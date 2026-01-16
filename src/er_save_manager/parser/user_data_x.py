@@ -66,7 +66,6 @@ class UserDataX:
     weather_offset: int = 0
     time_offset: int = 0
     steamid_offset: int = 0
-    dlc_offset: int = 0
     # Header (4 + 4 + 8 + 16 = 32 bytes)
     version: int = 0
     map_id: MapId = field(default_factory=MapId)
@@ -79,7 +78,7 @@ class UserDataX:
     # Player data (0x1B0 = 432 bytes)
     player_game_data: PlayerGameData = field(default_factory=PlayerGameData)
 
-    # SP Effects (13 entries, 16 bytes = 208 bytes, but actually reads different)
+    # SP Effects (13 entries ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â 16 bytes = 208 bytes, but actually reads different)
     sp_effects: list[SPEffect] = field(default_factory=list)
 
     # Equipment structures
@@ -296,42 +295,49 @@ class UserDataX:
         gaitem_count = 0x13FE if obj.version <= 81 else 0x1400  # 5118 or 5120
         obj.gaitem_map = [Gaitem.read(f) for _ in range(gaitem_count)]
 
-        # Read player game data (432 bytes)
+        # Track PlayerGameData offset (CRITICAL for stats editing)
+        obj.player_game_data_offset = f.tell() - data_start
         obj.player_game_data = PlayerGameData.read(f)
 
-        # Read SP effects (13 entries)
+        # Track SPEffects offset
+        obj.sp_effects_offset = f.tell() - data_start
         obj.sp_effects = [SPEffect.read(f) for _ in range(13)]
 
-        # Read equipment structures
+        # Track equipment structures offsets
+        obj.equipped_items_equip_index_offset = f.tell() - data_start
         obj.equipped_items_equip_index = EquippedItemsEquipIndex.read(f)
         obj.active_weapon_slots_and_arm_style = ActiveWeaponSlotsAndArmStyle.read(f)
         obj.equipped_items_item_id = EquippedItemsItemIds.read(f)
         obj.equipped_items_gaitem_handle = EquippedItemsGaitemHandles.read(f)
 
-        # Read inventory held
+        # Track inventory held offset
         held_common_cap = 0xA80  # 2,688 common items
         held_key_cap = 0x180  # 384 key items
+        obj.inventory_held_offset = f.tell() - data_start
         obj.inventory_held = Inventory.read(f, held_common_cap, held_key_cap)
 
         # Read more equipment
+        obj.equipped_spells_offset = f.tell() - data_start
         obj.equipped_spells = EquippedSpells.read(f)
+        obj.equipped_items_offset = f.tell() - data_start
         obj.equipped_items = EquippedItems.read(f)
         obj.equipped_gestures = EquippedGestures.read(f)
         obj.acquired_projectiles = AcquiredProjectiles.read(f)
         obj.equipped_armaments_and_items = EquippedArmamentsAndItems.read(f)
         obj.equipped_physics = EquippedPhysics.read(f)
 
-        # Read face data (303 bytes)
+        # Track FaceData offset (CRITICAL for appearance editing)
+        obj.face_data_offset = f.tell() - data_start
         obj.face_data = FaceData.read(f, in_profile_summary=False)
 
-        # Read inventory storage
+        # Track inventory storage offset
+        obj.inventory_storage_box_offset = f.tell() - data_start
         obj.inventory_storage_box = Inventory.read(f, 0x780, 0x80)
 
         # Parse remaining structures
         obj.gestures = Gestures.read(f)
         obj.unlocked_regions = Regions.read(f)
-        obj.horse_offset = f.tell()
-        obj.horse_offset = f.tell()
+        obj.horse_offset = f.tell() - data_start
         obj.horse = RideGameData.read(f)
         obj.control_byte_maybe = struct.unpack("<B", f.read(1))[0]
         obj.blood_stain = BloodStain.read(f)
@@ -363,7 +369,7 @@ class UserDataX:
             0
         ]
 
-        obj.event_flags_offset = f.tell()
+        obj.event_flags_offset = f.tell() - data_start
         obj.event_flags = f.read(0x1BF99F)
         obj.event_flags_terminator = struct.unpack("<B", f.read(1))[0]
         # There are 16 more bytes after the terminator
@@ -373,6 +379,7 @@ class UserDataX:
         obj.world_geom_man = WorldGeomMan.read(f)
         obj.world_geom_man2 = WorldGeomMan.read(f)
         obj.rend_man = RendMan.read(f)
+        obj.coordinates_offset = f.tell() - data_start
         obj.player_coordinates = PlayerCoordinates.read(f)
 
         # 2 bytes padding after PlayerCoordinates
@@ -394,15 +401,14 @@ class UserDataX:
         f.read(24)
         f.seek(current_pos)
 
-        obj.weather_offset = f.tell()
+        obj.weather_offset = f.tell() - data_start
         obj.world_area_weather = WorldAreaWeather.read(f)
-        obj.time_offset = f.tell()
+        obj.time_offset = f.tell() - data_start
         obj.world_area_time = WorldAreaTime.read(f)
         obj.base_version = BaseVersion.read(f)
         obj.steamid_offset = f.tell()
         obj.steam_id = struct.unpack("<Q", f.read(8))[0]
         obj.ps5_activity = PS5Activity.read(f)
-        obj.dlc_offset = f.tell()
         obj.dlc = DLC.read(f)
         obj.player_data_hash = PlayerGameDataHash.read(f)
 
@@ -561,58 +567,6 @@ class UserDataX:
 
         return False
 
-    def has_dlc_flag(self) -> bool:
-        """
-        Check if DLC entry flag is set.
-
-        When this flag is non-zero, the character has entered the Shadow of the
-        Erdtree DLC area. This causes an infinite loading screen if the DLC is
-        not owned.
-
-        Returns:
-            True if DLC flag is set (character entered DLC)
-        """
-        if not hasattr(self, "dlc") or self.dlc is None:
-            return False
-        return self.dlc.has_dlc_flag()
-
-    def get_dlc_flag_value(self) -> int:
-        """Get the raw DLC flag value"""
-        if not hasattr(self, "dlc") or self.dlc is None:
-            return 0
-        return self.dlc.get_dlc_flag_value()
-
-    def clear_dlc_flag(self):
-        """
-        Clear the DLC entry flag.
-
-        This allows the character to load without owning the DLC.
-        Use this when someone else has teleported your character out of
-        the DLC but the flag is still set.
-        """
-        if hasattr(self, "dlc") and self.dlc is not None:
-            self.dlc.clear_dlc_flag()
-
-    def has_invalid_dlc(self) -> bool:
-        """
-        Check if DLC struct has invalid data in unused slots.
-
-        Returns:
-            True if unused DLC slots contain non-zero values
-        """
-        if not hasattr(self, "dlc") or self.dlc is None:
-            return False
-        return self.dlc.has_invalid_flags()
-
-    def clear_invalid_dlc(self):
-        """
-        Clear invalid data in unused DLC slots.
-
-        Sets all unused bytes [3-49] to 0.
-        """
-        if hasattr(self, "dlc") and self.dlc is not None:
-            self.dlc.clear_invalid_flags()
-
     def has_corruption(self, correct_steam_id: int = None) -> tuple[bool, list[str]]:
         """
         Check if this character slot has any corruption.
@@ -666,3 +620,4 @@ class UserDataX:
 
         has_corruption = len(issues) > 0
         return (has_corruption, issues)
+    

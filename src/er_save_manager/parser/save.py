@@ -510,85 +510,175 @@ class Save:
         was_fixed = len(fixes) > 0
         return (was_fixed, fixes)
 
-    def clear_character_dlc_flag(self, slot_index: int) -> bool:
+    def get_character_presets(self):
+        """Get character preset data from USER_DATA_10"""
+        if self.user_data_10_parsed and self.user_data_10_parsed.menu_system_save_load:
+            return self.user_data_10_parsed.menu_system_save_load.parsed
+        return None
+
+    def export_presets(self, output_path: str) -> int:
+        """Export all active presets to JSON file"""
+        import json
+
+        presets = self.get_character_presets()
+        if not presets:
+            return 0
+
+        active = presets.get_active_presets()
+        data = {
+            "version": 1,
+            "preset_count": len(active),
+            "presets": [
+                {"slot": idx, "data": preset.to_dict()} for idx, preset in active
+            ],
+        }
+
+        with open(output_path, "w") as f:
+            json.dump(data, f, indent=2)
+
+        return len(active)
+
+    def import_preset_from_json(
+        self, json_path: str, preset_slot: int, dest_slot: int
+    ) -> bool:
         """
-        Clear the DLC entry flag for a character slot.
-
-        When a character enters the Shadow of the Erdtree DLC, a flag is set
-        that prevents the character from loading if the DLC is not owned.
-        This method clears that flag.
-
-        Use case: Someone teleports your character out of the DLC but you
-        still cannot load because the flag remains set.
+        Import a preset from JSON file into a specific slot
 
         Args:
-            slot_index: Character slot index (0-9)
+            json_path: Path to JSON file exported by export_presets()
+            preset_slot: Which preset in the JSON to import (0-based index in JSON)
+            dest_slot: Destination slot in save file (0-14)
 
         Returns:
-            True if flag was cleared, False if not needed or failed
+            True if successful
         """
-        if slot_index < 0 or slot_index >= 10:
-            raise IndexError(f"Slot index must be 0-9, got {slot_index}")
+        import json
 
-        slot = self.character_slots[slot_index]
-        if slot.is_empty():
-            return False
+        from .character_presets import FacePreset
 
-        if not slot.has_dlc_flag():
-            return False
+        try:
+            # Load JSON
+            with open(json_path) as f:
+                data = json.load(f)
 
-        # Clear the flag in memory
-        slot.clear_dlc_flag()
+            # Validate JSON structure
+            if "presets" not in data:
+                return False
 
-        # Write the cleared DLC struct back to raw data
-        if hasattr(slot, "dlc_offset") and slot.dlc_offset > 0:
-            from io import BytesIO
+            if preset_slot < 0 or preset_slot >= len(data["presets"]):
+                return False
 
-            dlc_bytes = BytesIO()
-            slot.dlc.write(dlc_bytes)
-            dlc_data = dlc_bytes.getvalue()
-            self._raw_data[slot.dlc_offset : slot.dlc_offset + len(dlc_data)] = dlc_data
+            # Get preset data
+            preset_entry = data["presets"][preset_slot]
+            preset_data = preset_entry.get("data", {})
+
+            # Create FacePreset from dict
+            new_preset = FacePreset.from_dict(preset_data)
+
+            # Get destination presets container
+            dest_presets = self.get_character_presets()
+            if not dest_presets:
+                return False
+
+            if dest_slot < 0 or dest_slot >= 15:
+                return False
+
+            # Set the preset
+            dest_presets.presets[dest_slot] = new_preset
+
+            # Update in raw data
+            self._update_preset_in_raw_data(dest_slot, new_preset)
+
             return True
 
-        return False
+        except Exception:
+            import traceback
 
-    def clear_character_invalid_dlc(self, slot_index: int) -> bool:
-        """
-        Clear invalid data in unused DLC flag slots.
-
-        When garbage data is written to the unused DLC slots [3-49],
-        the save cannot load. This method clears those slots.
-
-        Args:
-            slot_index: Character slot index (0-9)
-
-        Returns:
-            True if invalid data was cleared, False if not needed or failed
-        """
-        if slot_index < 0 or slot_index >= 10:
-            raise IndexError(f"Slot index must be 0-9, got {slot_index}")
-
-        slot = self.character_slots[slot_index]
-        if slot.is_empty():
+            traceback.print_exc()
             return False
 
-        if not hasattr(slot, "dlc") or not slot.dlc.has_invalid_flags():
+    def copy_preset_to_save(
+        self, source_save, source_slot: int, dest_slot: int
+    ) -> bool:
+        """Copy preset from another save file"""
+        source_presets = source_save.get_character_presets()
+        dest_presets = self.get_character_presets()
+
+        if not source_presets or not dest_presets:
             return False
 
-        # Clear the invalid data in memory
-        slot.dlc.clear_invalid_flags()
+        if source_slot < 0 or source_slot >= 15 or dest_slot < 0 or dest_slot >= 15:
+            return False
 
-        # Write the cleared DLC struct back to raw data
-        if hasattr(slot, "dlc_offset") and slot.dlc_offset > 0:
-            from io import BytesIO
+        source_preset = source_presets.presets[source_slot]
+        if source_preset.is_empty():
+            return False
 
-            dlc_bytes = BytesIO()
-            slot.dlc.write(dlc_bytes)
-            dlc_data = dlc_bytes.getvalue()
-            self._raw_data[slot.dlc_offset : slot.dlc_offset + len(dlc_data)] = dlc_data
-            return True
+        # Deep copy the preset
+        from io import BytesIO
 
-        return False
+        preset_bytes = BytesIO()
+        source_preset.write(preset_bytes)
+        preset_bytes.seek(0)
+
+        from .character_presets import FacePreset
+
+        dest_presets.presets[dest_slot] = FacePreset.read(preset_bytes)
+
+        # Update in raw data
+        self._update_preset_in_raw_data(dest_slot, dest_presets.presets[dest_slot])
+        return True
+
+    def _update_preset_in_raw_data(self, slot_idx: int, preset) -> None:
+        """Update preset in raw save data"""
+        from io import BytesIO
+
+        # Calculate offset in save file
+        HEADER_SIZE = 0x300 if self.magic == b"BND4" else 0x6C
+        SLOT_SIZE = 0x280000
+        CHECKSUM_SIZE = 0x10
+
+        # USER_DATA_10 offset
+        userdata10_start = (
+            HEADER_SIZE + (10 * (SLOT_SIZE + CHECKSUM_SIZE)) + CHECKSUM_SIZE
+        )
+
+        # MenuSystemSaveLoad offset within USER_DATA_10
+        # Version(4) + SteamID(8) + Settings(0x140)
+        menu_offset = userdata10_start + 4 + 8 + 0x140
+
+        # CSMenuSystemSaveLoad header is 8 bytes, each preset is 0x130
+        preset_offset = menu_offset + 8 + (slot_idx * 0x130)
+
+        # Write preset data
+        preset_stream = BytesIO()
+        preset.write(preset_stream)
+        preset_data = preset_stream.getvalue()
+
+        self._raw_data[preset_offset : preset_offset + len(preset_data)] = preset_data
+
+        # Recalculate USER_DATA_10 checksum
+        self._recalculate_userdata10_checksum()
+
+    def _recalculate_userdata10_checksum(self) -> None:
+        """Recalculate USER_DATA_10 MD5 checksum after preset modification"""
+        import hashlib
+
+        HEADER_SIZE = 0x300 if self.magic == b"BND4" else 0x6C
+        SLOT_SIZE = 0x280000
+        CHECKSUM_SIZE = 0x10
+
+        userdata10_offset = HEADER_SIZE + (10 * (SLOT_SIZE + CHECKSUM_SIZE))
+        userdata10_checksum_offset = userdata10_offset
+        userdata10_data_offset = userdata10_offset + CHECKSUM_SIZE
+
+        userdata10_data = self._raw_data[
+            userdata10_data_offset : userdata10_data_offset + 0x60000
+        ]
+        md5_hash = hashlib.md5(userdata10_data).digest()
+        self._raw_data[
+            userdata10_checksum_offset : userdata10_checksum_offset + CHECKSUM_SIZE
+        ] = md5_hash
 
 
 def load_save(filepath: str) -> Save:
