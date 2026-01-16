@@ -89,3 +89,76 @@ src/er_save_manager/
 src/resources/
     eventflag_bst.txt       # Event flag BST mapping
 ```
+
+## Release Process
+
+### Automated Release Workflow
+
+This project uses an automated release workflow that creates PRs with version bumps and changelogs based on conventional commits.
+
+#### Conventional Commit Format
+
+Follow the [Conventional Commits](https://www.conventionalcommits.org/) specification for all commits:
+
+```
+<type>(<scope>): <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+**Common types:**
+- `feat`: New feature (✨ New Features in changelog)
+- `fix`: Bug fix (🔧 Bug Fixes in changelog)
+- `ui`: UI changes (🎨 User Interface in changelog)
+- `docs`: Documentation (📖 Documentation in changelog)
+- `perf`: Performance improvement (⚡ Performance in changelog)
+- `refactor`: Code refactoring (♻️ Refactoring in changelog)
+- `chore`: Maintenance (🧹 Maintenance in changelog)
+- `test`, `ci`, `build`: Skipped in changelog
+
+**Examples:**
+```bash
+git commit -m "feat: add auto-backup on save"
+git commit -m "fix: correct corruption detection for DLC saves"
+git commit -m "ui: improve character selection UI"
+git commit -m "docs: update installation instructions"
+```
+
+#### How Releases Work
+
+1. **Push to main**: When commits are merged to main, the workflow detects if a version bump is needed
+2. **Create release branch**: If needed, creates `release-vX.Y.Z` with version bump and changelog
+3. **Build artifacts**: Builds Windows executable on the release branch
+4. **Create PR**: Opens a PR to main with changelog in the body
+5. **Draft release**: Creates a draft GitHub release with the Windows artifact
+6. **Review & merge**: Review the PR, and when merged, the release is ready to publish
+
+#### Manual Version Bump (if needed)
+
+```bash
+# Bump version locally
+uv run python scripts/bump_version.py v1.2.3
+
+# Update changelog
+git cliff --tag v1.2.3 -o CHANGELOG.md
+
+# Commit changes
+git add pyproject.toml CHANGELOG.md
+git commit -m "chore(release): bump to v1.2.3"
+```
+
+#### Troubleshooting
+
+**Issue**: Release workflow doesn't trigger
+- **Solution**: Ensure commits follow conventional commit format
+- **Solution**: Check that commits since last release warrant a version bump
+
+**Issue**: PR creation fails
+- **Solution**: Ensure `PUSH_TOKEN` secret is configured with `repo` and `workflow` permissions
+
+**Issue**: Build artifacts not attached
+- **Solution**: Check build job logs for PyInstaller errors
+- **Solution**: Ensure `.spec` file is up to date
+

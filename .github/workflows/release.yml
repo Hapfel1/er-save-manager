@@ -1,83 +1,268 @@
-name: Release
+# =============================================================================
+# ER Save Manager - Automated Release Workflow
+# =============================================================================
+#
+# This workflow automates the release process:
+#   1. PLAN: Detect version changes from conventional commits
+#   2. CREATE: Bump version, update changelog, create release branch
+#   3. BUILD: Build Windows executable
+#   4. FINALIZE: Create PR and draft release with artifacts
+#
+# Triggers:
+#   - Push to main branch (auto-release on merge)
+#   - Manual workflow dispatch
+#
+# Required Secrets:
+#   - PUSH_TOKEN: GitHub PAT with repo and workflow permissions
+#
+# =============================================================================
+
+name: Create Release Draft
+
 on:
-  push:
-    tags:
-      - "v*.*.*"
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to release (e.g., 1.0.0)"
-        required: true
-        type: string
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
+
+# =============================================================================
+# Jobs
+# =============================================================================
 
 jobs:
-  checks:
-    uses: ./.github/workflows/checks.yml
-
-  build-windows:
-    name: Build Windows
-    runs-on: windows-latest
-    needs: checks
+  # ---------------------------------------------------------------------------
+  # Job 1: Plan Release
+  # ---------------------------------------------------------------------------
+  # Determines if a release is needed by comparing current version with
+  # the next version calculated from conventional commits.
+  # ---------------------------------------------------------------------------
+  plan:
+    name: Plan Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
-      version: ${{ steps.get-version.outputs.version }}
+      current_version: ${{ steps.get-versions.outputs.current_version }}
+      next_version: ${{ steps.get-versions.outputs.next_version }}
+      version_no_v: ${{ steps.get-versions.outputs.version_no_v }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: git-cliff
+
+      - name: Get current and next versions
+        id: get-versions
+        run: |
+          # Get current version from pyproject.toml
+          current_version=$(grep -Po '(?<=^version = ")[^"]*' pyproject.toml)
+          echo "current_version=v$current_version" >> "$GITHUB_OUTPUT"
+          
+          # Get next version from git-cliff (based on conventional commits)
+          next_version=$(git cliff --bumped-version --unreleased)
+          echo "next_version=$next_version" >> "$GITHUB_OUTPUT"
+          
+          # Also output version without 'v' prefix for artifact naming
+          version_no_v="${next_version#v}"
+          echo "version_no_v=$version_no_v" >> "$GITHUB_OUTPUT"
+          
+          echo "📌 Current version: v$current_version"
+          echo "📌 Next version: $next_version"
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Create Release Branch
+  # ---------------------------------------------------------------------------
+  # Creates the release branch with version bump and changelog update.
+  # ---------------------------------------------------------------------------
+  create-release-branch:
+    needs: plan
+    name: Create Release Branch
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    if: needs.plan.outputs.current_version != needs.plan.outputs.next_version
+    env:
+      NEXT_VERSION: ${{ needs.plan.outputs.next_version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ secrets.PUSH_TOKEN }}
+
       - uses: actions/setup-python@v5
         with:
           python-version-file: ".python-version"
+
       - uses: astral-sh/setup-uv@v4
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: git-cliff
+
+      - name: Install tomlkit for version bumping
+        run: uv pip install --system tomlkit
+
+      - name: Bump version and update changelog
+        run: |
+          # Bump version in pyproject.toml
+          uv run python scripts/bump_version.py "$NEXT_VERSION"
+          
+          # Update changelog only if this version section doesn't already exist
+          if ! grep -q "^## 📦 Release $NEXT_VERSION" CHANGELOG.md 2>/dev/null; then
+            git cliff --tag "$NEXT_VERSION" -o CHANGELOG.md
+          fi
+
+      - name: Commit and push release branch
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions"
+          git add pyproject.toml CHANGELOG.md
+          git commit -m "🚀 Release: Prepare ER Save Manager $NEXT_VERSION"
+          git push origin "HEAD:refs/heads/release-$NEXT_VERSION" --force
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Build Windows Artifacts
+  # ---------------------------------------------------------------------------
+  # Builds the Windows executable for the release.
+  # ---------------------------------------------------------------------------
+  build-windows:
+    needs:
+      - plan
+      - create-release-branch
+    name: Build Windows
+    runs-on: windows-latest
+    if: needs.plan.outputs.current_version != needs.plan.outputs.next_version
+    env:
+      NEXT_VERSION: ${{ needs.plan.outputs.next_version }}
+      VERSION_NO_V: ${{ needs.plan.outputs.version_no_v }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release-${{ needs.plan.outputs.next_version }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+
+      - uses: astral-sh/setup-uv@v4
+
       - name: Install dependencies
         run: uv sync --locked --dev
-      - name: Get version
-        id: get-version
-        shell: pwsh
-        run: |
-          if ("${{ github.event.inputs.version }}" -ne "") {
-            $version = "${{ github.event.inputs.version }}"
-          } elseif ("${{ github.ref_type }}" -eq "tag") {
-            $version = "${{ github.ref_name }}".TrimStart("v")
-          } else {
-            $version = (uv run python -c "import er_save_manager; print(er_save_manager.__version__)")
-          }
-          echo "version=$version" >> $env:GITHUB_OUTPUT
-          echo "Building version: $version"
+
       - name: Build Windows exe
         run: uv run pyinstaller "Elden Ring Save Manager.spec"
+
       - name: Package build
         shell: pwsh
         run: |
-          $version = "${{ steps.get-version.outputs.version }}"
+          $version = "${{ env.VERSION_NO_V }}"
           New-Item -ItemType Directory -Force "dist/er-save-manager-$version-windows" | Out-Null
           Copy-Item -Recurse -Force "dist\Elden Ring Save Manager*" "dist\er-save-manager-$version-windows\"
           Compress-Archive -Path "dist\er-save-manager-$version-windows\*" -DestinationPath "dist\er-save-manager-$version-windows.zip"
-      - name: Upload artifacts
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: er-save-manager-windows
-          path: dist/er-save-manager-${{ steps.get-version.outputs.version }}-windows.zip
+          path: dist/er-save-manager-${{ env.VERSION_NO_V }}-windows.zip
 
-  release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    needs: build-windows
+  # ---------------------------------------------------------------------------
+  # Job 4: Finalize Release
+  # ---------------------------------------------------------------------------
+  # Downloads artifacts, creates PR and draft release.
+  # ---------------------------------------------------------------------------
+  finalize-release:
+    needs:
+      - plan
+      - create-release-branch
+      - build-windows
+    name: Finalize Release
+    runs-on: windows-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    if: needs.plan.outputs.current_version != needs.plan.outputs.next_version
+    env:
+      NEXT_VERSION: ${{ needs.plan.outputs.next_version }}
+      VERSION_NO_V: ${{ needs.plan.outputs.version_no_v }}
+      GH_TOKEN: ${{ secrets.PUSH_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.PUSH_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: release-${{ needs.plan.outputs.next_version }}
+          token: ${{ secrets.PUSH_TOKEN }}
+
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           name: er-save-manager-windows
-          path: dist/
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: "Elden Ring Save Manager v${{ needs.build-windows.outputs.version }}"
-          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', needs.build-windows.outputs.version) }}
-          draft: ${{ github.event_name == 'workflow_dispatch' }}
-          generate_release_notes: true
-          files: |
-            dist/er-save-manager-${{ needs.build-windows.outputs.version }}-windows.zip
+          path: artifacts/er-save-manager-windows/
+
+      - name: Extract changelog for this release
+        id: changelog
+        shell: pwsh
+        run: |
+          $changelog = .\scripts\Extract-Changelog.ps1 -Version "$env:NEXT_VERSION"
+          
+          # Save to file for PR body
+          Set-Content -Path "release_changelog.txt" -Value $changelog
+          
+          # Also set as output for release notes (using heredoc syntax)
+          "content<<EOF" >> $env:GITHUB_OUTPUT
+          $changelog >> $env:GITHUB_OUTPUT
+          "EOF" >> $env:GITHUB_OUTPUT
+
+      - name: Create or update pull request
+        shell: pwsh
+        run: |
+          $changelog = Get-Content "release_changelog.txt" -Raw
+          $prTitle = "🚀 Release: ER Save Manager $env:NEXT_VERSION"
+          
+          # Create PR body with unreleased banner
+          $prBody = @"
+## 🚧 UNRELEASED
+
+**This release is still under development.**
+Changes in this PR will be included in the final release once merged.
+
+---
+
+$changelog
+"@
+          
+          Set-Content -Path "pr_body.txt" -Value $prBody
+          
+          # Try to create PR, if it fails (already exists), update it
+          gh pr create -B main --title $prTitle -F "pr_body.txt" --head "release-$env:NEXT_VERSION" 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "ℹ️  PR already exists, updating..."
+            gh pr edit "release-$env:NEXT_VERSION" -F "pr_body.txt"
+          } else {
+            Write-Host "✅ Created new PR"
+          }
+
+      - name: Delete old release drafts
+        uses: hugo19941994/delete-draft-releases@v2.0.0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PUSH_TOKEN }}
+        with:
+          threshold: "1s"
+
+      - name: Create draft release with artifacts
+        shell: pwsh
+        run: |
+          .\scripts\Create-Release.ps1 -Version "$env:NEXT_VERSION" -ChangelogContent "${{ steps.changelog.outputs.content }}"

@@ -34,6 +34,7 @@ dev = [
     "pyinstaller>=6.0",
     "ruff>=0.8",
     "pytest>=8.0",
+    "tomlkit>=0.13",
 ]
 
 [tool.ruff]
