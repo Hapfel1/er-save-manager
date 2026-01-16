@@ -40,10 +40,6 @@ See [DEVELOPMENT.md](DEVELOPMENT.md
 - **DLC Flag**: Clears Shadow of the Erdtree entry flag
 - **Invalid DLC Data**: Clears garbage data in unused DLC slots
 
-## Installation
-
-Download the latest release from [Releases](https://github.com/YOUR_USERNAME/er-save-manager/releases).
-
 ## Usage
 
 ### Command Line
