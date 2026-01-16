@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=ER Save Manager
+Comment=Elden Ring Save File Editor and Manager
+Exec=er-save-manager
+Icon=er-save-manager
+Type=Application
+Categories=Game;Utility;
+Terminal=false
