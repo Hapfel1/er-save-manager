@@ -26,9 +26,8 @@ Download the latest release from [Releases](https://github.com/Hapfel1/er-save-m
 
 ## Building from Source
 
-See [DEVELOPMENT.# Elden Ring Save Manager
+See [DEVELOPMENT.md](DEVELOPMENT.md
 
-A comprehensive save file editor, backup manager, and corruption fixer for Elden Ring.
 
 ## Corruption Fixes
 
@@ -72,10 +71,6 @@ er-save-manager backup list --save "C:\Path\To\ER0000.sl2"
 er-save-manager backup restore --save "C:\Path\To\ER0000.sl2" --backup "backup_file.bak"
 ```
 
-## Building from Source
-
-See [DEVELOPMENT.md](DEVELOPMENT.md)
-
 ## License
 
 MIT License - see [LICENSE](LICENSE)
@@ -85,8 +80,3 @@ MIT License - see [LICENSE](LICENSE)
 Based on research from:
 - [ER-Save-Lib](https://github.com/ClayAmore/ER-Save-Lib) Rust implementation
 - Community save file research and event flag documentation
-md](DEVELOPMENT.md)
-
-## License
-
-MIT License - see [LICENSE](LICENSE)
