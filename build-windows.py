@@ -29,9 +29,11 @@ if sys.platform != "win32":
     sys.exit("This script must be run on Windows to build a Windows binary.")
 
 # Include necessary files without including source code
-include_files = [
-    ("src/resources/", "resources/"),
-]
+include_files = []
+resources_path = Path("src/resources")
+if resources_path.exists():
+    include_files.append(("src/resources/", "resources/"))
+
 
 # Add additional options like packages and excludes
 build_exe_options = {
