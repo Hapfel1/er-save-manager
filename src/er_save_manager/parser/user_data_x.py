@@ -620,4 +620,3 @@ class UserDataX:
 
         has_corruption = len(issues) > 0
         return (has_corruption, issues)
-    

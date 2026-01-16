@@ -49,7 +49,9 @@ class EventFlags:
             Path(__file__).parent / "eventflag_bst.txt",
             Path(__file__).parent / "resources" / "eventflag_bst.txt",
             Path(__file__).parent.parent / "resources" / "eventflag_bst.txt",
-            Path(__file__).parent.parent.parent / "resources" / "eventflag_bst.txt",  # /src/resources/
+            Path(__file__).parent.parent.parent
+            / "resources"
+            / "eventflag_bst.txt",  # /src/resources/
         ]
 
         loaded = False
@@ -479,5 +481,3 @@ class CorruptionFixer:
                     fix_descriptions.append(description)
 
         return fixes_applied, fix_descriptions
-    
-    
