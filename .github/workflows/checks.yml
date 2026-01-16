@@ -39,5 +39,4 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --dev
       - name: Run tests
-        # --ignore-glob to skip if truly empty, or just ensure test_init.py exists
-        run: uv run pytest -v || if [ $? -eq 5 ]; then echo "No tests collected, skipping"; exit 0; fi
+        run: uv run pytest -v || if [ $? -eq 5 ]; then echo "No tests collected"; exit 0; fi

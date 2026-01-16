@@ -37,4 +37,4 @@ Thumbs.db
 *.co2
 *.bak
 *.backup
-backups/
+*.backups/
