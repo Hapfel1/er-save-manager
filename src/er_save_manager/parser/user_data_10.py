@@ -198,16 +198,37 @@ class ProfileSummary:
 
 @dataclass
 class MenuSystemSaveLoad:
-    """Menu system data - just read as raw for now"""
+    """Menu system data with character presets"""
 
     raw_data: bytes = b""
+    parsed: object = None  # CSMenuSystemSaveLoad from character_presets module
 
     @classmethod
     def read(cls, f: BytesIO) -> MenuSystemSaveLoad:
         """Read MenuSystemSaveLoad - 0x1808 bytes"""
         obj = cls()
+        f.tell()
         obj.raw_data = f.read(0x1808)
+
+        # Parse presets if character_presets module is available
+        try:
+            from .character_presets import CSMenuSystemSaveLoad
+
+            preset_stream = BytesIO(obj.raw_data)
+            obj.parsed = CSMenuSystemSaveLoad.read(preset_stream)
+        except ImportError:
+            pass
+
         return obj
+
+    def write(self, f: BytesIO) -> None:
+        """Write back (use parsed if modified, else raw)"""
+        if self.parsed:
+            preset_stream = BytesIO()
+            self.parsed.write(preset_stream)
+            f.write(preset_stream.getvalue())
+        else:
+            f.write(self.raw_data)
 
 
 @dataclass
