@@ -39,6 +39,15 @@ jobs:
           echo "version=$version" >> $env:GITHUB_OUTPUT
       - name: Build Windows exe
         run: uv run python build-windows.py build
+      - name: Debug - List build output
+        shell: pwsh
+        run: |
+          Write-Host "=== Listing dist directory ==="
+          if (Test-Path "dist") {
+            Get-ChildItem "dist" -Recurse | Select-Object FullName
+          } else {
+            Write-Host "dist directory does not exist!"
+          }
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
