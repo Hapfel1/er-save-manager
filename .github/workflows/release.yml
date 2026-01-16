@@ -204,15 +204,26 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: er-save-manager-windows
-          path: artifacts/er-save-manager-windows/
+          path: artifacts/er-save-manager-windows-release/
 
       - name: Package Windows release
         shell: pwsh
         run: |
           $version = "$env:VERSION_NO_V"
-          # Create the release zip from the downloaded artifact directory
+          # Create the release zip matching me3-manager's approach
+          # cd into the artifact directory and zip all contents from there
+          # This ensures the zip contains files directly without a wrapper folder
           New-Item -ItemType Directory -Force "artifacts/releases" | Out-Null
-          Compress-Archive -Path "artifacts\er-save-manager-windows\*" -DestinationPath "artifacts\releases\er-save-manager-$version-windows.zip"
+          
+          Push-Location "artifacts\er-save-manager-windows-release"
+          Compress-Archive -Path "*" -DestinationPath "..\..\er-save-manager-$version-windows.zip"
+          Pop-Location
+          
+          # Move the zip to releases directory
+          Move-Item "er-save-manager-$version-windows.zip" "artifacts\releases\" -Force
+          
+          Write-Host "✅ Created release zip: er-save-manager-$version-windows.zip"
+          Write-Host "Zip will contain files directly (no wrapper folder)"
 
       - name: Extract changelog for this release
         id: changelog
