@@ -235,16 +235,12 @@ jobs:
           $prTitle = "🚀 Release: ER Save Manager $env:NEXT_VERSION"
           
           # Create PR body with unreleased banner
-          $prBody = @"
-## 🚧 UNRELEASED
-
-**This release is still under development.**
-Changes in this PR will be included in the final release once merged.
-
----
-
-$changelog
-"@
+          # Build the body line by line to avoid YAML syntax issues
+          $prBody = "## 🚧 UNRELEASED`n`n"
+          $prBody += "**This release is still under development.**`n"
+          $prBody += "Changes in this PR will be included in the final release once merged.`n`n"
+          $prBody += "---`n`n"
+          $prBody += $changelog
           
           Set-Content -Path "pr_body.txt" -Value $prBody
           
