@@ -165,19 +165,13 @@ jobs:
       - name: Build Windows exe
         run: uv run python build-windows.py build
 
-      - name: Package build
-        shell: pwsh
-        run: |
-          $version = "${{ env.VERSION_NO_V }}"
-          New-Item -ItemType Directory -Force "dist/er-save-manager-$version-windows" | Out-Null
-          Copy-Item -Recurse -Force "dist\windows-$version\Elden_Ring_Save_Manager_$version\*" "dist\er-save-manager-$version-windows\"
-          Compress-Archive -Path "dist\er-save-manager-$version-windows\*" -DestinationPath "dist\er-save-manager-$version-windows.zip"
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: er-save-manager-windows
-          path: dist/er-save-manager-${{ env.VERSION_NO_V }}-windows.zip
+          # Upload the directory, not a zip - GitHub will handle artifact packaging
+          # We'll create the release zip in the finalize job
+          path: dist/windows-${{ env.VERSION_NO_V }}/Elden_Ring_Save_Manager_${{ env.VERSION_NO_V }}
 
   # ---------------------------------------------------------------------------
   # Job 4: Finalize Release
@@ -211,6 +205,14 @@ jobs:
         with:
           name: er-save-manager-windows
           path: artifacts/er-save-manager-windows/
+
+      - name: Package Windows release
+        shell: pwsh
+        run: |
+          $version = "$env:VERSION_NO_V"
+          # Create the release zip from the downloaded artifact directory
+          New-Item -ItemType Directory -Force "artifacts/releases" | Out-Null
+          Compress-Archive -Path "artifacts\er-save-manager-windows\*" -DestinationPath "artifacts\releases\er-save-manager-$version-windows.zip"
 
       - name: Extract changelog for this release
         id: changelog

@@ -8,7 +8,7 @@
 #
 # Expected artifact structure:
 #   artifacts/
-#   └── er-save-manager-windows/
+#   └── releases/
 #       └── er-save-manager-<version>-windows.zip
 
 param(
@@ -49,7 +49,7 @@ if ($LASTEXITCODE -eq 0) {
 $Artifacts = @()
 
 # Add Windows zip if exists
-$WindowsZip = Join-Path $ArtifactsDir "er-save-manager-windows" "er-save-manager-$VersionNoV-windows.zip"
+$WindowsZip = Join-Path $ArtifactsDir "releases" "er-save-manager-$VersionNoV-windows.zip"
 if (Test-Path $WindowsZip) {
     $Artifacts += $WindowsZip
     Write-Host "✅ Found Windows artifact: $WindowsZip"
