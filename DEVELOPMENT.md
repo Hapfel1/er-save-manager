@@ -50,7 +50,7 @@ uv run pytest -v
 ## Build (Windows exe)
 
 ```bash
-uv run pyinstaller "Elden Ring Save Manager.spec"
+uv run python build-windows.py build
 ```
 
 ## Project Structure

@@ -163,14 +163,14 @@ jobs:
         run: uv sync --locked --dev
 
       - name: Build Windows exe
-        run: uv run pyinstaller "Elden Ring Save Manager.spec"
+        run: uv run python build-windows.py build
 
       - name: Package build
         shell: pwsh
         run: |
           $version = "${{ env.VERSION_NO_V }}"
           New-Item -ItemType Directory -Force "dist/er-save-manager-$version-windows" | Out-Null
-          Copy-Item -Recurse -Force "dist\Elden Ring Save Manager*" "dist\er-save-manager-$version-windows\"
+          Copy-Item -Recurse -Force "dist\windows-$version\Elden_Ring_Save_Manager_$version\*" "dist\er-save-manager-$version-windows\"
           Compress-Archive -Path "dist\er-save-manager-$version-windows\*" -DestinationPath "dist\er-save-manager-$version-windows.zip"
 
       - name: Upload artifact
