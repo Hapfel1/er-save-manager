@@ -32,8 +32,9 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/er_save_manager"]
 
-[tool.uv]
-dev-dependencies = [
+# Use dependency-groups instead of deprecated tool.uv.dev-dependencies
+[dependency-groups]
+dev = [
     "pyinstaller>=6.0",
     "ruff>=0.8",
     "pytest>=8.0",
@@ -64,3 +65,5 @@ known-first-party = ["er_save_manager"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+# Don't fail if no tests collected yet
+minversion = "8.0"
