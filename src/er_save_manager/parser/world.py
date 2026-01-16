@@ -937,86 +937,18 @@ class PS5Activity:
 
 @dataclass
 class DLC:
-    """
-    DLC ownership/entry flags (0x32 = 50 bytes)
+    """DLC data (0x32 = 50 bytes)"""
 
-    Structure (CSDlc) - array of 1-byte bools:
-        [0] = pre-order gesture "The Ring"
-        [1] = Shadow of the Erdtree DLC ownership
-        [2] = pre-order gesture "Ring of Miquella"
-        [3-49] = unused (must be 0, invalid values cause save to not load)
-
-    When flag[1] (Shadow of the Erdtree) is non-zero, the character has
-    entered the DLC. This prevents loading if the DLC is not owned.
-    """
-
-    # Individual flags as bytes (0 or 1)
-    preorder_the_ring: int = 0  # [0]
-    shadow_of_erdtree: int = 0  # [1] - the main DLC flag
-    preorder_ring_of_miquella: int = 0  # [2]
-    unused: bytes = field(default_factory=lambda: b"\x00" * 47)  # [3-49] must be 0
+    data: bytes = field(default_factory=lambda: b"\x00" * 0x32)
 
     @classmethod
     def read(cls, f: BytesIO) -> DLC:
         """Read DLC from stream (50 bytes)"""
-        return cls(
-            preorder_the_ring=struct.unpack("<B", f.read(1))[0],
-            shadow_of_erdtree=struct.unpack("<B", f.read(1))[0],
-            preorder_ring_of_miquella=struct.unpack("<B", f.read(1))[0],
-            unused=f.read(47),
-        )
+        return cls(data=f.read(0x32))
 
     def write(self, f: BytesIO):
         """Write DLC to stream (50 bytes)"""
-        f.write(struct.pack("<B", self.preorder_the_ring))
-        f.write(struct.pack("<B", self.shadow_of_erdtree))
-        f.write(struct.pack("<B", self.preorder_ring_of_miquella))
-        f.write(self.unused)
-
-    def has_dlc_flag(self) -> bool:
-        """
-        Check if Shadow of the Erdtree DLC flag is set.
-
-        When this flag is non-zero, the character has entered the DLC area.
-        This causes an infinite loading screen if the DLC is not owned.
-
-        Returns:
-            True if DLC flag is set (character entered DLC)
-        """
-        return self.shadow_of_erdtree != 0
-
-    def get_dlc_flag_value(self) -> int:
-        """Get the Shadow of the Erdtree flag value"""
-        return self.shadow_of_erdtree
-
-    def clear_dlc_flag(self):
-        """
-        Clear the Shadow of the Erdtree DLC flag.
-
-        This allows the character to load without owning the DLC.
-        Use this when someone else has teleported your character out of
-        the DLC but the flag is still set.
-        """
-        self.shadow_of_erdtree = 0
-
-    def has_invalid_flags(self) -> bool:
-        """
-        Check if any unused flags have invalid (non-zero) values.
-
-        Invalid values in unused slots can cause the save to not load.
-
-        Returns:
-            True if any unused flags are non-zero
-        """
-        return self.unused != b"\x00" * 47
-
-    def clear_invalid_flags(self):
-        """
-        Clear any invalid values in unused flag slots.
-
-        Sets all unused bytes [3-49] to 0.
-        """
-        self.unused = b"\x00" * 47
+        f.write(self.data)
 
 
 # ============================================================================
