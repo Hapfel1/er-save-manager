@@ -32,15 +32,21 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --dev
       - name: Get version
-        run: echo "version=$(uv run python -c "import er_save_manager; print(er_save_manager.__version__)")" >> $env:GITHUB_ENV
+        id: get-version
+        shell: pwsh
+        run: |
+          $version = (uv run python -c "import er_save_manager; print(er_save_manager.__version__)")
+          echo "version=$version" >> $env:GITHUB_OUTPUT
       - name: Build Windows exe
         run: uv run pyinstaller "Elden Ring Save Manager.spec"
       - name: Package build
+        shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force "dist/windows-$env:version" | Out-Null
-          Copy-Item -Recurse -Force "dist\Elden Ring Save Manager*" "dist\windows-$env:version\"
+          $version = "${{ steps.get-version.outputs.version }}"
+          New-Item -ItemType Directory -Force "dist/windows-$version" | Out-Null
+          Copy-Item -Recurse -Force "dist\Elden Ring Save Manager*" "dist\windows-$version\"
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: er-save-manager-windows
-          path: dist/windows-${{ env.version }}
+          path: dist/windows-${{ steps.get-version.outputs.version }}
