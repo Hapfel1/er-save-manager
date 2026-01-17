@@ -313,133 +313,54 @@ Backup Format:
         )
         info_text.pack(pady=5)
 
-        # Source save section
-        source_frame = ttk.LabelFrame(
-            self.tab_char_mgmt, text="Source Save File", padding=15
+        # Operation selector
+        selector_frame = ttk.LabelFrame(
+            self.tab_char_mgmt, text="Select Operation", padding=15
         )
-        source_frame.pack(fill=tk.X, padx=20, pady=10)
+        selector_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        ttk.Label(
-            source_frame, text="Current save file loaded above", font=("Segoe UI", 10)
-        ).pack(anchor=tk.W)
+        self.char_operation_var = tk.StringVar(value="copy")
 
-        # Operations section
-        ops_frame = ttk.LabelFrame(self.tab_char_mgmt, text="Operations", padding=15)
-        ops_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        operations = [
+            ("Copy Character", "copy"),
+            ("Transfer to Another Save", "transfer"),
+            ("Swap Slots", "swap"),
+            ("Export Character", "export"),
+            ("Import Character", "import"),
+            ("Delete Character", "delete"),
+        ]
 
-        # Copy character to another slot
-        copy_frame = ttk.Frame(ops_frame)
-        copy_frame.pack(fill=tk.X, pady=10)
-
-        ttk.Label(
-            copy_frame, text="Copy Character:", font=("Segoe UI", 11, "bold")
-        ).pack(anchor=tk.W, pady=5)
-        ttk.Label(
-            copy_frame,
-            text="Copy a character from one slot to another in the same save file",
-        ).pack(anchor=tk.W)
-
-        copy_controls = ttk.Frame(copy_frame)
-        copy_controls.pack(fill=tk.X, pady=5)
-
-        ttk.Label(copy_controls, text="From Slot:").pack(side=tk.LEFT, padx=5)
-        self.copy_from_var = tk.IntVar(value=1)
-        ttk.Combobox(
-            copy_controls,
-            textvariable=self.copy_from_var,
-            values=list(range(1, 11)),
-            width=5,
+        # Dropdown selector
+        ttk.Label(selector_frame, text="Operation:").pack(side=tk.LEFT, padx=(0, 10))
+        operation_combo = ttk.Combobox(
+            selector_frame,
+            textvariable=self.char_operation_var,
+            values=[op[0] for op in operations],
             state="readonly",
-        ).pack(side=tk.LEFT, padx=5)
+            width=30,
+        )
+        operation_combo.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(copy_controls, text="To Slot:").pack(side=tk.LEFT, padx=10)
-        self.copy_to_var = tk.IntVar(value=2)
-        ttk.Combobox(
-            copy_controls,
-            textvariable=self.copy_to_var,
-            values=list(range(1, 11)),
-            width=5,
-            state="readonly",
-        ).pack(side=tk.LEFT, padx=5)
+        # Map display names to internal values
+        self.operation_map = {op[0]: op[1] for op in operations}
+        self.operation_map_reverse = {op[1]: op[0] for op in operations}
 
-        ttk.Button(
-            copy_controls,
-            text="Copy Character",
-            command=self.copy_character_slot,
-            width=18,
-            style="Accent.TButton",
-        ).pack(side=tk.LEFT, padx=10)
+        # Set initial display value
+        operation_combo.set("Copy Character")
 
-        ttk.Separator(ops_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=15)
+        # Bind change event
+        operation_combo.bind(
+            "<<ComboboxSelected>>", lambda e: self.update_char_operation_panel()
+        )
 
-        # Transfer to another save file
-        transfer_frame = ttk.Frame(ops_frame)
-        transfer_frame.pack(fill=tk.X, pady=10)
+        # Operation panel frame
+        self.char_ops_panel = ttk.LabelFrame(
+            self.tab_char_mgmt, text="Operation Details", padding=15
+        )
+        self.char_ops_panel.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
-        ttk.Label(
-            transfer_frame,
-            text="Transfer to Another Save:",
-            font=("Segoe UI", 11, "bold"),
-        ).pack(anchor=tk.W, pady=5)
-        ttk.Label(
-            transfer_frame, text="Copy a character to a different save file"
-        ).pack(anchor=tk.W)
-
-        transfer_controls = ttk.Frame(transfer_frame)
-        transfer_controls.pack(fill=tk.X, pady=5)
-
-        ttk.Label(transfer_controls, text="From Slot:").pack(side=tk.LEFT, padx=5)
-        self.transfer_from_var = tk.IntVar(value=1)
-        ttk.Combobox(
-            transfer_controls,
-            textvariable=self.transfer_from_var,
-            values=list(range(1, 11)),
-            width=5,
-            state="readonly",
-        ).pack(side=tk.LEFT, padx=5)
-
-        ttk.Button(
-            transfer_controls,
-            text="Select Target Save...",
-            command=self.transfer_character,
-            width=20,
-            style="Accent.TButton",
-        ).pack(side=tk.LEFT, padx=10)
-
-        ttk.Separator(ops_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=15)
-
-        # Delete character
-        delete_frame = ttk.Frame(ops_frame)
-        delete_frame.pack(fill=tk.X, pady=10)
-
-        ttk.Label(
-            delete_frame, text="Delete Character:", font=("Segoe UI", 11, "bold")
-        ).pack(anchor=tk.W, pady=5)
-        ttk.Label(
-            delete_frame,
-            text="⚠️ Permanently delete a character slot (creates backup)",
-            foreground="red",
-        ).pack(anchor=tk.W)
-
-        delete_controls = ttk.Frame(delete_frame)
-        delete_controls.pack(fill=tk.X, pady=5)
-
-        ttk.Label(delete_controls, text="Slot:").pack(side=tk.LEFT, padx=5)
-        self.delete_slot_var = tk.IntVar(value=1)
-        ttk.Combobox(
-            delete_controls,
-            textvariable=self.delete_slot_var,
-            values=list(range(1, 11)),
-            width=5,
-            state="readonly",
-        ).pack(side=tk.LEFT, padx=5)
-
-        ttk.Button(
-            delete_controls,
-            text="Delete Character",
-            command=self.delete_character_slot,
-            width=18,
-        ).pack(side=tk.LEFT, padx=10)
+        # Initialize with copy operation
+        self.update_char_operation_panel()
 
     def setup_character_tab(self):
         """Character editor tab"""
@@ -2067,14 +1988,12 @@ Warning:
                             f"PlayerGameData serialization error: expected 432 bytes, got {len(char_data)}"
                         )
 
-                    # Calculate absolute offset in save file
-                    HEADER_SIZE = 0x300 if self.save_file.magic == b"BND4" else 0x6C
-                    SLOT_SIZE = 0x280000
+                    # Calculate absolute offset in save file using tracked offset
+                    slot_offset = self.save_file._slot_offsets[slot_idx]
                     CHECKSUM_SIZE = 0x10
 
-                    slot_start = HEADER_SIZE + (slot_idx * (SLOT_SIZE + CHECKSUM_SIZE))
                     abs_offset = (
-                        slot_start + CHECKSUM_SIZE + slot.player_game_data_offset
+                        slot_offset + CHECKSUM_SIZE + slot.player_game_data_offset
                     )
 
                     # Write to raw data
@@ -2606,13 +2525,8 @@ Warning:
                             f"Preset size mismatch: {len(preset_data)} != 0x130"
                         )
 
-                    HEADER_SIZE = 0x300 if self.save_file.magic == b"BND4" else 0x6C
-                    SLOT_SIZE = 0x280000
+                    slot_offset = self.save_file._slot_offsets[target_slot]
                     CHECKSUM_SIZE = 0x10
-
-                    slot_start = HEADER_SIZE + (
-                        target_slot * (SLOT_SIZE + CHECKSUM_SIZE)
-                    )
 
                     if not hasattr(slot, "face_data_offset"):
                         messagebox.showerror(
@@ -2622,7 +2536,7 @@ Warning:
                         )
                         return
 
-                    face_offset = slot_start + CHECKSUM_SIZE + slot.face_data_offset
+                    face_offset = slot_offset + CHECKSUM_SIZE + slot.face_data_offset
 
                     preset_face_data = preset_data[0x20:]
                     if len(preset_face_data) < 0x12F:
@@ -3005,6 +2919,223 @@ Warning:
             traceback.print_exc()
 
     # Character Management methods (transfer, copy, delete)
+    def update_char_operation_panel(self):
+        """Update the operation panel based on selected operation"""
+        # Clear existing widgets
+        for widget in self.char_ops_panel.winfo_children():
+            widget.destroy()
+
+        # Get internal operation value from display name
+        display_name = self.char_operation_var.get()
+        operation = self.operation_map.get(display_name, "copy")
+
+        if operation == "copy":
+            self.setup_copy_panel()
+        elif operation == "transfer":
+            self.setup_transfer_panel()
+        elif operation == "swap":
+            self.setup_swap_panel()
+        elif operation == "export":
+            self.setup_export_panel()
+        elif operation == "import":
+            self.setup_import_panel()
+        elif operation == "delete":
+            self.setup_delete_panel()
+
+    def setup_copy_panel(self):
+        """Setup copy operation panel"""
+        ttk.Label(
+            self.char_ops_panel,
+            text="Copy a character from one slot to another in the same save file",
+            font=("Segoe UI", 10),
+        ).pack(anchor=tk.W, pady=10)
+
+        controls = ttk.Frame(self.char_ops_panel)
+        controls.pack(fill=tk.X, pady=10)
+
+        ttk.Label(controls, text="From Slot:").pack(side=tk.LEFT, padx=5)
+        self.copy_from_var = tk.IntVar(value=1)
+        ttk.Combobox(
+            controls,
+            textvariable=self.copy_from_var,
+            values=list(range(1, 11)),
+            width=8,
+            state="readonly",
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Label(controls, text="To Slot:").pack(side=tk.LEFT, padx=15)
+        self.copy_to_var = tk.IntVar(value=2)
+        ttk.Combobox(
+            controls,
+            textvariable=self.copy_to_var,
+            values=list(range(1, 11)),
+            width=8,
+            state="readonly",
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            controls,
+            text="Copy Character",
+            command=self.copy_character_slot,
+            style="Accent.TButton",
+            width=20,
+        ).pack(side=tk.LEFT, padx=20)
+
+    def setup_transfer_panel(self):
+        """Setup transfer operation panel"""
+        ttk.Label(
+            self.char_ops_panel,
+            text="Transfer a character to a different save file",
+            font=("Segoe UI", 10),
+        ).pack(anchor=tk.W, pady=10)
+
+        controls = ttk.Frame(self.char_ops_panel)
+        controls.pack(fill=tk.X, pady=10)
+
+        ttk.Label(controls, text="From Slot:").pack(side=tk.LEFT, padx=5)
+        self.transfer_from_var = tk.IntVar(value=1)
+        ttk.Combobox(
+            controls,
+            textvariable=self.transfer_from_var,
+            values=list(range(1, 11)),
+            width=8,
+            state="readonly",
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            controls,
+            text="Select Target Save...",
+            command=self.transfer_character,
+            style="Accent.TButton",
+            width=25,
+        ).pack(side=tk.LEFT, padx=20)
+
+    def setup_swap_panel(self):
+        """Setup swap operation panel"""
+        ttk.Label(
+            self.char_ops_panel,
+            text="Exchange two character slots",
+            font=("Segoe UI", 10),
+        ).pack(anchor=tk.W, pady=10)
+
+        controls = ttk.Frame(self.char_ops_panel)
+        controls.pack(fill=tk.X, pady=10)
+
+        ttk.Label(controls, text="Slot A:").pack(side=tk.LEFT, padx=5)
+        self.swap_a_var = tk.IntVar(value=1)
+        ttk.Combobox(
+            controls,
+            textvariable=self.swap_a_var,
+            values=list(range(1, 11)),
+            width=8,
+            state="readonly",
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Label(controls, text="Slot B:").pack(side=tk.LEFT, padx=15)
+        self.swap_b_var = tk.IntVar(value=2)
+        ttk.Combobox(
+            controls,
+            textvariable=self.swap_b_var,
+            values=list(range(1, 11)),
+            width=8,
+            state="readonly",
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            controls,
+            text="Swap Slots",
+            command=self.swap_character_slots,
+            style="Accent.TButton",
+            width=20,
+        ).pack(side=tk.LEFT, padx=20)
+
+    def setup_export_panel(self):
+        """Setup export operation panel"""
+        ttk.Label(
+            self.char_ops_panel,
+            text="Save character to a standalone .erc file for backup or sharing",
+            font=("Segoe UI", 10),
+        ).pack(anchor=tk.W, pady=10)
+
+        controls = ttk.Frame(self.char_ops_panel)
+        controls.pack(fill=tk.X, pady=10)
+
+        ttk.Label(controls, text="Slot:").pack(side=tk.LEFT, padx=5)
+        self.export_slot_var = tk.IntVar(value=1)
+        ttk.Combobox(
+            controls,
+            textvariable=self.export_slot_var,
+            values=list(range(1, 11)),
+            width=8,
+            state="readonly",
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            controls,
+            text="Export Character...",
+            command=self.export_character,
+            style="Accent.TButton",
+            width=25,
+        ).pack(side=tk.LEFT, padx=20)
+
+    def setup_import_panel(self):
+        """Setup import operation panel"""
+        ttk.Label(
+            self.char_ops_panel,
+            text="Load a character from a .erc file into a slot",
+            font=("Segoe UI", 10),
+        ).pack(anchor=tk.W, pady=10)
+
+        controls = ttk.Frame(self.char_ops_panel)
+        controls.pack(fill=tk.X, pady=10)
+
+        ttk.Label(controls, text="To Slot:").pack(side=tk.LEFT, padx=5)
+        self.import_slot_var = tk.IntVar(value=1)
+        ttk.Combobox(
+            controls,
+            textvariable=self.import_slot_var,
+            values=list(range(1, 11)),
+            width=8,
+            state="readonly",
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            controls,
+            text="Import Character...",
+            command=self.import_character,
+            style="Accent.TButton",
+            width=25,
+        ).pack(side=tk.LEFT, padx=20)
+
+    def setup_delete_panel(self):
+        """Setup delete operation panel"""
+        ttk.Label(
+            self.char_ops_panel,
+            text="Clear a character slot (creates backup)",
+            font=("Segoe UI", 10),
+            foreground="red",
+        ).pack(anchor=tk.W, pady=10)
+
+        controls = ttk.Frame(self.char_ops_panel)
+        controls.pack(fill=tk.X, pady=10)
+
+        ttk.Label(controls, text="Slot:").pack(side=tk.LEFT, padx=5)
+        self.delete_slot_var = tk.IntVar(value=1)
+        ttk.Combobox(
+            controls,
+            textvariable=self.delete_slot_var,
+            values=list(range(1, 11)),
+            width=8,
+            state="readonly",
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            controls,
+            text="Delete Character",
+            command=self.delete_character_slot,
+            width=20,
+        ).pack(side=tk.LEFT, padx=20)
+
     def copy_character_slot(self):
         """Copy character from one slot to another"""
         if not self.save_file:
@@ -3027,33 +3158,43 @@ Warning:
             messagebox.showerror("Error", f"Slot {from_slot + 1} is empty!")
             return
 
+        from_name = from_char.get_character_name()
+
         if not to_char.is_empty():
+            to_name = to_char.get_character_name()
             if not messagebox.askyesno(
                 "Overwrite?",
-                f"Slot {to_slot + 1} contains '{to_char.get_character_name()}'.\n\nOverwrite this character?",
+                f"Slot {to_slot + 1} contains '{to_name}'.\n\nOverwrite with '{from_name}'?",
             ):
                 return
 
         try:
             from er_save_manager.backup.manager import BackupManager
+            from er_save_manager.transfer.character_ops import CharacterOperations
 
             manager = BackupManager(self.save_path)
             manager.create_backup(
-                description=f"before_copy_slot_{from_slot + 1}_to_{to_slot + 1}",
+                description=f"before_copy_{from_name}_slot{from_slot + 1}_to_slot{to_slot + 1}",
                 operation="copy_character",
                 save=self.save_file,
             )
 
             # Copy character data
-            # This is a placeholder - implement actual copy logic
+            CharacterOperations.copy_slot(self.save_file, from_slot, to_slot)
+
+            # Recalculate checksums
+            self.save_file.recalculate_checksums()
+
+            # Save to file
+            self.save_file.to_file(self.save_path)
+
+            # Reload
+            self.load_save()
+
             messagebox.showinfo(
-                "Not Implemented",
-                "Character copy functionality coming soon!\n\n"
-                "This will copy all character data including:\n"
-                "• Stats and level\n"
-                "• Equipment and inventory\n"
-                "• Quest progression\n"
-                "• Gestures and regions",
+                "Success",
+                f"Character '{from_name}' copied from Slot {from_slot + 1} to Slot {to_slot + 1}!\n\n"
+                f"Backup created in backup manager.",
             )
 
         except Exception as e:
@@ -3075,12 +3216,20 @@ Warning:
             messagebox.showerror("Error", f"Slot {from_slot + 1} is empty!")
             return
 
+        from_name = from_char.get_character_name()
+
         # Select target save file
         from tkinter import filedialog
 
+        # Default to EldenRing save directory
+        default_dir = self.default_save_path
+        if not default_dir.exists():
+            default_dir = Path.home()
+
         target_path = filedialog.askopenfilename(
             title="Select Target Save File",
-            filetypes=[("Save Files", "*.sl2"), ("All Files", "*.*")],
+            initialdir=str(default_dir),
+            filetypes=[("Save Files", "*.sl2 *.co2"), ("All Files", "*.*")],
         )
 
         if not target_path:
@@ -3088,28 +3237,119 @@ Warning:
 
         try:
             from er_save_manager.backup.manager import BackupManager
+            from er_save_manager.transfer.character_ops import CharacterOperations
+
+            # Load target save
+            target_save = Save.from_file(target_path)
+
+            # Ask which slot in target
+            slot_dialog = tk.Toplevel(self.root)
+            slot_dialog.title("Select Target Slot")
+            slot_dialog.geometry("400x300")
+            slot_dialog.transient(self.root)
+            slot_dialog.grab_set()
+
+            ttk.Label(
+                slot_dialog,
+                text=f"Transfer '{from_name}' to which slot?",
+                font=("Segoe UI", 12, "bold"),
+            ).pack(pady=15)
+
+            # Show target slots
+            slots_frame = ttk.Frame(slot_dialog, padding=10)
+            slots_frame.pack(fill=tk.BOTH, expand=True)
+
+            selected_slot = tk.IntVar(value=1)
+
+            for i in range(10):
+                char = target_save.characters[i]
+                if char.is_empty():
+                    status = "Empty"
+                else:
+                    status = f"{char.get_character_name()} (Lv {char.get_level()})"
+
+                ttk.Radiobutton(
+                    slots_frame,
+                    text=f"Slot {i + 1}: {status}",
+                    variable=selected_slot,
+                    value=i + 1,
+                ).pack(anchor=tk.W, pady=3)
+
+            result = {"confirmed": False, "slot": 0}
+
+            def confirm():
+                result["confirmed"] = True
+                result["slot"] = selected_slot.get() - 1
+                slot_dialog.destroy()
+
+            def cancel():
+                slot_dialog.destroy()
+
+            btn_frame = ttk.Frame(slot_dialog)
+            btn_frame.pack(pady=10)
+
+            ttk.Button(
+                btn_frame,
+                text="Transfer",
+                command=confirm,
+                style="Accent.TButton",
+                width=15,
+            ).pack(side=tk.LEFT, padx=5)
+
+            ttk.Button(btn_frame, text="Cancel", command=cancel, width=15).pack(
+                side=tk.LEFT, padx=5
+            )
+
+            self.root.wait_window(slot_dialog)
+
+            if not result["confirmed"]:
+                return
+
+            to_slot = result["slot"]
+            to_char = target_save.characters[to_slot]
+
+            # Confirm overwrite if slot not empty
+            if not to_char.is_empty():
+                to_name = to_char.get_character_name()
+                if not messagebox.askyesno(
+                    "Overwrite?",
+                    f"Target Slot {to_slot + 1} contains '{to_name}'.\n\nOverwrite with '{from_name}'?",
+                ):
+                    return
 
             # Backup source
             manager = BackupManager(self.save_path)
             manager.create_backup(
-                description=f"before_transfer_slot_{from_slot + 1}_out",
+                description=f"before_transfer_{from_name}_out_to_{Path(target_path).name}",
                 operation="transfer_character_out",
                 save=self.save_file,
             )
 
             # Backup target
             target_manager = BackupManager(target_path)
-            target_save = Save.from_file(target_path)
             target_manager.create_backup(
-                description=f"before_transfer_slot_{from_slot + 1}_in",
+                description=f"before_transfer_{from_name}_in_from_{Path(self.save_path).name}",
                 operation="transfer_character_in",
                 save=target_save,
             )
 
+            # Transfer character
+            CharacterOperations.transfer_slot(
+                self.save_file, from_slot, target_save, to_slot
+            )
+
+            # Recalculate checksums
+            target_save.recalculate_checksums()
+
+            # Save target file
+            target_save.to_file(target_path)
+
             messagebox.showinfo(
-                "Not Implemented",
-                "Character transfer functionality coming soon!\n\n"
-                "This will transfer the character to the target save file.",
+                "Success",
+                f"Character '{from_name}' transferred!\n\n"
+                f"From: {Path(self.save_path).name} Slot {from_slot + 1}\n"
+                f"To: {Path(target_path).name} Slot {to_slot + 1}\n\n"
+                f"Backups created for both save files.",
             )
 
         except Exception as e:
@@ -3132,35 +3372,224 @@ Warning:
             return
 
         char_name = char.get_character_name()
+        char_level = char.get_level()
 
         if not messagebox.askyesno(
             "Confirm Delete",
-            f"⚠️ PERMANENTLY DELETE '{char_name}' from Slot {slot + 1}?\n\n"
-            f"This cannot be undone (except via backup restore).\n\n"
+            f"DELETE '{char_name}' (Lv {char_level}) from Slot {slot + 1}?\n\n"
+            f"This will clear the slot completely.\n"
             f"A backup will be created before deletion.",
         ):
             return
 
         try:
             from er_save_manager.backup.manager import BackupManager
+            from er_save_manager.transfer.character_ops import CharacterOperations
 
             manager = BackupManager(self.save_path)
             manager.create_backup(
-                description=f"before_delete_slot_{slot + 1}_{char_name}",
+                description=f"before_delete_{char_name}_lv{char_level}_slot{slot + 1}",
                 operation="delete_character",
                 save=self.save_file,
             )
 
             # Delete character
-            # This is a placeholder - implement actual delete logic
+            CharacterOperations.delete_slot(self.save_file, slot)
+
+            # Recalculate checksums
+            self.save_file.recalculate_checksums()
+
+            # Save to file
+            self.save_file.to_file(self.save_path)
+
+            # Reload
+            self.load_save()
+
             messagebox.showinfo(
-                "Not Implemented",
-                "Character deletion functionality coming soon!\n\n"
-                "This will clear the character slot completely.",
+                "Success",
+                f"Character '{char_name}' deleted from Slot {slot + 1}!\n\n"
+                f"Backup created in backup manager.",
             )
 
         except Exception as e:
             messagebox.showerror("Error", f"Delete failed:\n{str(e)}")
+            import traceback
+
+            traceback.print_exc()
+
+    def swap_character_slots(self):
+        """Swap two character slots"""
+        if not self.save_file:
+            messagebox.showwarning("No Save", "Please load a save file first!")
+            return
+
+        slot_a = self.swap_a_var.get() - 1
+        slot_b = self.swap_b_var.get() - 1
+
+        if slot_a == slot_b:
+            messagebox.showerror("Error", "Slots must be different!")
+            return
+
+        char_a = self.save_file.characters[slot_a]
+        char_b = self.save_file.characters[slot_b]
+
+        if char_a.is_empty() and char_b.is_empty():
+            messagebox.showwarning("Empty Slots", "Both slots are empty!")
+            return
+
+        name_a = char_a.get_character_name() if not char_a.is_empty() else "Empty"
+        name_b = char_b.get_character_name() if not char_b.is_empty() else "Empty"
+
+        if not messagebox.askyesno(
+            "Confirm Swap",
+            f"Swap these slots?\n\n"
+            f"Slot {slot_a + 1}: {name_a}\n"
+            f"Slot {slot_b + 1}: {name_b}\n\n"
+            f"A backup will be created.",
+        ):
+            return
+
+        try:
+            from er_save_manager.backup.manager import BackupManager
+            from er_save_manager.transfer.character_ops import CharacterOperations
+
+            manager = BackupManager(self.save_path)
+            manager.create_backup(
+                description=f"before_swap_slot{slot_a + 1}_slot{slot_b + 1}",
+                operation="swap_character",
+                save=self.save_file,
+            )
+
+            # Swap slots
+            CharacterOperations.swap_slots(self.save_file, slot_a, slot_b)
+
+            # Recalculate checksums
+            self.save_file.recalculate_checksums()
+
+            # Save to file
+            self.save_file.to_file(self.save_path)
+
+            # Reload
+            self.load_save()
+
+            messagebox.showinfo(
+                "Success",
+                f"Slots swapped!\n\n"
+                f"Slot {slot_a + 1}: {name_b}\n"
+                f"Slot {slot_b + 1}: {name_a}",
+            )
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Swap failed:\n{str(e)}")
+            import traceback
+
+            traceback.print_exc()
+
+    def export_character(self):
+        """Export character to .erc file"""
+        if not self.save_file:
+            messagebox.showwarning("No Save", "Please load a save file first!")
+            return
+
+        slot = self.export_slot_var.get() - 1
+        char = self.save_file.characters[slot]
+
+        if char.is_empty():
+            messagebox.showwarning("Empty Slot", f"Slot {slot + 1} is empty!")
+            return
+
+        char_name = char.get_character_name()
+
+        from tkinter import filedialog
+
+        default_name = f"{char_name.replace(' ', '_')}_slot{slot + 1}.erc"
+
+        export_path = filedialog.asksaveasfilename(
+            title="Export Character",
+            defaultextension=".erc",
+            initialfile=default_name,
+            filetypes=[("Character Files", "*.erc"), ("All Files", "*.*")],
+        )
+
+        if not export_path:
+            return
+
+        try:
+            from er_save_manager.transfer.character_ops import CharacterOperations
+
+            CharacterOperations.export_character(self.save_file, slot, export_path)
+
+            messagebox.showinfo(
+                "Success",
+                f"Character '{char_name}' exported!\n\nFile: {Path(export_path).name}",
+            )
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Export failed:\n{str(e)}")
+            import traceback
+
+            traceback.print_exc()
+
+    def import_character(self):
+        """Import character from .erc file"""
+        if not self.save_file:
+            messagebox.showwarning("No Save", "Please load a save file first!")
+            return
+
+        from tkinter import filedialog
+
+        import_path = filedialog.askopenfilename(
+            title="Import Character",
+            filetypes=[("Character Files", "*.erc"), ("All Files", "*.*")],
+        )
+
+        if not import_path:
+            return
+
+        slot = self.import_slot_var.get() - 1
+        char = self.save_file.characters[slot]
+
+        if not char.is_empty():
+            char_name = char.get_character_name()
+            if not messagebox.askyesno(
+                "Overwrite?",
+                f"Slot {slot + 1} contains '{char_name}'.\n\nOverwrite with imported character?",
+            ):
+                return
+
+        try:
+            from er_save_manager.backup.manager import BackupManager
+            from er_save_manager.transfer.character_ops import CharacterOperations
+
+            manager = BackupManager(self.save_path)
+            manager.create_backup(
+                description=f"before_import_to_slot{slot + 1}",
+                operation="import_character",
+                save=self.save_file,
+            )
+
+            # Import character
+            imported_name = CharacterOperations.import_character(
+                self.save_file, slot, import_path
+            )
+
+            # Recalculate checksums
+            self.save_file.recalculate_checksums()
+
+            # Save to file
+            self.save_file.to_file(self.save_path)
+
+            # Reload
+            self.load_save()
+
+            messagebox.showinfo(
+                "Success",
+                f"Character '{imported_name}' imported to Slot {slot + 1}!\n\n"
+                f"Backup created in backup manager.",
+            )
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Import failed:\n{str(e)}")
             import traceback
 
             traceback.print_exc()
