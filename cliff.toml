@@ -48,7 +48,7 @@ body = """
 {% for commit in commits | unique(attribute="id") %}
 {%- set pr_num = commit.remote.pr_number | default(value=0) -%}
 {%- set short_id = commit.id | truncate(length=7, end="") -%}
-- {{ commit.message | upper_first | trim }}{% if commit.scope %} `[{{ commit.scope }}]`{% endif %}{% if pr_num > 0 %} ([#{{ pr_num }}](https://github.com/2Pz/er-save-manager/pull/{{ pr_num }})){% endif %} ([{{ short_id }}](https://github.com/2Pz/er-save-manager/commit/{{ commit.id }})){% if commit.breaking %} ⚠️ **BREAKING CHANGE**{% endif %}
+- {{ commit.message | upper_first | trim }}{% if commit.scope %} `[{{ commit.scope }}]`{% endif %}{% if pr_num > 0 %} ([#{{ pr_num }}](https://github.com/Hapfel1/er-save-manager/pull/{{ pr_num }})){% endif %} ([{{ short_id }}](https://github.com/Hapfel1/er-save-manager/commit/{{ commit.id }})){% if commit.breaking %} ⚠️ **BREAKING CHANGE**{% endif %}
 
 {% endfor %}
 {% endfor %}
@@ -57,7 +57,7 @@ body = """
 """
 footer = """
 {%- macro repo_url() -%}
-https://github.com/2Pz/er-save-manager
+https://github.com/Hapfel1/er-save-manager
 {%- endmacro -%}
 
 {% for release in releases -%}
@@ -155,6 +155,6 @@ protect_breaking_commits = true
 # -----------------------------------------------------------------------------
 # Auto-link issue numbers and RFC references to GitHub
 link_parsers = [
-  { pattern = "#(\\d+)", href = "https://github.com/2Pz/er-save-manager/issues/$1" },
-  { pattern = "RFC-(\\d+)", href = "https://github.com/2Pz/er-save-manager/discussions/$1" },
+  { pattern = "#(\\d+)", href = "https://github.com/Hapfel1/er-save-manager/issues/$1" },
+  { pattern = "RFC-(\\d+)", href = "https://github.com/Hapfel1/er-save-manager/discussions/$1" },
 ]
