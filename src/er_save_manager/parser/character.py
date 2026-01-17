@@ -11,7 +11,7 @@ import struct
 from dataclasses import dataclass, field
 from io import BytesIO
 
-from .er_types import Util
+from er_save_manager.parser.er_types import Util
 
 # ============================================================================
 # PLAYER GAME DATA - Complete character stats and attributes
