@@ -3,6 +3,23 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.2.1
+**Released:** January 17, 2026
+
+
+### 🔧 Bug Fixes
+
+- Convert all relative imports to absolute ([08b1611](https://github.com/Hapfel1/er-save-manager/commit/08b1611fe5b32fa2af9639c64d236d4267fbc614))
+
+
+
+### 📖 Documentation
+
+- Add TODO file with feature implementation roadmap ([6da025a](https://github.com/Hapfel1/er-save-manager/commit/6da025a88146e33b0f70a55c1ce34dd7ff1ed9e7))
+
+
+
+---
 ## 📦 Release 0.2.0
 **Released:** January 17, 2026
 
@@ -76,5 +93,6 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.2.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.2.0..v0.2.1
 [0.2.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.1.0..v0.2.0
 
