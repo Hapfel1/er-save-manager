@@ -11,7 +11,7 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
-from ..parser import Save
+from er_save_manager.parser import Save
 
 
 class SaveManagerGUI:
@@ -1299,7 +1299,7 @@ Warning:
             return
 
         try:
-            from ..backup.manager import BackupManager
+            from er_save_manager.backup.manager import BackupManager
 
             manager = BackupManager(self.save_path)
             backups = manager.list_backups()
@@ -1600,7 +1600,7 @@ Warning:
         has_invalid_dlc = False
         try:
             if hasattr(slot, "dlc_data"):
-                from ..parser.world import DLC
+                from er_save_manager.parser.world import DLC
 
                 dlc = DLC.from_bytes(slot.dlc_data)
                 has_dlc_flag = dlc.has_dlc_access()
@@ -1756,8 +1756,8 @@ Warning:
 
         def do_teleport():
             try:
-                from ..backup.manager import BackupManager
-                from ..fixes.teleport import TeleportFix
+                from er_save_manager.backup.manager import BackupManager
+                from er_save_manager.fixes.teleport import TeleportFix
 
                 # Get destination first
                 destination = location_var.get()
@@ -1824,7 +1824,7 @@ Warning:
 
         try:
             # Create backup
-            from ..backup.manager import BackupManager
+            from er_save_manager.backup.manager import BackupManager
 
             manager = BackupManager(self.save_path)
             manager.create_backup(
@@ -1905,7 +1905,7 @@ Warning:
 
         try:
             # Create backup
-            from ..backup.manager import BackupManager
+            from er_save_manager.backup.manager import BackupManager
 
             manager = BackupManager(self.save_path)
             manager.create_backup(
@@ -2015,7 +2015,7 @@ Warning:
 
         try:
             # Create backup
-            from ..backup.manager import BackupManager
+            from er_save_manager.backup.manager import BackupManager
 
             manager = BackupManager(self.save_path)
             manager.create_backup(
@@ -2435,7 +2435,7 @@ Warning:
                     )
 
                     if success:
-                        from ..backup.manager import BackupManager
+                        from er_save_manager.backup.manager import BackupManager
 
                         manager = BackupManager(self.save_path)
                         manager.create_backup(
@@ -2581,7 +2581,7 @@ Warning:
                 try:
                     from io import BytesIO
 
-                    from ..backup.manager import BackupManager
+                    from er_save_manager.backup.manager import BackupManager
 
                     manager = BackupManager(self.save_path)
                     manager.create_backup(
@@ -2697,8 +2697,8 @@ Warning:
             return
 
         try:
-            from ..backup.manager import BackupManager
-            from ..fixes.teleport import TeleportFix
+            from er_save_manager.backup.manager import BackupManager
+            from er_save_manager.fixes.teleport import TeleportFix
 
             manager = BackupManager(self.save_path)
             manager.create_backup(
@@ -2748,7 +2748,7 @@ Warning:
             return
 
         try:
-            from ..backup.manager import BackupManager
+            from er_save_manager.backup.manager import BackupManager
 
             manager = BackupManager(self.save_path)
             manager.create_backup(
@@ -2774,7 +2774,7 @@ Warning:
             return
 
         try:
-            from ..backup.manager import BackupManager
+            from er_save_manager.backup.manager import BackupManager
 
             manager = BackupManager(self.save_path)
 
@@ -3035,7 +3035,7 @@ Warning:
                 return
 
         try:
-            from ..backup.manager import BackupManager
+            from er_save_manager.backup.manager import BackupManager
 
             manager = BackupManager(self.save_path)
             manager.create_backup(
@@ -3087,7 +3087,7 @@ Warning:
             return
 
         try:
-            from ..backup.manager import BackupManager
+            from er_save_manager.backup.manager import BackupManager
 
             # Backup source
             manager = BackupManager(self.save_path)
@@ -3142,7 +3142,7 @@ Warning:
             return
 
         try:
-            from ..backup.manager import BackupManager
+            from er_save_manager.backup.manager import BackupManager
 
             manager = BackupManager(self.save_path)
             manager.create_backup(
@@ -3185,8 +3185,8 @@ Warning:
             return
 
         try:
-            from ..backup.manager import BackupManager
-            from ..fixes.steamid import SteamIDFix
+            from er_save_manager.backup.manager import BackupManager
+            from er_save_manager.fixes.steamid import SteamIDFix
 
             manager = BackupManager(self.save_path)
             manager.create_backup(
@@ -3285,8 +3285,8 @@ Warning:
         slot_idx = self.eventflag_slot_var.get() - 1
 
         try:
-            from ..backup.manager import BackupManager
-            from ..fixes.event_flags import EventFlagFix
+            from er_save_manager.backup.manager import BackupManager
+            from er_save_manager.fixes.event_flags import EventFlagFix
 
             manager = BackupManager(self.save_path)
             manager.create_backup(
