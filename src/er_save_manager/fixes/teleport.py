@@ -5,9 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from er_save_manager.fixes.base import BaseFix, FixResult
 from er_save_manager.parser.er_types import MapId
-
-from .base import BaseFix, FixResult
 
 if TYPE_CHECKING:
     from er_save_manager.parser import Save

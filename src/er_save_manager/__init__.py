@@ -1,6 +1,6 @@
 """Elden Ring Save Manager - Editor, Backup Manager, and Corruption Fixer."""
 
-from .parser import (
+from er_save_manager.parser import (
     CorruptionDetector,
     CorruptionFixer,
     EventFlags,

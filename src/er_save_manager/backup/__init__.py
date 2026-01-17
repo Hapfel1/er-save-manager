@@ -1,5 +1,5 @@
 """ER Save Manager - Backup Manager Module."""
 
-from .manager import BackupManager
+from er_save_manager.backup.manager import BackupManager
 
 __all__ = ["BackupManager"]
