@@ -120,6 +120,9 @@ jobs:
           # Bump version in pyproject.toml
           uv run python scripts/bump_version.py "$NEXT_VERSION"
           
+          # Update lockfile to reflect any dependency changes
+          uv lock
+          
           # Update changelog only if this version section doesn't already exist
           if ! grep -q "^## 📦 Release $NEXT_VERSION" CHANGELOG.md 2>/dev/null; then
             git cliff --tag "$NEXT_VERSION" -o CHANGELOG.md
@@ -129,7 +132,7 @@ jobs:
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions"
-          git add pyproject.toml CHANGELOG.md
+          git add pyproject.toml uv.lock CHANGELOG.md
           git commit -m "🚀 Release: Prepare ER Save Manager $NEXT_VERSION"
           git push origin "HEAD:refs/heads/release-$NEXT_VERSION" --force
 
