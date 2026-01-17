@@ -11,7 +11,7 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
-from ..parser import Save
+from er_save_manager.parser import Save
 
 
 class SaveManagerGUI:
