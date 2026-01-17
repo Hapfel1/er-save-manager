@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..parser import Save, UserDataX
+    from er_save_manager.parser import Save, UserDataX
 
 
 @dataclass

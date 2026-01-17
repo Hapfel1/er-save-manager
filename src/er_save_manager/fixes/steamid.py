@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from .base import BaseFix, FixResult
 
 if TYPE_CHECKING:
-    from ..parser import Save
+    from er_save_manager.parser import Save
 
 
 class SteamIdFix(BaseFix):

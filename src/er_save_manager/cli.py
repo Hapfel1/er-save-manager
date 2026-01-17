@@ -6,10 +6,10 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import __version__
-from .backup import BackupManager
-from .fixes import ALL_FIXES, TELEPORT_LOCATIONS, TeleportFix
-from .parser import load_save
+from er_save_manager import __version__
+from er_save_manager.backup import BackupManager
+from er_save_manager.fixes import ALL_FIXES, TELEPORT_LOCATIONS, TeleportFix
+from er_save_manager.parser import load_save
 
 
 def _eprint(msg: str) -> None:
@@ -28,6 +28,29 @@ def _parse_slot(value: str) -> int:
     if 0 <= n <= 9:
         return n
     raise argparse.ArgumentTypeError("slot must be in range 1-10 (or 0-9)")
+
+
+def cmd_gui(args: argparse.Namespace) -> int:
+    """Launch the graphical user interface."""
+    try:
+        from er_save_manager.ui import main as gui_main
+
+        gui_main()
+        return 0
+    except ImportError as e:
+        _eprint(f"GUI not available: {e}")
+        _eprint("The GUI module could not be imported.")
+        _eprint("Make sure tkinter is installed:")
+        _eprint("  - Windows/Mac: Usually included with Python")
+        _eprint("  - Linux: sudo apt install python3-tk")
+        return 1
+    except Exception as e:
+        _eprint(f"Failed to launch GUI: {e}")
+        if "--debug" in sys.argv:
+            import traceback
+
+            traceback.print_exc()
+        return 1
 
 
 def cmd_list(args: argparse.Namespace) -> int:
@@ -209,6 +232,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub = p.add_subparsers(dest="command", metavar="COMMAND")
 
+    # gui command - Launch graphical interface
+    p_gui = sub.add_parser("gui", help="Launch the graphical interface (default)")
+    p_gui.set_defaults(_handler=cmd_gui)
+
     # list command
     p_list = sub.add_parser("list", help="List characters in a save file")
     p_list.add_argument("--save", required=True, help="Path to save file")
@@ -260,12 +287,12 @@ def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
 
-    parser = build_parser()
-
+    # If no arguments provided, launch GUI by default
     if not argv:
-        parser.print_help()
-        return 0
+        print("Launching GUI...")
+        return cmd_gui(argparse.Namespace())
 
+    parser = build_parser()
     args = parser.parse_args(argv)
     handler = getattr(args, "_handler", None)
 
