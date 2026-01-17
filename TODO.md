@@ -8,7 +8,7 @@ or like a warning that the save file may disappear if the launcher exe is remove
 Backup-Manager:
 - Think about how to handle different save files with the same name that may get replaced: Maybe attach a name to a save file that gets saved with it so you can also load different save files and back them up?
 
-Character Manager:
+Character Manager (DONE):
 - Make the window scrollable and the selection of the operations in sub tabs next to eachother, not in a list below eachother
 - Implement the Operation functionality
 
@@ -46,6 +46,11 @@ Hex Editor:
 
 Save File Fixer:
 - make sure to implement the disable dlc flag function
+
+Security:
+- add manifest and version_info file
+
+-- Make sure to always use tracked offsets i get from the parser instead of hardset ones
 
 
 
