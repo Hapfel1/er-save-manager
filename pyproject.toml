@@ -1,12 +1,12 @@
 [project]
 name = "er-save-manager"
-version = "1.0.0"
+version = "0.0.1"
 description = "Elden Ring Save File Editor, Backup Manager, and Corruption Fixer"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.13"
 authors = [
-    { name = "Quirin" }
+    { name = "Hapfel" }
 ]
 keywords = ["elden-ring", "save-editor", "save-manager", "game-tools"]
 classifiers = [
