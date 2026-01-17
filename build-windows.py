@@ -51,8 +51,9 @@ build_exe_options = {
 }
 
 # Base for the executable
-# Use None for Console application
-base = None
+# Use "gui" to hide console window for GUI app
+# Use None for console application
+base = "gui" if sys.platform == "win32" else None
 
 # Define the main executable
 executables = [

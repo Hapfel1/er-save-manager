@@ -30,6 +30,29 @@ def _parse_slot(value: str) -> int:
     raise argparse.ArgumentTypeError("slot must be in range 1-10 (or 0-9)")
 
 
+def cmd_gui(args: argparse.Namespace) -> int:
+    """Launch the graphical user interface."""
+    try:
+        from .ui import main as gui_main
+
+        gui_main()
+        return 0
+    except ImportError as e:
+        _eprint(f"GUI not available: {e}")
+        _eprint("The GUI module could not be imported.")
+        _eprint("Make sure tkinter is installed:")
+        _eprint("  - Windows/Mac: Usually included with Python")
+        _eprint("  - Linux: sudo apt install python3-tk")
+        return 1
+    except Exception as e:
+        _eprint(f"Failed to launch GUI: {e}")
+        if "--debug" in sys.argv:
+            import traceback
+
+            traceback.print_exc()
+        return 1
+
+
 def cmd_list(args: argparse.Namespace) -> int:
     """List characters in a save file."""
     save_path = Path(args.save).expanduser()
@@ -209,6 +232,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub = p.add_subparsers(dest="command", metavar="COMMAND")
 
+    # gui command - Launch graphical interface
+    p_gui = sub.add_parser("gui", help="Launch the graphical interface (default)")
+    p_gui.set_defaults(_handler=cmd_gui)
+
     # list command
     p_list = sub.add_parser("list", help="List characters in a save file")
     p_list.add_argument("--save", required=True, help="Path to save file")
@@ -260,12 +287,12 @@ def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
 
-    parser = build_parser()
-
+    # If no arguments provided, launch GUI by default
     if not argv:
-        parser.print_help()
-        return 0
+        print("Launching GUI...")
+        return cmd_gui(argparse.Namespace())
 
+    parser = build_parser()
     args = parser.parse_args(argv)
     handler = getattr(args, "_handler", None)
 

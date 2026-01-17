@@ -132,6 +132,15 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions"
           git add pyproject.toml uv.lock CHANGELOG.md
+          
+          # Check if there are staged changes
+          if git diff --staged --quiet; then
+            echo "📌 No changes to commit (version unchanged)"
+            echo "💡 Tip: Use conventional commits to trigger version bumps"
+            echo "   Examples: feat: add feature, fix: fix bug, docs: update docs"
+            exit 0
+          fi
+          
           git commit -m "🚀 Release: Prepare ER Save Manager $NEXT_VERSION"
           git push origin "HEAD:refs/heads/release-$NEXT_VERSION" --force
 
