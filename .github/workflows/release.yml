@@ -80,6 +80,26 @@ jobs:
           echo "📌 Current version: v$current_version"
           echo "📌 Next version: $next_version"
 
+      - name: Validate version tags
+        run: |
+          current_version="${{ steps.get-versions.outputs.current_version }}"
+          
+          # Check if the tag exists
+          if [ -z "$(git tag -l "$current_version")" ]; then
+            echo "❌ CRITICAL ERROR: Tag '$current_version' is missing!"
+            echo "---------------------------------------------------"
+            echo "git-cliff requires the LAST release to be tagged to calculate the NEXT release."
+            echo "Without this tag, it assumes this is the first ever release (0.1.0)."
+            echo ""
+            echo "To fix this, run:"
+            echo "  git tag $current_version <commit-hash-of-last-release>"
+            echo "  git push origin $current_version"
+            echo "---------------------------------------------------"
+            exit 1
+          else
+            echo "✅ Tag '$current_version' verified."
+          fi
+
   # ---------------------------------------------------------------------------
   # Job 2: Create Release Branch
   # ---------------------------------------------------------------------------
