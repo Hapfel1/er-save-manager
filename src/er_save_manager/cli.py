@@ -6,10 +6,10 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import __version__
-from .backup import BackupManager
-from .fixes import ALL_FIXES, TELEPORT_LOCATIONS, TeleportFix
-from .parser import load_save
+from er_save_manager import __version__
+from er_save_manager.backup import BackupManager
+from er_save_manager.fixes import ALL_FIXES, TELEPORT_LOCATIONS, TeleportFix
+from er_save_manager.parser import load_save
 
 
 def _eprint(msg: str) -> None:
@@ -33,7 +33,7 @@ def _parse_slot(value: str) -> int:
 def cmd_gui(args: argparse.Namespace) -> int:
     """Launch the graphical user interface."""
     try:
-        from .ui import main as gui_main
+        from er_save_manager.ui import main as gui_main
 
         gui_main()
         return 0

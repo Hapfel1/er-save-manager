@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..parser import Save
+    from er_save_manager.parser import Save
 
 
 @dataclass
