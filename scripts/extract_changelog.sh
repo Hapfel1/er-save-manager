@@ -23,12 +23,31 @@ if [ ! -f "$CHANGELOG_FILE" ]; then
     exit 1
 fi
 
-# Extract the section for this version (from "## 📦 Release X.Y.Z" to next "---")
-changelog=$(sed -n '/^## 📦 Release '"$VERSION"'/,/^---$/p' "$CHANGELOG_FILE" | head -n -1)
+# Strip 'v' prefix if present to match CHANGELOG format
+CLEAN_VERSION="${VERSION#v}"
 
-# Fallback: If extraction fails, try to get the first release section
+# Extract the section for this version
+# Matches from "## 📦 Release <VERSION>" until the next "## 📦 Release" or end of file
+changelog=$(awk -v target="$CLEAN_VERSION" '
+    /^## 📦 Release / {
+        # Check if this line is the start of our target version
+        if ($0 ~ target) {
+            flag=1
+            print
+            next
+        } else {
+            # Start of another release, stop printing
+            flag=0
+        }
+    }
+    flag { print }
+' "$CHANGELOG_FILE")
+
+# Fallback: If extraction returns empty, try strict match failure handling
 if [ -z "$changelog" ]; then
-    changelog=$(sed -n '/^## 📦 Release/,/^---$/p' "$CHANGELOG_FILE" | head -n -1 | head -100)
+    echo "Warning: Could not extract specific changelog for $VERSION (tried $CLEAN_VERSION)" >&2
+    # Fallback to just the top lines if desperate
+    changelog=$(head -n 50 "$CHANGELOG_FILE")
 fi
 
 # Output to stdout
