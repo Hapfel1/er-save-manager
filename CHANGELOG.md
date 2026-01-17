@@ -3,6 +3,39 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.2.0
+**Released:** January 17, 2026
+
+
+### ✨ New Features
+
+- Add GUI launcher and fix Windows executable ([613e1c5](https://github.com/Hapfel1/er-save-manager/commit/613e1c5826cf692ac45f6e1e510665f09cefcc98))
+
+
+
+### 🔧 Bug Fixes
+
+- Use absolute import for cx_Freeze compatibility ([fb6bea2](https://github.com/Hapfel1/er-save-manager/commit/fb6bea2e7932d47d28ff78f67fc1836fa16624a2))
+
+- Convert all relative imports to absolute for cx_Freeze compatibility ([1c5e95b](https://github.com/Hapfel1/er-save-manager/commit/1c5e95b170d6f504d6ae4bf525cfbc9638a9b235))
+
+- Test auto release trigger ([7491182](https://github.com/Hapfel1/er-save-manager/commit/749118280ad56bb592125f8b1663590b567f1d60))
+
+- Release workflow safety check and changelog extraction ([d87cde1](https://github.com/Hapfel1/er-save-manager/commit/d87cde15bb806602ec30f4de66f24f2080d5f924))
+
+- Correct PR URL in cliff.toml template ([01e3d9e](https://github.com/Hapfel1/er-save-manager/commit/01e3d9eb1221d3cf2f59ec55277a64b9c1e4f065))
+
+
+
+### 🧹 Maintenance
+
+- Re-trigger release for 0.1.1 ([eef04dc](https://github.com/Hapfel1/er-save-manager/commit/eef04dcaf250bc747b2a8fe3b264aef9be86c242))
+
+- Update repo URLs to upstream (Hapfel1) ([4121855](https://github.com/Hapfel1/er-save-manager/commit/4121855709c1bc82d1684198c83ebfc8e579270e))
+
+
+
+---
 ## 📦 Release 0.1.0
 **Released:** January 17, 2026
 
@@ -43,4 +76,5 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.2.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.1.0..v0.2.0
 
