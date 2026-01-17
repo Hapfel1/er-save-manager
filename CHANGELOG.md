@@ -3,6 +3,31 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.3.0
+**Released:** January 17, 2026
+
+
+### ✨ New Features
+
+- Add character operations module with dynamic offset tracking ([2101ae7](https://github.com/Hapfel1/er-save-manager/commit/2101ae77f2625ba83a14ddb7b5471e682fef07f2))
+
+- Implement dynamic offset tracking in save parser ([70561b3](https://github.com/Hapfel1/er-save-manager/commit/70561b373a1f42673bc4d58b360fcfb15926f914))
+
+
+
+### 🎨 User Interface
+
+- Redesign character management with operation dropdown ([e3141fc](https://github.com/Hapfel1/er-save-manager/commit/e3141fcbba1cb715dac4390cdf324d4a75cf4746))
+
+
+
+### 📖 Documentation
+
+- Updated TODO.md ([5dcee10](https://github.com/Hapfel1/er-save-manager/commit/5dcee100522b6452ca9633bf26cd7f934ed6b961))
+
+
+
+---
 ## 📦 Release 0.2.1
 **Released:** January 17, 2026
 
@@ -93,6 +118,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.3.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.2.1..v0.3.0
 [0.2.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.2.0..v0.2.1
 [0.2.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.1.0..v0.2.0
 
