@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..parser.event_flags import CorruptionDetector, CorruptionFixer
+from er_save_manager.parser.event_flags import CorruptionDetector, CorruptionFixer
+
 from .base import BaseFix, FixResult
 
 if TYPE_CHECKING:
-    from ..parser import Save
+    from er_save_manager.parser import Save
 
 
 class EventFlagsFix(BaseFix):
