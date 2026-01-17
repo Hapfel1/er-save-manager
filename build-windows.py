@@ -35,15 +35,15 @@ include_files = [
 
 # Add additional options like packages and excludes
 build_exe_options = {
-    # Packages are auto-detected from our imports
-    "packages": [],
+    # Explicitly include the entire package to handle relative imports
+    "packages": ["er_save_manager"],
     # Force exclude packages if needed
     "excludes": [],
     "include_files": include_files,
-    # Compress all packages into a zip file if possible
-    "zip_include_packages": ["*"],
-    # Exclude no packages from the zip file
-    "zip_exclude_packages": [],
+    # Don't compress into zip - this fixes relative import issues
+    "zip_include_packages": [],
+    # All packages as separate files
+    "zip_exclude_packages": ["*"],
     # Output dir for built executables and dependencies
     "build_exe": f"dist/windows-{VERSION}/er-save-manager_{VERSION}",
     # Optimize .pyc files (2 strips docstrings)
