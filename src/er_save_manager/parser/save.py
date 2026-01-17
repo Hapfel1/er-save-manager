@@ -48,6 +48,10 @@ class Save:
     user_data_10: bytes = b""
     user_data_11: bytes = b""
 
+    # Offset tracking for modifications
+    _user_data_10_offset: int = 0
+    _slot_offsets: list[int] = field(default_factory=list)
+
     @classmethod
     def from_file(cls, filepath: str) -> Save:
         """
@@ -96,6 +100,9 @@ class Save:
         for _slot_index in range(10):
             # Mark the start position of this slot's data
             slot_start = f.tell()
+
+            # Store slot offset
+            obj._slot_offsets.append(slot_start)
 
             # Read checksum (PC only)
             checksum = None
@@ -148,6 +155,7 @@ class Save:
         # Read and parse USER_DATA_10
 
         user_data_10_start = f.tell()
+        obj._user_data_10_offset = user_data_10_start
 
         try:
             # Parse USER_DATA_10
@@ -188,18 +196,17 @@ class Save:
 
         import hashlib
 
-        # Recalculate for each active slot
+        SLOT_SIZE = 0x280000
+        CHECKSUM_SIZE = 0x10
+
+        # Recalculate for each active slot using tracked offsets
         for slot_idx in range(10):
             slot = self.character_slots[slot_idx]
             if slot.is_empty():
                 continue
 
-            # Calculate slot boundaries
-            HEADER_SIZE = 0x300 if self.magic == b"BND4" else 0x6C
-            SLOT_SIZE = 0x280000
-            CHECKSUM_SIZE = 0x10
-
-            slot_offset = HEADER_SIZE + (slot_idx * (SLOT_SIZE + CHECKSUM_SIZE))
+            # Use tracked offset for this slot
+            slot_offset = self._slot_offsets[slot_idx]
             checksum_offset = slot_offset
             data_offset = slot_offset + CHECKSUM_SIZE
 
@@ -210,12 +217,8 @@ class Save:
             # Write checksum
             self._raw_data[checksum_offset : checksum_offset + CHECKSUM_SIZE] = md5_hash
 
-        # Recalculate USER_DATA_10 checksum
-        HEADER_SIZE = 0x300 if self.magic == b"BND4" else 0x6C
-        SLOT_SIZE = 0x280000
-        CHECKSUM_SIZE = 0x10
-
-        userdata10_offset = HEADER_SIZE + (10 * (SLOT_SIZE + CHECKSUM_SIZE))
+        # Recalculate USER_DATA_10 checksum using tracked offset
+        userdata10_offset = self._user_data_10_offset
         userdata10_checksum_offset = userdata10_offset
         userdata10_data_offset = userdata10_offset + CHECKSUM_SIZE
 
@@ -479,20 +482,15 @@ class Save:
                         + len(event_flags_mutable)
                     ] = event_flags_mutable
                 else:
-                    # Fallback: calculate the offset if not tracked
-                    # This shouldn't happen with the updated parser
-                    HEADER_SIZE = 0x300 if self.magic == b"BND4" else 0x6C
-                    SLOT_SIZE = 0x280000
+                    # Fallback: calculate using tracked slot offset
+                    slot_offset = self._slot_offsets[slot_index]
                     CHECKSUM_SIZE = 0x10
 
                     # Use the offset we found: 0x8F7 within character data
                     EVENT_FLAGS_OFFSET_IN_SLOT = 0x8F7
 
-                    slot_start = HEADER_SIZE + (
-                        slot_index * (SLOT_SIZE + CHECKSUM_SIZE)
-                    )
                     event_flags_start = (
-                        slot_start + CHECKSUM_SIZE + EVENT_FLAGS_OFFSET_IN_SLOT
+                        slot_offset + CHECKSUM_SIZE + EVENT_FLAGS_OFFSET_IN_SLOT
                     )
                     self._raw_data[
                         event_flags_start : event_flags_start + len(event_flags_mutable)
@@ -633,15 +631,8 @@ class Save:
         """Update preset in raw save data"""
         from io import BytesIO
 
-        # Calculate offset in save file
-        HEADER_SIZE = 0x300 if self.magic == b"BND4" else 0x6C
-        SLOT_SIZE = 0x280000
-        CHECKSUM_SIZE = 0x10
-
-        # USER_DATA_10 offset
-        userdata10_start = (
-            HEADER_SIZE + (10 * (SLOT_SIZE + CHECKSUM_SIZE)) + CHECKSUM_SIZE
-        )
+        # Calculate offset in save file using tracked offsets
+        userdata10_start = self._user_data_10_offset + 0x10  # Skip checksum
 
         # MenuSystemSaveLoad offset within USER_DATA_10
         # Version(4) + SteamID(8) + Settings(0x140)
@@ -664,11 +655,9 @@ class Save:
         """Recalculate USER_DATA_10 MD5 checksum after preset modification"""
         import hashlib
 
-        HEADER_SIZE = 0x300 if self.magic == b"BND4" else 0x6C
-        SLOT_SIZE = 0x280000
         CHECKSUM_SIZE = 0x10
 
-        userdata10_offset = HEADER_SIZE + (10 * (SLOT_SIZE + CHECKSUM_SIZE))
+        userdata10_offset = self._user_data_10_offset
         userdata10_checksum_offset = userdata10_offset
         userdata10_data_offset = userdata10_offset + CHECKSUM_SIZE
 
