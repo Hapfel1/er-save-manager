@@ -6,7 +6,6 @@ Handles corruption fixes, preset management, character editing, and more.
 from __future__ import annotations
 
 import os
-import shutil
 import subprocess
 import tkinter as tk
 from pathlib import Path
@@ -114,30 +113,60 @@ class SaveManagerGUI:
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill=tk.BOTH, expand=True, padx=15, pady=10)
 
-        # Tab 1: Quick Fix
-        self.tab_quick_fix = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(self.tab_quick_fix, text="Quick Fix")
-        self.setup_quick_fix_tab()
+        # Tab 1: Save File Inspector (issue detection and viewing)
+        self.tab_inspector = ttk.Frame(self.notebook, padding=10)
+        self.notebook.add(self.tab_inspector, text="Save Inspector")
+        self.setup_save_inspector_tab()
 
-        # Tab 2: Character Editor
+        # Tab 2: Character Management (transfer, copy, etc)
+        self.tab_char_mgmt = ttk.Frame(self.notebook, padding=10)
+        self.notebook.add(self.tab_char_mgmt, text="Character Management")
+        self.setup_character_management_tab()
+
+        # Tab 3: Character Editor (stats, equipment, inventory)
         self.tab_character = ttk.Frame(self.notebook, padding=10)
         self.notebook.add(self.tab_character, text="Character Editor")
         self.setup_character_tab()
 
-        # Tab 3: Appearance
+        # Tab 4: Appearance
         self.tab_appearance = ttk.Frame(self.notebook, padding=10)
         self.notebook.add(self.tab_appearance, text="Appearance")
         self.setup_appearance_tab()
 
-        # Tab 4: World
+        # Tab 5: World State
         self.tab_world = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(self.tab_world, text="World")
+        self.notebook.add(self.tab_world, text="World State")
         self.setup_world_tab()
 
-        # Tab 5: Advanced
+        # Tab 6: SteamID Patcher
+        self.tab_steamid = ttk.Frame(self.notebook, padding=10)
+        self.notebook.add(self.tab_steamid, text="SteamID Patcher")
+        self.setup_steamid_tab()
+
+        # Tab 7: Event Flags
+        self.tab_event_flags = ttk.Frame(self.notebook, padding=10)
+        self.notebook.add(self.tab_event_flags, text="Event Flags")
+        self.setup_event_flags_tab()
+
+        # Tab 8: Gestures & Regions
+        self.tab_gestures = ttk.Frame(self.notebook, padding=10)
+        self.notebook.add(self.tab_gestures, text="Gestures & Regions")
+        self.setup_gestures_tab()
+
+        # Tab 9: Hex Editor
+        self.tab_hex = ttk.Frame(self.notebook, padding=10)
+        self.notebook.add(self.tab_hex, text="Hex Editor")
+        self.setup_hex_tab()
+
+        # Tab 10: Advanced Tools
         self.tab_advanced = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(self.tab_advanced, text="Advanced")
+        self.notebook.add(self.tab_advanced, text="Advanced Tools")
         self.setup_advanced_tab()
+
+        # Tab 11: Backup Manager
+        self.tab_backup = ttk.Frame(self.notebook, padding=10)
+        self.notebook.add(self.tab_backup, text="Backup Manager")
+        self.setup_backup_tab()
 
         # Status bar
         status_frame = ttk.Frame(self.root)
@@ -152,11 +181,79 @@ class SaveManagerGUI:
             padding=(5, 2),
         ).pack(fill=tk.X)
 
-    def setup_quick_fix_tab(self):
+    def setup_backup_tab(self):
+        """Backup Manager tab - central hub for all backups"""
+        title_frame = ttk.Frame(self.tab_backup)
+        title_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Label(
+            title_frame,
+            text="Backup Manager",
+            font=("Segoe UI", 16, "bold"),
+        ).pack()
+
+        ttk.Label(
+            title_frame,
+            text="All save modifications automatically create timestamped backups with operation details",
+            font=("Segoe UI", 9),
+            foreground="gray",
+        ).pack()
+
+        # Main button
+        ttk.Button(
+            self.tab_backup,
+            text="Open Backup Manager Window",
+            command=self.show_backup_manager,
+            width=35,
+            style="Accent.TButton",
+        ).pack(pady=20)
+
+        # Quick stats frame
+        stats_frame = ttk.LabelFrame(self.tab_backup, text="Quick Stats", padding=15)
+        stats_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+        self.backup_stats_var = tk.StringVar(
+            value="Load a save file to view backup statistics"
+        )
+        stats_label = ttk.Label(
+            stats_frame,
+            textvariable=self.backup_stats_var,
+            font=("Consolas", 10),
+            justify=tk.LEFT,
+        )
+        stats_label.pack(anchor=tk.W)
+
+        # Info section
+        info_frame = ttk.LabelFrame(
+            self.tab_backup, text="Backup Information", padding=15
+        )
+        info_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        info_text = """Automatic Backups:
+• Fix Corruption - Before fixing any character issues
+• Teleport - Before moving character location
+• Edit Stats - Before changing character attributes
+• Import Preset - Before applying appearance changes
+• Patch SteamID - Before account transfers
+• Recalculate Checksums - Before save validation
+
+Backup Format:
+• Timestamp: YYYY-MM-DD_HH-MM-SS
+• Location: [save_name].sl2.backups/
+• Metadata: Character info, operation type, changes made"""
+
+        ttk.Label(
+            info_frame,
+            text=info_text,
+            font=("Segoe UI", 9),
+            justify=tk.LEFT,
+        ).pack(anchor=tk.W)
+
+    def setup_save_inspector_tab(self):
         """Quick Fix tab - similar to save fixer"""
         # Character selection
         char_frame = ttk.LabelFrame(
-            self.tab_quick_fix, text="Select Character", padding="10"
+            self.tab_inspector, text="Select Character", padding="10"
         )
         char_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
@@ -181,7 +278,7 @@ class SaveManagerGUI:
         self.char_listbox.bind("<Double-Button-1>", self.show_character_details)
 
         # Actions frame
-        action_frame = ttk.LabelFrame(self.tab_quick_fix, text="Actions", padding="10")
+        action_frame = ttk.LabelFrame(self.tab_inspector, text="Actions", padding="10")
         action_frame.pack(fill=tk.X)
 
         ttk.Button(
@@ -199,6 +296,150 @@ class SaveManagerGUI:
             width=25,
             style="Accent.TButton",
         ).pack(side=tk.LEFT, padx=5)
+
+    def setup_character_management_tab(self):
+        """Character Management tab - transfer, copy, delete characters"""
+        ttk.Label(
+            self.tab_char_mgmt,
+            text="Character Management",
+            font=("Segoe UI", 16, "bold"),
+        ).pack(pady=10)
+
+        info_text = ttk.Label(
+            self.tab_char_mgmt,
+            text="Transfer characters between save files, copy slots, and manage your character roster",
+            font=("Segoe UI", 10),
+            foreground="gray",
+        )
+        info_text.pack(pady=5)
+
+        # Source save section
+        source_frame = ttk.LabelFrame(
+            self.tab_char_mgmt, text="Source Save File", padding=15
+        )
+        source_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        ttk.Label(
+            source_frame, text="Current save file loaded above", font=("Segoe UI", 10)
+        ).pack(anchor=tk.W)
+
+        # Operations section
+        ops_frame = ttk.LabelFrame(self.tab_char_mgmt, text="Operations", padding=15)
+        ops_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+        # Copy character to another slot
+        copy_frame = ttk.Frame(ops_frame)
+        copy_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Label(
+            copy_frame, text="Copy Character:", font=("Segoe UI", 11, "bold")
+        ).pack(anchor=tk.W, pady=5)
+        ttk.Label(
+            copy_frame,
+            text="Copy a character from one slot to another in the same save file",
+        ).pack(anchor=tk.W)
+
+        copy_controls = ttk.Frame(copy_frame)
+        copy_controls.pack(fill=tk.X, pady=5)
+
+        ttk.Label(copy_controls, text="From Slot:").pack(side=tk.LEFT, padx=5)
+        self.copy_from_var = tk.IntVar(value=1)
+        ttk.Combobox(
+            copy_controls,
+            textvariable=self.copy_from_var,
+            values=list(range(1, 11)),
+            width=5,
+            state="readonly",
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Label(copy_controls, text="To Slot:").pack(side=tk.LEFT, padx=10)
+        self.copy_to_var = tk.IntVar(value=2)
+        ttk.Combobox(
+            copy_controls,
+            textvariable=self.copy_to_var,
+            values=list(range(1, 11)),
+            width=5,
+            state="readonly",
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            copy_controls,
+            text="Copy Character",
+            command=self.copy_character_slot,
+            width=18,
+            style="Accent.TButton",
+        ).pack(side=tk.LEFT, padx=10)
+
+        ttk.Separator(ops_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=15)
+
+        # Transfer to another save file
+        transfer_frame = ttk.Frame(ops_frame)
+        transfer_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Label(
+            transfer_frame,
+            text="Transfer to Another Save:",
+            font=("Segoe UI", 11, "bold"),
+        ).pack(anchor=tk.W, pady=5)
+        ttk.Label(
+            transfer_frame, text="Copy a character to a different save file"
+        ).pack(anchor=tk.W)
+
+        transfer_controls = ttk.Frame(transfer_frame)
+        transfer_controls.pack(fill=tk.X, pady=5)
+
+        ttk.Label(transfer_controls, text="From Slot:").pack(side=tk.LEFT, padx=5)
+        self.transfer_from_var = tk.IntVar(value=1)
+        ttk.Combobox(
+            transfer_controls,
+            textvariable=self.transfer_from_var,
+            values=list(range(1, 11)),
+            width=5,
+            state="readonly",
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            transfer_controls,
+            text="Select Target Save...",
+            command=self.transfer_character,
+            width=20,
+            style="Accent.TButton",
+        ).pack(side=tk.LEFT, padx=10)
+
+        ttk.Separator(ops_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=15)
+
+        # Delete character
+        delete_frame = ttk.Frame(ops_frame)
+        delete_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Label(
+            delete_frame, text="Delete Character:", font=("Segoe UI", 11, "bold")
+        ).pack(anchor=tk.W, pady=5)
+        ttk.Label(
+            delete_frame,
+            text="⚠️ Permanently delete a character slot (creates backup)",
+            foreground="red",
+        ).pack(anchor=tk.W)
+
+        delete_controls = ttk.Frame(delete_frame)
+        delete_controls.pack(fill=tk.X, pady=5)
+
+        ttk.Label(delete_controls, text="Slot:").pack(side=tk.LEFT, padx=5)
+        self.delete_slot_var = tk.IntVar(value=1)
+        ttk.Combobox(
+            delete_controls,
+            textvariable=self.delete_slot_var,
+            values=list(range(1, 11)),
+            width=5,
+            state="readonly",
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            delete_controls,
+            text="Delete Character",
+            command=self.delete_character_slot,
+            width=18,
+        ).pack(side=tk.LEFT, padx=10)
 
     def setup_character_tab(self):
         """Character editor tab"""
@@ -505,6 +746,409 @@ class SaveManagerGUI:
                 style="Accent.TButton",
             ).grid(row=i // 2, column=i % 2, padx=5, pady=5, sticky=tk.W)
 
+    def setup_steamid_tab(self):
+        """SteamID Patcher tab"""
+        ttk.Label(
+            self.tab_steamid,
+            text="SteamID Patcher",
+            font=("Segoe UI", 16, "bold"),
+        ).pack(pady=10)
+
+        info_text = ttk.Label(
+            self.tab_steamid,
+            text="Transfer save files between Steam accounts by patching SteamID",
+            font=("Segoe UI", 10),
+            foreground="gray",
+        )
+        info_text.pack(pady=5)
+
+        # Current SteamID display
+        current_frame = ttk.LabelFrame(
+            self.tab_steamid, text="Current Save File", padding=15
+        )
+        current_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        self.current_steamid_var = tk.StringVar(value="No save file loaded")
+        ttk.Label(
+            current_frame,
+            textvariable=self.current_steamid_var,
+            font=("Consolas", 10),
+        ).pack(anchor=tk.W)
+
+        # Patch section
+        patch_frame = ttk.LabelFrame(self.tab_steamid, text="Patch SteamID", padding=15)
+        patch_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        ttk.Label(
+            patch_frame,
+            text="Enter new SteamID (17-digit number):",
+            font=("Segoe UI", 10),
+        ).pack(anchor=tk.W, pady=5)
+
+        steamid_entry_frame = ttk.Frame(patch_frame)
+        steamid_entry_frame.pack(fill=tk.X, pady=5)
+
+        self.new_steamid_var = tk.StringVar()
+        steamid_entry = ttk.Entry(
+            steamid_entry_frame,
+            textvariable=self.new_steamid_var,
+            font=("Consolas", 11),
+            width=20,
+        )
+        steamid_entry.pack(side=tk.LEFT, padx=(0, 10))
+
+        ttk.Button(
+            steamid_entry_frame,
+            text="Patch SteamID",
+            command=self.patch_steamid,
+            width=15,
+            style="Accent.TButton",
+        ).pack(side=tk.LEFT)
+
+        ttk.Button(
+            steamid_entry_frame,
+            text="Auto-Detect from System",
+            command=self.auto_detect_steamid,
+            width=20,
+        ).pack(side=tk.LEFT, padx=5)
+
+        # Info
+        info_frame = ttk.LabelFrame(self.tab_steamid, text="Information", padding=15)
+        info_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+        info = """What is SteamID Patching?
+When you transfer a save file to another computer or Steam account, the SteamID
+mismatch can cause issues. This tool updates the SteamID in all character slots.
+
+How to use:
+1. Load the save file you want to transfer
+2. Enter the target Steam account's SteamID (17 digits)
+3. Click "Patch SteamID" to update the save file
+4. A backup is automatically created before patching
+
+Warning:
+• Make sure you have the correct SteamID
+• Patching to the wrong SteamID may cause save corruption
+• Always test the patched save file before deleting the original"""
+
+        ttk.Label(
+            info_frame,
+            text=info,
+            font=("Segoe UI", 9),
+            justify=tk.LEFT,
+        ).pack(anchor=tk.W)
+
+    def setup_event_flags_tab(self):
+        """Event Flags tab"""
+        ttk.Label(
+            self.tab_event_flags,
+            text="Event Flags",
+            font=("Segoe UI", 16, "bold"),
+        ).pack(pady=10)
+
+        info_text = ttk.Label(
+            self.tab_event_flags,
+            text="View and edit event flags that control game progression",
+            font=("Segoe UI", 10),
+            foreground="gray",
+        )
+        info_text.pack(pady=5)
+
+        # Slot selector
+        slot_frame = ttk.Frame(self.tab_event_flags)
+        slot_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        ttk.Label(slot_frame, text="Character Slot:", font=("Segoe UI", 10)).pack(
+            side=tk.LEFT, padx=5
+        )
+
+        self.eventflag_slot_var = tk.IntVar(value=1)
+        slot_combo = ttk.Combobox(
+            slot_frame,
+            textvariable=self.eventflag_slot_var,
+            values=list(range(1, 11)),
+            state="readonly",
+            width=5,
+        )
+        slot_combo.pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            slot_frame,
+            text="Load Event Flags",
+            command=self.load_event_flags,
+            width=20,
+            style="Accent.TButton",
+        ).pack(side=tk.LEFT, padx=10)
+
+        # Quick fixes
+        fixes_frame = ttk.LabelFrame(
+            self.tab_event_flags, text="Quick Fixes", padding=15
+        )
+        fixes_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        ttk.Label(
+            fixes_frame,
+            text="Fix common event flag issues:",
+            font=("Segoe UI", 10),
+        ).pack(anchor=tk.W, pady=5)
+
+        button_grid = ttk.Frame(fixes_frame)
+        button_grid.pack(fill=tk.X)
+
+        ttk.Button(
+            button_grid,
+            text="Fix Ranni Quest",
+            command=lambda: self.fix_event_flag_issue("ranni"),
+            width=18,
+        ).grid(row=0, column=0, padx=5, pady=5)
+
+        ttk.Button(
+            button_grid,
+            text="Fix Warp Sickness",
+            command=lambda: self.fix_event_flag_issue("warp"),
+            width=18,
+        ).grid(row=0, column=1, padx=5, pady=5)
+
+        ttk.Button(
+            button_grid,
+            text="Clear Softlock Flags",
+            command=lambda: self.fix_event_flag_issue("softlock"),
+            width=18,
+        ).grid(row=0, column=2, padx=5, pady=5)
+
+        # Event flag viewer (placeholder)
+        viewer_frame = ttk.LabelFrame(
+            self.tab_event_flags, text="Event Flags", padding=10
+        )
+        viewer_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+        # Add scrollable text area for flags
+        text_frame = ttk.Frame(viewer_frame)
+        text_frame.pack(fill=tk.BOTH, expand=True)
+
+        scrollbar = ttk.Scrollbar(text_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.eventflag_text = tk.Text(
+            text_frame,
+            height=15,
+            font=("Consolas", 9),
+            yscrollcommand=scrollbar.set,
+            wrap=tk.WORD,
+        )
+        self.eventflag_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.config(command=self.eventflag_text.yview)
+
+        self.eventflag_text.insert("1.0", "Load a character to view event flags")
+        self.eventflag_text.config(state="disabled")
+
+    def setup_gestures_tab(self):
+        """Gestures & Regions tab"""
+        ttk.Label(
+            self.tab_gestures,
+            text="Gestures & Regions",
+            font=("Segoe UI", 16, "bold"),
+        ).pack(pady=10)
+
+        info_text = ttk.Label(
+            self.tab_gestures,
+            text="View and manage unlocked gestures and discovered regions",
+            font=("Segoe UI", 10),
+            foreground="gray",
+        )
+        info_text.pack(pady=5)
+
+        # Slot selector
+        slot_frame = ttk.Frame(self.tab_gestures)
+        slot_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        ttk.Label(slot_frame, text="Character Slot:", font=("Segoe UI", 10)).pack(
+            side=tk.LEFT, padx=5
+        )
+
+        self.gesture_slot_var = tk.IntVar(value=1)
+        slot_combo = ttk.Combobox(
+            slot_frame,
+            textvariable=self.gesture_slot_var,
+            values=list(range(1, 11)),
+            state="readonly",
+            width=5,
+        )
+        slot_combo.pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            slot_frame,
+            text="Load Character",
+            command=self.load_gestures_regions,
+            width=20,
+            style="Accent.TButton",
+        ).pack(side=tk.LEFT, padx=10)
+
+        # Notebook for gestures and regions
+        notebook = ttk.Notebook(self.tab_gestures)
+        notebook.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+        # Gestures tab
+        gestures_frame = ttk.Frame(notebook, padding=10)
+        notebook.add(gestures_frame, text="Gestures")
+
+        gestures_text_frame = ttk.Frame(gestures_frame)
+        gestures_text_frame.pack(fill=tk.BOTH, expand=True)
+
+        gestures_scrollbar = ttk.Scrollbar(gestures_text_frame)
+        gestures_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.gestures_text = tk.Text(
+            gestures_text_frame,
+            height=15,
+            font=("Consolas", 9),
+            yscrollcommand=gestures_scrollbar.set,
+            wrap=tk.WORD,
+        )
+        self.gestures_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        gestures_scrollbar.config(command=self.gestures_text.yview)
+
+        self.gestures_text.insert("1.0", "Load a character to view unlocked gestures")
+        self.gestures_text.config(state="disabled")
+
+        # Regions tab
+        regions_frame = ttk.Frame(notebook, padding=10)
+        notebook.add(regions_frame, text="Regions")
+
+        regions_text_frame = ttk.Frame(regions_frame)
+        regions_text_frame.pack(fill=tk.BOTH, expand=True)
+
+        regions_scrollbar = ttk.Scrollbar(regions_text_frame)
+        regions_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.regions_text = tk.Text(
+            regions_text_frame,
+            height=15,
+            font=("Consolas", 9),
+            yscrollcommand=regions_scrollbar.set,
+            wrap=tk.WORD,
+        )
+        self.regions_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        regions_scrollbar.config(command=self.regions_text.yview)
+
+        self.regions_text.insert("1.0", "Load a character to view discovered regions")
+        self.regions_text.config(state="disabled")
+
+    def setup_hex_tab(self):
+        """Hex Editor tab"""
+        ttk.Label(
+            self.tab_hex,
+            text="Hex Editor",
+            font=("Segoe UI", 16, "bold"),
+        ).pack(pady=10)
+
+        info_text = ttk.Label(
+            self.tab_hex,
+            text="Advanced: View and edit raw save file data in hexadecimal format",
+            font=("Segoe UI", 10),
+            foreground="gray",
+        )
+        info_text.pack(pady=5)
+
+        # Warning
+        warning_frame = ttk.Frame(self.tab_hex, padding=10)
+        warning_frame.pack(fill=tk.X, padx=20, pady=5)
+
+        ttk.Label(
+            warning_frame,
+            text="⚠️  Warning: Direct hex editing can corrupt your save file. Use with caution!",
+            font=("Segoe UI", 10, "bold"),
+            foreground="red",
+        ).pack()
+
+        # Controls
+        control_frame = ttk.Frame(self.tab_hex)
+        control_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        ttk.Label(control_frame, text="Offset:", font=("Segoe UI", 10)).pack(
+            side=tk.LEFT, padx=5
+        )
+
+        self.hex_offset_var = tk.StringVar(value="0x0000")
+        offset_entry = ttk.Entry(
+            control_frame,
+            textvariable=self.hex_offset_var,
+            font=("Consolas", 10),
+            width=12,
+        )
+        offset_entry.pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            control_frame,
+            text="Go to Offset",
+            command=self.hex_goto_offset,
+            width=15,
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            control_frame,
+            text="Refresh",
+            command=self.hex_refresh,
+            width=12,
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            control_frame,
+            text="Save Changes",
+            command=self.hex_save,
+            width=15,
+            style="Accent.TButton",
+        ).pack(side=tk.LEFT, padx=5)
+
+        # Hex viewer
+        hex_frame = ttk.LabelFrame(self.tab_hex, text="Hex Data", padding=10)
+        hex_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+        # Create a frame for hex and ASCII
+        display_frame = ttk.Frame(hex_frame)
+        display_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Hex display
+        hex_text_frame = ttk.Frame(display_frame)
+        hex_text_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        hex_scrollbar = ttk.Scrollbar(hex_text_frame)
+        hex_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.hex_text = tk.Text(
+            hex_text_frame,
+            height=20,
+            width=60,
+            font=("Consolas", 9),
+            yscrollcommand=hex_scrollbar.set,
+            wrap=tk.NONE,
+        )
+        self.hex_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        hex_scrollbar.config(command=self.hex_text.yview)
+
+        self.hex_text.insert("1.0", "Load a save file to view hex data")
+        self.hex_text.config(state="disabled")
+
+        # Info panel
+        info_panel = ttk.LabelFrame(
+            self.tab_hex, text="Save Structure Info", padding=10
+        )
+        info_panel.pack(fill=tk.X, padx=20, pady=5)
+
+        structure_info = """Save File Structure:
+• 0x0000-0x0003: Magic bytes (BND4 or SL2\x00)
+• 0x0004-0x02FF: Header data
+• 0x0300-0x280FFF: Character slots (10 slots × 0x280000 bytes)
+  - Each slot: 0x10 checksum + 0x27FFF0 data
+• User data sections contain character stats, inventory, world state"""
+
+        ttk.Label(
+            info_panel,
+            text=structure_info,
+            font=("Consolas", 8),
+            justify=tk.LEFT,
+        ).pack(anchor=tk.W)
+
     def setup_advanced_tab(self):
         """Advanced tools tab"""
         ttk.Label(
@@ -648,6 +1292,57 @@ class SaveManagerGUI:
         except Exception:
             return None
 
+    def update_backup_stats(self):
+        """Update backup statistics display"""
+        if not self.save_path:
+            self.backup_stats_var.set("Load a save file to view backup statistics")
+            return
+
+        try:
+            from ..backup.manager import BackupManager
+
+            manager = BackupManager(self.save_path)
+            backups = manager.list_backups()
+
+            if not backups:
+                self.backup_stats_var.set(
+                    f"Save File: {os.path.basename(self.save_path)}\n"
+                    f"Backups: 0\n\n"
+                    f"No backups yet. Backups are created automatically when you make changes."
+                )
+                return
+
+            # Count by operation type
+            operation_counts = {}
+            for backup in backups:
+                op = backup.operation or "unknown"
+                operation_counts[op] = operation_counts.get(op, 0) + 1
+
+            # Format stats
+            stats_lines = [
+                f"Save File: {os.path.basename(self.save_path)}",
+                f"Total Backups: {len(backups)}",
+                f"Backup Location: {self.save_path}.backups/",
+                "",
+                "Backups by Type:",
+            ]
+
+            for op, count in sorted(
+                operation_counts.items(), key=lambda x: x[1], reverse=True
+            ):
+                op_name = op.replace("_", " ").title()
+                stats_lines.append(f"  • {op_name}: {count}")
+
+            if backups:
+                latest = backups[0]
+                stats_lines.append("")
+                stats_lines.append(f"Latest Backup: {latest.timestamp.split('T')[0]}")
+
+            self.backup_stats_var.set("\n".join(stats_lines))
+
+        except Exception as e:
+            self.backup_stats_var.set(f"Error loading backup stats:\n{str(e)}")
+
     def load_save(self):
         """Load save file"""
         save_path = self.file_path_var.get()
@@ -681,6 +1376,32 @@ class SaveManagerGUI:
             self.load_presets()
 
             self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
+
+            # Update backup stats
+            if hasattr(self, "update_backup_stats"):
+                self.update_backup_stats()
+
+            # Update SteamID display
+            if hasattr(self, "current_steamid_var"):
+                if self.save_file and hasattr(self.save_file, "user_data_10"):
+                    try:
+                        steamid = self.save_file.user_data_10.steam_id
+                        self.current_steamid_var.set(f"Current SteamID: {steamid}")
+                    except Exception:
+                        self.current_steamid_var.set("SteamID: Unable to read")
+                else:
+                    self.current_steamid_var.set("No save file loaded")
+
+            # Update hex view
+            if hasattr(self, "hex_text") and self.save_file:
+                try:
+                    # Store raw data
+                    with open(self.save_path, "rb") as f:
+                        self.save_file._raw_data = f.read()
+                    self.hex_display_at_offset(0)
+                except Exception:
+                    pass  # Silently fail
+
             messagebox.showinfo("Success", "Save file loaded successfully!")
 
         except Exception as e:
@@ -1035,12 +1756,20 @@ class SaveManagerGUI:
 
         def do_teleport():
             try:
+                from ..backup.manager import BackupManager
                 from ..fixes.teleport import TeleportFix
 
-                backup_path = self.save_path + ".backup"
-                shutil.copy2(self.save_path, backup_path)
+                # Get destination first
+                destination = location_var.get()
 
-                teleport = TeleportFix(location_var.get())
+                manager = BackupManager(self.save_path)
+                manager.create_backup(
+                    description=f"before_teleport_to_{destination}",
+                    operation=f"teleport_to_{destination}",
+                    save=self.save_file,
+                )
+
+                teleport = TeleportFix(destination)
                 result = teleport.apply(self.save_file, slot_idx)
 
                 if result.applied:
@@ -1051,7 +1780,7 @@ class SaveManagerGUI:
                     details = "\n".join(result.details) if result.details else ""
                     messagebox.showinfo(
                         "Success",
-                        f"{result.description}\n\n{details}\n\nBackup: {os.path.basename(backup_path)}",
+                        f"{result.description}\n\n{details}\n\nBackup saved to backup manager.",
                     )
                     teleport_dialog.destroy()
                 else:
@@ -1095,11 +1824,35 @@ class SaveManagerGUI:
 
         try:
             # Create backup
-            backup_path = self.save_path + ".backup"
-            shutil.copy2(self.save_path, backup_path)
+            from ..backup.manager import BackupManager
+
+            manager = BackupManager(self.save_path)
+            manager.create_backup(
+                description=f"before_fix_slot_{slot_idx + 1}",
+                operation="fix_corruption",
+                save=self.save_file,
+            )
 
             # Apply fix using the existing corruption fix method
             was_fixed, fixes = self.save_file.fix_character_corruption(slot_idx)
+
+            # Update operation description based on what was fixed
+            if fixes:
+                # Use first fix type as primary operation
+                first_fix = fixes[0].lower()
+                if "torrent" in first_fix:
+                    manager.history.backups[0].operation = "fix_corruption_torrent"
+                elif "weather" in first_fix:
+                    manager.history.backups[0].operation = "fix_corruption_weather"
+                elif "time" in first_fix:
+                    manager.history.backups[0].operation = "fix_corruption_time"
+                elif "steamid" in first_fix:
+                    manager.history.backups[0].operation = "fix_corruption_steamid"
+                elif "event" in first_fix or "flag" in first_fix:
+                    manager.history.backups[0].operation = "fix_corruption_event_flags"
+                elif "dlc" in first_fix:
+                    manager.history.backups[0].operation = "fix_corruption_dlc"
+                manager._save_history()
 
             if was_fixed:
                 # Save
@@ -1117,7 +1870,7 @@ class SaveManagerGUI:
                 messagebox.showinfo(
                     "Success",
                     f"Fixed {len(fixes)} issue(s):\n\n{fix_list}\n\n"
-                    f"Backup created: {os.path.basename(backup_path)}",
+                    "Backup saved to backup manager.",
                 )
             else:
                 messagebox.showinfo("No Issues", "No corruption was detected or fixed")
@@ -1152,8 +1905,14 @@ class SaveManagerGUI:
 
         try:
             # Create backup
-            backup_path = self.save_path + ".backup"
-            shutil.copy2(self.save_path, backup_path)
+            from ..backup.manager import BackupManager
+
+            manager = BackupManager(self.save_path)
+            manager.create_backup(
+                description="before_fix",
+                operation="fix_corruption",
+                save=self.save_file,
+            )
 
             # Apply fix
             was_fixed, fixes = self.save_file.fix_character_corruption(
@@ -1173,7 +1932,7 @@ class SaveManagerGUI:
                     f"Fixed {len(fixes)} issue(s):\n\n"
                     + "\n".join(fixes[:5])
                     + (f"\n...and {len(fixes) - 5} more" if len(fixes) > 5 else "")
-                    + f"\n\nBackup: {os.path.basename(backup_path)}",
+                    + "\n\nBackup saved to backup manager.",
                 )
             else:
                 messagebox.showinfo("No Issues", "No corruption detected")
@@ -1256,8 +2015,14 @@ class SaveManagerGUI:
 
         try:
             # Create backup
-            backup_path = self.save_path + ".backup"
-            shutil.copy2(self.save_path, backup_path)
+            from ..backup.manager import BackupManager
+
+            manager = BackupManager(self.save_path)
+            manager.create_backup(
+                description=f"before_edit_stats_slot_{slot_idx + 1}",
+                operation=f"edit_stats_slot_{slot_idx + 1}",
+                save=self.save_file,
+            )
 
             # Modify stats
             slot = self.save_file.characters[slot_idx]
@@ -1326,7 +2091,7 @@ class SaveManagerGUI:
 
                     messagebox.showinfo(
                         "Success",
-                        f"Stats updated successfully!\n\nBackup: {os.path.basename(backup_path)}",
+                        "Stats updated successfully!\n\nBackup saved to backup manager.",
                     )
                 else:
                     messagebox.showerror(
@@ -1510,9 +2275,9 @@ class SaveManagerGUI:
                 "",
                 "Hair:",
                 f"  Color RGB: ({preset.hair_color_r}, {preset.hair_color_g}, {preset.hair_color_b})",
-                f"  Luster: {preset.hair_luster}",
+                f"  Luster: {preset.luster}",
                 f"  Root Darkness: {preset.hair_root_darkness}",
-                f"  White Hairs: {preset.hair_white_hairs}",
+                f"  White Hairs: {preset.white_hairs}",
                 "",
                 "Eyes:",
                 f"  Right Iris RGB: ({preset.right_iris_color_r}, {preset.right_iris_color_g}, {preset.right_iris_color_b})",
@@ -1588,10 +2353,19 @@ class SaveManagerGUI:
             import json
 
             with open(json_path) as f:
-                presets = json.load(f)
+                data = json.load(f)
 
-            if not isinstance(presets, list) or not presets:
+            # Support both formats: direct list or {'presets': [...]}
+            if isinstance(data, dict) and "presets" in data:
+                presets = data["presets"]
+            elif isinstance(data, list):
+                presets = data
+            else:
                 messagebox.showerror("Error", "Invalid JSON file format")
+                return
+
+            if not presets:
+                messagebox.showerror("Error", "No presets found in JSON file")
                 return
 
             dialog = tk.Toplevel(self.root)
@@ -1661,8 +2435,14 @@ class SaveManagerGUI:
                     )
 
                     if success:
-                        backup_path = self.save_path + ".backup"
-                        shutil.copy2(self.save_path, backup_path)
+                        from ..backup.manager import BackupManager
+
+                        manager = BackupManager(self.save_path)
+                        manager.create_backup(
+                            description=f"before_preset_import_slot_{dest_slot}",
+                            operation="import_preset",
+                            save=self.save_file,
+                        )
 
                         self.save_file.to_file(self.save_path)
                         self.load_save()
@@ -1670,7 +2450,7 @@ class SaveManagerGUI:
                         messagebox.showinfo(
                             "Success",
                             f"Preset imported to slot {dest_slot}!\n\n"
-                            f"Backup: {os.path.basename(backup_path)}",
+                            "Backup saved to backup manager.",
                         )
                         dialog.destroy()
                     else:
@@ -1801,8 +2581,14 @@ class SaveManagerGUI:
                 try:
                     from io import BytesIO
 
-                    backup_path = self.save_path + ".backup"
-                    shutil.copy2(self.save_path, backup_path)
+                    from ..backup.manager import BackupManager
+
+                    manager = BackupManager(self.save_path)
+                    manager.create_backup(
+                        description=f"before_preset_import_slot_{target_slot + 1}",
+                        operation="import_preset",
+                        save=self.save_file,
+                    )
 
                     slot = self.save_file.characters[target_slot]
                     if slot.is_empty():
@@ -1858,7 +2644,7 @@ class SaveManagerGUI:
                     messagebox.showinfo(
                         "Success",
                         f"Preset {preset_idx + 1} applied to Slot {target_slot + 1}!\n\n"
-                        f"Backup: {os.path.basename(backup_path)}",
+                        "Backup saved to backup manager.",
                     )
 
                 except Exception as e:
@@ -1911,10 +2697,15 @@ class SaveManagerGUI:
             return
 
         try:
+            from ..backup.manager import BackupManager
             from ..fixes.teleport import TeleportFix
 
-            backup_path = self.save_path + ".backup"
-            shutil.copy2(self.save_path, backup_path)
+            manager = BackupManager(self.save_path)
+            manager.create_backup(
+                description=f"before_teleport_to_{location}_slot_{slot_idx + 1}",
+                operation=f"teleport_to_{location}",
+                save=self.save_file,
+            )
 
             teleport = TeleportFix(location)
             result = teleport.apply(self.save_file, slot_idx)
@@ -1927,7 +2718,7 @@ class SaveManagerGUI:
                 details = "\n".join(result.details) if result.details else ""
                 messagebox.showinfo(
                     "Success",
-                    f"{result.description}\n\n{details}\n\nBackup: {os.path.basename(backup_path)}",
+                    f"{result.description}\n\n{details}\n\nBackup saved to backup manager.",
                 )
             else:
                 messagebox.showwarning("Not Applied", result.description)
@@ -1957,15 +2748,21 @@ class SaveManagerGUI:
             return
 
         try:
-            backup_path = self.save_path + ".backup"
-            shutil.copy2(self.save_path, backup_path)
+            from ..backup.manager import BackupManager
+
+            manager = BackupManager(self.save_path)
+            manager.create_backup(
+                description="before_checksum_recalc",
+                operation="recalculate_checksums",
+                save=self.save_file,
+            )
 
             self.save_file.recalculate_checksums()
             self.save_file.to_file(self.save_path)
 
             messagebox.showinfo(
                 "Success",
-                f"Checksums recalculated!\n\nBackup: {os.path.basename(backup_path)}",
+                "Checksums recalculated!\n\nBackup saved to backup manager.",
             )
         except Exception as e:
             messagebox.showerror("Error", f"Failed to recalculate:\n{str(e)}")
@@ -2206,6 +3003,449 @@ class SaveManagerGUI:
             import traceback
 
             traceback.print_exc()
+
+    # Character Management methods (transfer, copy, delete)
+    def copy_character_slot(self):
+        """Copy character from one slot to another"""
+        if not self.save_file:
+            messagebox.showwarning("No Save", "Please load a save file first!")
+            return
+
+        from_slot = self.copy_from_var.get() - 1
+        to_slot = self.copy_to_var.get() - 1
+
+        if from_slot == to_slot:
+            messagebox.showerror(
+                "Error", "Source and destination slots must be different!"
+            )
+            return
+
+        from_char = self.save_file.characters[from_slot]
+        to_char = self.save_file.characters[to_slot]
+
+        if from_char.is_empty():
+            messagebox.showerror("Error", f"Slot {from_slot + 1} is empty!")
+            return
+
+        if not to_char.is_empty():
+            if not messagebox.askyesno(
+                "Overwrite?",
+                f"Slot {to_slot + 1} contains '{to_char.get_character_name()}'.\n\nOverwrite this character?",
+            ):
+                return
+
+        try:
+            from ..backup.manager import BackupManager
+
+            manager = BackupManager(self.save_path)
+            manager.create_backup(
+                description=f"before_copy_slot_{from_slot + 1}_to_{to_slot + 1}",
+                operation="copy_character",
+                save=self.save_file,
+            )
+
+            # Copy character data
+            # This is a placeholder - implement actual copy logic
+            messagebox.showinfo(
+                "Not Implemented",
+                "Character copy functionality coming soon!\n\n"
+                "This will copy all character data including:\n"
+                "• Stats and level\n"
+                "• Equipment and inventory\n"
+                "• Quest progression\n"
+                "• Gestures and regions",
+            )
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Copy failed:\n{str(e)}")
+            import traceback
+
+            traceback.print_exc()
+
+    def transfer_character(self):
+        """Transfer character to another save file"""
+        if not self.save_file:
+            messagebox.showwarning("No Save", "Please load a save file first!")
+            return
+
+        from_slot = self.transfer_from_var.get() - 1
+        from_char = self.save_file.characters[from_slot]
+
+        if from_char.is_empty():
+            messagebox.showerror("Error", f"Slot {from_slot + 1} is empty!")
+            return
+
+        # Select target save file
+        from tkinter import filedialog
+
+        target_path = filedialog.askopenfilename(
+            title="Select Target Save File",
+            filetypes=[("Save Files", "*.sl2"), ("All Files", "*.*")],
+        )
+
+        if not target_path:
+            return
+
+        try:
+            from ..backup.manager import BackupManager
+
+            # Backup source
+            manager = BackupManager(self.save_path)
+            manager.create_backup(
+                description=f"before_transfer_slot_{from_slot + 1}_out",
+                operation="transfer_character_out",
+                save=self.save_file,
+            )
+
+            # Backup target
+            target_manager = BackupManager(target_path)
+            target_save = Save.from_file(target_path)
+            target_manager.create_backup(
+                description=f"before_transfer_slot_{from_slot + 1}_in",
+                operation="transfer_character_in",
+                save=target_save,
+            )
+
+            messagebox.showinfo(
+                "Not Implemented",
+                "Character transfer functionality coming soon!\n\n"
+                "This will transfer the character to the target save file.",
+            )
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Transfer failed:\n{str(e)}")
+            import traceback
+
+            traceback.print_exc()
+
+    def delete_character_slot(self):
+        """Delete character from slot"""
+        if not self.save_file:
+            messagebox.showwarning("No Save", "Please load a save file first!")
+            return
+
+        slot = self.delete_slot_var.get() - 1
+        char = self.save_file.characters[slot]
+
+        if char.is_empty():
+            messagebox.showwarning("Empty Slot", f"Slot {slot + 1} is already empty!")
+            return
+
+        char_name = char.get_character_name()
+
+        if not messagebox.askyesno(
+            "Confirm Delete",
+            f"⚠️ PERMANENTLY DELETE '{char_name}' from Slot {slot + 1}?\n\n"
+            f"This cannot be undone (except via backup restore).\n\n"
+            f"A backup will be created before deletion.",
+        ):
+            return
+
+        try:
+            from ..backup.manager import BackupManager
+
+            manager = BackupManager(self.save_path)
+            manager.create_backup(
+                description=f"before_delete_slot_{slot + 1}_{char_name}",
+                operation="delete_character",
+                save=self.save_file,
+            )
+
+            # Delete character
+            # This is a placeholder - implement actual delete logic
+            messagebox.showinfo(
+                "Not Implemented",
+                "Character deletion functionality coming soon!\n\n"
+                "This will clear the character slot completely.",
+            )
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Delete failed:\n{str(e)}")
+            import traceback
+
+            traceback.print_exc()
+
+    # SteamID Patcher methods
+    def patch_steamid(self):
+        """Patch SteamID in save file"""
+        if not self.save_file:
+            messagebox.showwarning("No Save", "Please load a save file first!")
+            return
+
+        new_steamid = self.new_steamid_var.get().strip()
+
+        if not new_steamid.isdigit() or len(new_steamid) != 17:
+            messagebox.showerror("Invalid SteamID", "SteamID must be exactly 17 digits")
+            return
+
+        if not messagebox.askyesno(
+            "Confirm Patch",
+            f"Patch all character slots to SteamID: {new_steamid}?\n\nA backup will be created.",
+        ):
+            return
+
+        try:
+            from ..backup.manager import BackupManager
+            from ..fixes.steamid import SteamIDFix
+
+            manager = BackupManager(self.save_path)
+            manager.create_backup(
+                description=f"before_steamid_patch_{new_steamid[:8]}",
+                operation="patch_steamid",
+                save=self.save_file,
+            )
+
+            # Apply SteamID fix to all slots
+            patched_count = 0
+            for slot_idx in range(10):
+                fix = SteamIDFix(int(new_steamid))
+                result = fix.apply(self.save_file, slot_idx)
+                if result.applied:
+                    patched_count += 1
+
+            if patched_count > 0:
+                self.save_file.recalculate_checksums()
+                self.save_file.to_file(self.save_path)
+                self.load_save()
+
+                messagebox.showinfo(
+                    "Success",
+                    f"Patched {patched_count} character slot(s)!\n\nBackup saved to backup manager.",
+                )
+            else:
+                messagebox.showinfo("No Changes", "No character slots needed patching")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"SteamID patch failed:\n{str(e)}")
+            import traceback
+
+            traceback.print_exc()
+
+    def auto_detect_steamid(self):
+        """Auto-detect SteamID from system"""
+        try:
+            import winreg
+
+            # Try to get Steam user ID from registry
+            key = winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam\ActiveProcess"
+            )
+            user_id, _ = winreg.QueryValueEx(key, "ActiveUser")
+            winreg.CloseKey(key)
+
+            if user_id and user_id != 0:
+                # Convert to SteamID64 format
+                steamid64 = 76561197960265728 + user_id
+                self.new_steamid_var.set(str(steamid64))
+                messagebox.showinfo("Detected", f"SteamID detected: {steamid64}")
+            else:
+                messagebox.showwarning(
+                    "Not Found", "Could not detect SteamID. Please enter manually."
+                )
+
+        except Exception as e:
+            messagebox.showwarning(
+                "Detection Failed", f"Could not auto-detect SteamID:\n{str(e)}"
+            )
+
+    # Event Flags methods
+    def load_event_flags(self):
+        """Load event flags for selected character"""
+        if not self.save_file:
+            messagebox.showwarning("No Save", "Please load a save file first!")
+            return
+
+        slot_idx = self.eventflag_slot_var.get() - 1
+        slot = self.save_file.characters[slot_idx]
+
+        if slot.is_empty():
+            messagebox.showwarning("Empty Slot", f"Slot {slot_idx + 1} is empty!")
+            return
+
+        self.eventflag_text.config(state="normal")
+        self.eventflag_text.delete("1.0", tk.END)
+        self.eventflag_text.insert(
+            "1.0",
+            f"Event Flags for {slot.get_character_name()} (Slot {slot_idx + 1})\n\n",
+        )
+        self.eventflag_text.insert(tk.END, "Event flag viewing coming soon...\n\n")
+        self.eventflag_text.insert(tk.END, "This feature will display:\n")
+        self.eventflag_text.insert(tk.END, "• Boss defeats\n")
+        self.eventflag_text.insert(tk.END, "• Grace sites unlocked\n")
+        self.eventflag_text.insert(tk.END, "• Quest progression\n")
+        self.eventflag_text.insert(tk.END, "• NPC states\n")
+        self.eventflag_text.config(state="disabled")
+
+    def fix_event_flag_issue(self, issue_type):
+        """Fix specific event flag issues"""
+        if not self.save_file:
+            messagebox.showwarning("No Save", "Please load a save file first!")
+            return
+
+        slot_idx = self.eventflag_slot_var.get() - 1
+
+        try:
+            from ..backup.manager import BackupManager
+            from ..fixes.event_flags import EventFlagFix
+
+            manager = BackupManager(self.save_path)
+            manager.create_backup(
+                description=f"before_fix_{issue_type}_flags_slot_{slot_idx + 1}",
+                operation=f"fix_event_flags_{issue_type}",
+                save=self.save_file,
+            )
+
+            fix = EventFlagFix()
+            result = fix.apply(self.save_file, slot_idx)
+
+            if result.applied:
+                self.save_file.recalculate_checksums()
+                self.save_file.to_file(self.save_path)
+                self.load_save()
+
+                messagebox.showinfo(
+                    "Success",
+                    f"{result.description}\n\nBackup saved to backup manager.",
+                )
+            else:
+                messagebox.showinfo("No Changes", "No issues were detected or fixed")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Fix failed:\n{str(e)}")
+            import traceback
+
+            traceback.print_exc()
+
+    # Gestures & Regions methods
+    def load_gestures_regions(self):
+        """Load gestures and regions for selected character"""
+        if not self.save_file:
+            messagebox.showwarning("No Save", "Please load a save file first!")
+            return
+
+        slot_idx = self.gesture_slot_var.get() - 1
+        slot = self.save_file.characters[slot_idx]
+
+        if slot.is_empty():
+            messagebox.showwarning("Empty Slot", f"Slot {slot_idx + 1} is empty!")
+            return
+
+        # Gestures
+        self.gestures_text.config(state="normal")
+        self.gestures_text.delete("1.0", tk.END)
+        self.gestures_text.insert(
+            "1.0", f"Gestures for {slot.get_character_name()}\n\n"
+        )
+
+        if hasattr(slot, "gestures") and slot.gestures:
+            self.gestures_text.insert(
+                tk.END,
+                f"Total gestures unlocked: {len([g for g in slot.gestures.gesture_ids if g > 0])}\n\n",
+            )
+            self.gestures_text.insert(tk.END, "Gesture IDs:\n")
+            for i, gesture_id in enumerate(slot.gestures.gesture_ids):
+                if gesture_id > 0:
+                    self.gestures_text.insert(tk.END, f"  {i}: {gesture_id}\n")
+        else:
+            self.gestures_text.insert(tk.END, "No gesture data available")
+
+        self.gestures_text.config(state="disabled")
+
+        # Regions
+        self.regions_text.config(state="normal")
+        self.regions_text.delete("1.0", tk.END)
+        self.regions_text.insert("1.0", f"Regions for {slot.get_character_name()}\n\n")
+
+        if hasattr(slot, "regions") and slot.regions:
+            self.regions_text.insert(
+                tk.END, f"Total regions discovered: {slot.regions.count}\n\n"
+            )
+            self.regions_text.insert(tk.END, "Region IDs:\n")
+            for i, region_id in enumerate(slot.regions.region_ids):
+                if region_id > 0:
+                    self.regions_text.insert(tk.END, f"  {i}: {region_id}\n")
+        else:
+            self.regions_text.insert(tk.END, "No region data available")
+
+        self.regions_text.config(state="disabled")
+
+    # Hex Editor methods
+    def hex_goto_offset(self):
+        """Jump to specific offset in hex view"""
+        if not self.save_file:
+            messagebox.showwarning("No Save", "Please load a save file first!")
+            return
+
+        offset_str = self.hex_offset_var.get().strip()
+        try:
+            if offset_str.startswith("0x"):
+                offset = int(offset_str, 16)
+            else:
+                offset = int(offset_str)
+
+            self.hex_display_at_offset(offset)
+
+        except ValueError:
+            messagebox.showerror(
+                "Invalid Offset", "Please enter a valid hex offset (e.g., 0x1000)"
+            )
+
+    def hex_display_at_offset(self, offset=0, length=512):
+        """Display hex data at offset"""
+        if not self.save_file or not hasattr(self.save_file, "_raw_data"):
+            return
+
+        raw_data = self.save_file._raw_data
+        max_offset = len(raw_data)
+
+        if offset >= max_offset:
+            messagebox.showerror(
+                "Invalid Offset", f"Offset {offset} exceeds file size {max_offset}"
+            )
+            return
+
+        end_offset = min(offset + length, max_offset)
+
+        self.hex_text.config(state="normal")
+        self.hex_text.delete("1.0", tk.END)
+
+        # Display hex dump
+        for i in range(offset, end_offset, 16):
+            line_offset = f"{i:08X}: "
+            hex_part = ""
+            ascii_part = ""
+
+            for j in range(16):
+                if i + j < end_offset:
+                    byte = raw_data[i + j]
+                    hex_part += f"{byte:02X} "
+                    ascii_part += chr(byte) if 32 <= byte < 127 else "."
+                else:
+                    hex_part += "   "
+                    ascii_part += " "
+
+                if j == 7:
+                    hex_part += " "
+
+            self.hex_text.insert(tk.END, f"{line_offset}{hex_part} {ascii_part}\n")
+
+        self.hex_text.config(state="disabled")
+
+    def hex_refresh(self):
+        """Refresh hex view"""
+        if not self.save_file:
+            messagebox.showwarning("No Save", "Please load a save file first!")
+            return
+
+        self.hex_display_at_offset(0)
+
+    def hex_save(self):
+        """Save hex changes"""
+        messagebox.showinfo(
+            "Not Implemented",
+            "Direct hex editing is not yet implemented.\n\n"
+            "This is a read-only hex viewer for now.",
+        )
 
 
 def main():
