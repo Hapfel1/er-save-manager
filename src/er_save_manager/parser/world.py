@@ -11,7 +11,12 @@ import struct
 from dataclasses import dataclass, field
 from io import BytesIO
 
-from .er_types import FloatVector3, FloatVector4, HorseState, MapId
+from er_save_manager.parser.er_types import (
+    FloatVector3,
+    FloatVector4,
+    HorseState,
+    MapId,
+)
 
 # ============================================================================
 # FACE DATA - Character appearance customization

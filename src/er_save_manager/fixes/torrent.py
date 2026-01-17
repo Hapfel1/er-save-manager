@@ -5,7 +5,7 @@ from __future__ import annotations
 from io import BytesIO
 from typing import TYPE_CHECKING
 
-from .base import BaseFix, FixResult
+from er_save_manager.fixes.base import BaseFix, FixResult
 
 if TYPE_CHECKING:
     from er_save_manager.parser import Save

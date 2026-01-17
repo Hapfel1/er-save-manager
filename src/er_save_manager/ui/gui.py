@@ -18,8 +18,8 @@ class SaveManagerGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Elden Ring Save Manager")
-        self.root.geometry("900x700")
-        self.root.minsize(800, 600)
+        self.root.geometry("1115x850")
+        self.root.minsize(800, 700)
 
         # Configure style
         style = ttk.Style()

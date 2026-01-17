@@ -10,8 +10,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from io import BytesIO
 
-from .user_data_10 import UserData10
-from .user_data_x import UserDataX
+from er_save_manager.parser.user_data_10 import UserData10
+from er_save_manager.parser.user_data_x import UserDataX
 
 
 @dataclass
