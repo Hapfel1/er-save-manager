@@ -5,11 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ..parser.er_types import MapId
+from er_save_manager.parser.er_types import MapId
+
 from .base import BaseFix, FixResult
 
 if TYPE_CHECKING:
-    from ..parser import Save
+    from er_save_manager.parser import Save
 
 
 @dataclass
