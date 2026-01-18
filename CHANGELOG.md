@@ -3,6 +3,37 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.4.0
+**Released:** January 18, 2026
+
+
+### ✨ New Features
+
+- Add modular UI components ([1aa8d2a](https://github.com/Hapfel1/er-save-manager/commit/1aa8d2aa33373ab343cadcf14ded79d1038df944))
+
+- Add modular GUI coordinator ([a2143bb](https://github.com/Hapfel1/er-save-manager/commit/a2143bb1a14cf1cf2ca430e0e81558ea7c80008a))
+
+- Add item database for user-friendly names ([fd9d173](https://github.com/Hapfel1/er-save-manager/commit/fd9d173c370ffe3383697837883eae5bb5315198))
+
+
+
+### 🔧 Bug Fixes
+
+- Fixed cli to integrate new ui modules ([458a9dd](https://github.com/Hapfel1/er-save-manager/commit/458a9dddab3f2db80f389193332c9523890a6161))
+
+- Update parser for GUI compatibility ([dbe8b22](https://github.com/Hapfel1/er-save-manager/commit/dbe8b2264822b4caaf7023e7452f56df2e6701d9))
+
+- Format and lint ([31fbadd](https://github.com/Hapfel1/er-save-manager/commit/31fbadd6a85e6f574ccb1ccebe17246ff3c6d098))
+
+
+
+### 🧹 Maintenance
+
+- Update TODO and backup original GUI ([bf7ed93](https://github.com/Hapfel1/er-save-manager/commit/bf7ed93ac4c8c705c8be10a454a187c9c4fd048c))
+
+
+
+---
 ## 📦 Release 0.3.0
 **Released:** January 17, 2026
 
@@ -118,6 +149,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.4.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.3.0..v0.4.0
 [0.3.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.2.1..v0.3.0
 [0.2.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.2.0..v0.2.1
 [0.2.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.1.0..v0.2.0
