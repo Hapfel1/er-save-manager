@@ -220,22 +220,6 @@ def cmd_backup_restore(args: argparse.Namespace) -> int:
     except FileNotFoundError as e:
         _eprint(str(e))
         return 1
-    
-def cmd_gui(args: argparse.Namespace) -> int:
-    """Launch the graphical interface."""
-    try:
-        from er_save_manager.ui.gui import main as gui_main
-        gui_main()
-        return 0
-    except ImportError as e:
-        _eprint(f"GUI dependencies not available: {e}")
-        return 1
-    except Exception as e:
-        _eprint(f"Failed to launch GUI: {e}")
-        return 1
-
-
-
 
 
 def build_parser() -> argparse.ArgumentParser:
