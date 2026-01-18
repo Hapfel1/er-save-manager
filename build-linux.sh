@@ -21,16 +21,42 @@ fi
 # Get version from pyproject.toml
 version=$(grep --max-count=1 '^version\s*=' pyproject.toml | cut -d '"' -f2)
 
-echo "Building with PyInstaller..."
+echo "Building GUI with PyInstaller..."
 
-# Don't need to generate spec file first with pyi-makespec. We can pass the same
-# arguments directly to pyinstaller; it will generate the spec file then build.
+# Build with GUI entry point and include all UI modules
+# Using --onefile for single executable distribution
 pyinstaller --clean --noconfirm \
 	--name er-save-manager \
 	--onefile \
+	--windowed \
 	--copy-metadata er-save-manager \
 	--add-data resources:resources \
+	--hidden-import er_save_manager.ui \
+	--hidden-import er_save_manager.ui.gui \
+	--hidden-import er_save_manager.ui.editors \
+	--hidden-import er_save_manager.ui.editors.equipment_editor \
+	--hidden-import er_save_manager.ui.editors.stats_editor \
+	--hidden-import er_save_manager.ui.editors.character_info_editor \
+	--hidden-import er_save_manager.ui.editors.inventory_editor \
+	--hidden-import er_save_manager.ui.dialogs \
+	--hidden-import er_save_manager.ui.dialogs.character_details \
+	--hidden-import er_save_manager.ui.dialogs.save_selector \
+	--hidden-import er_save_manager.ui.widgets \
+	--hidden-import er_save_manager.ui.widgets.scrollable_frame \
+	--hidden-import er_save_manager.ui.tabs \
+	--hidden-import er_save_manager.ui.tabs.character_management_tab \
+	--hidden-import er_save_manager.ui.tabs.save_inspector_tab \
+	--hidden-import er_save_manager.ui.tabs.appearance_tab \
+	--hidden-import er_save_manager.ui.tabs.world_state_tab \
+	--hidden-import er_save_manager.ui.tabs.steamid_patcher_tab \
+	--hidden-import er_save_manager.ui.tabs.event_flags_tab \
+	--hidden-import er_save_manager.ui.tabs.gestures_regions_tab \
+	--hidden-import er_save_manager.ui.tabs.hex_editor_tab \
+	--hidden-import er_save_manager.ui.tabs.advanced_tools_tab \
+	--hidden-import er_save_manager.ui.tabs.backup_manager_tab \
 	--optimize 2 \
 	--strip \
 	--distpath "dist/linux-$version" \
-	src/er_save_manager/cli.py
+	run_gui.py
+
+echo "Build complete: dist/linux-$version/er-save-manager"

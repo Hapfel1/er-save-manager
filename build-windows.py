@@ -33,10 +33,40 @@ include_files = [
     ("resources/", "resources/"),
 ]
 
+# Explicitly include UI submodules for cx_Freeze
+ui_packages = [
+    "er_save_manager.ui",
+    "er_save_manager.ui.editors",
+    "er_save_manager.ui.dialogs",
+    "er_save_manager.ui.widgets",
+    "er_save_manager.ui.tabs",
+]
+
 # Add additional options like packages and excludes
 build_exe_options = {
     # Explicitly include the entire package to handle relative imports
-    "packages": ["er_save_manager"],
+    "packages": ["er_save_manager"] + ui_packages,
+    # Include all modules explicitly
+    "includes": [
+        "er_save_manager.ui.gui",
+        "er_save_manager.ui.editors.equipment_editor",
+        "er_save_manager.ui.editors.stats_editor",
+        "er_save_manager.ui.editors.character_info_editor",
+        "er_save_manager.ui.editors.inventory_editor",
+        "er_save_manager.ui.dialogs.character_details",
+        "er_save_manager.ui.dialogs.save_selector",
+        "er_save_manager.ui.widgets.scrollable_frame",
+        "er_save_manager.ui.tabs.character_management_tab",
+        "er_save_manager.ui.tabs.save_inspector_tab",
+        "er_save_manager.ui.tabs.appearance_tab",
+        "er_save_manager.ui.tabs.world_state_tab",
+        "er_save_manager.ui.tabs.steamid_patcher_tab",
+        "er_save_manager.ui.tabs.event_flags_tab",
+        "er_save_manager.ui.tabs.gestures_regions_tab",
+        "er_save_manager.ui.tabs.hex_editor_tab",
+        "er_save_manager.ui.tabs.advanced_tools_tab",
+        "er_save_manager.ui.tabs.backup_manager_tab",
+    ],
     # Force exclude packages if needed
     "excludes": [],
     "include_files": include_files,
@@ -58,11 +88,11 @@ base = "gui" if sys.platform == "win32" else None
 # Define the main executable
 executables = [
     Executable(
-        # The main script of your project
-        "src/er_save_manager/cli.py",
+        # Use run_gui.py as the main entry point for GUI mode
+        "run_gui.py",
         base=base,
         # Output executable name (without extension)
-        target_name="er-save-manager",
+        target_name="Elden Ring Save Manager",
         # Path to the icon file
         icon="resources/icon/icon.ico",
     )
