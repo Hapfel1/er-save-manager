@@ -1,5 +1,5 @@
-"""ER Save Manager - UI Module."""
+"""User interface components for ER Save Manager."""
 
-from er_save_manager.ui.gui import SaveManagerGUI, main
+from .gui import SaveManagerGUI, main
 
 __all__ = ["SaveManagerGUI", "main"]
