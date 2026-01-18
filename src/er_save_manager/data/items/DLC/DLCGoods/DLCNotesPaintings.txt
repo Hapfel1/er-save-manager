@@ -1,0 +1,25 @@
+2008015 Letter for Freyja
+2008016 Ruins Map
+2008017 Ruins Map (2nd)
+2008018 Ruins Map (3rd)
+2008025 Furnace Keeper's Note
+2008027 Castle Cross Message
+2008028 Ancient Ruins Cross Message
+2008029 Monk's Missive
+2008030 Storehouse Cross Message
+2008031 Note: Sealed Spiritsprings
+2008032 Torn Diary Page
+2008034 Message from Leda
+2008037 Tower of Shadow Message
+2008131 Note: Sealed Spiritsprings
+2008200 "Incursion" Painting
+2008201 "The Sacred Tower" Painting
+2008202 "Domain of Dragons" Painting
+2008600 Map: Gravesite Plain
+2008601 Map: Scadu Altus
+2008602 Map: Southern Shore
+2008603 Map: Rauh Ruins
+2008604 Map: Abyss
+2009160 About the Scadutree Blessing
+2009161 About the Revered Spirit Ash Blessing
+2009162 About New Inventory Features

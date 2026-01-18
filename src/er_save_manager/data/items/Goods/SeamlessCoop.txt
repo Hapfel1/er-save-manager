@@ -1,0 +1,11 @@
+8380001  HostingItem
+8380002  JoiningItem
+8380003  BreakInItem
+8380004  LeavingItem
+8380005  GameRuleChangeItem
+8380006  RuneArcItem
+8380007  RotItem_01
+8380008  RotItem_02
+8380009  RotItem_03
+8380010  RotItem_04
+8380011  RotItem_05
