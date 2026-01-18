@@ -1,0 +1,52 @@
+//Format: Item Category; Weapons = 0x00000000, Armor = 0x10000000, Talismans = 0x20000000, Goods = 0x40000000, Ashes = 0x80000000
+
+0x00000000 false Items/Weapons/MeleeWeapons.txt Melee Weapons
+0x00000000 false Items/Weapons/RangedWeapons.txt Ranged Weapons
+0x80000000 false Items/Gems.txt Gems
+0x10000000 false Items/Armor.txt Armor
+0x00000000 false Items/Weapons/SpellTools.txt Spell Tools
+0x00000000 false Items/Weapons/Shields.txt Shields
+0x20000000 false Items/Talismans.txt Talismans
+0x00000000 false Items/Weapons/Ammo.txt Ammo
+0x40000000 false Items/Goods/UpgradeMaterials.txt Upgrade Materials
+0x40000000 false Items/Goods/Tools.txt Tools
+0x40000000 false Items/Goods/Consumables.txt Consumables
+0x40000000 false Items/Goods/CraftingMaterials.txt Crafting Materials
+0x40000000 false Items/Goods/KeyItems.txt Key Items
+0x40000000 false Items/Goods/CrystalTears.txt Crystal Tears
+0x40000000 false Items/Goods/Flasks.txt Flasks
+0x40000000 false Items/Goods/Ashes.txt Ashes
+0x40000000 false Items/Goods/NotesPaintings.txt Notes and Paintings
+0x40000000 false Items/Goods/Gestures.txt Gestures
+0x40000000 false Items/Goods/Cookbooks.txt Cookbooks
+0x40000000 false Items/Goods/MerchantItems.txt Merchant Items
+0x40000000 false Items/Magic.txt Magic
+
+//DLC Categories
+0x00000000 false Items/DLC/DLCWeapons/DLCMeleeWeapons.txt DLC Melee Weapons
+0x00000000 false Items/DLC/DLCWeapons/DLCRangedWeapons.txt DLC Ranged Weapons
+0x80000000 false Items/DLC/DLCGems.txt DLC Gems
+0x10000000 false Items/DLC/DLCArmor.txt DLC Armor
+0x00000000 false Items/DLC/DLCWeapons/DLCSpellTools.txt DLC Spell Tools
+0x00000000 false Items/DLC/DLCWeapons/DLCShields.txt DLC Shields
+0x20000000 false Items/DLC/DLCTalismans.txt DLC Talismans
+0x00000000 false Items/DLC/DLCWeapons/DLCAmmo.txt DLC Ammo
+0x40000000 false Items/DLC/DLCGoods/DLCUpgradeMaterials.txt DLC Upgrade Materials
+0x40000000 false Items/DLC/DLCGoods/DLCTools.txt DLC Tools
+0x40000000 false Items/DLC/DLCGoods/DLCConsumables.txt DLC Consumables
+0x40000000 false Items/DLC/DLCGoods/DLCCraftingMaterials.txt DLC Crafting Materials
+0x40000000 false Items/DLC/DLCGoods/DLCKeyItems.txt DLC Key Items
+0x40000000 false Items/DLC/DLCGoods/DLCCrystalTears.txt DLC Crystal Tears
+0x40000000 false Items/DLC/DLCGoods/DLCAshes.txt DLC Ashes
+0x40000000 false Items/DLC/DLCGoods/DLCNotesPaintings.txt DLC Notes and Paintings
+0x40000000 false Items/DLC/DLCGoods/DLCGestures.txt DLC Gestures
+0x40000000 false Items/DLC/DLCGoods/DLCCookbooks.txt DLC Cookbooks
+0x40000000 false Items/DLC/DLCGoods/DLCMerchantItems.txt DLC Merchant Items
+0x40000000 false Items/DLC/DLCMagic.txt DLC Magic
+
+
+//0x10000000 false Items/CutContent/Armor.txt Cut Content Armor
+//0x20000000 false Items/CutContent/Talismans.txt Cut Content Talismans
+
+
+//0x40000000 false Items/Goods/SeamlessCoop.txt Cut Content Talismans
