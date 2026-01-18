@@ -7,6 +7,7 @@ or like a warning that the save file may disappear if the launcher exe is remove
 
 Backup-Manager:
 - Think about how to handle different save files with the same name that may get replaced: Maybe attach a name to a save file that gets saved with it so you can also load different save files and back them up?
+- Make the category tabs like filename and size etc togglable to be sorted after it, so for example file name, alphabetic from a to z and the other way round
 
 Character Manager (DONE):
 - Make the window scrollable and the selection of the operations in sub tabs next to eachother, not in a list below eachother
@@ -52,6 +53,7 @@ Security:
 
 -- Make sure to always use tracked offsets i get from the parser instead of hardset ones
 
+-- change design so that you don't have to expand the window that much sometimes to see everything
 
 
 Whole feature list below
