@@ -1,0 +1,5 @@
+50540000 Piquebone Arrow (Fletched)
+50550000 Piquebone Arrow
+51500000 Igon's Harpoon
+52520000 Piquebone Bolt
+53500000 Rabbath's Greatbolt

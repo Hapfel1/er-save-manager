@@ -1,0 +1,80 @@
+1500000 Main-gauche
+1510000 Fire Knight's Shortsword
+2510000 Velvet Sword of St. Trina
+2520000 Star-Lined Sword
+2530000 Carian Sorcery Sword
+2540000 Stone-Sheathed Sword
+2550000 Sword of Light
+2560000 Sword of Darkness
+3500000 Sword Lance
+3510000 Greatsword of Damnation
+3520000 Lizard Greatsword
+3550000 Greatsword of Solitude
+4500000 Ancient Meteoric Ore Greatsword
+4520000	Fire Knight's Greatsword
+4530000 Greatsword of Radahn (Lord)
+4540000 Moonrithyll's Knight Sword
+4550000 Greatsword of Radahn (Light)
+6500000 Queelign's Greatsword
+7500000 Spirit Sword
+7510000 Falx
+7520000 Dancing Blade of Ranah
+7530000 Horned Warrior's Sword
+8500000 Putrescence Cleaver
+8510000 Freyja's Greatsword
+8520000 Horned Warrior's Greatsword
+9500000 Sword of Night
+10500000 Euporia
+10510000 Black Steel Twinblade
+11500000 Flowerstone Gavel
+12500000 Smithscript Greathammer
+12510000 Anvil Hammer
+12520000 Black Steel Greathammer
+12530000 Bloodfiend's Arm
+13500000 Serpent Flail
+14500000 Smithscript Axe
+14510000 Death Knight's Twin Axes
+14520000 Messmer Soldier's Axe
+14540000 Forked-Tongue Hatchet
+15500000 Death Knight's Longhaft Axe
+15510000 Bonny Butchering Knife
+16500000 Smithscript Spear
+16520000 Swift Spear
+16540000 Bloodfiend's Fork
+17500000 Spear of the Impaler
+17510000 Messmer Soldier's Spear
+17520000 Barbed Staff-Spear
+18500000 Spirit Glaive
+18510000 Poleblade of the Bud
+19500000 Obsidian Lamina
+20500000 Tooth Whip
+21500000 Thiollier's Hidden Needle
+21510000 Pata
+21530000 Madding Hand
+21540000 Golem Fist
+21550000 Shield of Night
+22500000 Claws of Night
+23500000 Devonia's Hammer
+23510000 Shadow Sunflower Blossom
+23520000 Gazing Finger
+24500000 Nanaya's Torch
+24510000 Lamenting Visage
+60500000 Dryleaf Arts
+60510000 Dane's Footwork
+61500000 Firespark Perfume Bottle
+61510000 Chilling Perfume Bottle
+61520000 Frenzyflame Perfume Bottle
+61530000 Lightning Perfume Bottle
+61540000 Deadly Poison Perfume Bottle
+63500000 Smithscript Dagger
+64500000 Backhand Blade
+64510000 Smithscript Cirque
+64520000 Curseblade's Cirque
+66500000 Great Katana
+66510000 Dragon-Hunter's Great Katana
+66520000 Rakshasa's Great Katana
+67500000 Milady
+67510000 Leda's Sword
+67520000 Rellana's Twin Blades
+68500000 Beast Claw
+68510000 Red Bear's Claw
