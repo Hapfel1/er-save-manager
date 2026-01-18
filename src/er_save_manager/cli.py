@@ -220,6 +220,22 @@ def cmd_backup_restore(args: argparse.Namespace) -> int:
     except FileNotFoundError as e:
         _eprint(str(e))
         return 1
+    
+def cmd_gui(args: argparse.Namespace) -> int:
+    """Launch the graphical interface."""
+    try:
+        from er_save_manager.ui.gui import main as gui_main
+        gui_main()
+        return 0
+    except ImportError as e:
+        _eprint(f"GUI dependencies not available: {e}")
+        return 1
+    except Exception as e:
+        _eprint(f"Failed to launch GUI: {e}")
+        return 1
+
+
+
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -278,6 +294,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_backup_restore.add_argument("--save", required=True, help="Path to save file")
     p_backup_restore.add_argument("--backup", required=True, help="Backup filename")
     p_backup_restore.set_defaults(_handler=cmd_backup_restore)
+
+    p_gui = sub.add_parser("gui", help="Launch graphical interface")
+    p_gui.set_defaults(_handler=cmd_gui)
 
     return p
 
