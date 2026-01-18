@@ -1,0 +1,6 @@
+40500000 Bone Bow
+41510000 Ansbach's Longbow
+42500000 Igon's Greatbow
+43500000 Repeating Crossbow
+43510000 Spread Crossbow
+44500000 Rabbath's Cannon

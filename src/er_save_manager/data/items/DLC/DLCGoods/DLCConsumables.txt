@@ -1,0 +1,91 @@
+2000300 Hefty Fire Pot
+2000310 Hefty Rock Pot
+2000320 Hefty Lightning Pot
+2000310 Hefty Rock Pot
+2000330 Hefty Fetid Pot
+2000340 Hefty Fly Pot
+2000360 Hefty Freezing Pot
+2000380 Hefty Oil Pot
+2000600 Hefty Volcano Pot
+2000620 Hefty Frenzied Flame Pot
+2000650 Hefty Rancor Pot
+2000670 Hefty Rot Pot
+2000680 Hefty Furnace Pot
+2000710 Frenzied Flame Pot
+2000740 Eternal Sleep Pot
+2000760 Roped Frenzied Flame Pot
+2000370 Hefty Poison Pot
+2000660 Hefty Magic Pot
+2000690 Hefty Red Lightning Pot
+2000700 Red Lightning Pot
+2001130 Fireproof Pickled Liver
+2001140 Lightningproof Pickled Liver
+2001210 Sacred Bloody Flesh
+2001420 Royal Magic Grease
+2001520 Drawstring Royal Magic Grease
+2002130 Iris of Occultation
+2000800 Spirit Raisin
+2000900 Blessing of Marika
+2000910 Lulling Branch
+2001100 Dragon Communion Flesh
+2001105 Dragonscale Flesh
+2001110 Fingerprint Nostrum
+2001120 Spellproof Pickled Liver
+2001150 Holyproof Pickled Liver
+2001160 Opaline Pickled Liver
+2001170 Well-Pickled Turtle Neck
+2001200 Scorpion Stew
+2001201 Gourmet Scorpion Stew
+2001202 Scorpion Stew
+2001203 Gourmet Scorpion Stew
+2001220 Silver Horn Tender
+2001230 Golden Horn Tender
+2001400 Messmerfire Grease
+2001410 Dragonbolt Grease
+2001430 Golden Grease
+2001450 Eternal Sleep Grease
+2001480 Dragon Communion Grease
+2001500 Drawstring Messmerfire Grease
+2001510 Drawstring Dragonbolt Grease
+2001530 Drawstring Golden Grease
+2001550 Drawstring Eternal Sleep Grease
+2001600 Festive Grease
+2001700 Innard Meat
+2001710 Dragon Communion Harpoon
+2002000 Polter Stone
+2002010 Rock Heart
+2002020 Priestess Heart
+2002030 Lamenter's Mask
+2002100 Ancient Dragon's Blessing
+2002120 Iris of Grace
+2002140 Thiollier's Concoction
+2002150 Prattling Pate "Lamentation"
+2002900 Remembrance of the Wild Boar Rider
+2002901 Remembrance of the Impaler
+2002902 Remembrance of the Shadow Sunflower
+2002903 Remembrance of the Twin Moon Knight
+2002904 Remembrance of the Saint of the Bud
+2002905 Remembrance of the Dancing Lion
+2002907 Remembrance of a God and a Lord
+2002908 Remembrance of the Lord of Frenzied Flame
+2002909 Remembrance of the Mother of Fingers
+2002910 Remembrance of Putrescence
+2002950 Leda's Rune
+2002951 Broken Rune
+2002952 Shadow Realm Rune [1]
+2002953 Shadow Realm Rune [2]
+2002954 Shadow Realm Rune [3]
+2002955 Shadow Realm Rune [4]
+2002956 Shadow Realm Rune [5]
+2002957 Shadow Realm Rune [6]
+2002958 Shadow Realm Rune [7]
+2002959 Rune of an Unsung Hero
+2002960 Marika's Rune
+2003150 Call of Tibia
+2003160 Surging Frenzied Flame
+2003170 Golden Vow
+2003180 Fire Coil
+2003190 Fire Spritestone
+2003200 Glinting Nail
+2003310 Sunwarmth Stone
+2003350 Charming Branch

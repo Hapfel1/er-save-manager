@@ -1,0 +1,32 @@
+11000 Crimsonspill Crystal Tear
+11001 Greenspill Crystal Tear
+11002 Crimson Crystal Tear
+11003 Crimson Crystal Tear
+11004 Cerulean Crystal Tear
+11005 Cerulean Crystal Tear
+11006 Speckled Hardtear
+11007 Crimson Bubbletear
+11008 Opaline Bubbletear
+11009 Crimsonburst Crystal Tear
+11010 Greenburst Crystal Tear
+11011 Opaline Hardtear
+11012 Winged Crystal Tear
+11013 Thorny Cracked Tear
+11014 Spiked Cracked Tear
+11015 Windy Crystal Tear
+11016 Ruptured Crystal Tear
+11017 Ruptured Crystal Tear
+11018 Leaden Hardtear
+11019 Twiggy Cracked Tear
+11020 Crimsonwhorl Bubbletear
+11021 Strength-knot Crystal Tear
+11022 Dexterity-knot Crystal Tear
+11023 Intelligence-knot Crystal Tear
+11024 Faith-knot Crystal Tear
+11025 Cerulean Hidden Tear
+11026 Stonebarb Cracked Tear
+11027 Purifying Crystal Tear
+11028 Flame-Shrouding Cracked Tear
+11029 Magic-Shrouding Cracked Tear
+11030 Lightning-Shrouding Cracked Tear
+11031 Holy-Shrouding Cracked Tear

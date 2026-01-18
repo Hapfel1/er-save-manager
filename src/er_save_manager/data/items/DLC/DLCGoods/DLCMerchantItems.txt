@@ -1,0 +1,10 @@
+2008900 Moore's Bell Bearing
+2008901 Ymir's Bell Bearing
+2008902 Herbalist's Bell Bearing
+2008903 Mushroom-Seller's Bell Bearing [1]
+2008904 Mushroom-Seller's Bell Bearing [2]
+2008905 Greasemonger's Bell Bearing
+2008906 Moldmonger's Bell Bearing
+2008907 Igon's Bell Bearing
+2008908 Spellmachinist's Bell Bearing
+2008909 String-Seller's Bell Bearing

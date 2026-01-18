@@ -1,0 +1,8 @@
+2011000 Viridian Hidden Tear
+2011010 Crimsonburst Dried Tear
+2011020 Crimson-Sapping Cracked Tear
+2011030 Cerulean-Sapping Cracked Tear
+2011040 Oil-Soaked Tear
+2011050 Bloodsucking Cracked Tear
+2011060 Glovewort Crystal Tear
+2011070 Deflecting Hardtear

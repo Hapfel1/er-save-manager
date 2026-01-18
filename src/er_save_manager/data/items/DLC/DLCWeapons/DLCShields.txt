@@ -1,0 +1,10 @@
+21550000 Shield of Night
+31500000 Messmer Soldier Shield
+31510000 Wolf Crest Shield
+31520000 Serpent Crest Shield
+31530000 Golden Lion Shield
+32500000 Black Steel Greatshield
+32520000 Verdigris Greatshield
+30510000 Smithscript Shield
+62500000 Dueling Shield
+62510000 Carian Thrusting Shield

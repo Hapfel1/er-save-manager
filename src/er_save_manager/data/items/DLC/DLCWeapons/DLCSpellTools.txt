@@ -1,0 +1,5 @@
+33510000 Staff of the Great Beyond
+33520000 Maternal Staff
+34500000 Dryleaf Seal
+34510000 Fire Knight's Seal
+34520000 Spiraltree Seal

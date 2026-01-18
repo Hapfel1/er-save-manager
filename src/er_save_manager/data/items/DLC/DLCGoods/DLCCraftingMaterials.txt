@@ -1,0 +1,41 @@
+2009500 Hefty Cracked Pot
+2015000 Beast Horn
+2015010 Spirit Calculus
+2015020 Pearlescent Scale
+2015030 Scorpion Liver
+2015040 Fly Mold
+2020001 Rada Fruit
+2020002 Redflesh Mushroom
+2020003 Whiteflesh Mushroom
+2020004 Knot Resin
+2020005 Dewgem
+2020006 Black Pyrefly
+2020007 Glintslab Firefly
+2020008 Yellow Fulgurbloom
+2020009 Shadow Sunflower
+2020010 Toxic Mossling
+2020011 Scarlet Bud
+2020012 Sanguine Amaryllis
+2020013 Frozen Maggot
+2020014 Deep-Purple Lily
+2020015 Nectarblood Burgeon
+2020016 Winter-Lantern Fly
+2020017 Swollen Grape
+2020018 Grave Keeper's Brainpan
+2020019 Horn-Strewn Excrement
+2020020 Gas Stone
+2020021 Ghostflame Bloom
+2020022 Grave Cricket
+2020023 Dragon's Calorbloom
+2020024 Finger Mimic
+2020025 Empyrean-Blood Burgeon
+2020026 Congealed Putrescence
+2020027 Roundrock
+2020028 Spiritgrave Stone
+2020029 Rauh Burrow
+2020030 Ember of Messmer
+2020031 Blessed Bone Shard
+2020032 Red Fulgurbloom
+2020033 Nailstone
+2020034 Sharp Gravel Stone
+2020035 Furnace Visage

@@ -1,0 +1,42 @@
+2004300 Miriam's Vanishing
+2004310 Glintblade Trio
+2004320 Rellana's Twin Moons
+2004500 Glintstone Nail
+2004510 Glintstone Nails
+2004700 Blades of Stone
+2004710 Gravitational Missile
+2004900 Mantle of Thorns
+2004910 Impenetrable Thorns
+2005000 Rings of Spectral Light
+2006200 Vortex of Putrescence
+2006210 Mass of Putrescence
+2006300 Furious Blade of Ansbach
+2006400 Heal from Afar
+2006650 Aspects of the Crucible: Thorns
+2006660 Aspects of the Crucible: Bloom
+2006670 Minor Erdtree
+2006680 Land of Shadow
+2006690 Wrath from Afar
+2006700 Light of Miquella
+2006710 Multilayered Ring of Light
+2006800 Roar of Rugalea
+2006900 Knight's Lightning Spear
+2006910 Dragonbolt of Florissax
+2006920 Electrocharge
+2007000 Bayle's Tyranny
+2007010 Bayle's Flame Lightning
+2007020 Ghostflame Breath
+2007200 Rotten Butterflies
+2007210 Pest-Thread Spears
+2007300 Midra's Flame of Frenzy
+2007410 Fleeting Microcosm
+2007420 Cherishing Fingers
+2007600 Watchful Spirit
+2007700 Golden Arcs
+2007710 Giant Golden Arc
+2007720 Spira
+2007730 Divine Beast Tornado
+2007740 Divine Bird Feathers
+2007800 Fire Serpent
+2007810 Rain of Fire
+2007820 Messmer's Orb

@@ -66,6 +66,14 @@ class UserDataX:
     weather_offset: int = 0
     time_offset: int = 0
     steamid_offset: int = 0
+    player_game_data_offset: int = 0
+    sp_effects_offset: int = 0
+    equipped_items_equip_index_offset: int = 0
+    equipped_items_item_id_offset: int = 0
+    inventory_held_offset: int = 0
+    equipped_spells_offset: int = 0
+    face_data_offset: int = 0
+    inventory_storage_box_offset: int = 0
     # Header (4 + 4 + 8 + 16 = 32 bytes)
     version: int = 0
     map_id: MapId = field(default_factory=MapId)
@@ -307,6 +315,7 @@ class UserDataX:
         obj.equipped_items_equip_index_offset = f.tell() - data_start
         obj.equipped_items_equip_index = EquippedItemsEquipIndex.read(f)
         obj.active_weapon_slots_and_arm_style = ActiveWeaponSlotsAndArmStyle.read(f)
+        obj.equipped_items_item_id_offset = f.tell() - data_start
         obj.equipped_items_item_id = EquippedItemsItemIds.read(f)
         obj.equipped_items_gaitem_handle = EquippedItemsGaitemHandles.read(f)
 

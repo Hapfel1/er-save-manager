@@ -1,0 +1,16 @@
+2008000 Miquella's Great Rune
+2008003 Igon's Furled Finger
+2008004 Well Depths Key
+2008005 Gaol Upper Level Key
+2008006 Gaol Lower Level Key
+2008007 Cross Map
+2008008 Hole-Laden Necklace
+2008011 Heart of Bayle
+2008012 New Cross Map
+2008013 Storeroom Key
+2008014 Secret Rite Scroll
+2008019 Black Syrup
+2008021 Messmer's Kindling
+2008023 Keep Wall Key
+2008033 Larval Tear
+2008036 Prayer Room Key

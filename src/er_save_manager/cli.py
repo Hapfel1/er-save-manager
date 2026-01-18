@@ -279,6 +279,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_backup_restore.add_argument("--backup", required=True, help="Backup filename")
     p_backup_restore.set_defaults(_handler=cmd_backup_restore)
 
+    p_gui = sub.add_parser("gui", help="Launch graphical interface")
+    p_gui.set_defaults(_handler=cmd_gui)
+
     return p
 
 
