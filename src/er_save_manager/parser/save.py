@@ -52,6 +52,29 @@ class Save:
     _user_data_10_offset: int = 0
     _slot_offsets: list[int] = field(default_factory=list)
 
+    # Note: _raw_data and _original_filepath are set dynamically in from_file()
+    # They are not dataclass fields to avoid type conversion issues
+
+    def __post_init__(self):
+        """Initialize dynamic attributes if not already set."""
+        if not hasattr(self, "_raw_data"):
+            self._raw_data = bytearray()
+        if not hasattr(self, "_original_filepath"):
+            self._original_filepath = ""
+        # Ensure _raw_data is always bytearray
+        if isinstance(self._raw_data, bytes) and not isinstance(
+            self._raw_data, bytearray
+        ):
+            self._raw_data = bytearray(self._raw_data)
+
+    def __setattr__(self, name, value):
+        """Override to ensure _raw_data is always bytearray"""
+        if name == "_raw_data":
+            # Force conversion to bytearray
+            if isinstance(value, bytes) and not isinstance(value, bytearray):
+                value = bytearray(value)
+        super().__setattr__(name, value)
+
     @classmethod
     def from_file(cls, filepath: str) -> Save:
         """
@@ -72,7 +95,25 @@ class Save:
 
         # Track original filepath for save() method
         obj._original_filepath = filepath
-        obj._raw_data = bytearray(data)  # Keep raw data for modifications
+
+        # CRITICAL: Force bytearray, not bytes
+        if isinstance(data, bytes):
+            obj._raw_data = bytearray(data)
+        else:
+            obj._raw_data = data
+
+        # Double-check it's actually bytearray
+        assert isinstance(obj._raw_data, bytearray), (
+            f"_raw_data is {type(obj._raw_data)}, not bytearray!"
+        )
+
+        # Verify it's mutable
+        try:
+            obj._raw_data[0] = obj._raw_data[0]  # Test write
+        except TypeError as e:
+            raise TypeError(
+                f"_raw_data is not writable! Type: {type(obj._raw_data)}"
+            ) from e
 
         # Read magic (4 bytes)
         obj.magic = f.read(4)
@@ -323,8 +364,13 @@ class Save:
 
     @property
     def data(self):
-        """Compatibility alias for _raw_data"""
+        """Compatibility alias for _raw_data - always returns bytearray"""
         if hasattr(self, "_raw_data"):
+            # Force conversion if it's somehow bytes
+            if isinstance(self._raw_data, bytes) and not isinstance(
+                self._raw_data, bytearray
+            ):
+                self._raw_data = bytearray(self._raw_data)
             return self._raw_data
         return bytearray()
 
@@ -586,6 +632,92 @@ class Save:
 
             # Update in raw data
             self._update_preset_in_raw_data(dest_slot, new_preset)
+
+            return True
+
+        except Exception:
+            import traceback
+
+            traceback.print_exc()
+            return False
+
+    def import_preset(self, preset, dest_slot: int) -> bool:
+        """
+        Import a FacePreset object into a specific slot
+
+        Args:
+            preset: FacePreset object or dict with preset data
+            dest_slot: Destination slot in save file (0-14)
+
+        Returns:
+            True if successful
+        """
+        from .character_presets import FacePreset
+
+        try:
+            # Handle dict input (from JSON presets list)
+            if isinstance(preset, dict):
+                if "data" in preset:
+                    # Format: {"original_slot": N, "data": {...}}
+                    preset_data = preset["data"]
+                else:
+                    # Format: raw preset dict
+                    preset_data = preset
+                new_preset = FacePreset.from_dict(preset_data)
+            else:
+                # Already a FacePreset object
+                new_preset = preset
+
+            # Get destination presets container
+            dest_presets = self.get_character_presets()
+            if not dest_presets:
+                return False
+
+            if dest_slot < 0 or dest_slot >= 15:
+                return False
+
+            # Set the preset
+            dest_presets.presets[dest_slot] = new_preset
+
+            # Update in raw data
+            self._update_preset_in_raw_data(dest_slot, new_preset)
+
+            return True
+
+        except Exception:
+            import traceback
+
+            traceback.print_exc()
+            return False
+
+    def delete_preset(self, slot: int) -> bool:
+        """
+        Delete a preset from a specific slot
+
+        Args:
+            slot: Preset slot to delete (0-14)
+
+        Returns:
+            True if successful
+        """
+        from .character_presets import FacePreset
+
+        try:
+            presets = self.get_character_presets()
+            if not presets:
+                return False
+
+            if slot < 0 or slot >= 15:
+                return False
+
+            # Create empty preset
+            empty_preset = FacePreset()
+
+            # Set the preset
+            presets.presets[slot] = empty_preset
+
+            # Update in raw data
+            self._update_preset_in_raw_data(slot, empty_preset)
 
             return True
 

@@ -18,6 +18,7 @@ class SaveInspectorTab:
         get_save_path_callback,
         reload_callback,
         show_details_callback,
+        on_slot_selected_callback=None,
     ):
         """
         Initialize save inspector tab
@@ -28,12 +29,14 @@ class SaveInspectorTab:
             get_save_path_callback: Function that returns save file path
             reload_callback: Function to reload save file
             show_details_callback: Function to show character details dialog (slot_idx)
+            on_slot_selected_callback: Function called when slot is selected (slot_idx)
         """
         self.parent = parent
         self.get_save_file = get_save_file_callback
         self.get_save_path = get_save_path_callback
         self.reload_save = reload_callback
         self.show_details = show_details_callback
+        self.on_slot_selected = on_slot_selected_callback
 
         self.char_listbox = None
         self.selected_slot = None
@@ -161,6 +164,9 @@ class SaveInspectorTab:
             active_slots = save_file.get_active_slots()
             if selection[0] < len(active_slots):
                 self.selected_slot = active_slots[selection[0]]
+                # Notify GUI of slot selection
+                if self.on_slot_selected:
+                    self.on_slot_selected(self.selected_slot)
 
     def on_character_double_click(self, event):
         """Handle double-click to show details"""
