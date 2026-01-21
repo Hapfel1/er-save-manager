@@ -145,7 +145,7 @@ class WorldStateTab:
 
         ttk.Radiobutton(
             mode_frame,
-            text="Known Locations (1041 Sites)",
+            text="Known Locations",
             variable=self.teleport_mode,
             value="known",
             command=self._on_mode_changed,
@@ -513,7 +513,7 @@ class WorldStateTab:
             slot = save.character_slots[slot_idx]
 
             if not slot.has_dlc_flag():
-                dlc_warning = "\n\n⚠ WARNING: This is a DLC map!\nYour character has not entered the DLC.\nThis may cause serious issues!"
+                dlc_warning = "\n\n⚠ WARNING: This is a DLC map!\nYour character has not entered the DLC.\nIf you don't own the dlc you will get stuck in an infinite loading screen!"
 
         # Confirm
         coords_text = f"Coordinates: X={coords.x}, Y={coords.y}, Z={coords.z}"
