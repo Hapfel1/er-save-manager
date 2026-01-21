@@ -55,6 +55,8 @@ Security:
 
 -- change design so that you don't have to expand the window that much sometimes to see everything
 
+-- ng + state editor/changer
+
 
 Whole feature list below
 # Elden Ring Save Editor - Complete Function Breakdown

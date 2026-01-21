@@ -60,6 +60,7 @@ class SaveManagerGUI:
         self.save_file = None
         self.save_path = None
         self.selected_slot = None
+        self.selected_slot_index = -1  # Current selected character slot (0-9)
 
         # Status
         self.status_var = tk.StringVar(value="Ready")
@@ -162,6 +163,7 @@ class SaveManagerGUI:
             lambda: self.save_path,
             self.load_save,
             self.show_character_details,
+            self.on_slot_selected,
         )
         self.inspector_tab.setup_ui()
 
@@ -196,7 +198,11 @@ class SaveManagerGUI:
         tab_world = ttk.Frame(self.notebook, padding=10)
         self.notebook.add(tab_world, text="World State")
         self.world_tab = WorldStateTab(
-            tab_world, lambda: self.save_file, lambda: self.save_path, self.load_save
+            tab_world,
+            lambda: self.save_file,
+            lambda: self.save_path,
+            self.load_save,
+            lambda: self.selected_slot_index,
         )
         self.world_tab.setup_ui()
 
@@ -246,6 +252,9 @@ class SaveManagerGUI:
             tab_backup, lambda: self.save_file, lambda: self.save_path, self.load_save
         )
         self.backup_tab.setup_ui()
+
+        # Bind tab change event to refresh world state
+        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
     def setup_character_editor_tab(self, parent):
         """Setup character editor tab with modular editors"""
@@ -400,18 +409,23 @@ class SaveManagerGUI:
             if "eldenring.exe" in result.stdout.lower():
                 return True
 
-            result = subprocess.run(
-                ["tasklist", "/FI", "IMAGENAME eq start_protected_game.exe", "/NH"],
-                capture_output=True,
-                text=True,
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
-            )
-            if "start_protected_game.exe" in result.stdout.lower():
-                return True
+        except Exception as e:
+            print(f"Warning: Could not check if game is running: {e}")
 
-            return False
-        except Exception:
-            return None
+        return False
+
+    def _on_tab_changed(self, event=None):
+        """Handle tab change event - refresh world state when switching to it."""
+        current_tab = self.notebook.select()
+        tab_text = self.notebook.tab(current_tab, "text")
+
+        # Refresh world state tab when switched to
+        if tab_text == "World State":
+            self.world_tab.refresh()
+
+    def on_slot_selected(self, slot_index: int):
+        """Handle character slot selection from Save Inspector."""
+        self.selected_slot_index = slot_index
 
     def load_save(self):
         """Load save file"""
