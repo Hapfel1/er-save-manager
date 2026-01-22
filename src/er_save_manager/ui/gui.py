@@ -225,9 +225,9 @@ class SaveManagerGUI:
         )
         self.event_flags_tab.setup_ui()
 
-        # Tab 8: Gestures & Regions
+        # Tab 8: Gestures
         tab_gestures = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab_gestures, text="Gestures & Regions")
+        self.notebook.add(tab_gestures, text="Gestures")
         self.gestures_tab = GesturesRegionsTab(
             tab_gestures,
             lambda: self.save_file,
