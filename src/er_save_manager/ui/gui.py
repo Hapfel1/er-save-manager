@@ -228,7 +228,12 @@ class SaveManagerGUI:
         # Tab 8: Gestures & Regions
         tab_gestures = ttk.Frame(self.notebook, padding=10)
         self.notebook.add(tab_gestures, text="Gestures & Regions")
-        self.gestures_tab = GesturesRegionsTab(tab_gestures, lambda: self.save_file)
+        self.gestures_tab = GesturesRegionsTab(
+            tab_gestures,
+            lambda: self.save_file,
+            lambda: self.save_path,
+            self.load_save,
+        )
         self.gestures_tab.setup_ui()
 
         # Tab 9: Hex Editor
@@ -442,6 +447,25 @@ class SaveManagerGUI:
                 "Please close Elden Ring before loading the save file.",
             )
             return
+
+        # EAC warning for PC save files (.sl2)
+        if save_path.lower().endswith(".sl2"):
+            response = messagebox.askyesno(
+                "⚠️ EAC Warning - PC Save File Detected",
+                "You are loading a PC save file (.sl2).\n\n"
+                "WARNING: Modifying save files can result in a BAN if:\n"
+                "• Easy Anti-Cheat (EAC) is enabled\n"
+                "• You play online with modified saves\n\n"
+                "To avoid bans:\n"
+                "1. Launch Elden Ring with EAC disabled (use -eac_launcher flag)\n"
+                "2. Only play offline with modified saves\n"
+                "3. Do not use modified saves in online/multiplayer\n\n"
+                "Do you understand and want to continue?",
+                icon="warning",
+            )
+            if not response:
+                self.status_var.set("Load cancelled by user")
+                return
 
         try:
             self.status_var.set("Loading save file...")
