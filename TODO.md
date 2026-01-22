@@ -24,7 +24,6 @@ Character Editor:
 - Implement Character Info
 
 Appearance:
-- Fix Import (failed to import preset from json)
 - Give option to delete presets/edit them in there too
 - Implement Tab for preset browser with presets (coming in the future) (The other difficult thing i am still unsure if i want to do is a character preset database where users can contribute presets to me which can be put in a database. Main issue is displaying how the preset looks nicely, Actually good idea - humm just screenshot from the game is enough i think, Yeah, gonna have to give users a good way to contribute (i will have to check every contribution manually anyways) and a way for me to update the db wo having to update the tool, i'm sure i can host it somewhere)
 
@@ -32,9 +31,6 @@ World State:
 - Implement World State
 - Implement Teleportation feature with dropdown list of all known locations (give documentation txt for that) / also the option to type in custom coords with a warning ofc
 
-SteamID Patcher:
-- Fix Current Save file: SteamID: Unable to read
-- Add option to paste in steamprofile link to get the ID
 
 Event Flags:
 - Implement event flag load
@@ -49,6 +45,7 @@ Hex Editor:
 
 Save File Fixer:
 - make sure to implement the disable dlc flag function
+- make sure all the fixes work
 
 Security:
 - add manifest and version_info file
