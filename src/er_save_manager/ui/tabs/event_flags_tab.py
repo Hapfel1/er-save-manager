@@ -901,33 +901,6 @@ class EventFlagsTab:
                 save_file.recalculate_checksums()
                 save_file.to_file(save_path)
 
-                # Verify the write by reloading and checking
-                try:
-                    from er_save_manager.parser.save import Save
-
-                    verify_save = Save.from_file(save_path)
-                    verify_slot = verify_save.characters[self.current_slot]
-                    verify_event_flags = verify_slot.event_flags
-
-                    # Check if first boss flag is still OFF
-                    test_boss = selected_bosses[0]
-                    test_flag = BOSSES[test_boss]["flags"][0]
-                    verify_state = EventFlags.get_flag(verify_event_flags, test_flag)
-
-                    if verify_state:
-                        messagebox.showwarning(
-                            "Verification Failed",
-                            f"WARNING: Verified save file still shows boss flag as ON!\n"
-                            f"Test flag {test_flag} for {test_boss} is still TRUE.\n\n"
-                            f"This suggests:\n"
-                            f"1. Steam Cloud may be syncing old save\n"
-                            f"2. Another process is modifying the file\n"
-                            f"3. File write permissions issue\n\n"
-                            f"Try: Disable Steam Cloud sync for Elden Ring",
-                        )
-                except Exception as e:
-                    print(f"Verification check failed: {e}")
-
                 messagebox.showinfo(
                     "Success",
                     f"Respawned {len(selected_bosses)} boss(es)!\n\n"
