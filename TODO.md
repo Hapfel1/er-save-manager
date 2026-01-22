@@ -1,3 +1,5 @@
+- make sure the builds are updated with all the new imports if there are any
+
 - put out warnings for vanilla save files when detected as modifying stuff can cause bans if eac isn't disabled/they are playing online
 
 Save File Load: 
