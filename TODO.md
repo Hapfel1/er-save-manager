@@ -1,3 +1,5 @@
+- put out warnings for vanilla save files when detected as modifying stuff can cause bans if eac isn't disabled/they are playing online
+
 Save File Load: 
 - Auto-Find, make it work for Linux, search with find and ER0000 plus any ending in the compatdata folders as well as look in the default compatdata folder (How would you deal with autofind in Linux given the compatdata can be anything?
 Just do a find and return the locations)
@@ -24,7 +26,7 @@ Character Editor:
 Appearance:
 - Fix Import (failed to import preset from json)
 - Give option to delete presets/edit them in there too
-- Implement Tab for preset browser with presets (coming in the future)
+- Implement Tab for preset browser with presets (coming in the future) (The other difficult thing i am still unsure if i want to do is a character preset database where users can contribute presets to me which can be put in a database. Main issue is displaying how the preset looks nicely, Actually good idea - humm just screenshot from the game is enough i think, Yeah, gonna have to give users a good way to contribute (i will have to check every contribution manually anyways) and a way for me to update the db wo having to update the tool, i'm sure i can host it somewhere)
 
 World State: 
 - Implement World State
