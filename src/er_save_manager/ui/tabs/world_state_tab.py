@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import tkinter as tk
+from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING
 
+from er_save_manager.backup.manager import BackupManager
 from er_save_manager.data.locations import get_all_locations_sorted
 from er_save_manager.editors.world_state import WorldStateEditor
 from er_save_manager.parser.er_types import FloatVector3, MapId
@@ -411,6 +413,16 @@ class WorldStateTab:
                 ):
                     return
 
+        # Create backup before teleporting
+        save_path = self.get_save_path()
+        if save_path:
+            manager = BackupManager(Path(save_path))
+            manager.create_backup(
+                description=f"before_teleport_to_{location_key}",
+                operation="world_state_teleport",
+                save=self.get_save_file(),
+            )
+
         success, message = self.editor.teleport_to_location(location_key)
         if success:
             save_path = self.get_save_path()
@@ -531,6 +543,16 @@ class WorldStateTab:
             icon="warning",
         ):
             return
+
+        # Create backup before custom teleporting
+        save_path = self.get_save_path()
+        if save_path:
+            manager = BackupManager(Path(save_path))
+            manager.create_backup(
+                description="before_custom_teleport",
+                operation="world_state_custom_teleport",
+                save=self.get_save_file(),
+            )
 
         success, message = self.editor.teleport_to_custom(map_id, coords)
         if success:

@@ -49,6 +49,8 @@ build_exe_options = {
     # Include all modules explicitly
     "includes": [
         "er_save_manager.ui.gui",
+        "er_save_manager.ui.settings",
+        "er_save_manager.platform",
         "er_save_manager.ui.editors.equipment_editor",
         "er_save_manager.ui.editors.stats_editor",
         "er_save_manager.ui.editors.character_info_editor",
@@ -66,6 +68,7 @@ build_exe_options = {
         "er_save_manager.ui.tabs.hex_editor_tab",
         "er_save_manager.ui.tabs.advanced_tools_tab",
         "er_save_manager.ui.tabs.backup_manager_tab",
+        "er_save_manager.ui.tabs.settings_tab",
     ],
     # Force exclude packages if needed
     "excludes": [],
