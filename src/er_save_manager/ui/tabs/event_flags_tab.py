@@ -737,11 +737,11 @@ class EventFlagsTab:
         warning_frame.pack(fill=tk.X, padx=20, pady=10)
         ttk.Label(
             warning_frame,
-            text="IMPORTANT: After loading the game, REST AT A GRACE IMMEDIATELY!\n"
-            "This forces the game to reload world state from event flags.\n"
-            "If you don't rest immediately, the game will undo the changes.",
+            text="You have 4 SECONDS after loading to rest at a grace!\n"
+            "Boss spawns with 0 HP and dies after 4 seconds without resting.\n"
+            "Position next to grace BEFORE closing game.",
             foreground="red",
-            font=("Segoe UI", 9, "bold"),
+            font=("Segoe UI", 10, "bold"),
             wraplength=660,
             justify=tk.CENTER,
         ).pack()
@@ -752,17 +752,21 @@ class EventFlagsTab:
 
         # Important instructions
         instruction_frame = ttk.LabelFrame(
-            boss_frame, text="CRITICAL: Read Before Respawning", padding=10
+            boss_frame, text="CRITICAL: Follow Steps Exactly", padding=10
         )
         instruction_frame.pack(fill=tk.X, pady=5)
 
         ttk.Label(
             instruction_frame,
-            text="After respawning bosses, you MUST:\n"
-            "1. Load the game and your character\n"
-            "2. IMMEDIATELY rest at ANY grace (before doing anything else)\n"
-            "3. The boss will spawn after you rest\n\n"
-            "If you don't rest immediately, the game will revert the changes!",
+            text="BEFORE respawning:\n"
+            "1. Position character next to a grace in-game\n"
+            "2. Quit to main menu and close Elden Ring\n\n"
+            "AFTER respawning:\n"
+            "3. Boot up game and load character\n"
+            "4. IMMEDIATELY rest at grace (within 4 seconds!)\n"
+            "5. Boss will spawn after resting\n\n"
+            "Why 4 seconds? Boss entity has 0 HP and dies after 4 seconds\n"
+            "if you don't rest. Resting forces world rebuild with correct HP.",
             foreground="red",
             font=("Segoe UI", 9, "bold"),
             justify=tk.LEFT,
@@ -850,9 +854,12 @@ class EventFlagsTab:
             if not messagebox.askyesno(
                 "Respawn Bosses",
                 f"Respawn {len(selected_bosses)} boss(es)?\n\n"
-                f"This will clear all defeat flags for selected bosses.\n\n"
-                f"CRITICAL STEP AFTER LOADING GAME:\n"
-                f"You MUST rest at a grace IMMEDIATELY after loading!\n\n"
+                f"Make sure you followed the setup:\n"
+                f"1. Positioned next to grace in-game\n"
+                f"2. Quit and closed Elden Ring\n\n"
+                f"After clicking OK:\n"
+                f"3. Boot game and load character\n"
+                f"4. Rest at grace within 4 seconds\n\n"
                 f"Backup will be created.",
             ):
                 return
@@ -901,16 +908,42 @@ class EventFlagsTab:
                 save_file.recalculate_checksums()
                 save_file.to_file(save_path)
 
+                # Verify the write by reloading and checking
+                try:
+                    from er_save_manager.parser.save import Save
+
+                    verify_save = Save.from_file(save_path)
+                    verify_slot = verify_save.characters[self.current_slot]
+                    verify_event_flags = verify_slot.event_flags
+
+                    # Check if first boss flag is still OFF
+                    test_boss = selected_bosses[0]
+                    test_flag = BOSSES[test_boss]["flags"][0]
+                    verify_state = EventFlags.get_flag(verify_event_flags, test_flag)
+
+                    if verify_state:
+                        messagebox.showwarning(
+                            "Verification Failed",
+                            f"WARNING: Verified save file still shows boss flag as ON!\n"
+                            f"Test flag {test_flag} for {test_boss} is still TRUE.\n\n"
+                            f"This suggests:\n"
+                            f"1. Steam Cloud may be syncing old save\n"
+                            f"2. Another process is modifying the file\n"
+                            f"3. File write permissions issue\n\n"
+                            f"Try: Disable Steam Cloud sync for Elden Ring",
+                        )
+                except Exception as e:
+                    print(f"Verification check failed: {e}")
+
                 messagebox.showinfo(
                     "Success",
                     f"Respawned {len(selected_bosses)} boss(es)!\n\n"
-                    f"CRITICAL: Follow these steps EXACTLY:\n"
-                    f"1. Close this tool\n"
-                    f"2. Start Elden Ring\n"
-                    f"3. Load your character\n"
-                    f"4. IMMEDIATELY rest at ANY grace\n"
-                    f"5. Boss will spawn after resting\n\n"
-                    f"If you don't rest immediately, changes will be reverted!",
+                    f"NOW:\n"
+                    f"1. Boot up Elden Ring\n"
+                    f"2. Load your character\n"
+                    f"3. REST AT GRACE WITHIN 4 SECONDS!\n\n"
+                    f"Boss spawns with 0 HP and dies after 4 seconds.\n"
+                    f"Resting rebuilds world with correct HP.",
                 )
 
                 dialog.destroy()
@@ -921,20 +954,6 @@ class EventFlagsTab:
                 import traceback
 
                 traceback.print_exc()
-
-        ttk.Button(
-            button_frame,
-            text="Check World Area Data",
-            command=lambda: self.check_world_area(boss_listbox),
-            width=25,
-        ).pack(side=tk.LEFT, padx=5)
-
-        ttk.Button(
-            button_frame,
-            text="Check Selected Boss Flags",
-            command=lambda: self.check_boss_flags(boss_listbox),
-            width=25,
-        ).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(
             button_frame, text="Respawn Selected", command=respawn_selected, width=20
@@ -957,268 +976,3 @@ class EventFlagsTab:
         ttk.Button(button_frame, text="Close", command=dialog.destroy, width=10).pack(
             side=tk.RIGHT, padx=5
         )
-
-    def check_boss_flags(self, boss_listbox):
-        """Check and display current state of boss flags"""
-        if self.current_event_flags is None:
-            messagebox.showwarning("No Flags", "Please load event flags first!")
-            return
-
-        selection = boss_listbox.curselection()
-        if not selection or len(selection) != 1:
-            messagebox.showwarning(
-                "Selection", "Please select exactly ONE boss to check."
-            )
-            return
-
-        # Get boss name
-        text = boss_listbox.get(selection[0])
-        boss_name = text.split(" | ", 1)[1]
-
-        if boss_name not in BOSSES:
-            messagebox.showerror("Error", f"Boss '{boss_name}' not found in database.")
-            return
-
-        boss_flags = BOSSES[boss_name]["flags"]
-
-        # Check all flags
-        flag_states = []
-        for flag_id in boss_flags:
-            try:
-                state = EventFlags.get_flag(self.current_event_flags, flag_id)
-                flag_states.append((flag_id, state))
-            except Exception as e:
-                flag_states.append((flag_id, f"ERROR: {e}"))
-
-        # Create display dialog
-        dialog = tk.Toplevel(self.parent)
-        dialog.title(f"Flag States: {boss_name}")
-        dialog.geometry("600x400")
-        dialog.transient(self.parent)
-
-        ttk.Label(
-            dialog,
-            text=f"Current Flag States for {boss_name}",
-            font=("Segoe UI", 12, "bold"),
-        ).pack(pady=10)
-
-        # Text widget to show flags
-        text_frame = ttk.Frame(dialog)
-        text_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-
-        scrollbar = ttk.Scrollbar(text_frame)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        text_widget = tk.Text(
-            text_frame,
-            yscrollcommand=scrollbar.set,
-            font=("Consolas", 10),
-            wrap=tk.WORD,
-        )
-        text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.config(command=text_widget.yview)
-
-        # Add flag information
-        flag_descriptions = {
-            0: "isDefeated - Main defeat flag",
-            1: "isEncountered - Boss has been seen",
-            2: "Defeat flag (Loot, common funcs)",
-            3: "Loot already given (should be FALSE to get loot)",
-            4: "Defeat flag (Non-resetting, ALWAYS_TRUE in CEA)",
-            5: "Event status after defeat",
-            6: "Door/Arena flag",
-            7: "Grace menu icon (ALWAYS_FALSE in CEA)",
-            8: "Defeat flag (Resetting, clears on NG+)",
-        }
-
-        text_widget.insert(tk.END, f"Boss: {boss_name}\n")
-        text_widget.insert(tk.END, f"Category: {BOSSES[boss_name]['category']}\n")
-        text_widget.insert(tk.END, f"Total flags: {len(boss_flags)}\n\n")
-        text_widget.insert(tk.END, "Flag States:\n")
-        text_widget.insert(tk.END, "=" * 60 + "\n\n")
-
-        for idx, (flag_id, state) in enumerate(flag_states):
-            desc = flag_descriptions.get(idx, "Unknown")
-            state_str = (
-                "ON" if state is True else "OFF" if state is False else str(state)
-            )
-
-            text_widget.insert(tk.END, f"Flag #{idx}: {flag_id}\n")
-            text_widget.insert(tk.END, f"  Description: {desc}\n")
-            text_widget.insert(tk.END, f"  Current State: {state_str}\n")
-
-            # Add hint about what this means
-            if idx == 0:
-                if state:
-                    text_widget.insert(
-                        tk.END,
-                        "  -> Boss is DEFEATED (this should be OFF for respawn)\n",
-                    )
-                else:
-                    text_widget.insert(tk.END, "  -> Boss is ALIVE\n")
-            elif idx == 4:
-                text_widget.insert(
-                    tk.END, "  -> CEA keeps this ON even when respawning\n"
-                )
-
-            text_widget.insert(tk.END, "\n")
-
-        text_widget.insert(tk.END, "\n" + "=" * 60 + "\n")
-        text_widget.insert(tk.END, "DIAGNOSIS:\n")
-
-        main_flag_state = flag_states[0][1]
-        if main_flag_state is True:
-            text_widget.insert(tk.END, "Boss appears DEFEATED (flag #0 is ON)\n")
-            text_widget.insert(tk.END, "To respawn: Set flag #0 to OFF\n")
-        elif main_flag_state is False:
-            text_widget.insert(tk.END, "Boss appears ALIVE (flag #0 is OFF)\n")
-            text_widget.insert(tk.END, "If boss is still dead in-game:\n")
-            text_widget.insert(tk.END, "  1. Game may be checking a different flag\n")
-            text_widget.insert(tk.END, "  2. Boss entity may need area reload\n")
-            text_widget.insert(tk.END, "  3. Try clearing flag #4 as well (risky)\n")
-
-        text_widget.config(state="disabled")
-
-        ttk.Button(dialog, text="Close", command=dialog.destroy, width=15).pack(pady=10)
-
-    def check_world_area(self, boss_listbox):
-        """Check world area data to see if boss entities are stored there"""
-        save_file = self.get_save_file()
-        if not save_file or self.current_slot is None:
-            messagebox.showwarning("No Save", "Please load a save file first!")
-            return
-
-        slot = save_file.characters[self.current_slot]
-
-        # Create display dialog
-        dialog = tk.Toplevel(self.parent)
-        dialog.title(f"World Area Data - Slot {self.current_slot + 1}")
-        dialog.geometry("700x500")
-        dialog.transient(self.parent)
-
-        ttk.Label(
-            dialog,
-            text="World Area Data Analysis",
-            font=("Segoe UI", 12, "bold"),
-        ).pack(pady=10)
-
-        # Text widget to show data
-        text_frame = ttk.Frame(dialog)
-        text_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-
-        scrollbar = ttk.Scrollbar(text_frame)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        text_widget = tk.Text(
-            text_frame,
-            yscrollcommand=scrollbar.set,
-            font=("Consolas", 9),
-            wrap=tk.WORD,
-        )
-        text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.config(command=text_widget.yview)
-
-        # Analyze world area
-        if not hasattr(slot, "world_area") or slot.world_area is None:
-            text_widget.insert(tk.END, "No world_area data found in slot!\n")
-        else:
-            world_area = slot.world_area
-            text_widget.insert(tk.END, "World Area Data Structure:\n")
-            text_widget.insert(tk.END, "=" * 60 + "\n\n")
-
-            text_widget.insert(tk.END, f"Size: {world_area.size} bytes\n\n")
-
-            if hasattr(world_area, "data") and world_area.data:
-                chr_data = world_area.data
-                text_widget.insert(tk.END, "WorldAreaChrData:\n")
-                text_widget.insert(tk.END, f"  Magic: {chr_data.magic.hex()}\n")
-                text_widget.insert(
-                    tk.END, f"  unk_0x21042700: {chr_data.unk_0x21042700}\n"
-                )
-                text_widget.insert(tk.END, f"  unk0x8: {chr_data.unk0x8}\n")
-                text_widget.insert(tk.END, f"  unk0xc: {chr_data.unk0xc}\n\n")
-
-                if hasattr(chr_data, "blocks") and chr_data.blocks:
-                    text_widget.insert(
-                        tk.END, f"Character/Entity Blocks: {len(chr_data.blocks)}\n"
-                    )
-                    text_widget.insert(tk.END, "=" * 60 + "\n\n")
-
-                    for idx, block in enumerate(chr_data.blocks):
-                        if block.size < 1:
-                            text_widget.insert(
-                                tk.END, f"Block {idx}: TERMINATOR (size={block.size})\n"
-                            )
-                            break
-
-                        text_widget.insert(tk.END, f"Block {idx}:\n")
-                        text_widget.insert(tk.END, f"  Magic: {block.magic.hex()}\n")
-                        text_widget.insert(tk.END, f"  Map ID: {block.map_id}\n")
-                        text_widget.insert(tk.END, f"  Size: {block.size} bytes\n")
-                        text_widget.insert(tk.END, f"  unk0xc: {block.unk0xc}\n")
-                        text_widget.insert(
-                            tk.END, f"  Data length: {len(block.data)} bytes\n"
-                        )
-
-                        # Show first 64 bytes of data as hex
-                        if block.data:
-                            preview = block.data[:64].hex()
-                            text_widget.insert(
-                                tk.END, f"  Data preview: {preview}...\n"
-                            )
-
-                        text_widget.insert(tk.END, "\n")
-                else:
-                    text_widget.insert(tk.END, "No blocks found\n")
-            else:
-                text_widget.insert(tk.END, "No WorldAreaChrData found\n")
-
-            text_widget.insert(tk.END, "\n" + "=" * 60 + "\n")
-            text_widget.insert(tk.END, "NOTES:\n")
-            text_widget.insert(
-                tk.END, "These blocks likely contain entity/character state data.\n"
-            )
-            text_widget.insert(tk.END, "Boss entities may be stored here.\n")
-            text_widget.insert(tk.END, "Each block corresponds to a map area.\n")
-            text_widget.insert(
-                tk.END, "Data format is unknown - needs reverse engineering.\n"
-            )
-
-        text_widget.config(state="disabled")
-
-        ttk.Button(
-            dialog,
-            text="Export Raw Data",
-            command=lambda: self.export_world_area(slot),
-            width=20,
-        ).pack(side=tk.LEFT, padx=20, pady=10)
-        ttk.Button(dialog, text="Close", command=dialog.destroy, width=15).pack(
-            side=tk.RIGHT, padx=20, pady=10
-        )
-
-    def export_world_area(self, slot):
-        """Export world area data to file for analysis"""
-        try:
-            if not hasattr(slot, "world_area") or slot.world_area is None:
-                messagebox.showwarning("No Data", "No world area data to export")
-                return
-
-            from io import BytesIO
-
-            buffer = BytesIO()
-            slot.world_area.write(buffer)
-            raw_data = buffer.getvalue()
-
-            output_path = Path(
-                "/mnt/user-data/outputs/world_area_slot_"
-                + str(self.current_slot + 1)
-                + ".bin"
-            )
-            output_path.write_bytes(raw_data)
-
-            messagebox.showinfo(
-                "Exported",
-                f"World area data exported to:\n{output_path}\n\nSize: {len(raw_data)} bytes",
-            )
-        except Exception as e:
-            messagebox.showerror("Export Failed", f"Failed to export:\n{str(e)}")
