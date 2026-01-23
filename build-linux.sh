@@ -34,6 +34,7 @@ pyinstaller --clean --noconfirm \
 	--hidden-import er_save_manager.ui \
 	--hidden-import er_save_manager.ui.gui \
 	--hidden-import er_save_manager.ui.editors \
+	--hidden-import er_save_manager.platform \
 	--hidden-import er_save_manager.ui.editors.equipment_editor \
 	--hidden-import er_save_manager.ui.editors.stats_editor \
 	--hidden-import er_save_manager.ui.editors.character_info_editor \

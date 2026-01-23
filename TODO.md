@@ -1,8 +1,8 @@
-- no backup creation when doing custom tp/normal tp
+- dark mode
 
-- make sure the builds are updated with all the new imports if there are any
+- no backup creation when doing custom tp/normal tp done
 
-- put out warnings for vanilla save files when detected as modifying stuff can cause bans if eac isn't disabled/they are playing online
+- put out warnings for vanilla save files when detected as modifying stuff can cause bans if eac isn't disabled/they are playing online done
 
 Save File Load: 
 - Auto-Find, make it work for Linux, search with find and ER0000 plus any ending in the compatdata folders as well as look in the default compatdata folder (How would you deal with autofind in Linux given the compatdata can be anything?
@@ -10,6 +10,7 @@ Just do a find and return the locations)
 - create a class for centralized platform utlilites
 - give a tooltip on what to add as a launch option and add the option to move the save file to the default compatdata location
 or like a warning that the save file may disappear if the launcher exe is removed from steam
+done
 
 Backup-Manager:
 - Think about how to handle different save files with the same name that may get replaced: Maybe attach a name to a save file that gets saved with it so you can also load different save files and back them up?
@@ -24,37 +25,35 @@ Character Editor:
 - Also calculate characterlevel and change it based on changing attributes, give a warning if it is not the same before applying and recommend setting it to the actual level (Example: you change vigor from 12 to 15, so your character level should go from 9 to 12 which needs to be changed too)
 - Make Health/FP/Stamina only the max values editable, the active values have no need for that
 
-- Implement Equipment Editor
+- Implement Equipment Editor item spawner, remove seamless items
 - Implement Character Info
 
 Appearance:
-- Give option to delete presets/edit them in there too
+- Give option to delete presets/edit them in there too done
 - Implement Tab for preset browser with presets (coming in the future) (The other difficult thing i am still unsure if i want to do is a character preset database where users can contribute presets to me which can be put in a database. Main issue is displaying how the preset looks nicely, Actually good idea - humm just screenshot from the game is enough i think, Yeah, gonna have to give users a good way to contribute (i will have to check every contribution manually anyways) and a way for me to update the db wo having to update the tool, i'm sure i can host it somewhere)
 
-World State: 
+World State: done
 - Implement World State
 - Implement Teleportation feature with dropdown list of all known locations (give documentation txt for that) / also the option to type in custom coords with a warning ofc
 
 
-Event Flags:
+Event Flags: done
 - Implement event flag load
 - Add documentatio
 - Expand common scripts to be used / split up in categories/tabs if needed
 
-Gestures&Regions:
+Gestures&Regions: done
 - Implement together with documentation and unlocking features
 
 Hex Editor:
 - Make it scrollable and editable
 
-Save File Fixer:
+Save File Fixer: 
 - make sure to implement the disable dlc flag function
 - make sure all the fixes work
 
 Security:
 - add manifest and version_info file
-
--- Make sure to always use tracked offsets i get from the parser instead of hardset ones
 
 -- change design so that you don't have to expand the window that much sometimes to see everything
 

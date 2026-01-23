@@ -18,6 +18,9 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Topic :: Games/Entertainment",
 ]
+dependencies = [
+    "pillow>=12.1.0",
+]
 
 [project.scripts]
 er-save-manager = "er_save_manager.cli:main"

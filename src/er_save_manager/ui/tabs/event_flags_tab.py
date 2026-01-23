@@ -15,6 +15,7 @@ from er_save_manager.data.event_flags_db import (
     get_flag_name,
     get_subcategories,
 )
+from er_save_manager.fixes.teleport import TeleportFix
 from er_save_manager.parser.event_flags import EventFlags
 
 
@@ -732,16 +733,14 @@ class EventFlagsTab:
             font=("Segoe UI", 10),
         ).pack(pady=5)
 
-        # Warning
-        warning_frame = ttk.Frame(dialog)
-        warning_frame.pack(fill=tk.X, padx=20, pady=10)
+        # Info header
+        info_frame = ttk.Frame(dialog)
+        info_frame.pack(fill=tk.X, padx=20, pady=10)
         ttk.Label(
-            warning_frame,
-            text="You have 4 SECONDS after loading to rest at a grace!\n"
-            "Boss spawns with 0 HP and dies after 4 seconds without resting.\n"
-            "Position next to grace BEFORE closing game.",
-            foreground="red",
-            font=("Segoe UI", 10, "bold"),
+            info_frame,
+            text="Boss Respawn - Automatic Roundtable Hold Teleport",
+            foreground="green",
+            font=("Segoe UI", 11, "bold"),
             wraplength=660,
             justify=tk.CENTER,
         ).pack()
@@ -750,25 +749,23 @@ class EventFlagsTab:
         boss_frame = ttk.LabelFrame(dialog, text="Select Boss", padding=10)
         boss_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
-        # Important instructions
-        instruction_frame = ttk.LabelFrame(
-            boss_frame, text="CRITICAL: Follow Steps Exactly", padding=10
-        )
+        # Instructions
+        instruction_frame = ttk.LabelFrame(boss_frame, text="How It Works", padding=10)
         instruction_frame.pack(fill=tk.X, pady=5)
 
         ttk.Label(
             instruction_frame,
-            text="BEFORE respawning:\n"
-            "1. Position character next to a grace in-game\n"
-            "2. Quit to main menu and close Elden Ring\n\n"
-            "AFTER respawning:\n"
-            "3. Boot up game and load character\n"
-            "4. IMMEDIATELY rest at grace (within 4 seconds!)\n"
-            "5. Boss will spawn after resting\n\n"
-            "Why 4 seconds? Boss entity has 0 HP and dies after 4 seconds\n"
-            "if you don't rest. Resting forces world rebuild with correct HP.",
-            foreground="red",
-            font=("Segoe UI", 9, "bold"),
+            text="Process:\n"
+            "1. Close Elden Ring (no positioning needed)\n"
+            "2. Select bosses and click 'Respawn Selected'\n"
+            "3. Character teleports to Roundtable Hold automatically\n"
+            "4. Load game - you spawn at Roundtable Hold\n"
+            "5. Warp to any grace\n"
+            "6. Boss spawns with full HP!\n\n"
+            "Why RTH? Spawning at Roundtable prevents the 4-second timer.\n"
+            "Boss area loads fresh when you warp to a grace.",
+            foreground="blue",
+            font=("Segoe UI", 9),
             justify=tk.LEFT,
         ).pack()
 
@@ -854,12 +851,14 @@ class EventFlagsTab:
             if not messagebox.askyesno(
                 "Respawn Bosses",
                 f"Respawn {len(selected_bosses)} boss(es)?\n\n"
-                f"Make sure you followed the setup:\n"
-                f"1. Positioned next to grace in-game\n"
-                f"2. Quit and closed Elden Ring\n\n"
+                f"This will:\n"
+                f"1. Clear boss defeat flags\n"
+                f"2. Teleport character to Roundtable Hold\n\n"
                 f"After clicking OK:\n"
-                f"3. Boot game and load character\n"
-                f"4. Rest at grace within 4 seconds\n\n"
+                f"• Boot game and load character\n"
+                f"• You'll spawn at Roundtable Hold\n"
+                f"• Warp to any grace\n"
+                f"• Boss will spawn with full HP\n\n"
                 f"Backup will be created.",
             ):
                 return
@@ -895,6 +894,17 @@ class EventFlagsTab:
                             print(
                                 f"Failed to clear flag {flag_id} for {boss_name}: {e}"
                             )
+
+                try:
+                    teleport_fix = TeleportFix(destination="roundtable")
+                    teleport_result = teleport_fix.apply(save_file, self.current_slot)
+                    if not teleport_result.applied:
+                        print(
+                            f"Failed to teleport to RTH: {teleport_result.description}"
+                        )
+                except Exception as e:
+                    print(f"Failed to teleport to RTH: {e}")
+                    # Continue anyway - flags are still cleared
 
                 # Write back
                 slot = save_file.characters[self.current_slot]
@@ -941,9 +951,9 @@ class EventFlagsTab:
                     f"NOW:\n"
                     f"1. Boot up Elden Ring\n"
                     f"2. Load your character\n"
-                    f"3. REST AT GRACE WITHIN 4 SECONDS!\n\n"
-                    f"Boss spawns with 0 HP and dies after 4 seconds.\n"
-                    f"Resting rebuilds world with correct HP.",
+                    f"3. You'll spawn at Roundtable Hold\n"
+                    f"4. Warp to any grace\n\n"
+                    f"Boss will spawn with full HP!",
                 )
 
                 dialog.destroy()
