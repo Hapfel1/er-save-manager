@@ -3,6 +3,19 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.4.1
+**Released:** January 23, 2026
+
+
+### 🔧 Bug Fixes
+
+- License format in pyproject.toml to combat deprecation warning ([0b81a37](https://github.com/Hapfel1/er-save-manager/commit/0b81a377c63a7e92c1d16db3a7420a2c2a4f3878))
+
+- Fix deprecation issue with license ([336a556](https://github.com/Hapfel1/er-save-manager/commit/336a556cb682d259590550f5d979a71ab1dfba45))
+
+
+
+---
 ## 📦 Release 0.4.0
 **Released:** January 18, 2026
 
@@ -149,6 +162,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.4.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.4.0..v0.4.1
 [0.4.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.3.0..v0.4.0
 [0.3.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.2.1..v0.3.0
 [0.2.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.2.0..v0.2.1
