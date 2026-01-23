@@ -117,45 +117,45 @@ class AppearanceTab:
 
     def open_preset_browser(self):
         """Open community preset browser dialog."""
-        from er_save_manager.ui.dialogs.preset_browser import PresetBrowserDialog
-        
-        print("\n" + "="*60)
+
+        print("\n" + "=" * 60)
         print("DEBUG: Opening preset browser...")
-        
+
         # Create browser instance
         browser = PresetBrowserDialog(self.parent, self)
-        print(f"DEBUG: Created browser instance")
+        print("DEBUG: Created browser instance")
         print(f"DEBUG: Base URL: {browser.manager.base_url}")
         print(f"DEBUG: Index URL: {browser.manager.index_url}")
-        
+
         # Check if presets exist
         try:
             print("DEBUG: Fetching index from GitHub...")
             index = browser.manager.fetch_index()
-            
-            print(f"DEBUG: Index fetched successfully")
+
+            print("DEBUG: Index fetched successfully")
             print(f"DEBUG: Index keys: {list(index.keys())}")
             print(f"DEBUG: Index version: {index.get('version', 'N/A')}")
-            
-            presets = index.get('presets', [])
+
+            presets = index.get("presets", [])
             print(f"DEBUG: Number of presets: {len(presets)}")
-            
+
             if presets:
-                print(f"DEBUG: Presets found! Showing full browser...")
+                print("DEBUG: Presets found! Showing full browser...")
                 print(f"DEBUG: First preset: {presets[0].get('name', 'Unknown')}")
                 browser.show()  # Full browser!
             else:
-                print(f"DEBUG: No presets in index - showing Coming Soon")
+                print("DEBUG: No presets in index - showing Coming Soon")
                 PresetBrowserDialog.show_coming_soon(self.parent)  # Coming soon
-                
+
         except Exception as e:
             print(f"DEBUG: ERROR fetching index: {e}")
             import traceback
+
             traceback.print_exc()
-            print(f"DEBUG: Showing Coming Soon due to error")
+            print("DEBUG: Showing Coming Soon due to error")
             PresetBrowserDialog.show_coming_soon(self.parent)  # Coming soon
-        
-        print("="*60 + "\n")
+
+        print("=" * 60 + "\n")
 
     def _on_preset_select(self, event=None):
         """Handle preset selection"""
