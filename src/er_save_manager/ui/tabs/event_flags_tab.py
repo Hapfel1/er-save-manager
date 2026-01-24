@@ -424,7 +424,7 @@ class EventFlagsTab:
         # Create dialog
         dialog = tk.Toplevel(self.parent)
         dialog.title("Advanced Flag Editor")
-        dialog.geometry("600x400")
+        dialog.geometry("600x600")
         dialog.transient(self.parent)
         dialog.grab_set()
 
@@ -717,7 +717,7 @@ class EventFlagsTab:
         # Create dialog
         dialog = tk.Toplevel(self.parent)
         dialog.title("Boss Respawn")
-        dialog.geometry("700x500")
+        dialog.geometry("700x700")
         dialog.transient(self.parent)
         dialog.grab_set()
 
@@ -756,14 +756,12 @@ class EventFlagsTab:
         ttk.Label(
             instruction_frame,
             text="Process:\n"
-            "1. Close Elden Ring (no positioning needed)\n"
+            "1. Close Elden Ring\n"
             "2. Select bosses and click 'Respawn Selected'\n"
             "3. Character teleports to Roundtable Hold automatically\n"
             "4. Load game - you spawn at Roundtable Hold\n"
             "5. Warp to any grace\n"
-            "6. Boss spawns with full HP!\n\n"
-            "Why RTH? Spawning at Roundtable prevents the 4-second timer.\n"
-            "Boss area loads fresh when you warp to a grace.",
+            "6. Boss spawns with full HP!\n\n",
             foreground="blue",
             font=("Segoe UI", 9),
             justify=tk.LEFT,
