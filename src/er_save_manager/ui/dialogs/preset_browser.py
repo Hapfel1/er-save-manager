@@ -47,7 +47,7 @@ class EnhancedPresetBrowser:
         # Cleanup on close
         def on_close():
             # Unbind mousewheel
-            if hasattr(self, "_mousewheel_unbind"):
+            if hasattr(self, '_mousewheel_unbind'):
                 try:
                     self._mousewheel_unbind(None)
                 except Exception:
@@ -157,7 +157,7 @@ class EnhancedPresetBrowser:
         # Enable mousewheel scrolling ONLY when mouse is over canvas
         def on_mousewheel(event):
             if canvas.winfo_exists():
-                canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+                canvas.yview_scroll(int(-1*(event.delta/120)), "units")
 
         def bind_mousewheel(event):
             canvas.bind_all("<MouseWheel>", on_mousewheel)
@@ -191,12 +191,12 @@ class EnhancedPresetBrowser:
         slot_frame = ttk.LabelFrame(preview_frame, text="Apply To", padding=10)
         slot_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Label(slot_frame, text="Character Slot:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(slot_frame, text="Preset Slot:").pack(side=tk.LEFT, padx=5)
         self.target_slot_var = tk.StringVar(value="Slot 1")
         slot_combo = ttk.Combobox(
             slot_frame,
             textvariable=self.target_slot_var,
-            values=[f"Slot {i + 1}" for i in range(self.NUM_SLOTS)],
+            values=[f"Slot {i + 1}" for i in range(5)],  # Only 5 preset slots
             state="readonly",
             width=10,
         )
@@ -209,6 +209,15 @@ class EnhancedPresetBrowser:
             state=tk.DISABLED,
         )
         self.apply_button.pack(side=tk.LEFT, padx=10)
+
+        # Add info label
+        info_label = ttk.Label(
+            slot_frame,
+            text="⚠ Applies to currently selected character",
+            font=("Segoe UI", 8),
+            foreground="gray"
+        )
+        info_label.pack(side=tk.LEFT, padx=5)
 
         # Status
         self.status_var = tk.StringVar(value="Loading presets...")
@@ -235,9 +244,7 @@ class EnhancedPresetBrowser:
 
 Just fill the form and click Submit!"""
 
-        ttk.Label(
-            main_frame, text=instructions, justify=tk.CENTER, font=("Segoe UI", 9)
-        ).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=instructions, justify=tk.CENTER, font=("Segoe UI", 9)).pack(pady=(0, 15))
 
         # Create 2-column layout
         content_frame = ttk.Frame(main_frame)
@@ -316,9 +323,7 @@ Just fill the form and click Submit!"""
         ttk.Label(preview_frame, text="Preview Thumbnail:", width=20).pack(
             side=tk.LEFT, padx=5
         )
-        self.preview_image_label = ttk.Label(
-            preview_frame, text="Optional (uses face)", width=25, foreground="gray"
-        )
+        self.preview_image_label = ttk.Label(preview_frame, text="Optional (uses face)", width=25, foreground="gray")
         self.preview_image_label.pack(side=tk.LEFT, padx=5)
         ttk.Button(
             preview_frame, text="Browse...", command=self.select_preview_image
@@ -346,7 +351,9 @@ Just fill the form and click Submit!"""
         # Author
         author_frame = ttk.Frame(meta_section)
         author_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(author_frame, text="Your Name:", width=15).pack(side=tk.LEFT, padx=5)
+        ttk.Label(author_frame, text="Your Name:", width=15).pack(
+            side=tk.LEFT, padx=5
+        )
         self.author_var = tk.StringVar()
         ttk.Entry(author_frame, textvariable=self.author_var, width=30).pack(
             side=tk.LEFT, fill=tk.X, expand=True, padx=5
@@ -362,24 +369,15 @@ Just fill the form and click Submit!"""
         self.description_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
 
         # Tags - CHECKBOXES
-        tags_section = ttk.LabelFrame(
-            meta_section, text="Tags (select all that apply)", padding=5
-        )
+        tags_section = ttk.LabelFrame(meta_section, text="Tags (select all that apply)", padding=5)
         tags_section.pack(fill=tk.X, pady=(10, 5))
 
         # Predefined tags
         self.tag_vars = {}
         available_tags = [
-            "male",
-            "female",
-            "cosplay",
-            "original",
-            "fantasy",
-            "realistic",
-            "anime",
-            "meme",
-            "elder",
-            "young",
+            "male", "female", "cosplay", "original",
+            "fantasy", "realistic", "anime", "meme",
+            "elder", "young"
         ]
 
         # Create 2 columns of checkboxes
@@ -401,19 +399,14 @@ Just fill the form and click Submit!"""
         # Custom tags entry (optional)
         custom_tags_frame = ttk.Frame(meta_section)
         custom_tags_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(
-            custom_tags_frame, text="Custom Tags:", width=15, foreground="gray"
-        ).pack(side=tk.LEFT, padx=5)
+        ttk.Label(custom_tags_frame, text="Custom Tags:", width=15, foreground="gray").pack(side=tk.LEFT, padx=5)
         self.custom_tags_var = tk.StringVar()
         ttk.Entry(custom_tags_frame, textvariable=self.custom_tags_var, width=30).pack(
             side=tk.LEFT, fill=tk.X, expand=True, padx=5
         )
-        ttk.Label(
-            custom_tags_frame,
-            text="(comma-separated)",
-            font=("Segoe UI", 7),
-            foreground="gray",
-        ).pack(side=tk.LEFT)
+        ttk.Label(custom_tags_frame, text="(comma-separated)", font=("Segoe UI", 7), foreground="gray").pack(
+            side=tk.LEFT
+        )
 
         # Submit section
         submit_frame = ttk.Frame(main_frame)
@@ -487,9 +480,7 @@ Just fill the form and click Submit!"""
         # Add custom tags if provided
         custom_tags = self.custom_tags_var.get().strip()
         if custom_tags:
-            selected_tags.extend(
-                [t.strip() for t in custom_tags.split(",") if t.strip()]
-            )
+            selected_tags.extend([t.strip() for t in custom_tags.split(",") if t.strip()])
 
         if not selected_tags:
             messagebox.showerror("Error", "At least one tag is required")
@@ -690,7 +681,6 @@ Just fill the form and click Submit!"""
         except Exception as e:
             self.status_var.set(f"Error loading presets: {str(e)}")
             import traceback
-
             traceback.print_exc()
 
     def apply_filters(self):
@@ -729,7 +719,7 @@ Just fill the form and click Submit!"""
         self.preset_widgets = []
 
         # Reset scroll to top
-        if hasattr(self, "preset_canvas"):
+        if hasattr(self, 'preset_canvas'):
             self.preset_canvas.yview_moveto(0)
 
         if not self.filtered_presets:
@@ -851,9 +841,7 @@ Just fill the form and click Submit!"""
             # If not in cache, try to download from URLs in preset metadata
             if not face_img and "face_url" in preset:
                 try:
-                    face_path = self.manager.download_image(
-                        preset["id"], preset["face_url"], "_face"
-                    )
+                    face_path = self.manager.download_image(preset["id"], preset["face_url"], "_face")
                     if face_path and face_path.exists():
                         face_img = Image.open(face_path)
                         face_img.thumbnail((250, 250))
@@ -862,14 +850,13 @@ Just fill the form and click Submit!"""
 
             if not body_img and "body_url" in preset:
                 try:
-                    body_path = self.manager.download_image(
-                        preset["id"], preset["body_url"], "_body"
-                    )
+                    body_path = self.manager.download_image(preset["id"], preset["body_url"], "_body")
                     if body_path and body_path.exists():
                         body_img = Image.open(body_path)
                         body_img.thumbnail((250, 250))
                 except Exception:
                     pass
+
 
             # If we have separate face/body images, show them side by side
             if face_img or body_img:
@@ -885,9 +872,7 @@ Just fill the form and click Submit!"""
                     face_label.image = face_photo  # Keep reference
                     face_label.pack()
 
-                    ttk.Label(face_col, text="Face", font=("Segoe UI", 9, "bold")).pack(
-                        pady=5
-                    )
+                    ttk.Label(face_col, text="Face", font=("Segoe UI", 9, "bold")).pack(pady=5)
 
                 if body_img:
                     body_col = ttk.Frame(img_frame)
@@ -898,9 +883,7 @@ Just fill the form and click Submit!"""
                     body_label.image = body_photo  # Keep reference
                     body_label.pack()
 
-                    ttk.Label(body_col, text="Body", font=("Segoe UI", 9, "bold")).pack(
-                        pady=5
-                    )
+                    ttk.Label(body_col, text="Body", font=("Segoe UI", 9, "bold")).pack(pady=5)
 
             # If no separate images, use main screenshot
             elif "screenshot_path" in cached:
@@ -913,13 +896,9 @@ Just fill the form and click Submit!"""
                     img_label.pack(pady=10)
                 except Exception as e:
                     print(f"Error loading screenshot: {e}")
-                    ttk.Label(self.preview_label, text="[Preview not available]").pack(
-                        pady=10
-                    )
+                    ttk.Label(self.preview_label, text="[Preview not available]").pack(pady=10)
             else:
-                ttk.Label(self.preview_label, text="[No preview available]").pack(
-                    pady=10
-                )
+                ttk.Label(self.preview_label, text="[No preview available]").pack(pady=10)
 
         # Display details
         for widget in self.details_frame.winfo_children():
@@ -961,10 +940,17 @@ Just fill the form and click Submit!"""
         slot_str = self.target_slot_var.get()
         target_slot = int(slot_str.split()[1]) - 1
 
+        # Get current character from appearance tab
+        try:
+            current_char = self.appearance_tab.get_current_character_slot()
+            char_name = f"Character {current_char + 1}"
+        except Exception:
+            char_name = "the current character"
+
         if not messagebox.askyesno(
             "Apply Preset",
-            f"Apply '{self.current_preset['name']}' to {slot_str}?\n\n"
-            f"This will overwrite that character's appearance.\n"
+            f"Apply '{self.current_preset['name']}' to {char_name}'s {slot_str}?\n\n"
+            f"This will add the preset to that character's appearance menu.\n"
             f"A backup will be created automatically.",
         ):
             return
@@ -1002,27 +988,24 @@ Just fill the form and click Submit!"""
                     save=save_file,
                 )
 
-            # Import preset using the SAME method as appearance_tab's import_preset_from_json
-            # This is the proven working method
+            # Import using the SAME method as appearance_tab
+            # Pass the appearance data dict directly
             save_file.import_preset(preset_data["appearance"], target_slot)
 
-            # Save (exact same as appearance_tab)
+            # Save
             save_file.recalculate_checksums()
             save_file.to_file(Path(save_path))
 
             messagebox.showinfo(
                 "Success",
-                f"Applied '{self.current_preset['name']}' to {slot_str}!\n\n"
-                f"Close and reload to see changes in appearance tab.",
+                f"Applied '{self.current_preset['name']}' to Preset Slot {target_slot + 1}!\n\n"
+                f"The preset is now available in the appearance menu.",
             )
 
             self.dialog.destroy()
 
             # Force reload
-            if (
-                hasattr(self.appearance_tab, "reload_save")
-                and self.appearance_tab.reload_save
-            ):
+            if hasattr(self.appearance_tab, 'reload_save') and self.appearance_tab.reload_save:
                 self.appearance_tab.reload_save()
 
         except Exception as e:
