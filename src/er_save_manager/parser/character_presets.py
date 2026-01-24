@@ -840,6 +840,23 @@ class FacePreset:
             "eye_patch_color_r": self.eye_patch_color_r,
             "eye_patch_color_g": self.eye_patch_color_g,
             "eye_patch_color_b": self.eye_patch_color_b,
+
+            # CRITICAL: Unknown/binary fields that must be preserved
+            "_unk0x00": list(self.unk0x00),
+            "_face_data_marker": self.face_data_marker,
+            "_magic": self.magic.decode('ascii', errors='ignore') if self.magic else "",
+            "_alignment": self.alignment,
+            "_size": self.size,
+            "_unk0x14": self.unk0x14,
+            "_unk0x24": self.unk0x24,
+            "_unk0x28": self.unk0x28,
+            "_unk0x2f": self.unk0x2f,
+            "_unk0x45": self.unk0x45,
+            "_unk0x4a": self.unk0x4a,
+            "_unk0x4d": self.unk0x4d,
+            "_unk0x6c": list(self.unk0x6c),
+            "_unk0xb1": list(self.unk0xb1),
+            "_pad": list(self.pad),
         }
 
     @classmethod
@@ -855,40 +872,47 @@ class FacePreset:
         """
         preset = cls()
 
-        # CRITICAL: These values must match working presets
-        preset.magic = b"FACE"
-        preset.alignment = 4
-        preset.size = 0x120
-        preset.face_data_marker = 32767  # Use a common value from working presets
+        # CRITICAL: Restore unknown fields from JSON or use safe defaults
+        # These fields contain essential face data that must be preserved!
+        preset.unk0x00 = bytes(data.get("_unk0x00", [0] * 20))
+        preset.face_data_marker = data.get("_face_data_marker", 32767)
+        
+        magic_str = data.get("_magic", "FACE")
+        preset.magic = magic_str.encode('ascii') if magic_str else b"FACE"
+        preset.alignment = data.get("_alignment", 4)
+        preset.size = data.get("_size", 0x120)
 
-        # Initialize padding
-        preset.unk0x00 = bytes([0] * 20)
-        preset.unk0x6c = bytes([0] * 64)
-        preset.unk0xb1 = bytes([0, 0])
-        preset.pad = bytes([0] * 10)
+        preset.unk0x6c = bytes(data.get("_unk0x6c", [0] * 64))
+        preset.unk0xb1 = bytes(data.get("_unk0xb1", [0, 0]))
+        preset.pad = bytes(data.get("_pad", [0] * 10))
 
-        # Set body type in unk0x00 at offset 0x9
-        body_type = data.get("body_type", 0)
-        unk_list = list(preset.unk0x00)
-        unk_list[8] = 0x01  # This byte is always 0x01 in working presets
-        unk_list[9] = body_type
-        preset.unk0x00 = bytes(unk_list)
+
+
+        # If body_type is explicitly provided, override it in unk0x00
+        # (for backward compatibility with old JSONs that don't have _unk0x00)
+        if "body_type" in data and "_unk0x00" not in data:
+            body_type = data["body_type"]
+            unk_list = list(preset.unk0x00)
+            if len(unk_list) >= 10:
+                unk_list[8] = 0x01
+                unk_list[9] = body_type
+                preset.unk0x00 = bytes(unk_list)
 
         # Face models
         preset.face_model = data.get("face_model", 0)
         preset.hair_model = data.get("hair_model", 0)
-        preset.unk0x14 = 0
+        preset.unk0x14 = data.get("_unk0x14", 0)
         preset.eyebrow_model = data.get("eyebrow_model", 0)
         preset.beard_model = data.get("beard_model", 0)
         preset.eyepatch_model = data.get("eyepatch_model", 0)
-        preset.unk0x24 = 0
-        preset.unk0x28 = 3
+        preset.unk0x24 = data.get("_unk0x24", 0)
+        preset.unk0x28 = data.get("_unk0x28", 3)
 
         # Facial structure
         preset.apparent_age = data.get("apparent_age", 128)
         preset.facial_aesthetic = data.get("facial_aesthetic", 128)
         preset.form_emphasis = data.get("form_emphasis", 128)
-        preset.unk0x2f = 0
+        preset.unk0x2f = data.get("_unk0x2f", 0)
         preset.brow_ridge_height = data.get("brow_ridge_height", 128)
         preset.inner_brow_ridge = data.get("inner_brow_ridge", 128)
         preset.outer_brow_ridge = data.get("outer_brow_ridge", 128)
@@ -910,15 +934,15 @@ class FacePreset:
         preset.eye_spacing = data.get("eye_spacing", 128)
         preset.nose_size = data.get("nose_size", 128)
         preset.nose_forehead_ratio = data.get("nose_forehead_ratio", 128)
-        preset.unk0x45 = 0
+        preset.unk0x45 = data.get("_unk0x45", 0)
         preset.face_protrusion = data.get("face_protrusion", 128)
         preset.vertical_face_ratio = data.get("vertical_face_ratio", 128)
         preset.facial_feature_slant = data.get("facial_feature_slant", 128)
         preset.horizontal_face_ratio = data.get("horizontal_face_ratio", 128)
-        preset.unk0x4a = 0
+        preset.unk0x4a = data.get("_unk0x4a", 0)
         preset.forehead_depth = data.get("forehead_depth", 128)
         preset.forehead_protrusion = data.get("forehead_protrusion", 128)
-        preset.unk0x4d = 0
+        preset.unk0x4d = data.get("_unk0x4d", 0)
         preset.jaw_protrusion = data.get("jaw_protrusion", 128)
         preset.jaw_width = data.get("jaw_width", 128)
         preset.lower_jaw = data.get("lower_jaw", 128)

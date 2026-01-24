@@ -678,6 +678,8 @@ class AppearanceTab:
         if not source_preset or source_preset.is_empty():
             messagebox.showwarning("Empty Slot", "Selected slot is empty")
             return
+        # CRITICAL: Capture the slot value NOW to avoid closure issues
+        source_slot = self.selected_slot
 
         # Show copy dialog
         dialog = tk.Toplevel(self.parent)
@@ -690,7 +692,7 @@ class AppearanceTab:
 
         ttk.Label(
             frame,
-            text=f"Copy preset from Slot {self.selected_slot + 1}",
+            text=f"Copy preset from Slot {source_slot + 1}",
             font=("TkDefaultFont", 11, "bold"),
         ).grid(row=0, column=0, columnspan=3, pady=(0, 15))
 
@@ -843,3 +845,4 @@ class AppearanceTab:
             import traceback
 
             traceback.print_exc()
+            
