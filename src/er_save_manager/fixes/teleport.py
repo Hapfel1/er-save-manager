@@ -114,8 +114,12 @@ class TeleportFix(BaseFix):
         # Calculate map offset
         map_offset = slot.data_start + 0x4
 
-        # Write new map ID
-        save._raw_data[map_offset : map_offset + 4] = self.destination.map_id.data
+        # Write new map ID - use struct to write bytes
+        import struct
+
+        struct.pack_into(
+            "4B", save._raw_data, map_offset, *self.destination.map_id.data
+        )
 
         return FixResult(
             applied=True,

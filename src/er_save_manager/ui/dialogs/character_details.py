@@ -234,22 +234,21 @@ class CharacterDetailsDialog:
         )
         location_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        location_var = tk.StringVar(value="limgrave")
+        # Always teleport to Roundtable Hold
+        location_var = tk.StringVar(value="roundtable")
 
-        locations = [
-            ("limgrave", "Limgrave - First Step"),
-            ("roundtable", "Roundtable Hold"),
-            ("liurnia", "Liurnia - Lake-Facing Cliffs"),
-            ("altus", "Altus Plateau - Erdtree-Gazing Hill"),
-        ]
+        ttk.Label(
+            location_frame,
+            text="Roundtable Hold",
+            font=("Segoe UI", 11),
+        ).pack(pady=10)
 
-        for key, name in locations:
-            ttk.Radiobutton(
-                location_frame,
-                text=name,
-                value=key,
-                variable=location_var,
-            ).pack(anchor=tk.W, pady=2)
+        ttk.Label(
+            location_frame,
+            text="Character will be teleported to Roundtable Hold.\nThis is the safest location for unstuck/DLC escape.",
+            font=("Segoe UI", 9),
+            foreground="gray",
+        ).pack(pady=5)
 
         def do_teleport():
             try:

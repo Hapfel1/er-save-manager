@@ -10,6 +10,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
 from er_save_manager.parser import Save
+from er_save_manager.platform import PlatformUtils
 
 # Import all modular components
 from er_save_manager.ui.dialogs.character_details import CharacterDetailsDialog
@@ -20,6 +21,7 @@ from er_save_manager.ui.editors import (
     InventoryEditor,
     StatsEditor,
 )
+from er_save_manager.ui.settings import get_settings
 from er_save_manager.ui.tabs import (
     AdvancedToolsTab,
     AppearanceTab,
@@ -29,6 +31,7 @@ from er_save_manager.ui.tabs import (
     GesturesRegionsTab,
     HexEditorTab,
     SaveInspectorTab,
+    SettingsTab,
     SteamIDPatcherTab,
     WorldStateTab,
 )
@@ -60,6 +63,7 @@ class SaveManagerGUI:
         self.save_file = None
         self.save_path = None
         self.selected_slot = None
+        self.selected_slot_index = -1  # Current selected character slot (0-9)
 
         # Status
         self.status_var = tk.StringVar(value="Ready")
@@ -113,6 +117,15 @@ class SaveManagerGUI:
             width=10,
         ).pack(side=tk.LEFT, padx=2)
 
+        # Linux help button
+        if PlatformUtils.is_linux():
+            ttk.Button(
+                path_frame,
+                text="Linux Info",
+                command=self.show_linux_steam_info_dialog,
+                width=12,
+            ).pack(side=tk.LEFT, padx=2)
+
         # Load button
         buttons_frame = ttk.Frame(file_frame)
         buttons_frame.pack(fill=tk.X, pady=(10, 0))
@@ -136,6 +149,9 @@ class SaveManagerGUI:
         self.notebook.pack(fill=tk.BOTH, expand=True, padx=15, pady=10)
 
         # Create all tabs
+        # Initialize settings
+        self.settings = get_settings()
+
         self.create_tabs()
 
         # Status bar
@@ -162,6 +178,7 @@ class SaveManagerGUI:
             lambda: self.save_path,
             self.load_save,
             self.show_character_details,
+            self.on_slot_selected,
         )
         self.inspector_tab.setup_ui()
 
@@ -196,7 +213,11 @@ class SaveManagerGUI:
         tab_world = ttk.Frame(self.notebook, padding=10)
         self.notebook.add(tab_world, text="World State")
         self.world_tab = WorldStateTab(
-            tab_world, lambda: self.save_file, lambda: self.save_path, self.load_save
+            tab_world,
+            lambda: self.save_file,
+            lambda: self.save_path,
+            self.load_save,
+            lambda: self.selected_slot_index,
         )
         self.world_tab.setup_ui()
 
@@ -219,10 +240,15 @@ class SaveManagerGUI:
         )
         self.event_flags_tab.setup_ui()
 
-        # Tab 8: Gestures & Regions
+        # Tab 8: Gestures
         tab_gestures = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab_gestures, text="Gestures & Regions")
-        self.gestures_tab = GesturesRegionsTab(tab_gestures, lambda: self.save_file)
+        self.notebook.add(tab_gestures, text="Gestures")
+        self.gestures_tab = GesturesRegionsTab(
+            tab_gestures,
+            lambda: self.save_file,
+            lambda: self.save_path,
+            self.load_save,
+        )
         self.gestures_tab.setup_ui()
 
         # Tab 9: Hex Editor
@@ -246,6 +272,15 @@ class SaveManagerGUI:
             tab_backup, lambda: self.save_file, lambda: self.save_path, self.load_save
         )
         self.backup_tab.setup_ui()
+
+        # Tab 12: Settings
+        tab_settings = ttk.Frame(self.notebook, padding=10)
+        self.notebook.add(tab_settings, text="Settings")
+        self.settings_tab = SettingsTab(tab_settings)
+        self.settings_tab.setup_ui()
+
+        # Bind tab change event to refresh world state
+        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
     def setup_character_editor_tab(self, parent):
         """Setup character editor tab with modular editors"""
@@ -364,29 +399,234 @@ class SaveManagerGUI:
             self.status_var.set(f"Selected: {os.path.basename(filename)}")
 
     def auto_detect(self):
-        """Auto-detect save file"""
-        if not self.default_save_path.exists():
-            messagebox.showerror(
-                "Not Found",
-                f"Elden Ring save folder not found:\n{self.default_save_path}",
-            )
+        """Auto-detect save file with Linux support"""
+        # Find all save files using platform utilities
+        found_saves = PlatformUtils.find_all_save_files()
+
+        if not found_saves:
+            # Show platform-specific help
+            if PlatformUtils.is_linux():
+                messagebox.showinfo(
+                    "No Saves Found",
+                    "No Elden Ring save files found.\n\n"
+                    "Linux users: Make sure you've launched Elden Ring at least once.\n"
+                    "Saves are stored in Steam's compatdata folder.\n\n"
+                    "Click 'Linux Steam Info' for help.",
+                )
+            else:
+                messagebox.showwarning("Not Found", "No Elden Ring save files found.")
             return
 
-        saves = list(self.default_save_path.rglob("ER*.sl2")) + list(
-            self.default_save_path.rglob("ER*.co2")
+        if len(found_saves) == 1:
+            # Only one save found
+            self.file_path_var.set(str(found_saves[0]))
+            self.status_var.set("Save file auto-detected")
+
+            # Linux: Check if in default location
+            if (
+                PlatformUtils.is_linux()
+                and not PlatformUtils.is_save_in_default_location(found_saves[0])
+            ):
+                if self.settings.get("show_linux_save_warning", True):
+                    self.show_linux_save_location_warning(found_saves[0])
+        else:
+            # Multiple saves found
+            SaveSelectorDialog.show(
+                self.root, found_saves, lambda path: self.file_path_var.set(path)
+            )
+
+    def show_linux_save_location_warning(self, save_path):
+        """Show warning about non-default save location on Linux"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("⚠️ Save Location Warning")
+        dialog.geometry("550x450")
+        dialog.transient(self.root)
+
+        msg_frame = ttk.Frame(dialog, padding=20)
+        msg_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(
+            msg_frame,
+            text="⚠️ Non-Standard Save Location",
+            font=("Segoe UI", 12, "bold"),
+            foreground="orange",
+        ).pack(pady=(0, 10))
+
+        warning_text = (
+            f"Your save file is located in:\n"
+            f"{save_path}\n\n"
+            f"This is NOT the default Steam compatdata location!\n\n"
+            f"⚠️ If you remove Elden Ring from Steam and reinstall it, "
+            f"Steam will create a NEW compatdata folder and your saves may become inaccessible.\n\n"
+            f"Recommended: Set a fixed Steam launch option to prevent this."
         )
 
-        if not saves:
-            messagebox.showwarning("Not Found", "No Elden Ring save files found.")
+        ttk.Label(
+            msg_frame,
+            text=warning_text,
+            wraplength=500,
+            justify=tk.LEFT,
+        ).pack(pady=10)
+
+        # Show launch option
+        launch_option = PlatformUtils.get_steam_launch_option_hint()
+        if launch_option:
+            ttk.Label(
+                msg_frame,
+                text="Add this to Elden Ring's Steam launch options:",
+                font=("Segoe UI", 9, "bold"),
+            ).pack(anchor=tk.W, pady=(10, 5))
+
+            option_frame = ttk.Frame(msg_frame)
+            option_frame.pack(fill=tk.X, pady=5)
+
+            option_entry = ttk.Entry(option_frame, font=("Consolas", 9))
+            option_entry.insert(0, launch_option)
+            option_entry.config(state="readonly")
+            option_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+
+            def copy_to_clipboard():
+                self.root.clipboard_clear()
+                self.root.clipboard_append(launch_option)
+                messagebox.showinfo("Copied", "Launch option copied to clipboard!")
+
+            ttk.Button(
+                option_frame, text="Copy", command=copy_to_clipboard, width=10
+            ).pack(side=tk.LEFT)
+
+        # Buttons
+        button_frame = ttk.Frame(msg_frame)
+        button_frame.pack(pady=10)
+
+        def copy_to_default():
+            default_loc = PlatformUtils.get_default_save_location()
+            if default_loc:
+                if messagebox.askyesno(
+                    "Copy Save",
+                    f"Copy save file to:\n{default_loc}\n\nThe original file will remain in its current location.",
+                ):
+                    try:
+                        default_loc.mkdir(parents=True, exist_ok=True)
+                        import shutil
+
+                        new_path = default_loc / Path(save_path).name
+                        shutil.copy2(save_path, new_path)
+                        self.file_path_var.set(str(new_path))
+                        messagebox.showinfo(
+                            "Success",
+                            f"Save file copied to:\n{new_path}\n\nOriginal file remains at:\n{save_path}",
+                        )
+                        dialog.destroy()
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Failed to move save:\n{e}")
+
+        def dont_show_again():
+            self.settings.set("show_linux_save_warning", False)
+            dialog.destroy()
+
+        ttk.Button(
+            button_frame, text="Copy to Default", command=copy_to_default, width=18
+        ).pack(side=tk.LEFT, padx=5)
+        ttk.Button(
+            button_frame, text="Keep Current", command=dialog.destroy, width=15
+        ).pack(side=tk.LEFT, padx=5)
+        ttk.Button(
+            button_frame, text="Don't Show Again", command=dont_show_again, width=18
+        ).pack(side=tk.LEFT, padx=5)
+
+    def show_linux_steam_info_dialog(self):
+        """Show Linux-specific Steam/Proton information"""
+        if not PlatformUtils.is_linux():
             return
 
-        if len(saves) == 1:
-            self.file_path_var.set(str(saves[0]))
-            self.status_var.set("Save file auto-detected")
-        else:
-            SaveSelectorDialog.show(
-                self.root, saves, lambda path: self.file_path_var.set(path)
-            )
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Linux Steam / Proton Info")
+        dialog.geometry("650x550")
+        dialog.transient(self.root)
+
+        msg_frame = ttk.Frame(dialog, padding=20)
+        msg_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(
+            msg_frame,
+            text="Elden Ring on Linux (Steam/Proton)",
+            font=("Segoe UI", 14, "bold"),
+        ).pack(pady=(0, 15))
+
+        # Info sections
+        info_text = """Save File Locations:
+Elden Ring on Linux uses Steam's Proton compatibility layer. Your saves are stored in:
+
+~/.steam/steam/steamapps/compatdata/[NUMBER]/pfx/drive_c/users/steamuser/AppData/Roaming/EldenRing/[SteamID]/
+
+The [NUMBER] is called the "compatdata ID" and varies depending on installation.
+
+Common Issues:
+1. Multiple Save Locations: If you've reinstalled the game, Steam may create a NEW compatdata folder, making old saves appear lost.
+
+2. Disappearing Saves: If Steam removes the game data, the compatdata folder may be deleted.
+
+Solution - Fixed Launch Option:
+Add this to Elden Ring's Steam launch options to always use the same location:
+
+"""
+
+        ttk.Label(
+            msg_frame,
+            text=info_text,
+            justify=tk.LEFT,
+            wraplength=600,
+        ).pack(pady=10)
+
+        # Launch option
+        launch_option = PlatformUtils.get_steam_launch_option_hint()
+        if launch_option:
+            option_frame = ttk.Frame(msg_frame)
+            option_frame.pack(fill=tk.X, pady=10)
+
+            option_entry = ttk.Entry(option_frame, font=("Consolas", 9))
+            option_entry.insert(0, launch_option)
+            option_entry.config(state="readonly")
+            option_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+
+            def copy_to_clipboard():
+                self.root.clipboard_clear()
+                self.root.clipboard_append(launch_option)
+                messagebox.showinfo("Copied", "Copied to clipboard!")
+
+            ttk.Button(
+                option_frame, text="Copy", command=copy_to_clipboard, width=10
+            ).pack(side=tk.LEFT)
+
+        # How to add launch option
+        steps_text = """How to Add Launch Options:
+1. Right-click Elden Ring in Steam
+2. Properties → General → Launch Options
+3. Paste the command above
+4. Click OK and restart the game
+
+This ensures your saves always go to the same location!"""
+
+        ttk.Label(
+            msg_frame,
+            text=steps_text,
+            justify=tk.LEFT,
+            wraplength=600,
+            font=("Segoe UI", 9),
+        ).pack(pady=10)
+
+        # Flatpak warning
+        if PlatformUtils.is_flatpak_steam():
+            ttk.Label(
+                msg_frame,
+                text="Note: Flatpak Steam detected - using appropriate path.",
+                font=("Segoe UI", 9, "italic"),
+                foreground="blue",
+            ).pack(pady=5)
+
+        ttk.Button(msg_frame, text="Close", command=dialog.destroy, width=15).pack(
+            pady=10
+        )
 
     def is_game_running(self):
         """Check if Elden Ring is running"""
@@ -400,18 +640,23 @@ class SaveManagerGUI:
             if "eldenring.exe" in result.stdout.lower():
                 return True
 
-            result = subprocess.run(
-                ["tasklist", "/FI", "IMAGENAME eq start_protected_game.exe", "/NH"],
-                capture_output=True,
-                text=True,
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
-            )
-            if "start_protected_game.exe" in result.stdout.lower():
-                return True
+        except Exception as e:
+            print(f"Warning: Could not check if game is running: {e}")
 
-            return False
-        except Exception:
-            return None
+        return False
+
+    def _on_tab_changed(self, event=None):
+        """Handle tab change event - refresh world state when switching to it."""
+        current_tab = self.notebook.select()
+        tab_text = self.notebook.tab(current_tab, "text")
+
+        # Refresh world state tab when switched to
+        if tab_text == "World State":
+            self.world_tab.refresh()
+
+    def on_slot_selected(self, slot_index: int):
+        """Handle character slot selection from Save Inspector."""
+        self.selected_slot_index = slot_index
 
     def load_save(self):
         """Load save file"""
@@ -428,6 +673,85 @@ class SaveManagerGUI:
                 "Please close Elden Ring before loading the save file.",
             )
             return
+
+        # EAC warning for PC save files (.sl2)
+        if save_path.lower().endswith(".sl2") and self.settings.get(
+            "show_eac_warning", True
+        ):
+            # Create custom dialog with "Don't show again" option
+            warning_dialog = tk.Toplevel(self.root)
+            warning_dialog.title("⚠️ EAC Warning - PC Save File Detected")
+            warning_dialog.geometry("520x420")
+            warning_dialog.transient(self.root)
+            warning_dialog.grab_set()
+
+            # Warning message
+            msg_frame = ttk.Frame(warning_dialog, padding=20)
+            msg_frame.pack(fill=tk.BOTH, expand=True)
+
+            ttk.Label(
+                msg_frame,
+                text="⚠️ EAC Warning - PC Save File Detected",
+                font=("Segoe UI", 12, "bold"),
+                foreground="red",
+            ).pack(pady=(0, 10))
+
+            warning_text = (
+                "You are loading a PC save file (.sl2).\n\n"
+                "WARNING: Modifying save files can result in a BAN if:\n"
+                "• Easy Anti-Cheat (EAC) is enabled\n"
+                "• You play online with modified saves\n\n"
+                "To avoid bans:\n"
+                "1. Launch Elden Ring with EAC disabled (use -eac_launcher flag)\n"
+                "2. Only play offline with modified saves\n"
+                "3. Do not use modified saves in online/multiplayer\n\n"
+                "Do you understand and want to continue?"
+            )
+
+            ttk.Label(
+                msg_frame,
+                text=warning_text,
+                wraplength=470,
+                justify=tk.LEFT,
+            ).pack(pady=10)
+
+            # Don't show again checkbox
+            dont_show_var = tk.BooleanVar(value=False)
+            ttk.Checkbutton(
+                msg_frame,
+                text="Don't show this warning again",
+                variable=dont_show_var,
+            ).pack(pady=10)
+
+            # Buttons
+            button_frame = ttk.Frame(msg_frame)
+            button_frame.pack(pady=10)
+
+            result = {"continue": False}
+
+            def on_yes():
+                if dont_show_var.get():
+                    self.settings.set("show_eac_warning", False)
+                result["continue"] = True
+                warning_dialog.destroy()
+
+            def on_no():
+                result["continue"] = False
+                warning_dialog.destroy()
+
+            ttk.Button(
+                button_frame, text="Yes, Continue", command=on_yes, width=15
+            ).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text="No, Cancel", command=on_no, width=15).pack(
+                side=tk.LEFT, padx=5
+            )
+
+            # Wait for dialog to close
+            self.root.wait_window(warning_dialog)
+
+            if not result["continue"]:
+                self.status_var.set("Load cancelled by user")
+                return
 
         try:
             self.status_var.set("Loading save file...")
