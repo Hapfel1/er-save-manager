@@ -1,4 +1,6 @@
-- dark mode
+- make settings fully work
+
+- dark mode !
 
 - no backup creation when doing custom tp/normal tp done
 
@@ -12,7 +14,7 @@ Just do a find and return the locations)
 or like a warning that the save file may disappear if the launcher exe is removed from steam
 done
 
-Backup-Manager:
+Backup-Manager: !
 - Think about how to handle different save files with the same name that may get replaced: Maybe attach a name to a save file that gets saved with it so you can also load different save files and back them up?
 - Make the category tabs like filename and size etc togglable to be sorted after it, so for example file name, alphabetic from a to z and the other way round
 

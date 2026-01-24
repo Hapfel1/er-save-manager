@@ -94,7 +94,7 @@ class SteamIDPatcherTab:
             steamid_entry_frame,
             text="Auto-Detect from System",
             command=self.auto_detect_steamid,
-            width=20,
+            width=25,
         ).pack(side=tk.LEFT, padx=5)
 
         # Steam Profile URL section
@@ -169,7 +169,7 @@ class SteamIDPatcherTab:
 
         help_text = """WHAT IS STEAMID PATCHING?
 
-When you transfer a save file to another computer or Steam account, the SteamID mismatch can cause loading issues or prevent the save from being recognized. This tool updates the SteamID in:
+When you transfer a save file to another Steam account, the SteamID will be mismatched and will cause the save file to not load.. This tool updates the SteamID in:
 • All 10 character slots
 • USER_DATA_10 common section
 • Profile summary
@@ -180,7 +180,7 @@ Step 1: Load the save file you want to transfer
 
 Step 2: Get the target SteamID using one of three methods:
 
-Method 1 - Auto-Detect (Windows only):
+Method 1 - Auto-Detect:
 • Click "Auto-Detect from System"
 • If multiple accounts detected, select from list
 • SteamID will be auto-filled
@@ -217,14 +217,6 @@ SUPPORTED URL FORMATS:
 ✓ 76561198012345678 (direct number)
 
 
-WHAT GETS UPDATED:
-
-✓ All 10 character slots
-✓ USER_DATA_10 (common section)
-✓ Profile summary for each character
-✓ Checksums are recalculated
-
-
 SAFETY FEATURES:
 
 ✓ Automatic backup before patching
@@ -236,15 +228,10 @@ SAFETY FEATURES:
 WARNINGS:
 
 ⚠ Make sure you have the CORRECT SteamID
-⚠ Patching to wrong SteamID may corrupt save
 ⚠ Test the patched save before deleting original
-⚠ Keep backups of important saves
 
 
 TROUBLESHOOTING:
-
-Q: Auto-detect doesn't work?
-A: Auto-detect only works on Windows and requires Steam to be installed
 
 Q: Custom URL resolution fails?
 A: Get the /profiles/ URL instead by clicking on the user's name

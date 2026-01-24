@@ -153,6 +153,36 @@ class PresetManager:
             print(f"Failed to apply preset: {e}")
             return False
 
+    def download_image(self, preset_id: str, url: str, suffix: str = "") -> Path | None:
+        """Download image from URL and save to cache with suffix."""
+        try:
+            import urllib.request
+            from pathlib import Path
+
+            cache_dir = self.cache_dir / preset_id
+            cache_dir.mkdir(parents=True, exist_ok=True)
+
+            # Build full URL
+            if not url.startswith("http"):
+                full_url = self.base_url + url
+            else:
+                full_url = url
+
+            # Save with suffix
+            ext = Path(url).suffix or ".png"
+            filename = f"{preset_id}{suffix}{ext}"
+            filepath = cache_dir / filename
+
+            # Download if not cached
+            if not filepath.exists():
+                with urllib.request.urlopen(full_url, timeout=10) as response:
+                    filepath.write_bytes(response.read())
+
+            return filepath
+        except Exception as e:
+            print(f"Failed to download image: {e}")
+            return None
+
     def clear_cache(self):
         """Clear all cached presets."""
         import shutil

@@ -10,7 +10,6 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
 from er_save_manager.backup.manager import BackupManager
-from er_save_manager.ui.dialogs.preset_browser import PresetBrowserDialog
 
 
 class AppearanceTab:
@@ -97,7 +96,7 @@ class AppearanceTab:
             action_frame,
             text="Copy to Another Save",
             command=self.copy_preset_to_save,
-            width=18,
+            width=22,
         ).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(
@@ -110,52 +109,31 @@ class AppearanceTab:
         # Community presets button
         ttk.Button(
             action_frame,
-            text="Browse Community Presets (Coming Soon)",
+            text="Browse Community Presets",
             command=self.open_preset_browser,
             width=45,
         ).pack(pady=5)
 
     def open_preset_browser(self):
-        """Open community preset browser dialog."""
+        """Open enhanced preset browser dialog."""
+        from er_save_manager.ui.dialogs.preset_browser import (
+            EnhancedPresetBrowser,
+            PresetBrowserDialog,
+        )
 
-        print("\n" + "=" * 60)
-        print("DEBUG: Opening preset browser...")
+        browser = EnhancedPresetBrowser(self.parent, self)
 
-        # Create browser instance
-        browser = PresetBrowserDialog(self.parent, self)
-        print("DEBUG: Created browser instance")
-        print(f"DEBUG: Base URL: {browser.manager.base_url}")
-        print(f"DEBUG: Index URL: {browser.manager.index_url}")
-
-        # Check if presets exist
         try:
-            print("DEBUG: Fetching index from GitHub...")
             index = browser.manager.fetch_index()
-
-            print("DEBUG: Index fetched successfully")
-            print(f"DEBUG: Index keys: {list(index.keys())}")
-            print(f"DEBUG: Index version: {index.get('version', 'N/A')}")
-
             presets = index.get("presets", [])
-            print(f"DEBUG: Number of presets: {len(presets)}")
 
             if presets:
-                print("DEBUG: Presets found! Showing full browser...")
-                print(f"DEBUG: First preset: {presets[0].get('name', 'Unknown')}")
-                browser.show()  # Full browser!
+                browser.show()
             else:
-                print("DEBUG: No presets in index - showing Coming Soon")
-                PresetBrowserDialog.show_coming_soon(self.parent)  # Coming soon
-
+                PresetBrowserDialog.show_coming_soon(self.parent)
         except Exception as e:
-            print(f"DEBUG: ERROR fetching index: {e}")
-            import traceback
-
-            traceback.print_exc()
-            print("DEBUG: Showing Coming Soon due to error")
-            PresetBrowserDialog.show_coming_soon(self.parent)  # Coming soon
-
-        print("=" * 60 + "\n")
+            print(f"Failed to fetch presets: {e}")
+            PresetBrowserDialog.show_coming_soon(self.parent)
 
     def _on_preset_select(self, event=None):
         """Handle preset selection"""
