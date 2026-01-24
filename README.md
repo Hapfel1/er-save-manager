@@ -26,7 +26,7 @@ Download the latest release from [Releases](https://github.com/Hapfel1/er-save-m
 
 ## Building from Source
 
-See [DEVELOPMENT.md](DEVELOPMENT.md
+See [DEVELOPMENT.md](DEVELOPMENT.md)
 
 
 ## Corruption Fixes
