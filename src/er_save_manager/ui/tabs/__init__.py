@@ -8,6 +8,7 @@ from .event_flags_tab import EventFlagsTab
 from .gestures_regions_tab import GesturesRegionsTab
 from .hex_editor_tab import HexEditorTab
 from .save_inspector_tab import SaveInspectorTab
+from .settings_tab import SettingsTab
 from .steamid_patcher_tab import SteamIDPatcherTab
 from .world_state_tab import WorldStateTab
 
@@ -22,4 +23,5 @@ __all__ = [
     "SaveInspectorTab",
     "SteamIDPatcherTab",
     "WorldStateTab",
+    "SettingsTab",
 ]

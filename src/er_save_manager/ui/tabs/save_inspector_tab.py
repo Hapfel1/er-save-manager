@@ -4,7 +4,6 @@ Displays character list with quick fix functionality
 """
 
 import tkinter as tk
-from pathlib import Path
 from tkinter import messagebox, ttk
 
 
@@ -18,6 +17,7 @@ class SaveInspectorTab:
         get_save_path_callback,
         reload_callback,
         show_details_callback,
+        on_slot_selected_callback=None,
     ):
         """
         Initialize save inspector tab
@@ -28,12 +28,14 @@ class SaveInspectorTab:
             get_save_path_callback: Function that returns save file path
             reload_callback: Function to reload save file
             show_details_callback: Function to show character details dialog (slot_idx)
+            on_slot_selected_callback: Function called when slot is selected (slot_idx)
         """
         self.parent = parent
         self.get_save_file = get_save_file_callback
         self.get_save_path = get_save_path_callback
         self.reload_save = reload_callback
         self.show_details = show_details_callback
+        self.on_slot_selected = on_slot_selected_callback
 
         self.char_listbox = None
         self.selected_slot = None
@@ -72,13 +74,6 @@ class SaveInspectorTab:
             action_frame,
             text="View Details & Issues",
             command=self.show_character_details,
-            width=25,
-        ).pack(side=tk.LEFT, padx=5)
-
-        ttk.Button(
-            action_frame,
-            text="Quick Fix All Issues",
-            command=self.quick_fix_all,
             width=25,
         ).pack(side=tk.LEFT, padx=5)
 
@@ -161,6 +156,9 @@ class SaveInspectorTab:
             active_slots = save_file.get_active_slots()
             if selection[0] < len(active_slots):
                 self.selected_slot = active_slots[selection[0]]
+                # Notify GUI of slot selection
+                if self.on_slot_selected:
+                    self.on_slot_selected(self.selected_slot)
 
     def on_character_double_click(self, event):
         """Handle double-click to show details"""
@@ -174,58 +172,3 @@ class SaveInspectorTab:
 
         if self.show_details:
             self.show_details(self.selected_slot)
-
-    def quick_fix_all(self):
-        """Apply all fixes to selected character"""
-        save_file = self.get_save_file()
-        if not save_file or self.selected_slot is None:
-            messagebox.showwarning("No Selection", "Please select a character first!")
-            return
-
-        if not messagebox.askyesno(
-            "Confirm",
-            f"Fix all issues in Slot {self.selected_slot + 1}?\n\nA backup will be created.",
-        ):
-            return
-
-        try:
-            from er_save_manager.backup.manager import BackupManager
-
-            save_path = self.get_save_path()
-            if save_path:
-                manager = BackupManager(Path(save_path))
-                manager.create_backup(
-                    description="before_fix",
-                    operation="fix_corruption",
-                    save=save_file,
-                )
-
-            # Apply fix
-            was_fixed, fixes = save_file.fix_character_corruption(self.selected_slot)
-
-            if was_fixed:
-                # Save
-                save_file.recalculate_checksums()
-                if save_path:
-                    save_file.to_file(Path(save_path))
-
-                # Reload
-                if self.reload_save:
-                    self.reload_save()
-
-                fix_summary = "\n".join(fixes[:5])
-                if len(fixes) > 5:
-                    fix_summary += f"\n...and {len(fixes) - 5} more"
-
-                messagebox.showinfo(
-                    "Success",
-                    f"Fixed {len(fixes)} issue(s):\n\n{fix_summary}\n\nBackup saved to backup manager.",
-                )
-            else:
-                messagebox.showinfo("No Issues", "No corruption detected")
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Fix failed:\n{str(e)}")
-            import traceback
-
-            traceback.print_exc()
