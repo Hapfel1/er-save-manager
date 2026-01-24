@@ -191,12 +191,12 @@ class EnhancedPresetBrowser:
         slot_frame = ttk.LabelFrame(preview_frame, text="Apply To", padding=10)
         slot_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Label(slot_frame, text="Character Slot:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(slot_frame, text="Preset Slot:").pack(side=tk.LEFT, padx=5)
         self.target_slot_var = tk.StringVar(value="Slot 1")
         slot_combo = ttk.Combobox(
             slot_frame,
             textvariable=self.target_slot_var,
-            values=[f"Slot {i + 1}" for i in range(self.NUM_SLOTS)],
+            values=[f"Slot {i + 1}" for i in range(5)],  # Only 5 preset slots
             state="readonly",
             width=10,
         )
@@ -209,6 +209,15 @@ class EnhancedPresetBrowser:
             state=tk.DISABLED,
         )
         self.apply_button.pack(side=tk.LEFT, padx=10)
+
+        # Add info label
+        info_label = ttk.Label(
+            slot_frame,
+            text="⚠ Applies to currently selected character",
+            font=("Segoe UI", 8),
+            foreground="gray",
+        )
+        info_label.pack(side=tk.LEFT, padx=5)
 
         # Status
         self.status_var = tk.StringVar(value="Loading presets...")
@@ -961,10 +970,17 @@ Just fill the form and click Submit!"""
         slot_str = self.target_slot_var.get()
         target_slot = int(slot_str.split()[1]) - 1
 
+        # Get current character from appearance tab
+        try:
+            current_char = self.appearance_tab.get_current_character_slot()
+            char_name = f"Character {current_char + 1}"
+        except Exception:
+            char_name = "the current character"
+
         if not messagebox.askyesno(
             "Apply Preset",
-            f"Apply '{self.current_preset['name']}' to {slot_str}?\n\n"
-            f"This will overwrite that character's appearance.\n"
+            f"Apply '{self.current_preset['name']}' to {char_name}'s {slot_str}?\n\n"
+            f"This will add the preset to that character's appearance menu.\n"
             f"A backup will be created automatically.",
         ):
             return
@@ -1002,18 +1018,18 @@ Just fill the form and click Submit!"""
                     save=save_file,
                 )
 
-            # Import preset using the SAME method as appearance_tab's import_preset_from_json
-            # This is the proven working method
+            # Import using the SAME method as appearance_tab
+            # Pass the appearance data dict directly
             save_file.import_preset(preset_data["appearance"], target_slot)
 
-            # Save (exact same as appearance_tab)
+            # Save
             save_file.recalculate_checksums()
             save_file.to_file(Path(save_path))
 
             messagebox.showinfo(
                 "Success",
-                f"Applied '{self.current_preset['name']}' to {slot_str}!\n\n"
-                f"Close and reload to see changes in appearance tab.",
+                f"Applied '{self.current_preset['name']}' to Preset Slot {target_slot + 1}!\n\n"
+                f"The preset is now available in the appearance menu.",
             )
 
             self.dialog.destroy()

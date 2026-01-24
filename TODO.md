@@ -1,3 +1,13 @@
+- change eac warning
+
+- change linux notice on seein gthat the save file is not in a default location
+
+- add better refresh logic
+
+- add notice for users to be logged in via github
+
+- add blocklist and trusted users to skip approval from me with github user account ids
+
 - make settings fully work
 
 - dark mode !
