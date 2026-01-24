@@ -3,6 +3,47 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.5.0
+**Released:** January 24, 2026
+
+
+### ✨ New Features
+
+- Major UI improvements and bug fixes ([b8dccbe](https://github.com/Hapfel1/er-save-manager/commit/b8dccbee8cd639d3545895d8b4807d9e110577eb))
+
+- Complete SteamID patcher with custom URL resolution `[steamid]` ([f785b38](https://github.com/Hapfel1/er-save-manager/commit/f785b38c5a75a94b8809bc6c1b0672d7dd388e82))
+
+- Implement comprehensive event flags and gestures systems ([7a21259](https://github.com/Hapfel1/er-save-manager/commit/7a21259615616e44cc5c127ddd2bc73c28ad9b58))
+
+- Implement boss respawn function (not finished) ([c53687b](https://github.com/Hapfel1/er-save-manager/commit/c53687bca7459d9b1820fe63edac67b6588f4afe))
+
+- Implement complete community character preset browser system `[ui]` ([4970826](https://github.com/Hapfel1/er-save-manager/commit/4970826bb953655840252fbd77d841cd54d55840))
+
+
+
+### 🔧 Bug Fixes
+
+- Small removal ([dfe4053](https://github.com/Hapfel1/er-save-manager/commit/dfe4053f1f98a76afbd3ac9b853aa516adb57292))
+
+- Fix: removed temporary testing buttons
+docs: updated tooltips for boss respawner ([fe4a601](https://github.com/Hapfel1/er-save-manager/commit/fe4a601c8e552e7e71701c665e1ec0127f927e5d))
+
+- Lint % format ([e02108d](https://github.com/Hapfel1/er-save-manager/commit/e02108deda47e59bb84aab4d2bf5c2bfeabb2ab4))
+
+- Fix: small fixes for UI
+fix: fix appearance browser + add workflow for submission ([e898db2](https://github.com/Hapfel1/er-save-manager/commit/e898db276234052c419330d7cfb50785c50ecd6f))
+
+
+
+### 📖 Documentation
+
+- Updated TODO.md ([9e3b06f](https://github.com/Hapfel1/er-save-manager/commit/9e3b06fe1797ecef9f70737f980f4e347d22bcee))
+
+- Updated TODO ([0fd8602](https://github.com/Hapfel1/er-save-manager/commit/0fd86026d024c86670d289b2f44ec8283ad37bee))
+
+
+
+---
 ## 📦 Release 0.4.1
 **Released:** January 23, 2026
 
@@ -162,6 +203,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.5.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.4.1..v0.5.0
 [0.4.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.4.0..v0.4.1
 [0.4.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.3.0..v0.4.0
 [0.3.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.2.1..v0.3.0
