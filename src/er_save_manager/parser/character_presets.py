@@ -840,11 +840,10 @@ class FacePreset:
             "eye_patch_color_r": self.eye_patch_color_r,
             "eye_patch_color_g": self.eye_patch_color_g,
             "eye_patch_color_b": self.eye_patch_color_b,
-
             # CRITICAL: Unknown/binary fields that must be preserved
             "_unk0x00": list(self.unk0x00),
             "_face_data_marker": self.face_data_marker,
-            "_magic": self.magic.decode('ascii', errors='ignore') if self.magic else "",
+            "_magic": self.magic.decode("ascii", errors="ignore") if self.magic else "",
             "_alignment": self.alignment,
             "_size": self.size,
             "_unk0x14": self.unk0x14,
@@ -876,17 +875,15 @@ class FacePreset:
         # These fields contain essential face data that must be preserved!
         preset.unk0x00 = bytes(data.get("_unk0x00", [0] * 20))
         preset.face_data_marker = data.get("_face_data_marker", 32767)
-        
+
         magic_str = data.get("_magic", "FACE")
-        preset.magic = magic_str.encode('ascii') if magic_str else b"FACE"
+        preset.magic = magic_str.encode("ascii") if magic_str else b"FACE"
         preset.alignment = data.get("_alignment", 4)
         preset.size = data.get("_size", 0x120)
 
         preset.unk0x6c = bytes(data.get("_unk0x6c", [0] * 64))
         preset.unk0xb1 = bytes(data.get("_unk0xb1", [0, 0]))
         preset.pad = bytes(data.get("_pad", [0] * 10))
-
-
 
         # If body_type is explicitly provided, override it in unk0x00
         # (for backward compatibility with old JSONs that don't have _unk0x00)

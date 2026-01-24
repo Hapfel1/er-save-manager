@@ -845,4 +845,3 @@ class AppearanceTab:
             import traceback
 
             traceback.print_exc()
-            
