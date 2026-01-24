@@ -74,6 +74,8 @@ class UserDataX:
     equipped_spells_offset: int = 0
     face_data_offset: int = 0
     inventory_storage_box_offset: int = 0
+    gestures_offset: int = 0
+    regions_offset: int = 0
     # Header (4 + 4 + 8 + 16 = 32 bytes)
     version: int = 0
     map_id: MapId = field(default_factory=MapId)
@@ -343,9 +345,14 @@ class UserDataX:
         obj.inventory_storage_box_offset = f.tell() - data_start
         obj.inventory_storage_box = Inventory.read(f, 0x780, 0x80)
 
-        # Parse remaining structures
+        # Track gestures offset and parse
+        obj.gestures_offset = f.tell() - data_start
         obj.gestures = Gestures.read(f)
+
+        # Track regions offset and parse
+        obj.regions_offset = f.tell() - data_start
         obj.unlocked_regions = Regions.read(f)
+
         obj.horse_offset = f.tell() - data_start
         obj.horse = RideGameData.read(f)
         obj.control_byte_maybe = struct.unpack("<B", f.read(1))[0]

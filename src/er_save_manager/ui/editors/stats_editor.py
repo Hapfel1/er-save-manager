@@ -65,7 +65,7 @@ class StatsEditor:
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Top row: Attributes and Resources side by side
+        # Single row: Attributes and Resources side by side
         top_row = ttk.Frame(self.frame)
         top_row.pack(fill=tk.X, pady=5)
 
@@ -97,37 +97,27 @@ class StatsEditor:
             # Bind to calculate level on attribute change
             entry.bind("<KeyRelease>", lambda e: self.calculate_character_level())
 
-        # HP/FP/Stamina on the right
+        # Max HP/FP/Stamina on the right (base max values only, no active HP/FP/SP)
         resources_frame = ttk.LabelFrame(
-            top_row, text="Health/FP/Stamina (Max Values)", padding=10
+            top_row, text="Max Health/FP/Stamina", padding=10
         )
         resources_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0))
 
         resources = [
-            ("Max HP", "max_hp", "base_max_hp"),
-            ("Max FP", "max_fp", "base_max_fp"),
-            ("Max Stamina", "max_sp", "base_max_sp"),
+            ("Max HP", "base_max_hp"),
+            ("Max FP", "base_max_fp"),
+            ("Max Stamina", "base_max_sp"),
         ]
 
-        for i, (label, max_key, base_key) in enumerate(resources):
+        for i, (label, key) in enumerate(resources):
             ttk.Label(resources_frame, text=f"{label}:").grid(
                 row=i, column=0, sticky=tk.W, padx=5, pady=5
             )
 
-            var_max = tk.IntVar(value=0)
-            self.stat_vars[max_key] = var_max
-            ttk.Entry(resources_frame, textvariable=var_max, width=10).grid(
+            var = tk.IntVar(value=0)
+            self.stat_vars[key] = var
+            ttk.Entry(resources_frame, textvariable=var, width=10).grid(
                 row=i, column=1, padx=5, pady=5
-            )
-
-            ttk.Label(resources_frame, text="Base:").grid(
-                row=i, column=2, sticky=tk.W, padx=5, pady=5
-            )
-
-            var_base = tk.IntVar(value=0)
-            self.stat_vars[base_key] = var_base
-            ttk.Entry(resources_frame, textvariable=var_base, width=10).grid(
-                row=i, column=3, padx=5, pady=5
             )
 
         # Bottom row: Level & Runes in one compact frame
@@ -212,12 +202,9 @@ class StatsEditor:
         self.stat_vars["faith"].set(getattr(char, "faith", 0))
         self.stat_vars["arcane"].set(getattr(char, "arcane", 0))
 
-        # Load resources
-        self.stat_vars["max_hp"].set(getattr(char, "max_hp", 0))
+        # Load base max resources only
         self.stat_vars["base_max_hp"].set(getattr(char, "base_max_hp", 0))
-        self.stat_vars["max_fp"].set(getattr(char, "max_fp", 0))
         self.stat_vars["base_max_fp"].set(getattr(char, "base_max_fp", 0))
-        self.stat_vars["max_sp"].set(getattr(char, "max_sp", 0))
         self.stat_vars["base_max_sp"].set(getattr(char, "base_max_sp", 0))
 
         # Load level and runes
@@ -361,11 +348,8 @@ class StatsEditor:
                 char.level = self.level_var.get()
                 char.runes = self.runes_var.get()
 
-                char.max_hp = self.stat_vars["max_hp"].get()
                 char.base_max_hp = self.stat_vars["base_max_hp"].get()
-                char.max_fp = self.stat_vars["max_fp"].get()
                 char.base_max_fp = self.stat_vars["base_max_fp"].get()
-                char.max_sp = self.stat_vars["max_sp"].get()
                 char.base_max_sp = self.stat_vars["base_max_sp"].get()
 
                 # Write back to raw data using tracked offset
