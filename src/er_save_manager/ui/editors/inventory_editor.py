@@ -1,5 +1,5 @@
 """
-Inventory Editor Module
+Inventory Editor Module (customtkinter)
 Full implementation with gaitem system for adding/removing items
 """
 
@@ -7,7 +7,11 @@ import re
 import tkinter as tk
 from io import BytesIO
 from pathlib import Path
-from tkinter import messagebox, ttk
+
+import customtkinter as ctk
+
+from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.utils import bind_mousewheel
 
 
 class InventoryEditor:
@@ -25,7 +29,7 @@ class InventoryEditor:
         Initialize inventory editor
 
         Args:
-            parent: Parent tkinter widget
+            parent: Parent widget
             get_save_file_callback: Function that returns current save file
             get_char_slot_callback: Function that returns current character slot index
             get_save_path_callback: Function that returns save file path
@@ -51,39 +55,33 @@ class InventoryEditor:
 
     def setup_ui(self):
         """Setup the inventory editor UI"""
-        # Create scrollable frame
-        canvas = tk.Canvas(self.parent, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(self.parent, orient=tk.VERTICAL, command=canvas.yview)
-        self.frame = ttk.Frame(canvas)
-
-        self.frame.bind(
-            "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        self.frame = ctk.CTkScrollableFrame(
+            self.parent,
+            fg_color=("gray86", "gray25"),
+            scrollbar_button_color=("gray70", "gray30"),
+            scrollbar_button_hover_color=("gray60", "gray40"),
         )
-
-        canvas.create_window((0, 0), window=self.frame, anchor=tk.NW)
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        # Bind mousewheel
-        def on_mousewheel(event):
-            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-        canvas.bind_all("<MouseWheel>", on_mousewheel)
-
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.frame.pack(fill=ctk.BOTH, expand=True)
+        bind_mousewheel(self.frame)
 
         # Add item frame
-        add_frame = ttk.LabelFrame(self.frame, text="Add/Spawn Item", padding=10)
-        add_frame.pack(fill=tk.X, pady=5)
+        add_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        add_frame.pack(fill=ctk.X, pady=5, padx=10)
+        ctk.CTkLabel(
+            add_frame,
+            text="Add/Spawn Item",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).grid(row=0, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(5, 0))
 
         # Category dropdown
-        ttk.Label(add_frame, text="Category:").grid(
-            row=0, column=0, sticky=tk.W, padx=5, pady=5
+        ctk.CTkLabel(add_frame, text="Category:", text_color=("black", "white")).grid(
+            row=1, column=0, sticky=ctk.W, padx=5, pady=5
         )
-        self.inv_category_var = tk.StringVar(value="Weapon")
-        category_combo = ttk.Combobox(
+        self.inv_category_var = ctk.StringVar(value="Weapon")
+        category_combo = ctk.CTkComboBox(
             add_frame,
-            textvariable=self.inv_category_var,
+            variable=self.inv_category_var,
             values=[
                 "Weapon",
                 "Armor",
@@ -97,145 +95,158 @@ class InventoryEditor:
                 "Crafting Material",
                 "Info Item",
             ],
-            state="readonly",
-            width=20,
+            width=180,
         )
-        category_combo.grid(row=0, column=1, padx=5, pady=5)
+        category_combo.grid(row=1, column=1, padx=5, pady=5)
 
         # Item ID
-        ttk.Label(add_frame, text="Item ID:").grid(
-            row=0, column=2, sticky=tk.W, padx=5, pady=5
+        ctk.CTkLabel(add_frame, text="Item ID:", text_color=("black", "white")).grid(
+            row=1, column=2, sticky=ctk.W, padx=5, pady=5
         )
-        self.inv_item_id_var = tk.IntVar(value=0)
-        ttk.Entry(add_frame, textvariable=self.inv_item_id_var, width=15).grid(
-            row=0, column=3, padx=5, pady=5
-        )
-
-        # Quantity
-        ttk.Label(add_frame, text="Quantity:").grid(
-            row=1, column=0, sticky=tk.W, padx=5, pady=5
-        )
-        self.inv_quantity_var = tk.IntVar(value=1)
-        ttk.Entry(add_frame, textvariable=self.inv_quantity_var, width=10).grid(
-            row=1, column=1, padx=5, pady=5
-        )
-
-        # Upgrade level
-        ttk.Label(add_frame, text="Upgrade Level:").grid(
-            row=1, column=2, sticky=tk.W, padx=5, pady=5
-        )
-        self.inv_upgrade_var = tk.IntVar(value=0)
-        ttk.Entry(add_frame, textvariable=self.inv_upgrade_var, width=10).grid(
+        self.inv_item_id_var = ctk.IntVar(value=0)
+        ctk.CTkEntry(add_frame, textvariable=self.inv_item_id_var, width=100).grid(
             row=1, column=3, padx=5, pady=5
         )
 
+        # Quantity
+        ctk.CTkLabel(add_frame, text="Quantity:", text_color=("black", "white")).grid(
+            row=2, column=0, sticky=ctk.W, padx=5, pady=5
+        )
+        self.inv_quantity_var = ctk.IntVar(value=1)
+        ctk.CTkEntry(add_frame, textvariable=self.inv_quantity_var, width=80).grid(
+            row=2, column=1, padx=5, pady=5
+        )
+
+        # Upgrade level
+        ctk.CTkLabel(
+            add_frame, text="Upgrade Level:", text_color=("black", "white")
+        ).grid(row=2, column=2, sticky=ctk.W, padx=5, pady=5)
+        self.inv_upgrade_var = ctk.IntVar(value=0)
+        ctk.CTkEntry(add_frame, textvariable=self.inv_upgrade_var, width=80).grid(
+            row=2, column=3, padx=5, pady=5
+        )
+
         # Reinforcement type (regular/somber)
-        ttk.Label(add_frame, text="Reinforcement:").grid(
-            row=2, column=0, sticky=tk.W, padx=5, pady=5
-        )
-        self.inv_reinforcement_var = tk.StringVar(value="regular")
-        reinforcement_combo = ttk.Combobox(
+        ctk.CTkLabel(
+            add_frame, text="Reinforcement:", text_color=("black", "white")
+        ).grid(row=3, column=0, sticky=ctk.W, padx=5, pady=5)
+        self.inv_reinforcement_var = ctk.StringVar(value="regular")
+        reinforcement_combo = ctk.CTkComboBox(
             add_frame,
-            textvariable=self.inv_reinforcement_var,
+            variable=self.inv_reinforcement_var,
             values=["regular", "somber"],
-            state="readonly",
-            width=10,
+            width=120,
         )
-        reinforcement_combo.grid(row=2, column=1, padx=5, pady=5)
+        reinforcement_combo.grid(row=3, column=1, padx=5, pady=5)
 
         # Storage location
-        ttk.Label(add_frame, text="Location:").grid(
-            row=2, column=2, sticky=tk.W, padx=5, pady=5
+        ctk.CTkLabel(add_frame, text="Location:", text_color=("black", "white")).grid(
+            row=3, column=2, sticky=ctk.W, padx=5, pady=5
         )
-        self.inv_location_var = tk.StringVar(value="held")
-        location_combo = ttk.Combobox(
+        self.inv_location_var = ctk.StringVar(value="held")
+        location_combo = ctk.CTkComboBox(
             add_frame,
-            textvariable=self.inv_location_var,
+            variable=self.inv_location_var,
             values=["held", "storage"],
-            state="readonly",
-            width=10,
+            width=120,
         )
-        location_combo.grid(row=2, column=3, padx=5, pady=5)
+        location_combo.grid(row=3, column=3, padx=5, pady=5)
 
         # Add button
-        ttk.Button(
+        ctk.CTkButton(
             add_frame,
             text="Add Item",
             command=self.add_item,
-            width=15,
-        ).grid(row=3, column=0, columnspan=4, pady=10)
+            width=140,
+        ).grid(row=4, column=0, columnspan=4, pady=10)
 
         # Item list frame
-        list_frame = ttk.LabelFrame(self.frame, text="Current Inventory", padding=10)
-        list_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+        list_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        list_frame.pack(fill=ctk.BOTH, expand=True, pady=5, padx=10)
+        ctk.CTkLabel(
+            list_frame,
+            text="Current Inventory",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
 
         # Filter frame
-        filter_frame = ttk.Frame(list_frame)
-        filter_frame.pack(fill=tk.X, pady=(0, 5))
+        filter_frame = ctk.CTkFrame(list_frame, fg_color="transparent")
+        filter_frame.pack(fill=ctk.X, pady=(0, 5))
 
-        ttk.Label(filter_frame, text="Filter by Category:").pack(side=tk.LEFT, padx=5)
-        self.inv_filter_var = tk.StringVar(value="All")
-        filter_combo = ttk.Combobox(
+        ctk.CTkLabel(
+            filter_frame, text="Filter by Category:", text_color=("black", "white")
+        ).pack(side=ctk.LEFT, padx=5)
+        self.inv_filter_var = ctk.StringVar(value="All")
+        filter_combo = ctk.CTkComboBox(
             filter_frame,
-            textvariable=self.inv_filter_var,
+            variable=self.inv_filter_var,
             values=["All", "Held", "Storage", "Key Items"],
-            state="readonly",
-            width=15,
+            width=140,
+            command=lambda _e=None: self.refresh_inventory(),
         )
-        filter_combo.pack(side=tk.LEFT, padx=5)
-        filter_combo.bind("<<ComboboxSelected>>", lambda e: self.refresh_inventory())
+        filter_combo.pack(side=ctk.LEFT, padx=5)
 
-        # Inventory display
-        inv_list_frame = ttk.Frame(list_frame)
-        inv_list_frame.pack(fill=tk.BOTH, expand=True)
+        # Inventory display (tk Listbox for rich text & performance)
+        inv_list_container = ctk.CTkFrame(list_frame, fg_color="transparent")
+        inv_list_container.pack(fill=ctk.BOTH, expand=True)
 
-        inv_scrollbar = ttk.Scrollbar(inv_list_frame)
+        inv_scrollbar = tk.Scrollbar(inv_list_container)
         inv_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         self.inventory_listbox = tk.Listbox(
-            inv_list_frame,
+            inv_list_container,
             yscrollcommand=inv_scrollbar.set,
-            font=("Consolas", 9),
-            height=15,
+            font=("Consolas", 10),
+            height=18,
+            bg="#1f1f28",
+            fg="#e5e5f5",
+            selectbackground="#c9a0dc",
+            relief=tk.FLAT,
         )
         self.inventory_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         inv_scrollbar.config(command=self.inventory_listbox.yview)
+        bind_mousewheel(self.inventory_listbox)
 
-        # Remove item frame
-        remove_frame = ttk.Frame(self.frame)
-        remove_frame.pack(fill=tk.X, pady=5)
+        # Remove / refresh buttons
+        remove_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        remove_frame.pack(fill=ctk.X, pady=5, padx=10)
 
-        ttk.Button(
+        ctk.CTkButton(
             remove_frame,
             text="Remove Selected Item",
             command=self.remove_item,
-            width=20,
-        ).pack(side=tk.LEFT, padx=5)
+            width=200,
+        ).pack(side=ctk.LEFT, padx=5)
 
-        ttk.Button(
+        ctk.CTkButton(
             remove_frame,
             text="Refresh List",
             command=self.refresh_inventory,
-            width=15,
-        ).pack(side=tk.LEFT, padx=5)
+            width=140,
+        ).pack(side=ctk.LEFT, padx=5)
 
         # Info section
-        info_label = ttk.Label(
+        info_label = ctk.CTkLabel(
             self.frame,
-            text="Item IDs can be found in ITEM_IDS_Elden_Ring.txt reference file.\n"
-            "Upgrade level: 0-25 for regular, 0-10 for somber.\n"
-            "Changes are saved immediately when adding/removing items.",
+            text=(
+                "Item IDs can be found in ITEM_IDS_Elden_Ring.txt reference file.\n"
+                "Upgrade level: 0-25 for regular, 0-10 for somber.\n"
+                "Changes are saved immediately when adding/removing items."
+            ),
             font=("Segoe UI", 9),
-            foreground="gray",
-            justify=tk.LEFT,
+            text_color=("gray30", "gray80"),
+            justify=ctk.LEFT,
         )
-        info_label.pack(pady=10)
+        info_label.pack(pady=10, padx=10, anchor=ctk.W)
 
     def refresh_inventory(self):
         """Refresh the inventory display"""
         save_file = self.get_save_file()
         if not save_file:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         slot_idx = self.get_char_slot()
@@ -244,7 +255,9 @@ class InventoryEditor:
             slot = save_file.characters[slot_idx]
 
             if not slot or slot.is_empty():
-                messagebox.showwarning("Empty Slot", f"Slot {slot_idx + 1} is empty!")
+                CTkMessageBox.showwarning(
+                    "Empty Slot", f"Slot {slot_idx + 1} is empty!", parent=self.parent
+                )
                 return
 
             self.inventory_listbox.delete(0, tk.END)
@@ -256,7 +269,7 @@ class InventoryEditor:
             gaitem_map = {}
             if hasattr(slot, "gaitem_map"):
                 for gaitem in slot.gaitem_map:
-                    if gaitem.gaitem_handle != 0xFFFFFFFF:
+                    if getattr(gaitem, "gaitem_handle", 0) != 0xFFFFFFFF:
                         gaitem_map[gaitem.gaitem_handle] = gaitem
 
             # Display held inventory
@@ -272,11 +285,9 @@ class InventoryEditor:
                 # Common items
                 for i, inv_item in enumerate(inv.common_items):
                     if inv_item.gaitem_handle != 0 and inv_item.quantity > 0:
-                        # Resolve gaitem
                         gaitem = gaitem_map.get(inv_item.gaitem_handle)
                         if gaitem:
                             item_id = gaitem.item_id
-                            # unk0x10 typically contains upgrade level
                             upgrade = (
                                 gaitem.unk0x10 if gaitem.unk0x10 is not None else 0
                             )
@@ -362,7 +373,9 @@ class InventoryEditor:
                                 )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to refresh inventory:\n{str(e)}")
+            CTkMessageBox.showerror(
+                "Error", f"Failed to refresh inventory:\n{str(e)}", parent=self.parent
+            )
             import traceback
 
             traceback.print_exc()
@@ -371,7 +384,9 @@ class InventoryEditor:
         """Add item to inventory"""
         save_file = self.get_save_file()
         if not save_file:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         slot_idx = self.get_char_slot()
@@ -381,7 +396,9 @@ class InventoryEditor:
         location = self.inv_location_var.get()
 
         if item_id == 0:
-            messagebox.showwarning("Invalid Item", "Please enter a valid item ID!")
+            CTkMessageBox.showwarning(
+                "Invalid Item", "Please enter a valid item ID!", parent=self.parent
+            )
             return
 
         try:
@@ -408,7 +425,9 @@ class InventoryEditor:
                 inv_offset_attr = "inventory_storage_box_offset"
 
             if not inventory:
-                messagebox.showerror("Error", "Could not access inventory")
+                CTkMessageBox.showerror(
+                    "Error", "Could not access inventory", parent=self.parent
+                )
                 return
 
             # Find first empty gaitem slot
@@ -421,7 +440,9 @@ class InventoryEditor:
                     break
 
             if empty_gaitem_idx == -1:
-                messagebox.showwarning("Gaitem Map Full", "No empty gaitem slots!")
+                CTkMessageBox.showwarning(
+                    "Gaitem Map Full", "No empty gaitem slots!", parent=self.parent
+                )
                 return
 
             # Find first empty inventory slot
@@ -434,7 +455,9 @@ class InventoryEditor:
                     break
 
             if empty_inv_idx == -1:
-                messagebox.showwarning("Inventory Full", "No empty slots in inventory!")
+                CTkMessageBox.showwarning(
+                    "Inventory Full", "No empty slots in inventory!", parent=self.parent
+                )
                 return
 
             # Create new gaitem in gaitem_map
@@ -464,7 +487,6 @@ class InventoryEditor:
             inventory.common_item_count += 1
 
             # Write back gaitem_map (after header at data_start)
-            # Write gaitem_map
             gaitem_bytes = BytesIO()
             for gaitem in slot.gaitem_map:
                 gaitem.write(gaitem_bytes)
@@ -504,15 +526,20 @@ class InventoryEditor:
                 # Refresh
                 self.refresh_inventory()
 
-                messagebox.showinfo(
+                CTkMessageBox.showinfo(
                     "Success",
                     f"Added item {item_id} (x{quantity}) +{upgrade} to {location}!",
+                    parent=self.parent,
                 )
             else:
-                messagebox.showerror("Error", "Offset not tracked for inventory")
+                CTkMessageBox.showerror(
+                    "Error", "Offset not tracked for inventory", parent=self.parent
+                )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add item:\n{str(e)}")
+            CTkMessageBox.showerror(
+                "Error", f"Failed to add item:\n{str(e)}", parent=self.parent
+            )
             import traceback
 
             traceback.print_exc()
@@ -521,7 +548,9 @@ class InventoryEditor:
         """Remove selected item from inventory"""
         selection = self.inventory_listbox.curselection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select an item to remove!")
+            CTkMessageBox.showwarning(
+                "No Selection", "Please select an item to remove!", parent=self.parent
+            )
             return
 
         save_file = self.get_save_file()
@@ -627,12 +656,18 @@ class InventoryEditor:
 
                 self.refresh_inventory()
 
-                messagebox.showinfo("Success", "Item removed from inventory!")
+                CTkMessageBox.showinfo(
+                    "Success", "Item removed from inventory!", parent=self.parent
+                )
             else:
-                messagebox.showerror("Error", "Offset not tracked for inventory")
+                CTkMessageBox.showerror(
+                    "Error", "Offset not tracked for inventory", parent=self.parent
+                )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to remove item:\n{str(e)}")
+            CTkMessageBox.showerror(
+                "Error", f"Failed to remove item:\n{str(e)}", parent=self.parent
+            )
             import traceback
 
             traceback.print_exc()

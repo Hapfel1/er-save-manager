@@ -1,14 +1,14 @@
-"""
-Hex Editor Tab
-View raw save file data in hexadecimal format
-"""
+"""Hex Editor Tab (customtkinter version)."""
 
 import tkinter as tk
-from tkinter import messagebox, ttk
+
+import customtkinter as ctk
+
+from er_save_manager.ui.messagebox import CTkMessageBox
 
 
 class HexEditorTab:
-    """Tab for viewing hex data of save files"""
+    """Tab for viewing hex data of save files (customtkinter version)."""
 
     def __init__(self, parent, get_save_file_callback):
         """
@@ -20,107 +20,117 @@ class HexEditorTab:
         """
         self.parent = parent
         self.get_save_file = get_save_file_callback
-
         self.hex_offset_var = None
         self.hex_text = None
 
     def setup_ui(self):
-        """Setup the hex editor tab UI"""
-        ttk.Label(
+        """Setup the hex editor tab UI."""
+        # Title and info
+        ctk.CTkLabel(
             self.parent,
             text="Hex Editor",
             font=("Segoe UI", 16, "bold"),
         ).pack(pady=10)
 
-        info_text = ttk.Label(
+        info_text = ctk.CTkLabel(
             self.parent,
-            text="Advanced: View and edit raw save file data in hexadecimal format",
-            font=("Segoe UI", 10),
-            foreground="gray",
+            text="Advanced: View and edit raw save file data in hexadecimal format\n(Full editing coming soon)",
+            font=("Segoe UI", 12),
+            text_color=("gray40", "gray70"),
         )
         info_text.pack(pady=5)
 
         # Warning
-        warning_frame = ttk.Frame(self.parent, padding=10)
-        warning_frame.pack(fill=tk.X, padx=20, pady=5)
+        warning_frame = ctk.CTkFrame(
+            self.parent, corner_radius=8, fg_color=("#ffe6e6", "#4a2a2a")
+        )
+        warning_frame.pack(fill="x", padx=20, pady=5)
 
-        ttk.Label(
+        ctk.CTkLabel(
             warning_frame,
             text="⚠️  Warning: Direct hex editing can corrupt your save file. Use with caution!",
-            font=("Segoe UI", 10, "bold"),
-            foreground="red",
-        ).pack()
+            font=("Segoe UI", 12, "bold"),
+            text_color=("#cc0000", "#ff8080"),
+        ).pack(padx=10, pady=8)
 
         # Controls
-        control_frame = ttk.Frame(self.parent)
-        control_frame.pack(fill=tk.X, padx=20, pady=10)
+        control_frame = ctk.CTkFrame(self.parent, fg_color="transparent")
+        control_frame.pack(fill="x", padx=20, pady=10)
 
-        ttk.Label(control_frame, text="Offset:", font=("Segoe UI", 10)).pack(
-            side=tk.LEFT, padx=5
+        ctk.CTkLabel(control_frame, text="Offset:", font=("Segoe UI", 12)).pack(
+            side="left", padx=(0, 5)
         )
 
         self.hex_offset_var = tk.StringVar(value="0x0000")
-        offset_entry = ttk.Entry(
+        offset_entry = ctk.CTkEntry(
             control_frame,
             textvariable=self.hex_offset_var,
-            font=("Consolas", 10),
-            width=12,
+            font=("Consolas", 11),
+            width=120,
         )
-        offset_entry.pack(side=tk.LEFT, padx=5)
+        offset_entry.pack(side="left", padx=5)
 
-        ttk.Button(
+        ctk.CTkButton(
             control_frame,
             text="Go to Offset",
             command=self.hex_goto_offset,
-            width=15,
-        ).pack(side=tk.LEFT, padx=5)
+            width=120,
+        ).pack(side="left", padx=5)
 
-        ttk.Button(
+        ctk.CTkButton(
             control_frame,
             text="Refresh",
             command=self.hex_refresh,
-            width=12,
-        ).pack(side=tk.LEFT, padx=5)
-
-        ttk.Button(
-            control_frame,
-            text="Save Changes",
-            command=self.hex_save,
-            width=15,
-        ).pack(side=tk.LEFT, padx=5)
+            width=100,
+        ).pack(side="left", padx=5)
 
         # Hex viewer
-        hex_frame = ttk.LabelFrame(self.parent, text="Hex Data", padding=10)
-        hex_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        hex_frame = ctk.CTkFrame(self.parent, corner_radius=12)
+        hex_frame.pack(fill="both", expand=True, padx=20, pady=10)
 
-        # Create a frame for hex display
-        display_frame = ttk.Frame(hex_frame)
-        display_frame.pack(fill=tk.BOTH, expand=True)
+        ctk.CTkLabel(
+            hex_frame,
+            text="Hex Data",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(anchor="w", padx=12, pady=(12, 6))
 
-        # Hex display
-        hex_text_frame = ttk.Frame(display_frame)
-        hex_text_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # Hex text display (using tk.Text since CTk doesn't have native text widget)
+        hex_inner = ctk.CTkFrame(hex_frame)
+        hex_inner.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
-        hex_scrollbar = ttk.Scrollbar(hex_text_frame)
-        hex_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        scrollbar = ctk.CTkScrollbar(hex_inner)
+        scrollbar.pack(side="right", fill="y")
+
+        appearance = ctk.get_appearance_mode()
+        hex_bg = "#1f1f28" if appearance == "Dark" else "#f5f5f5"
+        hex_fg = "#e5e5f5" if appearance == "Dark" else "#1f1f28"
 
         self.hex_text = tk.Text(
-            hex_text_frame,
+            hex_inner,
             height=20,
             width=60,
-            font=("Consolas", 9),
-            yscrollcommand=hex_scrollbar.set,
-            wrap=tk.NONE,
+            font=("Consolas", 11),
+            yscrollcommand=scrollbar.set,
+            wrap="none",
+            bg=hex_bg,
+            fg=hex_fg,
+            insertbackground=hex_fg,
         )
-        self.hex_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        hex_scrollbar.config(command=self.hex_text.yview)
+        self.hex_text.pack(side="left", fill="both", expand=True)
+        scrollbar.configure(command=self.hex_text.yview)
 
         self.hex_text.insert("1.0", "Load a save file to view hex data")
         self.hex_text.config(state="disabled")
 
         # Info panel
-        info_panel = ttk.LabelFrame(self.parent, text="Save Structure Info", padding=10)
-        info_panel.pack(fill=tk.X, padx=20, pady=5)
+        info_panel = ctk.CTkFrame(self.parent, corner_radius=12)
+        info_panel.pack(fill="x", padx=20, pady=(0, 10))
+
+        ctk.CTkLabel(
+            info_panel,
+            text="Save Structure Info",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(anchor="w", padx=12, pady=(12, 6))
 
         structure_info = """Save File Structure:
 • 0x0000-0x0003: Magic bytes (BND4 or SL2\\x00)
@@ -129,18 +139,18 @@ class HexEditorTab:
   - Each slot: 0x10 checksum + 0x27FFF0 data
 • User data sections contain character stats, inventory, world state"""
 
-        ttk.Label(
+        ctk.CTkLabel(
             info_panel,
             text=structure_info,
-            font=("Consolas", 8),
-            justify=tk.LEFT,
-        ).pack(anchor=tk.W)
+            font=("Consolas", 10),
+            justify="left",
+        ).pack(anchor="w", padx=12, pady=(0, 12))
 
     def hex_goto_offset(self):
-        """Jump to specific offset in hex view"""
+        """Jump to specific offset in hex view."""
         save_file = self.get_save_file()
         if not save_file:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
             return
 
         offset_str = self.hex_offset_var.get().strip()
@@ -153,12 +163,12 @@ class HexEditorTab:
             self.hex_display_at_offset(offset)
 
         except ValueError:
-            messagebox.showerror(
+            CTkMessageBox.showerror(
                 "Invalid Offset", "Please enter a valid hex offset (e.g., 0x1000)"
             )
 
     def hex_display_at_offset(self, offset=0, length=512):
-        """Display hex data at offset"""
+        """Display hex data at offset."""
         save_file = self.get_save_file()
         if not save_file or not hasattr(save_file, "_raw_data"):
             return
@@ -167,7 +177,7 @@ class HexEditorTab:
         max_offset = len(raw_data)
 
         if offset >= max_offset:
-            messagebox.showerror(
+            CTkMessageBox.showerror(
                 "Invalid Offset", f"Offset {offset} exceeds file size {max_offset}"
             )
             return
@@ -200,18 +210,10 @@ class HexEditorTab:
         self.hex_text.config(state="disabled")
 
     def hex_refresh(self):
-        """Refresh hex view"""
+        """Refresh hex view."""
         save_file = self.get_save_file()
         if not save_file:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
             return
 
         self.hex_display_at_offset(0)
-
-    def hex_save(self):
-        """Save hex changes"""
-        messagebox.showinfo(
-            "Not Implemented",
-            "Direct hex editing is not yet implemented.\n\n"
-            "This is a read-only hex viewer for now.",
-        )

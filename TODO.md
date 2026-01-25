@@ -1,16 +1,18 @@
-- change eac warning
+- pic of character slots + explanation done
+
+- change eac warning done
 
 - change linux notice on seein gthat the save file is not in a default location
 
-- add better refresh logic
+- add better refresh logic done
 
-- add notice for users to be logged in via github
+- add notice for users to be logged in via github done
 
-- add blocklist and trusted users to skip approval from me with github user account ids
+- add blocklist and trusted users to skip approval from me with github user account ids done
 
-- make settings fully work
+- make settings fully work done
 
-- dark mode !
+- dark mode done
 
 - no backup creation when doing custom tp/normal tp done
 

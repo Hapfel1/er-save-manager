@@ -12,6 +12,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from er_save_manager.parser import Save
 
+from er_save_manager.ui.settings import get_settings
+
 
 @dataclass
 class BackupMetadata:
@@ -140,7 +142,7 @@ class BackupManager:
         description: str = "",
         operation: str = "",
         save: Save | None = None,
-    ) -> Path:
+    ) -> tuple[Path, list[BackupMetadata]]:
         """
         Create a backup of the current save file.
 
@@ -150,7 +152,7 @@ class BackupManager:
             save: Optional Save object to extract character info from
 
         Returns:
-            Path to the created backup file
+            Tuple of (Path to created backup, List of BackupMetadata that will be pruned)
         """
         self.backup_folder.mkdir(parents=True, exist_ok=True)
 
@@ -179,7 +181,51 @@ class BackupManager:
         self.history.backups.insert(0, metadata)
         self._save_history()
 
-        return backup_path
+        # Prune old backups if max_backups setting is configured
+        pruned_backups = []
+        try:
+            settings = get_settings()
+            max_backups = settings.get("max_backups", 50)
+            if max_backups and max_backups > 0:
+                pruned_backups = self.get_backups_to_prune(keep_count=max_backups)
+                if pruned_backups:
+                    self.prune_backups(keep_count=max_backups)
+
+                    # Show warning if setting is enabled
+                    if settings.get("show_backup_pruning_warning", True):
+                        self._show_pruning_warning(max_backups, pruned_backups)
+        except Exception:
+            # Silently fail if settings can't be accessed
+            pass
+
+        return backup_path, pruned_backups
+
+    def _show_pruning_warning(
+        self, max_backups: int, pruned_backups: list[BackupMetadata]
+    ):
+        """Show warning about pruned backups using messagebox."""
+        try:
+            from tkinter import messagebox
+
+            # Format the list of deleted backups
+            deleted_list = "\n".join(
+                f"  • {backup.filename}" for backup in pruned_backups
+            )
+
+            message = (
+                f"Backup limit of {max_backups} reached.\n\n"
+                f"The following old backups were permanently deleted:\n\n{deleted_list}\n\n"
+                f"You can disable this warning in Settings > Backups > "
+                f"'Show warning when backups are automatically deleted'"
+            )
+
+            messagebox.showwarning(
+                "Backups Pruned",
+                message,
+            )
+        except Exception:
+            # Silently fail if messagebox can't be shown (headless mode, etc)
+            pass
 
     def create_pre_write_backup(self, save: Save, operation: str) -> Path:
         """
@@ -274,6 +320,21 @@ class BackupManager:
         ]
         self._save_history()
         return True
+
+    def get_backups_to_prune(self, keep_count: int = 10) -> list[BackupMetadata]:
+        """
+        Get list of backups that would be deleted by pruning.
+
+        Args:
+            keep_count: Number of backups to keep
+
+        Returns:
+            List of BackupMetadata that would be deleted
+        """
+        if len(self.history.backups) <= keep_count:
+            return []
+
+        return self.history.backups[keep_count:]
 
     def prune_backups(self, keep_count: int = 10) -> int:
         """
