@@ -1,11 +1,15 @@
 """
-Backup Manager Tab
+Backup Manager Tab (customtkinter version)
 Central hub for managing save file backups
 """
 
 import tkinter as tk
 from pathlib import Path
-from tkinter import messagebox, simpledialog, ttk
+
+import customtkinter as ctk
+
+from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.utils import bind_mousewheel
 
 
 class BackupManagerTab:
@@ -32,48 +36,63 @@ class BackupManagerTab:
 
     def setup_ui(self):
         """Setup the backup manager tab UI"""
-        title_frame = ttk.Frame(self.parent)
+        title_frame = ctk.CTkFrame(self.parent, fg_color="transparent")
         title_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Label(
+        ctk.CTkLabel(
             title_frame,
             text="Backup Manager",
             font=("Segoe UI", 16, "bold"),
         ).pack()
 
-        ttk.Label(
+        ctk.CTkLabel(
             title_frame,
             text="All save modifications automatically create timestamped backups with operation details",
-            font=("Segoe UI", 9),
-            foreground="gray",
+            font=("Segoe UI", 11),
+            text_color=("gray40", "gray70"),
         ).pack()
 
         # Main button
-        ttk.Button(
+        ctk.CTkButton(
             self.parent,
             text="Open Backup Manager Window",
             command=self.show_backup_manager,
-            width=35,
         ).pack(pady=20)
 
         # Quick stats frame
-        stats_frame = ttk.LabelFrame(self.parent, text="Quick Stats", padding=15)
+        stats_frame = ctk.CTkFrame(self.parent)
         stats_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+        stats_label_title = ctk.CTkLabel(
+            stats_frame,
+            text="Quick Stats",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("gray70", "gray50"),
+        )
+        stats_label_title.pack(anchor=tk.W, padx=15, pady=(10, 5))
 
         self.backup_stats_var = tk.StringVar(
             value="Load a save file to view backup statistics"
         )
-        stats_label = ttk.Label(
+        stats_label = ctk.CTkLabel(
             stats_frame,
             textvariable=self.backup_stats_var,
             font=("Consolas", 10),
             justify=tk.LEFT,
         )
-        stats_label.pack(anchor=tk.W)
+        stats_label.pack(anchor=tk.W, padx=15, pady=10)
 
         # Info section
-        info_frame = ttk.LabelFrame(self.parent, text="Backup Information", padding=15)
+        info_frame = ctk.CTkFrame(self.parent)
         info_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        info_label_title = ctk.CTkLabel(
+            info_frame,
+            text="Backup Information",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("gray70", "gray50"),
+        )
+        info_label_title.pack(anchor=tk.W, padx=15, pady=(10, 5))
 
         info_text = """Automatic Backups:
 • Fix Corruption - Before fixing any character issues
@@ -88,12 +107,12 @@ Backup Format:
 • Location: [save_name].sl2.backups/
 • Metadata: Character info, operation type, changes made"""
 
-        ttk.Label(
+        ctk.CTkLabel(
             info_frame,
             text=info_text,
-            font=("Segoe UI", 9),
+            font=("Segoe UI", 11),
             justify=tk.LEFT,
-        ).pack(anchor=tk.W)
+        ).pack(anchor=tk.W, padx=15, pady=10)
 
     def update_backup_stats(self):
         """Update backup statistics display"""
@@ -129,7 +148,7 @@ Backup Format:
         save_path = self.get_save_path()
 
         if not save_file or not save_path:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
             return
 
         try:
@@ -137,54 +156,98 @@ Backup Format:
 
             manager = BackupManager(Path(save_path))
 
-            dialog = tk.Toplevel(self.parent)
+            dialog = ctk.CTkToplevel(self.parent)
             dialog.title("Backup Manager")
             dialog.geometry("900x600")
             dialog.grab_set()
 
             dialog.update_idletasks()
-            x = (dialog.winfo_screenwidth() // 2) - (dialog.winfo_width() // 2)
-            y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
+            x = (dialog.winfo_screenwidth() // 2) - 450
+            y = (dialog.winfo_screenheight() // 2) - 300
             dialog.geometry(f"900x600+{x}+{y}")
 
-            ttk.Label(
+            ctk.CTkLabel(
                 dialog,
                 text="Backup Manager",
                 font=("Segoe UI", 14, "bold"),
-                padding=10,
-            ).pack()
+            ).pack(pady=10)
 
-            list_frame = ttk.LabelFrame(dialog, text="Backups", padding=10)
+            list_frame = ctk.CTkFrame(dialog)
             list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-            columns = ("timestamp", "operation", "description", "size")
-            tree = ttk.Treeview(
-                list_frame, columns=columns, show="tree headings", height=15
+            list_label = ctk.CTkLabel(
+                list_frame,
+                text="Backups",
+                font=("Segoe UI", 12, "bold"),
+                text_color=("gray70", "gray50"),
             )
+            list_label.pack(anchor=tk.W, padx=10, pady=(0, 5))
 
-            tree.heading("#0", text="Filename")
-            tree.heading("timestamp", text="Timestamp")
-            tree.heading("operation", text="Operation")
-            tree.heading("description", text="Description")
-            tree.heading("size", text="Size")
+            # Sorting controls
+            sort_var = tk.StringVar(value="Newest")
+            sort_options = ["Newest", "Oldest", "Operation", "Description", "Size"]
 
-            tree.column("#0", width=200)
-            tree.column("timestamp", width=150)
-            tree.column("operation", width=150)
-            tree.column("description", width=250)
-            tree.column("size", width=80)
+            sort_frame = ctk.CTkFrame(list_frame, fg_color="transparent")
+            sort_frame.pack(fill=tk.X, padx=10, pady=(0, 6))
 
-            scrollbar = ttk.Scrollbar(
-                list_frame, orient=tk.VERTICAL, command=tree.yview
+            ctk.CTkLabel(
+                sort_frame,
+                text="Sort by:",
+                font=("Segoe UI", 10, "bold"),
+            ).pack(side=tk.LEFT, padx=(0, 6))
+
+            sort_combo = ctk.CTkComboBox(
+                sort_frame,
+                values=sort_options,
+                variable=sort_var,
+                state="readonly",
+                width=140,
             )
-            tree.configure(yscrollcommand=scrollbar.set)
+            sort_combo.pack(side=tk.LEFT)
 
-            tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            scrollable_frame = ctk.CTkScrollableFrame(list_frame)
+            scrollable_frame.pack(fill=tk.BOTH, expand=True)
+            bind_mousewheel(scrollable_frame)
+
+            backup_items = {}
+
+            def sort_backups(backups):
+                selection = sort_var.get()
+                if selection == "Oldest":
+                    return sorted(backups, key=lambda b: b.timestamp)
+                if selection == "Operation":
+                    return sorted(
+                        backups,
+                        key=lambda b: (b.operation or "", b.timestamp),
+                        reverse=False,
+                    )
+                if selection == "Description":
+                    return sorted(
+                        backups,
+                        key=lambda b: (b.description or "", b.timestamp),
+                        reverse=False,
+                    )
+                if selection == "Size":
+                    return sorted(backups, key=lambda b: b.file_size, reverse=True)
+                # Default "Newest"
+                return sorted(backups, key=lambda b: b.timestamp, reverse=True)
 
             def refresh_list():
-                tree.delete(*tree.get_children())
-                backups = manager.list_backups()
+                for widget in scrollable_frame.winfo_children():
+                    widget.destroy()
+                backup_items.clear()
+
+                backups = sort_backups(manager.list_backups())
+
+                if not backups:
+                    no_backups_label = ctk.CTkLabel(
+                        scrollable_frame,
+                        text="No backups found",
+                        text_color=("gray70", "gray50"),
+                    )
+                    no_backups_label.pack(pady=20)
+                    return
+
                 for backup in backups:
                     timestamp = (
                         backup.timestamp.split("T")[0]
@@ -192,109 +255,188 @@ Backup Format:
                         + backup.timestamp.split("T")[1][:8]
                     )
                     size_mb = f"{backup.file_size / (1024 * 1024):.1f} MB"
-                    tree.insert(
-                        "",
-                        tk.END,
-                        text=backup.filename,
-                        values=(
-                            timestamp,
-                            backup.operation,
-                            backup.description,
-                            size_mb,
-                        ),
+
+                    item_frame = ctk.CTkFrame(
+                        scrollable_frame,
+                        fg_color=("gray86", "gray25"),
+                        corner_radius=6,
                     )
+                    item_frame.pack(fill=tk.X, padx=5, pady=3)
+
+                    content_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
+                    content_frame.pack(fill=tk.X, padx=10, pady=8)
+
+                    filename_label = ctk.CTkLabel(
+                        content_frame,
+                        text=backup.filename,
+                        font=("Segoe UI", 10, "bold"),
+                        justify=tk.LEFT,
+                    )
+                    filename_label.pack(anchor=tk.W)
+
+                    info_text = f"Timestamp: {timestamp} | Operation: {backup.operation} | Description: {backup.description} | Size: {size_mb}"
+                    info_label = ctk.CTkLabel(
+                        content_frame,
+                        text=info_text,
+                        font=("Segoe UI", 11),
+                        text_color=("gray40", "gray70"),
+                        justify=tk.LEFT,
+                    )
+                    info_label.pack(anchor=tk.W, pady=(3, 0))
+
+                    backup_items[backup.filename] = {
+                        "frame": item_frame,
+                        "backup": backup,
+                    }
+
+                    item_frame.bind(
+                        "<Button-1>",
+                        lambda e, bf=item_frame: select_backup_item(bf),
+                    )
+                    filename_label.bind(
+                        "<Button-1>",
+                        lambda e, bf=item_frame: select_backup_item(bf),
+                    )
+                    info_label.bind(
+                        "<Button-1>",
+                        lambda e, bf=item_frame: select_backup_item(bf),
+                    )
+
+            selected_backup = [None]
+
+            def select_backup_item(frame):
+                for backup_name, item_data in backup_items.items():
+                    if item_data["frame"] == frame:
+                        item_data["frame"].configure(fg_color=("gray70", "gray30"))
+                        selected_backup[0] = backup_name
+                    else:
+                        item_data["frame"].configure(fg_color=("gray86", "gray25"))
 
             refresh_list()
 
-            button_frame = ttk.Frame(dialog, padding=10)
-            button_frame.pack(fill=tk.X)
+            # Re-sort when selection changes
+            sort_combo.configure(command=lambda _value=None: refresh_list())
+
+            button_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+            button_frame.pack(fill=tk.X, padx=10, pady=10)
 
             def create_backup():
-                desc = simpledialog.askstring(
-                    "Create Backup",
-                    "Enter backup description (optional):",
-                    parent=dialog,
-                )
-                if desc is not None:
+                dialog_window = ctk.CTkToplevel(dialog)
+                dialog_window.title("Create Backup")
+                dialog_window.geometry("400x150")
+                dialog_window.grab_set()
+
+                dialog_window.update_idletasks()
+                x = (dialog_window.winfo_screenwidth() // 2) - 200
+                y = (dialog_window.winfo_screenheight() // 2) - 75
+                dialog_window.geometry(f"400x150+{x}+{y}")
+
+                ctk.CTkLabel(
+                    dialog_window,
+                    text="Enter backup description (optional):",
+                    font=("Segoe UI", 11),
+                ).pack(pady=10)
+
+                entry = ctk.CTkEntry(dialog_window, width=350)
+                entry.pack(pady=5)
+                entry.focus()
+
+                result = {"value": None, "confirmed": False}
+
+                def on_confirm():
+                    result["value"] = entry.get()
+                    result["confirmed"] = True
+                    dialog_window.destroy()
+
+                def on_cancel():
+                    dialog_window.destroy()
+
+                button_subframe = ctk.CTkFrame(dialog_window, fg_color="transparent")
+                button_subframe.pack(pady=10)
+
+                ctk.CTkButton(
+                    button_subframe, text="OK", command=on_confirm, width=150
+                ).pack(side=tk.LEFT, padx=5)
+
+                ctk.CTkButton(
+                    button_subframe, text="Cancel", command=on_cancel, width=150
+                ).pack(side=tk.LEFT, padx=5)
+
+                dialog_window.wait_window()
+
+                if result["confirmed"]:
                     try:
                         manager.create_backup(
-                            description=desc or "manual",
+                            description=result["value"] or "manual",
                             operation="manual_backup",
                             save=save_file,
                         )
                         refresh_list()
                         self.update_backup_stats()
-                        messagebox.showinfo("Success", "Backup created successfully!")
+                        CTkMessageBox.showinfo(
+                            "Success", "Backup created successfully!"
+                        )
                     except Exception as e:
-                        messagebox.showerror(
+                        CTkMessageBox.showerror(
                             "Error", f"Failed to create backup:\n{str(e)}"
                         )
 
             def restore_backup():
-                selection = tree.selection()
-                if not selection:
-                    messagebox.showwarning(
+                if not selected_backup[0]:
+                    CTkMessageBox.showwarning(
                         "No Selection", "Please select a backup to restore!"
                     )
                     return
 
-                item = tree.item(selection[0])
-                backup_name = item["text"]
-
-                if not messagebox.askyesno(
+                if not CTkMessageBox.askyesno(
                     "Confirm Restore",
-                    f"Restore backup '{backup_name}'?\n\nCurrent save will be backed up first.",
+                    f"Restore backup '{selected_backup[0]}'?\n\nCurrent save will be backed up first.",
                 ):
                     return
 
                 try:
-                    manager.restore_backup(backup_name)
+                    manager.restore_backup(selected_backup[0])
                     if self.reload_save:
                         self.reload_save()
                     refresh_list()
                     self.update_backup_stats()
-                    messagebox.showinfo("Success", "Backup restored successfully!")
+                    CTkMessageBox.showinfo("Success", "Backup restored successfully!")
                 except Exception as e:
-                    messagebox.showerror(
+                    CTkMessageBox.showerror(
                         "Error", f"Failed to restore backup:\n{str(e)}"
                     )
 
             def delete_backup():
-                selection = tree.selection()
-                if not selection:
-                    messagebox.showwarning(
+                if not selected_backup[0]:
+                    CTkMessageBox.showwarning(
                         "No Selection", "Please select a backup to delete!"
                     )
                     return
 
-                item = tree.item(selection[0])
-                backup_name = item["text"]
-
-                if not messagebox.askyesno(
+                if not CTkMessageBox.askyesno(
                     "Confirm Delete",
-                    f"Delete backup '{backup_name}'?\n\nThis cannot be undone.",
+                    f"Delete backup '{selected_backup[0]}'?\n\nThis cannot be undone.",
                 ):
                     return
 
                 try:
-                    manager.delete_backup(backup_name)
+                    manager.delete_backup(selected_backup[0])
                     refresh_list()
                     self.update_backup_stats()
-                    messagebox.showinfo("Success", "Backup deleted successfully!")
+                    CTkMessageBox.showinfo("Success", "Backup deleted successfully!")
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to delete backup:\n{str(e)}")
+                    CTkMessageBox.showerror(
+                        "Error", f"Failed to delete backup:\n{str(e)}"
+                    )
 
             def view_details():
-                selection = tree.selection()
-                if not selection:
-                    messagebox.showwarning(
+                if not selected_backup[0]:
+                    CTkMessageBox.showwarning(
                         "No Selection", "Please select a backup to view!"
                     )
                     return
 
-                item = tree.item(selection[0])
-                backup_name = item["text"]
-                info = manager.get_backup_info(backup_name)
+                info = manager.get_backup_info(selected_backup[0])
 
                 if info:
                     details = []
@@ -311,52 +453,54 @@ Backup Format:
                                 f"  Slot {char['slot']}: {char['name']} (Lv.{char['level']})"
                             )
 
-                    messagebox.showinfo("Backup Details", "\n".join(details))
+                    CTkMessageBox.showinfo("Backup Details", "\n".join(details))
 
-            ttk.Button(
+            ctk.CTkButton(
                 button_frame,
                 text="Create Backup",
                 command=create_backup,
-                width=15,
+                width=120,
             ).pack(side=tk.LEFT, padx=5)
 
-            ttk.Button(
+            ctk.CTkButton(
                 button_frame,
                 text="Restore",
                 command=restore_backup,
-                width=15,
+                width=120,
             ).pack(side=tk.LEFT, padx=5)
 
-            ttk.Button(
+            ctk.CTkButton(
                 button_frame,
                 text="View Details",
                 command=view_details,
-                width=15,
+                width=120,
             ).pack(side=tk.LEFT, padx=5)
 
-            ttk.Button(
+            ctk.CTkButton(
                 button_frame,
                 text="Delete",
                 command=delete_backup,
-                width=15,
+                width=120,
             ).pack(side=tk.LEFT, padx=5)
 
-            ttk.Button(
+            ctk.CTkButton(
                 button_frame,
                 text="Refresh",
                 command=refresh_list,
-                width=15,
+                width=120,
             ).pack(side=tk.LEFT, padx=5)
 
-            ttk.Button(
+            ctk.CTkButton(
                 button_frame,
                 text="Close",
                 command=dialog.destroy,
-                width=15,
+                width=120,
             ).pack(side=tk.RIGHT, padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open backup manager:\n{str(e)}")
+            CTkMessageBox.showerror(
+                "Error", f"Failed to open backup manager:\n{str(e)}"
+            )
             import traceback
 
             traceback.print_exc()

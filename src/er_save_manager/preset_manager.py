@@ -93,10 +93,15 @@ class PresetManager:
             with urllib.request.urlopen(screenshot_url, timeout=10) as response:
                 screenshot_path.write_bytes(response.read())
 
-            # Cache preset data
+            # Cache preset data with metadata
             preset_path = self.cache_dir / f"{preset_id}.json"
+            metadata = {
+                "data": preset_data,
+                "hash": self._compute_data_hash(preset_data),
+                "preset_info_hash": self._compute_data_hash(preset_info),
+            }
             with open(preset_path, "w", encoding="utf-8") as f:
-                json.dump(preset_data, f)
+                json.dump(metadata, f)
 
             preset_data["screenshot_path"] = str(screenshot_path)
             return preset_data
@@ -107,25 +112,45 @@ class PresetManager:
 
     def get_cached_preset(self, preset_id: str) -> dict | None:
         """
-        Get preset from local cache.
+        Get preset from local cache with validation.
 
         Args:
             preset_id: Preset ID
 
         Returns:
-            Preset data or None if not cached
+            Preset data or None if not cached or invalid
         """
         preset_path = self.cache_dir / f"{preset_id}.json"
         screenshot_path = self.cache_dir / f"{preset_id}.png"
 
         if preset_path.exists():
-            with open(preset_path, encoding="utf-8") as f:
-                data = json.load(f)
+            try:
+                with open(preset_path, encoding="utf-8") as f:
+                    cached = json.load(f)
 
-            if screenshot_path.exists():
-                data["screenshot_path"] = str(screenshot_path)
+                # Handle both old format (direct data) and new format (with metadata)
+                if isinstance(cached, dict):
+                    # New format with metadata
+                    if "data" in cached and "hash" in cached:
+                        data = cached["data"]
+                        stored_hash = cached["hash"]
+                        # Validate hash to detect corruption
+                        if self._compute_data_hash(data) != stored_hash:
+                            print(
+                                f"Cache validation failed for {preset_id}: hash mismatch"
+                            )
+                            return None
+                    else:
+                        # Old format, use as-is
+                        data = cached
 
-            return data
+                    if screenshot_path.exists():
+                        data["screenshot_path"] = str(screenshot_path)
+
+                    return data
+            except Exception as e:
+                print(f"Error reading cached preset {preset_id}: {e}")
+                return None
 
         return None
 
@@ -182,6 +207,45 @@ class PresetManager:
         except Exception as e:
             print(f"Failed to download image: {e}")
             return None
+
+    def _compute_data_hash(self, data: dict) -> str:
+        """Compute hash of preset data for validation."""
+        import hashlib
+
+        # Create a stable JSON string for hashing
+        stable_json = json.dumps(data, sort_keys=True, separators=(",", ":"))
+        return hashlib.md5(stable_json.encode()).hexdigest()
+
+    def validate_preset_in_index(
+        self, preset_id: str, preset_info: dict
+    ) -> tuple[bool, str]:
+        """
+        Validate cached preset against index metadata.
+
+        Returns:
+            (is_valid: bool, reason: str)
+        """
+        cached = self.get_cached_preset(preset_id)
+        if not cached:
+            return False, "Not cached"
+
+        preset_path = self.cache_dir / f"{preset_id}.json"
+        try:
+            with open(preset_path, encoding="utf-8") as f:
+                metadata = json.load(f)
+
+            # Check if it's new format with metadata
+            if "preset_info_hash" in metadata:
+                stored_info_hash = metadata["preset_info_hash"]
+                current_info_hash = self._compute_data_hash(preset_info)
+
+                if stored_info_hash != current_info_hash:
+                    return False, "Preset metadata changed in index"
+
+            return True, "Valid"
+        except Exception as e:
+            print(f"Error validating preset {preset_id}: {e}")
+            return False, f"Validation error: {e}"
 
     def clear_cache(self):
         """Clear all cached presets."""

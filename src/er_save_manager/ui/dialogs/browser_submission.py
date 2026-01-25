@@ -25,7 +25,7 @@ def submit_preset_via_browser(
     preview_image_path: str | None = None,
     repo_owner: str = "Hapfel1",
     repo_name: str = "er-character-presets",
-) -> bool:
+) -> tuple[bool, str | None]:
     """
     Submit preset by opening GitHub with pre-filled data and packaged images.
 
@@ -45,7 +45,7 @@ def submit_preset_via_browser(
         repo_name: Repository name
 
     Returns:
-        True if browser opened successfully
+        (success: bool, submission_url: str | None) - Returns the submission URL as fallback
     """
     try:
         # Validate images - both face AND body required
@@ -55,7 +55,7 @@ def submit_preset_via_browser(
                 "Both face AND body screenshots are required!\n\n"
                 "Please select both images before submitting.",
             )
-            return False
+            return False, None
 
         # Create ZIP with images
         zip_path = _create_image_zip(
@@ -106,14 +106,14 @@ def submit_preset_via_browser(
         # Show success dialog with ZIP info
         show_submission_success_dialog(preset_name, zip_path)
 
-        return True
+        return True, url
 
     except Exception as e:
         print(f"Failed to prepare submission: {e}")
         import traceback
 
         traceback.print_exc()
-        return False
+        return False, None
 
 
 def _create_image_zip(
@@ -294,13 +294,13 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
     """Show success message with ZIP file location and open file explorer."""
     import platform
     import subprocess
-    import tkinter as tk
-    from tkinter import ttk
+
+    import customtkinter as ctk
 
     # Create custom dialog
-    dialog = tk.Toplevel()
+    dialog = ctk.CTkToplevel()
     dialog.title("Submission Ready")
-    dialog.geometry("700x500")
+    dialog.geometry("900x700")
     dialog.resizable(False, False)
 
     # Center on screen
@@ -315,46 +315,73 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
     dialog.attributes("-topmost", True)
     dialog.focus_force()
 
-    main_frame = ttk.Frame(dialog, padding=20)
-    main_frame.pack(fill=tk.BOTH, expand=True)
+    main_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+    main_frame.pack(fill=ctk.BOTH, expand=True, padx=30, pady=30)
 
     # Title
-    title = ttk.Label(
+    title = ctk.CTkLabel(
         main_frame,
         text="✅ Preset Ready to Submit!",
-        font=("Segoe UI", 14, "bold"),
+        font=("Segoe UI", 20, "bold"),
     )
-    title.pack(pady=(0, 15))
+    title.pack(pady=(0, 20))
 
     # ZIP info
     zip_filename = Path(zip_path).name
 
-    info = ttk.Label(
+    info = ctk.CTkLabel(
         main_frame,
-        text=f"📦 Your images have been packaged:\n\n{zip_filename}",
-        font=("Segoe UI", 10),
-        justify=tk.CENTER,
+        text="📦 Your images have been packaged:",
+        font=("Segoe UI", 14),
+        justify=ctk.CENTER,
     )
-    info.pack(pady=(0, 20))
+    info.pack(pady=(0, 8))
 
-    # Instructions
-    instructions = ttk.Label(
+    zip_label = ctk.CTkLabel(
         main_frame,
-        text="Your browser has opened to GitHub.\n\n"
-        "Next steps:\n\n"
-        "1. Click 'Open Folder' below\n"
-        "2. Drag the ZIP file into GitHub's text box\n"
-        "3. Click the green 'Create new issue' button\n"
-        "4. Wait for maintainer to review and approve\n"
-        "5. You'll be notified when it's added!",
-        justify=tk.LEFT,
-        font=("Segoe UI", 10),
+        text=zip_filename,
+        font=("Segoe UI", 13, "bold"),
+        text_color=("#2563eb", "#60a5fa"),
     )
-    instructions.pack(pady=(0, 25))
+    zip_label.pack(pady=(0, 25))
+
+    # Info box
+    info_box = ctk.CTkFrame(
+        main_frame, fg_color=("#f0f4f8", "#1e2839"), corner_radius=10
+    )
+    info_box.pack(fill=ctk.BOTH, expand=True, padx=0, pady=(0, 20))
+
+    ctk.CTkLabel(
+        info_box,
+        text="Your browser has opened to GitHub.",
+        font=("Segoe UI", 13),
+        justify=ctk.LEFT,
+    ).pack(anchor=ctk.W, padx=20, pady=(15, 12))
+
+    ctk.CTkLabel(
+        info_box,
+        text="Next steps:",
+        font=("Segoe UI", 12, "bold"),
+        justify=ctk.LEFT,
+    ).pack(anchor=ctk.W, padx=20, pady=(0, 10))
+
+    instructions_text = """1. Click 'Open Folder' below
+2. Drag the ZIP file into GitHub's text box
+3. Click the green 'Create new issue' button
+4. Wait for maintainer to review and approve
+5. You'll be notified when it's added!"""
+
+    ctk.CTkLabel(
+        info_box,
+        text=instructions_text,
+        justify=ctk.LEFT,
+        font=("Segoe UI", 12),
+        text_color=("#4b5563", "#d0d8e0"),
+    ).pack(anchor=ctk.W, padx=20, pady=(0, 15))
 
     # Buttons frame
-    button_frame = ttk.Frame(main_frame)
-    button_frame.pack(pady=20)
+    button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+    button_frame.pack(fill=ctk.X, pady=(0, 0))
 
     def open_folder():
         """Open file explorer to ZIP location and select file."""
@@ -374,36 +401,43 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
                 subprocess.run(["xdg-open", zip_dir])
         except Exception as e:
             print(f"Failed to open file explorer: {e}")
-            # Show error
-            messagebox.showerror(
-                "Error", f"Could not open file explorer.\n\nZIP location:\n{zip_path}"
-            )
 
     # Large "Open Folder" button
-    open_btn = ttk.Button(
+    open_btn = ctk.CTkButton(
         button_frame,
         text="📁 Open Folder",
         command=open_folder,
-        width=25,
+        width=200,
+        height=40,
+        font=("Segoe UI", 13),
     )
-    open_btn.pack(side=tk.LEFT, padx=10)
+    open_btn.pack(side=ctk.LEFT, padx=(0, 12))
 
     # Close button
-    close_btn = ttk.Button(
+    close_btn = ctk.CTkButton(
         button_frame,
         text="Close",
         command=dialog.destroy,
-        width=20,
+        width=150,
+        height=40,
+        font=("Segoe UI", 13),
     )
-    close_btn.pack(side=tk.LEFT, padx=10)
+    close_btn.pack(side=ctk.LEFT)
 
-    # Show path at bottom (for user reference only - NOT included in GitHub issue)
-    path_frame = ttk.LabelFrame(
-        main_frame, text="ZIP Location (for your reference)", padding=10
+    # Show path at bottom (for user reference)
+    path_label = ctk.CTkLabel(
+        main_frame,
+        text="ZIP Location (for your reference):",
+        font=("Segoe UI", 12, "bold"),
     )
-    path_frame.pack(pady=(20, 0), fill=tk.X)
+    path_label.pack(anchor=ctk.W, pady=(20, 8))
 
-    path_text = tk.Text(path_frame, height=2, wrap=tk.WORD, font=("Consolas", 9))
-    path_text.pack(fill=tk.X)
-    path_text.insert("1.0", str(zip_path))
-    path_text.configure(state=tk.DISABLED, bg="#f0f0f0")
+    path_display = ctk.CTkLabel(
+        main_frame,
+        text=str(zip_path),
+        font=("Segoe UI", 12),
+        text_color=("#666666", "#999999"),
+        wraplength=800,
+        justify=ctk.LEFT,
+    )
+    path_display.pack(anchor=ctk.W)

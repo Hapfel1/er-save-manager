@@ -19,6 +19,8 @@ classifiers = [
 ]
 dependencies = [
     "pillow>=12.1.0",
+    "customtkinter>=5.2.2",
+    "customtkinterthemes>=1.0.0",
 ]
 
 [project.scripts]

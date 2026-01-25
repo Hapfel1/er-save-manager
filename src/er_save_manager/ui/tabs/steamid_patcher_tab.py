@@ -5,7 +5,11 @@ Patches SteamID in save files for account transfers
 
 import tkinter as tk
 from pathlib import Path
-from tkinter import messagebox, ttk
+
+import customtkinter as ctk
+
+from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.utils import bind_mousewheel
 
 
 class SteamIDPatcherTab:
@@ -34,217 +38,219 @@ class SteamIDPatcherTab:
 
     def setup_ui(self):
         """Setup the SteamID patcher tab UI"""
-        ttk.Label(
-            self.parent,
-            text="SteamID Patcher",
-            font=("Segoe UI", 16, "bold"),
-        ).pack(pady=10)
+        # Main scrollable container
+        main_frame = ctk.CTkScrollableFrame(self.parent, corner_radius=0)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        bind_mousewheel(main_frame)
 
-        info_text = ttk.Label(
-            self.parent,
+        # Header
+        ctk.CTkLabel(
+            main_frame,
+            text="SteamID Patcher",
+            font=("Segoe UI", 18, "bold"),
+        ).pack(pady=(15, 5), padx=15, anchor="w")
+
+        ctk.CTkLabel(
+            main_frame,
             text="Transfer save files between Steam accounts by patching SteamID",
-            font=("Segoe UI", 10),
-            foreground="gray",
-        )
-        info_text.pack(pady=5)
+            font=("Segoe UI", 11),
+            text_color=("#808080", "#a0a0a0"),
+        ).pack(pady=(0, 15), padx=15, anchor="w")
 
         # Current SteamID display
-        current_frame = ttk.LabelFrame(
-            self.parent, text="Current Save File", padding=15
-        )
-        current_frame.pack(fill=tk.X, padx=20, pady=10)
+        current_frame = ctk.CTkFrame(main_frame, corner_radius=10)
+        current_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        ctk.CTkLabel(
+            current_frame,
+            text="Current Save File",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(pady=(12, 6), padx=12, anchor="w")
 
         self.current_steamid_var = tk.StringVar(value="No save file loaded")
-        ttk.Label(
+        ctk.CTkLabel(
             current_frame,
             textvariable=self.current_steamid_var,
-            font=("Consolas", 10),
-        ).pack(anchor=tk.W)
+            font=("Consolas", 11),
+            text_color=("#2a2a2a", "#e5e5f5"),
+        ).pack(pady=(0, 12), padx=12, anchor="w")
 
         # Patch section
-        patch_frame = ttk.LabelFrame(self.parent, text="Patch SteamID", padding=15)
-        patch_frame.pack(fill=tk.X, padx=20, pady=10)
+        patch_frame = ctk.CTkFrame(main_frame, corner_radius=10)
+        patch_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
-        ttk.Label(
+        ctk.CTkLabel(
+            patch_frame,
+            text="Patch SteamID",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(pady=(12, 8), padx=12, anchor="w")
+
+        # Manual Entry Section
+        ctk.CTkLabel(
             patch_frame,
             text="Enter new SteamID (17-digit number):",
-            font=("Segoe UI", 10),
-        ).pack(anchor=tk.W, pady=5)
+            font=("Segoe UI", 12),
+            text_color=("gray40", "gray70"),
+        ).pack(pady=(0, 6), padx=12, anchor="w")
 
-        steamid_entry_frame = ttk.Frame(patch_frame)
-        steamid_entry_frame.pack(fill=tk.X, pady=5)
+        steamid_entry_frame = ctk.CTkFrame(patch_frame, fg_color="transparent")
+        steamid_entry_frame.pack(fill=tk.X, pady=(0, 10), padx=12)
 
-        self.new_steamid_var = tk.StringVar()
-        steamid_entry = ttk.Entry(
+        self.new_steamid_var = tk.StringVar(value="")
+        steamid_entry = ctk.CTkEntry(
             steamid_entry_frame,
             textvariable=self.new_steamid_var,
             font=("Consolas", 11),
-            width=20,
+            width=180,
+            placeholder_text="76561198012345678",
         )
-        steamid_entry.pack(side=tk.LEFT, padx=(0, 10))
+        steamid_entry.pack(side=tk.LEFT, padx=(0, 8))
 
-        ttk.Button(
+        ctk.CTkButton(
             steamid_entry_frame,
             text="Patch SteamID",
             command=self.patch_steamid,
-            width=15,
+            width=120,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+
+        ctk.CTkButton(
+            steamid_entry_frame,
+            text="Auto-Detect",
+            command=self.auto_detect_steamid,
+            width=110,
         ).pack(side=tk.LEFT)
 
-        ttk.Button(
-            steamid_entry_frame,
-            text="Auto-Detect from System",
-            command=self.auto_detect_steamid,
-            width=25,
-        ).pack(side=tk.LEFT, padx=5)
-
         # Steam Profile URL section
-        ttk.Label(
+        ctk.CTkLabel(
             patch_frame,
             text="Or paste Steam profile URL:",
-            font=("Segoe UI", 10),
-        ).pack(anchor=tk.W, pady=(15, 5))
+            font=("Segoe UI", 12),
+            text_color=("gray40", "gray70"),
+        ).pack(pady=(12, 6), padx=12, anchor="w")
 
-        url_entry_frame = ttk.Frame(patch_frame)
-        url_entry_frame.pack(fill=tk.X, pady=5)
+        url_entry_frame = ctk.CTkFrame(patch_frame, fg_color="transparent")
+        url_entry_frame.pack(fill=tk.X, pady=(0, 12), padx=12)
 
-        self.steam_url_var = tk.StringVar()
-        url_entry = ttk.Entry(
+        self.steam_url_var = tk.StringVar(value="")
+        url_entry = ctk.CTkEntry(
             url_entry_frame,
             textvariable=self.steam_url_var,
             font=("Consolas", 10),
-            width=50,
+            placeholder_text="https://steamcommunity.com/profiles/...",
         )
-        url_entry.pack(side=tk.LEFT, padx=(0, 10))
+        url_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
 
-        ttk.Button(
+        ctk.CTkButton(
             url_entry_frame,
             text="Parse URL",
             command=self.parse_steam_url,
-            width=12,
+            width=100,
         ).pack(side=tk.LEFT)
 
-        # Help button instead of large info section
-        help_button_frame = ttk.Frame(patch_frame)
-        help_button_frame.pack(fill=tk.X, pady=(15, 0))
-
-        ttk.Button(
-            help_button_frame,
+        # Help button
+        ctk.CTkButton(
+            patch_frame,
             text="❓ How to Use / Help",
             command=self._show_help_dialog,
-            width=20,
-        ).pack(anchor=tk.W)
+            text_color=("#2a5f3f", "#a8d5ba"),
+            fg_color=("#d0f0e5", "#1a3a2a"),
+            width=140,
+        ).pack(pady=(0, 12), padx=12, anchor="w")
 
     def _show_help_dialog(self):
         """Show comprehensive help dialog"""
-        dialog = tk.Toplevel(self.parent)
+        dialog = ctk.CTkToplevel(self.parent)
         dialog.title("SteamID Patcher - Help")
-        dialog.geometry("600x500")
-        dialog.transient(self.parent)
+        dialog.geometry("720x680")
+        dialog.resizable(True, True)
+        dialog.grab_set()
 
-        # Title
-        ttk.Label(
-            dialog,
+        header = ctk.CTkFrame(dialog, corner_radius=10)
+        header.pack(fill=tk.X, padx=14, pady=(14, 8))
+        ctk.CTkLabel(
+            header,
             text="SteamID Patcher - Complete Guide",
-            font=("Segoe UI", 14, "bold"),
-            padding=10,
-        ).pack()
+            font=("Segoe UI", 16, "bold"),
+        ).pack(anchor="w", pady=(8, 2), padx=10)
+        ctk.CTkLabel(
+            header,
+            text="Patch SteamIDs safely when moving saves between Steam accounts.",
+            font=("Segoe UI", 12),
+            text_color=("gray40", "gray70"),
+        ).pack(anchor="w", padx=10, pady=(0, 8))
 
-        # Scrollable text
-        text_frame = ttk.Frame(dialog)
-        text_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        body = ctk.CTkScrollableFrame(dialog, corner_radius=10)
+        body.pack(fill=tk.BOTH, expand=True, padx=14, pady=(0, 12))
+        bind_mousewheel(body)
 
-        scrollbar = ttk.Scrollbar(text_frame)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        def add_section(title: str, text: str):
+            section = ctk.CTkFrame(body, fg_color=("gray90", "gray18"), corner_radius=8)
+            section.pack(fill=tk.X, expand=True, padx=8, pady=(0, 10))
+            ctk.CTkLabel(
+                section,
+                text=title,
+                font=("Segoe UI", 12, "bold"),
+                text_color=("#111", "#e7e7ef"),
+            ).pack(anchor="w", padx=10, pady=(8, 2))
+            ctk.CTkLabel(
+                section,
+                text=text,
+                font=("Segoe UI", 12),
+                wraplength=640,
+                justify=ctk.LEFT,
+            ).pack(anchor="w", padx=10, pady=(0, 10))
 
-        text = tk.Text(
-            text_frame,
-            wrap=tk.WORD,
-            yscrollcommand=scrollbar.set,
-            font=("Segoe UI", 10),
-            padx=10,
-            pady=10,
+        add_section(
+            "What is SteamID patching?",
+            "When you move a save to another Steam account, the SteamID no longer matches and the game will refuse to load it. This tool rewrites the SteamID in all 10 character slots, the common USER_DATA_10 section, and the profile summary so the save loads on the target account.",
         )
-        text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.config(command=text.yview)
 
-        help_text = """WHAT IS STEAMID PATCHING?
+        add_section(
+            "Quick steps",
+            "1) Load the save you want to transfer.\n"
+            "2) Get the target SteamID using one of the methods below.\n"
+            "3) Click Patch SteamID. A backup is created automatically.\n"
+            "4) Load the patched save on the new account.",
+        )
 
-When you transfer a save file to another Steam account, the SteamID will be mismatched and will cause the save file to not load.. This tool updates the SteamID in:
-• All 10 character slots
-• USER_DATA_10 common section
-• Profile summary
+        add_section(
+            "Method 1 — Auto-Detect",
+            "• Click Auto-Detect.\n"
+            "• If multiple accounts are found, pick from the list.\n"
+            "• The SteamID field is filled automatically.",
+        )
 
-HOW TO USE:
+        add_section(
+            "Method 2 — Paste profile URL",
+            "• Copy the profile URL, e.g. steamcommunity.com/profiles/76561198012345678.\n"
+            "• Paste into Steam profile URL.\n"
+            "• Click Parse URL. Works for both /profiles/ and /id/ URLs.",
+        )
 
-Step 1: Load the save file you want to transfer
+        add_section(
+            "Method 3 — Manual entry",
+            "• Enter the 17-digit SteamID directly (e.g. 76561198012345678).\n"
+            "• Use Patch SteamID to write it everywhere.",
+        )
 
-Step 2: Get the target SteamID using one of three methods:
+        add_section(
+            "Supported formats",
+            "✓ https://steamcommunity.com/profiles/76561198012345678\n"
+            "✓ https://steamcommunity.com/id/username (auto-resolves)\n"
+            "✓ 76561198012345678 (just the number)",
+        )
 
-Method 1 - Auto-Detect:
-• Click "Auto-Detect from System"
-• If multiple accounts detected, select from list
-• SteamID will be auto-filled
+        add_section(
+            "Safety features",
+            "✓ Automatic backup before patching\n"
+            "✓ SteamID format validation\n"
+            "✓ Confirmation dialog\n"
+            "✓ Shows old vs new SteamID after success",
+        )
 
-Method 2 - Parse Steam Profile URL:
-• Copy Steam profile URL: steamcommunity.com/profiles/76561198012345678
-• Paste into "Steam profile URL" field
-• Click "Parse URL"
-• Works with both /profiles/ and /id/ URLs
-
-Method 3 - Manual Entry:
-• Enter the 17-digit SteamID directly
-• Format: 76561198012345678
-
-Step 3: Click "Patch SteamID" to update the save file
-
-Step 4: A backup is automatically created before patching
-
-
-HOW TO FIND SOMEONE'S STEAMID:
-
-1. Go to their Steam Community profile
-2. Copy the URL from the address bar
-3. If URL contains /profiles/NUMBER - use it directly
-4. If URL contains /id/username - tool will attempt to resolve it
-5. Paste into "Steam profile URL" field
-6. Click "Parse URL"
-
-
-SUPPORTED URL FORMATS:
-
-✓ https://steamcommunity.com/profiles/76561198012345678
-✓ https://steamcommunity.com/id/username (auto-resolves)
-✓ 76561198012345678 (direct number)
-
-
-SAFETY FEATURES:
-
-✓ Automatic backup before patching
-✓ Validation of SteamID format
-✓ Confirmation dialog
-✓ Shows old and new SteamID in success message
-
-
-WARNINGS:
-
-⚠ Make sure you have the CORRECT SteamID
-⚠ Test the patched save before deleting original
-
-
-TROUBLESHOOTING:
-
-Q: Custom URL resolution fails?
-A: Get the /profiles/ URL instead by clicking on the user's name
-
-Q: Patch fails?
-A: Make sure save file is loaded and not corrupted
-"""
-
-        text.insert("1.0", help_text)
-        text.config(state="disabled")
-
-        # Close button
-        ttk.Button(dialog, text="Close", command=dialog.destroy, width=15).pack(pady=10)
+        ctk.CTkButton(dialog, text="Close", command=dialog.destroy, width=110).pack(
+            pady=(0, 14)
+        )
 
     def update_steamid_display(self):
         """Update current SteamID display"""
@@ -254,49 +260,44 @@ A: Make sure save file is loaded and not corrupted
             return
 
         try:
-            # Check if USER_DATA_10 was parsed
             if not save_file.user_data_10_parsed:
                 self.current_steamid_var.set("SteamID: Unable to parse save file")
                 return
 
-            # Check if steam_id attribute exists
             if not hasattr(save_file.user_data_10_parsed, "steam_id"):
                 self.current_steamid_var.set("SteamID: Attribute not found")
                 return
 
-            # Get the SteamID
             steamid = save_file.user_data_10_parsed.steam_id
 
-            # Validate it's a reasonable SteamID
             if steamid == 0:
                 self.current_steamid_var.set(
                     "SteamID: 0 (Invalid - save may be corrupted)"
                 )
-            elif steamid < 76561197960265728:  # Minimum valid SteamID64
+            elif steamid < 76561197960265728:
                 self.current_steamid_var.set(f"SteamID: {steamid} (Invalid format)")
             else:
                 self.current_steamid_var.set(f"Current SteamID: {steamid}")
 
         except Exception as e:
             self.current_steamid_var.set(f"SteamID: Error - {str(e)}")
-            import traceback
-
-            traceback.print_exc()
 
     def patch_steamid(self):
         """Patch SteamID in save file"""
         save_file = self.get_save_file()
         if not save_file:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
             return
 
         new_steamid = self.new_steamid_var.get().strip()
 
         if not new_steamid.isdigit() or len(new_steamid) != 17:
-            messagebox.showerror("Invalid SteamID", "SteamID must be exactly 17 digits")
+            CTkMessageBox.showerror(
+                "Invalid SteamID", "SteamID must be exactly 17 digits"
+            )
             return
 
-        if not messagebox.askyesno(
+        if not CTkMessageBox.askyesno(
             "Confirm Patch",
             f"Patch all character slots to SteamID: {new_steamid}?\n\nA backup will be created.",
         ):
@@ -315,17 +316,14 @@ A: Make sure save file is loaded and not corrupted
                     save=save_file,
                 )
 
-            # Store old SteamID for message
             old_steamid = 0
             if save_file.user_data_10_parsed:
                 old_steamid = save_file.user_data_10_parsed.steam_id
 
-            # STEP 1: Update USER_DATA_10 (common section) FIRST
+            # Update USER_DATA_10
             if save_file.user_data_10_parsed:
                 save_file.user_data_10_parsed.steam_id = int(new_steamid)
 
-                # Write to raw data at correct offset
-                # USER_DATA_10 structure: [checksum 16] + [version 4] + [steamid 8]
                 steamid_offset = (
                     save_file._user_data_10_offset + (0 if save_file.is_ps else 16) + 4
                 )
@@ -334,7 +332,6 @@ A: Make sure save file is loaded and not corrupted
                 steamid_bytes = struct.pack("<Q", int(new_steamid))
                 save_file._raw_data[steamid_offset : steamid_offset + 8] = steamid_bytes
 
-                # Also update in profile summary if exists
                 if (
                     hasattr(save_file.user_data_10_parsed, "profile_summary")
                     and save_file.user_data_10_parsed.profile_summary
@@ -345,16 +342,14 @@ A: Make sure save file is loaded and not corrupted
                         if hasattr(profile, "steam_id"):
                             profile.steam_id = int(new_steamid)
 
-            # STEP 2: Now sync all character slots to the NEW save SteamID
-            # SteamIdFix reads from USER_DATA_10 and syncs slots to it
+            # Sync all character slots
             patched_count = 0
-            fix = SteamIdFix()  # No arguments - it reads from save
+            fix = SteamIdFix()
             for slot_idx in range(10):
                 result = fix.apply(save_file, slot_idx)
                 if result.applied:
                     patched_count += 1
 
-            # STEP 3: Recalculate checksums and save
             save_file.recalculate_checksums()
             if save_path:
                 save_file.to_file(Path(save_path))
@@ -362,7 +357,7 @@ A: Make sure save file is loaded and not corrupted
             if self.reload_save:
                 self.reload_save()
 
-            messagebox.showinfo(
+            CTkMessageBox.showinfo(
                 "Success",
                 f"✓ Updated USER_DATA_10 SteamID\n"
                 f"✓ Updated profile summary\n"
@@ -373,51 +368,40 @@ A: Make sure save file is loaded and not corrupted
             )
 
         except Exception as e:
-            messagebox.showerror("Error", f"SteamID patch failed:\n{str(e)}")
-            import traceback
-
-            traceback.print_exc()
+            CTkMessageBox.showerror("Error", f"SteamID patch failed:\n{str(e)}")
 
     def parse_steam_url(self):
         """Parse Steam profile URL to extract SteamID"""
         url = self.steam_url_var.get().strip()
 
         if not url:
-            messagebox.showwarning("Empty URL", "Please enter a Steam profile URL")
+            CTkMessageBox.showwarning("Empty URL", "Please enter a Steam profile URL")
             return
 
         try:
             import re
 
-            # Direct SteamID64 input (just numbers)
             if url.isdigit() and len(url) == 17:
                 self.new_steamid_var.set(url)
-                self.steam_url_var.set("")  # Clear URL field
-                messagebox.showinfo("Success", f"SteamID: {url}")
+                self.steam_url_var.set("")
+                CTkMessageBox.showinfo("Success", f"SteamID: {url}")
                 return
-
-            # Parse Steam profile URL formats:
-            # https://steamcommunity.com/profiles/76561198012345678
-            # steamcommunity.com/profiles/76561198012345678
-            # /profiles/76561198012345678
 
             match = re.search(r"/profiles/(\d{17})", url)
             if match:
                 steamid = match.group(1)
                 self.new_steamid_var.set(steamid)
-                self.steam_url_var.set("")  # Clear URL field
-                messagebox.showinfo("Success", f"Extracted SteamID: {steamid}")
+                self.steam_url_var.set("")
+                CTkMessageBox.showinfo("Success", f"Extracted SteamID: {steamid}")
                 return
 
-            # Custom URL format - try to resolve via SteamDB API
             custom_match = re.search(r"/id/([^/\s]+)", url)
             if custom_match:
                 custom_name = custom_match.group(1)
                 self._resolve_custom_url(custom_name)
                 return
 
-            # No valid pattern found
-            messagebox.showerror(
+            CTkMessageBox.showerror(
                 "Invalid Format",
                 "Could not find SteamID in the URL.\n\n"
                 "Supported formats:\n"
@@ -427,7 +411,7 @@ A: Make sure save file is loaded and not corrupted
             )
 
         except Exception as e:
-            messagebox.showerror("Parse Error", f"Failed to parse URL:\n{str(e)}")
+            CTkMessageBox.showerror("Parse Error", f"Failed to parse URL:\n{str(e)}")
 
     def _resolve_custom_url(self, custom_name):
         """Resolve custom Steam URL using steamid.io"""
@@ -436,10 +420,7 @@ A: Make sure save file is loaded and not corrupted
             import urllib.parse
             import urllib.request
 
-            # Clean up the custom name
             custom_name = custom_name.strip().strip("/")
-
-            # Use steamid.io lookup
             lookup_url = f"https://steamid.io/lookup/{urllib.parse.quote(custom_name)}"
 
             req = urllib.request.Request(
@@ -449,8 +430,6 @@ A: Make sure save file is loaded and not corrupted
             with urllib.request.urlopen(req, timeout=10) as response:
                 html = response.read().decode()
 
-                # Parse HTML to find SteamID
-                # Look for patterns like: data-steamid64="76561198..."
                 patterns = [
                     r'data-steamid64="(\d{17})"',
                     r'"steamid64":"(\d{17})"',
@@ -463,8 +442,8 @@ A: Make sure save file is loaded and not corrupted
                     if match:
                         steamid = match.group(1)
                         self.new_steamid_var.set(steamid)
-                        self.steam_url_var.set("")  # Clear URL field
-                        messagebox.showinfo(
+                        self.steam_url_var.set("")
+                        CTkMessageBox.showinfo(
                             "Success",
                             f"Resolved via steamid.io!\n\n"
                             f"Username: {custom_name}\n"
@@ -472,15 +451,14 @@ A: Make sure save file is loaded and not corrupted
                         )
                         return
 
-                # No pattern matched
-                messagebox.showerror(
+                CTkMessageBox.showerror(
                     "Not Found",
                     f"Could not find SteamID for: {custom_name}\n\n"
                     "Please check the username and try again.",
                 )
 
         except Exception as e:
-            messagebox.showerror(
+            CTkMessageBox.showerror(
                 "Resolution Failed",
                 f"Failed to resolve custom URL: {custom_name}\n\n"
                 f"Error: {str(e)}\n\n"
@@ -492,11 +470,9 @@ A: Make sure save file is loaded and not corrupted
         try:
             import winreg
 
-            # Get all Steam users from registry
             steam_users = []
 
             try:
-                # Try to get active user first
                 key = winreg.OpenKey(
                     winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam\ActiveProcess"
                 )
@@ -509,7 +485,6 @@ A: Make sure save file is loaded and not corrupted
             except Exception:
                 pass
 
-            # Get all users from Steam installation
             try:
                 steam_key = winreg.OpenKey(
                     winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam"
@@ -517,17 +492,14 @@ A: Make sure save file is loaded and not corrupted
                 steam_path, _ = winreg.QueryValueEx(steam_key, "SteamPath")
                 winreg.CloseKey(steam_key)
 
-                # Read loginusers.vdf to get all accounts
                 import os
 
                 loginusers_path = os.path.join(steam_path, "config", "loginusers.vdf")
                 if os.path.exists(loginusers_path):
                     with open(loginusers_path, encoding="utf-8") as f:
                         content = f.read()
-                        # Parse SteamIDs from VDF (simple regex)
                         import re
 
-                        # Match "765611..." followed by account name
                         pattern = r'"(765611\d{10})"\s*\{[^}]*"AccountName"\s*"([^"]+)"'
                         matches = re.findall(pattern, content)
                         for steamid, account_name in matches:
@@ -537,89 +509,80 @@ A: Make sure save file is loaded and not corrupted
                 pass
 
             if not steam_users:
-                messagebox.showwarning(
+                CTkMessageBox.showwarning(
                     "Not Found",
                     "Could not detect any Steam accounts.\n\nPlease enter SteamID manually.",
                 )
                 return
 
-            # If only one account, use it directly
             if len(steam_users) == 1:
                 steamid = steam_users[0][1]
                 self.new_steamid_var.set(str(steamid))
-                messagebox.showinfo(
+                CTkMessageBox.showinfo(
                     "Detected",
                     f"SteamID detected: {steamid}\n\nAccount: {steam_users[0][0]}",
                 )
                 return
 
-            # Multiple accounts - show selection dialog
             self._show_account_selection_dialog(steam_users)
 
         except Exception as e:
-            messagebox.showwarning(
+            CTkMessageBox.showwarning(
                 "Detection Failed",
                 f"Could not auto-detect SteamID:\n{str(e)}\n\nNote: Auto-detection only works on Windows.",
             )
 
     def _show_account_selection_dialog(self, accounts):
         """Show dialog to select from multiple Steam accounts"""
-        dialog = tk.Toplevel(self.parent)
+        dialog = ctk.CTkToplevel(self.parent)
         dialog.title("Select Steam Account")
-        dialog.geometry("400x300")
-        dialog.transient(self.parent)
-        dialog.grab_set()
+        dialog.geometry("450x350")
+        dialog.resizable(False, False)
 
-        ttk.Label(
+        ctk.CTkLabel(
             dialog,
             text="Multiple Steam accounts detected.\nSelect the account to use:",
-            font=("Segoe UI", 10),
-            padding=10,
-        ).pack()
+            font=("Segoe UI", 11),
+        ).pack(pady=(15, 12), padx=15)
 
-        # Listbox with accounts
-        list_frame = ttk.Frame(dialog)
-        list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        # List frame with scrollable list
+        list_frame = ctk.CTkScrollableFrame(dialog, corner_radius=8)
+        list_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
+        bind_mousewheel(list_frame)
 
-        scrollbar = ttk.Scrollbar(list_frame)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        selected_steamid = tk.StringVar(value="")
 
-        listbox = tk.Listbox(
-            list_frame, yscrollcommand=scrollbar.set, font=("Consolas", 10), height=10
-        )
-        listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.config(command=listbox.yview)
+        for _idx, (account_name, steamid) in enumerate(accounts):
+            btn_frame = ctk.CTkFrame(
+                list_frame, corner_radius=8, fg_color=("#f0f0f0", "#2a2a3e")
+            )
+            btn_frame.pack(fill=tk.X, pady=4)
 
-        # Populate listbox
-        for account_name, steamid in accounts:
-            listbox.insert(tk.END, f"{account_name}: {steamid}")
+            def make_select(sid):
+                def select_account():
+                    selected_steamid.set(str(sid))
+                    dialog.destroy()
+                    CTkMessageBox.showinfo(
+                        "Selected",
+                        f"SteamID: {sid}\n\nAccount: {accounts[[a[1] for a in accounts].index(sid)][0]}",
+                    )
 
-        listbox.selection_set(0)
+                return select_account
+
+            ctk.CTkButton(
+                btn_frame,
+                text=f"{account_name}: {steamid}",
+                font=("Consolas", 10),
+                command=make_select(steamid),
+                fg_color="transparent",
+                text_color=("#2a2a2a", "#e5e5f5"),
+                hover_color=("#c9a0dc", "#3b2f5c"),
+            ).pack(fill=tk.BOTH, expand=True, padx=8, pady=6)
 
         # Buttons
-        button_frame = ttk.Frame(dialog)
-        button_frame.pack(pady=10)
+        button_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        button_frame.pack(pady=(0, 15), padx=15, fill=tk.X)
 
-        def on_select():
-            selection = listbox.curselection()
-            if selection:
-                idx = selection[0]
-                steamid = accounts[idx][1]
-                self.new_steamid_var.set(str(steamid))
-                dialog.destroy()
-                messagebox.showinfo(
-                    "Selected", f"SteamID: {steamid}\n\nAccount: {accounts[idx][0]}"
-                )
-
-        def on_cancel():
-            dialog.destroy()
-
-        ttk.Button(button_frame, text="Select", command=on_select, width=12).pack(
-            side=tk.LEFT, padx=5
-        )
-        ttk.Button(button_frame, text="Cancel", command=on_cancel, width=12).pack(
-            side=tk.LEFT, padx=5
-        )
-
-        # Bind double-click
-        listbox.bind("<Double-Button-1>", lambda e: on_select())
+        ctk.CTkButton(
+            button_frame, text="Cancel", command=dialog.destroy, width=100
+        ).pack(side=tk.RIGHT)

@@ -1,10 +1,14 @@
 """
-Save Inspector Tab
+Save Inspector Tab (customtkinter version)
 Displays character list with quick fix functionality
 """
 
 import tkinter as tk
-from tkinter import messagebox, ttk
+
+import customtkinter as ctk
+
+from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.utils import bind_mousewheel
 
 
 class SaveInspectorTab:
@@ -37,49 +41,45 @@ class SaveInspectorTab:
         self.show_details = show_details_callback
         self.on_slot_selected = on_slot_selected_callback
 
-        self.char_listbox = None
         self.selected_slot = None
+        self.rows = []
+        self.selection_var = tk.StringVar(value="")
 
     def setup_ui(self):
         """Setup the save inspector tab UI"""
         # Character selection frame
-        char_frame = ttk.LabelFrame(self.parent, text="Select Character", padding="10")
-        char_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        char_frame = ctk.CTkFrame(self.parent, corner_radius=12)
+        char_frame.pack(fill="both", expand=True, pady=(0, 10))
 
-        # Character listbox
-        list_frame = ttk.Frame(char_frame)
-        list_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        header = ctk.CTkFrame(char_frame, fg_color="transparent")
+        header.pack(fill="x", padx=10, pady=(10, 6))
 
-        scrollbar = ttk.Scrollbar(list_frame)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        ctk.CTkLabel(
+            header,
+            text="Select Character",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(side="left")
 
-        self.char_listbox = tk.Listbox(
-            list_frame,
-            yscrollcommand=scrollbar.set,
-            font=("Consolas", 10),
-            height=10,
-            selectmode=tk.SINGLE,
-        )
-        self.char_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.config(command=self.char_listbox.yview)
-
-        self.char_listbox.bind("<ButtonRelease-1>", self.on_character_select)
-        self.char_listbox.bind("<Double-Button-1>", self.on_character_double_click)
-
-        # Actions frame
-        action_frame = ttk.LabelFrame(self.parent, text="Actions", padding="10")
-        action_frame.pack(fill=tk.X)
-
-        ttk.Button(
-            action_frame,
+        ctk.CTkButton(
+            header,
             text="View Details & Issues",
             command=self.show_character_details,
-            width=25,
-        ).pack(side=tk.LEFT, padx=5)
+            width=180,
+        ).pack(side="right")
+
+        self.list_frame = ctk.CTkScrollableFrame(
+            char_frame, width=900, height=320, corner_radius=10
+        )
+        self.list_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        bind_mousewheel(self.list_frame)
 
     def populate_character_list(self):
         """Populate character listbox"""
-        self.char_listbox.delete(0, tk.END)
+        # Clear existing rows
+        for child in self.list_frame.winfo_children():
+            child.destroy()
+        self.rows.clear()
+        self.selected_slot = None
 
         save_file = self.get_save_file()
         if not save_file:
@@ -89,7 +89,9 @@ class SaveInspectorTab:
             active_slots = save_file.get_active_slots()
 
             if not active_slots:
-                self.char_listbox.insert(tk.END, "No active characters found")
+                ctk.CTkLabel(self.list_frame, text="No active characters found").pack(
+                    anchor="w", padx=6, pady=6
+                )
                 return
 
             # Get profiles safely
@@ -99,6 +101,21 @@ class SaveInspectorTab:
                     profiles = save_file.user_data_10_parsed.profile_summary.profiles
             except Exception as e:
                 print(f"Warning: Could not load profiles: {e}")
+
+            def select_slot(slot_index: int):
+                self.selected_slot = slot_index
+                self.selection_var.set(str(slot_index))
+                for val, frame, label in self.rows:
+                    if val == slot_index:
+                        frame.configure(fg_color=("#c9a0dc", "#3b2f5c"))
+                        label.configure(text_color=("#1f1f28", "#f0f0f0"))
+                    else:
+                        frame.configure(fg_color=("#f5f5f5", "#2a2a3e"))
+                        label.configure(text_color=("#333333", "#cccccc"))
+
+                # Notify GUI of slot selection
+                if self.on_slot_selected:
+                    self.on_slot_selected(slot_index)
 
             for slot_idx in active_slots:
                 try:
@@ -115,50 +132,69 @@ class SaveInspectorTab:
                             profile = profiles[slot_idx]
                             name = profile.character_name or "Unknown"
                             level = str(profile.level) if profile.level else "?"
-                        except Exception as e:
-                            print(
-                                f"Warning: Could not load profile for slot {slot_idx}: {e}"
-                            )
+                        except Exception:
+                            pass
 
                     # Get map location safely
                     map_str = "Unknown"
                     try:
                         if hasattr(slot, "map_id") and slot.map_id:
                             map_str = slot.map_id.to_string_decimal()
-                    except Exception as e:
-                        print(f"Warning: Could not get map for slot {slot_idx}: {e}")
+                    except Exception:
+                        pass
 
                     display_text = f"Slot {slot_idx + 1:2d} | {name:16s} | Lv.{level:>3s} | Map: {map_str}"
-                    self.char_listbox.insert(tk.END, display_text)
+
+                    row = ctk.CTkFrame(
+                        self.list_frame,
+                        fg_color=("#f5f5f5", "#2a2a3e"),
+                        corner_radius=6,
+                    )
+                    row.pack(fill="x", padx=4, pady=4)
+
+                    label = ctk.CTkLabel(
+                        row,
+                        text=display_text,
+                        anchor="w",
+                        padx=8,
+                        pady=8,
+                        font=("Courier", 13),  # Large font for readability
+                    )
+                    label.pack(fill="x")
+
+                    row.bind("<Button-1>", lambda e, v=slot_idx: select_slot(v))
+                    label.bind("<Button-1>", lambda e, v=slot_idx: select_slot(v))
+
+                    self.rows.append((slot_idx, row, label))
 
                 except Exception as e:
-                    # If individual character fails, show error but continue
-                    self.char_listbox.insert(
-                        tk.END, f"Slot {slot_idx + 1:2d} | Error loading data"
+                    error_row = ctk.CTkLabel(
+                        self.list_frame,
+                        text=f"Slot {slot_idx + 1:2d} | Error loading data",
+                        anchor="w",
                     )
+                    error_row.pack(fill="x", padx=4, pady=4)
                     print(f"Error loading slot {slot_idx}: {e}")
 
+            # Select first item by default
+            if self.rows:
+                select_slot(self.rows[0][0])
+
         except Exception as e:
-            self.char_listbox.insert(tk.END, "Error loading characters")
-            messagebox.showerror("Error", f"Failed to load character list:\n{str(e)}")
+            ctk.CTkLabel(self.list_frame, text="Error loading characters").pack(
+                anchor="w", padx=6, pady=6
+            )
+            CTkMessageBox.showerror(
+                "Error", f"Failed to load character list:\n{str(e)}"
+            )
             import traceback
 
             traceback.print_exc()
 
     def on_character_select(self, event):
         """Handle character selection"""
-        save_file = self.get_save_file()
-        if not save_file:
-            return
-
-        selection = self.char_listbox.curselection()
-        if selection:
-            active_slots = save_file.get_active_slots()
-            if selection[0] < len(active_slots):
-                self.selected_slot = active_slots[selection[0]]
-                # Notify GUI of slot selection
-                if self.on_slot_selected:
-                    self.on_slot_selected(self.selected_slot)
+        # Not used in CTk list version
+        return
 
     def on_character_double_click(self, event):
         """Handle double-click to show details"""
@@ -167,7 +203,9 @@ class SaveInspectorTab:
     def show_character_details(self):
         """Show character details dialog"""
         if self.selected_slot is None:
-            messagebox.showwarning("No Selection", "Please select a character first!")
+            CTkMessageBox.showwarning(
+                "No Selection", "Please select a character first!"
+            )
             return
 
         if self.show_details:

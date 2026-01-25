@@ -75,12 +75,8 @@ class WorldStateEditor:
         if not location:
             return False, f"Unknown location: {location_key}"
 
-        # Check if DLC location
-        if location.is_dlc and not self.slot.has_dlc_flag():
-            return (
-                False,
-                "Cannot teleport to DLC location: character has not entered DLC",
-            )
+        # Note: DLC location warnings are handled in the UI, not here
+        # This allows users to teleport to DLC locations even if they haven't entered DLC yet
 
         # Update map ID - use struct to write bytes
         import struct
