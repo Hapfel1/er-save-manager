@@ -3,10 +3,13 @@ Stats Editor Module
 Handles character stats editing UI and logic
 """
 
-import tkinter as tk
-from tkinter import messagebox, ttk
+import logging
+
+import customtkinter as ctk
 
 from er_save_manager.data import calculate_level_from_stats, get_class_data
+from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.utils import bind_mousewheel
 
 
 class StatsEditor:
@@ -23,7 +26,7 @@ class StatsEditor:
         Initialize stats editor
 
         Args:
-            parent: Parent tkinter widget
+            parent: Parent customtkinter widget
             get_save_file_callback: Function that returns current save file
             get_char_slot_callback: Function that returns current character slot index
             get_save_path_callback: Function that returns save file path
@@ -37,6 +40,8 @@ class StatsEditor:
         self.level_var = None
         self.calculated_level_var = None
         self.level_warning_var = None
+
+        self._logger = logging.getLogger(__name__)
         self.level_warning_label = None
         self.runes_var = None
 
@@ -45,33 +50,36 @@ class StatsEditor:
     def setup_ui(self):
         """Setup the stats editor UI"""
         # Create scrollable frame
-        canvas = tk.Canvas(self.parent, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(self.parent, orient=tk.VERTICAL, command=canvas.yview)
-        self.frame = ttk.Frame(canvas)
-
-        self.frame.bind(
-            "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        self.frame = ctk.CTkScrollableFrame(
+            self.parent,
+            fg_color=("gray86", "gray25"),
+            bg_color=("gray86", "gray25"),
+            scrollbar_fg_color=("gray86", "gray25"),
+            scrollbar_button_color=("gray70", "gray30"),
+            scrollbar_button_hover_color=("gray60", "gray40"),
         )
-
-        canvas.create_window((0, 0), window=self.frame, anchor=tk.NW)
-        canvas.configure(yscrollcommand=scrollbar.set)
+        self.frame.pack(fill=ctk.BOTH, expand=True)
 
         # Bind mousewheel
-        def on_mousewheel(event):
-            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-        canvas.bind_all("<MouseWheel>", on_mousewheel)
-
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        bind_mousewheel(self.frame)
 
         # Single row: Attributes and Resources side by side
-        top_row = ttk.Frame(self.frame)
-        top_row.pack(fill=tk.X, pady=5)
+        top_row = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        top_row.pack(fill=ctk.X, pady=5, padx=10)
 
         # Attributes on the left
-        stats_frame = ttk.LabelFrame(top_row, text="Attributes", padding=10)
-        stats_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
+        stats_frame = ctk.CTkFrame(top_row, fg_color=("gray86", "gray25"))
+        stats_frame.pack(side=ctk.LEFT, fill=ctk.BOTH, expand=True, padx=(0, 5))
+
+        ctk.CTkLabel(
+            stats_frame,
+            text="Attributes",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
+
+        stats_grid = ctk.CTkFrame(stats_frame, fg_color=("gray86", "gray25"))
+        stats_grid.pack(fill=ctk.X, padx=5, pady=5)
 
         attributes = [
             ("Vigor", "vigor"),
@@ -85,23 +93,39 @@ class StatsEditor:
         ]
 
         for i, (label, key) in enumerate(attributes):
-            ttk.Label(stats_frame, text=f"{label}:").grid(
-                row=i, column=0, sticky=tk.W, padx=5, pady=5
-            )
+            ctk.CTkLabel(
+                stats_grid, text=f"{label}:", text_color=("black", "white")
+            ).grid(row=i, column=0, sticky=ctk.W, padx=5, pady=5)
 
-            var = tk.IntVar(value=0)
+            var = ctk.IntVar(value=0)
             self.stat_vars[key] = var
-            entry = ttk.Entry(stats_frame, textvariable=var, width=10)
+            entry = ctk.CTkEntry(
+                stats_grid,
+                textvariable=var,
+                width=120,
+                fg_color=("gray86", "gray25"),
+                text_color=("black", "white"),
+                border_color=("gray70", "gray40"),
+                border_width=1,
+            )
             entry.grid(row=i, column=1, padx=5, pady=5)
 
             # Bind to calculate level on attribute change
             entry.bind("<KeyRelease>", lambda e: self.calculate_character_level())
 
         # Max HP/FP/Stamina on the right (base max values only, no active HP/FP/SP)
-        resources_frame = ttk.LabelFrame(
-            top_row, text="Max Health/FP/Stamina", padding=10
-        )
-        resources_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0))
+        resources_frame = ctk.CTkFrame(top_row, fg_color=("gray86", "gray25"))
+        resources_frame.pack(side=ctk.LEFT, fill=ctk.BOTH, expand=True, padx=(5, 0))
+
+        ctk.CTkLabel(
+            resources_frame,
+            text="Max Health/FP/Stamina",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
+
+        resources_grid = ctk.CTkFrame(resources_frame, fg_color=("gray86", "gray25"))
+        resources_grid.pack(fill=ctk.X, padx=5, pady=5)
 
         resources = [
             ("Max HP", "base_max_hp"),
@@ -110,71 +134,113 @@ class StatsEditor:
         ]
 
         for i, (label, key) in enumerate(resources):
-            ttk.Label(resources_frame, text=f"{label}:").grid(
-                row=i, column=0, sticky=tk.W, padx=5, pady=5
-            )
+            ctk.CTkLabel(
+                resources_grid, text=f"{label}:", text_color=("black", "white")
+            ).grid(row=i, column=0, sticky=ctk.W, padx=5, pady=5)
 
-            var = tk.IntVar(value=0)
+            var = ctk.IntVar(value=0)
             self.stat_vars[key] = var
-            ttk.Entry(resources_frame, textvariable=var, width=10).grid(
-                row=i, column=1, padx=5, pady=5
-            )
+            ctk.CTkEntry(
+                resources_grid,
+                textvariable=var,
+                width=120,
+                fg_color=("gray86", "gray25"),
+                text_color=("black", "white"),
+                border_color=("gray70", "gray40"),
+                border_width=1,
+            ).grid(row=i, column=1, padx=5, pady=5)
 
         # Bottom row: Level & Runes in one compact frame
-        bottom_row = ttk.Frame(self.frame)
-        bottom_row.pack(fill=tk.X, pady=5)
+        bottom_row = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        bottom_row.pack(fill=ctk.X, pady=5, padx=10)
 
-        other_frame = ttk.LabelFrame(bottom_row, text="Level & Runes", padding=10)
-        other_frame.pack(fill=tk.X)
+        other_frame = ctk.CTkFrame(bottom_row, fg_color=("gray86", "gray25"))
+        other_frame.pack(fill=ctk.X)
+
+        ctk.CTkLabel(
+            other_frame,
+            text="Level & Runes",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).grid(row=0, column=0, columnspan=5, sticky=ctk.W, padx=5, pady=(5, 0))
+
+        content_row = 1
 
         # Level row
-        ttk.Label(other_frame, text="Level:").grid(
-            row=0, column=0, sticky=tk.W, padx=5, pady=5
-        )
-        self.level_var = tk.IntVar(value=0)
-        ttk.Entry(other_frame, textvariable=self.level_var, width=10).grid(
-            row=0, column=1, padx=5, pady=5
+        ctk.CTkLabel(other_frame, text="Level:", text_color=("black", "white")).grid(
+            row=content_row, column=0, sticky=ctk.W, padx=5, pady=5
         )
 
-        ttk.Label(other_frame, text="Calculated Level:").grid(
-            row=0, column=2, sticky=tk.W, padx=(20, 5), pady=5
-        )
-        self.calculated_level_var = tk.IntVar(value=0)
-        ttk.Label(
+        self.level_var = ctk.IntVar(value=0)
+        ctk.CTkEntry(
+            other_frame,
+            textvariable=self.level_var,
+            width=120,
+            fg_color=("gray86", "gray25"),
+            text_color=("black", "white"),
+            border_color=("gray70", "gray40"),
+            border_width=1,
+        ).grid(row=content_row, column=1, padx=5, pady=5)
+
+        ctk.CTkLabel(
+            other_frame, text="Calculated Level:", text_color=("black", "white")
+        ).grid(row=content_row, column=2, sticky=ctk.W, padx=(20, 5), pady=5)
+
+        self.calculated_level_var = ctk.IntVar(value=0)
+        ctk.CTkLabel(
             other_frame,
             textvariable=self.calculated_level_var,
+            text_color=("black", "white"),
             font=("Segoe UI", 10, "bold"),
-        ).grid(row=0, column=3, padx=5, pady=5)
+        ).grid(row=content_row, column=3, padx=5, pady=5)
 
         # Level warning
-        self.level_warning_var = tk.StringVar(value="")
-        self.level_warning_label = ttk.Label(
+        self.level_warning_var = ctk.StringVar(value="")
+        self.level_warning_label = ctk.CTkLabel(
             other_frame,
             textvariable=self.level_warning_var,
-            foreground="red",
-            font=("Segoe UI", 9),
+            text_color="red",
+            font=("Segoe UI", 11),
         )
-        self.level_warning_label.grid(row=0, column=4, padx=10, pady=5, sticky=tk.W)
+        self.level_warning_label.grid(
+            row=content_row, column=4, padx=10, pady=5, sticky=ctk.W
+        )
 
         # Runes row
-        ttk.Label(other_frame, text="Runes:").grid(
-            row=1, column=0, sticky=tk.W, padx=5, pady=5
+        ctk.CTkLabel(other_frame, text="Runes:", text_color=("black", "white")).grid(
+            row=content_row + 1, column=0, sticky=ctk.W, padx=5, pady=5
         )
-        self.runes_var = tk.IntVar(value=0)
-        ttk.Entry(other_frame, textvariable=self.runes_var, width=15).grid(
-            row=1, column=1, columnspan=2, sticky=tk.W, padx=5, pady=5
+
+        self.runes_var = ctk.IntVar(value=0)
+        ctk.CTkEntry(
+            other_frame,
+            textvariable=self.runes_var,
+            width=120,
+            fg_color=("gray86", "gray25"),
+            text_color=("black", "white"),
+            border_color=("gray70", "gray40"),
+            border_width=1,
+        ).grid(
+            row=content_row + 1, column=1, columnspan=2, sticky=ctk.W, padx=5, pady=5
         )
 
         # Apply button
-        button_frame = ttk.LabelFrame(self.frame, text="Actions", padding=10)
-        button_frame.pack(fill=tk.X, pady=10)
+        button_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        button_frame.pack(fill=ctk.X, pady=10, padx=10)
 
-        ttk.Button(
+        ctk.CTkLabel(
+            button_frame,
+            text="Actions",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
+
+        ctk.CTkButton(
             button_frame,
             text="Apply Changes",
             command=self.apply_changes,
-            width=20,
-        ).pack(side=tk.LEFT, padx=5)
+            width=160,
+        ).pack(side=ctk.LEFT, padx=5)
 
     def load_stats(self):
         """Load stats from current character slot"""
@@ -192,6 +258,28 @@ class StatsEditor:
 
         char = slot.player_game_data
 
+        # Debug: log raw values loaded from save
+        try:
+            self._logger.debug(
+                "Loaded stats for slot %s: vig=%s mind=%s end=%s str=%s dex=%s int=%s fth=%s arc=%s lvl=%s runes=%s base_hp=%s base_fp=%s base_sp=%s",
+                slot_idx,
+                getattr(char, "vigor", None),
+                getattr(char, "mind", None),
+                getattr(char, "endurance", None),
+                getattr(char, "strength", None),
+                getattr(char, "dexterity", None),
+                getattr(char, "intelligence", None),
+                getattr(char, "faith", None),
+                getattr(char, "arcane", None),
+                getattr(char, "level", None),
+                getattr(char, "runes", None),
+                getattr(char, "base_max_hp", None),
+                getattr(char, "base_max_fp", None),
+                getattr(char, "base_max_sp", None),
+            )
+        except Exception:
+            self._logger.exception("Failed logging stats for slot %s", slot_idx)
+
         # Load attributes
         self.stat_vars["vigor"].set(getattr(char, "vigor", 0))
         self.stat_vars["mind"].set(getattr(char, "mind", 0))
@@ -208,7 +296,7 @@ class StatsEditor:
         self.stat_vars["base_max_sp"].set(getattr(char, "base_max_sp", 0))
 
         # Load level and runes
-        self.level_var.set(getattr(char, "level", 0))
+        self.level_var.set(str(getattr(char, "level", 0)))
         self.runes_var.set(getattr(char, "runes", 0))
 
         # Calculate level
@@ -258,14 +346,18 @@ class StatsEditor:
             )
 
             # Update calculated level display
-            self.calculated_level_var.set(calculated_level)
+            self.calculated_level_var.set(str(calculated_level))
 
             # Show class name in warning if available
             class_data = get_class_data(archetype)
             class_name = class_data.get("name", "Unknown")
 
             # Check if current level matches
-            current_level = self.level_var.get()
+            try:
+                current_level = int(self.level_var.get())
+            except (ValueError, TypeError):
+                current_level = 0
+
             if current_level != calculated_level:
                 self.level_warning_var.set(
                     f"⚠ Mismatch! Recommend {calculated_level} (based on {class_name})"
@@ -274,41 +366,49 @@ class StatsEditor:
                 self.level_warning_var.set("")
 
         except Exception:
-            self.calculated_level_var.set(0)
+            self.calculated_level_var.set("0")
             self.level_warning_var.set("")
 
     def apply_changes(self):
         """Apply stat changes to save file"""
         save_file = self.get_save_file()
         if not save_file:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save",
+                "Please load a save file first!",
+            )
             return
 
         slot_idx = self.get_char_slot()
 
         # Check for level mismatch
-        current_level = self.level_var.get()
-        calculated_level = self.calculated_level_var.get()
+        current_level = int(self.level_var.get()) if self.level_var.get() else 0
+        calculated_level = (
+            int(self.calculated_level_var.get())
+            if self.calculated_level_var.get()
+            else 0
+        )
 
         if current_level != calculated_level:
-            response = messagebox.askyesnocancel(
+            response = CTkMessageBox.askyesno(
                 "Level Mismatch",
                 f"Current level ({current_level}) does not match calculated level ({calculated_level}) based on attributes.\n\n"
                 f"It's recommended to set level to {calculated_level}.\n\n"
                 f"Yes - Update level to {calculated_level}\n"
-                f"No - Keep current level {current_level}\n"
-                f"Cancel - Abort changes",
+                f"No - Keep current level {current_level}",
             )
 
-            if response is None:  # Cancel
+            if response:
+                self.level_var.set(str(calculated_level))
+            else:
                 return
-            elif response:  # Yes - update to calculated level
-                self.level_var.set(calculated_level)
 
-        if not messagebox.askyesno(
+        response = CTkMessageBox.askyesno(
             "Confirm",
             f"Apply stat changes to Slot {slot_idx + 1}?\n\nA backup will be created.",
-        ):
+        )
+
+        if not response:
             return
 
         try:
@@ -345,7 +445,7 @@ class StatsEditor:
                 char.faith = self.stat_vars["faith"].get()
                 char.arcane = self.stat_vars["arcane"].get()
 
-                char.level = self.level_var.get()
+                char.level = int(self.level_var.get()) if self.level_var.get() else 0
                 char.runes = self.runes_var.get()
 
                 char.base_max_hp = self.stat_vars["base_max_hp"].get()
@@ -389,17 +489,23 @@ class StatsEditor:
                     if save_path:
                         save_file.to_file(Path(save_path))
 
-                    messagebox.showinfo(
+                    CTkMessageBox.showinfo(
                         "Success",
                         "Stats updated successfully!\n\nBackup saved to backup manager.",
                     )
                 else:
-                    messagebox.showerror(
+                    CTkMessageBox.showwarning(
                         "Error",
                         "Offset not tracked - cannot save changes.",
                     )
             else:
-                messagebox.showerror("Error", "Character has no game data")
+                CTkMessageBox.showwarning(
+                    "Error",
+                    "Character has no game data",
+                )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to apply stat changes:\n{e}")
+            CTkMessageBox.showerror(
+                "Error",
+                f"Failed to apply stat changes:\n{e}",
+            )

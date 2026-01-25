@@ -3,10 +3,11 @@ Equipment Editor Module
 Handles equipment editing UI and logic
 """
 
-import tkinter as tk
-from tkinter import messagebox, ttk
+import customtkinter as ctk
 
 from er_save_manager.data.item_database import get_item_name
+from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.utils import bind_mousewheel
 
 
 class EquipmentEditor:
@@ -32,34 +33,33 @@ class EquipmentEditor:
 
     def setup_ui(self):
         """Setup the equipment editor UI"""
-        # Main scrollable frame
-        canvas = tk.Canvas(self.parent, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(self.parent, orient="vertical", command=canvas.yview)
-        self.frame = ttk.Frame(canvas)
-
-        self.frame.bind(
-            "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        self.frame = ctk.CTkScrollableFrame(
+            self.parent,
+            fg_color=("gray86", "gray25"),
         )
-
-        canvas.create_window((0, 0), window=self.frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        # Bind mousewheel
-        def on_mousewheel(event):
-            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-        canvas.bind_all("<MouseWheel>", on_mousewheel)
-
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.frame.pack(fill="both", expand=True)
+        bind_mousewheel(self.frame)
 
         # Top row: Weapons and Armor
-        top_row = ttk.Frame(self.frame)
-        top_row.pack(fill=tk.X, pady=5)
+        top_row = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        top_row.pack(fill="x", pady=5)
 
         # Weapons frame (left)
-        weapons_frame = ttk.LabelFrame(top_row, text="Weapons", padding=10)
-        weapons_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
+        weapons_frame = ctk.CTkFrame(
+            top_row,
+            fg_color=("gray86", "gray25"),
+        )
+        weapons_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
+
+        ctk.CTkLabel(
+            weapons_frame,
+            text="Weapons",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).pack(anchor="w", padx=5, pady=(5, 0))
+
+        weapons_grid = ctk.CTkFrame(weapons_frame, fg_color="transparent")
+        weapons_grid.pack(fill="both", expand=True, padx=5, pady=5)
 
         weapons = [
             ("Right Hand 1", "right_hand_armament1"),
@@ -71,25 +71,53 @@ class EquipmentEditor:
         ]
 
         for i, (label, key) in enumerate(weapons):
-            ttk.Label(weapons_frame, text=f"{label}:").grid(
-                row=i, column=0, sticky=tk.W, padx=5, pady=3
-            )
-            var = tk.IntVar(value=0)
+            ctk.CTkLabel(
+                weapons_grid,
+                text=f"{label}:",
+                text_color=("black", "white"),
+            ).grid(row=i, column=0, sticky="w", padx=5, pady=3)
+            var = ctk.IntVar(value=0)
             self.equipment_vars[key] = var
-            entry = ttk.Entry(weapons_frame, textvariable=var, width=12)
+            entry = ctk.CTkComboBox(
+                weapons_grid,
+                variable=var,
+                values=[],
+                width=120,
+                fg_color=("gray86", "gray25"),
+                text_color=("black", "white"),
+                button_color=("gray70", "gray30"),
+                command=lambda _v=None, k=key: self.update_equipment_name(k),
+            )
             entry.grid(row=i, column=1, padx=5, pady=3)
 
             # Item name label
-            name_label = ttk.Label(
-                weapons_frame, text="", foreground="blue", width=28, anchor="w"
+            name_label = ctk.CTkLabel(
+                weapons_grid,
+                text="",
+                text_color="#60a5fa",
+                width=200,
+                anchor="w",
             )
-            name_label.grid(row=i, column=2, sticky=tk.W, padx=5, pady=3)
+            name_label.grid(row=i, column=2, sticky="w", padx=5, pady=3)
             self.equipment_name_labels[key] = name_label
             var.trace("w", lambda *args, k=key: self.update_equipment_name(k))
 
         # Armor frame (right)
-        armor_frame = ttk.LabelFrame(top_row, text="Armor", padding=10)
-        armor_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0))
+        armor_frame = ctk.CTkFrame(
+            top_row,
+            fg_color=("gray86", "gray25"),
+        )
+        armor_frame.pack(side="left", fill="both", expand=True, padx=(5, 0))
+
+        ctk.CTkLabel(
+            armor_frame,
+            text="Armor",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).pack(anchor="w", padx=5, pady=(5, 0))
+
+        armor_grid = ctk.CTkFrame(armor_frame, fg_color="transparent")
+        armor_grid.pack(fill="both", expand=True, padx=5, pady=5)
 
         armor = [
             ("Head", "head"),
@@ -99,29 +127,57 @@ class EquipmentEditor:
         ]
 
         for i, (label, key) in enumerate(armor):
-            ttk.Label(armor_frame, text=f"{label}:").grid(
-                row=i, column=0, sticky=tk.W, padx=5, pady=3
-            )
-            var = tk.IntVar(value=0)
+            ctk.CTkLabel(
+                armor_grid,
+                text=f"{label}:",
+                text_color=("black", "white"),
+            ).grid(row=i, column=0, sticky="w", padx=5, pady=3)
+            var = ctk.IntVar(value=0)
             self.equipment_vars[key] = var
-            entry = ttk.Entry(armor_frame, textvariable=var, width=12)
+            entry = ctk.CTkComboBox(
+                armor_grid,
+                variable=var,
+                values=[],
+                width=120,
+                fg_color=("gray86", "gray25"),
+                text_color=("black", "white"),
+                button_color=("gray70", "gray30"),
+                command=lambda _v=None, k=key: self.update_equipment_name(k),
+            )
             entry.grid(row=i, column=1, padx=5, pady=3)
 
             # Item name label
-            name_label = ttk.Label(
-                armor_frame, text="", foreground="blue", width=28, anchor="w"
+            name_label = ctk.CTkLabel(
+                armor_grid,
+                text="",
+                text_color="#60a5fa",
+                width=200,
+                anchor="w",
             )
-            name_label.grid(row=i, column=2, sticky=tk.W, padx=5, pady=3)
+            name_label.grid(row=i, column=2, sticky="w", padx=5, pady=3)
             self.equipment_name_labels[key] = name_label
             var.trace("w", lambda *args, k=key: self.update_equipment_name(k))
 
         # Middle row: Talismans and Arrows/Bolts
-        middle_row = ttk.Frame(self.frame)
-        middle_row.pack(fill=tk.X, pady=5)
+        middle_row = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        middle_row.pack(fill="x", pady=5)
 
         # Talismans frame (left)
-        talisman_frame = ttk.LabelFrame(middle_row, text="Talismans", padding=10)
-        talisman_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
+        talisman_frame = ctk.CTkFrame(
+            middle_row,
+            fg_color=("gray86", "gray25"),
+        )
+        talisman_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
+
+        ctk.CTkLabel(
+            talisman_frame,
+            text="Talismans",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).pack(anchor="w", padx=5, pady=(5, 0))
+
+        talisman_grid = ctk.CTkFrame(talisman_frame, fg_color="transparent")
+        talisman_grid.pack(fill="both", expand=True, padx=5, pady=5)
 
         talismans = [
             ("Talisman 1", "talisman1"),
@@ -131,25 +187,53 @@ class EquipmentEditor:
         ]
 
         for i, (label, key) in enumerate(talismans):
-            ttk.Label(talisman_frame, text=f"{label}:").grid(
-                row=i, column=0, sticky=tk.W, padx=5, pady=3
-            )
-            var = tk.IntVar(value=0)
+            ctk.CTkLabel(
+                talisman_grid,
+                text=f"{label}:",
+                text_color=("black", "white"),
+            ).grid(row=i, column=0, sticky="w", padx=5, pady=3)
+            var = ctk.IntVar(value=0)
             self.equipment_vars[key] = var
-            entry = ttk.Entry(talisman_frame, textvariable=var, width=12)
+            entry = ctk.CTkComboBox(
+                talisman_grid,
+                variable=var,
+                values=[],
+                width=120,
+                fg_color=("gray86", "gray25"),
+                text_color=("black", "white"),
+                button_color=("gray70", "gray30"),
+                command=lambda _v=None, k=key: self.update_equipment_name(k),
+            )
             entry.grid(row=i, column=1, padx=5, pady=3)
 
             # Item name label
-            name_label = ttk.Label(
-                talisman_frame, text="", foreground="blue", width=28, anchor="w"
+            name_label = ctk.CTkLabel(
+                talisman_grid,
+                text="",
+                text_color="#60a5fa",
+                width=200,
+                anchor="w",
             )
-            name_label.grid(row=i, column=2, sticky=tk.W, padx=5, pady=3)
+            name_label.grid(row=i, column=2, sticky="w", padx=5, pady=3)
             self.equipment_name_labels[key] = name_label
             var.trace("w", lambda *args, k=key: self.update_equipment_name(k))
 
         # Arrows/Bolts frame (right)
-        ammo_frame = ttk.LabelFrame(middle_row, text="Arrows & Bolts", padding=10)
-        ammo_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0))
+        ammo_frame = ctk.CTkFrame(
+            middle_row,
+            fg_color=("gray86", "gray25"),
+        )
+        ammo_frame.pack(side="left", fill="both", expand=True, padx=(5, 0))
+
+        ctk.CTkLabel(
+            ammo_frame,
+            text="Arrows & Bolts",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).pack(anchor="w", padx=5, pady=(5, 0))
+
+        ammo_grid = ctk.CTkFrame(ammo_frame, fg_color="transparent")
+        ammo_grid.pack(fill="both", expand=True, padx=5, pady=5)
 
         ammo = [
             ("Arrows 1", "arrows1"),
@@ -159,58 +243,99 @@ class EquipmentEditor:
         ]
 
         for i, (label, key) in enumerate(ammo):
-            ttk.Label(ammo_frame, text=f"{label}:").grid(
-                row=i, column=0, sticky=tk.W, padx=5, pady=3
-            )
-            var = tk.IntVar(value=0)
+            ctk.CTkLabel(
+                ammo_grid,
+                text=f"{label}:",
+                text_color=("black", "white"),
+            ).grid(row=i, column=0, sticky="w", padx=5, pady=3)
+            var = ctk.IntVar(value=0)
             self.equipment_vars[key] = var
-            entry = ttk.Entry(ammo_frame, textvariable=var, width=12)
+            entry = ctk.CTkComboBox(
+                ammo_grid,
+                variable=var,
+                values=[],
+                width=120,
+                fg_color=("gray86", "gray25"),
+                text_color=("black", "white"),
+                button_color=("gray70", "gray30"),
+                command=lambda _v=None, k=key: self.update_equipment_name(k),
+            )
             entry.grid(row=i, column=1, padx=5, pady=3)
 
             # Item name label
-            name_label = ttk.Label(
-                ammo_frame, text="", foreground="blue", width=28, anchor="w"
+            name_label = ctk.CTkLabel(
+                ammo_grid,
+                text="",
+                text_color="#60a5fa",
+                width=200,
+                anchor="w",
             )
-            name_label.grid(row=i, column=2, sticky=tk.W, padx=5, pady=3)
+            name_label.grid(row=i, column=2, sticky="w", padx=5, pady=3)
             self.equipment_name_labels[key] = name_label
             var.trace("w", lambda *args, k=key: self.update_equipment_name(k))
 
         # Bottom: Spells (12 slots in 2 columns)
-        spells_frame = ttk.LabelFrame(
-            self.frame, text="Spells (Memory Slots)", padding=10
+        spells_frame = ctk.CTkFrame(
+            self.frame,
+            fg_color=("gray86", "gray25"),
         )
-        spells_frame.pack(fill=tk.X, pady=5)
+        spells_frame.pack(fill="x", pady=5)
+
+        ctk.CTkLabel(
+            spells_frame,
+            text="Spells (Memory Slots)",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).pack(anchor="w", padx=5, pady=(5, 0))
+
+        spells_grid = ctk.CTkFrame(spells_frame, fg_color="transparent")
+        spells_grid.pack(fill="x", padx=5, pady=5)
 
         for i in range(12):
             row = i // 2
             col = (i % 2) * 3  # Changed to 3 to make room for name labels
 
-            ttk.Label(spells_frame, text=f"Spell {i + 1}:").grid(
-                row=row, column=col, sticky=tk.W, padx=5, pady=3
-            )
-            var = tk.IntVar(value=0)
+            ctk.CTkLabel(
+                spells_grid,
+                text=f"Spell {i + 1}:",
+                text_color=("black", "white"),
+            ).grid(row=row, column=col, sticky="w", padx=5, pady=3)
+            var = ctk.IntVar(value=0)
             key = f"spell{i + 1}"
             self.equipment_vars[key] = var
-            entry = ttk.Entry(spells_frame, textvariable=var, width=12)
+            entry = ctk.CTkComboBox(
+                spells_grid,
+                variable=var,
+                values=[],
+                width=120,
+                fg_color=("gray86", "gray25"),
+                text_color=("black", "white"),
+                button_color=("gray70", "gray30"),
+                command=lambda _v=None, k=key: self.update_equipment_name(k),
+            )
             entry.grid(row=row, column=col + 1, padx=5, pady=3)
 
             # Item name label
-            name_label = ttk.Label(
-                spells_frame, text="", foreground="blue", width=20, anchor="w"
+            name_label = ctk.CTkLabel(
+                spells_grid,
+                text="",
+                text_color="#60a5fa",
+                width=160,
+                anchor="w",
             )
-            name_label.grid(row=row, column=col + 2, sticky=tk.W, padx=5, pady=3)
+            name_label.grid(row=row, column=col + 2, sticky="w", padx=5, pady=3)
             self.equipment_name_labels[key] = name_label
             var.trace("w", lambda *args, k=key: self.update_equipment_name(k))
 
         # Apply button
-        button_frame = ttk.Frame(self.frame)
-        button_frame.pack(fill=tk.X, pady=10)
+        button_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        button_frame.pack(fill="x", pady=10)
 
-        ttk.Button(
+        ctk.CTkButton(
             button_frame,
             text="Apply Equipment Changes",
             command=self.apply_changes,
-            width=30,
+            width=240,
         ).pack()
 
     def load_equipment(self):
@@ -234,44 +359,44 @@ class EquipmentEditor:
 
         # Load all equipment IDs
         self.equipment_vars["right_hand_armament1"].set(
-            getattr(equip, "right_hand_armament1", 0)
+            str(getattr(equip, "right_hand_armament1", 0))
         )
         self.equipment_vars["right_hand_armament2"].set(
-            getattr(equip, "right_hand_armament2", 0)
+            str(getattr(equip, "right_hand_armament2", 0))
         )
         self.equipment_vars["right_hand_armament3"].set(
-            getattr(equip, "right_hand_armament3", 0)
+            str(getattr(equip, "right_hand_armament3", 0))
         )
         self.equipment_vars["left_hand_armament1"].set(
-            getattr(equip, "left_hand_armament1", 0)
+            str(getattr(equip, "left_hand_armament1", 0))
         )
         self.equipment_vars["left_hand_armament2"].set(
-            getattr(equip, "left_hand_armament2", 0)
+            str(getattr(equip, "left_hand_armament2", 0))
         )
         self.equipment_vars["left_hand_armament3"].set(
-            getattr(equip, "left_hand_armament3", 0)
+            str(getattr(equip, "left_hand_armament3", 0))
         )
 
-        self.equipment_vars["head"].set(getattr(equip, "head", 0))
-        self.equipment_vars["chest"].set(getattr(equip, "chest", 0))
-        self.equipment_vars["arms"].set(getattr(equip, "arms", 0))
-        self.equipment_vars["legs"].set(getattr(equip, "legs", 0))
+        self.equipment_vars["head"].set(str(getattr(equip, "head", 0)))
+        self.equipment_vars["chest"].set(str(getattr(equip, "chest", 0)))
+        self.equipment_vars["arms"].set(str(getattr(equip, "arms", 0)))
+        self.equipment_vars["legs"].set(str(getattr(equip, "legs", 0)))
 
-        self.equipment_vars["talisman1"].set(getattr(equip, "talisman1", 0))
-        self.equipment_vars["talisman2"].set(getattr(equip, "talisman2", 0))
-        self.equipment_vars["talisman3"].set(getattr(equip, "talisman3", 0))
-        self.equipment_vars["talisman4"].set(getattr(equip, "talisman4", 0))
+        self.equipment_vars["talisman1"].set(str(getattr(equip, "talisman1", 0)))
+        self.equipment_vars["talisman2"].set(str(getattr(equip, "talisman2", 0)))
+        self.equipment_vars["talisman3"].set(str(getattr(equip, "talisman3", 0)))
+        self.equipment_vars["talisman4"].set(str(getattr(equip, "talisman4", 0)))
 
-        self.equipment_vars["arrows1"].set(getattr(equip, "arrows1", 0))
-        self.equipment_vars["arrows2"].set(getattr(equip, "arrows2", 0))
-        self.equipment_vars["bolts1"].set(getattr(equip, "bolts1", 0))
-        self.equipment_vars["bolts2"].set(getattr(equip, "bolts2", 0))
+        self.equipment_vars["arrows1"].set(str(getattr(equip, "arrows1", 0)))
+        self.equipment_vars["arrows2"].set(str(getattr(equip, "arrows2", 0)))
+        self.equipment_vars["bolts1"].set(str(getattr(equip, "bolts1", 0)))
+        self.equipment_vars["bolts2"].set(str(getattr(equip, "bolts2", 0)))
 
         # Load spells if they exist
         for i in range(1, 13):
             key = f"spell{i}"
             if hasattr(equip, key):
-                self.equipment_vars[key].set(getattr(equip, key, 0))
+                self.equipment_vars[key].set(str(getattr(equip, key, 0)))
 
         # Update all name labels
         for key in self.equipment_vars.keys():
@@ -282,14 +407,17 @@ class EquipmentEditor:
         """Apply equipment changes to save file"""
         save_file = self.get_save_file()
         if not save_file:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         slot_idx = self.get_char_slot()
 
-        if not messagebox.askyesno(
+        if not CTkMessageBox.askyesno(
             "Confirm",
             f"Apply equipment changes to Slot {slot_idx + 1}?\n\nA backup will be created.",
+            parent=self.parent,
         ):
             return
 
@@ -318,52 +446,58 @@ class EquipmentEditor:
                 equip = slot.equipped_items_item_id
 
                 # Update all equipment
-                equip.right_hand_armament1 = self.equipment_vars[
+                equip.right_hand_armament1 = self._get_equipment_value(
                     "right_hand_armament1"
-                ].get()
-                equip.right_hand_armament2 = self.equipment_vars[
+                )
+                equip.right_hand_armament2 = self._get_equipment_value(
                     "right_hand_armament2"
-                ].get()
-                equip.right_hand_armament3 = self.equipment_vars[
+                )
+                equip.right_hand_armament3 = self._get_equipment_value(
                     "right_hand_armament3"
-                ].get()
-                equip.left_hand_armament1 = self.equipment_vars[
+                )
+                equip.left_hand_armament1 = self._get_equipment_value(
                     "left_hand_armament1"
-                ].get()
-                equip.left_hand_armament2 = self.equipment_vars[
+                )
+                equip.left_hand_armament2 = self._get_equipment_value(
                     "left_hand_armament2"
-                ].get()
-                equip.left_hand_armament3 = self.equipment_vars[
+                )
+                equip.left_hand_armament3 = self._get_equipment_value(
                     "left_hand_armament3"
-                ].get()
+                )
 
-                equip.head = self.equipment_vars["head"].get()
-                equip.chest = self.equipment_vars["chest"].get()
-                equip.arms = self.equipment_vars["arms"].get()
-                equip.legs = self.equipment_vars["legs"].get()
+                equip.head = self._get_equipment_value("head")
+                equip.chest = self._get_equipment_value("chest")
+                equip.arms = self._get_equipment_value("arms")
+                equip.legs = self._get_equipment_value("legs")
 
-                equip.talisman1 = self.equipment_vars["talisman1"].get()
-                equip.talisman2 = self.equipment_vars["talisman2"].get()
-                equip.talisman3 = self.equipment_vars["talisman3"].get()
-                equip.talisman4 = self.equipment_vars["talisman4"].get()
+                equip.talisman1 = self._get_equipment_value("talisman1")
+                equip.talisman2 = self._get_equipment_value("talisman2")
+                equip.talisman3 = self._get_equipment_value("talisman3")
+                equip.talisman4 = self._get_equipment_value("talisman4")
 
-                equip.arrows1 = self.equipment_vars["arrows1"].get()
-                equip.arrows2 = self.equipment_vars["arrows2"].get()
-                equip.bolts1 = self.equipment_vars["bolts1"].get()
-                equip.bolts2 = self.equipment_vars["bolts2"].get()
+                equip.arrows1 = self._get_equipment_value("arrows1")
+                equip.arrows2 = self._get_equipment_value("arrows2")
+                equip.bolts1 = self._get_equipment_value("bolts1")
+                equip.bolts2 = self._get_equipment_value("bolts2")
 
                 # Update spells
                 for i in range(1, 13):
                     key = f"spell{i}"
                     if hasattr(equip, key):
-                        setattr(equip, key, self.equipment_vars[key].get())
+                        setattr(equip, key, self._get_equipment_value(key))
 
-                messagebox.showinfo("Success", "Equipment updated successfully!")
+                CTkMessageBox.showinfo(
+                    "Success", "Equipment updated successfully!", parent=self.parent
+                )
             else:
-                messagebox.showerror("Error", "Character has no equipment data")
+                CTkMessageBox.showerror(
+                    "Error", "Character has no equipment data", parent=self.parent
+                )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to apply equipment changes:\n{e}")
+            CTkMessageBox.showerror(
+                "Error", f"Failed to apply equipment changes:\n{e}", parent=self.parent
+            )
 
     def update_equipment_name(self, equipment_key):
         """Update equipment name label when ID changes"""
@@ -371,9 +505,9 @@ class EquipmentEditor:
             return
 
         try:
-            item_id = self.equipment_vars[equipment_key].get()
+            item_id = self._get_equipment_value(equipment_key)
             if item_id == 0 or item_id == -1:
-                self.equipment_name_labels[equipment_key].config(text="")
+                self.equipment_name_labels[equipment_key].configure(text="")
                 return
 
             # Get name from item database
@@ -383,6 +517,18 @@ class EquipmentEditor:
             if len(item_name) > 28:
                 item_name = item_name[:25] + "..."
 
-            self.equipment_name_labels[equipment_key].config(text=item_name)
+            self.equipment_name_labels[equipment_key].configure(text=item_name)
         except Exception:
-            self.equipment_name_labels[equipment_key].config(text="(Unknown)")
+            # Fallback for invalid/unknown IDs or decode failures
+            self.equipment_name_labels[equipment_key].configure(text="(Unknown)")
+
+    def _get_equipment_value(self, key):
+        """Safely parse equipment value from its widget variable"""
+        try:
+            value = self.equipment_vars.get(key)
+            if value is None:
+                return 0
+            raw = value.get()
+            return int(raw) if raw not in ("", None) else 0
+        except Exception:
+            return 0

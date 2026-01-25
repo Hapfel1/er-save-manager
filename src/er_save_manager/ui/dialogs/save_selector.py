@@ -1,14 +1,24 @@
-"""
-Save Selector Dialog
-Dialog for selecting from multiple save files
-"""
+"""CustomTkinter Save Selector Dialog with Lavender theme."""
 
-import tkinter as tk
-from tkinter import ttk
+from importlib import resources
+
+import customtkinter as ctk
 
 
 class SaveSelectorDialog:
-    """Dialog for selecting from multiple save files"""
+    """Dialog for selecting from multiple save files using customtkinter."""
+
+    @staticmethod
+    def _load_lavender_theme():
+        """Load the lavender theme from customtkinterthemes if available."""
+        try:
+            import customtkinterthemes as ctt
+
+            theme_path = resources.files(ctt).joinpath("themes", "lavender.json")
+            ctk.set_default_color_theme(theme_path)
+        except Exception:
+            # Fallback to built-in dark-blue if theme package missing
+            ctk.set_default_color_theme("dark-blue")
 
     @staticmethod
     def show(parent, saves, callback):
@@ -20,44 +30,82 @@ class SaveSelectorDialog:
             saves: List of Path objects for save files
             callback: Function to call with selected save path
         """
-        dialog = tk.Toplevel(parent)
+        # Load lavender theme (appearance mode already set in main GUI)
+        SaveSelectorDialog._load_lavender_theme()
+
+        dialog = ctk.CTkToplevel(parent)
         dialog.title("Select Save File")
-        dialog.geometry("600x350")
         dialog.grab_set()
+        dialog.resizable(True, True)
 
+        width, height = 780, 520
         dialog.update_idletasks()
-        x = (dialog.winfo_screenwidth() // 2) - (dialog.winfo_width() // 2)
-        y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
-        dialog.geometry(f"600x350+{x}+{y}")
+        x = (dialog.winfo_screenwidth() // 2) - (width // 2)
+        y = (dialog.winfo_screenheight() // 2) - (height // 2)
+        dialog.geometry(f"{width}x{height}+{x}+{y}")
 
-        ttk.Label(
+        title = ctk.CTkLabel(
             dialog,
             text=f"Found {len(saves)} save files:",
-            font=("Segoe UI", 11, "bold"),
-            padding=15,
-        ).pack()
-
-        listbox_frame = ttk.Frame(dialog, padding=15)
-        listbox_frame.pack(fill=tk.BOTH, expand=True)
-
-        scrollbar = ttk.Scrollbar(listbox_frame)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        listbox = tk.Listbox(
-            listbox_frame, yscrollcommand=scrollbar.set, font=("Consolas", 9)
+            font=("Segoe UI", 14, "bold"),
+            pady=10,
         )
-        listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.config(command=listbox.yview)
+        title.pack(padx=15, pady=(12, 6))
+
+        # Scrollable list with click-to-select rows (list-like instead of radio dots)
+        selection_var = ctk.StringVar(value=str(saves[0]) if saves else "")
+        list_frame = ctk.CTkScrollableFrame(
+            dialog, label_text="Save Files", width=720, height=260
+        )
+        list_frame.pack(fill="both", expand=True, padx=15, pady=10)
+
+        row_widgets: list[tuple[str, ctk.CTkFrame, ctk.CTkLabel]] = []
+
+        def apply_selection(value: str):
+            selection_var.set(value)
+            # Update row highlight with mode-aware colors
+            for val, row, label in row_widgets:
+                if val == value:
+                    # Selected: lavender highlight
+                    row.configure(fg_color=("#c9a0dc", "#3b2f5c"))
+                    label.configure(text_color=("#1f1f28", "#f0f0f0"))
+                else:
+                    # Unselected: subtle background
+                    row.configure(fg_color=("#f5f5f5", "#2a2a3e"))
+                    label.configure(text_color=("#333333", "#cccccc"))
 
         for save in saves:
-            listbox.insert(tk.END, str(save))
+            row = ctk.CTkFrame(
+                list_frame, fg_color=("#f5f5f5", "#2a2a3e"), corner_radius=6
+            )
+            row.pack(fill="x", pady=4, padx=4)
+
+            label = ctk.CTkLabel(row, text=str(save), anchor="w", padx=8, pady=6)
+            label.pack(fill="x")
+
+            row.bind("<Button-1>", lambda e, v=str(save): apply_selection(v))
+            label.bind("<Button-1>", lambda e, v=str(save): apply_selection(v))
+
+            row_widgets.append((str(save), row, label))
+
+        if saves:
+            apply_selection(str(saves[0]))
 
         def select_save():
-            selection = listbox.curselection()
-            if selection:
-                callback(str(saves[selection[0]]))
+            value = selection_var.get()
+            if value:
+                callback(value)
                 dialog.destroy()
 
-        ttk.Button(dialog, text="Select", command=select_save, width=15).pack(pady=15)
+        button_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        button_frame.pack(fill="x", pady=(0, 14))
 
-        listbox.bind("<Double-Button-1>", lambda e: select_save())
+        button = ctk.CTkButton(
+            button_frame, text="Select", command=select_save, width=140
+        )
+        button.pack(side="right", padx=15)
+
+        # Default selection and keyboard activation
+        button.focus_set()
+        dialog.bind("<Return>", lambda e: select_save())
+        dialog.bind("<Escape>", lambda e: dialog.destroy())

@@ -41,6 +41,7 @@ class Settings:
             "last_save_path": "",
             "theme": "default",
             "show_linux_save_warning": True,
+            "show_backup_pruning_warning": True,
         }
 
     def save(self):

@@ -7,9 +7,13 @@ import json
 import os
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog
+
+import customtkinter as ctk
 
 from er_save_manager.backup.manager import BackupManager
+from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.utils import bind_mousewheel
 
 
 class AppearanceTab:
@@ -32,87 +36,93 @@ class AppearanceTab:
         self.get_save_path = get_save_path_callback
         self.reload_save = reload_callback
 
-        self.preset_listbox = None
+        self.preset_frames = []
         self.selected_slot = None  # Track selected preset slot
 
     def setup_ui(self):
         """Setup the appearance tab UI"""
-        ttk.Label(
-            self.parent,
+        # Header
+        header_frame = ctk.CTkFrame(self.parent, fg_color="transparent")
+        header_frame.pack(fill=tk.X, padx=15, pady=(15, 10))
+
+        ctk.CTkLabel(
+            header_frame,
             text="Character Appearance & Presets",
-            font=("Segoe UI", 14, "bold"),
-        ).pack(pady=10)
+            font=("Segoe UI", 16, "bold"),
+        ).pack(anchor="w")
 
-        # Preset list
-        preset_frame = ttk.LabelFrame(
-            self.parent, text="Character Presets (15 slots)", padding=10
+        ctk.CTkLabel(
+            header_frame,
+            text="Manage character appearance presets (15 slots)",
+            font=("Segoe UI", 11),
+            text_color=("gray40", "gray70"),
+        ).pack(anchor="w", pady=(2, 0))
+
+        # Preset list container
+        list_container = ctk.CTkFrame(self.parent, corner_radius=10)
+        list_container.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
+
+        ctk.CTkLabel(
+            list_container,
+            text="Presets",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(pady=(12, 6), padx=12, anchor="w")
+
+        # Scrollable list
+        self.list_frame = ctk.CTkScrollableFrame(
+            list_container, corner_radius=8, height=280
         )
-        preset_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        self.list_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 12))
+        bind_mousewheel(self.list_frame)
 
-        list_frame = ttk.Frame(preset_frame)
-        list_frame.pack(fill=tk.BOTH, expand=True)
+        # Action buttons
+        action_frame = ctk.CTkFrame(self.parent, fg_color="transparent")
+        action_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
-        scrollbar = ttk.Scrollbar(list_frame)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        btn_row = ctk.CTkFrame(action_frame, fg_color="transparent")
+        btn_row.pack(fill=tk.X, pady=(0, 4))
 
-        self.preset_listbox = tk.Listbox(
-            list_frame,
-            yscrollcommand=scrollbar.set,
-            font=("Consolas", 10),
-            height=12,
-        )
-        self.preset_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.config(command=self.preset_listbox.yview)
-
-        # Bind selection event
-        self.preset_listbox.bind("<<ListboxSelect>>", self._on_preset_select)
-
-        # Preset actions
-        action_frame = ttk.Frame(self.parent)
-        action_frame.pack(fill=tk.X, pady=5)
-
-        ttk.Button(
-            action_frame,
+        ctk.CTkButton(
+            btn_row,
             text="View Details",
             command=self.view_preset_details,
-            width=18,
-        ).pack(side=tk.LEFT, padx=5)
+            width=130,
+        ).pack(side=tk.LEFT, padx=(0, 6))
 
-        ttk.Button(
-            action_frame,
+        ctk.CTkButton(
+            btn_row,
             text="Export to JSON",
             command=self.export_presets,
-            width=18,
-        ).pack(side=tk.LEFT, padx=5)
+            width=130,
+        ).pack(side=tk.LEFT, padx=(0, 6))
 
-        ttk.Button(
-            action_frame,
+        ctk.CTkButton(
+            btn_row,
             text="Import from JSON",
             command=self.import_preset_from_json,
-            width=18,
-        ).pack(side=tk.LEFT, padx=5)
+            width=130,
+        ).pack(side=tk.LEFT, padx=(0, 6))
 
-        ttk.Button(
-            action_frame,
-            text="Copy to Another Save",
-            command=self.copy_preset_to_save,
-            width=22,
-        ).pack(side=tk.LEFT, padx=5)
-
-        ttk.Button(
-            action_frame,
+        ctk.CTkButton(
+            btn_row,
             text="Delete Preset",
             command=self.delete_preset,
-            width=18,
-        ).pack(side=tk.LEFT, padx=5)
+            width=130,
+        ).pack(side=tk.LEFT, padx=(0, 6))
 
-        # Community presets button
-        ttk.Button(
-            action_frame,
+        ctk.CTkButton(
+            btn_row,
+            text="Copy to Another Save",
+            command=self.copy_preset_to_save,
+            width=170,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+
+        ctk.CTkButton(
+            btn_row,
             text="Browse Community Presets",
             command=self.open_preset_browser,
-            width=45,
-        ).pack(pady=5)
+            width=200,
+        ).pack(side=tk.LEFT)
 
     def open_preset_browser(self):
         """Open enhanced preset browser dialog."""
@@ -135,17 +145,29 @@ class AppearanceTab:
             print(f"Failed to fetch presets: {e}")
             PresetBrowserDialog.show_coming_soon(self.parent)
 
-    def _on_preset_select(self, event=None):
+    def select_preset(self, slot_idx, frame):
         """Handle preset selection"""
-        selection = self.preset_listbox.curselection()
-        if selection:
-            self.selected_slot = selection[0]
-        else:
-            self.selected_slot = None
+        self.selected_slot = slot_idx
+
+        # Get appearance mode for colors
+        mode = ctk.get_appearance_mode().lower()
+        selected_color = "#c9a0dc" if mode == "light" else "#3b2f5c"
+        unselected_color = "#f5f5f5" if mode == "light" else "#2a2a3e"
+
+        # Update all frames
+        for i, f in enumerate(self.preset_frames):
+            if i == slot_idx:
+                f.configure(fg_color=selected_color)
+            else:
+                f.configure(fg_color=unselected_color)
 
     def load_presets(self):
         """Load character presets"""
-        self.preset_listbox.delete(0, tk.END)
+        # Clear existing frames
+        for widget in self.list_frame.winfo_children():
+            widget.destroy()
+        self.preset_frames = []
+        self.selected_slot = None
 
         save_file = self.get_save_file()
         if not save_file:
@@ -154,14 +176,30 @@ class AppearanceTab:
         try:
             presets = save_file.get_character_presets()
             if not presets:
-                self.preset_listbox.insert(tk.END, "No presets found")
+                ctk.CTkLabel(
+                    self.list_frame, text="No presets found", text_color="gray"
+                ).pack(pady=10)
                 return
 
+            mode = ctk.get_appearance_mode().lower()
+            unselected_color = "#f5f5f5" if mode == "light" else "#2a2a3e"
+
             for i in range(15):
+                frame = ctk.CTkFrame(
+                    self.list_frame, corner_radius=8, fg_color=unselected_color
+                )
+                frame.pack(fill=tk.X, pady=4, padx=4)
+                self.preset_frames.append(frame)
+
+                # Make frame clickable
+                frame.bind(
+                    "<Button-1>", lambda e, idx=i, f=frame: self.select_preset(idx, f)
+                )
+
                 try:
                     preset = presets.presets[i]
                     if preset.is_empty():
-                        self.preset_listbox.insert(tk.END, f"Preset {i + 1:2d}: Empty")
+                        label_text = f"Preset {i + 1:2d}: Empty"
                     else:
                         body_type_value = (
                             preset.get_body_type()
@@ -169,14 +207,27 @@ class AppearanceTab:
                             else 0
                         )
                         body_type = "Type A" if body_type_value == 0 else "Type B"
-                        self.preset_listbox.insert(
-                            tk.END, f"Preset {i + 1:2d}: {body_type}"
-                        )
+                        label_text = f"Preset {i + 1:2d}: {body_type}"
                 except Exception:
-                    self.preset_listbox.insert(tk.END, f"Preset {i + 1:2d}: Error")
+                    label_text = f"Preset {i + 1:2d}: Error"
+
+                label = ctk.CTkLabel(
+                    frame,
+                    text=label_text,
+                    font=("Consolas", 11),
+                    anchor="w",
+                )
+                label.pack(fill=tk.X, padx=12, pady=8)
+                label.bind(
+                    "<Button-1>", lambda e, idx=i, f=frame: self.select_preset(idx, f)
+                )
 
         except Exception as e:
-            self.preset_listbox.insert(tk.END, "Error loading presets")
+            ctk.CTkLabel(
+                self.list_frame,
+                text="Error loading presets",
+                text_color=("red", "lightcoral"),
+            ).pack(pady=10)
             print(f"Error loading presets: {e}")
             import traceback
 
@@ -186,62 +237,61 @@ class AppearanceTab:
         """View detailed preset information"""
         save_file = self.get_save_file()
         if not save_file:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", self.parent
+            )
             return
 
-        selection = self.preset_listbox.curselection()
-        if not selection:
-            messagebox.showwarning("No Selection", "Please select a preset to view!")
+        if self.selected_slot is None:
+            CTkMessageBox.showwarning(
+                "No Selection", "Please select a preset to view!", self.parent
+            )
             return
 
-        preset_idx = selection[0]
+        preset_idx = self.selected_slot
 
         try:
             presets = save_file.get_character_presets()
             if not presets or preset_idx >= len(presets.presets):
-                messagebox.showerror("Error", "Could not load preset data")
+                CTkMessageBox.showerror(
+                    "Error", "Could not load preset data", self.parent
+                )
                 return
 
             preset = presets.presets[preset_idx]
 
             if preset.is_empty():
-                messagebox.showinfo("Empty Preset", f"Preset {preset_idx + 1} is empty")
+                CTkMessageBox.showinfo(
+                    "Empty Preset", f"Preset {preset_idx + 1} is empty", self.parent
+                )
                 return
 
             # Create dialog
-            dialog = tk.Toplevel(self.parent)
-            dialog.withdraw()
+            dialog = ctk.CTkToplevel(self.parent)
             dialog.title(f"Preset {preset_idx + 1} Details")
+            dialog.geometry("700x600")
+            dialog.resizable(True, True)
+            dialog.transient(self.parent)
+            dialog.grab_set()
+            dialog.lift()
+            dialog.focus_force()
 
-            width, height = 700, 600
-            screen_w = dialog.winfo_screenwidth()
-            screen_h = dialog.winfo_screenheight()
-            x = (screen_w // 2) - (width // 2)
-            y = (screen_h // 2) - (height // 2)
-            dialog.geometry(f"{width}x{height}+{x}+{y}")
-
-            ttk.Label(
+            ctk.CTkLabel(
                 dialog,
                 text=f"Preset {preset_idx + 1} - Character Appearance",
                 font=("Segoe UI", 14, "bold"),
-                padding=10,
-            ).pack()
+            ).pack(pady=(15, 10), padx=15)
 
             # Create scrollable text display
-            text_frame = ttk.Frame(dialog)
-            text_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+            text_container = ctk.CTkFrame(dialog, corner_radius=8)
+            text_container.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
 
-            scrollbar = ttk.Scrollbar(text_frame)
-            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-            text = tk.Text(
-                text_frame,
-                font=("Consolas", 9),
-                wrap=tk.WORD,
-                yscrollcommand=scrollbar.set,
+            text = ctk.CTkTextbox(
+                text_container,
+                font=("Consolas", 11),
+                wrap="word",
             )
-            text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-            scrollbar.config(command=text.yview)
+            text.pack(fill=tk.BOTH, expand=True)
 
             # Build comprehensive info text - use getattr for safety
             body_type_value = preset.get_body_type()
@@ -476,19 +526,19 @@ class AppearanceTab:
                 )
 
             text.insert("1.0", "\n".join(info))
-            text.config(state="disabled")
+            text.configure(state="disabled")
 
             # Close button
-            ttk.Button(dialog, text="Close", command=dialog.destroy, width=15).pack(
+            ctk.CTkButton(dialog, text="Close", command=dialog.destroy, width=15).pack(
                 pady=10
             )
 
-            dialog.deiconify()
+            # Auto-shown
             dialog.lift()
-            dialog.focus_force()
+            dialog.focus_set()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to view preset:\n{str(e)}")
+            CTkMessageBox.showerror("Error", f"Failed to view preset:\n{str(e)}")
             import traceback
 
             traceback.print_exc()
@@ -497,7 +547,7 @@ class AppearanceTab:
         """Export presets to JSON"""
         save_file = self.get_save_file()
         if not save_file:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
             return
 
         output_path = filedialog.asksaveasfilename(
@@ -509,15 +559,15 @@ class AppearanceTab:
         if output_path:
             try:
                 count = save_file.export_presets(output_path)
-                messagebox.showinfo("Success", f"Exported {count} preset(s) to JSON")
+                CTkMessageBox.showinfo("Success", f"Exported {count} preset(s) to JSON")
             except Exception as e:
-                messagebox.showerror("Error", f"Export failed:\n{str(e)}")
+                CTkMessageBox.showerror("Error", f"Export failed:\n{str(e)}")
 
     def import_preset_from_json(self):
         """Import preset from external JSON file"""
         save_file = self.get_save_file()
         if not save_file:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
             return
 
         json_path = filedialog.askopenfilename(
@@ -538,11 +588,11 @@ class AppearanceTab:
             elif isinstance(data, list):
                 presets = data
             else:
-                messagebox.showerror("Error", "Invalid JSON file format")
+                CTkMessageBox.showerror("Error", "Invalid JSON file format")
                 return
 
             if not presets:
-                messagebox.showerror("Error", "No presets found in JSON file")
+                CTkMessageBox.showerror("Error", "No presets found in JSON file")
                 return
 
             # Create import dialog
@@ -556,22 +606,22 @@ class AppearanceTab:
             y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
             dialog.geometry(f"550x250+{x}+{y}")
 
-            frame = ttk.Frame(dialog, padding=20)
-            frame.pack(fill=tk.BOTH, expand=True)
+            frame = ctk.CTkFrame(dialog)
+            frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-            ttk.Label(
+            ctk.CTkLabel(
                 frame,
                 text=f"Import from: {os.path.basename(json_path)}",
                 font=("Segoe UI", 11, "bold"),
             ).grid(row=0, column=0, columnspan=3, pady=(0, 15))
 
-            ttk.Label(frame, text="Select Preset from JSON:").grid(
+            ctk.CTkLabel(frame, text="Select Preset from JSON:").grid(
                 row=1, column=0, sticky=tk.W, pady=5
             )
 
-            preset_var = tk.StringVar()
+            preset_var = tk.StringVar(value="")
             preset_names = [f"Preset {i + 1}" for i in range(len(presets))]
-            preset_combo = ttk.Combobox(
+            preset_combo = ctk.CTkComboBox(
                 frame,
                 textvariable=preset_var,
                 values=preset_names,
@@ -581,12 +631,12 @@ class AppearanceTab:
             preset_combo.grid(row=1, column=1, padx=10, pady=5)
             preset_combo.current(0)
 
-            ttk.Label(frame, text="Import to Slot:").grid(
+            ctk.CTkLabel(frame, text="Import to Slot:").grid(
                 row=2, column=0, sticky=tk.W, pady=5
             )
 
             slot_var = tk.IntVar(value=1)
-            slot_combo = ttk.Combobox(
+            slot_combo = ctk.CTkComboBox(
                 frame,
                 textvariable=slot_var,
                 values=list(range(1, 16)),
@@ -603,7 +653,7 @@ class AppearanceTab:
                     target_slot = slot_var.get() - 1
 
                     if source_idx < 0 or target_slot < 0:
-                        messagebox.showwarning(
+                        CTkMessageBox.showwarning(
                             "Invalid", "Please select valid source and target"
                         )
                         return
@@ -630,29 +680,29 @@ class AppearanceTab:
                     if self.reload_save:
                         self.reload_save()
 
-                    messagebox.showinfo(
+                    CTkMessageBox.showinfo(
                         "Success", f"Preset imported to Slot {target_slot + 1}!"
                     )
                     dialog.destroy()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Import failed:\n{str(e)}")
+                    CTkMessageBox.showerror("Error", f"Import failed:\n{str(e)}")
                     import traceback
 
                     traceback.print_exc()
 
-            button_frame = ttk.Frame(frame)
+            button_frame = ctk.CTkFrame(frame)
             button_frame.grid(row=3, column=0, columnspan=3, pady=20)
 
-            ttk.Button(button_frame, text="Import", command=do_import, width=15).pack(
-                side=tk.LEFT, padx=5
-            )
-            ttk.Button(
+            ctk.CTkButton(
+                button_frame, text="Import", command=do_import, width=15
+            ).pack(side=tk.LEFT, padx=5)
+            ctk.CTkButton(
                 button_frame, text="Cancel", command=dialog.destroy, width=15
             ).pack(side=tk.LEFT, padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load JSON:\n{str(e)}")
+            CTkMessageBox.showerror("Error", f"Failed to load JSON:\n{str(e)}")
             import traceback
 
             traceback.print_exc()
@@ -660,23 +710,23 @@ class AppearanceTab:
     def copy_preset_to_save(self):
         """Copy selected preset to another save file"""
         if self.selected_slot is None:
-            messagebox.showwarning("No Selection", "Please select a preset to copy")
+            CTkMessageBox.showwarning("No Selection", "Please select a preset to copy")
             return
 
         save_file = self.get_save_file()
         if not save_file:
-            messagebox.showwarning("No Save", "Please load a save file first")
+            CTkMessageBox.showwarning("No Save", "Please load a save file first")
             return
 
         # Get preset info
         presets_data = save_file.get_character_presets()
         if not presets_data or self.selected_slot >= 15:
-            messagebox.showerror("Error", "Invalid preset selection")
+            CTkMessageBox.showerror("Error", "Invalid preset selection")
             return
 
         source_preset = presets_data.presets[self.selected_slot]
         if not source_preset or source_preset.is_empty():
-            messagebox.showwarning("Empty Slot", "Selected slot is empty")
+            CTkMessageBox.showwarning("Empty Slot", "Selected slot is empty")
             return
         # CRITICAL: Capture the slot value NOW to avoid closure issues
         source_slot = self.selected_slot
@@ -687,21 +737,21 @@ class AppearanceTab:
         dialog.geometry("600x250")
         dialog.grab_set()
 
-        frame = ttk.Frame(dialog, padding=20)
-        frame.pack(fill=tk.BOTH, expand=True)
+        frame = ctk.CTkFrame(dialog)
+        frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-        ttk.Label(
+        ctk.CTkLabel(
             frame,
             text=f"Copy preset from Slot {source_slot + 1}",
             font=("TkDefaultFont", 11, "bold"),
         ).grid(row=0, column=0, columnspan=3, pady=(0, 15))
 
-        ttk.Label(frame, text="Destination Save File:").grid(
+        ctk.CTkLabel(frame, text="Destination Save File:").grid(
             row=1, column=0, sticky="w", pady=5
         )
 
-        dest_path_var = tk.StringVar()
-        ttk.Entry(frame, textvariable=dest_path_var, width=45).grid(
+        dest_path_var = tk.StringVar(value="")
+        ctk.CTkEntry(frame, textvariable=dest_path_var, width=45).grid(
             row=1, column=1, padx=5
         )
 
@@ -715,23 +765,23 @@ class AppearanceTab:
             if filename:
                 dest_path_var.set(filename)
 
-        ttk.Button(frame, text="Browse", command=browse_dest).grid(
+        ctk.CTkButton(frame, text="Browse", command=browse_dest).grid(
             row=1, column=2, padx=5
         )
 
-        ttk.Label(frame, text="Destination Slot (1-15):").grid(
+        ctk.CTkLabel(frame, text="Destination Slot (1-15):").grid(
             row=2, column=0, sticky="w", pady=5
         )
 
         dest_slot_var = tk.StringVar(value="1")
-        ttk.Entry(frame, textvariable=dest_slot_var, width=10).grid(
+        ctk.CTkEntry(frame, textvariable=dest_slot_var, width=10).grid(
             row=2, column=1, sticky="w", padx=5
         )
 
         def do_copy():
             dest_path = dest_path_var.get()
             if not dest_path or not Path(dest_path).exists():
-                messagebox.showerror(
+                CTkMessageBox.showerror(
                     "Error", "Please select a valid destination save file"
                 )
                 return
@@ -739,7 +789,7 @@ class AppearanceTab:
             try:
                 dest_slot = int(dest_slot_var.get())
                 if dest_slot < 1 or dest_slot > 15:
-                    messagebox.showerror("Error", "Slot must be between 1 and 15")
+                    CTkMessageBox.showerror("Error", "Slot must be between 1 and 15")
                     return
 
                 # Load destination save
@@ -761,51 +811,52 @@ class AppearanceTab:
                 )
 
                 if not success:
-                    messagebox.showerror("Error", "Failed to copy preset")
+                    CTkMessageBox.showerror("Error", "Failed to copy preset")
                     return
 
                 # Save destination
                 dest_save.recalculate_checksums()
                 dest_save.to_file(dest_path)
 
-                messagebox.showinfo(
+                CTkMessageBox.showinfo(
                     "Success",
                     f"Preset copied to {Path(dest_path).name}, Slot {dest_slot}!",
                 )
                 dialog.destroy()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Copy failed:\n{str(e)}")
+                CTkMessageBox.showerror("Error", f"Copy failed:\n{str(e)}")
                 import traceback
 
                 traceback.print_exc()
 
-        button_frame = ttk.Frame(frame)
+        button_frame = ctk.CTkFrame(frame)
         button_frame.grid(row=3, column=0, columnspan=3, pady=20)
 
-        ttk.Button(button_frame, text="Copy", command=do_copy, width=15).pack(
+        ctk.CTkButton(button_frame, text="Copy", command=do_copy, width=15).pack(
             side=tk.LEFT, padx=5
         )
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy, width=15).pack(
-            side=tk.LEFT, padx=5
-        )
+        ctk.CTkButton(
+            button_frame, text="Cancel", command=dialog.destroy, width=15
+        ).pack(side=tk.LEFT, padx=5)
 
     def delete_preset(self):
         """Delete selected preset"""
         if self.selected_slot is None:
-            messagebox.showwarning("No Selection", "Please select a preset to delete")
+            CTkMessageBox.showwarning(
+                "No Selection", "Please select a preset to delete"
+            )
             return
 
         save_file = self.get_save_file()
         if not save_file:
-            messagebox.showwarning("No Save", "Please load a save file first")
+            CTkMessageBox.showwarning("No Save", "Please load a save file first")
             return
 
         # Confirm deletion
-        if not messagebox.askyesno(
+        if not CTkMessageBox.askyesno(
             "Confirm Delete",
             f"Delete preset in Slot {self.selected_slot + 1}?\n\nThis will clear the slot.",
-            icon="warning",
         ):
             return
 
@@ -824,7 +875,7 @@ class AppearanceTab:
             success = save_file.delete_preset(self.selected_slot)
 
             if not success:
-                messagebox.showerror("Error", "Failed to delete preset")
+                CTkMessageBox.showerror("Error", "Failed to delete preset")
                 return
 
             # Save
@@ -836,12 +887,15 @@ class AppearanceTab:
             if self.reload_save:
                 self.reload_save()
 
-            messagebox.showinfo(
+            # Refresh preset list so UI matches new state
+            self.load_presets()
+
+            CTkMessageBox.showinfo(
                 "Success", f"Preset in Slot {self.selected_slot + 1} deleted!"
             )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Delete failed:\n{str(e)}")
+            CTkMessageBox.showerror("Error", f"Delete failed:\n{str(e)}")
             import traceback
 
             traceback.print_exc()
