@@ -32,6 +32,10 @@ class BackupPruningWarningDialog(ctk.CTkToplevel):
 
         # Center on parent
         self.transient(parent)
+
+        # Force rendering on Linux before grab_set
+        from er_save_manager.ui.utils import force_render_dialog
+        force_render_dialog(self)
         self.grab_set()
 
         # Handle window close button
@@ -68,8 +72,13 @@ class BackupPruningWarningDialog(ctk.CTkToplevel):
         list_frame.pack(fill="both", expand=True, pady=(0, 10))
 
         # Create scrollable frame for backups
+        from er_save_manager.ui.utils import bind_mousewheel
+
         scrollable_list = ctk.CTkScrollableFrame(list_frame)
         scrollable_list.pack(fill="both", expand=True)
+
+        # Bind mousewheel for scrolling on Linux and other platforms
+        bind_mousewheel(scrollable_list)
 
         # Populate with backup info
         for backup in self.pruned_backups:

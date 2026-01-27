@@ -511,6 +511,7 @@ class CharacterManagementTab:
             from er_save_manager.backup.manager import BackupManager
             from er_save_manager.parser import Save
             from er_save_manager.transfer.character_ops import CharacterOperations
+            from er_save_manager.ui.utils import force_render_dialog
 
             # Load target save
             target_save = Save(target_path)
@@ -519,6 +520,9 @@ class CharacterManagementTab:
             slot_dialog = ctk.CTkToplevel(self.parent)
             slot_dialog.title("Select Target Slot")
             slot_dialog.geometry("300x150")
+
+            # Force rendering on Linux before grab_set
+            force_render_dialog(slot_dialog)
             slot_dialog.grab_set()
 
             dialog_label = ctk.CTkLabel(

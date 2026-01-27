@@ -14,6 +14,8 @@ class CTkMessageBox:
     @staticmethod
     def _create_dialog(parent, title, message, icon_type="info", buttons=None):
         """Create base dialog"""
+        from er_save_manager.ui.utils import force_render_dialog
+
         dialog = ctk.CTkToplevel(parent if parent else None)
         dialog.title(title)
 
@@ -25,29 +27,23 @@ class CTkMessageBox:
 
         dialog.geometry(f"{dialog_width}x{dialog_height}")
         dialog.resizable(False, False)
+
+        # Force rendering on Linux before grab_set
+        force_render_dialog(dialog)
         dialog.grab_set()
-
-        # Center dialog
-        dialog.update_idletasks()
-        x = (dialog.winfo_screenwidth() // 2) - (dialog_width // 2)
-        y = (dialog.winfo_screenheight() // 2) - (dialog_height // 2)
-        dialog.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
-
-        result = {"value": None}
-
-        # Icon colors
-        icon_colors = {
-            "info": ("#3b82f6", "#60a5fa"),
-            "warning": ("#f59e0b", "#fbbf24"),
-            "error": ("#ef4444", "#f87171"),
-            "question": ("#8b5cf6", "#a78bfa"),
-        }
 
         icon_symbols = {
             "info": "ℹ",
             "warning": "⚠",
             "error": "✕",
             "question": "?",
+        }
+
+        icon_colors = {
+            "info": ("#2563eb", "#60a5fa"),
+            "warning": ("#ea580c", "#fb923c"),
+            "error": ("#dc2626", "#fca5a5"),
+            "question": ("#7c3aed", "#c084fc"),
         }
 
         icon_color = icon_colors.get(icon_type, icon_colors["info"])
@@ -86,6 +82,8 @@ class CTkMessageBox:
 
         if buttons is None:
             buttons = [("OK", True)]
+
+        result = {}
 
         for btn_text, btn_value in buttons:
             ctk.CTkButton(

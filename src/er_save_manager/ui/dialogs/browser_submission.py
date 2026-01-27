@@ -297,6 +297,8 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
 
     import customtkinter as ctk
 
+    from er_save_manager.ui.utils import force_render_dialog
+
     # Create custom dialog
     dialog = ctk.CTkToplevel()
     dialog.title("Submission Ready")
@@ -313,8 +315,10 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
 
     # Make it stay on top
     dialog.attributes("-topmost", True)
-    dialog.lift()
-    dialog.focus_force()
+
+    # Force rendering on Linux
+    force_render_dialog(dialog)
+
     dialog.grab_set()  # ensure this dialog owns the grab so buttons remain clickable
 
     main_frame = ctk.CTkFrame(dialog, fg_color="transparent")

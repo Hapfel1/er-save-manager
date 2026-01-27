@@ -35,16 +35,22 @@ class PresetManager:
         # Try to create cache directory, fallback to temp if permission denied
         try:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
-        except (OSError, PermissionError):
+            print(f"[Image Cache] Using cache directory: {self.cache_dir}")
+        except (OSError, PermissionError) as e:
             # Fallback to system temp directory
+            print(f"[Image Cache] Cannot write to {self.cache_dir}: {e}")
             self.cache_dir = Path(tempfile.gettempdir()) / "er-save-manager-cache"
             self.cache_dir.mkdir(parents=True, exist_ok=True)
+            print(f"[Image Cache] Fallback cache directory: {self.cache_dir}")
 
         # Separate directories for different cache types
         self.thumbnails_dir = self.cache_dir / "thumbnails"
         self.thumbnails_dir.mkdir(exist_ok=True)
+        print(f"[Image Cache] Thumbnails directory: {self.thumbnails_dir}")
+        
         self.full_images_dir = self.cache_dir / "full_images"
         self.full_images_dir.mkdir(exist_ok=True)
+        print(f"[Image Cache] Full images directory: {self.full_images_dir}")
 
         # GitHub repo URL - update this to your actual repo
         self.base_url = (
@@ -117,13 +123,17 @@ class PresetManager:
             Preset data dict or None if failed
         """
         try:
+            print(f"[Preset Download] Starting download for preset {preset_id}")
             # Download preset JSON
             data_url = self.base_url + preset_info["data_url"]
+            print(f"[Preset Download] Data URL: {data_url}")
             with urllib.request.urlopen(data_url, timeout=10) as response:
                 preset_data = json.loads(response.read().decode("utf-8"))
+            print(f"[Preset Download] Downloaded preset data for {preset_id}")
 
             # Download and create thumbnail
             screenshot_url = self.base_url + preset_info["screenshot_url"]
+            print(f"[Preset Download] Screenshot URL: {screenshot_url}")
             thumbnail_path = self._download_and_create_thumbnail(
                 preset_id, screenshot_url
             )
@@ -137,9 +147,13 @@ class PresetManager:
             }
             with open(preset_path, "w", encoding="utf-8") as f:
                 json.dump(metadata, f)
+            print(f"[Preset Download] Cached preset data to {preset_path}")
 
             if thumbnail_path:
                 preset_data["screenshot_path"] = str(thumbnail_path)
+                print(f"[Preset Download] Set screenshot path: {thumbnail_path}")
+            else:
+                print(f"[Preset Download] WARNING: No thumbnail for {preset_id}")
             return preset_data
 
         except Exception as e:
@@ -321,16 +335,25 @@ class PresetManager:
         Returns:
             Path to thumbnail or None if failed
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        
         try:
             thumbnail_path = self.thumbnails_dir / f"{preset_id}.png"
+            logger.debug(f"[Image] Creating thumbnail for preset {preset_id}")
+            logger.debug(f"[Image] Thumbnail path: {thumbnail_path}")
+            logger.debug(f"[Image] Thumbnail dir exists: {self.thumbnails_dir.exists()}")
 
             # Return if already cached
             if thumbnail_path.exists():
+                logger.debug(f"[Image] Thumbnail already cached: {preset_id}")
                 return thumbnail_path
 
+            logger.debug(f"[Image] Downloading image from URL: {image_url}")
             # Download full image temporarily
             with urllib.request.urlopen(image_url, timeout=10) as response:
                 image_data = response.read()
+            logger.debug(f"[Image] Downloaded {len(image_data)} bytes for preset {preset_id}")
 
             # Try to create thumbnail using PIL if available
             try:
@@ -338,16 +361,22 @@ class PresetManager:
 
                 from PIL import Image
 
+                logger.debug(f"[Image] Creating PIL thumbnail for {preset_id}")
                 img = Image.open(io.BytesIO(image_data))
+                logger.debug(f"[Image] Original image size: {img.size}")
                 img.thumbnail(self.THUMBNAIL_SIZE, Image.Resampling.LANCZOS)
+                logger.debug(f"[Image] Resized to: {img.size}")
                 img.save(thumbnail_path, "PNG", optimize=True)
+                logger.debug(f"[Image] Saved thumbnail to: {thumbnail_path}")
             except ImportError:
                 # PIL not available, save full image as thumbnail
+                logger.warning(f"[Image] PIL not available, saving full image as thumbnail for {preset_id}")
                 thumbnail_path.write_bytes(image_data)
 
+            logger.debug(f"[Image] Successfully created thumbnail: {preset_id}")
             return thumbnail_path
         except Exception as e:
-            print(f"Failed to create thumbnail for {preset_id}: {e}")
+            logger.error(f"[Image] Failed to create thumbnail for {preset_id}: {e}", exc_info=True)
             return None
 
     def _cleanup_cache(self):
