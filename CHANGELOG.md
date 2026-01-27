@@ -3,6 +3,70 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.6.0
+**Released:** January 27, 2026
+
+
+### ✨ New Features
+
+- Apply dark theme to character editor and fix CTkMessageBox calls `[ui]` ([e4ae35e](https://github.com/Hapfel1/er-save-manager/commit/e4ae35e15a0f57019551931344abeca4174a18b7))
+
+- Community preset system with metrics, voting, and reporting ([71b0f50](https://github.com/Hapfel1/er-save-manager/commit/71b0f5078acc9fffff24a4e142d56992b7da6699))
+
+- Cross-platform save file detection and Linux steam path improvements ([42f58a3](https://github.com/Hapfel1/er-save-manager/commit/42f58a3746695300449e1d3aa1b5dd4456af72ac))
+
+
+
+### 🔧 Bug Fixes
+
+- Improve save file loading and compatdata warnings ([3ed7393](https://github.com/Hapfel1/er-save-manager/commit/3ed739361a4e1c53ef6e435faae6bba958a04457))
+
+- Format & lint ([e7ee415](https://github.com/Hapfel1/er-save-manager/commit/e7ee415a6a85924090428e01ae0286ee880fcb39))
+
+- Fixed issues when running the appimage on linux ([cce2cbb](https://github.com/Hapfel1/er-save-manager/commit/cce2cbbf43d787fb63aa214cbd3b0545c381f3d4))
+
+- Fix: linux tab rendering fixes
+build: added logging to find out issue with appearance browser ([f13188d](https://github.com/Hapfel1/er-save-manager/commit/f13188d749311973b56add619e66a845a964b83c))
+
+- Format & lint ([76f6856](https://github.com/Hapfel1/er-save-manager/commit/76f68563d0a444c36842db32fff834b3d297057f))
+
+- Fix: Fixed PIL/Tkinter ingegration for Linux
+Fixed Resource loading
+Fixed "grab failed" issues ([d882972](https://github.com/Hapfel1/er-save-manager/commit/d882972843695e79647cd3b3a02b502283ab6fa0))
+
+- Fixed eventflag binary search tree text file loading on linux ([cee75f7](https://github.com/Hapfel1/er-save-manager/commit/cee75f7581ce92b212d141f560fed6138a2fa837))
+
+- Fixed correct resources import ([e07509b](https://github.com/Hapfel1/er-save-manager/commit/e07509b14c038afa403ce3e545107212d5e55afb))
+
+
+
+### 🎨 User Interface
+
+- Enhance preset browser and application UI ([834ba8c](https://github.com/Hapfel1/er-save-manager/commit/834ba8c6f727de6bca6107ca36b51e550721aad2))
+
+
+
+### 📖 Documentation
+
+- Complete documentation rewrite with feature status and architecture ([8f6742b](https://github.com/Hapfel1/er-save-manager/commit/8f6742bf6569988d2ca73534a5ae5f31c34578bd))
+
+- Fixed documentation ([abc108c](https://github.com/Hapfel1/er-save-manager/commit/abc108cab70895e26fcbca92a3cf78954af58248))
+
+
+
+### ⚡ Performance Improvements
+
+- Optimize preset browser loading and caching ([27042ad](https://github.com/Hapfel1/er-save-manager/commit/27042ad0725bc60e4d31e3652bd0a42a4ce25452))
+
+
+
+### 🧹 Maintenance
+
+- Fix gitignore to track source data and fix region_ids_map ([23068a3](https://github.com/Hapfel1/er-save-manager/commit/23068a38a5066ef010490d3ebefc4ed90cfea59a))
+
+
+
+---
 ## 📦 Release 0.5.1
 **Released:** January 24, 2026
 
@@ -216,6 +280,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.6.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.5.1..v0.6.0
 [0.5.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.5.0..v0.5.1
 [0.5.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.4.1..v0.5.0
 [0.4.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.4.0..v0.4.1

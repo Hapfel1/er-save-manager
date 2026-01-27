@@ -1,6 +1,6 @@
 [project]
 name = "er-save-manager"
-version = "0.5.1"
+version = "0.6.0"
 description = "Elden Ring Save File Editor, Backup Manager, and Corruption Fixer"
 readme = "README.md"
 license = "MIT"
