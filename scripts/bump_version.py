@@ -55,23 +55,30 @@ def bump_version(new_version: str) -> None:
     version_txt_path.write_text(version_txt_content, encoding="utf-8")
     print(f"Updated {version_txt_path.name} to version {windows_version_str}")
 
-    # Update app.manifest file - only update assemblyIdentity version
+    # Update app.manifest file - replace assemblyIdentity version attribute
     manifest_path = Path(__file__).parent.parent / "resources" / "app.manifest"
     if manifest_path.exists():
         manifest_content = manifest_path.read_text(encoding="utf-8")
-        # Find and update only the assemblyIdentity version attribute
-        # Split around assemblyIdentity to avoid changing XML declaration
-        lines = manifest_content.split("\n")
-        for i, line in enumerate(lines):
-            # Look for the version= line that's inside assemblyIdentity (has leading spaces)
-            if "version=" in line and line.strip().startswith("version="):
-                lines[i] = re.sub(
-                    r'version="[\d.]+"',
-                    f'version="{windows_version_str}"',
-                    line,
-                )
-        manifest_content = "\n".join(lines)
-        manifest_path.write_text(manifest_content, encoding="utf-8")
+
+        # Normalize XML declaration version to 1.0 (avoid accidental replacement)
+        manifest_content = re.sub(
+            r'(<?xml[^>]*version=")[^"]+("[^>]*\?>)',
+            r"\g<1>1.0\g<2>",
+            manifest_content,
+            count=1,
+            flags=re.IGNORECASE,
+        )
+
+        # Replace only the assemblyIdentity version attribute
+        updated_manifest = re.sub(
+            r'(<assemblyIdentity[^>]*?\bversion=")[^"]+("[^>]*>)',
+            rf"\g<1>{windows_version_str}\g<2>",
+            manifest_content,
+            count=1,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+
+        manifest_path.write_text(updated_manifest, encoding="utf-8")
         print(f"Updated {manifest_path.name} to version {windows_version_str}")
 
 
