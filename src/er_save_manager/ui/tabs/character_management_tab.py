@@ -1,11 +1,16 @@
 """
-Character Management Tab
+Character Management Tab (CustomTkinter)
 Handles copy, transfer, swap, export, import, and delete operations
 """
 
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog
+
+import customtkinter as ctk
+
+from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.utils import bind_mousewheel
 
 
 class CharacterManagementTab:
@@ -48,25 +53,41 @@ class CharacterManagementTab:
 
     def setup_ui(self):
         """Setup the character management tab UI"""
-        ttk.Label(
+        # Title
+        title_label = ctk.CTkLabel(
             self.parent,
             text="Character Management",
             font=("Segoe UI", 16, "bold"),
-        ).pack(pady=10)
+        )
+        title_label.pack(pady=10)
 
-        info_text = ttk.Label(
+        # Info label
+        info_text = ctk.CTkLabel(
             self.parent,
             text="Transfer characters between save files, copy slots, and manage your character roster",
-            font=("Segoe UI", 10),
-            foreground="gray",
+            font=("Segoe UI", 11),
+            text_color=("gray40", "gray70"),
         )
         info_text.pack(pady=5)
 
-        # Operation selector
-        selector_frame = ttk.LabelFrame(
-            self.parent, text="Select Operation", padding=15
+        # Operation selector frame
+        selector_frame = ctk.CTkFrame(
+            self.parent,
+            corner_radius=10,
         )
         selector_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        # Add label to selector frame
+        selector_label = ctk.CTkLabel(
+            selector_frame,
+            text="Select Operation",
+            font=("Segoe UI", 12, "bold"),
+        )
+        selector_label.pack(anchor=tk.W, padx=15, pady=(10, 5))
+
+        # Inner frame for controls
+        selector_controls = ctk.CTkFrame(selector_frame, fg_color="transparent")
+        selector_controls.pack(fill=tk.X, padx=15, pady=(5, 15))
 
         self.char_operation_var = tk.StringVar(value="copy")
 
@@ -79,14 +100,18 @@ class CharacterManagementTab:
             ("Delete Character", "delete"),
         ]
 
+        # Operation label
+        op_label = ctk.CTkLabel(selector_controls, text="Operation:")
+        op_label.pack(side=tk.LEFT, padx=(0, 10))
+
         # Dropdown selector
-        ttk.Label(selector_frame, text="Operation:").pack(side=tk.LEFT, padx=(0, 10))
-        operation_combo = ttk.Combobox(
-            selector_frame,
-            textvariable=self.char_operation_var,
+        operation_combo = ctk.CTkComboBox(
+            selector_controls,
+            variable=self.char_operation_var,
             values=[op[0] for op in operations],
             state="readonly",
-            width=30,
+            width=300,
+            command=self.update_operation_panel,
         )
         operation_combo.pack(side=tk.LEFT, padx=5)
 
@@ -97,30 +122,45 @@ class CharacterManagementTab:
         # Set initial display value
         operation_combo.set("Copy Character")
 
-        # Bind change event
-        operation_combo.bind(
-            "<<ComboboxSelected>>", lambda e: self.update_operation_panel()
-        )
-
         # Operation panel frame
-        self.char_ops_panel = ttk.LabelFrame(
-            self.parent, text="Operation Details", padding=15
+        self.char_ops_panel = ctk.CTkFrame(
+            self.parent,
+            corner_radius=10,
         )
         self.char_ops_panel.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+        # Add label to operation panel
+        panel_label = ctk.CTkLabel(
+            self.char_ops_panel,
+            text="Operation Details",
+            font=("Segoe UI", 12, "bold"),
+        )
+        panel_label.pack(anchor=tk.W, padx=15, pady=(10, 5))
+
+        # Create scrollable frame for operation-specific content
+        self.ops_scrollable = ctk.CTkScrollableFrame(
+            self.char_ops_panel,
+            fg_color="transparent",
+        )
+        self.ops_scrollable.pack(fill=tk.BOTH, expand=True, padx=15, pady=(5, 15))
+
+        # Bind mousewheel to scrollable frame
+        bind_mousewheel(self.ops_scrollable)
 
         # Initialize with copy operation
         self.update_operation_panel()
 
-    def update_operation_panel(self):
-        """Update the operation panel based on selected operation"""
-        # Clear existing widgets
-        for widget in self.char_ops_panel.winfo_children():
+    def update_operation_panel(self, value=None):
+        """Update the operation panel based on selected operation - optimized for performance"""
+        # Clear existing widgets efficiently
+        for widget in self.ops_scrollable.winfo_children():
             widget.destroy()
 
         # Get internal operation value from display name
         display_name = self.char_operation_var.get()
         operation = self.operation_map.get(display_name, "copy")
 
+        # Create appropriate panel based on operation
         if operation == "copy":
             self._setup_copy_panel()
         elif operation == "transfer":
@@ -134,194 +174,240 @@ class CharacterManagementTab:
         elif operation == "delete":
             self._setup_delete_panel()
 
+        # Force layout update to avoid rendering delays
+        self.ops_scrollable.update_idletasks()
+
     def _setup_copy_panel(self):
         """Setup copy operation panel"""
-        ttk.Label(
-            self.char_ops_panel,
+        desc_label = ctk.CTkLabel(
+            self.ops_scrollable,
             text="Copy a character from one slot to another in the same save file",
-            font=("Segoe UI", 10),
-        ).pack(anchor=tk.W, pady=10)
+            font=("Segoe UI", 11),
+            text_color=("gray40", "gray70"),
+        )
+        desc_label.pack(anchor=tk.W, pady=10)
 
-        controls = ttk.Frame(self.char_ops_panel)
+        controls = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
         controls.pack(fill=tk.X, pady=10)
 
-        ttk.Label(controls, text="From Slot:").pack(side=tk.LEFT, padx=5)
+        from_label = ctk.CTkLabel(controls, text="From Slot:")
+        from_label.pack(side=tk.LEFT, padx=5)
+
         self.copy_from_var = tk.IntVar(value=1)
-        ttk.Combobox(
+        from_combo = ctk.CTkComboBox(
             controls,
-            textvariable=self.copy_from_var,
-            values=list(range(1, 11)),
-            width=8,
+            variable=self.copy_from_var,
+            values=[str(i) for i in range(1, 11)],
             state="readonly",
-        ).pack(side=tk.LEFT, padx=5)
+            width=80,
+        )
+        from_combo.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(controls, text="To Slot:").pack(side=tk.LEFT, padx=15)
+        to_label = ctk.CTkLabel(controls, text="To Slot:")
+        to_label.pack(side=tk.LEFT, padx=15)
+
         self.copy_to_var = tk.IntVar(value=2)
-        ttk.Combobox(
+        to_combo = ctk.CTkComboBox(
             controls,
-            textvariable=self.copy_to_var,
-            values=list(range(1, 11)),
-            width=8,
+            variable=self.copy_to_var,
+            values=[str(i) for i in range(1, 11)],
             state="readonly",
-        ).pack(side=tk.LEFT, padx=5)
+            width=80,
+        )
+        to_combo.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(
+        copy_button = ctk.CTkButton(
             controls,
             text="Copy Character",
             command=self.copy_character,
-            width=20,
-        ).pack(side=tk.LEFT, padx=20)
+            width=150,
+        )
+        copy_button.pack(side=tk.LEFT, padx=20)
 
     def _setup_transfer_panel(self):
         """Setup transfer operation panel"""
-        ttk.Label(
-            self.char_ops_panel,
+        desc_label = ctk.CTkLabel(
+            self.ops_scrollable,
             text="Transfer a character to a different save file",
-            font=("Segoe UI", 10),
-        ).pack(anchor=tk.W, pady=10)
+            font=("Segoe UI", 11),
+            text_color=("gray40", "gray70"),
+        )
+        desc_label.pack(anchor=tk.W, pady=10)
 
-        controls = ttk.Frame(self.char_ops_panel)
+        controls = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
         controls.pack(fill=tk.X, pady=10)
 
-        ttk.Label(controls, text="From Slot:").pack(side=tk.LEFT, padx=5)
-        self.transfer_from_var = tk.IntVar(value=1)
-        ttk.Combobox(
-            controls,
-            textvariable=self.transfer_from_var,
-            values=list(range(1, 11)),
-            width=8,
-            state="readonly",
-        ).pack(side=tk.LEFT, padx=5)
+        from_label = ctk.CTkLabel(controls, text="From Slot:")
+        from_label.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(
+        self.transfer_from_var = tk.IntVar(value=1)
+        from_combo = ctk.CTkComboBox(
+            controls,
+            variable=self.transfer_from_var,
+            values=[str(i) for i in range(1, 11)],
+            state="readonly",
+            width=80,
+        )
+        from_combo.pack(side=tk.LEFT, padx=5)
+
+        transfer_button = ctk.CTkButton(
             controls,
             text="Select Target Save...",
             command=self.transfer_character,
-            width=25,
-        ).pack(side=tk.LEFT, padx=20)
+            width=180,
+        )
+        transfer_button.pack(side=tk.LEFT, padx=20)
 
     def _setup_swap_panel(self):
         """Setup swap operation panel"""
-        ttk.Label(
-            self.char_ops_panel,
+        desc_label = ctk.CTkLabel(
+            self.ops_scrollable,
             text="Exchange two character slots",
-            font=("Segoe UI", 10),
-        ).pack(anchor=tk.W, pady=10)
+            font=("Segoe UI", 11),
+            text_color=("gray40", "gray70"),
+        )
+        desc_label.pack(anchor=tk.W, pady=10)
 
-        controls = ttk.Frame(self.char_ops_panel)
+        controls = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
         controls.pack(fill=tk.X, pady=10)
 
-        ttk.Label(controls, text="Slot A:").pack(side=tk.LEFT, padx=5)
+        slot_a_label = ctk.CTkLabel(controls, text="Slot A:")
+        slot_a_label.pack(side=tk.LEFT, padx=5)
+
         self.swap_a_var = tk.IntVar(value=1)
-        ttk.Combobox(
+        slot_a_combo = ctk.CTkComboBox(
             controls,
-            textvariable=self.swap_a_var,
-            values=list(range(1, 11)),
-            width=8,
+            variable=self.swap_a_var,
+            values=[str(i) for i in range(1, 11)],
             state="readonly",
-        ).pack(side=tk.LEFT, padx=5)
+            width=80,
+        )
+        slot_a_combo.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(controls, text="Slot B:").pack(side=tk.LEFT, padx=15)
+        slot_b_label = ctk.CTkLabel(controls, text="Slot B:")
+        slot_b_label.pack(side=tk.LEFT, padx=15)
+
         self.swap_b_var = tk.IntVar(value=2)
-        ttk.Combobox(
+        slot_b_combo = ctk.CTkComboBox(
             controls,
-            textvariable=self.swap_b_var,
-            values=list(range(1, 11)),
-            width=8,
+            variable=self.swap_b_var,
+            values=[str(i) for i in range(1, 11)],
             state="readonly",
-        ).pack(side=tk.LEFT, padx=5)
+            width=80,
+        )
+        slot_b_combo.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(
+        swap_button = ctk.CTkButton(
             controls,
             text="Swap Slots",
             command=self.swap_characters,
-            width=20,
-        ).pack(side=tk.LEFT, padx=20)
+            width=150,
+        )
+        swap_button.pack(side=tk.LEFT, padx=20)
 
     def _setup_export_panel(self):
         """Setup export operation panel"""
-        ttk.Label(
-            self.char_ops_panel,
+        desc_label = ctk.CTkLabel(
+            self.ops_scrollable,
             text="Save character to a standalone .erc file for backup or sharing",
-            font=("Segoe UI", 10),
-        ).pack(anchor=tk.W, pady=10)
+            font=("Segoe UI", 11),
+            text_color=("gray40", "gray70"),
+        )
+        desc_label.pack(anchor=tk.W, pady=10)
 
-        controls = ttk.Frame(self.char_ops_panel)
+        controls = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
         controls.pack(fill=tk.X, pady=10)
 
-        ttk.Label(controls, text="Slot:").pack(side=tk.LEFT, padx=5)
-        self.export_slot_var = tk.IntVar(value=1)
-        ttk.Combobox(
-            controls,
-            textvariable=self.export_slot_var,
-            values=list(range(1, 11)),
-            width=8,
-            state="readonly",
-        ).pack(side=tk.LEFT, padx=5)
+        slot_label = ctk.CTkLabel(controls, text="Slot:")
+        slot_label.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(
+        self.export_slot_var = tk.IntVar(value=1)
+        slot_combo = ctk.CTkComboBox(
+            controls,
+            variable=self.export_slot_var,
+            values=[str(i) for i in range(1, 11)],
+            state="readonly",
+            width=80,
+        )
+        slot_combo.pack(side=tk.LEFT, padx=5)
+
+        export_button = ctk.CTkButton(
             controls,
             text="Export Character...",
             command=self.export_character,
-            width=25,
-        ).pack(side=tk.LEFT, padx=20)
+            width=180,
+        )
+        export_button.pack(side=tk.LEFT, padx=20)
 
     def _setup_import_panel(self):
         """Setup import operation panel"""
-        ttk.Label(
-            self.char_ops_panel,
+        desc_label = ctk.CTkLabel(
+            self.ops_scrollable,
             text="Load a character from a .erc file into a slot",
-            font=("Segoe UI", 10),
-        ).pack(anchor=tk.W, pady=10)
+            font=("Segoe UI", 11),
+            text_color=("gray40", "gray70"),
+        )
+        desc_label.pack(anchor=tk.W, pady=10)
 
-        controls = ttk.Frame(self.char_ops_panel)
+        controls = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
         controls.pack(fill=tk.X, pady=10)
 
-        ttk.Label(controls, text="To Slot:").pack(side=tk.LEFT, padx=5)
-        self.import_slot_var = tk.IntVar(value=1)
-        ttk.Combobox(
-            controls,
-            textvariable=self.import_slot_var,
-            values=list(range(1, 11)),
-            width=8,
-            state="readonly",
-        ).pack(side=tk.LEFT, padx=5)
+        slot_label = ctk.CTkLabel(controls, text="To Slot:")
+        slot_label.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(
+        self.import_slot_var = tk.IntVar(value=1)
+        slot_combo = ctk.CTkComboBox(
+            controls,
+            variable=self.import_slot_var,
+            values=[str(i) for i in range(1, 11)],
+            state="readonly",
+            width=80,
+        )
+        slot_combo.pack(side=tk.LEFT, padx=5)
+
+        import_button = ctk.CTkButton(
             controls,
             text="Import Character...",
             command=self.import_character,
-            width=25,
-        ).pack(side=tk.LEFT, padx=20)
+            width=180,
+        )
+        import_button.pack(side=tk.LEFT, padx=20)
 
     def _setup_delete_panel(self):
         """Setup delete operation panel"""
-        ttk.Label(
-            self.char_ops_panel,
+        desc_label = ctk.CTkLabel(
+            self.ops_scrollable,
             text="Clear a character slot (creates backup)",
-            font=("Segoe UI", 10),
-            foreground="red",
-        ).pack(anchor=tk.W, pady=10)
+            font=("Segoe UI", 11),
+            text_color=("red",),
+        )
+        desc_label.pack(anchor=tk.W, pady=10)
 
-        controls = ttk.Frame(self.char_ops_panel)
+        controls = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
         controls.pack(fill=tk.X, pady=10)
 
-        ttk.Label(controls, text="Slot:").pack(side=tk.LEFT, padx=5)
-        self.delete_slot_var = tk.IntVar(value=1)
-        ttk.Combobox(
-            controls,
-            textvariable=self.delete_slot_var,
-            values=list(range(1, 11)),
-            width=8,
-            state="readonly",
-        ).pack(side=tk.LEFT, padx=5)
+        slot_label = ctk.CTkLabel(controls, text="Slot:")
+        slot_label.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(
+        self.delete_slot_var = tk.IntVar(value=1)
+        slot_combo = ctk.CTkComboBox(
+            controls,
+            variable=self.delete_slot_var,
+            values=[str(i) for i in range(1, 11)],
+            state="readonly",
+            width=80,
+        )
+        slot_combo.pack(side=tk.LEFT, padx=5)
+
+        delete_button = ctk.CTkButton(
             controls,
             text="Delete Character",
             command=self.delete_character,
-            width=20,
-        ).pack(side=tk.LEFT, padx=20)
+            width=150,
+            fg_color=("red", "darkred"),
+            hover_color=("darkred", "red"),
+        )
+        delete_button.pack(side=tk.LEFT, padx=20)
 
     # ========== Operations ==========
 
@@ -329,14 +415,14 @@ class CharacterManagementTab:
         """Copy character from one slot to another"""
         save_file = self.get_save_file()
         if not save_file:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
             return
 
         from_slot = self.copy_from_var.get() - 1
         to_slot = self.copy_to_var.get() - 1
 
         if from_slot == to_slot:
-            messagebox.showerror(
+            CTkMessageBox.showerror(
                 "Error", "Source and destination slots must be different!"
             )
             return
@@ -345,17 +431,18 @@ class CharacterManagementTab:
         to_char = save_file.characters[to_slot]
 
         if from_char.is_empty():
-            messagebox.showerror("Error", f"Slot {from_slot + 1} is empty!")
+            CTkMessageBox.showerror("Error", f"Slot {from_slot + 1} is empty!")
             return
 
         from_name = from_char.get_character_name()
 
         if not to_char.is_empty():
             to_name = to_char.get_character_name()
-            if not messagebox.askyesno(
+            response = CTkMessageBox.askyesno(
                 "Overwrite?",
                 f"Slot {to_slot + 1} contains '{to_name}'.\n\nOverwrite with '{from_name}'?",
-            ):
+            )
+            if response != "Yes":
                 return
 
         try:
@@ -386,14 +473,13 @@ class CharacterManagementTab:
             if self.reload_save:
                 self.reload_save()
 
-            messagebox.showinfo(
+            CTkMessageBox.showinfo(
                 "Success",
-                f"Character '{from_name}' copied from Slot {from_slot + 1} to Slot {to_slot + 1}!\n\n"
-                f"Backup created in backup manager.",
+                f"Character '{from_name}' copied from Slot {from_slot + 1} to Slot {to_slot + 1}!\n\nBackup created in backup manager.",
             )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Copy failed:\n{str(e)}")
+            CTkMessageBox.showerror("Error", f"Copy failed:\n{str(e)}")
             import traceback
 
             traceback.print_exc()
@@ -402,14 +488,14 @@ class CharacterManagementTab:
         """Transfer character to another save file"""
         save_file = self.get_save_file()
         if not save_file:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
             return
 
         from_slot = self.transfer_from_var.get() - 1
         from_char = save_file.characters[from_slot]
 
         if from_char.is_empty():
-            messagebox.showerror("Error", f"Slot {from_slot + 1} is empty!")
+            CTkMessageBox.showerror("Error", f"Slot {from_slot + 1} is empty!")
             return
 
         # Select target save file
@@ -425,28 +511,36 @@ class CharacterManagementTab:
             from er_save_manager.backup.manager import BackupManager
             from er_save_manager.parser import Save
             from er_save_manager.transfer.character_ops import CharacterOperations
+            from er_save_manager.ui.utils import force_render_dialog
 
             # Load target save
             target_save = Save(target_path)
 
             # Ask which slot in target
-            slot_dialog = tk.Toplevel(self.parent)
+            slot_dialog = ctk.CTkToplevel(self.parent)
             slot_dialog.title("Select Target Slot")
             slot_dialog.geometry("300x150")
+
+            # Force rendering on Linux before grab_set
+            force_render_dialog(slot_dialog)
             slot_dialog.grab_set()
 
-            ttk.Label(
-                slot_dialog, text="Select destination slot in target save:", padding=10
-            ).pack()
+            dialog_label = ctk.CTkLabel(
+                slot_dialog,
+                text="Select destination slot in target save:",
+                font=("Segoe UI", 12),
+            )
+            dialog_label.pack(padx=10, pady=10)
 
             to_slot_var = tk.IntVar(value=1)
-            ttk.Combobox(
+            slot_combo = ctk.CTkComboBox(
                 slot_dialog,
-                textvariable=to_slot_var,
-                values=list(range(1, 11)),
+                variable=to_slot_var,
+                values=[str(i) for i in range(1, 11)],
                 state="readonly",
-                width=10,
-            ).pack(pady=10)
+                width=150,
+            )
+            slot_combo.pack(pady=10)
 
             result = [None]
 
@@ -454,7 +548,12 @@ class CharacterManagementTab:
                 result[0] = to_slot_var.get() - 1
                 slot_dialog.destroy()
 
-            ttk.Button(slot_dialog, text="Transfer", command=confirm).pack(pady=10)
+            confirm_button = ctk.CTkButton(
+                slot_dialog,
+                text="Transfer",
+                command=confirm,
+            )
+            confirm_button.pack(pady=10)
 
             slot_dialog.wait_window()
 
@@ -497,14 +596,13 @@ class CharacterManagementTab:
             if self.reload_save:
                 self.reload_save()
 
-            messagebox.showinfo(
+            CTkMessageBox.showinfo(
                 "Success",
-                f"Character transferred from Slot {from_slot + 1} to target save Slot {to_slot + 1}!\n\n"
-                f"Both saves backed up.",
+                f"Character transferred from Slot {from_slot + 1} to target save Slot {to_slot + 1}!\n\nBoth saves backed up.",
             )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Transfer failed:\n{str(e)}")
+            CTkMessageBox.showerror("Error", f"Transfer failed:\n{str(e)}")
             import traceback
 
             traceback.print_exc()
@@ -513,14 +611,14 @@ class CharacterManagementTab:
         """Swap two character slots"""
         save_file = self.get_save_file()
         if not save_file:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
             return
 
         slot_a = self.swap_a_var.get() - 1
         slot_b = self.swap_b_var.get() - 1
 
         if slot_a == slot_b:
-            messagebox.showerror("Error", "Slots must be different!")
+            CTkMessageBox.showerror("Error", "Slots must be different!")
             return
 
         try:
@@ -548,13 +646,12 @@ class CharacterManagementTab:
             if self.reload_save:
                 self.reload_save()
 
-            messagebox.showinfo(
-                "Success",
-                f"Swapped Slot {slot_a + 1} and Slot {slot_b + 1}!",
+            CTkMessageBox.showinfo(
+                "Success", f"Swapped Slot {slot_a + 1} and Slot {slot_b + 1}!"
             )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Swap failed:\n{str(e)}")
+            CTkMessageBox.showerror("Error", f"Swap failed:\n{str(e)}")
             import traceback
 
             traceback.print_exc()
@@ -563,14 +660,14 @@ class CharacterManagementTab:
         """Export character to .erc file"""
         save_file = self.get_save_file()
         if not save_file:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
             return
 
         slot = self.export_slot_var.get() - 1
         char = save_file.characters[slot]
 
         if char.is_empty():
-            messagebox.showerror("Error", f"Slot {slot + 1} is empty!")
+            CTkMessageBox.showerror("Error", f"Slot {slot + 1} is empty!")
             return
 
         # Get character name for default filename
@@ -592,13 +689,12 @@ class CharacterManagementTab:
 
             CharacterOperations.export_character(save_file, slot, Path(output_path))
 
-            messagebox.showinfo(
-                "Success",
-                f"Character '{char_name}' exported to:\n{output_path}",
+            CTkMessageBox.showinfo(
+                "Success", f"Character '{char_name}' exported to:\n{output_path}"
             )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Export failed:\n{str(e)}")
+            CTkMessageBox.showerror("Error", f"Export failed:\n{str(e)}")
             import traceback
 
             traceback.print_exc()
@@ -607,7 +703,7 @@ class CharacterManagementTab:
         """Import character from .erc file"""
         save_file = self.get_save_file()
         if not save_file:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
             return
 
         import_path = filedialog.askopenfilename(
@@ -623,10 +719,10 @@ class CharacterManagementTab:
 
         if not to_char.is_empty():
             to_name = to_char.get_character_name()
-            if not messagebox.askyesno(
-                "Overwrite?",
-                f"Slot {to_slot + 1} contains '{to_name}'.\n\nOverwrite?",
-            ):
+            response = CTkMessageBox.askyesno(
+                "Overwrite?", f"Slot {to_slot + 1} contains '{to_name}'.\n\nOverwrite?"
+            )
+            if response != "Yes":
                 return
 
         try:
@@ -654,13 +750,12 @@ class CharacterManagementTab:
             if self.reload_save:
                 self.reload_save()
 
-            messagebox.showinfo(
-                "Success",
-                f"Character imported to Slot {to_slot + 1}!",
+            CTkMessageBox.showinfo(
+                "Success", f"Character imported to Slot {to_slot + 1}!"
             )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Import failed:\n{str(e)}")
+            CTkMessageBox.showerror("Error", f"Import failed:\n{str(e)}")
             import traceback
 
             traceback.print_exc()
@@ -669,23 +764,23 @@ class CharacterManagementTab:
         """Delete character from slot"""
         save_file = self.get_save_file()
         if not save_file:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
             return
 
         slot = self.delete_slot_var.get() - 1
         char = save_file.characters[slot]
 
         if char.is_empty():
-            messagebox.showinfo("Info", f"Slot {slot + 1} is already empty.")
+            CTkMessageBox.showinfo("Info", f"Slot {slot + 1} is already empty.")
             return
 
         char_name = char.get_character_name()
 
-        if not messagebox.askyesno(
+        response = CTkMessageBox.askyesno(
             "Confirm Delete",
-            f"Delete character '{char_name}' from Slot {slot + 1}?\n\n"
-            f"This will create a backup first.",
-        ):
+            f"Delete character '{char_name}' from Slot {slot + 1}?\n\nThis will create a backup first.",
+        )
+        if response != "Yes":
             return
 
         try:
@@ -713,13 +808,13 @@ class CharacterManagementTab:
             if self.reload_save:
                 self.reload_save()
 
-            messagebox.showinfo(
+            CTkMessageBox.showinfo(
                 "Success",
                 f"Character '{char_name}' deleted from Slot {slot + 1}.\n\nBackup created.",
             )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Delete failed:\n{str(e)}")
+            CTkMessageBox.showerror("Error", f"Delete failed:\n{str(e)}")
             import traceback
 
             traceback.print_exc()

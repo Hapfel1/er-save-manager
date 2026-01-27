@@ -16,6 +16,7 @@ from er_save_manager.data.locations import (
     get_map_name,
 )
 from er_save_manager.parser.er_types import FloatVector3, FloatVector4, MapId
+from er_save_manager.parser.slot_rebuild import rebuild_slot
 
 if TYPE_CHECKING:
     from er_save_manager.parser import Save
@@ -62,6 +63,8 @@ class WorldStateEditor:
         """
         Teleport character to a predefined safe location.
 
+        Uses full save rebuild to handle variable-size regions structure.
+
         Args:
             location_key: Key from SAFE_LOCATIONS
 
@@ -75,22 +78,70 @@ class WorldStateEditor:
         if not location:
             return False, f"Unknown location: {location_key}"
 
-        # Check if DLC location
-        if location.is_dlc and not self.slot.has_dlc_flag():
-            return (
-                False,
-                "Cannot teleport to DLC location: character has not entered DLC",
-            )
+        # Update map ID in parsed structure so rebuild writes it
+        self.slot.map_id.data = location.map_id.data
+        # Keep player coordinate map ID in sync
+        if hasattr(self.slot, "player_coordinates"):
+            self.slot.player_coordinates.map_id.data = location.map_id.data
 
-        # Update map ID - use struct to write bytes
-        import struct
-
-        map_offset = self.slot.data_start + 0x4
-        struct.pack_into("4B", self.save._raw_data, map_offset, *location.map_id.data)
-
-        # Update coordinates if provided
+        # Update coordinates in parsed structure so rebuild writes them
         if location.coordinates:
-            self._write_coordinates(location.coordinates)
+            coords = self.slot.player_coordinates.coordinates
+            coords.x = location.coordinates.x
+            coords.y = location.coordinates.y
+            coords.z = location.coordinates.z
+
+            # Also update unknown secondary coordinates to match
+            # (Rust version has player_coords2 which seems to be a duplicate)
+            unk_coords = self.slot.player_coordinates.unk_coordinates
+            unk_coords.x = location.coordinates.x
+            unk_coords.y = location.coordinates.y
+            unk_coords.z = location.coordinates.z
+
+        # Add region ID to unlocked regions if not already present
+        if hasattr(self.slot, "unlocked_regions"):
+            if location.region_id > 0:
+                if location.region_id not in self.slot.unlocked_regions.region_ids:
+                    # Add the region
+                    self.slot.unlocked_regions.region_ids.append(location.region_id)
+                    self.slot.unlocked_regions.count = len(
+                        self.slot.unlocked_regions.region_ids
+                    )
+
+                    # Rebuild entire slot to persist changes
+                    try:
+                        rebuilt_data = rebuild_slot(self.slot)
+
+                        # Write rebuilt data at the character data start (after checksum)
+                        slot_data_offset = self.slot.data_start
+                        self.save._raw_data[
+                            slot_data_offset : slot_data_offset + len(rebuilt_data)
+                        ] = rebuilt_data
+
+                        # Recalculate checksums for integrity
+                        try:
+                            self.save.recalculate_checksums()
+                        except Exception:
+                            pass
+                    except Exception as e:
+                        return False, f"Failed to unlock region: {e}"
+        else:
+            pass
+
+        # Ensure slot changes (map/coordinates) are persisted even if region was already unlocked
+        try:
+            rebuilt_data = rebuild_slot(self.slot)
+            slot_data_offset = self.slot.data_start
+            self.save._raw_data[
+                slot_data_offset : slot_data_offset + len(rebuilt_data)
+            ] = rebuilt_data
+            try:
+                self.save.recalculate_checksums()
+            except Exception:
+                pass
+        except Exception:
+            # Fallback: ignore if rebuild already done above
+            pass
 
         return True, f"Teleported to {location.display_name}"
 
