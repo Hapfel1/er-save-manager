@@ -1,8 +1,19 @@
 #!/usr/bin/env python3
 """Run the Elden Ring Save Manager GUI."""
 
+import logging
 import sys
 from pathlib import Path
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("er_save_manager.log"),
+    ],
+)
 
 # Add src directory to path
 project_root = Path(__file__).parent

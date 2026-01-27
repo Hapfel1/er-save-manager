@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from er_save_manager.fixes.base import BaseFix, FixResult
 from er_save_manager.parser.er_types import MapId
+from er_save_manager.parser.slot_rebuild import rebuild_slot
 
 if TYPE_CHECKING:
     from er_save_manager.parser import Save
@@ -19,6 +20,7 @@ class TeleportLocation:
     name: str
     display_name: str
     map_id: MapId
+    coordinates: tuple[float, float, float] | None = None
     is_dlc: bool = False
 
 
@@ -34,6 +36,7 @@ TELEPORT_LOCATIONS = {
         name="roundtable",
         display_name="Roundtable Hold",
         map_id=MapId(bytes([0, 0, 10, 11])),  # 11 10 00 00
+        coordinates=(-331.0, -22.0, -305.8),
         is_dlc=False,
     ),
     "liurnia": TeleportLocation(
@@ -111,23 +114,61 @@ class TeleportFix(BaseFix):
         if hasattr(slot, "map_id") and slot.map_id:
             original_map = slot.map_id.to_decimal()
 
-        # Calculate map offset
-        map_offset = slot.data_start + 0x4
+        # Update map_id in parsed structure
+        slot.map_id = self.destination.map_id
 
-        # Write new map ID - use struct to write bytes
-        import struct
+        # Keep player coordinate map ID in sync
+        if hasattr(slot, "player_coordinates"):
+            slot.player_coordinates.map_id.data = self.destination.map_id.data
 
-        struct.pack_into(
-            "4B", save._raw_data, map_offset, *self.destination.map_id.data
-        )
+        details = [
+            f"From: {original_map}",
+            f"To: {self.destination.map_id.to_decimal()}",
+        ]
+
+        # Also set coordinates if available
+        if self.destination.coordinates and hasattr(slot, "player_coordinates"):
+            try:
+                # Update primary coordinates
+                coords = slot.player_coordinates.coordinates
+                coords.x = self.destination.coordinates[0]
+                coords.y = self.destination.coordinates[1]
+                coords.z = self.destination.coordinates[2]
+
+                # Also update secondary coordinates to match (Rust has player_coords2)
+                unk_coords = slot.player_coordinates.unk_coordinates
+                unk_coords.x = self.destination.coordinates[0]
+                unk_coords.y = self.destination.coordinates[1]
+                unk_coords.z = self.destination.coordinates[2]
+
+                details.append(f"Coordinates set to {self.destination.coordinates}")
+            except (AttributeError, TypeError) as e:
+                details.append(f"Note: Could not set coordinates ({e})")
+
+        # Rebuild slot to persist all changes to raw data
+        try:
+            rebuilt_data = rebuild_slot(slot)
+            slot_data_offset = slot.data_start
+            save._raw_data[slot_data_offset : slot_data_offset + len(rebuilt_data)] = (
+                rebuilt_data
+            )
+
+            # Recalculate checksums
+            try:
+                save.recalculate_checksums()
+            except Exception:
+                pass
+        except Exception as e:
+            return FixResult(
+                applied=False,
+                description=f"Failed to apply teleport: {e}",
+                details=[str(e)],
+            )
 
         return FixResult(
             applied=True,
             description=f"Teleported to {self.destination.display_name}",
-            details=[
-                f"From: {original_map}",
-                f"To: {self.destination.map_id.to_decimal()}",
-            ],
+            details=details,
         )
 
 

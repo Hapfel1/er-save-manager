@@ -1,3 +1,7 @@
+ fix readme and development
+ 
+ fix linux warning/test on linux, 
+
 - pic of character slots + explanation done
 
 - change eac warning done
