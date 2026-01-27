@@ -16,12 +16,21 @@ from pathlib import Path
 import tomlkit
 from cx_Freeze import Executable, setup
 
-# Get version from pyproject.toml instead of importing package
-# This is more robust in CI environments.
-pyproject_path = Path(__file__).parent / "pyproject.toml"
-pyproject_content = pyproject_path.read_text(encoding="utf-8")
-pyproject_data = tomlkit.parse(pyproject_content)
-VERSION = pyproject_data["project"]["version"]  # type: ignore[index]
+
+# Prefer version.txt (bump_version writes full metadata); fallback to pyproject
+def load_version() -> str:
+    version_txt = Path(__file__).parent / "resources" / "version.txt"
+    if version_txt.exists():
+        for line in version_txt.read_text(encoding="utf-8").splitlines():
+            if line.startswith("version="):
+                return line.split("=", 1)[1].strip()
+    pyproject_path = Path(__file__).parent / "pyproject.toml"
+    pyproject_content = pyproject_path.read_text(encoding="utf-8")
+    pyproject_data = tomlkit.parse(pyproject_content)
+    return pyproject_data["project"]["version"]  # type: ignore[index]
+
+
+VERSION = load_version()
 
 warnings.filterwarnings("ignore", category=SyntaxWarning)
 
@@ -31,6 +40,7 @@ if sys.platform != "win32":
 # Include necessary files without including source code
 include_files = [
     ("resources/", "resources/"),
+    ("resources/app.manifest", "app.manifest"),
 ]
 
 # Explicitly include UI submodules for cx_Freeze
@@ -101,6 +111,8 @@ executables = [
         target_name="Elden Ring Save Manager",
         # Path to the icon file
         icon="resources/icon/icon.ico",
+        # Windows manifest for security and compatibility
+        manifest="resources/app.manifest",
     )
 ]
 
