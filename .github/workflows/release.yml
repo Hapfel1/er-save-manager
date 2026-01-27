@@ -151,7 +151,7 @@ jobs:
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions"
-          git add pyproject.toml uv.lock CHANGELOG.md
+          git add pyproject.toml uv.lock CHANGELOG.md resources/version.txt resources/app.manifest
           
           # Check if there are staged changes
           if git diff --staged --quiet; then
