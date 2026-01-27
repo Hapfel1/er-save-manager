@@ -54,10 +54,15 @@ class EnhancedPresetBrowser:
 
     def show(self):
         """Show enhanced preset browser with tabs."""
+        from er_save_manager.ui.utils import force_render_dialog
+
         self.dialog = ctk.CTkToplevel(self.parent)
         self.dialog.title("Community Appearance Presets")
         self.dialog.geometry("1400x1000")
         self.dialog.transient(self.parent)
+
+        # Force rendering before grab_set to avoid "window not viewable" errors
+        force_render_dialog(self.dialog)
         self.dialog.grab_set()
 
         def on_close():
@@ -430,7 +435,12 @@ class EnhancedPresetBrowser:
         webbrowser.open("https://github.com/login")
 
     def _make_ctk_image(self, img: Image.Image, size: tuple[int, int]) -> ctk.CTkImage:
-        return ctk.CTkImage(light_image=img, dark_image=img, size=size)
+        try:
+            return ctk.CTkImage(light_image=img, dark_image=img, size=size)
+        except Exception as e:
+            # Handle PIL/Tkinter integration issues (common in AppImage packaging)
+            print(f"[Image] Failed to create CTkImage: {e}")
+            return None
 
     # ---------------------- Image selection ----------------------
     def select_face_image(self):
@@ -859,41 +869,54 @@ class EnhancedPresetBrowser:
             widget.destroy()
 
         if HAS_PIL:
-            face_img = self._load_cached_image(
-                preset, cached, suffix="_face", key="face_url", size=(260, 260)
-            )
-            body_img = self._load_cached_image(
-                preset, cached, suffix="_body", key="body_url", size=(260, 260)
-            )
+            try:
+                face_img = self._load_cached_image(
+                    preset, cached, suffix="_face", key="face_url", size=(260, 260)
+                )
+                body_img = self._load_cached_image(
+                    preset, cached, suffix="_body", key="body_url", size=(260, 260)
+                )
 
-            if face_img or body_img:
-                img_row = ctk.CTkFrame(self.preview_area)
-                img_row.pack(pady=10)
-                if face_img:
-                    face_col = ctk.CTkFrame(img_row)
-                    face_col.pack(side=ctk.LEFT, padx=8)
-                    ctk.CTkLabel(face_col, image=face_img, text="").pack()
-                    ctk.CTkLabel(face_col, text="Face").pack()
-                if body_img:
-                    body_col = ctk.CTkFrame(img_row)
-                    body_col.pack(side=ctk.LEFT, padx=8)
-                    ctk.CTkLabel(body_col, image=body_img, text="").pack()
-                    ctk.CTkLabel(body_col, text="Body").pack()
-            elif "screenshot_path" in cached:
-                try:
-                    img = Image.open(cached["screenshot_path"])
-                    img.thumbnail((320, 320))
-                    ctk.CTkLabel(
-                        self.preview_area,
-                        image=self._make_ctk_image(img, (320, 320)),
-                        text="",
-                    ).pack(pady=10)
-                except Exception:
-                    ctk.CTkLabel(
-                        self.preview_area, text="[Preview not available]"
-                    ).pack(pady=10)
-            else:
-                ctk.CTkLabel(self.preview_area, text="[No preview available]").pack(
+                if face_img or body_img:
+                    img_row = ctk.CTkFrame(self.preview_area)
+                    img_row.pack(pady=10)
+                    if face_img:
+                        face_col = ctk.CTkFrame(img_row)
+                        face_col.pack(side=ctk.LEFT, padx=8)
+                        ctk.CTkLabel(face_col, image=face_img, text="").pack()
+                        ctk.CTkLabel(face_col, text="Face").pack()
+                    if body_img:
+                        body_col = ctk.CTkFrame(img_row)
+                        body_col.pack(side=ctk.LEFT, padx=8)
+                        ctk.CTkLabel(body_col, image=body_img, text="").pack()
+                        ctk.CTkLabel(body_col, text="Body").pack()
+                elif "screenshot_path" in cached:
+                    try:
+                        img = Image.open(cached["screenshot_path"])
+                        img.thumbnail((320, 320))
+                        ctk_img = self._make_ctk_image(img, (320, 320))
+                        if ctk_img:
+                            ctk.CTkLabel(
+                                self.preview_area,
+                                image=ctk_img,
+                                text="",
+                            ).pack(pady=10)
+                        else:
+                            ctk.CTkLabel(
+                                self.preview_area, text="[Preview not available]"
+                            ).pack(pady=10)
+                    except Exception:
+                        ctk.CTkLabel(
+                            self.preview_area, text="[Preview not available]"
+                        ).pack(pady=10)
+                else:
+                    ctk.CTkLabel(self.preview_area, text="[No preview available]").pack(
+                        pady=10
+                    )
+            except Exception as e:
+                # Handle any PIL/Tkinter integration errors
+                print(f"[Preview] Image display error: {e}")
+                ctk.CTkLabel(self.preview_area, text="[Preview not available]").pack(
                     pady=10
                 )
         else:
