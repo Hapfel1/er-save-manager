@@ -137,6 +137,11 @@ class CharacterDetailsDialog:
         dialog.geometry(f"{width}x{height}+{x}+{y}")
         dialog.resizable(True, True)
 
+        # Force update and rendering on Linux
+        dialog.update_idletasks()
+        dialog.lift()
+        dialog.focus_force()
+
         # Main frame
         main_frame = ctk.CTkFrame(dialog, corner_radius=10)
         main_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -233,6 +238,10 @@ class CharacterDetailsDialog:
         x = (teleport_dialog.winfo_screenwidth() // 2) - 200
         y = (teleport_dialog.winfo_screenheight() // 2) - 125
         teleport_dialog.geometry(f"400x250+{x}+{y}")
+
+        # Force rendering on Linux
+        teleport_dialog.lift()
+        teleport_dialog.focus_force()
 
         # Main frame
         main_frame = ctk.CTkFrame(teleport_dialog)

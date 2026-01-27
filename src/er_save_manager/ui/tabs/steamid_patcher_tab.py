@@ -159,10 +159,15 @@ class SteamIDPatcherTab:
 
     def _show_help_dialog(self):
         """Show comprehensive help dialog"""
+        from er_save_manager.ui.utils import force_render_dialog
+
         dialog = ctk.CTkToplevel(self.parent)
         dialog.title("SteamID Patcher - Help")
         dialog.geometry("720x680")
         dialog.resizable(True, True)
+
+        # Force rendering on Linux before grab_set
+        force_render_dialog(dialog)
         dialog.grab_set()
 
         header = ctk.CTkFrame(dialog, corner_radius=10)
@@ -534,10 +539,15 @@ class SteamIDPatcherTab:
 
     def _show_account_selection_dialog(self, accounts):
         """Show dialog to select from multiple Steam accounts"""
+        from er_save_manager.ui.utils import force_render_dialog
+
         dialog = ctk.CTkToplevel(self.parent)
         dialog.title("Select Steam Account")
         dialog.geometry("450x350")
         dialog.resizable(False, False)
+
+        # Force rendering on Linux
+        force_render_dialog(dialog)
 
         ctk.CTkLabel(
             dialog,

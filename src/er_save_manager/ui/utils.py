@@ -3,6 +3,24 @@
 import platform as platform_module
 
 
+def force_render_dialog(dialog):
+    """
+    Force proper rendering of a CTkToplevel dialog on Linux and all platforms.
+
+    Call this immediately after creating a CTkToplevel dialog to ensure
+    it renders properly, especially important on Linux.
+
+    Args:
+        dialog: The CTkToplevel dialog to render
+    """
+    try:
+        dialog.update_idletasks()
+        dialog.lift()
+        dialog.focus_force()
+    except Exception:
+        pass
+
+
 def bind_mousewheel(widget, target_widget=None):
     """
     Bind mousewheel scrolling to a CTkScrollableFrame (cross-platform).
@@ -15,6 +33,12 @@ def bind_mousewheel(widget, target_widget=None):
         target_widget = widget
 
     def _on_mousewheel(event):
+        # Ensure widget has focus for scroll to work
+        try:
+            widget.focus_set()
+        except Exception:
+            pass
+
         # For CTkScrollableFrame, use _parent_canvas
         if hasattr(target_widget, "_parent_canvas"):
             try:

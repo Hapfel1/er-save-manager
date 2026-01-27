@@ -75,6 +75,11 @@ class EnhancedPresetBrowser:
         self.setup_browse_tab()
         self.setup_contribute_tab()
 
+        # Force update and rendering on Linux
+        self.dialog.update_idletasks()
+        self.dialog.lift()
+        self.dialog.focus_force()
+
         # Load presets asynchronously after dialog is displayed
         self.dialog.after(50, self.refresh_presets)
 
@@ -541,10 +546,15 @@ class EnhancedPresetBrowser:
             )
 
     def _show_submission_error_dialog(self, submission_url: str | None):
+        from er_save_manager.ui.utils import force_render_dialog
+
         dialog = ctk.CTkToplevel(self.dialog)
         dialog.title("Use This Link to Submit")
         dialog.geometry("720x360")
         dialog.transient(self.dialog)
+
+        # Force rendering on Linux before grab_set
+        force_render_dialog(dialog)
         dialog.grab_set()
 
         frame = ctk.CTkFrame(dialog)
@@ -1118,10 +1128,15 @@ class EnhancedPresetBrowser:
 
     def _show_report_dialog(self, preset: dict[str, Any]):
         """Show dialog for reporting a preset."""
+        from er_save_manager.ui.utils import force_render_dialog
+
         report_dialog = ctk.CTkToplevel(self.dialog)
         report_dialog.title("Report Preset")
         report_dialog.geometry("600x600")
         report_dialog.transient(self.dialog)
+
+        # Force rendering on Linux before grab_set
+        force_render_dialog(report_dialog)
         report_dialog.grab_set()
 
         main_frame = ctk.CTkFrame(report_dialog)
@@ -1275,10 +1290,15 @@ class PresetBrowserDialog:
 
     @staticmethod
     def show_coming_soon(parent):
+        from er_save_manager.ui.utils import force_render_dialog
+
         dialog = ctk.CTkToplevel(parent)
         dialog.title("Community Character Presets")
         dialog.geometry("600x480")
         dialog.transient(parent)
+
+        # Force rendering on Linux before grab_set
+        force_render_dialog(dialog)
         dialog.grab_set()
 
         frame = ctk.CTkFrame(dialog)
@@ -1289,8 +1309,8 @@ class PresetBrowserDialog:
         ).pack(pady=(0, 12))
         ctk.CTkLabel(
             frame,
-            text="COMING SOON",
-            font=("Segoe UI", 13, "bold"),
+            text="Community Character Presets",
+            font=("Segoe UI", 16, "bold"),
             text_color=("#f59e0b", "#fcd34d"),
         ).pack(pady=6)
 

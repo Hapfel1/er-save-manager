@@ -521,17 +521,22 @@ class EventFlagsTab:
             )
             return
 
+        from er_save_manager.ui.utils import force_render_dialog
+
         dialog = ctk.CTkToplevel(self.parent)
         dialog.title("Advanced Event Flag Editor")
         dialog.geometry("600x500")
         dialog.transient(self.parent)
-        dialog.grab_set()
 
         # Center dialog
         dialog.update_idletasks()
         x = (dialog.winfo_screenwidth() // 2) - (600 // 2)
         y = (dialog.winfo_screenheight() // 2) - (500 // 2)
         dialog.geometry(f"+{x}+{y}")
+
+        # Force rendering on Linux before grab_set
+        force_render_dialog(dialog)
+        dialog.grab_set()
 
         ctk.CTkLabel(
             dialog,
@@ -637,17 +642,22 @@ class EventFlagsTab:
             )
             return
 
+        from er_save_manager.ui.utils import force_render_dialog
+
         dialog = ctk.CTkToplevel(self.parent)
         dialog.title("Boss Respawn")
         dialog.geometry("700x600")
         dialog.transient(self.parent)
-        dialog.grab_set()
 
         # Center dialog
         dialog.update_idletasks()
         x = (dialog.winfo_screenwidth() // 2) - (700 // 2)
         y = (dialog.winfo_screenheight() // 2) - (600 // 2)
         dialog.geometry(f"+{x}+{y}")
+
+        # Force rendering on Linux before grab_set
+        force_render_dialog(dialog)
+        dialog.grab_set()
 
         ctk.CTkLabel(
             dialog,

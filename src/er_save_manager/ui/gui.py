@@ -586,15 +586,23 @@ class SaveManagerGUI:
                     self.show_linux_save_location_warning(found_saves[0])
         else:
             # Multiple saves found
-            SaveSelectorDialog.show(
-                self.root, found_saves, lambda path: self.file_path_var.set(path)
-            )
+            def on_save_selected(path):
+                self.file_path_var.set(path)
+                # Linux: Check if in default location
+                if (
+                    PlatformUtils.is_linux()
+                    and not PlatformUtils.is_save_in_default_location(Path(path))
+                    and self.settings.get("show_linux_save_warning", True)
+                ):
+                    self.show_linux_save_location_warning(Path(path))
+
+            SaveSelectorDialog.show(self.root, found_saves, on_save_selected)
 
     def show_linux_save_location_warning(self, save_path):
         """Show warning about non-default save location on Linux"""
         dialog = tk.Toplevel(self.root)
         dialog.title("⚠️ Save Location Warning")
-        dialog.geometry("550x450")
+        dialog.geometry("550x500")
         dialog.transient(self.root)
 
         msg_frame = ttk.Frame(dialog, padding=20)
@@ -611,8 +619,8 @@ class SaveManagerGUI:
             f"Your save file is located in:\n"
             f"{save_path}\n\n"
             f"This is NOT the default Steam compatdata location!\n\n"
-            f"⚠️ If you remove Elden Ring from Steam and reinstall it, "
-            f"Steam will create a NEW compatdata folder and your saves may become inaccessible.\n\n"
+            f'⚠️ If you remove the custom launcher (e.g. "ersc_launcher.exe") from Steam, '
+            f"Steam will remove that compatdata folder and your save will get lost.\n\n"
             f"Recommended: Set a fixed Steam launch option to prevent this."
         )
 
@@ -628,7 +636,7 @@ class SaveManagerGUI:
         if launch_option:
             ttk.Label(
                 msg_frame,
-                text="Add this to Elden Ring's Steam launch options:",
+                text="Add this to the custom launcher's Steam launch options:",
                 font=("Segoe UI", 9, "bold"),
             ).pack(anchor=tk.W, pady=(10, 5))
 
@@ -654,17 +662,25 @@ class SaveManagerGUI:
         button_frame.pack(pady=10)
 
         def copy_to_default():
-            default_loc = PlatformUtils.get_default_save_location()
-            if default_loc:
+            """Copy save to the SteamID-specific folder instead of the root EldenRing folder."""
+
+            # On Linux we already know the precise SteamID folder from the current path
+            # (…/EldenRing/<steamid>/). Use that to avoid dropping the file one level up.
+            if PlatformUtils.is_linux():
+                target_dir = Path(save_path).parent
+            else:
+                target_dir = PlatformUtils.get_default_save_location()
+
+            if target_dir:
                 if messagebox.askyesno(
                     "Copy Save",
-                    f"Copy save file to:\n{default_loc}\n\nThe original file will remain in its current location.",
+                    f"Copy save file to:\n{target_dir}\n\nThe original file will remain in its current location.",
                 ):
                     try:
-                        default_loc.mkdir(parents=True, exist_ok=True)
+                        target_dir.mkdir(parents=True, exist_ok=True)
                         import shutil
 
-                        new_path = default_loc / Path(save_path).name
+                        new_path = target_dir / Path(save_path).name
                         shutil.copy2(save_path, new_path)
                         self.file_path_var.set(str(new_path))
                         messagebox.showinfo(
@@ -698,7 +714,7 @@ class SaveManagerGUI:
 
         dialog = tk.Toplevel(self.root)
         dialog.title("Linux Steam / Proton Info")
-        dialog.geometry("700x700")
+        dialog.geometry("700x750")
         dialog.transient(self.root)
         dialog.grab_set()
 
@@ -725,15 +741,16 @@ Elden Ring on Linux uses Steam's Proton compatibility layer. Your saves are stor
 
 ~/.steam/steam/steamapps/compatdata/[NUMBER]/pfx/drive_c/users/steamuser/AppData/Roaming/EldenRing/[SteamID]/
 
-The [NUMBER] is called the "compatdata ID" and varies depending on installation.
+The [NUMBER] is called the "compatdata ID" and may vary.
 
-Common Issues:
-1. Multiple Save Locations: If you've reinstalled the game, Steam may create a NEW compatdata folder, making old saves appear lost.
-
-2. Disappearing Saves: If Steam removes the game data, the compatdata folder may be deleted.
+Common Issue:
+Multiple Save Locations: If you are using a custom launcher you added as a non-Steam Game to Steam
+to launch Elden Ring like the "ersc_launcher.exe"
+it will create a new compatdata ID connected to it. and store the save file in that folder
+If you at some point remove that custom launcher it will remove that folder and your save file will be lost.
 
 Solution - Fixed Launch Option:
-Add this to Elden Ring's Steam launch options to always use the same location:"""
+Add this to the custom launcher's Steam launch options to always use the same location:"""
 
         ctk.CTkLabel(
             msg_frame,
@@ -782,7 +799,7 @@ Add this to Elden Ring's Steam launch options to always use the same location:""
 
         # How to add launch option
         steps_text = """How to Add Launch Options:
-1. Right-click Elden Ring in Steam
+1. Right-click the custom launcher in Steam
 2. Properties → General → Launch Options
 3. Paste the command above
 4. Click OK and restart the game

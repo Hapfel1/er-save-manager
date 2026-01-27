@@ -153,18 +153,22 @@ Backup Format:
 
         try:
             from er_save_manager.backup.manager import BackupManager
+            from er_save_manager.ui.utils import force_render_dialog
 
             manager = BackupManager(Path(save_path))
 
             dialog = ctk.CTkToplevel(self.parent)
             dialog.title("Backup Manager")
             dialog.geometry("900x600")
-            dialog.grab_set()
 
             dialog.update_idletasks()
             x = (dialog.winfo_screenwidth() // 2) - 450
             y = (dialog.winfo_screenheight() // 2) - 300
             dialog.geometry(f"900x600+{x}+{y}")
+
+            # Force rendering on Linux before grab_set
+            force_render_dialog(dialog)
+            dialog.grab_set()
 
             ctk.CTkLabel(
                 dialog,
@@ -321,6 +325,8 @@ Backup Format:
             button_frame.pack(fill=tk.X, padx=10, pady=10)
 
             def create_backup():
+                from er_save_manager.ui.utils import force_render_dialog
+
                 dialog_window = ctk.CTkToplevel(dialog)
                 dialog_window.title("Create Backup")
                 dialog_window.geometry("400x150")
@@ -330,6 +336,9 @@ Backup Format:
                 x = (dialog_window.winfo_screenwidth() // 2) - 200
                 y = (dialog_window.winfo_screenheight() // 2) - 75
                 dialog_window.geometry(f"400x150+{x}+{y}")
+
+                # Force rendering on Linux
+                force_render_dialog(dialog_window)
 
                 ctk.CTkLabel(
                     dialog_window,

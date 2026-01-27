@@ -267,14 +267,17 @@ class AppearanceTab:
                 return
 
             # Create dialog
+            from er_save_manager.ui.utils import force_render_dialog
+
             dialog = ctk.CTkToplevel(self.parent)
             dialog.title(f"Preset {preset_idx + 1} Details")
             dialog.geometry("700x600")
             dialog.resizable(True, True)
             dialog.transient(self.parent)
+
+            # Force rendering on Linux before grab_set
+            force_render_dialog(dialog)
             dialog.grab_set()
-            dialog.lift()
-            dialog.focus_force()
 
             ctk.CTkLabel(
                 dialog,

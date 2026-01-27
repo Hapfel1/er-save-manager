@@ -33,9 +33,10 @@ class SaveSelectorDialog:
         # Load lavender theme (appearance mode already set in main GUI)
         SaveSelectorDialog._load_lavender_theme()
 
+        from er_save_manager.ui.utils import force_render_dialog
+
         dialog = ctk.CTkToplevel(parent)
         dialog.title("Select Save File")
-        dialog.grab_set()
         dialog.resizable(True, True)
 
         width, height = 780, 520
@@ -43,6 +44,10 @@ class SaveSelectorDialog:
         x = (dialog.winfo_screenwidth() // 2) - (width // 2)
         y = (dialog.winfo_screenheight() // 2) - (height // 2)
         dialog.geometry(f"{width}x{height}+{x}+{y}")
+
+        # Force rendering on Linux before grab_set
+        force_render_dialog(dialog)
+        dialog.grab_set()
 
         title = ctk.CTkLabel(
             dialog,
@@ -54,10 +59,16 @@ class SaveSelectorDialog:
 
         # Scrollable list with click-to-select rows (list-like instead of radio dots)
         selection_var = ctk.StringVar(value=str(saves[0]) if saves else "")
+
+        from er_save_manager.ui.utils import bind_mousewheel
+
         list_frame = ctk.CTkScrollableFrame(
             dialog, label_text="Save Files", width=720, height=260
         )
         list_frame.pack(fill="both", expand=True, padx=15, pady=10)
+
+        # Bind mousewheel for scrolling on Linux and other platforms
+        bind_mousewheel(list_frame)
 
         row_widgets: list[tuple[str, ctk.CTkFrame, ctk.CTkLabel]] = []
 
