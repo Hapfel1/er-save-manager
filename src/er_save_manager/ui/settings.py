@@ -11,8 +11,9 @@ class Settings:
     def __init__(self, settings_file: Path | None = None):
         """Initialize settings."""
         if settings_file is None:
-            # Default to user's home directory
-            settings_dir = Path.home() / ".er_save_manager"
+            # Store in program directory instead of user home
+            program_dir = Path(__file__).parent.parent.parent.parent
+            settings_dir = program_dir / "data"
             settings_dir.mkdir(exist_ok=True)
             settings_file = settings_dir / "settings.json"
 

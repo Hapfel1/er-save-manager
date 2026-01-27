@@ -63,7 +63,14 @@ class CharacterDetailsDialog:
         has_corruption = False
         issues_detected = []
         try:
-            has_corruption, corruption_issues = slot.has_corruption()
+            # Get correct steamid from USER_DATA_10 if available
+            correct_steam_id = None
+            if save_file.user_data_10_parsed and hasattr(
+                save_file.user_data_10_parsed, "steam_id"
+            ):
+                correct_steam_id = save_file.user_data_10_parsed.steam_id
+
+            has_corruption, corruption_issues = slot.has_corruption(correct_steam_id)
             if has_corruption:
                 issues_detected = corruption_issues
         except Exception:

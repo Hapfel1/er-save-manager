@@ -21,6 +21,8 @@ dependencies = [
     "pillow>=12.1.0",
     "customtkinter>=5.2.2",
     "customtkinterthemes>=1.0.0",
+    "requests>=2.32.0",
+    "supabase>=2.4.0",
 ]
 
 [project.scripts]

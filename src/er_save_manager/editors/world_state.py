@@ -9,6 +9,7 @@ Handles:
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from er_save_manager.data.locations import (
@@ -16,9 +17,13 @@ from er_save_manager.data.locations import (
     get_map_name,
 )
 from er_save_manager.parser.er_types import FloatVector3, FloatVector4, MapId
+from er_save_manager.parser.slot_rebuild import rebuild_slot
 
 if TYPE_CHECKING:
     from er_save_manager.parser import Save
+
+
+logger = logging.getLogger(__name__)
 
 
 class WorldStateEditor:
@@ -62,6 +67,8 @@ class WorldStateEditor:
         """
         Teleport character to a predefined safe location.
 
+        Uses full save rebuild to handle variable-size regions structure.
+
         Args:
             location_key: Key from SAFE_LOCATIONS
 
@@ -75,18 +82,96 @@ class WorldStateEditor:
         if not location:
             return False, f"Unknown location: {location_key}"
 
-        # Note: DLC location warnings are handled in the UI, not here
-        # This allows users to teleport to DLC locations even if they haven't entered DLC yet
+        logger.info(f"Teleporting to: {location.name}")
+        logger.info(f"  Region: {location.region}")
+        logger.info(f"  Region ID: {location.region_id}")
+        logger.info(f"  Map ID: {location.map_id.data}")
 
-        # Update map ID - use struct to write bytes
-        import struct
+        # Update map ID in parsed structure so rebuild writes it
+        self.slot.map_id.data = location.map_id.data
+        # Keep player coordinate map ID in sync
+        if hasattr(self.slot, "player_coordinates"):
+            self.slot.player_coordinates.map_id.data = location.map_id.data
 
-        map_offset = self.slot.data_start + 0x4
-        struct.pack_into("4B", self.save._raw_data, map_offset, *location.map_id.data)
-
-        # Update coordinates if provided
+        # Update coordinates in parsed structure so rebuild writes them
         if location.coordinates:
-            self._write_coordinates(location.coordinates)
+            coords = self.slot.player_coordinates.coordinates
+            coords.x = location.coordinates.x
+            coords.y = location.coordinates.y
+            coords.z = location.coordinates.z
+
+            # Also update unknown secondary coordinates to match
+            # (Rust version has player_coords2 which seems to be a duplicate)
+            unk_coords = self.slot.player_coordinates.unk_coordinates
+            unk_coords.x = location.coordinates.x
+            unk_coords.y = location.coordinates.y
+            unk_coords.z = location.coordinates.z
+
+        # Add region ID to unlocked regions if not already present
+        if hasattr(self.slot, "unlocked_regions"):
+            logger.info(
+                f"  Current unlocked regions count: {self.slot.unlocked_regions.count}"
+            )
+
+            if location.region_id > 0:
+                if location.region_id not in self.slot.unlocked_regions.region_ids:
+                    logger.info(
+                        f"  Adding region ID {location.region_id} to unlocked regions"
+                    )
+
+                    # Add the region
+                    self.slot.unlocked_regions.region_ids.append(location.region_id)
+                    self.slot.unlocked_regions.count = len(
+                        self.slot.unlocked_regions.region_ids
+                    )
+
+                    logger.info(
+                        f"  New unlocked regions count: {self.slot.unlocked_regions.count}"
+                    )
+
+                    # Rebuild entire slot to persist changes
+                    logger.info("  Rebuilding entire slot data...")
+                    try:
+                        rebuilt_data = rebuild_slot(self.slot)
+                        logger.info(f"  Rebuilt slot: {len(rebuilt_data)} bytes")
+
+                        # Write rebuilt data at the character data start (after checksum)
+                        slot_data_offset = self.slot.data_start
+                        logger.info(f"  Writing slot at offset {slot_data_offset:#x}")
+                        self.save._raw_data[
+                            slot_data_offset : slot_data_offset + len(rebuilt_data)
+                        ] = rebuilt_data
+
+                        # Recalculate checksums for integrity
+                        try:
+                            self.save.recalculate_checksums()
+                            logger.info("  Recalculated MD5 checksums")
+                        except Exception:
+                            logger.warning("  Failed to recalculate checksums")
+                    except Exception as e:
+                        logger.error(f"Failed to rebuild slot: {e}")
+                        return False, f"Failed to unlock region: {e}"
+                else:
+                    logger.info(f"  Region ID {location.region_id} already unlocked")
+            else:
+                logger.warning("  Region ID is 0 - not adding to unlocked regions!")
+        else:
+            logger.warning("  Slot does not have unlocked_regions attribute!")
+
+        # Ensure slot changes (map/coordinates) are persisted even if region was already unlocked
+        try:
+            rebuilt_data = rebuild_slot(self.slot)
+            slot_data_offset = self.slot.data_start
+            self.save._raw_data[
+                slot_data_offset : slot_data_offset + len(rebuilt_data)
+            ] = rebuilt_data
+            try:
+                self.save.recalculate_checksums()
+            except Exception:
+                pass
+        except Exception:
+            # Fallback: ignore if rebuild already done above
+            pass
 
         return True, f"Teleported to {location.display_name}"
 

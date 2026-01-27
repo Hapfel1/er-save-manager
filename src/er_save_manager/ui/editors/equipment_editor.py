@@ -40,6 +40,15 @@ class EquipmentEditor:
         self.frame.pack(fill="both", expand=True)
         bind_mousewheel(self.frame)
 
+        # Disabled notice
+        notice_label = ctk.CTkLabel(
+            self.frame,
+            text="⚠️ Equipment editing is temporarily disabled for stability.",
+            font=("Segoe UI", 10, "bold"),
+            text_color="#ff6b6b",
+        )
+        notice_label.pack(pady=10, padx=10)
+
         # Top row: Weapons and Armor
         top_row = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
         top_row.pack(fill="x", pady=5)
@@ -87,6 +96,7 @@ class EquipmentEditor:
                 text_color=("black", "white"),
                 button_color=("gray70", "gray30"),
                 command=lambda _v=None, k=key: self.update_equipment_name(k),
+                state=ctk.DISABLED,
             )
             entry.grid(row=i, column=1, padx=5, pady=3)
 
@@ -143,6 +153,7 @@ class EquipmentEditor:
                 text_color=("black", "white"),
                 button_color=("gray70", "gray30"),
                 command=lambda _v=None, k=key: self.update_equipment_name(k),
+                state=ctk.DISABLED,
             )
             entry.grid(row=i, column=1, padx=5, pady=3)
 
@@ -336,6 +347,7 @@ class EquipmentEditor:
             text="Apply Equipment Changes",
             command=self.apply_changes,
             width=240,
+            state=ctk.DISABLED,
         ).pack()
 
     def load_equipment(self):

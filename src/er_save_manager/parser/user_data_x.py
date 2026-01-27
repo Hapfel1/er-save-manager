@@ -388,7 +388,6 @@ class UserDataX:
         obj.event_flags_offset = f.tell() - data_start
         obj.event_flags = f.read(0x1BF99F)
         obj.event_flags_terminator = struct.unpack("<B", f.read(1))[0]
-        # There are 16 more bytes after the terminator
 
         obj.field_area = FieldArea.read(f)
         obj.world_area = WorldArea.read(f)
@@ -411,19 +410,23 @@ class UserDataX:
 
         obj.net_man = NetMan.read(f)
 
-        # DIAGNOSTIC: Show exact position and bytes
-        current_pos = f.tell()
-        current_pos + 0x300
-        f.read(24)
-        f.seek(current_pos)
-
         obj.weather_offset = f.tell() - data_start
         obj.world_area_weather = WorldAreaWeather.read(f)
+
         obj.time_offset = f.tell() - data_start
         obj.world_area_time = WorldAreaTime.read(f)
+
         obj.base_version = BaseVersion.read(f)
-        obj.steamid_offset = f.tell()
-        obj.steam_id = struct.unpack("<Q", f.read(8))[0]
+        obj.steamid_offset = f.tell() - data_start
+        steamid_bytes = f.read(8)
+        obj.steam_id = struct.unpack("<Q", steamid_bytes)[0]
+
+        if obj.steam_id == 0:
+            # Steamid read as 0 - this might be corruption or offset misalignment
+            # For now, leave it as 0 and log warning
+            print(
+                f"[WARNING] Steamid read as 0 at offset 0x{obj.steamid_offset:X}, data: {steamid_bytes.hex()}"
+            )
         obj.ps5_activity = PS5Activity.read(f)
         obj.dlc = DLC.read(f)
         obj.player_data_hash = PlayerGameDataHash.read(f)

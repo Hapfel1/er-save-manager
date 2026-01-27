@@ -779,6 +779,21 @@ class EventFlagsTab:
             save_file.save(self.get_save_path())
             self.reload_save()
 
+            # Teleport to Roundtable Hold
+            try:
+                from er_save_manager.fixes.teleport import TeleportFix
+
+                teleport = TeleportFix("roundtable")
+                result = teleport.apply(save_file, self.current_slot)
+                if result.applied:
+                    save_file.save(self.get_save_path())
+                    self.reload_save()
+            except Exception as e:
+                CTkMessageBox.showwarning(
+                    "Teleport Failed",
+                    f"Could not teleport to Roundtable Hold: {e}",
+                )
+
             CTkMessageBox.showinfo(
                 "Success", f"Respawned {count} boss(es)!\n\nSave file updated."
             )
@@ -835,6 +850,21 @@ class EventFlagsTab:
             save_file = self.get_save_file()
             save_file.save(self.get_save_path())
             self.reload_save()
+
+            # Teleport to Roundtable Hold
+            try:
+                from er_save_manager.fixes.teleport import TeleportFix
+
+                teleport = TeleportFix("roundtable")
+                result = teleport.apply(save_file, self.current_slot)
+                if result.applied:
+                    save_file.save(self.get_save_path())
+                    self.reload_save()
+            except Exception as e:
+                CTkMessageBox.showwarning(
+                    "Teleport Failed",
+                    f"Could not teleport to Roundtable Hold: {e}",
+                )
 
             CTkMessageBox.showinfo(
                 "Success",

@@ -38,3 +38,5 @@ Thumbs.db
 *.bak
 *.backup
 *.backups/
+/data/
+*.log
