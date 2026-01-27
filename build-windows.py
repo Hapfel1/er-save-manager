@@ -16,12 +16,23 @@ from pathlib import Path
 import tomlkit
 from cx_Freeze import Executable, setup
 
-# Get version from pyproject.toml instead of importing package
-# This is more robust in CI environments.
-pyproject_path = Path(__file__).parent / "pyproject.toml"
-pyproject_content = pyproject_path.read_text(encoding="utf-8")
-pyproject_data = tomlkit.parse(pyproject_content)
-VERSION = pyproject_data["project"]["version"]  # type: ignore[index]
+
+# Prefer version.txt (bump_version writes full metadata); fallback to pyproject
+def load_version() -> str:
+    version_txt = Path(__file__).parent / "resources" / "version.txt"
+    if version_txt.exists():
+        for line in version_txt.read_text(encoding="utf-8").splitlines():
+            if line.startswith("version="):
+                version_str = line.split("=", 1)[1].strip()
+                # Strip trailing .0 for semantic versioning (0.5.0.0 -> 0.5.0)
+                return version_str.rstrip("0").rstrip(".")
+    pyproject_path = Path(__file__).parent / "pyproject.toml"
+    pyproject_content = pyproject_path.read_text(encoding="utf-8")
+    pyproject_data = tomlkit.parse(pyproject_content)
+    return pyproject_data["project"]["version"]  # type: ignore[index]
+
+
+VERSION = load_version()
 
 warnings.filterwarnings("ignore", category=SyntaxWarning)
 
@@ -30,7 +41,9 @@ if sys.platform != "win32":
 
 # Include necessary files without including source code
 include_files = [
+    ("src/resources/", "resources/"),
     ("resources/", "resources/"),
+    ("resources/app.manifest", "app.manifest"),
 ]
 
 # Explicitly include UI submodules for cx_Freeze
@@ -57,6 +70,9 @@ build_exe_options = {
         "er_save_manager.ui.editors.inventory_editor",
         "er_save_manager.ui.dialogs.character_details",
         "er_save_manager.ui.dialogs.save_selector",
+        "er_save_manager.ui.dialogs.preset_browser",
+        "er_save_manager.ui.dialogs.browser_submission",
+        "er_save_manager.ui.dialogs.backup_pruning_warning",
         "er_save_manager.ui.widgets.scrollable_frame",
         "er_save_manager.ui.tabs.character_management_tab",
         "er_save_manager.ui.tabs.save_inspector_tab",
@@ -98,6 +114,8 @@ executables = [
         target_name="Elden Ring Save Manager",
         # Path to the icon file
         icon="resources/icon/icon.ico",
+        # Windows manifest for security and compatibility
+        manifest="resources/app.manifest",
     )
 ]
 

@@ -278,8 +278,10 @@ class GaitemGameDataEntry:
 
     id: int = 0
     unk0x4: int = 0
+    pad0x5: bytes = b"\x00\x00\x00"
     next_item_id: int = 0
     unk0xc: int = 0
+    pad0x0d: bytes = b"\x00\x00\x00"
 
     @classmethod
     def read(cls, f: BytesIO) -> GaitemGameDataEntry:
@@ -287,20 +289,28 @@ class GaitemGameDataEntry:
         obj = cls()
         obj.id = struct.unpack("<I", f.read(4))[0]
         obj.unk0x4 = struct.unpack("<B", f.read(1))[0]
-        f.read(3)  # padding
+        obj.pad0x5 = f.read(3)
         obj.next_item_id = struct.unpack("<I", f.read(4))[0]
         obj.unk0xc = struct.unpack("<B", f.read(1))[0]
-        f.read(3)  # padding
+        obj.pad0x0d = f.read(3)
         return obj
 
     def write(self, f: BytesIO):
         """Write GaitemGameDataEntry to stream (16 bytes)"""
         f.write(struct.pack("<I", self.id))
         f.write(struct.pack("<B", self.unk0x4))
-        f.write(b"\x00" * 3)  # padding
+        f.write(
+            self.pad0x5
+            if isinstance(self.pad0x5, (bytes, bytearray)) and len(self.pad0x5) == 3
+            else b"\x00\x00\x00"
+        )
         f.write(struct.pack("<I", self.next_item_id))
         f.write(struct.pack("<B", self.unk0xc))
-        f.write(b"\x00" * 3)  # padding
+        f.write(
+            self.pad0x0d
+            if isinstance(self.pad0x0d, (bytes, bytearray)) and len(self.pad0x0d) == 3
+            else b"\x00\x00\x00"
+        )
 
 
 @dataclass
@@ -517,7 +527,7 @@ class WorldArea:
     """World area (variable size)"""
 
     size: int = 0
-    data: WorldAreaChrData = field(default_factory=WorldAreaChrData)
+    data: bytes = b""
 
     @classmethod
     def read(cls, f: BytesIO) -> WorldArea:
@@ -527,19 +537,9 @@ class WorldArea:
 
         # Size field indicates how many DATA bytes to read
         if obj.size > 0 and obj.size < 0x10000:
-            raw_data = f.read(obj.size)
-
-            # Try to parse WorldAreaChrData from the data
-            if obj.size >= 8:
-                inner_stream = BytesIO(raw_data)
-                try:
-                    obj.data = WorldAreaChrData.read(inner_stream)
-                except Exception:
-                    obj.data = WorldAreaChrData()
-            else:
-                obj.data = WorldAreaChrData()
+            obj.data = f.read(obj.size)
         else:
-            obj.data = WorldAreaChrData()
+            obj.data = b""
             if obj.size != 0:
                 pass
 
@@ -548,7 +548,8 @@ class WorldArea:
     def write(self, f: BytesIO):
         """Write WorldArea to stream"""
         f.write(struct.pack("<i", self.size))
-        self.data.write(f)
+        if self.size > 4:
+            f.write(self.data)
 
 
 # ============================================================================
@@ -622,7 +623,7 @@ class WorldGeomMan:
     """World geometry manager (variable size)"""
 
     size: int = 0
-    data: WorldGeomData = field(default_factory=WorldGeomData)
+    data: bytes = b""
 
     @classmethod
     def read(cls, f: BytesIO) -> WorldGeomMan:
@@ -632,19 +633,9 @@ class WorldGeomMan:
 
         # Size field indicates how many DATA bytes to read
         if obj.size > 0 and obj.size < 0x100000:
-            raw_data = f.read(obj.size)
-
-            # Try to parse the data
-            if obj.size >= 8:
-                inner_stream = BytesIO(raw_data)
-                try:
-                    obj.data = WorldGeomData.read(inner_stream)
-                except Exception:
-                    obj.data = WorldGeomData()
-            else:
-                obj.data = WorldGeomData()
+            obj.data = f.read(obj.size)
         else:
-            obj.data = WorldGeomData()
+            obj.data = b""
             if obj.size != 0:
                 pass
 
@@ -653,7 +644,8 @@ class WorldGeomMan:
     def write(self, f: BytesIO):
         """Write WorldGeomMan to stream"""
         f.write(struct.pack("<i", self.size))
-        self.data.write(f)
+        if self.size > 4:
+            f.write(self.data)
 
 
 # ============================================================================
@@ -719,7 +711,7 @@ class RendMan:
     """Renderer manager (variable size)"""
 
     size: int = 0
-    data: StageMan = field(default_factory=StageMan)
+    data: bytes = b""
 
     @classmethod
     def read(cls, f: BytesIO) -> RendMan:
@@ -740,7 +732,10 @@ class RendMan:
     def write(self, f: BytesIO):
         """Write RendMan to stream"""
         f.write(struct.pack("<i", self.size))
-        self.data.write(f)
+        if isinstance(self.data, bytes):
+            f.write(self.data)
+        else:
+            self.data.write(f)
 
 
 # ============================================================================

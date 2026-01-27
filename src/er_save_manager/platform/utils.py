@@ -63,12 +63,7 @@ class PlatformUtils:
             # Linux: Multiple possible locations due to Proton
             locations = []
 
-            # Standard Steam location
-            steam_compat = Path.home() / ".steam" / "steam" / "steamapps" / "compatdata"
-            if steam_compat.exists():
-                locations.append(steam_compat)
-
-            # Alternative Steam location
+            # Standard Steam location (~/.steam/steam is just a symlink to this)
             local_steam = (
                 Path.home() / ".local" / "share" / "Steam" / "steamapps" / "compatdata"
             )
@@ -121,22 +116,9 @@ class PlatformUtils:
                 found_saves.extend(files)
         elif platform_name == "linux":
             # Linux: Search all compatdata folders
+            # Note: ~/.steam/steam is just a symlink to ~/.local/share/Steam, no need to check both
             search_patterns = [
-                # Standard Steam
-                Path.home()
-                / ".steam"
-                / "steam"
-                / "steamapps"
-                / "compatdata"
-                / "*"
-                / "pfx"
-                / "drive_c"
-                / "users"
-                / "steamuser"
-                / "AppData"
-                / "Roaming"
-                / "EldenRing",
-                # Alternative Steam location
+                # Standard Steam location
                 Path.home()
                 / ".local"
                 / "share"
@@ -276,13 +258,42 @@ class PlatformUtils:
 
         if platform_name == "windows":
             # Windows Steam config
-            Path.home() / "Program Files (x86)" / "Steam"
-            # Also check registry/common locations
+            config_path = (
+                Path.home()
+                / "Program Files (x86)"
+                / "Steam"
+                / "config"
+                / "libraryfolders.vdf"
+            )
+            # Also check AppData location
+            if not config_path.exists():
+                config_path = (
+                    Path.home()
+                    / "AppData"
+                    / "Local"
+                    / "Steam"
+                    / "config"
+                    / "libraryfolders.vdf"
+                )
+
+            if config_path.exists():
+                try:
+                    with open(config_path, encoding="utf-8") as f:
+                        content = f.read()
+
+                    import re
+
+                    paths = re.findall(r'"path"\s+"([^"]+)"', content)
+                    for path_str in paths:
+                        lib_path = Path(path_str)
+                        if lib_path.exists():
+                            libraries.append(lib_path)
+                except Exception:
+                    pass
 
         elif platform_name == "linux":
-            # Linux Steam config locations
+            # Linux Steam config locations (~/.steam/steam is just a symlink, no need to check both)
             config_paths = [
-                Path.home() / ".steam" / "steam" / "config" / "libraryfolders.vdf",
                 Path.home()
                 / ".local"
                 / "share"
@@ -316,6 +327,7 @@ class PlatformUtils:
                                 libraries.append(lib_path)
                     except Exception:
                         continue
+                    break  # Found valid config, stop searching
 
         return libraries
 
@@ -378,9 +390,16 @@ class PlatformUtils:
             return True
 
         elif PlatformUtils.is_linux():
-            # Linux: Check if in default compatdata
+            # Linux: Only check if file is in compatdata
+            path_str = str(save_path)
+
+            # If not in compatdata at all, consider it fine
+            if "/compatdata/" not in path_str:
+                return True
+
+            # If in compatdata, check if it's the default Elden Ring ID
             compatdata_id = PlatformUtils.get_default_compatdata_id()
-            return compatdata_id in str(save_path)
+            return compatdata_id in path_str
 
         return True
 
@@ -409,10 +428,8 @@ class PlatformUtils:
                     / "Steam"
                 )
             else:
-                # Try .steam/steam first, fallback to .local/share/Steam
-                base = Path.home() / ".steam" / "steam"
-                if not base.exists():
-                    base = Path.home() / ".local" / "share" / "Steam"
+                # Standard Steam location (~/.steam/steam is just a symlink to this)
+                base = Path.home() / ".local" / "share" / "Steam"
 
             return (
                 base

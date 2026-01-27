@@ -1,11 +1,14 @@
 """
-Character Info Editor Module
+Character Info Editor Module (customtkinter)
 Handles character information editing (name, body type, class, etc.)
 """
 
-import tkinter as tk
 from pathlib import Path
-from tkinter import messagebox, ttk
+
+import customtkinter as ctk
+
+from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.utils import bind_mousewheel
 
 
 class CharacterInfoEditor:
@@ -22,7 +25,7 @@ class CharacterInfoEditor:
         Initialize character info editor
 
         Args:
-            parent: Parent tkinter widget
+            parent: Parent widget
             get_save_file_callback: Function that returns current save file
             get_char_slot_callback: Function that returns current character slot index
             get_save_path_callback: Function that returns save file path
@@ -48,166 +51,227 @@ class CharacterInfoEditor:
 
     def setup_ui(self):
         """Setup the character info editor UI"""
-        # Create scrollable frame
-        canvas = tk.Canvas(self.parent, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(self.parent, orient=tk.VERTICAL, command=canvas.yview)
-        self.frame = ttk.Frame(canvas)
-
-        self.frame.bind(
-            "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        self.frame = ctk.CTkScrollableFrame(
+            self.parent,
+            fg_color=("gray86", "gray25"),
+            bg_color=("gray86", "gray25"),
+            scrollbar_fg_color=("gray86", "gray25"),
+            scrollbar_button_color=("gray70", "gray30"),
+            scrollbar_button_hover_color=("gray60", "gray40"),
         )
-
-        canvas.create_window((0, 0), window=self.frame, anchor=tk.NW)
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        # Bind mousewheel
-        def on_mousewheel(event):
-            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-        canvas.bind_all("<MouseWheel>", on_mousewheel)
-
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.frame.pack(fill=ctk.BOTH, expand=True)
+        bind_mousewheel(self.frame)
 
         # Character creation info
-        creation_frame = ttk.LabelFrame(
-            self.frame, text="Character Creation", padding=10
-        )
-        creation_frame.pack(fill=tk.X, pady=5)
+        creation_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        creation_frame.pack(fill=ctk.X, pady=5, padx=10)
+        ctk.CTkLabel(
+            creation_frame,
+            text="Character Creation",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).grid(row=0, column=0, columnspan=5, sticky=ctk.W, padx=5, pady=(5, 0))
 
         # Name
-        ttk.Label(creation_frame, text="Name:").grid(
-            row=0, column=0, sticky=tk.W, padx=5, pady=5
+        ctk.CTkLabel(creation_frame, text="Name:", text_color=("black", "white")).grid(
+            row=1, column=0, sticky=ctk.W, padx=5, pady=5
         )
-        self.char_name_var = tk.StringVar(value="")
+        self.char_name_var = ctk.StringVar(value="")
 
         # Add validation for max 16 characters
         def validate_name(new_value):
             return len(new_value) <= 16
 
         name_vcmd = (creation_frame.register(validate_name), "%P")
-        name_entry = ttk.Entry(
+        name_entry = ctk.CTkEntry(
             creation_frame,
             textvariable=self.char_name_var,
-            width=30,
+            width=200,
+            fg_color=("gray86", "gray25"),
+            text_color=("black", "white"),
+            border_color=("gray70", "gray40"),
+            border_width=1,
             validate="key",
             validatecommand=name_vcmd,
         )
-        name_entry.grid(row=0, column=1, columnspan=3, padx=5, pady=5)
+        name_entry.grid(row=1, column=1, columnspan=3, padx=5, pady=5)
 
         # Add label showing character count
-        self.char_name_count_label = ttk.Label(
-            creation_frame, text="0/16", font=("Segoe UI", 8), foreground="gray"
+        self.char_name_count_label = ctk.CTkLabel(
+            creation_frame,
+            text="0/16",
+            font=("Segoe UI", 8),
+            text_color=("gray30", "gray80"),
         )
-        self.char_name_count_label.grid(row=0, column=4, padx=5, pady=5)
+        self.char_name_count_label.grid(row=1, column=4, padx=5, pady=5)
 
         # Update counter on change
         def update_name_count(*args):
             count = len(self.char_name_var.get())
-            self.char_name_count_label.config(text=f"{count}/16")
+            self.char_name_count_label.configure(text=f"{count}/16")
 
         self.char_name_var.trace("w", update_name_count)
 
         # Body Type
-        ttk.Label(creation_frame, text="Body Type:").grid(
-            row=1, column=0, sticky=tk.W, padx=5, pady=5
-        )
-        self.char_body_type_var = tk.IntVar(value=0)
-        body_type_combo = ttk.Combobox(
+        ctk.CTkLabel(
+            creation_frame, text="Body Type:", text_color=("black", "white")
+        ).grid(row=2, column=0, sticky=ctk.W, padx=5, pady=5)
+        self.char_body_type_var = ctk.IntVar(value=0)
+        body_type_combo = ctk.CTkComboBox(
             creation_frame,
-            textvariable=self.char_body_type_var,
+            variable=self.char_body_type_var,
             values=["Type A (0)", "Type B (1)"],
-            state="readonly",
-            width=15,
+            width=140,
+            fg_color=("gray86", "gray25"),
+            text_color=("black", "white"),
+            button_color=("gray70", "gray30"),
         )
-        body_type_combo.grid(row=1, column=1, padx=5, pady=5)
+        body_type_combo.grid(row=2, column=1, padx=5, pady=5)
 
         # Archetype (starting class)
-        ttk.Label(creation_frame, text="Archetype:").grid(
-            row=1, column=2, sticky=tk.W, padx=5, pady=5
-        )
-        self.char_archetype_var = tk.IntVar(value=0)
-        ttk.Entry(creation_frame, textvariable=self.char_archetype_var, width=10).grid(
-            row=1, column=3, padx=5, pady=5
-        )
+        ctk.CTkLabel(
+            creation_frame, text="Archetype:", text_color=("black", "white")
+        ).grid(row=2, column=2, sticky=ctk.W, padx=5, pady=5)
+        self.char_archetype_var = ctk.IntVar(value=0)
+        ctk.CTkEntry(
+            creation_frame,
+            textvariable=self.char_archetype_var,
+            width=100,
+            fg_color=("gray86", "gray25"),
+            text_color=("black", "white"),
+            border_color=("gray70", "gray40"),
+            border_width=1,
+        ).grid(row=2, column=3, padx=5, pady=5)
 
         # Voice type
-        ttk.Label(creation_frame, text="Voice Type:").grid(
-            row=2, column=0, sticky=tk.W, padx=5, pady=5
-        )
-        self.char_voice_var = tk.IntVar(value=0)
-        voice_combo = ttk.Combobox(
+        ctk.CTkLabel(
+            creation_frame, text="Voice Type:", text_color=("black", "white")
+        ).grid(row=3, column=0, sticky=ctk.W, padx=5, pady=5)
+        self.char_voice_var = ctk.IntVar(value=0)
+        voice_combo = ctk.CTkComboBox(
             creation_frame,
-            textvariable=self.char_voice_var,
+            variable=self.char_voice_var,
             values=["Young (0)", "Mature (1)", "Aged (2)"],
-            state="readonly",
-            width=15,
+            width=140,
+            fg_color=("gray86", "gray25"),
+            text_color=("black", "white"),
+            button_color=("gray70", "gray30"),
         )
-        voice_combo.grid(row=2, column=1, padx=5, pady=5)
+        voice_combo.grid(row=3, column=1, padx=5, pady=5)
 
         # Keepsake gift
-        ttk.Label(creation_frame, text="Keepsake:").grid(
-            row=2, column=2, sticky=tk.W, padx=5, pady=5
-        )
-        self.char_gift_var = tk.IntVar(value=0)
-        ttk.Entry(creation_frame, textvariable=self.char_gift_var, width=10).grid(
-            row=2, column=3, padx=5, pady=5
-        )
+        ctk.CTkLabel(
+            creation_frame, text="Keepsake:", text_color=("black", "white")
+        ).grid(row=3, column=2, sticky=ctk.W, padx=5, pady=5)
+        self.char_gift_var = ctk.IntVar(value=0)
+        ctk.CTkEntry(
+            creation_frame,
+            textvariable=self.char_gift_var,
+            width=100,
+            fg_color=("gray86", "gray25"),
+            text_color=("black", "white"),
+            border_color=("gray70", "gray40"),
+            border_width=1,
+        ).grid(row=3, column=3, padx=5, pady=5)
 
         # Game progression info
-        progression_frame = ttk.LabelFrame(
-            self.frame, text="Game Progression", padding=10
-        )
-        progression_frame.pack(fill=tk.X, pady=5)
+        progression_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        progression_frame.pack(fill=ctk.X, pady=5, padx=10)
+        ctk.CTkLabel(
+            progression_frame,
+            text="Game Progression",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).grid(row=0, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(5, 0))
 
         # Additional talisman slots
-        ttk.Label(progression_frame, text="Extra Talisman Slots:").grid(
-            row=0, column=0, sticky=tk.W, padx=5, pady=5
-        )
-        self.char_talisman_slots_var = tk.IntVar(value=0)
-        ttk.Entry(
-            progression_frame, textvariable=self.char_talisman_slots_var, width=10
-        ).grid(row=0, column=1, padx=5, pady=5)
+        ctk.CTkLabel(
+            progression_frame,
+            text="Extra Talisman Slots:",
+            text_color=("black", "white"),
+        ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
+        self.char_talisman_slots_var = ctk.IntVar(value=0)
+        ctk.CTkEntry(
+            progression_frame,
+            textvariable=self.char_talisman_slots_var,
+            width=100,
+            fg_color=("gray86", "gray25"),
+            text_color=("black", "white"),
+            border_color=("gray70", "gray40"),
+            border_width=1,
+        ).grid(row=1, column=1, padx=5, pady=5)
 
         # Spirit summon level
-        ttk.Label(progression_frame, text="Spirit Summon Level:").grid(
-            row=0, column=2, sticky=tk.W, padx=5, pady=5
-        )
-        self.char_spirit_level_var = tk.IntVar(value=0)
-        ttk.Entry(
-            progression_frame, textvariable=self.char_spirit_level_var, width=10
-        ).grid(row=0, column=3, padx=5, pady=5)
+        ctk.CTkLabel(
+            progression_frame,
+            text="Spirit Summon Level:",
+            text_color=("black", "white"),
+        ).grid(row=1, column=2, sticky=ctk.W, padx=5, pady=5)
+        self.char_spirit_level_var = ctk.IntVar(value=0)
+        ctk.CTkEntry(
+            progression_frame,
+            textvariable=self.char_spirit_level_var,
+            width=100,
+            fg_color=("gray86", "gray25"),
+            text_color=("black", "white"),
+            border_color=("gray70", "gray40"),
+            border_width=1,
+        ).grid(row=1, column=3, padx=5, pady=5)
 
         # Flask info
-        flask_frame = ttk.LabelFrame(self.frame, text="Flasks", padding=10)
-        flask_frame.pack(fill=tk.X, pady=5)
+        flask_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        flask_frame.pack(fill=ctk.X, pady=5, padx=10)
+        ctk.CTkLabel(
+            flask_frame,
+            text="Flasks",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).grid(row=0, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(5, 0))
 
-        ttk.Label(flask_frame, text="Max Crimson Flasks:").grid(
-            row=0, column=0, sticky=tk.W, padx=5, pady=5
-        )
-        self.char_crimson_flask_var = tk.IntVar(value=0)
-        ttk.Entry(flask_frame, textvariable=self.char_crimson_flask_var, width=10).grid(
-            row=0, column=1, padx=5, pady=5
-        )
+        ctk.CTkLabel(
+            flask_frame, text="Max Crimson Flasks:", text_color=("black", "white")
+        ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
+        self.char_crimson_flask_var = ctk.IntVar(value=0)
+        ctk.CTkEntry(
+            flask_frame,
+            textvariable=self.char_crimson_flask_var,
+            width=100,
+            fg_color=("gray86", "gray25"),
+            text_color=("black", "white"),
+            border_color=("gray70", "gray40"),
+            border_width=1,
+        ).grid(row=1, column=1, padx=5, pady=5)
 
-        ttk.Label(flask_frame, text="Max Cerulean Flasks:").grid(
-            row=0, column=2, sticky=tk.W, padx=5, pady=5
-        )
-        self.char_cerulean_flask_var = tk.IntVar(value=0)
-        ttk.Entry(
-            flask_frame, textvariable=self.char_cerulean_flask_var, width=10
-        ).grid(row=0, column=3, padx=5, pady=5)
+        ctk.CTkLabel(
+            flask_frame, text="Max Cerulean Flasks:", text_color=("black", "white")
+        ).grid(row=1, column=2, sticky=ctk.W, padx=5, pady=5)
+        self.char_cerulean_flask_var = ctk.IntVar(value=0)
+        ctk.CTkEntry(
+            flask_frame,
+            textvariable=self.char_cerulean_flask_var,
+            width=100,
+            fg_color=("gray86", "gray25"),
+            text_color=("black", "white"),
+            border_color=("gray70", "gray40"),
+            border_width=1,
+        ).grid(row=1, column=3, padx=5, pady=5)
 
         # Apply button
-        button_frame = ttk.LabelFrame(self.frame, text="Actions", padding=10)
-        button_frame.pack(fill=tk.X, pady=10)
+        button_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        button_frame.pack(fill=ctk.X, pady=10, padx=10)
+        ctk.CTkLabel(
+            button_frame,
+            text="Actions",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
 
-        ttk.Button(
+        ctk.CTkButton(
             button_frame,
             text="Apply Changes",
             command=self.apply_changes,
-            width=20,
-        ).pack(side=tk.LEFT, padx=5)
+            width=180,
+        ).pack(side=ctk.LEFT, padx=5, pady=5)
 
     def load_character_info(self):
         """Load character info from current character slot"""
@@ -245,14 +309,17 @@ class CharacterInfoEditor:
         """Apply character info changes to save file"""
         save_file = self.get_save_file()
         if not save_file:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         slot_idx = self.get_char_slot()
 
-        if not messagebox.askyesno(
+        if not CTkMessageBox.askyesno(
             "Confirm",
             f"Apply character info changes to Slot {slot_idx + 1}?\n\nA backup will be created.",
+            parent=self.parent,
         ):
             return
 
@@ -314,14 +381,21 @@ class CharacterInfoEditor:
                     if save_path:
                         save_file.to_file(Path(save_path))
 
-                    messagebox.showinfo(
+                    CTkMessageBox.showinfo(
                         "Success",
                         "Character info updated successfully!\n\nBackup saved to backup manager.",
+                        parent=self.parent,
                     )
                 else:
-                    messagebox.showerror("Error", "Offset not tracked")
+                    CTkMessageBox.showerror(
+                        "Error", "Offset not tracked", parent=self.parent
+                    )
             else:
-                messagebox.showerror("Error", "Could not access character data")
+                CTkMessageBox.showerror(
+                    "Error", "Could not access character data", parent=self.parent
+                )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to apply changes:\n{str(e)}")
+            CTkMessageBox.showerror(
+                "Error", f"Failed to apply changes:\n{str(e)}", parent=self.parent
+            )

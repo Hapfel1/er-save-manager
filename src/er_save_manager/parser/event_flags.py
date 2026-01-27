@@ -9,6 +9,8 @@ Includes corruption detection and fixes for:
 - Warp sickness (Radahn, Morgott, Radagon, Sealing Tree)
 """
 
+import os
+import sys
 from pathlib import Path
 
 
@@ -43,16 +45,34 @@ class EventFlags:
 
         cls._bst_map = {}
 
-        possible_paths = [
-            Path("eventflag_bst.txt"),
-            Path("resources/eventflag_bst.txt"),
-            Path(__file__).parent / "eventflag_bst.txt",
-            Path(__file__).parent / "resources" / "eventflag_bst.txt",
-            Path(__file__).parent.parent / "resources" / "eventflag_bst.txt",
-            Path(__file__).parent.parent.parent
-            / "resources"
-            / "eventflag_bst.txt",  # /src/resources/
-        ]
+        # Check if running as PyInstaller bundle
+        if getattr(sys, "_MEIPASS", None):
+            # PyInstaller bundle - resources are in _MEIPASS/resources/
+            bundle_path = Path(sys._MEIPASS) / "resources" / "eventflag_bst.txt"
+            possible_paths = [bundle_path]
+        else:
+            # Normal Python execution (handles editable installs, pip packages, AppImage)
+            appdir = os.environ.get("APPDIR")
+            exe_dir = Path(sys.argv[0]).resolve().parent
+            possible_paths = [
+                Path("eventflag_bst.txt"),
+                Path("resources/eventflag_bst.txt"),
+                Path(__file__).parent / "eventflag_bst.txt",
+                Path(__file__).parent / "resources" / "eventflag_bst.txt",
+                Path(__file__).parent.parent / "resources" / "eventflag_bst.txt",
+                Path(__file__).parent.parent.parent
+                / "resources"
+                / "eventflag_bst.txt",  # /src/resources/
+                Path(__file__).parent.parent.parent.parent
+                / "resources"
+                / "eventflag_bst.txt",  # project root /resources when src installed
+                exe_dir
+                / "resources"
+                / "eventflag_bst.txt",  # alongside binary/AppImage squashfs
+            ]
+
+            if appdir:
+                possible_paths.append(Path(appdir) / "resources" / "eventflag_bst.txt")
 
         loaded = False
         for path in possible_paths:

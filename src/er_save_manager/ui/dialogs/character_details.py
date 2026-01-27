@@ -1,15 +1,17 @@
 """
-Character Details Dialog
+Character Details Dialog (customtkinter version)
 Shows detailed character information with corruption detection
 """
 
-import tkinter as tk
 from pathlib import Path
-from tkinter import messagebox, ttk
+
+import customtkinter as ctk
+
+from er_save_manager.ui.messagebox import CTkMessageBox
 
 
 class CharacterDetailsDialog:
-    """Dialog showing character details with fix/teleport options"""
+    """Dialog showing character details with fix/teleport options (customtkinter version)"""
 
     @staticmethod
     def show(parent, save_file, slot_idx, save_path=None, reload_callback=None):
@@ -24,7 +26,7 @@ class CharacterDetailsDialog:
             reload_callback: Callback to reload save after fixes
         """
         if not save_file:
-            messagebox.showwarning("No Save", "No save file loaded!")
+            CTkMessageBox.showwarning("No Save", "No save file loaded!")
             return
 
         slot = save_file.characters[slot_idx]
@@ -61,7 +63,14 @@ class CharacterDetailsDialog:
         has_corruption = False
         issues_detected = []
         try:
-            has_corruption, corruption_issues = slot.has_corruption()
+            # Get correct steamid from USER_DATA_10 if available
+            correct_steam_id = None
+            if save_file.user_data_10_parsed and hasattr(
+                save_file.user_data_10_parsed, "steam_id"
+            ):
+                correct_steam_id = save_file.user_data_10_parsed.steam_id
+
+            has_corruption, corruption_issues = slot.has_corruption(correct_steam_id)
             if has_corruption:
                 issues_detected = corruption_issues
         except Exception:
@@ -117,34 +126,48 @@ class CharacterDetailsDialog:
             info.append("Character appears healthy!")
 
         # Create dialog
-        dialog = tk.Toplevel(parent)
-        dialog.withdraw()
+        dialog = ctk.CTkToplevel(parent)
         dialog.title(f"Character Details - {name}")
 
-        width, height = 600, 500
+        width, height = 640, 520
         screen_w = dialog.winfo_screenwidth()
         screen_h = dialog.winfo_screenheight()
         x = (screen_w // 2) - (width // 2)
         y = (screen_h // 2) - (height // 2)
         dialog.geometry(f"{width}x{height}+{x}+{y}")
-        dialog.resizable(False, False)
+        dialog.resizable(True, True)
 
-        # Text display
-        text_widget = tk.Text(
-            dialog,
-            font=("Consolas", 9),
-            bg="#f0f0f0",
-            wrap=tk.WORD,
-            padx=10,
-            pady=10,
+        # Force update and rendering on Linux
+        dialog.update_idletasks()
+        dialog.lift()
+        dialog.focus_force()
+
+        # Main frame
+        main_frame = ctk.CTkFrame(dialog, corner_radius=10)
+        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        header = ctk.CTkLabel(
+            main_frame,
+            text=f"Character Details — {name}",
+            font=("Segoe UI", 16, "bold"),
         )
-        text_widget.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        text_widget.insert("1.0", "\n".join(info))
-        text_widget.config(state="disabled")
+        header.pack(anchor="w", padx=10, pady=(8, 6))
+
+        # Scrollable, selectable info
+        info_box = ctk.CTkTextbox(
+            main_frame,
+            font=("Consolas", 13),
+            wrap="word",
+            fg_color=("#f5f5f5", "#111827"),
+            text_color=("#1f1f28", "#e5e7eb"),
+        )
+        info_box.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        info_box.insert("1.0", "\n".join(info))
+        info_box.configure(state="disabled")
 
         # Buttons
-        button_frame = ttk.Frame(dialog, padding="10")
-        button_frame.pack(fill=tk.X)
+        button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        button_frame.pack(fill="x", padx=6, pady=(0, 4))
 
         if issues_detected:
 
@@ -158,36 +181,34 @@ class CharacterDetailsDialog:
                     reload_callback,
                 )
 
-            ttk.Button(
+            ctk.CTkButton(
                 button_frame,
                 text="Fix All Issues",
                 command=fix_all,
-                width=20,
-            ).pack(side=tk.LEFT, padx=5)
+                width=150,
+            ).pack(side="left", padx=5)
 
         def teleport():
             CharacterDetailsDialog._show_teleport_dialog(
                 parent, dialog, save_file, slot_idx, save_path, reload_callback
             )
 
-        ttk.Button(
+        ctk.CTkButton(
             button_frame,
             text="Teleport Character",
             command=teleport,
-            width=20,
-        ).pack(side=tk.LEFT, padx=5)
+            width=150,
+        ).pack(side="left", padx=5)
 
-        ttk.Button(
+        ctk.CTkButton(
             button_frame,
             text="Close",
             command=dialog.destroy,
-            width=15,
-        ).pack(side=tk.RIGHT, padx=5)
+            width=100,
+        ).pack(side="right", padx=5)
 
-        dialog.deiconify()
         dialog.lift()
         dialog.focus_force()
-        dialog.attributes("-topmost", True)
         dialog.grab_set()
 
     @staticmethod
@@ -208,46 +229,44 @@ class CharacterDetailsDialog:
         """Show teleport dialog"""
         details_dialog.destroy()
 
-        teleport_dialog = tk.Toplevel(parent)
+        teleport_dialog = ctk.CTkToplevel(parent)
         teleport_dialog.title("Teleport Character")
         teleport_dialog.geometry("400x250")
         teleport_dialog.grab_set()
 
         teleport_dialog.update_idletasks()
-        x = (teleport_dialog.winfo_screenwidth() // 2) - (
-            teleport_dialog.winfo_width() // 2
-        )
-        y = (teleport_dialog.winfo_screenheight() // 2) - (
-            teleport_dialog.winfo_height() // 2
-        )
+        x = (teleport_dialog.winfo_screenwidth() // 2) - 200
+        y = (teleport_dialog.winfo_screenheight() // 2) - 125
         teleport_dialog.geometry(f"400x250+{x}+{y}")
 
-        ttk.Label(
-            teleport_dialog,
+        # Force rendering on Linux
+        teleport_dialog.lift()
+        teleport_dialog.focus_force()
+
+        # Main frame
+        main_frame = ctk.CTkFrame(teleport_dialog)
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        ctk.CTkLabel(
+            main_frame,
             text=f"Teleport Slot {slot_idx + 1}",
             font=("Segoe UI", 14, "bold"),
-            padding=10,
-        ).pack()
+        ).pack(pady=(0, 20))
 
-        location_frame = ttk.LabelFrame(
-            teleport_dialog, text="Select Destination", padding=10
-        )
-        location_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        location_frame = ctk.CTkFrame(main_frame)
+        location_frame.pack(fill="both", expand=True, pady=10)
 
-        # Always teleport to Roundtable Hold
-        location_var = tk.StringVar(value="roundtable")
-
-        ttk.Label(
+        ctk.CTkLabel(
             location_frame,
             text="Roundtable Hold",
-            font=("Segoe UI", 11),
+            font=("Segoe UI", 13, "bold"),
         ).pack(pady=10)
 
-        ttk.Label(
+        ctk.CTkLabel(
             location_frame,
             text="Character will be teleported to Roundtable Hold.\nThis is the safest location for unstuck/DLC escape.",
-            font=("Segoe UI", 9),
-            foreground="gray",
+            font=("Segoe UI", 11),
+            text_color=("gray40", "gray70"),
         ).pack(pady=5)
 
         def do_teleport():
@@ -255,7 +274,7 @@ class CharacterDetailsDialog:
                 from er_save_manager.backup.manager import BackupManager
                 from er_save_manager.fixes.teleport import TeleportFix
 
-                destination = location_var.get()
+                destination = "roundtable"
 
                 if save_path:
                     manager = BackupManager(Path(save_path))
@@ -277,36 +296,36 @@ class CharacterDetailsDialog:
                         reload_callback()
 
                     details = "\n".join(result.details) if result.details else ""
-                    messagebox.showinfo(
+                    CTkMessageBox.showinfo(
                         "Success",
                         f"{result.description}\n\n{details}\n\nBackup saved to backup manager.",
                     )
                     teleport_dialog.destroy()
                 else:
-                    messagebox.showwarning("Not Applied", result.description)
+                    CTkMessageBox.showwarning("Not Applied", result.description)
 
             except Exception as e:
-                messagebox.showerror("Error", f"Teleport failed:\n{str(e)}")
+                CTkMessageBox.showerror("Error", f"Teleport failed:\n{str(e)}")
                 import traceback
 
                 traceback.print_exc()
 
-        button_frame = ttk.Frame(teleport_dialog, padding=10)
-        button_frame.pack(fill=tk.X)
+        button_frame = ctk.CTkFrame(main_frame)
+        button_frame.pack(fill="x", pady=(10, 0))
 
-        ttk.Button(
+        ctk.CTkButton(
             button_frame,
             text="Teleport",
             command=do_teleport,
-            width=15,
-        ).pack(side=tk.LEFT, padx=5)
+            width=100,
+        ).pack(side="left", padx=5)
 
-        ttk.Button(
+        ctk.CTkButton(
             button_frame,
             text="Cancel",
             command=teleport_dialog.destroy,
-            width=15,
-        ).pack(side=tk.RIGHT, padx=5)
+            width=100,
+        ).pack(side="right", padx=5)
 
     @staticmethod
     def _fix_character(
@@ -315,7 +334,7 @@ class CharacterDetailsDialog:
         """Fix character corruption"""
         dialog.destroy()
 
-        if not messagebox.askyesno(
+        if not CTkMessageBox.askyesno(
             "Confirm",
             f"Fix all {issue_count} issue(s) in Slot {slot_idx + 1}?\n\nA backup will be created.",
         ):
@@ -365,15 +384,17 @@ class CharacterDetailsDialog:
                     reload_callback()
 
                 fix_summary = "\n".join(f"  • {fix}" for fix in fixes)
-                messagebox.showinfo(
+                CTkMessageBox.showinfo(
                     "Success",
                     f"Fixed {len(fixes)} issue(s):\n\n{fix_summary}\n\nBackup saved to backup manager.",
                 )
             else:
-                messagebox.showinfo("Info", "No fixes were needed or could be applied.")
+                CTkMessageBox.showinfo(
+                    "Info", "No fixes were needed or could be applied."
+                )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Fix failed:\n{str(e)}")
+            CTkMessageBox.showerror("Error", f"Fix failed:\n{str(e)}")
             import traceback
 
             traceback.print_exc()
