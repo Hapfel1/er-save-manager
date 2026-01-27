@@ -41,6 +41,7 @@ if sys.platform != "win32":
 
 # Include necessary files without including source code
 include_files = [
+    ("src/resources/", "resources/"),
     ("resources/", "resources/"),
     ("resources/app.manifest", "app.manifest"),
 ]
