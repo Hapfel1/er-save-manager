@@ -35,6 +35,7 @@ class BackupPruningWarningDialog(ctk.CTkToplevel):
 
         # Force rendering on Linux before grab_set
         from er_save_manager.ui.utils import force_render_dialog
+
         force_render_dialog(self)
         self.grab_set()
 
