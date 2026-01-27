@@ -1,6 +1,9 @@
 """Preset manager for community character presets."""
 
 import json
+import os
+import platform
+import tempfile
 import time
 import urllib.request
 from pathlib import Path
@@ -15,11 +18,27 @@ class PresetManager:
     THUMBNAIL_SIZE = (150, 150)  # Thumbnail dimensions
 
     def __init__(self):
-        """Initialize preset manager."""
-        # Store in program directory instead of user home
-        program_dir = Path(__file__).parent.parent.parent
-        self.cache_dir = program_dir / "data" / "presets"
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        """Initialize preset manager with platform-appropriate cache location."""
+        # Determine cache directory based on platform
+        if platform.system() == "Linux":
+            # Use XDG_CACHE_HOME if available, otherwise ~/.cache
+            xdg_cache = os.environ.get("XDG_CACHE_HOME")
+            if xdg_cache:
+                self.cache_dir = Path(xdg_cache) / "er-save-manager"
+            else:
+                self.cache_dir = Path.home() / ".cache" / "er-save-manager"
+        else:
+            # Windows/macOS: use program directory
+            program_dir = Path(__file__).parent.parent.parent
+            self.cache_dir = program_dir / "data" / "presets"
+
+        # Try to create cache directory, fallback to temp if permission denied
+        try:
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+        except (OSError, PermissionError):
+            # Fallback to system temp directory
+            self.cache_dir = Path(tempfile.gettempdir()) / "er-save-manager-cache"
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
 
         # Separate directories for different cache types
         self.thumbnails_dir = self.cache_dir / "thumbnails"
