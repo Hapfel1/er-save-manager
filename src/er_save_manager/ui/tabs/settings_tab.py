@@ -1,13 +1,16 @@
-"""Settings tab for application configuration."""
+"""Settings tab for application configuration (customtkinter version)."""
 
 import tkinter as tk
-from tkinter import messagebox, ttk
 
+import customtkinter as ctk
+
+from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.settings import get_settings
+from er_save_manager.ui.utils import bind_mousewheel
 
 
 class SettingsTab:
-    """UI tab for application settings."""
+    """UI tab for application settings (customtkinter version)."""
 
     def __init__(self, parent):
         """Initialize settings tab."""
@@ -16,185 +19,199 @@ class SettingsTab:
 
     def setup_ui(self):
         """Create settings UI."""
-        # Main container
-        main_frame = ttk.Frame(self.parent)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        # Main container with scrolling
+        scroll_frame = ctk.CTkScrollableFrame(self.parent, corner_radius=12)
+        scroll_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        bind_mousewheel(scroll_frame)
 
-        # Title
-        title_frame = ttk.Frame(main_frame)
-        title_frame.pack(fill=tk.X, pady=(0, 20))
+        # Title with reset button
+        title_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
+        title_frame.pack(fill="x", pady=(0, 20))
 
-        ttk.Label(
+        ctk.CTkLabel(
             title_frame,
             text="Settings",
             font=("Segoe UI", 16, "bold"),
-        ).pack(side=tk.LEFT)
+        ).pack(side="left")
 
-        ttk.Button(
+        ctk.CTkButton(
             title_frame,
             text="Reset to Defaults",
             command=self.reset_to_defaults,
-        ).pack(side=tk.RIGHT)
+            width=140,
+        ).pack(side="right")
 
         # Settings sections
-        self._create_general_settings(main_frame)
-        self._create_backup_settings(main_frame)
-        self._create_ui_settings(main_frame)
+        self._create_general_settings(scroll_frame)
+        self._create_backup_settings(scroll_frame)
+        self._create_ui_settings(scroll_frame)
 
     def _create_general_settings(self, parent):
         """Create general settings section."""
-        frame = ttk.LabelFrame(parent, text="General", padding=10)
-        frame.pack(fill=tk.X, pady=(0, 10))
+        frame = ctk.CTkFrame(parent, corner_radius=12)
+        frame.pack(fill="x", pady=(0, 10))
+
+        ctk.CTkLabel(
+            frame,
+            text="General",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(anchor="w", padx=12, pady=(12, 6))
 
         # EAC Warning
         self.show_eac_warning_var = tk.BooleanVar(
             value=self.settings.get("show_eac_warning", True)
         )
-        ttk.Checkbutton(
+        ctk.CTkCheckBox(
             frame,
             text="Show EAC warning when loading .sl2 files",
             variable=self.show_eac_warning_var,
             command=lambda: self.settings.set(
                 "show_eac_warning", self.show_eac_warning_var.get()
             ),
-        ).pack(anchor=tk.W, pady=5)
+        ).pack(anchor="w", padx=12, pady=5)
 
-        ttk.Label(
+        ctk.CTkLabel(
             frame,
             text="Disabling this will skip the anti-cheat warning dialog.",
-            font=("Segoe UI", 9),
-            foreground="gray",
-        ).pack(anchor=tk.W, padx=20)
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+        ).pack(anchor="w", padx=32, pady=(0, 10))
 
         # Remember Last Location
         self.remember_location_var = tk.BooleanVar(
             value=self.settings.get("remember_last_location", True)
         )
-        ttk.Checkbutton(
+        ctk.CTkCheckBox(
             frame,
             text="Remember last opened save file location",
             variable=self.remember_location_var,
             command=lambda: self.settings.set(
                 "remember_last_location", self.remember_location_var.get()
             ),
-        ).pack(anchor=tk.W, pady=5)
+        ).pack(anchor="w", padx=12, pady=5)
 
         # Linux Save Location Warning
         self.show_linux_save_warning_var = tk.BooleanVar(
             value=self.settings.get("show_linux_save_warning", True)
         )
-        ttk.Checkbutton(
+        ctk.CTkCheckBox(
             frame,
             text="Show Linux save location warnings (non-default compatdata)",
             variable=self.show_linux_save_warning_var,
             command=lambda: self.settings.set(
                 "show_linux_save_warning", self.show_linux_save_warning_var.get()
             ),
-        ).pack(anchor=tk.W, pady=5)
+        ).pack(anchor="w", padx=12, pady=5)
 
-        ttk.Label(
+        ctk.CTkLabel(
             frame,
             text="Linux: Warns when save is not in default compatdata folder.",
-            font=("Segoe UI", 9),
-            foreground="gray",
-        ).pack(anchor=tk.W, padx=20)
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+        ).pack(anchor="w", padx=32, pady=(0, 12))
 
     def _create_backup_settings(self, parent):
         """Create backup settings section."""
-        frame = ttk.LabelFrame(parent, text="Backups", padding=10)
-        frame.pack(fill=tk.X, pady=(0, 10))
+        frame = ctk.CTkFrame(parent, corner_radius=12)
+        frame.pack(fill="x", pady=(0, 10))
 
-        # Auto Backup
-        self.auto_backup_var = tk.BooleanVar(
-            value=self.settings.get("auto_backup", True)
-        )
-        ttk.Checkbutton(
+        ctk.CTkLabel(
             frame,
-            text="Create backups automatically before modifications",
-            variable=self.auto_backup_var,
-            command=lambda: self.settings.set(
-                "auto_backup", self.auto_backup_var.get()
-            ),
-        ).pack(anchor=tk.W, pady=5)
-
-        # Backup on Save
-        self.backup_on_save_var = tk.BooleanVar(
-            value=self.settings.get("backup_on_save", True)
-        )
-        ttk.Checkbutton(
-            frame,
-            text="Create backup when saving changes",
-            variable=self.backup_on_save_var,
-            command=lambda: self.settings.set(
-                "backup_on_save", self.backup_on_save_var.get()
-            ),
-        ).pack(anchor=tk.W, pady=5)
+            text="Backups",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(anchor="w", padx=12, pady=(12, 6))
 
         # Max Backups
-        max_backup_frame = ttk.Frame(frame)
-        max_backup_frame.pack(fill=tk.X, pady=5)
+        max_backup_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        max_backup_frame.pack(fill="x", padx=12, pady=5)
 
-        ttk.Label(max_backup_frame, text="Maximum backups to keep:").pack(side=tk.LEFT)
-
-        self.max_backups_var = tk.IntVar(value=self.settings.get("max_backups", 50))
-        max_backup_spinner = ttk.Spinbox(
-            max_backup_frame,
-            from_=10,
-            to=200,
-            textvariable=self.max_backups_var,
-            width=10,
-            command=lambda: self.settings.set(
-                "max_backups", self.max_backups_var.get()
-            ),
+        ctk.CTkLabel(max_backup_frame, text="Maximum backups to keep:").pack(
+            side="left", padx=(0, 10)
         )
-        max_backup_spinner.pack(side=tk.LEFT, padx=10)
 
-        ttk.Label(
+        self.max_backups_var = tk.StringVar(
+            value=str(self.settings.get("max_backups", 50))
+        )
+        spinbox = ctk.CTkEntry(
+            max_backup_frame,
+            textvariable=self.max_backups_var,
+            width=80,
+        )
+        spinbox.pack(side="left")
+
+        # Save backup limit when it changes
+        def save_backup_limit(*args):
+            try:
+                value = int(self.max_backups_var.get())
+                if value > 0:
+                    self.settings.set("max_backups", value)
+            except ValueError:
+                pass  # Ignore non-integer values
+
+        self.max_backups_var.trace_add("write", save_backup_limit)
+
+        ctk.CTkLabel(
             frame,
             text="Older backups are automatically deleted when this limit is reached.",
-            font=("Segoe UI", 9),
-            foreground="gray",
-        ).pack(anchor=tk.W, padx=20)
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+        ).pack(anchor="w", padx=32, pady=(0, 10))
+
+        # Backup Pruning Warning
+        self.show_backup_pruning_warning_var = tk.BooleanVar(
+            value=self.settings.get("show_backup_pruning_warning", True)
+        )
+        ctk.CTkCheckBox(
+            frame,
+            text="Show warning when backups are automatically deleted",
+            variable=self.show_backup_pruning_warning_var,
+            command=lambda: self.settings.set(
+                "show_backup_pruning_warning",
+                self.show_backup_pruning_warning_var.get(),
+            ),
+        ).pack(anchor="w", padx=12, pady=(0, 12))
 
     def _create_ui_settings(self, parent):
         """Create UI settings section."""
-        frame = ttk.LabelFrame(parent, text="User Interface", padding=10)
-        frame.pack(fill=tk.X, pady=(0, 10))
+        frame = ctk.CTkFrame(parent, corner_radius=12)
+        frame.pack(fill="x", pady=(0, 10))
 
-        # Theme (placeholder for future)
-        theme_frame = ttk.Frame(frame)
-        theme_frame.pack(fill=tk.X, pady=5)
+        ctk.CTkLabel(
+            frame,
+            text="User Interface",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(anchor="w", padx=12, pady=(12, 6))
 
-        ttk.Label(theme_frame, text="Theme:").pack(side=tk.LEFT)
+        # Theme
+        theme_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        theme_frame.pack(fill="x", padx=12, pady=5)
+
+        ctk.CTkLabel(theme_frame, text="Theme:").pack(side="left", padx=(0, 10))
 
         self.theme_var = tk.StringVar(value=self.settings.get("theme", "default"))
-        theme_combo = ttk.Combobox(
+        theme_combo = ctk.CTkComboBox(
             theme_frame,
-            textvariable=self.theme_var,
-            values=["default"],
+            variable=self.theme_var,
+            values=["default", "dark"],
             state="readonly",
-            width=15,
+            width=150,
+            command=self._on_theme_changed,
         )
-        theme_combo.pack(side=tk.LEFT, padx=10)
-        theme_combo.bind(
-            "<<ComboboxSelected>>",
-            lambda e: self.settings.set("theme", self.theme_var.get()),
-        )
+        theme_combo.pack(side="left")
 
-        ttk.Label(
+        ctk.CTkLabel(
             frame,
-            text="(Dark theme support coming soon)",
-            font=("Segoe UI", 9),
-            foreground="gray",
-        ).pack(anchor=tk.W, padx=20)
+            text="(Restart required for full theme application)",
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+        ).pack(anchor="w", padx=32, pady=(0, 12))
 
     def reset_to_defaults(self):
         """Reset all settings to defaults."""
-        if messagebox.askyesno(
+        if CTkMessageBox.askyesno(
             "Reset Settings",
             "Are you sure you want to reset all settings to defaults?\n\n"
             "This cannot be undone.",
-            icon="warning",
         ):
             self.settings.reset_to_defaults()
 
@@ -202,9 +219,17 @@ class SettingsTab:
             self.show_eac_warning_var.set(True)
             self.remember_location_var.set(True)
             self.show_linux_save_warning_var.set(True)
-            self.auto_backup_var.set(True)
-            self.backup_on_save_var.set(True)
+            self.show_backup_pruning_warning_var.set(True)
             self.max_backups_var.set(50)
             self.theme_var.set("default")
 
-            messagebox.showinfo("Success", "Settings have been reset to defaults.")
+            CTkMessageBox.showinfo("Success", "Settings have been reset to defaults.")
+
+    def _on_theme_changed(self, value=None):
+        """Handle theme change."""
+        theme = self.theme_var.get()
+        self.settings.set("theme", theme)
+        CTkMessageBox.showinfo(
+            "Theme Changed",
+            f"Theme changed to {theme}.\n\nPlease restart the application for full effect.",
+        )

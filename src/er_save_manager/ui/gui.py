@@ -5,9 +5,14 @@ Modular Elden Ring Save Manager GUI
 
 import os
 import subprocess
+import sys
+import threading
 import tkinter as tk
+from importlib import resources
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
+
+import customtkinter as ctk
 
 from er_save_manager.parser import Save
 from er_save_manager.platform import PlatformUtils
@@ -25,7 +30,6 @@ from er_save_manager.ui.settings import get_settings
 from er_save_manager.ui.tabs import (
     AdvancedToolsTab,
     AppearanceTab,
-    BackupManagerTab,
     CharacterManagementTab,
     EventFlagsTab,
     GesturesRegionsTab,
@@ -35,6 +39,7 @@ from er_save_manager.ui.tabs import (
     SteamIDPatcherTab,
     WorldStateTab,
 )
+from er_save_manager.ui.theme import ThemeManager
 
 
 class SaveManagerGUI:
@@ -43,20 +48,66 @@ class SaveManagerGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Elden Ring Save Manager")
-        self.root.geometry("1115x850")
+        self.root.geometry("1200x950")
         self.root.minsize(800, 700)
 
-        # Configure style
+        # Set application icon
+        try:
+            # Detect if running as frozen/packaged executable
+            if getattr(sys, "frozen", False):
+                # Running as compiled executable
+                if hasattr(sys, "_MEIPASS"):
+                    # PyInstaller (Linux)
+                    base_path = Path(sys._MEIPASS)
+                else:
+                    # cx_Freeze (Windows)
+                    base_path = Path(sys.executable).parent
+            else:
+                # Running as script
+                base_path = Path(__file__).parent.parent.parent
+
+            icon_path = base_path / "resources" / "icon" / "icon.ico"
+            if icon_path.exists():
+                self.root.iconbitmap(str(icon_path))
+            else:
+                # Fallback to PNG if ICO doesn't exist
+                icon_png = base_path / "resources" / "icon" / "icon.png"
+                if icon_png.exists():
+                    from PIL import Image, ImageTk
+
+                    icon_image = Image.open(icon_png)
+                    icon_photo = ImageTk.PhotoImage(icon_image)
+                    self.root.iconphoto(True, icon_photo)
+        except Exception:
+            pass
+
+        # Initialize settings
+        self.settings = get_settings()
+
+        # Configure customtkinter appearance based on saved theme
+        theme_name = self.settings.get("theme", "default")
+        appearance = "dark" if theme_name == "dark" else "light"
+        ctk.set_appearance_mode(appearance)
+
+        # Try to load lavender theme from customtkinterthemes
+        try:
+            import customtkinterthemes as ctt
+
+            theme_path = resources.files(ctt).joinpath("themes", "lavender.json")
+            ctk.set_default_color_theme(theme_path)
+        except Exception:
+            ctk.set_default_color_theme("dark-blue")
+
+        # Initialize theme manager for any remaining ttk widgets (during migration)
+        self.theme_manager = ThemeManager(theme_name)
+
+        # Configure style for legacy ttk widgets
         style = ttk.Style()
         style.theme_use("clam")
+        self.theme_manager.apply_theme(style)
 
-        self.colors = {"pink": "#F5A9B8", "text": "#1f1f1f", "bg": "#f0f0f0"}
-        style.configure("Accent.TButton", padding=6)
-        style.map(
-            "Accent.TButton",
-            background=[("active", self.colors["pink"])],
-            foreground=[("active", self.colors["text"])],
-        )
+        # Configure background for root window
+        self.root.configure(bg=self.theme_manager.get_color("bg"))
 
         # State
         self.default_save_path = Path(os.environ.get("APPDATA", "")) / "EldenRing"
@@ -65,113 +116,166 @@ class SaveManagerGUI:
         self.selected_slot = None
         self.selected_slot_index = -1  # Current selected character slot (0-9)
 
+        # Lazy loading flags (track which tabs have been initialized with data)
+        self.tabs_loaded = {
+            "Save Inspector": False,
+            "Appearance": False,
+            "Advanced Tools": False,
+            "SteamID Patcher": False,
+            "Hex Editor": False,
+            "Gestures": False,
+        }
+
         # Status
         self.status_var = tk.StringVar(value="Ready")
 
+        # Resize debouncing for performance
+        self._resize_timer = None
+        self._last_width = None
+        self._last_height = None
+
         self.setup_ui()
 
-    def setup_ui(self):
-        """Setup main UI structure"""
-        # Title
-        title_frame = ttk.Frame(self.root, padding="15")
-        title_frame.pack(fill=tk.X)
+        # Apply theme colors to tk widgets (non-ttk)
+        self.theme_manager.apply_tk_widget_colors(self.root)
 
-        ttk.Label(
+        # Bind resize event with debouncing
+        self.root.bind("<Configure>", self._on_window_resize)
+
+    def _on_window_resize(self, event=None):
+        """Debounce window resize events to improve responsiveness"""
+        if event is None:
+            return
+
+        # Only process if size actually changed (skip if just movement)
+        width = event.width
+        height = event.height
+
+        if width == self._last_width and height == self._last_height:
+            return
+
+        self._last_width = width
+        self._last_height = height
+
+        # Cancel pending resize processing
+        if self._resize_timer:
+            self.root.after_cancel(self._resize_timer)
+
+        # Delay actual processing to batch multiple resize events
+        self._resize_timer = self.root.after(200, self._process_resize)
+
+    def _process_resize(self):
+        """Process pending resize - called after resize events stop"""
+        self._resize_timer = None
+        self.root.update_idletasks()
+
+    def setup_ui(self):
+        """Setup main UI structure with optimized layout"""
+        # Use grid for main container - more efficient than pack
+        self.root.grid_rowconfigure(0, weight=0)  # Title
+        self.root.grid_rowconfigure(1, weight=0)  # File selection
+        self.root.grid_rowconfigure(2, weight=1)  # Main content (tabs)
+        self.root.grid_rowconfigure(3, weight=0)  # Status bar
+        self.root.grid_columnconfigure(0, weight=1)
+
+        # Title
+        title_frame = ctk.CTkFrame(self.root, corner_radius=12)
+        title_frame.grid(row=0, column=0, padx=12, pady=(12, 6), sticky="ew")
+
+        ctk.CTkLabel(
             title_frame,
             text="Elden Ring Save Manager",
             font=("Segoe UI", 20, "bold"),
-        ).pack()
+        ).pack(pady=(10, 2))
 
-        ttk.Label(
+        ctk.CTkLabel(
             title_frame,
             text="Complete save editor, backup manager, and corruption fixer",
-            font=("Segoe UI", 10),
-        ).pack()
+            font=("Segoe UI", 11),
+        ).pack(pady=(0, 10))
 
         # File Selection
-        file_frame = ttk.LabelFrame(
-            self.root, text="Step 1: Select Save File", padding="15"
+        file_frame = ctk.CTkFrame(self.root, corner_radius=12)
+        file_frame.grid(row=1, column=0, padx=12, pady=10, sticky="ew")
+
+        ctk.CTkLabel(
+            file_frame,
+            text="Step 1: Select Save File",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(anchor="w", padx=12, pady=(12, 4))
+
+        self.file_path_var = tk.StringVar(value="")
+
+        path_frame = ctk.CTkFrame(file_frame, corner_radius=8)
+        path_frame.pack(fill=tk.X, padx=12, pady=(0, 12))
+
+        ctk.CTkEntry(path_frame, textvariable=self.file_path_var).pack(
+            side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 6), pady=10
         )
-        file_frame.pack(fill=tk.X, padx=15, pady=10)
 
-        self.file_path_var = tk.StringVar()
-
-        path_frame = ttk.Frame(file_frame)
-        path_frame.pack(fill=tk.X)
-
-        ttk.Entry(path_frame, textvariable=self.file_path_var, width=60).pack(
-            side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5)
-        )
-
-        ttk.Button(
+        ctk.CTkButton(
             path_frame,
             text="Browse",
             command=self.browse_file,
-            width=10,
-        ).pack(side=tk.LEFT, padx=2)
+            width=110,
+        ).pack(side=tk.LEFT, padx=4, pady=10)
 
-        ttk.Button(
+        ctk.CTkButton(
             path_frame,
             text="Auto-Find",
             command=self.auto_detect,
-            width=10,
-        ).pack(side=tk.LEFT, padx=2)
-
-        # Linux help button
-        if PlatformUtils.is_linux():
-            ttk.Button(
-                path_frame,
-                text="Linux Info",
-                command=self.show_linux_steam_info_dialog,
-                width=12,
-            ).pack(side=tk.LEFT, padx=2)
+            width=110,
+        ).pack(side=tk.LEFT, padx=4, pady=10)
 
         # Load button
-        buttons_frame = ttk.Frame(file_frame)
-        buttons_frame.pack(fill=tk.X, pady=(10, 0))
+        buttons_frame = ctk.CTkFrame(file_frame, corner_radius=8)
+        buttons_frame.pack(fill=tk.X, pady=(6, 10), padx=12)
 
-        ttk.Button(
+        ctk.CTkButton(
             buttons_frame,
             text="Load Save File",
             command=self.load_save,
-            width=20,
-        ).pack(side=tk.LEFT)
+            width=160,
+        ).pack(side=tk.LEFT, padx=6, pady=10)
 
-        ttk.Button(
+        ctk.CTkButton(
             buttons_frame,
             text="Backup Manager",
             command=self.show_backup_manager_standalone,
-            width=20,
-        ).pack(side=tk.LEFT, padx=10)
+            width=160,
+        ).pack(side=tk.LEFT, padx=6, pady=10)
 
-        # Main content - tabbed interface
-        self.notebook = ttk.Notebook(self.root)
-        self.notebook.pack(fill=tk.BOTH, expand=True, padx=15, pady=10)
+        # Main content - tabbed interface (customtkinter)
+        self.notebook = ctk.CTkTabview(
+            self.root,
+            width=1100,
+            height=620,
+            corner_radius=12,
+            command=self._on_tab_changed,
+        )
+        self.notebook.grid(row=2, column=0, padx=12, pady=10, sticky="nsew")
 
         # Create all tabs
-        # Initialize settings
-        self.settings = get_settings()
-
         self.create_tabs()
 
         # Status bar
-        status_frame = ttk.Frame(self.root)
-        status_frame.pack(fill=tk.X, side=tk.BOTTOM)
+        status_frame = ctk.CTkFrame(self.root, corner_radius=0)
+        status_frame.grid(row=3, column=0, sticky="ew")
 
-        ttk.Label(
+        ctk.CTkLabel(
             status_frame,
             textvariable=self.status_var,
-            relief=tk.SUNKEN,
-            anchor=tk.W,
-            padding=5,
+            anchor="w",
+            padx=8,
+            pady=6,
         ).pack(fill=tk.X)
 
     def create_tabs(self):
         """Create all tabs with modular components"""
 
         # Tab 1: Save Inspector
-        tab_inspector = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab_inspector, text="Save Inspector")
+        self.notebook.add("Save Inspector")
+        tab_inspector = self.notebook.tab("Save Inspector")
         self.inspector_tab = SaveInspectorTab(
             tab_inspector,
             lambda: self.save_file,
@@ -183,8 +287,8 @@ class SaveManagerGUI:
         self.inspector_tab.setup_ui()
 
         # Tab 2: Character Management
-        tab_char_mgmt = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab_char_mgmt, text="Character Management")
+        self.notebook.add("Character Management")
+        tab_char_mgmt = self.notebook.tab("Character Management")
         self.char_mgmt_tab = CharacterManagementTab(
             tab_char_mgmt,
             lambda: self.save_file,
@@ -194,13 +298,13 @@ class SaveManagerGUI:
         self.char_mgmt_tab.setup_ui()
 
         # Tab 3: Character Editor
-        tab_character = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab_character, text="Character Editor")
+        self.notebook.add("Character Editor")
+        tab_character = self.notebook.tab("Character Editor")
         self.setup_character_editor_tab(tab_character)
 
         # Tab 4: Appearance
-        tab_appearance = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab_appearance, text="Appearance")
+        self.notebook.add("Appearance")
+        tab_appearance = self.notebook.tab("Appearance")
         self.appearance_tab = AppearanceTab(
             tab_appearance,
             lambda: self.save_file,
@@ -210,8 +314,8 @@ class SaveManagerGUI:
         self.appearance_tab.setup_ui()
 
         # Tab 5: World State
-        tab_world = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab_world, text="World State")
+        self.notebook.add("World State")
+        tab_world = self.notebook.tab("World State")
         self.world_tab = WorldStateTab(
             tab_world,
             lambda: self.save_file,
@@ -222,16 +326,16 @@ class SaveManagerGUI:
         self.world_tab.setup_ui()
 
         # Tab 6: SteamID Patcher
-        tab_steamid = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab_steamid, text="SteamID Patcher")
+        self.notebook.add("SteamID Patcher")
+        tab_steamid = self.notebook.tab("SteamID Patcher")
         self.steamid_tab = SteamIDPatcherTab(
             tab_steamid, lambda: self.save_file, lambda: self.save_path, self.load_save
         )
         self.steamid_tab.setup_ui()
 
         # Tab 7: Event Flags
-        tab_event_flags = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab_event_flags, text="Event Flags")
+        self.notebook.add("Event Flags")
+        tab_event_flags = self.notebook.tab("Event Flags")
         self.event_flags_tab = EventFlagsTab(
             tab_event_flags,
             lambda: self.save_file,
@@ -241,8 +345,8 @@ class SaveManagerGUI:
         self.event_flags_tab.setup_ui()
 
         # Tab 8: Gestures
-        tab_gestures = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab_gestures, text="Gestures")
+        self.notebook.add("Gestures")
+        tab_gestures = self.notebook.tab("Gestures")
         self.gestures_tab = GesturesRegionsTab(
             tab_gestures,
             lambda: self.save_file,
@@ -252,109 +356,126 @@ class SaveManagerGUI:
         self.gestures_tab.setup_ui()
 
         # Tab 9: Hex Editor
-        tab_hex = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab_hex, text="Hex Editor")
+        self.notebook.add("Hex Editor")
+        tab_hex = self.notebook.tab("Hex Editor")
         self.hex_tab = HexEditorTab(tab_hex, lambda: self.save_file)
         self.hex_tab.setup_ui()
 
         # Tab 10: Advanced Tools
-        tab_advanced = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab_advanced, text="Advanced Tools")
+        self.notebook.add("Advanced Tools")
+        tab_advanced = self.notebook.tab("Advanced Tools")
         self.advanced_tab = AdvancedToolsTab(
             tab_advanced, lambda: self.save_file, lambda: self.save_path, self.load_save
         )
         self.advanced_tab.setup_ui()
 
-        # Tab 11: Backup Manager
-        tab_backup = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab_backup, text="Backup Manager")
-        self.backup_tab = BackupManagerTab(
-            tab_backup, lambda: self.save_file, lambda: self.save_path, self.load_save
-        )
-        self.backup_tab.setup_ui()
-
-        # Tab 12: Settings
-        tab_settings = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab_settings, text="Settings")
+        # Tab 11: Settings
+        self.notebook.add("Settings")
+        tab_settings = self.notebook.tab("Settings")
         self.settings_tab = SettingsTab(tab_settings)
         self.settings_tab.setup_ui()
 
-        # Bind tab change event to refresh world state
-        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
-
     def setup_character_editor_tab(self, parent):
         """Setup character editor tab with modular editors"""
-        ttk.Label(
+        header = ctk.CTkLabel(
             parent,
             text="Character Editor",
-            font=("Segoe UI", 14, "bold"),
-        ).pack(pady=10)
-
-        # Slot selector
-        select_frame = ttk.Frame(parent)
-        select_frame.pack(fill=tk.X, pady=10)
-
-        ttk.Label(select_frame, text="Character Slot:").pack(side=tk.LEFT, padx=5)
-
-        self.char_slot_var = tk.IntVar(value=1)
-        slot_combo = ttk.Combobox(
-            select_frame,
-            textvariable=self.char_slot_var,
-            values=list(range(1, 11)),
-            state="readonly",
-            width=5,
+            font=("Segoe UI", 18, "bold"),
         )
-        slot_combo.pack(side=tk.LEFT, padx=5)
+        header.pack(pady=(6, 12))
 
-        ttk.Button(
+        container = ctk.CTkFrame(
+            parent, corner_radius=10, fg_color=("gray12", "gray22")
+        )
+        container.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 12))
+
+        # Slot selector bar
+        select_frame = ctk.CTkFrame(container, fg_color=("gray14", "gray24"))
+        select_frame.pack(fill=tk.X, padx=10, pady=(12, 8))
+
+        ctk.CTkLabel(select_frame, text="Character Slot:").pack(
+            side=ctk.LEFT, padx=(0, 10)
+        )
+
+        self.char_slot_var = ctk.StringVar(value="1")
+        slot_combo = ctk.CTkComboBox(
+            select_frame,
+            variable=self.char_slot_var,
+            values=[str(i) for i in range(1, 11)],
+            state="readonly",
+            width=90,
+        )
+        slot_combo.pack(side=ctk.LEFT, padx=(0, 12))
+
+        ctk.CTkButton(
             select_frame,
             text="Load Character",
             command=self.load_character_for_edit,
-        ).pack(side=tk.LEFT, padx=5)
+            width=140,
+        ).pack(side=ctk.LEFT)
 
-        # Editor notebook
-        editor_notebook = ttk.Notebook(parent)
-        editor_notebook.pack(fill=tk.BOTH, expand=True, pady=10)
+        # Editor tabs
+        editor_tabs = ctk.CTkTabview(
+            container,
+            width=900,
+            height=520,
+            fg_color=("gray10", "gray20"),
+            segmented_button_fg_color=("gray25", "gray35"),
+            segmented_button_selected_color=("#7c5b9a", "#6a4b85"),
+            segmented_button_unselected_color=("gray40", "gray30"),
+            text_color=("white", "white"),
+        )
+        editor_tabs.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 12))
+
+        def current_slot_index() -> int:
+            try:
+                return int(self.char_slot_var.get()) - 1
+            except Exception:
+                return -1
 
         # Stats editor
-        stats_frame = ttk.Frame(editor_notebook, padding=10)
-        editor_notebook.add(stats_frame, text="Stats")
+        stats_frame = editor_tabs.add("Stats")
+        stats_frame = ctk.CTkFrame(stats_frame, fg_color=("gray12", "gray22"))
+        stats_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self.stats_editor = StatsEditor(
             stats_frame,
             lambda: self.save_file,
-            lambda: self.char_slot_var.get() - 1,
+            current_slot_index,
             lambda: self.save_path,
         )
         self.stats_editor.setup_ui()
 
         # Equipment editor
-        equipment_frame = ttk.Frame(editor_notebook, padding=10)
-        editor_notebook.add(equipment_frame, text="Equipment")
+        equipment_tab = editor_tabs.add("Equipment")
+        equipment_frame = ctk.CTkFrame(equipment_tab, fg_color=("gray12", "gray22"))
+        equipment_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self.equipment_editor = EquipmentEditor(
             equipment_frame,
             lambda: self.save_file,
-            lambda: self.char_slot_var.get() - 1,
+            current_slot_index,
         )
         self.equipment_editor.setup_ui()
 
         # Character info editor
-        info_frame = ttk.Frame(editor_notebook, padding=10)
-        editor_notebook.add(info_frame, text="Info")
+        info_tab = editor_tabs.add("Info")
+        info_frame = ctk.CTkFrame(info_tab, fg_color=("gray12", "gray22"))
+        info_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self.char_info_editor = CharacterInfoEditor(
             info_frame,
             lambda: self.save_file,
-            lambda: self.char_slot_var.get() - 1,
+            current_slot_index,
             lambda: self.save_path,
         )
         self.char_info_editor.setup_ui()
 
         # Inventory editor
-        inventory_frame = ttk.Frame(editor_notebook, padding=10)
-        editor_notebook.add(inventory_frame, text="Inventory")
+        inventory_tab = editor_tabs.add("Inventory")
+        inventory_frame = ctk.CTkFrame(inventory_tab, fg_color=("gray12", "gray22"))
+        inventory_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self.inventory_editor = InventoryEditor(
             inventory_frame,
             lambda: self.save_file,
-            lambda: self.char_slot_var.get() - 1,
+            current_slot_index,
             lambda: self.save_path,
             self.ensure_raw_data_mutable,
         )
@@ -366,7 +487,11 @@ class SaveManagerGUI:
             messagebox.showwarning("No Save", "Please load a save file first!")
             return
 
-        slot_idx = self.char_slot_var.get() - 1
+        try:
+            slot_idx = int(self.char_slot_var.get()) - 1
+        except Exception:
+            messagebox.showwarning("Invalid Slot", "Please choose a character slot.")
+            return
         slot = self.save_file.characters[slot_idx]
 
         if slot.is_empty():
@@ -389,14 +514,35 @@ class SaveManagerGUI:
     # File operations
     def browse_file(self):
         """Browse for save file"""
+        # On Linux, try to start in a visible directory since .local is hidden
+        initialdir = (
+            str(self.default_save_path)
+            if self.default_save_path.exists()
+            else str(Path.home())
+        )
+
+        # On Linux, if default path doesn't exist, try to navigate to Steam directory
+        if PlatformUtils.is_linux() and not self.default_save_path.exists():
+            steam_base = Path.home() / ".local" / "share" / "Steam"
+            if steam_base.exists():
+                initialdir = str(steam_base)
+
         filename = filedialog.askopenfilename(
             title="Select Elden Ring Save File",
-            initialdir=self.default_save_path,
+            initialdir=initialdir,
             filetypes=[("Elden Ring Saves", "*.sl2 *.co2"), ("All files", "*.*")],
         )
         if filename:
             self.file_path_var.set(filename)
             self.status_var.set(f"Selected: {os.path.basename(filename)}")
+
+            # Linux: Check if in default location
+            if (
+                PlatformUtils.is_linux()
+                and not PlatformUtils.is_save_in_default_location(Path(filename))
+                and self.settings.get("show_linux_save_warning", True)
+            ):
+                self.show_linux_save_location_warning(Path(filename))
 
     def auto_detect(self):
         """Auto-detect save file with Linux support"""
@@ -410,8 +556,7 @@ class SaveManagerGUI:
                     "No Saves Found",
                     "No Elden Ring save files found.\n\n"
                     "Linux users: Make sure you've launched Elden Ring at least once.\n"
-                    "Saves are stored in Steam's compatdata folder.\n\n"
-                    "Click 'Linux Steam Info' for help.",
+                    "Saves are stored in Steam's compatdata folder.",
                 )
             else:
                 messagebox.showwarning("Not Found", "No Elden Ring save files found.")
@@ -431,15 +576,23 @@ class SaveManagerGUI:
                     self.show_linux_save_location_warning(found_saves[0])
         else:
             # Multiple saves found
-            SaveSelectorDialog.show(
-                self.root, found_saves, lambda path: self.file_path_var.set(path)
-            )
+            def on_save_selected(path):
+                self.file_path_var.set(path)
+                # Linux: Check if in default location
+                if (
+                    PlatformUtils.is_linux()
+                    and not PlatformUtils.is_save_in_default_location(Path(path))
+                    and self.settings.get("show_linux_save_warning", True)
+                ):
+                    self.show_linux_save_location_warning(Path(path))
+
+            SaveSelectorDialog.show(self.root, found_saves, on_save_selected)
 
     def show_linux_save_location_warning(self, save_path):
         """Show warning about non-default save location on Linux"""
         dialog = tk.Toplevel(self.root)
         dialog.title("⚠️ Save Location Warning")
-        dialog.geometry("550x450")
+        dialog.geometry("550x500")
         dialog.transient(self.root)
 
         msg_frame = ttk.Frame(dialog, padding=20)
@@ -456,9 +609,10 @@ class SaveManagerGUI:
             f"Your save file is located in:\n"
             f"{save_path}\n\n"
             f"This is NOT the default Steam compatdata location!\n\n"
-            f"⚠️ If you remove Elden Ring from Steam and reinstall it, "
-            f"Steam will create a NEW compatdata folder and your saves may become inaccessible.\n\n"
-            f"Recommended: Set a fixed Steam launch option to prevent this."
+            f'⚠️ If you remove the custom launcher (e.g. "ersc_launcher.exe") from Steam, '
+            f"Steam will remove that compatdata folder and your save will get lost.\n\n"
+            f"Recommended: Set a fixed Steam launch option and copy the save file to the default"
+            f"location via the 'Copy Save' button below to prevent this."
         )
 
         ttk.Label(
@@ -473,14 +627,14 @@ class SaveManagerGUI:
         if launch_option:
             ttk.Label(
                 msg_frame,
-                text="Add this to Elden Ring's Steam launch options:",
+                text="Add this to the custom launcher's Steam launch options:",
                 font=("Segoe UI", 9, "bold"),
             ).pack(anchor=tk.W, pady=(10, 5))
 
             option_frame = ttk.Frame(msg_frame)
             option_frame.pack(fill=tk.X, pady=5)
 
-            option_entry = ttk.Entry(option_frame, font=("Consolas", 9))
+            option_entry = ttk.Entry(option_frame, font=("Consolas", 11))
             option_entry.insert(0, launch_option)
             option_entry.config(state="readonly")
             option_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
@@ -499,17 +653,30 @@ class SaveManagerGUI:
         button_frame.pack(pady=10)
 
         def copy_to_default():
-            default_loc = PlatformUtils.get_default_save_location()
-            if default_loc:
+            """Copy save to the SteamID-specific folder instead of the root EldenRing folder."""
+
+            # Get the default save location (with correct compatdata ID on Linux)
+            target_dir = PlatformUtils.get_default_save_location()
+
+            # Extract SteamID from the current save path and append it to target
+            # Path structure: .../EldenRing/[SteamID]/ER0000.co2
+            current_path = Path(save_path)
+            steamid = current_path.parent.name  # Get the SteamID folder name
+
+            # Append SteamID to the target directory to get the full path
+            if target_dir and steamid:
+                target_dir = target_dir / steamid
+
+            if target_dir:
                 if messagebox.askyesno(
                     "Copy Save",
-                    f"Copy save file to:\n{default_loc}\n\nThe original file will remain in its current location.",
+                    f"Copy save file to:\n{target_dir}\n\nThe original file will remain in its current location.",
                 ):
                     try:
-                        default_loc.mkdir(parents=True, exist_ok=True)
+                        target_dir.mkdir(parents=True, exist_ok=True)
                         import shutil
 
-                        new_path = default_loc / Path(save_path).name
+                        new_path = target_dir / Path(save_path).name
                         shutil.copy2(save_path, new_path)
                         self.file_path_var.set(str(new_path))
                         messagebox.showinfo(
@@ -534,100 +701,6 @@ class SaveManagerGUI:
             button_frame, text="Don't Show Again", command=dont_show_again, width=18
         ).pack(side=tk.LEFT, padx=5)
 
-    def show_linux_steam_info_dialog(self):
-        """Show Linux-specific Steam/Proton information"""
-        if not PlatformUtils.is_linux():
-            return
-
-        dialog = tk.Toplevel(self.root)
-        dialog.title("Linux Steam / Proton Info")
-        dialog.geometry("650x550")
-        dialog.transient(self.root)
-
-        msg_frame = ttk.Frame(dialog, padding=20)
-        msg_frame.pack(fill=tk.BOTH, expand=True)
-
-        ttk.Label(
-            msg_frame,
-            text="Elden Ring on Linux (Steam/Proton)",
-            font=("Segoe UI", 14, "bold"),
-        ).pack(pady=(0, 15))
-
-        # Info sections
-        info_text = """Save File Locations:
-Elden Ring on Linux uses Steam's Proton compatibility layer. Your saves are stored in:
-
-~/.steam/steam/steamapps/compatdata/[NUMBER]/pfx/drive_c/users/steamuser/AppData/Roaming/EldenRing/[SteamID]/
-
-The [NUMBER] is called the "compatdata ID" and varies depending on installation.
-
-Common Issues:
-1. Multiple Save Locations: If you've reinstalled the game, Steam may create a NEW compatdata folder, making old saves appear lost.
-
-2. Disappearing Saves: If Steam removes the game data, the compatdata folder may be deleted.
-
-Solution - Fixed Launch Option:
-Add this to Elden Ring's Steam launch options to always use the same location:
-
-"""
-
-        ttk.Label(
-            msg_frame,
-            text=info_text,
-            justify=tk.LEFT,
-            wraplength=600,
-        ).pack(pady=10)
-
-        # Launch option
-        launch_option = PlatformUtils.get_steam_launch_option_hint()
-        if launch_option:
-            option_frame = ttk.Frame(msg_frame)
-            option_frame.pack(fill=tk.X, pady=10)
-
-            option_entry = ttk.Entry(option_frame, font=("Consolas", 9))
-            option_entry.insert(0, launch_option)
-            option_entry.config(state="readonly")
-            option_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
-
-            def copy_to_clipboard():
-                self.root.clipboard_clear()
-                self.root.clipboard_append(launch_option)
-                messagebox.showinfo("Copied", "Copied to clipboard!")
-
-            ttk.Button(
-                option_frame, text="Copy", command=copy_to_clipboard, width=10
-            ).pack(side=tk.LEFT)
-
-        # How to add launch option
-        steps_text = """How to Add Launch Options:
-1. Right-click Elden Ring in Steam
-2. Properties → General → Launch Options
-3. Paste the command above
-4. Click OK and restart the game
-
-This ensures your saves always go to the same location!"""
-
-        ttk.Label(
-            msg_frame,
-            text=steps_text,
-            justify=tk.LEFT,
-            wraplength=600,
-            font=("Segoe UI", 9),
-        ).pack(pady=10)
-
-        # Flatpak warning
-        if PlatformUtils.is_flatpak_steam():
-            ttk.Label(
-                msg_frame,
-                text="Note: Flatpak Steam detected - using appropriate path.",
-                font=("Segoe UI", 9, "italic"),
-                foreground="blue",
-            ).pack(pady=5)
-
-        ttk.Button(msg_frame, text="Close", command=dialog.destroy, width=15).pack(
-            pady=10
-        )
-
     def is_game_running(self):
         """Check if Elden Ring is running"""
         try:
@@ -640,26 +713,68 @@ This ensures your saves always go to the same location!"""
             if "eldenring.exe" in result.stdout.lower():
                 return True
 
-        except Exception as e:
-            print(f"Warning: Could not check if game is running: {e}")
+        except Exception:
+            pass
 
         return False
 
     def _on_tab_changed(self, event=None):
-        """Handle tab change event - refresh world state when switching to it."""
-        current_tab = self.notebook.select()
-        tab_text = self.notebook.tab(current_tab, "text")
+        """Handle tab change event - lazy load and refresh tabs."""
+        current_tab = self.notebook.get()
 
-        # Refresh world state tab when switched to
-        if tab_text == "World State":
+        # Load tab content in background for non-blocking UI
+        if not self.tabs_loaded.get(current_tab, False):
+            thread = threading.Thread(
+                target=self._lazy_load_tab_background, args=(current_tab,), daemon=True
+            )
+            thread.start()
+        elif current_tab == "World State" and hasattr(self, "world_tab"):
+            # Already loaded, just refresh
             self.world_tab.refresh()
+
+    def _lazy_load_tab_background(self, tab_name):
+        """Load tab data in background thread"""
+        try:
+            if not self.save_file:
+                return
+
+            # Skip if already loaded (double-check)
+            if self.tabs_loaded.get(tab_name, False):
+                return
+
+            # Load data without blocking UI
+            if tab_name == "Save Inspector":
+                self.inspector_tab.populate_character_list()
+            elif tab_name == "Appearance":
+                self.appearance_tab.load_presets()
+            elif tab_name == "Advanced Tools":
+                self.advanced_tab.update_save_info()
+            elif tab_name == "SteamID Patcher":
+                if hasattr(self.steamid_tab, "update_steamid_display"):
+                    self.steamid_tab.update_steamid_display()
+            elif tab_name == "Hex Editor":
+                if self.save_file:
+                    try:
+                        with open(self.save_path, "rb") as f:
+                            self.save_file._raw_data = f.read()
+                        self.hex_tab.hex_display_at_offset(0)
+                    except Exception:
+                        pass
+            elif tab_name == "Gestures":
+                pass  # Gestures tab doesn't auto-load
+
+            # Mark as loaded
+            self.root.after(0, lambda: self.tabs_loaded.update({tab_name: True}))
+
+        except Exception:
+            pass
 
     def on_slot_selected(self, slot_index: int):
         """Handle character slot selection from Save Inspector."""
         self.selected_slot_index = slot_index
 
     def load_save(self):
-        """Load save file"""
+        """Load save file in background thread to prevent UI freezing"""
         save_path = self.file_path_var.get()
 
         if not save_path or not os.path.exists(save_path):
@@ -680,7 +795,7 @@ This ensures your saves always go to the same location!"""
         ):
             # Create custom dialog with "Don't show again" option
             warning_dialog = tk.Toplevel(self.root)
-            warning_dialog.title("⚠️ EAC Warning - PC Save File Detected")
+            warning_dialog.title("⚠️ EAC Warning - Vanilla Save File Detected")
             warning_dialog.geometry("520x420")
             warning_dialog.transient(self.root)
             warning_dialog.grab_set()
@@ -691,18 +806,18 @@ This ensures your saves always go to the same location!"""
 
             ttk.Label(
                 msg_frame,
-                text="⚠️ EAC Warning - PC Save File Detected",
+                text="⚠️ EAC Warning - Vanilla Save File Detected",
                 font=("Segoe UI", 12, "bold"),
                 foreground="red",
             ).pack(pady=(0, 10))
 
             warning_text = (
-                "You are loading a PC save file (.sl2).\n\n"
+                "You are loading a Vanilla save file (.sl2).\n\n"
                 "WARNING: Modifying save files can result in a BAN if:\n"
                 "• Easy Anti-Cheat (EAC) is enabled\n"
                 "• You play online with modified saves\n\n"
                 "To avoid bans:\n"
-                "1. Launch Elden Ring with EAC disabled (use -eac_launcher flag)\n"
+                "1. Launch Elden Ring with EAC disabled\n"
                 "2. Only play offline with modified saves\n"
                 "3. Do not use modified saves in online/multiplayer\n\n"
                 "Do you understand and want to continue?"
@@ -753,40 +868,46 @@ This ensures your saves always go to the same location!"""
                 self.status_var.set("Load cancelled by user")
                 return
 
+        # Start loading in background thread
+        self.status_var.set("Loading save file...")
+        thread = threading.Thread(
+            target=self._load_save_background, args=(save_path,), daemon=True
+        )
+        thread.start()
+
+    def _load_save_background(self, save_path):
+        """Background thread for loading save file"""
         try:
-            self.status_var.set("Loading save file...")
-            self.root.update()
+            # Load save file in background
+            save_file = Save.from_file(save_path)
 
-            self.save_file = Save.from_file(save_path)
-            self.save_path = Path(save_path)
-
-            # Update all tab displays
-            self.inspector_tab.populate_character_list()
-            self.appearance_tab.load_presets()
-            self.advanced_tab.update_save_info()
-            self.backup_tab.update_backup_stats()
-
-            # Update SteamID display
-            if hasattr(self.steamid_tab, "update_steamid_display"):
-                self.steamid_tab.update_steamid_display()
-
-            # Update hex view
-            if self.save_file:
-                try:
-                    with open(self.save_path, "rb") as f:
-                        self.save_file._raw_data = f.read()
-                    self.hex_tab.hex_display_at_offset(0)
-                except Exception:
-                    pass
-
-            self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
-            messagebox.showinfo("Success", "Save file loaded successfully!")
-
+            # Update main thread
+            self.root.after(0, self._finalize_save_load, save_file, save_path)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load save file:\n{str(e)}")
-            import traceback
+            error_msg = str(e)
+            self.root.after(
+                0,
+                lambda: messagebox.showerror(
+                    "Error", f"Failed to load save file:\n{error_msg}"
+                ),
+            )
+            self.root.after(0, lambda: self.status_var.set("Load failed"))
 
-            traceback.print_exc()
+    def _finalize_save_load(self, save_file, save_path):
+        """Finalize save loading on main thread"""
+        self.save_file = save_file
+        self.save_path = Path(save_path)
+
+        # Reset all tab flags so views will refresh with the new save
+        for tab_name in self.tabs_loaded:
+            self.tabs_loaded[tab_name] = False
+
+        # Lazy-load the currently visible tab immediately (ensures live refresh)
+        current_tab = self.notebook.get()
+        self._lazy_load_tab_background(current_tab)
+
+        self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
+        messagebox.showinfo("Success", "Save file loaded successfully!")
 
     def show_character_details(self, slot_idx):
         """Show character details dialog"""
@@ -796,15 +917,33 @@ This ensures your saves always go to the same location!"""
 
     def show_backup_manager_standalone(self):
         """Show backup manager from top button"""
-        if hasattr(self.backup_tab, "show_backup_manager"):
-            self.backup_tab.show_backup_manager()
-        else:
+        from tkinter import messagebox
+
+        if not self.save_file or not self.save_path:
             messagebox.showwarning("No Save", "Please load a save file first!")
+            return
+
+        # Reuse the full-featured BackupManagerTab window (with buttons + sorting)
+        try:
+            from er_save_manager.ui.tabs.backup_manager_tab import BackupManagerTab
+
+            if not hasattr(self, "_backup_tab_helper"):
+                self._backup_tab_helper = BackupManagerTab(
+                    self.root,
+                    lambda: self.save_file,
+                    lambda: self.save_path,
+                    self.load_save,
+                )
+
+            self._backup_tab_helper.show_backup_manager()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open backup manager:\n{str(e)}")
 
 
 def main():
     """Main entry point for GUI"""
-    root = tk.Tk()
+    root = ctk.CTk()
     SaveManagerGUI(root)
     root.mainloop()
 

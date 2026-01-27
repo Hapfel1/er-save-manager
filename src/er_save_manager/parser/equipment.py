@@ -448,15 +448,9 @@ class AcquiredProjectiles:
 
     def write(self, f: BytesIO):
         """Write AcquiredProjectiles to stream"""
-        start_pos = f.tell()
         f.write(struct.pack("<I", self.count))
         for proj in self.projectiles:
             proj.write(f)
-        # Pad to 0x7CC bytes
-        bytes_written = f.tell() - start_pos
-        remaining = 0x7CC - bytes_written
-        if remaining > 0:
-            f.write(b"\x00" * remaining)
 
 
 @dataclass

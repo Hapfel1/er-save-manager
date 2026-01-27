@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from er_save_manager.data.region_ids_map import get_region_id
 from er_save_manager.parser.er_types import FloatVector3, MapId
 
 
@@ -22,6 +23,11 @@ class Location:
     is_safe: bool = True
     is_dlc: bool = False
     grace_name: str = ""
+
+    @property
+    def region_id(self) -> int:
+        """Get region ID for this location's region."""
+        return get_region_id(self.region)
 
     @property
     def display_name(self) -> str:
@@ -250,7 +256,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "divine_bridge_1": Location(
         map_id=MapId(bytes([0, 0, 5, 11])),
         name="Divine Bridge",
-        region="Leyndell, Royal Capital",
+        region="Roundtable Hold",
         grace_name="Divine Bridge",
     ),
     "table_of_lost_grace": Location(
@@ -258,6 +264,7 @@ ALL_LOCATIONS: dict[str, Location] = {
         name="Table of Lost Grace",
         region="Roundtable Hold",
         grace_name="Table of Lost Grace",
+        coordinates=FloatVector3(x=-331.0, y=-22.0, z=-305.8),
     ),
     "dragonkin_soldier_of_nokstella": Location(
         map_id=MapId(bytes([0, 0, 1, 12])),
@@ -442,7 +449,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "across_the_roots": Location(
         map_id=MapId(bytes([0, 0, 3, 12])),
         name="Across the Roots",
-        region="Deeproot Depths",
+        region="Ainsel River",
         grace_name="Across the Roots",
     ),
     "astel_naturalborn_of_the_void": Location(
@@ -712,7 +719,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "fringefolk_hero_s_grave_grave": Location(
         map_id=MapId(bytes([0, 0, 0, 18])),
         name="Fringefolk Hero's Grave (Grave)",
-        region="Stranded Graveyard",
+        region="Stone Platform",
         grace_name="Fringefolk Hero's Grave (Grave)",
     ),
     "fractured_marika": Location(
@@ -906,7 +913,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "storehouse_loft": Location(
         map_id=MapId(bytes([0, 0, 1, 21])),
         name="Storehouse, Loft",
-        region="Shadow Keep",
+        region="Specimen Storehouse",
         grace_name="Storehouse, Loft",
         is_dlc=True,
     ),
@@ -962,7 +969,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "miquella_s_cross_cross_2": Location(
         map_id=MapId(bytes([0, 0, 0, 22])),
         name="Miquella's Cross (Cross)",
-        region="Stone Coffin Fissure",
+        region="Scadu Altus",
         grace_name="Miquella's Cross (Cross)",
         is_dlc=True,
     ),
@@ -997,14 +1004,14 @@ ALL_LOCATIONS: dict[str, Location] = {
     "second_floor_chamber": Location(
         map_id=MapId(bytes([0, 0, 0, 28])),
         name="Second Floor Chamber",
-        region="Scadu Altus",
+        region="Weeping Peninsula",
         grace_name="Second Floor Chamber",
         is_dlc=True,
     ),
     "tombsward_catacombs": Location(
         map_id=MapId(bytes([0, 0, 0, 30])),
         name="Tombsward Catacombs",
-        region="Limgrave",
+        region="Weeping Peninsula",
         grace_name="Tombsward Catacombs",
     ),
     "impaler_s_catacombs": Location(
@@ -1016,19 +1023,19 @@ ALL_LOCATIONS: dict[str, Location] = {
     "stormfoot_catacombs": Location(
         map_id=MapId(bytes([0, 0, 2, 30])),
         name="Stormfoot Catacombs",
-        region="Limgrave",
+        region="Liurnia of the Lakes",
         grace_name="Stormfoot Catacombs",
     ),
     "road_s_end_catacombs": Location(
         map_id=MapId(bytes([0, 0, 3, 30])),
         name="Road's End Catacombs",
-        region="Liurnia of the Lakes",
+        region="Limgrave",
         grace_name="Road's End Catacombs",
     ),
     "murkwater_catacombs": Location(
         map_id=MapId(bytes([0, 0, 4, 30])),
         name="Murkwater Catacombs",
-        region="Limgrave",
+        region="Liurnia of the Lakes",
         grace_name="Murkwater Catacombs",
     ),
     "black_knife_catacombs": Location(
@@ -1040,7 +1047,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "cliffbottom_catacombs": Location(
         map_id=MapId(bytes([0, 0, 6, 30])),
         name="Cliffbottom Catacombs",
-        region="Liurnia of the Lakes",
+        region="Mt. Gelmir",
         grace_name="Cliffbottom Catacombs",
     ),
     "wyndham_catacombs": Location(
@@ -1052,37 +1059,37 @@ ALL_LOCATIONS: dict[str, Location] = {
     "sainted_hero_s_grave": Location(
         map_id=MapId(bytes([0, 0, 8, 30])),
         name="Sainted Hero's Grave",
-        region="Altus Plateau",
+        region="Mt. Gelmir",
         grace_name="Sainted Hero's Grave",
     ),
     "gelmir_hero_s_grave": Location(
         map_id=MapId(bytes([0, 0, 9, 30])),
         name="Gelmir Hero's Grave",
-        region="Altus Plateau",
+        region="Capital Outskirts",
         grace_name="Gelmir Hero's Grave",
     ),
     "auriza_hero_s_grave": Location(
         map_id=MapId(bytes([0, 0, 10, 30])),
         name="Auriza Hero's Grave",
-        region="Altus Plateau",
+        region="Stormhill",
         grace_name="Auriza Hero's Grave",
     ),
     "deathtouched_catacombs": Location(
         map_id=MapId(bytes([0, 0, 11, 30])),
         name="Deathtouched Catacombs",
-        region="Limgrave",
+        region="Altus Plateau",
         grace_name="Deathtouched Catacombs",
     ),
     "unsightly_catacombs": Location(
         map_id=MapId(bytes([0, 0, 12, 30])),
         name="Unsightly Catacombs",
-        region="Altus Plateau",
+        region="Capital Outskirts",
         grace_name="Unsightly Catacombs",
     ),
     "auriza_side_tomb": Location(
         map_id=MapId(bytes([0, 0, 13, 30])),
         name="Auriza Side Tomb",
-        region="Altus Plateau",
+        region="Caelid",
         grace_name="Auriza Side Tomb",
     ),
     "minor_erdtree_catacombs": Location(
@@ -1100,43 +1107,43 @@ ALL_LOCATIONS: dict[str, Location] = {
     "war_dead_catacombs": Location(
         map_id=MapId(bytes([0, 0, 16, 30])),
         name="War-Dead Catacombs",
-        region="Caelid",
+        region="Flame Peak",
         grace_name="War-Dead Catacombs",
     ),
     "giant_conquering_hero_s_grave": Location(
         map_id=MapId(bytes([0, 0, 17, 30])),
         name="Giant-Conquering Hero's Grave",
-        region="Mountaintops of the Giants",
+        region="Flame Peak",
         grace_name="Giant-Conquering Hero's Grave",
     ),
     "giants_mountaintop_catacombs": Location(
         map_id=MapId(bytes([0, 0, 18, 30])),
         name="Giants' Mountaintop Catacombs",
-        region="Mountaintops of the Giants",
+        region="Consecrated Snowfield",
         grace_name="Giants' Mountaintop Catacombs",
     ),
     "consecrated_snowfield_catacombs": Location(
         map_id=MapId(bytes([0, 0, 19, 30])),
         name="Consecrated Snowfield Catacombs",
-        region="Mountaintops of the Giants",
+        region="Forbidden Lands",
         grace_name="Consecrated Snowfield Catacombs",
     ),
     "hidden_path_to_the_haligtree": Location(
         map_id=MapId(bytes([0, 0, 20, 30])),
         name="Hidden Path to the Haligtree",
-        region="Mountaintops of the Giants",
+        region="Limgrave",
         grace_name="Hidden Path to the Haligtree",
     ),
     "murkwater_cave": Location(
         map_id=MapId(bytes([0, 0, 0, 31])),
         name="Murkwater Cave",
-        region="Limgrave",
+        region="Weeping Peninsula",
         grace_name="Murkwater Cave",
     ),
     "earthbore_cave": Location(
         map_id=MapId(bytes([0, 0, 1, 31])),
         name="Earthbore Cave",
-        region="Limgrave",
+        region="Weeping Peninsula",
         grace_name="Earthbore Cave",
     ),
     "tombsward_cave": Location(
@@ -1148,7 +1155,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "groveside_cave": Location(
         map_id=MapId(bytes([0, 0, 3, 31])),
         name="Groveside Cave",
-        region="Limgrave",
+        region="Liurnia of the Lakes",
         grace_name="Groveside Cave",
     ),
     "stillwater_cave": Location(
@@ -1166,37 +1173,37 @@ ALL_LOCATIONS: dict[str, Location] = {
     "academy_crystal_cave": Location(
         map_id=MapId(bytes([0, 0, 6, 31])),
         name="Academy Crystal Cave",
-        region="Liurnia of the Lakes",
+        region="Mt. Gelmir",
         grace_name="Academy Crystal Cave",
     ),
     "seethewater_cave": Location(
         map_id=MapId(bytes([0, 0, 7, 31])),
         name="Seethewater Cave",
-        region="Altus Plateau",
+        region="Mt. Gelmir",
         grace_name="Seethewater Cave",
     ),
     "volcano_cave": Location(
         map_id=MapId(bytes([0, 0, 9, 31])),
         name="Volcano Cave",
-        region="Altus Plateau",
+        region="Greyoll's Dragonbarrow",
         grace_name="Volcano Cave",
     ),
     "dragonbarrow_cave": Location(
         map_id=MapId(bytes([0, 0, 10, 31])),
         name="Dragonbarrow Cave",
-        region="Caelid",
+        region="Greyoll's Dragonbarrow",
         grace_name="Dragonbarrow Cave",
     ),
     "sellia_hideaway": Location(
         map_id=MapId(bytes([0, 0, 11, 31])),
         name="Sellia Hideaway",
-        region="Caelid",
+        region="Consecrated Snowfield",
         grace_name="Sellia Hideaway",
     ),
     "cave_of_the_forlorn": Location(
         map_id=MapId(bytes([0, 0, 12, 31])),
         name="Cave of the Forlorn",
-        region="Mountaintops of the Giants",
+        region="Limgrave",
         grace_name="Cave of the Forlorn",
     ),
     "coastal_cave": Location(
@@ -1208,7 +1215,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "highroad_cave": Location(
         map_id=MapId(bytes([0, 0, 17, 31])),
         name="Highroad Cave",
-        region="Limgrave",
+        region="Altus Plateau",
         grace_name="Highroad Cave",
     ),
     "perfumer_s_grotto": Location(
@@ -1220,7 +1227,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "sage_s_cave": Location(
         map_id=MapId(bytes([0, 0, 19, 31])),
         name="Sage's Cave",
-        region="Altus Plateau",
+        region="Caelid",
         grace_name="Sage's Cave",
     ),
     "abandoned_cave": Location(
@@ -1232,13 +1239,13 @@ ALL_LOCATIONS: dict[str, Location] = {
     "gaol_cave": Location(
         map_id=MapId(bytes([0, 0, 21, 31])),
         name="Gaol Cave",
-        region="Caelid",
+        region="Mountaintops of the Giants",
         grace_name="Gaol Cave",
     ),
     "spiritcaller_cave": Location(
         map_id=MapId(bytes([0, 0, 22, 31])),
         name="Spiritcaller Cave",
-        region="Mountaintops of the Giants",
+        region="Weeping Peninsula",
         grace_name="Spiritcaller Cave",
     ),
     "morne_tunnel": Location(
@@ -1250,13 +1257,13 @@ ALL_LOCATIONS: dict[str, Location] = {
     "limgrave_tunnels": Location(
         map_id=MapId(bytes([0, 0, 1, 32])),
         name="Limgrave Tunnels",
-        region="Limgrave",
+        region="Liurnia of the Lakes",
         grace_name="Limgrave Tunnels",
     ),
     "raya_lucaria_crystal_tunnel": Location(
         map_id=MapId(bytes([0, 0, 2, 32])),
         name="Raya Lucaria Crystal Tunnel",
-        region="Liurnia of the Lakes",
+        region="Altus Plateau",
         grace_name="Raya Lucaria Crystal Tunnel",
     ),
     "old_altus_tunnel": Location(
@@ -1286,7 +1293,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "sellia_crystal_tunnel": Location(
         map_id=MapId(bytes([0, 0, 8, 32])),
         name="Sellia Crystal Tunnel",
-        region="Caelid",
+        region="Consecrated Snowfield",
         grace_name="Sellia Crystal Tunnel",
     ),
     "yelough_anix_tunnel": Location(
@@ -1376,7 +1383,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "divine_tower_of_east_altus": Location(
         map_id=MapId(bytes([0, 0, 14, 34])),
         name="Divine Tower of East Altus",
-        region="Mountaintops of the Giants",
+        region="Greyoll's Dragonbarrow",
         grace_name="Divine Tower of East Altus",
     ),
     "isolated_divine_tower": Location(
@@ -1430,37 +1437,37 @@ ALL_LOCATIONS: dict[str, Location] = {
     "ruin_strewn_precipice_overlook": Location(
         map_id=MapId(bytes([0, 0, 20, 39])),
         name="Ruin-Strewn Precipice Overlook",
-        region="Liurnia of the Lakes",
+        region="Gravesite Plain",
         grace_name="Ruin-Strewn Precipice Overlook",
     ),
     "fog_rift_catacombs": Location(
         map_id=MapId(bytes([0, 0, 0, 40])),
         name="Fog Rift Catacombs",
-        region="Gravesite Plain",
+        region="Rauh Base",
         grace_name="Fog Rift Catacombs",
     ),
     "scorpion_river_catacombs": Location(
         map_id=MapId(bytes([0, 0, 1, 40])),
         name="Scorpion River Catacombs",
-        region="Land of the Tower",
+        region="Scadu Altus",
         grace_name="Scorpion River Catacombs",
     ),
     "darklight_catacombs": Location(
         map_id=MapId(bytes([0, 0, 2, 40])),
         name="Darklight Catacombs",
-        region="Scadu Altus",
+        region="Gravesite Plain",
         grace_name="Darklight Catacombs",
     ),
     "belurat_gaol": Location(
         map_id=MapId(bytes([0, 0, 0, 41])),
         name="Belurat Gaol",
-        region="Gravesite Plain",
+        region="Scadu Altus",
         grace_name="Belurat Gaol",
     ),
     "bonny_gaol": Location(
         map_id=MapId(bytes([0, 0, 1, 41])),
         name="Bonny Gaol",
-        region="Scadu Altus",
+        region="Charo's Hidden Grave",
         grace_name="Bonny Gaol",
     ),
     "lamenter_s_gaol": Location(
@@ -1472,19 +1479,19 @@ ALL_LOCATIONS: dict[str, Location] = {
     "ruined_forge_lava_intake": Location(
         map_id=MapId(bytes([0, 0, 0, 42])),
         name="Ruined Forge Lava Intake",
-        region="Gravesite Plain",
+        region="Scadu Altus",
         grace_name="Ruined Forge Lava Intake",
     ),
     "ruined_forge_of_starfall_past": Location(
         map_id=MapId(bytes([0, 0, 2, 42])),
         name="Ruined Forge of Starfall Past",
-        region="Scadu Altus",
+        region="Rauh Base",
         grace_name="Ruined Forge of Starfall Past",
     ),
     "taylew_s_ruined_forge": Location(
         map_id=MapId(bytes([0, 0, 3, 42])),
         name="Taylew's Ruined Forge",
-        region="Land of the Tower",
+        region="Gravesite Plain",
         grace_name="Taylew's Ruined Forge",
     ),
     "rivermouth_cave": Location(
@@ -1598,7 +1605,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "village_of_the_albinaurics_unique": Location(
         map_id=MapId(bytes([2, 10, 8, 60])),
         name="Village of the Albinaurics (Unique)",
-        region="Southwest Liurnia",
+        region="Liurnia of the Lakes",
         grace_name="Village of the Albinaurics (Unique)",
     ),
     "converted_tower": Location(
@@ -1610,19 +1617,19 @@ ALL_LOCATIONS: dict[str, Location] = {
     "converted_tower_1": Location(
         map_id=MapId(bytes([2, 10, 8, 60])),
         name="Converted Tower",
-        region="Liurnia of the Lakes",
+        region="Moonlight Altar",
         grace_name="Converted Tower",
     ),
     "cathedral_of_manus_celes": Location(
         map_id=MapId(bytes([2, 10, 8, 60])),
         name="Cathedral of Manus Celes",
-        region="Liurnia of the Lakes",
+        region="Moonlight Altar",
         grace_name="Cathedral of Manus Celes",
     ),
     "cathedral_of_manus_celes_1": Location(
         map_id=MapId(bytes([2, 10, 8, 60])),
         name="Cathedral of Manus Celes",
-        region="Liurnia of the Lakes",
+        region="Moonlight Altar",
         grace_name="Cathedral of Manus Celes",
     ),
     "folly_on_the_lake_south_rose_church": Location(
@@ -1640,7 +1647,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "sw_m60_16_22_01_south_of_four_belfries": Location(
         map_id=MapId(bytes([2, 11, 8, 60])),
         name="South of Four Belfries",
-        region="West Liurnia",
+        region="Liurnia of the Lakes",
         grace_name="South of Four Belfries",
     ),
     "revenger_s_shack": Location(
@@ -1664,7 +1671,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "nw_m60_16_23_01_four_belries": Location(
         map_id=MapId(bytes([2, 11, 8, 60])),
         name="Four Belries",
-        region="West Liurnia",
+        region="Liurnia of the Lakes",
         grace_name="Four Belries",
     ),
     "foot_of_the_four_belfries": Location(
@@ -1694,7 +1701,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "se_m60_17_22_01_south_raya_lucaria_outskirts": Location(
         map_id=MapId(bytes([2, 11, 8, 60])),
         name="South Raya Lucaria Outskirts",
-        region="West Liurnia",
+        region="Liurnia of the Lakes",
         grace_name="South Raya Lucaria Outskirts",
     ),
     "temple_quarter": Location(
@@ -2036,7 +2043,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "se_m60_19_20_01_liurnia_highway_south_southeast_lake_shore": Location(
         map_id=MapId(bytes([2, 10, 9, 60])),
         name="Liurnia Highway South; Southeast Lake Shore",
-        region="Southeast Liurnia",
+        region="Liurnia of the Lakes",
         grace_name="Liurnia Highway South; Southeast Lake Shore",
     ),
     "liurnia_lake_shore": Location(
@@ -2222,7 +2229,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "artist_s_shack_eastern_liurnia_lake_shore": Location(
         map_id=MapId(bytes([2, 11, 9, 60])),
         name="Artist's Shack, Eastern Liurnia Lake Shore",
-        region="Liurnia of the Lakes",
+        region="Limgrave",
         grace_name="Artist's Shack, Eastern Liurnia Lake Shore",
     ),
     "artist_s_shack": Location(
@@ -2294,7 +2301,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "sw_m60_18_24_01_main_bellum_highway": Location(
         map_id=MapId(bytes([2, 12, 9, 60])),
         name="Main Bellum Highway",
-        region="Liurnia to Altus Plateau",
+        region="Bellum Highway",
         grace_name="Main Bellum Highway",
     ),
     "east_raya_lucaria_gate": Location(
@@ -2618,13 +2625,13 @@ ALL_LOCATIONS: dict[str, Location] = {
     "second_church_of_marika": Location(
         map_id=MapId(bytes([2, 13, 9, 60])),
         name="Second Church of Marika",
-        region="Altus Plateau",
+        region="Mt. Gelmir",
         grace_name="Second Church of Marika",
     ),
     "bridge_of_iniquity": Location(
         map_id=MapId(bytes([2, 13, 9, 60])),
         name="Bridge of Iniquity",
-        region="Altus Plateau",
+        region="Mt. Gelmir",
         grace_name="Bridge of Iniquity",
     ),
     "bridge_of_iniquity_1": Location(
@@ -2678,7 +2685,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "ne_m60_21_15_01_castle_morne": Location(
         map_id=MapId(bytes([2, 7, 10, 60])),
         name="Castle Morne",
-        region="South Weeping Peninsula",
+        region="Weeping Peninsula",
         grace_name="Castle Morne",
     ),
     "morne_moangrave": Location(
@@ -2726,13 +2733,13 @@ ALL_LOCATIONS: dict[str, Location] = {
     "far_west_shore": Location(
         map_id=MapId(bytes([2, 8, 10, 60])),
         name="Far West Shore",
-        region="Weeping Peninsula",
+        region="Greyoll's Dragonbarrow",
         grace_name="Far West Shore",
     ),
     "isolated_merchant_s_shack": Location(
         map_id=MapId(bytes([2, 8, 10, 60])),
         name="Isolated Merchant's Shack",
-        region="Weeping Peninsula",
+        region="Greyoll's Dragonbarrow",
         grace_name="Isolated Merchant's Shack",
     ),
     "isolated_merchant_s_shack_1": Location(
@@ -2876,7 +2883,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "demi_human_forest_ruins_ruins": Location(
         map_id=MapId(bytes([2, 8, 10, 60])),
         name="Demi-Human Forest Ruins (Ruins)",
-        region="West Weeping Peninsula",
+        region="Limgrave",
         grace_name="Demi-Human Forest Ruins (Ruins)",
     ),
     "seaside_ruins": Location(
@@ -3254,7 +3261,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "nw_m60_20_27_01_altus_plateau_north_forest_west_windmill_village": Location(
         map_id=MapId(bytes([2, 13, 10, 60])),
         name="Altus Plateau North Forest; West Windmill Village",
-        region="North Altus Plateau",
+        region="Altus Plateau",
         grace_name="Altus Plateau North Forest; West Windmill Village",
     ),
     "road_of_iniquity_side_path": Location(
@@ -3368,7 +3375,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "highway_lookout_tower_tower": Location(
         map_id=MapId(bytes([2, 13, 10, 60])),
         name="Highway Lookout Tower (Tower)",
-        region="North Altus Plateau",
+        region="Altus Plateau",
         grace_name="Highway Lookout Tower (Tower)",
     ),
     "windmill_heights": Location(
@@ -3590,7 +3597,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "nw_m60_22_19_01_summonwater_village": Location(
         map_id=MapId(bytes([2, 9, 11, 60])),
         name="Summonwater Village",
-        region="East Limgrave",
+        region="Limgrave",
         grace_name="Summonwater Village",
     ),
     "artist_s_shack_1": Location(
@@ -3692,7 +3699,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "fort_gael_fort": Location(
         map_id=MapId(bytes([2, 9, 11, 60])),
         name="Fort Gael (Fort)",
-        region="East Limgrave",
+        region="Caelid",
         grace_name="Fort Gael (Fort)",
     ),
     "fort_gael_north": Location(
@@ -3842,7 +3849,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "forbidden_lands_start": Location(
         map_id=MapId(bytes([2, 12, 11, 60])),
         name="Forbidden Lands Start",
-        region="Leyndell",
+        region="Forbidden Lands",
         grace_name="Forbidden Lands Start",
     ),
     "forbidden_lands": Location(
@@ -3956,7 +3963,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "ne_m60_23_29_01_consecrated_snowfield_northwest_cliffside": Location(
         map_id=MapId(bytes([2, 14, 11, 60])),
         name="Consecrated Snowfield Northwest Cliffside",
-        region="West Consecrated Snowfield",
+        region="Consecrated Snowfield",
         grace_name="Consecrated Snowfield Northwest Cliffside",
     ),
     "apostate_derelict": Location(
@@ -4124,7 +4131,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "se_m60_25_18_01_redmane_castle_southwest_radahn_arena": Location(
         map_id=MapId(bytes([2, 9, 12, 60])),
         name="Redmane Castle; Southwest Radahn Arena",
-        region="South Caelid",
+        region="Caelid",
         grace_name="Redmane Castle; Southwest Radahn Arena",
     ),
     "impassable_greatbridge": Location(
@@ -4208,7 +4215,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "west_radahn_arena": Location(
         map_id=MapId(bytes([2, 9, 12, 60])),
         name="West Radahn Arena",
-        region="Caelid",
+        region="Greyoll's Dragonbarrow",
         grace_name="West Radahn Arena",
     ),
     "fort_faroth": Location(
@@ -4244,7 +4251,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "dragonbarrow_west_1": Location(
         map_id=MapId(bytes([2, 10, 12, 60])),
         name="Dragonbarrow West",
-        region="Caelid",
+        region="Greyoll's Dragonbarrow",
         grace_name="Dragonbarrow West",
     ),
     "isolated_merchant_s_shack_2": Location(
@@ -4274,7 +4281,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "se_m60_25_20_01_central_dragonbarrow": Location(
         map_id=MapId(bytes([2, 10, 12, 60])),
         name="Central Dragonbarrow",
-        region="North Caelid",
+        region="Greyoll's Dragonbarrow",
         grace_name="Central Dragonbarrow",
     ),
     "dragonbarrow_fork": Location(
@@ -4808,13 +4815,13 @@ ALL_LOCATIONS: dict[str, Location] = {
     "west_of_first_church_of_marika": Location(
         map_id=MapId(bytes([2, 13, 13, 60])),
         name="West of First Church of Marika",
-        region="Mountaintops of the Giants",
+        region="Flame Peak",
         grace_name="West of First Church of Marika",
     ),
     "se_m60_27_26_01_forge_of_the_giants": Location(
         map_id=MapId(bytes([2, 13, 13, 60])),
         name="Forge of the Giants",
-        region="Southeast Mountaintops",
+        region="Flame Peak",
         grace_name="Forge of the Giants",
     ),
     "forge_of_the_giants": Location(
@@ -4832,7 +4839,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "ne_m60_27_27_01_south_of_freezing_lake": Location(
         map_id=MapId(bytes([2, 13, 13, 60])),
         name="South of Freezing Lake",
-        region="Southeast Mountaintops",
+        region="Mountaintops of the Giants",
         grace_name="South of Freezing Lake",
     ),
     "first_church_of_marika": Location(
@@ -5185,7 +5192,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "ne_m61_23_21_01": Location(
         map_id=MapId(bytes([2, 10, 11, 61])),
         name="Unknown Location",
-        region="Southwest Gravesite Plain; Northwest Cerulean Coast",
+        region="Gravesite Plain",
         grace_name="",
         is_dlc=True,
     ),
@@ -5283,7 +5290,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "west_ruins_cave_entrance_and_grace": Location(
         map_id=MapId(bytes([2, 11, 11, 61])),
         name="West Ruins Cave Entrance and Grace",
-        region="Rauh Base",
+        region="Ancient Ruins of Rauh",
         grace_name="West Ruins Cave Entrance and Grace",
         is_dlc=True,
     ),
@@ -5304,7 +5311,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "spirit_spring_courtyard_rot_ruins_north_church_of_the_bud": Location(
         map_id=MapId(bytes([2, 11, 11, 61])),
         name="Spirit Spring Courtyard, Rot Ruins, North Church of the Bud",
-        region="Rauh Base",
+        region="Ancient Ruins of Rauh",
         grace_name="Spirit Spring Courtyard, Rot Ruins, North Church of the Bud",
         is_dlc=True,
     ),
@@ -5430,7 +5437,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "scadu_altus_west": Location(
         map_id=MapId(bytes([2, 11, 11, 61])),
         name="Scadu Altus West",
-        region="Gravesite Plain",
+        region="Scadu Altus",
         grace_name="Scadu Altus West",
         is_dlc=True,
     ),
@@ -5458,7 +5465,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "east_ruins_grace_and_cave_entrance_scorpion_cave": Location(
         map_id=MapId(bytes([2, 11, 11, 61])),
         name="East Ruins Grace and Cave Entrance, Scorpion Cave",
-        region="Rauh Base",
+        region="Ancient Ruins of Rauh",
         grace_name="East Ruins Grace and Cave Entrance, Scorpion Cave",
         is_dlc=True,
     ),
@@ -5479,7 +5486,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "shadow_keep_exit_viaduct_minor_tower_bloodfiend_ruins": Location(
         map_id=MapId(bytes([2, 11, 11, 61])),
         name="Shadow Keep Exit, Viaduct Minor Tower, Bloodfiend Ruins",
-        region="Rauh Base",
+        region="Ancient Ruins of Rauh",
         grace_name="Shadow Keep Exit, Viaduct Minor Tower, Bloodfiend Ruins",
         is_dlc=True,
     ),
@@ -5612,14 +5619,14 @@ ALL_LOCATIONS: dict[str, Location] = {
     "south_of_grand_altar": Location(
         map_id=MapId(bytes([2, 9, 12, 61])),
         name="South of Grand Altar",
-        region="Cerulean Coast",
+        region="Foot of the Jagged Peak",
         grace_name="South of Grand Altar",
         is_dlc=True,
     ),
     "grand_altar_of_dragon_communion": Location(
         map_id=MapId(bytes([2, 9, 12, 61])),
         name="Grand Altar of Dragon Communion",
-        region="Finger Ruins of Rhia",
+        region="Foot of the Jagged Peak",
         grace_name="Grand Altar of Dragon Communion",
         is_dlc=True,
     ),
@@ -5654,7 +5661,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "far_southwest_from_cerulean_coast": Location(
         map_id=MapId(bytes([2, 9, 12, 61])),
         name="Far Southwest from Cerulean Coast",
-        region="Finger Ruins of Rhia",
+        region="Cerulean Coast",
         grace_name="Far Southwest from Cerulean Coast",
         is_dlc=True,
     ),
@@ -6011,14 +6018,14 @@ ALL_LOCATIONS: dict[str, Location] = {
     "entrance_from_poison_swamp": Location(
         map_id=MapId(bytes([2, 11, 12, 61])),
         name="Entrance from Poison Swamp",
-        region="Scadu Altus",
+        region="Rauh Base",
         grace_name="Entrance from Poison Swamp",
         is_dlc=True,
     ),
     "ancient_ruins_base": Location(
         map_id=MapId(bytes([2, 11, 12, 61])),
         name="Ancient Ruins Base",
-        region="Scadu Altus",
+        region="Rauh Base",
         grace_name="Ancient Ruins Base",
         is_dlc=True,
     ),
@@ -6480,7 +6487,7 @@ ALL_LOCATIONS: dict[str, Location] = {
     "se_m61_27_20_01": Location(
         map_id=MapId(bytes([2, 10, 13, 61])),
         name="Unknown Location",
-        region="North Jagged Peak; East Abyssal Woods",
+        region="Jagged Peak",
         grace_name="",
         is_dlc=True,
     ),
