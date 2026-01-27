@@ -523,9 +523,22 @@ class SaveManagerGUI:
     # File operations
     def browse_file(self):
         """Browse for save file"""
+        # On Linux, try to start in a visible directory since .local is hidden
+        initialdir = (
+            str(self.default_save_path)
+            if self.default_save_path.exists()
+            else str(Path.home())
+        )
+
+        # On Linux, if default path doesn't exist, try to navigate to Steam directory
+        if PlatformUtils.is_linux() and not self.default_save_path.exists():
+            steam_base = Path.home() / ".local" / "share" / "Steam"
+            if steam_base.exists():
+                initialdir = str(steam_base)
+
         filename = filedialog.askopenfilename(
             title="Select Elden Ring Save File",
-            initialdir=self.default_save_path,
+            initialdir=initialdir,
             filetypes=[("Elden Ring Saves", "*.sl2 *.co2"), ("All files", "*.*")],
         )
         if filename:
@@ -681,19 +694,30 @@ class SaveManagerGUI:
         if not PlatformUtils.is_linux():
             return
 
+        from er_save_manager.ui.utils import bind_mousewheel
+
         dialog = tk.Toplevel(self.root)
         dialog.title("Linux Steam / Proton Info")
-        dialog.geometry("650x550")
+        dialog.geometry("700x700")
         dialog.transient(self.root)
+        dialog.grab_set()
 
-        msg_frame = ttk.Frame(dialog, padding=20)
-        msg_frame.pack(fill=tk.BOTH, expand=True)
+        # Use CTkScrollableFrame for better scrolling and appearance
+        msg_frame = ctk.CTkScrollableFrame(
+            dialog,
+            fg_color=("gray86", "gray25"),
+            scrollbar_fg_color=("gray70", "gray40"),
+        )
+        msg_frame.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
+        bind_mousewheel(msg_frame)
 
-        ttk.Label(
+        # Title
+        ctk.CTkLabel(
             msg_frame,
             text="Elden Ring on Linux (Steam/Proton)",
             font=("Segoe UI", 14, "bold"),
-        ).pack(pady=(0, 15))
+            text_color=("black", "white"),
+        ).pack(pady=(15, 10), padx=20)
 
         # Info sections
         info_text = """Save File Locations:
@@ -709,36 +733,52 @@ Common Issues:
 2. Disappearing Saves: If Steam removes the game data, the compatdata folder may be deleted.
 
 Solution - Fixed Launch Option:
-Add this to Elden Ring's Steam launch options to always use the same location:
+Add this to Elden Ring's Steam launch options to always use the same location:"""
 
-"""
-
-        ttk.Label(
+        ctk.CTkLabel(
             msg_frame,
             text=info_text,
             justify=tk.LEFT,
-            wraplength=600,
-        ).pack(pady=10)
+            wraplength=650,
+            text_color=("black", "white"),
+        ).pack(pady=(0, 15), padx=20)
 
         # Launch option
         launch_option = PlatformUtils.get_steam_launch_option_hint()
         if launch_option:
-            option_frame = ttk.Frame(msg_frame)
-            option_frame.pack(fill=tk.X, pady=10)
+            option_frame = ctk.CTkFrame(
+                msg_frame, fg_color=("gray75", "gray35"), corner_radius=6
+            )
+            option_frame.pack(fill=tk.X, pady=(0, 15), padx=20)
 
-            option_entry = ttk.Entry(option_frame, font=("Consolas", 11))
+            ctk.CTkLabel(
+                option_frame,
+                text="Launch Option:",
+                text_color=("black", "white"),
+                font=("Segoe UI", 10, "bold"),
+            ).pack(anchor=tk.W, padx=10, pady=(10, 5))
+
+            option_entry = ctk.CTkEntry(
+                option_frame,
+                fg_color=("white", "gray20"),
+                text_color=("black", "white"),
+                border_color=("gray50", "gray60"),
+                border_width=1,
+            )
             option_entry.insert(0, launch_option)
-            option_entry.config(state="readonly")
-            option_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+            option_entry.configure(state="readonly")
+            option_entry.pack(
+                side=tk.LEFT, fill=tk.X, expand=True, padx=(10, 5), pady=(0, 10)
+            )
 
             def copy_to_clipboard():
                 self.root.clipboard_clear()
                 self.root.clipboard_append(launch_option)
                 messagebox.showinfo("Copied", "Copied to clipboard!")
 
-            ttk.Button(
-                option_frame, text="Copy", command=copy_to_clipboard, width=10
-            ).pack(side=tk.LEFT)
+            ctk.CTkButton(
+                option_frame, text="Copy", command=copy_to_clipboard, width=70
+            ).pack(side=tk.LEFT, padx=(0, 10), pady=(0, 10))
 
         # How to add launch option
         steps_text = """How to Add Launch Options:
@@ -749,26 +789,34 @@ Add this to Elden Ring's Steam launch options to always use the same location:
 
 This ensures your saves always go to the same location!"""
 
-        ttk.Label(
+        ctk.CTkLabel(
             msg_frame,
             text=steps_text,
             justify=tk.LEFT,
-            wraplength=600,
-            font=("Segoe UI", 11),
-        ).pack(pady=10)
+            wraplength=650,
+            text_color=("black", "white"),
+        ).pack(pady=(0, 15), padx=20)
 
         # Flatpak warning
         if PlatformUtils.is_flatpak_steam():
-            ttk.Label(
-                msg_frame,
-                text="Note: Flatpak Steam detected - using appropriate path.",
-                font=("Segoe UI", 11, "italic"),
-                foreground="blue",
-            ).pack(pady=5)
+            flatpak_frame = ctk.CTkFrame(
+                msg_frame, fg_color=("#e3f2fd", "#1a2332"), corner_radius=6
+            )
+            flatpak_frame.pack(fill=tk.X, pady=(0, 15), padx=20)
+            ctk.CTkLabel(
+                flatpak_frame,
+                text="⚠️ Flatpak Steam detected - using appropriate path.",
+                text_color=("#1565c0", "#64b5f6"),
+                font=("Segoe UI", 10),
+            ).pack(padx=10, pady=8)
 
-        ttk.Button(msg_frame, text="Close", command=dialog.destroy, width=15).pack(
-            pady=10
-        )
+        # Close button frame at bottom
+        button_frame = ctk.CTkFrame(dialog, fg_color=("gray86", "gray25"))
+        button_frame.pack(fill=tk.X, padx=20, pady=15)
+
+        ctk.CTkButton(
+            button_frame, text="Close", command=dialog.destroy, width=120
+        ).pack(side=tk.RIGHT)
 
     def is_game_running(self):
         """Check if Elden Ring is running"""
