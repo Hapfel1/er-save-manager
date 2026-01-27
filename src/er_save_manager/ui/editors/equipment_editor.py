@@ -35,7 +35,7 @@ class EquipmentEditor:
         """Setup the equipment editor UI"""
         self.frame = ctk.CTkScrollableFrame(
             self.parent,
-            fg_color=("gray86", "gray25"),
+            fg_color="transparent",
         )
         self.frame.pack(fill="both", expand=True)
         bind_mousewheel(self.frame)
@@ -50,13 +50,13 @@ class EquipmentEditor:
         notice_label.pack(pady=10, padx=10)
 
         # Top row: Weapons and Armor
-        top_row = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        top_row = ctk.CTkFrame(self.frame, fg_color="transparent")
         top_row.pack(fill="x", pady=5)
 
         # Weapons frame (left)
         weapons_frame = ctk.CTkFrame(
             top_row,
-            fg_color=("gray86", "gray25"),
+            fg_color="transparent",
         )
         weapons_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
 
@@ -64,7 +64,6 @@ class EquipmentEditor:
             weapons_frame,
             text="Weapons",
             font=("Segoe UI", 12, "bold"),
-            text_color=("black", "white"),
         ).pack(anchor="w", padx=5, pady=(5, 0))
 
         weapons_grid = ctk.CTkFrame(weapons_frame, fg_color="transparent")
@@ -83,7 +82,6 @@ class EquipmentEditor:
             ctk.CTkLabel(
                 weapons_grid,
                 text=f"{label}:",
-                text_color=("black", "white"),
             ).grid(row=i, column=0, sticky="w", padx=5, pady=3)
             var = ctk.IntVar(value=0)
             self.equipment_vars[key] = var

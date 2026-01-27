@@ -1,4 +1,8 @@
- make appearance tab scrollable to view buttons
+ investigate steam deck appearance browse issue, add logging build which puts out log in a log file
+
+ fix character editor bg in bright mode
+ 
+ make appearance tab scrollable to view buttons done
  
  fix readme and development done
  
