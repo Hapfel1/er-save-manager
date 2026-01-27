@@ -393,7 +393,7 @@ class PlatformUtils:
             # Linux: Only check if file is in compatdata
             path_str = str(save_path)
 
-            # If not in compatdata at all, consider it fine (user knows what they're doing)
+            # If not in compatdata at all, consider it fine
             if "/compatdata/" not in path_str:
                 return True
 

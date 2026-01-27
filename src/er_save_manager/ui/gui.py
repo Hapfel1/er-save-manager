@@ -227,15 +227,6 @@ class SaveManagerGUI:
             width=110,
         ).pack(side=tk.LEFT, padx=4, pady=10)
 
-        # Linux help button
-        if PlatformUtils.is_linux():
-            ttk.Button(
-                path_frame,
-                text="Linux Info",
-                command=self.show_linux_steam_info_dialog,
-                width=12,
-            ).pack(side=tk.LEFT, padx=2)
-
         # Load button
         buttons_frame = ctk.CTkFrame(file_frame, corner_radius=8)
         buttons_frame.pack(fill=tk.X, pady=(6, 10), padx=12)
@@ -565,8 +556,7 @@ class SaveManagerGUI:
                     "No Saves Found",
                     "No Elden Ring save files found.\n\n"
                     "Linux users: Make sure you've launched Elden Ring at least once.\n"
-                    "Saves are stored in Steam's compatdata folder.\n\n"
-                    "Click 'Linux Steam Info' for help.",
+                    "Saves are stored in Steam's compatdata folder.",
                 )
             else:
                 messagebox.showwarning("Not Found", "No Elden Ring save files found.")
@@ -621,7 +611,8 @@ class SaveManagerGUI:
             f"This is NOT the default Steam compatdata location!\n\n"
             f'⚠️ If you remove the custom launcher (e.g. "ersc_launcher.exe") from Steam, '
             f"Steam will remove that compatdata folder and your save will get lost.\n\n"
-            f"Recommended: Set a fixed Steam launch option to prevent this."
+            f"Recommended: Set a fixed Steam launch option and copy the save file to the default"
+            f"location via the 'Copy Save' button below to prevent this."
         )
 
         ttk.Label(
@@ -664,12 +655,17 @@ class SaveManagerGUI:
         def copy_to_default():
             """Copy save to the SteamID-specific folder instead of the root EldenRing folder."""
 
-            # On Linux we already know the precise SteamID folder from the current path
-            # (…/EldenRing/<steamid>/). Use that to avoid dropping the file one level up.
-            if PlatformUtils.is_linux():
-                target_dir = Path(save_path).parent
-            else:
-                target_dir = PlatformUtils.get_default_save_location()
+            # Get the default save location (with correct compatdata ID on Linux)
+            target_dir = PlatformUtils.get_default_save_location()
+
+            # Extract SteamID from the current save path and append it to target
+            # Path structure: .../EldenRing/[SteamID]/ER0000.co2
+            current_path = Path(save_path)
+            steamid = current_path.parent.name  # Get the SteamID folder name
+
+            # Append SteamID to the target directory to get the full path
+            if target_dir and steamid:
+                target_dir = target_dir / steamid
 
             if target_dir:
                 if messagebox.askyesno(
@@ -704,136 +700,6 @@ class SaveManagerGUI:
         ttk.Button(
             button_frame, text="Don't Show Again", command=dont_show_again, width=18
         ).pack(side=tk.LEFT, padx=5)
-
-    def show_linux_steam_info_dialog(self):
-        """Show Linux-specific Steam/Proton information"""
-        if not PlatformUtils.is_linux():
-            return
-
-        from er_save_manager.ui.utils import bind_mousewheel
-
-        dialog = tk.Toplevel(self.root)
-        dialog.title("Linux Steam / Proton Info")
-        dialog.geometry("700x750")
-        dialog.transient(self.root)
-        dialog.grab_set()
-
-        # Use CTkScrollableFrame for better scrolling and appearance
-        msg_frame = ctk.CTkScrollableFrame(
-            dialog,
-            fg_color=("gray86", "gray25"),
-            scrollbar_fg_color=("gray70", "gray40"),
-        )
-        msg_frame.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
-        bind_mousewheel(msg_frame)
-
-        # Title
-        ctk.CTkLabel(
-            msg_frame,
-            text="Elden Ring on Linux (Steam/Proton)",
-            font=("Segoe UI", 14, "bold"),
-            text_color=("black", "white"),
-        ).pack(pady=(15, 10), padx=20)
-
-        # Info sections
-        info_text = """Save File Locations:
-Elden Ring on Linux uses Steam's Proton compatibility layer. Your saves are stored in:
-
-~/.steam/steam/steamapps/compatdata/[NUMBER]/pfx/drive_c/users/steamuser/AppData/Roaming/EldenRing/[SteamID]/
-
-The [NUMBER] is called the "compatdata ID" and may vary.
-
-Common Issue:
-Multiple Save Locations: If you are using a custom launcher you added as a non-Steam Game to Steam
-to launch Elden Ring like the "ersc_launcher.exe"
-it will create a new compatdata ID connected to it. and store the save file in that folder
-If you at some point remove that custom launcher it will remove that folder and your save file will be lost.
-
-Solution - Fixed Launch Option:
-Add this to the custom launcher's Steam launch options to always use the same location:"""
-
-        ctk.CTkLabel(
-            msg_frame,
-            text=info_text,
-            justify=tk.LEFT,
-            wraplength=650,
-            text_color=("black", "white"),
-        ).pack(pady=(0, 15), padx=20)
-
-        # Launch option
-        launch_option = PlatformUtils.get_steam_launch_option_hint()
-        if launch_option:
-            option_frame = ctk.CTkFrame(
-                msg_frame, fg_color=("gray75", "gray35"), corner_radius=6
-            )
-            option_frame.pack(fill=tk.X, pady=(0, 15), padx=20)
-
-            ctk.CTkLabel(
-                option_frame,
-                text="Launch Option:",
-                text_color=("black", "white"),
-                font=("Segoe UI", 10, "bold"),
-            ).pack(anchor=tk.W, padx=10, pady=(10, 5))
-
-            option_entry = ctk.CTkEntry(
-                option_frame,
-                fg_color=("white", "gray20"),
-                text_color=("black", "white"),
-                border_color=("gray50", "gray60"),
-                border_width=1,
-            )
-            option_entry.insert(0, launch_option)
-            option_entry.configure(state="readonly")
-            option_entry.pack(
-                side=tk.LEFT, fill=tk.X, expand=True, padx=(10, 5), pady=(0, 10)
-            )
-
-            def copy_to_clipboard():
-                self.root.clipboard_clear()
-                self.root.clipboard_append(launch_option)
-                messagebox.showinfo("Copied", "Copied to clipboard!")
-
-            ctk.CTkButton(
-                option_frame, text="Copy", command=copy_to_clipboard, width=70
-            ).pack(side=tk.LEFT, padx=(0, 10), pady=(0, 10))
-
-        # How to add launch option
-        steps_text = """How to Add Launch Options:
-1. Right-click the custom launcher in Steam
-2. Properties → General → Launch Options
-3. Paste the command above
-4. Click OK and restart the game
-
-This ensures your saves always go to the same location!"""
-
-        ctk.CTkLabel(
-            msg_frame,
-            text=steps_text,
-            justify=tk.LEFT,
-            wraplength=650,
-            text_color=("black", "white"),
-        ).pack(pady=(0, 15), padx=20)
-
-        # Flatpak warning
-        if PlatformUtils.is_flatpak_steam():
-            flatpak_frame = ctk.CTkFrame(
-                msg_frame, fg_color=("#e3f2fd", "#1a2332"), corner_radius=6
-            )
-            flatpak_frame.pack(fill=tk.X, pady=(0, 15), padx=20)
-            ctk.CTkLabel(
-                flatpak_frame,
-                text="⚠️ Flatpak Steam detected - using appropriate path.",
-                text_color=("#1565c0", "#64b5f6"),
-                font=("Segoe UI", 10),
-            ).pack(padx=10, pady=8)
-
-        # Close button frame at bottom
-        button_frame = ctk.CTkFrame(dialog, fg_color=("gray86", "gray25"))
-        button_frame.pack(fill=tk.X, padx=20, pady=15)
-
-        ctk.CTkButton(
-            button_frame, text="Close", command=dialog.destroy, width=120
-        ).pack(side=tk.RIGHT)
 
     def is_game_running(self):
         """Check if Elden Ring is running"""

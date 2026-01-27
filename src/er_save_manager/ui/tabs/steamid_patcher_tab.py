@@ -472,46 +472,95 @@ class SteamIDPatcherTab:
 
     def auto_detect_steamid(self):
         """Auto-detect SteamID from system with multi-account support"""
-        try:
-            import winreg
+        from er_save_manager.platform.utils import PlatformUtils
 
+        try:
             steam_users = []
 
-            try:
-                key = winreg.OpenKey(
-                    winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam\ActiveProcess"
+            if PlatformUtils.is_windows():
+                # Windows: Use registry
+                import winreg
+
+                try:
+                    key = winreg.OpenKey(
+                        winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam\ActiveProcess"
+                    )
+                    active_user_id, _ = winreg.QueryValueEx(key, "ActiveUser")
+                    winreg.CloseKey(key)
+
+                    if active_user_id and active_user_id != 0:
+                        active_steamid64 = 76561197960265728 + active_user_id
+                        steam_users.append(("Active Account", active_steamid64))
+                except Exception:
+                    pass
+
+                try:
+                    steam_key = winreg.OpenKey(
+                        winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam"
+                    )
+                    steam_path, _ = winreg.QueryValueEx(steam_key, "SteamPath")
+                    winreg.CloseKey(steam_key)
+
+                    import os
+
+                    loginusers_path = os.path.join(
+                        steam_path, "config", "loginusers.vdf"
+                    )
+                    if os.path.exists(loginusers_path):
+                        with open(loginusers_path, encoding="utf-8") as f:
+                            content = f.read()
+                            import re
+
+                            pattern = (
+                                r'"(765611\d{10})"\s*\{[^}]*"AccountName"\s*"([^"]+)"'
+                            )
+                            matches = re.findall(pattern, content)
+                            for steamid, account_name in matches:
+                                if steamid not in [str(s[1]) for s in steam_users]:
+                                    steam_users.append((account_name, int(steamid)))
+                except Exception:
+                    pass
+
+            elif PlatformUtils.is_linux():
+                # Linux: Parse loginusers.vdf from Steam config
+                import re
+
+                # Check common Steam locations, including custom via symlink
+                steam_base_paths = []
+
+                # Check ~/.steam/steam symlink (follows custom installations)
+                steam_symlink = Path.home() / ".steam" / "steam"
+                if steam_symlink.exists() and steam_symlink.is_symlink():
+                    steam_base_paths.append(steam_symlink.resolve())
+
+                # Standard locations
+                steam_base_paths.extend(
+                    [
+                        Path.home() / ".local" / "share" / "Steam",
+                        Path.home()
+                        / ".var"
+                        / "app"
+                        / "com.valvesoftware.Steam"
+                        / ".local"
+                        / "share"
+                        / "Steam",
+                    ]
                 )
-                active_user_id, _ = winreg.QueryValueEx(key, "ActiveUser")
-                winreg.CloseKey(key)
 
-                if active_user_id and active_user_id != 0:
-                    active_steamid64 = 76561197960265728 + active_user_id
-                    steam_users.append(("Active Account", active_steamid64))
-            except Exception:
-                pass
-
-            try:
-                steam_key = winreg.OpenKey(
-                    winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam"
-                )
-                steam_path, _ = winreg.QueryValueEx(steam_key, "SteamPath")
-                winreg.CloseKey(steam_key)
-
-                import os
-
-                loginusers_path = os.path.join(steam_path, "config", "loginusers.vdf")
-                if os.path.exists(loginusers_path):
-                    with open(loginusers_path, encoding="utf-8") as f:
-                        content = f.read()
-                        import re
-
-                        pattern = r'"(765611\d{10})"\s*\{[^}]*"AccountName"\s*"([^"]+)"'
-                        matches = re.findall(pattern, content)
-                        for steamid, account_name in matches:
-                            if steamid not in [str(s[1]) for s in steam_users]:
-                                steam_users.append((account_name, int(steamid)))
-            except Exception:
-                pass
+                for steam_base in steam_base_paths:
+                    loginusers_path = steam_base / "config" / "loginusers.vdf"
+                    if loginusers_path.exists():
+                        try:
+                            with open(loginusers_path, encoding="utf-8") as f:
+                                content = f.read()
+                                pattern = r'"(765611\d{10})"\s*\{[^}]*"AccountName"\s*"([^"]+)"'
+                                matches = re.findall(pattern, content)
+                                for steamid, account_name in matches:
+                                    if steamid not in [str(s[1]) for s in steam_users]:
+                                        steam_users.append((account_name, int(steamid)))
+                        except Exception:
+                            continue
+                        break
 
             if not steam_users:
                 CTkMessageBox.showwarning(
@@ -534,7 +583,7 @@ class SteamIDPatcherTab:
         except Exception as e:
             CTkMessageBox.showwarning(
                 "Detection Failed",
-                f"Could not auto-detect SteamID:\n{str(e)}\n\nNote: Auto-detection only works on Windows.",
+                f"Could not auto-detect SteamID:\n{str(e)}",
             )
 
     def _show_account_selection_dialog(self, accounts):

@@ -32,6 +32,9 @@ pyinstaller --clean --noconfirm \
 	--icon resources/icon/icon.png \
 	--copy-metadata er-save-manager \
 	--add-data resources:resources \
+	--hidden-import PIL._tkinter_finder \
+	--hidden-import PIL.ImageTk \
+	--hidden-import PIL._imagingtk \
 	--hidden-import er_save_manager.ui \
 	--hidden-import er_save_manager.ui.gui \
 	--hidden-import er_save_manager.ui.editors \
