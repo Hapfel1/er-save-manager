@@ -1,6 +1,6 @@
-version=0.5.0.0
-file_version=0.5.0.0
-product_version=0.5.0.0
+version=0.6.2.0
+file_version=0.6.2.0
+product_version=0.6.2.0
 company=ER Save Manager Contributors
 description=Elden Ring Save File Manager
 product=ER Save Manager
