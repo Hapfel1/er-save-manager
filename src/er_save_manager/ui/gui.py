@@ -78,8 +78,8 @@ class SaveManagerGUI:
                     icon_image = Image.open(icon_png)
                     icon_photo = ImageTk.PhotoImage(icon_image)
                     self.root.iconphoto(True, icon_photo)
-        except Exception as e:
-            print(f"Failed to load icon: {e}")
+        except Exception:
+            pass
 
         # Initialize settings
         self.settings = get_settings()
@@ -782,8 +782,8 @@ This ensures your saves always go to the same location!"""
             if "eldenring.exe" in result.stdout.lower():
                 return True
 
-        except Exception as e:
-            print(f"Warning: Could not check if game is running: {e}")
+        except Exception:
+            pass
 
         return False
 
@@ -835,8 +835,8 @@ This ensures your saves always go to the same location!"""
             # Mark as loaded
             self.root.after(0, lambda: self.tabs_loaded.update({tab_name: True}))
 
-        except Exception as e:
-            print(f"Error lazy loading tab {tab_name}: {e}")
+        except Exception:
+            pass
 
     def on_slot_selected(self, slot_index: int):
         """Handle character slot selection from Save Inspector."""
@@ -961,9 +961,6 @@ This ensures your saves always go to the same location!"""
                 ),
             )
             self.root.after(0, lambda: self.status_var.set("Load failed"))
-            import traceback
-
-            traceback.print_exc()
 
     def _finalize_save_load(self, save_file, save_path):
         """Finalize save loading on main thread"""
