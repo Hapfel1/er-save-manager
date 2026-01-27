@@ -23,7 +23,9 @@ def load_version() -> str:
     if version_txt.exists():
         for line in version_txt.read_text(encoding="utf-8").splitlines():
             if line.startswith("version="):
-                return line.split("=", 1)[1].strip()
+                version_str = line.split("=", 1)[1].strip()
+                # Strip trailing .0 for semantic versioning (0.5.0.0 -> 0.5.0)
+                return version_str.rstrip("0").rstrip(".")
     pyproject_path = Path(__file__).parent / "pyproject.toml"
     pyproject_content = pyproject_path.read_text(encoding="utf-8")
     pyproject_data = tomlkit.parse(pyproject_content)
