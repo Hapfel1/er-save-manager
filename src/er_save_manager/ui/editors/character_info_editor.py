@@ -103,9 +103,9 @@ class CharacterInfoEditor:
         self.char_name_var.trace("w", update_name_count)
 
         # Body Type
-        ctk.CTkLabel(
-            creation_frame, text="Body Type:"
-        ).grid(row=2, column=0, sticky=ctk.W, padx=5, pady=5)
+        ctk.CTkLabel(creation_frame, text="Body Type:").grid(
+            row=2, column=0, sticky=ctk.W, padx=5, pady=5
+        )
         self.char_body_type_var = ctk.IntVar(value=0)
         body_type_combo = ctk.CTkComboBox(
             creation_frame,
@@ -116,9 +116,9 @@ class CharacterInfoEditor:
         body_type_combo.grid(row=2, column=1, padx=5, pady=5)
 
         # Archetype (starting class)
-        ctk.CTkLabel(
-            creation_frame, text="Archetype:"
-        ).grid(row=2, column=2, sticky=ctk.W, padx=5, pady=5)
+        ctk.CTkLabel(creation_frame, text="Archetype:").grid(
+            row=2, column=2, sticky=ctk.W, padx=5, pady=5
+        )
         self.char_archetype_var = ctk.IntVar(value=0)
         ctk.CTkEntry(
             creation_frame,
@@ -127,9 +127,9 @@ class CharacterInfoEditor:
         ).grid(row=2, column=3, padx=5, pady=5)
 
         # Voice type
-        ctk.CTkLabel(
-            creation_frame, text="Voice Type:"
-        ).grid(row=3, column=0, sticky=ctk.W, padx=5, pady=5)
+        ctk.CTkLabel(creation_frame, text="Voice Type:").grid(
+            row=3, column=0, sticky=ctk.W, padx=5, pady=5
+        )
         self.char_voice_var = ctk.IntVar(value=0)
         voice_combo = ctk.CTkComboBox(
             creation_frame,
@@ -140,9 +140,9 @@ class CharacterInfoEditor:
         voice_combo.grid(row=3, column=1, padx=5, pady=5)
 
         # Keepsake gift
-        ctk.CTkLabel(
-            creation_frame, text="Keepsake:"
-        ).grid(row=3, column=2, sticky=ctk.W, padx=5, pady=5)
+        ctk.CTkLabel(creation_frame, text="Keepsake:").grid(
+            row=3, column=2, sticky=ctk.W, padx=5, pady=5
+        )
         self.char_gift_var = ctk.IntVar(value=0)
         ctk.CTkEntry(
             creation_frame,
@@ -192,9 +192,9 @@ class CharacterInfoEditor:
             font=("Segoe UI", 12, "bold"),
         ).grid(row=0, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(5, 0))
 
-        ctk.CTkLabel(
-            flask_frame, text="Max Crimson Flasks:"
-        ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
+        ctk.CTkLabel(flask_frame, text="Max Crimson Flasks:").grid(
+            row=1, column=0, sticky=ctk.W, padx=5, pady=5
+        )
         self.char_crimson_flask_var = ctk.IntVar(value=0)
         ctk.CTkEntry(
             flask_frame,
@@ -202,9 +202,9 @@ class CharacterInfoEditor:
             width=100,
         ).grid(row=1, column=1, padx=5, pady=5)
 
-        ctk.CTkLabel(
-            flask_frame, text="Max Cerulean Flasks:"
-        ).grid(row=1, column=2, sticky=ctk.W, padx=5, pady=5)
+        ctk.CTkLabel(flask_frame, text="Max Cerulean Flasks:").grid(
+            row=1, column=2, sticky=ctk.W, padx=5, pady=5
+        )
         self.char_cerulean_flask_var = ctk.IntVar(value=0)
         ctk.CTkEntry(
             flask_frame,

@@ -85,9 +85,9 @@ class InventoryEditor:
         filter_frame = ctk.CTkFrame(list_frame, fg_color="transparent")
         filter_frame.pack(fill=ctk.X, pady=(0, 5))
 
-        ctk.CTkLabel(
-            filter_frame, text="Filter by Category:"
-        ).pack(side=ctk.LEFT, padx=5)
+        ctk.CTkLabel(filter_frame, text="Filter by Category:").pack(
+            side=ctk.LEFT, padx=5
+        )
         self.inv_filter_var = ctk.StringVar(value="All")
         filter_combo = ctk.CTkComboBox(
             filter_frame,

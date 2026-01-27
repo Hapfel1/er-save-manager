@@ -88,9 +88,9 @@ class StatsEditor:
         ]
 
         for i, (label, key) in enumerate(attributes):
-            ctk.CTkLabel(
-                stats_grid, text=f"{label}:"
-            ).grid(row=i, column=0, sticky=ctk.W, padx=5, pady=5)
+            ctk.CTkLabel(stats_grid, text=f"{label}:").grid(
+                row=i, column=0, sticky=ctk.W, padx=5, pady=5
+            )
 
             var = ctk.IntVar(value=0)
             self.stat_vars[key] = var
@@ -124,9 +124,9 @@ class StatsEditor:
         ]
 
         for i, (label, key) in enumerate(resources):
-            ctk.CTkLabel(
-                resources_grid, text=f"{label}:"
-            ).grid(row=i, column=0, sticky=ctk.W, padx=5, pady=5)
+            ctk.CTkLabel(resources_grid, text=f"{label}:").grid(
+                row=i, column=0, sticky=ctk.W, padx=5, pady=5
+            )
 
             var = ctk.IntVar(value=0)
             self.stat_vars[key] = var
