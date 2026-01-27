@@ -32,14 +32,21 @@ class AdvancedToolsTab:
 
     def setup_ui(self):
         """Setup the advanced tools tab UI."""
+        # Main scrollable container
+        scroll_frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
+        scroll_frame.pack(fill=tk.BOTH, expand=True)
+        from er_save_manager.ui.utils import bind_mousewheel
+
+        bind_mousewheel(scroll_frame)
+
         ctk.CTkLabel(
-            self.parent,
+            scroll_frame,
             text="Advanced Tools",
             font=("Segoe UI", 14, "bold"),
         ).pack(pady=10)
 
         # Save info
-        info_frame = ctk.CTkFrame(self.parent, corner_radius=12)
+        info_frame = ctk.CTkFrame(scroll_frame, corner_radius=12)
         info_frame.pack(fill="x", padx=20, pady=10)
 
         ctk.CTkLabel(
@@ -65,7 +72,7 @@ class AdvancedToolsTab:
         self.save_info_text.pack(fill="x", padx=12, pady=(0, 12))
 
         # Tools
-        tools_frame = ctk.CTkFrame(self.parent, corner_radius=12)
+        tools_frame = ctk.CTkFrame(scroll_frame, corner_radius=12)
         tools_frame.pack(fill="x", padx=20, pady=10)
 
         ctk.CTkLabel(

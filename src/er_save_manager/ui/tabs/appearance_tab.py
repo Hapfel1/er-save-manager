@@ -41,8 +41,13 @@ class AppearanceTab:
 
     def setup_ui(self):
         """Setup the appearance tab UI"""
+        # Main scrollable container
+        scroll_frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
+        scroll_frame.pack(fill=tk.BOTH, expand=True)
+        bind_mousewheel(scroll_frame)
+
         # Header
-        header_frame = ctk.CTkFrame(self.parent, fg_color="transparent")
+        header_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
         header_frame.pack(fill=tk.X, padx=15, pady=(15, 10))
 
         ctk.CTkLabel(
@@ -59,7 +64,7 @@ class AppearanceTab:
         ).pack(anchor="w", pady=(2, 0))
 
         # Preset list container
-        list_container = ctk.CTkFrame(self.parent, corner_radius=10)
+        list_container = ctk.CTkFrame(scroll_frame, corner_radius=10)
         list_container.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
 
         ctk.CTkLabel(
@@ -76,7 +81,7 @@ class AppearanceTab:
         bind_mousewheel(self.list_frame)
 
         # Action buttons
-        action_frame = ctk.CTkFrame(self.parent, fg_color="transparent")
+        action_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
         action_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
         btn_row = ctk.CTkFrame(action_frame, fg_color="transparent")

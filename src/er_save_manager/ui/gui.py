@@ -611,7 +611,7 @@ class SaveManagerGUI:
             f"This is NOT the default Steam compatdata location!\n\n"
             f'⚠️ If you remove the custom launcher (e.g. "ersc_launcher.exe") from Steam, '
             f"Steam will remove that compatdata folder and your save will get lost.\n\n"
-            f"Recommended: Set a fixed Steam launch option and copy the save file to the default"
+            f"Recommended: Set a fixed Steam launch option and copy the save file to the default "
             f"location via the 'Copy Save' button below to prevent this."
         )
 
