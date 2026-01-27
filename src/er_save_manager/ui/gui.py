@@ -5,6 +5,7 @@ Modular Elden Ring Save Manager GUI
 
 import os
 import subprocess
+import sys
 import threading
 import tkinter as tk
 from importlib import resources
@@ -49,6 +50,36 @@ class SaveManagerGUI:
         self.root.title("Elden Ring Save Manager")
         self.root.geometry("1200x950")
         self.root.minsize(800, 700)
+
+        # Set application icon
+        try:
+            # Detect if running as frozen/packaged executable
+            if getattr(sys, "frozen", False):
+                # Running as compiled executable
+                if hasattr(sys, "_MEIPASS"):
+                    # PyInstaller (Linux)
+                    base_path = Path(sys._MEIPASS)
+                else:
+                    # cx_Freeze (Windows)
+                    base_path = Path(sys.executable).parent
+            else:
+                # Running as script
+                base_path = Path(__file__).parent.parent.parent
+
+            icon_path = base_path / "resources" / "icon" / "icon.ico"
+            if icon_path.exists():
+                self.root.iconbitmap(str(icon_path))
+            else:
+                # Fallback to PNG if ICO doesn't exist
+                icon_png = base_path / "resources" / "icon" / "icon.png"
+                if icon_png.exists():
+                    from PIL import Image, ImageTk
+
+                    icon_image = Image.open(icon_png)
+                    icon_photo = ImageTk.PhotoImage(icon_image)
+                    self.root.iconphoto(True, icon_photo)
+        except Exception as e:
+            print(f"Failed to load icon: {e}")
 
         # Initialize settings
         self.settings = get_settings()
@@ -500,6 +531,14 @@ class SaveManagerGUI:
         if filename:
             self.file_path_var.set(filename)
             self.status_var.set(f"Selected: {os.path.basename(filename)}")
+
+            # Linux: Check if in default location
+            if (
+                PlatformUtils.is_linux()
+                and not PlatformUtils.is_save_in_default_location(Path(filename))
+                and self.settings.get("show_linux_save_warning", True)
+            ):
+                self.show_linux_save_location_warning(Path(filename))
 
     def auto_detect(self):
         """Auto-detect save file with Linux support"""

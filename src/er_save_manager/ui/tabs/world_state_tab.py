@@ -43,7 +43,9 @@ class WorldStateTab:
         self.filtered_locations = self.all_locations_sorted.copy()
 
         # Mode selection
-        self.teleport_mode = tk.StringVar(value="known")
+        self.teleport_mode = tk.StringVar(
+            value="custom"
+        )  # Default to custom since known is disabled
 
         # Slot selection
         self.slot_var = tk.IntVar(value=0)
@@ -188,13 +190,15 @@ class WorldStateTab:
         mode_frame = ctk.CTkFrame(right_frame, fg_color="transparent")
         mode_frame.pack(fill=tk.X, padx=10, pady=(5, 10))
 
-        ctk.CTkRadioButton(
+        self.known_locations_radio = ctk.CTkRadioButton(
             mode_frame,
-            text="Known Locations",
+            text="Known Locations (WIP - Temporarily Disabled)",
             variable=self.teleport_mode,
             value="known",
             command=self._on_mode_changed,
-        ).pack(side=tk.LEFT, padx=(0, 20))
+            state="disabled",
+        )
+        self.known_locations_radio.pack(side=tk.LEFT, padx=(0, 20))
 
         ctk.CTkRadioButton(
             mode_frame,
@@ -459,7 +463,7 @@ class WorldStateTab:
                 or search_text in (loc.grace_name or "").lower()
             ]
         self._update_location_list()
-        self.count_label.config(
+        self.count_label.configure(
             text=f"{len(self.filtered_locations)} / {len(self.all_locations_sorted)}"
         )
 
@@ -468,7 +472,36 @@ class WorldStateTab:
         self.location_listbox.delete(0, tk.END)
         for _key, location in self.filtered_locations:
             dlc_tag = " (DLC)" if location.is_dlc else ""
-            self.location_listbox.insert(tk.END, f"{location.display_name}{dlc_tag}")
+            # Format: Region - Name - Grace Name - (DLC)
+            # Build map code string
+            map_str = f"m{location.map_id.data[3]:02d}_{location.map_id.data[2]:02d}_{location.map_id.data[1]:02d}_{location.map_id.data[0]:02d}"
+
+            # Start with region
+            display = location.region
+
+            # Add name only if different from region
+            if location.name and location.name != location.region:
+                display += f" - {location.name}"
+
+            # Add grace name if different from name and not a map code
+            # Skip if it looks like a map ID (starts with 'm' followed by digits and underscores)
+            is_grace_name_map_code = (
+                location.grace_name
+                and location.grace_name.startswith("m")
+                and "_" in location.grace_name
+            )
+            if (
+                location.grace_name
+                and location.grace_name != location.name
+                and location.grace_name != location.region
+                and not is_grace_name_map_code
+            ):
+                display += f" - {location.grace_name}"
+
+            # Add map code and DLC tag
+            display += f" - {map_str}{dlc_tag}"
+
+            self.location_listbox.insert(tk.END, display)
 
     def _teleport_to_known(self):
         """Teleport to selected known location."""

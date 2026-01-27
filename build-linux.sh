@@ -29,6 +29,7 @@ pyinstaller --clean --noconfirm \
 	--name er-save-manager \
 	--onefile \
 	--windowed \
+	--icon resources/icon/icon.png \
 	--copy-metadata er-save-manager \
 	--add-data resources:resources \
 	--hidden-import er_save_manager.ui \
@@ -42,6 +43,9 @@ pyinstaller --clean --noconfirm \
 	--hidden-import er_save_manager.ui.dialogs \
 	--hidden-import er_save_manager.ui.dialogs.character_details \
 	--hidden-import er_save_manager.ui.dialogs.save_selector \
+	--hidden-import er_save_manager.ui.dialogs.preset_browser \
+	--hidden-import er_save_manager.ui.dialogs.browser_submission \
+	--hidden-import er_save_manager.ui.dialogs.backup_pruning_warning \
 	--hidden-import er_save_manager.ui.widgets \
 	--hidden-import er_save_manager.ui.widgets.scrollable_frame \
 	--hidden-import er_save_manager.ui.tabs \

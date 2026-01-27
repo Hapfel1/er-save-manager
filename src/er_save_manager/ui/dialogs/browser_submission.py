@@ -313,7 +313,9 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
 
     # Make it stay on top
     dialog.attributes("-topmost", True)
+    dialog.lift()
     dialog.focus_force()
+    dialog.grab_set()  # ensure this dialog owns the grab so buttons remain clickable
 
     main_frame = ctk.CTkFrame(dialog, fg_color="transparent")
     main_frame.pack(fill=ctk.BOTH, expand=True, padx=30, pady=30)

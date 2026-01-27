@@ -396,11 +396,22 @@ Backup Format:
 
                 try:
                     manager.restore_backup(selected_backup[0])
+
+                    # Try to reload, but don't fail if it doesn't work
                     if self.reload_save:
-                        self.reload_save()
+                        try:
+                            self.reload_save()
+                        except Exception as reload_error:
+                            print(
+                                f"Warning: Failed to reload save after restore: {reload_error}"
+                            )
+
                     refresh_list()
                     self.update_backup_stats()
-                    CTkMessageBox.showinfo("Success", "Backup restored successfully!")
+                    CTkMessageBox.showinfo(
+                        "Success",
+                        "Backup restored successfully!\n\nPlease reload your save file to see the changes.",
+                    )
                 except Exception as e:
                     CTkMessageBox.showerror(
                         "Error", f"Failed to restore backup:\n{str(e)}"
