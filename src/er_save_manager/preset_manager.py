@@ -335,30 +335,16 @@ class PresetManager:
         Returns:
             Path to thumbnail or None if failed
         """
-        import logging
-
-        logger = logging.getLogger(__name__)
-
         try:
             thumbnail_path = self.thumbnails_dir / f"{preset_id}.png"
-            logger.debug(f"[Image] Creating thumbnail for preset {preset_id}")
-            logger.debug(f"[Image] Thumbnail path: {thumbnail_path}")
-            logger.debug(
-                f"[Image] Thumbnail dir exists: {self.thumbnails_dir.exists()}"
-            )
 
             # Return if already cached
             if thumbnail_path.exists():
-                logger.debug(f"[Image] Thumbnail already cached: {preset_id}")
                 return thumbnail_path
 
-            logger.debug(f"[Image] Downloading image from URL: {image_url}")
             # Download full image temporarily
             with urllib.request.urlopen(image_url, timeout=10) as response:
                 image_data = response.read()
-            logger.debug(
-                f"[Image] Downloaded {len(image_data)} bytes for preset {preset_id}"
-            )
 
             # Try to create thumbnail using PIL if available
             try:
@@ -366,27 +352,15 @@ class PresetManager:
 
                 from PIL import Image
 
-                logger.debug(f"[Image] Creating PIL thumbnail for {preset_id}")
                 img = Image.open(io.BytesIO(image_data))
-                logger.debug(f"[Image] Original image size: {img.size}")
                 img.thumbnail(self.THUMBNAIL_SIZE, Image.Resampling.LANCZOS)
-                logger.debug(f"[Image] Resized to: {img.size}")
                 img.save(thumbnail_path, "PNG", optimize=True)
-                logger.debug(f"[Image] Saved thumbnail to: {thumbnail_path}")
             except ImportError:
                 # PIL not available, save full image as thumbnail
-                logger.warning(
-                    f"[Image] PIL not available, saving full image as thumbnail for {preset_id}"
-                )
                 thumbnail_path.write_bytes(image_data)
 
-            logger.debug(f"[Image] Successfully created thumbnail: {preset_id}")
             return thumbnail_path
-        except Exception as e:
-            logger.error(
-                f"[Image] Failed to create thumbnail for {preset_id}: {e}",
-                exc_info=True,
-            )
+        except Exception:
             return None
 
     def _cleanup_cache(self):
