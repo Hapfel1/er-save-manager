@@ -6,7 +6,7 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 
 ### Working Features
 
-- **Save File Fixer**: Automatically detect and fix save corruption issues
+- **Save File Fixer**: Automatically detect and fix save corruption issues and infinite loading screens
 - **Character Management**: Export, import, and move characters between saves
 - **Character Editor**: Edit stats, runes, name, level, and build attributes
 - **Appearance Editor**: View, export and import Presets
@@ -54,8 +54,10 @@ Automatically detects and fixes common save corruption issues:
 - **Time Sync**: Recalculates in-game time from seconds played
 - **Ranni Softlock**: Fixes Ranni's Tower softlock
 - **Warp Sickness**: Fixes stuck warps (Radahn, Morgott, Radagon, Sealing Tree)
+- **Stuck at DLC coordinates**: Teleports your character to the Roundtable if you tried accessing the DLC without owning it.
 - **DLC Flag**: Clears Shadow of the Erdtree entry flag if accidentally set
 - **Invalid DLC Data**: Clears garbage data in unused DLC slots
+- **Teleport Fallback**: Teleports your character to the roundtable for any other invalid coordinates that cause an infinite loading screen
 
 ### Character Management
 
