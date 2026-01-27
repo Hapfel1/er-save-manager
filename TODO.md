@@ -1,6 +1,8 @@
- fix readme and development
+ make appearance tab scrollable to view buttons
  
- fix linux warning/test on linux, 
+ fix readme and development done
+ 
+ fix linux warning/test on linux done
 
 - pic of character slots + explanation done
 
