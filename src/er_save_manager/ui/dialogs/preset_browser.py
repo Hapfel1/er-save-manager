@@ -690,7 +690,9 @@ class EnhancedPresetBrowser:
         elif sort_mode == "Likes":
             self.filtered_presets.sort(
                 key=lambda p: (
-                    self.preset_metrics_cache.get(p.get("id", ""), {}).get("thumbs_up", 0),
+                    self.preset_metrics_cache.get(p.get("id", ""), {}).get(
+                        "thumbs_up", 0
+                    ),
                     p.get("created", ""),
                 ),
                 reverse=True,
@@ -698,7 +700,9 @@ class EnhancedPresetBrowser:
         elif sort_mode == "Downloads":
             self.filtered_presets.sort(
                 key=lambda p: (
-                    self.preset_metrics_cache.get(p.get("id", ""), {}).get("downloads", 0),
+                    self.preset_metrics_cache.get(p.get("id", ""), {}).get(
+                        "downloads", 0
+                    ),
                     p.get("created", ""),
                 ),
                 reverse=True,
