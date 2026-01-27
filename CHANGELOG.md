@@ -3,6 +3,17 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.6.1
+**Released:** January 27, 2026
+
+
+### 🔧 Bug Fixes
+
+- Fixed version  bumping to include manifest and version info file ([883e0ea](https://github.com/Hapfel1/er-save-manager/commit/883e0ea179a8f48b412ef2509b6673c3fea02a83))
+
+
+
+---
 ## 📦 Release 0.6.0
 **Released:** January 27, 2026
 
@@ -280,6 +291,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.6.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.6.0..v0.6.1
 [0.6.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.5.1..v0.6.0
 [0.5.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.5.0..v0.5.1
 [0.5.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.4.1..v0.5.0
