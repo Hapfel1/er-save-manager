@@ -404,7 +404,7 @@ class SteamIDPatcherTab:
             if custom_match:
                 custom_name = custom_match.group(1)
                 self._resolve_custom_url(custom_name)
-                return
+                return  # Exit after resolving custom URL
 
             CTkMessageBox.showerror(
                 "Invalid Format",
@@ -461,6 +461,7 @@ class SteamIDPatcherTab:
                     f"Could not find SteamID for: {custom_name}\n\n"
                     "Please check the username and try again.",
                 )
+                return  # Exit after showing not found error
 
         except Exception as e:
             CTkMessageBox.showerror(

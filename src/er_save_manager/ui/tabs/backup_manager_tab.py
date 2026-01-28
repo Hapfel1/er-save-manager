@@ -116,6 +116,10 @@ Backup Format:
 
     def update_backup_stats(self):
         """Update backup statistics display"""
+        # Guard against backup_stats_var not being initialized
+        if not self.backup_stats_var:
+            return
+
         save_path = self.get_save_path()
         if not save_path:
             self.backup_stats_var.set("Load a save file to view backup statistics")
@@ -380,15 +384,21 @@ Backup Format:
                             operation="manual_backup",
                             save=save_file,
                         )
-                        refresh_list()
-                        self.update_backup_stats()
-                        CTkMessageBox.showinfo(
-                            "Success", "Backup created successfully!"
-                        )
                     except Exception as e:
                         CTkMessageBox.showerror(
                             "Error", f"Failed to create backup:\n{str(e)}"
                         )
+                        return
+
+                    # Backup created successfully, now try to refresh UI
+                    # (don't fail if UI refresh has issues)
+                    try:
+                        refresh_list()
+                        self.update_backup_stats()
+                    except Exception as ui_error:
+                        print(f"Warning: Failed to refresh UI after backup: {ui_error}")
+
+                    CTkMessageBox.showinfo("Success", "Backup created successfully!")
 
             def restore_backup():
                 if not selected_backup[0]:
@@ -405,7 +415,15 @@ Backup Format:
 
                 try:
                     manager.restore_backup(selected_backup[0])
+                except Exception as e:
+                    CTkMessageBox.showerror(
+                        "Error", f"Failed to restore backup:\n{str(e)}"
+                    )
+                    return
 
+                # Restore succeeded, now try to refresh UI
+                # (don't fail if UI refresh has issues)
+                try:
                     # Try to reload, but don't fail if it doesn't work
                     if self.reload_save:
                         try:
@@ -417,14 +435,13 @@ Backup Format:
 
                     refresh_list()
                     self.update_backup_stats()
-                    CTkMessageBox.showinfo(
-                        "Success",
-                        "Backup restored successfully!\n\nPlease reload your save file to see the changes.",
-                    )
-                except Exception as e:
-                    CTkMessageBox.showerror(
-                        "Error", f"Failed to restore backup:\n{str(e)}"
-                    )
+                except Exception as ui_error:
+                    print(f"Warning: Failed to refresh UI after restore: {ui_error}")
+
+                CTkMessageBox.showinfo(
+                    "Success",
+                    "Backup restored successfully!\n\nPlease reload your save file to see the changes.",
+                )
 
             def delete_backup():
                 if not selected_backup[0]:
