@@ -3,6 +3,17 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.7.1
+**Released:** January 28, 2026
+
+
+### 🔧 Bug Fixes
+
+- Fixed error message pop-up when no actual error happened ([a5e6337](https://github.com/Hapfel1/er-save-manager/commit/a5e6337f8d2389588f0e6d3279ed771e4fa61b71))
+
+
+
+---
 ## 📦 Release 0.7.0
 **Released:** January 28, 2026
 
@@ -327,6 +338,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.7.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.7.0..v0.7.1
 [0.7.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.6.2..v0.7.0
 [0.6.2]: https://github.com/Hapfel1/er-save-manager/compare/v0.6.1..v0.6.2
 [0.6.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.6.0..v0.6.1
