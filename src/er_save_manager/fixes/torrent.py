@@ -58,9 +58,9 @@ class TorrentFix(BaseFix):
             horse_data = horse_bytes.getvalue()
             # Calculate absolute offset
             absolute_horse_offset = slot.data_start + slot.horse_offset
-            save._raw_data[absolute_horse_offset : absolute_horse_offset + len(horse_data)] = (
-                horse_data
-            )
+            save._raw_data[
+                absolute_horse_offset : absolute_horse_offset + len(horse_data)
+            ] = horse_data
 
             return FixResult(
                 applied=True,

@@ -487,11 +487,20 @@ class CorruptionFixer:
         """
         fix_map = {
             "ranni_softlock": (cls.fix_ranni_softlock, "Ranni quest fixed"),
-            "radahn_alive_warp": (cls.fix_radahn_alive_warp, "Radahn warp sickness fixed (alive variant)"),
-            "radahn_dead_warp": (cls.fix_radahn_dead_warp, "Radahn warp sickness fixed (dead variant)"),
+            "radahn_alive_warp": (
+                cls.fix_radahn_alive_warp,
+                "Radahn warp sickness fixed (alive variant)",
+            ),
+            "radahn_dead_warp": (
+                cls.fix_radahn_dead_warp,
+                "Radahn warp sickness fixed (dead variant)",
+            ),
             "morgott_warp": (cls.fix_morgott_warp, "Morgott warp sickness fixed"),
             "radagon_warp": (cls.fix_radagon_warp, "Radagon warp sickness fixed"),
-            "sealing_tree_warp": (cls.fix_sealing_tree_warp, "Sealing Tree warp sickness fixed (DLC)"),
+            "sealing_tree_warp": (
+                cls.fix_sealing_tree_warp,
+                "Sealing Tree warp sickness fixed (DLC)",
+            ),
         }
 
         fixes_applied = 0
