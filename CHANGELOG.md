@@ -3,6 +3,31 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.7.0
+**Released:** January 28, 2026
+
+
+### ✨ New Features
+
+- Add DLC flag clearing with conditional UI and teleport integration ([337cd83](https://github.com/Hapfel1/er-save-manager/commit/337cd837452dbc03910cc5bc5a62603d0dbb5218))
+
+
+
+### 🔧 Bug Fixes
+
+- Made all tabs scrollable, fixed typo ([ed9db29](https://github.com/Hapfel1/er-save-manager/commit/ed9db29da936f20855f262842e9642efbfba5472))
+
+- Format & lint ([6fe1019](https://github.com/Hapfel1/er-save-manager/commit/6fe101902efe82b62f20116bd55b7fad58d5fa6d))
+
+
+
+### 🎨 User Interface
+
+- Fixed color issue in bright mode with character editor tab ([699cc32](https://github.com/Hapfel1/er-save-manager/commit/699cc32f66b0de5ca7b63f36a7ce9bf7a07b2e61))
+
+
+
+---
 ## 📦 Release 0.6.2
 **Released:** January 27, 2026
 
@@ -302,6 +327,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.7.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.6.2..v0.7.0
 [0.6.2]: https://github.com/Hapfel1/er-save-manager/compare/v0.6.1..v0.6.2
 [0.6.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.6.0..v0.6.1
 [0.6.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.5.1..v0.6.0
