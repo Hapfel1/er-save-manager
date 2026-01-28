@@ -640,7 +640,9 @@ class UserDataX:
 
         # Check if character is in DLC area (potential infinite loading if DLC not owned)
         if hasattr(self, "map_id") and self.map_id and self.map_id.is_dlc():
-            issues.append("dlc_location:Character in DLC area - may cause infinite loading without DLC ownership")
+            issues.append(
+                "dlc_location:Character in DLC area - may cause infinite loading without DLC ownership"
+            )
 
         has_corruption = len(issues) > 0
         return (has_corruption, issues)

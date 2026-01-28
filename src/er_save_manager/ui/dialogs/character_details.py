@@ -395,9 +395,7 @@ class CharacterDetailsDialog:
                     )
                     teleport_dialog.destroy()
                 else:
-                    CTkMessageBox.showwarning(
-                        "Not Applied", "No fixes were applied."
-                    )
+                    CTkMessageBox.showwarning("Not Applied", "No fixes were applied.")
 
             except Exception as e:
                 CTkMessageBox.showerror("Error", f"Teleport failed:\n{str(e)}")
@@ -470,9 +468,7 @@ class CharacterDetailsDialog:
             # Check if character is in DLC area and needs teleport
             slot = save_file.characters[slot_idx]
             has_dlc_location = (
-                hasattr(slot, "map_id")
-                and slot.map_id
-                and slot.map_id.is_dlc()
+                hasattr(slot, "map_id") and slot.map_id and slot.map_id.is_dlc()
             )
 
             # Teleport if in DLC location

@@ -477,7 +477,8 @@ class Save:
                             # Calculate absolute offset
                             absolute_time_offset = slot.data_start + slot.time_offset
                             self._raw_data[
-                                absolute_time_offset : absolute_time_offset + len(time_data)
+                                absolute_time_offset : absolute_time_offset
+                                + len(time_data)
                             ] = time_data
                             fixes.append(
                                 f"Time set to {hours:02d}:{minutes:02d}:{seconds:02d}"
@@ -498,7 +499,8 @@ class Save:
                     # Calculate absolute offset
                     absolute_weather_offset = slot.data_start + slot.weather_offset
                     self._raw_data[
-                        absolute_weather_offset : absolute_weather_offset + len(weather_data)
+                        absolute_weather_offset : absolute_weather_offset
+                        + len(weather_data)
                     ] = weather_data
                     fixes.append(f"AreaId set to {weather.area_id}")
 
@@ -532,7 +534,9 @@ class Save:
                 # Write back to raw data using the tracked offset
                 if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
                     # Calculate absolute offset
-                    absolute_event_flags_offset = slot.data_start + slot.event_flags_offset
+                    absolute_event_flags_offset = (
+                        slot.data_start + slot.event_flags_offset
+                    )
                     self._raw_data[
                         absolute_event_flags_offset : absolute_event_flags_offset
                         + len(event_flags_mutable)
@@ -555,7 +559,7 @@ class Save:
                 # Add fix descriptions
                 for fix_desc in fix_descriptions:
                     fixes.append(f"{fix_desc}")
-            except Exception as e:
+            except Exception:
                 # Log error but don't fail the whole fix operation
                 import traceback
 
