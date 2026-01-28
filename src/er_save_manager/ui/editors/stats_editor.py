@@ -52,11 +52,7 @@ class StatsEditor:
         # Create scrollable frame
         self.frame = ctk.CTkScrollableFrame(
             self.parent,
-            fg_color=("gray86", "gray25"),
-            bg_color=("gray86", "gray25"),
-            scrollbar_fg_color=("gray86", "gray25"),
-            scrollbar_button_color=("gray70", "gray30"),
-            scrollbar_button_hover_color=("gray60", "gray40"),
+            fg_color="transparent",
         )
         self.frame.pack(fill=ctk.BOTH, expand=True)
 
@@ -64,21 +60,20 @@ class StatsEditor:
         bind_mousewheel(self.frame)
 
         # Single row: Attributes and Resources side by side
-        top_row = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        top_row = ctk.CTkFrame(self.frame, fg_color="transparent")
         top_row.pack(fill=ctk.X, pady=5, padx=10)
 
         # Attributes on the left
-        stats_frame = ctk.CTkFrame(top_row, fg_color=("gray86", "gray25"))
+        stats_frame = ctk.CTkFrame(top_row, fg_color="transparent")
         stats_frame.pack(side=ctk.LEFT, fill=ctk.BOTH, expand=True, padx=(0, 5))
 
         ctk.CTkLabel(
             stats_frame,
             text="Attributes",
             font=("Segoe UI", 12, "bold"),
-            text_color=("black", "white"),
         ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
 
-        stats_grid = ctk.CTkFrame(stats_frame, fg_color=("gray86", "gray25"))
+        stats_grid = ctk.CTkFrame(stats_frame, fg_color="transparent")
         stats_grid.pack(fill=ctk.X, padx=5, pady=5)
 
         attributes = [
@@ -93,9 +88,9 @@ class StatsEditor:
         ]
 
         for i, (label, key) in enumerate(attributes):
-            ctk.CTkLabel(
-                stats_grid, text=f"{label}:", text_color=("black", "white")
-            ).grid(row=i, column=0, sticky=ctk.W, padx=5, pady=5)
+            ctk.CTkLabel(stats_grid, text=f"{label}:").grid(
+                row=i, column=0, sticky=ctk.W, padx=5, pady=5
+            )
 
             var = ctk.IntVar(value=0)
             self.stat_vars[key] = var
@@ -103,10 +98,6 @@ class StatsEditor:
                 stats_grid,
                 textvariable=var,
                 width=120,
-                fg_color=("gray86", "gray25"),
-                text_color=("black", "white"),
-                border_color=("gray70", "gray40"),
-                border_width=1,
             )
             entry.grid(row=i, column=1, padx=5, pady=5)
 
@@ -114,17 +105,16 @@ class StatsEditor:
             entry.bind("<KeyRelease>", lambda e: self.calculate_character_level())
 
         # Max HP/FP/Stamina on the right (base max values only, no active HP/FP/SP)
-        resources_frame = ctk.CTkFrame(top_row, fg_color=("gray86", "gray25"))
+        resources_frame = ctk.CTkFrame(top_row, fg_color="transparent")
         resources_frame.pack(side=ctk.LEFT, fill=ctk.BOTH, expand=True, padx=(5, 0))
 
         ctk.CTkLabel(
             resources_frame,
             text="Max Health/FP/Stamina",
             font=("Segoe UI", 12, "bold"),
-            text_color=("black", "white"),
         ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
 
-        resources_grid = ctk.CTkFrame(resources_frame, fg_color=("gray86", "gray25"))
+        resources_grid = ctk.CTkFrame(resources_frame, fg_color="transparent")
         resources_grid.pack(fill=ctk.X, padx=5, pady=5)
 
         resources = [
@@ -134,9 +124,9 @@ class StatsEditor:
         ]
 
         for i, (label, key) in enumerate(resources):
-            ctk.CTkLabel(
-                resources_grid, text=f"{label}:", text_color=("black", "white")
-            ).grid(row=i, column=0, sticky=ctk.W, padx=5, pady=5)
+            ctk.CTkLabel(resources_grid, text=f"{label}:").grid(
+                row=i, column=0, sticky=ctk.W, padx=5, pady=5
+            )
 
             var = ctk.IntVar(value=0)
             self.stat_vars[key] = var
@@ -144,14 +134,10 @@ class StatsEditor:
                 resources_grid,
                 textvariable=var,
                 width=120,
-                fg_color=("gray86", "gray25"),
-                text_color=("black", "white"),
-                border_color=("gray70", "gray40"),
-                border_width=1,
             ).grid(row=i, column=1, padx=5, pady=5)
 
         # Bottom row: Level & Runes in one compact frame
-        bottom_row = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        bottom_row = ctk.CTkFrame(self.frame, fg_color="transparent")
         bottom_row.pack(fill=ctk.X, pady=5, padx=10)
 
         other_frame = ctk.CTkFrame(bottom_row, fg_color=("gray86", "gray25"))

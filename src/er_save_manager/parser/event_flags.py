@@ -391,9 +391,13 @@ class CorruptionFixer:
             # Set blocking flag OFF
             EventFlags.set_flag(event_flags, FixFlags.RANNI_BLOCKING_FLAG, False)
 
-            # Enable all progression flags
+            # Enable all progression flags (skip any that don't exist in BST)
             for flag_id in FixFlags.RANNI_FLAGS_TO_ENABLE:
-                EventFlags.set_flag(event_flags, flag_id, True)
+                try:
+                    EventFlags.set_flag(event_flags, flag_id, True)
+                except ValueError:
+                    # Skip flags not in BST (some may be invalid/unused)
+                    continue
 
             return True
         except Exception:
@@ -482,12 +486,21 @@ class CorruptionFixer:
             (fixes_applied, list_of_fix_descriptions)
         """
         fix_map = {
-            "ranni_softlock": (cls.fix_ranni_softlock, "Ranni's Tower soft-lock"),
-            "radahn_alive_warp": (cls.fix_radahn_alive_warp, "Radahn warp (alive)"),
-            "radahn_dead_warp": (cls.fix_radahn_dead_warp, "Radahn warp (dead)"),
-            "morgott_warp": (cls.fix_morgott_warp, "Morgott warp"),
-            "radagon_warp": (cls.fix_radagon_warp, "Radagon warp"),
-            "sealing_tree_warp": (cls.fix_sealing_tree_warp, "Sealing Tree warp"),
+            "ranni_softlock": (cls.fix_ranni_softlock, "Ranni quest fixed"),
+            "radahn_alive_warp": (
+                cls.fix_radahn_alive_warp,
+                "Radahn warp sickness fixed (alive variant)",
+            ),
+            "radahn_dead_warp": (
+                cls.fix_radahn_dead_warp,
+                "Radahn warp sickness fixed (dead variant)",
+            ),
+            "morgott_warp": (cls.fix_morgott_warp, "Morgott warp sickness fixed"),
+            "radagon_warp": (cls.fix_radagon_warp, "Radagon warp sickness fixed"),
+            "sealing_tree_warp": (
+                cls.fix_sealing_tree_warp,
+                "Sealing Tree warp sickness fixed (DLC)",
+            ),
         }
 
         fixes_applied = 0

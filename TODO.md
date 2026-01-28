@@ -1,6 +1,12 @@
- fix readme and development
+ investigate steam deck appearance browse issue, add logging build which puts out log in a log file
+
+ fix character editor bg in bright mode
  
- fix linux warning/test on linux, 
+ make appearance tab scrollable to view buttons done
+ 
+ fix readme and development done
+ 
+ fix linux warning/test on linux done
 
 - pic of character slots + explanation done
 

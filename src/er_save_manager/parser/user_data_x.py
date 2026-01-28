@@ -66,6 +66,7 @@ class UserDataX:
     weather_offset: int = 0
     time_offset: int = 0
     steamid_offset: int = 0
+    dlc_offset: int = 0
     player_game_data_offset: int = 0
     sp_effects_offset: int = 0
     equipped_items_equip_index_offset: int = 0
@@ -428,6 +429,7 @@ class UserDataX:
                 f"[WARNING] Steamid read as 0 at offset 0x{obj.steamid_offset:X}, data: {steamid_bytes.hex()}"
             )
         obj.ps5_activity = PS5Activity.read(f)
+        obj.dlc_offset = f.tell() - data_start
         obj.dlc = DLC.read(f)
         obj.player_data_hash = PlayerGameDataHash.read(f)
 
@@ -625,7 +627,6 @@ class UserDataX:
         # Check SteamId corruption
         if self.has_steamid_corruption(correct_steam_id):
             issues.append(f"steamid_corruption:SteamId = {self.steam_id}")
-
         # Check event flag corruption (Ranni quest and warp sickness)
         if hasattr(self, "event_flags") and self.event_flags:
             try:
@@ -637,5 +638,77 @@ class UserDataX:
             except Exception:
                 pass
 
+        # Check if character is in DLC area (potential infinite loading if DLC not owned)
+        if hasattr(self, "map_id") and self.map_id and self.map_id.is_dlc():
+            issues.append(
+                "dlc_location:Character in DLC area - may cause infinite loading without DLC ownership"
+            )
+
         has_corruption = len(issues) > 0
         return (has_corruption, issues)
+
+    def has_dlc_flag(self) -> bool:
+        """
+        Check if DLC entry flag is set.
+
+        When this flag is non-zero, the character has entered the Shadow of the
+        Erdtree DLC area. This causes an infinite loading screen if the DLC is
+        not owned.
+
+        Returns:
+            True if DLC flag is set (character entered DLC)
+        """
+        if not hasattr(self, "dlc") or self.dlc is None:
+            return False
+        # Check if byte 1 (shadow_of_erdtree flag) is non-zero
+        return len(self.dlc.data) > 1 and self.dlc.data[1] != 0
+
+    def get_dlc_flag_value(self) -> int:
+        """Get the raw DLC flag value"""
+        if not hasattr(self, "dlc") or self.dlc is None:
+            return 0
+        if len(self.dlc.data) < 2:
+            return 0
+        return self.dlc.data[1]
+
+    def clear_dlc_flag(self):
+        """
+        Clear the DLC entry flag.
+
+        This allows the character to load without owning the DLC.
+        Use this when someone else has teleported your character out of
+        the DLC but the flag is still set.
+        """
+        if hasattr(self, "dlc") and self.dlc is not None:
+            if len(self.dlc.data) >= 2:
+                # Set byte 1 (shadow_of_erdtree) to 0
+                data_list = bytearray(self.dlc.data)
+                data_list[1] = 0
+                self.dlc.data = bytes(data_list)
+
+    def has_invalid_dlc(self) -> bool:
+        """
+        Check if DLC struct has invalid data in unused slots.
+
+        Returns:
+            True if unused DLC slots contain non-zero values
+        """
+        if not hasattr(self, "dlc") or self.dlc is None:
+            return False
+        # Check if bytes [3-49] are non-zero
+        if len(self.dlc.data) < 50:
+            return False
+        return self.dlc.data[3:] != b"\x00" * 47
+
+    def clear_invalid_dlc(self):
+        """
+        Clear invalid data in unused DLC slots.
+
+        Sets all unused bytes [3-49] to 0.
+        """
+        if hasattr(self, "dlc") and self.dlc is not None:
+            if len(self.dlc.data) >= 50:
+                # Keep first 3 bytes, zero out the rest
+                data_list = bytearray(self.dlc.data)
+                data_list[3:] = b"\x00" * 47
+                self.dlc.data = bytes(data_list)

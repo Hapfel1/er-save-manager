@@ -70,9 +70,11 @@ class TimeFix(BaseFix):
             time_bytes = BytesIO()
             time.write(time_bytes)
             time_data = time_bytes.getvalue()
-            save._raw_data[slot.time_offset : slot.time_offset + len(time_data)] = (
-                time_data
-            )
+            # Calculate absolute offset
+            absolute_time_offset = slot.data_start + slot.time_offset
+            save._raw_data[
+                absolute_time_offset : absolute_time_offset + len(time_data)
+            ] = time_data
 
             new_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
             return FixResult(

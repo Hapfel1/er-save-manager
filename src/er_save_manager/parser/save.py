@@ -407,8 +407,10 @@ class Save:
                     horse_bytes = BytesIO()
                     horse.write(horse_bytes)
                     horse_data = horse_bytes.getvalue()
+                    # Calculate absolute offset
+                    absolute_horse_offset = slot.data_start + slot.horse_offset
                     self._raw_data[
-                        slot.horse_offset : slot.horse_offset + len(horse_data)
+                        absolute_horse_offset : absolute_horse_offset + len(horse_data)
                     ] = horse_data
                     fixes.append(f"State changed to {horse.state.name}")
 
@@ -427,8 +429,10 @@ class Save:
                 if hasattr(slot, "steamid_offset") and slot.steamid_offset > 0:
                     import struct
 
+                    # Calculate absolute offset (steamid_offset is relative to data_start)
+                    absolute_offset = slot.data_start + slot.steamid_offset
                     steamid_bytes = struct.pack("<Q", correct_steam_id)
-                    self._raw_data[slot.steamid_offset : slot.steamid_offset + 8] = (
+                    self._raw_data[absolute_offset : absolute_offset + 8] = (
                         steamid_bytes
                     )
                     fixes.append(f"SteamId set to {correct_steam_id}")
@@ -470,8 +474,11 @@ class Save:
                             time_bytes = BytesIO()
                             time.write(time_bytes)
                             time_data = time_bytes.getvalue()
+                            # Calculate absolute offset
+                            absolute_time_offset = slot.data_start + slot.time_offset
                             self._raw_data[
-                                slot.time_offset : slot.time_offset + len(time_data)
+                                absolute_time_offset : absolute_time_offset
+                                + len(time_data)
                             ] = time_data
                             fixes.append(
                                 f"Time set to {hours:02d}:{minutes:02d}:{seconds:02d}"
@@ -489,8 +496,11 @@ class Save:
                     weather_bytes = BytesIO()
                     weather.write(weather_bytes)
                     weather_data = weather_bytes.getvalue()
+                    # Calculate absolute offset
+                    absolute_weather_offset = slot.data_start + slot.weather_offset
                     self._raw_data[
-                        slot.weather_offset : slot.weather_offset + len(weather_data)
+                        absolute_weather_offset : absolute_weather_offset
+                        + len(weather_data)
                     ] = weather_data
                     fixes.append(f"AreaId set to {weather.area_id}")
 
@@ -523,8 +533,12 @@ class Save:
 
                 # Write back to raw data using the tracked offset
                 if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
+                    # Calculate absolute offset
+                    absolute_event_flags_offset = (
+                        slot.data_start + slot.event_flags_offset
+                    )
                     self._raw_data[
-                        slot.event_flags_offset : slot.event_flags_offset
+                        absolute_event_flags_offset : absolute_event_flags_offset
                         + len(event_flags_mutable)
                     ] = event_flags_mutable
                 else:

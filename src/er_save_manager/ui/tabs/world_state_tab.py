@@ -52,8 +52,13 @@ class WorldStateTab:
 
     def setup_ui(self):
         """Create two-column layout using CTk."""
+        # Main scrollable container
+        scroll_frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
+        scroll_frame.pack(fill=tk.BOTH, expand=True)
+        bind_mousewheel(scroll_frame)
+
         # Main container with two columns
-        main_container = ctk.CTkFrame(self.parent, fg_color="transparent")
+        main_container = ctk.CTkFrame(scroll_frame, fg_color="transparent")
         main_container.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         # Configure grid weights

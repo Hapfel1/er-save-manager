@@ -53,27 +53,22 @@ class CharacterInfoEditor:
         """Setup the character info editor UI"""
         self.frame = ctk.CTkScrollableFrame(
             self.parent,
-            fg_color=("gray86", "gray25"),
-            bg_color=("gray86", "gray25"),
-            scrollbar_fg_color=("gray86", "gray25"),
-            scrollbar_button_color=("gray70", "gray30"),
-            scrollbar_button_hover_color=("gray60", "gray40"),
+            fg_color="transparent",
         )
         self.frame.pack(fill=ctk.BOTH, expand=True)
         bind_mousewheel(self.frame)
 
         # Character creation info
-        creation_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        creation_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
         creation_frame.pack(fill=ctk.X, pady=5, padx=10)
         ctk.CTkLabel(
             creation_frame,
             text="Character Creation",
             font=("Segoe UI", 12, "bold"),
-            text_color=("black", "white"),
         ).grid(row=0, column=0, columnspan=5, sticky=ctk.W, padx=5, pady=(5, 0))
 
         # Name
-        ctk.CTkLabel(creation_frame, text="Name:", text_color=("black", "white")).grid(
+        ctk.CTkLabel(creation_frame, text="Name:").grid(
             row=1, column=0, sticky=ctk.W, padx=5, pady=5
         )
         self.char_name_var = ctk.StringVar(value="")
@@ -87,10 +82,6 @@ class CharacterInfoEditor:
             creation_frame,
             textvariable=self.char_name_var,
             width=200,
-            fg_color=("gray86", "gray25"),
-            text_color=("black", "white"),
-            border_color=("gray70", "gray40"),
-            border_width=1,
             validate="key",
             validatecommand=name_vcmd,
         )
@@ -101,7 +92,6 @@ class CharacterInfoEditor:
             creation_frame,
             text="0/16",
             font=("Segoe UI", 8),
-            text_color=("gray30", "gray80"),
         )
         self.char_name_count_label.grid(row=1, column=4, padx=5, pady=5)
 
@@ -113,157 +103,122 @@ class CharacterInfoEditor:
         self.char_name_var.trace("w", update_name_count)
 
         # Body Type
-        ctk.CTkLabel(
-            creation_frame, text="Body Type:", text_color=("black", "white")
-        ).grid(row=2, column=0, sticky=ctk.W, padx=5, pady=5)
+        ctk.CTkLabel(creation_frame, text="Body Type:").grid(
+            row=2, column=0, sticky=ctk.W, padx=5, pady=5
+        )
         self.char_body_type_var = ctk.IntVar(value=0)
         body_type_combo = ctk.CTkComboBox(
             creation_frame,
             variable=self.char_body_type_var,
             values=["Type A (0)", "Type B (1)"],
             width=140,
-            fg_color=("gray86", "gray25"),
-            text_color=("black", "white"),
-            button_color=("gray70", "gray30"),
         )
         body_type_combo.grid(row=2, column=1, padx=5, pady=5)
 
         # Archetype (starting class)
-        ctk.CTkLabel(
-            creation_frame, text="Archetype:", text_color=("black", "white")
-        ).grid(row=2, column=2, sticky=ctk.W, padx=5, pady=5)
+        ctk.CTkLabel(creation_frame, text="Archetype:").grid(
+            row=2, column=2, sticky=ctk.W, padx=5, pady=5
+        )
         self.char_archetype_var = ctk.IntVar(value=0)
         ctk.CTkEntry(
             creation_frame,
             textvariable=self.char_archetype_var,
             width=100,
-            fg_color=("gray86", "gray25"),
-            text_color=("black", "white"),
-            border_color=("gray70", "gray40"),
-            border_width=1,
         ).grid(row=2, column=3, padx=5, pady=5)
 
         # Voice type
-        ctk.CTkLabel(
-            creation_frame, text="Voice Type:", text_color=("black", "white")
-        ).grid(row=3, column=0, sticky=ctk.W, padx=5, pady=5)
+        ctk.CTkLabel(creation_frame, text="Voice Type:").grid(
+            row=3, column=0, sticky=ctk.W, padx=5, pady=5
+        )
         self.char_voice_var = ctk.IntVar(value=0)
         voice_combo = ctk.CTkComboBox(
             creation_frame,
             variable=self.char_voice_var,
             values=["Young (0)", "Mature (1)", "Aged (2)"],
             width=140,
-            fg_color=("gray86", "gray25"),
-            text_color=("black", "white"),
-            button_color=("gray70", "gray30"),
         )
         voice_combo.grid(row=3, column=1, padx=5, pady=5)
 
         # Keepsake gift
-        ctk.CTkLabel(
-            creation_frame, text="Keepsake:", text_color=("black", "white")
-        ).grid(row=3, column=2, sticky=ctk.W, padx=5, pady=5)
+        ctk.CTkLabel(creation_frame, text="Keepsake:").grid(
+            row=3, column=2, sticky=ctk.W, padx=5, pady=5
+        )
         self.char_gift_var = ctk.IntVar(value=0)
         ctk.CTkEntry(
             creation_frame,
             textvariable=self.char_gift_var,
             width=100,
-            fg_color=("gray86", "gray25"),
-            text_color=("black", "white"),
-            border_color=("gray70", "gray40"),
-            border_width=1,
         ).grid(row=3, column=3, padx=5, pady=5)
 
         # Game progression info
-        progression_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        progression_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
         progression_frame.pack(fill=ctk.X, pady=5, padx=10)
         ctk.CTkLabel(
             progression_frame,
             text="Game Progression",
             font=("Segoe UI", 12, "bold"),
-            text_color=("black", "white"),
         ).grid(row=0, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(5, 0))
 
         # Additional talisman slots
         ctk.CTkLabel(
             progression_frame,
             text="Extra Talisman Slots:",
-            text_color=("black", "white"),
         ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
         self.char_talisman_slots_var = ctk.IntVar(value=0)
         ctk.CTkEntry(
             progression_frame,
             textvariable=self.char_talisman_slots_var,
             width=100,
-            fg_color=("gray86", "gray25"),
-            text_color=("black", "white"),
-            border_color=("gray70", "gray40"),
-            border_width=1,
         ).grid(row=1, column=1, padx=5, pady=5)
 
         # Spirit summon level
         ctk.CTkLabel(
             progression_frame,
             text="Spirit Summon Level:",
-            text_color=("black", "white"),
         ).grid(row=1, column=2, sticky=ctk.W, padx=5, pady=5)
         self.char_spirit_level_var = ctk.IntVar(value=0)
         ctk.CTkEntry(
             progression_frame,
             textvariable=self.char_spirit_level_var,
             width=100,
-            fg_color=("gray86", "gray25"),
-            text_color=("black", "white"),
-            border_color=("gray70", "gray40"),
-            border_width=1,
         ).grid(row=1, column=3, padx=5, pady=5)
 
         # Flask info
-        flask_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        flask_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
         flask_frame.pack(fill=ctk.X, pady=5, padx=10)
         ctk.CTkLabel(
             flask_frame,
             text="Flasks",
             font=("Segoe UI", 12, "bold"),
-            text_color=("black", "white"),
         ).grid(row=0, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(5, 0))
 
-        ctk.CTkLabel(
-            flask_frame, text="Max Crimson Flasks:", text_color=("black", "white")
-        ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
+        ctk.CTkLabel(flask_frame, text="Max Crimson Flasks:").grid(
+            row=1, column=0, sticky=ctk.W, padx=5, pady=5
+        )
         self.char_crimson_flask_var = ctk.IntVar(value=0)
         ctk.CTkEntry(
             flask_frame,
             textvariable=self.char_crimson_flask_var,
             width=100,
-            fg_color=("gray86", "gray25"),
-            text_color=("black", "white"),
-            border_color=("gray70", "gray40"),
-            border_width=1,
         ).grid(row=1, column=1, padx=5, pady=5)
 
-        ctk.CTkLabel(
-            flask_frame, text="Max Cerulean Flasks:", text_color=("black", "white")
-        ).grid(row=1, column=2, sticky=ctk.W, padx=5, pady=5)
+        ctk.CTkLabel(flask_frame, text="Max Cerulean Flasks:").grid(
+            row=1, column=2, sticky=ctk.W, padx=5, pady=5
+        )
         self.char_cerulean_flask_var = ctk.IntVar(value=0)
         ctk.CTkEntry(
             flask_frame,
             textvariable=self.char_cerulean_flask_var,
             width=100,
-            fg_color=("gray86", "gray25"),
-            text_color=("black", "white"),
-            border_color=("gray70", "gray40"),
-            border_width=1,
         ).grid(row=1, column=3, padx=5, pady=5)
 
         # Apply button
-        button_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        button_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
         button_frame.pack(fill=ctk.X, pady=10, padx=10)
         ctk.CTkLabel(
             button_frame,
             text="Actions",
             font=("Segoe UI", 12, "bold"),
-            text_color=("black", "white"),
         ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
 
         ctk.CTkButton(

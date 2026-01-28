@@ -385,12 +385,12 @@ class SaveManagerGUI:
         header.pack(pady=(6, 12))
 
         container = ctk.CTkFrame(
-            parent, corner_radius=10, fg_color=("gray12", "gray22")
+            parent, corner_radius=10, fg_color=("gray86", "gray22")
         )
         container.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 12))
 
         # Slot selector bar
-        select_frame = ctk.CTkFrame(container, fg_color=("gray14", "gray24"))
+        select_frame = ctk.CTkFrame(container, fg_color=("gray76", "gray24"))
         select_frame.pack(fill=tk.X, padx=10, pady=(12, 8))
 
         ctk.CTkLabel(select_frame, text="Character Slot:").pack(
@@ -419,11 +419,10 @@ class SaveManagerGUI:
             container,
             width=900,
             height=520,
-            fg_color=("gray10", "gray20"),
-            segmented_button_fg_color=("gray25", "gray35"),
-            segmented_button_selected_color=("#7c5b9a", "#6a4b85"),
-            segmented_button_unselected_color=("gray40", "gray30"),
-            text_color=("white", "white"),
+            fg_color=("gray90", "gray20"),
+            segmented_button_fg_color=("gray80", "gray35"),
+            segmented_button_selected_color=("#c9a0dc", "#6a4b85"),
+            segmented_button_unselected_color=("gray70", "gray30"),
         )
         editor_tabs.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 12))
 
@@ -435,7 +434,7 @@ class SaveManagerGUI:
 
         # Stats editor
         stats_frame = editor_tabs.add("Stats")
-        stats_frame = ctk.CTkFrame(stats_frame, fg_color=("gray12", "gray22"))
+        stats_frame = ctk.CTkFrame(stats_frame, fg_color="transparent")
         stats_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self.stats_editor = StatsEditor(
             stats_frame,
@@ -447,7 +446,7 @@ class SaveManagerGUI:
 
         # Equipment editor
         equipment_tab = editor_tabs.add("Equipment")
-        equipment_frame = ctk.CTkFrame(equipment_tab, fg_color=("gray12", "gray22"))
+        equipment_frame = ctk.CTkFrame(equipment_tab, fg_color="transparent")
         equipment_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self.equipment_editor = EquipmentEditor(
             equipment_frame,
@@ -458,7 +457,7 @@ class SaveManagerGUI:
 
         # Character info editor
         info_tab = editor_tabs.add("Info")
-        info_frame = ctk.CTkFrame(info_tab, fg_color=("gray12", "gray22"))
+        info_frame = ctk.CTkFrame(info_tab, fg_color="transparent")
         info_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self.char_info_editor = CharacterInfoEditor(
             info_frame,
@@ -470,7 +469,7 @@ class SaveManagerGUI:
 
         # Inventory editor
         inventory_tab = editor_tabs.add("Inventory")
-        inventory_frame = ctk.CTkFrame(inventory_tab, fg_color=("gray12", "gray22"))
+        inventory_frame = ctk.CTkFrame(inventory_tab, fg_color="transparent")
         inventory_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self.inventory_editor = InventoryEditor(
             inventory_frame,
@@ -611,7 +610,7 @@ class SaveManagerGUI:
             f"This is NOT the default Steam compatdata location!\n\n"
             f'⚠️ If you remove the custom launcher (e.g. "ersc_launcher.exe") from Steam, '
             f"Steam will remove that compatdata folder and your save will get lost.\n\n"
-            f"Recommended: Set a fixed Steam launch option and copy the save file to the default"
+            f"Recommended: Set a fixed Steam launch option and copy the save file to the default "
             f"location via the 'Copy Save' button below to prevent this."
         )
 

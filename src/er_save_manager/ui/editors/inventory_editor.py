@@ -56,42 +56,38 @@ class InventoryEditor:
         """Setup the inventory editor UI"""
         self.frame = ctk.CTkScrollableFrame(
             self.parent,
-            fg_color=("gray86", "gray25"),
-            scrollbar_button_color=("gray70", "gray30"),
-            scrollbar_button_hover_color=("gray60", "gray40"),
+            fg_color="transparent",
         )
         self.frame.pack(fill=ctk.BOTH, expand=True)
         bind_mousewheel(self.frame)
 
         # Add item frame - DISABLED FOR NOW
-        # add_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        # add_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
         # add_frame.pack(fill=ctk.X, pady=5, padx=10)
         # ctk.CTkLabel(
         #     add_frame,
         #     text="Add/Spawn Item",
         #     font=("Segoe UI", 12, "bold"),
-        #     text_color=("black", "white"),
         # ).grid(row=0, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(5, 0))
 
         # Skip add item UI - will be re-enabled after serialization fixes
 
         # Item list frame
-        list_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        list_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
         list_frame.pack(fill=ctk.BOTH, expand=True, pady=5, padx=10)
         ctk.CTkLabel(
             list_frame,
             text="Current Inventory",
             font=("Segoe UI", 12, "bold"),
-            text_color=("black", "white"),
         ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
 
         # Filter frame
         filter_frame = ctk.CTkFrame(list_frame, fg_color="transparent")
         filter_frame.pack(fill=ctk.X, pady=(0, 5))
 
-        ctk.CTkLabel(
-            filter_frame, text="Filter by Category:", text_color=("black", "white")
-        ).pack(side=ctk.LEFT, padx=5)
+        ctk.CTkLabel(filter_frame, text="Filter by Category:").pack(
+            side=ctk.LEFT, padx=5
+        )
         self.inv_filter_var = ctk.StringVar(value="All")
         filter_combo = ctk.CTkComboBox(
             filter_frame,
