@@ -56,8 +56,13 @@ class SteamIdFix(BaseFix):
 
         # Write to raw data
         if hasattr(slot, "steamid_offset") and slot.steamid_offset > 0:
+            # Calculate absolute offset in save file
+            # steamid_offset is relative to the stream position when parsing started (data_start)
+            # data_start is the absolute position in the file (stored in slot.data_start)
+            absolute_steamid_offset = slot.data_start + slot.steamid_offset
+
             steamid_bytes = struct.pack("<Q", correct_steam_id)
-            save._raw_data[slot.steamid_offset : slot.steamid_offset + 8] = (
+            save._raw_data[absolute_steamid_offset : absolute_steamid_offset + 8] = (
                 steamid_bytes
             )
 

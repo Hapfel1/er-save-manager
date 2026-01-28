@@ -57,8 +57,10 @@ class WeatherFix(BaseFix):
             weather_bytes = BytesIO()
             weather.write(weather_bytes)
             weather_data = weather_bytes.getvalue()
+            # Calculate absolute offset
+            absolute_weather_offset = slot.data_start + slot.weather_offset
             save._raw_data[
-                slot.weather_offset : slot.weather_offset + len(weather_data)
+                absolute_weather_offset : absolute_weather_offset + len(weather_data)
             ] = weather_data
 
             return FixResult(

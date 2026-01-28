@@ -80,12 +80,8 @@ class CharacterDetailsDialog:
         has_dlc_flag = False
         has_invalid_dlc = False
         try:
-            if hasattr(slot, "dlc_data"):
-                from er_save_manager.parser.world import DLC
-
-                dlc = DLC.from_bytes(slot.dlc_data)
-                has_dlc_flag = dlc.has_dlc_access()
-                has_invalid_dlc = dlc.has_invalid_flags()
+            has_dlc_flag = slot.has_dlc_flag()
+            has_invalid_dlc = slot.has_invalid_dlc()
         except Exception:
             pass
 
@@ -115,8 +111,19 @@ class CharacterDetailsDialog:
             info.append("ISSUES DETECTED:")
             info.append("=" * 50)
             for issue in issues_detected:
-                info.append(f"  • {issue}")
+                # Parse issue format: "type:details"
+                if ":" in issue:
+                    issue_type, issue_detail = issue.split(":", 1)
+                    info.append(f"  • {issue_detail}")
+                else:
+                    info.append(f"  • {issue}")
             info.append("")
+            # Add helpful context for DLC location issues
+            if any("dlc_location" in issue for issue in issues_detected):
+                info.append("RECOMMENDATION:")
+                info.append("  Click 'Teleport Character' to escape the DLC area")
+                info.append("  to Roundtable Hold (safest location).")
+                info.append("")
             info.append("Click 'Fix All Issues' to correct everything")
         else:
             info.append("=" * 50)
@@ -165,6 +172,48 @@ class CharacterDetailsDialog:
         info_box.insert("1.0", "\n".join(info))
         info_box.configure(state="disabled")
 
+        # DLC flag checkboxes (show if flag is set or invalid data exists)
+        clear_dlc_flag_var = None
+        clear_invalid_dlc_var = None
+
+        if has_dlc_flag or has_invalid_dlc:
+            dlc_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+            dlc_frame.pack(fill="x", padx=10, pady=(5, 10))
+
+            if has_dlc_flag:
+                clear_dlc_flag_var = ctk.BooleanVar(value=False)
+                dlc_checkbox = ctk.CTkCheckBox(
+                    dlc_frame,
+                    text="Clear Shadow of the Erdtree flag (allows loading without DLC)",
+                    variable=clear_dlc_flag_var,
+                )
+                dlc_checkbox.pack(anchor="w", pady=(0, 2))
+
+                info_label = ctk.CTkLabel(
+                    dlc_frame,
+                    text="   Use if someone teleported you out of the DLC but you cannot load the save file.",
+                    font=("Segoe UI", 10),
+                    text_color=("gray50", "gray50"),
+                )
+                info_label.pack(anchor="w", pady=(0, 8))
+
+            if has_invalid_dlc:
+                clear_invalid_dlc_var = ctk.BooleanVar(value=False)
+                invalid_checkbox = ctk.CTkCheckBox(
+                    dlc_frame,
+                    text="Clear invalid DLC data (fixes corrupted DLC flags)",
+                    variable=clear_invalid_dlc_var,
+                )
+                invalid_checkbox.pack(anchor="w", pady=(0, 2))
+
+                invalid_info_label = ctk.CTkLabel(
+                    dlc_frame,
+                    text="   Invalid data in unused DLC slots can prevent save from loading.",
+                    font=("Segoe UI", 10),
+                    text_color=("gray50", "gray50"),
+                )
+                invalid_info_label.pack(anchor="w")
+
         # Buttons
         button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         button_frame.pack(fill="x", padx=6, pady=(0, 4))
@@ -179,6 +228,8 @@ class CharacterDetailsDialog:
                     len(issues_detected),
                     save_path,
                     reload_callback,
+                    clear_dlc_flag_var,
+                    clear_invalid_dlc_var,
                 )
 
             ctk.CTkButton(
@@ -190,7 +241,14 @@ class CharacterDetailsDialog:
 
         def teleport():
             CharacterDetailsDialog._show_teleport_dialog(
-                parent, dialog, save_file, slot_idx, save_path, reload_callback
+                parent,
+                dialog,
+                save_file,
+                slot_idx,
+                save_path,
+                reload_callback,
+                clear_dlc_flag_var,
+                clear_invalid_dlc_var,
             )
 
         ctk.CTkButton(
@@ -224,7 +282,14 @@ class CharacterDetailsDialog:
 
     @staticmethod
     def _show_teleport_dialog(
-        parent, details_dialog, save_file, slot_idx, save_path, reload_callback
+        parent,
+        details_dialog,
+        save_file,
+        slot_idx,
+        save_path,
+        reload_callback,
+        clear_dlc_flag_var=None,
+        clear_invalid_dlc_var=None,
     ):
         """Show teleport dialog"""
         details_dialog.destroy()
@@ -287,7 +352,35 @@ class CharacterDetailsDialog:
                 teleport = TeleportFix(destination)
                 result = teleport.apply(save_file, slot_idx)
 
+                fixes_applied = []
                 if result.applied:
+                    fixes_applied.append(result.description)
+                    if result.details:
+                        fixes_applied.extend(result.details)
+
+                # Apply DLC flag fix if checkbox was ticked
+                should_clear_dlc = clear_dlc_flag_var and clear_dlc_flag_var.get()
+                if should_clear_dlc:
+                    from er_save_manager.fixes.dlc import DLCFlagFix
+
+                    dlc_fix = DLCFlagFix()
+                    dlc_result = dlc_fix.apply(save_file, slot_idx)
+                    if dlc_result.applied:
+                        fixes_applied.append(dlc_result.description)
+
+                # Apply invalid DLC fix if checkbox was ticked
+                should_clear_invalid = (
+                    clear_invalid_dlc_var and clear_invalid_dlc_var.get()
+                )
+                if should_clear_invalid:
+                    from er_save_manager.fixes.dlc import InvalidDLCFix
+
+                    invalid_dlc_fix = InvalidDLCFix()
+                    invalid_result = invalid_dlc_fix.apply(save_file, slot_idx)
+                    if invalid_result.applied:
+                        fixes_applied.append(invalid_result.description)
+
+                if fixes_applied:
                     save_file.recalculate_checksums()
                     if save_path:
                         save_file.to_file(Path(save_path))
@@ -295,14 +388,16 @@ class CharacterDetailsDialog:
                     if reload_callback:
                         reload_callback()
 
-                    details = "\n".join(result.details) if result.details else ""
+                    fixes_text = "\n".join(f"  • {fix}" for fix in fixes_applied)
                     CTkMessageBox.showinfo(
                         "Success",
-                        f"{result.description}\n\n{details}\n\nBackup saved to backup manager.",
+                        f"Applied fixes:\n\n{fixes_text}\n\nBackup saved to backup manager.",
                     )
                     teleport_dialog.destroy()
                 else:
-                    CTkMessageBox.showwarning("Not Applied", result.description)
+                    CTkMessageBox.showwarning(
+                        "Not Applied", "No fixes were applied."
+                    )
 
             except Exception as e:
                 CTkMessageBox.showerror("Error", f"Teleport failed:\n{str(e)}")
@@ -329,15 +424,33 @@ class CharacterDetailsDialog:
 
     @staticmethod
     def _fix_character(
-        dialog, save_file, slot_idx, issue_count, save_path, reload_callback
+        dialog,
+        save_file,
+        slot_idx,
+        issue_count,
+        save_path,
+        reload_callback,
+        clear_dlc_flag_var=None,
+        clear_invalid_dlc_var=None,
     ):
         """Fix character corruption"""
         dialog.destroy()
 
-        if not CTkMessageBox.askyesno(
-            "Confirm",
-            f"Fix all {issue_count} issue(s) in Slot {slot_idx + 1}?\n\nA backup will be created.",
-        ):
+        # Check if user wants to clear DLC flags
+        should_clear_dlc = clear_dlc_flag_var and clear_dlc_flag_var.get()
+        should_clear_invalid = clear_invalid_dlc_var and clear_invalid_dlc_var.get()
+
+        # Build confirmation message
+        confirm_parts = [f"Fix all {issue_count} issue(s) in Slot {slot_idx + 1}?"]
+        if should_clear_dlc or should_clear_invalid:
+            confirm_parts.append("\nAdditional fixes:")
+            if should_clear_dlc:
+                confirm_parts.append("  • Clear Shadow of the Erdtree flag")
+            if should_clear_invalid:
+                confirm_parts.append("  • Clear invalid DLC data")
+        confirm_parts.append("\nA backup will be created.")
+
+        if not CTkMessageBox.askyesno("Confirm", "\n".join(confirm_parts)):
             return
 
         try:
@@ -353,6 +466,44 @@ class CharacterDetailsDialog:
 
             # Apply fix
             was_fixed, fixes = save_file.fix_character_corruption(slot_idx)
+
+            # Check if character is in DLC area and needs teleport
+            slot = save_file.characters[slot_idx]
+            has_dlc_location = (
+                hasattr(slot, "map_id")
+                and slot.map_id
+                and slot.map_id.is_dlc()
+            )
+
+            # Teleport if in DLC location
+            if has_dlc_location:
+                from er_save_manager.fixes.teleport import TeleportFix
+
+                teleport_fix = TeleportFix("roundtable")
+                teleport_result = teleport_fix.apply(save_file, slot_idx)
+                if teleport_result.applied:
+                    fixes.append(teleport_result.description)
+                    was_fixed = True
+
+            # Apply DLC flag fix if requested
+            if should_clear_dlc:
+                from er_save_manager.fixes.dlc import DLCFlagFix
+
+                dlc_fix = DLCFlagFix()
+                result = dlc_fix.apply(save_file, slot_idx)
+                if result.applied:
+                    fixes.append(result.description)
+                    was_fixed = True
+
+            # Apply invalid DLC fix if requested
+            if should_clear_invalid:
+                from er_save_manager.fixes.dlc import InvalidDLCFix
+
+                invalid_dlc_fix = InvalidDLCFix()
+                result = invalid_dlc_fix.apply(save_file, slot_idx)
+                if result.applied:
+                    fixes.append(result.description)
+                    was_fixed = True
 
             # Update operation description
             if save_path and fixes:
