@@ -299,19 +299,13 @@ def rebuild_slot_with_map(slot: UserDataX) -> tuple[bytes, list[dict[str, Any]]]
 
     # Weather, time, base version
     write_section("world_area_weather", lambda: slot.world_area_weather.write(buf))
-    print(f"[REBUILD] Wrote weather, now at offset {buf.tell()}")
 
     write_section("world_area_time", lambda: slot.world_area_time.write(buf))
-    print(f"[REBUILD] Wrote time, now at offset {buf.tell()}")
 
     write_section("base_version", lambda: slot.base_version.write(buf))
-    print(f"[REBUILD] Wrote base_version, now at offset {buf.tell()}")
 
     # Steam ID
-    print(f"[REBUILD] Writing steamid: {slot.steam_id} at offset {buf.tell()}")
-    steamid_bytes = struct.pack("<Q", slot.steam_id)
-    print(f"[REBUILD] Raw steamid bytes: {steamid_bytes.hex()}")
-    write_section("steam_id", lambda: buf.write(steamid_bytes))
+    write_section("steam_id", lambda: buf.write(struct.pack("<Q", slot.steam_id)))
 
     # PS5 Activity and DLC
     write_section("ps5_activity", lambda: slot.ps5_activity.write(buf))
