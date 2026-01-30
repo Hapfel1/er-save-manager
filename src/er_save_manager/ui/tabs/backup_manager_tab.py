@@ -163,12 +163,17 @@ Backup Format:
 
             dialog = ctk.CTkToplevel(self.parent)
             dialog.title("Backup Manager")
-            dialog.geometry("900x600")
-
+            width, height = 900, 600
             dialog.update_idletasks()
-            x = (dialog.winfo_screenwidth() // 2) - 450
-            y = (dialog.winfo_screenheight() // 2) - 300
-            dialog.geometry(f"900x600+{x}+{y}")
+            # Center over parent window
+            self.parent.update_idletasks()
+            parent_x = self.parent.winfo_rootx()
+            parent_y = self.parent.winfo_rooty()
+            parent_width = self.parent.winfo_width()
+            parent_height = self.parent.winfo_height()
+            x = parent_x + (parent_width // 2) - (width // 2)
+            y = parent_y + (parent_height // 2) - (height // 2)
+            dialog.geometry(f"{width}x{height}+{x}+{y}")
 
             # Force rendering on Linux before grab_set
             force_render_dialog(dialog)

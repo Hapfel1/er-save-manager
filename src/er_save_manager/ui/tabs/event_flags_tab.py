@@ -646,15 +646,18 @@ class EventFlagsTab:
 
         dialog = ctk.CTkToplevel(self.parent)
         dialog.title("Boss Respawn")
-        dialog.geometry("700x600")
+        width, height = 700, 600
         dialog.transient(self.parent)
-
-        # Center dialog
         dialog.update_idletasks()
-        x = (dialog.winfo_screenwidth() // 2) - (700 // 2)
-        y = (dialog.winfo_screenheight() // 2) - (600 // 2)
-        dialog.geometry(f"+{x}+{y}")
-
+        # Center over parent window
+        self.parent.update_idletasks()
+        parent_x = self.parent.winfo_rootx()
+        parent_y = self.parent.winfo_rooty()
+        parent_width = self.parent.winfo_width()
+        parent_height = self.parent.winfo_height()
+        x = parent_x + (parent_width // 2) - (width // 2)
+        y = parent_y + (parent_height // 2) - (height // 2)
+        dialog.geometry(f"{width}x{height}+{x}+{y}")
         # Force rendering on Linux before grab_set
         force_render_dialog(dialog)
         dialog.grab_set()

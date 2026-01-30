@@ -137,10 +137,15 @@ class CharacterDetailsDialog:
         dialog.title(f"Character Details - {name}")
 
         width, height = 640, 520
-        screen_w = dialog.winfo_screenwidth()
-        screen_h = dialog.winfo_screenheight()
-        x = (screen_w // 2) - (width // 2)
-        y = (screen_h // 2) - (height // 2)
+        dialog.update_idletasks()
+        # Center over parent window
+        parent.update_idletasks()
+        parent_x = parent.winfo_rootx()
+        parent_y = parent.winfo_rooty()
+        parent_width = parent.winfo_width()
+        parent_height = parent.winfo_height()
+        x = parent_x + (parent_width // 2) - (width // 2)
+        y = parent_y + (parent_height // 2) - (height // 2)
         dialog.geometry(f"{width}x{height}+{x}+{y}")
         dialog.resizable(True, True)
 
@@ -296,13 +301,18 @@ class CharacterDetailsDialog:
 
         teleport_dialog = ctk.CTkToplevel(parent)
         teleport_dialog.title("Teleport Character")
-        teleport_dialog.geometry("400x250")
-        teleport_dialog.grab_set()
-
+        width, height = 400, 250
         teleport_dialog.update_idletasks()
-        x = (teleport_dialog.winfo_screenwidth() // 2) - 200
-        y = (teleport_dialog.winfo_screenheight() // 2) - 125
-        teleport_dialog.geometry(f"400x250+{x}+{y}")
+        # Center over parent window
+        parent.update_idletasks()
+        parent_x = parent.winfo_rootx()
+        parent_y = parent.winfo_rooty()
+        parent_width = parent.winfo_width()
+        parent_height = parent.winfo_height()
+        x = parent_x + (parent_width // 2) - (width // 2)
+        y = parent_y + (parent_height // 2) - (height // 2)
+        teleport_dialog.geometry(f"{width}x{height}+{x}+{y}")
+        teleport_dialog.grab_set()
 
         # Force rendering on Linux
         teleport_dialog.lift()
