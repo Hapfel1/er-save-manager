@@ -773,12 +773,12 @@ class SaveManagerGUI:
     def _on_file_path_changed(self, *args):
         """Auto-load save file when a valid file path is entered."""
         save_path = self.file_path_var.get()
-        
+
         # Only auto-load if path exists and is a valid save file
         if save_path and os.path.exists(save_path):
             # Only auto-load if it's a save file named ER0000.* with any extension
             filename = os.path.basename(save_path).lower()
-            if filename.startswith('er0000.'):
+            if filename.startswith("er0000."):
                 # Use after() to avoid loading while user is still typing
                 self.root.after(500, self.load_save)
 
