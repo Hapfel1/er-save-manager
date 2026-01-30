@@ -823,7 +823,14 @@ class EnhancedPresetBrowser:
             try:
                 img = Image.open(cached["screenshot_path"])
                 img.thumbnail((150, 150))
-                label.configure(image=self._make_ctk_image(img, (150, 150)), text="")
+                actual_size = img.size
+                label.configure(
+                    image=self._make_ctk_image(img, actual_size),
+                    text="",
+                    width=actual_size[0],
+                    height=actual_size[1],
+                    anchor="center",
+                )
                 return
             except Exception:
                 pass
@@ -842,7 +849,14 @@ class EnhancedPresetBrowser:
             if downloaded and "screenshot_path" in downloaded:
                 img = Image.open(downloaded["screenshot_path"])
                 img.thumbnail((150, 150))
-                label.configure(image=self._make_ctk_image(img, (150, 150)), text="")
+                actual_size = img.size
+                label.configure(
+                    image=self._make_ctk_image(img, actual_size),
+                    text="",
+                    width=actual_size[0],
+                    height=actual_size[1],
+                    anchor="center",
+                )
                 return
         except Exception:
             pass
@@ -1023,8 +1037,9 @@ class EnhancedPresetBrowser:
             for img_file in cache_dir.glob(f"*{suffix}.*"):
                 try:
                     img = Image.open(img_file)
-                    img.thumbnail(size)
-                    return self._make_ctk_image(img, size)
+                    img = img.copy()
+                    img.thumbnail(size, Image.LANCZOS)
+                    return self._make_ctk_image(img, img.size)
                 except Exception:
                     continue
 
@@ -1033,8 +1048,9 @@ class EnhancedPresetBrowser:
                 path = self.manager.download_image(preset["id"], preset[key], suffix)
                 if path and path.exists():
                     img = Image.open(path)
-                    img.thumbnail(size)
-                    return self._make_ctk_image(img, size)
+                    img = img.copy()
+                    img.thumbnail(size, Image.LANCZOS)
+                    return self._make_ctk_image(img, img.size)
             except Exception:
                 return None
         return None
@@ -1049,8 +1065,13 @@ class EnhancedPresetBrowser:
                     try:
                         img = Image.open(cached["screenshot_path"])
                         img.thumbnail((150, 150))
+                        actual_size = img.size
                         label.configure(
-                            image=self._make_ctk_image(img, (150, 150)), text=""
+                            image=self._make_ctk_image(img, actual_size),
+                            text="",
+                            width=actual_size[0],
+                            height=actual_size[1],
+                            anchor="center",
                         )
                     except Exception:
                         pass
@@ -1077,13 +1098,10 @@ class EnhancedPresetBrowser:
             parent=self.dialog,
         ):
             return
-
         try:
             preset_data = self.manager.get_cached_preset(self.current_preset["id"])
             if not preset_data:
-                preset_data = self.manager.download_preset(
-                    self.current_preset["id"], self.current_preset
-                )
+                preset_data = self.manager.download_preset()
 
             if not preset_data or "appearance" not in preset_data:
                 CTkMessageBox.showerror(
