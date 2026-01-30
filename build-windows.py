@@ -62,7 +62,7 @@ build_exe_options = {
     "zip_exclude_packages": ["er_save_manager", "customtkinter", "customtkinterthemes"],
     "zip_include_packages": ["*"],
     # Exclude unused heavy dependencies found in environment
-    "excludes": ["pyiceberg", "unittest", "pydoc", "html"],
+    "excludes": ["unittest", "pydoc"],
     # Output dir for built executables and dependencies
     "build_exe": f"dist/windows-{VERSION}/er-save-manager_{VERSION}",
     # Optimize .pyc files (2 strips docstrings)
