@@ -1,19 +1,19 @@
-change first tab naming to save fixer and add clear instructions done
-
-
-change all info popups to be custom themed
-implement ng+ editor done
-fix image resolution in browser
-
 implement item spawning + check region unlock
 
- implement hex editor
- 
- implement ng+ editor done
- 
- investigate steam deck appearance browse issue, add logging build which puts out log in a log file
+implement hex editor
 
- fix character editor bg in bright mode
+check and fix worldstate locations
+
+investigate steam deck appearance browse issue, add logging build which puts out log in a log file
+
+change first tab naming to save fixer and add clear instructions done
+change all info popups to be custom themed done
+implement ng+ editor done
+fix image resolution in browser done
+
+implement ng+ editor done
+ 
+ fix character editor bg in bright mode done
  
  make appearance tab scrollable to view buttons done
  
