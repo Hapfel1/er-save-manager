@@ -46,6 +46,7 @@ class CharacterInfoEditor:
         self.char_spirit_level_var = None
         self.char_crimson_flask_var = None
         self.char_cerulean_flask_var = None
+        self.char_ng_level_var = None
 
         self.frame = None
 
@@ -157,7 +158,7 @@ class CharacterInfoEditor:
             progression_frame,
             text="Game Progression",
             font=("Segoe UI", 12, "bold"),
-        ).grid(row=0, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(5, 0))
+        ).grid(row=0, column=0, columnspan=6, sticky=ctk.W, padx=5, pady=(5, 0))
 
         # Additional talisman slots
         ctk.CTkLabel(
@@ -182,6 +183,29 @@ class CharacterInfoEditor:
             textvariable=self.char_spirit_level_var,
             width=100,
         ).grid(row=1, column=3, padx=5, pady=5)
+
+        # NG+ Level (event flag and ClearCount)
+        ctk.CTkLabel(
+            progression_frame,
+            text="NG+ Level:",
+        ).grid(row=1, column=4, sticky=ctk.W, padx=5, pady=5)
+        self.char_ng_level_var = ctk.StringVar(value="NG (0)")
+        ng_combo = ctk.CTkComboBox(
+            progression_frame,
+            variable=self.char_ng_level_var,
+            values=[
+                "NG (0)",
+                "NG+ (1)",
+                "NG+2 (2)",
+                "NG+3 (3)",
+                "NG+4 (4)",
+                "NG+5 (5)",
+                "NG+6 (6)",
+                "NG+7+ (7+)",
+            ],
+            width=140,
+        )
+        ng_combo.grid(row=1, column=5, padx=5, pady=5)
 
         # Flask info
         flask_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
@@ -260,6 +284,27 @@ class CharacterInfoEditor:
                 getattr(char, "max_cerulean_flask_count", 0)
             )
 
+        # Load NG+ level from ClearCount if possible, else from event flags
+        clearcount = None
+        if hasattr(slot, "unk_gamedataman_0x120_or_gamedataman_0x130"):
+            clearcount = getattr(
+                slot, "unk_gamedataman_0x120_or_gamedataman_0x130", None
+            )
+        if clearcount is not None and 0 <= clearcount <= 7:
+            ng_label = [
+                "NG (0)",
+                "NG+ (1)",
+                "NG+2 (2)",
+                "NG+3 (3)",
+                "NG+4 (4)",
+                "NG+5 (5)",
+                "NG+6 (6)",
+                "NG+7+ (7+)",
+            ][clearcount]
+            self.char_ng_level_var.set(ng_label)
+        else:
+            self._load_ng_level(save_file, slot_idx)
+
     def apply_changes(self):
         """Apply character info changes to save file"""
         save_file = self.get_save_file()
@@ -310,6 +355,12 @@ class CharacterInfoEditor:
                 char.max_crimson_flask_count = self.char_crimson_flask_var.get()
                 char.max_cerulean_flask_count = self.char_cerulean_flask_var.get()
 
+                # Set ClearCount (NG+ playthroughs, raw field) from dropdown
+                if hasattr(slot, "unk_gamedataman_0x120_or_gamedataman_0x130"):
+                    ng_string = self.char_ng_level_var.get()
+                    target_level = int(ng_string.split("(")[1].rstrip(")"))
+                    slot.unk_gamedataman_0x120_or_gamedataman_0x130 = target_level
+
                 # Write back using offset
                 if hasattr(slot, "player_game_data_offset"):
                     from io import BytesIO
@@ -330,11 +381,32 @@ class CharacterInfoEditor:
                         char_data
                     )
 
+                    # Apply NG+ level changes (event flag and ClearCount sync)
+                    self._apply_ng_level(
+                        save_file,
+                        slot_idx,
+                        force_clearcount=target_level,
+                    )
+
+                    # Rebuild slot bytes and write to _raw_data before saving
+                    from er_save_manager.parser.slot_rebuild import rebuild_slot
+
+                    rebuilt_bytes = rebuild_slot(slot)
+                    slot_offset = save_file._slot_offsets[slot_idx]
+                    CHECKSUM_SIZE = 0x10
+                    abs_offset = slot_offset + CHECKSUM_SIZE
+                    save_file._raw_data[
+                        abs_offset : abs_offset + len(rebuilt_bytes)
+                    ] = rebuilt_bytes
+
                     # Recalculate checksums and save
                     save_file.recalculate_checksums()
                     save_path = self.get_save_path()
                     if save_path:
                         save_file.to_file(Path(save_path))
+
+                    # Reload character info to reflect changes
+                    self.load_character_info()
 
                     CTkMessageBox.showinfo(
                         "Success",
@@ -354,3 +426,90 @@ class CharacterInfoEditor:
             CTkMessageBox.showerror(
                 "Error", f"Failed to apply changes:\n{str(e)}", parent=self.parent
             )
+
+    def _load_ng_level(self, save_file, slot_idx):
+        """Load NG+ level from event flags using EventFlags.get_flag (matches event flag tab)"""
+        try:
+            from er_save_manager.parser.event_flags import EventFlags
+
+            ng_flag_ids = [50, 51, 52, 53, 54, 55, 56, 57]
+            slot = save_file.characters[slot_idx]
+            flags = slot.event_flags
+
+            ng_bits = []
+            for flag_id in ng_flag_ids:
+                try:
+                    is_set = EventFlags.get_flag(flags, flag_id)
+                except Exception:
+                    is_set = 0
+                ng_bits.append(1 if is_set else 0)
+
+            # Strict logic:
+            # - If only flag 50 is set, show NG (0)
+            # - If only one of 51-57 is set, show that NG+
+            # - Otherwise, default to NG (0)
+            if ng_bits[0] == 1 and sum(ng_bits[1:]) == 0:
+                self.char_ng_level_var.set("NG (0)")
+            elif sum(ng_bits[1:]) == 1 and ng_bits[0] == 0:
+                idx = ng_bits[1:].index(1) + 1
+                ng_label = [
+                    "NG (0)",
+                    "NG+ (1)",
+                    "NG+2 (2)",
+                    "NG+3 (3)",
+                    "NG+4 (4)",
+                    "NG+5 (5)",
+                    "NG+6 (6)",
+                    "NG+7+ (7+)",
+                ][idx]
+                self.char_ng_level_var.set(ng_label)
+            else:
+                self.char_ng_level_var.set("NG (0)")
+        except Exception:
+            self.char_ng_level_var.set("NG (0)")
+
+    def _apply_ng_level(self, save_file, slot_idx, force_clearcount=None):
+        """Apply NG+ level changes to save file using EventFlags.set_flag (matches event flag tab). Optionally force ClearCount."""
+        try:
+            from er_save_manager.parser.event_flags import EventFlags
+
+            # Get the string value from combo box and extract the number
+            ng_string = self.char_ng_level_var.get()
+            target_level = int(ng_string.split("(")[1].rstrip(")"))
+
+            ng_flag_ids = [50, 51, 52, 53, 54, 55, 56, 57]
+            slot = save_file.characters[slot_idx]
+            # Always operate on a mutable buffer
+            flags = (
+                bytearray(slot.event_flags)
+                if not isinstance(slot.event_flags, bytearray)
+                else slot.event_flags
+            )
+
+            # Clear all NG+ level flags first
+            for flag_id in ng_flag_ids:
+                try:
+                    EventFlags.set_flag(flags, flag_id, False)
+                except Exception:
+                    pass
+
+            # Set the target NG+ level flag
+            target_flag_id = ng_flag_ids[target_level]
+            try:
+                EventFlags.set_flag(flags, target_flag_id, True)
+            except Exception:
+                pass
+
+            # Write back as bytes
+            slot.event_flags = bytes(flags)
+
+            # Update ClearCount (the actual playthrough counter)
+            # If force_clearcount is provided, use it, else set to target_level
+            if hasattr(slot, "unk_gamedataman_0x120_or_gamedataman_0x130"):
+                cc_val = (
+                    force_clearcount if force_clearcount is not None else target_level
+                )
+                slot.unk_gamedataman_0x120_or_gamedataman_0x130 = cc_val
+
+        except Exception:
+            raise

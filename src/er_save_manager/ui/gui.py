@@ -10,7 +10,7 @@ import threading
 import tkinter as tk
 from importlib import resources
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, ttk
 
 import customtkinter as ctk
 
@@ -26,6 +26,7 @@ from er_save_manager.ui.editors import (
     InventoryEditor,
     StatsEditor,
 )
+from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.settings import get_settings
 from er_save_manager.ui.tabs import (
     AdvancedToolsTab,
@@ -118,7 +119,7 @@ class SaveManagerGUI:
 
         # Lazy loading flags (track which tabs have been initialized with data)
         self.tabs_loaded = {
-            "Save Inspector": False,
+            "Save Fixer": False,
             "Appearance": False,
             "Advanced Tools": False,
             "SteamID Patcher": False,
@@ -200,11 +201,13 @@ class SaveManagerGUI:
 
         ctk.CTkLabel(
             file_frame,
-            text="Step 1: Select Save File",
+            text="Select a Save File",
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 4))
 
         self.file_path_var = tk.StringVar(value="")
+        # Auto-load when valid file path is entered
+        self.file_path_var.trace("w", self._on_file_path_changed)
 
         path_frame = ctk.CTkFrame(file_frame, corner_radius=8)
         path_frame.pack(fill=tk.X, padx=12, pady=(0, 12))
@@ -233,7 +236,7 @@ class SaveManagerGUI:
 
         ctk.CTkButton(
             buttons_frame,
-            text="Load Save File",
+            text="Reload",
             command=self.load_save,
             width=160,
         ).pack(side=tk.LEFT, padx=6, pady=10)
@@ -273,9 +276,9 @@ class SaveManagerGUI:
     def create_tabs(self):
         """Create all tabs with modular components"""
 
-        # Tab 1: Save Inspector
-        self.notebook.add("Save Inspector")
-        tab_inspector = self.notebook.tab("Save Inspector")
+        # Tab 1: Save Fixer
+        self.notebook.add("Save Fixer")
+        tab_inspector = self.notebook.tab("Save Fixer")
         self.inspector_tab = SaveInspectorTab(
             tab_inspector,
             lambda: self.save_file,
@@ -482,19 +485,26 @@ class SaveManagerGUI:
 
     def load_character_for_edit(self):
         """Load character data into editors"""
+
         if not self.save_file:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.root
+            )
             return
 
         try:
             slot_idx = int(self.char_slot_var.get()) - 1
         except Exception:
-            messagebox.showwarning("Invalid Slot", "Please choose a character slot.")
+            CTkMessageBox.showwarning(
+                "Invalid Slot", "Please choose a character slot.", parent=self.root
+            )
             return
         slot = self.save_file.characters[slot_idx]
 
         if slot.is_empty():
-            messagebox.showwarning("Empty Slot", f"Slot {slot_idx + 1} is empty!")
+            CTkMessageBox.showwarning(
+                "Empty Slot", f"Slot {slot_idx + 1} is empty!", parent=self.root
+            )
             return
 
         # Load into all editors
@@ -551,14 +561,17 @@ class SaveManagerGUI:
         if not found_saves:
             # Show platform-specific help
             if PlatformUtils.is_linux():
-                messagebox.showinfo(
+                CTkMessageBox.showinfo(
                     "No Saves Found",
                     "No Elden Ring save files found.\n\n"
                     "Linux users: Make sure you've launched Elden Ring at least once.\n"
                     "Saves are stored in Steam's compatdata folder.",
+                    parent=self.root,
                 )
             else:
-                messagebox.showwarning("Not Found", "No Elden Ring save files found.")
+                CTkMessageBox.showwarning(
+                    "Not Found", "No Elden Ring save files found.", parent=self.root
+                )
             return
 
         if len(found_saves) == 1:
@@ -641,7 +654,9 @@ class SaveManagerGUI:
             def copy_to_clipboard():
                 self.root.clipboard_clear()
                 self.root.clipboard_append(launch_option)
-                messagebox.showinfo("Copied", "Launch option copied to clipboard!")
+                CTkMessageBox.showinfo(
+                    "Copied", "Launch option copied to clipboard!", parent=self.root
+                )
 
             ttk.Button(
                 option_frame, text="Copy", command=copy_to_clipboard, width=10
@@ -667,9 +682,10 @@ class SaveManagerGUI:
                 target_dir = target_dir / steamid
 
             if target_dir:
-                if messagebox.askyesno(
+                if CTkMessageBox.askyesno(
                     "Copy Save",
                     f"Copy save file to:\n{target_dir}\n\nThe original file will remain in its current location.",
+                    parent=self.root,
                 ):
                     try:
                         target_dir.mkdir(parents=True, exist_ok=True)
@@ -678,13 +694,16 @@ class SaveManagerGUI:
                         new_path = target_dir / Path(save_path).name
                         shutil.copy2(save_path, new_path)
                         self.file_path_var.set(str(new_path))
-                        messagebox.showinfo(
+                        CTkMessageBox.showinfo(
                             "Success",
                             f"Save file copied to:\n{new_path}\n\nOriginal file remains at:\n{save_path}",
+                            parent=self.root,
                         )
                         dialog.destroy()
                     except Exception as e:
-                        messagebox.showerror("Error", f"Failed to move save:\n{e}")
+                        CTkMessageBox.showerror(
+                            "Error", f"Failed to move save:\n{e}", parent=self.root
+                        )
 
         def dont_show_again():
             self.settings.set("show_linux_save_warning", False)
@@ -742,7 +761,7 @@ class SaveManagerGUI:
                 return
 
             # Load data without blocking UI
-            if tab_name == "Save Inspector":
+            if tab_name == "Save Fixer":
                 self.inspector_tab.populate_character_list()
             elif tab_name == "Appearance":
                 self.appearance_tab.load_presets()
@@ -768,8 +787,20 @@ class SaveManagerGUI:
         except Exception:
             pass
 
+    def _on_file_path_changed(self, *args):
+        """Auto-load save file when a valid file path is entered."""
+        save_path = self.file_path_var.get()
+
+        # Only auto-load if path exists and is a valid save file
+        if save_path and os.path.exists(save_path):
+            # Only auto-load if it's a save file named ER0000.* with any extension
+            filename = os.path.basename(save_path).lower()
+            if filename.startswith("er0000."):
+                # Use after() to avoid loading while user is still typing
+                self.root.after(500, self.load_save)
+
     def on_slot_selected(self, slot_index: int):
-        """Handle character slot selection from Save Inspector."""
+        """Handle character slot selection from Fixer tab."""
         self.selected_slot_index = slot_index
 
     def load_save(self):
@@ -777,14 +808,18 @@ class SaveManagerGUI:
         save_path = self.file_path_var.get()
 
         if not save_path or not os.path.exists(save_path):
-            messagebox.showerror("Error", "Please select a valid save file first!")
+            CTkMessageBox.showerror(
+                "Error", "Please select a valid save file first!", parent=self.root
+            )
             return
 
         # Check if game is running
+
         if self.is_game_running():
-            messagebox.showerror(
+            CTkMessageBox.showerror(
                 "Elden Ring is Running!",
                 "Please close Elden Ring before loading the save file.",
+                parent=self.root,
             )
             return
 
@@ -884,10 +919,11 @@ class SaveManagerGUI:
             self.root.after(0, self._finalize_save_load, save_file, save_path)
         except Exception as e:
             error_msg = str(e)
+
             self.root.after(
                 0,
-                lambda: messagebox.showerror(
-                    "Error", f"Failed to load save file:\n{error_msg}"
+                lambda: CTkMessageBox.showerror(
+                    "Error", f"Failed to load save file:\n{error_msg}", parent=self.root
                 ),
             )
             self.root.after(0, lambda: self.status_var.set("Load failed"))
@@ -906,7 +942,9 @@ class SaveManagerGUI:
         self._lazy_load_tab_background(current_tab)
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
-        messagebox.showinfo("Success", "Save file loaded successfully!")
+        CTkMessageBox.showinfo(
+            "Success", "Save file loaded successfully!", parent=self.root
+        )
 
     def show_character_details(self, slot_idx):
         """Show character details dialog"""
@@ -916,10 +954,11 @@ class SaveManagerGUI:
 
     def show_backup_manager_standalone(self):
         """Show backup manager from top button"""
-        from tkinter import messagebox
 
         if not self.save_file or not self.save_path:
-            messagebox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.root
+            )
             return
 
         # Reuse the full-featured BackupManagerTab window (with buttons + sorting)
@@ -937,7 +976,9 @@ class SaveManagerGUI:
             self._backup_tab_helper.show_backup_manager()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open backup manager:\n{str(e)}")
+            CTkMessageBox.showerror(
+                "Error", f"Failed to open backup manager:\n{str(e)}", parent=self.root
+            )
 
 
 def main():

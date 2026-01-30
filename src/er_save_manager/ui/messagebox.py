@@ -12,7 +12,15 @@ class CTkMessageBox:
     """Custom message box dialogs matching the lavender theme"""
 
     @staticmethod
-    def _create_dialog(parent, title, message, icon_type="info", buttons=None):
+    def _create_dialog(
+        parent,
+        title,
+        message,
+        icon_type="info",
+        buttons=None,
+        font_size=16,
+        position=None,
+    ):
         """Create base dialog"""
         from er_save_manager.ui.utils import force_render_dialog
 
@@ -22,10 +30,31 @@ class CTkMessageBox:
         # Calculate dialog size based on message length
         # Estimate: ~80 characters per line at wraplength 280
         line_count = max(3, len(message) // 80 + 1)
-        dialog_height = 180 + (line_count * 20)  # Base height + extra for more lines
-        dialog_width = 550  # Wider to accommodate longer messages
 
-        dialog.geometry(f"{dialog_width}x{dialog_height}")
+        dialog_height = 180 + (line_count * 22)  # Original height
+        dialog_width = 550  # Original width
+
+        # Default: center on parent or screen
+        if position is None:
+            if parent:
+                parent.update_idletasks()
+                px = (
+                    parent.winfo_rootx()
+                    + (parent.winfo_width() // 2)
+                    - (dialog_width // 2)
+                )
+                py = (
+                    parent.winfo_rooty()
+                    + (parent.winfo_height() // 2)
+                    - (dialog_height // 2)
+                )
+            else:
+                screen = dialog.winfo_screenwidth(), dialog.winfo_screenheight()
+                px = (screen[0] // 2) - (dialog_width // 2)
+                py = (screen[1] // 2) - (dialog_height // 2)
+        else:
+            px, py = position
+        dialog.geometry(f"{dialog_width}x{dialog_height}+{px}+{py}")
         dialog.resizable(False, False)
 
         # Force rendering on Linux before grab_set
@@ -57,20 +86,22 @@ class CTkMessageBox:
         content_frame.pack(fill=tk.BOTH, expand=True)
 
         # Icon
+
         icon_label = ctk.CTkLabel(
             content_frame,
             text=icon_symbols.get(icon_type, "ℹ"),
-            font=("Segoe UI", 32, "bold"),
+            font=("Segoe UI Semibold", 32, "bold"),
             text_color=icon_color,
             width=60,
         )
         icon_label.pack(side=tk.LEFT, padx=(0, 15))
 
         # Message
+
         message_label = ctk.CTkLabel(
             content_frame,
             text=message,
-            font=("Segoe UI", 11),
+            font=("Segoe UI Semibold", font_size),
             wraplength=380,
             justify=tk.LEFT,
         )
@@ -94,34 +125,54 @@ class CTkMessageBox:
                     dialog.destroy(),
                 ),
                 width=120,
+                font=("Segoe UI Semibold", 18),
             ).pack(side=tk.LEFT, padx=5)
 
         dialog.wait_window()
-        return result["value"]
+        # If user closes the window without clicking a button, return None
+        return result["value"] if "value" in result else None
 
     @staticmethod
-    def showinfo(title, message, parent=None):
+    def showinfo(title, message, parent=None, font_size=16, position=None):
         """Show info message"""
         CTkMessageBox._create_dialog(
-            parent, title, message, icon_type="info", buttons=[("OK", None)]
+            parent,
+            title,
+            message,
+            icon_type="info",
+            buttons=[("OK", None)],
+            font_size=font_size,
+            position=position,
         )
 
     @staticmethod
-    def showwarning(title, message, parent=None):
+    def showwarning(title, message, parent=None, font_size=16, position=None):
         """Show warning message"""
         CTkMessageBox._create_dialog(
-            parent, title, message, icon_type="warning", buttons=[("OK", None)]
+            parent,
+            title,
+            message,
+            icon_type="warning",
+            buttons=[("OK", None)],
+            font_size=font_size,
+            position=position,
         )
 
     @staticmethod
-    def showerror(title, message, parent=None):
+    def showerror(title, message, parent=None, font_size=16, position=None):
         """Show error message"""
         CTkMessageBox._create_dialog(
-            parent, title, message, icon_type="error", buttons=[("OK", None)]
+            parent,
+            title,
+            message,
+            icon_type="error",
+            buttons=[("OK", None)],
+            font_size=font_size,
+            position=position,
         )
 
     @staticmethod
-    def askyesno(title, message, parent=None):
+    def askyesno(title, message, parent=None, font_size=16, position=None):
         """Ask yes/no question"""
         result = CTkMessageBox._create_dialog(
             parent,
@@ -129,11 +180,13 @@ class CTkMessageBox:
             message,
             icon_type="question",
             buttons=[("Yes", True), ("No", False)],
+            font_size=font_size,
+            position=position,
         )
         return result if result is not None else False
 
     @staticmethod
-    def askokcancel(title, message, parent=None):
+    def askokcancel(title, message, parent=None, font_size=16, position=None):
         """Ask OK/Cancel question"""
         result = CTkMessageBox._create_dialog(
             parent,
@@ -141,11 +194,13 @@ class CTkMessageBox:
             message,
             icon_type="question",
             buttons=[("OK", True), ("Cancel", False)],
+            font_size=font_size,
+            position=position,
         )
         return result if result is not None else False
 
     @staticmethod
-    def askyesnocancel(title, message, parent=None):
+    def askyesnocancel(title, message, parent=None, font_size=16, position=None):
         """Ask yes/no/cancel question"""
         result = CTkMessageBox._create_dialog(
             parent,
@@ -153,5 +208,7 @@ class CTkMessageBox:
             message,
             icon_type="question",
             buttons=[("Yes", True), ("No", False), ("Cancel", None)],
+            font_size=font_size,
+            position=position,
         )
         return result

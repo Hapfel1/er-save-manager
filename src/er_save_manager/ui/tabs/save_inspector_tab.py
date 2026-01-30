@@ -46,7 +46,7 @@ class SaveInspectorTab:
         self.selection_var = tk.StringVar(value="")
 
     def setup_ui(self):
-        """Setup the save inspector tab UI"""
+        """Setup the save fixer tab UI"""
         # Character selection frame
         char_frame = ctk.CTkFrame(self.parent, corner_radius=12)
         char_frame.pack(fill="both", expand=True, pady=(0, 10))
@@ -56,16 +56,27 @@ class SaveInspectorTab:
 
         ctk.CTkLabel(
             header,
-            text="Select Character",
-            font=("Segoe UI", 12, "bold"),
+            text="Save Fixer",
+            font=("Segoe UI", 16, "bold"),
         ).pack(side="left")
 
         ctk.CTkButton(
             header,
-            text="View Details & Issues",
+            text="View All Issues",
             command=self.show_character_details,
             width=180,
         ).pack(side="right")
+
+        # Instructions
+        instructions_frame = ctk.CTkFrame(char_frame, fg_color="transparent")
+        instructions_frame.pack(fill="x", padx=10, pady=(0, 10))
+
+        ctk.CTkLabel(
+            instructions_frame,
+            text="Select a character and click 'View All Issues' to scan for problems and apply fixes",
+            font=("Segoe UI", 11),
+            text_color=("gray40", "gray70"),
+        ).pack(side="left", anchor="w")
 
         self.list_frame = ctk.CTkScrollableFrame(
             char_frame, width=900, height=320, corner_radius=10

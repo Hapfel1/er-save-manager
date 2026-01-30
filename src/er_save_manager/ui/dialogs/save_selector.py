@@ -41,8 +41,14 @@ class SaveSelectorDialog:
 
         width, height = 780, 520
         dialog.update_idletasks()
-        x = (dialog.winfo_screenwidth() // 2) - (width // 2)
-        y = (dialog.winfo_screenheight() // 2) - (height // 2)
+        # Center over parent window
+        parent.update_idletasks()
+        parent_x = parent.winfo_rootx()
+        parent_y = parent.winfo_rooty()
+        parent_width = parent.winfo_width()
+        parent_height = parent.winfo_height()
+        x = parent_x + (parent_width // 2) - (width // 2)
+        y = parent_y + (parent_height // 2) - (height // 2)
         dialog.geometry(f"{width}x{height}+{x}+{y}")
 
         # Force rendering on Linux before grab_set
