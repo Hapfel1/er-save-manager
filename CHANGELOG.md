@@ -3,6 +3,39 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.7.3
+**Released:** January 30, 2026
+
+
+### ✨ New Features
+
+- Add ng+ editor in character info tab ([77f71af](https://github.com/Hapfel1/er-save-manager/commit/77f71afaed0bb9236c7ac72f2254e5705df5f971))
+
+
+
+### 🔧 Bug Fixes
+
+- Changed image display in the preset browser to always display the original image's resolution ([041733d](https://github.com/Hapfel1/er-save-manager/commit/041733db7e32cb082891f47039ac59440424338b))
+
+
+
+### 🎨 User Interface
+
+- Make save fixer description more clear and add auto loading upon selecting a save file ([7124a5a](https://github.com/Hapfel1/er-save-manager/commit/7124a5a794a42e4dc08224f557c6a2e759470bb7))
+
+- Made all message boxes custom and improved the messagebox module ([dfa8685](https://github.com/Hapfel1/er-save-manager/commit/dfa86856f40c532b21240581bafcd257826a4140))
+
+- Centered all popups to be in the middle of the parent's window ([a672e29](https://github.com/Hapfel1/er-save-manager/commit/a672e29a9ed1d7f8d1edd15434f5f0518c04117b))
+
+
+
+### 📖 Documentation
+
+- Update TODO ([8d5eb68](https://github.com/Hapfel1/er-save-manager/commit/8d5eb68096da0b93ace48d3de33a761b0138d355))
+
+
+
+---
 ## 📦 Release 0.7.2
 **Released:** January 30, 2026
 
@@ -343,6 +376,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.7.3]: https://github.com/Hapfel1/er-save-manager/compare/v0.7.2..v0.7.3
 [0.7.2]: https://github.com/Hapfel1/er-save-manager/compare/v0.7.1..v0.7.2
 [0.7.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.7.0..v0.7.1
 [0.7.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.6.2..v0.7.0
