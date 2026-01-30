@@ -1,3 +1,20 @@
+change first tab naming to save fixer and add clear instructions done
+
+
+change all info popups to be custom themed
+implement ng+ editor
+fix image resolution in browser
+
+implement item spawning + check region unlock
+
+ implement hex editor
+ 
+ implement ng+ editor
+ you asked for it and Clay didn't have it, so I looked
+ClearCount is the one marked as unk_gameDataMan_0x120_or_gameDataMan_0x130 immediately after BloodStainData.
+it's 0x120 btw :sip:
+raw regular uint32_t, nothing fancy going on
+ 
  investigate steam deck appearance browse issue, add logging build which puts out log in a log file
 
  fix character editor bg in bright mode
