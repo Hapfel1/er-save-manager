@@ -15,6 +15,7 @@ from pathlib import Path
 
 import tomlkit
 from cx_Freeze import Executable, setup
+from cx_Freeze.finder import ModuleFinder
 
 
 # Prefer version.txt (bump_version writes full metadata); fallback to pyproject
@@ -47,52 +48,21 @@ include_files = [
 ]
 
 # Explicitly include UI submodules for cx_Freeze
-ui_packages = [
-    "er_save_manager.ui",
-    "er_save_manager.ui.editors",
-    "er_save_manager.ui.dialogs",
-    "er_save_manager.ui.widgets",
-    "er_save_manager.ui.tabs",
-]
+ui_packages = []
 
 # Add additional options like packages and excludes
 build_exe_options = {
     # Explicitly include the entire package to handle relative imports
     "packages": ["er_save_manager"] + ui_packages,
     # Include all modules explicitly
-    "includes": [
-        "er_save_manager.ui.gui",
-        "er_save_manager.ui.settings",
-        "er_save_manager.platform",
-        "er_save_manager.ui.editors.equipment_editor",
-        "er_save_manager.ui.editors.stats_editor",
-        "er_save_manager.ui.editors.character_info_editor",
-        "er_save_manager.ui.editors.inventory_editor",
-        "er_save_manager.ui.dialogs.character_details",
-        "er_save_manager.ui.dialogs.save_selector",
-        "er_save_manager.ui.dialogs.preset_browser",
-        "er_save_manager.ui.dialogs.browser_submission",
-        "er_save_manager.ui.dialogs.backup_pruning_warning",
-        "er_save_manager.ui.widgets.scrollable_frame",
-        "er_save_manager.ui.tabs.character_management_tab",
-        "er_save_manager.ui.tabs.save_inspector_tab",
-        "er_save_manager.ui.tabs.appearance_tab",
-        "er_save_manager.ui.tabs.world_state_tab",
-        "er_save_manager.ui.tabs.steamid_patcher_tab",
-        "er_save_manager.ui.tabs.event_flags_tab",
-        "er_save_manager.ui.tabs.gestures_regions_tab",
-        "er_save_manager.ui.tabs.hex_editor_tab",
-        "er_save_manager.ui.tabs.advanced_tools_tab",
-        "er_save_manager.ui.tabs.backup_manager_tab",
-        "er_save_manager.ui.tabs.settings_tab",
-    ],
-    # Force exclude packages if needed
-    "excludes": [],
+    "includes": [],
     "include_files": include_files,
-    # Don't compress into zip - this fixes relative import issues
-    "zip_include_packages": [],
-    # All packages as separate files
-    "zip_exclude_packages": ["*"],
+    # Compress packages into library.zip to reduce file count (bloat)
+    # Exclude specific packages that rely on __file__ for resource loading
+    "zip_exclude_packages": ["er_save_manager", "customtkinter", "customtkinterthemes"],
+    "zip_include_packages": ["*"],
+    # Exclude unused heavy dependencies found in environment
+    "excludes": ["pyiceberg", "unittest", "pydoc", "html"],
     # Output dir for built executables and dependencies
     "build_exe": f"dist/windows-{VERSION}/er-save-manager_{VERSION}",
     # Optimize .pyc files (2 strips docstrings)
@@ -118,6 +88,42 @@ executables = [
         manifest="resources/app.manifest",
     )
 ]
+
+
+# Monkey patch to exclude tzdata and demos from tcl/tk (reduces build size significantly)
+
+original_include_files = ModuleFinder.include_files
+
+
+def patched_include_files(self, source_path, target_path, copy_dependent_files=True):
+    source_path = Path(source_path)
+    target_path = Path(target_path)
+
+    # Intercept tcl/tk copying (which usually copies the whole folder)
+    if str(target_path).startswith("share") and source_path.is_dir():
+        if "tcl" in source_path.name or "tk" in source_path.name:
+            # Manually walk and include files, skipping bloat
+            for file_path in source_path.rglob("*"):
+                if file_path.is_dir():
+                    continue
+
+                # Check for excluded folders
+                rel_path = file_path.relative_to(source_path)
+                if "tzdata" in rel_path.parts or "demos" in rel_path.parts:
+                    continue  # Skip these bulky folders
+
+                # Include this specific file
+                final_target = target_path / rel_path
+                original_include_files(
+                    self, file_path, final_target, copy_dependent_files
+                )
+            return
+
+    # Default behavior for everything else
+    original_include_files(self, source_path, target_path, copy_dependent_files)
+
+
+ModuleFinder.include_files = patched_include_files
 
 # Setup configuration
 setup(
