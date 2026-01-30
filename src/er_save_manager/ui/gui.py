@@ -118,7 +118,7 @@ class SaveManagerGUI:
 
         # Lazy loading flags (track which tabs have been initialized with data)
         self.tabs_loaded = {
-            "Save Inspector": False,
+            "Save Fixer": False,
             "Appearance": False,
             "Advanced Tools": False,
             "SteamID Patcher": False,
@@ -200,11 +200,13 @@ class SaveManagerGUI:
 
         ctk.CTkLabel(
             file_frame,
-            text="Step 1: Select Save File",
+            text="Select a Save File",
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 4))
 
         self.file_path_var = tk.StringVar(value="")
+        # Auto-load when valid file path is entered
+        self.file_path_var.trace("w", self._on_file_path_changed)
 
         path_frame = ctk.CTkFrame(file_frame, corner_radius=8)
         path_frame.pack(fill=tk.X, padx=12, pady=(0, 12))
@@ -233,7 +235,7 @@ class SaveManagerGUI:
 
         ctk.CTkButton(
             buttons_frame,
-            text="Load Save File",
+            text="Reload",
             command=self.load_save,
             width=160,
         ).pack(side=tk.LEFT, padx=6, pady=10)
@@ -273,9 +275,9 @@ class SaveManagerGUI:
     def create_tabs(self):
         """Create all tabs with modular components"""
 
-        # Tab 1: Save Inspector
-        self.notebook.add("Save Inspector")
-        tab_inspector = self.notebook.tab("Save Inspector")
+        # Tab 1: Save Fixer
+        self.notebook.add("Save Fixer")
+        tab_inspector = self.notebook.tab("Save Fixer")
         self.inspector_tab = SaveInspectorTab(
             tab_inspector,
             lambda: self.save_file,
@@ -742,7 +744,7 @@ class SaveManagerGUI:
                 return
 
             # Load data without blocking UI
-            if tab_name == "Save Inspector":
+            if tab_name == "Save Fixer":
                 self.inspector_tab.populate_character_list()
             elif tab_name == "Appearance":
                 self.appearance_tab.load_presets()
@@ -768,8 +770,20 @@ class SaveManagerGUI:
         except Exception:
             pass
 
+    def _on_file_path_changed(self, *args):
+        """Auto-load save file when a valid file path is entered."""
+        save_path = self.file_path_var.get()
+        
+        # Only auto-load if path exists and is a valid save file
+        if save_path and os.path.exists(save_path):
+            # Only auto-load if it's a save file named ER0000.* with any extension
+            filename = os.path.basename(save_path).lower()
+            if filename.startswith('er0000.'):
+                # Use after() to avoid loading while user is still typing
+                self.root.after(500, self.load_save)
+
     def on_slot_selected(self, slot_index: int):
-        """Handle character slot selection from Save Inspector."""
+        """Handle character slot selection from Fixer tab."""
         self.selected_slot_index = slot_index
 
     def load_save(self):
