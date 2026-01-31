@@ -636,38 +636,37 @@ class AppearanceTab:
                 row=1, column=0, sticky=tk.W, pady=5
             )
 
-            preset_var = tk.StringVar(value="")
             preset_names = [f"Preset {i + 1}" for i in range(len(presets))]
             preset_combo = ctk.CTkComboBox(
                 frame,
-                textvariable=preset_var,
                 values=preset_names,
                 state="readonly",
                 width=15,
+                font=("Segoe UI", 11),
             )
             preset_combo.grid(row=1, column=1, padx=10, pady=5)
-            preset_combo.current(0)
+            preset_combo.set(preset_names[0])
 
             ctk.CTkLabel(frame, text="Import to Slot:").grid(
                 row=2, column=0, sticky=tk.W, pady=5
             )
 
-            slot_var = tk.IntVar(value=1)
             slot_combo = ctk.CTkComboBox(
                 frame,
-                textvariable=slot_var,
-                values=list(range(1, 16)),
+                values=[str(i) for i in range(1, 16)],
                 state="readonly",
                 width=15,
+                font=("Segoe UI", 11),
             )
             slot_combo.grid(row=2, column=1, padx=10, pady=5)
+            slot_combo.set("1")
 
             def do_import():
                 try:
                     from er_save_manager.backup.manager import BackupManager
 
-                    source_idx = preset_combo.current()
-                    target_slot = slot_var.get() - 1
+                    source_idx = preset_combo.cget("values").index(preset_combo.get())
+                    target_slot = int(slot_combo.get()) - 1
 
                     if source_idx < 0 or target_slot < 0:
                         CTkMessageBox.showwarning(
