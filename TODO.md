@@ -1,3 +1,11 @@
+comments fix/change
+
+troubleshooter
+
+Add VERSION + update notice
+
+default theme dark mode
+
 implement item spawning + check region unlock
 
 implement hex editor
