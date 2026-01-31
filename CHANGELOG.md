@@ -3,6 +3,23 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.7.4
+**Released:** January 31, 2026
+
+
+### 🔧 Bug Fixes
+
+- Fixed JSON import error msg ([36c73c1](https://github.com/Hapfel1/er-save-manager/commit/36c73c11f1d47fe9937b57b6757e796d83d81d66))
+
+
+
+### 🎨 User Interface
+
+- Change default theme to dark ([6516a42](https://github.com/Hapfel1/er-save-manager/commit/6516a42182316f9065677645df424c9087ca2c4f))
+
+
+
+---
 ## 📦 Release 0.7.3
 **Released:** January 30, 2026
 
@@ -376,6 +393,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.7.4]: https://github.com/Hapfel1/er-save-manager/compare/v0.7.3..v0.7.4
 [0.7.3]: https://github.com/Hapfel1/er-save-manager/compare/v0.7.2..v0.7.3
 [0.7.2]: https://github.com/Hapfel1/er-save-manager/compare/v0.7.1..v0.7.2
 [0.7.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.7.0..v0.7.1
