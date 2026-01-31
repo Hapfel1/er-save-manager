@@ -85,10 +85,14 @@ class SaveManagerGUI:
         # Initialize settings
         self.settings = get_settings()
 
-        # Configure customtkinter appearance based on saved theme
-        theme_name = self.settings.get("theme", "default")
-        appearance = "dark" if theme_name == "dark" else "light"
-        ctk.set_appearance_mode(appearance)
+        # Configure customtkinter appearance based on saved theme (default to dark)
+        theme_name = self.settings.get("theme", None)
+        if theme_name is None or theme_name == "dark":
+            ctk.set_appearance_mode("dark")
+            theme_name = "dark"
+        elif theme_name == "bright" or theme_name == "default":
+            ctk.set_appearance_mode("light")
+            theme_name = "bright"
 
         # Try to load lavender theme from customtkinterthemes
         try:

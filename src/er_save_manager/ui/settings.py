@@ -40,7 +40,7 @@ class Settings:
             "max_backups": 50,
             "remember_last_location": True,
             "last_save_path": "",
-            "theme": "default",
+            "theme": "dark",
             "show_linux_save_warning": True,
             "show_backup_pruning_warning": True,
         }

@@ -32,14 +32,17 @@ class ThemeManager:
         "button_fg": "#cdd6f4",
     }
 
-    def __init__(self, theme: str = "default"):
+    def __init__(self, theme: str = "dark"):
         """Initialize theme manager.
 
         Args:
-            theme: "default" for light mode, "dark" for dark mode
+            theme: "bright" for light mode, "dark" for dark mode
         """
+        # Force dark mode unless theme is explicitly 'bright'
+        if not theme or theme not in ("bright", "dark"):
+            theme = "dark"
         self.theme = theme
-        self.colors = self.LIGHT_COLORS if theme == "default" else self.DARK_COLORS
+        self.colors = self.LIGHT_COLORS if theme == "bright" else self.DARK_COLORS
 
     def apply_theme(self, style: ttk.Style):
         """Apply theme to ttk.Style.
@@ -211,10 +214,13 @@ class ThemeManager:
         """Change to a different theme.
 
         Args:
-            theme: "default" for light mode, "dark" for dark mode
+            theme: "bright" for light mode, "dark" for dark mode
         """
+        # Force dark mode unless theme is explicitly 'bright'
+        if not theme or theme not in ("bright", "dark"):
+            theme = "dark"
         self.theme = theme
-        self.colors = self.LIGHT_COLORS if theme == "default" else self.DARK_COLORS
+        self.colors = self.LIGHT_COLORS if theme == "bright" else self.DARK_COLORS
 
     def get_color(self, key: str) -> str:
         """Get a color from current theme.
