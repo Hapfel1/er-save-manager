@@ -636,7 +636,6 @@ class AppearanceTab:
                 row=1, column=0, sticky=tk.W, pady=5
             )
 
-
             preset_names = [f"Preset {i + 1}" for i in range(len(presets))]
             preset_combo = ctk.CTkComboBox(
                 frame,
@@ -651,7 +650,6 @@ class AppearanceTab:
             ctk.CTkLabel(frame, text="Import to Slot:").grid(
                 row=2, column=0, sticky=tk.W, pady=5
             )
-
 
             slot_combo = ctk.CTkComboBox(
                 frame,
