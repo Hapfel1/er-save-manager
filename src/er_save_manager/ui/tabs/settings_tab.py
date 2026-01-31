@@ -19,6 +19,13 @@ class SettingsTab:
 
     def setup_ui(self):
         """Create settings UI."""
+        # Set dark mode on startup if theme is not set or is dark
+        theme_value = self.settings.get("theme", None)
+        if theme_value is None or theme_value == "dark":
+            ctk.set_appearance_mode("dark")
+        elif theme_value == "bright":
+            ctk.set_appearance_mode("light")
+
         # Main container with scrolling
         scroll_frame = ctk.CTkScrollableFrame(self.parent, corner_radius=12)
         scroll_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -188,11 +195,15 @@ class SettingsTab:
 
         ctk.CTkLabel(theme_frame, text="Theme:").pack(side="left", padx=(0, 10))
 
-        self.theme_var = tk.StringVar(value=self.settings.get("theme", "default"))
+        # Map old 'default' to 'bright' for compatibility
+        theme_value = self.settings.get("theme", "dark")
+        if theme_value == "default":
+            theme_value = "bright"
+        self.theme_var = tk.StringVar(value=theme_value)
         theme_combo = ctk.CTkComboBox(
             theme_frame,
             variable=self.theme_var,
-            values=["default", "dark"],
+            values=["bright", "dark"],
             state="readonly",
             width=150,
             command=self._on_theme_changed,
@@ -221,13 +232,14 @@ class SettingsTab:
             self.show_linux_save_warning_var.set(True)
             self.show_backup_pruning_warning_var.set(True)
             self.max_backups_var.set(50)
-            self.theme_var.set("default")
+            self.theme_var.set("dark")
 
             CTkMessageBox.showinfo("Success", "Settings have been reset to defaults.")
 
     def _on_theme_changed(self, value=None):
         """Handle theme change."""
         theme = self.theme_var.get()
+        # Save as 'bright' or 'dark', but if 'bright', you may want to map to 'default' for legacy compatibility
         self.settings.set("theme", theme)
         CTkMessageBox.showinfo(
             "Theme Changed",
