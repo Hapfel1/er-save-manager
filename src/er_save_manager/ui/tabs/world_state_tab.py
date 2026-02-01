@@ -300,7 +300,7 @@ class WorldStateTab:
         )
         self.count_label.pack(side=tk.LEFT)
 
-        # Teleport button - pack BEFORE listbox to ensure visibility
+        # Teleport button - pack before listbox to ensure visibility
         ctk.CTkButton(
             self.content_frame,
             text="Teleport to Selected Location",

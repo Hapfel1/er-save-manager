@@ -527,7 +527,6 @@ class SaveManagerGUI:
     # File operations
     def browse_file(self):
         """Browse for save file"""
-        # On Linux, try to start in a visible directory since .local is hidden
         initialdir = (
             str(self.default_save_path)
             if self.default_save_path.exists()

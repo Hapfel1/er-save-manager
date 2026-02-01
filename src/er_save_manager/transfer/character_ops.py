@@ -76,7 +76,6 @@ class CharacterOperations:
             raise RuntimeError("USER_DATA_10 not parsed")
 
         # Use actual parsed structure to find ProfileSummary location
-        # We need to calculate where ProfileSummary starts within USER_DATA_10
         from io import BytesIO
 
         # Simulate reading up to ProfileSummary to get offset
@@ -93,7 +92,7 @@ class CharacterOperations:
         # SteamID (8 bytes)
         f.read(8)
 
-        # Settings - read until we match the size
+        # Settings - read until size matched
         settings_start = f.tell()
         # Settings expected to take 0x140 bytes total (with padding)
         f.seek(settings_start + 0x140)
@@ -101,7 +100,6 @@ class CharacterOperations:
         # MenuSystemSaveLoad (0x1808 bytes)
         f.read(0x1808)
 
-        # Now we're at ProfileSummary
         profile_summary_start = f.tell()
 
         # IsProfileActive[10] - 10 bytes
@@ -341,7 +339,6 @@ class CharacterOperations:
     def _update_profile_summary_from_slot(save: Save, slot_index: int) -> None:
         """Update profile summary from the character data in the slot."""
         # This reads name/level from the slot and updates the summary
-        # For now, we'll keep existing summary logic from the copy
         pass
 
     @staticmethod
@@ -437,7 +434,7 @@ class CharacterOperations:
         try:
             save.user_data_10_parsed = UserData10.read(f, save.is_ps)
         except Exception as e:
-            # If parsing fails, at least clear the old parsed data
+            # If parsing fails, clear the old parsed data
             save.user_data_10_parsed = None
             print(f"Warning: Failed to re-parse USER_DATA_10: {e}")
 
