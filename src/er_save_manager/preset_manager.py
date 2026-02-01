@@ -52,7 +52,7 @@ class PresetManager:
         self.full_images_dir.mkdir(exist_ok=True)
         print(f"[Image Cache] Full images directory: {self.full_images_dir}")
 
-        # GitHub repo URL - update this to your actual repo
+        # GitHub repo URL
         self.base_url = (
             "https://raw.githubusercontent.com/Hapfel1/er-character-presets/main/"
         )

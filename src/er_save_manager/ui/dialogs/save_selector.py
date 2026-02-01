@@ -63,7 +63,7 @@ class SaveSelectorDialog:
         )
         title.pack(padx=15, pady=(12, 6))
 
-        # Scrollable list with click-to-select rows (list-like instead of radio dots)
+        # Scrollable list with click-to-select rows
         selection_var = ctk.StringVar(value=str(saves[0]) if saves else "")
 
         from er_save_manager.ui.utils import bind_mousewheel
