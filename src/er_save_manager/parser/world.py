@@ -420,7 +420,7 @@ class FieldArea:
         obj = cls()
         obj.size = struct.unpack("<i", f.read(4))[0]
 
-        # Size field indicates how many DATA bytes to read (NOT including the size field itself)
+        # Size field indicates how many DATA bytes to read (not including the size field itself)
         if obj.size > 0 and obj.size < 0x10000:
             obj.data = f.read(obj.size)
         else:
@@ -438,7 +438,7 @@ class FieldArea:
 
 
 # ============================================================================
-# WORLD AREA (Complex nested structure)
+# WORLD AREA
 # ============================================================================
 
 
@@ -686,7 +686,7 @@ class StageMan:
         obj = cls()
         obj.count = struct.unpack("<i", f.read(4))[0]
 
-        # CRITICAL: Validate count to prevent hanging on corrupted data
+        #  Validate count to prevent hanging on corrupted data
         if obj.count > 0 and obj.count < 1000:  # Reasonable count limit
             entry_size = (total_size - 4) // obj.count
             # Also validate entry_size is reasonable

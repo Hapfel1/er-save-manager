@@ -89,7 +89,7 @@ class UserDataX:
     # Player data (0x1B0 = 432 bytes)
     player_game_data: PlayerGameData = field(default_factory=PlayerGameData)
 
-    # SP Effects (13 entries ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â 16 bytes = 208 bytes, but actually reads different)
+    # SP Effects (13 entries, 16 bytes = 208 bytes, but actually reads different)
     sp_effects: list[SPEffect] = field(default_factory=list)
 
     # Equipment structures
@@ -124,7 +124,7 @@ class UserDataX:
     # Face data (0x12F = 303 bytes when in_profile_summary=False)
     face_data: FaceData = field(default_factory=FaceData)
 
-    # Inventory storage (CRITICAL: 0x780 common, 0x80 key)
+    # Inventory storage (0x780 common, 0x80 key)
     inventory_storage_box: Inventory = field(default_factory=Inventory)
 
     # Gestures and regions
@@ -255,7 +255,7 @@ class UserDataX:
 
         f.seek(original_pos)
 
-        # Only return if we have a STRONG match (score >= 80)
+        # Only return if  STRONG match (score >= 80)
         if best_score >= 80 and best_match is not None:
             return best_match
 

@@ -2,7 +2,7 @@
 
 Implements full save serialization similar to the Rust implementation.
 When modifications are made to variable-size structures like Regions,
-we rebuild the entire slot by serializing all components in order.
+the entire slot will be rebuilt by serializing all components in order.
 """
 
 from __future__ import annotations
@@ -317,7 +317,7 @@ def rebuild_slot_with_map(slot: UserDataX) -> tuple[bytes, list[dict[str, Any]]]
     current_size = buf.tell()
     if current_size < slot_size:
         if hasattr(slot, "rest") and slot.rest:
-            # Don't write the rest field - we rebuild everything properly
+            # Don't write the rest field - rebuild everything properly
             pass
             # # Write the rest field if available
             # write_section("rest_padding", lambda: buf.write(slot.rest))
