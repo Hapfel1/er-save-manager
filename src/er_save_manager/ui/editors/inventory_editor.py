@@ -609,9 +609,6 @@ class InventoryEditor:
 
                 time.sleep(0.1)
 
-            # DO NOT call refresh_inventory() - it reloads from disk and overwrites our changes!
-            # Instead, just show success message
-
             CTkMessageBox.showinfo(
                 "Success",
                 f"Added item {item_id} (x{quantity}) +{upgrade} to {location}!\nPlease reload the save to see changes.",

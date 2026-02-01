@@ -81,7 +81,7 @@ class Save:
         Load and parse save file from disk.
 
         Args:
-            filepath: Path to .sl2 or .co2 save file
+            filepath: Path to save file
 
         Returns:
             Save instance with all data parsed
@@ -96,7 +96,7 @@ class Save:
         # Track original filepath for save() method
         obj._original_filepath = filepath
 
-        # CRITICAL: Force bytearray, not bytes
+        # Force bytearray, not bytes
         if isinstance(data, bytes):
             obj._raw_data = bytearray(data)
         else:
@@ -150,7 +150,7 @@ class Save:
             if not obj.is_ps:
                 checksum = f.read(16)
 
-                # Check if we got the full checksum
+                # Check if full checksum
                 if len(checksum) < 16:
                     obj.character_slots.append(UserDataX())
                     break  # No more slots
@@ -821,7 +821,7 @@ def load_save(filepath: str) -> Save:
     Convenience function to load a save file.
 
     Args:
-        filepath: Path to .sl2 or .co2 file
+        filepath: Path to file
 
     Returns:
         Parsed Save object

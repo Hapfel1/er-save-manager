@@ -239,7 +239,6 @@ class SettingsTab:
     def _on_theme_changed(self, value=None):
         """Handle theme change."""
         theme = self.theme_var.get()
-        # Save as 'bright' or 'dark', but if 'bright', you may want to map to 'default' for legacy compatibility
         self.settings.set("theme", theme)
         CTkMessageBox.showinfo(
             "Theme Changed",

@@ -391,12 +391,12 @@ class CorruptionFixer:
             # Set blocking flag OFF
             EventFlags.set_flag(event_flags, FixFlags.RANNI_BLOCKING_FLAG, False)
 
-            # Enable all progression flags (skip any that don't exist in BST)
+            # Enable all progression flags
             for flag_id in FixFlags.RANNI_FLAGS_TO_ENABLE:
                 try:
                     EventFlags.set_flag(event_flags, flag_id, True)
                 except ValueError:
-                    # Skip flags not in BST (some may be invalid/unused)
+                    # Skip flags not in BST
                     continue
 
             return True

@@ -92,7 +92,7 @@ class WorldStateEditor:
             coords.z = location.coordinates.z
 
             # Also update unknown secondary coordinates to match
-            # (Rust version has player_coords2 which seems to be a duplicate)
+            # (player_coords2 seems to be a duplicate)
             unk_coords = self.slot.player_coordinates.unk_coordinates
             unk_coords.x = location.coordinates.x
             unk_coords.y = location.coordinates.y

@@ -40,7 +40,7 @@ def bump_version(new_version: str) -> None:
 
     print(f"Version updated: {old_version} -> {new_version}")
 
-    # Update version.txt with full version metadata for easy inspection and tooling
+    # Update version.txt with full version metadata
     version_txt_path = Path(__file__).parent.parent / "resources" / "version.txt"
     version_txt_content = (
         "version=" + windows_version_str + "\n"
@@ -60,7 +60,7 @@ def bump_version(new_version: str) -> None:
     if manifest_path.exists():
         manifest_content = manifest_path.read_text(encoding="utf-8")
 
-        # Normalize XML declaration version to 1.0 (avoid accidental replacement)
+        # Normalize XML declaration version to 1.0
         manifest_content = re.sub(
             r'(<?xml[^>]*version=")[^"]+("[^>]*\?>)',
             r"\g<1>1.0\g<2>",

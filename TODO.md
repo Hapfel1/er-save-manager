@@ -1,10 +1,8 @@
-comments fix/change
+comments fix/change done
 
 troubleshooter
 
 Add VERSION + update notice
-
-default theme dark mode
 
 implement item spawning + check region unlock
 
