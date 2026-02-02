@@ -162,9 +162,15 @@ class EnhancedPresetBrowser:
             font=("Segoe UI", 18, "bold"),
         ).pack(side=ctk.LEFT)
 
-        ctk.CTkButton(top_frame, text="Refresh", command=self.refresh_presets).pack(
-            side=ctk.RIGHT
-        )
+        button_frame = ctk.CTkFrame(top_frame, fg_color="transparent")
+        button_frame.pack(side=ctk.RIGHT)
+
+        ctk.CTkButton(
+            button_frame, text="View Log", command=self._show_log_viewer, width=90
+        ).pack(side=ctk.LEFT, padx=(0, 8))
+        ctk.CTkButton(
+            button_frame, text="Refresh", command=self.refresh_presets, width=90
+        ).pack(side=ctk.LEFT)
 
         filter_frame = ctk.CTkFrame(main_frame)
         filter_frame.pack(fill=ctk.X, pady=(0, 14))
@@ -578,6 +584,102 @@ class EnhancedPresetBrowser:
             print(f"Original error: {exc}")
             print(f"Log saved to: {self.LOG_PATH}")
 
+    def _show_log_viewer(self):
+        """Show log file contents in a dialog for easy access."""
+        from er_save_manager.ui.utils import force_render_dialog
+
+        log_dialog = ctk.CTkToplevel(self.dialog)
+        log_dialog.title("Preset Browser Log")
+        log_dialog.geometry("900x600")
+        log_dialog.transient(self.dialog)
+
+        force_render_dialog(log_dialog)
+        log_dialog.grab_set()
+
+        frame = ctk.CTkFrame(log_dialog)
+        frame.pack(fill=ctk.BOTH, expand=True, padx=14, pady=14)
+
+        ctk.CTkLabel(
+            frame,
+            text="Preset Browser Debug Log",
+            font=("Segoe UI", 14, "bold"),
+        ).pack(anchor=ctk.W, pady=(0, 10))
+
+        # Log file path (selectable)
+        path_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        path_frame.pack(fill=ctk.X, pady=(0, 10))
+        ctk.CTkLabel(path_frame, text="Log location:", font=("Segoe UI", 10)).pack(
+            anchor=ctk.W, pady=(0, 4)
+        )
+        path_text = ctk.CTkTextbox(path_frame, height=30, wrap="none")
+        path_text.pack(fill=ctk.X)
+        path_text.insert("1.0", self.LOG_PATH)
+        path_text.configure(state="disabled")
+
+        # Log contents
+        ctk.CTkLabel(frame, text="Log contents:", font=("Segoe UI", 10)).pack(
+            anchor=ctk.W, pady=(10, 4)
+        )
+
+        log_text = ctk.CTkTextbox(frame, wrap="none")
+        log_text.pack(fill=ctk.BOTH, expand=True, pady=(0, 10))
+
+        try:
+            if os.path.exists(self.LOG_PATH):
+                with open(self.LOG_PATH, encoding="utf-8") as f:
+                    content = f.read()
+                    if content:
+                        log_text.insert("1.0", content)
+                        # Scroll to bottom to show most recent entries
+                        log_text.see("end")
+                    else:
+                        log_text.insert("1.0", "(Log file is empty)")
+            else:
+                log_text.insert(
+                    "1.0",
+                    f"Log file not found at:\n{self.LOG_PATH}\n\n"
+                    "The log file will be created when the preset browser encounters an issue.",
+                )
+        except Exception as e:
+            log_text.insert("1.0", f"Error reading log file: {e}")
+
+        log_text.configure(state="disabled")
+
+        button_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        button_frame.pack(fill=ctk.X)
+
+        ctk.CTkButton(
+            button_frame,
+            text="Refresh",
+            command=lambda: self._refresh_log_viewer(log_text),
+            width=120,
+        ).pack(side=ctk.LEFT, padx=(0, 8))
+
+        ctk.CTkButton(
+            button_frame, text="Close", command=log_dialog.destroy, width=120
+        ).pack(side=ctk.LEFT)
+
+    def _refresh_log_viewer(self, log_text: ctk.CTkTextbox):
+        """Refresh the log viewer with current log contents."""
+        log_text.configure(state="normal")
+        log_text.delete("1.0", "end")
+
+        try:
+            if os.path.exists(self.LOG_PATH):
+                with open(self.LOG_PATH, encoding="utf-8") as f:
+                    content = f.read()
+                    if content:
+                        log_text.insert("1.0", content)
+                        log_text.see("end")
+                    else:
+                        log_text.insert("1.0", "(Log file is empty)")
+            else:
+                log_text.insert("1.0", f"Log file not found at:\n{self.LOG_PATH}")
+        except Exception as e:
+            log_text.insert("1.0", f"Error reading log file: {e}")
+
+        log_text.configure(state="disabled")
+
     def _make_ctk_image(self, img: Image.Image, size: tuple[int, int]) -> ctk.CTkImage:
         try:
             return ctk.CTkImage(light_image=img, dark_image=img, size=size)
@@ -757,13 +859,24 @@ class EnhancedPresetBrowser:
 
     # ---------------------- Browse logic ----------------------
     def refresh_presets(self):
+        logging.info("=" * 60)
+        logging.info("refresh_presets() called")
         self.status_var.set("Fetching presets from GitHub...")
         self.dialog.update_idletasks()
 
         try:
+            logging.info("Calling manager.fetch_index(force_refresh=True)...")
             index_data = self.manager.fetch_index(force_refresh=True)
+            logging.info(f"fetch_index() returned: {type(index_data)}")
+            logging.info(
+                f"index_data keys: {index_data.keys() if isinstance(index_data, dict) else 'N/A'}"
+            )
+
             self.all_presets = index_data.get("presets", [])
+            logging.info(f"Extracted {len(self.all_presets)} presets from index_data")
+
             if not self.all_presets:
+                logging.warning("No presets found in index_data!")
                 self.status_var.set("No presets available yet")
                 return
 
@@ -822,7 +935,13 @@ class EnhancedPresetBrowser:
 
             # Schedule async load after 10ms to allow UI to render first
             self.dialog.after(10, load_metrics_async)
+
+            logging.info("refresh_presets() completed successfully")
+            logging.info("=" * 60)
         except Exception as exc:  # pragma: no cover - UI path
+            logging.error(f"Error in refresh_presets(): {exc}")
+            logging.error(f"Traceback:\n{traceback.format_exc()}")
+            logging.error("=" * 60)
             self.status_var.set(f"Error loading presets: {exc}")
 
     def apply_filters(self):
