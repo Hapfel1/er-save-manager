@@ -11,6 +11,7 @@ from er_save_manager.parser import (
     UserDataX,
     load_save,
 )
+from er_save_manager.version_checker import VersionChecker
 
 __all__ = [
     "Save",
@@ -22,6 +23,7 @@ __all__ = [
     "EventFlags",
     "CorruptionDetector",
     "CorruptionFixer",
+    "VersionChecker",
 ]
 
-__version__ = "1.0.0"
+__version__ = "0.7.4"

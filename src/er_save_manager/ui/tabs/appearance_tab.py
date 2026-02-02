@@ -131,24 +131,10 @@ class AppearanceTab:
 
     def open_preset_browser(self):
         """Open enhanced preset browser dialog."""
-        from er_save_manager.ui.dialogs.preset_browser import (
-            EnhancedPresetBrowser,
-            PresetBrowserDialog,
-        )
+        from er_save_manager.ui.dialogs.preset_browser import EnhancedPresetBrowser
 
         browser = EnhancedPresetBrowser(self.parent, self)
-
-        try:
-            index = browser.manager.fetch_index()
-            presets = index.get("presets", [])
-
-            if presets:
-                browser.show()
-            else:
-                PresetBrowserDialog.show_coming_soon(self.parent)
-        except Exception as e:
-            print(f"Failed to fetch presets: {e}")
-            PresetBrowserDialog.show_coming_soon(self.parent)
+        browser.show()
 
     def select_preset(self, slot_idx, frame):
         """Handle preset selection"""

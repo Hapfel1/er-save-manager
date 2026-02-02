@@ -102,9 +102,9 @@ class EnhancedPresetBrowser:
             font=("Segoe UI", 18, "bold"),
         ).pack(side=ctk.LEFT)
 
-        ctk.CTkButton(top_frame, text="Refresh", command=self.refresh_presets).pack(
-            side=ctk.RIGHT
-        )
+        ctk.CTkButton(
+            top_frame, text="Refresh", command=self.refresh_presets, width=90
+        ).pack(side=ctk.RIGHT)
 
         filter_frame = ctk.CTkFrame(main_frame)
         filter_frame.pack(fill=ctk.X, pady=(0, 14))
@@ -205,8 +205,13 @@ class EnhancedPresetBrowser:
 
     # ---------------------- Contribute tab ----------------------
     def setup_contribute_tab(self):
-        main_frame = ctk.CTkFrame(self.contribute_tab)
-        main_frame.pack(fill=ctk.BOTH, expand=True, padx=12, pady=12)
+        # Make the contribute tab scrollable for smaller screens
+        scrollable_frame = ctk.CTkScrollableFrame(self.contribute_tab)
+        scrollable_frame.pack(fill=ctk.BOTH, expand=True, padx=12, pady=12)
+        bind_mousewheel(scrollable_frame)
+
+        main_frame = ctk.CTkFrame(scrollable_frame, fg_color="transparent")
+        main_frame.pack(fill=ctk.BOTH, expand=True)
         main_frame.rowconfigure(1, weight=1)
 
         ctk.CTkLabel(
@@ -619,6 +624,7 @@ class EnhancedPresetBrowser:
         try:
             index_data = self.manager.fetch_index(force_refresh=True)
             self.all_presets = index_data.get("presets", [])
+
             if not self.all_presets:
                 self.status_var.set("No presets available yet")
                 return
@@ -678,6 +684,7 @@ class EnhancedPresetBrowser:
 
             # Schedule async load after 10ms to allow UI to render first
             self.dialog.after(10, load_metrics_async)
+
         except Exception as exc:  # pragma: no cover - UI path
             self.status_var.set(f"Error loading presets: {exc}")
 

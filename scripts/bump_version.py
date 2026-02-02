@@ -55,6 +55,24 @@ def bump_version(new_version: str) -> None:
     version_txt_path.write_text(version_txt_content, encoding="utf-8")
     print(f"Updated {version_txt_path.name} to version {windows_version_str}")
 
+    # Update __init__.py __version__ variable
+    init_py_path = (
+        Path(__file__).parent.parent / "src" / "er_save_manager" / "__init__.py"
+    )
+    if init_py_path.exists():
+        init_content = init_py_path.read_text(encoding="utf-8")
+
+        # Replace __version__ = "old_version" with __version__ = "new_version"
+        updated_init = re.sub(
+            r'(__version__\s*=\s*")[^"]+(")',
+            rf"\g<1>{new_version}\g<2>",
+            init_content,
+            count=1,
+        )
+
+        init_py_path.write_text(updated_init, encoding="utf-8")
+        print(f"Updated {init_py_path.name} __version__ to {new_version}")
+
     # Update app.manifest file - replace assemblyIdentity version attribute
     manifest_path = Path(__file__).parent.parent / "resources" / "app.manifest"
     if manifest_path.exists():

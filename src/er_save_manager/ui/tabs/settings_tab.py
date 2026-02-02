@@ -115,6 +115,26 @@ class SettingsTab:
             text="Linux: Warns when save is not in default compatdata folder.",
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
+        ).pack(anchor="w", padx=32, pady=(0, 10))
+
+        # Update Notifications
+        self.show_update_notifications_var = tk.BooleanVar(
+            value=self.settings.get("show_update_notifications", True)
+        )
+        ctk.CTkCheckBox(
+            frame,
+            text="Show update notifications on startup",
+            variable=self.show_update_notifications_var,
+            command=lambda: self.settings.set(
+                "show_update_notifications", self.show_update_notifications_var.get()
+            ),
+        ).pack(anchor="w", padx=12, pady=5)
+
+        ctk.CTkLabel(
+            frame,
+            text="Check for new versions and show notification dialog.",
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
     def _create_backup_settings(self, parent):
@@ -230,6 +250,7 @@ class SettingsTab:
             self.show_eac_warning_var.set(True)
             self.remember_location_var.set(True)
             self.show_linux_save_warning_var.set(True)
+            self.show_update_notifications_var.set(True)
             self.show_backup_pruning_warning_var.set(True)
             self.max_backups_var.set(50)
             self.theme_var.set("dark")

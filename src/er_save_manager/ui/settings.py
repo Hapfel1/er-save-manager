@@ -43,6 +43,7 @@ class Settings:
             "theme": "dark",
             "show_linux_save_warning": True,
             "show_backup_pruning_warning": True,
+            "show_update_notifications": True,
         }
 
     def save(self):
