@@ -383,9 +383,7 @@ class HexEditorTab:
                 f"Found {len(invalid)} invalid checksum(s).\nUse 'Fix All Invalid' to repair them.",
             )
         else:
-            CTkMessageBox.showinfo(
-                "All Valid", "All checksums are valid!"
-            )
+            CTkMessageBox.showinfo("All Valid", "All checksums are valid!")
 
     def _on_fix_checksum(self, slot_index: int):
         """Fix checksum for a specific slot."""

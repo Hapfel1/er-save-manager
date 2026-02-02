@@ -7,7 +7,6 @@ PC saves have MD5 checksums (16 bytes) before each character slot.
 
 import hashlib
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -19,8 +18,8 @@ class ChecksumInfo:
     data_offset: int  # Where the character data starts
     data_size: int  # Size of character data to hash
     expected_checksum: bytes  # Current checksum in file
-    calculated_checksum: Optional[bytes] = None  # Recalculated checksum
-    is_valid: Optional[bool] = None  # Whether checksums match
+    calculated_checksum: bytes | None = None  # Recalculated checksum
+    is_valid: bool | None = None  # Whether checksums match
 
 
 class ChecksumValidator:
@@ -53,10 +52,9 @@ class ChecksumValidator:
             data_offset = checksum_offset + self.CHECKSUM_SIZE
 
             # Check if offsets are within file bounds
-            if (
-                data_offset + self.DATA_SIZE > len(self.save_data)
-                or checksum_offset + self.CHECKSUM_SIZE > len(self.save_data)
-            ):
+            if data_offset + self.DATA_SIZE > len(
+                self.save_data
+            ) or checksum_offset + self.CHECKSUM_SIZE > len(self.save_data):
                 break
 
             # Extract checksum from file
@@ -123,7 +121,7 @@ class ChecksumValidator:
 
         return hashlib.md5(character_data).digest()
 
-    def get_slot_for_offset(self, offset: int) -> Optional[int]:
+    def get_slot_for_offset(self, offset: int) -> int | None:
         """
         Get the character slot index for a given offset.
 
@@ -142,7 +140,7 @@ class ChecksumValidator:
 
         return None
 
-    def get_checksum_info(self, slot_index: int) -> Optional[ChecksumInfo]:
+    def get_checksum_info(self, slot_index: int) -> ChecksumInfo | None:
         """
         Get checksum information for a specific slot.
 
@@ -174,9 +172,7 @@ class ChecksumValidator:
         Returns:
             List of ChecksumInfo for slots with invalid checksums
         """
-        return [
-            info for info in self.checksums if info.is_valid is False
-        ]
+        return [info for info in self.checksums if info.is_valid is False]
 
     def get_modified_slots(self, original_data: bytes) -> list[int]:
         """

@@ -4,11 +4,12 @@ Checksum Status Panel for Hex Editor
 Displays checksum validation status and provides fix options.
 """
 
-import customtkinter as ctk
+from collections.abc import Callable
 from tkinter import ttk
-from typing import Callable, Optional
 
-from .checksum_validator import ChecksumValidator, ChecksumInfo
+import customtkinter as ctk
+
+from .checksum_validator import ChecksumValidator
 
 
 class ChecksumStatusPanel(ctk.CTkFrame):
@@ -17,9 +18,9 @@ class ChecksumStatusPanel(ctk.CTkFrame):
     def __init__(
         self,
         parent,
-        on_validate_click: Optional[Callable] = None,
-        on_fix_click: Optional[Callable[[int], None]] = None,
-        on_fix_all_click: Optional[Callable] = None,
+        on_validate_click: Callable | None = None,
+        on_fix_click: Callable[[int], None] | None = None,
+        on_fix_all_click: Callable | None = None,
         **kwargs,
     ):
         """
@@ -36,7 +37,7 @@ class ChecksumStatusPanel(ctk.CTkFrame):
         self.on_validate_click = on_validate_click
         self.on_fix_click = on_fix_click
         self.on_fix_all_click = on_fix_all_click
-        self.validator: Optional[ChecksumValidator] = None
+        self.validator: ChecksumValidator | None = None
 
         self._setup_ui()
 
@@ -114,11 +115,15 @@ class ChecksumStatusPanel(ctk.CTkFrame):
         style = ttk.Style()
 
         # Get current theme colors
-        bg_color = self._apply_appearance_mode(ctk.ThemeManager.theme["CTkFrame"]["fg_color"])
+        bg_color = self._apply_appearance_mode(
+            ctk.ThemeManager.theme["CTkFrame"]["fg_color"]
+        )
         if isinstance(bg_color, tuple):
             bg_color = bg_color[1]  # Use dark mode color
 
-        text_color = self._apply_appearance_mode(ctk.ThemeManager.theme["CTkLabel"]["text_color"])
+        text_color = self._apply_appearance_mode(
+            ctk.ThemeManager.theme["CTkLabel"]["text_color"]
+        )
         if isinstance(text_color, tuple):
             text_color = text_color[1]
 
@@ -133,7 +138,7 @@ class ChecksumStatusPanel(ctk.CTkFrame):
         style.configure("Treeview.Heading", background=bg_color, foreground=text_color)
         style.map("Treeview", background=[("selected", "#1f538d")])
 
-    def set_validator(self, validator: Optional[ChecksumValidator]):
+    def set_validator(self, validator: ChecksumValidator | None):
         """
         Set the checksum validator.
 
@@ -195,7 +200,9 @@ class ChecksumStatusPanel(ctk.CTkFrame):
         if not_checked_count == total:
             summary = "No checksums validated yet"
         else:
-            summary = f"Valid: {valid_count} | Invalid: {invalid_count} | Total: {total}"
+            summary = (
+                f"Valid: {valid_count} | Invalid: {invalid_count} | Total: {total}"
+            )
 
         self.summary_label.configure(text=summary)
 
