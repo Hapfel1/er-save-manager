@@ -3,6 +3,25 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.8.0
+**Released:** February 02, 2026
+
+
+### ✨ New Features
+
+- Added version checker to notify users of new update ([757c4b1](https://github.com/Hapfel1/er-save-manager/commit/757c4b1a2a1c458e3ad3bc96c17e5147d2e34d72))
+
+- Add Troubleshooter for checking game und save file related issues ([f0f850b](https://github.com/Hapfel1/er-save-manager/commit/f0f850b6050e0ef33f5092fdbb7374bfa2d45064))
+
+
+
+### 🔧 Bug Fixes
+
+- Fixed SteamDeck not showing Preset Browser correctly bc of SSL errors ([ea6794b](https://github.com/Hapfel1/er-save-manager/commit/ea6794b0cffdf812d1942a4158d79cbf3718e82c))
+
+
+
+---
 ## 📦 Release 0.7.4
 **Released:** January 31, 2026
 
@@ -393,6 +412,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.8.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.7.4..v0.8.0
 [0.7.4]: https://github.com/Hapfel1/er-save-manager/compare/v0.7.3..v0.7.4
 [0.7.3]: https://github.com/Hapfel1/er-save-manager/compare/v0.7.2..v0.7.3
 [0.7.2]: https://github.com/Hapfel1/er-save-manager/compare/v0.7.1..v0.7.2
