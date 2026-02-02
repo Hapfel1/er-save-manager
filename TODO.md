@@ -2,7 +2,7 @@ comments fix/change done
 
 troubleshooter
 
-Add VERSION + update notice
+Add VERSION + update notice done
 
 implement item spawning + check region unlock
 
