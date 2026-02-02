@@ -1,6 +1,6 @@
 comments fix/change done
 
-troubleshooter
+troubleshooter done
 
 Add VERSION + update notice done
 
