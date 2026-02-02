@@ -872,8 +872,14 @@ class EnhancedPresetBrowser:
                 f"index_data keys: {index_data.keys() if isinstance(index_data, dict) else 'N/A'}"
             )
 
+            # Log the full index_data to see what's actually in it
+            logging.info(f"Full index_data content: {index_data}")
+
             self.all_presets = index_data.get("presets", [])
             logging.info(f"Extracted {len(self.all_presets)} presets from index_data")
+
+            if self.all_presets:
+                logging.info(f"First preset sample: {self.all_presets[0]}")
 
             if not self.all_presets:
                 logging.warning("No presets found in index_data!")
