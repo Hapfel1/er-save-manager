@@ -14,6 +14,7 @@ from tkinter import filedialog, ttk
 
 import customtkinter as ctk
 
+from er_save_manager import VersionChecker, __version__
 from er_save_manager.parser import Save
 from er_save_manager.platform import PlatformUtils
 
@@ -147,6 +148,9 @@ class SaveManagerGUI:
         # Bind resize event with debouncing
         self.root.bind("<Configure>", self._on_window_resize)
 
+        # Check for updates asynchronously (don't block UI startup)
+        self.root.after(1000, self._check_for_updates)
+
     def _on_window_resize(self, event=None):
         """Debounce window resize events to improve responsiveness"""
         if event is None:
@@ -173,6 +177,143 @@ class SaveManagerGUI:
         """Process pending resize - called after resize events stop"""
         self._resize_timer = None
         self.root.update_idletasks()
+
+    def _check_for_updates(self):
+        """Check for application updates in a background thread"""
+
+        def check_in_thread():
+            try:
+                # Check if user wants to see update notifications
+                if not self.settings.get("show_update_notifications", True):
+                    return
+
+                checker = VersionChecker(__version__)
+                has_update, latest_version, download_url = checker.check_for_updates()
+
+                if has_update and latest_version and download_url:
+                    # Schedule the dialog to show on the main thread
+                    self.root.after(
+                        0,
+                        lambda: self._show_update_dialog(latest_version, download_url),
+                    )
+            except Exception:
+                # Silently fail if update check doesn't work
+                pass
+
+        # Run in background thread to not block UI
+        threading.Thread(target=check_in_thread, daemon=True).start()
+
+    def _show_update_dialog(self, latest_version: str, download_url: str):
+        """Show update available dialog with GitHub and Nexus Mods download options"""
+        import webbrowser
+
+        from er_save_manager.ui.utils import force_render_dialog
+
+        dialog = ctk.CTkToplevel(self.root)
+        dialog.title("Update Available")
+        dialog.geometry("550x320")
+        dialog.transient(self.root)
+
+        force_render_dialog(dialog)
+
+        # Center dialog over parent window
+        dialog.update_idletasks()
+        parent_x = self.root.winfo_x()
+        parent_y = self.root.winfo_y()
+        parent_width = self.root.winfo_width()
+        parent_height = self.root.winfo_height()
+
+        dialog_width = 550
+        dialog_height = 320
+
+        x = parent_x + (parent_width - dialog_width) // 2
+        y = parent_y + (parent_height - dialog_height) // 2
+
+        dialog.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
+
+        dialog.grab_set()
+
+        main_frame = ctk.CTkFrame(dialog)
+        main_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=20)
+
+        # Title
+        ctk.CTkLabel(
+            main_frame,
+            text="🎉 Update Available!",
+            font=("Segoe UI", 16, "bold"),
+        ).pack(pady=(0, 15))
+
+        # Version info
+        info_text = (
+            f"A new version of ER Save Manager is available!\n\n"
+            f"Current version: {__version__}\n"
+            f"Latest version: {latest_version}"
+        )
+        ctk.CTkLabel(
+            main_frame,
+            text=info_text,
+            font=("Segoe UI", 11),
+            justify=ctk.LEFT,
+        ).pack(pady=(0, 20))
+
+        # Download options label
+        ctk.CTkLabel(
+            main_frame,
+            text="Download from:",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(anchor=ctk.W, pady=(0, 10))
+
+        # Download buttons
+        button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        button_frame.pack(fill=ctk.X, pady=(0, 20))
+
+        def open_github():
+            webbrowser.open(download_url)
+            dialog.destroy()
+
+        def open_nexus():
+            webbrowser.open("https://www.nexusmods.com/eldenring/mods/9271?tab=files")
+            dialog.destroy()
+
+        ctk.CTkButton(
+            button_frame,
+            text="📦 GitHub Releases",
+            command=open_github,
+            width=240,
+            height=40,
+        ).pack(side=ctk.LEFT, padx=(0, 10))
+
+        ctk.CTkButton(
+            button_frame,
+            text="🔗 Nexus Mods",
+            command=open_nexus,
+            width=240,
+            height=40,
+        ).pack(side=ctk.LEFT)
+
+        # Don't show again checkbox
+        dont_show_var = ctk.BooleanVar(value=False)
+        checkbox = ctk.CTkCheckBox(
+            main_frame,
+            text="Don't show update notifications in the future",
+            variable=dont_show_var,
+            font=("Segoe UI", 10),
+        )
+        checkbox.pack(anchor=ctk.W, pady=(0, 15))
+
+        # Close button
+        def on_close():
+            if dont_show_var.get():
+                self.settings.set("show_update_notifications", False)
+            dialog.destroy()
+
+        ctk.CTkButton(
+            main_frame,
+            text="Close",
+            command=on_close,
+            width=120,
+            height=32,
+        ).pack(pady=(5, 0))
 
     def setup_ui(self):
         """Setup main UI structure with optimized layout"""
@@ -251,6 +392,13 @@ class SaveManagerGUI:
             command=self.show_backup_manager_standalone,
             width=160,
         ).pack(side=tk.LEFT, padx=6, pady=10)
+
+        ctk.CTkButton(
+            buttons_frame,
+            text="Troubleshooting",
+            command=self.open_troubleshooting,
+            width=160,
+        ).pack(side=tk.RIGHT, padx=6, pady=10)
 
         # Main content - tabbed interface (customtkinter)
         self.notebook = ctk.CTkTabview(
@@ -738,6 +886,85 @@ class SaveManagerGUI:
             pass
 
         return False
+
+    def _get_game_folder(self) -> Path | None:
+        """Attempt to detect the Elden Ring installation folder."""
+        try:
+            # Try to find via Steam registry on Windows
+            if PlatformUtils.is_windows():
+                import winreg
+
+                # Try to read Steam install path from registry
+                try:
+                    key = winreg.OpenKey(
+                        winreg.HKEY_LOCAL_MACHINE,
+                        r"SOFTWARE\WOW6432Node\Valve\Steam",
+                    )
+                    steam_path = Path(winreg.QueryValueEx(key, "InstallPath")[0])
+                    winreg.CloseKey(key)
+
+                    # Check common Steam library locations
+                    game_folder = steam_path / "steamapps" / "common" / "ELDEN RING"
+                    if game_folder.exists():
+                        return game_folder
+
+                    # Check libraryfolders.vdf for additional libraries
+                    library_file = steam_path / "steamapps" / "libraryfolders.vdf"
+                    if library_file.exists():
+                        content = library_file.read_text(encoding="utf-8")
+                        # Simple parse for paths (not perfect VDF parsing)
+                        import re
+
+                        paths = re.findall(r'"path"\s+"(.+?)"', content)
+                        for path_str in paths:
+                            lib_path = Path(path_str.replace("\\\\", "\\"))
+                            game_folder = (
+                                lib_path / "steamapps" / "common" / "ELDEN RING"
+                            )
+                            if game_folder.exists():
+                                return game_folder
+
+                except Exception:
+                    pass
+
+            # Fallback: Check common default locations
+            common_paths = [
+                Path("C:/Program Files (x86)/Steam/steamapps/common/ELDEN RING"),
+                Path("C:/Program Files/Steam/steamapps/common/ELDEN RING"),
+                Path.home()
+                / ".steam"
+                / "steam"
+                / "steamapps"
+                / "common"
+                / "ELDEN RING",
+                Path.home()
+                / ".local"
+                / "share"
+                / "Steam"
+                / "steamapps"
+                / "common"
+                / "ELDEN RING",
+            ]
+
+            for path in common_paths:
+                if path.exists():
+                    return path
+
+        except Exception:
+            pass
+
+        return None
+
+    def open_troubleshooting(self):
+        """Open the troubleshooting dialog."""
+        from er_save_manager.ui.dialogs.troubleshooting import TroubleshootingDialog
+
+        dialog = TroubleshootingDialog(
+            parent=self.root,
+            game_folder=self._get_game_folder(),
+            save_file_path=self.save_path,
+        )
+        dialog.show()
 
     def _on_tab_changed(self, event=None):
         """Handle tab change event - lazy load and refresh tabs."""

@@ -3,6 +3,7 @@
 import json
 import os
 import platform
+import ssl
 import tempfile
 import time
 import urllib.request
@@ -60,8 +61,28 @@ class PresetManager:
         self.cache_file = self.cache_dir / "cache.json"
         self.index_url = self.base_url + "index.json"
 
+        # Create SSL context for HTTPS requests
+        # This handles certificate verification properly across platforms
+        self.ssl_context = self._create_ssl_context()
+
         # Perform cache maintenance on init
         self._cleanup_cache()
+
+    def _create_ssl_context(self):
+        """Create SSL context for HTTPS requests with proper certificate verification."""
+        try:
+            # Try to use certifi if available (recommended for cross-platform)
+            import certifi
+
+            return ssl.create_default_context(cafile=certifi.where())
+        except ImportError:
+            # Fallback to default context
+            try:
+                return ssl.create_default_context()
+            except Exception:
+                # Last resort: disable verification (not ideal but allows functionality)
+                context = ssl._create_unverified_context()
+                return context
 
     def fetch_index(self, force_refresh: bool = False) -> dict:
         """
@@ -85,14 +106,18 @@ class PresetManager:
                 )
                 if cache_age < 3600:  # 1 hour
                     with open(self.cache_file, encoding="utf-8") as f:
-                        return json.load(f)
+                        cached_data = json.load(f)
+                    return cached_data
             except Exception:
                 pass
 
         # Download from remote
         try:
-            with urllib.request.urlopen(self.index_url, timeout=10) as response:
-                data = json.loads(response.read().decode("utf-8"))
+            with urllib.request.urlopen(
+                self.index_url, timeout=10, context=self.ssl_context
+            ) as response:
+                raw_data = response.read().decode("utf-8")
+                data = json.loads(raw_data)
 
             # Cache it
             with open(self.cache_file, "w", encoding="utf-8") as f:
@@ -100,13 +125,12 @@ class PresetManager:
 
             return data
 
-        except Exception as e:
-            print(f"Failed to fetch remote index: {e}")
-
+        except Exception:
             # Fall back to cache if available
             if self.cache_file.exists():
                 with open(self.cache_file, encoding="utf-8") as f:
-                    return json.load(f)
+                    fallback_data = json.load(f)
+                return fallback_data
 
             # No cache available
             return {"version": "0.0.0", "presets": []}
@@ -127,7 +151,9 @@ class PresetManager:
             # Download preset JSON
             data_url = self.base_url + preset_info["data_url"]
             print(f"[Preset Download] Data URL: {data_url}")
-            with urllib.request.urlopen(data_url, timeout=10) as response:
+            with urllib.request.urlopen(
+                data_url, timeout=10, context=self.ssl_context
+            ) as response:
                 preset_data = json.loads(response.read().decode("utf-8"))
             print(f"[Preset Download] Downloaded preset data for {preset_id}")
 
@@ -259,7 +285,9 @@ class PresetManager:
 
             # Download if not cached
             if not filepath.exists():
-                with urllib.request.urlopen(full_url, timeout=10) as response:
+                with urllib.request.urlopen(
+                    full_url, timeout=10, context=self.ssl_context
+                ) as response:
                     filepath.write_bytes(response.read())
 
             # Update access time for LRU tracking
@@ -343,7 +371,9 @@ class PresetManager:
                 return thumbnail_path
 
             # Download full image temporarily
-            with urllib.request.urlopen(image_url, timeout=10) as response:
+            with urllib.request.urlopen(
+                image_url, timeout=10, context=self.ssl_context
+            ) as response:
                 image_data = response.read()
 
             # Try to create thumbnail using PIL if available
