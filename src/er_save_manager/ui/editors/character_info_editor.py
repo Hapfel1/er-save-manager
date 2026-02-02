@@ -8,7 +8,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, trace_variable
 
 
 class CharacterInfoEditor:
@@ -101,7 +101,7 @@ class CharacterInfoEditor:
             count = len(self.char_name_var.get())
             self.char_name_count_label.configure(text=f"{count}/16")
 
-        self.char_name_var.trace("w", update_name_count)
+        trace_variable(self.char_name_var, "w", update_name_count)
 
         # Body Type
         ctk.CTkLabel(creation_frame, text="Body Type:").grid(

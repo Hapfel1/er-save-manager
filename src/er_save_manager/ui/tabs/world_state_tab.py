@@ -13,7 +13,7 @@ from er_save_manager.data.locations import get_all_locations_sorted
 from er_save_manager.editors.world_state import WorldStateEditor
 from er_save_manager.parser.er_types import FloatVector3, MapId
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, trace_variable
 
 if TYPE_CHECKING:
     pass
@@ -284,7 +284,7 @@ class WorldStateTab:
         ).pack(side=tk.LEFT, padx=(0, 5))
 
         self.search_var = tk.StringVar(value="")
-        self.search_var.trace("w", self._on_search_changed)
+        trace_variable(self.search_var, "w", self._on_search_changed)
         search_entry = ctk.CTkEntry(
             search_frame,
             textvariable=self.search_var,

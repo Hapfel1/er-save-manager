@@ -16,7 +16,7 @@ from er_save_manager.backup.manager import BackupManager
 from er_save_manager.preset_manager import PresetManager
 from er_save_manager.preset_metrics import PresetMetrics
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, trace_variable
 
 try:
     from PIL import Image
@@ -111,7 +111,7 @@ class EnhancedPresetBrowser:
 
         ctk.CTkLabel(filter_frame, text="Search:").pack(side=ctk.LEFT, padx=(0, 8))
         self.search_var = ctk.StringVar(value="")
-        self.search_var.trace("w", lambda *args: self.apply_filters())
+        trace_variable(self.search_var, "w", lambda *args: self.apply_filters())
         ctk.CTkEntry(filter_frame, textvariable=self.search_var, width=240).pack(
             side=ctk.LEFT
         )
