@@ -16,6 +16,7 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **Boss Respawner**: Respawn any boss for repeated fights
 - **Gestures**: Unlock gestures
 - **Backup Manager**: Automatic and manual backups with restore functionality
+- **Troubleshooting**: Troubleshooter for checking game and save file related issues
 
 ### Work in Progress
 
