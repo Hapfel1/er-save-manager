@@ -73,6 +73,10 @@ class PresetManager:
         Returns:
             Index data dict
         """
+        print(
+            f"[PresetManager] fetch_index() called with force_refresh={force_refresh}"
+        )
+
         # Check cache first if not forcing refresh
         if not force_refresh and self.cache_file.exists():
             try:
@@ -83,32 +87,69 @@ class PresetManager:
                     datetime.datetime.now().timestamp()
                     - self.cache_file.stat().st_mtime
                 )
+                print(f"[PresetManager] Cache age: {cache_age} seconds")
                 if cache_age < 3600:  # 1 hour
+                    print(f"[PresetManager] Using cached index from {self.cache_file}")
                     with open(self.cache_file, encoding="utf-8") as f:
-                        return json.load(f)
-            except Exception:
-                pass
+                        cached_data = json.load(f)
+                    print(
+                        f"[PresetManager] Cached data has {len(cached_data.get('presets', []))} presets"
+                    )
+                    return cached_data
+            except Exception as e:
+                print(f"[PresetManager] Failed to load cache: {e}")
 
         # Download from remote
+        print(f"[PresetManager] Downloading index from {self.index_url}")
         try:
             with urllib.request.urlopen(self.index_url, timeout=10) as response:
-                data = json.loads(response.read().decode("utf-8"))
+                raw_data = response.read().decode("utf-8")
+                print(f"[PresetManager] Downloaded {len(raw_data)} bytes")
+                print(f"[PresetManager] First 200 chars: {raw_data[:200]}")
+                data = json.loads(raw_data)
+                print("[PresetManager] Parsed JSON successfully")
+                print(f"[PresetManager] Data type: {type(data)}")
+                print(
+                    f"[PresetManager] Data keys: {data.keys() if isinstance(data, dict) else 'N/A'}"
+                )
+
+                if isinstance(data, dict) and "presets" in data:
+                    print(
+                        f"[PresetManager] Found {len(data['presets'])} presets in downloaded data"
+                    )
+                    if data["presets"]:
+                        print(f"[PresetManager] First preset: {data['presets'][0]}")
+                else:
+                    print(
+                        "[PresetManager] WARNING: Downloaded data structure unexpected!"
+                    )
 
             # Cache it
+            print(f"[PresetManager] Caching to {self.cache_file}")
             with open(self.cache_file, "w", encoding="utf-8") as f:
                 json.dump(data, f)
+            print("[PresetManager] Cache written successfully")
 
             return data
 
         except Exception as e:
-            print(f"Failed to fetch remote index: {e}")
+            print(f"[PresetManager] Failed to fetch remote index: {e}")
+            import traceback
+
+            print(f"[PresetManager] Traceback: {traceback.format_exc()}")
 
             # Fall back to cache if available
             if self.cache_file.exists():
+                print("[PresetManager] Falling back to cached index")
                 with open(self.cache_file, encoding="utf-8") as f:
-                    return json.load(f)
+                    fallback_data = json.load(f)
+                print(
+                    f"[PresetManager] Fallback data has {len(fallback_data.get('presets', []))} presets"
+                )
+                return fallback_data
 
             # No cache available
+            print("[PresetManager] No cache available, returning empty presets")
             return {"version": "0.0.0", "presets": []}
 
     def download_preset(self, preset_id: str, preset_info: dict) -> dict | None:
