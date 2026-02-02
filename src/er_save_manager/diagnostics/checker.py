@@ -70,6 +70,7 @@ class TroubleshootingChecker:
 
         # Process checks
         results.extend(self._check_problematic_processes())
+        results.append(self._check_steam_elevated())
 
         # Save file checks
         if self.save_file_path:
@@ -349,6 +350,187 @@ class TroubleshootingChecker:
             )
 
         return results
+
+    def _check_steam_elevated(self) -> DiagnosticResult:
+        """Check if Steam is running with elevated (administrator) privileges."""
+        if not PlatformUtils.is_windows():
+            return DiagnosticResult(
+                name="Steam Elevation Check",
+                status="info",
+                message="Steam elevation check only available on Windows",
+            )
+
+        try:
+            # Use PowerShell to check if steam.exe is running elevated by checking process integrity level
+            ps_script = """
+            Add-Type -TypeDefinition @"
+            using System;
+            using System.Runtime.InteropServices;
+            using System.Diagnostics;
+
+            public class ProcessChecker {
+                [DllImport("advapi32.dll", SetLastError=true)]
+                public static extern bool OpenProcessToken(IntPtr ProcessHandle, uint DesiredAccess, out IntPtr TokenHandle);
+
+                [DllImport("advapi32.dll", SetLastError=true)]
+                public static extern bool GetTokenInformation(IntPtr TokenHandle, int TokenInformationClass, IntPtr TokenInformation, uint TokenInformationLength, out uint ReturnLength);
+
+                [DllImport("kernel32.dll", SetLastError=true)]
+                public static extern bool CloseHandle(IntPtr hObject);
+
+                public static int CheckProcessElevation(int processId) {
+                    IntPtr tokenHandle = IntPtr.Zero;
+                    try {
+                        Process process = Process.GetProcessById(processId);
+                        if (OpenProcessToken(process.Handle, 0x0008, out tokenHandle)) {
+                            uint returnLength;
+                            IntPtr elevationResult = Marshal.AllocHGlobal(4);
+                            try {
+                                if (GetTokenInformation(tokenHandle, 20, elevationResult, 4, out returnLength)) {
+                                    bool isElevated = Marshal.ReadInt32(elevationResult) != 0;
+                                    return isElevated ? 1 : 0;
+                                }
+                            } finally {
+                                Marshal.FreeHGlobal(elevationResult);
+                            }
+                        }
+                        return 0;
+                    } catch (System.ComponentModel.Win32Exception ex) {
+                        // Access denied (error 5) means process is elevated
+                        if (ex.NativeErrorCode == 5) {
+                            return 1; // Elevated
+                        }
+                        return -1; // Unknown error
+                    } catch (UnauthorizedAccessException) {
+                        // Access denied means process is elevated
+                        return 1;
+                    } catch {
+                        return -1;
+                    } finally {
+                        if (tokenHandle != IntPtr.Zero) {
+                            CloseHandle(tokenHandle);
+                        }
+                    }
+                }
+            }
+"@
+
+            $steamProcesses = Get-Process -Name "steam" -ErrorAction SilentlyContinue
+            if (-not $steamProcesses) {
+                Write-Output "not_running"
+                exit 1
+            }
+
+            $foundElevated = $false
+            foreach ($proc in $steamProcesses) {
+                try {
+                    $result = [ProcessChecker]::CheckProcessElevation($proc.Id)
+                    if ($result -eq 1) {
+                        $foundElevated = $true
+                        break
+                    }
+                } catch {
+                    # Continue checking other processes
+                }
+            }
+
+            if ($foundElevated) {
+                Write-Output "elevated"
+            } else {
+                Write-Output "normal"
+            }
+            """
+
+            result = subprocess.run(
+                ["powershell", "-NoProfile", "-Command", ps_script],
+                capture_output=True,
+                text=True,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+                timeout=5,
+            )
+
+            # Extract the last non-debug line from stdout
+            stdout_lines = result.stdout.strip().split("\n")
+            output = ""
+            for line in reversed(stdout_lines):
+                line_stripped = line.strip().lower()
+                if line_stripped and not line_stripped.startswith("debug:"):
+                    output = line_stripped
+                    break
+
+            if output == "not_running":
+                return DiagnosticResult(
+                    name="Steam Elevation Check",
+                    status="info",
+                    message="Steam is not currently running",
+                )
+            elif output == "elevated":
+                # Steam is running as administrator - this can cause permission issues
+                appdata_path = Path(os.getenv("APPDATA", "")) / "EldenRing"
+
+                fix_message = """Steam is running with administrator privileges, which can cause file permission issues.
+
+Recommended fixes (try in order):
+
+1. Disable Steam Administrator Mode:
+   - Exit Steam completely (right-click system tray icon > Exit)
+   - Right-click Steam shortcut > Open file location
+   - Right-click steam.exe > Properties > Compatibility tab
+   - Uncheck "Run this program as an administrator"
+   - Restart Steam normally
+
+2. Take Ownership of Game & Save Folders (run these PowerShell commands as Admin):
+
+Game folder ownership:
+takeown /F "{game_folder}" /R /D Y
+icacls "{game_folder}" /grant %USERNAME%:F /T
+
+AppData folder ownership:
+takeown /F "{appdata}" /R /D Y
+icacls "{appdata}" /grant %USERNAME%:F /T
+
+3. If issues persist:
+   - Reinstall Steam (do NOT run as admin after reinstall)
+   - Uninstall Elden Ring, delete game folder, reinstall
+""".format(
+                    game_folder=self.game_folder
+                    if self.game_folder
+                    else "C:\\Program Files (x86)\\Steam\\steamapps\\common\\ELDEN RING",
+                    appdata=appdata_path,
+                )
+
+                return DiagnosticResult(
+                    name="Steam Running as Administrator",
+                    status="error",
+                    message="Steam is running with elevated privileges. This can cause save file permission issues and crashes.",
+                    fix_available=True,
+                    fix_action=fix_message,
+                )
+            elif output == "normal":
+                return DiagnosticResult(
+                    name="Steam Elevation Check",
+                    status="ok",
+                    message="Steam is running with normal privileges",
+                )
+            else:  # unknown
+                return DiagnosticResult(
+                    name="Steam Elevation Check",
+                    status="warning",
+                    message="Could not determine if Steam is elevated (access denied)",
+                )
+
+        except subprocess.TimeoutExpired:
+            return DiagnosticResult(
+                name="Steam Elevation Check",
+                status="warning",
+                message="Steam elevation check timed out",
+            )
+        except Exception as e:
+            return DiagnosticResult(
+                name="Steam Elevation Check",
+                status="warning",
+                message=f"Could not check Steam elevation: {e}",
+            )
 
     def _check_save_file_health(self) -> list[DiagnosticResult]:
         """Check save file health and accessibility."""
