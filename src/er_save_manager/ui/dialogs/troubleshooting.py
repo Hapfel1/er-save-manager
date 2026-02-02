@@ -190,13 +190,67 @@ class TroubleshootingDialog:
             ctk.CTkLabel(
                 fix_frame,
                 text="💡 Suggested Fix:",
-                font=("Segoe UI", 10, "bold"),
+                font=("Segoe UI", 11, "bold"),
             ).pack(anchor="w", padx=8, pady=(5, 2))
 
-            ctk.CTkLabel(
-                fix_frame,
-                text=result.fix_action,
-                font=("Segoe UI", 10),
-                wraplength=590,
-                justify="left",
-            ).pack(anchor="w", padx=8, pady=(0, 5))
+            # Check if fix_action contains PowerShell commands (lines starting with takeown or icacls)
+            lines = result.fix_action.split("\n")
+            has_ps_commands = any(
+                line.strip().startswith(("takeown", "icacls")) for line in lines
+            )
+
+            if has_ps_commands:
+                # Split into text and commands
+                current_text = []
+
+                for line in lines:
+                    stripped = line.strip()
+                    if stripped.startswith(("takeown", "icacls")):
+                        # Flush current text
+                        if current_text:
+                            text_content = "\n".join(current_text).strip()
+                            if text_content:
+                                ctk.CTkLabel(
+                                    fix_frame,
+                                    text=text_content,
+                                    font=("Segoe UI", 11),
+                                    wraplength=590,
+                                    justify="left",
+                                ).pack(anchor="w", padx=8, pady=(0, 5))
+                            current_text = []
+
+                        # Create copyable textbox for command
+                        cmd_box = ctk.CTkTextbox(
+                            fix_frame,
+                            height=30,
+                            font=("Consolas", 10),
+                            wrap="none",
+                        )
+                        cmd_box.pack(fill="x", padx=8, pady=(2, 2))
+                        cmd_box.insert("1.0", line.strip())
+                        cmd_box.configure(
+                            state="disabled"
+                        )  # Read-only but still copyable
+                    else:
+                        current_text.append(line)
+
+                # Flush remaining text
+                if current_text:
+                    text_content = "\n".join(current_text).strip()
+                    if text_content:
+                        ctk.CTkLabel(
+                            fix_frame,
+                            text=text_content,
+                            font=("Segoe UI", 11),
+                            wraplength=590,
+                            justify="left",
+                        ).pack(anchor="w", padx=8, pady=(0, 5))
+            else:
+                # No PowerShell commands, just show as regular text
+                ctk.CTkLabel(
+                    fix_frame,
+                    text=result.fix_action,
+                    font=("Segoe UI", 11),
+                    wraplength=590,
+                    justify="left",
+                ).pack(anchor="w", padx=8, pady=(0, 5))
