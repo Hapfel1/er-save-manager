@@ -7,7 +7,7 @@ import customtkinter as ctk
 
 from er_save_manager.data.item_database import get_item_name
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, trace_variable
 
 
 class EquipmentEditor:
@@ -108,7 +108,7 @@ class EquipmentEditor:
             )
             name_label.grid(row=i, column=2, sticky="w", padx=5, pady=3)
             self.equipment_name_labels[key] = name_label
-            var.trace("w", lambda *args, k=key: self.update_equipment_name(k))
+            trace_variable(var, "w", lambda *args, k=key: self.update_equipment_name(k))
 
         # Armor frame (right)
         armor_frame = ctk.CTkFrame(
@@ -165,7 +165,7 @@ class EquipmentEditor:
             )
             name_label.grid(row=i, column=2, sticky="w", padx=5, pady=3)
             self.equipment_name_labels[key] = name_label
-            var.trace("w", lambda *args, k=key: self.update_equipment_name(k))
+            trace_variable(var, "w", lambda *args, k=key: self.update_equipment_name(k))
 
         # Middle row: Talismans and Arrows/Bolts
         middle_row = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
@@ -225,7 +225,7 @@ class EquipmentEditor:
             )
             name_label.grid(row=i, column=2, sticky="w", padx=5, pady=3)
             self.equipment_name_labels[key] = name_label
-            var.trace("w", lambda *args, k=key: self.update_equipment_name(k))
+            trace_variable(var, "w", lambda *args, k=key: self.update_equipment_name(k))
 
         # Arrows/Bolts frame (right)
         ammo_frame = ctk.CTkFrame(
@@ -281,7 +281,7 @@ class EquipmentEditor:
             )
             name_label.grid(row=i, column=2, sticky="w", padx=5, pady=3)
             self.equipment_name_labels[key] = name_label
-            var.trace("w", lambda *args, k=key: self.update_equipment_name(k))
+            trace_variable(var, "w", lambda *args, k=key: self.update_equipment_name(k))
 
         # Bottom: Spells (12 slots in 2 columns)
         spells_frame = ctk.CTkFrame(
@@ -334,7 +334,7 @@ class EquipmentEditor:
             )
             name_label.grid(row=row, column=col + 2, sticky="w", padx=5, pady=3)
             self.equipment_name_labels[key] = name_label
-            var.trace("w", lambda *args, k=key: self.update_equipment_name(k))
+            trace_variable(var, "w", lambda *args, k=key: self.update_equipment_name(k))
 
         # Apply button
         button_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
