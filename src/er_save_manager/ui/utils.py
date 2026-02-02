@@ -3,6 +3,26 @@
 import platform as platform_module
 
 
+def trace_variable(var, mode, callback):
+    """
+    Cross-version compatible variable trace.
+
+    Args:
+        var: Tkinter variable (StringVar, IntVar, etc.)
+        mode: "w" for write, "r" for read, "u" for undefine
+        callback: Callback function
+
+    Returns:
+        Trace id (can be used to remove trace later)
+    """
+    # Python 3.11+ uses trace_add instead of trace
+    if hasattr(var, "trace_add"):
+        mode_map = {"w": "write", "r": "read", "u": "undefine"}
+        return var.trace_add(mode_map.get(mode, mode), callback)
+    else:
+        return var.trace(mode, callback)
+
+
 def force_render_dialog(dialog):
     """
     Force proper rendering of a CTkToplevel dialog on Linux and all platforms.

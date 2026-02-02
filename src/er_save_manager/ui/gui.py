@@ -42,6 +42,7 @@ from er_save_manager.ui.tabs import (
     WorldStateTab,
 )
 from er_save_manager.ui.theme import ThemeManager
+from er_save_manager.ui.utils import trace_variable
 
 
 class SaveManagerGUI:
@@ -352,7 +353,7 @@ class SaveManagerGUI:
 
         self.file_path_var = tk.StringVar(value="")
         # Auto-load when valid file path is entered
-        self.file_path_var.trace("w", self._on_file_path_changed)
+        trace_variable(self.file_path_var, "w", self._on_file_path_changed)
 
         path_frame = ctk.CTkFrame(file_frame, corner_radius=8)
         path_frame.pack(fill=tk.X, padx=12, pady=(0, 12))
