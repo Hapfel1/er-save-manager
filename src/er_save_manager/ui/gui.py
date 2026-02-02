@@ -393,6 +393,13 @@ class SaveManagerGUI:
             width=160,
         ).pack(side=tk.LEFT, padx=6, pady=10)
 
+        ctk.CTkButton(
+            buttons_frame,
+            text="Troubleshooting",
+            command=self.open_troubleshooting,
+            width=160,
+        ).pack(side=tk.RIGHT, padx=6, pady=10)
+
         # Main content - tabbed interface (customtkinter)
         self.notebook = ctk.CTkTabview(
             self.root,
@@ -879,6 +886,85 @@ class SaveManagerGUI:
             pass
 
         return False
+
+    def _get_game_folder(self) -> Path | None:
+        """Attempt to detect the Elden Ring installation folder."""
+        try:
+            # Try to find via Steam registry on Windows
+            if PlatformUtils.is_windows():
+                import winreg
+
+                # Try to read Steam install path from registry
+                try:
+                    key = winreg.OpenKey(
+                        winreg.HKEY_LOCAL_MACHINE,
+                        r"SOFTWARE\WOW6432Node\Valve\Steam",
+                    )
+                    steam_path = Path(winreg.QueryValueEx(key, "InstallPath")[0])
+                    winreg.CloseKey(key)
+
+                    # Check common Steam library locations
+                    game_folder = steam_path / "steamapps" / "common" / "ELDEN RING"
+                    if game_folder.exists():
+                        return game_folder
+
+                    # Check libraryfolders.vdf for additional libraries
+                    library_file = steam_path / "steamapps" / "libraryfolders.vdf"
+                    if library_file.exists():
+                        content = library_file.read_text(encoding="utf-8")
+                        # Simple parse for paths (not perfect VDF parsing)
+                        import re
+
+                        paths = re.findall(r'"path"\s+"(.+?)"', content)
+                        for path_str in paths:
+                            lib_path = Path(path_str.replace("\\\\", "\\"))
+                            game_folder = (
+                                lib_path / "steamapps" / "common" / "ELDEN RING"
+                            )
+                            if game_folder.exists():
+                                return game_folder
+
+                except Exception:
+                    pass
+
+            # Fallback: Check common default locations
+            common_paths = [
+                Path("C:/Program Files (x86)/Steam/steamapps/common/ELDEN RING"),
+                Path("C:/Program Files/Steam/steamapps/common/ELDEN RING"),
+                Path.home()
+                / ".steam"
+                / "steam"
+                / "steamapps"
+                / "common"
+                / "ELDEN RING",
+                Path.home()
+                / ".local"
+                / "share"
+                / "Steam"
+                / "steamapps"
+                / "common"
+                / "ELDEN RING",
+            ]
+
+            for path in common_paths:
+                if path.exists():
+                    return path
+
+        except Exception:
+            pass
+
+        return None
+
+    def open_troubleshooting(self):
+        """Open the troubleshooting dialog."""
+        from er_save_manager.ui.dialogs.troubleshooting import TroubleshootingDialog
+
+        dialog = TroubleshootingDialog(
+            parent=self.root,
+            game_folder=self._get_game_folder(),
+            save_file_path=self.save_path,
+        )
+        dialog.show()
 
     def _on_tab_changed(self, event=None):
         """Handle tab change event - lazy load and refresh tabs."""
