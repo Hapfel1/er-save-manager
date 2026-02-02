@@ -1,7 +1,6 @@
 """Preset manager for community character presets."""
 
 import json
-import logging
 import os
 import platform
 import ssl
@@ -75,21 +74,13 @@ class PresetManager:
             # Try to use certifi if available (recommended for cross-platform)
             import certifi
 
-            logging.info("[PresetManager] Using certifi for SSL certificates")
             return ssl.create_default_context(cafile=certifi.where())
         except ImportError:
             # Fallback to default context
-            logging.info(
-                "[PresetManager] certifi not available, using default SSL context"
-            )
             try:
                 return ssl.create_default_context()
-            except Exception as e:
-                logging.warning(f"[PresetManager] Could not create SSL context: {e}")
+            except Exception:
                 # Last resort: disable verification (not ideal but allows functionality)
-                logging.warning(
-                    "[PresetManager] WARNING: SSL verification disabled as fallback"
-                )
                 context = ssl._create_unverified_context()
                 return context
 
@@ -103,10 +94,6 @@ class PresetManager:
         Returns:
             Index data dict
         """
-        logging.info(
-            f"[PresetManager] fetch_index() called with force_refresh={force_refresh}"
-        )
-
         # Check cache first if not forcing refresh
         if not force_refresh and self.cache_file.exists():
             try:
@@ -117,77 +104,35 @@ class PresetManager:
                     datetime.datetime.now().timestamp()
                     - self.cache_file.stat().st_mtime
                 )
-                logging.info(f"[PresetManager] Cache age: {cache_age} seconds")
                 if cache_age < 3600:  # 1 hour
-                    logging.info(
-                        f"[PresetManager] Using cached index from {self.cache_file}"
-                    )
                     with open(self.cache_file, encoding="utf-8") as f:
                         cached_data = json.load(f)
-                    logging.info(
-                        f"[PresetManager] Cached data has {len(cached_data.get('presets', []))} presets"
-                    )
                     return cached_data
-            except Exception as e:
-                logging.error(f"[PresetManager] Failed to load cache: {e}")
+            except Exception:
+                pass
 
         # Download from remote
-        logging.info(f"[PresetManager] Downloading index from {self.index_url}")
         try:
             with urllib.request.urlopen(
                 self.index_url, timeout=10, context=self.ssl_context
             ) as response:
                 raw_data = response.read().decode("utf-8")
-                logging.info(f"[PresetManager] Downloaded {len(raw_data)} bytes")
-                logging.info(f"[PresetManager] First 200 chars: {raw_data[:200]}")
                 data = json.loads(raw_data)
-                logging.info("[PresetManager] Parsed JSON successfully")
-                logging.info(f"[PresetManager] Data type: {type(data)}")
-                logging.info(
-                    f"[PresetManager] Data keys: {data.keys() if isinstance(data, dict) else 'N/A'}"
-                )
-
-                if isinstance(data, dict) and "presets" in data:
-                    logging.info(
-                        f"[PresetManager] Found {len(data['presets'])} presets in downloaded data"
-                    )
-                    if data["presets"]:
-                        logging.info(
-                            f"[PresetManager] First preset: {data['presets'][0]}"
-                        )
-                else:
-                    logging.warning(
-                        "[PresetManager] WARNING: Downloaded data structure unexpected!"
-                    )
 
             # Cache it
-            logging.info(f"[PresetManager] Caching to {self.cache_file}")
             with open(self.cache_file, "w", encoding="utf-8") as f:
                 json.dump(data, f)
-            logging.info("[PresetManager] Cache written successfully")
 
             return data
 
-        except Exception as e:
-            logging.error(f"[PresetManager] Failed to fetch remote index: {e}")
-            import traceback
-
-            logging.error(f"[PresetManager] Traceback: {traceback.format_exc()}")
-
+        except Exception:
             # Fall back to cache if available
             if self.cache_file.exists():
-                logging.info("[PresetManager] Falling back to cached index")
                 with open(self.cache_file, encoding="utf-8") as f:
                     fallback_data = json.load(f)
-                logging.info(
-                    f"[PresetManager] Fallback data has {len(fallback_data.get('presets', []))} presets"
-                )
                 return fallback_data
 
             # No cache available
-            logging.warning(
-                "[PresetManager] No cache available, returning empty presets"
-            )
             return {"version": "0.0.0", "presets": []}
 
     def download_preset(self, preset_id: str, preset_info: dict) -> dict | None:
