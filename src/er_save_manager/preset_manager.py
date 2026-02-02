@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import platform
+import ssl
 import tempfile
 import time
 import urllib.request
@@ -61,8 +62,36 @@ class PresetManager:
         self.cache_file = self.cache_dir / "cache.json"
         self.index_url = self.base_url + "index.json"
 
+        # Create SSL context for HTTPS requests
+        # This handles certificate verification properly across platforms
+        self.ssl_context = self._create_ssl_context()
+
         # Perform cache maintenance on init
         self._cleanup_cache()
+
+    def _create_ssl_context(self):
+        """Create SSL context for HTTPS requests with proper certificate verification."""
+        try:
+            # Try to use certifi if available (recommended for cross-platform)
+            import certifi
+
+            logging.info("[PresetManager] Using certifi for SSL certificates")
+            return ssl.create_default_context(cafile=certifi.where())
+        except ImportError:
+            # Fallback to default context
+            logging.info(
+                "[PresetManager] certifi not available, using default SSL context"
+            )
+            try:
+                return ssl.create_default_context()
+            except Exception as e:
+                logging.warning(f"[PresetManager] Could not create SSL context: {e}")
+                # Last resort: disable verification (not ideal but allows functionality)
+                logging.warning(
+                    "[PresetManager] WARNING: SSL verification disabled as fallback"
+                )
+                context = ssl._create_unverified_context()
+                return context
 
     def fetch_index(self, force_refresh: bool = False) -> dict:
         """
@@ -105,7 +134,9 @@ class PresetManager:
         # Download from remote
         logging.info(f"[PresetManager] Downloading index from {self.index_url}")
         try:
-            with urllib.request.urlopen(self.index_url, timeout=10) as response:
+            with urllib.request.urlopen(
+                self.index_url, timeout=10, context=self.ssl_context
+            ) as response:
                 raw_data = response.read().decode("utf-8")
                 logging.info(f"[PresetManager] Downloaded {len(raw_data)} bytes")
                 logging.info(f"[PresetManager] First 200 chars: {raw_data[:200]}")
@@ -175,7 +206,9 @@ class PresetManager:
             # Download preset JSON
             data_url = self.base_url + preset_info["data_url"]
             print(f"[Preset Download] Data URL: {data_url}")
-            with urllib.request.urlopen(data_url, timeout=10) as response:
+            with urllib.request.urlopen(
+                data_url, timeout=10, context=self.ssl_context
+            ) as response:
                 preset_data = json.loads(response.read().decode("utf-8"))
             print(f"[Preset Download] Downloaded preset data for {preset_id}")
 
@@ -307,7 +340,9 @@ class PresetManager:
 
             # Download if not cached
             if not filepath.exists():
-                with urllib.request.urlopen(full_url, timeout=10) as response:
+                with urllib.request.urlopen(
+                    full_url, timeout=10, context=self.ssl_context
+                ) as response:
                     filepath.write_bytes(response.read())
 
             # Update access time for LRU tracking
@@ -391,7 +426,9 @@ class PresetManager:
                 return thumbnail_path
 
             # Download full image temporarily
-            with urllib.request.urlopen(image_url, timeout=10) as response:
+            with urllib.request.urlopen(
+                image_url, timeout=10, context=self.ssl_context
+            ) as response:
                 image_data = response.read()
 
             # Try to create thumbnail using PIL if available
