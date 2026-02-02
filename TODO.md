@@ -10,7 +10,7 @@ implement hex editor
 
 check and fix worldstate locations
 
-investigate steam deck appearance browse issue, add logging build which puts out log in a log file
+investigate steam deck appearance browse issue, add logging build which puts out log in a log file done
 
 change first tab naming to save fixer and add clear instructions done
 change all info popups to be custom themed done

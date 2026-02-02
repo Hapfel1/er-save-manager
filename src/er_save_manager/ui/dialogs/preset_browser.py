@@ -5,10 +5,7 @@ Browse and contribute community appearance presets with 15-slot support.
 
 from __future__ import annotations
 
-import logging
-import os
 import tkinter as tk
-import traceback
 from pathlib import Path
 from tkinter import filedialog
 from typing import Any
@@ -32,25 +29,7 @@ except ImportError:
 class EnhancedPresetBrowser:
     """Enhanced preset browser with Browse and Contribute tabs."""
 
-    LOG_PATH = os.path.expanduser("~/.er-save-manager/preset_browser_log.txt")
     NUM_SLOTS = 15
-
-    @classmethod
-    def _setup_logging(cls):
-        """Setup logging to file for debugging Steam Deck issues."""
-        log_dir = os.path.dirname(cls.LOG_PATH)
-        os.makedirs(log_dir, exist_ok=True)
-
-        logging.basicConfig(
-            filename=cls.LOG_PATH,
-            filemode="a",
-            format="%(asctime)s [%(levelname)s] %(message)s",
-            level=logging.DEBUG,
-        )
-        # Also log to console
-        console = logging.StreamHandler()
-        console.setLevel(logging.DEBUG)
-        logging.getLogger("").addHandler(console)
 
     def __init__(self, parent, appearance_tab):
         self.parent = parent
@@ -77,76 +56,37 @@ class EnhancedPresetBrowser:
         """Show enhanced preset browser with tabs."""
         from er_save_manager.ui.utils import force_render_dialog
 
-        # Setup logging
-        self._setup_logging()
+        self.dialog = ctk.CTkToplevel(self.parent)
+        self.dialog.title("Community Appearance Presets")
+        self.dialog.geometry("1400x1000")
+        self.dialog.transient(self.parent)
 
-        try:
-            logging.info("=" * 60)
-            logging.info("Opening EnhancedPresetBrowser dialog...")
-            logging.info(f"Platform: {os.name}")
-            logging.info(f"Parent widget: {self.parent}")
+        # Force rendering before grab_set to avoid "window not viewable" errors
+        force_render_dialog(self.dialog)
+        self.dialog.grab_set()
 
-            logging.debug("Creating CTkToplevel widget...")
-            self.dialog = ctk.CTkToplevel(self.parent)
-            logging.debug("CTkToplevel created successfully")
+        def on_close():
+            self.dialog.grab_release()
+            self.dialog.destroy()
 
-            logging.debug("Setting dialog properties...")
-            self.dialog.title("Community Appearance Presets")
-            self.dialog.geometry("1400x1000")
-            self.dialog.transient(self.parent)
-            logging.debug("Dialog properties set")
+        self.dialog.protocol("WM_DELETE_WINDOW", on_close)
 
-            # Force rendering before grab_set to avoid "window not viewable" errors
-            logging.debug("Forcing dialog render...")
-            force_render_dialog(self.dialog)
-            logging.debug("Setting grab...")
-            self.dialog.grab_set()
-            logging.debug("Grab set successfully")
+        self.tabview = ctk.CTkTabview(self.dialog, width=1150, height=820)
+        self.tabview.pack(fill=ctk.BOTH, expand=True, padx=10, pady=10)
 
-            def on_close():
-                logging.info("Dialog close requested by user")
-                self.dialog.grab_release()
-                self.dialog.destroy()
+        self.browse_tab = self.tabview.add("Browse Presets")
+        self.contribute_tab = self.tabview.add("Contribute Preset")
 
-            self.dialog.protocol("WM_DELETE_WINDOW", on_close)
+        self.setup_browse_tab()
+        self.setup_contribute_tab()
 
-            logging.debug("Creating tabview...")
-            self.tabview = ctk.CTkTabview(self.dialog, width=1150, height=820)
-            self.tabview.pack(fill=ctk.BOTH, expand=True, padx=10, pady=10)
-            logging.debug("Tabview created")
+        # Force update and rendering on Linux
+        self.dialog.update_idletasks()
+        self.dialog.lift()
+        self.dialog.focus_force()
 
-            logging.debug("Adding tabs...")
-            self.browse_tab = self.tabview.add("Browse Presets")
-            self.contribute_tab = self.tabview.add("Contribute Preset")
-            logging.debug("Tabs added")
-
-            logging.debug("Setting up browse tab...")
-            self.setup_browse_tab()
-            logging.debug("Browse tab setup complete")
-
-            logging.debug("Setting up contribute tab...")
-            self.setup_contribute_tab()
-            logging.debug("Contribute tab setup complete")
-
-            # Force update and rendering on Linux
-            logging.debug("Updating dialog layout...")
-            self.dialog.update_idletasks()
-            self.dialog.lift()
-            self.dialog.focus_force()
-            logging.debug("Dialog layout updated")
-
-            # Load presets asynchronously after dialog is displayed
-            logging.debug("Scheduling preset loading...")
-            self.dialog.after(50, self.refresh_presets)
-
-            logging.info("Preset browser dialog opened successfully!")
-
-        except Exception as exc:
-            tb = traceback.format_exc()
-            logging.error(f"Failed to open preset browser dialog: {exc}")
-            logging.error(f"Traceback:\n{tb}")
-            logging.error("=" * 60)
-            self._show_error_with_log(exc, tb)
+        # Load presets asynchronously after dialog is displayed
+        self.dialog.after(50, self.refresh_presets)
 
     # ---------------------- Browse tab ----------------------
     def setup_browse_tab(self):
@@ -162,15 +102,9 @@ class EnhancedPresetBrowser:
             font=("Segoe UI", 18, "bold"),
         ).pack(side=ctk.LEFT)
 
-        button_frame = ctk.CTkFrame(top_frame, fg_color="transparent")
-        button_frame.pack(side=ctk.RIGHT)
-
         ctk.CTkButton(
-            button_frame, text="View Log", command=self._show_log_viewer, width=90
-        ).pack(side=ctk.LEFT, padx=(0, 8))
-        ctk.CTkButton(
-            button_frame, text="Refresh", command=self.refresh_presets, width=90
-        ).pack(side=ctk.LEFT)
+            top_frame, text="Refresh", command=self.refresh_presets, width=90
+        ).pack(side=ctk.RIGHT)
 
         filter_frame = ctk.CTkFrame(main_frame)
         filter_frame.pack(fill=ctk.X, pady=(0, 14))
@@ -271,8 +205,13 @@ class EnhancedPresetBrowser:
 
     # ---------------------- Contribute tab ----------------------
     def setup_contribute_tab(self):
-        main_frame = ctk.CTkFrame(self.contribute_tab)
-        main_frame.pack(fill=ctk.BOTH, expand=True, padx=12, pady=12)
+        # Make the contribute tab scrollable for smaller screens
+        scrollable_frame = ctk.CTkScrollableFrame(self.contribute_tab)
+        scrollable_frame.pack(fill=ctk.BOTH, expand=True, padx=12, pady=12)
+        bind_mousewheel(scrollable_frame)
+
+        main_frame = ctk.CTkFrame(scrollable_frame, fg_color="transparent")
+        main_frame.pack(fill=ctk.BOTH, expand=True)
         main_frame.rowconfigure(1, weight=1)
 
         ctk.CTkLabel(
@@ -500,186 +439,6 @@ class EnhancedPresetBrowser:
 
         webbrowser.open("https://github.com/login")
 
-    def _show_error_with_log(self, exc: Exception, tb: str):
-        """Show error dialog with log file location for easy sharing."""
-        from er_save_manager.ui.utils import force_render_dialog
-
-        try:
-            error_dialog = ctk.CTkToplevel(self.parent)
-            error_dialog.title("Preset Browser Error")
-            error_dialog.geometry("700x500")
-            error_dialog.transient(self.parent)
-
-            force_render_dialog(error_dialog)
-            error_dialog.grab_set()
-
-            frame = ctk.CTkFrame(error_dialog)
-            frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=20)
-
-            ctk.CTkLabel(
-                frame,
-                text="⚠️ Failed to Open Preset Browser",
-                font=("Segoe UI", 16, "bold"),
-                text_color=("#dc2626", "#fca5a5"),
-            ).pack(pady=(0, 10))
-
-            ctk.CTkLabel(
-                frame,
-                text=f"Error: {str(exc)}",
-                font=("Segoe UI", 11),
-                wraplength=650,
-            ).pack(pady=(0, 15))
-
-            ctk.CTkLabel(
-                frame,
-                text="A detailed log has been saved to:",
-                font=("Segoe UI", 11, "bold"),
-            ).pack(pady=(0, 5))
-
-            # Log path (clickable/selectable)
-            log_path_text = ctk.CTkTextbox(
-                frame, height=40, fg_color=("gray90", "gray20")
-            )
-            log_path_text.pack(fill=ctk.X, pady=(0, 15))
-            log_path_text.insert("1.0", self.LOG_PATH)
-            log_path_text.configure(state="disabled")
-
-            ctk.CTkLabel(
-                frame,
-                text="Please share this log file with the developer to help fix the issue.",
-                font=("Segoe UI", 10),
-                text_color=("#6b7280", "#9ca3af"),
-            ).pack(pady=(0, 15))
-
-            # Show last 15 lines of log
-            ctk.CTkLabel(
-                frame,
-                text="Recent log entries:",
-                font=("Segoe UI", 11, "bold"),
-            ).pack(anchor=ctk.W, pady=(0, 5))
-
-            log_preview = ctk.CTkTextbox(frame, height=200)
-            log_preview.pack(fill=ctk.BOTH, expand=True, pady=(0, 15))
-
-            try:
-                with open(self.LOG_PATH, encoding="utf-8", errors="ignore") as f:
-                    lines = f.readlines()
-                    preview_text = "".join(lines[-15:])
-                    log_preview.insert("1.0", preview_text)
-            except Exception:
-                log_preview.insert("1.0", "(Could not read log file)")
-
-            log_preview.configure(state="disabled")
-
-            ctk.CTkButton(
-                frame,
-                text="Close",
-                command=error_dialog.destroy,
-                width=120,
-            ).pack(pady=(5, 0))
-
-        except Exception as dialog_exc:
-            # If we can't even show the error dialog, print to console
-            print(f"Failed to show error dialog: {dialog_exc}")
-            print(f"Original error: {exc}")
-            print(f"Log saved to: {self.LOG_PATH}")
-
-    def _show_log_viewer(self):
-        """Show log file contents in a dialog for easy access."""
-        from er_save_manager.ui.utils import force_render_dialog
-
-        log_dialog = ctk.CTkToplevel(self.dialog)
-        log_dialog.title("Preset Browser Log")
-        log_dialog.geometry("900x600")
-        log_dialog.transient(self.dialog)
-
-        force_render_dialog(log_dialog)
-        log_dialog.grab_set()
-
-        frame = ctk.CTkFrame(log_dialog)
-        frame.pack(fill=ctk.BOTH, expand=True, padx=14, pady=14)
-
-        ctk.CTkLabel(
-            frame,
-            text="Preset Browser Debug Log",
-            font=("Segoe UI", 14, "bold"),
-        ).pack(anchor=ctk.W, pady=(0, 10))
-
-        # Log file path (selectable)
-        path_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        path_frame.pack(fill=ctk.X, pady=(0, 10))
-        ctk.CTkLabel(path_frame, text="Log location:", font=("Segoe UI", 10)).pack(
-            anchor=ctk.W, pady=(0, 4)
-        )
-        path_text = ctk.CTkTextbox(path_frame, height=30, wrap="none")
-        path_text.pack(fill=ctk.X)
-        path_text.insert("1.0", self.LOG_PATH)
-        path_text.configure(state="disabled")
-
-        # Log contents
-        ctk.CTkLabel(frame, text="Log contents:", font=("Segoe UI", 10)).pack(
-            anchor=ctk.W, pady=(10, 4)
-        )
-
-        log_text = ctk.CTkTextbox(frame, wrap="none")
-        log_text.pack(fill=ctk.BOTH, expand=True, pady=(0, 10))
-
-        try:
-            if os.path.exists(self.LOG_PATH):
-                with open(self.LOG_PATH, encoding="utf-8") as f:
-                    content = f.read()
-                    if content:
-                        log_text.insert("1.0", content)
-                        # Scroll to bottom to show most recent entries
-                        log_text.see("end")
-                    else:
-                        log_text.insert("1.0", "(Log file is empty)")
-            else:
-                log_text.insert(
-                    "1.0",
-                    f"Log file not found at:\n{self.LOG_PATH}\n\n"
-                    "The log file will be created when the preset browser encounters an issue.",
-                )
-        except Exception as e:
-            log_text.insert("1.0", f"Error reading log file: {e}")
-
-        log_text.configure(state="disabled")
-
-        button_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        button_frame.pack(fill=ctk.X)
-
-        ctk.CTkButton(
-            button_frame,
-            text="Refresh",
-            command=lambda: self._refresh_log_viewer(log_text),
-            width=120,
-        ).pack(side=ctk.LEFT, padx=(0, 8))
-
-        ctk.CTkButton(
-            button_frame, text="Close", command=log_dialog.destroy, width=120
-        ).pack(side=ctk.LEFT)
-
-    def _refresh_log_viewer(self, log_text: ctk.CTkTextbox):
-        """Refresh the log viewer with current log contents."""
-        log_text.configure(state="normal")
-        log_text.delete("1.0", "end")
-
-        try:
-            if os.path.exists(self.LOG_PATH):
-                with open(self.LOG_PATH, encoding="utf-8") as f:
-                    content = f.read()
-                    if content:
-                        log_text.insert("1.0", content)
-                        log_text.see("end")
-                    else:
-                        log_text.insert("1.0", "(Log file is empty)")
-            else:
-                log_text.insert("1.0", f"Log file not found at:\n{self.LOG_PATH}")
-        except Exception as e:
-            log_text.insert("1.0", f"Error reading log file: {e}")
-
-        log_text.configure(state="disabled")
-
     def _make_ctk_image(self, img: Image.Image, size: tuple[int, int]) -> ctk.CTkImage:
         try:
             return ctk.CTkImage(light_image=img, dark_image=img, size=size)
@@ -859,30 +618,14 @@ class EnhancedPresetBrowser:
 
     # ---------------------- Browse logic ----------------------
     def refresh_presets(self):
-        logging.info("=" * 60)
-        logging.info("refresh_presets() called")
         self.status_var.set("Fetching presets from GitHub...")
         self.dialog.update_idletasks()
 
         try:
-            logging.info("Calling manager.fetch_index(force_refresh=True)...")
             index_data = self.manager.fetch_index(force_refresh=True)
-            logging.info(f"fetch_index() returned: {type(index_data)}")
-            logging.info(
-                f"index_data keys: {index_data.keys() if isinstance(index_data, dict) else 'N/A'}"
-            )
-
-            # Log the full index_data to see what's actually in it
-            logging.info(f"Full index_data content: {index_data}")
-
             self.all_presets = index_data.get("presets", [])
-            logging.info(f"Extracted {len(self.all_presets)} presets from index_data")
-
-            if self.all_presets:
-                logging.info(f"First preset sample: {self.all_presets[0]}")
 
             if not self.all_presets:
-                logging.warning("No presets found in index_data!")
                 self.status_var.set("No presets available yet")
                 return
 
@@ -942,12 +685,7 @@ class EnhancedPresetBrowser:
             # Schedule async load after 10ms to allow UI to render first
             self.dialog.after(10, load_metrics_async)
 
-            logging.info("refresh_presets() completed successfully")
-            logging.info("=" * 60)
         except Exception as exc:  # pragma: no cover - UI path
-            logging.error(f"Error in refresh_presets(): {exc}")
-            logging.error(f"Traceback:\n{traceback.format_exc()}")
-            logging.error("=" * 60)
             self.status_var.set(f"Error loading presets: {exc}")
 
     def apply_filters(self):
