@@ -24,6 +24,7 @@ dependencies = [
     "requests>=2.32.0",
     "supabase>=2.4.0",
     "certifi>=2023.7.22",
+    "packaging>=23.0",
 ]
 
 [project.scripts]

@@ -14,6 +14,7 @@ from tkinter import filedialog, ttk
 
 import customtkinter as ctk
 
+from er_save_manager import VersionChecker, __version__
 from er_save_manager.parser import Save
 from er_save_manager.platform import PlatformUtils
 
@@ -147,6 +148,9 @@ class SaveManagerGUI:
         # Bind resize event with debouncing
         self.root.bind("<Configure>", self._on_window_resize)
 
+        # Check for updates asynchronously (don't block UI startup)
+        self.root.after(1000, self._check_for_updates)
+
     def _on_window_resize(self, event=None):
         """Debounce window resize events to improve responsiveness"""
         if event is None:
@@ -173,6 +177,143 @@ class SaveManagerGUI:
         """Process pending resize - called after resize events stop"""
         self._resize_timer = None
         self.root.update_idletasks()
+
+    def _check_for_updates(self):
+        """Check for application updates in a background thread"""
+
+        def check_in_thread():
+            try:
+                # Check if user wants to see update notifications
+                if not self.settings.get("show_update_notifications", True):
+                    return
+
+                checker = VersionChecker(__version__)
+                has_update, latest_version, download_url = checker.check_for_updates()
+
+                if has_update and latest_version and download_url:
+                    # Schedule the dialog to show on the main thread
+                    self.root.after(
+                        0,
+                        lambda: self._show_update_dialog(latest_version, download_url),
+                    )
+            except Exception:
+                # Silently fail if update check doesn't work
+                pass
+
+        # Run in background thread to not block UI
+        threading.Thread(target=check_in_thread, daemon=True).start()
+
+    def _show_update_dialog(self, latest_version: str, download_url: str):
+        """Show update available dialog with GitHub and Nexus Mods download options"""
+        import webbrowser
+
+        from er_save_manager.ui.utils import force_render_dialog
+
+        dialog = ctk.CTkToplevel(self.root)
+        dialog.title("Update Available")
+        dialog.geometry("550x320")
+        dialog.transient(self.root)
+
+        force_render_dialog(dialog)
+
+        # Center dialog over parent window
+        dialog.update_idletasks()
+        parent_x = self.root.winfo_x()
+        parent_y = self.root.winfo_y()
+        parent_width = self.root.winfo_width()
+        parent_height = self.root.winfo_height()
+
+        dialog_width = 550
+        dialog_height = 320
+
+        x = parent_x + (parent_width - dialog_width) // 2
+        y = parent_y + (parent_height - dialog_height) // 2
+
+        dialog.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
+
+        dialog.grab_set()
+
+        main_frame = ctk.CTkFrame(dialog)
+        main_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=20)
+
+        # Title
+        ctk.CTkLabel(
+            main_frame,
+            text="🎉 Update Available!",
+            font=("Segoe UI", 16, "bold"),
+        ).pack(pady=(0, 15))
+
+        # Version info
+        info_text = (
+            f"A new version of ER Save Manager is available!\n\n"
+            f"Current version: {__version__}\n"
+            f"Latest version: {latest_version}"
+        )
+        ctk.CTkLabel(
+            main_frame,
+            text=info_text,
+            font=("Segoe UI", 11),
+            justify=ctk.LEFT,
+        ).pack(pady=(0, 20))
+
+        # Download options label
+        ctk.CTkLabel(
+            main_frame,
+            text="Download from:",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(anchor=ctk.W, pady=(0, 10))
+
+        # Download buttons
+        button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        button_frame.pack(fill=ctk.X, pady=(0, 20))
+
+        def open_github():
+            webbrowser.open(download_url)
+            dialog.destroy()
+
+        def open_nexus():
+            webbrowser.open("https://www.nexusmods.com/eldenring/mods/9271?tab=files")
+            dialog.destroy()
+
+        ctk.CTkButton(
+            button_frame,
+            text="📦 GitHub Releases",
+            command=open_github,
+            width=240,
+            height=40,
+        ).pack(side=ctk.LEFT, padx=(0, 10))
+
+        ctk.CTkButton(
+            button_frame,
+            text="🔗 Nexus Mods",
+            command=open_nexus,
+            width=240,
+            height=40,
+        ).pack(side=ctk.LEFT)
+
+        # Don't show again checkbox
+        dont_show_var = ctk.BooleanVar(value=False)
+        checkbox = ctk.CTkCheckBox(
+            main_frame,
+            text="Don't show update notifications in the future",
+            variable=dont_show_var,
+            font=("Segoe UI", 10),
+        )
+        checkbox.pack(anchor=ctk.W, pady=(0, 15))
+
+        # Close button
+        def on_close():
+            if dont_show_var.get():
+                self.settings.set("show_update_notifications", False)
+            dialog.destroy()
+
+        ctk.CTkButton(
+            main_frame,
+            text="Close",
+            command=on_close,
+            width=120,
+            height=32,
+        ).pack(pady=(5, 0))
 
     def setup_ui(self):
         """Setup main UI structure with optimized layout"""
