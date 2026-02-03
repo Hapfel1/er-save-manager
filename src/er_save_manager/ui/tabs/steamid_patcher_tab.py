@@ -376,19 +376,24 @@ class SteamIDPatcherTab:
             if self.reload_save:
                 self.reload_save()
 
-            CTkMessageBox.showinfo(
-                "Success",
-                f"✓ Updated USER_DATA_10 SteamID\n"
-                f"✓ Updated profile summary\n"
-                f"✓ Synced {patched_count} character slot(s, parent=self.parent)\n\n"
-                f"Old SteamID: {old_steamid}\n"
-                f"New SteamID: {new_steamid}\n\n"
-                f"Backup saved to backup manager.",
+            # Delay message to ensure it appears on top after reload
+            self.parent.after(
+                100,
+                lambda: CTkMessageBox.showinfo(
+                    "Success",
+                    f"✓ Updated USER_DATA_10 SteamID\n"
+                    f"✓ Updated profile summary\n"
+                    f"✓ Synced {patched_count} character slot(s)\n\n"
+                    f"Old SteamID: {old_steamid}\n"
+                    f"New SteamID: {new_steamid}\n\n"
+                    f"Backup saved to backup manager.",
+                    parent=self.parent,
+                ),
             )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"SteamID patch failed:\n{str(e, parent=self.parent)}"
+                "Error", f"SteamID patch failed:\n{str(e)}", parent=self.parent
             )
 
     def parse_steam_url(self):

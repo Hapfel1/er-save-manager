@@ -318,10 +318,11 @@ class GesturesRegionsTab:
                 "Success",
                 (
                     f"Applied changes to Slot {slot_idx + 1}:\n"
-                    f"Unlocked {len(to_unlock, parent=self.parent)}"
+                    f"Unlocked {len(to_unlock)}"
                     + (f", locked {len(to_lock)}" if to_lock else "")
                     + "."
                 ),
+                parent=self.parent,
             )
 
             if self.reload_save:
