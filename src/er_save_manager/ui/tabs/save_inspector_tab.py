@@ -196,7 +196,7 @@ class SaveInspectorTab:
                 anchor="w", padx=6, pady=6
             )
             CTkMessageBox.showerror(
-                "Error", f"Failed to load character list:\n{str(e, parent=self.parent)}"
+                "Error", f"Failed to load character list:\n{str(e)}", parent=self.parent
             )
             import traceback
 

@@ -446,10 +446,12 @@ class CharacterOperations:
         File format:
         - Magic: "ERC\0" (4 bytes)
         - Version: uint32 (1)
+        - Active flag: uint8 (1 byte) - whether slot was active
         - Slot size: uint32
         - Character data: full slot data
-        - Profile data: 0x24C bytes
-        - Checksum: MD5 of data
+        - Profile size: uint32
+        - Profile data: 0x24C bytes (CSProfileSummary entry)
+        - Checksum: MD5 of all above data (16 bytes)
 
         Args:
             save: Save instance
@@ -485,6 +487,9 @@ class CharacterOperations:
             save._raw_data[profile_offset : profile_offset + profile_size]
         )
 
+        # Get active flag
+        is_active = CharacterOperations._is_slot_active(save, slot_index)
+
         # Build file
         import hashlib
 
@@ -493,6 +498,8 @@ class CharacterOperations:
             f.write(b"ERC\x00")
             # Version
             f.write(struct.pack("<I", 1))
+            # Active flag (1 byte)
+            f.write(struct.pack("<B", 1 if is_active else 0))
             # Slot data size
             f.write(struct.pack("<I", len(slot_data)))
             # Slot data
@@ -542,6 +549,10 @@ class CharacterOperations:
             if version != 1:
                 raise ValueError(f"Unsupported .erc version: {version}")
 
+            # Read active flag (added in version 1)
+            active_flag = struct.unpack("<B", f.read(1))[0]
+            was_active = bool(active_flag)
+
             # Read slot data
             slot_size = struct.unpack("<I", f.read(4))[0]
             slot_data = f.read(slot_size)
@@ -570,12 +581,13 @@ class CharacterOperations:
         # Write to slot
         slot_offset = CharacterOperations.get_slot_offset(save, slot_index)
 
-        # Clear checksum (will recalculate later)
-        save._raw_data[
-            slot_offset : slot_offset + CharacterOperations.CHECKSUM_SIZE
-        ] = bytes(CharacterOperations.CHECKSUM_SIZE)
+        # IMPORTANT: Clear the ENTIRE slot first to avoid residual data from previous character
+        # This prevents issues when overwriting a character with a different one
+        save._raw_data[slot_offset : slot_offset + CharacterOperations.SLOT_SIZE] = (
+            bytes(CharacterOperations.SLOT_SIZE)
+        )
 
-        # Write slot data
+        # Write slot data (checksum remains zeroed, will recalculate later)
         save._raw_data[
             slot_offset + CharacterOperations.CHECKSUM_SIZE : slot_offset
             + CharacterOperations.CHECKSUM_SIZE
@@ -589,8 +601,8 @@ class CharacterOperations:
             profile_data
         )
 
-        # Mark slot as active
-        CharacterOperations._set_slot_active(save, slot_index, True)
+        # Restore the active flag from the exported character (or set to True if it was active)
+        CharacterOperations._set_slot_active(save, slot_index, was_active)
 
         # Patch SteamID
         CharacterOperations._patch_steamid_in_slot(save, slot_index)

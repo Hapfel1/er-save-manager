@@ -286,11 +286,19 @@ class Save:
 
     def get_active_slots(self) -> list[int]:
         """
-        Get list of slot indices that contain characters.
+        Get list of slot indices that are marked as active in CSProfileSummary.
+        This is the authoritative source - checks the active flag in USER_DATA_10,
+        not just whether the slot has data.
 
         Returns:
-            List of slot indices (0-9) that are not empty
+            List of slot indices (0-9) that are active
         """
+        # Use the active flags from CSProfileSummary if available
+        if self.user_data_10_parsed and self.user_data_10_parsed.profile_summary:
+            active_flags = self.user_data_10_parsed.profile_summary.active_profiles
+            return [i for i in range(10) if i < len(active_flags) and active_flags[i]]
+
+        # Fallback to checking if slot is not empty (old behavior)
         return [i for i, slot in enumerate(self.character_slots) if not slot.is_empty()]
 
     def get_slot(self, index: int) -> UserDataX:
