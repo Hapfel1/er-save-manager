@@ -3,6 +3,17 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.9.1
+**Released:** February 03, 2026
+
+
+### 🔧 Bug Fixes
+
+- Fixed appimage build to include the custom lavender theme correctly ([381481d](https://github.com/Hapfel1/er-save-manager/commit/381481d5a8fec155b1cf598ce7105008837c96b5))
+
+
+
+---
 ## 📦 Release 0.9.0
 **Released:** February 03, 2026
 
@@ -437,6 +448,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.9.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.9.0..v0.9.1
 [0.9.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.8.0..v0.9.0
 [0.8.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.7.4..v0.8.0
 [0.7.4]: https://github.com/Hapfel1/er-save-manager/compare/v0.7.3..v0.7.4
