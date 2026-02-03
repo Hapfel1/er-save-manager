@@ -1,3 +1,5 @@
+fix window popups centered
+
 comments fix/change done
 
 troubleshooter done

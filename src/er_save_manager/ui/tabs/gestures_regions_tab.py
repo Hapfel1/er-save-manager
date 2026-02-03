@@ -144,23 +144,31 @@ class GesturesRegionsTab:
         """Load gestures for selected character"""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         try:
             slot_idx = int(self.gesture_slot_var.get()) - 1
         except (ValueError, AttributeError):
-            CTkMessageBox.showwarning("Invalid Slot", "Please select a valid slot!")
+            CTkMessageBox.showwarning(
+                "Invalid Slot", "Please select a valid slot!", parent=self.parent
+            )
             return
 
         if slot_idx < 0 or slot_idx >= 10:
-            CTkMessageBox.showwarning("Invalid Slot", "Slot must be between 1 and 10!")
+            CTkMessageBox.showwarning(
+                "Invalid Slot", "Slot must be between 1 and 10!", parent=self.parent
+            )
             return
 
         slot = save_file.characters[slot_idx]
 
         if slot.is_empty():
-            CTkMessageBox.showwarning("Empty Slot", f"Slot {slot_idx + 1} is empty!")
+            CTkMessageBox.showwarning(
+                "Empty Slot", f"Slot {slot_idx + 1} is empty!", parent=self.parent
+            )
             return
 
         self.current_slot = slot_idx
@@ -202,25 +210,31 @@ class GesturesRegionsTab:
 
         CTkMessageBox.showinfo(
             "Loaded",
-            f"Loaded {len(self.gesture_states)} gestures for Slot {slot_idx + 1}.",
+            f"Loaded {len(self.gesture_states, parent=self.parent)} gestures for Slot {slot_idx + 1}.",
         )
 
     def apply_gesture_changes(self):
         """Apply individual gesture changes"""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         if self.current_slot is None:
-            CTkMessageBox.showwarning("No Slot", "Please load a character slot first!")
+            CTkMessageBox.showwarning(
+                "No Slot", "Please load a character slot first!", parent=self.parent
+            )
             return
 
         slot_idx = self.current_slot
         slot = save_file.characters[slot_idx]
 
         if slot.is_empty():
-            CTkMessageBox.showwarning("Empty Slot", f"Slot {slot_idx + 1} is empty!")
+            CTkMessageBox.showwarning(
+                "Empty Slot", f"Slot {slot_idx + 1} is empty!", parent=self.parent
+            )
             return
 
         selected_set = {gid for gid, var in self.gesture_states.items() if var.get()}
@@ -233,7 +247,7 @@ class GesturesRegionsTab:
             "Apply Changes",
             (
                 f"Apply gesture changes to Slot {slot_idx + 1}?\n"
-                f"{len(to_unlock)} gesture(s) will be unlocked"
+                f"{len(to_unlock, parent=self.parent)} gesture(s) will be unlocked"
                 + (f" and {len(to_lock)} locked" if to_lock else "")
                 + ".\n\nA backup will be created."
             ),
@@ -262,7 +276,7 @@ class GesturesRegionsTab:
             if len(new_gesture_ids) != 64:
                 CTkMessageBox.showerror(
                     "Error",
-                    f"Invalid gesture count: {len(new_gesture_ids)} (expected 64)",
+                    f"Invalid gesture count: {len(new_gesture_ids, parent=self.parent)} (expected 64)",
                 )
                 return
 
@@ -272,6 +286,7 @@ class GesturesRegionsTab:
                 CTkMessageBox.showerror(
                     "Error",
                     "Gesture offset not tracked. Cannot write changes.",
+                    parent=self.parent,
                 )
                 return
 
@@ -284,7 +299,7 @@ class GesturesRegionsTab:
             if len(gesture_data) != 256:
                 CTkMessageBox.showerror(
                     "Error",
-                    f"Invalid gesture data size: {len(gesture_data)} bytes (expected 256)",
+                    f"Invalid gesture data size: {len(gesture_data, parent=self.parent)} bytes (expected 256)",
                 )
                 return
 
@@ -303,7 +318,7 @@ class GesturesRegionsTab:
                 "Success",
                 (
                     f"Applied changes to Slot {slot_idx + 1}:\n"
-                    f"Unlocked {len(to_unlock)}"
+                    f"Unlocked {len(to_unlock, parent=self.parent)}"
                     + (f", locked {len(to_lock)}" if to_lock else "")
                     + "."
                 ),
@@ -314,7 +329,9 @@ class GesturesRegionsTab:
             self.load_gestures()
 
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Failed to apply changes:\n{str(e)}")
+            CTkMessageBox.showerror(
+                "Error", f"Failed to apply changes:\n{str(e, parent=self.parent)}"
+            )
 
     def select_all_gestures(self, select_type: str):
         """
@@ -324,7 +341,9 @@ class GesturesRegionsTab:
             select_type: "base" for base game only, "all" for base + DLC
         """
         if self.current_slot is None:
-            CTkMessageBox.showwarning("No Slot", "Please load a character slot first!")
+            CTkMessageBox.showwarning(
+                "No Slot", "Please load a character slot first!", parent=self.parent
+            )
             return
 
         include_dlc = select_type == "all"
@@ -337,15 +356,20 @@ class GesturesRegionsTab:
             "Gestures Selected",
             f"All {'base game + DLC' if include_dlc else 'base game'} gestures selected.\n"
             f"Click 'Apply Changes' to save.",
+            parent=self.parent,
         )
 
     def deselect_all_gestures(self):
         """Deselect all gestures"""
         if self.current_slot is None:
-            CTkMessageBox.showwarning("No Slot", "Please load a character slot first!")
+            CTkMessageBox.showwarning(
+                "No Slot", "Please load a character slot first!", parent=self.parent
+            )
             return
 
         for var in self.gesture_states.values():
             var.set(False)
 
-        CTkMessageBox.showinfo("Gestures Deselected", "All gestures deselected.")
+        CTkMessageBox.showinfo(
+            "Gestures Deselected", "All gestures deselected.", parent=self.parent
+        )

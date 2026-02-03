@@ -246,20 +246,26 @@ class EventFlagsTab:
         """Load event flags for selected character"""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         slot_idx = int(self.eventflag_slot_var.get()) - 1
         slot = save_file.characters[slot_idx]
 
         if slot.is_empty():
-            CTkMessageBox.showwarning("Empty Slot", f"Slot {slot_idx + 1} is empty!")
+            CTkMessageBox.showwarning(
+                "Empty Slot", f"Slot {slot_idx + 1} is empty!", parent=self.parent
+            )
             return
 
         self.current_slot = slot_idx
 
         if not hasattr(slot, "event_flags") or not slot.event_flags:
-            CTkMessageBox.showerror("Error", "Event flags not available")
+            CTkMessageBox.showerror(
+                "Error", "Event flags not available", parent=self.parent
+            )
             return
 
         self.current_event_flags = self._EventFlagAccessor(slot)
@@ -276,6 +282,7 @@ class EventFlagsTab:
             "Loaded",
             f"Loaded event flags for Slot {slot_idx + 1}.\n\n"
             f"Use Category dropdown or Search to view flags.",
+            parent=self.parent,
         )
 
     def on_category_changed(self, choice=None):
@@ -436,13 +443,16 @@ class EventFlagsTab:
     def unlock_all_in_category(self):
         """Unlock all flags in current category"""
         if not self.flag_widgets:
-            CTkMessageBox.showwarning("No Flags", "No flags are currently displayed!")
+            CTkMessageBox.showwarning(
+                "No Flags", "No flags are currently displayed!", parent=self.parent
+            )
             return
 
         result = CTkMessageBox.askyesno(
             "Confirm",
             f"Set all {len(self.flag_widgets)} displayed flags to ON?\n\n"
             f"This will affect only the flags currently visible.",
+            parent=self.parent,
         )
 
         if result:
@@ -454,16 +464,21 @@ class EventFlagsTab:
             CTkMessageBox.showinfo(
                 "Success",
                 f"Enabled all {len(self.flag_widgets)} displayed flags.\n\nClick 'Apply Changes' to save.",
+                parent=self.parent,
             )
 
     def apply_changes(self):
         """Apply flag changes to save file"""
         if self.current_event_flags is None:
-            CTkMessageBox.showwarning("Not Loaded", "No event flags loaded!")
+            CTkMessageBox.showwarning(
+                "Not Loaded", "No event flags loaded!", parent=self.parent
+            )
             return
 
         if not self.flag_states:
-            CTkMessageBox.showwarning("No Changes", "No flags have been modified!")
+            CTkMessageBox.showwarning(
+                "No Changes", "No flags have been modified!", parent=self.parent
+            )
             return
 
         # Count changes
@@ -474,13 +489,16 @@ class EventFlagsTab:
                 changes += 1
 
         if changes == 0:
-            CTkMessageBox.showinfo("No Changes", "No flags were modified!")
+            CTkMessageBox.showinfo(
+                "No Changes", "No flags were modified!", parent=self.parent
+            )
             return
 
         result = CTkMessageBox.askyesno(
             "Confirm Changes",
             f"Apply {changes} flag changes to Slot {self.current_slot + 1}?\n\n"
             f"A backup will be created automatically.",
+            parent=self.parent,
         )
 
         if not result:
@@ -489,9 +507,8 @@ class EventFlagsTab:
         # Create backup
         save_path = self.get_save_path()
         if save_path:
-            backup_mgr = BackupManager(save_path.parent)
+            backup_mgr = BackupManager(save_path)
             backup_mgr.create_backup(
-                save_path.name,
                 f"Before event flag changes (Slot {self.current_slot + 1})",
             )
 
@@ -499,8 +516,26 @@ class EventFlagsTab:
         for flag_id, new_state in self.flag_states.items():
             self.current_event_flags.set_flag(flag_id, new_state)
 
-        # Save
+        # CRITICAL: Write the modified event_flags buffer back to _raw_data
+        # The set_flag() updates slot.event_flags in memory, but we must also
+        # update the save file's raw data buffer that gets written to disk
         save_file = self.get_save_file()
+        slot = save_file.character_slots[self.current_slot]
+
+        if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
+            # Calculate absolute offset in the raw data
+            absolute_offset = slot.data_start + slot.event_flags_offset
+            event_flags_size = 0x1BF99F  # 1,833,375 bytes
+
+            # Write the modified event_flags buffer to raw_data
+            save_file._raw_data[
+                absolute_offset : absolute_offset + event_flags_size
+            ] = slot.event_flags
+
+        # Recalculate checksums before saving
+        save_file.recalculate_checksums()
+
+        # Save
         save_file.save(self.get_save_path())
         self.reload_save()
 
@@ -508,6 +543,7 @@ class EventFlagsTab:
             "Success",
             f"Applied {changes} flag changes to Slot {self.current_slot + 1}!\n\n"
             f"Backup created and save file reloaded.",
+            parent=self.parent,
         )
 
         # Clear states
@@ -525,14 +561,19 @@ class EventFlagsTab:
 
         dialog = ctk.CTkToplevel(self.parent)
         dialog.title("Advanced Event Flag Editor")
-        dialog.geometry("600x500")
+        width, height = 600, 500
         dialog.transient(self.parent)
 
-        # Center dialog
+        # Center dialog over parent window
         dialog.update_idletasks()
-        x = (dialog.winfo_screenwidth() // 2) - (600 // 2)
-        y = (dialog.winfo_screenheight() // 2) - (500 // 2)
-        dialog.geometry(f"+{x}+{y}")
+        self.parent.update_idletasks()
+        parent_x = self.parent.winfo_rootx()
+        parent_y = self.parent.winfo_rooty()
+        parent_width = self.parent.winfo_width()
+        parent_height = self.parent.winfo_height()
+        x = parent_x + (parent_width // 2) - (width // 2)
+        y = parent_y + (parent_height // 2) - (height // 2)
+        dialog.geometry(f"{width}x{height}+{x}+{y}")
 
         # Force rendering on Linux before grab_set
         force_render_dialog(dialog)
@@ -561,19 +602,32 @@ class EventFlagsTab:
                 new_state = not current
                 self.current_event_flags.set_flag(flag_id, new_state)
 
-                # Save
+                # Write to raw data and recalculate checksums
                 save_file = self.get_save_file()
+                slot = save_file.character_slots[self.current_slot]
+
+                if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
+                    absolute_offset = slot.data_start + slot.event_flags_offset
+                    event_flags_size = 0x1BF99F
+                    save_file._raw_data[
+                        absolute_offset : absolute_offset + event_flags_size
+                    ] = slot.event_flags
+
+                save_file.recalculate_checksums()
                 save_file.save(self.get_save_path())
                 self.reload_save()
 
                 CTkMessageBox.showinfo(
                     "Success",
                     f"Flag {flag_id} set to {'ON' if new_state else 'OFF'}",
+                    parent=dialog,
                 )
             except ValueError:
-                CTkMessageBox.showerror("Error", "Invalid flag ID!")
+                CTkMessageBox.showerror("Error", "Invalid flag ID!", parent=dialog)
             except Exception as e:
-                CTkMessageBox.showerror("Error", f"Failed to toggle flag: {e}")
+                CTkMessageBox.showerror(
+                    "Error", f"Failed to toggle flag: {e}", parent=dialog
+                )
 
         def check_flag():
             try:
@@ -583,11 +637,14 @@ class EventFlagsTab:
                 CTkMessageBox.showinfo(
                     "Flag Status",
                     f"Flag {flag_id}: {flag_name}\n\nState: {'ON' if state else 'OFF'}",
+                    parent=dialog,
                 )
             except ValueError:
-                CTkMessageBox.showerror("Error", "Invalid flag ID!")
+                CTkMessageBox.showerror("Error", "Invalid flag ID!", parent=dialog)
             except Exception as e:
-                CTkMessageBox.showerror("Error", f"Failed to check flag: {e}")
+                CTkMessageBox.showerror(
+                    "Error", f"Failed to check flag: {e}", parent=dialog
+                )
 
         ctk.CTkButton(input_frame, text="Toggle", command=toggle_flag, width=100).pack(
             side=tk.LEFT, padx=2
@@ -764,6 +821,7 @@ class EventFlagsTab:
                 CTkMessageBox.showinfo(
                     "No Selection",
                     "No valid selections. Select defeated bosses to respawn.",
+                    parent=dialog,
                 )
                 return
 
@@ -787,8 +845,18 @@ class EventFlagsTab:
                     " Proceeding without backup.",
                 )
 
-            # Save
+            # Write to raw data and recalculate checksums
             save_file = self.get_save_file()
+            slot = save_file.character_slots[self.current_slot]
+
+            if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
+                absolute_offset = slot.data_start + slot.event_flags_offset
+                event_flags_size = 0x1BF99F
+                save_file._raw_data[
+                    absolute_offset : absolute_offset + event_flags_size
+                ] = slot.event_flags
+
+            save_file.recalculate_checksums()
             save_file.save(self.get_save_path())
             self.reload_save()
 
@@ -799,16 +867,20 @@ class EventFlagsTab:
                 teleport = TeleportFix("roundtable")
                 result = teleport.apply(save_file, self.current_slot)
                 if result.applied:
+                    save_file.recalculate_checksums()
                     save_file.save(self.get_save_path())
                     self.reload_save()
             except Exception as e:
                 CTkMessageBox.showwarning(
                     "Teleport Failed",
                     f"Could not teleport to Roundtable Hold: {e}",
+                    parent=dialog,
                 )
 
             CTkMessageBox.showinfo(
-                "Success", f"Respawned {count} boss(es)!\n\nSave file updated."
+                "Success",
+                f"Respawned {count} boss(es)!\n\nSave file updated.",
+                parent=dialog,
             )
             dialog.destroy()
 
@@ -819,6 +891,7 @@ class EventFlagsTab:
                 CTkMessageBox.showerror(
                     "Invalid Save Path",
                     "Could not locate the save file to back up. Load a valid save (.sl2) first.",
+                    parent=dialog,
                 )
                 return
 
@@ -826,6 +899,7 @@ class EventFlagsTab:
                 "Confirm",
                 f"Respawn ALL bosses in {boss_category_var.get()}?\n\n"
                 f"This will reset {len(boss_vars)} boss(es).",
+                parent=dialog,
             )
 
             if not result:
@@ -851,16 +925,28 @@ class EventFlagsTab:
                         "Backup Skipped",
                         "Could not create backup (permission denied)."
                         " Continuing without backup.",
+                        parent=dialog,
                     )
             else:
                 CTkMessageBox.showwarning(
                     "Backup Skipped",
                     "Could not create backup because the save path is not a file."
                     " Proceeding without backup.",
+                    parent=dialog,
                 )
 
-            # Save
+            # Write to raw data and recalculate checksums
             save_file = self.get_save_file()
+            slot = save_file.character_slots[self.current_slot]
+
+            if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
+                absolute_offset = slot.data_start + slot.event_flags_offset
+                event_flags_size = 0x1BF99F
+                save_file._raw_data[
+                    absolute_offset : absolute_offset + event_flags_size
+                ] = slot.event_flags
+
+            save_file.recalculate_checksums()
             save_file.save(self.get_save_path())
             self.reload_save()
 
@@ -871,18 +957,21 @@ class EventFlagsTab:
                 teleport = TeleportFix("roundtable")
                 result = teleport.apply(save_file, self.current_slot)
                 if result.applied:
+                    save_file.recalculate_checksums()
                     save_file.save(self.get_save_path())
                     self.reload_save()
             except Exception as e:
                 CTkMessageBox.showwarning(
                     "Teleport Failed",
                     f"Could not teleport to Roundtable Hold: {e}",
+                    parent=dialog,
                 )
 
             CTkMessageBox.showinfo(
                 "Success",
                 f"Respawned all {count} bosses in {boss_category_var.get()}!\n\n"
                 f"Save file updated.",
+                parent=dialog,
             )
             dialog.destroy()
 
