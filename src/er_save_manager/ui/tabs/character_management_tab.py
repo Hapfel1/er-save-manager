@@ -415,7 +415,9 @@ class CharacterManagementTab:
         """Copy character from one slot to another"""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         from_slot = self.copy_from_var.get() - 1
@@ -423,7 +425,9 @@ class CharacterManagementTab:
 
         if from_slot == to_slot:
             CTkMessageBox.showerror(
-                "Error", "Source and destination slots must be different!"
+                "Error",
+                "Source and destination slots must be different!",
+                parent=self.parent,
             )
             return
 
@@ -431,7 +435,9 @@ class CharacterManagementTab:
         to_char = save_file.characters[to_slot]
 
         if from_char.is_empty():
-            CTkMessageBox.showerror("Error", f"Slot {from_slot + 1} is empty!")
+            CTkMessageBox.showerror(
+                "Error", f"Slot {from_slot + 1} is empty!", parent=self.parent
+            )
             return
 
         from_name = from_char.get_character_name()
@@ -441,6 +447,7 @@ class CharacterManagementTab:
             response = CTkMessageBox.askyesno(
                 "Overwrite?",
                 f"Slot {to_slot + 1} contains '{to_name}'.\n\nOverwrite with '{from_name}'?",
+                parent=self.parent,
             )
             if response != "Yes":
                 return
@@ -476,10 +483,13 @@ class CharacterManagementTab:
             CTkMessageBox.showinfo(
                 "Success",
                 f"Character '{from_name}' copied from Slot {from_slot + 1} to Slot {to_slot + 1}!\n\nBackup created in backup manager.",
+                parent=self.parent,
             )
 
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Copy failed:\n{str(e)}")
+            CTkMessageBox.showerror(
+                "Error", f"Copy failed:\n{str(e, parent=self.parent)}"
+            )
             import traceback
 
             traceback.print_exc()
@@ -488,14 +498,18 @@ class CharacterManagementTab:
         """Transfer character to another save file"""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         from_slot = self.transfer_from_var.get() - 1
         from_char = save_file.characters[from_slot]
 
         if from_char.is_empty():
-            CTkMessageBox.showerror("Error", f"Slot {from_slot + 1} is empty!")
+            CTkMessageBox.showerror(
+                "Error", f"Slot {from_slot + 1} is empty!", parent=self.parent
+            )
             return
 
         # Select target save file
@@ -599,10 +613,13 @@ class CharacterManagementTab:
             CTkMessageBox.showinfo(
                 "Success",
                 f"Character transferred from Slot {from_slot + 1} to target save Slot {to_slot + 1}!\n\nBoth saves backed up.",
+                parent=self.parent,
             )
 
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Transfer failed:\n{str(e)}")
+            CTkMessageBox.showerror(
+                "Error", f"Transfer failed:\n{str(e, parent=self.parent)}"
+            )
             import traceback
 
             traceback.print_exc()
@@ -611,14 +628,18 @@ class CharacterManagementTab:
         """Swap two character slots"""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         slot_a = self.swap_a_var.get() - 1
         slot_b = self.swap_b_var.get() - 1
 
         if slot_a == slot_b:
-            CTkMessageBox.showerror("Error", "Slots must be different!")
+            CTkMessageBox.showerror(
+                "Error", "Slots must be different!", parent=self.parent
+            )
             return
 
         try:
@@ -647,11 +668,15 @@ class CharacterManagementTab:
                 self.reload_save()
 
             CTkMessageBox.showinfo(
-                "Success", f"Swapped Slot {slot_a + 1} and Slot {slot_b + 1}!"
+                "Success",
+                f"Swapped Slot {slot_a + 1} and Slot {slot_b + 1}!",
+                parent=self.parent,
             )
 
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Swap failed:\n{str(e)}")
+            CTkMessageBox.showerror(
+                "Error", f"Swap failed:\n{str(e, parent=self.parent)}"
+            )
             import traceback
 
             traceback.print_exc()
@@ -660,14 +685,18 @@ class CharacterManagementTab:
         """Export character to .erc file"""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         slot = self.export_slot_var.get() - 1
         char = save_file.characters[slot]
 
         if char.is_empty():
-            CTkMessageBox.showerror("Error", f"Slot {slot + 1} is empty!")
+            CTkMessageBox.showerror(
+                "Error", f"Slot {slot + 1} is empty!", parent=self.parent
+            )
             return
 
         # Get character name for default filename
@@ -690,11 +719,15 @@ class CharacterManagementTab:
             CharacterOperations.export_character(save_file, slot, Path(output_path))
 
             CTkMessageBox.showinfo(
-                "Success", f"Character '{char_name}' exported to:\n{output_path}"
+                "Success",
+                f"Character '{char_name}' exported to:\n{output_path}",
+                parent=self.parent,
             )
 
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Export failed:\n{str(e)}")
+            CTkMessageBox.showerror(
+                "Error", f"Export failed:\n{str(e, parent=self.parent)}"
+            )
             import traceback
 
             traceback.print_exc()
@@ -703,7 +736,9 @@ class CharacterManagementTab:
         """Import character from .erc file"""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         import_path = filedialog.askopenfilename(
@@ -720,7 +755,9 @@ class CharacterManagementTab:
         if not to_char.is_empty():
             to_name = to_char.get_character_name()
             response = CTkMessageBox.askyesno(
-                "Overwrite?", f"Slot {to_slot + 1} contains '{to_name}'.\n\nOverwrite?"
+                "Overwrite?",
+                f"Slot {to_slot + 1} contains '{to_name}'.\n\nOverwrite?",
+                parent=self.parent,
             )
             if response != "Yes":
                 return
@@ -751,11 +788,15 @@ class CharacterManagementTab:
                 self.reload_save()
 
             CTkMessageBox.showinfo(
-                "Success", f"Character imported to Slot {to_slot + 1}!"
+                "Success",
+                f"Character imported to Slot {to_slot + 1}!",
+                parent=self.parent,
             )
 
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Import failed:\n{str(e)}")
+            CTkMessageBox.showerror(
+                "Error", f"Import failed:\n{str(e, parent=self.parent)}"
+            )
             import traceback
 
             traceback.print_exc()
@@ -764,14 +805,18 @@ class CharacterManagementTab:
         """Delete character from slot"""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         slot = self.delete_slot_var.get() - 1
         char = save_file.characters[slot]
 
         if char.is_empty():
-            CTkMessageBox.showinfo("Info", f"Slot {slot + 1} is already empty.")
+            CTkMessageBox.showinfo(
+                "Info", f"Slot {slot + 1} is already empty.", parent=self.parent
+            )
             return
 
         char_name = char.get_character_name()
@@ -779,6 +824,7 @@ class CharacterManagementTab:
         response = CTkMessageBox.askyesno(
             "Confirm Delete",
             f"Delete character '{char_name}' from Slot {slot + 1}?\n\nThis will create a backup first.",
+            parent=self.parent,
         )
         if response != "Yes":
             return
@@ -811,10 +857,13 @@ class CharacterManagementTab:
             CTkMessageBox.showinfo(
                 "Success",
                 f"Character '{char_name}' deleted from Slot {slot + 1}.\n\nBackup created.",
+                parent=self.parent,
             )
 
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Delete failed:\n{str(e)}")
+            CTkMessageBox.showerror(
+                "Error", f"Delete failed:\n{str(e, parent=self.parent)}"
+            )
             import traceback
 
             traceback.print_exc()

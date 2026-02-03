@@ -300,20 +300,25 @@ class SteamIDPatcherTab:
         """Patch SteamID in save file"""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         new_steamid = self.new_steamid_var.get().strip()
 
         if not new_steamid.isdigit() or len(new_steamid) != 17:
             CTkMessageBox.showerror(
-                "Invalid SteamID", "SteamID must be exactly 17 digits"
+                "Invalid SteamID",
+                "SteamID must be exactly 17 digits",
+                parent=self.parent,
             )
             return
 
         if not CTkMessageBox.askyesno(
             "Confirm Patch",
             f"Patch all character slots to SteamID: {new_steamid}?\n\nA backup will be created.",
+            parent=self.parent,
         ):
             return
 
@@ -375,21 +380,25 @@ class SteamIDPatcherTab:
                 "Success",
                 f"✓ Updated USER_DATA_10 SteamID\n"
                 f"✓ Updated profile summary\n"
-                f"✓ Synced {patched_count} character slot(s)\n\n"
+                f"✓ Synced {patched_count} character slot(s, parent=self.parent)\n\n"
                 f"Old SteamID: {old_steamid}\n"
                 f"New SteamID: {new_steamid}\n\n"
                 f"Backup saved to backup manager.",
             )
 
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"SteamID patch failed:\n{str(e)}")
+            CTkMessageBox.showerror(
+                "Error", f"SteamID patch failed:\n{str(e, parent=self.parent)}"
+            )
 
     def parse_steam_url(self):
         """Parse Steam profile URL to extract SteamID"""
         url = self.steam_url_var.get().strip()
 
         if not url:
-            CTkMessageBox.showwarning("Empty URL", "Please enter a Steam profile URL")
+            CTkMessageBox.showwarning(
+                "Empty URL", "Please enter a Steam profile URL", parent=self.parent
+            )
             return
 
         try:
@@ -398,7 +407,7 @@ class SteamIDPatcherTab:
             if url.isdigit() and len(url) == 17:
                 self.new_steamid_var.set(url)
                 self.steam_url_var.set("")
-                CTkMessageBox.showinfo("Success", f"SteamID: {url}")
+                CTkMessageBox.showinfo("Success", f"SteamID: {url}", parent=self.parent)
                 return
 
             match = re.search(r"/profiles/(\d{17})", url)
@@ -406,7 +415,9 @@ class SteamIDPatcherTab:
                 steamid = match.group(1)
                 self.new_steamid_var.set(steamid)
                 self.steam_url_var.set("")
-                CTkMessageBox.showinfo("Success", f"Extracted SteamID: {steamid}")
+                CTkMessageBox.showinfo(
+                    "Success", f"Extracted SteamID: {steamid}", parent=self.parent
+                )
                 return
 
             custom_match = re.search(r"/id/([^/\s]+)", url)
@@ -420,12 +431,14 @@ class SteamIDPatcherTab:
                 "Could not find SteamID in the URL.\n\n"
                 "Supported formats:\n"
                 "• https://steamcommunity.com/profiles/76561198012345678\n"
-                "• https://steamcommunity.com/id/username (will attempt to resolve)\n"
+                "• https://steamcommunity.com/id/username (will attempt to resolve, parent=self.parent)\n"
                 "• Just the 17-digit SteamID number",
             )
 
         except Exception as e:
-            CTkMessageBox.showerror("Parse Error", f"Failed to parse URL:\n{str(e)}")
+            CTkMessageBox.showerror(
+                "Parse Error", f"Failed to parse URL:\n{str(e, parent=self.parent)}"
+            )
 
     def _resolve_custom_url(self, custom_name):
         """Resolve custom Steam URL using steamid.io"""
@@ -462,6 +475,7 @@ class SteamIDPatcherTab:
                             f"Resolved via steamid.io!\n\n"
                             f"Username: {custom_name}\n"
                             f"SteamID: {steamid}",
+                            parent=self.parent,
                         )
                         return
 
@@ -469,6 +483,7 @@ class SteamIDPatcherTab:
                     "Not Found",
                     f"Could not find SteamID for: {custom_name}\n\n"
                     "Please check the username and try again.",
+                    parent=self.parent,
                 )
                 return  # Exit after showing not found error
 
@@ -476,7 +491,7 @@ class SteamIDPatcherTab:
             CTkMessageBox.showerror(
                 "Resolution Failed",
                 f"Failed to resolve custom URL: {custom_name}\n\n"
-                f"Error: {str(e)}\n\n"
+                f"Error: {str(e, parent=self.parent)}\n\n"
                 "Please use a /profiles/ URL or enter the SteamID directly.",
             )
 
@@ -576,6 +591,7 @@ class SteamIDPatcherTab:
                 CTkMessageBox.showwarning(
                     "Not Found",
                     "Could not detect any Steam accounts.\n\nPlease enter SteamID manually.",
+                    parent=self.parent,
                 )
                 return
 
@@ -585,6 +601,7 @@ class SteamIDPatcherTab:
                 CTkMessageBox.showinfo(
                     "Detected",
                     f"SteamID detected: {steamid}\n\nAccount: {steam_users[0][0]}",
+                    parent=self.parent,
                 )
                 return
 
@@ -593,7 +610,7 @@ class SteamIDPatcherTab:
         except Exception as e:
             CTkMessageBox.showwarning(
                 "Detection Failed",
-                f"Could not auto-detect SteamID:\n{str(e)}",
+                f"Could not auto-detect SteamID:\n{str(e, parent=self.parent)}",
             )
 
     def _show_account_selection_dialog(self, accounts):
@@ -633,7 +650,7 @@ class SteamIDPatcherTab:
                     dialog.destroy()
                     CTkMessageBox.showinfo(
                         "Selected",
-                        f"SteamID: {sid}\n\nAccount: {accounts[[a[1] for a in accounts].index(sid)][0]}",
+                        f"SteamID: {sid}\n\nAccount: {accounts[[a[1] for a in accounts].index(sid, parent=self.parent)][0]}",
                     )
 
                 return select_account
