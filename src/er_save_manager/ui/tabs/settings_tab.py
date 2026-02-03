@@ -243,6 +243,7 @@ class SettingsTab:
             "Reset Settings",
             "Are you sure you want to reset all settings to defaults?\n\n"
             "This cannot be undone.",
+            parent=self.parent,
         ):
             self.settings.reset_to_defaults()
 
@@ -255,7 +256,9 @@ class SettingsTab:
             self.max_backups_var.set(50)
             self.theme_var.set("dark")
 
-            CTkMessageBox.showinfo("Success", "Settings have been reset to defaults.")
+            CTkMessageBox.showinfo(
+                "Success", "Settings have been reset to defaults.", parent=self.parent
+            )
 
     def _on_theme_changed(self, value=None):
         """Handle theme change."""
@@ -264,4 +267,5 @@ class SettingsTab:
         CTkMessageBox.showinfo(
             "Theme Changed",
             f"Theme changed to {theme}.\n\nPlease restart the application for full effect.",
+            parent=self.parent,
         )

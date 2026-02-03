@@ -229,13 +229,19 @@ class AppearanceTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", self.parent
+                "No Save",
+                "Please load a save file first!",
+                self.parent,
+                parent=self.parent,
             )
             return
 
         if self.selected_slot is None:
             CTkMessageBox.showwarning(
-                "No Selection", "Please select a preset to view!", self.parent
+                "No Selection",
+                "Please select a preset to view!",
+                self.parent,
+                parent=self.parent,
             )
             return
 
@@ -245,7 +251,10 @@ class AppearanceTab:
             presets = save_file.get_character_presets()
             if not presets or preset_idx >= len(presets.presets):
                 CTkMessageBox.showerror(
-                    "Error", "Could not load preset data", self.parent
+                    "Error",
+                    "Could not load preset data",
+                    self.parent,
+                    parent=self.parent,
                 )
                 return
 
@@ -253,7 +262,10 @@ class AppearanceTab:
 
             if preset.is_empty():
                 CTkMessageBox.showinfo(
-                    "Empty Preset", f"Preset {preset_idx + 1} is empty", self.parent
+                    "Empty Preset",
+                    f"Preset {preset_idx + 1} is empty",
+                    self.parent,
+                    parent=self.parent,
                 )
                 return
 
@@ -541,7 +553,9 @@ class AppearanceTab:
             dialog.focus_set()
 
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Failed to view preset:\n{str(e)}")
+            CTkMessageBox.showerror(
+                "Error", f"Failed to view preset:\n{str(e, parent=self.parent)}"
+            )
             import traceback
 
             traceback.print_exc()
@@ -550,7 +564,9 @@ class AppearanceTab:
         """Export presets to JSON"""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         output_path = filedialog.asksaveasfilename(
@@ -562,15 +578,21 @@ class AppearanceTab:
         if output_path:
             try:
                 count = save_file.export_presets(output_path)
-                CTkMessageBox.showinfo("Success", f"Exported {count} preset(s) to JSON")
+                CTkMessageBox.showinfo(
+                    "Success", f"Exported {count} preset(s, parent=self.parent) to JSON"
+                )
             except Exception as e:
-                CTkMessageBox.showerror("Error", f"Export failed:\n{str(e)}")
+                CTkMessageBox.showerror(
+                    "Error", f"Export failed:\n{str(e, parent=self.parent)}"
+                )
 
     def import_preset_from_json(self):
         """Import preset from external JSON file"""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         json_path = filedialog.askopenfilename(
@@ -591,23 +613,34 @@ class AppearanceTab:
             elif isinstance(data, list):
                 presets = data
             else:
-                CTkMessageBox.showerror("Error", "Invalid JSON file format")
+                CTkMessageBox.showerror(
+                    "Error", "Invalid JSON file format", parent=self.parent
+                )
                 return
 
             if not presets:
-                CTkMessageBox.showerror("Error", "No presets found in JSON file")
+                CTkMessageBox.showerror(
+                    "Error", "No presets found in JSON file", parent=self.parent
+                )
                 return
 
             # Create import dialog
             dialog = tk.Toplevel(self.parent)
             dialog.title("Import from JSON")
-            dialog.geometry("550x250")
-            dialog.grab_set()
+            width, height = 550, 250
+            dialog.transient(self.parent)
 
+            # Center over parent window
             dialog.update_idletasks()
-            x = (dialog.winfo_screenwidth() // 2) - (dialog.winfo_width() // 2)
-            y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
-            dialog.geometry(f"550x250+{x}+{y}")
+            self.parent.update_idletasks()
+            parent_x = self.parent.winfo_rootx()
+            parent_y = self.parent.winfo_rooty()
+            parent_width = self.parent.winfo_width()
+            parent_height = self.parent.winfo_height()
+            x = parent_x + (parent_width // 2) - (width // 2)
+            y = parent_y + (parent_height // 2) - (height // 2)
+            dialog.geometry(f"{width}x{height}+{x}+{y}")
+            dialog.grab_set()
 
             frame = ctk.CTkFrame(dialog)
             frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
@@ -656,7 +689,9 @@ class AppearanceTab:
 
                     if source_idx < 0 or target_slot < 0:
                         CTkMessageBox.showwarning(
-                            "Invalid", "Please select valid source and target"
+                            "Invalid",
+                            "Please select valid source and target",
+                            parent=self.parent,
                         )
                         return
 
@@ -683,12 +718,16 @@ class AppearanceTab:
                         self.reload_save()
 
                     CTkMessageBox.showinfo(
-                        "Success", f"Preset imported to Slot {target_slot + 1}!"
+                        "Success",
+                        f"Preset imported to Slot {target_slot + 1}!",
+                        parent=self.parent,
                     )
                     dialog.destroy()
 
                 except Exception as e:
-                    CTkMessageBox.showerror("Error", f"Import failed:\n{str(e)}")
+                    CTkMessageBox.showerror(
+                        "Error", f"Import failed:\n{str(e, parent=self.parent)}"
+                    )
                     import traceback
 
                     traceback.print_exc()
@@ -704,7 +743,9 @@ class AppearanceTab:
             ).pack(side=tk.LEFT, padx=5)
 
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Failed to load JSON:\n{str(e)}")
+            CTkMessageBox.showerror(
+                "Error", f"Failed to load JSON:\n{str(e, parent=self.parent)}"
+            )
             import traceback
 
             traceback.print_exc()
@@ -712,23 +753,31 @@ class AppearanceTab:
     def copy_preset_to_save(self):
         """Copy selected preset to another save file"""
         if self.selected_slot is None:
-            CTkMessageBox.showwarning("No Selection", "Please select a preset to copy")
+            CTkMessageBox.showwarning(
+                "No Selection", "Please select a preset to copy", parent=self.parent
+            )
             return
 
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first", parent=self.parent
+            )
             return
 
         # Get preset info
         presets_data = save_file.get_character_presets()
         if not presets_data or self.selected_slot >= 15:
-            CTkMessageBox.showerror("Error", "Invalid preset selection")
+            CTkMessageBox.showerror(
+                "Error", "Invalid preset selection", parent=self.parent
+            )
             return
 
         source_preset = presets_data.presets[self.selected_slot]
         if not source_preset or source_preset.is_empty():
-            CTkMessageBox.showwarning("Empty Slot", "Selected slot is empty")
+            CTkMessageBox.showwarning(
+                "Empty Slot", "Selected slot is empty", parent=self.parent
+            )
             return
         # CRITICAL: Capture the slot value NOW to avoid closure issues
         source_slot = self.selected_slot
@@ -784,14 +833,18 @@ class AppearanceTab:
             dest_path = dest_path_var.get()
             if not dest_path or not Path(dest_path).exists():
                 CTkMessageBox.showerror(
-                    "Error", "Please select a valid destination save file"
+                    "Error",
+                    "Please select a valid destination save file",
+                    parent=self.parent,
                 )
                 return
 
             try:
                 dest_slot = int(dest_slot_var.get())
                 if dest_slot < 1 or dest_slot > 15:
-                    CTkMessageBox.showerror("Error", "Slot must be between 1 and 15")
+                    CTkMessageBox.showerror(
+                        "Error", "Slot must be between 1 and 15", parent=self.parent
+                    )
                     return
 
                 # Load destination save
@@ -813,7 +866,9 @@ class AppearanceTab:
                 )
 
                 if not success:
-                    CTkMessageBox.showerror("Error", "Failed to copy preset")
+                    CTkMessageBox.showerror(
+                        "Error", "Failed to copy preset", parent=self.parent
+                    )
                     return
 
                 # Save destination
@@ -822,12 +877,14 @@ class AppearanceTab:
 
                 CTkMessageBox.showinfo(
                     "Success",
-                    f"Preset copied to {Path(dest_path).name}, Slot {dest_slot}!",
+                    f"Preset copied to {Path(dest_path, parent=self.parent).name}, Slot {dest_slot}!",
                 )
                 dialog.destroy()
 
             except Exception as e:
-                CTkMessageBox.showerror("Error", f"Copy failed:\n{str(e)}")
+                CTkMessageBox.showerror(
+                    "Error", f"Copy failed:\n{str(e, parent=self.parent)}"
+                )
                 import traceback
 
                 traceback.print_exc()
@@ -846,19 +903,22 @@ class AppearanceTab:
         """Delete selected preset"""
         if self.selected_slot is None:
             CTkMessageBox.showwarning(
-                "No Selection", "Please select a preset to delete"
+                "No Selection", "Please select a preset to delete", parent=self.parent
             )
             return
 
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first", parent=self.parent
+            )
             return
 
         # Confirm deletion
         if not CTkMessageBox.askyesno(
             "Confirm Delete",
             f"Delete preset in Slot {self.selected_slot + 1}?\n\nThis will clear the slot.",
+            parent=self.parent,
         ):
             return
 
@@ -877,7 +937,9 @@ class AppearanceTab:
             success = save_file.delete_preset(self.selected_slot)
 
             if not success:
-                CTkMessageBox.showerror("Error", "Failed to delete preset")
+                CTkMessageBox.showerror(
+                    "Error", "Failed to delete preset", parent=self.parent
+                )
                 return
 
             # Save
@@ -893,11 +955,15 @@ class AppearanceTab:
             self.load_presets()
 
             CTkMessageBox.showinfo(
-                "Success", f"Preset in Slot {self.selected_slot + 1} deleted!"
+                "Success",
+                f"Preset in Slot {self.selected_slot + 1} deleted!",
+                parent=self.parent,
             )
 
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Delete failed:\n{str(e)}")
+            CTkMessageBox.showerror(
+                "Error", f"Delete failed:\n{str(e, parent=self.parent)}"
+            )
             import traceback
 
             traceback.print_exc()
