@@ -449,7 +449,8 @@ class SaveManagerGUI:
             tab_char_mgmt,
             lambda: self.save_file,
             lambda: self.save_path,
-            self.load_save,
+            self.reload_save,
+            self.is_game_running,
         )
         self.char_mgmt_tab.setup_ui()
 
@@ -1034,8 +1035,12 @@ class SaveManagerGUI:
         """Handle character slot selection from Fixer tab."""
         self.selected_slot_index = slot_index
 
-    def load_save(self):
-        """Load save file in background thread to prevent UI freezing"""
+    def load_save(self, silent=False):
+        """Load save file in background thread to prevent UI freezing
+
+        Args:
+            silent: If True, suppress the success message (used for reloads after operations)
+        """
         save_path = self.file_path_var.get()
 
         if not save_path or not os.path.exists(save_path):
@@ -1136,18 +1141,18 @@ class SaveManagerGUI:
         # Start loading in background thread
         self.status_var.set("Loading save file...")
         thread = threading.Thread(
-            target=self._load_save_background, args=(save_path,), daemon=True
+            target=self._load_save_background, args=(save_path, silent), daemon=True
         )
         thread.start()
 
-    def _load_save_background(self, save_path):
+    def _load_save_background(self, save_path, silent=False):
         """Background thread for loading save file"""
         try:
             # Load save file in background
             save_file = Save.from_file(save_path)
 
             # Update main thread
-            self.root.after(0, self._finalize_save_load, save_file, save_path)
+            self.root.after(0, self._finalize_save_load, save_file, save_path, silent)
         except Exception as e:
             error_msg = str(e)
 
@@ -1159,7 +1164,11 @@ class SaveManagerGUI:
             )
             self.root.after(0, lambda: self.status_var.set("Load failed"))
 
-    def _finalize_save_load(self, save_file, save_path):
+    def reload_save(self):
+        """Reload the current save file without showing success message"""
+        self.load_save(silent=True)
+
+    def _finalize_save_load(self, save_file, save_path, silent=False):
         """Finalize save loading on main thread"""
         self.save_file = save_file
         self.save_path = Path(save_path)
@@ -1173,9 +1182,10 @@ class SaveManagerGUI:
         self._lazy_load_tab_background(current_tab)
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
-        CTkMessageBox.showinfo(
-            "Success", "Save file loaded successfully!", parent=self.root
-        )
+        if not silent:
+            CTkMessageBox.showinfo(
+                "Success", "Save file loaded successfully!", parent=self.root
+            )
 
     def show_character_details(self, slot_idx):
         """Show character details dialog"""

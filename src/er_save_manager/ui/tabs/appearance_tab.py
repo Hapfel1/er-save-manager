@@ -561,7 +561,7 @@ class AppearanceTab:
             traceback.print_exc()
 
     def export_presets(self):
-        """Export presets to JSON"""
+        """Export selected presets to JSON"""
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
@@ -569,22 +569,199 @@ class AppearanceTab:
             )
             return
 
-        output_path = filedialog.asksaveasfilename(
-            title="Export Presets",
-            defaultextension=".json",
-            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
-        )
-
-        if output_path:
-            try:
-                count = save_file.export_presets(output_path)
-                CTkMessageBox.showinfo(
-                    "Success", f"Exported {count} preset(s, parent=self.parent) to JSON"
-                )
-            except Exception as e:
+        try:
+            # Get all presets
+            presets_data = save_file.get_character_presets()
+            if not presets_data:
                 CTkMessageBox.showerror(
-                    "Error", f"Export failed:\n{str(e, parent=self.parent)}"
+                    "Error", "Could not load preset data", parent=self.parent
                 )
+                return
+
+            # Find non-empty presets
+            available_presets = []
+            for i in range(15):
+                try:
+                    preset = presets_data.presets[i]
+                    if not preset.is_empty():
+                        body_type_value = (
+                            preset.get_body_type()
+                            if hasattr(preset, "get_body_type")
+                            else 0
+                        )
+                        body_type = "Type A" if body_type_value == 0 else "Type B"
+                        available_presets.append((i, f"Preset {i + 1}: {body_type}"))
+                    else:
+                        available_presets.append((i, f"Preset {i + 1}: Empty"))
+                except Exception:
+                    available_presets.append((i, f"Preset {i + 1}: Error"))
+
+            if not any(
+                label
+                for idx, label in available_presets
+                if "Empty" not in label and "Error" not in label
+            ):
+                CTkMessageBox.showwarning(
+                    "No Presets", "No presets available to export", parent=self.parent
+                )
+                return
+
+            # Create selection dialog
+            from er_save_manager.ui.utils import force_render_dialog
+
+            dialog = ctk.CTkToplevel(self.parent)
+            dialog.title("Select Presets to Export")
+            width, height = 450, 550
+            dialog.resizable(True, True)
+            dialog.transient(self.parent)
+
+            # Center dialog
+            dialog.update_idletasks()
+            parent_x = self.parent.winfo_rootx()
+            parent_y = self.parent.winfo_rooty()
+            parent_width = self.parent.winfo_width()
+            parent_height = self.parent.winfo_height()
+            x = parent_x + (parent_width - width) // 2
+            y = parent_y + (parent_height - height) // 2
+            dialog.geometry(f"{width}x{height}+{x}+{y}")
+
+            force_render_dialog(dialog)
+            dialog.grab_set()
+
+            # Header
+            ctk.CTkLabel(
+                dialog,
+                text="Select Presets to Export",
+                font=("Segoe UI", 14, "bold"),
+            ).pack(pady=(15, 5))
+
+            ctk.CTkLabel(
+                dialog,
+                text="Choose which presets to include in the JSON file",
+                font=("Segoe UI", 10),
+                text_color=("gray40", "gray70"),
+            ).pack(pady=(0, 10))
+
+            # Selection controls
+            controls_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+            controls_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
+
+            def select_all():
+                for var, _idx, label in checkbox_data:
+                    if "Empty" not in label and "Error" not in label:
+                        var.set(True)
+
+            def select_none():
+                for var, _idx, _label in checkbox_data:
+                    var.set(False)
+
+            ctk.CTkButton(
+                controls_frame, text="Select All", command=select_all, width=100
+            ).pack(side=tk.LEFT, padx=5)
+
+            ctk.CTkButton(
+                controls_frame, text="Deselect All", command=select_none, width=100
+            ).pack(side=tk.LEFT, padx=5)
+
+            # Scrollable checkbox list
+            list_frame = ctk.CTkScrollableFrame(dialog, corner_radius=8)
+            list_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
+            bind_mousewheel(list_frame)
+
+            checkbox_data = []
+            for idx, label in available_presets:
+                var = tk.BooleanVar(value=False)
+
+                # Pre-select non-empty presets
+                if "Empty" not in label and "Error" not in label:
+                    var.set(True)
+
+                cb = ctk.CTkCheckBox(
+                    list_frame,
+                    text=label,
+                    variable=var,
+                    font=("Consolas", 11),
+                )
+                cb.pack(anchor=tk.W, padx=10, pady=4)
+
+                # Disable empty/error presets
+                if "Empty" in label or "Error" in label:
+                    cb.configure(state="disabled")
+
+                checkbox_data.append((var, idx, label))
+
+            # Export button
+            def do_export():
+                selected_indices = [
+                    idx for var, idx, label in checkbox_data if var.get()
+                ]
+
+                if not selected_indices:
+                    CTkMessageBox.showwarning(
+                        "No Selection",
+                        "Please select at least one preset to export",
+                        parent=dialog,
+                    )
+                    return
+
+                # Ask for output path
+                output_path = filedialog.asksaveasfilename(
+                    title="Export Presets",
+                    defaultextension=".json",
+                    filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+                )
+
+                if not output_path:
+                    return
+
+                try:
+                    # Build JSON with only selected presets
+                    export_data = {"presets": []}
+
+                    for idx in selected_indices:
+                        preset = presets_data.presets[idx]
+                        preset_dict = (
+                            preset.to_dict() if hasattr(preset, "to_dict") else {}
+                        )
+                        export_data["presets"].append(preset_dict)
+
+                    # Write to file
+                    with open(output_path, "w") as f:
+                        json.dump(export_data, f, indent=2)
+
+                    CTkMessageBox.showinfo(
+                        "Success",
+                        f"Exported {len(selected_indices)} preset(s) to:\n{os.path.basename(output_path)}",
+                        parent=dialog,
+                    )
+                    dialog.destroy()
+
+                except Exception as e:
+                    CTkMessageBox.showerror(
+                        "Error", f"Export failed:\n{str(e)}", parent=dialog
+                    )
+                    import traceback
+
+                    traceback.print_exc()
+
+            button_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+            button_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+            ctk.CTkButton(
+                button_frame, text="Export Selected", command=do_export, width=140
+            ).pack(side=tk.LEFT, padx=5)
+
+            ctk.CTkButton(
+                button_frame, text="Cancel", command=dialog.destroy, width=100
+            ).pack(side=tk.LEFT, padx=5)
+
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error", f"Failed to prepare export:\n{str(e)}", parent=self.parent
+            )
+            import traceback
+
+            traceback.print_exc()
 
     def import_preset_from_json(self):
         """Import preset from external JSON file"""
@@ -625,9 +802,12 @@ class AppearanceTab:
                 return
 
             # Create import dialog
-            dialog = tk.Toplevel(self.parent)
+            from er_save_manager.ui.utils import force_render_dialog
+
+            dialog = ctk.CTkToplevel(self.parent)
             dialog.title("Import from JSON")
             width, height = 550, 250
+            dialog.resizable(False, False)
             dialog.transient(self.parent)
 
             # Center over parent window
@@ -640,6 +820,8 @@ class AppearanceTab:
             x = parent_x + (parent_width // 2) - (width // 2)
             y = parent_y + (parent_height // 2) - (height // 2)
             dialog.geometry(f"{width}x{height}+{x}+{y}")
+
+            force_render_dialog(dialog)
             dialog.grab_set()
 
             frame = ctk.CTkFrame(dialog)
@@ -660,7 +842,7 @@ class AppearanceTab:
                 frame,
                 values=preset_names,
                 state="readonly",
-                width=15,
+                width=200,
                 font=("Segoe UI", 11),
             )
             preset_combo.grid(row=1, column=1, padx=10, pady=5)
@@ -674,7 +856,7 @@ class AppearanceTab:
                 frame,
                 values=[str(i) for i in range(1, 16)],
                 state="readonly",
-                width=15,
+                width=200,
                 font=("Segoe UI", 11),
             )
             slot_combo.grid(row=2, column=1, padx=10, pady=5)
@@ -717,16 +899,21 @@ class AppearanceTab:
                     if self.reload_save:
                         self.reload_save()
 
-                    CTkMessageBox.showinfo(
-                        "Success",
-                        f"Preset imported to Slot {target_slot + 1}!",
-                        parent=self.parent,
-                    )
                     dialog.destroy()
+
+                    # Delay message to ensure it appears on top after reload
+                    self.parent.after(
+                        100,
+                        lambda: CTkMessageBox.showinfo(
+                            "Success",
+                            f"Preset imported to Slot {target_slot + 1}!",
+                            parent=self.parent,
+                        ),
+                    )
 
                 except Exception as e:
                     CTkMessageBox.showerror(
-                        "Error", f"Import failed:\n{str(e, parent=self.parent)}"
+                        "Error", f"Import failed:\n{str(e)}", parent=self.parent
                     )
                     import traceback
 
@@ -744,7 +931,7 @@ class AppearanceTab:
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to load JSON:\n{str(e, parent=self.parent)}"
+                "Error", f"Failed to load JSON:\n{str(e)}", parent=self.parent
             )
             import traceback
 
@@ -877,13 +1064,14 @@ class AppearanceTab:
 
                 CTkMessageBox.showinfo(
                     "Success",
-                    f"Preset copied to {Path(dest_path, parent=self.parent).name}, Slot {dest_slot}!",
+                    f"Preset copied to {Path(dest_path).name}, Slot {dest_slot}!",
+                    parent=self.parent,
                 )
                 dialog.destroy()
 
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Copy failed:\n{str(e, parent=self.parent)}"
+                    "Error", f"Copy failed:\n{str(e)}", parent=self.parent
                 )
                 import traceback
 
@@ -954,15 +1142,19 @@ class AppearanceTab:
             # Refresh preset list so UI matches new state
             self.load_presets()
 
-            CTkMessageBox.showinfo(
-                "Success",
-                f"Preset in Slot {self.selected_slot + 1} deleted!",
-                parent=self.parent,
+            # Delay message to ensure it appears on top after reload
+            self.parent.after(
+                100,
+                lambda: CTkMessageBox.showinfo(
+                    "Success",
+                    f"Preset in Slot {self.selected_slot + 1} deleted!",
+                    parent=self.parent,
+                ),
             )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Delete failed:\n{str(e, parent=self.parent)}"
+                "Error", f"Delete failed:\n{str(e)}", parent=self.parent
             )
             import traceback
 
