@@ -31,7 +31,10 @@ pyinstaller --clean --noconfirm \
 	--windowed \
 	--icon resources/icon/icon.png \
 	--copy-metadata er-save-manager \
+	--copy-metadata customtkinterthemes \
 	--add-data src/resources:resources \
+	--collect-data customtkinterthemes \
+	--hidden-import customtkinterthemes \
 	--hidden-import PIL._tkinter_finder \
 	--hidden-import PIL.ImageTk \
 	--hidden-import PIL._imagingtk \
