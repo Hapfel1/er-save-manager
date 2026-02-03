@@ -152,7 +152,9 @@ Backup Format:
         save_path = self.get_save_path()
 
         if not save_file or not save_path:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         try:
@@ -338,16 +340,23 @@ Backup Format:
 
                 dialog_window = ctk.CTkToplevel(dialog)
                 dialog_window.title("Create Backup")
-                dialog_window.geometry("400x150")
-                dialog_window.grab_set()
+                width, height = 400, 150
+                dialog_window.transient(dialog)
 
+                # Center over parent dialog
                 dialog_window.update_idletasks()
-                x = (dialog_window.winfo_screenwidth() // 2) - 200
-                y = (dialog_window.winfo_screenheight() // 2) - 75
-                dialog_window.geometry(f"400x150+{x}+{y}")
+                dialog.update_idletasks()
+                parent_x = dialog.winfo_rootx()
+                parent_y = dialog.winfo_rooty()
+                parent_width = dialog.winfo_width()
+                parent_height = dialog.winfo_height()
+                x = parent_x + (parent_width // 2) - (width // 2)
+                y = parent_y + (parent_height // 2) - (height // 2)
+                dialog_window.geometry(f"{width}x{height}+{x}+{y}")
 
                 # Force rendering on Linux
                 force_render_dialog(dialog_window)
+                dialog_window.grab_set()
 
                 ctk.CTkLabel(
                     dialog_window,
@@ -391,7 +400,8 @@ Backup Format:
                         )
                     except Exception as e:
                         CTkMessageBox.showerror(
-                            "Error", f"Failed to create backup:\n{str(e)}"
+                            "Error",
+                            f"Failed to create backup:\n{str(e, parent=self.parent)}",
                         )
                         return
 
@@ -403,18 +413,23 @@ Backup Format:
                     except Exception as ui_error:
                         print(f"Warning: Failed to refresh UI after backup: {ui_error}")
 
-                    CTkMessageBox.showinfo("Success", "Backup created successfully!")
+                    CTkMessageBox.showinfo(
+                        "Success", "Backup created successfully!", parent=self.parent
+                    )
 
             def restore_backup():
                 if not selected_backup[0]:
                     CTkMessageBox.showwarning(
-                        "No Selection", "Please select a backup to restore!"
+                        "No Selection",
+                        "Please select a backup to restore!",
+                        parent=self.parent,
                     )
                     return
 
                 if not CTkMessageBox.askyesno(
                     "Confirm Restore",
                     f"Restore backup '{selected_backup[0]}'?\n\nCurrent save will be backed up first.",
+                    parent=self.parent,
                 ):
                     return
 
@@ -422,7 +437,8 @@ Backup Format:
                     manager.restore_backup(selected_backup[0])
                 except Exception as e:
                     CTkMessageBox.showerror(
-                        "Error", f"Failed to restore backup:\n{str(e)}"
+                        "Error",
+                        f"Failed to restore backup:\n{str(e, parent=self.parent)}",
                     )
                     return
 
@@ -446,18 +462,22 @@ Backup Format:
                 CTkMessageBox.showinfo(
                     "Success",
                     "Backup restored successfully!\n\nPlease reload your save file to see the changes.",
+                    parent=self.parent,
                 )
 
             def delete_backup():
                 if not selected_backup[0]:
                     CTkMessageBox.showwarning(
-                        "No Selection", "Please select a backup to delete!"
+                        "No Selection",
+                        "Please select a backup to delete!",
+                        parent=self.parent,
                     )
                     return
 
                 if not CTkMessageBox.askyesno(
                     "Confirm Delete",
                     f"Delete backup '{selected_backup[0]}'?\n\nThis cannot be undone.",
+                    parent=self.parent,
                 ):
                     return
 
@@ -465,16 +485,21 @@ Backup Format:
                     manager.delete_backup(selected_backup[0])
                     refresh_list()
                     self.update_backup_stats()
-                    CTkMessageBox.showinfo("Success", "Backup deleted successfully!")
+                    CTkMessageBox.showinfo(
+                        "Success", "Backup deleted successfully!", parent=self.parent
+                    )
                 except Exception as e:
                     CTkMessageBox.showerror(
-                        "Error", f"Failed to delete backup:\n{str(e)}"
+                        "Error",
+                        f"Failed to delete backup:\n{str(e, parent=self.parent)}",
                     )
 
             def view_details():
                 if not selected_backup[0]:
                     CTkMessageBox.showwarning(
-                        "No Selection", "Please select a backup to view!"
+                        "No Selection",
+                        "Please select a backup to view!",
+                        parent=self.parent,
                     )
                     return
 
@@ -495,7 +520,9 @@ Backup Format:
                                 f"  Slot {char['slot']}: {char['name']} (Lv.{char['level']})"
                             )
 
-                    CTkMessageBox.showinfo("Backup Details", "\n".join(details))
+                    CTkMessageBox.showinfo(
+                        "Backup Details", "\n".join(details, parent=self.parent)
+                    )
 
             ctk.CTkButton(
                 button_frame,
@@ -541,7 +568,7 @@ Backup Format:
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to open backup manager:\n{str(e)}"
+                "Error", f"Failed to open backup manager:\n{str(e, parent=self.parent)}"
             )
             import traceback
 
