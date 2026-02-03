@@ -3,6 +3,21 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.8.1
+**Released:** February 03, 2026
+
+
+### 🔧 Bug Fixes
+
+- Correct case sensitivity for theme path on Linux ([88123da](https://github.com/Hapfel1/er-save-manager/commit/88123dabb5667a249d61e6b1eb572dcbd2ae578b))
+
+- Fixed event flags being written incorrectly ([3e21c0d](https://github.com/Hapfel1/er-save-manager/commit/3e21c0dec72c1143b50c22658551dc3ac4faee77))
+
+- Fixed save file backup functionality ([c49509e](https://github.com/Hapfel1/er-save-manager/commit/c49509e44d0de1f4e1d980e6542d095be91e0450))
+
+
+
+---
 ## 📦 Release 0.8.0
 **Released:** February 02, 2026
 
@@ -412,6 +427,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.8.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.8.0..v0.8.1
 [0.8.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.7.4..v0.8.0
 [0.7.4]: https://github.com/Hapfel1/er-save-manager/compare/v0.7.3..v0.7.4
 [0.7.3]: https://github.com/Hapfel1/er-save-manager/compare/v0.7.2..v0.7.3
