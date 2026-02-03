@@ -24,7 +24,6 @@ class BackupPruningWarningDialog(ctk.CTkToplevel):
         """
         super().__init__(parent)
         self.title("Backup Limit Reached")
-        self.geometry("500x400")
         self.resizable(True, True)
         self.pruned_backups = pruned_backups
         self.max_backups = max_backups
@@ -33,19 +32,32 @@ class BackupPruningWarningDialog(ctk.CTkToplevel):
         # Center on parent
         self.transient(parent)
 
-        # Force rendering on Linux before grab_set
-        from er_save_manager.ui.utils import force_render_dialog
-
-        force_render_dialog(self)
-        self.grab_set()
-
         # Handle window close button
         self.protocol("WM_DELETE_WINDOW", self._on_ok)
 
         self._setup_ui()
 
-        # Force update to ensure window appears
+        # Update to get actual dimensions after UI is built
         self.update_idletasks()
+
+        # Set size
+        self.geometry("500x400")
+        self.update_idletasks()
+
+        # Now center the dialog using actual dimensions
+        parent_x = parent.winfo_x()
+        parent_y = parent.winfo_y()
+        parent_width = parent.winfo_width()
+        parent_height = parent.winfo_height()
+        x = parent_x + (parent_width - 500) // 2
+        y = parent_y + (parent_height - 400) // 2
+        self.geometry(f"500x400+{x}+{y}")
+
+        # Force rendering on Linux before grab_set
+        from er_save_manager.ui.utils import force_render_dialog
+
+        force_render_dialog(self)
+        self.grab_set()
 
     def _setup_ui(self):
         """Setup UI components."""

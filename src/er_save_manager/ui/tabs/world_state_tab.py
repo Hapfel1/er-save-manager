@@ -578,9 +578,15 @@ class WorldStateTab:
                 # Recalculate checksums before saving
                 self.get_save_file().recalculate_checksums()
                 self.get_save_file().to_file(save_path)
-                CTkMessageBox.showinfo("Success", f"✓ {message}", parent=self.parent)
                 self.reload_save()
                 self.refresh()
+                # Delay message to ensure it appears on top after reload
+                self.parent.after(
+                    100,
+                    lambda msg=message: CTkMessageBox.showinfo(
+                        "Success", f"✓ {msg}", parent=self.parent
+                    ),
+                )
         else:
             CTkMessageBox.showerror("Error", message, parent=self.parent)
 
@@ -724,9 +730,15 @@ class WorldStateTab:
                 # Recalculate checksums before saving
                 self.get_save_file().recalculate_checksums()
                 self.get_save_file().to_file(save_path)
-                CTkMessageBox.showinfo("Success", f"✓ {message}", parent=self.parent)
                 self.reload_save()
                 self.refresh()
+                # Delay message to ensure it appears on top after reload
+                self.parent.after(
+                    100,
+                    lambda msg=message: CTkMessageBox.showinfo(
+                        "Success", f"✓ {msg}", parent=self.parent
+                    ),
+                )
         else:
             CTkMessageBox.showerror("Error", message, parent=self.parent)
 
