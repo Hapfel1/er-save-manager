@@ -820,7 +820,7 @@ class AppearanceTab:
             x = parent_x + (parent_width // 2) - (width // 2)
             y = parent_y + (parent_height // 2) - (height // 2)
             dialog.geometry(f"{width}x{height}+{x}+{y}")
-            
+
             force_render_dialog(dialog)
             dialog.grab_set()
 
@@ -900,7 +900,7 @@ class AppearanceTab:
                         self.reload_save()
 
                     dialog.destroy()
-                    
+
                     # Delay message to ensure it appears on top after reload
                     self.parent.after(
                         100,
