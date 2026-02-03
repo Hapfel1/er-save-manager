@@ -14,7 +14,7 @@ class SaveSelectorDialog:
         try:
             import customtkinterthemes as ctt
 
-            theme_path = resources.files(ctt).joinpath("themes", "lavender.json")
+            theme_path = resources.files(ctt).joinpath("Themes", "lavender.json")
             ctk.set_default_color_theme(theme_path)
         except Exception:
             # Fallback to built-in dark-blue if theme package missing
