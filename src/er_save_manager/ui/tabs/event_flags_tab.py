@@ -504,12 +504,17 @@ class EventFlagsTab:
         if not result:
             return
 
+        # Get save file for backup
+        save_file = self.get_save_file()
+
         # Create backup
         save_path = self.get_save_path()
         if save_path:
             backup_mgr = BackupManager(save_path)
             backup_mgr.create_backup(
-                f"Before event flag changes (Slot {self.current_slot + 1})",
+                description=f"Before event flag changes (Slot {self.current_slot + 1})",
+                operation="event_flag_changes",
+                save=save_file,
             )
 
         # Apply changes
@@ -519,7 +524,6 @@ class EventFlagsTab:
         # CRITICAL: Write the modified event_flags buffer back to _raw_data
         # The set_flag() updates slot.event_flags in memory, but we must also
         # update the save file's raw data buffer that gets written to disk
-        save_file = self.get_save_file()
         slot = save_file.character_slots[self.current_slot]
 
         if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
@@ -825,12 +829,16 @@ class EventFlagsTab:
                 )
                 return
 
+            # Get save file for backup
+            save_file = self.get_save_file()
+
             if save_path and save_path.is_file():
                 try:
                     backup_mgr = BackupManager(save_path)
                     backup_mgr.create_backup(
-                        save_path.name,
-                        f"Before boss respawn (Slot {self.current_slot + 1})",
+                        description=f"Before boss respawn (Slot {self.current_slot + 1})",
+                        operation="respawn_boss",
+                        save=save_file,
                     )
                 except PermissionError:
                     CTkMessageBox.showwarning(
@@ -846,7 +854,6 @@ class EventFlagsTab:
                 )
 
             # Write to raw data and recalculate checksums
-            save_file = self.get_save_file()
             slot = save_file.character_slots[self.current_slot]
 
             if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
@@ -911,14 +918,18 @@ class EventFlagsTab:
                     self.current_event_flags.set_flag(flag_id, False)
                 count += 1
 
+            # Get save file for backup
+            save_file = self.get_save_file()
+
             # Create backup
             save_path = self.get_save_path()
             if save_path and save_path.is_file():
                 try:
                     backup_mgr = BackupManager(save_path)
                     backup_mgr.create_backup(
-                        save_path.name,
-                        f"Before respawn all ({boss_category_var.get()}, Slot {self.current_slot + 1})",
+                        description=f"Before respawn all ({boss_category_var.get()}, Slot {self.current_slot + 1})",
+                        operation="respawn_all_bosses",
+                        save=save_file,
                     )
                 except PermissionError:
                     CTkMessageBox.showwarning(
@@ -936,7 +947,6 @@ class EventFlagsTab:
                 )
 
             # Write to raw data and recalculate checksums
-            save_file = self.get_save_file()
             slot = save_file.character_slots[self.current_slot]
 
             if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
