@@ -224,7 +224,9 @@ class WorldStateTab:
         """Load selected character and refresh display."""
         save = self.get_save_file()
         if not save:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first", parent=self.parent
+            )
             return
 
         try:
@@ -235,7 +237,8 @@ class WorldStateTab:
         # Check if slot is valid
         if slot_idx < 0 or slot_idx >= 10:
             CTkMessageBox.showerror(
-                "Invalid Slot", "Please select a valid character slot (1-10)"
+                "Invalid Slot",
+                "Please select a valid character slot (1-10, parent=self.parent)",
             )
             return
 
@@ -243,7 +246,9 @@ class WorldStateTab:
         slot = save.character_slots[slot_idx]
         if slot.is_empty():
             CTkMessageBox.showwarning(
-                "Empty Slot", f"Character slot {slot_idx + 1} is empty"
+                "Empty Slot",
+                f"Character slot {slot_idx + 1} is empty",
+                parent=self.parent,
             )
             self.map_name_var.set("Empty slot")
             self.coords_var.set("N/A")
@@ -258,7 +263,9 @@ class WorldStateTab:
         self.refresh()
 
         CTkMessageBox.showinfo(
-            "Loaded", f"Character slot {slot_idx + 1} loaded successfully"
+            "Loaded",
+            f"Character slot {slot_idx + 1} loaded successfully",
+            parent=self.parent,
         )
 
     def _on_mode_changed(self):
@@ -512,13 +519,16 @@ class WorldStateTab:
         """Teleport to selected known location."""
         if not self.editor:
             CTkMessageBox.showerror(
-                "Error", "Please load a character first (select slot and click Load)"
+                "Error",
+                "Please load a character first (select slot and click Load, parent=self.parent)",
             )
             return
 
         selection_idx = self.location_listbox.curselection()
         if not selection_idx:
-            CTkMessageBox.showerror("Error", "Please select a location from the list")
+            CTkMessageBox.showerror(
+                "Error", "Please select a location from the list", parent=self.parent
+            )
             return
 
         location_key, location = self.filtered_locations[selection_idx[0]]
@@ -547,6 +557,7 @@ class WorldStateTab:
                     "Your character has not entered the DLC yet.\n\n"
                     "Teleporting may cause issues.\n\n"
                     "Continue anyway?",
+                    parent=self.parent,
                 ):
                     return
 
@@ -567,16 +578,18 @@ class WorldStateTab:
                 # Recalculate checksums before saving
                 self.get_save_file().recalculate_checksums()
                 self.get_save_file().to_file(save_path)
-                CTkMessageBox.showinfo("Success", f"✓ {message}")
+                CTkMessageBox.showinfo("Success", f"✓ {message}", parent=self.parent)
                 self.reload_save()
                 self.refresh()
         else:
-            CTkMessageBox.showerror("Error", message)
+            CTkMessageBox.showerror("Error", message, parent=self.parent)
 
     def _teleport_to_custom(self):
         """Teleport to custom map ID + coordinates."""
         if not self.editor:
-            CTkMessageBox.showerror("Error", "Please load a character first")
+            CTkMessageBox.showerror(
+                "Error", "Please load a character first", parent=self.parent
+            )
             return
 
         # Parse map ID
@@ -617,7 +630,7 @@ class WorldStateTab:
                 "Invalid Map ID",
                 f"{e}\n\n"
                 "Valid formats:\n"
-                "• m60_42_36_00 (decimal with m prefix)\n"
+                "• m60_42_36_00 (decimal with m prefix, parent=self.parent)\n"
                 "• 60 42 36 00 (decimal with spaces)\n"
                 "• 00362A3C (hex, no spaces)",
             )
@@ -650,7 +663,9 @@ class WorldStateTab:
                 )
         except ValueError:
             CTkMessageBox.showerror(
-                "Error", "Invalid coordinates - must be numeric values"
+                "Error",
+                "Invalid coordinates - must be numeric values",
+                parent=self.parent,
             )
             return
 
@@ -688,6 +703,7 @@ class WorldStateTab:
             f"{coords_text}\n\n"
             f"Have you created a backup?\n\n"
             f"Continue with teleport?",
+            parent=self.parent,
         ):
             return
 
@@ -708,11 +724,11 @@ class WorldStateTab:
                 # Recalculate checksums before saving
                 self.get_save_file().recalculate_checksums()
                 self.get_save_file().to_file(save_path)
-                CTkMessageBox.showinfo("Success", f"✓ {message}")
+                CTkMessageBox.showinfo("Success", f"✓ {message}", parent=self.parent)
                 self.reload_save()
                 self.refresh()
         else:
-            CTkMessageBox.showerror("Error", message)
+            CTkMessageBox.showerror("Error", message, parent=self.parent)
 
     def refresh(self):
         """Refresh location display."""

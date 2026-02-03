@@ -302,13 +302,11 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
     # Create custom dialog
     dialog = ctk.CTkToplevel()
     dialog.title("Submission Ready")
-    dialog.geometry("900x700")
+    width, height = 900, 700
     dialog.resizable(False, False)
 
     # Center on screen
     dialog.update_idletasks()
-    width = dialog.winfo_width()
-    height = dialog.winfo_height()
     x = (dialog.winfo_screenwidth() // 2) - (width // 2)
     y = (dialog.winfo_screenheight() // 2) - (height // 2)
     dialog.geometry(f"{width}x{height}+{x}+{y}")
