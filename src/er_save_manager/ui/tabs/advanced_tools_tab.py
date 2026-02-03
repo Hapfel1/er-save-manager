@@ -147,7 +147,9 @@ class AdvancedToolsTab:
         """Validate save file integrity."""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         try:
@@ -210,21 +212,27 @@ class AdvancedToolsTab:
                 CTkMessageBox.showinfo(
                     "Validation Complete",
                     "✓ Save file validation passed!\n\nNo critical issues detected.",
+                    parent=self.parent,
                 )
             else:
                 message = "Validation found potential issues:\n\n" + "\n".join(issues)
-                CTkMessageBox.showwarning("Validation Results", message)
+                CTkMessageBox.showwarning(
+                    "Validation Results", message, parent=self.parent
+                )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Validation Error", f"Failed to validate save:\n{str(e)}"
+                "Validation Error",
+                f"Failed to validate save:\n{str(e, parent=self.parent)}",
             )
 
     def recalculate_checksums(self):
         """Recalculate all checksums in save file."""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         try:
@@ -247,14 +255,18 @@ class AdvancedToolsTab:
                     "Success",
                     "✓ Backup created and checksums recalculated.\n\n"
                     "All save file checksums have been updated.",
+                    parent=self.parent,
                 )
                 # Refresh info panel
                 self.reload_save()
                 self.update_save_info()
             else:
-                CTkMessageBox.showerror("Error", "Save path not available")
+                CTkMessageBox.showerror(
+                    "Error", "Save path not available", parent=self.parent
+                )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Recalculation Error", f"Failed to recalculate checksums:\n{str(e)}"
+                "Recalculation Error",
+                f"Failed to recalculate checksums:\n{str(e, parent=self.parent)}",
             )

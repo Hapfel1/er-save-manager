@@ -150,7 +150,9 @@ class HexEditorTab:
         """Jump to specific offset in hex view."""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         offset_str = self.hex_offset_var.get().strip()
@@ -164,7 +166,8 @@ class HexEditorTab:
 
         except ValueError:
             CTkMessageBox.showerror(
-                "Invalid Offset", "Please enter a valid hex offset (e.g., 0x1000)"
+                "Invalid Offset",
+                "Please enter a valid hex offset (e.g., 0x1000, parent=self.parent)",
             )
 
     def hex_display_at_offset(self, offset=0, length=512):
@@ -178,7 +181,9 @@ class HexEditorTab:
 
         if offset >= max_offset:
             CTkMessageBox.showerror(
-                "Invalid Offset", f"Offset {offset} exceeds file size {max_offset}"
+                "Invalid Offset",
+                f"Offset {offset} exceeds file size {max_offset}",
+                parent=self.parent,
             )
             return
 
@@ -213,7 +218,9 @@ class HexEditorTab:
         """Refresh hex view."""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Please load a save file first!")
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first!", parent=self.parent
+            )
             return
 
         self.hex_display_at_offset(0)
