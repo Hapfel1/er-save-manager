@@ -50,6 +50,31 @@ class TroubleshootingChecker:
         "ProcessLasso.exe",
     ]
 
+    # VPN clients that might cause connection issues
+    VPN_PROCESSES = [
+        "NordVPN.exe",
+        "nordvpn-service.exe",
+        "expressvpn.exe",
+        "expressvpnd.exe",
+        "surfshark.exe",
+        "SurfsharkService.exe",
+        "protonvpn.exe",
+        "ProtonVPN.exe",
+        "CyberGhost.exe",
+        "CG7Service.exe",
+        "pia-client.exe",
+        "pia-service.exe",
+        "windscribe.exe",
+        "windscribeservice.exe",
+        "TunnelBear.exe",
+        "TunnelBearService.exe",
+        "hsscp.exe",
+        "IPVanish.exe",
+        "AtlasVPN.exe",
+        "Cloudflare WARP.exe",
+        "warp-svc.exe",
+    ]
+
     def __init__(
         self, game_folder: Path | None = None, save_file_path: Path | None = None
     ):
@@ -70,6 +95,7 @@ class TroubleshootingChecker:
 
         # Process checks
         results.extend(self._check_problematic_processes())
+        results.extend(self._check_vpn_processes())
         results.append(self._check_steam_elevated())
 
         # Save file checks
@@ -346,6 +372,72 @@ class TroubleshootingChecker:
                     name="Process Check",
                     status="warning",
                     message=f"Could not check processes: {e}",
+                )
+            )
+
+        return results
+
+    def _check_vpn_processes(self) -> list[DiagnosticResult]:
+        """Check for running VPN clients that might cause connection issues."""
+        results = []
+
+        if not PlatformUtils.is_windows():
+            return [
+                DiagnosticResult(
+                    name="VPN Check",
+                    status="info",
+                    message="VPN checking only available on Windows",
+                )
+            ]
+
+        try:
+            # Get list of running processes
+            output = subprocess.check_output(
+                ["tasklist", "/FO", "CSV", "/NH"],
+                text=True,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
+
+            running_vpns = []
+            for vpn_process in self.VPN_PROCESSES:
+                if vpn_process.lower() in output.lower():
+                    # Extract clean name without .exe
+                    clean_name = (
+                        vpn_process.replace(".exe", "")
+                        .replace("-service", "")
+                        .replace("service", "")
+                        .replace("d", "")
+                    )
+                    if clean_name and clean_name not in [
+                        v.split("(")[0].strip() for v in running_vpns
+                    ]:
+                        running_vpns.append(vpn_process)
+
+            if running_vpns:
+                results.append(
+                    DiagnosticResult(
+                        name="VPN Detected",
+                        status="warning",
+                        message=f"Running VPN client(s) detected: {', '.join(running_vpns)}. VPNs may cause issues when trying to join other players.",
+                        fix_available=True,
+                        fix_action="Disable or exit your VPN client before playing online. VPNs can interfere with multiplayer connections and prevent you from joining other players.",
+                    )
+                )
+            else:
+                results.append(
+                    DiagnosticResult(
+                        name="VPN Check",
+                        status="ok",
+                        message="No VPN clients detected",
+                    )
+                )
+
+        except Exception as e:
+            results.append(
+                DiagnosticResult(
+                    name="VPN Check",
+                    status="warning",
+                    message=f"Could not check for VPN processes: {e}",
                 )
             )
 
