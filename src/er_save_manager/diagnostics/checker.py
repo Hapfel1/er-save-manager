@@ -73,6 +73,10 @@ class TroubleshootingChecker:
         "AtlasVPN.exe",
         "Cloudflare WARP.exe",
         "warp-svc.exe",
+        "hamachi-2.exe",
+        "hamachi-2-ui.exe",
+        "Radmin VPN.exe",
+        "RvpnService.exe",
     ]
 
     def __init__(

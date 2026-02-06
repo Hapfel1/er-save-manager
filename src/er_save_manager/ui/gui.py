@@ -3,69 +3,9 @@ Main GUI Application
 Modular Elden Ring Save Manager GUI
 """
 
-# CRITICAL: Check for ZIP before ANY imports to show proper error instead of cx_Freeze cryptic message
 import os
-import sys
-
-try:
-    # Get executable/script path
-    exe_path = (
-        sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__)
-    )
-
-    # TEMP: Set to True to test error handling
-    force_test = False
-
-    # Check if running from ZIP
-    if force_test or ".zip" in exe_path.lower():
-        error_msg = (
-            "Cannot Run from ZIP Archive!\n\n"
-            "This program cannot run directly from inside a ZIP file.\n\n"
-            "Please extract the ZIP archive first:\n"
-            "1. Right-click the ZIP file\n"
-            "2. Select 'Extract All...' or 'Extract Here'\n"
-            "3. Open the extracted folder\n"
-            "4. Run the program from there\n\n"
-            f"Current location: {exe_path}"
-        )
-
-        # Try multiple display methods
-        try:
-            # Method 1: ctypes MessageBox (most reliable on Windows)
-            import ctypes
-
-            MB_OK = 0x0
-            MB_ICONERROR = 0x10
-            ctypes.windll.user32.MessageBoxW(
-                0, error_msg, "Extract ZIP First", MB_OK | MB_ICONERROR
-            )
-        except Exception:
-            try:
-                # Method 2: tkinter messagebox (if ctypes fails)
-                import tkinter as tk
-                from tkinter import messagebox
-
-                root = tk.Tk()
-                root.withdraw()
-                messagebox.showerror("Extract ZIP First", error_msg)
-                root.destroy()
-            except Exception:
-                # Method 3: Console output as last resort
-                print("\n" + "=" * 70)
-                print(error_msg)
-                print("=" * 70 + "\n")
-                try:
-                    input("Press Enter to exit...")
-                except Exception:
-                    pass
-        sys.exit(1)
-except Exception:
-    # If check itself fails, continue (better to try running than crash early)
-    pass
-
-# Now safe to import everything else
-# ruff: noqa: E402  (imports must come after ZIP check to show proper error)
 import subprocess
+import sys
 import threading
 import tkinter as tk
 from importlib import resources
