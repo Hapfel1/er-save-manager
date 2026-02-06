@@ -8,6 +8,7 @@ import subprocess
 import sys
 import threading
 import tkinter as tk
+import webbrowser
 from importlib import resources
 from pathlib import Path
 from tkinter import filedialog, ttk
@@ -316,6 +317,10 @@ class SaveManagerGUI:
             height=32,
         ).pack(pady=(5, 0))
 
+    def _open_kofi(self):
+        """Open Ko-fi support page in browser."""
+        webbrowser.open("https://ko-fi.com/hapfell")
+
     def setup_ui(self):
         """Setup main UI structure with optimized layout"""
         # Use grid for main container - more efficient than pack
@@ -328,6 +333,17 @@ class SaveManagerGUI:
         # Title
         title_frame = ctk.CTkFrame(self.root, corner_radius=12)
         title_frame.grid(row=0, column=0, padx=12, pady=(12, 6), sticky="ew")
+
+        # Support button (top right corner)
+        support_btn = ctk.CTkButton(
+            title_frame,
+            text="☕ Support me",
+            command=self._open_kofi,
+            width=100,
+            height=32,
+            font=("Segoe UI", 11),
+        )
+        support_btn.place(relx=1.0, x=-12, y=12, anchor="ne")
 
         ctk.CTkLabel(
             title_frame,

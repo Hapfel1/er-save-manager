@@ -1,26 +1,6 @@
 troubleshooting check for running vpns done
 
-check for extracted or not
-(Oo. Thought. Can you stick a bit of code in the manager that directly checks for the libs it needs and throws an error if they're not present? Like some dork running from inside the zip?
-No idea how that works in python.
-Okay so i can either check if the program is in a tempdir bc that's where windows extracts zips to when you run it zipped.
-Or check if the exe is in a .zip path 
-Cyan
-
- — Yesterday at 8:28 PM
-Really either one works tbh
-Hapfel
- — Yesterday at 8:29 PM
-I guess zip is better
-If someone on linux/steamdeck decides to not unpack it
-Cyan
-
- — Yesterday at 8:31 PM
-You'd think your average linux/steam deck user would know to unpack
-Hapfel
- — Yesterday at 8:32 PM
-Not trusting that
-Especially on steamdeck)
+check for extracted or not - not needd, windows throws error
 
 backups zip, auto backup
 (One functionality i was also thinking of was the tool having a launch game button and it automatically creating a backup before starting
@@ -49,9 +29,9 @@ Yeah sadly doing the whole folder would be bad. Save bloat is crazy.
 Oh. Actually.
 If you can programmatically zip the save folder it would save a ton of room. Get all of them that way)
 
-add another longbow and second one check csvs
+add another longbow and second one check csvs done
 
-add support button
+add support button done
 
 add charaacter browser .erc export, images, same format as appearance editor, specify if overhaul mod etc
 
