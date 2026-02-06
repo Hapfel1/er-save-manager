@@ -1,18 +1,4 @@
-troubleshooting check for running vpns
-(Hapfel
- — 12:23 AM
-Should i check for vpns in the troubleshooting tab too maybe?
-Cyan
-
- — 1:42 AM
-It wouldn't hurt, but checking for all of those will be a big of a pain.
-Hapfel
- — 2:21 AM
-I'd only check for the biggest ones
-Cyan
-
- — 2:23 AM
-If you keep the VPN count to a minimum so you aren't chasing random shit down yeah it wouldn't be a bad thing to add.)
+troubleshooting check for running vpns done
 
 check for extracted or not
 (Oo. Thought. Can you stick a bit of code in the manager that directly checks for the libs it needs and throws an error if they're not present? Like some dork running from inside the zip?
