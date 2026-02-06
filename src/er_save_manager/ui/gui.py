@@ -4,8 +4,55 @@ Modular Elden Ring Save Manager GUI
 """
 
 import os
-import subprocess
 import sys
+
+
+# CHECK IF RUNNING FROM ZIP - Must be done BEFORE other imports
+def _check_running_from_zip():
+    """Check if running from inside a ZIP archive before imports fail."""
+    try:
+        # Get the path of the current executable or script
+        if getattr(sys, "frozen", False):
+            exe_path = sys.executable
+        else:
+            exe_path = os.path.abspath(__file__)
+
+        # Check if the path contains .zip (case-insensitive)
+        if ".zip" in exe_path.lower():
+            import tkinter as tk
+            from tkinter import messagebox
+
+            # Create minimal root window
+            root = tk.Tk()
+            root.withdraw()
+
+            error_msg = (
+                "⚠️ Running from ZIP Archive Detected!\n\n"
+                "The ER Save Manager is being run directly from inside a ZIP archive.\n"
+                "This will cause errors and the program will not work correctly.\n\n"
+                "Please extract the ZIP archive to a folder first, then run the program.\n\n"
+                "Steps:\n"
+                "1. Right-click the ZIP file\n"
+                "2. Select 'Extract All...' or 'Extract Here'\n"
+                "3. Open the extracted folder\n"
+                "4. Run the program from the extracted folder\n\n"
+                "The application will now close."
+            )
+
+            messagebox.showerror("Cannot Run from ZIP", error_msg)
+            root.destroy()
+            sys.exit(1)
+
+    except Exception:
+        # If check fails, continue anyway
+        pass
+
+
+_check_running_from_zip()
+
+# Now safe to import everything else
+# ruff: noqa: E402  (imports must come after ZIP check to show proper error)
+import subprocess
 import threading
 import tkinter as tk
 from importlib import resources
@@ -53,9 +100,6 @@ class SaveManagerGUI:
         self.root.title("Elden Ring Save Manager")
         self.root.geometry("1200x950")
         self.root.minsize(800, 700)
-
-        # Check if running from inside a ZIP archive
-        self._check_if_running_from_zip()
 
         # Set application icon
         try:
@@ -154,46 +198,6 @@ class SaveManagerGUI:
 
         # Check for updates asynchronously (don't block UI startup)
         self.root.after(1000, self._check_for_updates)
-
-    def _check_if_running_from_zip(self):
-        """Check if the program is being run from inside a ZIP archive."""
-        try:
-            # Get the path of the current executable or script
-            if getattr(sys, "frozen", False):
-                # Running as compiled executable
-                exe_path = sys.executable
-            else:
-                # Running as script
-                exe_path = os.path.abspath(__file__)
-
-            # Check if the path contains .zip (case-insensitive)
-            if ".zip" in exe_path.lower():
-                error_msg = (
-                    "⚠️ Running from ZIP Archive Detected!\n\n"
-                    "The ER Save Manager is being run directly from inside a ZIP archive.\n"
-                    "This will cause errors and the program will not work correctly.\n\n"
-                    "Please extract the ZIP archive to a folder first, then run the program.\n\n"
-                    "Steps:\n"
-                    "1. Right-click the ZIP file\n"
-                    "2. Select 'Extract All...' or 'Extract Here'\n"
-                    "3. Open the extracted folder\n"
-                    "4. Run the program from the extracted folder\n\n"
-                    "The application will now close."
-                )
-
-                CTkMessageBox.showerror(
-                    "Cannot Run from ZIP",
-                    error_msg,
-                    parent=self.root,
-                )
-
-                # Exit the application
-                self.root.destroy()
-                sys.exit(1)
-
-        except Exception:
-            # If check fails, continue anyway (better than blocking legitimate users)
-            pass
 
     def _on_window_resize(self, event=None):
         """Debounce window resize events to improve responsiveness"""
