@@ -32,10 +32,31 @@ def _check_running_from_zip():
                 "The application will now close."
             )
 
-            # Use Windows native MessageBox (works even from ZIP)
-            import ctypes
+            # Try multiple methods to show error (in order of reliability when running from ZIP)
+            try:
+                # Method 1: Windows msg command (most reliable, works even from ZIP)
+                import subprocess
 
-            ctypes.windll.user32.MessageBoxW(0, error_msg, "Cannot Run from ZIP", 0x10)
+                subprocess.run(
+                    ["msg", "*", error_msg],
+                    creationflags=0x08000000,  # CREATE_NO_WINDOW
+                    timeout=1,
+                )
+            except Exception:
+                try:
+                    # Method 2: Windows MessageBox via ctypes
+                    import ctypes
+
+                    ctypes.windll.user32.MessageBoxW(
+                        0, error_msg, "Cannot Run from ZIP", 0x10
+                    )
+                except Exception:
+                    # Method 3: Print to console as fallback
+                    print("\n" + "=" * 60)
+                    print(error_msg)
+                    print("=" * 60 + "\n")
+                    input("Press Enter to exit...")
+
             sys.exit(1)
 
     except Exception:
