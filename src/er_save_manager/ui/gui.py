@@ -19,15 +19,8 @@ def _check_running_from_zip():
 
         # Check if the path contains .zip (case-insensitive)
         if ".zip" in exe_path.lower():
-            import tkinter as tk
-            from tkinter import messagebox
-
-            # Create minimal root window
-            root = tk.Tk()
-            root.withdraw()
-
             error_msg = (
-                "⚠️ Running from ZIP Archive Detected!\n\n"
+                "Running from ZIP Archive Detected!\n\n"
                 "The ER Save Manager is being run directly from inside a ZIP archive.\n"
                 "This will cause errors and the program will not work correctly.\n\n"
                 "Please extract the ZIP archive to a folder first, then run the program.\n\n"
@@ -39,8 +32,9 @@ def _check_running_from_zip():
                 "The application will now close."
             )
 
-            messagebox.showerror("Cannot Run from ZIP", error_msg)
-            root.destroy()
+            # Use Windows native MessageBox (works even from ZIP)
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(0, error_msg, "Cannot Run from ZIP", 0x10)
             sys.exit(1)
 
     except Exception:
