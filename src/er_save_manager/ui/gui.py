@@ -17,8 +17,11 @@ def _check_running_from_zip():
         else:
             exe_path = os.path.abspath(__file__)
 
+        # TEMP: Force ZIP detection for testing
+        force_test = False  # Set to True to test error handling
+
         # Check if the path contains .zip (case-insensitive)
-        if ".zip" in exe_path.lower():
+        if force_test or ".zip" in exe_path.lower():
             error_msg = (
                 "Running from ZIP Archive Detected!\n\n"
                 "The ER Save Manager is being run directly from inside a ZIP archive.\n"
@@ -32,30 +35,19 @@ def _check_running_from_zip():
                 "The application will now close."
             )
 
-            # Try multiple methods to show error (in order of reliability when running from ZIP)
+            # Try to show error using Windows MessageBox (works even from ZIP)
             try:
-                # Method 1: Windows msg command (most reliable, works even from ZIP)
-                import subprocess
+                import ctypes
 
-                subprocess.run(
-                    ["msg", "*", error_msg],
-                    creationflags=0x08000000,  # CREATE_NO_WINDOW
-                    timeout=1,
+                ctypes.windll.user32.MessageBoxW(
+                    0, error_msg, "Cannot Run from ZIP", 0x10
                 )
             except Exception:
-                try:
-                    # Method 2: Windows MessageBox via ctypes
-                    import ctypes
-
-                    ctypes.windll.user32.MessageBoxW(
-                        0, error_msg, "Cannot Run from ZIP", 0x10
-                    )
-                except Exception:
-                    # Method 3: Print to console as fallback
-                    print("\n" + "=" * 60)
-                    print(error_msg)
-                    print("=" * 60 + "\n")
-                    input("Press Enter to exit...")
+                # Fallback to console output if MessageBox fails
+                print("\n" + "=" * 60)
+                print(error_msg)
+                print("=" * 60 + "\n")
+                input("Press Enter to exit...")
 
             sys.exit(1)
 
