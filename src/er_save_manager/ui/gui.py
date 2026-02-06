@@ -34,6 +34,7 @@ def _check_running_from_zip():
 
             # Use Windows native MessageBox (works even from ZIP)
             import ctypes
+
             ctypes.windll.user32.MessageBoxW(0, error_msg, "Cannot Run from ZIP", 0x10)
             sys.exit(1)
 
