@@ -3,60 +3,65 @@ Main GUI Application
 Modular Elden Ring Save Manager GUI
 """
 
+# CRITICAL: Check for ZIP before ANY imports to show proper error instead of cx_Freeze cryptic message
 import os
 import sys
 
+try:
+    # Get executable/script path
+    exe_path = (
+        sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__)
+    )
 
-# CHECK IF RUNNING FROM ZIP - Must be done BEFORE other imports
-def _check_running_from_zip():
-    """Check if running from inside a ZIP archive before imports fail."""
-    try:
-        # Get the path of the current executable or script
-        if getattr(sys, "frozen", False):
-            exe_path = sys.executable
-        else:
-            exe_path = os.path.abspath(__file__)
+    # TEMP: Set to True to test error handling
+    force_test = False
 
-        # TEMP: Force ZIP detection for testing
-        force_test = False  # Set to True to test error handling
+    # Check if running from ZIP
+    if force_test or ".zip" in exe_path.lower():
+        error_msg = (
+            "Cannot Run from ZIP Archive!\n\n"
+            "This program cannot run directly from inside a ZIP file.\n\n"
+            "Please extract the ZIP archive first:\n"
+            "1. Right-click the ZIP file\n"
+            "2. Select 'Extract All...' or 'Extract Here'\n"
+            "3. Open the extracted folder\n"
+            "4. Run the program from there\n\n"
+            f"Current location: {exe_path}"
+        )
 
-        # Check if the path contains .zip (case-insensitive)
-        if force_test or ".zip" in exe_path.lower():
-            error_msg = (
-                "Running from ZIP Archive Detected!\n\n"
-                "The ER Save Manager is being run directly from inside a ZIP archive.\n"
-                "This will cause errors and the program will not work correctly.\n\n"
-                "Please extract the ZIP archive to a folder first, then run the program.\n\n"
-                "Steps:\n"
-                "1. Right-click the ZIP file\n"
-                "2. Select 'Extract All...' or 'Extract Here'\n"
-                "3. Open the extracted folder\n"
-                "4. Run the program from the extracted folder\n\n"
-                "The application will now close."
+        # Try multiple display methods
+        try:
+            # Method 1: ctypes MessageBox (most reliable on Windows)
+            import ctypes
+
+            MB_OK = 0x0
+            MB_ICONERROR = 0x10
+            ctypes.windll.user32.MessageBoxW(
+                0, error_msg, "Extract ZIP First", MB_OK | MB_ICONERROR
             )
-
-            # Try to show error using Windows MessageBox (works even from ZIP)
+        except Exception:
             try:
-                import ctypes
+                # Method 2: tkinter messagebox (if ctypes fails)
+                import tkinter as tk
+                from tkinter import messagebox
 
-                ctypes.windll.user32.MessageBoxW(
-                    0, error_msg, "Cannot Run from ZIP", 0x10
-                )
+                root = tk.Tk()
+                root.withdraw()
+                messagebox.showerror("Extract ZIP First", error_msg)
+                root.destroy()
             except Exception:
-                # Fallback to console output if MessageBox fails
-                print("\n" + "=" * 60)
+                # Method 3: Console output as last resort
+                print("\n" + "=" * 70)
                 print(error_msg)
-                print("=" * 60 + "\n")
-                input("Press Enter to exit...")
-
-            sys.exit(1)
-
-    except Exception:
-        # If check fails, continue anyway
-        pass
-
-
-_check_running_from_zip()
+                print("=" * 70 + "\n")
+                try:
+                    input("Press Enter to exit...")
+                except Exception:
+                    pass
+        sys.exit(1)
+except Exception:
+    # If check itself fails, continue (better to try running than crash early)
+    pass
 
 # Now safe to import everything else
 # ruff: noqa: E402  (imports must come after ZIP check to show proper error)
