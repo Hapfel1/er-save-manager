@@ -40,3 +40,4 @@ Thumbs.db
 *.backups/
 /data/
 *.log
+/test
