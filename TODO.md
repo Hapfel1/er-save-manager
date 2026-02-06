@@ -1,4 +1,77 @@
-fix window popups centered
+troubleshooting check for running vpns
+(Hapfel
+ — 12:23 AM
+Should i check for vpns in the troubleshooting tab too maybe?
+Cyan
+
+ — 1:42 AM
+It wouldn't hurt, but checking for all of those will be a big of a pain.
+Hapfel
+ — 2:21 AM
+I'd only check for the biggest ones
+Cyan
+
+ — 2:23 AM
+If you keep the VPN count to a minimum so you aren't chasing random shit down yeah it wouldn't be a bad thing to add.)
+
+check for extracted or not
+(Oo. Thought. Can you stick a bit of code in the manager that directly checks for the libs it needs and throws an error if they're not present? Like some dork running from inside the zip?
+No idea how that works in python.
+Okay so i can either check if the program is in a tempdir bc that's where windows extracts zips to when you run it zipped.
+Or check if the exe is in a .zip path 
+Cyan
+
+ — Yesterday at 8:28 PM
+Really either one works tbh
+Hapfel
+ — Yesterday at 8:29 PM
+I guess zip is better
+If someone on linux/steamdeck decides to not unpack it
+Cyan
+
+ — Yesterday at 8:31 PM
+You'd think your average linux/steam deck user would know to unpack
+Hapfel
+ — Yesterday at 8:32 PM
+Not trusting that
+Especially on steamdeck)
+
+backups zip, auto backup
+(One functionality i was also thinking of was the tool having a launch game button and it automatically creating a backup before starting
+Or just having the tool open and as soon as eldenring.exe is detected it creates one backup
+Could be nice for invaders
+  
+  Cyan
+
+ — Yesterday at 8:54 PM
+Interesting. Maybe on first run if asks if the user wants that enabled? 🤔
+Hapfel
+ — Yesterday at 8:54 PM
+Yeah exactly
+Cyan
+
+ — Yesterday at 8:54 PM
+Invaders would like that quite a bit.
+Hapfel
+ — Yesterday at 8:54 PM
+And the user would need to choose for which save file
+If they got multiple
+Cyan
+
+ — Yesterday at 8:56 PM
+Yeah sadly doing the whole folder would be bad. Save bloat is crazy.
+Oh. Actually.
+If you can programmatically zip the save folder it would save a ton of room. Get all of them that way)
+
+add another longbow and second one check csvs
+
+add support button
+
+add charaacter browser .erc export, images, same format as appearance editor, specify if overhaul mod etc
+
+view details in backup man not working and show saved location + change it to somewhere else option (settings)
+
+fix window popups centered done
 
 comments fix/change done
 
