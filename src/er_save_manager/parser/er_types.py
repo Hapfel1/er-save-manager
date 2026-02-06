@@ -270,13 +270,19 @@ class Gaitem:
 
             if handle_type == 0x80000000:
                 # Read additional 5 bytes (for gem items)
-                obj.gem_gaitem_handle = struct.unpack("<i", f.read(4))[0]
+                obj.gem_gaitem_handle = struct.unpack("<I", f.read(4))[0]
                 obj.unk0x1c = struct.unpack("<B", f.read(1))[0]
 
         return obj
 
     def write(self, f: BytesIO):
         """Write Gaitem to stream with conditional field writing"""
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        start_pos = f.tell()
+
         # Always write base 8 bytes
         f.write(struct.pack("<I", self.gaitem_handle))
         f.write(struct.pack("<I", self.item_id))
@@ -284,13 +290,35 @@ class Gaitem:
         # Conditional writing based on handle type
         handle_type = self.gaitem_handle & 0xF0000000
 
+        # Only log non-empty gaitems to reduce noise
+        is_empty = self.gaitem_handle == 0 and self.item_id == 0xFFFFFFFF
+        if not is_empty:
+            logger.debug(
+                f"Writing NON-EMPTY gaitem: handle=0x{self.gaitem_handle:08X}, item_id=0x{self.item_id:08X}, handle_type=0x{handle_type:08X}"
+            )
+
         if self.gaitem_handle != 0 and handle_type != 0xC0000000:
+            if not is_empty:
+                logger.debug(
+                    f"  Writing extended fields: unk0x10={self.unk0x10}, unk0x14={self.unk0x14}"
+                )
             f.write(struct.pack("<i", self.unk0x10 or 0))
             f.write(struct.pack("<i", self.unk0x14 or 0))
 
             if handle_type == 0x80000000:
-                f.write(struct.pack("<i", self.gem_gaitem_handle or 0))
+                # Handle both -1 and 0xFFFFFFFF properly as unsigned
+                gem_handle = (self.gem_gaitem_handle or 0) & 0xFFFFFFFF
+                if not is_empty:
+                    logger.debug(
+                        f"  Writing gem fields: gem_handle=0x{gem_handle:08X}, unk0x1c={self.unk0x1c}"
+                    )
+                f.write(struct.pack("<I", gem_handle))
                 f.write(struct.pack("<B", self.unk0x1c or 0))
+
+        if not is_empty:
+            end_pos = f.tell()
+            bytes_written = end_pos - start_pos
+            logger.debug(f"  Wrote {bytes_written} bytes total")
 
     def get_size(self) -> int:
         """
