@@ -167,25 +167,29 @@ class CharacterBrowser:
         preview_panel = ctk.CTkFrame(content, width=650)
         preview_panel.grid(row=0, column=1, sticky="nsew")
         preview_panel.grid_propagate(False)  # Prevent resizing based on content
-        preview_panel.rowconfigure(1, weight=1)
+
+        # Create scrollable container for preview content
+        preview_scroll = ctk.CTkScrollableFrame(preview_panel, fg_color="transparent")
+        preview_scroll.pack(fill=ctk.BOTH, expand=True)
+        bind_mousewheel(preview_scroll)
 
         ctk.CTkLabel(
-            preview_panel,
+            preview_scroll,
             text="Preview",
             font=("Segoe UI", 14, "bold"),
         ).pack(anchor=ctk.W, padx=10, pady=(10, 2))
 
-        self.preview_area = ctk.CTkFrame(preview_panel)
-        self.preview_area.pack(fill=ctk.BOTH, expand=True, padx=10, pady=10)
+        self.preview_area = ctk.CTkFrame(preview_scroll)
+        self.preview_area.pack(fill=ctk.BOTH, expand=True, padx=10, pady=(10, 60))
 
         self.details_frame = ctk.CTkScrollableFrame(
-            preview_panel, fg_color="transparent"
+            preview_scroll, fg_color="transparent"
         )
-        self.details_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=(0, 12))
+        self.details_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=(0, 0))
         bind_mousewheel(self.details_frame)
 
-        slot_frame = ctk.CTkFrame(preview_panel)
-        slot_frame.pack(fill=ctk.X, padx=10, pady=(0, 10))
+        slot_frame = ctk.CTkFrame(preview_scroll)
+        slot_frame.pack(fill=ctk.X, padx=10, pady=(60, 10))
 
         ctk.CTkLabel(slot_frame, text="Target Slot:").pack(side=ctk.LEFT, padx=(0, 8))
         self.target_slot_var = ctk.StringVar(value="Slot 1")
@@ -207,18 +211,22 @@ class CharacterBrowser:
 
     # ---------------------- Contribute tab ----------------------
     def setup_contribute_tab(self):
-        main_frame = ctk.CTkFrame(self.contribute_tab)
-        main_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=10)
+        # Create main scrollable frame
+        scroll_frame = ctk.CTkScrollableFrame(
+            self.contribute_tab, fg_color="transparent"
+        )
+        scroll_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=10)
+        bind_mousewheel(scroll_frame)
 
         title_label = ctk.CTkLabel(
-            main_frame,
+            scroll_frame,
             text="Contribute Your Character",
             font=("Segoe UI", 18, "bold"),
         )
         title_label.pack(pady=(10, 5))
 
         desc_label = ctk.CTkLabel(
-            main_frame,
+            scroll_frame,
             text="Share your character build with the community! Provide screenshots and details.",
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
@@ -227,7 +235,7 @@ class CharacterBrowser:
 
         # GitHub Account Required notice
         notice = ctk.CTkFrame(
-            main_frame, fg_color=("#fff7ed", "#3b2f1b"), corner_radius=8
+            scroll_frame, fg_color=("#fff7ed", "#3b2f1b"), corner_radius=8
         )
         notice.pack(fill=ctk.X, pady=(0, 20), padx=20)
         ctk.CTkLabel(
@@ -243,13 +251,12 @@ class CharacterBrowser:
             text_color=("#6b7280", "#d1d5db"),
         ).pack(pady=(0, 12))
 
-        # Scrollable form
-        form_frame = ctk.CTkScrollableFrame(
-            main_frame,
+        # Form content frame
+        form_frame = ctk.CTkFrame(
+            scroll_frame,
             fg_color="transparent",
         )
         form_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=(0, 20))
-        bind_mousewheel(form_frame)
 
         # Character slot selector
         slot_section = ctk.CTkFrame(form_frame, fg_color="transparent")
@@ -412,8 +419,8 @@ class CharacterBrowser:
         link.bind("<Button-1>", lambda e: webbrowser.open("https://github.com/login"))
 
         # Submit button
-        submit_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        submit_frame.pack(fill=ctk.X, padx=20, pady=(0, 10))
+        submit_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
+        submit_frame.pack(fill=ctk.X, padx=0, pady=(0, 10))
 
         ctk.CTkButton(
             submit_frame,

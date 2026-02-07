@@ -1,3 +1,5 @@
+edit readme and description
+
 add progress loading bar when loading presets in browser done
 
 troubled checking for running vpns done
