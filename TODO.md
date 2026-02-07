@@ -1,3 +1,5 @@
+add progress loading bar when loading presets in browser
+
 troubleshooting check for running vpns done
 
 check for extracted or not - not needed, windows throws error

@@ -202,7 +202,7 @@ class SettingsTab:
             save_select_frame,
             text="Monitored save file:",
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 10),
+            font=("Segoe UI", 11),
         ).pack(anchor="w")
 
         path_display_frame = ctk.CTkFrame(save_select_frame, fg_color="transparent")
@@ -216,7 +216,7 @@ class SettingsTab:
             path_display_frame,
             textvariable=self.auto_backup_path_var,
             text_color=("gray50", "gray60"),
-            font=("Consolas", 9),
+            font=("Consolas", 11),
             wraplength=500,
         ).pack(side="left", fill="x", expand=True)
 
