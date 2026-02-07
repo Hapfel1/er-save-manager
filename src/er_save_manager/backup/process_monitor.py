@@ -142,35 +142,113 @@ class GameProcessMonitor:
             time.sleep(self.CHECK_INTERVAL)
 
 
-def show_auto_backup_first_run_dialog(parent=None) -> bool:
+def show_auto_backup_first_run_dialog(
+    parent=None, get_save_path_callback=None, get_default_save_path_callback=None
+) -> bool:
     """
     Show first-run dialog asking if user wants to enable auto-backup.
 
     Args:
         parent: Parent window for centering the dialog
+        get_save_path_callback: Optional callback to get currently loaded save path
+        get_default_save_path_callback: Optional callback to get default save location
 
     Returns:
-        True if user wants to configure, False if dismissed
+        True if configured successfully, False if dismissed
     """
     try:
-        from er_save_manager.ui.messagebox import CTkMessageBox
+        import os
+        import tkinter.filedialog as filedialog
 
-        result = CTkMessageBox.askyesno(
-            "Auto-Backup Feature",
-            "Would you like to enable automatic backups?\n\n"
-            "When enabled, the tool will automatically create a backup of your "
-            "chosen save file whenever Elden Ring launches.\n\n"
-            "This is useful for PvP players who want to protect their saves.\n\n"
-            "You can configure this in Settings > Backups later.",
-            parent=parent,
-            font_size=12,
-        )
+        from er_save_manager.ui.messagebox import CTkMessageBox
 
         # Mark first run complete
         settings = get_settings()
         settings.set("auto_backup_first_run_check", False)
 
-        return result
+        # Ask if they want to enable auto-backup
+        result = CTkMessageBox.askyesno(
+            "Auto-Backup Feature",
+            "Would you like to enable automatic backups?\n\n"
+            "When enabled, the tool will automatically create a backup of your "
+            "chosen save file whenever Elden Ring launches.\n\n"
+            "You can configure this in Settings > Backups later.",
+            parent=parent,
+            font_size=12,
+        )
 
-    except Exception:
+        if not result:
+            return False
+
+        # User wants to configure - show save file selection dialog
+        current_save = None
+        if get_save_path_callback:
+            current_save = get_save_path_callback()
+
+        # If save is loaded, offer to use it
+        if current_save and Path(current_save).exists():
+            choice = CTkMessageBox.askyesnocancel(
+                "Choose Save File",
+                f"Currently loaded save file:\n\n{current_save}\n\n"
+                "Would you like to use this save file for auto-backup?\n\n"
+                "Yes - Use current save\n"
+                "No - Browse for a different save\n"
+                "Cancel - Don't configure now",
+                parent=parent,
+                font_size=11,
+            )
+
+            if choice is None:  # Cancel
+                return False
+            elif choice:  # Yes - use current save
+                file_path = str(Path(current_save).resolve())
+                settings.set("auto_backup_save_path", file_path)
+                settings.set("auto_backup_on_game_launch", True)
+
+                CTkMessageBox.showinfo(
+                    "Auto-Backup Enabled",
+                    f"Auto-backup is now enabled and will monitor:\n\n{file_path}\n\n"
+                    "A backup will be created automatically when Elden Ring launches.",
+                    parent=parent,
+                )
+                return True
+            # If No, continue to file browser below
+
+        # Get default save location
+        initial_dir = os.path.expanduser("~")
+        if get_default_save_path_callback:
+            default_path = get_default_save_path_callback()
+            if default_path and Path(default_path).exists():
+                initial_dir = str(default_path)
+
+        # Show file browser
+        file_path = filedialog.askopenfilename(
+            title="Choose Save File for Auto-Backup",
+            filetypes=[
+                ("Elden Ring Save", "*.sl2;*.co2"),
+                ("PC Save Files", "*.sl2"),
+                ("Console Save Files", "*.co2"),
+                ("All files", "*.*"),
+            ],
+            initialdir=initial_dir,
+            parent=parent,
+        )
+
+        if file_path:
+            file_path = str(Path(file_path).resolve())
+            settings.set("auto_backup_save_path", file_path)
+            settings.set("auto_backup_on_game_launch", True)
+
+            CTkMessageBox.showinfo(
+                "Auto-Backup Enabled",
+                f"Auto-backup is now enabled and will monitor:\n\n{file_path}\n\n"
+                "A backup will be created automatically when Elden Ring launches.",
+                parent=parent,
+            )
+            return True
+
+        return False
+
+    except Exception as e:
+        print(f"Auto-backup first-run dialog error: {e}")
         return False
