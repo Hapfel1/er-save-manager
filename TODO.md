@@ -1,6 +1,6 @@
-add progress loading bar when loading presets in browser
+add progress loading bar when loading presets in browser done
 
-troubleshooting check for running vpns done
+troubled checking for running vpns done
 
 check for extracted or not - not needed, windows throws error
 
@@ -10,7 +10,7 @@ add another longbow and second one check csvs done
 
 add support button done
 
-add charaacter browser .erc export, images, same format as appearance editor, specify if overhaul mod etc
+add charaacter browser .erc export, images, same format as appearance editor, specify if overhaul mod etc done
 
 view details in backup man not working and show saved location done
 

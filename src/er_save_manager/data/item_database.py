@@ -184,12 +184,39 @@ def get_item_name(full_item_id: int, upgrade_level: int = 0) -> str:
     db = get_item_database()
     base_id, category = db.decode_item_id(full_item_id)
 
-    if category == ItemCategory.WEAPON and upgrade_level > 0:
-        return db.get_weapon_with_upgrade(base_id, upgrade_level)
+    # Handle empty armor slots (0 or 10000 = 0x2710)
+    if category == ItemCategory.ARMOR and base_id in (0, 10000):
+        return ""
 
+    # Try exact ID first
     item = db.get_item_by_id(full_item_id)
     if item:
+        if category == ItemCategory.WEAPON and upgrade_level > 0:
+            return f"{item.name} +{upgrade_level}"
         return item.name
+
+    # For weapons, seals, and spell tools - try stripping variant suffix
+    # Variants are encoded in the last 1-2 digits (e.g., 17050009 -> 17050000, 34090004 -> 34090000)
+    if category in (ItemCategory.WEAPON, ItemCategory.TALISMAN):
+        # Try rounding to nearest 100 (for multi-upgrade weapons)
+        rounded_base = (base_id // 100) * 100
+        rounded_full_id = category | rounded_base
+
+        item = db.get_item_by_id(rounded_full_id)
+        if item:
+            if upgrade_level > 0:
+                return f"{item.name} +{upgrade_level}"
+            return item.name
+
+        # If that fails, try rounding to nearest 10 (for single-digit variants)
+        rounded_base_10 = (base_id // 10) * 10
+        rounded_full_id_10 = category | rounded_base_10
+
+        item = db.get_item_by_id(rounded_full_id_10)
+        if item:
+            if upgrade_level > 0:
+                return f"{item.name} +{upgrade_level}"
+            return item.name
 
     return f"Unknown Item (0x{full_item_id:08X})"
 

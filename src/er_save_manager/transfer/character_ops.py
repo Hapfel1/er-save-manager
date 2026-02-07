@@ -388,7 +388,9 @@ class CharacterOperations:
         """
         Patch SteamID in character slot to match USER_DATA_10.
 
-        The SteamID in each character slot must match the one in USER_DATA_10.
+        IMPORTANT: SteamID is ONLY in the character slot data, NOT in the
+        profile summary. The profile summary contains character name, level,
+        playtime, and other profile info, but NOT SteamID.
         """
         if not save.user_data_10_parsed:
             return
@@ -402,7 +404,7 @@ class CharacterOperations:
         if target_steamid == 0:
             return
 
-        # SteamID is near the end of character data
+        # SteamID is near the end of character data (in the slot, not profile summary)
         slot_char = save.character_slots[slot_index]
         if not slot_char.is_empty() and hasattr(slot_char, "steamid_offset"):
             slot_offset = CharacterOperations.get_slot_offset(save, slot_index)
@@ -487,6 +489,14 @@ class CharacterOperations:
             save._raw_data[profile_offset : profile_offset + profile_size]
         )
 
+        # Validate profile data size
+        if len(profile_data) != profile_size:
+            raise ValueError(
+                f"Failed to extract full profile data during export: "
+                f"expected {profile_size} bytes, got {len(profile_data)} bytes. "
+                f"Save may be corrupted."
+            )
+
         # Get active flag
         is_active = CharacterOperations._is_slot_active(save, slot_index)
 
@@ -551,7 +561,7 @@ class CharacterOperations:
 
             # Read active flag (added in version 1)
             active_flag = struct.unpack("<B", f.read(1))[0]
-            was_active = bool(active_flag)
+            bool(active_flag)
 
             # Read slot data
             slot_size = struct.unpack("<I", f.read(4))[0]
@@ -559,7 +569,24 @@ class CharacterOperations:
 
             # Read profile data
             profile_size = struct.unpack("<I", f.read(4))[0]
+            if profile_size != 0x24C:
+                raise ValueError(
+                    f"Profile size mismatch in .erc file: expected 0x24C ({0x24C}) bytes, "
+                    f"got {profile_size} ({hex(profile_size)}). The .erc file may be corrupted."
+                )
             profile_data = f.read(profile_size)
+
+            if len(profile_data) != profile_size:
+                raise ValueError(
+                    f"Failed to read full profile data from .erc file: "
+                    f"expected {profile_size} bytes, got {len(profile_data)} bytes. "
+                    f"The .erc file may be truncated."
+                )
+
+            print(
+                f"[CharacterOps] Read .erc file: slot_data={len(slot_data)} bytes, "
+                f"profile_data={len(profile_data)} bytes"
+            )
 
             # Read checksum
             checksum_expected = f.read(16)
@@ -594,15 +621,34 @@ class CharacterOperations:
             + len(slot_data)
         ] = slot_data
 
-        # Write profile data using calculated offsets
+        # Clear and write profile data using calculated offsets
         _, profiles_base = CharacterOperations.get_profile_summary_offsets(save)
-        profile_offset = profiles_base + slot_index * 0x24C
-        save._raw_data[profile_offset : profile_offset + len(profile_data)] = (
-            profile_data
+        profile_size = 0x24C
+        profile_offset = profiles_base + slot_index * profile_size
+
+        # Validate profile data size
+        if len(profile_data) != profile_size:
+            raise ValueError(
+                f"Profile data size mismatch: expected {profile_size} bytes, "
+                f"got {len(profile_data)} bytes. The .erc file may be corrupted."
+            )
+
+        print(
+            f"[CharacterOps] Writing profile data to slot {slot_index} at offset {hex(profile_offset)}"
         )
 
-        # Restore the active flag from the exported character (or set to True if it was active)
-        CharacterOperations._set_slot_active(save, slot_index, was_active)
+        # Clear the profile entry first to avoid residual data
+        save._raw_data[profile_offset : profile_offset + profile_size] = bytes(
+            profile_size
+        )
+
+        # Write new profile data (always full 0x24C bytes)
+        save._raw_data[profile_offset : profile_offset + profile_size] = profile_data
+
+        print("[CharacterOps] Profile data written successfully")
+
+        # Set slot as active (imported characters should be active by default)
+        CharacterOperations._set_slot_active(save, slot_index, True)
 
         # Patch SteamID
         CharacterOperations._patch_steamid_in_slot(save, slot_index)
@@ -624,4 +670,248 @@ class CharacterOperations:
             CharacterOperations.SLOT_DATA_SIZE,
         )
 
+        # CRITICAL: Recalculate checksums for the modified slot and USER_DATA_10
+        # Without this, the save file will be corrupted and the game won't load it
+        save.recalculate_checksums()
+
         return save.character_slots[slot_index].get_character_name()
+
+    @staticmethod
+    def extract_character_metadata(save: Save, slot_index: int) -> dict:
+        """
+        Extract comprehensive metadata from a character for community sharing.
+
+        Args:
+            save: Save instance
+            slot_index: Slot index (0-9)
+
+        Returns:
+            Dictionary with character metadata including:
+            - Basic info (name, level, class, gender)
+            - Stats (vigor, mind, endurance, etc.)
+            - Playtime and NG+ cycle
+            - Equipment and inventory summary
+            - DLC item detection
+        """
+        char = save.character_slots[slot_index]
+        if char.is_empty():
+            raise ValueError(f"Slot {slot_index} is empty")
+
+        player_data = char.player_game_data
+
+        # Basic character info
+        from er_save_manager.data.starting_classes import STARTING_CLASSES
+
+        profile = None
+        try:
+            if save.user_data_10_parsed and save.user_data_10_parsed.profile_summary:
+                profiles = save.user_data_10_parsed.profile_summary.profiles
+                if profiles and slot_index < len(profiles):
+                    profile = profiles[slot_index]
+        except Exception:
+            profile = None
+
+        archetype_id = None
+        if profile and profile.archetype is not None:
+            archetype_id = profile.archetype
+        else:
+            archetype_id = player_data.archetype
+
+        class_data = STARTING_CLASSES.get(archetype_id, None)
+        char_class = class_data["name"] if class_data else "Unknown"
+
+        playtime_seconds = profile.seconds_played if profile else 0
+        playtime_formatted = CharacterOperations._format_playtime(playtime_seconds)
+
+        body_type = None
+        if profile and profile.body_type is not None:
+            body_type = "Type A" if profile.body_type == 0 else "Type B"
+
+        metadata = {
+            "name": player_data.character_name,
+            "level": player_data.level,
+            "class": char_class,
+            "body_type": body_type,
+            # Stats
+            "stats": {
+                "vigor": player_data.vigor,
+                "mind": player_data.mind,
+                "endurance": player_data.endurance,
+                "strength": player_data.strength,
+                "dexterity": player_data.dexterity,
+                "intelligence": player_data.intelligence,
+                "faith": player_data.faith,
+                "arcane": player_data.arcane,
+            },
+            "runes": player_data.runes,
+            # Playtime (from USER_DATA_10 ProfileSummary)
+            "playtime_seconds": playtime_seconds,
+            "playtime": playtime_formatted,
+            # NG+ detection - check if any NG+1 flags are set
+            "ng_plus": CharacterOperations._detect_ng_plus(save, slot_index),
+            # Equipment
+            "equipment": CharacterOperations._extract_equipment_summary(char),
+            # DLC access detection (checks if character has Shadow of the Erdtree flag)
+            "has_dlc": CharacterOperations._has_dlc_access(char),
+        }
+
+        return metadata
+
+    @staticmethod
+    def _detect_ng_plus(save: Save, slot_index: int) -> int:
+        """
+        Detect NG+ cycle by checking event flags.
+
+        Returns:
+            NG+ cycle number (0 for first playthrough, 1 for NG+1, etc.)
+        """
+        # NG+ cycles are tracked via event flags
+        # Flag 10000799 = Beat final boss (NG)
+        # Flag 10001799 = Beat final boss (NG+1)
+        # Flag 10002799 = Beat final boss (NG+2)
+        # etc.
+
+        try:
+            from er_save_manager.parser.event_flags import EventFlagManager
+
+            # Get event flags for character
+            event_flags = save.character_slots[slot_index].gaitem
+            if not event_flags:
+                return 0
+
+            # Check NG+ progression flags
+            for ng_cycle in range(7, 0, -1):  # Check NG+7 down to NG+1
+                flag_id = 10000799 + (ng_cycle * 1000)
+                if EventFlagManager.get_flag_state(event_flags, flag_id):
+                    return ng_cycle
+
+            return 0
+        except Exception:
+            return 0
+
+    @staticmethod
+    def _extract_equipment_summary(char) -> dict:
+        """Extract summary of equipped items with names resolved."""
+        try:
+            from er_save_manager.data.item_database import ItemCategory, get_item_name
+
+            equipped = None
+            if hasattr(char, "equipped_items_item_id"):
+                equipped = char.equipped_items_item_id
+            if not equipped and hasattr(char, "equipped_items"):
+                equipped = char.equipped_items
+            if not equipped:
+                return {}
+
+            def resolve_item(item_id: int, category: ItemCategory) -> dict | None:
+                """Resolve item ID to name and ID with proper category bits."""
+                # Filter out empty/placeholder slots
+                if item_id == 0 or item_id == 0xFFFFFFFF or item_id == 110000:
+                    return None
+                # Add category bits to the base ID
+                full_id = category | item_id
+                return {"id": item_id, "name": get_item_name(full_id)}
+
+            equipment = {}
+
+            # Weapons (right and left hand)
+            for hand in ["right_hand", "left_hand"]:
+                for i in [1, 2, 3]:
+                    item_id = getattr(equipped, f"{hand}_armament{i}", 0)
+                    item = resolve_item(item_id, ItemCategory.WEAPON)
+                    if item:
+                        equipment[f"{hand}_{i}"] = item
+
+            # Armor (skip if 0 or 0xFFFFFFFF)
+            for slot in ["head", "chest", "arms", "legs"]:
+                item_id = getattr(equipped, slot, 0)
+                item = resolve_item(item_id, ItemCategory.ARMOR)
+                if item:
+                    equipment[slot] = item
+
+            # Talismans (skip if 0 or 0xFFFFFFFF)
+            talismans = []
+            for i in range(1, 5):
+                item_id = getattr(equipped, f"talisman{i}", 0)
+                item = resolve_item(item_id, ItemCategory.TALISMAN)
+                if item:
+                    talismans.append(item)
+            if talismans:
+                equipment["talismans"] = talismans
+
+            return equipment
+        except Exception:
+            return {}
+
+    @staticmethod
+    def _format_playtime(seconds: int) -> str:
+        """Format playtime seconds as Hh Mm Ss."""
+        if not seconds or seconds < 0:
+            return "0h 0m 0s"
+        hours = seconds // 3600
+        minutes = (seconds % 3600) // 60
+        secs = seconds % 60
+        return f"{hours}h {minutes}m {secs}s"
+
+    @staticmethod
+    def _has_dlc_access(char) -> bool:
+        """Check if character has Shadow of the Erdtree DLC access (via DLC flag)."""
+        try:
+            if hasattr(char, "has_dlc_flag"):
+                return bool(char.has_dlc_flag())
+        except Exception:
+            return False
+        return False
+
+    @staticmethod
+    def _detect_dlc_items(char) -> bool:
+        """
+        Detect if character has any DLC (Shadow of the Erdtree) items.
+
+        DLC items have IDs in specific ranges:
+        - Weapons: 41000000-42000000
+        - Armor: 43000000-44000000
+        - Talismans: 2100-2200
+        - Ashes of War: 850000-860000
+        """
+        try:
+            # Check equipped items
+            equipped = char.equipped_items
+            if equipped:
+                # Check weapons
+                for weapon in [
+                    equipped.right_hand_armament_1,
+                    equipped.right_hand_armament_2,
+                    equipped.right_hand_armament_3,
+                    equipped.left_hand_armament_1,
+                    equipped.left_hand_armament_2,
+                    equipped.left_hand_armament_3,
+                ]:
+                    if weapon and 41000000 <= weapon < 42000000:
+                        return True
+
+                # Check armor
+                for armor in [
+                    equipped.head_armor,
+                    equipped.chest_armor,
+                    equipped.arms_armor,
+                    equipped.legs_armor,
+                ]:
+                    if armor and 43000000 <= armor < 44000000:
+                        return True
+
+                # Check talismans
+                for talisman in [
+                    equipped.talisman_1,
+                    equipped.talisman_2,
+                    equipped.talisman_3,
+                    equipped.talisman_4,
+                ]:
+                    if talisman and 2100 <= talisman < 2200:
+                        return True
+
+            # TODO: Check inventory items when inventory parsing is implemented
+
+            return False
+        except Exception:
+            return False

@@ -16,6 +16,7 @@ from er_save_manager.backup.manager import BackupManager
 from er_save_manager.preset_manager import PresetManager
 from er_save_manager.preset_metrics import PresetMetrics
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.progress_dialog import ProgressDialog
 from er_save_manager.ui.utils import bind_mousewheel, trace_variable
 
 try:
@@ -618,75 +619,119 @@ class EnhancedPresetBrowser:
 
     # ---------------------- Browse logic ----------------------
     def refresh_presets(self):
-        self.status_var.set("Fetching presets from GitHub...")
-        self.dialog.update_idletasks()
+        import threading
 
-        try:
-            index_data = self.manager.fetch_index(force_refresh=True)
-            self.all_presets = index_data.get("presets", [])
+        # Show progress dialog
+        progress = ProgressDialog(
+            self.dialog, "Loading Presets", "Fetching presets from GitHub..."
+        )
 
-            if not self.all_presets:
-                self.status_var.set("No presets available yet")
-                return
+        def load_in_background():
+            try:
+                index_data = self.manager.fetch_index(force_refresh=True)
+                self.all_presets = index_data.get("presets", [])
 
-            # Validate cache entries in case index changed
-            invalidated_count = 0
-            for preset in self.all_presets:
-                is_valid, _ = self.manager.validate_preset_in_index(
-                    preset["id"], preset
-                )
-                if not is_valid:
-                    invalidated_count += 1
-                    cache_dir = self.manager.cache_dir / preset["id"]
-                    if cache_dir.exists():
-                        import shutil
+                if not self.all_presets:
+                    self.dialog.after(0, progress.close)
+                    self.dialog.after(
+                        0, lambda: self.status_var.set("No presets available yet")
+                    )
+                    return
 
-                        try:
-                            shutil.rmtree(cache_dir)
-                        except Exception:
-                            pass
-                    preset_path = self.manager.cache_dir / f"{preset['id']}.json"
-                    if preset_path.exists():
-                        try:
-                            preset_path.unlink()
-                        except Exception:
-                            pass
-
-            if invalidated_count:
-                print(
-                    f"Invalidated {invalidated_count} cached presets due to index changes"
+                self.dialog.after(
+                    0,
+                    lambda: progress.update_status(
+                        "Validating cache",
+                        f"Processing {len(self.all_presets)} presets...",
+                    ),
                 )
 
-            # Load presets first so UI opens quickly
-            self.status_var.set(f"Loaded {len(self.all_presets)} presets")
-            self.apply_filters()
+                # Validate cache entries in case index changed
+                invalidated_count = 0
+                for preset in self.all_presets:
+                    is_valid, _ = self.manager.validate_preset_in_index(
+                        preset["id"], preset
+                    )
+                    if not is_valid:
+                        invalidated_count += 1
+                        cache_dir = self.manager.cache_dir / preset["id"]
+                        if cache_dir.exists():
+                            import shutil
 
-            # Fetch metrics from Supabase asynchronously after UI loads
-            def load_metrics_async():
-                try:
-                    preset_ids = [p.get("id") for p in self.all_presets if p.get("id")]
-                    self.preset_metrics_cache = self.metrics.fetch_metrics(preset_ids)
+                            try:
+                                shutil.rmtree(cache_dir)
+                            except Exception:
+                                pass
+                        preset_path = self.manager.cache_dir / f"{preset['id']}.json"
+                        if preset_path.exists():
+                            try:
+                                preset_path.unlink()
+                            except Exception:
+                                pass
+
+                if invalidated_count:
                     print(
-                        f"Fetched metrics for {len(self.preset_metrics_cache)} presets"
+                        f"Invalidated {invalidated_count} cached presets due to index changes"
                     )
 
-                    # Load user's likes from local settings (persisted across sessions)
-                    user_likes = self.metrics.fetch_user_likes(preset_ids)
-                    like_count = len([k for k, v in user_likes.items() if v])
-                    if like_count > 0:
-                        print(f"Loaded {like_count} user likes from local cache")
+                self.dialog.after(
+                    0,
+                    lambda: progress.update_status(
+                        "Loading presets...", f"Loaded {len(self.all_presets)} presets"
+                    ),
+                )
 
-                    # Refresh display with metrics and respect sort order
-                    self.apply_filters()
-                except Exception as e:
-                    print(f"Failed to fetch metrics: {e}")
-                    self.preset_metrics_cache = {}
+                # Load presets first so UI opens quickly
+                self.dialog.after(
+                    0,
+                    lambda: (
+                        self.status_var.set(f"Loaded {len(self.all_presets)} presets"),
+                        self.apply_filters(),
+                    ),
+                )
 
-            # Schedule async load after 10ms to allow UI to render first
-            self.dialog.after(10, load_metrics_async)
+                # Fetch metrics from Supabase asynchronously after UI loads
+                def load_metrics_async():
+                    try:
+                        preset_ids = [
+                            p.get("id") for p in self.all_presets if p.get("id")
+                        ]
+                        self.preset_metrics_cache = self.metrics.fetch_metrics(
+                            preset_ids
+                        )
+                        print(
+                            f"Fetched metrics for {len(self.preset_metrics_cache)} presets"
+                        )
 
-        except Exception as exc:  # pragma: no cover - UI path
-            self.status_var.set(f"Error loading presets: {exc}")
+                        # Load user's likes from local settings (persisted across sessions)
+                        user_likes = self.metrics.fetch_user_likes(preset_ids)
+                        like_count = len([k for k, v in user_likes.items() if v])
+                        if like_count > 0:
+                            print(f"Loaded {like_count} user likes from local cache")
+
+                        # Refresh display with metrics and respect sort order
+                        self.apply_filters()
+                    except Exception as e:
+                        print(f"Failed to fetch metrics: {e}")
+                        self.preset_metrics_cache = {}
+
+                # Schedule async load after 10ms to allow UI to render first
+                self.dialog.after(10, load_metrics_async)
+                # Close progress after metrics load
+                self.dialog.after(100, progress.close)
+
+            except Exception as exc:  # pragma: no cover - UI path
+                self.dialog.after(0, progress.close)
+                self.dialog.after(
+                    0,
+                    lambda err=exc: self.status_var.set(
+                        f"Error loading presets: {err}"
+                    ),
+                )
+
+        # Start loading in background thread
+        thread = threading.Thread(target=load_in_background, daemon=True)
+        thread.start()
 
     def apply_filters(self):
         search_term = self.search_var.get().lower()
