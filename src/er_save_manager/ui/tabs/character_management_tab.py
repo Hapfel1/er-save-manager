@@ -60,9 +60,14 @@ class CharacterManagementTab:
 
     def setup_ui(self):
         """Setup the character management tab UI"""
+        # Create scrollable frame wrapper
+        scroll_frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
+        scroll_frame.pack(fill=tk.BOTH, expand=True)
+        bind_mousewheel(scroll_frame)
+
         # Title
         title_label = ctk.CTkLabel(
-            self.parent,
+            scroll_frame,
             text="Character Management",
             font=("Segoe UI", 16, "bold"),
         )
@@ -70,16 +75,38 @@ class CharacterManagementTab:
 
         # Info label
         info_text = ctk.CTkLabel(
-            self.parent,
-            text="Transfer characters between save files, copy slots, and manage your character roster",
+            scroll_frame,
+            text="Transfer characters between save files, copy slots, manage your character roster, share and download community builds",
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         )
         info_text.pack(pady=5)
 
+        # Character Browser button
+        browser_frame = ctk.CTkFrame(
+            scroll_frame,
+            corner_radius=10,
+        )
+        browser_frame.pack(fill=tk.X, padx=20, pady=(10, 5))
+
+        ctk.CTkButton(
+            browser_frame,
+            text="🌐 Browse Character Library",
+            command=self.open_character_browser,
+            width=250,
+            height=40,
+        ).pack(side=tk.LEFT, padx=15, pady=10)
+
+        ctk.CTkLabel(
+            browser_frame,
+            text="Download complete character builds from the community",
+            font=("Segoe UI", 11),
+            text_color=("gray40", "gray70"),
+        ).pack(side=tk.LEFT, padx=(10, 15))
+
         # Operation selector frame
         selector_frame = ctk.CTkFrame(
-            self.parent,
+            scroll_frame,
             corner_radius=10,
         )
         selector_frame.pack(fill=tk.X, padx=20, pady=10)
@@ -131,7 +158,7 @@ class CharacterManagementTab:
 
         # Operation panel frame
         self.char_ops_panel = ctk.CTkFrame(
-            self.parent,
+            scroll_frame,
             corner_radius=10,
         )
         self.char_ops_panel.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
@@ -887,6 +914,22 @@ class CharacterManagementTab:
             import traceback
 
             traceback.print_exc()
+
+    def open_character_browser(self):
+        """Open the character browser dialog."""
+        from er_save_manager.ui.dialogs.character_browser import CharacterBrowser
+
+        save = self.get_save_file()
+        if not save:
+            CTkMessageBox.showwarning(
+                "No Save File",
+                "Please load a save file first",
+                parent=self.parent,
+            )
+            return
+
+        browser = CharacterBrowser(self.parent, character_tab=self, save_file=save)
+        browser.show()
 
     def delete_character(self):
         """Delete character from slot"""
