@@ -1,33 +1,8 @@
 troubleshooting check for running vpns done
 
-check for extracted or not - not needd, windows throws error
+check for extracted or not - not needed, windows throws error
 
-backups zip, auto backup
-(One functionality i was also thinking of was the tool having a launch game button and it automatically creating a backup before starting
-Or just having the tool open and as soon as eldenring.exe is detected it creates one backup
-Could be nice for invaders
-  
-  Cyan
-
- — Yesterday at 8:54 PM
-Interesting. Maybe on first run if asks if the user wants that enabled? 🤔
-Hapfel
- — Yesterday at 8:54 PM
-Yeah exactly
-Cyan
-
- — Yesterday at 8:54 PM
-Invaders would like that quite a bit.
-Hapfel
- — Yesterday at 8:54 PM
-And the user would need to choose for which save file
-If they got multiple
-Cyan
-
- — Yesterday at 8:56 PM
-Yeah sadly doing the whole folder would be bad. Save bloat is crazy.
-Oh. Actually.
-If you can programmatically zip the save folder it would save a ton of room. Get all of them that way)
+backups zip, auto backup done
 
 add another longbow and second one check csvs done
 
@@ -35,7 +10,7 @@ add support button done
 
 add charaacter browser .erc export, images, same format as appearance editor, specify if overhaul mod etc
 
-view details in backup man not working and show saved location + change it to somewhere else option (settings)
+view details in backup man not working and show saved location done
 
 fix window popups centered done
 
