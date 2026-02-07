@@ -218,20 +218,9 @@ class SaveManagerGUI:
     def _init_process_monitor(self):
         """Initialize auto-backup process monitor"""
         try:
-            from er_save_manager.backup.process_monitor import (
-                GameProcessMonitor,
-                show_auto_backup_first_run_dialog,
-            )
+            from er_save_manager.backup.process_monitor import GameProcessMonitor
 
-            # Check if this is first run
-            if self.settings.get("auto_backup_first_run_check", True):
-                # Show first run dialog
-                if show_auto_backup_first_run_dialog(parent=self.root):
-                    # User wants to configure - show settings tab
-                    # (they can configure there)
-                    pass
-
-            # Start process monitor
+            # Start process monitor (first-run dialog moved to backup manager tab)
             self.process_monitor = GameProcessMonitor()
             self.process_monitor.set_backup_callback(self._on_auto_backup_created)
             self.process_monitor.start()
