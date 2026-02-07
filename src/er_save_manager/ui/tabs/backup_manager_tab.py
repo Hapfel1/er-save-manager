@@ -114,6 +114,34 @@ Backup Format:
             justify=tk.LEFT,
         ).pack(anchor=tk.W, padx=15, pady=10)
 
+    def _check_auto_backup_first_run(self):
+        """Check and show auto-backup first-run dialog if needed"""
+        try:
+            import os
+            from pathlib import Path
+
+            from er_save_manager.backup.process_monitor import (
+                show_auto_backup_first_run_dialog,
+            )
+            from er_save_manager.ui.settings import get_settings
+
+            settings = get_settings()
+            if settings.get("auto_backup_first_run_check", True):
+                # Default save location fallback
+                def get_default_save_path():
+                    appdata = Path(os.environ.get("APPDATA", ""))
+                    default_path = appdata / "EldenRing"
+                    return str(default_path) if default_path.exists() else None
+
+                # Show first-run dialog with callbacks
+                show_auto_backup_first_run_dialog(
+                    parent=self.parent,
+                    get_save_path_callback=self.get_save_path,
+                    get_default_save_path_callback=get_default_save_path,
+                )
+        except Exception as e:
+            print(f"Auto-backup first-run check failed: {e}")
+
     def update_backup_stats(self):
         """Update backup statistics display"""
         # Guard against backup_stats_var not being initialized
@@ -156,6 +184,9 @@ Backup Format:
                 "No Save", "Please load a save file first!", parent=self.parent
             )
             return
+
+        # Show auto-backup first-run dialog (only once, when opening backup manager)
+        self._check_auto_backup_first_run()
 
         try:
             from er_save_manager.backup.manager import BackupManager
