@@ -506,23 +506,74 @@ Backup Format:
                 info = manager.get_backup_info(selected_backup[0])
 
                 if info:
-                    details = []
-                    details.append(f"Filename: {info.filename}")
-                    details.append(f"Timestamp: {info.timestamp}")
-                    details.append(f"Operation: {info.operation}")
-                    details.append(f"Description: {info.description}")
-                    details.append(f"Size: {info.file_size / (1024 * 1024):.2f} MB")
+                    # Create custom dialog for details with better layout
+                    details_dialog = ctk.CTkToplevel(dialog)
+                    details_dialog.title("Backup Details")
+                    details_dialog.geometry("600x450")
+                    details_dialog.transient(dialog)
+                    details_dialog.grab_set()
+
+                    # Center the dialog over backup manager window
+                    details_dialog.update_idletasks()
+                    dialog.update_idletasks()
+                    parent_x = dialog.winfo_rootx()
+                    parent_y = dialog.winfo_rooty()
+                    parent_width = dialog.winfo_width()
+                    parent_height = dialog.winfo_height()
+                    x = parent_x + (parent_width // 2) - (600 // 2)
+                    y = parent_y + (parent_height // 2) - (450 // 2)
+                    details_dialog.geometry(f"600x450+{x}+{y}")
+
+                    # Main frame
+                    main_frame = ctk.CTkFrame(details_dialog)
+                    main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+                    # Title
+                    ctk.CTkLabel(
+                        main_frame,
+                        text="Backup Information",
+                        font=("Segoe UI", 16, "bold"),
+                    ).pack(pady=(0, 15))
+
+                    # Details text
+                    details_text = ctk.CTkTextbox(
+                        main_frame,
+                        width=540,
+                        height=280,
+                        font=("Segoe UI", 11),
+                    )
+                    details_text.pack(pady=(0, 15))
+
+                    # Build details content
+                    details_content = []
+                    details_content.append(f"Filename: {info.filename}\n")
+                    details_content.append(f"Timestamp: {info.timestamp}\n")
+                    details_content.append(f"Operation: {info.operation}\n")
+                    details_content.append(f"Description: {info.description}\n")
+                    details_content.append(
+                        f"Size: {info.file_size / (1024 * 1024):.2f} MB\n"
+                    )
+                    details_content.append(
+                        f"\nBackup Location:\n{manager.backup_folder}\n"
+                    )
 
                     if info.character_summary:
-                        details.append("\nCharacters:")
+                        details_content.append("\nCharacters:\n")
                         for char in info.character_summary:
-                            details.append(
-                                f"  Slot {char['slot']}: {char['name']} (Lv.{char['level']})"
+                            details_content.append(
+                                f"  Slot {char['slot']}: {char['name']} (Lv.{char['level']})\n"
                             )
 
-                    CTkMessageBox.showinfo(
-                        "Backup Details", "\n".join(details, parent=self.parent)
-                    )
+                    details_text.insert("1.0", "".join(details_content))
+                    details_text.configure(state="disabled")
+
+                    # Close button
+                    ctk.CTkButton(
+                        main_frame,
+                        text="Close",
+                        command=details_dialog.destroy,
+                        width=120,
+                    ).pack(pady=(0, 0))
 
             ctk.CTkButton(
                 button_frame,
@@ -556,6 +607,29 @@ Backup Format:
                 button_frame,
                 text="Refresh",
                 command=refresh_list,
+                width=120,
+            ).pack(side=tk.LEFT, padx=5)
+
+            def open_backup_folder():
+                import os
+                import subprocess
+
+                try:
+                    if os.name == "nt":  # Windows
+                        os.startfile(manager.backup_folder)
+                    elif os.name == "posix":  # Linux/Mac
+                        subprocess.run(["xdg-open", str(manager.backup_folder)])
+                except Exception as e:
+                    CTkMessageBox.showerror(
+                        "Error",
+                        f"Failed to open folder:\n{str(e)}",
+                        parent=dialog,
+                    )
+
+            ctk.CTkButton(
+                button_frame,
+                text="Open Folder",
+                command=open_backup_folder,
                 width=120,
             ).pack(side=tk.LEFT, padx=5)
 
