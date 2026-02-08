@@ -8,6 +8,7 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 
 - **Save File Fixer**: Automatically detect and fix save corruption issues and infinite loading screens
 - **Character Management**: Export, import, and move characters between saves
+- **Community Character Browser**: Browse, download, and contribute characters with likes and download tracking
 - **Character Editor**: Edit stats, runes, name, level, and build attributes
 - **Appearance Editor**: View, export and import Presets
 - **Community Preset Browser**: Browse, download, and contribute character appearance presets with likes and download tracking
@@ -68,6 +69,17 @@ Automatically detects and fixes common save corruption issues:
 - **Move Between Slots**: Reorganize characters within a save
 - **Copy Between Saves**: Transfer characters to different save files
 - **Delete a Character**
+
+### Community Character Browser
+
+- Browse characters from the community and download characters from others
+- Like your favorite characters
+- Download tracking
+- Submit your own characters to share with others
+- Image preview (face and body)
+- Search and filter functionality
+- Report inappropriate content
+- Local cache for fast loading
 
 ### Character Editor
 
