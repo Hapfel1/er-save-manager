@@ -150,9 +150,11 @@ class CharacterBrowser:
 
         content = ctk.CTkFrame(main_frame)
         content.pack(fill=ctk.BOTH, expand=True, pady=(0, 10))
-        # Fixed widths to prevent shifting when preview loads
-        content.columnconfigure(0, weight=1, minsize=620)
-        content.columnconfigure(1, weight=0, minsize=650)
+        # Flexible layout - grid and preview scale responsively
+        content.columnconfigure(0, weight=1, minsize=300)  # Reduced minsize for grid
+        content.columnconfigure(
+            1, weight=1, minsize=300
+        )  # Changed to weight=1 for preview
         content.rowconfigure(0, weight=1)
 
         self.grid_container = ctk.CTkScrollableFrame(
@@ -160,14 +162,12 @@ class CharacterBrowser:
             fg_color=("gray95", "gray20"),
             corner_radius=8,
             border_width=1,
-            width=620,
         )
-        self.grid_container.grid(row=0, column=0, sticky="nsew", padx=(0, 12))
+        self.grid_container.grid(row=0, column=0, sticky="nsew", padx=(0, 0))
         bind_mousewheel(self.grid_container)
 
-        preview_panel = ctk.CTkFrame(content, width=650)
-        preview_panel.grid(row=0, column=1, sticky="nsew")
-        preview_panel.grid_propagate(False)  # Prevent resizing based on content
+        preview_panel = ctk.CTkFrame(content)
+        preview_panel.grid(row=0, column=1, sticky="nsew", padx=(12, 0))
 
         # Create scrollable container for preview content
         preview_scroll = ctk.CTkScrollableFrame(preview_panel, fg_color="transparent")
