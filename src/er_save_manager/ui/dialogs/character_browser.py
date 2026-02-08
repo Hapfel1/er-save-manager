@@ -5,6 +5,7 @@ Browse and contribute community character builds with 10-slot support.
 
 from __future__ import annotations
 
+import tkinter as tk
 import webbrowser
 from pathlib import Path
 from tkinter import filedialog
@@ -583,7 +584,6 @@ class CharacterBrowser:
             )
 
             # Extract character metadata
-            print("[Character Submission] Extracting metadata...")
             metadata = CharacterOperations.extract_character_metadata(
                 self.save_file, slot_index
             )
@@ -606,7 +606,6 @@ class CharacterBrowser:
                 }
 
             # Export character to temp .erc file
-            print("[Character Submission] Exporting character...")
             temp_dir = Path(tempfile.gettempdir()) / "er_character_export"
             temp_dir.mkdir(exist_ok=True)
 
@@ -622,7 +621,6 @@ class CharacterBrowser:
             )
 
             # Submit via browser
-            print("[Character Submission] Opening GitHub...")
             success, url = submit_character_via_browser(
                 char_name=char_name,
                 author=author,
@@ -709,8 +707,6 @@ class CharacterBrowser:
         """Refresh character list from remote."""
         import threading
 
-        print("[Character Browser] Refreshing characters...")
-
         # Show loading state
         for widget in self.grid_container.winfo_children():
             widget.destroy()
@@ -739,10 +735,6 @@ class CharacterBrowser:
                     self.character_metrics_cache = self.metrics.fetch_metrics(
                         character_ids
                     )
-
-                print(
-                    f"[Character Browser] Loaded {len(self.all_characters)} characters"
-                )
 
                 # Update UI on main thread
                 def finalize():
@@ -1003,25 +995,12 @@ class CharacterBrowser:
                 ctk_img = ctk.CTkImage(img, size=(80, 80))
                 label.configure(image=ctk_img)
                 label.image = ctk_img  # Keep reference
-            except Exception as e:
-                print(f"[Character Browser] Failed to load thumbnail: {e}")
+            except Exception:
+                pass
 
     def preview_character(self, character: dict[str, Any]):
         """Show character preview in right panel."""
         self.current_character = character
-
-        # DEBUG: Log character data
-        print("\n[Character Browser] Previewing character:")
-        print(f"  ID: {character.get('id')}")
-        print(f"  Name: {character.get('name')}")
-        print(f"  Author: {character.get('author')}")
-        print(f"  Description: {character.get('description')}")
-        print(f"  Tags: {character.get('tags')}")
-        print(f"  Level: {character.get('level')}")
-        print(f"  Class: {character.get('class')}")
-        print(f"  Equipment: {character.get('equipment')}")
-        print(f"  Metadata URL: {character.get('metadata_url')}")
-        print(f"  Full character dict keys: {list(character.keys())}")
 
         # Clear preview area
         for widget in self.preview_area.winfo_children():
@@ -1040,7 +1019,6 @@ class CharacterBrowser:
 
         # Author
         author = character.get("author", "Unknown")
-        print(f"[Character Browser] Displaying author: {author}")
         ctk.CTkLabel(
             self.preview_area,
             text=f"by {author}",
@@ -1056,85 +1034,34 @@ class CharacterBrowser:
             # Try to load screenshots
             char_id = character["id"]
 
-            print(f"[Character Browser] Loading screenshots for {char_id}")
-
             # First, try to get screenshot URLs from index.json character entry
             face_url = None
             body_url = None
 
             screenshots_obj = character.get("screenshots")
-            print(f"  Screenshots object from character: {screenshots_obj}")
-            print(f"  Screenshots object type: {type(screenshots_obj)}")
 
             if screenshots_obj:
                 face_url = screenshots_obj.get("face_url")
                 body_url = screenshots_obj.get("body_url")
-
-                print("  Found screenshots in index.json")
-                print(f"  Face URL: {face_url}")
-                print(f"  Body URL: {body_url}")
             # Fallback: try to get from metadata if not in index
             if not (face_url or body_url):
                 metadata_url = character.get("metadata_url")
-                print(f"  Metadata URL: {metadata_url}")
 
                 if metadata_url:
                     # Download metadata to get screenshot URLs
                     metadata = self.manager.get_cached_metadata(char_id)
-                    print(f"  Cached metadata: {metadata is not None}")
 
                     if not metadata:
-                        print(f"  Downloading metadata from {metadata_url}")
                         metadata = self.manager.download_metadata(char_id, metadata_url)
-                        print(f"  Download successful: {metadata is not None}")
 
                     if metadata:
-                        print(f"  Metadata keys: {list(metadata.keys())}")
                         screenshots = metadata.get("screenshots", {})
-                        print(f"  Screenshots object: {screenshots}")
 
                         # Load face and body screenshots
                         face_url = screenshots.get("face_url")
                         body_url = screenshots.get("body_url")
 
-                        print(f"  Face URL: {face_url}")
-                        print(f"  Body URL: {body_url}")
-
-                    if face_url or body_url:
-                        screenshot_container = ctk.CTkFrame(screenshots_frame)
-                        screenshot_container.pack(fill=ctk.BOTH, expand=True)
-
-                        if face_url:
-                            face_label = ctk.CTkLabel(
-                                screenshot_container, text="Loading face..."
-                            )
-                            face_label.pack(side=ctk.LEFT, padx=5, expand=True)
-                            self.dialog.after(
-                                10,
-                                lambda url=face_url: self._load_screenshot(
-                                    char_id, url, face_label, "_face", (220, 220)
-                                ),
-                            )
-
-                        if body_url:
-                            body_label = ctk.CTkLabel(
-                                screenshot_container, text="Loading body..."
-                            )
-                            body_label.pack(side=ctk.LEFT, padx=5, expand=True)
-                            self.dialog.after(
-                                10,
-                                lambda url=body_url: self._load_screenshot(
-                                    char_id, url, body_label, "_body", (220, 220)
-                                ),
-                            )
-                    else:
-                        print("  No screenshot URLs found in metadata")
-                else:
-                    print(f"  Failed to load metadata from {metadata_url}")
-            else:
-                print("  No metadata URL available")
-
-            # Display screenshots from index.json if available
+            # Display screenshots (from index.json or fallback metadata)
             if face_url or body_url:
                 screenshot_container = ctk.CTkFrame(screenshots_frame)
                 screenshot_container.pack(fill=ctk.BOTH, expand=True)
@@ -1217,7 +1144,6 @@ class CharacterBrowser:
         # Equipment
         equipment = character.get("equipment", {})
         if equipment and isinstance(equipment, dict):
-            print(f"[Character Browser] Displaying equipment: {equipment}")
             equip_label = ctk.CTkLabel(
                 self.details_frame,
                 text="Equipment:",
@@ -1329,7 +1255,19 @@ class CharacterBrowser:
             state="disabled" if has_liked else "normal",
             fg_color=("#10b981", "#059669") if has_liked else None,
         )
-        like_btn.pack(side=ctk.LEFT, padx=(0, 0))
+        like_btn.pack(side=ctk.LEFT, padx=(0, 8))
+
+        # Report button
+        report_btn = ctk.CTkButton(
+            metrics_frame,
+            text="🚩 Report",
+            command=lambda: self._show_report_dialog(character),
+            width=90,
+            height=32,
+            fg_color=("#dc2626", "#b91c1c"),
+            hover_color=("#b91c1c", "#991b1b"),
+        )
+        report_btn.pack(side=ctk.LEFT, padx=(0, 0))
 
     def _load_screenshot(
         self,
@@ -1355,8 +1293,7 @@ class CharacterBrowser:
                 ctk_img = ctk.CTkImage(img, size=img.size)
                 label.configure(image=ctk_img, text="")
                 label.image = ctk_img  # Keep reference
-            except Exception as e:
-                print(f"[Character Browser] Failed to load screenshot: {e}")
+            except Exception:
                 label.configure(text="Failed to load")
         else:
             label.configure(text="No image")
@@ -1446,7 +1383,7 @@ class CharacterBrowser:
                 from er_save_manager.transfer.character_ops import CharacterOperations
 
                 # Download .erc file to temp location
-                print(f"[Character Browser] Downloading {char_id}...")
+
                 self.dialog.after(
                     0,
                     lambda: progress.update_status(
@@ -1470,10 +1407,8 @@ class CharacterBrowser:
                 if not success:
                     raise RuntimeError("Failed to download character file")
 
-                print(f"[Character Browser] Downloaded to {temp_erc}")
-
                 # Create backup before importing
-                print("[Character Browser] Creating backup before import...")
+
                 self.dialog.after(
                     0,
                     lambda: progress.update_status(
@@ -1489,15 +1424,13 @@ class CharacterBrowser:
                         operation="character_import",
                         save=self.save_file,
                     )
-                    print(f"[Character Browser] Backup created: {backup_path.name}")
-                except Exception as backup_error:
-                    print(
-                        f"[Character Browser] Warning: Backup creation failed: {backup_error}"
-                    )
+
+                except Exception:
                     # Continue with import even if backup fails
+                    pass
 
                 # Import character
-                print(f"[Character Browser] Importing to slot {target_slot}...")
+
                 self.dialog.after(
                     0,
                     lambda: progress.update_status(
@@ -1508,10 +1441,8 @@ class CharacterBrowser:
                     self.save_file, target_slot, str(temp_erc)
                 )
 
-                print(f"[Character Browser] Imported '{imported_name}'")
-
                 # Save the modified save file to disk
-                print("[Character Browser] Saving changes to disk...")
+
                 self.dialog.after(
                     0,
                     lambda: progress.update_status(
@@ -1519,10 +1450,9 @@ class CharacterBrowser:
                     ),
                 )
                 self.save_file.save()
-                print("[Character Browser] Save file updated successfully")
 
                 # Record download metric
-                print("[Character Browser] Recording download metric...")
+
                 self.dialog.after(
                     0,
                     lambda: progress.update_status("Finalizing...", "Updating metrics"),
@@ -1543,11 +1473,10 @@ class CharacterBrowser:
 
                 # Reload save file if there's a callback
                 if self.character_tab and hasattr(self.character_tab, "reload_save"):
-                    print("[Character Browser] Reloading save file...")
                     self.character_tab.reload_save()
 
                 # Refresh metrics for this character from Supabase
-                print("[Character Browser] Refreshing character metrics...")
+
                 try:
                     fresh_metrics = self.metrics.fetch_metrics([char_id])
                     if fresh_metrics and char_id in fresh_metrics:
@@ -1562,11 +1491,8 @@ class CharacterBrowser:
                         self.character_metrics_cache[char_id] = fresh_metrics[char_id]
                         # Re-display with updated metrics
                         self.preview_character(self.current_character)
-                        print(
-                            f"[Character Browser] Updated metrics - downloads: {fresh_metrics[char_id].get('downloads', 0)}, likes: {fresh_metrics[char_id].get('likes', 0)}"
-                        )
-                except Exception as e:
-                    print(f"[Character Browser] Failed to refresh metrics: {e}")
+                except Exception:
+                    pass
 
                 # Show success dialog on main thread
                 def show_success():
@@ -1578,7 +1504,6 @@ class CharacterBrowser:
                     )
 
                 self.dialog.after(0, show_success)
-                print("[Character Browser] Import complete!")
 
             except Exception as e:
                 print(f"[Character Browser] Import failed: {e}")
@@ -1596,3 +1521,161 @@ class CharacterBrowser:
         # Start import in background thread
         thread = threading.Thread(target=import_in_background, daemon=True)
         thread.start()
+
+    def _show_report_dialog(self, character: dict[str, Any]):
+        """Show dialog for reporting a character."""
+        from er_save_manager.ui.utils import force_render_dialog
+
+        report_dialog = ctk.CTkToplevel(self.dialog)
+        report_dialog.title("Report Character")
+        report_dialog.geometry("600x600")
+        report_dialog.transient(self.dialog)
+
+        # Force rendering on Linux before grab_set
+        force_render_dialog(report_dialog)
+        report_dialog.grab_set()
+
+        main_frame = ctk.CTkFrame(report_dialog)
+        main_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=20)
+
+        # GitHub Account Required notice
+        notice_frame = ctk.CTkFrame(
+            main_frame, fg_color=("#fff7ed", "#3b2f1b"), corner_radius=8
+        )
+        notice_frame.pack(fill=ctk.X, pady=(0, 15))
+        ctk.CTkLabel(
+            notice_frame,
+            text="⚠ GitHub Account Required",
+            font=("Segoe UI", 13, "bold"),
+            text_color=("#b45309", "#fbbf24"),
+        ).pack(pady=(10, 4))
+        ctk.CTkLabel(
+            notice_frame,
+            text="Log into GitHub in your browser before reporting",
+            font=("Segoe UI", 11),
+            text_color=("#6b7280", "#d1d5db"),
+        ).pack(pady=(0, 10))
+
+        # Title
+        ctk.CTkLabel(
+            main_frame,
+            text=f"Report: {character.get('name', 'Character')}",
+            font=("Segoe UI", 16, "bold"),
+        ).pack(anchor=ctk.W, pady=(0, 5))
+
+        ctk.CTkLabel(
+            main_frame,
+            text=f"by {character.get('author', 'Unknown')}",
+            font=("Segoe UI", 11),
+            text_color=("#6b7280", "#9ca3af"),
+        ).pack(anchor=ctk.W, pady=(0, 15))
+
+        # Info box
+        info_frame = ctk.CTkFrame(
+            main_frame, fg_color=("#fef3c7", "#3f2f1e"), corner_radius=8
+        )
+        info_frame.pack(fill=ctk.X, pady=(0, 20))
+        ctk.CTkLabel(
+            info_frame,
+            text="⚠️ Please report only genuine issues (inappropriate content, etc.)",
+            font=("Segoe UI", 11),
+            text_color=("#92400e", "#fbbf24"),
+            wraplength=550,
+        ).pack(padx=15, pady=12)
+
+        # Reason label
+        ctk.CTkLabel(
+            main_frame,
+            text="Reason for report:",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(anchor=ctk.W, pady=(0, 8))
+
+        # Text box for report message
+        report_text = ctk.CTkTextbox(main_frame, height=150)
+        report_text.pack(fill=ctk.BOTH, expand=True, pady=(0, 20))
+        report_text.focus()
+
+        # Button frame
+        button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        button_frame.pack(fill=ctk.X)
+
+        def submit_report():
+            message = report_text.get("1.0", tk.END).strip()
+            if not message:
+                CTkMessageBox.showerror(
+                    "Error",
+                    "Please enter a reason for the report.",
+                    parent=report_dialog,
+                )
+                return
+
+            # Submit report
+            self._submit_character_report(character, message)
+            report_dialog.destroy()
+
+        ctk.CTkButton(
+            button_frame,
+            text="Submit Report",
+            command=submit_report,
+            width=150,
+            height=35,
+            fg_color=("#dc2626", "#b91c1c"),
+            hover_color=("#b91c1c", "#991b1b"),
+        ).pack(side=ctk.LEFT, padx=(0, 10))
+
+        ctk.CTkButton(
+            button_frame,
+            text="Cancel",
+            command=report_dialog.destroy,
+            width=120,
+            height=35,
+        ).pack(side=ctk.LEFT)
+
+    def _submit_character_report(self, character: dict[str, Any], message: str):
+        """Submit a character report by opening GitHub with pre-filled issue."""
+        import urllib.parse
+        import webbrowser
+
+        char_name = character.get("name", "Unknown Character")
+        char_author = character.get("author", "Unknown")
+        char_id = character.get("id", "unknown")
+
+        # Create issue title
+        issue_title = f"[Report] {char_name}"
+
+        # Create issue body
+        issue_body = f"""**Reported Character:** {char_name}
+**Author:** {char_author}
+**Character ID:** {char_id}
+
+---
+
+**Reason for Report:**
+```
+{message}
+```
+
+*Submitted via ER Save Manager Character Browser*
+"""
+
+        # Build GitHub issue URL
+        repo_owner = "Hapfel1"
+        repo_name = "er-character-library"
+        params = {
+            "title": issue_title,
+            "labels": "report",
+            "body": issue_body,
+        }
+
+        query_string = urllib.parse.urlencode(params, safe="")
+        url = f"https://github.com/{repo_owner}/{repo_name}/issues/new?{query_string}"
+
+        # Open browser
+        webbrowser.open(url)
+
+        # Show confirmation
+        CTkMessageBox.showinfo(
+            "Report Submitted",
+            "Your browser has opened to GitHub.\n\nClick 'Submit new issue' to complete the report.",
+            parent=self.dialog,
+        )
