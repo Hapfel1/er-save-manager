@@ -1,4 +1,4 @@
-edit readme and description
+edit readme and description done
 
 add progress loading bar when loading presets in browser done
 
