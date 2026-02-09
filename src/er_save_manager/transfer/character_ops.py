@@ -700,7 +700,7 @@ class CharacterOperations:
         player_data = char.player_game_data
 
         # Basic character info
-        from er_save_manager.data.starting_classes import STARTING_CLASSES
+        from er_save_manager.data.starting_classes import get_class_data
 
         profile = None
         try:
@@ -717,8 +717,12 @@ class CharacterOperations:
         else:
             archetype_id = player_data.archetype
 
-        class_data = STARTING_CLASSES.get(archetype_id, None)
-        char_class = class_data["name"] if class_data else "Unknown"
+        # Use Convergence classes if applicable
+        is_convergence = (
+            save.is_convergence if hasattr(save, "is_convergence") else False
+        )
+        class_data = get_class_data(archetype_id, is_convergence)
+        char_class = class_data.get("name", "Unknown")
 
         playtime_seconds = profile.seconds_played if profile else 0
         playtime_formatted = CharacterOperations._format_playtime(playtime_seconds)
@@ -743,10 +747,22 @@ class CharacterOperations:
                 "faith": player_data.faith,
                 "arcane": player_data.arcane,
             },
+            # Max resources
+            "max_hp": getattr(player_data, "base_max_hp", 0),
+            "max_fp": getattr(player_data, "base_max_fp", 0),
+            "max_stamina": getattr(player_data, "base_max_sp", 0),
             "runes": player_data.runes,
             # Playtime (from USER_DATA_10 ProfileSummary)
             "playtime_seconds": playtime_seconds,
             "playtime": playtime_formatted,
+            # Progression info
+            "ng_level": CharacterOperations._get_ng_level(save, slot_index),
+            "bosses_defeated": CharacterOperations._count_bosses_defeated(
+                save, slot_index
+            ),
+            "graces_unlocked": CharacterOperations._count_graces_unlocked(
+                save, slot_index
+            ),
             # NG+ detection - check if any NG+1 flags are set
             "ng_plus": CharacterOperations._detect_ng_plus(save, slot_index),
             # Equipment
@@ -772,17 +788,17 @@ class CharacterOperations:
         # etc.
 
         try:
-            from er_save_manager.parser.event_flags import EventFlagManager
+            from er_save_manager.parser.event_flags import EventFlags
 
             # Get event flags for character
-            event_flags = save.character_slots[slot_index].gaitem
+            event_flags = save.character_slots[slot_index].event_flags
             if not event_flags:
                 return 0
 
             # Check NG+ progression flags
             for ng_cycle in range(7, 0, -1):  # Check NG+7 down to NG+1
                 flag_id = 10000799 + (ng_cycle * 1000)
-                if EventFlagManager.get_flag_state(event_flags, flag_id):
+                if EventFlags.get_flag(event_flags, flag_id):
                     return ng_cycle
 
             return 0
@@ -790,54 +806,143 @@ class CharacterOperations:
             return 0
 
     @staticmethod
-    def _extract_equipment_summary(char) -> dict:
-        """Extract summary of equipped items with names resolved."""
-        try:
-            from er_save_manager.data.item_database import ItemCategory, get_item_name
+    def _get_ng_level(save: Save, slot_index: int) -> str:
+        """Get descriptive NG level (NG, NG+1, NG+2, etc.)."""
+        ng_plus = CharacterOperations._detect_ng_plus(save, slot_index)
+        if ng_plus == 0:
+            return "NG"
+        else:
+            return f"NG+{ng_plus}"
 
-            equipped = None
-            if hasattr(char, "equipped_items_item_id"):
-                equipped = char.equipped_items_item_id
-            if not equipped and hasattr(char, "equipped_items"):
-                equipped = char.equipped_items
-            if not equipped:
+    @staticmethod
+    def _count_bosses_defeated(save: Save, slot_index: int) -> int:
+        """Count number of bosses defeated."""
+        try:
+            from er_save_manager.data.event_flags_db import EVENT_FLAGS
+            from er_save_manager.parser.event_flags import EventFlags
+
+            event_flags = save.character_slots[slot_index].event_flags
+            if not event_flags:
+                return 0
+
+            # Count all flags in "Bosses" category that are set
+            boss_count = 0
+            for flag_id, flag_data in EVENT_FLAGS.items():
+                if flag_data.get("category") == "Bosses" and EventFlags.get_flag(
+                    event_flags, flag_id
+                ):
+                    boss_count += 1
+
+            return boss_count
+        except Exception:
+            return 0
+
+    @staticmethod
+    def _count_graces_unlocked(save: Save, slot_index: int) -> int:
+        """Count number of graces unlocked."""
+        try:
+            from er_save_manager.data.event_flags_db import EVENT_FLAGS
+            from er_save_manager.parser.event_flags import EventFlags
+
+            event_flags = save.character_slots[slot_index].event_flags
+            if not event_flags:
+                return 0
+
+            # Count all flags in "Grace" category that are set
+            grace_count = 0
+            for flag_id, flag_data in EVENT_FLAGS.items():
+                if flag_data.get("category") == "Grace" and EventFlags.get_flag(
+                    event_flags, flag_id
+                ):
+                    grace_count += 1
+
+            return grace_count
+        except Exception:
+            return 0
+
+    @staticmethod
+    def _extract_equipment_summary(char) -> dict:
+        """
+        Extract equipped items summary for character metadata.
+
+        Returns:
+            Dictionary with equipment info (currently returns empty dict as placeholder)
+        """
+        try:
+            from er_save_manager.data.convergence_items import (
+                parse_convergence_hex_all,
+                parse_convergence_hex_files,
+            )
+            from er_save_manager.data.item_database import get_item_name
+
+            equip = getattr(char, "equipped_items_item_id", None)
+            if not equip:
                 return {}
 
-            def resolve_item(item_id: int, category: ItemCategory) -> dict | None:
-                """Resolve item ID to name and ID with proper category bits."""
-                # Filter out empty/placeholder slots
-                if item_id == 0 or item_id == 0xFFFFFFFF or item_id == 110000:
-                    return None
-                # Add category bits to the base ID
-                full_id = category | item_id
-                return {"id": item_id, "name": get_item_name(full_id)}
+            convergence_items = parse_convergence_hex_files()
+            id_to_name = {}
+            for items in convergence_items.values():
+                for item_name, item_id in items.items():
+                    id_to_name[item_id] = item_name
 
-            equipment = {}
+            id_to_name.update(parse_convergence_hex_all())
 
-            # Weapons (right and left hand)
-            for hand in ["right_hand", "left_hand"]:
-                for i in [1, 2, 3]:
-                    item_id = getattr(equipped, f"{hand}_armament{i}", 0)
-                    item = resolve_item(item_id, ItemCategory.WEAPON)
-                    if item:
-                        equipment[f"{hand}_{i}"] = item
+            def resolve_name(item_id: int, category_bits: int | None) -> str:
+                if not item_id or item_id == 0xFFFFFFFF:
+                    return ""
 
-            # Armor (skip if 0 or 0xFFFFFFFF)
-            for slot in ["head", "chest", "arms", "legs"]:
-                item_id = getattr(equipped, slot, 0)
-                item = resolve_item(item_id, ItemCategory.ARMOR)
-                if item:
-                    equipment[slot] = item
+                full_id = item_id
+                if category_bits and (item_id & 0xF0000000) == 0:
+                    full_id = category_bits | item_id
 
-            # Talismans (skip if 0 or 0xFFFFFFFF)
-            talismans = []
-            for i in range(1, 5):
-                item_id = getattr(equipped, f"talisman{i}", 0)
-                item = resolve_item(item_id, ItemCategory.TALISMAN)
-                if item:
-                    talismans.append(item)
-            if talismans:
-                equipment["talismans"] = talismans
+                name = get_item_name(full_id)
+                if name and not name.startswith("Unknown "):
+                    return name
+
+                # Try Convergence lookup
+                if full_id in id_to_name:
+                    return id_to_name[full_id]
+                if item_id in id_to_name:
+                    return id_to_name[item_id]
+                base_id = full_id & 0x0FFFFFFF
+                if base_id in id_to_name:
+                    return id_to_name[base_id]
+
+                # Try rounding for weapon-like variants (category 0x0)
+                category = full_id & 0xF0000000
+                base_id = full_id & 0x0FFFFFFF
+                if category == 0x00000000:
+                    rounded_100 = category | ((base_id // 100) * 100)
+                    rounded_10 = category | ((base_id // 10) * 10)
+                    if rounded_100 in id_to_name:
+                        return id_to_name[rounded_100]
+                    if rounded_10 in id_to_name:
+                        return id_to_name[rounded_10]
+
+                return name
+
+            slots = {
+                "right_hand_1": (equip.right_hand_armament1, 0x00000000),
+                "right_hand_2": (equip.right_hand_armament2, 0x00000000),
+                "right_hand_3": (equip.right_hand_armament3, 0x00000000),
+                "left_hand_1": (equip.left_hand_armament1, 0x00000000),
+                "left_hand_2": (equip.left_hand_armament2, 0x00000000),
+                "left_hand_3": (equip.left_hand_armament3, 0x00000000),
+                "head": (equip.head, 0x10000000),
+                "chest": (equip.chest, 0x10000000),
+                "arms": (equip.arms, 0x10000000),
+                "legs": (equip.legs, 0x10000000),
+                "talisman_1": (equip.talisman1, 0x20000000),
+                "talisman_2": (equip.talisman2, 0x20000000),
+                "talisman_3": (equip.talisman3, 0x20000000),
+                "talisman_4": (equip.talisman4, 0x20000000),
+            }
+
+            equipment: dict[str, dict[str, int | str]] = {}
+            for slot_name, (item_id, category_bits) in slots.items():
+                item_name = resolve_name(item_id, category_bits)
+                if item_name:
+                    equipment[slot_name] = {"id": item_id, "name": item_name}
 
             return equipment
         except Exception:
