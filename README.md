@@ -62,6 +62,15 @@ Automatically detects and fixes common save corruption issues:
 - **Invalid DLC Data**: Clears garbage data in unused DLC slots
 - **Teleport Fallback**: Teleports your character to the roundtable for any other invalid coordinates that cause an infinite loading screen
 
+### Troubleshooting Tab
+
+Automatically detects issues with your game installation, your save file and any software that could cause issues
+
+- Scans and validates game files
+- Checks for Steam Elevation
+- Checks for interfering software that may stop the modded game from launching
+- Checks for VPNs
+
 ### Character Management
 
 - **Export Characters**: Save individual characters to `.erc` files

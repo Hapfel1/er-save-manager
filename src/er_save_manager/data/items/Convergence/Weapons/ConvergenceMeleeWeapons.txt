@@ -1,0 +1,44 @@
+1050000 Underworld Dagger
+1120000 Surgeons Catlinger
+1170000 Midnight Dagger
+2030000 Yura’s Kanabo
+2100000 Zephyr Blades
+2140000 Sword of the Cosmos
+2150000 Molten Sword
+2250000 Dragonkin Seeker Sword
+3110000 Celestial Blade
+3120000 Sword of the Cyclops
+3230000 Sword of Hadea
+4120000 Gravelstone Arcblades
+4130000 Osian’s Greatsword
+5070000 Thorn of the Guilty
+5080000 Foil of Caddock
+5090000 Quicksilver Rapier
+6030000 Carwyn’s Épée
+7160000 Blade of Scarlet Boom
+7170000 Godskin Flayer
+7180000 Nomad's Kilij
+8090000 Three Finger Blade
+10020000 Sulien's Razors
+10040000 Frozen Twinshards
+10070000 Godwyn's Cragblades
+10100000 Palm-Ax Twinblades
+10110000 Gilded Quarterstaff
+11020000 Leaden Maul
+12030000 Underworld Greatmace
+12040000 Crimson Brair-Bough
+12070000 Sigur’s Greatmace
+13050000 Mohgwyn Censer
+13060000 Seething Flail
+14070000 Glintstone Cleaver
+14090000 Axe of Epiphany
+14130000 Axe of Fell Prophecy
+14150000 Bloodhound Hookblade
+15090000 Axe of Rust
+16100000 Spear of Tranquility
+18110000 Guardian Spearblade
+18120000 Glaive of the Ancients
+18170000 Reaver’s Odachi
+19040000 War Scythe
+22040000 Stone Claws
+23160000 Lodestone of Gelmir

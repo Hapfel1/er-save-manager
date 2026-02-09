@@ -1,3 +1,13 @@
+add conv mode itemids
+
+check consumable spawning as well as spawning on a further played profile
+
+add hp fp stam to character browser and submission done
+
+add changing the name to profile summary as well done
+
+add conv mode, items, starting classes etc. starting classes done
+
 edit readme and description done
 
 add progress loading bar when loading presets in browser done

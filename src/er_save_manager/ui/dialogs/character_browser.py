@@ -588,6 +588,19 @@ class CharacterBrowser:
                 self.save_file, slot_index
             )
 
+            # Check for Convergence mod save
+            from er_save_manager.data.convergence_items import (
+                get_convergence_items_for_submission,
+            )
+
+            convergence_data = get_convergence_items_for_submission(
+                self.save_file,
+                getattr(self.save_file, "_original_filepath", None)
+                or getattr(self.save_file, "file_path", None),
+            )
+            if convergence_data:
+                metadata["convergence"] = convergence_data
+
             # Attach overhaul mod info
             if hasattr(self, "overhaul_used_var") and self.overhaul_used_var.get():
                 selected_name = self.overhaul_name_var.get().strip()
@@ -891,8 +904,13 @@ class CharacterBrowser:
         # Stats line
         level = character.get("level", "?")
         char_class = character.get("class", "Unknown")
-        ng_plus = character.get("ng_plus", 0)
-        ng_text = f" (NG+{ng_plus})" if ng_plus > 0 else ""
+        # Use ng_level if available (string like "NG", "NG+1"), otherwise fall back to ng_plus
+        ng_level = character.get("ng_level")
+        if ng_level and ng_level != "NG":
+            ng_text = f" ({ng_level})"
+        else:
+            ng_plus = character.get("ng_plus", 0)
+            ng_text = f" (NG+{ng_plus})" if ng_plus > 0 else ""
 
         stats_text = f"Level {level} • {char_class}{ng_text}"
         stats_label = ctk.CTkLabel(
@@ -926,27 +944,52 @@ class CharacterBrowser:
         tags = []
         if character.get("has_dlc"):
             tags.append("DLC")
-        mod_info = character.get("overhaul_mod") or character.get("mod_info")
-        if mod_info and mod_info.get("name"):
-            mod_name = mod_info.get("name", "Mod")
-            tags.append(mod_name)
+
+        # Check for Convergence mod
+        convergence = character.get("convergence")
+        if convergence and convergence.get("convergence_detected"):
+            mod_name = "Convergence"
+            version = convergence.get("version", "")
+            tag_text = f"{mod_name} {version}" if version else mod_name
+            tags.append((tag_text, "convergence"))
+        # Check for other overhaul mods
+        elif character.get("overhaul_mod") or character.get("mod_info"):
+            mod_info = character.get("overhaul_mod") or character.get("mod_info")
+            if mod_info and mod_info.get("name"):
+                mod_name = mod_info.get("name", "Mod")
+                version = mod_info.get("version", "")
+                tag_text = f"{mod_name} {version}" if version else mod_name
+                tags.append((tag_text, "mod"))
 
         if tags:
             tags_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
-            tags_frame.pack(side=ctk.RIGHT, padx=(8, 0))
+            tags_frame.pack(side=ctk.RIGHT, padx=(8, 0), anchor=ctk.N, pady=8)
             tags_frame.bind("<Button-1>", lambda e: self.preview_character(character))
 
-            for tag in tags:
-                tag_color = (
-                    ("#dbeafe", "#1e3a5f") if tag == "DLC" else ("#fef3c7", "#78350f")
-                )
-                text_color = (
-                    ("#1e40af", "#93c5fd") if tag == "DLC" else ("#92400e", "#fbbf24")
-                )
+            for tag_data in tags:
+                # Handle both old string format and new tuple format
+                if isinstance(tag_data, tuple):
+                    tag_text, tag_type = tag_data
+                else:
+                    tag_text = tag_data
+                    tag_type = (
+                        tag_data  # Use tag text as type for backward compatibility
+                    )
+
+                # Color coding for different tag types
+                if tag_type == "DLC" or tag_text == "DLC":
+                    tag_color = ("#dbeafe", "#1e3a5f")
+                    text_color = ("#1e40af", "#93c5fd")
+                elif tag_type == "convergence" or "Convergence" in tag_text:
+                    tag_color = ("#fef3c7", "#3f2f1e")
+                    text_color = ("#92400e", "#fbbf24")
+                else:
+                    tag_color = ("#fef3c7", "#78350f")
+                    text_color = ("#92400e", "#fbbf24")
 
                 tag_label = ctk.CTkLabel(
                     tags_frame,
-                    text=tag,
+                    text=tag_text,
                     font=("Segoe UI", 9, "bold"),
                     fg_color=tag_color,
                     text_color=text_color,
@@ -954,7 +997,7 @@ class CharacterBrowser:
                     padx=6,
                     pady=2,
                 )
-                tag_label.pack(pady=2)
+                tag_label.pack(pady=2, anchor=ctk.E)
                 tag_label.bind(
                     "<Button-1>", lambda e: self.preview_character(character)
                 )
@@ -1000,6 +1043,17 @@ class CharacterBrowser:
 
     def preview_character(self, character: dict[str, Any]):
         """Show character preview in right panel."""
+        # Merge metadata if available so preview shows full details
+        char_id = character.get("id")
+        metadata_url = character.get("metadata_url")
+        if char_id and metadata_url:
+            metadata = self.manager.get_cached_metadata(char_id)
+            if not metadata:
+                metadata = self.manager.download_metadata(char_id, metadata_url)
+
+            if metadata:
+                character = {**character, **metadata}
+
         self.current_character = character
 
         # Clear preview area
@@ -1094,8 +1148,13 @@ class CharacterBrowser:
         # Character level and class
         level = character.get("level", "?")
         char_class = character.get("class", "Unknown")
-        ng_plus = character.get("ng_plus", 0)
-        ng_text = f" (NG+{ng_plus})" if ng_plus > 0 else ""
+        # Use ng_level if available (string like "NG", "NG+1"), otherwise fall back to ng_plus
+        ng_level = character.get("ng_level")
+        if ng_level:
+            ng_text = f" ({ng_level})"
+        else:
+            ng_plus = character.get("ng_plus", 0)
+            ng_text = f" (NG+{ng_plus})" if ng_plus > 0 else ""
 
         stats_header = ctk.CTkLabel(
             self.details_frame,
@@ -1103,6 +1162,17 @@ class CharacterBrowser:
             font=("Segoe UI", 14, "bold"),
         )
         stats_header.pack(anchor=ctk.W, pady=(0, 10))
+
+        # Playtime
+        playtime = character.get("playtime")
+        if playtime:
+            playtime_label = ctk.CTkLabel(
+                self.details_frame,
+                text=f"Playtime: {playtime}",
+                font=("Segoe UI", 11),
+                text_color=("gray40", "gray70"),
+            )
+            playtime_label.pack(anchor=ctk.W, pady=(0, 10))
 
         # Stats
         stats = character.get("stats", {})
@@ -1140,6 +1210,132 @@ class CharacterBrowser:
                     text=str(value),
                     font=("Segoe UI", 11, "bold"),
                 ).pack(side=ctk.LEFT)
+
+        # Max HP/FP/Stamina
+        max_hp = character.get("max_hp")
+        max_fp = character.get("max_fp")
+        max_stamina = character.get("max_stamina")
+
+        if max_hp or max_fp or max_stamina:
+            resources_frame = ctk.CTkFrame(
+                self.details_frame,
+                fg_color=("#e0f2fe", "#1e3a5f"),
+                corner_radius=6,
+            )
+            resources_frame.pack(fill=ctk.X, pady=(0, 10))
+
+            ctk.CTkLabel(
+                resources_frame,
+                text="Max Resources:",
+                font=("Segoe UI", 11, "bold"),
+                text_color=("#0369a1", "#7dd3fc"),
+            ).pack(anchor=ctk.W, padx=10, pady=(8, 4))
+
+            resources_grid = ctk.CTkFrame(resources_frame, fg_color="transparent")
+            resources_grid.pack(fill=ctk.X, padx=10, pady=(0, 8))
+
+            resource_items = []
+            if max_hp:
+                resource_items.append((f"❤️ HP: {max_hp}", 0))
+            if max_fp:
+                resource_items.append((f"🔮 FP: {max_fp}", 1))
+            if max_stamina:
+                resource_items.append((f"⚡ Stamina: {max_stamina}", 2))
+
+            for text, idx in resource_items:
+                ctk.CTkLabel(
+                    resources_grid,
+                    text=text,
+                    font=("Segoe UI", 10),
+                    text_color=("#0369a1", "#7dd3fc"),
+                ).grid(row=0, column=idx, sticky=ctk.W, padx=(0, 15), pady=1)
+
+        # Progression info (bosses, graces)
+        bosses_defeated = character.get("bosses_defeated")
+        graces_unlocked = character.get("graces_unlocked")
+        ng_level = character.get("ng_level")
+
+        # Show progression box if we have any progression data
+        if bosses_defeated is not None or graces_unlocked is not None or ng_level:
+            prog_frame = ctk.CTkFrame(
+                self.details_frame,
+                fg_color=("#f0f9ff", "#1e3a5f"),
+                corner_radius=6,
+            )
+            prog_frame.pack(fill=ctk.X, pady=(5, 10))
+
+            ctk.CTkLabel(
+                prog_frame,
+                text="Progression:",
+                font=("Segoe UI", 11, "bold"),
+                text_color=("#1e40af", "#93c5fd"),
+            ).pack(anchor=ctk.W, padx=10, pady=(8, 2))
+
+            prog_stats = ctk.CTkFrame(prog_frame, fg_color="transparent")
+            prog_stats.pack(fill=ctk.X, padx=10, pady=(0, 8))
+
+            if ng_level:
+                ctk.CTkLabel(
+                    prog_stats,
+                    text=f"🔄 Playthrough: {ng_level}",
+                    font=("Segoe UI", 10),
+                    text_color=("#1e40af", "#93c5fd"),
+                ).pack(anchor=ctk.W, pady=1)
+
+            if bosses_defeated is not None:
+                ctk.CTkLabel(
+                    prog_stats,
+                    text=f"⚔️ Bosses Defeated: {bosses_defeated}",
+                    font=("Segoe UI", 10),
+                    text_color=("#1e40af", "#93c5fd"),
+                ).pack(anchor=ctk.W, pady=1)
+
+            if graces_unlocked is not None:
+                ctk.CTkLabel(
+                    prog_stats,
+                    text=f"🔥 Graces Unlocked: {graces_unlocked}",
+                    font=("Segoe UI", 10),
+                    text_color=("#1e40af", "#93c5fd"),
+                ).pack(anchor=ctk.W, pady=1)
+
+        # Convergence custom items
+        convergence = character.get("convergence")
+        if convergence and convergence.get("custom_items"):
+            conv_frame = ctk.CTkFrame(
+                self.details_frame,
+                fg_color=("#fef3c7", "#3f2f1e"),
+                corner_radius=6,
+            )
+            conv_frame.pack(fill=ctk.X, pady=(0, 10))
+
+            ctk.CTkLabel(
+                conv_frame,
+                text="⚡ Convergence Mod Items:",
+                font=("Segoe UI", 11, "bold"),
+                text_color=("#92400e", "#fbbf24"),
+            ).pack(anchor=ctk.W, padx=10, pady=(8, 4))
+
+            custom_items = convergence.get("custom_items", {})
+            for category, items in custom_items.items():
+                if items:
+                    category_display = category.capitalize()
+                    items_text = ", ".join(items[:5])  # Show first 5 items
+                    if len(items) > 5:
+                        items_text += f" (+{len(items) - 5} more)"
+
+                    ctk.CTkLabel(
+                        conv_frame,
+                        text=f"• {category_display}: {items_text}",
+                        font=("Segoe UI", 10),
+                        text_color=("#78350f", "#fbbf24"),
+                        wraplength=580,
+                    ).pack(anchor=ctk.W, padx=20, pady=1)
+
+            ctk.CTkLabel(
+                conv_frame,
+                text="",  # Spacer
+                font=("Segoe UI", 4),
+            ).pack()
 
         # Equipment
         equipment = character.get("equipment", {})
@@ -1199,12 +1395,21 @@ class CharacterBrowser:
         warnings = []
         if character.get("has_dlc"):
             warnings.append("ℹ️ Character has Shadow of the Erdtree DLC")
-        mod_info = character.get("overhaul_mod") or character.get("mod_info")
-        if mod_info and mod_info.get("name"):
-            mod_name = mod_info.get("name", "Unknown mod")
-            mod_version = mod_info.get("version", "")
+
+        # Check for Convergence mod
+        convergence = character.get("convergence")
+        if convergence and convergence.get("convergence_detected"):
+            mod_version = convergence.get("version", "")
             version_text = f" v{mod_version}" if mod_version else ""
-            warnings.append(f"⚠ Uses overhaul mod: {mod_name}{version_text}")
+            warnings.append(f"⚡ Requires Convergence mod{version_text}")
+        # Check for other overhaul mods
+        else:
+            mod_info = character.get("overhaul_mod") or character.get("mod_info")
+            if mod_info and mod_info.get("name"):
+                mod_name = mod_info.get("name", "Unknown mod")
+                mod_version = mod_info.get("version", "")
+                version_text = f" v{mod_version}" if mod_version else ""
+                warnings.append(f"⚠ Uses overhaul mod: {mod_name}{version_text}")
 
         if warnings:
             warning_frame = ctk.CTkFrame(
@@ -1331,13 +1536,20 @@ class CharacterBrowser:
         if character.get("has_dlc"):
             warnings.append("ℹ️ Character has Shadow of the Erdtree DLC")
 
-        # Check mod requirement
-        mod_info = character.get("overhaul_mod") or character.get("mod_info")
-        if mod_info and mod_info.get("name"):
-            mod_name = mod_info.get("name", "Unknown mod")
-            mod_version = mod_info.get("version", "")
+        # Check for Convergence mod
+        convergence = character.get("convergence")
+        if convergence and convergence.get("convergence_detected"):
+            mod_version = convergence.get("version", "")
             version_text = f" v{mod_version}" if mod_version else ""
-            warnings.append(f"⚠ Uses overhaul mod: {mod_name}{version_text}")
+            warnings.append(f"⚡ Requires Convergence mod{version_text}")
+        # Check for other overhaul mods
+        else:
+            mod_info = character.get("overhaul_mod") or character.get("mod_info")
+            if mod_info and mod_info.get("name"):
+                mod_name = mod_info.get("name", "Unknown mod")
+                mod_version = mod_info.get("version", "")
+                version_text = f" v{mod_version}" if mod_version else ""
+                warnings.append(f"⚠ Uses overhaul mod: {mod_name}{version_text}")
 
         # Check NG+ compatibility
         char_ng = character.get("ng_plus", 0)
