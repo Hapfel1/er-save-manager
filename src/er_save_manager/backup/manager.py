@@ -118,15 +118,15 @@ class BackupManager:
         if not text:
             return ""
         # Remove null bytes and control characters
-        text = re.sub(r'[\x00-\x1f\x7f]', '', text)
+        text = re.sub(r"[\x00-\x1f\x7f]", "", text)
         # Replace invalid filename characters with underscores
-        text = re.sub(r'[<>:"/\\|?*]', '_', text)
+        text = re.sub(r'[<>:"/\\|?*]', "_", text)
         # Replace spaces with underscores
-        text = text.replace(' ', '_')
+        text = text.replace(" ", "_")
         # Collapse multiple underscores
-        text = re.sub(r'_+', '_', text)
+        text = re.sub(r"_+", "_", text)
         # Remove leading/trailing underscores
-        text = text.strip('_')
+        text = text.strip("_")
         return text
 
     def _generate_backup_name(
