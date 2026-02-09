@@ -75,6 +75,19 @@ class Save:
                 value = bytearray(value)
         super().__setattr__(name, value)
 
+    @property
+    def is_convergence(self) -> bool:
+        """
+        Check if this save is for the Convergence mod.
+
+        Returns:
+            True if the save file has .cnv or .cnv.co2 extension
+        """
+        if hasattr(self, "_original_filepath") and self._original_filepath:
+            filepath = self._original_filepath.lower()
+            return filepath.endswith(".cnv") or filepath.endswith(".cnv.co2")
+        return False
+
     @classmethod
     def from_file(cls, filepath: str) -> Save:
         """

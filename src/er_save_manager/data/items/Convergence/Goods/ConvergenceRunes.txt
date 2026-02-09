@@ -1,0 +1,90 @@
+8300 Faint Rune of Beasts
+8301 Shimmering Rune of Beasts
+8302 Glowing Rune of Beasts
+8303 Shining Rune of Beasts
+8304 Radiant Rune of Beasts
+8305 Faint Rune of Order
+8306 Shimmering Rune of Order
+8307 Glowing Rune of Order
+8308 Shining Rune of Order
+8309 Radiant Rune of Order
+8310 Faint Rune of Fell Flame
+8311 Shimmering Rune of Fell Flame
+8312 Glowing Rune of Fell Flame
+8313 Shining Rune of Fell Flame
+8314 Radiant Rune of Fell Flame
+8315 Faint Rune of Lightning
+8316 Shimmering Rune of Lightning
+8317 Glowing Rune of Lightning
+8318 Shining Rune of Lightning
+8319 Radiant Rune of Lightning
+8320 Faint Rune of Black Flame
+8321 Shimmering Rune of Black Flame
+8322 Glowing Rune of Black Flame
+8323 Shining Rune of Black Flame
+8324 Radiant Rune of Black Flame
+8325 Faint Rune of Frenzy
+8326 Shimmering Rune of Frenzy
+8327 Glowing Rune of Frenzy
+8328 Shining Rune of Frenzy
+8329 Radiant Rune of Frenzy
+8330 Faint Rune of Bloodflame
+8331 Shimmering Rune of Bloodflame
+8332 Glowing Rune of Bloodflame
+8333 Shining Rune of Bloodflame
+8334 Radiant Rune of Bloodflame
+8335 Faint Rune of Rot
+8336 Shimmering Rune of Rot
+8337 Glowing Rune of Rot
+8338 Shining Rune of Rot
+8339 Radiant Rune of Rot
+8340 Faint Rune of Ancient
+8341 Shimmering Rune of Ancient
+8342 Glowing Rune of Ancient
+8343 Shining Rune of Ancient
+8344 Radiant Rune of Ancient
+8345 Faint Rune of Glintstone
+8346 Shimmering Rune of Glintstone
+8347 Glowing Rune of Glintstone
+8348 Shinning Rune of Glintstone
+8349 Radiant Rune of Glintstone
+8350 Faint Rune of Gravity
+8351 Shimmering Rune of Gravity
+8352 Glowing Rune of Gravity
+8353 Shining Rune of Gravity
+8354 Radiant Rune of Gravity
+8355 Faint Rune of the Dragonkin
+8356 Shimmering Rune of the Dragonkin
+8357 Glowing Rune of the Dragonkin
+8358 Shining Rune of the Dragonkin
+8359 Radiant Rune of the Dragonkin
+8360 Faint Rune of Magma
+8361 Shimmering Rune of Magma
+8362 Glowing Rune of Magma
+8363 Shining Rune of Magma
+8364 Radiant Rune of Magma
+8365 Faint Rune of Night
+8366 Shimmering Rune of Night
+8367 Glowing Rune of Night
+8368 Shining Rune of Night
+8369 Radiant Rune of Night
+8370 Faint Rune of Necromancy
+8371 Shimmering Rune of Necromancy
+8372 Glowing Rune of Necromancy
+8373 Shining Rune of Necromancy
+8374 Radiant Rune of Necromancy
+8375 Faint Rune of the Storm
+8376 Shimmering Rune of the Storm
+8377 Glowing Rune of the Storm
+8378 Shining Rune of the Storm
+8379 Radiant Rune of the Storm
+8380 Faint Rune of Frost
+8381 Shimmering Rune of Frost
+8382 Glowing Rune of Frost
+8383 Shining Rune of Frost
+8384 Radiant Rune of Frost
+8385 Faint Rune of Thorns
+8386 Shimmering Rune of Thorns
+8387 Glowing Rune of Thorns
+8388 Shining Rune of Thorns
+8389 Radiant Rune of Thorns

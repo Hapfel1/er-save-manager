@@ -1,0 +1,52 @@
+8800 Path of the Retainer
+8801 Path of the Vanguard
+8802 Path of the Marksman
+8803 Path of the Berserker
+8804 Path of the Dreadnought
+8805 Path of the Sellsword
+8806 Path of the Rogue
+8807 Path of the Glint Sorcerer
+8808 Path of the Starcaller
+8809 Path of the Underworld Mage
+8810 Path of the Volcanist
+8811 Path of the Storm Caller
+8812 Path of the Nox Oracle
+8813 Path of the Necromancer
+8814 Path of the Frost Witch
+8815 Path of the Aberrant Heretic
+8816 Path of the Flame Prophet
+8817 Path of the Fundamentalist
+8818 Path of the Bestial Devout
+8819 Path of the Dragon Cultist
+8820 Path of the Godskin Celebrant
+8821 Path of the Frenzied Zealot
+8822 Path of the Blood Initiate
+8823 Path of the Servant of Rot
+8824 Path of the Mystic
+8825 Path of the Perfumer
+8826 Path of the Prisoner
+8870 Weapons for the Retainer
+8871 Weapons for the Vanguard
+8872 Weapons for the Marksman
+8873 Weapons for the Berserker
+8874 Weapons for the Dreadnought
+8875 Weapons for the Sellsword
+8876 Weapons for the Rogue
+8877 Weapons for the Glint Sorcerer
+8878 Weapons for the Starcaller
+8879 Weapons for the Underworld Mage
+8880 Weapons for the Volcanist
+8881 Weapons for the Storm Caller
+8882 Weapons for the Nox Oracle
+8883 Weapons for the Necromancer
+8884 Weapons for the Frost Witch
+8885 Weapons for the Aberrant Heretic
+8886 Weapons for the Flame Prophet
+8887 Weapons for the Fundamentalist
+8888 Weapons for Bestial Devout
+8889 Weapons for the Dragon Cultist
+8890 Weapons for the Godskin Celebrant
+8891 Weapons for the Frenzied Zealot
+8892 Weapons for the Blood Initiate
+8893 Weapons for the Servant of Rot
+8894 Weapons for the Mystic

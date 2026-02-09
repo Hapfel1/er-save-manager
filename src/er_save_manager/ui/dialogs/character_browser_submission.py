@@ -198,11 +198,27 @@ def _create_issue_body(
     ng_plus = metadata.get("ng_plus", 0)
     ng_text = f" (NG+{ng_plus})" if ng_plus > 0 else ""
 
+    # Extract max resources
+    max_hp = metadata.get("max_hp")
+    max_fp = metadata.get("max_fp")
+    max_stamina = metadata.get("max_stamina")
+
+    resources_text = ""
+    if max_hp or max_fp or max_stamina:
+        resources_parts = []
+        if max_hp:
+            resources_parts.append(f"HP: {max_hp}")
+        if max_fp:
+            resources_parts.append(f"FP: {max_fp}")
+        if max_stamina:
+            resources_parts.append(f"Stamina: {max_stamina}")
+        resources_text = f"\n**Resources:** {' • '.join(resources_parts)}"
+
     body = f"""**Character Name:** {char_name}
 **Author:** {author}
 **Tags:** {tags}
 
-**Stats:** Level {level} • {char_class}{ng_text}
+**Stats:** Level {level} • {char_class}{ng_text}{resources_text}
 
 **Description:**
 {description}

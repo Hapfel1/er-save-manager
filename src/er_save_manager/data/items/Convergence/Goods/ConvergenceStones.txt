@@ -1,0 +1,9 @@
+10101 Smithing Stone
+10105 Large Smithing Stone
+10107 Great Smithing Stone
+10140 Dragon Smithing Stone
+10160 Somber Stone
+10164 Large Somber Stone
+10165 Great Somber Stone
+10167 Colossal Somber Stone
+10168 Dragon Somber Stone

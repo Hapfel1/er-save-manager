@@ -318,6 +318,12 @@ class StatsEditor:
             faith = self.stat_vars["faith"].get()
             arcane = self.stat_vars["arcane"].get()
 
+            # Determine if using Convergence mod
+            is_convergence = False
+            save_file = self.get_save_file()
+            if save_file and hasattr(save_file, "is_convergence"):
+                is_convergence = save_file.is_convergence
+
             # Calculate level using actual class data
             calculated_level = calculate_level_from_stats(
                 vigor,
@@ -329,13 +335,14 @@ class StatsEditor:
                 faith,
                 arcane,
                 archetype,
+                is_convergence,
             )
 
             # Update calculated level display
             self.calculated_level_var.set(str(calculated_level))
 
             # Show class name in warning if available
-            class_data = get_class_data(archetype)
+            class_data = get_class_data(archetype, is_convergence)
             class_name = class_data.get("name", "Unknown")
 
             # Check if current level matches
