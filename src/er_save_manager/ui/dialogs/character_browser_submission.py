@@ -9,11 +9,12 @@ import json
 import tempfile
 import traceback
 import urllib.parse
-import webbrowser
 import zipfile
 from pathlib import Path
 
 import customtkinter as ctk
+
+from er_save_manager.ui.utils import open_url
 
 
 def submit_character_via_browser(
@@ -105,7 +106,7 @@ def submit_character_via_browser(
             )
 
         # Open browser
-        opened = webbrowser.open_new_tab(url)
+        opened = open_url(url)
 
         # Show success dialog with ZIP info
         show_submission_success_dialog(char_name, zip_path)

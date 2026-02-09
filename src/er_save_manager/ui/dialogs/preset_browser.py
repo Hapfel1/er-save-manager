@@ -17,7 +17,7 @@ from er_save_manager.preset_manager import PresetManager
 from er_save_manager.preset_metrics import PresetMetrics
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.progress_dialog import ProgressDialog
-from er_save_manager.ui.utils import bind_mousewheel, trace_variable
+from er_save_manager.ui.utils import bind_mousewheel, open_url, trace_variable
 
 try:
     from PIL import Image
@@ -436,9 +436,7 @@ class EnhancedPresetBrowser:
         ctk.CTkEntry(row, textvariable=var).pack(fill=ctk.X, pady=0)
 
     def _open_github_login(self):
-        import webbrowser
-
-        webbrowser.open("https://github.com/login")
+        open_url("https://github.com/login")
 
     def _make_ctk_image(self, img: Image.Image, size: tuple[int, int]) -> ctk.CTkImage:
         try:
@@ -1331,7 +1329,6 @@ class EnhancedPresetBrowser:
     def _submit_preset_report(self, preset: dict[str, Any], message: str):
         """Submit a preset report by opening GitHub with pre-filled issue."""
         import urllib.parse
-        import webbrowser
 
         preset_name = preset.get("name", "Unknown Preset")
         preset_author = preset.get("author", "Unknown")
@@ -1368,7 +1365,7 @@ class EnhancedPresetBrowser:
         url = f"https://github.com/{repo_owner}/{repo_name}/issues/new?{query_string}"
 
         # Open browser
-        webbrowser.open(url)
+        open_url(url)
 
         # Show confirmation
         CTkMessageBox.showinfo(

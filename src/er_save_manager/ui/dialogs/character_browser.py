@@ -6,7 +6,6 @@ Browse and contribute community character builds with 10-slot support.
 from __future__ import annotations
 
 import tkinter as tk
-import webbrowser
 from pathlib import Path
 from tkinter import filedialog
 from typing import Any
@@ -17,7 +16,7 @@ from er_save_manager.character_manager import CharacterManager
 from er_save_manager.character_metrics import CharacterMetrics
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.progress_dialog import ProgressDialog
-from er_save_manager.ui.utils import bind_mousewheel, trace_variable
+from er_save_manager.ui.utils import bind_mousewheel, open_url, trace_variable
 
 try:
     from PIL import Image
@@ -417,7 +416,7 @@ class CharacterBrowser:
             font=("Segoe UI", 11),
         )
         link.pack(anchor=ctk.W, padx=12, pady=(0, 10))
-        link.bind("<Button-1>", lambda e: webbrowser.open("https://github.com/login"))
+        link.bind("<Button-1>", lambda e: open_url("https://github.com/login"))
 
         # Submit button
         submit_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
@@ -1859,7 +1858,6 @@ class CharacterBrowser:
     def _submit_character_report(self, character: dict[str, Any], message: str):
         """Submit a character report by opening GitHub with pre-filled issue."""
         import urllib.parse
-        import webbrowser
 
         char_name = character.get("name", "Unknown Character")
         char_author = character.get("author", "Unknown")
@@ -1896,7 +1894,7 @@ class CharacterBrowser:
         url = f"https://github.com/{repo_owner}/{repo_name}/issues/new?{query_string}"
 
         # Open browser
-        webbrowser.open(url)
+        open_url(url)
 
         # Show confirmation
         CTkMessageBox.showinfo(

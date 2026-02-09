@@ -8,7 +8,6 @@ import subprocess
 import sys
 import threading
 import tkinter as tk
-import webbrowser
 from importlib import resources
 from pathlib import Path
 from tkinter import filedialog, ttk
@@ -43,7 +42,7 @@ from er_save_manager.ui.tabs import (
     WorldStateTab,
 )
 from er_save_manager.ui.theme import ThemeManager
-from er_save_manager.ui.utils import trace_variable
+from er_save_manager.ui.utils import open_url, trace_variable
 
 
 class SaveManagerGUI:
@@ -247,8 +246,6 @@ class SaveManagerGUI:
 
     def _show_update_dialog(self, latest_version: str, download_url: str):
         """Show update available dialog with GitHub and Nexus Mods download options"""
-        import webbrowser
-
         from er_save_manager.ui.utils import force_render_dialog
 
         dialog = ctk.CTkToplevel(self.root)
@@ -310,11 +307,11 @@ class SaveManagerGUI:
         button_frame.pack(fill=ctk.X, pady=(0, 20))
 
         def open_github():
-            webbrowser.open(download_url)
+            open_url(download_url)
             dialog.destroy()
 
         def open_nexus():
-            webbrowser.open("https://www.nexusmods.com/eldenring/mods/9271?tab=files")
+            open_url("https://www.nexusmods.com/eldenring/mods/9271?tab=files")
             dialog.destroy()
 
         ctk.CTkButton(
@@ -359,7 +356,7 @@ class SaveManagerGUI:
 
     def _open_kofi(self):
         """Open Ko-fi support page in browser."""
-        webbrowser.open("https://ko-fi.com/hapfell")
+        open_url("https://ko-fi.com/hapfell")
 
     def setup_ui(self):
         """Setup main UI structure with optimized layout"""
