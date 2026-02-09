@@ -8,10 +8,11 @@ Automation extracts and identifies images automatically.
 import json
 import tempfile
 import urllib.parse
-import webbrowser
 import zipfile
 from pathlib import Path
 from tkinter import messagebox
+
+from er_save_manager.ui.utils import open_url
 
 
 def submit_preset_via_browser(
@@ -101,7 +102,7 @@ def submit_preset_via_browser(
             )
 
         # Open browser
-        webbrowser.open(url)
+        open_url(url)
 
         # Show success dialog with ZIP info
         show_submission_success_dialog(preset_name, zip_path)
