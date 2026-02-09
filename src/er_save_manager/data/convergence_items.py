@@ -124,9 +124,28 @@ def is_convergence_save(save_path: str | Path) -> bool:
     Returns:
         True if save is Convergence format
     """
+    import logging
+
+    logger = logging.getLogger(__name__)
+
     path = Path(save_path)
     suffix = path.suffix.lower()
-    return suffix in {".cnv", ".co2"} or path.suffixes[-2:] == [".cnv", ".co2"]
+    suffixes = [s.lower() for s in path.suffixes]
+
+    # Check for .cnv or .cnv.co2 extensions
+    # .cnv alone = Convergence save
+    # .cnv.co2 = Convergence save with encryption
+    # .co2 alone = NOT Convergence (these are encrypted vanilla saves)
+    is_cnv = suffix == ".cnv"
+    is_cnv_co2 = len(suffixes) >= 2 and suffixes[-2:] == [".cnv", ".co2"]
+    result = is_cnv or is_cnv_co2
+
+    logger.debug(
+        f"[is_convergence_save] path={path.name}, suffix={suffix}, "
+        f"suffixes={suffixes}, is_cnv={is_cnv}, is_cnv_co2={is_cnv_co2}, result={result}"
+    )
+
+    return result
 
 
 def detect_convergence_items(
@@ -268,24 +287,51 @@ def get_convergence_items_for_submission(
     Extract Convergence custom items for character submission.
 
     If the save is a Convergence save, returns detected custom items using
-    bundled Convergence HEX ID files.
+    bundled Convergence item list files.
 
     Args:
         save: Save instance
         save_path: Path to save file
 
     Returns:
-        Dict with convergence_items and convergence_detected, or None if not Convergence
+        Dict with convergence_detected and custom_items, or None if not Convergence
     """
-    if not is_convergence_save(save_path):
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    if not save_path:
+        logger.debug(
+            "[get_convergence_items_for_submission] save_path is None, returning None"
+        )
         return None
 
-    convergence_data = {"convergence_detected": True, "custom_items": {}}
+    logger.debug(
+        f"[get_convergence_items_for_submission] Checking save_path: {save_path}"
+    )
+
+    if not is_convergence_save(save_path):
+        logger.debug(
+            "[get_convergence_items_for_submission] Not a Convergence save, returning None"
+        )
+        return None
+
+    logger.info(
+        f"[get_convergence_items_for_submission] Detected Convergence save: {save_path}"
+    )
+
+    convergence_data = {
+        "convergence_detected": True,
+        "custom_items": {},
+    }
 
     # Load bundled Convergence item mappings
     convergence_items = parse_convergence_hex_files()
     if convergence_items:
         found_items = detect_convergence_items(save, convergence_items)
         convergence_data["custom_items"] = found_items
+        logger.debug(
+            f"[get_convergence_items_for_submission] Found items: {found_items}"
+        )
 
     return convergence_data
