@@ -483,6 +483,9 @@ class CharacterBrowser:
         else:
             self.overhaul_details_frame.pack_forget()
 
+    def _requires_convergence(self, convergence: dict | None) -> bool:
+        return bool(convergence and convergence.get("convergence_detected"))
+
     # ---------------------- Image selection ----------------------
     def select_face_image(self):
         path = filedialog.askopenfilename(
@@ -593,13 +596,23 @@ class CharacterBrowser:
                 get_convergence_items_for_submission,
             )
 
+            # Get save file path for Convergence detection
+            save_path = getattr(self.save_file, "_original_filepath", None) or getattr(
+                self.save_file, "file_path", None
+            )
+            print(f"[Character Submit] Checking save file path: {save_path}")
+
             convergence_data = get_convergence_items_for_submission(
                 self.save_file,
-                getattr(self.save_file, "_original_filepath", None)
-                or getattr(self.save_file, "file_path", None),
+                save_path,
             )
             if convergence_data:
+                print(
+                    f"[Character Submit] Convergence data detected: {convergence_data}"
+                )
                 metadata["convergence"] = convergence_data
+            else:
+                print("[Character Submit] No Convergence data detected")
 
             # Attach overhaul mod info
             if hasattr(self, "overhaul_used_var") and self.overhaul_used_var.get():
@@ -947,7 +960,7 @@ class CharacterBrowser:
 
         # Check for Convergence mod
         convergence = character.get("convergence")
-        if convergence and convergence.get("convergence_detected"):
+        if self._requires_convergence(convergence):
             mod_name = "Convergence"
             version = convergence.get("version", "")
             tag_text = f"{mod_name} {version}" if version else mod_name
@@ -1396,9 +1409,9 @@ class CharacterBrowser:
         if character.get("has_dlc"):
             warnings.append("ℹ️ Character has Shadow of the Erdtree DLC")
 
-        # Check for Convergence mod
+        # Check for Convergence mod - only show if convergence_detected is explicitly True
         convergence = character.get("convergence")
-        if convergence and convergence.get("convergence_detected"):
+        if convergence and convergence.get("convergence_detected") is True:
             mod_version = convergence.get("version", "")
             version_text = f" v{mod_version}" if mod_version else ""
             warnings.append(f"⚡ Requires Convergence mod{version_text}")
@@ -1538,7 +1551,7 @@ class CharacterBrowser:
 
         # Check for Convergence mod
         convergence = character.get("convergence")
-        if convergence and convergence.get("convergence_detected"):
+        if convergence and convergence.get("convergence_detected") is True:
             mod_version = convergence.get("version", "")
             version_text = f" v{mod_version}" if mod_version else ""
             warnings.append(f"⚡ Requires Convergence mod{version_text}")

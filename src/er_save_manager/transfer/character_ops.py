@@ -887,8 +887,10 @@ class CharacterOperations:
 
             id_to_name.update(parse_convergence_hex_all())
 
+            empty_item_ids = {0x00000000, 0xFFFFFFFF, 0x0001ADB0}
+
             def resolve_name(item_id: int, category_bits: int | None) -> str:
-                if not item_id or item_id == 0xFFFFFFFF:
+                if item_id in empty_item_ids:
                     return ""
 
                 full_id = item_id
