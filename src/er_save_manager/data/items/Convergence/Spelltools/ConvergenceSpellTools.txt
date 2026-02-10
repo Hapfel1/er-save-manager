@@ -1,0 +1,36 @@
+33000000 Glintstone Staff
+33050000 Gelmir Lava Staff
+33060000 Blighted Branch
+33120000 Digger Staff
+33180000 Prince of Death Staff
+33200000 Dragon Student Staff
+33230000 Azur's Staff
+33240000 Lusat's Night Staff
+33250000 Meteorite Staff
+33260000 Staff of the Guilty
+33280000 Staff of Loss
+33290000 Dragonkin Scepter
+33300000 Ranni's Staff
+33310000 Snow Witch Staff
+33320000 Staff of Briar
+33330000 Lavastone Staff
+33340000 Tempestcaller's Staff
+33350000 Stormcaller Staff
+34000000 Finger Seal
+34010000 Godslayer's Seal
+34020000 Giant's Seal
+34030000 Gravel Stone Seal
+34040000 Clawmark Seal
+34060000 Golden Order Seal
+34090000 Frenzied Flame Seal
+34100000 Godskin Seal
+34110000 Fire Monk Seal
+34120000 Dragon Cult Seal
+34130000 Earthbreaker Seal
+34140000 Fingerprint Seal
+34150000 Mohgwyn Seal
+34160000 War Surgeon Seal
+34170000 Seal of Rot
+34180000 Pest Seal
+34190000 Spiritshaper Seal
+34200000 Mystic Seal

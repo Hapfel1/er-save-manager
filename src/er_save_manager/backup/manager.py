@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import gzip
 import json
+import re
 import shutil
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
@@ -26,6 +28,7 @@ class BackupMetadata:
     operation: str = ""
     character_summary: list[dict] = field(default_factory=list)
     file_size: int = 0
+    compressed: bool = False  # Whether backup is gzip compressed
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -110,18 +113,37 @@ class BackupManager:
         with open(metadata_path, "w") as f:
             json.dump(self.history.to_dict(), f, indent=2)
 
-    def _generate_backup_name(self, description: str = "", operation: str = "") -> str:
+    def _sanitize_filename_part(self, text: str) -> str:
+        """Sanitize a string for safe use in filenames."""
+        if not text:
+            return ""
+        # Remove null bytes and control characters
+        text = re.sub(r"[\x00-\x1f\x7f]", "", text)
+        # Replace invalid filename characters with underscores
+        text = re.sub(r'[<>:"/\\|?*]', "_", text)
+        # Replace spaces with underscores
+        text = text.replace(" ", "_")
+        # Collapse multiple underscores
+        text = re.sub(r"_+", "_", text)
+        # Remove leading/trailing underscores
+        text = text.strip("_")
+        return text
+
+    def _generate_backup_name(
+        self, description: str = "", operation: str = "", compressed: bool = False
+    ) -> str:
         """Generate a unique backup filename."""
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         base_name = self.save_path.stem
 
         parts = [base_name, timestamp]
         if operation:
-            parts.append(operation.replace(" ", "_").lower())
+            parts.append(self._sanitize_filename_part(operation).lower())
         if description:
-            parts.append(description.replace(" ", "_").lower()[:30])
+            parts.append(self._sanitize_filename_part(description).lower()[:30])
 
-        return "_".join(parts) + ".bak"
+        extension = ".bak.gz" if compressed else ".bak"
+        return "_".join(parts) + extension
 
     def _get_character_summary(self, save: Save) -> list[dict]:
         """Extract character summary from save for metadata."""
@@ -142,6 +164,7 @@ class BackupManager:
         description: str = "",
         operation: str = "",
         save: Save | None = None,
+        compress: bool | None = None,
     ) -> tuple[Path, list[BackupMetadata]]:
         """
         Create a backup of the current save file.
@@ -150,18 +173,32 @@ class BackupManager:
             description: Optional description of the backup
             operation: Operation being performed (e.g., "fix_torrent")
             save: Optional Save object to extract character info from
+            compress: Whether to compress the backup (None = use settings)
 
         Returns:
             Tuple of (Path to created backup, List of BackupMetadata that will be pruned)
         """
         self.backup_folder.mkdir(parents=True, exist_ok=True)
 
+        # Check compression setting
+        if compress is None:
+            try:
+                settings = get_settings()
+                compress = settings.get("compress_backups", False)
+            except Exception:
+                compress = False
+
         # Generate backup filename
-        backup_name = self._generate_backup_name(description, operation)
+        backup_name = self._generate_backup_name(description, operation, compress)
         backup_path = self.backup_folder / backup_name
 
-        # Copy the save file
-        shutil.copy2(self.save_path, backup_path)
+        # Copy and optionally compress the save file
+        if compress:
+            with open(self.save_path, "rb") as f_in:
+                with gzip.open(backup_path, "wb", compresslevel=6) as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+        else:
+            shutil.copy2(self.save_path, backup_path)
 
         # Create metadata
         metadata = BackupMetadata(
@@ -171,6 +208,7 @@ class BackupManager:
             description=description,
             operation=operation,
             file_size=backup_path.stat().st_size,
+            compressed=compress,
         )
 
         # Add character summary if save provided
@@ -260,6 +298,7 @@ class BackupManager:
         Restore a backup to the current save file.
 
         Creates a backup of the current state before restoring.
+        Automatically handles compressed backups.
 
         Args:
             backup_name: Name of the backup file to restore
@@ -277,13 +316,23 @@ class BackupManager:
             operation=f"restore_{backup_name}",
         )
 
+        # Check if backup is compressed
+        is_compressed = backup_name.endswith(".gz")
+
         # Restore the backup
-        shutil.copy2(backup_path, self.save_path)
+        if is_compressed:
+            with gzip.open(backup_path, "rb") as f_in:
+                with open(self.save_path, "wb") as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+        else:
+            shutil.copy2(backup_path, self.save_path)
+
         return True
 
     def restore_to_new_file(self, backup_name: str, target_path: str | Path) -> bool:
         """
         Restore a backup to a new file (doesn't overwrite current save).
+        Automatically handles compressed backups.
 
         Args:
             backup_name: Name of the backup file to restore
@@ -297,7 +346,15 @@ class BackupManager:
             raise FileNotFoundError(f"Backup not found: {backup_name}")
 
         target = Path(target_path)
-        shutil.copy2(backup_path, target)
+        is_compressed = backup_name.endswith(".gz")
+
+        if is_compressed:
+            with gzip.open(backup_path, "rb") as f_in:
+                with open(target, "wb") as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+        else:
+            shutil.copy2(backup_path, target)
+
         return True
 
     def delete_backup(self, backup_name: str) -> bool:

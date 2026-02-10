@@ -1,16 +1,50 @@
-fix window popups centered
+troubleshooter for each game
 
-comments fix/change done
+check character presets wiping issue done
 
-troubleshooter done
+redo profiles done
 
-Add VERSION + update notice done
+edit readme and description done
+
+add conv mode itemids
 
 implement item spawning + check region unlock
 
 implement hex editor
 
 check and fix worldstate locations
+
+check consumable spawning as well as spawning on a further played profile
+
+add hp fp stam to character browser and submission done
+
+add changing the name to profile summary as well done
+
+add conv mode, items, starting classes etc. starting classes done
+
+add progress loading bar when loading presets in browser done
+
+troubled checking for running vpns done
+
+check for extracted or not - not needed, windows throws error
+
+backups zip, auto backup done
+
+add another longbow and second one check csvs done
+
+add support button done
+
+add charaacter browser .erc export, images, same format as appearance editor, specify if overhaul mod etc done
+
+view details in backup man not working and show saved location done
+
+fix window popups centered done
+
+comments fix/change done
+
+troubleshooter done
+
+Add VERSION + update notice done
 
 investigate steam deck appearance browse issue, add logging build which puts out log in a log file done
 

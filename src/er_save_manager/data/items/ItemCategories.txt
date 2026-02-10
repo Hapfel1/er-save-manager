@@ -44,6 +44,15 @@
 0x40000000 false Items/DLC/DLCGoods/DLCMerchantItems.txt DLC Merchant Items
 0x40000000 false Items/DLC/DLCMagic.txt DLC Magic
 
+//Convergence Mod Categories
+0x00000000 false Items/Convergence/Weapons/ConvergenceMeleeWeapons.txt Convergence Melee Weapons
+0x10000000 false Items/Convergence/Armor/ConvergenceArmor.txt Convergence Armor
+0x00000000 false Items/Convergence/Spelltools/ConvergenceSpellTools.txt Convergence Spell Tools
+0x40000000 false Items/Convergence/Goods/ConvergenceKeystonesRemnants.txt Convergence Keystones and Remnants
+0x40000000 false Items/Convergence/Goods/ConvergenceStones.txt Convergence Stones
+0x40000000 false Items/Convergence/Goods/ConvergenceRunes.txt Convergence Runes
+0x40000000 false Items/Convergence/Goods/ConvergenceNotes.txt Convergence Notes
+0x40000000 false Items/Convergence/Goods/ConvergenceRemembrances.txt Convergence Remembrances
 
 //0x10000000 false Items/CutContent/Armor.txt Cut Content Armor
 //0x20000000 false Items/CutContent/Talismans.txt Cut Content Talismans
