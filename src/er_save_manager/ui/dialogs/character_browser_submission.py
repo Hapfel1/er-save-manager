@@ -1,44 +1,48 @@
 """
-Browser-based preset submission with automatic image packaging.
+Browser-based character submission with automatic metadata packaging.
 
-Creates a ZIP file with properly named images that user can attach to GitHub.
-Automation extracts and identifies images automatically.
+Creates a ZIP file with .erc + metadata.json + images that user can attach to GitHub.
+Automation extracts and identifies files automatically.
 """
 
 import json
 import tempfile
+import traceback
 import urllib.parse
 import zipfile
 from pathlib import Path
-from tkinter import messagebox
+
+import customtkinter as ctk
 
 from er_save_manager.ui.utils import open_url
 
 
-def submit_preset_via_browser(
-    preset_name: str,
+def submit_character_via_browser(
+    char_name: str,
     author: str,
     description: str,
     tags: str,
-    appearance_data: dict,
+    erc_path: str,
+    metadata: dict,
     face_image_path: str | None = None,
     body_image_path: str | None = None,
     preview_image_path: str | None = None,
     repo_owner: str = "Hapfel1",
-    repo_name: str = "er-character-presets",
+    repo_name: str = "er-character-library",
 ) -> tuple[bool, str | None]:
     """
-    Submit preset by opening GitHub with pre-filled data and packaged images.
+    Submit character by opening GitHub with pre-filled data and packaged files.
 
-    Creates a ZIP file with properly named images that user just drags into GitHub.
+    Creates a ZIP file with .erc + metadata.json + images that user just drags into GitHub.
     No manual labeling needed!
 
     Args:
-        preset_name: Name of preset
+        char_name: Character name
         author: Author name
-        description: Preset description
+        description: Character description
         tags: Comma-separated tags
-        appearance_data: Appearance JSON dict
+        erc_path: Path to .erc character file
+        metadata: Character metadata dict (auto-extracted from .erc)
         face_image_path: Path to face screenshot (REQUIRED)
         body_image_path: Path to body screenshot (REQUIRED)
         preview_image_path: Optional preview image path
@@ -51,16 +55,16 @@ def submit_preset_via_browser(
     try:
         # Validate images - both face AND body required
         if not face_image_path or not body_image_path:
-            messagebox.showerror(
-                "Images Required",
-                "Both face AND body screenshots are required!\n\n"
-                "Please select both images before submitting.",
+            print(
+                "[Character Submission] Error: Both face and body screenshots are required"
             )
-            return False, None
+            return (False, None)
 
-        # Create ZIP with images
-        zip_path = _create_image_zip(
-            preset_name,
+        # Create ZIP with .erc + metadata + images
+        zip_path = _create_character_zip(
+            char_name,
+            erc_path,
+            metadata,
             face_image_path,
             body_image_path,
             preview_image_path,
@@ -68,21 +72,21 @@ def submit_preset_via_browser(
 
         # Create issue body
         issue_body = _create_issue_body(
-            preset_name,
+            char_name,
             author,
             description,
             tags,
-            appearance_data,
+            metadata,
             zip_path,
         )
 
         # Create issue title
-        issue_title = f"[Preset Submission] {preset_name}"
+        issue_title = f"[Character Submission] {char_name}"
 
         # Build URL with query parameters
         params = {
             "title": issue_title,
-            "labels": "preset-submission",
+            "labels": "character-submission",
             "body": issue_body,
         }
 
@@ -91,9 +95,9 @@ def submit_preset_via_browser(
 
         # Check URL length
         if len(url) > 8000:
-            # Use compact JSON
+            print("[Character Submission] URL too long, using compact format")
             issue_body = _create_compact_issue_body(
-                preset_name, author, description, tags, appearance_data, zip_path
+                char_name, author, description, tags, metadata, zip_path
             )
             params["body"] = issue_body
             query_string = urllib.parse.urlencode(params, safe="")
@@ -102,32 +106,40 @@ def submit_preset_via_browser(
             )
 
         # Open browser
-        open_url(url)
+        opened = open_url(url)
 
         # Show success dialog with ZIP info
-        show_submission_success_dialog(preset_name, zip_path)
+        show_submission_success_dialog(char_name, zip_path)
 
-        return True, url
+        if not opened:
+            return (False, url)
+
+        return (True, url)
 
     except Exception as e:
-        print(f"Failed to prepare submission: {e}")
-        import traceback
-
+        print(f"Failed to prepare character submission: {e}")
+        print(
+            "If you're seeing this, please report this error to the developer with the details below:"
+        )
         traceback.print_exc()
-        return False, None
+        return (False, None)
 
 
-def _create_image_zip(
-    preset_name: str,
+def _create_character_zip(
+    char_name: str,
+    erc_path: str,
+    metadata: dict,
     face_image_path: str | None,
     body_image_path: str | None,
     preview_image_path: str | None,
 ) -> str:
     """
-    Create ZIP file with properly named images.
+    Create ZIP file with .erc + metadata.json + images.
 
     ZIP structure:
-    - preset_images.zip
+    - character_package.zip
+      - character.erc
+      - metadata.json
       - face.png (or .jpg)
       - body.png (or .jpg)
       - preview.png (or .jpg, optional)
@@ -136,97 +148,127 @@ def _create_image_zip(
         Path to created ZIP file
     """
     # Create temp directory for output
-    output_dir = Path(tempfile.gettempdir()) / "er_preset_submissions"
+    output_dir = Path(tempfile.gettempdir()) / "er_character_submissions"
     output_dir.mkdir(exist_ok=True)
 
-    # Clean preset name for filename
-    safe_name = "".join(c for c in preset_name if c.isalnum() or c in (" ", "-", "_"))
+    # Clean character name for filename
+    safe_name = "".join(c for c in char_name if c.isalnum() or c in (" ", "-", "_"))
     safe_name = safe_name.strip().replace(" ", "_")
 
-    zip_filename = f"{safe_name}_images.zip"
+    zip_filename = f"{safe_name}_package.zip"
     zip_path = output_dir / zip_filename
 
     # Create ZIP file
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+        # Add .erc file
+        zipf.write(erc_path, "character.erc")
+
+        # Add metadata.json
+        metadata_json = json.dumps(metadata, indent=2)
+        zipf.writestr("metadata.json", metadata_json)
+
+        # Add images
         if face_image_path:
-            src_path = Path(face_image_path)
-            ext = src_path.suffix  # Keep original extension
-            zipf.write(src_path, f"face{ext}")
+            ext = Path(face_image_path).suffix or ".jpg"
+            zipf.write(face_image_path, f"face{ext}")
 
         if body_image_path:
-            src_path = Path(body_image_path)
-            ext = src_path.suffix
-            zipf.write(src_path, f"body{ext}")
+            ext = Path(body_image_path).suffix or ".jpg"
+            zipf.write(body_image_path, f"body{ext}")
 
         if preview_image_path:
-            src_path = Path(preview_image_path)
-            ext = src_path.suffix
-            zipf.write(src_path, f"preview{ext}")
+            ext = Path(preview_image_path).suffix or ".jpg"
+            zipf.write(preview_image_path, f"preview{ext}")
 
     return str(zip_path)
 
 
 def _create_issue_body(
-    preset_name: str,
+    char_name: str,
     author: str,
     description: str,
     tags: str,
-    appearance_data: dict,
+    metadata: dict,
     zip_path: str | None,
 ) -> str:
     """Create formatted issue body with ZIP instructions."""
 
-    # Use formatted JSON for readability
-    appearance_json = json.dumps(appearance_data, indent=2)
+    # Extract key metadata for display
+    level = metadata.get("level", "?")
+    char_class = metadata.get("class", "Unknown")
+    ng_plus = metadata.get("ng_plus", 0)
+    ng_text = f" (NG+{ng_plus})" if ng_plus > 0 else ""
 
-    body = f"""**Preset Name:** {preset_name}
+    # Extract max resources
+    max_hp = metadata.get("max_hp")
+    max_fp = metadata.get("max_fp")
+    max_stamina = metadata.get("max_stamina")
+
+    resources_text = ""
+    if max_hp or max_fp or max_stamina:
+        resources_parts = []
+        if max_hp:
+            resources_parts.append(f"HP: {max_hp}")
+        if max_fp:
+            resources_parts.append(f"FP: {max_fp}")
+        if max_stamina:
+            resources_parts.append(f"Stamina: {max_stamina}")
+        resources_text = f"\n**Resources:** {' • '.join(resources_parts)}"
+
+    body = f"""**Character Name:** {char_name}
 **Author:** {author}
 **Tags:** {tags}
+
+**Stats:** Level {level} • {char_class}{ng_text}{resources_text}
 
 **Description:**
 {description}
 
 ---
 
-### 📸 Images
+### 📦 Character Package
 
 """
 
     if zip_path:
         zip_filename = Path(zip_path).name
-        body += f"""**Image package ready!**
+        body += f"""**Attached File:** `{zip_filename}`
 
-Your images have been packaged into: `{zip_filename}`
+**What's inside:**
+- `character.erc` - Full character save data
+- `metadata.json` - Auto-extracted character info
+- `face.jpg` - Face screenshot
+- `body.jpg` - Full body screenshot
+- `preview.jpg` - Preview thumbnail (optional)
 
-**To attach:**
-1. Drag the ZIP file into the text box below
-2. GitHub will upload it automatically
-3. That's it!
-
-The automation will extract and use the images automatically.
+**📌 TO COMPLETE SUBMISSION:**
+1. Drag and drop `{zip_filename}` into this text box
+2. Wait for upload to complete
+3. Click "Submit new issue"
 
 """
     else:
-        body += """No images selected.
+        body += """⚠️ **Error:** Failed to create package file.
 
-You can still attach images manually if you have them:
-- Name them: `face.png`, `body.png`, `preview.png`
-- Put them in a ZIP file
-- Drag the ZIP into the text box
+Please attach your character files manually:
+- Character .erc file
+- Face screenshot
+- Body screenshot
+- metadata.json (if available)
 
 """
 
     body += "---\n\n"
 
-    # Add appearance JSON
-    body += """### Appearance Data
+    # Add metadata preview
+    body += """### 📊 Character Metadata Preview
 
 <details>
-<summary>Click to expand appearance JSON</summary>
+<summary>Click to expand metadata</summary>
 
 ```json
 """
-    body += appearance_json
+    body += json.dumps(metadata, indent=2)
     body += """
 ```
 
@@ -234,54 +276,44 @@ You can still attach images manually if you have them:
 
 ---
 
-**Submitted via ER Save Manager Preset Browser**
+**Submitted via ER Save Manager Character Browser**
 """
 
     return body
 
 
 def _create_compact_issue_body(
-    preset_name: str,
+    char_name: str,
     author: str,
     description: str,
     tags: str,
-    appearance_data: dict,
+    metadata: dict,
     zip_path: str | None,
 ) -> str:
     """Create compact issue body to avoid URL length limits."""
 
-    # Compact JSON
-    appearance_json = json.dumps(appearance_data, separators=(",", ":"))
+    level = metadata.get("level", "?")
+    char_class = metadata.get("class", "Unknown")
 
-    body = f"""**Preset Name:** {preset_name}
+    body = f"""**Character Name:** {char_name}
 **Author:** {author}
 **Tags:** {tags}
+**Stats:** Level {level} • {char_class}
 
 **Description:**
 {description}
 
 ---
 
-### 📸 Images
+### 📦 Package
 """
 
     if zip_path:
-        zip_filename = Path(zip_path).name
-        body += f"""
-Drag `{zip_filename}` into this text box.
-"""
+        body += f"""Attach: `{Path(zip_path).name}`"""
     else:
-        body += "No images provided."
+        body += """Attach character files manually"""
 
-    body += f"""
-
----
-
-### Appearance Data
-
-```json
-{appearance_json}
-```
+    body += """
 
 ---
 
@@ -291,19 +323,17 @@ Drag `{zip_filename}` into this text box.
     return body
 
 
-def show_submission_success_dialog(preset_name: str, zip_path: str):
+def show_submission_success_dialog(char_name: str, zip_path: str):
     """Show success message with ZIP file location and open file explorer."""
+    import os
     import platform
-    import subprocess
-
-    import customtkinter as ctk
 
     from er_save_manager.ui.utils import force_render_dialog
 
     # Create custom dialog
     dialog = ctk.CTkToplevel()
     dialog.title("Submission Ready")
-    width, height = 900, 700
+    width, height = 900, 600
     dialog.resizable(False, False)
 
     # Center on screen
@@ -318,7 +348,7 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
     # Force rendering on Linux
     force_render_dialog(dialog)
 
-    dialog.grab_set()  # ensure this dialog owns the grab so buttons remain clickable
+    dialog.grab_set()
 
     main_frame = ctk.CTkFrame(dialog, fg_color="transparent")
     main_frame.pack(fill=ctk.BOTH, expand=True, padx=30, pady=30)
@@ -326,7 +356,7 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
     # Title
     title = ctk.CTkLabel(
         main_frame,
-        text="✅ Preset Ready to Submit!",
+        text="✅ Character Ready to Submit!",
         font=("Segoe UI", 20, "bold"),
     )
     title.pack(pady=(0, 20))
@@ -336,7 +366,7 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
 
     info = ctk.CTkLabel(
         main_frame,
-        text="📦 Your images have been packaged:",
+        text="📦 Your character package has been created:",
         font=("Segoe UI", 14),
         justify=ctk.CENTER,
     )
@@ -370,11 +400,12 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
         justify=ctk.LEFT,
     ).pack(anchor=ctk.W, padx=20, pady=(0, 10))
 
-    instructions_text = """1. Click 'Open Folder' below
+    instructions_text = """1. Click 'Open Folder' below to find your package
 2. Drag the ZIP file into GitHub's text box
-3. Click the green 'Create new issue' button
-4. Wait for maintainer to review and approve
-5. You'll be notified when it's added!"""
+3. Wait for the upload to complete
+4. Click the green 'Submit new issue' button
+5. Wait for maintainer to test and approve
+6. You'll be notified when it's published!"""
 
     ctk.CTkLabel(
         info_box,
@@ -389,23 +420,19 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
     button_frame.pack(fill=ctk.X, pady=(0, 0))
 
     def open_folder():
-        """Open file explorer to ZIP location and select file."""
-        system = platform.system()
-
+        """Open the folder containing the ZIP file."""
+        folder_path = Path(zip_path).parent
         try:
-            if system == "Windows":
-                # Open explorer and select the file - use absolute path
-                abs_path = str(Path(zip_path).resolve())
-                subprocess.run(["explorer", f"/select,{abs_path}"], shell=False)
-            elif system == "Darwin":  # macOS
-                # Open Finder and select the file
-                subprocess.run(["open", "-R", str(zip_path)])
+            if platform.system() == "Windows":
+                os.startfile(folder_path)
+            elif platform.system() == "Darwin":  # macOS
+                os.system(f'open "{folder_path}"')
             else:  # Linux
-                # Open file manager to directory
-                zip_dir = str(Path(zip_path).parent)
-                subprocess.run(["xdg-open", zip_dir])
+                os.system(f'xdg-open "{folder_path}"')
         except Exception as e:
-            print(f"Failed to open file explorer: {e}")
+            print(f"Failed to open folder: {e}")
+            # Fallback: just print the path
+            print(f"Package location: {folder_path}")
 
     # Large "Open Folder" button
     open_btn = ctk.CTkButton(
@@ -432,7 +459,7 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
     # Show path at bottom (for user reference)
     path_label = ctk.CTkLabel(
         main_frame,
-        text="ZIP Location (for your reference):",
+        text="Package Location (for your reference):",
         font=("Segoe UI", 12, "bold"),
     )
     path_label.pack(anchor=ctk.W, pady=(20, 8))

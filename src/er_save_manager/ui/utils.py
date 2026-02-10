@@ -1,6 +1,10 @@
 """Utility functions for UI components."""
 
+import os
 import platform as platform_module
+import shutil
+import subprocess
+import webbrowser
 
 
 def trace_variable(var, mode, callback):
@@ -122,3 +126,64 @@ def bind_mousewheel(widget, target_widget=None):
             pass
 
     bind_children(widget)
+
+
+def open_url(url: str) -> bool:
+    """Open a URL in the user's default browser with cross-platform fallbacks."""
+    try:
+        if webbrowser.open(url, new=2):
+            return True
+    except Exception:
+        pass
+
+    platform_name = platform_module.system()
+    if platform_name == "Linux":
+        return _open_url_linux(url)
+    if platform_name == "Darwin":
+        return _run_command(["open", url])
+    if platform_name == "Windows":
+        try:
+            os.startfile(url)
+            return True
+        except Exception:
+            return _run_command(["cmd", "/c", "start", "", url])
+    return False
+
+
+def _open_url_linux(url: str) -> bool:
+    env = _get_subprocess_env()
+    commands = [
+        ["xdg-open", url],
+        ["gio", "open", url],
+        ["gnome-open", url],
+        ["kde-open5", url],
+        ["kde-open", url],
+    ]
+    for cmd in commands:
+        if shutil.which(cmd[0]) and _run_command(cmd, env=env):
+            return True
+    return False
+
+
+def _run_command(args: list[str], env: dict | None = None) -> bool:
+    try:
+        subprocess.Popen(
+            args,
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        return True
+    except Exception:
+        return False
+
+
+def _get_subprocess_env() -> dict:
+    env = os.environ.copy()
+    if env.get("APPIMAGE") or env.get("SNAP") or env.get("FLATPAK_ID"):
+        # Avoid lib path pollution when launching system helpers (AppImage/Snap/Flatpak).
+        env.pop("LD_LIBRARY_PATH", None)
+        env.pop("PYTHONHOME", None)
+        env.pop("PYTHONPATH", None)
+    return env

@@ -42,7 +42,7 @@ from er_save_manager.ui.tabs import (
     WorldStateTab,
 )
 from er_save_manager.ui.theme import ThemeManager
-from er_save_manager.ui.utils import trace_variable
+from er_save_manager.ui.utils import open_url, trace_variable
 
 
 class SaveManagerGUI:
@@ -141,6 +141,9 @@ class SaveManagerGUI:
         self._last_width = None
         self._last_height = None
 
+        # Auto-backup process monitor
+        self.process_monitor = None
+
         self.setup_ui()
 
         # Apply theme colors to tk widgets (non-ttk)
@@ -148,6 +151,9 @@ class SaveManagerGUI:
 
         # Bind resize event with debouncing
         self.root.bind("<Configure>", self._on_window_resize)
+
+        # Start auto-backup process monitor
+        self.root.after(2000, self._init_process_monitor)
 
         # Check for updates asynchronously (don't block UI startup)
         self.root.after(1000, self._check_for_updates)
@@ -197,17 +203,49 @@ class SaveManagerGUI:
                         0,
                         lambda: self._show_update_dialog(latest_version, download_url),
                     )
-            except Exception:
-                # Silently fail if update check doesn't work
-                pass
 
-        # Run in background thread to not block UI
-        threading.Thread(target=check_in_thread, daemon=True).start()
+            except Exception as e:
+                # Silently fail on update check errors
+                print(f"Update check failed: {e}")
+
+        # Run check in background thread
+        import threading
+
+        thread = threading.Thread(target=check_in_thread, daemon=True)
+        thread.start()
+
+    def _init_process_monitor(self):
+        """Initialize auto-backup process monitor"""
+        try:
+            from er_save_manager.backup.process_monitor import GameProcessMonitor
+
+            # Start process monitor (first-run dialog moved to backup manager tab)
+            self.process_monitor = GameProcessMonitor()
+            self.process_monitor.set_backup_callback(self._on_auto_backup_created)
+            self.process_monitor.start()
+
+        except Exception as e:
+            print(f"Failed to initialize process monitor: {e}")
+
+    def _on_auto_backup_created(self, backup_path):
+        """Callback when auto-backup is created"""
+        try:
+            from er_save_manager.ui.messagebox import CTkMessageBox
+
+            # Show notification (non-blocking)
+            self.root.after(
+                0,
+                lambda: CTkMessageBox.showinfo(
+                    "Auto-Backup Created",
+                    f"Elden Ring launched - backup created:\n\n{backup_path.name}",
+                    parent=self.root,
+                ),
+            )
+        except Exception:
+            pass
 
     def _show_update_dialog(self, latest_version: str, download_url: str):
         """Show update available dialog with GitHub and Nexus Mods download options"""
-        import webbrowser
-
         from er_save_manager.ui.utils import force_render_dialog
 
         dialog = ctk.CTkToplevel(self.root)
@@ -269,11 +307,11 @@ class SaveManagerGUI:
         button_frame.pack(fill=ctk.X, pady=(0, 20))
 
         def open_github():
-            webbrowser.open(download_url)
+            open_url(download_url)
             dialog.destroy()
 
         def open_nexus():
-            webbrowser.open("https://www.nexusmods.com/eldenring/mods/9271?tab=files")
+            open_url("https://www.nexusmods.com/eldenring/mods/9271?tab=files")
             dialog.destroy()
 
         ctk.CTkButton(
@@ -316,6 +354,10 @@ class SaveManagerGUI:
             height=32,
         ).pack(pady=(5, 0))
 
+    def _open_kofi(self):
+        """Open Ko-fi support page in browser."""
+        open_url("https://ko-fi.com/hapfell")
+
     def setup_ui(self):
         """Setup main UI structure with optimized layout"""
         # Use grid for main container - more efficient than pack
@@ -328,6 +370,17 @@ class SaveManagerGUI:
         # Title
         title_frame = ctk.CTkFrame(self.root, corner_radius=12)
         title_frame.grid(row=0, column=0, padx=12, pady=(12, 6), sticky="ew")
+
+        # Support button (top right corner)
+        support_btn = ctk.CTkButton(
+            title_frame,
+            text="☕ Support me",
+            command=self._open_kofi,
+            width=100,
+            height=32,
+            font=("Segoe UI", 11),
+        )
+        support_btn.place(relx=1.0, x=-12, y=12, anchor="ne")
 
         ctk.CTkLabel(
             title_frame,
@@ -529,7 +582,11 @@ class SaveManagerGUI:
         # Tab 11: Settings
         self.notebook.add("Settings")
         tab_settings = self.notebook.tab("Settings")
-        self.settings_tab = SettingsTab(tab_settings)
+        self.settings_tab = SettingsTab(
+            tab_settings,
+            get_save_path_callback=lambda: self.save_path,
+            get_default_save_path_callback=lambda: self.default_save_path,
+        )
         self.settings_tab.setup_ui()
 
     def setup_character_editor_tab(self, parent):
@@ -677,11 +734,21 @@ class SaveManagerGUI:
     # File operations
     def browse_file(self):
         """Browse for save file"""
-        initialdir = (
-            str(self.default_save_path)
-            if self.default_save_path.exists()
-            else str(Path.home())
-        )
+        # Use last_save_path if enabled and valid
+        initialdir = None
+        if self.settings.get("remember_last_location", True):
+            last_path = self.settings.get("last_save_path", "")
+            if last_path:
+                last_dir = os.path.dirname(last_path)
+                if os.path.exists(last_dir):
+                    initialdir = last_dir
+
+        if not initialdir:
+            initialdir = (
+                str(self.default_save_path)
+                if self.default_save_path.exists()
+                else str(Path.home())
+            )
 
         # On Linux, if default path doesn't exist, try to navigate to Steam directory
         if PlatformUtils.is_linux() and not self.default_save_path.exists():
@@ -697,6 +764,10 @@ class SaveManagerGUI:
         if filename:
             self.file_path_var.set(filename)
             self.status_var.set(f"Selected: {os.path.basename(filename)}")
+
+            # Save last location if enabled
+            if self.settings.get("remember_last_location", True):
+                self.settings.set("last_save_path", filename)
 
             # Linux: Check if in default location
             if (
@@ -1225,7 +1296,15 @@ class SaveManagerGUI:
 def main():
     """Main entry point for GUI"""
     root = ctk.CTk()
-    SaveManagerGUI(root)
+    app = SaveManagerGUI(root)
+
+    # Register cleanup handler
+    def on_closing():
+        if app.process_monitor:
+            app.process_monitor.stop()
+        root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()
 
 

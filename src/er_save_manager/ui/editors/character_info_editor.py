@@ -7,6 +7,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.data.starting_classes import get_class_data
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, trace_variable
 
@@ -120,12 +121,14 @@ class CharacterInfoEditor:
         ctk.CTkLabel(creation_frame, text="Archetype:").grid(
             row=2, column=2, sticky=ctk.W, padx=5, pady=5
         )
-        self.char_archetype_var = ctk.IntVar(value=0)
-        ctk.CTkEntry(
+        self.char_archetype_var = ctk.StringVar(value="Vagabond")
+        self.char_archetype_combo = ctk.CTkComboBox(
             creation_frame,
-            textvariable=self.char_archetype_var,
-            width=100,
-        ).grid(row=2, column=3, padx=5, pady=5)
+            variable=self.char_archetype_var,
+            values=["Vagabond"],  # Will be populated dynamically on load
+            width=140,
+        )
+        self.char_archetype_combo.grid(row=2, column=3, padx=5, pady=5)
 
         # Voice type
         ctk.CTkLabel(creation_frame, text="Voice Type:").grid(
@@ -272,7 +275,26 @@ class CharacterInfoEditor:
 
             self.char_name_var.set(getattr(char, "character_name", ""))
             self.char_body_type_var.set(getattr(char, "gender", 0))
-            self.char_archetype_var.set(getattr(char, "archetype", 0))
+
+            # Update archetype combobox with class names from appropriate class set
+            archetype_id = getattr(char, "archetype", 0)
+            is_convergence = save_file.is_convergence
+            class_data = get_class_data(archetype_id, is_convergence)
+            class_name = class_data["name"] if class_data else f"Class {archetype_id}"
+
+            # Get all class names for this save type and update combobox
+            all_classes = get_class_data(0, is_convergence)
+            if all_classes:
+                class_names = []
+                max_id = 26 if is_convergence else 9
+                for i in range(max_id + 1):
+                    c = get_class_data(i, is_convergence)
+                    if c:
+                        class_names.append(c["name"])
+                self.char_archetype_combo.configure(values=class_names)
+
+            self.char_archetype_var.set(class_name)
+
             self.char_voice_var.set(getattr(char, "voice_type", 0))
             self.char_gift_var.set(getattr(char, "gift", 0))
             self.char_talisman_slots_var.set(
@@ -344,10 +366,55 @@ class CharacterInfoEditor:
             slot = save_file.characters[slot_idx]
             if hasattr(slot, "player_game_data") and slot.player_game_data:
                 char = slot.player_game_data
+                char_name = self.char_name_var.get()
 
-                char.character_name = self.char_name_var.get()
+                char.character_name = char_name
+                # Also set name in profile summary if it exists
+                if (
+                    hasattr(save_file, "user_data_10_parsed")
+                    and save_file.user_data_10_parsed
+                    and save_file.user_data_10_parsed.profile_summary
+                ):
+                    profiles = save_file.user_data_10_parsed.profile_summary.profiles
+                    if profiles and slot_idx < len(profiles):
+                        profiles[slot_idx].character_name = char_name
+
+                        # Also write to raw data so it persists to file
+                        from er_save_manager.transfer.character_ops import (
+                            CharacterOperations,
+                        )
+
+                        _, profiles_base = (
+                            CharacterOperations.get_profile_summary_offsets(save_file)
+                        )
+                        profile_size = 0x24C
+                        profile_offset = profiles_base + slot_idx * profile_size
+
+                        # Write character name (16 wide chars = 32 bytes + 2 byte terminator = 34 bytes)
+                        name_bytes = char_name.encode("utf-16-le")
+                        # Pad to 32 bytes if needed
+                        name_bytes = (name_bytes + b"\x00" * 32)[:32]
+                        save_file._raw_data[profile_offset : profile_offset + 32] = (
+                            name_bytes
+                        )
+                        save_file._raw_data[
+                            profile_offset + 32 : profile_offset + 34
+                        ] = b"\x00\x00"
+
                 char.gender = self.char_body_type_var.get()
-                char.archetype = self.char_archetype_var.get()
+
+                # Convert class name back to archetype ID
+                class_name = self.char_archetype_var.get()
+                is_convergence = save_file.is_convergence
+                archetype_id = 0
+                max_id = 26 if is_convergence else 9
+                for i in range(max_id + 1):
+                    c = get_class_data(i, is_convergence)
+                    if c and c["name"] == class_name:
+                        archetype_id = i
+                        break
+                char.archetype = archetype_id
+
                 char.voice_type = self.char_voice_var.get()
                 char.gift = self.char_gift_var.get()
                 char.additional_talisman_slot_count = self.char_talisman_slots_var.get()

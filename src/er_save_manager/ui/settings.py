@@ -1,6 +1,7 @@
 """Settings management for ER Save Manager."""
 
 import json
+import platform
 from pathlib import Path
 from typing import Any
 
@@ -11,14 +12,48 @@ class Settings:
     def __init__(self, settings_file: Path | None = None):
         """Initialize settings."""
         if settings_file is None:
-            # Store in program directory instead of user home
-            program_dir = Path(__file__).parent.parent.parent.parent
-            settings_dir = program_dir / "data"
-            settings_dir.mkdir(exist_ok=True)
-            settings_file = settings_dir / "settings.json"
+            # Store in platform-appropriate AppData directory to persist across reinstalls
+            settings_file = self._get_default_settings_path()
+            settings_file.parent.mkdir(parents=True, exist_ok=True)
 
         self.settings_file = settings_file
         self.settings = self._load_settings()
+
+    @staticmethod
+    def _get_default_settings_path() -> Path:
+        """Get platform-appropriate settings file path."""
+        system = platform.system()
+
+        if system == "Windows":
+            # Windows: %APPDATA%\ER Save Manager\settings.json
+            import os
+
+            appdata = os.getenv("APPDATA")
+            if appdata:
+                return Path(appdata) / "ER Save Manager" / "settings.json"
+        elif system == "Darwin":
+            # macOS: ~/Library/Application Support/ER Save Manager/settings.json
+            return (
+                Path.home()
+                / "Library"
+                / "Application Support"
+                / "ER Save Manager"
+                / "settings.json"
+            )
+        elif system == "Linux":
+            # Linux: ~/.local/share/er-save-manager/settings.json or $XDG_DATA_HOME
+            import os
+
+            xdg_data = os.getenv("XDG_DATA_HOME")
+            if xdg_data:
+                return Path(xdg_data) / "er-save-manager" / "settings.json"
+            return (
+                Path.home() / ".local" / "share" / "er-save-manager" / "settings.json"
+            )
+
+        # Fallback to program directory if platform unknown
+        program_dir = Path(__file__).parent.parent.parent.parent
+        return program_dir / "data" / "settings.json"
 
     def _load_settings(self) -> dict:
         """Load settings from file."""
@@ -44,6 +79,10 @@ class Settings:
             "show_linux_save_warning": True,
             "show_backup_pruning_warning": True,
             "show_update_notifications": True,
+            "compress_backups": True,
+            "auto_backup_on_game_launch": False,
+            "auto_backup_save_path": "",
+            "auto_backup_first_run_check": True,
         }
 
     def save(self):

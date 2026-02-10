@@ -8,6 +8,7 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 
 - **Save File Fixer**: Automatically detect and fix save corruption issues and infinite loading screens
 - **Character Management**: Export, import, and move characters between saves
+- **Community Character Browser**: Browse, download, and contribute characters with likes and download tracking
 - **Character Editor**: Edit stats, runes, name, level, and build attributes
 - **Appearance Editor**: View, export and import Presets
 - **Community Preset Browser**: Browse, download, and contribute character appearance presets with likes and download tracking
@@ -61,6 +62,15 @@ Automatically detects and fixes common save corruption issues:
 - **Invalid DLC Data**: Clears garbage data in unused DLC slots
 - **Teleport Fallback**: Teleports your character to the roundtable for any other invalid coordinates that cause an infinite loading screen
 
+### Troubleshooting Tab
+
+Automatically detects issues with your game installation, your save file and any software that could cause issues
+
+- Scans and validates game files
+- Checks for Steam Elevation
+- Checks for interfering software that may stop the modded game from launching
+- Checks for VPNs
+
 ### Character Management
 
 - **Export Characters**: Save individual characters to `.erc` files
@@ -68,6 +78,19 @@ Automatically detects and fixes common save corruption issues:
 - **Move Between Slots**: Reorganize characters within a save
 - **Copy Between Saves**: Transfer characters to different save files
 - **Delete a Character**
+
+### Community Character Browser
+
+- Browse characters from the community and download characters from others
+- Like your favorite characters
+- Download tracking
+- Submit your own characters to share with others
+- Image preview (face and body)
+- Search and filter functionality
+- Report inappropriate content
+- Local cache for fast loading
+- Supports Convergence Mod for character submission
+- Allows specifying and contributing any overhaul mod character
 
 ### Character Editor
 
@@ -121,6 +144,10 @@ Automatically detects and fixes common save corruption issues:
 - Browse and restore previous backups
 - Backup pruning with configurable retention
 - One-click restore with confirmation
+
+### Convergence Mod Support
+
+- Recognizes Convergence Save File and enables Convergence Mode to adjust for custom stats like custom classes etc.
 
 ## Building from Source
 
