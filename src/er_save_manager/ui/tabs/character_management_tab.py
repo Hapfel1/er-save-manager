@@ -460,8 +460,8 @@ class CharacterManagementTab:
             )
             return
 
-        from_slot = self.copy_from_var.get() - 1
-        to_slot = self.copy_to_var.get() - 1
+        from_slot = int(self.copy_from_var.get()) - 1
+        to_slot = int(self.copy_to_var.get()) - 1
 
         if from_slot == to_slot:
             CTkMessageBox.showerror(
@@ -516,6 +516,8 @@ class CharacterManagementTab:
                     save=save_file,
                 )
 
+            # (debug logging removed)
+
             # Copy character data
             CharacterOperations.copy_slot(save_file, from_slot, to_slot)
 
@@ -567,7 +569,7 @@ class CharacterManagementTab:
             )
             return
 
-        from_slot = self.transfer_from_var.get() - 1
+        from_slot = int(self.transfer_from_var.get()) - 1
         from_char = save_file.characters[from_slot]
 
         if from_char.is_empty():
@@ -592,7 +594,7 @@ class CharacterManagementTab:
             from er_save_manager.ui.utils import force_render_dialog
 
             # Load target save
-            target_save = Save(target_path)
+            target_save = Save.from_file(target_path)
 
             # Ask which slot in target
             slot_dialog = ctk.CTkToplevel(self.parent)
@@ -623,7 +625,7 @@ class CharacterManagementTab:
             result = [None]
 
             def confirm():
-                result[0] = to_slot_var.get() - 1
+                result[0] = int(to_slot_var.get()) - 1
                 slot_dialog.destroy()
 
             confirm_button = ctk.CTkButton(
@@ -710,8 +712,8 @@ class CharacterManagementTab:
             )
             return
 
-        slot_a = self.swap_a_var.get() - 1
-        slot_b = self.swap_b_var.get() - 1
+        slot_a = int(self.swap_a_var.get()) - 1
+        slot_b = int(self.swap_b_var.get()) - 1
 
         if slot_a == slot_b:
             CTkMessageBox.showerror(
@@ -780,7 +782,7 @@ class CharacterManagementTab:
             )
             return
 
-        slot = self.export_slot_var.get() - 1
+        slot = int(self.export_slot_var.get()) - 1
         char = save_file.characters[slot]
 
         if char.is_empty():
@@ -848,7 +850,7 @@ class CharacterManagementTab:
         if not import_path:
             return
 
-        to_slot = self.import_slot_var.get() - 1
+        to_slot = int(self.import_slot_var.get()) - 1
         to_char = save_file.characters[to_slot]
 
         # Check if destination slot has an ACTIVE character (not just data)
@@ -949,7 +951,7 @@ class CharacterManagementTab:
             )
             return
 
-        slot = self.delete_slot_var.get() - 1
+        slot = int(self.delete_slot_var.get()) - 1
         char = save_file.characters[slot]
 
         if char.is_empty():

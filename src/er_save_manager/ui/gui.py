@@ -734,11 +734,21 @@ class SaveManagerGUI:
     # File operations
     def browse_file(self):
         """Browse for save file"""
-        initialdir = (
-            str(self.default_save_path)
-            if self.default_save_path.exists()
-            else str(Path.home())
-        )
+        # Use last_save_path if enabled and valid
+        initialdir = None
+        if self.settings.get("remember_last_location", True):
+            last_path = self.settings.get("last_save_path", "")
+            if last_path:
+                last_dir = os.path.dirname(last_path)
+                if os.path.exists(last_dir):
+                    initialdir = last_dir
+
+        if not initialdir:
+            initialdir = (
+                str(self.default_save_path)
+                if self.default_save_path.exists()
+                else str(Path.home())
+            )
 
         # On Linux, if default path doesn't exist, try to navigate to Steam directory
         if PlatformUtils.is_linux() and not self.default_save_path.exists():
@@ -754,6 +764,10 @@ class SaveManagerGUI:
         if filename:
             self.file_path_var.set(filename)
             self.status_var.set(f"Selected: {os.path.basename(filename)}")
+
+            # Save last location if enabled
+            if self.settings.get("remember_last_location", True):
+                self.settings.set("last_save_path", filename)
 
             # Linux: Check if in default location
             if (

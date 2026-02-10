@@ -89,6 +89,8 @@ Automatically detects issues with your game installation, your save file and any
 - Search and filter functionality
 - Report inappropriate content
 - Local cache for fast loading
+- Supports Convergence Mod for character submission
+- Allows specifying and contributing any overhaul mod character
 
 ### Character Editor
 
@@ -142,6 +144,10 @@ Automatically detects issues with your game installation, your save file and any
 - Browse and restore previous backups
 - Backup pruning with configurable retention
 - One-click restore with confirmation
+
+### Convergence Mod Support
+
+- Recognizes Convergence Save File and enables Convergence Mode to adjust for custom stats like custom classes etc.
 
 ## Building from Source
 

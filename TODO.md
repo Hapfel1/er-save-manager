@@ -1,6 +1,10 @@
+troubleshooter for each game
+
+check character presets wiping issue done
+
 redo profiles done
 
-edit readme and description
+edit readme and description done
 
 add conv mode itemids
 
