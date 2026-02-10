@@ -12,59 +12,115 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from er_save_manager.parser.save import Save
 
+import logging
+
+# Module logger — write detailed transfer logs to project log file for debugging
+logger = logging.getLogger(__name__)
+# Ensure there is a dedicated file handler writing to er_save_manager.log
+found = False
+for h in logger.handlers:
+    if isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", "").endswith(
+        "er_save_manager.log"
+    ):
+        found = True
+        break
+if not found:
+    try:
+        fh = logging.FileHandler("er_save_manager.log", encoding="utf-8")
+        formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
+    except Exception:
+        pass
+
 
 class CharacterOperations:
-    """
-    Character slot operations.
-
-    Uses dynamically tracked offsets from Save instance instead of hardcoded values
-    to ensure compatibility across different save file formats and versions.
-    """
-
-    SLOT_SIZE = 0x280010
-    SLOT_DATA_SIZE = 0x280000
-    CHECKSUM_SIZE = 16
+    CHECKSUM_SIZE = 0x10  # Match parser/save.py CHECKSUM_SIZE
+    SLOT_SIZE = 0x280000  # Match parser/save.py SLOT_SIZE
+    SLOT_DATA_SIZE = 0x280000  # Match parser/save.py slot_data_size
 
     @staticmethod
-    def get_slot_offset(save: Save, slot_index: int) -> int:
-        """
-        Get file offset for a character slot from tracked offsets.
-
-        Args:
-            save: Save instance with tracked offsets
-            slot_index: Slot index (0-9)
-
-        Returns:
-            Absolute file offset for the slot
-        """
-        if not 0 <= slot_index <= 9:
-            raise ValueError(f"Slot index must be 0-9, got {slot_index}")
-
-        if not hasattr(save, "_slot_offsets") or not save._slot_offsets:
-            raise RuntimeError("Save does not have tracked slot offsets")
-
-        if slot_index >= len(save._slot_offsets):
-            raise IndexError(f"Slot {slot_index} offset not tracked")
-
+    def get_slot_offset(save, slot_index: int) -> int:
+        """Return the byte offset of the start of the given slot in the save file."""
         return save._slot_offsets[slot_index]
 
     @staticmethod
-    def get_user_data_10_offset(save: Save) -> int:
-        """
-        Get USER_DATA_10 offset from tracked offset.
+    def _update_profile_summary_from_slot(save: Save, slot_index: int) -> None:
+        """Update profile summary for a slot using the character data in that slot, including appearance and equipment."""
+        char = save.character_slots[slot_index]
+        if char.is_empty():
+            return
 
-        Args:
-            save: Save instance with tracked offset
+        # Get offsets for profile summary
+        _, profiles_base = CharacterOperations.get_profile_summary_offsets(save)
+        profile_size = 0x24C
+        profile_offset = profiles_base + slot_index * profile_size
 
-        Returns:
-            Absolute file offset for USER_DATA_10
-        """
-        if not hasattr(save, "_user_data_10_offset"):
-            raise RuntimeError("Save does not have tracked USER_DATA_10 offset")
+        import struct
+        from io import BytesIO
 
-        return save._user_data_10_offset
+        player = char.player_game_data
+        buf = BytesIO()
 
-    @staticmethod
+        # Character name (16 wide chars, UTF-16LE, padded)
+        name = getattr(player, "character_name", "")[:16]
+        name_bytes = name.encode("utf-16le")
+        name_bytes = name_bytes + b"\x00" * (32 - len(name_bytes))
+        buf.write(name_bytes)
+        buf.write(b"\x00" * 2)  # Terminator
+
+        # Level, seconds played, runes_memory, map_id, unk0x34
+        buf.write(struct.pack("<I", getattr(player, "level", 1)))
+        buf.write(struct.pack("<I", getattr(player, "seconds_played", 0)))
+        buf.write(struct.pack("<I", getattr(player, "runes_memory", 0)))
+        buf.write(getattr(player, "map_id", b"\x00\x00\x00\x00"))
+        buf.write(struct.pack("<I", getattr(player, "unk0x34", 0)))
+
+        # Face data (0x124 bytes) - use FaceData from slot, convert to profile summary size (0x120 if needed)
+        face_data = getattr(player, "face_data", None)
+        if face_data is not None and hasattr(face_data, "raw_data"):
+            face_bytes = face_data.raw_data
+            if len(face_bytes) > 0x124:
+                face_bytes = face_bytes[:0x124]
+            elif len(face_bytes) < 0x124:
+                face_bytes = face_bytes + b"\x00" * (0x124 - len(face_bytes))
+        else:
+            face_bytes = b"\x00" * 0x124
+        buf.write(face_bytes)
+
+        # Equipment (0xE8 bytes) - use equipment from slot if available
+        equipment = getattr(player, "profile_equipment", None)
+        if equipment is not None:
+            if hasattr(equipment, "raw_data"):
+                equip_bytes = equipment.raw_data
+            else:
+                equip_bytes = equipment
+            if len(equip_bytes) > 0xE8:
+                equip_bytes = equip_bytes[:0xE8]
+            elif len(equip_bytes) < 0xE8:
+                equip_bytes = equip_bytes + b"\x00" * (0xE8 - len(equip_bytes))
+        else:
+            equip_bytes = b"\x00" * 0xE8
+        buf.write(equip_bytes)
+
+        # Body type, archetype, starting gift
+        buf.write(struct.pack("<B", getattr(player, "body_type", 0)))
+        buf.write(struct.pack("<B", getattr(player, "archetype", 0)))
+        buf.write(struct.pack("<B", getattr(player, "starting_gift", 0)))
+
+        # Unknown fields (3 bytes + 4 bytes = 7 bytes)
+        buf.write(b"\x00" * 7)
+
+        # Pad to 0x24C bytes
+        data = buf.getvalue()
+        if len(data) < profile_size:
+            data += b"\x00" * (profile_size - len(data))
+        elif len(data) > profile_size:
+            data = data[:profile_size]
+
+        # Write to raw_data
+        save._raw_data[profile_offset : profile_offset + profile_size] = data
+
     def get_profile_summary_offsets(save: Save) -> tuple[int, int]:
         """
         Calculate ProfileSummary offsets based on parsed USER_DATA_10.
@@ -123,6 +179,13 @@ class CharacterOperations:
         if from_slot == to_slot:
             raise ValueError("Source and destination slots cannot be the same")
 
+        # Log copy intent
+        try:
+            path = getattr(save, "_original_filepath", "<unknown>")
+            logger.info("copy_slot: %s %d -> %d", path, from_slot, to_slot)
+        except Exception:
+            logger.exception("Failed to log copy_slot intent")
+
         if not hasattr(save, "_raw_data"):
             raise RuntimeError("Save does not have raw data")
 
@@ -133,9 +196,22 @@ class CharacterOperations:
         from_offset = CharacterOperations.get_slot_offset(save, from_slot)
         to_offset = CharacterOperations.get_slot_offset(save, to_slot)
 
+        logger.debug(
+            "copy_slot offsets: from_offset=%s to_offset=%s",
+            hex(from_offset),
+            hex(to_offset),
+        )
+
         # Copy entire slot (checksum + data)
         save._raw_data[to_offset : to_offset + CharacterOperations.SLOT_SIZE] = (
             save._raw_data[from_offset : from_offset + CharacterOperations.SLOT_SIZE]
+        )
+
+        logger.debug(
+            "Copied %d bytes from %s to %s",
+            CharacterOperations.SLOT_SIZE,
+            hex(from_offset),
+            hex(to_offset),
         )
 
         # Update profile summary in USER_DATA_10
@@ -179,6 +255,25 @@ class CharacterOperations:
         ):
             raise RuntimeError("Both saves must have raw data")
 
+        # Log transfer intent and context
+        try:
+            s_path = getattr(source_save, "_original_filepath", "<unknown>")
+            t_path = getattr(target_save, "_original_filepath", "<unknown>")
+            logger.info(
+                "transfer_slot: %s slot %d -> %s slot %d",
+                s_path,
+                from_slot,
+                t_path,
+                to_slot,
+            )
+            logger.debug(
+                "source raw len=%d target raw len=%d",
+                len(source_save._raw_data),
+                len(target_save._raw_data),
+            )
+        except Exception:
+            logger.exception("Failed to log transfer context")
+
         # Ensure both are bytearray
         if isinstance(source_save._raw_data, bytes):
             source_save._raw_data = bytearray(source_save._raw_data)
@@ -188,6 +283,12 @@ class CharacterOperations:
         from_offset = CharacterOperations.get_slot_offset(source_save, from_slot)
         to_offset = CharacterOperations.get_slot_offset(target_save, to_slot)
 
+        logger.debug(
+            "slot offsets: from_offset=%s to_offset=%s",
+            hex(from_offset),
+            hex(to_offset),
+        )
+
         # Copy entire slot
         target_save._raw_data[to_offset : to_offset + CharacterOperations.SLOT_SIZE] = (
             source_save._raw_data[
@@ -195,31 +296,93 @@ class CharacterOperations:
             ]
         )
 
-        # Patch SteamID to match target save
-        CharacterOperations._patch_steamid_in_slot(target_save, to_slot)
-
-        # Update profile summary
-        CharacterOperations._update_profile_summary_from_slot(target_save, to_slot)
-
-        # Mark slot as active
-        CharacterOperations._set_slot_active(target_save, to_slot, True)
-
-        # Re-parse USER_DATA_10 to update parsed profile data
-        CharacterOperations._reparse_user_data_10(target_save)
-
-        # Re-parse the modified slot
+        # Re-parse the modified slot first so we have an accurate UserDataX
         from io import BytesIO
 
         from er_save_manager.parser.user_data_x import UserDataX
 
         f = BytesIO(target_save._raw_data)
         f.seek(to_offset + CharacterOperations.CHECKSUM_SIZE)
-        target_save.character_slots[to_slot] = UserDataX.read(
-            f,
-            target_save.is_ps,
-            to_offset + CharacterOperations.CHECKSUM_SIZE,
-            CharacterOperations.SLOT_DATA_SIZE,
-        )
+        try:
+            target_save.character_slots[to_slot] = UserDataX.read(
+                f,
+                target_save.is_ps,
+                to_offset + CharacterOperations.CHECKSUM_SIZE,
+                CharacterOperations.SLOT_DATA_SIZE,
+            )
+        except Exception:
+            logger.exception(
+                "Failed to parse UserDataX for target slot %d after transfer", to_slot
+            )
+            raise
+
+        # Patch SteamID to match target save using the freshly parsed slot info
+        try:
+            CharacterOperations._patch_steamid_in_slot(target_save, to_slot)
+        except Exception:
+            logger.exception("_patch_steamid_in_slot failed")
+
+        # Update profile summary from the transferred slot
+        try:
+            CharacterOperations._update_profile_summary_from_slot(target_save, to_slot)
+        except Exception:
+            logger.exception("_update_profile_summary_from_slot failed")
+
+        # Mark slot as active
+        try:
+            CharacterOperations._set_slot_active(target_save, to_slot, True)
+        except Exception:
+            logger.exception("_set_slot_active failed")
+
+        # Re-parse USER_DATA_10 to update parsed profile data
+        try:
+            CharacterOperations._reparse_user_data_10(target_save)
+        except Exception:
+            logger.exception("_reparse_user_data_10 failed")
+
+        # Re-parse the modified slot again in case SteamID patching altered parsed fields
+        f = BytesIO(target_save._raw_data)
+        f.seek(to_offset + CharacterOperations.CHECKSUM_SIZE)
+        try:
+            target_save.character_slots[to_slot] = UserDataX.read(
+                f,
+                target_save.is_ps,
+                to_offset + CharacterOperations.CHECKSUM_SIZE,
+                CharacterOperations.SLOT_DATA_SIZE,
+            )
+        except Exception:
+            logger.exception(
+                "Failed to re-parse UserDataX for target slot %d after steamid patch",
+                to_slot,
+            )
+            # not fatal
+
+        # Log resulting character info
+        try:
+            slot_obj = target_save.character_slots[to_slot]
+            name = (
+                slot_obj.get_character_name()
+                if hasattr(slot_obj, "get_character_name")
+                else "<unknown>"
+            )
+            active = CharacterOperations._is_slot_active(target_save, to_slot)
+            logger.info(
+                "Transfer result: target_slot=%d name=%s active=%s empty=%s",
+                to_slot,
+                name,
+                active,
+                slot_obj.is_empty() if hasattr(slot_obj, "is_empty") else False,
+            )
+        except Exception:
+            logger.exception("Failed to log transfer result for slot %d", to_slot)
+
+        # Recalculate checksums for the modified target save to ensure integrity
+        try:
+            if hasattr(target_save, "recalculate_checksums"):
+                target_save.recalculate_checksums()
+                logger.debug("Recalculated checksums for target save")
+        except Exception:
+            logger.exception("Failed to recalculate checksums for target save")
 
     @staticmethod
     def delete_slot(save: Save, slot_index: int) -> None:
@@ -337,9 +500,61 @@ class CharacterOperations:
 
     @staticmethod
     def _update_profile_summary_from_slot(save: Save, slot_index: int) -> None:
-        """Update profile summary from the character data in the slot."""
-        # This reads name/level from the slot and updates the summary
-        pass
+        """Update profile summary for a slot using the character data in that slot."""
+        # Defensive: ensure slot is not empty
+        char = save.character_slots[slot_index]
+        if char.is_empty():
+            return
+
+        # Get offsets for profile summary
+        _, profiles_base = CharacterOperations.get_profile_summary_offsets(save)
+        profile_size = 0x24C
+        profile_offset = profiles_base + slot_index * profile_size
+
+        # Build a new Profile entry from the slot's player_game_data
+        import struct
+        from io import BytesIO
+
+        player = char.player_game_data
+        buf = BytesIO()
+
+        # Character name (16 wide chars, UTF-16LE, padded)
+        name = getattr(player, "character_name", "")[:16]
+        name_bytes = name.encode("utf-16le")
+        name_bytes = name_bytes + b"\x00" * (32 - len(name_bytes))
+        buf.write(name_bytes)
+        buf.write(b"\x00" * 2)  # Terminator
+
+        # Level, seconds played, runes, map id, unk0x34
+        buf.write(struct.pack("<I", getattr(player, "level", 1)))
+        buf.write(struct.pack("<I", getattr(player, "seconds_played", 0)))
+        buf.write(struct.pack("<I", getattr(player, "runes", 0)))
+        buf.write(getattr(player, "map_id", b"\x00\x00\x00\x00"))
+        buf.write(struct.pack("<I", getattr(player, "unk0x34", 0)))
+
+        # Face data (0x124 bytes)
+        buf.write(getattr(player, "face_data", b"\x00" * 0x124))
+
+        # Equipment (0xE8 bytes)
+        buf.write(getattr(player, "profile_equipment", b"\x00" * 0xE8))
+
+        # Body type, archetype, starting gift
+        buf.write(struct.pack("<B", getattr(player, "body_type", 0)))
+        buf.write(struct.pack("<B", getattr(player, "archetype", 0)))
+        buf.write(struct.pack("<B", getattr(player, "starting_gift", 0)))
+
+        # Unknown fields (3 bytes + 4 bytes = 7 bytes)
+        buf.write(b"\x00" * 7)
+
+        # Pad to 0x24C bytes
+        data = buf.getvalue()
+        if len(data) < profile_size:
+            data += b"\x00" * (profile_size - len(data))
+        elif len(data) > profile_size:
+            data = data[:profile_size]
+
+        # Write to raw_data
+        save._raw_data[profile_offset : profile_offset + profile_size] = data
 
     @staticmethod
     def _clear_profile_summary(save: Save, slot_index: int) -> None:
@@ -481,21 +696,57 @@ class CharacterOperations:
             ]
         )
 
-        # Get profile summary using calculated offsets
+        # Get profile summary using calculated offsets, but re-generate from slot for full fidelity
         _, profiles_base = CharacterOperations.get_profile_summary_offsets(save)
         profile_size = 0x24C
-        profile_offset = profiles_base + slot_index * profile_size
-        profile_data = bytes(
-            save._raw_data[profile_offset : profile_offset + profile_size]
-        )
+        # Use the same logic as _update_profile_summary_from_slot to build profile_data
+        import struct
+        from io import BytesIO
 
-        # Validate profile data size
-        if len(profile_data) != profile_size:
-            raise ValueError(
-                f"Failed to extract full profile data during export: "
-                f"expected {profile_size} bytes, got {len(profile_data)} bytes. "
-                f"Save may be corrupted."
-            )
+        player = char.player_game_data
+        buf = BytesIO()
+        name = getattr(player, "character_name", "")[:16]
+        name_bytes = name.encode("utf-16le")
+        name_bytes = name_bytes + b"\x00" * (32 - len(name_bytes))
+        buf.write(name_bytes)
+        buf.write(b"\x00" * 2)
+        buf.write(struct.pack("<I", getattr(player, "level", 1)))
+        buf.write(struct.pack("<I", getattr(player, "seconds_played", 0)))
+        buf.write(struct.pack("<I", getattr(player, "runes_memory", 0)))
+        buf.write(getattr(player, "map_id", b"\x00\x00\x00\x00"))
+        buf.write(struct.pack("<I", getattr(player, "unk0x34", 0)))
+        face_data = getattr(player, "face_data", None)
+        if face_data is not None and hasattr(face_data, "raw_data"):
+            face_bytes = face_data.raw_data
+            if len(face_bytes) > 0x124:
+                face_bytes = face_bytes[:0x124]
+            elif len(face_bytes) < 0x124:
+                face_bytes = face_bytes + b"\x00" * (0x124 - len(face_bytes))
+        else:
+            face_bytes = b"\x00" * 0x124
+        buf.write(face_bytes)
+        equipment = getattr(player, "profile_equipment", None)
+        if equipment is not None:
+            if hasattr(equipment, "raw_data"):
+                equip_bytes = equipment.raw_data
+            else:
+                equip_bytes = equipment
+            if len(equip_bytes) > 0xE8:
+                equip_bytes = equip_bytes[:0xE8]
+            elif len(equip_bytes) < 0xE8:
+                equip_bytes = equip_bytes + b"\x00" * (0xE8 - len(equip_bytes))
+        else:
+            equip_bytes = b"\x00" * 0xE8
+        buf.write(equip_bytes)
+        buf.write(struct.pack("<B", getattr(player, "body_type", 0)))
+        buf.write(struct.pack("<B", getattr(player, "archetype", 0)))
+        buf.write(struct.pack("<B", getattr(player, "starting_gift", 0)))
+        buf.write(b"\x00" * 7)
+        profile_data = buf.getvalue()
+        if len(profile_data) < profile_size:
+            profile_data += b"\x00" * (profile_size - len(profile_data))
+        elif len(profile_data) > profile_size:
+            profile_data = profile_data[:profile_size]
 
         # Get active flag
         is_active = CharacterOperations._is_slot_active(save, slot_index)
@@ -621,31 +872,10 @@ class CharacterOperations:
             + len(slot_data)
         ] = slot_data
 
-        # Clear and write profile data using calculated offsets
-        _, profiles_base = CharacterOperations.get_profile_summary_offsets(save)
-        profile_size = 0x24C
-        profile_offset = profiles_base + slot_index * profile_size
-
-        # Validate profile data size
-        if len(profile_data) != profile_size:
-            raise ValueError(
-                f"Profile data size mismatch: expected {profile_size} bytes, "
-                f"got {len(profile_data)} bytes. The .erc file may be corrupted."
-            )
-
-        print(
-            f"[CharacterOps] Writing profile data to slot {slot_index} at offset {hex(profile_offset)}"
-        )
-
-        # Clear the profile entry first to avoid residual data
-        save._raw_data[profile_offset : profile_offset + profile_size] = bytes(
-            profile_size
-        )
-
         # Write new profile data (always full 0x24C bytes)
+        _, profiles_base = CharacterOperations.get_profile_summary_offsets(save)
+        profile_offset = profiles_base + slot_index * profile_size
         save._raw_data[profile_offset : profile_offset + profile_size] = profile_data
-
-        print("[CharacterOps] Profile data written successfully")
 
         # Set slot as active (imported characters should be active by default)
         CharacterOperations._set_slot_active(save, slot_index, True)
@@ -1019,6 +1249,5 @@ class CharacterOperations:
 
             # TODO: Check inventory items when inventory parsing is implemented
 
-            return False
         except Exception:
             return False
