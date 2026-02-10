@@ -3,6 +3,61 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.10.0
+**Released:** February 10, 2026
+
+
+### ✨ New Features
+
+- Added Auto-Backup Feature when booting up the game, changed backups to be zipped by default. ([992ed82](https://github.com/Hapfel1/er-save-manager/commit/992ed82a22d7cd62d1cb9330b64e93f134370a41))
+
+- Added Character Browser ([c78dfe0](https://github.com/Hapfel1/er-save-manager/commit/c78dfe0068022e10b62408771378ee30e9879764))
+
+- Add Convergence Support for the Character Browser ([edc61d4](https://github.com/Hapfel1/er-save-manager/commit/edc61d4a81269c94521f098e1a639489147c94e5))
+
+
+
+### 🔧 Bug Fixes
+
+- Fixed appimage build to include the custom lavender theme correctly ([381481d](https://github.com/Hapfel1/er-save-manager/commit/381481d5a8fec155b1cf598ce7105008837c96b5))
+
+- Added vpn checker in troubleshooting tab ([d034cf3](https://github.com/Hapfel1/er-save-manager/commit/d034cf301effa169588d5f464af812b7dd9b1f8e))
+
+- Added error for if the program is being run while zipped ([e7cb442](https://github.com/Hapfel1/er-save-manager/commit/e7cb4423c3dce2483aee93713f38d35082d4bb07))
+
+- Fix steamdeck resolution issue ([2e9af76](https://github.com/Hapfel1/er-save-manager/commit/2e9af76cf060c4f5ddb730f53cd5b0495b47888b))
+
+- Fixed wrong cnv save detection ([a213f99](https://github.com/Hapfel1/er-save-manager/commit/a213f99693b3188011b8251866f887cf616b7178))
+
+- Fixed error when copying characters because of invalid filename characters, added sanitization ([22b83bb](https://github.com/Hapfel1/er-save-manager/commit/22b83bb87a162397c474159e1a86e424d1b25e85))
+
+- Made opening links work on Linux ([f716d51](https://github.com/Hapfel1/er-save-manager/commit/f716d515b8329d5339639988a8caf6a4e24751c6))
+
+- Fixed transferring characters between Save Files to correctly update Profile Summary and fixed an offset tracking error ([01ca69c](https://github.com/Hapfel1/er-save-manager/commit/01ca69c408244ba13a4bee912291923b1ead03f1))
+
+
+
+### 🎨 User Interface
+
+- Made autobackup more clear and easier to use ([572e8a3](https://github.com/Hapfel1/er-save-manager/commit/572e8a304214f6fa358d3bc2ea383670bf7da942))
+
+- Revamped UI to work better for small resolution displays ([c058bd5](https://github.com/Hapfel1/er-save-manager/commit/c058bd55e846eea9b02592cae0902e6fceb45182))
+
+
+
+### 📖 Documentation
+
+- Updated TODO ([085914d](https://github.com/Hapfel1/er-save-manager/commit/085914dc2cfca94b3a45ab7c45180280fee08634))
+
+
+
+### Buld
+
+- Edit todo ([b996d7b](https://github.com/Hapfel1/er-save-manager/commit/b996d7beb4462e7d1110aaa126effdb1eb7c8f5f))
+
+
+
+---
 ## 📦 Release 0.9.0
 **Released:** February 03, 2026
 
@@ -437,6 +492,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.10.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.9.0..v0.10.0
 [0.9.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.8.0..v0.9.0
 [0.8.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.7.4..v0.8.0
 [0.7.4]: https://github.com/Hapfel1/er-save-manager/compare/v0.7.3..v0.7.4
