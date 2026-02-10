@@ -1,4 +1,14 @@
+redo profiles done
+
+edit readme and description
+
 add conv mode itemids
+
+implement item spawning + check region unlock
+
+implement hex editor
+
+check and fix worldstate locations
 
 check consumable spawning as well as spawning on a further played profile
 
@@ -7,8 +17,6 @@ add hp fp stam to character browser and submission done
 add changing the name to profile summary as well done
 
 add conv mode, items, starting classes etc. starting classes done
-
-edit readme and description done
 
 add progress loading bar when loading presets in browser done
 
@@ -33,12 +41,6 @@ comments fix/change done
 troubleshooter done
 
 Add VERSION + update notice done
-
-implement item spawning + check region unlock
-
-implement hex editor
-
-check and fix worldstate locations
 
 investigate steam deck appearance browse issue, add logging build which puts out log in a log file done
 
