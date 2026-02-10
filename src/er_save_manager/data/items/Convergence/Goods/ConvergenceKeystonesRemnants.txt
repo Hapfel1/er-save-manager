@@ -1,0 +1,17 @@
+8060 Keystone 1
+8061 Keystone 2
+8062 Keystone 3
+8063 Keystone 4
+8064 Keystone 5
+20900 Essence Physick Remnant
+20901 Elemental Physick Remnant
+20902 Prowess Physick Remnant
+20903 Invigorating Physick Remnant
+20904 Enduring Physick Remnant
+20950 Combat Remnant
+20951 Heirloom Remnant
+20952 Faint Relic Remnant
+20953 Shimmering Relic Remnant
+20954 Glowing Relic Remnant
+20955 Shining Relic Remnant
+20956 Enchanted Remnant

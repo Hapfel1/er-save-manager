@@ -1,0 +1,108 @@
+220200 Page Gloves
+250200 Nomadic Merchant Gloves
+293200 Night Maiden Bracelets
+293300 Night Maiden Greaves
+301200 Shaman Bracers
+302000 Mystic Circlet
+302200 Mystic Bracelets
+320200 Sanguine Noble Bracelets
+421000 Vulgar Militia Hood
+620200 Prophet Manacles
+681000 War Surgeon Hood
+743000 Viridian Hood
+800200 Festive Gloves
+800300 Festive Trousers
+837000 Glint Mage Cap
+837100 Glint Mage Robe
+837200 Raya Lucarian Gloves
+837300 Raya Lucarian Trousers
+890200 Prisoner Chains
+960200 Consort's Gloves
+964300 Bloodsoaked Wraps
+1010200 Snow Witch Gloves
+1140000 Vanguard Helm
+1140100 Vanguard Armor
+1140200 Vanguard Gauntlets
+1140300 Vanguard Greaves
+1150000 Marksman Hat
+1150100 Marksman Tabard
+1150200 Marksman Gauntlets
+1150300 Marksman Boots
+1160000 Berserker Leather Helm
+1160100 Berserker Battlewear
+1160200 Berserker Bracers
+1160300 Berserker Legwraps
+1170000 Dreadnought Helm
+1170100 Dreadnought Armor
+1170200 Dreadnought Gauntlets
+1170300 Dreadnought Greaves
+1180000 Sellsword Helm
+1180100 Sellsword Armor
+1180200 Sellsword Gloves
+1180300 Sellsword Boots
+1190000 Starcaller Hood
+1190100 Starcaller Garb
+1190200 Starcaller Wraps
+1190300 Starcaller Boots
+1200000 Underworld Hood
+1200100 Underworld Robe
+1200200 Underworld Bracers
+1200300 Underworld Boots
+1210000 Volcanist Hat
+1210100 Volcanist Robe
+1210200 Volcanist Gloves
+1210300 Volcanist Boots
+1220000 Stormcaller Helm
+1220100 Stormcaller Armor
+1220200 Stormcaller Gauntlets
+1220300 Stormcaller Greaves
+1230000 Nox Oracle Headband
+1230100 Nox Oracle Armor
+1230200 Nox Oracle Gloves
+1230300 Nox Oracle Skirt
+1240000 Necromancer Hood
+1240100 Necromancer Robe
+1240200 Necromancer Gloves
+1240300 Necromancer Trousers
+1250000 Frost Witch Hat
+1250100 Frost Witch Robe
+1250200 Frost Witch Wraps
+1250300 Frost Witch Skirt
+1260000 Heretic's Collar
+1260100 Heretic's Rags
+1260200 Heretic's Wraps
+1260300 Heretic's Boots
+1310000 Fundamentalist Crown
+1310100 Fundamentalist Breastplate
+1310200 Fundamentalist Bracers
+1310300 Fundamentalist Greaves
+1320000 Dragon Cult Helm
+1320100 Dragon Cult Armor
+1320200 Dragon Cult Gauntlets
+1320300 Dragon Cult Greaves
+1330000 Zealot Hood
+1330100 Zealot Robe
+1330200 Zealot Wraps
+1330300 Zealot Boots
+1340000 Hood of Rot
+1340100 Coat of Rot
+1340200 Gloves of Rot
+1340300 Boots of Rot
+1350000 Frenzied Maiden Blindfold
+1350100 Frenzied Maiden Robe
+1350200 Frenzied Maiden Gloves
+1350300 Frenzied Maiden Boots
+1360000 Dreamer's Horned Headband
+1360100 Dreamer's Rags
+1360200 Dreamer's Wraps
+1360300 Dreamer's Skirt
+1370000 Beast Clergy Hood
+1370100 Beast Clergy Robe
+1370200 Beast Clergy Bracers
+1370300 Beast Clergy Boots
+1810000 Mausoleum Knight Helm
+1940200 Fia's Bracelets
+1940300 Fia's Trousers
+1950000 Millicent's Headband
+1990200 High Page Gloves
+1990300 High Page Trousers
