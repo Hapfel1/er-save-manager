@@ -35,6 +35,13 @@ if not found:
 
 
 class CharacterOperations:
+    @staticmethod
+    def get_user_data_10_offset(save) -> int:
+        """
+        Return the offset of USER_DATA_10 section in the save file.
+        """
+        return getattr(save, "_user_data_10_offset", 0)
+
     CHECKSUM_SIZE = 0x10  # Match parser/save.py CHECKSUM_SIZE
     SLOT_SIZE = 0x280000  # Match parser/save.py SLOT_SIZE
     SLOT_DATA_SIZE = 0x280000  # Match parser/save.py slot_data_size
