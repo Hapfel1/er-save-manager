@@ -726,7 +726,7 @@ class InventoryEditor:
             logger.info(f"Category bits: 0x{item_category:08X}")
 
             # Determine category enum and expected size
-            # CRITICAL: Handle type determines gaitem size in er_types.py:
+            # Handle type determines gaitem size in er_types.py:
             # - Type 0x8 (category 0): 21 bytes with gem fields - WEAPONS
             # - Type 0x9-0xB (category 1-3): 16 bytes with upgrade fields - ARMOR/GOODS/TALISMANS
             # - Type 0xC (category 4): 8 bytes base only - SPECIAL/EQUIPPED ITEMS
@@ -762,7 +762,7 @@ class InventoryEditor:
             logger.info(f"Category: {category} ({category_name})")
             logger.info(f"Expected final gaitem size: {expected_size} bytes")
 
-            # Find empty gaitem slot IN THE SAME REGION as existing items of this category
+            # Find empty gaitem slot in the same region as existing items of this category
             from er_save_manager.parser.er_types import Gaitem
 
             logger.info("\n--- STEP 2: FIND EMPTY GAITEM SLOT ---")
@@ -938,13 +938,13 @@ class InventoryEditor:
 
             log.debug(f"add_item: gaitem_handle=0x{gaitem_handle:08X}")
 
-            # Create new gaitem by CLONING the template EXACTLY
+            # Create new gaitem by cloning the template
             logger.info("\n--- STEP 4: CREATE NEW WEAPON FROM TEMPLATE ---")
             new_gaitem = Gaitem()
             new_gaitem.gaitem_handle = gaitem_handle  # New handle with new index
             new_gaitem.item_id = item_id  # Always use the selected item_id
 
-            # Clone ALL fields from template to ensure correct structure, or use defaults
+            # Clone all fields from template to ensure correct structure, or use defaults
             if template_gaitem:
                 new_gaitem.unk0x10 = template_gaitem.unk0x10
                 new_gaitem.unk0x14 = template_gaitem.unk0x14
