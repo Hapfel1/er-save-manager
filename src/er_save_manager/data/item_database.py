@@ -47,42 +47,72 @@ class ItemDatabase:
         self._loaded = False
 
     def load(self):
-        """Load all items from resource files"""
+        """Load all items from resource files, robust to PyInstaller/AppImage."""
         if self._loaded:
             return
 
-        base_path = Path(__file__).parent / "items"
-        categories_file = base_path / "ItemCategories.txt"
+        import os
+        import sys
 
-        if not categories_file.exists():
+        possible_base_paths = []
+        # PyInstaller (_MEIPASS) support
+        if getattr(sys, "_MEIPASS", None):
+            possible_base_paths.append(
+                Path(sys._MEIPASS) / "er_save_manager" / "data" / "items"
+            )
+            possible_base_paths.append(Path(sys._MEIPASS) / "data" / "items")
+        # Normal execution
+        exe_dir = Path(sys.argv[0]).resolve().parent
+        possible_base_paths.extend(
+            [
+                Path(__file__).parent / "items",
+                Path(__file__).parent.parent / "data" / "items",
+                Path(__file__).parent.parent.parent / "data" / "items",
+                exe_dir / "er_save_manager" / "data" / "items",
+                exe_dir / "data" / "items",
+            ]
+        )
+        appdir = os.environ.get("APPDIR")
+        if appdir:
+            possible_base_paths.append(Path(appdir) / "data" / "items")
+
+        categories_file = None
+        base_path = None
+        for base in possible_base_paths:
+            candidate = base / "ItemCategories.txt"
+            if candidate.exists():
+                categories_file = candidate
+                base_path = base
+                break
+        if not categories_file:
             raise FileNotFoundError(
-                f"ItemCategories.txt not found at {categories_file}"
+                f"ItemCategories.txt not found. Tried: {[str(p / 'ItemCategories.txt') for p in possible_base_paths]}"
             )
 
         # Parse category definitions
         with open(categories_file, encoding="utf-8-sig") as f:
             for line in f:
                 line = line.strip()
-
                 # Skip comments and empty lines
                 if not line or line.startswith("//"):
                     continue
-
                 # Format: 0x00000000 false Items/Weapons/MeleeWeapons.txt Melee Weapons
                 parts = line.split(maxsplit=3)
                 if len(parts) < 4:
                     continue
-
                 category_hex = parts[0]
                 # parts[1] is show_ids (ignored for now)
                 rel_path = parts[2].replace("Items/", "")  # Remove Items/ prefix
                 category_name = parts[3]
-
                 category = int(category_hex, 16)
-
-                # Load items from the specified file
-                item_file = base_path / rel_path
-                if item_file.exists():
+                # Load items from the specified file (try all possible base_paths)
+                item_file = None
+                for base in [base_path] + possible_base_paths:
+                    candidate = base / rel_path
+                    if candidate.exists():
+                        item_file = candidate
+                        break
+                if item_file and item_file.exists():
                     self._load_items_from_file(item_file, category, category_name)
                     self.categories.append((category_name, ItemCategory(category)))
 
