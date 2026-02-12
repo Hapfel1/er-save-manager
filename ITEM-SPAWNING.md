@@ -55,11 +55,6 @@ All item types (weapons, armor, talismans, consumables, gems) are represented by
 - The acquisition index is used for sorting and tracking the order in which items were obtained.
 - The slot rebuild step is critical for maintaining save file integrity, as adding items changes the size of the gaitem map and shifts subsequent data.
 
-## Limitations
-
-- The game performs additional validation on load. Items added offline may be removed if required internal state or flags are missing.
-- This implementation does not currently set any event flags or additional state beyond the save file structures described above.
-
 ## References
 
 - See `src/er_save_manager/parser/er_types.py` for gaitem structure definitions.
