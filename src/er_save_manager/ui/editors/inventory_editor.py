@@ -69,7 +69,7 @@ class InventoryEditor:
         self.ensure_mutable = ensure_mutable_callback
 
         # UI variables
-        self.selected_item = None  # Currently selected item from browser
+        self.selected_item = None
         self.inv_quantity_var = None
         self.inv_upgrade_var = None
         self.inv_reinforcement_var = None
@@ -98,36 +98,60 @@ class InventoryEditor:
             font=("Segoe UI", 12, "bold"),
         ).grid(row=0, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(5, 0))
 
-        # Item selection
-        ctk.CTkLabel(add_frame, text="Item ID (hex):").grid(
+        # Item selection using database with category filter
+        from er_save_manager.data.item_database import get_item_database
+
+        ctk.CTkLabel(add_frame, text="Category:").grid(
             row=1, column=0, sticky=ctk.W, padx=5, pady=2
         )
-        self.item_id_var = ctk.StringVar(value="0xF4240")  # Dagger as example
-        ctk.CTkEntry(add_frame, textvariable=self.item_id_var, width=120).grid(
-            row=1, column=1, sticky=ctk.W, padx=5, pady=2
+        self.item_db = get_item_database()
+        self.category_names = self.item_db.get_all_categories()
+        self.category_var = ctk.StringVar()
+        self.category_combobox = ctk.CTkComboBox(
+            add_frame,
+            variable=self.category_var,
+            values=self.category_names,
+            width=180,
+            command=self._on_category_change,
         )
+        self.category_combobox.grid(row=1, column=1, sticky=ctk.W, padx=5, pady=2)
+
+        ctk.CTkLabel(add_frame, text="Item:").grid(
+            row=1, column=2, sticky=ctk.W, padx=5, pady=2
+        )
+        self.item_name_var = ctk.StringVar()
+        self.item_combobox = ctk.CTkComboBox(
+            add_frame,
+            variable=self.item_name_var,
+            values=[],
+            width=220,
+        )
+        self.item_combobox.grid(row=1, column=3, sticky=ctk.W, padx=5, pady=2)
+
+        # Separator for clarity
+        ctk.CTkLabel(add_frame, text="").grid(row=2, column=0, columnspan=4, pady=2)
 
         # Quantity
         ctk.CTkLabel(add_frame, text="Quantity:").grid(
-            row=2, column=0, sticky=ctk.W, padx=5, pady=2
+            row=3, column=0, sticky=ctk.W, padx=5, pady=2
         )
         self.inv_quantity_var = ctk.IntVar(value=1)
         ctk.CTkEntry(add_frame, textvariable=self.inv_quantity_var, width=80).grid(
-            row=2, column=1, sticky=ctk.W, padx=5, pady=2
+            row=3, column=1, sticky=ctk.W, padx=5, pady=2
         )
 
         # Upgrade level
         ctk.CTkLabel(add_frame, text="Upgrade:").grid(
-            row=3, column=0, sticky=ctk.W, padx=5, pady=2
+            row=4, column=0, sticky=ctk.W, padx=5, pady=2
         )
         self.inv_upgrade_var = ctk.IntVar(value=0)
         ctk.CTkEntry(add_frame, textvariable=self.inv_upgrade_var, width=80).grid(
-            row=3, column=1, sticky=ctk.W, padx=5, pady=2
+            row=4, column=1, sticky=ctk.W, padx=5, pady=2
         )
 
         # Reinforcement type
         ctk.CTkLabel(add_frame, text="Type:").grid(
-            row=3, column=2, sticky=ctk.W, padx=5, pady=2
+            row=4, column=2, sticky=ctk.W, padx=5, pady=2
         )
         self.inv_reinforcement_var = ctk.StringVar(value="standard")
         ctk.CTkComboBox(
@@ -135,11 +159,11 @@ class InventoryEditor:
             variable=self.inv_reinforcement_var,
             values=["standard", "somber"],
             width=100,
-        ).grid(row=3, column=3, sticky=ctk.W, padx=5, pady=2)
+        ).grid(row=4, column=3, sticky=ctk.W, padx=5, pady=2)
 
         # Location
         ctk.CTkLabel(add_frame, text="Location:").grid(
-            row=4, column=0, sticky=ctk.W, padx=5, pady=2
+            row=5, column=0, sticky=ctk.W, padx=5, pady=2
         )
         self.inv_location_var = ctk.StringVar(value="held")
         ctk.CTkComboBox(
@@ -147,7 +171,7 @@ class InventoryEditor:
             variable=self.inv_location_var,
             values=["held", "storage"],
             width=100,
-        ).grid(row=4, column=1, sticky=ctk.W, padx=5, pady=2)
+        ).grid(row=5, column=1, sticky=ctk.W, padx=5, pady=2)
 
         # Add button
         ctk.CTkButton(
@@ -157,7 +181,18 @@ class InventoryEditor:
             width=140,
             fg_color="#4CAF50",
             hover_color="#45a049",
-        ).grid(row=5, column=0, columnspan=2, sticky=ctk.W, padx=5, pady=5)
+        ).grid(row=6, column=0, columnspan=2, sticky=ctk.W, padx=5, pady=5)
+
+    def _on_category_change(self, _event=None):
+        """Update item dropdown when category changes"""
+        category = self.category_var.get()
+        items = self.item_db.get_items_by_category(category)
+        item_names = [f"{item.name} [0x{item.full_id:08X}]" for item in items]
+        self.item_combobox.configure(values=item_names)
+        if item_names:
+            self.item_name_var.set(item_names[0])
+        else:
+            self.item_name_var.set("")
 
         # Item list frame
         list_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
@@ -267,7 +302,7 @@ class InventoryEditor:
         """Return an empty Gaitem placeholder that preserves the serialized size."""
 
     def add_item_simple(self):
-        """Add item using direct item ID input"""
+        """Add item using selected item from database"""
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
@@ -275,31 +310,38 @@ class InventoryEditor:
             )
             return
 
-        # Parse item ID from hex string
+        # Get selected item from combobox
+        selected_name = self.item_name_var.get()
+        if not selected_name:
+            CTkMessageBox.showwarning(
+                "No Item", "Please select an item from the list!", parent=self.parent
+            )
+            return
+
+        # Find the item in the database
         try:
-            item_id_str = self.item_id_var.get().strip()
-            if item_id_str.startswith("0x"):
-                item_id = int(item_id_str, 16)
-            else:
-                item_id = int(item_id_str, 16)
-        except ValueError:
+            # Extract full_id from string (format: name [0xXXXXXXXX])
+            full_id_hex = selected_name.split("[0x")[-1].rstrip("]")
+            item_id = int(full_id_hex, 16)
+            item = self.item_db.get_item_by_id(item_id)
+        except Exception:
             CTkMessageBox.showerror(
-                "Invalid Item ID",
-                f"Invalid item ID format: {self.item_id_var.get()}\nUse hex format like 0x00100000",
+                "Invalid Selection",
+                f"Could not parse item from selection: {selected_name}",
                 parent=self.parent,
             )
             return
 
-        # Create a simple item object
-        from dataclasses import dataclass
+        if not item:
+            CTkMessageBox.showerror(
+                "Item Not Found",
+                f"Item not found in database: {selected_name}",
+                parent=self.parent,
+            )
+            return
 
-        @dataclass
-        class SimpleItem:
-            full_id: int
-
-        self.selected_item = SimpleItem(full_id=item_id)
-
-        # Call the main add_item function
+        # Use the item as selected_item
+        self.selected_item = item
         self.add_item()
 
     @staticmethod
@@ -336,6 +378,8 @@ class InventoryEditor:
                 )
                 return
 
+            if self.inventory_listbox is None:
+                return
             self.inventory_listbox.delete(0, tk.END)
 
             # Get filter value
@@ -355,10 +399,7 @@ class InventoryEditor:
                 and slot.inventory_held
             ):
                 inv = slot.inventory_held
-
                 self.inventory_listbox.insert(tk.END, "=== HELD INVENTORY ===")
-
-                # Common items
                 for i, inv_item in enumerate(inv.common_items):
                     if inv_item.gaitem_handle != 0 and inv_item.quantity > 0:
                         gaitem = gaitem_map.get(inv_item.gaitem_handle)
@@ -367,9 +408,12 @@ class InventoryEditor:
                             upgrade = (
                                 gaitem.unk0x10 if gaitem.unk0x10 is not None else 0
                             )
+                            from er_save_manager.data.item_database import get_item_name
+
+                            item_name = get_item_name(item_id, upgrade)
                             self.inventory_listbox.insert(
                                 tk.END,
-                                f"  [{i}] ID: {item_id} | Qty: {inv_item.quantity} | +{upgrade}",
+                                f"  [{i}] {item_name} | Qty: {inv_item.quantity} | +{upgrade}",
                             )
                         else:
                             self.inventory_listbox.insert(
@@ -386,14 +430,17 @@ class InventoryEditor:
                 inv = slot.inventory_held
                 self.inventory_listbox.insert(tk.END, "")
                 self.inventory_listbox.insert(tk.END, "=== KEY ITEMS ===")
+                from er_save_manager.data.item_database import get_item_name
+
                 for i, inv_item in enumerate(inv.key_items):
                     if inv_item.gaitem_handle != 0 and inv_item.quantity > 0:
                         gaitem = gaitem_map.get(inv_item.gaitem_handle)
                         if gaitem:
                             item_id = gaitem.item_id
+                            item_name = get_item_name(item_id)
                             self.inventory_listbox.insert(
                                 tk.END,
-                                f"  [K{i}] ID: {item_id} | Qty: {inv_item.quantity}",
+                                f"  [K{i}] {item_name} | Qty: {inv_item.quantity}",
                             )
                         else:
                             self.inventory_listbox.insert(
@@ -408,11 +455,10 @@ class InventoryEditor:
                 and slot.inventory_storage_box
             ):
                 inv = slot.inventory_storage_box
-
                 self.inventory_listbox.insert(tk.END, "")
                 self.inventory_listbox.insert(tk.END, "=== STORAGE BOX ===")
+                from er_save_manager.data.item_database import get_item_name
 
-                # Common items
                 for i, inv_item in enumerate(inv.common_items):
                     if inv_item.gaitem_handle != 0 and inv_item.quantity > 0:
                         gaitem = gaitem_map.get(inv_item.gaitem_handle)
@@ -421,9 +467,10 @@ class InventoryEditor:
                             upgrade = (
                                 gaitem.unk0x10 if gaitem.unk0x10 is not None else 0
                             )
+                            item_name = get_item_name(item_id, upgrade)
                             self.inventory_listbox.insert(
                                 tk.END,
-                                f"  [S{i}] ID: {item_id} | Qty: {inv_item.quantity} | +{upgrade}",
+                                f"  [S{i}] {item_name} | Qty: {inv_item.quantity} | +{upgrade}",
                             )
                         else:
                             self.inventory_listbox.insert(
@@ -433,14 +480,17 @@ class InventoryEditor:
 
                 # Key items in storage (only if All or Storage selected)
                 if filter_val in ["All", "Storage"]:
+                    from er_save_manager.data.item_database import get_item_name
+
                     for i, inv_item in enumerate(inv.key_items):
                         if inv_item.gaitem_handle != 0 and inv_item.quantity > 0:
                             gaitem = gaitem_map.get(inv_item.gaitem_handle)
                             if gaitem:
                                 item_id = gaitem.item_id
+                                item_name = get_item_name(item_id)
                                 self.inventory_listbox.insert(
                                     tk.END,
-                                    f"  [SK{i}] ID: {item_id} | Qty: {inv_item.quantity}",
+                                    f"  [SK{i}] {item_name} | Qty: {inv_item.quantity}",
                                 )
                             else:
                                 self.inventory_listbox.insert(
@@ -491,8 +541,6 @@ class InventoryEditor:
         try:
             # Ensure raw_data is mutable BEFORE any modifications
             self.ensure_mutable()
-
-            # Double-check it's actually mutable
             if isinstance(save_file._raw_data, bytes):
                 save_file._raw_data = bytearray(save_file._raw_data)
 
@@ -531,46 +579,131 @@ class InventoryEditor:
             logger.info(f"STARTING ITEM ADDITION: Item ID {item_id:08X}")
             logger.info("=" * 80)
 
-            # CLONE EXISTING WEAPON APPROACH: Find an existing weapon with the SAME item_id
-            logger.info("\n--- LOOKING FOR EXISTING WEAPON TO CLONE ---")
-            logger.info(f"Target item_id to find: 0x{item_id:08X}")
+            # Try to find an existing item to use as a template (for legacy compatibility)
             template_gaitem = None
-
-            # Search for the EXACT item_id we want to clone
-            for i, gaitem in enumerate(slot.gaitem_map):
-                if gaitem.item_id == item_id:  # EXACT match
-                    # Found the exact item! Use it as template
+            for _i, gaitem in enumerate(slot.gaitem_map):
+                if gaitem.item_id == item_id:
                     template_gaitem = gaitem
-                    logger.info(f"Found EXACT match template at index {i}:")
-                    logger.info(f"  item_id=0x{gaitem.item_id:08X}")
-                    logger.info(f"  handle=0x{gaitem.gaitem_handle:08X}")
-                    logger.info(f"  unk0x10={gaitem.unk0x10}")
-                    logger.info(f"  unk0x14={gaitem.unk0x14}")
-                    logger.info(f"  gem_gaitem_handle=0x{gaitem.gem_gaitem_handle:08X}")
-                    logger.info(f"  unk0x1c={gaitem.unk0x1c}")
-                    logger.info(f"  size={gaitem.get_size()} bytes")
-
-                    # Also find this weapon in inventory to see how it's referenced
-                    for inv_item in inventory.common_items:
-                        if inv_item.gaitem_handle == gaitem.gaitem_handle:
-                            logger.info(
-                                f"  Found in inventory: quantity={inv_item.quantity}, acquisition={inv_item.acquisition_index}"
-                            )
-                            break
                     break
 
-            if not template_gaitem:
-                logger.error(
-                    f"Weapon with item_id 0x{item_id:08X} not found in inventory!"
-                )
+            # Determine category enum and expected size
+            if item_category == 0x00000000:  # Weapon
+                category = 0
+                category_name = "Weapon"
+                expected_size = 21
+                default_unk0x10 = upgrade
+                default_unk0x14 = 0x20
+                default_gem_gaitem_handle = 0
+                default_unk0x1c = 0
+            elif item_category == 0x10000000:  # Protector (Armor)
+                category = 3
+                category_name = "Protector (Armor)"
+                expected_size = 16
+                default_unk0x10 = 0
+                default_unk0x14 = 0
+                default_gem_gaitem_handle = 0
+                default_unk0x1c = 0
+            elif item_category == 0x20000000:  # Accessory (Talisman)
+                category = 2
+                category_name = "Accessory (Talisman)"
+                expected_size = 16
+                default_unk0x10 = 0
+                default_unk0x14 = 0
+                default_gem_gaitem_handle = 0
+                default_unk0x1c = 0
+            elif item_category == 0x40000000:  # Goods (Consumable)
+                category = 1
+                category_name = "Goods (Consumable)"
+                expected_size = 16
+                default_unk0x10 = 0
+                default_unk0x14 = 0
+                default_gem_gaitem_handle = 0
+                default_unk0x1c = 0
+            elif item_category == 0x80000000:  # Gem/AoW
+                category = 0
+                category_name = "Gem/AoW"
+                expected_size = 21
+                default_unk0x10 = 0
+                default_unk0x14 = 0
+                default_gem_gaitem_handle = 0
+                default_unk0x1c = 0
+            else:
+                logger.error(f"Unknown item category: 0x{item_category:08X}")
                 CTkMessageBox.showerror(
-                    "Item Not Found",
-                    f"You must already have this weapon in your inventory to clone it!\n\n"
-                    f"Item ID: 0x{item_id:08X}\n\n"
-                    f"This tool duplicates existing items. Please obtain the item in-game first.",
+                    "Invalid Item",
+                    f"Unknown item category: 0x{item_category:08X}",
                     parent=self.parent,
                 )
                 return
+
+            # Find empty gaitem slot as before
+            from er_save_manager.parser.er_types import Gaitem
+
+            # Generate gaitem handle
+            if template_gaitem:
+                template_prefix = template_gaitem.gaitem_handle & 0xF0000000
+            else:
+                # Use category prefix: 0x8 for weapons/gems, 0x9 for goods, 0xA for accessories, 0xB for armor
+                if item_category == 0x00000000 or item_category == 0x80000000:
+                    template_prefix = 0x80000000
+                elif item_category == 0x40000000:
+                    template_prefix = 0x90000000
+                elif item_category == 0x20000000:
+                    template_prefix = 0xA0000000
+                elif item_category == 0x10000000:
+                    template_prefix = 0xB0000000
+                else:
+                    template_prefix = 0x80000000
+
+            # Find the highest handle index for this category to determine next sequential index
+            category_indices = []
+            for gaitem in slot.gaitem_map:
+                if gaitem.gaitem_handle != 0 and gaitem.item_id not in (0, 0xFFFFFFFF):
+                    gaitem_prefix = gaitem.gaitem_handle & 0xF0000000
+                    if gaitem_prefix == template_prefix:
+                        handle_index = gaitem.gaitem_handle & 0x00FFFFFF
+                        category_indices.append(handle_index)
+
+            category_indices.sort()
+
+            # Find first gap in the sequence
+            next_handle_index = None
+            if category_indices:
+                for i in range(len(category_indices) - 1):
+                    current = category_indices[i]
+                    next_expected = category_indices[i + 1]
+                    if next_expected - current > 1:
+                        next_handle_index = current + 1
+                        break
+                if next_handle_index is None:
+                    next_handle_index = category_indices[-1] + 1
+            else:
+                next_handle_index = 0x8C
+
+            gaitem_handle = (template_prefix | next_handle_index) & 0xFFFFFFFF
+
+            # Create new gaitem (clone if template, else use defaults)
+            new_gaitem = Gaitem()
+            new_gaitem.gaitem_handle = gaitem_handle
+            new_gaitem.item_id = item_id
+            if template_gaitem:
+                new_gaitem.unk0x10 = template_gaitem.unk0x10
+                new_gaitem.unk0x14 = template_gaitem.unk0x14
+                new_gaitem.gem_gaitem_handle = template_gaitem.gem_gaitem_handle
+                new_gaitem.unk0x1c = template_gaitem.unk0x1c
+            else:
+                new_gaitem.unk0x10 = default_unk0x10
+                new_gaitem.unk0x14 = default_unk0x14
+                new_gaitem.gem_gaitem_handle = default_gem_gaitem_handle
+                new_gaitem.unk0x1c = default_unk0x1c
+
+            # Apply upgrade if requested (for weapons)
+            if item_category == 0x00000000 and upgrade > 0:
+                new_gaitem.unk0x10 = upgrade
+                if self.inv_reinforcement_var.get() == "somber":
+                    new_gaitem.unk0x14 = 0x30
+                else:
+                    new_gaitem.unk0x14 = 0x20
 
             # DEBUG: Check existing weapon handles to verify correct category
             logger.info("\n--- EXISTING WEAPON HANDLES (for category verification) ---")
@@ -700,7 +833,7 @@ class InventoryEditor:
                 )
                 return
 
-            # Log the slot we found
+            # Log the slot
             gaitem = slot.gaitem_map[empty_gaitem_idx]
             logger.info(f"  BEFORE - handle: 0x{gaitem.gaitem_handle:08X}")
             logger.info(f"  BEFORE - item_id: 0x{gaitem.item_id:08X}")
@@ -720,8 +853,7 @@ class InventoryEditor:
             # Find first empty inventory slot
             from er_save_manager.parser.equipment import InventoryItem
 
-            # Find the LAST used inventory slot, then place after it
-            # This ensures we don't overwrite slots that might be referenced
+            # Find the last used inventory slot, then place after it
             last_used_idx = -1
             for i, inv_item in enumerate(inventory.common_items):
                 if inv_item.gaitem_handle != 0 and inv_item.gaitem_handle != 0xFFFFFFFF:
@@ -747,12 +879,9 @@ class InventoryEditor:
             )
 
             # Find the highest handle index for this category to determine next sequential index
-            # CRITICAL: Elden Ring requires TRULY SEQUENTIAL handles with NO GAPS!
-            # We must find the FIRST gap in the sequence, not just max+1
-            # Example: If handles are 0x8C, 0x8D, 0x8E, 0x8F, 0x90, 0x92 (missing 0x91)
-            #          Next handle should be 0x91 (fills the gap), not 0x93 (creates bigger gap)
 
-            template_prefix = template_gaitem.gaitem_handle & 0xF0000000
+            if template_gaitem:
+                template_prefix = template_gaitem.gaitem_handle & 0xF0000000
 
             # Collect all handle indices for this category, sorted
             category_indices = []
@@ -791,7 +920,12 @@ class InventoryEditor:
 
             new_handle = (template_prefix | next_handle_index) & 0xFFFFFFFF
 
-            logger.info(f"Template handle: 0x{template_gaitem.gaitem_handle:08X}")
+            if template_gaitem:
+                logger.info(f"Template handle: 0x{template_gaitem.gaitem_handle:08X}")
+            else:
+                logger.info(
+                    "No template gaitem found; using category defaults for handle prefix."
+                )
             logger.info(f"Template prefix: 0x{template_prefix:08X}")
             logger.info(f"Category has {len(category_indices)} existing items")
             logger.info(
@@ -808,20 +942,27 @@ class InventoryEditor:
             logger.info("\n--- STEP 4: CREATE NEW WEAPON FROM TEMPLATE ---")
             new_gaitem = Gaitem()
             new_gaitem.gaitem_handle = gaitem_handle  # New handle with new index
-            new_gaitem.item_id = (
-                template_gaitem.item_id
-            )  # DUPLICATE the template (for testing)
+            new_gaitem.item_id = item_id  # Always use the selected item_id
 
-            # Clone ALL fields from template to ensure correct structure
-            new_gaitem.unk0x10 = template_gaitem.unk0x10
-            new_gaitem.unk0x14 = template_gaitem.unk0x14
-            new_gaitem.gem_gaitem_handle = template_gaitem.gem_gaitem_handle
-            new_gaitem.unk0x1c = template_gaitem.unk0x1c
+            # Clone ALL fields from template to ensure correct structure, or use defaults
+            if template_gaitem:
+                new_gaitem.unk0x10 = template_gaitem.unk0x10
+                new_gaitem.unk0x14 = template_gaitem.unk0x14
+                new_gaitem.gem_gaitem_handle = template_gaitem.gem_gaitem_handle
+                new_gaitem.unk0x1c = template_gaitem.unk0x1c
+            else:
+                new_gaitem.unk0x10 = default_unk0x10
+                new_gaitem.unk0x14 = default_unk0x14
+                new_gaitem.gem_gaitem_handle = default_gem_gaitem_handle
+                new_gaitem.unk0x1c = default_unk0x1c
 
             logger.info("Cloning weapon:")
-            logger.info(
-                f"  Template: item_id=0x{template_gaitem.item_id:08X}, handle=0x{template_gaitem.gaitem_handle:08X}"
-            )
+            if template_gaitem:
+                logger.info(
+                    f"  Template: item_id=0x{template_gaitem.item_id:08X}, handle=0x{template_gaitem.gaitem_handle:08X}"
+                )
+            else:
+                logger.info("  No template gaitem found; using category defaults.")
             logger.info(
                 f"  New copy: item_id=0x{new_gaitem.item_id:08X}, handle=0x{new_gaitem.gaitem_handle:08X}"
             )
@@ -856,7 +997,6 @@ class InventoryEditor:
             logger.info("\n--- STEP 6: UPDATE GAITEM MAP ---")
             logger.info(f"Replacing slot {empty_gaitem_idx}")
 
-            # DEBUG: Log field values BEFORE assignment
             logger.info(
                 f"  Fields to write: unk0x10={new_gaitem.unk0x10} (type={type(new_gaitem.unk0x10).__name__})"
             )
@@ -890,7 +1030,7 @@ class InventoryEditor:
             # Create inventory item
             logger.info("\n--- STEP 8: CREATE INVENTORY ITEM ---")
 
-            # Find max acquisition index from existing items (the counter may not be accurate)
+            # Find max acquisition index from existing items
             max_acquisition = 0
             for inv_item in inventory.common_items:
                 if (
@@ -1025,7 +1165,7 @@ class InventoryEditor:
                     f"Verification: Slot loaded, gaitem_map has {len(verification_slot.gaitem_map)} entries"
                 )
 
-                # Check if our handle exists in gaitem_map
+                # Check if handle exists in gaitem_map
                 found_in_gaitem = False
                 for idx, gaitem in enumerate(verification_slot.gaitem_map):
                     if gaitem.gaitem_handle == gaitem_handle:
@@ -1043,7 +1183,7 @@ class InventoryEditor:
                         f"✗ Handle 0x{gaitem_handle:08X} NOT FOUND in gaitem_map after write!"
                     )
 
-                # Check if our handle exists in inventory
+                # Check if handle exists in inventory
                 found_in_inventory = False
                 if location == "held":
                     for idx, inv_item in enumerate(
@@ -1073,7 +1213,7 @@ class InventoryEditor:
                         f"✗ Handle 0x{gaitem_handle:08X} NOT FOUND in inventory after write!"
                     )
 
-                # Scan and log ALL inventory items to verify
+                # Scan and log all inventory items to verify
                 logger.info("\n--- FULL INVENTORY SCAN ---")
                 logger.info(
                     f"Total common items: {verification_slot.inventory_held.common_item_count}"
@@ -1159,7 +1299,7 @@ class InventoryEditor:
                     if handle != 0 and handle != 0xFFFFFFFF:
                         logger.info(f"    slot[{i}]: 0x{handle:08X}")
 
-                # Check if our handle appears in equipped arrays (it shouldn't for unequipped items)
+                # Check if handle appears in equipped arrays (it shouldn't for unequipped items)
                 found_in_equipped = False
                 if gaitem_handle in equipped_handles:
                     found_in_equipped = True
@@ -1254,10 +1394,7 @@ class InventoryEditor:
             abs_offset = slot_offset + CHECKSUM_SIZE
             save_file._raw_data[abs_offset : abs_offset + len(slot_bytes)] = slot_bytes
 
-            # Recalculate checksums to prevent corruption
             save_file.recalculate_checksums()
-
-            # Save to disk
             save_file.save(save_path)
 
             CTkMessageBox.showinfo(
@@ -1295,7 +1432,7 @@ class InventoryEditor:
             return
 
         try:
-            # Extract index from format like "[123]" or "[S123]"
+            # Extract index from format
             match = re.search(r"\[([SK]?)(\d+)\]", selected_text)
             if not match:
                 return

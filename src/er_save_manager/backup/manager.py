@@ -26,13 +26,17 @@ class BackupMetadata:
     operation: str = ""
     character_summary: list[dict] = field(default_factory=list)
     file_size: int = 0
+    compressed: bool = False
 
     def to_dict(self) -> dict:
         return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> BackupMetadata:
-        return cls(**data)
+        # Ignore unknown fields for forward compatibility
+        known_fields = {f.name for f in cls.__dataclass_fields__.values()}
+        filtered = {k: v for k, v in data.items() if k in known_fields}
+        return cls(**filtered)
 
 
 @dataclass
