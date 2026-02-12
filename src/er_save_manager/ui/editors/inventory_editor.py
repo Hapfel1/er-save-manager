@@ -643,7 +643,7 @@ class InventoryEditor:
             if template_gaitem:
                 template_prefix = template_gaitem.gaitem_handle & 0xF0000000
             else:
-                # Correct mapping: 0x8=Weapon, 0x9=Armor, 0xA=Talisman, 0xB=Goods, 0xC=Gem
+                # Enforce strict mapping for all item categories
                 if item_category == 0x00000000:  # Weapon
                     template_prefix = 0x80000000
                 elif item_category == 0x10000000:  # Protector (Armor)
@@ -655,7 +655,13 @@ class InventoryEditor:
                 elif item_category == 0x80000000:  # Gem/AoW
                     template_prefix = 0xC0000000
                 else:
+                    logger.error(
+                        f"[HANDLE BUG] Unknown item_category 0x{item_category:08X}, defaulting to 0x80000000 (Weapon)"
+                    )
                     template_prefix = 0x80000000
+            logger.info(
+                f"[HANDLE DEBUG] item_id=0x{item_id:08X}, item_category=0x{item_category:08X}, selected handle prefix=0x{template_prefix:08X}"
+            )
 
             # Find the highest handle index for this category to determine next sequential index
             category_indices = []
