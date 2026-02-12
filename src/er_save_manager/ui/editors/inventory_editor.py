@@ -639,19 +639,21 @@ class InventoryEditor:
             # Find empty gaitem slot as before
             from er_save_manager.parser.er_types import Gaitem
 
-            # Generate gaitem handle
+            # Generate gaitem handle with correct prefix for each category
             if template_gaitem:
                 template_prefix = template_gaitem.gaitem_handle & 0xF0000000
             else:
-                # Use category prefix: 0x8 for weapons/gems, 0x9 for goods, 0xA for accessories, 0xB for armor
-                if item_category == 0x00000000 or item_category == 0x80000000:
+                # Correct mapping: 0x8=Weapon, 0x9=Armor, 0xA=Talisman, 0xB=Goods, 0xC=Gem
+                if item_category == 0x00000000:  # Weapon
                     template_prefix = 0x80000000
-                elif item_category == 0x40000000:
+                elif item_category == 0x10000000:  # Protector (Armor)
                     template_prefix = 0x90000000
-                elif item_category == 0x20000000:
+                elif item_category == 0x20000000:  # Accessory (Talisman)
                     template_prefix = 0xA0000000
-                elif item_category == 0x10000000:
+                elif item_category == 0x40000000:  # Goods (Consumable)
                     template_prefix = 0xB0000000
+                elif item_category == 0x80000000:  # Gem/AoW
+                    template_prefix = 0xC0000000
                 else:
                     template_prefix = 0x80000000
 
@@ -918,7 +920,10 @@ class InventoryEditor:
                 next_handle_index = 0x8C  # Start from same base as existing weapons
                 logger.info("No existing items in category, starting from 0x8C")
 
-            new_handle = (template_prefix | next_handle_index) & 0xFFFFFFFF
+            # Ensure only the prefix occupies the highest nibble, index fills lower 28 bits
+            new_handle = (
+                template_prefix | (next_handle_index & 0x0FFFFFFF)
+            ) & 0xFFFFFFFF
 
             if template_gaitem:
                 logger.info(f"Template handle: 0x{template_gaitem.gaitem_handle:08X}")
@@ -969,7 +974,10 @@ class InventoryEditor:
             logger.info("Cloned fields:")
             logger.info(f"  unk0x10={new_gaitem.unk0x10}")
             logger.info(f"  unk0x14={new_gaitem.unk0x14}")
-            logger.info(f"  gem_gaitem_handle=0x{new_gaitem.gem_gaitem_handle:08X}")
+            if new_gaitem.gem_gaitem_handle is not None:
+                logger.info(f"  gem_gaitem_handle=0x{new_gaitem.gem_gaitem_handle:08X}")
+            else:
+                logger.info("  gem_gaitem_handle=None")
             logger.info(f"  unk0x1c={new_gaitem.unk0x1c}")
             logger.info(f"New gaitem final size: {new_gaitem.get_size()} bytes")
 
@@ -1003,9 +1011,14 @@ class InventoryEditor:
             logger.info(
                 f"  Fields to write: unk0x14={new_gaitem.unk0x14} (type={type(new_gaitem.unk0x14).__name__})"
             )
-            logger.info(
-                f"  Fields to write: gem_handle={new_gaitem.gem_gaitem_handle:08X} (type={type(new_gaitem.gem_gaitem_handle).__name__})"
-            )
+            if new_gaitem.gem_gaitem_handle is not None:
+                logger.info(
+                    f"  Fields to write: gem_handle={new_gaitem.gem_gaitem_handle:08X} (type={type(new_gaitem.gem_gaitem_handle).__name__})"
+                )
+            else:
+                logger.info(
+                    f"  Fields to write: gem_handle=None (type={type(new_gaitem.gem_gaitem_handle).__name__})"
+                )
             logger.info(
                 f"  Fields to write: unk0x1c={new_gaitem.unk0x1c} (type={type(new_gaitem.unk0x1c).__name__})"
             )
