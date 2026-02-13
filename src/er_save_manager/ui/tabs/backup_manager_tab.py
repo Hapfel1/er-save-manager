@@ -401,7 +401,8 @@ Backup Format:
                     except Exception as e:
                         CTkMessageBox.showerror(
                             "Error",
-                            f"Failed to create backup:\n{str(e, parent=self.parent)}",
+                            f"Failed to create backup:\n{str(e)}",
+                            parent=self.parent,
                         )
                         return
 
@@ -435,10 +436,18 @@ Backup Format:
 
                 try:
                     manager.restore_backup(selected_backup[0])
+                except FileNotFoundError as e:
+                    CTkMessageBox.showerror(
+                        "File Not Found",
+                        f"Backup file not found:\n{e}",
+                        parent=self.parent,
+                    )
+                    return
                 except Exception as e:
                     CTkMessageBox.showerror(
                         "Error",
-                        f"Failed to restore backup:\n{str(e, parent=self.parent)}",
+                        f"Failed to restore backup:\n{str(e)}",
+                        parent=self.parent,
                     )
                     return
 
