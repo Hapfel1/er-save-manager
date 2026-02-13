@@ -306,10 +306,6 @@ class InventoryEditor:
     #     """Open item browser to select item for adding"""
     #     # Feature disabled for stability
 
-    @staticmethod
-    def _make_blank_gaitem_with_size(size: int):
-        """Return an empty Gaitem placeholder that preserves the serialized size."""
-
     def add_item_simple(self):
         """Add item using selected item from database"""
         save_file = self.get_save_file()
@@ -355,16 +351,30 @@ class InventoryEditor:
 
     @staticmethod
     def _make_blank_gaitem_with_size(size: int):
-        """Return an empty Gaitem placeholder that preserves the serialized size."""
+        """Return an empty Gaitem placeholder that preserves the serialized size.
+
+        The handle must be non-zero to trigger extended-field serialization.
+        We use a sentinel handle whose prefix drives the correct byte count:
+          8  bytes: handle=0
+          16 bytes: handle with 0x90 prefix (armor)
+          21 bytes: handle with 0x80 prefix (weapon)
+        item_id is set to 0xFFFFFFFF to mark the slot as unused.
+        """
         from er_save_manager.parser.er_types import Gaitem
 
         g = Gaitem()
-        if size >= 16:
+        g.item_id = 0xFFFFFFFF
+        if size == 16:
+            g.gaitem_handle = 0x90000000  # non-zero, 0x9 prefix -> 16 bytes
             g.unk0x10 = 0
             g.unk0x14 = 0
-        if size == 21:
-            g.gem_gaitem_handle = 0xFFFFFFFF
+        elif size == 21:
+            g.gaitem_handle = 0x80000000  # non-zero, 0x8 prefix -> 21 bytes
+            g.unk0x10 = 0
+            g.unk0x14 = 0
+            g.gem_gaitem_handle = 0
             g.unk0x1c = 0
+        # size == 8: handle stays 0 -> 8 bytes
         return g
 
     def refresh_inventory(self):
@@ -704,7 +714,10 @@ class InventoryEditor:
 
             # ---- EARLY PATH: goods and talismans skip all gaitem logic ----
             if not needs_gaitem:
-                gaitem_handle = (item_id & 0x00FFFFFF) | 0xB0000000
+                if item_category == 0x20000000:  # Talisman: 0xA0 prefix, 28-bit item id
+                    gaitem_handle = (item_id & 0x0FFFFFFF) | 0xA0000000
+                else:  # Goods: 0xB0 prefix, 24-bit item id
+                    gaitem_handle = (item_id & 0x00FFFFFF) | 0xB0000000
                 log.debug(
                     f"add_item: {category_name} direct handle=0x{gaitem_handle:08X}"
                 )
@@ -851,21 +864,10 @@ class InventoryEditor:
             # ---- COMMON: build inventory entry and write to common_items ----
             # All categories (weapons, armor, gems, goods, talismans) go into common_items.
             # key_items is not used for player inventory spawning.
-            max_acquisition = 0
-            for inv_item in inventory.common_items:
-                if (
-                    inv_item.gaitem_handle != 0
-                    and inv_item.acquisition_index > max_acquisition
-                ):
-                    max_acquisition = inv_item.acquisition_index
-            for inv_item in inventory.key_items:
-                if (
-                    inv_item.gaitem_handle != 0
-                    and inv_item.acquisition_index > max_acquisition
-                ):
-                    max_acquisition = inv_item.acquisition_index
-
-            next_acquisition = max_acquisition + 1
+            # Use acquisition_index_counter as authoritative next value.
+            # Do NOT scan key_items — they have separate high indices that would
+            # push common_items out of the valid range the game tracks.
+            next_acquisition = inventory.acquisition_index_counter
 
             from er_save_manager.parser.equipment import InventoryItem
 
@@ -909,7 +911,8 @@ class InventoryEditor:
             # Structure: fixed 7000-entry array, active entries = count.
             # next_item_id forms a sorted linked list by item_id across all entries.
             # Only needed for gaitem-backed items (weapons/armor/gems) not direct-handle goods.
-            if not (gaitem_handle & 0xF0000000) == 0xB0000000:
+            new_idx = -1
+            if (gaitem_handle & 0xF0000000) not in (0xA0000000, 0xB0000000):
                 from er_save_manager.parser.world import GaitemGameDataEntry
 
                 ggd = slot.gaitem_game_data
@@ -922,10 +925,6 @@ class InventoryEditor:
                         f"add_item: ggd already has 0x{item_id:08X}, skipping registration"
                     )
                 elif new_idx < len(ggd.entries):
-                    _old_e = ggd.entries[new_idx]
-                    log.debug(
-                        f"add_item: ggd[{new_idx}] BEFORE: id=0x{_old_e.id:08X} unk0x4={_old_e.unk0x4} next=0x{_old_e.next_item_id:08X} unk0xc={_old_e.unk0xc}"
-                    )
                     new_entry = GaitemGameDataEntry()
                     new_entry.id = item_id
                     new_entry.unk0x4 = 1
@@ -951,9 +950,13 @@ class InventoryEditor:
                             cur_e = ggd.entries[cat_entries[cur_id]]
                             nxt = cur_e.next_item_id
                             if cur_id < item_id and (nxt == 0 or nxt > item_id):
+                                # correct insertion: cur -> new -> nxt
                                 pred_idx = cat_entries[cur_id]
                                 break
-                            if nxt == 0 or nxt > item_id:
+                            if nxt == 0 or nxt not in cat_entries:
+                                # tail: item_id is largest in chain
+                                if cur_id < item_id:
+                                    pred_idx = cat_entries[cur_id]
                                 break
                             cur_id = nxt
                     if pred_idx >= 0:
@@ -966,14 +969,6 @@ class InventoryEditor:
                     log.debug(
                         f"add_item: ggd[{new_idx}] registered id=0x{item_id:08X} next=0x{new_entry.next_item_id:08X} (count={ggd.count})"
                     )
-                    # Dump entries around insertion to verify chain
-                    for di in range(
-                        max(0, new_idx - 2), min(len(ggd.entries), new_idx + 3)
-                    ):
-                        e = ggd.entries[di]
-                        log.debug(
-                            f"add_item: ggd[{di}] id=0x{e.id:08X} unk0x4={e.unk0x4} next=0x{e.next_item_id:08X} unk0xc={e.unk0xc}"
-                        )
                 else:
                     log.warning(
                         f"add_item: gaitem_game_data full ({len(ggd.entries)} entries), item may not appear in game"
@@ -1003,6 +998,14 @@ class InventoryEditor:
                 raise ValueError("Write would exceed file bounds")
 
             save_file._raw_data[abs_offset : abs_offset + len(slot_bytes)] = slot_bytes
+
+            # Verify the write landed correctly: check common_item_count in _raw_data
+            # inventory_held_offset is relative to data_start (after checksum)
+            inv_off = abs_offset + slot.inventory_held_offset
+            raw_count = int.from_bytes(save_file._raw_data[inv_off:inv_off+4], 'little')
+            log.debug(f"add_item: raw_data common_item_count after write = {raw_count} (expected {inventory.common_item_count})")
+            if raw_count != inventory.common_item_count:
+                log.error(f"add_item: COUNT MISMATCH in _raw_data: got {raw_count}, expected {inventory.common_item_count}")
 
             # Re-parse the slot from _raw_data so the in-memory object reflects the
             # new gaitem_map. Without this, a second add_item call in the same session
@@ -1041,10 +1044,10 @@ class InventoryEditor:
             # Re-read the save file to verify the item persisted
             try:
                 verification_save = Save.from_file(str(save_path))
-                verification_slot = verification_save.get_slot(slot_idx)
+                verification_slot = verification_save.character_slots[slot_idx]
 
                 # Verify gaitem entry (not applicable for B0 direct-handle items)
-                is_direct = (gaitem_handle & 0xF0000000) == 0xB0000000
+                is_direct = (gaitem_handle & 0xF0000000) in (0xA0000000, 0xB0000000)
                 gaitem_ok = is_direct
                 gaitem_idx = -1
                 gaitem_size = 0
