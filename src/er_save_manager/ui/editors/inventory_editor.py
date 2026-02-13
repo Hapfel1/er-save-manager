@@ -1002,10 +1002,16 @@ class InventoryEditor:
             # Verify the write landed correctly: check common_item_count in _raw_data
             # inventory_held_offset is relative to data_start (after checksum)
             inv_off = abs_offset + slot.inventory_held_offset
-            raw_count = int.from_bytes(save_file._raw_data[inv_off:inv_off+4], 'little')
-            log.debug(f"add_item: raw_data common_item_count after write = {raw_count} (expected {inventory.common_item_count})")
+            raw_count = int.from_bytes(
+                save_file._raw_data[inv_off : inv_off + 4], "little"
+            )
+            log.debug(
+                f"add_item: raw_data common_item_count after write = {raw_count} (expected {inventory.common_item_count})"
+            )
             if raw_count != inventory.common_item_count:
-                log.error(f"add_item: COUNT MISMATCH in _raw_data: got {raw_count}, expected {inventory.common_item_count}")
+                log.error(
+                    f"add_item: COUNT MISMATCH in _raw_data: got {raw_count}, expected {inventory.common_item_count}"
+                )
 
             # Re-parse the slot from _raw_data so the in-memory object reflects the
             # new gaitem_map. Without this, a second add_item call in the same session
