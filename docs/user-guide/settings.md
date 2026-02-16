@@ -5,6 +5,7 @@ Configure application behavior, backup options, and UI preferences.
 ## Overview
 
 The Settings tab provides control over:
+
 - General application settings
 - Backup configuration (including auto-backup on game launch)
 - UI theme and appearance
@@ -18,11 +19,13 @@ The Settings tab provides control over:
 ### Sections
 
 **Three main sections:**
+
 1. General Settings
 2. Backup Settings  
 3. UI Settings
 
 **Reset to Defaults:**
+
 - Button at top-right
 - Restores all settings to default values
 
@@ -37,11 +40,13 @@ The Settings tab provides control over:
 **Default:** ON (checked)
 
 **What it does:**
+
 - Shows warning about Easy Anti-Cheat
 - Reminds to use offline mode
 - Prevents accidental online play with modified save
 
 **When to disable:**
+
 - You always play offline
 - Understand EAC risks
 - Don't want repeated warnings
@@ -53,6 +58,7 @@ The Settings tab provides control over:
 **Default:** ON (checked)
 
 **What it does:**
+
 - Saves last used folder
 - Auto-navigates to last location when browsing
 - Speeds up file selection
@@ -64,11 +70,13 @@ The Settings tab provides control over:
 **Default:** ON (checked)
 
 **What it does:**
+
 - Warns when save file not in default Proton location
 - Linux-specific warning
 - Helps identify non-standard Steam installations
 
 **When to disable:**
+
 - Using custom Proton prefix intentionally
 - Non-standard Steam location known and correct
 
@@ -81,6 +89,7 @@ The Settings tab provides control over:
 **Default:** ON (checked)
 
 **What it does:**
+
 - Checks for new versions on startup
 - Shows notification if update available
 - Links to download page
@@ -96,15 +105,18 @@ The Settings tab provides control over:
 **Default:** ON (checked)
 
 **What it does:**
+
 - Compresses backup files with gzip
 - Reduces size by ~90%
 - Takes slightly longer to create/restore
 
 **Storage Impact:**
+
 - Uncompressed: ~26MB per backup
 - Compressed: ~2-3MB per backup
 
 **When to disable:**
+
 - Prefer faster backup/restore
 - Have plenty of disk space
 - Want simple file handling
@@ -116,12 +128,14 @@ The Settings tab provides control over:
 **Default:** OFF (unchecked)
 
 **What it does:**
+
 - Monitors for Elden Ring process
 - Creates automatic backup when game starts
 - Protects against in-game corruption
 - Runs in background
 
 **How it works:**
+
 1. Enable setting
 2. Select save file to monitor
 3. Tool monitors for game launch
@@ -129,6 +143,7 @@ The Settings tab provides control over:
 5. Continues monitoring until disabled
 
 **Requirements:**
+
 - Save file must be selected
 - Tool must be running
 - Game process detectable
@@ -141,11 +156,13 @@ ER0000_2026-02-15_18-30-00_game_launch.bak
 ### Save File Selection (Auto-Backup)
 
 **Only visible when Auto-Backup enabled:**
+
 - Dropdown showing current save path
 - Select different save file
 - Must be set for auto-backup to work
 
 **Configuration:**
+
 1. Enable "Auto-backup when Elden Ring launches"
 2. Save file selection appears
 3. Shows currently loaded save
@@ -161,10 +178,12 @@ ER0000_2026-02-15_18-30-00_game_launch.bak
 **Setting:** Application theme/appearance mode
 
 **Options:**
+
 - **Dark** (default)
 - **Light**
 
 **What it does:**
+
 - Changes entire UI color scheme
 - Dark: Dark background, light text
 - Light: Light background, dark text
@@ -178,12 +197,14 @@ ER0000_2026-02-15_18-30-00_game_launch.bak
 ### How Settings Are Saved
 
 **Storage location:**
+
 - Windows: `%APPDATA%\EldenRingSaveManager\settings.json`
 - Linux: `~/.local/share/EldenRingSaveManager/settings.json`
 
 **Format:** JSON file
 
 **When saved:**
+
 - Immediately on change
 - Persists between sessions
 - Survives app updates
@@ -210,17 +231,20 @@ ER0000_2026-02-15_18-30-00_game_launch.bak
 ### How to Reset
 
 **Steps:**
+
 1. Click **Reset to Defaults** button (top-right)
 2. Confirm reset
 3. All settings restored to defaults
 4. Application may refresh UI
 
 **What gets reset:**
+
 - All general settings
 - All backup settings
 - All UI settings
 
 **What doesn't reset:**
+
 - Recent file history
 - Backup files themselves
 - Cache data
@@ -232,6 +256,7 @@ ER0000_2026-02-15_18-30-00_game_launch.bak
 ### Setup
 
 **Steps:**
+
 1. Load your save file normally
 2. Go to Settings tab
 3. Check "Auto-backup when Elden Ring launches"
@@ -239,6 +264,7 @@ ER0000_2026-02-15_18-30-00_game_launch.bak
 5. Setting saved
 
 **Verification:**
+
 - Checkbox stays checked
 - Save path shows in dropdown
 - Ready for monitoring
@@ -246,6 +272,7 @@ ER0000_2026-02-15_18-30-00_game_launch.bak
 ### How It Works
 
 **Monitoring Process:**
+
 1. Tool checks for Elden Ring process
 2. When `eldenring.exe` is detected:
    - Creates backup of monitored save
@@ -255,6 +282,7 @@ ER0000_2026-02-15_18-30-00_game_launch.bak
 4. Continues monitoring after game closes
 
 **Background Operation:**
+
 - Tool must remain running
 - Minimized to tray works
 - Works while tool in background
@@ -272,6 +300,7 @@ ER0000_2026-02-15_18-30-00_game_launch.bak
 ### Disabling
 
 **To stop auto-backup:**
+
 1. Uncheck "Auto-backup when Elden Ring launches"
 2. Monitoring stops immediately
 3. Existing backups remain
@@ -285,6 +314,7 @@ ER0000_2026-02-15_18-30-00_game_launch.bak
 **Cause:** Permission issue or corrupted file
 
 **Solutions:**
+
 - Check write permissions
 - Delete settings.json and restart
 - Run without admin
@@ -294,6 +324,7 @@ ER0000_2026-02-15_18-30-00_game_launch.bak
 **Cause:** Game not detected or save path wrong
 
 **Solutions:**
+
 - Verify save file selected
 - Check game process name (eldenring.exe)
 - Ensure tool running when game starts
@@ -304,6 +335,7 @@ ER0000_2026-02-15_18-30-00_game_launch.bak
 **Cause:** UI not refreshing
 
 **Solution:**
+
 - Restart application
 - Force refresh (close/reopen tabs)
 - Check theme setting persisted

@@ -130,11 +130,13 @@ Files outside compatdata entirely (e.g. manually placed elsewhere) do not trigge
 When you click **Auto-Find**, the tool searches for save files in these locations (in order):
 
 **Standard Steam:**
+
 1. `~/.local/share/Steam/steamapps/compatdata/` — all subfolders
 2. `~/.steam/steam/steamapps/compatdata/` — symlink, same location
 3. Additional Steam library folders from `libraryfolders.vdf`
 
 **Flatpak Steam:**
+
 1. `~/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/compatdata/`
 
 It finds all `ER0000.sl2` and `ER0000.co2` files across all compatdata subfolders. If it finds a save in a non-`1245620` subfolder, it loads it but shows the warning.

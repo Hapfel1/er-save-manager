@@ -9,6 +9,7 @@ Share your character builds and download builds from other players through the i
 Located inside of the Character Management tab
 
 **Features:**
+
 - Browse characters by level, build type, popularity
 - Download complete characters with one click
 - Upload your characters with screenshots
@@ -24,6 +25,7 @@ Located inside of the Character Management tab
 ### Interface
 
 **Grid View:**
+
 - Character preview images (face + body)
 - Character name and level
 - Build type tags
@@ -31,6 +33,7 @@ Located inside of the Character Management tab
 - Uploader name
 
 **List View:**
+
 - Compact character list
 - Sortable columns
 - Quick preview on hover
@@ -38,12 +41,14 @@ Located inside of the Character Management tab
 ### Search
 
 **Search by:**
+
 - Character name
 - Build description
 - Uploader username
 - Tags
 
 **Advanced search:**
+
 - Combine multiple filters
 - Exclude terms
 - Date range
@@ -61,12 +66,14 @@ Located inside of the Character Management tab
 4. Click **Download & Import**
 
 **What Gets Downloaded:**
+
 - Complete character data
 - All inventory
 - Quest progress
 - Appearance
 
 **Automatic Adjustments:**
+
 - SteamID patched to your account
 - Checksums recalculated
 - Backup created before import
@@ -74,6 +81,7 @@ Located inside of the Character Management tab
 ### Character Details View
 
 **Displays:**
+
 - Full stats (Vigor, Mind, Endurance, etc.)
 - Equipment loadout
 - Build description
@@ -84,6 +92,7 @@ Located inside of the Character Management tab
 ### Download Stats
 
 **Tracked:**
+
 - Total downloads
 - Likes
 
@@ -119,6 +128,7 @@ Located inside of the Character Management tab
 ### Upload Form Fields
 
 **Required:**
+
 - Character name
 - Author Name
 - Build description
@@ -126,6 +136,7 @@ Located inside of the Character Management tab
 - Screenshots
 
 **Convergence/other overhaul mods:**
+
 - Checkbox if modded character
 - Select mod and version
 
@@ -136,6 +147,7 @@ Located inside of the Character Management tab
 ### When to Report
 
 **Report for:**
+
 - Offensive/inappropriate content
 - Misleading descriptions
 - Broken/corrupted characters
@@ -157,28 +169,33 @@ Located inside of the Character Management tab
 ### For Uploaders
 
 **Good descriptions:**
+
 - Explain build concept
 - List key equipment
 - Note playstyle
 - Mention quest requirements
 
 **Good tags:**
+
 - Accurate build type
 - PvP/PvE designation
 
 **Good images:**
+
 - Clear face view
 - Full body visible
 
 ### For Downloaders
 
 **Before downloading:**
+
 - Read description fully
 - Check equipment requirements
 - Verify level range
 - Read uploader notes
 
 **After downloading:**
+
 - Test character in-game
 - Leave feedback (likes)
 - Report if issues
@@ -191,6 +208,7 @@ Located inside of the Character Management tab
 ### "Character failed to download"
 
 **Solutions:**
+
 - Check internet connection
 - Verify server status
 - Try again later
@@ -199,6 +217,7 @@ Located inside of the Character Management tab
 ### "Downloaded character won't load"
 
 **Solutions:**
+
 - Check SteamID patched correctly
 - Run Save File Fixer
 - Verify checksums
@@ -207,6 +226,7 @@ Located inside of the Character Management tab
 ### "Upload failed"
 
 **Solutions:**
+
 - Check file size (<30MB)
 - Verify description meets minimum
 - Ensure images generated
@@ -215,6 +235,7 @@ Located inside of the Character Management tab
 ### "Can't find character I uploaded"
 
 **Solutions:**
+
 - Refresh browser
 - Check pending approval status
 - Verify upload completed
