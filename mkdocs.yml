@@ -1,0 +1,131 @@
+site_name: Elden Ring Save Manager
+site_description: Complete save file editor, backup manager, and corruption fixer for Elden Ring
+site_author: Hapfel
+site_url: https://hapfel1.github.io/er-save-manager
+repo_name: Hapfel1/er-save-manager
+repo_url: https://github.com/Hapfel1/er-save-manager
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+  features:
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - content.tooltips
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/pencil
+    view: material/eye
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Hapfel1/er-save-manager
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/your-server
+  version:
+    provider: mike
+    default: latest
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+plugins:
+  - search:
+      separator: '[\s\-,:!=\[\]()"/]+|(?!\b)(?=[A-Z][a-z])|\.(?!\d)|&[lg]t;'
+  - minify:
+      minify_html: true
+
+nav:
+  - Home: index.md
+  - User Guide:
+    - Installation: user-guide/installation.md
+    - Save File Fixer: user-guide/save-file-fixer.md
+    - Character Management: user-guide/character-management.md
+    - Character Browser: user-guide/character-browser.md
+    - Character Editor: user-guide/character-editor.md
+    - Appearance: user-guide/appearance.md
+    - World State: user-guide/world-state.md
+    - Event Flags: user-guide/event-flags.md
+    - Gestures: user-guide/gestures.md
+    - SteamID Patcher: user-guide/steamid-patcher.md
+    - Backup Manager: user-guide/backup-manager.md
+    - Settings: user-guide/settings.md
+    - Troubleshooting: user-guide/troubleshooting-tab.md
+    - EAC Warning: user-guide/eac-warning.md
+    - Linux Save Location: user-guide/linux-compatdata.md
+  - Technical:
+    - Save File Structure: technical/save-file-structure.md
+  - Developer:
+    - Contributing: developer/contributing.md
