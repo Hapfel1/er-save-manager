@@ -1,6 +1,6 @@
 # Installation
 
-Get started with Elden Ring Save Manager on your platform.
+Get started with the Elden Ring Save Manager on your platform.
 
 ---
 
@@ -14,20 +14,21 @@ Get started with Elden Ring Save Manager on your platform.
 
 1. **Download** the latest release
    - Go to [Releases](https://github.com/Hapfel1/er-save-manager/releases)
-   - Download `EldenRingSaveManager.exe`
+   - Download the Windows zip
+   - Extract it
 
 2. **Run the executable**
    - No installation needed - it's a portable application
    - Double-click to launch
 
 3. **Optional: Create shortcut**
-   - Right-click `EldenRingSaveManager.exe` → Send to → Desktop
+   - Right-click `Elden Ring Save Manager.exe` → Send to → Desktop
 
 ### Save File Location
 
 Windows saves are located at:
 ```
-%APPDATA%\EldenRing\<steamid>\ER0000.sl2
+%APPDATA%\EldenRing\<steamid>\ER0000.sl2/co2
 ```
 
 The tool auto-detects this location.
@@ -36,25 +37,15 @@ The tool auto-detects this location.
 
 ## Linux / Steam Deck
 
-### Requirements
-- FUSE (for AppImage)
-- Steam or Proton compatibility layer
-
 ### Installation Steps
 
 1. **Download** the latest release
    - Go to [Releases](https://github.com/Hapfel1/er-save-manager/releases)
-   - Download `EldenRingSaveManager.AppImage`
+   - Download the Linux zip
+   - Extract it
 
-2. **Make executable**
-   ```bash
-   chmod +x EldenRingSaveManager.AppImage
-   ```
-
-3. **Run**
-   ```bash
-   ./EldenRingSaveManager.AppImage
-   ```
+2. **Run the AppImage**
+   - The AppImage should be executable by default, just run it
 
 ### FUSE Installation
 
@@ -98,26 +89,13 @@ The tool auto-detects both paths.
 
 ---
 
-## macOS
-
-**Status:** Not officially supported
-
-The tool may work via Wine/Crossover but is untested. If you try it:
-- Install Wine/Crossover
-- Run the Windows .exe through Wine
-- Save location will be in Wine prefix
-
-Community feedback welcome!
-
----
-
 ## From Source
 
 For developers or those who want the latest development version.
 
 ### Requirements
 
-- Python 3.11 or later
+- Python 3.13 or later
 - pip or uv package manager
 - Git
 
@@ -137,6 +115,9 @@ source .venv/bin/activate  # Linux/macOS
 
 # Install dependencies
 uv pip install -e .
+
+# Setup
+uv sync --locked --dev
 ```
 
 **Using pip:**
@@ -153,18 +134,15 @@ venv\Scripts\activate  # Windows
 
 # Install
 pip install -e .
+
+# Setup
+uv sync --locked --dev
 ```
 
 ### Running
 
-**GUI:**
 ```bash
-python -m er_save_manager.ui.gui
-```
-
-**CLI:**
-```bash
-python -m er_save_manager.cli --help
+uv run python run_gui.py
 ```
 
 See **[Building from Source](Building-from-Source)** for more details.
@@ -177,7 +155,7 @@ After installation, verify the tool works:
 
 1. **Launch** the application
 2. Click **Auto-Detect** - should find your save file
-3. Click **Load Save File**
+3. Select the correct file
 4. If successful, you'll see your character list
 
 If auto-detect fails, use **Browse** to manually locate your save file.
@@ -204,10 +182,13 @@ pip install -e .  # or uv pip install -e .
 
 ## Troubleshooting
 
+**Windows protected your PC**
+- Click **More info** and then **Run anyway**
+- This is the default warning by Windows for any unsigned executables. Signing an executable costs too much for it to be worth it.
+
 **"Application won't start" (Windows):**
 - Install [Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist)
-- Run as administrator
-- Check antivirus isn't blocking
+- Check antivirus isn't blocking it
 
 **"FUSE error" (Linux):**
 - Install FUSE package (see above)
