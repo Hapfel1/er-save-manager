@@ -5,6 +5,7 @@ Manage character appearance with 15 preset slots - view, export, import, and sha
 ## Overview
 
 The Appearance tab manages character appearance presets stored in your save file:
+
 - 15 preset slots available
 - View preset details (face, body, colors)
 - Export presets to JSON files
@@ -13,6 +14,7 @@ The Appearance tab manages character appearance presets stored in your save file
 - Browse and download community presets
 
 **When to Use:**
+
 - Save favorite character appearances
 - Share appearances with friends
 - Transfer appearances between characters
@@ -26,11 +28,13 @@ The Appearance tab manages character appearance presets stored in your save file
 ### Preset List
 
 **Displays all 15 slots:**
+
 - Preset slot number (1-15)
 - Status: "Empty" or "Preset X"
 - Selection indicator (highlighted when selected)
 
 **Selection:**
+
 - Click preset to select
 - Selected preset highlighted
 - One preset selected at a time
@@ -38,6 +42,7 @@ The Appearance tab manages character appearance presets stored in your save file
 ### Action Buttons
 
 **Main Actions:**
+
 - **View Details** - View complete preset data
 - **Export to JSON** - Save preset to file
 - **Import from JSON** - Load preset from file
@@ -52,6 +57,7 @@ The Appearance tab manages character appearance presets stored in your save file
 ### What Are Preset Slots?
 
 The save file contains 15 appearance preset storage slots:
+
 - Used for quick appearance changes at Mirror
 - Store face and body customization
 - Independent of active characters
@@ -60,11 +66,13 @@ The save file contains 15 appearance preset storage slots:
 ### Slot Status
 
 **Empty Slot:**
+
 - Shows as "(Empty)"
 - Can import preset
 - Can be populated from community
 
 **Occupied Slot:**
+
 - Shows as "Preset X"
 - Contains appearance data
 - Can be viewed/exported/deleted
@@ -82,6 +90,7 @@ The save file contains 15 appearance preset storage slots:
 ### Details Displayed
 
 **Face Structure:**
+
 - Face model selection
 - Age appearance
 - Facial aesthetic value
@@ -89,6 +98,7 @@ The save file contains 15 appearance preset storage slots:
   - Brow ridge, cheekbones, jaw, chin, nose, mouth, eyes
 
 **Colors:**
+
 - Skin color (RGB + luster + pores)
 - Left eye color
 - Right eye color
@@ -100,6 +110,7 @@ The save file contains 15 appearance preset storage slots:
 - Lipstick color
 
 **Hair/Facial Hair:**
+
 - Hair model
 - Eyebrow model
 - Beard model
@@ -107,6 +118,7 @@ The save file contains 15 appearance preset storage slots:
 - Stubble
 
 **Body:**
+
 - Head size
 - Chest size
 - Abdomen size
@@ -115,6 +127,7 @@ The save file contains 15 appearance preset storage slots:
 - Body proportions
 
 **Additional:**
+
 - Tattoo/marking selection
 - Cosmetic adjustments
 
@@ -127,6 +140,7 @@ The save file contains 15 appearance preset storage slots:
 Creates human-readable JSON file with all preset data.
 
 **Steps:**
+
 1. Select preset slot
 2. Click **Export to JSON**
 3. Choose save location
@@ -167,16 +181,19 @@ Creates human-readable JSON file with all preset data.
 ### Use Cases
 
 **Sharing:**
+
 - Send to friends
 - Upload to community
 - Post in Discord/Reddit
 
 **Backup:**
+
 - Before changing appearance
 - Archive favorite looks
 - Store build-specific appearances
 
 **Editing:**
+
 - Manual tweaking in text editor
 - Batch modifications
 - Custom color schemes
@@ -190,6 +207,7 @@ Creates human-readable JSON file with all preset data.
 Loads preset from JSON file into selected slot.
 
 **Steps:**
+
 1. Select target preset slot (empty or occupied)
 2. Click **Import from JSON**
 3. Browse to `.json` file
@@ -199,6 +217,7 @@ Loads preset from JSON file into selected slot.
 ### What Gets Imported
 
 **Complete appearance data:**
+
 - All facial parameters
 - All color values
 - Body proportions
@@ -209,11 +228,13 @@ Loads preset from JSON file into selected slot.
 ### Validation
 
 **Before import:**
+
 - Checks JSON format
 - Verifies version compatibility
 - Validates value ranges
 
 **After import:**
+
 - Preset stored in save
 - Available at Mirror in-game
 - Changes saved
@@ -227,12 +248,14 @@ Loads preset from JSON file into selected slot.
 Clears selected preset slot, making it empty.
 
 **Steps:**
+
 1. Select preset to delete
 2. Click **Delete Preset**
 3. Confirm deletion
 4. Slot becomes empty
 
 **Safety:**
+
 - Confirmation required
 - Automatic backup created
 - Can restore from backup
@@ -246,6 +269,7 @@ Clears selected preset slot, making it empty.
 Copy preset from current save to different save file.
 
 **Steps:**
+
 1. Load source save file
 2. Select preset slot to copy
 3. Click **Copy to Another Save**
@@ -254,6 +278,7 @@ Copy preset from current save to different save file.
 6. Confirm copy
 
 **Result:**
+
 - Preset exists in both saves
 - Source unchanged
 - Target slot populated
@@ -267,6 +292,7 @@ Copy preset from current save to different save file.
 Access community-shared appearance presets.
 
 **Steps:**
+
 1. Click **Browse Community Presets**
 2. Browser dialog opens
 3. Browse or search presets
@@ -276,6 +302,7 @@ Access community-shared appearance presets.
 ### Browser Features
 
 **Browsing:**
+
 - Grid view with preview images
 - Face preview (front view)
 - Body preview (full character)
@@ -284,12 +311,14 @@ Access community-shared appearance presets.
 - Uploader name
 
 **Filters:**
+
 - Search by name
 - Filter by popularity
 - Sort by downloads
 - Recent uploads
 
 **Actions:**
+
 - Download to slot
 - Like preset
 - Report inappropriate content
@@ -297,6 +326,7 @@ Access community-shared appearance presets.
 ### Downloading from Community
 
 **Steps:**
+
 1. Find preset in browser
 2. Click preset to view details
 3. Click **Download**
@@ -304,6 +334,7 @@ Access community-shared appearance presets.
 5. Preset downloaded and imported
 
 **What You Get:**
+
 - Complete appearance data
 - Ready to use at Mirror
 - Local copy in your save
@@ -313,6 +344,7 @@ Access community-shared appearance presets.
 **GitHub Account needed!**
 
 **Steps:**
+
 1. Select the **Contribute** tab
 2. Select your preset slot
 3. Fill in details:
@@ -324,6 +356,7 @@ Access community-shared appearance presets.
 6. Click **Create** on the prefilled Issue in gitHub and wait for a maintainer to review and merge it
 
 **Guidelines:**
+
 - Original creations preferred
 - Clear, appropriate preview images
 - Accurate descriptions
@@ -335,6 +368,7 @@ Access community-shared appearance presets.
 ### Using Presets at Mirror
 
 **In Elden Ring:**
+
 1. Visit Mirror of the Roundtable
 2. Select "Cosmetics"
 3. Choose "Load Preset"
@@ -350,6 +384,7 @@ Access community-shared appearance presets.
 **Cause:** Slot is empty
 
 **Solution:**
+
 - Select occupied preset slot
 - Verify slot contains data
 
@@ -358,6 +393,7 @@ Access community-shared appearance presets.
 **Cause:** Invalid JSON file
 
 **Solutions:**
+
 - Check JSON file format
 - Verify not corrupted
 - Re-download if from community
@@ -368,6 +404,7 @@ Access community-shared appearance presets.
 **Cause:** Changes not saved
 
 **Solutions:**
+
 1. Verify import completed
 2. Save file after import
 3. Reload save in game
@@ -378,6 +415,7 @@ Access community-shared appearance presets.
 **Cause:** Connection issue
 
 **Solutions:**
+
 - Check internet connection
 - Verify server status
 - Try again later

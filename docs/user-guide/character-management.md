@@ -7,6 +7,7 @@ Manage characters across slots and save files - export, import, move, and delete
 ## Overview
 
 The Character Management tab provides complete control over your character slots:
+
 - Export characters to standalone `.erc` files
 - Import characters from `.erc` files
 - Move characters between slots
@@ -14,6 +15,7 @@ The Character Management tab provides complete control over your character slots
 - Delete characters permanently
 
 **When to Use:**
+
 - Backing up favorite characters
 - Sharing builds with friends
 - Reorganizing character slots
@@ -27,6 +29,7 @@ The Character Management tab provides complete control over your character slots
 ### Operation Selection
 
 **Dropdown menu for all actions available**
+
 - Copy Character
 - Transfer to Another Save
 - Swap Slots
@@ -35,6 +38,7 @@ The Character Management tab provides complete control over your character slots
 - Delete Character
 
 **Operation Details**
+
 - Displays buttons related to the selected operation
 
 ---
@@ -60,6 +64,7 @@ Save a complete character to a standalone file.
 ### What Gets Exported
 
 **Complete character data (~2.6MB):**
+
 - All stats (Vigor, Mind, Endurance, etc.)
 - Runes held
 - Character name and level
@@ -104,6 +109,7 @@ Load a character from `.erc` file into any slot.
 ### What Gets Imported
 
 Everything from the `.erc` file:
+
 - Complete character data
 - Inventory and equipment
 - Quest progress
@@ -112,16 +118,19 @@ Everything from the `.erc` file:
 ### Automatic Adjustments
 
 **SteamID Patching:**
+
 - Original SteamID detected
 - Automatically replaced with target save's SteamID
 - Prevents corruption
 
 **Profile Summary:**
+
 - Character added to save's profile list
 - Active slot flag set
 - Playtime preserved
 
 **Checksums:**
+
 - Recalculated for target slot
 - USER_DATA_10 checksum updated
 - Save integrity maintained
@@ -142,17 +151,20 @@ Everything from the `.erc` file:
 ### Safety Features
 
 **Validation:**
+
 - Checks `.erc` file format
 - Verifies checksum
 - Validates data integrity
 - Confirms compatibility
 
 **Backup:**
+
 - Automatic backup before import
 - Original save preserved
 - Easy rollback if needed
 
 **Warnings:**
+
 - Shows if overwriting existing character
 - Displays character being replaced
 - Requires explicit confirmation
@@ -160,16 +172,19 @@ Everything from the `.erc` file:
 ### Troubleshooting
 
 **"Invalid .erc file"**
+
 - File corrupted during download/transfer
 - Wrong file type
 - Incompatible version
 
 **"Import failed"**
+
 - Save file not loaded
 - Target save corrupted
 - File system error
 
 **Character won't load in-game**
+
 - SteamID patching failed (try SteamID Patcher)
 - Event flag corruption (use Save Fixer)
 - Restore from backup
@@ -211,10 +226,12 @@ Transfer character to another save file.
 ### Automatic Adjustments
 
 **SteamID:**
+
 - Patched to target save's SteamID
 - No manual patching needed
 
 **Profile Summary:**
+
 - Added to target save's profiles
 - Playtime preserved
 - Active slot marked
@@ -235,6 +252,7 @@ Permanently remove character from slot.
 ### What Gets Deleted
 
 **Character Data:**
+
 - All stats and inventory
 - Equipment and appearance
 - Quest progress
@@ -242,6 +260,7 @@ Permanently remove character from slot.
 - Event flags
 
 **Profile Entry:**
+
 - Removed from profile summary
 - Active slot flag cleared
 - Playtime data removed
@@ -260,16 +279,19 @@ Permanently remove character from slot.
 ### Safety Features
 
 **Confirmation Required:**
+
 - Must type character name
 - Prevents accidental deletion
 - Clear warning message
 
 **Automatic Backup:**
+
 - Full save backup created
 - Easy restore if mistake
 - Stored in backup folder
 
 **Validation:**
+
 - Checks slot isn't already empty
 - Verifies save is loaded
 - Confirms write permission
@@ -277,6 +299,7 @@ Permanently remove character from slot.
 ### Recovery
 
 **If deleted by mistake:**
+
 1. Go to **Backup Manager** tab
 2. Find backup before deletion
 3. Click **Restore Backup**
@@ -294,6 +317,7 @@ ER0000_2026-02-15_14-30-00_delete.bak
 ### Automatic Backups
 
 **Created for:**
+
 - Every import operation
 - Every delete operation
 - Every move operation
@@ -307,6 +331,7 @@ ER0000_2026-02-15_14-30-00_delete.bak
 ### Manual Backup
 
 Before major operations:
+
 1. Go to Backup Manager
 2. Create manual backup
 3. Add description
@@ -315,6 +340,7 @@ Before major operations:
 ### Restore
 
 If something goes wrong:
+
 1. Open Backup Manager
 2. Select backup before operation
 3. Click Restore
@@ -327,11 +353,13 @@ If something goes wrong:
 ### Export Issues
 
 **"Failed to export character"**
+
 - Slot is empty (select different slot)
 - Save file not fully loaded
 - Write permission denied
 
 **Exported file is corrupted**
+
 - Try exporting again
 - Check disk space
 - Run disk check
@@ -339,10 +367,12 @@ If something goes wrong:
 ### Import Issues
 
 **"SteamID mismatch after import"**
+
 - Use SteamID Patcher on imported character
 - Or re-import (SteamID should auto-patch)
 
 **"Character won't load in-game"**
+
 1. Check with Save Fixer
 2. Verify checksums
 3. Try different slot
@@ -351,11 +381,13 @@ If something goes wrong:
 ### Move Issues
 
 **"Destination slot not empty"**
+
 - Slot contains character
 - Export destination character first
 - Or confirm overwrite
 
 **"Move failed"**
+
 - Source or destination corrupted
 - Save not fully loaded
 - Try export/import instead

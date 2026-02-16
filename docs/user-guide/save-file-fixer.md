@@ -7,6 +7,7 @@ Automatically detect and repair common save corruption issues that cause infinit
 The Save File Fixer scans your save file for known corruption patterns and provides one-click fixes. It's the most essential feature when dealing with infinite loading screens or corrupted saves.
 
 **When to Use:**
+
 - Game stuck on infinite loading screen
 - Save file won't load
 - Character appears corrupted
@@ -24,6 +25,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 **Cause:** Torrent HP = 0 while state = ACTIVE
 
 **Fix Applied:**
+
 - Sets Torrent HP to maximum
 - Sets Torrent state to INACTIVE
 - Clears invalid horse state flags
@@ -35,6 +37,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 **Cause:** Character SteamID doesn't match save file header
 
 **Fix Applied:**
+
 - Reads SteamID from USER_DATA_10
 - Copies to each character slot
 - Recalculates checksums
@@ -46,6 +49,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 **Cause:** AreaID doesn't match current map location
 
 **Fix Applied:**
+
 - Reads current MapId
 - Updates AreaID from MapId[3]
 - Syncs weather data
@@ -57,6 +61,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 **Cause:** Time desynchronized from actual playtime
 
 **Fix Applied:**
+
 - Reads seconds_played from profile
 - Calculates hours:minutes:seconds
 - Updates in-game time fields
@@ -68,6 +73,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 **Cause:** Event flag corruption in quest progression
 
 **Fix Applied:**
+
 - Identifies quest stage
 - Resets flag 1034500738
 - Corrects 31 progression flags
@@ -78,12 +84,14 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 **Symptom:** Stuck at boss warp location
 
 **Variants:**
+
 - Radahn (Festival active/inactive)
 - Morgott
 - Radagon
 - Sealing Tree
 
 **Fix Applied:**
+
 - Detects warp type from flags
 - Clears specific warp flags
 - Removes stuck warp state
@@ -96,6 +104,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 **Cause:** Character at DLC coordinates without DLC flag
 
 **Fix Applied:**
+
 - Detects DLC map coordinates
 - Teleports to Roundtable Hold
 - Clears partial DLC data
@@ -108,6 +117,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 **Cause:** DLC entry flag set without DLC ownership
 
 **Fix Applied:**
+
 - Clears Shadow of the Erdtree entry flag
 - Preserves other DLC data
 - Maintains non-DLC progress
@@ -119,6 +129,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 **Cause:** Corrupted data in unused DLC slots [3-49]
 
 **Fix Applied:**
+
 - Zeroes out slots 3-49
 - Preserves valid DLC data
 - Maintains slot 0-2 data
@@ -130,6 +141,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 **Cause:** Unknown location issues
 
 **Fix Applied:**
+
 - Emergency teleport to Roundtable Hold
 - Safe coordinates guaranteed
 - Last resort when other fixes don't work
@@ -160,6 +172,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 ### Scan Results
 
 **List shows:**
+
 - Issue name and type
 - Severity (Critical/Warning/Info)
 - Affected character slot
@@ -174,6 +187,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 **Scenario:** Character stuck loading after dying on Torrent
 
 **Steps:**
+
 1. Load save file
 2. Scan for issues
 3. **Detected:** "Torrent Bug - HP=0, State=ACTIVE"
@@ -189,6 +203,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 **Scenario:** Copied save to new PC, won't load
 
 **Steps:**
+
 1. Load save file
 2. Scan for issues
 3. **Detected:** "SteamID Mismatch in slots 1, 2, 4"
@@ -206,6 +221,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 **Scenario:** Modded save with several corruptions
 
 **Steps:**
+
 1. Load save file
 2. Scan for issues
 3. **Detected:**
@@ -225,6 +241,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 ### Automatic Backup
 
 **Every fix operation creates backup:**
+
 - Timestamp included
 - Original file preserved
 - Metadata tracked
@@ -235,12 +252,14 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 ### Validation
 
 **Before applying fixes:**
+
 - Verifies save integrity
 - Checks for additional issues
 - Validates fix compatibility
 - Confirms changes are safe
 
 **After applying fixes:**
+
 - Recalculates checksums
 - Validates new data
 - Checks for new corruption
@@ -249,6 +268,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 ### Rollback
 
 If fix causes issues:
+
 1. Go to Backup Manager tab
 2. Select backup before fix
 3. Click Restore
@@ -261,11 +281,13 @@ If fix causes issues:
 ### "No issues detected" but still won't load
 
 **Possible causes:**
+
 - Issue not yet detected by tool
 - Corruption in unscanned area
 - Hardware/game file issue
 
 **Solutions:**
+
 1. Try Teleport Fallback fix manually
 2. Export characters to new save
 3. Verify game files in Steam
@@ -274,6 +296,7 @@ If fix causes issues:
 ### Fix applied but issue persists
 
 **Possible causes:**
+
 - Character is corrupted beyond the tools functionality to fix it
 - Fix didn't fully apply
 
