@@ -6,10 +6,6 @@ Complete technical documentation of Elden Ring save file format (.sl2 / .co2).
 
 ## Overview
 
-**File Extensions:**
-- `.sl2` - PC (Steam) save files
-- `.co2` - PlayStation save files
-
 **File Size:** ~26 MB (26,214,400 bytes for PC)
 
 **Encoding:** Binary format with BND4 container (PC)
@@ -312,15 +308,6 @@ def checksum_character_slot(slot_data: bytes) -> bytes:
 | UD10 | 0x19003A0 | 0x19003B0 | 0x1F003AF | 0x60000 |
 | UD11 | 0x1F003B0 | 0x1F003C0 | 0x21403BF | 0x240000 |
 
-### PlayStation (No Checksums)
-
-PlayStation saves (`.co2`) have **no checksums**. They use different validation.
-
-**Implications:**
-- No checksum recalculation needed
-- Different corruption detection
-- Simpler write-back process
-
 ---
 
 ## Version Detection
@@ -330,11 +317,6 @@ PlayStation saves (`.co2`) have **no checksums**. They use different validation.
 ```c
 uint32_t version;  // At offset 0x00 in character data
 ```
-
-**Known Versions:**
-- **81** - Initial release version
-- **82** - Post-launch updates
-- **83+** - DLC versions (Shadow of the Erdtree)
 
 **Version-specific changes:**
 - GaitemMap entry count (5118 vs 5120)
@@ -362,29 +344,6 @@ def parse_character_slot(data: bytes, offset: int) -> UserDataX:
 
 ---
 
-## Platform Differences
-
-### PC vs PlayStation
-
-| Feature | PC (.sl2) | PlayStation (.co2) |
-|---------|-----------|-------------------|
-| Magic | `BND4` | `0xCB 0x01 0x9C 0x2C` |
-| Header Size | 0x2FC | 0x6C |
-| Checksums | Yes (MD5) | No |
-| Slot Size | 0x280010 | 0x280000 |
-| SteamID | Present | PSN ID instead |
-
-### Cross-Platform Transfer
-
-**Challenges:**
-- Different ID systems (SteamID vs PSN ID)
-- Checksum requirements
-- Header format differences
-
-**Possible:** Transfer character data only (UserDataX)  
-**Not Possible:** Direct file copy between platforms
-
----
 
 ## Validation
 
