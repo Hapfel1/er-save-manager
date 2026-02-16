@@ -186,4 +186,4 @@ A: Currently all checks run together. Future may allow selective checks.
 
 ---
 
-[← Settings](settings.md) | [End of User Guide]
+[← Settings](settings.md) | [EAC Warning →](eac-warning.md)

@@ -164,4 +164,4 @@ Replace `<any_id>` with the subfolder IDs you see in `~/.local/share/Steam/steam
 
 ---
 
-[← Installation](installation.md) | [← Settings](settings.md)
+[← EAC Warning](eac-warning.md) | [Save File Structure →](../technical/save-file-structure.md)
