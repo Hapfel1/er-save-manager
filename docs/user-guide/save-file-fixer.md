@@ -141,9 +141,9 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 ### Automatic Scan
 
 1. Load your save file
-2. Navigate to **Save File Fixer** tab
-3. Click **Scan for Issues**
-4. Wait for analysis (2-5 seconds)
+2. Navigate to **Save Fixer** tab7
+3. Select your character in the list
+4. Click **View All Issues Issues**
 5. Review detected problems in list
 
 ### Fix All at Once
@@ -152,27 +152,6 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 2. Confirm action
 3. All detected issues fixed automatically
 4. Automatic backup created before fixing
-5. Click **Save** to write changes
-
-### Fix Individual Issues
-
-1. After scanning, select issue from list
-2. Review fix description
-3. Click **Apply Selected**
-4. Confirm action
-5. Selected fix applied
-6. Click **Save** to write changes
-
-### With Teleport
-
-Some fixes benefit from teleporting to safe location:
-
-1. Scan for issues
-2. Select fix or Fix All
-3. Check **Teleport to safe location**
-4. Choose location (default: Roundtable Hold)
-5. Apply fixes
-6. Character moved to safe spot
 
 ---
 
@@ -187,11 +166,6 @@ Some fixes benefit from teleporting to safe location:
 - Brief description
 - Recommended action
 
-**Color coding:**
-- 🔴 Red: Critical (prevents loading)
-- 🟡 Yellow: Warning (may cause issues)
-- 🔵 Blue: Info (non-critical)
-
 ### Fix Details
 
 Click any issue to view:
@@ -200,16 +174,6 @@ Click any issue to view:
 - What the fix does
 - Expected outcome
 - Any side effects
-
-### Options
-
-**Available options:**
-- **Scan for Issues** - Run diagnostics
-- **Fix All** - Apply all fixes
-- **Apply Selected** - Fix selected issues only
-- **Teleport to:** - Location dropdown
-- **Create Backup** - Manual backup before fix
-
 ---
 
 ## Examples
@@ -301,38 +265,6 @@ If fix causes issues:
 
 ---
 
-## Tips & Best Practices
-
-### Before Fixing
-
-1. **Create manual backup** - Extra safety
-2. **Close game** - Don't run while game is open
-3. **Note character location** - Know where you are
-4. **Document issue** - Screenshot error if any
-
-### During Fixing
-
-1. **Read fix descriptions** - Understand what happens
-2. **Fix one at a time** - Test individually if unsure
-3. **Use teleport option** - Ensures safe location
-4. **Keep scan window open** - Reference during fix
-
-### After Fixing
-
-1. **Test in-game immediately** - Verify fix worked
-2. **Keep backup** - Don't delete for a while
-3. **Report new issues** - Help improve tool
-4. **Document what worked** - Share with community
-
-### Prevention
-
-1. **Regular backups** - Before and after play sessions
-2. **Avoid force-quit** - Close game properly
-3. **Be careful with mods** - Not all are save-safe
-4. **Update game** - Keep game version current
-
----
-
 ## Troubleshooting
 
 ### "No issues detected" but still won't load
@@ -351,72 +283,11 @@ If fix causes issues:
 ### Fix applied but issue persists
 
 **Possible causes:**
-- Game cache not cleared
-- Multiple characters affected
+- Character is corrupted beyond the tools functionality to fix it
 - Fix didn't fully apply
 
-**Solutions:**
-1. Rescan for issues
-2. Apply fix again
-3. Check other character slots
-4. Restore backup and retry
-5. Try Teleport Fallback
-
-### New issue after fix
-
-**Possible causes:**
-- Rare fix side effect
-- Additional corruption revealed
-- Incompatible game version
-
-**Solutions:**
-1. Restore from backup
-2. Report issue on GitHub
-3. Try individual fixes instead of Fix All
-4. Check game version compatibility
-
----
-
-## Technical Details
-
-### Detection Logic
-
-**How issues are detected:**
-
-```python
-def detect_torrent_bug(character_slot):
-    horse = character_slot.horse
-    if horse.hp == 0 and horse.state == ACTIVE:
-        return True
-    return False
-```
-
-**Each fix has:**
-- Detection function
-- Severity level
-- Fix application logic
-- Validation checks
-
-### Fix Application
-
-**Process:**
-1. Parse save file
-2. Run all detectors
-3. Collect issues
-4. User selects fixes
-5. Apply fixes to memory
-6. Validate changes
-7. Write to raw data
-8. Recalculate checksums
-9. Save file
-
-### Checksum Handling
-
-**After fixes:**
-- All affected checksums recalculated
-- MD5 hash per modified section
-- Validation ensures integrity
-- Automatic on save
+**Solutions**
+If the tool does not help at all, feel free to contact me on Discord, Username: hapfel
 
 ---
 
@@ -436,9 +307,6 @@ A: Yes, but mod-specific issues may not be detected.
 
 **Q: Can I undo a fix?**  
 A: Yes, restore from automatic backup.
-
-**Q: Do I need to apply all fixes?**  
-A: No, only apply fixes for detected issues.
 
 **Q: What if my issue isn't detected?**  
 A: Try Teleport Fallback or report new issue type.
