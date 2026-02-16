@@ -1,0 +1,6 @@
+mkdocs>=1.5.0
+mkdocs-material>=9.5.0
+pymdown-extensions>=10.0
+mkdocs-minify-plugin>=0.8.0
+myst-parser>=2.0.0
+linkify-it-py>=2.0.0
