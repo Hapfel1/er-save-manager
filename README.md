@@ -4,7 +4,7 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 
 ## Documentation and User Guides
 
-[https://elden-ring-save-manager.readthedocs.io/en/latest/](https://elden-ring-save-manager.readthedocs.io/en/latest/)
+[https://elden-ring-save-manager.readthedocs.io/en/main/](https://elden-ring-save-manager.readthedocs.io/en/main/)
 
 ## Features
 
