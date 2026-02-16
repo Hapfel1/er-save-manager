@@ -30,7 +30,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # -- Options for HTML output -------------------------------------------------
 
-html_theme = "sphinx_rtd_theme"  # Read the Docs theme
+html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 
 # Theme options
@@ -40,17 +40,29 @@ html_theme_options = {
     "sticky_navigation": True,
     "includehidden": True,
     "titles_only": False,
+    "style_nav_header_background": "#1e1e2e",  # Catppuccin base
 }
 
-# Logo and favicon
-# html_logo = '_static/logo.png'
-# html_favicon = '_static/favicon.ico'
+# Custom CSS
+html_css_files = [
+    "custom.css",
+]
+
+
+# Show "Edit on GitHub" links
+html_context = {
+    "display_github": True,
+    "github_user": "Hapfel",
+    "github_repo": "er-save-manager",
+    "github_version": "main",
+    "conf_py_path": "/docs/",
+}
 
 # -- Options for LaTeX output ------------------------------------------------
 
 latex_elements = {
     "papersize": "letterpaper",
-    "pointsize": "10pt",
+    "pointsize": "11pt",  # Slightly larger for print
 }
 
 latex_documents = [
@@ -88,3 +100,6 @@ myst_enable_extensions = [
 ]
 
 myst_heading_anchors = 3
+
+# Suppress warnings
+suppress_warnings = ["myst.header"]
