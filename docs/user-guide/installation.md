@@ -183,23 +183,28 @@ pip install -e .  # or uv pip install -e .
 ## Troubleshooting
 
 **Windows protected your PC**
+
 - Click **More info** and then **Run anyway**
 - This is the default warning by Windows for any unsigned executables. Signing an executable costs too much for it to be worth it.
 
 **"Application won't start" (Windows):**
+
 - Install [Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist)
 - Check antivirus isn't blocking it
 
 **"FUSE error" (Linux):**
+
 - Install FUSE package (see above)
 - Try running with `--appimage-extract-and-run` flag
 
 **"Save file not found":**
+
 - Use **Browse** button to manually locate save
 - Check you have Elden Ring installed
 - For Linux: verify Proton prefix path
 
 **"Permission denied" (Linux):**
+
 - Make sure AppImage is executable: `chmod +x`
 - Check save file permissions
 

@@ -7,6 +7,7 @@ Comprehensive backup system with automatic and manual backups for complete save 
 The Backup Manager provides safety for all save file modifications through automatic and manual backup creation, with easy restore functionality.
 
 **Features:**
+
 - Automatic backups before any modification
 - Manual backup creation with custom names
 - Browse and restore previous backups
@@ -38,6 +39,7 @@ ER0000_2026-02-15_11-00-00_steamid_patch.bak
 ### Metadata
 
 Each backup includes:
+
 - Timestamp (YYYY-MM-DD HH:MM:SS)
 - Operation type (fix, edit, manual)
 - Description
@@ -62,6 +64,7 @@ Each backup includes:
 ### Viewing Backups
 
 **List shows:**
+
 - Filename
 - Creation timestamp
 - File size
@@ -73,6 +76,7 @@ Each backup includes:
 ### Backup Information
 
 Click any backup to view:
+
 - Full metadata
 - Character list with levels
 - Exact file path
@@ -87,6 +91,7 @@ Click any backup to view:
 Replaces current save with selected backup.
 
 **Steps:**
+
 1. Select backup from list
 2. Click **Restore Backup**
 3. Review what will be replaced
@@ -99,11 +104,13 @@ Replaces current save with selected backup.
 ### Safety Features
 
 **Before restore:**
+
 - Current save automatically backed up
 - Shows characters that will be replaced
 - Requires confirmation
 
 **After restore:**
+
 - Validates restored file
 - Recalculates checksums if needed
 - Verifies game can load
@@ -142,6 +149,7 @@ ER0000.co2.backups/
 **Cause:** Backup folder deleted or moved
 
 **Solutions:**
+
 - Backups are lost if folder deleted
 - Create new manual backup
 - Check recycle bin
@@ -151,6 +159,7 @@ ER0000.co2.backups/
 **Cause:** Backup corrupted or incompatible
 
 **Solutions:**
+
 - Verify backup first
 - Try different backup
 - Check file permissions
@@ -161,6 +170,7 @@ ER0000.co2.backups/
 **Cause:** Too many backups
 
 **Solutions:**
+
 - Prune old backups
 - Reduce retention count
 - Move backups to external drive

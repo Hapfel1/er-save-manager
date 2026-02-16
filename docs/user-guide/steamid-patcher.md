@@ -97,6 +97,7 @@ Open the Backup Manager and restore the backup created before the patch.
 ### What Gets Patched
 
 **SteamID locations in save file:**
+
 1. USER_DATA_10 header (master SteamID)
 2. Each character slot (10 total)
 3. Profile summary metadata
@@ -106,11 +107,13 @@ Open the Backup Manager and restore the backup created before the patch.
 ### Validation
 
 **Before patching:**
+
 - Verifies SteamID format (17 digits)
 - Checks save file loaded
 - Confirms write permission
 
 **After patching:**
+
 - Recalculates all checksums
 - Validates new SteamID written
 - Verifies save integrity
