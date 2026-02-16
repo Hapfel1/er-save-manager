@@ -53,8 +53,6 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/Hapfel1/er-save-manager
-    - icon: fontawesome/brands/discord
-      link: https://discord.gg/your-server
   version:
     provider: mike
     default: latest
