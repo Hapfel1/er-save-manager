@@ -5,6 +5,7 @@ View and unlock all gestures including base game, DLC, and cut content gestures.
 ## Overview
 
 The Gestures tab allows you to:
+
 - View unlocked gestures for each character
 - Unlock base game gestures
 - Unlock DLC gestures
@@ -20,12 +21,14 @@ The Gestures tab allows you to:
 ### Character Slot Selector
 
 **Controls:**
+
 - Slot dropdown (1-10)
 - Load button
 
 ### Gestures List
 
 **Displays:**
+
 - All available gestures
 - Checkbox for each gesture
 - Gesture name
@@ -34,6 +37,7 @@ The Gestures tab allows you to:
   - (Cut) - Cut content/hidden gesture
 
 **Visual Organization:**
+
 - Scrollable list
 - Grouped display
 - Clear status indicators
@@ -41,6 +45,7 @@ The Gestures tab allows you to:
 ### Action Buttons
 
 **Main Actions:**
+
 - **Apply Changes** - Save gesture selections
 - **Select All Base** - Check all base game gestures
 - **Select All + DLC** - Check base + DLC gestures
@@ -66,6 +71,7 @@ The Gestures tab allows you to:
 ### Single Gesture
 
 **Steps:**
+
 1. Load character gestures
 2. Find gesture in list
 3. Check checkbox to unlock
@@ -76,6 +82,7 @@ The Gestures tab allows you to:
 ### Bulk Unlock - Base Game Only
 
 **Steps:**
+
 1. Load character gestures
 2. Click **Select All Base**
 3. All non-DLC, non-cut gestures selected
@@ -86,6 +93,7 @@ The Gestures tab allows you to:
 ### Bulk Unlock - Base + DLC
 
 **Steps:**
+
 1. Load character gestures
 2. Click **Select All + DLC**
 3. All base and DLC gestures selected (excluding cut content)
@@ -96,6 +104,7 @@ The Gestures tab allows you to:
 ### Deselect All
 
 **Steps:**
+
 1. Click **Deselect All**
 2. All checkboxes cleared
 3. Click **Apply Changes** to lock all gestures
@@ -109,6 +118,7 @@ The Gestures tab allows you to:
 ### Saving Gesture Unlocks
 
 **Steps:**
+
 1. Make gesture selections
 2. Click **Apply Changes**
 3. Automatic backup created
@@ -124,6 +134,7 @@ The Gestures tab allows you to:
 ### Automatic Backup
 
 **Before applying changes:**
+
 - Full save backup created
 - Timestamp included
 - Stored in backup folder
@@ -131,6 +142,7 @@ The Gestures tab allows you to:
 ### Validation
 
 **Checks performed:**
+
 - Character slot valid
 - Save file loaded
 - Gesture data accessible
@@ -144,6 +156,7 @@ The Gestures tab allows you to:
 **Cause:** Character slot empty or not selected
 
 **Solution:**
+
 - Select valid character slot
 - Click Load button
 - Verify character exists in slot
@@ -153,6 +166,7 @@ The Gestures tab allows you to:
 **Cause:** Forgot to click Apply Changes
 
 **Solution:**
+
 - Click **Apply Changes** button
 - Wait for confirmation message
 

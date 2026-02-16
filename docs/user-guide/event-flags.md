@@ -5,6 +5,7 @@ View, edit, and toggle event flags - including boss respawning functionality wit
 ## Overview
 
 Event flags are binary switches (ON/OFF) that track game state:
+
 - Boss defeats
 - Grace site discoveries
 - NPC quest progression  
@@ -13,6 +14,7 @@ Event flags are binary switches (ON/OFF) that track game state:
 - World changes
 
 The Event Flags tab provides:
+
 - 948 documented flags organized by category
 - Boss respawn functionality
 - Search and filter
@@ -26,6 +28,7 @@ The Event Flags tab provides:
 ### Top Section
 
 **Character Slot Selector:**
+
 - Choose slot (1-10)
 - Load Flags button
 - Advanced... button (custom flag editor)
@@ -36,6 +39,7 @@ The Event Flags tab provides:
 ### Category Selection
 
 **Main Categories:**
+
 - Boss
 - Grace
 - Quest
@@ -46,18 +50,21 @@ The Event Flags tab provides:
 - Misc
 
 **Subcategories:**
+
 - Varies by main category
 - Example: Boss → Demigods, Dragons, Dungeon Bosses, etc.
 
 ### Flag List
 
 **Displays:**
+
 - Checkbox for each flag
 - Flag name (description)
 - Current state (checked = ON, unchecked = OFF)
 - Flag ID number
 
 **Search:**
+
 - Text search to filter flags
 - Searches flag names
 - Real-time filtering
@@ -69,6 +76,7 @@ The Event Flags tab provides:
 ### Loading Flags
 
 **Steps:**
+
 1. Select character slot
 2. Click **Load Flags**
 3. Flag list populates with current states
@@ -79,11 +87,13 @@ The Event Flags tab provides:
 ### Viewing Flags
 
 **By Category:**
+
 1. Select main category dropdown
 2. Select subcategory (if available)
 3. Flag list updates to show matching flags
 
 **By Search:**
+
 1. Type search term
 2. Flags filtered by name
 3. Matching flags displayed
@@ -91,12 +101,14 @@ The Event Flags tab provides:
 ### Toggling Flags
 
 **Single Flag:**
+
 1. Find flag in list
 2. Click checkbox to toggle ON/OFF
 3. State changes immediately in interface
 4. Changes not saved until **Apply Changes**
 
 **Multiple Flags:**
+
 1. Check/uncheck multiple flags
 2. All changes tracked
 3. Click **Apply Changes** to save all at once
@@ -104,12 +116,14 @@ The Event Flags tab provides:
 ### Unlock All in Category
 
 **Bulk unlock:**
+
 1. Select category and subcategory
 2. Click **Unlock All in Category**
 3. All flags in current view set to ON
 4. Click **Apply Changes** to save
 
 **Use Cases:**
+
 - Unlock all graces in area
 - Unlock all gestures
 - Mark all bosses defeated
@@ -117,6 +131,7 @@ The Event Flags tab provides:
 ### Applying Changes
 
 **Steps:**
+
 1. Make flag changes
 2. Click **Apply Changes**
 3. Automatic backup created
@@ -133,6 +148,7 @@ The Event Flags tab provides:
 ### Opening Boss Respawner
 
 **Steps:**
+
 1. Load event flags for character
 2. Click **Boss Respawn...**
 3. Boss Respawn dialog opens
@@ -140,6 +156,7 @@ The Event Flags tab provides:
 ### Boss Respawn Dialog
 
 **Interface:**
+
 - **Boss Location dropdown** - Select boss location
 - **Boss list** - All bosses in category
 - **Checkboxes** - Select bosses to respawn
@@ -149,6 +166,7 @@ The Event Flags tab provides:
 ### Boss List Display
 
 **Each boss shows:**
+
 - Boss name
 - Current status: "Defeated" or "Alive"
 - Checkbox to select for respawn
@@ -156,6 +174,7 @@ The Event Flags tab provides:
 ### Respawning Bosses
 
 **Single Boss:**
+
 1. Select boss category
 2. Find boss in list
 3. Check boss checkbox
@@ -164,12 +183,14 @@ The Event Flags tab provides:
 6. Boss respawns in-game
 
 **Multiple Bosses:**
+
 1. Select category
 2. Check multiple bosses
 3. Click **Respawn Selected**
 4. All selected bosses respawn
 
 **All in Category:**
+
 1. Select category
 2. Click **Respawn All in Category**
 3. All bosses in category respawn
@@ -177,6 +198,7 @@ The Event Flags tab provides:
 ### How Boss Respawn Works
 
 **Process:**
+
 1. Identifies boss defeat flag(s)
 2. Sets flag(s) to OFF (0)
 3. Teleports character to Roundtable Hold
@@ -187,6 +209,7 @@ The Event Flags tab provides:
 **Result:** Boss respawns at original location
 
 **Notes:**
+
 - Great Runes remain if obtained
 - Achievements remain earned
 - Can obtain drops again
@@ -199,6 +222,7 @@ The Event Flags tab provides:
 ### Opening Advanced Editor
 
 **Steps:**
+
 1. Load event flags
 2. Click **Advanced...**
 3. Advanced editor dialog opens
@@ -206,12 +230,14 @@ The Event Flags tab provides:
 ### Advanced Editor Features
 
 **Custom Flag ID:**
+
 - Enter any 8-digit flag ID
 - Access undocumented flags
 - Toggle ON/OFF manually
 - For advanced users/modders
 
 **Use Cases:**
+
 - Accessing hidden flags
 - Mod-specific flags
 - Testing custom content
@@ -226,11 +252,13 @@ The Event Flags tab provides:
 ### Boss Flags
 
 **What They Do:**
+
 - Track boss defeat status
 - Control boss respawning
 - Affect world state after defeat
 
 **Common Boss Flags:**
+
 - 1035500800: Margit
 - 1036540800: Godrick
 - 1035520800: Radahn
@@ -241,11 +269,13 @@ The Event Flags tab provides:
 ### Grace Flags
 
 **What They Do:**
+
 - Track discovered Sites of Grace
 - Enable fast travel
 - Control grace visibility
 
 **Examples:**
+
 - 71000: First Step
 - 71050: Church of Elleh
 - 71100: Gatefront Ruins
@@ -253,6 +283,7 @@ The Event Flags tab provides:
 ### Quest Flags
 
 **What They Do:**
+
 - Track NPC quest progression
 - Control dialogue options
 - Trigger quest events
@@ -262,6 +293,7 @@ The Event Flags tab provides:
 ### Item Flags
 
 **What They Do:**
+
 - Mark items as picked up
 - Prevent re-obtaining
 - Track key items
@@ -269,6 +301,7 @@ The Event Flags tab provides:
 ### Achievement Flags
 
 **What They Do:**
+
 - Unlock achievements
 - Track completion requirements
 - Control ending access
@@ -280,6 +313,7 @@ The Event Flags tab provides:
 ### Automatic Backup
 
 **Before applying changes:**
+
 - Full save backup created
 - Timestamp included
 - Easy restore if issues
@@ -287,6 +321,7 @@ The Event Flags tab provides:
 ### Validation
 
 **Checks performed:**
+
 - Flag IDs valid
 - Event flag buffer accessible
 - Save file loaded
@@ -294,6 +329,7 @@ The Event Flags tab provides:
 ### Confirmation
 
 **For risky operations:**
+
 - Respawn all bosses
 - Unlock all in category
 - Bulk operations
@@ -307,6 +343,7 @@ The Event Flags tab provides:
 **Cause:** No character selected or slot empty
 
 **Solution:**
+
 - Select character slot
 - Click Load Flags
 - Verify slot has character
@@ -316,6 +353,7 @@ The Event Flags tab provides:
 **Cause:** Forgot to click Apply Changes
 
 **Solution:**
+
 - Click **Apply Changes** button
 - Wait for confirmation
 
@@ -324,6 +362,7 @@ The Event Flags tab provides:
 **Cause:** Wrong flags modified
 
 **Solution:**
+
 - Restore from automatic backup
 - Research correct flag sequence
 - Consult community resources

@@ -15,11 +15,13 @@ Be respectful and constructive. We're all here to make a better tool.
 ### Reporting Bugs
 
 **Before submitting:**
+
 1. Search existing issues
 2. Check if already reported
 3. Verify bug in latest version
 
 **Bug report should include:**
+
 - Clear description
 - Steps to reproduce
 - Expected vs actual behavior
@@ -29,11 +31,13 @@ Be respectful and constructive. We're all here to make a better tool.
 - Tool version
 
 **Where to report:**
+
 - GitHub Issues
 
 ### Suggesting Features
 
 **Feature requests should include:**
+
 - Clear use case
 - Why it would be useful
 - How it should work
@@ -102,6 +106,7 @@ uv run ruff format
 ### PR Description
 
 **Should include:**
+
 - What changes were made
 - Why changes were made
 - Related issue numbers
@@ -278,6 +283,7 @@ pyproject.toml                  # Project metadata and dependencies
 ### Parser Changes
 
 **When modifying parser:**
+
 1. Update offset tracking
 2. Add write-back support
 3. Update checksum calculation
@@ -287,6 +293,7 @@ pyproject.toml                  # Project metadata and dependencies
 ### New Fixes
 
 **Creating a fix:**
+
 1. Inherit from `BaseFix`
 2. Implement `detect()` method
 3. Implement `apply()` method
@@ -312,6 +319,7 @@ class MyCustomFix(BaseFix):
 ### UI Changes
 
 **When modifying UI:**
+
 1. Follow existing patterns
 2. Use Qt signals/slots properly
 3. Handle errors gracefully

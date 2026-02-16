@@ -5,6 +5,7 @@ Edit character stats, runes, name, level, and build attributes directly.
 ## Overview
 
 The Character Editor allows you to modify:
+
 - Character name (max 16 characters)
 - Stats (Vigor, Mind, Endurance, Strength, Dexterity, Intelligence, Faith, Arcane)
 - Runes held
@@ -12,6 +13,7 @@ The Character Editor allows you to modify:
 - Progression info (NG level, talisman slots, spirit tuning, flasks)
 
 **When to Use:**
+
 - Respec character build
 - Adjust stats for PvP/PvE
 - Fix level/stat inconsistencies
@@ -25,6 +27,7 @@ The Character Editor allows you to modify:
 ### Character Creation Section
 
 **Editable Fields:**
+
 - **Name** - Character name (max 16 characters, UTF-16)
   - Character counter shows X/16
   - Validated to prevent exceeding limit
@@ -36,6 +39,7 @@ The Character Editor allows you to modify:
 ### Stats Section
 
 **Eight Core Stats:**
+
 - **Vigor**
 - **Mind** 
 - **Endurance**
@@ -46,6 +50,7 @@ The Character Editor allows you to modify:
 - **Arcane**
 
 **Display Shows:**
+
 - Current value
 - Input field for new value
 - Valid range indicators
@@ -53,6 +58,7 @@ The Character Editor allows you to modify:
 ### Progression Section
 
 **Editable Fields:**
+
 - **Runes Held** - Current runes
 - **Level** - Character level (calculated from stats)
 - **NG Level** - New Game Plus cycle (0-7+)
@@ -75,6 +81,7 @@ The Character Editor allows you to modify:
 6. Click **Apply Changes**
 
 **Validation:**
+
 - Maximum 16 characters enforced
 - UTF-16 encoding supported (supports special characters)
 - Empty names not allowed
@@ -82,6 +89,7 @@ The Character Editor allows you to modify:
 ### Editing Stats
 
 **Steps:**
+
 1. Load save file and load character slot
 2. Locate stat to modify in Stats section
 3. Enter new value in input field
@@ -89,6 +97,7 @@ The Character Editor allows you to modify:
 5. Click **Apply Changes**
 
 **Constraints:**
+
 - Minimum: Base class values
 - Maximum: 99 per stat
 - Level auto-calculated from total stats
@@ -105,6 +114,7 @@ The Character Editor allows you to modify:
 ### Editing Level
 
 Level is automatically calculated from stat totals. To change level:
+
 1. Adjust individual stats
 2. Total stat points determine level
 3. Level updates automatically
@@ -132,6 +142,7 @@ Selection between available body types. Determines base character model.
 View and modify the starting class/archetype.
 
 **Available Classes:**
+
 - Vagabond
 - Warrior
 - Hero
@@ -150,6 +161,7 @@ View and modify the starting class/archetype.
 Character voice selection for grunts and sounds.
 
 **Options:**
+
 - Young (Voice 1-3)
 - Mature (Voice 1-3)
 
@@ -158,6 +170,7 @@ Character voice selection for grunts and sounds.
 The gift chosen at character creation.
 
 **Available Keepsakes:**
+
 - Crimson Amber Medallion
 - Lands Between Rune
 - Golden Seed
@@ -182,12 +195,14 @@ Number of talisman slots unlocked (0-4).
 Maximum upgrade level for Spirit Ashes (0-10).
 
 **Unlocks:**
+
 - Glovewort levels through Roderika dialogue
 - Final unlock (+10) after specific quest progression
 
 ### Flask Counts
 
 Total number of flasks:
+
 - **Crimson Tears** - HP recovery
 - **Cerulean Tears** - FP recovery
 
@@ -198,6 +213,7 @@ Total number of flasks:
 ### Automatic Backup
 
 Created before every character edit:
+
 - Timestamp included
 - Original state preserved
 - Easy restore from Backup Manager
@@ -205,12 +221,14 @@ Created before every character edit:
 ### Validation
 
 **Before applying changes:**
+
 - Stats within valid ranges (1-99)
 - Name length ≤16 characters
 - Runes within limits
 - NG level valid
 
 **After applying:**
+
 - Checksums recalculated
 - Save file integrity maintained
 - Changes verified
@@ -218,6 +236,7 @@ Created before every character edit:
 ### Apply Changes Button
 
 All edits are temporary until clicking **Apply Changes**:
+
 1. Review all changes
 2. Click **Apply Changes**
 3. Backup created automatically
@@ -234,6 +253,7 @@ All edits are temporary until clicking **Apply Changes**:
 **Cause:** Stat outside valid range
 
 **Solution:**
+
 - Check stat is 1-99
 - Verify no decimals
 - Check typing errors
@@ -243,6 +263,7 @@ All edits are temporary until clicking **Apply Changes**:
 **Cause:** Name exceeds 16 characters
 
 **Solution:**
+
 - Shorten name
 - Counter shows current length
 
@@ -251,6 +272,7 @@ All edits are temporary until clicking **Apply Changes**:
 **Cause:** Forgot to click Apply Changes
 
 **Solution:**
+
 - Click **Apply Changes** button
 - Wait for confirmation
 
@@ -259,6 +281,7 @@ All edits are temporary until clicking **Apply Changes**:
 **Cause:** Invalid stats or corruption
 
 **Solutions:**
+
 1. Restore from automatic backup
 2. Check stats are reasonable
 3. Run Save File Fixer
