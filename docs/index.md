@@ -1,107 +1,136 @@
-# Elden Ring Save Manager Documentation
+# Elden Ring Save Manager
 
-Welcome to the Elden Ring Save Manager documentation. This tool provides comprehensive save file management, corruption fixing, and character editing for Elden Ring.
+<div class="grid cards" markdown>
 
-```{toctree}
-:maxdepth: 2
-:caption: User Guide
+-   :material-shield-check:{ .lg .middle } __Save File Fixer__
 
-user-guide/installation
-user-guide/quick-start
-user-guide/save-file-fixer
-user-guide/character-management
-user-guide/character-editor
-user-guide/appearance-editor
-user-guide/community-browser
-user-guide/steamid-patcher
-user-guide/event-flags
-user-guide/boss-respawner
-user-guide/gestures-regions
-user-guide/backup-manager
-user-guide/troubleshooting-tab
-```
+    ---
 
-```{toctree}
-:maxdepth: 2
-:caption: Technical Documentation
+    Automatically detect and fix save corruption issues and infinite loading screens
 
-technical/save-file-structure
-technical/character-slot-structure
-technical/checksum-system
-technical/event-flag-system
-technical/parser-architecture
-technical/offset-tracking
-technical/backup-system
-technical/fix-system
-technical/community-integration
-```
+    [:octicons-arrow-right-24: Get Started](user-guide/save-file-fixer.md)
 
-```{toctree}
-:maxdepth: 2
-:caption: Reference
+-   :material-account-multiple:{ .lg .middle } __Character Management__
 
-reference/event-flags
-reference/item-ids
-reference/map-ids
-reference/file-formats
-```
+    ---
 
-```{toctree}
-:maxdepth: 2
-:caption: Developer Guide
+    Export, import, and move characters between saves with full backup support
 
-developer/building
-developer/contributing
-developer/testing
-developer/cli-reference
-```
+    [:octicons-arrow-right-24: Learn More](user-guide/character-management.md)
 
-```{toctree}
-:maxdepth: 1
-:caption: Resources
+-   :material-cloud-download:{ .lg .middle } __Community Browser__
 
-resources/faq
-resources/troubleshooting
-resources/keyboard-shortcuts
-```
+    ---
 
-## Quick Links
+    Browse, download, and share character builds and appearance presets
 
-- [Installation](user-guide/installation.md) - Get started
-- [Quick Start Guide](user-guide/quick-start.md) - Learn the basics
-- [Save File Fixer](user-guide/save-file-fixer.md) - Fix infinite loading screens
-- [GitHub Repository](https://github.com/Hapfel1/er-save-manager)
-- [Report Issues](https://github.com/Hapfel1/er-save-manager/issues)
+    [:octicons-arrow-right-24: Explore](user-guide/character-browser.md)
+
+-   :material-tune:{ .lg .middle } __Character Editor__
+
+    ---
+
+    Edit stats, runes, name, level, and progression details
+
+    [:octicons-arrow-right-24: Edit](user-guide/character-editor.md)
+
+</div>
 
 ## Features
 
-- **Automated Corruption Detection & Fixing** - Detect and repair infinite loading screens
-- **Character Management** - Export, import, move characters between saves
-- **Community Integration** - Browse and share characters and appearance presets
-- **Character Editing** - Modify stats, runes, name, level
-- **Appearance Customization** - Create and share character presets
-- **Event Flags** - Toggle quest progress, boss defeats, grace unlocks
-- **SteamID Patching** - Transfer saves between Steam accounts
-- **Backup System** - Automatic and manual backups with restore
-- **Diagnostics** - Troubleshoot game and save file issues
+### :material-check-all: Working Features
+
+- **Save File Fixer** - Automatically detect and fix save corruption issues
+- **Character Management** - Export, import, and move characters between saves  
+- **Community Character Browser** - Browse, download, and contribute characters
+- **Character Editor** - Edit stats, runes, name, level, and build attributes
+- **Appearance Editor** - View, export and import 15 preset slots
+- **Community Preset Browser** - Browse and download appearance presets
+- **SteamID Patcher** - Transfer saves between Steam accounts
+- **Event Flags Editor** - View and toggle 948+ documented event flags
+- **Boss Respawner** - Respawn any boss for repeated fights
+- **Gestures** - Unlock all gestures including DLC and cut content
+- **Backup Manager** - Automatic and manual backups with restore functionality
+- **Troubleshooting** - Diagnostic checks for game and save file issues
+
+### :material-wrench: Work in Progress
+
+- **World State / Teleportation** - Custom coordinate teleportation (known location list needs verification)
+- **Inventory Editor** - Item spawning requires additional reverse engineering
+- **Hex Editor** - Not yet implemented
+
+## Installation
+
+=== "Windows"
+
+    Download the latest `EldenRingSaveManager.exe` from [Releases](https://github.com/Hapfel1/er-save-manager/releases)
+    
+    No installation required - it's a portable executable!
+
+=== "Linux / Steam Deck"
+
+    Download `EldenRingSaveManager.AppImage` from [Releases](https://github.com/Hapfel1/er-save-manager/releases)
+    
+    ```bash
+    chmod +x EldenRingSaveManager.AppImage
+    ./EldenRingSaveManager.AppImage
+    ```
+    
+    **Features:**
+    - Auto-detects Steam (standard and Flatpak)
+    - Finds Proton compatdata locations
+    - Full Steam Deck support
+
+## Quick Start
+
+1. **Launch** the application
+2. **Auto-Detect** or **Browse** to your save file
+3. **Load Save File** to begin
+4. Use tabs to access different features
+
+!!! tip "First Time?"
+    Check out the [Installation Guide](user-guide/installation.md) for platform-specific instructions!
+
+## Corruption Fixes
+
+The Save File Fixer can detect and repair:
+
+- **Torrent Bug** - Infinite loading when horse HP=0 with state=ACTIVE
+- **SteamID Mismatch** - Character SteamID doesn't match save file
+- **Weather Sync** - AreaID mismatch with current map
+- **Time Sync** - Recalculates time from seconds played
+- **Ranni Softlock** - Fixes Ranni's Tower quest progression
+- **Warp Sickness** - Stuck warps (Radahn, Morgott, Radagon, Sealing Tree)
+- **DLC Issues** - Stuck at DLC coordinates, invalid DLC flag data
+- **Teleport Fallback** - Emergency teleport to Roundtable Hold
+
+[:octicons-arrow-right-24: Learn more about fixes](user-guide/save-file-fixer.md)
 
 ## Platform Support
 
-- **Windows**: Native executable
-- **Linux**: AppImage with Steam/Proton support
-- **Steam Deck**: Fully supported with auto-detection
+| Platform | Support | Notes |
+|----------|---------|-------|
+| Windows  | :material-check: Full | Native executable |
+| Linux    | :material-check: Full | AppImage with Steam/Proton support |
+| Steam Deck | :material-check: Full | Auto-detection, optimized UI |
+| macOS    | :material-close: Not supported | May work via Wine (untested) |
 
 ## Credits
 
-**Save File Research:**
-- [ER-Save-Lib](https://github.com/ClayAmore/ER-Save-Lib) - Rust reference implementation
-- [Umgak](https://github.com/Umgak) - Event Flag Manager from TGA Cheat Table
-- [SoulsModding Wiki](https://soulsmodding.com/doku.php?id=er-refmat:main)
+### Research & Development
 
-**Special Thanks:**
-- [2Pz](https://github.com/2Pz) - Automated build workflow
-- [Ghostlyswat12](https://github.com/Ghostlyswat12) - Testing
-- Community contributors and preset creators
+- [ER-Save-Lib](https://github.com/ClayAmore/ER-Save-Lib) - Rust implementation
+- [Umgak](https://github.com/Umgak) - Event Flag Manager tables
+- [?WikiName?](https://soulsmodding.com/doku.php?id=er-refmat:main) - Documentation
+
+### Community
+
+- All preset contributors
+- Testers: [2Pz](https://github.com/2Pz), [Ghostlyswat12](https://github.com/Ghostlyswat12)
+
+### Special Thanks
+
+- [2Pz](https://github.com/2Pz) - Automated build/release workflow
 
 ## License
 

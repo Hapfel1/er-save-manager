@@ -1,0 +1,63 @@
+/* Custom CSS for Elden Ring Save Manager docs */
+
+:root {
+  /* Catppuccin Mocha inspired colors */
+  --md-primary-fg-color: #c9a0dc;
+  --md-primary-fg-color--light: #ddb6f2;
+  --md-primary-fg-color--dark: #b48ead;
+  --md-accent-fg-color: #b48ead;
+}
+
+/* Better centered content like me3 docs */
+.md-content {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.md-typeset {
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* Better code blocks */
+.md-typeset code {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 0.1em 0.4em;
+  border-radius: 0.2em;
+}
+
+/* Better admonitions */
+.md-typeset .admonition {
+  border-left: 4px solid var(--md-accent-fg-color);
+}
+
+/* Better tables */
+.md-typeset table:not([class]) {
+  font-size: 0.85em;
+  border-radius: 0.2em;
+  overflow: hidden;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better buttons */
+.md-button {
+  border-radius: 0.3em;
+  transition: all 0.2s;
+}
+
+.md-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Custom colors for dark mode */
+[data-md-color-scheme="slate"] {
+  --md-default-bg-color: #1e1e2e;
+  --md-default-fg-color: #cdd6f4;
+  --md-code-bg-color: #181825;
+  --md-code-fg-color: #cdd6f4;
+}
