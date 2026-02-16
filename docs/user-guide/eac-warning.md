@@ -68,4 +68,4 @@ No. The tool only reads and writes the save file on disk. It does not inject int
 
 ---
 
-[← Settings](settings.md) | [← Installation](installation.md)
+[← Troubleshooting](troubleshooting-tab.md) | [Linux Save Location →](linux-compatdata.md)
