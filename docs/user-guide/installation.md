@@ -145,7 +145,7 @@ uv sync --locked --dev
 uv run python run_gui.py
 ```
 
-See **[Building from Source](Building-from-Source)** for more details.
+See the [Contributing](../developer/contributing.md) guide for build details.
 
 ---
 
@@ -203,16 +203,15 @@ pip install -e .  # or uv pip install -e .
 - Make sure AppImage is executable: `chmod +x`
 - Check save file permissions
 
-See **[Troubleshooting](Troubleshooting)** for more issues.
+See [Troubleshooting](troubleshooting-tab.md) for more issues.
 
 ---
 
 ## Next Steps
 
-- **[Quick Start Guide](Quick-Start-Guide)** - Learn the basics
-- **[Save File Fixer](Save-File-Fixer)** - Fix infinite loading screens
-- **[Character Editor](Character-Editor)** - Edit your character
+- **[Save File Fixer](save-file-fixer.md)** - Fix infinite loading screens
+- **[Character Editor](character-editor.md)** - Edit your character
 
 ---
 
-[← Back to Home](Home)
+[← Back to Home](../index.md)

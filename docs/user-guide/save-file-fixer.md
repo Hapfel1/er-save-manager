@@ -41,7 +41,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 
 ### 3. Weather Sync
 
-**Symptom:** Infinite loading or wrong weather effects
+**Symptom:** Corruption error
 
 **Cause:** AreaID doesn't match current map location
 
@@ -52,7 +52,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 
 ### 4. Time Sync
 
-**Symptom:** Incorrect in-game time display
+**Symptom:** Corruption Error
 
 **Cause:** Time desynchronized from actual playtime
 
@@ -75,7 +75,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 
 ### 6. Warp Sickness
 
-**Symptom:** Stuck at boss warp location, infinite loading
+**Symptom:** Stuck at boss warp location
 
 **Variants:**
 - Radahn (Festival active/inactive)
@@ -141,7 +141,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 ### Automatic Scan
 
 1. Load your save file
-2. Navigate to **Save Fixer** tab7
+2. Navigate to **Save Fixer** tab
 3. Select your character in the list
 4. Click **View All Issues Issues**
 5. Review detected problems in list
@@ -165,15 +165,6 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 - Affected character slot
 - Brief description
 - Recommended action
-
-### Fix Details
-
-Click any issue to view:
-- Full description of problem
-- What caused it
-- What the fix does
-- Expected outcome
-- Any side effects
 ---
 
 ## Examples
