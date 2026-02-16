@@ -82,14 +82,13 @@ uv run python run_gui.py
 
 ---
 
-## Format & Lint
-
-### Ruff
+### Format & Lint
 
 ```bash
 uv run ruff check
 uv run ruff format
 ```
+
 ---
 
 ## Pull Request Process
