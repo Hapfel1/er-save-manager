@@ -52,6 +52,8 @@ def bind_mousewheel(widget, target_widget=None):
     if target_widget is None:
         target_widget = widget
 
+    is_linux = platform_module.system() == "Linux"
+
     def _on_mousewheel(event):
         # For CTkScrollableFrame, use _parent_canvas
         if hasattr(target_widget, "_parent_canvas"):
@@ -66,8 +68,9 @@ def bind_mousewheel(widget, target_widget=None):
                         delta = 0
                     if delta != 0:
                         canvas.yview_scroll(delta, "units")
-            except Exception:
-                pass
+                        return "break"  # Stop event propagation
+            except Exception as e:
+                print(f"[DEBUG] Scroll error: {e}")
         elif hasattr(target_widget, "yview_scroll"):
             try:
                 if hasattr(event, "delta"):
@@ -78,42 +81,20 @@ def bind_mousewheel(widget, target_widget=None):
                     delta = 0
                 if delta != 0:
                     target_widget.yview_scroll(delta, "units")
-            except Exception:
-                pass
+                    return "break"
+            except Exception as e:
+                print(f"[DEBUG] Scroll error: {e}")
 
-    is_linux = platform_module.system() == "Linux"
-
-    # Bind to widget and its canvas if it exists
-    widgets_to_bind = [widget]
-    if hasattr(widget, "_parent_canvas") and widget._parent_canvas:
-        widgets_to_bind.append(widget._parent_canvas)
-
-    for w in widgets_to_bind:
-        try:
-            if is_linux:
-                w.bind("<Button-4>", _on_mousewheel, add="+")
-                w.bind("<Button-5>", _on_mousewheel, add="+")
-            else:
-                w.bind("<MouseWheel>", _on_mousewheel, add="+")
-        except Exception:
-            pass
-
-    # Recursively bind to children
-    def bind_children(w, depth=0):
-        if depth > 5:
-            return
-        try:
-            for child in w.winfo_children():
-                if is_linux:
-                    child.bind("<Button-4>", _on_mousewheel, add="+")
-                    child.bind("<Button-5>", _on_mousewheel, add="+")
-                else:
-                    child.bind("<MouseWheel>", _on_mousewheel, add="+")
-                bind_children(child, depth + 1)
-        except Exception:
-            pass
-
-    bind_children(widget)
+    # Bind to the toplevel window instead of recursing through children
+    try:
+        toplevel = widget.winfo_toplevel()
+        if is_linux:
+            toplevel.bind_all("<Button-4>", _on_mousewheel, add="+")
+            toplevel.bind_all("<Button-5>", _on_mousewheel, add="+")
+        else:
+            toplevel.bind_all("<MouseWheel>", _on_mousewheel, add="+")
+    except Exception as e:
+        print(f"[DEBUG] Bind error: {e}")
 
 
 def open_url(url: str) -> bool:
