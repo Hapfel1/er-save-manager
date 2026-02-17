@@ -182,8 +182,8 @@ def _run_command(args: list[str], env: dict | None = None) -> bool:
 def _get_subprocess_env() -> dict:
     env = os.environ.copy()
     if env.get("APPIMAGE") or env.get("SNAP") or env.get("FLATPAK_ID"):
-        # Avoid lib path pollution when launching system helpers (AppImage/Snap/Flatpak).
         env.pop("LD_LIBRARY_PATH", None)
+        env.pop("LD_PRELOAD", None)  # Add this line
         env.pop("PYTHONHOME", None)
         env.pop("PYTHONPATH", None)
     return env
