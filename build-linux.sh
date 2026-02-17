@@ -70,4 +70,8 @@ pyinstaller --clean --noconfirm \
 	--distpath "dist/linux-$version" \
 	run_gui.py
 
+# Remove bundled OpenSSL so system libs are used
+echo "Removing bundled OpenSSL..."
+find "dist/linux-$version" -name "libssl.so*" -delete
+find "dist/linux-$version" -name "libcrypto.so*" -delete
 echo "Build complete: dist/linux-$version/er-save-manager"
