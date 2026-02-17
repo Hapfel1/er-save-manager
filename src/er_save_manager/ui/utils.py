@@ -57,7 +57,9 @@ def bind_mousewheel(widget, target_widget=None):
         target_widget = widget
 
     def _on_mousewheel(event):
-        print(f"[DEBUG] Mousewheel event: {event}, delta={getattr(event, 'delta', None)}, num={getattr(event, 'num', None)}")
+        print(
+            f"[DEBUG] Mousewheel event: {event}, delta={getattr(event, 'delta', None)}, num={getattr(event, 'num', None)}"
+        )
         # Ensure widget has focus for scroll to work
         try:
             widget.focus_set()
