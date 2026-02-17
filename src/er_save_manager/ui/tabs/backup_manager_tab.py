@@ -439,14 +439,11 @@ Backup Format:
                     # Backup created successfully, now try to refresh UI
                     # (don't fail if UI refresh has issues)
                     try:
-                        refresh_list()
+                        if dialog.winfo_exists():
+                            refresh_list()
                         self.update_backup_stats()
                     except Exception as ui_error:
                         print(f"Warning: Failed to refresh UI after backup: {ui_error}")
-
-                    CTkMessageBox.showinfo(
-                        "Success", "Backup created successfully!", parent=self.parent
-                    )
 
             def restore_backup():
                 if not selected_backup[0]:
@@ -476,7 +473,6 @@ Backup Format:
                 # Restore succeeded, now try to refresh UI
                 # (don't fail if UI refresh has issues)
                 try:
-                    # Try to reload, but don't fail if it doesn't work
                     if self.reload_save:
                         try:
                             self.reload_save()
@@ -485,7 +481,8 @@ Backup Format:
                                 f"Warning: Failed to reload save after restore: {reload_error}"
                             )
 
-                    refresh_list()
+                    if dialog.winfo_exists():
+                        refresh_list()
                     self.update_backup_stats()
                 except Exception as ui_error:
                     print(f"Warning: Failed to refresh UI after restore: {ui_error}")
@@ -542,6 +539,7 @@ Backup Format:
                     details_dialog.title("Backup Details")
                     details_dialog.geometry("600x450")
                     details_dialog.transient(dialog)
+                    force_render_dialog(details_dialog)
                     details_dialog.grab_set()
 
                     # Center the dialog over backup manager window
