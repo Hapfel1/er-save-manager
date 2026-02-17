@@ -130,13 +130,17 @@ def bind_mousewheel(widget, target_widget=None):
 
 def open_url(url: str) -> bool:
     """Open a URL in the user's default browser with cross-platform fallbacks."""
+    print(f"[DEBUG] Attempting to open: {url}")
     try:
-        if webbrowser.open(url, new=2):
+        result = webbrowser.open(url, new=2)
+        print(f"[DEBUG] webbrowser.open returned: {result}")
+        if result:
             return True
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[DEBUG] webbrowser exception: {e}")
 
     platform_name = platform_module.system()
+    print(f"[DEBUG] Platform: {platform_name}, trying fallbacks...")
     if platform_name == "Linux":
         return _open_url_linux(url)
     if platform_name == "Darwin":
@@ -152,6 +156,7 @@ def open_url(url: str) -> bool:
 
 def _open_url_linux(url: str) -> bool:
     env = _get_subprocess_env()
+    print(f"[DEBUG] Cleaned env keys: {list(env.keys())[:10]}...")  # Show first 10
     commands = [
         ["xdg-open", url],
         ["gio", "open", url],
@@ -160,8 +165,12 @@ def _open_url_linux(url: str) -> bool:
         ["kde-open", url],
     ]
     for cmd in commands:
-        if shutil.which(cmd[0]) and _run_command(cmd, env=env):
+        available = shutil.which(cmd[0])
+        print(f"[DEBUG] Trying {cmd[0]}: available={available}")
+        if available and _run_command(cmd, env=env):
+            print(f"[DEBUG] {cmd[0]} succeeded")
             return True
+    print("[DEBUG] All Linux commands failed")
     return False
 
 
