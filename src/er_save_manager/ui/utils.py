@@ -48,35 +48,19 @@ def force_render_dialog(dialog):
 def bind_mousewheel(widget, target_widget=None):
     """
     Bind mousewheel scrolling to a CTkScrollableFrame (cross-platform).
-
-    Args:
-        widget: The widget to bind events to (usually the scrollable frame)
-        target_widget: The widget to scroll (defaults to widget if None)
     """
     if target_widget is None:
         target_widget = widget
 
     def _on_mousewheel(event):
-        print(
-            f"[DEBUG] Mousewheel event: {event}, delta={getattr(event, 'delta', None)}, num={getattr(event, 'num', None)}"
-        )
-        # Ensure widget has focus for scroll to work
-        try:
-            widget.focus_set()
-        except Exception:
-            pass
-
         # For CTkScrollableFrame, use _parent_canvas
         if hasattr(target_widget, "_parent_canvas"):
             try:
                 canvas = target_widget._parent_canvas
                 if canvas and hasattr(canvas, "yview_scroll"):
-                    # Scroll up (negative delta) or down (positive delta)
-                    # Windows/Darwin: event.delta; Linux: event.num
                     if hasattr(event, "delta"):
                         delta = int(-1 * (event.delta / 120))
                     elif hasattr(event, "num"):
-                        # Linux: Button-4 (up) = 4, Button-5 (down) = 5
                         delta = -1 if event.num == 4 else 1
                     else:
                         delta = 0
@@ -84,7 +68,6 @@ def bind_mousewheel(widget, target_widget=None):
                         canvas.yview_scroll(delta, "units")
             except Exception:
                 pass
-        # Fallback for regular tk Canvas/Frame
         elif hasattr(target_widget, "yview_scroll"):
             try:
                 if hasattr(event, "delta"):
@@ -98,24 +81,26 @@ def bind_mousewheel(widget, target_widget=None):
             except Exception:
                 pass
 
-    # Detect platform for appropriate event binding
     is_linux = platform_module.system() == "Linux"
 
-    # Bind to the main widget
-    try:
-        if is_linux:
-            # Linux uses Button-4 (scroll up) and Button-5 (scroll down)
-            widget.bind("<Button-4>", _on_mousewheel, add="+")
-            widget.bind("<Button-5>", _on_mousewheel, add="+")
-        else:
-            # Windows/Darwin use MouseWheel
-            widget.bind("<MouseWheel>", _on_mousewheel, add="+")
-    except Exception:
-        pass
+    # Bind to widget and its canvas if it exists
+    widgets_to_bind = [widget]
+    if hasattr(widget, "_parent_canvas") and widget._parent_canvas:
+        widgets_to_bind.append(widget._parent_canvas)
 
-    # Recursively bind to all children up to a reasonable depth
+    for w in widgets_to_bind:
+        try:
+            if is_linux:
+                w.bind("<Button-4>", _on_mousewheel, add="+")
+                w.bind("<Button-5>", _on_mousewheel, add="+")
+            else:
+                w.bind("<MouseWheel>", _on_mousewheel, add="+")
+        except Exception:
+            pass
+
+    # Recursively bind to children
     def bind_children(w, depth=0):
-        if depth > 5:  # Prevent infinite recursion
+        if depth > 5:
             return
         try:
             for child in w.winfo_children():
