@@ -57,6 +57,7 @@ def bind_mousewheel(widget, target_widget=None):
         target_widget = widget
 
     def _on_mousewheel(event):
+        print(f"[DEBUG] Mousewheel event: {event}, delta={getattr(event, 'delta', None)}, num={getattr(event, 'num', None)}")
         # Ensure widget has focus for scroll to work
         try:
             widget.focus_set()
@@ -130,22 +131,16 @@ def bind_mousewheel(widget, target_widget=None):
 
 def open_url(url: str) -> bool:
     """Open a URL in the user's default browser with cross-platform fallbacks."""
-    print(f"[DEBUG] Attempting to open: {url}")
-
-    # Skip webbrowser.open on Linux AppImages - it uses broken portal integration
     platform_name = platform_module.system()
     in_appimage = bool(os.environ.get("APPIMAGE"))
 
     if not (platform_name == "Linux" and in_appimage):
         try:
-            result = webbrowser.open(url, new=2)
-            print(f"[DEBUG] webbrowser.open returned: {result}")
-            if result:
+            if webbrowser.open(url, new=2):
                 return True
-        except Exception as e:
-            print(f"[DEBUG] webbrowser exception: {e}")
+        except Exception:
+            pass
 
-    print(f"[DEBUG] Platform: {platform_name}, trying fallbacks...")
     if platform_name == "Linux":
         return _open_url_linux(url)
     if platform_name == "Darwin":
@@ -161,7 +156,6 @@ def open_url(url: str) -> bool:
 
 def _open_url_linux(url: str) -> bool:
     env = _get_subprocess_env()
-    print(f"[DEBUG] Cleaned env keys: {list(env.keys())[:10]}...")  # Show first 10
     commands = [
         ["xdg-open", url],
         ["gio", "open", url],
@@ -170,12 +164,8 @@ def _open_url_linux(url: str) -> bool:
         ["kde-open", url],
     ]
     for cmd in commands:
-        available = shutil.which(cmd[0])
-        print(f"[DEBUG] Trying {cmd[0]}: available={available}")
-        if available and _run_command(cmd, env=env):
-            print(f"[DEBUG] {cmd[0]} succeeded")
+        if shutil.which(cmd[0]) and _run_command(cmd, env=env):
             return True
-    print("[DEBUG] All Linux commands failed")
     return False
 
 
