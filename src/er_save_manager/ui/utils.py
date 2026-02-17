@@ -131,15 +131,20 @@ def bind_mousewheel(widget, target_widget=None):
 def open_url(url: str) -> bool:
     """Open a URL in the user's default browser with cross-platform fallbacks."""
     print(f"[DEBUG] Attempting to open: {url}")
-    try:
-        result = webbrowser.open(url, new=2)
-        print(f"[DEBUG] webbrowser.open returned: {result}")
-        if result:
-            return True
-    except Exception as e:
-        print(f"[DEBUG] webbrowser exception: {e}")
 
+    # Skip webbrowser.open on Linux AppImages - it uses broken portal integration
     platform_name = platform_module.system()
+    in_appimage = bool(os.environ.get("APPIMAGE"))
+
+    if not (platform_name == "Linux" and in_appimage):
+        try:
+            result = webbrowser.open(url, new=2)
+            print(f"[DEBUG] webbrowser.open returned: {result}")
+            if result:
+                return True
+        except Exception as e:
+            print(f"[DEBUG] webbrowser exception: {e}")
+
     print(f"[DEBUG] Platform: {platform_name}, trying fallbacks...")
     if platform_name == "Linux":
         return _open_url_linux(url)
