@@ -1,3 +1,11 @@
+copy path does not work on linux done
+
+add npc event flags
+
+zip done
+
+troubleshooting borked save
+
 troubleshooter for each game
 
 check character presets wiping issue done
