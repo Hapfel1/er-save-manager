@@ -147,6 +147,13 @@ class EventFlagsTab:
             width=140,
         ).pack(side=tk.LEFT, padx=2)
 
+        ctk.CTkButton(
+            slot_frame,
+            text="NPC Revival...",
+            command=self.open_npc_revival,
+            width=130,
+        ).pack(side=tk.LEFT, padx=2)
+
         # Category selector
         filter_frame = ctk.CTkFrame(main_frame, corner_radius=10)
         filter_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
@@ -995,4 +1002,154 @@ class EventFlagsTab:
 
         ctk.CTkButton(
             btn_frame, text="Respawn All in Category", command=respawn_all, width=180
+        ).pack(side=tk.RIGHT)
+
+    def open_npc_revival(self):
+        """Open NPC revival dialog"""
+        if self.current_event_flags is None:
+            CTkMessageBox.showwarning(
+                "Not Loaded", "Please load event flags for a character first!"
+            )
+            return
+
+        from er_save_manager.data.npc_data import NPC_FLAGS, get_npc_state, revive_npc
+        from er_save_manager.ui.utils import force_render_dialog
+
+        dialog = ctk.CTkToplevel(self.parent)
+        dialog.title("NPC Revival")
+        width, height = 700, 600
+        dialog.transient(self.parent)
+        dialog.update_idletasks()
+
+        # Center dialog
+        self.parent.update_idletasks()
+        parent_x = self.parent.winfo_rootx()
+        parent_y = self.parent.winfo_rooty()
+        parent_width = self.parent.winfo_width()
+        parent_height = self.parent.winfo_height()
+        x = parent_x + (parent_width // 2) - (width // 2)
+        y = parent_y + (parent_height // 2) - (height // 2)
+        dialog.geometry(f"{width}x{height}+{x}+{y}")
+
+        force_render_dialog(dialog)
+        dialog.grab_set()
+
+        ctk.CTkLabel(
+            dialog,
+            text="NPC Revival",
+            font=("Segoe UI", 14, "bold"),
+        ).pack(pady=(15, 5), padx=15)
+
+        ctk.CTkLabel(
+            dialog,
+            text="Revive dead NPCs (does not restore quest progress)",
+            text_color=("gray50", "gray70"),
+        ).pack(pady=(0, 12), padx=15)
+
+        # NPC list
+        npc_frame = ctk.CTkScrollableFrame(dialog, corner_radius=10)
+        npc_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
+        bind_mousewheel(npc_frame)
+
+        npc_vars = {}
+
+        for npc_name, (_base_flag, location) in sorted(NPC_FLAGS.items()):
+            state = get_npc_state(self.current_event_flags, npc_name)
+            if not state:
+                continue
+
+            is_dead = state["dead"]
+            is_aggro = state["aggro_absolvable"] or state["aggro_permanent"]
+
+            status = "Dead" if is_dead else ("Hostile" if is_aggro else "Alive")
+
+            var = tk.BooleanVar(value=False)
+            npc_vars[npc_name] = var
+
+            item_frame = ctk.CTkFrame(
+                npc_frame,
+                corner_radius=6,
+                fg_color=("#ffffff", "#1f1f28"),
+            )
+            item_frame.pack(fill=tk.X, pady=3, padx=4)
+
+            checkbox = ctk.CTkCheckBox(
+                item_frame,
+                text=f"{npc_name} ({status}) - {location}",
+                variable=var,
+            )
+            checkbox.pack(side=tk.LEFT, padx=8, pady=6)
+
+        # Action buttons
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        def revive_selected():
+            """Revive selected NPCs"""
+            save_path = self.get_save_path()
+            if not save_path or not save_path.is_file():
+                CTkMessageBox.showerror(
+                    "Invalid Save Path",
+                    "Could not locate save file. Load a valid save first.",
+                    parent=dialog,
+                )
+                return
+
+            count = 0
+            for npc_name, var in npc_vars.items():
+                if var.get():
+                    if revive_npc(self.current_event_flags, npc_name):
+                        count += 1
+
+            if count == 0:
+                CTkMessageBox.showinfo(
+                    "No Selection",
+                    "No NPCs selected for revival.",
+                    parent=dialog,
+                )
+                return
+
+            # Create backup
+            save_file = self.get_save_file()
+            if save_path:
+                try:
+                    backup_mgr = BackupManager(save_path)
+                    backup_mgr.create_backup(
+                        description=f"Before NPC revival (Slot {self.current_slot + 1})",
+                        operation="npc_revival",
+                        save=save_file,
+                    )
+                except PermissionError:
+                    CTkMessageBox.showwarning(
+                        "Backup Skipped",
+                        "Could not create backup (permission denied).",
+                        parent=dialog,
+                    )
+
+            # Write to raw data and save
+            slot = save_file.character_slots[self.current_slot]
+            if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
+                absolute_offset = slot.data_start + slot.event_flags_offset
+                event_flags_size = 0x1BF99F
+                save_file._raw_data[
+                    absolute_offset : absolute_offset + event_flags_size
+                ] = slot.event_flags
+
+            save_file.recalculate_checksums()
+            save_file.save(self.get_save_path())
+            self.reload_save()
+
+            CTkMessageBox.showinfo(
+                "Success",
+                f"Revived {count} NPC(s)!\n\nNote: Quest progress is not restored.",
+                parent=dialog,
+            )
+            dialog.destroy()
+
+        ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=120).pack(
+            side=tk.LEFT
+        )
+
+        ctk.CTkButton(
+            btn_frame, text="Revive Selected", command=revive_selected, width=150
         ).pack(side=tk.RIGHT)
