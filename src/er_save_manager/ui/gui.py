@@ -884,12 +884,8 @@ class SaveManagerGUI:
                 )
 
             ctk.CTkButton(  # Use CTkButton instead of ttk.Button
-                option_frame,
-                text="Copy",
-                command=copy_to_clipboard,
-                width=80
+                option_frame, text="Copy", command=copy_to_clipboard, width=80
             ).pack(side=tk.LEFT, padx=5)
-
 
         def copy_to_default():
             """Copy save to the SteamID-specific folder instead of the root EldenRing folder."""
