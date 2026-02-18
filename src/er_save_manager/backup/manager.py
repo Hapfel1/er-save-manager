@@ -6,6 +6,7 @@ import gzip
 import json
 import re
 import shutil
+import zipfile
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -28,7 +29,7 @@ class BackupMetadata:
     operation: str = ""
     character_summary: list[dict] = field(default_factory=list)
     file_size: int = 0
-    compressed: bool = False  # Whether backup is gzip compressed
+    compressed: bool = False  # Whether backup is compressed
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -142,7 +143,7 @@ class BackupManager:
         if description:
             parts.append(self._sanitize_filename_part(description).lower()[:30])
 
-        extension = ".bak.gz" if compressed else ".bak"
+        extension = ".bak.zip" if compressed else ".bak"
         return "_".join(parts) + extension
 
     def _get_character_summary(self, save: Save) -> list[dict]:
@@ -192,11 +193,13 @@ class BackupManager:
         backup_name = self._generate_backup_name(description, operation, compress)
         backup_path = self.backup_folder / backup_name
 
-        # Copy and optionally compress the save file
+        # Copy and optionally zip compress the save file
         if compress:
-            with open(self.save_path, "rb") as f_in:
-                with gzip.open(backup_path, "wb", compresslevel=6) as f_out:
-                    shutil.copyfileobj(f_in, f_out)
+            with zipfile.ZipFile(
+                backup_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6
+            ) as zipf:
+                # Store save file inside zip with original name
+                zipf.write(self.save_path, arcname=self.save_path.name)
         else:
             shutil.copy2(self.save_path, backup_path)
 
@@ -298,7 +301,7 @@ class BackupManager:
         Restore a backup to the current save file.
 
         Creates a backup of the current state before restoring.
-        Automatically handles compressed backups.
+        Automatically handles compressed backups (both .zip and legacy .gz).
 
         Args:
             backup_name: Name of the backup file to restore
@@ -316,15 +319,27 @@ class BackupManager:
             operation=f"restore_{backup_name}",
         )
 
-        # Check if backup is compressed
-        is_compressed = backup_name.endswith(".gz")
+        # Check compression format
+        is_zip = backup_name.endswith(".zip")
+        is_gzip = backup_name.endswith(".gz")
 
         # Restore the backup
-        if is_compressed:
+        if is_zip:
+            with zipfile.ZipFile(backup_path, "r") as zipf:
+                # Extract the save file (should be only file in zip)
+                names = zipf.namelist()
+                if not names:
+                    raise ValueError(f"Backup zip is empty: {backup_name}")
+                # Extract first file to save path
+                data = zipf.read(names[0])
+                self.save_path.write_bytes(data)
+        elif is_gzip:
+            # Legacy gzip support
             with gzip.open(backup_path, "rb") as f_in:
                 with open(self.save_path, "wb") as f_out:
                     shutil.copyfileobj(f_in, f_out)
         else:
+            # Uncompressed backup
             shutil.copy2(backup_path, self.save_path)
 
         return True
@@ -332,7 +347,7 @@ class BackupManager:
     def restore_to_new_file(self, backup_name: str, target_path: str | Path) -> bool:
         """
         Restore a backup to a new file (doesn't overwrite current save).
-        Automatically handles compressed backups.
+        Automatically handles compressed backups (both .zip and legacy .gz).
 
         Args:
             backup_name: Name of the backup file to restore
@@ -346,13 +361,23 @@ class BackupManager:
             raise FileNotFoundError(f"Backup not found: {backup_name}")
 
         target = Path(target_path)
-        is_compressed = backup_name.endswith(".gz")
+        is_zip = backup_name.endswith(".zip")
+        is_gzip = backup_name.endswith(".gz")
 
-        if is_compressed:
+        if is_zip:
+            with zipfile.ZipFile(backup_path, "r") as zipf:
+                names = zipf.namelist()
+                if not names:
+                    raise ValueError(f"Backup zip is empty: {backup_name}")
+                data = zipf.read(names[0])
+                target.write_bytes(data)
+        elif is_gzip:
+            # Legacy gzip support
             with gzip.open(backup_path, "rb") as f_in:
                 with open(target, "wb") as f_out:
                     shutil.copyfileobj(f_in, f_out)
         else:
+            # Uncompressed backup
             shutil.copy2(backup_path, target)
 
         return True
@@ -423,6 +448,7 @@ class BackupManager:
     def verify_backup(self, backup_name: str) -> bool:
         """
         Verify a backup file is valid.
+        Supports .zip, legacy .gz, and uncompressed backups.
 
         Args:
             backup_name: Name of the backup file to verify
@@ -438,7 +464,26 @@ class BackupManager:
         if backup_path.stat().st_size < 1000:
             return False
 
-        # Check magic bytes
+        # Check compression format
+        is_zip = backup_name.endswith(".zip")
+        is_gzip = backup_name.endswith(".gz")
+
+        if is_zip:
+            try:
+                with zipfile.ZipFile(backup_path, "r") as zipf:
+                    return len(zipf.namelist()) > 0
+            except zipfile.BadZipFile:
+                return False
+
+        if is_gzip:
+            try:
+                with gzip.open(backup_path, "rb") as f:
+                    f.read(4)
+                return True
+            except (gzip.BadGzipFile, OSError):
+                return False
+
+        # Check magic bytes for uncompressed save
         with open(backup_path, "rb") as f:
             magic = f.read(4)
             return magic in (b"BND4", b"SL2\x00")
