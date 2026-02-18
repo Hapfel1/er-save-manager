@@ -847,7 +847,7 @@ class SaveManagerGUI:
             f"This is NOT the default Steam compatdata location!\n\n"
             f'⚠️ If you remove the custom launcher (e.g. "ersc_launcher.exe") from Steam, '
             f"Steam will remove that compatdata folder and your save will get lost.\n\n"
-            f"Recommended: Set a fixed Steam launch option and copy the save file to the default "
+            f"Recommended: Set a fixed Steam launch option and the save file to the default "
             f"location via the 'Copy Save' button below to prevent this."
         )
 
@@ -884,8 +884,12 @@ class SaveManagerGUI:
                 )
 
             ctk.CTkButton(  # Use CTkButton instead of ttk.Button
-                option_frame, text="Copy", command=copy_to_clipboard, width=80
+                option_frame,
+                text="Copy",
+                command=copy_to_clipboard,
+                width=80
             ).pack(side=tk.LEFT, padx=5)
+
 
         def copy_to_default():
             """Copy save to the SteamID-specific folder instead of the root EldenRing folder."""
