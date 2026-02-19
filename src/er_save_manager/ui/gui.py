@@ -847,7 +847,7 @@ class SaveManagerGUI:
             f"This is NOT the default Steam compatdata location!\n\n"
             f'⚠️ If you remove the custom launcher (e.g. "ersc_launcher.exe") from Steam, '
             f"Steam will remove that compatdata folder and your save will get lost.\n\n"
-            f"Recommended: Set a fixed Steam launch option and copy the save file to the default "
+            f"Recommended: Set a fixed Steam launch option and the save file to the default "
             f"location via the 'Copy Save' button below to prevent this."
         )
 
@@ -876,19 +876,16 @@ class SaveManagerGUI:
             option_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
 
             def copy_to_clipboard():
-                self.root.clipboard_clear()
-                self.root.clipboard_append(launch_option)
+                dialog.clipboard_clear()  # Use dialog, not self.root
+                dialog.clipboard_append(launch_option)
+                dialog.update()  # Force clipboard sync
                 CTkMessageBox.showinfo(
-                    "Copied", "Launch option copied to clipboard!", parent=self.root
+                    "Copied", "Launch option copied to clipboard!", parent=dialog
                 )
 
-            ttk.Button(
-                option_frame, text="Copy", command=copy_to_clipboard, width=10
-            ).pack(side=tk.LEFT)
-
-        # Buttons
-        button_frame = ttk.Frame(msg_frame)
-        button_frame.pack(pady=10)
+            ctk.CTkButton(  # Use CTkButton instead of ttk.Button
+                option_frame, text="Copy", command=copy_to_clipboard, width=80
+            ).pack(side=tk.LEFT, padx=5)
 
         def copy_to_default():
             """Copy save to the SteamID-specific folder instead of the root EldenRing folder."""
@@ -932,6 +929,10 @@ class SaveManagerGUI:
         def dont_show_again():
             self.settings.set("show_linux_save_warning", False)
             dialog.destroy()
+
+        # Buttons
+        button_frame = ttk.Frame(msg_frame)
+        button_frame.pack(pady=10)
 
         ttk.Button(
             button_frame, text="Copy to Default", command=copy_to_default, width=18
