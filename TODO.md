@@ -1,3 +1,13 @@
+copy path does not work on linux done
+
+add npc event flags done
+
+try fixing scrolling on linux skipped for now
+
+zip done
+
+troubleshooting borked save
+
 troubleshooter for each game
 
 check character presets wiping issue done
