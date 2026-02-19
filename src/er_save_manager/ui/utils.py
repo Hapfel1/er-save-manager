@@ -48,40 +48,29 @@ def force_render_dialog(dialog):
 def bind_mousewheel(widget, target_widget=None):
     """
     Bind mousewheel scrolling to a CTkScrollableFrame (cross-platform).
-
-    Args:
-        widget: The widget to bind events to (usually the scrollable frame)
-        target_widget: The widget to scroll (defaults to widget if None)
     """
     if target_widget is None:
         target_widget = widget
 
-    def _on_mousewheel(event):
-        # Ensure widget has focus for scroll to work
-        try:
-            widget.focus_set()
-        except Exception:
-            pass
+    is_linux = platform_module.system() == "Linux"
 
+    def _on_mousewheel(event):
         # For CTkScrollableFrame, use _parent_canvas
         if hasattr(target_widget, "_parent_canvas"):
             try:
                 canvas = target_widget._parent_canvas
                 if canvas and hasattr(canvas, "yview_scroll"):
-                    # Scroll up (negative delta) or down (positive delta)
-                    # Windows/Darwin: event.delta; Linux: event.num
                     if hasattr(event, "delta"):
                         delta = int(-1 * (event.delta / 120))
                     elif hasattr(event, "num"):
-                        # Linux: Button-4 (up) = 4, Button-5 (down) = 5
                         delta = -1 if event.num == 4 else 1
                     else:
                         delta = 0
                     if delta != 0:
                         canvas.yview_scroll(delta, "units")
-            except Exception:
-                pass
-        # Fallback for regular tk Canvas/Frame
+                        return "break"  # Stop event propagation
+            except Exception as e:
+                print(f"[DEBUG] Scroll error: {e}")
         elif hasattr(target_widget, "yview_scroll"):
             try:
                 if hasattr(event, "delta"):
@@ -92,51 +81,34 @@ def bind_mousewheel(widget, target_widget=None):
                     delta = 0
                 if delta != 0:
                     target_widget.yview_scroll(delta, "units")
-            except Exception:
-                pass
+                    return "break"
+            except Exception as e:
+                print(f"[DEBUG] Scroll error: {e}")
 
-    # Detect platform for appropriate event binding
-    is_linux = platform_module.system() == "Linux"
-
-    # Bind to the main widget
+    # Bind to the toplevel window instead of recursing through children
     try:
+        toplevel = widget.winfo_toplevel()
         if is_linux:
-            # Linux uses Button-4 (scroll up) and Button-5 (scroll down)
-            widget.bind("<Button-4>", _on_mousewheel, add="+")
-            widget.bind("<Button-5>", _on_mousewheel, add="+")
+            toplevel.bind_all("<Button-4>", _on_mousewheel, add="+")
+            toplevel.bind_all("<Button-5>", _on_mousewheel, add="+")
         else:
-            # Windows/Darwin use MouseWheel
-            widget.bind("<MouseWheel>", _on_mousewheel, add="+")
-    except Exception:
-        pass
-
-    # Recursively bind to all children up to a reasonable depth
-    def bind_children(w, depth=0):
-        if depth > 5:  # Prevent infinite recursion
-            return
-        try:
-            for child in w.winfo_children():
-                if is_linux:
-                    child.bind("<Button-4>", _on_mousewheel, add="+")
-                    child.bind("<Button-5>", _on_mousewheel, add="+")
-                else:
-                    child.bind("<MouseWheel>", _on_mousewheel, add="+")
-                bind_children(child, depth + 1)
-        except Exception:
-            pass
-
-    bind_children(widget)
+            toplevel.bind_all("<MouseWheel>", _on_mousewheel, add="+")
+    except Exception as e:
+        print(f"[DEBUG] Bind error: {e}")
 
 
 def open_url(url: str) -> bool:
     """Open a URL in the user's default browser with cross-platform fallbacks."""
-    try:
-        if webbrowser.open(url, new=2):
-            return True
-    except Exception:
-        pass
-
     platform_name = platform_module.system()
+    in_appimage = bool(os.environ.get("APPIMAGE"))
+
+    if not (platform_name == "Linux" and in_appimage):
+        try:
+            if webbrowser.open(url, new=2):
+                return True
+        except Exception:
+            pass
+
     if platform_name == "Linux":
         return _open_url_linux(url)
     if platform_name == "Darwin":
@@ -182,8 +154,8 @@ def _run_command(args: list[str], env: dict | None = None) -> bool:
 def _get_subprocess_env() -> dict:
     env = os.environ.copy()
     if env.get("APPIMAGE") or env.get("SNAP") or env.get("FLATPAK_ID"):
-        # Avoid lib path pollution when launching system helpers (AppImage/Snap/Flatpak).
         env.pop("LD_LIBRARY_PATH", None)
+        env.pop("LD_PRELOAD", None)  # Add this line
         env.pop("PYTHONHOME", None)
         env.pop("PYTHONPATH", None)
     return env
