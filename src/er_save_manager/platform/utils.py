@@ -1,6 +1,7 @@
 """Platform-specific utilities for cross-platform support."""
 
 import platform
+import subprocess
 from pathlib import Path
 
 
@@ -38,6 +39,64 @@ class PlatformUtils:
     def is_macos() -> bool:
         """Check if running on macOS."""
         return PlatformUtils.get_platform() == "darwin"
+
+    @staticmethod
+    def is_game_running() -> bool:
+        """
+        Check if Elden Ring is running.
+
+        Returns:
+            True if game process is found, False otherwise
+        """
+        try:
+            if PlatformUtils.is_windows():
+                result = subprocess.run(
+                    ["tasklist", "/FI", "IMAGENAME eq eldenring.exe", "/NH"],
+                    capture_output=True,
+                    text=True,
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                )
+                return "eldenring.exe" in result.stdout.lower()
+            elif PlatformUtils.is_linux():
+                # Check for eldenring.exe process (runs under Wine/Proton)
+                result = subprocess.run(
+                    ["pgrep", "-f", "eldenring.exe"],
+                    capture_output=True,
+                    text=True,
+                )
+                return result.returncode == 0
+        except Exception:
+            pass
+
+        return False
+
+    @staticmethod
+    def kill_game_process() -> bool:
+        """
+        Force kill Elden Ring process.
+
+        Returns:
+            True if process was killed successfully, False otherwise
+        """
+        try:
+            if PlatformUtils.is_windows():
+                subprocess.run(
+                    ["taskkill", "/F", "/IM", "eldenring.exe"],
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                    check=True,
+                )
+                return True
+            elif PlatformUtils.is_linux():
+                # Kill all eldenring.exe processes
+                subprocess.run(
+                    ["pkill", "-9", "-f", "eldenring.exe"],
+                    check=True,
+                )
+                return True
+        except Exception:
+            pass
+
+        return False
 
     @staticmethod
     def get_default_save_locations() -> list[Path]:
