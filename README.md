@@ -137,6 +137,11 @@ Automatically detects issues with your game installation, your save file and any
 - Supports all main game and DLC bosses
 - One-click respawn functionality
 
+### NPC Respawner
+
+- Respawn NPCs
+- One-click respawn functionality
+
 ### Gestures
 
 - Unlock gestures
