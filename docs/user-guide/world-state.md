@@ -8,7 +8,6 @@ The World State tab displays character location information and provides custom 
 
 - View current map and coordinates
 - Custom coordinate teleportation
-- Real-time coordinate display
 - Location validation
 
 **Note:** Known location list is temporarily disabled pending verification. Only custom coordinate entry is available.
@@ -202,7 +201,7 @@ The known location dropdown is temporarily disabled pending verification of coor
 A: Coordinates are being verified and tested. Custom coordinates still work.
 
 **Q: Can teleporting break my save?**  
-A: Invalid coordinates can cause loading issues, but backup system prevents permanent damage.
+A: Invalid coordinates can cause loading issues, but the backup system prevents permanent damage.
 
 **Q: Can I teleport to DLC areas?**  
 A: Yes, but you must own the DLC or the game won't load.

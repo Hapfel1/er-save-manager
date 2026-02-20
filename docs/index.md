@@ -63,18 +63,17 @@
 
 === "Windows"
 
-    Download the latest `EldenRingSaveManager.exe` from [Releases](https://github.com/Hapfel1/er-save-manager/releases)
+    Download the latest Windows Version from [Releases](https://github.com/Hapfel1/er-save-manager/releases)
     
-    No installation required - it's a portable executable!
+    Unpack the zip.
+    Run the executable.
+    
 
 === "Linux / Steam Deck"
 
-    Download `EldenRingSaveManager.AppImage` from [Releases](https://github.com/Hapfel1/er-save-manager/releases)
-    
-    ```bash
-    chmod +x EldenRingSaveManager.AppImage
-    ./EldenRingSaveManager.AppImage
-    ```
+    Download the latest Linux Version from [Releases](https://github.com/Hapfel1/er-save-manager/releases)
+
+    Run the AppImage
     
     **Features:**
     - Auto-detects Steam (standard and Flatpak)
@@ -84,9 +83,8 @@
 ## Quick Start
 
 1. **Launch** the application
-2. **Auto-Detect** or **Browse** to your save file
-3. **Load Save File** to begin
-4. Use tabs to access different features
+2. Click **Auto-Detect** or **Browse** to load your save file
+3. Use tabs to access different features
 
 !!! tip "First Time?"
     Check out the [Installation Guide](user-guide/installation.md) for platform-specific instructions!

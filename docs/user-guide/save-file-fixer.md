@@ -155,7 +155,7 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 1. Load your save file
 2. Navigate to **Save Fixer** tab
 3. Select your character in the list
-4. Click **View All Issues Issues**
+4. Click **View All Issues**
 5. Review detected problems in list
 
 ### Fix All at Once
