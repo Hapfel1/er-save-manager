@@ -23,7 +23,12 @@ class GesturesRegionsTab:
     """Tab for viewing and unlocking gestures"""
 
     def __init__(
-        self, parent, get_save_file_callback, get_save_path_callback, reload_callback
+        self,
+        parent,
+        get_save_file_callback,
+        get_save_path_callback,
+        reload_callback,
+        show_toast_callback,
     ):
         """
         Initialize gestures tab
@@ -33,11 +38,13 @@ class GesturesRegionsTab:
             get_save_file_callback: Function that returns current save file
             get_save_path_callback: Function that returns save file path
             reload_callback: Function to reload save file
+            show_toast_callback: Function to show toast notifications
         """
         self.parent = parent
         self.get_save_file = get_save_file_callback
         self.get_save_path = get_save_path_callback
         self.reload_save = reload_callback
+        self.show_toast = show_toast_callback
 
         self.gesture_slot_var = None
         self.current_slot = None
@@ -208,9 +215,9 @@ class GesturesRegionsTab:
         # Remember initial unlocked set for delta calculation on apply
         self._initial_unlocked = set(unlocked_gesture_ids)
 
-        CTkMessageBox.showinfo(
-            "Loaded",
-            f"Loaded {len(self.gesture_states, parent=self.parent)} gestures for Slot {slot_idx + 1}.",
+        self.show_toast(
+            f"Loaded {len(self.gesture_states)} gestures for Slot {slot_idx + 1}",
+            duration=2500,
         )
 
     def apply_gesture_changes(self):
@@ -247,10 +254,11 @@ class GesturesRegionsTab:
             "Apply Changes",
             (
                 f"Apply gesture changes to Slot {slot_idx + 1}?\n"
-                f"{len(to_unlock, parent=self.parent)} gesture(s) will be unlocked"
+                f"{len(to_unlock)} gesture(s) will be unlocked"
                 + (f" and {len(to_lock)} locked" if to_lock else "")
                 + ".\n\nA backup will be created."
             ),
+            parent=self.parent,
         ):
             return
 
@@ -276,7 +284,8 @@ class GesturesRegionsTab:
             if len(new_gesture_ids) != 64:
                 CTkMessageBox.showerror(
                     "Error",
-                    f"Invalid gesture count: {len(new_gesture_ids, parent=self.parent)} (expected 64)",
+                    f"Invalid gesture count: {len(new_gesture_ids)} (expected 64)",
+                    parent=self.parent,
                 )
                 return
 
@@ -299,7 +308,8 @@ class GesturesRegionsTab:
             if len(gesture_data) != 256:
                 CTkMessageBox.showerror(
                     "Error",
-                    f"Invalid gesture data size: {len(gesture_data, parent=self.parent)} bytes (expected 256)",
+                    f"Invalid gesture data size: {len(gesture_data)} bytes (expected 256)",
+                    parent=self.parent,
                 )
                 return
 
@@ -314,24 +324,20 @@ class GesturesRegionsTab:
             save_file.recalculate_checksums()
             save_file.to_file(save_path)
 
-            CTkMessageBox.showinfo(
-                "Success",
-                (
-                    f"Applied changes to Slot {slot_idx + 1}:\n"
-                    f"Unlocked {len(to_unlock)}"
-                    + (f", locked {len(to_lock)}" if to_lock else "")
-                    + "."
-                ),
-                parent=self.parent,
-            )
-
             if self.reload_save:
                 self.reload_save()
+
+            self.show_toast(
+                f"Applied changes to Slot {slot_idx + 1}: Unlocked {len(to_unlock)}"
+                + (f", locked {len(to_lock)}" if to_lock else ""),
+                duration=2500,
+            )
+
             self.load_gestures()
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to apply changes:\n{str(e, parent=self.parent)}"
+                "Error", f"Failed to apply changes:\n{str(e)}", parent=self.parent
             )
 
     def select_all_gestures(self, select_type: str):
@@ -353,11 +359,9 @@ class GesturesRegionsTab:
             if include_dlc or not is_dlc_gesture(gesture_id):
                 var.set(True)
 
-        CTkMessageBox.showinfo(
-            "Gestures Selected",
-            f"All {'base game + DLC' if include_dlc else 'base game'} gestures selected.\n"
-            f"Click 'Apply Changes' to save.",
-            parent=self.parent,
+        self.show_toast(
+            f"All {'base game + DLC' if include_dlc else 'base game'} gestures selected. Click 'Apply Changes' to save.",
+            duration=2500,
         )
 
     def deselect_all_gestures(self):
@@ -371,6 +375,4 @@ class GesturesRegionsTab:
         for var in self.gesture_states.values():
             var.set(False)
 
-        CTkMessageBox.showinfo(
-            "Gestures Deselected", "All gestures deselected.", parent=self.parent
-        )
+        self.show_toast("All gestures deselected", duration=2000)

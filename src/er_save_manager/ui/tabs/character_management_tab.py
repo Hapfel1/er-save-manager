@@ -22,6 +22,7 @@ class CharacterManagementTab:
         get_save_file_callback,
         get_save_path_callback,
         reload_callback,
+        show_toast_callback,
         is_game_running_callback=None,
     ):
         """
@@ -32,12 +33,14 @@ class CharacterManagementTab:
             get_save_file_callback: Function that returns current save file
             get_save_path_callback: Function that returns save file path
             reload_callback: Function to reload save file after operations
+            show_toast_callback: Function to show toast notifications
             is_game_running_callback: Function to check if game is running
         """
         self.parent = parent
         self.get_save_file = get_save_file_callback
         self.get_save_path = get_save_path_callback
         self.reload_save = reload_callback
+        self.show_toast = show_toast_callback
         self.is_game_running = is_game_running_callback
 
         # Operation variables
@@ -534,12 +537,10 @@ class CharacterManagementTab:
                 self.reload_save()
 
             # Delay message to ensure it appears on top after reload
-            self.parent.after(
-                100,
-                lambda: CTkMessageBox.showinfo(
-                    "Success",
-                    f"Character '{from_name}' copied from Slot {from_slot + 1} to Slot {to_slot + 1}!\n\nBackup created in backup manager.",
-                    parent=self.parent,
+            (
+                self.show_toast(
+                    f"Character '{from_name}' copied to Slot {to_slot + 1}!",
+                    duration=2500,
                 ),
             )
 
@@ -677,13 +678,8 @@ class CharacterManagementTab:
                 self.reload_save()
 
             # Delay message to ensure it appears on top after reload
-            self.parent.after(
-                100,
-                lambda: CTkMessageBox.showinfo(
-                    "Success",
-                    f"Character transferred from Slot {from_slot + 1} to target save Slot {to_slot + 1}!\n\nBoth saves backed up.",
-                    parent=self.parent,
-                ),
+            self.show_toast(
+                f"Character transferred to target Slot {to_slot + 1}!", duration=2500
             )
 
         except Exception as e:
@@ -747,13 +743,8 @@ class CharacterManagementTab:
                 self.reload_save()
 
             # Delay message to ensure it appears on top after reload
-            self.parent.after(
-                100,
-                lambda: CTkMessageBox.showinfo(
-                    "Success",
-                    f"Swapped Slot {slot_a + 1} and Slot {slot_b + 1}!",
-                    parent=self.parent,
-                ),
+            self.show_toast(
+                f"Swapped Slot {slot_a + 1} and Slot {slot_b + 1}!", duration=2500
             )
 
         except Exception as e:
@@ -900,14 +891,7 @@ class CharacterManagementTab:
                 self.reload_save()
 
             # Delay message to ensure it appears on top after reload
-            self.parent.after(
-                100,
-                lambda: CTkMessageBox.showinfo(
-                    "Success",
-                    f"Character imported to Slot {to_slot + 1}!",
-                    parent=self.parent,
-                ),
-            )
+            self.show_toast(f"Character imported to Slot {to_slot + 1}!", duration=2500)
 
         except Exception as e:
             CTkMessageBox.showerror(
@@ -996,14 +980,7 @@ class CharacterManagementTab:
                 self.reload_save()
 
             # Delay message to ensure it appears on top after reload
-            self.parent.after(
-                100,
-                lambda: CTkMessageBox.showinfo(
-                    "Success",
-                    f"Character '{char_name}' deleted from Slot {slot + 1}.\n\nBackup created.",
-                    parent=self.parent,
-                ),
-            )
+            self.show_toast(f"Character deleted from Slot {slot + 1}", duration=2500)
 
         except Exception as e:
             CTkMessageBox.showerror(
