@@ -3,6 +3,29 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.11.0
+**Released:** February 20, 2026
+
+
+### ✨ New Features
+
+- Add NPC respawner ([a6cb90d](https://github.com/Hapfel1/er-save-manager/commit/a6cb90dfbae0e38e69f3f3ff3b39f5140560b9f2))
+
+
+
+### 🔧 Bug Fixes
+
+- Fixed window popup render issue on linux ([8d340db](https://github.com/Hapfel1/er-save-manager/commit/8d340db0e9f52e6c4a586bc348df90dfe2bade46))
+
+
+
+### 🎨 User Interface
+
+- Made game running detection more clear and added a button to force quit the game ([aad25ef](https://github.com/Hapfel1/er-save-manager/commit/aad25ef2d4671daa6e1d414821aecb05f0ecc520))
+
+
+
+---
 ## 📦 Release 0.10.1
 **Released:** February 11, 2026
 
@@ -503,6 +526,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.11.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.10.1..v0.11.0
 [0.10.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.10.0..v0.10.1
 [0.10.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.9.0..v0.10.0
 [0.9.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.8.0..v0.9.0
