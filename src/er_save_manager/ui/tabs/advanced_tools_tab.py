@@ -13,7 +13,12 @@ class AdvancedToolsTab:
     """Tab for advanced save file operations (customtkinter version)."""
 
     def __init__(
-        self, parent, get_save_file_callback, get_save_path_callback, reload_callback
+        self,
+        parent,
+        get_save_file_callback,
+        get_save_path_callback,
+        reload_callback,
+        show_toast_callback,
     ):
         """
         Initialize advanced tools tab
@@ -27,6 +32,7 @@ class AdvancedToolsTab:
         self.parent = parent
         self.get_save_file = get_save_file_callback
         self.get_save_path = get_save_path_callback
+        self.show_toast = show_toast_callback
         self.reload_save = reload_callback
         self.save_info_text = None
 

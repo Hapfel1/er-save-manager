@@ -304,6 +304,12 @@ class SaveManagerGUI:
         except Exception:
             pass
 
+    def show_toast(self, message: str, duration: int = 3000, type: str = "success"):
+        """Show toast notification"""
+        from er_save_manager.ui.toast import show_toast as _show_toast
+
+        _show_toast(self.root, message, duration, type)
+
     def _show_update_dialog(self, latest_version: str, download_url: str):
         """Show update available dialog with GitHub and Nexus Mods download options"""
         from er_save_manager.ui.utils import force_render_dialog
@@ -563,6 +569,7 @@ class SaveManagerGUI:
             lambda: self.save_file,
             lambda: self.save_path,
             self.reload_save,
+            self.show_toast,
             self.is_game_running,
         )
         self.char_mgmt_tab.setup_ui()
@@ -580,6 +587,7 @@ class SaveManagerGUI:
             lambda: self.save_file,
             lambda: self.save_path,
             self.load_save,
+            self.show_toast,
         )
         self.appearance_tab.setup_ui()
 
@@ -592,6 +600,7 @@ class SaveManagerGUI:
             lambda: self.save_path,
             self.load_save,
             lambda: self.selected_slot_index,
+            self.show_toast,
         )
         self.world_tab.setup_ui()
 
@@ -599,7 +608,11 @@ class SaveManagerGUI:
         self.notebook.add("SteamID Patcher")
         tab_steamid = self.notebook.tab("SteamID Patcher")
         self.steamid_tab = SteamIDPatcherTab(
-            tab_steamid, lambda: self.save_file, lambda: self.save_path, self.load_save
+            tab_steamid,
+            lambda: self.save_file,
+            lambda: self.save_path,
+            self.load_save,
+            self.show_toast,
         )
         self.steamid_tab.setup_ui()
 
@@ -611,6 +624,7 @@ class SaveManagerGUI:
             lambda: self.save_file,
             lambda: self.save_path,
             self.load_save,
+            self.show_toast,
         )
         self.event_flags_tab.setup_ui()
 
@@ -622,6 +636,7 @@ class SaveManagerGUI:
             lambda: self.save_file,
             lambda: self.save_path,
             self.load_save,
+            self.show_toast,
         )
         self.gestures_tab.setup_ui()
 
@@ -635,7 +650,11 @@ class SaveManagerGUI:
         self.notebook.add("Advanced Tools")
         tab_advanced = self.notebook.tab("Advanced Tools")
         self.advanced_tab = AdvancedToolsTab(
-            tab_advanced, lambda: self.save_file, lambda: self.save_path, self.load_save
+            tab_advanced,
+            lambda: self.save_file,
+            lambda: self.save_path,
+            self.load_save,
+            self.show_toast,
         )
         self.advanced_tab.setup_ui()
 
@@ -844,11 +863,6 @@ class SaveManagerGUI:
 
     def auto_detect(self):
         """Auto-detect save file with Linux support"""
-        # Check if game is running - MUST be closed
-        if self.is_game_running():
-            if not self._handle_game_running_dialog():
-                return
-
         # Find all save files using platform utilities
         found_saves = PlatformUtils.find_all_save_files()
 
@@ -1156,7 +1170,7 @@ class SaveManagerGUI:
         if save_path and os.path.exists(save_path):
             # Only auto-load if it's a save file named ER0000.* with any extension
             filename = os.path.basename(save_path).lower()
-            if filename.startswith("er0000."):
+            if filename.startswith("er"):
                 # Use after() to avoid loading while user is still typing
                 self.root.after(500, self.load_save)
 
@@ -1307,9 +1321,8 @@ class SaveManagerGUI:
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         if not silent:
-            CTkMessageBox.showinfo(
-                "Success", "Save file loaded successfully!", parent=self.root
-            )
+            # Show toast notification instead of blocking popup
+            self.show_toast("Save file loaded successfully!", duration=2500)
 
     def show_character_details(self, slot_idx):
         """Show character details dialog"""
