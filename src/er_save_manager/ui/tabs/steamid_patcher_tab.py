@@ -16,7 +16,12 @@ class SteamIDPatcherTab:
     """Tab for SteamID patching operations"""
 
     def __init__(
-        self, parent, get_save_file_callback, get_save_path_callback, reload_callback
+        self,
+        parent,
+        get_save_file_callback,
+        get_save_path_callback,
+        reload_callback,
+        show_toast_callback,
     ):
         """
         Initialize SteamID patcher tab
@@ -31,7 +36,7 @@ class SteamIDPatcherTab:
         self.get_save_file = get_save_file_callback
         self.get_save_path = get_save_path_callback
         self.reload_save = reload_callback
-
+        self.show_toast = show_toast_callback
         self.current_steamid_var = None
         self.new_steamid_var = None
         self.steam_url_var = None

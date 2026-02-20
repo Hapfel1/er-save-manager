@@ -29,11 +29,13 @@ class WorldStateTab:
         get_save_path_callback,
         reload_callback,
         selected_slot_callback,
+        show_toast_callback,
     ):
         """Initialize World State tab."""
         self.parent = parent
         self.get_save_file = get_save_file_callback
         self.get_save_path = get_save_path_callback
+        self.show_toast = show_toast_callback
         self.reload_save = reload_callback
         self.get_selected_slot = selected_slot_callback
         self.editor: WorldStateEditor | None = None
@@ -261,11 +263,8 @@ class WorldStateTab:
 
         # Refresh display
         self.refresh()
-
-        CTkMessageBox.showinfo(
-            "Loaded",
-            f"Character slot {slot_idx + 1} loaded successfully",
-            parent=self.parent,
+        self.show_toast(
+            f"Character slot {slot_idx + 1} loaded successfully", duration=2500
         )
 
     def _on_mode_changed(self):
@@ -581,12 +580,7 @@ class WorldStateTab:
                 self.reload_save()
                 self.refresh()
                 # Delay message to ensure it appears on top after reload
-                self.parent.after(
-                    100,
-                    lambda msg=message: CTkMessageBox.showinfo(
-                        "Success", f"✓ {msg}", parent=self.parent
-                    ),
-                )
+                self.show_toast(f"✓ {message}", duration=2500)
         else:
             CTkMessageBox.showerror("Error", message, parent=self.parent)
 
@@ -733,12 +727,7 @@ class WorldStateTab:
                 self.reload_save()
                 self.refresh()
                 # Delay message to ensure it appears on top after reload
-                self.parent.after(
-                    100,
-                    lambda msg=message: CTkMessageBox.showinfo(
-                        "Success", f"✓ {msg}", parent=self.parent
-                    ),
-                )
+                self.show_toast(f"✓ {message}", duration=2500)
         else:
             CTkMessageBox.showerror("Error", message, parent=self.parent)
 
