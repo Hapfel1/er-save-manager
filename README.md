@@ -19,6 +19,7 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **SteamID Patcher**: Transfer saves between Steam accounts
 - **Event Flags Editor**: Read and toggle event flags
 - **Boss Respawner**: Respawn any boss for repeated fights
+- **NPC Respawner**: Respawn NPCs
 - **Gestures**: Unlock gestures
 - **Backup Manager**: Automatic and manual backups with restore functionality
 - **Troubleshooting**: Troubleshooter for checking game and save file related issues
