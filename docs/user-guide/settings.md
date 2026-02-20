@@ -100,13 +100,13 @@ The Settings tab provides control over:
 
 ### Compress Backups
 
-**Setting:** Compress backups (gzip) to save disk space
+**Setting:** Compress backups (zip) to save disk space
 
 **Default:** ON (checked)
 
 **What it does:**
 
-- Compresses backup files with gzip
+- Compresses backup files with zip
 - Reduces size by ~90%
 - Takes slightly longer to create/restore
 
