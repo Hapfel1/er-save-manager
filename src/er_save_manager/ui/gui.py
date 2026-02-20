@@ -4,7 +4,6 @@ Modular Elden Ring Save Manager GUI
 """
 
 import os
-import subprocess
 import sys
 import threading
 import tkinter as tk
@@ -213,6 +212,67 @@ class SaveManagerGUI:
 
         thread = threading.Thread(target=check_in_thread, daemon=True)
         thread.start()
+
+    def _handle_game_running_dialog(self) -> bool:
+        """
+        Show dialog when game is running and handle user choice.
+        Blocks loading until game process is terminated.
+
+        Returns:
+            True if game was successfully terminated
+            False if user cancelled or kill failed
+        """
+        result = CTkMessageBox.askyesno(
+            "⚠️ Game is Running",
+            "Elden Ring is currently running.\n\n"
+            "The save file cannot be loaded while the game is running.\n\n"
+            "Would you like to force kill the game process?",
+            parent=self.root,
+        )
+
+        if not result:  # User said No/Cancel
+            return False
+
+        # User said Yes - kill the game
+        if not PlatformUtils.kill_game_process():
+            CTkMessageBox.showerror(
+                "Error",
+                "Failed to terminate Elden Ring process.\n\n"
+                "The game may require manual closing or administrator permissions.",
+                parent=self.root,
+            )
+            return False
+
+        # Wait for process to actually terminate (scan for up to 5 seconds)
+        import time
+
+        max_wait = 5  # seconds
+        wait_interval = 0.2  # check every 200ms
+        elapsed = 0
+
+        while elapsed < max_wait:
+            if not PlatformUtils.is_game_running():
+                # Process is gone
+                CTkMessageBox.showinfo(
+                    "Success",
+                    "Elden Ring process terminated successfully.\n\n"
+                    "You can now proceed safely.",
+                    parent=self.root,
+                )
+                return True
+
+            time.sleep(wait_interval)
+            elapsed += wait_interval
+            self.root.update()  # Keep UI responsive
+
+        # Timeout - process still running
+        CTkMessageBox.showerror(
+            "Timeout",
+            "Game process is still running after kill attempt.\n\n"
+            "Please close Elden Ring manually and try again.",
+            parent=self.root,
+        )
+        return False
 
     def _init_process_monitor(self):
         """Initialize auto-backup process monitor"""
@@ -734,6 +794,11 @@ class SaveManagerGUI:
     # File operations
     def browse_file(self):
         """Browse for save file"""
+        # Check if game is running - MUST be closed
+        if self.is_game_running():
+            if not self._handle_game_running_dialog():
+                return
+
         # Use last_save_path if enabled and valid
         initialdir = None
         if self.settings.get("remember_last_location", True):
@@ -779,6 +844,11 @@ class SaveManagerGUI:
 
     def auto_detect(self):
         """Auto-detect save file with Linux support"""
+        # Check if game is running - MUST be closed
+        if self.is_game_running():
+            if not self._handle_game_running_dialog():
+                return
+
         # Find all save files using platform utilities
         found_saves = PlatformUtils.find_all_save_files()
 
@@ -945,21 +1015,8 @@ class SaveManagerGUI:
         ).pack(side=tk.LEFT, padx=5)
 
     def is_game_running(self):
-        """Check if Elden Ring is running"""
-        try:
-            result = subprocess.run(
-                ["tasklist", "/FI", "IMAGENAME eq eldenring.exe", "/NH"],
-                capture_output=True,
-                text=True,
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
-            )
-            if "eldenring.exe" in result.stdout.lower():
-                return True
-
-        except Exception:
-            pass
-
-        return False
+        """Check if Elden Ring is running (uses PlatformUtils for cross-platform support)"""
+        return PlatformUtils.is_game_running()
 
     def _get_game_folder(self) -> Path | None:
         """Attempt to detect the Elden Ring installation folder."""
@@ -1121,15 +1178,10 @@ class SaveManagerGUI:
             )
             return
 
-        # Check if game is running
-
+        # Check if game is running - MUST be closed
         if self.is_game_running():
-            CTkMessageBox.showerror(
-                "Elden Ring is Running!",
-                "Please close Elden Ring before loading the save file.",
-                parent=self.root,
-            )
-            return
+            if not self._handle_game_running_dialog():
+                return
 
         # EAC warning for PC save files (.sl2)
         if save_path.lower().endswith(".sl2") and self.settings.get(
