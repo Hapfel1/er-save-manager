@@ -1,12 +1,14 @@
-Add avira 
+Add avira and exact file size
 
-troubleshooter in the save man
+troubleshooter in the save manager done
 
-check steamid linux and windows virus warning
+check steamid linux and windows virus warning done
 
-improve visuals, check item spawning again, add character names everywhere
+improve visuals done
 
-add slot names, general ui improvements etc
+check item spawning again
+
+add character slot names everywhere
 
 copy path does not work on linux done
 

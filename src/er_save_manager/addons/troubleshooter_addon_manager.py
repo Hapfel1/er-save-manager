@@ -178,33 +178,54 @@ class TroubleshooterAddon:
                 progress_callback(f"Installation failed: {e}")
             return False
 
-    def launch(self) -> bool:
+    def launch(self, show_error=None) -> bool:
         """
         Launch the troubleshooter
+
+        Args:
+            show_error: Optional callback to show error messages to the user (e.g., a messagebox)
 
         Returns:
             True if launched successfully
         """
         if not self.is_installed():
+            if show_error:
+                show_error("Troubleshooter is not installed.")
             return False
 
         try:
+            cmd = [str(self.executable_path)]
+            print(f"Launching troubleshooter: {cmd}")
             if os.name == "nt":
                 # Windows - launch without console window
-                subprocess.Popen(
-                    [str(self.executable_path)],
+                proc = subprocess.Popen(
+                    cmd,
                     creationflags=subprocess.CREATE_NO_WINDOW,
                 )
             else:
                 # Linux - launch in background
-                subprocess.Popen(
-                    [str(self.executable_path)],
+                proc = subprocess.Popen(
+                    cmd,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                 )
+            # Optionally, check if process starts and does not exit immediately
+            import time
+
+            time.sleep(0.5)
+            if proc.poll() is not None:
+                # Process exited
+                msg = "Troubleshooter process exited immediately. Check if the executable is valid."
+                print(msg)
+                if show_error:
+                    show_error(msg)
+                return False
             return True
         except Exception as e:
-            print(f"Failed to launch troubleshooter: {e}")
+            msg = f"Failed to launch troubleshooter: {e}"
+            print(msg)
+            if show_error:
+                show_error(msg)
             return False
 
     def uninstall(self) -> bool:
