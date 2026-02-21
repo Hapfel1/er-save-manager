@@ -1,3 +1,7 @@
+Add avira, troubleshooter in the save man, check steamid linux and windows virus warning, improve visuals, check item spawning again, add character names everywhere
+
+add slot names, general ui improvements etc
+
 copy path does not work on linux done
 
 add npc event flags done
