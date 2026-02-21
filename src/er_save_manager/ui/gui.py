@@ -1101,15 +1101,16 @@ class SaveManagerGUI:
         return None
 
     def open_troubleshooting(self):
-        """Open the troubleshooting dialog."""
-        from er_save_manager.ui.dialogs.troubleshooting import TroubleshootingDialog
-
-        dialog = TroubleshootingDialog(
-            parent=self.root,
-            game_folder=self._get_game_folder(),
-            save_file_path=self.save_path,
+        """Open the troubleshooting dialog or install addon"""
+        from er_save_manager.addons.troubleshooter_addon_manager import (
+            TroubleshooterAddon,
         )
-        dialog.show()
+        from er_save_manager.addons.troubleshooter_install_dialog import (
+            show_troubleshooter_dialog,
+        )
+
+        addon_manager = TroubleshooterAddon()
+        show_troubleshooter_dialog(self.root, addon_manager)
 
     def _on_tab_changed(self, event=None):
         """Handle tab change event - lazy load and refresh tabs."""
