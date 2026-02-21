@@ -1349,6 +1349,7 @@ class SaveManagerGUI:
                     lambda: self.save_file,
                     lambda: self.save_path,
                     self.load_save,
+                    self.show_toast,
                 )
 
             self._backup_tab_helper.show_backup_manager()
