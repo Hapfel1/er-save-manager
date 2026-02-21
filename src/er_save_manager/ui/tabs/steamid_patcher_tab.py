@@ -655,6 +655,10 @@ class SteamIDPatcherTab:
         # Force rendering on Linux
         force_render_dialog(dialog)
 
+        dialog.lift()  # Bring to front
+        dialog.focus_force()  # Force focus
+        dialog.grab_set()
+
         ctk.CTkLabel(
             dialog,
             text="Multiple Steam accounts detected.\nSelect the account to use:",

@@ -1,4 +1,10 @@
-Add avira, troubleshooter in the save man, check steamid linux and windows virus warning, improve visuals, check item spawning again, add character names everywhere
+Add avira 
+
+troubleshooter in the save man
+
+check steamid linux and windows virus warning
+
+improve visuals, check item spawning again, add character names everywhere
 
 add slot names, general ui improvements etc
 
