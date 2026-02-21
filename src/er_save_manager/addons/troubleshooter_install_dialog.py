@@ -111,14 +111,11 @@ def show_troubleshooter_dialog(parent, addon_manager):
 
     desc_text = """The FromSoftware Troubleshooter helps diagnose and fix common issues:
 
-✓ EAC/Game Process Detection
-✓ Save File Permissions
-✓ Missing Game Files
-✓ Registry Issues
-✓ Anti-Virus Conflicts
-✓ Mod Installation Problems
+✓ Game installation & folder
+✓ Problematic running processes
+✓ VPN clients
+✓ Steam running as administrator
 
-Size: ~5MB
 Source: github.com/Hapfel1/fromsoftware-troubleshooter"""
 
     ctk.CTkLabel(
