@@ -217,7 +217,7 @@ class AdvancedToolsTab:
             if not issues:
                 CTkMessageBox.showinfo(
                     "Validation Complete",
-                    "✓ Save file validation passed!\n\nNo critical issues detected.",
+                    "Save file validation passed!\n\nNo critical issues detected.",
                     parent=self.parent,
                 )
             else:
@@ -257,15 +257,10 @@ class AdvancedToolsTab:
 
             if save_path:
                 save_file.to_file(save_path)
-                CTkMessageBox.showinfo(
-                    "Success",
-                    "✓ Backup created and checksums recalculated.\n\n"
-                    "All save file checksums have been updated.",
-                    parent=self.parent,
-                )
                 # Refresh info panel
                 self.reload_save()
                 self.update_save_info()
+                self.show_toast("Checksums recalculated successfully", duration=2500)
             else:
                 CTkMessageBox.showerror(
                     "Error", "Save path not available", parent=self.parent
