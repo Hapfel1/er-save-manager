@@ -1,13 +1,12 @@
 """
-Toast Notification System - ACTUALLY ROUNDED
-The fix: Use fg_color instead of bg_color for CTkLabel!
+Toast Notification System - Clean Professional Rectangle
+No transparency issues, clean Catppuccin style
 """
 
 import tkinter as tk
 
 import customtkinter as ctk
 
-# Global queue to track active toasts
 _active_toasts = []
 
 
@@ -36,29 +35,30 @@ def show_toast(root: tk.Tk, message: str, duration: int = 3000, type: str = "suc
 
     theme = colors.get(type, colors["success"])
 
-    # Create toast window
-    toast = tk.Toplevel(root)
+    # Create clean rectangular toast
+    toast = ctk.CTkToplevel(root)
     toast.withdraw()
     toast.overrideredirect(True)
     toast.attributes("-topmost", True)
 
     # Transparency
     try:
-        toast.attributes("-alpha", 0.98)
+        toast.attributes("-alpha", 0.96)
     except tk.TclError:
         pass
 
-    # THE FIX: Use fg_color NOT bg_color for rounded corners!
+    # Simple label - clean and works
+    toast.configure(fg_color=theme["bg"])
+
     label = ctk.CTkLabel(
         toast,
         text=message,
         text_color=theme["fg"],
-        fg_color=theme["bg"],  # ✅ fg_color, not bg_color!
+        fg_color=theme["bg"],
         font=("Segoe UI", 12, "bold"),
-        corner_radius=14,
         wraplength=400,
     )
-    label.pack(padx=24, pady=14)
+    label.pack(padx=20, pady=12)
 
     # Get size
     toast.update_idletasks()
