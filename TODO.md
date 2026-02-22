@@ -1,6 +1,6 @@
 scrolling works on linux via the view details window in the appearance tab but not anywhere else
 
-Add avira and exact file size
+Add avira and exact file size done
 
 troubleshooter in the save manager done
 
