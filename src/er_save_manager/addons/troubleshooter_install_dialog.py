@@ -28,8 +28,10 @@ def show_troubleshooter_dialog(parent, addon_manager):
 
     # If installed and no updates, just launch
     if is_installed and not has_update:
+
         def show_error(msg):
             CTkMessageBox.showerror("Launch Failed", msg, parent=parent)
+
         if addon_manager.launch(show_error=show_error):
             return
         else:
@@ -165,6 +167,7 @@ Source: github.com/Hapfel1/fromsoftware-troubleshooter"""
             # Launch the troubleshooter
             def show_error(msg):
                 CTkMessageBox.showwarning("Launch Failed", msg, parent=parent)
+
             if addon_manager.launch(show_error=show_error):
                 CTkMessageBox.showinfo(
                     "Success",
@@ -180,8 +183,10 @@ Source: github.com/Hapfel1/fromsoftware-troubleshooter"""
         """Launch existing installation or cancel"""
         if is_installed:
             dialog.destroy()
+
             def show_error(msg):
                 CTkMessageBox.showerror("Launch Failed", msg, parent=parent)
+
             addon_manager.launch(show_error=show_error)
         else:
             dialog.destroy()
