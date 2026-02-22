@@ -46,70 +46,25 @@ def force_render_dialog(dialog):
 
 
 def bind_mousewheel(widget, target_widget=None):
-    """
-    Bind mousewheel scrolling to a CTkScrollableFrame (cross-platform).
-    Uses widget-specific binding instead of bind_all to avoid conflicts.
-    """
+    """AppImage-compatible scroll binding"""
     if target_widget is None:
         target_widget = widget
 
-    is_linux = platform_module.system() == "Linux"
+    # Direct canvas binding - works in AppImage
+    if hasattr(target_widget, "_parent_canvas"):
+        canvas = target_widget._parent_canvas
 
-    def _on_mousewheel(event):
-        # For CTkScrollableFrame, use _parent_canvas
-        if hasattr(target_widget, "_parent_canvas"):
-            try:
-                canvas = target_widget._parent_canvas
-                if canvas and hasattr(canvas, "yview_scroll"):
-                    if hasattr(event, "delta"):
-                        delta = int(-1 * (event.delta / 120))
-                    elif hasattr(event, "num"):
-                        delta = -1 if event.num == 4 else 1
-                    else:
-                        delta = 0
-                    if delta != 0:
-                        canvas.yview_scroll(delta, "units")
-                        return "break"  # Stop event propagation
-            except Exception as e:
-                print(f"[DEBUG] Scroll error: {e}")
-        elif hasattr(target_widget, "yview_scroll"):
-            try:
-                if hasattr(event, "delta"):
-                    delta = int(-1 * (event.delta / 120))
-                elif hasattr(event, "num"):
-                    delta = -1 if event.num == 4 else 1
-                else:
-                    delta = 0
-                if delta != 0:
-                    target_widget.yview_scroll(delta, "units")
-                    return "break"
-            except Exception as e:
-                print(f"[DEBUG] Scroll error: {e}")
+        def scroll(event):
+            if event.num == 4:  # Scroll up
+                canvas.yview_scroll(-1, "units")
+            elif event.num == 5:  # Scroll down
+                canvas.yview_scroll(1, "units")
 
-    # CHANGED: Bind to widget itself and its children, NOT bind_all
-    def bind_to_widget_tree(w):
-        """Recursively bind to widget and all children"""
-        try:
-            if is_linux:
-                w.bind("<Button-4>", _on_mousewheel, add="+")
-                w.bind("<Button-5>", _on_mousewheel, add="+")
-            else:
-                w.bind("<MouseWheel>", _on_mousewheel, add="+")
-
-            # Bind to all children recursively
-            for child in w.winfo_children():
-                bind_to_widget_tree(child)
-        except Exception:
-            pass
-
-    # Start binding from the widget
-    bind_to_widget_tree(widget)
-
-    # Also bind when new children are added (for dynamic content)
-    def on_configure(event):
-        bind_to_widget_tree(widget)
-
-    widget.bind("<Configure>", on_configure, add="+")
+        # Bind directly to canvas - bypasses AppImage issues
+        canvas.bind("<Button-4>", scroll)
+        canvas.bind("<Button-5>", scroll)
+        target_widget.bind("<Button-4>", scroll)
+        target_widget.bind("<Button-5>", scroll)
 
 
 def open_url(url: str) -> bool:
