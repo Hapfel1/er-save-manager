@@ -25,7 +25,7 @@ class TroubleshooterAddon:
         if os.name == "nt":  # Windows
             self.addon_dir = (
                 Path(os.environ.get("APPDATA"))
-                / "ERSaveManager"
+                / "ER Save Manager"
                 / "addons"
                 / "troubleshooter"
             )
@@ -41,7 +41,7 @@ class TroubleshooterAddon:
 
         self.version_file = self.addon_dir / "version.json"
         self.executable_name = (
-            "FromSoftware-Troubleshooter.exe"
+            "FromSoftware Troubleshooter.exe"
             if os.name == "nt"
             else "FromSoftware-Troubleshooter"
         )
