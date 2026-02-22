@@ -47,12 +47,11 @@ class AppearanceTab:
     def setup_ui(self):
         """Setup the appearance tab UI"""
         # Main scrollable container
-        scroll_frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
-        scroll_frame.pack(fill=tk.BOTH, expand=True)
-        bind_mousewheel(scroll_frame)
+        main_frame = ctk.CTkFrame(self.parent, fg_color="transparent")
+        main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Header
-        header_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
+        header_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         header_frame.pack(fill=tk.X, padx=15, pady=(15, 10))
 
         ctk.CTkLabel(
@@ -69,7 +68,7 @@ class AppearanceTab:
         ).pack(anchor="w", pady=(2, 0))
 
         # Preset list container
-        list_container = ctk.CTkFrame(scroll_frame, corner_radius=10)
+        list_container = ctk.CTkFrame(main_frame, corner_radius=10)
         list_container.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
 
         ctk.CTkLabel(
@@ -85,22 +84,8 @@ class AppearanceTab:
         self.list_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 12))
         bind_mousewheel(self.list_frame)
 
-        def on_enter(e):
-            # Unbind parent scroll when entering child
-            scroll_frame.unbind_all("<MouseWheel>")
-            scroll_frame.unbind_all("<Button-4>")
-            scroll_frame.unbind_all("<Button-5>")
-            bind_mousewheel(self.list_frame)
-
-        def on_leave(e):
-            # Re-bind parent scroll when leaving child
-            bind_mousewheel(scroll_frame)
-
-        self.list_frame.bind("<Enter>", on_enter)
-        self.list_frame.bind("<Leave>", on_leave)
-
         # Action buttons
-        action_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
+        action_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         action_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
         btn_row = ctk.CTkFrame(action_frame, fg_color="transparent")
