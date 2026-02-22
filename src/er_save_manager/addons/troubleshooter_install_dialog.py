@@ -28,14 +28,11 @@ def show_troubleshooter_dialog(parent, addon_manager):
 
     # If installed and no updates, just launch
     if is_installed and not has_update:
-        if addon_manager.launch():
+        def show_error(msg):
+            CTkMessageBox.showerror("Launch Failed", msg, parent=parent)
+        if addon_manager.launch(show_error=show_error):
             return
         else:
-            CTkMessageBox.showerror(
-                "Launch Failed",
-                "Failed to launch troubleshooter.\n\nTry reinstalling from the Troubleshooting menu.",
-                parent=parent,
-            )
             return
 
     # Show install/update dialog
@@ -166,16 +163,12 @@ Source: github.com/Hapfel1/fromsoftware-troubleshooter"""
             dialog.destroy()
 
             # Launch the troubleshooter
-            if addon_manager.launch():
+            def show_error(msg):
+                CTkMessageBox.showwarning("Launch Failed", msg, parent=parent)
+            if addon_manager.launch(show_error=show_error):
                 CTkMessageBox.showinfo(
                     "Success",
                     "Troubleshooter installed and launched successfully!",
-                    parent=parent,
-                )
-            else:
-                CTkMessageBox.showwarning(
-                    "Installed",
-                    "Troubleshooter installed successfully!\n\nLaunch failed - try again from the Troubleshooting button.",
                     parent=parent,
                 )
         else:
@@ -187,7 +180,9 @@ Source: github.com/Hapfel1/fromsoftware-troubleshooter"""
         """Launch existing installation or cancel"""
         if is_installed:
             dialog.destroy()
-            addon_manager.launch()
+            def show_error(msg):
+                CTkMessageBox.showerror("Launch Failed", msg, parent=parent)
+            addon_manager.launch(show_error=show_error)
         else:
             dialog.destroy()
 
