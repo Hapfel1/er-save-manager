@@ -48,6 +48,7 @@ def force_render_dialog(dialog):
 def bind_mousewheel(widget, target_widget=None):
     """
     Bind mousewheel scrolling to a CTkScrollableFrame (cross-platform).
+    Uses widget-specific binding instead of bind_all to avoid conflicts.
     """
     if target_widget is None:
         target_widget = widget
@@ -85,16 +86,30 @@ def bind_mousewheel(widget, target_widget=None):
             except Exception as e:
                 print(f"[DEBUG] Scroll error: {e}")
 
-    # Bind to the toplevel window instead of recursing through children
-    try:
-        toplevel = widget.winfo_toplevel()
-        if is_linux:
-            toplevel.bind_all("<Button-4>", _on_mousewheel, add="+")
-            toplevel.bind_all("<Button-5>", _on_mousewheel, add="+")
-        else:
-            toplevel.bind_all("<MouseWheel>", _on_mousewheel, add="+")
-    except Exception as e:
-        print(f"[DEBUG] Bind error: {e}")
+    # CHANGED: Bind to widget itself and its children, NOT bind_all
+    def bind_to_widget_tree(w):
+        """Recursively bind to widget and all children"""
+        try:
+            if is_linux:
+                w.bind("<Button-4>", _on_mousewheel, add="+")
+                w.bind("<Button-5>", _on_mousewheel, add="+")
+            else:
+                w.bind("<MouseWheel>", _on_mousewheel, add="+")
+
+            # Bind to all children recursively
+            for child in w.winfo_children():
+                bind_to_widget_tree(child)
+        except Exception:
+            pass
+
+    # Start binding from the widget
+    bind_to_widget_tree(widget)
+
+    # Also bind when new children are added (for dynamic content)
+    def on_configure(event):
+        bind_to_widget_tree(widget)
+
+    widget.bind("<Configure>", on_configure, add="+")
 
 
 def open_url(url: str) -> bool:
