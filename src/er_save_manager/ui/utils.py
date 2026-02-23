@@ -46,25 +46,49 @@ def force_render_dialog(dialog):
 
 
 def bind_mousewheel(widget, target_widget=None):
-    """AppImage-compatible scroll binding"""
+    """
+    Bind mousewheel scrolling to a CTkScrollableFrame (AppImage-compatible).
+    """
     if target_widget is None:
         target_widget = widget
 
-    # Direct canvas binding - works in AppImage
+    # For CTkScrollableFrame, bind directly to internal canvas
     if hasattr(target_widget, "_parent_canvas"):
         canvas = target_widget._parent_canvas
 
-        def scroll(event):
-            if event.num == 4:  # Scroll up
-                canvas.yview_scroll(-1, "units")
-            elif event.num == 5:  # Scroll down
-                canvas.yview_scroll(1, "units")
+        def scroll_up(event):
+            canvas.yview_scroll(-1, "units")
+            return "break"
 
-        # Bind directly to canvas - bypasses AppImage issues
-        canvas.bind("<Button-4>", scroll)
-        canvas.bind("<Button-5>", scroll)
-        target_widget.bind("<Button-4>", scroll)
-        target_widget.bind("<Button-5>", scroll)
+        def scroll_down(event):
+            canvas.yview_scroll(1, "units")
+            return "break"
+
+        # Bind to canvas itself
+        canvas.bind("<Button-4>", scroll_up)
+        canvas.bind("<Button-5>", scroll_down)
+
+        # Bind to the scrollable frame
+        target_widget.bind("<Button-4>", scroll_up)
+        target_widget.bind("<Button-5>", scroll_down)
+
+        # CRITICAL: Recursively bind to ALL children (for dynamic content)
+        def bind_to_children(w):
+            try:
+                w.bind("<Button-4>", scroll_up)
+                w.bind("<Button-5>", scroll_down)
+                for child in w.winfo_children():
+                    bind_to_children(child)
+            except Exception:
+                pass
+
+        bind_to_children(target_widget)
+
+        # Re-bind when content changes
+        def on_map(event):
+            bind_to_children(target_widget)
+
+        target_widget.bind("<Map>", on_map, add="+")
 
 
 def open_url(url: str) -> bool:
