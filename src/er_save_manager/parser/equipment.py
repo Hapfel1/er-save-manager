@@ -302,7 +302,7 @@ class Spell:
 
 @dataclass
 class EquippedSpells:
-    """Equipped spells (0x74 = 116 bytes: 14 spells — 8 bytes + 4 bytes active index)"""
+    """Equipped spells (0x74 = 116 bytes: 14 spells - 8 bytes + 4 bytes active index)"""
 
     spell_slots: list[Spell] = field(default_factory=list)
     active_index: int = 0
@@ -387,7 +387,7 @@ class EquippedItems:
 
 @dataclass
 class EquippedGestures:
-    """Equipped gestures (0x18 = 24 bytes: 6 gestures — 4 bytes)"""
+    """Equipped gestures (0x18 = 24 bytes: 6 gestures - 4 bytes)"""
 
     gesture_ids: list[int] = field(default_factory=list)
 
@@ -455,7 +455,7 @@ class AcquiredProjectiles:
 
 @dataclass
 class EquippedArmamentsAndItems:
-    """Complete equipped state (0x9C = 156 bytes: 39 items — 4 bytes)"""
+    """Complete equipped state (0x9C = 156 bytes: 39 items - 4 bytes)"""
 
     left_hand_armament1: int = 0
     right_hand_armament1: int = 0

@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 import logging
 
-# Module logger — write detailed transfer logs to project log file for debugging
+# Module logger - write detailed transfer logs to project log file for debugging
 logger = logging.getLogger(__name__)
 # Ensure there is a dedicated file handler writing to er_save_manager.log
 found = False
