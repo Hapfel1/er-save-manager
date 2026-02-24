@@ -25,11 +25,11 @@ You can dismiss it with **Yes, Continue** or cancel the load with **No, Cancel**
 
 ## Why Does This Risk Exist?
 
-When you play online, FromSoftware's servers receive your character data and can flag values that fall outside what the game would normally produce. The tool does not bypass EAC or interact with the game process — it only edits the save file on disk — but a modified save taken online is detectable server-side.
+When you play online, FromSoftware's servers receive your character data and can flag values that fall outside what the game would normally produce. The tool does not bypass EAC or interact with the game process - it only edits the save file on disk - but a modified save taken online is detectable server-side.
 
 The risk is specifically:
 
-- **Going online with a save that has been edited** — FromSoftware's servers may detect stat values, item counts, or flag states outside normal game ranges
+- **Going online with a save that has been edited** - FromSoftware's servers may detect stat values, item counts, or flag states outside normal game ranges
 
 There is **no risk** if you only play offline with modified saves.
 
@@ -58,7 +58,7 @@ The warning appears every time you load a `.sl2` file unless disabled.
 ## FAQ
 
 **Q: Will the fixer get me banned?**
-The fixer only restores values the game would produce normally (valid HP, correct coordinates, proper flags). If you play offline after fixing, the risk is effectively zero. If you play online with a fixed save, the risk is low but not zero — FromSoftware's servers may still check character state.
+The fixer only restores values the game would produce normally (valid HP, correct coordinates, proper flags). If you play offline after fixing, the risk is effectively zero. If you play online with a fixed save, the risk is low but not zero - FromSoftware's servers may still check character state.
 
 **Q: I just fixed an infinite loading screen. Is it safe to go online?**
 After a fix, your save is back to a valid game state. Playing online after fixing a crash bug should be safe, but I don't give any guarantees.
