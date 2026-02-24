@@ -160,7 +160,7 @@ class CharacterDetailsDialog:
 
         header = ctk.CTkLabel(
             main_frame,
-            text=f"Character Details — {name}",
+            text=f"Character Details - {name}",
             font=("Segoe UI", 16, "bold"),
         )
         header.pack(anchor="w", padx=10, pady=(8, 6))

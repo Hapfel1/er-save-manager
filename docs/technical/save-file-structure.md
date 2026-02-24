@@ -136,7 +136,7 @@ Gaitem count: `5118` if `version <= 81`, `5120` if `version > 81`.
 
 ---
 
-## PlayerGameData — 432 bytes (0x1B0)
+## PlayerGameData - 432 bytes (0x1B0)
 
 Character stats, attributes, and metadata.
 
@@ -226,7 +226,7 @@ Offset  Size  Field
 
 ---
 
-## SPEffect — 16 bytes per entry, 13 entries (208 bytes total)
+## SPEffect - 16 bytes per entry, 13 entries (208 bytes total)
 
 Active status effects, buffs, weapon enchants.
 
@@ -245,7 +245,7 @@ An entry is active when `sp_effect_id != 0` and `remaining_time > 0`.
 
 ---
 
-## Equipment Slots — 88 bytes (0x58)
+## Equipment Slots - 88 bytes (0x58)
 
 Used by three parallel structures: `EquippedItemsEquipIndex`, `EquippedItemsItemIds`, `EquippedItemsGaitemHandles`. All three have identical layout, differing only in what the values mean (inventory index, item ID, or gaitem handle).
 
@@ -280,7 +280,7 @@ Offset  Size  Field
 
 ---
 
-## ActiveWeaponSlotsAndArmStyle — 28 bytes (0x1C)
+## ActiveWeaponSlotsAndArmStyle - 28 bytes (0x1C)
 
 ```
 Offset  Size  Field
@@ -298,7 +298,7 @@ Offset  Size  Field
 
 ---
 
-## Inventory — variable size
+## Inventory - variable size
 
 Two instances: held and storage box.
 
@@ -316,7 +316,7 @@ acquisition_index_counter uint32
 
 All slots are always written to disk (empty slots have zeroed data). Counts reflect actual items, capacity is fixed.
 
-**InventoryItem — 12 bytes:**
+**InventoryItem - 12 bytes:**
 
 ```
 Offset  Size  Field
@@ -330,7 +330,7 @@ Offset  Size  Field
 
 ---
 
-## EquippedSpells — 116 bytes (0x74)
+## EquippedSpells - 116 bytes (0x74)
 
 14 spell slots + active index.
 
@@ -343,7 +343,7 @@ active_index    uint32    4
                           116    total
 ```
 
-**Spell — 8 bytes:**
+**Spell - 8 bytes:**
 
 ```
 Offset  Size  Field
@@ -354,7 +354,7 @@ Offset  Size  Field
 
 ---
 
-## EquippedItems — 140 bytes (0x8C)
+## EquippedItems - 140 bytes (0x8C)
 
 Quick items and pouch items.
 
@@ -370,7 +370,7 @@ unk0x88                 uint32         4
                                        140    total
 ```
 
-**EquippedItem — 8 bytes:**
+**EquippedItem - 8 bytes:**
 
 ```
 Offset  Size  Field
@@ -381,13 +381,13 @@ Offset  Size  Field
 
 ---
 
-## EquippedGestures — 24 bytes (0x18)
+## EquippedGestures - 24 bytes (0x18)
 
 6 equipped gesture IDs, each 4 bytes.
 
 ---
 
-## AcquiredProjectiles — variable
+## AcquiredProjectiles - variable
 
 ```
 Field        Type          Notes
@@ -397,11 +397,11 @@ projectiles  Projectile[]  count × 8 bytes
 ──────────────────────────────────────────
 ```
 
-**Projectile — 8 bytes:** `id` (uint32) + `unk0x4` (uint32).
+**Projectile - 8 bytes:** `id` (uint32) + `unk0x4` (uint32).
 
 ---
 
-## EquippedArmamentsAndItems — 156 bytes (0x9C)
+## EquippedArmamentsAndItems - 156 bytes (0x9C)
 
 Combined equipment state including quick items and pouch. Extends the 88-byte equipment slots with 10 quick item slots, 6 pouch slots, and 1 unknown field.
 
@@ -432,7 +432,7 @@ Offset  Size  Field
 
 ---
 
-## EquippedPhysics — 12 bytes (0xC)
+## EquippedPhysics - 12 bytes (0xC)
 
 Wondrous Physick tear slots.
 
@@ -446,19 +446,19 @@ Offset  Size  Field
 
 ---
 
-## FaceData — 303 bytes (0x12F)
+## FaceData - 303 bytes (0x12F)
 
-Character appearance data. Stored as raw bytes — contains 100+ fields for facial features, body proportions, and color sliders. When read from `ProfileSummary` (USER_DATA_10), reads `0x120` bytes instead of `0x12F`.
+Character appearance data. Stored as raw bytes - contains 100+ fields for facial features, body proportions, and color sliders. When read from `ProfileSummary` (USER_DATA_10), reads `0x120` bytes instead of `0x12F`.
 
 ---
 
-## Gestures — 256 bytes (0x100)
+## Gestures - 256 bytes (0x100)
 
 64 gesture IDs, each 4 bytes (`uint32`).
 
 ---
 
-## Regions — variable
+## Regions - variable
 
 ```
 Field       Type      Notes
@@ -470,7 +470,7 @@ region_ids  uint32[]  count × 4 bytes
 
 ---
 
-## RideGameData (Torrent) — 40 bytes (0x28)
+## RideGameData (Torrent) - 40 bytes (0x28)
 
 ```
 Offset  Size  Type          Field
@@ -490,7 +490,7 @@ Offset  Size  Type          Field
 
 ---
 
-## BloodStain — 68 bytes (0x44)
+## BloodStain - 68 bytes (0x44)
 
 Death location and lost runes.
 
@@ -515,13 +515,13 @@ Offset  Size  Type          Field
 
 ---
 
-## Event Flags — 1,833,375 bytes (0x1BF99F)
+## Event Flags - 1,833,375 bytes (0x1BF99F)
 
 Bitfield encoding all quest flags, boss defeats, grace unlocks, and world state. Each bit corresponds to a specific game event by ID. Followed by a 4-byte `event_flags_terminator`.
 
 ---
 
-## PlayerCoordinates — 57 bytes (0x39)
+## PlayerCoordinates - 57 bytes (0x39)
 
 ```
 Offset  Size  Type          Field
@@ -538,13 +538,13 @@ Offset  Size  Type          Field
 
 ---
 
-## NetMan — 131,076 bytes (0x20004)
+## NetMan - 131,076 bytes (0x20004)
 
 Network manager state. `unk0x0` (uint32, 4 bytes) followed by `0x20000` bytes of data.
 
 ---
 
-## WorldAreaWeather — 12 bytes (0xC)
+## WorldAreaWeather - 12 bytes (0xC)
 
 ```
 Offset  Size  Type    Field
@@ -561,7 +561,7 @@ Offset  Size  Type    Field
 
 ---
 
-## WorldAreaTime — 12 bytes (0xC)
+## WorldAreaTime - 12 bytes (0xC)
 
 ```
 Offset  Size  Type    Field
@@ -577,7 +577,7 @@ Should match `seconds_played` from `ProfileSummary`. All zeros indicates corrupt
 
 ---
 
-## BaseVersion — 16 bytes (0x10)
+## BaseVersion - 16 bytes (0x10)
 
 ```
 Offset  Size  Type    Field
@@ -592,22 +592,22 @@ Offset  Size  Type    Field
 
 ---
 
-## DLC — 50 bytes (0x32)
+## DLC - 50 bytes (0x32)
 
 Raw bytes. Notable fields:
 
-- `data[1]` — Shadow of the Erdtree entry flag. Non-zero = character has entered the DLC area. Causes infinite loading if DLC is not owned.
-- `data[3:50]` — Unused. Should be all `0x00`. Non-zero values indicate corruption.
+- `data[1]` - Shadow of the Erdtree entry flag. Non-zero = character has entered the DLC area. Causes infinite loading if DLC is not owned.
+- `data[3:50]` - Unused. Should be all `0x00`. Non-zero values indicate corruption.
 
 ---
 
-## PS5Activity — 32 bytes (0x20)
+## PS5Activity - 32 bytes (0x20)
 
 Raw bytes. PlayStation-specific activity data.
 
 ---
 
-## PlayerGameDataHash — 128 bytes (0x80)
+## PlayerGameDataHash - 128 bytes (0x80)
 
 Integrity hash computed from player data and equipment.
 
@@ -646,7 +646,7 @@ Offset  Size    Field
 ──────────────────────────────────────────────────────
 ```
 
-**Profile — 0x24C (588 bytes) per slot:**
+**Profile - 0x24C (588 bytes) per slot:**
 
 ```
 Offset  Size  Field

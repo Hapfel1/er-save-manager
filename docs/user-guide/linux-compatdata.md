@@ -35,10 +35,10 @@ The tool shows this warning when it detects your save file is inside a compatdat
 
 ### When Does This Happen?
 
-This happens when you use a **custom launcher** added as a non-Steam game or as a Steam launch option that points to a different executable — most commonly:
+This happens when you use a **custom launcher** added as a non-Steam game or as a Steam launch option that points to a different executable - most commonly:
 
-- **Seamless Co-op** (`ersc_launcher.exe`) — when added as a separate Steam game entry
-- **Mod Engine 2** or similar mod loaders — when launched as a separate game entry
+- **Seamless Co-op** (`ersc_launcher.exe`) - when added as a separate Steam game entry
+- **Mod Engine 2** or similar mod loaders - when launched as a separate game entry
 - Any other launcher added as a **non-Steam game** or separate Steam library entry
 
 Each separate Steam game entry gets its own compatdata folder with a different ID (e.g., `2898770` instead of `1245620`). If that entry is removed from Steam, Steam deletes its compatdata folder and the save inside it.
@@ -47,7 +47,7 @@ Each separate Steam game entry gets its own compatdata folder with a different I
 
 - As long as the custom launcher entry stays in Steam, nothing happens
 - If you remove the launcher from Steam, its compatdata folder is deleted
-- **Your save file is deleted with it** — there is no recycle bin
+- **Your save file is deleted with it** - there is no recycle bin
 
 ---
 
@@ -61,7 +61,7 @@ Copies the save file to the default `1245620` compatdata location:
 ~/.local/share/Steam/steamapps/compatdata/1245620/pfx/.../EldenRing/<SteamID>/ER0000.sl2
 ```
 
-- The **original file is left in place** — nothing is deleted
+- The **original file is left in place** - nothing is deleted
 - You now have two copies: one at the non-standard location, one at the default
 - The tool switches to tracking the default-location copy going forward
 
@@ -121,7 +121,7 @@ After applying, the custom launcher will write saves to the same `1245620` compa
 | Non-Steam game / custom launcher, no launch option | `compatdata/<other_id>/...` | Yes |
 | Save not in compatdata at all | Anywhere else | Never |
 
-Files outside compatdata entirely (e.g. manually placed elsewhere) do not trigger the warning — the check only applies when a file is inside a compatdata folder with a non-standard ID.
+Files outside compatdata entirely (e.g. manually placed elsewhere) do not trigger the warning - the check only applies when a file is inside a compatdata folder with a non-standard ID.
 
 ---
 
@@ -131,8 +131,8 @@ When you click **Auto-Find**, the tool searches for save files in these location
 
 **Standard Steam:**
 
-1. `~/.local/share/Steam/steamapps/compatdata/` — all subfolders
-2. `~/.steam/steam/steamapps/compatdata/` — symlink, same location
+1. `~/.local/share/Steam/steamapps/compatdata/` - all subfolders
+2. `~/.steam/steam/steamapps/compatdata/` - symlink, same location
 3. Additional Steam library folders from `libraryfolders.vdf`
 
 **Flatpak Steam:**
@@ -146,7 +146,7 @@ It finds all `ER0000.sl2` and `ER0000.co2` files across all compatdata subfolder
 ## FAQ
 
 **Q: I use Seamless Co-op. Which save format does it use?**
-Seamless Co-op uses `.co2` files, stored in a separate folder from vanilla `.sl2` files. The tool loads both formats. The compatdata warning applies regardless of format — it's about the folder location, not the file extension.
+Seamless Co-op uses `.co2` files, stored in a separate folder from vanilla `.sl2` files. The tool loads both formats. The compatdata warning applies regardless of format - it's about the folder location, not the file extension.
 
 **Q: I set the launch option but the warning still appears.**
 The launch option takes effect the next time you launch the game through Steam. After launching with the option set, the new save will be at the `1245620` location. You may need to copy your existing save to that location first (use the **Copy to Default** button in the warning).
@@ -155,7 +155,7 @@ The launch option takes effect the next time you launch the game through Steam. 
 Whichever location the game or launcher writes to. After setting the launch option, the launcher uses `1245620`. The old save at the non-standard location is ignored by the game but still exists on disk.
 
 **Q: Is it safe to delete the old compatdata folder after copying?**
-Only if you are certain you have the save copied correctly and the game loads it. Verify in-game first. The old compatdata folder may also contain other game files — deleting it removes everything for that entry.
+Only if you are certain you have the save copied correctly and the game loads it. Verify in-game first. The old compatdata folder may also contain other game files - deleting it removes everything for that entry.
 
 **Q: The tool can't find my save automatically.**
 Use the **Browse** button to locate it manually. Common non-standard locations to check:
