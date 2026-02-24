@@ -696,7 +696,7 @@ class SaveManagerGUI:
             variable=self.char_slot_var,
             values=[str(i) for i in range(1, 11)],
             state="readonly",
-            width=90,
+            width=200,
         )
         slot_combo.pack(side=ctk.LEFT, padx=(0, 12))
 
@@ -1312,6 +1312,18 @@ class SaveManagerGUI:
         self.save_file = save_file
         self.save_path = Path(save_path)
 
+        if hasattr(self, "char_mgmt_tab") and self.char_mgmt_tab:
+            self.char_mgmt_tab.refresh_slot_names()
+        if hasattr(self, "world_tab") and self.world_tab:
+            self.world_tab.refresh_slot_names()
+        if hasattr(self, "event_flags_tab") and self.event_flags_tab:
+            self.event_flags_tab.refresh_slot_names()
+        if hasattr(self, "gestures_tab") and self.gestures_tab:
+            self.gestures_tab.refresh_slot_names()
+
+        # Update Character Editor tab slot names
+        self._update_character_editor_slots()
+
         # Reset all tab flags so views will refresh with the new save
         for tab_name in self.tabs_loaded:
             self.tabs_loaded[tab_name] = False
@@ -1324,6 +1336,67 @@ class SaveManagerGUI:
         if not silent:
             # Show toast notification instead of blocking popup
             self.show_toast("Save file loaded successfully!", duration=2500)
+
+    def _update_character_editor_slots(self):
+        """Update Character Editor slot dropdown with character names"""
+        if not self.save_file:
+            return
+
+        slot_names = []
+        profiles = None
+
+        try:
+            if self.save_file.user_data_10_parsed:
+                profiles = self.save_file.user_data_10_parsed.profile_summary.profiles
+        except Exception:
+            pass
+
+        for i in range(10):
+            slot_num = i + 1
+            char = self.save_file.characters[i]
+
+            if char.is_empty():
+                slot_names.append(f"{slot_num} - Empty")
+                continue
+
+            char_name = "Unknown"
+            if profiles and i < len(profiles):
+                try:
+                    char_name = profiles[i].character_name or "Unknown"
+                except Exception:
+                    pass
+
+            slot_names.append(f"{slot_num} - {char_name}")
+
+        # Update the combobox values
+        if hasattr(self, "char_slot_var"):
+            # Find the combobox widget and update its values
+            # The combobox is in the character editor tab
+            for widget in self.root.winfo_children():
+                self._update_combobox_recursive(widget, slot_names)
+
+    def _update_combobox_recursive(self, widget, values):
+        """Recursively find and update character slot combobox"""
+        try:
+            if isinstance(widget, ctk.CTkComboBox):
+                if (
+                    hasattr(widget, "cget")
+                    and widget.cget("variable") == self.char_slot_var
+                ):
+                    current = self.char_slot_var.get()
+                    widget.configure(values=values)
+                    # Restore selection if valid
+                    if current.isdigit() and 0 < int(current) <= 10:
+                        idx = int(current) - 1
+                        if idx < len(values):
+                            self.char_slot_var.set(values[idx])
+                    return
+
+            # Recurse into children
+            for child in widget.winfo_children():
+                self._update_combobox_recursive(child, values)
+        except Exception:
+            pass
 
     def show_character_details(self, slot_idx):
         """Show character details dialog"""
