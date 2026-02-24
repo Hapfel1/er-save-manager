@@ -160,7 +160,7 @@ class SettingsTab:
         )
         ctk.CTkCheckBox(
             frame,
-            text="Compress backups (gzip) to save disk space",
+            text="Compress backups (zip) to save disk space",
             variable=self.compress_backups_var,
             command=lambda: self.settings.set(
                 "compress_backups", self.compress_backups_var.get()
