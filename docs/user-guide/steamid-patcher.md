@@ -19,7 +19,7 @@ Elden Ring saves are tied to a SteamID. If the ID in the save doesn't match the 
 
 ## Before You Start
 
-Make sure the save file is fully loaded — the current SteamID will be displayed under **Current Save File** at the top of the tab.
+Make sure the save file is fully loaded - the current SteamID will be displayed under **Current Save File** at the top of the tab.
 
 A backup is created automatically before any patch is applied. You can restore it from the Backup Manager if anything goes wrong.
 
@@ -27,15 +27,15 @@ A backup is created automatically before any patch is applied. You can restore i
 
 ## Getting the Target SteamID
 
-### Method 1 — Auto-Detect
+### Method 1 - Auto-Detect
 
 Click **Auto-Detect**. The tool scans your system for logged-in Steam accounts.
 
-If multiple accounts are found, a picker appears — select the correct one and the SteamID field is filled automatically.
+If multiple accounts are found, a picker appears - select the correct one and the SteamID field is filled automatically.
 
 Best used when patching to your own account or one that has been logged in on the same PC.
 
-### Method 2 — Steam Profile URL
+### Method 2 - Steam Profile URL
 
 1. Open the target Steam profile in a browser and copy the URL
 2. Paste it into the **Steam profile URL** field
@@ -47,7 +47,7 @@ https://steamcommunity.com/profiles/76561198012345678
 https://steamcommunity.com/id/username
 ```
 
-### Method 3 — Manual Entry
+### Method 3 - Manual Entry
 
 Enter the 17-digit SteamID64 directly into the SteamID field and proceed to patching.
 
@@ -58,7 +58,7 @@ The ID must be exactly 17 digits, no spaces. Example: `76561198012345678`
 ## Applying the Patch
 
 1. Once the SteamID field is filled, click **Patch SteamID**
-2. A confirmation dialog shows the ID being written — confirm to proceed
+2. A confirmation dialog shows the ID being written - confirm to proceed
 3. A success message confirms how many slots were patched and shows the old vs. new SteamID
 
 ---
@@ -72,7 +72,7 @@ Default location on Windows:
 %AppData%\EldenRing\<SteamID>\
 ```
 
-The folder name must match the new SteamID. Launch the game on the target account — the save should load normally.
+The folder name must match the new SteamID. Launch the game on the target account - the save should load normally.
 
 ---
 
