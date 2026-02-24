@@ -29,11 +29,13 @@ class WorldStateTab:
         get_save_path_callback,
         reload_callback,
         selected_slot_callback,
+        show_toast_callback,
     ):
         """Initialize World State tab."""
         self.parent = parent
         self.get_save_file = get_save_file_callback
         self.get_save_path = get_save_path_callback
+        self.show_toast = show_toast_callback
         self.reload_save = reload_callback
         self.get_selected_slot = selected_slot_callback
         self.editor: WorldStateEditor | None = None
@@ -49,6 +51,47 @@ class WorldStateTab:
 
         # Slot selection
         self.slot_var = tk.IntVar(value=0)
+
+    def _get_slot_display_names(self):
+        """Get display names for all slots"""
+        save_file = self.get_save_file()  # or self.save_file depending on class
+        if not save_file:
+            return [str(i) for i in range(1, 11)]
+
+        slot_names = []
+        profiles = None
+
+        try:
+            if save_file.user_data_10_parsed:
+                profiles = save_file.user_data_10_parsed.profile_summary.profiles
+        except Exception:
+            pass
+
+        for i in range(10):
+            slot_num = i + 1
+            char = save_file.characters[i]
+
+            if char.is_empty():
+                slot_names.append(f"{slot_num} - Empty")
+                continue
+
+            char_name = "Unknown"
+            if profiles and i < len(profiles):
+                try:
+                    char_name = profiles[i].character_name or "Unknown"
+                except Exception:
+                    pass
+
+            slot_names.append(f"{slot_num} - {char_name}")
+
+        return slot_names
+
+    def refresh_slot_names(self):
+        slot_names = self._get_slot_display_names()
+
+        if hasattr(self, "slot_combo"):
+            self.slot_combo.configure(values=slot_names)
+            self.slot_combo.set(slot_names[0])
 
     def setup_ui(self):
         """Create two-column layout using CTk."""
@@ -89,15 +132,17 @@ class WorldStateTab:
             text="Slot:",
         ).pack(side=tk.LEFT, padx=(0, 5))
 
-        slot_combo = ctk.CTkComboBox(
+        self.slot_var = tk.IntVar(value=1)
+        slot_names = self._get_slot_display_names()
+        self.slot_combo = ctk.CTkComboBox(  # Store reference
             slot_select,
-            variable=self.slot_var,
-            values=[str(i) for i in range(1, 11)],
+            values=slot_names,
+            width=200,
             state="readonly",
-            width=80,
+            command=lambda v: self.slot_var.set(int(v.split(" - ")[0])),
         )
-        slot_combo.pack(side=tk.LEFT, padx=(0, 10))
-        slot_combo.set("1")
+        self.slot_combo.set(slot_names[0])
+        self.slot_combo.pack(side=tk.LEFT, padx=(0, 10))
 
         ctk.CTkButton(
             slot_select,
@@ -261,11 +306,8 @@ class WorldStateTab:
 
         # Refresh display
         self.refresh()
-
-        CTkMessageBox.showinfo(
-            "Loaded",
-            f"Character slot {slot_idx + 1} loaded successfully",
-            parent=self.parent,
+        self.show_toast(
+            f"Character slot {slot_idx + 1} loaded successfully", duration=2500
         )
 
     def _on_mode_changed(self):
@@ -581,12 +623,7 @@ class WorldStateTab:
                 self.reload_save()
                 self.refresh()
                 # Delay message to ensure it appears on top after reload
-                self.parent.after(
-                    100,
-                    lambda msg=message: CTkMessageBox.showinfo(
-                        "Success", f"✓ {msg}", parent=self.parent
-                    ),
-                )
+                self.show_toast(f"✓ {message}", duration=2500)
         else:
             CTkMessageBox.showerror("Error", message, parent=self.parent)
 
@@ -733,12 +770,7 @@ class WorldStateTab:
                 self.reload_save()
                 self.refresh()
                 # Delay message to ensure it appears on top after reload
-                self.parent.after(
-                    100,
-                    lambda msg=message: CTkMessageBox.showinfo(
-                        "Success", f"✓ {msg}", parent=self.parent
-                    ),
-                )
+                self.show_toast(f"✓ {message}", duration=2500)
         else:
             CTkMessageBox.showerror("Error", message, parent=self.parent)
 

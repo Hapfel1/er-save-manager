@@ -20,7 +20,12 @@ class AppearanceTab:
     """Tab for character appearance preset management"""
 
     def __init__(
-        self, parent, get_save_file_callback, get_save_path_callback, reload_callback
+        self,
+        parent,
+        get_save_file_callback,
+        get_save_path_callback,
+        reload_callback,
+        show_toast_callback,
     ):
         """
         Initialize appearance tab
@@ -35,13 +40,12 @@ class AppearanceTab:
         self.get_save_file = get_save_file_callback
         self.get_save_path = get_save_path_callback
         self.reload_save = reload_callback
-
+        self.show_toast = show_toast_callback
         self.preset_frames = []
         self.selected_slot = None  # Track selected preset slot
 
     def setup_ui(self):
         """Setup the appearance tab UI"""
-        # Main scrollable container
         scroll_frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
         scroll_frame.pack(fill=tk.BOTH, expand=True)
         bind_mousewheel(scroll_frame)
@@ -902,13 +906,8 @@ class AppearanceTab:
                     dialog.destroy()
 
                     # Delay message to ensure it appears on top after reload
-                    self.parent.after(
-                        100,
-                        lambda: CTkMessageBox.showinfo(
-                            "Success",
-                            f"Preset imported to Slot {target_slot + 1}!",
-                            parent=self.parent,
-                        ),
+                    self.show_toast(
+                        f"Preset imported to Slot {target_slot + 1}!", duration=2500
                     )
 
                 except Exception as e:
@@ -1143,13 +1142,8 @@ class AppearanceTab:
             self.load_presets()
 
             # Delay message to ensure it appears on top after reload
-            self.parent.after(
-                100,
-                lambda: CTkMessageBox.showinfo(
-                    "Success",
-                    f"Preset in Slot {self.selected_slot + 1} deleted!",
-                    parent=self.parent,
-                ),
+            self.show_toast(
+                f"Preset in Slot {self.selected_slot + 1} deleted!", duration=2500
             )
 
         except Exception as e:

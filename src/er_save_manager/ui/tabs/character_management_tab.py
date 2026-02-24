@@ -22,6 +22,7 @@ class CharacterManagementTab:
         get_save_file_callback,
         get_save_path_callback,
         reload_callback,
+        show_toast_callback,
         is_game_running_callback=None,
     ):
         """
@@ -32,12 +33,14 @@ class CharacterManagementTab:
             get_save_file_callback: Function that returns current save file
             get_save_path_callback: Function that returns save file path
             reload_callback: Function to reload save file after operations
+            show_toast_callback: Function to show toast notifications
             is_game_running_callback: Function to check if game is running
         """
         self.parent = parent
         self.get_save_file = get_save_file_callback
         self.get_save_path = get_save_path_callback
         self.reload_save = reload_callback
+        self.show_toast = show_toast_callback
         self.is_game_running = is_game_running_callback
 
         # Operation variables
@@ -208,6 +211,49 @@ class CharacterManagementTab:
         elif operation == "delete":
             self._setup_delete_panel()
 
+    def _get_slot_display_names(self):
+        """Get display names for all slots"""
+        save_file = self.get_save_file()
+        if not save_file:
+            return [str(i) for i in range(1, 11)]
+
+        slot_names = []
+        profiles = None
+
+        try:
+            if save_file.user_data_10_parsed:
+                profiles = save_file.user_data_10_parsed.profile_summary.profiles
+        except Exception:
+            pass
+
+        for i in range(10):
+            slot_num = i + 1
+            char = save_file.characters[i]
+
+            if char.is_empty():
+                slot_names.append(f"{slot_num} - Empty")
+                continue
+
+            char_name = "Unknown"
+            if profiles and i < len(profiles):
+                try:
+                    char_name = profiles[i].character_name or "Unknown"
+                except Exception:
+                    pass
+
+            slot_names.append(f"{slot_num} - {char_name}")
+
+        return slot_names
+
+    def refresh_slot_names(self):
+        """Refresh slot display names after save file changes"""
+        # Only refresh if panel is visible
+        if not hasattr(self, "char_ops_panel"):
+            return
+
+        # Re-run current panel setup to refresh names
+        self.update_operation_panel()
+
     def _setup_copy_panel(self):
         """Setup copy operation panel"""
         desc_label = ctk.CTkLabel(
@@ -225,13 +271,15 @@ class CharacterManagementTab:
         from_label.pack(side=tk.LEFT, padx=5)
 
         self.copy_from_var = tk.IntVar(value=1)
+        slot_names = self._get_slot_display_names()
         from_combo = ctk.CTkComboBox(
             controls,
-            variable=self.copy_from_var,
-            values=[str(i) for i in range(1, 11)],
+            values=slot_names,
             state="readonly",
-            width=80,
+            width=200,
+            command=lambda v: self.copy_from_var.set(int(v.split(" - ")[0])),
         )
+        from_combo.set(slot_names[0])
         from_combo.pack(side=tk.LEFT, padx=5)
 
         to_label = ctk.CTkLabel(controls, text="To Slot:")
@@ -241,10 +289,12 @@ class CharacterManagementTab:
         to_combo = ctk.CTkComboBox(
             controls,
             variable=self.copy_to_var,
-            values=[str(i) for i in range(1, 11)],
+            values=slot_names,
             state="readonly",
-            width=80,
+            width=200,
+            command=lambda v: self.copy_to_var.set(int(v.split(" - ")[0])),
         )
+        to_combo.set(slot_names[1])
         to_combo.pack(side=tk.LEFT, padx=5)
 
         copy_button = ctk.CTkButton(
@@ -272,13 +322,15 @@ class CharacterManagementTab:
         from_label.pack(side=tk.LEFT, padx=5)
 
         self.transfer_from_var = tk.IntVar(value=1)
+        slot_names = self._get_slot_display_names()
         from_combo = ctk.CTkComboBox(
             controls,
-            variable=self.transfer_from_var,
-            values=[str(i) for i in range(1, 11)],
+            values=slot_names,
             state="readonly",
-            width=80,
+            width=200,
+            command=lambda v: self.transfer_from_var.set(int(v.split(" - ")[0])),
         )
+        from_combo.set(slot_names[0])
         from_combo.pack(side=tk.LEFT, padx=5)
 
         transfer_button = ctk.CTkButton(
@@ -306,13 +358,15 @@ class CharacterManagementTab:
         slot_a_label.pack(side=tk.LEFT, padx=5)
 
         self.swap_a_var = tk.IntVar(value=1)
+        slot_names = self._get_slot_display_names()
         slot_a_combo = ctk.CTkComboBox(
             controls,
-            variable=self.swap_a_var,
-            values=[str(i) for i in range(1, 11)],
+            values=slot_names,
             state="readonly",
-            width=80,
+            width=200,
+            command=lambda v: self.swap_a_var.set(int(v.split(" - ")[0])),
         )
+        slot_a_combo.set(slot_names[0])
         slot_a_combo.pack(side=tk.LEFT, padx=5)
 
         slot_b_label = ctk.CTkLabel(controls, text="Slot B:")
@@ -321,11 +375,12 @@ class CharacterManagementTab:
         self.swap_b_var = tk.IntVar(value=2)
         slot_b_combo = ctk.CTkComboBox(
             controls,
-            variable=self.swap_b_var,
-            values=[str(i) for i in range(1, 11)],
+            values=slot_names,
             state="readonly",
-            width=80,
+            width=200,
+            command=lambda v: self.swap_b_var.set(int(v.split(" - ")[0])),
         )
+        slot_b_combo.set(slot_names[1])
         slot_b_combo.pack(side=tk.LEFT, padx=5)
 
         swap_button = ctk.CTkButton(
@@ -353,13 +408,15 @@ class CharacterManagementTab:
         slot_label.pack(side=tk.LEFT, padx=5)
 
         self.export_slot_var = tk.IntVar(value=1)
+        slot_names = self._get_slot_display_names()
         slot_combo = ctk.CTkComboBox(
             controls,
-            variable=self.export_slot_var,
-            values=[str(i) for i in range(1, 11)],
+            values=slot_names,
             state="readonly",
-            width=80,
+            width=200,
+            command=lambda v: self.export_slot_var.set(int(v.split(" - ")[0])),
         )
+        slot_combo.set(slot_names[0])
         slot_combo.pack(side=tk.LEFT, padx=5)
 
         export_button = ctk.CTkButton(
@@ -387,13 +444,15 @@ class CharacterManagementTab:
         slot_label.pack(side=tk.LEFT, padx=5)
 
         self.import_slot_var = tk.IntVar(value=1)
+        slot_names = self._get_slot_display_names()
         slot_combo = ctk.CTkComboBox(
             controls,
-            variable=self.import_slot_var,
-            values=[str(i) for i in range(1, 11)],
+            values=slot_names,
             state="readonly",
-            width=80,
+            width=200,
+            command=lambda v: self.import_slot_var.set(int(v.split(" - ")[0])),
         )
+        slot_combo.set(slot_names[0])
         slot_combo.pack(side=tk.LEFT, padx=5)
 
         import_button = ctk.CTkButton(
@@ -421,13 +480,15 @@ class CharacterManagementTab:
         slot_label.pack(side=tk.LEFT, padx=5)
 
         self.delete_slot_var = tk.IntVar(value=1)
+        slot_names = self._get_slot_display_names()
         slot_combo = ctk.CTkComboBox(
             controls,
-            variable=self.delete_slot_var,
-            values=[str(i) for i in range(1, 11)],
+            values=slot_names,
             state="readonly",
-            width=80,
+            width=200,
+            command=lambda v: self.delete_slot_var.set(int(v.split(" - ")[0])),
         )
+        slot_combo.set(slot_names[0])
         slot_combo.pack(side=tk.LEFT, padx=5)
 
         delete_button = ctk.CTkButton(
@@ -534,12 +595,10 @@ class CharacterManagementTab:
                 self.reload_save()
 
             # Delay message to ensure it appears on top after reload
-            self.parent.after(
-                100,
-                lambda: CTkMessageBox.showinfo(
-                    "Success",
-                    f"Character '{from_name}' copied from Slot {from_slot + 1} to Slot {to_slot + 1}!\n\nBackup created in backup manager.",
-                    parent=self.parent,
+            (
+                self.show_toast(
+                    f"Character '{from_name}' copied to Slot {to_slot + 1}!",
+                    duration=2500,
                 ),
             )
 
@@ -677,13 +736,8 @@ class CharacterManagementTab:
                 self.reload_save()
 
             # Delay message to ensure it appears on top after reload
-            self.parent.after(
-                100,
-                lambda: CTkMessageBox.showinfo(
-                    "Success",
-                    f"Character transferred from Slot {from_slot + 1} to target save Slot {to_slot + 1}!\n\nBoth saves backed up.",
-                    parent=self.parent,
-                ),
+            self.show_toast(
+                f"Character transferred to target Slot {to_slot + 1}!", duration=2500
             )
 
         except Exception as e:
@@ -747,13 +801,8 @@ class CharacterManagementTab:
                 self.reload_save()
 
             # Delay message to ensure it appears on top after reload
-            self.parent.after(
-                100,
-                lambda: CTkMessageBox.showinfo(
-                    "Success",
-                    f"Swapped Slot {slot_a + 1} and Slot {slot_b + 1}!",
-                    parent=self.parent,
-                ),
+            self.show_toast(
+                f"Swapped Slot {slot_a + 1} and Slot {slot_b + 1}!", duration=2500
             )
 
         except Exception as e:
@@ -900,14 +949,7 @@ class CharacterManagementTab:
                 self.reload_save()
 
             # Delay message to ensure it appears on top after reload
-            self.parent.after(
-                100,
-                lambda: CTkMessageBox.showinfo(
-                    "Success",
-                    f"Character imported to Slot {to_slot + 1}!",
-                    parent=self.parent,
-                ),
-            )
+            self.show_toast(f"Character imported to Slot {to_slot + 1}!", duration=2500)
 
         except Exception as e:
             CTkMessageBox.showerror(
@@ -996,14 +1038,7 @@ class CharacterManagementTab:
                 self.reload_save()
 
             # Delay message to ensure it appears on top after reload
-            self.parent.after(
-                100,
-                lambda: CTkMessageBox.showinfo(
-                    "Success",
-                    f"Character '{char_name}' deleted from Slot {slot + 1}.\n\nBackup created.",
-                    parent=self.parent,
-                ),
-            )
+            self.show_toast(f"Character deleted from Slot {slot + 1}", duration=2500)
 
         except Exception as e:
             CTkMessageBox.showerror(

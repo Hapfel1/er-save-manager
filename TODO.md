@@ -1,3 +1,17 @@
+scrolling works on linux via the view details window in the appearance tab but not anywhere else done
+
+Add avira and exact file size done
+
+troubleshooter in the save manager done
+
+check steamid linux and windows virus warning done
+
+improve visuals done
+
+check item spawning again
+
+add character slot names everywhere done
+
 copy path does not work on linux done
 
 add npc event flags done
