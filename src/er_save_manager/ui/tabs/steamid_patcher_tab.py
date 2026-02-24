@@ -233,21 +233,21 @@ class SteamIDPatcherTab:
         )
 
         add_section(
-            "Method 1 — Auto-Detect",
+            "Method 1 - Auto-Detect",
             "• Click Auto-Detect.\n"
             "• If multiple accounts are found, pick from the list.\n"
             "• The SteamID field is filled automatically.",
         )
 
         add_section(
-            "Method 2 — Paste profile URL",
+            "Method 2 - Paste profile URL",
             "• Copy the profile URL, e.g. steamcommunity.com/profiles/76561198012345678.\n"
             "• Paste into Steam profile URL.\n"
             "• Click Parse URL. Works for both /profiles/ and /id/ URLs.",
         )
 
         add_section(
-            "Method 3 — Manual entry",
+            "Method 3 - Manual entry",
             "• Enter the 17-digit SteamID directly (e.g. 76561198012345678).\n"
             "• Use Patch SteamID to write it everywhere.",
         )
