@@ -13,7 +13,12 @@ class AdvancedToolsTab:
     """Tab for advanced save file operations (customtkinter version)."""
 
     def __init__(
-        self, parent, get_save_file_callback, get_save_path_callback, reload_callback
+        self,
+        parent,
+        get_save_file_callback,
+        get_save_path_callback,
+        reload_callback,
+        show_toast_callback,
     ):
         """
         Initialize advanced tools tab
@@ -27,6 +32,7 @@ class AdvancedToolsTab:
         self.parent = parent
         self.get_save_file = get_save_file_callback
         self.get_save_path = get_save_path_callback
+        self.show_toast = show_toast_callback
         self.reload_save = reload_callback
         self.save_info_text = None
 
@@ -211,7 +217,7 @@ class AdvancedToolsTab:
             if not issues:
                 CTkMessageBox.showinfo(
                     "Validation Complete",
-                    "✓ Save file validation passed!\n\nNo critical issues detected.",
+                    "Save file validation passed!\n\nNo critical issues detected.",
                     parent=self.parent,
                 )
             else:
@@ -251,15 +257,10 @@ class AdvancedToolsTab:
 
             if save_path:
                 save_file.to_file(save_path)
-                CTkMessageBox.showinfo(
-                    "Success",
-                    "✓ Backup created and checksums recalculated.\n\n"
-                    "All save file checksums have been updated.",
-                    parent=self.parent,
-                )
                 # Refresh info panel
                 self.reload_save()
                 self.update_save_info()
+                self.show_toast("Checksums recalculated successfully", duration=2500)
             else:
                 CTkMessageBox.showerror(
                     "Error", "Save path not available", parent=self.parent

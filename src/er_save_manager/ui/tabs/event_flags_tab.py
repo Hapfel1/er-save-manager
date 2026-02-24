@@ -48,8 +48,14 @@ class EventFlagsTab:
             self.slot.event_flags = bytes(self.buffer)
 
     def __init__(
-        self, parent, get_save_file_callback, get_save_path_callback, reload_callback
+        self,
+        parent,
+        get_save_file_callback,
+        get_save_path_callback,
+        reload_callback,
+        show_toast_callback,
     ):
+        self.show_toast = show_toast_callback
         """
         Initialize event flags tab
 
@@ -72,6 +78,47 @@ class EventFlagsTab:
         self.flag_states = {}  # Track checkbox states
         self.flag_widgets = {}  # Track checkbox widgets
         self.current_event_flags = None
+
+    def _get_slot_display_names(self):
+        """Get display names for all slots"""
+        save_file = self.get_save_file()  # or self.save_file depending on class
+        if not save_file:
+            return [str(i) for i in range(1, 11)]
+
+        slot_names = []
+        profiles = None
+
+        try:
+            if save_file.user_data_10_parsed:
+                profiles = save_file.user_data_10_parsed.profile_summary.profiles
+        except Exception:
+            pass
+
+        for i in range(10):
+            slot_num = i + 1
+            char = save_file.characters[i]
+
+            if char.is_empty():
+                slot_names.append(f"{slot_num} - Empty")
+                continue
+
+            char_name = "Unknown"
+            if profiles and i < len(profiles):
+                try:
+                    char_name = profiles[i].character_name or "Unknown"
+                except Exception:
+                    pass
+
+            slot_names.append(f"{slot_num} - {char_name}")
+
+        return slot_names
+
+    def refresh_slot_names(self):
+        slot_names = self._get_slot_display_names()
+
+        if hasattr(self, "event_flag_slot_combo"):
+            self.event_flag_slot_combo.configure(values=slot_names)
+            self.event_flag_slot_combo.set(slot_names[0])
 
     def setup_ui(self):
         """Setup the event flags tab UI"""
@@ -103,14 +150,16 @@ class EventFlagsTab:
         )
 
         self.eventflag_slot_var = tk.IntVar(value=1)
-        slot_combo = ctk.CTkComboBox(
+        slot_names = self._get_slot_display_names()
+        self.event_flag_slot_combo = ctk.CTkComboBox(  # Store reference with self.
             slot_frame,
-            variable=self.eventflag_slot_var,
-            values=[str(i) for i in range(1, 11)],
+            values=slot_names,
+            width=200,
             state="readonly",
-            width=80,
+            command=lambda v: self.eventflag_slot_var.set(int(v.split(" - ")[0])),
         )
-        slot_combo.pack(side=tk.LEFT, padx=(0, 12))
+        self.event_flag_slot_combo.set(slot_names[0])
+        self.event_flag_slot_combo.pack(side=tk.LEFT, padx=(0, 12))
 
         ctk.CTkButton(
             slot_frame,
@@ -285,12 +334,7 @@ class EventFlagsTab:
             text=f"Loaded Slot {slot_idx + 1}. Select category or search."
         )
 
-        CTkMessageBox.showinfo(
-            "Loaded",
-            f"Loaded event flags for Slot {slot_idx + 1}.\n\n"
-            f"Use Category dropdown or Search to view flags.",
-            parent=self.parent,
-        )
+        self.show_toast(f"Loaded event flags for Slot {slot_idx + 1}", duration=2500)
 
     def on_category_changed(self, choice=None):
         """Handle category selection"""
@@ -549,12 +593,9 @@ class EventFlagsTab:
         # Save
         save_file.save(self.get_save_path())
         self.reload_save()
-
-        CTkMessageBox.showinfo(
-            "Success",
-            f"Applied {changes} flag changes to Slot {self.current_slot + 1}!\n\n"
-            f"Backup created and save file reloaded.",
-            parent=self.parent,
+        self.show_toast(
+            f"Applied {changes} flag changes to Slot {self.current_slot + 1}!",
+            duration=2500,
         )
 
         # Clear states
@@ -628,10 +669,9 @@ class EventFlagsTab:
                 save_file.save(self.get_save_path())
                 self.reload_save()
 
-                CTkMessageBox.showinfo(
-                    "Success",
+                self.show_toast(
                     f"Flag {flag_id} set to {'ON' if new_state else 'OFF'}",
-                    parent=dialog,
+                    duration=2000,
                 )
             except ValueError:
                 CTkMessageBox.showerror("Error", "Invalid flag ID!", parent=dialog)
@@ -891,11 +931,7 @@ class EventFlagsTab:
                     parent=dialog,
                 )
 
-            CTkMessageBox.showinfo(
-                "Success",
-                f"Respawned {count} boss(es)!\n\nSave file updated.",
-                parent=dialog,
-            )
+            self.show_toast("Boss respawned successfully!", duration=2500)
             dialog.destroy()
 
         def respawn_all():
@@ -984,11 +1020,9 @@ class EventFlagsTab:
                     parent=dialog,
                 )
 
-            CTkMessageBox.showinfo(
-                "Success",
-                f"Respawned all {count} bosses in {boss_category_var.get()}!\n\n"
-                f"Save file updated.",
-                parent=dialog,
+            self.show_toast(
+                f"Respawned all {count} bosses in {boss_category_var.get()}!",
+                duration=2500,
             )
             dialog.destroy()
 
@@ -1139,11 +1173,7 @@ class EventFlagsTab:
             save_file.save(self.get_save_path())
             self.reload_save()
 
-            CTkMessageBox.showinfo(
-                "Success",
-                f"Revived {count} NPC(s)!\n\nNote: Quest progress is not restored.",
-                parent=dialog,
-            )
+            self.show_toast(f"Revived {count} NPC(s)!", duration=2500)
             dialog.destroy()
 
         ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=120).pack(
