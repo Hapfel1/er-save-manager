@@ -16,7 +16,12 @@ class BackupManagerTab:
     """Tab for backup management"""
 
     def __init__(
-        self, parent, get_save_file_callback, get_save_path_callback, reload_callback
+        self,
+        parent,
+        get_save_file_callback,
+        get_save_path_callback,
+        reload_callback,
+        show_toast_callback,
     ):
         """
         Initialize backup manager tab
@@ -26,11 +31,13 @@ class BackupManagerTab:
             get_save_file_callback: Function that returns current save file
             get_save_path_callback: Function that returns save file path
             reload_callback: Function to reload save file
+            show_toast_callback: Function to show toast notifications
         """
         self.parent = parent
         self.get_save_file = get_save_file_callback
         self.get_save_path = get_save_path_callback
         self.reload_save = reload_callback
+        self.show_toast = show_toast_callback
 
         self.backup_stats_var = None
 
@@ -487,11 +494,7 @@ Backup Format:
                 except Exception as ui_error:
                     print(f"Warning: Failed to refresh UI after restore: {ui_error}")
 
-                CTkMessageBox.showinfo(
-                    "Success",
-                    "Backup restored successfully!\n\nPlease reload your save file to see the changes.",
-                    parent=self.parent,
-                )
+                self.show_toast("Backup restored successfully!", duration=3000)
 
             def delete_backup():
                 if not selected_backup[0]:
@@ -513,9 +516,7 @@ Backup Format:
                     manager.delete_backup(selected_backup[0])
                     refresh_list()
                     self.update_backup_stats()
-                    CTkMessageBox.showinfo(
-                        "Success", "Backup deleted successfully!", parent=self.parent
-                    )
+                    self.show_toast("Backup deleted successfully", duration=2500)
                 except Exception as e:
                     CTkMessageBox.showerror(
                         "Error",

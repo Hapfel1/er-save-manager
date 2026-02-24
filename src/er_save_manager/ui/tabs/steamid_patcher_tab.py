@@ -16,7 +16,12 @@ class SteamIDPatcherTab:
     """Tab for SteamID patching operations"""
 
     def __init__(
-        self, parent, get_save_file_callback, get_save_path_callback, reload_callback
+        self,
+        parent,
+        get_save_file_callback,
+        get_save_path_callback,
+        reload_callback,
+        show_toast_callback,
     ):
         """
         Initialize SteamID patcher tab
@@ -31,7 +36,7 @@ class SteamIDPatcherTab:
         self.get_save_file = get_save_file_callback
         self.get_save_path = get_save_path_callback
         self.reload_save = reload_callback
-
+        self.show_toast = show_toast_callback
         self.current_steamid_var = None
         self.new_steamid_var = None
         self.steam_url_var = None
@@ -508,54 +513,41 @@ class SteamIDPatcherTab:
             steam_users = []
 
             if PlatformUtils.is_windows():
-                # Windows: Use registry
-                import winreg
+                import os
 
-                try:
-                    key = winreg.OpenKey(
-                        winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam\ActiveProcess"
-                    )
-                    active_user_id, _ = winreg.QueryValueEx(key, "ActiveUser")
-                    winreg.CloseKey(key)
+                # Check AppData EldenRing folder for SteamID folders
+                appdata = Path(os.environ.get("APPDATA", ""))
+                elden_ring_path = appdata / "EldenRing"
 
-                    if active_user_id and active_user_id != 0:
-                        active_steamid64 = 76561197960265728 + active_user_id
-                        steam_users.append(("Active Account", active_steamid64))
-                except Exception:
-                    pass
+                if elden_ring_path.exists():
+                    # Each subfolder is a SteamID
+                    for folder in elden_ring_path.iterdir():
+                        if (
+                            folder.is_dir()
+                            and folder.name.isdigit()
+                            and len(folder.name) == 17
+                        ):
+                            steamid = int(folder.name)
+                            steam_users.append((f"Account {steamid}", steamid))
 
-                try:
-                    steam_key = winreg.OpenKey(
-                        winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam"
-                    )
-                    steam_path, _ = winreg.QueryValueEx(steam_key, "SteamPath")
-                    winreg.CloseKey(steam_key)
+                # Also check for custom save locations
+                # Look in common locations
+                common_paths = [
+                    Path("C:/Program Files (x86)/Steam/userdata"),
+                    Path(os.environ.get("PROGRAMFILES(X86)", ""))
+                    / "Steam"
+                    / "userdata",
+                    Path(os.environ.get("PROGRAMFILES", "")) / "Steam" / "userdata",
+                ]
 
-                    import os
-
-                    loginusers_path = os.path.join(
-                        steam_path, "config", "loginusers.vdf"
-                    )
-                    if os.path.exists(loginusers_path):
-                        with open(loginusers_path, encoding="utf-8") as f:
-                            content = f.read()
-                            import re
-
-                            pattern = (
-                                r'"(765611\d{10})"\s*\{[^}]*"AccountName"\s*"([^"]+)"'
-                            )
-                            matches = re.findall(pattern, content)
-                            for steamid, account_name in matches:
-                                if steamid not in [str(s[1]) for s in steam_users]:
-                                    steam_users.append((account_name, int(steamid)))
-                except Exception:
-                    pass
+                for steam_userdata in common_paths:
+                    if steam_userdata.exists():
+                        pass
 
             elif PlatformUtils.is_linux():
                 # Linux: Parse loginusers.vdf from Steam config
                 import re
 
-                # Check common Steam locations, including custom via symlink
                 steam_base_paths = []
 
                 # Check ~/.steam/steam symlink (follows custom installations)
@@ -592,22 +584,54 @@ class SteamIDPatcherTab:
                             continue
                         break
 
+                # Also check save folder names as fallback
+                if not steam_users:
+                    # Check for EldenRing save folders in compatdata
+                    for steam_base in steam_base_paths:
+                        compatdata_path = steam_base / "steamapps" / "compatdata"
+                        if compatdata_path.exists():
+                            # Look for Elden Ring's app ID folders
+                            for app_folder in compatdata_path.iterdir():
+                                if app_folder.is_dir():
+                                    elden_ring_saves = (
+                                        app_folder
+                                        / "pfx"
+                                        / "drive_c"
+                                        / "users"
+                                        / "steamuser"
+                                        / "AppData"
+                                        / "Roaming"
+                                        / "EldenRing"
+                                    )
+                                    if elden_ring_saves.exists():
+                                        # Each subfolder is a SteamID
+                                        for folder in elden_ring_saves.iterdir():
+                                            if (
+                                                folder.is_dir()
+                                                and folder.name.isdigit()
+                                                and len(folder.name) == 17
+                                            ):
+                                                steamid = int(folder.name)
+                                                steam_users.append(
+                                                    (f"Account {steamid}", steamid)
+                                                )
+
             if not steam_users:
                 CTkMessageBox.showwarning(
                     "Not Found",
-                    "Could not detect any Steam accounts.\n\nPlease enter SteamID manually.",
+                    "Could not detect any Steam accounts.\n\nPlease enter SteamID manually or use the Steam profile URL method.",
                     parent=self.parent,
                 )
                 return
 
+            # Remove duplicates
+            steam_users = list({steamid: name for name, steamid in steam_users}.items())
+            steam_users = [(name, steamid) for steamid, name in steam_users]
+
             if len(steam_users) == 1:
                 steamid = steam_users[0][1]
                 self.new_steamid_var.set(str(steamid))
-                CTkMessageBox.showinfo(
-                    "Detected",
-                    f"SteamID detected: {steamid}\n\nAccount: {steam_users[0][0]}",
-                    parent=self.parent,
-                )
+                self.show_toast(f"SteamID detected: {steamid}", duration=2500)
                 return
 
             self._show_account_selection_dialog(steam_users)
@@ -615,7 +639,8 @@ class SteamIDPatcherTab:
         except Exception as e:
             CTkMessageBox.showwarning(
                 "Detection Failed",
-                f"Could not auto-detect SteamID:\n{str(e, parent=self.parent)}",
+                f"Could not auto-detect SteamID:\n{str(e)}",
+                parent=self.parent,
             )
 
     def _show_account_selection_dialog(self, accounts):
@@ -630,6 +655,10 @@ class SteamIDPatcherTab:
         # Force rendering on Linux
         force_render_dialog(dialog)
 
+        dialog.lift()  # Bring to front
+        dialog.focus_force()  # Force focus
+        dialog.grab_set()
+
         ctk.CTkLabel(
             dialog,
             text="Multiple Steam accounts detected.\nSelect the account to use:",
@@ -641,30 +670,26 @@ class SteamIDPatcherTab:
         list_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
         bind_mousewheel(list_frame)
 
-        selected_steamid = tk.StringVar(value="")
-
         for _idx, (account_name, steamid) in enumerate(accounts):
             btn_frame = ctk.CTkFrame(
                 list_frame, corner_radius=8, fg_color=("#f0f0f0", "#2a2a3e")
             )
             btn_frame.pack(fill=tk.X, pady=4)
 
-            def make_select(sid):
+            def make_select(sid, name):
                 def select_account():
-                    selected_steamid.set(str(sid))
+                    self.new_steamid_var.set(str(sid))
                     dialog.destroy()
-                    CTkMessageBox.showinfo(
-                        "Selected",
-                        f"SteamID: {sid}\n\nAccount: {accounts[[a[1] for a in accounts].index(sid, parent=self.parent)][0]}",
-                    )
+                    self.show_toast(f"Selected: {name}", duration=2500)
 
                 return select_account
 
+            # Just show the account name (SteamID is already in the name from auto-detect)
             ctk.CTkButton(
                 btn_frame,
-                text=f"{account_name}: {steamid}",
+                text=f"{account_name}",  # Fixed: Don't duplicate SteamID
                 font=("Consolas", 10),
-                command=make_select(steamid),
+                command=make_select(steamid, account_name),
                 fg_color="transparent",
                 text_color=("#2a2a2a", "#e5e5f5"),
                 hover_color=("#c9a0dc", "#3b2f5c"),

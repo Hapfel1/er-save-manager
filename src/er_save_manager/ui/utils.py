@@ -47,54 +47,48 @@ def force_render_dialog(dialog):
 
 def bind_mousewheel(widget, target_widget=None):
     """
-    Bind mousewheel scrolling to a CTkScrollableFrame (cross-platform).
+    Bind mousewheel scrolling to a CTkScrollableFrame (AppImage-compatible).
     """
     if target_widget is None:
         target_widget = widget
 
-    is_linux = platform_module.system() == "Linux"
+    # For CTkScrollableFrame, bind directly to internal canvas
+    if hasattr(target_widget, "_parent_canvas"):
+        canvas = target_widget._parent_canvas
 
-    def _on_mousewheel(event):
-        # For CTkScrollableFrame, use _parent_canvas
-        if hasattr(target_widget, "_parent_canvas"):
-            try:
-                canvas = target_widget._parent_canvas
-                if canvas and hasattr(canvas, "yview_scroll"):
-                    if hasattr(event, "delta"):
-                        delta = int(-1 * (event.delta / 120))
-                    elif hasattr(event, "num"):
-                        delta = -1 if event.num == 4 else 1
-                    else:
-                        delta = 0
-                    if delta != 0:
-                        canvas.yview_scroll(delta, "units")
-                        return "break"  # Stop event propagation
-            except Exception as e:
-                print(f"[DEBUG] Scroll error: {e}")
-        elif hasattr(target_widget, "yview_scroll"):
-            try:
-                if hasattr(event, "delta"):
-                    delta = int(-1 * (event.delta / 120))
-                elif hasattr(event, "num"):
-                    delta = -1 if event.num == 4 else 1
-                else:
-                    delta = 0
-                if delta != 0:
-                    target_widget.yview_scroll(delta, "units")
-                    return "break"
-            except Exception as e:
-                print(f"[DEBUG] Scroll error: {e}")
+        def scroll_up(event):
+            canvas.yview_scroll(-1, "units")
+            return "break"
 
-    # Bind to the toplevel window instead of recursing through children
-    try:
-        toplevel = widget.winfo_toplevel()
-        if is_linux:
-            toplevel.bind_all("<Button-4>", _on_mousewheel, add="+")
-            toplevel.bind_all("<Button-5>", _on_mousewheel, add="+")
-        else:
-            toplevel.bind_all("<MouseWheel>", _on_mousewheel, add="+")
-    except Exception as e:
-        print(f"[DEBUG] Bind error: {e}")
+        def scroll_down(event):
+            canvas.yview_scroll(1, "units")
+            return "break"
+
+        # Bind to canvas itself
+        canvas.bind("<Button-4>", scroll_up)
+        canvas.bind("<Button-5>", scroll_down)
+
+        # Bind to the scrollable frame
+        target_widget.bind("<Button-4>", scroll_up)
+        target_widget.bind("<Button-5>", scroll_down)
+
+        # CRITICAL: Recursively bind to ALL children (for dynamic content)
+        def bind_to_children(w):
+            try:
+                w.bind("<Button-4>", scroll_up)
+                w.bind("<Button-5>", scroll_down)
+                for child in w.winfo_children():
+                    bind_to_children(child)
+            except Exception:
+                pass
+
+        bind_to_children(target_widget)
+
+        # Re-bind when content changes
+        def on_map(event):
+            bind_to_children(target_widget)
+
+        target_widget.bind("<Map>", on_map, add="+")
 
 
 def open_url(url: str) -> bool:

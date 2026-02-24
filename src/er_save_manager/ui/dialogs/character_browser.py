@@ -89,6 +89,53 @@ class CharacterBrowser:
         # Load characters asynchronously after dialog is displayed
         self.dialog.after(50, self.refresh_characters)
 
+    def _get_slot_display_names(self):
+        """Get display names for all slots"""
+        if not self.save_file:
+            return [str(i) for i in range(1, 11)]
+
+        slot_names = []
+        profiles = None
+
+        try:
+            if self.save_file.user_data_10_parsed:
+                profiles = self.save_file.user_data_10_parsed.profile_summary.profiles
+        except Exception:
+            pass
+
+        for i in range(10):
+            slot_num = i + 1
+            char = self.save_file.characters[i]
+
+            if char.is_empty():
+                slot_names.append(f"{slot_num} - Empty")
+                continue
+
+            char_name = "Unknown"
+            if profiles and i < len(profiles):
+                try:
+                    char_name = profiles[i].character_name or "Unknown"
+                except Exception:
+                    pass
+
+            slot_names.append(f"{slot_num} - {char_name}")
+
+        return slot_names
+
+    def refresh_slot_names(self):
+        """Refresh slot names in both tabs"""
+        slot_names = self._get_slot_display_names()
+
+        # Update browse tab target slot
+        if hasattr(self, "target_slot_combo"):
+            self.target_slot_combo.configure(values=slot_names)
+            self.target_slot_combo.set(slot_names[0])
+
+        # Update contribute tab slot
+        if hasattr(self, "contrib_slot_combo"):
+            self.contrib_slot_combo.configure(values=slot_names)
+            self.contrib_slot_combo.set(slot_names[0])
+
     # ---------------------- Browse tab ----------------------
     def setup_browse_tab(self):
         main_frame = ctk.CTkFrame(self.browse_tab)
@@ -192,14 +239,17 @@ class CharacterBrowser:
         slot_frame.pack(fill=ctk.X, padx=10, pady=(60, 10))
 
         ctk.CTkLabel(slot_frame, text="Target Slot:").pack(side=ctk.LEFT, padx=(0, 8))
-        self.target_slot_var = ctk.StringVar(value="Slot 1")
-        ctk.CTkComboBox(
+        self.target_slot_var = tk.IntVar(value=1)
+        slot_names = self._get_slot_display_names()
+        self.target_slot_combo = ctk.CTkComboBox(
             slot_frame,
-            variable=self.target_slot_var,
-            values=[f"Slot {i + 1}" for i in range(self.NUM_SLOTS)],
-            width=120,
+            values=slot_names,
+            width=200,
             state="readonly",
-        ).pack(side=ctk.LEFT)
+            command=lambda v: self.target_slot_var.set(int(v.split(" - ")[0])),
+        )
+        self.target_slot_combo.set(slot_names[0])
+        self.target_slot_combo.pack(side=tk.LEFT)
 
         import_button = ctk.CTkButton(
             slot_frame,
@@ -268,14 +318,17 @@ class CharacterBrowser:
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor=ctk.W, pady=(0, 5))
 
-        self.contrib_slot_var = ctk.StringVar(value="Slot 1")
-        ctk.CTkComboBox(
+        self.contrib_slot_var = tk.IntVar(value=1)
+        slot_names = self._get_slot_display_names()
+        self.contrib_slot_combo = ctk.CTkComboBox(
             slot_section,
-            variable=self.contrib_slot_var,
-            values=[f"Slot {i + 1}" for i in range(self.NUM_SLOTS)],
-            width=150,
+            values=slot_names,
+            width=200,
             state="readonly",
-        ).pack(anchor=ctk.W)
+            command=lambda v: self.contrib_slot_var.set(int(v.split(" - ")[0])),
+        )
+        self.contrib_slot_combo.set(slot_names[0])
+        self.contrib_slot_combo.pack(anchor=ctk.W)
 
         # Character name
         self.char_name_var = ctk.StringVar()
@@ -564,15 +617,14 @@ class CharacterBrowser:
             return
 
         # Get selected slot
-        slot_str = self.contrib_slot_var.get()
-        slot_index = int(slot_str.split()[1]) - 1
+        slot_index = self.contrib_slot_var.get() - 1
 
         # Verify slot is not empty
         char = self.save_file.character_slots[slot_index]
         if char.is_empty():
             CTkMessageBox.showerror(
                 "Empty Slot",
-                f"{slot_str} is empty. Please select a slot with a character.",
+                f"Slot {slot_index + 1} is empty. Please select a slot with a character.",
                 parent=self.dialog,
             )
             return
@@ -1538,8 +1590,7 @@ class CharacterBrowser:
         char_id = character["id"]
 
         # Get target slot
-        slot_str = self.target_slot_var.get()
-        target_slot = int(slot_str.split()[1]) - 1
+        target_slot = self.target_slot_var.get() - 1
 
         # Build warning message
         warnings = []
@@ -1575,10 +1626,10 @@ class CharacterBrowser:
         slot_warning = ""
         if not target_char.is_empty():
             existing_name = target_char.get_character_name()
-            slot_warning = f"\n\n⚠ WARNING: {slot_str} is occupied by '{existing_name}'.\nThis will DELETE that character!"
+            slot_warning = f"\n\n⚠ WARNING: Slot {target_slot + 1} is occupied by '{existing_name}'.\nThis will DELETE that character!"
 
         # Build confirmation message
-        message = f"Import '{char_name}' to {slot_str}?"
+        message = f"Import '{char_name}' to Slot {target_slot + 1}?"
         if warnings:
             message += "\n\n" + "\n".join(warnings)
         message += slot_warning
@@ -1644,7 +1695,7 @@ class CharacterBrowser:
 
                     backup_manager = BackupManager(self.save_file._original_filepath)
                     backup_path, _ = backup_manager.create_backup(
-                        description=f"Before importing '{char_name}' to {slot_str}",
+                        description=f"Before importing '{char_name}' to Slot {target_slot + 1}",
                         operation="character_import",
                         save=self.save_file,
                     )
@@ -1721,6 +1772,13 @@ class CharacterBrowser:
                 # Show success dialog on main thread
                 def show_success():
                     progress.close()
+                    # Wait for progress dialog to fully release grab
+                    self.dialog.update_idletasks()
+                    slot_str = f"Slot {target_slot + 1}"
+
+                    # Refresh slot names to show updated character
+                    self.refresh_slot_names()
+
                     CTkMessageBox.showinfo(
                         "Import Successful",
                         f"'{imported_name}' has been imported to {slot_str}!\n\nThe character's SteamID has been synced to your save file.",
