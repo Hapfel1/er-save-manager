@@ -721,7 +721,9 @@ class SaveManagerGUI:
 
         def current_slot_index() -> int:
             try:
-                return int(self.char_slot_var.get()) - 1
+                # Extract slot number from display name "1 - Character Name"
+                slot_display = self.char_slot_var.get()
+                return int(slot_display.split(" - ")[0]) - 1
             except Exception:
                 return -1
 
@@ -783,12 +785,15 @@ class SaveManagerGUI:
             return
 
         try:
-            slot_idx = int(self.char_slot_var.get()) - 1
+            # Extract slot number from display name "1 - Character Name"
+            slot_display = self.char_slot_var.get()
+            slot_idx = int(slot_display.split(" - ")[0]) - 1
         except Exception:
             CTkMessageBox.showwarning(
                 "Invalid Slot", "Please choose a character slot.", parent=self.root
             )
             return
+
         slot = self.save_file.characters[slot_idx]
 
         if slot.is_empty():
