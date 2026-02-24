@@ -79,6 +79,47 @@ class EventFlagsTab:
         self.flag_widgets = {}  # Track checkbox widgets
         self.current_event_flags = None
 
+    def _get_slot_display_names(self):
+        """Get display names for all slots"""
+        save_file = self.get_save_file()  # or self.save_file depending on class
+        if not save_file:
+            return [str(i) for i in range(1, 11)]
+
+        slot_names = []
+        profiles = None
+
+        try:
+            if save_file.user_data_10_parsed:
+                profiles = save_file.user_data_10_parsed.profile_summary.profiles
+        except Exception:
+            pass
+
+        for i in range(10):
+            slot_num = i + 1
+            char = save_file.characters[i]
+
+            if char.is_empty():
+                slot_names.append(f"{slot_num} - Empty")
+                continue
+
+            char_name = "Unknown"
+            if profiles and i < len(profiles):
+                try:
+                    char_name = profiles[i].character_name or "Unknown"
+                except Exception:
+                    pass
+
+            slot_names.append(f"{slot_num} - {char_name}")
+
+        return slot_names
+
+    def refresh_slot_names(self):
+        slot_names = self._get_slot_display_names()
+
+        if hasattr(self, "event_flag_slot_combo"):
+            self.event_flag_slot_combo.configure(values=slot_names)
+            self.event_flag_slot_combo.set(slot_names[0])
+
     def setup_ui(self):
         """Setup the event flags tab UI"""
         # Main scrollable container
@@ -109,14 +150,16 @@ class EventFlagsTab:
         )
 
         self.eventflag_slot_var = tk.IntVar(value=1)
-        slot_combo = ctk.CTkComboBox(
+        slot_names = self._get_slot_display_names()
+        self.event_flag_slot_combo = ctk.CTkComboBox(  # Store reference with self.
             slot_frame,
-            variable=self.eventflag_slot_var,
-            values=[str(i) for i in range(1, 11)],
+            values=slot_names,
+            width=200,
             state="readonly",
-            width=80,
+            command=lambda v: self.eventflag_slot_var.set(int(v.split(" - ")[0])),
         )
-        slot_combo.pack(side=tk.LEFT, padx=(0, 12))
+        self.event_flag_slot_combo.set(slot_names[0])
+        self.event_flag_slot_combo.pack(side=tk.LEFT, padx=(0, 12))
 
         ctk.CTkButton(
             slot_frame,
