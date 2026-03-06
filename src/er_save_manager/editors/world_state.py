@@ -1,252 +1,173 @@
-"""
-World State Editor - Teleportation and world state management.
-
-Handles:
-- Character teleportation to safe locations
-- Custom coordinate teleportation
-- World state viewing (map, coordinates, angle)
-"""
+"""World state editor - reads/writes character position/map data using parser-tracked offsets."""
 
 from __future__ import annotations
 
+import struct
 from typing import TYPE_CHECKING
 
-from er_save_manager.data.locations import (
-    get_location_by_key,
-    get_map_name,
-)
-from er_save_manager.parser.er_types import FloatVector3, FloatVector4, MapId
-from er_save_manager.parser.slot_rebuild import rebuild_slot
+from er_save_manager.data.locations import LOCATIONS, get_name_for_map_id
+from er_save_manager.parser.er_types import MapId
 
 if TYPE_CHECKING:
-    from er_save_manager.parser import Save
+    from er_save_manager.parser.save import Save
+    from er_save_manager.parser.user_data_x import UserDataX
+
+
+def _map_id_to_str(map_id: MapId) -> str:
+    d = map_id.data
+    return f"m{d[3]:02d}_{d[2]:02d}_{d[1]:02d}_{d[0]:02d}"
 
 
 class WorldStateEditor:
-    """Editor for character position and world state."""
+    """Read and write player world state from a parsed save slot."""
 
     def __init__(self, save: Save, slot_index: int):
-        """
-        Initialize editor.
+        self._save = save
+        self._slot_index = slot_index
 
-        Args:
-            save: Save file
-            slot_index: Character slot (0-9)
-        """
-        self.save = save
-        self.slot_index = slot_index
-        self.slot = save.character_slots[slot_index]
+    @property
+    def _slot(self) -> UserDataX:
+        return self._save.character_slots[self._slot_index]
+
+    # ------------------------------------------------------------------
+    # Read
+    # ------------------------------------------------------------------
 
     def get_current_location(self) -> dict:
-        """
-        Get current character location info.
+        slot = self._slot
+        if slot.is_empty():
+            return {"map_name": "Empty Slot", "coordinates": None, "map_id": None}
 
-        Returns:
-            Dict with map_id, map_name, coordinates, angle
-        """
-        if self.slot.is_empty():
-            return {
-                "map_id": None,
-                "map_name": "Empty Slot",
-                "coordinates": None,
-                "angle": None,
-            }
+        map_id: MapId = slot.map_id
+        map_id_str = _map_id_to_str(map_id)
+        map_name = get_name_for_map_id(map_id_str)
+
+        coords = None
+        try:
+            coords = slot.player_coordinates.coordinates
+        except AttributeError:
+            pass
 
         return {
-            "map_id": self.slot.map_id,
-            "map_name": get_map_name(self.slot.map_id),
-            "coordinates": self.slot.player_coordinates.coordinates,
-            "angle": self.slot.player_coordinates.angle,
+            "map_name": map_name,
+            "map_id_str": map_id_str,
+            "coordinates": coords,
+            "map_id": map_id,
         }
-
-    def teleport_to_location(self, location_key: str) -> tuple[bool, str]:
-        """
-        Teleport character to a predefined safe location.
-
-        Uses full save rebuild to handle variable-size regions structure.
-
-        Args:
-            location_key: Key from SAFE_LOCATIONS
-
-        Returns:
-            Tuple of (success, message)
-        """
-        if self.slot.is_empty():
-            return False, "Cannot teleport: slot is empty"
-
-        location = get_location_by_key(location_key)
-        if not location:
-            return False, f"Unknown location: {location_key}"
-
-        # Update map ID in parsed structure so rebuild writes it
-        self.slot.map_id.data = location.map_id.data
-        # Keep player coordinate map ID in sync
-        if hasattr(self.slot, "player_coordinates"):
-            self.slot.player_coordinates.map_id.data = location.map_id.data
-
-        # Update coordinates in parsed structure so rebuild writes them
-        if location.coordinates:
-            coords = self.slot.player_coordinates.coordinates
-            coords.x = location.coordinates.x
-            coords.y = location.coordinates.y
-            coords.z = location.coordinates.z
-
-            # Also update unknown secondary coordinates to match
-            # (player_coords2 seems to be a duplicate)
-            unk_coords = self.slot.player_coordinates.unk_coordinates
-            unk_coords.x = location.coordinates.x
-            unk_coords.y = location.coordinates.y
-            unk_coords.z = location.coordinates.z
-
-        # Add region ID to unlocked regions if not already present
-        if hasattr(self.slot, "unlocked_regions"):
-            if location.region_id > 0:
-                if location.region_id not in self.slot.unlocked_regions.region_ids:
-                    # Add the region
-                    self.slot.unlocked_regions.region_ids.append(location.region_id)
-                    self.slot.unlocked_regions.count = len(
-                        self.slot.unlocked_regions.region_ids
-                    )
-
-                    # Rebuild entire slot to persist changes
-                    try:
-                        rebuilt_data = rebuild_slot(self.slot)
-
-                        # Write rebuilt data at the character data start (after checksum)
-                        slot_data_offset = self.slot.data_start
-                        self.save._raw_data[
-                            slot_data_offset : slot_data_offset + len(rebuilt_data)
-                        ] = rebuilt_data
-
-                        # Recalculate checksums for integrity
-                        try:
-                            self.save.recalculate_checksums()
-                        except Exception:
-                            pass
-                    except Exception as e:
-                        return False, f"Failed to unlock region: {e}"
-        else:
-            pass
-
-        # Ensure slot changes (map/coordinates) are persisted even if region was already unlocked
-        try:
-            rebuilt_data = rebuild_slot(self.slot)
-            slot_data_offset = self.slot.data_start
-            self.save._raw_data[
-                slot_data_offset : slot_data_offset + len(rebuilt_data)
-            ] = rebuilt_data
-            try:
-                self.save.recalculate_checksums()
-            except Exception:
-                pass
-        except Exception:
-            # Fallback: ignore if rebuild already done above
-            pass
-
-        return True, f"Teleported to {location.display_name}"
-
-    def teleport_to_custom(
-        self,
-        map_id: MapId,
-        coordinates: FloatVector3 | None = None,
-        angle: FloatVector4 | None = None,
-    ) -> tuple[bool, str]:
-        """
-        Teleport to custom map ID and coordinates.
-
-        WARNING: Teleporting to invalid coordinates can corrupt saves.
-
-        Args:
-            map_id: Target map ID
-            coordinates: Target coordinates (optional)
-            angle: Target angle/rotation (optional)
-
-        Returns:
-            Tuple of (success, message)
-        """
-        if self.slot.is_empty():
-            return False, "Cannot teleport: slot is empty"
-
-        # Update map ID - use struct to write bytes
-        import struct
-
-        map_offset = self.slot.data_start + 0x4
-        struct.pack_into("4B", self.save._raw_data, map_offset, *map_id.data)
-
-        # Update coordinates if provided
-        if coordinates:
-            self._write_coordinates(coordinates)
-
-        # Update angle if provided
-        if angle:
-            self._write_angle(angle)
-
-        map_name = get_map_name(map_id)
-        return True, f"Teleported to {map_name}"
-
-    def _write_coordinates(self, coords: FloatVector3):
-        """Write coordinates to save file."""
-        if not hasattr(self.slot, "coordinates_offset"):
-            # Fallback: calculate from data_start
-            # PlayerCoordinates is at tracked offset
-            coords_offset = self.slot.data_start + self.slot.coordinates_offset
-        else:
-            coords_offset = self.slot.data_start + self.slot.coordinates_offset
-
-        # Write FloatVector3 (12 bytes: 3x f32)
-        import struct
-
-        self.save._raw_data[coords_offset : coords_offset + 4] = struct.pack(
-            "<f", coords.x
-        )
-        self.save._raw_data[coords_offset + 4 : coords_offset + 8] = struct.pack(
-            "<f", coords.y
-        )
-        self.save._raw_data[coords_offset + 8 : coords_offset + 12] = struct.pack(
-            "<f", coords.z
-        )
-
-    def _write_angle(self, angle: FloatVector4):
-        """Write angle/rotation to save file."""
-        if not hasattr(self.slot, "coordinates_offset"):
-            return
-
-        # Angle is 16 bytes after coordinates (FloatVector3 = 12 bytes, MapId = 4 bytes)
-        angle_offset = self.slot.data_start + self.slot.coordinates_offset + 12 + 4
-
-        # Write FloatVector4 (16 bytes: 4x f32)
-        import struct
-
-        self.save._raw_data[angle_offset : angle_offset + 4] = struct.pack(
-            "<f", angle.x
-        )
-        self.save._raw_data[angle_offset + 4 : angle_offset + 8] = struct.pack(
-            "<f", angle.y
-        )
-        self.save._raw_data[angle_offset + 8 : angle_offset + 12] = struct.pack(
-            "<f", angle.z
-        )
-        self.save._raw_data[angle_offset + 12 : angle_offset + 16] = struct.pack(
-            "<f", angle.w
-        )
 
     def get_bloodstain_location(self) -> dict | None:
-        """
-        Get bloodstain (death) location.
-
-        Returns:
-            Dict with coordinates, map_id, runes or None if no bloodstain
-        """
-        if self.slot.is_empty():
+        slot = self._slot
+        if slot.is_empty():
+            return None
+        try:
+            bs = slot.blood_stain
+            if bs is None:
+                return None
+            map_name = get_name_for_map_id(_map_id_to_str(bs.map_id))
+            return {"map_name": map_name, "runes": bs.runes}
+        except AttributeError:
             return None
 
-        bloodstain = self.slot.blood_stain
-        if not bloodstain:
-            return None
+    # ------------------------------------------------------------------
+    # Write
+    # ------------------------------------------------------------------
 
-        return {
-            "coordinates": bloodstain.coordinates,
-            "map_id": bloodstain.map_id,
-            "map_name": get_map_name(bloodstain.map_id),
-            "runes": bloodstain.runes,
-        }
+    def teleport_to_map_id(self, map_id_str: str) -> tuple[bool, str]:
+        """
+        Teleport character to a map by its string ID (e.g. "m60_42_36_00").
+        Sets map_id only; the game spawns the player at the map default position.
+        Also adds the region unlock ID from the location database if not already present.
+        """
+        loc = LOCATIONS.get(map_id_str)
+        if loc is None:
+            return False, f"Unknown map ID: {map_id_str}"
+
+        try:
+            self._write_map_id_raw(MapId(loc.map_bytes))
+            if loc.region_id:
+                self._ensure_region_unlocked(loc.region_id)
+            return True, f"Teleported to {loc.name}"
+        except Exception as e:
+            return False, str(e)
+
+    def teleport_to_custom(self, map_id: MapId, coords=None) -> tuple[bool, str]:
+        """Teleport to a custom MapId with optional coordinates."""
+        try:
+            self._write_map_id_raw(map_id, zero_coords=(coords is None))
+            if coords is not None:
+                self._write_coordinates(coords)
+            return True, f"Teleported to {_map_id_to_str(map_id)}"
+        except Exception as e:
+            return False, str(e)
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _write_map_id_raw(self, map_id: MapId, zero_coords: bool = True) -> None:
+        """
+        Write map_id to both the header field (offset 0x4) and PlayerCoordinates.map_id
+        (coordinates_offset + 12). Optionally zeroes both xyz and unk_xyz so the game
+        uses its internal spawn point instead of stale coordinates from the old map.
+        """
+        slot = self._slot
+        raw = self._save._raw_data
+
+        # Header map_id at slot data + 0x4
+        header_offset = slot.data_start + 0x4
+        raw[header_offset : header_offset + 4] = map_id.data
+        slot.map_id = map_id
+
+        # PlayerCoordinates.map_id at coordinates_offset + 12
+        if hasattr(slot, "coordinates_offset") and slot.coordinates_offset:
+            coord_base = slot.data_start + slot.coordinates_offset
+            pc_map_id_offset = coord_base + 12
+            raw[pc_map_id_offset : pc_map_id_offset + 4] = map_id.data
+            try:
+                slot.player_coordinates.map_id = map_id
+            except AttributeError:
+                pass
+
+            if zero_coords:
+                # Zero xyz (offset +0) and unk_xyz (offset +33: map_id(4)+angle(16)+byte(1) = +21, then +12)
+                zero = struct.pack("<fff", 0.0, 0.0, 0.0)
+                raw[coord_base : coord_base + 12] = zero
+                raw[coord_base + 33 : coord_base + 45] = zero
+                try:
+                    pc = slot.player_coordinates
+                    pc.coordinates.x = pc.coordinates.y = pc.coordinates.z = 0.0
+                    pc.unk_coordinates.x = pc.unk_coordinates.y = (
+                        pc.unk_coordinates.z
+                    ) = 0.0
+                except AttributeError:
+                    pass
+
+    def _write_coordinates(self, coords) -> None:
+        """Write player coordinates using parser-tracked coordinates_offset."""
+        slot = self._slot
+        if not hasattr(slot, "coordinates_offset") or slot.coordinates_offset == 0:
+            raise RuntimeError("coordinates_offset not available")
+
+        offset = slot.data_start + slot.coordinates_offset
+        raw = self._save._raw_data
+        raw[offset : offset + 4] = struct.pack("<f", coords.x)
+        raw[offset + 4 : offset + 8] = struct.pack("<f", coords.y)
+        raw[offset + 8 : offset + 12] = struct.pack("<f", coords.z)
+
+        try:
+            slot.player_coordinates.coordinates.x = coords.x
+            slot.player_coordinates.coordinates.y = coords.y
+            slot.player_coordinates.coordinates.z = coords.z
+        except AttributeError:
+            pass
+
+    def _ensure_region_unlocked(self, region_id: int) -> None:
+        """Add region_id to the Regions list if not already present."""
+        slot = self._slot
+        try:
+            regions = slot.unlocked_regions
+            if region_id not in regions.region_ids:
+                regions.region_ids.append(region_id)
+                regions.count = len(regions.region_ids)
+        except AttributeError:
+            pass
