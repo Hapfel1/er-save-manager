@@ -39,7 +39,7 @@ class SaveSelectorDialog:
         dialog.title("Select Save File")
         dialog.resizable(True, True)
 
-        width, height = 780, 520
+        width, height = 950, 520
         dialog.update_idletasks()
         # Center over parent window
         parent.update_idletasks()

@@ -53,7 +53,7 @@ class CharacterOperations:
 
     @staticmethod
     def _update_profile_summary_from_slot(save: Save, slot_index: int) -> None:
-        """Update profile summary for a slot using the character data in that slot, including appearance and equipment."""
+        """Update profile summary for a slot using the character data in that slot."""
         char = save.character_slots[slot_index]
         if char.is_empty():
             return
@@ -67,65 +67,116 @@ class CharacterOperations:
         from io import BytesIO
 
         player = char.player_game_data
+
         buf = BytesIO()
 
-        # Character name (16 wide chars, UTF-16LE, padded)
-        name = getattr(player, "character_name", "")[:16]
+        # Character name (16 wide chars, UTF-16LE, padded to 32 bytes + 2 byte terminator)
+        name = getattr(player, "character_name", "Unknown")
+        if not name:
+            name = "Unknown"
+        name = name[:16]  # Max 16 wide chars
         name_bytes = name.encode("utf-16le")
-        name_bytes = name_bytes + b"\x00" * (32 - len(name_bytes))
+        # Pad to exactly 32 bytes
+        if len(name_bytes) < 32:
+            name_bytes = name_bytes + b"\x00" * (32 - len(name_bytes))
         buf.write(name_bytes)
-        buf.write(b"\x00" * 2)  # Terminator
+        buf.write(b"\x00\x00")  # 2 byte terminator
 
-        # Level, seconds played, runes_memory, map_id, unk0x34
-        buf.write(struct.pack("<I", getattr(player, "level", 1)))
-        buf.write(struct.pack("<I", getattr(player, "seconds_played", 0)))
-        buf.write(struct.pack("<I", getattr(player, "runes_memory", 0)))
-        buf.write(getattr(player, "map_id", b"\x00\x00\x00\x00"))
-        buf.write(struct.pack("<I", getattr(player, "unk0x34", 0)))
+        # Level (4 bytes)
+        level = getattr(player, "level", 1)
+        buf.write(struct.pack("<I", level))
 
-        # Face data (0x124 bytes) - use FaceData from slot, convert to profile summary size (0x120 if needed)
+        # Seconds played (4 bytes) - try to preserve from source, otherwise 0
+        # NOTE: seconds_played is NOT in character slot data, only in profile summary
+        # For transfers, we lose this data - it will be 0 in the target
+        seconds_played = 0
+        buf.write(struct.pack("<I", seconds_played))
+
+        # Runes memory (4 bytes) - this IS in character slot data
+        runes_memory = getattr(player, "runes_memory", 0)
+        buf.write(struct.pack("<I", runes_memory))
+
+        # Map ID (4 bytes)
+        map_id = getattr(player, "map_id", None)
+        if map_id is not None:
+            if hasattr(map_id, "data"):
+                # MapId object with .data attribute
+                map_bytes = bytes(map_id.data)[:4]
+            elif isinstance(map_id, bytes):
+                map_bytes = map_id[:4]
+            else:
+                map_bytes = b"\x00\x00\x00\x00"
+        else:
+            map_bytes = b"\x00\x00\x00\x00"
+        buf.write(map_bytes)
+
+        # Unk0x34 (4 bytes)
+        unk0x34 = getattr(player, "unk0x34", 0)
+        buf.write(struct.pack("<I", unk0x34))
+
+        # Face data (0x124 bytes = 292 bytes)
         face_data = getattr(player, "face_data", None)
-        if face_data is not None and hasattr(face_data, "raw_data"):
-            face_bytes = face_data.raw_data
-            if len(face_bytes) > 0x124:
-                face_bytes = face_bytes[:0x124]
-            elif len(face_bytes) < 0x124:
-                face_bytes = face_bytes + b"\x00" * (0x124 - len(face_bytes))
+        if face_data is not None:
+            if hasattr(face_data, "raw_data"):
+                face_bytes = bytes(face_data.raw_data)
+            elif isinstance(face_data, bytes):
+                face_bytes = face_data
+            else:
+                face_bytes = b"\x00" * 0x124
         else:
             face_bytes = b"\x00" * 0x124
+
+        # Ensure exactly 0x124 bytes
+        if len(face_bytes) < 0x124:
+            face_bytes = face_bytes + b"\x00" * (0x124 - len(face_bytes))
+        elif len(face_bytes) > 0x124:
+            face_bytes = face_bytes[:0x124]
         buf.write(face_bytes)
 
-        # Equipment (0xE8 bytes) - use equipment from slot if available
+        # Equipment (0xE8 bytes = 232 bytes)
         equipment = getattr(player, "profile_equipment", None)
         if equipment is not None:
             if hasattr(equipment, "raw_data"):
-                equip_bytes = equipment.raw_data
-            else:
+                equip_bytes = bytes(equipment.raw_data)
+            elif isinstance(equipment, bytes):
                 equip_bytes = equipment
-            if len(equip_bytes) > 0xE8:
-                equip_bytes = equip_bytes[:0xE8]
-            elif len(equip_bytes) < 0xE8:
-                equip_bytes = equip_bytes + b"\x00" * (0xE8 - len(equip_bytes))
+            else:
+                equip_bytes = b"\x00" * 0xE8
         else:
             equip_bytes = b"\x00" * 0xE8
+
+        # Ensure exactly 0xE8 bytes
+        if len(equip_bytes) < 0xE8:
+            equip_bytes = equip_bytes + b"\x00" * (0xE8 - len(equip_bytes))
+        elif len(equip_bytes) > 0xE8:
+            equip_bytes = equip_bytes[:0xE8]
         buf.write(equip_bytes)
 
-        # Body type, archetype, starting gift
-        buf.write(struct.pack("<B", getattr(player, "body_type", 0)))
-        buf.write(struct.pack("<B", getattr(player, "archetype", 0)))
-        buf.write(struct.pack("<B", getattr(player, "starting_gift", 0)))
+        # Body type (1 byte)
+        body_type = getattr(player, "body_type", 0)
+        buf.write(struct.pack("<B", body_type))
 
-        # Unknown fields (3 bytes + 4 bytes = 7 bytes)
+        # Archetype (1 byte)
+        archetype = getattr(player, "archetype", 0)
+        buf.write(struct.pack("<B", archetype))
+
+        # Starting gift (1 byte)
+        starting_gift = getattr(player, "starting_gift", 0)
+        buf.write(struct.pack("<B", starting_gift))
+
+        # Padding: 3 bytes + 4 bytes = 7 bytes
         buf.write(b"\x00" * 7)
 
-        # Pad to 0x24C bytes
+        # Get final data
         data = buf.getvalue()
+
+        # Verify size and pad/trim to exactly 0x24C bytes
         if len(data) < profile_size:
-            data += b"\x00" * (profile_size - len(data))
+            data = data + b"\x00" * (profile_size - len(data))
         elif len(data) > profile_size:
             data = data[:profile_size]
 
-        # Write to raw_data
+        # Write to raw_data at calculated offset
         save._raw_data[profile_offset : profile_offset + profile_size] = data
 
     def get_profile_summary_offsets(save: Save) -> tuple[int, int]:
@@ -296,11 +347,36 @@ class CharacterOperations:
             hex(to_offset),
         )
 
-        # Copy entire slot
+        # Copy entire slot (character data)
         target_save._raw_data[to_offset : to_offset + CharacterOperations.SLOT_SIZE] = (
             source_save._raw_data[
                 from_offset : from_offset + CharacterOperations.SLOT_SIZE
             ]
+        )
+
+        # Copy profile summary from source to target (preserves seconds_played, equipment preview, etc.)
+        _, source_profiles_base = CharacterOperations.get_profile_summary_offsets(
+            source_save
+        )
+        _, target_profiles_base = CharacterOperations.get_profile_summary_offsets(
+            target_save
+        )
+        profile_size = 0x24C
+
+        source_profile_offset = source_profiles_base + from_slot * profile_size
+        target_profile_offset = target_profiles_base + to_slot * profile_size
+
+        # Copy profile summary entry from source to target
+        target_save._raw_data[
+            target_profile_offset : target_profile_offset + profile_size
+        ] = source_save._raw_data[
+            source_profile_offset : source_profile_offset + profile_size
+        ]
+
+        logger.debug(
+            "Copied profile summary from source slot %d to target slot %d",
+            from_slot,
+            to_slot,
         )
 
         # Re-parse the modified slot first so we have an accurate UserDataX
@@ -328,12 +404,6 @@ class CharacterOperations:
             CharacterOperations._patch_steamid_in_slot(target_save, to_slot)
         except Exception:
             logger.exception("_patch_steamid_in_slot failed")
-
-        # Update profile summary from the transferred slot
-        try:
-            CharacterOperations._update_profile_summary_from_slot(target_save, to_slot)
-        except Exception:
-            logger.exception("_update_profile_summary_from_slot failed")
 
         # Mark slot as active
         try:
