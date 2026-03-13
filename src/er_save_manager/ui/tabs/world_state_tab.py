@@ -76,8 +76,12 @@ class WorldStateTab:
     def refresh_slot_names(self):
         slot_names = self._get_slot_display_names()
         if hasattr(self, "slot_combo"):
+            current = self.slot_combo.get()
             self.slot_combo.configure(values=slot_names)
-            self.slot_combo.set(slot_names[0])
+            if current in slot_names:
+                self.slot_combo.set(current)
+            else:
+                self.slot_combo.set(slot_names[0])
 
     def setup_ui(self):
         scroll_frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
@@ -223,6 +227,18 @@ class WorldStateTab:
         self.editor = WorldStateEditor(save, slot_idx)
         self.refresh()
         self.show_toast(f"Slot {slot_idx + 1} loaded.", duration=2500)
+
+    def _reload_editor(self):
+        """Recreate editor from the reloaded save so it points to the fresh object."""
+        save = self.get_save_file()
+        if save is None or self.editor is None:
+            return
+        # Preserve slot selection across reload
+        slot_idx = self.slot_var.get() - 1
+        current_combo = self.slot_combo.get() if hasattr(self, "slot_combo") else None
+        self.editor = WorldStateEditor(save, slot_idx)
+        if current_combo and hasattr(self, "slot_combo"):
+            self.slot_combo.set(current_combo)
 
     def _on_mode_changed(self):
         for widget in self.content_frame.winfo_children():
@@ -374,6 +390,7 @@ class WorldStateTab:
                 self.get_save_file().recalculate_checksums()
                 self.get_save_file().to_file(save_path)
                 self.reload_save()
+                self._reload_editor()
                 self.refresh()
             self.show_toast(f"Teleported to {loc.name}", duration=2500)
         else:
@@ -528,6 +545,7 @@ class WorldStateTab:
                 self.get_save_file().recalculate_checksums()
                 self.get_save_file().to_file(save_path)
                 self.reload_save()
+                self._reload_editor()
                 self.refresh()
             self.show_toast(message, duration=2500)
         else:
