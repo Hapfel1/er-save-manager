@@ -27,14 +27,25 @@ class CTkMessageBox:
         dialog = ctk.CTkToplevel(parent if parent else None)
         dialog.title(title)
 
-        # Calculate dialog size based on message length
-        # Estimate: ~80 characters per line at wraplength 280
-        line_count = max(3, len(message) // 80 + 1)
+        dialog_width = 550
+        wraplength = 380
 
-        dialog_height = 180 + (line_count * 22)  # Original height
-        dialog_width = 550  # Original width
+        # Estimate lines: split on explicit newlines first, then wrap long lines
+        line_height = font_size + 10  # px per line at given font size
+        lines = 0
+        for segment in message.split("\n"):
+            # Each segment wraps at ~wraplength / (font_size * 0.6) chars
+            chars_per_line = max(1, int(wraplength / (font_size * 0.6)))
+            lines += max(1, (len(segment) + chars_per_line - 1) // chars_per_line)
 
-        # Default: center on parent or screen
+        text_height = lines * line_height
+        button_area = 80  # button row + padding
+        icon_padding = 40  # top/bottom padding
+        dialog_height = text_height + button_area + icon_padding
+
+        # Clamp to reasonable bounds
+        dialog_height = max(180, min(dialog_height, 600))
+
         if position is None:
             if parent:
                 parent.update_idletasks()
@@ -54,10 +65,10 @@ class CTkMessageBox:
                 py = (screen[1] // 2) - (dialog_height // 2)
         else:
             px, py = position
+
         dialog.geometry(f"{dialog_width}x{dialog_height}+{px}+{py}")
         dialog.resizable(False, False)
 
-        # Force rendering on Linux before grab_set
         force_render_dialog(dialog)
         dialog.grab_set()
 
@@ -77,37 +88,28 @@ class CTkMessageBox:
 
         icon_color = icon_colors.get(icon_type, icon_colors["info"])
 
-        # Main container
         main_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-        # Icon + Message row
         content_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         content_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Icon
-
-        icon_label = ctk.CTkLabel(
+        ctk.CTkLabel(
             content_frame,
             text=icon_symbols.get(icon_type, "ℹ"),
             font=("Segoe UI Semibold", 32, "bold"),
             text_color=icon_color,
             width=60,
-        )
-        icon_label.pack(side=tk.LEFT, padx=(0, 15))
+        ).pack(side=tk.LEFT, anchor="n", padx=(0, 15))
 
-        # Message
-
-        message_label = ctk.CTkLabel(
+        ctk.CTkLabel(
             content_frame,
             text=message,
             font=("Segoe UI Semibold", font_size),
-            wraplength=380,
+            wraplength=wraplength,
             justify=tk.LEFT,
-        )
-        message_label.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        ).pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        # Buttons
         button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         button_frame.pack(pady=(15, 0))
 
@@ -129,12 +131,10 @@ class CTkMessageBox:
             ).pack(side=tk.LEFT, padx=5)
 
         dialog.wait_window()
-        # If user closes the window without clicking a button, return None
         return result["value"] if "value" in result else None
 
     @staticmethod
     def showinfo(title, message, parent=None, font_size=16, position=None):
-        """Show info message"""
         CTkMessageBox._create_dialog(
             parent,
             title,
@@ -147,7 +147,6 @@ class CTkMessageBox:
 
     @staticmethod
     def showwarning(title, message, parent=None, font_size=16, position=None):
-        """Show warning message"""
         CTkMessageBox._create_dialog(
             parent,
             title,
@@ -160,7 +159,6 @@ class CTkMessageBox:
 
     @staticmethod
     def showerror(title, message, parent=None, font_size=16, position=None):
-        """Show error message"""
         CTkMessageBox._create_dialog(
             parent,
             title,
@@ -173,7 +171,6 @@ class CTkMessageBox:
 
     @staticmethod
     def askyesno(title, message, parent=None, font_size=16, position=None):
-        """Ask yes/no question"""
         result = CTkMessageBox._create_dialog(
             parent,
             title,
@@ -187,7 +184,6 @@ class CTkMessageBox:
 
     @staticmethod
     def askokcancel(title, message, parent=None, font_size=16, position=None):
-        """Ask OK/Cancel question"""
         result = CTkMessageBox._create_dialog(
             parent,
             title,
@@ -201,8 +197,7 @@ class CTkMessageBox:
 
     @staticmethod
     def askyesnocancel(title, message, parent=None, font_size=16, position=None):
-        """Ask yes/no/cancel question"""
-        result = CTkMessageBox._create_dialog(
+        return CTkMessageBox._create_dialog(
             parent,
             title,
             message,
@@ -211,4 +206,3 @@ class CTkMessageBox:
             font_size=font_size,
             position=position,
         )
-        return result

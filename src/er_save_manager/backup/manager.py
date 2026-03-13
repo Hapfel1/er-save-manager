@@ -15,8 +15,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from er_save_manager.parser import Save
 
-from er_save_manager.ui.settings import get_settings
-
 
 @dataclass
 class BackupMetadata:
@@ -167,6 +165,10 @@ class BackupManager:
         save: Save | None = None,
         compress: bool | None = None,
     ) -> tuple[Path, list[BackupMetadata]]:
+        from er_save_manager.ui.settings import (
+            get_settings,  # lazy to avoid circular import
+        )
+
         """
         Create a backup of the current save file.
 
