@@ -26,11 +26,18 @@ class MapLocation:
     tile_type: str  # "dungeon", "small", "medium", "big"
     region_id: int = 0  # unlock ID to add to Regions; 0 = not required
     is_dlc: bool = False
+    safe_coords: tuple[float, float, float] | None = None
 
 
 LOCATIONS: dict[str, MapLocation] = {
     "m10_00_00_00": MapLocation(
-        "m10_00_00_00", "Stormveil Castle", bytes([0, 0, 0, 10]), "dungeon", 0, False
+        "m10_00_00_00",
+        "Stormveil Castle",
+        bytes([0, 0, 0, 10]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(-92.67759704589844, 21.6, 18.263784408569336),
     ),
     "m10_01_00_00": MapLocation(
         "m10_01_00_00",
@@ -39,6 +46,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(-14.46453857421875, 20.4, -35.50751495361328),
     ),
     "m11_00_00_00": MapLocation(
         "m11_00_00_00",
@@ -47,27 +55,61 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(0.1374073028564453, 6.0, -26.138813018798828),
     ),
     "m11_10_00_00": MapLocation(
-        "m11_10_00_00", "Roundtable Hold", bytes([0, 0, 10, 11]), "dungeon", 0, False
+        "m11_10_00_00",
+        "Roundtable Hold",
+        bytes([0, 0, 10, 11]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(-330.8607177734375, -21.9, -305.8151550292969),
     ),
     "m12_01_00_00": MapLocation(
-        "m12_01_00_00", "Ainsel River", bytes([0, 0, 1, 12]), "dungeon", 0, False
+        "m12_01_00_00",
+        "Ainsel River",
+        bytes([0, 0, 1, 12]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(331.8866271972656, -79.3, 270.02362060546875),
     ),
     "m12_02_00_00": MapLocation(
-        "m12_02_00_00", "Siofra River", bytes([0, 0, 2, 12]), "dungeon", 0, False
+        "m12_02_00_00",
+        "Siofra River",
+        bytes([0, 0, 2, 12]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(1098.3218994140625, -823.4, 1265.383544921875),
     ),
     "m12_03_00_00": MapLocation(
-        "m12_03_00_00", "Deeproot Depths", bytes([0, 0, 3, 12]), "dungeon", 0, False
-    ),
-    "m12_04_00_00": MapLocation(
-        "m12_04_00_00", "Ainsel River - Boss", bytes([0, 0, 4, 12]), "dungeon", 0, False
+        "m12_03_00_00",
+        "Deeproot Depths",
+        bytes([0, 0, 3, 12]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(-600.768310546875, 98.5, -609.9166870117188),
     ),
     "m12_05_00_00": MapLocation(
-        "m12_05_00_00", "Mohgwyn Palace", bytes([0, 0, 5, 12]), "dungeon", 0, False
+        "m12_05_00_00",
+        "Mohgwyn Palace",
+        bytes([0, 0, 5, 12]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(1695.847900390625, -611.6, 1291.994140625),
     ),
     "m12_07_00_00": MapLocation(
-        "m12_07_00_00", "Siofra River Start", bytes([0, 0, 7, 12]), "dungeon", 0, False
+        "m12_07_00_00",
+        "Siofra River Start",
+        bytes([0, 0, 7, 12]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(747.6365966796875, -911.6, 1163.400390625),
     ),
     "m13_00_00_00": MapLocation(
         "m13_00_00_00",
@@ -76,6 +118,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(216.5925750732422, 83.6, 163.2028350830078),
     ),
     "m14_00_00_00": MapLocation(
         "m14_00_00_00",
@@ -84,6 +127,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(-26.239049911499023, 50.6, -45.99475860595703),
     ),
     "m15_00_00_00": MapLocation(
         "m15_00_00_00",
@@ -92,12 +136,25 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(-2.7390592098236084, 618.9, 42.803138732910156),
     ),
     "m16_00_00_00": MapLocation(
-        "m16_00_00_00", "Volcano Manor", bytes([0, 0, 0, 16]), "dungeon", 0, False
+        "m16_00_00_00",
+        "Volcano Manor",
+        bytes([0, 0, 0, 16]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(42.435001373291016, 5.1, -59.12300109863281),
     ),
     "m18_00_00_00": MapLocation(
-        "m18_00_00_00", "Stranded Graveyard", bytes([0, 0, 0, 18]), "dungeon", 0, False
+        "m18_00_00_00",
+        "Stranded Graveyard",
+        bytes([0, 0, 0, 18]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(-114.48245239257812, 13.9, 12.80687141418457),
     ),
     "m20_00_00_00": MapLocation(
         "m20_00_00_00",
@@ -106,15 +163,34 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         True,
+        safe_coords=(-106.36699676513672, 44.0, 190.2429962158203),
     ),
     "m20_01_00_00": MapLocation(
-        "m20_01_00_00", "Enir-Ilim", bytes([0, 0, 1, 20]), "dungeon", 0, True
+        "m20_01_00_00",
+        "Enir-Ilim",
+        bytes([0, 0, 1, 20]),
+        "dungeon",
+        0,
+        True,
+        safe_coords=(-172.54710388183594, -15.0, 19.60202980041504),
     ),
     "m21_00_00_00": MapLocation(
-        "m21_00_00_00", "Shadow Keep", bytes([0, 0, 0, 21]), "dungeon", 0, True
+        "m21_00_00_00",
+        "Shadow Keep",
+        bytes([0, 0, 0, 21]),
+        "dungeon",
+        0,
+        True,
+        safe_coords=(60.56464385986328, 157.1, 105.0648422241211),
     ),
     "m21_01_00_00": MapLocation(
-        "m21_01_00_00", "Specimen Storehouse", bytes([0, 0, 1, 21]), "dungeon", 0, True
+        "m21_01_00_00",
+        "Specimen Storehouse",
+        bytes([0, 0, 1, 21]),
+        "dungeon",
+        0,
+        True,
+        safe_coords=(191.80039978027344, 268.1, 256.3921203613281),
     ),
     "m21_02_00_00": MapLocation(
         "m21_02_00_00",
@@ -123,9 +199,16 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         True,
+        safe_coords=(1.6457467079162598, 131.9, 260.8629150390625),
     ),
     "m22_00_00_00": MapLocation(
-        "m22_00_00_00", "Stone Coffin Fissure", bytes([0, 0, 0, 22]), "dungeon", 0, True
+        "m22_00_00_00",
+        "Stone Coffin Fissure",
+        bytes([0, 0, 0, 22]),
+        "dungeon",
+        0,
+        True,
+        safe_coords=(-399.9311218261719, 305.3, 13.900691032409668),
     ),
     "m25_00_00_00": MapLocation(
         "m25_00_00_00",
@@ -134,18 +217,43 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         True,
+        safe_coords=(-399.5071105957031, 305.0, 12.466434478759766),
     ),
     "m28_00_00_00": MapLocation(
-        "m28_00_00_00", "Midra's Manse", bytes([0, 0, 0, 28]), "dungeon", 0, True
+        "m28_00_00_00",
+        "Midra's Manse",
+        bytes([0, 0, 0, 28]),
+        "dungeon",
+        0,
+        True,
+        safe_coords=(-3.5952115058898926, 3.1, -28.751461029052734),
     ),
     "m30_00_00_00": MapLocation(
-        "m30_00_00_00", "Tombsward Catacombs", bytes([0, 0, 0, 30]), "dungeon", 0, False
+        "m30_00_00_00",
+        "Tombsward Catacombs",
+        bytes([0, 0, 0, 30]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(-95.55783081054688, 61.3, 88.967041015625),
     ),
     "m30_01_00_00": MapLocation(
-        "m30_01_00_00", "Impaler's Catacombs", bytes([0, 0, 1, 30]), "dungeon", 0, False
+        "m30_01_00_00",
+        "Impaler's Catacombs",
+        bytes([0, 0, 1, 30]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(-45.35493469238281, 44.5, -61.13959884643555),
     ),
     "m30_02_00_00": MapLocation(
-        "m30_02_00_00", "Stormfoot Catacombs", bytes([0, 0, 2, 30]), "dungeon", 0, False
+        "m30_02_00_00",
+        "Stormfoot Catacombs",
+        bytes([0, 0, 2, 30]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(33.488182067871094, 110.1, 4.652586460113525),
     ),
     "m30_03_00_00": MapLocation(
         "m30_03_00_00",
@@ -154,9 +262,16 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(15.050951957702637, 218.9, -24.000438690185547),
     ),
     "m30_04_00_00": MapLocation(
-        "m30_04_00_00", "Murkwater Catacombs", bytes([0, 0, 4, 30]), "dungeon", 0, False
+        "m30_04_00_00",
+        "Murkwater Catacombs",
+        bytes([0, 0, 4, 30]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(74.02631378173828, 61.5, 53.56120681762695),
     ),
     "m30_05_00_00": MapLocation(
         "m30_05_00_00",
@@ -165,6 +280,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(-72.3408203125, 424.1, 121.0999984741211),
     ),
     "m30_06_00_00": MapLocation(
         "m30_06_00_00",
@@ -173,9 +289,16 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(56.39570999145508, 234.7, 67.43321228027344),
     ),
     "m30_07_00_00": MapLocation(
-        "m30_07_00_00", "Wyndham Catacombs", bytes([0, 0, 7, 30]), "dungeon", 0, False
+        "m30_07_00_00",
+        "Wyndham Catacombs",
+        bytes([0, 0, 7, 30]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(-126.9530029296875, 830.9, 137.27584838867188),
     ),
     "m30_08_00_00": MapLocation(
         "m30_08_00_00",
@@ -184,9 +307,16 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(26.27971839904785, 801.9, -10.831143379211426),
     ),
     "m30_09_00_00": MapLocation(
-        "m30_09_00_00", "Gelmir Hero's Grave", bytes([0, 0, 9, 30]), "dungeon", 0, False
+        "m30_09_00_00",
+        "Gelmir Hero's Grave",
+        bytes([0, 0, 9, 30]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(99.72671508789062, 769.6, 14.607630729675293),
     ),
     "m30_10_00_00": MapLocation(
         "m30_10_00_00",
@@ -195,6 +325,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(63.9900016784668, 835.6, 97.94999694824219),
     ),
     "m30_11_00_00": MapLocation(
         "m30_11_00_00",
@@ -203,6 +334,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(-102.30122375488281, 187.8, 28.961271286010742),
     ),
     "m30_12_00_00": MapLocation(
         "m30_12_00_00",
@@ -211,9 +343,16 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(-36.55099868774414, 648.7, 118.64582824707031),
     ),
     "m30_13_00_00": MapLocation(
-        "m30_13_00_00", "Auriza Side Tomb", bytes([0, 0, 13, 30]), "dungeon", 0, False
+        "m30_13_00_00",
+        "Auriza Side Tomb",
+        bytes([0, 0, 13, 30]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(87.7405776977539, 964.8, 33.94525146484375),
     ),
     "m30_14_00_00": MapLocation(
         "m30_14_00_00",
@@ -222,12 +361,25 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(-54.500701904296875, 123.5, 69.27332305908203),
     ),
     "m30_15_00_00": MapLocation(
-        "m30_15_00_00", "Caelid Catacombs", bytes([0, 0, 15, 30]), "dungeon", 0, False
+        "m30_15_00_00",
+        "Caelid Catacombs",
+        bytes([0, 0, 15, 30]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(77.53103637695312, 49.6, 79.87663269042969),
     ),
     "m30_16_00_00": MapLocation(
-        "m30_16_00_00", "War-Dead Catacombs", bytes([0, 0, 16, 30]), "dungeon", 0, False
+        "m30_16_00_00",
+        "War-Dead Catacombs",
+        bytes([0, 0, 16, 30]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(37.6150016784668, -4.9, -111.65916442871094),
     ),
     "m30_17_00_00": MapLocation(
         "m30_17_00_00",
@@ -236,6 +388,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(-117.41412353515625, 1511.9, 120.06999969482422),
     ),
     "m30_18_00_00": MapLocation(
         "m30_18_00_00",
@@ -244,6 +397,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(10.448554039001465, 1577.8, 97.71613311767578),
     ),
     "m30_19_00_00": MapLocation(
         "m30_19_00_00",
@@ -252,6 +406,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(-40.18370819091797, 1365.1, -94.25881958007812),
     ),
     "m30_20_00_00": MapLocation(
         "m30_20_00_00",
@@ -260,21 +415,52 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(-104.98283386230469, 1333.7, -141.23919677734375),
     ),
     "m31_00_00_00": MapLocation(
-        "m31_00_00_00", "Murkwater Cave", bytes([0, 0, 0, 31]), "dungeon", 0, False
+        "m31_00_00_00",
+        "Murkwater Cave",
+        bytes([0, 0, 0, 31]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(43.700347900390625, 52.3, 53.5712776184082),
     ),
     "m31_01_00_00": MapLocation(
-        "m31_01_00_00", "Earthbore Cave", bytes([0, 0, 1, 31]), "dungeon", 0, False
+        "m31_01_00_00",
+        "Earthbore Cave",
+        bytes([0, 0, 1, 31]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(-114.36024475097656, -3.1, -49.46512222290039),
     ),
     "m31_02_00_00": MapLocation(
-        "m31_02_00_00", "Tombsward Cave", bytes([0, 0, 2, 31]), "dungeon", 0, False
+        "m31_02_00_00",
+        "Tombsward Cave",
+        bytes([0, 0, 2, 31]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(-146.00442504882812, -4.2, 24.0441951751709),
     ),
     "m31_03_00_00": MapLocation(
-        "m31_03_00_00", "Groveside Cave", bytes([0, 0, 3, 31]), "dungeon", 0, False
+        "m31_03_00_00",
+        "Groveside Cave",
+        bytes([0, 0, 3, 31]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(-63.54646682739258, 110.5, -4.553553104400635),
     ),
     "m31_04_00_00": MapLocation(
-        "m31_04_00_00", "Stillwater Cave", bytes([0, 0, 4, 31]), "dungeon", 0, False
+        "m31_04_00_00",
+        "Stillwater Cave",
+        bytes([0, 0, 4, 31]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(27.941343307495117, 229.4, -59.811031341552734),
     ),
     "m31_05_00_00": MapLocation(
         "m31_05_00_00",
@@ -283,6 +469,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(-115.40735626220703, 225.7, -2.201061725616455),
     ),
     "m31_06_00_00": MapLocation(
         "m31_06_00_00",
@@ -291,18 +478,43 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(85.71137237548828, 230.7, 93.54288482666016),
     ),
     "m31_07_00_00": MapLocation(
-        "m31_07_00_00", "Seethewater Cave", bytes([0, 0, 7, 31]), "dungeon", 0, False
+        "m31_07_00_00",
+        "Seethewater Cave",
+        bytes([0, 0, 7, 31]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(-24.35442352294922, 793.3, 166.911376953125),
     ),
     "m31_09_00_00": MapLocation(
-        "m31_09_00_00", "Volcano Cave", bytes([0, 0, 9, 31]), "dungeon", 0, False
+        "m31_09_00_00",
+        "Volcano Cave",
+        bytes([0, 0, 9, 31]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(-81.78671264648438, 1029.3, -69.55252075195312),
     ),
     "m31_10_00_00": MapLocation(
-        "m31_10_00_00", "Dragonbarrow Cave", bytes([0, 0, 10, 31]), "dungeon", 0, False
+        "m31_10_00_00",
+        "Dragonbarrow Cave",
+        bytes([0, 0, 10, 31]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(26.868324279785156, 153.3, 63.942352294921875),
     ),
     "m31_11_00_00": MapLocation(
-        "m31_11_00_00", "Sellia Hideaway", bytes([0, 0, 11, 31]), "dungeon", 0, False
+        "m31_11_00_00",
+        "Sellia Hideaway",
+        bytes([0, 0, 11, 31]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(140.53182983398438, 198.6, 94.9221420288086),
     ),
     "m31_12_00_00": MapLocation(
         "m31_12_00_00",
@@ -311,33 +523,88 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(-44.152137756347656, 1249.0, 79.26685333251953),
     ),
     "m31_15_00_00": MapLocation(
-        "m31_15_00_00", "Coastal Cave", bytes([0, 0, 15, 31]), "dungeon", 0, False
+        "m31_15_00_00",
+        "Coastal Cave",
+        bytes([0, 0, 15, 31]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(44.91859817504883, -9.1, -15.318456649780273),
     ),
     "m31_17_00_00": MapLocation(
-        "m31_17_00_00", "Highroad Cave", bytes([0, 0, 17, 31]), "dungeon", 0, False
+        "m31_17_00_00",
+        "Highroad Cave",
+        bytes([0, 0, 17, 31]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(33.20851516723633, 91.2, 100.32142639160156),
     ),
     "m31_18_00_00": MapLocation(
-        "m31_18_00_00", "Perfumer's Grotto", bytes([0, 0, 18, 31]), "dungeon", 0, False
+        "m31_18_00_00",
+        "Perfumer's Grotto",
+        bytes([0, 0, 18, 31]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(49.5135498046875, 837.9, 37.011871337890625),
     ),
     "m31_19_00_00": MapLocation(
-        "m31_19_00_00", "Sage's Cave", bytes([0, 0, 19, 31]), "dungeon", 0, False
+        "m31_19_00_00",
+        "Sage's Cave",
+        bytes([0, 0, 19, 31]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(124.23173522949219, 652.8, -51.343841552734375),
     ),
     "m31_20_00_00": MapLocation(
-        "m31_20_00_00", "Abandoned Cave", bytes([0, 0, 20, 31]), "dungeon", 0, False
+        "m31_20_00_00",
+        "Abandoned Cave",
+        bytes([0, 0, 20, 31]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(167.68243408203125, 116.8, 39.3786735534668),
     ),
     "m31_21_00_00": MapLocation(
-        "m31_21_00_00", "Gaol Cave", bytes([0, 0, 21, 31]), "dungeon", 0, False
+        "m31_21_00_00",
+        "Gaol Cave",
+        bytes([0, 0, 21, 31]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(-77.26312255859375, 80.3, 66.0573501586914),
     ),
     "m31_22_00_00": MapLocation(
-        "m31_22_00_00", "Spiritcaller Cave", bytes([0, 0, 22, 31]), "dungeon", 0, False
+        "m31_22_00_00",
+        "Spiritcaller Cave",
+        bytes([0, 0, 22, 31]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(-38.25589370727539, 1617.3, 84.3916244506836),
     ),
     "m32_00_00_00": MapLocation(
-        "m32_00_00_00", "Morne Tunnel", bytes([0, 0, 0, 32]), "dungeon", 0, False
+        "m32_00_00_00",
+        "Morne Tunnel",
+        bytes([0, 0, 0, 32]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(35.99372482299805, -8.0, -82.62100982666016),
     ),
     "m32_01_00_00": MapLocation(
-        "m32_01_00_00", "Limgrave Tunnels", bytes([0, 0, 1, 32]), "dungeon", 0, False
+        "m32_01_00_00",
+        "Limgrave Tunnels",
+        bytes([0, 0, 1, 32]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(111.24449157714844, 33.2, 14.361974716186523),
     ),
     "m32_02_00_00": MapLocation(
         "m32_02_00_00",
@@ -346,15 +613,34 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(-58.122093200683594, 207.0, 25.64635467529297),
     ),
     "m32_04_00_00": MapLocation(
-        "m32_04_00_00", "Old Altus Tunnel", bytes([0, 0, 4, 32]), "dungeon", 0, False
+        "m32_04_00_00",
+        "Old Altus Tunnel",
+        bytes([0, 0, 4, 32]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(-193.5060577392578, 696.5, -97.3302993774414),
     ),
     "m32_05_00_00": MapLocation(
-        "m32_05_00_00", "Altus Tunnel", bytes([0, 0, 5, 32]), "dungeon", 0, False
+        "m32_05_00_00",
+        "Altus Tunnel",
+        bytes([0, 0, 5, 32]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(-52.072418212890625, 778.1, 19.559186935424805),
     ),
     "m32_07_00_00": MapLocation(
-        "m32_07_00_00", "Gael Tunnel", bytes([0, 0, 7, 32]), "dungeon", 0, False
+        "m32_07_00_00",
+        "Gael Tunnel",
+        bytes([0, 0, 7, 32]),
+        "dungeon",
+        0,
+        False,
+        safe_coords=(61.6071662902832, 106.9, 86.46086883544922),
     ),
     "m32_08_00_00": MapLocation(
         "m32_08_00_00",
@@ -363,6 +649,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(16.342174530029297, 86.6, 145.05731201171875),
     ),
     "m32_11_00_00": MapLocation(
         "m32_11_00_00",
@@ -371,6 +658,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(44.62934494018555, 1222.9, -18.549396514892578),
     ),
     "m34_10_00_00": MapLocation(
         "m34_10_00_00",
@@ -379,6 +667,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(931.7809448242188, 341.0, 602.5575561523438),
     ),
     "m34_11_00_00": MapLocation(
         "m34_11_00_00",
@@ -387,6 +676,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(453.87750244140625, 288.5, 82.0694351196289),
     ),
     "m34_12_00_00": MapLocation(
         "m34_12_00_00",
@@ -395,6 +685,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(-44.930870056152344, 991.5, -351.5395202636719),
     ),
     "m34_13_00_00": MapLocation(
         "m34_13_00_00",
@@ -403,6 +694,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(87.15776062011719, 47.4, -22.998777389526367),
     ),
     "m34_14_00_00": MapLocation(
         "m34_14_00_00",
@@ -411,6 +703,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(601.859375, 26.6, -485.3127746582031),
     ),
     "m34_15_00_00": MapLocation(
         "m34_15_00_00",
@@ -419,6 +712,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(-3.3419504165649414, 291.5, -25.141210556030273),
     ),
     "m35_00_00_00": MapLocation(
         "m35_00_00_00",
@@ -427,6 +721,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(-148.9739990234375, -98.5, -166.33099365234375),
     ),
     "m39_20_00_00": MapLocation(
         "m39_20_00_00",
@@ -435,9 +730,16 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         False,
+        safe_coords=(94.41600036621094, 238.8, -1315.385986328125),
     ),
     "m40_00_00_00": MapLocation(
-        "m40_00_00_00", "Fog Rift Catacombs", bytes([0, 0, 0, 40]), "dungeon", 0, True
+        "m40_00_00_00",
+        "Fog Rift Catacombs",
+        bytes([0, 0, 0, 40]),
+        "dungeon",
+        0,
+        True,
+        safe_coords=(-91.98690032958984, 218.9, -30.594104766845703),
     ),
     "m40_01_00_00": MapLocation(
         "m40_01_00_00",
@@ -446,18 +748,43 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         True,
+        safe_coords=(-44.054805755615234, 254.9, 36.11783218383789),
     ),
     "m40_02_00_00": MapLocation(
-        "m40_02_00_00", "Darklight Catacombs", bytes([0, 0, 2, 40]), "dungeon", 0, True
+        "m40_02_00_00",
+        "Darklight Catacombs",
+        bytes([0, 0, 2, 40]),
+        "dungeon",
+        0,
+        True,
+        safe_coords=(-40.547813415527344, -35.1, 143.313232421875),
     ),
     "m41_00_00_00": MapLocation(
-        "m41_00_00_00", "Belurat Gaol", bytes([0, 0, 0, 41]), "dungeon", 0, True
+        "m41_00_00_00",
+        "Belurat Gaol",
+        bytes([0, 0, 0, 41]),
+        "dungeon",
+        0,
+        True,
+        safe_coords=(-151.30516052246094, 239.7, -73.04521179199219),
     ),
     "m41_01_00_00": MapLocation(
-        "m41_01_00_00", "Bonny Gaol", bytes([0, 0, 1, 41]), "dungeon", 0, True
+        "m41_01_00_00",
+        "Bonny Gaol",
+        bytes([0, 0, 1, 41]),
+        "dungeon",
+        0,
+        True,
+        safe_coords=(-70.51966094970703, 299.8, -22.22067642211914),
     ),
     "m41_02_00_00": MapLocation(
-        "m41_02_00_00", "Lamenter's Gaol", bytes([0, 0, 2, 41]), "dungeon", 0, True
+        "m41_02_00_00",
+        "Lamenter's Gaol",
+        bytes([0, 0, 2, 41]),
+        "dungeon",
+        0,
+        True,
+        safe_coords=(105.88697052001953, 73.0, 2.0997636318206787),
     ),
     "m42_00_00_00": MapLocation(
         "m42_00_00_00",
@@ -466,6 +793,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         True,
+        safe_coords=(-104.67444610595703, 265.9, 59.66701126098633),
     ),
     "m42_02_00_00": MapLocation(
         "m42_02_00_00",
@@ -474,6 +802,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         True,
+        safe_coords=(84.35011291503906, 339.1, -89.1863021850586),
     ),
     "m42_03_00_00": MapLocation(
         "m42_03_00_00",
@@ -482,988 +811,25 @@ LOCATIONS: dict[str, MapLocation] = {
         "dungeon",
         0,
         True,
+        safe_coords=(-17.581449508666992, 344.9, -79.30915069580078),
     ),
     "m43_00_00_00": MapLocation(
-        "m43_00_00_00", "Rivermouth Cave", bytes([0, 0, 0, 43]), "dungeon", 0, True
+        "m43_00_00_00",
+        "Rivermouth Cave",
+        bytes([0, 0, 0, 43]),
+        "dungeon",
+        0,
+        True,
+        safe_coords=(-85.90608215332031, 165.1, 144.12753295898438),
     ),
     "m43_01_00_00": MapLocation(
-        "m43_01_00_00", "Dragon's Pit", bytes([0, 0, 1, 43]), "dungeon", 0, True
-    ),
-    "m60_08_10_02": MapLocation(
-        "m60_08_10_02",
-        "Southwest Liurnia [Big Tile]",
-        bytes([2, 10, 8, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_08_11_02": MapLocation(
-        "m60_08_11_02",
-        "West Liurnia [Big Tile]",
-        bytes([2, 11, 8, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_08_12_02": MapLocation(
-        "m60_08_12_02",
-        "Northwest Liurnia [Big Tile]",
-        bytes([2, 12, 8, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_08_13_02": MapLocation(
-        "m60_08_13_02",
-        "Far West Altus Plateau [Big Tile]",
-        bytes([2, 13, 8, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_09_09_02": MapLocation(
-        "m60_09_09_02",
-        "Far West Limgrave [Big Tile]",
-        bytes([2, 9, 9, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_09_10_02": MapLocation(
-        "m60_09_10_02",
-        "Southeast Liurnia [Big Tile]",
-        bytes([2, 10, 9, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_09_11_02": MapLocation(
-        "m60_09_11_02",
-        "East Liurnia [Big Tile]",
-        bytes([2, 11, 9, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_09_12_02": MapLocation(
-        "m60_09_12_02",
-        "Liurnia to Altus Plateau [Big Tile]",
-        bytes([2, 12, 9, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_09_13_02": MapLocation(
-        "m60_09_13_02",
-        "West Altus Plateau [Big Tile]",
-        bytes([2, 13, 9, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_10_07_02": MapLocation(
-        "m60_10_07_02",
-        "South Weeping Peninsula [Big Tile]",
-        bytes([2, 7, 10, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_10_08_02": MapLocation(
-        "m60_10_08_02",
-        "West Weeping Peninsula [Big Tile]",
-        bytes([2, 8, 10, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_10_09_02": MapLocation(
-        "m60_10_09_02",
-        "West Limgrave [Big Tile]",
-        bytes([2, 9, 10, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_10_10_02": MapLocation(
-        "m60_10_10_02",
-        "Northwest Limgrave Coast [Big Tile]",
-        bytes([2, 10, 10, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_10_12_02": MapLocation(
-        "m60_10_12_02",
-        "South Altus Plateau [Big Tile]",
-        bytes([2, 12, 10, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_10_13_02": MapLocation(
-        "m60_10_13_02",
-        "North Altus Plateau [Big Tile]",
-        bytes([2, 13, 10, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_11_07_02": MapLocation(
-        "m60_11_07_02",
-        "Southeast Weeping Peninsula Coast [Big Tile]",
-        bytes([2, 7, 11, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_11_08_02": MapLocation(
-        "m60_11_08_02",
-        "East Weeping Peninsula [Big Tile]",
-        bytes([2, 8, 11, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_11_09_02": MapLocation(
-        "m60_11_09_02",
-        "East Limgrave [Big Tile]",
-        bytes([2, 9, 11, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_11_10_02": MapLocation(
-        "m60_11_10_02",
-        "Northwest Caelid [Big Tile]",
-        bytes([2, 10, 11, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_11_12_02": MapLocation(
-        "m60_11_12_02",
-        "Southeast Altus Plateau [Big Tile]",
-        bytes([2, 12, 11, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_11_13_02": MapLocation(
-        "m60_11_13_02",
-        "Northeast Altus Plateau [Big Tile]",
-        bytes([2, 13, 11, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_11_14_02": MapLocation(
-        "m60_11_14_02",
-        "West Consecrated Snowfield [Big Tile]",
-        bytes([2, 14, 11, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_12_08_02": MapLocation(
-        "m60_12_08_02",
-        "Far South Caelid [Big Tile]",
-        bytes([2, 8, 12, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_12_09_02": MapLocation(
-        "m60_12_09_02",
-        "South Caelid [Big Tile]",
-        bytes([2, 9, 12, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_12_10_02": MapLocation(
-        "m60_12_10_02",
-        "North Caelid [Big Tile]",
-        bytes([2, 10, 12, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_12_12_02": MapLocation(
-        "m60_12_12_02",
-        "Forbidden Lands [Big Tile]",
-        bytes([2, 12, 12, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_12_13_02": MapLocation(
-        "m60_12_13_02",
-        "Southwest Mountaintops [Big Tile]",
-        bytes([2, 13, 12, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_12_14_02": MapLocation(
-        "m60_12_14_02",
-        "Northwest Mountaintops [Big Tile]",
-        bytes([2, 14, 12, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_13_09_02": MapLocation(
-        "m60_13_09_02",
-        "Southeast Caelid [Big Tile]",
-        bytes([2, 9, 13, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_13_10_02": MapLocation(
-        "m60_13_10_02",
-        "Northeast Caelid [Big Tile]",
-        bytes([2, 10, 13, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_13_13_02": MapLocation(
-        "m60_13_13_02",
-        "Southeast Mountaintops [Big Tile]",
-        bytes([2, 13, 13, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_13_14_02": MapLocation(
-        "m60_13_14_02",
-        "Northeast Mountaintops [Big Tile]",
-        bytes([2, 14, 13, 60]),
-        "big",
-        0,
-        False,
-    ),
-    "m60_16_20_01": MapLocation(
-        "m60_16_20_01",
-        "Southwest Moonlight Altar [Medium Tile]",
-        bytes([1, 20, 16, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_16_21_01": MapLocation(
-        "m60_16_21_01",
-        "Northwest Moonlight Altar; Liurnia Minor Erdtree [Medium Tile]",
-        bytes([1, 21, 16, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_16_22_01": MapLocation(
-        "m60_16_22_01",
-        "South of Four Belfries [Medium Tile]",
-        bytes([1, 22, 16, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_16_23_01": MapLocation(
-        "m60_16_23_01",
-        "Four Belries [Medium Tile]",
-        bytes([1, 23, 16, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_17_20_01": MapLocation(
-        "m60_17_20_01",
-        "Southeast Moonlight Altar [Medium Tile]",
-        bytes([1, 20, 17, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_17_21_01": MapLocation(
-        "m60_17_21_01",
-        "Northeast Moonlight Altar; Liurnia Southwest Lake Shore [Medium Tile]",
-        bytes([1, 21, 17, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_17_22_01": MapLocation(
-        "m60_17_22_01",
-        "South Raya Lucaria Outskirts [Medium Tile]",
-        bytes([1, 22, 17, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_17_23_01": MapLocation(
-        "m60_17_23_01",
-        "North Raya Lucaria Outskirts [Medium Tile]",
-        bytes([1, 23, 17, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_17_24_01": MapLocation(
-        "m60_17_24_01",
-        "South of Caria Manor [Medium Tile]",
-        bytes([1, 24, 17, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_17_25_01": MapLocation(
-        "m60_17_25_01",
-        "Caria Manor; Three Sisters [Medium Tile]",
-        bytes([1, 25, 17, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_17_26_01": MapLocation(
-        "m60_17_26_01",
-        "South of Fort Laiedd [Medium Tile]",
-        bytes([1, 26, 17, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_17_27_01": MapLocation(
-        "m60_17_27_01",
-        "Fort Laiedd [Medium Tile]",
-        bytes([1, 27, 17, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_18_20_01": MapLocation(
-        "m60_18_20_01",
-        "Liurnia Far South Cliffside [Medium Tile]",
-        bytes([1, 20, 18, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_18_21_01": MapLocation(
-        "m60_18_21_01",
-        "South of Gate Town [Medium Tile]",
-        bytes([1, 21, 18, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_18_22_01": MapLocation(
-        "m60_18_22_01",
-        "Liurnia of the Lakes - Gate Town [Medium Tile]",
-        bytes([1, 22, 18, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_18_23_01": MapLocation(
-        "m60_18_23_01",
-        "Liurnia Lake Mausoleum; Church of Vows [Medium Tile]",
-        bytes([1, 23, 18, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_18_24_01": MapLocation(
-        "m60_18_24_01",
-        "Main Bellum Highway [Medium Tile]",
-        bytes([1, 24, 18, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_18_25_01": MapLocation(
-        "m60_18_25_01",
-        "Behind Caria Manor; Ruin-Strewn Precipice to Altus Plateau [Medium Tile]",
-        bytes([1, 25, 18, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_18_26_01": MapLocation(
-        "m60_18_26_01",
-        "Volano Manor Outskirts [Medium Tile]",
-        bytes([1, 26, 18, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_18_27_01": MapLocation(
-        "m60_18_27_01",
-        "North Mt. Gelmir [Medium Tile]",
-        bytes([1, 27, 18, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_19_19_01": MapLocation(
-        "m60_19_19_01",
-        "South of Liurnia Lake-Facing Cliffs [Medium Tile]",
-        bytes([1, 19, 19, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_19_20_01": MapLocation(
-        "m60_19_20_01",
-        "Liurnia Highway South; Southeast Lake Shore [Medium Tile]",
-        bytes([1, 20, 19, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_19_21_01": MapLocation(
-        "m60_19_21_01",
-        "Liurnia Highway North [Medium Tile]",
-        bytes([1, 21, 19, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_19_22_01": MapLocation(
-        "m60_19_22_01",
-        "Liurnia Eastern Lake Shore [Medium Tile]",
-        bytes([1, 22, 19, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_19_23_01": MapLocation(
-        "m60_19_23_01",
-        "Liurnia Eastern Tableland [Medium Tile]",
-        bytes([1, 23, 19, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_19_24_01": MapLocation(
-        "m60_19_24_01",
-        "Frenzied Flame Village; Bellum Minor Erdtree [Medium Tile]",
-        bytes([1, 24, 19, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_19_25_01": MapLocation(
-        "m60_19_25_01",
-        "Grand Lift of Dectus [Medium Tile]",
-        bytes([1, 25, 19, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_19_26_01": MapLocation(
-        "m60_19_26_01",
-        "Altus Plateau to Mt. Gelmir [Medium Tile]",
-        bytes([1, 26, 19, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_19_27_01": MapLocation(
-        "m60_19_27_01",
-        "Shaded Castle; Northeast Mt. Gelmir [Medium Tile]",
-        bytes([1, 27, 19, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_20_16_01": MapLocation(
-        "m60_20_16_01",
-        "Weeping Peninsula West Shore [Medium Tile]",
-        bytes([1, 16, 20, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_20_17_01": MapLocation(
-        "m60_20_17_01",
-        "Limgrave Dragon Church [Medium Tile]",
-        bytes([1, 17, 20, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_20_18_01": MapLocation(
-        "m60_20_18_01",
-        "Limgrave West Coast [Medium Tile]",
-        bytes([1, 18, 20, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_20_19_01": MapLocation(
-        "m60_20_19_01",
-        "Stormveil Outskirts in Stormhill [Medium Tile]",
-        bytes([1, 19, 20, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_20_20_01": MapLocation(
-        "m60_20_20_01",
-        "Far South Liurnia Highway [Medium Tile]",
-        bytes([1, 20, 20, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_20_25_01": MapLocation(
-        "m60_20_25_01",
-        "Altus Plateau to Capital Outskirts [Medium Tile]",
-        bytes([1, 25, 20, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_20_26_01": MapLocation(
-        "m60_20_26_01",
-        "Altus Plateau South Forest [Medium Tile]",
-        bytes([1, 26, 20, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_20_27_01": MapLocation(
-        "m60_20_27_01",
-        "Altus Plateau North Forest; West Windmill Village [Medium Tile]",
-        bytes([1, 27, 20, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_21_15_01": MapLocation(
-        "m60_21_15_01",
-        "Castle Morne [Medium Tile]",
-        bytes([1, 15, 21, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_21_16_01": MapLocation(
-        "m60_21_16_01",
-        "Central Weeping Peninsula [Medium Tile]",
-        bytes([1, 16, 21, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_21_17_01": MapLocation(
-        "m60_21_17_01",
-        "Weeping Peninsula Central North Shore [Medium Tile]",
-        bytes([1, 17, 21, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_21_18_01": MapLocation(
-        "m60_21_18_01",
-        "Limgrave Start; Lake Agheel [Medium Tile]",
-        bytes([1, 18, 21, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_21_19_01": MapLocation(
-        "m60_21_19_01",
-        "East Stormhill [Medium Tile]",
-        bytes([1, 19, 21, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_21_20_01": MapLocation(
-        "m60_21_20_01",
-        "Stormhill North Cliffside [Medium Tile]",
-        bytes([1, 20, 21, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_21_25_01": MapLocation(
-        "m60_21_25_01",
-        "South Capital Outskirts [Medium Tile]",
-        bytes([1, 25, 21, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_21_26_01": MapLocation(
-        "m60_21_26_01",
-        "Capital Outskirts Outer Wall Battleground [Medium Tile]",
-        bytes([1, 26, 21, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_21_27_01": MapLocation(
-        "m60_21_27_01",
-        "Altus Plateau East Windmill Village [Medium Tile]",
-        bytes([1, 27, 21, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_22_15_01": MapLocation(
-        "m60_22_15_01",
-        "Weeping Peninsula Southern West Coast [Medium Tile]",
-        bytes([1, 15, 22, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_22_16_01": MapLocation(
-        "m60_22_16_01",
-        "Weeping Peninsula Road to Castle Morne [Medium Tile]",
-        bytes([1, 16, 22, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_22_17_01": MapLocation(
-        "m60_22_17_01",
-        "Limgrave to Weeping Peninsula [Medium Tile]",
-        bytes([1, 17, 22, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_22_18_01": MapLocation(
-        "m60_22_18_01",
-        "Limgrave Waypoint Fork; Mistwood [Medium Tile]",
-        bytes([1, 18, 22, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_22_19_01": MapLocation(
-        "m60_22_19_01",
-        "Summonwater Village [Medium Tile]",
-        bytes([1, 19, 22, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_22_20_01": MapLocation(
-        "m60_22_20_01",
-        "North of Summonwater Village [Medium Tile]",
-        bytes([1, 20, 22, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_22_25_01": MapLocation(
-        "m60_22_25_01",
-        "Capital Outskirts Southeast Cliffside [Medium Tile]",
-        bytes([1, 25, 22, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_22_26_01": MapLocation(
-        "m60_22_26_01",
-        "Northeast Capital Outskirts [Medium Tile]",
-        bytes([1, 26, 22, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_23_18_01": MapLocation(
-        "m60_23_18_01",
-        "Fort Haight; Caelid Southwest Cliffside [Medium Tile]",
-        bytes([1, 18, 23, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_23_19_01": MapLocation(
-        "m60_23_19_01",
-        "East Limgrave to Central West Caelid [Medium Tile]",
-        bytes([1, 19, 23, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_23_20_01": MapLocation(
-        "m60_23_20_01",
-        "Far Northwest Caelid [Medium Tile]",
-        bytes([1, 20, 23, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_23_21_01": MapLocation(
-        "m60_23_21_01",
-        "North of Great-Jar [Medium Tile]",
-        bytes([1, 21, 23, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_23_25_01": MapLocation(
-        "m60_23_25_01",
-        "Forbidden Lands Start [Medium Tile]",
-        bytes([1, 25, 23, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_23_27_01": MapLocation(
-        "m60_23_27_01",
-        "Consecrated Snowfield Southwest Cliffside [Medium Tile]",
-        bytes([1, 27, 23, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_23_28_01": MapLocation(
-        "m60_23_28_01",
-        "Consecrated Snowfield West Cliffside [Medium Tile]",
-        bytes([1, 28, 23, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_23_29_01": MapLocation(
-        "m60_23_29_01",
-        "Consecrated Snowfield Northwest Cliffside [Medium Tile]",
-        bytes([1, 29, 23, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_24_18_01": MapLocation(
-        "m60_24_18_01",
-        "South of Aeonia Swamp [Medium Tile]",
-        bytes([1, 18, 24, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_24_19_01": MapLocation(
-        "m60_24_19_01",
-        "Aeonia Swamp; West Sellia [Medium Tile]",
-        bytes([1, 19, 24, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_24_20_01": MapLocation(
-        "m60_24_20_01",
-        "West Dragonbarrow [Medium Tile]",
-        bytes([1, 20, 24, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_24_25_01": MapLocation(
-        "m60_24_25_01",
-        "Forbidden Lands Midway [Medium Tile]",
-        bytes([1, 25, 24, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_24_26_01": MapLocation(
-        "m60_24_26_01",
-        "Grand Lift of Rold; West Zamor Ruins [Medium Tile]",
-        bytes([1, 26, 24, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_24_27_01": MapLocation(
-        "m60_24_27_01",
-        "Consecrated Snowfield Foggy Area [Medium Tile]",
-        bytes([1, 27, 24, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_24_28_01": MapLocation(
-        "m60_24_28_01",
-        "Ordina; Ordina Outskirts [Medium Tile]",
-        bytes([1, 28, 24, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_24_29_01": MapLocation(
-        "m60_24_29_01",
-        "Apostate Derelict East Cliffside [Medium Tile]",
-        bytes([1, 29, 24, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_25_17_01": MapLocation(
-        "m60_25_17_01",
-        "Redmane Castle South Cliffside [Medium Tile]",
-        bytes([1, 17, 25, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_25_18_01": MapLocation(
-        "m60_25_18_01",
-        "Redmane Castle; Southwest Radahn Arena [Medium Tile]",
-        bytes([1, 18, 25, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_25_19_01": MapLocation(
-        "m60_25_19_01",
-        "East Sellia; West Radahn Arena [Medium Tile]",
-        bytes([1, 19, 25, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_25_20_01": MapLocation(
-        "m60_25_20_01",
-        "Central Dragonbarrow [Medium Tile]",
-        bytes([1, 20, 25, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_25_21_01": MapLocation(
-        "m60_25_21_01",
-        "Bestial Sanctum [Medium Tile]",
-        bytes([1, 21, 25, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_25_26_01": MapLocation(
-        "m60_25_26_01",
-        "Southwest Flame Peak; East Zamor Ruins [Medium Tile]",
-        bytes([1, 26, 25, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_25_27_01": MapLocation(
-        "m60_25_27_01",
-        "Bridge to Snow Valley Ruins; Northwest Flame Peak [Medium Tile]",
-        bytes([1, 27, 25, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_25_28_01": MapLocation(
-        "m60_25_28_01",
-        "Northwest Mountaintops; Eastern Consecrated Snowfield [Medium Tile]",
-        bytes([1, 28, 25, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_25_29_01": MapLocation(
-        "m60_25_29_01",
-        "North Castle Sol [Medium Tile]",
-        bytes([1, 29, 25, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_26_18_01": MapLocation(
-        "m60_26_18_01",
-        "Southeast Radahn Arena [Medium Tile]",
-        bytes([1, 18, 26, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_26_19_01": MapLocation(
-        "m60_26_19_01",
-        "East Radahn Arena [Medium Tile]",
-        bytes([1, 19, 26, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_26_20_01": MapLocation(
-        "m60_26_20_01",
-        "North Radahn Arena; Southeast Dragonbarrow [Medium Tile]",
-        bytes([1, 20, 26, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_26_21_01": MapLocation(
-        "m60_26_21_01",
-        "Northeast Dragonbarrow [Medium Tile]",
-        bytes([1, 21, 26, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_26_26_01": MapLocation(
-        "m60_26_26_01",
-        "Southeast Flame Peak [Medium Tile]",
-        bytes([1, 26, 26, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_26_27_01": MapLocation(
-        "m60_26_27_01",
-        "Northeast Flame Peak [Medium Tile]",
-        bytes([1, 27, 26, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_26_28_01": MapLocation(
-        "m60_26_28_01",
-        "Freezing Lake; Mountaintops Minor Erdtree [Medium Tile]",
-        bytes([1, 28, 26, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_26_29_01": MapLocation(
-        "m60_26_29_01",
-        "North of Freezing Lake [Medium Tile]",
-        bytes([1, 29, 26, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_27_26_01": MapLocation(
-        "m60_27_26_01",
-        "Forge of the Giants [Medium Tile]",
-        bytes([1, 26, 27, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_27_27_01": MapLocation(
-        "m60_27_27_01",
-        "South of Freezing Lake [Medium Tile]",
-        bytes([1, 27, 27, 60]),
-        "medium",
-        0,
-        False,
-    ),
-    "m60_27_28_01": MapLocation(
-        "m60_27_28_01",
-        "East Freezing Lake [Medium Tile]",
-        bytes([1, 28, 27, 60]),
-        "medium",
-        0,
-        False,
+        "m43_01_00_00",
+        "Dragon's Pit",
+        bytes([0, 0, 1, 43]),
+        "dungeon",
+        0,
+        True,
+        safe_coords=(-74.36468505859375, 348.3, 13.883668899536133),
     ),
     "m60_33_40_00": MapLocation(
         "m60_33_40_00",
@@ -1472,6 +838,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(9.3, 236.2, 43.8),
     ),
     "m60_33_41_00": MapLocation(
         "m60_33_41_00",
@@ -1480,6 +847,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(28.2, 313.7, 61.0),
     ),
     "m60_33_42_00": MapLocation(
         "m60_33_42_00",
@@ -1488,6 +856,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-3.9, 347.2, 42.4),
     ),
     "m60_33_43_00": MapLocation(
         "m60_33_43_00",
@@ -1496,6 +865,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-15.1, 223.9, -24.4),
     ),
     "m60_33_44_00": MapLocation(
         "m60_33_44_00",
@@ -1504,6 +874,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(14.0, 257.2, 16.9),
     ),
     "m60_33_45_00": MapLocation(
         "m60_33_45_00",
@@ -1512,6 +883,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-11.0, 244.0, -47.0),
     ),
     "m60_33_46_00": MapLocation(
         "m60_33_46_00",
@@ -1520,6 +892,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-27.5, 263.8, -52.6),
     ),
     "m60_33_47_00": MapLocation(
         "m60_33_47_00",
@@ -1528,6 +901,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-15.6, 276.3, -12.79),
     ),
     "m60_34_41_00": MapLocation(
         "m60_34_41_00",
@@ -1536,6 +910,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-13.2, 363.9, 37.9),
     ),
     "m60_34_42_00": MapLocation(
         "m60_34_42_00",
@@ -1544,6 +919,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(61.3, 269.6, -100.5),
     ),
     "m60_34_43_00": MapLocation(
         "m60_34_43_00",
@@ -1552,6 +928,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-92.0, 263.5, -99.1),
     ),
     "m60_34_44_00": MapLocation(
         "m60_34_44_00",
@@ -1560,6 +937,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-42.9, 237.6, 120.9),
     ),
     "m60_34_45_00": MapLocation(
         "m60_34_45_00",
@@ -1568,6 +946,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(66.0, 238.0, 120.0),
     ),
     "m60_34_46_00": MapLocation(
         "m60_34_46_00",
@@ -1576,6 +955,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-19.6, 237.7, -104.8),
     ),
     "m60_34_47_00": MapLocation(
         "m60_34_47_00",
@@ -1584,6 +964,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-24.9, 238.5, -120.7),
     ),
     "m60_34_48_00": MapLocation(
         "m60_34_48_00",
@@ -1592,6 +973,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-14.6, 257.5, 45.7),
     ),
     "m60_34_49_00": MapLocation(
         "m60_34_49_00",
@@ -1600,6 +982,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(50.6, 272.7, -69.6),
     ),
     "m60_34_50_00": MapLocation(
         "m60_34_50_00",
@@ -1608,6 +991,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-86.0, 476.1, 11.3),
     ),
     "m60_34_51_00": MapLocation(
         "m60_34_51_00",
@@ -1616,6 +1000,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(99.9, 458.2, -64.1),
     ),
     "m60_35_41_00": MapLocation(
         "m60_35_41_00",
@@ -1624,6 +1009,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-102.0, 354.4, 81.7),
     ),
     "m60_35_42_00": MapLocation(
         "m60_35_42_00",
@@ -1632,6 +1018,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-15.8, 408.0, -22.3),
     ),
     "m60_35_43_00": MapLocation(
         "m60_35_43_00",
@@ -1640,6 +1027,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-57.6, 240.8, -91.4),
     ),
     "m60_35_44_00": MapLocation(
         "m60_35_44_00",
@@ -1648,6 +1036,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-61.7, 239.9, 110.3),
     ),
     "m60_35_45_00": MapLocation(
         "m60_35_45_00",
@@ -1656,6 +1045,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(107.8, 267.8, -65.6),
     ),
     "m60_35_46_00": MapLocation(
         "m60_35_46_00",
@@ -1664,6 +1054,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-91.7, 321.8, -31.7),
     ),
     "m60_35_47_00": MapLocation(
         "m60_35_47_00",
@@ -1672,6 +1063,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(33.1, 238.1, -97.0),
     ),
     "m60_35_48_00": MapLocation(
         "m60_35_48_00",
@@ -1680,6 +1072,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(75.9, 240.2, 43.4),
     ),
     "m60_35_49_00": MapLocation(
         "m60_35_49_00",
@@ -1688,6 +1081,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-100.1, 300.4, 42.4),
     ),
     "m60_35_50_00": MapLocation(
         "m60_35_50_00",
@@ -1696,6 +1090,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(102.5, 406.6, -45.0),
     ),
     "m60_35_51_00": MapLocation(
         "m60_35_51_00",
@@ -1704,6 +1099,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(29.3, 421.4, -75.6),
     ),
     "m60_35_52_00": MapLocation(
         "m60_35_52_00",
@@ -1712,6 +1108,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(115.7, 835.4, 12.8),
     ),
     "m60_35_53_00": MapLocation(
         "m60_35_53_00",
@@ -1720,6 +1117,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(126.3, 294.9, 79.3),
     ),
     "m60_35_54_00": MapLocation(
         "m60_35_54_00",
@@ -1728,6 +1126,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(110.1, 1009.1, 48.8),
     ),
     "m60_36_41_00": MapLocation(
         "m60_36_41_00",
@@ -1736,6 +1135,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(124.4, 150.5, -61.2),
     ),
     "m60_36_42_00": MapLocation(
         "m60_36_42_00",
@@ -1744,6 +1144,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(122.8, 237.5, -62.4),
     ),
     "m60_36_43_00": MapLocation(
         "m60_36_43_00",
@@ -1752,6 +1153,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(82.7, 237.7, -62.4),
     ),
     "m60_36_44_00": MapLocation(
         "m60_36_44_00",
@@ -1760,6 +1162,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-30.2, 237.7, -43.8),
     ),
     "m60_36_45_00": MapLocation(
         "m60_36_45_00",
@@ -1768,6 +1171,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-61.7, 239.9, 110.3),
     ),
     "m60_36_46_00": MapLocation(
         "m60_36_46_00",
@@ -1776,6 +1180,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-93.9, 402.1, 20.2),
     ),
     "m60_36_47_00": MapLocation(
         "m60_36_47_00",
@@ -1784,6 +1189,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(68.7, 303.4, 111.2),
     ),
     "m60_36_48_00": MapLocation(
         "m60_36_48_00",
@@ -1792,6 +1198,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(65.7, 321.7, 103.6),
     ),
     "m60_36_49_00": MapLocation(
         "m60_36_49_00",
@@ -1800,6 +1207,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(1.5, 307.4, 92.1),
     ),
     "m60_36_50_00": MapLocation(
         "m60_36_50_00",
@@ -1808,6 +1216,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(77.2, 382.7, 39.5),
     ),
     "m60_36_51_00": MapLocation(
         "m60_36_51_00",
@@ -1816,6 +1225,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(48.9, 664.9, 86.2),
     ),
     "m60_36_52_00": MapLocation(
         "m60_36_52_00",
@@ -1824,6 +1234,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(101.2, 879.7, -26.1),
     ),
     "m60_36_53_00": MapLocation(
         "m60_36_53_00",
@@ -1832,6 +1243,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(10.4, 979.0, 112.3),
     ),
     "m60_36_54_00": MapLocation(
         "m60_36_54_00",
@@ -1840,6 +1252,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(121.1, 1010.6, 26.5),
     ),
     "m60_37_41_00": MapLocation(
         "m60_37_41_00",
@@ -1848,6 +1261,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-79.1, 262.4, -58.4),
     ),
     "m60_37_42_00": MapLocation(
         "m60_37_42_00",
@@ -1856,6 +1270,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-101.4, 250.7, 23.6),
     ),
     "m60_37_43_00": MapLocation(
         "m60_37_43_00",
@@ -1864,6 +1279,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-97.1, 237.7, 24.1),
     ),
     "m60_37_44_00": MapLocation(
         "m60_37_44_00",
@@ -1872,6 +1288,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-96.1, 239.7, 28.4),
     ),
     "m60_37_45_00": MapLocation(
         "m60_37_45_00",
@@ -1880,6 +1297,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-97.1, 237.7, 29.6),
     ),
     "m60_37_46_00": MapLocation(
         "m60_37_46_00",
@@ -1888,6 +1306,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-8.8, 396.8, 18.1),
     ),
     "m60_37_47_00": MapLocation(
         "m60_37_47_00",
@@ -1896,6 +1315,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-9.7, 373.8, 17.9),
     ),
     "m60_37_48_00": MapLocation(
         "m60_37_48_00",
@@ -1904,6 +1324,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(21.3, 434.7, 15.8),
     ),
     "m60_37_49_00": MapLocation(
         "m60_37_49_00",
@@ -1912,6 +1333,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(50.5, 369.7, 12.8),
     ),
     "m60_37_50_00": MapLocation(
         "m60_37_50_00",
@@ -1920,6 +1342,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(43.8, 237.7, 20.1),
     ),
     "m60_37_51_00": MapLocation(
         "m60_37_51_00",
@@ -1928,6 +1351,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-53.1, 658.0, -83.3),
     ),
     "m60_37_52_00": MapLocation(
         "m60_37_52_00",
@@ -1936,6 +1360,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(94.0, 657.1, -59.8),
     ),
     "m60_37_53_00": MapLocation(
         "m60_37_53_00",
@@ -1944,6 +1369,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(5.5, 904.7, -63.4),
     ),
     "m60_37_54_00": MapLocation(
         "m60_37_54_00",
@@ -1952,6 +1378,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(7.6, 844.7, -39.6),
     ),
     "m60_37_55_00": MapLocation(
         "m60_37_55_00",
@@ -1960,6 +1387,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-66.7, 1033.6, -60.1),
     ),
     "m60_38_39_00": MapLocation(
         "m60_38_39_00",
@@ -1968,6 +1396,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-36.0, 320.3, 127.6),
     ),
     "m60_38_40_00": MapLocation(
         "m60_38_40_00",
@@ -1976,6 +1405,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(45.3, 238.2, 113.4),
     ),
     "m60_38_41_00": MapLocation(
         "m60_38_41_00",
@@ -1984,6 +1414,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(55.3, 238.6, -117.3),
     ),
     "m60_38_42_00": MapLocation(
         "m60_38_42_00",
@@ -1992,6 +1423,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(53.3, 257.9, 26.4),
     ),
     "m60_38_43_00": MapLocation(
         "m60_38_43_00",
@@ -2000,6 +1432,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(53.3, 257.9, 26.4),
     ),
     "m60_38_44_00": MapLocation(
         "m60_38_44_00",
@@ -2008,6 +1441,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(26.7, 282.3, 22.7),
     ),
     "m60_38_45_00": MapLocation(
         "m60_38_45_00",
@@ -2016,6 +1450,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(51.7, 312.0, 16.1),
     ),
     "m60_38_46_00": MapLocation(
         "m60_38_46_00",
@@ -2024,6 +1459,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(96.3, 248.9, 66.2),
     ),
     "m60_38_47_00": MapLocation(
         "m60_38_47_00",
@@ -2032,6 +1468,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-104.4, 373.1, -8.3),
     ),
     "m60_38_48_00": MapLocation(
         "m60_38_48_00",
@@ -2040,6 +1477,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(52.8, 450.2, 71.3),
     ),
     "m60_38_49_00": MapLocation(
         "m60_38_49_00",
@@ -2048,6 +1486,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-10.4, 466.0, -83.4),
     ),
     "m60_38_50_00": MapLocation(
         "m60_38_50_00",
@@ -2056,6 +1495,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-125.0, 240.8, 96.3),
     ),
     "m60_38_51_00": MapLocation(
         "m60_38_51_00",
@@ -2064,6 +1504,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-103.9, 793.3, -120.0),
     ),
     "m60_38_52_00": MapLocation(
         "m60_38_52_00",
@@ -2072,6 +1513,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(46.5, 799.6, -26.2),
     ),
     "m60_38_53_00": MapLocation(
         "m60_38_53_00",
@@ -2080,6 +1522,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(94.6, 733.1, -107.2),
     ),
     "m60_38_54_00": MapLocation(
         "m60_38_54_00",
@@ -2088,6 +1531,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(27.9, 861.0, -122.2),
     ),
     "m60_39_39_00": MapLocation(
         "m60_39_39_00",
@@ -2096,6 +1540,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-36.0, 320.3, 127.6),
     ),
     "m60_39_40_00": MapLocation(
         "m60_39_40_00",
@@ -2104,6 +1549,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(18.7, 338.0, -71.0),
     ),
     "m60_39_41_00": MapLocation(
         "m60_39_41_00",
@@ -2112,6 +1558,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(16.2, 293.0, -74.4),
     ),
     "m60_39_42_00": MapLocation(
         "m60_39_42_00",
@@ -2120,6 +1567,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(16.2, 277.6, -74.3),
     ),
     "m60_39_43_00": MapLocation(
         "m60_39_43_00",
@@ -2128,6 +1576,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-2.4, 288.2, -99.5),
     ),
     "m60_39_44_00": MapLocation(
         "m60_39_44_00",
@@ -2136,6 +1585,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(47.8, 221.0, -58.1),
     ),
     "m60_39_45_00": MapLocation(
         "m60_39_45_00",
@@ -2144,6 +1594,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-34.4, 237.9, -19.6),
     ),
     "m60_39_46_00": MapLocation(
         "m60_39_46_00",
@@ -2152,6 +1603,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-34.4, 237.9, -19.6),
     ),
     "m60_39_48_00": MapLocation(
         "m60_39_48_00",
@@ -2160,6 +1612,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-91.0, 263.8, -98.5),
     ),
     "m60_39_49_00": MapLocation(
         "m60_39_49_00",
@@ -2168,6 +1621,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-91.0, 263.8, -98.5),
     ),
     "m60_39_50_00": MapLocation(
         "m60_39_50_00",
@@ -2176,6 +1630,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-91.1, 711.0, -98.5),
     ),
     "m60_39_51_00": MapLocation(
         "m60_39_51_00",
@@ -2184,6 +1639,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(91.1, 760.7, -0.5),
     ),
     "m60_39_52_00": MapLocation(
         "m60_39_52_00",
@@ -2192,6 +1648,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(90.3, 773.8, -0.8),
     ),
     "m60_39_53_00": MapLocation(
         "m60_39_53_00",
@@ -2200,6 +1657,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(115.0, 754.0, -68.2),
     ),
     "m60_39_54_00": MapLocation(
         "m60_39_54_00",
@@ -2208,6 +1666,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(23.7, 725.1, -48.9),
     ),
     "m60_40_33_00": MapLocation(
         "m60_40_33_00",
@@ -2216,22 +1675,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
-    ),
-    "m60_40_38_00": MapLocation(
-        "m60_40_38_00",
-        "Stormhill - Forested West Cliffside",
-        bytes([0, 38, 40, 60]),
-        "small",
-        0,
-        False,
-    ),
-    "m60_40_39_00": MapLocation(
-        "m60_40_39_00",
-        "Stormhill - Path to Liurnia",
-        bytes([0, 39, 40, 60]),
-        "small",
-        0,
-        False,
+        safe_coords=(-87.1, 0.6, -28.8),
     ),
     "m60_40_40_00": MapLocation(
         "m60_40_40_00",
@@ -2240,6 +1684,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-21.8, 253.6, -92.0),
     ),
     "m60_40_50_00": MapLocation(
         "m60_40_50_00",
@@ -2248,6 +1693,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-13.0, 835.8, 60.8),
     ),
     "m60_40_51_00": MapLocation(
         "m60_40_51_00",
@@ -2256,6 +1702,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(37.9, 845.3, 103.1),
     ),
     "m60_40_52_00": MapLocation(
         "m60_40_52_00",
@@ -2264,6 +1711,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(108.8, 828.6, 142.1),
     ),
     "m60_40_53_00": MapLocation(
         "m60_40_53_00",
@@ -2272,6 +1720,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(11.0, 749.2, -82.1),
     ),
     "m60_40_54_00": MapLocation(
         "m60_40_54_00",
@@ -2280,6 +1729,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(68.2, 820.8, 113.7),
     ),
     "m60_40_55_00": MapLocation(
         "m60_40_55_00",
@@ -2288,6 +1738,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(124.5, 860.8, 74.1),
     ),
     "m60_41_32_00": MapLocation(
         "m60_41_32_00",
@@ -2296,6 +1747,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(4.8, 0.8, 112.2),
     ),
     "m60_41_33_00": MapLocation(
         "m60_41_33_00",
@@ -2304,6 +1756,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(55.2, 32.6, 66.6),
     ),
     "m60_41_34_00": MapLocation(
         "m60_41_34_00",
@@ -2312,6 +1765,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(47.8, -2.8, -95.0),
     ),
     "m60_41_35_00": MapLocation(
         "m60_41_35_00",
@@ -2320,6 +1774,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(14.9, 4.0, 50.7),
     ),
     "m60_41_36_00": MapLocation(
         "m60_41_36_00",
@@ -2328,6 +1783,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(44.9, -9.0, -15.3),
     ),
     "m60_41_37_00": MapLocation(
         "m60_41_37_00",
@@ -2336,6 +1792,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(33.9, 110.1, 4.1),
     ),
     "m60_41_38_00": MapLocation(
         "m60_41_38_00",
@@ -2344,6 +1801,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(19.6, 204.6, 15.6),
     ),
     "m60_41_39_00": MapLocation(
         "m60_41_39_00",
@@ -2352,6 +1810,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(12.8, 245.1, -30.7),
     ),
     "m60_41_50_00": MapLocation(
         "m60_41_50_00",
@@ -2360,6 +1819,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(100.1, 848.8, 42.4),
     ),
     "m60_41_51_00": MapLocation(
         "m60_41_51_00",
@@ -2368,6 +1828,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(49.5, 837.9, 37.8),
     ),
     "m60_41_52_00": MapLocation(
         "m60_41_52_00",
@@ -2376,6 +1837,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(93.4, 904.6, 18.1),
     ),
     "m60_41_53_00": MapLocation(
         "m60_41_53_00",
@@ -2384,6 +1846,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-2.4, 795.3, -97.1),
     ),
     "m60_41_54_00": MapLocation(
         "m60_41_54_00",
@@ -2392,6 +1855,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(74.2, 887.5, 74.1),
     ),
     "m60_41_55_00": MapLocation(
         "m60_41_55_00",
@@ -2400,6 +1864,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(38.0, 879.8, -64.8),
     ),
     "m60_42_32_00": MapLocation(
         "m60_42_32_00",
@@ -2408,6 +1873,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-53.1, 84.6, -45.9),
     ),
     "m60_42_33_00": MapLocation(
         "m60_42_33_00",
@@ -2416,6 +1882,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-24.3, 11.2, 52.3),
     ),
     "m60_42_34_00": MapLocation(
         "m60_42_34_00",
@@ -2424,6 +1891,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-3.9, 24.3, -125.7),
     ),
     "m60_42_35_00": MapLocation(
         "m60_42_35_00",
@@ -2432,6 +1900,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-25.0, 2.8, 109.0),
     ),
     "m60_42_36_00": MapLocation(
         "m60_42_36_00",
@@ -2440,6 +1909,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-11.5, 90.6, -56.8),
     ),
     "m60_42_37_00": MapLocation(
         "m60_42_37_00",
@@ -2448,6 +1918,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-10.9, 103.5, -54.7),
     ),
     "m60_42_38_00": MapLocation(
         "m60_42_38_00",
@@ -2456,6 +1927,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(11.1, 187.9, 99.4),
     ),
     "m60_42_39_00": MapLocation(
         "m60_42_39_00",
@@ -2464,6 +1936,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(12.9, 206.0, 36.0),
     ),
     "m60_42_40_00": MapLocation(
         "m60_42_40_00",
@@ -2472,6 +1945,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-52.6, 205.0, 120.8),
     ),
     "m60_42_50_00": MapLocation(
         "m60_42_50_00",
@@ -2480,6 +1954,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-66.4, 862.5, 75.3),
     ),
     "m60_42_51_00": MapLocation(
         "m60_42_51_00",
@@ -2488,6 +1963,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-52.0, 850.3, -40.3),
     ),
     "m60_42_52_00": MapLocation(
         "m60_42_52_00",
@@ -2496,6 +1972,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-38.5, 933.4, -60.3),
     ),
     "m60_42_53_00": MapLocation(
         "m60_42_53_00",
@@ -2504,6 +1981,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-44.9, 915.1, -58.7),
     ),
     "m60_42_54_00": MapLocation(
         "m60_42_54_00",
@@ -2512,6 +1990,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(17.8, 954.4, -42.1),
     ),
     "m60_42_55_00": MapLocation(
         "m60_42_55_00",
@@ -2520,6 +1999,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-39.1, 968.7, -33.7),
     ),
     "m60_43_30_00": MapLocation(
         "m60_43_30_00",
@@ -2528,6 +2008,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-30.8, 0.3, -11.9),
     ),
     "m60_43_31_00": MapLocation(
         "m60_43_31_00",
@@ -2536,6 +2017,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(103.5, 14.3, -1.1),
     ),
     "m60_43_32_00": MapLocation(
         "m60_43_32_00",
@@ -2544,6 +2026,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(114.6, 42.7, -1.4),
     ),
     "m60_43_33_00": MapLocation(
         "m60_43_33_00",
@@ -2552,6 +2035,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(114.0, 81.4, -2.4),
     ),
     "m60_43_34_00": MapLocation(
         "m60_43_34_00",
@@ -2560,6 +2044,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-110.6, 88.5, 82.6),
     ),
     "m60_43_35_00": MapLocation(
         "m60_43_35_00",
@@ -2568,6 +2053,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-15.9, 67.8, 48.6),
     ),
     "m60_43_36_00": MapLocation(
         "m60_43_36_00",
@@ -2576,6 +2062,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(31.415836334228516, 64.8, -77.49371337890625),
     ),
     "m60_43_37_00": MapLocation(
         "m60_43_37_00",
@@ -2584,6 +2071,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(93.91230773925781, 65.3, 63.675537109375),
     ),
     "m60_43_38_00": MapLocation(
         "m60_43_38_00",
@@ -2592,6 +2080,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(90.71356201171875, 66.3, 66.53729248046875),
     ),
     "m60_43_39_00": MapLocation(
         "m60_43_39_00",
@@ -2600,6 +2089,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(79.96467590332031, 102.2, 93.63046264648438),
     ),
     "m60_43_40_00": MapLocation(
         "m60_43_40_00",
@@ -2608,6 +2098,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(28.221162796020508, 202.5, 14.260129928588867),
     ),
     "m60_43_50_00": MapLocation(
         "m60_43_50_00",
@@ -2616,6 +2107,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-123.28744506835938, 907.4, -12.553709030151367),
     ),
     "m60_43_51_00": MapLocation(
         "m60_43_51_00",
@@ -2624,6 +2116,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-123.14261627197266, 869.3, -10.999874114990234),
     ),
     "m60_43_52_00": MapLocation(
         "m60_43_52_00",
@@ -2632,6 +2125,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-123.58609008789062, 907.3, -9.393142700195312),
     ),
     "m60_43_53_00": MapLocation(
         "m60_43_53_00",
@@ -2640,14 +2134,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
-    ),
-    "m60_43_54_00": MapLocation(
-        "m60_43_54_00",
-        "Altus Plateau - Cliffside Northeast of Outer Wall Battlefield",
-        bytes([0, 54, 43, 60]),
-        "small",
-        0,
-        False,
+        safe_coords=(-6.264699459075928, 993.1, 9.408607482910156),
     ),
     "m60_44_31_00": MapLocation(
         "m60_44_31_00",
@@ -2656,6 +2143,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-39.381473541259766, 14.9, 93.25312042236328),
     ),
     "m60_44_32_00": MapLocation(
         "m60_44_32_00",
@@ -2664,6 +2152,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-80.57481384277344, 48.1, -11.594618797302246),
     ),
     "m60_44_33_00": MapLocation(
         "m60_44_33_00",
@@ -2672,6 +2161,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-121.665283203125, 84.3, -26.126731872558594),
     ),
     "m60_44_34_00": MapLocation(
         "m60_44_34_00",
@@ -2680,6 +2170,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-114.73184967041016, 30.2, -14.833115577697754),
     ),
     "m60_44_35_00": MapLocation(
         "m60_44_35_00",
@@ -2688,6 +2179,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-112.24750518798828, 75.8, -10.070300102233887),
     ),
     "m60_44_36_00": MapLocation(
         "m60_44_36_00",
@@ -2696,6 +2188,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-102.75216674804688, 64.8, -21.22522735595703),
     ),
     "m60_44_37_00": MapLocation(
         "m60_44_37_00",
@@ -2704,6 +2197,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(122.95841979980469, 26.2, 110.28016662597656),
     ),
     "m60_44_38_00": MapLocation(
         "m60_44_38_00",
@@ -2712,6 +2206,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-13.2817964553833, 93.3, -26.438100814819336),
     ),
     "m60_44_39_00": MapLocation(
         "m60_44_39_00",
@@ -2720,6 +2215,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(122.52547454833984, 101.4, -38.53324508666992),
     ),
     "m60_44_52_00": MapLocation(
         "m60_44_52_00",
@@ -2728,6 +2224,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-111.26886749267578, 974.9, 59.018775939941406),
     ),
     "m60_44_53_00": MapLocation(
         "m60_44_53_00",
@@ -2736,6 +2233,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(2.2143049240112305, 1034.7, 50.330841064453125),
     ),
     "m60_45_32_00": MapLocation(
         "m60_45_32_00",
@@ -2744,6 +2242,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(44.24824905395508, 14.3, 20.218650817871094),
     ),
     "m60_45_33_00": MapLocation(
         "m60_45_33_00",
@@ -2752,6 +2251,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(5.299327850341797, 108.8, -84.09779357910156),
     ),
     "m60_45_34_00": MapLocation(
         "m60_45_34_00",
@@ -2760,6 +2260,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-24.136581420898438, 50.3, -48.94147491455078),
     ),
     "m60_45_35_00": MapLocation(
         "m60_45_35_00",
@@ -2768,6 +2269,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-86.35145568847656, 69.4, -47.52470779418945),
     ),
     "m60_45_36_00": MapLocation(
         "m60_45_36_00",
@@ -2776,6 +2278,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(117.69859313964844, 21.2, -46.63291931152344),
     ),
     "m60_45_37_00": MapLocation(
         "m60_45_37_00",
@@ -2784,6 +2287,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(114.422607421875, 31.6, -42.87770080566406),
     ),
     "m60_45_38_00": MapLocation(
         "m60_45_38_00",
@@ -2792,6 +2296,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(91.1471939086914, 10.5, -39.06882095336914),
     ),
     "m60_45_39_00": MapLocation(
         "m60_45_39_00",
@@ -2800,14 +2305,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
-    ),
-    "m60_45_40_00": MapLocation(
-        "m60_45_40_00",
-        "Limgrave - North of Summonwater Village",
-        bytes([0, 40, 45, 60]),
-        "small",
-        0,
-        False,
+        safe_coords=(-38.0184326171875, 92.3, 14.892810821533203),
     ),
     "m60_45_51_00": MapLocation(
         "m60_45_51_00",
@@ -2816,6 +2314,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(62.376155853271484, 952.9, 141.98989868164062),
     ),
     "m60_45_52_00": MapLocation(
         "m60_45_52_00",
@@ -2824,14 +2323,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
-    ),
-    "m60_45_53_00": MapLocation(
-        "m60_45_53_00",
-        "Capital Outskirts - Capital Rampart North Cliffside",
-        bytes([0, 53, 45, 60]),
-        "small",
-        0,
-        False,
+        safe_coords=(92.36697387695312, 1028.3, 141.48825073242188),
     ),
     "m60_46_36_00": MapLocation(
         "m60_46_36_00",
@@ -2840,6 +2332,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-56.82273483276367, 46.3, -34.95906448364258),
     ),
     "m60_46_37_00": MapLocation(
         "m60_46_37_00",
@@ -2848,6 +2341,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-99.95558166503906, 29.5, 5.1169657707214355),
     ),
     "m60_46_38_00": MapLocation(
         "m60_46_38_00",
@@ -2856,6 +2350,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-91.58290100097656, 3.6, 66.32379913330078),
     ),
     "m60_46_39_00": MapLocation(
         "m60_46_39_00",
@@ -2864,6 +2359,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-37.80126953125, 91.0, 124.22557830810547),
     ),
     "m60_46_40_00": MapLocation(
         "m60_46_40_00",
@@ -2872,22 +2368,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
-    ),
-    "m60_46_55_00": MapLocation(
-        "m60_46_55_00",
-        "Consecrated Snowfield - Yelough Anix Ruins West Cliffside",
-        bytes([0, 55, 46, 60]),
-        "small",
-        0,
-        False,
-    ),
-    "m60_46_57_00": MapLocation(
-        "m60_46_57_00",
-        "Consecrated Snowfield - Far West Cliffside",
-        bytes([0, 57, 46, 60]),
-        "small",
-        0,
-        False,
+        safe_coords=(105.36986541748047, 171.0, -66.44918060302734),
     ),
     "m60_47_37_00": MapLocation(
         "m60_47_37_00",
@@ -2896,6 +2377,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(56.727664947509766, 117.0, 33.37788009643555),
     ),
     "m60_47_38_00": MapLocation(
         "m60_47_38_00",
@@ -2904,6 +2386,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(91.99441528320312, 102.9, 34.27137756347656),
     ),
     "m60_47_39_00": MapLocation(
         "m60_47_39_00",
@@ -2912,6 +2395,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(50.395050048828125, 127.1, -6.641473770141602),
     ),
     "m60_47_40_00": MapLocation(
         "m60_47_40_00",
@@ -2920,6 +2404,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(49.533634185791016, 164.0, -3.9410862922668457),
     ),
     "m60_47_41_00": MapLocation(
         "m60_47_41_00",
@@ -2928,6 +2413,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(37.78708267211914, 120.7, 4.295876979827881),
     ),
     "m60_47_42_00": MapLocation(
         "m60_47_42_00",
@@ -2936,6 +2422,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-6.3746724128723145, 147.4, -113.34893035888672),
     ),
     "m60_47_51_00": MapLocation(
         "m60_47_51_00",
@@ -2944,6 +2431,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-18.236099243164062, 1003.7, -43.75879669189453),
     ),
     "m60_47_55_00": MapLocation(
         "m60_47_55_00",
@@ -2952,6 +2440,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(45.448787689208984, 1259.0, -55.599849700927734),
     ),
     "m60_47_56_00": MapLocation(
         "m60_47_56_00",
@@ -2960,6 +2449,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(45.49032211303711, 1269.4, -57.71692657470703),
     ),
     "m60_47_57_00": MapLocation(
         "m60_47_57_00",
@@ -2968,6 +2458,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(45.50988006591797, 1262.4, -58.71383285522461),
     ),
     "m60_47_58_00": MapLocation(
         "m60_47_58_00",
@@ -2976,6 +2467,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(64.78057098388672, 1290.6, -48.54931640625),
     ),
     "m60_48_36_00": MapLocation(
         "m60_48_36_00",
@@ -2984,6 +2476,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(38.52018737792969, 127.6, 107.46511840820312),
     ),
     "m60_48_37_00": MapLocation(
         "m60_48_37_00",
@@ -2992,6 +2485,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(29.241270065307617, 96.5, 34.0297966003418),
     ),
     "m60_48_38_00": MapLocation(
         "m60_48_38_00",
@@ -3000,6 +2494,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(61.055118560791016, 66.3, 28.44182014465332),
     ),
     "m60_48_39_00": MapLocation(
         "m60_48_39_00",
@@ -3008,6 +2503,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(74.957763671875, 144.7, 32.34474182128906),
     ),
     "m60_48_40_00": MapLocation(
         "m60_48_40_00",
@@ -3016,6 +2512,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(88.77169036865234, 181.7, 49.82368087768555),
     ),
     "m60_48_41_00": MapLocation(
         "m60_48_41_00",
@@ -3024,6 +2521,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(72.82020568847656, 200.4, 3.0732927322387695),
     ),
     "m60_48_51_00": MapLocation(
         "m60_48_51_00",
@@ -3032,6 +2530,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-63.0593147277832, 973.3, 50.93645477294922),
     ),
     "m60_48_54_00": MapLocation(
         "m60_48_54_00",
@@ -3040,6 +2539,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(106.36176300048828, 1329.2, -80.2076416015625),
     ),
     "m60_48_55_00": MapLocation(
         "m60_48_55_00",
@@ -3048,6 +2548,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(112.92518615722656, 1288.7, -117.68753051757812),
     ),
     "m60_48_56_00": MapLocation(
         "m60_48_56_00",
@@ -3056,6 +2557,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(111.24969482421875, 1258.3, -118.07225799560547),
     ),
     "m60_48_57_00": MapLocation(
         "m60_48_57_00",
@@ -3064,6 +2566,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(110.87602996826172, 1286.7, -118.1580581665039),
     ),
     "m60_48_58_00": MapLocation(
         "m60_48_58_00",
@@ -3072,6 +2575,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-98.37791442871094, 1284.0, -46.58913803100586),
     ),
     "m60_49_36_00": MapLocation(
         "m60_49_36_00",
@@ -3080,6 +2584,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(94.53443145751953, 54.2, -105.36178588867188),
     ),
     "m60_49_37_00": MapLocation(
         "m60_49_37_00",
@@ -3088,6 +2593,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-113.9726333618164, 95.0, 12.875076293945312),
     ),
     "m60_49_38_00": MapLocation(
         "m60_49_38_00",
@@ -3096,6 +2602,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-125.14415740966797, 68.1, 3.9716806411743164),
     ),
     "m60_49_39_00": MapLocation(
         "m60_49_39_00",
@@ -3104,6 +2611,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(19.097898483276367, 85.9, 109.63007354736328),
     ),
     "m60_49_40_00": MapLocation(
         "m60_49_40_00",
@@ -3112,6 +2620,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(11.269492149353027, 194.0, 102.83485412597656),
     ),
     "m60_49_41_00": MapLocation(
         "m60_49_41_00",
@@ -3120,6 +2629,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(81.30012512207031, 259.4, -6.112401485443115),
     ),
     "m60_49_52_00": MapLocation(
         "m60_49_52_00",
@@ -3128,6 +2638,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-19.56356430053711, 1063.1, 111.46953582763672),
     ),
     "m60_49_53_00": MapLocation(
         "m60_49_53_00",
@@ -3136,6 +2647,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(9.510246276855469, 1555.7, 92.02922821044922),
     ),
     "m60_49_54_00": MapLocation(
         "m60_49_54_00",
@@ -3144,6 +2656,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-74.67388916015625, 1309.3, 118.88629913330078),
     ),
     "m60_49_55_00": MapLocation(
         "m60_49_55_00",
@@ -3152,6 +2665,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-73.8632583618164, 1274.3, 119.28295135498047),
     ),
     "m60_49_56_00": MapLocation(
         "m60_49_56_00",
@@ -3160,6 +2674,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-75.02995300292969, 1297.7, 120.34878540039062),
     ),
     "m60_49_57_00": MapLocation(
         "m60_49_57_00",
@@ -3168,6 +2683,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-89.61972045898438, 1315.6, 25.959243774414062),
     ),
     "m60_50_36_00": MapLocation(
         "m60_50_36_00",
@@ -3176,6 +2692,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-67.72203063964844, 38.7, -81.42259216308594),
     ),
     "m60_50_37_00": MapLocation(
         "m60_50_37_00",
@@ -3184,6 +2701,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-46.74720001220703, 3.3, -46.03101348876953),
     ),
     "m60_50_38_00": MapLocation(
         "m60_50_38_00",
@@ -3192,6 +2710,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-94.12368774414062, 94.7, 45.344173431396484),
     ),
     "m60_50_39_00": MapLocation(
         "m60_50_39_00",
@@ -3200,6 +2719,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-105.19230651855469, 108.3, 49.193695068359375),
     ),
     "m60_50_40_00": MapLocation(
         "m60_50_40_00",
@@ -3208,6 +2728,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(74.6445083618164, 155.3, 125.26200103759766),
     ),
     "m60_50_41_00": MapLocation(
         "m60_50_41_00",
@@ -3216,6 +2737,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(78.96971130371094, 153.0, -113.79591369628906),
     ),
     "m60_50_53_00": MapLocation(
         "m60_50_53_00",
@@ -3224,6 +2746,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-23.265159606933594, 1571.6, -23.280488967895508),
     ),
     "m60_50_54_00": MapLocation(
         "m60_50_54_00",
@@ -3232,6 +2755,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-1.3256537914276123, 1589.1, -119.55957794189453),
     ),
     "m60_50_55_00": MapLocation(
         "m60_50_55_00",
@@ -3240,6 +2764,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-50.54566192626953, 1361.4, 98.94569396972656),
     ),
     "m60_50_56_00": MapLocation(
         "m60_50_56_00",
@@ -3248,6 +2773,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-67.62618255615234, 1389.6, 100.69990539550781),
     ),
     "m60_50_57_00": MapLocation(
         "m60_50_57_00",
@@ -3256,6 +2782,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(35.88545608520508, 1621.5, -30.437767028808594),
     ),
     "m60_51_35_00": MapLocation(
         "m60_51_35_00",
@@ -3264,6 +2791,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(72.4355697631836, 81.7, 90.50251007080078),
     ),
     "m60_51_36_00": MapLocation(
         "m60_51_36_00",
@@ -3272,6 +2800,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(93.23512268066406, 90.8, -42.89995193481445),
     ),
     "m60_51_37_00": MapLocation(
         "m60_51_37_00",
@@ -3280,6 +2809,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(26.6180419921875, 0.9, 35.45712661743164),
     ),
     "m60_51_38_00": MapLocation(
         "m60_51_38_00",
@@ -3288,6 +2818,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(28.56639862060547, 21.5, 28.720863342285156),
     ),
     "m60_51_39_00": MapLocation(
         "m60_51_39_00",
@@ -3296,6 +2827,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-74.24447631835938, 257.5, 125.20488739013672),
     ),
     "m60_51_40_00": MapLocation(
         "m60_51_40_00",
@@ -3304,6 +2836,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-18.360414505004883, 209.9, 36.135494232177734),
     ),
     "m60_51_41_00": MapLocation(
         "m60_51_41_00",
@@ -3312,6 +2845,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(34.17488479614258, 167.1, -115.7186279296875),
     ),
     "m60_51_42_00": MapLocation(
         "m60_51_42_00",
@@ -3320,6 +2854,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(31.11241340637207, 254.7, 47.24952697753906),
     ),
     "m60_51_43_00": MapLocation(
         "m60_51_43_00",
@@ -3328,6 +2863,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-32.886085510253906, 344.4, -2.9399285316467285),
     ),
     "m60_51_52_00": MapLocation(
         "m60_51_52_00",
@@ -3336,6 +2872,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(15.773481369018555, 1835.8, 88.12566375732422),
     ),
     "m60_51_53_00": MapLocation(
         "m60_51_53_00",
@@ -3344,6 +2881,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-10.076774597167969, 1794.0, -17.547115325927734),
     ),
     "m60_51_54_00": MapLocation(
         "m60_51_54_00",
@@ -3352,6 +2890,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(49.417327880859375, 1739.8, -73.04878234863281),
     ),
     "m60_51_55_00": MapLocation(
         "m60_51_55_00",
@@ -3360,6 +2899,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-40.2625617980957, 1569.2, 107.98104858398438),
     ),
     "m60_51_56_00": MapLocation(
         "m60_51_56_00",
@@ -3368,6 +2908,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-2.6286842823028564, 1610.7, -44.941505432128906),
     ),
     "m60_51_57_00": MapLocation(
         "m60_51_57_00",
@@ -3376,6 +2917,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-9.508337020874023, 1597.2, 42.516258239746094),
     ),
     "m60_51_58_00": MapLocation(
         "m60_51_58_00",
@@ -3384,6 +2926,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(85.20425415039062, 1664.3, 21.70976448059082),
     ),
     "m60_52_37_00": MapLocation(
         "m60_52_37_00",
@@ -3392,6 +2935,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-9.721474647521973, 1.4, 56.516387939453125),
     ),
     "m60_52_38_00": MapLocation(
         "m60_52_38_00",
@@ -3400,6 +2944,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-39.746803283691406, 34.3, -20.52361297607422),
     ),
     "m60_52_39_00": MapLocation(
         "m60_52_39_00",
@@ -3408,6 +2953,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-21.567729949951172, 28.5, -52.66846466064453),
     ),
     "m60_52_40_00": MapLocation(
         "m60_52_40_00",
@@ -3416,6 +2962,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-7.752829551696777, 1.9, -43.275604248046875),
     ),
     "m60_52_41_00": MapLocation(
         "m60_52_41_00",
@@ -3424,6 +2971,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(22.42873191833496, 219.1, 8.070917129516602),
     ),
     "m60_52_42_00": MapLocation(
         "m60_52_42_00",
@@ -3432,6 +2980,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-20.99726104736328, 257.5, -38.650848388671875),
     ),
     "m60_52_43_00": MapLocation(
         "m60_52_43_00",
@@ -3440,6 +2989,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-57.51246643066406, 299.0, -52.845149993896484),
     ),
     "m60_52_52_00": MapLocation(
         "m60_52_52_00",
@@ -3448,6 +2998,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-24.309898376464844, 1840.7, 17.410490036010742),
     ),
     "m60_52_53_00": MapLocation(
         "m60_52_53_00",
@@ -3456,6 +3007,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-2.325143814086914, 1813.1, 19.243432998657227),
     ),
     "m60_52_54_00": MapLocation(
         "m60_52_54_00",
@@ -3464,6 +3016,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-50.869327545166016, 1709.3, 61.521240234375),
     ),
     "m60_52_55_00": MapLocation(
         "m60_52_55_00",
@@ -3472,6 +3025,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-50.49757385253906, 1693.8, 94.21405792236328),
     ),
     "m60_52_56_00": MapLocation(
         "m60_52_56_00",
@@ -3480,6 +3034,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-50.367027282714844, 1677.8, 94.1242904663086),
     ),
     "m60_52_57_00": MapLocation(
         "m60_52_57_00",
@@ -3488,6 +3043,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(12.217695236206055, 1675.3, 3.226123809814453),
     ),
     "m60_52_58_00": MapLocation(
         "m60_52_58_00",
@@ -3496,6 +3052,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-19.680681228637695, 1675.8, -63.79988098144531),
     ),
     "m60_53_38_00": MapLocation(
         "m60_53_38_00",
@@ -3504,6 +3061,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-15.694494247436523, 8.1, -17.122983932495117),
     ),
     "m60_53_39_00": MapLocation(
         "m60_53_39_00",
@@ -3512,6 +3070,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-28.516538619995117, 7.8, 5.692142486572266),
     ),
     "m60_53_52_00": MapLocation(
         "m60_53_52_00",
@@ -3520,14 +3079,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
-    ),
-    "m60_53_53_00": MapLocation(
-        "m60_53_53_00",
-        "Flame Peak - Northeast Fire Giant Arena",
-        bytes([0, 53, 53, 60]),
-        "small",
-        0,
-        False,
+        safe_coords=(-54.699066162109375, 1884.2, 34.401763916015625),
     ),
     "m60_53_54_00": MapLocation(
         "m60_53_54_00",
@@ -3536,6 +3088,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-75.73973083496094, 1759.9, 63.77217102050781),
     ),
     "m60_53_55_00": MapLocation(
         "m60_53_55_00",
@@ -3544,6 +3097,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-22.089557647705078, 1647.6, 92.51667022705078),
     ),
     "m60_53_56_00": MapLocation(
         "m60_53_56_00",
@@ -3552,6 +3106,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-21.012197494506836, 1650.0, -19.624923706054688),
     ),
     "m60_53_57_00": MapLocation(
         "m60_53_57_00",
@@ -3560,6 +3115,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-24.849002838134766, 1620.2, -19.45625877380371),
     ),
     "m60_53_58_00": MapLocation(
         "m60_53_58_00",
@@ -3568,6 +3124,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-51.56036376953125, 1626.8, -75.99058532714844),
     ),
     "m60_54_53_00": MapLocation(
         "m60_54_53_00",
@@ -3576,6 +3133,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-22.53575897216797, 1969.6, -19.877296447753906),
     ),
     "m60_54_55_00": MapLocation(
         "m60_54_55_00",
@@ -3584,6 +3142,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-29.369693756103516, 1624.7, 73.73574829101562),
     ),
     "m60_54_56_00": MapLocation(
         "m60_54_56_00",
@@ -3592,6 +3151,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
+        safe_coords=(-16.474699020385742, 1620.2, -17.79718017578125),
     ),
     "m60_54_57_00": MapLocation(
         "m60_54_57_00",
@@ -3600,422 +3160,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         False,
-    ),
-    "m61_11_08_02": MapLocation(
-        "m61_11_08_02",
-        "Far South Cerulean Coast [Big Tile]",
-        bytes([2, 8, 11, 61]),
-        "big",
-        0,
-        True,
-    ),
-    "m61_11_09_02": MapLocation(
-        "m61_11_09_02",
-        "Southwest Cerulean Coast [Big Tile]",
-        bytes([2, 9, 11, 61]),
-        "big",
-        0,
-        True,
-    ),
-    "m61_11_10_02": MapLocation(
-        "m61_11_10_02",
-        "Southwest Gravesite Plain; Northwest Cerulean Coast [Big Tile]",
-        bytes([2, 10, 11, 61]),
-        "big",
-        0,
-        True,
-    ),
-    "m61_11_11_02": MapLocation(
-        "m61_11_11_02",
-        "Northwest Gravesite Plain; West Scadu Altus; Rauh Ruins [Big Tile]",
-        bytes([2, 11, 11, 61]),
-        "big",
-        0,
-        True,
-    ),
-    "m61_11_12_02": MapLocation(
-        "m61_11_12_02",
-        "North Rauh Ruins [Big Tile]",
-        bytes([2, 12, 11, 61]),
-        "big",
-        0,
-        True,
-    ),
-    "m61_12_09_02": MapLocation(
-        "m61_12_09_02",
-        "East Cerulean Coast; South Finger Ruins of Rhia; Dragon Communion Grand Altar [Big Tile]",
-        bytes([2, 9, 12, 61]),
-        "big",
-        0,
-        True,
-    ),
-    "m61_12_10_02": MapLocation(
-        "m61_12_10_02",
-        "Southeast Gravesite Plain; Fort Reprimand; Foot of the Jagged Peak; North Finger Ruins of Rhia; West Abyssal Woods [Big Tile]",
-        bytes([2, 10, 12, 61]),
-        "big",
-        0,
-        True,
-    ),
-    "m61_12_11_02": MapLocation(
-        "m61_12_11_02",
-        "Central Scadu Altus [Big Tile]",
-        bytes([2, 11, 12, 61]),
-        "big",
-        0,
-        True,
-    ),
-    "m61_12_12_02": MapLocation(
-        "m61_12_12_02",
-        "West Scaduview [Big Tile]",
-        bytes([2, 12, 12, 61]),
-        "big",
-        0,
-        True,
-    ),
-    "m61_13_09_02": MapLocation(
-        "m61_13_09_02",
-        "South Jagged Peak [Big Tile]",
-        bytes([2, 9, 13, 61]),
-        "big",
-        0,
-        True,
-    ),
-    "m61_13_10_02": MapLocation(
-        "m61_13_10_02",
-        "North Jagged Peak; East Abyssal Woods [Big Tile]",
-        bytes([2, 10, 13, 61]),
-        "big",
-        0,
-        True,
-    ),
-    "m61_13_11_02": MapLocation(
-        "m61_13_11_02",
-        "Far East Scadu Altus; Finger Ruins of Dheo [Big Tile]",
-        bytes([2, 11, 13, 61]),
-        "big",
-        0,
-        True,
-    ),
-    "m61_13_12_02": MapLocation(
-        "m61_13_12_02",
-        "East Scaduview [Big Tile]",
-        bytes([2, 12, 13, 61]),
-        "big",
-        0,
-        True,
-    ),
-    "m61_22_19_01": MapLocation(
-        "m61_22_19_01",
-        "Southwest Cerulean Coast [Medium Tile]",
-        bytes([1, 19, 22, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_22_20_01": MapLocation(
-        "m61_22_20_01",
-        "Southwest Gravesite Plain; Northwest Cerulean Coast [Medium Tile]",
-        bytes([1, 20, 22, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_22_21_01": MapLocation(
-        "m61_22_21_01",
-        "Southwest Gravesite Plain; Northwest Cerulean Coast [Medium Tile]",
-        bytes([1, 21, 22, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_22_22_01": MapLocation(
-        "m61_22_22_01",
-        "Northwest Gravesite Plain; West Scadu Altus; Rauh Ruins [Medium Tile]",
-        bytes([1, 22, 22, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_22_23_01": MapLocation(
-        "m61_22_23_01",
-        "Northwest Gravesite Plain; West Scadu Altus; Rauh Ruins [Medium Tile]",
-        bytes([1, 23, 22, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_22_24_01": MapLocation(
-        "m61_22_24_01",
-        "North Rauh Ruins [Medium Tile]",
-        bytes([1, 24, 22, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_23_17_01": MapLocation(
-        "m61_23_17_01",
-        "Far South Cerulean Coast [Medium Tile]",
-        bytes([1, 17, 23, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_23_18_01": MapLocation(
-        "m61_23_18_01",
-        "Southwest Cerulean Coast [Medium Tile]",
-        bytes([1, 18, 23, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_23_19_01": MapLocation(
-        "m61_23_19_01",
-        "Southwest Cerulean Coast [Medium Tile]",
-        bytes([1, 19, 23, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_23_20_01": MapLocation(
-        "m61_23_20_01",
-        "Southwest Gravesite Plain; Northwest Cerulean Coast [Medium Tile]",
-        bytes([1, 20, 23, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_23_21_01": MapLocation(
-        "m61_23_21_01",
-        "Southwest Gravesite Plain; Northwest Cerulean Coast [Medium Tile]",
-        bytes([1, 21, 23, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_23_22_01": MapLocation(
-        "m61_23_22_01",
-        "Northwest Gravesite Plain; West Scadu Altus; Rauh Ruins [Medium Tile]",
-        bytes([1, 22, 23, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_23_23_01": MapLocation(
-        "m61_23_23_01",
-        "Northwest Gravesite Plain; West Scadu Altus; Rauh Ruins [Medium Tile]",
-        bytes([1, 23, 23, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_23_24_01": MapLocation(
-        "m61_23_24_01",
-        "North Rauh Ruins [Medium Tile]",
-        bytes([1, 24, 23, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_24_18_01": MapLocation(
-        "m61_24_18_01",
-        "East Cerulean Coast; South Finger Ruins of Rhia; Dragon Communion Grand Altar [Medium Tile]",
-        bytes([1, 18, 24, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_24_19_01": MapLocation(
-        "m61_24_19_01",
-        "East Cerulean Coast; South Finger Ruins of Rhia; Dragon Communion Grand Altar [Medium Tile]",
-        bytes([1, 19, 24, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_24_20_01": MapLocation(
-        "m61_24_20_01",
-        "Southeast Gravesite Plain; Fort Reprimand; Foot of the Jagged Peak; North Finger Ruins of Rhia; West Abyssal Woods [Medium Tile]",
-        bytes([1, 20, 24, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_24_21_01": MapLocation(
-        "m61_24_21_01",
-        "Southeast Gravesite Plain; Fort Reprimand; Foot of the Jagged Peak; North Finger Ruins of Rhia; West Abyssal Woods [Medium Tile]",
-        bytes([1, 21, 24, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_24_22_01": MapLocation(
-        "m61_24_22_01",
-        "Central Scadu Altus [Medium Tile]",
-        bytes([1, 22, 24, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_24_23_01": MapLocation(
-        "m61_24_23_01",
-        "Central Scadu Altus [Medium Tile]",
-        bytes([1, 23, 24, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_24_24_01": MapLocation(
-        "m61_24_24_01",
-        "West Scaduview [Medium Tile]",
-        bytes([1, 24, 24, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_25_18_01": MapLocation(
-        "m61_25_18_01",
-        "East Cerulean Coast; South Finger Ruins of Rhia; Dragon Communion Grand Altar [Medium Tile]",
-        bytes([1, 18, 25, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_25_19_01": MapLocation(
-        "m61_25_19_01",
-        "East Cerulean Coast; South Finger Ruins of Rhia; Dragon Communion Grand Altar [Medium Tile]",
-        bytes([1, 19, 25, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_25_20_01": MapLocation(
-        "m61_25_20_01",
-        "Southeast Gravesite Plain; Fort Reprimand; Foot of the Jagged Peak; North Finger Ruins of Rhia; West Abyssal Woods [Medium Tile]",
-        bytes([1, 20, 25, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_25_21_01": MapLocation(
-        "m61_25_21_01",
-        "Southeast Gravesite Plain; Fort Reprimand; Foot of the Jagged Peak; North Finger Ruins of Rhia; West Abyssal Woods [Medium Tile]",
-        bytes([1, 21, 25, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_25_22_01": MapLocation(
-        "m61_25_22_01",
-        "Central Scadu Altus [Medium Tile]",
-        bytes([1, 22, 25, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_25_23_01": MapLocation(
-        "m61_25_23_01",
-        "Central Scadu Altus [Medium Tile]",
-        bytes([1, 23, 25, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_25_24_01": MapLocation(
-        "m61_25_24_01",
-        "West Scaduview [Medium Tile]",
-        bytes([1, 24, 25, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_26_19_01": MapLocation(
-        "m61_26_19_01",
-        "South Jagged Peak [Medium Tile]",
-        bytes([1, 19, 26, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_26_20_01": MapLocation(
-        "m61_26_20_01",
-        "North Jagged Peak; East Abyssal Woods [Medium Tile]",
-        bytes([1, 20, 26, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_26_21_01": MapLocation(
-        "m61_26_21_01",
-        "North Jagged Peak; East Abyssal Woods [Medium Tile]",
-        bytes([1, 21, 26, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_26_22_01": MapLocation(
-        "m61_26_22_01",
-        "Far East Scadu Altus; Finger Ruins of Dheo [Medium Tile]",
-        bytes([1, 22, 26, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_26_23_01": MapLocation(
-        "m61_26_23_01",
-        "Far East Scadu Altus; Finger Ruins of Dheo [Medium Tile]",
-        bytes([1, 23, 26, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_26_24_01": MapLocation(
-        "m61_26_24_01",
-        "East Scaduview [Medium Tile]",
-        bytes([1, 24, 26, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_27_19_01": MapLocation(
-        "m61_27_19_01",
-        "South Jagged Peak [Medium Tile]",
-        bytes([1, 19, 27, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_27_20_01": MapLocation(
-        "m61_27_20_01",
-        "North Jagged Peak; East Abyssal Woods [Medium Tile]",
-        bytes([1, 20, 27, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_27_22_01": MapLocation(
-        "m61_27_22_01",
-        "Far East Scadu Altus; Finger Ruins of Dheo [Medium Tile]",
-        bytes([1, 22, 27, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_27_23_01": MapLocation(
-        "m61_27_23_01",
-        "Far East Scadu Altus; Finger Ruins of Dheo [Medium Tile]",
-        bytes([1, 23, 27, 61]),
-        "medium",
-        0,
-        True,
-    ),
-    "m61_27_24_01": MapLocation(
-        "m61_27_24_01",
-        "East Scaduview [Medium Tile]",
-        bytes([1, 24, 27, 61]),
-        "medium",
-        0,
-        True,
+        safe_coords=(-17.96742057800293, 1618.8, -17.54874038696289),
     ),
     "m61_44_41_00": MapLocation(
         "m61_44_41_00",
@@ -4024,6 +3169,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(87.5526123046875, 420.3, -103.4737548828125),
     ),
     "m61_44_43_00": MapLocation(
         "m61_44_43_00",
@@ -4032,6 +3178,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(143.33316040039062, 399.6, -125.30229187011719),
     ),
     "m61_44_45_00": MapLocation(
         "m61_44_45_00",
@@ -4040,6 +3187,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(137.7928924560547, 562.7, -53.87413787841797),
     ),
     "m61_44_46_00": MapLocation(
         "m61_44_46_00",
@@ -4048,6 +3196,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-48.383148193359375, 625.6, -56.97758483886719),
     ),
     "m61_44_47_00": MapLocation(
         "m61_44_47_00",
@@ -4056,6 +3205,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-109.15717315673828, 329.8, 114.08466339111328),
     ),
     "m61_44_48_00": MapLocation(
         "m61_44_48_00",
@@ -4064,6 +3214,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-20.804222106933594, 325.1, 1.621469497680664),
     ),
     "m61_45_39_00": MapLocation(
         "m61_45_39_00",
@@ -4072,6 +3223,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-86.57671356201172, 93.9, -42.79442596435547),
     ),
     "m61_45_40_00": MapLocation(
         "m61_45_40_00",
@@ -4080,6 +3232,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-92.71763610839844, 405.4, 75.13751983642578),
     ),
     "m61_45_41_00": MapLocation(
         "m61_45_41_00",
@@ -4088,6 +3241,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-83.8121109008789, 400.5, 56.88656997680664),
     ),
     "m61_45_42_00": MapLocation(
         "m61_45_42_00",
@@ -4096,6 +3250,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-88.77633666992188, 390.4, 75.36180877685547),
     ),
     "m61_45_43_00": MapLocation(
         "m61_45_43_00",
@@ -4104,6 +3259,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(94.22257232666016, 303.0, -6.813506126403809),
     ),
     "m61_45_44_00": MapLocation(
         "m61_45_44_00",
@@ -4112,6 +3268,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(94.23853302001953, 256.2, -6.754481315612793),
     ),
     "m61_45_45_00": MapLocation(
         "m61_45_45_00",
@@ -4120,6 +3277,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(100.31318664550781, 294.5, -8.6461820602417),
     ),
     "m61_45_46_00": MapLocation(
         "m61_45_46_00",
@@ -4128,6 +3286,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-40.414154052734375, 552.1, -60.83415222167969),
     ),
     "m61_45_47_00": MapLocation(
         "m61_45_47_00",
@@ -4136,6 +3295,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-51.583675384521484, 526.0, -59.359657287597656),
     ),
     "m61_45_48_00": MapLocation(
         "m61_45_48_00",
@@ -4144,14 +3304,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
-    ),
-    "m61_46_35_00": MapLocation(
-        "m61_46_35_00",
-        "Cerulean Coast - The Fissure West Cliffside",
-        bytes([0, 35, 46, 61]),
-        "small",
-        0,
-        True,
+        safe_coords=(-48.852783203125, 327.4, -50.98198318481445),
     ),
     "m61_46_38_00": MapLocation(
         "m61_46_38_00",
@@ -4160,6 +3313,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-20.524255752563477, 3.5, 97.63554382324219),
     ),
     "m61_46_39_00": MapLocation(
         "m61_46_39_00",
@@ -4168,6 +3322,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(1.4759531021118164, 104.6, 29.120805740356445),
     ),
     "m61_46_40_00": MapLocation(
         "m61_46_40_00",
@@ -4176,6 +3331,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-98.43724822998047, 20.9, -39.21799850463867),
     ),
     "m61_46_41_00": MapLocation(
         "m61_46_41_00",
@@ -4184,6 +3340,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-98.33219909667969, 382.1, -40.47820281982422),
     ),
     "m61_46_42_00": MapLocation(
         "m61_46_42_00",
@@ -4192,6 +3349,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-12.036996841430664, 298.3, 87.5339584350586),
     ),
     "m61_46_43_00": MapLocation(
         "m61_46_43_00",
@@ -4200,6 +3358,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(60.564064025878906, 258.9, 1.2021703720092773),
     ),
     "m61_46_44_00": MapLocation(
         "m61_46_44_00",
@@ -4208,6 +3367,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-28.04383087158203, 290.3, 39.279632568359375),
     ),
     "m61_46_45_00": MapLocation(
         "m61_46_45_00",
@@ -4216,6 +3376,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-28.04442024230957, 291.3, 39.12798309326172),
     ),
     "m61_46_46_00": MapLocation(
         "m61_46_46_00",
@@ -4224,6 +3385,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-18.291709899902344, 532.3, 31.213626861572266),
     ),
     "m61_46_47_00": MapLocation(
         "m61_46_47_00",
@@ -4232,14 +3394,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
-    ),
-    "m61_46_48_00": MapLocation(
-        "m61_46_48_00",
-        "Ancient Ruins of Rauh - East Ruins North Pit and Tunnels",
-        bytes([0, 48, 46, 61]),
-        "small",
-        0,
-        True,
+        safe_coords=(1.0461254119873047, 633.6, 22.29411506652832),
     ),
     "m61_47_35_00": MapLocation(
         "m61_47_35_00",
@@ -4248,6 +3403,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(17.510162353515625, -95.6, 121.99395751953125),
     ),
     "m61_47_36_00": MapLocation(
         "m61_47_36_00",
@@ -4256,6 +3412,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-46.689537048339844, 60.0, 17.787796020507812),
     ),
     "m61_47_37_00": MapLocation(
         "m61_47_37_00",
@@ -4264,6 +3421,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(7.886504173278809, 10.1, 19.19526481628418),
     ),
     "m61_47_38_00": MapLocation(
         "m61_47_38_00",
@@ -4272,6 +3430,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(47.39042282104492, 4.8, 4.727571487426758),
     ),
     "m61_47_39_00": MapLocation(
         "m61_47_39_00",
@@ -4280,6 +3439,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(41.11982345581055, 84.9, -1.8043768405914307),
     ),
     "m61_47_40_00": MapLocation(
         "m61_47_40_00",
@@ -4288,6 +3448,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(41.2191162109375, 276.2, -1.679972529411316),
     ),
     "m61_47_41_00": MapLocation(
         "m61_47_41_00",
@@ -4296,6 +3457,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(41.21365737915039, 314.1, -1.6868102550506592),
     ),
     "m61_47_42_00": MapLocation(
         "m61_47_42_00",
@@ -4304,6 +3466,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(36.2109260559082, 299.7, -16.751293182373047),
     ),
     "m61_47_43_00": MapLocation(
         "m61_47_43_00",
@@ -4312,6 +3475,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(36.0701904296875, 263.3, -16.832529067993164),
     ),
     "m61_47_44_00": MapLocation(
         "m61_47_44_00",
@@ -4320,6 +3484,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(21.120567321777344, 358.7, 120.94756317138672),
     ),
     "m61_47_45_00": MapLocation(
         "m61_47_45_00",
@@ -4328,6 +3493,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(22.783580780029297, 438.8, 121.04216766357422),
     ),
     "m61_47_46_00": MapLocation(
         "m61_47_46_00",
@@ -4336,6 +3502,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(42.952430725097656, 304.3, 115.19976043701172),
     ),
     "m61_47_47_00": MapLocation(
         "m61_47_47_00",
@@ -4344,6 +3511,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(36.780086517333984, 329.3, 115.82878112792969),
     ),
     "m61_47_48_00": MapLocation(
         "m61_47_48_00",
@@ -4352,6 +3520,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(37.57032775878906, 332.4, -89.16961669921875),
     ),
     "m61_48_37_00": MapLocation(
         "m61_48_37_00",
@@ -4360,6 +3529,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(36.531585693359375, 61.2, -96.64493560791016),
     ),
     "m61_48_38_00": MapLocation(
         "m61_48_38_00",
@@ -4368,6 +3538,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(32.49103927612305, 54.2, -100.22212219238281),
     ),
     "m61_48_39_00": MapLocation(
         "m61_48_39_00",
@@ -4376,6 +3547,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(15.8760986328125, 88.6, -100.20640563964844),
     ),
     "m61_48_40_00": MapLocation(
         "m61_48_40_00",
@@ -4384,6 +3556,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(41.55909729003906, 32.7, -15.556692123413086),
     ),
     "m61_48_41_00": MapLocation(
         "m61_48_41_00",
@@ -4392,6 +3565,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(48.920230865478516, 413.5, 8.323162078857422),
     ),
     "m61_48_42_00": MapLocation(
         "m61_48_42_00",
@@ -4400,6 +3574,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(45.55698776245117, 205.0, 15.73421859741211),
     ),
     "m61_48_43_00": MapLocation(
         "m61_48_43_00",
@@ -4408,6 +3583,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(45.54470443725586, 193.2, 15.74782943725586),
     ),
     "m61_48_44_00": MapLocation(
         "m61_48_44_00",
@@ -4416,6 +3592,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(50.92897033691406, 363.1, -101.93859100341797),
     ),
     "m61_48_45_00": MapLocation(
         "m61_48_45_00",
@@ -4424,6 +3601,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-23.004846572875977, 410.4, -118.18724822998047),
     ),
     "m61_48_46_00": MapLocation(
         "m61_48_46_00",
@@ -4432,6 +3610,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-10.801225662231445, 394.3, 97.30477905273438),
     ),
     "m61_48_47_00": MapLocation(
         "m61_48_47_00",
@@ -4440,6 +3619,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-14.493301391601562, 438.8, -132.6665496826172),
     ),
     "m61_48_48_00": MapLocation(
         "m61_48_48_00",
@@ -4448,6 +3628,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-42.99681091308594, 355.2, -99.61189270019531),
     ),
     "m61_48_49_00": MapLocation(
         "m61_48_49_00",
@@ -4456,6 +3637,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(105.41342163085938, 629.2, 62.04938888549805),
     ),
     "m61_49_37_00": MapLocation(
         "m61_49_37_00",
@@ -4464,6 +3646,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-104.5018539428711, -0.2, 51.16453552246094),
     ),
     "m61_49_38_00": MapLocation(
         "m61_49_38_00",
@@ -4472,6 +3655,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-103.81021118164062, 22.0, 66.66209411621094),
     ),
     "m61_49_39_00": MapLocation(
         "m61_49_39_00",
@@ -4480,6 +3664,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-14.005823135375977, 68.4, 188.8426513671875),
     ),
     "m61_49_40_00": MapLocation(
         "m61_49_40_00",
@@ -4488,6 +3673,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(85.3056640625, 66.5, 65.42958068847656),
     ),
     "m61_49_41_00": MapLocation(
         "m61_49_41_00",
@@ -4496,6 +3682,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(84.04363250732422, -517.5, 62.134437561035156),
     ),
     "m61_49_42_00": MapLocation(
         "m61_49_42_00",
@@ -4504,6 +3691,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(83.56023406982422, -561.0, 62.648048400878906),
     ),
     "m61_49_43_00": MapLocation(
         "m61_49_43_00",
@@ -4512,6 +3700,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(34.174983978271484, 392.3, 93.6494369506836),
     ),
     "m61_49_44_00": MapLocation(
         "m61_49_44_00",
@@ -4520,6 +3709,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(48.888484954833984, 348.6, 72.95494079589844),
     ),
     "m61_49_45_00": MapLocation(
         "m61_49_45_00",
@@ -4528,6 +3718,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(51.564231872558594, 396.1, 100.50204467773438),
     ),
     "m61_49_46_00": MapLocation(
         "m61_49_46_00",
@@ -4536,6 +3727,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(21.12195587158203, 335.9, 99.81163787841797),
     ),
     "m61_49_47_00": MapLocation(
         "m61_49_47_00",
@@ -4544,6 +3736,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(42.5162239074707, 260.2, -102.97628784179688),
     ),
     "m61_49_48_00": MapLocation(
         "m61_49_48_00",
@@ -4552,6 +3745,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(45.35749053955078, 583.9, -52.90362548828125),
     ),
     "m61_49_49_00": MapLocation(
         "m61_49_49_00",
@@ -4560,14 +3754,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
-    ),
-    "m61_50_37_00": MapLocation(
-        "m61_50_37_00",
-        "Cerulean Coast - Far Southeast Fingercreeper Beach Coast",
-        bytes([0, 37, 50, 61]),
-        "small",
-        0,
-        True,
+        safe_coords=(-123.04093170166016, 613.9, -100.88109588623047),
     ),
     "m61_50_38_00": MapLocation(
         "m61_50_38_00",
@@ -4576,6 +3763,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-7.403492450714111, 34.9, 49.627132415771484),
     ),
     "m61_50_39_00": MapLocation(
         "m61_50_39_00",
@@ -4584,6 +3772,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-29.80733871459961, -76.8, 42.37164306640625),
     ),
     "m61_50_40_00": MapLocation(
         "m61_50_40_00",
@@ -4592,6 +3781,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-26.855974197387695, -75.8, 40.214107513427734),
     ),
     "m61_50_41_00": MapLocation(
         "m61_50_41_00",
@@ -4600,6 +3790,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-13.967529296875, -558.3, 101.3399658203125),
     ),
     "m61_50_42_00": MapLocation(
         "m61_50_42_00",
@@ -4608,6 +3799,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(104.3521957397461, -551.3, 50.74940872192383),
     ),
     "m61_50_43_00": MapLocation(
         "m61_50_43_00",
@@ -4616,6 +3808,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-38.40410614013672, 305.6, -22.111433029174805),
     ),
     "m61_50_44_00": MapLocation(
         "m61_50_44_00",
@@ -4624,6 +3817,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-36.25623321533203, 306.0, -20.332033157348633),
     ),
     "m61_50_45_00": MapLocation(
         "m61_50_45_00",
@@ -4632,6 +3826,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-45.516815185546875, 249.1, -12.804892539978027),
     ),
     "m61_50_46_00": MapLocation(
         "m61_50_46_00",
@@ -4640,6 +3835,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-47.6105842590332, 260.1, -13.546188354492188),
     ),
     "m61_50_47_00": MapLocation(
         "m61_50_47_00",
@@ -4648,6 +3844,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-44.24263381958008, 489.7, -4.920617580413818),
     ),
     "m61_50_48_00": MapLocation(
         "m61_50_48_00",
@@ -4656,6 +3853,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-40.52532958984375, 583.3, -58.696128845214844),
     ),
     "m61_50_49_00": MapLocation(
         "m61_50_49_00",
@@ -4664,14 +3862,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
-    ),
-    "m61_51_38_00": MapLocation(
-        "m61_51_38_00",
-        "Finger Ruins of Rhia - Far Southeast",
-        bytes([0, 38, 51, 61]),
-        "small",
-        0,
-        True,
+        safe_coords=(-41.7674560546875, 190.2, -59.77615737915039),
     ),
     "m61_51_39_00": MapLocation(
         "m61_51_39_00",
@@ -4680,6 +3871,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-75.44442749023438, -52.9, -67.31787872314453),
     ),
     "m61_51_40_00": MapLocation(
         "m61_51_40_00",
@@ -4688,6 +3880,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(76.5846939086914, 288.6, -20.23124885559082),
     ),
     "m61_51_41_00": MapLocation(
         "m61_51_41_00",
@@ -4696,6 +3889,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-6.0532073974609375, -550.9, 50.67710876464844),
     ),
     "m61_51_42_00": MapLocation(
         "m61_51_42_00",
@@ -4704,14 +3898,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
-    ),
-    "m61_51_43_00": MapLocation(
-        "m61_51_43_00",
-        "Scadu Altus - Darklight Catacombs Entrance; Abyssal Woods - West of Forsaken Graveyard",
-        bytes([0, 43, 51, 61]),
-        "small",
-        0,
-        True,
+        safe_coords=(-7.738424301147461, -551.8, 53.47442626953125),
     ),
     "m61_51_44_00": MapLocation(
         "m61_51_44_00",
@@ -4720,6 +3907,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-8.964571952819824, 136.8, 44.295528411865234),
     ),
     "m61_51_45_00": MapLocation(
         "m61_51_45_00",
@@ -4728,6 +3916,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-60.52967834472656, 472.1, 46.385040283203125),
     ),
     "m61_51_46_00": MapLocation(
         "m61_51_46_00",
@@ -4736,6 +3925,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-60.50387191772461, 437.7, 46.418514251708984),
     ),
     "m61_51_47_00": MapLocation(
         "m61_51_47_00",
@@ -4744,6 +3934,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-60.62948989868164, 577.2, 81.75575256347656),
     ),
     "m61_51_48_00": MapLocation(
         "m61_51_48_00",
@@ -4752,6 +3943,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-28.642141342163086, 551.8, 37.945865631103516),
     ),
     "m61_51_49_00": MapLocation(
         "m61_51_49_00",
@@ -4760,6 +3952,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(113.11088562011719, 534.5, -54.54018783569336),
     ),
     "m61_52_39_00": MapLocation(
         "m61_52_39_00",
@@ -4768,6 +3961,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-86.55797576904297, 290.0, 75.66242218017578),
     ),
     "m61_52_40_00": MapLocation(
         "m61_52_40_00",
@@ -4776,6 +3970,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-85.37731170654297, 293.8, 74.16587829589844),
     ),
     "m61_52_41_00": MapLocation(
         "m61_52_41_00",
@@ -4784,6 +3979,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-85.15099334716797, -549.3, 74.41967010498047),
     ),
     "m61_52_42_00": MapLocation(
         "m61_52_42_00",
@@ -4792,6 +3988,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-84.82565307617188, -507.7, 75.18844604492188),
     ),
     "m61_52_43_00": MapLocation(
         "m61_52_43_00",
@@ -4800,6 +3997,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-69.63150024414062, -511.9, 44.69947052001953),
     ),
     "m61_52_45_00": MapLocation(
         "m61_52_45_00",
@@ -4808,6 +4006,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-66.9228515625, 337.0, 24.79534912109375),
     ),
     "m61_52_46_00": MapLocation(
         "m61_52_46_00",
@@ -4816,6 +4015,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-66.85137939453125, 408.2, 24.71542739868164),
     ),
     "m61_52_47_00": MapLocation(
         "m61_52_47_00",
@@ -4824,6 +4024,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-16.430803298950195, 435.0, 122.01583862304688),
     ),
     "m61_52_48_00": MapLocation(
         "m61_52_48_00",
@@ -4832,14 +4033,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
-    ),
-    "m61_52_49_00": MapLocation(
-        "m61_52_49_00",
-        "Scaduview - Fingerstone Hill Crater North Cliffside",
-        bytes([0, 49, 52, 61]),
-        "small",
-        0,
-        True,
+        safe_coords=(-15.359543800354004, 484.3, 122.5723876953125),
     ),
     "m61_53_39_00": MapLocation(
         "m61_53_39_00",
@@ -4848,14 +4042,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
-    ),
-    "m61_53_40_00": MapLocation(
-        "m61_53_40_00",
-        "Abyssal Woods - South of Church; Jagged Peak - East of Drake Duo Area",
-        bytes([0, 40, 53, 61]),
-        "small",
-        0,
-        True,
+        safe_coords=(98.24784851074219, 514.4, -5.230527877807617),
     ),
     "m61_53_41_00": MapLocation(
         "m61_53_41_00",
@@ -4864,14 +4051,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
-    ),
-    "m61_53_45_00": MapLocation(
-        "m61_53_45_00",
-        "Finger Ruins of Dheo - Southwest",
-        bytes([0, 45, 53, 61]),
-        "small",
-        0,
-        True,
+        safe_coords=(-111.81098175048828, -539.6, -35.814918518066406),
     ),
     "m61_53_46_00": MapLocation(
         "m61_53_46_00",
@@ -4880,6 +4060,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-22.994009017944336, 324.8, -111.750244140625),
     ),
     "m61_53_47_00": MapLocation(
         "m61_53_47_00",
@@ -4888,6 +4069,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-25.7747802734375, 332.8, -103.22327423095703),
     ),
     "m61_53_48_00": MapLocation(
         "m61_53_48_00",
@@ -4896,6 +4078,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
+        safe_coords=(-25.320640563964844, 386.0, -101.8414077758789),
     ),
     "m61_54_39_00": MapLocation(
         "m61_54_39_00",
@@ -4904,54 +4087,7 @@ LOCATIONS: dict[str, MapLocation] = {
         "small",
         0,
         True,
-    ),
-    "m61_54_40_00": MapLocation(
-        "m61_54_40_00",
-        "Jagged Peak - Jagged Peak Mountainside",
-        bytes([0, 40, 54, 61]),
-        "small",
-        0,
-        True,
-    ),
-    "m61_54_45_00": MapLocation(
-        "m61_54_45_00",
-        "Finger Ruins of Dheo - Southeast",
-        bytes([0, 45, 54, 61]),
-        "small",
-        0,
-        True,
-    ),
-    "m61_54_46_00": MapLocation(
-        "m61_54_46_00",
-        "Finger Ruins of Dheo - East",
-        bytes([0, 46, 54, 61]),
-        "small",
-        0,
-        True,
-    ),
-    "m61_54_47_00": MapLocation(
-        "m61_54_47_00",
-        "Finger Ruins of Dheo - Northeast",
-        bytes([0, 47, 54, 61]),
-        "small",
-        0,
-        True,
-    ),
-    "m61_54_48_00": MapLocation(
-        "m61_54_48_00",
-        "Scaduview - Fingerstone Hill Far East Cliffside",
-        bytes([0, 48, 54, 61]),
-        "small",
-        0,
-        True,
-    ),
-    "m61_55_39_00": MapLocation(
-        "m61_55_39_00",
-        "Jagged Peak - Bayle Arena East Wall, Rest of the Dread Dragon",
-        bytes([0, 39, 55, 61]),
-        "small",
-        0,
-        True,
+        safe_coords=(41.69546127319336, 955.9, 100.6236801147461),
     ),
 }
 

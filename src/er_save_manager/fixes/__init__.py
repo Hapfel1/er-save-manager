@@ -1,6 +1,7 @@
 """ER Save Manager - Corruption Fixes Module."""
 
 from er_save_manager.fixes.base import BaseFix, FixResult
+from er_save_manager.fixes.deep_scan import DeepScanFix, DeepScanResult
 from er_save_manager.fixes.dlc import DLCFlagFix, InvalidDLCFix
 from er_save_manager.fixes.event_flags import EventFlagsFix, RanniSoftlockFix
 from er_save_manager.fixes.steamid import SteamIdFix
@@ -23,6 +24,7 @@ ALL_FIXES = [
     EventFlagsFix,
     DLCFlagFix,
     InvalidDLCFix,
+    DeepScanFix,
 ]
 
 __all__ = [
@@ -45,4 +47,6 @@ __all__ = [
     "TELEPORT_LOCATIONS",
     # All fixes list
     "ALL_FIXES",
+    "DeepScanFix",
+    "DeepScanResult",
 ]
