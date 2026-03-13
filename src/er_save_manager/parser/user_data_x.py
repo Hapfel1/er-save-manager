@@ -331,7 +331,6 @@ class UserDataX:
         obj.gestures = Gestures.read(f)
         obj.unlocked_regions = Regions.read(f)
         obj.horse_offset = f.tell()
-        obj.horse_offset = f.tell()
         obj.horse = RideGameData.read(f)
         obj.control_byte_maybe = struct.unpack("<B", f.read(1))[0]
         obj.blood_stain = BloodStain.read(f)
@@ -373,7 +372,7 @@ class UserDataX:
         obj.world_geom_man = WorldGeomMan.read(f)
         obj.world_geom_man2 = WorldGeomMan.read(f)
         obj.rend_man = RendMan.read(f)
-        obj.coordinates_offset = f.tell() - data_start
+        obj.coordinates_offset = f.tell()
         obj.player_coordinates = PlayerCoordinates.read(f)
 
         # 2 bytes padding after PlayerCoordinates

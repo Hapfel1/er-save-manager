@@ -53,10 +53,8 @@ class DLCFlagFix(BaseFix):
             dlc_bytes = BytesIO()
             slot.dlc.write(dlc_bytes)
             dlc_data = dlc_bytes.getvalue()
-            # Calculate absolute offset
-            absolute_dlc_offset = slot.data_start + slot.dlc_offset
             save._raw_data[
-                absolute_dlc_offset : absolute_dlc_offset + len(dlc_data)
+                slot.dlc_offset : slot.dlc_offset + len(dlc_data)
             ] = dlc_data
 
             return FixResult(
@@ -107,10 +105,8 @@ class InvalidDLCFix(BaseFix):
             dlc_bytes = BytesIO()
             slot.dlc.write(dlc_bytes)
             dlc_data = dlc_bytes.getvalue()
-            # Calculate absolute offset
-            absolute_dlc_offset = slot.data_start + slot.dlc_offset
             save._raw_data[
-                absolute_dlc_offset : absolute_dlc_offset + len(dlc_data)
+                slot.dlc_offset : slot.dlc_offset + len(dlc_data)
             ] = dlc_data
 
             return FixResult(
