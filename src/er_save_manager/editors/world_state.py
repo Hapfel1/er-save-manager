@@ -6,7 +6,7 @@ import struct
 from typing import TYPE_CHECKING
 
 from er_save_manager.data.locations import LOCATIONS, get_name_for_map_id
-from er_save_manager.parser.er_types import MapId
+from er_save_manager.parser.er_types import FloatVector3, MapId
 
 if TYPE_CHECKING:
     from er_save_manager.parser.save import Save
@@ -75,7 +75,8 @@ class WorldStateEditor:
     def teleport_to_map_id(self, map_id_str: str) -> tuple[bool, str]:
         """
         Teleport character to a map by its string ID (e.g. "m60_42_36_00").
-        Sets map_id only; the game spawns the player at the map default position.
+        Uses safe_coords from the location database if available, otherwise
+        preserves current coordinates so the character doesn't void-spawn.
         Also adds the region unlock ID from the location database if not already present.
         """
         loc = LOCATIONS.get(map_id_str)
@@ -83,9 +84,19 @@ class WorldStateEditor:
             return False, f"Unknown map ID: {map_id_str}"
 
         try:
-            self._write_map_id_raw(MapId(loc.map_bytes))
+            if loc.safe_coords is not None:
+                x, y, z = loc.safe_coords
+                coords = FloatVector3(x, y, z)
+            else:
+                info = self.get_current_location()
+                coords = info["coordinates"] or FloatVector3(0.0, 0.0, 0.0)
+
+            self._write_map_id_raw(MapId(loc.map_bytes), zero_coords=False)
+            self._write_coordinates(coords)
+
             if loc.region_id:
                 self._ensure_region_unlocked(loc.region_id)
+
             return True, f"Teleported to {loc.name}"
         except Exception as e:
             return False, str(e)
@@ -129,7 +140,6 @@ class WorldStateEditor:
                 pass
 
             if zero_coords:
-                # Zero xyz (offset +0) and unk_xyz (offset +33: map_id(4)+angle(16)+byte(1) = +21, then +12)
                 zero = struct.pack("<fff", 0.0, 0.0, 0.0)
                 raw[coord_base : coord_base + 12] = zero
                 raw[coord_base + 33 : coord_base + 45] = zero

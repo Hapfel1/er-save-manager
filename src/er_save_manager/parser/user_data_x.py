@@ -63,22 +63,10 @@ class UserDataX:
     # Metadata (not from file, tracking info)
     data_start: int = 0
     horse_offset: int = 0
-    weather_offset: int = 0
+    coordinates_offset: int = 0
     time_offset: int = 0
     steamid_offset: int = 0
     dlc_offset: int = 0
-    coordinates_offset: int = 0
-    event_flags_offset: int = 0
-    player_game_data_offset: int = 0
-    sp_effects_offset: int = 0
-    equipped_items_equip_index_offset: int = 0
-    equipped_items_item_id_offset: int = 0
-    inventory_held_offset: int = 0
-    equipped_spells_offset: int = 0
-    face_data_offset: int = 0
-    inventory_storage_box_offset: int = 0
-    gestures_offset: int = 0
-    regions_offset: int = 0
     # Header (4 + 4 + 8 + 16 = 32 bytes)
     version: int = 0
     map_id: MapId = field(default_factory=MapId)
@@ -309,29 +297,23 @@ class UserDataX:
         obj.gaitem_map = [Gaitem.read(f) for _ in range(gaitem_count)]
 
         # Read player game data (432 bytes)
-        obj.player_game_data_offset = f.tell() - data_start
         obj.player_game_data = PlayerGameData.read(f)
 
         # Read SP effects (13 entries)
-        obj.sp_effects_offset = f.tell() - data_start
         obj.sp_effects = [SPEffect.read(f) for _ in range(13)]
 
         # Read equipment structures
-        obj.equipped_items_equip_index_offset = f.tell() - data_start
         obj.equipped_items_equip_index = EquippedItemsEquipIndex.read(f)
         obj.active_weapon_slots_and_arm_style = ActiveWeaponSlotsAndArmStyle.read(f)
-        obj.equipped_items_item_id_offset = f.tell() - data_start
         obj.equipped_items_item_id = EquippedItemsItemIds.read(f)
         obj.equipped_items_gaitem_handle = EquippedItemsGaitemHandles.read(f)
 
         # Read inventory held
         held_common_cap = 0xA80  # 2,688 common items
         held_key_cap = 0x180  # 384 key items
-        obj.inventory_held_offset = f.tell() - data_start
         obj.inventory_held = Inventory.read(f, held_common_cap, held_key_cap)
 
         # Read more equipment
-        obj.equipped_spells_offset = f.tell() - data_start
         obj.equipped_spells = EquippedSpells.read(f)
         obj.equipped_items = EquippedItems.read(f)
         obj.equipped_gestures = EquippedGestures.read(f)
@@ -340,19 +322,16 @@ class UserDataX:
         obj.equipped_physics = EquippedPhysics.read(f)
 
         # Read face data (303 bytes)
-        obj.face_data_offset = f.tell() - data_start
         obj.face_data = FaceData.read(f, in_profile_summary=False)
 
         # Read inventory storage
-        obj.inventory_storage_box_offset = f.tell() - data_start
         obj.inventory_storage_box = Inventory.read(f, 0x780, 0x80)
 
         # Parse remaining structures
-        obj.gestures_offset = f.tell() - data_start
         obj.gestures = Gestures.read(f)
-        obj.regions_offset = f.tell() - data_start
         obj.unlocked_regions = Regions.read(f)
-        obj.horse_offset = f.tell() - data_start
+        obj.horse_offset = f.tell()
+        obj.horse_offset = f.tell()
         obj.horse = RideGameData.read(f)
         obj.control_byte_maybe = struct.unpack("<B", f.read(1))[0]
         obj.blood_stain = BloodStain.read(f)
@@ -384,7 +363,7 @@ class UserDataX:
             0
         ]
 
-        obj.event_flags_offset = f.tell() - data_start
+        obj.event_flags_offset = f.tell()
         obj.event_flags = f.read(0x1BF99F)
         obj.event_flags_terminator = struct.unpack("<B", f.read(1))[0]
         # There are 16 more bytes after the terminator
@@ -408,17 +387,18 @@ class UserDataX:
         if obj.version >= 66:
             obj.game_man_0xcb3 = struct.unpack("<B", f.read(1))[0]
 
+        obj.net_man_offset = f.tell()
         obj.net_man = NetMan.read(f)
 
-        obj.weather_offset = f.tell() - data_start
+        obj.weather_offset = f.tell()
         obj.world_area_weather = WorldAreaWeather.read(f)
-        obj.time_offset = f.tell() - data_start
+        obj.time_offset = f.tell()
         obj.world_area_time = WorldAreaTime.read(f)
         obj.base_version = BaseVersion.read(f)
-        obj.steamid_offset = f.tell() - data_start
+        obj.steamid_offset = f.tell()
         obj.steam_id = struct.unpack("<Q", f.read(8))[0]
         obj.ps5_activity = PS5Activity.read(f)
-        obj.dlc_offset = f.tell() - data_start
+        obj.dlc_offset = f.tell()
         obj.dlc = DLC.read(f)
         obj.player_data_hash = PlayerGameDataHash.read(f)
 

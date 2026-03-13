@@ -1,3 +1,7 @@
+Backup Manager + SteamID Patcher for the other games
+
+item spawning
+
 scrolling works on linux via the view details window in the appearance tab but not anywhere else done
 
 Add avira and exact file size done

@@ -15,23 +15,12 @@ class CharacterDetailsDialog:
 
     @staticmethod
     def show(parent, save_file, slot_idx, save_path=None, reload_callback=None):
-        """
-        Show character details dialog
-
-        Args:
-            parent: Parent window
-            save_file: Save file object
-            slot_idx: Character slot index (0-9)
-            save_path: Path to save file (for fixes)
-            reload_callback: Callback to reload save after fixes
-        """
         if not save_file:
             CTkMessageBox.showwarning("No Save", "No save file loaded!")
             return
 
         slot = save_file.characters[slot_idx]
 
-        # Get character info from profile
         name = f"Character {slot_idx + 1}"
         level = "?"
         playtime = "Unknown"
@@ -49,7 +38,6 @@ class CharacterDetailsDialog:
         except Exception as e:
             print(f"Warning: Could not load profile data: {e}")
 
-        # Get location
         location = "Unknown"
         is_dlc_location = False
         try:
@@ -59,11 +47,9 @@ class CharacterDetailsDialog:
         except Exception:
             pass
 
-        # Corruption detection
         has_corruption = False
         issues_detected = []
         try:
-            # Get correct steamid from USER_DATA_10 if available
             correct_steam_id = None
             if save_file.user_data_10_parsed and hasattr(
                 save_file.user_data_10_parsed, "steam_id"
@@ -76,7 +62,6 @@ class CharacterDetailsDialog:
         except Exception:
             pass
 
-        # DLC info
         has_dlc_flag = False
         has_invalid_dlc = False
         try:
@@ -85,7 +70,20 @@ class CharacterDetailsDialog:
         except Exception:
             pass
 
-        # Build info text
+        # Deep scan check
+        deep_scan_available = False
+        deep_scan_result = None
+        try:
+            from er_save_manager.fixes.deep_scan import DeepScanFix
+
+            deep_fix = DeepScanFix()
+            deep_scan_result = deep_fix.scan_only(save_file, slot_idx)
+            deep_scan_available = (
+                deep_scan_result.steamid_found and deep_scan_result.delta != 0
+            )
+        except Exception:
+            pass
+
         info = []
         info.append("=" * 50)
         info.append(f"  CHARACTER: {name}")
@@ -97,28 +95,38 @@ class CharacterDetailsDialog:
             info.append("  WARNING: Currently in DLC area!")
         info.append("")
 
-        # DLC info
-        if has_dlc_flag or has_invalid_dlc:
+        if (has_dlc_flag or has_invalid_dlc) and not deep_scan_available:
             info.append("DLC FLAGS:")
             info.append(f"  Has DLC Access: {'Yes' if has_dlc_flag else 'No'}")
             if has_invalid_dlc:
                 info.append("  WARNING: Invalid data in unused DLC slots")
             info.append("")
 
-        # Issues section
-        if issues_detected:
+        if deep_scan_available and deep_scan_result:
+            info.append("=" * 50)
+            info.append("TORN WRITE DETECTED:")
+            info.append("=" * 50)
+            delta = deep_scan_result.delta
+            info.append(
+                f"  Shift: {'+' if delta > 0 else ''}{delta} bytes (0x{abs(delta):x})"
+            )
+            info.append(f"  Confidence: {deep_scan_result.confidence}")
+            info.append("")
+            info.append("RECOMMENDATION:")
+            info.append("  Click 'Fix All Issues' to repair the torn write.")
+            info.append("  Do NOT apply SteamID, weather, area or DLC fixes")
+            info.append("  before this — they will break the byte-shift repair.")
+        elif issues_detected:
             info.append("=" * 50)
             info.append("ISSUES DETECTED:")
             info.append("=" * 50)
             for issue in issues_detected:
-                # Parse issue format: "type:details"
                 if ":" in issue:
                     issue_type, issue_detail = issue.split(":", 1)
-                    info.append(f"  • {issue_detail}")
+                    info.append(f"  - {issue_detail}")
                 else:
-                    info.append(f"  • {issue}")
+                    info.append(f"  - {issue}")
             info.append("")
-            # Add helpful context for DLC location issues
             if any("dlc_location" in issue for issue in issues_detected):
                 info.append("RECOMMENDATION:")
                 info.append("  Click 'Teleport Character' to escape the DLC area")
@@ -127,18 +135,16 @@ class CharacterDetailsDialog:
             info.append("Click 'Fix All Issues' to correct everything")
         else:
             info.append("=" * 50)
-            info.append("✓ NO ISSUES DETECTED")
+            info.append("NO ISSUES DETECTED")
             info.append("=" * 50)
             info.append("")
             info.append("Character appears healthy!")
 
-        # Create dialog
         dialog = ctk.CTkToplevel(parent)
         dialog.title(f"Character Details - {name}")
 
-        width, height = 640, 520
+        width, height = 640, 560 if deep_scan_available else 520
         dialog.update_idletasks()
-        # Center over parent window
         parent.update_idletasks()
         parent_x = parent.winfo_rootx()
         parent_y = parent.winfo_rooty()
@@ -149,12 +155,10 @@ class CharacterDetailsDialog:
         dialog.geometry(f"{width}x{height}+{x}+{y}")
         dialog.resizable(True, True)
 
-        # Force update and rendering on Linux
         dialog.update_idletasks()
         dialog.lift()
         dialog.focus_force()
 
-        # Main frame
         main_frame = ctk.CTkFrame(dialog, corner_radius=10)
         main_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
@@ -165,7 +169,6 @@ class CharacterDetailsDialog:
         )
         header.pack(anchor="w", padx=10, pady=(8, 6))
 
-        # Scrollable, selectable info
         info_box = ctk.CTkTextbox(
             main_frame,
             font=("Consolas", 13),
@@ -177,65 +180,66 @@ class CharacterDetailsDialog:
         info_box.insert("1.0", "\n".join(info))
         info_box.configure(state="disabled")
 
-        # DLC flag checkboxes (show if flag is set or invalid data exists)
         clear_dlc_flag_var = None
         clear_invalid_dlc_var = None
 
-        if has_dlc_flag or has_invalid_dlc:
+        if (has_dlc_flag or has_invalid_dlc) and not deep_scan_available:
             dlc_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
             dlc_frame.pack(fill="x", padx=10, pady=(5, 10))
 
             if has_dlc_flag:
                 clear_dlc_flag_var = ctk.BooleanVar(value=False)
-                dlc_checkbox = ctk.CTkCheckBox(
+                ctk.CTkCheckBox(
                     dlc_frame,
                     text="Clear Shadow of the Erdtree flag (allows loading without DLC)",
                     variable=clear_dlc_flag_var,
-                )
-                dlc_checkbox.pack(anchor="w", pady=(0, 2))
-
-                info_label = ctk.CTkLabel(
+                ).pack(anchor="w", pady=(0, 2))
+                ctk.CTkLabel(
                     dlc_frame,
                     text="   Use if someone teleported you out of the DLC but you cannot load the save file.",
                     font=("Segoe UI", 10),
                     text_color=("gray50", "gray50"),
-                )
-                info_label.pack(anchor="w", pady=(0, 8))
+                ).pack(anchor="w", pady=(0, 8))
 
             if has_invalid_dlc:
                 clear_invalid_dlc_var = ctk.BooleanVar(value=False)
-                invalid_checkbox = ctk.CTkCheckBox(
+                ctk.CTkCheckBox(
                     dlc_frame,
                     text="Clear invalid DLC data (fixes corrupted DLC flags)",
                     variable=clear_invalid_dlc_var,
-                )
-                invalid_checkbox.pack(anchor="w", pady=(0, 2))
-
-                invalid_info_label = ctk.CTkLabel(
+                ).pack(anchor="w", pady=(0, 2))
+                ctk.CTkLabel(
                     dlc_frame,
                     text="   Invalid data in unused DLC slots can prevent save from loading.",
                     font=("Segoe UI", 10),
                     text_color=("gray50", "gray50"),
-                )
-                invalid_info_label.pack(anchor="w")
+                ).pack(anchor="w")
 
-        # Buttons
         button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         button_frame.pack(fill="x", padx=6, pady=(0, 4))
 
-        if issues_detected:
+        if deep_scan_available or issues_detected:
 
             def fix_all():
-                CharacterDetailsDialog._fix_character(
-                    dialog,
-                    save_file,
-                    slot_idx,
-                    len(issues_detected),
-                    save_path,
-                    reload_callback,
-                    clear_dlc_flag_var,
-                    clear_invalid_dlc_var,
-                )
+                if deep_scan_available:
+                    CharacterDetailsDialog._run_deep_scan_fix(
+                        dialog,
+                        save_file,
+                        slot_idx,
+                        save_path,
+                        reload_callback,
+                    )
+                else:
+                    CharacterDetailsDialog._fix_character(
+                        dialog,
+                        save_file,
+                        slot_idx,
+                        len(issues_detected),
+                        save_path,
+                        reload_callback,
+                        clear_dlc_flag_var,
+                        clear_invalid_dlc_var,
+                    )
 
             ctk.CTkButton(
                 button_frame,
@@ -276,14 +280,84 @@ class CharacterDetailsDialog:
 
     @staticmethod
     def _format_playtime(seconds):
-        """Format seconds as HH:MM:SS"""
         if not seconds:
             return "0h 0m 0s"
-
         hours = seconds // 3600
         minutes = (seconds % 3600) // 60
         secs = seconds % 60
         return f"{hours}h {minutes}m {secs}s"
+
+    @staticmethod
+    def _run_deep_scan_fix(dialog, save_file, slot_idx, save_path, reload_callback):
+        """Run deep scan and show result before applying."""
+        try:
+            from er_save_manager.fixes.deep_scan import DeepScanFix
+
+            deep_fix = DeepScanFix()
+            result = deep_fix.scan_only(save_file, slot_idx)
+
+            if not result.steamid_found:
+                CTkMessageBox.showwarning(
+                    "Deep Scan",
+                    "SteamID64 not found in slot data.\nCannot determine shift.",
+                )
+                return
+
+            if result.delta == 0:
+                CTkMessageBox.showinfo("Deep Scan", "No byte shift detected.")
+                return
+
+            delta = result.delta
+            detail_lines = "\n".join(f"  {d}" for d in result.details)
+            msg = (
+                f"Torn write detected:\n\n"
+                f"  Shift: {'+' if delta > 0 else ''}{delta} bytes (0x{abs(delta):x})\n"
+                f"  Confidence: {result.confidence}\n\n"
+                f"Details:\n{detail_lines}\n\n"
+                f"Apply fix? A backup will be created."
+            )
+
+            if result.confidence == "low":
+                msg = f"WARNING: Low confidence scan result.\n\n{msg}"
+
+            if not CTkMessageBox.askyesno("Deep Scan Fix", msg):
+                return
+
+            from er_save_manager.backup.manager import BackupManager
+
+            if save_path:
+                manager = BackupManager(Path(save_path))
+                manager.create_backup(
+                    description=f"before_deep_scan_fix_slot_{slot_idx + 1}",
+                    operation="deep_scan_fix",
+                    save=save_file,
+                )
+
+            fix_result = deep_fix.apply(save_file, slot_idx)
+
+            if fix_result.applied:
+                save_file.recalculate_checksums()
+                if save_path:
+                    save_file.to_file(Path(save_path))
+                if reload_callback:
+                    reload_callback()
+                detail_text = "\n".join(f"  - {d}" for d in fix_result.details)
+                CTkMessageBox.showinfo(
+                    "Deep Scan Fix",
+                    f"{fix_result.description}\n\n{detail_text}\n\nBackup saved.",
+                )
+                dialog.destroy()
+            else:
+                CTkMessageBox.showwarning(
+                    "Deep Scan Fix",
+                    f"Fix not applied:\n{fix_result.description}",
+                )
+
+        except Exception as e:
+            CTkMessageBox.showerror("Error", f"Deep scan failed:\n{str(e)}")
+            import traceback
+
+            traceback.print_exc()
 
     @staticmethod
     def _show_teleport_dialog(
@@ -296,14 +370,12 @@ class CharacterDetailsDialog:
         clear_dlc_flag_var=None,
         clear_invalid_dlc_var=None,
     ):
-        """Show teleport dialog"""
         details_dialog.destroy()
 
         teleport_dialog = ctk.CTkToplevel(parent)
         teleport_dialog.title("Teleport Character")
         width, height = 400, 250
         teleport_dialog.update_idletasks()
-        # Center over parent window
         parent.update_idletasks()
         parent_x = parent.winfo_rootx()
         parent_y = parent.winfo_rooty()
@@ -313,12 +385,9 @@ class CharacterDetailsDialog:
         y = parent_y + (parent_height // 2) - (height // 2)
         teleport_dialog.geometry(f"{width}x{height}+{x}+{y}")
         teleport_dialog.grab_set()
-
-        # Force rendering on Linux
         teleport_dialog.lift()
         teleport_dialog.focus_force()
 
-        # Main frame
         main_frame = ctk.CTkFrame(teleport_dialog)
         main_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
@@ -368,25 +437,21 @@ class CharacterDetailsDialog:
                     if result.details:
                         fixes_applied.extend(result.details)
 
-                # Apply DLC flag fix if checkbox was ticked
                 should_clear_dlc = clear_dlc_flag_var and clear_dlc_flag_var.get()
                 if should_clear_dlc:
                     from er_save_manager.fixes.dlc import DLCFlagFix
 
-                    dlc_fix = DLCFlagFix()
-                    dlc_result = dlc_fix.apply(save_file, slot_idx)
+                    dlc_result = DLCFlagFix().apply(save_file, slot_idx)
                     if dlc_result.applied:
                         fixes_applied.append(dlc_result.description)
 
-                # Apply invalid DLC fix if checkbox was ticked
                 should_clear_invalid = (
                     clear_invalid_dlc_var and clear_invalid_dlc_var.get()
                 )
                 if should_clear_invalid:
                     from er_save_manager.fixes.dlc import InvalidDLCFix
 
-                    invalid_dlc_fix = InvalidDLCFix()
-                    invalid_result = invalid_dlc_fix.apply(save_file, slot_idx)
+                    invalid_result = InvalidDLCFix().apply(save_file, slot_idx)
                     if invalid_result.applied:
                         fixes_applied.append(invalid_result.description)
 
@@ -394,11 +459,9 @@ class CharacterDetailsDialog:
                     save_file.recalculate_checksums()
                     if save_path:
                         save_file.to_file(Path(save_path))
-
                     if reload_callback:
                         reload_callback()
-
-                    fixes_text = "\n".join(f"  • {fix}" for fix in fixes_applied)
+                    fixes_text = "\n".join(f"  - {fix}" for fix in fixes_applied)
                     CTkMessageBox.showinfo(
                         "Success",
                         f"Applied fixes:\n\n{fixes_text}\n\nBackup saved to backup manager.",
@@ -417,17 +480,10 @@ class CharacterDetailsDialog:
         button_frame.pack(fill="x", pady=(10, 0))
 
         ctk.CTkButton(
-            button_frame,
-            text="Teleport",
-            command=do_teleport,
-            width=100,
+            button_frame, text="Teleport", command=do_teleport, width=100
         ).pack(side="left", padx=5)
-
         ctk.CTkButton(
-            button_frame,
-            text="Cancel",
-            command=teleport_dialog.destroy,
-            width=100,
+            button_frame, text="Cancel", command=teleport_dialog.destroy, width=100
         ).pack(side="right", padx=5)
 
     @staticmethod
@@ -441,21 +497,18 @@ class CharacterDetailsDialog:
         clear_dlc_flag_var=None,
         clear_invalid_dlc_var=None,
     ):
-        """Fix character corruption"""
         dialog.destroy()
 
-        # Check if user wants to clear DLC flags
         should_clear_dlc = clear_dlc_flag_var and clear_dlc_flag_var.get()
         should_clear_invalid = clear_invalid_dlc_var and clear_invalid_dlc_var.get()
 
-        # Build confirmation message
         confirm_parts = [f"Fix all {issue_count} issue(s) in Slot {slot_idx + 1}?"]
         if should_clear_dlc or should_clear_invalid:
             confirm_parts.append("\nAdditional fixes:")
             if should_clear_dlc:
-                confirm_parts.append("  • Clear Shadow of the Erdtree flag")
+                confirm_parts.append("  - Clear Shadow of the Erdtree flag")
             if should_clear_invalid:
-                confirm_parts.append("  • Clear invalid DLC data")
+                confirm_parts.append("  - Clear invalid DLC data")
         confirm_parts.append("\nA backup will be created.")
 
         if not CTkMessageBox.askyesno("Confirm", "\n".join(confirm_parts)):
@@ -472,46 +525,37 @@ class CharacterDetailsDialog:
                     save=save_file,
                 )
 
-            # Apply fix
             was_fixed, fixes = save_file.fix_character_corruption(slot_idx)
 
-            # Check if character is in DLC area and needs teleport
             slot = save_file.characters[slot_idx]
             has_dlc_location = (
                 hasattr(slot, "map_id") and slot.map_id and slot.map_id.is_dlc()
             )
 
-            # Teleport if in DLC location
             if has_dlc_location:
                 from er_save_manager.fixes.teleport import TeleportFix
 
-                teleport_fix = TeleportFix("roundtable")
-                teleport_result = teleport_fix.apply(save_file, slot_idx)
+                teleport_result = TeleportFix("roundtable").apply(save_file, slot_idx)
                 if teleport_result.applied:
                     fixes.append(teleport_result.description)
                     was_fixed = True
 
-            # Apply DLC flag fix if requested
             if should_clear_dlc:
                 from er_save_manager.fixes.dlc import DLCFlagFix
 
-                dlc_fix = DLCFlagFix()
-                result = dlc_fix.apply(save_file, slot_idx)
+                result = DLCFlagFix().apply(save_file, slot_idx)
                 if result.applied:
                     fixes.append(result.description)
                     was_fixed = True
 
-            # Apply invalid DLC fix if requested
             if should_clear_invalid:
                 from er_save_manager.fixes.dlc import InvalidDLCFix
 
-                invalid_dlc_fix = InvalidDLCFix()
-                result = invalid_dlc_fix.apply(save_file, slot_idx)
+                result = InvalidDLCFix().apply(save_file, slot_idx)
                 if result.applied:
                     fixes.append(result.description)
                     was_fixed = True
 
-            # Update operation description
             if save_path and fixes:
                 first_fix = fixes[0].lower()
                 if "torrent" in first_fix:
@@ -528,7 +572,6 @@ class CharacterDetailsDialog:
                     operation = "fix_corruption_dlc"
                 else:
                     operation = "fix_corruption"
-
                 manager.history.backups[0].operation = operation
                 manager._save_history()
 
@@ -536,11 +579,9 @@ class CharacterDetailsDialog:
                 save_file.recalculate_checksums()
                 if save_path:
                     save_file.to_file(Path(save_path))
-
                 if reload_callback:
                     reload_callback()
-
-                fix_summary = "\n".join(f"  • {fix}" for fix in fixes)
+                fix_summary = "\n".join(f"  - {fix}" for fix in fixes)
                 CTkMessageBox.showinfo(
                     "Success",
                     f"Fixed {len(fixes)} issue(s):\n\n{fix_summary}\n\nBackup saved to backup manager.",

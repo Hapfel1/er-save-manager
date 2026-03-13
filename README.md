@@ -16,6 +16,7 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **Character Editor**: Edit stats, runes, name, level, and build attributes
 - **Appearance Editor**: View, export and import Presets
 - **Community Preset Browser**: Browse, download, and contribute character appearance presets with likes and download tracking
+- **World State / Teleportation**: 451 known safe locations to warp to as well as custom coordinate teleportation
 - **SteamID Patcher**: Transfer saves between Steam accounts
 - **Event Flags Editor**: Read and toggle event flags
 - **Boss Respawner**: Respawn any boss for repeated fights
@@ -26,9 +27,9 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 
 ### Work in Progress
 
-- **World State / Teleportation**: Custom coordinate teleportation works, known location list needs verification (temporarily disabled)
 - **Inventory Editor**: Item spawning requires additional reverse engineering
 - **Hex Editor**: Not yet implemented
+- **Backup Manager and SteamID Patcher for all games**
 
 ## Installation
 
