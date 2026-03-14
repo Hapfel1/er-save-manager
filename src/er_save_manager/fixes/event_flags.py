@@ -69,10 +69,8 @@ class EventFlagsFix(BaseFix):
 
         # Write to raw data
         if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
-            # Calculate absolute offset
-            absolute_event_flags_offset = slot.data_start + slot.event_flags_offset
             save._raw_data[
-                absolute_event_flags_offset : absolute_event_flags_offset
+                slot.event_flags_offset : slot.event_flags_offset
                 + len(event_flags_mutable)
             ] = event_flags_mutable
 
@@ -118,10 +116,8 @@ class RanniSoftlockFix(BaseFix):
             slot.event_flags = bytes(event_flags_mutable)
 
             if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
-                # Calculate absolute offset
-                absolute_event_flags_offset = slot.data_start + slot.event_flags_offset
                 save._raw_data[
-                    absolute_event_flags_offset : absolute_event_flags_offset
+                    slot.event_flags_offset : slot.event_flags_offset
                     + len(event_flags_mutable)
                 ] = event_flags_mutable
 

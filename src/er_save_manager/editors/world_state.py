@@ -131,7 +131,7 @@ class WorldStateEditor:
 
         # PlayerCoordinates.map_id at coordinates_offset + 12
         if hasattr(slot, "coordinates_offset") and slot.coordinates_offset:
-            coord_base = slot.data_start + slot.coordinates_offset
+            coord_base = slot.coordinates_offset
             pc_map_id_offset = coord_base + 12
             raw[pc_map_id_offset : pc_map_id_offset + 4] = map_id.data
             try:
@@ -158,7 +158,7 @@ class WorldStateEditor:
         if not hasattr(slot, "coordinates_offset") or slot.coordinates_offset == 0:
             raise RuntimeError("coordinates_offset not available")
 
-        offset = slot.data_start + slot.coordinates_offset
+        offset = slot.coordinates_offset
         raw = self._save._raw_data
         raw[offset : offset + 4] = struct.pack("<f", coords.x)
         raw[offset + 4 : offset + 8] = struct.pack("<f", coords.y)

@@ -579,7 +579,7 @@ class EventFlagsTab:
 
         if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
             # Calculate absolute offset in the raw data
-            absolute_offset = slot.data_start + slot.event_flags_offset
+            absolute_offset = slot.event_flags_offset
             event_flags_size = 0x1BF99F  # 1,833,375 bytes
 
             # Write the modified event_flags buffer to raw_data
@@ -659,7 +659,7 @@ class EventFlagsTab:
                 slot = save_file.character_slots[self.current_slot]
 
                 if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
-                    absolute_offset = slot.data_start + slot.event_flags_offset
+                    absolute_offset = slot.event_flags_offset
                     event_flags_size = 0x1BF99F
                     save_file._raw_data[
                         absolute_offset : absolute_offset + event_flags_size
@@ -904,7 +904,7 @@ class EventFlagsTab:
             slot = save_file.character_slots[self.current_slot]
 
             if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
-                absolute_offset = slot.data_start + slot.event_flags_offset
+                absolute_offset = slot.event_flags_offset
                 event_flags_size = 0x1BF99F
                 save_file._raw_data[
                     absolute_offset : absolute_offset + event_flags_size
@@ -993,7 +993,7 @@ class EventFlagsTab:
             slot = save_file.character_slots[self.current_slot]
 
             if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
-                absolute_offset = slot.data_start + slot.event_flags_offset
+                absolute_offset = slot.event_flags_offset
                 event_flags_size = 0x1BF99F
                 save_file._raw_data[
                     absolute_offset : absolute_offset + event_flags_size
@@ -1163,7 +1163,7 @@ class EventFlagsTab:
             # Write to raw data and save
             slot = save_file.character_slots[self.current_slot]
             if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
-                absolute_offset = slot.data_start + slot.event_flags_offset
+                absolute_offset = slot.event_flags_offset
                 event_flags_size = 0x1BF99F
                 save_file._raw_data[
                     absolute_offset : absolute_offset + event_flags_size
