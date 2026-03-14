@@ -447,6 +447,7 @@ class Save:
                 # Write to file
                 if hasattr(slot, "steamid_offset") and slot.steamid_offset > 0:
                     import struct
+
                     steamid_bytes = struct.pack("<Q", correct_steam_id)
                     self._raw_data[slot.steamid_offset : slot.steamid_offset + 8] = (
                         steamid_bytes
@@ -491,8 +492,7 @@ class Save:
                             time.write(time_bytes)
                             time_data = time_bytes.getvalue()
                             self._raw_data[
-                                slot.time_offset : slot.time_offset
-                                + len(time_data)
+                                slot.time_offset : slot.time_offset + len(time_data)
                             ] = time_data
                             fixes.append(
                                 f"Time set to {hours:02d}:{minutes:02d}:{seconds:02d}"
@@ -512,8 +512,7 @@ class Save:
                     weather_data = weather_bytes.getvalue()
                     # Calculate absolute offset
                     self._raw_data[
-                        slot.weather_offset : slot.weather_offset
-                        + len(weather_data)
+                        slot.weather_offset : slot.weather_offset + len(weather_data)
                     ] = weather_data
                     fixes.append(f"AreaId set to {weather.area_id}")
 
