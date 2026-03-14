@@ -3,6 +3,25 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.11.1
+**Released:** March 14, 2026
+
+
+### 🔧 Bug Fixes
+
+- Fix: use data_start consistently
+fbcbdc3 converted the offsets from slot-relative to absolute, but only
+in the slot itself - all of the other scripts still expected it to have
+been removed and would re-add the slot data offset back in, corrupting
+the pointer and trashing the save slot. This removes the slot offset
+addition from all of the places where the slot data offset is already
+present in the slot object itself, preventing corruption ([e62ae60](https://github.com/Hapfel1/er-save-manager/commit/e62ae60ec290e7e5b8e5242e8997eada664235ce))
+
+- Fixed offsets being applied twice ([058008f](https://github.com/Hapfel1/er-save-manager/commit/058008f4c65b237da0546b710095363ba64b851f))
+
+
+
+---
 ## 📦 Release 0.11.0
 **Released:** March 13, 2026
 
@@ -544,6 +563,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.11.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.11.0..v0.11.1
 [0.11.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.10.1..v0.11.0
 [0.10.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.10.0..v0.10.1
 [0.10.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.9.0..v0.10.0
