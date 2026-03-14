@@ -356,9 +356,8 @@ class GesturesRegionsTab:
                 )
                 return
 
-            slot_offset = save_file._slot_offsets[slot_idx]
-            CHECKSUM_SIZE = 0x10
-            abs_offset = slot_offset + CHECKSUM_SIZE + slot.gestures_offset
+            # gestures_offset is absolute in the raw file
+            abs_offset = slot.gestures_offset
 
             save_file._raw_data[abs_offset : abs_offset + len(gesture_data)] = (
                 gesture_data

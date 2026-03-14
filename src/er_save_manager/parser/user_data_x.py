@@ -64,6 +64,11 @@ class UserDataX:
     data_start: int = 0
     horse_offset: int = 0
     coordinates_offset: int = 0
+    event_flags_offset: int = 0
+    player_game_data_offset: int = 0
+    net_man_offset: int = 0
+    weather_offset: int = 0
+    gestures_offset: int = 0
     time_offset: int = 0
     steamid_offset: int = 0
     dlc_offset: int = 0
@@ -297,6 +302,7 @@ class UserDataX:
         obj.gaitem_map = [Gaitem.read(f) for _ in range(gaitem_count)]
 
         # Read player game data (432 bytes)
+        obj.player_game_data_offset = f.tell()
         obj.player_game_data = PlayerGameData.read(f)
 
         # Read SP effects (13 entries)
@@ -328,6 +334,7 @@ class UserDataX:
         obj.inventory_storage_box = Inventory.read(f, 0x780, 0x80)
 
         # Parse remaining structures
+        obj.gestures_offset = f.tell()
         obj.gestures = Gestures.read(f)
         obj.unlocked_regions = Regions.read(f)
         obj.horse_offset = f.tell()

@@ -1,3 +1,5 @@
+Add button for discord server to the tool
+
 Backup Manager + SteamID Patcher for the other games
 
 item spawning

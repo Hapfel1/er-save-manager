@@ -463,13 +463,8 @@ class StatsEditor:
                             f"PlayerGameData serialization error: expected 432 bytes, got {len(char_data)}"
                         )
 
-                    # Calculate absolute offset in save file using tracked offset
-                    slot_offset = save_file._slot_offsets[slot_idx]
-                    CHECKSUM_SIZE = 0x10
-
-                    abs_offset = (
-                        slot_offset + CHECKSUM_SIZE + slot.player_game_data_offset
-                    )
+                    # player_game_data_offset is absolute in the raw file
+                    abs_offset = slot.player_game_data_offset
 
                     # Write to raw data
                     save_file._raw_data[abs_offset : abs_offset + len(char_data)] = (
