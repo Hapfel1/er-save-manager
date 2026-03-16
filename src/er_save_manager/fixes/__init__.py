@@ -1,7 +1,11 @@
 """ER Save Manager - Corruption Fixes Module."""
 
 from er_save_manager.fixes.base import BaseFix, FixResult
-from er_save_manager.fixes.deep_scan import DeepScanFix, DeepScanResult
+from er_save_manager.fixes.deep_scan import (
+    DeepScanFix,
+    DeepScanResult,
+    EFTornScanResult,
+)
 from er_save_manager.fixes.dlc import DLCFlagFix, InvalidDLCFix
 from er_save_manager.fixes.event_flags import EventFlagsFix, RanniSoftlockFix
 from er_save_manager.fixes.steamid import SteamIdFix
@@ -49,4 +53,5 @@ __all__ = [
     "ALL_FIXES",
     "DeepScanFix",
     "DeepScanResult",
+    "EFTornScanResult",
 ]

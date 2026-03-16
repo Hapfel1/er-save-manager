@@ -1,3 +1,5 @@
+last opened save location on linux
+
 Add button for discord server to the tool
 
 Backup Manager + SteamID Patcher for the other games
