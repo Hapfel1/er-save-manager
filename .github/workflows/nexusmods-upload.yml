@@ -1,0 +1,118 @@
+name: Upload Release to Nexus Mods
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release tag to upload, for example v0.11.1
+        required: true
+        type: string
+
+concurrency:
+  group: nexusmods-${{ github.event.release.tag_name || github.event.inputs.version || github.run_id }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  upload-to-nexusmods:
+    name: Upload ${{ matrix.platform }} to Nexus Mods
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: Linux
+            asset_suffix: Linux.AppImage
+          - platform: Windows
+            asset_suffix: Windows.zip
+    env:
+      GH_TOKEN: ${{ github.token }}
+      NEXUSMODS_FILE_GROUP_ID_LINUX: ${{ vars.NEXUSMODS_FILE_GROUP_ID_LINUX }}
+      NEXUSMODS_FILE_GROUP_ID_WINDOWS: ${{ vars.NEXUSMODS_FILE_GROUP_ID_WINDOWS }}
+    steps:
+      - name: Validate Nexus Mods configuration
+        env:
+          NEXUSMODS_API_KEY: ${{ secrets.NEXUSMODS_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$NEXUSMODS_API_KEY" ]; then
+            echo "Missing required secret: NEXUSMODS_API_KEY" >&2
+            exit 1
+          fi
+
+          case "${{ matrix.platform }}" in
+            Linux)
+              group_id="$NEXUSMODS_FILE_GROUP_ID_LINUX"
+              expected_var="NEXUSMODS_FILE_GROUP_ID_LINUX"
+              ;;
+            Windows)
+              group_id="$NEXUSMODS_FILE_GROUP_ID_WINDOWS"
+              expected_var="NEXUSMODS_FILE_GROUP_ID_WINDOWS"
+              ;;
+            *)
+              echo "Unsupported platform: ${{ matrix.platform }}" >&2
+              exit 1
+              ;;
+          esac
+
+          if [ -z "$group_id" ]; then
+            echo "Missing required repository variable: $expected_var" >&2
+            exit 1
+          fi
+
+      - name: Resolve release asset metadata
+        id: meta
+        run: |
+          set -euo pipefail
+
+          version="${{ github.event.release.tag_name || github.event.inputs.version }}"
+          if [[ "$version" != v* ]]; then
+            version="v$version"
+          fi
+
+          version_no_v="${version#v}"
+          asset_name="er-save-manager_${version_no_v}_${{ matrix.asset_suffix }}"
+
+          case "${{ matrix.platform }}" in
+            Linux)
+              file_group_id="$NEXUSMODS_FILE_GROUP_ID_LINUX"
+              ;;
+            Windows)
+              file_group_id="$NEXUSMODS_FILE_GROUP_ID_WINDOWS"
+              ;;
+            *)
+              echo "Unsupported platform: ${{ matrix.platform }}" >&2
+              exit 1
+              ;;
+          esac
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "version_no_v=$version_no_v" >> "$GITHUB_OUTPUT"
+          echo "asset_name=$asset_name" >> "$GITHUB_OUTPUT"
+          echo "file_group_id=$file_group_id" >> "$GITHUB_OUTPUT"
+
+      - name: Download GitHub release asset
+        run: |
+          set -euo pipefail
+          mkdir -p nexusmods-upload
+          gh release download "${{ steps.meta.outputs.version }}" \
+            --pattern "${{ steps.meta.outputs.asset_name }}" \
+            --dir nexusmods-upload
+
+      - name: Upload artifact to Nexus Mods
+        id: upload
+        uses: Nexus-Mods/upload-action@6430924a6f1347c527a529be4c6fbae16750c78b # v1.0.0-beta.2
+        with:
+          api_key: ${{ secrets.NEXUSMODS_API_KEY }}
+          file_group_id: ${{ steps.meta.outputs.file_group_id }}
+          filename: nexusmods-upload/${{ steps.meta.outputs.asset_name }}
+          display_name: ER Save Manager ${{ steps.meta.outputs.version_no_v }} (${{ matrix.platform }})
+          description: |
+            Automated upload for ER Save Manager ${{ steps.meta.outputs.version }} (${{ matrix.platform }}).
+            Source release: https://github.com/${{ github.repository }}/releases/tag/${{ steps.meta.outputs.version }}
+          version: ${{ steps.meta.outputs.version_no_v }}
