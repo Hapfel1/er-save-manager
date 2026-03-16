@@ -839,8 +839,12 @@ class SaveManagerGUI:
                 else str(Path.home())
             )
 
-        # On Linux, if default path doesn't exist, try to navigate to Steam directory
-        if PlatformUtils.is_linux() and not self.default_save_path.exists():
+        # On Linux, if no better starting directory is available, try Steam base
+        if (
+            not initialdir
+            and PlatformUtils.is_linux()
+            and not self.default_save_path.exists()
+        ):
             steam_base = Path.home() / ".local" / "share" / "Steam"
             if steam_base.exists():
                 initialdir = str(steam_base)

@@ -1,4 +1,4 @@
-last opened save location on linux
+last opened save location on linux done
 
 Add button for discord server to the tool
 
