@@ -11,7 +11,7 @@ Strategy:
      locate where NetMan must start (NetMan is 0x20004 bytes, fixed).
   3. Compare that against the expected NetMan start (event_flags_end +
      variable-sized structs). The sized structs are opaque but their
-     size fields are intact, so we can sum them up from event_flags_end.
+     size fields are intact, so they can be summed up from event_flags_end.
   4. The delta between expected and actual is the shift amount. Cut or
      pad at the boundary right after event flags end.
   5. Re-parse the corrected slot to validate.
@@ -332,8 +332,10 @@ class DeepScanFix(BaseFix):
             # NetMan tear: splice at found_steamid_rel - 0x28.
             # Derived from reference fix: 0x28 bytes before the misplaced SteamID,
             # inside NetMan data. Shifts SteamID and everything after to correct position.
-            _SPLICE_BEFORE_STEAMID = 0x28
-            shift_point = result.steamid_offset_in_slot - _SPLICE_BEFORE_STEAMID
+            # Splice at expected_steamid_offset (= steamid_offset_in_slot - delta).
+            # This is the zero-filled hole start; placing the cut here keeps the
+            # SteamID outside the removed region.
+            shift_point = result.expected_steamid_offset
             log.info(
                 "[deep_scan] slot %d: NetMan tear, delta=%+d (0x%x), splice=slot+0x%x, confidence=%s",
                 slot_index,
@@ -586,7 +588,7 @@ class DeepScanFix(BaseFix):
         # Check for EF tear unconditionally, trying all SteamID candidates.
         # EF tears can produce false SteamID hits (duplicate values in shifted data)
         # and the parser may store a wrong steamid_offset due to zeroed structs.
-        # We iterate all candidates and pick the one where a struct scan from
+        # Iterate all candidates and pick the one where a struct scan from
         # ef_end_rel+d lands exactly on the candidate - that gives the true delta.
         # Anchor pairs are used only to locate the splice point, NOT to detect the tear
         # (anchors can disagree legitimately due to boss flags set in non-standard ways).
