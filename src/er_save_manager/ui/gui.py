@@ -424,6 +424,10 @@ class SaveManagerGUI:
         """Open Ko-fi support page in browser."""
         open_url("https://ko-fi.com/hapfell")
 
+    def _open_discord(self):
+        """Open Discord server invite in browser."""
+        open_url("https://dsc.gg/er-saveman")
+
     def setup_ui(self):
         """Setup main UI structure with optimized layout"""
         # Use grid for main container - more efficient than pack
@@ -447,6 +451,16 @@ class SaveManagerGUI:
             font=("Segoe UI", 11),
         )
         support_btn.place(relx=1.0, x=-12, y=12, anchor="ne")
+
+        discord_btn = ctk.CTkButton(
+            title_frame,
+            text="Discord Server",
+            command=self._open_discord,
+            width=100,
+            height=32,
+            font=("Segoe UI", 11),
+        )
+        discord_btn.place(relx=0.0, x=12, y=12, anchor="nw")
 
         ctk.CTkLabel(
             title_frame,
