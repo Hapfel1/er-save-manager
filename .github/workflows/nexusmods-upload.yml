@@ -70,12 +70,23 @@ jobs:
         run: |
           set -euo pipefail
 
-          version="${{ github.event.release.tag_name || github.event.inputs.version }}"
-          if [[ "$version" != v* ]]; then
-            version="v$version"
+          requested_version="${{ github.event.release.tag_name || github.event.inputs.version }}"
+          if [ -z "$requested_version" ]; then
+            echo "Unable to resolve release version from event payload or workflow input." >&2
+            exit 1
           fi
 
-          version_no_v="${version#v}"
+          version_no_v="${requested_version#v}"
+          version_prefixed="v${version_no_v}"
+
+          if [ "$requested_version" = "$version_prefixed" ]; then
+            primary_version="$requested_version"
+            alternate_version="$version_no_v"
+          else
+            primary_version="$requested_version"
+            alternate_version="$version_prefixed"
+          fi
+
           asset_name="er-save-manager_${version_no_v}_${{ matrix.asset_suffix }}"
 
           case "${{ matrix.platform }}" in
@@ -91,19 +102,46 @@ jobs:
               ;;
           esac
 
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "requested_version=$requested_version" >> "$GITHUB_OUTPUT"
+          echo "primary_version=$primary_version" >> "$GITHUB_OUTPUT"
+          echo "alternate_version=$alternate_version" >> "$GITHUB_OUTPUT"
           echo "version_no_v=$version_no_v" >> "$GITHUB_OUTPUT"
           echo "asset_name=$asset_name" >> "$GITHUB_OUTPUT"
           echo "file_group_id=$file_group_id" >> "$GITHUB_OUTPUT"
 
       - name: Download GitHub release asset
+        id: download
         run: |
           set -euo pipefail
+
           mkdir -p nexusmods-upload
-          gh release download "${{ steps.meta.outputs.version }}" \
-            --repo "${{ github.repository }}" \
-            --pattern "${{ steps.meta.outputs.asset_name }}" \
-            --dir nexusmods-upload
+
+          downloaded=0
+          used_version=""
+
+          for version in "${{ steps.meta.outputs.primary_version }}" "${{ steps.meta.outputs.alternate_version }}"; do
+            if [ -z "$version" ] || [ "$version" = "$used_version" ]; then
+              continue
+            fi
+
+            echo "Trying to download asset from release tag: $version"
+            if gh release download "$version" \
+              --repo "${{ github.repository }}" \
+              --pattern "${{ steps.meta.outputs.asset_name }}" \
+              --dir nexusmods-upload; then
+              downloaded=1
+              used_version="$version"
+              break
+            fi
+          done
+
+          if [ "$downloaded" -ne 1 ]; then
+            echo "Failed to download asset '${{ steps.meta.outputs.asset_name }}' from releases '${{ steps.meta.outputs.primary_version }}' and '${{ steps.meta.outputs.alternate_version }}'." >&2
+            echo "Verify the release tag and asset name in GitHub Releases." >&2
+            exit 1
+          fi
+
+          echo "resolved_version=$used_version" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifact to Nexus Mods
         id: upload
@@ -114,6 +152,6 @@ jobs:
           filename: nexusmods-upload/${{ steps.meta.outputs.asset_name }}
           display_name: ER Save Manager ${{ steps.meta.outputs.version_no_v }} (${{ matrix.platform }})
           description: |
-            Automated upload for ER Save Manager ${{ steps.meta.outputs.version }} (${{ matrix.platform }}).
-            Source release: https://github.com/${{ github.repository }}/releases/tag/${{ steps.meta.outputs.version }}
+            Automated upload for ER Save Manager ${{ steps.download.outputs.resolved_version }} (${{ matrix.platform }}).
+            Source release: https://github.com/${{ github.repository }}/releases/tag/${{ steps.download.outputs.resolved_version }}
           version: ${{ steps.meta.outputs.version_no_v }}
