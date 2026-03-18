@@ -110,12 +110,12 @@ class CharacterDetailsDialog:
             info.append(
                 f"  Shift: {'+' if delta > 0 else ''}{delta} bytes (0x{abs(delta):x})"
             )
+            tear_loc = getattr(deep_scan_result, "tear_location", "netman")
+            info.append(f"  Location: {tear_loc}")
             info.append(f"  Confidence: {deep_scan_result.confidence}")
             info.append("")
             info.append("RECOMMENDATION:")
             info.append("  Click 'Fix All Issues' to repair the torn write.")
-            info.append("  Do NOT apply SteamID, weather, area or DLC fixes")
-            info.append("  before this — they will break the byte-shift repair.")
         elif issues_detected:
             info.append("=" * 50)
             info.append("ISSUES DETECTED:")
