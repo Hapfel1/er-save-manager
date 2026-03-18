@@ -3,6 +3,37 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.12.0
+**Released:** March 18, 2026
+
+
+### ✨ New Features
+
+- Added Event Flag Torn Detection and Fix ([d535ea5](https://github.com/Hapfel1/er-save-manager/commit/d535ea5f2922da4ce3ab2a3a555490f5deb64350))
+
+
+
+### 🔧 Bug Fixes
+
+- Fixed last opened save location not working on Linux ([b65a1da](https://github.com/Hapfel1/er-save-manager/commit/b65a1dabc913e232b3ff85de87833bf9b692367b))
+
+- Add netman validation and corruption fixing after byteshift ([7405b3d](https://github.com/Hapfel1/er-save-manager/commit/7405b3d7a9fe25c278ef191803786ea3f99de70e))
+
+
+
+### 🎨 User Interface
+
+- Add button that links to discord server ([12ff6bc](https://github.com/Hapfel1/er-save-manager/commit/12ff6bcfc1c82ab2ac48fa3dd171ab719cd736c9))
+
+
+
+### 📦 Dependencies
+
+- Bump the github-actions group with 2 updates `[deps]` ([285e359](https://github.com/Hapfel1/er-save-manager/commit/285e35912bb1c8b9f301a4f8bbdbb319cddfad34))
+
+
+
+---
 ## 📦 Release 0.11.1
 **Released:** March 14, 2026
 
@@ -563,6 +594,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.12.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.11.1..v0.12.0
 [0.11.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.11.0..v0.11.1
 [0.11.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.10.1..v0.11.0
 [0.10.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.10.0..v0.10.1
