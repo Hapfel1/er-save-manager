@@ -101,6 +101,7 @@ jobs:
           set -euo pipefail
           mkdir -p nexusmods-upload
           gh release download "${{ steps.meta.outputs.version }}" \
+            --repo "${{ github.repository }}" \
             --pattern "${{ steps.meta.outputs.asset_name }}" \
             --dir nexusmods-upload
 
