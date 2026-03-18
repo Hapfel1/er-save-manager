@@ -31,6 +31,7 @@ from __future__ import annotations
 import logging
 import struct
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .base import BaseFix, FixResult
@@ -329,15 +330,15 @@ class DeepScanFix(BaseFix):
                 result.confidence,
             )
         else:
-            # NetMan tear: splice at found_steamid_rel - 0x28.
-            # Derived from reference fix: 0x28 bytes before the misplaced SteamID,
-            # inside NetMan data. Shifts SteamID and everything after to correct position.
-            # Splice at expected_steamid_offset (= steamid_offset_in_slot - delta).
-            # This is the zero-filled hole start; placing the cut here keeps the
-            # SteamID outside the removed region.
-            shift_point = result.expected_steamid_offset
+            # NetMan tear: splice at expected_netman + TAIL_AFTER_NETMAN.
+            # = expected_steamid_offset - _NETMAN_SIZE
+            # Verified by byte-diff against manual fix: the tear removes bytes from
+            # inside the NetMan block; splicing here restores correct NetMan content
+            # and leaves weather/time/SteamID intact at their expected positions.
+            shift_point = result.expected_steamid_offset - _NETMAN_SIZE
             log.info(
-                "[deep_scan] slot %d: NetMan tear, delta=%+d (0x%x), splice=slot+0x%x, confidence=%s",
+                "[deep_scan] slot %d: NetMan tear, delta=%+d (0x%x), "
+                "splice=slot+0x%x (expected_sid-NetMan_size), confidence=%s",
                 slot_index,
                 delta,
                 abs(delta),
@@ -466,6 +467,33 @@ class DeepScanFix(BaseFix):
         save._raw_data[slot_data_start : slot_data_start + slot_size] = corrected
         log.info("[deep_scan] wrote corrected slot data back to file buffer")
 
+        # For NetMan-region tears: after reshifting, NetMan may contain invalid data.
+        # Check if NetMan is non-empty and replace with known-clean binary if so.
+        netman_note = None
+        if result.tear_location == "netman":
+            netman_abs = (
+                slot_data_start
+                + result.expected_steamid_offset
+                - _STEAM_ID_TO_NETMAN_START
+            )
+            netman_region = save._raw_data[netman_abs : netman_abs + _NETMAN_SIZE]
+            if any(b != 0 for b in netman_region):
+                clean = _load_clean_netman()
+                if clean is not None:
+                    save._raw_data[netman_abs : netman_abs + _NETMAN_SIZE] = clean
+                    netman_note = "NetMan replaced with clean template"
+                    log.info(
+                        "[deep_scan] NetMan had data after reshift - replaced with clean template"
+                    )
+                else:
+                    netman_note = "WARNING: clean NetMan template not found - NetMan may be invalid"
+                    log.warning(
+                        "[deep_scan] CSNetMan.bin not found, cannot wipe invalid NetMan"
+                    )
+            else:
+                netman_note = "NetMan empty - no wipe needed"
+                log.info("[deep_scan] NetMan is empty after reshift, no wipe needed")
+
         # Recalculate checksum for this slot
         _recalculate_slot_checksum(save, slot_index, slot_data_start)
 
@@ -488,8 +516,9 @@ class DeepScanFix(BaseFix):
                 f"Confidence: {result.confidence}",
                 validation_note,
                 zero_note,
-                "Checksum recalculated",
-            ],
+            ]
+            + ([netman_note] if netman_note else [])
+            + ["Checksum recalculated"],
         )
 
     def scan_only(self, save: Save, slot_index: int) -> DeepScanResult:
@@ -1047,6 +1076,35 @@ class DeepScanFix(BaseFix):
 
 # ------------------------------------------------------------------
 # Helpers
+
+
+def _load_clean_netman() -> bytes | None:
+    """
+    Load the clean NetMan template from CSNetMan.bin.
+
+    The file is expected to live alongside this module. Returns None if not found
+    or if the size does not match _NETMAN_SIZE.
+    """
+    candidate = Path(__file__).parent / "CSNetMan.bin"
+    if not candidate.is_file():
+        log.debug("[deep_scan] CSNetMan.bin not found at %s", candidate)
+        return None
+    data = candidate.read_bytes()
+    if len(data) != _NETMAN_SIZE:
+        log.warning(
+            "[deep_scan] CSNetMan.bin size mismatch: expected 0x%x, got 0x%x",
+            _NETMAN_SIZE,
+            len(data),
+        )
+        return None
+    unk0x0 = struct.unpack_from("<I", data, 0)[0]
+    if unk0x0 != 0:
+        log.warning(
+            "[deep_scan] CSNetMan.bin unk0x0=0x%x (non-zero) - template is invalid, ignoring",
+            unk0x0,
+        )
+        return None
+    return data
 
 
 def _find_all(data: bytes | bytearray, pattern: bytes) -> list[int]:
