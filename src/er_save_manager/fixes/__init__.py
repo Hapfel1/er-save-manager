@@ -1,6 +1,7 @@
 """ER Save Manager - Corruption Fixes Module."""
 
 from er_save_manager.fixes.base import BaseFix, FixResult
+from er_save_manager.fixes.checksum import SlotChecksumFix, check_slot_checksum
 from er_save_manager.fixes.deep_scan import (
     DeepScanFix,
     DeepScanResult,
@@ -28,6 +29,7 @@ ALL_FIXES = [
     EventFlagsFix,
     DLCFlagFix,
     InvalidDLCFix,
+    SlotChecksumFix,
     DeepScanFix,
 ]
 
@@ -44,6 +46,8 @@ __all__ = [
     "RanniSoftlockFix",
     "DLCFlagFix",
     "InvalidDLCFix",
+    "SlotChecksumFix",
+    "check_slot_checksum",
     "TeleportFix",
     "DLCEscapeFix",
     # Teleport locations
