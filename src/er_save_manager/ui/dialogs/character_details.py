@@ -16,7 +16,7 @@ class CharacterDetailsDialog:
     @staticmethod
     def show(parent, save_file, slot_idx, save_path=None, reload_callback=None):
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "No save file loaded!")
+            CTkMessageBox.showwarning("No Save", "No save file loaded!", parent=parent)
             return
 
         slot = save_file.characters[slot_idx]
@@ -393,14 +393,18 @@ class CharacterDetailsDialog:
             if reload_callback:
                 reload_callback()
 
+            _parent = dialog.master
             dialog.destroy()
             CTkMessageBox.showinfo(
                 "DLC Flags",
                 "DLC flag cleared. The save file has been updated.",
+                parent=_parent,
             )
 
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Failed to apply DLC fix:\n{e}")
+            CTkMessageBox.showerror(
+                "Error", f"Failed to apply DLC fix:\n{e}", parent=dialog
+            )
 
     @staticmethod
     def _run_deep_scan_fix(dialog, save_file, slot_idx, save_path, reload_callback):
@@ -415,11 +419,14 @@ class CharacterDetailsDialog:
                 CTkMessageBox.showwarning(
                     "Deep Scan",
                     "SteamID64 not found in slot data.\nCannot determine shift.",
+                    parent=dialog,
                 )
                 return
 
             if result.delta == 0:
-                CTkMessageBox.showinfo("Deep Scan", "No byte shift detected.")
+                CTkMessageBox.showinfo(
+                    "Deep Scan", "No byte shift detected.", parent=dialog
+                )
                 return
 
             delta = result.delta
@@ -435,7 +442,7 @@ class CharacterDetailsDialog:
             if result.confidence == "low":
                 msg = f"WARNING: Low confidence scan result.\n\n{msg}"
 
-            if not CTkMessageBox.askyesno("Deep Scan Fix", msg):
+            if not CTkMessageBox.askyesno("Deep Scan Fix", msg, parent=dialog):
                 return
 
             from er_save_manager.backup.manager import BackupManager
@@ -460,16 +467,20 @@ class CharacterDetailsDialog:
                 CTkMessageBox.showinfo(
                     "Deep Scan Fix",
                     f"{fix_result.description}\n\n{detail_text}\n\nBackup saved.",
+                    parent=dialog,
                 )
                 dialog.destroy()
             else:
                 CTkMessageBox.showwarning(
                     "Deep Scan Fix",
                     f"Fix not applied:\n{fix_result.description}",
+                    parent=dialog,
                 )
 
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Deep scan failed:\n{str(e)}")
+            CTkMessageBox.showerror(
+                "Error", f"Deep scan failed:\n{str(e)}", parent=dialog
+            )
             import traceback
 
             traceback.print_exc()
@@ -580,13 +591,18 @@ class CharacterDetailsDialog:
                     CTkMessageBox.showinfo(
                         "Success",
                         f"Applied fixes:\n\n{fixes_text}\n\nBackup saved to backup manager.",
+                        parent=teleport_dialog,
                     )
                     teleport_dialog.destroy()
                 else:
-                    CTkMessageBox.showwarning("Not Applied", "No fixes were applied.")
+                    CTkMessageBox.showwarning(
+                        "Not Applied", "No fixes were applied.", parent=teleport_dialog
+                    )
 
             except Exception as e:
-                CTkMessageBox.showerror("Error", f"Teleport failed:\n{str(e)}")
+                CTkMessageBox.showerror(
+                    "Error", f"Teleport failed:\n{str(e)}", parent=teleport_dialog
+                )
                 import traceback
 
                 traceback.print_exc()
@@ -614,6 +630,7 @@ class CharacterDetailsDialog:
     ):
         dialog.destroy()
 
+        _parent = dialog.master
         should_clear_dlc = clear_dlc_flag_var and clear_dlc_flag_var.get()
         should_clear_invalid = clear_invalid_dlc_var and clear_invalid_dlc_var.get()
 
@@ -626,7 +643,9 @@ class CharacterDetailsDialog:
                 confirm_parts.append("  - Clear invalid DLC data")
         confirm_parts.append("\nA backup will be created.")
 
-        if not CTkMessageBox.askyesno("Confirm", "\n".join(confirm_parts)):
+        if not CTkMessageBox.askyesno(
+            "Confirm", "\n".join(confirm_parts), parent=_parent
+        ):
             return
 
         try:
@@ -700,14 +719,15 @@ class CharacterDetailsDialog:
                 CTkMessageBox.showinfo(
                     "Success",
                     f"Fixed {len(fixes)} issue(s):\n\n{fix_summary}\n\nBackup saved to backup manager.",
+                    parent=_parent,
                 )
             else:
                 CTkMessageBox.showinfo(
-                    "Info", "No fixes were needed or could be applied."
+                    "Info", "No fixes were needed or could be applied.", parent=_parent
                 )
 
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Fix failed:\n{str(e)}")
+            CTkMessageBox.showerror("Error", f"Fix failed:\n{str(e)}", parent=_parent)
             import traceback
 
             traceback.print_exc()
