@@ -937,18 +937,54 @@ class PS5Activity:
 
 @dataclass
 class DLC:
-    """DLC data (0x32 = 50 bytes)"""
+    """
+    DLC ownership/entry flags (0x32 = 50 bytes)
 
-    data: bytes = field(default_factory=lambda: b"\x00" * 0x32)
+    Structure (CSDlc) - array of 1-byte bools:
+        [0] = pre-order gesture "The Ring"
+        [1] = Shadow of the Erdtree DLC entry flag
+        [2] = pre-order gesture "Ring of Miquella"
+        [3-49] = unused (must be 0, non-zero values prevent save from loading)
+    """
+
+    preorder_the_ring: int = 0
+    shadow_of_erdtree: int = 0
+    preorder_ring_of_miquella: int = 0
+    unused: bytes = field(default_factory=lambda: b"\x00" * 47)
 
     @classmethod
     def read(cls, f: BytesIO) -> DLC:
         """Read DLC from stream (50 bytes)"""
-        return cls(data=f.read(0x32))
+        return cls(
+            preorder_the_ring=struct.unpack("<B", f.read(1))[0],
+            shadow_of_erdtree=struct.unpack("<B", f.read(1))[0],
+            preorder_ring_of_miquella=struct.unpack("<B", f.read(1))[0],
+            unused=f.read(47),
+        )
 
     def write(self, f: BytesIO):
         """Write DLC to stream (50 bytes)"""
-        f.write(self.data)
+        f.write(struct.pack("<B", self.preorder_the_ring))
+        f.write(struct.pack("<B", self.shadow_of_erdtree))
+        f.write(struct.pack("<B", self.preorder_ring_of_miquella))
+        f.write(self.unused)
+
+    def has_dlc_flag(self) -> bool:
+        """True if the character has entered the Shadow of the Erdtree DLC area."""
+        return self.shadow_of_erdtree != 0
+
+    def get_dlc_flag_value(self) -> int:
+        return self.shadow_of_erdtree
+
+    def clear_dlc_flag(self):
+        self.shadow_of_erdtree = 0
+
+    def has_invalid_flags(self) -> bool:
+        """True if any unused slots [3-49] are non-zero."""
+        return any(b != 0 for b in self.unused)
+
+    def clear_invalid_flags(self):
+        self.unused = b"\x00" * 47
 
 
 # ============================================================================
