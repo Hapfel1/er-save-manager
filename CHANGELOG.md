@@ -3,8 +3,8 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
-## 📦 Release 0.12.0
-**Released:** March 18, 2026
+## 📦 Release 0.12.1
+**Released:** March 23, 2026
 
 
 ### ✨ New Features
@@ -19,17 +19,27 @@
 
 - Add netman validation and corruption fixing after byteshift ([7405b3d](https://github.com/Hapfel1/er-save-manager/commit/7405b3d7a9fe25c278ef191803786ea3f99de70e))
 
+- Fixed dlc flag detection + added apply button when only checking that checkbox ([f6ed165](https://github.com/Hapfel1/er-save-manager/commit/f6ed16569fef75e41dad2b3700fbf54d0a091f76))
+
+- Added Checksum validation for slots ([adebcb8](https://github.com/Hapfel1/er-save-manager/commit/adebcb81b14bef64c57874a2255508add9d7d391))
+
+- Added event flags for npc quests and a tab for checking progress ([03ebe4b](https://github.com/Hapfel1/er-save-manager/commit/03ebe4ba6b601b4cae4f19c9b633bfdc226125b6))
+
 
 
 ### 🎨 User Interface
 
 - Add button that links to discord server ([12ff6bc](https://github.com/Hapfel1/er-save-manager/commit/12ff6bcfc1c82ab2ac48fa3dd171ab719cd736c9))
 
+- Made popups from character_details appear centered over its parent ([9a814f2](https://github.com/Hapfel1/er-save-manager/commit/9a814f206157460adad1e895473d779e861b7afa))
+
 
 
 ### 📦 Dependencies
 
 - Bump the github-actions group with 2 updates `[deps]` ([285e359](https://github.com/Hapfel1/er-save-manager/commit/285e35912bb1c8b9f301a4f8bbdbb319cddfad34))
+
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([5bb543f](https://github.com/Hapfel1/er-save-manager/commit/5bb543fc3c2f6b0088cfd4596e0fa6f54e0d820c))
 
 
 
@@ -594,7 +604,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
-[0.12.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.11.1..v0.12.0
+[0.12.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.11.1..v0.12.1
 [0.11.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.11.0..v0.11.1
 [0.11.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.10.1..v0.11.0
 [0.10.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.10.0..v0.10.1
