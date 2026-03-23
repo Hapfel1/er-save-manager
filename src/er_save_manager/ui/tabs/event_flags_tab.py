@@ -184,7 +184,7 @@ class EventFlagsTab:
 
         # Row 2: tools - more breathing room below row 1
         tools_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        tools_frame.pack(fill=tk.X, padx=15, pady=(4, 30))
+        tools_frame.pack(fill=tk.X, padx=15, pady=(15, 30))
 
         ctk.CTkButton(
             tools_frame,
