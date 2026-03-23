@@ -141,9 +141,9 @@ class EventFlagsTab:
             text_color=("gray50", "gray70"),
         ).pack(pady=(0, 12), padx=15, anchor="w")
 
-        # Slot selector
+        # Row 1: slot + primary actions
         slot_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        slot_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
+        slot_frame.pack(fill=tk.X, padx=15, pady=(0, 6))
 
         ctk.CTkLabel(slot_frame, text="Character Slot:", font=("Segoe UI", 11)).pack(
             side=tk.LEFT, padx=(0, 8)
@@ -159,49 +159,60 @@ class EventFlagsTab:
             command=lambda v: self.eventflag_slot_var.set(int(v.split(" - ")[0])),
         )
         self.event_flag_slot_combo.set(slot_names[0])
-        self.event_flag_slot_combo.pack(side=tk.LEFT, padx=(0, 12))
+        self.event_flag_slot_combo.pack(side=tk.LEFT, padx=(0, 16))
 
         ctk.CTkButton(
             slot_frame,
             text="Load Flags",
             command=self.load_event_flags,
-            width=130,
-        ).pack(side=tk.LEFT, padx=(0, 12))
-
-        ctk.CTkButton(
-            slot_frame,
-            text="Advanced...",
-            command=self.open_advanced_editor,
-            width=110,
-        ).pack(side=tk.LEFT, padx=2)
+            width=120,
+        ).pack(side=tk.LEFT, padx=(0, 8))
 
         ctk.CTkButton(
             slot_frame,
             text="Apply Changes",
             command=self.apply_changes,
-            width=130,
-        ).pack(side=tk.LEFT, padx=2)
+            width=120,
+        ).pack(side=tk.LEFT, padx=(0, 8))
 
         ctk.CTkButton(
             slot_frame,
             text="Unlock All in Category",
             command=self.unlock_all_in_category,
             width=160,
-        ).pack(side=tk.LEFT, padx=2)
+        ).pack(side=tk.LEFT)
+
+        # Row 2: tools - more breathing room below row 1
+        tools_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        tools_frame.pack(fill=tk.X, padx=15, pady=(4, 30))
 
         ctk.CTkButton(
-            slot_frame,
+            tools_frame,
+            text="Advanced...",
+            command=self.open_advanced_editor,
+            width=110,
+        ).pack(side=tk.LEFT, padx=(0, 10))
+
+        ctk.CTkButton(
+            tools_frame,
             text="Boss Respawn...",
             command=self.open_boss_respawn,
             width=140,
-        ).pack(side=tk.LEFT, padx=2)
+        ).pack(side=tk.LEFT, padx=(0, 10))
 
         ctk.CTkButton(
-            slot_frame,
+            tools_frame,
             text="NPC Revival...",
             command=self.open_npc_revival,
             width=130,
-        ).pack(side=tk.LEFT, padx=2)
+        ).pack(side=tk.LEFT, padx=(0, 10))
+
+        ctk.CTkButton(
+            tools_frame,
+            text="Quest Progress...",
+            command=self.open_quest_progress,
+            width=145,
+        ).pack(side=tk.LEFT)
 
         # Category selector
         filter_frame = ctk.CTkFrame(main_frame, corner_radius=10)
@@ -1183,3 +1194,35 @@ class EventFlagsTab:
         ctk.CTkButton(
             btn_frame, text="Revive Selected", command=revive_selected, width=150
         ).pack(side=tk.RIGHT)
+
+    def open_quest_progress(self):
+        if self.current_event_flags is None:
+            CTkMessageBox.showwarning(
+                "Not Loaded",
+                "Please load event flags for a character first!",
+                parent=self.parent,
+            )
+            return
+
+        if not CTkMessageBox.askyesno(
+            "Experimental Feature",
+            "Quest Progress is experimental.\n\n"
+            "Flag data is sourced from community research and may be incomplete or "
+            "inaccurate. Applying steps sets event flags directly and could have "
+            "unintended side effects.\n\n"
+            "A backup is created before any changes. Proceed?",
+            parent=self.parent,
+        ):
+            return
+
+        from er_save_manager.ui.quest_progress_dialog import QuestProgressDialog
+
+        QuestProgressDialog.open(
+            self.parent,
+            self.current_event_flags,
+            self.get_save_file(),
+            self.get_save_path(),
+            self.current_slot,
+            self.reload_save,
+            self.show_toast,
+        )
