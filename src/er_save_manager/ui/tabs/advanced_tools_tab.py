@@ -179,7 +179,7 @@ class AdvancedToolsTab:
 
                 size = Path(save_path).stat().st_size
                 try:
-                    expected_size = len(save_file.data)
+                    expected_size = len(save_file._raw_data)
                 except Exception:
                     expected_size = None
 
@@ -187,6 +187,21 @@ class AdvancedToolsTab:
                     issues.append(
                         f"⚠ File size {size} bytes (expected {expected_size})"
                     )
+
+            # Check per-slot checksums
+            try:
+                from er_save_manager.fixes.checksum import check_slot_checksum
+
+                for i, slot in enumerate(save_file.character_slots):
+                    if slot.is_empty():
+                        continue
+                    valid, stored, computed = check_slot_checksum(save_file, i)
+                    if not valid:
+                        issues.append(
+                            f"⚠ Slot {i + 1}: Invalid checksum (stored {stored[:8]}... computed {computed[:8]}...)"
+                        )
+            except Exception:
+                pass
 
             # Check character data safely via accessors on UserDataX
             for i, slot in enumerate(save_file.characters):
@@ -229,7 +244,8 @@ class AdvancedToolsTab:
         except Exception as e:
             CTkMessageBox.showerror(
                 "Validation Error",
-                f"Failed to validate save:\n{str(e, parent=self.parent)}",
+                f"Failed to validate save:\n{e}",
+                parent=self.parent,
             )
 
     def recalculate_checksums(self):
@@ -269,5 +285,6 @@ class AdvancedToolsTab:
         except Exception as e:
             CTkMessageBox.showerror(
                 "Recalculation Error",
-                f"Failed to recalculate checksums:\n{str(e, parent=self.parent)}",
+                f"Failed to recalculate checksums:\n{e}",
+                parent=self.parent,
             )
