@@ -70,6 +70,16 @@ class CharacterDetailsDialog:
         except Exception:
             pass
 
+        # Checksum check
+        try:
+            from er_save_manager.fixes.checksum import check_slot_checksum
+
+            valid, _, _ = check_slot_checksum(save_file, slot_idx)
+            if not valid:
+                issues_detected.append("checksum:Invalid slot checksum")
+        except Exception:
+            pass
+
         # Deep scan check
         deep_scan_available = False
         deep_scan_result = None

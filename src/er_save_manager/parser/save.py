@@ -573,6 +573,24 @@ class Save:
 
                 traceback.print_exc()
 
+        # Fix: invalid slot checksum
+        try:
+            from er_save_manager.fixes.checksum import check_slot_checksum
+
+            valid, stored, computed = check_slot_checksum(self, slot_index)
+            if not valid:
+                checksum_offset = slot.data_start - 0x10
+                self._raw_data[checksum_offset : checksum_offset + 0x10] = (
+                    bytes.fromhex(computed)
+                )
+                fixes.append(
+                    f"Slot checksum recalculated ({stored[:8]}... -> {computed[:8]}...)"
+                )
+        except Exception:
+            import traceback
+
+            traceback.print_exc()
+
         was_fixed = len(fixes) > 0
         return (was_fixed, fixes)
 
