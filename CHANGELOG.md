@@ -3,8 +3,8 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
-## 📦 Release 0.12.0
-**Released:** March 18, 2026
+## 📦 Release 0.12.1
+**Released:** March 23, 2026
 
 
 ### ✨ New Features
@@ -18,6 +18,10 @@
 - Fixed last opened save location not working on Linux ([b65a1da](https://github.com/Hapfel1/er-save-manager/commit/b65a1dabc913e232b3ff85de87833bf9b692367b))
 
 - Add netman validation and corruption fixing after byteshift ([7405b3d](https://github.com/Hapfel1/er-save-manager/commit/7405b3d7a9fe25c278ef191803786ea3f99de70e))
+
+- Fixed dlc flag detection + added apply button when only checking that checkbox ([f6ed165](https://github.com/Hapfel1/er-save-manager/commit/f6ed16569fef75e41dad2b3700fbf54d0a091f76))
+
+- Added Checksum validation for slots ([adebcb8](https://github.com/Hapfel1/er-save-manager/commit/adebcb81b14bef64c57874a2255508add9d7d391))
 
 
 
@@ -594,7 +598,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
-[0.12.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.11.1..v0.12.0
+[0.12.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.11.1..v0.12.1
 [0.11.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.11.0..v0.11.1
 [0.11.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.10.1..v0.11.0
 [0.10.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.10.0..v0.10.1
