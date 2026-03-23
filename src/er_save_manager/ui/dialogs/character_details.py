@@ -95,10 +95,11 @@ class CharacterDetailsDialog:
             info.append("  WARNING: Currently in DLC area!")
         info.append("")
 
-        if (has_dlc_flag or has_invalid_dlc) and not deep_scan_available:
+        if has_dlc_flag or (has_invalid_dlc and not deep_scan_available):
             info.append("DLC FLAGS:")
-            info.append(f"  Has DLC Access: {'Yes' if has_dlc_flag else 'No'}")
-            if has_invalid_dlc:
+            if has_dlc_flag:
+                info.append("  Has DLC Access: Yes")
+            if has_invalid_dlc and not deep_scan_available:
                 info.append("  WARNING: Invalid data in unused DLC slots")
             info.append("")
 
@@ -143,7 +144,12 @@ class CharacterDetailsDialog:
         dialog = ctk.CTkToplevel(parent)
         dialog.title(f"Character Details - {name}")
 
-        width, height = 640, 560 if deep_scan_available else 520
+        width = 640
+        height = 520
+        if deep_scan_available:
+            height = 560
+        elif has_dlc_flag or (has_invalid_dlc and not deep_scan_available):
+            height = 560
         dialog.update_idletasks()
         parent.update_idletasks()
         parent_x = parent.winfo_rootx()
@@ -183,7 +189,7 @@ class CharacterDetailsDialog:
         clear_dlc_flag_var = None
         clear_invalid_dlc_var = None
 
-        if (has_dlc_flag or has_invalid_dlc) and not deep_scan_available:
+        if has_dlc_flag or (has_invalid_dlc and not deep_scan_available):
             dlc_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
             dlc_frame.pack(fill="x", padx=10, pady=(5, 10))
 
@@ -196,12 +202,12 @@ class CharacterDetailsDialog:
                 ).pack(anchor="w", pady=(0, 2))
                 ctk.CTkLabel(
                     dlc_frame,
-                    text="   Use if someone teleported you out of the DLC but you cannot load the save file.",
+                    text="   Use if you cannot load the save file without the DLC installed.",
                     font=("Segoe UI", 10),
                     text_color=("gray50", "gray50"),
                 ).pack(anchor="w", pady=(0, 8))
 
-            if has_invalid_dlc:
+            if has_invalid_dlc and not deep_scan_available:
                 clear_invalid_dlc_var = ctk.BooleanVar(value=False)
                 ctk.CTkCheckBox(
                     dlc_frame,
@@ -248,6 +254,35 @@ class CharacterDetailsDialog:
                 width=150,
             ).pack(side="left", padx=5)
 
+        elif has_dlc_flag or (has_invalid_dlc and not deep_scan_available):
+            apply_btn = ctk.CTkButton(
+                button_frame,
+                text="Apply",
+                command=lambda: CharacterDetailsDialog._apply_dlc_flags(
+                    dialog,
+                    save_file,
+                    slot_idx,
+                    save_path,
+                    reload_callback,
+                    clear_dlc_flag_var,
+                    clear_invalid_dlc_var,
+                ),
+                width=150,
+                state="disabled",
+            )
+            apply_btn.pack(side="left", padx=5)
+
+            def _on_dlc_checkbox_change(*_):
+                any_ticked = (clear_dlc_flag_var and clear_dlc_flag_var.get()) or (
+                    clear_invalid_dlc_var and clear_invalid_dlc_var.get()
+                )
+                apply_btn.configure(state="normal" if any_ticked else "disabled")
+
+            if clear_dlc_flag_var:
+                clear_dlc_flag_var.trace_add("write", _on_dlc_checkbox_change)
+            if clear_invalid_dlc_var:
+                clear_invalid_dlc_var.trace_add("write", _on_dlc_checkbox_change)
+
         def teleport():
             CharacterDetailsDialog._show_teleport_dialog(
                 parent,
@@ -286,6 +321,76 @@ class CharacterDetailsDialog:
         minutes = (seconds % 3600) // 60
         secs = seconds % 60
         return f"{hours}h {minutes}m {secs}s"
+
+    @staticmethod
+    def _apply_dlc_flags(
+        dialog,
+        save_file,
+        slot_idx,
+        save_path,
+        reload_callback,
+        clear_dlc_flag_var=None,
+        clear_invalid_dlc_var=None,
+    ):
+        should_clear_dlc = clear_dlc_flag_var and clear_dlc_flag_var.get()
+        should_clear_invalid = clear_invalid_dlc_var and clear_invalid_dlc_var.get()
+
+        if not should_clear_dlc and not should_clear_invalid:
+            return
+
+        try:
+            from er_save_manager.backup.manager import BackupManager
+
+            if save_path:
+                manager = BackupManager(Path(save_path))
+                manager.create_backup(
+                    description=f"before_dlc_flag_fix_slot_{slot_idx + 1}",
+                    operation="dlc_flag_fix",
+                    save=save_file,
+                )
+
+            slot = save_file.characters[slot_idx]
+
+            if should_clear_dlc:
+                slot.clear_dlc_flag()
+                if hasattr(slot, "dlc_offset") and slot.dlc_offset > 0:
+                    from io import BytesIO
+
+                    dlc_bytes = BytesIO()
+                    slot.dlc.write(dlc_bytes)
+                    dlc_data = dlc_bytes.getvalue()
+                    save_file._raw_data[
+                        slot.dlc_offset : slot.dlc_offset + len(dlc_data)
+                    ] = dlc_data
+
+            if should_clear_invalid:
+                slot.clear_invalid_dlc()
+                if hasattr(slot, "dlc_offset") and slot.dlc_offset > 0:
+                    from io import BytesIO
+
+                    dlc_bytes = BytesIO()
+                    slot.dlc.write(dlc_bytes)
+                    dlc_data = dlc_bytes.getvalue()
+                    save_file._raw_data[
+                        slot.dlc_offset : slot.dlc_offset + len(dlc_data)
+                    ] = dlc_data
+
+            save_file.recalculate_checksums()
+
+            if save_path:
+                save_file.to_file(Path(save_path))
+
+            if reload_callback:
+                reload_callback()
+
+            dialog.destroy()
+            CTkMessageBox.showinfo(
+                "DLC Flags",
+                "DLC flag cleared. The save file has been updated.",
+            )
+
+        except Exception as e:
+            CTkMessageBox.showerror("Error", f"Failed to apply DLC fix:\n{e}")
 
     @staticmethod
     def _run_deep_scan_fix(dialog, save_file, slot_idx, save_path, reload_callback):
