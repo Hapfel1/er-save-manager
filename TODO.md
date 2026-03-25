@@ -1,10 +1,12 @@
-last opened save location on linux done
-
-Add button for discord server to the tool
-
 Backup Manager + SteamID Patcher for the other games
 
 item spawning
+
+check ce functions to find missing features
+
+last opened save location on linux done
+
+Add button for discord server to the tool done
 
 scrolling works on linux via the view details window in the appearance tab but not anywhere else done
 
