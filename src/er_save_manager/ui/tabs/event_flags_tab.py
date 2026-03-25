@@ -319,7 +319,7 @@ class EventFlagsTab:
             return
 
         slot_idx = int(self.eventflag_slot_var.get()) - 1
-        slot = save_file.characters[slot_idx]
+        slot = save_file.character_slots[slot_idx]
 
         if slot.is_empty():
             CTkMessageBox.showwarning(
@@ -661,14 +661,43 @@ class EventFlagsTab:
         def toggle_flag():
             try:
                 flag_id = int(flag_id_var.get())
+            except ValueError:
+                CTkMessageBox.showerror("Error", "Invalid flag ID!", parent=dialog)
+                return
+
+            try:
+                save_file = self.get_save_file()
+                save_path = self.get_save_path()
+
+                if not save_path or not save_path.is_file():
+                    CTkMessageBox.showerror(
+                        "Invalid Save Path",
+                        "Could not locate save file.",
+                        parent=dialog,
+                    )
+                    return
+
                 current = self.current_event_flags.get_flag(flag_id)
                 new_state = not current
+
+                # Backup before write
+                try:
+                    backup_mgr = BackupManager(save_path)
+                    backup_mgr.create_backup(
+                        description=f"Before advanced flag toggle {flag_id} (Slot {self.current_slot + 1})",
+                        operation="advanced_flag_toggle",
+                        save=save_file,
+                    )
+                except PermissionError:
+                    CTkMessageBox.showwarning(
+                        "Backup Skipped",
+                        "Could not create backup (permission denied). Proceeding.",
+                        parent=dialog,
+                    )
+
                 self.current_event_flags.set_flag(flag_id, new_state)
 
-                # Write to raw data and recalculate checksums
-                save_file = self.get_save_file()
                 slot = save_file.character_slots[self.current_slot]
-
                 if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
                     absolute_offset = slot.event_flags_offset
                     event_flags_size = 0x1BF99F
@@ -684,8 +713,6 @@ class EventFlagsTab:
                     f"Flag {flag_id} set to {'ON' if new_state else 'OFF'}",
                     duration=2000,
                 )
-            except ValueError:
-                CTkMessageBox.showerror("Error", "Invalid flag ID!", parent=dialog)
             except Exception as e:
                 CTkMessageBox.showerror(
                     "Error", f"Failed to toggle flag: {e}", parent=dialog
