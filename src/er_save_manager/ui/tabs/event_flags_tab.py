@@ -141,9 +141,9 @@ class EventFlagsTab:
             text_color=("gray50", "gray70"),
         ).pack(pady=(0, 12), padx=15, anchor="w")
 
-        # Row 1: slot + primary actions
+        # Slot selector
         slot_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        slot_frame.pack(fill=tk.X, padx=15, pady=(0, 6))
+        slot_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
         ctk.CTkLabel(slot_frame, text="Character Slot:", font=("Segoe UI", 11)).pack(
             side=tk.LEFT, padx=(0, 8)
@@ -159,21 +159,28 @@ class EventFlagsTab:
             command=lambda v: self.eventflag_slot_var.set(int(v.split(" - ")[0])),
         )
         self.event_flag_slot_combo.set(slot_names[0])
-        self.event_flag_slot_combo.pack(side=tk.LEFT, padx=(0, 16))
+        self.event_flag_slot_combo.pack(side=tk.LEFT, padx=(0, 12))
 
         ctk.CTkButton(
             slot_frame,
             text="Load Flags",
             command=self.load_event_flags,
-            width=120,
-        ).pack(side=tk.LEFT, padx=(0, 8))
+            width=130,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+
+        ctk.CTkButton(
+            slot_frame,
+            text="Advanced...",
+            command=self.open_advanced_editor,
+            width=110,
+        ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
             slot_frame,
             text="Apply Changes",
             command=self.apply_changes,
-            width=120,
-        ).pack(side=tk.LEFT, padx=(0, 8))
+            width=130,
+        ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
             slot_frame,
@@ -182,36 +189,36 @@ class EventFlagsTab:
             width=160,
         ).pack(side=tk.LEFT)
 
-        # Row 2: tools - more breathing room below row 1
-        tools_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        tools_frame.pack(fill=tk.X, padx=15, pady=(15, 30))
+        # Row 2: secondary tools
+        tools_row = ctk.CTkFrame(main_frame, fg_color="transparent")
+        tools_row.pack(fill=tk.X, padx=15, pady=(6, 20))
 
         ctk.CTkButton(
-            tools_frame,
-            text="Advanced...",
-            command=self.open_advanced_editor,
-            width=110,
-        ).pack(side=tk.LEFT, padx=(0, 10))
-
-        ctk.CTkButton(
-            tools_frame,
+            tools_row,
             text="Boss Respawn...",
             command=self.open_boss_respawn,
             width=140,
-        ).pack(side=tk.LEFT, padx=(0, 10))
+        ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
-            tools_frame,
+            tools_row,
             text="NPC Revival...",
             command=self.open_npc_revival,
             width=130,
-        ).pack(side=tk.LEFT, padx=(0, 10))
+        ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
-            tools_frame,
+            tools_row,
             text="Quest Progress...",
             command=self.open_quest_progress,
             width=145,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+
+        ctk.CTkButton(
+            tools_row,
+            text="Export Flags...",
+            command=self.export_flags,
+            width=120,
         ).pack(side=tk.LEFT)
 
         # Category selector
@@ -319,7 +326,7 @@ class EventFlagsTab:
             return
 
         slot_idx = int(self.eventflag_slot_var.get()) - 1
-        slot = save_file.character_slots[slot_idx]
+        slot = save_file.characters[slot_idx]
 
         if slot.is_empty():
             CTkMessageBox.showwarning(
@@ -612,6 +619,85 @@ class EventFlagsTab:
         # Clear states
         self.flag_states.clear()
 
+    def export_flags(self):
+        """Export all set event flags to a JSON file."""
+        if self.current_event_flags is None:
+            CTkMessageBox.showwarning(
+                "Not Loaded", "Please load event flags for a character first!"
+            )
+            return
+
+        import json
+        from tkinter import filedialog
+
+        save_path = self.get_save_path()
+        initial_dir = str(save_path.parent) if save_path else None
+        slot_num = (self.current_slot + 1) if self.current_slot is not None else 1
+
+        out_path = filedialog.asksaveasfilename(
+            parent=self.parent,
+            title="Export Event Flags",
+            initialdir=initial_dir,
+            initialfile=f"flags_slot{slot_num}.json",
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+        )
+        if not out_path:
+            return
+
+        try:
+            set_flags = []
+            seen: set[int] = set()
+
+            for category in CATEGORIES:
+                subcats = get_subcategories(category)
+                if subcats:
+                    for subcat in subcats:
+                        for flag_id in get_category_flags(category, subcat):
+                            if flag_id in seen:
+                                continue
+                            seen.add(flag_id)
+                            try:
+                                if self.current_event_flags.get_flag(flag_id):
+                                    set_flags.append(
+                                        {
+                                            "id": flag_id,
+                                            "name": get_flag_name(flag_id),
+                                        }
+                                    )
+                            except Exception:
+                                pass
+                else:
+                    for flag_id in get_category_flags(category, None):
+                        if flag_id in seen:
+                            continue
+                        seen.add(flag_id)
+                        try:
+                            if self.current_event_flags.get_flag(flag_id):
+                                set_flags.append(
+                                    {
+                                        "id": flag_id,
+                                        "name": get_flag_name(flag_id),
+                                    }
+                                )
+                        except Exception:
+                            pass
+
+            data = {
+                "slot": slot_num,
+                "count": len(set_flags),
+                "flags": set_flags,
+            }
+            with open(out_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+
+            self.show_toast(f"Exported {len(set_flags)} set flags", duration=2500)
+
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Export Failed", f"Could not export flags:\n{e}", parent=self.parent
+            )
+
     def open_advanced_editor(self):
         """Open advanced flag editor dialog"""
         if self.current_event_flags is None:
@@ -677,10 +763,6 @@ class EventFlagsTab:
                     )
                     return
 
-                current = self.current_event_flags.get_flag(flag_id)
-                new_state = not current
-
-                # Backup before write
                 try:
                     backup_mgr = BackupManager(save_path)
                     backup_mgr.create_backup(
@@ -695,6 +777,8 @@ class EventFlagsTab:
                         parent=dialog,
                     )
 
+                current = self.current_event_flags.get_flag(flag_id)
+                new_state = not current
                 self.current_event_flags.set_flag(flag_id, new_state)
 
                 slot = save_file.character_slots[self.current_slot]
@@ -706,7 +790,7 @@ class EventFlagsTab:
                     ] = slot.event_flags
 
                 save_file.recalculate_checksums()
-                save_file.save(self.get_save_path())
+                save_file.save(save_path)
                 self.reload_save()
 
                 self.show_toast(
@@ -1225,21 +1309,8 @@ class EventFlagsTab:
     def open_quest_progress(self):
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded",
-                "Please load event flags for a character first!",
-                parent=self.parent,
+                "Not Loaded", "Please load event flags for a character first!"
             )
-            return
-
-        if not CTkMessageBox.askyesno(
-            "Experimental Feature",
-            "Quest Progress is experimental.\n\n"
-            "Flag data is sourced from community research and may be incomplete or "
-            "inaccurate. Applying steps sets event flags directly and could have "
-            "unintended side effects.\n\n"
-            "A backup is created before any changes. Proceed?",
-            parent=self.parent,
-        ):
             return
 
         from er_save_manager.ui.quest_progress_dialog import QuestProgressDialog
