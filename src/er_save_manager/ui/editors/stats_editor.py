@@ -465,6 +465,7 @@ class StatsEditor:
             CTkMessageBox.showwarning(
                 "No Save",
                 "Please load a save file first!",
+                parent=self.parent,
             )
             return
 
@@ -485,6 +486,7 @@ class StatsEditor:
                 f"It's recommended to set level to {calculated_level}.\n\n"
                 f"Yes - Update level to {calculated_level}\n"
                 f"No - Keep current level {current_level}",
+                parent=self.parent,
             )
 
             if response:
@@ -495,6 +497,7 @@ class StatsEditor:
         response = CTkMessageBox.askyesno(
             "Confirm",
             f"Apply stat changes to Slot {slot_idx + 1}?\n\nA backup will be created.",
+            parent=self.parent,
         )
 
         if not response:
@@ -598,20 +601,24 @@ class StatsEditor:
                     CTkMessageBox.showinfo(
                         "Success",
                         "Stats updated successfully!\n\nBackup saved to backup manager.",
+                        parent=self.parent,
                     )
                 else:
                     CTkMessageBox.showwarning(
                         "Error",
                         "Offset not tracked - cannot save changes.",
+                        parent=self.parent,
                     )
             else:
                 CTkMessageBox.showwarning(
                     "Error",
                     "Character has no game data",
+                    parent=self.parent,
                 )
 
         except Exception as e:
             CTkMessageBox.showerror(
                 "Error",
                 f"Failed to apply stat changes:\n{e}",
+                parent=self.parent,
             )
