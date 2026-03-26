@@ -2,7 +2,7 @@ Backup Manager + SteamID Patcher for the other games
 
 item spawning
 
-check ce functions to find missing features
+check ce functions to find missing features done
 
 last opened save location on linux done
 

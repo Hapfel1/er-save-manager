@@ -4,6 +4,7 @@ Handles character stats editing UI and logic
 """
 
 import logging
+import tkinter as tk
 
 import customtkinter as ctk
 
@@ -44,6 +45,10 @@ class StatsEditor:
         self._logger = logging.getLogger(__name__)
         self.level_warning_label = None
         self.runes_var = None
+        self.great_rune_on_var = None
+        self.great_rune_id_var = None
+        self.rune_arc_var = None
+        self.last_grace_var = None
 
         self.frame = None
 
@@ -210,6 +215,82 @@ class StatsEditor:
             row=content_row + 1, column=1, columnspan=2, sticky=ctk.W, padx=5, pady=5
         )
 
+        # Great rune / rune arc
+        rune_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        rune_frame.pack(fill=ctk.X, pady=5, padx=10)
+
+        ctk.CTkLabel(
+            rune_frame,
+            text="Great Rune & Rune Arc",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).grid(row=0, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(5, 0))
+
+        self.great_rune_on_var = ctk.BooleanVar(value=False)
+        ctk.CTkCheckBox(
+            rune_frame,
+            text="Great Rune active",
+            variable=self.great_rune_on_var,
+            text_color=("black", "white"),
+        ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
+
+        self.rune_arc_var = ctk.BooleanVar(value=False)
+        ctk.CTkCheckBox(
+            rune_frame,
+            text="Rune Arc active",
+            variable=self.rune_arc_var,
+            text_color=("black", "white"),
+        ).grid(row=1, column=1, sticky=ctk.W, padx=(20, 5), pady=5)
+
+        ctk.CTkLabel(
+            rune_frame, text="Active Great Rune:", text_color=("black", "white")
+        ).grid(row=2, column=0, sticky=ctk.W, padx=5, pady=5)
+
+        _GREAT_RUNES = [
+            ("None", 0),
+            ("Godrick's Great Rune", 0x40000053),
+            ("Radahn's Great Rune", 0x40000054),
+            ("Morgott's Great Rune", 0x40000055),
+            ("Rykard's Great Rune", 0x40000056),
+            ("Malenia's Great Rune", 0x40000057),
+            ("Mohg's Great Rune", 0x40000058),
+        ]
+        self._great_rune_options = _GREAT_RUNES
+        self.great_rune_id_var = tk.StringVar(value=_GREAT_RUNES[0][0])
+        ctk.CTkComboBox(
+            rune_frame,
+            variable=self.great_rune_id_var,
+            values=[name for name, _ in _GREAT_RUNES],
+            state="readonly",
+            width=260,
+        ).grid(row=2, column=1, columnspan=2, sticky=ctk.W, padx=5, pady=(5, 10))
+
+        # Last rested grace
+        grace_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        grace_frame.pack(fill=ctk.X, pady=5, padx=10)
+
+        ctk.CTkLabel(
+            grace_frame,
+            text="Last Rested Grace",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).grid(row=0, column=0, columnspan=2, sticky=ctk.W, padx=5, pady=(5, 0))
+
+        ctk.CTkLabel(
+            grace_frame, text="Grace ID (hex):", text_color=("black", "white")
+        ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
+
+        self.last_grace_var = tk.StringVar(value="0")
+        ctk.CTkEntry(
+            grace_frame,
+            textvariable=self.last_grace_var,
+            width=120,
+            fg_color=("gray86", "gray25"),
+            text_color=("black", "white"),
+            border_color=("gray70", "gray40"),
+            border_width=1,
+        ).grid(row=1, column=1, padx=5, pady=(5, 10), sticky=ctk.W)
+
         # Apply button
         button_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
         button_frame.pack(fill=ctk.X, pady=10, padx=10)
@@ -284,6 +365,21 @@ class StatsEditor:
         # Load level and runes
         self.level_var.set(str(getattr(char, "level", 0)))
         self.runes_var.set(getattr(char, "runes", 0))
+
+        # Load flask max counts
+
+        # Load great rune / rune arc
+        self.great_rune_on_var.set(bool(getattr(char, "great_rune_on", False)))
+        self.rune_arc_var.set(bool(getattr(char, "furl_calling_finger_on", False)))
+        rune_id = getattr(slot.equipped_items_item_id, "unk0x28", 0)
+        rune_name = next(
+            (n for n, v in self._great_rune_options if v == rune_id),
+            self._great_rune_options[0][0],
+        )
+        self.great_rune_id_var.set(rune_name)
+
+        # Load last rested grace as hex
+        self.last_grace_var.set(hex(getattr(slot, "last_rested_grace", 0)))
 
         # Calculate level
         self.calculate_character_level()
@@ -445,6 +541,10 @@ class StatsEditor:
                 char.base_max_fp = self.stat_vars["base_max_fp"].get()
                 char.base_max_sp = self.stat_vars["base_max_sp"].get()
 
+                # Great rune active / rune arc
+                char.great_rune_on = bool(self.great_rune_on_var.get())
+                char.furl_calling_finger_on = bool(self.rune_arc_var.get())
+
                 # Write back to raw data using tracked offset
                 if (
                     hasattr(slot, "player_game_data_offset")
@@ -463,13 +563,31 @@ class StatsEditor:
                             f"PlayerGameData serialization error: expected 432 bytes, got {len(char_data)}"
                         )
 
-                    # player_game_data_offset is absolute in the raw file
                     abs_offset = slot.player_game_data_offset
-
-                    # Write to raw data
                     save_file._raw_data[abs_offset : abs_offset + len(char_data)] = (
                         char_data
                     )
+
+                    # Great rune ID and last grace require full slot rebuild
+                    # (both live outside PlayerGameData)
+                    from er_save_manager.parser.slot_rebuild import rebuild_slot
+
+                    rune_name = self.great_rune_id_var.get()
+                    rune_id = next(
+                        (v for n, v in self._great_rune_options if n == rune_name), 0
+                    )
+                    slot.equipped_items_item_id.unk0x28 = rune_id
+
+                    try:
+                        raw_grace = self.last_grace_var.get().strip()
+                        slot.last_rested_grace = int(raw_grace, 16)
+                    except ValueError:
+                        pass
+
+                    rebuilt = rebuild_slot(slot)
+                    save_file._raw_data[
+                        slot.data_start : slot.data_start + len(rebuilt)
+                    ] = rebuilt
 
                     # Recalculate checksums and save
                     save_file.recalculate_checksums()
