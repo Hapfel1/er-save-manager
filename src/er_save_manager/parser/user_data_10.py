@@ -107,6 +107,47 @@ class Settings:
         obj.unk0x2c = struct.unpack("<H", f.read(2))[0]
         return obj
 
+    def write(self, f: BytesIO) -> None:
+        """Write Settings to stream (mirrors read order)."""
+        f.write(struct.pack("<B", self.camera_speed))
+        f.write(struct.pack("<B", self.controller_vibration))
+        f.write(struct.pack("<B", self.brightness))
+        f.write(struct.pack("<B", self.unk0x3))
+        f.write(struct.pack("<B", self.music_volume))
+        f.write(struct.pack("<B", self.sound_effects_volume))
+        f.write(struct.pack("<B", self.voice_volume))
+        f.write(struct.pack("<B", self.display_blood))
+        f.write(struct.pack("<B", self.subtitles))
+        f.write(struct.pack("<B", self.hud))
+        f.write(struct.pack("<B", self.camera_x_axis))
+        f.write(struct.pack("<B", self.camera_y_axis))
+        f.write(struct.pack("<B", self.toggle_auto_lockon))
+        f.write(struct.pack("<B", self.camera_auto_wall_recovery))
+        f.write(struct.pack("<B", self.unk0xe))
+        f.write(struct.pack("<B", self.unk0xf))
+        f.write(struct.pack("<B", self.reset_camera_y_axis))
+        f.write(struct.pack("<B", self.cinematic_effects))
+        f.write(struct.pack("<B", self.unk0x12))
+        f.write(struct.pack("<B", self.perform_matchmaking))
+        f.write(struct.pack("<B", self.unk0x14))
+        f.write(struct.pack("<B", self.unk0x15))
+        f.write(struct.pack("<B", self.manual_attack_aim))
+        f.write(struct.pack("<B", self.autotarget))
+        f.write(struct.pack("<B", self.launchsettings))
+        f.write(struct.pack("<B", self.send_summon_sign))
+        f.write(struct.pack("<B", self.unk0x1a))
+        f.write(struct.pack("<B", self.hdr))
+        f.write(struct.pack("<B", self.hdr_adjust_brightness))
+        f.write(struct.pack("<B", self.hdr_maximum_brightness))
+        f.write(struct.pack("<B", self.hdr_adjust_saturation))
+        f.write(struct.pack("<B", self.unk0x1f))
+        f.write(struct.pack("<B", self.master_volume))
+        f.write(struct.pack("<B", self.is_raytracing_on))
+        f.write(struct.pack("<B", self.mark_new_items))
+        f.write(struct.pack("<B", self.show_recent_tabs))
+        f.write(struct.pack("<Q", self.unk0x24))
+        f.write(struct.pack("<H", self.unk0x2c))
+
 
 @dataclass
 class ProfileEquipment:
