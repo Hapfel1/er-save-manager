@@ -100,7 +100,12 @@ class PlatformUtils:
             return ("EldenRing", "ER*.*", "1245620", "")
         documents_subdir = getattr(profile, "documents_subdir", "")
         save_glob = getattr(profile, "save_glob", profile.save_filename)
-        return (profile.appdata_subdir, save_glob, str(profile.steam_app_id), documents_subdir)
+        return (
+            profile.appdata_subdir,
+            save_glob,
+            str(profile.steam_app_id),
+            documents_subdir,
+        )
 
     @staticmethod
     def _roaming_rel(appdata_subdir: str, documents_subdir: str) -> str:
@@ -115,7 +120,9 @@ class PlatformUtils:
     @staticmethod
     def get_default_save_locations(profile: GameProfile | None = None) -> list[Path]:
         """Get platform-specific directories containing saves for the given game."""
-        appdata_subdir, _glob, _app_id, documents_subdir = PlatformUtils._profile_params(profile)
+        appdata_subdir, _glob, _app_id, documents_subdir = (
+            PlatformUtils._profile_params(profile)
+        )
         platform_name = PlatformUtils.get_platform()
 
         if platform_name == "windows":
@@ -169,7 +176,9 @@ class PlatformUtils:
         Uses save_glob (e.g. "ER*.*") to match all save file variants
         (different slot numbers, alternate extensions like .co2).
         """
-        appdata_subdir, save_glob, _app_id, documents_subdir = PlatformUtils._profile_params(profile)
+        appdata_subdir, save_glob, _app_id, documents_subdir = (
+            PlatformUtils._profile_params(profile)
+        )
         found_saves: list[Path] = []
         platform_name = PlatformUtils.get_platform()
 
@@ -253,7 +262,8 @@ class PlatformUtils:
         # Remove duplicates and backup files
         unique = list({p.resolve(): p for p in found_saves}.values())
         return [
-            p for p in unique
+            p
+            for p in unique
             if not any(p.name.endswith(ext) for ext in (".backup", ".backups", ".bak"))
         ]
 
@@ -303,7 +313,9 @@ class PlatformUtils:
     @staticmethod
     def get_default_save_location(profile: GameProfile | None = None) -> Path | None:
         """Canonical save directory (contains the SteamID subfolder)."""
-        appdata_subdir, _glob, app_id, documents_subdir = PlatformUtils._profile_params(profile)
+        appdata_subdir, _glob, app_id, documents_subdir = PlatformUtils._profile_params(
+            profile
+        )
 
         if PlatformUtils.is_windows():
             if documents_subdir:
@@ -372,12 +384,26 @@ class PlatformUtils:
 
         if platform_name == "windows":
             candidates = [
-                Path.home() / "Program Files (x86)" / "Steam" / "config" / "libraryfolders.vdf",
-                Path.home() / "AppData" / "Local" / "Steam" / "config" / "libraryfolders.vdf",
+                Path.home()
+                / "Program Files (x86)"
+                / "Steam"
+                / "config"
+                / "libraryfolders.vdf",
+                Path.home()
+                / "AppData"
+                / "Local"
+                / "Steam"
+                / "config"
+                / "libraryfolders.vdf",
             ]
         elif platform_name == "linux":
             candidates = [
-                Path.home() / ".local" / "share" / "Steam" / "config" / "libraryfolders.vdf",
+                Path.home()
+                / ".local"
+                / "share"
+                / "Steam"
+                / "config"
+                / "libraryfolders.vdf",
                 Path.home()
                 / ".var"
                 / "app"

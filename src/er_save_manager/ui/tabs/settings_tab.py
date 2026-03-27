@@ -257,7 +257,9 @@ class SettingsTab:
         enabled = game_cfg.get("enabled", False)
         save_path_str = game_cfg.get("save_path", "")
 
-        game_frame = ctk.CTkFrame(parent, corner_radius=8, fg_color=("gray90", "gray18"))
+        game_frame = ctk.CTkFrame(
+            parent, corner_radius=8, fg_color=("gray90", "gray18")
+        )
         game_frame.pack(fill="x", padx=12, pady=(0, 6))
 
         header_row = ctk.CTkFrame(game_frame, fg_color="transparent")
@@ -304,7 +306,9 @@ class SettingsTab:
             file_row,
             text="Choose...",
             width=80,
-            command=lambda k=profile.key, p=profile: self._choose_game_auto_backup_save(k, p),
+            command=lambda k=profile.key, p=profile: self._choose_game_auto_backup_save(
+                k, p
+            ),
         ).pack(side="right", padx=(6, 0))
 
     def _on_game_auto_backup_toggle(self, game_key: str):
