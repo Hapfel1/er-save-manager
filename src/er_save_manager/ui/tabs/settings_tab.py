@@ -28,7 +28,7 @@ class SettingsTab:
         self.get_default_save_path = get_default_save_path_callback
         self.active_game = active_game
 
-        # Per-game auto-backup path vars — populated in setup_ui
+        # Per-game auto-backup path vars - populated in setup_ui
         self._auto_backup_path_vars: dict[str, tk.StringVar] = {}
         self._auto_backup_enabled_vars: dict[str, tk.BooleanVar] = {}
 
@@ -73,7 +73,7 @@ class SettingsTab:
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
-        # EAC Warning — Elden Ring only
+        # EAC Warning - Elden Ring only
         if self.active_game == "elden_ring":
             self.show_eac_warning_var = tk.BooleanVar(
                 value=self.settings.get("show_eac_warning", True)
@@ -257,9 +257,7 @@ class SettingsTab:
         enabled = game_cfg.get("enabled", False)
         save_path_str = game_cfg.get("save_path", "")
 
-        game_frame = ctk.CTkFrame(
-            parent, corner_radius=8, fg_color=("gray90", "gray18")
-        )
+        game_frame = ctk.CTkFrame(parent, corner_radius=8, fg_color=("gray90", "gray18"))
         game_frame.pack(fill="x", padx=12, pady=(0, 6))
 
         header_row = ctk.CTkFrame(game_frame, fg_color="transparent")
@@ -306,9 +304,7 @@ class SettingsTab:
             file_row,
             text="Choose...",
             width=80,
-            command=lambda k=profile.key, p=profile: self._choose_game_auto_backup_save(
-                k, p
-            ),
+            command=lambda k=profile.key, p=profile: self._choose_game_auto_backup_save(k, p),
         ).pack(side="right", padx=(6, 0))
 
     def _on_game_auto_backup_toggle(self, game_key: str):
@@ -353,7 +349,7 @@ class SettingsTab:
                 if choice:
                     self._set_game_auto_backup_path(game_key, options[0])
                     return
-            # Multiple found — show simple picker
+            # Multiple found - show simple picker
             elif len(options) > 1:
                 from er_save_manager.ui.utils import force_render_dialog
 
