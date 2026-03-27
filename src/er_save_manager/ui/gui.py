@@ -14,6 +14,7 @@ from tkinter import filedialog, ttk
 import customtkinter as ctk
 
 from er_save_manager import VersionChecker, __version__
+from er_save_manager.games.game_profiles import GAME_PROFILES, PROFILES_BY_KEY
 from er_save_manager.parser import Save
 from er_save_manager.platform import PlatformUtils
 
@@ -31,6 +32,7 @@ from er_save_manager.ui.settings import get_settings
 from er_save_manager.ui.tabs import (
     AdvancedToolsTab,
     AppearanceTab,
+    BackupManagerTab,
     CharacterManagementTab,
     EventFlagsTab,
     GesturesRegionsTab,
@@ -121,6 +123,12 @@ class SaveManagerGUI:
         self.save_path = None
         self.selected_slot = None
         self.selected_slot_index = -1  # Current selected character slot (0-9)
+
+        # Active game (key from game_profiles.py); drives which tabs are shown
+        self.active_game = "elden_ring"
+
+        # Refs to file-frame buttons that should be disabled for non-ER games
+        self._file_load_buttons: list = []
 
         # Lazy loading flags (track which tabs have been initialized with data)
         self.tabs_loaded = {
@@ -287,17 +295,20 @@ class SaveManagerGUI:
         except Exception as e:
             print(f"Failed to initialize process monitor: {e}")
 
-    def _on_auto_backup_created(self, backup_path):
-        """Callback when auto-backup is created"""
+    def _on_auto_backup_created(self, game_key: str, backup_path):
+        """Callback when auto-backup is created."""
         try:
+            from er_save_manager.games.game_profiles import PROFILES_BY_KEY
             from er_save_manager.ui.messagebox import CTkMessageBox
 
-            # Show notification (non-blocking)
+            profile = PROFILES_BY_KEY.get(game_key)
+            game_name = profile.name if profile else game_key
+
             self.root.after(
                 0,
                 lambda: CTkMessageBox.showinfo(
                     "Auto-Backup Created",
-                    f"Elden Ring launched - backup created:\n\n{backup_path.name}",
+                    f"{game_name} launched - backup created:\n\n{backup_path.name}",
                     parent=self.root,
                 ),
             )
@@ -484,6 +495,26 @@ class SaveManagerGUI:
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 4))
 
+        # Game selector
+        game_row = ctk.CTkFrame(file_frame, fg_color="transparent")
+        game_row.pack(fill=tk.X, padx=12, pady=(0, 4))
+
+        ctk.CTkLabel(game_row, text="Game:", font=("Segoe UI", 11)).pack(
+            side=tk.LEFT, padx=(0, 8)
+        )
+
+        self._game_selector_var = tk.StringVar(value=PROFILES_BY_KEY["elden_ring"].name)
+        game_names = [p.name for p in GAME_PROFILES]
+        self._game_combo = ctk.CTkComboBox(
+            game_row,
+            values=game_names,
+            variable=self._game_selector_var,
+            state="readonly",
+            width=260,
+            command=self._on_game_changed,
+        )
+        self._game_combo.pack(side=tk.LEFT)
+
         self.file_path_var = tk.StringVar(value="")
         # Auto-load when valid file path is entered
         trace_variable(self.file_path_var, "w", self._on_file_path_changed)
@@ -495,30 +526,36 @@ class SaveManagerGUI:
             side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 6), pady=10
         )
 
-        ctk.CTkButton(
+        _browse_btn = ctk.CTkButton(
             path_frame,
             text="Browse",
             command=self.browse_file,
             width=110,
-        ).pack(side=tk.LEFT, padx=4, pady=10)
+        )
+        _browse_btn.pack(side=tk.LEFT, padx=4, pady=10)
+        self._file_load_buttons.append(_browse_btn)
 
-        ctk.CTkButton(
+        _autofind_btn = ctk.CTkButton(
             path_frame,
             text="Auto-Find",
             command=self.auto_detect,
             width=110,
-        ).pack(side=tk.LEFT, padx=4, pady=10)
+        )
+        _autofind_btn.pack(side=tk.LEFT, padx=4, pady=10)
+        self._file_load_buttons.append(_autofind_btn)
 
         # Load button
         buttons_frame = ctk.CTkFrame(file_frame, corner_radius=8)
         buttons_frame.pack(fill=tk.X, pady=(6, 10), padx=12)
 
-        ctk.CTkButton(
+        _reload_btn = ctk.CTkButton(
             buttons_frame,
             text="Reload",
             command=self.load_save,
             width=160,
-        ).pack(side=tk.LEFT, padx=6, pady=10)
+        )
+        _reload_btn.pack(side=tk.LEFT, padx=6, pady=10)
+        self._file_load_buttons.append(_reload_btn)
 
         ctk.CTkButton(
             buttons_frame,
@@ -559,8 +596,97 @@ class SaveManagerGUI:
             pady=6,
         ).pack(fill=tk.X)
 
+    def _on_game_changed(self, _value=None):
+        """Rebuild notebook tabs for the newly selected game."""
+        name = self._game_selector_var.get()
+        profile = next((p for p in GAME_PROFILES if p.name == name), None)
+        if profile is None:
+            return
+
+        self.active_game = profile.key
+
+        # Clear save state — switching games means the loaded save is no longer relevant.
+        # This prevents tab setup_ui() calls from accessing stale save data.
+        self.save_file = None
+        self.save_path = None
+        self.file_path_var.set("")
+
+        # Null out all tab references so _finalize_save_load doesn't call methods
+        # on widgets that are about to be destroyed.
+        for attr in (
+            "inspector_tab",
+            "char_mgmt_tab",
+            "world_tab",
+            "event_flags_tab",
+            "gestures_tab",
+            "appearance_tab",
+            "steamid_tab",
+            "hex_tab",
+            "advanced_tab",
+            "settings_tab",
+        ):
+            setattr(self, attr, None)
+
+        # Rebuild notebook
+        self.notebook.destroy()
+        self.notebook = ctk.CTkTabview(
+            self.root,
+            width=1100,
+            height=620,
+            corner_radius=12,
+            command=self._on_tab_changed,
+        )
+        self.notebook.grid(row=2, column=0, padx=12, pady=10, sticky="nsew")
+
+        # Reset lazy-load flags
+        self.tabs_loaded = {
+            "Save Fixer": False,
+            "Appearance": False,
+            "Advanced Tools": False,
+            "SteamID Patcher": False,
+            "Hex Editor": False,
+            "Gestures": False,
+        }
+
+        if profile.key == "elden_ring":
+            self.create_tabs()
+        else:
+            self._create_other_game_tabs(profile)
+            # Auto-detect and show the primary save path for this game
+            self._auto_show_save_for_profile(profile)
+
+    def _auto_show_save_for_profile(self, profile):
+        """Find the primary save file for a non-ER game and show it in the path bar."""
+        import threading
+
+        def _find_and_set():
+            try:
+                from er_save_manager.platform.utils import PlatformUtils
+
+                paths = PlatformUtils.find_all_save_files(profile)
+                if paths:
+                    # Show the path but don't try to load it through the ER parser
+                    self.root.after(0, lambda: self.file_path_var.set(str(paths[0])))
+                    self.root.after(
+                        0,
+                        lambda: self.status_var.set(
+                            f"{profile.name} save found: {paths[0].name}"
+                        ),
+                    )
+                else:
+                    self.root.after(
+                        0,
+                        lambda: self.status_var.set(
+                            f"No {profile.name} save file found. Launch the game once to create it."
+                        ),
+                    )
+            except Exception:
+                pass
+
+        threading.Thread(target=_find_and_set, daemon=True).start()
+
     def create_tabs(self):
-        """Create all tabs with modular components"""
+        """Create all Elden Ring tabs."""
 
         # Tab 1: Save Fixer
         self.notebook.add("Save Fixer")
@@ -679,6 +805,35 @@ class SaveManagerGUI:
             tab_settings,
             get_save_path_callback=lambda: self.save_path,
             get_default_save_path_callback=lambda: self.default_save_path,
+            active_game="elden_ring",
+        )
+        self.settings_tab.setup_ui()
+
+    def _create_other_game_tabs(self, profile):
+        """Create the reduced tab set for non-Elden Ring games."""
+
+        # All non-ER games get: SteamID Patcher + Settings
+        # Backup Manager is available via the top-level button, not as a tab.
+
+        self.notebook.add("SteamID Patcher")
+        tab_steamid = self.notebook.tab("SteamID Patcher")
+        self.steamid_tab = SteamIDPatcherTab(
+            tab_steamid,
+            lambda: self.save_file,
+            lambda: self.save_path,
+            self.load_save,
+            self.show_toast,
+        )
+        self.steamid_tab.setup_ui()
+        self.steamid_tab.set_active_profile(profile.name)
+
+        self.notebook.add("Settings")
+        tab_settings = self.notebook.tab("Settings")
+        self.settings_tab = SettingsTab(
+            tab_settings,
+            get_save_path_callback=lambda: self.save_path,
+            get_default_save_path_callback=lambda: self.default_save_path,
+            active_game=profile.key,
         )
         self.settings_tab.setup_ui()
 
@@ -829,15 +984,21 @@ class SaveManagerGUI:
         if self.save_file and isinstance(self.save_file._raw_data, bytes):
             self.save_file._raw_data = bytearray(self.save_file._raw_data)
 
+    def _active_profile(self):
+        """Return the GameProfile for the currently selected game."""
+        return PROFILES_BY_KEY.get(self.active_game)
+
     # File operations
     def browse_file(self):
-        """Browse for save file"""
-        # Check if game is running - MUST be closed
-        if self.is_game_running():
+        """Browse for a save file for the active game."""
+        profile = self._active_profile()
+
+        # Only check game-running for ER (we know that process name)
+        if self.active_game == "elden_ring" and self.is_game_running():
             if not self._handle_game_running_dialog():
                 return
 
-        # Use last_save_path if enabled and valid
+        # Determine starting directory
         initialdir = None
         if self.settings.get("remember_last_location", True):
             last_path = self.settings.get("last_save_path", "")
@@ -847,94 +1008,97 @@ class SaveManagerGUI:
                     initialdir = last_dir
 
         if not initialdir:
-            initialdir = (
-                str(self.default_save_path)
-                if self.default_save_path.exists()
-                else str(Path.home())
-            )
+            # Try the game's default save location
+            default_loc = PlatformUtils.get_default_save_location(profile)
+            if default_loc and default_loc.exists():
+                initialdir = str(default_loc)
 
-        # On Linux, if no better starting directory is available, try Steam base
-        if (
-            not initialdir
-            and PlatformUtils.is_linux()
-            and not self.default_save_path.exists()
-        ):
+        if not initialdir:
+            # ER legacy fallback
+            if self.default_save_path.exists():
+                initialdir = str(self.default_save_path)
+
+        if not initialdir and PlatformUtils.is_linux():
             steam_base = Path.home() / ".local" / "share" / "Steam"
             if steam_base.exists():
                 initialdir = str(steam_base)
 
+        if not initialdir:
+            initialdir = str(Path.home())
+
+        # Build file type filter from profile extensions
+        if profile:
+            ext_str = " ".join(f"*{e}" for e in profile.extensions)
+            filetypes = [(f"{profile.name} Saves", ext_str), ("All files", "*.*")]
+            title = f"Select {profile.name} Save File"
+        else:
+            filetypes = [("Save Files", "*.sl2 *.co2"), ("All files", "*.*")]
+            title = "Select Save File"
+
         filename = filedialog.askopenfilename(
-            title="Select Elden Ring Save File",
+            title=title,
             initialdir=initialdir,
-            filetypes=[("Elden Ring Saves", "*.sl2 *.co2"), ("All files", "*.*")],
+            filetypes=filetypes,
         )
         if filename:
             self.file_path_var.set(filename)
             self.status_var.set(f"Selected: {os.path.basename(filename)}")
 
-            # Save last location if enabled
             if self.settings.get("remember_last_location", True):
                 self.settings.set("last_save_path", filename)
 
-            # Linux: Check if in default location
             if (
                 PlatformUtils.is_linux()
-                and not PlatformUtils.is_save_in_default_location(Path(filename))
+                and not PlatformUtils.is_save_in_default_location(
+                    Path(filename), profile
+                )
                 and self.settings.get("show_linux_save_warning", True)
             ):
-                self.show_linux_save_location_warning(Path(filename))
+                self.show_linux_save_location_warning(Path(filename), profile)
 
     def auto_detect(self):
-        """Auto-detect save file with Linux support"""
-        # Find all save files using platform utilities
-        found_saves = PlatformUtils.find_all_save_files()
+        """Auto-detect save file for the active game."""
+        profile = self._active_profile()
+        found_saves = PlatformUtils.find_all_save_files(profile)
+        game_name = profile.name if profile else "Elden Ring"
 
         if not found_saves:
-            # Show platform-specific help
             if PlatformUtils.is_linux():
                 CTkMessageBox.showinfo(
                     "No Saves Found",
-                    "No Elden Ring save files found.\n\n"
-                    "Linux users: Make sure you've launched Elden Ring at least once.\n"
-                    "Saves are stored in Steam's compatdata folder.",
+                    f"No {game_name} save files found.\n\n"
+                    "Make sure you have launched the game at least once.\n"
+                    "On Linux, saves are stored in Steam's compatdata folder.",
                     parent=self.root,
                 )
             else:
                 CTkMessageBox.showwarning(
-                    "Not Found", "No Elden Ring save files found.", parent=self.root
+                    "Not Found",
+                    f"No {game_name} save files found.",
+                    parent=self.root,
                 )
             return
 
-        if len(found_saves) == 1:
-            # Only one save found
-            self.file_path_var.set(str(found_saves[0]))
-            self.status_var.set("Save file auto-detected")
-
-            # Linux: Check if in default location
+        def _on_selected(path: str):
+            self.file_path_var.set(path)
             if (
                 PlatformUtils.is_linux()
-                and not PlatformUtils.is_save_in_default_location(found_saves[0])
+                and not PlatformUtils.is_save_in_default_location(Path(path), profile)
+                and self.settings.get("show_linux_save_warning", True)
             ):
-                if self.settings.get("show_linux_save_warning", True):
-                    self.show_linux_save_location_warning(found_saves[0])
+                self.show_linux_save_location_warning(Path(path), profile)
+
+        if len(found_saves) == 1:
+            _on_selected(str(found_saves[0]))
+            self.status_var.set(f"{game_name} save auto-detected")
         else:
-            # Multiple saves found
-            def on_save_selected(path):
-                self.file_path_var.set(path)
-                # Linux: Check if in default location
-                if (
-                    PlatformUtils.is_linux()
-                    and not PlatformUtils.is_save_in_default_location(Path(path))
-                    and self.settings.get("show_linux_save_warning", True)
-                ):
-                    self.show_linux_save_location_warning(Path(path))
+            SaveSelectorDialog.show(self.root, found_saves, _on_selected)
 
-            SaveSelectorDialog.show(self.root, found_saves, on_save_selected)
-
-    def show_linux_save_location_warning(self, save_path):
-        """Show warning about non-default save location on Linux"""
+    def show_linux_save_location_warning(self, save_path, profile=None):
+        """Show warning about non-default save location on Linux."""
+        game_name = profile.name if profile else "Elden Ring"
         dialog = tk.Toplevel(self.root)
-        dialog.title("⚠️ Save Location Warning")
+        dialog.title("Save Location Warning")
         dialog.geometry("550x500")
         dialog.transient(self.root)
 
@@ -943,19 +1107,19 @@ class SaveManagerGUI:
 
         ttk.Label(
             msg_frame,
-            text="⚠️ Non-Standard Save Location",
+            text="Non-Standard Save Location",
             font=("Segoe UI", 12, "bold"),
             foreground="orange",
         ).pack(pady=(0, 10))
 
         warning_text = (
-            f"Your save file is located in:\n"
+            f"Your {game_name} save file is located in:\n"
             f"{save_path}\n\n"
             f"This is NOT the default Steam compatdata location!\n\n"
-            f'⚠️ If you remove the custom launcher (e.g. "ersc_launcher.exe") from Steam, '
+            f'If you remove the custom launcher (e.g. "ersc_launcher.exe") from Steam, '
             f"Steam will remove that compatdata folder and your save will get lost.\n\n"
-            f"Recommended: Set a fixed Steam launch option and the save file to the default "
-            f"location via the 'Copy Save' button below to prevent this."
+            f"Recommended: Set a fixed Steam launch option and copy the save file to the "
+            f"default location via the 'Copy Save' button below to prevent this."
         )
 
         ttk.Label(
@@ -966,7 +1130,7 @@ class SaveManagerGUI:
         ).pack(pady=10)
 
         # Show launch option
-        launch_option = PlatformUtils.get_steam_launch_option_hint()
+        launch_option = PlatformUtils.get_steam_launch_option_hint(profile)
         if launch_option:
             ttk.Label(
                 msg_frame,
@@ -983,29 +1147,21 @@ class SaveManagerGUI:
             option_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
 
             def copy_to_clipboard():
-                dialog.clipboard_clear()  # Use dialog, not self.root
+                dialog.clipboard_clear()
                 dialog.clipboard_append(launch_option)
-                dialog.update()  # Force clipboard sync
+                dialog.update()
                 CTkMessageBox.showinfo(
                     "Copied", "Launch option copied to clipboard!", parent=dialog
                 )
 
-            ctk.CTkButton(  # Use CTkButton instead of ttk.Button
+            ctk.CTkButton(
                 option_frame, text="Copy", command=copy_to_clipboard, width=80
             ).pack(side=tk.LEFT, padx=5)
 
         def copy_to_default():
-            """Copy save to the SteamID-specific folder instead of the root EldenRing folder."""
-
-            # Get the default save location (with correct compatdata ID on Linux)
-            target_dir = PlatformUtils.get_default_save_location()
-
-            # Extract SteamID from the current save path and append it to target
-            # Path structure: .../EldenRing/[SteamID]/ER0000.co2
+            target_dir = PlatformUtils.get_default_save_location(profile)
             current_path = Path(save_path)
-            steamid = current_path.parent.name  # Get the SteamID folder name
-
-            # Append SteamID to the target directory to get the full path
+            steamid = current_path.parent.name
             if target_dir and steamid:
                 target_dir = target_dir / steamid
 
@@ -1016,10 +1172,10 @@ class SaveManagerGUI:
                     parent=self.root,
                 ):
                     try:
-                        target_dir.mkdir(parents=True, exist_ok=True)
                         import shutil
 
-                        new_path = target_dir / Path(save_path).name
+                        target_dir.mkdir(parents=True, exist_ok=True)
+                        new_path = target_dir / current_path.name
                         shutil.copy2(save_path, new_path)
                         self.file_path_var.set(str(new_path))
                         CTkMessageBox.showinfo(
@@ -1030,14 +1186,13 @@ class SaveManagerGUI:
                         dialog.destroy()
                     except Exception as e:
                         CTkMessageBox.showerror(
-                            "Error", f"Failed to move save:\n{e}", parent=self.root
+                            "Error", f"Failed to copy save:\n{e}", parent=self.root
                         )
 
         def dont_show_again():
             self.settings.set("show_linux_save_warning", False)
             dialog.destroy()
 
-        # Buttons
         button_frame = ttk.Frame(msg_frame)
         button_frame.pack(pady=10)
 
@@ -1189,14 +1344,36 @@ class SaveManagerGUI:
     def _on_file_path_changed(self, *args):
         """Auto-load save file when a valid file path is entered."""
         save_path = self.file_path_var.get()
+        if not save_path or not os.path.exists(save_path):
+            return
 
-        # Only auto-load if path exists and is a valid save file
-        if save_path and os.path.exists(save_path):
-            # Only auto-load if it's a save file named ER0000.* with any extension
+        if self.active_game == "elden_ring":
             filename = os.path.basename(save_path).lower()
             if filename.startswith("er"):
-                # Use after() to avoid loading while user is still typing
                 self.root.after(500, self.load_save)
+        else:
+            # Non-ER: just record the path without parsing
+            self.root.after(500, lambda: self._load_non_er_save(save_path))
+
+    def _load_non_er_save(self, save_path: str):
+        """
+        Record the selected save path for non-ER games.
+        No parsing — just stores the path so SteamID patcher and backup
+        manager know which file is active, and refreshes the SteamID display.
+        """
+        if self.file_path_var.get() != save_path:
+            return  # user changed path before the delay fired
+
+        self.save_path = Path(save_path)
+        self.save_file = None
+        self.status_var.set(f"Selected: {os.path.basename(save_path)}")
+
+        if hasattr(self, "steamid_tab") and self.steamid_tab:
+            import threading
+
+            threading.Thread(
+                target=self.steamid_tab._refresh_steamid_display, daemon=True
+            ).start()
 
     def on_slot_selected(self, slot_index: int):
         """Handle character slot selection from Fixer tab."""
@@ -1221,9 +1398,11 @@ class SaveManagerGUI:
             if not self._handle_game_running_dialog():
                 return
 
-        # EAC warning for PC save files (.sl2)
-        if save_path.lower().endswith(".sl2") and self.settings.get(
-            "show_eac_warning", True
+        # EAC warning only applies to Elden Ring .sl2 files
+        if (
+            self.active_game == "elden_ring"
+            and save_path.lower().endswith(".sl2")
+            and self.settings.get("show_eac_warning", True)
         ):
             # Create custom dialog with "Don't show again" option
             warning_dialog = tk.Toplevel(self.root)
@@ -1335,17 +1514,16 @@ class SaveManagerGUI:
         self.save_file = save_file
         self.save_path = Path(save_path)
 
-        if hasattr(self, "char_mgmt_tab") and self.char_mgmt_tab:
-            self.char_mgmt_tab.refresh_slot_names()
-        if hasattr(self, "world_tab") and self.world_tab:
-            self.world_tab.refresh_slot_names()
-        if hasattr(self, "event_flags_tab") and self.event_flags_tab:
-            self.event_flags_tab.refresh_slot_names()
-        if hasattr(self, "gestures_tab") and self.gestures_tab:
-            self.gestures_tab.refresh_slot_names()
-
-        # Update Character Editor tab slot names
-        self._update_character_editor_slots()
+        if self.active_game == "elden_ring":
+            if hasattr(self, "char_mgmt_tab") and self.char_mgmt_tab:
+                self.char_mgmt_tab.refresh_slot_names()
+            if hasattr(self, "world_tab") and self.world_tab:
+                self.world_tab.refresh_slot_names()
+            if hasattr(self, "event_flags_tab") and self.event_flags_tab:
+                self.event_flags_tab.refresh_slot_names()
+            if hasattr(self, "gestures_tab") and self.gestures_tab:
+                self.gestures_tab.refresh_slot_names()
+            self._update_character_editor_slots()
 
         # Reset all tab flags so views will refresh with the new save
         for tab_name in self.tabs_loaded:
@@ -1428,17 +1606,11 @@ class SaveManagerGUI:
         )
 
     def show_backup_manager_standalone(self):
-        """Show backup manager from top button"""
-
-        if not self.save_file or not self.save_path:
-            CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.root
-            )
-            return
-
-        # Reuse the full-featured BackupManagerTab window (with buttons + sorting)
+        """Show backup manager from top button."""
         try:
-            from er_save_manager.ui.tabs.backup_manager_tab import BackupManagerTab
+            profile = PROFILES_BY_KEY.get(self.active_game)
+            if not profile:
+                return
 
             if not hasattr(self, "_backup_tab_helper"):
                 self._backup_tab_helper = BackupManagerTab(
@@ -1449,11 +1621,11 @@ class SaveManagerGUI:
                     self.show_toast,
                 )
 
-            self._backup_tab_helper.show_backup_manager()
+            self._backup_tab_helper.open_for_profile(profile)
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to open backup manager:\n{str(e)}", parent=self.root
+                "Error", f"Failed to open backup manager:\n{e}", parent=self.root
             )
 
 

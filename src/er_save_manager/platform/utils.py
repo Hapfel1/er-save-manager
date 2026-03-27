@@ -1,8 +1,14 @@
 """Platform-specific utilities for cross-platform support."""
 
+from __future__ import annotations
+
 import platform
 import subprocess
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from er_save_manager.games.game_profiles import GameProfile
 
 
 class PlatformUtils:
@@ -10,12 +16,6 @@ class PlatformUtils:
 
     @staticmethod
     def get_platform() -> str:
-        """
-        Get current platform.
-
-        Returns:
-            'windows', 'linux', or 'darwin' (macOS)
-        """
         system = platform.system().lower()
         if system == "windows":
             return "windows"
@@ -27,27 +27,19 @@ class PlatformUtils:
 
     @staticmethod
     def is_windows() -> bool:
-        """Check if running on Windows."""
         return PlatformUtils.get_platform() == "windows"
 
     @staticmethod
     def is_linux() -> bool:
-        """Check if running on Linux."""
         return PlatformUtils.get_platform() == "linux"
 
     @staticmethod
     def is_macos() -> bool:
-        """Check if running on macOS."""
         return PlatformUtils.get_platform() == "darwin"
 
     @staticmethod
     def is_game_running() -> bool:
-        """
-        Check if Elden Ring is running.
-
-        Returns:
-            True if game process is found, False otherwise
-        """
+        """Check if Elden Ring is running."""
         try:
             if PlatformUtils.is_windows():
                 result = subprocess.run(
@@ -58,7 +50,6 @@ class PlatformUtils:
                 )
                 return "eldenring.exe" in result.stdout.lower()
             elif PlatformUtils.is_linux():
-                # Check for eldenring.exe process (runs under Wine/Proton)
                 result = subprocess.run(
                     ["pgrep", "-f", "eldenring.exe"],
                     capture_output=True,
@@ -67,17 +58,11 @@ class PlatformUtils:
                 return result.returncode == 0
         except Exception:
             pass
-
         return False
 
     @staticmethod
     def kill_game_process() -> bool:
-        """
-        Force kill Elden Ring process.
-
-        Returns:
-            True if process was killed successfully, False otherwise
-        """
+        """Force kill Elden Ring process."""
         try:
             if PlatformUtils.is_windows():
                 subprocess.run(
@@ -87,7 +72,6 @@ class PlatformUtils:
                 )
                 return True
             elif PlatformUtils.is_linux():
-                # Kill all eldenring.exe processes
                 subprocess.run(
                     ["pkill", "-9", "-f", "eldenring.exe"],
                     check=True,
@@ -95,41 +79,68 @@ class PlatformUtils:
                 return True
         except Exception:
             pass
-
         return False
 
+    # ------------------------------------------------------------------
+    # Game-aware methods.
+    # All accept an optional profile; default to ER behaviour when None.
+    # ------------------------------------------------------------------
+
     @staticmethod
-    def get_default_save_locations() -> list[Path]:
+    def _profile_params(profile: GameProfile | None) -> tuple[str, str, str, str]:
         """
-        Get platform-specific default save locations.
+        Return (appdata_subdir, save_glob, app_id, documents_subdir).
 
-        Note: Save files are typically in SteamID subfolders:
-        - Windows: AppData/Roaming/EldenRing/[SteamID]/
-        - Linux: .../EldenRing/[SteamID]/
-        - macOS: .../EldenRing/[SteamID]/
-
-        Returns:
-            List of Path objects to check for save files
+        save_glob is a glob pattern like "ER*.*" that matches all save files
+        for the game (including alternate extensions like .co2).
+        documents_subdir is non-empty only for DSR-style games.
         """
+        if profile is None:
+            # ER defaults — identical to original behaviour
+            return ("EldenRing", "ER*.*", "1245620", "")
+        documents_subdir = getattr(profile, "documents_subdir", "")
+        save_glob = getattr(profile, "save_glob", profile.save_filename)
+        return (
+            profile.appdata_subdir,
+            save_glob,
+            str(profile.steam_app_id),
+            documents_subdir,
+        )
+
+    @staticmethod
+    def _roaming_rel(appdata_subdir: str, documents_subdir: str) -> str:
+        """
+        Relative path from drive_c/users/steamuser/ to the game's save directory
+        inside a Proton prefix.
+        """
+        if documents_subdir:
+            return "Documents/" + documents_subdir.replace("\\", "/")
+        return f"AppData/Roaming/{appdata_subdir}"
+
+    @staticmethod
+    def get_default_save_locations(profile: GameProfile | None = None) -> list[Path]:
+        """Get platform-specific directories containing saves for the given game."""
+        appdata_subdir, _glob, _app_id, documents_subdir = (
+            PlatformUtils._profile_params(profile)
+        )
         platform_name = PlatformUtils.get_platform()
 
         if platform_name == "windows":
-            # Windows: AppData\Roaming\EldenRing
-            appdata = Path.home() / "AppData" / "Roaming" / "EldenRing"
-            return [appdata] if appdata.exists() else []
+            if documents_subdir:
+                base = Path.home() / "Documents"
+                for part in documents_subdir.replace("\\", "/").split("/"):
+                    base = base / part
+            else:
+                base = Path.home() / "AppData" / "Roaming" / appdata_subdir
+            return [base] if base.exists() else []
 
         elif platform_name == "linux":
-            # Linux: Multiple possible locations due to Proton
             locations = []
-
-            # Standard Steam location (~/.steam/steam is just a symlink to this)
             local_steam = (
                 Path.home() / ".local" / "share" / "Steam" / "steamapps" / "compatdata"
             )
             if local_steam.exists():
                 locations.append(local_steam)
-
-            # Flatpak Steam
             flatpak_steam = (
                 Path.home()
                 / ".var"
@@ -143,56 +154,56 @@ class PlatformUtils:
             )
             if flatpak_steam.exists():
                 locations.append(flatpak_steam)
-
             return locations
 
         elif platform_name == "darwin":
-            # macOS: Similar to Windows but in different location
-            # ~/Library/Application Support/EldenRing
-            app_support = Path.home() / "Library" / "Application Support" / "EldenRing"
-            return [app_support] if app_support.exists() else []
+            if documents_subdir:
+                base = Path.home() / "Documents"
+                for part in documents_subdir.replace("\\", "/").split("/"):
+                    base = base / part
+            else:
+                base = Path.home() / "Library" / "Application Support" / appdata_subdir
+            return [base] if base.exists() else []
 
         return []
 
     @staticmethod
-    def find_all_save_files() -> list[Path]:
+    def find_all_save_files(profile: GameProfile | None = None) -> list[Path]:
         """
-        Find all Elden Ring save files on the system.
+        Find all save files for the given game on the system.
+        When profile is None, finds ER saves (original behaviour).
 
-        Returns:
-            List of Path objects to found save files (ER0000-ER0009 with any extension)
+        Uses save_glob (e.g. "ER*.*") to match all save file variants
+        (different slot numbers, alternate extensions like .co2).
         """
-        found_saves = []
+        appdata_subdir, save_glob, _app_id, documents_subdir = (
+            PlatformUtils._profile_params(profile)
+        )
+        found_saves: list[Path] = []
         platform_name = PlatformUtils.get_platform()
 
         if platform_name == "windows":
-            # Windows: AppData/Roaming/EldenRing/[SteamID]/ER*.*
-            appdata = Path.home() / "AppData" / "Roaming" / "EldenRing"
+            if documents_subdir:
+                base = Path.home() / "Documents"
+                for part in documents_subdir.replace("\\", "/").split("/"):
+                    base = base / part
+            else:
+                base = Path.home() / "AppData" / "Roaming" / appdata_subdir
 
-            if appdata.exists():
-                # Save files are in SteamID subfolders: EldenRing/[SteamID]/ER*.*
-                files = list(appdata.glob("*/ER*.*"))
-                found_saves.extend(files)
+            if base.exists():
+                # Save files are in SteamID subfolders
+                found_saves.extend(base.glob(f"*/{save_glob}"))
+                # Also check direct files (edge case / no SteamID subfolder)
+                found_saves.extend(base.glob(save_glob))
+
         elif platform_name == "linux":
-            # Linux: Search all compatdata folders
-            # Note: ~/.steam/steam is just a symlink to ~/.local/share/Steam, no need to check both
-            search_patterns = [
-                # Standard Steam location
-                Path.home()
-                / ".local"
-                / "share"
-                / "Steam"
-                / "steamapps"
-                / "compatdata"
-                / "*"
-                / "pfx"
-                / "drive_c"
-                / "users"
-                / "steamuser"
-                / "AppData"
-                / "Roaming"
-                / "EldenRing",
-                # Flatpak Steam
+            roaming_rel = PlatformUtils._roaming_rel(appdata_subdir, documents_subdir)
+            # Full path from a compatdata entry to the game's save directory,
+            # relative to the compatdata entry itself.
+            user_rel = f"pfx/drive_c/users/steamuser/{roaming_rel}"
+
+            compat_bases = [
+                Path.home() / ".local" / "share" / "Steam" / "steamapps" / "compatdata",
                 Path.home()
                 / ".var"
                 / "app"
@@ -201,283 +212,122 @@ class PlatformUtils:
                 / "share"
                 / "Steam"
                 / "steamapps"
-                / "compatdata"
-                / "*"
-                / "pfx"
-                / "drive_c"
-                / "users"
-                / "steamuser"
-                / "AppData"
-                / "Roaming"
-                / "EldenRing",
+                / "compatdata",
             ]
+            # Also check custom Steam library folders
+            for lib in PlatformUtils.get_steam_library_folders():
+                compat_bases.append(lib / "steamapps" / "compatdata")
 
-            # Search each pattern
-            for pattern in search_patterns:
-                parent = pattern.parent
-                if not parent.exists():
+            seen: set[Path] = set()
+            for compat_base in compat_bases:
+                if not compat_base.exists():
+                    continue
+                resolved = compat_base.resolve()
+                if resolved in seen:
+                    continue
+                seen.add(resolved)
+
+                try:
+                    # Two-step search: first expand the compatdata/* wildcard,
+                    # then look for the game's roaming path inside each entry.
+                    # This mirrors the original approach and correctly handles
+                    # directory names with spaces (e.g. "DARK SOULS REMASTERED").
+                    parts = (compat_base / "*").parts
+                    wildcard_idx = next(i for i, p in enumerate(parts) if "*" in p)
+                    base_path = Path(*parts[:wildcard_idx])
+                    rest = "/".join(parts[wildcard_idx:]) + "/" + user_rel
+
+                    if base_path.exists():
+                        for game_dir in base_path.glob(rest):
+                            if game_dir.is_dir():
+                                # Save files are in SteamID subfolders
+                                found_saves.extend(game_dir.glob(f"*/{save_glob}"))
+                                # Also check direct files (edge case)
+                                found_saves.extend(game_dir.glob(save_glob))
+                except (StopIteration, OSError):
                     continue
 
-                # Get the wildcard part
-                pattern_str = str(pattern)
-                if "*" in pattern_str:
-                    # Use glob to expand wildcards
-                    try:
-                        # Get base path before wildcard
-                        parts = pattern.parts
-                        wildcard_idx = next(i for i, p in enumerate(parts) if "*" in p)
-                        base = Path(*parts[:wildcard_idx])
-                        rest = "/".join(parts[wildcard_idx:])
-
-                        if base.exists():
-                            for match in base.glob(rest):
-                                if match.is_dir():
-                                    # Save files are in SteamID subfolders: EldenRing/[SteamID]/ER*.*
-                                    found_saves.extend(match.glob("*/ER*.*"))
-                                    # Also check if files are directly in EldenRing folder (edge case)
-                                    found_saves.extend(match.glob("ER*.*"))
-                    except (StopIteration, OSError):
-                        continue
-
-            # Also check custom Steam library folders
-            custom_saves = PlatformUtils._find_in_custom_steam_libraries()
-            found_saves.extend(custom_saves)
-
         elif platform_name == "darwin":
-            # macOS: Library/Application Support/EldenRing/[SteamID]/ER*.*
-            app_support = Path.home() / "Library" / "Application Support" / "EldenRing"
-            if app_support.exists():
-                # Save files are in SteamID subfolders
-                found_saves.extend(app_support.glob("*/ER*.*"))
-                # Covered by ER0000.* above
+            if documents_subdir:
+                base = Path.home() / "Documents"
+                for part in documents_subdir.replace("\\", "/").split("/"):
+                    base = base / part
+            else:
+                base = Path.home() / "Library" / "Application Support" / appdata_subdir
 
-        # Remove duplicates
-        unique_saves = list(set(found_saves))
+            if base.exists():
+                found_saves.extend(base.glob(f"*/{save_glob}"))
+                found_saves.extend(base.glob(save_glob))
 
-        # Filter out backup files (.backup, .backups, .bak extensions)
-        filtered_saves = [
-            save
-            for save in unique_saves
-            if not any(
-                save.name.endswith(ext) for ext in [".backup", ".backups", ".bak"]
-            )
+        # Remove duplicates and backup files
+        unique = list({p.resolve(): p for p in found_saves}.values())
+        return [
+            p
+            for p in unique
+            if not any(p.name.endswith(ext) for ext in (".backup", ".backups", ".bak"))
         ]
 
-        return filtered_saves
-
     @staticmethod
-    def _find_in_custom_steam_libraries() -> list[Path]:
-        """Find saves in custom Steam library folders."""
-        found = []
-        steam_libraries = PlatformUtils.get_steam_library_folders()
-
-        for library in steam_libraries:
-            compat_path = library / "steamapps" / "compatdata"
-            if not compat_path.exists():
-                continue
-
-            # Search all compatdata folders in this library
-            (
-                compat_path
-                / "*"
-                / "pfx"
-                / "drive_c"
-                / "users"
-                / "steamuser"
-                / "AppData"
-                / "Roaming"
-                / "EldenRing"
-            )
-
-            try:
-                for match in compat_path.glob(
-                    "*/pfx/drive_c/users/steamuser/AppData/Roaming/EldenRing"
-                ):
-                    if match.is_dir():
-                        # Save files are in SteamID subfolders
-                        found.extend(match.glob("*/ER*.*"))
-                        # Also check direct files (edge case)
-                        found.extend(match.glob("ER*.*"))
-                        # Covered by ER0000.* above
-            except OSError:
-                continue
-
-        return found
-
-    @staticmethod
-    def get_steam_library_folders() -> list[Path]:
-        """
-        Parse Steam's libraryfolders.vdf to find custom library locations.
-
-        Returns:
-            List of Path objects to Steam library folders
-        """
-        libraries = []
-        platform_name = PlatformUtils.get_platform()
-
-        if platform_name == "windows":
-            # Windows Steam config
-            config_path = (
-                Path.home()
-                / "Program Files (x86)"
-                / "Steam"
-                / "config"
-                / "libraryfolders.vdf"
-            )
-            # Also check AppData location
-            if not config_path.exists():
-                config_path = (
-                    Path.home()
-                    / "AppData"
-                    / "Local"
-                    / "Steam"
-                    / "config"
-                    / "libraryfolders.vdf"
-                )
-
-            if config_path.exists():
-                try:
-                    with open(config_path, encoding="utf-8") as f:
-                        content = f.read()
-
-                    import re
-
-                    paths = re.findall(r'"path"\s+"([^"]+)"', content)
-                    for path_str in paths:
-                        lib_path = Path(path_str)
-                        if lib_path.exists():
-                            libraries.append(lib_path)
-                except Exception:
-                    pass
-
-        elif platform_name == "linux":
-            # Linux Steam config locations (~/.steam/steam is just a symlink, no need to check both)
-            config_paths = [
-                Path.home()
-                / ".local"
-                / "share"
-                / "Steam"
-                / "config"
-                / "libraryfolders.vdf",
-                Path.home()
-                / ".var"
-                / "app"
-                / "com.valvesoftware.Steam"
-                / ".local"
-                / "share"
-                / "Steam"
-                / "config"
-                / "libraryfolders.vdf",
-            ]
-
-            for config_path in config_paths:
-                if config_path.exists():
-                    try:
-                        with open(config_path, encoding="utf-8") as f:
-                            content = f.read()
-
-                        # Simple VDF parsing - look for "path" entries
-                        import re
-
-                        paths = re.findall(r'"path"\s+"([^"]+)"', content)
-                        for path_str in paths:
-                            lib_path = Path(path_str)
-                            if lib_path.exists():
-                                libraries.append(lib_path)
-                    except Exception:
-                        continue
-                    break  # Found valid config, stop searching
-
-        return libraries
-
-    @staticmethod
-    def is_flatpak_steam() -> bool:
-        """Check if Steam is running via Flatpak."""
-        if not PlatformUtils.is_linux():
-            return False
-
-        flatpak_path = (
-            Path.home()
-            / ".var"
-            / "app"
-            / "com.valvesoftware.Steam"
-            / ".local"
-            / "share"
-            / "Steam"
-        )
-        return flatpak_path.exists()
-
-    @staticmethod
-    def get_default_compatdata_id() -> str:
-        """
-        Get the default Steam compatdata ID for Elden Ring.
-
-        Returns:
-            '1245620' (Elden Ring's Steam app ID)
-        """
+    def get_default_compatdata_id(profile: GameProfile | None = None) -> str:
+        """Steam App ID used as the compatdata folder name. Defaults to ER."""
+        if profile is not None:
+            return str(profile.steam_app_id)
         return "1245620"
 
     @staticmethod
-    def get_steam_launch_option_hint() -> str:
-        """
-        Get platform-specific launch option hint for Steam.
-
-        Returns:
-            Launch option string to show user
-        """
-        if PlatformUtils.is_linux():
-            compatdata_id = PlatformUtils.get_default_compatdata_id()
-            if PlatformUtils.is_flatpak_steam():
-                return f"STEAM_COMPAT_LIBRARY_PATHS=$HOME/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/ STEAM_COMPAT_DATA_PATH=$STEAM_COMPAT_LIBRARY_PATHS/compatdata/{compatdata_id}/ %command%"
-            else:
-                return f"STEAM_COMPAT_LIBRARY_PATHS=$HOME/.local/share/Steam/steamapps/ STEAM_COMPAT_DATA_PATH=$STEAM_COMPAT_LIBRARY_PATHS/compatdata/{compatdata_id}/ %command%"
-        return ""
+    def get_steam_launch_option_hint(profile: GameProfile | None = None) -> str:
+        """STEAM_COMPAT_DATA_PATH launch option hint for the given game."""
+        if not PlatformUtils.is_linux():
+            return ""
+        compatdata_id = PlatformUtils.get_default_compatdata_id(profile)
+        if PlatformUtils.is_flatpak_steam():
+            base = "$HOME/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps"
+        else:
+            base = "$HOME/.local/share/Steam/steamapps"
+        return (
+            f"STEAM_COMPAT_LIBRARY_PATHS={base}/ "
+            f"STEAM_COMPAT_DATA_PATH={base}/compatdata/{compatdata_id}/ %command%"
+        )
 
     @staticmethod
-    def is_save_in_default_location(save_path: Path) -> bool:
+    def is_save_in_default_location(
+        save_path: Path,
+        profile: GameProfile | None = None,
+    ) -> bool:
         """
-        Check if save file is in the recommended default location.
-
-        Args:
-            save_path: Path to save file
-
-        Returns:
-            True if in default/recommended location
+        Check whether a save is in the expected compatdata folder for the game.
+        On Windows always returns True.
         """
         if PlatformUtils.is_windows():
-            # Windows: AppData is always correct
             return True
 
-        elif PlatformUtils.is_linux():
-            # Linux: Only check if file is in compatdata
+        if PlatformUtils.is_linux():
             path_str = str(save_path)
-
-            # If not in compatdata at all, consider it fine
             if "/compatdata/" not in path_str:
                 return True
-
-            # If in compatdata, check if it's the default Elden Ring ID
-            compatdata_id = PlatformUtils.get_default_compatdata_id()
+            compatdata_id = PlatformUtils.get_default_compatdata_id(profile)
             return compatdata_id in path_str
 
         return True
 
     @staticmethod
-    def get_default_save_location() -> Path | None:
-        """
-        Get the recommended default save location for moving files.
+    def get_default_save_location(profile: GameProfile | None = None) -> Path | None:
+        """Canonical save directory (contains the SteamID subfolder)."""
+        appdata_subdir, _glob, app_id, documents_subdir = PlatformUtils._profile_params(
+            profile
+        )
 
-        Returns:
-            Path to default location, or None if not applicable
-        """
         if PlatformUtils.is_windows():
-            return Path.home() / "AppData" / "Roaming" / "EldenRing"
+            if documents_subdir:
+                base = Path.home() / "Documents"
+                for part in documents_subdir.replace("\\", "/").split("/"):
+                    base = base / part
+                return base
+            return Path.home() / "AppData" / "Roaming" / appdata_subdir
 
         elif PlatformUtils.is_linux():
-            compatdata_id = PlatformUtils.get_default_compatdata_id()
-
             if PlatformUtils.is_flatpak_steam():
-                base = (
+                steam_base = (
                     Path.home()
                     / ".var"
                     / "app"
@@ -487,21 +337,97 @@ class PlatformUtils:
                     / "Steam"
                 )
             else:
-                # Standard Steam location (~/.steam/steam is just a symlink to this)
-                base = Path.home() / ".local" / "share" / "Steam"
+                steam_base = Path.home() / ".local" / "share" / "Steam"
 
-            return (
-                base
+            prefix = (
+                steam_base
                 / "steamapps"
                 / "compatdata"
-                / compatdata_id
+                / app_id
                 / "pfx"
                 / "drive_c"
                 / "users"
                 / "steamuser"
-                / "AppData"
-                / "Roaming"
-                / "EldenRing"
             )
 
+            if documents_subdir:
+                result = prefix / "Documents"
+                for part in documents_subdir.replace("\\", "/").split("/"):
+                    result = result / part
+                return result
+            return prefix / "AppData" / "Roaming" / appdata_subdir
+
         return None
+
+    @staticmethod
+    def is_flatpak_steam() -> bool:
+        """Check if Steam is running via Flatpak."""
+        if not PlatformUtils.is_linux():
+            return False
+        return (
+            Path.home()
+            / ".var"
+            / "app"
+            / "com.valvesoftware.Steam"
+            / ".local"
+            / "share"
+            / "Steam"
+        ).exists()
+
+    @staticmethod
+    def get_steam_library_folders() -> list[Path]:
+        """Parse Steam's libraryfolders.vdf to find custom library locations."""
+        import re
+
+        libraries: list[Path] = []
+        platform_name = PlatformUtils.get_platform()
+
+        if platform_name == "windows":
+            candidates = [
+                Path.home()
+                / "Program Files (x86)"
+                / "Steam"
+                / "config"
+                / "libraryfolders.vdf",
+                Path.home()
+                / "AppData"
+                / "Local"
+                / "Steam"
+                / "config"
+                / "libraryfolders.vdf",
+            ]
+        elif platform_name == "linux":
+            candidates = [
+                Path.home()
+                / ".local"
+                / "share"
+                / "Steam"
+                / "config"
+                / "libraryfolders.vdf",
+                Path.home()
+                / ".var"
+                / "app"
+                / "com.valvesoftware.Steam"
+                / ".local"
+                / "share"
+                / "Steam"
+                / "config"
+                / "libraryfolders.vdf",
+            ]
+        else:
+            return libraries
+
+        for config_path in candidates:
+            if not config_path.exists():
+                continue
+            try:
+                content = config_path.read_text(encoding="utf-8")
+                for path_str in re.findall(r'"path"\s+"([^"]+)"', content):
+                    lib_path = Path(path_str)
+                    if lib_path.exists():
+                        libraries.append(lib_path)
+            except Exception:
+                continue
+            break
+
+        return libraries
