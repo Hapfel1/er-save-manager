@@ -1,3 +1,7 @@
+check contribution again
+
+provide warning for importing apperance presets, check autoloading, check autobackup again
+
 Backup Manager + SteamID Patcher for the other games done
 
 item spawning

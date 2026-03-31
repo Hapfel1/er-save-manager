@@ -221,7 +221,7 @@ class SaveManagerGUI:
         thread = threading.Thread(target=check_in_thread, daemon=True)
         thread.start()
 
-    def _handle_game_running_dialog(self) -> bool:
+    def _handle_game_running_dialog(self, profile=None) -> bool:
         """
         Show dialog when game is running and handle user choice.
         Blocks loading until game process is terminated.
@@ -230,54 +230,56 @@ class SaveManagerGUI:
             True if game was successfully terminated
             False if user cancelled or kill failed
         """
+        game_name = profile.name if profile else "Elden Ring"
+        process_name = (
+            profile.process_name
+            if profile and profile.process_name
+            else "eldenring.exe"
+        )
+
         result = CTkMessageBox.askyesno(
-            "⚠️ Game is Running",
-            "Elden Ring is currently running.\n\n"
+            "Game is Running",
+            f"{game_name} is currently running.\n\n"
             "The save file cannot be loaded while the game is running.\n\n"
             "Would you like to force kill the game process?",
             parent=self.root,
         )
 
-        if not result:  # User said No/Cancel
+        if not result:
             return False
 
-        # User said Yes - kill the game
         if not PlatformUtils.kill_game_process():
             CTkMessageBox.showerror(
                 "Error",
-                "Failed to terminate Elden Ring process.\n\n"
+                f"Failed to terminate {game_name} process.\n\n"
                 "The game may require manual closing or administrator permissions.",
                 parent=self.root,
             )
             return False
 
-        # Wait for process to actually terminate (scan for up to 5 seconds)
         import time
 
-        max_wait = 5  # seconds
-        wait_interval = 0.2  # check every 200ms
+        max_wait = 5
+        wait_interval = 0.2
         elapsed = 0
 
         while elapsed < max_wait:
-            if not PlatformUtils.is_game_running():
-                # Process is gone
+            if not self.is_game_running(process_name):
                 CTkMessageBox.showinfo(
                     "Success",
-                    "Elden Ring process terminated successfully.\n\n"
+                    f"{game_name} process terminated successfully.\n\n"
                     "You can now proceed safely.",
                     parent=self.root,
                 )
                 return True
-
             time.sleep(wait_interval)
             elapsed += wait_interval
-            self.root.update()  # Keep UI responsive
+            self.root.update()
 
-        # Timeout - process still running
         CTkMessageBox.showerror(
             "Timeout",
-            "Game process is still running after kill attempt.\n\n"
-            "Please close Elden Ring manually and try again.",
+            f"Game process is still running after kill attempt.\n\n"
+            f"Please close {game_name} manually and try again.",
             parent=self.root,
         )
         return False
@@ -780,20 +782,22 @@ class SaveManagerGUI:
     def _create_other_game_tabs(self, profile):
         """Create the reduced tab set for non-Elden Ring games."""
 
-        # All non-ER games get: SteamID Patcher + Settings
+        # DSR has no embedded SteamID - SteamID Patcher tab is not shown.
+        # All other non-ER games get: SteamID Patcher + Settings.
         # Backup Manager is available via the top-level button, not as a tab.
 
-        self.notebook.add("SteamID Patcher")
-        tab_steamid = self.notebook.tab("SteamID Patcher")
-        self.steamid_tab = SteamIDPatcherTab(
-            tab_steamid,
-            lambda: self.save_file,
-            lambda: self.save_path,
-            self.load_save,
-            self.show_toast,
-        )
-        self.steamid_tab.setup_ui()
-        self.steamid_tab.set_active_profile(profile.name)
+        if profile.key != "dark_souls_remastered":
+            self.notebook.add("SteamID Patcher")
+            tab_steamid = self.notebook.tab("SteamID Patcher")
+            self.steamid_tab = SteamIDPatcherTab(
+                tab_steamid,
+                lambda: self.save_file,
+                lambda: self.save_path,
+                self.load_save,
+                self.show_toast,
+            )
+            self.steamid_tab.setup_ui()
+            self.steamid_tab.set_active_profile(profile.name)
 
         self.notebook.add("Settings")
         tab_settings = self.notebook.tab("Settings")
@@ -961,12 +965,15 @@ class SaveManagerGUI:
         """Browse for a save file for the active game."""
         profile = self._active_profile()
 
-        # Only check game-running for ER (we know that process name)
-        if self.active_game == "elden_ring" and self.is_game_running():
-            if not self._handle_game_running_dialog():
+        # Block loading if the game is currently running
+        if (
+            profile
+            and profile.process_name
+            and self.is_game_running(profile.process_name)
+        ):
+            if not self._handle_game_running_dialog(profile):
                 return
 
-        # Determine starting directory
         initialdir = None
         if self.settings.get("remember_last_location", True):
             last_path = self.settings.get("last_save_path", "")
@@ -1174,9 +1181,29 @@ class SaveManagerGUI:
             button_frame, text="Don't Show Again", command=dont_show_again, width=18
         ).pack(side=tk.LEFT, padx=5)
 
-    def is_game_running(self):
-        """Check if Elden Ring is running (uses PlatformUtils for cross-platform support)"""
-        return PlatformUtils.is_game_running()
+    def is_game_running(self, process_name: str = "eldenring.exe") -> bool:
+        """Check if a game process is running."""
+        if process_name == "eldenring.exe":
+            return PlatformUtils.is_game_running()
+        import subprocess
+
+        try:
+            if PlatformUtils.is_windows():
+                result = subprocess.run(
+                    ["tasklist", "/FI", f"IMAGENAME eq {process_name}", "/NH"],
+                    capture_output=True,
+                    text=True,
+                    creationflags=0x08000000,
+                )
+                return process_name.lower() in result.stdout.lower()
+            else:
+                result = subprocess.run(
+                    ["pgrep", "-f", process_name],
+                    capture_output=True,
+                )
+                return result.returncode == 0
+        except Exception:
+            return False
 
     def _get_game_folder(self) -> Path | None:
         """Attempt to detect the Elden Ring installation folder."""
@@ -1324,11 +1351,20 @@ class SaveManagerGUI:
 
     def _load_non_er_save(self, save_path: str):
         """Store the selected save path for non-ER games and refresh the SteamID display."""
+        profile = self._active_profile()
+        if (
+            profile
+            and profile.process_name
+            and self.is_game_running(profile.process_name)
+        ):
+            if not self._handle_game_running_dialog(profile):
+                return
+
         self.save_path = Path(save_path)
         self.save_file = None
         self.status_var.set(f"Selected: {os.path.basename(save_path)}")
         self.show_toast(
-            f"Save file selected: {os.path.basename(save_path)}", duration=2500
+            f"Save file loaded: {os.path.basename(save_path)}", duration=2500
         )
         if hasattr(self, "steamid_tab") and self.steamid_tab:
             import threading
@@ -1356,8 +1392,14 @@ class SaveManagerGUI:
             return
 
         # Check if game is running - MUST be closed
-        if self.is_game_running():
-            if not self._handle_game_running_dialog():
+        profile = self._active_profile()
+        process_name = (
+            profile.process_name
+            if profile and profile.process_name
+            else "eldenring.exe"
+        )
+        if self.is_game_running(process_name):
+            if not self._handle_game_running_dialog(profile):
                 return
 
         # EAC warning only applies to Elden Ring .sl2 files

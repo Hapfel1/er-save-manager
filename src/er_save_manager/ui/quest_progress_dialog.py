@@ -253,7 +253,7 @@ class QuestProgressDialog:
                     last_complete = i
 
             if last_complete < 0:
-                # None complete — ask if user wants to apply all or just the first
+                # None complete - ask if user wants to apply all or just the first
                 if not CTkMessageBox.askyesno(
                     "No Complete Steps",
                     f"No steps are currently complete for {npc_name}.\n\nApply the first step only?",

@@ -25,7 +25,13 @@ _PROCESS_NAMES: dict[str, str] = {
 
 
 def _is_process_running(process_name: str) -> bool:
-    """Check if a process is currently running. No console windows are created."""
+    """
+    Check if a process is currently running.
+
+    Windows: tasklist with CREATE_NO_WINDOW to avoid CMD flash.
+    Linux: pgrep -f - same approach as PlatformUtils.is_game_running(), works for Wine/Proton.
+    """
+    name_lower = process_name.lower()
     try:
         if sys.platform == "win32":
             si = subprocess.STARTUPINFO()
@@ -40,9 +46,7 @@ def _is_process_running(process_name: str) -> bool:
                 creationflags=subprocess.CREATE_NO_WINDOW,
                 startupinfo=si,
             )
-            return (
-                process_name.lower() in result.stdout.decode(errors="replace").lower()
-            )
+            return name_lower in result.stdout.decode(errors="replace").lower()
         else:
             result = subprocess.run(
                 ["pgrep", "-f", process_name],
@@ -223,7 +227,7 @@ def show_auto_backup_first_run_dialog(
         chosen_path = None
 
         if len(found_paths) == 1:
-            # One save found — confirm with user
+            # One save found - confirm with user
             use_found = CTkMessageBox.askyesno(
                 "Save File Found",
                 f"Found save file:\n\n{found_paths[0]}\n\n"
@@ -234,7 +238,7 @@ def show_auto_backup_first_run_dialog(
                 chosen_path = str(found_paths[0])
 
         elif len(found_paths) > 1:
-            # Multiple — show a quick picker dialog
+            # Multiple - show a quick picker dialog
             import tkinter as tk
 
             import customtkinter as ctk
@@ -244,8 +248,9 @@ def show_auto_backup_first_run_dialog(
             selected = [None]
             dlg = ctk.CTkToplevel(parent)
             dlg.title(f"Select Save - {game_name}")
-            dlg.geometry("540x300")
-            dlg.resizable(False, False)
+            dlg.geometry("620x400")
+            dlg.resizable(True, True)
+            dlg.minsize(500, 300)
             force_render_dialog(dlg)
             dlg.grab_set()
 
