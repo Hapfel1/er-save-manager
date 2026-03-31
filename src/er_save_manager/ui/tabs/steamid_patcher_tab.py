@@ -248,21 +248,12 @@ class SteamIDPatcherTab:
 
         from er_save_manager.games.generic_steamid import detect_steamid_in_file
 
-        # Prefer the path already selected by the user
-        save_path = None
         selected = self.get_save_path()
-        if selected and Path(selected).exists():
-            save_path = Path(selected)
-        else:
-            from er_save_manager.platform.utils import PlatformUtils
-
-            paths = PlatformUtils.find_all_save_files(profile)
-            if paths:
-                save_path = paths[0]
-
-        if not save_path:
-            _set(f"No save file found for {profile.name}")
+        if not selected or not Path(selected).exists():
+            _set("No save file selected")
             return
+
+        save_path = Path(selected)
 
         try:
             steamid = detect_steamid_in_file(save_path)
@@ -336,7 +327,28 @@ class SteamIDPatcherTab:
         if profile.key == "elden_ring":
             self._patch_er(new_steamid)
         else:
-            self._patch_generic(profile, new_steamid)
+            # Disable button during patch to prevent double-click and avoid UI freeze
+            if self._patch_btn:
+                self._patch_btn.configure(state="disabled", text="Patching...")
+            import threading
+
+            def _run():
+                try:
+                    self._patch_generic(profile, new_steamid)
+                finally:
+                    try:
+                        self.parent.after(
+                            0,
+                            lambda: self._patch_btn.configure(
+                                state="normal", text="Patch SteamID"
+                            )
+                            if self._patch_btn
+                            else None,
+                        )
+                    except Exception:
+                        pass
+
+            threading.Thread(target=_run, daemon=True).start()
 
     def _patch_er(self, new_steamid: int):
         """Patch using the full ER save model (loaded save)."""
@@ -426,37 +438,59 @@ class SteamIDPatcherTab:
             )
 
     def _patch_generic(self, profile, new_steamid: int):
-        """Patch SteamID for non-ER games. Nightreign uses AES decrypt/re-encrypt; others use byte-scan."""
-        # Resolve save path
+        """Patch SteamID for non-ER games. Called from a background thread - dialogs use after(0,...)."""
+        # Resolve save path (no auto-disk-scan; user must select a file first)
         selected = self.get_save_path()
-        if selected and Path(selected).exists():
-            save_path = Path(selected)
-        else:
-            from er_save_manager.platform.utils import PlatformUtils
-
-            paths = PlatformUtils.find_all_save_files(profile)
-            if not paths:
-                CTkMessageBox.showwarning(
+        if not selected or not Path(selected).exists():
+            self.parent.after(
+                0,
+                lambda: CTkMessageBox.showwarning(
                     "No Save File",
-                    f"No save file found for {profile.name}.\n\n"
-                    "Launch the game at least once so the save file is created,\n"
-                    "then try again.",
+                    "Please select a save file first using Browse or Auto-Find.",
                     parent=self.parent,
-                )
-                return
-            if len(paths) > 1:
-                save_path = self._pick_save_path(paths)
-                if save_path is None:
-                    return
-            else:
-                save_path = paths[0]
-
-        if not CTkMessageBox.askyesno(
-            "Confirm Patch",
-            f"Patch SteamID in:\n{save_path}\n\nNew SteamID: {new_steamid}\n\nA backup will be created.",
-            parent=self.parent,
-        ):
+                ),
+            )
             return
+        save_path = Path(selected)
+
+        # Confirm dialog must run on main thread - use a threading Event to wait
+        import threading
+
+        confirmed = threading.Event()
+        confirmed_result = [False]
+
+        def _ask():
+            result = CTkMessageBox.askyesno(
+                "Confirm Patch",
+                f"Patch SteamID in:\n{save_path}\n\nNew SteamID: {new_steamid}\n\nA backup will be created.",
+                parent=self.parent,
+            )
+            confirmed_result[0] = result
+            confirmed.set()
+
+        self.parent.after(0, _ask)
+        confirmed.wait()
+        if not confirmed_result[0]:
+            return
+
+        def _show_error(msg):
+            self.parent.after(
+                0,
+                lambda: CTkMessageBox.showerror(
+                    "Patch Failed", f"SteamID patch failed:\n{msg}", parent=self.parent
+                ),
+            )
+
+        def _show_success(msg):
+            self._refresh_steamid_display()
+            self.parent.after(
+                0,
+                lambda: CTkMessageBox.showinfo(
+                    "Success",
+                    f"{msg}\n\nBackup created before patching.",
+                    parent=self.parent,
+                ),
+            )
 
         try:
             from er_save_manager.backup.manager import BackupManager
@@ -487,9 +521,6 @@ class SteamIDPatcherTab:
 
                 success, msg = patch_steamid(save_path, new_steamid, profile.key)
             elif profile.key == "dark_souls_remastered":
-                # DSR does not embed the SteamID inside the save file.
-                # The game identifies saves by folder name (Steam32 decimal) only.
-                # Renaming the save directory is the complete solution.
                 success, msg = (
                     True,
                     (
@@ -503,42 +534,29 @@ class SteamIDPatcherTab:
 
             if success is not None:
                 if not success:
-                    CTkMessageBox.showerror(
-                        "Patch Failed",
-                        f"SteamID patch failed:\n{msg}",
-                        parent=self.parent,
-                    )
-                    return
-                self._refresh_steamid_display()
-                CTkMessageBox.showinfo(
-                    "Success",
-                    f"{msg}\n\nBackup created before patching.",
-                    parent=self.parent,
-                )
+                    _show_error(msg)
+                else:
+                    _show_success(msg)
             else:
                 from er_save_manager.games.generic_steamid import patch_steamid_generic
 
                 result = patch_steamid_generic(save_path, new_steamid)
                 if not result.success:
-                    CTkMessageBox.showerror(
-                        "Patch Failed",
-                        f"SteamID patch failed:\n{result.error}",
-                        parent=self.parent,
+                    _show_error(result.error)
+                else:
+                    _show_success(
+                        f"Patched {result.replacements} occurrence(s)\n\n"
+                        f"Old SteamID: {result.old_steamid}\n"
+                        f"New SteamID: {result.new_steamid}"
                     )
-                    return
-                self._refresh_steamid_display()
-                CTkMessageBox.showinfo(
-                    "Success",
-                    f"Patched {result.replacements} occurrence(s)\n\n"
-                    f"Old SteamID: {result.old_steamid}\n"
-                    f"New SteamID: {result.new_steamid}\n\n"
-                    f"Backup created before patching.",
-                    parent=self.parent,
-                )
 
         except Exception as e:
-            CTkMessageBox.showerror(
-                "Error", f"SteamID patch failed:\n{e}", parent=self.parent
+            err = str(e)
+            self.parent.after(
+                0,
+                lambda: CTkMessageBox.showerror(
+                    "Error", f"SteamID patch failed:\n{err}", parent=self.parent
+                ),
             )
 
     def _pick_save_path(self, paths: list[Path]) -> Path | None:
