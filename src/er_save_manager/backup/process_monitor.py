@@ -28,7 +28,6 @@ def _is_process_running(process_name: str) -> bool:
     """Check if a process is currently running. No console windows are created."""
     try:
         if sys.platform == "win32":
-            # STARTUPINFO + CREATE_NO_WINDOW together fully suppress any CMD flash.
             si = subprocess.STARTUPINFO()
             si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             si.wShowWindow = 0  # SW_HIDE

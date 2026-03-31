@@ -34,7 +34,7 @@ class SteamIDPatcherTab:
         self.current_steamid_var = None
         self.new_steamid_var = None
         self.steam_url_var = None
-        self._game_var: tk.StringVar | None = None
+        self._active_profile_key: str = "elden_ring"
         self._profiles: list = []
         self._note_var: tk.StringVar | None = None
         self._note_frame: ctk.CTkFrame | None = None
@@ -48,13 +48,21 @@ class SteamIDPatcherTab:
         return self._profiles
 
     def _selected_profile(self):
-        if not self._game_var:
-            return None
-        name = self._game_var.get()
         for p in self._get_profiles():
-            if p.name == name:
+            if p.key == self._active_profile_key:
                 return p
-        return None
+        profiles = self._get_profiles()
+        return profiles[0] if profiles else None
+
+    def set_active_profile(self, profile_name: str):
+        """Called by gui.py when the global game selection changes."""
+        for p in self._get_profiles():
+            if p.name == profile_name:
+                self._active_profile_key = p.key
+                import threading
+
+                threading.Thread(target=self._on_game_changed, daemon=True).start()
+                return
 
     def setup_ui(self):
         main_frame = ctk.CTkScrollableFrame(self.parent, corner_radius=0)
@@ -92,11 +100,11 @@ class SteamIDPatcherTab:
             text_color=("#2a2a2a", "#e5e5f5"),
         ).pack(pady=(0, 12), padx=12, anchor="w")
 
-        # Note / warning for selected game — hidden when empty
+        # Note / warning for selected game - hidden when empty
         self._note_frame = ctk.CTkFrame(
             main_frame, corner_radius=10, fg_color=("gray90", "gray18")
         )
-        # Don't pack yet — _on_game_changed will show/hide based on content
+        # Don't pack yet - _on_game_changed will show/hide based on content
 
         self._note_var = tk.StringVar(value="")
         self._note_label = ctk.CTkLabel(
@@ -188,61 +196,39 @@ class SteamIDPatcherTab:
             width=140,
         ).pack(pady=(0, 12), padx=12, anchor="w")
 
-    def set_active_profile(self, profile_name: str):
-        """Called by gui.py when the global game selection changes."""
-        for p in self._get_profiles():
-            if p.name == profile_name:
-                # Store selected profile key directly — no internal dropdown
-                self._active_profile_key = p.key
-                self._on_game_changed()
-                return
-
-    def _selected_profile(self):
-        # Use the key stored by set_active_profile (driven by global selector)
-        key = getattr(self, "_active_profile_key", None)
-        if key:
-            for p in self._get_profiles():
-                if p.key == key:
-                    return p
-        # Fallback: first profile (ER)
-        profiles = self._get_profiles()
-        return profiles[0] if profiles else None
-
     def _on_game_changed(self, _value=None):
         profile = self._selected_profile()
         if profile is None:
             return
 
-        if not profile.supports_steamid_patch:
-            note = (
-                profile.steamid_patch_note
-                or "SteamID patching is not supported for this game."
-            )
-            self._note_var.set(note)
-            if self._note_frame:
-                self._note_frame.pack(fill=tk.X, padx=15, pady=(0, 12))
-            if self._patch_btn:
-                self._patch_btn.configure(state="disabled")
-        else:
-            note = profile.steamid_patch_note or ""
-            self._note_var.set(note)
-            if self._note_frame:
-                if note:
+        def _update_ui():
+            if not profile.supports_steamid_patch:
+                note = (
+                    profile.steamid_patch_note
+                    or "SteamID patching is not supported for this game."
+                )
+                self._note_var.set(note)
+                if self._note_frame:
                     self._note_frame.pack(fill=tk.X, padx=15, pady=(0, 12))
-                else:
-                    self._note_frame.pack_forget()
-            if self._patch_btn:
-                self._patch_btn.configure(state="normal")
+                if self._patch_btn:
+                    self._patch_btn.configure(state="disabled")
+            else:
+                note = profile.steamid_patch_note or ""
+                self._note_var.set(note)
+                if self._note_frame:
+                    if note:
+                        self._note_frame.pack(fill=tk.X, padx=15, pady=(0, 12))
+                    else:
+                        self._note_frame.pack_forget()
+                if self._patch_btn:
+                    self._patch_btn.configure(state="normal")
 
-        # Defer the file scan off the UI thread
-        import threading
+        try:
+            self.parent.after(0, _update_ui)
+        except Exception:
+            _update_ui()
 
-        threading.Thread(target=self._refresh_steamid_display, daemon=True).start()
-
-    def _refresh_steamid_display(self):
-        profile = self._selected_profile()
-        if profile is None:
-            return
+        self._refresh_steamid_display()
 
     def _refresh_steamid_display(self):
         """Scan the save file for its SteamID. Safe to call from a background thread."""
@@ -257,19 +243,27 @@ class SteamIDPatcherTab:
                 pass
 
         if profile.key == "elden_ring":
-            # ER: read from already-parsed save object (main thread safe via StringVar)
             self.update_steamid_display()
             return
 
         from er_save_manager.games.generic_steamid import detect_steamid_in_file
-        from er_save_manager.platform.utils import PlatformUtils
 
-        paths = PlatformUtils.find_all_save_files(profile)
-        if not paths:
+        # Prefer the path already selected by the user
+        save_path = None
+        selected = self.get_save_path()
+        if selected and Path(selected).exists():
+            save_path = Path(selected)
+        else:
+            from er_save_manager.platform.utils import PlatformUtils
+
+            paths = PlatformUtils.find_all_save_files(profile)
+            if paths:
+                save_path = paths[0]
+
+        if not save_path:
             _set(f"No save file found for {profile.name}")
             return
 
-        save_path = paths[0]
         try:
             steamid = detect_steamid_in_file(save_path)
         except Exception as e:
@@ -432,27 +426,30 @@ class SteamIDPatcherTab:
             )
 
     def _patch_generic(self, profile, new_steamid: int):
-        """Patch using generic BND4 byte-scan for non-ER games."""
-        from er_save_manager.games.generic_steamid import patch_steamid_generic
-        from er_save_manager.platform.utils import PlatformUtils
+        """Patch SteamID for non-ER games. Nightreign uses AES decrypt/re-encrypt; others use byte-scan."""
+        # Resolve save path
+        selected = self.get_save_path()
+        if selected and Path(selected).exists():
+            save_path = Path(selected)
+        else:
+            from er_save_manager.platform.utils import PlatformUtils
 
-        paths = PlatformUtils.find_all_save_files(profile)
-        if not paths:
-            CTkMessageBox.showwarning(
-                "No Save File",
-                f"No save file found for {profile.name}.\n\n"
-                "Launch the game at least once so the save file is created,\n"
-                "then try again.",
-                parent=self.parent,
-            )
-            return
-
-        # If multiple saves found (multiple Steam accounts), let user pick
-        save_path = paths[0]
-        if len(paths) > 1:
-            save_path = self._pick_save_path(paths)
-            if save_path is None:
+            paths = PlatformUtils.find_all_save_files(profile)
+            if not paths:
+                CTkMessageBox.showwarning(
+                    "No Save File",
+                    f"No save file found for {profile.name}.\n\n"
+                    "Launch the game at least once so the save file is created,\n"
+                    "then try again.",
+                    parent=self.parent,
+                )
                 return
+            if len(paths) > 1:
+                save_path = self._pick_save_path(paths)
+                if save_path is None:
+                    return
+            else:
+                save_path = paths[0]
 
         if not CTkMessageBox.askyesno(
             "Confirm Patch",
@@ -469,25 +466,75 @@ class SteamIDPatcherTab:
                 operation="patch_steamid",
             )
 
-            result = patch_steamid_generic(save_path, new_steamid)
+            if profile.key == "nightreign":
+                from er_save_manager.games.nightreign_steamid import patch_steamid_nr
 
-            if not result.success:
-                CTkMessageBox.showerror(
-                    "Patch Failed",
-                    f"SteamID patch failed:\n{result.error}",
+                success, msg = patch_steamid_nr(save_path, new_steamid)
+            elif profile.key == "armored_core_6":
+                from er_save_manager.games.ac6_steamid import patch_steamid_ac6
+
+                success, msg = patch_steamid_ac6(save_path, new_steamid)
+            elif profile.key == "dark_souls_3":
+                from er_save_manager.games.ds3_steamid import patch_steamid_ds3
+
+                success, msg = patch_steamid_ds3(save_path, new_steamid)
+            elif profile.key == "sekiro":
+                from er_save_manager.games.sekiro_steamid import patch_steamid_sekiro
+
+                success, msg = patch_steamid_sekiro(save_path, new_steamid)
+            elif profile.key == "dark_souls_2":
+                from er_save_manager.games.ds2_dsr_steamid import patch_steamid
+
+                success, msg = patch_steamid(save_path, new_steamid, profile.key)
+            elif profile.key == "dark_souls_remastered":
+                # DSR does not embed the SteamID inside the save file.
+                # The game identifies saves by folder name (Steam32 decimal) only.
+                # Renaming the save directory is the complete solution.
+                success, msg = (
+                    True,
+                    (
+                        "Dark Souls Remastered does not store a SteamID inside the save file.\n\n"
+                        "The game uses the save folder name to identify your account.\n"
+                        "Use the folder-rename feature to move the save to the correct Steam account folder."
+                    ),
+                )
+            else:
+                success, msg = None, None
+
+            if success is not None:
+                if not success:
+                    CTkMessageBox.showerror(
+                        "Patch Failed",
+                        f"SteamID patch failed:\n{msg}",
+                        parent=self.parent,
+                    )
+                    return
+                self._refresh_steamid_display()
+                CTkMessageBox.showinfo(
+                    "Success",
+                    f"{msg}\n\nBackup created before patching.",
                     parent=self.parent,
                 )
-                return
+            else:
+                from er_save_manager.games.generic_steamid import patch_steamid_generic
 
-            self._refresh_steamid_display()
-            CTkMessageBox.showinfo(
-                "Success",
-                f"Patched {result.replacements} occurrence(s)\n\n"
-                f"Old SteamID: {result.old_steamid}\n"
-                f"New SteamID: {result.new_steamid}\n\n"
-                f"Backup created before patching.",
-                parent=self.parent,
-            )
+                result = patch_steamid_generic(save_path, new_steamid)
+                if not result.success:
+                    CTkMessageBox.showerror(
+                        "Patch Failed",
+                        f"SteamID patch failed:\n{result.error}",
+                        parent=self.parent,
+                    )
+                    return
+                self._refresh_steamid_display()
+                CTkMessageBox.showinfo(
+                    "Success",
+                    f"Patched {result.replacements} occurrence(s)\n\n"
+                    f"Old SteamID: {result.old_steamid}\n"
+                    f"New SteamID: {result.new_steamid}\n\n"
+                    f"Backup created before patching.",
+                    parent=self.parent,
+                )
 
         except Exception as e:
             CTkMessageBox.showerror(
@@ -614,11 +661,9 @@ class SteamIDPatcherTab:
         """
         Auto-detect SteamID for the currently selected game.
 
-        Strategy:
-        - Find all save files for the game using PlatformUtils.find_all_save_files.
-        - Extract SteamID from the save file's parent folder name (17-digit Steam64 subfolder).
-        - Fallback: scan the save file bytes for a valid Steam64 ID.
-        - If multiple accounts are found, show a selection dialog.
+        Uses the already-selected save path if available, otherwise scans disk.
+        Extracts SteamID from folder name (handles all three folder formats),
+        with byte-scan fallback.
         """
         from er_save_manager.games.game_profiles import _folder_name_to_steam64
         from er_save_manager.games.generic_steamid import detect_steamid_in_file
@@ -629,19 +674,23 @@ class SteamIDPatcherTab:
         try:
             steam_users: list[tuple[str, int]] = []
 
-            # Primary: find save files and extract SteamID from the folder name
-            # (works for all games that use a SteamID subfolder structure)
-            save_paths = PlatformUtils.find_all_save_files(profile)
+            # Build candidate list - prefer selected path
+            save_paths: list[Path] = []
+            selected = self.get_save_path()
+            if selected and Path(selected).exists():
+                save_paths.append(Path(selected))
+            else:
+                save_paths = PlatformUtils.find_all_save_files(profile)
+
+            # Primary: extract SteamID from folder name
             for save_path in save_paths:
                 folder_name = save_path.parent.name
                 steamid = _folder_name_to_steam64(folder_name, profile)
-                if steamid is None:
-                    continue
-                label = f"Account {steamid} ({save_path.name})"
-                if steamid not in {s for _, s in steam_users}:
+                if steamid and steamid not in {s for _, s in steam_users}:
+                    label = f"Account {steamid} ({save_path.name})"
                     steam_users.append((label, steamid))
 
-            # Fallback: scan save file bytes for Steam64 IDs
+            # Fallback: byte-scan
             if not steam_users:
                 for save_path in save_paths:
                     steamid = detect_steamid_in_file(save_path)
@@ -788,12 +837,8 @@ class SteamIDPatcherTab:
 
         add_section(
             "Supported games",
-            "Elden Ring, Elden Ring Nightreign, Dark Souls Remastered, Dark Souls II SotFS, "
-            "Dark Souls III: Full SteamID patch supported.\n\n"
-            "Sekiro: Shadows Die Twice: No file-level SteamID patch. Use SimpleSekiroSavegameHelper "
-            "(RAM patch) to load foreign saves.\n\n"
-            "Armored Core 6: Save files are AES-encrypted. Use the dedicated AC6SaveTransferTool "
-            "by Nordgaren instead.",
+            "Elden Ring, Elden Ring Nightreign, Dark Souls II SotFS, Armored Core 6, "
+            "Dark Souls III, Sekiro: Full SteamID patch supported.\n\n",
         )
 
         add_section(
@@ -809,18 +854,6 @@ class SteamIDPatcherTab:
             "2) Get the target SteamID via Auto-Detect, URL parse, or manual entry.\n"
             "3) Click Patch SteamID. A backup is created automatically.\n"
             "4) Load the patched save on the new account.",
-        )
-
-        add_section(
-            "Elden Ring - extra detail",
-            "For Elden Ring, load the save file first. The patch updates USER_DATA_10, "
-            "the profile summary, and all 10 character slots, then recalculates checksums.",
-        )
-
-        add_section(
-            "Other games (DS1/DS2/DS3/Nightreign)",
-            "No need to load the save in the editor. The patcher scans the raw BND4 file "
-            "for all occurrences of the old SteamID and replaces them. A backup is created first.",
         )
 
         ctk.CTkButton(dialog, text="Close", command=dialog.destroy, width=110).pack(
