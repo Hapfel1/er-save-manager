@@ -329,6 +329,7 @@ version = "0.12.1"
 source = { editable = "." }
 dependencies = [
     { name = "certifi" },
+    { name = "cryptography" },
     { name = "customtkinter" },
     { name = "customtkinterthemes" },
     { name = "packaging" },
@@ -349,6 +350,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "certifi", specifier = ">=2023.7.22" },
+    { name = "cryptography", specifier = ">=46.0.3" },
     { name = "customtkinter", specifier = ">=5.2.2" },
     { name = "customtkinterthemes", specifier = ">=1.0.0" },
     { name = "packaging", specifier = ">=23.0" },

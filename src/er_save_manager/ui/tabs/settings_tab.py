@@ -1,4 +1,6 @@
-"""Settings tab for application configuration (customtkinter version)."""
+"""Settings tab for application configuration."""
+
+from __future__ import annotations
 
 import tkinter as tk
 from pathlib import Path
@@ -11,32 +13,36 @@ from er_save_manager.ui.utils import bind_mousewheel
 
 
 class SettingsTab:
-    """UI tab for application settings (customtkinter version)."""
+    """UI tab for application settings."""
 
     def __init__(
-        self, parent, get_save_path_callback=None, get_default_save_path_callback=None
+        self,
+        parent,
+        get_save_path_callback=None,
+        get_default_save_path_callback=None,
+        active_game: str = "elden_ring",
     ):
-        """Initialize settings tab."""
         self.parent = parent
         self.settings = get_settings()
         self.get_save_path = get_save_path_callback
         self.get_default_save_path = get_default_save_path_callback
+        self.active_game = active_game
+
+        # Per-game auto-backup path vars - populated in setup_ui
+        self._auto_backup_path_vars: dict[str, tk.StringVar] = {}
+        self._auto_backup_enabled_vars: dict[str, tk.BooleanVar] = {}
 
     def setup_ui(self):
-        """Create settings UI."""
-        # Set dark mode on startup if theme is not set or is dark
         theme_value = self.settings.get("theme", None)
         if theme_value is None or theme_value == "dark":
             ctk.set_appearance_mode("dark")
         elif theme_value == "bright":
             ctk.set_appearance_mode("light")
 
-        # Main container with scrolling
         scroll_frame = ctk.CTkScrollableFrame(self.parent, corner_radius=12)
         scroll_frame.pack(fill="both", expand=True, padx=10, pady=10)
         bind_mousewheel(scroll_frame)
 
-        # Title with reset button
         title_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
         title_frame.pack(fill="x", pady=(0, 20))
 
@@ -53,13 +59,11 @@ class SettingsTab:
             width=140,
         ).pack(side="right")
 
-        # Settings sections
         self._create_general_settings(scroll_frame)
         self._create_backup_settings(scroll_frame)
         self._create_ui_settings(scroll_frame)
 
     def _create_general_settings(self, parent):
-        """Create general settings section."""
         frame = ctk.CTkFrame(parent, corner_radius=12)
         frame.pack(fill="x", pady=(0, 10))
 
@@ -69,25 +73,27 @@ class SettingsTab:
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
-        # EAC Warning
-        self.show_eac_warning_var = tk.BooleanVar(
-            value=self.settings.get("show_eac_warning", True)
-        )
-        ctk.CTkCheckBox(
-            frame,
-            text="Show EAC warning when loading .sl2 files",
-            variable=self.show_eac_warning_var,
-            command=lambda: self.settings.set(
-                "show_eac_warning", self.show_eac_warning_var.get()
-            ),
-        ).pack(anchor="w", padx=12, pady=5)
-
-        ctk.CTkLabel(
-            frame,
-            text="Disabling this will skip the anti-cheat warning dialog.",
-            text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
-        ).pack(anchor="w", padx=32, pady=(0, 10))
+        # EAC Warning - Elden Ring only
+        if self.active_game == "elden_ring":
+            self.show_eac_warning_var = tk.BooleanVar(
+                value=self.settings.get("show_eac_warning", True)
+            )
+            ctk.CTkCheckBox(
+                frame,
+                text="Show EAC warning when loading .sl2 files",
+                variable=self.show_eac_warning_var,
+                command=lambda: self.settings.set(
+                    "show_eac_warning", self.show_eac_warning_var.get()
+                ),
+            ).pack(anchor="w", padx=12, pady=5)
+            ctk.CTkLabel(
+                frame,
+                text="Disabling this will skip the anti-cheat warning dialog.",
+                text_color=("gray40", "gray70"),
+                font=("Segoe UI", 11),
+            ).pack(anchor="w", padx=32, pady=(0, 10))
+        else:
+            self.show_eac_warning_var = tk.BooleanVar(value=False)
 
         # Remember Last Location
         self.remember_location_var = tk.BooleanVar(
@@ -114,10 +120,9 @@ class SettingsTab:
                 "show_linux_save_warning", self.show_linux_save_warning_var.get()
             ),
         ).pack(anchor="w", padx=12, pady=5)
-
         ctk.CTkLabel(
             frame,
-            text="Linux: Warns when save is not in default compatdata folder.",
+            text="Linux: Warns when save is not in the default compatdata folder.",
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 10))
@@ -131,10 +136,10 @@ class SettingsTab:
             text="Show update notifications on startup",
             variable=self.show_update_notifications_var,
             command=lambda: self.settings.set(
-                "show_update_notifications", self.show_update_notifications_var.get()
+                "show_update_notifications",
+                self.show_update_notifications_var.get(),
             ),
         ).pack(anchor="w", padx=12, pady=5)
-
         ctk.CTkLabel(
             frame,
             text="Check for new versions and show notification dialog.",
@@ -143,8 +148,6 @@ class SettingsTab:
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
     def _create_backup_settings(self, parent):
-        """Create backup settings section."""
-
         frame = ctk.CTkFrame(parent, corner_radius=12)
         frame.pack(fill="x", pady=(0, 10))
 
@@ -166,7 +169,6 @@ class SettingsTab:
                 "compress_backups", self.compress_backups_var.get()
             ),
         ).pack(anchor="w", padx=12, pady=5)
-
         ctk.CTkLabel(
             frame,
             text="Reduces backup size by ~90% but takes slightly longer to create/restore.",
@@ -174,85 +176,26 @@ class SettingsTab:
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 10))
 
-        # Auto-Backup on Game Launch
-        self.auto_backup_on_launch_var = tk.BooleanVar(
-            value=self.settings.get("auto_backup_on_game_launch", False)
-        )
-
-        auto_backup_check = ctk.CTkCheckBox(
-            frame,
-            text="Auto-backup when Elden Ring launches",
-            variable=self.auto_backup_on_launch_var,
-            command=self._on_auto_backup_toggle,
-        )
-        auto_backup_check.pack(anchor="w", padx=12, pady=5)
-
-        ctk.CTkLabel(
-            frame,
-            text="Automatically creates a backup before each game session.",
-            text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
-        ).pack(anchor="w", padx=32, pady=(0, 5))
-
-        # Save file selection for auto-backup
-        save_select_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        save_select_frame.pack(fill="x", padx=32, pady=(0, 10))
-
-        ctk.CTkLabel(
-            save_select_frame,
-            text="Monitored save file:",
-            text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
-        ).pack(anchor="w")
-
-        path_display_frame = ctk.CTkFrame(save_select_frame, fg_color="transparent")
-        path_display_frame.pack(fill="x", pady=(3, 0))
-
-        auto_backup_path = self.settings.get("auto_backup_save_path", "")
-        path_display_text = auto_backup_path if auto_backup_path else "(not configured)"
-
-        self.auto_backup_path_var = tk.StringVar(value=path_display_text)
-        ctk.CTkLabel(
-            path_display_frame,
-            textvariable=self.auto_backup_path_var,
-            text_color=("gray50", "gray60"),
-            font=("Consolas", 11),
-            wraplength=500,
-        ).pack(side="left", fill="x", expand=True)
-
-        ctk.CTkButton(
-            path_display_frame,
-            text="Choose...",
-            width=80,
-            command=self._choose_auto_backup_save,
-        ).pack(side="right", padx=(5, 0))
-
         # Max Backups
         max_backup_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        max_backup_frame.pack(fill="x", padx=12, pady=(10, 5))
-
+        max_backup_frame.pack(fill="x", padx=12, pady=(0, 5))
         ctk.CTkLabel(max_backup_frame, text="Maximum backups to keep:").pack(
             side="left", padx=(0, 10)
         )
-
         self.max_backups_var = tk.StringVar(
             value=str(self.settings.get("max_backups", 50))
         )
-        spinbox = ctk.CTkEntry(
-            max_backup_frame,
-            textvariable=self.max_backups_var,
-            width=80,
-        )
-        spinbox.pack(side="left")
+        ctk.CTkEntry(
+            max_backup_frame, textvariable=self.max_backups_var, width=80
+        ).pack(side="left")
 
-        # Save backup limit when it changes
         def save_backup_limit(*args):
             try:
                 value = int(self.max_backups_var.get())
                 if value > 0:
                     self.settings.set("max_backups", value)
             except ValueError:
-                pass  # Ignore non-integer values
+                pass
 
         self.max_backups_var.trace_add("write", save_backup_limit)
 
@@ -277,95 +220,219 @@ class SettingsTab:
             ),
         ).pack(anchor="w", padx=12, pady=(0, 12))
 
-    def _on_auto_backup_toggle(self):
-        """Handle auto-backup toggle."""
-        enabled = self.auto_backup_on_launch_var.get()
-        self.settings.set("auto_backup_on_game_launch", enabled)
+        # Auto-backup per game
+        self._create_auto_backup_section(frame)
 
-        # If enabling, check if save path is configured
+    def _create_auto_backup_section(self, parent):
+        """Auto-backup configuration for the currently active game only."""
+        from er_save_manager.games.game_profiles import PROFILES_BY_KEY
+
+        profile = PROFILES_BY_KEY.get(self.active_game)
+        if profile is None:
+            return
+
+        sep = ctk.CTkFrame(parent, height=1, fg_color=("gray70", "gray35"))
+        sep.pack(fill="x", padx=12, pady=(4, 10))
+
+        ctk.CTkLabel(
+            parent,
+            text="Auto-Backup on Game Launch",
+            font=("Segoe UI", 11, "bold"),
+        ).pack(anchor="w", padx=12, pady=(0, 4))
+
+        ctk.CTkLabel(
+            parent,
+            text=(
+                f"Automatically create a backup of your {profile.name} save "
+                "whenever the game launches."
+            ),
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+            wraplength=520,
+            justify="left",
+        ).pack(anchor="w", padx=12, pady=(0, 8))
+
+        auto_backup_cfg: dict = self.settings.get("auto_backup_games", {})
+        game_cfg = auto_backup_cfg.get(profile.key, {})
+        enabled = game_cfg.get("enabled", False)
+        save_path_str = game_cfg.get("save_path", "")
+
+        game_frame = ctk.CTkFrame(
+            parent, corner_radius=8, fg_color=("gray90", "gray18")
+        )
+        game_frame.pack(fill="x", padx=12, pady=(0, 6))
+
+        header_row = ctk.CTkFrame(game_frame, fg_color="transparent")
+        header_row.pack(fill="x", padx=10, pady=(8, 4))
+
+        enabled_var = tk.BooleanVar(value=enabled)
+        self._auto_backup_enabled_vars[profile.key] = enabled_var
+
+        ctk.CTkCheckBox(
+            header_row,
+            text=f"Enable auto-backup for {profile.name}",
+            variable=enabled_var,
+            font=("Segoe UI", 11),
+            command=lambda k=profile.key: self._on_game_auto_backup_toggle(k),
+        ).pack(side="left")
+
+        path_row = ctk.CTkFrame(game_frame, fg_color="transparent")
+        path_row.pack(fill="x", padx=10, pady=(0, 8))
+
+        path_var = tk.StringVar(value=save_path_str or "(not configured)")
+        self._auto_backup_path_vars[profile.key] = path_var
+
+        ctk.CTkLabel(
+            path_row,
+            text="Monitored save file:",
+            font=("Segoe UI", 10),
+            text_color=("gray40", "gray70"),
+        ).pack(anchor="w")
+
+        file_row = ctk.CTkFrame(game_frame, fg_color="transparent")
+        file_row.pack(fill="x", padx=10, pady=(0, 8))
+
+        ctk.CTkLabel(
+            file_row,
+            textvariable=path_var,
+            font=("Consolas", 10),
+            text_color=("gray50", "gray60"),
+            wraplength=420,
+            justify="left",
+            anchor="w",
+        ).pack(side="left", fill="x", expand=True)
+
+        ctk.CTkButton(
+            file_row,
+            text="Choose...",
+            width=80,
+            command=lambda k=profile.key, p=profile: self._choose_game_auto_backup_save(
+                k, p
+            ),
+        ).pack(side="right", padx=(6, 0))
+
+    def _on_game_auto_backup_toggle(self, game_key: str):
+        enabled = self._auto_backup_enabled_vars[game_key].get()
+        auto_backup_cfg: dict = dict(self.settings.get("auto_backup_games", {}))
+        game_cfg = dict(auto_backup_cfg.get(game_key, {}))
+        game_cfg["enabled"] = enabled
+
         if enabled:
-            save_path = self.settings.get("auto_backup_save_path", "")
+            save_path = game_cfg.get("save_path", "")
             if not save_path or not Path(save_path).exists():
                 CTkMessageBox.showwarning(
                     "Configure Save File",
                     "Please choose which save file to monitor for auto-backup.",
                     parent=self.parent,
                 )
-                self._choose_auto_backup_save()
+                # Find the profile
+                from er_save_manager.games.game_profiles import PROFILES_BY_KEY
 
-    def _choose_auto_backup_save(self):
-        """Let user choose which save file to monitor."""
-        import os
+                profile = PROFILES_BY_KEY.get(game_key)
+                if profile:
+                    self._choose_game_auto_backup_save(game_key, profile)
+
+        auto_backup_cfg[game_key] = game_cfg
+        self.settings.set("auto_backup_games", auto_backup_cfg)
+
+    def _choose_game_auto_backup_save(self, game_key: str, profile):
         import tkinter.filedialog as filedialog
-        from pathlib import Path
 
-        # Check if there's a currently loaded save file
-        current_save = None
-        if self.get_save_path:
-            current_save = self.get_save_path()
+        from er_save_manager.platform.utils import PlatformUtils
 
-        # If save is loaded, offer to use it
-        if current_save and Path(current_save).exists():
-            result = CTkMessageBox.askyesnocancel(
-                "Choose Save File",
-                f"Currently loaded save file:\n\n{current_save}\n\n"
-                "Would you like to use this save file for auto-backup?\n\n"
-                "Yes - Use current save\n"
-                "No - Browse for a different save\n"
-                "Cancel - Don't configure",
-                parent=self.parent,
-                font_size=11,
-            )
-
-            if result is None:  # Cancel
-                return
-            elif result:  # Yes - use current save
-                file_path = str(Path(current_save).resolve())
-                self.settings.set("auto_backup_save_path", file_path)
-                self.auto_backup_path_var.set(file_path)
-
-                CTkMessageBox.showinfo(
-                    "Auto-Backup Configured",
-                    f"Auto-backup will now monitor:\n\n{file_path}\n\n"
-                    "A backup will be created automatically when Elden Ring launches.",
+        # Offer auto-detected saves first
+        found = PlatformUtils.find_all_save_files(profile)
+        if found:
+            options = [str(p) for p in found]
+            if len(options) == 1:
+                choice = CTkMessageBox.askyesno(
+                    "Use Detected Save",
+                    f"Found save file:\n\n{options[0]}\n\nUse this for auto-backup?",
                     parent=self.parent,
                 )
-                return
-            # If No, continue to file browser below
+                if choice:
+                    self._set_game_auto_backup_path(game_key, options[0])
+                    return
+            # Multiple found - show simple picker
+            elif len(options) > 1:
+                from er_save_manager.ui.utils import force_render_dialog
 
-        # Get default save location
-        initial_dir = os.path.expanduser("~")
-        if self.get_default_save_path:
-            default_path = self.get_default_save_path()
-            if default_path and Path(default_path).exists():
-                initial_dir = str(default_path)
+                selected = [None]
+                dlg = ctk.CTkToplevel(self.parent)
+                dlg.title(f"Select Save - {profile.name}")
+                dlg.geometry("520x300")
+                dlg.resizable(False, False)
+                force_render_dialog(dlg)
+                dlg.grab_set()
 
+                ctk.CTkLabel(
+                    dlg,
+                    text="Select save file to monitor:",
+                    font=("Segoe UI", 11),
+                ).pack(pady=(15, 8), padx=15)
+
+                sf = ctk.CTkScrollableFrame(dlg, corner_radius=8)
+                sf.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
+
+                for opt in options:
+
+                    def make_sel(v):
+                        def _sel():
+                            selected[0] = v
+                            dlg.destroy()
+
+                        return _sel
+
+                    ctk.CTkButton(
+                        sf,
+                        text=opt,
+                        font=("Consolas", 10),
+                        fg_color="transparent",
+                        text_color=("#2a2a2a", "#e5e5f5"),
+                        hover_color=("#c9a0dc", "#3b2f5c"),
+                        anchor="w",
+                        command=make_sel(opt),
+                    ).pack(fill=tk.X, padx=6, pady=3)
+
+                ctk.CTkButton(
+                    dlg,
+                    text="Browse...",
+                    width=100,
+                    command=lambda: [
+                        setattr(selected, "__browse__", True),
+                        dlg.destroy(),
+                    ],
+                ).pack(side=tk.LEFT, padx=15, pady=(0, 12))
+                ctk.CTkButton(dlg, text="Cancel", width=80, command=dlg.destroy).pack(
+                    side=tk.RIGHT, padx=15, pady=(0, 12)
+                )
+                dlg.wait_window()
+
+                if selected[0]:
+                    self._set_game_auto_backup_path(game_key, selected[0])
+                    return
+
+        # Fallback: file browser
+        ext_str = " ".join(f"*{e}" for e in profile.extensions)
         file_path = filedialog.askopenfilename(
-            title="Choose Save File for Auto-Backup",
-            filetypes=[
-                ("Elden Ring Save", "*.sl2;*.co2"),
-                ("PC Save Files", "*.sl2"),
-                ("Console Save Files", "*.co2"),
-                ("All files", "*.*"),
-            ],
-            initialdir=initial_dir,
+            title=f"Choose Save File for Auto-Backup - {profile.name}",
+            filetypes=[(f"{profile.name} Save", ext_str), ("All files", "*.*")],
             parent=self.parent,
         )
-
         if file_path:
-            file_path = str(Path(file_path).resolve())
-            self.settings.set("auto_backup_save_path", file_path)
-            self.auto_backup_path_var.set(file_path)
+            self._set_game_auto_backup_path(game_key, file_path)
 
-            CTkMessageBox.showinfo(
-                "Auto-Backup Configured",
-                f"Auto-backup will now monitor:\n\n{file_path}\n\n"
-                "A backup will be created automatically when Elden Ring launches.",
-                parent=self.parent,
-            )
+    def _set_game_auto_backup_path(self, game_key: str, file_path: str):
+        file_path = str(Path(file_path).resolve())
+        auto_backup_cfg: dict = dict(self.settings.get("auto_backup_games", {}))
+        game_cfg = dict(auto_backup_cfg.get(game_key, {}))
+        game_cfg["save_path"] = file_path
+        auto_backup_cfg[game_key] = game_cfg
+        self.settings.set("auto_backup_games", auto_backup_cfg)
+        if game_key in self._auto_backup_path_vars:
+            self._auto_backup_path_vars[game_key].set(file_path)
 
     def _create_ui_settings(self, parent):
-        """Create UI settings section."""
         frame = ctk.CTkFrame(parent, corner_radius=12)
         frame.pack(fill="x", pady=(0, 10))
 
@@ -375,26 +442,23 @@ class SettingsTab:
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
-        # Theme
         theme_frame = ctk.CTkFrame(frame, fg_color="transparent")
         theme_frame.pack(fill="x", padx=12, pady=5)
 
         ctk.CTkLabel(theme_frame, text="Theme:").pack(side="left", padx=(0, 10))
 
-        # Map old 'default' to 'bright' for compatibility
         theme_value = self.settings.get("theme", "dark")
         if theme_value == "default":
             theme_value = "bright"
         self.theme_var = tk.StringVar(value=theme_value)
-        theme_combo = ctk.CTkComboBox(
+        ctk.CTkComboBox(
             theme_frame,
             variable=self.theme_var,
             values=["bright", "dark"],
             state="readonly",
             width=150,
             command=self._on_theme_changed,
-        )
-        theme_combo.pack(side="left")
+        ).pack(side="left")
 
         ctk.CTkLabel(
             frame,
@@ -404,33 +468,32 @@ class SettingsTab:
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
     def reset_to_defaults(self):
-        """Reset all settings to defaults."""
         if CTkMessageBox.askyesno(
             "Reset Settings",
-            "Are you sure you want to reset all settings to defaults?\n\n"
-            "This cannot be undone.",
+            "Are you sure you want to reset all settings to defaults?\n\nThis cannot be undone.",
             parent=self.parent,
         ):
             self.settings.reset_to_defaults()
-
-            # Update UI
-            self.show_eac_warning_var.set(True)
+            if self.active_game == "elden_ring" and hasattr(
+                self, "show_eac_warning_var"
+            ):
+                self.show_eac_warning_var.set(True)
             self.remember_location_var.set(True)
             self.show_linux_save_warning_var.set(True)
             self.show_update_notifications_var.set(True)
             self.show_backup_pruning_warning_var.set(True)
             self.compress_backups_var.set(True)
-            self.auto_backup_on_launch_var.set(False)
-            self.auto_backup_path_var.set("(not configured)")
-            self.max_backups_var.set(50)
+            self.max_backups_var.set("50")
             self.theme_var.set("dark")
-
+            for var in self._auto_backup_enabled_vars.values():
+                var.set(False)
+            for var in self._auto_backup_path_vars.values():
+                var.set("(not configured)")
             CTkMessageBox.showinfo(
                 "Success", "Settings have been reset to defaults.", parent=self.parent
             )
 
     def _on_theme_changed(self, value=None):
-        """Handle theme change."""
         theme = self.theme_var.get()
         self.settings.set("theme", theme)
         CTkMessageBox.showinfo(
