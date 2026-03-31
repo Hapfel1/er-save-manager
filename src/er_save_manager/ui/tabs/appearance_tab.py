@@ -969,9 +969,15 @@ class AppearanceTab:
         source_slot = self.selected_slot
 
         # Show copy dialog
+        from er_save_manager.ui.utils import force_render_dialog
+
         dialog = tk.Toplevel(self.parent)
         dialog.title("Copy Preset to Another Save")
         dialog.geometry("600x250")
+        dialog.transient(self.parent)
+        dialog.update_idletasks()
+        self.parent.update_idletasks()
+        force_render_dialog(dialog)
         dialog.grab_set()
 
         frame = ctk.CTkFrame(dialog)
