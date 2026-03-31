@@ -157,14 +157,13 @@ def detect_steamid_in_file(save_path: Path) -> int | None:
     """
     Return the SteamID found in the save file, or None on error.
 
-    Strategy: find the most frequently occurring valid Steam64 ID.
-    The real SteamID is stored in multiple locations in the BND4
-    header/metadata, while random byte sequences that happen to fall
-    in the Steam64 range (false positives from encrypted slot data)
-    appear only once. The most frequent value wins.
+    For unencrypted BND4 saves (ER, DS3, DS2, DSR): finds the most
+    frequently occurring valid Steam64 value via byte scan.
 
-    Returns None only if the file is not BND4 or no valid Steam64 ID
-    is found at all.
+    For Nightreign (AES-CBC encrypted entries): decrypts entry 10 and
+    reads the Steam64 at offset 0x8.
+
+    Returns None if no ID can be determined.
     """
     try:
         data = save_path.read_bytes()
@@ -175,8 +174,54 @@ def detect_steamid_in_file(save_path: Path) -> int | None:
         return None
 
     found = find_steamids_in_file(data)
-    if not found:
-        return None
+    if found:
+        return max(found, key=lambda k: len(found[k]))
 
-    # Most frequent occurrence = most likely the real SteamID
-    return max(found, key=lambda k: len(found[k]))
+    # No plaintext Steam64 found - try encrypted-entry detection (NR / AC6)
+    try:
+        from er_save_manager.games.nightreign_steamid import detect_steamid_nr
+
+        sid = detect_steamid_nr(save_path)
+        if sid:
+            return sid
+    except Exception:
+        pass
+
+    try:
+        from er_save_manager.games.ac6_steamid import detect_steamid_ac6
+
+        sid = detect_steamid_ac6(save_path)
+        if sid:
+            return sid
+    except Exception:
+        pass
+
+    try:
+        from er_save_manager.games.ds3_steamid import detect_steamid_ds3
+
+        sid = detect_steamid_ds3(save_path)
+        if sid:
+            return sid
+    except Exception:
+        pass
+
+    try:
+        from er_save_manager.games.sekiro_steamid import detect_steamid_sekiro
+
+        sid = detect_steamid_sekiro(save_path)
+        if sid:
+            return sid
+    except Exception:
+        pass
+
+    # DS2: AES-encrypted, byte-scan after decrypt
+    try:
+        from er_save_manager.games.ds2_dsr_steamid import detect_steamid
+
+        name = save_path.name.lower()
+        if name.startswith("ds2") or name.startswith("darksii"):
+            return detect_steamid(save_path, "dark_souls_2")
+    except Exception:
+        pass
+
+    return None

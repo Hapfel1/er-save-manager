@@ -489,15 +489,9 @@ class SaveManagerGUI:
         file_frame = ctk.CTkFrame(self.root, corner_radius=12)
         file_frame.grid(row=1, column=0, padx=12, pady=10, sticky="ew")
 
-        ctk.CTkLabel(
-            file_frame,
-            text="Select a Save File",
-            font=("Segoe UI", 12, "bold"),
-        ).pack(anchor="w", padx=12, pady=(12, 4))
-
         # Game selector
         game_row = ctk.CTkFrame(file_frame, fg_color="transparent")
-        game_row.pack(fill=tk.X, padx=12, pady=(0, 4))
+        game_row.pack(fill=tk.X, padx=12, pady=(12, 4))
 
         ctk.CTkLabel(game_row, text="Game:", font=("Segoe UI", 11)).pack(
             side=tk.LEFT, padx=(0, 8)
@@ -514,6 +508,12 @@ class SaveManagerGUI:
             command=self._on_game_changed,
         )
         self._game_combo.pack(side=tk.LEFT)
+
+        ctk.CTkLabel(
+            file_frame,
+            text="Select a Save File",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(anchor="w", padx=12, pady=(4, 4))
 
         self.file_path_var = tk.StringVar(value="")
         # Auto-load when valid file path is entered
@@ -605,7 +605,7 @@ class SaveManagerGUI:
 
         self.active_game = profile.key
 
-        # Clear save state — switching games means the loaded save is no longer relevant.
+        # Clear save state - switching games means the loaded save is no longer relevant.
         # This prevents tab setup_ui() calls from accessing stale save data.
         self.save_file = None
         self.save_path = None
@@ -652,38 +652,6 @@ class SaveManagerGUI:
             self.create_tabs()
         else:
             self._create_other_game_tabs(profile)
-            # Auto-detect and show the primary save path for this game
-            self._auto_show_save_for_profile(profile)
-
-    def _auto_show_save_for_profile(self, profile):
-        """Find the primary save file for a non-ER game and show it in the path bar."""
-        import threading
-
-        def _find_and_set():
-            try:
-                from er_save_manager.platform.utils import PlatformUtils
-
-                paths = PlatformUtils.find_all_save_files(profile)
-                if paths:
-                    # Show the path but don't try to load it through the ER parser
-                    self.root.after(0, lambda: self.file_path_var.set(str(paths[0])))
-                    self.root.after(
-                        0,
-                        lambda: self.status_var.set(
-                            f"{profile.name} save found: {paths[0].name}"
-                        ),
-                    )
-                else:
-                    self.root.after(
-                        0,
-                        lambda: self.status_var.set(
-                            f"No {profile.name} save file found. Launch the game once to create it."
-                        ),
-                    )
-            except Exception:
-                pass
-
-        threading.Thread(target=_find_and_set, daemon=True).start()
 
     def create_tabs(self):
         """Create all Elden Ring tabs."""
@@ -1352,22 +1320,16 @@ class SaveManagerGUI:
             if filename.startswith("er"):
                 self.root.after(500, self.load_save)
         else:
-            # Non-ER: just record the path without parsing
-            self.root.after(500, lambda: self._load_non_er_save(save_path))
+            self._load_non_er_save(save_path)
 
     def _load_non_er_save(self, save_path: str):
-        """
-        Record the selected save path for non-ER games.
-        No parsing — just stores the path so SteamID patcher and backup
-        manager know which file is active, and refreshes the SteamID display.
-        """
-        if self.file_path_var.get() != save_path:
-            return  # user changed path before the delay fired
-
+        """Store the selected save path for non-ER games and refresh the SteamID display."""
         self.save_path = Path(save_path)
         self.save_file = None
         self.status_var.set(f"Selected: {os.path.basename(save_path)}")
-
+        self.show_toast(
+            f"Save file selected: {os.path.basename(save_path)}", duration=2500
+        )
         if hasattr(self, "steamid_tab") and self.steamid_tab:
             import threading
 

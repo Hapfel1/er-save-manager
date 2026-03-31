@@ -37,9 +37,9 @@ class GameProfile:
     steamid_patch_note: str = ""
     has_steamid_subfolder: bool = True
     # Format of the SteamID subfolder name:
-    #   "steam64_dec" — 17 decimal digits, equals Steam64 (default, most games)
-    #   "steam64_hex" — 16 lowercase hex chars, equals Steam64 (DS2)
-    #   "steam32_dec" — 1-10 decimal digits, equals Steam32; add 76561197960265728 for Steam64 (DSR)
+    #   "steam64_dec" - 17 decimal digits, equals Steam64 (default, most games)
+    #   "steam64_hex" - 16 lowercase hex chars, equals Steam64 (DS2)
+    #   "steam32_dec" - 1-10 decimal digits, equals Steam32; add 76561197960265728 for Steam64 (DSR)
     steamid_folder_format: str = "steam64_dec"
     extensions: list[str] = field(default_factory=lambda: [".sl2"])
 
@@ -70,12 +70,6 @@ GAME_PROFILES: list[GameProfile] = [
         save_filename="AC60000.sl2",
         save_glob="AC6*.*",
         appdata_subdir="ArmoredCore6",
-        supports_steamid_patch=True,
-        steamid_patch_note=(
-            "AC6 save files are AES-encrypted. "
-            "Generic SteamID patching will not work. "
-            "Use the dedicated AC6SaveTransferTool by Nordgaren instead."
-        ),
     ),
     GameProfile(
         name="Dark Souls III",
@@ -113,12 +107,6 @@ GAME_PROFILES: list[GameProfile] = [
         save_filename="S0000.sl2",
         save_glob="S*.*",
         appdata_subdir="Sekiro",
-        supports_steamid_patch=False,
-        steamid_patch_note=(
-            "Sekiro performs live RAM checks, not file-based SteamID checks. "
-            "To load a foreign save, use SimpleSekiroSavegameHelper which patches "
-            "the game's memory at runtime."
-        ),
     ),
 ]
 
