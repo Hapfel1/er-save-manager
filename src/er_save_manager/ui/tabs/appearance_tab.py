@@ -133,8 +133,33 @@ class AppearanceTab:
             width=200,
         ).pack(side=tk.LEFT)
 
+    def _all_presets_empty(self) -> bool:
+        """Return True if every preset slot in the loaded save is empty."""
+        save_file = self.get_save_file()
+        if not save_file:
+            return False
+        presets = save_file.get_character_presets()
+        if not presets:
+            return True
+        return all(p.is_empty() for p in presets.presets)
+
+    def _warn_if_no_presets(self) -> bool:
+        """Show warning and return True if all preset slots are empty."""
+        if self._all_presets_empty():
+            CTkMessageBox.showwarning(
+                "No Presets Available",
+                "All preset slots are empty on this save.\n\n"
+                "Open the game, go to the character creation menu, save at least one "
+                "preset, then reload the save here before importing.",
+                parent=self.parent,
+            )
+            return True
+        return False
+
     def open_preset_browser(self):
         """Open enhanced preset browser dialog."""
+        if self._warn_if_no_presets():
+            return
         from er_save_manager.ui.dialogs.preset_browser import EnhancedPresetBrowser
 
         browser = EnhancedPresetBrowser(self.parent, self)
@@ -235,7 +260,6 @@ class AppearanceTab:
             CTkMessageBox.showwarning(
                 "No Save",
                 "Please load a save file first!",
-                self.parent,
                 parent=self.parent,
             )
             return
@@ -244,7 +268,6 @@ class AppearanceTab:
             CTkMessageBox.showwarning(
                 "No Selection",
                 "Please select a preset to view!",
-                self.parent,
                 parent=self.parent,
             )
             return
@@ -257,7 +280,6 @@ class AppearanceTab:
                 CTkMessageBox.showerror(
                     "Error",
                     "Could not load preset data",
-                    self.parent,
                     parent=self.parent,
                 )
                 return
@@ -268,7 +290,6 @@ class AppearanceTab:
                 CTkMessageBox.showinfo(
                     "Empty Preset",
                     f"Preset {preset_idx + 1} is empty",
-                    self.parent,
                     parent=self.parent,
                 )
                 return
@@ -557,9 +578,7 @@ class AppearanceTab:
             dialog.focus_set()
 
         except Exception as e:
-            CTkMessageBox.showerror(
-                "Error", f"Failed to view preset:\n{str(e, parent=self.parent)}"
-            )
+            CTkMessageBox.showerror("Error", f"Failed to view preset:\n{str(e)}")
             import traceback
 
             traceback.print_exc()
@@ -774,6 +793,9 @@ class AppearanceTab:
             CTkMessageBox.showwarning(
                 "No Save", "Please load a save file first!", parent=self.parent
             )
+            return
+
+        if self._warn_if_no_presets():
             return
 
         json_path = filedialog.askopenfilename(
@@ -1140,6 +1162,9 @@ class AppearanceTab:
             if save_path:
                 save_file.to_file(Path(save_path))
 
+            # Capture slot number before reload resets selected_slot
+            deleted_slot = self.selected_slot
+
             # Reload
             if self.reload_save:
                 self.reload_save()
@@ -1147,9 +1172,8 @@ class AppearanceTab:
             # Refresh preset list so UI matches new state
             self.load_presets()
 
-            # Delay message to ensure it appears on top after reload
             self.show_toast(
-                f"Preset in Slot {self.selected_slot + 1} deleted!", duration=2500
+                f"Preset in Slot {deleted_slot + 1} deleted!", duration=2500
             )
 
         except Exception as e:
