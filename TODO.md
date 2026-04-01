@@ -1,6 +1,8 @@
 check contribution again
 
-provide warning for importing apperance presets, check autoloading, check autobackup again
+provide warning for importing apperance presets done
+
+check autoloading, check autobackup again done
 
 Backup Manager + SteamID Patcher for the other games done
 
