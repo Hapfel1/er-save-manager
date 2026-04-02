@@ -1,3 +1,5 @@
+fix missing locations and update docs
+
 check contribution again done
 
 provide warning for importing apperance presets done
