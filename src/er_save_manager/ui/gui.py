@@ -713,6 +713,20 @@ class SaveManagerGUI:
             self.show_toast,
         )
         self.world_tab.setup_ui()
+        try:
+            if getattr(sys, "frozen", False):
+                _base = (
+                    Path(sys._MEIPASS)
+                    if hasattr(sys, "_MEIPASS")
+                    else Path(sys.executable).parent
+                )
+            else:
+                _base = Path(__file__).parent.parent.parent
+            _map_path = _base / "resources" / "map.jpeg"
+            if _map_path.exists():
+                self.world_tab.set_map_image_path(str(_map_path))
+        except Exception:
+            pass
 
         # Tab 6: SteamID Patcher
         self.notebook.add("SteamID Patcher")
