@@ -72,6 +72,40 @@ class WorldStateEditor:
     # Write
     # ------------------------------------------------------------------
 
+    def sync_bloodstain_to_player(self) -> tuple[bool, str]:
+        """Set bloodstain map_id and coordinates to the player's current position."""
+        slot = self._slot
+        if slot.is_empty():
+            return False, "Slot is empty"
+        bs = getattr(slot, "blood_stain", None)
+        if bs is None:
+            return False, "No bloodstain found"
+        off = getattr(slot, "blood_stain_offset", None)
+        if not off:
+            return False, "Bloodstain offset not available"
+
+        info = self.get_current_location()
+        map_id: MapId = info["map_id"]
+        coords = info["coordinates"]
+        if map_id is None:
+            return False, "Could not read player map ID"
+
+        raw = self._save._raw_data
+
+        if coords is not None:
+            raw[off : off + 4] = struct.pack("<f", coords.x)
+            raw[off + 4 : off + 8] = struct.pack("<f", coords.y)
+            raw[off + 8 : off + 12] = struct.pack("<f", coords.z)
+            bs.coordinates.x = coords.x
+            bs.coordinates.y = coords.y
+            bs.coordinates.z = coords.z
+
+        # map_id at offset 0x38 within BloodStain
+        raw[off + 56 : off + 60] = map_id.data
+        bs.map_id = map_id
+
+        return True, "Bloodstain moved to player position"
+
     def teleport_to_map_id(self, map_id_str: str) -> tuple[bool, str]:
         """
         Teleport character to a map by its string ID (e.g. "m60_42_36_00").
