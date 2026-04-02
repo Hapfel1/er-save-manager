@@ -3,6 +3,57 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.13.0
+**Released:** April 02, 2026
+
+
+### ✨ New Features
+
+- Added Invasion Regions and ingame settings ([1b1097b](https://github.com/Hapfel1/er-save-manager/commit/1b1097bd7bae370995f0dec1cdeb10db9f1450f2))
+
+- Add other Fromsoft Games for SteamID Patching and Backup Manager ([fc2a616](https://github.com/Hapfel1/er-save-manager/commit/fc2a616e832a9d7883aea56f733347ffa2b2d3a4))
+
+- Added "Move Bloodstain to player" button in the world state tab ([48cd065](https://github.com/Hapfel1/er-save-manager/commit/48cd0650e40adc9ac90634a1c7e214e2918dedba))
+
+
+
+### 🔧 Bug Fixes
+
+- Fix event flag custom id toggle not creating backups ([74d7434](https://github.com/Hapfel1/er-save-manager/commit/74d7434b17a3130271cef01903ce5afeddcd74b3))
+
+- Fixed rendering issue in Appearance Tab popup window ([fb7b38b](https://github.com/Hapfel1/er-save-manager/commit/fb7b38bcd29fe9f81d9b31ef64bc502a3e6efc08))
+
+- Added change files ([ea91317](https://github.com/Hapfel1/er-save-manager/commit/ea913171336039d22620c44c0f6b8af4c82e0bfe))
+
+- Lint ([188f267](https://github.com/Hapfel1/er-save-manager/commit/188f267955f123b87c7ff06aea53f1fc13706861))
+
+- Added correct functionality for steamid patching for each game ([d266428](https://github.com/Hapfel1/er-save-manager/commit/d266428169e8aaec34f642098e990b2508d05c91))
+
+- Fixed Save Loading and Process detection for Non-ER games ([1ca1b68](https://github.com/Hapfel1/er-save-manager/commit/1ca1b68aa2d2c605eb00bf583e8410822e3e7c21))
+
+
+
+### 🎨 User Interface
+
+- Add Event Flag Export ([9e82142](https://github.com/Hapfel1/er-save-manager/commit/9e82142a1ebf7c08292d411f123a5ef2afb2fdf5))
+
+- Added Great Rune and Rune Arc display ([16bf210](https://github.com/Hapfel1/er-save-manager/commit/16bf210aa3a11d93d8a3185d9abe9b6440eb1e93))
+
+- Fixed popup centering ([ad7d66a](https://github.com/Hapfel1/er-save-manager/commit/ad7d66ad1dea14bd07190e9a667fd295de496927))
+
+- Added warning when no apperance presets are saved to first save one in game ([62bcefa](https://github.com/Hapfel1/er-save-manager/commit/62bcefa5f3c89c7a960ff5d735351f407ec37f1f))
+
+- Add MapID map for the known locations teleport feature ([24d95be](https://github.com/Hapfel1/er-save-manager/commit/24d95be71c1b4264a8b5a32c307cca6fdf4aa910))
+
+
+
+### 📦 Dependencies
+
+- Bump the github-actions group with 3 updates `[deps]` ([e630f06](https://github.com/Hapfel1/er-save-manager/commit/e630f06a9675308963fedd3091a6be21d9bc2fbb))
+
+
+
+---
 ## 📦 Release 0.12.1
 **Released:** March 23, 2026
 
@@ -604,6 +655,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.13.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.12.1..v0.13.0
 [0.12.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.11.1..v0.12.1
 [0.11.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.11.0..v0.11.1
 [0.11.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.10.1..v0.11.0
