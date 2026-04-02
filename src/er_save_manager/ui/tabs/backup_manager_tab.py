@@ -153,25 +153,23 @@ class BackupManagerTab:
     def _resolve_save_path_for_profile(self) -> Path | None:
         """
         Get the relevant save path for backup stats.
-        For Elden Ring: use the currently loaded save.
-        For other games: find the first save file via PlatformUtils.
+        Prefers the user-selected path for all games; falls back to disk scan.
         """
         profile = self._selected_profile()
         if profile is None:
             return None
 
+        selected = self.get_save_path()
+        if selected and Path(selected).exists():
+            return Path(selected)
+
         if profile.key == "elden_ring":
-            save_path = self.get_save_path()
-            if save_path:
-                return Path(save_path)
+            return None
 
         from er_save_manager.platform.utils import PlatformUtils
 
         paths = PlatformUtils.find_all_save_files(profile)
-        if paths:
-            return paths[0]
-
-        return None
+        return paths[0] if paths else None
 
     def update_backup_stats(self):
         if not self.backup_stats_var:
@@ -238,11 +236,11 @@ class BackupManagerTab:
         from er_save_manager.platform.utils import PlatformUtils
 
         save_path = None
-        if profile.key == "elden_ring":
-            sp = self.get_save_path()
-            if sp:
-                save_path = Path(sp)
-        if not save_path:
+        selected = self.get_save_path()
+        if selected and Path(selected).exists():
+            save_path = Path(selected)
+
+        if not save_path and profile.key != "elden_ring":
             paths = PlatformUtils.find_all_save_files(profile)
             if paths:
                 save_path = paths[0]

@@ -7,15 +7,12 @@ Both use the same BND4 entry format:
   [AES-128-CBC encrypted payload]
 
 SteamID is stored as Steam64 (uint64 LE) and found by byte-scanning the
-decrypted entries - it is NOT at a fixed offset.
+decrypted entries - it is not at a fixed offset.
 
 Keys:
   DS2 SotFS: 59 9F 9B 69 96 40 A5 52 36 EE 2D 70 83 5E C7 44
   DSR:       01 23 45 67 89 AB CD EF FE DC BA 98 76 54 32 10
 
-Sources:
-  DS2 key: jtesta/souls_givifier (MIT), which credits mi5hmash/SL2Bonfire
-  DSR key: pawREP/Dark-Souls-Remastered-SL2-Unpacker
 """
 
 from __future__ import annotations

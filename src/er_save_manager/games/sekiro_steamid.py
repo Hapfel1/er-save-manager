@@ -3,7 +3,7 @@ SteamID patcher for Sekiro: Shadows Die Twice save files (S0000.sl2).
 
 Sekiro saves are unencrypted BND4 files with MD5 checksums. SteamID is stored
 as Steam64 (uint64 LE) at fixed offsets in each slot and the settings block.
-Recalculating MD5 checksums after patching is sufficient - no RAM injection needed.
+Recalculating MD5 checksums after patching is sufficient.
 
 All offsets and constants from uberhalit/SimpleSekiroSavegameHelper (MIT license).
 """

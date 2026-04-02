@@ -12,6 +12,7 @@ from er_save_manager.backup.manager import BackupManager
 from er_save_manager.data.locations import MapLocation, get_all_locations
 from er_save_manager.editors.world_state import WorldStateEditor
 from er_save_manager.parser.er_types import FloatVector3, MapId
+from er_save_manager.ui.map_view import open_map_window
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
@@ -38,6 +39,7 @@ class WorldStateTab:
         self.reload_save = reload_callback
         self.get_selected_slot = selected_slot_callback
         self.editor: WorldStateEditor | None = None
+        self._map_image_path = None  # set via set_map_image_path()
 
         self.all_locations: list[MapLocation] = get_all_locations()
         self.filtered_locations: list[MapLocation] = self.all_locations.copy()
@@ -160,7 +162,13 @@ class WorldStateTab:
         self.bloodstain_var = tk.StringVar(value="N/A")
         ctk.CTkLabel(
             bloodstain_frame, textvariable=self.bloodstain_var, wraplength=250
-        ).pack(fill=tk.X, pady=(2, 0))
+        ).pack(fill=tk.X, pady=(2, 4))
+        ctk.CTkButton(
+            bloodstain_frame,
+            text="Move Bloodstain to Player",
+            command=self._sync_bloodstain_to_player,
+            height=30,
+        ).pack(fill=tk.X, pady=(0, 2))
 
         # Right column: teleportation
         right_frame = ctk.CTkFrame(main_container, corner_radius=12)
@@ -187,6 +195,13 @@ class WorldStateTab:
             variable=self.teleport_mode,
             value="custom",
             command=self._on_mode_changed,
+        ).pack(side=tk.LEFT, padx=(0, 20))
+
+        ctk.CTkButton(
+            mode_frame,
+            text="Open Map",
+            width=100,
+            command=self._open_map_window,
         ).pack(side=tk.LEFT)
 
         self.content_frame = ctk.CTkFrame(right_frame, fg_color="transparent")
@@ -239,6 +254,69 @@ class WorldStateTab:
         self.editor = WorldStateEditor(save, slot_idx)
         if current_combo and hasattr(self, "slot_combo"):
             self.slot_combo.set(current_combo)
+
+    def _sync_bloodstain_to_player(self):
+        if not self.editor:
+            CTkMessageBox.showerror(
+                "Error", "Load a character first.", parent=self.parent
+            )
+            return
+
+        if not CTkMessageBox.askyesno(
+            "Move Bloodstain",
+            "Move the bloodstain to the player's current position?\n\nThis will overwrite the existing bloodstain location.",
+            parent=self.parent,
+        ):
+            return
+
+        save_path = self.get_save_path()
+        if save_path:
+            BackupManager(Path(save_path)).create_backup(
+                description="before_bloodstain_sync",
+                operation="world_state_bloodstain_sync",
+                save=self.get_save_file(),
+            )
+
+        success, message = self.editor.sync_bloodstain_to_player()
+        if success:
+            if save_path:
+                self.get_save_file().recalculate_checksums()
+                self.get_save_file().to_file(save_path)
+                self.reload_save()
+                self._reload_editor()
+                self.refresh()
+            self.show_toast(message, duration=2500)
+        else:
+            CTkMessageBox.showerror("Error", message, parent=self.parent)
+
+    def set_map_image_path(self, path: str):
+        self._map_image_path = path
+
+    def _open_map_window(self):
+        if not self.editor:
+            CTkMessageBox.showwarning(
+                "No Character", "Load a character first.", parent=self.parent
+            )
+            return
+        if not self._map_image_path:
+            CTkMessageBox.showwarning(
+                "Map Unavailable", "Map image not found.", parent=self.parent
+            )
+            return
+        m60_locations = [
+            loc
+            for loc in self.all_locations
+            if loc.map_id_str.startswith("m60_") and loc.map_id_str.endswith("_00")
+        ]
+        info = self.editor.get_current_location()
+        current_map_id = info.get("map_id_str")
+        open_map_window(
+            self.parent,
+            m60_locations,
+            self._teleport_to_known_loc,
+            self._map_image_path,
+            current_map_id,
+        )
 
     def _on_mode_changed(self):
         for widget in self.content_frame.winfo_children():
@@ -353,7 +431,14 @@ class WorldStateTab:
             )
             return
 
-        loc = self.filtered_locations[sel[0]]
+        self._teleport_to_known_loc(self.filtered_locations[sel[0]])
+
+    def _teleport_to_known_loc(self, loc: MapLocation):
+        if not self.editor:
+            CTkMessageBox.showerror(
+                "Error", "Load a character first.", parent=self.parent
+            )
+            return
 
         if loc.is_dlc:
             save = self.get_save_file()

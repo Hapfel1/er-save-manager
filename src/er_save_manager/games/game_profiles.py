@@ -33,6 +33,10 @@ class GameProfile:
     # Use forward slashes. Leave "" for all games that use appdata_subdir.
     documents_subdir: str = ""
 
+    # Game process executable name used to detect if the game is running.
+    # On Linux/Proton this is the .exe name as seen under Wine.
+    process_name: str = ""
+
     supports_steamid_patch: bool = True
     steamid_patch_note: str = ""
     has_steamid_subfolder: bool = True
@@ -52,6 +56,7 @@ GAME_PROFILES: list[GameProfile] = [
         save_filename="ER0000.sl2",
         save_glob="ER*.*",
         appdata_subdir="EldenRing",
+        process_name="eldenring.exe",
         extensions=[".sl2", ".co2"],
     ),
     GameProfile(
@@ -61,6 +66,7 @@ GAME_PROFILES: list[GameProfile] = [
         save_filename="NR0000.sl2",
         save_glob="NR*.*",
         appdata_subdir="Nightreign",
+        process_name="nightreign.exe",
         extensions=[".sl2", ".co2"],
     ),
     GameProfile(
@@ -70,6 +76,7 @@ GAME_PROFILES: list[GameProfile] = [
         save_filename="AC60000.sl2",
         save_glob="AC6*.*",
         appdata_subdir="ArmoredCore6",
+        process_name="armoredcore6.exe",
     ),
     GameProfile(
         name="Dark Souls III",
@@ -78,6 +85,7 @@ GAME_PROFILES: list[GameProfile] = [
         save_filename="DS30000.sl2",
         save_glob="DS3*.*",
         appdata_subdir="DarkSoulsIII",
+        process_name="darksoulsiii.exe",
     ),
     GameProfile(
         name="Dark Souls II: Scholar of the First Sin",
@@ -86,6 +94,7 @@ GAME_PROFILES: list[GameProfile] = [
         save_filename="DS2SOFS0000.sl2",
         save_glob="DS2*.*",
         appdata_subdir="DarkSoulsII",
+        process_name="darksoulsii.exe",
         steamid_folder_format="steam64_hex",
     ),
     GameProfile(
@@ -98,6 +107,7 @@ GAME_PROFILES: list[GameProfile] = [
         save_glob="DRAKS*.*",
         appdata_subdir="",
         documents_subdir="NBGI/DARK SOULS REMASTERED",
+        process_name="darksoulsremastered.exe",
         steamid_folder_format="steam32_dec",
     ),
     GameProfile(
@@ -107,6 +117,7 @@ GAME_PROFILES: list[GameProfile] = [
         save_filename="S0000.sl2",
         save_glob="S*.*",
         appdata_subdir="Sekiro",
+        process_name="sekiro.exe",
     ),
 ]
 

@@ -360,8 +360,9 @@ class SettingsTab:
                 selected = [None]
                 dlg = ctk.CTkToplevel(self.parent)
                 dlg.title(f"Select Save - {profile.name}")
-                dlg.geometry("520x300")
-                dlg.resizable(False, False)
+                dlg.geometry("620x400")
+                dlg.resizable(True, True)
+                dlg.minsize(500, 300)
                 force_render_dialog(dlg)
                 dlg.grab_set()
 
