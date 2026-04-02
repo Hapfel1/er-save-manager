@@ -340,6 +340,7 @@ class UserDataX:
         obj.horse_offset = f.tell()
         obj.horse = RideGameData.read(f)
         obj.control_byte_maybe = struct.unpack("<B", f.read(1))[0]
+        obj.blood_stain_offset = f.tell()
         obj.blood_stain = BloodStain.read(f)
         obj.unk_gamedataman_0x120_or_gamedataman_0x130 = struct.unpack("<I", f.read(4))[
             0

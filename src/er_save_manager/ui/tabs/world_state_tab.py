@@ -162,7 +162,13 @@ class WorldStateTab:
         self.bloodstain_var = tk.StringVar(value="N/A")
         ctk.CTkLabel(
             bloodstain_frame, textvariable=self.bloodstain_var, wraplength=250
-        ).pack(fill=tk.X, pady=(2, 0))
+        ).pack(fill=tk.X, pady=(2, 4))
+        ctk.CTkButton(
+            bloodstain_frame,
+            text="Move Bloodstain to Player",
+            command=self._sync_bloodstain_to_player,
+            height=30,
+        ).pack(fill=tk.X, pady=(0, 2))
 
         # Right column: teleportation
         right_frame = ctk.CTkFrame(main_container, corner_radius=12)
@@ -248,6 +254,40 @@ class WorldStateTab:
         self.editor = WorldStateEditor(save, slot_idx)
         if current_combo and hasattr(self, "slot_combo"):
             self.slot_combo.set(current_combo)
+
+    def _sync_bloodstain_to_player(self):
+        if not self.editor:
+            CTkMessageBox.showerror(
+                "Error", "Load a character first.", parent=self.parent
+            )
+            return
+
+        if not CTkMessageBox.askyesno(
+            "Move Bloodstain",
+            "Move the bloodstain to the player's current position?\n\nThis will overwrite the existing bloodstain location.",
+            parent=self.parent,
+        ):
+            return
+
+        save_path = self.get_save_path()
+        if save_path:
+            BackupManager(Path(save_path)).create_backup(
+                description="before_bloodstain_sync",
+                operation="world_state_bloodstain_sync",
+                save=self.get_save_file(),
+            )
+
+        success, message = self.editor.sync_bloodstain_to_player()
+        if success:
+            if save_path:
+                self.get_save_file().recalculate_checksums()
+                self.get_save_file().to_file(save_path)
+                self.reload_save()
+                self._reload_editor()
+                self.refresh()
+            self.show_toast(message, duration=2500)
+        else:
+            CTkMessageBox.showerror("Error", message, parent=self.parent)
 
     def set_map_image_path(self, path: str):
         self._map_image_path = path
