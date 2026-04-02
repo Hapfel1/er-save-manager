@@ -21,6 +21,7 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **Event Flags Editor**: Read and toggle event flags
 - **Boss Respawner**: Respawn any boss for repeated fights
 - **NPC Respawner**: Respawn NPCs
+- **NPC Quest Trakcer**
 - **Gestures**: Unlock gestures
 - **Invasion Regions & Game Settings**: View and edit invasion regions and game settings
 - **Backup Manager**: Automatic and manual backups with restore functionality
@@ -191,7 +192,6 @@ MIT License - see [LICENSE](LICENSE)
 - [Umgak](https://github.com/Umgak) for allowing me to use her contributions to the [TGA Cheat Table](https://github.com/The-Grand-Archives/Elden-Ring-CT-TGA), specifically the Event Flag Manager's tables
 - [?WikiName?](https://soulsmodding.com/doku.php?id=er-refmat:main) for the available documentation
 - [SimpleSekiroSavegameHelper](https://github.com/uberhalit/SimpleSekiroSavegameHelper) for offsets and constants for Sekiro steamid patcher
-- 
 
 ### Community
 - All preset contributors
