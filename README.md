@@ -16,20 +16,20 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **Character Editor**: Edit stats, runes, name, level, and build attributes
 - **Appearance Editor**: View, export and import Presets
 - **Community Preset Browser**: Browse, download, and contribute character appearance presets with likes and download tracking
-- **World State / Teleportation**: 451 known safe locations to warp to as well as custom coordinate teleportation
+- **World State / Teleportation**: 451 known safe locations to warp to as well as custom coordinate teleportation. Interactive map of the overworld for teleporting.
 - **SteamID Patcher**: Transfer saves between Steam accounts
 - **Event Flags Editor**: Read and toggle event flags
 - **Boss Respawner**: Respawn any boss for repeated fights
 - **NPC Respawner**: Respawn NPCs
 - **Gestures**: Unlock gestures
+- **Invasion Regions & Game Settings**: View and edit invasion regions and game settings
 - **Backup Manager**: Automatic and manual backups with restore functionality
 - **Troubleshooting**: Troubleshooter for checking game and save file related issues
+- **Backup Manager and SteamID Patcher for**: Elden Ring, Elden Ring Nightreign, Armored Core 6, Sekiro, Dark Souls III, Dark Souls II SotfS, Dark Souls Remastered
 
 ### Work in Progress
 
 - **Inventory Editor**: Item spawning requires additional reverse engineering
-- **Hex Editor**: Not yet implemented
-- **Backup Manager and SteamID Patcher for all games**
 
 ## Installation
 
@@ -58,9 +58,7 @@ Download the latest release from [Releases](https://github.com/Hapfel1/er-save-m
 Automatically detects and fixes common save corruption issues:
 
 - **Torrent Bug**: Fixes infinite loading when Torrent HP=0 with state=ACTIVE
-- **SteamID Mismatch**: Syncs character SteamID with save file header
-- **Weather Sync**: Fixes AreaID mismatch with current map
-- **Time Sync**: Recalculates in-game time from seconds played
+- **Torn Save Files**: Detects and fixes torn writes in save files mostly caused by game crashes and fixes them.
 - **Ranni Softlock**: Fixes Ranni's Tower softlock
 - **Warp Sickness**: Fixes stuck warps (Radahn, Morgott, Radagon, Sealing Tree)
 - **Stuck at DLC coordinates**: Teleports your character to the Roundtable if you tried accessing the DLC without owning it.
@@ -97,6 +95,14 @@ Automatically detects issues with your game installation, your save file and any
 - Local cache for fast loading
 - Supports Convergence Mod for character submission
 - Allows specifying and contributing any overhaul mod character
+
+### World State / Teleportation
+
+- Display of current location
+- 451 known locations to teleport to
+- Interactive map of the overworld for teleporting
+- Custom Coordinate Teleportation
+- "Move Bloodstain to Player" function
 
 ### Character Editor
 
@@ -148,6 +154,11 @@ Automatically detects issues with your game installation, your save file and any
 
 - Unlock gestures
 
+### Invasion Regions & Game Settings
+
+- View and unlock invasion regions
+- View and edit game settings
+
 ### Backup Manager
 
 - Automatic backups before any edit
@@ -156,9 +167,14 @@ Automatically detects issues with your game installation, your save file and any
 - Backup pruning with configurable retention
 - One-click restore with confirmation
 
-### Convergence Mod Support
+### Backup Manager and SteamID Patcher for other Fromsoftware Games
 
-- Recognizes Convergence Save File and enables Convergence Mode to adjust for custom stats like custom classes etc.
+- Elden Ring Nightreign
+- Armored Core 6
+- Sekiro
+- Dark Souls III
+- Dark Souls II SotfS
+- Dark Souls Remastered
 
 ## Building from Source
 
@@ -174,6 +190,8 @@ MIT License - see [LICENSE](LICENSE)
 - [ER-Save-Lib](https://github.com/ClayAmore/ER-Save-Lib) - Rust implementation and reverse engineering research
 - [Umgak](https://github.com/Umgak) for allowing me to use her contributions to the [TGA Cheat Table](https://github.com/The-Grand-Archives/Elden-Ring-CT-TGA), specifically the Event Flag Manager's tables
 - [?WikiName?](https://soulsmodding.com/doku.php?id=er-refmat:main) for the available documentation
+- [SimpleSekiroSavegameHelper](https://github.com/uberhalit/SimpleSekiroSavegameHelper) for offsets and constants for Sekiro steamid patcher
+- 
 
 ### Community
 - All preset contributors

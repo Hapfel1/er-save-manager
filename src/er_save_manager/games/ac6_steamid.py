@@ -7,7 +7,6 @@ AC6 uses the same AES-128-CBC BND4 encryption pattern as Nightreign but:
   entry for a section header containing the ASCII string "Steam", where the
   section's data field is exactly 8 bytes (uint64 SteamID LE).
 
-Reference: Nordgaren/ArmoredCore6SaveTransferTool
 """
 
 from __future__ import annotations

@@ -105,13 +105,13 @@ class GesturesRegionsTab:
         # Header
         ctk.CTkLabel(
             main_frame,
-            text="Gestures",
+            text="Gestures & Invasion Regions",
             font=("Segoe UI", 18, "bold"),
         ).pack(pady=(15, 5), padx=15, anchor="w")
 
         ctk.CTkLabel(
             main_frame,
-            text="View and manage unlocked gestures",
+            text="View and manage unlocked gestures as well as invasion regions and game settings.",
             font=("Segoe UI", 11),
             text_color=("#808080", "#a0a0a0"),
         ).pack(pady=(0, 15), padx=15, anchor="w")

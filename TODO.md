@@ -1,3 +1,11 @@
+fix missing locations and update docs
+
+check contribution again done
+
+provide warning for importing apperance presets done
+
+check autoloading, check autobackup again done
+
 Backup Manager + SteamID Patcher for the other games done
 
 item spawning

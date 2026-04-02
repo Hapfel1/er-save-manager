@@ -12,7 +12,6 @@ SteamID storage (all values are Steam32 / account ID, i.e. Steam64 - 0x011000010
   USER_DATA_010 (global menu): int32 at offset 0x8 of decrypted data
   USER_DATA_000..009 (char slots): int32 at SlotData[int32@0x58 + 0x6F]
 
-Reference: JKAnderson/SaveMerge (MIT license)
 """
 
 from __future__ import annotations

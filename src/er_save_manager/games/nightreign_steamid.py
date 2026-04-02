@@ -2,8 +2,7 @@
 SteamID patcher for Elden Ring: Nightreign save files (NR0000.sl2 / NR0000.co2).
 
 Nightreign saves use the same BND4 container as DS2/DS3/ER but with AES-CBC
-encryption on every entry. The AES key was found by TKGP and published in
-EonaCat's NightReign Save Transfer tool (MIT license).
+encryption on every entry.
 
 Patching process:
   1. Decrypt all entries (AES-128-CBC, fixed key, per-entry IV prepended to data).
