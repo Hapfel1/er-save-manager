@@ -75,6 +75,7 @@ class SettingsTab:
         self._create_general_settings(scroll_frame)
         self._create_backup_settings(scroll_frame)
         self._create_ui_settings(scroll_frame)
+        self._create_launch_settings(scroll_frame)
 
         if self.settings.get("advanced_mode_unlocked", False):
             self._create_advanced_settings(scroll_frame)
@@ -612,6 +613,46 @@ class SettingsTab:
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
+    def _create_launch_settings(self, parent) -> None:
+        """CPU 0 exclusion settings -- Windows only."""
+        import sys
+
+        if sys.platform != "win32":
+            return
+
+        frame = ctk.CTkFrame(parent, corner_radius=12)
+        frame.pack(fill="x", pady=(0, 10))
+
+        ctk.CTkLabel(
+            frame,
+            text="Performance",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(anchor="w", padx=12, pady=(12, 6))
+
+        self._cpu0_exclude_var = tk.BooleanVar(
+            value=self.settings.get("cpu0_exclude_on_launch", False)
+        )
+        ctk.CTkCheckBox(
+            frame,
+            text="Exclude CPU 0 from Elden Ring, Nightreign and DS3 affinity on launch",
+            variable=self._cpu0_exclude_var,
+            command=lambda: self.settings.set(
+                "cpu0_exclude_on_launch", self._cpu0_exclude_var.get()
+            ),
+        ).pack(anchor="w", padx=12, pady=5)
+        ctk.CTkLabel(
+            frame,
+            text=(
+                "When eldenring.exe, nightreign.exe or darksoulsiii.exe is detected, "
+                "CPU 0 is removed from its affinity mask. "
+                "Can reduce stutter caused by Windows scheduling on core 0."
+            ),
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+            wraplength=560,
+            justify="left",
+        ).pack(anchor="w", padx=32, pady=(0, 12))
+
     def _lock_advanced(self) -> None:
         """Hide the advanced section and clear the unlock flag."""
         self.settings.set("advanced_mode_unlocked", False)
@@ -651,6 +692,9 @@ class SettingsTab:
                 self.skip_game_check_var.set(False)
             if hasattr(self, "verbose_logging_var"):
                 self.verbose_logging_var.set(False)
+            if hasattr(self, "_cpu0_exclude_var"):
+                self._cpu0_exclude_var.set(False)
+                self.settings.set("cpu0_exclude_on_launch", False)
             CTkMessageBox.showinfo(
                 "Success", "Settings have been reset to defaults.", parent=self.parent
             )

@@ -154,6 +154,21 @@ class GameProcessMonitor:
 
                     # Trigger on launch transition (not-running -> running)
                     if is_running and not was_running[game_key]:
+                        # Apply CPU 0 affinity exclusion for supported games if configured.
+                        if (
+                            game_key in ("elden_ring", "dark_souls_3", "nightreign")
+                            and sys.platform == "win32"
+                        ):
+                            if settings.get("cpu0_exclude_on_launch", False):
+                                try:
+                                    from er_save_manager.platform.cpu0_launcher import (
+                                        apply_cpu0_exclusion,
+                                    )
+
+                                    apply_cpu0_exclusion(process_name)
+                                except Exception as exc:
+                                    print(f"CPU0 exclusion failed: {exc}")
+
                         if game_key not in self._backed_up_this_session:
                             backup_path = self._create_backup_for_game(
                                 game_key, save_path
