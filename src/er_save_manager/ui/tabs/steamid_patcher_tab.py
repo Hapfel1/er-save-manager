@@ -649,15 +649,17 @@ class SteamIDPatcherTab:
 
     def _resolve_vanity_url(self, custom_name: str):
         try:
-            import json
+            import re
             import urllib.request
 
-            api_url = f"https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=&vanityurl={custom_name}&format=json"
-            with urllib.request.urlopen(api_url, timeout=5) as resp:
-                data = json.loads(resp.read())
+            xml_url = f"https://steamcommunity.com/id/{custom_name}/?xml=1"
+            req = urllib.request.Request(xml_url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                body = resp.read().decode("utf-8", errors="replace")
 
-            if data.get("response", {}).get("success") == 1:
-                steamid = data["response"]["steamid"]
+            match = re.search(r"<steamID64>(\d{17})</steamID64>", body)
+            if match:
+                steamid = match.group(1)
                 self.new_steamid_var.set(steamid)
                 self.steam_url_var.set("")
                 self.show_toast(f"Resolved: {steamid}", duration=2500)
@@ -665,6 +667,7 @@ class SteamIDPatcherTab:
                 CTkMessageBox.showerror(
                     "Not Found",
                     f"Could not resolve Steam vanity URL: {custom_name}\n\n"
+                    "The profile may be private or the name may be incorrect.\n"
                     "Enter the SteamID directly instead.",
                     parent=self.parent,
                 )
