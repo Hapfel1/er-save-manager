@@ -306,7 +306,7 @@ class StatsEditor:
 
         ctk.CTkLabel(
             mm_frame,
-            text="Level (0-9):",
+            text="Level (0-25):",
             text_color=("black", "white"),
         ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
 
@@ -598,12 +598,12 @@ class StatsEditor:
                 char.furl_calling_finger_on = bool(self.rune_arc_var.get())
 
                 # Matchmaking weapon level -- clamp to inventory floor
-                mm_value = max(0, min(9, int(self.matchmaking_level_var.get())))
+                mm_value = max(0, min(25, int(self.matchmaking_level_var.get())))
                 if mm_value < self._matchmaking_min:
                     CTkMessageBox.showwarning(
                         "Invalid Value",
                         f"Matchmaking weapon level cannot be set below {self._matchmaking_min} "
-                        f"(highest upgrade tier found in inventory).\n"
+                        f"(highest upgrade level found in inventory).\n"
                         f"Value has been raised to {self._matchmaking_min}.",
                         parent=self.parent,
                     )
@@ -687,46 +687,10 @@ class StatsEditor:
             )
 
     def _refresh_matchmaking_min(self, slot) -> None:
-        import logging
+        """Recompute inventory floor and update the label."""
+        from er_save_manager.editors.matchmaking_utils import get_max_weapon_upgrade
 
-        from er_save_manager.editors.matchmaking_utils import get_max_matchmaking_level
-
-        log = logging.getLogger(__name__)
-
-        gaitem_map_raw = getattr(slot, "gaitem_map", None)
-        log.warning(
-            f"DEBUG gaitem_map type={type(gaitem_map_raw)}, len={len(gaitem_map_raw) if gaitem_map_raw else 'None'}"
-        )
-
-        if gaitem_map_raw:
-            weapon_gaitems = [
-                g
-                for g in gaitem_map_raw
-                if (getattr(g, "gaitem_handle", 0) & 0xF0000000) == 0x80000000
-            ]
-            log.warning(f"DEBUG weapon gaitems count={len(weapon_gaitems)}")
-            for g in weapon_gaitems[:10]:
-                log.warning(
-                    f"  handle=0x{g.gaitem_handle:08X} item_id=0x{g.item_id:08X} unk0x10={g.unk0x10} unk0x14={g.unk0x14}"
-                )
-
-        inv = getattr(slot, "inventory_held", None)
-        if inv:
-            weapon_handles = {
-                getattr(g, "gaitem_handle", 0)
-                for g in (gaitem_map_raw or [])
-                if (getattr(g, "gaitem_handle", 0) & 0xF0000000) == 0x80000000
-            }
-            hits = [
-                (getattr(i, "gaitem_handle", 0), getattr(i, "quantity", 0))
-                for i in inv.common_items
-                if getattr(i, "gaitem_handle", 0) in weapon_handles
-                and getattr(i, "quantity", 0) > 0
-            ]
-            log.warning(f"DEBUG inventory weapon hits={hits[:10]}")
-
-        self._matchmaking_min = get_max_matchmaking_level(slot)
-        log.warning(f"DEBUG matchmaking result={self._matchmaking_min}")
+        self._matchmaking_min = get_max_weapon_upgrade(slot)
         if hasattr(self, "_mm_min_label") and self._mm_min_label:
             self._mm_min_label.configure(
                 text=f"Min from inventory: {self._matchmaking_min}"
