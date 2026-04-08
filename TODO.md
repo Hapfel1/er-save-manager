@@ -1,4 +1,18 @@
-fix missing locations and update docs
+make level recalculation mandatory in stats editor, also recalculate in the other way if people change the soul level pbut the stats do not match up to that
+
+add matchmaking_weapon_level with checking every upgrade level of the weapons in the inventory and only allowing it to set it lower if there are no higher upgrade levels player_game_data_offset + 0xDA
+
+check steamidio again and add non default compatcdata path for other games
+
+add secret for advanced settings: skip game running check
+
+cpu0 launch button
+
+system explorer troubleshooter
+
+prase loginusers.vdf again done
+
+fix missing locations and update docs done
 
 check contribution again done
 
