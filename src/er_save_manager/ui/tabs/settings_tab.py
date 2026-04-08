@@ -21,8 +21,10 @@ class SettingsTab:
         get_save_path_callback=None,
         get_default_save_path_callback=None,
         active_game: str = "elden_ring",
+        root=None,
     ):
         self.parent = parent
+        self.root = root
         self.settings = get_settings()
         self.get_save_path = get_save_path_callback
         self.get_default_save_path = get_default_save_path_callback
@@ -31,6 +33,11 @@ class SettingsTab:
         # Per-game auto-backup path vars - populated in setup_ui
         self._auto_backup_path_vars: dict[str, tk.StringVar] = {}
         self._auto_backup_enabled_vars: dict[str, tk.BooleanVar] = {}
+
+        # Keypress buffer for secret unlock sequence
+        self._key_buffer: str = ""
+        # Reference to the advanced section frame (created on unlock)
+        self._advanced_frame: ctk.CTkFrame | None = None
 
     def setup_ui(self):
         theme_value = self.settings.get("theme", None)
@@ -42,6 +49,12 @@ class SettingsTab:
         scroll_frame = ctk.CTkScrollableFrame(self.parent, corner_radius=12)
         scroll_frame.pack(fill="both", expand=True, padx=10, pady=10)
         bind_mousewheel(scroll_frame)
+        self._scroll_frame = scroll_frame
+
+        # Bind at the root level so keypresses are captured regardless of focus.
+        # The handler checks that this tab's frame is currently visible before acting.
+        bind_target = self.root if self.root is not None else self.parent
+        bind_target.bind_all("<KeyPress>", self._on_key_press, add=True)
 
         title_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
         title_frame.pack(fill="x", pady=(0, 20))
@@ -62,6 +75,9 @@ class SettingsTab:
         self._create_general_settings(scroll_frame)
         self._create_backup_settings(scroll_frame)
         self._create_ui_settings(scroll_frame)
+
+        if self.settings.get("advanced_mode_unlocked", False):
+            self._create_advanced_settings(scroll_frame)
 
     def _create_general_settings(self, parent):
         frame = ctk.CTkFrame(parent, corner_radius=12)
@@ -468,6 +484,108 @@ class SettingsTab:
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
+    def _on_key_press(self, event) -> None:
+        """Accumulate keypresses and check for the unlock sequence STRAWBERRY.
+        Only processes input when the Settings tab is the visible tab.
+        """
+        try:
+            if not self.parent.winfo_ismapped():
+                return
+        except Exception:
+            return
+        ch = event.char
+        if not ch or not ch.isprintable():
+            return
+        self._key_buffer = (self._key_buffer + ch.upper())[-10:]
+        if self._key_buffer == "STRAWBERRY":
+            self._key_buffer = ""
+            if not self.settings.get("advanced_mode_unlocked", False):
+                self.settings.set("advanced_mode_unlocked", True)
+                self._create_advanced_settings(self._scroll_frame)
+
+    def _create_advanced_settings(self, parent) -> None:
+        """Build the advanced/developer settings section."""
+        if self._advanced_frame is not None:
+            return
+
+        frame = ctk.CTkFrame(
+            parent, corner_radius=12, border_width=1, border_color=("gray60", "gray40")
+        )
+        frame.pack(fill="x", pady=(0, 10))
+        self._advanced_frame = frame
+
+        header = ctk.CTkFrame(frame, fg_color="transparent")
+        header.pack(fill="x", padx=12, pady=(12, 6))
+
+        ctk.CTkLabel(
+            header,
+            text="Advanced",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(side="left")
+
+        ctk.CTkButton(
+            header,
+            text="Lock",
+            width=60,
+            fg_color=("gray70", "gray30"),
+            hover_color=("gray60", "gray20"),
+            command=self._lock_advanced,
+        ).pack(side="right")
+
+        ctk.CTkLabel(
+            frame,
+            text="These settings bypass safety checks. Use with care.",
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+        ).pack(anchor="w", padx=12, pady=(0, 8))
+
+        # Skip game running check
+        self.skip_game_check_var = tk.BooleanVar(
+            value=self.settings.get("skip_game_running_check", False)
+        )
+        ctk.CTkCheckBox(
+            frame,
+            text="Skip game-running check when loading saves",
+            variable=self.skip_game_check_var,
+            command=lambda: self.settings.set(
+                "skip_game_running_check", self.skip_game_check_var.get()
+            ),
+        ).pack(anchor="w", padx=12, pady=5)
+        ctk.CTkLabel(
+            frame,
+            text="Allows loading saves while the game is running. Risk of data loss.",
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+        ).pack(anchor="w", padx=32, pady=(0, 10))
+
+        # Verbose logging
+        self.verbose_logging_var = tk.BooleanVar(
+            value=self.settings.get("verbose_logging", False)
+        )
+        ctk.CTkCheckBox(
+            frame,
+            text="Verbose logging to file",
+            variable=self.verbose_logging_var,
+            command=lambda: self.settings.set(
+                "verbose_logging", self.verbose_logging_var.get()
+            ),
+        ).pack(anchor="w", padx=12, pady=5)
+        ctk.CTkLabel(
+            frame,
+            text="Writes er_save_manager.log next to the loaded save file.",
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+        ).pack(anchor="w", padx=32, pady=(0, 12))
+
+    def _lock_advanced(self) -> None:
+        """Hide the advanced section and clear the unlock flag."""
+        self.settings.set("advanced_mode_unlocked", False)
+        self.settings.set("skip_game_running_check", False)
+        self.settings.set("verbose_logging", False)
+        if self._advanced_frame is not None:
+            self._advanced_frame.destroy()
+            self._advanced_frame = None
+
     def reset_to_defaults(self):
         if CTkMessageBox.askyesno(
             "Reset Settings",
@@ -490,6 +608,14 @@ class SettingsTab:
                 var.set(False)
             for var in self._auto_backup_path_vars.values():
                 var.set("(not configured)")
+            # Reset advanced settings
+            if self._advanced_frame is not None:
+                self._advanced_frame.destroy()
+                self._advanced_frame = None
+            if hasattr(self, "skip_game_check_var"):
+                self.skip_game_check_var.set(False)
+            if hasattr(self, "verbose_logging_var"):
+                self.verbose_logging_var.set(False)
             CTkMessageBox.showinfo(
                 "Success", "Settings have been reset to defaults.", parent=self.parent
             )

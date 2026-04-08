@@ -790,6 +790,7 @@ class SaveManagerGUI:
             get_save_path_callback=lambda: self.save_path,
             get_default_save_path_callback=lambda: self.default_save_path,
             active_game="elden_ring",
+            root=self.root,
         )
         self.settings_tab.setup_ui()
 
@@ -820,6 +821,7 @@ class SaveManagerGUI:
             get_save_path_callback=lambda: self.save_path,
             get_default_save_path_callback=lambda: self.default_save_path,
             active_game=profile.key,
+            root=self.root,
         )
         self.settings_tab.setup_ui()
 
@@ -981,7 +983,8 @@ class SaveManagerGUI:
 
         # Block loading if the game is currently running
         if (
-            profile
+            not self.settings.get("skip_game_running_check", False)
+            and profile
             and profile.process_name
             and self.is_game_running(profile.process_name)
         ):
@@ -1367,7 +1370,8 @@ class SaveManagerGUI:
         """Store the selected save path for non-ER games and refresh the SteamID display."""
         profile = self._active_profile()
         if (
-            profile
+            not self.settings.get("skip_game_running_check", False)
+            and profile
             and profile.process_name
             and self.is_game_running(profile.process_name)
         ):
@@ -1412,7 +1416,9 @@ class SaveManagerGUI:
             if profile and profile.process_name
             else "eldenring.exe"
         )
-        if self.is_game_running(process_name):
+        if not self.settings.get(
+            "skip_game_running_check", False
+        ) and self.is_game_running(process_name):
             if not self._handle_game_running_dialog(profile):
                 return
 
@@ -1507,13 +1513,22 @@ class SaveManagerGUI:
     def _load_save_background(self, save_path, silent=False):
         """Background thread for loading save file"""
         try:
+            verbose = self.settings.get("verbose_logging", False)
+            if verbose:
+                self._verbose_log(f"Loading save: {save_path}")
+
             # Load save file in background
             save_file = Save.from_file(save_path)
+
+            if verbose:
+                self._verbose_log(f"Parsed successfully: {save_path}")
 
             # Update main thread
             self.root.after(0, self._finalize_save_load, save_file, save_path, silent)
         except Exception as e:
             error_msg = str(e)
+            if self.settings.get("verbose_logging", False):
+                self._verbose_log(f"Load failed: {save_path} -- {error_msg}")
 
             self.root.after(
                 0,
@@ -1645,6 +1660,20 @@ class SaveManagerGUI:
             CTkMessageBox.showerror(
                 "Error", f"Failed to open backup manager:\n{e}", parent=self.root
             )
+
+    def _verbose_log(self, message: str) -> None:
+        """Write a timestamped line to the verbose log file next to the current save."""
+        import datetime
+
+        save_path = self.file_path_var.get() if hasattr(self, "file_path_var") else ""
+        log_dir = Path(save_path).parent if save_path else Path.home()
+        log_path = log_dir / "er_save_manager.log"
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(f"[{timestamp}] {message}\n")
+        except OSError:
+            pass
 
 
 def main():
