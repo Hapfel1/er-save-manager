@@ -501,7 +501,42 @@ class SettingsTab:
             self._key_buffer = ""
             if not self.settings.get("advanced_mode_unlocked", False):
                 self.settings.set("advanced_mode_unlocked", True)
+                self._show_unlock_popup()
                 self._create_advanced_settings(self._scroll_frame)
+
+    def _show_unlock_popup(self) -> None:
+        """Show a small congratulations popup on first unlock."""
+        root = self.root if self.root is not None else self.parent
+        popup = ctk.CTkToplevel(root)
+        popup.title("")
+        popup.resizable(False, False)
+        popup.transient(root)
+        popup.grab_set()
+
+        popup.update_idletasks()
+        w, h = 260, 130
+        rx = root.winfo_rootx() + (root.winfo_width() - w) // 2
+        ry = root.winfo_rooty() + (root.winfo_height() - h) // 2
+        popup.geometry(f"{w}x{h}+{rx}+{ry}")
+
+        ctk.CTkLabel(
+            popup,
+            text="\U0001f353",
+            font=("Segoe UI", 36),
+        ).pack(pady=(16, 4))
+        ctk.CTkLabel(
+            popup,
+            text="You found it!",
+            font=("Segoe UI", 13, "bold"),
+        ).pack()
+        ctk.CTkButton(
+            popup,
+            text="OK",
+            width=80,
+            command=popup.destroy,
+        ).pack(pady=(10, 0))
+
+        popup.after(3000, lambda: popup.destroy() if popup.winfo_exists() else None)
 
     def _create_advanced_settings(self, parent) -> None:
         """Build the advanced/developer settings section."""
