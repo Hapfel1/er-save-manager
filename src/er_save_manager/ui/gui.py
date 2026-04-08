@@ -1430,7 +1430,7 @@ class SaveManagerGUI:
         ):
             # Create custom dialog with "Don't show again" option
             warning_dialog = tk.Toplevel(self.root)
-            warning_dialog.title("⚠️ EAC Warning - Vanilla Save File Detected")
+            warning_dialog.title("Vanilla Save File Detected")
             warning_dialog.geometry("520x420")
             warning_dialog.transient(self.root)
             warning_dialog.grab_set()
@@ -1441,7 +1441,7 @@ class SaveManagerGUI:
 
             ttk.Label(
                 msg_frame,
-                text="⚠️ EAC Warning - Vanilla Save File Detected",
+                text="Vanilla Save File Detected",
                 font=("Segoe UI", 12, "bold"),
                 foreground="red",
             ).pack(pady=(0, 10))
@@ -1449,12 +1449,10 @@ class SaveManagerGUI:
             warning_text = (
                 "You are loading a Vanilla save file (.sl2).\n\n"
                 "WARNING: Modifying save files can result in a BAN if:\n"
-                "• Easy Anti-Cheat (EAC) is enabled\n"
                 "• You play online with modified saves\n\n"
                 "To avoid bans:\n"
-                "1. Launch Elden Ring with EAC disabled\n"
-                "2. Only play offline with modified saves\n"
-                "3. Do not use modified saves in online/multiplayer\n\n"
+                "1. Only play offline with modified saves\n"
+                "2. Do not use modified saves in online/multiplayer\n\n"
                 "Do you understand and want to continue?"
             )
 
