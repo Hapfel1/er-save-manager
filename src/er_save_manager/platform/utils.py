@@ -42,18 +42,23 @@ class PlatformUtils:
         """Check if Elden Ring is running."""
         try:
             if PlatformUtils.is_windows():
+                si = subprocess.STARTUPINFO()
+                si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                si.wShowWindow = 0  # SW_HIDE
                 result = subprocess.run(
                     ["tasklist", "/FI", "IMAGENAME eq eldenring.exe", "/NH"],
-                    capture_output=True,
-                    text=True,
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL,
+                    startupinfo=si,
                     creationflags=subprocess.CREATE_NO_WINDOW,
                 )
-                return "eldenring.exe" in result.stdout.lower()
+                return "eldenring.exe" in result.stdout.decode(errors="replace").lower()
             elif PlatformUtils.is_linux():
                 result = subprocess.run(
                     ["pgrep", "-f", "eldenring.exe"],
-                    capture_output=True,
-                    text=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
                 )
                 return result.returncode == 0
         except Exception:
@@ -373,142 +378,6 @@ class PlatformUtils:
             / "share"
             / "Steam"
         ).exists()
-
-    @staticmethod
-    def get_steam_install_path() -> Path | None:
-        """
-        Return the Steam installation directory.
-
-        On Windows: reads HKCU\\Software\\Valve\\Steam -> SteamPath via winreg.
-        A plain registry read does not trigger Windows Defender heuristics.
-        On Linux: checks the standard and Flatpak Steam locations.
-        Returns None when Steam cannot be located.
-        """
-        platform_name = PlatformUtils.get_platform()
-
-        if platform_name == "windows":
-            try:
-                import winreg
-
-                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam")
-                steam_path = Path(winreg.QueryValueEx(key, "SteamPath")[0])
-                winreg.CloseKey(key)
-                if steam_path.exists():
-                    return steam_path
-            except Exception:
-                pass
-            # Fallback: common default locations (no shell, no subprocess)
-            for candidate in (
-                Path("C:/Program Files (x86)/Steam"),
-                Path("C:/Program Files/Steam"),
-            ):
-                if candidate.exists():
-                    return candidate
-            return None
-
-        if platform_name == "linux":
-            for candidate in (
-                Path.home() / ".local" / "share" / "Steam",
-                Path.home()
-                / ".var"
-                / "app"
-                / "com.valvesoftware.Steam"
-                / ".local"
-                / "share"
-                / "Steam",
-            ):
-                if candidate.exists():
-                    return candidate
-            return None
-
-        return None
-
-    @staticmethod
-    def get_loginusers_steam_accounts() -> list[tuple[int, str]]:
-        """
-        Parse Steam's loginusers.vdf and return logged-in accounts.
-
-        Returns a list of (steam64_id, persona_name) tuples, ordered by
-        most recently used first (mostrecent flag).
-
-        Scans all known Steam base directories so the file is found even
-        when get_steam_install_path() resolves a symlink to a path that
-        does not contain the config directory.
-        """
-        import re
-
-        platform_name = PlatformUtils.get_platform()
-
-        if platform_name == "windows":
-            # Registry lookup is reliable on Windows.
-            steam_dir = PlatformUtils.get_steam_install_path()
-            vdf_candidates = (
-                [steam_dir / "config" / "loginusers.vdf"] if steam_dir else []
-            )
-        else:
-            # On Linux the resolved install path may not contain config/.
-            # Check all known base paths explicitly.
-            bases: list[Path] = [
-                Path.home() / ".local" / "share" / "Steam",
-                Path.home()
-                / ".var"
-                / "app"
-                / "com.valvesoftware.Steam"
-                / ".local"
-                / "share"
-                / "Steam",
-            ]
-            resolved = PlatformUtils.get_steam_install_path()
-            if resolved is not None and resolved not in bases:
-                bases.append(resolved)
-            vdf_candidates = [b / "config" / "loginusers.vdf" for b in bases]
-
-        vdf_content: str | None = None
-        for vdf_path in vdf_candidates:
-            if not vdf_path.exists():
-                continue
-            try:
-                vdf_content = vdf_path.read_text(encoding="utf-8", errors="replace")
-                break
-            except OSError:
-                continue
-
-        if vdf_content is None:
-            return []
-
-        content = vdf_content
-        STEAM64_BASE = 0x0110000100000000
-        STEAM64_MAX = 0x01100001FFFFFFFF
-
-        # Split into per-account blocks by finding each top-level SteamID key.
-        block_pattern = re.compile(
-            r'"(\d{17})"\s*\{([^}]*)\}',
-            re.DOTALL,
-        )
-        kv_pattern = re.compile(r'"(\w+)"\s+"([^"]*)"')
-
-        accounts: list[tuple[int, str, int]] = []  # (steamid, name, most_recent)
-        for m in block_pattern.finditer(content):
-            try:
-                steamid = int(m.group(1))
-            except ValueError:
-                continue
-            if not (STEAM64_BASE <= steamid <= STEAM64_MAX):
-                continue
-
-            fields: dict[str, str] = {}
-            for kv in kv_pattern.finditer(m.group(2)):
-                fields[kv.group(1).lower()] = kv.group(2)
-
-            persona = (
-                fields.get("personaname") or fields.get("accountname") or str(steamid)
-            )
-            most_recent = int(fields.get("mostrecent", "0"))
-            accounts.append((steamid, persona, most_recent))
-
-        # Most-recently-used account first.
-        accounts.sort(key=lambda x: x[2], reverse=True)
-        return [(sid, name) for sid, name, _ in accounts]
 
     @staticmethod
     def get_steam_library_folders() -> list[Path]:
