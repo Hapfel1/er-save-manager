@@ -648,6 +648,8 @@ class SteamIDPatcherTab:
         )
 
     def _resolve_vanity_url(self, custom_name: str):
+        # Steam's XML profile endpoint requires no API key and returns
+        # a <steamID64> element directly.
         try:
             import re
             import urllib.request
@@ -699,6 +701,8 @@ class SteamIDPatcherTab:
 
             # --- Source 1: loginusers.vdf ---
             # All logged-in accounts, sorted by most-recently-used.
+            # Not filtered by save existence: the patcher target account
+            # typically has no save yet for this game.
             loginusers = PlatformUtils.get_loginusers_steam_accounts()
             for sid, persona in loginusers:
                 label = f"{persona} ({sid})"
