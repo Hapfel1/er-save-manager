@@ -59,6 +59,7 @@ pyinstaller --clean --noconfirm \
     --hidden-import er_save_manager.ui.tabs.advanced_tools_tab \
     --hidden-import er_save_manager.ui.tabs.backup_manager_tab \
     --hidden-import er_save_manager.ui.map_view \
+    --add-binary "/usr/lib/libreadline.so.8:." \
     --optimize 2 \
     --strip \
     --distpath "dist/linux-$version" \
