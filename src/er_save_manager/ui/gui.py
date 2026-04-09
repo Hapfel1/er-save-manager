@@ -1216,7 +1216,10 @@ class SaveManagerGUI:
                     startupinfo=si,
                     creationflags=subprocess.CREATE_NO_WINDOW,
                 )
-                return process_name.lower() in result.stdout.decode(errors="replace").lower()
+                return (
+                    process_name.lower()
+                    in result.stdout.decode(errors="replace").lower()
+                )
             else:
                 result = subprocess.run(
                     ["pgrep", "-f", process_name],
