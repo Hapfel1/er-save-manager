@@ -189,9 +189,8 @@ class SaveManagerGUI:
         self._resize_timer = self.root.after(200, self._process_resize)
 
     def _process_resize(self):
-        """Process pending resize - called after resize events stop"""
+        """Process pending resize -- CTk handles its own layout."""
         self._resize_timer = None
-        self.root.update_idletasks()
 
     def _check_for_updates(self):
         """Check for application updates in a background thread"""
@@ -1325,16 +1324,18 @@ class SaveManagerGUI:
             self.world_tab.refresh()
 
     def _lazy_load_tab_background(self, tab_name):
-        """Load tab data in background thread"""
+        """Schedule tab data load on the main thread -- all CTk calls must stay on the main thread."""
+        # Nothing here is actually safe to run off-thread; dispatch everything via after().
+        self.root.after(0, lambda: self._lazy_load_tab_main(tab_name))
+
+    def _lazy_load_tab_main(self, tab_name):
+        """Load tab data on the main thread."""
         try:
             if not self.save_file:
                 return
-
-            # Skip if already loaded (double-check)
             if self.tabs_loaded.get(tab_name, False):
                 return
 
-            # Load data without blocking UI
             if tab_name == "Save Fixer":
                 self.inspector_tab.populate_character_list()
             elif tab_name == "Appearance":
@@ -1352,12 +1353,9 @@ class SaveManagerGUI:
                         self.hex_tab.hex_display_at_offset(0)
                     except Exception:
                         pass
-            elif tab_name == "Gestures":
-                pass  # Gestures tab doesn't auto-load
+            # "Gestures" has no auto-load
 
-            # Mark as loaded
-            self.root.after(0, lambda: self.tabs_loaded.update({tab_name: True}))
-
+            self.tabs_loaded[tab_name] = True
         except Exception:
             pass
 
