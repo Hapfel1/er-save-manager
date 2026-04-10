@@ -15,9 +15,8 @@ from io import BytesIO
 
 
 def read_wstring(f: BytesIO, max_chars: int) -> str:
-    """Read a wide string (UTF-16LE) of max_chars characters"""
     data = f.read(max_chars * 2)
-    return data.decode("utf-16le").rstrip("\x00")
+    return data.decode("utf-16le", errors="replace").rstrip("\x00")
 
 
 @dataclass
