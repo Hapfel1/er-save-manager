@@ -25,6 +25,8 @@ class CTkMessageBox:
         from er_save_manager.ui.utils import force_render_dialog
 
         dialog = ctk.CTkToplevel(parent if parent else None)
+        # Keep invisible until fully built to prevent white flash on Windows.
+        dialog.attributes("-alpha", 0)
         dialog.title(title)
 
         dialog_width = 550
@@ -70,6 +72,7 @@ class CTkMessageBox:
         dialog.resizable(False, False)
 
         force_render_dialog(dialog)
+        dialog.attributes("-alpha", 1)
         dialog.grab_set()
 
         icon_symbols = {

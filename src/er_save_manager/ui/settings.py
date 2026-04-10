@@ -103,6 +103,10 @@ class Settings:
             "auto_backup_first_run_done": [],
             # Per-game auto-backup: {game_key: {enabled: bool, save_path: str}}
             "auto_backup_games": {},
+            # Advanced settings (unlocked via secret key sequence in Settings tab)
+            "advanced_mode_unlocked": False,
+            "skip_game_running_check": False,
+            "verbose_logging": False,
         }
 
     def save(self):

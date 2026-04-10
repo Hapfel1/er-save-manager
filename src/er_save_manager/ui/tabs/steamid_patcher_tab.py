@@ -648,16 +648,20 @@ class SteamIDPatcherTab:
         )
 
     def _resolve_vanity_url(self, custom_name: str):
+        # Steam's XML profile endpoint requires no API key and returns
+        # a <steamID64> element directly.
         try:
-            import json
+            import re
             import urllib.request
 
-            api_url = f"https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=&vanityurl={custom_name}&format=json"
-            with urllib.request.urlopen(api_url, timeout=5) as resp:
-                data = json.loads(resp.read())
+            xml_url = f"https://steamcommunity.com/id/{custom_name}/?xml=1"
+            req = urllib.request.Request(xml_url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                body = resp.read().decode("utf-8", errors="replace")
 
-            if data.get("response", {}).get("success") == 1:
-                steamid = data["response"]["steamid"]
+            match = re.search(r"<steamID64>(\d{17})</steamID64>", body)
+            if match:
+                steamid = match.group(1)
                 self.new_steamid_var.set(steamid)
                 self.steam_url_var.set("")
                 self.show_toast(f"Resolved: {steamid}", duration=2500)
@@ -665,6 +669,7 @@ class SteamIDPatcherTab:
                 CTkMessageBox.showerror(
                     "Not Found",
                     f"Could not resolve Steam vanity URL: {custom_name}\n\n"
+                    "The profile may be private or the name may be incorrect.\n"
                     "Enter the SteamID directly instead.",
                     parent=self.parent,
                 )
@@ -679,9 +684,11 @@ class SteamIDPatcherTab:
         """
         Auto-detect SteamID for the currently selected game.
 
-        Uses the already-selected save path if available, otherwise scans disk.
-        Extracts SteamID from folder name (handles all three folder formats),
-        with byte-scan fallback.
+        Detection order:
+        1. loginusers.vdf - returns persona names; read via plain text, no
+           subprocess or credential-store APIs (safe on Windows Defender).
+        2. Folder-name extraction from found save paths.
+        3. Byte-scan fallback.
         """
         from er_save_manager.games.game_profiles import _folder_name_to_steam64
         from er_save_manager.games.generic_steamid import detect_steamid_in_file
@@ -692,24 +699,34 @@ class SteamIDPatcherTab:
         try:
             steam_users: list[tuple[str, int]] = []
 
-            # Build candidate list - prefer selected path
-            save_paths: list[Path] = []
-            selected = self.get_save_path()
-            if selected and Path(selected).exists():
-                save_paths.append(Path(selected))
-            else:
-                save_paths = PlatformUtils.find_all_save_files(profile)
+            # --- Source 1: loginusers.vdf ---
+            # All logged-in accounts, sorted by most-recently-used.
+            # Not filtered by save existence: the patcher target account
+            # typically has no save yet for this game.
+            loginusers = PlatformUtils.get_loginusers_steam_accounts()
+            for sid, persona in loginusers:
+                label = f"{persona} ({sid})"
+                if sid not in {s for _, s in steam_users}:
+                    steam_users.append((label, sid))
 
-            # Primary: extract SteamID from folder name
-            for save_path in save_paths:
-                folder_name = save_path.parent.name
-                steamid = _folder_name_to_steam64(folder_name, profile)
-                if steamid and steamid not in {s for _, s in steam_users}:
-                    label = f"Account {steamid} ({save_path.name})"
-                    steam_users.append((label, steamid))
-
-            # Fallback: byte-scan
+            # --- Source 2: folder-name extraction from save paths ---
             if not steam_users:
+                save_paths: list[Path] = []
+                selected = self.get_save_path()
+                if selected and Path(selected).exists():
+                    save_paths.append(Path(selected))
+                else:
+                    save_paths = PlatformUtils.find_all_save_files(profile)
+
+                for save_path in save_paths:
+                    steamid = _folder_name_to_steam64(save_path.parent.name, profile)
+                    if steamid and steamid not in {s for _, s in steam_users}:
+                        label = f"Account {steamid} ({save_path.name})"
+                        steam_users.append((label, steamid))
+
+            # --- Source 3: byte-scan fallback ---
+            if not steam_users:
+                save_paths = PlatformUtils.find_all_save_files(profile)
                 for save_path in save_paths:
                     steamid = detect_steamid_in_file(save_path)
                     if steamid and steamid not in {s for _, s in steam_users}:

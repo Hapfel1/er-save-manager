@@ -132,6 +132,9 @@ class GameProcessMonitor:
             print(f"Auto-backup failed for {game_key}: {e}")
             return None
 
+    # Games that support CPU 0 exclusion.
+    _CPU0_GAMES = frozenset(("elden_ring", "dark_souls_3", "nightreign"))
+
     def _monitor_loop(self) -> None:
         was_running: dict[str, bool] = dict.fromkeys(_PROCESS_NAMES, False)
 
@@ -139,22 +142,34 @@ class GameProcessMonitor:
             try:
                 settings = get_settings()
                 auto_backup_cfg: dict = settings.get("auto_backup_games", {})
+                cpu0_enabled = sys.platform == "win32" and settings.get(
+                    "cpu0_exclude_on_launch", False
+                )
 
                 for game_key, process_name in _PROCESS_NAMES.items():
-                    game_cfg = auto_backup_cfg.get(game_key, {})
-                    if not game_cfg.get("enabled", False):
-                        was_running[game_key] = False
-                        continue
-
-                    save_path = game_cfg.get("save_path", "")
-                    if not save_path:
-                        continue
-
                     is_running = _is_process_running(process_name)
+                    launched = is_running and not was_running[game_key]
 
-                    # Trigger on launch transition (not-running -> running)
-                    if is_running and not was_running[game_key]:
-                        if game_key not in self._backed_up_this_session:
+                    if launched:
+                        # CPU 0 exclusion runs regardless of auto-backup config.
+                        if cpu0_enabled and game_key in self._CPU0_GAMES:
+                            try:
+                                from er_save_manager.platform.cpu0_launcher import (
+                                    apply_cpu0_exclusion,
+                                )
+
+                                apply_cpu0_exclusion(process_name)
+                            except Exception as exc:
+                                print(f"CPU0 exclusion failed: {exc}")
+
+                        # Auto-backup requires the game to be configured and enabled.
+                        game_cfg = auto_backup_cfg.get(game_key, {})
+                        save_path = (
+                            game_cfg.get("save_path", "")
+                            if game_cfg.get("enabled", False)
+                            else ""
+                        )
+                        if save_path and game_key not in self._backed_up_this_session:
                             backup_path = self._create_backup_for_game(
                                 game_key, save_path
                             )

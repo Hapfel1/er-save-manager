@@ -18,7 +18,23 @@ fi
 # Get version from pyproject.toml
 version=$(grep --max-count=1 '^version\s*=' pyproject.toml | cut -d '"' -f2)
 
+# Locate libreadline.so.8 for bundling - path varies by distro
+# (Arch: /usr/lib, Ubuntu/Debian: /lib/x86_64-linux-gnu, etc.)
+readline_lib=$(ldconfig -p 2>/dev/null | awk '/libreadline\.so\.8/{print $NF; exit}')
+if [ -z "$readline_lib" ]; then
+    readline_lib=$(find /usr/lib /lib -name "libreadline.so.8" 2>/dev/null | head -1)
+fi
+
+readline_flag=""
+if [ -n "$readline_lib" ]; then
+    echo "Bundling readline: $readline_lib"
+    readline_flag="--add-binary ${readline_lib}:."
+else
+    echo "Warning: libreadline.so.8 not found, skipping bundle"
+fi
+
 echo "Building GUI with PyInstaller..."
+# shellcheck disable=SC2086
 pyinstaller --clean --noconfirm \
     --name er-save-manager \
     --onedir \
@@ -59,6 +75,7 @@ pyinstaller --clean --noconfirm \
     --hidden-import er_save_manager.ui.tabs.advanced_tools_tab \
     --hidden-import er_save_manager.ui.tabs.backup_manager_tab \
     --hidden-import er_save_manager.ui.map_view \
+    $readline_flag \
     --optimize 2 \
     --strip \
     --distpath "dist/linux-$version" \
