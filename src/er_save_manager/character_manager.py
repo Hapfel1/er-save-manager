@@ -245,6 +245,11 @@ class CharacterManager:
         """
         Download and cache thumbnail image.
 
+        Checks for an existing cached file with either .jpg or .png extension
+        before downloading. If the primary URL returns a 404, retries with the
+        alternate extension. Path.with_suffix is avoided because it corrupts
+        https:// double-slash into a single slash.
+
         Args:
             character_id: Character ID
             thumbnail_url: URL to thumbnail
@@ -252,29 +257,45 @@ class CharacterManager:
         Returns:
             Path to cached thumbnail or None if failed
         """
-        try:
-            thumbnail_path = self.thumbnails_dir / f"{character_id}.jpg"
+        for ext in (".jpg", ".png"):
+            candidate = self.thumbnails_dir / f"{character_id}{ext}"
+            if candidate.exists():
+                return candidate
 
-            # Return cached if exists
-            if thumbnail_path.exists():
+        print(f"[Character Manager] Downloading thumbnail for {character_id}")
+
+        url_ext = Path(thumbnail_url).suffix.lower()
+        if url_ext not in (".jpg", ".jpeg", ".png"):
+            url_ext = ".jpg"
+        alt_ext = ".png" if url_ext in (".jpg", ".jpeg") else ".jpg"
+
+        def _try_download(url: str, ext: str) -> Path | None:
+            thumbnail_path = self.thumbnails_dir / f"{character_id}{ext}"
+            full_url = self._resolve_url(url)
+            try:
+                with urllib.request.urlopen(
+                    full_url, timeout=10, context=self.ssl_context
+                ) as response:
+                    with open(thumbnail_path, "wb") as f:
+                        f.write(response.read())
+                print(f"[Character Manager] Cached thumbnail for {character_id}")
                 return thumbnail_path
+            except Exception:
+                return None
 
-            print(f"[Character Manager] Downloading thumbnail for {character_id}")
+        result = _try_download(thumbnail_url, url_ext)
+        if result:
+            return result
 
-            full_url = self._resolve_url(thumbnail_url)
+        # rsplit avoids Path.with_suffix corrupting https:// into https:/
+        alt_url = thumbnail_url.rsplit(".", 1)[0] + alt_ext
+        print(f"[Character Manager] Primary thumbnail failed, retrying with {alt_ext}")
+        result = _try_download(alt_url, alt_ext)
+        if result:
+            return result
 
-            with urllib.request.urlopen(
-                full_url, timeout=10, context=self.ssl_context
-            ) as response:
-                with open(thumbnail_path, "wb") as f:
-                    f.write(response.read())
-
-            print(f"[Character Manager] Cached thumbnail for {character_id}")
-            return thumbnail_path
-
-        except Exception as e:
-            print(f"[Character Manager] Failed to download thumbnail: {e}")
-            return None
+        print(f"[Character Manager] Failed to download thumbnail for {character_id}")
+        return None
 
     def download_screenshot(
         self, character_id: str, screenshot_url: str, suffix: str = ""
@@ -290,30 +311,40 @@ class CharacterManager:
         Returns:
             Path to downloaded screenshot or None if failed
         """
-        try:
-            # Get file extension from URL
-            ext = Path(screenshot_url).suffix or ".jpg"
+        url_ext = Path(screenshot_url).suffix.lower() or ".jpg"
+        alt_ext = ".png" if url_ext in (".jpg", ".jpeg") else ".jpg"
+
+        def _try_download(url: str, ext: str) -> Path | None:
             screenshot_path = self.cache_dir / f"{character_id}{suffix}{ext}"
+            full_url = self._resolve_url(url)
+            try:
+                with urllib.request.urlopen(
+                    full_url, timeout=15, context=self.ssl_context
+                ) as response:
+                    with open(screenshot_path, "wb") as f:
+                        f.write(response.read())
+                screenshot_path.touch()
+                print(f"[Character Manager] Downloaded screenshot to {screenshot_path}")
+                return screenshot_path
+            except Exception:
+                return None
 
-            print(f"[Character Manager] Downloading screenshot {character_id}{suffix}")
+        print(f"[Character Manager] Downloading screenshot {character_id}{suffix}")
 
-            full_url = self._resolve_url(screenshot_url)
+        result = _try_download(screenshot_url, url_ext)
+        if result:
+            return result
 
-            with urllib.request.urlopen(
-                full_url, timeout=15, context=self.ssl_context
-            ) as response:
-                with open(screenshot_path, "wb") as f:
-                    f.write(response.read())
+        alt_url = screenshot_url.rsplit(".", 1)[0] + alt_ext
+        print(f"[Character Manager] Screenshot 404, retrying with {alt_ext}")
+        result = _try_download(alt_url, alt_ext)
+        if result:
+            return result
 
-            # Update access time for LRU cleanup
-            screenshot_path.touch()
-
-            print(f"[Character Manager] Downloaded screenshot to {screenshot_path}")
-            return screenshot_path
-
-        except Exception as e:
-            print(f"[Character Manager] Failed to download screenshot: {e}")
-            return None
+        print(
+            f"[Character Manager] Failed to download screenshot {character_id}{suffix}"
+        )
+        return None
 
     def clear_cache(self):
         """Clear all cached data (metadata and thumbnails)."""

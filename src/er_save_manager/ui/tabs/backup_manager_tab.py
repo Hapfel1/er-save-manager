@@ -610,11 +610,46 @@ class BackupManagerTab:
             import os
             import subprocess
 
+            path = str(manager.backup_folder)
             try:
                 if os.name == "nt":
                     os.startfile(manager.backup_folder)
-                else:
-                    subprocess.run(["xdg-open", str(manager.backup_folder)])
+                    return
+
+                # On Linux, xdg-open inherits the process environment which can
+                # trigger a readline symbol lookup error on Arch Linux (/bin/sh
+                # undefined symbol: rl_print_keybinding). Use a sanitized env
+                # and fall back to known file managers if xdg-open fails.
+                env = os.environ.copy()
+                env.pop("LD_PRELOAD", None)
+
+                # Try xdg-open first with a clean environment.
+                result = subprocess.run(
+                    ["xdg-open", path],
+                    env=env,
+                    stderr=subprocess.DEVNULL,
+                    timeout=5,
+                )
+                if result.returncode == 0:
+                    return
+
+                # Fall back through common file managers.
+                for fm in ("nautilus", "thunar", "dolphin", "nemo", "pcmanfm", "caja"):
+                    try:
+                        subprocess.Popen(
+                            [fm, path],
+                            env=env,
+                            stderr=subprocess.DEVNULL,
+                        )
+                        return
+                    except FileNotFoundError:
+                        continue
+
+                CTkMessageBox.showerror(
+                    "Error",
+                    f"Could not open folder.\nPath: {path}",
+                    parent=dialog,
+                )
             except Exception as e:
                 CTkMessageBox.showerror(
                     "Error", f"Failed to open folder:\n{e}", parent=dialog

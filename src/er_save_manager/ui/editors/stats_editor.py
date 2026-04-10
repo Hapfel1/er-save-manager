@@ -49,6 +49,8 @@ class StatsEditor:
         self.great_rune_id_var = None
         self.rune_arc_var = None
         self.last_grace_var = None
+        self.matchmaking_level_var = None
+        self._matchmaking_min = 0  # floor derived from inventory scan
 
         self.frame = None
 
@@ -291,6 +293,49 @@ class StatsEditor:
             border_width=1,
         ).grid(row=1, column=1, padx=5, pady=(5, 10), sticky=ctk.W)
 
+        # Matchmaking weapon level
+        mm_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        mm_frame.pack(fill=ctk.X, pady=5, padx=10)
+
+        ctk.CTkLabel(
+            mm_frame,
+            text="Matchmaking Weapon Level",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).grid(row=0, column=0, columnspan=3, sticky=ctk.W, padx=5, pady=(5, 0))
+
+        ctk.CTkLabel(
+            mm_frame,
+            text="Level (0-25):",
+            text_color=("black", "white"),
+        ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
+
+        self.matchmaking_level_var = tk.IntVar(value=0)
+        ctk.CTkEntry(
+            mm_frame,
+            textvariable=self.matchmaking_level_var,
+            width=60,
+            fg_color=("gray86", "gray25"),
+            text_color=("black", "white"),
+            border_color=("gray70", "gray40"),
+            border_width=1,
+        ).grid(row=1, column=1, padx=5, pady=5, sticky=ctk.W)
+
+        self._mm_min_label = ctk.CTkLabel(
+            mm_frame,
+            text="Min from inventory: --",
+            text_color=("gray50", "gray60"),
+            font=("Segoe UI", 10),
+        )
+        self._mm_min_label.grid(row=1, column=2, padx=10, pady=5, sticky=ctk.W)
+
+        ctk.CTkButton(
+            mm_frame,
+            text="Set to Inventory Max",
+            command=self._set_matchmaking_to_max,
+            width=160,
+        ).grid(row=2, column=0, columnspan=2, padx=5, pady=(0, 10), sticky=ctk.W)
+
         # Apply button
         button_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
         button_frame.pack(fill=ctk.X, pady=10, padx=10)
@@ -380,6 +425,10 @@ class StatsEditor:
 
         # Load last rested grace as hex
         self.last_grace_var.set(hex(getattr(slot, "last_rested_grace", 0)))
+
+        # Load matchmaking weapon level and compute inventory floor
+        self.matchmaking_level_var.set(getattr(char, "matchmaking_weapon_level", 0))
+        self._refresh_matchmaking_min(slot)
 
         # Calculate level
         self.calculate_character_level()
@@ -548,6 +597,20 @@ class StatsEditor:
                 char.great_rune_on = bool(self.great_rune_on_var.get())
                 char.furl_calling_finger_on = bool(self.rune_arc_var.get())
 
+                # Matchmaking weapon level -- clamp to inventory floor
+                mm_value = max(0, min(25, int(self.matchmaking_level_var.get())))
+                if mm_value < self._matchmaking_min:
+                    CTkMessageBox.showwarning(
+                        "Invalid Value",
+                        f"Matchmaking weapon level cannot be set below {self._matchmaking_min} "
+                        f"(highest upgrade level found in inventory).\n"
+                        f"Value has been raised to {self._matchmaking_min}.",
+                        parent=self.parent,
+                    )
+                    mm_value = self._matchmaking_min
+                    self.matchmaking_level_var.set(mm_value)
+                char.matchmaking_weapon_level = mm_value
+
                 # Write back to raw data using tracked offset
                 if (
                     hasattr(slot, "player_game_data_offset")
@@ -622,3 +685,18 @@ class StatsEditor:
                 f"Failed to apply stat changes:\n{e}",
                 parent=self.parent,
             )
+
+    def _refresh_matchmaking_min(self, slot) -> None:
+        """Recompute inventory floor and update the label."""
+        from er_save_manager.editors.matchmaking_utils import get_max_weapon_upgrade
+
+        self._matchmaking_min = get_max_weapon_upgrade(slot)
+        if hasattr(self, "_mm_min_label") and self._mm_min_label:
+            self._mm_min_label.configure(
+                text=f"Min from inventory: {self._matchmaking_min}"
+            )
+
+    def _set_matchmaking_to_max(self) -> None:
+        """Set the matchmaking level entry to the inventory floor."""
+        if self.matchmaking_level_var is not None:
+            self.matchmaking_level_var.set(self._matchmaking_min)

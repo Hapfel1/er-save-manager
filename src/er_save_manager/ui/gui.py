@@ -4,6 +4,7 @@ Modular Elden Ring Save Manager GUI
 """
 
 import os
+import subprocess
 import sys
 import threading
 import tkinter as tk
@@ -188,9 +189,8 @@ class SaveManagerGUI:
         self._resize_timer = self.root.after(200, self._process_resize)
 
     def _process_resize(self):
-        """Process pending resize - called after resize events stop"""
+        """Process pending resize -- CTk handles its own layout."""
         self._resize_timer = None
-        self.root.update_idletasks()
 
     def _check_for_updates(self):
         """Check for application updates in a background thread"""
@@ -790,6 +790,7 @@ class SaveManagerGUI:
             get_save_path_callback=lambda: self.save_path,
             get_default_save_path_callback=lambda: self.default_save_path,
             active_game="elden_ring",
+            root=self.root,
         )
         self.settings_tab.setup_ui()
 
@@ -820,6 +821,7 @@ class SaveManagerGUI:
             get_save_path_callback=lambda: self.save_path,
             get_default_save_path_callback=lambda: self.default_save_path,
             active_game=profile.key,
+            root=self.root,
         )
         self.settings_tab.setup_ui()
 
@@ -981,7 +983,8 @@ class SaveManagerGUI:
 
         # Block loading if the game is currently running
         if (
-            profile
+            not self.settings.get("skip_game_running_check", False)
+            and profile
             and profile.process_name
             and self.is_game_running(profile.process_name)
         ):
@@ -1199,21 +1202,28 @@ class SaveManagerGUI:
         """Check if a game process is running."""
         if process_name == "eldenring.exe":
             return PlatformUtils.is_game_running()
-        import subprocess
-
         try:
             if PlatformUtils.is_windows():
+                si = subprocess.STARTUPINFO()
+                si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                si.wShowWindow = 0  # SW_HIDE
                 result = subprocess.run(
                     ["tasklist", "/FI", f"IMAGENAME eq {process_name}", "/NH"],
-                    capture_output=True,
-                    text=True,
-                    creationflags=0x08000000,
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL,
+                    startupinfo=si,
+                    creationflags=subprocess.CREATE_NO_WINDOW,
                 )
-                return process_name.lower() in result.stdout.lower()
+                return (
+                    process_name.lower()
+                    in result.stdout.decode(errors="replace").lower()
+                )
             else:
                 result = subprocess.run(
                     ["pgrep", "-f", process_name],
-                    capture_output=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
                 )
                 return result.returncode == 0
         except Exception:
@@ -1314,16 +1324,18 @@ class SaveManagerGUI:
             self.world_tab.refresh()
 
     def _lazy_load_tab_background(self, tab_name):
-        """Load tab data in background thread"""
+        """Schedule tab data load on the main thread -- all CTk calls must stay on the main thread."""
+        # Nothing here is actually safe to run off-thread; dispatch everything via after().
+        self.root.after(0, lambda: self._lazy_load_tab_main(tab_name))
+
+    def _lazy_load_tab_main(self, tab_name):
+        """Load tab data on the main thread."""
         try:
             if not self.save_file:
                 return
-
-            # Skip if already loaded (double-check)
             if self.tabs_loaded.get(tab_name, False):
                 return
 
-            # Load data without blocking UI
             if tab_name == "Save Fixer":
                 self.inspector_tab.populate_character_list()
             elif tab_name == "Appearance":
@@ -1341,12 +1353,9 @@ class SaveManagerGUI:
                         self.hex_tab.hex_display_at_offset(0)
                     except Exception:
                         pass
-            elif tab_name == "Gestures":
-                pass  # Gestures tab doesn't auto-load
+            # "Gestures" has no auto-load
 
-            # Mark as loaded
-            self.root.after(0, lambda: self.tabs_loaded.update({tab_name: True}))
-
+            self.tabs_loaded[tab_name] = True
         except Exception:
             pass
 
@@ -1367,7 +1376,8 @@ class SaveManagerGUI:
         """Store the selected save path for non-ER games and refresh the SteamID display."""
         profile = self._active_profile()
         if (
-            profile
+            not self.settings.get("skip_game_running_check", False)
+            and profile
             and profile.process_name
             and self.is_game_running(profile.process_name)
         ):
@@ -1412,7 +1422,9 @@ class SaveManagerGUI:
             if profile and profile.process_name
             else "eldenring.exe"
         )
-        if self.is_game_running(process_name):
+        if not self.settings.get(
+            "skip_game_running_check", False
+        ) and self.is_game_running(process_name):
             if not self._handle_game_running_dialog(profile):
                 return
 
@@ -1507,13 +1519,22 @@ class SaveManagerGUI:
     def _load_save_background(self, save_path, silent=False):
         """Background thread for loading save file"""
         try:
+            verbose = self.settings.get("verbose_logging", False)
+            if verbose:
+                self._verbose_log(f"Loading save: {save_path}")
+
             # Load save file in background
             save_file = Save.from_file(save_path)
+
+            if verbose:
+                self._verbose_log(f"Parsed successfully: {save_path}")
 
             # Update main thread
             self.root.after(0, self._finalize_save_load, save_file, save_path, silent)
         except Exception as e:
             error_msg = str(e)
+            if self.settings.get("verbose_logging", False):
+                self._verbose_log(f"Load failed: {save_path} -- {error_msg}")
 
             self.root.after(
                 0,
@@ -1645,6 +1666,20 @@ class SaveManagerGUI:
             CTkMessageBox.showerror(
                 "Error", f"Failed to open backup manager:\n{e}", parent=self.root
             )
+
+    def _verbose_log(self, message: str) -> None:
+        """Write a timestamped line to the verbose log file next to the current save."""
+        import datetime
+
+        save_path = self.file_path_var.get() if hasattr(self, "file_path_var") else ""
+        log_dir = Path(save_path).parent if save_path else Path.home()
+        log_path = log_dir / "er_save_manager.log"
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(f"[{timestamp}] {message}\n")
+        except OSError:
+            pass
 
 
 def main():
