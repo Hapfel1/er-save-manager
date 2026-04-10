@@ -3,6 +3,63 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.14.0
+**Released:** April 10, 2026
+
+
+### ✨ New Features
+
+- Add weapon_matchmaking_level and a check for every weapon upgrade level to combat any tries to abuse modifying it ([f68ac2f](https://github.com/Hapfel1/er-save-manager/commit/f68ac2fe3eb5b2402921ded78bf5b314ba361e10))
+
+
+
+### 🔧 Bug Fixes
+
+- Fixed SteamID auto-detection on Linux ([7e2ee39](https://github.com/Hapfel1/er-save-manager/commit/7e2ee39acfe73cee08912268298f3929a9994db5))
+
+- Fixed Steam vanity link parsing ([46458e7](https://github.com/Hapfel1/er-save-manager/commit/46458e79b78f6f6aeeb970cfdd70e858d22cb631))
+
+- Fix Open folder button on certain Linux distros not working ([5617f65](https://github.com/Hapfel1/er-save-manager/commit/5617f65e2d3eb1088f81b206b04837cae1923e19))
+
+- Fixed the upgrade level detection ([96ab048](https://github.com/Hapfel1/er-save-manager/commit/96ab048d629d5a89906fd509ff88c93f42398100))
+
+- Fixed process monitoring ([9aaabfb](https://github.com/Hapfel1/er-save-manager/commit/9aaabfb738f12b62f326031c1965aabcbf004290))
+
+- Fixed process detection for is_game_running ([4b57a80](https://github.com/Hapfel1/er-save-manager/commit/4b57a8013d422c224e2e24369972357c62adf738))
+
+- Fixed character name not being read correctly because of garbage data ([df34500](https://github.com/Hapfel1/er-save-manager/commit/df3450088e16adbe1850891a850af76edccd9209))
+
+- Format and lint ([9f5fd3a](https://github.com/Hapfel1/er-save-manager/commit/9f5fd3ad318d6f37da0b40c267e08ea5912d4d1c))
+
+- Fixed png issue with character browser and impoved loading in the browser ([ffa3e96](https://github.com/Hapfel1/er-save-manager/commit/ffa3e9654a13f23a46ff7d9bc3d5bbf810a79dc8))
+
+- Fixed cpu0 feature not applying correctly ([242cf46](https://github.com/Hapfel1/er-save-manager/commit/242cf4693b911cd4ca904cf53a9635e883158279))
+
+- Lint ([fbdba81](https://github.com/Hapfel1/er-save-manager/commit/fbdba8108e8937d5fa9a3ff0a91fde86a7e1b323))
+
+
+
+### 🎨 User Interface
+
+- Add "Apply CPU 0 fix on game launch" setting for ER, NR and DS3 ([e4654b4](https://github.com/Hapfel1/er-save-manager/commit/e4654b4f258ba0f028b0622e41a47e1e57beb3f6))
+
+- Fix performance issues ([e1c2ae0](https://github.com/Hapfel1/er-save-manager/commit/e1c2ae012e18ce647991d119e74dd50b0c856af3))
+
+
+
+### 📦 Dependencies
+
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([3ba7626](https://github.com/Hapfel1/er-save-manager/commit/3ba76262255cd967250d33bf44582ea42a0702dc))
+
+
+
+### Buld
+
+- Lint ([e759435](https://github.com/Hapfel1/er-save-manager/commit/e759435744f1e499aec4cd9f2c29ffaa57788bf7))
+
+
+
+---
 ## 📦 Release 0.13.0
 **Released:** April 02, 2026
 
@@ -655,6 +712,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.14.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.13.0..v0.14.0
 [0.13.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.12.1..v0.13.0
 [0.12.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.11.1..v0.12.1
 [0.11.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.11.0..v0.11.1
