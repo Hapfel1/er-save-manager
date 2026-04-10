@@ -196,11 +196,8 @@ class CharacterBrowser:
 
         content = ctk.CTkFrame(main_frame)
         content.pack(fill=ctk.BOTH, expand=True, pady=(0, 10))
-        # Flexible layout - grid and preview scale responsively
-        content.columnconfigure(0, weight=1, minsize=300)  # Reduced minsize for grid
-        content.columnconfigure(
-            1, weight=1, minsize=300
-        )  # Changed to weight=1 for preview
+        content.columnconfigure(0, weight=1, minsize=300)
+        content.columnconfigure(1, weight=1, minsize=300)
         content.rowconfigure(0, weight=1)
 
         self.grid_container = ctk.CTkScrollableFrame(
@@ -215,7 +212,6 @@ class CharacterBrowser:
         preview_panel = ctk.CTkFrame(content)
         preview_panel.grid(row=0, column=1, sticky="nsew", padx=(12, 0))
 
-        # Create scrollable container for preview content
         preview_scroll = ctk.CTkScrollableFrame(preview_panel, fg_color="transparent")
         preview_scroll.pack(fill=ctk.BOTH, expand=True)
         bind_mousewheel(preview_scroll)
@@ -261,7 +257,6 @@ class CharacterBrowser:
 
     # ---------------------- Contribute tab ----------------------
     def setup_contribute_tab(self):
-        # Create main scrollable frame
         scroll_frame = ctk.CTkScrollableFrame(
             self.contribute_tab, fg_color="transparent"
         )
@@ -283,7 +278,6 @@ class CharacterBrowser:
         )
         desc_label.pack(pady=(0, 10))
 
-        # GitHub Account Required notice
         notice = ctk.CTkFrame(
             scroll_frame, fg_color=("#fff7ed", "#3b2f1b"), corner_radius=8
         )
@@ -301,14 +295,12 @@ class CharacterBrowser:
             text_color=("#6b7280", "#d1d5db"),
         ).pack(pady=(0, 12))
 
-        # Form content frame
         form_frame = ctk.CTkFrame(
             scroll_frame,
             fg_color="transparent",
         )
         form_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=(0, 20))
 
-        # Character slot selector
         slot_section = ctk.CTkFrame(form_frame, fg_color="transparent")
         slot_section.pack(fill=ctk.X, pady=(0, 15))
 
@@ -330,15 +322,12 @@ class CharacterBrowser:
         self.contrib_slot_combo.set(slot_names[0])
         self.contrib_slot_combo.pack(anchor=ctk.W)
 
-        # Character name
         self.char_name_var = ctk.StringVar()
         self._labeled_entry(form_frame, "Character Name:", self.char_name_var)
 
-        # Author
         self.char_author_var = ctk.StringVar()
         self._labeled_entry(form_frame, "Author (your name):", self.char_author_var)
 
-        # Description
         desc_section = ctk.CTkFrame(form_frame, fg_color="transparent")
         desc_section.pack(fill=ctk.X, pady=(0, 15))
 
@@ -355,11 +344,9 @@ class CharacterBrowser:
         )
         self.char_desc_text.pack(fill=ctk.X)
 
-        # Tags
         self.char_tags_var = ctk.StringVar()
         self._labeled_entry(form_frame, "Tags (comma-separated):", self.char_tags_var)
 
-        # Screenshots section
         screenshots_section = ctk.CTkFrame(form_frame, fg_color="transparent")
         screenshots_section.pack(fill=ctk.X, pady=(10, 15))
 
@@ -388,7 +375,6 @@ class CharacterBrowser:
             placeholder="Optional",
         )
 
-        # Overhaul mod section
         mod_section = ctk.CTkFrame(form_frame, fg_color="transparent")
         mod_section.pack(fill=ctk.X, pady=(10, 15))
 
@@ -446,7 +432,6 @@ class CharacterBrowser:
 
         self._toggle_overhaul_details()
 
-        # Login notice
         login_notice = ctk.CTkFrame(
             form_frame, fg_color=("#eef2ff", "#1f2937"), corner_radius=8
         )
@@ -471,7 +456,6 @@ class CharacterBrowser:
         link.pack(anchor=ctk.W, padx=12, pady=(0, 10))
         link.bind("<Button-1>", lambda e: open_url("https://github.com/login"))
 
-        # Submit button
         submit_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
         submit_frame.pack(fill=ctk.X, padx=0, pady=(0, 10))
 
@@ -483,7 +467,6 @@ class CharacterBrowser:
             height=40,
         ).pack(side=ctk.RIGHT)
 
-        # Auto-detect Convergence mod from save file extension (delayed to ensure widgets are ready)
         self.dialog.after(100, self._auto_detect_convergence)
 
     # ---------------------- Helpers ----------------------
@@ -575,13 +558,11 @@ class CharacterBrowser:
     # ---------------------- Contribution submit ----------------------
     def submit_contribution(self):
         """Submit character contribution via browser."""
-        # Validate inputs
         char_name = self.char_name_var.get().strip()
         author = self.char_author_var.get().strip()
         description = self.char_desc_text.get("1.0", "end").strip()
         tags = self.char_tags_var.get().strip()
 
-        # Build list of missing required fields
         missing_fields = []
         if not char_name:
             missing_fields.append("Name")
@@ -590,14 +571,12 @@ class CharacterBrowser:
         if not description:
             missing_fields.append("Description")
 
-        # Build list of missing screenshots
         missing_images = []
         if not self.face_image_path:
             missing_images.append("Face screenshot")
         if not self.body_image_path:
             missing_images.append("Body screenshot")
 
-        # Combine all missing items
         all_missing = missing_fields + missing_images
 
         if all_missing:
@@ -616,10 +595,8 @@ class CharacterBrowser:
             )
             return
 
-        # Get selected slot
         slot_index = self.contrib_slot_var.get() - 1
 
-        # Verify slot is not empty
         char = self.save_file.character_slots[slot_index]
         if char.is_empty():
             CTkMessageBox.showerror(
@@ -637,17 +614,14 @@ class CharacterBrowser:
                 submit_character_via_browser,
             )
 
-            # Extract character metadata
             metadata = CharacterOperations.extract_character_metadata(
                 self.save_file, slot_index
             )
 
-            # Check for Convergence mod save
             from er_save_manager.data.convergence_items import (
                 get_convergence_items_for_submission,
             )
 
-            # Get save file path for Convergence detection
             save_path = getattr(self.save_file, "_original_filepath", None) or getattr(
                 self.save_file, "file_path", None
             )
@@ -665,7 +639,6 @@ class CharacterBrowser:
             else:
                 print("[Character Submit] No Convergence data detected")
 
-            # Attach overhaul mod info
             if hasattr(self, "overhaul_used_var") and self.overhaul_used_var.get():
                 selected_name = self.overhaul_name_var.get().strip()
                 custom_name = self.overhaul_custom_var.get().strip()
@@ -682,11 +655,9 @@ class CharacterBrowser:
                     "required": True,
                 }
 
-            # Export character to temp .erc file
             temp_dir = Path(tempfile.gettempdir()) / "er_character_export"
             temp_dir.mkdir(exist_ok=True)
 
-            # Clean name for filename
             safe_name = "".join(
                 c for c in char_name if c.isalnum() or c in (" ", "-", "_")
             )
@@ -697,7 +668,6 @@ class CharacterBrowser:
                 self.save_file, slot_index, str(erc_path)
             )
 
-            # Submit via browser
             success, url = submit_character_via_browser(
                 char_name=char_name,
                 author=author,
@@ -711,7 +681,6 @@ class CharacterBrowser:
             )
 
             if not success:
-                # Show fallback dialog with URL
                 self._show_submission_error_dialog(url)
 
         except Exception as e:
@@ -784,11 +753,9 @@ class CharacterBrowser:
         """Refresh character list from remote."""
         import threading
 
-        # Show loading state
         for widget in self.grid_container.winfo_children():
             widget.destroy()
 
-        # Show progress dialog
         progress = ProgressDialog(
             self.dialog, "Loading Characters", "Fetching characters from GitHub..."
         )
@@ -806,14 +773,12 @@ class CharacterBrowser:
                     ),
                 )
 
-                # Fetch metrics for all characters
                 character_ids = [c["id"] for c in self.all_characters]
                 if character_ids:
                     self.character_metrics_cache = self.metrics.fetch_metrics(
                         character_ids
                     )
 
-                # Update UI on main thread
                 def finalize():
                     progress.close()
                     self.apply_filters()
@@ -825,7 +790,6 @@ class CharacterBrowser:
 
                 def show_error(error_msg=e):
                     progress.close()
-                    # Show error in grid
                     for widget in self.grid_container.winfo_children():
                         widget.destroy()
                     error_label = ctk.CTkLabel(
@@ -838,7 +802,6 @@ class CharacterBrowser:
 
                 self.dialog.after(0, show_error)
 
-        # Start loading in background thread
         thread = threading.Thread(target=load_in_background, daemon=True)
         thread.start()
 
@@ -848,10 +811,8 @@ class CharacterBrowser:
         filter_type = self.filter_var.get()
         sort_by = self.sort_var.get()
 
-        # Filter characters
         self.filtered_characters = []
         for char in self.all_characters:
-            # Search filter
             if search:
                 searchable = (
                     char.get("name", "").lower()
@@ -861,7 +822,6 @@ class CharacterBrowser:
                 if search not in searchable:
                     continue
 
-            # Overhaul mod filter
             if filter_type == "Overhaul Mod":
                 mod_info = char.get("overhaul_mod") or char.get("mod_info")
                 if not (mod_info and mod_info.get("name")):
@@ -873,7 +833,6 @@ class CharacterBrowser:
 
             self.filtered_characters.append(char)
 
-        # Sort characters
         if sort_by == "Recent":
             self.filtered_characters.sort(
                 key=lambda c: c.get("created_at", ""), reverse=True
@@ -901,7 +860,6 @@ class CharacterBrowser:
 
     def display_characters(self):
         """Display filtered characters in grid."""
-        # Clear existing widgets
         for widget in self.grid_container.winfo_children():
             widget.destroy()
 
@@ -915,7 +873,6 @@ class CharacterBrowser:
             no_results.pack(pady=50)
             return
 
-        # Display character cards
         for character in self.filtered_characters:
             card = self.create_character_card(character)
             card.pack(fill=ctk.X, padx=10, pady=8)
@@ -930,14 +887,12 @@ class CharacterBrowser:
             border_color=("gray80", "gray50"),
         )
 
-        # Make card clickable
         card.bind("<Button-1>", lambda e: self.preview_character(character))
         card.configure(cursor="hand2")
 
         content_frame = ctk.CTkFrame(card, fg_color="transparent")
         content_frame.pack(fill=ctk.BOTH, expand=True, padx=12, pady=10)
 
-        # Thumbnail (left side)
         thumbnail_label = ctk.CTkLabel(
             content_frame,
             text="",
@@ -947,15 +902,12 @@ class CharacterBrowser:
         thumbnail_label.pack(side=ctk.LEFT, padx=(0, 12))
         thumbnail_label.bind("<Button-1>", lambda e: self.preview_character(character))
 
-        # Load thumbnail asynchronously
-        self.dialog.after(10, lambda: self.load_thumbnail(character, thumbnail_label))
+        self.load_thumbnail(character, thumbnail_label)
 
-        # Info (middle)
         info_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
         info_frame.pack(side=ctk.LEFT, fill=ctk.BOTH, expand=True)
         info_frame.bind("<Button-1>", lambda e: self.preview_character(character))
 
-        # Name
         name_label = ctk.CTkLabel(
             info_frame,
             text=character.get("name", "Unnamed"),
@@ -965,10 +917,8 @@ class CharacterBrowser:
         name_label.pack(anchor=ctk.W)
         name_label.bind("<Button-1>", lambda e: self.preview_character(character))
 
-        # Stats line
         level = character.get("level", "?")
         char_class = character.get("class", "Unknown")
-        # Use ng_level if available (string like "NG", "NG+1"), otherwise fall back to ng_plus
         ng_level = character.get("ng_level")
         if ng_level and ng_level != "NG":
             ng_text = f" ({ng_level})"
@@ -987,7 +937,6 @@ class CharacterBrowser:
         stats_label.pack(anchor=ctk.W, pady=(2, 0))
         stats_label.bind("<Button-1>", lambda e: self.preview_character(character))
 
-        # Metrics
         char_id = character["id"]
         metrics = self.character_metrics_cache.get(char_id, {})
         likes = metrics.get("likes", 0)
@@ -1004,19 +953,16 @@ class CharacterBrowser:
         metrics_label.pack(anchor=ctk.W, pady=(4, 0))
         metrics_label.bind("<Button-1>", lambda e: self.preview_character(character))
 
-        # Tags for DLC and mod (right side)
         tags = []
         if character.get("has_dlc"):
             tags.append("DLC")
 
-        # Check for Convergence mod
         convergence = character.get("convergence")
         if self._requires_convergence(convergence):
             mod_name = "Convergence"
             version = convergence.get("version", "")
             tag_text = f"{mod_name} {version}" if version else mod_name
             tags.append((tag_text, "convergence"))
-        # Check for other overhaul mods
         elif character.get("overhaul_mod") or character.get("mod_info"):
             mod_info = character.get("overhaul_mod") or character.get("mod_info")
             if mod_info and mod_info.get("name"):
@@ -1031,16 +977,12 @@ class CharacterBrowser:
             tags_frame.bind("<Button-1>", lambda e: self.preview_character(character))
 
             for tag_data in tags:
-                # Handle both old string format and new tuple format
                 if isinstance(tag_data, tuple):
                     tag_text, tag_type = tag_data
                 else:
                     tag_text = tag_data
-                    tag_type = (
-                        tag_data  # Use tag text as type for backward compatibility
-                    )
+                    tag_type = tag_data
 
-                # Color coding for different tag types
                 if tag_type == "DLC" or tag_text == "DLC":
                     tag_color = ("#dbeafe", "#1e3a5f")
                     text_color = ("#1e40af", "#93c5fd")
@@ -1069,13 +1011,18 @@ class CharacterBrowser:
         return card
 
     def load_thumbnail(self, character: dict[str, Any], label: ctk.CTkLabel):
-        """Load thumbnail for character card."""
+        """Load thumbnail for a character card.
+
+        Downloads and decodes the image in a background thread, then
+        updates the label on the main thread to avoid blocking the UI.
+        """
         if not HAS_PIL:
             return
 
+        import threading
+
         char_id = character["id"]
 
-        # Get URLs from screenshots object
         screenshots = character.get("screenshots", {})
         if isinstance(screenshots, dict):
             thumbnail_url = screenshots.get("thumbnail_url")
@@ -1087,38 +1034,64 @@ class CharacterBrowser:
         if not thumbnail_url and not face_url:
             return
 
-        # Try thumbnail first, fall back to face if it fails
-        thumbnail_path = None
-        if thumbnail_url:
-            thumbnail_path = self.manager.download_thumbnail(char_id, thumbnail_url)
-
-        # If thumbnail failed or doesn't exist, try face
-        if (not thumbnail_path or not thumbnail_path.exists()) and face_url:
-            thumbnail_path = self.manager.download_thumbnail(char_id, face_url)
-
-        if thumbnail_path and thumbnail_path.exists():
+        def _download_and_set():
+            path = None
+            if thumbnail_url:
+                path = self.manager.download_thumbnail(char_id, thumbnail_url)
+            if (not path or not path.exists()) and face_url:
+                path = self.manager.download_thumbnail(char_id, face_url)
+            if not path or not path.exists():
+                return
             try:
-                img = Image.open(thumbnail_path)
+                img = Image.open(path)
                 ctk_img = ctk.CTkImage(img, size=(80, 80))
-                label.configure(image=ctk_img)
-                label.image = ctk_img  # Keep reference
+
+                def _apply():
+                    try:
+                        label.configure(image=ctk_img)
+                        label.image = ctk_img
+                    except Exception:
+                        pass
+
+                self.dialog.after(0, _apply)
             except Exception:
                 pass
 
+        threading.Thread(target=_download_and_set, daemon=True).start()
+
     def preview_character(self, character: dict[str, Any]):
-        """Show character preview in right panel."""
-        # Merge metadata if available so preview shows full details
+        """Show character preview in right panel.
+
+        Metadata is fetched in a background thread when not already cached.
+        If cached it is merged synchronously before rendering.
+        """
+        import threading
+
         char_id = character.get("id")
         metadata_url = character.get("metadata_url")
-        if char_id and metadata_url:
-            metadata = self.manager.get_cached_metadata(char_id)
-            if not metadata:
-                metadata = self.manager.download_metadata(char_id, metadata_url)
 
-            if metadata:
-                character = {**character, **metadata}
+        # Use cached metadata immediately if available
+        if char_id and metadata_url:
+            cached = self.manager.get_cached_metadata(char_id)
+            if cached:
+                character = {**character, **cached}
 
         self.current_character = character
+
+        # If metadata isn't cached yet, fetch it in the background and re-render
+        if char_id and metadata_url and not self.manager.get_cached_metadata(char_id):
+
+            def _fetch_and_rerender():
+                metadata = self.manager.download_metadata(char_id, metadata_url)
+                if metadata and self.current_character.get("id") == char_id:
+                    self.dialog.after(
+                        0,
+                        lambda: self.preview_character(
+                            {**self.current_character, **metadata}
+                        ),
+                    )
+
+            threading.Thread(target=_fetch_and_rerender, daemon=True).start()
 
         # Clear preview area
         for widget in self.preview_area.winfo_children():
@@ -1128,14 +1101,12 @@ class CharacterBrowser:
         for widget in self.details_frame.winfo_children():
             widget.destroy()
 
-        # Character name and basic info
         ctk.CTkLabel(
             self.preview_area,
             text=character.get("name", "Unnamed"),
             font=("Segoe UI", 16, "bold"),
         ).pack(pady=(5, 5))
 
-        # Author
         author = character.get("author", "Unknown")
         ctk.CTkLabel(
             self.preview_area,
@@ -1144,15 +1115,12 @@ class CharacterBrowser:
             text_color=("gray40", "gray70"),
         ).pack(pady=(0, 15))
 
-        # Screenshots section
         if HAS_PIL:
             screenshots_frame = ctk.CTkFrame(self.preview_area, fg_color="transparent")
             screenshots_frame.pack(fill=ctk.BOTH, expand=True, pady=(0, 10))
 
-            # Try to load screenshots
             char_id = character["id"]
 
-            # First, try to get screenshot URLs from index.json character entry
             face_url = None
             body_url = None
 
@@ -1161,12 +1129,11 @@ class CharacterBrowser:
             if screenshots_obj:
                 face_url = screenshots_obj.get("face_url")
                 body_url = screenshots_obj.get("body_url")
-            # Fallback: try to get from metadata if not in index
+
             if not (face_url or body_url):
                 metadata_url = character.get("metadata_url")
 
                 if metadata_url:
-                    # Download metadata to get screenshot URLs
                     metadata = self.manager.get_cached_metadata(char_id)
 
                     if not metadata:
@@ -1174,12 +1141,9 @@ class CharacterBrowser:
 
                     if metadata:
                         screenshots = metadata.get("screenshots", {})
-
-                        # Load face and body screenshots
                         face_url = screenshots.get("face_url")
                         body_url = screenshots.get("body_url")
 
-            # Display screenshots (from index.json or fallback metadata)
             if face_url or body_url:
                 screenshot_container = ctk.CTkFrame(screenshots_frame)
                 screenshot_container.pack(fill=ctk.BOTH, expand=True)
@@ -1189,11 +1153,8 @@ class CharacterBrowser:
                         screenshot_container, text="Loading face..."
                     )
                     face_label.pack(side=ctk.LEFT, padx=5, expand=True)
-                    self.dialog.after(
-                        10,
-                        lambda url=face_url: self._load_screenshot(
-                            char_id, url, face_label, "_face", (220, 220)
-                        ),
+                    self._load_screenshot(
+                        char_id, face_url, face_label, "_face", (220, 220)
                     )
 
                 if body_url:
@@ -1201,18 +1162,12 @@ class CharacterBrowser:
                         screenshot_container, text="Loading body..."
                     )
                     body_label.pack(side=ctk.LEFT, padx=5, expand=True)
-                    self.dialog.after(
-                        10,
-                        lambda url=body_url: self._load_screenshot(
-                            char_id, url, body_label, "_body", (220, 220)
-                        ),
+                    self._load_screenshot(
+                        char_id, body_url, body_label, "_body", (220, 220)
                     )
 
-        # Details frame - show stats and equipment
-        # Character level and class
         level = character.get("level", "?")
         char_class = character.get("class", "Unknown")
-        # Use ng_level if available (string like "NG", "NG+1"), otherwise fall back to ng_plus
         ng_level = character.get("ng_level")
         if ng_level:
             ng_text = f" ({ng_level})"
@@ -1227,7 +1182,6 @@ class CharacterBrowser:
         )
         stats_header.pack(anchor=ctk.W, pady=(0, 10))
 
-        # Playtime
         playtime = character.get("playtime")
         if playtime:
             playtime_label = ctk.CTkLabel(
@@ -1238,7 +1192,6 @@ class CharacterBrowser:
             )
             playtime_label.pack(anchor=ctk.W, pady=(0, 10))
 
-        # Stats
         stats = character.get("stats", {})
         if stats:
             stats_grid = ctk.CTkFrame(self.details_frame, fg_color="transparent")
@@ -1275,7 +1228,6 @@ class CharacterBrowser:
                     font=("Segoe UI", 11, "bold"),
                 ).pack(side=ctk.LEFT)
 
-        # Max HP/FP/Stamina
         max_hp = character.get("max_hp")
         max_fp = character.get("max_fp")
         max_stamina = character.get("max_stamina")
@@ -1314,12 +1266,10 @@ class CharacterBrowser:
                     text_color=("#0369a1", "#7dd3fc"),
                 ).grid(row=0, column=idx, sticky=ctk.W, padx=(0, 15), pady=1)
 
-        # Progression info (bosses, graces)
         bosses_defeated = character.get("bosses_defeated")
         graces_unlocked = character.get("graces_unlocked")
         ng_level = character.get("ng_level")
 
-        # Show progression box if we have any progression data
         if bosses_defeated is not None or graces_unlocked is not None or ng_level:
             prog_frame = ctk.CTkFrame(
                 self.details_frame,
@@ -1362,7 +1312,6 @@ class CharacterBrowser:
                     text_color=("#1e40af", "#93c5fd"),
                 ).pack(anchor=ctk.W, pady=1)
 
-        # Convergence custom items
         convergence = character.get("convergence")
         if convergence and convergence.get("custom_items"):
             conv_frame = ctk.CTkFrame(
@@ -1383,7 +1332,7 @@ class CharacterBrowser:
             for category, items in custom_items.items():
                 if items:
                     category_display = category.capitalize()
-                    items_text = ", ".join(items[:5])  # Show first 5 items
+                    items_text = ", ".join(items[:5])
                     if len(items) > 5:
                         items_text += f" (+{len(items) - 5} more)"
 
@@ -1397,11 +1346,10 @@ class CharacterBrowser:
 
             ctk.CTkLabel(
                 conv_frame,
-                text="",  # Spacer
+                text="",
                 font=("Segoe UI", 4),
             ).pack()
 
-        # Equipment
         equipment = character.get("equipment", {})
         if equipment and isinstance(equipment, dict):
             equip_label = ctk.CTkLabel(
@@ -1425,7 +1373,6 @@ class CharacterBrowser:
                         anchor="w",
                     ).pack(anchor=ctk.W, pady=1)
 
-        # Description
         description = character.get("description", "")
         if description:
             desc_label = ctk.CTkLabel(
@@ -1444,7 +1391,6 @@ class CharacterBrowser:
             )
             desc_text.pack(anchor=ctk.W, fill=ctk.X)
 
-        # Tags
         tags = character.get("tags", [])
         if tags:
             tags_label = ctk.CTkLabel(
@@ -1455,18 +1401,15 @@ class CharacterBrowser:
             )
             tags_label.pack(anchor=ctk.W, pady=(10, 0))
 
-        # Warnings
         warnings = []
         if character.get("has_dlc"):
             warnings.append("ℹ️ Character has Shadow of the Erdtree DLC")
 
-        # Check for Convergence mod - only show if convergence_detected is explicitly True
         convergence = character.get("convergence")
         if convergence and convergence.get("convergence_detected") is True:
             mod_version = convergence.get("version", "")
             version_text = f" v{mod_version}" if mod_version else ""
             warnings.append(f"⚡ Requires Convergence mod{version_text}")
-        # Check for other overhaul mods
         else:
             mod_info = character.get("overhaul_mod") or character.get("mod_info")
             if mod_info and mod_info.get("name"):
@@ -1489,7 +1432,6 @@ class CharacterBrowser:
                     text_color=("#b45309", "#fbbf24"),
                 ).pack(anchor=ctk.W, padx=10, pady=5)
 
-        # Metrics and voting
         char_id = character.get("id", "")
         metrics = self.character_metrics_cache.get(char_id, {})
         likes = metrics.get("likes", 0)
@@ -1506,13 +1448,10 @@ class CharacterBrowser:
         )
         stats_label.pack(anchor=ctk.W, pady=(0, 8))
 
-        # Like button
         has_liked = self.metrics.has_user_liked(char_id)
 
         def vote_like():
             self.metrics.like(char_id)
-            # Update UI regardless of server response (action was cached locally)
-            # Refresh preview to show updated like state
             self.preview_character(character)
 
         like_btn = ctk.CTkButton(
@@ -1526,7 +1465,6 @@ class CharacterBrowser:
         )
         like_btn.pack(side=ctk.LEFT, padx=(0, 8))
 
-        # Report button
         report_btn = ctk.CTkButton(
             metrics_frame,
             text="🚩 Report",
@@ -1546,26 +1484,38 @@ class CharacterBrowser:
         suffix: str,
         size: tuple[int, int],
     ):
-        """Load screenshot image asynchronously."""
+        """Download and display a screenshot in a background thread.
+
+        The download and decode run off the main thread; only the widget
+        update is posted back via dialog.after().
+        """
         if not HAS_PIL:
             return
 
-        screenshot_path = self.manager.download_screenshot(
-            char_id, screenshot_url, suffix
-        )
+        import threading
 
-        if screenshot_path and screenshot_path.exists():
+        def _download_and_set():
+            path = self.manager.download_screenshot(char_id, screenshot_url, suffix)
+            if not path or not path.exists():
+                self.dialog.after(0, lambda: label.configure(text="No image"))
+                return
             try:
-                img = Image.open(screenshot_path)
-                # Use thumbnail to maintain aspect ratio while fitting within size
+                img = Image.open(path)
                 img.thumbnail(size, Image.Resampling.LANCZOS)
                 ctk_img = ctk.CTkImage(img, size=img.size)
-                label.configure(image=ctk_img, text="")
-                label.image = ctk_img  # Keep reference
+
+                def _apply():
+                    try:
+                        label.configure(image=ctk_img, text="")
+                        label.image = ctk_img
+                    except Exception:
+                        pass
+
+                self.dialog.after(0, _apply)
             except Exception:
-                label.configure(text="Failed to load")
-        else:
-            label.configure(text="No image")
+                self.dialog.after(0, lambda: label.configure(text="Failed to load"))
+
+        threading.Thread(target=_download_and_set, daemon=True).start()
 
     def import_to_slot(self):
         """Import selected character to chosen slot."""
@@ -1589,23 +1539,18 @@ class CharacterBrowser:
         char_name = character.get("name", "Unnamed")
         char_id = character["id"]
 
-        # Get target slot
         target_slot = self.target_slot_var.get() - 1
 
-        # Build warning message
         warnings = []
 
-        # Check DLC requirement
         if character.get("has_dlc"):
             warnings.append("ℹ️ Character has Shadow of the Erdtree DLC")
 
-        # Check for Convergence mod
         convergence = character.get("convergence")
         if convergence and convergence.get("convergence_detected") is True:
             mod_version = convergence.get("version", "")
             version_text = f" v{mod_version}" if mod_version else ""
             warnings.append(f"⚡ Requires Convergence mod{version_text}")
-        # Check for other overhaul mods
         else:
             mod_info = character.get("overhaul_mod") or character.get("mod_info")
             if mod_info and mod_info.get("name"):
@@ -1614,28 +1559,24 @@ class CharacterBrowser:
                 version_text = f" v{mod_version}" if mod_version else ""
                 warnings.append(f"⚠ Uses overhaul mod: {mod_name}{version_text}")
 
-        # Check NG+ compatibility
         char_ng = character.get("ng_plus", 0)
         if char_ng > 0:
             warnings.append(
                 f"⚠ Character is from NG+{char_ng} (may have issues on lower NG cycles)"
             )
 
-        # Check if slot is occupied
         target_char = self.save_file.character_slots[target_slot]
         slot_warning = ""
         if not target_char.is_empty():
             existing_name = target_char.get_character_name()
             slot_warning = f"\n\n⚠ WARNING: Slot {target_slot + 1} is occupied by '{existing_name}'.\nThis will DELETE that character!"
 
-        # Build confirmation message
         message = f"Import '{char_name}' to Slot {target_slot + 1}?"
         if warnings:
             message += "\n\n" + "\n".join(warnings)
         message += slot_warning
         message += "\n\nThe character's SteamID will be automatically synced to match your save file."
 
-        # Confirm with user
         if not CTkMessageBox.askyesno(
             "Confirm Import",
             message,
@@ -1646,7 +1587,6 @@ class CharacterBrowser:
 
         import threading
 
-        # Show progress dialog
         progress = ProgressDialog(
             self.dialog, "Importing Character", f"Importing '{char_name}'..."
         )
@@ -1656,8 +1596,6 @@ class CharacterBrowser:
                 import tempfile
 
                 from er_save_manager.transfer.character_ops import CharacterOperations
-
-                # Download .erc file to temp location
 
                 self.dialog.after(
                     0,
@@ -1675,14 +1613,11 @@ class CharacterBrowser:
 
                 temp_erc = temp_dir / f"{char_id}.erc"
 
-                # Stream download
                 success = self.manager.stream_character_download(
                     char_id, erc_url, temp_erc
                 )
                 if not success:
                     raise RuntimeError("Failed to download character file")
-
-                # Create backup before importing
 
                 self.dialog.after(
                     0,
@@ -1701,10 +1636,7 @@ class CharacterBrowser:
                     )
 
                 except Exception:
-                    # Continue with import even if backup fails
                     pass
-
-                # Import character
 
                 self.dialog.after(
                     0,
@@ -1716,8 +1648,6 @@ class CharacterBrowser:
                     self.save_file, target_slot, str(temp_erc)
                 )
 
-                # Save the modified save file to disk
-
                 self.dialog.after(
                     0,
                     lambda: progress.update_status(
@@ -1726,59 +1656,44 @@ class CharacterBrowser:
                 )
                 self.save_file.save()
 
-                # Record download metric
-
                 self.dialog.after(
                     0,
                     lambda: progress.update_status("Finalizing...", "Updating metrics"),
                 )
                 self.metrics.record_download(char_id)
 
-                # Update metrics cache
                 if char_id in self.character_metrics_cache:
                     self.character_metrics_cache[char_id]["downloads"] = (
                         self.character_metrics_cache[char_id].get("downloads", 0) + 1
                     )
 
-                # Clean up temp file
                 try:
                     temp_erc.unlink()
                 except Exception:
                     pass
 
-                # Reload save file if there's a callback
                 if self.character_tab and hasattr(self.character_tab, "reload_save"):
                     self.character_tab.reload_save()
-
-                # Refresh metrics for this character from Supabase
 
                 try:
                     fresh_metrics = self.metrics.fetch_metrics([char_id])
                     if fresh_metrics and char_id in fresh_metrics:
-                        # Update the character data with fresh metrics
                         self.current_character["downloads"] = fresh_metrics[
                             char_id
                         ].get("downloads", 0)
                         self.current_character["likes"] = fresh_metrics[char_id].get(
                             "likes", 0
                         )
-                        # Update metrics cache so preview displays new counts
                         self.character_metrics_cache[char_id] = fresh_metrics[char_id]
-                        # Re-display with updated metrics
                         self.preview_character(self.current_character)
                 except Exception:
                     pass
 
-                # Show success dialog on main thread
                 def show_success():
                     progress.close()
-                    # Wait for progress dialog to fully release grab
                     self.dialog.update_idletasks()
                     slot_str = f"Slot {target_slot + 1}"
-
-                    # Refresh slot names to show updated character
                     self.refresh_slot_names()
-
                     CTkMessageBox.showinfo(
                         "Import Successful",
                         f"'{imported_name}' has been imported to {slot_str}!\n\nThe character's SteamID has been synced to your save file.",
@@ -1800,7 +1715,6 @@ class CharacterBrowser:
 
                 self.dialog.after(0, show_error)
 
-        # Start import in background thread
         thread = threading.Thread(target=import_in_background, daemon=True)
         thread.start()
 
@@ -1813,14 +1727,12 @@ class CharacterBrowser:
         report_dialog.geometry("600x600")
         report_dialog.transient(self.dialog)
 
-        # Force rendering on Linux before grab_set
         force_render_dialog(report_dialog)
         report_dialog.grab_set()
 
         main_frame = ctk.CTkFrame(report_dialog)
         main_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=20)
 
-        # GitHub Account Required notice
         notice_frame = ctk.CTkFrame(
             main_frame, fg_color=("#fff7ed", "#3b2f1b"), corner_radius=8
         )
@@ -1838,7 +1750,6 @@ class CharacterBrowser:
             text_color=("#6b7280", "#d1d5db"),
         ).pack(pady=(0, 10))
 
-        # Title
         ctk.CTkLabel(
             main_frame,
             text=f"Report: {character.get('name', 'Character')}",
@@ -1852,7 +1763,6 @@ class CharacterBrowser:
             text_color=("#6b7280", "#9ca3af"),
         ).pack(anchor=ctk.W, pady=(0, 15))
 
-        # Info box
         info_frame = ctk.CTkFrame(
             main_frame, fg_color=("#fef3c7", "#3f2f1e"), corner_radius=8
         )
@@ -1865,19 +1775,16 @@ class CharacterBrowser:
             wraplength=550,
         ).pack(padx=15, pady=12)
 
-        # Reason label
         ctk.CTkLabel(
             main_frame,
             text="Reason for report:",
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor=ctk.W, pady=(0, 8))
 
-        # Text box for report message
         report_text = ctk.CTkTextbox(main_frame, height=150)
         report_text.pack(fill=ctk.BOTH, expand=True, pady=(0, 20))
         report_text.focus()
 
-        # Button frame
         button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         button_frame.pack(fill=ctk.X)
 
@@ -1890,8 +1797,6 @@ class CharacterBrowser:
                     parent=report_dialog,
                 )
                 return
-
-            # Submit report
             self._submit_character_report(character, message)
             report_dialog.destroy()
 
@@ -1921,10 +1826,8 @@ class CharacterBrowser:
         char_author = character.get("author", "Unknown")
         char_id = character.get("id", "unknown")
 
-        # Create issue title
         issue_title = f"[Report] {char_name}"
 
-        # Create issue body
         issue_body = f"""**Reported Character:** {char_name}
 **Author:** {char_author}
 **Character ID:** {char_id}
