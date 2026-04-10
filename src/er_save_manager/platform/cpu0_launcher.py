@@ -212,7 +212,9 @@ def launch_with_cpu0_excluded(
 
     new_pid = _get_pid_by_name_csv(process_name)
     if new_pid is None:
-        return LaunchResult(False, f"Process '{process_name}' exited during startup delay.")
+        return LaunchResult(
+            False, f"Process '{process_name}' exited during startup delay."
+        )
     if new_pid != pid:
         pid = new_pid
 
