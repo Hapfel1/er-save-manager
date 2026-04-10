@@ -1,21 +1,15 @@
 """
-Launch eldenring.exe or ersc_launcher.exe with CPU 0 excluded from the process affinity mask.
-
-Windows only. The affinity is applied after the process appears in the process list.
-All operations use ctypes so no external dependencies are required.
+Launch a game executable with CPU 0 excluded from the process affinity mask.
 """
 
 from __future__ import annotations
 
 import ctypes
 import ctypes.wintypes
-import logging
 import subprocess
 import sys
 import time
 from pathlib import Path
-
-logger = logging.getLogger(__name__)
 
 # Win32 constants
 _PROCESS_QUERY_INFORMATION = 0x0400
@@ -26,11 +20,40 @@ _kernel32 = (
 )
 
 
+class _SYSTEM_INFO(ctypes.Structure):
+    """Mirrors the Win32 SYSTEM_INFO struct."""
+
+    class _OemId(ctypes.Union):
+        class _Proc(ctypes.Structure):
+            _fields_ = [
+                ("wProcessorArchitecture", ctypes.c_uint16),
+                ("wReserved", ctypes.c_uint16),
+            ]
+
+        _fields_ = [
+            ("dwOemId", ctypes.c_uint32),
+            ("_proc", _Proc),
+        ]
+
+    _fields_ = [
+        ("_oemId", _OemId),
+        ("dwPageSize", ctypes.c_uint32),
+        ("lpMinimumApplicationAddress", ctypes.c_void_p),
+        ("lpMaximumApplicationAddress", ctypes.c_void_p),
+        ("dwActiveProcessorMask", ctypes.POINTER(ctypes.c_ulong)),
+        ("dwNumberOfProcessors", ctypes.c_uint32),
+        ("dwProcessorType", ctypes.c_uint32),
+        ("dwAllocationGranularity", ctypes.c_uint32),
+        ("wProcessorLevel", ctypes.c_uint16),
+        ("wProcessorRevision", ctypes.c_uint16),
+    ]
+
+
 def _cpu_count() -> int:
     """Return the logical processor count reported by Windows."""
     if _kernel32 is None:
         return 1
-    si = ctypes.wintypes.SYSTEM_INFO()
+    si = _SYSTEM_INFO()
     _kernel32.GetSystemInfo(ctypes.byref(si))
     return si.dwNumberOfProcessors
 
@@ -46,44 +69,16 @@ def _affinity_without_cpu0() -> int:
 
 
 def _set_affinity(pid: int, mask: int) -> bool:
-    """
-    Apply mask to the process identified by pid.
-
-    Logs the Win32 error code on failure so the caller can diagnose
-    whether this is an access-rights issue (e.g. EAC protection) or
-    something else.
-    """
+    """Apply mask to the process identified by pid. Returns True on success."""
     if _kernel32 is None:
         return False
-
     handle = _kernel32.OpenProcess(
         _PROCESS_QUERY_INFORMATION | _PROCESS_SET_INFORMATION, False, pid
     )
     if not handle:
-        err = ctypes.get_last_error()
-        logger.warning(
-            "OpenProcess failed for PID %d (Win32 error %d) - "
-            "likely insufficient rights; try running as Administrator",
-            pid,
-            err,
-        )
         return False
-
     try:
-        ok = bool(_kernel32.SetProcessAffinityMask(handle, ctypes.c_size_t(mask)))
-        if not ok:
-            err = ctypes.get_last_error()
-            logger.warning(
-                "SetProcessAffinityMask failed for PID %d, mask 0x%X (Win32 error %d)",
-                pid,
-                mask,
-                err,
-            )
-        else:
-            logger.debug(
-                "SetProcessAffinityMask succeeded for PID %d, mask 0x%X", pid, mask
-            )
-        return ok
+        return bool(_kernel32.SetProcessAffinityMask(handle, ctypes.c_size_t(mask)))
     finally:
         _kernel32.CloseHandle(handle)
 
@@ -109,8 +104,7 @@ def _get_pid_by_name_csv(name: str) -> int | None:
             creationflags=subprocess.CREATE_NO_WINDOW,
             timeout=3,
         )
-    except Exception as exc:
-        logger.warning("tasklist query failed: %s", exc)
+    except Exception:
         return None
     for line in result.stdout.decode(errors="replace").splitlines():
         parts = [p.strip('"') for p in line.split(",")]
@@ -122,37 +116,39 @@ def _get_pid_by_name_csv(name: str) -> int | None:
     return None
 
 
+# The game must finish initializing before the affinity mask is applied.
+# Applying it too early causes a crash.
+_STARTUP_DELAY = 10.0
+
+
 def apply_cpu0_exclusion(process_name: str) -> bool:
     """
     Find a running process by name and remove CPU 0 from its affinity mask.
 
+    Waits _STARTUP_DELAY seconds after detection before applying the mask.
+
     Intended to be called from the process monitor on a launch transition.
+    Supports eldenring.exe, nightreign.exe, and darksoulsiii.exe.
     Returns True if the affinity was successfully updated.
     """
     if sys.platform != "win32":
         return False
     if _cpu_count() <= 1:
-        logger.debug("apply_cpu0_exclusion: single-core system, skipping")
         return False
 
     pid = _get_pid_by_name_csv(process_name)
     if pid is None:
-        logger.warning(
-            "apply_cpu0_exclusion: '%s' not found in process list", process_name
-        )
         return False
 
-    logger.debug("apply_cpu0_exclusion: found '%s' at PID %d", process_name, pid)
-    mask = _affinity_without_cpu0()
-    ok = _set_affinity(pid, mask)
-    if ok:
-        logger.info(
-            "CPU 0 excluded for '%s' (PID %d), affinity mask 0x%X",
-            process_name,
-            pid,
-            mask,
-        )
-    return ok
+    time.sleep(_STARTUP_DELAY)
+
+    new_pid = _get_pid_by_name_csv(process_name)
+    if new_pid is None:
+        return False
+    if new_pid != pid:
+        pid = new_pid
+
+    return _set_affinity(pid, _affinity_without_cpu0())
 
 
 class LaunchResult:
@@ -171,22 +167,6 @@ def launch_with_cpu0_excluded(
     poll_interval: float = 0.25,
     timeout: float = 30.0,
 ) -> LaunchResult:
-    """
-    Launch exe_path and remove CPU 0 from its affinity mask once it appears.
-
-    Parameters
-    ----------
-    exe_path:
-        Path to eldenring.exe or ersc_launcher.exe.
-    poll_interval:
-        Seconds between PID-lookup attempts after launch.
-    timeout:
-        Maximum seconds to wait for the process to appear before giving up.
-
-    Returns
-    -------
-    LaunchResult with success flag and a human-readable message.
-    """
     if sys.platform != "win32":
         return LaunchResult(False, "CPU affinity control is only available on Windows.")
 
@@ -202,15 +182,7 @@ def launch_with_cpu0_excluded(
     process_name = exe_path.name.lower()
     mask = _affinity_without_cpu0()
 
-    logger.debug(
-        "Launching '%s', will apply affinity mask 0x%X (%d/%d cores)",
-        exe_path,
-        mask,
-        cpu_count - 1,
-        cpu_count,
-    )
-
-    # Launch the process detached so it outlives the tool.
+    # Launch detached so the process outlives the tool.
     try:
         subprocess.Popen(
             [str(exe_path)],
@@ -227,7 +199,6 @@ def launch_with_cpu0_excluded(
     while time.monotonic() < deadline:
         pid = _get_pid_by_name_csv(process_name)
         if pid is not None:
-            logger.debug("Process '%s' appeared at PID %d", process_name, pid)
             break
         time.sleep(poll_interval)
 
@@ -237,14 +208,21 @@ def launch_with_cpu0_excluded(
             f"Process '{process_name}' did not appear within {timeout:.0f}s after launch.",
         )
 
+    time.sleep(_STARTUP_DELAY)
+
+    new_pid = _get_pid_by_name_csv(process_name)
+    if new_pid is None:
+        return LaunchResult(False, f"Process '{process_name}' exited during startup delay.")
+    if new_pid != pid:
+        pid = new_pid
+
     if not _set_affinity(pid, mask):
         err = ctypes.get_last_error()
         return LaunchResult(
             False, f"SetProcessAffinityMask failed (Win32 error {err})."
         )
 
-    excluded_cores = 1
-    active_cores = cpu_count - excluded_cores
+    active_cores = cpu_count - 1
     return LaunchResult(
         True,
         f"Launched '{process_name}' (PID {pid}) with CPU 0 excluded "
