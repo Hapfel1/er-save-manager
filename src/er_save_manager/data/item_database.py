@@ -115,7 +115,10 @@ class ItemDatabase:
                     )
 
                     self.items.append(item)
-                    self.items_by_id[item.full_id] = item
+                    # First-write-wins: base-game entries (loaded first) take priority
+                    # over Convergence mod entries that reuse the same IDs.
+                    if item.full_id not in self.items_by_id:
+                        self.items_by_id[item.full_id] = item
 
                     if category_name not in self.items_by_category:
                         self.items_by_category[category_name] = []

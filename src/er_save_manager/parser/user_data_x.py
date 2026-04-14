@@ -72,6 +72,8 @@ class UserDataX:
     time_offset: int = 0
     steamid_offset: int = 0
     dlc_offset: int = 0
+    inventory_held_offset: int = 0
+    inventory_storage_offset: int = 0
     # Header (4 + 4 + 8 + 16 = 32 bytes)
     version: int = 0
     map_id: MapId = field(default_factory=MapId)
@@ -317,6 +319,7 @@ class UserDataX:
         # Read inventory held
         held_common_cap = 0xA80  # 2,688 common items
         held_key_cap = 0x180  # 384 key items
+        obj.inventory_held_offset = f.tell() - data_start
         obj.inventory_held = Inventory.read(f, held_common_cap, held_key_cap)
 
         # Read more equipment
@@ -331,6 +334,7 @@ class UserDataX:
         obj.face_data = FaceData.read(f, in_profile_summary=False)
 
         # Read inventory storage
+        obj.inventory_storage_offset = f.tell() - data_start
         obj.inventory_storage_box = Inventory.read(f, 0x780, 0x80)
 
         # Parse remaining structures
