@@ -613,6 +613,27 @@ class SettingsTab:
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
+        # Manual CSNetMan replace button in Character Details
+        self._debug_netman_var = tk.BooleanVar(
+            value=self.settings.get("debug_netman_replace", False)
+        )
+        ctk.CTkCheckBox(
+            frame,
+            text="Show manual CSNetMan replace button in Character Details",
+            variable=self._debug_netman_var,
+            command=lambda: self.settings.set(
+                "debug_netman_replace", self._debug_netman_var.get()
+            ),
+        ).pack(anchor="w", padx=12, pady=5)
+        ctk.CTkLabel(
+            frame,
+            text="Adds a button to replace the NetMan block with CSNetMan.bin. For saves with trashed NetMan data but no offset shift.",
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+            wraplength=560,
+            justify="left",
+        ).pack(anchor="w", padx=32, pady=(0, 12))
+
     def _create_launch_settings(self, parent) -> None:
         """CPU 0 exclusion settings -- Windows only."""
         import sys
@@ -658,6 +679,7 @@ class SettingsTab:
         self.settings.set("advanced_mode_unlocked", False)
         self.settings.set("skip_game_running_check", False)
         self.settings.set("verbose_logging", False)
+        self.settings.set("debug_netman_replace", False)
         if self._advanced_frame is not None:
             self._advanced_frame.destroy()
             self._advanced_frame = None
@@ -695,6 +717,8 @@ class SettingsTab:
             if hasattr(self, "_cpu0_exclude_var"):
                 self._cpu0_exclude_var.set(False)
                 self.settings.set("cpu0_exclude_on_launch", False)
+            if hasattr(self, "_debug_netman_var"):
+                self._debug_netman_var.set(False)
             CTkMessageBox.showinfo(
                 "Success", "Settings have been reset to defaults.", parent=self.parent
             )
