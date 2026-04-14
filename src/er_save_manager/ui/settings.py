@@ -107,6 +107,8 @@ class Settings:
             "advanced_mode_unlocked": False,
             "skip_game_running_check": False,
             "verbose_logging": False,
+            # Debug: show manual CSNetMan replace button in Character Details
+            "debug_netman_replace": False,
         }
 
     def save(self):
