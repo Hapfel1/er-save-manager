@@ -219,6 +219,13 @@ class EventFlagsTab:
             text="Export Flags...",
             command=self.export_flags,
             width=120,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+
+        ctk.CTkButton(
+            tools_row,
+            text="Import Flags...",
+            command=self.import_flags,
+            width=120,
         ).pack(side=tk.LEFT)
 
         # Category selector
@@ -369,8 +376,8 @@ class EventFlagsTab:
         # Update subcategories
         subcats = get_subcategories(category)
         if subcats:
-            self.subcat_combo.configure(values=subcats, state="readonly")
-            self.subcategory_var.set(subcats[0])
+            self.subcat_combo.configure(values=["All"] + subcats, state="readonly")
+            self.subcategory_var.set("All")
             self.on_subcategory_changed()
         else:
             self.subcat_combo.configure(values=[], state="disabled")
@@ -387,53 +394,62 @@ class EventFlagsTab:
         subcategory = self.subcategory_var.get()
 
         if category and subcategory:
-            self.display_flags(category, subcategory)
+            self.display_flags(category, None if subcategory == "All" else subcategory)
 
     def display_flags(self, category, subcategory):
-        """Display flags for category/subcategory"""
-        # Clear current flags
+        """Display flags for category/subcategory, rendered in chunks to avoid X11 BadAlloc."""
         for widget in self.flags_inner_frame.winfo_children():
             widget.destroy()
         self.flag_widgets.clear()
 
         flags = get_category_flags(category, subcategory)
-        count = 0
+        total = len(flags)
 
-        for flag_id in flags:
+        label = f"{category} > {subcategory}" if subcategory else category
+        self.status_label.configure(text=f"Loading {total} flags in {label}...")
+
+        self._render_flags_chunk(flags, 0, total, label)
+
+    _RENDER_CHUNK = 25  # flags per batch
+    _RENDER_DELAY = 20  # ms between batches - gives X11 time to flush
+
+    def _render_flags_chunk(self, flags, offset, total, label):
+        """Render one chunk of flags, then schedule the next batch."""
+        chunk = flags[offset : offset + self._RENDER_CHUNK]
+
+        for flag_id in chunk:
             flag_name = get_flag_name(flag_id)
             is_set = self.current_event_flags.get_flag(flag_id)
 
-            # Store initial state
             if flag_id not in self.flag_states:
                 self.flag_states[flag_id] = is_set
 
-            # Create checkbox
             var = tk.BooleanVar(value=is_set)
 
-            flag_frame = ctk.CTkFrame(
-                self.flags_inner_frame,
-                corner_radius=6,
-                fg_color=("#ffffff", "#1f1f28"),
-            )
-            flag_frame.pack(fill=tk.X, pady=2, padx=4)
-
             checkbox = ctk.CTkCheckBox(
-                flag_frame,
+                self.flags_inner_frame,
                 text=f"{flag_id}: {flag_name}",
                 variable=var,
                 command=lambda fid=flag_id, v=var: self.on_flag_toggled(fid, v),
             )
-            checkbox.pack(side=tk.LEFT, padx=8, pady=6)
+            checkbox.pack(anchor="w", padx=8, pady=2)
 
             self.flag_widgets[flag_id] = (checkbox, var)
-            count += 1
 
-        if subcategory:
+        # Flush pending X11 requests before allocating the next batch
+        self.flags_inner_frame.update_idletasks()
+
+        next_offset = offset + self._RENDER_CHUNK
+        if next_offset < total:
             self.status_label.configure(
-                text=f"Showing {count} flags in {category} > {subcategory}"
+                text=f"Loading {next_offset}/{total} flags in {label}..."
+            )
+            self.flags_inner_frame.after(
+                self._RENDER_DELAY,
+                lambda: self._render_flags_chunk(flags, next_offset, total, label),
             )
         else:
-            self.status_label.configure(text=f"Showing {count} flags in {category}")
+            self.status_label.configure(text=f"Showing {total} flags in {label}")
 
     def on_flag_toggled(self, flag_id, var):
         """Handle flag checkbox toggle"""
@@ -471,8 +487,14 @@ class EventFlagsTab:
                     if query in str(flag_id).lower() or query in flag_name.lower():
                         results.append((flag_id, flag_name, category, None))
 
-        # Display results
-        for flag_id, flag_name, category, subcategory in results:
+        self.status_label.configure(text="Searching...")
+        self._render_search_chunk(results, 0)
+
+    def _render_search_chunk(self, results, offset):
+        """Render one chunk of search results, then schedule the next batch."""
+        chunk = results[offset : offset + self._RENDER_CHUNK]
+
+        for flag_id, flag_name, category, subcategory in chunk:
             is_set = self.current_event_flags.get_flag(flag_id)
 
             if flag_id not in self.flag_states:
@@ -480,26 +502,29 @@ class EventFlagsTab:
 
             var = tk.BooleanVar(value=is_set)
 
-            flag_frame = ctk.CTkFrame(
-                self.flags_inner_frame,
-                corner_radius=6,
-                fg_color=("#ffffff", "#1f1f28"),
-            )
-            flag_frame.pack(fill=tk.X, pady=2, padx=4)
-
             location = f"{category} > {subcategory}" if subcategory else category
 
             checkbox = ctk.CTkCheckBox(
-                flag_frame,
+                self.flags_inner_frame,
                 text=f"{flag_id}: {flag_name} ({location})",
                 variable=var,
                 command=lambda fid=flag_id, v=var: self.on_flag_toggled(fid, v),
             )
-            checkbox.pack(side=tk.LEFT, padx=8, pady=6)
+            checkbox.pack(anchor="w", padx=8, pady=2)
 
             self.flag_widgets[flag_id] = (checkbox, var)
 
-        self.status_label.configure(text=f"Found {len(results)} matching flags")
+        self.flags_inner_frame.update_idletasks()
+
+        next_offset = offset + self._RENDER_CHUNK
+        total = len(results)
+        if next_offset < total:
+            self.flags_inner_frame.after(
+                self._RENDER_DELAY,
+                lambda: self._render_search_chunk(results, next_offset),
+            )
+        else:
+            self.status_label.configure(text=f"Found {total} matching flags")
 
     def clear_search(self):
         """Clear search field"""
@@ -697,6 +722,116 @@ class EventFlagsTab:
             CTkMessageBox.showerror(
                 "Export Failed", f"Could not export flags:\n{e}", parent=self.parent
             )
+
+    def import_flags(self):
+        """Merge flags from a JSON file into the current slot. Only sets flags; never clears existing ones."""
+        if self.current_event_flags is None:
+            CTkMessageBox.showwarning(
+                "Not Loaded", "Please load event flags for a character first!"
+            )
+            return
+
+        import json
+        from tkinter import filedialog
+
+        save_path = self.get_save_path()
+        initial_dir = str(save_path.parent) if save_path else None
+
+        in_path = filedialog.askopenfilename(
+            parent=self.parent,
+            title="Import Event Flags",
+            initialdir=initial_dir,
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+        )
+        if not in_path:
+            return
+
+        try:
+            with open(in_path, encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Import Failed", f"Could not read file:\n{e}", parent=self.parent
+            )
+            return
+
+        if "flags" not in data or not isinstance(data["flags"], list):
+            CTkMessageBox.showerror(
+                "Invalid File",
+                "File does not contain a valid flags list.",
+                parent=self.parent,
+            )
+            return
+
+        flag_ids = []
+        for entry in data["flags"]:
+            if isinstance(entry, dict) and "id" in entry:
+                try:
+                    flag_ids.append(int(entry["id"]))
+                except (ValueError, TypeError):
+                    pass
+
+        if not flag_ids:
+            CTkMessageBox.showinfo(
+                "Nothing to Import",
+                "No valid flag IDs found in file.",
+                parent=self.parent,
+            )
+            return
+
+        result = CTkMessageBox.askyesno(
+            "Confirm Import",
+            f"Set {len(flag_ids)} flags on Slot {self.current_slot + 1}?\n\n"
+            f"Existing flags will not be cleared.",
+            parent=self.parent,
+        )
+        if not result:
+            return
+
+        save_file = self.get_save_file()
+
+        try:
+            backup_mgr = BackupManager(save_path)
+            backup_mgr.create_backup(
+                description=f"Before flag import (Slot {self.current_slot + 1})",
+                operation="flag_import",
+                save=save_file,
+            )
+        except PermissionError:
+            CTkMessageBox.showwarning(
+                "Backup Skipped",
+                "Could not create backup (permission denied). Proceeding.",
+                parent=self.parent,
+            )
+
+        applied = 0
+        for flag_id in flag_ids:
+            try:
+                self.current_event_flags.set_flag(flag_id, True)
+                applied += 1
+            except Exception:
+                pass
+
+        slot = save_file.character_slots[self.current_slot]
+        if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
+            absolute_offset = slot.event_flags_offset
+            event_flags_size = 0x1BF99F
+            save_file._raw_data[
+                absolute_offset : absolute_offset + event_flags_size
+            ] = slot.event_flags
+
+        save_file.recalculate_checksums()
+        save_file.save(self.get_save_path())
+        self.reload_save()
+
+        # Refresh displayed checkboxes to reflect imported state
+        if self.flag_widgets:
+            for flag_id, (_cb, var) in self.flag_widgets.items():
+                current = self.current_event_flags.get_flag(flag_id)
+                var.set(current)
+                self.flag_states[flag_id] = current
+
+        self.show_toast(f"Imported {applied} flags", duration=2500)
 
     def open_advanced_editor(self):
         """Open advanced flag editor dialog"""
