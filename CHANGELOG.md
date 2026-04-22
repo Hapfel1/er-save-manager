@@ -3,6 +3,35 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.14.1
+**Released:** April 22, 2026
+
+
+### 🔧 Bug Fixes
+
+- Add replacenetman option and button for trashed csnetmans without visible write torns ([44075f5](https://github.com/Hapfel1/er-save-manager/commit/44075f5229e9f16bf2314ca1927b8f348f817e5a))
+
+- Fixed steamid not being synced correctly when importing from a .erc file ([6f7f3fa](https://github.com/Hapfel1/er-save-manager/commit/6f7f3fa2590c95919f102b258bfd00f09adff770))
+
+
+
+### 🎨 User Interface
+
+- Add import flags button and add "All" selection for event flag categories with subcategories ([ed9b36c](https://github.com/Hapfel1/er-save-manager/commit/ed9b36c2aa0cbb45a9cb046d2131f85ea933fd5b))
+
+- Added Playtime Editor ([6bf0805](https://github.com/Hapfel1/er-save-manager/commit/6bf080529b49a86893d2ace6ffb121ba67d2c371))
+
+
+
+### 📦 Dependencies
+
+- Bump the github-actions group with 2 updates `[deps]` ([6639df2](https://github.com/Hapfel1/er-save-manager/commit/6639df2b1985f73f8984926bd24f5f536b43e0e5))
+
+- Bump the github-actions group with 2 updates `[deps]` ([7f7c08c](https://github.com/Hapfel1/er-save-manager/commit/7f7c08ca2cfc4943a833ce622f8aae1bdf6aa0a2))
+
+
+
+---
 ## 📦 Release 0.14.0
 **Released:** April 10, 2026
 
@@ -712,6 +741,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.14.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.14.0..v0.14.1
 [0.14.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.13.0..v0.14.0
 [0.13.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.12.1..v0.13.0
 [0.12.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.11.1..v0.12.1
