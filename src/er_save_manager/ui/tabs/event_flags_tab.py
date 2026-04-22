@@ -724,7 +724,8 @@ class EventFlagsTab:
             )
 
     def import_flags(self):
-        """Merge flags from a JSON file into the current slot. Only sets flags; never clears existing ones."""
+        """Apply flags from a JSON file. Entries with "state": false are cleared; others are set.
+        Backward compatible: entries without a "state" field default to true."""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
                 "Not Loaded", "Please load event flags for a character first!"
@@ -763,15 +764,17 @@ class EventFlagsTab:
             )
             return
 
-        flag_ids = []
+        # Parse (flag_id, state) pairs; "state" defaults to True for plain exports
+        flag_ops: list[tuple[int, bool]] = []
         for entry in data["flags"]:
             if isinstance(entry, dict) and "id" in entry:
                 try:
-                    flag_ids.append(int(entry["id"]))
+                    state = bool(entry.get("state", True))
+                    flag_ops.append((int(entry["id"]), state))
                 except (ValueError, TypeError):
                     pass
 
-        if not flag_ids:
+        if not flag_ops:
             CTkMessageBox.showinfo(
                 "Nothing to Import",
                 "No valid flag IDs found in file.",
@@ -779,10 +782,12 @@ class EventFlagsTab:
             )
             return
 
+        set_count = sum(1 for _, s in flag_ops if s)
+        unset_count = len(flag_ops) - set_count
+        summary = f"Set {set_count}" + (f", unset {unset_count}" if unset_count else "")
         result = CTkMessageBox.askyesno(
             "Confirm Import",
-            f"Set {len(flag_ids)} flags on Slot {self.current_slot + 1}?\n\n"
-            f"Existing flags will not be cleared.",
+            f"{summary} flags on Slot {self.current_slot + 1}?",
             parent=self.parent,
         )
         if not result:
@@ -805,9 +810,9 @@ class EventFlagsTab:
             )
 
         applied = 0
-        for flag_id in flag_ids:
+        for flag_id, state in flag_ops:
             try:
-                self.current_event_flags.set_flag(flag_id, True)
+                self.current_event_flags.set_flag(flag_id, state)
                 applied += 1
             except Exception:
                 pass
