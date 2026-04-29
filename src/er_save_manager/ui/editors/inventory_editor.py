@@ -1,9 +1,9 @@
 """
-Inventory Editor Module (customtkinter)
-Full implementation with gaitem system for adding/removing items using item browser
+Inventory Editor - add, remove, and set quantities using inventory_ops.
 """
 
-import re
+from __future__ import annotations
+
 import tkinter as tk
 from pathlib import Path
 
@@ -12,9 +12,59 @@ import customtkinter as ctk
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
+# ---- item-id helpers --------------------------------------------------------
+
+
+def _decode_inv_item(inv_item, gaitem_map: dict) -> tuple[int, int]:
+    """
+    Return (full_item_id, upgrade_level) for an inventory item.
+
+    For gaitem items (weapons/armor/gems) the full_id is read from the gaitem
+    entry. For direct-handle items (goods/talismans, 0xB0 prefix) the full_id
+    is reconstructed from the handle's lower 24 bits.
+    """
+    handle = inv_item.gaitem_handle
+    gaitem = gaitem_map.get(handle)
+    if gaitem:
+        prefix = gaitem.gaitem_handle & 0xF0000000
+        if prefix == 0x80000000:
+            # Weapon: item_id = base_id + upgrade, no category bits (0x00 = weapon)
+            upgrade = gaitem.item_id % 100
+            return (gaitem.item_id // 100) * 100, upgrade
+        # Armor (0x90) and gem/AoW (0xC0): item_id already carries category bits
+        return gaitem.item_id, 0
+
+    # Direct handle: 0xA0 prefix = talisman (game-native encoding)
+    if handle & 0xF0000000 == 0xA0000000:
+        return 0x20000000 | (handle & 0x00FFFFFF), 0
+
+    # Direct handle: 0xB0 prefix encodes goods or talismans (inventory_ops encoding)
+    if handle & 0xF0000000 == 0xB0000000:
+        base = handle & 0x00FFFFFF
+        return 0x40000000 | base, 0  # treat as goods; name lookup will clarify
+
+    return handle, 0
+
+
+def _item_name(full_item_id: int, upgrade: int = 0) -> str:
+    """Look up item name, falling back to talisman category on goods miss."""
+    from er_save_manager.data.item_database import get_item_database, get_item_name
+
+    name = get_item_name(full_item_id, upgrade)
+    if name.startswith("Unknown Item") and (full_item_id & 0xF0000000) == 0x40000000:
+        # B0 handles cannot distinguish goods from talismans; try talisman category
+        alt = 0x20000000 | (full_item_id & 0x0FFFFFFF)
+        alt_name = get_item_database().get_item_by_id(alt)
+        if alt_name:
+            return alt_name.name
+    return name
+
+
+# ---- editor -----------------------------------------------------------------
+
 
 class InventoryEditor:
-    """Full inventory editor with gaitem system support"""
+    """Inventory editor: browse, add, remove, and adjust item quantities."""
 
     def __init__(
         self,
@@ -24,750 +74,384 @@ class InventoryEditor:
         get_save_path_callback,
         ensure_mutable_callback,
     ):
-        """
-        Initialize inventory editor
-
-        Args:
-            parent: Parent widget
-            get_save_file_callback: Function that returns current save file
-            get_char_slot_callback: Function that returns current character slot index
-            get_save_path_callback: Function that returns save file path
-            ensure_mutable_callback: Function to ensure raw_data is mutable
-        """
         self.parent = parent
         self.get_save_file = get_save_file_callback
         self.get_char_slot = get_char_slot_callback
         self.get_save_path = get_save_path_callback
         self.ensure_mutable = ensure_mutable_callback
 
-        # UI variables
-        self.selected_item = None  # Currently selected item from browser
+        self.selected_item = None  # Item from the search browser
+        self._item_data: list[tuple[int, str] | None] = []  # parallel to listbox rows
+
         self.inv_quantity_var = None
         self.inv_upgrade_var = None
-        self.inv_reinforcement_var = None
         self.inv_location_var = None
         self.inv_filter_var = None
         self.inventory_listbox = None
-        self.selected_item_label = None
+        self._search_var = None
+        self._search_cat_var = None
+        self._results_listbox = None
+        self._results_items: list = []  # Item objects matching current search
+        self._selected_item_label = None
 
         self.frame = None
 
+    # ---- UI setup -----------------------------------------------------------
+
     def setup_ui(self):
-        """Setup the inventory editor UI"""
-        self.frame = ctk.CTkScrollableFrame(
-            self.parent,
-            fg_color="transparent",
-        )
+        self.frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
         self.frame.pack(fill=ctk.BOTH, expand=True)
         bind_mousewheel(self.frame)
 
-        # Add item frame - DISABLED FOR NOW
-        # add_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
-        # add_frame.pack(fill=ctk.X, pady=5, padx=10)
-        # ctk.CTkLabel(
-        #     add_frame,
-        #     text="Add/Spawn Item",
-        #     font=("Segoe UI", 12, "bold"),
-        # ).grid(row=0, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(5, 0))
+        self._build_add_panel()
+        self._build_inventory_list()
+        self._build_action_bar()
 
-        # Skip add item UI - will be re-enabled after serialization fixes
+    def _build_add_panel(self):
+        add_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        add_frame.pack(fill=ctk.X, pady=5, padx=10)
 
-        # Item list frame
+        ctk.CTkLabel(add_frame, text="Add Item", font=("Segoe UI", 12, "bold")).grid(
+            row=0, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(5, 0)
+        )
+
+        # Search row
+        ctk.CTkLabel(add_frame, text="Search:").grid(
+            row=1, column=0, sticky=ctk.W, padx=5, pady=3
+        )
+        self._search_var = ctk.StringVar()
+        self._search_var.trace_add("write", lambda *_: self._search_items())
+        search_entry = ctk.CTkEntry(add_frame, textvariable=self._search_var, width=200)
+        search_entry.grid(row=1, column=1, padx=5, pady=3)
+
+        # Category filter for search
+        self._search_cat_var = ctk.StringVar(value="All")
+        search_cat = ctk.CTkComboBox(
+            add_frame,
+            variable=self._search_cat_var,
+            values=["All"],
+            width=160,
+            command=lambda _e=None: self._search_items(),
+        )
+        search_cat.grid(row=1, column=2, padx=5, pady=3)
+        self._search_cat_combo = search_cat
+
+        # Populate category list after DB loads
+        self._populate_search_categories()
+
+        # Search results listbox
+        results_container = ctk.CTkFrame(add_frame, fg_color="transparent")
+        results_container.grid(
+            row=2, column=0, columnspan=4, sticky=ctk.EW, padx=5, pady=3
+        )
+        results_sb = tk.Scrollbar(results_container)
+        results_sb.pack(side=tk.RIGHT, fill=tk.Y)
+
+        mode = ctk.get_appearance_mode()
+        lb_bg = "#1f1f28" if mode == "Dark" else "#f0f0f0"
+        lb_fg = "#e5e5f5" if mode == "Dark" else "#000000"
+        lb_sel = "#c9a0dc" if mode == "Dark" else "#b8a0d0"
+
+        self._results_listbox = tk.Listbox(
+            results_container,
+            yscrollcommand=results_sb.set,
+            font=("Consolas", 9),
+            height=5,
+            bg=lb_bg,
+            fg=lb_fg,
+            selectbackground=lb_sel,
+            relief=tk.FLAT,
+        )
+        self._results_listbox.pack(side=tk.LEFT, fill=ctk.BOTH, expand=True)
+        results_sb.config(command=self._results_listbox.yview)
+        self._results_listbox.bind("<<ListboxSelect>>", self._on_result_select)
+
+        # Selected item label
+        self._selected_item_label = ctk.CTkLabel(
+            add_frame, text="No item selected", text_color=("gray50", "gray70")
+        )
+        self._selected_item_label.grid(
+            row=3, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(0, 3)
+        )
+
+        # Options row: qty, upgrade, location, add button
+        ctk.CTkLabel(add_frame, text="Qty:").grid(
+            row=4, column=0, sticky=ctk.W, padx=5, pady=3
+        )
+        self.inv_quantity_var = ctk.IntVar(value=1)
+        ctk.CTkEntry(add_frame, textvariable=self.inv_quantity_var, width=60).grid(
+            row=4, column=1, sticky=ctk.W, padx=5, pady=3
+        )
+
+        ctk.CTkLabel(add_frame, text="Upgrade:").grid(
+            row=4, column=2, sticky=ctk.W, padx=(10, 5), pady=3
+        )
+        self.inv_upgrade_var = ctk.IntVar(value=0)
+        ctk.CTkEntry(add_frame, textvariable=self.inv_upgrade_var, width=50).grid(
+            row=4, column=3, sticky=ctk.W, padx=5, pady=3
+        )
+
+        ctk.CTkLabel(add_frame, text="Location:").grid(
+            row=5, column=0, sticky=ctk.W, padx=5, pady=3
+        )
+        self.inv_location_var = ctk.StringVar(value="held")
+        ctk.CTkComboBox(
+            add_frame,
+            variable=self.inv_location_var,
+            values=["held", "storage"],
+            width=120,
+        ).grid(row=5, column=1, sticky=ctk.W, padx=5, pady=3)
+
+        ctk.CTkButton(
+            add_frame, text="Add Item", command=self.add_item, width=120
+        ).grid(row=5, column=2, columnspan=2, padx=5, pady=3)
+
+    def _build_inventory_list(self):
         list_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
         list_frame.pack(fill=ctk.BOTH, expand=True, pady=5, padx=10)
+
         ctk.CTkLabel(
-            list_frame,
-            text="Current Inventory",
-            font=("Segoe UI", 12, "bold"),
+            list_frame, text="Current Inventory", font=("Segoe UI", 12, "bold")
         ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
 
-        # Filter frame
         filter_frame = ctk.CTkFrame(list_frame, fg_color="transparent")
         filter_frame.pack(fill=ctk.X, pady=(0, 5))
-
-        ctk.CTkLabel(filter_frame, text="Filter by Category:").pack(
-            side=ctk.LEFT, padx=5
-        )
+        ctk.CTkLabel(filter_frame, text="Show:").pack(side=ctk.LEFT, padx=5)
         self.inv_filter_var = ctk.StringVar(value="All")
-        filter_combo = ctk.CTkComboBox(
+        ctk.CTkComboBox(
             filter_frame,
             variable=self.inv_filter_var,
             values=["All", "Held", "Storage", "Key Items"],
             width=140,
             command=lambda _e=None: self.refresh_inventory(),
-        )
-        filter_combo.pack(side=ctk.LEFT, padx=5)
+        ).pack(side=ctk.LEFT, padx=5)
 
-        # Inventory display (tk Listbox for rich text & performance)
-        inv_list_container = ctk.CTkFrame(list_frame, fg_color="transparent")
-        inv_list_container.pack(fill=ctk.BOTH, expand=True)
+        inv_container = ctk.CTkFrame(list_frame, fg_color="transparent")
+        inv_container.pack(fill=ctk.BOTH, expand=True)
+        sb = tk.Scrollbar(inv_container)
+        sb.pack(side=tk.RIGHT, fill=tk.Y)
 
-        inv_scrollbar = tk.Scrollbar(inv_list_container)
-        inv_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        # Get current theme mode
         mode = ctk.get_appearance_mode()
-        if mode == "Light":
-            listbox_bg = "#f0f0f0"
-            listbox_fg = "#000000"
-            listbox_select_bg = "#b8a0d0"
-        else:
-            listbox_bg = "#1f1f28"
-            listbox_fg = "#e5e5f5"
-            listbox_select_bg = "#c9a0dc"
+        lb_bg = "#1f1f28" if mode == "Dark" else "#f0f0f0"
+        lb_fg = "#e5e5f5" if mode == "Dark" else "#000000"
+        lb_sel = "#c9a0dc" if mode == "Dark" else "#b8a0d0"
 
         self.inventory_listbox = tk.Listbox(
-            inv_list_container,
-            yscrollcommand=inv_scrollbar.set,
+            inv_container,
+            yscrollcommand=sb.set,
             font=("Consolas", 10),
             height=18,
-            bg=listbox_bg,
-            fg=listbox_fg,
-            selectbackground=listbox_select_bg,
+            bg=lb_bg,
+            fg=lb_fg,
+            selectbackground=lb_sel,
             relief=tk.FLAT,
         )
         self.inventory_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        inv_scrollbar.config(command=self.inventory_listbox.yview)
+        sb.config(command=self.inventory_listbox.yview)
         bind_mousewheel(self.inventory_listbox)
 
-        # Remove / refresh buttons
-        remove_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
-        remove_frame.pack(fill=ctk.X, pady=5, padx=10)
+    def _build_action_bar(self):
+        bar = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        bar.pack(fill=ctk.X, pady=5, padx=10)
 
-        ctk.CTkButton(
-            remove_frame,
-            text="Remove Selected Item",
-            command=self.remove_item,
-            width=200,
-            state=ctk.DISABLED,
-        ).pack(side=ctk.LEFT, padx=5)
-
-        ctk.CTkButton(
-            remove_frame,
-            text="Refresh List",
-            command=self.refresh_inventory,
-            width=140,
-        ).pack(side=ctk.LEFT, padx=5)
-
-        ctk.CTkButton(
-            remove_frame,
-            text="Apply Changes",
-            command=self.apply_inventory_changes,
-            width=140,
-            fg_color="#4CAF50",
-            hover_color="#45a049",
-            state=ctk.DISABLED,
-        ).pack(side=ctk.LEFT, padx=5)
-
-        # Disabled notice
-        notice_label = ctk.CTkLabel(
-            self.frame,
-            text="⚠️ Item editing (add/remove) is temporarily disabled for stability.",
-            font=("Segoe UI", 10, "bold"),
-            text_color="#ff6b6b",
+        self._remove_btn = ctk.CTkButton(
+            bar, text="Remove Selected", command=self.remove_item, width=160
         )
-        notice_label.pack(pady=5, padx=10)
+        self._remove_btn.pack(side=ctk.LEFT, padx=5, pady=5)
 
-        # Info section
-        info_label = ctk.CTkLabel(
-            self.frame,
-            text=(
-                "You can view your inventory here. Adding and removing items has been temporarily disabled.\n"
-                "Refresh List will reload your current inventory from the save file."
-            ),
+        self._set_qty_btn = ctk.CTkButton(
+            bar, text="Set Quantity", command=self.set_quantity, width=120
+        )
+        self._set_qty_btn.pack(side=ctk.LEFT, padx=5, pady=5)
+
+        ctk.CTkButton(
+            bar, text="Refresh", command=self.refresh_inventory, width=100
+        ).pack(side=ctk.LEFT, padx=5, pady=5)
+
+        ctk.CTkLabel(
+            bar,
+            text="Select an item from the list then use Remove or Set Quantity.",
+            text_color=("gray40", "gray70"),
             font=("Segoe UI", 9),
-            text_color=("gray30", "gray80"),
-            justify=ctk.LEFT,
+        ).pack(side=ctk.LEFT, padx=10)
+
+    # ---- search browser helpers ---------------------------------------------
+
+    def _populate_search_categories(self):
+        try:
+            from er_save_manager.data.item_database import get_categories
+
+            cats = ["All"] + get_categories()
+            self._search_cat_combo.configure(values=cats)
+        except Exception:
+            pass
+
+    def _search_items(self):
+        if self._results_listbox is None:
+            return
+        try:
+            from er_save_manager.data.item_database import get_item_database
+
+            db = get_item_database()
+            query = self._search_var.get().strip()
+            cat = self._search_cat_var.get()
+
+            if not query and cat == "All":
+                self._results_items = []
+                self._results_listbox.delete(0, tk.END)
+                return
+
+            if cat == "All":
+                results = db.search_items(query) if query else []
+            else:
+                items = db.get_items_by_category(cat)
+                results = (
+                    [i for i in items if query.lower() in i.name.lower()]
+                    if query
+                    else items
+                )
+
+            # Cap at 200 to keep the listbox responsive
+            self._results_items = results[:200]
+            self._results_listbox.delete(0, tk.END)
+            for item in self._results_items:
+                self._results_listbox.insert(
+                    tk.END, f"{item.name}  [{item.category_name}]"
+                )
+        except Exception:
+            pass
+
+    def _on_result_select(self, _event=None):
+        sel = self._results_listbox.curselection()
+        if not sel or sel[0] >= len(self._results_items):
+            return
+        self.selected_item = self._results_items[sel[0]]
+        self._selected_item_label.configure(
+            text=f"Selected: {self.selected_item.name}",
+            text_color=("#2563eb", "#60a5fa"),
         )
-        info_label.pack(pady=10, padx=10, anchor=ctk.W)
 
-    # Item browser disabled - commenting out unused function
-    # def _browse_item_to_add(self):
-    #     """Open item browser to select item for adding"""
-    #     # Feature disabled for stability
-
-    @staticmethod
-    def _make_blank_gaitem_with_size(size: int):
-        """Return an empty Gaitem placeholder that preserves the serialized size."""
-        from er_save_manager.parser.er_types import Gaitem
-
-        g = Gaitem()
-        if size >= 16:
-            g.unk0x10 = 0
-            g.unk0x14 = 0
-        if size == 21:
-            g.gem_gaitem_handle = 0xFFFFFFFF
-            g.unk0x1c = 0
-        return g
+    # ---- inventory display --------------------------------------------------
 
     def refresh_inventory(self):
-        """Refresh the inventory display"""
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                "No Save", "Please load a save file first.", parent=self.parent
             )
             return
 
         slot_idx = self.get_char_slot()
-
         try:
             slot = save_file.characters[slot_idx]
-
             if not slot or slot.is_empty():
                 CTkMessageBox.showwarning(
-                    "Empty Slot", f"Slot {slot_idx + 1} is empty!", parent=self.parent
+                    "Empty Slot", f"Slot {slot_idx + 1} is empty.", parent=self.parent
                 )
                 return
 
             self.inventory_listbox.delete(0, tk.END)
+            self._item_data = []
 
-            # Get filter value
-            filter_val = self.inv_filter_var.get() if self.inv_filter_var else "All"
-
-            # Build gaitem lookup map
             gaitem_map = {}
-            if hasattr(slot, "gaitem_map"):
-                for gaitem in slot.gaitem_map:
-                    if getattr(gaitem, "gaitem_handle", 0) != 0xFFFFFFFF:
-                        gaitem_map[gaitem.gaitem_handle] = gaitem
+            for g in getattr(slot, "gaitem_map", []):
+                if g.gaitem_handle not in (0, 0xFFFFFFFF):
+                    gaitem_map[g.gaitem_handle] = g
 
-            # Display held inventory
-            if (
-                (filter_val in ["All", "Held"])
-                and hasattr(slot, "inventory_held")
-                and slot.inventory_held
-            ):
-                inv = slot.inventory_held
+            filt = self.inv_filter_var.get() if self.inv_filter_var else "All"
 
-                self.inventory_listbox.insert(tk.END, "=== HELD INVENTORY ===")
+            if filt in ("All", "Held") and hasattr(slot, "inventory_held"):
+                self._append_section(
+                    "HELD INVENTORY",
+                    slot.inventory_held.common_items,
+                    gaitem_map,
+                    "held",
+                    key=False,
+                )
 
-                # Common items
-                for i, inv_item in enumerate(inv.common_items):
-                    if inv_item.gaitem_handle != 0 and inv_item.quantity > 0:
-                        gaitem = gaitem_map.get(inv_item.gaitem_handle)
-                        if gaitem:
-                            item_id = gaitem.item_id
-                            upgrade = (
-                                gaitem.unk0x10 if gaitem.unk0x10 is not None else 0
-                            )
-                            self.inventory_listbox.insert(
-                                tk.END,
-                                f"  [{i}] ID: {item_id} | Qty: {inv_item.quantity} | +{upgrade}",
-                            )
-                        else:
-                            self.inventory_listbox.insert(
-                                tk.END,
-                                f"  [{i}] Handle: {inv_item.gaitem_handle:08X} | Qty: {inv_item.quantity}",
-                            )
+            if filt in ("All", "Key Items") and hasattr(slot, "inventory_held"):
+                self._append_section(
+                    "KEY ITEMS (HELD)",
+                    slot.inventory_held.key_items,
+                    gaitem_map,
+                    "held",
+                    key=True,
+                )
 
-            # Key items (only if All or Key Items selected)
-            if (
-                (filter_val in ["All", "Key Items"])
-                and hasattr(slot, "inventory_held")
-                and slot.inventory_held
-            ):
-                inv = slot.inventory_held
-                self.inventory_listbox.insert(tk.END, "")
-                self.inventory_listbox.insert(tk.END, "=== KEY ITEMS ===")
-                for i, inv_item in enumerate(inv.key_items):
-                    if inv_item.gaitem_handle != 0 and inv_item.quantity > 0:
-                        gaitem = gaitem_map.get(inv_item.gaitem_handle)
-                        if gaitem:
-                            item_id = gaitem.item_id
-                            self.inventory_listbox.insert(
-                                tk.END,
-                                f"  [K{i}] ID: {item_id} | Qty: {inv_item.quantity}",
-                            )
-                        else:
-                            self.inventory_listbox.insert(
-                                tk.END,
-                                f"  [K{i}] Handle: {inv_item.gaitem_handle:08X} | Qty: {inv_item.quantity}",
-                            )
-
-            # Display storage inventory
-            if (
-                (filter_val in ["All", "Storage"])
-                and hasattr(slot, "inventory_storage_box")
-                and slot.inventory_storage_box
-            ):
-                inv = slot.inventory_storage_box
-
-                self.inventory_listbox.insert(tk.END, "")
-                self.inventory_listbox.insert(tk.END, "=== STORAGE BOX ===")
-
-                # Common items
-                for i, inv_item in enumerate(inv.common_items):
-                    if inv_item.gaitem_handle != 0 and inv_item.quantity > 0:
-                        gaitem = gaitem_map.get(inv_item.gaitem_handle)
-                        if gaitem:
-                            item_id = gaitem.item_id
-                            upgrade = (
-                                gaitem.unk0x10 if gaitem.unk0x10 is not None else 0
-                            )
-                            self.inventory_listbox.insert(
-                                tk.END,
-                                f"  [S{i}] ID: {item_id} | Qty: {inv_item.quantity} | +{upgrade}",
-                            )
-                        else:
-                            self.inventory_listbox.insert(
-                                tk.END,
-                                f"  [S{i}] Handle: {inv_item.gaitem_handle:08X} | Qty: {inv_item.quantity}",
-                            )
-
-                # Key items in storage (only if All or Storage selected)
-                if filter_val in ["All", "Storage"]:
-                    for i, inv_item in enumerate(inv.key_items):
-                        if inv_item.gaitem_handle != 0 and inv_item.quantity > 0:
-                            gaitem = gaitem_map.get(inv_item.gaitem_handle)
-                            if gaitem:
-                                item_id = gaitem.item_id
-                                self.inventory_listbox.insert(
-                                    tk.END,
-                                    f"  [SK{i}] ID: {item_id} | Qty: {inv_item.quantity}",
-                                )
-                            else:
-                                self.inventory_listbox.insert(
-                                    tk.END,
-                                    f"  [SK{i}] Handle: {inv_item.gaitem_handle:08X} | Qty: {inv_item.quantity}",
-                                )
+            if filt in ("All", "Storage") and hasattr(slot, "inventory_storage_box"):
+                self._append_section(
+                    "STORAGE BOX",
+                    slot.inventory_storage_box.common_items,
+                    gaitem_map,
+                    "storage",
+                    key=False,
+                )
+                self._append_section(
+                    "KEY ITEMS (STORAGE)",
+                    slot.inventory_storage_box.key_items,
+                    gaitem_map,
+                    "storage",
+                    key=True,
+                )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to refresh inventory:\n{str(e)}", parent=self.parent
+                "Error", f"Failed to refresh inventory:\n{e}", parent=self.parent
             )
-            import traceback
 
-            traceback.print_exc()
+    def _append_section(self, header, items, gaitem_map, location, key):
+        self.inventory_listbox.insert(tk.END, f"=== {header} ===")
+        self._item_data.append(None)
+
+        for inv_item in items:
+            if inv_item.gaitem_handle == 0 or inv_item.quantity == 0:
+                continue
+            full_id, upgrade = _decode_inv_item(inv_item, gaitem_map)
+            name = _item_name(full_id, upgrade)
+            suffix = f" +{upgrade}" if upgrade > 0 else ""
+            prefix = "K" if key else ""
+            self.inventory_listbox.insert(
+                tk.END,
+                f"  [{location[0].upper()}{prefix}] {name}{suffix}  | Qty: {inv_item.quantity}",
+            )
+            self._item_data.append((full_id, location))
+
+    # ---- operations ---------------------------------------------------------
 
     def add_item(self):
-        """Add item to inventory"""
-        import logging
-
-        log = logging.getLogger("er_save_manager.ui.inventory_editor")
-
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
-
         if not self.selected_item:
             CTkMessageBox.showwarning(
-                "No Item", "Please browse and select an item first!", parent=self.parent
+                "No Item", "Select an item from the browser first.", parent=self.parent
             )
             return
 
         slot_idx = self.get_char_slot()
-        item_id = self.selected_item.full_id
-        quantity = self.inv_quantity_var.get()
-        upgrade = self.inv_upgrade_var.get()
+        full_id = self.selected_item.full_id
+        try:
+            qty = int(self.inv_quantity_var.get())
+            upg = int(self.inv_upgrade_var.get())
+        except (ValueError, tk.TclError):
+            CTkMessageBox.showerror(
+                "Input Error",
+                "Quantity and upgrade must be integers.",
+                parent=self.parent,
+            )
+            return
         location = self.inv_location_var.get()
 
-        log.debug(
-            f"add_item: selected_item.full_id={hex(self.selected_item.full_id)}, item_id={hex(item_id)}"
-        )
-        log.debug(
-            f"add_item: slot_idx={slot_idx}, item_id={hex(item_id)}, quantity={quantity}, upgrade={upgrade}, location={location}"
-        )
-
         try:
-            # Create backup
-            from er_save_manager.backup.manager import BackupManager
+            self.ensure_mutable()
+            self._create_backup(save_file, slot_idx, "add_item")
 
-            save_path = self.get_save_path()
-            if save_path:
-                manager = BackupManager(Path(save_path))
-                manager.create_backup(
-                    description=f"before_add_item_{item_id}_slot_{slot_idx + 1}",
-                    operation="add_inventory_item",
-                    save=save_file,
-                )
+            from er_save_manager.parser.inventory_ops import add_item
 
-            slot = save_file.characters[slot_idx]
-            log.debug(f"add_item: loaded slot, version={slot.version}")
-
-            # Select inventory based on location
-            if location == "held":
-                inventory = slot.inventory_held
-            else:
-                inventory = slot.inventory_storage_box
-
-            if not inventory:
-                CTkMessageBox.showerror(
-                    "Error", "Could not access inventory", parent=self.parent
-                )
-                return
-
-            # CRITICAL FIX: Determine the SIZE of the item BEFORE looking for an empty slot!
-            # Different items have different serialized sizes:
-            # - Weapons (0x00000000): 21 bytes
-            # - Armor (0x10000000): 16 bytes
-            # - Consumables/Talismans: 8 bytes
-
-            item_category = item_id & 0xF0000000
-            log.debug(f"add_item: item_category={hex(item_category)}")
-
-            # Calculate the SIZE this new item will have
-            if item_category == 0x00000000:  # Weapon - 21 bytes
-                required_size = 21
-            elif item_category == 0x10000000:  # Armor - 16 bytes
-                required_size = 16
-            else:  # Consumables (0x40000000) and Talismans (0x20000000) - 8 bytes
-                required_size = 8
-
-            log.debug(f"add_item: item requires {required_size} bytes")
-
-            # Find first EMPTY gaitem slot with the REQUIRED SIZE
-            from er_save_manager.parser.er_types import Gaitem
-
-            empty_gaitem_idx = -1
-            for i, gaitem in enumerate(slot.gaitem_map):
-                if gaitem.item_id in (0, 0xFFFFFFFF):
-                    gaitem_size = gaitem.get_size()
-                    if gaitem_size == required_size:
-                        empty_gaitem_idx = i
-                        break
-
-            if empty_gaitem_idx == -1:
-                # NO matching size slot found - this is critical!
-                # Show the user what slots are available
-                size_counts = {}
-                for gaitem in slot.gaitem_map:
-                    if gaitem.item_id in (0, 0xFFFFFFFF):
-                        size = gaitem.get_size()
-                        size_counts[size] = size_counts.get(size, 0) + 1
-
-                size_names = {8: "Consumable/Talisman", 16: "Armor", 21: "Weapon"}
-                required_name = size_names.get(required_size, f"{required_size}-byte")
-
-                available_str = ", ".join(
-                    f"{size_names.get(s, f'{s}-byte')}: {count}"
-                    for s, count in sorted(size_counts.items())
-                )
-
-                log.error(
-                    f"add_item: Cannot add {required_name} - no empty {required_size}-byte slots. "
-                    f"Available: {available_str}"
-                )
-                CTkMessageBox.showerror(
-                    "No Space for Item",
-                    f"Cannot add {required_name} item.\n\n"
-                    f"Empty slots needed: {required_name} ({required_size} bytes)\n"
-                    f"Available empty slots:\n"
-                    f"  {available_str}\n\n"
-                    f"Try removing items of the same type to free up space.",
-                    parent=self.parent,
-                )
-                return
-
-            log.debug(f"add_item: empty_gaitem_idx={empty_gaitem_idx}")
-
-            # Log the gaitem we're replacing
-            old_gaitem = slot.gaitem_map[empty_gaitem_idx]
-            old_size = old_gaitem.get_size()
-            log.debug(
-                f"add_item: replacing gaitem[{empty_gaitem_idx}]: handle={hex(old_gaitem.gaitem_handle)}, "
-                f"item_id={hex(old_gaitem.item_id)}, size={old_size}, "
-                f"unk0x10={old_gaitem.unk0x10}, unk0x14={old_gaitem.unk0x14}"
-            )
-
-            # Find first empty inventory slot
-            from er_save_manager.parser.equipment import InventoryItem
-
-            empty_inv_idx = -1
-            for i, inv_item in enumerate(inventory.common_items):
-                if inv_item.gaitem_handle == 0 or inv_item.quantity == 0:
-                    empty_inv_idx = i
-                    break
-
-            if empty_inv_idx == -1:
-                log.warning("add_item: no empty inventory slots!")
-                CTkMessageBox.showwarning(
-                    "Inventory Full", "No empty slots in inventory!", parent=self.parent
-                )
-                return
-
-            log.debug(f"add_item: empty_inv_idx={empty_inv_idx}")
-
-            # Strip category prefix to get base item ID
-            # For consumables/goods, the full_id has 0x40000000 prefix, but we need just the base ID
-            base_item_id = item_id & 0x0FFFFFFF
-
-            # Generate gaitem_handle based on item type (matching Rust editor logic)
-            # Consumables/Goods: gaitem_handle = base_id | 0xB0000000
-            # Weapons: gaitem_handle would be generated (0x80000000 | counter), but we use simple formula for now
-            # Armor: gaitem_handle would be generated (0x90000000 | counter)
-            # Talismans: gaitem_handle = base_id | 0xA0000000
-            if item_category == 0x40000000:  # Consumable/Good
-                gaitem_handle = base_item_id | 0xB0000000
-                actual_item_id = item_id  # Consumables KEEP the 0x40000000 prefix for size calculation
-            elif item_category == 0x00000000:  # Weapon
-                gaitem_handle = 0x80000000 | (empty_gaitem_idx & 0xFFFF)
-                actual_item_id = base_item_id
-            elif item_category == 0x10000000:  # Armor
-                gaitem_handle = 0x90000000 | (empty_gaitem_idx & 0xFFFF)
-                actual_item_id = item_id  # Armor keeps the 0x10000000 prefix
-            elif item_category == 0x20000000:  # Talisman
-                gaitem_handle = base_item_id | 0xA0000000
-                actual_item_id = (
-                    item_id  # Talismans KEEP the 0x20000000 prefix for size calculation
-                )
-            else:
-                # Fallback for unknown types
-                gaitem_handle = 0xB0000000 | (empty_gaitem_idx & 0xFFFF)
-                actual_item_id = item_id
-
-            log.debug(
-                f"add_item: item_category={hex(item_category)}, base_item_id={hex(base_item_id)}, gaitem_handle={hex(gaitem_handle)}, actual_item_id={hex(actual_item_id)}"
-            )
-
-            # Create new gaitem in gaitem_map
-            new_gaitem = Gaitem()
-            new_gaitem.item_id = actual_item_id
-            log.debug(f"add_item: set new_gaitem.item_id={hex(new_gaitem.item_id)}")
-            new_gaitem.gaitem_handle = gaitem_handle
-
-            # Set extended fields ONLY for items that need them (weapons/armor)
-            # Check based on the ORIGINAL item_id's category prefix (0xF0000000)
-            # NOT the base_item_id which always has upper nibble = 0x0
-            #   0x00000000 (weapons) = 21 bytes, needs extended fields
-            #   0x10000000 (armor) = 16 bytes, needs extended fields
-            #   0x40000000 (consumables) = 8 bytes, NO extended fields
-            #   0x20000000 (talismans) = 8 bytes, NO extended fields
-
-            if item_category == 0x00000000:  # Weapons - set extended fields
-                # CRITICAL: Default unk0x10 and unk0x14 to -1 for weapons
-                new_gaitem.unk0x10 = -1
-                new_gaitem.unk0x14 = -1
-
-                # Only override with upgrade/reinforcement if user specified it
-                if upgrade > 0:
-                    new_gaitem.unk0x10 = upgrade
-                    if self.inv_reinforcement_var.get() == "somber":
-                        new_gaitem.unk0x14 = 0x30
-                    else:
-                        new_gaitem.unk0x14 = 0x20
-
-                # Default gem/AoW handle to 0xFFFFFFFF for weapons
-                new_gaitem.gem_gaitem_handle = 0xFFFFFFFF
-                new_gaitem.unk0x1c = 0
-
-            elif item_category == 0x10000000:  # Armor - set extended fields (16 bytes)
-                new_gaitem.unk0x10 = -1
-                new_gaitem.unk0x14 = -1
-
-            # For consumables (0x40000000) and talismans (0x20000000), leave extended fields as None (8-byte gaitem)
-
-            log.debug(
-                f"add_item: before get_size(), new_gaitem.item_id={hex(new_gaitem.item_id)}"
-            )
-            size_before = new_gaitem.get_size()
-            log.debug(f"add_item: after get_size(), size={size_before}")
-            log.debug(
-                f"add_item: created gaitem, item_id={hex(item_id)}, size={size_before}, handle={hex(gaitem_handle)}, unk0x10={new_gaitem.unk0x10}, unk0x14={new_gaitem.unk0x14}, gem_handle={hex(new_gaitem.gem_gaitem_handle) if new_gaitem.gem_gaitem_handle else 'None'}"
-            )
-
-            slot.gaitem_map[empty_gaitem_idx] = new_gaitem
-            slot.gaitem_map_entry_sizes = [g.get_size() for g in slot.gaitem_map]
-
-            log.debug(
-                f"add_item: gaitem_map_entry_sizes calculated, count={len(slot.gaitem_map_entry_sizes)}"
-            )
-
-            # Create inventory item that references the gaitem
-            new_inv_item = InventoryItem()
-            new_inv_item.gaitem_handle = gaitem_handle
-            new_inv_item.quantity = quantity
-            new_inv_item.acquisition_index = inventory.acquisition_index_counter
-            inventory.acquisition_index_counter += 1
-
-            inventory.common_items[empty_inv_idx] = new_inv_item
-            inventory.common_item_count += 1
-
-            log.debug("add_item: created inventory item, now serializing slot...")
-
-            # Serialize and write the full slot to keep offsets consistent
-            slot_bytes = slot.to_bytes()
-            log.debug(f"add_item: slot serialized, length={len(slot_bytes)}")
-
-            save_file.write_slot_data(slot_idx, slot_bytes)
-            log.debug("add_item: slot data written")
-
-            # Recalculate checksums and save
-            save_file.recalculate_checksums()
-            log.debug("add_item: checksums recalculated")
-
-            save_path = self.get_save_path()
-            if save_path:
-                save_file.to_file(Path(save_path))
-                log.debug(f"add_item: save file written to {save_path}")
-
-                # Ensure file is flushed to disk
-                import time
-
-                time.sleep(0.1)
-
-            CTkMessageBox.showinfo(
-                "Success",
-                f"Added item {item_id} (x{quantity}) +{upgrade} to {location}!\nPlease reload the save to see changes.",
-                parent=self.parent,
-            )
-
-        except Exception as e:
-            CTkMessageBox.showerror(
-                "Error", f"Failed to add item:\n{str(e)}", parent=self.parent
-            )
-            import traceback
-
-            traceback.print_exc()
-
-    def apply_inventory_changes(self):
-        """Apply inventory changes - save to disk with checksum recalculation"""
-        save_file = self.get_save_file()
-        if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
-            )
-            return
-
-        slot_idx = self.get_char_slot()
-        if not CTkMessageBox.askyesno(
-            "Confirm",
-            f"Apply all inventory changes to Slot {slot_idx + 1}?\n\nA backup will be created.",
-            parent=self.parent,
-        ):
-            return
-
-        try:
-            # Ensure raw_data is mutable
-            if isinstance(save_file._raw_data, bytes):
-                save_file._raw_data = bytearray(save_file._raw_data)
-
-            slot = save_file.characters[slot_idx]
-            if not slot or slot.is_empty():
-                CTkMessageBox.showwarning(
-                    "Empty Slot", f"Slot {slot_idx + 1} is empty!", parent=self.parent
-                )
-                return
-
-            # Create backup
-            save_path = self.get_save_path()
-            if save_path:
-                from pathlib import Path
-
-                from er_save_manager.backup.manager import BackupManager
-
-                manager = BackupManager(Path(save_path))
-                manager.create_backup(
-                    description=f"before_inventory_changes_slot_{slot_idx + 1}",
-                    operation=f"inventory_changes_slot_{slot_idx + 1}",
-                    save=save_file,
-                )
-
-            # Serialize whole slot and write back
-            slot_bytes = slot.to_bytes()
-            save_file.write_slot_data(slot_idx, slot_bytes)
-
-            # Recalculate checksums to prevent corruption
-            save_file.recalculate_checksums()
-
-            # Save to disk
-            save_file.save(save_path)
-
-            CTkMessageBox.showinfo(
-                "Success",
-                "Inventory changes applied successfully!",
-                parent=self.parent,
-            )
-
-        except Exception as e:
-            import traceback
-
-            traceback.print_exc()
-            CTkMessageBox.showerror(
-                "Error", f"Failed to apply inventory changes:\n{e}", parent=self.parent
-            )
-
-    def remove_item(self):
-        """Remove selected item from inventory"""
-        selection = self.inventory_listbox.curselection()
-        if not selection:
-            CTkMessageBox.showwarning(
-                "No Selection", "Please select an item to remove!", parent=self.parent
-            )
-            return
-
-        save_file = self.get_save_file()
-        if not save_file:
-            return
-
-        # Parse selection to get item location and index
-        selected_text = self.inventory_listbox.get(selection[0])
-
-        # Skip header lines
-        if "===" in selected_text:
-            return
-
-        try:
-            # Extract index from format like "[123]" or "[S123]"
-            match = re.search(r"\[([SK]?)(\d+)\]", selected_text)
-            if not match:
-                return
-
-            location_prefix = match.group(1)
-            idx = int(match.group(2))
-
-            slot_idx = self.get_char_slot()
-            slot = save_file.characters[slot_idx]
-
-            # Determine inventory and offset
-            if location_prefix.startswith("S"):
-                inventory = slot.inventory_storage_box
-                is_key = location_prefix == "SK"
-            else:
-                inventory = slot.inventory_held
-                is_key = location_prefix == "K"
-
-            # Create backup
-            from er_save_manager.backup.manager import BackupManager
-
-            save_path = self.get_save_path()
-            if save_path:
-                manager = BackupManager(Path(save_path))
-                manager.create_backup(
-                    description=f"before_remove_item_slot_{slot_idx + 1}",
-                    operation="remove_inventory_item",
-                    save=save_file,
-                )
-
-            # Clear the item
-            from er_save_manager.parser.equipment import InventoryItem
-
-            if is_key:
-                old_handle = inventory.key_items[idx].gaitem_handle
-                inventory.key_items[idx] = InventoryItem()
-                inventory.key_item_count = max(0, inventory.key_item_count - 1)
-            else:
-                old_handle = inventory.common_items[idx].gaitem_handle
-                inventory.common_items[idx] = InventoryItem()
-                inventory.common_item_count = max(0, inventory.common_item_count - 1)
-
-            # Also clear the gaitem in gaitem_map
-
-            for i, gaitem in enumerate(slot.gaitem_map):
-                if gaitem.gaitem_handle == old_handle:
-                    size_to_preserve = gaitem.get_size()
-                    slot.gaitem_map[i] = self._make_blank_gaitem_with_size(
-                        size_to_preserve
-                    )
-                    break
-            slot.gaitem_map_entry_sizes = [g.get_size() for g in slot.gaitem_map]
-
-            # Serialize and write the full slot to keep offsets consistent
-            slot_bytes = slot.to_bytes()
-            save_file.write_slot_data(slot_idx, slot_bytes)
+            result = add_item(save_file, slot_idx, full_id, qty, location, upgrade=upg)
 
             save_file.recalculate_checksums()
             save_path = self.get_save_path()
@@ -775,15 +459,133 @@ class InventoryEditor:
                 save_file.to_file(Path(save_path))
 
             self.refresh_inventory()
-
             CTkMessageBox.showinfo(
-                "Success", "Item removed from inventory!", parent=self.parent
+                "Done",
+                f"Added {self.selected_item.name}"
+                + (f" +{upg}" if upg else "")
+                + f" x{result['quantity']} to {location}.",
+                parent=self.parent,
             )
-
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to remove item:\n{str(e)}", parent=self.parent
+                "Error", f"Failed to add item:\n{e}", parent=self.parent
             )
-            import traceback
 
-            traceback.print_exc()
+    def remove_item(self):
+        sel = self.inventory_listbox.curselection()
+        if not sel:
+            CTkMessageBox.showwarning(
+                "No Selection", "Select an item to remove.", parent=self.parent
+            )
+            return
+
+        idx = sel[0]
+        if idx >= len(self._item_data) or self._item_data[idx] is None:
+            return  # header row
+
+        full_id, location = self._item_data[idx]
+        item_label = self.inventory_listbox.get(idx).strip()
+
+        if not CTkMessageBox.askyesno(
+            "Confirm Remove",
+            f"Remove this item from {location}?\n\n{item_label}",
+            parent=self.parent,
+        ):
+            return
+
+        save_file = self.get_save_file()
+        slot_idx = self.get_char_slot()
+
+        try:
+            self.ensure_mutable()
+            self._create_backup(save_file, slot_idx, "remove_item")
+
+            from er_save_manager.parser.inventory_ops import remove_item
+
+            remove_item(save_file, slot_idx, full_id, location)
+
+            save_file.recalculate_checksums()
+            save_path = self.get_save_path()
+            if save_path:
+                save_file.to_file(Path(save_path))
+
+            self.refresh_inventory()
+            CTkMessageBox.showinfo("Done", "Item removed.", parent=self.parent)
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error", f"Failed to remove item:\n{e}", parent=self.parent
+            )
+
+    def set_quantity(self):
+        sel = self.inventory_listbox.curselection()
+        if not sel:
+            CTkMessageBox.showwarning(
+                "No Selection", "Select an item first.", parent=self.parent
+            )
+            return
+
+        idx = sel[0]
+        if idx >= len(self._item_data) or self._item_data[idx] is None:
+            return  # header row
+
+        full_id, location = self._item_data[idx]
+
+        # Only stackable items (goods/spells) make sense to edit quantity
+        cat = full_id & 0xF0000000
+        if cat not in (0x40000000, 0x20000000):
+            CTkMessageBox.showinfo(
+                "Not Stackable",
+                "Quantity editing only applies to goods and spells.",
+                parent=self.parent,
+            )
+            return
+
+        qty_str = ctk.CTkInputDialog(
+            text="Enter new quantity:", title="Set Quantity"
+        ).get_input()
+        if qty_str is None:
+            return
+        try:
+            new_qty = int(qty_str)
+        except ValueError:
+            CTkMessageBox.showerror(
+                "Input Error", "Quantity must be an integer.", parent=self.parent
+            )
+            return
+
+        save_file = self.get_save_file()
+        slot_idx = self.get_char_slot()
+
+        try:
+            self.ensure_mutable()
+            self._create_backup(save_file, slot_idx, "set_quantity")
+
+            from er_save_manager.parser.inventory_ops import set_quantity
+
+            set_quantity(save_file, slot_idx, full_id, new_qty, location)
+
+            save_file.recalculate_checksums()
+            save_path = self.get_save_path()
+            if save_path:
+                save_file.to_file(Path(save_path))
+
+            self.refresh_inventory()
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error", f"Failed to set quantity:\n{e}", parent=self.parent
+            )
+
+    # ---- helpers ------------------------------------------------------------
+
+    def _create_backup(self, save_file, slot_idx, operation):
+        save_path = self.get_save_path()
+        if not save_path:
+            return
+        from er_save_manager.backup.manager import BackupManager
+
+        manager = BackupManager(Path(save_path))
+        manager.create_backup(
+            description=f"before_{operation}_slot_{slot_idx + 1}",
+            operation=operation,
+            save=save_file,
+        )

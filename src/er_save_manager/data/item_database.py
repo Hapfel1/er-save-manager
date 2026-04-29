@@ -115,10 +115,7 @@ class ItemDatabase:
                     )
 
                     self.items.append(item)
-                    # First-write-wins: base-game entries (loaded first) take priority
-                    # over Convergence mod entries that reuse the same IDs.
-                    if item.full_id not in self.items_by_id:
-                        self.items_by_id[item.full_id] = item
+                    self.items_by_id[item.full_id] = item
 
                     if category_name not in self.items_by_category:
                         self.items_by_category[category_name] = []
@@ -165,7 +162,12 @@ class ItemDatabase:
 
     def decode_item_id(self, full_id: int) -> tuple[int, ItemCategory]:
         """Decode full item ID into base ID and category"""
-        category = ItemCategory(full_id & 0xF0000000)
+        raw_cat = full_id & 0xF0000000
+        try:
+            category = ItemCategory(raw_cat)
+        except ValueError:
+            # Unknown category prefix (e.g. 0xA0 talisman handles from older saves)
+            category = ItemCategory.GOODS
         base_id = full_id & 0x0FFFFFFF
         return base_id, category
 
@@ -221,7 +223,15 @@ def get_item_name(full_item_id: int, upgrade_level: int = 0) -> str:
                 return f"{item.name} +{upgrade_level}"
             return item.name
 
-    return f"Unknown Item (0x{full_item_id:08X})"
+    _CATEGORY_LABELS = {
+        ItemCategory.WEAPON: "Weapon",
+        ItemCategory.ARMOR: "Armor",
+        ItemCategory.TALISMAN: "Talisman",
+        ItemCategory.GOODS: "Goods",
+        ItemCategory.GEM: "Gem",
+    }
+
+    return f"Unknown {_CATEGORY_LABELS.get(category, 'Item')} (ID: {base_id})"
 
 
 def search_items(query: str) -> list[Item]:
