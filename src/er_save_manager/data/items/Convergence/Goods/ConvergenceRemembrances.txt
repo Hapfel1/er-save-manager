@@ -15,3 +15,8 @@
 2964 Remembrance of the Naturalborn
 2965 Remembrance of the Crucible's Betrayer
 2966 Remembrance of the Godskin Matriarch
+2967 Remembrance of the Scion of the Sealed God
+2968 Remembrance of Dyru, Scavenger King
+2969 Remembrance of Einar, Ice Guardian
+2970 Remembrance of Spiritshaper Caimar
+

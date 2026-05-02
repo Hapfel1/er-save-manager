@@ -277,14 +277,47 @@ class InventoryEditor:
 
     # ---- search browser helpers ---------------------------------------------
 
-    def _populate_search_categories(self):
+    _SEAMLESS_CATS = {"Seamless Co-op Items"}
+    _CONVERGENCE_CATS = {
+        "Convergence Melee Weapons",
+        "Convergence Reworked Weapons",
+        "Convergence Shields",
+        "Convergence Armor",
+        "Convergence Spell Tools",
+        "Convergence Keystones and Remnants",
+        "Convergence Stones",
+        "Convergence Runes",
+        "Convergence Notes",
+        "Convergence Remembrances",
+        "Convergence Consumables",
+        "Convergence Crystal Tears",
+    }
+
+    def _visible_categories(self) -> list[str]:
+        """Return category list filtered by save file type."""
         try:
             from er_save_manager.data.item_database import get_categories
 
-            cats = ["All"] + get_categories()
-            self._search_cat_combo.configure(values=cats)
+            all_cats = get_categories()
         except Exception:
-            pass
+            return []
+
+        save_path = str(self.get_save_path() or "")
+        is_co2 = ".co2" in save_path
+        is_cnv = ".cnv" in save_path
+
+        return [
+            c
+            for c in all_cats
+            if (c not in self._SEAMLESS_CATS or is_co2)
+            and (c not in self._CONVERGENCE_CATS or is_cnv)
+        ]
+
+    def _populate_search_categories(self):
+        cats = ["All"] + self._visible_categories()
+        self._search_cat_combo.configure(values=cats)
+        if self._search_cat_var.get() not in cats:
+            self._search_cat_var.set("All")
 
     def _search_items(self):
         if self._results_listbox is None:
@@ -334,6 +367,7 @@ class InventoryEditor:
     # ---- inventory display --------------------------------------------------
 
     def refresh_inventory(self):
+        self._populate_search_categories()
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(

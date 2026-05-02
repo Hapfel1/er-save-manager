@@ -1,0 +1,56 @@
+11021 Strength-Knot Crystal Tear
+11022 Dexterity-Knot Crystal Tear
+11023 Intelligence-Knot Crystal Tear
+11024 Faith-Knot Crystal Tear
+11033 Arcane-Knot Crystal Tear
+11034 Knight's Crystal Tear
+11035 Battlemage's Crystal Tear
+11036 Templar's Crystal Tear
+11037 Barbarian's Crystal Tear
+11038 Assassin's Crystal Tear
+11039 Inquisitor's Crystal Tear
+11040 Rogue's Crystal Tear
+11041 Zealot's Crystal Tear
+11042 Witch's Crystal Tear
+11043 Cultist's Crystal Tear
+11032 Stone-Shrouding Cracked Tear
+11028 Flame-Shrouding Cracked Tear
+11029 Magic-Shrouding Cracked Tear
+11030 Lightning-Shrouding Cracked Tear
+11031 Holy-Shrouding Cracked Tear
+11016 Ruptured Crystal Tear
+11017 Ruptured Crystal Tear
+2011040 Oil-Soaked Tear
+2011050 Bloodsucking Cracked Tear
+2011060 Glovewort Crystal Tear
+11014 Spiked Cracked Tear
+11013 Thorny Cracked Tear
+11026 Stonebarb Cracked Tear
+11050 Waterblade Cracked Tear
+11051 Stonetalon Cracked Tear
+11052 Windbarb Cracked Tear
+11053 Shadowblade Cracked Tear
+11054 Stoneblade Cracked Tear
+11055 Stonehoof Cracked Tear
+11003 Crimson Crystal Tear
+11000 Crimsonspill Crystal Tear
+11009 Crimsonburst Crystal Tear
+11007 Crimson Bubbletear
+11005 Cerulean Crystal Tear
+11057 Ceruleanspill Crystal Tear
+11056 Ceruleanburst Crystal Tear
+11025 Cerulean Hidden Tear
+11001 Greenspill Crystal Tear
+11010 Greenburst Crystal Tear
+2011000 Viridian Hidden Tear
+2011010 Crimsonburst Dried Tear
+2011020 Crimson-Sapping Cracked Tear
+2011030 Cerulean-Sapping Cracked Tear
+11011 Opaline Hardtear
+11020 Crimsonwhorl Bubbletear
+11008 Opaline Bubbletear
+11018 Leaden Hardtear
+11015 Windy Crystal Tear
+11012 Winged Crystal Tear
+11019 Twiggy Cracked Tear
+11027 Purifying Crystal Tear
