@@ -764,10 +764,9 @@ class SaveManagerGUI:
         )
         self.gestures_tab.setup_ui()
 
-        # Tab 9: Hex Editor
-        self.notebook.add("Hex Editor")
-        tab_hex = self.notebook.tab("Hex Editor")
-        self.hex_tab = HexEditorTab(tab_hex, lambda: self.save_file)
+        # Tab 9: Hex Editor - hidden for now
+        _hex_hidden = ctk.CTkFrame(self.root, fg_color="transparent")
+        self.hex_tab = HexEditorTab(_hex_hidden, lambda: self.save_file)
         self.hex_tab.setup_ui()
 
         # Tab 10: Advanced Tools
@@ -854,6 +853,7 @@ class SaveManagerGUI:
             values=[str(i) for i in range(1, 11)],
             state="readonly",
             width=200,
+            command=lambda _e=None: self.load_character_for_edit(),
         )
         slot_combo.pack(side=ctk.LEFT, padx=(0, 12))
 
@@ -896,12 +896,10 @@ class SaveManagerGUI:
         )
         self.stats_editor.setup_ui()
 
-        # Equipment editor
-        equipment_tab = editor_tabs.add("Equipment")
-        equipment_frame = ctk.CTkFrame(equipment_tab, fg_color="transparent")
-        equipment_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        # Equipment editor - hidden until implementation is complete
+        _equipment_hidden = ctk.CTkFrame(container, fg_color="transparent")
         self.equipment_editor = EquipmentEditor(
-            equipment_frame,
+            _equipment_hidden,
             lambda: self.save_file,
             current_slot_index,
             lambda: self.save_path,

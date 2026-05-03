@@ -302,6 +302,10 @@ class EquipmentEditor:
 
         self.equipment_vars: dict[str, ctk.StringVar] = {}
         self.equipment_name_labels: dict[str, ctk.CTkLabel] = {}
+        # Parallel to equipment_vars: stores the gaitem handle for each slot.
+        # item_id goes to equipped_items_item_id and equipped_armaments_and_items.
+        # gaitem_handle goes to equipped_items_gaitem_handle.
+        self._gaitem_handles: dict[str, int] = {}
 
         self.frame = None
 
@@ -422,9 +426,43 @@ class EquipmentEditor:
 
     # ---- picker -------------------------------------------------------------
 
+    def _gaitem_handle_for_item(self, key: str, item_id: int) -> int:
+        """
+        Find the gaitem handle for item_id in the current character's gaitem_map.
+        Returns 0 if not found (item not in inventory / talisman direct handle).
+        """
+        save_file = self.get_save_file()
+        if not save_file or item_id == 0:
+            return 0
+
+        slot_idx = self.get_char_slot()
+        try:
+            slot = save_file.characters[slot_idx]
+        except Exception:
+            return 0
+
+        if key in _TALISMAN_KEYS:
+            # Talismans use direct 0xA0 handles, no gaitem entry
+            return 0xA0000000 | (item_id & 0x00FFFFFF)
+
+        # For weapons/armor/ammo: find matching gaitem entry
+        for g in getattr(slot, "gaitem_map", []):
+            if g.gaitem_handle == 0 or g.gaitem_handle == 0xFFFFFFFF:
+                continue
+            prefix = g.gaitem_handle & 0xF0000000
+            if key in _WEAPON_KEYS and prefix == 0x80000000:
+                if g.item_id == item_id:
+                    return g.gaitem_handle
+            elif key in _ARMOR_KEYS and prefix == 0x90000000:
+                if g.item_id == item_id or g.item_id == (item_id & 0x0FFFFFFF):
+                    return g.gaitem_handle
+
+        return 0
+
     def _open_picker(self, key: str):
         def on_select(item_id: int):
             self.equipment_vars[key].set(str(item_id))
+            self._gaitem_handles[key] = self._gaitem_handle_for_item(key, item_id)
 
         _ItemPickerDialog(self.parent, key, on_select)
 
@@ -446,10 +484,15 @@ class EquipmentEditor:
         ):
             return
 
-        equip = slot.equipped_items_item_id
+        equip_ids = slot.equipped_items_item_id
+        equip_handles = getattr(slot, "equipped_items_gaitem_handle", None)
+
         for key in self.equipment_vars:
-            raw = getattr(equip, key, 0) or 0
+            raw = getattr(equip_ids, key, 0) or 0
             self.equipment_vars[key].set(str(raw))
+            # Load existing gaitem handle so apply preserves it when unchanged
+            handle = getattr(equip_handles, key, 0) if equip_handles else 0
+            self._gaitem_handles[key] = handle or 0
 
         for key in self.equipment_vars:
             self.update_equipment_name(key)
@@ -513,10 +556,21 @@ class EquipmentEditor:
                 )
                 return
 
-            equip = slot.equipped_items_item_id
+            # Write item_id to both structs that store item IDs
+            equip_ids = slot.equipped_items_item_id
+            equip_armaments = getattr(slot, "equipped_armaments_and_items", None)
+            equip_handles = getattr(slot, "equipped_items_gaitem_handle", None)
+
             for key in self.equipment_vars:
-                if hasattr(equip, key):
-                    setattr(equip, key, self._get_raw(key))
+                item_id = self._get_raw(key)
+                gaitem_handle = self._gaitem_handles.get(key, 0)
+
+                if hasattr(equip_ids, key):
+                    setattr(equip_ids, key, item_id)
+                if equip_armaments and hasattr(equip_armaments, key):
+                    setattr(equip_armaments, key, item_id)
+                if equip_handles and hasattr(equip_handles, key):
+                    setattr(equip_handles, key, gaitem_handle)
 
             save_file.recalculate_checksums()
             if save_path:
