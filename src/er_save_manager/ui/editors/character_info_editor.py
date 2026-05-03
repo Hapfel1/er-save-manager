@@ -48,6 +48,9 @@ class CharacterInfoEditor:
         self.char_crimson_flask_var = None
         self.char_cerulean_flask_var = None
         self.char_ng_level_var = None
+        self.char_playtime_h_var = None
+        self.char_playtime_m_var = None
+        self.char_playtime_s_var = None
 
         self.frame = None
 
@@ -239,6 +242,45 @@ class CharacterInfoEditor:
             width=100,
         ).grid(row=1, column=3, padx=5, pady=5)
 
+        # Playtime
+        playtime_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
+        playtime_frame.pack(fill=ctk.X, pady=5, padx=10)
+        ctk.CTkLabel(
+            playtime_frame,
+            text="Playtime",
+            font=("Segoe UI", 12, "bold"),
+        ).grid(row=0, column=0, columnspan=6, sticky=ctk.W, padx=5, pady=(5, 0))
+
+        ctk.CTkLabel(playtime_frame, text="Hours:").grid(
+            row=1, column=0, sticky=ctk.W, padx=5, pady=5
+        )
+        self.char_playtime_h_var = ctk.IntVar(value=0)
+        ctk.CTkEntry(
+            playtime_frame,
+            textvariable=self.char_playtime_h_var,
+            width=80,
+        ).grid(row=1, column=1, padx=5, pady=5)
+
+        ctk.CTkLabel(playtime_frame, text="Minutes:").grid(
+            row=1, column=2, sticky=ctk.W, padx=5, pady=5
+        )
+        self.char_playtime_m_var = ctk.IntVar(value=0)
+        ctk.CTkEntry(
+            playtime_frame,
+            textvariable=self.char_playtime_m_var,
+            width=80,
+        ).grid(row=1, column=3, padx=5, pady=5)
+
+        ctk.CTkLabel(playtime_frame, text="Seconds:").grid(
+            row=1, column=4, sticky=ctk.W, padx=5, pady=5
+        )
+        self.char_playtime_s_var = ctk.IntVar(value=0)
+        ctk.CTkEntry(
+            playtime_frame,
+            textvariable=self.char_playtime_s_var,
+            width=80,
+        ).grid(row=1, column=5, padx=5, pady=5)
+
         # Apply button
         button_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
         button_frame.pack(fill=ctk.X, pady=10, padx=10)
@@ -305,6 +347,20 @@ class CharacterInfoEditor:
             self.char_cerulean_flask_var.set(
                 getattr(char, "max_cerulean_flask_count", 0)
             )
+
+        # Load playtime from ProfileSummary
+        seconds_played = 0
+        if (
+            hasattr(save_file, "user_data_10_parsed")
+            and save_file.user_data_10_parsed
+            and save_file.user_data_10_parsed.profile_summary
+        ):
+            profiles = save_file.user_data_10_parsed.profile_summary.profiles
+            if profiles and slot_idx < len(profiles):
+                seconds_played = profiles[slot_idx].seconds_played or 0
+        self.char_playtime_h_var.set(seconds_played // 3600)
+        self.char_playtime_m_var.set((seconds_played % 3600) // 60)
+        self.char_playtime_s_var.set(seconds_played % 60)
 
         # Load NG+ level from ClearCount if possible, else from event flags
         clearcount = None
@@ -451,6 +507,9 @@ class CharacterInfoEditor:
                         force_clearcount=target_level,
                     )
 
+                    # Write playtime to ProfileSummary and world_area_time
+                    self._apply_playtime(save_file, slot_idx, slot)
+
                     # Rebuild slot bytes and write to _raw_data before saving
                     from er_save_manager.parser.slot_rebuild import rebuild_slot
 
@@ -576,3 +635,56 @@ class CharacterInfoEditor:
 
         except Exception:
             raise
+
+    def _apply_playtime(self, save_file, slot_idx: int, slot) -> None:
+        """
+        Write playtime to ProfileSummary (seconds_played) and world_area_time.
+
+        Both locations must match - desync causes the in-game timer to display
+        incorrectly or triggers time corruption detection.
+        """
+        import struct
+        from io import BytesIO
+
+        h = max(0, self.char_playtime_h_var.get())
+        m = max(0, min(59, self.char_playtime_m_var.get()))
+        s = max(0, min(59, self.char_playtime_s_var.get()))
+        total_seconds = h * 3600 + m * 60 + s
+
+        # Write to ProfileSummary.seconds_played (u32 LE at profile_offset + 0x26)
+        if (
+            hasattr(save_file, "user_data_10_parsed")
+            and save_file.user_data_10_parsed
+            and save_file.user_data_10_parsed.profile_summary
+        ):
+            profiles = save_file.user_data_10_parsed.profile_summary.profiles
+            if profiles and slot_idx < len(profiles):
+                profiles[slot_idx].seconds_played = total_seconds
+
+            from er_save_manager.transfer.character_ops import CharacterOperations
+
+            _, profiles_base = CharacterOperations.get_profile_summary_offsets(
+                save_file
+            )
+            profile_size = 0x24C
+            # seconds_played is at +0x26 within the Profile struct:
+            # +0x00 name (32 bytes) + terminator (2 bytes) + level (4 bytes) = 0x26
+            sp_offset = profiles_base + slot_idx * profile_size + 0x26
+            save_file._raw_data[sp_offset : sp_offset + 4] = struct.pack(
+                "<I", total_seconds
+            )
+
+        # Write to world_area_time in the character slot
+        if hasattr(slot, "world_area_time") and slot.world_area_time is not None:
+            time = slot.world_area_time
+            time.hour = h
+            time.minute = m
+            time.second = s
+
+            if hasattr(slot, "time_offset") and slot.time_offset > 0:
+                buf = BytesIO()
+                time.write(buf)
+                time_data = buf.getvalue()
+                save_file._raw_data[
+                    slot.time_offset : slot.time_offset + len(time_data)
+                ] = time_data

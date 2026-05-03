@@ -312,6 +312,28 @@ class CharacterDetailsDialog:
             width=150,
         ).pack(side="left", padx=5)
 
+        from er_save_manager.ui.settings import get_settings as _get_settings
+
+        if _get_settings().get("debug_netman_replace", False):
+
+            def _replace_netman():
+                CharacterDetailsDialog._replace_netman(
+                    dialog,
+                    save_file,
+                    slot_idx,
+                    save_path,
+                    reload_callback,
+                )
+
+            ctk.CTkButton(
+                button_frame,
+                text="Replace CSNetMan",
+                command=_replace_netman,
+                width=160,
+                fg_color=("gray60", "gray30"),
+                hover_color=("gray50", "gray20"),
+            ).pack(side="left", padx=5)
+
         ctk.CTkButton(
             button_frame,
             text="Close",
@@ -616,6 +638,76 @@ class CharacterDetailsDialog:
         ctk.CTkButton(
             button_frame, text="Cancel", command=teleport_dialog.destroy, width=100
         ).pack(side="right", padx=5)
+
+    @staticmethod
+    def _replace_netman(
+        dialog,
+        save_file,
+        slot_idx,
+        save_path,
+        reload_callback,
+    ):
+        _parent = dialog.master
+
+        from er_save_manager.fixes.deep_scan import _NETMAN_SIZE, _load_clean_netman
+
+        clean = _load_clean_netman()
+        if clean is None:
+            CTkMessageBox.showerror(
+                "Not Available",
+                "CSNetMan.bin not found or invalid.\nPlace a valid CSNetMan.bin next to the fixes module.",
+                parent=_parent,
+            )
+            return
+
+        slot = save_file.characters[slot_idx]
+        if not hasattr(slot, "net_man_offset") or slot.net_man_offset <= 0:
+            CTkMessageBox.showerror(
+                "Error",
+                "Cannot determine NetMan offset for this slot.",
+                parent=_parent,
+            )
+            return
+
+        if not CTkMessageBox.askyesno(
+            "Confirm",
+            f"Replace the entire CSNetMan block in Slot {slot_idx + 1} with the clean template?\n\nA backup will be created.",
+            parent=_parent,
+        ):
+            return
+
+        try:
+            from er_save_manager.backup.manager import BackupManager
+
+            if save_path:
+                manager = BackupManager(Path(save_path))
+                manager.create_backup(
+                    description=f"before_netman_replace_slot_{slot_idx + 1}",
+                    operation="netman_replace",
+                    save=save_file,
+                )
+
+            offset = slot.net_man_offset
+            save_file._raw_data[offset : offset + _NETMAN_SIZE] = clean
+            save_file.recalculate_checksums()
+
+            if save_path:
+                save_file.to_file(Path(save_path))
+            if reload_callback:
+                reload_callback()
+
+            CTkMessageBox.showinfo(
+                "Done",
+                f"CSNetMan replaced in Slot {slot_idx + 1}.\nBackup saved to backup manager.",
+                parent=_parent,
+            )
+            dialog.destroy()
+
+        except Exception as e:
+            CTkMessageBox.showerror("Error", f"Replace failed:\n{e}", parent=_parent)
+            import traceback
+
+            traceback.print_exc()
 
     @staticmethod
     def _fix_character(

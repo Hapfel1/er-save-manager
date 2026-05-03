@@ -699,15 +699,10 @@ class CharacterOperations:
         # SteamID is near the end of character data (in the slot, not profile summary)
         slot_char = save.character_slots[slot_index]
         if not slot_char.is_empty() and hasattr(slot_char, "steamid_offset"):
-            slot_offset = CharacterOperations.get_slot_offset(save, slot_index)
-            steamid_offset = (
-                slot_offset
-                + CharacterOperations.CHECKSUM_SIZE
-                + slot_char.steamid_offset
+            # steamid_offset is an absolute file offset from f.tell() at parse time
+            struct.pack_into(
+                "<Q", save._raw_data, slot_char.steamid_offset, target_steamid
             )
-
-            # Write SteamID as uint64 little-endian
-            struct.pack_into("<Q", save._raw_data, steamid_offset, target_steamid)
 
     @staticmethod
     def _reparse_user_data_10(save: Save) -> None:
@@ -957,17 +952,29 @@ class CharacterOperations:
         # Set slot as active (imported characters should be active by default)
         CharacterOperations._set_slot_active(save, slot_index, True)
 
-        # Patch SteamID
-        CharacterOperations._patch_steamid_in_slot(save, slot_index)
-
-        # Re-parse USER_DATA_10 to update parsed profile data
-        CharacterOperations._reparse_user_data_10(save)
-
-        # Re-parse slot
+        # Re-parse the slot before patching SteamID so steamid_offset reflects the
+        # imported data, not the previous occupant of the slot.
         from io import BytesIO
 
         from er_save_manager.parser.user_data_x import UserDataX
 
+        f = BytesIO(save._raw_data)
+        f.seek(slot_offset + CharacterOperations.CHECKSUM_SIZE)
+        save.character_slots[slot_index] = UserDataX.read(
+            f,
+            save.is_ps,
+            slot_offset + CharacterOperations.CHECKSUM_SIZE,
+            CharacterOperations.SLOT_DATA_SIZE,
+        )
+
+        # Patch SteamID now that the slot object has the correct offsets.
+        CharacterOperations._patch_steamid_in_slot(save, slot_index)
+
+        # Re-parse USER_DATA_10 so CSProfileSummary reflects the written profile data
+        # and the steamid-patched slot bytes.
+        CharacterOperations._reparse_user_data_10(save)
+
+        # Re-parse slot again to pick up any changes made by the steamid patch.
         f = BytesIO(save._raw_data)
         f.seek(slot_offset + CharacterOperations.CHECKSUM_SIZE)
         save.character_slots[slot_index] = UserDataX.read(
