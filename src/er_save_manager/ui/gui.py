@@ -904,6 +904,7 @@ class SaveManagerGUI:
             equipment_frame,
             lambda: self.save_file,
             current_slot_index,
+            lambda: self.save_path,
         )
         self.equipment_editor.setup_ui()
 
@@ -1439,7 +1440,6 @@ class SaveManagerGUI:
             warning_dialog.title("⚠️ Warning - Vanilla Save File Detected")
             warning_dialog.geometry("520x420")
             warning_dialog.transient(self.root)
-            warning_dialog.update_idletasks()
             warning_dialog.grab_set()
 
             # Warning message
