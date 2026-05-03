@@ -189,8 +189,8 @@ def get_item_name(full_item_id: int, upgrade_level: int = 0) -> str:
     db = get_item_database()
     base_id, category = db.decode_item_id(full_item_id)
 
-    # Handle empty armor slots (0 or 10000 = 0x2710)
-    if category == ItemCategory.ARMOR and base_id in (0, 10000):
+    # Naked armor slots (head=10000, chest=10100, arms=10200, legs=10300)
+    if category == ItemCategory.ARMOR and base_id in (0, 10000, 10100, 10200, 10300):
         return ""
 
     # Try exact ID first
@@ -199,6 +199,15 @@ def get_item_name(full_item_id: int, upgrade_level: int = 0) -> str:
         if category == ItemCategory.WEAPON and upgrade_level > 0:
             return f"{item.name} +{upgrade_level}"
         return item.name
+
+    # For weapons: try stripping affinity+upgrade (last 4 digits) to get true base
+    if category == ItemCategory.WEAPON:
+        true_base = (base_id // 10000) * 10000
+        item = db.get_item_by_id(category | true_base)
+        if item:
+            if upgrade_level > 0:
+                return f"{item.name} +{upgrade_level}"
+            return item.name
 
     # For weapons, seals, and spell tools - try stripping variant suffix
     # Variants are encoded in the last 1-2 digits (e.g., 17050009 -> 17050000, 34090004 -> 34090000)

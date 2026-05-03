@@ -1,4 +1,6 @@
-add detection for co2 
+auto load character on selecting slot and do equipment editor then test everything release troubleshooter and this bump to v1.0.0 import feature from nyasu.business
+
+add detection for co2 done
 
 make level recalculation mandatory in stats editor, also recalculate in the other way if people change the soul level pbut the stats do not match up to that done
 

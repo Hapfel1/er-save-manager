@@ -53,7 +53,7 @@ class SaveManagerGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Elden Ring Save Manager")
-        self.root.geometry("1200x950")
+        self.root.geometry("1200x1000")
         self.root.minsize(800, 700)
 
         # Set application icon
