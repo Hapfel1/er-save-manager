@@ -1,4 +1,6 @@
-auto load character on selecting slot and do equipment editor then test everything release troubleshooter and this bump to v1.0.0 import feature from nyasu.business
+import feature from nyasu.business
+
+auto load character on selecting slot and do equipment editor then test everything release troubleshooter and this bump to v1.0.0
 
 add ash of war for weapons on equipped done
 
