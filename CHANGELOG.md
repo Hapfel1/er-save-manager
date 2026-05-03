@@ -3,6 +3,143 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 0.14.1
+**Released:** April 22, 2026
+
+
+### 🔧 Bug Fixes
+
+- Add replacenetman option and button for trashed csnetmans without visible write torns ([44075f5](https://github.com/Hapfel1/er-save-manager/commit/44075f5229e9f16bf2314ca1927b8f348f817e5a))
+
+- Fixed steamid not being synced correctly when importing from a .erc file ([6f7f3fa](https://github.com/Hapfel1/er-save-manager/commit/6f7f3fa2590c95919f102b258bfd00f09adff770))
+
+
+
+### 🎨 User Interface
+
+- Add import flags button and add "All" selection for event flag categories with subcategories ([ed9b36c](https://github.com/Hapfel1/er-save-manager/commit/ed9b36c2aa0cbb45a9cb046d2131f85ea933fd5b))
+
+- Added Playtime Editor ([6bf0805](https://github.com/Hapfel1/er-save-manager/commit/6bf080529b49a86893d2ace6ffb121ba67d2c371))
+
+
+
+### 📦 Dependencies
+
+- Bump the github-actions group with 2 updates `[deps]` ([6639df2](https://github.com/Hapfel1/er-save-manager/commit/6639df2b1985f73f8984926bd24f5f536b43e0e5))
+
+- Bump the github-actions group with 2 updates `[deps]` ([7f7c08c](https://github.com/Hapfel1/er-save-manager/commit/7f7c08ca2cfc4943a833ce622f8aae1bdf6aa0a2))
+
+
+
+---
+## 📦 Release 0.14.0
+**Released:** April 10, 2026
+
+
+### ✨ New Features
+
+- Add weapon_matchmaking_level and a check for every weapon upgrade level to combat any tries to abuse modifying it ([f68ac2f](https://github.com/Hapfel1/er-save-manager/commit/f68ac2fe3eb5b2402921ded78bf5b314ba361e10))
+
+
+
+### 🔧 Bug Fixes
+
+- Fixed SteamID auto-detection on Linux ([7e2ee39](https://github.com/Hapfel1/er-save-manager/commit/7e2ee39acfe73cee08912268298f3929a9994db5))
+
+- Fixed Steam vanity link parsing ([46458e7](https://github.com/Hapfel1/er-save-manager/commit/46458e79b78f6f6aeeb970cfdd70e858d22cb631))
+
+- Fix Open folder button on certain Linux distros not working ([5617f65](https://github.com/Hapfel1/er-save-manager/commit/5617f65e2d3eb1088f81b206b04837cae1923e19))
+
+- Fixed the upgrade level detection ([96ab048](https://github.com/Hapfel1/er-save-manager/commit/96ab048d629d5a89906fd509ff88c93f42398100))
+
+- Fixed process monitoring ([9aaabfb](https://github.com/Hapfel1/er-save-manager/commit/9aaabfb738f12b62f326031c1965aabcbf004290))
+
+- Fixed process detection for is_game_running ([4b57a80](https://github.com/Hapfel1/er-save-manager/commit/4b57a8013d422c224e2e24369972357c62adf738))
+
+- Fixed character name not being read correctly because of garbage data ([df34500](https://github.com/Hapfel1/er-save-manager/commit/df3450088e16adbe1850891a850af76edccd9209))
+
+- Format and lint ([9f5fd3a](https://github.com/Hapfel1/er-save-manager/commit/9f5fd3ad318d6f37da0b40c267e08ea5912d4d1c))
+
+- Fixed png issue with character browser and impoved loading in the browser ([ffa3e96](https://github.com/Hapfel1/er-save-manager/commit/ffa3e9654a13f23a46ff7d9bc3d5bbf810a79dc8))
+
+- Fixed cpu0 feature not applying correctly ([242cf46](https://github.com/Hapfel1/er-save-manager/commit/242cf4693b911cd4ca904cf53a9635e883158279))
+
+- Lint ([fbdba81](https://github.com/Hapfel1/er-save-manager/commit/fbdba8108e8937d5fa9a3ff0a91fde86a7e1b323))
+
+
+
+### 🎨 User Interface
+
+- Add "Apply CPU 0 fix on game launch" setting for ER, NR and DS3 ([e4654b4](https://github.com/Hapfel1/er-save-manager/commit/e4654b4f258ba0f028b0622e41a47e1e57beb3f6))
+
+- Fix performance issues ([e1c2ae0](https://github.com/Hapfel1/er-save-manager/commit/e1c2ae012e18ce647991d119e74dd50b0c856af3))
+
+
+
+### 📦 Dependencies
+
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([3ba7626](https://github.com/Hapfel1/er-save-manager/commit/3ba76262255cd967250d33bf44582ea42a0702dc))
+
+
+
+### Buld
+
+- Lint ([e759435](https://github.com/Hapfel1/er-save-manager/commit/e759435744f1e499aec4cd9f2c29ffaa57788bf7))
+
+
+
+---
+## 📦 Release 0.13.0
+**Released:** April 02, 2026
+
+
+### ✨ New Features
+
+- Added Invasion Regions and ingame settings ([1b1097b](https://github.com/Hapfel1/er-save-manager/commit/1b1097bd7bae370995f0dec1cdeb10db9f1450f2))
+
+- Add other Fromsoft Games for SteamID Patching and Backup Manager ([fc2a616](https://github.com/Hapfel1/er-save-manager/commit/fc2a616e832a9d7883aea56f733347ffa2b2d3a4))
+
+- Added "Move Bloodstain to player" button in the world state tab ([48cd065](https://github.com/Hapfel1/er-save-manager/commit/48cd0650e40adc9ac90634a1c7e214e2918dedba))
+
+
+
+### 🔧 Bug Fixes
+
+- Fix event flag custom id toggle not creating backups ([74d7434](https://github.com/Hapfel1/er-save-manager/commit/74d7434b17a3130271cef01903ce5afeddcd74b3))
+
+- Fixed rendering issue in Appearance Tab popup window ([fb7b38b](https://github.com/Hapfel1/er-save-manager/commit/fb7b38bcd29fe9f81d9b31ef64bc502a3e6efc08))
+
+- Added change files ([ea91317](https://github.com/Hapfel1/er-save-manager/commit/ea913171336039d22620c44c0f6b8af4c82e0bfe))
+
+- Lint ([188f267](https://github.com/Hapfel1/er-save-manager/commit/188f267955f123b87c7ff06aea53f1fc13706861))
+
+- Added correct functionality for steamid patching for each game ([d266428](https://github.com/Hapfel1/er-save-manager/commit/d266428169e8aaec34f642098e990b2508d05c91))
+
+- Fixed Save Loading and Process detection for Non-ER games ([1ca1b68](https://github.com/Hapfel1/er-save-manager/commit/1ca1b68aa2d2c605eb00bf583e8410822e3e7c21))
+
+
+
+### 🎨 User Interface
+
+- Add Event Flag Export ([9e82142](https://github.com/Hapfel1/er-save-manager/commit/9e82142a1ebf7c08292d411f123a5ef2afb2fdf5))
+
+- Added Great Rune and Rune Arc display ([16bf210](https://github.com/Hapfel1/er-save-manager/commit/16bf210aa3a11d93d8a3185d9abe9b6440eb1e93))
+
+- Fixed popup centering ([ad7d66a](https://github.com/Hapfel1/er-save-manager/commit/ad7d66ad1dea14bd07190e9a667fd295de496927))
+
+- Added warning when no apperance presets are saved to first save one in game ([62bcefa](https://github.com/Hapfel1/er-save-manager/commit/62bcefa5f3c89c7a960ff5d735351f407ec37f1f))
+
+- Add MapID map for the known locations teleport feature ([24d95be](https://github.com/Hapfel1/er-save-manager/commit/24d95be71c1b4264a8b5a32c307cca6fdf4aa910))
+
+
+
+### 📦 Dependencies
+
+- Bump the github-actions group with 3 updates `[deps]` ([e630f06](https://github.com/Hapfel1/er-save-manager/commit/e630f06a9675308963fedd3091a6be21d9bc2fbb))
+
+
+
+---
 ## 📦 Release 0.12.1
 **Released:** March 23, 2026
 
@@ -604,6 +741,9 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[0.14.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.14.0..v0.14.1
+[0.14.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.13.0..v0.14.0
+[0.13.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.12.1..v0.13.0
 [0.12.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.11.1..v0.12.1
 [0.11.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.11.0..v0.11.1
 [0.11.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.10.1..v0.11.0
