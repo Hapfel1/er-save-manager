@@ -162,7 +162,12 @@ class ItemDatabase:
 
     def decode_item_id(self, full_id: int) -> tuple[int, ItemCategory]:
         """Decode full item ID into base ID and category"""
-        category = ItemCategory(full_id & 0xF0000000)
+        raw_cat = full_id & 0xF0000000
+        try:
+            category = ItemCategory(raw_cat)
+        except ValueError:
+            # Unknown category prefix (e.g. 0xA0 talisman handles from older saves)
+            category = ItemCategory.GOODS
         base_id = full_id & 0x0FFFFFFF
         return base_id, category
 
@@ -184,8 +189,8 @@ def get_item_name(full_item_id: int, upgrade_level: int = 0) -> str:
     db = get_item_database()
     base_id, category = db.decode_item_id(full_item_id)
 
-    # Handle empty armor slots (0 or 10000 = 0x2710)
-    if category == ItemCategory.ARMOR and base_id in (0, 10000):
+    # Naked armor slots (head=10000, chest=10100, arms=10200, legs=10300)
+    if category == ItemCategory.ARMOR and base_id in (0, 10000, 10100, 10200, 10300):
         return ""
 
     # Try exact ID first
@@ -194,6 +199,15 @@ def get_item_name(full_item_id: int, upgrade_level: int = 0) -> str:
         if category == ItemCategory.WEAPON and upgrade_level > 0:
             return f"{item.name} +{upgrade_level}"
         return item.name
+
+    # For weapons: try stripping affinity+upgrade (last 4 digits) to get true base
+    if category == ItemCategory.WEAPON:
+        true_base = (base_id // 10000) * 10000
+        item = db.get_item_by_id(category | true_base)
+        if item:
+            if upgrade_level > 0:
+                return f"{item.name} +{upgrade_level}"
+            return item.name
 
     # For weapons, seals, and spell tools - try stripping variant suffix
     # Variants are encoded in the last 1-2 digits (e.g., 17050009 -> 17050000, 34090004 -> 34090000)
@@ -218,7 +232,15 @@ def get_item_name(full_item_id: int, upgrade_level: int = 0) -> str:
                 return f"{item.name} +{upgrade_level}"
             return item.name
 
-    return f"Unknown Item (0x{full_item_id:08X})"
+    _CATEGORY_LABELS = {
+        ItemCategory.WEAPON: "Weapon",
+        ItemCategory.ARMOR: "Armor",
+        ItemCategory.TALISMAN: "Talisman",
+        ItemCategory.GOODS: "Goods",
+        ItemCategory.GEM: "Gem",
+    }
+
+    return f"Unknown {_CATEGORY_LABELS.get(category, 'Item')} (ID: {base_id})"
 
 
 def search_items(query: str) -> list[Item]:

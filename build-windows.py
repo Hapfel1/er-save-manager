@@ -44,6 +44,7 @@ if sys.platform != "win32":
 include_files = [
     ("src/resources/", "resources/"),
     ("resources/", "resources/"),
+    ("src/er_save_manager/data/items/", "er_save_manager/data/items/"),
     ("resources/app.manifest", "app.manifest"),
 ]
 
