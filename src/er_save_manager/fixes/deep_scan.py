@@ -676,9 +676,15 @@ class DeepScanFix(BaseFix):
                 not ok0
                 or pos0 + ft + _NETMAN_SIZE + _TAIL_AFTER_NETMAN not in found_offsets
             ):
+                # Scan negative d first (bytes removed from EF - the common torn-write
+                # case), then positive d (bytes inserted into EF).
+                # Negative d: parser's ef_end is abs(d) bytes too far, struct zone
+                # starts at ef_end - abs(d) in the corrupted file.
                 for candidate in found_offsets:
-                    for d in range(1, 0x400):
+                    for d in list(range(-0x400, 0)) + list(range(1, 0x400)):
                         pos = ef_end_rel_early + d
+                        if pos < 0 or pos + 4 > len(slot_raw):
+                            continue
                         ok = True
                         for _ in range(5):
                             if pos + 4 > len(slot_raw):
@@ -695,26 +701,34 @@ class DeepScanFix(BaseFix):
                             ef_delta = d
                             ef_best = candidate
                             break
-                    if ef_delta > 0:
+                    if ef_delta != 0:
                         break
-            if ef_delta > 0:
+            if ef_delta != 0:
                 # Delta confirmed by struct scan - now run anchor scan to locate splice.
                 ef_early = self._scan_event_flags(save, slot_index)
-                # Find the exact splice point by scanning for the zero-run of length ef_delta
-                # that marks where the extra bytes were inserted.
-                # Search range: within the torn block region (tear_lo..tear_hi+125).
-                # If no agreeing pairs (tear_lo unknown), search only within tear_hi block.
+                abs_delta = abs(ef_delta)
+                # Find the splice point by scanning for a zero-run of abs_delta bytes.
+                # For insertions (ef_delta > 0): inserted bytes are typically zero-padded.
+                # For removals (ef_delta < 0): removed bytes were zeros (padding).
+                # When no anchor pairs bracket the tear (all anchors are before it),
+                # fall back to scanning the full reachable EF region.
                 ef_slot_raw = slot_raw[ef_rel : ef_rel + _EVENT_FLAGS_SIZE]
                 tear_lo = max(ef_early.tear_lo, 0)
                 tear_hi = ef_early.tear_hi
-                if ef_early.confident and tear_lo > 0:
+                # When tear_lo >= tear_hi the bracket is inverted: high-block-byte anchors
+                # "agree" by coincidence after the shift. The real tear is at or before
+                # tear_hi (the first genuinely disagreeing anchor). Search near tear_hi.
+                # When the bracket is valid (tear_lo < tear_hi), search between the last
+                # agreeing and first disagreeing anchor.
+                if ef_early.confident and tear_lo > 0 and tear_lo < tear_hi:
                     search_start = tear_lo
+                    search_end = min(tear_hi + 125, _EVENT_FLAGS_SIZE - abs_delta)
                 else:
-                    search_start = tear_hi
-                search_end = min(tear_hi + 125, _EVENT_FLAGS_SIZE - ef_delta)
-                splice_in_ef = tear_hi  # default: torn block start
+                    search_start = max(0, tear_hi - 125)
+                    search_end = min(tear_hi + 125, _EVENT_FLAGS_SIZE - abs_delta)
+                splice_in_ef = search_start  # default: torn block start
                 for i in range(search_start, search_end):
-                    if all(ef_slot_raw[i + j] == 0 for j in range(ef_delta)):
+                    if all(ef_slot_raw[i + j] == 0 for j in range(abs_delta)):
                         splice_in_ef = i
                         break
 
@@ -724,7 +738,10 @@ class DeepScanFix(BaseFix):
                 result.steamid_offset_in_slot = ef_best
                 result.expected_steamid_offset = ef_best - ef_delta
                 result.confidence = "high" if ef_early.confident else "medium"
-                result.details.append(f"EF shift: +{ef_delta} (0x{ef_delta:x}) bytes")
+                sign = "+" if ef_delta > 0 else ""
+                result.details.append(
+                    f"EF shift: {sign}{ef_delta} (0x{abs_delta:x}) bytes"
+                )
                 result.details.append(
                     f"Tear location: event_flags (ef+0x{splice_in_ef:x})"
                 )
@@ -733,8 +750,9 @@ class DeepScanFix(BaseFix):
                         f"Disagreeing bosses: {', '.join(ef_early.disagreeing)}"
                     )
                 log.info(
-                    "[deep_scan] _scan: EF tear, delta=+0x%x, splice=slot+0x%x, bosses=%s",
+                    "[deep_scan] _scan: EF tear, delta=%+d (0x%x), splice=slot+0x%x, bosses=%s",
                     ef_delta,
+                    abs_delta,
                     result.ef_splice_point,
                     ef_early.disagreeing,
                 )
