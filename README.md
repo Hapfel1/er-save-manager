@@ -13,6 +13,7 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **Save File Fixer**: Automatically detect and fix save corruption issues and infinite loading screens
 - **Character Management**: Export, import, and move characters between saves
 - **Community Character Browser**: Browse, download, and contribute characters with likes and download tracking
+- **Inventory Editor**: Edit your inventory, spawn in items
 - **Character Editor**: Edit stats, runes, name, level, and build attributes
 - **Appearance Editor**: View, export and import Presets
 - **Community Preset Browser**: Browse, download, and contribute character appearance presets with likes and download tracking
@@ -30,7 +31,7 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 
 ### Work in Progress
 
-- **Inventory Editor**: Item spawning requires additional reverse engineering
+- **Implementing Save Editing for other Fromsoft Games**
 
 ## Installation
 
@@ -110,6 +111,11 @@ Automatically detects issues with your game installation, your save file and any
 - Edit base stats (Vigor, Mind, Endurance, Strength, Dexterity, Intelligence, Faith, Arcane)
 - Modify character name and level
 - Adjust runes held
+
+### Inventory Editor
+
+- Edit your inventory, remove items, spawn in items
+- Supports SeamlessCoop Items
 
 ### Appearance Editor
 
