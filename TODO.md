@@ -1,5 +1,13 @@
 auto load character on selecting slot and do equipment editor then test everything release troubleshooter and this bump to v1.0.0 import feature from nyasu.business
 
+add ash of war for weapons on equipped done
+
+dlc spell tools armor ranged weapons corrupting done
+
+dlc ashes cut off at swordhand of night jolan + 1 change to upgrade level selection done
+
+talismans not working done
+
 add detection for co2 done
 fix csprofilesummary when importing character via erc as well as steamid
 
