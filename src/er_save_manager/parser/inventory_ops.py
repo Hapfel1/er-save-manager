@@ -24,7 +24,10 @@ save.recalculate_checksums() and save.to_file() after all operations.
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
+
+_log = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from er_save_manager.parser.save import Save
@@ -37,7 +40,8 @@ _CAT_GEM = 0x80000000
 
 _PREFIX_WEAPON = 0x80000000  # size 21
 _PREFIX_ARMOR = 0x90000000  # size 16
-_PREFIX_DIRECT = 0xB0000000  # goods and talismans, no gaitem entry
+_PREFIX_TALISMAN = 0xA0000000  # direct handle, no gaitem entry
+_PREFIX_DIRECT = 0xB0000000  # goods and spells direct handle, no gaitem entry
 _PREFIX_GEM = 0xC0000000  # size 8
 
 SLOT_DATA_SIZE = 0x280000
@@ -65,13 +69,15 @@ def _gaitem_prefix(full_item_id: int) -> int:
 
 def _direct_handle(full_item_id: int) -> int:
     """
-    B0-prefix direct inventory handle for goods, spells, and talismans.
+    Direct inventory handle (no gaitem entry) for goods, spells, and talismans.
 
-    Encodes the lower 24 bits of the base item id with a 0xB0 prefix.
-    For talismans, choose base_ids that don't overlap with any goods base_ids
-    to avoid the game misidentifying the item.
+    Talismans use the game-native 0xA0 prefix.
+    Goods and spells use 0xB0.
     """
-    return (_PREFIX_DIRECT | (full_item_id & 0x00FFFFFF)) & 0xFFFFFFFF
+    base = full_item_id & 0x00FFFFFF
+    if _category(full_item_id) == _CAT_TALISMAN:
+        return (_PREFIX_TALISMAN | base) & 0xFFFFFFFF
+    return (_PREFIX_DIRECT | base) & 0xFFFFFFFF
 
 
 def _next_gaitem_handle(slot, prefix: int) -> int:
@@ -105,26 +111,21 @@ def _next_gaitem_handle(slot, prefix: int) -> int:
     return (upper16 << 16) | next_lower16
 
 
-def _find_first_weapon_gaitem_idx(slot) -> int:
-    """Return index of the first weapon-prefix (0x8x) gaitem entry, or -1."""
-    for i, g in enumerate(slot.gaitem_map):
-        if g.gaitem_handle != 0 and (g.gaitem_handle & 0xF0000000) == _PREFIX_WEAPON:
-            return i
-    return -1
-
-
-def _find_empty_gaitem_slot_for_category(slot, prefix: int) -> int:
+def _find_empty_gaitem_slot(slot, prefix: int) -> int:
     """
-    Return the gaitem map index of the correct empty slot for the given prefix.
+    Return the gaitem map index of the first suitable empty slot for the given prefix.
 
-    Gems go before the first weapon (AoW region at the start of the gaitem map).
+    Gems (0xC0) go in the AoW region before the first weapon entry.
     Weapons and armor go after the first weapon entry.
     Returns -1 if no suitable empty slot exists.
     """
-    first_weapon_idx = _find_first_weapon_gaitem_idx(slot)
+    first_weapon_idx = -1
+    for i, g in enumerate(slot.gaitem_map):
+        if g.gaitem_handle != 0 and (g.gaitem_handle & 0xF0000000) == _PREFIX_WEAPON:
+            first_weapon_idx = i
+            break
 
     if prefix == _PREFIX_GEM:
-        # AoW/gems occupy the region before weapons
         for i, g in enumerate(slot.gaitem_map):
             if first_weapon_idx != -1 and i >= first_weapon_idx:
                 break
@@ -132,7 +133,6 @@ def _find_empty_gaitem_slot_for_category(slot, prefix: int) -> int:
                 return i
         return -1
 
-    # Weapons and armor: first empty after the first weapon entry
     start = (first_weapon_idx + 1) if first_weapon_idx != -1 else 0
     for i in range(start, len(slot.gaitem_map)):
         if slot.gaitem_map[i].gaitem_handle == 0:
@@ -207,12 +207,17 @@ def _patch_slot(save: Save, slot_idx: int, slot) -> None:
         save._raw_data[abs_off : abs_off + len(data)] = data
 
 
-def _gaitem_last_empty_offset(slot) -> int | None:
-    """Return the offset (relative to slot data start) of the last empty gaitem slot, or None."""
-    for i in range(len(slot.gaitem_map) - 1, -1, -1):
-        if slot.gaitem_map[i].gaitem_handle == 0:
-            return slot.gaitem_offsets[i]
-    return None
+def _gaitem_last_empty(slot, slot_data_base: int) -> int | None:
+    """
+    Return the absolute buffer offset of the last empty (00000000 FFFFFFFF)
+    gaitem entry, or None.
+    """
+    _EMPTY_PATTERN = b"\x00\x00\x00\x00\xff\xff\xff\xff"
+    result = None
+    for i, g in enumerate(slot.gaitem_map):
+        if g.gaitem_handle == 0:
+            result = slot_data_base + slot.gaitem_offsets[i]
+    return result
 
 
 def _patch_slot_with_gaitem_insert(
@@ -222,70 +227,88 @@ def _patch_slot_with_gaitem_insert(
     gaitem_idx: int,
     new_gaitem_bytes: bytes,
     old_gaitem_size: int,
-) -> None:
+) -> int:
     """
-    Insert/replace a gaitem entry matching er_spawner.py exactly.
+    Insert/replace a gaitem entry, matching the proven approach from Final.py.
+
+    Returns the net shift applied to all data after the gaitem region (inventory,
+    EF, etc.) so the caller can update in-memory offset fields.
 
     delta == 0 (AoW 8->8):
-        Direct overwrite. No size change.
+        Direct overwrite. Net shift = 0.
 
-    delta > 0 (weapon 8->21 or armor 8->16):
-        1. INSERT new entry at target offset.
-        2. DELETE 8 bytes at the pre-insert last-empty offset (stale, intentional).
-           The stale offset lands 3 bytes into an empty entry for weapons (21%8=5,
-           8-5=3) and at the entry boundary for armor (16%8=0). Both cases produce
-           a valid merged empty entry because empty slots are [0,0,0,0,FF,FF,FF,FF].
-        3. TRIM (new_size - 8) bytes from slot end (zero padding).
-        Net: 0.
+    delta > 0 (armor 8->16, weapon 8->21):
+        1. Pure INSERT new entry at entry_abs.
+        2. Delete 8 bytes at last_ga_empty (shifts to last_ga_empty + new_size
+           after step 1; we delete from the shifted position).
+        3. Trim (new_size - 8) bytes from slot end (guaranteed zero padding).
+        Net shift to inventory/EF = new_size - 8 = size_delta.
 
-    delta < 0 (remove weapon 21->8 or armor 16->8):
-        1. INSERT new 8-byte empty entry at target.
-        2. DELETE old larger entry.
-        3. APPEND abs(delta) zero bytes at new slot end.
-        Net: 0.
+    delta < 0 (shrink: weapon 21->8 or armor 16->8):
+        1. Pure INSERT small entry at entry_abs.
+        2. Delete old large entry.
+        3. Append abs(delta) zeros at slot end.
+        Net shift = size_delta (negative).
     """
     slot_data_base = save._slot_offsets[slot_idx] + CHECKSUM_SIZE
     entry_abs_off = slot_data_base + slot.gaitem_offsets[gaitem_idx]
     new_size = len(new_gaitem_bytes)
     delta = new_size - old_gaitem_size
 
+    _log.debug(
+        "gaitem_insert: slot=%d idx=%d entry_rel=0x%X new_size=%d delta=%d inv_rel=0x%X",
+        slot_idx,
+        gaitem_idx,
+        slot.gaitem_offsets[gaitem_idx],
+        new_size,
+        delta,
+        slot.inventory_held_offset,
+    )
+
     if delta == 0:
         save._raw_data[entry_abs_off : entry_abs_off + new_size] = new_gaitem_bytes
-        return
+        return 0
 
     if delta > 0:
-        # Capture last empty BEFORE any modification (stale offset used intentionally)
-        last_empty_rel = _gaitem_last_empty_offset(slot)
+        # Capture last empty BEFORE insert (its position shifts after step 1)
+        last_empty_abs = _gaitem_last_empty(slot, slot_data_base)
 
-        # Step 1: INSERT
+        # Step 1: pure INSERT - does not replace old empty, grows buffer by new_size
         save._raw_data[entry_abs_off:entry_abs_off] = new_gaitem_bytes
 
-        # Step 2: DELETE 8 bytes at stale last_empty
-        if last_empty_rel is not None:
-            abs_last_empty = slot_data_base + last_empty_rel
-            del save._raw_data[abs_last_empty : abs_last_empty + 8]
+        # Step 2: delete the last empty (now at last_empty_abs + new_size after insert)
+        if last_empty_abs is not None:
+            shifted_last_empty = last_empty_abs + new_size
+            del save._raw_data[shifted_last_empty : shifted_last_empty + 8]
         else:
-            slot_end_after = slot_data_base + SLOT_DATA_SIZE + delta
-            del save._raw_data[slot_end_after - 8 : slot_end_after]
+            # No empty found - delete from just before the shifted inventory
+            inv_abs_shifted = slot_data_base + slot.inventory_held_offset + new_size
+            del save._raw_data[inv_abs_shifted - 8 : inv_abs_shifted]
 
-        # Step 3: TRIM (new_size - 8) bytes from slot end
+        # Step 3: trim (new_size - 8) bytes from slot end (zero padding after all data)
         trim = new_size - 8
         if trim > 0:
             slot_end = slot_data_base + SLOT_DATA_SIZE
-            del save._raw_data[slot_end : slot_end + trim]
+            # After step 1 (+new_size) and step 2 (-8), slot_end shifted by (new_size - 8)
+            current_slot_end = slot_end + new_size - 8
+            del save._raw_data[current_slot_end - trim : current_slot_end]
+
+        # Net shift to everything after gaitem region = new_size - 8 = delta - (8-8+new_size-8)
+        # insert +new_size, delete -8 (before inv), trim -trim (after inv) -> net = new_size-8
+        return new_size - 8
 
     else:
         abs_delta = -delta
-        # Step 1: INSERT smaller entry
+        # Step 1: pure INSERT small new entry
         save._raw_data[entry_abs_off:entry_abs_off] = new_gaitem_bytes
-        # Step 2: DELETE old larger entry
+        # Step 2: delete the old large entry (now at entry_abs + new_size after insert)
         del save._raw_data[
             entry_abs_off + new_size : entry_abs_off + new_size + old_gaitem_size
         ]
-        # Net: -abs_delta; step 3 restores slot size
-        # Step 3: APPEND abs_delta zero bytes at new slot end
+        # Step 3: restore zero padding at slot end
         slot_end = slot_data_base + SLOT_DATA_SIZE - abs_delta
         save._raw_data[slot_end:slot_end] = bytes(abs_delta)
+        return -abs_delta
 
 
 def _make_gaitem(full_item_id: int, handle: int, upgrade: int = 0):
@@ -302,10 +325,18 @@ def _make_gaitem(full_item_id: int, handle: int, upgrade: int = 0):
     from er_save_manager.parser.er_types import Gaitem
 
     cat = _category(full_item_id)
+    base_id = full_item_id & 0x0FFFFFFF
     g = Gaitem()
-    # Embed upgrade level in item_id for weapons; armor and gems use base id as-is.
     g.gaitem_handle = handle
-    g.item_id = full_item_id + (upgrade if cat == _CAT_WEAPON else 0)
+    # Weapons: no category bits (cat=0x00), embed upgrade in item_id.
+    # Armor: category bits (0x10000000) are part of item_id as stored in gaitem.
+    # Gems: category bits (0x80000000) are NOT stored - game derives from 0xC0 handle prefix.
+    if cat == _CAT_WEAPON:
+        g.item_id = base_id + upgrade
+    elif cat == _CAT_GEM:
+        g.item_id = base_id
+    else:
+        g.item_id = full_item_id  # armor: 0x10000000 | base fits in int32
 
     if cat in (_CAT_WEAPON, _CAT_ARMOR):
         g.unk0x10 = 0
@@ -324,6 +355,7 @@ def add_item(
     quantity: int,
     location: str = "held",
     upgrade: int = 0,
+    gem_full_id: int = 0,
 ) -> dict:
     """
     Add an item to the inventory.
@@ -346,6 +378,8 @@ def add_item(
         upgrade: Upgrade level for weapons. Encoded as item_id = base_id + upgrade.
                  Standard weapons support 0-25, somber weapons 0-10. Ignored for
                  other categories.
+        gem_full_id: Full item id of an Ash of War gem to attach to a weapon.
+                     0 means no AoW (Standard). Ignored for non-weapon categories.
 
     Returns:
         Dict with keys: gaitem_handle, full_item_id, quantity, acquisition_index,
@@ -357,12 +391,37 @@ def add_item(
     """
     from er_save_manager.parser.equipment import InventoryItem
 
+    # For weapons with AoW: spawn the gem first as a complete add_item so it gets
+    # both a gaitem entry and an inventory item. Gem gaitem is delta=0 (size 8),
+    # so no offset shifting occurs and the weapon add can continue unchanged.
+    gem_handle_for_weapon = 0
+    if (
+        _category(full_item_id) == _CAT_WEAPON
+        and gem_full_id
+        and _category(gem_full_id) == _CAT_GEM
+    ):
+        try:
+            gem_result = add_item(save, slot_idx, gem_full_id, 1, location)
+            gem_handle_for_weapon = gem_result["gaitem_handle"]
+        except Exception as e:
+            _log.warning("add_item: gem spawn failed (%s), continuing without AoW", e)
+
     cat = _category(full_item_id)
     if cat not in (_CAT_WEAPON, _CAT_ARMOR, _CAT_TALISMAN, _CAT_GOODS, _CAT_GEM):
         raise ValueError(
             f"unknown item category 0x{cat:08X} for item 0x{full_item_id:08X}"
         )
 
+    _log.debug(
+        "add_item: full_id=0x%08X cat=0x%08X qty=%d location=%s upgrade=%d",
+        full_item_id,
+        cat,
+        quantity,
+        location,
+        upgrade,
+    )
+
+    # Re-read slot: gem add_item may have updated gaitem_map and counters.
     slot = save.character_slots[slot_idx]
     if slot.is_empty():
         raise ValueError(f"slot {slot_idx} is empty")
@@ -378,6 +437,12 @@ def add_item(
         prefix = _gaitem_prefix(full_item_id)
         handle = _next_gaitem_handle(slot, prefix)
 
+        _log.debug(
+            "add_item gaitem: prefix=0x%08X handle=0x%08X",
+            prefix,
+            handle,
+        )
+
         # Reject if handle already occupied
         for g in slot.gaitem_map:
             if g.gaitem_handle == handle:
@@ -386,13 +451,26 @@ def add_item(
                     f"(item 0x{g.item_id:08X})"
                 )
 
-        empty_g = _find_empty_gaitem_slot_for_category(slot, prefix)
+        empty_g = _find_empty_gaitem_slot(slot, prefix)
         if empty_g == -1:
             raise ValueError("gaitem map is full")
 
         new_gaitem = _make_gaitem(full_item_id, handle, upgrade)
+
+        # Attach AoW handle from the pre-spawned gem gaitem.
+        if cat == _CAT_WEAPON and gem_handle_for_weapon:
+            new_gaitem.gem_gaitem_handle = (
+                gem_handle_for_weapon - 0x100000000
+                if gem_handle_for_weapon >= 0x80000000
+                else gem_handle_for_weapon
+            )
+            _log.debug(
+                "add_item: linked gem_gaitem_handle=0x%08X", gem_handle_for_weapon
+            )
+
         gaitem_slot = empty_g
-        gaitem_size = new_gaitem.get_size()
+        gaitem_size = new_size = new_gaitem.get_size()
+        size_delta = new_size - 8
 
         # Serialize new gaitem entry
         buf = _BytesIO()
@@ -400,7 +478,17 @@ def add_item(
         new_gaitem_bytes = buf.getvalue()
 
         slot.gaitem_map[empty_g] = new_gaitem
-        size_delta = gaitem_size - 8
+
+        _log.debug(
+            "add_item gaitem: slot_idx=%d gaitem_slot=%d gaitem_size=%d "
+            "bytes=%s inv_held_off=0x%X inv_storage_off=0x%X",
+            slot_idx,
+            empty_g,
+            gaitem_size,
+            new_gaitem_bytes.hex(),
+            slot.inventory_held_offset,
+            slot.inventory_storage_offset,
+        )
     else:
         handle = _direct_handle(full_item_id)
         size_delta = 0
@@ -442,16 +530,22 @@ def add_item(
     # Write inventory FIRST (at current offsets, before gaitem insert shifts them)
     _patch_slot(save, slot_idx, slot)
 
-    # Then insert gaitem (shifts inventory forward but bytes already written correctly)
     if gaitem_slot is not None:
-        _patch_slot_with_gaitem_insert(
+        net_shift = _patch_slot_with_gaitem_insert(
             save, slot_idx, slot, gaitem_slot, new_gaitem_bytes, old_gaitem_size=8
         )
-        # Net inventory shift: INSERT(new_size) + stale-delete(-8) = new_size - 8 = size_delta
-        net_inv_shift = size_delta
-        if net_inv_shift != 0:
-            slot.inventory_held_offset += net_inv_shift
-            slot.inventory_storage_offset += net_inv_shift
+        # Update in-memory gaitem offsets: pure insert at entry_rel shifts all
+        # subsequent entries by +new_size, then delete last_empty (-8) shifts
+        # entries after last_empty by -8. Simplify: entries after entry_rel shift
+        # by net_shift (the net effect on inventory/EF = new_size - 8 for expand).
+        entry_rel = slot.gaitem_offsets[gaitem_slot]
+        for i, off in enumerate(slot.gaitem_offsets):
+            if off > entry_rel:
+                slot.gaitem_offsets[i] += size_delta
+        # Inventory and all post-gaitem data shifted by net_shift in the binary.
+        if net_shift != 0:
+            slot.inventory_held_offset += net_shift
+            slot.inventory_storage_offset += net_shift
 
     result = {
         "gaitem_handle": handle,
