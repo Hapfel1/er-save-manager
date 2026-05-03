@@ -1,355 +1,429 @@
 """
-Equipment Editor Module
-Handles equipment editing UI and logic
+Equipment Editor - view and edit equipped items per slot.
 """
+
+from __future__ import annotations
+
+import tkinter as tk
+from pathlib import Path
 
 import customtkinter as ctk
 
-from er_save_manager.data.item_database import get_item_name
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, trace_variable
 
+# ---- constants --------------------------------------------------------------
+
+# Item DB category names that belong to each slot type
+_WEAPON_CATS = [
+    "Melee Weapons",
+    "Ranged Weapons",
+    "Spell Tools",
+    "Shields",
+    "DLC Melee Weapons",
+    "DLC Ranged Weapons",
+    "DLC Spell Tools",
+    "DLC Shields",
+]
+_ARMOR_CATS = ["Armor", "DLC Armor"]
+_TALISMAN_CATS = ["Talismans", "DLC Talismans"]
+_AMMO_CATS = ["Ammo", "DLC Ammo"]
+
+_SLOT_CATS: dict[str, list[str]] = {
+    "right_hand_armament1": _WEAPON_CATS,
+    "right_hand_armament2": _WEAPON_CATS,
+    "right_hand_armament3": _WEAPON_CATS,
+    "left_hand_armament1": _WEAPON_CATS,
+    "left_hand_armament2": _WEAPON_CATS,
+    "left_hand_armament3": _WEAPON_CATS,
+    "head": _ARMOR_CATS,
+    "chest": _ARMOR_CATS,
+    "arms": _ARMOR_CATS,
+    "legs": _ARMOR_CATS,
+    "talisman1": _TALISMAN_CATS,
+    "talisman2": _TALISMAN_CATS,
+    "talisman3": _TALISMAN_CATS,
+    "talisman4": _TALISMAN_CATS,
+    "arrows1": _AMMO_CATS,
+    "arrows2": _AMMO_CATS,
+    "bolts1": _AMMO_CATS,
+    "bolts2": _AMMO_CATS,
+}
+
+# Raw IDs that mean "empty slot"
+_EMPTY_IDS = {0, 0xFFFFFFFF, 110000}
+
+_AFFINITY_BY_CODE: dict[int, str] = {
+    0: "Standard",
+    1: "Heavy",
+    2: "Keen",
+    3: "Quality",
+    4: "Fire",
+    5: "Flame Art",
+    6: "Lightning",
+    7: "Sacred",
+    8: "Magic",
+    9: "Cold",
+    10: "Poison",
+    11: "Blood",
+    12: "Occult",
+}
+
+
+# ---- name resolution --------------------------------------------------------
+
+_WEAPON_KEYS = {
+    "right_hand_armament1",
+    "right_hand_armament2",
+    "right_hand_armament3",
+    "left_hand_armament1",
+    "left_hand_armament2",
+    "left_hand_armament3",
+    "arrows1",
+    "arrows2",
+    "bolts1",
+    "bolts2",
+}
+_ARMOR_KEYS = {"head", "chest", "arms", "legs"}
+_TALISMAN_KEYS = {"talisman1", "talisman2", "talisman3", "talisman4"}
+
+
+def _resolve_name(key: str, raw_id: int) -> str:
+    if raw_id in _EMPTY_IDS:
+        return ""
+
+    from er_save_manager.data.item_database import get_item_name
+
+    if key in _WEAPON_KEYS:
+        upgrade = raw_id % 100
+        name = get_item_name(raw_id, upgrade_level=upgrade)
+        if name.startswith("Unknown"):
+            return ""
+        affinity_code = (raw_id // 100) % 100
+        if affinity_code != 0:
+            aff = _AFFINITY_BY_CODE.get(affinity_code, str(affinity_code))
+            name = f"{name} [{aff}]"
+        return name
+
+    if key in _ARMOR_KEYS:
+        name = get_item_name(0x10000000 | raw_id)
+        return "" if name.startswith("Unknown") else name
+
+    if key in _TALISMAN_KEYS:
+        name = get_item_name(0x20000000 | raw_id)
+        if name.startswith("Unknown"):
+            name = get_item_name(0x20000000 | (raw_id & 0x00FFFFFF))
+        return "" if name.startswith("Unknown") else name
+
+    return ""
+
+
+# ---- item picker dialog -----------------------------------------------------
+
+
+class _ItemPickerDialog(ctk.CTkToplevel):
+    """Small searchable item picker for a single equipment slot."""
+
+    _AFFINITY_NAMES = [
+        "Standard",
+        "Heavy",
+        "Keen",
+        "Quality",
+        "Fire",
+        "Flame Art",
+        "Lightning",
+        "Sacred",
+        "Magic",
+        "Cold",
+        "Poison",
+        "Blood",
+        "Occult",
+    ]
+    _AFFINITY_CODES = {n: i for i, n in enumerate(_AFFINITY_NAMES)}
+
+    def __init__(self, parent, slot_key: str, on_select):
+        super().__init__(parent)
+        self.title("Select Item")
+        self.resizable(False, True)
+        self.transient(parent)
+        self.attributes("-alpha", 0)
+
+        self._on_select = on_select
+        self._items: list = []
+        self._visible: list = []
+        self._is_weapon = slot_key in _WEAPON_KEYS
+
+        # Taller if weapon (extra controls)
+        self.geometry("420x520" if self._is_weapon else "420x460")
+
+        self.update_idletasks()
+        self.attributes("-alpha", 1)
+        self.grab_set()
+
+        cats = _SLOT_CATS.get(slot_key, [])
+
+        # Search row
+        top = ctk.CTkFrame(self, fg_color="transparent")
+        top.pack(fill=ctk.X, padx=10, pady=(10, 4))
+        ctk.CTkLabel(top, text="Search:").pack(side=ctk.LEFT, padx=(0, 6))
+        self._search_var = ctk.StringVar()
+        self._search_var.trace_add("write", lambda *_: self._filter())
+        ctk.CTkEntry(top, textvariable=self._search_var, width=320).pack(side=ctk.LEFT)
+
+        # Listbox
+        lb_frame = ctk.CTkFrame(self, fg_color=("gray82", "gray14"), corner_radius=6)
+        lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=4)
+
+        mode = ctk.get_appearance_mode()
+        lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
+        lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
+        lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+
+        sb = tk.Scrollbar(lb_frame)
+        sb.pack(side=tk.RIGHT, fill=tk.Y)
+        self._lb = tk.Listbox(
+            lb_frame,
+            yscrollcommand=sb.set,
+            font=("Consolas", 10),
+            bg=lb_bg,
+            fg=lb_fg,
+            selectbackground=lb_sel,
+            relief=tk.FLAT,
+            borderwidth=0,
+            activestyle="none",
+        )
+        self._lb.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2, pady=2)
+        sb.config(command=self._lb.yview)
+        self._lb.bind("<Double-Button-1>", lambda _e: self._confirm())
+        bind_mousewheel(self._lb)
+
+        # Upgrade + affinity (weapons only)
+        if self._is_weapon:
+            opts = ctk.CTkFrame(self, fg_color="transparent")
+            opts.pack(fill=ctk.X, padx=10, pady=(2, 0))
+
+            ctk.CTkLabel(opts, text="Upgrade:").pack(side=ctk.LEFT, padx=(0, 4))
+            self._upgrade_var = ctk.IntVar(value=0)
+            ctk.CTkEntry(opts, textvariable=self._upgrade_var, width=50).pack(
+                side=ctk.LEFT, padx=(0, 14)
+            )
+
+            ctk.CTkLabel(opts, text="Affinity:").pack(side=ctk.LEFT, padx=(0, 4))
+            self._affinity_var = ctk.StringVar(value="Standard")
+            ctk.CTkComboBox(
+                opts,
+                variable=self._affinity_var,
+                values=self._AFFINITY_NAMES,
+                width=130,
+            ).pack(side=ctk.LEFT)
+
+        # Buttons
+        btn_row = ctk.CTkFrame(self, fg_color="transparent")
+        btn_row.pack(fill=ctk.X, padx=10, pady=(6, 10))
+        ctk.CTkButton(btn_row, text="Select", command=self._confirm, width=120).pack(
+            side=ctk.LEFT, padx=(0, 6)
+        )
+        ctk.CTkButton(
+            btn_row,
+            text="Clear Slot",
+            command=self._clear,
+            width=100,
+            fg_color=("gray70", "gray35"),
+        ).pack(side=ctk.LEFT, padx=(0, 6))
+        ctk.CTkButton(btn_row, text="Cancel", command=self.destroy, width=80).pack(
+            side=ctk.RIGHT
+        )
+
+        self._load_items(cats)
+
+    def _load_items(self, cats: list[str]):
+        try:
+            from er_save_manager.data.item_database import get_item_database
+
+            db = get_item_database()
+            self._items = []
+            for cat in cats:
+                self._items.extend(db.get_items_by_category(cat))
+        except Exception:
+            pass
+        self._filter()
+
+    def _filter(self):
+        query = self._search_var.get().lower().strip()
+        self._visible = (
+            [i for i in self._items if query in i.name.lower()]
+            if query
+            else list(self._items)
+        )
+        self._lb.delete(0, tk.END)
+        for item in self._visible[:300]:
+            self._lb.insert(tk.END, item.name)
+
+    def _confirm(self):
+        sel = self._lb.curselection()
+        if not sel or sel[0] >= len(self._visible):
+            return
+        item = self._visible[sel[0]]
+        item_id = item.id
+
+        if self._is_weapon:
+            try:
+                upgrade = max(0, min(25, int(self._upgrade_var.get())))
+            except (ValueError, tk.TclError):
+                upgrade = 0
+            affinity_code = self._AFFINITY_CODES.get(self._affinity_var.get(), 0)
+            item_id = item_id + affinity_code * 100 + upgrade
+
+        self._on_select(item_id)
+        self.destroy()
+
+    def _clear(self):
+        self._on_select(0)
+        self.destroy()
+
+
+# ---- editor -----------------------------------------------------------------
+
 
 class EquipmentEditor:
-    """Equipment editor for character equipment slots"""
+    """Equipment editor: view and select equipped items per slot."""
 
     def __init__(self, parent, get_save_file_callback, get_char_slot_callback):
-        """
-        Initialize equipment editor
-
-        Args:
-            parent: Parent tkinter widget
-            get_save_file_callback: Function that returns current save file
-            get_char_slot_callback: Function that returns current character slot index
-        """
         self.parent = parent
         self.get_save_file = get_save_file_callback
         self.get_char_slot = get_char_slot_callback
 
-        self.equipment_vars = {}
-        self.equipment_name_labels = {}
+        self.equipment_vars: dict[str, ctk.StringVar] = {}
+        self.equipment_name_labels: dict[str, ctk.CTkLabel] = {}
 
         self.frame = None
 
+    # ---- UI -----------------------------------------------------------------
+
     def setup_ui(self):
-        """Setup the equipment editor UI"""
-        self.frame = ctk.CTkScrollableFrame(
-            self.parent,
-            fg_color="transparent",
-        )
+        self.frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
         self.frame.pack(fill="both", expand=True)
         bind_mousewheel(self.frame)
 
-        # Disabled notice
-        notice_label = ctk.CTkLabel(
-            self.frame,
-            text="⚠️ Equipment editing is temporarily disabled for stability.",
-            font=("Segoe UI", 10, "bold"),
-            text_color="#ff6b6b",
-        )
-        notice_label.pack(pady=10, padx=10)
-
-        # Top row: Weapons and Armor
         top_row = ctk.CTkFrame(self.frame, fg_color="transparent")
         top_row.pack(fill="x", pady=5)
 
-        # Weapons frame (left)
-        weapons_frame = ctk.CTkFrame(
+        self._build_section(
             top_row,
-            fg_color="transparent",
+            "Weapons",
+            "left",
+            [
+                ("Right Hand 1", "right_hand_armament1"),
+                ("Right Hand 2", "right_hand_armament2"),
+                ("Right Hand 3", "right_hand_armament3"),
+                ("Left Hand 1", "left_hand_armament1"),
+                ("Left Hand 2", "left_hand_armament2"),
+                ("Left Hand 3", "left_hand_armament3"),
+            ],
         )
-        weapons_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
-
-        ctk.CTkLabel(
-            weapons_frame,
-            text="Weapons",
-            font=("Segoe UI", 12, "bold"),
-        ).pack(anchor="w", padx=5, pady=(5, 0))
-
-        weapons_grid = ctk.CTkFrame(weapons_frame, fg_color="transparent")
-        weapons_grid.pack(fill="both", expand=True, padx=5, pady=5)
-
-        weapons = [
-            ("Right Hand 1", "right_hand_armament1"),
-            ("Right Hand 2", "right_hand_armament2"),
-            ("Right Hand 3", "right_hand_armament3"),
-            ("Left Hand 1", "left_hand_armament1"),
-            ("Left Hand 2", "left_hand_armament2"),
-            ("Left Hand 3", "left_hand_armament3"),
-        ]
-
-        for i, (label, key) in enumerate(weapons):
-            ctk.CTkLabel(
-                weapons_grid,
-                text=f"{label}:",
-            ).grid(row=i, column=0, sticky="w", padx=5, pady=3)
-            var = ctk.IntVar(value=0)
-            self.equipment_vars[key] = var
-            entry = ctk.CTkComboBox(
-                weapons_grid,
-                variable=var,
-                values=[],
-                width=120,
-                fg_color=("gray86", "gray25"),
-                text_color=("black", "white"),
-                button_color=("gray70", "gray30"),
-                command=lambda _v=None, k=key: self.update_equipment_name(k),
-                state=ctk.DISABLED,
-            )
-            entry.grid(row=i, column=1, padx=5, pady=3)
-
-            # Item name label
-            name_label = ctk.CTkLabel(
-                weapons_grid,
-                text="",
-                text_color="#60a5fa",
-                width=200,
-                anchor="w",
-            )
-            name_label.grid(row=i, column=2, sticky="w", padx=5, pady=3)
-            self.equipment_name_labels[key] = name_label
-            trace_variable(var, "w", lambda *args, k=key: self.update_equipment_name(k))
-
-        # Armor frame (right)
-        armor_frame = ctk.CTkFrame(
+        self._build_section(
             top_row,
-            fg_color=("gray86", "gray25"),
+            "Armor",
+            "left",
+            [
+                ("Head", "head"),
+                ("Chest", "chest"),
+                ("Arms", "arms"),
+                ("Legs", "legs"),
+            ],
         )
-        armor_frame.pack(side="left", fill="both", expand=True, padx=(5, 0))
 
-        ctk.CTkLabel(
-            armor_frame,
-            text="Armor",
-            font=("Segoe UI", 12, "bold"),
-            text_color=("black", "white"),
-        ).pack(anchor="w", padx=5, pady=(5, 0))
+        mid_row = ctk.CTkFrame(self.frame, fg_color="transparent")
+        mid_row.pack(fill="x", pady=5)
 
-        armor_grid = ctk.CTkFrame(armor_frame, fg_color="transparent")
-        armor_grid.pack(fill="both", expand=True, padx=5, pady=5)
-
-        armor = [
-            ("Head", "head"),
-            ("Chest", "chest"),
-            ("Arms", "arms"),
-            ("Legs", "legs"),
-        ]
-
-        for i, (label, key) in enumerate(armor):
-            ctk.CTkLabel(
-                armor_grid,
-                text=f"{label}:",
-                text_color=("black", "white"),
-            ).grid(row=i, column=0, sticky="w", padx=5, pady=3)
-            var = ctk.IntVar(value=0)
-            self.equipment_vars[key] = var
-            entry = ctk.CTkComboBox(
-                armor_grid,
-                variable=var,
-                values=[],
-                width=120,
-                fg_color=("gray86", "gray25"),
-                text_color=("black", "white"),
-                button_color=("gray70", "gray30"),
-                command=lambda _v=None, k=key: self.update_equipment_name(k),
-                state=ctk.DISABLED,
-            )
-            entry.grid(row=i, column=1, padx=5, pady=3)
-
-            # Item name label
-            name_label = ctk.CTkLabel(
-                armor_grid,
-                text="",
-                text_color="#60a5fa",
-                width=200,
-                anchor="w",
-            )
-            name_label.grid(row=i, column=2, sticky="w", padx=5, pady=3)
-            self.equipment_name_labels[key] = name_label
-            trace_variable(var, "w", lambda *args, k=key: self.update_equipment_name(k))
-
-        # Middle row: Talismans and Arrows/Bolts
-        middle_row = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
-        middle_row.pack(fill="x", pady=5)
-
-        # Talismans frame (left)
-        talisman_frame = ctk.CTkFrame(
-            middle_row,
-            fg_color=("gray86", "gray25"),
+        self._build_section(
+            mid_row,
+            "Talismans",
+            "left",
+            [
+                ("Talisman 1", "talisman1"),
+                ("Talisman 2", "talisman2"),
+                ("Talisman 3", "talisman3"),
+                ("Talisman 4", "talisman4"),
+            ],
         )
-        talisman_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
-
-        ctk.CTkLabel(
-            talisman_frame,
-            text="Talismans",
-            font=("Segoe UI", 12, "bold"),
-            text_color=("black", "white"),
-        ).pack(anchor="w", padx=5, pady=(5, 0))
-
-        talisman_grid = ctk.CTkFrame(talisman_frame, fg_color="transparent")
-        talisman_grid.pack(fill="both", expand=True, padx=5, pady=5)
-
-        talismans = [
-            ("Talisman 1", "talisman1"),
-            ("Talisman 2", "talisman2"),
-            ("Talisman 3", "talisman3"),
-            ("Talisman 4", "talisman4"),
-        ]
-
-        for i, (label, key) in enumerate(talismans):
-            ctk.CTkLabel(
-                talisman_grid,
-                text=f"{label}:",
-                text_color=("black", "white"),
-            ).grid(row=i, column=0, sticky="w", padx=5, pady=3)
-            var = ctk.IntVar(value=0)
-            self.equipment_vars[key] = var
-            entry = ctk.CTkComboBox(
-                talisman_grid,
-                variable=var,
-                values=[],
-                width=120,
-                fg_color=("gray86", "gray25"),
-                text_color=("black", "white"),
-                button_color=("gray70", "gray30"),
-                command=lambda _v=None, k=key: self.update_equipment_name(k),
-            )
-            entry.grid(row=i, column=1, padx=5, pady=3)
-
-            # Item name label
-            name_label = ctk.CTkLabel(
-                talisman_grid,
-                text="",
-                text_color="#60a5fa",
-                width=200,
-                anchor="w",
-            )
-            name_label.grid(row=i, column=2, sticky="w", padx=5, pady=3)
-            self.equipment_name_labels[key] = name_label
-            trace_variable(var, "w", lambda *args, k=key: self.update_equipment_name(k))
-
-        # Arrows/Bolts frame (right)
-        ammo_frame = ctk.CTkFrame(
-            middle_row,
-            fg_color=("gray86", "gray25"),
+        self._build_section(
+            mid_row,
+            "Arrows & Bolts",
+            "left",
+            [
+                ("Arrows 1", "arrows1"),
+                ("Arrows 2", "arrows2"),
+                ("Bolts 1", "bolts1"),
+                ("Bolts 2", "bolts2"),
+            ],
         )
-        ammo_frame.pack(side="left", fill="both", expand=True, padx=(5, 0))
 
-        ctk.CTkLabel(
-            ammo_frame,
-            text="Arrows & Bolts",
-            font=("Segoe UI", 12, "bold"),
-            text_color=("black", "white"),
-        ).pack(anchor="w", padx=5, pady=(5, 0))
-
-        ammo_grid = ctk.CTkFrame(ammo_frame, fg_color="transparent")
-        ammo_grid.pack(fill="both", expand=True, padx=5, pady=5)
-
-        ammo = [
-            ("Arrows 1", "arrows1"),
-            ("Arrows 2", "arrows2"),
-            ("Bolts 1", "bolts1"),
-            ("Bolts 2", "bolts2"),
-        ]
-
-        for i, (label, key) in enumerate(ammo):
-            ctk.CTkLabel(
-                ammo_grid,
-                text=f"{label}:",
-                text_color=("black", "white"),
-            ).grid(row=i, column=0, sticky="w", padx=5, pady=3)
-            var = ctk.IntVar(value=0)
-            self.equipment_vars[key] = var
-            entry = ctk.CTkComboBox(
-                ammo_grid,
-                variable=var,
-                values=[],
-                width=120,
-                fg_color=("gray86", "gray25"),
-                text_color=("black", "white"),
-                button_color=("gray70", "gray30"),
-                command=lambda _v=None, k=key: self.update_equipment_name(k),
-            )
-            entry.grid(row=i, column=1, padx=5, pady=3)
-
-            # Item name label
-            name_label = ctk.CTkLabel(
-                ammo_grid,
-                text="",
-                text_color="#60a5fa",
-                width=200,
-                anchor="w",
-            )
-            name_label.grid(row=i, column=2, sticky="w", padx=5, pady=3)
-            self.equipment_name_labels[key] = name_label
-            trace_variable(var, "w", lambda *args, k=key: self.update_equipment_name(k))
-
-        # Bottom: Spells (12 slots in 2 columns)
-        spells_frame = ctk.CTkFrame(
-            self.frame,
-            fg_color=("gray86", "gray25"),
-        )
-        spells_frame.pack(fill="x", pady=5)
-
-        ctk.CTkLabel(
-            spells_frame,
-            text="Spells (Memory Slots)",
-            font=("Segoe UI", 12, "bold"),
-            text_color=("black", "white"),
-        ).pack(anchor="w", padx=5, pady=(5, 0))
-
-        spells_grid = ctk.CTkFrame(spells_frame, fg_color="transparent")
-        spells_grid.pack(fill="x", padx=5, pady=5)
-
-        for i in range(12):
-            row = i // 2
-            col = (i % 2) * 3  # Changed to 3 to make room for name labels
-
-            ctk.CTkLabel(
-                spells_grid,
-                text=f"Spell {i + 1}:",
-                text_color=("black", "white"),
-            ).grid(row=row, column=col, sticky="w", padx=5, pady=3)
-            var = ctk.IntVar(value=0)
-            key = f"spell{i + 1}"
-            self.equipment_vars[key] = var
-            entry = ctk.CTkComboBox(
-                spells_grid,
-                variable=var,
-                values=[],
-                width=120,
-                fg_color=("gray86", "gray25"),
-                text_color=("black", "white"),
-                button_color=("gray70", "gray30"),
-                command=lambda _v=None, k=key: self.update_equipment_name(k),
-            )
-            entry.grid(row=row, column=col + 1, padx=5, pady=3)
-
-            # Item name label
-            name_label = ctk.CTkLabel(
-                spells_grid,
-                text="",
-                text_color="#60a5fa",
-                width=160,
-                anchor="w",
-            )
-            name_label.grid(row=row, column=col + 2, sticky="w", padx=5, pady=3)
-            self.equipment_name_labels[key] = name_label
-            trace_variable(var, "w", lambda *args, k=key: self.update_equipment_name(k))
-
-        # Apply button
-        button_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
-        button_frame.pack(fill="x", pady=10)
-
+        btn_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        btn_frame.pack(fill="x", pady=10)
         ctk.CTkButton(
-            button_frame,
+            btn_frame,
             text="Apply Equipment Changes",
             command=self.apply_changes,
             width=240,
-            state=ctk.DISABLED,
-        ).pack()
+        ).pack(pady=6)
+
+    def _build_section(
+        self, parent, title: str, side: str, slots: list[tuple[str, str]]
+    ):
+        frame = ctk.CTkFrame(parent, fg_color=("gray86", "gray25"))
+        frame.pack(side=side, fill="both", expand=True, padx=4)
+
+        ctk.CTkLabel(frame, text=title, font=("Segoe UI", 12, "bold")).pack(
+            anchor="w", padx=8, pady=(6, 0)
+        )
+
+        grid = ctk.CTkFrame(frame, fg_color="transparent")
+        grid.pack(fill="both", expand=True, padx=6, pady=4)
+
+        for i, (label, key) in enumerate(slots):
+            ctk.CTkLabel(grid, text=f"{label}:").grid(
+                row=i, column=0, sticky="w", padx=4, pady=3
+            )
+
+            var = ctk.StringVar(value="0")
+            self.equipment_vars[key] = var
+
+            # Read-only display showing the resolved item name; click to pick
+            name_label = ctk.CTkLabel(
+                grid,
+                text="(empty)",
+                text_color="#60a5fa",
+                width=220,
+                anchor="w",
+                cursor="hand2",
+            )
+            name_label.grid(row=i, column=1, sticky="w", padx=4, pady=3)
+            self.equipment_name_labels[key] = name_label
+            name_label.bind("<Button-1>", lambda _e, k=key: self._open_picker(k))
+
+            # Small pick button
+            ctk.CTkButton(
+                grid,
+                text="...",
+                width=28,
+                height=24,
+                command=lambda k=key: self._open_picker(k),
+            ).grid(row=i, column=2, padx=(0, 4), pady=3)
+
+            trace_variable(var, "w", lambda *_a, k=key: self.update_equipment_name(k))
+
+    # ---- picker -------------------------------------------------------------
+
+    def _open_picker(self, key: str):
+        def on_select(item_id: int):
+            self.equipment_vars[key].set(str(item_id))
+
+        _ItemPickerDialog(self.parent, key, on_select)
+
+    # ---- data ---------------------------------------------------------------
 
     def load_equipment(self):
-        """Load equipment from current character slot"""
         save_file = self.get_save_file()
         if not save_file:
             return
@@ -366,59 +440,36 @@ class EquipmentEditor:
             return
 
         equip = slot.equipped_items_item_id
+        for key in self.equipment_vars:
+            raw = getattr(equip, key, 0) or 0
+            self.equipment_vars[key].set(str(raw))
 
-        # Load all equipment IDs
-        self.equipment_vars["right_hand_armament1"].set(
-            str(getattr(equip, "right_hand_armament1", 0))
-        )
-        self.equipment_vars["right_hand_armament2"].set(
-            str(getattr(equip, "right_hand_armament2", 0))
-        )
-        self.equipment_vars["right_hand_armament3"].set(
-            str(getattr(equip, "right_hand_armament3", 0))
-        )
-        self.equipment_vars["left_hand_armament1"].set(
-            str(getattr(equip, "left_hand_armament1", 0))
-        )
-        self.equipment_vars["left_hand_armament2"].set(
-            str(getattr(equip, "left_hand_armament2", 0))
-        )
-        self.equipment_vars["left_hand_armament3"].set(
-            str(getattr(equip, "left_hand_armament3", 0))
-        )
+        for key in self.equipment_vars:
+            self.update_equipment_name(key)
 
-        self.equipment_vars["head"].set(str(getattr(equip, "head", 0)))
-        self.equipment_vars["chest"].set(str(getattr(equip, "chest", 0)))
-        self.equipment_vars["arms"].set(str(getattr(equip, "arms", 0)))
-        self.equipment_vars["legs"].set(str(getattr(equip, "legs", 0)))
+    def update_equipment_name(self, key: str):
+        label = self.equipment_name_labels.get(key)
+        if label is None:
+            return
+        try:
+            raw = self._get_raw(key)
+            name = _resolve_name(key, raw)
+            if not name:
+                label.configure(text="(empty)", text_color=("gray50", "gray55"))
+                return
+            if len(name) > 32:
+                name = name[:29] + "..."
+            label.configure(text=name, text_color="#60a5fa")
+        except Exception:
+            label.configure(text="(empty)", text_color=("gray50", "gray55"))
 
-        self.equipment_vars["talisman1"].set(str(getattr(equip, "talisman1", 0)))
-        self.equipment_vars["talisman2"].set(str(getattr(equip, "talisman2", 0)))
-        self.equipment_vars["talisman3"].set(str(getattr(equip, "talisman3", 0)))
-        self.equipment_vars["talisman4"].set(str(getattr(equip, "talisman4", 0)))
-
-        self.equipment_vars["arrows1"].set(str(getattr(equip, "arrows1", 0)))
-        self.equipment_vars["arrows2"].set(str(getattr(equip, "arrows2", 0)))
-        self.equipment_vars["bolts1"].set(str(getattr(equip, "bolts1", 0)))
-        self.equipment_vars["bolts2"].set(str(getattr(equip, "bolts2", 0)))
-
-        # Load spells if they exist
-        for i in range(1, 13):
-            key = f"spell{i}"
-            if hasattr(equip, key):
-                self.equipment_vars[key].set(str(getattr(equip, key, 0)))
-
-        # Update all name labels
-        for key in self.equipment_vars.keys():
-            if key in self.equipment_name_labels:
-                self.update_equipment_name(key)
+    # ---- apply --------------------------------------------------------------
 
     def apply_changes(self):
-        """Apply equipment changes to save file"""
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                "No Save", "Please load a save file first.", parent=self.parent
             )
             return
 
@@ -432,113 +483,49 @@ class EquipmentEditor:
             return
 
         try:
-            # Ensure raw_data is mutable
             if isinstance(save_file._raw_data, bytes):
                 save_file._raw_data = bytearray(save_file._raw_data)
 
-            # Create backup
-            from pathlib import Path
-
-            from er_save_manager.backup.manager import BackupManager
-
             save_path = getattr(save_file, "_save_path", None)
             if save_path:
-                manager = BackupManager(Path(save_path))
-                manager.create_backup(
+                from er_save_manager.backup.manager import BackupManager
+
+                BackupManager(Path(save_path)).create_backup(
                     description=f"before_edit_equipment_slot_{slot_idx + 1}",
                     operation=f"edit_equipment_slot_{slot_idx + 1}",
                     save=save_file,
                 )
 
-            # Modify equipment
             slot = save_file.characters[slot_idx]
-            if hasattr(slot, "equipped_items_item_id") and slot.equipped_items_item_id:
-                equip = slot.equipped_items_item_id
-
-                # Update all equipment
-                equip.right_hand_armament1 = self._get_equipment_value(
-                    "right_hand_armament1"
-                )
-                equip.right_hand_armament2 = self._get_equipment_value(
-                    "right_hand_armament2"
-                )
-                equip.right_hand_armament3 = self._get_equipment_value(
-                    "right_hand_armament3"
-                )
-                equip.left_hand_armament1 = self._get_equipment_value(
-                    "left_hand_armament1"
-                )
-                equip.left_hand_armament2 = self._get_equipment_value(
-                    "left_hand_armament2"
-                )
-                equip.left_hand_armament3 = self._get_equipment_value(
-                    "left_hand_armament3"
-                )
-
-                equip.head = self._get_equipment_value("head")
-                equip.chest = self._get_equipment_value("chest")
-                equip.arms = self._get_equipment_value("arms")
-                equip.legs = self._get_equipment_value("legs")
-
-                equip.talisman1 = self._get_equipment_value("talisman1")
-                equip.talisman2 = self._get_equipment_value("talisman2")
-                equip.talisman3 = self._get_equipment_value("talisman3")
-                equip.talisman4 = self._get_equipment_value("talisman4")
-
-                equip.arrows1 = self._get_equipment_value("arrows1")
-                equip.arrows2 = self._get_equipment_value("arrows2")
-                equip.bolts1 = self._get_equipment_value("bolts1")
-                equip.bolts2 = self._get_equipment_value("bolts2")
-
-                # Update spells
-                for i in range(1, 13):
-                    key = f"spell{i}"
-                    if hasattr(equip, key):
-                        setattr(equip, key, self._get_equipment_value(key))
-
-                CTkMessageBox.showinfo(
-                    "Success", "Equipment updated successfully!", parent=self.parent
-                )
-            else:
+            if (
+                not hasattr(slot, "equipped_items_item_id")
+                or not slot.equipped_items_item_id
+            ):
                 CTkMessageBox.showerror(
-                    "Error", "Character has no equipment data", parent=self.parent
+                    "Error", "Character has no equipment data.", parent=self.parent
                 )
+                return
 
+            equip = slot.equipped_items_item_id
+            for key in self.equipment_vars:
+                if hasattr(equip, key):
+                    setattr(equip, key, self._get_raw(key))
+
+            save_file.recalculate_checksums()
+            if save_path:
+                save_file.to_file(Path(save_path))
+
+            CTkMessageBox.showinfo(
+                "Done", "Equipment changes applied.", parent=self.parent
+            )
         except Exception as e:
             CTkMessageBox.showerror(
                 "Error", f"Failed to apply equipment changes:\n{e}", parent=self.parent
             )
 
-    def update_equipment_name(self, equipment_key):
-        """Update equipment name label when ID changes"""
-        if equipment_key not in self.equipment_name_labels:
-            return
-
+    def _get_raw(self, key: str) -> int:
         try:
-            item_id = self._get_equipment_value(equipment_key)
-            if item_id == 0 or item_id == -1:
-                self.equipment_name_labels[equipment_key].configure(text="")
-                return
-
-            # Get name from item database
-            item_name = get_item_name(item_id)
-
-            # Truncate if too long
-            if len(item_name) > 28:
-                item_name = item_name[:25] + "..."
-
-            self.equipment_name_labels[equipment_key].configure(text=item_name)
-        except Exception:
-            # Fallback for invalid/unknown IDs or decode failures
-            self.equipment_name_labels[equipment_key].configure(text="(Unknown)")
-
-    def _get_equipment_value(self, key):
-        """Safely parse equipment value from its widget variable"""
-        try:
-            value = self.equipment_vars.get(key)
-            if value is None:
-                return 0
-            raw = value.get()
+            raw = self.equipment_vars[key].get()
             return int(raw) if raw not in ("", None) else 0
-        except Exception:
+        except (ValueError, KeyError):
             return 0
