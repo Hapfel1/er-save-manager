@@ -325,7 +325,7 @@ wheels = [
 
 [[package]]
 name = "er-save-manager"
-version = "0.14.1"
+version = "0.15.0"
 source = { editable = "." }
 dependencies = [
     { name = "certifi" },
