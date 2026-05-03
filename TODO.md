@@ -1,3 +1,6 @@
+auto load character on selecting slot and do equipment editor then test everything release troubleshooter and this bump to v1.0.0 import feature from nyasu.business
+
+add detection for co2 done
 fix csprofilesummary when importing character via erc as well as steamid
 
 fix weapon names in the character submit flow

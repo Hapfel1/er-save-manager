@@ -72,6 +72,9 @@ class UserDataX:
     time_offset: int = 0
     steamid_offset: int = 0
     dlc_offset: int = 0
+    inventory_held_offset: int = 0
+    inventory_storage_offset: int = 0
+    blood_stain_offset: int = 0
     # Header (4 + 4 + 8 + 16 = 32 bytes)
     version: int = 0
     map_id: MapId = field(default_factory=MapId)
@@ -80,6 +83,7 @@ class UserDataX:
 
     # Gaitem map (VARIABLE LENGTH! 5118 or 5120 entries)
     gaitem_map: list[Gaitem] = field(default_factory=list)
+    gaitem_offsets: list[int] = field(default_factory=list)
 
     # Player data (0x1B0 = 432 bytes)
     player_game_data: PlayerGameData = field(default_factory=PlayerGameData)
@@ -299,7 +303,11 @@ class UserDataX:
 
         # Read Gaitem map (VARIABLE LENGTH!)
         gaitem_count = 0x13FE if obj.version <= 81 else 0x1400  # 5118 or 5120
-        obj.gaitem_map = [Gaitem.read(f) for _ in range(gaitem_count)]
+        obj.gaitem_map = []
+        obj.gaitem_offsets = []  # absolute offset of each gaitem entry relative to slot data start
+        for _ in range(gaitem_count):
+            obj.gaitem_offsets.append(f.tell() - data_start)
+            obj.gaitem_map.append(Gaitem.read(f))
 
         # Read player game data (432 bytes)
         obj.player_game_data_offset = f.tell()
@@ -317,6 +325,7 @@ class UserDataX:
         # Read inventory held
         held_common_cap = 0xA80  # 2,688 common items
         held_key_cap = 0x180  # 384 key items
+        obj.inventory_held_offset = f.tell() - data_start
         obj.inventory_held = Inventory.read(f, held_common_cap, held_key_cap)
 
         # Read more equipment
@@ -331,6 +340,7 @@ class UserDataX:
         obj.face_data = FaceData.read(f, in_profile_summary=False)
 
         # Read inventory storage
+        obj.inventory_storage_offset = f.tell() - data_start
         obj.inventory_storage_box = Inventory.read(f, 0x780, 0x80)
 
         # Parse remaining structures
