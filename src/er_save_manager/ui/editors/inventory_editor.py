@@ -220,7 +220,7 @@ class InventoryEditor:
             lb_frame,
             yscrollcommand=sb.set,
             font=("Consolas", 9),
-            height=7,
+            height=5,
             bg=lb_bg,
             fg=lb_fg,
             selectbackground=lb_sel,
@@ -248,17 +248,9 @@ class InventoryEditor:
         sep = ctk.CTkFrame(parent, height=1, fg_color=("gray75", "gray30"))
         sep.pack(fill=ctk.X, padx=10, pady=(0, 8))
 
-        ctk.CTkButton(
-            parent,
-            text="Add Item",
-            command=self.add_item,
-            height=34,
-            font=("Segoe UI", 11, "bold"),
-        ).pack(side=ctk.BOTTOM, fill=ctk.X, padx=10, pady=(0, 10))
-
-        # Options grid - also anchored above the button
+        # Options grid packed top-down after the sep so all rows are always visible
         opts = ctk.CTkFrame(parent, fg_color="transparent")
-        opts.pack(side=ctk.BOTTOM, fill=ctk.X, padx=10, pady=(0, 6))
+        opts.pack(fill=ctk.X, padx=10, pady=(0, 4))
         opts.columnconfigure(1, weight=1)
         opts.columnconfigure(3, weight=1)
 
@@ -337,6 +329,14 @@ class InventoryEditor:
         )
         self._aow_clear_btn.grid(row=2, column=3, sticky=ctk.W, pady=4)
         self._selected_gem_id: int = 0
+
+        ctk.CTkButton(
+            parent,
+            text="Add Item",
+            command=self.add_item,
+            height=34,
+            font=("Segoe UI", 11, "bold"),
+        ).pack(fill=ctk.X, padx=10, pady=(4, 10))
 
     # ---- right panel: current inventory -------------------------------------
 
