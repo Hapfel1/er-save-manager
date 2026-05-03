@@ -288,10 +288,17 @@ class _ItemPickerDialog(ctk.CTkToplevel):
 class EquipmentEditor:
     """Equipment editor: view and select equipped items per slot."""
 
-    def __init__(self, parent, get_save_file_callback, get_char_slot_callback):
+    def __init__(
+        self,
+        parent,
+        get_save_file_callback,
+        get_char_slot_callback,
+        get_save_path_callback,
+    ):
         self.parent = parent
         self.get_save_file = get_save_file_callback
         self.get_char_slot = get_char_slot_callback
+        self.get_save_path = get_save_path_callback
 
         self.equipment_vars: dict[str, ctk.StringVar] = {}
         self.equipment_name_labels: dict[str, ctk.CTkLabel] = {}
@@ -486,7 +493,7 @@ class EquipmentEditor:
             if isinstance(save_file._raw_data, bytes):
                 save_file._raw_data = bytearray(save_file._raw_data)
 
-            save_path = getattr(save_file, "_save_path", None)
+            save_path = self.get_save_path()
             if save_path:
                 from er_save_manager.backup.manager import BackupManager
 
