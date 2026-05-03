@@ -3,9 +3,12 @@ Elden Ring Item Database
 Loads and provides access to all items organized by category
 """
 
+import re as _re
 from dataclasses import dataclass
 from enum import IntEnum
 from pathlib import Path
+
+_UPGRADE_SUFFIX_RE = _re.compile(r" \+\s*\d+$")
 
 
 class ItemCategory(IntEnum):
@@ -107,6 +110,11 @@ class ItemDatabase:
                     item_id = int(parts[0])
                     item_name = parts[1].strip()
 
+                    # Skip upgrade variant entries - browser shows base only;
+                    # upgrade level is applied at spawn time via the upgrade field.
+                    if _UPGRADE_SUFFIX_RE.search(item_name):
+                        continue
+
                     item = Item(
                         id=item_id,
                         name=item_name,
@@ -199,6 +207,15 @@ def get_item_name(full_item_id: int, upgrade_level: int = 0) -> str:
         if category == ItemCategory.WEAPON and upgrade_level > 0:
             return f"{item.name} +{upgrade_level}"
         return item.name
+
+    # For goods: ashes encode upgrade as id % 1000; strip to find base entry
+    if category == ItemCategory.GOODS:
+        base_id_ash = (base_id // 1000) * 1000
+        if base_id_ash != base_id:
+            item = db.get_item_by_id(category | base_id_ash)
+            if item:
+                upgrade = base_id % 1000
+                return f"{item.name} +{upgrade}" if upgrade else item.name
 
     # For weapons: try stripping affinity+upgrade (last 4 digits) to get true base
     if category == ItemCategory.WEAPON:
