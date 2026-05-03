@@ -51,7 +51,7 @@ def _item_name(full_item_id: int, upgrade: int = 0) -> str:
     from er_save_manager.data.item_database import get_item_database, get_item_name
 
     name = get_item_name(full_item_id, upgrade)
-    if name.startswith("Unknown Item") and (full_item_id & 0xF0000000) == 0x40000000:
+    if name.startswith("Unknown") and (full_item_id & 0xF0000000) == 0x40000000:
         # B0 handles cannot distinguish goods from talismans; try talisman category
         alt = 0x20000000 | (full_item_id & 0x0FFFFFFF)
         alt_name = get_item_database().get_item_by_id(alt)
@@ -66,216 +66,25 @@ def _item_name(full_item_id: int, upgrade: int = 0) -> str:
 class InventoryEditor:
     """Inventory editor: browse, add, remove, and adjust item quantities."""
 
-    def __init__(
-        self,
-        parent,
-        get_save_file_callback,
-        get_char_slot_callback,
-        get_save_path_callback,
-        ensure_mutable_callback,
-    ):
-        self.parent = parent
-        self.get_save_file = get_save_file_callback
-        self.get_char_slot = get_char_slot_callback
-        self.get_save_path = get_save_path_callback
-        self.ensure_mutable = ensure_mutable_callback
+    # ---- constants ----------------------------------------------------------
 
-        self.selected_item = None  # Item from the search browser
-        self._item_data: list[tuple[int, str] | None] = []  # parallel to listbox rows
-
-        self.inv_quantity_var = None
-        self.inv_upgrade_var = None
-        self.inv_location_var = None
-        self.inv_filter_var = None
-        self.inventory_listbox = None
-        self._search_var = None
-        self._search_cat_var = None
-        self._results_listbox = None
-        self._results_items: list = []  # Item objects matching current search
-        self._selected_item_label = None
-
-        self.frame = None
-
-    # ---- UI setup -----------------------------------------------------------
-
-    def setup_ui(self):
-        self.frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
-        self.frame.pack(fill=ctk.BOTH, expand=True)
-        bind_mousewheel(self.frame)
-
-        self._build_add_panel()
-        self._build_inventory_list()
-        self._build_action_bar()
-
-    def _build_add_panel(self):
-        add_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
-        add_frame.pack(fill=ctk.X, pady=5, padx=10)
-
-        ctk.CTkLabel(add_frame, text="Add Item", font=("Segoe UI", 12, "bold")).grid(
-            row=0, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(5, 0)
-        )
-
-        # Search row
-        ctk.CTkLabel(add_frame, text="Search:").grid(
-            row=1, column=0, sticky=ctk.W, padx=5, pady=3
-        )
-        self._search_var = ctk.StringVar()
-        self._search_var.trace_add("write", lambda *_: self._search_items())
-        search_entry = ctk.CTkEntry(add_frame, textvariable=self._search_var, width=200)
-        search_entry.grid(row=1, column=1, padx=5, pady=3)
-
-        # Category filter for search
-        self._search_cat_var = ctk.StringVar(value="All")
-        search_cat = ctk.CTkComboBox(
-            add_frame,
-            variable=self._search_cat_var,
-            values=["All"],
-            width=160,
-            command=lambda _e=None: self._search_items(),
-        )
-        search_cat.grid(row=1, column=2, padx=5, pady=3)
-        self._search_cat_combo = search_cat
-
-        # Populate category list after DB loads
-        self._populate_search_categories()
-
-        # Search results listbox
-        results_container = ctk.CTkFrame(add_frame, fg_color="transparent")
-        results_container.grid(
-            row=2, column=0, columnspan=4, sticky=ctk.EW, padx=5, pady=3
-        )
-        results_sb = tk.Scrollbar(results_container)
-        results_sb.pack(side=tk.RIGHT, fill=tk.Y)
-
-        mode = ctk.get_appearance_mode()
-        lb_bg = "#1f1f28" if mode == "Dark" else "#f0f0f0"
-        lb_fg = "#e5e5f5" if mode == "Dark" else "#000000"
-        lb_sel = "#c9a0dc" if mode == "Dark" else "#b8a0d0"
-
-        self._results_listbox = tk.Listbox(
-            results_container,
-            yscrollcommand=results_sb.set,
-            font=("Consolas", 9),
-            height=5,
-            bg=lb_bg,
-            fg=lb_fg,
-            selectbackground=lb_sel,
-            relief=tk.FLAT,
-        )
-        self._results_listbox.pack(side=tk.LEFT, fill=ctk.BOTH, expand=True)
-        results_sb.config(command=self._results_listbox.yview)
-        self._results_listbox.bind("<<ListboxSelect>>", self._on_result_select)
-
-        # Selected item label
-        self._selected_item_label = ctk.CTkLabel(
-            add_frame, text="No item selected", text_color=("gray50", "gray70")
-        )
-        self._selected_item_label.grid(
-            row=3, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(0, 3)
-        )
-
-        # Options row: qty, upgrade, location, add button
-        ctk.CTkLabel(add_frame, text="Qty:").grid(
-            row=4, column=0, sticky=ctk.W, padx=5, pady=3
-        )
-        self.inv_quantity_var = ctk.IntVar(value=1)
-        ctk.CTkEntry(add_frame, textvariable=self.inv_quantity_var, width=60).grid(
-            row=4, column=1, sticky=ctk.W, padx=5, pady=3
-        )
-
-        ctk.CTkLabel(add_frame, text="Upgrade:").grid(
-            row=4, column=2, sticky=ctk.W, padx=(10, 5), pady=3
-        )
-        self.inv_upgrade_var = ctk.IntVar(value=0)
-        ctk.CTkEntry(add_frame, textvariable=self.inv_upgrade_var, width=50).grid(
-            row=4, column=3, sticky=ctk.W, padx=5, pady=3
-        )
-
-        ctk.CTkLabel(add_frame, text="Location:").grid(
-            row=5, column=0, sticky=ctk.W, padx=5, pady=3
-        )
-        self.inv_location_var = ctk.StringVar(value="held")
-        ctk.CTkComboBox(
-            add_frame,
-            variable=self.inv_location_var,
-            values=["held", "storage"],
-            width=120,
-        ).grid(row=5, column=1, sticky=ctk.W, padx=5, pady=3)
-
-        ctk.CTkButton(
-            add_frame, text="Add Item", command=self.add_item, width=120
-        ).grid(row=5, column=2, columnspan=2, padx=5, pady=3)
-
-    def _build_inventory_list(self):
-        list_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
-        list_frame.pack(fill=ctk.BOTH, expand=True, pady=5, padx=10)
-
-        ctk.CTkLabel(
-            list_frame, text="Current Inventory", font=("Segoe UI", 12, "bold")
-        ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
-
-        filter_frame = ctk.CTkFrame(list_frame, fg_color="transparent")
-        filter_frame.pack(fill=ctk.X, pady=(0, 5))
-        ctk.CTkLabel(filter_frame, text="Show:").pack(side=ctk.LEFT, padx=5)
-        self.inv_filter_var = ctk.StringVar(value="All")
-        ctk.CTkComboBox(
-            filter_frame,
-            variable=self.inv_filter_var,
-            values=["All", "Held", "Storage", "Key Items"],
-            width=140,
-            command=lambda _e=None: self.refresh_inventory(),
-        ).pack(side=ctk.LEFT, padx=5)
-
-        inv_container = ctk.CTkFrame(list_frame, fg_color="transparent")
-        inv_container.pack(fill=ctk.BOTH, expand=True)
-        sb = tk.Scrollbar(inv_container)
-        sb.pack(side=tk.RIGHT, fill=tk.Y)
-
-        mode = ctk.get_appearance_mode()
-        lb_bg = "#1f1f28" if mode == "Dark" else "#f0f0f0"
-        lb_fg = "#e5e5f5" if mode == "Dark" else "#000000"
-        lb_sel = "#c9a0dc" if mode == "Dark" else "#b8a0d0"
-
-        self.inventory_listbox = tk.Listbox(
-            inv_container,
-            yscrollcommand=sb.set,
-            font=("Consolas", 10),
-            height=18,
-            bg=lb_bg,
-            fg=lb_fg,
-            selectbackground=lb_sel,
-            relief=tk.FLAT,
-        )
-        self.inventory_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        sb.config(command=self.inventory_listbox.yview)
-        bind_mousewheel(self.inventory_listbox)
-
-    def _build_action_bar(self):
-        bar = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
-        bar.pack(fill=ctk.X, pady=5, padx=10)
-
-        self._remove_btn = ctk.CTkButton(
-            bar, text="Remove Selected", command=self.remove_item, width=160
-        )
-        self._remove_btn.pack(side=ctk.LEFT, padx=5, pady=5)
-
-        self._set_qty_btn = ctk.CTkButton(
-            bar, text="Set Quantity", command=self.set_quantity, width=120
-        )
-        self._set_qty_btn.pack(side=ctk.LEFT, padx=5, pady=5)
-
-        ctk.CTkButton(
-            bar, text="Refresh", command=self.refresh_inventory, width=100
-        ).pack(side=ctk.LEFT, padx=5, pady=5)
-
-        ctk.CTkLabel(
-            bar,
-            text="Select an item from the list then use Remove or Set Quantity.",
-            text_color=("gray40", "gray70"),
-            font=("Segoe UI", 9),
-        ).pack(side=ctk.LEFT, padx=10)
-
-    # ---- search browser helpers ---------------------------------------------
+    _AFFINITIES: list[tuple[int, str]] = [
+        (0, "Standard"),
+        (1, "Heavy"),
+        (2, "Keen"),
+        (3, "Quality"),
+        (4, "Fire"),
+        (5, "Flame Art"),
+        (6, "Lightning"),
+        (7, "Sacred"),
+        (8, "Magic"),
+        (9, "Cold"),
+        (10, "Poison"),
+        (11, "Blood"),
+        (12, "Occult"),
+    ]
+    _AFFINITY_BY_CODE: dict[int, str] = dict(_AFFINITIES)
+    _AFFINITY_NAMES: list[str] = [name for _, name in _AFFINITIES]
 
     _SEAMLESS_CATS = {"Seamless Co-op Items"}
     _CONVERGENCE_CATS = {
@@ -292,6 +101,300 @@ class InventoryEditor:
         "Convergence Consumables",
         "Convergence Crystal Tears",
     }
+
+    def __init__(
+        self,
+        parent,
+        get_save_file_callback,
+        get_char_slot_callback,
+        get_save_path_callback,
+        ensure_mutable_callback,
+    ):
+        self.parent = parent
+        self.get_save_file = get_save_file_callback
+        self.get_char_slot = get_char_slot_callback
+        self.get_save_path = get_save_path_callback
+        self.ensure_mutable = ensure_mutable_callback
+
+        self.selected_item = None
+        # All parsed rows before search filter: (text, full_id, location) - header rows have None full_id
+        self._all_rows: list[tuple[str, int | None, str | None]] = []
+        # Rows currently visible in listbox (parallel index)
+        self._item_data: list[tuple[int, str] | None] = []
+
+        # Add-panel widgets
+        self.inv_quantity_var: ctk.IntVar | None = None
+        self.inv_upgrade_var: ctk.IntVar | None = None
+        self.inv_affinity_var: ctk.StringVar | None = None
+        self.inv_location_var: ctk.StringVar | None = None
+        self._upgrade_entry: ctk.CTkEntry | None = None
+        self._affinity_combo: ctk.CTkComboBox | None = None
+        self._location_combo: ctk.CTkComboBox | None = None
+        self._selected_item_label: ctk.CTkLabel | None = None
+
+        # Browser widgets
+        self._search_var: ctk.StringVar | None = None
+        self._search_cat_var: ctk.StringVar | None = None
+        self._search_cat_combo: ctk.CTkComboBox | None = None
+        self._results_listbox: tk.Listbox | None = None
+        self._results_items: list = []
+
+        # Inventory widgets
+        self.inventory_listbox: tk.Listbox | None = None
+        self.inv_filter_var: ctk.StringVar | None = None
+        self._inv_search_var: ctk.StringVar | None = None
+
+        self.frame: ctk.CTkFrame | None = None
+
+    # ---- UI setup -----------------------------------------------------------
+
+    def setup_ui(self):
+        self.frame = ctk.CTkFrame(self.parent, fg_color="transparent")
+        self.frame.pack(fill=ctk.BOTH, expand=True)
+
+        pane = tk.PanedWindow(
+            self.frame,
+            orient=tk.HORIZONTAL,
+            sashwidth=6,
+            sashrelief=tk.FLAT,
+            bg="#2b2b2b",
+        )
+        pane.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        left = ctk.CTkFrame(pane, fg_color=("gray88", "gray18"), corner_radius=8)
+        right = ctk.CTkFrame(pane, fg_color=("gray88", "gray18"), corner_radius=8)
+
+        pane.add(left, minsize=340, width=420)
+        pane.add(right, minsize=340)
+
+        self._build_browser_panel(left)
+        self._build_inventory_panel(right)
+
+    # ---- left panel: item browser -------------------------------------------
+
+    def _build_browser_panel(self, parent: ctk.CTkFrame):
+        ctk.CTkLabel(
+            parent,
+            text="Add Item",
+            font=("Segoe UI", 13, "bold"),
+        ).pack(anchor=ctk.W, padx=12, pady=(10, 4))
+
+        # Search bar row
+        search_row = ctk.CTkFrame(parent, fg_color="transparent")
+        search_row.pack(fill=ctk.X, padx=10, pady=(0, 4))
+
+        ctk.CTkLabel(search_row, text="Search:", width=54).pack(side=ctk.LEFT)
+        self._search_var = ctk.StringVar()
+        self._search_var.trace_add("write", lambda *_: self._search_items())
+        ctk.CTkEntry(search_row, textvariable=self._search_var, width=160).pack(
+            side=ctk.LEFT, padx=(0, 6)
+        )
+        self._search_cat_var = ctk.StringVar(value="All")
+        self._search_cat_combo = ctk.CTkComboBox(
+            search_row,
+            variable=self._search_cat_var,
+            values=["All"],
+            width=150,
+            command=lambda _e=None: self._search_items(),
+        )
+        self._search_cat_combo.pack(side=ctk.LEFT)
+        self._populate_search_categories()
+
+        # Results listbox
+        lb_frame = ctk.CTkFrame(parent, fg_color=("gray82", "gray14"), corner_radius=6)
+        lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=(0, 4))
+
+        mode = ctk.get_appearance_mode()
+        lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
+        lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
+        lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+
+        sb = tk.Scrollbar(lb_frame)
+        sb.pack(side=tk.RIGHT, fill=tk.Y)
+        self._results_listbox = tk.Listbox(
+            lb_frame,
+            yscrollcommand=sb.set,
+            font=("Consolas", 9),
+            height=7,
+            bg=lb_bg,
+            fg=lb_fg,
+            selectbackground=lb_sel,
+            relief=tk.FLAT,
+            borderwidth=0,
+            activestyle="none",
+        )
+        self._results_listbox.pack(
+            side=tk.LEFT, fill=ctk.BOTH, expand=True, padx=2, pady=2
+        )
+        sb.config(command=self._results_listbox.yview)
+        bind_mousewheel(self._results_listbox)
+        self._results_listbox.bind("<<ListboxSelect>>", self._on_result_select)
+
+        # Selected item label
+        self._selected_item_label = ctk.CTkLabel(
+            parent,
+            text="No item selected",
+            text_color=("gray50", "gray60"),
+            font=("Segoe UI", 10),
+            anchor="w",
+        )
+        self._selected_item_label.pack(fill=ctk.X, padx=12, pady=(0, 6))
+
+        sep = ctk.CTkFrame(parent, height=1, fg_color=("gray75", "gray30"))
+        sep.pack(fill=ctk.X, padx=10, pady=(0, 8))
+
+        ctk.CTkButton(
+            parent,
+            text="Add Item",
+            command=self.add_item,
+            height=34,
+            font=("Segoe UI", 11, "bold"),
+        ).pack(side=ctk.BOTTOM, fill=ctk.X, padx=10, pady=(0, 10))
+
+        # Options grid - also anchored above the button
+        opts = ctk.CTkFrame(parent, fg_color="transparent")
+        opts.pack(side=ctk.BOTTOM, fill=ctk.X, padx=10, pady=(0, 6))
+        opts.columnconfigure(1, weight=1)
+        opts.columnconfigure(3, weight=1)
+
+        ctk.CTkLabel(opts, text="Quantity:", anchor="w").grid(
+            row=0, column=0, sticky=ctk.W, padx=(0, 6), pady=4
+        )
+        self.inv_quantity_var = ctk.IntVar(value=1)
+        ctk.CTkEntry(opts, textvariable=self.inv_quantity_var, width=70).grid(
+            row=0, column=1, sticky=ctk.W, pady=4
+        )
+
+        ctk.CTkLabel(opts, text="Upgrade:", anchor="w").grid(
+            row=0, column=2, sticky=ctk.W, padx=(14, 6), pady=4
+        )
+        self.inv_upgrade_var = ctk.IntVar(value=0)
+        self._upgrade_entry = ctk.CTkEntry(
+            opts, textvariable=self.inv_upgrade_var, width=60, state="disabled"
+        )
+        self._upgrade_entry.grid(row=0, column=3, sticky=ctk.W, pady=4)
+
+        ctk.CTkLabel(opts, text="Affinity:", anchor="w").grid(
+            row=1, column=0, sticky=ctk.W, padx=(0, 6), pady=4
+        )
+        self.inv_affinity_var = ctk.StringVar(value="Standard")
+        self._affinity_combo = ctk.CTkComboBox(
+            opts,
+            variable=self.inv_affinity_var,
+            values=self._AFFINITY_NAMES,
+            width=140,
+            state="disabled",
+        )
+        self._affinity_combo.grid(row=1, column=1, sticky=ctk.W, pady=4)
+
+        ctk.CTkLabel(opts, text="Location:", anchor="w").grid(
+            row=1, column=2, sticky=ctk.W, padx=(14, 6), pady=4
+        )
+        self.inv_location_var = ctk.StringVar(value="held")
+        self._location_combo = ctk.CTkComboBox(
+            opts,
+            variable=self.inv_location_var,
+            values=["held", "storage"],
+            width=120,
+        )
+        self._location_combo.grid(row=1, column=3, sticky=ctk.W, pady=4)
+
+    # ---- right panel: current inventory -------------------------------------
+
+    def _build_inventory_panel(self, parent: ctk.CTkFrame):
+        # Header row: title + filter
+        header = ctk.CTkFrame(parent, fg_color="transparent")
+        header.pack(fill=ctk.X, padx=10, pady=(10, 4))
+
+        ctk.CTkLabel(
+            header,
+            text="Current Inventory",
+            font=("Segoe UI", 13, "bold"),
+        ).pack(side=ctk.LEFT)
+
+        self.inv_filter_var = ctk.StringVar(value="All")
+        ctk.CTkComboBox(
+            header,
+            variable=self.inv_filter_var,
+            values=["All", "Held", "Storage", "Key Items"],
+            width=120,
+            command=lambda _e=None: self.refresh_inventory(),
+        ).pack(side=ctk.RIGHT, padx=(6, 0))
+        ctk.CTkLabel(header, text="Show:").pack(side=ctk.RIGHT)
+
+        # Inventory search bar
+        search_row = ctk.CTkFrame(parent, fg_color="transparent")
+        search_row.pack(fill=ctk.X, padx=10, pady=(0, 4))
+
+        ctk.CTkLabel(search_row, text="Filter:", width=42).pack(side=ctk.LEFT)
+        self._inv_search_var = ctk.StringVar()
+        self._inv_search_var.trace_add("write", lambda *_: self._apply_inv_filter())
+        ctk.CTkEntry(
+            search_row,
+            textvariable=self._inv_search_var,
+            placeholder_text="Filter items...",
+            width=220,
+        ).pack(side=ctk.LEFT, padx=(0, 6))
+        ctk.CTkButton(
+            search_row,
+            text="Clear",
+            width=60,
+            height=28,
+            command=lambda: self._inv_search_var.set(""),
+        ).pack(side=ctk.LEFT)
+
+        # Inventory listbox
+        lb_frame = ctk.CTkFrame(parent, fg_color=("gray82", "gray14"), corner_radius=6)
+        lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=(0, 6))
+
+        mode = ctk.get_appearance_mode()
+        lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
+        lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
+        lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+
+        sb = tk.Scrollbar(lb_frame)
+        sb.pack(side=tk.RIGHT, fill=tk.Y)
+        self.inventory_listbox = tk.Listbox(
+            lb_frame,
+            yscrollcommand=sb.set,
+            font=("Consolas", 10),
+            bg=lb_bg,
+            fg=lb_fg,
+            selectbackground=lb_sel,
+            relief=tk.FLAT,
+            borderwidth=0,
+            activestyle="none",
+        )
+        self.inventory_listbox.pack(
+            side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2, pady=2
+        )
+        sb.config(command=self.inventory_listbox.yview)
+        bind_mousewheel(self.inventory_listbox)
+
+        # Action bar
+        actions = ctk.CTkFrame(parent, fg_color="transparent")
+        actions.pack(fill=ctk.X, padx=10, pady=(0, 10))
+
+        ctk.CTkButton(
+            actions,
+            text="Remove Selected",
+            command=self.remove_item,
+            width=150,
+        ).pack(side=ctk.LEFT, padx=(0, 6))
+        ctk.CTkButton(
+            actions,
+            text="Set Quantity",
+            command=self.set_quantity,
+            width=120,
+        ).pack(side=ctk.LEFT, padx=(0, 6))
+        ctk.CTkButton(
+            actions,
+            text="Refresh",
+            command=self.refresh_inventory,
+            width=90,
+        ).pack(side=ctk.LEFT)
+
+    # ---- search browser helpers ---------------------------------------------
 
     def _visible_categories(self) -> list[str]:
         """Return category list filtered by save file type."""
@@ -344,13 +447,10 @@ class InventoryEditor:
                     else items
                 )
 
-            # Cap at 200 to keep the listbox responsive
             self._results_items = results[:200]
             self._results_listbox.delete(0, tk.END)
             for item in self._results_items:
-                self._results_listbox.insert(
-                    tk.END, f"{item.name}  [{item.category_name}]"
-                )
+                self._results_listbox.insert(tk.END, item.name)
         except Exception:
             pass
 
@@ -361,8 +461,28 @@ class InventoryEditor:
         self.selected_item = self._results_items[sel[0]]
         self._selected_item_label.configure(
             text=f"Selected: {self.selected_item.name}",
-            text_color=("#2563eb", "#60a5fa"),
+            text_color=("#7c4dac", "#c084fc"),
         )
+
+        is_weapon = self.selected_item.category == 0x00000000
+        is_gaitem = self.selected_item.category in (0x00000000, 0x10000000)
+
+        weapon_state = "normal" if is_weapon else "disabled"
+        if self._upgrade_entry:
+            self._upgrade_entry.configure(state=weapon_state)
+            if not is_weapon:
+                self.inv_upgrade_var.set(0)
+        if self._affinity_combo:
+            self._affinity_combo.configure(state=weapon_state)
+            if not is_weapon:
+                self.inv_affinity_var.set("Standard")
+
+        if self._location_combo:
+            if is_gaitem:
+                self.inv_location_var.set("held")
+                self._location_combo.configure(state="disabled")
+            else:
+                self._location_combo.configure(state="normal")
 
     # ---- inventory display --------------------------------------------------
 
@@ -384,43 +504,39 @@ class InventoryEditor:
                 )
                 return
 
-            self.inventory_listbox.delete(0, tk.END)
-            self._item_data = []
-
             gaitem_map = {}
             for g in getattr(slot, "gaitem_map", []):
                 if g.gaitem_handle not in (0, 0xFFFFFFFF):
                     gaitem_map[g.gaitem_handle] = g
 
             filt = self.inv_filter_var.get() if self.inv_filter_var else "All"
+            self._all_rows = []
 
             if filt in ("All", "Held") and hasattr(slot, "inventory_held"):
-                self._append_section(
+                self._collect_section(
                     "HELD INVENTORY",
                     slot.inventory_held.common_items,
                     gaitem_map,
                     "held",
                     key=False,
                 )
-
             if filt in ("All", "Key Items") and hasattr(slot, "inventory_held"):
-                self._append_section(
+                self._collect_section(
                     "KEY ITEMS (HELD)",
                     slot.inventory_held.key_items,
                     gaitem_map,
                     "held",
                     key=True,
                 )
-
             if filt in ("All", "Storage") and hasattr(slot, "inventory_storage_box"):
-                self._append_section(
+                self._collect_section(
                     "STORAGE BOX",
                     slot.inventory_storage_box.common_items,
                     gaitem_map,
                     "storage",
                     key=False,
                 )
-                self._append_section(
+                self._collect_section(
                     "KEY ITEMS (STORAGE)",
                     slot.inventory_storage_box.key_items,
                     gaitem_map,
@@ -428,27 +544,74 @@ class InventoryEditor:
                     key=True,
                 )
 
+            self._apply_inv_filter()
+
         except Exception as e:
             CTkMessageBox.showerror(
                 "Error", f"Failed to refresh inventory:\n{e}", parent=self.parent
             )
 
-    def _append_section(self, header, items, gaitem_map, location, key):
-        self.inventory_listbox.insert(tk.END, f"=== {header} ===")
-        self._item_data.append(None)
+    def _collect_section(self, header, items, gaitem_map, location, key):
+        """Parse items into _all_rows without touching the listbox."""
+        rows: list[tuple[str, int, str]] = []
 
         for inv_item in items:
             if inv_item.gaitem_handle == 0 or inv_item.quantity == 0:
                 continue
             full_id, upgrade = _decode_inv_item(inv_item, gaitem_map)
             name = _item_name(full_id, upgrade)
-            suffix = f" +{upgrade}" if upgrade > 0 else ""
-            prefix = "K" if key else ""
-            self.inventory_listbox.insert(
-                tk.END,
-                f"  [{location[0].upper()}{prefix}] {name}{suffix}  | Qty: {inv_item.quantity}",
+            if not name:
+                continue
+
+            cat = full_id & 0xF0000000
+            # Weapons: get_item_name already appends +N
+            suffix = f" +{upgrade}" if upgrade > 0 and cat != 0x00000000 else ""
+            affinity_label = ""
+            if cat == 0x00000000:
+                affinity_code = (full_id // 100) % 100
+                if affinity_code != 0:
+                    affinity_label = (
+                        f" [{self._AFFINITY_BY_CODE.get(affinity_code, affinity_code)}]"
+                    )
+
+            loc_tag = "K" if key else ""
+            text = (
+                f"  [{location[0].upper()}{loc_tag}] "
+                f"{name}{suffix}{affinity_label}"
+                f"  |  Qty: {inv_item.quantity}"
             )
-            self._item_data.append((full_id, location))
+            rows.append((text, full_id, location))
+
+        count = len(rows)
+        label = "item" if count == 1 else "items"
+        self._all_rows.append((f"  {header}  ({count} {label})", None, None))
+        self._all_rows.extend(rows)
+
+    def _apply_inv_filter(self):
+        """Re-render the listbox from _all_rows, applying the text filter."""
+        if self.inventory_listbox is None:
+            return
+
+        query = (
+            (self._inv_search_var.get() if self._inv_search_var else "").lower().strip()
+        )
+        self.inventory_listbox.delete(0, tk.END)
+        self._item_data = []
+
+        mode = ctk.get_appearance_mode()
+        hdr_fg = "#9d7fc4" if mode == "Dark" else "#6a3fa0"
+
+        for text, full_id, location in self._all_rows:
+            if full_id is None:
+                # Section header - always visible
+                self.inventory_listbox.insert(tk.END, text)
+                self.inventory_listbox.itemconfig(tk.END, foreground=hdr_fg)
+                self._item_data.append(None)
+            else:
+                if query and query not in text.lower():
+                    continue
+                self.inventory_listbox.insert(tk.END, text)
+                self._item_data.append((full_id, location))
 
     # ---- operations ---------------------------------------------------------
 
@@ -467,9 +630,10 @@ class InventoryEditor:
 
         slot_idx = self.get_char_slot()
         full_id = self.selected_item.full_id
+        is_weapon = (full_id & 0xF0000000) == 0x00000000
         try:
             qty = int(self.inv_quantity_var.get())
-            upg = int(self.inv_upgrade_var.get())
+            upg = int(self.inv_upgrade_var.get()) if is_weapon else 0
         except (ValueError, tk.TclError):
             CTkMessageBox.showerror(
                 "Input Error",
@@ -477,6 +641,20 @@ class InventoryEditor:
                 parent=self.parent,
             )
             return
+
+        affinity_code = 0
+        affinity_label = ""
+        if is_weapon:
+            affinity_name = self.inv_affinity_var.get()
+            affinity_code = next(
+                (c for c, n in self._AFFINITIES if n == affinity_name), 0
+            )
+            cat_bits = full_id & 0xF0000000
+            base = full_id & 0x0FFFFFFF
+            full_id = cat_bits | (base + affinity_code * 100)
+            if affinity_code != 0:
+                affinity_label = f" ({affinity_name})"
+
         location = self.inv_location_var.get()
 
         try:
@@ -497,6 +675,7 @@ class InventoryEditor:
                 "Done",
                 f"Added {self.selected_item.name}"
                 + (f" +{upg}" if upg else "")
+                + affinity_label
                 + f" x{result['quantity']} to {location}.",
                 parent=self.parent,
             )
@@ -515,7 +694,7 @@ class InventoryEditor:
 
         idx = sel[0]
         if idx >= len(self._item_data) or self._item_data[idx] is None:
-            return  # header row
+            return
 
         full_id, location = self._item_data[idx]
         item_label = self.inventory_listbox.get(idx).strip()
@@ -560,11 +739,9 @@ class InventoryEditor:
 
         idx = sel[0]
         if idx >= len(self._item_data) or self._item_data[idx] is None:
-            return  # header row
+            return
 
         full_id, location = self._item_data[idx]
-
-        # Only stackable items (goods/spells) make sense to edit quantity
         cat = full_id & 0xF0000000
         if cat not in (0x40000000, 0x20000000):
             CTkMessageBox.showinfo(
