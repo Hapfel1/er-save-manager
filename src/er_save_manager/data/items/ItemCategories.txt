@@ -17,7 +17,6 @@
 0x40000000 false Items/Goods/Flasks.txt Flasks
 0x40000000 false Items/Goods/Ashes.txt Ashes
 0x40000000 false Items/Goods/NotesPaintings.txt Notes and Paintings
-0x40000000 false Items/Goods/Gestures.txt Gestures
 0x40000000 false Items/Goods/Cookbooks.txt Cookbooks
 0x40000000 false Items/Goods/MerchantItems.txt Merchant Items
 0x40000000 false Items/Magic.txt Magic
@@ -40,7 +39,6 @@
 0x40000000 false Items/DLC/DLCGoods/DLCCrystalTears.txt DLC Crystal Tears
 0x40000000 false Items/DLC/DLCGoods/DLCAshes.txt DLC Ashes
 0x40000000 false Items/DLC/DLCGoods/DLCNotesPaintings.txt DLC Notes and Paintings
-0x40000000 false Items/DLC/DLCGoods/DLCGestures.txt DLC Gestures
 0x40000000 false Items/DLC/DLCGoods/DLCCookbooks.txt DLC Cookbooks
 0x40000000 false Items/DLC/DLCGoods/DLCMerchantItems.txt DLC Merchant Items
 0x40000000 false Items/DLC/DLCMagic.txt DLC Magic

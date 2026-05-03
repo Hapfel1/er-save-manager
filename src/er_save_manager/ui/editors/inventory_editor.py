@@ -130,6 +130,11 @@ class InventoryEditor:
         self._upgrade_entry: ctk.CTkEntry | None = None
         self._affinity_combo: ctk.CTkComboBox | None = None
         self._location_combo: ctk.CTkComboBox | None = None
+        self._aow_pick_btn: ctk.CTkButton | None = None
+        self._aow_clear_btn: ctk.CTkButton | None = None
+        self._aow_label: ctk.CTkLabel | None = None
+        self.inv_aow_var: ctk.StringVar | None = None
+        self._selected_gem_id: int = 0
         self._selected_item_label: ctk.CTkLabel | None = None
 
         # Browser widgets
@@ -299,6 +304,40 @@ class InventoryEditor:
         )
         self._location_combo.grid(row=1, column=3, sticky=ctk.W, pady=4)
 
+        # AoW row (row 2) - weapons only
+        ctk.CTkLabel(opts, text="Ash of War:", anchor="w").grid(
+            row=2, column=0, sticky=ctk.W, padx=(0, 6), pady=4
+        )
+        self.inv_aow_var = ctk.StringVar(value="None")
+        self._aow_label = ctk.CTkLabel(
+            opts,
+            textvariable=self.inv_aow_var,
+            text_color=("gray50", "gray60"),
+            width=140,
+            anchor="w",
+        )
+        self._aow_label.grid(row=2, column=1, sticky=ctk.W, pady=4)
+        self._aow_pick_btn = ctk.CTkButton(
+            opts,
+            text="Pick...",
+            width=60,
+            height=24,
+            command=self._pick_aow,
+            state="disabled",
+        )
+        self._aow_pick_btn.grid(row=2, column=2, sticky=ctk.W, pady=4)
+        self._aow_clear_btn = ctk.CTkButton(
+            opts,
+            text="Clear",
+            width=55,
+            height=24,
+            command=self._clear_aow,
+            state="disabled",
+            fg_color=("gray70", "gray35"),
+        )
+        self._aow_clear_btn.grid(row=2, column=3, sticky=ctk.W, pady=4)
+        self._selected_gem_id: int = 0
+
     # ---- right panel: current inventory -------------------------------------
 
     def _build_inventory_panel(self, parent: ctk.CTkFrame):
@@ -465,24 +504,131 @@ class InventoryEditor:
         )
 
         is_weapon = self.selected_item.category == 0x00000000
-        is_gaitem = self.selected_item.category in (0x00000000, 0x10000000)
+        is_ashes = self.selected_item.category_name in ("Ashes", "DLC Ashes")
+        is_upgradable = is_weapon or is_ashes
+
+        upgrade_state = "normal" if is_upgradable else "disabled"
+        if self._upgrade_entry:
+            self._upgrade_entry.configure(state=upgrade_state)
+            if not is_upgradable:
+                self.inv_upgrade_var.set(0)
 
         weapon_state = "normal" if is_weapon else "disabled"
-        if self._upgrade_entry:
-            self._upgrade_entry.configure(state=weapon_state)
-            if not is_weapon:
-                self.inv_upgrade_var.set(0)
         if self._affinity_combo:
             self._affinity_combo.configure(state=weapon_state)
             if not is_weapon:
                 self.inv_affinity_var.set("Standard")
 
+        aow_state = "normal" if is_weapon else "disabled"
+        if self._aow_pick_btn:
+            self._aow_pick_btn.configure(state=aow_state)
+            self._aow_clear_btn.configure(state=aow_state)
+        if not is_weapon:
+            self._clear_aow()
+
         if self._location_combo:
-            if is_gaitem:
-                self.inv_location_var.set("held")
-                self._location_combo.configure(state="disabled")
-            else:
-                self._location_combo.configure(state="normal")
+            self._location_combo.configure(state="normal")
+
+    def _pick_aow(self):
+        """Open a gem picker dialog and store the selected gem's full_id."""
+        import tkinter as tk
+
+        dialog = ctk.CTkToplevel(self.parent)
+        dialog.title("Select Ash of War")
+        dialog.geometry("380x400")
+        dialog.resizable(False, True)
+        dialog.transient(self.parent)
+        dialog.attributes("-alpha", 0)
+        dialog.update_idletasks()
+        dialog.attributes("-alpha", 1)
+        dialog.grab_set()
+
+        mode = ctk.get_appearance_mode()
+        lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
+        lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
+        lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+
+        search_var = ctk.StringVar()
+        ctk.CTkLabel(dialog, text="Search:").pack(anchor="w", padx=10, pady=(10, 0))
+        ctk.CTkEntry(dialog, textvariable=search_var, width=340).pack(
+            padx=10, pady=(0, 4)
+        )
+
+        lb_frame = ctk.CTkFrame(dialog, fg_color=("gray82", "gray14"), corner_radius=6)
+        lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=4)
+        sb = tk.Scrollbar(lb_frame)
+        sb.pack(side=tk.RIGHT, fill=tk.Y)
+        lb = tk.Listbox(
+            lb_frame,
+            yscrollcommand=sb.set,
+            font=("Consolas", 10),
+            bg=lb_bg,
+            fg=lb_fg,
+            selectbackground=lb_sel,
+            relief=tk.FLAT,
+            borderwidth=0,
+            activestyle="none",
+        )
+        lb.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2, pady=2)
+        sb.config(command=lb.yview)
+        bind_mousewheel(lb)
+
+        gem_items: list = []
+
+        def _load():
+            try:
+                from er_save_manager.data.item_database import get_item_database
+
+                db = get_item_database()
+                gems = db.get_items_by_category("Gems") + db.get_items_by_category(
+                    "DLC Gems"
+                )
+                return gems
+            except Exception:
+                return []
+
+        all_gems = _load()
+
+        def _filter(*_):
+            q = search_var.get().lower().strip()
+            gem_items.clear()
+            gem_items.extend(g for g in all_gems if not q or q in g.name.lower())
+            lb.delete(0, tk.END)
+            for g in gem_items[:200]:
+                lb.insert(tk.END, g.name)
+
+        search_var.trace_add("write", _filter)
+        _filter()
+
+        def _confirm():
+            sel = lb.curselection()
+            if not sel or sel[0] >= len(gem_items):
+                return
+            item = gem_items[sel[0]]
+            self._selected_gem_id = 0x80000000 | item.id
+            if self.inv_aow_var:
+                self.inv_aow_var.set(item.name)
+                if self._aow_label:
+                    self._aow_label.configure(text_color=("#7c4dac", "#c084fc"))
+            dialog.destroy()
+
+        lb.bind("<Double-Button-1>", lambda _e: _confirm())
+
+        btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_row.pack(fill=ctk.X, padx=10, pady=(4, 10))
+        ctk.CTkButton(btn_row, text="Select", command=_confirm, width=100).pack(
+            side=ctk.LEFT, padx=(0, 6)
+        )
+        ctk.CTkButton(btn_row, text="Cancel", command=dialog.destroy, width=80).pack(
+            side=ctk.RIGHT
+        )
+
+    def _clear_aow(self):
+        self._selected_gem_id = 0
+        if self.inv_aow_var:
+            self.inv_aow_var.set("None")
+        if self._aow_label:
+            self._aow_label.configure(text_color=("gray50", "gray60"))
 
     # ---- inventory display --------------------------------------------------
 
@@ -631,9 +777,10 @@ class InventoryEditor:
         slot_idx = self.get_char_slot()
         full_id = self.selected_item.full_id
         is_weapon = (full_id & 0xF0000000) == 0x00000000
+        is_ashes = self.selected_item.category_name in ("Ashes", "DLC Ashes")
         try:
             qty = int(self.inv_quantity_var.get())
-            upg = int(self.inv_upgrade_var.get()) if is_weapon else 0
+            upg = int(self.inv_upgrade_var.get()) if (is_weapon or is_ashes) else 0
         except (ValueError, tk.TclError):
             CTkMessageBox.showerror(
                 "Input Error",
@@ -641,6 +788,13 @@ class InventoryEditor:
                 parent=self.parent,
             )
             return
+
+        # Ashes: upgrade is encoded as base_id + upgrade (IDs step by 1 per level)
+        if is_ashes and upg > 0:
+            cat_bits = full_id & 0xF0000000
+            base = full_id & 0x0FFFFFFF
+            full_id = cat_bits | (base + upg)
+            upg = 0  # already baked; don't pass to add_item as weapon upgrade
 
         affinity_code = 0
         affinity_label = ""
@@ -663,7 +817,15 @@ class InventoryEditor:
 
             from er_save_manager.parser.inventory_ops import add_item
 
-            result = add_item(save_file, slot_idx, full_id, qty, location, upgrade=upg)
+            result = add_item(
+                save_file,
+                slot_idx,
+                full_id,
+                qty,
+                location,
+                upgrade=upg,
+                gem_full_id=self._selected_gem_id,
+            )
 
             save_file.recalculate_checksums()
             save_path = self.get_save_path()
