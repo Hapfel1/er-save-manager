@@ -1101,7 +1101,7 @@ class SaveManagerGUI:
         game_name = profile.name if profile else "Elden Ring"
         dialog = tk.Toplevel(self.root)
         dialog.title("Save Location Warning")
-        dialog.geometry("550x600")
+        dialog.geometry("550x500")
         dialog.transient(self.root)
 
         msg_frame = ttk.Frame(dialog, padding=20)
@@ -1447,7 +1447,7 @@ class SaveManagerGUI:
             # Create custom dialog with "Don't show again" option
             warning_dialog = tk.Toplevel(self.root)
             warning_dialog.title("⚠️ Warning - Vanilla Save File Detected")
-            warning_dialog.geometry("520x420")
+            warning_dialog.geometry("520x500")
             warning_dialog.transient(self.root)
             warning_dialog.update_idletasks()
             warning_dialog.grab_set()
