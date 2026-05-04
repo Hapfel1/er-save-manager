@@ -124,10 +124,10 @@ class InventoryEditor:
 
         # Add-panel widgets
         self.inv_quantity_var: ctk.IntVar | None = None
-        self.inv_upgrade_var: ctk.IntVar | None = None
+        self.inv_upgrade_var: ctk.StringVar | None = None
         self.inv_affinity_var: ctk.StringVar | None = None
         self.inv_location_var: ctk.StringVar | None = None
-        self._upgrade_entry: ctk.CTkEntry | None = None
+        self._upgrade_combo: ctk.CTkComboBox | None = None
         self._affinity_combo: ctk.CTkComboBox | None = None
         self._location_combo: ctk.CTkComboBox | None = None
         self._aow_pick_btn: ctk.CTkButton | None = None
@@ -265,11 +265,15 @@ class InventoryEditor:
         ctk.CTkLabel(opts, text="Upgrade:", anchor="w").grid(
             row=0, column=2, sticky=ctk.W, padx=(14, 6), pady=4
         )
-        self.inv_upgrade_var = ctk.IntVar(value=0)
-        self._upgrade_entry = ctk.CTkEntry(
-            opts, textvariable=self.inv_upgrade_var, width=60, state="disabled"
+        self.inv_upgrade_var = ctk.StringVar(value="0")
+        self._upgrade_combo = ctk.CTkComboBox(
+            opts,
+            variable=self.inv_upgrade_var,
+            values=["0"],
+            width=70,
+            state="disabled",
         )
-        self._upgrade_entry.grid(row=0, column=3, sticky=ctk.W, pady=4)
+        self._upgrade_combo.grid(row=0, column=3, sticky=ctk.W, pady=4)
 
         ctk.CTkLabel(opts, text="Affinity:", anchor="w").grid(
             row=1, column=0, sticky=ctk.W, padx=(0, 6), pady=4
@@ -507,23 +511,35 @@ class InventoryEditor:
         is_ashes = self.selected_item.category_name in ("Ashes", "DLC Ashes")
         is_upgradable = is_weapon or is_ashes
 
-        upgrade_state = "normal" if is_upgradable else "disabled"
-        if self._upgrade_entry:
-            self._upgrade_entry.configure(state=upgrade_state)
-            if not is_upgradable:
-                self.inv_upgrade_var.set(0)
+        if self._upgrade_combo:
+            if is_upgradable:
+                if is_ashes:
+                    cap = 10
+                elif is_weapon:
+                    r = getattr(self.selected_item, "reinforcement", "standard")
+                    cap = 25 if r == "standard" else 10 if r == "somber" else 0
+                else:
+                    cap = 0
+                values = [str(i) for i in range(cap + 1)]
+                self._upgrade_combo.configure(values=values, state="normal")
+                self.inv_upgrade_var.set("0")
+            else:
+                self._upgrade_combo.configure(values=["0"], state="disabled")
+                self.inv_upgrade_var.set("0")
 
+        # Disable AoW if weapon doesn't allow it or if not a weapon
+        aow_allowed = is_weapon and getattr(self.selected_item, "aow_allowed", True)
         weapon_state = "normal" if is_weapon else "disabled"
         if self._affinity_combo:
             self._affinity_combo.configure(state=weapon_state)
             if not is_weapon:
                 self.inv_affinity_var.set("Standard")
 
-        aow_state = "normal" if is_weapon else "disabled"
+        aow_state = "normal" if aow_allowed else "disabled"
         if self._aow_pick_btn:
             self._aow_pick_btn.configure(state=aow_state)
             self._aow_clear_btn.configure(state=aow_state)
-        if not is_weapon:
+        if not aow_allowed:
             self._clear_aow()
 
         if self._location_combo:
@@ -782,19 +798,14 @@ class InventoryEditor:
             qty = int(self.inv_quantity_var.get())
             upg = int(self.inv_upgrade_var.get()) if (is_weapon or is_ashes) else 0
         except (ValueError, tk.TclError):
-            CTkMessageBox.showerror(
-                "Input Error",
-                "Quantity and upgrade must be integers.",
-                parent=self.parent,
-            )
-            return
+            upg = 0
 
-        # Ashes: upgrade is encoded as base_id + upgrade (IDs step by 1 per level)
+        # Ashes: encode upgrade directly into goods ID (base + level)
         if is_ashes and upg > 0:
             cat_bits = full_id & 0xF0000000
             base = full_id & 0x0FFFFFFF
             full_id = cat_bits | (base + upg)
-            upg = 0  # already baked; don't pass to add_item as weapon upgrade
+            upg = 0  # already baked
 
         affinity_code = 0
         affinity_label = ""
@@ -825,6 +836,7 @@ class InventoryEditor:
                 location,
                 upgrade=upg,
                 gem_full_id=self._selected_gem_id,
+                reinforcement="ash" if is_ashes else "standard",
             )
 
             save_file.recalculate_checksums()

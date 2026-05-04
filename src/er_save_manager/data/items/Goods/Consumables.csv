@@ -1,0 +1,163 @@
+ID,Name,maxNum,category
+182,Furlcalling Finger Remedy,999,Consumables
+190,Rune Arc,99,Consumables
+300,Fire Pot,10,Consumables
+301,Redmane Fire Pot,10,Consumables
+302,Giantsflame Fire Pot,10,Consumables
+320,Lightning Pot,10,Consumables
+321,Ancient Dragonbolt Pot,10,Consumables
+330,Fetid Pot,10,Consumables
+340,Swarm Pot,10,Consumables
+350,Holy Water Pot,10,Consumables
+351,Sacred Order Pot,10,Consumables
+360,Freezing Pot,10,Consumables
+370,Poison Pot,10,Consumables
+380,Oil Pot,10,Consumables
+390,Alluring Pot,10,Consumables
+391,Beastlure Pot,10,Consumables
+400,Roped Fire Pot,10,Consumables
+420,Roped Lightning Pot,10,Consumables
+430,Roped Fetid Pot,10,Consumables
+440,Roped Poison Pot,10,Consumables
+450,Roped Oil Pot,10,Consumables
+460,Roped Magic Pot,10,Consumables
+470,Roped Fly Pot,10,Consumables
+480,Roped Freezing Pot,10,Consumables
+490,Roped Volcano Pot,10,Consumables
+510,Roped Holy Water Pot,10,Consumables
+600,Volcano Pot,10,Consumables
+610,Albinauric Pot,10,Consumables
+630,Cursed-Blood Pot,10,Consumables
+640,Sleep Pot,10,Consumables
+650,Rancor Pot,10,Consumables
+660,Magic Pot,10,Consumables
+661,Academy Magic Pot,10,Consumables
+670,Rot Pot,10,Consumables
+820,Boiled Crab,99,Consumables
+830,Boiled Prawn,99,Consumables
+900,Neutralizing Boluses,99,Consumables
+910,Stanching Boluses,99,Consumables
+920,Thawfrost Boluses,99,Consumables
+930,Stimulating Boluses,99,Consumables
+940,Preserving Boluses,99,Consumables
+950,Rejuvenating Boluses,99,Consumables
+960,Clarifying Boluses,99,Consumables
+1100,Pickled Turtle Neck,10,Consumables
+1110,Immunizing Cured Meat,10,Consumables
+1120,Invigorating Cured Meat,10,Consumables
+1130,Clarifying Cured Meat,10,Consumables
+1140,Dappled Cured Meat,10,Consumables
+1150,Spellproof Dried Liver,5,Consumables
+1160,Fireproof Dried Liver,5,Consumables
+1170,Lightningproof Dried Liver,5,Consumables
+1180,Holyproof Dried Liver,5,Consumables
+1190,Silver-Pickled Fowl Foot,10,Consumables
+1200,Gold-Pickled Fowl Foot,10,Consumables
+1210,Exalted Flesh,10,Consumables
+1220,Deathsbane Jerky,10,Consumables
+1235,Raw Meat Dumpling,3,Consumables
+1240,Shabriri Grape,99,Consumables
+1290,Starlight Shards,10,Consumables
+1310,Immunizing White Cured Meat,10,Consumables
+1320,Invigorating White Cured Meat,10,Consumables
+1330,Clarifying White Cured Meat,10,Consumables
+1340,Dappled White Cured Meat,10,Consumables
+1350,Deathsbane White Jerky,10,Consumables
+1400,Fire Grease,10,Consumables
+1410,Lightning Grease,10,Consumables
+1420,Magic Grease,10,Consumables
+1430,Holy Grease,10,Consumables
+1440,Blood Grease,10,Consumables
+1450,Soporific Grease,10,Consumables
+1460,Poison Grease,10,Consumables
+1470,Freezing Grease,10,Consumables
+1480,Dragonwound Grease,10,Consumables
+1490,Rot Grease,10,Consumables
+1500,Drawstring Fire Grease,30,Consumables
+1510,Drawstring Lightning Grease,30,Consumables
+1520,Drawstring Magic Grease,30,Consumables
+1530,Drawstring Holy Grease,30,Consumables
+1540,Drawstring Blood Grease,30,Consumables
+1550,Drawstring Soporific Grease,30,Consumables
+1560,Drawstring Poison Grease,30,Consumables
+1570,Drawstring Freezing Grease,30,Consumables
+1590,Drawstring Rot Grease,30,Consumables
+1690,Shield Grease,10,Consumables
+1700,Throwing Dagger,40,Consumables
+1710,Bone Dart,40,Consumables
+1720,Poisonbone Dart,40,Consumables
+1730,Kukri,30,Consumables
+1740,Crystal Dart,40,Consumables
+1750,Fan Daggers,40,Consumables
+1760,Ruin Fragment,999,Consumables
+1830,Explosive Stone,20,Consumables
+1831,Explosive Stone Clump,20,Consumables
+1840,Poisoned Stone,20,Consumables
+1841,Poisoned Stone Clump,20,Consumables
+2020,Rainbow Stone,99,Consumables
+2030,Glowstone,99,Consumables
+2050,Grace Mimic,99,Consumables
+2100,Soft Cotton,99,Consumables
+2120,Soap,99,Consumables
+2130,Celestial Dew,99,Consumables
+2190,Miquella's Needle,1,Consumables
+2900,Golden Rune [1],99,Consumables
+2901,Golden Rune [2],99,Consumables
+2902,Golden Rune [3],99,Consumables
+2903,Golden Rune [4],99,Consumables
+2904,Golden Rune [5],99,Consumables
+2905,Golden Rune [6],99,Consumables
+2906,Golden Rune [7],99,Consumables
+2907,Golden Rune [8],99,Consumables
+2908,Golden Rune [9],99,Consumables
+2909,Golden Rune [10],99,Consumables
+2910,Golden Rune [11],99,Consumables
+2911,Golden Rune [12],99,Consumables
+2912,Golden Rune [13],99,Consumables
+2913,Numen's Rune,99,Consumables
+2914,Hero's Rune [1],99,Consumables
+2915,Hero's Rune [2],99,Consumables
+2916,Hero's Rune [3],99,Consumables
+2917,Hero's Rune [4],99,Consumables
+2918,Hero's Rune [5],99,Consumables
+2919,Lord's Rune,99,Consumables
+2950,Remembrance of the Grafted,99,Consumables
+2951,Remembrance of the Starscourge,99,Consumables
+2952,Remembrance of the Omen King,99,Consumables
+2953,Remembrance of the Blasphemous,99,Consumables
+2954,Remembrance of the Rot Goddess,99,Consumables
+2955,Remembrance of the Blood Lord,99,Consumables
+2956,Remembrance of the Black Blade,99,Consumables
+2957,Remembrance of Hoarah Loux,99,Consumables
+2958,Remembrance of the Dragonlord,99,Consumables
+2959,Remembrance of the Full Moon Queen,99,Consumables
+2960,Remembrance of the Lichdragon,99,Consumables
+2961,Remembrance of the Fire Giant,99,Consumables
+2962,Remembrance of the Regal Ancestor,99,Consumables
+2963,Elden Remembrance,99,Consumables
+2964,Remembrance of the Naturalborn,99,Consumables
+2990,Lands Between Rune,99,Consumables
+3030,Cuckoo Glintstone,10,Consumables
+3050,Glintstone Scrap,10,Consumables
+3051,Large Glintstone Scrap,10,Consumables
+3060,Gravity Stone Fan,10,Consumables
+3070,Gravity Stone Chunk,10,Consumables
+3080,Wraith Calling Bell,1,Consumables
+3300,Holy Water Grease,5,Consumables
+3310,Warming Stone,10,Consumables
+3311,Frenzyflame Stone,10,Consumables
+3320,Scriptstone,10,Consumables
+3350,Bewitching Branch,10,Consumables
+3360,Baldachin's Blessing,1,Consumables
+3361,Radiant Baldachin's Blessing,1,Consumables
+3500,Uplifting Aromatic,10,Consumables
+3510,Spark Aromatic,10,Consumables
+3520,Ironjar Aromatic,10,Consumables
+3550,Bloodboil Aromatic,10,Consumables
+3580,Poison Spraymist,10,Consumables
+3610,Acid Spraymist,10,Consumables
+9500,Cracked Pot,20,Consumables
+9501,Ritual Pot,10,Consumables
+9510,Perfume Bottle,10,Consumables
+10000,Glass Shard,99,Consumables
+10080,Great Rune of the Unborn,1,Consumables
