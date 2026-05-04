@@ -690,20 +690,19 @@ def remove_item(
         buf = _BytesIO()
         empty_gaitem.write(buf)
         empty_bytes = buf.getvalue()  # 8 bytes
-        _patch_slot_with_gaitem_insert(
+        net_shift = _patch_slot_with_gaitem_insert(
             save,
             slot_idx,
             slot,
             gaitem_slot,
             empty_bytes,
-            old_gaitem_size=8 - gaitem_size_delta,  # original size before zeroing
+            old_gaitem_size=8 - gaitem_size_delta,
         )
-        # Update in-memory offsets for gaitem entries after the removed entry
         if gaitem_size_delta != 0:
             for i in range(gaitem_slot + 1, len(slot.gaitem_offsets)):
                 slot.gaitem_offsets[i] += gaitem_size_delta
-            # Inventory offsets do NOT change: the shrink path pads the slot end
-            # to maintain net-zero size change for the gaitem region.
+            slot.inventory_held_offset += net_shift
+            slot.inventory_storage_offset += net_shift
 
     # Always patch inventory to disk
     _patch_slot(save, slot_idx, slot)
