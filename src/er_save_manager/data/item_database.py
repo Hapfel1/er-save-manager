@@ -46,12 +46,17 @@ class Item:
     wep_type: int = 0
     wep_type_col: str = ""
     max_arrow_quantity: int = 1
+    max_upgrade: int = (
+        -1
+    )  # -1 = derive from reinforcement; set explicitly for mod overrides
 
     # Goods fields (populated from goods CSVs)
     max_num: int = 1
 
     # Gem fields (populated from gem CSVs)
     compatible_wep_types: list = field(default_factory=list)
+    default_affinity: str = "Standard"
+    allowed_affinities: list = field(default_factory=list)
 
     @property
     def full_id(self) -> int:
@@ -106,8 +111,9 @@ class ItemDatabase:
         self._loaded = True
 
     def _load_file(self, filepath: Path, category: int, category_name: str):
+        is_convergence = "Convergence" in str(filepath)
         if filepath.suffix == ".csv":
-            self._load_csv(filepath, category, category_name)
+            self._load_csv(filepath, category, category_name, is_convergence)
         else:
             self._load_txt(filepath, category, category_name)
 
@@ -136,7 +142,13 @@ class ItemDatabase:
                 except ValueError:
                     continue
 
-    def _load_csv(self, filepath: Path, category: int, category_name: str):
+    def _load_csv(
+        self,
+        filepath: Path,
+        category: int,
+        category_name: str,
+        convergence: bool = False,
+    ):
         with open(filepath, encoding="utf-8-sig", newline="") as f:
             reader = _csv.DictReader(f)
             headers = set(reader.fieldnames or [])
@@ -175,8 +187,10 @@ class ItemDatabase:
                     item.wep_type = int(row.get("wepType", 0) or 0)
                     item.wep_type_col = row.get("wepTypeCol", "")
                     item.max_arrow_quantity = int(row.get("maxArrowQuantity", 1) or 1)
-                    # Upgrade cap validation uses reinforcement; max_num=1 for weapons
                     item.max_num = 1
+                    # Convergence raises both standard and somber cap to +15
+                    if convergence and item.reinforcement in ("standard", "somber"):
+                        item.max_upgrade = 15
 
                 elif is_goods:
                     item.max_num = int(row.get("maxNum", 1) or 1)
@@ -184,6 +198,11 @@ class ItemDatabase:
                 elif is_gem:
                     compat = row.get("compatibleWepTypes", "")
                     item.compatible_wep_types = compat.split("|") if compat else []
+                    item.default_affinity = (
+                        row.get("defaultAffinity", "Standard") or "Standard"
+                    )
+                    allowed = row.get("allowedAffinities", "")
+                    item.allowed_affinities = allowed.split("|") if allowed else []
                     item.max_num = 1
 
                 self._register(item)
