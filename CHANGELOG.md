@@ -3,6 +3,31 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.1.0
+**Released:** May 04, 2026
+
+
+### ✨ New Features
+
+- Structured item data with param validation `[inventory]` ([c12b807](https://github.com/Hapfel1/er-save-manager/commit/c12b807956fdd4a2020ac95a529af0516e98b9f5))
+
+
+
+### 🔧 Bug Fixes
+
+- Remove_item was ignoring the delta return value so it did not shift the offsets correctly ([69dfc16](https://github.com/Hapfel1/er-save-manager/commit/69dfc164741a189275ccae21061aedcc2ca3b652))
+
+- Converted Database files to csv, added more params to validate each spawned item, split up add_item function ([b29471a](https://github.com/Hapfel1/er-save-manager/commit/b29471aad7755d10a0e1ac3219e13435b185bb19))
+
+
+
+### 📦 Dependencies
+
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([ae6993d](https://github.com/Hapfel1/er-save-manager/commit/ae6993dd0f3e679ba703f579b245e375ea1f54f7))
+
+
+
+---
 ## 📦 Release 1.0.0
 **Released:** May 03, 2026
 
@@ -764,6 +789,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.1.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.0.0..v1.1.0
 [1.0.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.14.1..v1.0.0
 [0.14.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.14.0..v0.14.1
 [0.14.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.13.0..v0.14.0
