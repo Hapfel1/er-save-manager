@@ -1,61 +1,66 @@
 //Format: Item Category; Weapons = 0x00000000, Armor = 0x10000000, Talismans = 0x20000000, Goods = 0x40000000, Ashes = 0x80000000
 
-0x00000000 false Items/Weapons/MeleeWeapons.txt Melee Weapons
-0x00000000 false Items/Weapons/RangedWeapons.txt Ranged Weapons
-0x80000000 false Items/Gems.txt Gems
-0x10000000 false Items/Armor.txt Armor
-0x00000000 false Items/Weapons/SpellTools.txt Spell Tools
-0x00000000 false Items/Weapons/Shields.txt Shields
-0x20000000 false Items/Talismans.txt Talismans
-0x00000000 false Items/Weapons/Ammo.txt Ammo
-0x40000000 false Items/Goods/UpgradeMaterials.txt Upgrade Materials
-0x40000000 false Items/Goods/Tools.txt Tools
-0x40000000 false Items/Goods/Consumables.txt Consumables
-0x40000000 false Items/Goods/CraftingMaterials.txt Crafting Materials
-0x40000000 false Items/Goods/KeyItems.txt Key Items
-0x40000000 false Items/Goods/CrystalTears.txt Crystal Tears
-0x40000000 false Items/Goods/Flasks.txt Flasks
-0x40000000 false Items/Goods/Ashes.txt Ashes
-0x40000000 false Items/Goods/NotesPaintings.txt Notes and Paintings
-0x40000000 false Items/Goods/Cookbooks.txt Cookbooks
-0x40000000 false Items/Goods/MerchantItems.txt Merchant Items
-0x40000000 false Items/Magic.txt Magic
-0x40000000 false Goods/SeamlessCoop.txt Seamless Co-op Items
+0x00000000 false Items/Weapons/MeleeWeapons.csv Melee Weapons
+0x00000000 false Items/Weapons/RangedWeapons.csv Ranged Weapons
+0x80000000 false Items/Gems.csv Gems
+0x10000000 false Items/Armor.csv Armor
+0x00000000 false Items/Weapons/SpellTools.csv Spell Tools
+0x00000000 false Items/Weapons/Shields.csv Shields
+0x20000000 false Items/Talismans.csv Talismans
+0x00000000 false Items/Weapons/Ammo.csv Ammo
+0x40000000 false Items/Goods/UpgradeMaterials.csv Upgrade Materials
+0x40000000 false Items/Goods/Tools.csv Tools
+0x40000000 false Items/Goods/Consumables.csv Consumables
+0x40000000 false Items/Goods/CraftingMaterials.csv Crafting Materials
+0x40000000 false Items/Goods/KeyItems.csv Key Items
+0x40000000 false Items/Goods/CrystalTears.csv Crystal Tears
+0x40000000 false Items/Goods/Flasks.csv Flasks
+0x40000000 false Items/Goods/Ashes.csv Ashes
+0x40000000 false Items/Goods/NotesPaintings.csv Notes and Paintings
+0x40000000 false Items/Goods/Cookbooks.csv Cookbooks
+0x40000000 false Items/Goods/MerchantItems.csv Merchant Items
+0x40000000 false Items/Magic.csv Magic
+0x40000000 false Goods/SeamlessCoop.csv Seamless Co-op Items
 
 //DLC Categories
-0x00000000 false Items/DLC/DLCWeapons/DLCMeleeWeapons.txt DLC Melee Weapons
-0x00000000 false Items/DLC/DLCWeapons/DLCRangedWeapons.txt DLC Ranged Weapons
-0x80000000 false Items/DLC/DLCGems.txt DLC Gems
-0x10000000 false Items/DLC/DLCArmor.txt DLC Armor
-0x00000000 false Items/DLC/DLCWeapons/DLCSpellTools.txt DLC Spell Tools
-0x00000000 false Items/DLC/DLCWeapons/DLCShields.txt DLC Shields
-0x20000000 false Items/DLC/DLCTalismans.txt DLC Talismans
-0x00000000 false Items/DLC/DLCWeapons/DLCAmmo.txt DLC Ammo
-0x40000000 false Items/DLC/DLCGoods/DLCUpgradeMaterials.txt DLC Upgrade Materials
-0x40000000 false Items/DLC/DLCGoods/DLCTools.txt DLC Tools
-0x40000000 false Items/DLC/DLCGoods/DLCConsumables.txt DLC Consumables
-0x40000000 false Items/DLC/DLCGoods/DLCCraftingMaterials.txt DLC Crafting Materials
-0x40000000 false Items/DLC/DLCGoods/DLCKeyItems.txt DLC Key Items
-0x40000000 false Items/DLC/DLCGoods/DLCCrystalTears.txt DLC Crystal Tears
-0x40000000 false Items/DLC/DLCGoods/DLCAshes.txt DLC Ashes
-0x40000000 false Items/DLC/DLCGoods/DLCNotesPaintings.txt DLC Notes and Paintings
-0x40000000 false Items/DLC/DLCGoods/DLCCookbooks.txt DLC Cookbooks
-0x40000000 false Items/DLC/DLCGoods/DLCMerchantItems.txt DLC Merchant Items
-0x40000000 false Items/DLC/DLCMagic.txt DLC Magic
+0x00000000 false Items/DLC/DLCWeapons/DLCMeleeWeapons.csv DLC Melee Weapons
+0x00000000 false Items/DLC/DLCWeapons/DLCRangedWeapons.csv DLC Ranged Weapons
+0x80000000 false Items/DLC/DLCGems.csv DLC Gems
+0x10000000 false Items/DLC/DLCArmor.csv DLC Armor
+0x00000000 false Items/DLC/DLCWeapons/DLCSpellTools.csv DLC Spell Tools
+0x00000000 false Items/DLC/DLCWeapons/DLCShields.csv DLC Shields
+0x20000000 false Items/DLC/DLCTalismans.csv DLC Talismans
+0x00000000 false Items/DLC/DLCWeapons/DLCAmmo.csv DLC Ammo
+0x40000000 false Items/DLC/DLCGoods/DLCUpgradeMaterials.csv DLC Upgrade Materials
+0x40000000 false Items/DLC/DLCGoods/DLCTools.csv DLC Tools
+0x40000000 false Items/DLC/DLCGoods/DLCConsumables.csv DLC Consumables
+0x40000000 false Items/DLC/DLCGoods/DLCCraftingMaterials.csv DLC Crafting Materials
+0x40000000 false Items/DLC/DLCGoods/DLCKeyItems.csv DLC Key Items
+0x40000000 false Items/DLC/DLCGoods/DLCCrystalTears.csv DLC Crystal Tears
+0x40000000 false Items/DLC/DLCGoods/DLCAshes.csv DLC Ashes
+0x40000000 false Items/DLC/DLCGoods/DLCNotesPaintings.csv DLC Notes and Paintings
+0x40000000 false Items/DLC/DLCGoods/DLCCookbooks.csv DLC Cookbooks
+0x40000000 false Items/DLC/DLCGoods/DLCMerchantItems.csv DLC Merchant Items
+0x40000000 false Items/DLC/DLCMagic.csv DLC Magic
 
 //Convergence Mod Categories
-0x00000000 false Items/Convergence/Weapons/ConvergenceMeleeWeapons.txt Convergence Melee Weapons
-0x00000000 false Items/Convergence/Weapons/ConvergenceReworkedWeapons.txt Convergence Reworked Weapons
-0x00000000 false Items/Convergence/Weapons/ConvergenceShields.txt Convergence Shields
-0x10000000 false Items/Convergence/Armor/ConvergenceArmor.txt Convergence Armor
-0x00000000 false Items/Convergence/Spelltools/ConvergenceSpellTools.txt Convergence Spell Tools
-0x40000000 false Items/Convergence/Goods/ConvergenceKeystonesRemnants.txt Convergence Keystones and Remnants
-0x40000000 false Items/Convergence/Goods/ConvergenceStones.txt Convergence Stones
-0x40000000 false Items/Convergence/Goods/ConvergenceRunes.txt Convergence Runes
-0x40000000 false Items/Convergence/Goods/ConvergenceNotes.txt Convergence Notes
-0x40000000 false Items/Convergence/Goods/ConvergenceRemembrances.txt Convergence Remembrances
-0x40000000 false Items/Convergence/Goods/ConvergenceConsumables.txt Convergence Consumables
-0x40000000 false Items/Convergence/Goods/ConvergenceCrystalTears.txt Convergence Crystal Tears
+0x00000000 false Items/Convergence/Weapons/ConvergenceMeleeWeapons.csv Convergence Melee Weapons
+0x00000000 false Items/Convergence/Weapons/ConvergenceReworkedWeapons.csv Convergence Reworked Weapons
+0x00000000 false Items/Convergence/Weapons/ConvergenceShields.csv Convergence Shields
+0x00000000 false Items/Convergence/Weapons/ConvergenceAmmo.csv Convergence Ammo
+0x80000000 false Items/Convergence/ConvergenceGems.csv Convergence Gems
+0x20000000 false Items/Convergence/ConvergenceTalismans.csv Convergence Talismans
+0x10000000 false Items/Convergence/Armor/ConvergenceArmor.csv Convergence Armor
+0x00000000 false Items/Convergence/Spelltools/ConvergenceSpellTools.csv Convergence Spell Tools
+0x40000000 false Items/Convergence/Goods/ConvergenceKeystonesRemnants.csv Convergence Keystones and Remnants
+0x40000000 false Items/Convergence/Goods/ConvergenceStones.csv Convergence Stones
+0x40000000 false Items/Convergence/Goods/ConvergenceRunes.csv Convergence Runes
+0x40000000 false Items/Convergence/Goods/ConvergenceAshes.csv Convergence Ashes
+0x40000000 false Items/Convergence/Goods/ConvergenceNotes.csv Convergence Notes
+0x40000000 false Items/Convergence/Goods/ConvergenceRemembrances.csv Convergence Remembrances
+0x40000000 false Items/Convergence/Goods/ConvergenceConsumables.csv Convergence Consumables
+0x40000000 false Items/Convergence/Goods/ConvergenceCrystalTears.csv Convergence Crystal Tears
+0x40000000 false Items/Convergence/ConvergenceMagic.csv Convergence Magic
 
 //0x10000000 false Items/CutContent/Armor.txt Cut Content Armor
 //0x20000000 false Items/CutContent/Talismans.txt Cut Content Talismans
