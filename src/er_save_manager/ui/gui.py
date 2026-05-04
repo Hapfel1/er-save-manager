@@ -1447,7 +1447,7 @@ class SaveManagerGUI:
             # Create custom dialog with "Don't show again" option
             warning_dialog = tk.Toplevel(self.root)
             warning_dialog.title("⚠️ Warning - Vanilla Save File Detected")
-            warning_dialog.geometry("520x500")
+            warning_dialog.geometry("520x600")
             warning_dialog.transient(self.root)
             warning_dialog.update_idletasks()
             warning_dialog.grab_set()
