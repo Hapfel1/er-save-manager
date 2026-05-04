@@ -44,18 +44,19 @@
 0x40000000 false Items/DLC/DLCMagic.csv DLC Magic
 
 //Convergence Mod Categories
-0x00000000 false Items/Convergence/Weapons/ConvergenceMeleeWeapons.txt Convergence Melee Weapons
-0x00000000 false Items/Convergence/Weapons/ConvergenceReworkedWeapons.txt Convergence Reworked Weapons
-0x00000000 false Items/Convergence/Weapons/ConvergenceShields.txt Convergence Shields
-0x10000000 false Items/Convergence/Armor/ConvergenceArmor.txt Convergence Armor
-0x00000000 false Items/Convergence/Spelltools/ConvergenceSpellTools.txt Convergence Spell Tools
-0x40000000 false Items/Convergence/Goods/ConvergenceKeystonesRemnants.txt Convergence Keystones and Remnants
-0x40000000 false Items/Convergence/Goods/ConvergenceStones.txt Convergence Stones
-0x40000000 false Items/Convergence/Goods/ConvergenceRunes.txt Convergence Runes
-0x40000000 false Items/Convergence/Goods/ConvergenceNotes.txt Convergence Notes
-0x40000000 false Items/Convergence/Goods/ConvergenceRemembrances.txt Convergence Remembrances
-0x40000000 false Items/Convergence/Goods/ConvergenceConsumables.txt Convergence Consumables
-0x40000000 false Items/Convergence/Goods/ConvergenceCrystalTears.txt Convergence Crystal Tears
+0x00000000 false Items/Convergence/Weapons/ConvergenceMeleeWeapons.csv Convergence Melee Weapons
+0x00000000 false Items/Convergence/Weapons/ConvergenceReworkedWeapons.csv Convergence Reworked Weapons
+0x00000000 false Items/Convergence/Weapons/ConvergenceShields.csv Convergence Shields
+0x80000000 false Items/Convergence/ConvergenceGems.csv Convergence Gems
+0x10000000 false Items/Convergence/Armor/ConvergenceArmor.csv Convergence Armor
+0x00000000 false Items/Convergence/Spelltools/ConvergenceSpellTools.csv Convergence Spell Tools
+0x40000000 false Items/Convergence/Goods/ConvergenceKeystonesRemnants.csv Convergence Keystones and Remnants
+0x40000000 false Items/Convergence/Goods/ConvergenceStones.csv Convergence Stones
+0x40000000 false Items/Convergence/Goods/ConvergenceRunes.csv Convergence Runes
+0x40000000 false Items/Convergence/Goods/ConvergenceNotes.csv Convergence Notes
+0x40000000 false Items/Convergence/Goods/ConvergenceRemembrances.csv Convergence Remembrances
+0x40000000 false Items/Convergence/Goods/ConvergenceConsumables.csv Convergence Consumables
+0x40000000 false Items/Convergence/Goods/ConvergenceCrystalTears.csv Convergence Crystal Tears
 
 //0x10000000 false Items/CutContent/Armor.txt Cut Content Armor
 //0x20000000 false Items/CutContent/Talismans.txt Cut Content Talismans

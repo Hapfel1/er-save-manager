@@ -1,3 +1,4 @@
+ID,Name
 40000,Iron Helmet
 40100,Scale Armor
 40200,Iron Gauntlets
@@ -110,8 +111,8 @@
 281100,Royal Knight Armor (Altered)
 290000,Nox Monk Hood
 290100,Nox Monk Armor
-290200,Nox Monk Bracelets
-290300,Nox Monk Greaves
+290200,Nox Bracelets
+290300,Nox Greaves
 291000,Nox Monk Hood (Altered)
 291100,Nox Monk Armor (Altered)
 292000,Nox Swordstress Crown
@@ -451,7 +452,7 @@
 1090000,Silver Tear Mask
 1100000,Chain Coif
 1100100,Chain Armor
-1100200,Gauntlets
+1100200,Chain Gauntlets
 1100300,Chain Leggings
 1101000,Greathelm
 1101100,Eye Surcoat

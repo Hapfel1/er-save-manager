@@ -1,11 +1,12 @@
-8380001,HostingItem
-8380002,JoiningItem
-8380003,BreakInItem
-8380004,LeavingItem
-8380005,GameRuleChangeItem
-8380006,RuneArcItem
-8380007,RotItem_01
-8380008,RotItem_02
-8380009,RotItem_03
-8380010,RotItem_04
-8380011,RotItem_05
+ID,Name,maxNum,category
+8380001,HostingItem,1,Seamless Co-op Items
+8380002,JoiningItem,1,Seamless Co-op Items
+8380003,BreakInItem,1,Seamless Co-op Items
+8380004,LeavingItem,1,Seamless Co-op Items
+8380005,GameRuleChangeItem,1,Seamless Co-op Items
+8380006,RuneArcItem,1,Seamless Co-op Items
+8380007,RotItem_01,5,Seamless Co-op Items
+8380008,RotItem_02,5,Seamless Co-op Items
+8380009,RotItem_03,5,Seamless Co-op Items
+8380010,RotItem_04,5,Seamless Co-op Items
+8380011,RotItem_05,5,Seamless Co-op Items

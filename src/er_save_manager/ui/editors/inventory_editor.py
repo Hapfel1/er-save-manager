@@ -82,6 +82,16 @@ class InventoryEditor:
         (10, "Poison"),
         (11, "Blood"),
         (12, "Occult"),
+        # Convergence mod affinities
+        (13, "Frenzy"),
+        (14, "Death"),
+        (15, "Godslayer"),
+        (16, "Frost"),
+        (17, "Aberrant"),
+        (18, "Bloodflame"),
+        (19, "Rotten"),
+        (20, "Storm"),
+        (21, "Psionic"),
     ]
     _AFFINITY_BY_CODE: dict[int, str] = dict(_AFFINITIES)
     _AFFINITY_NAMES: list[str] = [name for _, name in _AFFINITIES]
@@ -100,6 +110,7 @@ class InventoryEditor:
         "Convergence Remembrances",
         "Convergence Consumables",
         "Convergence Crystal Tears",
+        "Convergence Gems",
     }
 
     def __init__(
@@ -109,12 +120,14 @@ class InventoryEditor:
         get_char_slot_callback,
         get_save_path_callback,
         ensure_mutable_callback,
+        on_inventory_changed=None,
     ):
         self.parent = parent
         self.get_save_file = get_save_file_callback
         self.get_char_slot = get_char_slot_callback
         self.get_save_path = get_save_path_callback
         self.ensure_mutable = ensure_mutable_callback
+        self._on_inventory_changed = on_inventory_changed
 
         self.selected_item = None
         # All parsed rows before search filter: (text, full_id, location) - header rows have None full_id
@@ -124,6 +137,8 @@ class InventoryEditor:
 
         # Add-panel widgets
         self.inv_quantity_var: ctk.IntVar | None = None
+        self._quantity_entry: ctk.CTkEntry | None = None
+        self._current_max_num: int = 1
         self.inv_upgrade_var: ctk.StringVar | None = None
         self.inv_affinity_var: ctk.StringVar | None = None
         self.inv_location_var: ctk.StringVar | None = None
@@ -258,9 +273,10 @@ class InventoryEditor:
             row=0, column=0, sticky=ctk.W, padx=(0, 6), pady=4
         )
         self.inv_quantity_var = ctk.IntVar(value=1)
-        ctk.CTkEntry(opts, textvariable=self.inv_quantity_var, width=70).grid(
-            row=0, column=1, sticky=ctk.W, pady=4
+        self._quantity_entry = ctk.CTkEntry(
+            opts, textvariable=self.inv_quantity_var, width=70
         )
+        self._quantity_entry.grid(row=0, column=1, sticky=ctk.W, pady=4)
 
         ctk.CTkLabel(opts, text="Upgrade:", anchor="w").grid(
             row=0, column=2, sticky=ctk.W, padx=(14, 6), pady=4
@@ -508,31 +524,81 @@ class InventoryEditor:
         )
 
         is_weapon = self.selected_item.category == 0x00000000
+        is_armor = self.selected_item.category == 0x10000000
+        is_gem = self.selected_item.category == 0x80000000
         is_ashes = self.selected_item.category_name in ("Ashes", "DLC Ashes")
         is_upgradable = is_weapon or is_ashes
+        reinforcement = (
+            getattr(self.selected_item, "reinforcement", "standard")
+            if is_weapon
+            else "standard"
+        )
+        aow_allowed = is_weapon and getattr(self.selected_item, "aow_allowed", True)
+        affinity_allowed = is_weapon and reinforcement == "standard" and aow_allowed
+
+        # Gaitem items (weapon/armor/gem) are always qty 1, except ammo which uses max_arrow_quantity
+        if self._quantity_entry:
+            max_arrow = getattr(self.selected_item, "max_arrow_quantity", 1)
+            is_ammo = is_weapon and max_arrow > 1
+            if (is_weapon and not is_ammo) or is_armor or is_gem:
+                self.inv_quantity_var.set(1)
+                self._quantity_entry.configure(state="disabled")
+                self._current_max_num = 1
+            else:
+                max_num = (
+                    max_arrow if is_ammo else getattr(self.selected_item, "max_num", 1)
+                )
+                self._current_max_num = max_num
+                self.inv_quantity_var.set(1)
+                self._quantity_entry.configure(
+                    state="normal" if max_num > 1 else "disabled"
+                )
 
         if self._upgrade_combo:
             if is_upgradable:
                 if is_ashes:
                     cap = 10
-                elif is_weapon:
-                    r = getattr(self.selected_item, "reinforcement", "standard")
-                    cap = 25 if r == "standard" else 10 if r == "somber" else 0
                 else:
-                    cap = 0
-                values = [str(i) for i in range(cap + 1)]
-                self._upgrade_combo.configure(values=values, state="normal")
+                    save_path = self.get_save_path() or ""
+                    is_convergence_save = ".cnv" in str(save_path).lower()
+                    explicit_cap = getattr(self.selected_item, "max_upgrade", -1)
+                    if explicit_cap >= 0:
+                        cap = explicit_cap
+                    elif is_convergence_save and reinforcement in (
+                        "standard",
+                        "somber",
+                    ):
+                        cap = 15
+                    else:
+                        cap = (
+                            25
+                            if reinforcement == "standard"
+                            else 10
+                            if reinforcement == "somber"
+                            else 0
+                        )
+                self._upgrade_combo.configure(
+                    values=[str(i) for i in range(cap + 1)], state="normal"
+                )
                 self.inv_upgrade_var.set("0")
             else:
                 self._upgrade_combo.configure(values=["0"], state="disabled")
                 self.inv_upgrade_var.set("0")
 
-        # Disable AoW if weapon doesn't allow it or if not a weapon
-        aow_allowed = is_weapon and getattr(self.selected_item, "aow_allowed", True)
-        weapon_state = "normal" if is_weapon else "disabled"
+        save_path = self.get_save_path() or ""
+        is_convergence_save = ".cnv" in str(save_path).lower()
+
         if self._affinity_combo:
-            self._affinity_combo.configure(state=weapon_state)
-            if not is_weapon:
+            if affinity_allowed:
+                affinity_values = (
+                    self._AFFINITY_NAMES
+                    if is_convergence_save
+                    else self._AFFINITY_NAMES[:13]  # base 13 only
+                )
+                self._affinity_combo.configure(values=affinity_values, state="normal")
+                self.inv_affinity_var.set("Standard")
+            else:
+                self._affinity_combo.configure(state="disabled")
                 self.inv_affinity_var.set("Standard")
 
         aow_state = "normal" if aow_allowed else "disabled"
@@ -591,14 +657,33 @@ class InventoryEditor:
 
         gem_items: list = []
 
+        # Gems compatible with the currently selected weapon
+        wep_col = (
+            getattr(self.selected_item, "wep_type_col", "")
+            if self.selected_item
+            else ""
+        )
+        save_path_str = str(self.get_save_path() or "").lower()
+        is_convergence_save = ".cnv" in save_path_str
+
         def _load():
             try:
                 from er_save_manager.data.item_database import get_item_database
 
                 db = get_item_database()
-                gems = db.get_items_by_category("Gems") + db.get_items_by_category(
-                    "DLC Gems"
-                )
+                cats = ["Gems", "DLC Gems"]
+                if is_convergence_save:
+                    cats.append("Convergence Gems")
+                gems = []
+                for cat in cats:
+                    gems += db.get_items_by_category(cat)
+                if wep_col:
+                    gems = [
+                        g
+                        for g in gems
+                        if not g.compatible_wep_types
+                        or wep_col in g.compatible_wep_types
+                    ]
                 return gems
             except Exception:
                 return []
@@ -626,6 +711,11 @@ class InventoryEditor:
                 self.inv_aow_var.set(item.name)
                 if self._aow_label:
                     self._aow_label.configure(text_color=("#7c4dac", "#c084fc"))
+            # Update affinity combo to show only affinities this AoW supports
+            if self._affinity_combo and item.allowed_affinities:
+                self._affinity_combo.configure(values=item.allowed_affinities)
+                default = item.default_affinity or item.allowed_affinities[0]
+                self.inv_affinity_var.set(default)
             dialog.destroy()
 
         lb.bind("<Double-Button-1>", lambda _e: _confirm())
@@ -645,6 +735,15 @@ class InventoryEditor:
             self.inv_aow_var.set("None")
         if self._aow_label:
             self._aow_label.configure(text_color=("gray50", "gray60"))
+        if self._affinity_combo and self.inv_affinity_var:
+            is_convergence_save = ".cnv" in str(self.get_save_path() or "").lower()
+            values = (
+                self._AFFINITY_NAMES
+                if is_convergence_save
+                else self._AFFINITY_NAMES[:13]
+            )
+            self._affinity_combo.configure(values=values)
+            self.inv_affinity_var.set("Standard")
 
     # ---- inventory display --------------------------------------------------
 
@@ -792,13 +891,46 @@ class InventoryEditor:
 
         slot_idx = self.get_char_slot()
         full_id = self.selected_item.full_id
-        is_weapon = (full_id & 0xF0000000) == 0x00000000
+        cat = full_id & 0xF0000000
+        is_weapon = cat == 0x00000000
+        is_armor = cat == 0x10000000
+        is_gem = cat == 0x80000000
         is_ashes = self.selected_item.category_name in ("Ashes", "DLC Ashes")
+
         try:
             qty = int(self.inv_quantity_var.get())
             upg = int(self.inv_upgrade_var.get()) if (is_weapon or is_ashes) else 0
         except (ValueError, tk.TclError):
+            qty = 1
             upg = 0
+
+        if is_weapon or is_armor or is_gem:
+            max_arrow = getattr(self.selected_item, "max_arrow_quantity", 1)
+            is_ammo = is_weapon and max_arrow > 1
+            if not is_ammo:
+                qty = 1
+            elif qty < 1 or qty > max_arrow:
+                CTkMessageBox.showerror(
+                    "Invalid Quantity",
+                    f"Quantity must be 1-{max_arrow} for this ammo.",
+                    parent=self.parent,
+                )
+                return
+        else:
+            max_arrow = getattr(self.selected_item, "max_arrow_quantity", 1)
+            max_num = (
+                max_arrow
+                if max_arrow > 1
+                else getattr(self.selected_item, "max_num", 1)
+            )
+            if max_num > 1 and (qty < 1 or qty > max_num):
+                CTkMessageBox.showerror(
+                    "Invalid Quantity",
+                    f"Quantity must be 1-{max_num} for this item.",
+                    parent=self.parent,
+                )
+                return
+            qty = max(1, min(qty, max_num))
 
         # Ashes: encode upgrade directly into goods ID (base + level)
         if is_ashes and upg > 0:
@@ -845,6 +977,8 @@ class InventoryEditor:
                 save_file.to_file(Path(save_path))
 
             self.refresh_inventory()
+            if self._on_inventory_changed:
+                self._on_inventory_changed()
             CTkMessageBox.showinfo(
                 "Done",
                 f"Added {self.selected_item.name}"
