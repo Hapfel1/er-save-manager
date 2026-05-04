@@ -1,0 +1,70 @@
+ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity
+14090000,Axe Of Epiphany,somber,0,17,AxeNormal,1
+14130000,Axe Of Fell prophecy,somber,0,17,AxeNormal,1
+15090000,Axe Of Rust,somber,0,19,AxeLarge,1
+9090000,Blade of Distant Light,somber,0,13,katana,1
+7160000,Blade Of Scarlet Boom,somber,0,9,SaberNormal,1
+2120000,Blade of Valor,somber,0,3,SwordNormal,1
+1200000,Blades of the Prince,somber,0,1,Dagger,1
+14170000,Bloodflame Kamas,somber,0,17,AxeNormal,1
+14150000,Bloodhound Hookblade,somber,0,17,AxeNormal,1
+60540000,Bracelet of Gold,standard,0,88,HandToHand,1
+60530000,Bracelet of Shadow,standard,0,88,HandToHand,1
+10060000,Caimar's Battlestaff,somber,0,14,SwordDoubleEdge,1
+6030000,Carwyn’s Épée,somber,0,16,SpearHeavy,1
+3110000,Celestial Blade,somber,0,5,SwordLarge,1
+12040000,Crimson Brair-Bough,somber,0,23,HammerLarge,1
+21020000,Daergraf’s Opus,somber,0,35,Knuckle,1
+1180000,Deathrite Dagger,somber,0,1,Dagger,1
+2250000,Dragonkin Seeker Sword,somber,0,3,SwordNormal,1
+3240000,Dyru's Greatsword,somber,0,5,SwordLarge,1
+66530000,Eagle's Edge,somber,0,94,GreatKatana,1
+12090000,Einar's Hammer,somber,0,23,HammerLarge,1
+22050000,Emyr's Great Talons,somber,0,37,Claw,1
+5080000,Foil Of Caddock,somber,0,15,SwordPierce,1
+10040000,Frozen Twinshards,somber,0,14,SwordDoubleEdge,1
+21090000,Furnace Fists,somber,0,35,Knuckle,1
+10110000,Gilded Quarterstaff,somber,0,14,SwordDoubleEdge,1
+18120000,Glaive Of The Ancients,somber,0,29,SpearAxe,1
+14070000,Glintstone Cleaver,somber,0,17,AxeNormal,1
+7170000,Godskin Flayer,somber,0,9,SaberNormal,1
+10070000,Godwyn's Cragblades,somber,0,14,SwordDoubleEdge,1
+4120000,Gravelstone Arcblades,somber,0,7,SwordGigantic,1
+23090000,Greatstaff of Decay,somber,0,41,AxhammerLarge,1
+18110000,Guardian Spearblade,somber,0,3,SwordNormal,1
+11180000,Hammer of Virtue,somber,0,21,HammerNormal,1
+11020000,Leaden Maul,somber,0,21,HammerNormal,1
+23160000,Lodestone of Gelmir,somber,0,41,AxhammerLarge,1
+1170000,Midnight Dagger,somber,0,1,Dagger,1
+13050000,Mohgwyn Censer,somber,0,24,Flail,1
+2150000,Molten Sword,somber,0,3,SwordNormal,1
+7180000,Nomad's Kilij,somber,0,9,SaberNormal,1
+4130000,Osian’s Greatsword,somber,0,7,SwordGigantic,1
+10100000,Palm-Ax Twinblades,somber,0,14,SwordDoubleEdge,1
+16170000,Phalanx Pike,somber,0,25,SpearNormal,1
+5090000,Quicksilver rapier,somber,0,15,SwordPierce,1
+60520000,Rancor Touch,somber,0,88,HandToHand,1
+18170000,Reaver’s Odachi,somber,0,94,GreatKatana,1
+14160000,Rimeheart,somber,0,17,AxeNormal,1
+19050000,Rosus harvester,somber,0,31,Sickle,1
+19070000,Scarlet Triscythe,somber,0,31,Sickle,1
+13060000,Seething Flail,somber,0,24,Flail,1
+12070000,Sigur’s Greatmace,somber,0,23,HammerLarge,1
+17080000,Spear of the Dreaming,somber,0,28,SpearLarge,1
+16100000,Spear of Tranquility,somber,0,25,SpearNormal,1
+9050000,Star Shadow,somber,0,13,katana,1
+22040000,Stone Claws,somber,0,37,Claw,1
+10020000,Sulien's Razors,somber,0,14,SwordDoubleEdge,1
+1120000,Surgeons Catlinger,standard,1,1,Dagger,1
+3230000,Sword Of Hadea,somber,0,5,SwordLarge,1
+67530000,Sword of the Cosmos,somber,0,93,LightGreatsword,1
+3120000,Sword Of The Cyclops,somber,0,5,SwordLarge,1
+5070000,Thorn Of The Guilty,somber,0,15,SwordPierce,1
+8090000,Three Finger Blade,somber,0,11,SaberLarge,1
+11190000,Tricia's Pomander,somber,0,21,HammerNormal,1
+1050000,Underworld Dagger,standard,1,1,Dagger,1
+12030000,Underworld Greatmace,somber,0,23,HammerLarge,1
+19040000,War Scythe,somber,0,31,Sickle,1
+2030000,Yura’s Kanabo,somber,0,3,SwordNormal,1
+11160000,Zamor Star Mace,somber,0,21,HammerNormal,1
+7090000,Zephyr Blades,somber,0,9,SaberNormal,1

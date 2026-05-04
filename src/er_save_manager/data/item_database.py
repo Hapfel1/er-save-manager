@@ -1,10 +1,20 @@
 """
 Elden Ring Item Database
-Loads and provides access to all items organized by category
+Loads and provides access to all items organized by category.
+
+Files ending in .csv are parsed as structured data with optional param columns.
+Files ending in .txt are parsed as plain "id name" per line.
+
+CSV column sets:
+  Weapons/Ammo:  ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity
+  Goods:         ID,Name,maxNum,category
+  Gems:          ID,Name,compatibleWepTypes  (pipe-separated wepTypeCol values)
+  Plain CSV:     ID,Name
 """
 
+import csv as _csv
 import re as _re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import IntEnum
 from pathlib import Path
 
@@ -28,14 +38,31 @@ class Item:
     id: int
     name: str
     category: ItemCategory
-    category_name: str  # Human-readable category (e.g., "Melee Weapons", "Consumables")
+    category_name: str
+
+    # Weapon / ammo fields (populated from weapon CSVs)
+    reinforcement: str = "standard"  # standard | somber | none
+    aow_allowed: bool = True
+    wep_type: int = 0
+    wep_type_col: str = ""
+    max_arrow_quantity: int = 1
+    max_upgrade: int = (
+        -1
+    )  # -1 = derive from reinforcement; set explicitly for mod overrides
+
+    # Goods fields (populated from goods CSVs)
+    max_num: int = 1
+
+    # Gem fields (populated from gem CSVs)
+    compatible_wep_types: list = field(default_factory=list)
+    default_affinity: str = "Standard"
+    allowed_affinities: list = field(default_factory=list)
 
     @property
     def full_id(self) -> int:
-        """Get full item ID with category bits"""
         return self.category | self.id
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -44,13 +71,12 @@ class ItemDatabase:
 
     def __init__(self):
         self.items: list[Item] = []
-        self.items_by_id: dict[int, Item] = {}  # full_id -> Item
+        self.items_by_id: dict[int, Item] = {}
         self.items_by_category: dict[str, list[Item]] = {}
         self.categories: list[tuple[str, ItemCategory]] = []
         self._loaded = False
 
     def load(self):
-        """Load all items from resource files"""
         if self._loaded:
             return
 
@@ -62,153 +88,190 @@ class ItemDatabase:
                 f"ItemCategories.txt not found at {categories_file}"
             )
 
-        # Parse category definitions
         with open(categories_file, encoding="utf-8-sig") as f:
             for line in f:
                 line = line.strip()
-
-                # Skip comments and empty lines
                 if not line or line.startswith("//"):
                     continue
 
-                # Format: 0x00000000 false Items/Weapons/MeleeWeapons.txt Melee Weapons
                 parts = line.split(maxsplit=3)
                 if len(parts) < 4:
                     continue
 
                 category_hex = parts[0]
-                # parts[1] is show_ids (ignored for now)
-                rel_path = parts[2].replace("Items/", "")  # Remove Items/ prefix
+                rel_path = parts[2].replace("Items/", "")
                 category_name = parts[3]
-
                 category = int(category_hex, 16)
 
-                # Load items from the specified file
                 item_file = base_path / rel_path
                 if item_file.exists():
-                    self._load_items_from_file(item_file, category, category_name)
+                    self._load_file(item_file, category, category_name)
                     self.categories.append((category_name, ItemCategory(category)))
 
         self._loaded = True
 
-    def _load_items_from_file(self, filepath: Path, category: int, category_name: str):
-        """Load items from a single file"""
+    def _load_file(self, filepath: Path, category: int, category_name: str):
+        is_convergence = "Convergence" in str(filepath)
+        if filepath.suffix == ".csv":
+            self._load_csv(filepath, category, category_name, is_convergence)
+        else:
+            self._load_txt(filepath, category, category_name)
+
+    def _load_txt(self, filepath: Path, category: int, category_name: str):
         with open(filepath, encoding="utf-8-sig") as f:
             for line in f:
                 line = line.strip()
-
-                # Skip comments and empty lines
                 if not line or line.startswith("//"):
                     continue
-
-                # Format: "item_id item_name"
                 parts = line.split(maxsplit=1)
                 if len(parts) != 2:
                     continue
-
                 try:
                     item_id = int(parts[0])
                     item_name = parts[1].strip()
-
-                    # Skip upgrade variant entries - browser shows base only;
-                    # upgrade level is applied at spawn time via the upgrade field.
                     if _UPGRADE_SUFFIX_RE.search(item_name):
                         continue
-
-                    item = Item(
-                        id=item_id,
-                        name=item_name,
-                        category=ItemCategory(category),
-                        category_name=category_name,
+                    self._register(
+                        Item(
+                            id=item_id,
+                            name=item_name,
+                            category=ItemCategory(category),
+                            category_name=category_name,
+                        )
                     )
-
-                    self.items.append(item)
-                    self.items_by_id[item.full_id] = item
-
-                    if category_name not in self.items_by_category:
-                        self.items_by_category[category_name] = []
-                    self.items_by_category[category_name].append(item)
-
                 except ValueError:
                     continue
 
-    def get_item_by_id(self, full_item_id: int) -> Item | None:
-        """Get item by full ID (with category bits)"""
+    def _load_csv(
+        self,
+        filepath: Path,
+        category: int,
+        category_name: str,
+        convergence: bool = False,
+    ):
+        with open(filepath, encoding="utf-8-sig", newline="") as f:
+            reader = _csv.DictReader(f)
+            headers = set(reader.fieldnames or [])
+            is_weapon = "reinforcement" in headers
+            is_goods = "maxNum" in headers
+            is_gem = "compatibleWepTypes" in headers
+
+            for row in reader:
+                try:
+                    item_id = int(row["ID"])
+                    item_name = row["Name"].strip()
+                except (ValueError, KeyError):
+                    continue
+
+                if not item_name:
+                    continue
+                # Skip upgrade variants in plain CSVs (weapon/gem CSVs already have
+                # upgrade variants stripped at generation time)
+                if (
+                    not is_weapon
+                    and not is_gem
+                    and _UPGRADE_SUFFIX_RE.search(item_name)
+                ):
+                    continue
+
+                item = Item(
+                    id=item_id,
+                    name=item_name,
+                    category=ItemCategory(category),
+                    category_name=category_name,
+                )
+
+                if is_weapon:
+                    item.reinforcement = row.get("reinforcement", "standard")
+                    item.aow_allowed = row.get("aow_allowed", "1") == "1"
+                    item.wep_type = int(row.get("wepType", 0) or 0)
+                    item.wep_type_col = row.get("wepTypeCol", "")
+                    item.max_arrow_quantity = int(row.get("maxArrowQuantity", 1) or 1)
+                    item.max_num = 1
+                    # Convergence raises both standard and somber cap to +15
+                    if convergence and item.reinforcement in ("standard", "somber"):
+                        item.max_upgrade = 15
+
+                elif is_goods:
+                    item.max_num = int(row.get("maxNum", 1) or 1)
+
+                elif is_gem:
+                    compat = row.get("compatibleWepTypes", "")
+                    item.compatible_wep_types = compat.split("|") if compat else []
+                    item.default_affinity = (
+                        row.get("defaultAffinity", "Standard") or "Standard"
+                    )
+                    allowed = row.get("allowedAffinities", "")
+                    item.allowed_affinities = allowed.split("|") if allowed else []
+                    item.max_num = 1
+
+                self._register(item)
+
+    def _register(self, item: Item):
+        self.items.append(item)
+        self.items_by_id[item.full_id] = item
+        if item.category_name not in self.items_by_category:
+            self.items_by_category[item.category_name] = []
+        self.items_by_category[item.category_name].append(item)
+
+    # ---- public query methods ------------------------------------------------
+
+    def get_item_by_id(self, full_item_id: int) -> "Item | None":
         return self.items_by_id.get(full_item_id)
 
-    def get_item_by_base_id(self, base_id: int, category: ItemCategory) -> Item | None:
-        """Get item by base ID and category"""
-        full_id = category | base_id
-        return self.items_by_id.get(full_id)
+    def get_item_by_base_id(
+        self, base_id: int, category: ItemCategory
+    ) -> "Item | None":
+        return self.items_by_id.get(category | base_id)
 
     def get_items_by_category(self, category_name: str) -> list[Item]:
-        """Get all items in a category"""
         return self.items_by_category.get(category_name, [])
 
     def get_all_categories(self) -> list[str]:
-        """Get list of all category names"""
         return list(self.items_by_category.keys())
 
     def search_items(self, query: str) -> list[Item]:
-        """Search for items by name (case-insensitive)"""
         query_lower = query.lower()
         return [item for item in self.items if query_lower in item.name.lower()]
 
-    def get_weapon_with_upgrade(self, base_id: int, upgrade_level: int) -> str:
-        """Get weapon name with upgrade level"""
-        # For weapons, base_id might include upgrade level in last 2 digits
-        # Extract actual base
-        actual_base = (base_id // 100) * 100
-
-        item = self.get_item_by_base_id(actual_base, ItemCategory.WEAPON)
-        if item:
-            if upgrade_level > 0:
-                return f"{item.name} +{upgrade_level}"
-            return item.name
-
-        return f"Unknown Weapon ({base_id})"
-
-    def decode_item_id(self, full_id: int) -> tuple[int, ItemCategory]:
-        """Decode full item ID into base ID and category"""
+    def decode_item_id(self, full_id: int) -> "tuple[int, ItemCategory]":
         raw_cat = full_id & 0xF0000000
         try:
             category = ItemCategory(raw_cat)
         except ValueError:
-            # Unknown category prefix (e.g. 0xA0 talisman handles from older saves)
             category = ItemCategory.GOODS
-        base_id = full_id & 0x0FFFFFFF
-        return base_id, category
+        return full_id & 0x0FFFFFFF, category
 
 
-# Global instance
+# ---- global instance --------------------------------------------------------
+
 _item_db = ItemDatabase()
 
 
 def get_item_database() -> ItemDatabase:
-    """Get the global item database instance"""
     if not _item_db._loaded:
         _item_db.load()
     return _item_db
 
 
-# Convenience functions
+# ---- convenience functions --------------------------------------------------
+
+
 def get_item_name(full_item_id: int, upgrade_level: int = 0) -> str:
-    """Get item name from full ID, with optional upgrade level for weapons"""
     db = get_item_database()
     base_id, category = db.decode_item_id(full_item_id)
 
-    # Naked armor slots (head=10000, chest=10100, arms=10200, legs=10300)
+    # Naked armor placeholder slots
     if category == ItemCategory.ARMOR and base_id in (0, 10000, 10100, 10200, 10300):
         return ""
 
-    # Try exact ID first
     item = db.get_item_by_id(full_item_id)
     if item:
         if category == ItemCategory.WEAPON and upgrade_level > 0:
             return f"{item.name} +{upgrade_level}"
         return item.name
 
-    # For goods: ashes encode upgrade as id % 1000; strip to find base entry
+    # Ashes: upgrade encoded as base + N (steps of 1 per level per 1000-block)
     if category == ItemCategory.GOODS:
         base_id_ash = (base_id // 1000) * 1000
         if base_id_ash != base_id:
@@ -217,7 +280,7 @@ def get_item_name(full_item_id: int, upgrade_level: int = 0) -> str:
                 upgrade = base_id % 1000
                 return f"{item.name} +{upgrade}" if upgrade else item.name
 
-    # For weapons: try stripping affinity+upgrade (last 4 digits) to get true base
+    # Weapons: strip affinity+upgrade (last 4 digits)
     if category == ItemCategory.WEAPON:
         true_base = (base_id // 10000) * 10000
         item = db.get_item_by_id(category | true_base)
@@ -226,47 +289,29 @@ def get_item_name(full_item_id: int, upgrade_level: int = 0) -> str:
                 return f"{item.name} +{upgrade_level}"
             return item.name
 
-    # For weapons, seals, and spell tools - try stripping variant suffix
-    # Variants are encoded in the last 1-2 digits (e.g., 17050009 -> 17050000, 34090004 -> 34090000)
+    # Weapons/talismans: strip variant suffix - nearest 100 then nearest 10
     if category in (ItemCategory.WEAPON, ItemCategory.TALISMAN):
-        # Try rounding to nearest 100 (for multi-upgrade weapons)
-        rounded_base = (base_id // 100) * 100
-        rounded_full_id = category | rounded_base
+        for divisor in (100, 10):
+            rounded = (base_id // divisor) * divisor
+            item = db.get_item_by_id(category | rounded)
+            if item:
+                if upgrade_level > 0:
+                    return f"{item.name} +{upgrade_level}"
+                return item.name
 
-        item = db.get_item_by_id(rounded_full_id)
-        if item:
-            if upgrade_level > 0:
-                return f"{item.name} +{upgrade_level}"
-            return item.name
-
-        # If that fails, try rounding to nearest 10 (for single-digit variants)
-        rounded_base_10 = (base_id // 10) * 10
-        rounded_full_id_10 = category | rounded_base_10
-
-        item = db.get_item_by_id(rounded_full_id_10)
-        if item:
-            if upgrade_level > 0:
-                return f"{item.name} +{upgrade_level}"
-            return item.name
-
-    _CATEGORY_LABELS = {
+    _LABELS = {
         ItemCategory.WEAPON: "Weapon",
         ItemCategory.ARMOR: "Armor",
         ItemCategory.TALISMAN: "Talisman",
         ItemCategory.GOODS: "Goods",
         ItemCategory.GEM: "Gem",
     }
-
-    return f"Unknown {_CATEGORY_LABELS.get(category, 'Item')} (ID: {base_id})"
+    return f"Unknown {_LABELS.get(category, 'Item')} (ID: {base_id})"
 
 
 def search_items(query: str) -> list[Item]:
-    """Search for items by name"""
-    db = get_item_database()
-    return db.search_items(query)
+    return get_item_database().search_items(query)
 
 
 def get_categories() -> list[str]:
-    """Get all item category names"""
-    db = get_item_database()
-    return db.get_all_categories()
+    return get_item_database().get_all_categories()

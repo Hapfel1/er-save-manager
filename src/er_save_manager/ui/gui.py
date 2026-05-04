@@ -928,8 +928,19 @@ class SaveManagerGUI:
             current_slot_index,
             lambda: self.save_path,
             self.ensure_raw_data_mutable,
+            on_inventory_changed=self._on_inventory_changed,
         )
         self.inventory_editor.setup_ui()
+
+    def _on_inventory_changed(self) -> None:
+        """Refresh matchmaking weapon level floor after inventory changes."""
+        try:
+            slot_idx = int(self.char_slot_var.get()) - 1
+            slot = self.save_file.characters[slot_idx]
+            if hasattr(self, "stats_editor") and self.stats_editor:
+                self.stats_editor._refresh_matchmaking_min(slot)
+        except Exception:
+            pass
 
     def load_character_for_edit(self):
         """Load character data into editors"""
@@ -1438,6 +1449,7 @@ class SaveManagerGUI:
             warning_dialog.title("⚠️ Warning - Vanilla Save File Detected")
             warning_dialog.geometry("520x420")
             warning_dialog.transient(self.root)
+            warning_dialog.update_idletasks()
             warning_dialog.grab_set()
 
             # Warning message

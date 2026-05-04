@@ -1,0 +1,11 @@
+ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity
+21550000,Shield of Night,somber,0,65,ShieldSmall,1
+31500000,Messmer Soldier Shield,standard,1,67,ShieldNormal,1
+31510000,Wolf Crest Shield,standard,1,67,ShieldNormal,1
+31520000,Serpent Crest Shield,standard,1,67,ShieldNormal,1
+31530000,Golden Lion Shield,somber,0,67,ShieldNormal,1
+32500000,Black Steel Greatshield,standard,1,69,ShieldLarge,1
+32520000,Verdigris Greatshield,somber,0,69,ShieldLarge,1
+30510000,Smithscript Shield,standard,0,65,ShieldSmall,1
+62500000,Dueling Shield,standard,1,90,ThrustingShield,1
+62510000,Carian Thrusting Shield,standard,1,90,ThrustingShield,1
