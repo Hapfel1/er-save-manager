@@ -195,7 +195,7 @@ MIT License - see [LICENSE](LICENSE)
 
 ### Save File Research
 - [ER-Save-Lib](https://github.com/ClayAmore/ER-Save-Lib) - Rust implementation and reverse engineering research
-- [Umgak](https://github.com/Umgak) for allowing me to use her contributions to the [TGA Cheat Table](https://github.com/The-Grand-Archives/Elden-Ring-CT-TGA), specifically the Event Flag Manager's tables
+- [Sayuri](https://github.com/Umgak) for allowing me to use her contributions to the [TGA Cheat Table](https://github.com/The-Grand-Archives/Elden-Ring-CT-TGA), specifically the Event Flag Manager's tables
 - [?WikiName?](https://soulsmodding.com/doku.php?id=er-refmat:main) for the available documentation
 - [SimpleSekiroSavegameHelper](https://github.com/uberhalit/SimpleSekiroSavegameHelper) for offsets and constants for Sekiro steamid patcher
 
@@ -205,3 +205,4 @@ MIT License - see [LICENSE](LICENSE)
 
 ### Special Thanks
 - [2Pz](https://github.com/2Pz) for implenting an automated build/release workflow
+- [Sayuri](https://github.com/Umgak) for her invaluable help on save file research and item spawning validation and her patience in answering questions.

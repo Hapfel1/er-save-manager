@@ -1,0 +1,24 @@
+ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity
+1150000,Erdsteel Dagger,standard,0,1,Dagger,1
+2110000,Coded Sword,somber,0,3,SwordNormal,1
+3130000,Helphen’s Steeple,somber,0,5,SwordLarge,1
+3150000,Marais Executioner’s Sword,somber,0,5,SwordLarge,1
+4530000,Greatswords of Radahn,somber,0,7,SwordGigantic,1
+8070000,Monk’s Flameblade,somber,0,11,SaberLarge,1
+9070000,Dragonscale Blade,somber,0,13,katana,1
+9030000,Meteoric Ore Blade,somber,0,13,katana,1
+9080000,Serpentbone Blade,somber,0,13,katana,1
+10090000,Gargoyle’s Black Blades,somber,0,14,SwordDoubleEdge,1
+10080000,Gargoyles Twinblades,somber,0,14,SwordDoubleEdge,1
+10010000,Godskin Peeler,somber,0,14,SwordDoubleEdge,1
+14080000,Icerind Hatchet,somber,0,17,AxeNormal,1
+15040000,Axe of Godrick,somber,0,19,AxeLarge,1
+15140000,Gargoyle’s Black Axe,somber,0,19,AxeLarge,1
+15130000,Gargoyle’s Great Axe,somber,0,19,AxeLarge,1
+12200000,Devourer’s Scepter,somber,0,23,HammerLarge,1
+23060000,Dragon Greatclaw,somber,0,41,AxhammerLarge,1
+23140000,Rotten Staff,somber,0,41,AxhammerLarge,1
+17500000,Spear of the Impaler,somber,0,28,SpearLarge,1
+17050000,Vyke’s War Spear,somber,0,28,SpearLarge,1
+18030000,Banished Knight’s Halberd,somber,0,29,SpearAxe,1
+18500000,Spirit Glaive,somber,0,29,SpearAxe,1
