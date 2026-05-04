@@ -111,6 +111,10 @@ class InventoryEditor:
         "Convergence Consumables",
         "Convergence Crystal Tears",
         "Convergence Gems",
+        "Convergence Talismans",
+        "Convergence Ammo",
+        "Convergence Ashes",
+        "Convergence Magic",
     }
 
     def __init__(
