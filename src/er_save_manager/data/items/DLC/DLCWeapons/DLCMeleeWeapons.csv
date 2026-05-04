@@ -1,0 +1,83 @@
+ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity
+1500000,Main-gauche,standard,1,1,Dagger,1
+1510000,Fire Knight's Shortsword,standard,1,1,Dagger,1
+2510000,Velvet Sword of St. Trina,somber,0,3,SwordNormal,1
+2520000,Star-Lined Sword,somber,0,13,katana,1
+2530000,Carian Sorcery Sword,standard,0,15,SwordPierce,1
+2540000,Stone-Sheathed Sword,somber,0,3,SwordNormal,1
+2550000,Sword of Light,somber,0,3,SwordNormal,1
+2560000,Sword of Darkness,somber,0,3,SwordNormal,1
+3500000,Sword Lance,standard,1,16,SpearHeavy,1
+3510000,Greatsword of Damnation,somber,0,5,SwordLarge,1
+3520000,Lizard Greatsword,standard,1,5,SwordLarge,1
+3550000,Greatsword of Solitude,somber,0,5,SwordLarge,1
+4500000,Ancient Meteoric Ore Greatsword,somber,0,7,SwordGigantic,1
+4520000,Fire Knight's Greatsword,standard,1,7,SwordGigantic,1
+4530000,Greatsword of Radahn (Lord),somber,0,7,SwordGigantic,1
+4540000,Moonrithyll's Knight Sword,somber,0,7,SwordGigantic,1
+4550000,Greatsword of Radahn (Light),somber,0,7,SwordGigantic,1
+6500000,Queelign's Greatsword,standard,1,16,SpearHeavy,1
+7500000,Spirit Sword,somber,0,9,SaberNormal,1
+7510000,Falx,somber,0,9,SaberNormal,1
+7520000,Dancing Blade of Ranah,somber,0,9,SaberNormal,1
+7530000,Horned Warrior's Sword,somber,0,9,SaberNormal,1
+8500000,Putrescence Cleaver,somber,0,19,AxeLarge,1
+8510000,Freyja's Greatsword,standard,1,11,SaberLarge,1
+8520000,Horned Warrior's Greatsword,somber,0,11,SaberLarge,1
+9500000,Sword of Night,somber,0,13,katana,1
+10500000,Euporia,somber,0,14,SwordDoubleEdge,1
+10510000,Black Steel Twinblade,standard,1,14,SwordDoubleEdge,1
+11500000,Flowerstone Gavel,somber,0,21,HammerNormal,1
+12500000,Smithscript Greathammer,standard,1,23,HammerLarge,1
+12510000,Anvil Hammer,somber,0,41,AxhammerLarge,1
+12520000,Black Steel Greathammer,standard,1,23,HammerLarge,1
+12530000,Bloodfiend's Arm,standard,1,41,AxhammerLarge,1
+13500000,Serpent Flail,somber,0,24,Flail,1
+14500000,Smithscript Axe,standard,1,17,AxeNormal,1
+14510000,Death Knight's Twin Axes,somber,0,17,AxeNormal,1
+14520000,Messmer Soldier's Axe,standard,1,17,AxeNormal,1
+14540000,Forked-Tongue Hatchet,standard,0,17,AxeNormal,1
+15500000,Death Knight's Longhaft Axe,somber,0,19,AxeLarge,1
+15510000,Bonny Butchering Knife,somber,0,19,AxeLarge,1
+16500000,Smithscript Spear,standard,1,25,SpearNormal,1
+16520000,Swift Spear,standard,1,25,SpearNormal,1
+16540000,Bloodfiend's Fork,standard,1,25,SpearNormal,1
+17500000,Spear of the Impaler,somber,0,28,SpearLarge,1
+17510000,Messmer Soldier's Spear,standard,1,28,SpearLarge,1
+17520000,Barbed Staff-Spear,somber,0,28,SpearLarge,1
+18500000,Spirit Glaive,somber,0,29,SpearAxe,1
+18510000,Poleblade of the Bud,somber,0,29,SpearAxe,1
+19500000,Obsidian Lamina,somber,0,31,Sickle,1
+20500000,Tooth Whip,somber,0,39,Whip,1
+21500000,Thiollier's Hidden Needle,somber,0,35,Knuckle,1
+21510000,Pata,standard,1,35,Knuckle,1
+21530000,Madding Hand,somber,0,35,Knuckle,1
+21540000,Golem Fist,standard,1,35,Knuckle,1
+21550000,Shield of Night,somber,0,65,ShieldSmall,1
+22500000,Claws of Night,somber,0,37,Claw,1
+23500000,Devonia's Hammer,somber,0,41,AxhammerLarge,1
+23510000,Shadow Sunflower Blossom,somber,0,41,AxhammerLarge,1
+23520000,Gazing Finger,somber,0,41,AxhammerLarge,1
+24500000,Nanaya's Torch,somber,0,87,Torch,1
+24510000,Lamenting Visage,somber,0,87,Torch,1
+60500000,Dryleaf Arts,standard,1,88,HandToHand,1
+60510000,Dane's Footwork,standard,1,88,HandToHand,1
+61500000,Firespark Perfume Bottle,standard,1,89,PerfumeBottle,1
+61510000,Chilling Perfume Bottle,standard,1,89,PerfumeBottle,1
+61520000,Frenzyflame Perfume Bottle,standard,1,89,PerfumeBottle,1
+61530000,Lightning Perfume Bottle,standard,1,89,PerfumeBottle,1
+61540000,Deadly Poison Perfume Bottle,somber,0,89,PerfumeBottle,1
+63500000,Smithscript Dagger,standard,1,91,ThrowingWeapon,1
+64500000,Backhand Blade,standard,1,92,ReverseHandSword,1
+64510000,Smithscript Cirque,standard,1,92,ReverseHandSword,1
+64520000,Curseblade's Cirque,somber,0,92,ReverseHandSword,1
+66500000,Great Katana,standard,1,94,GreatKatana,1
+66510000,Dragon-Hunter's Great Katana,somber,0,94,GreatKatana,1
+66520000,Rakshasa's Great Katana,somber,0,94,GreatKatana,1
+67500000,Milady,standard,1,93,LightGreatsword,1
+67510000,Leda's Sword,somber,0,93,LightGreatsword,1
+67520000,Rellana's Twin Blades,somber,0,93,LightGreatsword,1
+68500000,Beast Claw,standard,1,95,BeastClaw,1
+68510000,Red Bear's Claw,somber,0,95,BeastClaw,1
+16550000,Bloodfiend's Sacred Spear,somber,0,28,SpearLarge,1
+21520000,Poisoned Hand,standard,1,35,Knuckle,1

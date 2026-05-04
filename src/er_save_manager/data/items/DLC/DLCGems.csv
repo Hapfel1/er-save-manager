@@ -1,0 +1,26 @@
+ID,Name,compatibleWepTypes
+200000,Ash of War: Dryleaf Whirlwind,HandToHand
+200100,Ash of War: Aspects of the Crucible: Wings,Dagger|SwordNormal|SwordLarge|SwordGigantic|SaberNormal|SaberLarge|katana|SwordDoubleEdge|SwordPierce|RapierHeavy|SpearNormal|SpearHeavy|SpearAxe|ThrowingWeapon|LightGreatsword|GreatKatana
+400000,Ash of War: Spinning Gravity Thrust,SwordLarge|SwordGigantic|SaberLarge|RapierHeavy|GreatKatana
+401000,Ash of War: Palm Blast,HandToHand
+402000,Ash of War: Piercing Throw,ThrowingWeapon
+403000,Ash of War: Scattershot Throw,ThrowingWeapon
+404000,Ash of War: Wall of Sparks,PerfumeBottle
+405000,Ash of War: Rolling Sparks,PerfumeBottle
+406000,Ash of War: Raging Beast,BeastClaw
+407000,Ash of War: Savage Claws,BeastClaw
+409000,Ash of War: Blind Spot,ReverseHandSword
+410000,Ash of War: Swift Slash,ReverseHandSword
+411000,Ash of War: Overhead Stance,GreatKatana
+412000,Ash of War: Wing Stance,LightGreatsword
+413000,Ash of War: Blinkbolt,Dagger|SwordNormal|SwordLarge|SwordGigantic|SaberNormal|SaberLarge|katana|SwordDoubleEdge|SwordPierce|RapierHeavy|AxeNormal|AxeLarge|HammerNormal|HammerLarge|Flail|SpearNormal|SpearHeavy|SpearAxe|Sickle|Knuckle|Claw|Whip|AxhammerLarge|HandToHand|ThrustingShield|ThrowingWeapon|ReverseHandSword|LightGreatsword|GreatKatana|BeastClaw
+414000,Ash of War: Flame Skewer,SwordNormal|SwordLarge|SwordGigantic|katana|SwordDoubleEdge|SwordPierce|RapierHeavy|SpearNormal|SpearHeavy|SpearAxe|ThrustingShield|LightGreatsword|GreatKatana
+415000,Ash of War: Savage Lion's Claw,SwordNormal|SwordLarge|SwordGigantic|SaberNormal|SaberLarge|katana|SwordDoubleEdge|AxeNormal|AxeLarge|HammerNormal|HammerLarge|Flail|AxhammerLarge|LightGreatsword|GreatKatana
+416000,Ash of War: Divine Beast Frost Stomp,Dagger|SwordNormal|SwordLarge|SwordGigantic|SaberNormal|SaberLarge|katana|SwordDoubleEdge|SwordPierce|RapierHeavy|AxeNormal|AxeLarge|HammerNormal|HammerLarge|Flail|SpearNormal|SpearHeavy|SpearAxe|Sickle|Knuckle|Claw|Whip|AxhammerLarge|HandToHand|ThrustingShield|ThrowingWeapon|ReverseHandSword|LightGreatsword|GreatKatana|BeastClaw
+417000,Ash of War: Flame Spear,Dagger|SwordNormal|SwordLarge|SwordGigantic|katana|SwordDoubleEdge|SwordPierce|RapierHeavy|SpearNormal|SpearHeavy|SpearAxe|ThrustingShield|LightGreatsword|GreatKatana
+418000,Ash of War: Carian Sovereignty,Dagger|SwordNormal|SwordLarge|SaberNormal|SaberLarge|katana|SwordDoubleEdge|SwordPierce|RapierHeavy|ThrowingWeapon|LightGreatsword|GreatKatana
+419000,Ash of War: Shriek of Sorrow,Dagger|SwordNormal|SwordLarge|SwordGigantic|SaberNormal|SaberLarge|katana|SwordDoubleEdge|SwordPierce|RapierHeavy|AxeNormal|AxeLarge|HammerNormal|HammerLarge|Flail|SpearNormal|SpearHeavy|SpearAxe|Sickle|Knuckle|Claw|Whip|AxhammerLarge|HandToHand|ThrustingShield|ThrowingWeapon|ReverseHandSword|LightGreatsword|GreatKatana|BeastClaw
+422000,Ash of War: Ghostflame Call,SwordNormal|SwordLarge|SwordGigantic|SaberNormal|SaberLarge|katana|SwordPierce|RapierHeavy|SpearNormal|SpearHeavy|SpearAxe|LightGreatsword|GreatKatana
+505000,Ash of War: The Poison Flower Blooms Twice,Dagger|SwordNormal|SwordLarge|SwordGigantic|SaberNormal|SaberLarge|katana|SwordDoubleEdge|SwordPierce|RapierHeavy|AxeNormal|AxeLarge|HammerNormal|HammerLarge|Flail|SpearNormal|SpearHeavy|SpearAxe|Sickle|Knuckle|Claw|Whip|AxhammerLarge|HandToHand|ThrustingShield|ThrowingWeapon|ReverseHandSword|LightGreatsword|GreatKatana|BeastClaw
+548000,Ash of War: Igon's Drake Hunt,BowLarge
+800000,Ash of War: Shield Strike,ShieldSmall|ShieldNormal|ShieldLarge|ThrustingShield
