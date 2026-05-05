@@ -165,11 +165,13 @@ class ItemDatabase:
 
                 if not item_name:
                     continue
-                # Skip upgrade variants in plain CSVs (weapon/gem CSVs already have
-                # upgrade variants stripped at generation time)
+                # Skip upgrade variants unless the file intentionally contains them.
+                # Flasks and talismans have distinct +N items that are separate entries.
+                _ALLOW_UPGRADES = {"Flasks", "Talismans", "DLCTalismans"}
                 if (
                     not is_weapon
                     and not is_gem
+                    and filepath.stem not in _ALLOW_UPGRADES
                     and _UPGRADE_SUFFIX_RE.search(item_name)
                 ):
                     continue
@@ -272,11 +274,12 @@ def get_item_name(full_item_id: int, upgrade_level: int = 0) -> str:
         return item.name
 
     # Ashes: upgrade encoded as base + N (steps of 1 per level per 1000-block)
+    # Only apply this if the base item is actually a spirit ash, not any goods.
     if category == ItemCategory.GOODS:
         base_id_ash = (base_id // 1000) * 1000
         if base_id_ash != base_id:
             item = db.get_item_by_id(category | base_id_ash)
-            if item:
+            if item and "Ashes" in item.category_name:
                 upgrade = base_id % 1000
                 return f"{item.name} +{upgrade}" if upgrade else item.name
 
