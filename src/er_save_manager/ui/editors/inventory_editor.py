@@ -137,7 +137,7 @@ class InventoryEditor:
         # All parsed rows before search filter: (text, full_id, location) - header rows have None full_id
         self._all_rows: list[tuple[str, int | None, str | None]] = []
         # Rows currently visible in listbox (parallel index)
-        self._item_data: list[tuple[int, str] | None] = []
+        self._item_data: list[tuple[int, str, int] | None] = []
 
         # Add-panel widgets
         self.inv_quantity_var: ctk.IntVar | None = None
@@ -448,13 +448,31 @@ class InventoryEditor:
             actions,
             text="Set Quantity",
             command=self.set_quantity,
-            width=120,
+            width=110,
+        ).pack(side=ctk.LEFT, padx=(0, 6))
+        ctk.CTkButton(
+            actions,
+            text="Set Upgrade",
+            command=self.set_upgrade,
+            width=100,
+        ).pack(side=ctk.LEFT, padx=(0, 6))
+        ctk.CTkButton(
+            actions,
+            text="Set Affinity",
+            command=self.set_affinity,
+            width=100,
+        ).pack(side=ctk.LEFT, padx=(0, 6))
+        ctk.CTkButton(
+            actions,
+            text="Set AoW",
+            command=self.set_aow,
+            width=80,
         ).pack(side=ctk.LEFT, padx=(0, 6))
         ctk.CTkButton(
             actions,
             text="Refresh",
             command=self.refresh_inventory,
-            width=90,
+            width=80,
         ).pack(side=ctk.LEFT)
 
     # ---- search browser helpers ---------------------------------------------
@@ -845,7 +863,7 @@ class InventoryEditor:
                 f"{name}{suffix}{affinity_label}"
                 f"  |  Qty: {inv_item.quantity}"
             )
-            rows.append((text, full_id, location))
+            rows.append((text, full_id, location, inv_item.gaitem_handle))
 
         count = len(rows)
         label = "item" if count == 1 else "items"
@@ -866,7 +884,8 @@ class InventoryEditor:
         mode = ctk.get_appearance_mode()
         hdr_fg = "#9d7fc4" if mode == "Dark" else "#6a3fa0"
 
-        for text, full_id, location in self._all_rows:
+        for text, full_id, location, *rest in self._all_rows:
+            gaitem_handle = rest[0] if rest else 0
             if full_id is None:
                 # Section header - always visible
                 self.inventory_listbox.insert(tk.END, text)
@@ -876,7 +895,7 @@ class InventoryEditor:
                 if query and query not in text.lower():
                     continue
                 self.inventory_listbox.insert(tk.END, text)
-                self._item_data.append((full_id, location))
+                self._item_data.append((full_id, location, gaitem_handle))
 
     # ---- operations ---------------------------------------------------------
 
@@ -1008,7 +1027,7 @@ class InventoryEditor:
         if idx >= len(self._item_data) or self._item_data[idx] is None:
             return
 
-        full_id, location = self._item_data[idx]
+        full_id, location, gaitem_handle = self._item_data[idx]
         item_label = self.inventory_listbox.get(idx).strip()
 
         if not CTkMessageBox.askyesno(
@@ -1053,18 +1072,44 @@ class InventoryEditor:
         if idx >= len(self._item_data) or self._item_data[idx] is None:
             return
 
-        full_id, location = self._item_data[idx]
+        full_id, location, gaitem_handle = self._item_data[idx]
         cat = full_id & 0xF0000000
-        if cat not in (0x40000000, 0x20000000):
+
+        # Determine max quantity for this item
+        db = None
+        max_qty = None
+        try:
+            from er_save_manager.data.item_database import (
+                get_item_database,
+            )
+
+            db = get_item_database()
+            item = db.get_item_by_id(full_id)
+            if item is None and cat == 0x00000000:
+                item = db.get_item_by_id(full_id & 0xFFFF0000)
+            if item:
+                max_arrow = getattr(item, "max_arrow_quantity", 1)
+                max_qty = max_arrow if max_arrow > 1 else getattr(item, "max_num", 1)
+        except Exception:
+            pass
+
+        # Non-stackable: weapon, armor, gem (but allow ammo)
+        is_weapon = cat == 0x00000000
+        is_armor = cat == 0x10000000
+        is_gem = cat == 0x80000000
+        is_ammo = is_weapon and max_qty is not None and max_qty > 1
+
+        if (is_weapon and not is_ammo) or is_armor or is_gem:
             CTkMessageBox.showinfo(
                 "Not Stackable",
-                "Quantity editing only applies to goods and spells.",
+                "Quantity editing does not apply to this item type.",
                 parent=self.parent,
             )
             return
 
         qty_str = ctk.CTkInputDialog(
-            text="Enter new quantity:", title="Set Quantity"
+            text=f"Enter new quantity{f' (max {max_qty})' if max_qty else ''}:",
+            title="Set Quantity",
         ).get_input()
         if qty_str is None:
             return
@@ -1076,29 +1121,504 @@ class InventoryEditor:
             )
             return
 
+        if new_qty < 1:
+            CTkMessageBox.showerror(
+                "Input Error", "Quantity must be at least 1.", parent=self.parent
+            )
+            return
+        if max_qty is not None and new_qty > max_qty:
+            CTkMessageBox.showerror(
+                "Invalid Quantity",
+                f"Maximum quantity for this item is {max_qty}.",
+                parent=self.parent,
+            )
+            return
+
         save_file = self.get_save_file()
         slot_idx = self.get_char_slot()
-
         try:
             self.ensure_mutable()
             self._create_backup(save_file, slot_idx, "set_quantity")
-
             from er_save_manager.parser.inventory_ops import set_quantity
 
             set_quantity(save_file, slot_idx, full_id, new_qty, location)
-
             save_file.recalculate_checksums()
             save_path = self.get_save_path()
             if save_path:
                 save_file.to_file(Path(save_path))
-
             self.refresh_inventory()
         except Exception as e:
             CTkMessageBox.showerror(
                 "Error", f"Failed to set quantity:\n{e}", parent=self.parent
             )
 
-    # ---- helpers ------------------------------------------------------------
+    def _patch_gaitem(self, save_file, slot_idx: int, slot, gaitem_idx: int) -> None:
+        """Serialize a modified gaitem entry back to the raw binary buffer."""
+        from io import BytesIO
+
+        CHECKSUM_SIZE = 0x10
+        slot_data_base = save_file._slot_offsets[slot_idx] + CHECKSUM_SIZE
+        entry_abs = slot_data_base + slot.gaitem_offsets[gaitem_idx]
+        g = slot.gaitem_map[gaitem_idx]
+        buf = BytesIO()
+        g.write(buf)
+        data = buf.getvalue()
+        save_file._raw_data[entry_abs : entry_abs + len(data)] = data
+
+    def _get_selected_weapon(self) -> tuple[int, str, int] | None:
+        """Return (full_id, location, gaitem_handle) for the selected weapon."""
+        sel = self.inventory_listbox.curselection()
+        if not sel:
+            CTkMessageBox.showwarning(
+                "No Selection", "Select an item first.", parent=self.parent
+            )
+            return None
+        idx = sel[0]
+        if idx >= len(self._item_data) or self._item_data[idx] is None:
+            return None
+        full_id, location, gaitem_handle = self._item_data[idx]
+        if (full_id & 0xF0000000) != 0x00000000:
+            CTkMessageBox.showinfo(
+                "Not a Weapon",
+                "This operation only applies to weapons.",
+                parent=self.parent,
+            )
+            return None
+        return full_id, location, gaitem_handle
+
+    def _lookup_weapon_item(self, full_id: int):
+        """Return Item from DB for a weapon, trying base-strip fallback."""
+        try:
+            from er_save_manager.data.item_database import get_item_database
+
+            db = get_item_database()
+            base = (full_id & 0x0FFFFFFF) // 10000 * 10000
+            return db.get_item_by_id(0x00000000 | base)
+        except Exception:
+            return None
+
+    def set_upgrade(self):
+        result = self._get_selected_weapon()
+        if result is None:
+            return
+        full_id, location, gaitem_handle = result
+
+        item = self._lookup_weapon_item(full_id)
+        reinforcement = (
+            getattr(item, "reinforcement", "standard") if item else "standard"
+        )
+        explicit_cap = getattr(item, "max_upgrade", -1) if item else -1
+        save_path = str(self.get_save_path() or "").lower()
+        is_convergence_save = ".cnv" in save_path
+
+        if reinforcement == "none":
+            CTkMessageBox.showinfo(
+                "Not Upgradable", "This weapon cannot be upgraded.", parent=self.parent
+            )
+            return
+
+        if explicit_cap >= 0:
+            cap = explicit_cap
+        elif is_convergence_save and reinforcement in ("standard", "somber"):
+            cap = 15
+        else:
+            cap = 25 if reinforcement == "standard" else 10
+
+        upg_str = ctk.CTkInputDialog(
+            text=f"Enter upgrade level (0-{cap}):", title="Set Upgrade"
+        ).get_input()
+        if upg_str is None:
+            return
+        try:
+            new_upg = int(upg_str)
+        except ValueError:
+            CTkMessageBox.showerror(
+                "Input Error", "Upgrade level must be an integer.", parent=self.parent
+            )
+            return
+        if new_upg < 0 or new_upg > cap:
+            CTkMessageBox.showerror(
+                "Invalid Upgrade", f"Upgrade must be 0-{cap}.", parent=self.parent
+            )
+            return
+
+        save_file = self.get_save_file()
+        slot_idx = self.get_char_slot()
+        try:
+            self.ensure_mutable()
+            slot = save_file.characters[slot_idx]
+            base_id = (full_id & 0x0FFFFFFF) // 100 * 100
+            for i, g in enumerate(slot.gaitem_map):
+                if g.gaitem_handle != gaitem_handle:
+                    continue
+                self._create_backup(save_file, slot_idx, "set_upgrade")
+                g.item_id = base_id + new_upg
+                self._patch_gaitem(save_file, slot_idx, slot, i)
+                save_file.recalculate_checksums()
+                if self.get_save_path():
+                    save_file.to_file(Path(self.get_save_path()))
+                self.refresh_inventory()
+                if self._on_inventory_changed:
+                    self._on_inventory_changed()
+                return
+            CTkMessageBox.showerror(
+                "Not Found", "Weapon gaitem entry not found.", parent=self.parent
+            )
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error", f"Failed to set upgrade:\n{e}", parent=self.parent
+            )
+
+    def set_affinity(
+        self,
+        forced_full_id: int | None = None,
+        forced_gaitem_handle: int | None = None,
+        allowed: list | None = None,
+    ):
+        """Open affinity picker. If forced args given, skip listbox lookup.
+        If allowed is given, restrict the list to those affinities only.
+        """
+        if forced_full_id is not None:
+            full_id = forced_full_id
+            gaitem_handle = forced_gaitem_handle
+        else:
+            result = self._get_selected_weapon()
+            if result is None:
+                return
+            full_id, _, gaitem_handle = result
+
+            # If no allowed list was passed, derive it from the weapon's current AoW
+            if allowed is None and gaitem_handle is not None:
+                try:
+                    slot0 = self.get_save_file().characters[self.get_char_slot()]
+                    for g0 in slot0.gaitem_map:
+                        if g0.gaitem_handle != gaitem_handle:
+                            continue
+                        gem_h = getattr(g0, "gem_gaitem_handle", None)
+                        if gem_h and gem_h not in (0, -1):
+                            gem_h_u = gem_h & 0xFFFFFFFF
+                            for gg in slot0.gaitem_map:
+                                if gg.gaitem_handle == gem_h_u:
+                                    from er_save_manager.data.item_database import (
+                                        get_item_database,
+                                    )
+
+                                    gem_item = get_item_database().get_item_by_id(
+                                        0x80000000 | (gg.item_id & 0x0FFFFFFF)
+                                    )
+                                    if gem_item and gem_item.allowed_affinities:
+                                        allowed = gem_item.allowed_affinities
+                                    break
+                        break
+                except Exception:
+                    pass
+
+        item = self._lookup_weapon_item(full_id)
+        if item and not getattr(item, "aow_allowed", True):
+            CTkMessageBox.showinfo(
+                "Not Infusable", "This weapon cannot be infused.", parent=self.parent
+            )
+            return
+
+        save_path = str(self.get_save_path() or "").lower()
+        is_convergence_save = ".cnv" in save_path
+
+        # Base list gated by save type
+        base_list = (
+            self._AFFINITY_NAMES if is_convergence_save else self._AFFINITY_NAMES[:13]
+        )
+        # Further restrict to allowed list if provided (AoW-specific constraint)
+        # In Convergence saves all affinities are valid so ignore AoW restriction
+        affinity_list = (
+            base_list
+            if (is_convergence_save or allowed is None)
+            else [a for a in base_list if a in allowed]
+        )
+        if not affinity_list:
+            affinity_list = base_list
+
+        import tkinter as tk
+
+        dialog = ctk.CTkToplevel(self.parent)
+        dialog.title("Set Affinity")
+        dialog.geometry("220x320")
+        dialog.resizable(False, True)
+        dialog.transient(self.parent)
+        dialog.update_idletasks()
+        dialog.grab_set()
+
+        mode = ctk.get_appearance_mode()
+        lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
+        lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
+        lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+
+        lb_frame = ctk.CTkFrame(dialog, fg_color=("gray82", "gray14"), corner_radius=6)
+        lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=(10, 4))
+        lb = tk.Listbox(
+            lb_frame,
+            font=("Consolas", 11),
+            bg=lb_bg,
+            fg=lb_fg,
+            selectbackground=lb_sel,
+            relief=tk.FLAT,
+            borderwidth=0,
+            activestyle="none",
+        )
+        lb.pack(fill=ctk.BOTH, expand=True, padx=2, pady=2)
+        for name in affinity_list:
+            lb.insert(tk.END, name)
+
+        def _apply_affinity(affinity_code: int):
+            save_file2 = self.get_save_file()
+            slot_idx2 = self.get_char_slot()
+            try:
+                self.ensure_mutable()
+                slot = save_file2.characters[slot_idx2]
+                raw_base = full_id & 0x0FFFFFFF
+                true_base = raw_base // 10000 * 10000
+                upgrade = raw_base % 100
+                new_item_id = true_base + affinity_code * 100 + upgrade
+                for i, g in enumerate(slot.gaitem_map):
+                    if gaitem_handle is not None:
+                        if g.gaitem_handle != gaitem_handle:
+                            continue
+                    else:
+                        if (g.gaitem_handle & 0xF0000000) != 0x80000000:
+                            continue
+                        if (getattr(g, "item_id", 0) // 10000) * 10000 != true_base:
+                            continue
+                    self._create_backup(save_file2, slot_idx2, "set_affinity")
+                    g.item_id = new_item_id
+                    self._patch_gaitem(save_file2, slot_idx2, slot, i)
+                    save_file2.recalculate_checksums()
+                    if self.get_save_path():
+                        save_file2.to_file(Path(self.get_save_path()))
+                    self.refresh_inventory()
+                    return
+                CTkMessageBox.showerror(
+                    "Not Found", "Weapon gaitem entry not found.", parent=self.parent
+                )
+            except Exception as e:
+                CTkMessageBox.showerror(
+                    "Error", f"Failed to set affinity:\n{e}", parent=self.parent
+                )
+
+        def _confirm():
+            sel2 = lb.curselection()
+            if not sel2:
+                return
+            affinity_name = affinity_list[sel2[0]]
+            affinity_code = next(
+                (c for c, n in self._AFFINITIES if n == affinity_name), 0
+            )
+            dialog.destroy()
+            _apply_affinity(affinity_code)
+
+        lb.bind("<Double-Button-1>", lambda _e: _confirm())
+        btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_row.pack(fill=ctk.X, padx=10, pady=(0, 10))
+        ctk.CTkButton(btn_row, text="Apply", command=_confirm, width=90).pack(
+            side=ctk.LEFT, padx=(0, 6)
+        )
+        ctk.CTkButton(btn_row, text="Cancel", command=dialog.destroy, width=80).pack(
+            side=ctk.RIGHT
+        )
+
+    def set_aow(self):
+        result = self._get_selected_weapon()
+        if result is None:
+            return
+        full_id, location, gaitem_handle = result
+
+        item = self._lookup_weapon_item(full_id)
+        if item and not getattr(item, "aow_allowed", True):
+            CTkMessageBox.showinfo(
+                "AoW Not Supported",
+                "This weapon does not accept an Ash of War.",
+                parent=self.parent,
+            )
+            return
+
+        wep_col = getattr(item, "wep_type_col", "") if item else ""
+        save_path_str = str(self.get_save_path() or "").lower()
+        is_convergence_save = ".cnv" in save_path_str
+
+        # Look up current AoW name from gaitem
+        current_aow_name = "None"
+        try:
+            slot0 = self.get_save_file().characters[self.get_char_slot()]
+            for g0 in slot0.gaitem_map:
+                if g0.gaitem_handle != gaitem_handle:
+                    continue
+                gem_h = getattr(g0, "gem_gaitem_handle", None)
+                if gem_h and gem_h not in (0, -1):
+                    gem_h_u = gem_h & 0xFFFFFFFF
+                    for gg in slot0.gaitem_map:
+                        if gg.gaitem_handle == gem_h_u:
+                            from er_save_manager.data.item_database import (
+                                get_item_database,
+                            )
+
+                            gi = get_item_database().get_item_by_id(
+                                0x80000000 | (gg.item_id & 0x0FFFFFFF)
+                            )
+                            if gi:
+                                current_aow_name = gi.name
+                            break
+                break
+        except Exception:
+            pass
+
+        import tkinter as tk
+
+        dialog = ctk.CTkToplevel(self.parent)
+        dialog.title("Set Ash of War")
+        dialog.geometry("380x440")
+        dialog.resizable(False, True)
+        dialog.transient(self.parent)
+        dialog.update_idletasks()
+        dialog.grab_set()
+
+        mode = ctk.get_appearance_mode()
+        lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
+        lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
+        lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+
+        cur_frame = ctk.CTkFrame(dialog, fg_color=("gray78", "gray18"), corner_radius=6)
+        cur_frame.pack(fill=ctk.X, padx=10, pady=(8, 2))
+        ctk.CTkLabel(cur_frame, text="Current:", anchor="w", width=60).pack(
+            side=ctk.LEFT, padx=6, pady=4
+        )
+        ctk.CTkLabel(
+            cur_frame,
+            text=current_aow_name,
+            anchor="w",
+            text_color=("#7c4dac", "#c084fc")
+            if current_aow_name != "None"
+            else ("gray50", "gray60"),
+        ).pack(side=ctk.LEFT, padx=4, pady=4)
+
+        search_var = ctk.StringVar()
+        ctk.CTkLabel(dialog, text="Search:").pack(anchor="w", padx=10, pady=(4, 0))
+        ctk.CTkEntry(dialog, textvariable=search_var, width=340).pack(
+            padx=10, pady=(0, 4)
+        )
+
+        lb_frame = ctk.CTkFrame(dialog, fg_color=("gray82", "gray14"), corner_radius=6)
+        lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=4)
+        sb = tk.Scrollbar(lb_frame)
+        sb.pack(side=tk.RIGHT, fill=tk.Y)
+        lb = tk.Listbox(
+            lb_frame,
+            yscrollcommand=sb.set,
+            font=("Consolas", 10),
+            bg=lb_bg,
+            fg=lb_fg,
+            selectbackground=lb_sel,
+            relief=tk.FLAT,
+            borderwidth=0,
+            activestyle="none",
+        )
+        lb.pack(side=tk.LEFT, fill=ctk.BOTH, expand=True, padx=2, pady=2)
+        sb.config(command=lb.yview)
+
+        try:
+            from er_save_manager.data.item_database import get_item_database
+
+            db = get_item_database()
+            cats = ["Gems", "DLC Gems"]
+            if is_convergence_save:
+                cats.append("Convergence Gems")
+            all_gems = []
+            for cat in cats:
+                all_gems += db.get_items_by_category(cat)
+            if wep_col:
+                all_gems = [
+                    g
+                    for g in all_gems
+                    if not g.compatible_wep_types or wep_col in g.compatible_wep_types
+                ]
+        except Exception:
+            all_gems = []
+
+        visible_gems: list = []
+
+        def _filter(*_):
+            q = search_var.get().lower().strip()
+            visible_gems.clear()
+            visible_gems.extend(g for g in all_gems if not q or q in g.name.lower())
+            lb.delete(0, tk.END)
+            for g in visible_gems[:200]:
+                lb.insert(tk.END, g.name)
+
+        search_var.trace_add("write", _filter)
+        _filter()
+
+        def _confirm():
+            sel2 = lb.curselection()
+            if not sel2 or sel2[0] >= len(visible_gems):
+                return
+            gem_item = visible_gems[sel2[0]]
+            gem_full_id = 0x80000000 | gem_item.id
+            dialog.destroy()
+
+            save_file2 = self.get_save_file()
+            slot_idx2 = self.get_char_slot()
+            try:
+                self.ensure_mutable()
+                self._create_backup(save_file2, slot_idx2, "set_aow")
+                from er_save_manager.parser.inventory_ops import insert_gaitem
+
+                gem_handle, _ = insert_gaitem(save_file2, slot_idx2, gem_full_id)
+                slot2 = save_file2.characters[slot_idx2]
+                (full_id & 0x0FFFFFFF) // 10000 * 10000
+                for i2, g2 in enumerate(slot2.gaitem_map):
+                    if g2.gaitem_handle != gaitem_handle:
+                        continue
+                    g2.gem_gaitem_handle = (
+                        gem_handle - 0x100000000
+                        if gem_handle >= 0x80000000
+                        else gem_handle
+                    )
+                    self._patch_gaitem(save_file2, slot_idx2, slot2, i2)
+                    break
+                save_file2.recalculate_checksums()
+                if self.get_save_path():
+                    save_file2.to_file(Path(self.get_save_path()))
+                self.refresh_inventory()
+                if self._on_inventory_changed:
+                    self._on_inventory_changed()
+
+                # If selected AoW doesn't support current affinity, open affinity picker
+                # restricted to valid ones (skipped for Convergence saves)
+                if gem_item.allowed_affinities and not is_convergence_save:
+                    raw_base = full_id & 0x0FFFFFFF
+                    cur_code = (raw_base // 100) % 100
+                    cur_name = next(
+                        (n for c, n in self._AFFINITIES if c == cur_code), "Standard"
+                    )
+                    if cur_name not in gem_item.allowed_affinities:
+                        self.set_affinity(
+                            forced_full_id=full_id,
+                            forced_gaitem_handle=gaitem_handle,
+                            allowed=gem_item.allowed_affinities,
+                        )
+            except Exception as e:
+                CTkMessageBox.showerror(
+                    "Error", f"Failed to set AoW:\n{e}", parent=self.parent
+                )
+
+        lb.bind("<Double-Button-1>", lambda _e: _confirm())
+        btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_row.pack(fill=ctk.X, padx=10, pady=(4, 10))
+        ctk.CTkButton(btn_row, text="Apply", command=_confirm, width=90).pack(
+            side=ctk.LEFT, padx=(0, 6)
+        )
+        ctk.CTkButton(btn_row, text="Cancel", command=dialog.destroy, width=80).pack(
+            side=ctk.RIGHT
+        )
+
+        # ---- helpers ------------------------------------------------------------
 
     def _create_backup(self, save_file, slot_idx, operation):
         save_path = self.get_save_path()
