@@ -442,7 +442,7 @@ class InventoryEditor:
             actions,
             text="Remove Selected",
             command=self.remove_item,
-            width=150,
+            width=125,
         ).pack(side=ctk.LEFT, padx=(0, 6))
         ctk.CTkButton(
             actions,
