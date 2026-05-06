@@ -686,6 +686,7 @@ class DeepScanFix(BaseFix):
                         if pos < 0 or pos + 4 > len(slot_raw):
                             continue
                         ok = True
+                        any_nonzero = False
                         for _ in range(5):
                             if pos + 4 > len(slot_raw):
                                 ok = False
@@ -694,8 +695,12 @@ class DeepScanFix(BaseFix):
                             if sz < 0 or sz > 0x8000:
                                 ok = False
                                 break
+                            if sz > 0:
+                                any_nonzero = True
                             pos += 4 + sz
-                        if not ok:
+                        # All-zero struct sizes means we landed inside EF data,
+                        # not at the real struct zone boundary.
+                        if not ok or not any_nonzero:
                             continue
                         if pos + ft + _NETMAN_SIZE + _TAIL_AFTER_NETMAN == candidate:
                             ef_delta = d
@@ -945,50 +950,8 @@ class DeepScanFix(BaseFix):
         log.info("[deep_scan] _scan: confidence=%s", confidence)
         result.details.append(f"Confidence: {confidence}")
 
-        # Check if the tear is actually in event flags rather than NetMan.
-        # If EF scan finds disagreeing anchor pairs, the tear is in event flags -
-        # the SteamID shift is a downstream effect, and the splice point differs.
-        ef_result = self._scan_event_flags(save, slot_index)
-        if ef_result.torn and ef_result.confident:
-            result.tear_location = "event_flags"
-            # Splice at the start of the first disagreeing block in ef
-            # ef_start_rel = event_flags_offset - slot_data_start (already computed above)
-            result.ef_splice_point = (
-                ef_end_rel
-                - _EVENT_FLAGS_SIZE
-                - _EVENT_FLAGS_TERMINATOR
-                + ef_result.tear_hi
-            )
-            log.info(
-                "[deep_scan] _scan: tear in event_flags, splice at slot+0x%x (ef+0x%x)",
-                result.ef_splice_point,
-                ef_result.tear_hi,
-            )
-            result.details.append(
-                f"Tear location: event_flags (ef+0x{ef_result.tear_hi:x})"
-            )
-            result.details.append(
-                f"Disagreeing bosses: {', '.join(ef_result.disagreeing)}"
-            )
-        elif ef_result.torn and not ef_result.confident:
-            result.tear_location = "event_flags"
-            # No agreeing pairs - tear before all anchors; use first anchor as upper bound
-            result.ef_splice_point = (
-                ef_end_rel
-                - _EVENT_FLAGS_SIZE
-                - _EVENT_FLAGS_TERMINATOR
-                + ef_result.tear_hi
-            )
-            log.info(
-                "[deep_scan] _scan: tear likely in event_flags (no agreeing pairs), splice at slot+0x%x",
-                result.ef_splice_point,
-            )
-            result.details.append(
-                f"Tear location: event_flags (before ef+0x{ef_result.tear_hi:x}, low confidence)"
-            )
-        else:
-            result.tear_location = "netman"
-            result.details.append("Tear location: NetMan region")
+        result.tear_location = "netman"
+        result.details.append("Tear location: NetMan region")
 
         return result
 
@@ -1064,12 +1027,14 @@ class DeepScanFix(BaseFix):
         result.torn = True
 
         if not agreeing:
-            # All defeated bosses' map flags disagree - tear is before the first anchor.
+            # Some checked pairs disagree with none agreeing - tear is before the
+            # earliest disagreeing anchor. Use min(disagreeing) as the upper bound,
+            # not _EF_ANCHOR_PAIRS[0][0], which may not have been checked at all.
             result.confident = False
             result.tear_lo = 0
-            result.tear_hi = _EF_ANCHOR_PAIRS[0][0]
+            result.tear_hi = min(p for p, _ in disagreeing)
             log.info(
-                "[deep_scan] ef_scan slot %d: all pairs disagree, tear before ef+0x%x",
+                "[deep_scan] ef_scan slot %d: no agreeing pairs, tear before ef+0x%x",
                 slot_index,
                 result.tear_hi,
             )
