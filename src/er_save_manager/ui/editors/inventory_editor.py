@@ -96,6 +96,9 @@ class InventoryEditor:
     _AFFINITY_BY_CODE: dict[int, str] = dict(_AFFINITIES)
     _AFFINITY_NAMES: list[str] = [name for _, name in _AFFINITIES]
 
+    # Goods stack up to 600 in the storage box regardless of held max_num.
+    _STORAGE_MAX_STACKABLE = 600
+
     _SEAMLESS_CATS = {"Seamless Co-op Items"}
     _CONVERGENCE_CATS = {
         "Convergence Melee Weapons",
@@ -167,6 +170,7 @@ class InventoryEditor:
         self.inventory_listbox: tk.Listbox | None = None
         self.inv_filter_var: ctk.StringVar | None = None
         self._inv_search_var: ctk.StringVar | None = None
+        self._inv_cat_var: ctk.StringVar | None = None
 
         self.frame: ctk.CTkFrame | None = None
 
@@ -254,22 +258,31 @@ class InventoryEditor:
         bind_mousewheel(self._results_listbox)
         self._results_listbox.bind("<<ListboxSelect>>", self._on_result_select)
 
-        # Selected item label
-        self._selected_item_label = ctk.CTkLabel(
-            parent,
-            text="No item selected",
-            text_color=("gray50", "gray60"),
-            font=("Segoe UI", 10),
-            anchor="w",
-        )
-        self._selected_item_label.pack(fill=ctk.X, padx=12, pady=(0, 6))
+        # Selected item label and options are pinned to the bottom so they
+        # remain visible on small screens regardless of listbox height.
 
-        sep = ctk.CTkFrame(parent, height=1, fg_color=("gray75", "gray30"))
-        sep.pack(fill=ctk.X, padx=10, pady=(0, 8))
+        # Action buttons row (absolute bottom)
+        btn_row = ctk.CTkFrame(parent, fg_color="transparent")
+        btn_row.pack(fill=ctk.X, padx=10, pady=(0, 10), side=ctk.BOTTOM)
+        ctk.CTkButton(
+            btn_row,
+            text="Add Item",
+            command=self.add_item,
+            height=34,
+            font=("Segoe UI", 11, "bold"),
+        ).pack(side=ctk.LEFT, fill=ctk.X, expand=True, padx=(0, 4))
+        ctk.CTkButton(
+            btn_row,
+            text="Import Build",
+            command=self._import_nyasu,
+            height=34,
+            width=110,
+            fg_color=("gray70", "gray35"),
+        ).pack(side=ctk.RIGHT)
 
-        # Options grid packed top-down after the sep so all rows are always visible
+        # Options grid packed second from bottom
         opts = ctk.CTkFrame(parent, fg_color="transparent")
-        opts.pack(fill=ctk.X, padx=10, pady=(0, 4))
+        opts.pack(fill=ctk.X, padx=10, pady=(0, 4), side=ctk.BOTTOM)
         opts.columnconfigure(1, weight=1)
         opts.columnconfigure(3, weight=1)
 
@@ -354,18 +367,24 @@ class InventoryEditor:
         self._aow_clear_btn.grid(row=2, column=3, sticky=ctk.W, pady=4)
         self._selected_gem_id: int = 0
 
-        ctk.CTkButton(
+        sep = ctk.CTkFrame(parent, height=1, fg_color=("gray75", "gray30"))
+        sep.pack(fill=ctk.X, padx=10, pady=(0, 4), side=ctk.BOTTOM)
+
+        self._selected_item_label = ctk.CTkLabel(
             parent,
-            text="Add Item",
-            command=self.add_item,
-            height=34,
-            font=("Segoe UI", 11, "bold"),
-        ).pack(fill=ctk.X, padx=10, pady=(4, 10))
+            text="No item selected",
+            text_color=("gray50", "gray60"),
+            font=("Segoe UI", 10),
+            anchor="w",
+        )
+        self._selected_item_label.pack(
+            fill=ctk.X, padx=12, pady=(0, 4), side=ctk.BOTTOM
+        )
 
     # ---- right panel: current inventory -------------------------------------
 
     def _build_inventory_panel(self, parent: ctk.CTkFrame):
-        # Header row: title + filter
+        # Header row: title + location filter + category filter
         header = ctk.CTkFrame(parent, fg_color="transparent")
         header.pack(fill=ctk.X, padx=10, pady=(10, 4))
 
@@ -384,6 +403,19 @@ class InventoryEditor:
             command=lambda _e=None: self.refresh_inventory(),
         ).pack(side=ctk.RIGHT, padx=(6, 0))
         ctk.CTkLabel(header, text="Show:").pack(side=ctk.RIGHT)
+
+        # Category filter row
+        cat_row = ctk.CTkFrame(parent, fg_color="transparent")
+        cat_row.pack(fill=ctk.X, padx=10, pady=(0, 4))
+        ctk.CTkLabel(cat_row, text="Category:", width=60).pack(side=ctk.LEFT)
+        self._inv_cat_var = ctk.StringVar(value="All")
+        ctk.CTkComboBox(
+            cat_row,
+            variable=self._inv_cat_var,
+            values=["All", "Weapons", "Armor", "Talismans", "Goods", "Gems"],
+            width=140,
+            command=lambda _e=None: self._apply_inv_filter(),
+        ).pack(side=ctk.LEFT, padx=(0, 6))
 
         # Inventory search bar
         search_row = ctk.CTkFrame(parent, fg_color="transparent")
@@ -871,13 +903,24 @@ class InventoryEditor:
         self._all_rows.extend(rows)
 
     def _apply_inv_filter(self):
-        """Re-render the listbox from _all_rows, applying the text filter."""
+        """Re-render the listbox from _all_rows, applying text and category filters."""
         if self.inventory_listbox is None:
             return
 
         query = (
             (self._inv_search_var.get() if self._inv_search_var else "").lower().strip()
         )
+        cat_filter = self._inv_cat_var.get() if self._inv_cat_var else "All"
+
+        _CAT_BITS = {
+            "Weapons": 0x00000000,
+            "Armor": 0x10000000,
+            "Talismans": 0x20000000,
+            "Goods": 0x40000000,
+            "Gems": 0x80000000,
+        }
+        cat_mask = _CAT_BITS.get(cat_filter)  # None means "All"
+
         self.inventory_listbox.delete(0, tk.END)
         self._item_data = []
 
@@ -892,12 +935,89 @@ class InventoryEditor:
                 self.inventory_listbox.itemconfig(tk.END, foreground=hdr_fg)
                 self._item_data.append(None)
             else:
+                if cat_mask is not None and (full_id & 0xF0000000) != cat_mask:
+                    continue
                 if query and query not in text.lower():
                     continue
                 self.inventory_listbox.insert(tk.END, text)
                 self._item_data.append((full_id, location, gaitem_handle))
 
     # ---- operations ---------------------------------------------------------
+
+    def _max_qty_for_location(self, item, location: str) -> int:
+        """Return the max stack size for item in the given location.
+
+        Storage allows up to _STORAGE_MAX_STACKABLE for any stackable consumable.
+        Held uses the item's own max_num.
+        """
+        max_arrow = getattr(item, "max_arrow_quantity", 1)
+        if max_arrow > 1:
+            return max_arrow  # ammo cap is the same in both locations
+        base_max = getattr(item, "max_num", 1)
+        if location == "storage" and base_max > 1:
+            return self._STORAGE_MAX_STACKABLE
+        return base_max
+
+    def _validate_add_item(
+        self,
+        full_id: int,
+        qty: int,
+        upgrade: int,
+        location: str,
+        slot,
+    ) -> tuple[bool, str]:
+        """Pre-flight validation before calling inventory_ops.add_item.
+
+        Returns (ok, error_message). Skips AoW affinity since that's gated
+        separately in _pick_aow.
+        """
+        from er_save_manager.data.item_database import get_item_database
+        from er_save_manager.parser.inventory_ops import (
+            _direct_handle,
+            _find_gaitem_by_item,
+            _needs_gaitem,
+        )
+
+        cat = full_id & 0xF0000000
+        db = get_item_database()
+
+        # Upgrade range
+        if cat == 0x00000000:
+            item = db.get_item_by_id(full_id & 0xFFFF0000)
+            reinforcement = (
+                getattr(item, "reinforcement", "standard") if item else "standard"
+            )
+            caps = {"standard": 25, "somber": 10, "ash": 10, "none": 0}
+            cap = caps.get(reinforcement, 25)
+            if upgrade < 0 or upgrade > cap:
+                return False, f"Upgrade must be 0-{cap} for this weapon."
+
+        # Quantity range
+        item_for_qty = db.get_item_by_id(full_id)
+        if item_for_qty is not None:
+            max_qty = self._max_qty_for_location(item_for_qty, location)
+            if qty < 1 or qty > max_qty:
+                return (
+                    False,
+                    f"Quantity must be 1-{max_qty} for this item in {location}.",
+                )
+
+        # Duplicate check in target inventory
+        inventory = (
+            slot.inventory_held if location == "held" else slot.inventory_storage_box
+        )
+        if _needs_gaitem(full_id):
+            gaitem_idx, _ = _find_gaitem_by_item(slot, full_id)
+            if gaitem_idx != -1:
+                # Gaitem exists - check if it's also in inventory
+                pass  # ops layer raises the right error; skip double-check here
+        else:
+            handle = _direct_handle(full_id)
+            for it in inventory.common_items:
+                if it.gaitem_handle == handle and it.quantity > 0:
+                    return False, "This item is already in the inventory."
+
+        return True, ""
 
     def add_item(self):
         save_file = self.get_save_file()
@@ -927,33 +1047,32 @@ class InventoryEditor:
             qty = 1
             upg = 0
 
+        location = self.inv_location_var.get()
+
         if is_weapon or is_armor or is_gem:
             max_arrow = getattr(self.selected_item, "max_arrow_quantity", 1)
             is_ammo = is_weapon and max_arrow > 1
             if not is_ammo:
                 qty = 1
-            elif qty < 1 or qty > max_arrow:
-                CTkMessageBox.showerror(
-                    "Invalid Quantity",
-                    f"Quantity must be 1-{max_arrow} for this ammo.",
-                    parent=self.parent,
-                )
-                return
+            else:
+                max_qty = self._max_qty_for_location(self.selected_item, location)
+                if qty < 1 or qty > max_qty:
+                    CTkMessageBox.showerror(
+                        "Invalid Quantity",
+                        f"Quantity must be 1-{max_qty} for this ammo.",
+                        parent=self.parent,
+                    )
+                    return
         else:
-            max_arrow = getattr(self.selected_item, "max_arrow_quantity", 1)
-            max_num = (
-                max_arrow
-                if max_arrow > 1
-                else getattr(self.selected_item, "max_num", 1)
-            )
-            if max_num > 1 and (qty < 1 or qty > max_num):
+            max_qty = self._max_qty_for_location(self.selected_item, location)
+            if max_qty > 1 and (qty < 1 or qty > max_qty):
                 CTkMessageBox.showerror(
                     "Invalid Quantity",
-                    f"Quantity must be 1-{max_num} for this item.",
+                    f"Quantity must be 1-{max_qty} for this item in {location}.",
                     parent=self.parent,
                 )
                 return
-            qty = max(1, min(qty, max_num))
+            qty = max(1, min(qty, max_qty))
 
         # Ashes: encode upgrade directly into goods ID (base + level)
         if is_ashes and upg > 0:
@@ -975,7 +1094,30 @@ class InventoryEditor:
             if affinity_code != 0:
                 affinity_label = f" ({affinity_name})"
 
-        location = self.inv_location_var.get()
+        # Auto-redirect to storage if held inventory is full
+        auto_storage = False
+        if location == "held":
+            try:
+                slot = save_file.characters[slot_idx]
+                held_full = all(
+                    it.gaitem_handle != 0 for it in slot.inventory_held.common_items
+                )
+                if held_full:
+                    location = "storage"
+                    self.inv_location_var.set("storage")
+                    auto_storage = True
+            except Exception:
+                pass
+
+        # Second-gate validation before writing
+        try:
+            slot = save_file.characters[slot_idx]
+            ok, err = self._validate_add_item(full_id, qty, upg, location, slot)
+            if not ok:
+                CTkMessageBox.showerror("Validation Error", err, parent=self.parent)
+                return
+        except Exception:
+            pass  # let the op raise its own error if slot not accessible
 
         try:
             self.ensure_mutable()
@@ -1002,12 +1144,14 @@ class InventoryEditor:
             self.refresh_inventory()
             if self._on_inventory_changed:
                 self._on_inventory_changed()
+
+            note = " (held full, sent to storage)" if auto_storage else ""
             CTkMessageBox.showinfo(
                 "Done",
                 f"Added {self.selected_item.name}"
                 + (f" +{upg}" if upg else "")
                 + affinity_label
-                + f" x{result['quantity']} to {location}.",
+                + f" x{result['quantity']} to {location}{note}.",
                 parent=self.parent,
             )
         except Exception as e:
@@ -1075,21 +1219,17 @@ class InventoryEditor:
         full_id, location, gaitem_handle = self._item_data[idx]
         cat = full_id & 0xF0000000
 
-        # Determine max quantity for this item
-        db = None
+        # Determine max quantity, respecting storage cap for stackable goods
         max_qty = None
         try:
-            from er_save_manager.data.item_database import (
-                get_item_database,
-            )
+            from er_save_manager.data.item_database import get_item_database
 
             db = get_item_database()
             item = db.get_item_by_id(full_id)
             if item is None and cat == 0x00000000:
                 item = db.get_item_by_id(full_id & 0xFFFF0000)
             if item:
-                max_arrow = getattr(item, "max_arrow_quantity", 1)
-                max_qty = max_arrow if max_arrow > 1 else getattr(item, "max_num", 1)
+                max_qty = self._max_qty_for_location(item, location)
         except Exception:
             pass
 
@@ -1618,7 +1758,212 @@ class InventoryEditor:
             side=ctk.RIGHT
         )
 
-        # ---- helpers ------------------------------------------------------------
+    def _import_nyasu(self):
+        """Import a build from a Nyasu (er-inventory.nyasu.business) JSON export.
+
+        Parses weapons, armor, talismans, goods, and spells from the JSON.
+        For each item, tries held first; falls back to storage if held is full.
+        Duplicates are silently skipped.
+        """
+
+        import json
+        from tkinter import filedialog
+
+        save_file = self.get_save_file()
+        if not save_file:
+            CTkMessageBox.showwarning(
+                "No Save", "Load a save file first.", parent=self.parent
+            )
+            return
+
+        slot_idx = self.get_char_slot()
+        try:
+            slot = save_file.characters[slot_idx]
+            if not slot or slot.is_empty():
+                CTkMessageBox.showwarning(
+                    "Empty Slot", "Load a character first.", parent=self.parent
+                )
+                return
+        except Exception as e:
+            CTkMessageBox.showerror("Error", str(e), parent=self.parent)
+            return
+
+        path = filedialog.askopenfilename(
+            title="Select Nyasu Build JSON",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+            parent=self.parent,
+        )
+        if not path:
+            return
+
+        try:
+            with open(path, encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Import Error", f"Failed to read JSON:\n{e}", parent=self.parent
+            )
+            return
+
+        from er_save_manager.data.item_database import get_item_database
+        from er_save_manager.parser.inventory_ops import add_item as _add_item
+
+        db = get_item_database()
+
+        # Collect items to add: list of (full_id, qty, upgrade, gem_full_id, reinforcement, label)
+        queue: list[tuple[int, int, int, int, str, str]] = []
+
+        def _pick_location() -> str:
+            """Return 'held' unless held is full, then 'storage'."""
+            try:
+                s = save_file.characters[slot_idx]
+                if all(it.gaitem_handle != 0 for it in s.inventory_held.common_items):
+                    return "storage"
+            except Exception:
+                pass
+            return "held"
+
+        def _queue_weapon(slot_data: dict):
+            try:
+                # affinity_hex_id = base + affinity_code*100, no upgrade
+                full_id = int(slot_data["affinity_hex_id"], 16)
+                upgrade = int(slot_data["upgrade_hex_id"], 16)
+                gem_full_id = 0
+                aow_hex = slot_data.get("ash_of_war_hex_id", "")
+                if aow_hex and aow_hex not in ("00000000", "FFFFFFFF"):
+                    gem_full_id = int(aow_hex, 16)
+                # Reinforcement from DB
+                base = (full_id & 0x0FFFFFFF) // 10000 * 10000
+                item = db.get_item_by_id(0x00000000 | base)
+                reinforcement = (
+                    getattr(item, "reinforcement", "standard") if item else "standard"
+                )
+                label = slot_data.get("name", f"0x{full_id:08X}")
+                queue.append((full_id, 1, upgrade, gem_full_id, reinforcement, label))
+            except (KeyError, ValueError):
+                pass
+
+        def _queue_direct(slot_data: dict, expected_cat: int):
+            try:
+                full_id = int(slot_data["full_hex_id"], 16)
+                if (full_id & 0xF0000000) != expected_cat:
+                    return
+                label = slot_data.get("name", f"0x{full_id:08X}")
+                queue.append((full_id, 1, 0, 0, "standard", label))
+            except (KeyError, ValueError):
+                pass
+
+        def _queue_goods(slot_data: dict):
+            try:
+                full_id = int(slot_data["full_hex_id"], 16)
+                if (full_id & 0xF0000000) != 0x40000000:
+                    return
+                label = slot_data.get("name", f"0x{full_id:08X}")
+                # Use max qty for this item (1 for non-stackables)
+                item = db.get_item_by_id(full_id)
+                qty = getattr(item, "max_num", 1) if item else 1
+                queue.append((full_id, qty, 0, 0, "standard", label))
+            except (KeyError, ValueError):
+                pass
+
+        # Weapons
+        for s in data.get("inventory", {}).get("slots", []):
+            _queue_weapon(s)
+
+        # Talismans
+        for s in data.get("talismans", {}).get("slots", []):
+            _queue_direct(s, 0x20000000)
+
+        # Armor
+        prot = data.get("protectors", {})
+        for key in ("head", "body", "arms", "legs"):
+            for s in prot.get(key, {}).get("slots", []):
+                _queue_direct(s, 0x10000000)
+
+        # Goods / tools
+        for s in data.get("items", {}).get("tools", {}).get("slots", []):
+            _queue_goods(s)
+
+        # Spells: name-lookup only
+        for s in data.get("spells", {}).get("slots", []):
+            name = s.get("name", "").strip()
+            if not name:
+                continue
+            results = db.search_items(name)
+            # Prefer exact match in Goods category
+            match = next(
+                (i for i in results if i.name == name and i.category == 0x40000000),
+                next((i for i in results if i.category == 0x40000000), None),
+            )
+            if match:
+                queue.append((match.full_id, 1, 0, 0, "standard", name))
+
+        if not queue:
+            CTkMessageBox.showinfo(
+                "Import", "No items found in JSON.", parent=self.parent
+            )
+            return
+
+        try:
+            self.ensure_mutable()
+            self._create_backup(save_file, slot_idx, "import_nyasu")
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error", f"Cannot modify save:\n{e}", parent=self.parent
+            )
+            return
+
+        added, skipped, failed = [], [], []
+
+        for full_id, qty, upgrade, gem_full_id, reinforcement, label in queue:
+            location = _pick_location()
+            try:
+                _add_item(
+                    save_file,
+                    slot_idx,
+                    full_id,
+                    qty,
+                    location,
+                    upgrade=upgrade,
+                    gem_full_id=gem_full_id,
+                    reinforcement=reinforcement,
+                )
+                added.append(label)
+            except ValueError as e:
+                msg = str(e)
+                if "already present" in msg:
+                    skipped.append(label)
+                else:
+                    failed.append(f"{label}: {msg}")
+            except Exception as e:
+                failed.append(f"{label}: {e}")
+
+        try:
+            save_file.recalculate_checksums()
+            save_path = self.get_save_path()
+            if save_path:
+                save_file.to_file(Path(save_path))
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Save Error", f"Failed to save:\n{e}", parent=self.parent
+            )
+            return
+
+        self.refresh_inventory()
+        if self._on_inventory_changed:
+            self._on_inventory_changed()
+
+        lines = [
+            f"Added: {len(added)}   Skipped: {len(skipped)}   Failed: {len(failed)}"
+        ]
+        if failed:
+            lines.append("\nFailed:")
+            lines.extend(f"  {f}" for f in failed[:10])
+            if len(failed) > 10:
+                lines.append(f"  ...and {len(failed) - 10} more")
+        CTkMessageBox.showinfo("Import Complete", "\n".join(lines), parent=self.parent)
+
+    # ---- helpers ------------------------------------------------------------
 
     def _create_backup(self, save_file, slot_idx, operation):
         save_path = self.get_save_path()

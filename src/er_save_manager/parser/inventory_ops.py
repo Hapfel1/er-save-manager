@@ -291,6 +291,29 @@ def _patch_slot_with_gaitem_insert(
         return 0
 
     if delta > 0:
+        # Ensure there are enough trailing zero bytes to trim safely.
+        # The trim removes `delta` bytes from the slot end. If those bytes are
+        # non-zero (real data), trimming would corrupt the slot.
+        # rebuild_slot serializes all structures and pads the remainder with zeros,
+        # giving us a safe trim budget for future edits.
+        trim = delta
+        slot_end_before = slot_data_base + SLOT_DATA_SIZE
+        trailing_zeros = 0
+        for i in range(slot_end_before - 1, slot_end_before - trim - 1, -1):
+            if i >= 0 and save._raw_data[i] == 0:
+                trailing_zeros += 1
+            else:
+                break
+
+        if trailing_zeros < trim:
+            from er_save_manager.parser.slot_rebuild import rebuild_slot
+
+            rebuilt = rebuild_slot(slot)
+            save._raw_data[slot_data_base : slot_data_base + SLOT_DATA_SIZE] = rebuilt
+            # Recompute entry_abs_off after rebuild (gaitem_offsets are still valid
+            # since the rebuild preserves the same gaitem structure)
+            entry_abs_off = slot_data_base + slot.gaitem_offsets[gaitem_idx]
+
         last_empty_abs = _gaitem_last_empty(slot, slot_data_base)
 
         save._raw_data[entry_abs_off:entry_abs_off] = new_gaitem_bytes
@@ -302,7 +325,6 @@ def _patch_slot_with_gaitem_insert(
             inv_shifted = slot_data_base + slot.inventory_held_offset + new_size
             del save._raw_data[inv_shifted - 8 : inv_shifted]
 
-        trim = new_size - 8
         if trim > 0:
             current_end = slot_data_base + SLOT_DATA_SIZE + new_size - 8
             del save._raw_data[current_end - trim : current_end]
