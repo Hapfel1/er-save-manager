@@ -573,6 +573,15 @@ class SaveManagerGUI:
             width=160,
         ).pack(side=tk.RIGHT, padx=6, pady=10)
 
+        _itemgib_btn = ctk.CTkButton(
+            buttons_frame,
+            text="Item Gib",
+            command=self._open_inventory_editor,
+            width=200,
+        )
+        _itemgib_btn.pack(side=tk.RIGHT, padx=6, pady=10)
+        self._file_load_buttons.append(_itemgib_btn)
+
         # Main content - tabbed interface (customtkinter)
         self.notebook = ctk.CTkTabview(
             self.root,
@@ -1306,6 +1315,21 @@ class SaveManagerGUI:
             pass
 
         return None
+
+    def _open_inventory_editor(self):
+        """Navigate to Character Editor > Inventory tab."""
+        self.notebook.set("Character Editor")
+        if hasattr(self, "inventory_editor"):
+            # Find the inner editor_tabs and activate Inventory
+            try:
+                for widget in self.notebook.tab("Character Editor").winfo_children():
+                    if isinstance(widget, ctk.CTkFrame):
+                        for child in widget.winfo_children():
+                            if isinstance(child, ctk.CTkTabview):
+                                child.set("Inventory")
+                                break
+            except Exception:
+                pass
 
     def open_troubleshooting(self):
         """Open the troubleshooting dialog or install addon"""
