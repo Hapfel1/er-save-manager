@@ -130,10 +130,16 @@ def _next_gaitem_handle(slot, prefix: int) -> int:
 
 def _find_empty_gaitem_slot(slot, prefix: int) -> int:
     """
-    Return index of the first suitable empty gaitem slot for the given prefix.
+    Return index of the best empty gaitem slot for the given prefix.
 
-    Gems go before the first weapon entry (AoW region).
-    Weapons and armor go after the first weapon entry.
+    Gems go before the first weapon entry (AoW region) - use the first
+    available empty there to keep gems compactly packed.
+
+    Weapons and armor go after the first weapon entry. Return the LAST
+    available empty in that region so that the insert position equals the
+    last-empty position. The INSERT-before + DELETE-last-empty algorithm in
+    _patch_slot_with_gaitem_insert is only orphan-free when they coincide.
+
     Returns -1 if no suitable slot exists.
     """
     first_weapon_idx = -1
@@ -151,10 +157,11 @@ def _find_empty_gaitem_slot(slot, prefix: int) -> int:
         return -1
 
     start = (first_weapon_idx + 1) if first_weapon_idx != -1 else 0
+    result = -1
     for i in range(start, len(slot.gaitem_map)):
         if slot.gaitem_map[i].gaitem_handle == 0:
-            return i
-    return -1
+            result = i
+    return result
 
 
 def _find_gaitem_by_item(slot, full_item_id: int):
