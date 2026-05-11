@@ -317,9 +317,20 @@ def _patch_slot_with_gaitem_insert(
 
             rebuilt = rebuild_slot(slot)
             save._raw_data[slot_data_base : slot_data_base + SLOT_DATA_SIZE] = rebuilt
-            # Recompute entry_abs_off after rebuild (gaitem_offsets are still valid
-            # since the rebuild preserves the same gaitem structure)
             entry_abs_off = slot_data_base + slot.gaitem_offsets[gaitem_idx]
+
+            # Re-check trailing zeros in the binary after writing the rebuild.
+            # If still empty the slot is genuinely full and trimming would corrupt data.
+            post_trailing = 0
+            for _j in range(slot_end_before - 1, slot_end_before - trim - 1, -1):
+                if _j >= 0 and save._raw_data[_j] == 0:
+                    post_trailing += 1
+                else:
+                    break
+            if post_trailing < trim:
+                raise ValueError(
+                    f"slot {slot_idx} data is full - cannot safely add this item"
+                )
 
         last_empty_abs = _gaitem_last_empty(slot, slot_data_base)
 
@@ -443,11 +454,16 @@ def insert_gaitem(
     gaitem_size = len(new_gaitem_bytes)
     size_delta = gaitem_size - 8
 
+    _prev_gaitem = slot.gaitem_map[empty_g]
     slot.gaitem_map[empty_g] = new_gaitem
 
-    net_shift = _patch_slot_with_gaitem_insert(
-        save, slot_idx, slot, empty_g, new_gaitem_bytes, old_gaitem_size=8
-    )
+    try:
+        net_shift = _patch_slot_with_gaitem_insert(
+            save, slot_idx, slot, empty_g, new_gaitem_bytes, old_gaitem_size=8
+        )
+    except Exception:
+        slot.gaitem_map[empty_g] = _prev_gaitem
+        raise
 
     entry_rel = slot.gaitem_offsets[empty_g]
     for i, off in enumerate(slot.gaitem_offsets):

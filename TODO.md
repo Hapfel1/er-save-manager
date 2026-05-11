@@ -1,4 +1,8 @@
-import feature from nyasu.business
+maxrepositorynum
+
+ui when successfully adding item change to toast done
+
+import feature from nyasu.business done
 
 auto load character on selecting slot and do equipment editor then test everything release troubleshooter and this bump to v1.0.0
 
