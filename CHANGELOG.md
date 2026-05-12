@@ -21,9 +21,7 @@
 
 - Correct EF tear false positive and remove unreliable anchor override `[deep_scan]` ([508e170](https://github.com/Hapfel1/er-save-manager/commit/508e1708a717ec9d627a5518570e68fddb469bf4))
 
-- Fix update inventory ops with rebuild to fix crashing issue
-
-Co-authored-by: Copilot <copilot@github.com> ([24a31f3](https://github.com/Hapfel1/er-save-manager/commit/24a31f3272b9b284a6ac578b79ae714873baeb81))
+- Fix update inventory ops with rebuild to fix crashing issue ([24a31f3](https://github.com/Hapfel1/er-save-manager/commit/24a31f3272b9b284a6ac578b79ae714873baeb81))
 
 - Improve Item Spawning to avoid crashing/corruption ([210fb35](https://github.com/Hapfel1/er-save-manager/commit/210fb356a1a3c926d0c1e74f8ab4f98d48b11e70))
 
