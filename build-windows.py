@@ -46,6 +46,7 @@ include_files = [
     ("resources/", "resources/"),
     ("src/er_save_manager/data/items/", "er_save_manager/data/items/"),
     ("resources/app.manifest", "app.manifest"),
+    ("src/er_save_manager/fixes/", "er_save_manager/fixes/"),
 ]
 
 # Explicitly include UI submodules for cx_Freeze
