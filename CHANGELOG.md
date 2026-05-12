@@ -3,6 +3,47 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.2.0
+**Released:** May 12, 2026
+
+
+### ✨ New Features
+
+- Added more modification to existing items in inventory (set affinity, aow, upgrade level) with the correct validation ([5caafc4](https://github.com/Hapfel1/er-save-manager/commit/5caafc43fbf1337de1996e8c912034898a5f2a8c))
+
+
+
+### 🔧 Bug Fixes
+
+- Fixed unkown item ids showing up ([f950bb7](https://github.com/Hapfel1/er-save-manager/commit/f950bb7078a53152ee6cec9a548a99a6b8fa9caf))
+
+- Fixed Weapon mm level calculation ([6a24869](https://github.com/Hapfel1/er-save-manager/commit/6a24869dd3073319e9b02d29a9893ccd698c820f))
+
+- Correct EF tear false positive and remove unreliable anchor override `[deep_scan]` ([508e170](https://github.com/Hapfel1/er-save-manager/commit/508e1708a717ec9d627a5518570e68fddb469bf4))
+
+- Fix update inventory ops with rebuild to fix crashing issue ([24a31f3](https://github.com/Hapfel1/er-save-manager/commit/24a31f3272b9b284a6ac578b79ae714873baeb81))
+
+- Improve Item Spawning to avoid crashing/corruption ([210fb35](https://github.com/Hapfel1/er-save-manager/commit/210fb356a1a3c926d0c1e74f8ab4f98d48b11e70))
+
+- Fixed Item Import and slot rebuild to cause more corruption issues ([d04eb45](https://github.com/Hapfel1/er-save-manager/commit/d04eb457f9597f868356acd8e7f5b58edbfaf99a))
+
+- Add maxrepositorynum ([d3c48a9](https://github.com/Hapfel1/er-save-manager/commit/d3c48a9563226e6a929aa34674d249d04a4135af))
+
+
+
+### 🎨 User Interface
+
+- Add ItemGib button ([8c6c26f](https://github.com/Hapfel1/er-save-manager/commit/8c6c26fe9e6bbdbc81a8c4a417e4917ebb98c388))
+
+
+
+### 📦 Dependencies
+
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([2811c8f](https://github.com/Hapfel1/er-save-manager/commit/2811c8f8a3dcd8e55389e29575d31ef8ee7449ba))
+
+
+
+---
 ## 📦 Release 1.1.0
 **Released:** May 04, 2026
 
@@ -789,6 +830,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.2.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.1.0..v1.2.0
 [1.1.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.0.0..v1.1.0
 [1.0.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.14.1..v1.0.0
 [0.14.1]: https://github.com/Hapfel1/er-save-manager/compare/v0.14.0..v0.14.1
