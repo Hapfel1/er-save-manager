@@ -97,8 +97,6 @@ class InventoryEditor:
     _AFFINITY_BY_CODE: dict[int, str] = dict(_AFFINITIES)
     _AFFINITY_NAMES: list[str] = [name for _, name in _AFFINITIES]
 
-    _STORAGE_MAX_STACKABLE = 600
-
     _SEAMLESS_CATS = {"Seamless Co-op Items"}
     _CONVERGENCE_CATS = {
         "Convergence Melee Weapons",
@@ -921,10 +919,9 @@ class InventoryEditor:
         max_arrow = getattr(item, "max_arrow_quantity", 1)
         if max_arrow > 1:
             return max_arrow
-        base_max = getattr(item, "max_num", 1)
-        if location == "storage" and base_max > 1:
-            return self._STORAGE_MAX_STACKABLE
-        return base_max
+        if location == "storage":
+            return getattr(item, "max_repository_num", getattr(item, "max_num", 1))
+        return getattr(item, "max_num", 1)
 
     def _validate_add_item(
         self,

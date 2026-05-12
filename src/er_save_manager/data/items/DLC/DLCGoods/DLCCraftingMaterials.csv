@@ -1,42 +1,42 @@
-ID,Name,maxNum,category
-2009500,Hefty Cracked Pot,10,DLC CraftingMaterials
-2015000,Beast Horn,999,DLC CraftingMaterials
-2015010,Spirit Calculus,999,DLC CraftingMaterials
-2015020,Pearlescent Scale,999,DLC CraftingMaterials
-2015030,Scorpion Liver,999,DLC CraftingMaterials
-2015040,Fly Mold,999,DLC CraftingMaterials
-2020001,Rada Fruit,999,DLC CraftingMaterials
-2020002,Redflesh Mushroom,999,DLC CraftingMaterials
-2020003,Whiteflesh Mushroom,999,DLC CraftingMaterials
-2020004,Knot Resin,999,DLC CraftingMaterials
-2020005,Dewgem,999,DLC CraftingMaterials
-2020006,Black Pyrefly,999,DLC CraftingMaterials
-2020007,Glintslab Firefly,999,DLC CraftingMaterials
-2020008,Yellow Fulgurbloom,999,DLC CraftingMaterials
-2020009,Shadow Sunflower,999,DLC CraftingMaterials
-2020010,Toxic Mossling,999,DLC CraftingMaterials
-2020011,Scarlet Bud,999,DLC CraftingMaterials
-2020012,Sanguine Amaryllis,999,DLC CraftingMaterials
-2020013,Frozen Maggot,999,DLC CraftingMaterials
-2020014,Deep-Purple Lily,999,DLC CraftingMaterials
-2020015,Nectarblood Burgeon,999,DLC CraftingMaterials
-2020016,Winter-Lantern Fly,999,DLC CraftingMaterials
-2020017,Swollen Grape,999,DLC CraftingMaterials
-2020018,Grave Keeper's Brainpan,999,DLC CraftingMaterials
-2020019,Horn-Strewn Excrement,999,DLC CraftingMaterials
-2020020,Gas Stone,999,DLC CraftingMaterials
-2020021,Ghostflame Bloom,999,DLC CraftingMaterials
-2020022,Grave Cricket,999,DLC CraftingMaterials
-2020023,Dragon's Calorbloom,999,DLC CraftingMaterials
-2020024,Finger Mimic,999,DLC CraftingMaterials
-2020025,Empyrean-Blood Burgeon,999,DLC CraftingMaterials
-2020026,Congealed Putrescence,999,DLC CraftingMaterials
-2020027,Roundrock,999,DLC CraftingMaterials
-2020028,Spiritgrave Stone,999,DLC CraftingMaterials
-2020029,Rauh Burrow,999,DLC CraftingMaterials
-2020030,Ember of Messmer,999,DLC CraftingMaterials
-2020031,Blessed Bone Shard,999,DLC CraftingMaterials
-2020032,Red Fulgurbloom,999,DLC CraftingMaterials
-2020033,Nailstone,999,DLC CraftingMaterials
-2020034,Sharp Gravel Stone,999,DLC CraftingMaterials
-2020035,Furnace Visage,999,DLC CraftingMaterials
+ID,Name,maxNum,category,maxRepositoryNum
+2009500,Hefty Cracked Pot,10,DLC CraftingMaterials,10
+2015000,Beast Horn,999,DLC CraftingMaterials,999
+2015010,Spirit Calculus,999,DLC CraftingMaterials,999
+2015020,Pearlescent Scale,999,DLC CraftingMaterials,999
+2015030,Scorpion Liver,999,DLC CraftingMaterials,999
+2015040,Fly Mold,999,DLC CraftingMaterials,999
+2020001,Rada Fruit,999,DLC CraftingMaterials,999
+2020002,Redflesh Mushroom,999,DLC CraftingMaterials,999
+2020003,Whiteflesh Mushroom,999,DLC CraftingMaterials,999
+2020004,Knot Resin,999,DLC CraftingMaterials,999
+2020005,Dewgem,999,DLC CraftingMaterials,999
+2020006,Black Pyrefly,999,DLC CraftingMaterials,999
+2020007,Glintslab Firefly,999,DLC CraftingMaterials,999
+2020008,Yellow Fulgurbloom,999,DLC CraftingMaterials,999
+2020009,Shadow Sunflower,999,DLC CraftingMaterials,999
+2020010,Toxic Mossling,999,DLC CraftingMaterials,999
+2020011,Scarlet Bud,999,DLC CraftingMaterials,999
+2020012,Sanguine Amaryllis,999,DLC CraftingMaterials,999
+2020013,Frozen Maggot,999,DLC CraftingMaterials,999
+2020014,Deep-Purple Lily,999,DLC CraftingMaterials,999
+2020015,Nectarblood Burgeon,999,DLC CraftingMaterials,999
+2020016,Winter-Lantern Fly,999,DLC CraftingMaterials,999
+2020017,Swollen Grape,999,DLC CraftingMaterials,999
+2020018,Grave Keeper's Brainpan,999,DLC CraftingMaterials,999
+2020019,Horn-Strewn Excrement,999,DLC CraftingMaterials,999
+2020020,Gas Stone,999,DLC CraftingMaterials,999
+2020021,Ghostflame Bloom,999,DLC CraftingMaterials,999
+2020022,Grave Cricket,999,DLC CraftingMaterials,999
+2020023,Dragon's Calorbloom,999,DLC CraftingMaterials,999
+2020024,Finger Mimic,999,DLC CraftingMaterials,999
+2020025,Empyrean-Blood Burgeon,999,DLC CraftingMaterials,999
+2020026,Congealed Putrescence,999,DLC CraftingMaterials,999
+2020027,Roundrock,999,DLC CraftingMaterials,999
+2020028,Spiritgrave Stone,999,DLC CraftingMaterials,999
+2020029,Rauh Burrow,999,DLC CraftingMaterials,999
+2020030,Ember of Messmer,999,DLC CraftingMaterials,999
+2020031,Blessed Bone Shard,999,DLC CraftingMaterials,999
+2020032,Red Fulgurbloom,999,DLC CraftingMaterials,999
+2020033,Nailstone,999,DLC CraftingMaterials,999
+2020034,Sharp Gravel Stone,999,DLC CraftingMaterials,999
+2020035,Furnace Visage,999,DLC CraftingMaterials,999
