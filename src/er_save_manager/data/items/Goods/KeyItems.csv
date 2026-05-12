@@ -1,109 +1,109 @@
-ID,Name,maxNum,category
-100,Tarnished's Furled Finger,1,KeyItems
-101,Duelist's Furled Finger,1,KeyItems
-102,Bloody Finger,1,KeyItems
-103,Finger Severer,1,KeyItems
-104,White Cipher Ring,1,KeyItems
-105,Blue Cipher Ring,1,KeyItems
-106,Tarnished's Wizened Finger,1,KeyItems
-107,Phantom Bloody Finger,99,KeyItems
-108,Taunter's Tongue,1,KeyItems
-109,Small Golden Effigy,1,KeyItems
-110,Small Red Effigy,1,KeyItems
-111,Festering Bloody Finger,99,KeyItems
-112,Recusant Finger,1,KeyItems
-113,Phantom Bloody Finger,99,KeyItems
-114,Phantom Recusant Finger,99,KeyItems
-115,Memory of Grace,1,KeyItems
-130,Spectral Steed Whistle,1,KeyItems
-135,Phantom Great Rune,99,KeyItems
-191,Godrick's Great Rune,1,KeyItems
-192,Radahn's Great Rune,1,KeyItems
-193,Morgott's Great Rune,1,KeyItems
-194,Rykard's Great Rune,1,KeyItems
-195,Mohg's Great Rune,1,KeyItems
-196,Malenia's Great Rune,1,KeyItems
-2090,Deathroot,99,KeyItems
-8000,Stonesword Key,99,KeyItems
-8010,Rusty Key,1,KeyItems
-8102,Lucent Baldachin's Blessing,1,KeyItems
-8105,Dectus Medallion (Left),1,KeyItems
-8106,Dectus Medallion (Right),1,KeyItems
-8107,Rold Medallion,1,KeyItems
-8109,Academy Glintstone Key,1,KeyItems
-8111,Carian Inverted Statue,1,KeyItems
-8121,Dark Moon Ring,1,KeyItems
-8126,Fingerprint Grape,1,KeyItems
-8127,Letter from Volcano Manor,1,KeyItems
-8128,Tonic of Forgetfulness,1,KeyItems
-8129,Serpent's Amnion,1,KeyItems
-8130,Rya's Necklace,1,KeyItems
-8131,Irina's Letter,1,KeyItems
-8132,Letter from Volcano Manor,1,KeyItems
-8133,Red Letter,1,KeyItems
-8134,Drawing-Room Key,1,KeyItems
-8136,Rya's Necklace,1,KeyItems
-8137,Volcano Manor Invitation,1,KeyItems
-8142,Amber Starlight,1,KeyItems
-8143,Seluvis's Introduction,1,KeyItems
-8144,Sellen's Primal Glintstone,1,KeyItems
-8146,Miniature Ranni,1,KeyItems
-8147,"Asimi, Silver Tear",1,KeyItems
-8148,Godrick's Great Rune (Unpowered),1,KeyItems
-8149,Radahn's Great Rune (Unpowered),1,KeyItems
-8150,Morgott's Great Rune (Unpowered),1,KeyItems
-8151,Rykard's Great Rune (Unpowered),1,KeyItems
-8152,Mohg's Great Rune (Unpowered),1,KeyItems
-8153,Malenia's Great Rune (Unpowered),1,KeyItems
-8154,Lord of Blood's Favor,1,KeyItems
-8155,Lord of Blood's Favor,1,KeyItems
-8156,Burial Crow's Letter,1,KeyItems
-8158,Spirit Calling Bell,1,KeyItems
-8159,Fingerslayer Blade,1,KeyItems
-8161,Sewing Needle,1,KeyItems
-8162,Gold Sewing Needle,1,KeyItems
-8163,Tailoring Tools,1,KeyItems
-8164,Seluvis's Potion,1,KeyItems
-8166,Amber Draught,1,KeyItems
-8167,Letter to Patches,1,KeyItems
-8168,Dancer's Castanets,1,KeyItems
-8169,Sellian Sealbreaker,1,KeyItems
-8171,Chrysalids' Memento,1,KeyItems
-8172,Black Knifeprint,1,KeyItems
-8173,Letter to Bernahl,1,KeyItems
-8174,Academy Glintstone Key,1,KeyItems
-8175,Haligtree Secret Medallion (Left),1,KeyItems
-8176,Haligtree Secret Medallion (Right),1,KeyItems
-8181,Burial Crow's Letter,1,KeyItems
-8182,Mending Rune of Perfect Order,1,KeyItems
-8183,Mending Rune of the Death-Prince,1,KeyItems
-8184,Mending Rune of the Fell Curse,1,KeyItems
-8185,Larval Tear,99,KeyItems
-8186,Imbued Sword Key,99,KeyItems
-8187,Miniature Ranni,1,KeyItems
-8188,Golden Tailoring Tools,1,KeyItems
-8189,Iji's Confession,1,KeyItems
-8190,Knifeprint Clue,1,KeyItems
-8191,Cursemark of Death,1,KeyItems
-8192,Asimi's Husk,1,KeyItems
-8193,Seedbed Curse,99,KeyItems
-8194,The Stormhawk King,1,KeyItems
-8195,"Asimi, Silver Chrysalid",1,KeyItems
-8196,Unalloyed Gold Needle,1,KeyItems
-8197,Sewer-Gaol Key,1,KeyItems
-8198,Meeting Place Map,1,KeyItems
-8199,Discarded Palace Key,1,KeyItems
-8500,Crafting Kit,1,KeyItems
-8590,Whetstone Knife, 1,KeyItems
-8970,Iron Whetblade,1,KeyItems
-8971,Red-Hot Whetblade,1,KeyItems
-8972,Sanctified Whetblade,1,KeyItems
-8973,Glintstone Whetblade,1,KeyItems
-8974,Black Whetblade,1,KeyItems
-8975,Unalloyed Gold Needle,1,KeyItems
-8976,Unalloyed Gold Needle,1,KeyItems
-8977,Valkyrie's Prosthesis,1,KeyItems
-8978,Sellia's Secret,1,KeyItems
-8979,Beast Eye,1,KeyItems
-8980,Weathered Dagger,1,KeyItems
-10080,Great Rune of the Unborn,1,KeyItems
+ID,Name,maxNum,category,maxRepositoryNum
+100,Tarnished's Furled Finger,1,KeyItems,1
+101,Duelist's Furled Finger,1,KeyItems,1
+102,Bloody Finger,1,KeyItems,1
+103,Finger Severer,1,KeyItems,1
+104,White Cipher Ring,1,KeyItems,1
+105,Blue Cipher Ring,1,KeyItems,1
+106,Tarnished's Wizened Finger,1,KeyItems,1
+107,Phantom Bloody Finger,99,KeyItems,99
+108,Taunter's Tongue,1,KeyItems,1
+109,Small Golden Effigy,1,KeyItems,1
+110,Small Red Effigy,1,KeyItems,1
+111,Festering Bloody Finger,99,KeyItems,99
+112,Recusant Finger,1,KeyItems,1
+113,Phantom Bloody Finger,99,KeyItems,99
+114,Phantom Recusant Finger,99,KeyItems,99
+115,Memory of Grace,1,KeyItems,1
+130,Spectral Steed Whistle,1,KeyItems,1
+135,Phantom Great Rune,99,KeyItems,99
+191,Godrick's Great Rune,1,KeyItems,1
+192,Radahn's Great Rune,1,KeyItems,1
+193,Morgott's Great Rune,1,KeyItems,1
+194,Rykard's Great Rune,1,KeyItems,1
+195,Mohg's Great Rune,1,KeyItems,1
+196,Malenia's Great Rune,1,KeyItems,1
+2090,Deathroot,99,KeyItems,600
+8000,Stonesword Key,99,KeyItems,600
+8010,Rusty Key,1,KeyItems,1
+8102,Lucent Baldachin's Blessing,1,KeyItems,1
+8105,Dectus Medallion (Left),1,KeyItems,1
+8106,Dectus Medallion (Right),1,KeyItems,1
+8107,Rold Medallion,1,KeyItems,1
+8109,Academy Glintstone Key,1,KeyItems,1
+8111,Carian Inverted Statue,1,KeyItems,1
+8121,Dark Moon Ring,1,KeyItems,1
+8126,Fingerprint Grape,1,KeyItems,1
+8127,Letter from Volcano Manor,1,KeyItems,1
+8128,Tonic of Forgetfulness,1,KeyItems,1
+8129,Serpent's Amnion,1,KeyItems,1
+8130,Rya's Necklace,1,KeyItems,1
+8131,Irina's Letter,1,KeyItems,1
+8132,Letter from Volcano Manor,1,KeyItems,1
+8133,Red Letter,1,KeyItems,1
+8134,Drawing-Room Key,1,KeyItems,1
+8136,Rya's Necklace,1,KeyItems,1
+8137,Volcano Manor Invitation,1,KeyItems,1
+8142,Amber Starlight,1,KeyItems,1
+8143,Seluvis's Introduction,1,KeyItems,1
+8144,Sellen's Primal Glintstone,1,KeyItems,1
+8146,Miniature Ranni,1,KeyItems,1
+8147,"Asimi, Silver Tear",1,KeyItems,1
+8148,Godrick's Great Rune (Unpowered),1,KeyItems,1
+8149,Radahn's Great Rune (Unpowered),1,KeyItems,1
+8150,Morgott's Great Rune (Unpowered),1,KeyItems,1
+8151,Rykard's Great Rune (Unpowered),1,KeyItems,1
+8152,Mohg's Great Rune (Unpowered),1,KeyItems,1
+8153,Malenia's Great Rune (Unpowered),1,KeyItems,1
+8154,Lord of Blood's Favor,1,KeyItems,1
+8155,Lord of Blood's Favor,1,KeyItems,1
+8156,Burial Crow's Letter,1,KeyItems,1
+8158,Spirit Calling Bell,1,KeyItems,1
+8159,Fingerslayer Blade,1,KeyItems,1
+8161,Sewing Needle,1,KeyItems,1
+8162,Gold Sewing Needle,1,KeyItems,1
+8163,Tailoring Tools,1,KeyItems,1
+8164,Seluvis's Potion,1,KeyItems,1
+8166,Amber Draught,1,KeyItems,1
+8167,Letter to Patches,1,KeyItems,1
+8168,Dancer's Castanets,1,KeyItems,1
+8169,Sellian Sealbreaker,1,KeyItems,1
+8171,Chrysalids' Memento,1,KeyItems,1
+8172,Black Knifeprint,1,KeyItems,1
+8173,Letter to Bernahl,1,KeyItems,1
+8174,Academy Glintstone Key,1,KeyItems,1
+8175,Haligtree Secret Medallion (Left),1,KeyItems,1
+8176,Haligtree Secret Medallion (Right),1,KeyItems,1
+8181,Burial Crow's Letter,1,KeyItems,1
+8182,Mending Rune of Perfect Order,1,KeyItems,1
+8183,Mending Rune of the Death-Prince,1,KeyItems,1
+8184,Mending Rune of the Fell Curse,1,KeyItems,1
+8185,Larval Tear,99,KeyItems,600
+8186,Imbued Sword Key,99,KeyItems,1
+8187,Miniature Ranni,1,KeyItems,1
+8188,Golden Tailoring Tools,1,KeyItems,1
+8189,Iji's Confession,1,KeyItems,1
+8190,Knifeprint Clue,1,KeyItems,1
+8191,Cursemark of Death,1,KeyItems,1
+8192,Asimi's Husk,1,KeyItems,1
+8193,Seedbed Curse,99,KeyItems,1
+8194,The Stormhawk King,1,KeyItems,1
+8195,"Asimi, Silver Chrysalid",1,KeyItems,1
+8196,Unalloyed Gold Needle,1,KeyItems,1
+8197,Sewer-Gaol Key,1,KeyItems,1
+8198,Meeting Place Map,1,KeyItems,1
+8199,Discarded Palace Key,1,KeyItems,1
+8500,Crafting Kit,1,KeyItems,1
+8590,Whetstone Knife, 1,KeyItems,1
+8970,Iron Whetblade,1,KeyItems,1
+8971,Red-Hot Whetblade,1,KeyItems,1
+8972,Sanctified Whetblade,1,KeyItems,1
+8973,Glintstone Whetblade,1,KeyItems,1
+8974,Black Whetblade,1,KeyItems,1
+8975,Unalloyed Gold Needle,1,KeyItems,1
+8976,Unalloyed Gold Needle,1,KeyItems,1
+8977,Valkyrie's Prosthesis,1,KeyItems,1
+8978,Sellia's Secret,1,KeyItems,1
+8979,Beast Eye,1,KeyItems,1
+8980,Weathered Dagger,1,KeyItems,1
+10080,Great Rune of the Unborn,1,KeyItems,1

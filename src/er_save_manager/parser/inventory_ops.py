@@ -130,10 +130,16 @@ def _next_gaitem_handle(slot, prefix: int) -> int:
 
 def _find_empty_gaitem_slot(slot, prefix: int) -> int:
     """
-    Return index of the first suitable empty gaitem slot for the given prefix.
+    Return index of the best empty gaitem slot for the given prefix.
 
-    Gems go before the first weapon entry (AoW region).
-    Weapons and armor go after the first weapon entry.
+    Gems go before the first weapon entry (AoW region) - use the first
+    available empty there to keep gems compactly packed.
+
+    Weapons and armor go after the first weapon entry. Return the LAST
+    available empty in that region so that the insert position equals the
+    last-empty position. The INSERT-before + DELETE-last-empty algorithm in
+    _patch_slot_with_gaitem_insert is only orphan-free when they coincide.
+
     Returns -1 if no suitable slot exists.
     """
     first_weapon_idx = -1
@@ -151,10 +157,11 @@ def _find_empty_gaitem_slot(slot, prefix: int) -> int:
         return -1
 
     start = (first_weapon_idx + 1) if first_weapon_idx != -1 else 0
+    result = -1
     for i in range(start, len(slot.gaitem_map)):
         if slot.gaitem_map[i].gaitem_handle == 0:
-            return i
-    return -1
+            result = i
+    return result
 
 
 def _find_gaitem_by_item(slot, full_item_id: int):
@@ -291,6 +298,40 @@ def _patch_slot_with_gaitem_insert(
         return 0
 
     if delta > 0:
+        # Ensure there are enough trailing zero bytes to trim safely.
+        # The trim removes `delta` bytes from the slot end. If those bytes are
+        # non-zero (real data), trimming would corrupt the slot.
+        # rebuild_slot serializes all structures and pads the remainder with zeros,
+        # giving us a safe trim budget for future edits.
+        trim = delta
+        slot_end_before = slot_data_base + SLOT_DATA_SIZE
+        trailing_zeros = 0
+        for i in range(slot_end_before - 1, slot_end_before - trim - 1, -1):
+            if i >= 0 and save._raw_data[i] == 0:
+                trailing_zeros += 1
+            else:
+                break
+
+        if trailing_zeros < trim:
+            from er_save_manager.parser.slot_rebuild import rebuild_slot
+
+            rebuilt = rebuild_slot(slot)
+            save._raw_data[slot_data_base : slot_data_base + SLOT_DATA_SIZE] = rebuilt
+            entry_abs_off = slot_data_base + slot.gaitem_offsets[gaitem_idx]
+
+            # Re-check trailing zeros in the binary after writing the rebuild.
+            # If still empty the slot is genuinely full and trimming would corrupt data.
+            post_trailing = 0
+            for _j in range(slot_end_before - 1, slot_end_before - trim - 1, -1):
+                if _j >= 0 and save._raw_data[_j] == 0:
+                    post_trailing += 1
+                else:
+                    break
+            if post_trailing < trim:
+                raise ValueError(
+                    f"slot {slot_idx} data is full - cannot safely add this item"
+                )
+
         last_empty_abs = _gaitem_last_empty(slot, slot_data_base)
 
         save._raw_data[entry_abs_off:entry_abs_off] = new_gaitem_bytes
@@ -302,7 +343,6 @@ def _patch_slot_with_gaitem_insert(
             inv_shifted = slot_data_base + slot.inventory_held_offset + new_size
             del save._raw_data[inv_shifted - 8 : inv_shifted]
 
-        trim = new_size - 8
         if trim > 0:
             current_end = slot_data_base + SLOT_DATA_SIZE + new_size - 8
             del save._raw_data[current_end - trim : current_end]
@@ -414,11 +454,14 @@ def insert_gaitem(
     gaitem_size = len(new_gaitem_bytes)
     size_delta = gaitem_size - 8
 
-    slot.gaitem_map[empty_g] = new_gaitem
-
+    # Patch the binary first so rebuild_slot (called when trailing zeros
+    # are exhausted) serializes the original map without the new weapon.
+    # Updating gaitem_map before the patch caused rebuild to write the weapon
+    # twice, corrupting everything that followed.
     net_shift = _patch_slot_with_gaitem_insert(
         save, slot_idx, slot, empty_g, new_gaitem_bytes, old_gaitem_size=8
     )
+    slot.gaitem_map[empty_g] = new_gaitem
 
     entry_rel = slot.gaitem_offsets[empty_g]
     for i, off in enumerate(slot.gaitem_offsets):

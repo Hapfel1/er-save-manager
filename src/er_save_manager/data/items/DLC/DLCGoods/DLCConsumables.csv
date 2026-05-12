@@ -1,92 +1,92 @@
-ID,Name,maxNum,category
-2000300,Hefty Fire Pot,10,DLC Consumables
-2000310,Hefty Rock Pot,10,DLC Consumables
-2000320,Hefty Lightning Pot,10,DLC Consumables
-2000310,Hefty Rock Pot,10,DLC Consumables
-2000330,Hefty Fetid Pot,10,DLC Consumables
-2000340,Hefty Fly Pot,10,DLC Consumables
-2000360,Hefty Freezing Pot,10,DLC Consumables
-2000380,Hefty Oil Pot,10,DLC Consumables
-2000600,Hefty Volcano Pot,10,DLC Consumables
-2000620,Hefty Frenzied Flame Pot,10,DLC Consumables
-2000650,Hefty Rancor Pot,10,DLC Consumables
-2000670,Hefty Rot Pot,10,DLC Consumables
-2000680,Hefty Furnace Pot,10,DLC Consumables
-2000710,Frenzied Flame Pot,10,DLC Consumables
-2000740,Eternal Sleep Pot,10,DLC Consumables
-2000760,Roped Frenzied Flame Pot,10,DLC Consumables
-2000370,Hefty Poison Pot,10,DLC Consumables
-2000660,Hefty Magic Pot,10,DLC Consumables
-2000690,Hefty Red Lightning Pot,10,DLC Consumables
-2000700,Red Lightning Pot,10,DLC Consumables
-2001130,Fireproof Pickled Liver,5,DLC Consumables
-2001140,Lightningproof Pickled Liver,5,DLC Consumables
-2001210,Sacred Bloody Flesh,10,DLC Consumables
-2001420,Royal Magic Grease,10,DLC Consumables
-2001520,Drawstring Royal Magic Grease,30,DLC Consumables
-2002130,Iris of Occultation,99,DLC Consumables
-2000800,Spirit Raisin,30,DLC Consumables
-2000900,Blessing of Marika,1,DLC Consumables
-2000910,Lulling Branch,10,DLC Consumables
-2001100,Dragon Communion Flesh,10,DLC Consumables
-2001105,Dragonscale Flesh,10,DLC Consumables
-2001110,Fingerprint Nostrum,10,DLC Consumables
-2001120,Spellproof Pickled Liver,5,DLC Consumables
-2001150,Holyproof Pickled Liver,5,DLC Consumables
-2001160,Opaline Pickled Liver,5,DLC Consumables
-2001170,Well-Pickled Turtle Neck,10,DLC Consumables
-2001200,Scorpion Stew,1,DLC Consumables
-2001201,Gourmet Scorpion Stew,1,DLC Consumables
-2001202,Scorpion Stew,1,DLC Consumables
-2001203,Gourmet Scorpion Stew,1,DLC Consumables
-2001220,Silver Horn Tender,10,DLC Consumables
-2001230,Golden Horn Tender,10,DLC Consumables
-2001400,Messmerfire Grease,10,DLC Consumables
-2001410,Dragonbolt Grease,10,DLC Consumables
-2001430,Golden Grease,10,DLC Consumables
-2001450,Eternal Sleep Grease,10,DLC Consumables
-2001480,Dragon Communion Grease,10,DLC Consumables
-2001500,Drawstring Messmerfire Grease,30,DLC Consumables
-2001510,Drawstring Dragonbolt Grease,30,DLC Consumables
-2001530,Drawstring Golden Grease,30,DLC Consumables
-2001550,Drawstring Eternal Sleep Grease,30,DLC Consumables
-2001600,Festive Grease,10,DLC Consumables
-2001700,Innard Meat,40,DLC Consumables
-2001710,Dragon Communion Harpoon,5,DLC Consumables
-2002000,Polter Stone,99,DLC Consumables
-2002010,Rock Heart,1,DLC Consumables
-2002020,Priestess Heart,1,DLC Consumables
-2002030,Lamenter's Mask,1,DLC Consumables
-2002100,Ancient Dragon's Blessing,1,DLC Consumables
-2002120,Iris of Grace,99,DLC Consumables
-2002140,Thiollier's Concoction,99,DLC Consumables
-2002150,"Prattling Pate ""Lamentation""",1,DLC Consumables
-2002900,Remembrance of the Wild Boar Rider,99,DLC Consumables
-2002901,Remembrance of the Impaler,99,DLC Consumables
-2002902,Remembrance of the Shadow Sunflower,99,DLC Consumables
-2002903,Remembrance of the Twin Moon Knight,99,DLC Consumables
-2002904,Remembrance of the Saint of the Bud,99,DLC Consumables
-2002905,Remembrance of the Dancing Lion,99,DLC Consumables
-2002907,Remembrance of a God and a Lord,99,DLC Consumables
-2002908,Remembrance of the Lord of Frenzied Flame,99,DLC Consumables
-2002909,Remembrance of the Mother of Fingers,99,DLC Consumables
-2002910,Remembrance of Putrescence,99,DLC Consumables
-2002950,Leda's Rune,99,DLC Consumables
-2002951,Broken Rune,99,DLC Consumables
-2002952,Shadow Realm Rune [1],99,DLC Consumables
-2002953,Shadow Realm Rune [2],99,DLC Consumables
-2002954,Shadow Realm Rune [3],99,DLC Consumables
-2002955,Shadow Realm Rune [4],99,DLC Consumables
-2002956,Shadow Realm Rune [5],99,DLC Consumables
-2002957,Shadow Realm Rune [6],99,DLC Consumables
-2002958,Shadow Realm Rune [7],99,DLC Consumables
-2002959,Rune of an Unsung Hero,99,DLC Consumables
-2002960,Marika's Rune,99,DLC Consumables
-2003150,Call of Tibia,10,DLC Consumables
-2003160,Surging Frenzied Flame,10,DLC Consumables
-2003170,Golden Vow,10,DLC Consumables
-2003180,Fire Coil,10,DLC Consumables
-2003190,Fire Spritestone,10,DLC Consumables
-2003200,Glinting Nail,10,DLC Consumables
-2003310,Sunwarmth Stone,10,DLC Consumables
-2003350,Charming Branch,10,DLC Consumables
+ID,Name,maxNum,category,maxRepositoryNum
+2000300,Hefty Fire Pot,10,DLC Consumables,600
+2000310,Hefty Rock Pot,10,DLC Consumables,600
+2000320,Hefty Lightning Pot,10,DLC Consumables,600
+2000310,Hefty Rock Pot,10,DLC Consumables,600
+2000330,Hefty Fetid Pot,10,DLC Consumables,600
+2000340,Hefty Fly Pot,10,DLC Consumables,600
+2000360,Hefty Freezing Pot,10,DLC Consumables,600
+2000380,Hefty Oil Pot,10,DLC Consumables,600
+2000600,Hefty Volcano Pot,10,DLC Consumables,600
+2000620,Hefty Frenzied Flame Pot,10,DLC Consumables,600
+2000650,Hefty Rancor Pot,10,DLC Consumables,600
+2000670,Hefty Rot Pot,10,DLC Consumables,600
+2000680,Hefty Furnace Pot,10,DLC Consumables,600
+2000710,Frenzied Flame Pot,10,DLC Consumables,600
+2000740,Eternal Sleep Pot,10,DLC Consumables,600
+2000760,Roped Frenzied Flame Pot,10,DLC Consumables,600
+2000370,Hefty Poison Pot,10,DLC Consumables,600
+2000660,Hefty Magic Pot,10,DLC Consumables,600
+2000690,Hefty Red Lightning Pot,10,DLC Consumables,600
+2000700,Red Lightning Pot,10,DLC Consumables,600
+2001130,Fireproof Pickled Liver,5,DLC Consumables,999
+2001140,Lightningproof Pickled Liver,5,DLC Consumables,999
+2001210,Sacred Bloody Flesh,10,DLC Consumables,999
+2001420,Royal Magic Grease,10,DLC Consumables,600
+2001520,Drawstring Royal Magic Grease,30,DLC Consumables,600
+2002130,Iris of Occultation,99,DLC Consumables,600
+2000800,Spirit Raisin,30,DLC Consumables,600
+2000900,Blessing of Marika,1,DLC Consumables,600
+2000910,Lulling Branch,10,DLC Consumables,600
+2001100,Dragon Communion Flesh,10,DLC Consumables,999
+2001105,Dragonscale Flesh,10,DLC Consumables,999
+2001110,Fingerprint Nostrum,10,DLC Consumables,999
+2001120,Spellproof Pickled Liver,5,DLC Consumables,999
+2001150,Holyproof Pickled Liver,5,DLC Consumables,999
+2001160,Opaline Pickled Liver,5,DLC Consumables,999
+2001170,Well-Pickled Turtle Neck,10,DLC Consumables,999
+2001200,Scorpion Stew,1,DLC Consumables,1
+2001201,Gourmet Scorpion Stew,1,DLC Consumables,1
+2001202,Scorpion Stew,1,DLC Consumables,1
+2001203,Gourmet Scorpion Stew,1,DLC Consumables,1
+2001220,Silver Horn Tender,10,DLC Consumables,999
+2001230,Golden Horn Tender,10,DLC Consumables,999
+2001400,Messmerfire Grease,10,DLC Consumables,600
+2001410,Dragonbolt Grease,10,DLC Consumables,600
+2001430,Golden Grease,10,DLC Consumables,600
+2001450,Eternal Sleep Grease,10,DLC Consumables,600
+2001480,Dragon Communion Grease,10,DLC Consumables,600
+2001500,Drawstring Messmerfire Grease,30,DLC Consumables,600
+2001510,Drawstring Dragonbolt Grease,30,DLC Consumables,600
+2001530,Drawstring Golden Grease,30,DLC Consumables,600
+2001550,Drawstring Eternal Sleep Grease,30,DLC Consumables,600
+2001600,Festive Grease,10,DLC Consumables,600
+2001700,Innard Meat,40,DLC Consumables,600
+2001710,Dragon Communion Harpoon,5,DLC Consumables,600
+2002000,Polter Stone,99,DLC Consumables,600
+2002010,Rock Heart,1,DLC Consumables,600
+2002020,Priestess Heart,1,DLC Consumables,600
+2002030,Lamenter's Mask,1,DLC Consumables,600
+2002100,Ancient Dragon's Blessing,1,DLC Consumables,1
+2002120,Iris of Grace,99,DLC Consumables,600
+2002140,Thiollier's Concoction,99,DLC Consumables,600
+2002150,"Prattling Pate ""Lamentation""",1,DLC Consumables,600
+2002900,Remembrance of the Wild Boar Rider,99,DLC Consumables,600
+2002901,Remembrance of the Impaler,99,DLC Consumables,600
+2002902,Remembrance of the Shadow Sunflower,99,DLC Consumables,600
+2002903,Remembrance of the Twin Moon Knight,99,DLC Consumables,600
+2002904,Remembrance of the Saint of the Bud,99,DLC Consumables,600
+2002905,Remembrance of the Dancing Lion,99,DLC Consumables,600
+2002907,Remembrance of a God and a Lord,99,DLC Consumables,600
+2002908,Remembrance of the Lord of Frenzied Flame,99,DLC Consumables,600
+2002909,Remembrance of the Mother of Fingers,99,DLC Consumables,600
+2002910,Remembrance of Putrescence,99,DLC Consumables,600
+2002950,Leda's Rune,99,DLC Consumables,600
+2002951,Broken Rune,99,DLC Consumables,600
+2002952,Shadow Realm Rune [1],99,DLC Consumables,600
+2002953,Shadow Realm Rune [2],99,DLC Consumables,600
+2002954,Shadow Realm Rune [3],99,DLC Consumables,600
+2002955,Shadow Realm Rune [4],99,DLC Consumables,600
+2002956,Shadow Realm Rune [5],99,DLC Consumables,600
+2002957,Shadow Realm Rune [6],99,DLC Consumables,600
+2002958,Shadow Realm Rune [7],99,DLC Consumables,600
+2002959,Rune of an Unsung Hero,99,DLC Consumables,600
+2002960,Marika's Rune,99,DLC Consumables,600
+2003150,Call of Tibia,10,DLC Consumables,600
+2003160,Surging Frenzied Flame,10,DLC Consumables,600
+2003170,Golden Vow,10,DLC Consumables,600
+2003180,Fire Coil,10,DLC Consumables,600
+2003190,Fire Spritestone,10,DLC Consumables,600
+2003200,Glinting Nail,10,DLC Consumables,600
+2003310,Sunwarmth Stone,10,DLC Consumables,600
+2003350,Charming Branch,10,DLC Consumables,600
