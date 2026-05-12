@@ -1,17 +1,17 @@
-ID,Name,maxNum,category
-2008000,Miquella's Great Rune,1,DLC KeyItems
-2008003,Igon's Furled Finger,1,DLC KeyItems
-2008004,Well Depths Key,1,DLC KeyItems
-2008005,Gaol Upper Level Key,1,DLC KeyItems
-2008006,Gaol Lower Level Key,1,DLC KeyItems
-2008007,Cross Map,1,DLC KeyItems
-2008008,Hole-Laden Necklace,1,DLC KeyItems
-2008011,Heart of Bayle,99,DLC KeyItems
-2008012,New Cross Map,1,DLC KeyItems
-2008013,Storeroom Key,1,DLC KeyItems
-2008014,Secret Rite Scroll,1,DLC KeyItems
-2008019,Black Syrup,1,DLC KeyItems
-2008021,Messmer's Kindling,1,DLC KeyItems
-2008023,Keep Wall Key,1,DLC KeyItems
-2008033,Larval Tear,99,DLC KeyItems
-2008036,Prayer Room Key,1,DLC KeyItems
+ID,Name,maxNum,category,maxRepositoryNum
+2008000,Miquella's Great Rune,1,DLC KeyItems,1
+2008003,Igon's Furled Finger,1,DLC KeyItems,1
+2008004,Well Depths Key,1,DLC KeyItems,1
+2008005,Gaol Upper Level Key,1,DLC KeyItems,1
+2008006,Gaol Lower Level Key,1,DLC KeyItems,1
+2008007,Cross Map,1,DLC KeyItems,1
+2008008,Hole-Laden Necklace,1,DLC KeyItems,1
+2008011,Heart of Bayle,99,DLC KeyItems,600
+2008012,New Cross Map,1,DLC KeyItems,1
+2008013,Storeroom Key,1,DLC KeyItems,1
+2008014,Secret Rite Scroll,1,DLC KeyItems,1
+2008019,Black Syrup,1,DLC KeyItems,1
+2008021,Messmer's Kindling,1,DLC KeyItems,1
+2008023,Keep Wall Key,1,DLC KeyItems,1
+2008033,Larval Tear,99,DLC KeyItems,600
+2008036,Prayer Room Key,1,DLC KeyItems,1

@@ -1,10 +1,10 @@
-ID,Name,maxNum,category
-10101,Smithing Stone,999,Convergence Stones
-10105,Large Smithing Stone,999,Convergence Stones
-10107,Great Smithing Stone,999,Convergence Stones
-10140,Dragon Smithing Stone,999,Convergence Stones
-10160,Somber Stone,999,Convergence Stones
-10164,Large Somber Stone,999,Convergence Stones
-10165,Great Somber Stone,999,Convergence Stones
-10167,Colossal Somber Stone,999,Convergence Stones
-10168,Dragon Somber Stone,999,Convergence Stones
+ID,Name,maxNum,category,maxRepositoryNum
+10101,Smithing Stone,999,Convergence Stones,999
+10105,Large Smithing Stone,999,Convergence Stones,999
+10107,Great Smithing Stone,999,Convergence Stones,999
+10140,Dragon Smithing Stone,999,Convergence Stones,999
+10160,Somber Stone,999,Convergence Stones,999
+10164,Large Somber Stone,999,Convergence Stones,999
+10165,Great Somber Stone,999,Convergence Stones,999
+10167,Colossal Somber Stone,999,Convergence Stones,999
+10168,Dragon Somber Stone,999,Convergence Stones,999
