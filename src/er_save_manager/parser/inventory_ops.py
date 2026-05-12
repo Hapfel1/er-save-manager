@@ -454,16 +454,14 @@ def insert_gaitem(
     gaitem_size = len(new_gaitem_bytes)
     size_delta = gaitem_size - 8
 
-    _prev_gaitem = slot.gaitem_map[empty_g]
+    # Patch the binary first so rebuild_slot (called when trailing zeros
+    # are exhausted) serializes the original map without the new weapon.
+    # Updating gaitem_map before the patch caused rebuild to write the weapon
+    # twice, corrupting everything that followed.
+    net_shift = _patch_slot_with_gaitem_insert(
+        save, slot_idx, slot, empty_g, new_gaitem_bytes, old_gaitem_size=8
+    )
     slot.gaitem_map[empty_g] = new_gaitem
-
-    try:
-        net_shift = _patch_slot_with_gaitem_insert(
-            save, slot_idx, slot, empty_g, new_gaitem_bytes, old_gaitem_size=8
-        )
-    except Exception:
-        slot.gaitem_map[empty_g] = _prev_gaitem
-        raise
 
     entry_rel = slot.gaitem_offsets[empty_g]
     for i, off in enumerate(slot.gaitem_offsets):

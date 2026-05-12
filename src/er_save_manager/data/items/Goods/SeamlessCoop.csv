@@ -1,13 +1,13 @@
-ID,Name,maxNum,category
-8380001,Tiny Great Pot,1,Seamless Co-op Items
-8380002,Effigy of Malenia,1,Seamless Co-op Items
-8380003,Challenger's Lynchpin,1,Seamless Co-op Items
-8380004,Seperating Mist,1,Seamless Co-op Items
-8380005,Judicator's Rulebook,1,Seamless Co-op Items
-8380006,Rune Decanter,1,Seamless Co-op Items
-8380012,Dried Fingers,1, Seamless Co-op Items
-8380007,Rot Essence: Emaciation,5,Seamless Co-op Items
-8380008,Rot Essence: Hopelessness,5,Seamless Co-op Items
-8380009,Rot Essence: Decay,5,Seamless Co-op Items
-8380010,Rot Essence: Vulnerability,5,Seamless Co-op Items
-8380011,Rot Essence: Despair,5,Seamless Co-op Items
+ID,Name,maxNum,category,maxRepositoryNum
+8380001,Tiny Great Pot,1,Seamless Co-op Items,1
+8380002,Effigy of Malenia,1,Seamless Co-op Items,1
+8380003,Challenger's Lynchpin,1,Seamless Co-op Items,1
+8380004,Seperating Mist,1,Seamless Co-op Items,1
+8380005,Judicator's Rulebook,1,Seamless Co-op Items,1
+8380006,Rune Decanter,1,Seamless Co-op Items,1
+8380012,Dried Fingers,1, Seamless Co-op Items,1
+8380007,Rot Essence: Emaciation,5,Seamless Co-op Items,5
+8380008,Rot Essence: Hopelessness,5,Seamless Co-op Items,5
+8380009,Rot Essence: Decay,5,Seamless Co-op Items,5
+8380010,Rot Essence: Vulnerability,5,Seamless Co-op Items,5
+8380011,Rot Essence: Despair,5,Seamless Co-op Items,5
