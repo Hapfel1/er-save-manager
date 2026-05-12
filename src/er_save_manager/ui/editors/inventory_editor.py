@@ -47,15 +47,17 @@ def _decode_inv_item(inv_item, gaitem_map: dict) -> tuple[int, int]:
     return handle, 0
 
 
-def _item_name(full_item_id: int, upgrade: int = 0) -> str:
+def _item_name(
+    full_item_id: int, upgrade: int = 0, is_convergence: bool = False
+) -> str:
     """Look up item name, falling back to talisman category on goods miss."""
     from er_save_manager.data.item_database import get_item_database, get_item_name
 
-    name = get_item_name(full_item_id, upgrade)
+    name = get_item_name(full_item_id, upgrade, is_convergence)
     if name.startswith("Unknown") and (full_item_id & 0xF0000000) == 0x40000000:
         # B0 handles cannot distinguish goods from talismans; try talisman category
         alt = 0x20000000 | (full_item_id & 0x0FFFFFFF)
-        alt_name = get_item_database().get_item_by_id(alt)
+        alt_name = get_item_database().get_item_by_id(alt, is_convergence)
         if alt_name:
             return alt_name.name
     return name
@@ -96,6 +98,9 @@ class InventoryEditor:
     ]
     _AFFINITY_BY_CODE: dict[int, str] = dict(_AFFINITIES)
     _AFFINITY_NAMES: list[str] = [name for _, name in _AFFINITIES]
+
+    def _is_cnv_save(self) -> bool:
+        return ".cnv" in str(self.get_save_path() or "").lower()
 
     _SEAMLESS_CATS = {"Seamless Co-op Items"}
     _CONVERGENCE_CATS = {
@@ -800,6 +805,7 @@ class InventoryEditor:
                     gaitem_map[g.gaitem_handle] = g
 
             filt = self.inv_filter_var.get() if self.inv_filter_var else "All"
+            cnv = self._is_cnv_save()
             self._all_rows = []
 
             if filt in ("All", "Held") and hasattr(slot, "inventory_held"):
@@ -809,6 +815,7 @@ class InventoryEditor:
                     gaitem_map,
                     "held",
                     key=False,
+                    is_convergence=cnv,
                 )
             if filt in ("All", "Key Items") and hasattr(slot, "inventory_held"):
                 self._collect_section(
@@ -817,6 +824,7 @@ class InventoryEditor:
                     gaitem_map,
                     "held",
                     key=True,
+                    is_convergence=cnv,
                 )
             if filt in ("All", "Storage") and hasattr(slot, "inventory_storage_box"):
                 self._collect_section(
@@ -825,6 +833,7 @@ class InventoryEditor:
                     gaitem_map,
                     "storage",
                     key=False,
+                    is_convergence=cnv,
                 )
                 self._collect_section(
                     "KEY ITEMS (STORAGE)",
@@ -832,6 +841,7 @@ class InventoryEditor:
                     gaitem_map,
                     "storage",
                     key=True,
+                    is_convergence=cnv,
                 )
 
             self._apply_inv_filter()
@@ -841,14 +851,16 @@ class InventoryEditor:
                 "Error", f"Failed to refresh inventory:\n{e}", parent=self.parent
             )
 
-    def _collect_section(self, header, items, gaitem_map, location, key):
+    def _collect_section(
+        self, header, items, gaitem_map, location, key, is_convergence: bool = False
+    ):
         rows: list[tuple[str, int, str]] = []
 
         for inv_item in items:
             if inv_item.gaitem_handle == 0 or inv_item.quantity == 0:
                 continue
             full_id, upgrade = _decode_inv_item(inv_item, gaitem_map)
-            name = _item_name(full_id, upgrade)
+            name = _item_name(full_id, upgrade, is_convergence)
             if not name:
                 continue
 

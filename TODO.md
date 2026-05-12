@@ -1,3 +1,7 @@
+rework item spawning ui to have a  popup window that shows item pngs for selection with names and categorizes
+
+check inventory display displaying convergence item names when the save is vanilla
+
 new version works on some characters and does not work on other characters, even adding one weapon does not work sometimes, investigate, ship both versions and say what works/does not done
 
 maxrepositorynum done
