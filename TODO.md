@@ -1,4 +1,10 @@
-import feature from nyasu.business
+new version works on some characters and does not work on other characters, even adding one weapon does not work sometimes, investigate, ship both versions and say what works/does not done
+
+maxrepositorynum done
+
+ui when successfully adding item change to toast done
+
+import feature from nyasu.business done
 
 auto load character on selecting slot and do equipment editor then test everything release troubleshooter and this bump to v1.0.0
 

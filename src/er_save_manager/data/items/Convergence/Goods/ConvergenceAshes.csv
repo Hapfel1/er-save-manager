@@ -1,22 +1,22 @@
-ID,Name,maxNum,category
-2400000,Cemetery Shade,1,Convergence Ashes
-2410000,Horned Omen,1,Convergence Ashes
-2420000,Blighted Nox Ancestor,1,Convergence Ashes
-2430000,Rotten Duelist,1,Convergence Ashes
-2440000,Sanguine Noble ,1,Convergence Ashes
-2450000,Erdtree Guardians,1,Convergence Ashes
-2460000,Rootmen,1,Convergence Ashes
-2470000,Spiritcaller Snail,1,Convergence Ashes
-2480000,Winged Dame,1,Convergence Ashes
-2490000,Starcallers,1,Convergence Ashes
-2500000,Bloodthorn Exiles,1,Convergence Ashes
-2510000,Warrior Jar Alexander,1,Convergence Ashes
-2520000,Wormfaces,1,Convergence Ashes
-2530000,Putrescence Sorcerer,1,Convergence Ashes
-2540000,Abnormal Stone Clusters (Explosion),1,Convergence Ashes
-2550000,Abnormal Stone Sentry,1,Convergence Ashes
-2560000,Red Bears,1,Convergence Ashes
-2570000,Mystic Pigmen,1,Convergence Ashes
-2580000,Zamor Knight,1,Convergence Ashes
-2590000,Erdtree Sentry,1,Convergence Ashes
-2600000,Man-Serpent Caster,1,Convergence Ashes
+ID,Name,maxNum,category,maxRepositoryNum
+2400000,Cemetery Shade,1,Convergence Ashes,1
+2410000,Horned Omen,1,Convergence Ashes,1
+2420000,Blighted Nox Ancestor,1,Convergence Ashes,1
+2430000,Rotten Duelist,1,Convergence Ashes,1
+2440000,Sanguine Noble ,1,Convergence Ashes,1
+2450000,Erdtree Guardians,1,Convergence Ashes,1
+2460000,Rootmen,1,Convergence Ashes,1
+2470000,Spiritcaller Snail,1,Convergence Ashes,1
+2480000,Winged Dame,1,Convergence Ashes,1
+2490000,Starcallers,1,Convergence Ashes,1
+2500000,Bloodthorn Exiles,1,Convergence Ashes,1
+2510000,Warrior Jar Alexander,1,Convergence Ashes,1
+2520000,Wormfaces,1,Convergence Ashes,1
+2530000,Putrescence Sorcerer,1,Convergence Ashes,1
+2540000,Abnormal Stone Clusters (Explosion),1,Convergence Ashes,1
+2550000,Abnormal Stone Sentry,1,Convergence Ashes,1
+2560000,Red Bears,1,Convergence Ashes,1
+2570000,Mystic Pigmen,1,Convergence Ashes,1
+2580000,Zamor Knight,1,Convergence Ashes,1
+2590000,Erdtree Sentry,1,Convergence Ashes,1
+2600000,Man-Serpent Caster,1,Convergence Ashes,1
