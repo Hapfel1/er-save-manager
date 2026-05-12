@@ -1,6 +1,6 @@
-new version works on some characters and does not work on other characters, even adding one weapon does not work sometimes, investigate, ship both versions and say what works/does not
+new version works on some characters and does not work on other characters, even adding one weapon does not work sometimes, investigate, ship both versions and say what works/does not done
 
-maxrepositorynum
+maxrepositorynum done
 
 ui when successfully adding item change to toast done
 
