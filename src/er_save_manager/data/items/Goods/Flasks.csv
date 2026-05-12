@@ -1,55 +1,55 @@
-ID,Name,maxNum,category
-250,Flask of Wondrous Physick (Empty),1,Flasks
-251,Flask of Wondrous Physick,1,Flasks
-1000,Flask of Crimson Tears (Empty),1,Flasks
-1001,Flask of Crimson Tears,20,Flasks
-1002,Flask of Crimson Tears +1 (Empty),1,Flasks
-1003,Flask of Crimson Tears +1,20,Flasks
-1004,Flask of Crimson Tears +2 (Empty),1,Flasks
-1005,Flask of Crimson Tears +2,20,Flasks
-1006,Flask of Crimson Tears +3 (Empty),1,Flasks
-1007,Flask of Crimson Tears +3,20,Flasks
-1008,Flask of Crimson Tears +4 (Empty),1,Flasks
-1009,Flask of Crimson Tears +4,20,Flasks
-1010,Flask of Crimson Tears +5 (Empty),1,Flasks
-1011,Flask of Crimson Tears +5,20,Flasks
-1012,Flask of Crimson Tears +6 (Empty),1,Flasks
-1013,Flask of Crimson Tears +6,20,Flasks
-1014,Flask of Crimson Tears +7 (Empty),1,Flasks
-1015,Flask of Crimson Tears +7,20,Flasks
-1016,Flask of Crimson Tears +8 (Empty),1,Flasks
-1017,Flask of Crimson Tears +8,20,Flasks
-1018,Flask of Crimson Tears +9 (Empty),1,Flasks
-1019,Flask of Crimson Tears +9,20,Flasks
-1020,Flask of Crimson Tears +10 (Empty),1,Flasks
-1021,Flask of Crimson Tears +10,20,Flasks
-1022,Flask of Crimson Tears +11 (Empty),1,Flasks
-1023,Flask of Crimson Tears +11,20,Flasks
-1024,Flask of Crimson Tears +12 (Empty),1,Flasks
-1025,Flask of Crimson Tears +12,20,Flasks
-1050,Flask of Cerulean Tears (Empty),1,Flasks
-1051,Flask of Cerulean Tears,20,Flasks
-1052,Flask of Cerulean Tears +1 (Empty),1,Flasks
-1053,Flask of Cerulean Tears +1,20,Flasks
-1054,Flask of Cerulean Tears +2 (Empty),1,Flasks
-1055,Flask of Cerulean Tears +2,20,Flasks
-1056,Flask of Cerulean Tears +3 (Empty),1,Flasks
-1057,Flask of Cerulean Tears +3,20,Flasks
-1058,Flask of Cerulean Tears +4 (Empty),1,Flasks
-1059,Flask of Cerulean Tears +4,20,Flasks
-1060,Flask of Cerulean Tears +5 (Empty),1,Flasks
-1061,Flask of Cerulean Tears +5,20,Flasks
-1062,Flask of Cerulean Tears +6 (Empty),1,Flasks
-1063,Flask of Cerulean Tears +6,20,Flasks
-1064,Flask of Cerulean Tears +7 (Empty),1,Flasks
-1065,Flask of Cerulean Tears +7,20,Flasks
-1066,Flask of Cerulean Tears +8 (Empty),1,Flasks
-1067,Flask of Cerulean Tears +8,20,Flasks
-1068,Flask of Cerulean Tears +9 (Empty),1,Flasks
-1069,Flask of Cerulean Tears +9,20,Flasks
-1070,Flask of Cerulean Tears +10 (Empty),1,Flasks
-1071,Flask of Cerulean Tears +10,20,Flasks
-1072,Flask of Cerulean Tears +11 (Empty),1,Flasks
-1073,Flask of Cerulean Tears +11,20,Flasks
-1074,Flask of Cerulean Tears +12 (Empty),1,Flasks
-1075,Flask of Cerulean Tears +12,20,Flasks
+ID,Name,maxNum,category,maxRepositoryNum
+250,Flask of Wondrous Physick (Empty),1,Flasks,1
+251,Flask of Wondrous Physick,1,Flasks,1
+1000,Flask of Crimson Tears (Empty),1,Flasks,1
+1001,Flask of Crimson Tears,20,Flasks,20
+1002,Flask of Crimson Tears +1 (Empty),1,Flasks,1
+1003,Flask of Crimson Tears +1,20,Flasks,20
+1004,Flask of Crimson Tears +2 (Empty),1,Flasks,1
+1005,Flask of Crimson Tears +2,20,Flasks,20
+1006,Flask of Crimson Tears +3 (Empty),1,Flasks,1
+1007,Flask of Crimson Tears +3,20,Flasks,20
+1008,Flask of Crimson Tears +4 (Empty),1,Flasks,1
+1009,Flask of Crimson Tears +4,20,Flasks,20
+1010,Flask of Crimson Tears +5 (Empty),1,Flasks,1
+1011,Flask of Crimson Tears +5,20,Flasks,20
+1012,Flask of Crimson Tears +6 (Empty),1,Flasks,1
+1013,Flask of Crimson Tears +6,20,Flasks,20
+1014,Flask of Crimson Tears +7 (Empty),1,Flasks,1
+1015,Flask of Crimson Tears +7,20,Flasks,20
+1016,Flask of Crimson Tears +8 (Empty),1,Flasks,1
+1017,Flask of Crimson Tears +8,20,Flasks,20
+1018,Flask of Crimson Tears +9 (Empty),1,Flasks,1
+1019,Flask of Crimson Tears +9,20,Flasks,20
+1020,Flask of Crimson Tears +10 (Empty),1,Flasks,1
+1021,Flask of Crimson Tears +10,20,Flasks,20
+1022,Flask of Crimson Tears +11 (Empty),1,Flasks,1
+1023,Flask of Crimson Tears +11,20,Flasks,20
+1024,Flask of Crimson Tears +12 (Empty),1,Flasks,1
+1025,Flask of Crimson Tears +12,20,Flasks,20
+1050,Flask of Cerulean Tears (Empty),1,Flasks,1
+1051,Flask of Cerulean Tears,20,Flasks,20
+1052,Flask of Cerulean Tears +1 (Empty),1,Flasks,1
+1053,Flask of Cerulean Tears +1,20,Flasks,20
+1054,Flask of Cerulean Tears +2 (Empty),1,Flasks,1
+1055,Flask of Cerulean Tears +2,20,Flasks,20
+1056,Flask of Cerulean Tears +3 (Empty),1,Flasks,1
+1057,Flask of Cerulean Tears +3,20,Flasks,20
+1058,Flask of Cerulean Tears +4 (Empty),1,Flasks,1
+1059,Flask of Cerulean Tears +4,20,Flasks,20
+1060,Flask of Cerulean Tears +5 (Empty),1,Flasks,1
+1061,Flask of Cerulean Tears +5,20,Flasks,20
+1062,Flask of Cerulean Tears +6 (Empty),1,Flasks,1
+1063,Flask of Cerulean Tears +6,20,Flasks,20
+1064,Flask of Cerulean Tears +7 (Empty),1,Flasks,1
+1065,Flask of Cerulean Tears +7,20,Flasks,20
+1066,Flask of Cerulean Tears +8 (Empty),1,Flasks,1
+1067,Flask of Cerulean Tears +8,20,Flasks,20
+1068,Flask of Cerulean Tears +9 (Empty),1,Flasks,1
+1069,Flask of Cerulean Tears +9,20,Flasks,20
+1070,Flask of Cerulean Tears +10 (Empty),1,Flasks,1
+1071,Flask of Cerulean Tears +10,20,Flasks,20
+1072,Flask of Cerulean Tears +11 (Empty),1,Flasks,1
+1073,Flask of Cerulean Tears +11,20,Flasks,20
+1074,Flask of Cerulean Tears +12 (Empty),1,Flasks,1
+1075,Flask of Cerulean Tears +12,20,Flasks,20

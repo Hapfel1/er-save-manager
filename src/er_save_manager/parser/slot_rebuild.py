@@ -312,25 +312,19 @@ def rebuild_slot_with_map(slot: UserDataX) -> tuple[bytes, list[dict[str, Any]]]
     write_section("dlc", lambda: slot.dlc.write(buf))
     write_section("player_data_hash", lambda: slot.player_data_hash.write(buf))
 
-    # Pad to exact slot boundary (2,621,440 bytes)
+    # Pad to exactly slot_size with zeros.
+    # slot.rest (bytes after player_data_hash) is intentionally skipped -
+    # it is trailing padding that the game also discards on re-serialisation.
+    # Omitting it here recreates the game's behaviour: the rebuilt output is
+    # slightly smaller than the raw binary, giving the zero-padding needed for
+    # the gaitem INSERT+TRIM to work on heavily-loaded slots.
     slot_size = 0x280000
-    current_size = buf.tell()
-    if current_size < slot_size:
-        if hasattr(slot, "rest") and slot.rest:
-            # Don't write the rest field - rebuild everything properly
-            pass
-            # # Write the rest field if available
-            # write_section("rest_padding", lambda: buf.write(slot.rest))
-            current_size = buf.tell()
-
-        if current_size < slot_size:
-            # Fill remaining with zeros
-            padding_needed = slot_size - current_size
-            write_section(
-                "padding_to_slot_end", lambda: buf.write(b"\x00" * padding_needed)
-            )
-
-    return buf.getvalue(), sections
+    raw = buf.getvalue()
+    if len(raw) < slot_size:
+        raw = raw + b"\x00" * (slot_size - len(raw))
+    elif len(raw) > slot_size:
+        raw = raw[:slot_size]
+    return raw, sections
 
 
 def rebuild_slot(slot: UserDataX) -> bytes:

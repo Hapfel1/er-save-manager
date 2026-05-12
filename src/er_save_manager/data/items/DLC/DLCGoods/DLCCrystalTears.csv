@@ -1,9 +1,9 @@
-ID,Name,maxNum,category
-2011000,Viridian Hidden Tear,1,DLC CrystalTears
-2011010,Crimsonburst Dried Tear,1,DLC CrystalTears
-2011020,Crimson-Sapping Cracked Tear,1,DLC CrystalTears
-2011030,Cerulean-Sapping Cracked Tear,1,DLC CrystalTears
-2011040,Oil-Soaked Tear,1,DLC CrystalTears
-2011050,Bloodsucking Cracked Tear,1,DLC CrystalTears
-2011060,Glovewort Crystal Tear,1,DLC CrystalTears
-2011070,Deflecting Hardtear,1,DLC CrystalTears
+ID,Name,maxNum,category,maxRepositoryNum
+2011000,Viridian Hidden Tear,1,DLC CrystalTears,1
+2011010,Crimsonburst Dried Tear,1,DLC CrystalTears,1
+2011020,Crimson-Sapping Cracked Tear,1,DLC CrystalTears,1
+2011030,Cerulean-Sapping Cracked Tear,1,DLC CrystalTears,1
+2011040,Oil-Soaked Tear,1,DLC CrystalTears,1
+2011050,Bloodsucking Cracked Tear,1,DLC CrystalTears,1
+2011060,Glovewort Crystal Tear,1,DLC CrystalTears,1
+2011070,Deflecting Hardtear,1,DLC CrystalTears,1
