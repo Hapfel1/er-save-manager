@@ -121,6 +121,7 @@ class InventoryEditor:
         "Convergence Ammo",
         "Convergence Ashes",
         "Convergence Magic",
+        "Convergence Bell Bearings",
     }
 
     def __init__(
