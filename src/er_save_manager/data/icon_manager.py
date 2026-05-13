@@ -9,6 +9,7 @@ Returns PIL Images; callers create CTkImage at the desired display size.
 from __future__ import annotations
 
 import re
+import unicodedata
 import zipfile
 from io import BytesIO
 from pathlib import Path
@@ -58,11 +59,21 @@ def _norm_icon(s: str) -> str:
     # Strip Convergence weapon prefix and numeric ID suffix
     s = re.sub(r"^wep-", "", s, flags=re.I)
     s = re.sub(r"-\d+$", "", s)
+    # Normalize colon spacing ("Note : X" -> "Note: X")
+    s = re.sub(r"\s*:\s*", ": ", s)
+    # Strip diacritics to match _norm_db (consistent both directions)
+    s = "".join(
+        c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn"
+    )
     return s.lower()
 
 
 def _norm_db(name: str) -> str:
-    return name.lower().replace("\u2019", "'").replace("\u2018", "'")
+    s = name.lower().replace("\u2019", "'").replace("\u2018", "'")
+    # Strip diacritics so "Jolán" matches "Jolan", "Épée" matches "Epee"
+    return "".join(
+        c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn"
+    )
 
 
 def _ammo_lookup(key: str) -> str | None:
@@ -87,10 +98,85 @@ def _ammo_lookup(key: str) -> str | None:
     return None
 
 
-def _lookup(name: str) -> str | None:
+# Explicit DB name -> icon key overrides for naming mismatches in packs.
+# Keys and values are both lowercase (post _norm_db / _norm_icon).
+_NAME_OVERRIDES: dict[str, str] = {
+    # Convergence weapon pack typos / word-order mismatches
+    "blade of distant light": "blade of dsitant light",
+    "blades of the prince": "blade of the prince",
+    "caimar's battlestaff": "caimars battle staff",
+    "emyr's great talons": "emyrs-great-talons",
+    "glaive of the ancients": "glaive of ancients",
+    # Convergence talismans
+    "firemonk's filigree": "fire monk's filigree",
+    "runebear's claw": "runebears claw",
+    # Convergence rune - Dragonkin uses {N}_Rarity_Dragonkin_Rune filename format
+    "faint rune of the dragonkin": "faint dragonkin rune",
+    "shimmering rune of the dragonkin": "shimmering dragonkin rune",
+    "glowing rune of the dragonkin": "glowing dragonkin rune",
+    "shining rune of the dragonkin": "4 radiant dragonkin rune",
+    "radiant rune of the dragonkin": "5 radient dragonkin rune",
+    # Convergence rune - DB has "Shinning" typo for Glintstone tier 4
+    "shinning rune of glintstone": "shining rune of glintstone",
+    # Convergence rune tier 4: pack uses "Radiant" name, DB uses "Shining"
+    "shining rune of magma": "radiant rune of magma",
+    "shining rune of necromancy": "radiant rune of necromancy",
+    "shining rune of frost": "radiant rune of frost",
+    "shining rune of thorns": "radiant rune of thorns",
+    "shining rune of fell flame": "radiant rune of fell flame",
+    "shining rune of order": "radiant rune of order",
+    "shining rune of beasts": "radiant rune of beasts",
+    "shining rune of lightning": "radiant rune of lightning",
+    "shining rune of ancestors": "radiant rune of ancestors",
+    # Convergence rune tier 6: pack uses "Empyrean", DB uses "Shadow"
+    "shadow rune of necromancy": "empyrean rune of necromancy",
+    "shadow rune of thorns": "empyrean rune of thorns",
+    "shadow rune of fell flame": "empyrean rune of fell flame",
+    "shadow rune of order": "empyrean rune of order",
+    "shadow rune of beasts": "empyrean rune of beasts",
+    "shadow rune of ancestors": "empyrean rune of ancestors",
+    # Merchant items
+    "golden order principles": "golden order principia",
+    # Prattling Pate "You're beautiful" - double quotes in DB name, plain name in icon
+    "prattling pate \u201cyou\u2019re beautiful\u201d": "prattling pate you're beautiful",
+    'prattling pate "you\'re beautiful"': "prattling pate you're beautiful",
+    # Ashes: DB name without "Ashes" suffix, icon stored with it
+    "banished knight oleg": "banished knight oleg ashes",
+    "banished knight engvall": "banished knight engvall ashes",
+    "battlemage hugues": "battlemage hugues ashes",
+    "cleanrot knight finlay": "cleanrot knight finlay ashes",
+    "blackflame monk amon": "blackflame monk amon ashes",
+    "ancient dragon knight kristoff": "ancient dragon knight kristoff ashes",
+    "depraved perfumer carmaan": "depraved perfumer carmaan ashes",
+    "blighted nox ancestor": "blighted nox ancenstor",
+    # Key items
+    "the stormhawk king": "the stormhawk king",
+    # DLC weapons - flavor suffix in DB name, plain name in pack
+    "greatsword of radahn (light)": "greatsword of radahn",
+    "greatsword of radahn (relict)": "greatsword of radahn",
+    # Convergence ashes - spelling mismatch
+    "putrescence sorcerer": "putrescent sorcerer",
+    # Convergence melee - typo in pack ("ride" instead of "rite")
+    "deathrite dagger": "deathride-dagger",
+}
+
+
+def _lookup(name: str, category_name: str = "") -> str | None:
     if not _ensure_loaded() or _available is None:
         return None
     key = _norm_db(name)
+
+    # Explicit overrides take priority
+    if key in _NAME_OVERRIDES:
+        target = _NAME_OVERRIDES[key]
+        if target in _available:
+            return _available[target]
+
+    # Category-specific: weapons with name collision (e.g. Beast Claw = spell + weapon)
+    if any(w in category_name.lower() for w in ("weapon", "melee", "shield", "ranged")):
+        weapon_key = f"{key} (weapon)"
+        if weapon_key in _available:
+            return _available[weapon_key]
 
     if key in _available:
         return _available[key]
@@ -132,10 +218,14 @@ def _lookup(name: str) -> str | None:
     if alt != key and alt in _available:
         return _available[alt]
 
-    # Numbered items: strip "[N]" suffix for cookbook base lookup
+    # Numbered items: strip "[N]" suffix, try base name then [1]
     no_num = re.sub(r"\s*\[\d+\]$", "", key).rstrip()
-    if no_num != key and no_num in _available:
-        return _available[no_num]
+    if no_num != key:
+        if no_num in _available:
+            return _available[no_num]
+        one = no_num + " [1]"
+        if one in _available:
+            return _available[one]
 
     # "Axe Of Epiphany" -> try "Epiphany Axe" inversion (Convergence weapon naming)
     m = re.match(r"^(.+?)\s+of\s+(?:the\s+)?(.+)$", key)
@@ -143,6 +233,46 @@ def _lookup(name: str) -> str | None:
         inv = f"{m.group(2)} {m.group(1)}"
         if inv in _available:
             return _available[inv]
+
+    # "Keystone 1" -> try "Keystone1" (Convergence key items stored without space)
+    no_space = key.replace(" ", "")
+    if no_space != key and no_space in _available:
+        return _available[no_space]
+
+    # Bell bearings: numbered ones (e.g. "[1]") fall back to generic icon
+    _bb_key = no_num if no_num != key else key
+    if _bb_key.endswith("bell bearing"):
+        for _bb in (
+            "general bell bearing",
+            "patches_ _ kale_s _ gostoc_s _ blackguard_s _ pidia_s bell bearing",
+        ):
+            if _bb in _available:
+                return _available[_bb]
+
+    # Note/Map base-game icons lack the colon: "Note Gateway" vs "Note: Gateway"
+    if key.startswith("note: "):
+        no_colon = "note " + key[6:]
+        if no_colon in _available:
+            return _available[no_colon]
+        for _fallback in (
+            "note gateway",
+            "note demi-human mobs",
+            "note waypoint ruins",
+        ):
+            if _fallback in _available:
+                return _available[_fallback]
+    if key.startswith("map: "):
+        region = key[5:]
+        paren = f"map ({region})"
+        if paren in _available:
+            return _available[paren]
+        for _fallback in (
+            "map (limgrave, west)",
+            "map (altus plateau)",
+            "map (caelid)",
+        ):
+            if _fallback in _available:
+                return _available[_fallback]
 
     # Convergence icon filenames after merge use camelCase-split names.
     # This catches any remaining mismatches from the merge normalization.
@@ -163,9 +293,9 @@ def has_icon(name: str) -> bool:
     return _lookup(name) is not None
 
 
-def get_icon(name: str) -> PILImage.Image | None:
+def get_icon(name: str, category_name: str = "") -> PILImage.Image | None:
     """Return a PIL RGBA image for the item name, or None if not found."""
-    entry = _lookup(name)
+    entry = _lookup(name, category_name)
     if entry is None:
         return None
     if entry in _cache:

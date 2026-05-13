@@ -1,16 +1,24 @@
-include csnetman.bin doublecheck in build change to only include that one file if possible done
-
-restrict results when searching in all category to cnv co2 etc check done
-
 fix great rune memory slot, talisman pouch import and flasks as well
 
 check playtime writing
 
-also add inventory browse poup that show the items with the images
+also add inventory browse poup that show the items with the images need to think how to redesign handle it, maybe make aow selection also use the icons as well as affinity, then also show items in inventory as that with the aows in the tob left small added and affinities in the bottom right
 
-rework item spawning ui to have a  popup window that shows item pngs for selection with names and categorizes categories in the popup
+include csnetman.bin doublecheck in build change to only include that one file if possible done
 
-check inventory display displaying convergence item names when the save is vanilla
+restrict results when searching in all category to cnv co2 etc check done
+
+sync selectin of categories between icon viewer and normal one done
+
+when you go into a category where the scrollbar is the full length bc there is nothing to scroll and switch to a category where you can/have to scroll it does not update done
+
+in icon browser if name is too long needs to expand on second row done
+
+currently selected item is squashed done
+
+rework item spawning ui to have a  popup window that shows item pngs for selection with names and categorizes categories in the popup done
+
+check inventory display displaying convergence item names when the save is vanilla done
 
 new version works on some characters and does not work on other characters, even adding one weapon does not work sometimes, investigate, ship both versions and say what works/does not done
 
