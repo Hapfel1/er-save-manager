@@ -243,43 +243,43 @@ class CharacterInfoEditor:
         ).grid(row=1, column=3, padx=5, pady=5)
 
         # Playtime
-        playtime_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
-        playtime_frame.pack(fill=ctk.X, pady=5, padx=10)
-        ctk.CTkLabel(
-            playtime_frame,
-            text="Playtime",
-            font=("Segoe UI", 12, "bold"),
-        ).grid(row=0, column=0, columnspan=6, sticky=ctk.W, padx=5, pady=(5, 0))
+        # playtime_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
+        # playtime_frame.pack(fill=ctk.X, pady=5, padx=10)
+        # ctk.CTkLabel(
+        #   playtime_frame,
+        #    text="Playtime",
+        #    font=("Segoe UI", 12, "bold"),
+        # ).grid(row=0, column=0, columnspan=6, sticky=ctk.W, padx=5, pady=(5, 0))
 
-        ctk.CTkLabel(playtime_frame, text="Hours:").grid(
-            row=1, column=0, sticky=ctk.W, padx=5, pady=5
-        )
-        self.char_playtime_h_var = ctk.IntVar(value=0)
-        ctk.CTkEntry(
-            playtime_frame,
-            textvariable=self.char_playtime_h_var,
-            width=80,
-        ).grid(row=1, column=1, padx=5, pady=5)
+        # ctk.CTkLabel(playtime_frame, text="Hours:").grid(
+        #    row=1, column=0, sticky=ctk.W, padx=5, pady=5
+        # )
+        # self.char_playtime_h_var = ctk.IntVar(value=0)
+        # ctk.CTkEntry(
+        #    playtime_frame,
+        #    textvariable=self.char_playtime_h_var,
+        #    width=80,
+        # ).grid(row=1, column=1, padx=5, pady=5)
 
-        ctk.CTkLabel(playtime_frame, text="Minutes:").grid(
-            row=1, column=2, sticky=ctk.W, padx=5, pady=5
-        )
-        self.char_playtime_m_var = ctk.IntVar(value=0)
-        ctk.CTkEntry(
-            playtime_frame,
-            textvariable=self.char_playtime_m_var,
-            width=80,
-        ).grid(row=1, column=3, padx=5, pady=5)
+        # ctk.CTkLabel(playtime_frame, text="Minutes:").grid(
+        #    row=1, column=2, sticky=ctk.W, padx=5, pady=5
+        # )
+        # self.char_playtime_m_var = ctk.IntVar(value=0)
+        # ctk.CTkEntry(
+        #    playtime_frame,
+        #    textvariable=self.char_playtime_m_var,
+        #    width=80,
+        # ).grid(row=1, column=3, padx=5, pady=5)
 
-        ctk.CTkLabel(playtime_frame, text="Seconds:").grid(
-            row=1, column=4, sticky=ctk.W, padx=5, pady=5
-        )
-        self.char_playtime_s_var = ctk.IntVar(value=0)
-        ctk.CTkEntry(
-            playtime_frame,
-            textvariable=self.char_playtime_s_var,
-            width=80,
-        ).grid(row=1, column=5, padx=5, pady=5)
+        # ctk.CTkLabel(playtime_frame, text="Seconds:").grid(
+        #    row=1, column=4, sticky=ctk.W, padx=5, pady=5
+        # )
+        # self.char_playtime_s_var = ctk.IntVar(value=0)
+        # ctk.CTkEntry(
+        #    playtime_frame,
+        #    textvariable=self.char_playtime_s_var,
+        #    width=80,
+        # ).grid(row=1, column=5, padx=5, pady=5)
 
         # Apply button
         button_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
