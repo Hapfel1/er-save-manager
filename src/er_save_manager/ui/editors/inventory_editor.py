@@ -378,9 +378,17 @@ class InventoryEditor:
             text_color=("gray50", "gray60"),
             font=("Segoe UI", 10),
             anchor="w",
+            justify="left",
+            wraplength=200,
         )
         self._selected_item_label.pack(
             fill=ctk.X, padx=12, pady=(0, 4), side=ctk.BOTTOM
+        )
+        self._selected_item_label.bind(
+            "<Configure>",
+            lambda e: self._selected_item_label.configure(
+                wraplength=max(80, e.width - 16)
+            ),
         )
 
     # ---- right panel: current inventory -------------------------------------
@@ -677,24 +685,33 @@ class InventoryEditor:
     def _update_browse_state(self) -> None:
         if not hasattr(self, "_browse_btn") or self._browse_btn is None:
             return
-        cat = self._search_cat_var.get() if hasattr(self, "_search_cat_var") else "All"
-        self._browse_btn.configure(state="normal" if cat != "All" else "disabled")
+        self._search_cat_var.get() if hasattr(self, "_search_cat_var") else "All"
+        self._browse_btn.configure(state="normal")
+
+    def _sync_browse_category(self, category: str) -> None:
+        """Called when the icon browser switches category; syncs the add-item dropdown."""
+        if hasattr(self, "_search_cat_var"):
+            self._search_cat_var.set(category)
+            self._search_items()
+            self._update_browse_state()
 
     def _open_icon_browser(self):
         cat = self._search_cat_var.get() if hasattr(self, "_search_cat_var") else "All"
-        if cat == "All":
-            return
         from er_save_manager.data.item_database import get_item_database
         from er_save_manager.ui.icon_browser import IconBrowser
 
-        items = get_item_database().get_items_by_category(cat)
+        cats = self._visible_categories()
+        if cat == "All":
+            cat = cats[0] if cats else ""
+        items = list(get_item_database().get_items_by_category(cat)) if cat else []
         IconBrowser(
             self.parent,
-            list(items),
+            items,
             self._apply_item_selection,
-            title=f"Browse: {cat}",
-            categories=self._visible_categories(),
+            title=f"Browse: {cat}" if cat else "Browse Items",
+            categories=cats,
             initial_category=cat,
+            on_category_change=self._sync_browse_category,
         )
 
     def _pick_aow(self):
