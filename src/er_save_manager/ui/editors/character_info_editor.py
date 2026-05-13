@@ -349,18 +349,18 @@ class CharacterInfoEditor:
             )
 
         # Load playtime from ProfileSummary
-        seconds_played = 0
-        if (
-            hasattr(save_file, "user_data_10_parsed")
-            and save_file.user_data_10_parsed
-            and save_file.user_data_10_parsed.profile_summary
-        ):
-            profiles = save_file.user_data_10_parsed.profile_summary.profiles
-            if profiles and slot_idx < len(profiles):
-                seconds_played = profiles[slot_idx].seconds_played or 0
-        self.char_playtime_h_var.set(seconds_played // 3600)
-        self.char_playtime_m_var.set((seconds_played % 3600) // 60)
-        self.char_playtime_s_var.set(seconds_played % 60)
+        # seconds_played = 0
+        # if (
+        #    hasattr(save_file, "user_data_10_parsed")
+        #    and save_file.user_data_10_parsed
+        #    and save_file.user_data_10_parsed.profile_summary
+        # ):
+        #    profiles = save_file.user_data_10_parsed.profile_summary.profiles
+        #    if profiles and slot_idx < len(profiles):
+        #       seconds_played = profiles[slot_idx].seconds_played or 0
+        # self.char_playtime_h_var.set(seconds_played // 3600)
+        # self.char_playtime_m_var.set((seconds_played % 3600) // 60)
+        # self.char_playtime_s_var.set(seconds_played % 60)
 
         # Load NG+ level from ClearCount if possible, else from event flags
         clearcount = None
