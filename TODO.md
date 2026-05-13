@@ -1,4 +1,4 @@
-fix great rune memory slot, talisman pouch import and flasks as well
+fix great rune memory slot, talisman pouch import and flasks as well done
 
 check playtime writing
 
