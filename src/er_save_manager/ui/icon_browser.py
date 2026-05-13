@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 _DEFAULT_COLS = 4
 _ICON_SIZE = 64
 _CELL_W = 116
-_CELL_H = 100
+_CELL_H = 110
 _CELL_PAD = 4
 _SCROLLBAR_W = 24  # CTkScrollableFrame scrollbar + inner border buffer
 
@@ -33,6 +33,7 @@ class IconBrowser(ctk.CTkToplevel):
         title: str = "Browse Items",
         categories: list[str] | None = None,
         initial_category: str = "",
+        on_category_change: Callable[[str], None] | None = None,
     ):
         super().__init__(parent)
         self._on_select = on_select
@@ -42,6 +43,7 @@ class IconBrowser(ctk.CTkToplevel):
         self._resize_job = None
         self._categories = categories or []
         self._current_cat = initial_category
+        self._cat_change_cb = on_category_change
 
         self.title(title)
         # +12 pack padx, +_SCROLLBAR_W for scrollbar/borders, +30 buffer
@@ -112,7 +114,7 @@ class IconBrowser(ctk.CTkToplevel):
         from er_save_manager.data.icon_manager import get_icon
 
         for item in items:
-            img = get_icon(item.name)
+            img = get_icon(item.name, getattr(item, "category_name", ""))
             if img:
                 ctk_img = ctk.CTkImage(
                     light_image=img, dark_image=img, size=(_ICON_SIZE, _ICON_SIZE)
@@ -121,7 +123,7 @@ class IconBrowser(ctk.CTkToplevel):
             else:
                 ctk_img = None
 
-            display = item.name if len(item.name) <= 18 else item.name[:16] + "\u2026"
+            display = item.name
 
             btn = ctk.CTkButton(
                 self._scroll,
@@ -137,6 +139,8 @@ class IconBrowser(ctk.CTkToplevel):
                 command=lambda it=item: self._select(it),
                 anchor="center",
             )
+            if hasattr(btn, "_text_label") and btn._text_label is not None:
+                btn._text_label.configure(wraplength=_CELL_W - 8, justify="center")
             self._buttons.append((btn, item))
 
         self._apply_filter(
@@ -151,6 +155,9 @@ class IconBrowser(ctk.CTkToplevel):
         items = list(get_item_database().get_items_by_category(value))
         self._search_var.set("")
         self._load_items(items)
+        self._scroll._parent_canvas.yview_moveto(0)
+        if self._cat_change_cb:
+            self._cat_change_cb(value)
 
     # ---- layout & filtering --------------------------------------------------
 

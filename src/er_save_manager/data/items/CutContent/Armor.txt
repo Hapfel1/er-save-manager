@@ -4,3 +4,4 @@
 1950300 Millicent's Boots
 1970100 Millicent's Tunic
 1970200 Golden Prosthetic
+920000,Grass Hair Ornament
