@@ -1,10 +1,14 @@
-fix great rune memory slot, talisman pouch import and flasks as well done
+if multiple item name entries are in there display icons for all
 
-check playtime writing
+only when selecting all does the browse icons button get active by default it is not on, change that
 
 also add inventory browse poup that show the items with the images need to think how to redesign handle it, maybe make aow selection also use the icons as well as affinity, then also show items in inventory as that with the aows in the tob left small added and affinities in the bottom right
 
+fix great rune memory slot, talisman pouch import and flasks as well done
+
 include csnetman.bin doublecheck in build change to only include that one file if possible done
+
+check playtime writing done
 
 restrict results when searching in all category to cnv co2 etc check done
 
