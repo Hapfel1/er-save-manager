@@ -1,4 +1,14 @@
-rework item spawning ui to have a  popup window that shows item pngs for selection with names and categorizes
+include csnetman.bin doublecheck in build change to only include that one file if possible done
+
+restrict results when searching in all category to cnv co2 etc check done
+
+fix great rune memory slot, talisman pouch import and flasks as well
+
+check playtime writing
+
+also add inventory browse poup that show the items with the images
+
+rework item spawning ui to have a  popup window that shows item pngs for selection with names and categorizes categories in the popup
 
 check inventory display displaying convergence item names when the save is vanilla
 

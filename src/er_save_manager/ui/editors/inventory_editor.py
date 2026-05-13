@@ -220,10 +220,22 @@ class InventoryEditor:
             variable=self._search_cat_var,
             values=["All"],
             width=150,
-            command=lambda _e=None: self._search_items(),
+            command=lambda _e=None: (self._search_items(), self._update_browse_state()),
         )
         self._search_cat_combo.pack(side=ctk.LEFT)
         self._populate_search_categories()
+
+        browse_row = ctk.CTkFrame(parent, fg_color="transparent")
+        browse_row.pack(fill=ctk.X, padx=10, pady=(0, 4))
+        self._browse_btn = ctk.CTkButton(
+            browse_row,
+            text="Browse with Icons",
+            height=28,
+            command=self._open_icon_browser,
+            fg_color=("gray70", "gray35"),
+            state="disabled",
+        )
+        self._browse_btn.pack(fill=ctk.X)
 
         lb_frame = ctk.CTkFrame(parent, fg_color=("gray82", "gray14"), corner_radius=6)
         lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=(0, 4))
@@ -536,6 +548,16 @@ class InventoryEditor:
 
             if cat == "All":
                 results = db.search_items(query) if query else []
+                if not self._is_cnv_save():
+                    results = [
+                        i
+                        for i in results
+                        if i.category_name not in self._CONVERGENCE_CATS
+                    ]
+                if ".co2" not in str(self.get_save_path() or "").lower():
+                    results = [
+                        i for i in results if i.category_name not in self._SEAMLESS_CATS
+                    ]
             else:
                 items = db.get_items_by_category(cat)
                 results = (
@@ -551,13 +573,11 @@ class InventoryEditor:
         except Exception:
             pass
 
-    def _on_result_select(self, _event=None):
-        sel = self._results_listbox.curselection()
-        if not sel or sel[0] >= len(self._results_items):
-            return
-        self.selected_item = self._results_items[sel[0]]
+    def _apply_item_selection(self, item) -> None:
+        """Apply item selection state - called from listbox and icon browser."""
+        self.selected_item = item
         self._selected_item_label.configure(
-            text=f"Selected: {self.selected_item.name}",
+            text=f"Selected: {item.name}",
             text_color=("#7c4dac", "#c084fc"),
         )
 
@@ -647,6 +667,35 @@ class InventoryEditor:
 
         if self._location_combo:
             self._location_combo.configure(state="normal")
+
+    def _on_result_select(self, _event=None):
+        sel = self._results_listbox.curselection()
+        if not sel or sel[0] >= len(self._results_items):
+            return
+        self._apply_item_selection(self._results_items[sel[0]])
+
+    def _update_browse_state(self) -> None:
+        if not hasattr(self, "_browse_btn") or self._browse_btn is None:
+            return
+        cat = self._search_cat_var.get() if hasattr(self, "_search_cat_var") else "All"
+        self._browse_btn.configure(state="normal" if cat != "All" else "disabled")
+
+    def _open_icon_browser(self):
+        cat = self._search_cat_var.get() if hasattr(self, "_search_cat_var") else "All"
+        if cat == "All":
+            return
+        from er_save_manager.data.item_database import get_item_database
+        from er_save_manager.ui.icon_browser import IconBrowser
+
+        items = get_item_database().get_items_by_category(cat)
+        IconBrowser(
+            self.parent,
+            list(items),
+            self._apply_item_selection,
+            title=f"Browse: {cat}",
+            categories=self._visible_categories(),
+            initial_category=cat,
+        )
 
     def _pick_aow(self):
         import tkinter as tk
