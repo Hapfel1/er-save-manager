@@ -3,6 +3,35 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.2.1
+**Released:** May 14, 2026
+
+
+### 🔧 Bug Fixes
+
+- Inventory update operations and crashing issue ([1c8081e](https://github.com/Hapfel1/er-save-manager/commit/1c8081e5eda7844b44b0474c7c7f4ce3d1827130))
+
+- Fixed Convergence IDs that collided with base game IDs overwriting base game item names on non convergence saves ([3c65c8f](https://github.com/Hapfel1/er-save-manager/commit/3c65c8fbca94a7c1d6236cb64195c1f9ed0b3fef))
+
+- Fixed icon display issues, updated database ([035e717](https://github.com/Hapfel1/er-save-manager/commit/035e717b608f767f61a3bd0106484575d8509838))
+
+- Fix nyasu import to correctly import talisman pouches and memory slots ([504b6e1](https://github.com/Hapfel1/er-save-manager/commit/504b6e1f471902fe78fa5e8c7c86431d1c9a2e42))
+
+
+
+### 🎨 User Interface
+
+- Added view as icons for all items to make it  more user friendly ([3086051](https://github.com/Hapfel1/er-save-manager/commit/3086051271fe8e94d94249a5fd7851bb77b84f03))
+
+- Added Visual Inventory ([a2d0ae7](https://github.com/Hapfel1/er-save-manager/commit/a2d0ae71ef70e910edd062c177e3b60b8ca885bd))
+
+- Added full visual Item Picker ([ccb68f3](https://github.com/Hapfel1/er-save-manager/commit/ccb68f3fea3d7cf2b2ea294d904341863851b13c))
+
+- Increased Font Size and centered all new popups ([b4f505e](https://github.com/Hapfel1/er-save-manager/commit/b4f505e5281b3632b3aa06240e4c1d7563ed5e7b))
+
+
+
+---
 ## 📦 Release 1.2.0
 **Released:** May 12, 2026
 
@@ -21,7 +50,9 @@
 
 - Correct EF tear false positive and remove unreliable anchor override `[deep_scan]` ([508e170](https://github.com/Hapfel1/er-save-manager/commit/508e1708a717ec9d627a5518570e68fddb469bf4))
 
-- Fix update inventory ops with rebuild to fix crashing issue ([24a31f3](https://github.com/Hapfel1/er-save-manager/commit/24a31f3272b9b284a6ac578b79ae714873baeb81))
+- Fix update inventory ops with rebuild to fix crashing issue
+
+Co-authored-by: Copilot <copilot@github.com> ([24a31f3](https://github.com/Hapfel1/er-save-manager/commit/24a31f3272b9b284a6ac578b79ae714873baeb81))
 
 - Improve Item Spawning to avoid crashing/corruption ([210fb35](https://github.com/Hapfel1/er-save-manager/commit/210fb356a1a3c926d0c1e74f8ab4f98d48b11e70))
 
@@ -830,6 +861,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.2.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.2.0..v1.2.1
 [1.2.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.1.0..v1.2.0
 [1.1.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.0.0..v1.1.0
 [1.0.0]: https://github.com/Hapfel1/er-save-manager/compare/v0.14.1..v1.0.0
