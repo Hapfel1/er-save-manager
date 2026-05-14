@@ -1016,7 +1016,7 @@ class InventoryEditor:
                 continue
             full_id, upgrade = _decode_inv_item(inv_item, gaitem_map)
             name = _item_name(full_id, upgrade, is_convergence)
-            if not name:
+            if not name or name.startswith("Unknown"):
                 continue
 
             cat = full_id & 0xF0000000

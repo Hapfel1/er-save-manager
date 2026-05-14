@@ -1,3 +1,5 @@
+colossal somber stone in non cnv save
+
 sorting as well as make a full visual popup
 
 aow and affinity setting done

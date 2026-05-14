@@ -184,6 +184,18 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             command=self._on_close,
         ).pack(side=ctk.RIGHT)
 
+        row2 = ctk.CTkFrame(self, fg_color="transparent")
+        row2.pack(fill=ctk.X, padx=10, pady=(0, 2))
+        self._sort_var = ctk.StringVar(value="Name A-Z")
+        ctk.CTkLabel(row2, text="Sort:").pack(side=ctk.LEFT)
+        ctk.CTkComboBox(
+            row2,
+            variable=self._sort_var,
+            width=120,
+            values=["Default", "Name A-Z", "Name Z-A", "Qty \u2193", "Qty \u2191"],
+            command=self._on_sort_changed,
+        ).pack(side=ctk.LEFT, padx=(4, 0))
+
         cf = ctk.CTkFrame(self, fg_color=("gray82", "gray14"), corner_radius=6)
         cf.pack(fill=ctk.BOTH, expand=True, padx=6, pady=(4, 0))
         self._canvas = tk.Canvas(cf, bg=self._bg, highlightthickness=0, bd=0)
@@ -276,6 +288,10 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
 
     # ---- filter / tabs -------------------------------------------------------
 
+    def _on_sort_changed(self, value: str) -> None:
+        self._sort_mode = value
+        self._apply_filter()
+
     def _switch_tab(self, tab: str):
         self._tab = tab
         hi, lo = ("gray50", "gray25"), ("gray70", "gray35")
@@ -299,6 +315,26 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             and (self._cat_filter == "All" or self._row_cat(row) == self._cat_filter)
             and (not q or q in row[0].lower())
         ]
+        # Sort
+        sort_mode = getattr(self, "_sort_mode", "Name A-Z")
+        if sort_mode != "Default":
+
+            def _sort_key(row):
+                text = row[0]
+                name = re.sub(r"^\s*\[[HS]K?\]\s*", "", text.split("|")[0]).strip()
+                name = re.sub(r"\s*\+\d+$", "", name).strip()
+                qty_m = re.search(r"Qty:\s*(\d+)", text)
+                qty = int(qty_m.group(1)) if qty_m else 0
+                return name.lower(), qty
+
+            if "Qty" in sort_mode:
+                self._visible.sort(
+                    key=lambda r: _sort_key(r)[1], reverse=(sort_mode == "Qty \u2191")
+                )
+            else:
+                self._visible.sort(
+                    key=lambda r: _sort_key(r)[0], reverse=(sort_mode == "Name Z-A")
+                )
         self._sel_idx = None
         self._clear_bottom()
         self._stop_loading()
