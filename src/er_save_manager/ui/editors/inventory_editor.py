@@ -16,6 +16,16 @@ from er_save_manager.ui.utils import bind_mousewheel
 # ---- item-id helpers --------------------------------------------------------
 
 
+def _center_over(window, parent) -> None:
+    """Position window centered over parent."""
+    window.update_idletasks()
+    w = window.winfo_width()
+    h = window.winfo_height()
+    x = max(0, parent.winfo_rootx() + (parent.winfo_width() - w) // 2)
+    y = max(0, parent.winfo_rooty() + (parent.winfo_height() - h) // 2)
+    window.geometry(f"+{x}+{y}")
+
+
 def _decode_inv_item(inv_item, gaitem_map: dict) -> tuple[int, int]:
     """
     Return (full_item_id, upgrade_level) for an inventory item.
@@ -807,6 +817,7 @@ class InventoryEditor:
         dialog.transient(self.parent)
         dialog.attributes("-alpha", 0)
         dialog.update_idletasks()
+        _center_over(dialog, self.parent)
         dialog.attributes("-alpha", 1)
         dialog.grab_set()
         dialog.lift()
@@ -1628,6 +1639,7 @@ class InventoryEditor:
         dialog.resizable(False, True)
         dialog.transient(self.parent)
         dialog.update_idletasks()
+        _center_over(dialog, self.parent)
         dialog.grab_set()
         dialog.lift()
         dialog.focus_force()
@@ -1824,6 +1836,7 @@ class InventoryEditor:
         dialog.resizable(False, True)
         dialog.transient(self.parent)
         dialog.update_idletasks()
+        _center_over(dialog, self.parent)
         dialog.grab_set()
         dialog.lift()
         dialog.focus_force()
