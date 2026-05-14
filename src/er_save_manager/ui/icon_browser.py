@@ -20,6 +20,16 @@ _CELL_PAD = 4
 _SCROLLBAR_W = 24
 
 
+def _center_over(window, parent) -> None:
+    """Position window centered over parent."""
+    window.update_idletasks()
+    w = window.winfo_width()
+    h = window.winfo_height()
+    x = max(0, parent.winfo_rootx() + (parent.winfo_width() - w) // 2)
+    y = max(0, parent.winfo_rooty() + (parent.winfo_height() - h) // 2)
+    window.geometry(f"+{x}+{y}")
+
+
 class IconBrowser(ctk.CTkToplevel):
     """
     Visual add-item popup.
@@ -52,6 +62,7 @@ class IconBrowser(ctk.CTkToplevel):
         self.transient(parent)
         self.attributes("-alpha", 0)
         self.update_idletasks()
+        _center_over(self, parent)
         self.attributes("-alpha", 1)
         self.grab_set()
 
@@ -265,7 +276,7 @@ class IconBrowser(ctk.CTkToplevel):
                 compound="top",
                 width=_CELL_W,
                 height=_CELL_H,
-                font=("Segoe UI", 9),
+                font=("Segoe UI", 11),
                 fg_color=("gray82", "gray18"),
                 hover_color=("gray70", "gray28"),
                 text_color=("gray10", "gray90"),
@@ -455,6 +466,7 @@ class IconBrowser(ctk.CTkToplevel):
         dialog.transient(self)
         dialog.attributes("-alpha", 0)
         dialog.update_idletasks()
+        _center_over(dialog, self)
         dialog.attributes("-alpha", 1)
         dialog.grab_set()
         dialog.lift()

@@ -100,6 +100,16 @@ def _cell_icon(full_id, gaitem_handle, slot, aff_code, affinity_names):
         return None
 
 
+def _center_over(window, parent) -> None:
+    """Position window centered over parent."""
+    window.update_idletasks()
+    w = window.winfo_width()
+    h = window.winfo_height()
+    x = max(0, parent.winfo_rootx() + (parent.winfo_width() - w) // 2)
+    y = max(0, parent.winfo_rooty() + (parent.winfo_height() - h) // 2)
+    window.geometry(f"+{x}+{y}")
+
+
 class VisualInventoryBrowser(ctk.CTkToplevel):
     """Single Canvas grid view - one X11 window regardless of inventory size."""
 
@@ -115,6 +125,8 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
 
         self.title("Visual Inventory")
         self.geometry("760x680")
+        self.update_idletasks()
+        _center_over(self, parent)
         self.minsize(500, 400)
         self.resizable(True, True)
         self.transient(parent)
@@ -411,7 +423,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
                 text_area_mid,
                 text=display,
                 fill=self._fg,
-                font=("Segoe UI", 8),
+                font=("Segoe UI", 10),
                 anchor="center",
                 width=_CELL_W - 10,
                 tags=f"text_{idx}",
