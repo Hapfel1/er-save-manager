@@ -16,6 +16,55 @@ from er_save_manager.ui.utils import bind_mousewheel
 # ---- item-id helpers --------------------------------------------------------
 
 
+def _center_over(window, parent) -> None:
+    """Position window centered over parent."""
+    window.update_idletasks()
+    w = window.winfo_reqwidth()
+    h = window.winfo_reqheight()
+    x = max(0, parent.winfo_rootx() + (parent.winfo_width() - w) // 2)
+    y = max(0, parent.winfo_rooty() + (parent.winfo_height() - h) // 2)
+    window.geometry(f"+{x}+{y}")
+
+
+def _ask_value(title: str, text: str, parent) -> str | None:
+    """Centered modal single-line input dialog."""
+    result: list = [None]
+    dialog = ctk.CTkToplevel(parent)
+    dialog.title(title)
+    dialog.resizable(False, False)
+    dialog.transient(parent)
+    dialog.attributes("-alpha", 0)
+    ctk.CTkLabel(dialog, text=text, wraplength=260, anchor="w").pack(
+        padx=20, pady=(16, 6), fill="x"
+    )
+    var = ctk.StringVar()
+    entry = ctk.CTkEntry(dialog, textvariable=var, width=260)
+    entry.pack(padx=20, pady=(0, 10))
+    btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
+    btn_row.pack(fill="x", padx=20, pady=(0, 16))
+
+    def _ok(_e=None):
+        result[0] = var.get()
+        dialog.destroy()
+
+    entry.bind("<Return>", _ok)
+    entry.bind("<Escape>", lambda _e: dialog.destroy())
+    ctk.CTkButton(btn_row, text="OK", command=_ok, width=80).pack(side="left")
+    ctk.CTkButton(
+        btn_row,
+        text="Cancel",
+        command=dialog.destroy,
+        width=80,
+        fg_color=("gray70", "gray35"),
+    ).pack(side="right")
+    _center_over(dialog, parent)
+    dialog.attributes("-alpha", 1)
+    dialog.grab_set()
+    entry.focus_set()
+    dialog.wait_window()
+    return result[0]
+
+
 def _decode_inv_item(inv_item, gaitem_map: dict) -> tuple[int, int]:
     """
     Return (full_item_id, upgrade_level) for an inventory item.
@@ -47,15 +96,17 @@ def _decode_inv_item(inv_item, gaitem_map: dict) -> tuple[int, int]:
     return handle, 0
 
 
-def _item_name(full_item_id: int, upgrade: int = 0) -> str:
+def _item_name(
+    full_item_id: int, upgrade: int = 0, is_convergence: bool = False
+) -> str:
     """Look up item name, falling back to talisman category on goods miss."""
     from er_save_manager.data.item_database import get_item_database, get_item_name
 
-    name = get_item_name(full_item_id, upgrade)
+    name = get_item_name(full_item_id, upgrade, is_convergence)
     if name.startswith("Unknown") and (full_item_id & 0xF0000000) == 0x40000000:
         # B0 handles cannot distinguish goods from talismans; try talisman category
         alt = 0x20000000 | (full_item_id & 0x0FFFFFFF)
-        alt_name = get_item_database().get_item_by_id(alt)
+        alt_name = get_item_database().get_item_by_id(alt, is_convergence)
         if alt_name:
             return alt_name.name
     return name
@@ -69,7 +120,7 @@ class InventoryEditor:
 
     # ---- constants ----------------------------------------------------------
 
-    _AFFINITIES: list[tuple[int, str]] = [
+    _AFFINITIES_VANILLA: list[tuple[int, str]] = [
         (0, "Standard"),
         (1, "Heavy"),
         (2, "Keen"),
@@ -83,7 +134,21 @@ class InventoryEditor:
         (10, "Poison"),
         (11, "Blood"),
         (12, "Occult"),
-        # Convergence mod affinities
+    ]
+    _AFFINITIES_CNV: list[tuple[int, str]] = [
+        (0, "Standard"),
+        (1, "Heavy"),
+        (2, "Keen"),
+        (3, "Quality"),
+        (4, "Glint"),
+        (5, "Dragonkin"),
+        (6, "Gravity"),
+        (7, "Flame"),
+        (8, "Golden"),
+        (9, "Draconic"),
+        (10, "Bestial"),
+        (11, "Night"),
+        (12, "Lava"),
         (13, "Frenzy"),
         (14, "Death"),
         (15, "Godslayer"),
@@ -94,8 +159,20 @@ class InventoryEditor:
         (20, "Storm"),
         (21, "Psionic"),
     ]
-    _AFFINITY_BY_CODE: dict[int, str] = dict(_AFFINITIES)
-    _AFFINITY_NAMES: list[str] = [name for _, name in _AFFINITIES]
+    # Keep _AFFINITIES as alias used by visual_inventory and external callers
+    _AFFINITIES = _AFFINITIES_VANILLA
+
+    def _affinities(self) -> list[tuple[int, str]]:
+        return self._AFFINITIES_CNV if self._is_cnv_save() else self._AFFINITIES_VANILLA
+
+    def _affinity_names(self) -> list[str]:
+        return [n for _, n in self._affinities()]
+
+    def _affinity_by_code(self) -> dict[int, str]:
+        return dict(self._affinities())
+
+    def _is_cnv_save(self) -> bool:
+        return ".cnv" in str(self.get_save_path() or "").lower()
 
     _SEAMLESS_CATS = {"Seamless Co-op Items"}
     _CONVERGENCE_CATS = {
@@ -116,6 +193,7 @@ class InventoryEditor:
         "Convergence Ammo",
         "Convergence Ashes",
         "Convergence Magic",
+        "Convergence Bell Bearings",
     }
 
     def __init__(
@@ -126,6 +204,7 @@ class InventoryEditor:
         get_save_path_callback,
         ensure_mutable_callback,
         on_inventory_changed=None,
+        get_settings_callback=None,
     ):
         self.parent = parent
         self.get_save_file = get_save_file_callback
@@ -133,6 +212,7 @@ class InventoryEditor:
         self.get_save_path = get_save_path_callback
         self.ensure_mutable = ensure_mutable_callback
         self._on_inventory_changed = on_inventory_changed
+        self.get_settings = get_settings_callback
 
         self.selected_item = None
         self._all_rows: list[tuple[str, int | None, str | None]] = []
@@ -153,6 +233,10 @@ class InventoryEditor:
         self.inv_aow_var: ctk.StringVar | None = None
         self._selected_gem_id: int = 0
         self._selected_item_label: ctk.CTkLabel | None = None
+        self._inventory_change_listeners: list = []
+        self._forced_selection: tuple | None = None
+        self._affinity_icon_lbl: ctk.CTkLabel | None = None
+        self._aow_icon_lbl: ctk.CTkLabel | None = None
 
         self._search_var: ctk.StringVar | None = None
         self._search_cat_var: ctk.StringVar | None = None
@@ -215,10 +299,23 @@ class InventoryEditor:
             variable=self._search_cat_var,
             values=["All"],
             width=150,
-            command=lambda _e=None: self._search_items(),
+            command=lambda _e=None: (self._search_items(), self._update_browse_state()),
         )
         self._search_cat_combo.pack(side=ctk.LEFT)
         self._populate_search_categories()
+
+        browse_row = ctk.CTkFrame(parent, fg_color="transparent")
+        browse_row.pack(fill=ctk.X, padx=10, pady=(0, 4))
+        self._browse_btn = ctk.CTkButton(
+            browse_row,
+            text="Visual Item Picker...",
+            height=28,
+            command=self._open_icon_browser,
+            fg_color=("#6a3fa0", "#7c4dac"),
+            hover_color=("#7c4dac", "#9d5fd4"),
+            state="disabled",
+        )
+        self._browse_btn.pack(fill=ctk.X)
 
         lb_frame = ctk.CTkFrame(parent, fg_color=("gray82", "gray14"), corner_radius=6)
         lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=(0, 4))
@@ -298,14 +395,19 @@ class InventoryEditor:
             row=1, column=0, sticky=ctk.W, padx=(0, 6), pady=4
         )
         self.inv_affinity_var = ctk.StringVar(value="Standard")
+        _aff_frame = ctk.CTkFrame(opts, fg_color="transparent")
+        _aff_frame.grid(row=1, column=1, sticky=ctk.W, pady=4)
+        self._affinity_icon_lbl = ctk.CTkLabel(_aff_frame, text="", width=26, height=26)
+        self._affinity_icon_lbl.pack(side=ctk.LEFT, padx=(0, 4))
         self._affinity_combo = ctk.CTkComboBox(
-            opts,
+            _aff_frame,
             variable=self.inv_affinity_var,
-            values=self._AFFINITY_NAMES,
+            values=[n for _, n in self._AFFINITIES_VANILLA],
             width=140,
             state="disabled",
+            command=self._on_affinity_combo_changed,
         )
-        self._affinity_combo.grid(row=1, column=1, sticky=ctk.W, pady=4)
+        self._affinity_combo.pack(side=ctk.LEFT)
 
         ctk.CTkLabel(opts, text="Location:", anchor="w").grid(
             row=1, column=2, sticky=ctk.W, padx=(14, 6), pady=4
@@ -323,14 +425,18 @@ class InventoryEditor:
             row=2, column=0, sticky=ctk.W, padx=(0, 6), pady=4
         )
         self.inv_aow_var = ctk.StringVar(value="None")
+        _aow_frame = ctk.CTkFrame(opts, fg_color="transparent")
+        _aow_frame.grid(row=2, column=1, sticky=ctk.W, pady=4)
+        self._aow_icon_lbl = ctk.CTkLabel(_aow_frame, text="", width=26, height=26)
+        self._aow_icon_lbl.pack(side=ctk.LEFT, padx=(0, 4))
         self._aow_label = ctk.CTkLabel(
-            opts,
+            _aow_frame,
             textvariable=self.inv_aow_var,
             text_color=("gray50", "gray60"),
             width=140,
             anchor="w",
         )
-        self._aow_label.grid(row=2, column=1, sticky=ctk.W, pady=4)
+        self._aow_label.pack(side=ctk.LEFT)
         self._aow_pick_btn = ctk.CTkButton(
             opts,
             text="Pick...",
@@ -361,9 +467,17 @@ class InventoryEditor:
             text_color=("gray50", "gray60"),
             font=("Segoe UI", 10),
             anchor="w",
+            justify="left",
+            wraplength=400,
         )
         self._selected_item_label.pack(
             fill=ctk.X, padx=12, pady=(0, 4), side=ctk.BOTTOM
+        )
+        self._selected_item_label.bind(
+            "<Configure>",
+            lambda e: self._selected_item_label.configure(
+                wraplength=max(160, e.width - 8)
+            ),
         )
 
     # ---- right panel: current inventory -------------------------------------
@@ -419,6 +533,15 @@ class InventoryEditor:
             height=28,
             command=lambda: self._inv_search_var.set(""),
         ).pack(side=ctk.LEFT)
+        ctk.CTkButton(
+            search_row,
+            text="Visual Inventory...",
+            width=130,
+            height=28,
+            fg_color=("#6a3fa0", "#7c4dac"),
+            hover_color=("#7c4dac", "#9d5fd4"),
+            command=self._open_visual_inventory,
+        ).pack(side=ctk.RIGHT)
 
         lb_frame = ctk.CTkFrame(parent, fg_color=("gray82", "gray14"), corner_radius=6)
         lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=(0, 6))
@@ -531,6 +654,16 @@ class InventoryEditor:
 
             if cat == "All":
                 results = db.search_items(query) if query else []
+                if not self._is_cnv_save():
+                    results = [
+                        i
+                        for i in results
+                        if i.category_name not in self._CONVERGENCE_CATS
+                    ]
+                if ".co2" not in str(self.get_save_path() or "").lower():
+                    results = [
+                        i for i in results if i.category_name not in self._SEAMLESS_CATS
+                    ]
             else:
                 items = db.get_items_by_category(cat)
                 results = (
@@ -546,13 +679,11 @@ class InventoryEditor:
         except Exception:
             pass
 
-    def _on_result_select(self, _event=None):
-        sel = self._results_listbox.curselection()
-        if not sel or sel[0] >= len(self._results_items):
-            return
-        self.selected_item = self._results_items[sel[0]]
+    def _apply_item_selection(self, item) -> None:
+        """Apply item selection state - called from listbox and icon browser."""
+        self.selected_item = item
         self._selected_item_label.configure(
-            text=f"Selected: {self.selected_item.name}",
+            text=f"Selected: {item.name}",
             text_color=("#7c4dac", "#c084fc"),
         )
 
@@ -622,16 +753,14 @@ class InventoryEditor:
 
         if self._affinity_combo:
             if affinity_allowed:
-                affinity_values = (
-                    self._AFFINITY_NAMES
-                    if is_convergence_save
-                    else self._AFFINITY_NAMES[:13]
-                )
+                affinity_values = self._affinity_names()
                 self._affinity_combo.configure(values=affinity_values, state="normal")
                 self.inv_affinity_var.set("Standard")
+                self._update_affinity_icon("Standard")
             else:
                 self._affinity_combo.configure(state="disabled")
                 self.inv_affinity_var.set("Standard")
+                self._update_affinity_icon("Standard")
 
         aow_state = "normal" if aow_allowed else "disabled"
         if self._aow_pick_btn:
@@ -643,6 +772,80 @@ class InventoryEditor:
         if self._location_combo:
             self._location_combo.configure(state="normal")
 
+    def _on_result_select(self, _event=None):
+        sel = self._results_listbox.curselection()
+        if not sel or sel[0] >= len(self._results_items):
+            return
+        self._apply_item_selection(self._results_items[sel[0]])
+
+    def _update_browse_state(self) -> None:
+        if not hasattr(self, "_browse_btn") or self._browse_btn is None:
+            return
+        self._search_cat_var.get() if hasattr(self, "_search_cat_var") else "All"
+        self._browse_btn.configure(state="normal")
+
+    def _open_visual_inventory(self) -> None:
+        from er_save_manager.ui.visual_inventory import VisualInventoryBrowser
+
+        VisualInventoryBrowser(self.parent, self)
+
+    def _on_affinity_combo_changed(self, value: str) -> None:
+        self._update_affinity_icon(value)
+
+    def _update_affinity_icon(self, affinity_name: str) -> None:
+        if not self._affinity_icon_lbl:
+            return
+        try:
+            from er_save_manager.data.icon_manager import get_affinity_icon
+
+            img = get_affinity_icon(affinity_name, is_convergence=self._is_cnv_save())
+            if img:
+                cimg = ctk.CTkImage(img, img, (22, 22))
+                self._affinity_icon_lbl.configure(image=cimg)
+                self._affinity_icon_lbl._cached_icon = cimg
+            else:
+                self._affinity_icon_lbl.configure(image=None)
+        except Exception:
+            self._affinity_icon_lbl.configure(image=None)
+
+    def _update_aow_icon(self, aow_name: str) -> None:
+        if not self._aow_icon_lbl:
+            return
+        try:
+            from er_save_manager.data.icon_manager import get_icon
+
+            img = get_icon(aow_name) if aow_name and aow_name != "None" else None
+            if img:
+                cimg = ctk.CTkImage(img, img, (22, 22))
+                self._aow_icon_lbl.configure(image=cimg)
+                self._aow_icon_lbl._cached_icon = cimg
+            else:
+                self._aow_icon_lbl.configure(image=None)
+        except Exception:
+            self._aow_icon_lbl.configure(image=None)
+
+    def _sync_browse_category(self, category: str) -> None:
+        """Called when the icon browser switches category; syncs the add-item dropdown."""
+        if hasattr(self, "_search_cat_var"):
+            self._search_cat_var.set(category)
+            self._search_items()
+            self._update_browse_state()
+
+    def _open_icon_browser(self):
+        cat = self._search_cat_var.get() if hasattr(self, "_search_cat_var") else "All"
+        cats = self._visible_categories()
+        if cat == "All":
+            cat = cats[0] if cats else ""
+        from er_save_manager.ui.icon_browser import IconBrowser
+
+        settings = self.get_settings() if self.get_settings else None
+        dev_icon_export = (
+            settings.get("icon_export_enabled", False) if settings else False
+        )
+        IconBrowser(
+            self.parent, self, initial_category=cat, dev_icon_export=dev_icon_export
+        )
+
     def _pick_aow(self):
         import tkinter as tk
 
@@ -653,8 +856,11 @@ class InventoryEditor:
         dialog.transient(self.parent)
         dialog.attributes("-alpha", 0)
         dialog.update_idletasks()
+        _center_over(dialog, self.parent)
         dialog.attributes("-alpha", 1)
         dialog.grab_set()
+        dialog.lift()
+        dialog.focus_force()
 
         mode = ctk.get_appearance_mode()
         lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
@@ -739,15 +945,15 @@ class InventoryEditor:
             self._selected_gem_id = 0x80000000 | item.id
             if self.inv_aow_var:
                 self.inv_aow_var.set(item.name)
+                self._update_aow_icon(item.name)
                 if self._aow_label:
                     self._aow_label.configure(text_color=("#7c4dac", "#c084fc"))
             if self._affinity_combo and item.allowed_affinities:
                 self._affinity_combo.configure(values=item.allowed_affinities)
                 default = item.default_affinity or item.allowed_affinities[0]
                 self.inv_affinity_var.set(default)
+                self._update_affinity_icon(default)
             dialog.destroy()
-
-        lb.bind("<Double-Button-1>", lambda _e: _confirm())
 
         btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_row.pack(fill=ctk.X, padx=10, pady=(4, 10))
@@ -762,22 +968,22 @@ class InventoryEditor:
         self._selected_gem_id = 0
         if self.inv_aow_var:
             self.inv_aow_var.set("None")
+            self._update_aow_icon("None")
         if self._aow_label:
             self._aow_label.configure(text_color=("gray50", "gray60"))
         if self._affinity_combo and self.inv_affinity_var:
-            is_convergence_save = ".cnv" in str(self.get_save_path() or "").lower()
-            values = (
-                self._AFFINITY_NAMES
-                if is_convergence_save
-                else self._AFFINITY_NAMES[:13]
-            )
+            values = self._affinity_names()
             self._affinity_combo.configure(values=values)
             self.inv_affinity_var.set("Standard")
+            self._update_affinity_icon("Standard")
 
     # ---- inventory display --------------------------------------------------
 
     def refresh_inventory(self):
         self._populate_search_categories()
+        self._update_browse_state()
+        if self._affinity_combo:
+            self._affinity_combo.configure(values=self._affinity_names())
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
@@ -800,6 +1006,7 @@ class InventoryEditor:
                     gaitem_map[g.gaitem_handle] = g
 
             filt = self.inv_filter_var.get() if self.inv_filter_var else "All"
+            cnv = self._is_cnv_save()
             self._all_rows = []
 
             if filt in ("All", "Held") and hasattr(slot, "inventory_held"):
@@ -809,6 +1016,7 @@ class InventoryEditor:
                     gaitem_map,
                     "held",
                     key=False,
+                    is_convergence=cnv,
                 )
             if filt in ("All", "Key Items") and hasattr(slot, "inventory_held"):
                 self._collect_section(
@@ -817,6 +1025,7 @@ class InventoryEditor:
                     gaitem_map,
                     "held",
                     key=True,
+                    is_convergence=cnv,
                 )
             if filt in ("All", "Storage") and hasattr(slot, "inventory_storage_box"):
                 self._collect_section(
@@ -825,6 +1034,7 @@ class InventoryEditor:
                     gaitem_map,
                     "storage",
                     key=False,
+                    is_convergence=cnv,
                 )
                 self._collect_section(
                     "KEY ITEMS (STORAGE)",
@@ -832,24 +1042,32 @@ class InventoryEditor:
                     gaitem_map,
                     "storage",
                     key=True,
+                    is_convergence=cnv,
                 )
 
             self._apply_inv_filter()
+            for _cb in list(getattr(self, "_inventory_change_listeners", [])):
+                try:
+                    _cb()
+                except Exception:
+                    pass
 
         except Exception as e:
             CTkMessageBox.showerror(
                 "Error", f"Failed to refresh inventory:\n{e}", parent=self.parent
             )
 
-    def _collect_section(self, header, items, gaitem_map, location, key):
+    def _collect_section(
+        self, header, items, gaitem_map, location, key, is_convergence: bool = False
+    ):
         rows: list[tuple[str, int, str]] = []
 
         for inv_item in items:
             if inv_item.gaitem_handle == 0 or inv_item.quantity == 0:
                 continue
             full_id, upgrade = _decode_inv_item(inv_item, gaitem_map)
-            name = _item_name(full_id, upgrade)
-            if not name:
+            name = _item_name(full_id, upgrade, is_convergence)
+            if not name or name.startswith("Unknown"):
                 continue
 
             cat = full_id & 0xF0000000
@@ -858,9 +1076,7 @@ class InventoryEditor:
             if cat == 0x00000000:
                 affinity_code = (full_id // 100) % 100
                 if affinity_code != 0:
-                    affinity_label = (
-                        f" [{self._AFFINITY_BY_CODE.get(affinity_code, affinity_code)}]"
-                    )
+                    affinity_label = f" [{self._affinity_by_code().get(affinity_code, affinity_code)}]"
 
             loc_tag = "K" if key else ""
             text = (
@@ -920,7 +1136,8 @@ class InventoryEditor:
         if max_arrow > 1:
             return max_arrow
         if location == "storage":
-            return getattr(item, "max_repository_num", getattr(item, "max_num", 1))
+            repo = getattr(item, "max_repository_num", 0)
+            return repo if repo > 0 else getattr(item, "max_num", 1)
         return getattr(item, "max_num", 1)
 
     def _validate_add_item(
@@ -1055,7 +1272,7 @@ class InventoryEditor:
         if is_weapon:
             affinity_name = self.inv_affinity_var.get()
             affinity_code = next(
-                (c for c, n in self._AFFINITIES if n == affinity_name), 0
+                (c for c, n in self._affinities() if n == affinity_name), 0
             )
             cat_bits = full_id & 0xF0000000
             base = full_id & 0x0FFFFFFF
@@ -1126,19 +1343,18 @@ class InventoryEditor:
             )
 
     def remove_item(self):
-        sel = self.inventory_listbox.curselection()
-        if not sel:
+        result = self._get_forced_or_listbox()
+        if result is None:
             CTkMessageBox.showwarning(
                 "No Selection", "Select an item to remove.", parent=self.parent
             )
             return
-
-        idx = sel[0]
-        if idx >= len(self._item_data) or self._item_data[idx] is None:
-            return
-
-        full_id, location, gaitem_handle = self._item_data[idx]
-        item_label = self.inventory_listbox.get(idx).strip()
+        full_id, location, gaitem_handle = result
+        item_label = f"0x{full_id:08X}"
+        if self._forced_selection is None and self.inventory_listbox:
+            sel = self.inventory_listbox.curselection()
+            if sel:
+                item_label = self.inventory_listbox.get(sel[0]).strip()
 
         if not CTkMessageBox.askyesno(
             "Confirm Remove",
@@ -1171,18 +1387,13 @@ class InventoryEditor:
             )
 
     def set_quantity(self):
-        sel = self.inventory_listbox.curselection()
-        if not sel:
+        result = self._get_forced_or_listbox()
+        if result is None:
             CTkMessageBox.showwarning(
                 "No Selection", "Select an item first.", parent=self.parent
             )
             return
-
-        idx = sel[0]
-        if idx >= len(self._item_data) or self._item_data[idx] is None:
-            return
-
-        full_id, location, gaitem_handle = self._item_data[idx]
+        full_id, location, gaitem_handle = result
         cat = full_id & 0xF0000000
 
         max_qty = None
@@ -1211,10 +1422,11 @@ class InventoryEditor:
             )
             return
 
-        qty_str = ctk.CTkInputDialog(
-            text=f"Enter new quantity{f' (max {max_qty})' if max_qty else ''}:",
-            title="Set Quantity",
-        ).get_input()
+        qty_str = _ask_value(
+            "Set Quantity",
+            f"Enter new quantity{f' (max {max_qty})' if max_qty else ''}:",
+            self.parent,
+        )
         if qty_str is None:
             return
         try:
@@ -1268,7 +1480,32 @@ class InventoryEditor:
         data = buf.getvalue()
         save_file._raw_data[entry_abs : entry_abs + len(data)] = data
 
+    def _get_forced_or_listbox(self):
+        if self._forced_selection is not None:
+            return self._forced_selection
+        if self.inventory_listbox is None:
+            return None
+        sel = self.inventory_listbox.curselection()
+        if not sel:
+            return None
+        idx = sel[0]
+        if idx >= len(self._item_data) or self._item_data[idx] is None:
+            return None
+        return self._item_data[idx]
+
     def _get_selected_weapon(self) -> tuple[int, str, int] | None:
+        # Support forced selection from the visual inventory popup
+        if self._forced_selection is not None:
+            full_id, location, gaitem_handle = self._forced_selection
+            if (full_id & 0xF0000000) != 0x00000000:
+                CTkMessageBox.showinfo(
+                    "Not a Weapon",
+                    "This operation only applies to weapons.",
+                    parent=self.parent,
+                )
+                return None
+            return full_id, location, gaitem_handle
+
         sel = self.inventory_listbox.curselection()
         if not sel:
             CTkMessageBox.showwarning(
@@ -1325,9 +1562,11 @@ class InventoryEditor:
         else:
             cap = 25 if reinforcement == "standard" else 10
 
-        upg_str = ctk.CTkInputDialog(
-            text=f"Enter upgrade level (0-{cap}):", title="Set Upgrade"
-        ).get_input()
+        upg_str = _ask_value(
+            "Set Upgrade",
+            f"Enter upgrade level (0-{cap}):",
+            self.parent,
+        )
         if upg_str is None:
             return
         try:
@@ -1425,9 +1664,7 @@ class InventoryEditor:
         save_path = str(self.get_save_path() or "").lower()
         is_convergence_save = ".cnv" in save_path
 
-        base_list = (
-            self._AFFINITY_NAMES if is_convergence_save else self._AFFINITY_NAMES[:13]
-        )
+        base_list = self._affinity_names()
         affinity_list = (
             base_list
             if (is_convergence_save or allowed is None)
@@ -1440,32 +1677,100 @@ class InventoryEditor:
 
         dialog = ctk.CTkToplevel(self.parent)
         dialog.title("Set Affinity")
-        dialog.geometry("220x320")
+        dialog.geometry("260x400")
         dialog.resizable(False, True)
         dialog.transient(self.parent)
         dialog.update_idletasks()
+        _center_over(dialog, self.parent)
         dialog.grab_set()
+        dialog.lift()
+        dialog.focus_force()
 
         mode = ctk.get_appearance_mode()
         lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
         lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
         lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
 
-        lb_frame = ctk.CTkFrame(dialog, fg_color=("gray82", "gray14"), corner_radius=6)
-        lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=(10, 4))
-        lb = tk.Listbox(
-            lb_frame,
-            font=("Consolas", 11),
-            bg=lb_bg,
-            fg=lb_fg,
-            selectbackground=lb_sel,
-            relief=tk.FLAT,
-            borderwidth=0,
-            activestyle="none",
+        _AFF_ROW_H = 32
+        cv_frame = ctk.CTkFrame(dialog, fg_color=("gray82", "gray14"), corner_radius=6)
+        cv_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=(10, 4))
+        aff_sb = tk.Scrollbar(cv_frame)
+        aff_sb.pack(side=tk.RIGHT, fill=tk.Y)
+        aff_cv = tk.Canvas(
+            cv_frame, bg=lb_bg, highlightthickness=0, bd=0, yscrollcommand=aff_sb.set
         )
-        lb.pack(fill=ctk.BOTH, expand=True, padx=2, pady=2)
-        for name in affinity_list:
-            lb.insert(tk.END, name)
+        aff_cv.pack(side=tk.LEFT, fill=ctk.BOTH, expand=True, padx=2, pady=2)
+        aff_sb.config(command=aff_cv.yview)
+        aff_cv.bind("<Button-4>", lambda _e: aff_cv.yview_scroll(-1, "units"))
+        aff_cv.bind("<Button-5>", lambda _e: aff_cv.yview_scroll(1, "units"))
+
+        _sel_name: list[str | None] = [None]
+        _sel_aff_idx: list[int | None] = [None]
+        _aff_photos: list = []
+        is_cnv_now = self._is_cnv_save()
+
+        cw_aff = 230
+        for i, name in enumerate(affinity_list):
+            y0 = i * _AFF_ROW_H
+            aff_cv.create_rectangle(
+                0, y0, cw_aff, y0 + _AFF_ROW_H, fill=lb_bg, outline="", tags=f"arow_{i}"
+            )
+            aff_cv.create_text(
+                32,
+                y0 + _AFF_ROW_H // 2,
+                text=name,
+                fill=lb_fg,
+                font=("Consolas", 11),
+                anchor="w",
+                tags=f"atext_{i}",
+            )
+        aff_cv.configure(scrollregion=(0, 0, cw_aff, len(affinity_list) * _AFF_ROW_H))
+
+        def _aff_click(event) -> None:
+            cy = aff_cv.canvasy(event.y)
+            idx = int(cy // _AFF_ROW_H)
+            if 0 <= idx < len(affinity_list):
+                prev = _sel_aff_idx[0]
+                _sel_aff_idx[0] = idx
+                _sel_name[0] = affinity_list[idx]
+                for i in (prev, idx):
+                    if i is None:
+                        continue
+                    aff_cv.itemconfigure(
+                        f"arow_{i}", fill=lb_sel if i == _sel_aff_idx[0] else lb_bg
+                    )
+
+        aff_cv.bind("<Button-1>", _aff_click)
+        aff_cv.bind("<Double-Button-1>", lambda e: (_aff_click(e), _confirm()))
+
+        def _load_aff_icons() -> None:
+            try:
+                from PIL import Image, ImageTk
+
+                from er_save_manager.data.icon_manager import get_affinity_icon
+            except Exception:
+                return
+            for i, name in enumerate(affinity_list):
+                try:
+                    _pil = get_affinity_icon(name, is_convergence=is_cnv_now)
+                    if _pil:
+                        _pil = _pil.convert("RGBA").resize((22, 22), Image.LANCZOS)
+                        _ph = ImageTk.PhotoImage(_pil)
+                        _aff_photos.append(_ph)
+                        y0 = i * _AFF_ROW_H
+                        aff_cv.create_image(
+                            4,
+                            y0 + _AFF_ROW_H // 2,
+                            image=_ph,
+                            anchor="w",
+                            tags=f"arow_{i}",
+                        )
+                except Exception:
+                    pass
+            # Pin list to canvas so PhotoImages are not GC'd
+            aff_cv._photo_refs = _aff_photos
+
+        dialog.after(80, _load_aff_icons)
 
         def _apply_affinity(affinity_code: int):
             save_file2 = self.get_save_file()
@@ -1503,17 +1808,15 @@ class InventoryEditor:
                 )
 
         def _confirm():
-            sel2 = lb.curselection()
-            if not sel2:
+            if not _sel_name[0]:
                 return
-            affinity_name = affinity_list[sel2[0]]
+            affinity_name = _sel_name[0]
             affinity_code = next(
-                (c for c, n in self._AFFINITIES if n == affinity_name), 0
+                (c for c, n in self._affinities() if n == affinity_name), 0
             )
             dialog.destroy()
             _apply_affinity(affinity_code)
 
-        lb.bind("<Double-Button-1>", lambda _e: _confirm())
         btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_row.pack(fill=ctk.X, padx=10, pady=(0, 10))
         ctk.CTkButton(btn_row, text="Apply", command=_confirm, width=90).pack(
@@ -1575,7 +1878,10 @@ class InventoryEditor:
         dialog.resizable(False, True)
         dialog.transient(self.parent)
         dialog.update_idletasks()
+        _center_over(dialog, self.parent)
         dialog.grab_set()
+        dialog.lift()
+        dialog.focus_force()
 
         mode = ctk.get_appearance_mode()
         lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
@@ -1602,23 +1908,99 @@ class InventoryEditor:
             padx=10, pady=(0, 4)
         )
 
+        _ROW_H = 34
         lb_frame = ctk.CTkFrame(dialog, fg_color=("gray82", "gray14"), corner_radius=6)
         lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=4)
         sb = tk.Scrollbar(lb_frame)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
-        lb = tk.Listbox(
-            lb_frame,
-            yscrollcommand=sb.set,
-            font=("Consolas", 10),
-            bg=lb_bg,
-            fg=lb_fg,
-            selectbackground=lb_sel,
-            relief=tk.FLAT,
-            borderwidth=0,
-            activestyle="none",
+        cv = tk.Canvas(
+            lb_frame, bg=lb_bg, highlightthickness=0, bd=0, yscrollcommand=sb.set
         )
-        lb.pack(side=tk.LEFT, fill=ctk.BOTH, expand=True, padx=2, pady=2)
-        sb.config(command=lb.yview)
+        cv.pack(side=tk.LEFT, fill=ctk.BOTH, expand=True, padx=2, pady=2)
+        sb.config(command=cv.yview)
+        cv.bind("<Button-4>", lambda _e: cv.yview_scroll(-1, "units"))
+        cv.bind("<Button-5>", lambda _e: cv.yview_scroll(1, "units"))
+        _aow_sel_idx: list[int | None] = [None]
+        _aow_photos: list = []
+        _aow_drawn_gems: list = []
+
+        _aow_icon_job: list[str | None] = [None]
+
+        def _draw_aow_rows(gems) -> None:
+            if _aow_icon_job[0]:
+                try:
+                    dialog.after_cancel(_aow_icon_job[0])
+                except Exception:
+                    pass
+                _aow_icon_job[0] = None
+            cv.delete("all")
+            _aow_photos.clear()
+            _aow_drawn_gems.clear()
+            _aow_sel_idx[0] = None
+            cw = max(cv.winfo_width(), 300)
+            for i, g in enumerate(gems):
+                y0 = i * _ROW_H
+                cv.create_rectangle(
+                    0, y0, cw, y0 + _ROW_H, fill=lb_bg, outline="", tags=f"row_{i}"
+                )
+                cv.create_text(
+                    32,
+                    y0 + _ROW_H // 2,
+                    text=g.name,
+                    fill=lb_fg,
+                    font=("Consolas", 10),
+                    anchor="w",
+                    tags=f"text_{i}",
+                )
+                _aow_drawn_gems.append(g)
+            cv.configure(scrollregion=(0, 0, cw, len(gems) * _ROW_H))
+            _aow_icon_job[0] = dialog.after(80, lambda: _load_aow_icons(0))
+
+        def _load_aow_icons(start: int, batch: int = 20) -> None:
+            try:
+                from PIL import Image, ImageTk
+
+                from er_save_manager.data.icon_manager import get_icon
+            except Exception:
+                return
+            end = min(start + batch, len(_aow_drawn_gems))
+            max(cv.winfo_width(), 300)
+            for i in range(start, end):
+                g = _aow_drawn_gems[i]
+                try:
+                    _pil = get_icon(g.name)
+                    if _pil:
+                        _pil = _pil.convert("RGBA").resize((24, 24), Image.LANCZOS)
+                        _ph = ImageTk.PhotoImage(_pil)
+                        _aow_photos.append(_ph)
+                        y0 = i * _ROW_H
+                        cv.create_image(
+                            4, y0 + _ROW_H // 2, image=_ph, anchor="w", tags=f"row_{i}"
+                        )
+                except Exception:
+                    pass
+            if end < len(_aow_drawn_gems):
+                _aow_icon_job[0] = dialog.after(30, lambda: _load_aow_icons(end, batch))
+            else:
+                _aow_icon_job[0] = None
+                cv._photo_refs = _aow_photos  # prevent GC
+
+        def _aow_click(event) -> None:
+            cy = cv.canvasy(event.y)
+            idx = int(cy // _ROW_H)
+            if 0 <= idx < len(_aow_drawn_gems):
+                prev = _aow_sel_idx[0]
+                _aow_sel_idx[0] = idx
+                max(cv.winfo_width(), 300)
+                for i in (prev, idx):
+                    if i is None:
+                        continue
+                    cv.itemconfigure(
+                        f"row_{i}", fill=lb_sel if i == _aow_sel_idx[0] else lb_bg
+                    )
+
+        cv.bind("<Button-1>", _aow_click)
+        cv.bind("<Double-Button-1>", lambda e: (_aow_click(e), _confirm()))
 
         try:
             from er_save_manager.data.item_database import get_item_database
@@ -1645,18 +2027,16 @@ class InventoryEditor:
             q = search_var.get().lower().strip()
             visible_gems.clear()
             visible_gems.extend(g for g in all_gems if not q or q in g.name.lower())
-            lb.delete(0, tk.END)
-            for g in visible_gems[:200]:
-                lb.insert(tk.END, g.name)
+            _draw_aow_rows(visible_gems[:200])
 
         search_var.trace_add("write", _filter)
         _filter()
 
         def _confirm():
-            sel2 = lb.curselection()
-            if not sel2 or sel2[0] >= len(visible_gems):
+            idx2 = _aow_sel_idx[0]
+            if idx2 is None or idx2 >= len(visible_gems):
                 return
-            gem_item = visible_gems[sel2[0]]
+            gem_item = visible_gems[idx2]
             gem_full_id = 0x80000000 | gem_item.id
             dialog.destroy()
 
@@ -1704,7 +2084,6 @@ class InventoryEditor:
                     "Error", f"Failed to set AoW:\n{e}", parent=self.parent
                 )
 
-        lb.bind("<Double-Button-1>", lambda _e: _confirm())
         btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_row.pack(fill=ctk.X, padx=10, pady=(4, 10))
         ctk.CTkButton(btn_row, text="Apply", command=_confirm, width=90).pack(

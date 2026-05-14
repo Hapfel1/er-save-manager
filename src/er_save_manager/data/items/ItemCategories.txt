@@ -54,6 +54,7 @@
 0x00000000 false Items/Convergence/Spelltools/ConvergenceSpellTools.csv Convergence Spell Tools
 0x40000000 false Items/Convergence/Goods/ConvergenceKeystonesRemnants.csv Convergence Keystones and Remnants
 0x40000000 false Items/Convergence/Goods/ConvergenceStones.csv Convergence Stones
+0x40000000 false Items/Convergence/Goods/ConvergenceBellBearings.csv Convergence Bell Bearings
 0x40000000 false Items/Convergence/Goods/ConvergenceRunes.csv Convergence Runes
 0x40000000 false Items/Convergence/Goods/ConvergenceAshes.csv Convergence Ashes
 0x40000000 false Items/Convergence/Goods/ConvergenceNotes.csv Convergence Notes
