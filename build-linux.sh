@@ -43,6 +43,8 @@ pyinstaller --clean --noconfirm \
     --copy-metadata customtkinterthemes \
     --add-data src/resources:resources \
     --add-data src/er_save_manager/data/items:er_save_manager/data/items \
+    --add-data src/er_save_manager/data/icons.zip:er_save_manager/data \
+    --add-data src/er_save_manager/fixes/CSNetMan.bin:er_save_manager/fixes \
     --collect-data customtkinterthemes \
     --hidden-import customtkinterthemes \
     --hidden-import PIL._tkinter_finder \

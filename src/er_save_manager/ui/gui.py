@@ -938,6 +938,7 @@ class SaveManagerGUI:
             lambda: self.save_path,
             self.ensure_raw_data_mutable,
             on_inventory_changed=self._on_inventory_changed,
+            get_settings_callback=lambda: self.settings,
         )
         self.inventory_editor.setup_ui()
 
@@ -1043,7 +1044,7 @@ class SaveManagerGUI:
             filetypes = [(f"{profile.name} Saves", ext_str), ("All files", "*.*")]
             title = f"Select {profile.name} Save File"
         else:
-            filetypes = [("Save Files", "*.sl2 *.co2"), ("All files", "*.*")]
+            filetypes = [("Save Files", "*.sl2 *.co2, *.cnv"), ("All files", "*.*")]
             title = "Select Save File"
 
         filename = filedialog.askopenfilename(
