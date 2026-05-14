@@ -634,6 +634,25 @@ class SettingsTab:
             justify="left",
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
+        # Icon export in Visual Item Picker
+        self._icon_export_var = tk.BooleanVar(
+            value=self.settings.get("icon_export_enabled", False)
+        )
+        ctk.CTkCheckBox(
+            frame,
+            text="Enable icon export in Visual Item Picker",
+            variable=self._icon_export_var,
+            command=lambda: self.settings.set(
+                "icon_export_enabled", self._icon_export_var.get()
+            ),
+        ).pack(anchor="w", padx=12, pady=5)
+        ctk.CTkLabel(
+            frame,
+            text="Adds a Save Icon button to the Visual Item Picker for exporting item icons.",
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+        ).pack(anchor="w", padx=32, pady=(0, 12))
+
     def _create_launch_settings(self, parent) -> None:
         """CPU 0 exclusion settings -- Windows only."""
         import sys
@@ -680,6 +699,7 @@ class SettingsTab:
         self.settings.set("skip_game_running_check", False)
         self.settings.set("verbose_logging", False)
         self.settings.set("debug_netman_replace", False)
+        self.settings.set("icon_export_enabled", False)
         if self._advanced_frame is not None:
             self._advanced_frame.destroy()
             self._advanced_frame = None
@@ -719,6 +739,8 @@ class SettingsTab:
                 self.settings.set("cpu0_exclude_on_launch", False)
             if hasattr(self, "_debug_netman_var"):
                 self._debug_netman_var.set(False)
+            if hasattr(self, "_icon_export_var"):
+                self._icon_export_var.set(False)
             CTkMessageBox.showinfo(
                 "Success", "Settings have been reset to defaults.", parent=self.parent
             )
