@@ -276,7 +276,7 @@ class GesturesRegionsTab:
             checkbox.pack(anchor="w", pady=4, padx=8)
 
         # Remember initial unlocked set for delta calculation on apply
-        self._initial_unlocked = set(unlocked_gesture_ids)
+        self._initial_unlocked = unlocked_gesture_ids & set(all_gestures)
 
         self.show_toast(
             f"Loaded {len(self.gesture_states)} gestures for Slot {slot_idx + 1}",
