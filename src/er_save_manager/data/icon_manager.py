@@ -316,3 +316,90 @@ def get_icon(name: str, category_name: str = "") -> PILImage.Image | None:
 def coverage_stats() -> dict[str, int]:
     _ensure_loaded()
     return {"total_icons": len(_available) if _available else 0, "cached": len(_cache)}
+
+
+# ---- affinity icons ---------------------------------------------------------
+
+# Maps affinity display name -> icon lookup name.
+# Icons are stored as e.g. "Standard.webp" from Elden_Ring_Affinity_*.webp files.
+# Vanilla affinity icons
+_AFFINITY_ICON_VANILLA: dict[str, str] = {
+    "Standard": "Standard",
+    "Heavy": "Heavy",
+    "Keen": "Keen",
+    "Quality": "Quality",
+    "Fire": "Fire",
+    "Flame Art": "Flame Art",
+    "Lightning": "Lightning",
+    "Sacred": "Sacred",
+    "Magic": "Magic",
+    "Cold": "Cold",
+    "Poison": "Poison",
+    "Blood": "Blood",
+    "Occult": "Occult",
+}
+
+# Convergence affinity icons - user imports these with matching filenames
+_AFFINITY_ICON_CNV: dict[str, str] = {
+    "Standard": "Standard",
+    "Heavy": "Heavy",
+    "Keen": "Keen",
+    "Quality": "Quality",
+    "Glint": "Glint",
+    "Dragonkin": "Dragonkin",
+    "Gravity": "Gravity",
+    "Flame": "Flame",
+    "Golden": "Golden",
+    "Draconic": "Draconic",
+    "Bestial": "Bestial",
+    "Night": "Night",
+    "Lava": "Lava",
+    "Frenzy": "Frenzy",
+    "Death": "Death",
+    "Godslayer": "Godslayer",
+    "Frost": "Frost",
+    "Aberrant": "Aberrant",
+    "Bloodflame": "Bloodflame",
+    "Rotten": "Rotten",
+    "Storm": "Storm",
+    "Psionic": "Psionic",
+}
+
+# Combined map for backward-compat callers that don't pass is_convergence
+_AFFINITY_ICON: dict[str, str] = {**_AFFINITY_ICON_VANILLA, **_AFFINITY_ICON_CNV}
+
+
+def get_affinity_icon(
+    affinity_name: str, is_convergence: bool = False
+) -> PILImage.Image | None:
+    """Return the icon for an affinity name, or None if unavailable."""
+    table = _AFFINITY_ICON_CNV if is_convergence else _AFFINITY_ICON_VANILLA
+    icon_name = table.get(affinity_name, affinity_name)
+    return get_icon(icon_name)
+
+
+def compose_weapon_icon(
+    weapon: PILImage.Image,
+    aow: PILImage.Image | None = None,
+    affinity: PILImage.Image | None = None,
+    overlay_size: int = 26,
+) -> PILImage.Image:
+    """
+    Return a 64x64 composite: weapon base with optional AoW overlay (top-left)
+    and affinity overlay (bottom-right).
+    """
+    try:
+        from PIL import Image
+
+        base = weapon.copy().convert("RGBA").resize((64, 64), Image.LANCZOS)
+        if aow:
+            sm = aow.convert("RGBA").resize((overlay_size, overlay_size), Image.LANCZOS)
+            base.alpha_composite(sm, (2, 2))
+        if affinity:
+            sm = affinity.convert("RGBA").resize(
+                (overlay_size, overlay_size), Image.LANCZOS
+            )
+            base.alpha_composite(sm, (64 - overlay_size - 2, 64 - overlay_size - 2))
+        return base
+    except Exception:
+        return weapon
