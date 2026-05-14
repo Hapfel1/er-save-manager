@@ -52,6 +52,9 @@ class Item:
 
     # Goods fields (populated from goods CSVs)
     max_num: int = 1
+    max_repository_num: int = (
+        0  # 0 = same as max_num; set from maxRepositoryNum CSV column
+    )
 
     # Gem fields (populated from gem CSVs)
     compatible_wep_types: list = field(default_factory=list)
@@ -196,6 +199,7 @@ class ItemDatabase:
 
                 elif is_goods:
                     item.max_num = int(row.get("maxNum", 1) or 1)
+                    item.max_repository_num = int(row.get("maxRepositoryNum", 0) or 0)
 
                 elif is_gem:
                     compat = row.get("compatibleWepTypes", "")
@@ -207,7 +211,7 @@ class ItemDatabase:
                     item.allowed_affinities = allowed.split("|") if allowed else []
                     item.max_num = 1
 
-                self._register(item)
+                self._register(item, is_convergence=convergence)
 
     def _register(self, item: Item, is_convergence: bool = False):
         self.items.append(item)

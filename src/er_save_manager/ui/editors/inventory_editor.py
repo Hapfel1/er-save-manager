@@ -257,10 +257,11 @@ class InventoryEditor:
         browse_row.pack(fill=ctk.X, padx=10, pady=(0, 4))
         self._browse_btn = ctk.CTkButton(
             browse_row,
-            text="Browse with Icons",
+            text="Visual Item Picker...",
             height=28,
             command=self._open_icon_browser,
-            fg_color=("gray70", "gray35"),
+            fg_color=("#6a3fa0", "#7c4dac"),
+            hover_color=("#7c4dac", "#9d5fd4"),
             state="disabled",
         )
         self._browse_btn.pack(fill=ctk.X)
@@ -483,9 +484,11 @@ class InventoryEditor:
         ).pack(side=ctk.LEFT)
         ctk.CTkButton(
             search_row,
-            text="Visual",
-            width=72,
+            text="Visual Inventory...",
+            width=130,
             height=28,
+            fg_color=("#6a3fa0", "#7c4dac"),
+            hover_color=("#7c4dac", "#9d5fd4"),
             command=self._open_visual_inventory,
         ).pack(side=ctk.RIGHT)
 
@@ -779,22 +782,12 @@ class InventoryEditor:
 
     def _open_icon_browser(self):
         cat = self._search_cat_var.get() if hasattr(self, "_search_cat_var") else "All"
-        from er_save_manager.data.item_database import get_item_database
-        from er_save_manager.ui.icon_browser import IconBrowser
-
         cats = self._visible_categories()
         if cat == "All":
             cat = cats[0] if cats else ""
-        items = list(get_item_database().get_items_by_category(cat)) if cat else []
-        IconBrowser(
-            self.parent,
-            items,
-            self._apply_item_selection,
-            title=f"Browse: {cat}" if cat else "Browse Items",
-            categories=cats,
-            initial_category=cat,
-            on_category_change=self._sync_browse_category,
-        )
+        from er_save_manager.ui.icon_browser import IconBrowser
+
+        IconBrowser(self.parent, self, initial_category=cat)
 
     def _pick_aow(self):
         import tkinter as tk
@@ -1085,7 +1078,8 @@ class InventoryEditor:
         if max_arrow > 1:
             return max_arrow
         if location == "storage":
-            return getattr(item, "max_repository_num", getattr(item, "max_num", 1))
+            repo = getattr(item, "max_repository_num", 0)
+            return repo if repo > 0 else getattr(item, "max_num", 1)
         return getattr(item, "max_num", 1)
 
     def _validate_add_item(
@@ -1220,7 +1214,7 @@ class InventoryEditor:
         if is_weapon:
             affinity_name = self.inv_affinity_var.get()
             affinity_code = next(
-                (c for c, n in self._AFFINITIES if n == affinity_name), 0
+                (c for c, n in self._affinities() if n == affinity_name), 0
             )
             cat_bits = full_id & 0xF0000000
             base = full_id & 0x0FFFFFFF
