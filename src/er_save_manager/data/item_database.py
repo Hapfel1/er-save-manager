@@ -53,7 +53,7 @@ class Item:
     # Goods fields (populated from goods CSVs)
     max_num: int = 1
     max_repository_num: int = (
-        1  # max stack size in storage (from maxRepositoryNum param)
+        0  # 0 = same as max_num; set from maxRepositoryNum CSV column
     )
 
     # Gem fields (populated from gem CSVs)
@@ -199,9 +199,7 @@ class ItemDatabase:
 
                 elif is_goods:
                     item.max_num = int(row.get("maxNum", 1) or 1)
-                    item.max_repository_num = int(
-                        row.get("maxRepositoryNum", item.max_num) or item.max_num
-                    )
+                    item.max_repository_num = int(row.get("maxRepositoryNum", 0) or 0)
 
                 elif is_gem:
                     compat = row.get("compatibleWepTypes", "")
@@ -213,18 +211,32 @@ class ItemDatabase:
                     item.allowed_affinities = allowed.split("|") if allowed else []
                     item.max_num = 1
 
-                self._register(item)
+                self._register(item, is_convergence=convergence)
 
-    def _register(self, item: Item):
+    def _register(self, item: Item, is_convergence: bool = False):
         self.items.append(item)
-        self.items_by_id[item.full_id] = item
+        if is_convergence and item.full_id in self.items_by_id:
+            # Convergence renames a base-game item under the same ID.
+            # Store it separately so non-convergence saves keep the original name.
+            if not hasattr(self, "_convergence_overrides"):
+                self._convergence_overrides: dict[int, Item] = {}
+            self._convergence_overrides[item.full_id] = item
+        else:
+            self.items_by_id[item.full_id] = item
+        # Always register in the category list so browser shows all items.
         if item.category_name not in self.items_by_category:
             self.items_by_category[item.category_name] = []
         self.items_by_category[item.category_name].append(item)
 
     # ---- public query methods ------------------------------------------------
 
-    def get_item_by_id(self, full_item_id: int) -> "Item | None":
+    def get_item_by_id(
+        self, full_item_id: int, is_convergence: bool = False
+    ) -> "Item | None":
+        if is_convergence and hasattr(self, "_convergence_overrides"):
+            return self._convergence_overrides.get(
+                full_item_id
+            ) or self.items_by_id.get(full_item_id)
         return self.items_by_id.get(full_item_id)
 
     def get_item_by_base_id(
@@ -265,7 +277,9 @@ def get_item_database() -> ItemDatabase:
 # ---- convenience functions --------------------------------------------------
 
 
-def get_item_name(full_item_id: int, upgrade_level: int = 0) -> str:
+def get_item_name(
+    full_item_id: int, upgrade_level: int = 0, is_convergence: bool = False
+) -> str:
     db = get_item_database()
     base_id, category = db.decode_item_id(full_item_id)
 
@@ -273,7 +287,7 @@ def get_item_name(full_item_id: int, upgrade_level: int = 0) -> str:
     if category == ItemCategory.ARMOR and base_id in (0, 10000, 10100, 10200, 10300):
         return ""
 
-    item = db.get_item_by_id(full_item_id)
+    item = db.get_item_by_id(full_item_id, is_convergence)
     if item:
         if category == ItemCategory.WEAPON and upgrade_level > 0:
             return f"{item.name} +{upgrade_level}"

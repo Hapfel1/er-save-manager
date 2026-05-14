@@ -41,9 +41,10 @@ _SEED_COST = {
     14: 30,
 }
 
-_GOLDEN_SEED_ID = 0x4000272A  # 10010
-_SACRED_TEAR_ID = 0x40002734  # 10020
-_TALISMAN_POUCH_ID = 0x40002740  # 10040
+_GOLDEN_SEED_ID = 0x4000271A  # 10010
+_SACRED_TEAR_ID = 0x40002724  # 10020
+_MEMORY_STONE_ID = 0x4000272E  # 10030
+_TALISMAN_POUCH_ID = 0x40002738  # 10040
 _PHYSICK_EMPTY_ID = 0x400000FA  # 250 - Flask of Wondrous Physick (Empty)
 _PHYSICK_ID = 0x400000FB  # 251 - Flask of Wondrous Physick
 
@@ -246,7 +247,7 @@ def import_nyasu(
             ),
         )
 
-    # Talisman pouches
+    # Talisman pouches (max 3; editor can spawn these fine)
     unique_talismans = sum(1 for fid, *_ in queue if (fid & 0xF0000000) == 0x20000000)
     pouches_needed = max(0, min(3, unique_talismans - 1))
     pouches_have = _inv_qty(_TALISMAN_POUCH_ID)
@@ -256,6 +257,17 @@ def import_nyasu(
         queue.append(
             (_TALISMAN_POUCH_ID, pouches_to_give, 0, 0, "standard", "Talisman Pouch")
         )
+
+    # Memory stones: base slots = 2; each stone adds 1 when used at grace
+    spell_count = len(data.get("spells", {}).get("slots", []))
+    if spell_count > 2:
+        stones_have = _inv_qty(_MEMORY_STONE_ID)
+        stones_needed = max(0, spell_count - 2 - stones_have)
+        if stones_needed > 0:
+            seen_ids.add(_MEMORY_STONE_ID)
+            queue.append(
+                (_MEMORY_STONE_ID, stones_needed, 0, 0, "standard", "Memory Stone")
+            )
 
     # Flask upgrades: golden seeds (count) + sacred tears (level)
     flask_data = data.get("items", {}).get("flasks", {})
