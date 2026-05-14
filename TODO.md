@@ -1,8 +1,16 @@
-if multiple item name entries are in there display icons for all
+sorting as well as make a full visual popup
 
-only when selecting all does the browse icons button get active by default it is not on, change that
+aow and affinity setting done
 
-also add inventory browse poup that show the items with the images need to think how to redesign handle it, maybe make aow selection also use the icons as well as affinity, then also show items in inventory as that with the aows in the tob left small added and affinities in the bottom right
+check convergence icons done
+
+check conv affinities done
+
+conv affinity icons do not work add aow idcons as well done
+
+also add inventory browse poup that show the items with the images need to think how to redesign handle it, maybe make aow selection also use the icons as well as affinity, then also show items in inventory as that with the aows in the tob left small added and affinities in the bottom right done
+
+only when selecting all does the browse icons button get active by default it is not on, change that done
 
 fix great rune memory slot, talisman pouch import and flasks as well done
 
