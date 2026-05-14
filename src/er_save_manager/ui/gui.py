@@ -938,6 +938,7 @@ class SaveManagerGUI:
             lambda: self.save_path,
             self.ensure_raw_data_mutable,
             on_inventory_changed=self._on_inventory_changed,
+            get_settings_callback=lambda: self.settings,
         )
         self.inventory_editor.setup_ui()
 

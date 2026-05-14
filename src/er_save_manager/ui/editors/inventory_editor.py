@@ -155,6 +155,7 @@ class InventoryEditor:
         get_save_path_callback,
         ensure_mutable_callback,
         on_inventory_changed=None,
+        get_settings_callback=None,
     ):
         self.parent = parent
         self.get_save_file = get_save_file_callback
@@ -162,6 +163,7 @@ class InventoryEditor:
         self.get_save_path = get_save_path_callback
         self.ensure_mutable = ensure_mutable_callback
         self._on_inventory_changed = on_inventory_changed
+        self.get_settings = get_settings_callback
 
         self.selected_item = None
         self._all_rows: list[tuple[str, int | None, str | None]] = []
@@ -787,7 +789,13 @@ class InventoryEditor:
             cat = cats[0] if cats else ""
         from er_save_manager.ui.icon_browser import IconBrowser
 
-        IconBrowser(self.parent, self, initial_category=cat)
+        settings = self.get_settings() if self.get_settings else None
+        dev_icon_export = (
+            settings.get("icon_export_enabled", False) if settings else False
+        )
+        IconBrowser(
+            self.parent, self, initial_category=cat, dev_icon_export=dev_icon_export
+        )
 
     def _pick_aow(self):
         import tkinter as tk
