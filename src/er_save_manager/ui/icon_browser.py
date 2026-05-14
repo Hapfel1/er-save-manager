@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import tkinter as tk
 from typing import TYPE_CHECKING
 
@@ -30,6 +31,7 @@ class IconBrowser(ctk.CTkToplevel):
         parent,
         editor: InventoryEditor,
         initial_category: str = "",
+        dev_icon_export: bool = False,
     ):
         super().__init__(parent)
         self._editor = editor
@@ -40,6 +42,7 @@ class IconBrowser(ctk.CTkToplevel):
         self._current_cat = initial_category
         self._selected_item: Item | None = None
         self._selected_gem_id: int = 0
+        self._dev_icon_export = dev_icon_export
 
         w = _DEFAULT_COLS * (_CELL_W + _CELL_PAD * 2) + 12 + _SCROLLBAR_W + 30
         self.title("Add Item")
@@ -215,7 +218,20 @@ class IconBrowser(ctk.CTkToplevel):
             command=self._do_add,
             state="disabled",
         )
-        self._add_btn.pack(fill=ctk.X)
+        self._add_btn.pack(side=ctk.LEFT, fill=ctk.X, expand=True)
+        if self._dev_icon_export:
+            self._save_icon_btn = ctk.CTkButton(
+                add_row,
+                text="Save Icon",
+                height=34,
+                width=100,
+                fg_color=("gray70", "gray35"),
+                command=self._save_icon,
+                state="disabled",
+            )
+            self._save_icon_btn.pack(side=ctk.LEFT, padx=(6, 0))
+        else:
+            self._save_icon_btn = None
 
     # ---- items ---------------------------------------------------------------
 
@@ -380,6 +396,8 @@ class IconBrowser(ctk.CTkToplevel):
             self._clear_aow()
 
         self._add_btn.configure(state="normal")
+        if self._save_icon_btn:
+            self._save_icon_btn.configure(state="normal")
 
     # ---- icon helpers --------------------------------------------------------
 
@@ -605,6 +623,40 @@ class IconBrowser(ctk.CTkToplevel):
         )
 
     # ---- add -----------------------------------------------------------------
+
+    def _save_icon(self):
+        if not self._selected_item:
+            return
+        from er_save_manager.data.icon_manager import get_icon
+
+        img = get_icon(
+            self._selected_item.name,
+            getattr(self._selected_item, "category_name", ""),
+        )
+        if img is None:
+            from er_save_manager.ui.messagebox import CTkMessageBox
+
+            CTkMessageBox.showwarning(
+                "No Icon",
+                f"No icon found for {self._selected_item.name}.",
+                parent=self,
+            )
+            return
+
+        from tkinter import filedialog
+
+        safe_name = re.sub(r'[\/:*?"<>|]', "_", self._selected_item.name)
+        path = filedialog.asksaveasfilename(
+            parent=self,
+            defaultextension=".webp",
+            initialfile=f"{safe_name}.webp",
+            filetypes=[("WebP image", "*.webp"), ("PNG image", "*.png")],
+            title="Save Icon",
+        )
+        if not path:
+            return
+        fmt = "PNG" if path.lower().endswith(".png") else "WEBP"
+        img.save(path, fmt)
 
     def _do_add(self):
         if not self._selected_item:
