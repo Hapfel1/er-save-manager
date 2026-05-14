@@ -610,11 +610,16 @@ class IconBrowser(ctk.CTkToplevel):
         if not self._selected_item:
             return
         editor = self._editor
-        # Sync local form state to editor vars, then delegate fully
         editor.selected_item = self._selected_item
         editor.inv_quantity_var.set(self._qty_var.get())
         editor.inv_upgrade_var.set(self._upgrade_var.get())
         editor.inv_affinity_var.set(self._affinity_var.get())
         editor.inv_location_var.set(self._location_var.get())
         editor._selected_gem_id = self._selected_gem_id
-        editor.add_item()
+        # Parent dialogs to this window so grab_set is not lost on error
+        orig_parent = editor.parent
+        editor.parent = self
+        try:
+            editor.add_item()
+        finally:
+            editor.parent = orig_parent
