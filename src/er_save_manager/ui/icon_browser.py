@@ -23,8 +23,8 @@ _SCROLLBAR_W = 24
 def _center_over(window, parent) -> None:
     """Position window centered over parent."""
     window.update_idletasks()
-    w = window.winfo_width()
-    h = window.winfo_height()
+    w = window.winfo_reqwidth()
+    h = window.winfo_reqheight()
     x = max(0, parent.winfo_rootx() + (parent.winfo_width() - w) // 2)
     y = max(0, parent.winfo_rooty() + (parent.winfo_height() - h) // 2)
     window.geometry(f"+{x}+{y}")

@@ -19,11 +19,50 @@ from er_save_manager.ui.utils import bind_mousewheel
 def _center_over(window, parent) -> None:
     """Position window centered over parent."""
     window.update_idletasks()
-    w = window.winfo_width()
-    h = window.winfo_height()
+    w = window.winfo_reqwidth()
+    h = window.winfo_reqheight()
     x = max(0, parent.winfo_rootx() + (parent.winfo_width() - w) // 2)
     y = max(0, parent.winfo_rooty() + (parent.winfo_height() - h) // 2)
     window.geometry(f"+{x}+{y}")
+
+
+def _ask_value(title: str, text: str, parent) -> str | None:
+    """Centered modal single-line input dialog."""
+    result: list = [None]
+    dialog = ctk.CTkToplevel(parent)
+    dialog.title(title)
+    dialog.resizable(False, False)
+    dialog.transient(parent)
+    dialog.attributes("-alpha", 0)
+    ctk.CTkLabel(dialog, text=text, wraplength=260, anchor="w").pack(
+        padx=20, pady=(16, 6), fill="x"
+    )
+    var = ctk.StringVar()
+    entry = ctk.CTkEntry(dialog, textvariable=var, width=260)
+    entry.pack(padx=20, pady=(0, 10))
+    btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
+    btn_row.pack(fill="x", padx=20, pady=(0, 16))
+
+    def _ok(_e=None):
+        result[0] = var.get()
+        dialog.destroy()
+
+    entry.bind("<Return>", _ok)
+    entry.bind("<Escape>", lambda _e: dialog.destroy())
+    ctk.CTkButton(btn_row, text="OK", command=_ok, width=80).pack(side="left")
+    ctk.CTkButton(
+        btn_row,
+        text="Cancel",
+        command=dialog.destroy,
+        width=80,
+        fg_color=("gray70", "gray35"),
+    ).pack(side="right")
+    _center_over(dialog, parent)
+    dialog.attributes("-alpha", 1)
+    dialog.grab_set()
+    entry.focus_set()
+    dialog.wait_window()
+    return result[0]
 
 
 def _decode_inv_item(inv_item, gaitem_map: dict) -> tuple[int, int]:
@@ -1383,10 +1422,11 @@ class InventoryEditor:
             )
             return
 
-        qty_str = ctk.CTkInputDialog(
-            text=f"Enter new quantity{f' (max {max_qty})' if max_qty else ''}:",
-            title="Set Quantity",
-        ).get_input()
+        qty_str = _ask_value(
+            "Set Quantity",
+            f"Enter new quantity{f' (max {max_qty})' if max_qty else ''}:",
+            self.parent,
+        )
         if qty_str is None:
             return
         try:
@@ -1522,9 +1562,11 @@ class InventoryEditor:
         else:
             cap = 25 if reinforcement == "standard" else 10
 
-        upg_str = ctk.CTkInputDialog(
-            text=f"Enter upgrade level (0-{cap}):", title="Set Upgrade"
-        ).get_input()
+        upg_str = _ask_value(
+            "Set Upgrade",
+            f"Enter upgrade level (0-{cap}):",
+            self.parent,
+        )
         if upg_str is None:
             return
         try:
