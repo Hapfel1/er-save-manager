@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import platform as _platform
 import re
 import tkinter as tk
 from typing import TYPE_CHECKING
@@ -18,6 +19,37 @@ _CELL_W = 116
 _CELL_H = 110
 _CELL_PAD = 4
 _SCROLLBAR_W = 24
+
+
+def _patch_combo_scroll(combo):
+    """Bind mousewheel to CTkComboBox dropdown on Windows. Returns combo."""
+    if _platform.system() != "Windows":
+        return combo
+    orig = combo._open_dropdown_menu
+
+    def _open():
+        orig()
+        dm = getattr(combo, "_dropdown_menu", None)
+        if dm is None:
+            return
+        frame = getattr(dm, "_frame", None)
+        if frame is None:
+            return
+        canvas = getattr(frame, "_parent_canvas", None)
+        if canvas is None:
+            return
+
+        def _scroll(e):
+            canvas.yview_scroll(int(-e.delta / 120), "units")
+
+        canvas.bind("<MouseWheel>", _scroll, add="+")
+        for child in frame.winfo_children():
+            child.bind("<MouseWheel>", _scroll, add="+")
+            for sub in child.winfo_children():
+                sub.bind("<MouseWheel>", _scroll, add="+")
+
+    combo._open_dropdown_menu = _open
+    return combo
 
 
 def _center_over(window, parent) -> None:
@@ -105,11 +137,13 @@ class IconBrowser(ctk.CTkToplevel):
         ctk.CTkLabel(cat_row, text="Category:", width=68).pack(side=ctk.LEFT)
         cats = self._editor._visible_categories()
         self._cat_var = ctk.StringVar(value=self._current_cat)
-        ctk.CTkComboBox(
-            cat_row,
-            variable=self._cat_var,
-            values=cats,
-            command=self._on_category_change,
+        _patch_combo_scroll(
+            ctk.CTkComboBox(
+                cat_row,
+                variable=self._cat_var,
+                values=cats,
+                command=self._on_category_change,
+            )
         ).pack(side=ctk.LEFT, fill=ctk.X, expand=True)
 
         self._scroll = ctk.CTkScrollableFrame(self)
@@ -153,6 +187,7 @@ class IconBrowser(ctk.CTkToplevel):
             opts, variable=self._upgrade_var, values=["0"], width=70, state="disabled"
         )
         self._upgrade_combo.grid(row=0, column=3, sticky=ctk.W, pady=3)
+        _patch_combo_scroll(self._upgrade_combo)
 
         # Affinity + Location
         ctk.CTkLabel(opts, text="Affinity:", anchor="w").grid(
@@ -172,6 +207,7 @@ class IconBrowser(ctk.CTkToplevel):
             command=self._on_affinity_changed,
         )
         self._affinity_combo.pack(side=ctk.LEFT)
+        _patch_combo_scroll(self._affinity_combo)
 
         ctk.CTkLabel(opts, text="Location:", anchor="w").grid(
             row=1, column=2, sticky=ctk.W, padx=(14, 6), pady=3

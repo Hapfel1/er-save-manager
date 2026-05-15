@@ -4,6 +4,8 @@ Inventory Editor - add, remove, and set quantities using inventory_ops.
 
 from __future__ import annotations
 
+# ---- item-id helpers --------------------------------------------------------
+import platform as _platform
 import tkinter as tk
 from pathlib import Path
 
@@ -13,7 +15,36 @@ from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.toast import show_toast
 from er_save_manager.ui.utils import bind_mousewheel
 
-# ---- item-id helpers --------------------------------------------------------
+
+def _patch_combo_scroll(combo):
+    """Bind mousewheel to CTkComboBox dropdown on Windows. Returns combo."""
+    if _platform.system() != "Windows":
+        return combo
+    orig = combo._open_dropdown_menu
+
+    def _open():
+        orig()
+        dm = getattr(combo, "_dropdown_menu", None)
+        if dm is None:
+            return
+        frame = getattr(dm, "_frame", None)
+        if frame is None:
+            return
+        canvas = getattr(frame, "_parent_canvas", None)
+        if canvas is None:
+            return
+
+        def _scroll(e):
+            canvas.yview_scroll(int(-e.delta / 120), "units")
+
+        canvas.bind("<MouseWheel>", _scroll, add="+")
+        for child in frame.winfo_children():
+            child.bind("<MouseWheel>", _scroll, add="+")
+            for sub in child.winfo_children():
+                sub.bind("<MouseWheel>", _scroll, add="+")
+
+    combo._open_dropdown_menu = _open
+    return combo
 
 
 def _center_over(window, parent) -> None:
@@ -302,6 +333,7 @@ class InventoryEditor:
             command=lambda _e=None: (self._search_items(), self._update_browse_state()),
         )
         self._search_cat_combo.pack(side=ctk.LEFT)
+        _patch_combo_scroll(self._search_cat_combo)
         self._populate_search_categories()
 
         browse_row = ctk.CTkFrame(parent, fg_color="transparent")
@@ -390,6 +422,7 @@ class InventoryEditor:
             state="disabled",
         )
         self._upgrade_combo.grid(row=0, column=3, sticky=ctk.W, pady=4)
+        _patch_combo_scroll(self._upgrade_combo)
 
         ctk.CTkLabel(opts, text="Affinity:", anchor="w").grid(
             row=1, column=0, sticky=ctk.W, padx=(0, 6), pady=4
@@ -408,6 +441,7 @@ class InventoryEditor:
             command=self._on_affinity_combo_changed,
         )
         self._affinity_combo.pack(side=ctk.LEFT)
+        _patch_combo_scroll(self._affinity_combo)
 
         ctk.CTkLabel(opts, text="Location:", anchor="w").grid(
             row=1, column=2, sticky=ctk.W, padx=(14, 6), pady=4
