@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gc
+import platform as _platform
 import re
 import tkinter as tk
 from typing import TYPE_CHECKING
@@ -100,6 +101,37 @@ def _cell_icon(full_id, gaitem_handle, slot, aff_code, affinity_names):
         return None
 
 
+def _patch_combo_scroll(combo):
+    """Bind mousewheel to CTkComboBox dropdown on Windows. Returns combo."""
+    if _platform.system() != "Windows":
+        return combo
+    orig = combo._open_dropdown_menu
+
+    def _open():
+        orig()
+        dm = getattr(combo, "_dropdown_menu", None)
+        if dm is None:
+            return
+        frame = getattr(dm, "_frame", None)
+        if frame is None:
+            return
+        canvas = getattr(frame, "_parent_canvas", None)
+        if canvas is None:
+            return
+
+        def _scroll(e):
+            canvas.yview_scroll(int(-e.delta / 120), "units")
+
+        canvas.bind("<MouseWheel>", _scroll, add="+")
+        for child in frame.winfo_children():
+            child.bind("<MouseWheel>", _scroll, add="+")
+            for sub in child.winfo_children():
+                sub.bind("<MouseWheel>", _scroll, add="+")
+
+    combo._open_dropdown_menu = _open
+    return combo
+
+
 def _center_over(window, parent) -> None:
     """Position window centered over parent."""
     window.update_idletasks()
@@ -179,6 +211,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             command=self._on_cat_changed,
         )
         self._cat_combo.pack(side=ctk.LEFT, padx=(0, 8))
+        _patch_combo_scroll(self._cat_combo)
 
         self._filter_var = ctk.StringVar()
         self._filter_var.trace_add("write", lambda *_: self._apply_filter())

@@ -1,6 +1,8 @@
-colossal somber stone in non cnv save
+center pick item and inventory editor visual popups and check how to make category drop down scrollable
 
-sorting as well as make a full visual popup
+colossal somber stone in non cnv save done
+
+sorting as well as make a full visual popup done
 
 aow and affinity setting done
 
