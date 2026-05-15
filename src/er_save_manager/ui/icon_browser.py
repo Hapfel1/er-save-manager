@@ -32,34 +32,63 @@ def _patch_combo_scroll(combo):
         dm = getattr(combo, "_dropdown_menu", None)
         if dm is None:
             return
-        frame = getattr(dm, "_frame", None)
-        if frame is None:
-            return
-        canvas = getattr(frame, "_parent_canvas", None)
-        if canvas is None:
-            return
 
-        def _scroll(e):
-            canvas.yview_scroll(int(-e.delta / 120), "units")
+        def _setup():
+            import tkinter as _tk
 
-        canvas.bind("<MouseWheel>", _scroll, add="+")
-        for child in frame.winfo_children():
-            child.bind("<MouseWheel>", _scroll, add="+")
-            for sub in child.winfo_children():
-                sub.bind("<MouseWheel>", _scroll, add="+")
+            canvas = getattr(dm, "_canvas", None)
+            if canvas is None:
+
+                def _find(w):
+                    if isinstance(w, _tk.Canvas):
+                        return w
+                    for c in w.winfo_children():
+                        found = _find(c)
+                        if found:
+                            return found
+                    return None
+
+                canvas = _find(dm)
+            if canvas is None:
+                return
+
+            def _scroll(e):
+                canvas.yview_scroll(int(-e.delta / 120), "units")
+
+            def _bind_all(w):
+                try:
+                    w.bind("<MouseWheel>", _scroll, add="+")
+                    for child in w.winfo_children():
+                        _bind_all(child)
+                except Exception:
+                    pass
+
+            _bind_all(dm)
+
+        dm.after(50, _setup)
 
     combo._open_dropdown_menu = _open
     return combo
 
 
-def _center_over(window, parent) -> None:
-    """Position window centered over parent."""
-    window.update_idletasks()
-    w = window.winfo_reqwidth()
-    h = window.winfo_reqheight()
+def _center_over(window, parent, w=None, h=None, *, top=False) -> None:
+    """Center window over parent. Pass w/h explicitly to avoid pre-map size queries."""
+    import re as _re
+
+    if w is None:
+        window.update_idletasks()
+        w = window.winfo_reqwidth()
+    if h is None:
+        window.update_idletasks()
+        h = window.winfo_reqheight()
     x = max(0, parent.winfo_rootx() + (parent.winfo_width() - w) // 2)
-    y = max(0, parent.winfo_rooty() + (parent.winfo_height() - h) // 2)
-    window.geometry(f"+{x}+{y}")
+    if top:
+        # wm_geometry gives the outer frame Y (includes titlebar) on all platforms
+        m = _re.search(r"\+(\-?\d+)\+(\-?\d+)$", parent.winfo_toplevel().wm_geometry())
+        y = int(m.group(2)) if m else parent.winfo_rooty()
+    else:
+        y = max(0, parent.winfo_rooty() + (parent.winfo_height() - h) // 2)
+    window.geometry(f"+{x}+{max(0, y)}")
 
 
 class IconBrowser(ctk.CTkToplevel):
@@ -94,7 +123,7 @@ class IconBrowser(ctk.CTkToplevel):
         self.transient(parent)
         self.attributes("-alpha", 0)
         self.update_idletasks()
-        _center_over(self, parent)
+        _center_over(self, parent, w, 800, top=True)
         self.attributes("-alpha", 1)
         self.grab_set()
 
@@ -502,7 +531,7 @@ class IconBrowser(ctk.CTkToplevel):
         dialog.transient(self)
         dialog.attributes("-alpha", 0)
         dialog.update_idletasks()
-        _center_over(dialog, self)
+        _center_over(dialog, self, 400, 420)
         dialog.attributes("-alpha", 1)
         dialog.grab_set()
         dialog.lift()
