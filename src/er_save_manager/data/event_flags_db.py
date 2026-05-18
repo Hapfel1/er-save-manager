@@ -6331,7 +6331,7 @@ EVENT_FLAGS = {
         "subcategory": "Altus Plateau",
         "related_flags": [1037510810, 1041520820, 530300],
     },
-    1037530800: {
+    31090800: {
         "name": "[Mt. Gelmir] Demi-Human Queen Margot | Defeated",
         "category": "Bosses",
         "subcategory": "Mt. Gelmir",
@@ -7285,7 +7285,7 @@ FLAGS_BY_CATEGORY = {
             1035530800,
             1036540800,
             1037530800,
-            1037530800,
+            31090800,
             1037540810,
         ],
         "Rauh Base": [40010800, 2044470800],
