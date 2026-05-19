@@ -53,6 +53,7 @@
 0x10000000 false Items/Convergence/Armor/ConvergenceArmor.csv Convergence Armor
 0x00000000 false Items/Convergence/Spelltools/ConvergenceSpellTools.csv Convergence Spell Tools
 0x40000000 false Items/Convergence/Goods/ConvergenceKeystonesRemnants.csv Convergence Keystones and Remnants
+0x40000000 false Items/Convergence/Goods/ConvergenceSteeds.csv Convergence Steeds
 0x40000000 false Items/Convergence/Goods/ConvergenceStones.csv Convergence Stones
 0x40000000 false Items/Convergence/Goods/ConvergenceBellBearings.csv Convergence Bell Bearings
 0x40000000 false Items/Convergence/Goods/ConvergenceRunes.csv Convergence Runes

@@ -29,8 +29,6 @@
 4602,[Sorcery] Curse of Midnight
 4603,[Sorcery] Quicksilver Shard
 4621,[Sorcery] Quicksilver Comet
-4641,[Sorcery] Carian Retaliation (Unused 1)
-4642,[Sorcery] Carian Retaliation (Unused 2)
 4671,[Sorcery] Oath of Darkness
 4672,[Sorcery] Attune of the Black Moon
 4680,[Sorcery] Nox Simulacrum
@@ -75,7 +73,7 @@
 4971,[Sorcery] Ritual of Desecration
 4972,[Sorcery] Sadistic Glee
 4980,[Sorcery] Briar-Wrapped Armament
-4990,[Sorcery] Aberrant Ascention
+4990,[Sorcery] Aberrant Ascension
 4991,[Sorcery] Blood Revelry
 5002,[Sorcery] Rancor Bolt
 5011,[Sorcery] Rancorstorm
@@ -142,7 +140,6 @@
 6211,[Incantation] Burrowing Black Flame
 6220,[Incantation] Surge- O Flame
 6231,[Incantation] Black Flame Wave
-6251,[Incantation] Frenzy Flame Blade
 6261,[Incantation] Godslayer's Devotion
 6262,[Incantation] Wrath of the Queen
 6280,[Incantation] Black Flame Mortar
@@ -171,7 +168,6 @@
 6371,[Incantation] Hidden Mother's Blessing
 6431,[Incantation] Blessing of The Erdtree
 6501,[Sorcery] Night Maiden's Fog
-6511,[Incantation] Weakness
 6610,[Incantation] Rune Shards
 6620,[Incantation] Golden Land
 6630,[Incantation] Elden Blade
@@ -235,7 +231,6 @@
 7323,[Incantation] Hyetta's Flare
 7331,[Incantation] Mark of Frenzy
 7332,[Incantation] Tendrils of Shabriri
-7340,[Incantation] Rain of Chaos (cut)
 7341,[Incantation] Three Finger Flare
 7350,[Incantation] Deranged Fury
 7351,[Incantation] Disintegration
@@ -244,12 +239,10 @@
 7370,[Incantation] Apocalyptic Flames
 7380,[Incantation] Heart of Chaos
 7381,[Incantation] Three Finger's Embrace
-7390,[Incantation] Midra's Devastation
 7400,[Incantation] Soporific Fume
 7401,[Incantation] Dream Siphon
 7402,[Incantation] Spirit Vapor
 7410,[Incantation] Dream Cloak
-7411,[Incantation] Phantom Pain
 7412,[Incantation] Berserk
 7413,[Incantation] Spirit Link
 7414,[Incantation] Psychic Agony
