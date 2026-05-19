@@ -651,7 +651,7 @@ BOSSES = {
     # Mt. Gelmir (7 bosses)
     "Demi-Human Queen Maggie": {"flags": [1037530800, 60450], "category": "Mt. Gelmir"},
     "Demi-Human Queen Margot": {
-        "flags": [1037530800, 9240, 520400, 61240, 1240],
+        "flags": [31090800, 9240, 520400, 61240, 1240],
         "category": "Mt. Gelmir",
     },
     "Full-Grown Fallingstar Beast": {
