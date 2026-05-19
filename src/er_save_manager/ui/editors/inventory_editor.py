@@ -4,6 +4,8 @@ Inventory Editor - add, remove, and set quantities using inventory_ops.
 
 from __future__ import annotations
 
+# ---- item-id helpers --------------------------------------------------------
+import platform as _platform
 import tkinter as tk
 from pathlib import Path
 
@@ -13,17 +15,75 @@ from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.toast import show_toast
 from er_save_manager.ui.utils import bind_mousewheel
 
-# ---- item-id helpers --------------------------------------------------------
+
+def _patch_combo_scroll(combo):
+    """Bind mousewheel to CTkComboBox dropdown on Windows. Returns combo."""
+    if _platform.system() != "Windows":
+        return combo
+    orig = combo._open_dropdown_menu
+
+    def _open():
+        orig()
+        dm = getattr(combo, "_dropdown_menu", None)
+        if dm is None:
+            return
+
+        def _setup():
+            import tkinter as _tk
+
+            canvas = getattr(dm, "_canvas", None)
+            if canvas is None:
+
+                def _find(w):
+                    if isinstance(w, _tk.Canvas):
+                        return w
+                    for c in w.winfo_children():
+                        found = _find(c)
+                        if found:
+                            return found
+                    return None
+
+                canvas = _find(dm)
+            if canvas is None:
+                return
+
+            def _scroll(e):
+                canvas.yview_scroll(int(-e.delta / 120), "units")
+
+            def _bind_all(w):
+                try:
+                    w.bind("<MouseWheel>", _scroll, add="+")
+                    for child in w.winfo_children():
+                        _bind_all(child)
+                except Exception:
+                    pass
+
+            _bind_all(dm)
+
+        dm.after(50, _setup)
+
+    combo._open_dropdown_menu = _open
+    return combo
 
 
-def _center_over(window, parent) -> None:
-    """Position window centered over parent."""
-    window.update_idletasks()
-    w = window.winfo_reqwidth()
-    h = window.winfo_reqheight()
+def _center_over(window, parent, w=None, h=None, *, top=False) -> None:
+    """Center window over parent. Pass w/h explicitly to avoid pre-map size queries."""
+    import re as _re
+
+    if w is None:
+        window.update_idletasks()
+        w = window.winfo_reqwidth()
+    if h is None:
+        window.update_idletasks()
+        h = window.winfo_reqheight()
     x = max(0, parent.winfo_rootx() + (parent.winfo_width() - w) // 2)
-    y = max(0, parent.winfo_rooty() + (parent.winfo_height() - h) // 2)
-    window.geometry(f"+{x}+{y}")
+    if top:
+        # wm_geometry gives the outer frame Y (includes titlebar) on all platforms
+        m = _re.search(r"\+(\-?\d+)\+(\-?\d+)$", parent.winfo_toplevel().wm_geometry())
+        y = int(m.group(2)) if m else parent.winfo_rooty()
+    else:
+        y = max(0, parent.winfo_rooty() + (parent.winfo_height() - h) // 2)
+    window.geometry(f"+{x}+{max(0, y)}")
 
 
 def _ask_value(title: str, text: str, parent) -> str | None:
@@ -172,6 +232,9 @@ class InventoryEditor:
         return dict(self._affinities())
 
     def _is_cnv_save(self) -> bool:
+        sf = self.get_save_file()
+        if sf and hasattr(sf, "is_convergence"):
+            return bool(sf.is_convergence)
         return ".cnv" in str(self.get_save_path() or "").lower()
 
     _SEAMLESS_CATS = {"Seamless Co-op Items"}
@@ -182,6 +245,7 @@ class InventoryEditor:
         "Convergence Armor",
         "Convergence Spell Tools",
         "Convergence Keystones and Remnants",
+        "Convergence Steeds",
         "Convergence Stones",
         "Convergence Runes",
         "Convergence Notes",
@@ -302,6 +366,7 @@ class InventoryEditor:
             command=lambda _e=None: (self._search_items(), self._update_browse_state()),
         )
         self._search_cat_combo.pack(side=ctk.LEFT)
+        _patch_combo_scroll(self._search_cat_combo)
         self._populate_search_categories()
 
         browse_row = ctk.CTkFrame(parent, fg_color="transparent")
@@ -390,6 +455,7 @@ class InventoryEditor:
             state="disabled",
         )
         self._upgrade_combo.grid(row=0, column=3, sticky=ctk.W, pady=4)
+        _patch_combo_scroll(self._upgrade_combo)
 
         ctk.CTkLabel(opts, text="Affinity:", anchor="w").grid(
             row=1, column=0, sticky=ctk.W, padx=(0, 6), pady=4
@@ -408,6 +474,7 @@ class InventoryEditor:
             command=self._on_affinity_combo_changed,
         )
         self._affinity_combo.pack(side=ctk.LEFT)
+        _patch_combo_scroll(self._affinity_combo)
 
         ctk.CTkLabel(opts, text="Location:", anchor="w").grid(
             row=1, column=2, sticky=ctk.W, padx=(14, 6), pady=4
@@ -620,9 +687,9 @@ class InventoryEditor:
         except Exception:
             return []
 
-        save_path = str(self.get_save_path() or "")
+        save_path = str(self.get_save_path() or "").lower()
         is_co2 = ".co2" in save_path
-        is_cnv = ".cnv" in save_path
+        is_cnv = self._is_cnv_save()
 
         return [
             c
@@ -690,7 +757,7 @@ class InventoryEditor:
         is_weapon = self.selected_item.category == 0x00000000
         is_armor = self.selected_item.category == 0x10000000
         is_gem = self.selected_item.category == 0x80000000
-        is_ashes = self.selected_item.category_name in ("Ashes", "DLC Ashes")
+        is_ashes = "Ashes" in self.selected_item.category_name
         is_upgradable = is_weapon or is_ashes
         reinforcement = (
             getattr(self.selected_item, "reinforcement", "standard")
@@ -856,7 +923,7 @@ class InventoryEditor:
         dialog.transient(self.parent)
         dialog.attributes("-alpha", 0)
         dialog.update_idletasks()
-        _center_over(dialog, self.parent)
+        _center_over(dialog, self.parent, 380, 400)
         dialog.attributes("-alpha", 1)
         dialog.grab_set()
         dialog.lift()
@@ -1225,7 +1292,7 @@ class InventoryEditor:
         is_weapon = cat == 0x00000000
         is_armor = cat == 0x10000000
         is_gem = cat == 0x80000000
-        is_ashes = self.selected_item.category_name in ("Ashes", "DLC Ashes")
+        is_ashes = "Ashes" in self.selected_item.category_name
 
         try:
             qty = int(self.inv_quantity_var.get())
@@ -1681,7 +1748,7 @@ class InventoryEditor:
         dialog.resizable(False, True)
         dialog.transient(self.parent)
         dialog.update_idletasks()
-        _center_over(dialog, self.parent)
+        _center_over(dialog, self.parent, 260, 400)
         dialog.grab_set()
         dialog.lift()
         dialog.focus_force()
@@ -1878,7 +1945,7 @@ class InventoryEditor:
         dialog.resizable(False, True)
         dialog.transient(self.parent)
         dialog.update_idletasks()
-        _center_over(dialog, self.parent)
+        _center_over(dialog, self.parent, 380, 440)
         dialog.grab_set()
         dialog.lift()
         dialog.focus_force()
