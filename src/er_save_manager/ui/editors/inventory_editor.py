@@ -232,6 +232,9 @@ class InventoryEditor:
         return dict(self._affinities())
 
     def _is_cnv_save(self) -> bool:
+        sf = self.get_save_file()
+        if sf and hasattr(sf, "is_convergence"):
+            return bool(sf.is_convergence)
         return ".cnv" in str(self.get_save_path() or "").lower()
 
     _SEAMLESS_CATS = {"Seamless Co-op Items"}
@@ -242,6 +245,7 @@ class InventoryEditor:
         "Convergence Armor",
         "Convergence Spell Tools",
         "Convergence Keystones and Remnants",
+        "Convergence Steeds",
         "Convergence Stones",
         "Convergence Runes",
         "Convergence Notes",
@@ -683,9 +687,9 @@ class InventoryEditor:
         except Exception:
             return []
 
-        save_path = str(self.get_save_path() or "")
+        save_path = str(self.get_save_path() or "").lower()
         is_co2 = ".co2" in save_path
-        is_cnv = ".cnv" in save_path
+        is_cnv = self._is_cnv_save()
 
         return [
             c
@@ -753,7 +757,7 @@ class InventoryEditor:
         is_weapon = self.selected_item.category == 0x00000000
         is_armor = self.selected_item.category == 0x10000000
         is_gem = self.selected_item.category == 0x80000000
-        is_ashes = self.selected_item.category_name in ("Ashes", "DLC Ashes")
+        is_ashes = "Ashes" in self.selected_item.category_name
         is_upgradable = is_weapon or is_ashes
         reinforcement = (
             getattr(self.selected_item, "reinforcement", "standard")
@@ -1288,7 +1292,7 @@ class InventoryEditor:
         is_weapon = cat == 0x00000000
         is_armor = cat == 0x10000000
         is_gem = cat == 0x80000000
-        is_ashes = self.selected_item.category_name in ("Ashes", "DLC Ashes")
+        is_ashes = "Ashes" in self.selected_item.category_name
 
         try:
             qty = int(self.inv_quantity_var.get())
