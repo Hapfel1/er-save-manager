@@ -26,6 +26,7 @@ dependencies = [
     "certifi>=2023.7.22",
     "packaging>=23.0",
     "cryptography>=46.0.3",
+    "pycryptodome>=3.23.0",
 ]
 
 [project.scripts]

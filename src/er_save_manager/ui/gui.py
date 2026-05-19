@@ -128,6 +128,9 @@ class SaveManagerGUI:
         # Active game (key from game_profiles.py); drives which tabs are shown
         self.active_game = "elden_ring"
 
+        # DSR-specific parsed save (separate from ER save_file)
+        self.dsr_save = None
+
         # Refs to file-frame buttons that should be disabled for non-ER games
         self._file_load_buttons: list = []
 
@@ -624,6 +627,8 @@ class SaveManagerGUI:
 
         # Null out all tab references so _finalize_save_load doesn't call methods
         # on widgets that are about to be destroyed.
+        self.dsr_save = None
+
         for attr in (
             "inspector_tab",
             "char_mgmt_tab",
@@ -635,6 +640,11 @@ class SaveManagerGUI:
             "hex_tab",
             "advanced_tab",
             "settings_tab",
+            "dsr_inspector_tab",
+            "dsr_editor_tab",
+            "dsr_inventory_tab",
+            "dsr_npc_tab",
+            "dsr_world_tab",
         ):
             setattr(self, attr, None)
 
@@ -821,6 +831,57 @@ class SaveManagerGUI:
             )
             self.steamid_tab.setup_ui()
             self.steamid_tab.set_active_profile(profile.name)
+
+        if profile.key == "dark_souls_remastered":
+            from er_save_manager.games.DSR.editor_tab import DSREditorTab
+            from er_save_manager.games.DSR.inspector_tab import DSRInspectorTab
+            from er_save_manager.games.DSR.inventory_tab import DSRInventoryTab
+            from er_save_manager.games.DSR.npc_tab import DSRNPCTab
+            from er_save_manager.games.DSR.world_state_tab import DSRWorldStateTab
+
+            self.notebook.add("Save Inspector")
+            self.dsr_inspector_tab = DSRInspectorTab(
+                self.notebook.tab("Save Inspector"),
+                get_dsr_save=lambda: self.dsr_save,
+                on_slot_selected=self._on_dsr_slot_edit,
+            )
+            self.dsr_inspector_tab.setup_ui()
+
+            self.notebook.add("Character Editor")
+            self.dsr_editor_tab = DSREditorTab(
+                self.notebook.tab("Character Editor"),
+                get_dsr_save=lambda: self.dsr_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.dsr_editor_tab.setup_ui()
+
+            self.notebook.add("Inventory")
+            self.dsr_inventory_tab = DSRInventoryTab(
+                self.notebook.tab("Inventory"),
+                get_dsr_save=lambda: self.dsr_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.dsr_inventory_tab.setup_ui()
+
+            self.notebook.add("NPCs & Bosses")
+            self.dsr_npc_tab = DSRNPCTab(
+                self.notebook.tab("NPCs & Bosses"),
+                get_dsr_save=lambda: self.dsr_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.dsr_npc_tab.setup_ui()
+
+            self.notebook.add("World State")
+            self.dsr_world_tab = DSRWorldStateTab(
+                self.notebook.tab("World State"),
+                get_dsr_save=lambda: self.dsr_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.dsr_world_tab.setup_ui()
 
         self.notebook.add("Settings")
         tab_settings = self.notebook.tab("Settings")
@@ -1318,10 +1379,18 @@ class SaveManagerGUI:
         return None
 
     def _open_inventory_editor(self):
-        """Navigate to Character Editor > Inventory tab."""
+        """Navigate to the inventory editor for the active game."""
+        if self.active_game == "dark_souls_remastered":
+            # Route to DSR Inventory tab
+            try:
+                self.notebook.set("Inventory")
+            except Exception:
+                pass
+            return
+
+        # ER path: Character Editor > Inventory sub-tab
         self.notebook.set("Character Editor")
         if hasattr(self, "inventory_editor"):
-            # Find the inner editor_tabs and activate Inventory
             try:
                 for widget in self.notebook.tab("Character Editor").winfo_children():
                     if isinstance(widget, ctk.CTkFrame):
@@ -1404,6 +1473,8 @@ class SaveManagerGUI:
             filename = os.path.basename(save_path).lower()
             if filename.startswith("er"):
                 self.root.after(500, self.load_save)
+        elif self.active_game == "dark_souls_remastered":
+            self.root.after(500, lambda p=save_path: self._load_dsr_save(p))
         else:
             self._load_non_er_save(save_path)
 
@@ -1581,6 +1652,53 @@ class SaveManagerGUI:
                 ),
             )
             self.root.after(0, lambda: self.status_var.set("Load failed"))
+
+    def _load_dsr_save(self, save_path: str) -> None:
+        """Parse a DSR save file and refresh all DSR tabs."""
+        from er_save_manager.games.DSR.save import DSRSave
+
+        profile = self._active_profile()
+        if (
+            not self.settings.get("skip_game_running_check", False)
+            and profile
+            and profile.process_name
+            and self.is_game_running(profile.process_name)
+        ):
+            if not self._handle_game_running_dialog(profile):
+                return
+
+        try:
+            self.dsr_save = DSRSave.from_file(save_path)
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error", f"Failed to load DSR save:\n{e}", parent=self.root
+            )
+            return
+
+        self.save_path = Path(save_path)
+        self.save_file = None
+
+        for attr in (
+            "dsr_inspector_tab",
+            "dsr_editor_tab",
+            "dsr_inventory_tab",
+            "dsr_npc_tab",
+            "dsr_world_tab",
+        ):
+            tab = getattr(self, attr, None)
+            if tab is not None:
+                tab.refresh()
+
+        self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
+        self.show_toast(
+            f"DSR save loaded: {os.path.basename(save_path)}", duration=2500
+        )
+
+    def _on_dsr_slot_edit(self, slot_idx: int) -> None:
+        """Switch to Character Editor tab and load the selected slot."""
+        self.notebook.set("Character Editor")
+        if hasattr(self, "dsr_editor_tab") and self.dsr_editor_tab:
+            self.dsr_editor_tab.load_slot(slot_idx)
 
     def reload_save(self):
         """Reload the current save file without showing success message"""
