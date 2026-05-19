@@ -31,7 +31,6 @@
 4621,[Sorcery] Quicksilver Comet
 4671,[Sorcery] Oath of Darkness
 4672,[Sorcery] Attune of the Black Moon
-4680,[Sorcery] Nox Simulacrum
 4702,[Sorcery] Stellar Bombardment
 4711,[Sorcery] Rock Burst
 4712,[Sorcery] Meteor Sling
@@ -106,7 +105,6 @@
 5221,[Sorcery] Cyclone
 5222,[Sorcery] Tornado
 5230,[Sorcery] Gale Blast
-5231,[Sorcery] Storm Spear
 5240,[Sorcery] Storm Arc
 5241,[Sorcery] Storm Call
 5242,[Sorcery] Storm Shatter
@@ -191,7 +189,6 @@
 6861,[Incantation] Landslide
 6870,[Incantation] Earthquake
 6871,[Incantation] Seismic Instability
-6880,[Incantation] Fissure
 6890,[Incantation] Crucible Spear
 6891,[Incantation] Stone Spears
 6901,[Incantation] Lightning Channel
@@ -260,5 +257,3 @@
 7480,[Incantation] Spirit Weaving
 7481,[Incantation] Dream Meld
 7903,[Incantation] Golden Light Fortification
-8000,[Incantation] Briars of Sin
-8001,[Incantation] Briars of Punishment
