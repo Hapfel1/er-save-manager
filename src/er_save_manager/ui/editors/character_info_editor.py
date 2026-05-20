@@ -646,6 +646,13 @@ class CharacterInfoEditor:
         import struct
         from io import BytesIO
 
+        if (
+            self.char_playtime_h_var is None
+            or self.char_playtime_m_var is None
+            or self.char_playtime_s_var is None
+        ):
+            return
+
         h = max(0, self.char_playtime_h_var.get())
         m = max(0, min(59, self.char_playtime_m_var.get()))
         s = max(0, min(59, self.char_playtime_s_var.get()))
