@@ -155,6 +155,12 @@ class SaveManagerGUI:
         # Auto-backup process monitor
         self.process_monitor = None
 
+        # External file modification watcher
+        self._watched_mtime: float | None = None
+        self._file_change_dialog_open: bool = False
+        self._file_watcher_running: bool = False
+        self._pending_file_change: bool = False
+
         self.setup_ui()
 
         # Apply theme colors to tk widgets (non-ttk)
@@ -162,6 +168,9 @@ class SaveManagerGUI:
 
         # Bind resize event with debouncing
         self.root.bind("<Configure>", self._on_window_resize)
+
+        # Show external-modification dialog when the user refocuses the window
+        self.root.bind("<FocusIn>", self._on_window_focus)
 
         # Start auto-backup process monitor
         self.root.after(2000, self._init_process_monitor)
@@ -645,6 +654,7 @@ class SaveManagerGUI:
             "dsr_inventory_tab",
             "dsr_npc_tab",
             "dsr_world_tab",
+            "dsr_flags_tab",
         ):
             setattr(self, attr, None)
 
@@ -873,6 +883,17 @@ class SaveManagerGUI:
                 show_toast=self.show_toast,
             )
             self.dsr_npc_tab.setup_ui()
+
+            self.notebook.add("Event Flags")
+            from er_save_manager.games.DSR.event_flags_tab import DSREventFlagsTab
+
+            self.dsr_flags_tab = DSREventFlagsTab(
+                self.notebook.tab("Event Flags"),
+                get_dsr_save=lambda: self.dsr_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.dsr_flags_tab.setup_ui()
 
             self.notebook.add("World State")
             self.dsr_world_tab = DSRWorldStateTab(
@@ -1381,14 +1402,11 @@ class SaveManagerGUI:
     def _open_inventory_editor(self):
         """Navigate to the inventory editor for the active game."""
         if self.active_game == "dark_souls_remastered":
-            # Route to DSR Inventory tab
             try:
                 self.notebook.set("Inventory")
             except Exception:
                 pass
             return
-
-        # ER path: Character Editor > Inventory sub-tab
         self.notebook.set("Character Editor")
         if hasattr(self, "inventory_editor"):
             try:
@@ -1684,6 +1702,7 @@ class SaveManagerGUI:
             "dsr_inventory_tab",
             "dsr_npc_tab",
             "dsr_world_tab",
+            "dsr_flags_tab",
         ):
             tab = getattr(self, attr, None)
             if tab is not None:
@@ -1708,6 +1727,8 @@ class SaveManagerGUI:
         """Finalize save loading on main thread"""
         self.save_file = save_file
         self.save_path = Path(save_path)
+        self._update_watched_mtime()
+        self._start_file_watcher()
 
         if self.active_game == "elden_ring":
             if hasattr(self, "char_mgmt_tab") and self.char_mgmt_tab:
@@ -1822,6 +1843,111 @@ class SaveManagerGUI:
             CTkMessageBox.showerror(
                 "Error", f"Failed to open backup manager:\n{e}", parent=self.root
             )
+
+    def _update_watched_mtime(self) -> None:
+        """Snapshot the current mtime of the loaded save file."""
+        try:
+            if self.save_path and self.save_path.exists():
+                self._watched_mtime = self.save_path.stat().st_mtime
+        except OSError:
+            self._watched_mtime = None
+
+    def _start_file_watcher(self) -> None:
+        """Start the external-modification poll loop if not already running."""
+        if self._file_watcher_running:
+            return
+        self._file_watcher_running = True
+        self.root.after(3000, self._poll_file_change)
+
+    def _poll_file_change(self) -> None:
+        """Poll for external save modifications every 3 seconds.
+
+        Sets a pending flag instead of showing the dialog immediately so the
+        user is only notified when they refocus the window.
+        """
+        if not self.save_file or not self.save_path:
+            self._file_watcher_running = False
+            return
+
+        try:
+            current_mtime = self.save_path.stat().st_mtime
+        except OSError:
+            self.root.after(3000, self._poll_file_change)
+            return
+
+        if self._watched_mtime is not None and current_mtime != self._watched_mtime:
+            self._watched_mtime = current_mtime
+            self._pending_file_change = True
+
+        self.root.after(3000, self._poll_file_change)
+
+    def _on_window_focus(self, event=None) -> None:
+        """Show the external-modification dialog when the window regains focus."""
+        # Only fire for the root window itself, not child widgets gaining focus
+        if event is not None and event.widget is not self.root:
+            return
+        if not self._pending_file_change or self._file_change_dialog_open:
+            return
+
+        self._pending_file_change = False
+        self._file_change_dialog_open = True
+
+        dialog = ctk.CTkToplevel(self.root)
+        dialog.title("Save File Modified")
+        dialog.geometry("440x200")
+        dialog.transient(self.root)
+        dialog.resizable(False, False)
+
+        dialog.update_idletasks()
+        px = self.root.winfo_x() + (self.root.winfo_width() - 440) // 2
+        py = self.root.winfo_y() + (self.root.winfo_height() - 200) // 2
+        dialog.geometry(f"440x200+{px}+{py}")
+
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=ctk.BOTH, expand=True, padx=24, pady=24)
+
+        ctk.CTkLabel(
+            main,
+            text="Save Modified Externally",
+            font=("Segoe UI", 18, "bold"),
+        ).pack(pady=(0, 22))
+
+        ctk.CTkLabel(
+            main,
+            text=(
+                f"{self.save_path.name} was changed while the save manager\n"
+                "had it loaded. Reload to avoid overwriting those changes."
+            ),
+            font=("Segoe UI", 16),
+            justify=ctk.CENTER,
+            wraplength=380,
+        ).pack(pady=(0, 24))
+
+        btn_row = ctk.CTkFrame(main, fg_color="transparent")
+        btn_row.pack()
+
+        def on_reload():
+            self._file_change_dialog_open = False
+            dialog.destroy()
+            self.reload_save()
+
+        def on_dismiss():
+            self._file_change_dialog_open = False
+            dialog.destroy()
+
+        dialog.protocol("WM_DELETE_WINDOW", on_dismiss)
+
+        ctk.CTkButton(btn_row, text="Reload Now", width=120, command=on_reload).pack(
+            side=ctk.LEFT, padx=(0, 8)
+        )
+        ctk.CTkButton(
+            btn_row,
+            text="Dismiss",
+            width=100,
+            fg_color="transparent",
+            border_width=1,
+            command=on_dismiss,
+        ).pack(side=ctk.LEFT)
 
     def _verbose_log(self, message: str) -> None:
         """Write a timestamped line to the verbose log file next to the current save."""
