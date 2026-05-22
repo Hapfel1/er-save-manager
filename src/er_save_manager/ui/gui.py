@@ -128,6 +128,9 @@ class SaveManagerGUI:
         # Active game (key from game_profiles.py); drives which tabs are shown
         self.active_game = "elden_ring"
 
+        # DSR-specific parsed save (separate from ER save_file)
+        self.dsr_save = None
+
         # Refs to file-frame buttons that should be disabled for non-ER games
         self._file_load_buttons: list = []
 
@@ -152,6 +155,12 @@ class SaveManagerGUI:
         # Auto-backup process monitor
         self.process_monitor = None
 
+        # External file modification watcher
+        self._watched_mtime: float | None = None
+        self._file_change_dialog_open: bool = False
+        self._file_watcher_running: bool = False
+        self._pending_file_change: bool = False
+
         self.setup_ui()
 
         # Apply theme colors to tk widgets (non-ttk)
@@ -159,6 +168,9 @@ class SaveManagerGUI:
 
         # Bind resize event with debouncing
         self.root.bind("<Configure>", self._on_window_resize)
+
+        # Show external-modification dialog when the user refocuses the window
+        self.root.bind("<FocusIn>", self._on_window_focus)
 
         # Start auto-backup process monitor
         self.root.after(2000, self._init_process_monitor)
@@ -624,6 +636,8 @@ class SaveManagerGUI:
 
         # Null out all tab references so _finalize_save_load doesn't call methods
         # on widgets that are about to be destroyed.
+        self.dsr_save = None
+
         for attr in (
             "inspector_tab",
             "char_mgmt_tab",
@@ -635,6 +649,12 @@ class SaveManagerGUI:
             "hex_tab",
             "advanced_tab",
             "settings_tab",
+            "dsr_inspector_tab",
+            "dsr_editor_tab",
+            "dsr_inventory_tab",
+            "dsr_npc_tab",
+            "dsr_world_tab",
+            "dsr_flags_tab",
         ):
             setattr(self, attr, None)
 
@@ -821,6 +841,68 @@ class SaveManagerGUI:
             )
             self.steamid_tab.setup_ui()
             self.steamid_tab.set_active_profile(profile.name)
+
+        if profile.key == "dark_souls_remastered":
+            from er_save_manager.games.DSR.editor_tab import DSREditorTab
+            from er_save_manager.games.DSR.inspector_tab import DSRInspectorTab
+            from er_save_manager.games.DSR.inventory_tab import DSRInventoryTab
+            from er_save_manager.games.DSR.npc_tab import DSRNPCTab
+            from er_save_manager.games.DSR.world_state_tab import DSRWorldStateTab
+
+            self.notebook.add("Save Inspector")
+            self.dsr_inspector_tab = DSRInspectorTab(
+                self.notebook.tab("Save Inspector"),
+                get_dsr_save=lambda: self.dsr_save,
+                on_slot_selected=self._on_dsr_slot_edit,
+            )
+            self.dsr_inspector_tab.setup_ui()
+
+            self.notebook.add("Character Editor")
+            self.dsr_editor_tab = DSREditorTab(
+                self.notebook.tab("Character Editor"),
+                get_dsr_save=lambda: self.dsr_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.dsr_editor_tab.setup_ui()
+
+            self.notebook.add("Inventory")
+            self.dsr_inventory_tab = DSRInventoryTab(
+                self.notebook.tab("Inventory"),
+                get_dsr_save=lambda: self.dsr_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.dsr_inventory_tab.setup_ui()
+
+            self.notebook.add("NPCs & Bosses")
+            self.dsr_npc_tab = DSRNPCTab(
+                self.notebook.tab("NPCs & Bosses"),
+                get_dsr_save=lambda: self.dsr_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.dsr_npc_tab.setup_ui()
+
+            self.notebook.add("Event Flags")
+            from er_save_manager.games.DSR.event_flags_tab import DSREventFlagsTab
+
+            self.dsr_flags_tab = DSREventFlagsTab(
+                self.notebook.tab("Event Flags"),
+                get_dsr_save=lambda: self.dsr_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.dsr_flags_tab.setup_ui()
+
+            self.notebook.add("World State")
+            self.dsr_world_tab = DSRWorldStateTab(
+                self.notebook.tab("World State"),
+                get_dsr_save=lambda: self.dsr_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.dsr_world_tab.setup_ui()
 
         self.notebook.add("Settings")
         tab_settings = self.notebook.tab("Settings")
@@ -1318,6 +1400,13 @@ class SaveManagerGUI:
         return None
 
     def _open_inventory_editor(self):
+        """Navigate to the inventory editor for the active game."""
+        if self.active_game == "dark_souls_remastered":
+            try:
+                self.notebook.set("Inventory")
+            except Exception:
+                pass
+            return
         """Navigate to Character Editor > Inventory tab."""
         self.notebook.set("Character Editor")
         if hasattr(self, "inventory_editor"):
@@ -1377,6 +1466,9 @@ class SaveManagerGUI:
                 self.appearance_tab.load_presets()
             elif tab_name == "Advanced Tools":
                 self.advanced_tab.update_save_info()
+            elif tab_name == "Event Flags":
+                if hasattr(self, "dsr_flags_tab") and self.dsr_flags_tab:
+                    self.dsr_flags_tab.refresh()
             elif tab_name == "SteamID Patcher":
                 if hasattr(self.steamid_tab, "update_steamid_display"):
                     self.steamid_tab.update_steamid_display()
@@ -1404,6 +1496,8 @@ class SaveManagerGUI:
             filename = os.path.basename(save_path).lower()
             if filename.startswith("er"):
                 self.root.after(500, self.load_save)
+        elif self.active_game == "dark_souls_remastered":
+            self.root.after(500, lambda p=save_path: self._load_dsr_save(p))
         else:
             self._load_non_er_save(save_path)
 
@@ -1582,6 +1676,59 @@ class SaveManagerGUI:
             )
             self.root.after(0, lambda: self.status_var.set("Load failed"))
 
+    def _load_dsr_save(self, save_path: str) -> None:
+        """Parse a DSR save file and refresh all DSR tabs."""
+        from er_save_manager.games.DSR.save import DSRSave
+
+        profile = self._active_profile()
+        if (
+            not self.settings.get("skip_game_running_check", False)
+            and profile
+            and profile.process_name
+            and self.is_game_running(profile.process_name)
+        ):
+            if not self._handle_game_running_dialog(profile):
+                return
+
+        try:
+            self.dsr_save = DSRSave.from_file(save_path)
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error", f"Failed to load DSR save:\n{e}", parent=self.root
+            )
+            return
+
+        self.save_path = Path(save_path)
+        self.save_file = None
+
+        for attr in (
+            "dsr_inspector_tab",
+            "dsr_editor_tab",
+            "dsr_inventory_tab",
+            "dsr_npc_tab",
+            "dsr_flags_tab",
+            "dsr_world_tab",
+        ):
+            tab = getattr(self, attr, None)
+            if tab is not None:
+                tab.refresh()
+
+        self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
+        self.show_toast(
+            f"DSR save loaded: {os.path.basename(save_path)}", duration=2500
+        )
+
+    def _on_dsr_slot_edit(self, slot_idx: int) -> None:
+        """Navigate to Character Editor and load the selected slot.
+        Called only from the inspector 'Edit Character' button - never from row clicks.
+        """
+        try:
+            self.notebook.set("Character Editor")
+        except Exception:
+            pass
+        if hasattr(self, "dsr_editor_tab") and self.dsr_editor_tab:
+            self.dsr_editor_tab.load_slot(slot_idx)
+
     def reload_save(self):
         """Reload the current save file without showing success message"""
         self.load_save(silent=True)
@@ -1590,6 +1737,8 @@ class SaveManagerGUI:
         """Finalize save loading on main thread"""
         self.save_file = save_file
         self.save_path = Path(save_path)
+        self._update_watched_mtime()
+        self._start_file_watcher()
 
         if self.active_game == "elden_ring":
             if hasattr(self, "char_mgmt_tab") and self.char_mgmt_tab:
@@ -1704,6 +1853,111 @@ class SaveManagerGUI:
             CTkMessageBox.showerror(
                 "Error", f"Failed to open backup manager:\n{e}", parent=self.root
             )
+
+    def _update_watched_mtime(self) -> None:
+        """Snapshot the current mtime of the loaded save file."""
+        try:
+            if self.save_path and self.save_path.exists():
+                self._watched_mtime = self.save_path.stat().st_mtime
+        except OSError:
+            self._watched_mtime = None
+
+    def _start_file_watcher(self) -> None:
+        """Start the external-modification poll loop if not already running."""
+        if self._file_watcher_running:
+            return
+        self._file_watcher_running = True
+        self.root.after(3000, self._poll_file_change)
+
+    def _poll_file_change(self) -> None:
+        """Poll for external save modifications every 3 seconds.
+
+        Sets a pending flag instead of showing the dialog immediately so the
+        user is only notified when they refocus the window.
+        """
+        if not self.save_file or not self.save_path:
+            self._file_watcher_running = False
+            return
+
+        try:
+            current_mtime = self.save_path.stat().st_mtime
+        except OSError:
+            self.root.after(3000, self._poll_file_change)
+            return
+
+        if self._watched_mtime is not None and current_mtime != self._watched_mtime:
+            self._watched_mtime = current_mtime
+            self._pending_file_change = True
+
+        self.root.after(3000, self._poll_file_change)
+
+    def _on_window_focus(self, event=None) -> None:
+        """Show the external-modification dialog when the window regains focus."""
+        # Only fire for the root window itself, not child widgets gaining focus
+        if event is not None and event.widget is not self.root:
+            return
+        if not self._pending_file_change or self._file_change_dialog_open:
+            return
+
+        self._pending_file_change = False
+        self._file_change_dialog_open = True
+
+        dialog = ctk.CTkToplevel(self.root)
+        dialog.title("Save File Modified")
+        dialog.geometry("440x200")
+        dialog.transient(self.root)
+        dialog.resizable(False, False)
+
+        dialog.update_idletasks()
+        px = self.root.winfo_x() + (self.root.winfo_width() - 440) // 2
+        py = self.root.winfo_y() + (self.root.winfo_height() - 200) // 2
+        dialog.geometry(f"440x200+{px}+{py}")
+
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=ctk.BOTH, expand=True, padx=24, pady=24)
+
+        ctk.CTkLabel(
+            main,
+            text="Save Modified Externally",
+            font=("Segoe UI", 18, "bold"),
+        ).pack(pady=(0, 22))
+
+        ctk.CTkLabel(
+            main,
+            text=(
+                f"{self.save_path.name} was changed while the save manager\n"
+                "had it loaded. Reload to avoid overwriting those changes."
+            ),
+            font=("Segoe UI", 16),
+            justify=ctk.CENTER,
+            wraplength=380,
+        ).pack(pady=(0, 24))
+
+        btn_row = ctk.CTkFrame(main, fg_color="transparent")
+        btn_row.pack()
+
+        def on_reload():
+            self._file_change_dialog_open = False
+            dialog.destroy()
+            self.reload_save()
+
+        def on_dismiss():
+            self._file_change_dialog_open = False
+            dialog.destroy()
+
+        dialog.protocol("WM_DELETE_WINDOW", on_dismiss)
+
+        ctk.CTkButton(btn_row, text="Reload Now", width=120, command=on_reload).pack(
+            side=ctk.LEFT, padx=(0, 8)
+        )
+        ctk.CTkButton(
+            btn_row,
+            text="Dismiss",
+            width=100,
+            fg_color="transparent",
+            border_width=1,
+            command=on_dismiss,
+        ).pack(side=ctk.LEFT)
 
     def _verbose_log(self, message: str) -> None:
         """Write a timestamped line to the verbose log file next to the current save."""

@@ -19,6 +19,10 @@ from er_save_manager.data.event_flags_db import (
     get_flag_name,
     get_subcategories,
 )
+from er_save_manager.data.summoning_pools_data import (
+    SUMMONING_POOL_FLAGS_BASE,
+    SUMMONING_POOL_FLAGS_DLC,
+)
 from er_save_manager.parser.event_flags import EventFlags
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
@@ -212,6 +216,13 @@ class EventFlagsTab:
             text="Quest Progress...",
             command=self.open_quest_progress,
             width=145,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+
+        ctk.CTkButton(
+            tools_row,
+            text="Summoning Pools...",
+            command=self.open_summoning_pools,
+            width=155,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
@@ -1464,3 +1475,204 @@ class EventFlagsTab:
             self.reload_save,
             self.show_toast,
         )
+
+    def open_summoning_pools(self):
+        """Open the summoning pool enable/disable dialog."""
+        if self.current_event_flags is None:
+            CTkMessageBox.showwarning(
+                "Not Loaded", "Please load event flags for a character first!"
+            )
+            return
+
+        from er_save_manager.ui.utils import force_render_dialog
+
+        dialog = ctk.CTkToplevel(self.parent)
+        dialog.title("Summoning Pools")
+        width, height = 720, 640
+        dialog.transient(self.parent)
+        dialog.update_idletasks()
+
+        self.parent.update_idletasks()
+        parent_x = self.parent.winfo_rootx()
+        parent_y = self.parent.winfo_rooty()
+        parent_width = self.parent.winfo_width()
+        parent_height = self.parent.winfo_height()
+        x = parent_x + (parent_width // 2) - (width // 2)
+        y = parent_y + (parent_height // 2) - (height // 2)
+        dialog.geometry(f"{width}x{height}+{x}+{y}")
+
+        force_render_dialog(dialog)
+        dialog.grab_set()
+
+        ctk.CTkLabel(
+            dialog,
+            text="Summoning Pools",
+            font=("Segoe UI", 14, "bold"),
+        ).pack(pady=(15, 2), padx=15)
+
+        ctk.CTkLabel(
+            dialog,
+            text="Enable or disable summoning pool activation flags",
+            text_color=("gray50", "gray70"),
+        ).pack(pady=(0, 10), padx=15)
+
+        # Selection toolbar
+        sel_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        sel_frame.pack(fill=tk.X, padx=15, pady=(0, 8))
+
+        # Checkbox vars: {flag_id: BooleanVar} - True means selected for action
+        pool_vars: dict[int, tk.BooleanVar] = {}
+
+        all_flags = [
+            (flag_id, label, "base") for flag_id, label in SUMMONING_POOL_FLAGS_BASE
+        ] + [(flag_id, label, "dlc") for flag_id, label in SUMMONING_POOL_FLAGS_DLC]
+
+        def select_group(group: str) -> None:
+            for flag_id, _label, g in all_flags:
+                if g == group:
+                    pool_vars[flag_id].set(True)
+
+        def select_all() -> None:
+            for var in pool_vars.values():
+                var.set(True)
+
+        def unselect_all() -> None:
+            for var in pool_vars.values():
+                var.set(False)
+
+        ctk.CTkButton(
+            sel_frame,
+            text="Select Base",
+            command=lambda: select_group("base"),
+            width=110,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+
+        ctk.CTkButton(
+            sel_frame, text="Select DLC", command=lambda: select_group("dlc"), width=110
+        ).pack(side=tk.LEFT, padx=(0, 6))
+
+        ctk.CTkButton(sel_frame, text="Select All", command=select_all, width=100).pack(
+            side=tk.LEFT, padx=(0, 6)
+        )
+
+        ctk.CTkButton(
+            sel_frame, text="Unselect All", command=unselect_all, width=110
+        ).pack(side=tk.LEFT)
+
+        # Scrollable pool list
+        pool_frame = ctk.CTkScrollableFrame(dialog, corner_radius=10)
+        pool_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
+        bind_mousewheel(pool_frame)
+
+        def _make_section_header(parent, text: str) -> None:
+            ctk.CTkLabel(
+                parent,
+                text=text,
+                font=("Segoe UI", 11, "bold"),
+                text_color=("gray30", "gray80"),
+            ).pack(anchor="w", padx=8, pady=(10, 4))
+
+        _make_section_header(pool_frame, "Base Game")
+
+        for flag_id, label in SUMMONING_POOL_FLAGS_BASE:
+            is_active = self.current_event_flags.get_flag(flag_id)
+            status = "Active" if is_active else "Inactive"
+            var = tk.BooleanVar(value=False)
+            pool_vars[flag_id] = var
+            ctk.CTkCheckBox(
+                pool_frame,
+                text=f"{flag_id}: {label}  ({status})",
+                variable=var,
+            ).pack(anchor="w", padx=8, pady=2)
+
+        _make_section_header(pool_frame, "Shadow of the Erdtree (DLC)")
+
+        for flag_id, label in SUMMONING_POOL_FLAGS_DLC:
+            is_active = self.current_event_flags.get_flag(flag_id)
+            status = "Active" if is_active else "Inactive"
+            var = tk.BooleanVar(value=False)
+            pool_vars[flag_id] = var
+            ctk.CTkCheckBox(
+                pool_frame,
+                text=f"{flag_id}: {label}  ({status})",
+                variable=var,
+            ).pack(anchor="w", pady=2, padx=8)
+
+        # Action buttons
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        def _apply(state: bool) -> None:
+            selected = [fid for fid, var in pool_vars.items() if var.get()]
+            if not selected:
+                CTkMessageBox.showinfo(
+                    "No Selection", "No pools selected.", parent=dialog
+                )
+                return
+
+            action = "Enable" if state else "Disable"
+            result = CTkMessageBox.askyesno(
+                "Confirm",
+                f"{action} {len(selected)} summoning pool flags on Slot {self.current_slot + 1}?\n\n"
+                "A backup will be created automatically.",
+                parent=dialog,
+            )
+            if not result:
+                return
+
+            save_file = self.get_save_file()
+            save_path = self.get_save_path()
+
+            if save_path and save_path.is_file():
+                try:
+                    backup_mgr = BackupManager(save_path)
+                    backup_mgr.create_backup(
+                        description=f"Before summoning pool {action.lower()} (Slot {self.current_slot + 1})",
+                        operation="summoning_pools",
+                        save=save_file,
+                    )
+                except PermissionError:
+                    CTkMessageBox.showwarning(
+                        "Backup Skipped",
+                        "Could not create backup (permission denied). Continuing without backup.",
+                        parent=dialog,
+                    )
+
+            for flag_id in selected:
+                self.current_event_flags.set_flag(flag_id, state)
+
+            slot = save_file.character_slots[self.current_slot]
+            if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
+                absolute_offset = slot.event_flags_offset
+                event_flags_size = 0x1BF99F
+                save_file._raw_data[
+                    absolute_offset : absolute_offset + event_flags_size
+                ] = slot.event_flags
+
+            save_file.recalculate_checksums()
+            save_file.save(self.get_save_path())
+            self.reload_save()
+
+            self.show_toast(
+                f"{action}d {len(selected)} summoning pool flags on Slot {self.current_slot + 1}",
+                duration=2500,
+            )
+            dialog.destroy()
+
+        ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=120).pack(
+            side=tk.LEFT
+        )
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Disable Selected",
+            command=lambda: _apply(False),
+            width=150,
+        ).pack(side=tk.RIGHT, padx=(8, 0))
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Enable Selected",
+            command=lambda: _apply(True),
+            width=150,
+        ).pack(side=tk.RIGHT)
