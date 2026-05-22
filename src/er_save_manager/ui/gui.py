@@ -1904,14 +1904,14 @@ class SaveManagerGUI:
 
         dialog = ctk.CTkToplevel(self.root)
         dialog.title("Save File Modified")
-        dialog.geometry("440x200")
+        dialog.geometry("440x250")
         dialog.transient(self.root)
         dialog.resizable(False, False)
 
         dialog.update_idletasks()
         px = self.root.winfo_x() + (self.root.winfo_width() - 440) // 2
-        py = self.root.winfo_y() + (self.root.winfo_height() - 200) // 2
-        dialog.geometry(f"440x200+{px}+{py}")
+        py = self.root.winfo_y() + (self.root.winfo_height() - 250) // 2
+        dialog.geometry(f"440x250+{px}+{py}")
 
         main = ctk.CTkFrame(dialog, fg_color="transparent")
         main.pack(fill=ctk.BOTH, expand=True, padx=24, pady=24)
