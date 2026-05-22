@@ -1904,14 +1904,14 @@ class SaveManagerGUI:
 
         dialog = ctk.CTkToplevel(self.root)
         dialog.title("Save File Modified")
-        dialog.geometry("440x300")
+        dialog.geometry("440x250")
         dialog.transient(self.root)
         dialog.resizable(False, False)
 
         dialog.update_idletasks()
         px = self.root.winfo_x() + (self.root.winfo_width() - 440) // 2
-        py = self.root.winfo_y() + (self.root.winfo_height() - 200) // 2
-        dialog.geometry(f"440x200+{px}+{py}")
+        py = self.root.winfo_y() + (self.root.winfo_height() - 250) // 2
+        dialog.geometry(f"440x250+{px}+{py}")
 
         main = ctk.CTkFrame(dialog, fg_color="transparent")
         main.pack(fill=ctk.BOTH, expand=True, padx=24, pady=24)
@@ -1919,7 +1919,7 @@ class SaveManagerGUI:
         ctk.CTkLabel(
             main,
             text="Save Modified Externally",
-            font=("Segoe UI", 16, "bold"),
+            font=("Segoe UI", 18, "bold"),
         ).pack(pady=(0, 22))
 
         ctk.CTkLabel(
@@ -1928,7 +1928,7 @@ class SaveManagerGUI:
                 f"{self.save_path.name} was changed while the save manager\n"
                 "had it loaded. Reload to avoid overwriting those changes."
             ),
-            font=("Segoe UI", 14),
+            font=("Segoe UI", 16),
             justify=ctk.CENTER,
             wraplength=380,
         ).pack(pady=(0, 24))
