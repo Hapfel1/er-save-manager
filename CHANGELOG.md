@@ -3,6 +3,37 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.3.0
+**Released:** May 22, 2026
+
+
+### ✨ New Features
+
+- Add DSR Save Editing: Stats Editor, Inventory Editor, NPC&Boss Revival, World State ([acc98e1](https://github.com/Hapfel1/er-save-manager/commit/acc98e154c2ae3b0451d74c9ab698c3165925992))
+
+- Added Summoning Pool Button to the event flags tab to disable and enable summoning pools ([d2a56a2](https://github.com/Hapfel1/er-save-manager/commit/d2a56a2f6bcecdc7f618a8153c558611915437cb))
+
+
+
+### 🔧 Bug Fixes
+
+- Removed cut magic ([600cf03](https://github.com/Hapfel1/er-save-manager/commit/600cf0325bce17f9019cf3568eaa906e437db3c9))
+
+- Added early return for a guard that caused a crash ([b116508](https://github.com/Hapfel1/er-save-manager/commit/b1165087382a6be8be8874e0df19283d6bbba321))
+
+
+
+### 🎨 User Interface
+
+- Add new popup when a loaded save file gets modified externally ([b69ecdc](https://github.com/Hapfel1/er-save-manager/commit/b69ecdceadfa3e6e152c2a5961357251676cf5de))
+
+- Improve DSR tabs `[DSR]` ([c85c66f](https://github.com/Hapfel1/er-save-manager/commit/c85c66fe42cc3bfb0c582a8099d459b13fb26033))
+
+- Add missing Convergence Armor ([ecbb2ca](https://github.com/Hapfel1/er-save-manager/commit/ecbb2caf7e9a09d3eedf4183ecd3c46a8131ab63))
+
+
+
+---
 ## 📦 Release 1.2.2
 **Released:** May 19, 2026
 
@@ -872,6 +903,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.3.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.2.2..v1.3.0
 [1.2.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.2.1..v1.2.2
 [1.2.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.2.0..v1.2.1
 [1.2.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.1.0..v1.2.0
