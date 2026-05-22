@@ -633,6 +633,8 @@ class DSRCharacter:
 
     # Raw decrypted data; all reads/writes go through this buffer
     _data: bytearray = field(default_factory=bytearray, repr=False)
+    # Cached Pattern1 anchor: -2 = not yet computed, -1 = not found, >= 0 = offset
+    _anchor_cache: int = field(default=-2, init=False, repr=False)
 
     # --- Character identity ---
     @property
@@ -928,15 +930,21 @@ class DSRCharacter:
     # --- Internal helpers ---
 
     def _find_pattern1(self) -> int:
-        """Return absolute offset of last Pattern1 hit in search range, or -1."""
-        pat = PATTERN1
-        plen = len(pat)
-        end = min(PATTERN1_SEARCH_END, len(self._data) - plen)
-        last = -1
-        for i in range(PATTERN1_SEARCH_START, end + 1):
-            if self._data[i : i + plen] == pat:
-                last = i
-        return last
+        """
+        Return absolute offset of the last Pattern1 hit in the search range, or -1.
+        Cached after first computation: writing flags near the anchor would otherwise
+        change the anchor byte and cause subsequent searches to find a different offset.
+        """
+        if self._anchor_cache == -2:
+            pat = PATTERN1
+            plen = len(pat)
+            end = min(PATTERN1_SEARCH_END, len(self._data) - plen)
+            last = -1
+            for i in range(PATTERN1_SEARCH_START, end + 1):
+                if self._data[i : i + plen] == pat:
+                    last = i
+            self._anchor_cache = last
+        return self._anchor_cache
 
     def _read_utf16(self, offset: int, length: int) -> str:
         raw = bytes(self._data[offset : offset + length])
@@ -1081,6 +1089,44 @@ class DSRCharacter:
         Sets the three bonfire data bytes and the warp enable flag.
         """
         self.set_bonfire_bytes(0xF0, 0xFF, 0xFF, 0x22)
+
+    # --- Generic event flags ------------------------------------------------- #
+
+    def get_flag(self, flag_id: int) -> bool:
+        """
+        Read a game event flag.
+
+        Encoding: byte_offset = anchor + flag_id // 8, bit = flag_id % 8.
+        Covers all global flags (2-17), NPC states (1000-1900), gesture flags
+        (280-288), and utility flags up to ID ~2,124,719.
+        Map-specific flags (11xxxxxx, 50xxxxxx) are out of range.
+        """
+        anchor = self._find_pattern1()
+        if anchor < 0:
+            raise ValueError("Pattern1 not found")
+        off = anchor + flag_id // 8
+        if off >= len(self._data):
+            raise IndexError(
+                f"Flag {flag_id} out of accessible range "
+                f"(needs anchor+{flag_id // 8:#x}, available to anchor+{len(self._data) - anchor:#x})"
+            )
+        return bool((self._data[off] >> (flag_id % 8)) & 1)
+
+    def set_flag(self, flag_id: int, value: bool) -> None:
+        """Write a game event flag. See get_flag for encoding and range details."""
+        anchor = self._find_pattern1()
+        if anchor < 0:
+            raise ValueError("Pattern1 not found")
+        off = anchor + flag_id // 8
+        if off >= len(self._data):
+            raise IndexError(
+                f"Flag {flag_id} out of accessible range "
+                f"(needs anchor+{flag_id // 8:#x}, available to anchor+{len(self._data) - anchor:#x})"
+            )
+        if value:
+            self._data[off] |= 1 << (flag_id % 8)
+        else:
+            self._data[off] &= ~(1 << (flag_id % 8))
 
 
 # --- Utility (module-level) -------------------------------------------------- #
