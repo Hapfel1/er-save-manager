@@ -7,6 +7,10 @@ ID,Name
 302000,Mystic Circlet
 302200,Mystic Bracelets
 320200,Sanguine Noble Bracelets
+401000,Caimar's Helm
+401100,Caimar's Armor
+401200,Caimar's Gauntlets
+401300,Caimar's Greaves
 421000,Vulgar Militia Hood
 620200,Prophet Manacles
 681000,War Surgeon Hood
@@ -107,3 +111,8 @@ ID,Name
 1950000,Millicent's Headband
 1990200,High Page Gloves
 1990300,High Page Trousers
+3020000,Golem Helm
+3020100,Golem Armor
+3020200,Golem Gauntlets
+3020300,Golem Greaves
+
