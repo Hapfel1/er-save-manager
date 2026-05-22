@@ -1,14 +1,18 @@
 """
 DSR NPCs & Bosses Tab
 
-Scrollable list of all 31 NPC/boss entries. Each toggle immediately
-creates a backup and writes the save. No separate Save button.
+NPCs section: 27 entries from npc_data.json, multi-bit alive detection.
+Bosses section: all 22 bosses from dsr_named_flags.json.
+  - 14 use global kill flags (IDs 2-17): fully editable.
+  - 8 use map-specific flags (11xxxxxx): displayed read-only. The Pattern1
+    bitfield encoding (anchor + flag_id//8) cannot reach these offsets within
+    the slot's 393KB boundary.
 """
 
 from __future__ import annotations
 
 import json
-from collections.abc import Callable
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -18,10 +22,11 @@ from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
 if TYPE_CHECKING:
-    from er_save_manager.games.DSR.save import DSRSave
+    pass
 
 _DATA_DIR = Path(__file__).parent / "data"
 _NPC_DATA: list[dict] | None = None
+_FLAGS_DB: dict | None = None
 
 
 def _load_npc_data() -> list[dict]:
@@ -33,35 +38,35 @@ def _load_npc_data() -> list[dict]:
     return _NPC_DATA
 
 
-_BOSSES = {
-    "Dark Sun Gwyndolin (boss)",
-    "Chaos Witch Quelaag (boss)",
-    "Ornstein and Smough (boss)",
-    "Artorias the Abysswalker (boss)",
-}
+def _load_flags_db() -> dict:
+    global _FLAGS_DB
+    if _FLAGS_DB is None:
+        _FLAGS_DB = json.loads(
+            (_DATA_DIR / "dsr_named_flags.json").read_text(encoding="utf-8")
+        )
+    return _FLAGS_DB
 
 
-def _backup_and_save(dsr_save: DSRSave, save_path: Path, operation: str) -> None:
-    from er_save_manager.backup.manager import BackupManager
-
-    BackupManager(save_path).create_backup(operation=operation, save=None)
-    dsr_save.save_to_file(save_path)
+def _is_boss(name: str) -> bool:
+    return bool(re.search(r"\(boss\)", name, re.IGNORECASE))
 
 
 def _clean_name(raw: str) -> str:
-    return raw.replace(" (boss)", "").replace(" (blackmish)", " (blacksmith)")
+    name = re.sub(r"\s*\(boss\)\s*$", "", raw, flags=re.IGNORECASE)
+    name = re.sub(r"\bblackmish\b", "blacksmith", name, flags=re.IGNORECASE)
+    name = re.sub(r"\s*\([^)]+\)\s*$", "", name)
+    return name.strip()
+
+
+def _backup_and_save(dsr_save, save_path: Path, op: str) -> None:
+    from er_save_manager.backup.manager import BackupManager
+
+    BackupManager(save_path).create_backup(operation=op, save=None)
+    dsr_save.save_to_file(save_path)
 
 
 class DSRNPCTab:
-    """NPC and boss alive/dead manager. Matches ER editor visual style."""
-
-    def __init__(
-        self,
-        parent,
-        get_dsr_save: Callable[[], DSRSave | None],
-        get_save_path: Callable[[], Path | None],
-        show_toast: Callable[[str], None],
-    ) -> None:
+    def __init__(self, parent, get_dsr_save, get_save_path, show_toast) -> None:
         self.parent = parent
         self._get_dsr_save = get_dsr_save
         self._get_save_path = get_save_path
@@ -69,57 +74,37 @@ class DSRNPCTab:
         self._current_slot = 0
 
     def setup_ui(self) -> None:
-        self.parent.grid_rowconfigure(2, weight=1)
-        self.parent.grid_columnconfigure(0, weight=1)
+        outer = ctk.CTkFrame(self.parent, corner_radius=12)
+        outer.pack(fill="both", expand=True, pady=(0, 10))
 
-        # Header row
-        header = ctk.CTkFrame(self.parent, fg_color="transparent")
-        header.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 6))
-
+        header = ctk.CTkFrame(outer, fg_color="transparent")
+        header.pack(fill="x", padx=10, pady=(10, 6))
         ctk.CTkLabel(header, text="NPCs & Bosses", font=("Segoe UI", 16, "bold")).pack(
             side="left"
         )
-
-        # Slot selector
-        ctk.CTkFrame(header, fg_color="transparent").pack(
-            side="left", fill="x", expand=True
+        ctk.CTkButton(header, text="Load", command=self._load_selected, width=70).pack(
+            side="right", padx=(6, 0)
         )
-        ctk.CTkLabel(header, text="Slot:").pack(side="left", padx=(0, 6))
         self._slot_var = ctk.StringVar()
         self._slot_combo = ctk.CTkComboBox(
-            header,
-            variable=self._slot_var,
-            values=[],
-            state="readonly",
-            width=220,
+            header, variable=self._slot_var, values=[], state="readonly", width=220
         )
-        self._slot_combo.pack(side="left", padx=(0, 8))
-        ctk.CTkButton(header, text="Load", command=self._load_selected, width=70).pack(
-            side="left", padx=4
-        )
+        self._slot_combo.pack(side="right")
+        ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
 
-        # Bulk action buttons
-        bulk_bar = ctk.CTkFrame(self.parent, fg_color="transparent")
-        bulk_bar.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 6))
-
+        bulk_bar = ctk.CTkFrame(outer, fg_color="transparent")
+        bulk_bar.pack(fill="x", padx=10, pady=(0, 6))
         ctk.CTkLabel(
             bulk_bar,
-            text="Bulk actions will backup and apply immediately:",
+            text="Changes apply and backup immediately:",
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
         ).pack(side="left", padx=(0, 12))
-
         ctk.CTkButton(
             bulk_bar,
             text="Respawn All NPCs",
             width=140,
-            command=lambda: self._bulk("npcs", True),
-        ).pack(side="left", padx=4)
-        ctk.CTkButton(
-            bulk_bar,
-            text="Respawn All Bosses",
-            width=145,
-            command=lambda: self._bulk("bosses", True),
+            command=lambda: self._bulk_npcs(True),
         ).pack(side="left", padx=4)
         ctk.CTkButton(
             bulk_bar,
@@ -127,25 +112,20 @@ class DSRNPCTab:
             width=110,
             fg_color=("#a03030", "#802020"),
             hover_color=("#c03030", "#a02020"),
-            command=lambda: self._bulk("npcs", False),
+            command=lambda: self._bulk_npcs(False),
+        ).pack(side="left", padx=4)
+        ctk.CTkButton(
+            bulk_bar,
+            text="Respawn All Bosses",
+            width=145,
+            command=lambda: self._bulk_bosses(False),
         ).pack(side="left", padx=4)
 
-        # Scrollable list
-        outer = ctk.CTkFrame(self.parent, corner_radius=12)
-        outer.grid(row=2, column=0, sticky="nsew", padx=10, pady=(0, 10))
-        outer.grid_rowconfigure(0, weight=1)
-        outer.grid_columnconfigure(0, weight=1)
-
-        self._scroll = ctk.CTkScrollableFrame(outer, corner_radius=10)
-        self._scroll.pack(fill="both", expand=True, padx=4, pady=4)
+        list_outer = ctk.CTkFrame(outer, fg_color="transparent")
+        list_outer.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        self._scroll = ctk.CTkScrollableFrame(list_outer, corner_radius=10)
+        self._scroll.pack(fill="both", expand=True)
         bind_mousewheel(self._scroll)
-
-        self._placeholder = ctk.CTkLabel(
-            self._scroll,
-            text="No save file loaded.",
-            text_color=("gray50", "gray60"),
-        )
-        self._placeholder.pack(anchor="w", padx=6, pady=6)
 
     # --- Refresh -------------------------------------------------------------- #
 
@@ -154,10 +134,10 @@ class DSRNPCTab:
         if save is None:
             self._slot_combo.configure(values=[])
             return
-        options = []
-        for i, char in enumerate(save.characters):
-            label = f"Slot {i + 1} - {char.name}" if char else f"Slot {i + 1} - Empty"
-            options.append(label)
+        options = [
+            f"Slot {i + 1} - {c.name}" if c else f"Slot {i + 1} - Empty"
+            for i, c in enumerate(save.characters)
+        ]
         self._slot_combo.configure(values=options)
         self._slot_var.set(options[0] if options else "")
         self._current_slot = 0
@@ -170,7 +150,275 @@ class DSRNPCTab:
         self._current_slot = slot_idx
         self._rebuild_rows()
 
-    # --- Internal helpers ----------------------------------------------------- #
+    # --- Build rows ----------------------------------------------------------- #
+
+    def _rebuild_rows(self) -> None:
+        for w in self._scroll.winfo_children():
+            w.destroy()
+        save = self._get_dsr_save()
+        char = save.characters[self._current_slot] if save else None
+        if char is None:
+            ctk.CTkLabel(
+                self._scroll,
+                text="Empty slot or no save loaded.",
+                text_color=("gray50", "gray60"),
+            ).pack(anchor="w", padx=6, pady=40)
+            return
+
+        # NPCs (npc_data.json multi-bit detection)
+        npcs = [n for n in _load_npc_data() if not _is_boss(n["name"])]
+        ctk.CTkLabel(self._scroll, text="NPCs", font=("Segoe UI", 12, "bold")).pack(
+            anchor="w", padx=12, pady=(12, 2)
+        )
+        for npc in npcs:
+            self._add_npc_row(char, npc)
+
+        # Bosses (flags DB)
+        accessible = [
+            b for b in _load_flags_db()["boss_kills"] if b.get("accessible", True)
+        ]
+        inaccessible = [
+            b for b in _load_flags_db()["boss_kills"] if not b.get("accessible", True)
+        ]
+
+        ctk.CTkLabel(self._scroll, text="Bosses", font=("Segoe UI", 12, "bold")).pack(
+            anchor="w", padx=12, pady=(14, 2)
+        )
+        for boss in accessible:
+            self._add_boss_row(char, boss, editable=True)
+
+        if inaccessible:
+            ctk.CTkLabel(
+                self._scroll,
+                text="The following bosses use map-specific event flags (11xxxxxx) that cannot be "
+                "reached via the save file's global flag encoding. State is unknown and cannot "
+                "be edited here.",
+                wraplength=700,
+                justify="left",
+                font=("Segoe UI", 9),
+                text_color=("gray50", "gray60"),
+            ).pack(anchor="w", padx=12, pady=(10, 4))
+            for boss in inaccessible:
+                self._add_boss_row(char, boss, editable=False)
+
+    def _add_npc_row(self, char, npc: dict) -> None:
+        alive = char.get_npc_alive(npc)
+        name = _clean_name(npc["name"])
+        row = ctk.CTkFrame(
+            self._scroll, fg_color=("#f5f5f5", "#2a2a3e"), corner_radius=6
+        )
+        row.pack(fill="x", padx=4, pady=3)
+        row.grid_columnconfigure(1, weight=1)
+
+        badge_color = ("#2a6e2a", "#1e7e1e") if alive else ("#8b2222", "#7a1a1a")
+        ctk.CTkLabel(
+            row,
+            text="ALIVE" if alive else "DEAD",
+            fg_color=badge_color,
+            corner_radius=4,
+            width=50,
+            font=("Segoe UI", 9, "bold"),
+        ).grid(row=0, column=0, padx=(8, 6), pady=6)
+        ctk.CTkLabel(
+            row,
+            text=name,
+            anchor="w",
+            font=("Segoe UI", 11),
+            text_color=("#333333", "#cccccc"),
+        ).grid(row=0, column=1, sticky="w", padx=4, pady=6)
+        ctk.CTkButton(
+            row,
+            text="Respawn",
+            width=80,
+            command=lambda n=npc, r=row: self._toggle_npc(n, True, r),
+        ).grid(row=0, column=2, padx=4, pady=6)
+        ctk.CTkButton(
+            row,
+            text="Kill",
+            width=60,
+            fg_color=("#a03030", "#802020"),
+            hover_color=("#c03030", "#a02020"),
+            command=lambda n=npc, r=row: self._toggle_npc(n, False, r),
+        ).grid(row=0, column=3, padx=(0, 8), pady=6)
+
+    def _add_boss_row(self, char, boss: dict, editable: bool) -> None:
+        if editable:
+            killed = char.get_flag(boss["id"])
+            badge_text = "KILLED" if killed else "ALIVE"
+            badge_color = ("#8b2222", "#7a1a1a") if killed else ("#2a6e2a", "#1e7e1e")
+        else:
+            badge_text = "N/A"
+            badge_color = ("#555", "#444")
+
+        row = ctk.CTkFrame(
+            self._scroll, fg_color=("#f5f5f5", "#2a2a3e"), corner_radius=6
+        )
+        row.pack(fill="x", padx=4, pady=3)
+        row.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            row,
+            text=badge_text,
+            fg_color=badge_color,
+            corner_radius=4,
+            width=55,
+            font=("Segoe UI", 9, "bold"),
+        ).grid(row=0, column=0, padx=(8, 6), pady=6)
+
+        name_color = ("#333333", "#cccccc") if editable else ("gray50", "gray55")
+        ctk.CTkLabel(
+            row,
+            text=boss["name"],
+            anchor="w",
+            font=("Segoe UI", 11),
+            text_color=name_color,
+        ).grid(row=0, column=1, sticky="w", padx=4, pady=6)
+        ctk.CTkLabel(
+            row,
+            text=boss["area"],
+            anchor="w",
+            font=("Segoe UI", 9),
+            text_color=("gray50", "gray60"),
+        ).grid(row=1, column=1, sticky="w", padx=4, pady=(0, 4))
+
+        if editable:
+            ctk.CTkButton(
+                row,
+                text="Respawn",
+                width=80,
+                command=lambda b=boss, r=row: self._toggle_boss(b, False, r),
+            ).grid(row=0, column=2, rowspan=2, padx=4, pady=6)
+            ctk.CTkButton(
+                row,
+                text="Kill",
+                width=60,
+                fg_color=("#a03030", "#802020"),
+                hover_color=("#c03030", "#a02020"),
+                command=lambda b=boss, r=row: self._toggle_boss(b, True, r),
+            ).grid(row=0, column=3, rowspan=2, padx=(0, 8), pady=6)
+        else:
+            ctk.CTkLabel(
+                row,
+                text="map flag",
+                font=("Segoe UI", 8),
+                text_color=("gray50", "gray55"),
+            ).grid(row=0, column=2, rowspan=2, padx=12, pady=6)
+
+    # --- Toggles -------------------------------------------------------------- #
+
+    def _toggle_npc(self, npc: dict, alive: bool, row: ctk.CTkFrame) -> None:
+        save, save_path, char = self._get_char()
+        if char is None:
+            return
+        char.set_npc_alive(npc, alive)
+        try:
+            action = "respawn" if alive else "kill"
+            _backup_and_save(
+                save,
+                save_path,
+                f"npc_{action}_{npc['name'].split()[0].lower()}_slot_{self._current_slot + 1}",
+            )
+            for child in row.winfo_children():
+                if isinstance(child, ctk.CTkLabel) and child.cget("text") in (
+                    "ALIVE",
+                    "DEAD",
+                ):
+                    badge_color = (
+                        ("#2a6e2a", "#1e7e1e") if alive else ("#8b2222", "#7a1a1a")
+                    )
+                    child.configure(
+                        text="ALIVE" if alive else "DEAD", fg_color=badge_color
+                    )
+                    break
+            self._show_toast(
+                f"{_clean_name(npc['name'])} {'respawned' if alive else 'killed'}."
+            )
+        except Exception as exc:
+            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+
+    def _toggle_boss(self, boss: dict, killed: bool, row: ctk.CTkFrame) -> None:
+        save, save_path, char = self._get_char()
+        if char is None:
+            return
+        char.set_flag(boss["id"], killed)
+        try:
+            action = "kill" if killed else "respawn"
+            _backup_and_save(
+                save,
+                save_path,
+                f"boss_{action}_{boss['id']}_slot_{self._current_slot + 1}",
+            )
+            badge_color = ("#8b2222", "#7a1a1a") if killed else ("#2a6e2a", "#1e7e1e")
+            for child in row.winfo_children():
+                if isinstance(child, ctk.CTkLabel) and child.cget("text") in (
+                    "KILLED",
+                    "ALIVE",
+                ):
+                    child.configure(
+                        text="KILLED" if killed else "ALIVE", fg_color=badge_color
+                    )
+                    break
+            self._show_toast(f"{boss['name']} {'killed' if killed else 'respawned'}.")
+        except Exception as exc:
+            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+
+    def _bulk_npcs(self, alive: bool) -> None:
+        save, save_path, char = self._get_char()
+        if char is None:
+            CTkMessageBox.showwarning(
+                "No Save", "No character loaded.", parent=self.parent
+            )
+            return
+        action = "Respawn" if alive else "Kill"
+        if not CTkMessageBox.askyesno(
+            "Confirm",
+            f"{action} all NPCs?\n\nA backup will be created.",
+            parent=self.parent,
+        ):
+            return
+        for npc in [n for n in _load_npc_data() if not _is_boss(n["name"])]:
+            char.set_npc_alive(npc, alive)
+        try:
+            _backup_and_save(
+                save,
+                save_path,
+                f"bulk_{action.lower()}_npcs_slot_{self._current_slot + 1}",
+            )
+            self._rebuild_rows()
+            self._show_toast(f"All NPCs {action.lower()}ed.")
+        except Exception as exc:
+            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+
+    def _bulk_bosses(self, killed: bool) -> None:
+        save, save_path, char = self._get_char()
+        if char is None:
+            CTkMessageBox.showwarning(
+                "No Save", "No character loaded.", parent=self.parent
+            )
+            return
+        action = "Kill" if killed else "Respawn"
+        if not CTkMessageBox.askyesno(
+            "Confirm",
+            f"{action} all bosses?\n\nOnly the 14 globally-tracked bosses can be toggled.\n"
+            "A backup will be created.",
+            parent=self.parent,
+        ):
+            return
+        for boss in _load_flags_db()["boss_kills"]:
+            if boss.get("accessible", True):
+                char.set_flag(boss["id"], killed)
+        try:
+            _backup_and_save(
+                save,
+                save_path,
+                f"bulk_{action.lower()}_bosses_slot_{self._current_slot + 1}",
+            )
+            self._rebuild_rows()
+            self._show_toast(f"All accessible bosses {action.lower()}ed.")
+        except Exception as exc:
+            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+
+    # --- Helpers -------------------------------------------------------------- #
 
     def _load_selected(self) -> None:
         save = self._get_dsr_save()
@@ -190,148 +438,17 @@ class DSRNPCTab:
         self._current_slot = idx
         self._rebuild_rows()
 
-    def _rebuild_rows(self) -> None:
-        for w in self._scroll.winfo_children():
-            w.destroy()
-
-        save = self._get_dsr_save()
-        char = save.characters[self._current_slot] if save else None
-        if char is None:
-            ctk.CTkLabel(
-                self._scroll,
-                text="Empty slot or no save loaded.",
-                text_color=("gray50", "gray60"),
-            ).pack(anchor="w", padx=6, pady=40)
-            return
-
-        npcs = _load_npc_data()
-        for section_name, entries in [
-            ("NPCs", [n for n in npcs if n["name"] not in _BOSSES]),
-            ("Bosses", [n for n in npcs if n["name"] in _BOSSES]),
-        ]:
-            ctk.CTkLabel(
-                self._scroll,
-                text=section_name,
-                font=("Segoe UI", 12, "bold"),
-            ).pack(anchor="w", padx=12, pady=(12, 2))
-            for npc in entries:
-                self._add_row(char, npc)
-
-    def _add_row(self, char, npc: dict) -> None:
-        alive = char.get_npc_alive(npc)
-        name = _clean_name(npc["name"])
-
-        # Mirror ER inspector row style
-        row = ctk.CTkFrame(
-            self._scroll,
-            fg_color=("#f5f5f5", "#2a2a3e"),
-            corner_radius=6,
-        )
-        row.pack(fill="x", padx=4, pady=3)
-        row.grid_columnconfigure(1, weight=1)
-
-        badge_color = ("#2a6e2a", "#1e7e1e") if alive else ("#8b2222", "#7a1a1a")
-        ctk.CTkLabel(
-            row,
-            text="ALIVE" if alive else "DEAD",
-            fg_color=badge_color,
-            corner_radius=4,
-            width=50,
-            font=("Segoe UI", 9, "bold"),
-        ).grid(row=0, column=0, padx=(8, 6), pady=6)
-
-        ctk.CTkLabel(
-            row,
-            text=name,
-            anchor="w",
-            font=("Segoe UI", 11),
-            text_color=("#333333", "#cccccc"),
-        ).grid(row=0, column=1, sticky="w", padx=4, pady=6)
-
-        ctk.CTkButton(
-            row,
-            text="Respawn",
-            width=80,
-            command=lambda n=npc, r=row: self._toggle(n, True, r),
-        ).grid(row=0, column=2, padx=4, pady=6)
-        ctk.CTkButton(
-            row,
-            text="Kill",
-            width=60,
-            fg_color=("#a03030", "#802020"),
-            hover_color=("#c03030", "#a02020"),
-            command=lambda n=npc, r=row: self._toggle(n, False, r),
-        ).grid(row=0, column=3, padx=(0, 8), pady=6)
-
-    def _toggle(self, npc: dict, alive: bool, row: ctk.CTkFrame) -> None:
+    def _get_char(self):
         save = self._get_dsr_save()
         save_path = self._get_save_path()
-        if save is None or save_path is None or self._current_slot < 0:
-            return
-        char = save.characters[self._current_slot]
-        if char is None:
-            return
-        char.set_npc_alive(npc, alive)
-        try:
-            action = "respawn" if alive else "kill"
-            _backup_and_save(
-                save,
-                save_path,
-                f"npc_{action}_{npc['name'].split()[0].lower()}_slot_{self._current_slot + 1}",
-            )
-            # Update badge in place
-            for child in row.winfo_children():
-                if isinstance(child, ctk.CTkLabel) and child.cget("text") in (
-                    "ALIVE",
-                    "DEAD",
-                ):
-                    badge_color = (
-                        ("#2a6e2a", "#1e7e1e") if alive else ("#8b2222", "#7a1a1a")
-                    )
-                    child.configure(
-                        text="ALIVE" if alive else "DEAD", fg_color=badge_color
-                    )
-                    break
-            self._show_toast(
-                f"{_clean_name(npc['name'])} {'respawned' if alive else 'killed'}."
-            )
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
-
-    def _bulk(self, group: str, alive: bool) -> None:
-        save = self._get_dsr_save()
-        save_path = self._get_save_path()
-        if save is None or save_path is None or self._current_slot < 0:
-            CTkMessageBox.showwarning(
-                "No Save", "No character loaded.", parent=self.parent
-            )
-            return
-        char = save.characters[self._current_slot]
-        if char is None:
-            return
-        action = "respawn" if alive else "kill"
-        if not CTkMessageBox.askyesno(
-            "Confirm",
-            f"{'Respawn' if alive else 'Kill'} all {group}?\n\nA backup will be created.",
-            parent=self.parent,
-        ):
-            return
-        npcs = _load_npc_data()
-        entries = (
-            [n for n in npcs if n["name"] in _BOSSES]
-            if group == "bosses"
-            else [n for n in npcs if n["name"] not in _BOSSES]
+        if save is None or save_path is None:
+            return None, None, None
+        char = (
+            save.characters[self._current_slot]
+            if 0 <= self._current_slot < len(save.characters)
+            else None
         )
-        for npc in entries:
-            char.set_npc_alive(npc, alive)
-        try:
-            _backup_and_save(
-                save, save_path, f"bulk_{action}_{group}_slot_{self._current_slot + 1}"
-            )
-            self._show_toast(f"All {group} {action}ed. Backup created.")
-            self._rebuild_rows()
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+        return save, save_path, char
 
     def _slot_idx(self) -> int:
         val = self._slot_var.get()

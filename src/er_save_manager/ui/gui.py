@@ -1407,8 +1407,10 @@ class SaveManagerGUI:
             except Exception:
                 pass
             return
+        """Navigate to Character Editor > Inventory tab."""
         self.notebook.set("Character Editor")
         if hasattr(self, "inventory_editor"):
+            # Find the inner editor_tabs and activate Inventory
             try:
                 for widget in self.notebook.tab("Character Editor").winfo_children():
                     if isinstance(widget, ctk.CTkFrame):
@@ -1464,6 +1466,9 @@ class SaveManagerGUI:
                 self.appearance_tab.load_presets()
             elif tab_name == "Advanced Tools":
                 self.advanced_tab.update_save_info()
+            elif tab_name == "Event Flags":
+                if hasattr(self, "dsr_flags_tab") and self.dsr_flags_tab:
+                    self.dsr_flags_tab.refresh()
             elif tab_name == "SteamID Patcher":
                 if hasattr(self.steamid_tab, "update_steamid_display"):
                     self.steamid_tab.update_steamid_display()
@@ -1701,8 +1706,8 @@ class SaveManagerGUI:
             "dsr_editor_tab",
             "dsr_inventory_tab",
             "dsr_npc_tab",
-            "dsr_world_tab",
             "dsr_flags_tab",
+            "dsr_world_tab",
         ):
             tab = getattr(self, attr, None)
             if tab is not None:
@@ -1714,8 +1719,13 @@ class SaveManagerGUI:
         )
 
     def _on_dsr_slot_edit(self, slot_idx: int) -> None:
-        """Switch to Character Editor tab and load the selected slot."""
-        self.notebook.set("Character Editor")
+        """Navigate to Character Editor and load the selected slot.
+        Called only from the inspector 'Edit Character' button - never from row clicks.
+        """
+        try:
+            self.notebook.set("Character Editor")
+        except Exception:
+            pass
         if hasattr(self, "dsr_editor_tab") and self.dsr_editor_tab:
             self.dsr_editor_tab.load_slot(slot_idx)
 
