@@ -1,0 +1,992 @@
+{
+  "boss_kills": [
+    {
+      "id": 2,
+      "name": "Gaping Dragon",
+      "area": "Depths"
+    },
+    {
+      "id": 3,
+      "name": "Bell Gargoyles",
+      "area": "Undead Parish"
+    },
+    {
+      "id": 4,
+      "name": "Crossbreed Priscilla",
+      "area": "Painted World of Ariamis"
+    },
+    {
+      "id": 5,
+      "name": "Sif the Great Grey Wolf",
+      "area": "Darkroot Garden"
+    },
+    {
+      "id": 6,
+      "name": "Pinwheel",
+      "area": "Catacombs"
+    },
+    {
+      "id": 7,
+      "name": "Gravelord Nito",
+      "area": "Tomb of the Giants"
+    },
+    {
+      "id": 9,
+      "name": "Chaos Witch Quelaag",
+      "area": "Blighttown"
+    },
+    {
+      "id": 10,
+      "name": "Bed of Chaos",
+      "area": "Lost Izalith"
+    },
+    {
+      "id": 11,
+      "name": "Iron Golem",
+      "area": "Sen's Fortress"
+    },
+    {
+      "id": 12,
+      "name": "Ornstein & Smough",
+      "area": "Anor Londo"
+    },
+    {
+      "id": 13,
+      "name": "The Four Kings",
+      "area": "New Londo Ruins"
+    },
+    {
+      "id": 14,
+      "name": "Seath the Scaleless",
+      "area": "Duke's Archives"
+    },
+    {
+      "id": 15,
+      "name": "Gwyn, Lord of Cinder",
+      "area": "Kiln of the First Flame"
+    },
+    {
+      "id": 16,
+      "name": "Asylum Demon",
+      "area": "Undead Asylum"
+    },
+    {
+      "id": 17,
+      "name": "Manus, Father of the Abyss",
+      "area": "Chasm of the Abyss (DLC)"
+    }
+  ],
+  "npc_states": {
+    "Solaire of Astora": [
+      {
+        "id": 1000,
+        "label": "At Starting Position"
+      },
+      {
+        "id": 1001,
+        "label": "First Encounter Done"
+      },
+      {
+        "id": 1003,
+        "label": "Rescued in Izalith"
+      },
+      {
+        "id": 1004,
+        "label": "Hostile"
+      },
+      {
+        "id": 1005,
+        "label": "Dead"
+      },
+      {
+        "id": 1007,
+        "label": "At Altar of Sunlight"
+      },
+      {
+        "id": 1008,
+        "label": "In Anor Londo"
+      },
+      {
+        "id": 1009,
+        "label": "After Centipede Demon"
+      },
+      {
+        "id": 1011,
+        "label": "Dead in Izalith"
+      }
+    ],
+    "Darkmoon Knightess": [
+      {
+        "id": 1031,
+        "label": "At Starting Position"
+      },
+      {
+        "id": 1033,
+        "label": "Hostile"
+      },
+      {
+        "id": 1034,
+        "label": "Dead"
+      },
+      {
+        "id": 1036,
+        "label": "After Lordvessel"
+      }
+    ],
+    "Oscar of Astora": [
+      {
+        "id": 1061,
+        "label": "Hollow"
+      },
+      {
+        "id": 1062,
+        "label": "Dead (Hollow)"
+      },
+      {
+        "id": 1073,
+        "label": "Dead"
+      }
+    ],
+    "Big Hat Logan": [
+      {
+        "id": 1091,
+        "label": "Rescued"
+      },
+      {
+        "id": 1092,
+        "label": "Spawns at Firelink"
+      },
+      {
+        "id": 1093,
+        "label": "Leaves for Duke's Prison"
+      },
+      {
+        "id": 1094,
+        "label": "Rescued in Duke's"
+      },
+      {
+        "id": 1096,
+        "label": "Hostile"
+      },
+      {
+        "id": 1097,
+        "label": "Dead"
+      }
+    ],
+    "Griggs of Vinheim": [
+      {
+        "id": 1111,
+        "label": "Rescue Done"
+      },
+      {
+        "id": 1112,
+        "label": "At Firelink"
+      },
+      {
+        "id": 1113,
+        "label": "At Firelink (sells more)"
+      },
+      {
+        "id": 1114,
+        "label": "Hostile"
+      },
+      {
+        "id": 1115,
+        "label": "Dead"
+      },
+      {
+        "id": 1117,
+        "label": "Hollow at Sen's"
+      }
+    ],
+    "Dusk of Oolacile": [
+      {
+        "id": 1121,
+        "label": "Rescued from Golem"
+      },
+      {
+        "id": 1122,
+        "label": "Summon Sign Active"
+      },
+      {
+        "id": 1123,
+        "label": "Summoned"
+      },
+      {
+        "id": 1125,
+        "label": "Dead"
+      }
+    ],
+    "Anastacia of Astora": [
+      {
+        "id": 1140,
+        "label": "Initial State"
+      },
+      {
+        "id": 1141,
+        "label": "Dead"
+      },
+      {
+        "id": 1142,
+        "label": "Revived"
+      },
+      {
+        "id": 1146,
+        "label": "Dead (Ready to Revive)"
+      }
+    ],
+    "Reah of Thorolund": [
+      {
+        "id": 1171,
+        "label": "At Firelink"
+      },
+      {
+        "id": 1173,
+        "label": "In Tomb of Giants"
+      },
+      {
+        "id": 1174,
+        "label": "Rescued in Tomb"
+      },
+      {
+        "id": 1175,
+        "label": "In Undead Parish"
+      },
+      {
+        "id": 1176,
+        "label": "Hostile"
+      },
+      {
+        "id": 1177,
+        "label": "Dead"
+      },
+      {
+        "id": 1181,
+        "label": "Hollow in Duke's Archives"
+      }
+    ],
+    "Petrus of Thorolund": [
+      {
+        "id": 1192,
+        "label": "Abandons Party"
+      },
+      {
+        "id": 1193,
+        "label": "Returned to Firelink"
+      },
+      {
+        "id": 1194,
+        "label": "After Lautrec Tip"
+      },
+      {
+        "id": 1197,
+        "label": "Hostile"
+      },
+      {
+        "id": 1198,
+        "label": "Dead"
+      }
+    ],
+    "Vince of Thorolund": [
+      {
+        "id": 1211,
+        "label": "At Firelink"
+      },
+      {
+        "id": 1213,
+        "label": "Hostile"
+      },
+      {
+        "id": 1214,
+        "label": "Dead"
+      },
+      {
+        "id": 1216,
+        "label": "In Tomb of Giants"
+      }
+    ],
+    "Nico of Thorolund": [
+      {
+        "id": 1221,
+        "label": "At Firelink"
+      },
+      {
+        "id": 1223,
+        "label": "Hostile"
+      },
+      {
+        "id": 1224,
+        "label": "Dead"
+      },
+      {
+        "id": 1226,
+        "label": "In Tomb of Giants"
+      }
+    ],
+    "Dark Sun Gwyndolin": [
+      {
+        "id": 1241,
+        "label": "Disapproves / Hostile flag"
+      },
+      {
+        "id": 1242,
+        "label": "Dead"
+      }
+    ],
+    "Laurentius of the Great Swamp": [
+      {
+        "id": 1251,
+        "label": "Rescued"
+      },
+      {
+        "id": 1252,
+        "label": "At Firelink"
+      },
+      {
+        "id": 1253,
+        "label": "Hostile"
+      },
+      {
+        "id": 1254,
+        "label": "Dead"
+      },
+      {
+        "id": 1256,
+        "label": "Informed of Quelana"
+      },
+      {
+        "id": 1257,
+        "label": "Hollow in Blighttown"
+      }
+    ],
+    "The Fair Lady (Quelaag's Sister)": [
+      {
+        "id": 1272,
+        "label": "Dead"
+      }
+    ],
+    "Eingyi": [
+      {
+        "id": 1281,
+        "label": "Steps Aside"
+      },
+      {
+        "id": 1283,
+        "label": "Hostile"
+      },
+      {
+        "id": 1284,
+        "label": "Dead"
+      },
+      {
+        "id": 1286,
+        "label": "Gained Trust"
+      }
+    ],
+    "Quelana of Izalith": [
+      {
+        "id": 1294,
+        "label": "Hostile"
+      },
+      {
+        "id": 1295,
+        "label": "Dead"
+      }
+    ],
+    "Ingward": [
+      {
+        "id": 1311,
+        "label": "After Lordvessel Placed"
+      },
+      {
+        "id": 1312,
+        "label": "After Drain New Londo"
+      },
+      {
+        "id": 1314,
+        "label": "Hostile"
+      },
+      {
+        "id": 1315,
+        "label": "Dead"
+      }
+    ],
+    "Andre of Astora": [
+      {
+        "id": 1321,
+        "label": "Hostile"
+      },
+      {
+        "id": 1322,
+        "label": "Dead"
+      }
+    ],
+    "Vamos": [
+      {
+        "id": 1341,
+        "label": "Hostile"
+      },
+      {
+        "id": 1342,
+        "label": "Dead"
+      }
+    ],
+    "Giant Blacksmith": [
+      {
+        "id": 1361,
+        "label": "Hostile"
+      },
+      {
+        "id": 1362,
+        "label": "Dead"
+      }
+    ],
+    "Rickert of Vinheim": [
+      {
+        "id": 1381,
+        "label": "Hostile"
+      },
+      {
+        "id": 1382,
+        "label": "Dead"
+      }
+    ],
+    "Undead Merchant (Male)": [
+      {
+        "id": 1400,
+        "label": "Present"
+      },
+      {
+        "id": 1401,
+        "label": "Hostile"
+      },
+      {
+        "id": 1402,
+        "label": "Dead"
+      }
+    ],
+    "Undead Merchant (Female)": [
+      {
+        "id": 1410,
+        "label": "Present"
+      },
+      {
+        "id": 1411,
+        "label": "Hostile"
+      },
+      {
+        "id": 1412,
+        "label": "Dead"
+      }
+    ],
+    "Crestfallen Merchant": [
+      {
+        "id": 1420,
+        "label": "At Starting Location"
+      },
+      {
+        "id": 1421,
+        "label": "Hostile"
+      },
+      {
+        "id": 1422,
+        "label": "Dead"
+      }
+    ],
+    "Domhnall of Zena": [
+      {
+        "id": 1430,
+        "label": "At Starting Location"
+      },
+      {
+        "id": 1431,
+        "label": "Moved to Firelink"
+      },
+      {
+        "id": 1434,
+        "label": "Hostile"
+      },
+      {
+        "id": 1435,
+        "label": "Dead"
+      }
+    ],
+    "Crestfallen Warrior": [
+      {
+        "id": 1461,
+        "label": "Hostile"
+      },
+      {
+        "id": 1462,
+        "label": "Dead"
+      },
+      {
+        "id": 1464,
+        "label": "Hollow in New Londo"
+      }
+    ],
+    "Siegmeyer of Catarina": [
+      {
+        "id": 1490,
+        "label": "Starting Location (Sen's)"
+      },
+      {
+        "id": 1491,
+        "label": "Second Location (no interaction needed)"
+      },
+      {
+        "id": 1492,
+        "label": "Second Location (interaction needed)"
+      },
+      {
+        "id": 1493,
+        "label": "In Anor Londo"
+      },
+      {
+        "id": 1494,
+        "label": "Rescued in Anor Londo"
+      },
+      {
+        "id": 1497,
+        "label": "At Firelink"
+      },
+      {
+        "id": 1501,
+        "label": "In Blighttown"
+      },
+      {
+        "id": 1502,
+        "label": "Rescued in Blighttown"
+      },
+      {
+        "id": 1503,
+        "label": "In Lost Izalith"
+      },
+      {
+        "id": 1504,
+        "label": "Charges Chaos Eaters"
+      },
+      {
+        "id": 1505,
+        "label": "Chaos Eaters killed before charge"
+      },
+      {
+        "id": 1506,
+        "label": "Failed Chaos Eater battle"
+      },
+      {
+        "id": 1507,
+        "label": "Survived Chaos Eater battle"
+      },
+      {
+        "id": 1511,
+        "label": "Dead in Ash Lake"
+      },
+      {
+        "id": 1512,
+        "label": "Hostile"
+      },
+      {
+        "id": 1513,
+        "label": "Dead"
+      }
+    ],
+    "Sieglinde of Catarina": [
+      {
+        "id": 1541,
+        "label": "Trapped in Golem (Duke's)"
+      },
+      {
+        "id": 1542,
+        "label": "Rescued in Duke's"
+      },
+      {
+        "id": 1543,
+        "label": "At Firelink (1st)"
+      },
+      {
+        "id": 1545,
+        "label": "At Firelink (return)"
+      },
+      {
+        "id": 1546,
+        "label": "In Ash Lake"
+      },
+      {
+        "id": 1547,
+        "label": "Hostile"
+      },
+      {
+        "id": 1548,
+        "label": "Dead"
+      }
+    ],
+    "Knight Lautrec of Carim": [
+      {
+        "id": 1570,
+        "label": "Starting Location"
+      },
+      {
+        "id": 1571,
+        "label": "Rescue Done"
+      },
+      {
+        "id": 1572,
+        "label": "At Firelink (after rescue)"
+      },
+      {
+        "id": 1573,
+        "label": "Temporarily left Firelink"
+      },
+      {
+        "id": 1574,
+        "label": "Hostile"
+      },
+      {
+        "id": 1575,
+        "label": "Dead"
+      },
+      {
+        "id": 1577,
+        "label": "At Firelink (after escape)"
+      },
+      {
+        "id": 1578,
+        "label": "In Anor Londo"
+      }
+    ],
+    "Shiva of the East": [
+      {
+        "id": 1603,
+        "label": "Hostile"
+      },
+      {
+        "id": 1604,
+        "label": "Dead"
+      }
+    ],
+    "Trusty Patches": [
+      {
+        "id": 1621,
+        "label": "After Catacombs Bridge"
+      },
+      {
+        "id": 1623,
+        "label": "In Tomb of Giants"
+      },
+      {
+        "id": 1624,
+        "label": "After Kicked Into Pit"
+      },
+      {
+        "id": 1625,
+        "label": "Hostile (cleric)"
+      },
+      {
+        "id": 1626,
+        "label": "At Firelink"
+      },
+      {
+        "id": 1627,
+        "label": "Hostile"
+      },
+      {
+        "id": 1628,
+        "label": "Dead"
+      }
+    ],
+    "Kingseeker Frampt": [
+      {
+        "id": 1641,
+        "label": "Snoring in Firelink"
+      },
+      {
+        "id": 1642,
+        "label": "Present in Firelink"
+      },
+      {
+        "id": 1644,
+        "label": "After Lordvessel placed"
+      },
+      {
+        "id": 1647,
+        "label": "Disapproves and leaves"
+      }
+    ],
+    "Darkstalker Kaathe": [
+      {
+        "id": 1671,
+        "label": "Appears"
+      },
+      {
+        "id": 1677,
+        "label": "Disapproves and leaves"
+      }
+    ],
+    "Crossbreed Priscilla": [
+      {
+        "id": 1691,
+        "label": "Hostile"
+      },
+      {
+        "id": 1692,
+        "label": "Dead"
+      }
+    ],
+    "Oswald of Carim": [
+      {
+        "id": 1700,
+        "label": "At Starting Location"
+      },
+      {
+        "id": 1701,
+        "label": "Hostile"
+      },
+      {
+        "id": 1702,
+        "label": "Dead"
+      }
+    ],
+    "Alvina": [
+      {
+        "id": 1711,
+        "label": "Gone / Betrayed"
+      },
+      {
+        "id": 1712,
+        "label": "Betrayed"
+      }
+    ],
+    "Hawkeye Gough": [
+      {
+        "id": 1821,
+        "label": "On Tower"
+      },
+      {
+        "id": 1822,
+        "label": "Hostile"
+      },
+      {
+        "id": 1823,
+        "label": "Dead"
+      }
+    ],
+    "Marvellous Chester": [
+      {
+        "id": 1841,
+        "label": "Hostile"
+      },
+      {
+        "id": 1842,
+        "label": "Dead"
+      }
+    ],
+    "Ciaran": [
+      {
+        "id": 1862,
+        "label": "Gifted Artorias Soul"
+      },
+      {
+        "id": 1863,
+        "label": "Hostile"
+      },
+      {
+        "id": 1864,
+        "label": "Dead"
+      }
+    ],
+    "Elizabeth": [
+      {
+        "id": 1871,
+        "label": "Hostile (Unused)"
+      },
+      {
+        "id": 1872,
+        "label": "Dead"
+      }
+    ]
+  },
+  "gestures": [
+    {
+      "id": 280,
+      "name": "Shrug",
+      "teacher": "Petrus",
+      "note": "0 = Petrus has taught it"
+    },
+    {
+      "id": 281,
+      "name": "Look Skyward",
+      "teacher": "Shiva",
+      "note": "0 = Shiva has taught it"
+    },
+    {
+      "id": 282,
+      "name": "Hurrah!",
+      "teacher": "Andre",
+      "note": "0 = Andre has taught it"
+    },
+    {
+      "id": 283,
+      "name": "Well, What Is It?",
+      "teacher": "Oswald",
+      "note": "0 = Oswald has taught it"
+    },
+    {
+      "id": 284,
+      "name": "Proper Bow",
+      "teacher": "Dusk",
+      "note": "0 = Dusk has taught it"
+    },
+    {
+      "id": 285,
+      "name": "Prostration",
+      "teacher": "Patches",
+      "note": "0 = Patches has taught it"
+    },
+    {
+      "id": 286,
+      "name": "Praise the Sun",
+      "teacher": "Altar",
+      "note": "0 = learned via Sunlight Altar"
+    },
+    {
+      "id": 287,
+      "name": "Prayer",
+      "teacher": "Rhea",
+      "note": "0 = Rhea has taught it (non-knight/cleric)"
+    },
+    {
+      "id": 288,
+      "name": "Joy",
+      "teacher": "Domhnall",
+      "note": "0 = Domhnall has taught it (knight/cleric)"
+    }
+  ],
+  "utility": [
+    {
+      "id": 250,
+      "name": "Weapon Smithbox Obtained",
+      "group": "Bonfire Items",
+      "session": true,
+      "note": "Resets on NG+. Set True to enable Weapon Smithbox at bonfires."
+    },
+    {
+      "id": 251,
+      "name": "Armor Smithbox Obtained",
+      "group": "Bonfire Items",
+      "session": true,
+      "note": "Resets on NG+."
+    },
+    {
+      "id": 252,
+      "name": "Repairbox Obtained",
+      "group": "Bonfire Items",
+      "session": true,
+      "note": "Resets on NG+."
+    },
+    {
+      "id": 257,
+      "name": "Rite of Kindling Obtained",
+      "group": "Bonfire Items",
+      "session": false,
+      "note": "Persistent across NG+ cycles."
+    },
+    {
+      "id": 258,
+      "name": "Bottomless Box Obtained",
+      "group": "Bonfire Items",
+      "session": false,
+      "note": "Persistent across NG+ cycles."
+    },
+    {
+      "id": 705,
+      "name": "NG+ or Beyond",
+      "group": "Progression",
+      "session": true,
+      "note": "Set by event script at cycle start. Reads False in save between sessions."
+    },
+    {
+      "id": 706,
+      "name": "Warp Allowed",
+      "group": "Progression",
+      "session": true,
+      "note": "Enabled by default at session start. Can be used to force-enable bonfire warp."
+    },
+    {
+      "id": 710,
+      "name": "Lordvessel Obtained",
+      "group": "Progression",
+      "session": true,
+      "note": "Resets on NG+. Set True to unlock Lordvessel slot at Firelink."
+    },
+    {
+      "id": 716,
+      "name": "Estus Flask Obtained (this cycle)",
+      "group": "Progression",
+      "session": true,
+      "note": "Mirrors item lot flag (50000082, out of range). Resets on NG+."
+    },
+    {
+      "id": 719,
+      "name": "Has Spell (Attunement unlock)",
+      "group": "Magic",
+      "session": true,
+      "note": "Set when any spell is obtained. Used to unlock Attune Magic at bonfires."
+    },
+    {
+      "id": 742,
+      "name": "Covenant Hard Betrayal",
+      "group": "Sin",
+      "session": false
+    },
+    {
+      "id": 744,
+      "name": "Has PvE Sin",
+      "group": "Sin",
+      "session": false
+    },
+    {
+      "id": 8131,
+      "name": "Estus Flask +1 Obtained",
+      "group": "Estus Upgrades",
+      "session": true,
+      "note": "Resets on NG+."
+    },
+    {
+      "id": 8132,
+      "name": "Estus Flask +2 Obtained",
+      "group": "Estus Upgrades",
+      "session": true
+    },
+    {
+      "id": 8133,
+      "name": "Estus Flask +3 Obtained",
+      "group": "Estus Upgrades",
+      "session": true
+    },
+    {
+      "id": 8134,
+      "name": "Estus Flask +4 Obtained",
+      "group": "Estus Upgrades",
+      "session": true
+    },
+    {
+      "id": 8135,
+      "name": "Estus Flask +5 Obtained",
+      "group": "Estus Upgrades",
+      "session": true
+    },
+    {
+      "id": 8136,
+      "name": "Estus Flask +6 Obtained",
+      "group": "Estus Upgrades",
+      "session": true
+    },
+    {
+      "id": 8137,
+      "name": "Estus Flask +7 Obtained",
+      "group": "Estus Upgrades",
+      "session": true
+    }
+  ]
+}
