@@ -3,6 +3,39 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.3.1
+**Released:** May 26, 2026
+
+
+### 🔧 Bug Fixes
+
+- Added missed Convergence Items (Maps and Perfumer quest items) ([94940cf](https://github.com/Hapfel1/er-save-manager/commit/94940cf8aab71cba06af0c8d6270eb2b7bf95cf6))
+
+- Fixed issue with interpreting int level making it unable to apply NG+7 ([d33e24e](https://github.com/Hapfel1/er-save-manager/commit/d33e24e63c234705a7d36af09b48f07190d6ddee))
+
+- Fixed build issue ([8fdbf21](https://github.com/Hapfel1/er-save-manager/commit/8fdbf211dddfefb55752a30049c2171544c6ffcd))
+
+- Write CSNetMan.bin at net_man_offset - 4 `[netman]` ([f999aa9](https://github.com/Hapfel1/er-save-manager/commit/f999aa9f83350d86ed9a2378c6a0c13026fec26a))
+
+- Fully implemented Affinity/Gem Validation for Convergence Saves ([8280c43](https://github.com/Hapfel1/er-save-manager/commit/8280c43a48a0f822888500f93a3e3302c64559cc))
+
+
+
+### 🎨 User Interface
+
+- Add .cnv to the browse option filter ([a27c3d7](https://github.com/Hapfel1/er-save-manager/commit/a27c3d7745d11642e4ccae226ca267cf5dd41a6e))
+
+- Fixed "Save File has been modified externally" popping up after modifying the save file with the manager ([7d630e3](https://github.com/Hapfel1/er-save-manager/commit/7d630e3d0c7af31dd860144b90e120fc67e56c13))
+
+
+
+### 📦 Dependencies
+
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([ff829da](https://github.com/Hapfel1/er-save-manager/commit/ff829dacb7b04bf987e10c5360ed29b46eabebbe))
+
+
+
+---
 ## 📦 Release 1.3.0
 **Released:** May 22, 2026
 
@@ -903,6 +936,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.3.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.3.0..v1.3.1
 [1.3.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.2.2..v1.3.0
 [1.2.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.2.1..v1.2.2
 [1.2.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.2.0..v1.2.1
