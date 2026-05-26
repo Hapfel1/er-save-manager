@@ -783,9 +783,19 @@ class PlayerCoordinates:
 
 @dataclass
 class NetMan:
-    """Network manager (0x20004 = 131,076 bytes)"""
+    """Network manager.
 
-    unk0x0: int = 0
+    Total blob in the save: 0x20004 bytes.
+      [4 bytes, always 0x00000000] - hidden prefix consumed by variable-struct parsing
+                                     before this point; NOT read by NetMan.read()
+      [4 bytes, always 0x00000002] - unk0x0; net_man_offset points here
+      [0x20000 bytes]              - network data
+
+    CSNetMan.bin captures the full 0x20004-byte blob including the hidden prefix,
+    so it must be written at (net_man_offset - 4), not at net_man_offset.
+    """
+
+    unk0x0: int = 0  # always 2
     data: bytes = field(default_factory=lambda: b"\x00" * 0x20000)
 
     @classmethod
