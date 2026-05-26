@@ -1,6 +1,6 @@
-ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity
-50540000,Piquebone Arrow (Fletched),none,0,81,,99
-50550000,Piquebone Arrow,none,0,81,,99
-51500000,Igon's Harpoon,none,0,83,,30
-52520000,Piquebone Bolt,none,0,85,,99
-53500000,Rabbath's Greatbolt,none,0,86,,20
+ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_affinities,convergence_affinities
+50540000,Piquebone Arrow (Fletched),none,0,81,,99,Standard,Standard
+50550000,Piquebone Arrow,none,0,81,,99,Standard,Standard
+51500000,Igon's Harpoon,none,0,83,,30,Standard,Standard
+52520000,Piquebone Bolt,none,0,85,,99,Standard,Standard
+53500000,Rabbath's Greatbolt,none,0,86,,20,Standard,Standard
