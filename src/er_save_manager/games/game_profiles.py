@@ -57,7 +57,7 @@ GAME_PROFILES: list[GameProfile] = [
         save_glob="ER*.*",
         appdata_subdir="EldenRing",
         process_name="eldenring.exe",
-        extensions=[".sl2", ".co2"],
+        extensions=[".sl2", ".co2", ".cnv"],
     ),
     GameProfile(
         name="Elden Ring Nightreign",
