@@ -820,7 +820,8 @@ class InventoryEditor:
 
         if self._affinity_combo:
             if affinity_allowed:
-                affinity_values = self._affinity_names()
+                weapon_affs = self.selected_item.get_affinities(is_convergence_save)
+                affinity_values = weapon_affs or self._affinity_names()
                 self._affinity_combo.configure(values=affinity_values, state="normal")
                 self.inv_affinity_var.set("Standard")
                 self._update_affinity_icon("Standard")
@@ -1015,11 +1016,28 @@ class InventoryEditor:
                 self._update_aow_icon(item.name)
                 if self._aow_label:
                     self._aow_label.configure(text_color=("#7c4dac", "#c084fc"))
-            if self._affinity_combo and item.allowed_affinities:
+            if (
+                self._affinity_combo
+                and not is_convergence_save
+                and item.allowed_affinities
+            ):
+                # Gem allowed_affinities uses vanilla affinity names; skip in
+                # convergence saves where the affinity name set is different.
                 self._affinity_combo.configure(values=item.allowed_affinities)
                 default = item.default_affinity or item.allowed_affinities[0]
                 self.inv_affinity_var.set(default)
                 self._update_affinity_icon(default)
+            elif self._affinity_combo:
+                gem_affs = item.get_affinities(is_convergence_save)
+                if gem_affs:
+                    self._affinity_combo.configure(values=gem_affs)
+                    default = (
+                        item.default_affinity
+                        if item.default_affinity in gem_affs
+                        else gem_affs[0]
+                    )
+                    self.inv_affinity_var.set(default)
+                    self._update_affinity_icon(default)
             dialog.destroy()
 
         btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
@@ -1039,7 +1057,13 @@ class InventoryEditor:
         if self._aow_label:
             self._aow_label.configure(text_color=("gray50", "gray60"))
         if self._affinity_combo and self.inv_affinity_var:
-            values = self._affinity_names()
+            is_cnv = self._is_cnv_save()
+            weapon_affs = (
+                self.selected_item.get_affinities(is_cnv)
+                if self.selected_item is not None
+                else []
+            )
+            values = weapon_affs or self._affinity_names()
             self._affinity_combo.configure(values=values)
             self.inv_affinity_var.set("Standard")
             self._update_affinity_icon("Standard")
@@ -1447,6 +1471,8 @@ class InventoryEditor:
                 save_file.to_file(Path(save_path))
 
             self.refresh_inventory()
+            if self._on_inventory_changed:
+                self._on_inventory_changed()
             show_toast(self.parent.winfo_toplevel(), "Item removed.", type="success")
         except Exception as e:
             CTkMessageBox.showerror(
@@ -1530,6 +1556,8 @@ class InventoryEditor:
             if save_path:
                 save_file.to_file(Path(save_path))
             self.refresh_inventory()
+            if self._on_inventory_changed:
+                self._on_inventory_changed()
         except Exception as e:
             CTkMessageBox.showerror(
                 "Error", f"Failed to set quantity:\n{e}", parent=self.parent
@@ -1687,6 +1715,9 @@ class InventoryEditor:
         forced_gaitem_handle: int | None = None,
         allowed: list | None = None,
     ):
+        save_path = str(self.get_save_path() or "").lower()
+        is_convergence_save = ".cnv" in save_path
+
         if forced_full_id is not None:
             full_id = forced_full_id
             gaitem_handle = forced_gaitem_handle
@@ -1714,8 +1745,12 @@ class InventoryEditor:
                                     gem_item = get_item_database().get_item_by_id(
                                         0x80000000 | (gg.item_id & 0x0FFFFFFF)
                                     )
-                                    if gem_item and gem_item.allowed_affinities:
-                                        allowed = gem_item.allowed_affinities
+                                    if gem_item:
+                                        gem_affs = gem_item.get_affinities(
+                                            is_convergence_save
+                                        )
+                                        if gem_affs:
+                                            allowed = gem_affs
                                     break
                         break
                 except Exception:
@@ -1728,14 +1763,13 @@ class InventoryEditor:
             )
             return
 
-        save_path = str(self.get_save_path() or "").lower()
-        is_convergence_save = ".cnv" in save_path
-
         base_list = self._affinity_names()
+        if item:
+            weapon_affs = item.get_affinities(is_convergence_save)
+            if weapon_affs:
+                base_list = weapon_affs
         affinity_list = (
-            base_list
-            if (is_convergence_save or allowed is None)
-            else [a for a in base_list if a in allowed]
+            base_list if allowed is None else [a for a in base_list if a in allowed]
         )
         if not affinity_list:
             affinity_list = base_list
@@ -1865,6 +1899,8 @@ class InventoryEditor:
                     if self.get_save_path():
                         save_file2.to_file(Path(self.get_save_path()))
                     self.refresh_inventory()
+                    if self._on_inventory_changed:
+                        self._on_inventory_changed()
                     return
                 CTkMessageBox.showerror(
                     "Not Found", "Weapon gaitem entry not found.", parent=self.parent
@@ -2134,17 +2170,16 @@ class InventoryEditor:
                 if self._on_inventory_changed:
                     self._on_inventory_changed()
 
-                if gem_item.allowed_affinities and not is_convergence_save:
+                gem_affs = gem_item.get_affinities(is_convergence_save)
+                if gem_affs:
                     raw_base = full_id & 0x0FFFFFFF
                     cur_code = (raw_base // 100) % 100
-                    cur_name = next(
-                        (n for c, n in self._AFFINITIES if c == cur_code), "Standard"
-                    )
-                    if cur_name not in gem_item.allowed_affinities:
+                    cur_name = self._affinity_by_code().get(cur_code, "Standard")
+                    if cur_name not in gem_affs:
                         self.set_affinity(
                             forced_full_id=full_id,
                             forced_gaitem_handle=gaitem_handle,
-                            allowed=gem_item.allowed_affinities,
+                            allowed=gem_affs,
                         )
             except Exception as e:
                 CTkMessageBox.showerror(
