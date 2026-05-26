@@ -14,6 +14,8 @@
 #
 # Required Secrets:
 #   - PUSH_TOKEN: GitHub PAT with repo and workflow permissions
+#   - CODE_SIGNING_CERT: Base64-encoded PFX certificate for Windows signing
+#   - CODE_SIGNING_PASSWORD: Password for the PFX certificate
 #
 # =============================================================================
 
@@ -212,6 +214,19 @@ jobs:
       - name: Build Windows Executable
         if: matrix.os == 'windows-latest'
         run: uv run ./build-windows.py build
+
+      - name: Sign Windows executable
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        env:
+          CERT_BASE64: ${{ secrets.CODE_SIGNING_CERT }}
+          CERT_PASSWORD: ${{ secrets.CODE_SIGNING_PASSWORD }}
+        run: |
+          $certBytes = [Convert]::FromBase64String($env:CERT_BASE64)
+          [IO.File]::WriteAllBytes("sign.pfx", $certBytes)
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter signtool.exe | Select-Object -First 1
+          & $signtool sign /f sign.pfx /p $env:CERT_PASSWORD /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 "dist\windows-${{ env.VERSION_NO_V }}\er-save-manager.exe"
+          Remove-Item sign.pfx
 
       - name: Upload Linux artifact
         if: matrix.os == 'ubuntu-latest'
