@@ -454,8 +454,10 @@ class IconBrowser(ctk.CTkToplevel):
 
         # Affinity
         if affinity_allowed:
+            is_cnv = self._editor._is_cnv_save()
+            weapon_affs = item.get_affinities(is_cnv)
             self._affinity_combo.configure(
-                values=self._editor._affinity_names(), state="normal"
+                values=weapon_affs or self._editor._affinity_names(), state="normal"
             )
             self._affinity_var.set("Standard")
             self._update_affinity_icon("Standard")
@@ -513,8 +515,15 @@ class IconBrowser(ctk.CTkToplevel):
         self._aow_var.set("None")
         self._aow_name_lbl.configure(text_color=("gray50", "gray60"))
         self._update_aow_icon("None")
-        # Restore full affinity list
-        self._affinity_combo.configure(values=self._editor._affinity_names())
+        is_cnv = self._editor._is_cnv_save()
+        weapon_affs = (
+            self._selected_item.get_affinities(is_cnv)
+            if self._selected_item is not None
+            else []
+        )
+        self._affinity_combo.configure(
+            values=weapon_affs or self._editor._affinity_names()
+        )
         self._affinity_var.set("Standard")
         self._update_affinity_icon("Standard")
 
@@ -688,6 +697,17 @@ class IconBrowser(ctk.CTkToplevel):
                 default = gem.default_affinity or gem.allowed_affinities[0]
                 self._affinity_var.set(default)
                 self._update_affinity_icon(default)
+            elif is_cnv:
+                gem_affs = gem.get_affinities(is_cnv)
+                if gem_affs:
+                    self._affinity_combo.configure(values=gem_affs)
+                    default = (
+                        gem.default_affinity
+                        if gem.default_affinity in gem_affs
+                        else gem_affs[0]
+                    )
+                    self._affinity_var.set(default)
+                    self._update_affinity_icon(default)
             dialog.destroy()
 
         btn_row = ctk.CTkFrame(dialog, fg_color="transparent")

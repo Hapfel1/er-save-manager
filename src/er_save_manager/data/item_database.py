@@ -61,9 +61,23 @@ class Item:
     default_affinity: str = "Standard"
     allowed_affinities: list = field(default_factory=list)
 
+    # Weapon affinities available under Convergence (vanilla weapons only;
+    # convergence-exclusive weapons use allowed_affinities directly)
+    convergence_affinities: list = field(default_factory=list)
+
     @property
     def full_id(self) -> int:
         return self.category | self.id
+
+    def get_affinities(self, is_convergence: bool = False) -> list[str]:
+        """Return the affinity list to show for this weapon.
+
+        Convergence saves may unlock additional affinities for vanilla weapons.
+        Falls back to allowed_affinities when no convergence list is present.
+        """
+        if is_convergence and self.convergence_affinities:
+            return self.convergence_affinities
+        return self.allowed_affinities
 
     def __str__(self) -> str:
         return self.name
@@ -193,6 +207,14 @@ class ItemDatabase:
                     item.wep_type_col = row.get("wepTypeCol", "")
                     item.max_arrow_quantity = int(row.get("maxArrowQuantity", 1) or 1)
                     item.max_num = 1
+                    allowed = row.get("allowed_affinities", "")
+                    item.allowed_affinities = (
+                        [x for x in allowed.split("|") if x] if allowed else []
+                    )
+                    cnv = row.get("convergence_affinities", "")
+                    item.convergence_affinities = (
+                        [x for x in cnv.split("|") if x] if cnv else []
+                    )
                     # Convergence raises both standard and somber cap to +15
                     if convergence and item.reinforcement in ("standard", "somber"):
                         item.max_upgrade = 15
@@ -208,7 +230,13 @@ class ItemDatabase:
                         row.get("defaultAffinity", "Standard") or "Standard"
                     )
                     allowed = row.get("allowedAffinities", "")
-                    item.allowed_affinities = allowed.split("|") if allowed else []
+                    item.allowed_affinities = (
+                        [x for x in allowed.split("|") if x] if allowed else []
+                    )
+                    cnv = row.get("convergence_affinities", "")
+                    item.convergence_affinities = (
+                        [x for x in cnv.split("|") if x] if cnv else []
+                    )
                     item.max_num = 1
 
                 self._register(item, is_convergence=convergence)
