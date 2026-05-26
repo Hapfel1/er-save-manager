@@ -1,4 +1,4 @@
-fix affinities on convergence save
+fix affinities on convergence save done
 
 center pick item and inventory editor visual popups and check how to make category drop down scrollable done
 
