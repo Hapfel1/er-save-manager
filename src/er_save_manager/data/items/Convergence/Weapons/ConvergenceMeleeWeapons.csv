@@ -31,7 +31,7 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 10070000,Godwyn's Cragblades,somber,0,14,SwordDoubleEdge,1,Standard
 4120000,Gravelstone Arcblades,somber,0,7,SwordGigantic,1,Standard
 23090000,Greatstaff of Decay,somber,0,41,AxhammerLarge,1,Standard
-18110000,Guardian Spearblade,somber,0,3,SwordNormal,1,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava
+18110000,Guardian Spearblade,somber,0,3,SwordNormal,1,Standard
 11180000,Hammer of Virtue,somber,0,21,HammerNormal,1,Standard
 11020000,Leaden Maul,somber,0,21,HammerNormal,1,Standard
 23160000,Lodestone of Gelmir,somber,0,41,AxhammerLarge,1,Standard
