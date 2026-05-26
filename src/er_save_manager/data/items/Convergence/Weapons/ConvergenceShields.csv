@@ -1,6 +1,6 @@
-ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity
-31350000,Aegis of Hadea,somber,0,67,ShieldNormal,1
-30300000,Crest of the Dragon Cult,standard,1,67,ShieldNormal,1
-30160000,Hermit's Buckler,standard,1,65,ShieldSmall,1
-30170000,Shield of Alacrity,standard,1,65,ShieldSmall,1
-31180000,Shield of Starlight,standard,1,67,ShieldNormal,1
+ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_affinities
+31350000,Aegis of Hadea,somber,0,67,ShieldNormal,1,Standard
+30300000,Crest of the Dragon Cult,standard,1,67,ShieldNormal,1,Standard
+30160000,Hermit's Buckler,standard,1,65,ShieldSmall,1,Standard
+30170000,Shield of Alacrity,standard,1,65,ShieldSmall,1,Standard
+31180000,Shield of Starlight,standard,1,67,ShieldNormal,1,Standard

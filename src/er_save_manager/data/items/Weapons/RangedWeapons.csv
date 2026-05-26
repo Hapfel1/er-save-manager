@@ -1,26 +1,26 @@
-ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity
-40000000,Shortbow,standard,1,50,BowSmall,1
-40010000,Misbegotten Shortbow,standard,1,50,BowSmall,1
-40020000,Red Branch Shortbow,standard,1,50,BowSmall,1
-40030000,Harp Bow,somber,0,50,BowSmall,1
-40050000,Composite Bow,standard,1,50,BowSmall,1
-41000000,Longbow,standard,1,51,BowNormal,1
-41010000,Albinauric Bow,standard,1,51,BowNormal,1
-41020000,Horn Bow,standard,1,51,BowNormal,1
-41030000,Erdtree Bow,somber,0,51,BowNormal,1
-41040000,Serpent Bow,somber,0,51,BowNormal,1
-41060000,Pulley Bow,somber,0,51,BowNormal,1
-41070000,Black Bow,somber,0,51,BowNormal,1
-42000000,Lion Greatbow,somber,0,53,BowLarge,1
-42010000,Golem Greatbow,somber,0,53,BowLarge,1
-42030000,Erdtree Greatbow,somber,0,53,BowLarge,1
-42040000,Greatbow,standard,1,53,BowLarge,1
-43000000,Soldier's Crossbow,standard,0,55,ClossBow,1
-43020000,Light Crossbow,standard,0,55,ClossBow,1
-43030000,Heavy Crossbow,standard,0,55,ClossBow,1
-43050000,Pulley Crossbow,somber,0,55,ClossBow,1
-43060000,Full Moon Crossbow,somber,0,55,ClossBow,1
-43080000,Arbalest,standard,0,55,ClossBow,1
-43110000,Crepus's Black-Key Crossbow,somber,0,55,ClossBow,1
-44000000,Hand Ballista,standard,0,56,Ballista,1
-44010000,Jar Cannon,somber,0,56,Ballista,1
+ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_affinities,convergence_affinities
+40000000,Shortbow,standard,1,50,BowSmall,1,Standard,Standard
+40010000,Misbegotten Shortbow,standard,1,50,BowSmall,1,Standard,Standard
+40020000,Red Branch Shortbow,standard,1,50,BowSmall,1,Standard,Standard
+40030000,Harp Bow,somber,0,50,BowSmall,1,Standard,Standard
+40050000,Composite Bow,standard,1,50,BowSmall,1,Standard,Standard
+41000000,Longbow,standard,1,51,BowNormal,1,Standard,Standard
+41010000,Albinauric Bow,standard,1,51,BowNormal,1,Standard,Standard
+41020000,Horn Bow,standard,1,51,BowNormal,1,Standard,Standard
+41030000,Erdtree Bow,somber,0,51,BowNormal,1,Standard,Standard
+41040000,Serpent Bow,somber,0,51,BowNormal,1,Standard,Standard
+41060000,Pulley Bow,somber,0,51,BowNormal,1,Standard,Standard
+41070000,Black Bow,somber,0,51,BowNormal,1,Standard,Standard
+42000000,Lion Greatbow,somber,0,53,BowLarge,1,Standard,Standard
+42010000,Golem Greatbow,somber,0,53,BowLarge,1,Standard,Standard
+42030000,Erdtree Greatbow,somber,0,53,BowLarge,1,Standard,Standard
+42040000,Greatbow,standard,1,53,BowLarge,1,Standard,Standard
+43000000,Soldier's Crossbow,standard,0,55,ClossBow,1,Standard,Standard
+43020000,Light Crossbow,standard,0,55,ClossBow,1,Standard,Standard
+43030000,Heavy Crossbow,standard,0,55,ClossBow,1,Standard,Standard
+43050000,Pulley Crossbow,somber,0,55,ClossBow,1,Standard,Standard
+43060000,Full Moon Crossbow,somber,0,55,ClossBow,1,Standard,Standard
+43080000,Arbalest,standard,0,55,ClossBow,1,Standard,Standard
+43110000,Crepus's Black-Key Crossbow,somber,0,55,ClossBow,1,Standard,Standard
+44000000,Hand Ballista,standard,0,56,Ballista,1,Standard,Standard
+44010000,Jar Cannon,somber,0,56,Ballista,1,Standard,Standard

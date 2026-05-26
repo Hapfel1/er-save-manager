@@ -1,64 +1,64 @@
-ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity
-50000000,Arrow - Arrow,none,0,81,,99
-50010000,Arrow - Fire,none,0,81,,99
-50020000,Arrow - Serpent,none,0,81,,99
-50030000,Arrow - Bone (Fletched),none,0,81,,99
-50040000,Arrow - St. Trina's,none,0,81,,99
-50060000,Arrow - Shattershard (Fletched),none,0,81,,99
-50080000,Arrow - Rainbow Stone (Fletched),none,0,81,,99
-50090000,Arrow - Golden,none,0,81,,99
-50100000,Arrow - Dwelling,none,0,81,,99
-50110000,Arrow - Bone,none,0,81,,99
-50130000,Arrow - Firebone (Fletched),none,0,81,,99
-50140000,Arrow - Firebone,none,0,81,,99
-50150000,Arrow - Poisonbone (Fletched),none,0,81,,99
-50160000,Arrow - Poisonbone,none,0,81,,99
-50170000,Arrow - Sleepbone (Fletched),none,0,81,,99
-50180000,Arrow - Sleepbone,none,0,81,,99
-50190000,Arrow - Stormwing Bone,none,0,81,,99
-50200000,Arrow - Lightningbone (Fletched),none,0,81,,99
-50210000,Arrow - Lightningbone,none,0,81,,99
-50220000,Arrow - Rainbow Stone,none,0,81,,99
-50230000,Arrow - Shattershard,none,0,81,,99
-50240000,Arrow - Spiritflame,none,0,81,,99
-50260000,Arrow - Magicbone (Fletched),none,0,81,,99
-50270000,Arrow - Magicbone,none,0,81,,99
-50280000,Arrow - Haligbone (Fletched),none,0,81,,99
-50290000,Arrow - Haligbone,none,0,81,,99
-50300000,Arrow - Bloodbone (Fletched),none,0,81,,99
-50310000,Arrow - Bloodbone,none,0,81,,99
-50320000,Arrow - Coldbone (Fletched),none,0,81,,99
-50330000,Arrow - Coldbone,none,0,81,,99
-50340000,Arrow - Rotbone (Fletched),none,0,81,,99
-50350000,Arrow - Rotbone,none,0,81,,99
-51030000,Arrow - Golem's Magic,none,0,83,,30
-51050000,Arrow - Bone (Fletched),none,0,83,,30
-51060000,Arrow - Bone,none,0,83,,30
-52000000,Bolt - Bolt,none,0,85,,99
-52010000,Bolt - Lightning,none,0,85,,99
-52020000,Bolt - Perfumer's,none,0,85,,99
-52030000,Bolt - Black-Key,none,0,85,,99
-52040000,Bolt - Burred,none,0,85,,99
-52050000,Bolt - Meteor,none,0,85,,99
-52060000,Bolt - Explosive,none,0,85,,99
-52070000,Bolt - Golden,none,0,85,,99
-52080000,Bolt - Lordsworn's,none,0,85,,99
-52090000,Bolt - Bone,none,0,85,,99
-52100000,Bolt - Firebone,none,0,85,,99
-52110000,Bolt - Lightningbone,none,0,85,,99
-52120000,Bolt - Magicbone,none,0,85,,99
-52130000,Bolt - Haligbone,none,0,85,,99
-52140000,Bolt - Poisonbone,none,0,85,,99
-52150000,Bolt - Bloodbone,none,0,85,,99
-52160000,Bolt - Coldbone,none,0,85,,99
-52170000,Bolt - Rotbone,none,0,85,,99
-52180000,Bolt - Sleepbone,none,0,85,,99
-52190000,Bolt - Flaming,none,0,85,,99
-51000000,Great Arrow - Great Arrow,none,0,83,,30
-51010000,Great Arrow - Golem's,none,0,83,,30
-51020000,Great Arrow - Golden,none,0,83,,30
-51040000,Great Arrow - Radahn's Spear,none,0,83,,30
-53000000,Greatbolt - Ballista Bolt,none,0,86,,20
-53010000,Greatbolt - Lightning,none,0,86,,20
-53020000,Greatbolt - Explosive,none,0,86,,20
-53030000,Greatbolt - Bone Ballista Bolt,none,0,86,,20
+ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_affinities,convergence_affinities
+50000000,Arrow - Arrow,none,0,81,,99,Standard,Standard
+50010000,Arrow - Fire,none,0,81,,99,Standard,Standard
+50020000,Arrow - Serpent,none,0,81,,99,Standard,Standard
+50030000,Arrow - Bone (Fletched),none,0,81,,99,Standard,Standard
+50040000,Arrow - St. Trina's,none,0,81,,99,Standard,Standard
+50060000,Arrow - Shattershard (Fletched),none,0,81,,99,Standard,Standard
+50080000,Arrow - Rainbow Stone (Fletched),none,0,81,,99,Standard,Standard
+50090000,Arrow - Golden,none,0,81,,99,Standard,Standard
+50100000,Arrow - Dwelling,none,0,81,,99,Standard,Standard
+50110000,Arrow - Bone,none,0,81,,99,Standard,Standard
+50130000,Arrow - Firebone (Fletched),none,0,81,,99,Standard,Standard
+50140000,Arrow - Firebone,none,0,81,,99,Standard,Standard
+50150000,Arrow - Poisonbone (Fletched),none,0,81,,99,Standard,Standard
+50160000,Arrow - Poisonbone,none,0,81,,99,Standard,Standard
+50170000,Arrow - Sleepbone (Fletched),none,0,81,,99,Standard,Standard
+50180000,Arrow - Sleepbone,none,0,81,,99,Standard,Standard
+50190000,Arrow - Stormwing Bone,none,0,81,,99,Standard,Standard
+50200000,Arrow - Lightningbone (Fletched),none,0,81,,99,Standard,Standard
+50210000,Arrow - Lightningbone,none,0,81,,99,Standard,Standard
+50220000,Arrow - Rainbow Stone,none,0,81,,99,Standard,Standard
+50230000,Arrow - Shattershard,none,0,81,,99,Standard,Standard
+50240000,Arrow - Spiritflame,none,0,81,,99,Standard,Standard
+50260000,Arrow - Magicbone (Fletched),none,0,81,,99,Standard,Standard
+50270000,Arrow - Magicbone,none,0,81,,99,Standard,Standard
+50280000,Arrow - Haligbone (Fletched),none,0,81,,99,Standard,Standard
+50290000,Arrow - Haligbone,none,0,81,,99,Standard,Standard
+50300000,Arrow - Bloodbone (Fletched),none,0,81,,99,Standard,Standard
+50310000,Arrow - Bloodbone,none,0,81,,99,Standard,Standard
+50320000,Arrow - Coldbone (Fletched),none,0,81,,99,Standard,Standard
+50330000,Arrow - Coldbone,none,0,81,,99,Standard,Standard
+50340000,Arrow - Rotbone (Fletched),none,0,81,,99,Standard,Standard
+50350000,Arrow - Rotbone,none,0,81,,99,Standard,Standard
+51030000,Arrow - Golem's Magic,none,0,83,,30,Standard,Standard
+51050000,Arrow - Bone (Fletched),none,0,83,,30,Standard,Standard
+51060000,Arrow - Bone,none,0,83,,30,Standard,Standard
+52000000,Bolt - Bolt,none,0,85,,99,Standard,Standard
+52010000,Bolt - Lightning,none,0,85,,99,Standard,Standard
+52020000,Bolt - Perfumer's,none,0,85,,99,Standard,Standard
+52030000,Bolt - Black-Key,none,0,85,,99,Standard,Standard
+52040000,Bolt - Burred,none,0,85,,99,Standard,Standard
+52050000,Bolt - Meteor,none,0,85,,99,Standard,Standard
+52060000,Bolt - Explosive,none,0,85,,99,Standard,Standard
+52070000,Bolt - Golden,none,0,85,,99,Standard,Standard
+52080000,Bolt - Lordsworn's,none,0,85,,99,Standard,Standard
+52090000,Bolt - Bone,none,0,85,,99,Standard,Standard
+52100000,Bolt - Firebone,none,0,85,,99,Standard,Standard
+52110000,Bolt - Lightningbone,none,0,85,,99,Standard,Standard
+52120000,Bolt - Magicbone,none,0,85,,99,Standard,Standard
+52130000,Bolt - Haligbone,none,0,85,,99,Standard,Standard
+52140000,Bolt - Poisonbone,none,0,85,,99,Standard,Standard
+52150000,Bolt - Bloodbone,none,0,85,,99,Standard,Standard
+52160000,Bolt - Coldbone,none,0,85,,99,Standard,Standard
+52170000,Bolt - Rotbone,none,0,85,,99,Standard,Standard
+52180000,Bolt - Sleepbone,none,0,85,,99,Standard,Standard
+52190000,Bolt - Flaming,none,0,85,,99,Standard,Standard
+51000000,Great Arrow - Great Arrow,none,0,83,,30,Standard,Standard
+51010000,Great Arrow - Golem's,none,0,83,,30,Standard,Standard
+51020000,Great Arrow - Golden,none,0,83,,30,Standard,Standard
+51040000,Great Arrow - Radahn's Spear,none,0,83,,30,Standard,Standard
+53000000,Greatbolt - Ballista Bolt,none,0,86,,20,Standard,Standard
+53010000,Greatbolt - Lightning,none,0,86,,20,Standard,Standard
+53020000,Greatbolt - Explosive,none,0,86,,20,Standard,Standard
+53030000,Greatbolt - Bone Ballista Bolt,none,0,86,,20,Standard,Standard
