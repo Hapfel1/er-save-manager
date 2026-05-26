@@ -1126,7 +1126,7 @@ class SaveManagerGUI:
             filetypes = [(f"{profile.name} Saves", ext_str), ("All files", "*.*")]
             title = f"Select {profile.name} Save File"
         else:
-            filetypes = [("Save Files", "*.sl2 *.co2, *.cnv"), ("All files", "*.*")]
+            filetypes = [("Save Files", "*.sl2 *.co2 *.cnv"), ("All files", "*.*")]
             title = "Select Save File"
 
         filename = filedialog.askopenfilename(
