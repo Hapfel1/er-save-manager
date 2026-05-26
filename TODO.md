@@ -1,3 +1,5 @@
+fix nexusmods upload, did not upload the appimage, needs to put old versions on archived and update the mods version
+
 fix affinities on convergence save done
 
 center pick item and inventory editor visual popups and check how to make category drop down scrollable done
