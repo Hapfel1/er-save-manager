@@ -1,4 +1,6 @@
-center pick item and inventory editor visual popups and check how to make category drop down scrollable
+fix affinities on convergence save
+
+center pick item and inventory editor visual popups and check how to make category drop down scrollable done
 
 colossal somber stone in non cnv save done
 
