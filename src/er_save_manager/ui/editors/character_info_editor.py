@@ -207,7 +207,7 @@ class CharacterInfoEditor:
                 "NG+4 (4)",
                 "NG+5 (5)",
                 "NG+6 (6)",
-                "NG+7+ (7+)",
+                "NG+7 (7)",
             ],
             width=140,
         )
@@ -377,7 +377,7 @@ class CharacterInfoEditor:
                 "NG+4 (4)",
                 "NG+5 (5)",
                 "NG+6 (6)",
-                "NG+7+ (7+)",
+                "NG+7 (7)",
             ][clearcount]
             self.char_ng_level_var.set(ng_label)
         else:
@@ -582,7 +582,7 @@ class CharacterInfoEditor:
                     "NG+4 (4)",
                     "NG+5 (5)",
                     "NG+6 (6)",
-                    "NG+7+ (7+)",
+                    "NG+ (7)",
                 ][idx]
                 self.char_ng_level_var.set(ng_label)
             else:
