@@ -1,7 +1,7 @@
-ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity
-40500000,Bone Bow,standard,0,50,BowSmall,1
-41510000,Ansbach's Longbow,somber,0,51,BowNormal,1
-42500000,Igon's Greatbow,standard,1,53,BowLarge,1
-43500000,Repeating Crossbow,somber,0,55,ClossBow,1
-43510000,Spread Crossbow,standard,0,55,ClossBow,1
-44500000,Rabbath's Cannon,somber,0,56,Ballista,1
+ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_affinities,convergence_affinities
+40500000,Bone Bow,standard,0,50,BowSmall,1,Standard,Standard
+41510000,Ansbach's Longbow,somber,0,51,BowNormal,1,Standard,Standard
+42500000,Igon's Greatbow,standard,1,53,BowLarge,1,Standard,Standard
+43500000,Repeating Crossbow,somber,0,55,ClossBow,1,Standard,Standard
+43510000,Spread Crossbow,standard,0,55,ClossBow,1,Standard,Standard
+44500000,Rabbath's Cannon,somber,0,56,Ballista,1,Standard,Standard

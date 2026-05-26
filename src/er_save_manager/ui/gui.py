@@ -1024,8 +1024,17 @@ class SaveManagerGUI:
         )
         self.inventory_editor.setup_ui()
 
+    def acknowledge_save_written(self) -> None:
+        """Resnapshot the save file mtime after an internal write.
+
+        Call this after any tab writes the save so the file watcher does not
+        treat the internal change as an external modification.
+        """
+        self._update_watched_mtime()
+
     def _on_inventory_changed(self) -> None:
         """Refresh matchmaking weapon level floor after inventory changes."""
+        self.acknowledge_save_written()
         try:
             slot_idx = int(self.char_slot_var.get()) - 1
             slot = self.save_file.characters[slot_idx]
