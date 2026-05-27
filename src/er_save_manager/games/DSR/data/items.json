@@ -8732,6 +8732,18 @@
     },
     {
       "Type": "0x40000000",
+      "Id": "0x5ef8f",
+      "MaxStackCount": 10,
+      "Category": "seamlesscoop_items",
+      "Name": "Crimson Blossom",
+      "MaxUpgrade": null,
+      "CanInfuse": null,
+      "Durability": null,
+      "MugenMonkeyName": null,
+      "SoulsplannerName": null
+    },
+    {
+      "Type": "0x40000000",
       "Id": "0x5ef90",
       "MaxStackCount": 1,
       "Category": "seamlesscoop_items",
