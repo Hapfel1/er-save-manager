@@ -1,3 +1,5 @@
+Redo wiki
+
 fix nexusmods upload, did not upload the appimage, needs to put old versions on archived and update the mods version
 
 fix affinities on convergence save done
