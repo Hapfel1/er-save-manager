@@ -164,6 +164,26 @@ class SettingsTab:
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
+        # External file change notification
+        self.external_file_change_var = tk.BooleanVar(
+            value=self.settings.get("external_file_change_notification", True)
+        )
+        ctk.CTkCheckBox(
+            frame,
+            text="Notify when save file is modified externally",
+            variable=self.external_file_change_var,
+            command=lambda: self.settings.set(
+                "external_file_change_notification",
+                self.external_file_change_var.get(),
+            ),
+        ).pack(anchor="w", padx=12, pady=5)
+        ctk.CTkLabel(
+            frame,
+            text="Shows a dialog when another program modifies the loaded save.",
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+        ).pack(anchor="w", padx=32, pady=(0, 12))
+
     def _create_backup_settings(self, parent):
         frame = ctk.CTkFrame(parent, corner_radius=12)
         frame.pack(fill="x", pady=(0, 10))
