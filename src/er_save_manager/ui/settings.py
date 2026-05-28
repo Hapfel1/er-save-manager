@@ -109,6 +109,8 @@ class Settings:
             "verbose_logging": False,
             # Debug: show manual CSNetMan replace button in Character Details
             "debug_netman_replace": False,
+            # Notify when the loaded save file is modified externally
+            "external_file_change_notification": True,
         }
 
     def save(self):
