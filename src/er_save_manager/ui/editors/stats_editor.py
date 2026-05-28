@@ -12,6 +12,19 @@ from er_save_manager.data import calculate_level_from_stats, get_class_data
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
+_ATTR_KEYS = frozenset(
+    {
+        "vigor",
+        "mind",
+        "endurance",
+        "strength",
+        "dexterity",
+        "intelligence",
+        "faith",
+        "arcane",
+    }
+)
+
 
 class StatsEditor:
     """Stats editor for character attributes, level, and runes"""
@@ -38,6 +51,9 @@ class StatsEditor:
         self.get_save_path = get_save_path_callback
 
         self.stat_vars = {}
+        self._attr_error_labels: dict[str, ctk.CTkLabel] = {}
+        self._attr_entries: dict[str, ctk.CTkEntry] = {}
+        self.apply_button: ctk.CTkButton | None = None
         self.level_var = None
         self.calculated_level_var = None
         self.level_warning_var = None
@@ -107,9 +123,20 @@ class StatsEditor:
                 width=120,
             )
             entry.grid(row=i, column=1, padx=5, pady=5)
+            self._attr_entries[key] = entry
 
-            # Bind to calculate level on attribute change
-            entry.bind("<KeyRelease>", lambda e: self.calculate_character_level())
+            error_label = ctk.CTkLabel(
+                stats_grid,
+                text="",
+                text_color="red",
+                font=("Segoe UI", 10),
+                width=80,
+            )
+            error_label.grid(row=i, column=2, padx=(0, 5), pady=5, sticky=ctk.W)
+            self._attr_error_labels[key] = error_label
+
+            entry.bind("<KeyRelease>", lambda e, k=key: self._on_attr_change(k))
+            entry.bind("<FocusOut>", lambda e, k=key: self._on_attr_change(k))
 
         # Max HP/FP/Stamina on the right (base max values only, no active HP/FP/SP)
         resources_frame = ctk.CTkFrame(top_row, fg_color="transparent")
@@ -347,12 +374,13 @@ class StatsEditor:
             text_color=("black", "white"),
         ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
 
-        ctk.CTkButton(
+        self.apply_button = ctk.CTkButton(
             button_frame,
             text="Apply Changes",
             command=self.apply_changes,
             width=160,
-        ).pack(side=ctk.LEFT, padx=5)
+        )
+        self.apply_button.pack(side=ctk.LEFT, padx=5)
 
     def load_stats(self):
         """Load stats from current character slot"""
@@ -506,6 +534,29 @@ class StatsEditor:
         except Exception:
             self.calculated_level_var.set("0")
             self.level_warning_var.set("")
+
+    def _on_attr_change(self, key: str) -> None:
+        # Validate attribute and update error label + apply button state.
+        raw = self._attr_entries[key].get().strip()
+        if not raw:
+            msg = "cannot be empty"
+        else:
+            try:
+                msg = "" if 1 <= int(raw) <= 99 else "1-99 only"
+            except ValueError:
+                msg = "1-99 only"
+        self._attr_error_labels[key].configure(text=msg)
+        self._update_apply_button()
+        self.calculate_character_level()
+
+    def _update_apply_button(self) -> None:
+        # Disable apply button when any attribute is invalid.
+        if self.apply_button is None:
+            return
+        all_valid = all(
+            self._attr_error_labels[k].cget("text") == "" for k in _ATTR_KEYS
+        )
+        self.apply_button.configure(state="normal" if all_valid else "disabled")
 
     def apply_changes(self):
         """Apply stat changes to save file"""

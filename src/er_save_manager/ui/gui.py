@@ -1907,6 +1907,9 @@ class SaveManagerGUI:
             return
         if not self._pending_file_change or self._file_change_dialog_open:
             return
+        if not self.settings.get("external_file_change_notification", True):
+            self._pending_file_change = False
+            return
 
         self._pending_file_change = False
         self._file_change_dialog_open = True
@@ -1951,6 +1954,8 @@ class SaveManagerGUI:
             self.reload_save()
 
         def on_dismiss():
+            if disable_var.get():
+                self.settings.set("external_file_change_notification", False)
             self._file_change_dialog_open = False
             dialog.destroy()
 
@@ -1967,6 +1972,14 @@ class SaveManagerGUI:
             border_width=1,
             command=on_dismiss,
         ).pack(side=ctk.LEFT)
+
+        disable_var = ctk.BooleanVar(value=False)
+        ctk.CTkCheckBox(
+            main,
+            text="Don't show this again",
+            variable=disable_var,
+            font=("Segoe UI", 11),
+        ).pack(pady=(14, 0))
 
     def _verbose_log(self, message: str) -> None:
         """Write a timestamped line to the verbose log file next to the current save."""
