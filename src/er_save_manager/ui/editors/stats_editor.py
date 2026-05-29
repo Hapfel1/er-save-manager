@@ -571,28 +571,13 @@ class StatsEditor:
 
         slot_idx = self.get_char_slot()
 
-        # Check for level mismatch
-        current_level = int(self.level_var.get()) if self.level_var.get() else 0
+        # Silently correct level to match attributes
         calculated_level = (
             int(self.calculated_level_var.get())
             if self.calculated_level_var.get()
             else 0
         )
-
-        if current_level != calculated_level:
-            response = CTkMessageBox.askyesno(
-                "Level Mismatch",
-                f"Current level ({current_level}) does not match calculated level ({calculated_level}) based on attributes.\n\n"
-                f"It's recommended to set level to {calculated_level}.\n\n"
-                f"Yes - Update level to {calculated_level}\n"
-                f"No - Keep current level {current_level}",
-                parent=self.parent,
-            )
-
-            if response:
-                self.level_var.set(str(calculated_level))
-            else:
-                return
+        self.level_var.set(str(calculated_level))
 
         response = CTkMessageBox.askyesno(
             "Confirm",
@@ -684,6 +669,39 @@ class StatsEditor:
                     save_file._raw_data[abs_offset : abs_offset + len(char_data)] = (
                         char_data
                     )
+
+                    # Patch ProfileSummary level in USER_DATA_10
+                    # Layout: checksum(16) + version(4) + steam_id(8) + settings(0x140)
+                    #         + menu_system(0x1808) + active_profiles(10)
+                    #         + slot_idx * Profile(0x24C) + name(32) + terminator(2)
+                    if hasattr(save_file, "_user_data_10_offset"):
+                        import struct as _struct
+
+                        _ps_off = 0 if save_file.is_ps else 16
+                        _profile_summary_off = (
+                            save_file._user_data_10_offset
+                            + _ps_off
+                            + 4
+                            + 8
+                            + 0x140
+                            + 0x1808
+                        )
+                        _level_off = _profile_summary_off + 10 + slot_idx * 0x24C + 0x22
+                        save_file._raw_data[_level_off : _level_off + 4] = _struct.pack(
+                            "<I", char.level
+                        )
+                        # Update parsed object to stay in sync
+                        if (
+                            save_file.user_data_10_parsed
+                            and save_file.user_data_10_parsed.profile_summary
+                            and slot_idx
+                            < len(
+                                save_file.user_data_10_parsed.profile_summary.profiles
+                            )
+                        ):
+                            save_file.user_data_10_parsed.profile_summary.profiles[
+                                slot_idx
+                            ].level = char.level
 
                     # Great rune ID and last grace require full slot rebuild
                     # (both live outside PlayerGameData)
