@@ -3,6 +3,33 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.3.2
+**Released:** May 29, 2026
+
+
+### 🔧 Bug Fixes
+
+- Fixed some convergence weapons having affinity options when they should not have them ([8e60b4a](https://github.com/Hapfel1/er-save-manager/commit/8e60b4a265b4b5ce8deaaef0c6869613dd14112f))
+
+- Added missed SeamlessCoop Item (Crimson Blossom) `[DSR]` ([81ec6cc](https://github.com/Hapfel1/er-save-manager/commit/81ec6cc9f3418e5ed647f0a08b5b5ba7252939e0))
+
+- Added missing Attribute level validation ([8171902](https://github.com/Hapfel1/er-save-manager/commit/8171902c05f167135781e2253f8c6eeaf338d586))
+
+
+
+### 🎨 User Interface
+
+- Added SeamlessCoop Items for DSR ([70fa936](https://github.com/Hapfel1/er-save-manager/commit/70fa936c2241aa28e1bd5c9861c4829fe8b923e2))
+
+- Added setting to disable "Save File modified externally" warning ([30256c4](https://github.com/Hapfel1/er-save-manager/commit/30256c47c309e0c84a5219f43cb1075fb44ddc61))
+
+- Fixed Search Indexing Bug in Icon Browser ([1f8a5b6](https://github.com/Hapfel1/er-save-manager/commit/1f8a5b62be0ca4aa3bf17066a51d105838cfc5e0))
+
+- Remove unnecessary popup when editing stats and also instantly change the level total in CSProfileSummary when total level changes ([fdb3188](https://github.com/Hapfel1/er-save-manager/commit/fdb3188c73518bc7c493c03871b7fa44eae8d23e))
+
+
+
+---
 ## 📦 Release 1.3.1
 **Released:** May 26, 2026
 
@@ -936,6 +963,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.3.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.3.1..v1.3.2
 [1.3.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.3.0..v1.3.1
 [1.3.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.2.2..v1.3.0
 [1.2.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.2.1..v1.2.2
