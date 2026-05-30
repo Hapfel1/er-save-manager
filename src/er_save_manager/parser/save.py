@@ -818,6 +818,13 @@ class Save:
         preset.write(preset_stream)
         preset_data = preset_stream.getvalue()
 
+        # The first 8 bytes of Preset 0 physically overlap with the global array header.
+        # We must preserve the existing header in the raw data to avoid corruption.
+        if slot_idx == 0:
+            preset_data = (
+                self._raw_data[preset_offset : preset_offset + 8] + preset_data[8:]
+            )
+
         self._raw_data[preset_offset : preset_offset + len(preset_data)] = preset_data
 
         # Recalculate USER_DATA_10 checksum
