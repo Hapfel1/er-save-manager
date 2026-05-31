@@ -1291,7 +1291,14 @@ class InventoryEditor:
                 pass  # ops layer raises correctly
         else:
             handle = _direct_handle(full_id)
-            for it in inventory.common_items:
+            from er_save_manager.parser.inventory_ops import _is_key_item
+
+            item_list = (
+                inventory.key_items
+                if _is_key_item(full_id, inventory)
+                else inventory.common_items
+            )
+            for it in item_list:
                 if it.gaitem_handle == handle and it.quantity > 0:
                     return False, "This item is already in the inventory."
 
