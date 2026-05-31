@@ -231,6 +231,35 @@ def _select_inventory(slot, location: str):
     raise ValueError(f"location must be 'held' or 'storage', got {location!r}")
 
 
+def _is_key_item(full_item_id: int, inventory=None) -> bool:
+    """
+    Return True if the item belongs in key_items[], not common_items[].
+
+    When inventory is provided, determines by handle presence in key_items[].
+    Falls back to item DB category_name lookup for add_item (item not yet present).
+    """
+    if _category(full_item_id) != _CAT_GOODS:
+        return False
+    if inventory is not None:
+        handle = _direct_handle(full_item_id)
+        for it in inventory.key_items:
+            if it.gaitem_handle == handle:
+                return True
+        return False
+    from er_save_manager.data.item_database import get_item_database
+
+    item = get_item_database().get_item_by_id(full_item_id)
+    return item is not None and item.category_name == "key_items"
+
+
+def _first_empty_key_slot(inventory) -> int:
+    """Return index of first key_items slot with gaitem_handle == 0, or -1."""
+    for i, it in enumerate(inventory.key_items):
+        if it.gaitem_handle == 0:
+            return i
+    return -1
+
+
 # ---- binary patch helpers ---------------------------------------------------
 
 
@@ -599,25 +628,36 @@ def add_item(
     else:
         handle = _direct_handle(full_item_id)
 
+    key_item = _is_key_item(full_item_id)
+    item_list = inventory.key_items if key_item else inventory.common_items
+
     # Reject if already in inventory
-    for it in inventory.common_items:
+    for it in item_list:
         if it.gaitem_handle == handle and it.quantity > 0:
             raise ValueError(
                 f"item 0x{full_item_id:08X} already present (handle 0x{handle:08X})"
             )
 
     acq_idx = _global_next_acq_index(slot)
-    inv_slot = _first_empty_inv_slot(inventory)
-    if inv_slot == -1:
-        raise ValueError(f"inventory {location!r} is full")
 
     entry = InventoryItem()
     entry.gaitem_handle = handle
     entry.quantity = quantity
     entry.acquisition_index = acq_idx
 
-    inventory.common_items[inv_slot] = entry
-    inventory.common_item_count += 1
+    if key_item:
+        inv_slot = _first_empty_key_slot(inventory)
+        if inv_slot == -1:
+            raise ValueError(f"key item inventory {location!r} is full")
+        inventory.key_items[inv_slot] = entry
+        inventory.key_item_count += 1
+    else:
+        inv_slot = _first_empty_inv_slot(inventory)
+        if inv_slot == -1:
+            raise ValueError(f"inventory {location!r} is full")
+        inventory.common_items[inv_slot] = entry
+        inventory.common_item_count += 1
+
     _update_inv_counters(slot, inventory, location, acq_idx)
 
     _patch_slot(save, slot_idx, slot)
@@ -629,7 +669,9 @@ def add_item(
         "acquisition_index": acq_idx,
         "inventory_slot": inv_slot,
         "location": location,
-        "new_common_item_count": inventory.common_item_count,
+        "new_item_count": inventory.key_item_count
+        if key_item
+        else inventory.common_item_count,
         **({"gaitem_slot": gaitem_slot} if gaitem_slot is not None else {}),
     }
 
@@ -673,9 +715,12 @@ def remove_item(
         handle = _direct_handle(full_item_id)
         gaitem_idx = -1
 
+    key_item = _is_key_item(full_item_id, inventory)
+    item_list = inventory.key_items if key_item else inventory.common_items
+
     inv_slot = -1
     old_qty = 0
-    for i, it in enumerate(inventory.common_items):
+    for i, it in enumerate(item_list):
         if it.gaitem_handle == handle:
             inv_slot = i
             old_qty = it.quantity
@@ -687,8 +732,12 @@ def remove_item(
             f"(handle 0x{handle:08X})"
         )
 
-    inventory.common_items[inv_slot] = InventoryItem()
-    inventory.common_item_count = max(0, inventory.common_item_count - 1)
+    if key_item:
+        inventory.key_items[inv_slot] = InventoryItem()
+        inventory.key_item_count = max(0, inventory.key_item_count - 1)
+    else:
+        inventory.common_items[inv_slot] = InventoryItem()
+        inventory.common_item_count = max(0, inventory.common_item_count - 1)
 
     if gaitem_idx != -1:
         _remove_gaitem(save, slot_idx, slot, gaitem_idx)
@@ -704,7 +753,9 @@ def remove_item(
         "inventory_slot": inv_slot,
         "location": location,
         "old_quantity": old_qty,
-        "new_common_item_count": inventory.common_item_count,
+        "new_item_count": inventory.key_item_count
+        if key_item
+        else inventory.common_item_count,
     }
 
 
@@ -747,9 +798,12 @@ def set_quantity(
     else:
         handle = _direct_handle(full_item_id)
 
+    key_item = _is_key_item(full_item_id, inventory)
+    item_list = inventory.key_items if key_item else inventory.common_items
+
     inv_slot = -1
     old_qty = 0
-    for i, it in enumerate(inventory.common_items):
+    for i, it in enumerate(item_list):
         if it.gaitem_handle == handle:
             inv_slot = i
             old_qty = it.quantity
@@ -761,7 +815,7 @@ def set_quantity(
             f"(handle 0x{handle:08X})"
         )
 
-    inventory.common_items[inv_slot].quantity = quantity
+    item_list[inv_slot].quantity = quantity
     _patch_slot(save, slot_idx, slot)
 
     return {
