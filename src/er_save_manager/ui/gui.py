@@ -43,6 +43,7 @@ from er_save_manager.ui.tabs import (
     SteamIDPatcherTab,
     WorldStateTab,
 )
+from er_save_manager.ui.sidebar import Sidebar
 from er_save_manager.ui.theme import ThemeManager
 from er_save_manager.ui.utils import open_url, trace_variable
 
@@ -130,9 +131,12 @@ class SaveManagerGUI:
 
         # DSR-specific parsed save (separate from ER save_file)
         self.dsr_save = None
-
-        # Refs to file-frame buttons that should be disabled for non-ER games
+        # DS3-specific parsed save
+        self.ds3_save = None
         self._file_load_buttons: list = []
+
+        # Screen registry: name -> CTkFrame (content stack, replaces CTkTabview)
+        self._screens: dict = {}
 
         # Lazy loading flags (track which tabs have been initialized with data)
         self.tabs_loaded = {
@@ -594,17 +598,21 @@ class SaveManagerGUI:
         _itemgib_btn.pack(side=tk.RIGHT, padx=6, pady=10)
         self._file_load_buttons.append(_itemgib_btn)
 
-        # Main content - tabbed interface (customtkinter)
-        self.notebook = ctk.CTkTabview(
-            self.root,
-            width=1100,
-            height=620,
-            corner_radius=12,
-            command=self._on_tab_changed,
-        )
-        self.notebook.grid(row=2, column=0, padx=12, pady=10, sticky="nsew")
+        # Main content: sidebar + content stack
+        shell = ctk.CTkFrame(self.root, corner_radius=12)
+        shell.grid(row=2, column=0, padx=12, pady=10, sticky="nsew")
+        shell.grid_columnconfigure(1, weight=1)
+        shell.grid_rowconfigure(0, weight=1)
 
-        # Create all tabs
+        self.sidebar = Sidebar(shell, self.active_game, self._show_screen)
+        self.sidebar.grid(row=0, column=0, sticky="ns")
+
+        self._content = ctk.CTkFrame(shell, corner_radius=0, fg_color="transparent")
+        self._content.grid(row=0, column=1, sticky="nsew")
+        self._content.grid_rowconfigure(0, weight=1)
+        self._content.grid_columnconfigure(0, weight=1)
+
+        # Create all screens
         self.create_tabs()
 
         # Status bar
@@ -619,8 +627,26 @@ class SaveManagerGUI:
             pady=6,
         ).pack(fill=tk.X)
 
+    def _add_screen(self, name: str) -> ctk.CTkFrame:
+        """Register a named screen frame in the content stack."""
+        f = ctk.CTkFrame(self._content, fg_color="transparent")
+        f.grid(row=0, column=0, sticky="nsew")
+        f.grid_remove()
+        self._screens[name] = f
+        return f
+
+    def _show_screen(self, name: str) -> None:
+        """Make the named screen visible and hide all others."""
+        for screen in self._screens.values():
+            screen.grid_remove()
+        if name in self._screens:
+            self._screens[name].grid()
+        self.sidebar.select(name)
+        # Preserve lazy-load behaviour: fire the same hook as the old tab change.
+        self._on_screen_changed(name)
+
     def _on_game_changed(self, _value=None):
-        """Rebuild notebook tabs for the newly selected game."""
+        """Rebuild the sidebar and content screens for the newly selected game."""
         name = self._game_selector_var.get()
         profile = next((p for p in GAME_PROFILES if p.name == name), None)
         if profile is None:
@@ -629,14 +655,12 @@ class SaveManagerGUI:
         self.active_game = profile.key
 
         # Clear save state - switching games means the loaded save is no longer relevant.
-        # This prevents tab setup_ui() calls from accessing stale save data.
         self.save_file = None
         self.save_path = None
         self.file_path_var.set("")
 
-        # Null out all tab references so _finalize_save_load doesn't call methods
-        # on widgets that are about to be destroyed.
         self.dsr_save = None
+        self.ds3_save = None
 
         for attr in (
             "inspector_tab",
@@ -655,19 +679,21 @@ class SaveManagerGUI:
             "dsr_npc_tab",
             "dsr_world_tab",
             "dsr_flags_tab",
+            "ds3_inspector_tab",
+            "ds3_editor_tab",
+            "ds3_inventory_tab",
+            "ds3_bosses_tab",
+            "ds3_world_tab",
         ):
             setattr(self, attr, None)
 
-        # Rebuild notebook
-        self.notebook.destroy()
-        self.notebook = ctk.CTkTabview(
-            self.root,
-            width=1100,
-            height=620,
-            corner_radius=12,
-            command=self._on_tab_changed,
-        )
-        self.notebook.grid(row=2, column=0, padx=12, pady=10, sticky="nsew")
+        # Destroy existing screen frames
+        for frame in self._screens.values():
+            frame.destroy()
+        self._screens.clear()
+
+        # Rebuild sidebar groups for the new game
+        self.sidebar.rebuild(profile.key)
 
         # Reset lazy-load flags
         self.tabs_loaded = {
@@ -685,13 +711,11 @@ class SaveManagerGUI:
             self._create_other_game_tabs(profile)
 
     def create_tabs(self):
-        """Create all Elden Ring tabs."""
+        """Create all Elden Ring screens."""
 
-        # Tab 1: Save Fixer
-        self.notebook.add("Save Fixer")
-        tab_inspector = self.notebook.tab("Save Fixer")
+        # Screen: Save Fixer
         self.inspector_tab = SaveInspectorTab(
-            tab_inspector,
+            self._add_screen("Save Fixer"),
             lambda: self.save_file,
             lambda: self.save_path,
             self.load_save,
@@ -700,11 +724,9 @@ class SaveManagerGUI:
         )
         self.inspector_tab.setup_ui()
 
-        # Tab 2: Character Management
-        self.notebook.add("Character Management")
-        tab_char_mgmt = self.notebook.tab("Character Management")
+        # Screen: Character Management
         self.char_mgmt_tab = CharacterManagementTab(
-            tab_char_mgmt,
+            self._add_screen("Character Management"),
             lambda: self.save_file,
             lambda: self.save_path,
             self.reload_save,
@@ -713,16 +735,12 @@ class SaveManagerGUI:
         )
         self.char_mgmt_tab.setup_ui()
 
-        # Tab 3: Character Editor
-        self.notebook.add("Character Editor")
-        tab_character = self.notebook.tab("Character Editor")
-        self.setup_character_editor_tab(tab_character)
+        # Screen: Character Editor
+        self.setup_character_editor_tab(self._add_screen("Character Editor"))
 
-        # Tab 4: Appearance
-        self.notebook.add("Appearance")
-        tab_appearance = self.notebook.tab("Appearance")
+        # Screen: Appearance
         self.appearance_tab = AppearanceTab(
-            tab_appearance,
+            self._add_screen("Appearance"),
             lambda: self.save_file,
             lambda: self.save_path,
             self.load_save,
@@ -730,9 +748,8 @@ class SaveManagerGUI:
         )
         self.appearance_tab.setup_ui()
 
-        # Tab 5: World State
-        self.notebook.add("World State")
-        tab_world = self.notebook.tab("World State")
+        # Screen: World State
+        tab_world = self._add_screen("World State")
         self.world_tab = WorldStateTab(
             tab_world,
             lambda: self.save_file,
@@ -757,11 +774,9 @@ class SaveManagerGUI:
         except Exception:
             pass
 
-        # Tab 6: SteamID Patcher
-        self.notebook.add("SteamID Patcher")
-        tab_steamid = self.notebook.tab("SteamID Patcher")
+        # Screen: SteamID Patcher
         self.steamid_tab = SteamIDPatcherTab(
-            tab_steamid,
+            self._add_screen("SteamID Patcher"),
             lambda: self.save_file,
             lambda: self.save_path,
             self.load_save,
@@ -769,11 +784,9 @@ class SaveManagerGUI:
         )
         self.steamid_tab.setup_ui()
 
-        # Tab 7: Event Flags
-        self.notebook.add("Event Flags")
-        tab_event_flags = self.notebook.tab("Event Flags")
+        # Screen: Event Flags
         self.event_flags_tab = EventFlagsTab(
-            tab_event_flags,
+            self._add_screen("Event Flags"),
             lambda: self.save_file,
             lambda: self.save_path,
             self.load_save,
@@ -781,11 +794,9 @@ class SaveManagerGUI:
         )
         self.event_flags_tab.setup_ui()
 
-        # Tab 8: Gestures
-        self.notebook.add("Gestures")
-        tab_gestures = self.notebook.tab("Gestures")
+        # Screen: Gestures
         self.gestures_tab = GesturesRegionsTab(
-            tab_gestures,
+            self._add_screen("Gestures"),
             lambda: self.save_file,
             lambda: self.save_path,
             self.load_save,
@@ -793,16 +804,14 @@ class SaveManagerGUI:
         )
         self.gestures_tab.setup_ui()
 
-        # Tab 9: Hex Editor - hidden for now
+        # Hex Editor - hidden from sidebar, still constructed so ref stays valid
         _hex_hidden = ctk.CTkFrame(self.root, fg_color="transparent")
         self.hex_tab = HexEditorTab(_hex_hidden, lambda: self.save_file)
         self.hex_tab.setup_ui()
 
-        # Tab 10: Advanced Tools
-        self.notebook.add("Advanced Tools")
-        tab_advanced = self.notebook.tab("Advanced Tools")
+        # Screen: Advanced Tools
         self.advanced_tab = AdvancedToolsTab(
-            tab_advanced,
+            self._add_screen("Advanced Tools"),
             lambda: self.save_file,
             lambda: self.save_path,
             self.load_save,
@@ -810,11 +819,9 @@ class SaveManagerGUI:
         )
         self.advanced_tab.setup_ui()
 
-        # Tab 11: Settings
-        self.notebook.add("Settings")
-        tab_settings = self.notebook.tab("Settings")
+        # Screen: Settings (pinned to sidebar bottom)
         self.settings_tab = SettingsTab(
-            tab_settings,
+            self._add_screen("Settings"),
             get_save_path_callback=lambda: self.save_path,
             get_default_save_path_callback=lambda: self.default_save_path,
             active_game="elden_ring",
@@ -822,25 +829,80 @@ class SaveManagerGUI:
         )
         self.settings_tab.setup_ui()
 
+        # Show the first screen and set sidebar state
+        self._show_screen("Save Fixer")
+
     def _create_other_game_tabs(self, profile):
-        """Create the reduced tab set for non-Elden Ring games."""
+        """Create the reduced screen set for non-Elden Ring games."""
 
-        # DSR has no embedded SteamID - SteamID Patcher tab is not shown.
-        # All other non-ER games get: SteamID Patcher + Settings.
-        # Backup Manager is available via the top-level button, not as a tab.
+        if profile.key == "dark_souls_3":
+            from er_save_manager.games.DS3.tabs import (
+                DS3BossesTab,
+                DS3EditorTab,
+                DS3InspectorTab,
+                DS3InventoryTab,
+                DS3WorldStateTab,
+            )
 
-        if profile.key != "dark_souls_remastered":
-            self.notebook.add("SteamID Patcher")
-            tab_steamid = self.notebook.tab("SteamID Patcher")
+            self.ds3_inspector_tab = DS3InspectorTab(
+                self._add_screen("Save Inspector"),
+                get_save=lambda: self.ds3_save,
+                on_slot_selected=self._on_ds3_slot_edit,
+            )
+            self.ds3_inspector_tab.setup_ui()
+
+            self.ds3_editor_tab = DS3EditorTab(
+                self._add_screen("Character Editor"),
+                get_save=lambda: self.ds3_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.ds3_editor_tab.setup_ui()
+
+            self.ds3_inventory_tab = DS3InventoryTab(
+                self._add_screen("Inventory"),
+                get_save=lambda: self.ds3_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.ds3_inventory_tab.setup_ui()
+
+            self.ds3_bosses_tab = DS3BossesTab(
+                self._add_screen("Bosses"),
+                get_save=lambda: self.ds3_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.ds3_bosses_tab.setup_ui()
+
+            self.ds3_world_tab = DS3WorldStateTab(
+                self._add_screen("World State"),
+                get_save=lambda: self.ds3_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.ds3_world_tab.setup_ui()
+
             self.steamid_tab = SteamIDPatcherTab(
-                tab_steamid,
+                self._add_screen("SteamID Patcher"),
                 lambda: self.save_file,
                 lambda: self.save_path,
                 self.load_save,
                 self.show_toast,
             )
             self.steamid_tab.setup_ui()
-            self.steamid_tab.set_active_profile(profile.name)
+            self.steamid_tab.set_active_profile("Dark Souls III")
+
+            self.settings_tab = SettingsTab(
+                self._add_screen("Settings"),
+                get_save_path_callback=lambda: self.save_path,
+                get_default_save_path_callback=lambda: self.default_save_path,
+                active_game="dark_souls_3",
+                root=self.root,
+            )
+            self.settings_tab.setup_ui()
+            self._show_screen("Save Inspector")
+            return
 
         if profile.key == "dark_souls_remastered":
             from er_save_manager.games.DSR.editor_tab import DSREditorTab
@@ -849,71 +911,86 @@ class SaveManagerGUI:
             from er_save_manager.games.DSR.npc_tab import DSRNPCTab
             from er_save_manager.games.DSR.world_state_tab import DSRWorldStateTab
 
-            self.notebook.add("Save Inspector")
             self.dsr_inspector_tab = DSRInspectorTab(
-                self.notebook.tab("Save Inspector"),
+                self._add_screen("Save Inspector"),
                 get_dsr_save=lambda: self.dsr_save,
                 on_slot_selected=self._on_dsr_slot_edit,
             )
             self.dsr_inspector_tab.setup_ui()
 
-            self.notebook.add("Character Editor")
             self.dsr_editor_tab = DSREditorTab(
-                self.notebook.tab("Character Editor"),
+                self._add_screen("Character Editor"),
                 get_dsr_save=lambda: self.dsr_save,
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
             self.dsr_editor_tab.setup_ui()
 
-            self.notebook.add("Inventory")
             self.dsr_inventory_tab = DSRInventoryTab(
-                self.notebook.tab("Inventory"),
+                self._add_screen("Inventory"),
                 get_dsr_save=lambda: self.dsr_save,
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
             self.dsr_inventory_tab.setup_ui()
 
-            self.notebook.add("NPCs & Bosses")
             self.dsr_npc_tab = DSRNPCTab(
-                self.notebook.tab("NPCs & Bosses"),
+                self._add_screen("NPCs & Bosses"),
                 get_dsr_save=lambda: self.dsr_save,
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
             self.dsr_npc_tab.setup_ui()
 
-            self.notebook.add("Event Flags")
             from er_save_manager.games.DSR.event_flags_tab import DSREventFlagsTab
 
             self.dsr_flags_tab = DSREventFlagsTab(
-                self.notebook.tab("Event Flags"),
+                self._add_screen("Event Flags"),
                 get_dsr_save=lambda: self.dsr_save,
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
             self.dsr_flags_tab.setup_ui()
 
-            self.notebook.add("World State")
             self.dsr_world_tab = DSRWorldStateTab(
-                self.notebook.tab("World State"),
+                self._add_screen("World State"),
                 get_dsr_save=lambda: self.dsr_save,
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
             self.dsr_world_tab.setup_ui()
 
-        self.notebook.add("Settings")
-        tab_settings = self.notebook.tab("Settings")
+            self.settings_tab = SettingsTab(
+                self._add_screen("Settings"),
+                get_save_path_callback=lambda: self.save_path,
+                get_default_save_path_callback=lambda: self.default_save_path,
+                active_game=profile.key,
+                root=self.root,
+            )
+            self.settings_tab.setup_ui()
+            self._show_screen("Save Inspector")
+            return
+
+        # Lite games: SteamID Patcher + Settings only
+        self.steamid_tab = SteamIDPatcherTab(
+            self._add_screen("SteamID Patcher"),
+            lambda: self.save_file,
+            lambda: self.save_path,
+            self.load_save,
+            self.show_toast,
+        )
+        self.steamid_tab.setup_ui()
+        self.steamid_tab.set_active_profile(profile.name)
+
         self.settings_tab = SettingsTab(
-            tab_settings,
+            self._add_screen("Settings"),
             get_save_path_callback=lambda: self.save_path,
             get_default_save_path_callback=lambda: self.default_save_path,
             active_game=profile.key,
             root=self.root,
         )
         self.settings_tab.setup_ui()
+        self._show_screen("SteamID Patcher")
 
     def setup_character_editor_tab(self, parent):
         """Setup character editor tab with modular editors"""
@@ -1411,22 +1488,21 @@ class SaveManagerGUI:
     def _open_inventory_editor(self):
         """Navigate to the inventory editor for the active game."""
         if self.active_game == "dark_souls_remastered":
-            try:
-                self.notebook.set("Inventory")
-            except Exception:
-                pass
+            self._show_screen("Inventory")
             return
         """Navigate to Character Editor > Inventory tab."""
-        self.notebook.set("Character Editor")
+        self._show_screen("Character Editor")
         if hasattr(self, "inventory_editor"):
-            # Find the inner editor_tabs and activate Inventory
+            # Navigate the inner editor sub-tabs (nested CTkTabview inside Character Editor)
             try:
-                for widget in self.notebook.tab("Character Editor").winfo_children():
-                    if isinstance(widget, ctk.CTkFrame):
-                        for child in widget.winfo_children():
-                            if isinstance(child, ctk.CTkTabview):
-                                child.set("Inventory")
-                                break
+                char_screen = self._screens.get("Character Editor")
+                if char_screen:
+                    for widget in char_screen.winfo_children():
+                        if isinstance(widget, ctk.CTkFrame):
+                            for child in widget.winfo_children():
+                                if isinstance(child, ctk.CTkTabview):
+                                    child.set("Inventory")
+                                    break
             except Exception:
                 pass
 
@@ -1442,18 +1518,20 @@ class SaveManagerGUI:
         addon_manager = TroubleshooterAddon()
         show_troubleshooter_dialog(self.root, addon_manager)
 
-    def _on_tab_changed(self, event=None):
-        """Handle tab change event - lazy load and refresh tabs."""
-        current_tab = self.notebook.get()
+    def _on_screen_changed(self, screen_name: str | None = None) -> None:
+        """Handle screen change - lazy load and refresh as needed."""
+        current = screen_name or next(
+            (n for n, f in self._screens.items() if f.winfo_ismapped()), None
+        )
+        if current is None:
+            return
 
-        # Load tab content in background for non-blocking UI
-        if not self.tabs_loaded.get(current_tab, False):
+        if not self.tabs_loaded.get(current, False):
             thread = threading.Thread(
-                target=self._lazy_load_tab_background, args=(current_tab,), daemon=True
+                target=self._lazy_load_tab_background, args=(current,), daemon=True
             )
             thread.start()
-        elif current_tab == "World State" and hasattr(self, "world_tab"):
-            # Already loaded, just refresh
+        elif current == "World State" and hasattr(self, "world_tab"):
             self.world_tab.refresh()
 
     def _lazy_load_tab_background(self, tab_name):
@@ -1507,6 +1585,8 @@ class SaveManagerGUI:
                 self.root.after(500, self.load_save)
         elif self.active_game == "dark_souls_remastered":
             self.root.after(500, lambda p=save_path: self._load_dsr_save(p))
+        elif self.active_game == "dark_souls_3":
+            self.root.after(500, lambda p=save_path: self._load_ds3_save(p))
         else:
             self._load_non_er_save(save_path)
 
@@ -1650,6 +1730,14 @@ class SaveManagerGUI:
                 self.status_var.set("Load cancelled by user")
                 return
 
+        # Route non-ER games to their own loaders so the Load button works too
+        if self.active_game == "dark_souls_remastered":
+            self._load_dsr_save(save_path)
+            return
+        if self.active_game == "dark_souls_3":
+            self._load_ds3_save(save_path)
+            return
+
         # Start loading in background thread
         self.status_var.set("Loading save file...")
         thread = threading.Thread(
@@ -1731,14 +1819,70 @@ class SaveManagerGUI:
         """Navigate to Character Editor and load the selected slot.
         Called only from the inspector 'Edit Character' button - never from row clicks.
         """
-        try:
-            self.notebook.set("Character Editor")
-        except Exception:
-            pass
+        self._show_screen("Character Editor")
         if hasattr(self, "dsr_editor_tab") and self.dsr_editor_tab:
             self.dsr_editor_tab.load_slot(slot_idx)
 
+    def _load_ds3_save(self, save_path: str) -> None:
+        """Parse a DS3 save file and refresh all DS3 tabs."""
+        from er_save_manager.games.DS3.save import DS3Save
+
+        profile = self._active_profile()
+        if (
+            not self.settings.get("skip_game_running_check", False)
+            and profile
+            and profile.process_name
+            and self.is_game_running(profile.process_name)
+        ):
+            if not self._handle_game_running_dialog(profile):
+                return
+
+        try:
+            self.ds3_save = DS3Save.from_file(save_path)
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error", f"Failed to load DS3 save:\n{e}", parent=self.root
+            )
+            return
+
+        self.save_path = Path(save_path)
+        self.save_file = None
+
+        for attr in (
+            "ds3_inspector_tab",
+            "ds3_editor_tab",
+            "ds3_inventory_tab",
+            "ds3_bosses_tab",
+            "ds3_world_tab",
+        ):
+            tab = getattr(self, attr, None)
+            if tab is not None:
+                tab.refresh()
+
+        self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
+        self.show_toast(
+            f"DS3 save loaded: {os.path.basename(save_path)}", duration=2500
+        )
+
     def reload_save(self):
+        """Reload the current save file without showing success message"""
+        self.load_save(silent=True)
+
+    def _on_ds3_slot_edit(self, slot_idx: int) -> None:
+        """Navigate to Character Editor and load the selected slot.
+        Called only from the DS3 inspector 'Edit Character' button.
+        """
+        self._show_screen("Character Editor")
+        for attr in (
+            "ds3_editor_tab",
+            "ds3_inventory_tab",
+            "ds3_bosses_tab",
+            "ds3_world_tab",
+        ):
+            tab = getattr(self, attr, None)
+            if tab is not None:
+                tab.load_slot(slot_idx)
+
         """Reload the current save file without showing success message"""
         self.load_save(silent=True)
 
@@ -1764,9 +1908,12 @@ class SaveManagerGUI:
         for tab_name in self.tabs_loaded:
             self.tabs_loaded[tab_name] = False
 
-        # Lazy-load the currently visible tab immediately (ensures live refresh)
-        current_tab = self.notebook.get()
-        self._lazy_load_tab_background(current_tab)
+        # Lazy-load the currently visible screen immediately
+        current = next(
+            (n for n, f in self._screens.items() if f.winfo_ismapped()), None
+        )
+        if current:
+            self._lazy_load_tab_background(current)
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         if not silent:
