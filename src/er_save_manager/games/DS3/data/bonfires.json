@@ -1,0 +1,92 @@
+[
+  {
+    "name": "Activate Lord of Cinders in Firelink Shrine",
+    "offset": 1288,
+    "unlock_value": "3F"
+  },
+  {
+    "name": "Cemetery of Ash",
+    "offset": 23154,
+    "unlock_value": "F8"
+  },
+  {
+    "name": "High Wall of Lothric",
+    "offset": 3953,
+    "unlock_value": "EC40"
+  },
+  {
+    "name": "Undead Settlement",
+    "offset": 6514,
+    "unlock_value": "F8"
+  },
+  {
+    "name": "Archdragon Peak",
+    "offset": 9074,
+    "unlock_value": "F0"
+  },
+  {
+    "name": "Kiln of the First Flame",
+    "offset": 24434,
+    "unlock_value": "E0"
+  },
+  {
+    "name": "Catacombs of Carthus",
+    "offset": 20594,
+    "unlock_value": "FA"
+  },
+  {
+    "name": "Irithyll of the Boreal Valley",
+    "offset": 19313,
+    "unlock_value": "FF80"
+  },
+  {
+    "name": "Unlock Ariandel's Room",
+    "offset": 25789,
+    "unlock_value": "08"
+  },
+  {
+    "name": "The Dreg Heap",
+    "offset": 29554,
+    "unlock_value": "F0"
+  },
+  {
+    "name": "Irithyll Dungeon",
+    "offset": 21874,
+    "unlock_value": "E0"
+  },
+  {
+    "name": "Road of Sacrifices",
+    "offset": 11633,
+    "unlock_value": "FF80"
+  },
+  {
+    "name": "Cathedral of the Deep",
+    "offset": 15474,
+    "unlock_value": "F0"
+  },
+  {
+    "name": "Lothric Castle",
+    "offset": 5234,
+    "unlock_value": "E0"
+  },
+  {
+    "name": "Grand Archives",
+    "offset": 14194,
+    "unlock_value": "C0"
+  },
+  {
+    "name": "Painted World of Ariandel",
+    "offset": 25714,
+    "unlock_value": "FF"
+  },
+  {
+    "name": "The Ringed City",
+    "offset": 30834,
+    "unlock_value": "FC"
+  },
+  {
+    "name": "Filianore's Rest",
+    "offset": 32114,
+    "unlock_value": "C0"
+  }
+]

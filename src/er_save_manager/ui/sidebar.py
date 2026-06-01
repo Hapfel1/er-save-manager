@@ -16,6 +16,7 @@ import customtkinter as ctk
 # Group / layout definitions
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class SidebarGroup:
     label: str
@@ -27,7 +28,9 @@ class SidebarGroup:
 SIDEBAR_LAYOUT: dict[str, list[SidebarGroup]] = {
     "elden_ring": [
         SidebarGroup("Rescue", ["Save Fixer"]),
-        SidebarGroup("Character", ["Character Management", "Character Editor", "Appearance"]),
+        SidebarGroup(
+            "Character", ["Character Management", "Character Editor", "Appearance"]
+        ),
         SidebarGroup("World", ["World State", "Event Flags", "Gestures"]),
         SidebarGroup("Tools", ["SteamID Patcher", "Advanced Tools"]),
     ],
@@ -121,8 +124,8 @@ class Sidebar(ctk.CTkFrame):
     # ------------------------------------------------------------------
 
     def _build(self, game_key: str) -> None:
-        self.grid_rowconfigure(0, weight=1)   # scrollable nav area expands
-        self.grid_rowconfigure(1, weight=0)   # settings pin stays at bottom
+        self.grid_rowconfigure(0, weight=1)  # scrollable nav area expands
+        self.grid_rowconfigure(1, weight=0)  # settings pin stays at bottom
         self.grid_columnconfigure(0, weight=1)
 
         # Nav area (top)

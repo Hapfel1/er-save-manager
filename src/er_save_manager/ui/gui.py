@@ -30,6 +30,7 @@ from er_save_manager.ui.editors import (
 )
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.settings import get_settings
+from er_save_manager.ui.sidebar import Sidebar
 from er_save_manager.ui.tabs import (
     AdvancedToolsTab,
     AppearanceTab,
@@ -43,7 +44,6 @@ from er_save_manager.ui.tabs import (
     SteamIDPatcherTab,
     WorldStateTab,
 )
-from er_save_manager.ui.sidebar import Sidebar
 from er_save_manager.ui.theme import ThemeManager
 from er_save_manager.ui.utils import open_url, trace_variable
 
