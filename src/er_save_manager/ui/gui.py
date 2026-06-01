@@ -18,6 +18,7 @@ from er_save_manager import VersionChecker, __version__
 from er_save_manager.games.game_profiles import GAME_PROFILES, PROFILES_BY_KEY
 from er_save_manager.parser import Save
 from er_save_manager.platform import PlatformUtils
+from er_save_manager.ui.context_bar import ContextBar
 
 # Import all modular components
 from er_save_manager.ui.dialogs.character_details import CharacterDetailsDialog
@@ -28,6 +29,7 @@ from er_save_manager.ui.editors import (
     InventoryEditor,
     StatsEditor,
 )
+from er_save_manager.ui.home_screen import HomeScreen
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.settings import get_settings
 from er_save_manager.ui.sidebar import Sidebar
@@ -128,6 +130,11 @@ class SaveManagerGUI:
 
         # Active game (key from game_profiles.py); drives which tabs are shown
         self.active_game = "elden_ring"
+
+        # Game selector and file path vars - initialised here so ContextBar can bind to them
+        self._game_selector_var = tk.StringVar(value=PROFILES_BY_KEY["elden_ring"].name)
+        self.file_path_var = tk.StringVar(value="")
+        trace_variable(self.file_path_var, "w", self._on_file_path_changed)
 
         # DSR-specific parsed save (separate from ER save_file)
         self.dsr_save = None
@@ -457,150 +464,45 @@ class SaveManagerGUI:
         """Open Discord server invite in browser."""
         open_url("https://dsc.gg/er-saveman")
 
+    def _backup_now(self):
+        """Trigger an immediate backup of the currently loaded save."""
+        if not self.save_path:
+            CTkMessageBox.showwarning(
+                "No Save", "Load a save file before backing up.", parent=self.root
+            )
+            return
+        self.show_backup_manager_standalone()
+
     def setup_ui(self):
-        """Setup main UI structure with optimized layout"""
-        # Use grid for main container - more efficient than pack
-        self.root.grid_rowconfigure(0, weight=0)  # Title
-        self.root.grid_rowconfigure(1, weight=0)  # File selection
-        self.root.grid_rowconfigure(2, weight=1)  # Main content (tabs)
-        self.root.grid_rowconfigure(3, weight=0)  # Status bar
+        """Setup main UI structure."""
+        self.root.grid_rowconfigure(0, weight=0)  # Context bar
+        self.root.grid_rowconfigure(1, weight=1)  # Main content (sidebar + screens)
+        self.root.grid_rowconfigure(2, weight=0)  # Status bar
         self.root.grid_columnconfigure(0, weight=1)
 
-        # Title
-        title_frame = ctk.CTkFrame(self.root, corner_radius=12)
-        title_frame.grid(row=0, column=0, padx=12, pady=(12, 6), sticky="ew")
-
-        # Support button (top right corner)
-        support_btn = ctk.CTkButton(
-            title_frame,
-            text="☕ Support me",
-            command=self._open_kofi,
-            width=100,
-            height=32,
-            font=("Segoe UI", 11),
+        # Context bar (replaces title frame + file frame)
+        self.context_bar = ContextBar(
+            self.root,
+            game_var=self._game_selector_var,
+            file_path_var=self.file_path_var,
+            get_slot_index=lambda: self.selected_slot_index,
+            get_save=lambda: self.save_file,
+            is_running=lambda: self.is_game_running(
+                (self._active_profile().process_name or "eldenring.exe")
+                if self._active_profile()
+                else "eldenring.exe"
+            ),
+            on_backup=self._backup_now,
+            on_discord=self._open_discord,
+            on_kofi=self._open_kofi,
+            game_names=[p.name for p in GAME_PROFILES],
+            on_game_changed=self._on_game_changed,
         )
-        support_btn.place(relx=1.0, x=-12, y=12, anchor="ne")
-
-        discord_btn = ctk.CTkButton(
-            title_frame,
-            text="Discord Server",
-            command=self._open_discord,
-            width=100,
-            height=32,
-            font=("Segoe UI", 11),
-        )
-        discord_btn.place(relx=0.0, x=12, y=12, anchor="nw")
-
-        ctk.CTkLabel(
-            title_frame,
-            text="Elden Ring Save Manager",
-            font=("Segoe UI", 20, "bold"),
-        ).pack(pady=(10, 2))
-
-        ctk.CTkLabel(
-            title_frame,
-            text="Complete save editor, backup manager, and corruption fixer",
-            font=("Segoe UI", 11),
-        ).pack(pady=(0, 10))
-
-        # File Selection
-        file_frame = ctk.CTkFrame(self.root, corner_radius=12)
-        file_frame.grid(row=1, column=0, padx=12, pady=10, sticky="ew")
-
-        # Game selector
-        game_row = ctk.CTkFrame(file_frame, fg_color="transparent")
-        game_row.pack(fill=tk.X, padx=12, pady=(12, 4))
-
-        ctk.CTkLabel(game_row, text="Game:", font=("Segoe UI", 11)).pack(
-            side=tk.LEFT, padx=(0, 8)
-        )
-
-        self._game_selector_var = tk.StringVar(value=PROFILES_BY_KEY["elden_ring"].name)
-        game_names = [p.name for p in GAME_PROFILES]
-        self._game_combo = ctk.CTkComboBox(
-            game_row,
-            values=game_names,
-            variable=self._game_selector_var,
-            state="readonly",
-            width=260,
-            command=self._on_game_changed,
-        )
-        self._game_combo.pack(side=tk.LEFT)
-
-        ctk.CTkLabel(
-            file_frame,
-            text="Select a Save File",
-            font=("Segoe UI", 12, "bold"),
-        ).pack(anchor="w", padx=12, pady=(4, 4))
-
-        self.file_path_var = tk.StringVar(value="")
-        # Auto-load when valid file path is entered
-        trace_variable(self.file_path_var, "w", self._on_file_path_changed)
-
-        path_frame = ctk.CTkFrame(file_frame, corner_radius=8)
-        path_frame.pack(fill=tk.X, padx=12, pady=(0, 12))
-
-        ctk.CTkEntry(path_frame, textvariable=self.file_path_var).pack(
-            side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 6), pady=10
-        )
-
-        _browse_btn = ctk.CTkButton(
-            path_frame,
-            text="Browse",
-            command=self.browse_file,
-            width=110,
-        )
-        _browse_btn.pack(side=tk.LEFT, padx=4, pady=10)
-        self._file_load_buttons.append(_browse_btn)
-
-        _autofind_btn = ctk.CTkButton(
-            path_frame,
-            text="Auto-Find",
-            command=self.auto_detect,
-            width=110,
-        )
-        _autofind_btn.pack(side=tk.LEFT, padx=4, pady=10)
-        self._file_load_buttons.append(_autofind_btn)
-
-        # Load button
-        buttons_frame = ctk.CTkFrame(file_frame, corner_radius=8)
-        buttons_frame.pack(fill=tk.X, pady=(6, 10), padx=12)
-
-        _reload_btn = ctk.CTkButton(
-            buttons_frame,
-            text="Reload",
-            command=self.load_save,
-            width=160,
-        )
-        _reload_btn.pack(side=tk.LEFT, padx=6, pady=10)
-        self._file_load_buttons.append(_reload_btn)
-
-        ctk.CTkButton(
-            buttons_frame,
-            text="Backup Manager",
-            command=self.show_backup_manager_standalone,
-            width=160,
-        ).pack(side=tk.LEFT, padx=6, pady=10)
-
-        ctk.CTkButton(
-            buttons_frame,
-            text="Troubleshooting",
-            command=self.open_troubleshooting,
-            width=160,
-        ).pack(side=tk.RIGHT, padx=6, pady=10)
-
-        _itemgib_btn = ctk.CTkButton(
-            buttons_frame,
-            text="Item Gib",
-            command=self._open_inventory_editor,
-            width=200,
-        )
-        _itemgib_btn.pack(side=tk.RIGHT, padx=6, pady=10)
-        self._file_load_buttons.append(_itemgib_btn)
+        self.context_bar.grid(row=0, column=0, sticky="ew")
 
         # Main content: sidebar + content stack
-        shell = ctk.CTkFrame(self.root, corner_radius=12)
-        shell.grid(row=2, column=0, padx=12, pady=10, sticky="nsew")
+        shell = ctk.CTkFrame(self.root, corner_radius=0)
+        shell.grid(row=1, column=0, sticky="nsew")
         shell.grid_columnconfigure(1, weight=1)
         shell.grid_rowconfigure(0, weight=1)
 
@@ -617,7 +519,7 @@ class SaveManagerGUI:
 
         # Status bar
         status_frame = ctk.CTkFrame(self.root, corner_radius=0)
-        status_frame.grid(row=3, column=0, sticky="ew")
+        status_frame.grid(row=2, column=0, sticky="ew")
 
         ctk.CTkLabel(
             status_frame,
@@ -663,6 +565,7 @@ class SaveManagerGUI:
         self.ds3_save = None
 
         for attr in (
+            "home_screen",
             "inspector_tab",
             "char_mgmt_tab",
             "world_tab",
@@ -712,6 +615,25 @@ class SaveManagerGUI:
 
     def create_tabs(self):
         """Create all Elden Ring screens."""
+
+        # Screen: Home dashboard (includes file-load strip)
+        home_frame = self._add_screen("Home")
+        self.home_screen = HomeScreen(
+            home_frame,
+            get_save=lambda: self.save_file,
+            get_game_key=lambda: self.active_game,
+            get_game_name=lambda: self._game_selector_var.get(),
+            on_navigate=self._show_screen,
+            on_scan=lambda: self._show_screen("Save Fixer"),
+            browse_file=self.browse_file,
+            auto_detect=self.auto_detect,
+            load_save=self.load_save,
+            show_backup=self.show_backup_manager_standalone,
+            open_trouble=self.open_troubleshooting,
+            open_itemgib=self._open_inventory_editor,
+            file_path_var=self.file_path_var,
+            file_load_buttons=self._file_load_buttons,
+        )
 
         # Screen: Save Fixer
         self.inspector_tab = SaveInspectorTab(
@@ -830,7 +752,7 @@ class SaveManagerGUI:
         self.settings_tab.setup_ui()
 
         # Show the first screen and set sidebar state
-        self._show_screen("Save Fixer")
+        self._show_screen("Home")
 
     def _create_other_game_tabs(self, profile):
         """Create the reduced screen set for non-Elden Ring games."""
@@ -842,6 +764,24 @@ class SaveManagerGUI:
                 DS3InspectorTab,
                 DS3InventoryTab,
                 DS3WorldStateTab,
+            )
+
+            home_frame = self._add_screen("Home")
+            self.home_screen = HomeScreen(
+                home_frame,
+                get_save=lambda: self.save_file,
+                get_game_key=lambda: self.active_game,
+                get_game_name=lambda: self._game_selector_var.get(),
+                on_navigate=self._show_screen,
+                on_scan=lambda: self._show_screen("Save Inspector"),
+                browse_file=self.browse_file,
+                auto_detect=self.auto_detect,
+                load_save=self.load_save,
+                show_backup=self.show_backup_manager_standalone,
+                open_trouble=self.open_troubleshooting,
+                open_itemgib=self._open_inventory_editor,
+                file_path_var=self.file_path_var,
+                file_load_buttons=self._file_load_buttons,
             )
 
             self.ds3_inspector_tab = DS3InspectorTab(
@@ -901,7 +841,7 @@ class SaveManagerGUI:
                 root=self.root,
             )
             self.settings_tab.setup_ui()
-            self._show_screen("Save Inspector")
+            self._show_screen("Home")
             return
 
         if profile.key == "dark_souls_remastered":
@@ -910,6 +850,24 @@ class SaveManagerGUI:
             from er_save_manager.games.DSR.inventory_tab import DSRInventoryTab
             from er_save_manager.games.DSR.npc_tab import DSRNPCTab
             from er_save_manager.games.DSR.world_state_tab import DSRWorldStateTab
+
+            home_frame = self._add_screen("Home")
+            self.home_screen = HomeScreen(
+                home_frame,
+                get_save=lambda: self.dsr_save,
+                get_game_key=lambda: self.active_game,
+                get_game_name=lambda: self._game_selector_var.get(),
+                on_navigate=self._show_screen,
+                on_scan=lambda: self._show_screen("Save Inspector"),
+                browse_file=self.browse_file,
+                auto_detect=self.auto_detect,
+                load_save=self.load_save,
+                show_backup=self.show_backup_manager_standalone,
+                open_trouble=self.open_troubleshooting,
+                open_itemgib=self._open_inventory_editor,
+                file_path_var=self.file_path_var,
+                file_load_buttons=self._file_load_buttons,
+            )
 
             self.dsr_inspector_tab = DSRInspectorTab(
                 self._add_screen("Save Inspector"),
@@ -968,10 +926,28 @@ class SaveManagerGUI:
                 root=self.root,
             )
             self.settings_tab.setup_ui()
-            self._show_screen("Save Inspector")
+            self._show_screen("Home")
             return
 
-        # Lite games: SteamID Patcher + Settings only
+        # Lite games: Home + SteamID Patcher + Settings
+        home_frame = self._add_screen("Home")
+        self.home_screen = HomeScreen(
+            home_frame,
+            get_save=lambda: self.save_file,
+            get_game_key=lambda: self.active_game,
+            get_game_name=lambda: self._game_selector_var.get(),
+            on_navigate=self._show_screen,
+            on_scan=lambda: self._show_screen("SteamID Patcher"),
+            browse_file=self.browse_file,
+            auto_detect=self.auto_detect,
+            load_save=self.load_save,
+            show_backup=self.show_backup_manager_standalone,
+            open_trouble=self.open_troubleshooting,
+            open_itemgib=self._open_inventory_editor,
+            file_path_var=self.file_path_var,
+            file_load_buttons=self._file_load_buttons,
+        )
+
         self.steamid_tab = SteamIDPatcherTab(
             self._add_screen("SteamID Patcher"),
             lambda: self.save_file,
@@ -990,7 +966,7 @@ class SaveManagerGUI:
             root=self.root,
         )
         self.settings_tab.setup_ui()
-        self._show_screen("SteamID Patcher")
+        self._show_screen("Home")
 
     def setup_character_editor_tab(self, parent):
         """Setup character editor tab with modular editors"""
@@ -1542,6 +1518,8 @@ class SaveManagerGUI:
     def _lazy_load_tab_main(self, tab_name):
         """Load tab data on the main thread."""
         try:
+            if tab_name == "Home":
+                return  # HomeScreen manages its own refresh via _finalize_save_load
             if not self.save_file:
                 return
             if self.tabs_loaded.get(tab_name, False):
@@ -1618,6 +1596,8 @@ class SaveManagerGUI:
     def on_slot_selected(self, slot_index: int):
         """Handle character slot selection from Fixer tab."""
         self.selected_slot_index = slot_index
+        if hasattr(self, "context_bar"):
+            self.context_bar.refresh()
 
     def load_save(self, silent=False):
         """Load save file in background thread to prevent UI freezing
@@ -1916,6 +1896,10 @@ class SaveManagerGUI:
             self._lazy_load_tab_background(current)
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
+        if hasattr(self, "context_bar"):
+            self.context_bar.refresh()
+        if hasattr(self, "home_screen"):
+            self.home_screen.refresh()
         if not silent:
             # Show toast notification instead of blocking popup
             self.show_toast("Save file loaded successfully!", duration=2500)

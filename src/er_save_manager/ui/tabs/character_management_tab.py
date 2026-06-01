@@ -10,7 +10,6 @@ from tkinter import filedialog
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
 
 
 class CharacterManagementTab:
@@ -62,157 +61,480 @@ class CharacterManagementTab:
         self.delete_slot_var = None
 
     def setup_ui(self):
-        """Setup the character management tab UI"""
-        # Create scrollable frame wrapper
-        scroll_frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
-        scroll_frame.pack(fill=tk.BOTH, expand=True)
-        bind_mousewheel(scroll_frame)
+        """Setup the Manage Slots screen with operation cards and an inline detail panel."""
+        # Palette
+        _PANEL = "#181825"
+        _PANEL2 = "#313244"
+        _FG = "#cdd6f4"
+        _FG_ALT = "#a6adc8"
+        _FAINT = "#7f849c"
+        _ACCENT = "#cba6f7"
+        _BORDER = "#313244"
+        _RED = "#f38ba8"
+        _RED_BG = "#3a1e2e"
+        _RED_BDR = "#7a2e3e"
+        _GOOD = "#a6e3a1"
+        _GOOD_BG = "#1e3a2e"
 
-        # Title
-        title_label = ctk.CTkLabel(
-            scroll_frame,
-            text="Character Management",
-            font=("Segoe UI", 16, "bold"),
+        outer = ctk.CTkScrollableFrame(
+            self.parent, fg_color="transparent", corner_radius=0
         )
-        title_label.pack(pady=10)
+        outer.pack(fill=tk.BOTH, expand=True, padx=22, pady=16)
 
-        # Info label
-        info_text = ctk.CTkLabel(
-            scroll_frame,
-            text="Transfer characters between save files, copy slots, manage your character roster, share and download community builds",
-            font=("Segoe UI", 11),
-            text_color=("gray40", "gray70"),
-        )
-        info_text.pack(pady=5)
+        # Header row
+        header = ctk.CTkFrame(outer, fg_color="transparent")
+        header.pack(fill=tk.X, pady=(0, 16))
 
-        # Character Browser button
-        browser_frame = ctk.CTkFrame(
-            scroll_frame,
-            corner_radius=10,
-        )
-        browser_frame.pack(fill=tk.X, padx=20, pady=(10, 5))
+        title_col = ctk.CTkFrame(header, fg_color="transparent")
+        title_col.pack(side=tk.LEFT, fill=tk.Y)
+        ctk.CTkLabel(
+            title_col,
+            text="Manage Slots",
+            font=("Segoe UI", 20, "bold"),
+            text_color=_FG,
+            anchor="w",
+        ).pack(anchor="w")
+        ctk.CTkLabel(
+            title_col,
+            text="Pick an action - every option is visible up front, no hidden menus.",
+            font=("Segoe UI", 12),
+            text_color=_FG_ALT,
+            anchor="w",
+        ).pack(anchor="w", pady=(4, 0))
 
         ctk.CTkButton(
-            browser_frame,
-            text="🌐 Browse Character Library",
+            header,
+            text="Character Library",
             command=self.open_character_browser,
-            width=250,
-            height=40,
-        ).pack(side=tk.LEFT, padx=15, pady=10)
+            width=150,
+            height=34,
+            font=("Segoe UI", 12),
+            fg_color=_PANEL2,
+            text_color=_FG,
+            hover_color="#45475a",
+        ).pack(side=tk.RIGHT, pady=(0, 0))
 
-        ctk.CTkLabel(
-            browser_frame,
-            text="Download complete character builds from the community",
-            font=("Segoe UI", 11),
-            text_color=("gray40", "gray70"),
-        ).pack(side=tk.LEFT, padx=(10, 15))
-
-        # Operation selector frame
-        selector_frame = ctk.CTkFrame(
-            scroll_frame,
-            corner_radius=10,
-        )
-        selector_frame.pack(fill=tk.X, padx=20, pady=10)
-
-        # Add label to selector frame
-        selector_label = ctk.CTkLabel(
-            selector_frame,
-            text="Select Operation",
-            font=("Segoe UI", 12, "bold"),
-        )
-        selector_label.pack(anchor=tk.W, padx=15, pady=(10, 5))
-
-        # Inner frame for controls
-        selector_controls = ctk.CTkFrame(selector_frame, fg_color="transparent")
-        selector_controls.pack(fill=tk.X, padx=15, pady=(5, 15))
-
-        self.char_operation_var = tk.StringVar(value="copy")
-
-        operations = [
-            ("Copy Character", "copy"),
-            ("Transfer to Another Save", "transfer"),
-            ("Swap Slots", "swap"),
-            ("Export Character", "export"),
-            ("Import Character", "import"),
-            ("Delete Character", "delete"),
+        # Operation cards grid (3 columns)
+        OPERATIONS = [
+            ("Copy", "Duplicate a slot within this save", False),
+            ("Move", "Reorder characters between slots", False),
+            ("Export", "Save a character to an .erc file", False),
+            ("Import", "Load a character from .erc", False),
+            ("Transfer", "Copy to a different save file", False),
+            ("Delete", "Permanently remove a character", True),
         ]
 
-        # Operation label
-        op_label = ctk.CTkLabel(selector_controls, text="Operation:")
-        op_label.pack(side=tk.LEFT, padx=(0, 10))
+        cards_frame = ctk.CTkFrame(outer, fg_color="transparent")
+        cards_frame.pack(fill=tk.X, pady=(0, 14))
+        for col in range(3):
+            cards_frame.grid_columnconfigure(col, weight=1, uniform="op_col")
 
-        # Dropdown selector
-        operation_combo = ctk.CTkComboBox(
-            selector_controls,
-            variable=self.char_operation_var,
-            values=[op[0] for op in operations],
-            state="readonly",
-            width=300,
-            command=self.update_operation_panel,
-        )
-        operation_combo.pack(side=tk.LEFT, padx=5)
+        self._active_op: str | None = None
+        self._op_card_widgets: dict[str, ctk.CTkFrame] = {}
 
-        # Map display names to internal values
-        self.operation_map = {op[0]: op[1] for op in operations}
-        self.operation_map_reverse = {op[1]: op[0] for op in operations}
+        def _select_op(name: str):
+            # Deselect previous
+            for op_name, card in self._op_card_widgets.items():
+                danger = op_name == "Delete"
+                card.configure(
+                    fg_color=_PANEL,
+                    border_color=_BORDER,
+                    border_width=1,
+                )
+            # Select new
+            self._active_op = name
+            danger = name == "Delete"
+            self._op_card_widgets[name].configure(
+                fg_color=_RED_BG if danger else _PANEL,
+                border_color=_RED_BDR if danger else _ACCENT,
+                border_width=1,
+            )
+            _rebuild_detail()
 
-        # Set initial display value
-        operation_combo.set("Copy Character")
+        for i, (name, desc, danger) in enumerate(OPERATIONS):
+            row = i // 3
+            col = i % 3
+            cards_frame.grid_rowconfigure(row, minsize=80)
 
-        # Operation panel frame
-        self.char_ops_panel = ctk.CTkFrame(
-            scroll_frame,
-            corner_radius=10,
-        )
-        self.char_ops_panel.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+            card = ctk.CTkFrame(
+                cards_frame,
+                fg_color=_PANEL,
+                corner_radius=10,
+                border_width=1,
+                border_color=_BORDER,
+                cursor="hand2",
+            )
+            card.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
+            self._op_card_widgets[name] = card
 
-        # Add label to operation panel
-        panel_label = ctk.CTkLabel(
-            self.char_ops_panel,
-            text="Operation Details",
-            font=("Segoe UI", 12, "bold"),
-        )
-        panel_label.pack(anchor=tk.W, padx=15, pady=(10, 5))
+            inner = ctk.CTkFrame(card, fg_color="transparent")
+            inner.pack(fill=tk.BOTH, expand=True, padx=14, pady=12)
 
-        # Create scrollable frame for operation-specific content
-        self.ops_scrollable = ctk.CTkScrollableFrame(
-            self.char_ops_panel,
-            fg_color="transparent",
-        )
-        self.ops_scrollable.pack(fill=tk.BOTH, expand=True, padx=15, pady=(5, 15))
+            ctk.CTkLabel(
+                inner,
+                text=name,
+                font=("Segoe UI", 13, "bold"),
+                text_color=_RED if danger else _FG,
+                anchor="w",
+            ).pack(anchor="w")
+            ctk.CTkLabel(
+                inner,
+                text=desc,
+                font=("Segoe UI", 11),
+                text_color=_FAINT,
+                anchor="w",
+            ).pack(anchor="w", pady=(3, 0))
 
-        # Bind mousewheel to scrollable frame
-        bind_mousewheel(self.ops_scrollable)
+            def cmd(n=name):
+                return _select_op(n)
 
-        # Initialize with copy operation
-        self.update_operation_panel()
+            card.bind("<Button-1>", lambda e, c=cmd: c())
+            inner.bind("<Button-1>", lambda e, c=cmd: c())
+            for child in inner.winfo_children():
+                child.bind("<Button-1>", lambda e, c=cmd: c())
 
-    def update_operation_panel(self, value=None):
-        """Update the operation panel based on selected operation - optimized for performance"""
-        # Clear existing widgets efficiently
-        for widget in self.ops_scrollable.winfo_children():
-            widget.destroy()
+        # Detail panel (rebuilt when an op card is selected)
+        self._detail_frame = ctk.CTkFrame(outer, fg_color=_PANEL, corner_radius=10)
+        self._detail_frame.pack(fill=tk.X)
+        self._detail_frame.pack_forget()
 
-        # Get internal operation value from display name
-        display_name = self.char_operation_var.get()
-        operation = self.operation_map.get(display_name, "copy")
+        def _rebuild_detail():
+            for w in self._detail_frame.winfo_children():
+                w.destroy()
+            op = self._active_op
+            if op is None:
+                self._detail_frame.pack_forget()
+                return
+            self._detail_frame.pack(fill=tk.X, pady=(0, 8))
+            self._build_detail_panel(
+                op,
+                self._detail_frame,
+                _select_op,
+                _PANEL2,
+                _FG,
+                _FG_ALT,
+                _FAINT,
+                _ACCENT,
+                _BORDER,
+                _RED,
+                _RED_BG,
+                _RED_BDR,
+                _GOOD,
+                _GOOD_BG,
+            )
 
-        # Create appropriate panel based on operation
-        if operation == "copy":
-            self._setup_copy_panel()
-        elif operation == "transfer":
-            self._setup_transfer_panel()
-        elif operation == "swap":
-            self._setup_swap_panel()
-        elif operation == "export":
-            self._setup_export_panel()
-        elif operation == "import":
-            self._setup_import_panel()
-        elif operation == "delete":
-            self._setup_delete_panel()
+        # Select Copy by default
+        _select_op("Copy")
+
+    def _build_detail_panel(
+        self,
+        op: str,
+        parent,
+        _select_op,
+        _PANEL2,
+        _FG,
+        _FG_ALT,
+        _FAINT,
+        _ACCENT,
+        _BORDER,
+        _RED,
+        _RED_BG,
+        _RED_BDR,
+        _GOOD,
+        _GOOD_BG,
+    ) -> None:
+        """Build the inline detail/controls panel for the selected operation."""
+        slot_names = self._get_slot_display_names()
+
+        inner = ctk.CTkFrame(parent, fg_color="transparent")
+        inner.pack(fill=tk.X, padx=18, pady=16)
+
+        if op == "Copy":
+            ctk.CTkLabel(
+                inner, text="From Slot:", font=("Segoe UI", 12), text_color=_FG_ALT
+            ).pack(side=tk.LEFT, padx=(0, 6))
+            self.copy_from_var = tk.IntVar(value=1)
+            fc = ctk.CTkComboBox(
+                inner,
+                values=slot_names,
+                state="readonly",
+                width=180,
+                command=lambda v: self.copy_from_var.set(int(v.split(" - ")[0])),
+            )
+            fc.set(slot_names[0])
+            fc.pack(side=tk.LEFT, padx=(0, 14))
+
+            ctk.CTkLabel(
+                inner, text="To Slot:", font=("Segoe UI", 12), text_color=_FG_ALT
+            ).pack(side=tk.LEFT, padx=(0, 6))
+            self.copy_to_var = tk.IntVar(value=2)
+            tc = ctk.CTkComboBox(
+                inner,
+                values=slot_names,
+                state="readonly",
+                width=180,
+                command=lambda v: self.copy_to_var.set(int(v.split(" - ")[0])),
+            )
+            tc.set(slot_names[1] if len(slot_names) > 1 else slot_names[0])
+            tc.pack(side=tk.LEFT, padx=(0, 14))
+            ctk.CTkButton(
+                inner,
+                text="Copy character",
+                command=self.copy_character,
+                width=140,
+                height=34,
+            ).pack(side=tk.LEFT)
+
+        elif op == "Move":
+            ctk.CTkLabel(
+                inner, text="Slot A:", font=("Segoe UI", 12), text_color=_FG_ALT
+            ).pack(side=tk.LEFT, padx=(0, 6))
+            self.swap_a_var = tk.IntVar(value=1)
+            ac = ctk.CTkComboBox(
+                inner,
+                values=slot_names,
+                state="readonly",
+                width=180,
+                command=lambda v: self.swap_a_var.set(int(v.split(" - ")[0])),
+            )
+            ac.set(slot_names[0])
+            ac.pack(side=tk.LEFT, padx=(0, 14))
+
+            ctk.CTkLabel(
+                inner, text="Slot B:", font=("Segoe UI", 12), text_color=_FG_ALT
+            ).pack(side=tk.LEFT, padx=(0, 6))
+            self.swap_b_var = tk.IntVar(value=2)
+            bc = ctk.CTkComboBox(
+                inner,
+                values=slot_names,
+                state="readonly",
+                width=180,
+                command=lambda v: self.swap_b_var.set(int(v.split(" - ")[0])),
+            )
+            bc.set(slot_names[1] if len(slot_names) > 1 else slot_names[0])
+            bc.pack(side=tk.LEFT, padx=(0, 14))
+            ctk.CTkButton(
+                inner,
+                text="Swap slots",
+                command=self.swap_characters,
+                width=120,
+                height=34,
+            ).pack(side=tk.LEFT)
+
+        elif op == "Export":
+            ctk.CTkLabel(
+                inner, text="Slot:", font=("Segoe UI", 12), text_color=_FG_ALT
+            ).pack(side=tk.LEFT, padx=(0, 6))
+            self.export_slot_var = tk.IntVar(value=1)
+            ec = ctk.CTkComboBox(
+                inner,
+                values=slot_names,
+                state="readonly",
+                width=200,
+                command=lambda v: self.export_slot_var.set(int(v.split(" - ")[0])),
+            )
+            ec.set(slot_names[0])
+            ec.pack(side=tk.LEFT, padx=(0, 14))
+            ctk.CTkButton(
+                inner,
+                text="Export to .erc...",
+                command=self.export_character,
+                width=150,
+                height=34,
+            ).pack(side=tk.LEFT)
+
+        elif op == "Import":
+            ctk.CTkLabel(
+                inner, text="To Slot:", font=("Segoe UI", 12), text_color=_FG_ALT
+            ).pack(side=tk.LEFT, padx=(0, 6))
+            self.import_slot_var = tk.IntVar(value=1)
+            ic = ctk.CTkComboBox(
+                inner,
+                values=slot_names,
+                state="readonly",
+                width=200,
+                command=lambda v: self.import_slot_var.set(int(v.split(" - ")[0])),
+            )
+            ic.set(slot_names[0])
+            ic.pack(side=tk.LEFT, padx=(0, 14))
+            ctk.CTkButton(
+                inner,
+                text="Import from .erc...",
+                command=self.import_character,
+                width=160,
+                height=34,
+            ).pack(side=tk.LEFT)
+
+        elif op == "Transfer":
+            ctk.CTkLabel(
+                inner, text="From Slot:", font=("Segoe UI", 12), text_color=_FG_ALT
+            ).pack(side=tk.LEFT, padx=(0, 6))
+            self.transfer_from_var = tk.IntVar(value=1)
+            tfc = ctk.CTkComboBox(
+                inner,
+                values=slot_names,
+                state="readonly",
+                width=200,
+                command=lambda v: self.transfer_from_var.set(int(v.split(" - ")[0])),
+            )
+            tfc.set(slot_names[0])
+            tfc.pack(side=tk.LEFT, padx=(0, 14))
+            ctk.CTkButton(
+                inner,
+                text="Select target save...",
+                command=self.transfer_character,
+                width=170,
+                height=34,
+            ).pack(side=tk.LEFT)
+
+        elif op == "Delete":
+            # Inline typed confirmation matching the mockup
+            top_row = ctk.CTkFrame(inner, fg_color="transparent")
+            top_row.pack(fill=tk.X, pady=(0, 12))
+
+            title_col = ctk.CTkFrame(top_row, fg_color="transparent")
+            title_col.pack(side=tk.LEFT, fill=tk.Y)
+            ctk.CTkLabel(
+                title_col,
+                text="Delete a character",
+                font=("Segoe UI", 14, "bold"),
+                text_color=_FG,
+                anchor="w",
+            ).pack(anchor="w")
+
+            ctk.CTkLabel(
+                top_row,
+                text="IRREVERSIBLE",
+                font=("Segoe UI", 10, "bold"),
+                text_color=_RED,
+                anchor="e",
+            ).pack(side=tk.RIGHT)
+
+            # Slot selector row
+            slot_row = ctk.CTkFrame(inner, fg_color="transparent")
+            slot_row.pack(fill=tk.X, pady=(0, 10))
+
+            ctk.CTkLabel(
+                slot_row, text="Slot:", font=("Segoe UI", 12), text_color=_FG_ALT
+            ).pack(side=tk.LEFT, padx=(0, 8))
+            self.delete_slot_var = tk.IntVar(value=1)
+            dc = ctk.CTkComboBox(
+                slot_row,
+                values=slot_names,
+                state="readonly",
+                width=220,
+                command=lambda v: self.delete_slot_var.set(int(v.split(" - ")[0])),
+            )
+            dc.set(slot_names[0])
+            dc.pack(side=tk.LEFT)
+
+            # Description
+            slot_display = slot_names[0] if slot_names else "Slot 1"
+            desc_var = tk.StringVar(
+                value=f"This permanently removes {slot_display}. To continue, type the slot number."
+            )
+
+            def _update_desc(*_):
+                v = dc.get()
+                desc_var.set(
+                    f"This permanently removes {v}. To continue, type the slot number."
+                )
+                confirm_entry.delete(0, tk.END)
+
+            dc.configure(
+                command=lambda v: (
+                    self.delete_slot_var.set(int(v.split(" - ")[0])),
+                    _update_desc(),
+                )
+            )
+
+            ctk.CTkLabel(
+                inner,
+                textvariable=desc_var,
+                font=("Segoe UI", 12),
+                text_color=_FG_ALT,
+                anchor="w",
+                wraplength=600,
+            ).pack(anchor="w", pady=(0, 12))
+
+            # Confirm row
+            confirm_row = ctk.CTkFrame(inner, fg_color="transparent")
+            confirm_row.pack(fill=tk.X)
+
+            confirm_entry = ctk.CTkEntry(
+                confirm_row,
+                placeholder_text=f'type "{slot_names[0].split(" - ")[0]}"',
+                width=120,
+                height=34,
+                fg_color=_PANEL2,
+                border_color=_BORDER,
+                text_color=_FG,
+            )
+            confirm_entry.pack(side=tk.LEFT, padx=(0, 8))
+
+            def _do_delete():
+                # Validate typed slot number matches selection
+                try:
+                    typed = int(confirm_entry.get().strip())
+                except ValueError:
+                    return
+                selected_slot = int(dc.get().split(" - ")[0])
+                if typed != selected_slot:
+                    confirm_entry.configure(border_color=_RED)
+                    return
+                confirm_entry.configure(border_color=_BORDER)
+                self.delete_character()
+
+            del_btn = ctk.CTkButton(
+                confirm_row,
+                text="Delete character",
+                command=_do_delete,
+                width=140,
+                height=34,
+                font=("Segoe UI", 12, "bold"),
+                fg_color=_RED,
+                text_color="#1e1e2e",
+                hover_color="#d4637f",
+            )
+            del_btn.pack(side=tk.LEFT, padx=(0, 8))
+
+            ctk.CTkButton(
+                confirm_row,
+                text="Cancel",
+                command=lambda: _select_op("Copy"),
+                width=80,
+                height=34,
+                fg_color="transparent",
+                text_color=_FG_ALT,
+                border_width=1,
+                border_color=_BORDER,
+                hover_color=_PANEL2,
+            ).pack(side=tk.LEFT, padx=(0, 14))
+
+            # Backup assurance
+            ctk.CTkLabel(
+                confirm_row,
+                text="A backup will be taken first",
+                font=("Segoe UI", 11),
+                text_color=_GOOD,
+            ).pack(side=tk.LEFT)
+
+    def refresh_slot_names(self):
+        """Rebuild the detail panel to pick up new slot names after a save reload."""
+        if not hasattr(self, "_active_op") or self._active_op is None:
+            return
+        if not hasattr(self, "_detail_frame"):
+            return
+        # Retrieve the color constants stored on the parent frame isn't possible,
+        # so trigger a full UI rebuild by calling setup_ui again.
+        # The scrollable frame is recreated; existing refs in ops go stale but
+        # setup_ui() recreates everything cleanly.
+        for w in self.parent.winfo_children():
+            w.destroy()
+        self.setup_ui()
 
     def _get_slot_display_names(self):
-        """Get display names for all slots"""
+        """Get display names for all slots."""
         save_file = self.get_save_file()
         if not save_file:
             return [str(i) for i in range(1, 11)]
@@ -244,262 +566,6 @@ class CharacterManagementTab:
             slot_names.append(f"{slot_num} - {char_name}")
 
         return slot_names
-
-    def refresh_slot_names(self):
-        """Refresh slot display names after save file changes"""
-        # Only refresh if panel is visible
-        if not hasattr(self, "char_ops_panel"):
-            return
-
-        # Re-run current panel setup to refresh names
-        self.update_operation_panel()
-
-    def _setup_copy_panel(self):
-        """Setup copy operation panel"""
-        desc_label = ctk.CTkLabel(
-            self.ops_scrollable,
-            text="Copy a character from one slot to another in the same save file",
-            font=("Segoe UI", 11),
-            text_color=("gray40", "gray70"),
-        )
-        desc_label.pack(anchor=tk.W, pady=10)
-
-        controls = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
-        controls.pack(fill=tk.X, pady=10)
-
-        from_label = ctk.CTkLabel(controls, text="From Slot:")
-        from_label.pack(side=tk.LEFT, padx=5)
-
-        self.copy_from_var = tk.IntVar(value=1)
-        slot_names = self._get_slot_display_names()
-        from_combo = ctk.CTkComboBox(
-            controls,
-            values=slot_names,
-            state="readonly",
-            width=200,
-            command=lambda v: self.copy_from_var.set(int(v.split(" - ")[0])),
-        )
-        from_combo.set(slot_names[0])
-        from_combo.pack(side=tk.LEFT, padx=5)
-
-        to_label = ctk.CTkLabel(controls, text="To Slot:")
-        to_label.pack(side=tk.LEFT, padx=15)
-
-        self.copy_to_var = tk.IntVar(value=2)
-        to_combo = ctk.CTkComboBox(
-            controls,
-            variable=self.copy_to_var,
-            values=slot_names,
-            state="readonly",
-            width=200,
-            command=lambda v: self.copy_to_var.set(int(v.split(" - ")[0])),
-        )
-        to_combo.set(slot_names[1])
-        to_combo.pack(side=tk.LEFT, padx=5)
-
-        copy_button = ctk.CTkButton(
-            controls,
-            text="Copy Character",
-            command=self.copy_character,
-            width=150,
-        )
-        copy_button.pack(side=tk.LEFT, padx=20)
-
-    def _setup_transfer_panel(self):
-        """Setup transfer operation panel"""
-        desc_label = ctk.CTkLabel(
-            self.ops_scrollable,
-            text="Transfer a character to a different save file",
-            font=("Segoe UI", 11),
-            text_color=("gray40", "gray70"),
-        )
-        desc_label.pack(anchor=tk.W, pady=10)
-
-        controls = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
-        controls.pack(fill=tk.X, pady=10)
-
-        from_label = ctk.CTkLabel(controls, text="From Slot:")
-        from_label.pack(side=tk.LEFT, padx=5)
-
-        self.transfer_from_var = tk.IntVar(value=1)
-        slot_names = self._get_slot_display_names()
-        from_combo = ctk.CTkComboBox(
-            controls,
-            values=slot_names,
-            state="readonly",
-            width=200,
-            command=lambda v: self.transfer_from_var.set(int(v.split(" - ")[0])),
-        )
-        from_combo.set(slot_names[0])
-        from_combo.pack(side=tk.LEFT, padx=5)
-
-        transfer_button = ctk.CTkButton(
-            controls,
-            text="Select Target Save...",
-            command=self.transfer_character,
-            width=180,
-        )
-        transfer_button.pack(side=tk.LEFT, padx=20)
-
-    def _setup_swap_panel(self):
-        """Setup swap operation panel"""
-        desc_label = ctk.CTkLabel(
-            self.ops_scrollable,
-            text="Exchange two character slots",
-            font=("Segoe UI", 11),
-            text_color=("gray40", "gray70"),
-        )
-        desc_label.pack(anchor=tk.W, pady=10)
-
-        controls = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
-        controls.pack(fill=tk.X, pady=10)
-
-        slot_a_label = ctk.CTkLabel(controls, text="Slot A:")
-        slot_a_label.pack(side=tk.LEFT, padx=5)
-
-        self.swap_a_var = tk.IntVar(value=1)
-        slot_names = self._get_slot_display_names()
-        slot_a_combo = ctk.CTkComboBox(
-            controls,
-            values=slot_names,
-            state="readonly",
-            width=200,
-            command=lambda v: self.swap_a_var.set(int(v.split(" - ")[0])),
-        )
-        slot_a_combo.set(slot_names[0])
-        slot_a_combo.pack(side=tk.LEFT, padx=5)
-
-        slot_b_label = ctk.CTkLabel(controls, text="Slot B:")
-        slot_b_label.pack(side=tk.LEFT, padx=15)
-
-        self.swap_b_var = tk.IntVar(value=2)
-        slot_b_combo = ctk.CTkComboBox(
-            controls,
-            values=slot_names,
-            state="readonly",
-            width=200,
-            command=lambda v: self.swap_b_var.set(int(v.split(" - ")[0])),
-        )
-        slot_b_combo.set(slot_names[1])
-        slot_b_combo.pack(side=tk.LEFT, padx=5)
-
-        swap_button = ctk.CTkButton(
-            controls,
-            text="Swap Slots",
-            command=self.swap_characters,
-            width=150,
-        )
-        swap_button.pack(side=tk.LEFT, padx=20)
-
-    def _setup_export_panel(self):
-        """Setup export operation panel"""
-        desc_label = ctk.CTkLabel(
-            self.ops_scrollable,
-            text="Save character to a standalone .erc file for backup or sharing",
-            font=("Segoe UI", 11),
-            text_color=("gray40", "gray70"),
-        )
-        desc_label.pack(anchor=tk.W, pady=10)
-
-        controls = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
-        controls.pack(fill=tk.X, pady=10)
-
-        slot_label = ctk.CTkLabel(controls, text="Slot:")
-        slot_label.pack(side=tk.LEFT, padx=5)
-
-        self.export_slot_var = tk.IntVar(value=1)
-        slot_names = self._get_slot_display_names()
-        slot_combo = ctk.CTkComboBox(
-            controls,
-            values=slot_names,
-            state="readonly",
-            width=200,
-            command=lambda v: self.export_slot_var.set(int(v.split(" - ")[0])),
-        )
-        slot_combo.set(slot_names[0])
-        slot_combo.pack(side=tk.LEFT, padx=5)
-
-        export_button = ctk.CTkButton(
-            controls,
-            text="Export Character...",
-            command=self.export_character,
-            width=180,
-        )
-        export_button.pack(side=tk.LEFT, padx=20)
-
-    def _setup_import_panel(self):
-        """Setup import operation panel"""
-        desc_label = ctk.CTkLabel(
-            self.ops_scrollable,
-            text="Load a character from a .erc file into a slot",
-            font=("Segoe UI", 11),
-            text_color=("gray40", "gray70"),
-        )
-        desc_label.pack(anchor=tk.W, pady=10)
-
-        controls = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
-        controls.pack(fill=tk.X, pady=10)
-
-        slot_label = ctk.CTkLabel(controls, text="To Slot:")
-        slot_label.pack(side=tk.LEFT, padx=5)
-
-        self.import_slot_var = tk.IntVar(value=1)
-        slot_names = self._get_slot_display_names()
-        slot_combo = ctk.CTkComboBox(
-            controls,
-            values=slot_names,
-            state="readonly",
-            width=200,
-            command=lambda v: self.import_slot_var.set(int(v.split(" - ")[0])),
-        )
-        slot_combo.set(slot_names[0])
-        slot_combo.pack(side=tk.LEFT, padx=5)
-
-        import_button = ctk.CTkButton(
-            controls,
-            text="Import Character...",
-            command=self.import_character,
-            width=180,
-        )
-        import_button.pack(side=tk.LEFT, padx=20)
-
-    def _setup_delete_panel(self):
-        """Setup delete operation panel"""
-        desc_label = ctk.CTkLabel(
-            self.ops_scrollable,
-            text="Clear a character slot (creates backup)",
-            font=("Segoe UI", 11),
-            text_color=("red", "red"),
-        )
-        desc_label.pack(anchor=tk.W, pady=10)
-
-        controls = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
-        controls.pack(fill=tk.X, pady=10)
-
-        slot_label = ctk.CTkLabel(controls, text="Slot:")
-        slot_label.pack(side=tk.LEFT, padx=5)
-
-        self.delete_slot_var = tk.IntVar(value=1)
-        slot_names = self._get_slot_display_names()
-        slot_combo = ctk.CTkComboBox(
-            controls,
-            values=slot_names,
-            state="readonly",
-            width=200,
-            command=lambda v: self.delete_slot_var.set(int(v.split(" - ")[0])),
-        )
-        slot_combo.set(slot_names[0])
-        slot_combo.pack(side=tk.LEFT, padx=5)
-
-        delete_button = ctk.CTkButton(
-            controls,
-            text="Delete Character",
-            command=self.delete_character,
-            width=150,
-            fg_color=("red", "darkred"),
-            hover_color=("darkred", "red"),
-        )
-        delete_button.pack(side=tk.LEFT, padx=20)
 
     # ========== Operations ==========
 
