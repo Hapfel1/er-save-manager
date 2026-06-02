@@ -585,6 +585,13 @@ class SaveManagerGUI:
             width=160,
         ).pack(side=tk.RIGHT, padx=6, pady=10)
 
+        ctk.CTkButton(
+            buttons_frame,
+            text="PS / Switch Save?",
+            command=self.show_console_save_info,
+            width=160,
+        ).pack(side=tk.RIGHT, padx=6, pady=10)
+
         _itemgib_btn = ctk.CTkButton(
             buttons_frame,
             text="Item Gib",
@@ -1088,6 +1095,68 @@ class SaveManagerGUI:
         return PROFILES_BY_KEY.get(self.active_game)
 
     # File operations
+    def show_console_save_info(self):
+        """Show instructions for loading a PlayStation or Switch save."""
+        from er_save_manager.ui.utils import force_render_dialog
+
+        dialog = ctk.CTkToplevel(self.root)
+        dialog.title("PS / Switch Saves")
+        dialog.geometry("640x320")
+        dialog.transient(self.root)
+
+        force_render_dialog(dialog)
+
+        dialog.update_idletasks()
+        parent_x = self.root.winfo_x()
+        parent_y = self.root.winfo_y()
+        parent_width = self.root.winfo_width()
+        parent_height = self.root.winfo_height()
+        dialog.geometry(
+            f"640x320+{parent_x + (parent_width - 640) // 2}+{parent_y + (parent_height - 320) // 2}"
+        )
+
+        dialog.grab_set()
+
+        main_frame = ctk.CTkFrame(dialog, corner_radius=14)
+        main_frame.pack(fill=ctk.BOTH, expand=True, padx=18, pady=18)
+
+        ctk.CTkLabel(
+            main_frame,
+            text="PS / Switch Saves",
+            font=("Segoe UI", 18, "bold"),
+        ).pack(pady=(10, 4))
+
+        ctk.CTkLabel(
+            main_frame,
+            text="Console saves must be decrypted and exported as memory.dat before you can load them.",
+            font=("Segoe UI", 12),
+            wraplength=580,
+            justify=ctk.CENTER,
+        ).pack(pady=(0, 12))
+
+        disclaimer = ctk.CTkLabel(
+            main_frame,
+            text=(
+                "Exporting/Decrypting a console save may require custom firmware on your console, "
+                "we cannot provide instructions for doing so. Use at your own risk."
+            ),
+            font=("Segoe UI", 12),
+            wraplength=570,
+            justify=ctk.CENTER,
+        )
+        disclaimer.pack(pady=(0, 18))
+
+        ctk.CTkLabel(
+            main_frame,
+            text="Auto-Find will not work for memory.dat files.",
+            font=("Segoe UI", 11),
+            text_color=("gray35", "gray75"),
+        ).pack(pady=(0, 14))
+
+        ctk.CTkButton(main_frame, text="Close", width=120, command=dialog.destroy).pack(
+            pady=(0, 4)
+        )
+
     def browse_file(self):
         """Browse for a save file for the active game."""
         profile = self._active_profile()
@@ -1132,10 +1201,16 @@ class SaveManagerGUI:
         # Build file type filter from profile extensions
         if profile:
             ext_str = " ".join(f"*{e}" for e in profile.extensions)
+            if profile.key == "elden_ring":
+                ext_str += " *.dat"
             filetypes = [(f"{profile.name} Saves", ext_str), ("All files", "*.*")]
             title = f"Select {profile.name} Save File"
         else:
-            filetypes = [("Save Files", "*.sl2 *.co2 *.cnv"), ("All files", "*.*")]
+            filetypes = [
+                ("Save Files", "*.sl2 *.co2 *.cnv *.dat"),
+                ("PlayStation (Save Wizard)", "*"),
+                ("All files", "*.*"),
+            ]
             title = "Select Save File"
 
         filename = filedialog.askopenfilename(
@@ -1503,7 +1578,7 @@ class SaveManagerGUI:
 
         if self.active_game == "elden_ring":
             filename = os.path.basename(save_path).lower()
-            if filename.startswith("er"):
+            if filename.startswith("er") or filename == "memory.dat":
                 self.root.after(500, self.load_save)
         elif self.active_game == "dark_souls_remastered":
             self.root.after(500, lambda p=save_path: self._load_dsr_save(p))
@@ -1566,10 +1641,12 @@ class SaveManagerGUI:
             if not self._handle_game_running_dialog(profile):
                 return
 
-        # EAC warning only applies to Elden Ring .sl2 files
+        # EAC warning applies to Elden Ring vanilla saves (.sl2) and PS saves (.dat)
         if (
             self.active_game == "elden_ring"
-            and save_path.lower().endswith(".sl2")
+            and (
+                save_path.lower().endswith(".sl2") or save_path.lower().endswith(".dat")
+            )
             and self.settings.get("show_eac_warning", True)
         ):
             # Create custom dialog with "Don't show again" option
@@ -1767,6 +1844,31 @@ class SaveManagerGUI:
         # Lazy-load the currently visible tab immediately (ensures live refresh)
         current_tab = self.notebook.get()
         self._lazy_load_tab_background(current_tab)
+
+        # Hide SteamID Patcher for PS saves - they have no SteamID
+        if self.active_game == "elden_ring" and hasattr(self, "steamid_tab"):
+            is_ps = getattr(save_file, "is_ps", False)
+            tab_names = (
+                self.notebook._tab_dict.keys()
+                if hasattr(self.notebook, "_tab_dict")
+                else []
+            )
+            has_tab = "SteamID Patcher" in tab_names
+            if is_ps and has_tab:
+                self.notebook.delete("SteamID Patcher")
+            elif not is_ps and not has_tab:
+                self.notebook.add("SteamID Patcher")
+                tab_steamid = self.notebook.tab("SteamID Patcher")
+                from er_save_manager.ui.tabs import SteamIDPatcherTab
+
+                self.steamid_tab = SteamIDPatcherTab(
+                    tab_steamid,
+                    lambda: self.save_file,
+                    lambda: self.save_path,
+                    self.load_save,
+                    self.show_toast,
+                )
+                self.steamid_tab.setup_ui()
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         if not silent:

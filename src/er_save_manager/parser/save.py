@@ -131,10 +131,9 @@ class Save:
         # Read magic (4 bytes)
         obj.magic = f.read(4)
 
-        # Detect platform
-        if obj.magic == b"BND4":
-            obj.is_ps = False
-        elif obj.magic == b"SL2\x00":
+        # Detect platform.
+        # PC saves start with BND4. Both Apollo and Save Wizard PS exports start with cb019c2c.
+        if obj.magic in (b"BND4", b"SL2\x00"):
             obj.is_ps = False
         elif obj.magic == bytes([0xCB, 0x01, 0x9C, 0x2C]):
             obj.is_ps = True
@@ -247,6 +246,10 @@ class Save:
         """
         if not hasattr(self, "_raw_data"):
             raise RuntimeError("Cannot recalculate checksums: raw data not available")
+
+        # PS saves have no per-slot or USER_DATA_10 checksums - nothing to do
+        if self.is_ps:
+            return
 
         import hashlib
 
