@@ -695,7 +695,9 @@ class CharacterDetailsDialog:
                     save=save_file,
                 )
 
-            offset = slot.net_man_offset
+            # net_man_offset points 4 bytes into the blob (past the hidden zero prefix
+            # that precedes CSNetMan in the slot). The bin includes that prefix.
+            offset = slot.net_man_offset - 4
             save_file._raw_data[offset : offset + _NETMAN_SIZE] = clean
             save_file.recalculate_checksums()
 
