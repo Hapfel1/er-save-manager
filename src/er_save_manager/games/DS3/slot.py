@@ -117,9 +117,11 @@ _LUCK_DIST = -239
 
 # Inventory
 _INV_REL_FIXED = 0x1DD  # inventory_start = fixed + _INV_REL_FIXED
-_INV_SIZE = 0x8808
+_INV_SIZE = 0x880C  # total inventory section (entries + 12 bytes of counters/pad)
+_INV_DATA_SIZE = 0x8800  # entry area only: 2176 x 16-byte entries
+_INV_C2_REL = 0x8808  # second counter = inv_start + _INV_C2_REL (i16)
 _INV_ENTRY_SIZE = 16
-_MAX_INV_SLOTS = _INV_SIZE // _INV_ENTRY_SIZE  # 2178
+_MAX_INV_SLOTS = _INV_DATA_SIZE // _INV_ENTRY_SIZE  # 2176
 
 # Storage box chain offsets from inventory_end
 _ABOVE_STORAGE_CTR_REL = 0x11C  # inventory_end + this = above_storage_counter offset
@@ -245,6 +247,23 @@ class DS3Slot:
     def _get_fixed(self) -> int:
         return self._get_gaitem_end() + _FIXED_REL
 
+    @staticmethod
+    def _probe_inv_size(data: bytearray, inv_start: int) -> int:
+        """
+        Return the inventory section size (0x8808 or 0x880C) for this slot.
+
+        The 4-byte difference exists in saves with a larger shop/trade history block.
+        Both sizes are tried; whichever yields a plausible above_storage_size wins.
+        """
+        for candidate in (_INV_SIZE, 0x8808):
+            above_ctr = inv_start + candidate + _ABOVE_STORAGE_CTR_REL
+            if above_ctr + 4 > len(data):
+                continue
+            val = struct.unpack_from("<I", data, above_ctr)[0]
+            if val < 200000:
+                return candidate
+        return _INV_SIZE  # fallback
+
     def _get_dynamic(self) -> dict:
         """
         Compute all dynamic offsets from fixed anchor.
@@ -255,7 +274,10 @@ class DS3Slot:
 
         fixed = self._get_fixed()
         inv_start = fixed + _INV_REL_FIXED
-        inv_end = inv_start + _INV_SIZE
+        inv_size = self._probe_inv_size(self._data, inv_start)
+        inv_end = inv_start + inv_size  # used for above_ctr_off only
+        inv_data_end = inv_start + _INV_DATA_SIZE  # iteration bound (2176 entries)
+        inv_c2_off = inv_start + (inv_size - 4)  # second counter (i16)
         above_ctr_off = inv_end + _ABOVE_STORAGE_CTR_REL
         above_size = _read_u32(self._data, above_ctr_off)
         table1_end = above_ctr_off + 4 + above_size * 8
@@ -272,6 +294,8 @@ class DS3Slot:
         self._dynamic = {
             "inv_start": inv_start,
             "inv_end": inv_end,
+            "inv_data_end": inv_data_end,
+            "inv_c2_off": inv_c2_off,
             "storage_start": storage_start,
             "storage_end": storage_end,
             "ng_plus_off": ng_plus_off,
@@ -292,9 +316,11 @@ class DS3Slot:
         ge = self._get_gaitem_end()
         off = ge + _NAME_REL
         raw = bytes(self._data[off : off + _NAME_LEN])
-        # Find null terminator
+        # Stop at first UTF-16LE null pair (0x00 0x00 on even boundary)
         end = 0
-        while end < _NAME_LEN - 1 and not (raw[end] == 0 and raw[end + 1] == 0):
+        while end + 1 < _NAME_LEN:
+            if raw[end] == 0 and raw[end + 1] == 0:
+                break
             end += 2
         return raw[:end].decode("utf-16-le", errors="replace")
 
@@ -399,7 +425,7 @@ class DS3Slot:
         dyn = self._get_dynamic()
         entries = []
         off = dyn["inv_start"]
-        end = dyn["inv_end"]
+        end = dyn["inv_data_end"]
         while off < end:
             handle = _read_u32(self._data, off)
             item_id = _read_u32(self._data, off + 4)
@@ -469,12 +495,10 @@ class DS3Slot:
     def _increment_inv_counters(self) -> None:
         dyn = self._get_dynamic()
         inv_start = dyn["inv_start"]
-        # First counter: signed i16 immediately before inventory
         c1_off = inv_start - 4
         c1 = struct.unpack_from("<h", self._data, c1_off)[0] + 1
         struct.pack_into("<h", self._data, c1_off, c1)
-        # Second counter: signed i16 at inventory_end
-        c2_off = dyn["inv_end"]
+        c2_off = dyn["inv_c2_off"]
         c2 = struct.unpack_from("<h", self._data, c2_off)[0] + 1
         struct.pack_into("<h", self._data, c2_off, c2)
 
@@ -521,7 +545,7 @@ class DS3Slot:
         qty = max(1, min(quantity, 99))
         dyn = self._get_dynamic()
         inv_start = dyn["inv_start"]
-        inv_end = dyn["inv_end"]
+        inv_end = dyn["inv_data_end"]
 
         # Update existing goods stack
         if item_type == ITEM_TYPE_GOOD:
@@ -609,7 +633,7 @@ class DS3Slot:
         # Add inventory entry
         dyn = self._get_dynamic()
         inv_start = dyn["inv_start"]
-        inv_end = dyn["inv_end"]
+        inv_end = dyn["inv_data_end"]
 
         first_empty = None
         off = inv_start
