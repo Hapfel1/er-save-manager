@@ -1696,7 +1696,7 @@ class CharacterBrowser:
                     self.refresh_slot_names()
                     CTkMessageBox.showinfo(
                         "Import Successful",
-                        f"'{imported_name}' has been imported to {slot_str}!\n\nThe character's SteamID has been synced to your save file.",
+                        f"'{imported_name}' has been imported to {slot_str}!",
                         parent=self.dialog,
                     )
 

@@ -585,6 +585,13 @@ class SaveManagerGUI:
             width=160,
         ).pack(side=tk.RIGHT, padx=6, pady=10)
 
+        ctk.CTkButton(
+            buttons_frame,
+            text="PlayStation Save?",
+            command=self.show_ps_save_info,
+            width=160,
+        ).pack(side=tk.RIGHT, padx=6, pady=10)
+
         _itemgib_btn = ctk.CTkButton(
             buttons_frame,
             text="Item Gib",
@@ -1088,6 +1095,16 @@ class SaveManagerGUI:
         return PROFILES_BY_KEY.get(self.active_game)
 
     # File operations
+    def show_ps_save_info(self):
+        """Show instructions for loading a PlayStation save."""
+        info = (
+            "PlayStation saves (PS4/PS5) must be decrypted before loading.\n\n"
+            "Use Save Wizard to export your save as memory.dat.\n\n"
+            "Then use the Browse button to load it - Auto-Find will not work for PlayStation saves.\n\n"
+            "savewizard.net"
+        )
+        CTkMessageBox.showinfo("PlayStation Saves", info, parent=self.root)
+
     def browse_file(self):
         """Browse for a save file for the active game."""
         profile = self._active_profile()
@@ -1132,10 +1149,16 @@ class SaveManagerGUI:
         # Build file type filter from profile extensions
         if profile:
             ext_str = " ".join(f"*{e}" for e in profile.extensions)
+            if profile.key == "elden_ring":
+                ext_str += " *.dat"
             filetypes = [(f"{profile.name} Saves", ext_str), ("All files", "*.*")]
             title = f"Select {profile.name} Save File"
         else:
-            filetypes = [("Save Files", "*.sl2 *.co2 *.cnv"), ("All files", "*.*")]
+            filetypes = [
+                ("Save Files", "*.sl2 *.co2 *.cnv *.dat"),
+                ("PlayStation (Save Wizard)", "*"),
+                ("All files", "*.*"),
+            ]
             title = "Select Save File"
 
         filename = filedialog.askopenfilename(
@@ -1503,7 +1526,7 @@ class SaveManagerGUI:
 
         if self.active_game == "elden_ring":
             filename = os.path.basename(save_path).lower()
-            if filename.startswith("er"):
+            if filename.startswith("er") or filename == "memory.dat":
                 self.root.after(500, self.load_save)
         elif self.active_game == "dark_souls_remastered":
             self.root.after(500, lambda p=save_path: self._load_dsr_save(p))
@@ -1566,10 +1589,12 @@ class SaveManagerGUI:
             if not self._handle_game_running_dialog(profile):
                 return
 
-        # EAC warning only applies to Elden Ring .sl2 files
+        # EAC warning applies to Elden Ring vanilla saves (.sl2) and PS saves (.dat)
         if (
             self.active_game == "elden_ring"
-            and save_path.lower().endswith(".sl2")
+            and (
+                save_path.lower().endswith(".sl2") or save_path.lower().endswith(".dat")
+            )
             and self.settings.get("show_eac_warning", True)
         ):
             # Create custom dialog with "Don't show again" option
@@ -1767,6 +1792,31 @@ class SaveManagerGUI:
         # Lazy-load the currently visible tab immediately (ensures live refresh)
         current_tab = self.notebook.get()
         self._lazy_load_tab_background(current_tab)
+
+        # Hide SteamID Patcher for PS saves - they have no SteamID
+        if self.active_game == "elden_ring" and hasattr(self, "steamid_tab"):
+            is_ps = getattr(save_file, "is_ps", False)
+            tab_names = (
+                self.notebook._tab_dict.keys()
+                if hasattr(self.notebook, "_tab_dict")
+                else []
+            )
+            has_tab = "SteamID Patcher" in tab_names
+            if is_ps and has_tab:
+                self.notebook.delete("SteamID Patcher")
+            elif not is_ps and not has_tab:
+                self.notebook.add("SteamID Patcher")
+                tab_steamid = self.notebook.tab("SteamID Patcher")
+                from er_save_manager.ui.tabs import SteamIDPatcherTab
+
+                self.steamid_tab = SteamIDPatcherTab(
+                    tab_steamid,
+                    lambda: self.save_file,
+                    lambda: self.save_path,
+                    self.load_save,
+                    self.show_toast,
+                )
+                self.steamid_tab.setup_ui()
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         if not silent:
