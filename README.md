@@ -45,6 +45,7 @@ Download the latest release from [Releases](https://github.com/Hapfel1/er-save-m
   - Supports SteamDeck fully
   - Auto-detects Proton compatdata locations
   - Warns about non-default save locations
+- **PlayStation Saves**: Requires Save File Decryption via Save Wizard beforehand.
 
 ## Usage
 
