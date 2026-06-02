@@ -587,8 +587,8 @@ class SaveManagerGUI:
 
         ctk.CTkButton(
             buttons_frame,
-            text="PlayStation Save?",
-            command=self.show_ps_save_info,
+            text="PS / Switch Save?",
+            command=self.show_console_save_info,
             width=160,
         ).pack(side=tk.RIGHT, padx=6, pady=10)
 
@@ -1095,15 +1095,67 @@ class SaveManagerGUI:
         return PROFILES_BY_KEY.get(self.active_game)
 
     # File operations
-    def show_ps_save_info(self):
-        """Show instructions for loading a PlayStation save."""
-        info = (
-            "PlayStation saves (PS4/PS5) must be decrypted before loading.\n\n"
-            "Use Save Wizard to export your save as memory.dat.\n\n"
-            "Then use the Browse button to load it - Auto-Find will not work for PlayStation saves.\n\n"
-            "savewizard.net"
+    def show_console_save_info(self):
+        """Show instructions for loading a PlayStation or Switch save."""
+        from er_save_manager.ui.utils import force_render_dialog
+
+        dialog = ctk.CTkToplevel(self.root)
+        dialog.title("PS / Switch Saves")
+        dialog.geometry("640x320")
+        dialog.transient(self.root)
+
+        force_render_dialog(dialog)
+
+        dialog.update_idletasks()
+        parent_x = self.root.winfo_x()
+        parent_y = self.root.winfo_y()
+        parent_width = self.root.winfo_width()
+        parent_height = self.root.winfo_height()
+        dialog.geometry(
+            f"640x320+{parent_x + (parent_width - 640) // 2}+{parent_y + (parent_height - 320) // 2}"
         )
-        CTkMessageBox.showinfo("PlayStation Saves", info, parent=self.root)
+
+        dialog.grab_set()
+
+        main_frame = ctk.CTkFrame(dialog, corner_radius=14)
+        main_frame.pack(fill=ctk.BOTH, expand=True, padx=18, pady=18)
+
+        ctk.CTkLabel(
+            main_frame,
+            text="PS / Switch Saves",
+            font=("Segoe UI", 18, "bold"),
+        ).pack(pady=(10, 4))
+
+        ctk.CTkLabel(
+            main_frame,
+            text="Console saves must be decrypted and exported as memory.dat before you can load them.",
+            font=("Segoe UI", 12),
+            wraplength=580,
+            justify=ctk.CENTER,
+        ).pack(pady=(0, 12))
+
+        disclaimer = ctk.CTkLabel(
+            main_frame,
+            text=(
+                "Exporting/Decrypting a console save may require custom firmware on your console, "
+                "we cannot provide instructions for doing so. Use at your own risk."
+            ),
+            font=("Segoe UI", 12),
+            wraplength=570,
+            justify=ctk.CENTER,
+        )
+        disclaimer.pack(pady=(0, 18))
+
+        ctk.CTkLabel(
+            main_frame,
+            text="Auto-Find will not work for memory.dat files.",
+            font=("Segoe UI", 11),
+            text_color=("gray35", "gray75"),
+        ).pack(pady=(0, 14))
+
+        ctk.CTkButton(main_frame, text="Close", width=120, command=dialog.destroy).pack(
+            pady=(0, 4)
+        )
 
     def browse_file(self):
         """Browse for a save file for the active game."""
