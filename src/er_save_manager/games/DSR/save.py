@@ -277,6 +277,48 @@ ANCHOR_BONFIRE_2 = 0x6C
 ANCHOR_BONFIRE_3 = 0x6D
 ANCHOR_BONFIRE_WARP = 0xAE
 
+# Event flags start immediately after the 16-byte Pattern1 marker.
+# Encoding: byte = flags_base + flag_id // 8, bit = flag_id % 8 (LSB-first).
+PATTERN1_LEN = 16
+
+# Starting stats per class: (base_level, vit, atn, end, str, dex, int, fth, res)
+# Used to recalculate total level when individual stats are edited.
+_CLASS_BASE_STATS: dict[int, tuple[int, ...]] = {
+    0: (4, 11, 8, 12, 13, 13, 9, 9, 11),  # Warrior
+    1: (5, 14, 10, 10, 11, 11, 9, 11, 10),  # Knight
+    2: (3, 10, 11, 10, 10, 14, 11, 8, 10),  # Wanderer
+    3: (5, 9, 11, 9, 9, 15, 12, 11, 10),  # Thief
+    4: (4, 12, 8, 14, 14, 9, 8, 10, 11),  # Bandit
+    5: (4, 11, 9, 11, 12, 14, 9, 8, 10),  # Hunter
+    6: (3, 8, 15, 8, 9, 11, 15, 8, 8),  # Sorcerer
+    7: (1, 10, 12, 11, 12, 9, 10, 8, 11),  # Pyromancer
+    8: (2, 11, 11, 9, 12, 8, 8, 14, 11),  # Cleric
+    9: (1, 11, 11, 11, 11, 11, 11, 11, 11),  # Deprived
+}
+
+
+def calc_level_from_stats(
+    player_class: int,
+    vit: int,
+    atn: int,
+    end: int,
+    str_: int,
+    dex: int,
+    int_: int,
+    fth: int,
+    res: int,
+) -> int:
+    """
+    Compute total SL from current stats and starting class.
+    SL = class_base_level + sum(current_stats) - sum(class_base_stats)
+    """
+    base = _CLASS_BASE_STATS.get(player_class, _CLASS_BASE_STATS[9])
+    base_level, *base_stats = base
+    current_sum = vit + atn + end + str_ + dex + int_ + fth + res
+    base_sum = sum(base_stats)
+    return base_level + (current_sum - base_sum)
+
+
 # VIT -> max HP lookup (game does not recalculate on load; must be set manually)
 VIT_TO_HP: dict[int, int] = {
     1: 400,
@@ -1096,32 +1138,31 @@ class DSRCharacter:
         """
         Read a game event flag.
 
-        Encoding: byte_offset = anchor + flag_id // 8, bit = flag_id % 8.
-        Covers all global flags (2-17), NPC states (1000-1900), gesture flags
-        (280-288), and utility flags up to ID ~2,124,719.
-        Map-specific flags (11xxxxxx, 50xxxxxx) are out of range.
+        Flags are stored immediately after the 16-byte Pattern1 marker.
+        Encoding: byte = anchor + PATTERN1_LEN + flag_id // 8, bit = flag_id % 8 (LSB-first).
+        Covers boss kills (2-17), NPC states, gesture flags, and utility flags.
         """
         anchor = self._find_pattern1()
         if anchor < 0:
             raise ValueError("Pattern1 not found")
-        off = anchor + flag_id // 8
+        off = anchor + PATTERN1_LEN + flag_id // 8
         if off >= len(self._data):
             raise IndexError(
-                f"Flag {flag_id} out of accessible range "
-                f"(needs anchor+{flag_id // 8:#x}, available to anchor+{len(self._data) - anchor:#x})"
+                f"Flag {flag_id} out of range "
+                f"(needs anchor+{PATTERN1_LEN + flag_id // 8:#x})"
             )
         return bool((self._data[off] >> (flag_id % 8)) & 1)
 
     def set_flag(self, flag_id: int, value: bool) -> None:
-        """Write a game event flag. See get_flag for encoding and range details."""
+        """Write a game event flag. See get_flag for encoding details."""
         anchor = self._find_pattern1()
         if anchor < 0:
             raise ValueError("Pattern1 not found")
-        off = anchor + flag_id // 8
+        off = anchor + PATTERN1_LEN + flag_id // 8
         if off >= len(self._data):
             raise IndexError(
-                f"Flag {flag_id} out of accessible range "
-                f"(needs anchor+{flag_id // 8:#x}, available to anchor+{len(self._data) - anchor:#x})"
+                f"Flag {flag_id} out of range "
+                f"(needs anchor+{PATTERN1_LEN + flag_id // 8:#x})"
             )
         if value:
             self._data[off] |= 1 << (flag_id % 8)
