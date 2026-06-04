@@ -130,8 +130,8 @@ class SaveManagerGUI:
 
         # DSR-specific parsed save (separate from ER save_file)
         self.dsr_save = None
-
-        # Refs to file-frame buttons that should be disabled for non-ER games
+        # DS3-specific parsed save
+        self.ds3_save = None
         self._file_load_buttons: list = []
 
         # Lazy loading flags (track which tabs have been initialized with data)
@@ -644,6 +644,7 @@ class SaveManagerGUI:
         # Null out all tab references so _finalize_save_load doesn't call methods
         # on widgets that are about to be destroyed.
         self.dsr_save = None
+        self.ds3_save = None
 
         for attr in (
             "inspector_tab",
@@ -662,6 +663,11 @@ class SaveManagerGUI:
             "dsr_npc_tab",
             "dsr_world_tab",
             "dsr_flags_tab",
+            "ds3_inspector_tab",
+            "ds3_editor_tab",
+            "ds3_inventory_tab",
+            "ds3_bosses_tab",
+            "ds3_world_tab",
         ):
             setattr(self, attr, None)
 
@@ -831,6 +837,81 @@ class SaveManagerGUI:
 
     def _create_other_game_tabs(self, profile):
         """Create the reduced tab set for non-Elden Ring games."""
+
+        if profile.key == "dark_souls_3":
+            from er_save_manager.games.DS3.tabs import (
+                DS3BossesTab,
+                DS3EditorTab,
+                DS3InspectorTab,
+                DS3InventoryTab,
+                DS3WorldStateTab,
+            )
+
+            self.notebook.add("Save Inspector")
+            self.ds3_inspector_tab = DS3InspectorTab(
+                self.notebook.tab("Save Inspector"),
+                get_save=lambda: self.ds3_save,
+                on_slot_selected=self._on_ds3_slot_edit,
+            )
+            self.ds3_inspector_tab.setup_ui()
+
+            self.notebook.add("Character Editor")
+            self.ds3_editor_tab = DS3EditorTab(
+                self.notebook.tab("Character Editor"),
+                get_save=lambda: self.ds3_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.ds3_editor_tab.setup_ui()
+
+            self.notebook.add("Inventory")
+            self.ds3_inventory_tab = DS3InventoryTab(
+                self.notebook.tab("Inventory"),
+                get_save=lambda: self.ds3_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.ds3_inventory_tab.setup_ui()
+
+            self.notebook.add("Bosses")
+            self.ds3_bosses_tab = DS3BossesTab(
+                self.notebook.tab("Bosses"),
+                get_save=lambda: self.ds3_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.ds3_bosses_tab.setup_ui()
+
+            self.notebook.add("World State")
+            self.ds3_world_tab = DS3WorldStateTab(
+                self.notebook.tab("World State"),
+                get_save=lambda: self.ds3_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.ds3_world_tab.setup_ui()
+
+            self.notebook.add("SteamID Patcher")
+            self.steamid_tab = SteamIDPatcherTab(
+                self.notebook.tab("SteamID Patcher"),
+                lambda: self.save_file,
+                lambda: self.save_path,
+                self.load_save,
+                self.show_toast,
+            )
+            self.steamid_tab.setup_ui()
+            self.steamid_tab.set_active_profile("Dark Souls III")
+
+            self.notebook.add("Settings")
+            self.settings_tab = SettingsTab(
+                self.notebook.tab("Settings"),
+                get_save_path_callback=lambda: self.save_path,
+                get_default_save_path_callback=lambda: self.default_save_path,
+                active_game="dark_souls_3",
+                root=self.root,
+            )
+            self.settings_tab.setup_ui()
+            return
 
         # DSR has no embedded SteamID - SteamID Patcher tab is not shown.
         # All other non-ER games get: SteamID Patcher + Settings.
@@ -1582,6 +1663,8 @@ class SaveManagerGUI:
                 self.root.after(500, self.load_save)
         elif self.active_game == "dark_souls_remastered":
             self.root.after(500, lambda p=save_path: self._load_dsr_save(p))
+        elif self.active_game == "dark_souls_3":
+            self.root.after(500, lambda p=save_path: self._load_ds3_save(p))
         else:
             self._load_non_er_save(save_path)
 
@@ -1727,6 +1810,14 @@ class SaveManagerGUI:
                 self.status_var.set("Load cancelled by user")
                 return
 
+        # Route non-ER games to their own loaders so the Load button works too
+        if self.active_game == "dark_souls_remastered":
+            self._load_dsr_save(save_path)
+            return
+        if self.active_game == "dark_souls_3":
+            self._load_ds3_save(save_path)
+            return
+
         # Start loading in background thread
         self.status_var.set("Loading save file...")
         thread = threading.Thread(
@@ -1815,7 +1906,76 @@ class SaveManagerGUI:
         if hasattr(self, "dsr_editor_tab") and self.dsr_editor_tab:
             self.dsr_editor_tab.load_slot(slot_idx)
 
+    def _load_ds3_save(self, save_path: str) -> None:
+        """Parse a DS3 save file and refresh all DS3 tabs."""
+        from er_save_manager.games.DS3.save import DS3Save
+
+        profile = self._active_profile()
+        if (
+            not self.settings.get("skip_game_running_check", False)
+            and profile
+            and profile.process_name
+            and self.is_game_running(profile.process_name)
+        ):
+            if not self._handle_game_running_dialog(profile):
+                return
+
+        try:
+            self.ds3_save = DS3Save.from_file(save_path)
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error", f"Failed to load DS3 save:\n{e}", parent=self.root
+            )
+            return
+
+        self.save_path = Path(save_path)
+        self.save_file = None
+
+        for attr in (
+            "ds3_inspector_tab",
+            "ds3_editor_tab",
+            "ds3_inventory_tab",
+            "ds3_bosses_tab",
+            "ds3_world_tab",
+        ):
+            tab = getattr(self, attr, None)
+            if tab is not None:
+                tab.refresh()
+
+        steamid_tab = getattr(self, "steamid_tab", None)
+        if steamid_tab is not None:
+            try:
+                steamid_tab._on_game_changed()
+            except Exception:
+                pass
+
+        self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
+        self.show_toast(
+            f"DS3 save loaded: {os.path.basename(save_path)}", duration=2500
+        )
+
     def reload_save(self):
+        """Reload the current save file without showing success message"""
+        self.load_save(silent=True)
+
+    def _on_ds3_slot_edit(self, slot_idx: int) -> None:
+        """Navigate to Character Editor and load the selected slot.
+        Called only from the DS3 inspector 'Edit Character' button.
+        """
+        try:
+            self.notebook.set("Character Editor")
+        except Exception:
+            pass
+        for attr in (
+            "ds3_editor_tab",
+            "ds3_inventory_tab",
+            "ds3_bosses_tab",
+            "ds3_world_tab",
+        ):
+            tab = getattr(self, attr, None)
+            if tab is not None:
+                tab.load_slot(slot_idx)
+
         """Reload the current save file without showing success message"""
         self.load_save(silent=True)
 
@@ -2018,7 +2178,7 @@ class SaveManagerGUI:
 
         dialog = ctk.CTkToplevel(self.root)
         dialog.title("Save File Modified")
-        dialog.geometry("440x250")
+        dialog.geometry("440x300")
         dialog.transient(self.root)
         dialog.resizable(False, False)
 
