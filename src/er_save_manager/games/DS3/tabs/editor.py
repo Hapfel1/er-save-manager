@@ -31,6 +31,8 @@ class DS3EditorTab:
         self._show_toast = show_toast
         self._current_slot = -1
         self._stat_vars: dict[str, tk.StringVar] = {}
+        self._base_stats_sum: int = 0  # sum of 9 stats at load time
+        self._base_level: int = 1  # level at load time
         self._name_var = tk.StringVar()
         self._ng_var = tk.StringVar(value="0")
         self._playtime_var = tk.StringVar(value="--")
@@ -135,13 +137,6 @@ class DS3EditorTab:
                 row=i, column=1, padx=5, pady=5
             )
 
-        ctk.CTkLabel(
-            frame,
-            text="HP/FP/Stamina are live values stored in the save. "
-            "The game may recalculate them on area load.",
-            font=("Segoe UI", 10),
-            text_color=("gray40", "gray70"),
-        ).pack(anchor="w", padx=15, pady=(4, 0))
         ctk.CTkButton(
             frame, text="Apply Changes", command=self._apply_stats, width=200
         ).pack(pady=16)
@@ -222,15 +217,47 @@ class DS3EditorTab:
         char = save.characters[slot_idx]
         if char is None:
             return
+        # Remove traces before writing to avoid premature recalc
+        for key in ("vig", "atn", "end", "vit", "str", "dex", "int", "fth", "lck"):
+            for tid in self._stat_vars[key].trace_info():
+                self._stat_vars[key].trace_remove(tid[0], tid[1])
+
         for key in ("vig", "atn", "end", "vit", "str", "dex", "int", "fth", "lck"):
             self._stat_vars[key].set(str(char.get_stat(key)))
         self._stat_vars["level"].set(str(char.level))
+
+        # Snapshot for delta-based level recalc
+        self._base_stats_sum = sum(
+            char.get_stat(k)
+            for k in ("vig", "atn", "end", "vit", "str", "dex", "int", "fth", "lck")
+        )
+        self._base_level = char.level
+
+        # Bind traces so any stat change auto-updates the level field
+        for key in ("vig", "atn", "end", "vit", "str", "dex", "int", "fth", "lck"):
+            self._stat_vars[key].trace_add(
+                "write", lambda *_: self._auto_recalc_level()
+            )
         self._stat_vars["souls"].set(str(char.souls))
         self._stat_vars["hp"].set(str(char.hp))
         self._stat_vars["fp"].set(str(char.fp))
         self._stat_vars["stamina"].set(str(char.stamina))
         self._name_var.set(char.name)
         self._ng_var.set(str(char.ng_plus))
+
+    def _auto_recalc_level(self) -> None:
+        """Recalculate level from stat delta relative to the load-time snapshot."""
+        try:
+            current_sum = sum(
+                int(self._stat_vars[k].get())
+                for k in ("vig", "atn", "end", "vit", "str", "dex", "int", "fth", "lck")
+            )
+        except ValueError:
+            return  # user mid-typing, skip
+        new_level = max(
+            1, min(802, self._base_level + (current_sum - self._base_stats_sum))
+        )
+        self._stat_vars["level"].set(str(new_level))
 
     # --- Apply --------------------------------------------------------------- #
 
@@ -255,8 +282,13 @@ class DS3EditorTab:
             return
         try:
             for key in ("vig", "atn", "end", "vit", "str", "dex", "int", "fth", "lck"):
-                char.set_stat(key, int(self._stat_vars[key].get()))
-            char.level = int(self._stat_vars["level"].get())
+                raw = int(self._stat_vars[key].get())
+                char.set_stat(key, max(1, min(99, raw)))
+                self._stat_vars[key].set(str(max(1, min(99, raw))))
+            level_raw = int(self._stat_vars["level"].get())
+            if not 1 <= level_raw <= 802:
+                raise ValueError(f"Level must be 1-802 (got {level_raw})")
+            char.level = level_raw
             char.souls = int(self._stat_vars["souls"].get())
             char.hp = int(self._stat_vars["hp"].get())
             char.fp = int(self._stat_vars["fp"].get())
