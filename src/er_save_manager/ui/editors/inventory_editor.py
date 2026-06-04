@@ -1573,8 +1573,7 @@ class InventoryEditor:
     def _patch_gaitem(self, save_file, slot_idx: int, slot, gaitem_idx: int) -> None:
         from io import BytesIO
 
-        CHECKSUM_SIZE = 0x10
-        slot_data_base = save_file._slot_offsets[slot_idx] + CHECKSUM_SIZE
+        slot_data_base = save_file.slot_data_offset(slot_idx)
         entry_abs = slot_data_base + slot.gaitem_offsets[gaitem_idx]
         g = slot.gaitem_map[gaitem_idx]
         buf = BytesIO()
