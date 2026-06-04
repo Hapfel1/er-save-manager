@@ -71,6 +71,8 @@ class DSREventFlagsTab:
         self._current_slot = 0
         self._npc_built = False
         self._world_built = False
+        self._lookup_id_var: tk.StringVar | None = None
+        self._lookup_result_var: tk.StringVar | None = None
 
     def setup_ui(self) -> None:
         outer = ctk.CTkFrame(self.parent, corner_radius=12)
@@ -103,6 +105,7 @@ class DSREventFlagsTab:
 
         self._npc_parent = self._tabs.add("NPC States")
         self._world_parent = self._tabs.add("World Flags")
+        self._lookup_parent = self._tabs.add("Flag Lookup")
 
         for p, t in [
             (self._npc_parent, "Load a character to view NPC state flags."),
@@ -110,6 +113,7 @@ class DSREventFlagsTab:
         ]:
             ctk.CTkLabel(p, text=t, text_color=("gray50", "gray60")).pack(pady=40)
 
+        self._build_lookup_ui()
         _apply_treeview_style()
 
     def _on_tab_change(self) -> None:
@@ -412,6 +416,91 @@ class DSREventFlagsTab:
             )
         except Exception as exc:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+
+    # --- Flag Lookup ---------------------------------------------------------- #
+
+    def _build_lookup_ui(self) -> None:
+        outer = ctk.CTkFrame(self._lookup_parent, fg_color="transparent")
+        outer.pack(fill="both", expand=True, padx=12, pady=10)
+
+        ctk.CTkLabel(
+            outer,
+            text="Read or write any event flag by numeric ID.",
+            font=("Segoe UI", 10),
+            text_color=("gray40", "gray70"),
+        ).pack(anchor="w", pady=(0, 8))
+
+        input_row = ctk.CTkFrame(outer, fg_color="transparent")
+        input_row.pack(fill="x", pady=(0, 6))
+
+        ctk.CTkLabel(input_row, text="Flag ID:").pack(side="left", padx=(0, 6))
+        self._lookup_id_var = tk.StringVar()
+        ctk.CTkEntry(
+            input_row,
+            textvariable=self._lookup_id_var,
+            width=120,
+            placeholder_text="e.g. 11010000",
+        ).pack(side="left", padx=(0, 8))
+        ctk.CTkButton(input_row, text="Read", command=self._lookup_read, width=70).pack(
+            side="left", padx=(0, 4)
+        )
+        ctk.CTkButton(
+            input_row, text="Set ON", command=lambda: self._lookup_write(True), width=75
+        ).pack(side="left", padx=(0, 4))
+        ctk.CTkButton(
+            input_row,
+            text="Set OFF",
+            command=lambda: self._lookup_write(False),
+            width=75,
+        ).pack(side="left")
+
+        self._lookup_result_var = tk.StringVar(value="")
+        ctk.CTkLabel(
+            outer,
+            textvariable=self._lookup_result_var,
+            font=("Consolas", 11),
+            anchor="w",
+        ).pack(anchor="w", pady=(6, 0))
+
+    def _lookup_read(self) -> None:
+        _, _, char = self._get_char()
+        if char is None:
+            self._lookup_result_var.set("No character loaded.")
+            return
+        try:
+            fid = int(self._lookup_id_var.get().strip())
+        except ValueError:
+            self._lookup_result_var.set("Invalid flag ID.")
+            return
+        try:
+            state = char.get_flag(fid)
+            self._lookup_result_var.set(
+                f"Flag {fid}  ->  {'ON (1)' if state else 'OFF (0)'}"
+            )
+        except Exception as exc:
+            self._lookup_result_var.set(f"Error: {exc}")
+
+    def _lookup_write(self, value: bool) -> None:
+        save, save_path, char = self._get_char()
+        if char is None:
+            self._lookup_result_var.set("No character loaded.")
+            return
+        try:
+            fid = int(self._lookup_id_var.get().strip())
+        except ValueError:
+            self._lookup_result_var.set("Invalid flag ID.")
+            return
+        try:
+            char.set_flag(fid, value)
+            _backup_and_save(
+                save, save_path, f"flag_{fid}_slot_{self._current_slot + 1}"
+            )
+            self._lookup_result_var.set(
+                f"Flag {fid}  ->  set to {'ON (1)' if value else 'OFF (0)'}. Backup created."
+            )
+            self._show_toast(f"Flag {fid} -> {'ON' if value else 'OFF'}.")
+        except Exception as exc:
+            self._lookup_result_var.set(f"Error: {exc}")
 
     # --- Refresh / helpers ---------------------------------------------------- #
 

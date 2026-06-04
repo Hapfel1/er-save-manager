@@ -103,11 +103,21 @@ jobs:
               ;;
           esac
 
+          case "${{ matrix.platform }}" in
+            Linux)
+              upload_filename="er-save-manager_${version_no_v}_Linux.zip"
+              ;;
+            Windows)
+              upload_filename="$asset_name"
+              ;;
+          esac
+
           echo "requested_version=$requested_version" >> "$GITHUB_OUTPUT"
           echo "primary_version=$primary_version" >> "$GITHUB_OUTPUT"
           echo "alternate_version=$alternate_version" >> "$GITHUB_OUTPUT"
           echo "version_no_v=$version_no_v" >> "$GITHUB_OUTPUT"
           echo "asset_name=$asset_name" >> "$GITHUB_OUTPUT"
+          echo "upload_filename=$upload_filename" >> "$GITHUB_OUTPUT"
           echo "file_group_id=$file_group_id" >> "$GITHUB_OUTPUT"
 
       - name: Download GitHub release asset
@@ -144,15 +154,24 @@ jobs:
 
           echo "resolved_version=$used_version" >> "$GITHUB_OUTPUT"
 
+      - name: Zip Linux AppImage
+        if: matrix.platform == 'Linux'
+        run: |
+          cd nexusmods-upload
+          zip "${{ steps.meta.outputs.upload_filename }}" \
+              "${{ steps.meta.outputs.asset_name }}"
+
       - name: Upload artifact to Nexus Mods
         id: upload
-        uses: Nexus-Mods/upload-action@v1.0.0-beta.5
+        uses: Nexus-Mods/upload-action@v1.0.0-beta.7
         with:
           api_key: ${{ secrets.NEXUSMODS_API_KEY }}
           file_group_id: ${{ steps.meta.outputs.file_group_id }}
-          filename: nexusmods-upload/${{ steps.meta.outputs.asset_name }}
-          display_name: ER Save Manager ${{ steps.meta.outputs.version_no_v }} (${{ matrix.platform }})
+          filename: nexusmods-upload/${{ steps.meta.outputs.upload_filename }}
+          display_name: Elden Ring Save File Manager ${{ steps.meta.outputs.version_no_v }} - ${{ matrix.platform }}
           description: |
-            Automated upload for ER Save Manager ${{ steps.download.outputs.resolved_version }} (${{ matrix.platform }}).
+            Automated upload for Elden Ring Save File Manager ${{ steps.download.outputs.resolved_version }} (${{ matrix.platform }}).
             Source release: https://github.com/${{ github.repository }}/releases/tag/${{ steps.download.outputs.resolved_version }}
           version: ${{ steps.meta.outputs.version_no_v }}
+          archive_existing_file: true
+          allow_mod_manager_download: false

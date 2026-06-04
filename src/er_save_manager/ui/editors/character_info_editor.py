@@ -514,9 +514,7 @@ class CharacterInfoEditor:
                     from er_save_manager.parser.slot_rebuild import rebuild_slot
 
                     rebuilt_bytes = rebuild_slot(slot)
-                    slot_offset = save_file._slot_offsets[slot_idx]
-                    CHECKSUM_SIZE = 0x10
-                    abs_offset = slot_offset + CHECKSUM_SIZE
+                    abs_offset = save_file.slot_data_offset(slot_idx)
                     save_file._raw_data[
                         abs_offset : abs_offset + len(rebuilt_bytes)
                     ] = rebuilt_bytes

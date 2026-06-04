@@ -1291,7 +1291,14 @@ class InventoryEditor:
                 pass  # ops layer raises correctly
         else:
             handle = _direct_handle(full_id)
-            for it in inventory.common_items:
+            from er_save_manager.parser.inventory_ops import _is_key_item
+
+            item_list = (
+                inventory.key_items
+                if _is_key_item(full_id, inventory)
+                else inventory.common_items
+            )
+            for it in item_list:
                 if it.gaitem_handle == handle and it.quantity > 0:
                     return False, "This item is already in the inventory."
 
@@ -1566,8 +1573,7 @@ class InventoryEditor:
     def _patch_gaitem(self, save_file, slot_idx: int, slot, gaitem_idx: int) -> None:
         from io import BytesIO
 
-        CHECKSUM_SIZE = 0x10
-        slot_data_base = save_file._slot_offsets[slot_idx] + CHECKSUM_SIZE
+        slot_data_base = save_file.slot_data_offset(slot_idx)
         entry_abs = slot_data_base + slot.gaitem_offsets[gaitem_idx]
         g = slot.gaitem_map[gaitem_idx]
         buf = BytesIO()
