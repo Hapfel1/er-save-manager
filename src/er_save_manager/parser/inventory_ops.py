@@ -598,12 +598,13 @@ def add_item(
     else:
         handle = _direct_handle(full_item_id)
 
-    # Reject if already in inventory
-    for it in inventory.common_items:
-        if it.gaitem_handle == handle and it.quantity > 0:
-            raise ValueError(
-                f"item 0x{full_item_id:08X} already present (handle 0x{handle:08X})"
-            )
+    # Reject if already in inventory (talismans allow duplicates)
+    if cat != _CAT_TALISMAN:
+        for it in inventory.common_items:
+            if it.gaitem_handle == handle and it.quantity > 0:
+                raise ValueError(
+                    f"item 0x{full_item_id:08X} already present (handle 0x{handle:08X})"
+                )
 
     acq_idx = _global_next_acq_index(slot)
     inv_slot = _first_empty_inv_slot(inventory)
