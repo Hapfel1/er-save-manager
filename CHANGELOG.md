@@ -3,13 +3,64 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.4.0
+**Released:** June 04, 2026
+
+
+### ✨ New Features
+
+- Added PlayStation Save File Reading and Editing `[ER]` ([41d87d7](https://github.com/Hapfel1/er-save-manager/commit/41d87d7eadd6dd118d6991ad34c191741d6b9686))
+
+- Add DS3 save file editor module `[DS3]` ([132de69](https://github.com/Hapfel1/er-save-manager/commit/132de699b663bd5937d13fca7960d539cc20a3d8))
+
+
+
+### 🔧 Bug Fixes
+
+- Preserve global array header when writing to preset slot 0 ([d78675f](https://github.com/Hapfel1/er-save-manager/commit/d78675f2f5381ae3c57557d8f3bd6acc192dbef4))
+
+- Added mising Convergence Item, Putrid Key ([0a88729](https://github.com/Hapfel1/er-save-manager/commit/0a88729158aa2439d189af2ac8733fbf35bb68cf))
+
+- Route key items to key_items[] in inventory ops ([5c99b64](https://github.com/Hapfel1/er-save-manager/commit/5c99b6488ad0ba0eb650d436032836db5aaaa634))
+
+- Skip checksum prefix on PS saves for all slot writes ([a9069dd](https://github.com/Hapfel1/er-save-manager/commit/a9069dd3b5976e14f9658f2e2ee7a0024b20f06f))
+
+- Correct event flag base offset, add level recalc, flag lookup tab `[DSR]` ([64200f4](https://github.com/Hapfel1/er-save-manager/commit/64200f42a85a5974bcc9d7b3381f551adcca74b7))
+
+
+
+### 🎨 User Interface
+
+- Fix scroll bar bug in Icon Browser ([196da49](https://github.com/Hapfel1/er-save-manager/commit/196da49a1176fdf0e1bd5ca1c7df3d186e7ada0d))
+
+- Rewrite info text to adjust for Switch and Playstation saves ([9ce410a](https://github.com/Hapfel1/er-save-manager/commit/9ce410a804785fafe89b99620117d88b892cc769))
+
+
+
+### 📦 Dependencies
+
+- Bump the github-actions group with 2 updates `[deps]` ([93bf07e](https://github.com/Hapfel1/er-save-manager/commit/93bf07e25a4ffe760c6a2ae1c09fb202731af842))
+
+
+
+---
 ## 📦 Release 1.3.2
 **Released:** May 29, 2026
+
+
+### ✨ New Features
+
+- Add DS3 save file editing `[DS3]` ([0bb980c](https://github.com/Hapfel1/er-save-manager/commit/0bb980c381e54df813ed6b95ff0bfbcc4af7e96f))
+
+- Add Item Spawning `[DS3]` ([fd4960f](https://github.com/Hapfel1/er-save-manager/commit/fd4960fe3201e12a221c5291df207b487becc784))
+
 
 
 ### 🔧 Bug Fixes
 
 - Fixed some convergence weapons having affinity options when they should not have them ([8e60b4a](https://github.com/Hapfel1/er-save-manager/commit/8e60b4a265b4b5ce8deaaef0c6869613dd14112f))
+
+- Added probing to find correct inventory size ([8b80f93](https://github.com/Hapfel1/er-save-manager/commit/8b80f93f0fc1d19b8c91c614b2859a6dbcee3e4a))
 
 - Added missed SeamlessCoop Item (Crimson Blossom) `[DSR]` ([81ec6cc](https://github.com/Hapfel1/er-save-manager/commit/81ec6cc9f3418e5ed647f0a08b5b5ba7252939e0))
 
@@ -18,6 +69,10 @@
 
 
 ### 🎨 User Interface
+
+- Redid character transferring between files flow to make it more user friendly ([a8087f5](https://github.com/Hapfel1/er-save-manager/commit/a8087f53a4015467f284594d922f2ee16173556f))
+
+- Add info about quest steps that stay applied even after fully resetting quest progress ([180d876](https://github.com/Hapfel1/er-save-manager/commit/180d87650f9b6b569dc04ab868b1f5f4cefe38eb))
 
 - Added SeamlessCoop Items for DSR ([70fa936](https://github.com/Hapfel1/er-save-manager/commit/70fa936c2241aa28e1bd5c9861c4829fe8b923e2))
 
@@ -963,6 +1018,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.4.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.3.2..v1.4.0
 [1.3.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.3.1..v1.3.2
 [1.3.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.3.0..v1.3.1
 [1.3.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.2.2..v1.3.0
