@@ -1865,6 +1865,13 @@ class SaveManagerGUI:
             if tab is not None:
                 tab.refresh()
 
+        steamid_tab = getattr(self, "steamid_tab", None)
+        if steamid_tab is not None:
+            try:
+                steamid_tab._on_game_changed()
+            except Exception:
+                pass
+
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         self.show_toast(
             f"DS3 save loaded: {os.path.basename(save_path)}", duration=2500
@@ -2069,7 +2076,7 @@ class SaveManagerGUI:
 
         dialog = ctk.CTkToplevel(self.root)
         dialog.title("Save File Modified")
-        dialog.geometry("440x250")
+        dialog.geometry("440x300")
         dialog.transient(self.root)
         dialog.resizable(False, False)
 

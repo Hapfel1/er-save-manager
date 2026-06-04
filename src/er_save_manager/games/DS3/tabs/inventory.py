@@ -1,13 +1,11 @@
 """
 DS3 Inventory Editor tab.
 
-Left panel: current inventory with search, category filter, sortable columns.
-  Edit row: Quantity | Upgrade (weapons only) | Apply / Remove buttons.
+Left: current inventory (standard item types only; DS3-internal entries are hidden).
+Right: item spawner with category filter, search, mod toggles (Vanilla / Cinders / Convergence).
 
-Right panel: item spawner with category filter, search, quantity + upgrade inputs.
-
-Weapons and armor use INSERT+TRIM (see slot.py). Goods and rings write directly
-into an empty inventory slot. All mutations backup then save immediately.
+Weapons and armor use INSERT+TRIM (slot.py). Goods and rings write directly.
+All mutations backup then save immediately.
 """
 
 from __future__ import annotations
@@ -24,6 +22,7 @@ from er_save_manager.ui.messagebox import CTkMessageBox
 _DATA_DIR = Path(__file__).parent.parent / "data"
 _DB: dict | None = None
 _LOOKUP: dict[tuple[int, int], dict] | None = None
+_MOD_DBS: dict[str, dict] = {}
 
 _CAT_LABELS: dict[str, str] = {
     "weapon_items": "Weapons",
@@ -32,8 +31,6 @@ _CAT_LABELS: dict[str, str] = {
     "ring_items": "Rings",
     "goods_items": "Goods",
 }
-
-# gaitem_handle type nibble values
 _TYPE_WEAPON = 0x8
 _TYPE_ARMOR = 0x9
 _TYPE_RING = 0xA
@@ -50,15 +47,48 @@ def _ensure_db() -> tuple[dict, dict]:
                 item["_cat"] = cat_key
                 type_nibble = int(item["Type"], 16) >> 28
                 _LOOKUP[(type_nibble, int(item["Id"], 16))] = item
-    return _DB, _LOOKUP  # type: ignore[return-value]
+    return _DB, _LOOKUP
 
 
-def _resolve_name(type_nibble: int, item_id: int) -> str:
+_MOD_LOOKUPS: dict[str, dict] = {}
+
+
+def _load_mod_db(mod: str) -> dict:
+    if mod not in _MOD_DBS:
+        path = _DATA_DIR / f"{mod}_items.json"
+        if path.exists():
+            _MOD_DBS[mod] = json.loads(path.read_text(encoding="utf-8"))
+        else:
+            _MOD_DBS[mod] = {}
+    return _MOD_DBS[mod]
+
+
+def _get_mod_lookup(mod: str) -> dict[tuple[int, int], dict]:
+    """Precomputed (type_nibble, item_id) lookup for a mod DB."""
+    if mod not in _MOD_LOOKUPS:
+        db = _load_mod_db(mod)
+        lut: dict[tuple[int, int], dict] = {}
+        for cat_items in db.values():
+            for item in cat_items:
+                tn = int(item["Type"], 16) >> 28
+                lut[(tn, int(item["Id"], 16))] = item
+        _MOD_LOOKUPS[mod] = lut
+    return _MOD_LOOKUPS[mod]
+
+
+def _resolve_name(type_nibble: int, item_id: int, active_mod: str | None = None) -> str:
     _, lookup = _ensure_db()
     entry = lookup.get((type_nibble, item_id))
-    if entry is None:
-        return f"Unknown (type={type_nibble:#x} id={item_id:#010x})"
-    return entry["Name"]
+    if entry is not None:
+        return entry["Name"]
+    if active_mod:
+        mod_entry = _get_mod_lookup(active_mod).get((type_nibble, item_id))
+        if mod_entry is not None:
+            return mod_entry["Name"]
+    label = {0x8: "Weapon", 0x9: "Armor", 0xA: "Ring", 0xB: "Good"}.get(
+        type_nibble, "Item"
+    )
+    return f"Unknown {label} ({item_id:#010x})"
 
 
 def _backup_and_save(ds3_save, save_path: Path, op: str) -> None:
@@ -87,20 +117,27 @@ def _apply_treeview_style() -> None:
 
 
 class DS3InventoryTab:
-    def __init__(self, parent, get_save, get_save_path, show_toast) -> None:
+    def __init__(
+        self, parent, get_save, get_save_path, show_toast, reload_save=None
+    ) -> None:
         self.parent = parent
         self._get_save = get_save
         self._get_save_path = get_save_path
         self._show_toast = show_toast
+        # Called after each successful save to reload DS3Save from disk,
+        # preventing stale _data from corrupting subsequent spawn operations.
+        self._reload_save = reload_save
         self._current_slot = -1
+        self._spawn_tree_ready = False
         self._selected_inv_offset = -1
         self._selected_db_item: dict | None = None
         self._spawn_row_map: dict[str, dict] = {}
-        self._all_items: list[
-            tuple
-        ] = []  # (offset, name, cat, qty, type_nibble, item_id)
+        self._all_items: list[tuple] = []
         self._sort_col: str | None = None
         self._sort_asc = True
+        # Mod toggles (mutually exclusive; vanilla items always shown)
+        self._mod_cinders = tk.BooleanVar(value=False)
+        self._mod_convergence = tk.BooleanVar(value=False)
 
     def setup_ui(self) -> None:
         _apply_treeview_style()
@@ -108,7 +145,6 @@ class DS3InventoryTab:
         outer = ctk.CTkFrame(self.parent, corner_radius=12)
         outer.pack(fill="both", expand=True, pady=(0, 10))
 
-        # Slot selector header
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
         ctk.CTkLabel(
@@ -119,16 +155,11 @@ class DS3InventoryTab:
         )
         self._slot_var = tk.StringVar()
         self._slot_combo = ctk.CTkComboBox(
-            header,
-            variable=self._slot_var,
-            values=[],
-            state="readonly",
-            width=240,
+            header, variable=self._slot_var, values=[], state="readonly", width=240
         )
         self._slot_combo.pack(side="right")
         ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
 
-        # Two-column layout
         body = ctk.CTkFrame(outer, fg_color="transparent")
         body.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         body.grid_columnconfigure(0, weight=2)
@@ -138,7 +169,7 @@ class DS3InventoryTab:
         self._build_inventory_panel(body)
         self._build_spawner_panel(body)
 
-    # --- Inventory panel (left) ---------------------------------------------- #
+    # --- Inventory panel ---------------------------------------------------- #
 
     def _build_inventory_panel(self, parent) -> None:
         left = ctk.CTkFrame(parent, corner_radius=10)
@@ -146,9 +177,8 @@ class DS3InventoryTab:
         left.grid_rowconfigure(1, weight=1)
         left.grid_columnconfigure(0, weight=1)
 
-        # Filter row
         frow = ctk.CTkFrame(left, fg_color="transparent")
-        frow.grid(row=0, column=0, sticky="ew", padx=8, pady=(8, 4))
+        frow.grid(row=0, column=0, columnspan=2, sticky="ew", padx=8, pady=(8, 4))
         ctk.CTkLabel(frow, text="Filter:").pack(side="left", padx=(0, 4))
         self._inv_search_var = tk.StringVar()
         self._inv_search_var.trace_add(
@@ -167,7 +197,6 @@ class DS3InventoryTab:
             command=lambda _: self._refresh_inventory_tree(),
         ).pack(side="left")
 
-        # Inventory treeview
         cols = ("name", "type", "qty")
         self._inv_tree = ttk.Treeview(
             left, columns=cols, show="headings", style="DS3.Treeview", height=16
@@ -178,9 +207,7 @@ class DS3InventoryTab:
             ("qty", "Qty", 55),
         ]:
             self._inv_tree.heading(
-                col,
-                text=heading,
-                command=lambda c=col: self._sort_by(c),
+                col, text=heading, command=lambda c=col: self._sort_by(c)
             )
             self._inv_tree.column(
                 col, width=width, anchor="w" if col == "name" else "center"
@@ -192,10 +219,8 @@ class DS3InventoryTab:
         self._inv_tree.configure(yscrollcommand=vsb.set)
         self._inv_tree.bind("<<TreeviewSelect>>", self._on_inv_select)
 
-        # Edit controls
         edit_row = ctk.CTkFrame(left, fg_color="transparent")
         edit_row.grid(row=2, column=0, columnspan=2, sticky="ew", padx=8, pady=(0, 8))
-
         ctk.CTkLabel(edit_row, text="Qty:").pack(side="left", padx=(0, 2))
         self._edit_qty_var = tk.StringVar(value="1")
         ctk.CTkEntry(edit_row, textvariable=self._edit_qty_var, width=55).pack(
@@ -219,56 +244,73 @@ class DS3InventoryTab:
             hover_color=("gray50", "gray25"),
         ).pack(side="left")
 
-    # --- Spawner panel (right) ----------------------------------------------- #
+    # --- Spawner panel ------------------------------------------------------ #
 
     def _build_spawner_panel(self, parent) -> None:
         right = ctk.CTkFrame(parent, corner_radius=10)
         right.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
-        right.grid_rowconfigure(1, weight=1)
+        right.grid_rowconfigure(3, weight=1)
         right.grid_columnconfigure(0, weight=1)
 
+        # Row 0: header
         ctk.CTkLabel(right, text="Spawn Item", font=("Segoe UI", 12, "bold")).grid(
-            row=0, column=0, sticky="w", padx=10, pady=(10, 4)
+            row=0, column=0, columnspan=2, sticky="w", padx=10, pady=(10, 4)
         )
 
-        # Category + search
+        # Row 1: mod source toggles (Cinders and Convergence are mutually exclusive)
+        mod_row = ctk.CTkFrame(right, fg_color="transparent")
+        mod_row.grid(row=1, column=0, columnspan=2, sticky="ew", padx=8, pady=(0, 4))
+        ctk.CTkLabel(mod_row, text="Mod:", font=("Segoe UI", 10)).pack(
+            side="left", padx=(0, 6)
+        )
+        ctk.CTkCheckBox(
+            mod_row,
+            text="Cinders",
+            variable=self._mod_cinders,
+            command=self._on_mod_toggle,
+        ).pack(side="left", padx=(0, 8))
+        ctk.CTkCheckBox(
+            mod_row,
+            text="Convergence",
+            variable=self._mod_convergence,
+            command=self._on_mod_toggle,
+        ).pack(side="left")
+
+        # Row 2: category + search
         frow = ctk.CTkFrame(right, fg_color="transparent")
-        frow.grid(row=0, column=0, sticky="ew", padx=8, pady=(28, 2))
+        frow.grid(row=2, column=0, columnspan=2, sticky="ew", padx=8, pady=(0, 4))
         self._spawn_cat_var = tk.StringVar(value="All")
         ctk.CTkComboBox(
             frow,
             variable=self._spawn_cat_var,
-            values=["All"] + list(_CAT_LABELS.values()),
+            values=["All"] + list(_CAT_LABELS.values()) + ["Cinders", "Convergence"],
             state="readonly",
-            width=110,
+            width=120,
             command=lambda _: self._refresh_spawn_tree(),
         ).pack(side="left", padx=(0, 6))
         self._spawn_search_var = tk.StringVar()
         self._spawn_search_var.trace_add("write", lambda *_: self._refresh_spawn_tree())
         ctk.CTkEntry(
-            frow,
-            textvariable=self._spawn_search_var,
-            width=140,
-            placeholder_text="Search...",
-        ).pack(side="left")
+            frow, textvariable=self._spawn_search_var, placeholder_text="Search..."
+        ).pack(side="left", fill="x", expand=True)
 
-        # Spawn treeview
+        # Row 3: spawn tree
         self._spawn_tree = ttk.Treeview(
             right, columns=("name",), show="headings", style="DS3.Treeview", height=18
         )
         self._spawn_tree.heading("name", text="Item")
         self._spawn_tree.column("name", width=200, anchor="w")
-        self._spawn_tree.grid(row=1, column=0, sticky="nsew", padx=8, pady=(0, 4))
+        self._spawn_tree.grid(row=3, column=0, sticky="nsew", padx=8, pady=(0, 4))
         ssb = ttk.Scrollbar(right, orient="vertical", command=self._spawn_tree.yview)
-        ssb.grid(row=1, column=1, sticky="ns", pady=(0, 4))
+        ssb.grid(row=3, column=1, sticky="ns", pady=(0, 4))
         self._spawn_tree.configure(yscrollcommand=ssb.set)
         self._spawn_tree.bind("<<TreeviewSelect>>", self._on_spawn_select)
-        # Maps auto-generated treeview IID -> item dict
-        self._spawn_row_map: dict[str, dict] = {}
 
-        # Spawn controls
+        # Spawn tree is populated on first character load, not at setup time
+
+        # Row 4: qty / upgrade / spawn
         ctrl = ctk.CTkFrame(right, fg_color="transparent")
-        ctrl.grid(row=2, column=0, columnspan=2, sticky="ew", padx=8, pady=(0, 8))
+        ctrl.grid(row=4, column=0, columnspan=2, sticky="ew", padx=8, pady=(0, 8))
         ctk.CTkLabel(ctrl, text="Qty:").grid(row=0, column=0, padx=(0, 2), pady=4)
         self._spawn_qty_var = tk.StringVar(value="1")
         ctk.CTkEntry(ctrl, textvariable=self._spawn_qty_var, width=50).grid(
@@ -283,13 +325,12 @@ class DS3InventoryTab:
         ctk.CTkButton(ctrl, text="Spawn", command=self._spawn_item, width=80).grid(
             row=0, column=4, pady=4
         )
-
         self._spawn_info = ctk.CTkLabel(
             ctrl, text="", font=("Segoe UI", 9), text_color=("gray40", "gray60")
         )
         self._spawn_info.grid(row=1, column=0, columnspan=5, sticky="w", pady=(0, 4))
 
-    # --- Refresh ------------------------------------------------------------- #
+    # --- Refresh ------------------------------------------------------------ #
 
     def refresh(self) -> None:
         save = self._get_save()
@@ -302,7 +343,7 @@ class DS3InventoryTab:
         ]
         self._slot_combo.configure(values=options)
         self._slot_var.set(options[0] if options else "")
-        self._refresh_spawn_tree()
+        # Spawn tree is built in setup_ui(); rebuilt only when mod selection changes
 
     def load_slot(self, slot_idx: int) -> None:
         options = self._slot_combo.cget("values")
@@ -324,7 +365,7 @@ class DS3InventoryTab:
         self._current_slot = idx
         self._reload_inventory()
 
-    # --- Inventory tree population ------------------------------------------- #
+    # --- Inventory tree ----------------------------------------------------- #
 
     def _reload_inventory(self) -> None:
         save = self._get_save()
@@ -333,36 +374,44 @@ class DS3InventoryTab:
         char = save.characters[self._current_slot]
         if char is None:
             return
-
-        _, lookup = _ensure_db()
+        if not self._spawn_tree_ready:
+            self._spawn_tree_ready = True
+            self.parent.after(0, self._refresh_spawn_tree)
+        active_mod = (
+            "cinders"
+            if self._mod_cinders.get()
+            else ("convergence" if self._mod_convergence.get() else None)
+        )
         self._all_items = []
         for entry in char.iter_inventory():
             if entry.is_empty:
                 continue
             type_nibble = entry.type_bits >> 28
-            name = _resolve_name(type_nibble, entry.item_id)
+            # Only show standard player-facing types; DS3-internal entries are excluded
+            if type_nibble not in (0x8, 0x9, 0xA, 0xB):
+                continue
+            # Game-internal entries use bytes 8-11 for non-quantity data;
+            # valid item stacks are always 1-99, never in the millions
+            if not 1 <= entry.quantity <= 9999:
+                continue
+            name = _resolve_name(type_nibble, entry.item_id, active_mod)
             cat = _CAT_LABELS.get(_nibble_to_cat(type_nibble), "?")
             self._all_items.append(
                 (entry.offset, name, cat, entry.quantity, type_nibble, entry.item_id)
             )
-
         self._refresh_inventory_tree()
 
     def _refresh_inventory_tree(self) -> None:
         self._inv_tree.delete(*self._inv_tree.get_children())
         query = self._inv_search_var.get().strip().lower()
-        cat_filter_label = self._inv_cat_var.get()
-        if cat_filter_label != "All":
-            next((k for k, v in _CAT_LABELS.items() if v == cat_filter_label), None)
-            cat_filter_label_resolved = cat_filter_label
-        else:
-            cat_filter_label_resolved = None
+        cat_label = self._inv_cat_var.get()
+        cat_filter = cat_label if cat_label != "All" else None
 
         items = self._all_items
         if query:
             items = [r for r in items if query in r[1].lower()]
-        if cat_filter_label_resolved:
-            items = [r for r in items if r[2] == cat_filter_label_resolved]
+        if cat_filter:
+            items = [r for r in items if r[2] == cat_filter]
 
         if self._sort_col == "name":
             items = sorted(items, key=lambda r: r[1], reverse=not self._sort_asc)
@@ -372,29 +421,64 @@ class DS3InventoryTab:
             items = sorted(items, key=lambda r: r[3], reverse=not self._sort_asc)
 
         for offset, name, cat, qty, *_ in items:
-            iid = str(offset)
-            self._inv_tree.insert("", "end", iid=iid, values=(name, cat, qty))
+            self._inv_tree.insert("", "end", iid=str(offset), values=(name, cat, qty))
+
+    def _on_mod_toggle(self) -> None:
+        """Enforce mutual exclusion and refresh both views."""
+        # Only one mod can be active at a time
+        if self._mod_cinders.get() and self._mod_convergence.get():
+            # Whichever was just toggled on wins; detect by which triggered this call
+            # We can't know which fired, so compare: most recently set wins via a flag
+            self._mod_convergence.set(False)
+        self._reload_inventory()
+        self._refresh_spawn_tree()
 
     def _refresh_spawn_tree(self) -> None:
         self._spawn_tree.delete(*self._spawn_tree.get_children())
         self._spawn_row_map.clear()
-        db, _ = _ensure_db()
+
         query = self._spawn_search_var.get().strip().lower()
         cat_label = self._spawn_cat_var.get()
+
+        # "Cinders" / "Convergence" in the dropdown filters to that mod's db only
+        mod_filter = cat_label if cat_label in ("Cinders", "Convergence") else None
         cat_key = None
-        if cat_label != "All":
+        if not mod_filter and cat_label != "All":
             cat_key = next((k for k, v in _CAT_LABELS.items() if v == cat_label), None)
 
-        for db_cat, cat_items in db.items():
-            if cat_key and db_cat != cat_key:
-                continue
-            for item in cat_items:
-                if query and query not in item["Name"].lower():
-                    continue
-                row_iid = self._spawn_tree.insert("", "end", values=(item["Name"],))
-                self._spawn_row_map[row_iid] = item
+        if mod_filter:
+            dbs_to_show = [_load_mod_db(mod_filter.lower())]
+        else:
+            db, _ = _ensure_db()
+            dbs_to_show = [db]
+            if self._mod_cinders.get():
+                dbs_to_show.append(_load_mod_db("cinders"))
+            if self._mod_convergence.get():
+                dbs_to_show.append(_load_mod_db("convergence"))
 
-    # --- Selection handlers -------------------------------------------------- #
+        items: list[dict] = []
+        for source_db in dbs_to_show:
+            for db_cat, cat_items in source_db.items():
+                if cat_key and db_cat != cat_key:
+                    continue
+                for item in cat_items:
+                    if query and query not in item["Name"].lower():
+                        continue
+                    items.append(item)
+
+        self._insert_spawn_batch(items, 0)
+
+    _SPAWN_BATCH = 150
+
+    def _insert_spawn_batch(self, items: list, start: int) -> None:
+        end = min(start + self._SPAWN_BATCH, len(items))
+        for item in items[start:end]:
+            row_iid = self._spawn_tree.insert("", "end", values=(item["Name"],))
+            self._spawn_row_map[row_iid] = item
+        if end < len(items):
+            self.parent.after(0, lambda s=end: self._insert_spawn_batch(items, s))
+
+    # --- Selection handlers ------------------------------------------------- #
 
     def _on_inv_select(self, _event) -> None:
         sel = self._inv_tree.selection()
@@ -407,7 +491,6 @@ class DS3InventoryTab:
             self._selected_inv_offset = -1
             return
         self._selected_inv_offset = offset
-        # Pre-fill qty from current entry
         for row in self._all_items:
             if row[0] == offset:
                 self._edit_qty_var.set(str(row[3]))
@@ -422,19 +505,17 @@ class DS3InventoryTab:
         entry = self._spawn_row_map.get(sel[0])
         self._selected_db_item = entry
         if entry:
-            max_up = entry.get("MaxUpgrade") or 0
-            max_stk = entry.get("MaxStackCount") or 1
-            info = f"Max stack: {max_stk}"
-            if max_up:
-                info += f"  Max upgrade: +{max_up}"
-            self._spawn_info.configure(text=info)
-            if max_up == 0:
+            max_up = int(entry.get("MaxUpgrade") or 0)
+            max_stk = int(entry.get("MaxStackCount") or 1)
+            self._spawn_info.configure(
+                text=f"Max stack: {max_stk}"
+                + (f"  Max upgrade: +{max_up}" if max_up else "")
+            )
+            self._spawn_upg_entry.configure(state="normal" if max_up else "disabled")
+            if not max_up:
                 self._spawn_upg_var.set("0")
-                self._spawn_upg_entry.configure(state="disabled")
-            else:
-                self._spawn_upg_entry.configure(state="normal")
 
-    # --- Sort ---------------------------------------------------------------- #
+    # --- Sort --------------------------------------------------------------- #
 
     def _sort_by(self, col: str) -> None:
         if self._sort_col == col:
@@ -443,15 +524,15 @@ class DS3InventoryTab:
             self._sort_col = col
             self._sort_asc = True
         arrow = " ^" if self._sort_asc else " v"
-        for c, heading, _ in [
+        for c, h, _ in [
             ("name", "Item", 220),
             ("type", "Type", 80),
             ("qty", "Qty", 55),
         ]:
-            self._inv_tree.heading(c, text=heading + (arrow if c == col else ""))
+            self._inv_tree.heading(c, text=h + (arrow if c == col else ""))
         self._refresh_inventory_tree()
 
-    # --- Inventory operations ------------------------------------------------ #
+    # --- Inventory operations ----------------------------------------------- #
 
     def _apply_edit(self) -> None:
         if self._selected_inv_offset < 0:
@@ -461,14 +542,9 @@ class DS3InventoryTab:
                 parent=self.parent,
             )
             return
-        save = self._get_save()
-        save_path = self._get_save_path()
-        if save is None or save_path is None or self._current_slot < 0:
-            return
-        char = save.characters[self._current_slot]
+        save, save_path, char = self._get_char()
         if char is None:
             return
-
         try:
             qty = int(self._edit_qty_var.get())
             upg = int(self._edit_upg_var.get())
@@ -478,17 +554,13 @@ class DS3InventoryTab:
             )
             return
 
-        # Find entry in inventory
         for entry in char.iter_inventory():
             if entry.offset == self._selected_inv_offset:
-                # Overwrite quantity
                 from er_save_manager.games.DS3.slot import _write_u32
 
                 _write_u32(char._data, entry.offset + 8, max(1, qty))
-                # Upgrade: only for weapons in gaitem table
                 type_nibble = entry.type_bits >> 28
                 if type_nibble in (_TYPE_WEAPON, _TYPE_ARMOR) and upg >= 0:
-                    # Find gaitem entry with matching handle
                     for ge in char.iter_gaitem():
                         if ge.handle == entry.handle and ge.size == 60:
                             _write_u32(char._data, ge.offset + 12, upg)
@@ -499,6 +571,8 @@ class DS3InventoryTab:
             _backup_and_save(
                 save, save_path, f"ds3_edit_item_slot_{self._current_slot + 1}"
             )
+            if self._reload_save:
+                self._reload_save()
             self._reload_inventory()
             self._show_toast("Item updated. Backup created.")
         except Exception as exc:
@@ -512,11 +586,7 @@ class DS3InventoryTab:
                 parent=self.parent,
             )
             return
-        save = self._get_save()
-        save_path = self._get_save_path()
-        if save is None or save_path is None or self._current_slot < 0:
-            return
-        char = save.characters[self._current_slot]
+        save, save_path, char = self._get_char()
         if char is None:
             return
         if not CTkMessageBox.askyesno(
@@ -531,6 +601,8 @@ class DS3InventoryTab:
                 save, save_path, f"ds3_remove_item_slot_{self._current_slot + 1}"
             )
             self._selected_inv_offset = -1
+            if self._reload_save:
+                self._reload_save()
             self._reload_inventory()
             self._show_toast("Item removed. Backup created.")
         except Exception as exc:
@@ -545,17 +617,12 @@ class DS3InventoryTab:
                 parent=self.parent,
             )
             return
-        save = self._get_save()
-        save_path = self._get_save_path()
-        if save is None or save_path is None or self._current_slot < 0:
+        save, save_path, char = self._get_char()
+        if char is None:
             CTkMessageBox.showwarning(
                 "No Character", "Load a character first.", parent=self.parent
             )
             return
-        char = save.characters[self._current_slot]
-        if char is None:
-            return
-
         try:
             qty = int(self._spawn_qty_var.get())
             upg = int(self._spawn_upg_var.get())
@@ -579,7 +646,6 @@ class DS3InventoryTab:
 
         item_id = int(entry["Id"], 16)
         type_nibble = int(entry["Type"], 16) >> 28
-
         type_map = {
             0x8: ITEM_TYPE_WEAPON,
             0x9: ITEM_TYPE_ARMOR,
@@ -603,7 +669,7 @@ class DS3InventoryTab:
         if not ok:
             CTkMessageBox.showerror(
                 "Full",
-                "Inventory and storage box are both full, or gaitem table has no empty slots.",
+                "Inventory and storage both full, or no empty gaitem slots.",
                 parent=self.parent,
             )
             return
@@ -612,12 +678,23 @@ class DS3InventoryTab:
             _backup_and_save(
                 save, save_path, f"ds3_spawn_item_slot_{self._current_slot + 1}"
             )
+            if self._reload_save:
+                self._reload_save()
             self._reload_inventory()
             self._show_toast(f"Spawned: {entry['Name']}. Backup created.")
         except Exception as exc:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
 
-    # --- Helpers ------------------------------------------------------------- #
+    # --- Helpers ------------------------------------------------------------ #
+
+    def _get_char(self):
+        save = self._get_save()
+        save_path = self._get_save_path()
+        if save is None or save_path is None:
+            return None, None, None
+        if self._current_slot < 0:
+            return None, None, None
+        return save, save_path, save.characters[self._current_slot]
 
     def _slot_idx(self) -> int:
         val = self._slot_var.get()
