@@ -1,6 +1,6 @@
 # Elden Ring Save Manager
 
-A comprehensive save file editor, backup manager, and corruption fixer for Elden Ring with an intuitive GUI and a community preset browser.
+A comprehensive save file editor, backup manager, and corruption fixer for Elden Ring with an intuitive GUI, community Browsers, ItemGib and much more.
 
 ## Documentation and User Guides
 
@@ -28,6 +28,8 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **Backup Manager**: Automatic and manual backups with restore functionality
 - **Troubleshooting**: Troubleshooter for checking game and save file related issues
 - **Backup Manager and SteamID Patcher for**: Elden Ring, Elden Ring Nightreign, Armored Core 6, Sekiro, Dark Souls III, Dark Souls II SotfS, Dark Souls Remastered
+- **DSR**: Stats Editing, Event Flags, Boss Revival, NPC Revival, Item Spawning
+- **DS3**: Stats Editing, Boss Revival, Item Spawning, World State Editing
 
 ### Work in Progress
 
@@ -45,6 +47,7 @@ Download the latest release from [Releases](https://github.com/Hapfel1/er-save-m
   - Supports SteamDeck fully
   - Auto-detects Proton compatdata locations
   - Warns about non-default save locations
+- **PlayStation/Switch Saves**: Supports editing decrypted console Save Files.
 
 ## Usage
 
