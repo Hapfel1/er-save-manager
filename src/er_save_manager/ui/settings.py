@@ -111,6 +111,9 @@ class Settings:
             "debug_netman_replace": False,
             # Notify when the loaded save file is modified externally
             "external_file_change_notification": True,
+            # UI scaling factor applied via CTk widget/window scaling APIs.
+            # None means auto-detect from the system on startup.
+            "ui_scale": None,
         }
 
     def save(self):
@@ -147,3 +150,59 @@ def get_settings() -> Settings:
     if _settings is None:
         _settings = Settings()
     return _settings
+
+
+def detect_system_scale() -> float:
+    """Return the display scale reported by the OS, or 1.0 as fallback.
+
+    Linux: reads GDK_SCALE then QT_SCALE_FACTOR (set by Plasma global scale).
+    Windows: reads the system DPI via GetDpiForSystem (Win8.1+) with a GDI
+             fallback. 96 DPI = 1.0, 192 DPI = 2.0, etc.
+    Returns 1.0 when detection fails or the value is out of the 0.5-4.0 range.
+    """
+    import platform as _platform
+
+    system = _platform.system()
+
+    if system == "Linux":
+        import os
+
+        for var in ("GDK_SCALE", "QT_SCALE_FACTOR"):
+            raw = os.environ.get(var, "").strip()
+            if raw:
+                try:
+                    value = float(raw)
+                    if 0.5 <= value <= 4.0:
+                        return value
+                except ValueError:
+                    pass
+        return 1.0
+
+    if system == "Windows":
+        import ctypes
+
+        try:
+            # GetDpiForSystem available on Windows 8.1+
+            dpi = ctypes.windll.user32.GetDpiForSystem()
+            if dpi > 0:
+                scale = dpi / 96.0
+                if 0.5 <= scale <= 4.0:
+                    return scale
+        except Exception:
+            pass
+
+        try:
+            # GDI fallback for older Windows
+            hdc = ctypes.windll.user32.GetDC(0)
+            dpi = ctypes.windll.gdi32.GetDeviceCaps(hdc, 88)  # LOGPIXELSX
+            ctypes.windll.user32.ReleaseDC(0, hdc)
+            if dpi > 0:
+                scale = dpi / 96.0
+                if 0.5 <= scale <= 4.0:
+                    return scale
+        except Exception:
+            pass
+
+        return 1.0
+
+    return 1.0

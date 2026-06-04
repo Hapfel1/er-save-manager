@@ -505,6 +505,75 @@ class SettingsTab:
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
+        scale_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        scale_frame.pack(fill="x", padx=12, pady=5)
+
+        ctk.CTkLabel(scale_frame, text="UI Scale:").pack(side="left", padx=(0, 10))
+
+        _SCALE_OPTIONS = [
+            "Auto",
+            "100%",
+            "125%",
+            "150%",
+            "175%",
+            "200%",
+            "250%",
+            "300%",
+        ]
+        _scale_to_str = {
+            1.0: "100%",
+            1.25: "125%",
+            1.5: "150%",
+            1.75: "175%",
+            2.0: "200%",
+            2.5: "250%",
+            3.0: "300%",
+        }
+        _str_to_scale = {v: k for k, v in _scale_to_str.items()}
+        saved_scale = self.settings.get("ui_scale", None)
+        initial_str = (
+            _scale_to_str.get(saved_scale, "Auto")
+            if saved_scale is not None
+            else "Auto"
+        )
+        self.scale_var = tk.StringVar(value=initial_str)
+
+        ctk.CTkComboBox(
+            scale_frame,
+            variable=self.scale_var,
+            values=_SCALE_OPTIONS,
+            state="readonly",
+            width=150,
+            command=lambda v: self._on_scale_changed(v, _str_to_scale),
+        ).pack(side="left")
+
+        import sys as _sys
+
+        if _sys.platform == "win32":
+            scale_hint = "Auto reads the Windows display DPI setting. Restart required."
+        else:
+            scale_hint = "Auto reads GDK_SCALE / QT_SCALE_FACTOR if set, otherwise 100%. Restart required."
+
+        ctk.CTkLabel(
+            frame,
+            text=scale_hint,
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+            wraplength=520,
+            justify="left",
+        ).pack(anchor="w", padx=32, pady=(0, 12))
+
+    def _on_scale_changed(self, value: str, str_to_scale: dict) -> None:
+        if value == "Auto":
+            self.settings.set("ui_scale", None)
+        else:
+            self.settings.set("ui_scale", str_to_scale.get(value, 1.0))
+        CTkMessageBox.showinfo(
+            "Scale Changed",
+            f"UI scale set to {value}.\n\nRestart the application to apply.",
+            parent=self.parent,
+        )
+
     def _on_key_press(self, event) -> None:
         """Accumulate keypresses and check for the unlock sequence STRAWBERRY.
         Only processes input when the Settings tab is the visible tab.
@@ -742,6 +811,8 @@ class SettingsTab:
             self.compress_backups_var.set(True)
             self.max_backups_var.set("50")
             self.theme_var.set("dark")
+            if hasattr(self, "scale_var"):
+                self.scale_var.set("Auto")
             for var in self._auto_backup_enabled_vars.values():
                 var.set(False)
             for var in self._auto_backup_path_vars.values():
