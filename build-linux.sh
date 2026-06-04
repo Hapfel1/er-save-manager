@@ -46,6 +46,7 @@ pyinstaller --clean --noconfirm \
     --add-data src/er_save_manager/data/icons.zip:er_save_manager/data \
     --add-data src/er_save_manager/fixes/CSNetMan.bin:er_save_manager/fixes \
     --add-data src/er_save_manager/games/DSR/data:er_save_manager/games/DSR/data \
+    --add-data src/er_save_manager/games/DS3/data:er_save_manager/games/DS3/data \
     --collect-data customtkinterthemes \
     --hidden-import customtkinterthemes \
     --hidden-import PIL._tkinter_finder \

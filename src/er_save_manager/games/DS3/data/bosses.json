@@ -1,0 +1,146 @@
+[
+  {
+    "name": "Iudex Gundyr",
+    "offset": 23254,
+    "defeat_value": "E0",
+    "area": "Cemetery of Ash"
+  },
+  {
+    "name": "Vordt of the Boreal Valley",
+    "offset": 4054,
+    "defeat_value": "C0",
+    "area": "High Wall of Lothric"
+  },
+  {
+    "name": "Curse-Rotted Greatwood",
+    "offset": 6614,
+    "defeat_value": "C0",
+    "area": "Undead Settlement"
+  },
+  {
+    "name": "Crystal Sage",
+    "offset": 11736,
+    "defeat_value": "28",
+    "area": "Road of Sacrifices"
+  },
+  {
+    "name": "Abyss Watchers",
+    "offset": 11734,
+    "defeat_value": "C0",
+    "area": "Farron Keep"
+  },
+  {
+    "name": "High Lord Wolnir",
+    "offset": 20694,
+    "defeat_value": "C0",
+    "area": "Catacombs of Carthus"
+  },
+  {
+    "name": "Oceiros, the Consumed King",
+    "offset": 4051,
+    "defeat_value": "42",
+    "area": "Consumed King's Garden"
+  },
+  {
+    "name": "Champion Gundyr",
+    "offset": 23251,
+    "defeat_value": "03",
+    "area": "Untended Graves"
+  },
+  {
+    "name": "Dancer of the Boreal Valley",
+    "offset": 4059,
+    "defeat_value": "20",
+    "area": "High Wall of Lothric"
+  },
+  {
+    "name": "Deacons of the Deep",
+    "offset": 15574,
+    "defeat_value": "C0",
+    "area": "Cathedral of the Deep"
+  },
+  {
+    "name": "Old Demon King",
+    "offset": 20691,
+    "defeat_value": "02",
+    "area": "Smouldering Lake"
+  },
+  {
+    "name": "Pontiff Sulyvahn",
+    "offset": 19416,
+    "defeat_value": "20",
+    "area": "Irithyll of the Boreal Valley"
+  },
+  {
+    "name": "Aldrich, Devourer of Gods",
+    "offset": 19414,
+    "defeat_value": "80",
+    "area": "Anor Londo"
+  },
+  {
+    "name": "Dragonslayer Armour",
+    "offset": 5334,
+    "defeat_value": "80",
+    "area": "Lothric Castle"
+  },
+  {
+    "name": "Yhorm the Giant",
+    "offset": 21974,
+    "defeat_value": "C0",
+    "area": "Profaned Capital"
+  },
+  {
+    "name": "Nameless King",
+    "offset": 9176,
+    "defeat_value": "21",
+    "area": "Archdragon Peak"
+  },
+  {
+    "name": "Twin Princes",
+    "offset": 14291,
+    "defeat_value": "03",
+    "area": "Grand Archives"
+  },
+  {
+    "name": "Soul of Cinder",
+    "offset": 24534,
+    "defeat_value": "C0",
+    "area": "Kiln of the First Flame"
+  },
+  {
+    "name": "Champion's Gravetender",
+    "offset": 25815,
+    "defeat_value": "0C",
+    "area": "Painted World of Ariandel (DLC)"
+  },
+  {
+    "name": "Father Ariandel and Sister Friede",
+    "offset": 25814,
+    "defeat_value": "C0",
+    "area": "Painted World of Ariandel (DLC)"
+  },
+  {
+    "name": "Halflight, Spear of the Church",
+    "offset": 30934,
+    "defeat_value": "C0",
+    "area": "Ringed City (DLC)"
+  },
+  {
+    "name": "Darkeater Midir",
+    "offset": 30936,
+    "defeat_value": "30",
+    "area": "Ringed City (DLC)"
+  },
+  {
+    "name": "Slave Knight Gael",
+    "offset": 32214,
+    "defeat_value": "C0",
+    "area": "Ringed City (DLC)"
+  },
+  {
+    "name": "Demon Prince",
+    "offset": 29654,
+    "defeat_value": "80",
+    "area": "Dreg Heap (DLC)"
+  }
+]

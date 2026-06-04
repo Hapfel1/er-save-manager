@@ -1,4 +1,8 @@
-Redo wiki
+add total level recalc for dsr and ds3 level changing and validate level + name item and data files in csv
+
+add conv + cinders items
+
+Investigate DSR Event flags again and flag 0 as wel as npc states
 
 fix nexusmods upload, did not upload the appimage, needs to put old versions on archived and update the mods version
 

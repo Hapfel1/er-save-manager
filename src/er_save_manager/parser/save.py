@@ -103,6 +103,9 @@ class Save:
         with open(filepath, "rb") as file:
             data = file.read()
 
+        if len(data) < 4:
+            raise ValueError(f"Save file is empty or too small: {filepath}")
+
         f = BytesIO(data)
         obj = cls()
 
@@ -120,7 +123,7 @@ class Save:
             f"_raw_data is {type(obj._raw_data)}, not bytearray!"
         )
 
-        # Verify it's mutable
+        # Verify it's mutable and non-empty
         try:
             obj._raw_data[0] = obj._raw_data[0]  # Test write
         except TypeError as e:

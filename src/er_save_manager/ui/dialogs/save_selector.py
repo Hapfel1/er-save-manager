@@ -21,7 +21,13 @@ class SaveSelectorDialog:
             ctk.set_default_color_theme("dark-blue")
 
     @staticmethod
-    def show(parent, saves, callback):
+    def show(
+        parent,
+        saves,
+        callback,
+        browse_callback=None,
+        browse_button_text="Browse Manually",
+    ):
         """
         Show save selector dialog
 
@@ -29,6 +35,9 @@ class SaveSelectorDialog:
             parent: Parent window
             saves: List of Path objects for save files
             callback: Function to call with selected save path
+            browse_callback: Optional function that opens a manual browse dialog
+                and returns a selected save path.
+            browse_button_text: Label for the manual browse button.
         """
         # Load lavender theme (appearance mode already set in main GUI)
         SaveSelectorDialog._load_lavender_theme()
@@ -65,6 +74,7 @@ class SaveSelectorDialog:
 
         # Scrollable list with click-to-select rows
         selection_var = ctk.StringVar(value=str(saves[0]) if saves else "")
+        result = {"value": None}
 
         from er_save_manager.ui.utils import bind_mousewheel
 
@@ -111,11 +121,29 @@ class SaveSelectorDialog:
         def select_save():
             value = selection_var.get()
             if value:
+                result["value"] = value
                 callback(value)
                 dialog.destroy()
 
         button_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         button_frame.pack(fill="x", pady=(0, 14))
+
+        if browse_callback:
+
+            def browse_manually():
+                value = browse_callback()
+                if value:
+                    result["value"] = value
+                    callback(value)
+                    dialog.destroy()
+
+            browse_button = ctk.CTkButton(
+                button_frame,
+                text=browse_button_text,
+                command=browse_manually,
+                width=170,
+            )
+            browse_button.pack(side="right", padx=(0, 15))
 
         button = ctk.CTkButton(
             button_frame, text="Select", command=select_save, width=140
@@ -126,3 +154,6 @@ class SaveSelectorDialog:
         button.focus_set()
         dialog.bind("<Return>", lambda e: select_save())
         dialog.bind("<Escape>", lambda e: dialog.destroy())
+
+        dialog.wait_window()
+        return result["value"]
