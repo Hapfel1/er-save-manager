@@ -354,7 +354,13 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         try:
             from er_save_manager.data.item_database import get_item_database
 
-            item = get_item_database().get_item_by_id(row[1])
+            db = get_item_database()
+            full_id = row[1]
+            item = db.get_item_by_id(full_id)
+            if item is None and (full_id & 0xF0000000) == 0x00000000:
+                # Infused/upgraded weapons encode affinity+upgrade in last 4 digits
+                base_id = (full_id & 0x0FFFFFFF) // 10000 * 10000
+                item = db.get_item_by_id(base_id)
             return item.category_name if item else None
         except Exception:
             return None
