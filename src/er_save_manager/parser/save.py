@@ -317,6 +317,11 @@ class Save:
         # Fallback to checking if slot is not empty (old behavior)
         return [i for i, slot in enumerate(self.character_slots) if not slot.is_empty()]
 
+    def slot_data_offset(self, slot_idx: int) -> int:
+        """Return the absolute offset of slot data, skipping the checksum prefix on PC."""
+        base = self._slot_offsets[slot_idx]
+        return base if self.is_ps else base + 0x10
+
     def get_slot(self, index: int) -> UserDataX:
         """
         Get character slot by index.
@@ -554,14 +559,11 @@ class Save:
                     ] = event_flags_mutable
                 else:
                     # Fallback: calculate using tracked slot offset
-                    slot_offset = self._slot_offsets[slot_index]
-                    CHECKSUM_SIZE = 0x10
-
                     # Use the offset we found: 0x8F7 within character data
                     EVENT_FLAGS_OFFSET_IN_SLOT = 0x8F7
 
                     event_flags_start = (
-                        slot_offset + CHECKSUM_SIZE + EVENT_FLAGS_OFFSET_IN_SLOT
+                        self.slot_data_offset(slot_index) + EVENT_FLAGS_OFFSET_IN_SLOT
                     )
                     self._raw_data[
                         event_flags_start : event_flags_start + len(event_flags_mutable)
