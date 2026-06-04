@@ -359,8 +359,8 @@ class IconBrowser(ctk.CTkToplevel):
     def _on_category_change(self, value: str):
         self._current_cat = value
         self.title(f"Add Item - {value}")
-        self._search_var.set("")
         self._load_category(value)
+        self._search_var.set("")
         self._scroll._parent_canvas.yview_moveto(0)
         self._editor._sync_browse_category(value)
 
@@ -376,7 +376,10 @@ class IconBrowser(ctk.CTkToplevel):
         for idx, btn in enumerate(visible):
             row, col = divmod(idx, self._cols)
             btn.grid(row=row, column=col, padx=_CELL_PAD, pady=_CELL_PAD, sticky="nsew")
+        # Let tkinter measure the new grid, then sync the canvas scroll region.
         self._scroll.update_idletasks()
+        canvas = self._scroll._parent_canvas
+        canvas.configure(scrollregion=canvas.bbox("all"))
 
     def _on_scroll_resize(self, event):
         if self._resize_job:

@@ -42,14 +42,13 @@ class CharacterOperations:
         """
         return getattr(save, "_user_data_10_offset", 0)
 
-    CHECKSUM_SIZE = 0x10  # Match parser/save.py CHECKSUM_SIZE
-    SLOT_SIZE = 0x280000  # Match parser/save.py SLOT_SIZE
-    SLOT_DATA_SIZE = 0x280000  # Match parser/save.py slot_data_size
+    SLOT_SIZE = 0x280000
+    SLOT_DATA_SIZE = 0x280000
 
     @staticmethod
     def get_slot_offset(save, slot_index: int) -> int:
-        """Return the byte offset of the start of the given slot in the save file."""
-        return save._slot_offsets[slot_index]
+        """Return the byte offset of slot data, skipping the checksum prefix on PC."""
+        return save.slot_data_offset(slot_index)
 
     @staticmethod
     def _update_profile_summary_from_slot(save: Save, slot_index: int) -> None:
@@ -287,11 +286,11 @@ class CharacterOperations:
         from er_save_manager.parser.user_data_x import UserDataX
 
         f = BytesIO(save._raw_data)
-        f.seek(to_offset + CharacterOperations.CHECKSUM_SIZE)
+        f.seek(to_offset)
         save.character_slots[to_slot] = UserDataX.read(
             f,
             save.is_ps,
-            to_offset + CharacterOperations.CHECKSUM_SIZE,
+            to_offset,
             CharacterOperations.SLOT_DATA_SIZE,
         )
 
@@ -385,12 +384,12 @@ class CharacterOperations:
         from er_save_manager.parser.user_data_x import UserDataX
 
         f = BytesIO(target_save._raw_data)
-        f.seek(to_offset + CharacterOperations.CHECKSUM_SIZE)
+        f.seek(to_offset)
         try:
             target_save.character_slots[to_slot] = UserDataX.read(
                 f,
                 target_save.is_ps,
-                to_offset + CharacterOperations.CHECKSUM_SIZE,
+                to_offset,
                 CharacterOperations.SLOT_DATA_SIZE,
             )
         except Exception:
@@ -419,12 +418,12 @@ class CharacterOperations:
 
         # Re-parse the modified slot again in case SteamID patching altered parsed fields
         f = BytesIO(target_save._raw_data)
-        f.seek(to_offset + CharacterOperations.CHECKSUM_SIZE)
+        f.seek(to_offset)
         try:
             target_save.character_slots[to_slot] = UserDataX.read(
                 f,
                 target_save.is_ps,
-                to_offset + CharacterOperations.CHECKSUM_SIZE,
+                to_offset,
                 CharacterOperations.SLOT_DATA_SIZE,
             )
         except Exception:
@@ -760,12 +759,10 @@ class CharacterOperations:
 
         slot_offset = CharacterOperations.get_slot_offset(save, slot_index)
 
-        # Get slot data (without checksum)
+        # Get slot data (without checksum prefix)
+        raw_slot_start = save._slot_offsets[slot_index]
         slot_data = bytes(
-            save._raw_data[
-                slot_offset + CharacterOperations.CHECKSUM_SIZE : slot_offset
-                + CharacterOperations.SLOT_SIZE
-            ]
+            save._raw_data[slot_offset : raw_slot_start + CharacterOperations.SLOT_SIZE]
         )
 
         # Get profile summary using calculated offsets, but re-generate from slot for full fidelity
@@ -937,12 +934,8 @@ class CharacterOperations:
             bytes(CharacterOperations.SLOT_SIZE)
         )
 
-        # Write slot data (checksum remains zeroed, will recalculate later)
-        save._raw_data[
-            slot_offset + CharacterOperations.CHECKSUM_SIZE : slot_offset
-            + CharacterOperations.CHECKSUM_SIZE
-            + len(slot_data)
-        ] = slot_data
+        # Write slot data (checksum prefix already zeroed by the clear above, recalculated later)
+        save._raw_data[slot_offset : slot_offset + len(slot_data)] = slot_data
 
         # Write new profile data (always full 0x24C bytes)
         _, profiles_base = CharacterOperations.get_profile_summary_offsets(save)
@@ -959,11 +952,11 @@ class CharacterOperations:
         from er_save_manager.parser.user_data_x import UserDataX
 
         f = BytesIO(save._raw_data)
-        f.seek(slot_offset + CharacterOperations.CHECKSUM_SIZE)
+        f.seek(slot_offset)
         save.character_slots[slot_index] = UserDataX.read(
             f,
             save.is_ps,
-            slot_offset + CharacterOperations.CHECKSUM_SIZE,
+            slot_offset,
             CharacterOperations.SLOT_DATA_SIZE,
         )
 
@@ -976,11 +969,11 @@ class CharacterOperations:
 
         # Re-parse slot again to pick up any changes made by the steamid patch.
         f = BytesIO(save._raw_data)
-        f.seek(slot_offset + CharacterOperations.CHECKSUM_SIZE)
+        f.seek(slot_offset)
         save.character_slots[slot_index] = UserDataX.read(
             f,
             save.is_ps,
-            slot_offset + CharacterOperations.CHECKSUM_SIZE,
+            slot_offset,
             CharacterOperations.SLOT_DATA_SIZE,
         )
 
