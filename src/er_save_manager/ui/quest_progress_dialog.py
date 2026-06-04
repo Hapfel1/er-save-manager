@@ -283,7 +283,7 @@ class QuestProgressDialog:
             """Reset all flags for this NPC's quest to 0."""
             if not CTkMessageBox.askyesno(
                 "Reset Quest",
-                f"Reset ALL event flags for {npc_name}'s quest to 0?\n\nThis will undo all tracked quest progress. A backup will be created.",
+                f"Reset ALL event flags for {npc_name}'s quest to 0?\n\nThis will undo all tracked quest progress. A backup will be created. Some steps may stay applied even if you reset all flags. This is because those steps only use flags that the game clears back to 0, so they're indistinguishable from never happened in a save.",
                 parent=dialog,
             ):
                 return

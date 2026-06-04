@@ -9,6 +9,8 @@ from tkinter import filedialog
 
 import customtkinter as ctk
 
+from er_save_manager.platform import PlatformUtils
+from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
@@ -211,9 +213,9 @@ class CharacterManagementTab:
         elif operation == "delete":
             self._setup_delete_panel()
 
-    def _get_slot_display_names(self):
+    def _get_slot_display_names(self, save_file=None):
         """Get display names for all slots"""
-        save_file = self.get_save_file()
+        save_file = save_file or self.get_save_file()
         if not save_file:
             return [str(i) for i in range(1, 11)]
 
@@ -637,11 +639,7 @@ class CharacterManagementTab:
             )
             return
 
-        # Select target save file
-        target_path = filedialog.askopenfilename(
-            title="Select target save file",
-            filetypes=[("Save files", "*.sl2 *.co2"), ("All files", "*.*")],
-        )
+        target_path = self._select_target_save_file()
 
         if not target_path:
             return
@@ -650,61 +648,26 @@ class CharacterManagementTab:
             from er_save_manager.backup.manager import BackupManager
             from er_save_manager.parser import Save
             from er_save_manager.transfer.character_ops import CharacterOperations
-            from er_save_manager.ui.utils import force_render_dialog
 
             # Load target save
             target_save = Save.from_file(target_path)
 
-            # Ask which slot in target
-            slot_dialog = ctk.CTkToplevel(self.parent)
-            slot_dialog.title("Select Target Slot")
-            slot_dialog.geometry("300x150")
-
-            # Force rendering on Linux before grab_set
-            force_render_dialog(slot_dialog)
-            slot_dialog.grab_set()
-
-            dialog_label = ctk.CTkLabel(
-                slot_dialog,
-                text="Select destination slot in target save:",
-                font=("Segoe UI", 12),
-            )
-            dialog_label.pack(padx=10, pady=10)
-
-            to_slot_var = tk.IntVar(value=1)
-            slot_combo = ctk.CTkComboBox(
-                slot_dialog,
-                variable=to_slot_var,
-                values=[str(i) for i in range(1, 11)],
-                state="readonly",
-                width=150,
-            )
-            slot_combo.pack(pady=10)
-
-            result = [None]
-
-            def confirm():
-                result[0] = int(to_slot_var.get()) - 1
-                slot_dialog.destroy()
-
-            confirm_button = ctk.CTkButton(
-                slot_dialog,
-                text="Transfer",
-                command=confirm,
-            )
-            confirm_button.pack(pady=10)
-
-            slot_dialog.wait_window()
-
-            if result[0] is None:
+            to_slot = self._select_target_slot(target_save, target_path)
+            if to_slot is None:
                 return
 
-            to_slot = result[0]
+            source_path = self._get_current_save_path()
+            if source_path and Path(target_path).resolve() == source_path.resolve():
+                CTkMessageBox.showerror(
+                    "Error",
+                    "Select a different target save file for transfer.",
+                    parent=self.parent,
+                )
+                return
 
             # Create backups
-            save_path = self.get_save_path()
-            if save_path:
-                manager = BackupManager(Path(save_path))
+            if source_path:
+                manager = BackupManager(source_path)
                 manager.create_backup(
                     description=f"before_transfer_slot_{from_slot + 1}_to_other_save",
                     operation="transfer_character",
@@ -727,8 +690,8 @@ class CharacterManagementTab:
             save_file.recalculate_checksums()
             target_save.recalculate_checksums()
 
-            if save_path:
-                save_file.to_file(Path(save_path))
+            if source_path:
+                save_file.to_file(source_path)
             target_save.to_file(Path(target_path))
 
             # Reload
@@ -747,6 +710,109 @@ class CharacterManagementTab:
             import traceback
 
             traceback.print_exc()
+
+    def _get_current_save_path(self) -> Path | None:
+        """Return the current save path as a Path object when available."""
+        save_path = self.get_save_path()
+        if not save_path:
+            return None
+        return Path(save_path)
+
+    def _browse_target_save_manually(self) -> str | None:
+        """Open a manual file picker for the target save file."""
+        save_path = self._get_current_save_path()
+        initialdir = str(save_path.parent) if save_path else None
+        return filedialog.askopenfilename(
+            title="Select target save file",
+            initialdir=initialdir,
+            filetypes=[("Save files", "*.sl2 *.co2 *.cnv"), ("All files", "*.*")],
+        )
+
+    def _select_target_save_file(self) -> str | None:
+        """Show a picker for the target save file with auto-detected saves."""
+        found_saves = PlatformUtils.find_all_save_files()
+        current_save_path = self._get_current_save_path()
+        if current_save_path:
+            found_saves = [
+                save_path
+                for save_path in found_saves
+                if save_path.resolve() != current_save_path.resolve()
+            ]
+
+        if found_saves:
+            selected_path = SaveSelectorDialog.show(
+                self.parent,
+                found_saves,
+                lambda path: None,
+                browse_callback=self._browse_target_save_manually,
+                browse_button_text="Browse Manually",
+            )
+        else:
+            selected_path = self._browse_target_save_manually()
+
+        return selected_path
+
+    def _select_target_slot(self, target_save, target_path: str) -> int | None:
+        """Show a target-slot picker using the parsed target save data."""
+        from er_save_manager.ui.utils import force_render_dialog
+
+        slot_dialog = ctk.CTkToplevel(self.parent)
+        slot_dialog.title("Select Target Slot")
+        slot_dialog.geometry("520x220")
+
+        # Force rendering on Linux before grab_set
+        force_render_dialog(slot_dialog)
+        slot_dialog.grab_set()
+
+        dialog_label = ctk.CTkLabel(
+            slot_dialog,
+            text="Select destination slot in target save:",
+            font=("Segoe UI", 12),
+        )
+        dialog_label.pack(padx=10, pady=(12, 6))
+
+        target_label = ctk.CTkLabel(
+            slot_dialog,
+            text=str(target_path),
+            font=("Segoe UI", 10),
+            text_color=("gray40", "gray70"),
+            wraplength=480,
+        )
+        target_label.pack(padx=10, pady=(0, 10))
+
+        slot_names = self._get_slot_display_names(target_save)
+        to_slot_var = tk.StringVar(value=slot_names[0] if slot_names else "1")
+        slot_combo = ctk.CTkComboBox(
+            slot_dialog,
+            variable=to_slot_var,
+            values=slot_names,
+            state="readonly",
+            width=360,
+        )
+        slot_combo.pack(pady=(0, 12))
+
+        result = {"value": None}
+
+        def confirm():
+            try:
+                result["value"] = int(to_slot_var.get().split(" - ")[0]) - 1
+            except Exception:
+                result["value"] = 0
+            slot_dialog.destroy()
+
+        confirm_button = ctk.CTkButton(
+            slot_dialog,
+            text="Transfer",
+            command=confirm,
+            width=140,
+        )
+        confirm_button.pack(pady=(0, 12))
+
+        slot_dialog.bind("<Return>", lambda _event: confirm())
+        slot_dialog.bind("<Escape>", lambda _event: slot_dialog.destroy())
+
+        slot_dialog.wait_window()
+        return result["value"]
 
     def swap_characters(self):
         """Swap two character slots"""

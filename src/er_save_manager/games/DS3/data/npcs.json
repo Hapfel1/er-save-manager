@@ -1,0 +1,57 @@
+[
+  {
+    "name": "Blacksmith Andre",
+    "offset_hex": "0108",
+    "alive_value": "0108"
+  },
+  {
+    "name": "Ludleth of Courland",
+    "offset_hex": null,
+    "note": "limited data"
+  },
+  {
+    "name": "Greirat",
+    "offset_hex": null,
+    "note": "limited data"
+  },
+  {
+    "name": "Hawkwood",
+    "offset_hex": null,
+    "note": "limited data"
+  },
+  {
+    "name": "Yoel of Londor",
+    "offset_hex": null,
+    "note": "limited data"
+  },
+  {
+    "name": "Irina of Carim",
+    "offset_hex": null,
+    "note": "limited data"
+  },
+  {
+    "name": "Sirris of the Sunless Realms",
+    "offset_hex": null,
+    "note": "limited data"
+  },
+  {
+    "name": "Orbeck of Vinheim",
+    "offset_hex": null,
+    "note": "limited data"
+  },
+  {
+    "name": "Karla",
+    "offset_hex": null,
+    "note": "limited data"
+  },
+  {
+    "name": "Cornyx of the Great Swamp",
+    "offset_hex": null,
+    "note": "limited data"
+  },
+  {
+    "name": "Unbreakable Patches",
+    "offset_hex": null,
+    "note": "limited data"
+  }
+]
