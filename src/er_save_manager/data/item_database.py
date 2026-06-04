@@ -321,15 +321,14 @@ def get_item_name(
             return f"{item.name} +{upgrade_level}"
         return item.name
 
-    # Ashes: upgrade encoded as base + N (steps of 1 per level per 1000-block)
-    # Only apply this if the base item is actually a spirit ash, not any goods.
+    # Ashes: some older saves have item_id = base + upgrade_level (1 per level).
+    # Walk back up to 10 steps to find the base entry.
     if category == ItemCategory.GOODS:
-        base_id_ash = (base_id // 1000) * 1000
-        if base_id_ash != base_id:
-            item = db.get_item_by_id(category | base_id_ash)
+        for delta in range(1, 11):
+            candidate = category | (base_id - delta)
+            item = db.get_item_by_id(candidate)
             if item and "Ashes" in item.category_name:
-                upgrade = base_id % 1000
-                return f"{item.name} +{upgrade}" if upgrade else item.name
+                return f"{item.name} +{delta}"
 
     # Weapons: strip affinity+upgrade (last 4 digits)
     if category == ItemCategory.WEAPON:
