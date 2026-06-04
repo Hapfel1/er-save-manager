@@ -54,6 +54,7 @@ _CAT_LABELS: dict[str, str] = {
     "material_items": "Materials",
     "magic_items": "Spells",
     "specials": "Special",
+    "seamlesscoop_items": "SeamlessCoop",
 }
 _INFUSION_NAMES = [
     "Standard",
@@ -330,14 +331,15 @@ class DSRInventoryTab:
         frow.grid_columnconfigure(1, weight=1)
         db, _ = _ensure_db()
         self._spawn_cat_var = tk.StringVar(value="All")
-        ctk.CTkComboBox(
+        self._spawn_cat_combo = ctk.CTkComboBox(
             frow,
             variable=self._spawn_cat_var,
             values=["All"] + [_CAT_LABELS.get(k, k) for k in db.keys()],
             state="readonly",
             width=110,
             command=lambda _: self._rebuild_item_list(),
-        ).grid(row=0, column=0, padx=(0, 6))
+        )
+        self._spawn_cat_combo.grid(row=0, column=0, padx=(0, 6))
         self._search_var = tk.StringVar()
         self._search_var.trace_add("write", lambda *_: self._rebuild_item_list())
         ctk.CTkEntry(
@@ -483,6 +485,25 @@ class DSRInventoryTab:
         ]
         self._slot_combo.configure(values=options)
         self._slot_var.set(options[0] if options else "")
+        self._refresh_spawner_cats()
+
+    def _is_co2(self) -> bool:
+        path = self._get_save_path()
+        return path is not None and Path(path).suffix.lower() == ".co2"
+
+    def _refresh_spawner_cats(self) -> None:
+        """Rebuild the spawner category dropdown, showing SeamlessCoop only for .co2 saves."""
+        db, _ = _ensure_db()
+        cats = ["All"] + [
+            _CAT_LABELS.get(k, k)
+            for k in db.keys()
+            if k != "seamlesscoop_items" or self._is_co2()
+        ]
+        current = self._spawn_cat_var.get()
+        self._spawn_cat_combo.configure(values=cats)
+        if current not in cats:
+            self._spawn_cat_var.set("All")
+        self._rebuild_item_list()
 
     def load_slot(self, slot_idx: int) -> None:
         options = self._slot_combo.cget("values")
@@ -532,9 +553,12 @@ class DSRInventoryTab:
         query = self._search_var.get().lower()
         cat_label = self._spawn_cat_var.get()
         cat_key = next((k for k, v in _CAT_LABELS.items() if v == cat_label), None)
+        co2 = self._is_co2()
         self._spawn_tree.delete(*self._spawn_tree.get_children())
         self._spawn_items.clear()
         for db_cat, cat_items in db.items():
+            if db_cat == "seamlesscoop_items" and not co2:
+                continue
             if cat_key and db_cat != cat_key:
                 continue
             for item in cat_items:

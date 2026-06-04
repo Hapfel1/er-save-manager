@@ -125,7 +125,7 @@ class AdvancedToolsTab:
             info.append(f"Platform: {'PlayStation' if save_file.is_ps else 'PC'}")
             info.append(f"Magic: {save_file.magic.hex()}")
 
-            if save_file.user_data_10_parsed:
+            if save_file.user_data_10_parsed and not getattr(save_file, "is_ps", False):
                 ud10 = save_file.user_data_10_parsed
                 info.append(f"SteamID: {ud10.steam_id}")
 
@@ -188,20 +188,21 @@ class AdvancedToolsTab:
                         f"⚠ File size {size} bytes (expected {expected_size})"
                     )
 
-            # Check per-slot checksums
-            try:
-                from er_save_manager.fixes.checksum import check_slot_checksum
+            # PS saves have no per-slot checksums
+            if not getattr(save_file, "is_ps", False):
+                try:
+                    from er_save_manager.fixes.checksum import check_slot_checksum
 
-                for i, slot in enumerate(save_file.character_slots):
-                    if slot.is_empty():
-                        continue
-                    valid, stored, computed = check_slot_checksum(save_file, i)
-                    if not valid:
-                        issues.append(
-                            f"⚠ Slot {i + 1}: Invalid checksum (stored {stored[:8]}... computed {computed[:8]}...)"
-                        )
-            except Exception:
-                pass
+                    for i, slot in enumerate(save_file.character_slots):
+                        if slot.is_empty():
+                            continue
+                        valid, stored, computed = check_slot_checksum(save_file, i)
+                        if not valid:
+                            issues.append(
+                                f"⚠ Slot {i + 1}: Invalid checksum (stored {stored[:8]}... computed {computed[:8]}...)"
+                            )
+                except Exception:
+                    pass
 
             # Check character data safely via accessors on UserDataX
             for i, slot in enumerate(save_file.characters):
@@ -254,6 +255,14 @@ class AdvancedToolsTab:
         if not save_file:
             CTkMessageBox.showwarning(
                 "No Save", "Please load a save file first!", parent=self.parent
+            )
+            return
+
+        if getattr(save_file, "is_ps", False):
+            CTkMessageBox.showinfo(
+                "Not Applicable",
+                "PlayStation saves do not use slot checksums.",
+                parent=self.parent,
             )
             return
 

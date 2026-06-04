@@ -134,10 +134,9 @@ class Save:
         # Read magic (4 bytes)
         obj.magic = f.read(4)
 
-        # Detect platform
-        if obj.magic == b"BND4":
-            obj.is_ps = False
-        elif obj.magic == b"SL2\x00":
+        # Detect platform.
+        # PC saves start with BND4. Both Apollo and Save Wizard PS exports start with cb019c2c.
+        if obj.magic in (b"BND4", b"SL2\x00"):
             obj.is_ps = False
         elif obj.magic == bytes([0xCB, 0x01, 0x9C, 0x2C]):
             obj.is_ps = True
@@ -251,6 +250,10 @@ class Save:
         if not hasattr(self, "_raw_data"):
             raise RuntimeError("Cannot recalculate checksums: raw data not available")
 
+        # PS saves have no per-slot or USER_DATA_10 checksums - nothing to do
+        if self.is_ps:
+            return
+
         import hashlib
 
         SLOT_SIZE = 0x280000
@@ -316,6 +319,11 @@ class Save:
 
         # Fallback to checking if slot is not empty (old behavior)
         return [i for i, slot in enumerate(self.character_slots) if not slot.is_empty()]
+
+    def slot_data_offset(self, slot_idx: int) -> int:
+        """Return the absolute offset of slot data, skipping the checksum prefix on PC."""
+        base = self._slot_offsets[slot_idx]
+        return base if self.is_ps else base + 0x10
 
     def get_slot(self, index: int) -> UserDataX:
         """
@@ -554,14 +562,11 @@ class Save:
                     ] = event_flags_mutable
                 else:
                     # Fallback: calculate using tracked slot offset
-                    slot_offset = self._slot_offsets[slot_index]
-                    CHECKSUM_SIZE = 0x10
-
                     # Use the offset we found: 0x8F7 within character data
                     EVENT_FLAGS_OFFSET_IN_SLOT = 0x8F7
 
                     event_flags_start = (
-                        slot_offset + CHECKSUM_SIZE + EVENT_FLAGS_OFFSET_IN_SLOT
+                        self.slot_data_offset(slot_index) + EVENT_FLAGS_OFFSET_IN_SLOT
                     )
                     self._raw_data[
                         event_flags_start : event_flags_start + len(event_flags_mutable)
@@ -820,6 +825,13 @@ class Save:
         preset_stream = BytesIO()
         preset.write(preset_stream)
         preset_data = preset_stream.getvalue()
+
+        # The first 8 bytes of Preset 0 physically overlap with the global array header.
+        # We must preserve the existing header in the raw data to avoid corruption.
+        if slot_idx == 0:
+            preset_data = (
+                self._raw_data[preset_offset : preset_offset + 8] + preset_data[8:]
+            )
 
         self._raw_data[preset_offset : preset_offset + len(preset_data)] = preset_data
 

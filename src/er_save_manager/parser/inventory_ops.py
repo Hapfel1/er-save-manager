@@ -33,7 +33,6 @@ _PREFIX_DIRECT = 0xB0000000  # goods and spells direct handle
 _PREFIX_GEM = 0xC0000000  # gaitem handle prefix, size 8
 
 SLOT_DATA_SIZE = 0x280000
-CHECKSUM_SIZE = 0x10
 
 # Upgrade caps by reinforcement type
 UPGRADE_CAP_STANDARD = 25
@@ -243,7 +242,7 @@ def _patch_slot(save: Save, slot_idx: int, slot) -> None:
     """
     from io import BytesIO
 
-    slot_data_base = save._slot_offsets[slot_idx] + CHECKSUM_SIZE
+    slot_data_base = save.slot_data_offset(slot_idx)
 
     if slot.inventory_held_offset:
         buf = BytesIO()
@@ -288,7 +287,7 @@ def _patch_slot_with_gaitem_insert(
         3. Append abs(delta) zeros at slot end.
         Net shift = -(old_size - new_size).
     """
-    slot_data_base = save._slot_offsets[slot_idx] + CHECKSUM_SIZE
+    slot_data_base = save.slot_data_offset(slot_idx)
     entry_abs_off = slot_data_base + slot.gaitem_offsets[gaitem_idx]
     new_size = len(new_gaitem_bytes)
     delta = new_size - old_gaitem_size

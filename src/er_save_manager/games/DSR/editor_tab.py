@@ -66,6 +66,8 @@ class DSREditorTab:
         self._covenant_var = tk.StringVar(value=_COVENANTS[0])
         self._ng_var = tk.StringVar(value="0")
         self._playtime_var = tk.StringVar(value="--")
+        # Starting class index at last load; used for level recalc
+        self._loaded_class_idx: int = 0
 
     def setup_ui(self) -> None:
         # Outer wrapper fills parent - fixes content being pushed down on CTkTabview frames
@@ -143,6 +145,7 @@ class DSREditorTab:
             )
             var = tk.StringVar(value="1")
             self._stat_vars[key] = var
+            var.trace_add("write", lambda *_: self._recalc_level())
             ctk.CTkEntry(ag, textvariable=var, width=120).grid(
                 row=i, column=1, padx=5, pady=5
             )
@@ -173,7 +176,7 @@ class DSREditorTab:
 
         ctk.CTkLabel(
             frame,
-            text="Saving VIT updates derived max HP. Saving END updates max Stamina.",
+            text="Saving VIT updates derived max HP. Saving END updates max Stamina. Level is recalculated from stats automatically.",
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=15, pady=(4, 0))
@@ -284,6 +287,7 @@ class DSREditorTab:
             return
         for key in ("vit", "atn", "end", "str", "dex", "int", "fth", "res"):
             self._stat_vars[key].set(str(char.get_stat(key)))
+        self._loaded_class_idx = int(char.player_class)
         self._stat_vars["level"].set(str(char.level))
         self._stat_vars["souls"].set(str(char.souls))
         self._stat_vars["humanity"].set(str(char.humanity))
@@ -298,6 +302,28 @@ class DSREditorTab:
         m = int((char.play_seconds % 3600) // 60)
         s = int(char.play_seconds % 60)
         self._playtime_var.set(f"{h}h {m:02d}m {s:02d}s")
+
+    def _recalc_level(self) -> None:
+        """Recalculate and update the level field from current stat inputs."""
+        try:
+            from er_save_manager.games.DSR.save import calc_level_from_stats
+        except ImportError:
+            return
+        try:
+            vit = int(self._stat_vars["vit"].get())
+            atn = int(self._stat_vars["atn"].get())
+            end = int(self._stat_vars["end"].get())
+            str_ = int(self._stat_vars["str"].get())
+            dex = int(self._stat_vars["dex"].get())
+            int_ = int(self._stat_vars["int"].get())
+            fth = int(self._stat_vars["fth"].get())
+            res = int(self._stat_vars["res"].get())
+        except ValueError:
+            return
+        lvl = calc_level_from_stats(
+            self._loaded_class_idx, vit, atn, end, str_, dex, int_, fth, res
+        )
+        self._stat_vars["level"].set(str(max(1, lvl)))
 
     # --- Apply ---------------------------------------------------------------- #
 

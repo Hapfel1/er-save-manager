@@ -8644,5 +8644,115 @@
       "MugenMonkeyName": null,
       "SoulsplannerName": null
     }
+  ],
+  "seamlesscoop_items": [
+    {
+      "Type": "0x40000000",
+      "Id": "0x5ef88",
+      "MaxStackCount": 1,
+      "Category": "seamlesscoop_items",
+      "Name": "Blessed Eye Orb",
+      "MaxUpgrade": null,
+      "CanInfuse": null,
+      "Durability": null,
+      "MugenMonkeyName": null,
+      "SoulsplannerName": null
+    },
+    {
+      "Type": "0x40000000",
+      "Id": "0x5ef89",
+      "MaxStackCount": 1,
+      "Category": "seamlesscoop_items",
+      "Name": "Crystal Eye Orb",
+      "MaxUpgrade": null,
+      "CanInfuse": null,
+      "Durability": null,
+      "MugenMonkeyName": null,
+      "SoulsplannerName": null
+    },
+    {
+      "Type": "0x40000000",
+      "Id": "0x5ef8a",
+      "MaxStackCount": 1,
+      "Category": "seamlesscoop_items",
+      "Name": "Chaos Eye Orb",
+      "MaxUpgrade": null,
+      "CanInfuse": null,
+      "Durability": null,
+      "MugenMonkeyName": null,
+      "SoulsplannerName": null
+    },
+    {
+      "Type": "0x40000000",
+      "Id": "0x5ef8b",
+      "MaxStackCount": 1,
+      "Category": "seamlesscoop_items",
+      "Name": "Abyssal Eye Orb",
+      "MaxUpgrade": null,
+      "CanInfuse": null,
+      "Durability": null,
+      "MugenMonkeyName": null,
+      "SoulsplannerName": null
+    },
+    {
+      "Type": "0x40000000",
+      "Id": "0x5ef8c",
+      "MaxStackCount": 1,
+      "Category": "seamlesscoop_items",
+      "Name": "Ominous Tome",
+      "MaxUpgrade": null,
+      "CanInfuse": null,
+      "Durability": null,
+      "MugenMonkeyName": null,
+      "SoulsplannerName": null
+    },
+    {
+      "Type": "0x40000000",
+      "Id": "0x5ef8d",
+      "MaxStackCount": 1,
+      "Category": "seamlesscoop_items",
+      "Name": "Dried Fingers",
+      "MaxUpgrade": null,
+      "CanInfuse": null,
+      "Durability": null,
+      "MugenMonkeyName": null,
+      "SoulsplannerName": null
+    },
+    {
+      "Type": "0x40000000",
+      "Id": "0x5ef8e",
+      "MaxStackCount": 1,
+      "Category": "seamlesscoop_items",
+      "Name": "Cursed Pendant",
+      "MaxUpgrade": null,
+      "CanInfuse": null,
+      "Durability": null,
+      "MugenMonkeyName": null,
+      "SoulsplannerName": null
+    },
+    {
+      "Type": "0x40000000",
+      "Id": "0x5ef8f",
+      "MaxStackCount": 10,
+      "Category": "seamlesscoop_items",
+      "Name": "Crimson Blossom",
+      "MaxUpgrade": null,
+      "CanInfuse": null,
+      "Durability": null,
+      "MugenMonkeyName": null,
+      "SoulsplannerName": null
+    },
+    {
+      "Type": "0x40000000",
+      "Id": "0x5ef90",
+      "MaxStackCount": 1,
+      "Category": "seamlesscoop_items",
+      "Name": "Parchment of Deliverance",
+      "MaxUpgrade": null,
+      "CanInfuse": null,
+      "Durability": null,
+      "MugenMonkeyName": null,
+      "SoulsplannerName": null
+    }
   ]
 }
