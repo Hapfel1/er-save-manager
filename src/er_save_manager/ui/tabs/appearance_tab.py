@@ -133,33 +133,8 @@ class AppearanceTab:
             width=200,
         ).pack(side=tk.LEFT)
 
-    def _all_presets_empty(self) -> bool:
-        """Return True if every preset slot in the loaded save is empty."""
-        save_file = self.get_save_file()
-        if not save_file:
-            return False
-        presets = save_file.get_character_presets()
-        if not presets:
-            return True
-        return all(p.is_empty() for p in presets.presets)
-
-    def _warn_if_no_presets(self) -> bool:
-        """Show warning and return True if all preset slots are empty."""
-        if self._all_presets_empty():
-            CTkMessageBox.showwarning(
-                "No Presets Available",
-                "All preset slots are empty on this save.\n\n"
-                "Open the game, go to the character creation menu, save at least one "
-                "preset, then reload the save here before importing.",
-                parent=self.parent,
-            )
-            return True
-        return False
-
     def open_preset_browser(self):
         """Open enhanced preset browser dialog."""
-        if self._warn_if_no_presets():
-            return
         from er_save_manager.ui.dialogs.preset_browser import EnhancedPresetBrowser
 
         browser = EnhancedPresetBrowser(self.parent, self)
@@ -793,9 +768,6 @@ class AppearanceTab:
             CTkMessageBox.showwarning(
                 "No Save", "Please load a save file first!", parent=self.parent
             )
-            return
-
-        if self._warn_if_no_presets():
             return
 
         json_path = filedialog.askopenfilename(

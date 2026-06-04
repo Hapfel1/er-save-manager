@@ -1130,9 +1130,6 @@ class EnhancedPresetBrowser:
         if not self.current_preset:
             return
 
-        if self.appearance_tab._warn_if_no_presets():
-            return
-
         slot_str = self.target_slot_var.get()
         target_slot = int(slot_str.split()[1]) - 1
 
