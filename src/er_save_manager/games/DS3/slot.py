@@ -132,6 +132,9 @@ _GESTURE_SIZE = 0xA4
 
 # Gaitem INSERT+TRIM constants
 _INSERT_EXPAND = 60  # new weapon/armor gaitem entry size
+_NULL_WEAPON_ID = (
+    0x0001ADB0  # null placeholder iid for pre-allocated weapon/armor gaitem entries
+)
 _TRIM_NET = 52  # bytes trimmed from end of slot data to compensate
 _END_TAIL = 0xD  # preserved trailing bytes at end of slot
 
@@ -228,6 +231,10 @@ class DS3Slot:
     @property
     def is_empty(self) -> bool:
         """Slot has no character if name bytes are all zero."""
+        # Fast path: empty slots have zeros at bytes 4-12 (before any character data).
+        # This avoids a 6144-iteration gaitem scan for each of the 9 unused slots.
+        if self._data[4:12] == b"\x00" * 8:
+            return True
         try:
             ge = self._get_gaitem_end()
             name_off = ge + _NAME_REL
@@ -250,19 +257,53 @@ class DS3Slot:
     @staticmethod
     def _probe_inv_size(data: bytearray, inv_start: int) -> int:
         """
-        Return the inventory section size (0x8808 or 0x880C) for this slot.
+        Determine the inventory section size by validating the full dynamic chain.
 
-        The 4-byte difference exists in saves with a larger shop/trade history block.
-        Both sizes are tried; whichever yields a plausible above_storage_size wins.
+        Tries known candidate sizes in order; the first that produces a plausible chain
+        (in-bounds offsets, valid above_storage_size, and NG+ value 0-9) wins.
+        NG+ > 9 is used as the primary discriminator since false-positive chains that
+        stay in-bounds almost always land at 0xFFFF or other junk NG+ bytes.
         """
-        for candidate in (_INV_SIZE, 0x8808):
+        buf = len(data)
+        for candidate in (
+            0x8808,
+            0x880C,
+            0x8800,
+            0x8810,
+            0x8804,
+            0x8814,
+            0x8818,
+            0x8820,
+        ):
             above_ctr = inv_start + candidate + _ABOVE_STORAGE_CTR_REL
-            if above_ctr + 4 > len(data):
+            if above_ctr + 4 > buf:
                 continue
-            val = struct.unpack_from("<I", data, above_ctr)[0]
-            if val < 200000:
-                return candidate
-        return _INV_SIZE  # fallback
+            above_size = struct.unpack_from("<I", data, above_ctr)[0]
+            if above_size >= 100000:
+                continue
+            table1_end = above_ctr + 4 + above_size * 8
+            storage_start = table1_end + _STORAGE_BOX_FROM_TABLE1
+            gesture_end = (
+                storage_start
+                + _STORAGE_BOX_SIZE
+                + _GESTURE_FROM_STORAGE_END
+                + _GESTURE_SIZE
+            )
+            if gesture_end + 4 > buf:
+                continue
+            table2_size = struct.unpack_from("<I", data, gesture_end)[0]
+            if table2_size >= 100000:
+                continue
+            table2_end = gesture_end + 4 + table2_size * 4
+            ng_off = table2_end + 0x92
+            if ng_off + 2 > buf:
+                continue
+            ng_plus = struct.unpack_from("<H", data, ng_off)[0]
+            if ng_plus > 9:
+                # Value out of valid DS3 range; chain landed on wrong data
+                continue
+            return candidate
+        return 0x8808  # last-resort fallback
 
     def _get_dynamic(self) -> dict:
         """
@@ -564,7 +605,7 @@ class DS3Slot:
         while off < inv_end:
             h = _read_u32(self._data, off)
             iid = _read_u32(self._data, off + 4)
-            if h == 0 and iid == 0:
+            if h == 0:
                 first_empty = off
                 break
             off += _INV_ENTRY_SIZE
@@ -580,92 +621,70 @@ class DS3Slot:
 
     # --- Add weapons / armor (INSERT + TRIM) --------------------------------- #
 
-    def add_weapon_armor(self, item_id: int, item_type: int, upgrade: int = 0) -> bool:
+    def add_weapon_armor(
+        self, item_id: int, item_type: int, upgrade: int = 0, durability: int = 50
+    ) -> bool:
         """
-        Add a weapon or armor to inventory using the INSERT+TRIM algorithm.
+        Spawn a weapon or armor by replacing a pre-allocated null placeholder.
 
-        Inserts a 60-byte gaitem entry at the first available empty gaitem slot,
-        removes the next 8-byte empty gaitem slot, adds a 16-byte inventory entry,
-        then trims 52 bytes from the safe zero region near end of slot data to
-        maintain constant total plaintext size.
-
-        upgrade: 0-10 for regular weapons, 0-5 for special/boss.
+        Scans the inventory for a weapon null entry (iid=_NULL_WEAPON_ID, type 0x80),
+        locates its matching gaitem, and patches both in-place.  For armor the handle
+        type bytes are updated from 0x80 to 0x90 so the game categorises it correctly.
+        Weapon nulls that appear before the goods section ensure the item lands in the
+        weapon/armor display region and is visible in-game.
         """
-        gaitem_entries = self.iter_gaitem()
-        empties = [e for e in gaitem_entries if e.is_empty]
-        if len(empties) < 2:
-            return False
-
-        # Sequential gaitem handle index
-        ga_max = (
-            max(
-                (e.handle & 0x0000FFFF for e in gaitem_entries if e.handle != 0),
-                default=0,
-            )
-            + 1
-        )
-        ga_hi = ga_max.to_bytes(2, "little")
-
-        # Build 60-byte gaitem entry
-        ga_slot = _build_wa_gaitem_slot(ga_hi, item_id, item_type, upgrade)
-        insert_at = empties[0].offset
-
-        # INSERT: replace 8-byte empty slot with 60-byte weapon entry (+52 bytes net so far)
-        self._data = (
-            self._data[:insert_at]
-            + ga_slot
-            + self._data[insert_at + GAITEM_BASE_SIZE :]
-        )
-        self._invalidate_cache()
-
-        # Re-scan to find the new first empty gaitem slot (after insertion)
-        post_entries = self.iter_gaitem_raw(slots=GAITEM_SLOT_COUNT + 1)
-        post_empties = [e for e in post_entries if e.is_empty]
-        if not post_empties:
-            # Rollback: this shouldn't happen but guard anyway
-            return False
-        del_at = post_empties[0].offset
-
-        # DELETE: remove next 8-byte empty gaitem slot (-8 bytes, net +44 from start)
-        self._data = self._data[:del_at] + self._data[del_at + GAITEM_BASE_SIZE :]
-        self._invalidate_cache()
-
-        # Add inventory entry
         dyn = self._get_dynamic()
-        inv_start = dyn["inv_start"]
-        inv_end = dyn["inv_data_end"]
+        inv_start, inv_end = dyn["inv_start"], dyn["inv_data_end"]
 
-        first_empty = None
-        off = inv_start
-        while off < inv_end:
-            h = _read_u32(self._data, off)
-            iid = _read_u32(self._data, off + 4)
-            if h == 0 and iid == 0:
-                first_empty = off
-                break
-            off += _INV_ENTRY_SIZE
+        for inv_off in range(inv_start, inv_end, _INV_ENTRY_SIZE):
+            h = _read_u32(self._data, inv_off)
+            if (h >> 28) == 8 and _read_u32(self._data, inv_off + 4) == _NULL_WEAPON_ID:
+                # Find matching gaitem
+                ga_off = GAITEM_TABLE_OFFSET
+                for _ in range(GAITEM_SLOT_COUNT):
+                    if ga_off + GAITEM_WA_SIZE > len(self._data):
+                        break
+                    gh = _read_u32(self._data, ga_off)
+                    if gh == h:
+                        return self._apply_null(
+                            ga_off, inv_off, h, item_id, item_type, upgrade, durability
+                        )
+                    ga_off += (
+                        GAITEM_WA_SIZE
+                        if (
+                            gh != 0
+                            and (gh & 0xF0000000) in (ITEM_TYPE_WEAPON, ITEM_TYPE_ARMOR)
+                        )
+                        else GAITEM_BASE_SIZE
+                    )
+        return False
 
-        if first_empty is None:
-            # Inventory full - write to storage instead; still trim to balance INSERT
-            inv_slot = _build_wa_inv_slot(
-                ga_hi, item_id, item_type, self._next_inv_index()
-            )
-            self._add_raw_to_storage(inv_slot)
-        else:
-            inv_slot = _build_wa_inv_slot(
-                ga_hi, item_id, item_type, self._next_inv_index()
-            )
-            self._data[first_empty : first_empty + _INV_ENTRY_SIZE] = inv_slot
-            self._increment_inv_counters()
-
-        # TRIM: remove _TRIM_NET bytes from the safe zero area near end of slot
-        # Preserves the last _END_TAIL bytes (fixed trailing bytes)
-        trim_end = len(self._data) - _END_TAIL
-        trim_start = trim_end - _TRIM_NET
-        if trim_start < 0:
-            return False
-        self._data = self._data[:trim_start] + self._data[trim_end:]
-        self._invalidate_cache()
+    def _apply_null(
+        self,
+        ga_off: int,
+        inv_off: int,
+        old_handle: int,
+        item_id: int,
+        item_type: int,
+        upgrade: int,
+        durability: int,
+    ) -> bool:
+        new_type = 0x80 if item_type == ITEM_TYPE_WEAPON else 0x90
+        counter = old_handle & 0x0000FFFF
+        new_handle = (new_type << 24) | (new_type << 16) | counter
+        # Patch gaitem
+        _write_u32(self._data, ga_off, new_handle)
+        _write_u32(self._data, ga_off + 4, item_id)
+        _write_u32(self._data, ga_off + 8, durability)
+        _write_u32(self._data, ga_off + 12, upgrade)
+        _write_u32(self._data, ga_off + 16, 1)
+        # Patch inventory
+        _write_u32(self._data, inv_off, new_handle)
+        _write_u32(self._data, inv_off + 4, item_id)
+        if item_type == ITEM_TYPE_ARMOR:
+            self._data[inv_off + 14] = 0x65
+            self._data[inv_off + 15] = 0xFE
+        self._increment_inv_counters()
         return True
 
     # --- Remove item --------------------------------------------------------- #
@@ -690,8 +709,8 @@ class DS3Slot:
         end = dyn["storage_end"]
         while off < end:
             h = _read_u32(self._data, off)
-            iid = _read_u32(self._data, off + 4)
-            if h == 0 and iid == 0:
+            _read_u32(self._data, off + 4)
+            if h == 0:
                 self._data[off : off + _INV_ENTRY_SIZE] = slot
                 self._increment_storage_counter()
                 return True
@@ -748,7 +767,6 @@ def _build_goods_ring_slot(
     _write_u32(slot, 0, gh)
     _write_u32(slot, 4, item_id)
     _write_u32(slot, 8, qty)
-    # Index field: [idx_lo][idx_hi_nibble+random][0xCF][0x1F]
     slot[12] = idx_bytes[0]
     slot[13] = idx_bytes[1]
     slot[14] = 0xCF
@@ -771,11 +789,13 @@ def _build_wa_gaitem_slot(
     slot[3] = type_byte
     # [4:8] = item_id
     _write_u32(slot, 4, item_id)
-    # [8:12] = sort index (same value as counter)
-    _write_u32(slot, 8, int.from_bytes(ga_hi, "little"))
+    # [8:12] = current durability (= max durability on spawn; hardcoded 50 until
+    # maxDurabilityParam data is available; works for Dagger whose max = 50)
+    _write_u32(slot, 8, 50)
     # [12:16] = upgrade level
     _write_u32(slot, 12, upgrade & 0xFF)
-    # [16:20] = unknown, leave zero
+    # [16:20] = required flag; must be 1 or game ignores the entry
+    _write_u32(slot, 16, 1)
     # [20:60] = 5 gem sockets, each 8 bytes; 0x80000000 = empty socket
     for i in range(5):
         _write_u32(slot, 20 + i * 8, 0x80000000)

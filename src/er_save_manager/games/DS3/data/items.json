@@ -24548,6 +24548,42 @@
       "Type": "0xB0000000",
       "Id": "0x40000858",
       "MaxStackCount": 99
+    },
+    {
+      "Name": "Crystalline Pendant",
+      "Type": "0xB0000000",
+      "Id": "0x4008fcc8",
+      "MaxStackCount": 1
+    },
+    {
+      "Name": "Stone Pendant",
+      "Type": "0xB0000000",
+      "Id": "0x4008fcc9",
+      "MaxStackCount": 1
+    },
+    {
+      "Name": "Blasphemous Pendant",
+      "Type": "0xB0000000",
+      "Id": "0x4008fcca",
+      "MaxStackCount": 1
+    },
+    {
+      "Name": "Rusted Pendant",
+      "Type": "0xB0000000",
+      "Id": "0x4008fccb",
+      "MaxStackCount": 1
+    },
+    {
+      "Name": "Ominous Tome",
+      "Type": "0xB0000000",
+      "Id": "0x4008fccc",
+      "MaxStackCount": 1
+    },
+    {
+      "Name": "Taunters Orb",
+      "Type": "0xB0000000",
+      "Id": "0x4008fccd",
+      "MaxStackCount": 1
     }
   ]
 }
