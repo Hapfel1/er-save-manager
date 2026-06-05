@@ -100,13 +100,16 @@ def validate_upgrade(upgrade: int, reinforcement: str = "standard") -> int:
 # ---- gaitem map helpers -----------------------------------------------------
 
 
-def _next_gaitem_handle(slot, prefix: int) -> int:
+def _next_gaitem_handle(slot, prefix: int, is_ps: bool = False) -> int:
     """
     Generate the next available gaitem handle for weapons, armor, or gems.
 
-    Upper 16 bits encode category (0x8080 weapon, 0x9080 armor, 0xC080 gem).
-    Lower 16 bits are a sequential counter shared across all categories so
-    handles from different categories never collide.
+    Upper 16 bits encode category. Lower 16 bits are a sequential counter
+    shared across all categories so handles from different categories never collide.
+
+    PC uses second byte 0x80 (e.g. 0x8080xxxx for weapons).
+    PS saves require second byte 0x85 - the game engine treats 0x00 as invalid/phantom.
+    0x85 is the most common native PS handle pattern (650 of 1107 weapons).
     """
     max_lower16 = 0
     for g in slot.gaitem_map:
@@ -119,10 +122,11 @@ def _next_gaitem_handle(slot, prefix: int) -> int:
                 max_lower16 = lower16
 
     next_lower16 = (max_lower16 + 1) & 0xFFFF
+    second_byte = 0x85 if is_ps else 0x80
     upper16 = {
-        _PREFIX_WEAPON: 0x8080,
-        _PREFIX_ARMOR: 0x9080,
-        _PREFIX_GEM: 0xC080,
+        _PREFIX_WEAPON: (0x80 << 8) | second_byte,
+        _PREFIX_ARMOR: (0x90 << 8) | second_byte,
+        _PREFIX_GEM: (0xC0 << 8) | second_byte,
     }[prefix]
     return (upper16 << 16) | next_lower16
 
@@ -434,7 +438,7 @@ def insert_gaitem(
         raise ValueError(f"slot {slot_idx} is empty")
 
     prefix = _gaitem_prefix(full_item_id)
-    handle = _next_gaitem_handle(slot, prefix)
+    handle = _next_gaitem_handle(slot, prefix, is_ps=getattr(save, "is_ps", False))
 
     empty_g = _find_empty_gaitem_slot(slot, prefix)
     if empty_g == -1:
