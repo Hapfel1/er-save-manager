@@ -100,18 +100,20 @@ def validate_upgrade(upgrade: int, reinforcement: str = "standard") -> int:
 # ---- gaitem map helpers -----------------------------------------------------
 
 
-def _next_gaitem_handle(slot, prefix: int, is_ps: bool = False) -> int:
+def _next_gaitem_handle(slot, prefix: int) -> int:
     """
     Generate the next available gaitem handle for weapons, armor, or gems.
 
     Upper 16 bits encode category. Lower 16 bits are a sequential counter
     shared across all categories so handles from different categories never collide.
 
-    PC uses second byte 0x80 (e.g. 0x8080xxxx for weapons).
-    PS saves require second byte 0x85 - the game engine treats 0x00 as invalid/phantom.
-    0x85 is the most common native PS handle pattern (650 of 1107 weapons).
+    The second byte (bits 16-23) is read from the first non-empty gaitem entry
+    and mirrored for all spawned handles - matching clay's ER-Save-Editor approach.
+    PC saves use 0x80; PS saves use 0x81-0x87. Using 0x00 (PC default on PS)
+    causes the game engine to treat items as phantom/invalid.
     """
     max_lower16 = 0
+    second_byte = 0x80  # PC default
     for g in slot.gaitem_map:
         if g.gaitem_handle == 0:
             continue
@@ -120,15 +122,16 @@ def _next_gaitem_handle(slot, prefix: int, is_ps: bool = False) -> int:
             lower16 = g.gaitem_handle & 0x0000FFFF
             if lower16 > max_lower16:
                 max_lower16 = lower16
+            if second_byte == 0x80:
+                second_byte = (g.gaitem_handle >> 16) & 0xFF
 
     next_lower16 = (max_lower16 + 1) & 0xFFFF
-    second_byte = 0x85 if is_ps else 0x80
-    upper16 = {
-        _PREFIX_WEAPON: (0x80 << 8) | second_byte,
-        _PREFIX_ARMOR: (0x90 << 8) | second_byte,
-        _PREFIX_GEM: (0xC0 << 8) | second_byte,
+    category_high = {
+        _PREFIX_WEAPON: 0x80,
+        _PREFIX_ARMOR: 0x90,
+        _PREFIX_GEM: 0xC0,
     }[prefix]
-    return (upper16 << 16) | next_lower16
+    return (category_high << 24) | (second_byte << 16) | next_lower16
 
 
 def _find_empty_gaitem_slot(slot, prefix: int) -> int:
@@ -438,7 +441,7 @@ def insert_gaitem(
         raise ValueError(f"slot {slot_idx} is empty")
 
     prefix = _gaitem_prefix(full_item_id)
-    handle = _next_gaitem_handle(slot, prefix, is_ps=getattr(save, "is_ps", False))
+    handle = _next_gaitem_handle(slot, prefix)
 
     empty_g = _find_empty_gaitem_slot(slot, prefix)
     if empty_g == -1:
