@@ -511,7 +511,6 @@ class SettingsTab:
         ctk.CTkLabel(scale_frame, text="UI Scale:").pack(side="left", padx=(0, 10))
 
         _SCALE_OPTIONS = [
-            "Auto",
             "100%",
             "125%",
             "150%",
@@ -519,6 +518,7 @@ class SettingsTab:
             "200%",
             "250%",
             "300%",
+            "Auto",
         ]
         _scale_to_str = {
             1.0: "100%",
@@ -532,9 +532,9 @@ class SettingsTab:
         _str_to_scale = {v: k for k, v in _scale_to_str.items()}
         saved_scale = self.settings.get("ui_scale", None)
         initial_str = (
-            _scale_to_str.get(saved_scale, "Auto")
+            _scale_to_str.get(saved_scale, "100%")
             if saved_scale is not None
-            else "Auto"
+            else "100%"
         )
         self.scale_var = tk.StringVar(value=initial_str)
 
@@ -547,16 +547,9 @@ class SettingsTab:
             command=lambda v: self._on_scale_changed(v, _str_to_scale),
         ).pack(side="left")
 
-        import sys as _sys
-
-        if _sys.platform == "win32":
-            scale_hint = "Auto reads the Windows display DPI setting. Restart required."
-        else:
-            scale_hint = "Auto reads GDK_SCALE / QT_SCALE_FACTOR if set, otherwise 100%. Restart required."
-
         ctk.CTkLabel(
             frame,
-            text=scale_hint,
+            text="Restart required to apply.",
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
             wraplength=520,
@@ -812,7 +805,7 @@ class SettingsTab:
             self.max_backups_var.set("50")
             self.theme_var.set("dark")
             if hasattr(self, "scale_var"):
-                self.scale_var.set("Auto")
+                self.scale_var.set("100%")
             for var in self._auto_backup_enabled_vars.values():
                 var.set(False)
             for var in self._auto_backup_path_vars.values():

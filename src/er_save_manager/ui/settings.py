@@ -113,7 +113,7 @@ class Settings:
             "external_file_change_notification": True,
             # UI scaling factor applied via CTk widget/window scaling APIs.
             # None means auto-detect from the system on startup.
-            "ui_scale": None,
+            "ui_scale": 1.0,
         }
 
     def save(self):
