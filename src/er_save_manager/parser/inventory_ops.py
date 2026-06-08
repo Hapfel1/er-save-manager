@@ -104,11 +104,15 @@ def _next_gaitem_handle(slot, prefix: int) -> int:
     """
     Generate the next available gaitem handle for weapons, armor, or gems.
 
-    Upper 16 bits encode category (0x8080 weapon, 0x9080 armor, 0xC080 gem).
-    Lower 16 bits are a sequential counter shared across all categories so
-    handles from different categories never collide.
+    Upper 16 bits encode category. Lower 16 bits are a sequential counter
+    shared across all categories so handles from different categories never collide.
+
+    The second byte (bits 16-23) is mirrored from the first non-empty gaitem entry.
+    PC saves use 0x80; PS/Switch saves use 0x81-0x87. Writing 0x80 on console
+    saves causes the game engine to treat items as phantom/invalid.
     """
     max_lower16 = 0
+    second_byte = 0x80  # PC default
     for g in slot.gaitem_map:
         if g.gaitem_handle == 0:
             continue
@@ -117,14 +121,16 @@ def _next_gaitem_handle(slot, prefix: int) -> int:
             lower16 = g.gaitem_handle & 0x0000FFFF
             if lower16 > max_lower16:
                 max_lower16 = lower16
+            if second_byte == 0x80:
+                second_byte = (g.gaitem_handle >> 16) & 0xFF
 
     next_lower16 = (max_lower16 + 1) & 0xFFFF
-    upper16 = {
-        _PREFIX_WEAPON: 0x8080,
-        _PREFIX_ARMOR: 0x9080,
-        _PREFIX_GEM: 0xC080,
+    category_high = {
+        _PREFIX_WEAPON: 0x80,
+        _PREFIX_ARMOR: 0x90,
+        _PREFIX_GEM: 0xC0,
     }[prefix]
-    return (upper16 << 16) | next_lower16
+    return (category_high << 24) | (second_byte << 16) | next_lower16
 
 
 def _find_empty_gaitem_slot(slot, prefix: int) -> int:
@@ -619,7 +625,15 @@ def add_item(
     acq_idx = _global_next_acq_index(slot)
     inv_slot = _first_empty_inv_slot(inventory)
     if inv_slot == -1:
-        raise ValueError(f"inventory {location!r} is full")
+        if location == "held":
+            # Held inventory full - fall back to storage
+            location = "storage"
+            inventory = _select_inventory(slot, location)
+            inv_slot = _first_empty_inv_slot(inventory)
+            if inv_slot == -1:
+                raise ValueError("both held and storage inventories are full")
+        else:
+            raise ValueError("storage inventory is full")
 
     entry = InventoryItem()
     entry.gaitem_handle = handle
