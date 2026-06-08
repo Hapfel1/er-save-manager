@@ -72,7 +72,7 @@ An empty character slot has bytes 0x20-0x90 all zero.
 
 --- Character info ---
 +0x0108  34   Name, primary copy (UTF-16LE, 16 chars + null terminator)
-+0x012A  1    Gender: 0=male, 1=female
++0x012A  1    Body type: 0=Type B (female), 1=Type A (male)
 +0x012E  1    Starting class (see DSRClass enum)
 +0x0173  1    Covenant (see DSRCovenant enum)
 +0x0179  1    Highest weapon upgrade level (used for matchmaking, must be calibrated)
@@ -142,8 +142,8 @@ Anchor-relative offsets:
   +0x6D    Bonfire warp data byte 3
   +0xAE    Bonfire warp enable flag
 
-NPC alive/dead states are stored as individual bits relative to the same anchor.
-See npc_data.json for per-NPC offset+bit definitions.
+NPC alive/dead states are stored as individual bits at absolute offsets into
+the decrypted slot data. See npc_data.json for per-NPC offset+bit definitions.
 """
 
 from __future__ import annotations
@@ -205,7 +205,7 @@ OFF_HUMANITY = 0x00E4  # u8
 OFF_LEVEL = 0x00F0  # u16 LE
 OFF_SOULS = 0x00F4  # u32 LE
 OFF_NAME_PRIMARY = 0x0108  # UTF-16LE, 34 bytes (16 chars + null)
-OFF_GENDER = 0x012A  # u8
+OFF_BODY_TYPE = 0x012A  # u8; 0=Type B (female), 1=Type A (male)
 OFF_CLASS = 0x012E  # u8
 OFF_COVENANT = 0x0173  # u8
 OFF_WEAPON_LEVEL = 0x0179  # u8, highest upgrade, used for matchmaking
@@ -694,12 +694,12 @@ class DSRCharacter:
         self._write_utf16(OFF_NAME_SECONDARY, value, length=34)
 
     @property
-    def gender(self) -> int:
-        return self._data[OFF_GENDER]
+    def body_type(self) -> int:
+        return self._data[OFF_BODY_TYPE]
 
-    @gender.setter
-    def gender(self, value: int) -> None:
-        self._data[OFF_GENDER] = value & 0xFF
+    @body_type.setter
+    def body_type(self, value: int) -> None:
+        self._data[OFF_BODY_TYPE] = value & 0xFF
 
     @property
     def player_class(self) -> DSRClass:
@@ -1091,12 +1091,10 @@ class DSRCharacter:
         npc_def is one entry from data/npc_data.json (keys: name, bits).
         Each bit entry: offset (hex str), bit (0-7), reverse (bool).
         reverse=True means bit=0 indicates alive; False means bit=1 indicates alive.
+        Offsets are absolute into the decrypted slot data.
         """
-        anchor = self._find_pattern1()
-        if anchor < 0:
-            return False
         for entry in npc_def["bits"]:
-            off = anchor + int(entry["offset"], 16)
+            off = int(entry["offset"], 16)
             bit = entry["bit"]
             reverse = entry.get("reverse", False)
             val = bool((self._data[off] >> bit) & 1)
@@ -1108,12 +1106,10 @@ class DSRCharacter:
         """
         Set all bit conditions in npc_def to the alive or dead state.
         See get_npc_alive for npc_def format.
+        Offsets are absolute into the decrypted slot data.
         """
-        anchor = self._find_pattern1()
-        if anchor < 0:
-            raise ValueError("Pattern1 not found")
         for entry in npc_def["bits"]:
-            off = anchor + int(entry["offset"], 16)
+            off = int(entry["offset"], 16)
             bit = entry["bit"]
             reverse = entry.get("reverse", False)
             # reverse=True: alive=clear, dead=set; reverse=False: alive=set, dead=clear
