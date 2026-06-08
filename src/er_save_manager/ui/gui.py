@@ -585,12 +585,13 @@ class SaveManagerGUI:
             width=160,
         ).pack(side=tk.RIGHT, padx=6, pady=10)
 
-        ctk.CTkButton(
+        self._ps_save_btn = ctk.CTkButton(
             buttons_frame,
             text="PS / Switch Save?",
             command=self.show_console_save_info,
             width=160,
-        ).pack(side=tk.RIGHT, padx=6, pady=10)
+        )
+        self._ps_save_btn.pack(side=tk.RIGHT, padx=6, pady=10)
 
         _itemgib_btn = ctk.CTkButton(
             buttons_frame,
@@ -634,6 +635,13 @@ class SaveManagerGUI:
             return
 
         self.active_game = profile.key
+
+        # PS / Switch button is only relevant for Elden Ring
+        if hasattr(self, "_ps_save_btn"):
+            if profile.key == "elden_ring":
+                self._ps_save_btn.pack(side=tk.RIGHT, padx=6, pady=10)
+            else:
+                self._ps_save_btn.pack_forget()
 
         # Clear save state - switching games means the loaded save is no longer relevant.
         # This prevents tab setup_ui() calls from accessing stale save data.
@@ -1575,10 +1583,15 @@ class SaveManagerGUI:
             except Exception:
                 pass
             return
-        """Navigate to Character Editor > Inventory tab."""
+        if self.active_game == "dark_souls_3":
+            try:
+                self.notebook.set("Inventory")
+            except Exception:
+                pass
+            return
+        # Elden Ring: Character Editor > Inventory sub-tab
         self.notebook.set("Character Editor")
         if hasattr(self, "inventory_editor"):
-            # Find the inner editor_tabs and activate Inventory
             try:
                 for widget in self.notebook.tab("Character Editor").winfo_children():
                     if isinstance(widget, ctk.CTkFrame):
@@ -2008,10 +2021,11 @@ class SaveManagerGUI:
         current_tab = self.notebook.get()
         self._lazy_load_tab_background(current_tab)
 
-        # Hide SteamID Patcher for PS saves - they have no SteamID
+        # Hide SteamID Patcher for PS saves - they have no SteamID.
+        # Rebuild the notebook when toggling so the tab stays in its original position.
         if self.active_game == "elden_ring" and hasattr(self, "steamid_tab"):
             is_ps = getattr(save_file, "is_ps", False)
-            tab_names = (
+            tab_names = list(
                 self.notebook._tab_dict.keys()
                 if hasattr(self.notebook, "_tab_dict")
                 else []
@@ -2020,23 +2034,45 @@ class SaveManagerGUI:
             if is_ps and has_tab:
                 self.notebook.delete("SteamID Patcher")
             elif not is_ps and not has_tab:
-                self.notebook.add("SteamID Patcher")
-                tab_steamid = self.notebook.tab("SteamID Patcher")
-                from er_save_manager.ui.tabs import SteamIDPatcherTab
-
-                self.steamid_tab = SteamIDPatcherTab(
-                    tab_steamid,
-                    lambda: self.save_file,
-                    lambda: self.save_path,
-                    self.load_save,
-                    self.show_toast,
-                )
-                self.steamid_tab.setup_ui()
+                # Rebuild the full ER notebook so SteamID Patcher lands at position 5
+                # rather than being appended at the end.
+                self._rebuild_er_notebook()
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         if not silent:
             # Show toast notification instead of blocking popup
             self.show_toast("Save file loaded successfully!", duration=2500)
+
+    def _rebuild_er_notebook(self) -> None:
+        """Rebuild the ER notebook in place, preserving save state.
+
+        Called when switching from a PS save back to a PC save so SteamID Patcher
+        is re-inserted at its correct position rather than appended at the end.
+        """
+        self.notebook.destroy()
+        self.notebook = ctk.CTkTabview(
+            self.root,
+            width=1100,
+            height=620,
+            corner_radius=12,
+            command=self._on_tab_changed,
+        )
+        self.notebook.grid(row=2, column=0, padx=12, pady=10, sticky="nsew")
+        self.tabs_loaded = dict.fromkeys(self.tabs_loaded, False)
+        for attr in (
+            "inspector_tab",
+            "char_mgmt_tab",
+            "world_tab",
+            "event_flags_tab",
+            "gestures_tab",
+            "appearance_tab",
+            "steamid_tab",
+            "hex_tab",
+            "advanced_tab",
+            "settings_tab",
+        ):
+            setattr(self, attr, None)
+        self.create_tabs()
 
     def _update_character_editor_slots(self):
         """Update Character Editor slot dropdown with character names"""
