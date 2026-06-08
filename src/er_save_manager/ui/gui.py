@@ -114,8 +114,8 @@ class SaveManagerGUI:
         # The tk named fonts are also scaled so ttk/tk widgets match.
         from er_save_manager.ui.settings import detect_system_scale
 
-        _saved_scale = self.settings.get("ui_scale", None)
-        _scale = _saved_scale if _saved_scale is not None else detect_system_scale()
+        _saved_scale = self.settings.get("ui_scale", 1.0)
+        _scale = detect_system_scale() if _saved_scale is None else _saved_scale
         if _scale != 1.0:
             ctk.set_widget_scaling(_scale)
             ctk.set_window_scaling(_scale)
