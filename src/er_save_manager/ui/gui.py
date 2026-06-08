@@ -1096,6 +1096,9 @@ class SaveManagerGUI:
             lambda: self.save_path,
         )
         self.char_info_editor.setup_ui()
+        self.char_info_editor.on_archetype_change = (
+            self.stats_editor.on_archetype_changed
+        )
 
         # Inventory editor
         inventory_tab = editor_tabs.add("Inventory")

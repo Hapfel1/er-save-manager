@@ -53,6 +53,8 @@ class CharacterInfoEditor:
         self.char_playtime_s_var = None
 
         self.frame = None
+        # Called with the new archetype int when the user changes the class combo.
+        self.on_archetype_change = None
 
     def setup_ui(self):
         """Setup the character info editor UI"""
@@ -132,6 +134,21 @@ class CharacterInfoEditor:
             width=140,
         )
         self.char_archetype_combo.grid(row=2, column=3, padx=5, pady=5)
+
+        def _on_archetype_combo_change(*_args):
+            if self.on_archetype_change is None:
+                return
+            class_name = self.char_archetype_var.get()
+            save_file = self.get_save_file()
+            is_convergence = save_file.is_convergence if save_file else False
+            max_id = 26 if is_convergence else 9
+            for i in range(max_id + 1):
+                c = get_class_data(i, is_convergence)
+                if c and c["name"] == class_name:
+                    self.on_archetype_change(i)
+                    return
+
+        self.char_archetype_var.trace_add("write", _on_archetype_combo_change)
 
         # Voice type
         ctk.CTkLabel(creation_frame, text="Voice Type:").grid(

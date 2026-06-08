@@ -59,6 +59,7 @@ class StatsEditor:
         self.level_warning_var = None
 
         self._logger = logging.getLogger(__name__)
+        self._current_archetype: int = 9  # tracks archetype for per-stat minimums
         self.level_warning_label = None
         self.runes_var = None
         self.great_rune_on_var = None
@@ -397,6 +398,7 @@ class StatsEditor:
             return
 
         char = slot.player_game_data
+        self._current_archetype = getattr(char, "archetype", 9)
 
         # Debug: log raw values loaded from save
         try:
@@ -535,16 +537,85 @@ class StatsEditor:
             self.calculated_level_var.set("0")
             self.level_warning_var.set("")
 
+    def on_archetype_changed(self, archetype_id: int) -> None:
+        """Called when the user changes the starting class in the Info tab.
+
+        Updates internal archetype tracking, recalculates level, and warns if
+        any current stat falls below the new class minimum.
+        """
+        save_file = self.get_save_file()
+        is_convergence = (
+            save_file.is_convergence
+            if save_file and hasattr(save_file, "is_convergence")
+            else False
+        )
+        self._current_archetype = archetype_id
+        class_data = get_class_data(archetype_id, is_convergence)
+        if not class_data:
+            return
+
+        stat_keys = [
+            "vigor",
+            "mind",
+            "endurance",
+            "strength",
+            "dexterity",
+            "intelligence",
+            "faith",
+            "arcane",
+        ]
+        violations: list[str] = []
+        for key in stat_keys:
+            stat_min = class_data.get(key, 1)
+            try:
+                current = int(self._attr_entries[key].get().strip())
+            except (ValueError, AttributeError):
+                current = 0
+            if current < stat_min:
+                label = key.capitalize()
+                violations.append(f"{label}: current {current}, minimum {stat_min}")
+
+        # Re-validate all entries so error labels update immediately.
+        for key in stat_keys:
+            self._on_attr_change(key)
+
+        self.calculate_character_level()
+
+        if violations:
+            violation_text = "\n".join(violations)
+            CTkMessageBox.showwarning(
+                "Class Minimum Conflict",
+                f"The following stats are below the minimum for {class_data['name']}:\n\n"
+                f"{violation_text}\n\n"
+                f"Please raise these stats to at least the minimum before applying.",
+                parent=self.parent,
+            )
+
     def _on_attr_change(self, key: str) -> None:
-        # Validate attribute and update error label + apply button state.
+        # Validate against class base minimum and 99 cap.
+        save_file = self.get_save_file()
+        is_convergence = (
+            save_file.is_convergence
+            if save_file and hasattr(save_file, "is_convergence")
+            else False
+        )
+        class_data = get_class_data(self._current_archetype, is_convergence)
+        stat_min = class_data.get(key, 1) if class_data else 1
+
         raw = self._attr_entries[key].get().strip()
         if not raw:
             msg = "cannot be empty"
         else:
             try:
-                msg = "" if 1 <= int(raw) <= 99 else "1-99 only"
+                val = int(raw)
+                if val < stat_min:
+                    msg = f"min {stat_min}"
+                elif val > 99:
+                    msg = "max 99"
+                else:
+                    msg = ""
             except ValueError:
-                msg = "1-99 only"
+                msg = f"min {stat_min} - 99"
         self._attr_error_labels[key].configure(text=msg)
         self._update_apply_button()
         self.calculate_character_level()
