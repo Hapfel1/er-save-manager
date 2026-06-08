@@ -5,7 +5,7 @@ ID,Name,maxNum,category,maxRepositoryNum
 203000,Fanged Imp Ashes,1,Ashes,1
 204000,Latenna the Albinauric,1,Ashes,1
 205000,Nomad Ashes,1,Ashes,1
-2010,Nightmaiden & Swordstress Puppets,1,Ashes,1
+206000,Nightmaiden & Swordstress Puppets,1,Ashes,1
 207000,Mimic Tear Ashes,1,Ashes,1
 208000,Crystalian Ashes,1,Ashes,1
 209000,Ancestral Follower Ashes,1,Ashes,1
@@ -15,7 +15,7 @@ ID,Name,maxNum,category,maxRepositoryNum
 213000,Skeletal Bandit Ashes,1,Ashes,1
 214000,Oracle Envoy Ashes,1,Ashes,1
 215000,Putrid Corpse Ashes,1,Ashes,1
-2110,Depraved Perfumer Carmaan,1,Ashes,1
+216000,Depraved Perfumer Carmaan,1,Ashes,1
 217000,Perfumer Tricia,1,Ashes,1
 218000,Glintstone Sorcerer Ashes,1,Ashes,1
 219000,Twinsage Sorcerer Ashes,1,Ashes,1
@@ -25,7 +25,7 @@ ID,Name,maxNum,category,maxRepositoryNum
 223000,Cleanrot Knight Finlay,1,Ashes,1
 224000,Kindred of Rot Ashes,1,Ashes,1
 225000,Marionette Soldier Ashes,1,Ashes,1
-2210,Avionette Soldier Ashes,1,Ashes,1
+226000,Avionette Soldier Ashes,1,Ashes,1
 227000,Fire Monk Ashes,1,Ashes,1
 228000,Blackflame Monk Amon,1,Ashes,1
 229000,Man-Serpent Ashes,1,Ashes,1
@@ -35,7 +35,7 @@ ID,Name,maxNum,category,maxRepositoryNum
 233000,Giant Rat Ashes,1,Ashes,1
 234000,Demi-Human Ashes,1,Ashes,1
 235000,Rotten Stray Ashes,1,Ashes,1
-2310,Spirit Jellyfish Ashes,1,Ashes,1
+236000,Spirit Jellyfish Ashes,1,Ashes,1
 237000,Warhawk Ashes,1,Ashes,1
 238000,Stormhawk Deenh,1,Ashes,1
 239000,Bloodhound Knight Floh,1,Ashes,1
@@ -45,7 +45,7 @@ ID,Name,maxNum,category,maxRepositoryNum
 243000,Mad Pumpkin Head Ashes,1,Ashes,1
 244000,Land Squirt Ashes,1,Ashes,1
 245000,Miranda Sprout Ashes,1,Ashes,1
-2410,Soldjars of Fortune Ashes,1,Ashes,1
+246000,Soldjars of Fortune Ashes,1,Ashes,1
 247000,Omenkiller Rollo,1,Ashes,1
 248000,Greatshield Soldier Ashes,1,Ashes,1
 249000,Archer Ashes,1,Ashes,1
@@ -55,11 +55,11 @@ ID,Name,maxNum,category,maxRepositoryNum
 253000,Radahn Soldier Ashes,1,Ashes,1
 254000,Mausoleum Soldier Ashes,1,Ashes,1
 255000,Haligtree Soldier Ashes,1,Ashes,1
-2510,Ancient Dragon Knight Kristoff,1,Ashes,1
+256000,Ancient Dragon Knight Kristoff,1,Ashes,1
 257000,Redmane Knight Ogha,1,Ashes,1
 258000,Lhutel the Headless,1,Ashes,1
 259000,Nepheli Loux Puppet,1,Ashes,1
-2100,Dung Eater Puppet,1,Ashes,1
+260000,Dung Eater Puppet,1,Ashes,1
 261000,Finger Maiden Therolina Puppet,1,Ashes,1
 262000,Dolores the Sleeping Arrow Puppet,1,Ashes,1
 263000,Jarwight Puppet,1,Ashes,1
