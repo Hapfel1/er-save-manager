@@ -173,17 +173,27 @@ def _find_gaitem_by_item(slot, full_item_id: int):
     Returns (gaitem_index, gaitem_entry) or (-1, None).
     """
     cat_bits = _category(full_item_id)
+    base_id = full_item_id & 0x0FFFFFFF
     for i, g in enumerate(slot.gaitem_map):
         if g.gaitem_handle == 0:
             continue
-        if _category(g.item_id) != cat_bits and cat_bits != _CAT_WEAPON:
-            continue
+        g_prefix = g.gaitem_handle & 0xF0000000
         if cat_bits == _CAT_WEAPON:
+            if g_prefix != _PREFIX_WEAPON:
+                continue
             stored_base = (g.item_id & 0x0FFFFFFF) // 10000 * 10000
-            want_base = (full_item_id & 0x0FFFFFFF) // 10000 * 10000
+            want_base = base_id // 10000 * 10000
             if stored_base == want_base:
                 return i, g
+        elif cat_bits == _CAT_GEM:
+            # item_id stored without category bits; match on base_id via handle prefix
+            if g_prefix != _PREFIX_GEM:
+                continue
+            if g.item_id == base_id:
+                return i, g
         else:
+            if _category(g.item_id) != cat_bits:
+                continue
             if g.item_id == full_item_id:
                 return i, g
     return -1, None
