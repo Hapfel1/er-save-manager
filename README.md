@@ -131,6 +131,7 @@ Automatically detects issues with your game installation, your save file and any
 ### Community Preset Browser
 
 - Browse character appearance presets from the community
+- 104 NPC Appearance Presets from the Game's Data
 - Like your favorite presets
 - Download tracking
 - Submit your own presets to share with others
