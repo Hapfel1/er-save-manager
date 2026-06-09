@@ -639,42 +639,6 @@ class EnhancedPresetBrowser:
                 self.dialog.after(
                     0,
                     lambda: progress.update_status(
-                        "Validating cache",
-                        f"Processing {len(self.all_presets)} presets...",
-                    ),
-                )
-
-                # Validate cache entries in case index changed
-                invalidated_count = 0
-                for preset in self.all_presets:
-                    is_valid, _ = self.manager.validate_preset_in_index(
-                        preset["id"], preset
-                    )
-                    if not is_valid:
-                        invalidated_count += 1
-                        cache_dir = self.manager.cache_dir / preset["id"]
-                        if cache_dir.exists():
-                            import shutil
-
-                            try:
-                                shutil.rmtree(cache_dir)
-                            except Exception:
-                                pass
-                        preset_path = self.manager.cache_dir / f"{preset['id']}.json"
-                        if preset_path.exists():
-                            try:
-                                preset_path.unlink()
-                            except Exception:
-                                pass
-
-                if invalidated_count:
-                    print(
-                        f"Invalidated {invalidated_count} cached presets due to index changes"
-                    )
-
-                self.dialog.after(
-                    0,
-                    lambda: progress.update_status(
                         "Loading presets...", f"Loaded {len(self.all_presets)} presets"
                     ),
                 )
@@ -795,18 +759,27 @@ class EnhancedPresetBrowser:
             self.preset_widgets.append(empty)
             return
 
-        row = col = 0
-        for preset in self.filtered_presets:
-            card = self.create_preset_card(preset)
-            card.grid(row=row, column=col, padx=6, pady=6, sticky="nsew")
-            self.preset_widgets.append(card)
-            col += 1
-            if col >= 3:
-                col = 0
-                row += 1
-
         for i in range(3):
             self.grid_container.grid_columnconfigure(i, weight=1)
+
+        # Render in batches of 12 so the UI stays responsive
+        self._render_batch(self.filtered_presets, index=0, batch_size=12)
+
+    def _render_batch(self, presets: list, index: int, batch_size: int):
+        # Guard against a filter change mid-render
+        if presets is not self.filtered_presets:
+            return
+
+        end = min(index + batch_size, len(presets))
+        for i in range(index, end):
+            preset = presets[i]
+            card = self.create_preset_card(preset)
+            row, col = divmod(i, 3)
+            card.grid(row=row, column=col, padx=6, pady=6, sticky="nsew")
+            self.preset_widgets.append(card)
+
+        if end < len(presets):
+            self.dialog.after(0, lambda: self._render_batch(presets, end, batch_size))
 
     def create_preset_card(self, preset: dict[str, Any]):
         frame = ctk.CTkFrame(self.grid_container, corner_radius=6, border_width=1)
@@ -867,50 +840,49 @@ class EnhancedPresetBrowser:
         return frame
 
     def load_thumbnail(self, preset: dict[str, Any], label: ctk.CTkLabel):
-        preset_id = preset["id"]
-        cached = self.manager.get_cached_preset(preset_id)
-        if cached and "screenshot_path" in cached:
+        import threading
+
+        def _work():
             try:
-                img = Image.open(cached["screenshot_path"])
-                img.thumbnail((150, 150))
-                actual_size = img.size
-                label.configure(
-                    image=self._make_ctk_image(img, actual_size),
-                    text="",
-                    width=actual_size[0],
-                    height=actual_size[1],
-                    anchor="center",
-                )
-                return
+                preset_id = preset["id"]
+                cached = self.manager.get_cached_preset(preset_id)
+                if not (cached and "screenshot_path" in cached):
+                    cached = self.manager.download_preset(preset_id, preset)
+
+                if cached and "screenshot_path" in cached:
+                    img = Image.open(cached["screenshot_path"])
+                    img.thumbnail((150, 150))
+                    actual_size = img.size
+                    ctk_img = self._make_ctk_image(img, actual_size)
+
+                    def _apply():
+                        try:
+                            if label.winfo_exists():
+                                label.configure(
+                                    image=ctk_img,
+                                    text="",
+                                    width=actual_size[0],
+                                    height=actual_size[1],
+                                    anchor="center",
+                                )
+                        except Exception:
+                            pass
+
+                    self.dialog.after(0, _apply)
+                else:
+
+                    def _no_img():
+                        try:
+                            if label.winfo_exists():
+                                label.configure(text="[No Image]")
+                        except Exception:
+                            pass
+
+                    self.dialog.after(0, _no_img)
             except Exception:
                 pass
 
-        label.configure(text="[Downloading...]")
-        self.dialog.after(
-            0, lambda: self._download_and_display_thumbnail(preset, label)
-        )
-
-    def _download_and_display_thumbnail(
-        self, preset: dict[str, Any], label: ctk.CTkLabel
-    ):
-        try:
-            preset_id = preset["id"]
-            downloaded = self.manager.download_preset(preset_id, preset)
-            if downloaded and "screenshot_path" in downloaded:
-                img = Image.open(downloaded["screenshot_path"])
-                img.thumbnail((150, 150))
-                actual_size = img.size
-                label.configure(
-                    image=self._make_ctk_image(img, actual_size),
-                    text="",
-                    width=actual_size[0],
-                    height=actual_size[1],
-                    anchor="center",
-                )
-                return
-        except Exception:
-            pass
-        label.configure(text="[No Image]")
+        threading.Thread(target=_work, daemon=True).start()
 
     def preview_preset(self, preset: dict[str, Any]):
         self.current_preset = preset
@@ -1107,24 +1079,27 @@ class EnhancedPresetBrowser:
 
     def _refresh_all_thumbnails(self):
         for card in self.preset_widgets:
-            if hasattr(card, "preset") and hasattr(card, "thumb_label"):
-                preset = card.preset
-                label = card.thumb_label
-                cached = self.manager.get_cached_preset(preset["id"])
-                if cached and "screenshot_path" in cached and HAS_PIL:
-                    try:
-                        img = Image.open(cached["screenshot_path"])
-                        img.thumbnail((150, 150))
-                        actual_size = img.size
-                        label.configure(
-                            image=self._make_ctk_image(img, actual_size),
-                            text="",
-                            width=actual_size[0],
-                            height=actual_size[1],
-                            anchor="center",
-                        )
-                    except Exception:
-                        pass
+            if not (hasattr(card, "preset") and hasattr(card, "thumb_label")):
+                continue
+            preset = card.preset
+            label = card.thumb_label
+            cached = self.manager.get_cached_preset(preset["id"])
+            if cached and "screenshot_path" in cached and HAS_PIL:
+                try:
+                    if not label.winfo_exists():
+                        continue
+                    img = Image.open(cached["screenshot_path"])
+                    img.thumbnail((150, 150))
+                    actual_size = img.size
+                    label.configure(
+                        image=self._make_ctk_image(img, actual_size),
+                        text="",
+                        width=actual_size[0],
+                        height=actual_size[1],
+                        anchor="center",
+                    )
+                except Exception:
+                    pass
 
     def apply_to_slot(self):
         if not self.current_preset:
