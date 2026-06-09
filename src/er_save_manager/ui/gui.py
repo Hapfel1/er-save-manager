@@ -11,6 +11,7 @@ import tkinter as tk
 from importlib import resources
 from pathlib import Path
 from tkinter import filedialog, ttk
+from tkinter import font as tkfont
 
 import customtkinter as ctk
 
@@ -107,6 +108,19 @@ class SaveManagerGUI:
         except Exception:
             ctk.set_default_color_theme("dark-blue")
 
+        # Apply UI scaling before any widgets are created.
+        # Uses the saved value; falls back to auto-detecting the OS scale.
+        # set_widget_scaling scales CTk widget dimensions and fonts.
+        # The tk named fonts are also scaled so ttk/tk widgets match.
+        from er_save_manager.ui.settings import detect_system_scale
+
+        _saved_scale = self.settings.get("ui_scale", 1.0)
+        _scale = detect_system_scale() if _saved_scale is None else _saved_scale
+        if _scale != 1.0:
+            ctk.set_widget_scaling(_scale)
+            ctk.set_window_scaling(_scale)
+            self._scale_tk_fonts(_scale)
+
         # Initialize theme manager for any remaining ttk widgets (during migration)
         self.theme_manager = ThemeManager(theme_name)
 
@@ -177,6 +191,21 @@ class SaveManagerGUI:
 
         # Check for updates asynchronously (don't block UI startup)
         self.root.after(1000, self._check_for_updates)
+
+    @staticmethod
+    def _scale_tk_fonts(scale: float) -> None:
+        """Scale the three named tk fonts used by ttk/tk widgets.
+
+        CTk handles its own font scaling, but ttk.Treeview, ttk.Label,
+        tk.Text and similar widgets use the tk named fonts which are unaffected
+        by set_widget_scaling. Multiplying their size here keeps them in sync.
+        """
+        for name in ("TkDefaultFont", "TkTextFont", "TkFixedFont"):
+            try:
+                f = tkfont.nametofont(name)
+                f.configure(size=round(f.actual("size") * scale))
+            except Exception:
+                pass
 
     def _on_window_resize(self, event=None):
         """Debounce window resize events to improve responsiveness"""
@@ -2232,7 +2261,7 @@ class SaveManagerGUI:
         ctk.CTkLabel(
             main,
             text="Save Modified Externally",
-            font=("Segoe UI", 18, "bold"),
+            font=("Segoe UI", 16, "bold"),
         ).pack(pady=(0, 22))
 
         ctk.CTkLabel(
@@ -2241,7 +2270,7 @@ class SaveManagerGUI:
                 f"{self.save_path.name} was changed while the save manager\n"
                 "had it loaded. Reload to avoid overwriting those changes."
             ),
-            font=("Segoe UI", 16),
+            font=("Segoe UI", 14),
             justify=ctk.CENTER,
             wraplength=380,
         ).pack(pady=(0, 24))
