@@ -18,7 +18,7 @@ DS3 decrypted slot data parser.
 Weapon/armor 60-byte entry layout:
   [0:4]   gaitem_handle u32 LE  (bits 31-28 = type, bits 15-0 = sequential index)
   [4:8]   item_id u32 LE        (base weapon/armor ID from params)
-  [8:12]  sort index u32 LE     (gaitem sort key, typically equals sequential counter)
+  [8:12]  durability u32 LE        (current/max durability; set to max on spawn)
   [12:16] upgrade_level u32 LE  (0-10 for regular, 0-5 for special)
   [16:20] unknown u32
   [20:60] gem sockets (5 x 8 bytes; 0x80000000 = empty socket)
@@ -50,7 +50,11 @@ Each entry: 16 bytes
   [0:4]   gaitem_handle u32 LE
   [4:8]   item_id u32 LE
   [8:12]  quantity u32 LE
-  [12:16] index u32 LE  (lower 12 bits = sequential counter, upper 4 bits random)
+  [12:16] index u32 LE  (byte 0 = sequential counter, byte 1 = 0x00, bytes 2-3 = 0x65/0xFE armor or 0x00/0x00 weapon)
+
+Sentinel values:
+  h=0x00000000, iid=0xFFFFFFFF  pre-allocated weapon/armor placeholder (overwritten on spawn)
+  h=0x00000000, iid=0x00000000  empty goods/ring slot
 
 Counters (signed i16 LE):
   first:  inventory_start - 4
@@ -130,13 +134,13 @@ _STORAGE_BOX_SIZE = 0x8800
 _GESTURE_FROM_STORAGE_END = 0x0C
 _GESTURE_SIZE = 0xA4
 
-# Gaitem INSERT+TRIM constants
-_INSERT_EXPAND = 60  # new weapon/armor gaitem entry size
-_NULL_WEAPON_ID = (
-    0x0001ADB0  # null placeholder iid for pre-allocated weapon/armor gaitem entries
-)
-_TRIM_NET = 52  # bytes trimmed from end of slot data to compensate
-_END_TAIL = 0xD  # preserved trailing bytes at end of slot
+# Null gaitem placeholder: pre-allocated 60-byte weapon/armor entries in the gaitem table.
+# These have iid=_NULL_WEAPON_ID and are overwritten in-place when spawning an item.
+_NULL_WEAPON_ID = 0x0001ADB0
+
+# FFFF inventory sentinel: pre-allocated 16-byte slots that pair with null gaitem entries.
+# h=0, iid=0xFFFFFFFF. Overwritten in-place when the paired gaitem is consumed.
+_INV_FFFF_IID = 0xFFFFFFFF
 
 
 def _scan_gaitem(
@@ -145,6 +149,9 @@ def _scan_gaitem(
     """
     Scan the gaitem table and return the offset immediately after all entries.
     Variable-length: weapons/armor are 60 bytes; everything else is 8 bytes.
+
+    After the loop, if the final position lands on a WA entry that was not consumed
+    (step count exhausted), advance past it so gaitem_end is always past the last entry.
     """
     offset = start
     for _ in range(slots):
@@ -156,6 +163,13 @@ def _scan_gaitem(
             offset += GAITEM_WA_SIZE
         else:
             offset += GAITEM_BASE_SIZE
+    # If the slot count was exhausted mid-table, advance past any WA entry at the
+    # current position so gaitem_end is never left pointing into an unprocessed entry.
+    if offset + GAITEM_BASE_SIZE <= len(data):
+        handle = struct.unpack_from("<I", data, offset)[0]
+        type_bits = handle & 0xF0000000
+        if handle != 0 and type_bits in (ITEM_TYPE_WEAPON, ITEM_TYPE_ARMOR):
+            offset += GAITEM_WA_SIZE
     return offset
 
 
@@ -619,71 +633,95 @@ class DS3Slot:
         self._increment_inv_counters()
         return True
 
-    # --- Add weapons / armor (INSERT + TRIM) --------------------------------- #
+    # --- Add weapons / armor ------------------------------------------------- #
 
     def add_weapon_armor(
         self, item_id: int, item_type: int, upgrade: int = 0, durability: int = 50
     ) -> bool:
         """
-        Spawn a weapon or armor by replacing a pre-allocated null placeholder.
+        Spawn a weapon or armor item using pre-allocated null slots.
 
-        Scans the inventory for a weapon null entry (iid=_NULL_WEAPON_ID, type 0x80),
-        locates its matching gaitem, and patches both in-place.  For armor the handle
-        type bytes are updated from 0x80 to 0x90 so the game categorises it correctly.
-        Weapon nulls that appear before the goods section ensure the item lands in the
-        weapon/armor display region and is visible in-game.
+        Two save formats exist:
+        - Old: inventory has null-weapon entries (h=real_handle, iid=_NULL_WEAPON_ID)
+          paired 1:1 with their gaitem entry. The matching inv entry must be used.
+        - New: inventory has FFFF sentinels (h=0, iid=0xFFFFFFFF); the null gaitem
+          handle is written into the first available sentinel.
+
+        Using a FFFF sentinel when the paired null-weapon-inv entry exists would
+        leave that entry pointing at the now-real gaitem, causing a duplicate item.
+        Returns True on success, False if no null slots remain.
         """
         dyn = self._get_dynamic()
-        inv_start, inv_end = dyn["inv_start"], dyn["inv_data_end"]
+        inv_start = dyn["inv_start"]
+        inv_data_end = dyn["inv_data_end"]
 
-        for inv_off in range(inv_start, inv_end, _INV_ENTRY_SIZE):
-            h = _read_u32(self._data, inv_off)
-            if (h >> 28) == 8 and _read_u32(self._data, inv_off + 4) == _NULL_WEAPON_ID:
-                # Find matching gaitem
-                ga_off = GAITEM_TABLE_OFFSET
-                for _ in range(GAITEM_SLOT_COUNT):
-                    if ga_off + GAITEM_WA_SIZE > len(self._data):
-                        break
-                    gh = _read_u32(self._data, ga_off)
-                    if gh == h:
-                        return self._apply_null(
-                            ga_off, inv_off, h, item_id, item_type, upgrade, durability
-                        )
-                    ga_off += (
-                        GAITEM_WA_SIZE
-                        if (
-                            gh != 0
-                            and (gh & 0xF0000000) in (ITEM_TYPE_WEAPON, ITEM_TYPE_ARMOR)
-                        )
-                        else GAITEM_BASE_SIZE
-                    )
-        return False
+        # Locate first null gaitem entry.
+        ga_off = GAITEM_TABLE_OFFSET
+        null_ga_off: int | None = None
+        null_ga_handle: int = 0
+        for _ in range(GAITEM_SLOT_COUNT):
+            if ga_off + GAITEM_BASE_SIZE > len(self._data):
+                break
+            gh = _read_u32(self._data, ga_off)
+            giid = _read_u32(self._data, ga_off + 4)
+            type_bits = gh & 0xF0000000
+            if type_bits in (ITEM_TYPE_WEAPON, ITEM_TYPE_ARMOR):
+                if giid == _NULL_WEAPON_ID:
+                    null_ga_off = ga_off
+                    null_ga_handle = gh
+                    break
+                ga_off += GAITEM_WA_SIZE
+            else:
+                ga_off += GAITEM_BASE_SIZE
 
-    def _apply_null(
-        self,
-        ga_off: int,
-        inv_off: int,
-        old_handle: int,
-        item_id: int,
-        item_type: int,
-        upgrade: int,
-        durability: int,
-    ) -> bool:
-        new_type = 0x80 if item_type == ITEM_TYPE_WEAPON else 0x90
-        counter = old_handle & 0x0000FFFF
-        new_handle = (new_type << 24) | (new_type << 16) | counter
-        # Patch gaitem
-        _write_u32(self._data, ga_off, new_handle)
-        _write_u32(self._data, ga_off + 4, item_id)
-        _write_u32(self._data, ga_off + 8, durability)
-        _write_u32(self._data, ga_off + 12, upgrade)
-        _write_u32(self._data, ga_off + 16, 1)
-        # Patch inventory
-        _write_u32(self._data, inv_off, new_handle)
-        _write_u32(self._data, inv_off + 4, item_id)
+        if null_ga_off is None:
+            return False
+
+        # Locate the paired inventory slot.
+        # Prefer the matched null-weapon-inv entry (old saves) to avoid leaving a
+        # stale handle pointing at the newly written gaitem. Fall back to FFFF sentinel.
+        inv_off: int | None = None
+        ffff_off: int | None = None
+        off = inv_start
+        while off < inv_data_end:
+            h = _read_u32(self._data, off)
+            iid = _read_u32(self._data, off + 4)
+            if h == null_ga_handle and iid == _NULL_WEAPON_ID:
+                inv_off = off
+                break
+            if ffff_off is None and h == 0 and iid == _INV_FFFF_IID:
+                ffff_off = off
+            off += _INV_ENTRY_SIZE
+
+        if inv_off is None:
+            inv_off = ffff_off
+        if inv_off is None:
+            return False
+
+        # Overwrite gaitem entry in-place (60 bytes).
+        # For armor, update the top byte of the handle from 0x80 to 0x90; byte 2 stays 0x80.
+        ga_handle = null_ga_handle
         if item_type == ITEM_TYPE_ARMOR:
-            self._data[inv_off + 14] = 0x65
-            self._data[inv_off + 15] = 0xFE
+            ga_handle = (0x90000000) | (null_ga_handle & 0x00FFFFFF)
+        _write_u32(self._data, null_ga_off, ga_handle)
+        _write_u32(self._data, null_ga_off + 4, item_id)
+        _write_u32(self._data, null_ga_off + 8, durability)
+        _write_u32(self._data, null_ga_off + 12, upgrade)
+        _write_u32(self._data, null_ga_off + 16, 1)  # unk, always 1
+        for i in range(5):
+            _write_u32(self._data, null_ga_off + 20 + i * 8, 0x80000000)
+
+        # Overwrite inventory slot in-place (16 bytes).
+        idx_bytes = self._next_inv_index()
+        is_armor = item_type == ITEM_TYPE_ARMOR
+        _write_u32(self._data, inv_off, ga_handle)
+        _write_u32(self._data, inv_off + 4, item_id)
+        _write_u32(self._data, inv_off + 8, 1)
+        self._data[inv_off + 12] = idx_bytes[0]
+        self._data[inv_off + 13] = idx_bytes[1]
+        self._data[inv_off + 14] = 0x65 if is_armor else 0x00
+        self._data[inv_off + 15] = 0xFE if is_armor else 0x00
+
         self._increment_inv_counters()
         return True
 
@@ -717,24 +755,6 @@ class DS3Slot:
             off += _INV_ENTRY_SIZE
         return False
 
-    def iter_gaitem_raw(self, slots: int = GAITEM_SLOT_COUNT) -> list[DS3GaitemEntry]:
-        """Scan gaitem with a custom slot count (used internally during INSERT)."""
-        entries = []
-        offset = GAITEM_TABLE_OFFSET
-        for _ in range(slots):
-            if offset + GAITEM_BASE_SIZE > len(self._data):
-                break
-            handle = _read_u32(self._data, offset)
-            item_id = _read_u32(self._data, offset + 4)
-            type_bits = handle & 0xF0000000
-            if handle != 0 and type_bits in (ITEM_TYPE_WEAPON, ITEM_TYPE_ARMOR):
-                size = GAITEM_WA_SIZE
-            else:
-                size = GAITEM_BASE_SIZE
-            entries.append(DS3GaitemEntry(handle, item_id, offset, size))
-            offset += size
-        return entries
-
     def get_raw(self) -> bytearray:
         return self._data
 
@@ -767,57 +787,6 @@ def _build_goods_ring_slot(
     _write_u32(slot, 0, gh)
     _write_u32(slot, 4, item_id)
     _write_u32(slot, 8, qty)
-    slot[12] = idx_bytes[0]
-    slot[13] = idx_bytes[1]
-    slot[14] = 0xCF
-    slot[15] = 0x1F
-    return slot
-
-
-def _build_wa_gaitem_slot(
-    ga_hi: bytes, item_id: int, item_type: int, upgrade: int
-) -> bytearray:
-    """Build a 60-byte gaitem table entry for a weapon or armor."""
-    # Type constant bytes: 0x80 for weapons, 0x90 for armor
-    type_byte = 0x80 if item_type == ITEM_TYPE_WEAPON else 0x90
-    slot = bytearray(60)
-    # [0:2] = sequential handle counter (ga_hi = 2-byte LE)
-    slot[0] = ga_hi[0]
-    slot[1] = ga_hi[1]
-    # [2:4] = type flags
-    slot[2] = type_byte
-    slot[3] = type_byte
-    # [4:8] = item_id
-    _write_u32(slot, 4, item_id)
-    # [8:12] = current durability (= max durability on spawn; hardcoded 50 until
-    # maxDurabilityParam data is available; works for Dagger whose max = 50)
-    _write_u32(slot, 8, 50)
-    # [12:16] = upgrade level
-    _write_u32(slot, 12, upgrade & 0xFF)
-    # [16:20] = required flag; must be 1 or game ignores the entry
-    _write_u32(slot, 16, 1)
-    # [20:60] = 5 gem sockets, each 8 bytes; 0x80000000 = empty socket
-    for i in range(5):
-        _write_u32(slot, 20 + i * 8, 0x80000000)
-    return slot
-
-
-def _build_wa_inv_slot(
-    ga_hi: bytes, item_id: int, item_type: int, idx_bytes: tuple[int, int]
-) -> bytearray:
-    """Build a 16-byte inventory entry for a weapon or armor."""
-    type_byte = 0x80 if item_type == ITEM_TYPE_WEAPON else 0x90
-    slot = bytearray(16)
-    # gaitem_handle: [counter_lo][counter_hi][type_byte][type_byte]
-    slot[0] = ga_hi[0]
-    slot[1] = ga_hi[1]
-    slot[2] = type_byte
-    slot[3] = type_byte
-    # item_id
-    _write_u32(slot, 4, item_id)
-    # quantity = 1
-    _write_u32(slot, 8, 1)
-    # index bytes
     slot[12] = idx_bytes[0]
     slot[13] = idx_bytes[1]
     slot[14] = 0xCF
