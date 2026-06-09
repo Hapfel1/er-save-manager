@@ -11,6 +11,7 @@ All mutations backup then save immediately.
 from __future__ import annotations
 
 import json
+import re as _re
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
@@ -35,6 +36,29 @@ _TYPE_WEAPON = 0x8
 _TYPE_ARMOR = 0x9
 _TYPE_RING = 0xA
 _TYPE_GOOD = 0xB
+
+# Convergence weapon infusion: entries are named "Weapon [Infusion]".
+# These suffixes are internal and should not appear in the spawner list.
+_HIDDEN_INFUSIONS = frozenset({"npc", "load check"})
+
+# Convergence goods IDs >= this are spells; MaxStackCount should be clamped to 1.
+_SPELL_ID_MIN = 0x40100000
+
+
+def _split_conv_infusion(name: str) -> tuple[str, str | None]:
+    """Return (base_name, infusion) splitting trailing [Infusion] from name, or (name, None)."""
+    m = _re.search(r"\s*\[([^\]]+)\]$", name)
+    if m:
+        return name[: m.start()].strip(), m.group(1)
+    return name, None
+
+
+def _item_max_stack(item: dict) -> int:
+    """Return max stack count from MaxQuantity (param-derived), falling back to MaxStackCount."""
+    raw = int(item.get("MaxQuantity") or item.get("MaxStackCount") or 1)
+    if int(item.get("Id", "0x0"), 16) >= _SPELL_ID_MIN:
+        return 1
+    return raw
 
 
 def _ensure_db() -> tuple[dict, dict]:
@@ -132,10 +156,13 @@ class DS3InventoryTab:
         self._selected_inv_offset = -1
         self._selected_db_item: dict | None = None
         self._spawn_row_map: dict[str, dict] = {}
+        # Maps spawn tree row iid -> list of (infusion_label, item_dict) for weapons
+        # with multiple convergence infusion variants. Empty list = no dropdown needed.
+        self._infusion_variants: dict[str, list[tuple[str, dict]]] = {}
         self._all_items: list[tuple] = []
         self._sort_col: str | None = None
         self._sort_asc = True
-        # Mod toggles (mutually exclusive; vanilla items always shown)
+        # Mod toggles - when checked, per-mod category options appear in the dropdown
         self._mod_cinders = tk.BooleanVar(value=False)
         self._mod_convergence = tk.BooleanVar(value=False)
 
@@ -257,7 +284,7 @@ class DS3InventoryTab:
             row=0, column=0, columnspan=2, sticky="w", padx=10, pady=(10, 4)
         )
 
-        # Row 1: mod source toggles (Cinders and Convergence are mutually exclusive)
+        # Row 1: mod source toggles
         mod_row = ctk.CTkFrame(right, fg_color="transparent")
         mod_row.grid(row=1, column=0, columnspan=2, sticky="ew", padx=8, pady=(0, 4))
         ctk.CTkLabel(mod_row, text="Mod:", font=("Segoe UI", 10)).pack(
@@ -280,14 +307,15 @@ class DS3InventoryTab:
         frow = ctk.CTkFrame(right, fg_color="transparent")
         frow.grid(row=2, column=0, columnspan=2, sticky="ew", padx=8, pady=(0, 4))
         self._spawn_cat_var = tk.StringVar(value="All")
-        ctk.CTkComboBox(
+        self._spawn_cat_combo = ctk.CTkComboBox(
             frow,
             variable=self._spawn_cat_var,
-            values=["All"] + list(_CAT_LABELS.values()) + ["Cinders", "Convergence"],
+            values=self._build_cat_options(),
             state="readonly",
-            width=120,
+            width=180,
             command=lambda _: self._refresh_spawn_tree(),
-        ).pack(side="left", padx=(0, 6))
+        )
+        self._spawn_cat_combo.pack(side="left", padx=(0, 6))
         self._spawn_search_var = tk.StringVar()
         self._spawn_search_var.trace_add("write", lambda *_: self._refresh_spawn_tree())
         ctk.CTkEntry(
@@ -308,9 +336,28 @@ class DS3InventoryTab:
 
         # Spawn tree is populated on first character load, not at setup time
 
-        # Row 4: qty / upgrade / spawn
+        # Row 4: infusion dropdown (convergence weapons only)
+        inf_row = ctk.CTkFrame(right, fg_color="transparent")
+        inf_row.grid(row=4, column=0, columnspan=2, sticky="ew", padx=8, pady=(0, 2))
+        self._infusion_label = ctk.CTkLabel(inf_row, text="Infusion:")
+        self._infusion_label.pack(side="left", padx=(0, 4))
+        self._infusion_var = tk.StringVar(value="")
+        self._infusion_combo = ctk.CTkComboBox(
+            inf_row,
+            variable=self._infusion_var,
+            values=[],
+            state="readonly",
+            width=160,
+            command=self._on_infusion_select,
+        )
+        self._infusion_combo.pack(side="left")
+        # Hidden until a multi-variant weapon is selected
+        inf_row.grid_remove()
+        self._infusion_row = inf_row
+
+        # Row 5: qty / upgrade / spawn
         ctrl = ctk.CTkFrame(right, fg_color="transparent")
-        ctrl.grid(row=4, column=0, columnspan=2, sticky="ew", padx=8, pady=(0, 8))
+        ctrl.grid(row=5, column=0, columnspan=2, sticky="ew", padx=8, pady=(0, 8))
         ctk.CTkLabel(ctrl, text="Qty:").grid(row=0, column=0, padx=(0, 2), pady=4)
         self._spawn_qty_var = tk.StringVar(value="1")
         ctk.CTkEntry(ctrl, textvariable=self._spawn_qty_var, width=50).grid(
@@ -365,6 +412,38 @@ class DS3InventoryTab:
         self._current_slot = idx
         self._reload_inventory()
 
+    # --- Category helpers --------------------------------------------------- #
+
+    def _build_cat_options(self) -> list[str]:
+        """Build category dropdown options based on active mod checkboxes."""
+        options = ["All", "Weapons", "Ammo", "Armor", "Rings", "Goods"]
+        if self._mod_cinders.get():
+            options += [
+                "Cinders Weapons",
+                "Cinders Armor",
+                "Cinders Rings",
+                "Cinders Magic",
+                "Cinders Goods",
+            ]
+        if self._mod_convergence.get():
+            options += [
+                "Convergence Weapons",
+                "Convergence Armor",
+                "Convergence Rings",
+                "Convergence Magic",
+                "Convergence Goods",
+            ]
+        return options
+
+    def _on_mod_toggle(self) -> None:
+        options = self._build_cat_options()
+        self._spawn_cat_combo.configure(values=options)
+        # Reset to All if current selection is no longer valid
+        if self._spawn_cat_var.get() not in options:
+            self._spawn_cat_var.set("All")
+        self._reload_inventory()
+        self._refresh_spawn_tree()
+
     # --- Inventory tree ----------------------------------------------------- #
 
     def _reload_inventory(self) -> None:
@@ -378,9 +457,11 @@ class DS3InventoryTab:
             self._spawn_tree_ready = True
             self.parent.after(0, self._refresh_spawn_tree)
         active_mod = (
-            "cinders"
+            "convergence"
+            if self._mod_convergence.get()
+            else "cinders"
             if self._mod_cinders.get()
-            else ("convergence" if self._mod_convergence.get() else None)
+            else None
         )
         self._all_items = []
         for entry in char.iter_inventory():
@@ -423,58 +504,123 @@ class DS3InventoryTab:
         for offset, name, cat, qty, *_ in items:
             self._inv_tree.insert("", "end", iid=str(offset), values=(name, cat, qty))
 
-    def _on_mod_toggle(self) -> None:
-        """Enforce mutual exclusion and refresh both views."""
-        # Only one mod can be active at a time
-        if self._mod_cinders.get() and self._mod_convergence.get():
-            # Whichever was just toggled on wins; detect by which triggered this call
-            # We can't know which fired, so compare: most recently set wins via a flag
-            self._mod_convergence.set(False)
-        self._reload_inventory()
-        self._refresh_spawn_tree()
-
     def _refresh_spawn_tree(self) -> None:
         self._spawn_tree.delete(*self._spawn_tree.get_children())
         self._spawn_row_map.clear()
+        self._infusion_variants.clear()
+        self._infusion_row.grid_remove()
+        self._selected_db_item = None
 
         query = self._spawn_search_var.get().strip().lower()
         cat_label = self._spawn_cat_var.get()
 
-        # "Cinders" / "Convergence" in the dropdown filters to that mod's db only
-        mod_filter = cat_label if cat_label in ("Cinders", "Convergence") else None
-        cat_key = None
-        if not mod_filter and cat_label != "All":
-            cat_key = next((k for k, v in _CAT_LABELS.items() if v == cat_label), None)
+        # Parse cat_label: optional "[Mod] " prefix + category name
+        # "Magic" maps to goods_items filtered by spell ID range
+        _MOD_PREFIXES = {"Cinders": "cinders", "Convergence": "convergence"}
 
-        if mod_filter:
-            dbs_to_show = [_load_mod_db(mod_filter.lower())]
+        source_mod: str | None = None
+        cat_key: str | None = None  # DB category key, or None = all keys
+        spell_filter: bool | None = (
+            None  # True=spells only, False=non-spells, None=no filter
+        )
+
+        if cat_label != "All":
+            for prefix, mod in _MOD_PREFIXES.items():
+                if cat_label.startswith(prefix + " "):
+                    source_mod = mod
+                    sub = cat_label[len(prefix) + 1 :]
+                    if sub == "Magic":
+                        cat_key = "goods_items"
+                        spell_filter = True
+                    elif sub == "Goods":
+                        cat_key = "goods_items"
+                        spell_filter = False
+                    else:
+                        cat_key = next(
+                            (k for k, v in _CAT_LABELS.items() if v == sub), None
+                        )
+                    break
+            else:
+                cat_key = next(
+                    (k for k, v in _CAT_LABELS.items() if v == cat_label), None
+                )
+
+        # Build source list: mod sources only included when their checkbox is checked
+        db, _ = _ensure_db()
+        if source_mod:
+            sources = [(source_mod, _load_mod_db(source_mod))]
         else:
-            db, _ = _ensure_db()
-            dbs_to_show = [db]
+            sources = [("vanilla", db)]
             if self._mod_cinders.get():
-                dbs_to_show.append(_load_mod_db("cinders"))
+                sources.append(("cinders", _load_mod_db("cinders")))
             if self._mod_convergence.get():
-                dbs_to_show.append(_load_mod_db("convergence"))
+                sources.append(("convergence", _load_mod_db("convergence")))
 
-        items: list[dict] = []
-        for source_db in dbs_to_show:
+        from collections import defaultdict as _dd
+
+        conv_weapon_groups: dict[str, list[tuple[str, dict]]] = _dd(list)
+        flat_items: list[tuple] = []
+
+        _HIDE = frozenset({"npc", "load check", "test"})
+
+        for mod_key, source_db in sources:
             for db_cat, cat_items in source_db.items():
                 if cat_key and db_cat != cat_key:
                     continue
                 for item in cat_items:
-                    if query and query not in item["Name"].lower():
+                    name = item["Name"]
+                    if name.lower() in _HIDE:
                         continue
-                    items.append(item)
+                    base, infusion = _split_conv_infusion(name)
+                    if infusion and infusion.lower() in _HIDDEN_INFUSIONS:
+                        continue
+                    # Apply spell/non-spell filter for Magic/Goods mod subcategories
+                    if spell_filter is not None:
+                        is_spell = int(item.get("Id", "0x0"), 16) >= _SPELL_ID_MIN
+                        if is_spell != spell_filter:
+                            continue
+                    if (
+                        query
+                        and query not in name.lower()
+                        and query not in base.lower()
+                    ):
+                        continue
+                    if "MaxStackCount" in item:
+                        item = dict(item)
+                        item["MaxStackCount"] = _item_max_stack(item)
 
-        self._insert_spawn_batch(items, 0)
+                    if (
+                        mod_key == "convergence"
+                        and db_cat == "weapon_items"
+                        and infusion
+                    ):
+                        conv_weapon_groups[base].append((infusion, item))
+                    else:
+                        flat_items.append((name, item))
+
+        for base, variants in conv_weapon_groups.items():
+            if len(variants) == 1:
+                flat_items.append((base, variants[0][1]))
+            else:
+                _, rep_item = variants[0]
+                flat_items.append((base, rep_item, variants))
+
+        self._insert_spawn_batch(flat_items, 0)
 
     _SPAWN_BATCH = 150
 
     def _insert_spawn_batch(self, items: list, start: int) -> None:
         end = min(start + self._SPAWN_BATCH, len(items))
-        for item in items[start:end]:
-            row_iid = self._spawn_tree.insert("", "end", values=(item["Name"],))
-            self._spawn_row_map[row_iid] = item
+        for entry in items[start:end]:
+            if len(entry) == 3:
+                display_name, item, variants = entry
+                row_iid = self._spawn_tree.insert("", "end", values=(display_name,))
+                self._spawn_row_map[row_iid] = item
+                self._infusion_variants[row_iid] = variants
+            else:
+                display_name, item = entry
+                row_iid = self._spawn_tree.insert("", "end", values=(display_name,))
+                self._spawn_row_map[row_iid] = item
         if end < len(items):
             self.parent.after(0, lambda s=end: self._insert_spawn_batch(items, s))
 
@@ -501,19 +647,53 @@ class DS3InventoryTab:
         if not sel:
             self._selected_db_item = None
             self._spawn_info.configure(text="")
+            self._infusion_row.grid_remove()
             return
-        entry = self._spawn_row_map.get(sel[0])
-        self._selected_db_item = entry
-        if entry:
-            max_up = int(entry.get("MaxUpgrade") or 0)
-            max_stk = int(entry.get("MaxStackCount") or 1)
-            self._spawn_info.configure(
-                text=f"Max stack: {max_stk}"
-                + (f"  Max upgrade: +{max_up}" if max_up else "")
-            )
-            self._spawn_upg_entry.configure(state="normal" if max_up else "disabled")
-            if not max_up:
-                self._spawn_upg_var.set("0")
+        row_iid = sel[0]
+        entry = self._spawn_row_map.get(row_iid)
+        variants = self._infusion_variants.get(row_iid, [])
+
+        if variants:
+            # Multi-infusion convergence weapon - show dropdown, default to first
+            labels = [inf for inf, _ in variants]
+            self._infusion_combo.configure(values=labels)
+            self._infusion_var.set(labels[0])
+            self._infusion_row.grid()
+            # Use first variant as the active item
+            self._selected_db_item = variants[0][1]
+        else:
+            self._infusion_row.grid_remove()
+            self._selected_db_item = entry
+
+        self._update_spawn_info()
+
+    def _on_infusion_select(self, _value: str) -> None:
+        sel = self._spawn_tree.selection()
+        if not sel:
+            return
+        row_iid = sel[0]
+        variants = self._infusion_variants.get(row_iid, [])
+        chosen = self._infusion_var.get()
+        for inf, item in variants:
+            if inf == chosen:
+                self._selected_db_item = item
+                self._update_spawn_info()
+                return
+
+    def _update_spawn_info(self) -> None:
+        entry = self._selected_db_item
+        if not entry:
+            self._spawn_info.configure(text="")
+            return
+        max_up = int(entry.get("MaxUpgrade") or 0)
+        max_stk = _item_max_stack(entry)
+        self._spawn_info.configure(
+            text=f"Max stack: {max_stk}"
+            + (f"  Max upgrade: +{max_up}" if max_up else "")
+        )
+        self._spawn_upg_entry.configure(state="normal" if max_up else "disabled")
+        if not max_up:
+            self._spawn_upg_var.set("0")
 
     # --- Sort --------------------------------------------------------------- #
 
@@ -609,6 +789,15 @@ class DS3InventoryTab:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
 
     def _spawn_item(self) -> None:
+        if getattr(self, "_spawn_in_progress", False):
+            return
+        self._spawn_in_progress = True
+        try:
+            self._do_spawn_item()
+        finally:
+            self._spawn_in_progress = False
+
+    def _do_spawn_item(self) -> None:
         entry = self._selected_db_item
         if entry is None:
             CTkMessageBox.showwarning(
@@ -632,7 +821,7 @@ class DS3InventoryTab:
             )
             return
 
-        max_stk = int(entry.get("MaxStackCount") or 1)
+        max_stk = _item_max_stack(entry)
         max_up = int(entry.get("MaxUpgrade") or 0)
         qty = max(1, min(qty, max_stk))
         upg = max(0, min(upg, max_up))
@@ -662,7 +851,8 @@ class DS3InventoryTab:
             return
 
         if type_nibble in (_TYPE_WEAPON, _TYPE_ARMOR):
-            ok = char.add_weapon_armor(item_id, item_type, upg)
+            dur = int(entry.get("MaxDurability") or entry.get("Durability") or 50)
+            ok = char.add_weapon_armor(item_id, item_type, upg, dur)
         else:
             ok = char.add_goods_rings(item_id, item_type, qty)
 
