@@ -78,7 +78,7 @@ STARTING_CLASSES = {
         "faith": 16,
         "arcane": 10,
     },
-    6: {
+    7: {
         "name": "Samurai",
         "level": 9,
         "vigor": 12,
@@ -90,7 +90,7 @@ STARTING_CLASSES = {
         "faith": 8,
         "arcane": 8,
     },
-    7: {
+    8: {
         "name": "Prisoner",
         "level": 9,
         "vigor": 11,
@@ -102,7 +102,7 @@ STARTING_CLASSES = {
         "faith": 6,
         "arcane": 9,
     },
-    8: {
+    6: {
         "name": "Confessor",
         "level": 10,
         "vigor": 10,

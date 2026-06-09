@@ -107,10 +107,9 @@ def _next_gaitem_handle(slot, prefix: int) -> int:
     Upper 16 bits encode category. Lower 16 bits are a sequential counter
     shared across all categories so handles from different categories never collide.
 
-    The second byte (bits 16-23) is read from the first non-empty gaitem entry
-    and mirrored for all spawned handles - matching clay's ER-Save-Editor approach.
-    PC saves use 0x80; PS saves use 0x81-0x87. Using 0x00 (PC default on PS)
-    causes the game engine to treat items as phantom/invalid.
+    The second byte (bits 16-23) is mirrored from the first non-empty gaitem entry.
+    PC saves use 0x80; PS/Switch saves use 0x81-0x87. Writing 0x80 on console
+    saves causes the game engine to treat items as phantom/invalid.
     """
     max_lower16 = 0
     second_byte = 0x80  # PC default
@@ -175,22 +174,33 @@ def _find_gaitem_by_item(slot, full_item_id: int):
     Find a gaitem entry matching full_item_id.
 
     For weapons, matches on base_id (ignores upgrade suffix and infusion code).
-    For armor and gems, matches on exact item_id.
+    For gems, matches on either full_item_id or base_id.
+    For armor and other types, matches on exact item_id.
 
     Returns (gaitem_index, gaitem_entry) or (-1, None).
     """
     cat_bits = _category(full_item_id)
+    base_id = full_item_id & 0x0FFFFFFF
     for i, g in enumerate(slot.gaitem_map):
         if g.gaitem_handle == 0:
             continue
-        if _category(g.item_id) != cat_bits and cat_bits != _CAT_WEAPON:
-            continue
+        g_prefix = g.gaitem_handle & 0xF0000000
         if cat_bits == _CAT_WEAPON:
+            if g_prefix != _PREFIX_WEAPON:
+                continue
             stored_base = (g.item_id & 0x0FFFFFFF) // 10000 * 10000
-            want_base = (full_item_id & 0x0FFFFFFF) // 10000 * 10000
+            want_base = base_id // 10000 * 10000
             if stored_base == want_base:
                 return i, g
+        elif cat_bits == _CAT_GEM:
+            if g_prefix != _PREFIX_GEM:
+                continue
+            # Match either base_id or full_item_id
+            if g.item_id == base_id or g.item_id == full_item_id:
+                return i, g
         else:
+            if _category(g.item_id) != cat_bits:
+                continue
             if g.item_id == full_item_id:
                 return i, g
     return -1, None
@@ -616,7 +626,15 @@ def add_item(
     acq_idx = _global_next_acq_index(slot)
     inv_slot = _first_empty_inv_slot(inventory)
     if inv_slot == -1:
-        raise ValueError(f"inventory {location!r} is full")
+        if location == "held":
+            # Held inventory full - fall back to storage
+            location = "storage"
+            inventory = _select_inventory(slot, location)
+            inv_slot = _first_empty_inv_slot(inventory)
+            if inv_slot == -1:
+                raise ValueError("both held and storage inventories are full")
+        else:
+            raise ValueError("storage inventory is full")
 
     entry = InventoryItem()
     entry.gaitem_handle = handle

@@ -61,7 +61,7 @@ class DSREditorTab:
         self._current_slot = -1
         self._stat_vars: dict[str, tk.StringVar] = {}
         self._name_var = tk.StringVar()
-        self._gender_var = tk.StringVar(value="Male")
+        self._body_type_var = tk.StringVar(value="Type A (Male)")
         self._class_var = tk.StringVar(value=_CLASSES[0])
         self._covenant_var = tk.StringVar(value=_COVENANTS[0])
         self._ng_var = tk.StringVar(value="0")
@@ -199,7 +199,12 @@ class DSREditorTab:
 
         rows = [
             ("Name:", self._name_var, "entry", None),
-            ("Gender:", self._gender_var, "combo", ["Male", "Female"]),
+            (
+                "Body Type:",
+                self._body_type_var,
+                "combo",
+                ["Type A (Male)", "Type B (Female)"],
+            ),
             ("Class:", self._class_var, "combo", _CLASSES),
             ("Covenant:", self._covenant_var, "combo", _COVENANTS),
             ("NG+:", self._ng_var, "combo", [str(i) for i in range(8)]),
@@ -292,7 +297,9 @@ class DSREditorTab:
         self._stat_vars["souls"].set(str(char.souls))
         self._stat_vars["humanity"].set(str(char.humanity))
         self._name_var.set(char.name)
-        self._gender_var.set("Female" if char.gender == 1 else "Male")
+        self._body_type_var.set(
+            "Type A (Male)" if char.body_type == 1 else "Type B (Female)"
+        )
         cls = int(char.player_class)
         self._class_var.set(_CLASSES[cls] if cls < len(_CLASSES) else str(cls))
         cov = int(char.covenant)
@@ -382,7 +389,7 @@ class DSREditorTab:
             return
         try:
             char.name = self._name_var.get()
-            char.gender = 1 if self._gender_var.get() == "Female" else 0
+            char.body_type = 1 if self._body_type_var.get() == "Type A (Male)" else 0
             char.player_class = type(char.player_class)(
                 _CLASSES.index(self._class_var.get())
             )
