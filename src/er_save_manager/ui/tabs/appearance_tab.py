@@ -782,8 +782,14 @@ class AppearanceTab:
             with open(json_path) as f:
                 data = json.load(f)
 
-            # Support both formats: direct list or {'presets': [...]}
-            if isinstance(data, dict) and "presets" in data:
+            # Support formats:
+            #   {"presets": [...]}           - UI export (raw appearance dicts)
+            #   {"presets": [{"slot","data"}]} - save.py export
+            #   {"description","appearance"} - single NPC preset
+            #   [...]                        - bare list
+            if isinstance(data, dict) and "appearance" in data:
+                presets = [data["appearance"]]
+            elif isinstance(data, dict) and "presets" in data:
                 presets = data["presets"]
             elif isinstance(data, list):
                 presets = data
