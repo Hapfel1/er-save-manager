@@ -3,6 +3,63 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.4.1
+**Released:** June 09, 2026
+
+
+### 🔧 Bug Fixes
+
+- Ashes Name Resolution, Allow Duplicate Talismans, Fix Melee filter exlcuding infused weapons in visual inventory ([54c9742](https://github.com/Hapfel1/er-save-manager/commit/54c97424d0cb4f7f60413ca89f85af37f4294706))
+
+- Removed "No Presets" warning as this is not needed anymore and is possible now ([53bb5e7](https://github.com/Hapfel1/er-save-manager/commit/53bb5e77000ff4dafde6c2fae3171e0d343c9b08))
+
+- Fix incorrect starting class ID assignment #169 ([b34f070](https://github.com/Hapfel1/er-save-manager/commit/b34f07040a00cb61fc07d76324e246b09f90bd80))
+
+- Enforce class stat minimums in stats editor, notify on archetype change ([806f742](https://github.com/Hapfel1/er-save-manager/commit/806f7427fe2d87ed10b5c66161912680dd97cbbd))
+
+- Correct wrong IDs for 8 ashes in Ashes.csv and DLCAshes.csv #170 ([b0d9c70](https://github.com/Hapfel1/er-save-manager/commit/b0d9c70d728fd90ccec56f5c001c971c50e59df1))
+
+- Correct body type encoding, NPC alive/dead offset handling `[DSR]` ([b4a7c4d](https://github.com/Hapfel1/er-save-manager/commit/b4a7c4d70642498822785ce180ea739f019ccf58))
+
+- Match gems in gaitem map by base_id via handle prefix ([aa71552](https://github.com/Hapfel1/er-save-manager/commit/aa71552df77d5ed5ace830f2d684a295f41184d8))
+
+- Hide PS button for non-ER games, fix item gib DS3 nav, restore SteamID tab position on PC save reloadfix: hide PS button for non-ER games, fix item gib DS3 nav, restore SteamID tab position on PC save reload ([6d8a3e2](https://github.com/Hapfel1/er-save-manager/commit/6d8a3e2282342e51bcb26fc0fdc68aa2419cbe92))
+
+- Mirror gaitem handle second byte from save; add held→storage fallback ([9b05cfd](https://github.com/Hapfel1/er-save-manager/commit/9b05cfdbba7eecdd16e5c955ce3daaa77c06adea))
+
+- Redo Item DB by getting data from Params ([722501a](https://github.com/Hapfel1/er-save-manager/commit/722501ae6ea4330aef7296a5e94e97195af45756))
+
+- Match gem gaitem by base_id or full_item_id ([63edea5](https://github.com/Hapfel1/er-save-manager/commit/63edea5f15145fd65a1083d7a7faf570b462d829))
+
+- Fix weapon spawn `[DS3]` ([0ddffc4](https://github.com/Hapfel1/er-save-manager/commit/0ddffc445c4ad1b24451767f8a24adcaf8e87f02))
+
+- Accept more formats in the appearance tab JSON import ([5bc098a](https://github.com/Hapfel1/er-save-manager/commit/5bc098aa55f18749103853c424407eb75f6c521b))
+
+- Potential PS fix for spawning weapons ([fdc0d52](https://github.com/Hapfel1/er-save-manager/commit/fdc0d524061e2c81a2adf6126c5a608166f10887))
+
+- Read second byte from first gaitem entry and reuse it for all spawned handle ([3018686](https://github.com/Hapfel1/er-save-manager/commit/3018686fc036913a572a0c06d58e9db42e5ab140))
+
+- Default UI scale to 100% instead of Auto ([e816c9f](https://github.com/Hapfel1/er-save-manager/commit/e816c9fe802f8bbb33084962dab7f911a5cfade9))
+
+- Lazy-load preset thumbnails in background threads ([e1f1388](https://github.com/Hapfel1/er-save-manager/commit/e1f1388b9f3a39a4681ccd3af70a2e97944ded59))
+
+
+
+### 🎨 User Interface
+
+- Added Display Scale Setting ([69f462f](https://github.com/Hapfel1/er-save-manager/commit/69f462f37d2d44ee65358af5df02b0667fb35806))
+
+- Add 104 NPC appearance presets to the preset browser ([6b07f97](https://github.com/Hapfel1/er-save-manager/commit/6b07f97f1732a749a758d572e1e1f58f3eabe0ac))
+
+
+
+### 📦 Dependencies
+
+- Bump the github-actions group with 3 updates `[deps]` ([4c838e8](https://github.com/Hapfel1/er-save-manager/commit/4c838e84ede334d78e712c2a588dd5464a1dbe16))
+
+
+
+---
 ## 📦 Release 1.4.0
 **Released:** June 04, 2026
 
@@ -1018,6 +1075,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.4.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.4.0..v1.4.1
 [1.4.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.3.2..v1.4.0
 [1.3.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.3.1..v1.3.2
 [1.3.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.3.0..v1.3.1
