@@ -174,7 +174,8 @@ def _find_gaitem_by_item(slot, full_item_id: int):
     Find a gaitem entry matching full_item_id.
 
     For weapons, matches on base_id (ignores upgrade suffix and infusion code).
-    For armor and gems, matches on exact item_id.
+    For gems, matches on either full_item_id or base_id.
+    For armor and other types, matches on exact item_id.
 
     Returns (gaitem_index, gaitem_entry) or (-1, None).
     """
@@ -192,10 +193,10 @@ def _find_gaitem_by_item(slot, full_item_id: int):
             if stored_base == want_base:
                 return i, g
         elif cat_bits == _CAT_GEM:
-            # item_id stored without category bits; match on base_id via handle prefix
             if g_prefix != _PREFIX_GEM:
                 continue
-            if g.item_id == base_id:
+            # Match either base_id or full_item_id
+            if g.item_id == base_id or g.item_id == full_item_id:
                 return i, g
         else:
             if _category(g.item_id) != cat_bits:
