@@ -47,6 +47,16 @@ from er_save_manager.ui.tabs import (
 from er_save_manager.ui.theme import ThemeManager
 from er_save_manager.ui.utils import open_url, trace_variable
 
+# Nightreign
+try:
+    from er_save_manager.games.NR.editor_tab import NREditorTab
+    from er_save_manager.games.NR.inspector_tab import NRInspectorTab
+    from er_save_manager.games.NR.parser import NightreignSave
+
+    _NR_AVAILABLE = True
+except ImportError:
+    _NR_AVAILABLE = False
+
 
 class SaveManagerGUI:
     """Main GUI application for Elden Ring Save Manager"""
@@ -146,6 +156,8 @@ class SaveManagerGUI:
         self.dsr_save = None
         # DS3-specific parsed save
         self.ds3_save = None
+        # Nightreign parsed save
+        self._nr_save: NightreignSave | None = None
         self._file_load_buttons: list = []
 
         # Lazy loading flags (track which tabs have been initialized with data)
@@ -682,6 +694,7 @@ class SaveManagerGUI:
         # on widgets that are about to be destroyed.
         self.dsr_save = None
         self.ds3_save = None
+        self._nr_save = None
 
         for attr in (
             "inspector_tab",
@@ -705,6 +718,9 @@ class SaveManagerGUI:
             "ds3_inventory_tab",
             "ds3_bosses_tab",
             "ds3_world_tab",
+            "nr_inspector_tab",
+            "nr_editor_tab",
+            "nr_steamid_tab",
         ):
             setattr(self, attr, None)
 
@@ -875,6 +891,10 @@ class SaveManagerGUI:
     def _create_other_game_tabs(self, profile):
         """Create the reduced tab set for non-Elden Ring games."""
 
+        if profile.key == "nightreign" and _NR_AVAILABLE:
+            self._create_nightreign_tabs(profile)
+            return
+
         if profile.key == "dark_souls_3":
             from er_save_manager.games.DS3.tabs import (
                 DS3BossesTab,
@@ -1039,6 +1059,56 @@ class SaveManagerGUI:
             root=self.root,
         )
         self.settings_tab.setup_ui()
+
+    def _create_nightreign_tabs(self, profile):
+        """Create tab set for Nightreign."""
+        self.nr_inspector_tab = None
+        self.nr_editor_tab = None
+        self.nr_steamid_tab = None
+
+        self.notebook.add("Inspector")
+        self.nr_inspector_tab = NRInspectorTab(
+            self.notebook.tab("Inspector"),
+            lambda: self._nr_save,
+            on_slot_selected=self._nr_on_slot_selected,
+        )
+        self.nr_inspector_tab.setup_ui()
+
+        self.notebook.add("Editor")
+        self.nr_editor_tab = NREditorTab(
+            self.notebook.tab("Editor"),
+            lambda: self._nr_save,
+            lambda: self.save_path,
+            self.show_toast,
+        )
+        self.nr_editor_tab.setup_ui()
+
+        self.notebook.add("SteamID Patcher")
+        self.nr_steamid_tab = SteamIDPatcherTab(
+            self.notebook.tab("SteamID Patcher"),
+            lambda: self.save_file,
+            lambda: self.save_path,
+            self.reload_save,
+            self.show_toast,
+        )
+        self.nr_steamid_tab.setup_ui()
+        self.nr_steamid_tab.set_active_profile(profile.name)
+
+        self.notebook.add("Settings")
+        self.settings_tab = SettingsTab(
+            self.notebook.tab("Settings"),
+            get_save_path_callback=lambda: self.save_path,
+            get_default_save_path_callback=lambda: self.default_save_path,
+            active_game=profile.key,
+            root=self.root,
+        )
+        self.settings_tab.setup_ui()
+
+    def _nr_on_slot_selected(self, slot_index: int) -> None:
+        """Navigate from inspector to editor for the selected slot."""
+        if hasattr(self, "nr_editor_tab") and self.nr_editor_tab:
+            self.nr_editor_tab.load_slot(slot_index)
+            self.notebook.set("Editor")
 
     def setup_character_editor_tab(self, parent):
         """Setup character editor tab with modular editors"""
@@ -1710,6 +1780,8 @@ class SaveManagerGUI:
             self.root.after(500, lambda p=save_path: self._load_dsr_save(p))
         elif self.active_game == "dark_souls_3":
             self.root.after(500, lambda p=save_path: self._load_ds3_save(p))
+        elif self.active_game == "nightreign" and _NR_AVAILABLE:
+            self.root.after(500, lambda p=save_path: self._load_nr_save(p))
         else:
             self._load_non_er_save(save_path)
 
@@ -1862,6 +1934,9 @@ class SaveManagerGUI:
         if self.active_game == "dark_souls_3":
             self._load_ds3_save(save_path)
             return
+        if self.active_game == "nightreign" and _NR_AVAILABLE:
+            self._load_nr_save(save_path)
+            return
 
         # Start loading in background thread
         self.status_var.set("Loading save file...")
@@ -1997,6 +2072,53 @@ class SaveManagerGUI:
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         self.show_toast(
             f"DS3 save loaded: {os.path.basename(save_path)}", duration=2500
+        )
+
+    def _load_nr_save(self, save_path: str) -> None:
+        """Parse a Nightreign save file and refresh all NR tabs."""
+        profile = self._active_profile()
+        if (
+            not self.settings.get("skip_game_running_check", False)
+            and profile
+            and profile.process_name
+            and self.is_game_running(profile.process_name)
+        ):
+            if not self._handle_game_running_dialog(profile):
+                return
+
+        try:
+            self._nr_save = NightreignSave.from_file(save_path)
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error", f"Failed to load Nightreign save:\n{e}", parent=self.root
+            )
+            return
+
+        self.save_path = Path(save_path)
+        self.save_file = None
+
+        for attr in ("nr_inspector_tab", "nr_editor_tab"):
+            tab = getattr(self, attr, None)
+            if tab is not None:
+                tab.refresh()
+
+        if hasattr(self, "nr_editor_tab") and self.nr_editor_tab:
+            self.nr_editor_tab.refresh_slot_list()
+
+        if hasattr(self, "nr_steamid_tab") and self.nr_steamid_tab:
+            if self._nr_save and self._nr_save.profile:
+                sid = self._nr_save.profile.steam_id
+                path = Path(save_path)
+                try:
+                    self.nr_steamid_tab.current_steamid_var.set(
+                        f"Save: {path.name}  |  SteamID: {sid}"
+                    )
+                except Exception:
+                    pass
+
+        self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
+        self.show_toast(
+            f"Nightreign save loaded: {os.path.basename(save_path)}", duration=2500
         )
 
     def reload_save(self):
