@@ -172,6 +172,157 @@ def _item_name(
     return name
 
 
+# ---- item event flag side-effects -------------------------------------------
+
+# Maps goods base item ID to the event flag(s) that must be set/cleared with it.
+# Crafting Kit also needs flag 60120 (Crafting Unlocked) in addition to its own.
+_ITEM_EVENT_FLAGS: dict[int, list[int]] = {
+    # Crafting Kit
+    8500: [60120],
+    # Whetstone Knife
+    8590: [60130],
+    # Whetblades
+    8970: [65610],
+    8971: [65640],
+    8972: [65660],
+    8973: [65680],
+    8974: [65700],
+    # Vanilla cookbooks
+    9300: [67000],
+    9301: [67010],
+    9302: [67020],
+    9303: [67030],
+    9305: [67050],
+    9306: [67060],
+    9307: [67070],
+    9308: [67080],
+    9309: [67090],
+    9310: [67100],
+    9311: [67110],
+    9312: [67120],
+    9313: [67130],
+    9320: [67200],
+    9321: [67210],
+    9322: [67220],
+    9323: [67230],
+    9325: [67250],
+    9326: [67260],
+    9327: [67270],
+    9328: [67280],
+    9329: [67290],
+    9330: [67300],
+    9331: [67310],
+    9340: [67400],
+    9341: [67410],
+    9342: [67420],
+    9343: [67430],
+    9344: [67440],
+    9345: [67450],
+    9346: [67460],
+    9347: [67470],
+    9348: [67480],
+    9360: [67600],
+    9361: [67610],
+    9363: [67630],
+    9364: [67640],
+    9365: [67650],
+    9380: [67800],
+    9383: [67830],
+    9384: [67840],
+    9385: [67850],
+    9386: [67860],
+    9387: [67870],
+    9388: [67880],
+    9389: [67890],
+    9390: [67900],
+    9391: [67910],
+    9392: [67920],
+    9400: [68000],
+    9401: [68010],
+    9402: [68020],
+    9403: [68030],
+    9420: [68200],
+    9421: [68210],
+    9422: [68220],
+    9423: [68230],
+    9440: [68400],
+    9441: [68410],
+    # DLC cookbooks
+    2009301: [68510],
+    2009302: [68520],
+    2009303: [68530],
+    2009304: [68540],
+    2009305: [68550],
+    2009306: [68560],
+    2009307: [68570],
+    2009308: [68580],
+    2009309: [68590],
+    2009310: [68600],
+    2009311: [68610],
+    2009312: [68620],
+    2009313: [68630],
+    2009314: [68640],
+    2009315: [68650],
+    2009316: [68660],
+    2009317: [68670],
+    2009318: [68680],
+    2009319: [68690],
+    2009320: [68700],
+    2009321: [68710],
+    2009322: [68720],
+    2009323: [68730],
+    2009324: [68740],
+    2009325: [68750],
+    2009326: [68760],
+    2009327: [68770],
+    2009328: [68780],
+    2009329: [68790],
+    2009330: [68800],
+    2009331: [68810],
+    2009332: [68820],
+    2009333: [68830],
+    2009334: [68840],
+    2009335: [68850],
+    2009336: [68860],
+    2009337: [68870],
+    2009338: [68880],
+    2009339: [68890],
+    2009340: [68900],
+    2009341: [68910],
+    2009342: [68920],
+    2009343: [68930],
+    2009344: [68940],
+    2009345: [68950],
+}
+
+_EVENT_FLAGS_SIZE = 0x1BF99F
+
+
+def _apply_item_event_flags(
+    save_file, slot_idx: int, full_item_id: int, state: bool
+) -> None:
+    """Set or clear event flags correlated with a key item spawn/removal."""
+    from er_save_manager.parser.event_flags import EventFlags
+
+    base_id = full_item_id & 0x0FFFFFFF
+    flag_ids = _ITEM_EVENT_FLAGS.get(base_id)
+    if not flag_ids:
+        return
+
+    slot = save_file.character_slots[slot_idx]
+    if not hasattr(slot, "event_flags") or not slot.event_flags:
+        return
+
+    buf = bytearray(slot.event_flags)
+    for flag_id in flag_ids:
+        EventFlags.set_flag(buf, flag_id, state)
+    slot.event_flags = bytes(buf)
+
+    if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
+        off = slot.event_flags_offset
+        save_file._raw_data[off : off + _EVENT_FLAGS_SIZE] = slot.event_flags
+
+
 # ---- editor -----------------------------------------------------------------
 
 
@@ -1151,6 +1302,8 @@ class InventoryEditor:
     def _collect_section(
         self, header, items, gaitem_map, location, key, is_convergence: bool = False
     ):
+        from er_save_manager.parser.inventory_ops import _is_key_item
+
         rows: list[tuple[str, int, str]] = []
 
         for inv_item in items:
@@ -1169,7 +1322,7 @@ class InventoryEditor:
                 if affinity_code != 0:
                     affinity_label = f" [{self._affinity_by_code().get(affinity_code, affinity_code)}]"
 
-            loc_tag = "K" if key else ""
+            loc_tag = "K" if (key or _is_key_item(full_id)) else ""
             text = (
                 f"  [{location[0].upper()}{loc_tag}] "
                 f"{name}{suffix}{affinity_label}"
@@ -1294,9 +1447,7 @@ class InventoryEditor:
             from er_save_manager.parser.inventory_ops import _is_key_item
 
             item_list = (
-                inventory.key_items
-                if _is_key_item(full_id, inventory)
-                else inventory.common_items
+                inventory.key_items if _is_key_item(full_id) else inventory.common_items
             )
             for it in item_list:
                 if it.gaitem_handle == handle and it.quantity > 0:
@@ -1418,6 +1569,8 @@ class InventoryEditor:
                 reinforcement="ash" if is_ashes else "standard",
             )
 
+            _apply_item_event_flags(save_file, slot_idx, full_id, True)
+
             save_file.recalculate_checksums()
             save_path = self.get_save_path()
             if save_path:
@@ -1471,6 +1624,8 @@ class InventoryEditor:
             from er_save_manager.parser.inventory_ops import remove_item
 
             remove_item(save_file, slot_idx, full_id, location)
+
+            _apply_item_event_flags(save_file, slot_idx, full_id, False)
 
             save_file.recalculate_checksums()
             save_path = self.get_save_path()
