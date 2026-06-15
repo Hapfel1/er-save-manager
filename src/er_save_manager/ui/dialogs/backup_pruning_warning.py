@@ -1,140 +1,130 @@
-"""Backup pruning warning dialog (customtkinter version)."""
+"""Backup pruning warning dialog."""
 
 import customtkinter as ctk
 
 from er_save_manager.backup.manager import BackupMetadata
-from er_save_manager.ui.settings import get_settings
 
 
 class BackupPruningWarningDialog(ctk.CTkToplevel):
-    """Dialog warning user about backups that will be pruned (customtkinter version)."""
+    """
+    Shown before the oldest backup is deleted due to the backup limit.
 
-    def __init__(
-        self,
-        parent: ctk.CTk,
-        pruned_backups: list[BackupMetadata],
-        max_backups: int,
-    ):
-        """Initialize backup pruning warning dialog.
+    Result is one of:
+      "delete"   - proceed with deletion (Close button)
+      "raised"   - user raised the limit, skip deletion
+      "silent"   - same as delete but don't show again was checked
+    """
 
-        Args:
-            parent: Parent window
-            pruned_backups: List of backups that will be pruned
-            max_backups: Maximum backups setting
-        """
+    def __init__(self, parent, oldest_backup: BackupMetadata, max_backups: int):
         super().__init__(parent)
         self.title("Backup Limit Reached")
-        self.resizable(True, True)
-        self.pruned_backups = pruned_backups
-        self.max_backups = max_backups
-        self.dont_show_again_var = ctk.BooleanVar(value=False)
-
-        # Center on parent
+        self.resizable(False, False)
         self.transient(parent)
 
-        # Handle window close button
-        self.protocol("WM_DELETE_WINDOW", self._on_ok)
+        self._result = "delete"
+        self._dont_show_var = ctk.BooleanVar(value=False)
+        self._oldest = oldest_backup
+        self._max_backups = max_backups
+        self._new_limit_var = ctk.StringVar(value=str(max_backups + 10))
 
-        self._setup_ui()
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
+        self._build_ui()
 
-        # Update to get actual dimensions after UI is built
+        self.geometry("480x280")
         self.update_idletasks()
+        px = parent.winfo_rootx() + (parent.winfo_width() - 480) // 2
+        py = parent.winfo_rooty() + (parent.winfo_height() - 280) // 2
+        self.geometry(f"480x280+{px}+{py}")
 
-        # Set size
-        self.geometry("500x400")
-        self.update_idletasks()
-
-        # Now center the dialog using actual dimensions
-        parent_x = parent.winfo_x()
-        parent_y = parent.winfo_y()
-        parent_width = parent.winfo_width()
-        parent_height = parent.winfo_height()
-        x = parent_x + (parent_width - 500) // 2
-        y = parent_y + (parent_height - 400) // 2
-        self.geometry(f"500x400+{x}+{y}")
-
-        # Force rendering on Linux before grab_set
         from er_save_manager.ui.utils import force_render_dialog
 
         force_render_dialog(self)
         self.grab_set()
 
-    def _setup_ui(self):
-        """Setup UI components."""
-        # Main frame
-        main_frame = ctk.CTkFrame(self)
-        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+    def _build_ui(self):
+        main = ctk.CTkFrame(self, fg_color="transparent")
+        main.pack(fill="both", expand=True, padx=20, pady=16)
 
-        # Title label
-        title_label = ctk.CTkLabel(
-            main_frame,
+        ctk.CTkLabel(
+            main,
             text="Backup Limit Reached",
-            font=("Segoe UI", 12, "bold"),
+            font=("Segoe UI", 13, "bold"),
+        ).pack(anchor="w")
+
+        ctk.CTkLabel(
+            main,
+            text=(
+                f"The backup limit ({self._max_backups}) has been reached.\n"
+                f"The oldest backup will be deleted:\n\n"
+                f"  {self._oldest.filename}"
+            ),
+            font=("Segoe UI", 11),
+            justify="left",
+        ).pack(anchor="w", pady=(8, 12))
+
+        # Raise limit row
+        limit_row = ctk.CTkFrame(main, fg_color="transparent")
+        limit_row.pack(anchor="w", pady=(0, 12))
+
+        ctk.CTkLabel(limit_row, text="Set new limit:").pack(side="left", padx=(0, 8))
+        ctk.CTkEntry(limit_row, textvariable=self._new_limit_var, width=70).pack(
+            side="left", padx=(0, 8)
         )
-        title_label.pack(anchor="w", pady=(0, 10))
+        ctk.CTkButton(
+            limit_row,
+            text="Apply and Keep Backup",
+            width=160,
+            command=self._on_raise_limit,
+        ).pack(side="left")
 
-        # Description label
-        desc_text = f"You have reached the maximum number of backups ({self.max_backups}). The following old backups will be permanently deleted:"
-        desc_label = ctk.CTkLabel(
-            main_frame, text=desc_text, wraplength=480, justify="left"
-        )
-        desc_label.pack(anchor="w", pady=(0, 10))
-
-        # Backups list with scrollbar
-        list_frame = ctk.CTkFrame(main_frame)
-        list_frame.pack(fill="both", expand=True, pady=(0, 10))
-
-        # Create scrollable frame for backups
-        from er_save_manager.ui.utils import bind_mousewheel
-
-        scrollable_list = ctk.CTkScrollableFrame(list_frame)
-        scrollable_list.pack(fill="both", expand=True)
-
-        # Bind mousewheel for scrolling on Linux and other platforms
-        bind_mousewheel(scrollable_list)
-
-        # Populate with backup info
-        for backup in self.pruned_backups:
-            timestamp = backup.timestamp[:10]  # Just the date part
-            display_text = f"{backup.filename} ({timestamp})"
-            label = ctk.CTkLabel(
-                scrollable_list,
-                text=display_text,
-                text_color=("gray40", "gray70"),
-                font=("Segoe UI", 11),
-                justify="left",
-            )
-            label.pack(anchor="w", padx=10, pady=4)
-
-        # Don't show again checkbox
-        checkbox = ctk.CTkCheckBox(
-            main_frame,
+        ctk.CTkCheckBox(
+            main,
             text="Don't show this warning again",
-            variable=self.dont_show_again_var,
-        )
-        checkbox.pack(anchor="w", pady=(0, 10))
+            variable=self._dont_show_var,
+        ).pack(anchor="w", pady=(0, 12))
 
-        # Button frame
-        button_frame = ctk.CTkFrame(main_frame)
-        button_frame.pack(fill="x", pady=(10, 0))
+        btn_row = ctk.CTkFrame(main, fg_color="transparent")
+        btn_row.pack(fill="x")
+        ctk.CTkButton(
+            btn_row,
+            text="Close (Delete Oldest)",
+            command=self._on_close,
+            fg_color=("gray70", "gray35"),
+            width=160,
+        ).pack(side="right")
 
-        ok_button = ctk.CTkButton(button_frame, text="OK", command=self._on_ok)
-        ok_button.pack(side="right", padx=(5, 0))
+    def _on_raise_limit(self):
+        try:
+            new_limit = int(self._new_limit_var.get())
+        except ValueError:
+            return
+        if new_limit <= self._max_backups:
+            return
 
-        # Bind Enter key
-        self.bind("<Return>", lambda e: self._on_ok())
+        from er_save_manager.ui.settings import get_settings
 
-    def _on_ok(self):
-        """Handle OK button click."""
-        dont_show = self.dont_show_again_var.get()
-        if dont_show:
-            settings = get_settings()
-            settings["show_backup_pruning_warning"] = False
-            settings.save()
+        settings = get_settings()
+        settings.set("max_backups", new_limit)
+        if self._dont_show_var.get():
+            settings.set("show_backup_pruning_warning", False)
+        settings.save()
 
+        self._result = "raised"
         self.destroy()
 
-    def show(self):
-        """Show dialog and return dont_show_again status."""
+    def _on_close(self):
+        if self._dont_show_var.get():
+            from er_save_manager.ui.settings import get_settings
+
+            settings = get_settings()
+            settings.set("show_backup_pruning_warning", False)
+            settings.save()
+            self._result = "silent"
+        else:
+            self._result = "delete"
+        self.destroy()
+
+    def show(self) -> str:
+        """Block until closed. Returns 'delete', 'raised', or 'silent'."""
         self.wait_window()
-        return self.dont_show_again_var.get()
+        return self._result

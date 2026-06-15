@@ -232,43 +232,45 @@ class BackupManager:
             if max_backups and max_backups > 0:
                 pruned_backups = self.get_backups_to_prune(keep_count=max_backups)
                 if pruned_backups:
-                    self.prune_backups(keep_count=max_backups)
-
-                    # Show warning if setting is enabled
+                    should_prune = True
                     if settings.get("show_backup_pruning_warning", True):
-                        self._show_pruning_warning(max_backups, pruned_backups)
-        except Exception:
-            # Silently fail if settings can't be accessed
-            pass
+                        result = self._show_pruning_warning(max_backups, pruned_backups)
+                        # User raised the limit - re-read setting and skip prune
+                        if result == "raised":
+                            new_max = get_settings().get("max_backups", max_backups)
+                            pruned_backups = self.get_backups_to_prune(
+                                keep_count=new_max
+                            )
+                            should_prune = bool(pruned_backups)
+                    if should_prune:
+                        self.prune_backups(
+                            keep_count=get_settings().get("max_backups", max_backups)
+                        )
+        except Exception as e:
+            print(f"Backup pruning failed: {e}")
 
         return backup_path, pruned_backups
 
     def _show_pruning_warning(
         self, max_backups: int, pruned_backups: list[BackupMetadata]
-    ):
-        """Show warning about pruned backups using messagebox."""
+    ) -> str:
+        """Show the pruning warning dialog before deleting. Returns dialog result."""
         try:
-            from tkinter import messagebox
+            import tkinter as _tk
 
-            # Format the list of deleted backups
-            deleted_list = "\n".join(
-                f"  • {backup.filename}" for backup in pruned_backups
+            from er_save_manager.ui.dialogs.backup_pruning_warning import (
+                BackupPruningWarningDialog,
             )
 
-            message = (
-                f"Backup limit of {max_backups} reached.\n\n"
-                f"The following old backups were permanently deleted:\n\n{deleted_list}\n\n"
-                f"You can disable this warning in Settings > Backups > "
-                f"'Show warning when backups are automatically deleted'"
-            )
-
-            messagebox.showwarning(
-                "Backups Pruned",
-                message,
-            )
-        except Exception:
-            # Silently fail if messagebox can't be shown (headless mode, etc)
-            pass
+            # Walk all Tk/CTk top-level windows to find a live root.
+            root = _tk._default_root
+            if root is None or not root.winfo_exists():
+                return "delete"
+            dialog = BackupPruningWarningDialog(root, pruned_backups[0], max_backups)
+            return dialog.show()
+        except Exception as e:
+            print(f"Backup pruning warning failed: {e}")
+            return "delete"
 
     def create_pre_write_backup(self, save: Save, operation: str) -> Path:
         """
