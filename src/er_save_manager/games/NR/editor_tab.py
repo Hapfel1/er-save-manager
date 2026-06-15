@@ -319,14 +319,17 @@ class NREditorTab:
             relics_sorted,
         )
 
-        # Cached option lists for pickers (populated once, tier-filtered lists built on demand)
         self._all_relic_opts: list[tuple[int, str, bool]] = relics_sorted()
         self._normal_effect_opts: list[tuple[int, str]] = effects_for_slot(False)
         self._deep_effect_opts: list[tuple[int, str]] = effects_for_slot(True)
         self._curse_opts: list[tuple[int, str]] = effects_for_curse_slot()
 
+        # Outer scrollable container so content is reachable at any window size
+        scroll = ctk.CTkScrollableFrame(parent, corner_radius=0, fg_color="transparent")
+        scroll.pack(fill="both", expand=True)
+
         # Search bar
-        top = ctk.CTkFrame(parent, fg_color="transparent")
+        top = ctk.CTkFrame(scroll, fg_color="transparent")
         top.pack(fill="x", padx=10, pady=(8, 4))
         ctk.CTkLabel(top, text="Relics", font=("Segoe UI", 14, "bold")).pack(
             side="left"
@@ -336,21 +339,21 @@ class NREditorTab:
         ctk.CTkEntry(
             top,
             textvariable=self._relic_search_var,
-            placeholder_text="Search name...",
+            placeholder_text="Search name or effect...",
             width=240,
         ).pack(side="right")
         ctk.CTkLabel(top, text="Search:").pack(side="right", padx=(0, 4))
 
-        # Treeview
-        tree_frame = ctk.CTkFrame(parent, corner_radius=8)
-        tree_frame.pack(fill="both", expand=True, padx=10, pady=(0, 4))
+        # Treeview - fixed height so edit panel always visible below
+        tree_frame = ctk.CTkFrame(scroll, corner_radius=8)
+        tree_frame.pack(fill="x", padx=10, pady=(0, 4))
 
         self._relic_tree = ttk.Treeview(
             tree_frame,
             columns=("name", "deep", "e1", "e2", "e3"),
             show="headings",
             selectmode="browse",
-            height=10,
+            height=8,
         )
         for col, label, w in [
             ("name", "Relic Name", 200),
@@ -378,7 +381,7 @@ class NREditorTab:
         self._tree_ga_map: dict[str, int] = {}
 
         # Sub-tabs: Edit | Spawn
-        action_tabs = ctk.CTkTabview(parent, corner_radius=8, height=185)
+        action_tabs = ctk.CTkTabview(scroll, corner_radius=8)
         action_tabs.pack(fill="x", padx=10, pady=(0, 6))
         action_tabs.add("Edit")
         action_tabs.add("Spawn")
@@ -409,7 +412,6 @@ class NREditorTab:
             fg_color=("gray65", "gray35"),
         ).pack(side="left")
 
-        # Relic type row
         relic_row = ctk.CTkFrame(self._edit_panel, fg_color="transparent")
         relic_row.pack(fill="x", padx=8, pady=2)
         ctk.CTkLabel(relic_row, text="Relic type:", width=90, anchor="w").pack(
@@ -428,13 +430,13 @@ class NREditorTab:
         ).pack(side="left")
         self._re_item_var = tk.StringVar(value="-1")
 
-        # Effect / curse rows
         self._re_effect_vars = [
             tk.StringVar(value=str(_EMPTY_EFFECT)) for _ in range(3)
         ]
         self._re_curse_vars = [tk.StringVar(value=str(_EMPTY_EFFECT)) for _ in range(3)]
         self._re_effect_labels = []
         self._re_curse_labels = []
+        self._re_curse_widgets: list[tuple] = []
 
         slots_frame = ctk.CTkFrame(self._edit_panel, fg_color="transparent")
         slots_frame.pack(fill="x", padx=8, pady=(2, 6))
@@ -442,7 +444,6 @@ class NREditorTab:
         for j in range(3):
             row = ctk.CTkFrame(slots_frame, fg_color="transparent")
             row.pack(fill="x", pady=1)
-            # Effect
             ctk.CTkLabel(row, text=f"E{j + 1}:", width=28, anchor="w").pack(side="left")
             lbl_e = ctk.CTkLabel(
                 row,
@@ -460,28 +461,28 @@ class NREditorTab:
                 height=24,
                 command=lambda jj=j: self._browse_effect(jj),
             ).pack(side="left", padx=(0, 16))
-            # Curse
-            ctk.CTkLabel(row, text=f"C{j + 1}:", width=28, anchor="w").pack(side="left")
             lbl_c = ctk.CTkLabel(
                 row,
-                text="(empty)",
+                text=f"C{j + 1}: (empty)",
                 anchor="w",
                 width=240,
                 font=("Segoe UI", 10),
                 wraplength=238,
             )
-            lbl_c.pack(side="left", padx=(2, 4))
-            ctk.CTkButton(
+            btn_c = ctk.CTkButton(
                 row,
                 text="Browse",
                 width=65,
                 height=24,
                 command=lambda jj=j: self._browse_curse(jj),
-            ).pack(side="left")
+            )
             self._re_effect_labels.append(lbl_e)
             self._re_curse_labels.append(lbl_c)
+            self._re_curse_widgets.append((lbl_c, btn_c, row))
 
-        # Spawner
+        self._set_edit_curse_visible(False)
+
+        # Spawn panel
         spawn_outer = ctk.CTkFrame(
             _spawn_parent, corner_radius=10, fg_color=("gray84", "gray24")
         )
@@ -496,7 +497,6 @@ class NREditorTab:
             spawn_title, text="Spawn", command=self._spawn_relic, width=80
         ).pack(side="right")
 
-        # Spawn relic type
         sr_row = ctk.CTkFrame(spawn_outer, fg_color="transparent")
         sr_row.pack(fill="x", padx=8, pady=2)
         ctk.CTkLabel(sr_row, text="Relic type:", width=90, anchor="w").pack(side="left")
@@ -505,11 +505,14 @@ class NREditorTab:
         )
         self._spawn_relic_label.pack(side="left", padx=(4, 6))
         ctk.CTkButton(
-            sr_row, text="Browse", command=self._browse_spawn_relic, width=70, height=26
+            sr_row,
+            text="Browse",
+            command=self._browse_spawn_relic,
+            width=70,
+            height=26,
         ).pack(side="left")
         self._spawn_relic_id = tk.IntVar(value=-1)
 
-        # Spawn effect / curse rows
         self._spawn_effect_vars = [
             tk.StringVar(value=str(_EMPTY_EFFECT)) for _ in range(3)
         ]
@@ -518,6 +521,7 @@ class NREditorTab:
         ]
         self._spawn_effect_labels = []
         self._spawn_curse_labels = []
+        self._spawn_curse_widgets: list[tuple] = []
 
         spawn_slots = ctk.CTkFrame(spawn_outer, fg_color="transparent")
         spawn_slots.pack(fill="x", padx=8, pady=(2, 8))
@@ -542,28 +546,51 @@ class NREditorTab:
                 height=24,
                 command=lambda jj=j: self._browse_spawn_effect(jj),
             ).pack(side="left", padx=(0, 16))
-            ctk.CTkLabel(row, text=f"C{j + 1}:", width=28, anchor="w").pack(side="left")
             lbl_c = ctk.CTkLabel(
                 row,
-                text="(empty)",
+                text=f"C{j + 1}: (empty)",
                 anchor="w",
                 width=240,
                 font=("Segoe UI", 10),
                 wraplength=238,
             )
-            lbl_c.pack(side="left", padx=(2, 4))
-            ctk.CTkButton(
+            btn_c = ctk.CTkButton(
                 row,
                 text="Browse",
                 width=65,
                 height=24,
                 command=lambda jj=j: self._browse_spawn_curse(jj),
-            ).pack(side="left")
+            )
             self._spawn_effect_labels.append(lbl_e)
             self._spawn_curse_labels.append(lbl_c)
+            self._spawn_curse_widgets.append((lbl_c, btn_c, row))
+
+        self._set_spawn_curse_visible(False)
 
         self._selected_relic_ga: int | None = None
         self._all_relic_data: list = []
+
+    # ------------------------------------------------------------------
+    # Curse slot visibility
+    # ------------------------------------------------------------------
+
+    def _set_edit_curse_visible(self, visible: bool) -> None:
+        for lbl_c, btn_c, _row in self._re_curse_widgets:
+            if visible:
+                lbl_c.pack(side="left", padx=(0, 4))
+                btn_c.pack(side="left")
+            else:
+                lbl_c.pack_forget()
+                btn_c.pack_forget()
+
+    def _set_spawn_curse_visible(self, visible: bool) -> None:
+        for lbl_c, btn_c, _row in self._spawn_curse_widgets:
+            if visible:
+                lbl_c.pack(side="left", padx=(0, 4))
+                btn_c.pack(side="left")
+            else:
+                lbl_c.pack_forget()
+                btn_c.pack_forget()
 
     # ------------------------------------------------------------------
     # Picker helpers
