@@ -55,7 +55,7 @@ ID,Name,maxNum,category,maxRepositoryNum
 8152,Mohg's Great Rune (Unpowered),1,KeyItems,1
 8153,Malenia's Great Rune (Unpowered),1,KeyItems,1
 8154,Lord of Blood's Favor,1,KeyItems,1
-8155,Lord of Blood's Favor,1,KeyItems,1
+8155,Lord of Blood's Favor (Soaked),1,KeyItems,1
 8156,Burial Crow's Letter,1,KeyItems,1
 8158,Spirit Calling Bell,1,KeyItems,1
 8159,Fingerslayer Blade,1,KeyItems,1
@@ -70,7 +70,7 @@ ID,Name,maxNum,category,maxRepositoryNum
 8171,Chrysalids' Memento,1,KeyItems,1
 8172,Black Knifeprint,1,KeyItems,1
 8173,Letter to Bernahl,1,KeyItems,1
-8174,Academy Glintstone Key,1,KeyItems,1
+8174,Academy Glintstone Key (Spare),1,KeyItems,1
 8175,Haligtree Secret Medallion (Left),1,KeyItems,1
 8176,Haligtree Secret Medallion (Right),1,KeyItems,1
 8181,Burial Crow's Letter,1,KeyItems,1
@@ -79,7 +79,7 @@ ID,Name,maxNum,category,maxRepositoryNum
 8184,Mending Rune of the Fell Curse,1,KeyItems,1
 8185,Larval Tear,99,KeyItems,600
 8186,Imbued Sword Key,99,KeyItems,1
-8187,Miniature Ranni,1,KeyItems,1
+8187,Miniature Ranni (Lifeless),1,KeyItems,1
 8188,Golden Tailoring Tools,1,KeyItems,1
 8189,Iji's Confession,1,KeyItems,1
 8190,Knifeprint Clue,1,KeyItems,1
@@ -98,8 +98,8 @@ ID,Name,maxNum,category,maxRepositoryNum
 8972,Sanctified Whetblade,1,KeyItems,1
 8973,Glintstone Whetblade,1,KeyItems,1
 8974,Black Whetblade,1,KeyItems,1
-8975,Unalloyed Gold Needle,1,KeyItems,1
-8976,Unalloyed Gold Needle,1,KeyItems,1
+8975,Unalloyed Gold Needle (Snapped),1,KeyItems,1
+8976,Unalloyed Gold Needle (Repaired),1,KeyItems,1
 8977,Valkyrie's Prosthesis,1,KeyItems,1
 8978,Sellia's Secret,1,KeyItems,1
 8979,Beast Eye,1,KeyItems,1
