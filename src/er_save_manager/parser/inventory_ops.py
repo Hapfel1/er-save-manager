@@ -52,8 +52,106 @@ def _needs_gaitem(full_item_id: int) -> bool:
 
 
 # Goods base IDs (without 0x40000000) that go in key_items, not common_items.
+# Sourced from KeyItems.csv plus cookbooks/whetblades which appear in separate CSVs.
 _KEY_ITEM_BASE_IDS: frozenset[int] = frozenset(
     [
+        # Multiplayer items
+        100,  # Tarnished's Furled Finger
+        101,  # Duelist's Furled Finger
+        102,  # Bloody Finger
+        103,  # Finger Severer
+        104,  # White Cipher Ring
+        105,  # Blue Cipher Ring
+        106,  # Tarnished's Wizened Finger
+        107,  # Phantom Bloody Finger
+        108,  # Taunter's Tongue
+        109,  # Small Golden Effigy
+        110,  # Small Red Effigy
+        111,  # Festering Bloody Finger
+        112,  # Recusant Finger
+        113,  # Phantom Bloody Finger
+        114,  # Phantom Recusant Finger
+        115,  # Memory of Grace
+        130,  # Spectral Steed Whistle
+        135,  # Phantom Great Rune
+        # Great Runes (powered)
+        191,  # Godrick's Great Rune
+        192,  # Radahn's Great Rune
+        193,  # Morgott's Great Rune
+        194,  # Rykard's Great Rune
+        195,  # Mohg's Great Rune
+        196,  # Malenia's Great Rune
+        # Other key items
+        2090,  # Deathroot
+        8000,  # Stonesword Key
+        8010,  # Rusty Key
+        8102,  # Lucent Baldachin's Blessing
+        8105,  # Dectus Medallion (Left)
+        8106,  # Dectus Medallion (Right)
+        8107,  # Rold Medallion
+        8109,  # Academy Glintstone Key
+        8111,  # Carian Inverted Statue
+        8121,  # Dark Moon Ring
+        8126,  # Fingerprint Grape
+        8127,  # Letter from Volcano Manor
+        8128,  # Tonic of Forgetfulness
+        8129,  # Serpent's Amnion
+        8130,  # Rya's Necklace
+        8131,  # Irina's Letter
+        8132,  # Letter from Volcano Manor
+        8133,  # Red Letter
+        8134,  # Drawing-Room Key
+        8136,  # Rya's Necklace
+        8137,  # Volcano Manor Invitation
+        8142,  # Amber Starlight
+        8143,  # Seluvis's Introduction
+        8144,  # Sellen's Primal Glintstone
+        8146,  # Miniature Ranni
+        # Great Runes (unpowered)
+        8148,  # Godrick's Great Rune (Unpowered)
+        8149,  # Radahn's Great Rune (Unpowered)
+        8150,  # Morgott's Great Rune (Unpowered)
+        8151,  # Rykard's Great Rune (Unpowered)
+        8152,  # Mohg's Great Rune (Unpowered)
+        8153,  # Malenia's Great Rune (Unpowered)
+        # Quest items continued
+        8154,  # Lord of Blood's Favor
+        8155,  # Lord of Blood's Favor (Soaked)
+        8156,  # Burial Crow's Letter
+        8158,  # Spirit Calling Bell
+        8159,  # Fingerslayer Blade
+        8161,  # Sewing Needle
+        8162,  # Gold Sewing Needle
+        8163,  # Tailoring Tools
+        8164,  # Seluvis's Potion
+        8166,  # Amber Draught
+        8167,  # Letter to Patches
+        8168,  # Dancer's Castanets
+        8169,  # Sellian Sealbreaker
+        8171,  # Chrysalids' Memento
+        8172,  # Black Knifeprint
+        8173,  # Letter to Bernahl
+        8174,  # Academy Glintstone Key (Spare)
+        8175,  # Haligtree Secret Medallion (Left)
+        8176,  # Haligtree Secret Medallion (Right)
+        8181,  # Burial Crow's Letter
+        8182,  # Mending Rune of Perfect Order
+        8183,  # Mending Rune of the Death-Prince
+        8184,  # Mending Rune of the Fell Curse
+        8185,  # Larval Tear
+        8186,  # Imbued Sword Key
+        8187,  # Miniature Ranni (Lifeless)
+        8188,  # Golden Tailoring Tools
+        8189,  # Iji's Confession
+        8190,  # Knifeprint Clue
+        8191,  # Cursemark of Death
+        8192,  # Asimi's Husk
+        8193,  # Seedbed Curse
+        8194,  # The Stormhawk King
+        8196,  # Unalloyed Gold Needle
+        8197,  # Sewer-Gaol Key
+        8198,  # Meeting Place Map
+        8199,  # Discarded Palace Key
         # Crafting
         8500,  # Crafting Kit
         # Whetstone / whetblades
@@ -63,6 +161,14 @@ _KEY_ITEM_BASE_IDS: frozenset[int] = frozenset(
         8972,  # Sanctified Whetblade
         8973,  # Glintstone Whetblade
         8974,  # Black Whetblade
+        8975,  # Unalloyed Gold Needle (Snapped)
+        8976,  # Unalloyed Gold Needle (Repaired)
+        8977,  # Valkyrie's Prosthesis
+        8978,  # Sellia's Secret
+        8979,  # Beast Eye
+        8980,  # Weathered Dagger
+        # Great Rune of the Unborn
+        10080,
         # Vanilla cookbooks
         9300,
         9301,
@@ -123,6 +229,227 @@ _KEY_ITEM_BASE_IDS: frozenset[int] = frozenset(
         9423,
         9440,
         9441,
+        # DLC key items
+        2008000,  # Miquella's Great Rune
+        2008003,  # Igon's Furled Finger
+        2008004,  # Well Depths Key
+        2008005,  # Gaol Upper Level Key
+        2008006,  # Gaol Lower Level Key
+        2008007,  # Cross Map
+        2008008,  # Hole-Laden Necklace
+        2008011,  # Heart of Bayle
+        2008012,  # New Cross Map
+        2008013,  # Storeroom Key
+        2008014,  # Secret Rite Scroll
+        2008019,  # Black Syrup
+        2008021,  # Messmer's Kindling
+        2008023,  # Keep Wall Key
+        2008033,  # Larval Tear (Spirit)
+        2008036,  # Prayer Room Key
+        # Crystal Tears
+        11000,  # Crimsonspill Crystal Tear
+        11001,  # Greenspill Crystal Tear
+        11002,  # Crimson Crystal Tear
+        11003,  # Crimson Crystal Tear
+        11004,  # Cerulean Crystal Tear
+        11005,  # Cerulean Crystal Tear
+        11006,  # Speckled Hardtear
+        11007,  # Crimson Bubbletear
+        11008,  # Opaline Bubbletear
+        11009,  # Crimsonburst Crystal Tear
+        11010,  # Greenburst Crystal Tear
+        11011,  # Opaline Hardtear
+        11012,  # Winged Crystal Tear
+        11013,  # Thorny Cracked Tear
+        11014,  # Spiked Cracked Tear
+        11015,  # Windy Crystal Tear
+        11016,  # Ruptured Crystal Tear
+        11017,  # Ruptured Crystal Tear
+        11018,  # Leaden Hardtear
+        11019,  # Twiggy Cracked Tear
+        11020,  # Crimsonwhorl Bubbletear
+        11021,  # Strength-knot Crystal Tear
+        11022,  # Dexterity-knot Crystal Tear
+        11023,  # Intelligence-knot Crystal Tear
+        11024,  # Faith-knot Crystal Tear
+        11025,  # Cerulean Hidden Tear
+        11026,  # Stonebarb Cracked Tear
+        11027,  # Purifying Crystal Tear
+        11028,  # Flame-Shrouding Cracked Tear
+        11029,  # Magic-Shrouding Cracked Tear
+        11030,  # Lightning-Shrouding Cracked Tear
+        11031,  # Holy-Shrouding Cracked Tear
+        # DLC Crystal Tears
+        2011000,  # Viridian Hidden Tear
+        2011010,  # Crimsonburst Dried Tear
+        2011020,  # Crimson-Sapping Cracked Tear
+        2011030,  # Cerulean-Sapping Cracked Tear
+        2011040,  # Oil-Soaked Tear
+        2011050,  # Bloodsucking Cracked Tear
+        2011060,  # Glovewort Crystal Tear
+        2011070,  # Deflecting Hardtear
+        # Maps
+        8600,  # Map: Limgrave
+        8601,  # Map: Weeping Peninsula
+        8602,  # Map: Limgrave
+        8603,  # Map: Liurnia
+        8604,  # Map: Liurnia
+        8605,  # Map: Liurnia
+        8606,  # Map: Altus Plateau
+        8607,  # Map: Leyndell
+        8608,  # Map: Mt. Gelmir
+        8609,  # Map: Caelid
+        8610,  # Map: Dragonbarrow
+        8611,  # Map: Mountaintops of the Giants
+        8612,  # Map: Mountaintops of the Giants
+        8613,  # Map: Ainsel River
+        8614,  # Map: Lake of Rot
+        8615,  # Map: Siofra River
+        8616,  # Map: Mohgwyn Palace
+        8617,  # Map: Deeproot Depths
+        8618,  # Map: Consecrated Snowfield
+        # DLC Maps
+        2008600,  # Map: Gravesite Plain
+        2008601,  # Map: Scadu Altus
+        2008602,  # Map: Southern Shore
+        2008603,  # Map: Rauh Ruins
+        2008604,  # Map: Abyss
+        # Convergence Maps (separate IDs from base game)
+        8620,  # Map: Limgrave
+        8621,  # Map: Caelid
+        8622,  # Map: Liurnia
+        8623,  # Map: Altus Plateau
+        8624,  # Map: Mountaintops of the Giants
+        8625,  # Map: Consecrated Snowfield
+        8626,  # Map: Farum Azula
+        8627,  # Map: Underground
+        8628,  # Map: Realm of Shadow
+        8660,  # Map: Mirage Riddle
+        # Bell Bearings and Spellbooks (MerchantItems)
+        8850,  # Conspectus Scroll
+        8851,  # Royal House Scroll
+        8855,  # Fire Monks' Prayerbook
+        8856,  # Giant's Prayerbook
+        8857,  # Godskin Prayerbook
+        8858,  # Two Fingers' Prayerbook
+        8859,  # Assassin's Prayerbook
+        8860,  # Erdtree Prayerbook
+        8861,  # Erdtree Codex
+        8862,  # Golden Order Principia
+        8863,  # Golden Order Principles
+        8864,  # Dragon Cult Prayerbook
+        8865,  # Ancient Dragon Prayerbook
+        8866,  # Academy Scroll
+        8910,  # Pidia's Bell Bearing
+        8911,  # Seluvis's Bell Bearing
+        8912,  # Patches' Bell Bearing
+        8913,  # Sellen's Bell Bearing
+        8915,  # D's Bell Bearing
+        8916,  # Bernahl's Bell Bearing
+        8917,  # Miriel's Bell Bearing
+        8918,  # Gostoc's Bell Bearing
+        8919,  # Thops's Bell Bearing
+        8920,  # Kale's Bell Bearing
+        8921,  # Nomadic Merchant's Bell Bearing [1]
+        8922,  # Nomadic Merchant's Bell Bearing [2]
+        8923,  # Nomadic Merchant's Bell Bearing [3]
+        8924,  # Nomadic Merchant's Bell Bearing [4]
+        8925,  # Nomadic Merchant's Bell Bearing [5]
+        8926,  # Isolated Merchant's Bell Bearing [1]
+        8927,  # Isolated Merchant's Bell Bearing [2]
+        8928,  # Nomadic Merchant's Bell Bearing [6]
+        8929,  # Hermit Merchant's Bell Bearing [1]
+        8930,  # Nomadic Merchant's Bell Bearing [7]
+        8931,  # Nomadic Merchant's Bell Bearing [8]
+        8932,  # Nomadic Merchant's Bell Bearing [9]
+        8933,  # Nomadic Merchant's Bell Bearing [10]
+        8934,  # Nomadic Merchant's Bell Bearing [11]
+        8935,  # Isolated Merchant's Bell Bearing [3]
+        8936,  # Hermit Merchant's Bell Bearing [2]
+        8937,  # Abandoned Merchant's Bell Bearing
+        8938,  # Hermit Merchant's Bell Bearing [3]
+        8939,  # Imprisoned Merchant's Bell Bearing
+        8940,  # Iji's Bell Bearing
+        8941,  # Rogier's Bell Bearing
+        8942,  # Blackguard's Bell Bearing
+        8943,  # Corhyn's Bell Bearing
+        8944,  # Gowry's Bell Bearing
+        8945,  # Bone Peddler's Bell Bearing
+        8946,  # Meat Peddler's Bell Bearing
+        8947,  # Medicine Peddler's Bell Bearing
+        8948,  # Gravity Stone Peddler's Bell Bearing
+        8951,  # Smithing-Stone Miner's Bell Bearing [1]
+        8952,  # Smithing-Stone Miner's Bell Bearing [2]
+        8953,  # Smithing-Stone Miner's Bell Bearing [3]
+        8954,  # Smithing-Stone Miner's Bell Bearing [4]
+        8955,  # Somberstone Miner's Bell Bearing [1]
+        8956,  # Somberstone Miner's Bell Bearing [2]
+        8957,  # Somberstone Miner's Bell Bearing [3]
+        8958,  # Somberstone Miner's Bell Bearing [4]
+        8959,  # Somberstone Miner's Bell Bearing [5]
+        8960,  # Glovewort Picker's Bell Bearing [1]
+        8961,  # Glovewort Picker's Bell Bearing [2]
+        8962,  # Glovewort Picker's Bell Bearing [3]
+        8963,  # Ghost-Glovewort Picker's Bell Bearing [1]
+        8964,  # Ghost-Glovewort Picker's Bell Bearing [2]
+        8965,  # Ghost-Glovewort Picker's Bell Bearing [3]
+        # DLC Bell Bearings
+        2008900,  # Moore's Bell Bearing
+        2008901,  # Ymir's Bell Bearing
+        2008902,  # Herbalist's Bell Bearing
+        2008903,  # Mushroom-Seller's Bell Bearing [1]
+        2008904,  # Mushroom-Seller's Bell Bearing [2]
+        2008905,  # Greasemonger's Bell Bearing
+        2008906,  # Moldmonger's Bell Bearing
+        2008907,  # Igon's Bell Bearing
+        2008908,  # Spellmachinist's Bell Bearing
+        2008909,  # String-Seller's Bell Bearing
+        # Convergence Crystal Tears
+        11032,  # Stone-Shrouding Cracked Tear
+        11033,  # Arcane-Knot Crystal Tear
+        11034,  # Knight's Crystal Tear
+        11035,  # Battlemage's Crystal Tear
+        11036,  # Templar's Crystal Tear
+        11037,  # Barbarian's Crystal Tear
+        11038,  # Assassin's Crystal Tear
+        11039,  # Inquisitor's Crystal Tear
+        11040,  # Rogue's Crystal Tear
+        11041,  # Zealot's Crystal Tear
+        11042,  # Witch's Crystal Tear
+        11043,  # Cultist's Crystal Tear
+        11050,  # Waterblade Cracked Tear
+        11051,  # Stonetalon Cracked Tear
+        11052,  # Windbarb Cracked Tear
+        11053,  # Shadowblade Cracked Tear
+        11054,  # Stoneblade Cracked Tear
+        11055,  # Stonehoof Cracked Tear
+        11056,  # Ceruleanburst Crystal Tear
+        11057,  # Ceruleanspill Crystal Tear
+        # Convergence Bell Bearings
+        8981,  # Shadow Stone Miner's Bell Bearing [1]
+        8982,  # Shadow Stone Miner's Bell Bearing [2]
+        8983,  # Shadow Stone Miner's Bell Bearing [3]
+        8984,  # Somber Shadow Stone Miner's Bell Bearing [1]
+        8985,  # Somber Shadow Stone Miner's Bell Bearing [2]
+        8986,  # Somber Shadow Stone Miner's Bell Bearing [3]
+        # Convergence Steeds
+        2500,  # Funeral Steed
+        2501,  # Frenzied Mule
+        2502,  # Carian Knight Steed
+        2503,  # Erdtree Steed
+        # Convergence Keystones
+        8060,  # Keystone 1
+        8061,  # Keystone 2
+        8062,  # Keystone 3
+        8063,  # Keystone 4
+        8064,  # Keystone 5
+        # Convergence Perfumer items and Putrid Key
+        8138,  # Putrid Key
+        8510,  # Perfumer Hammer Shell
+        8511,  # Perfumer's Fire Core
+        8512,  # Perfumer's Frost Core
+        8513,  # Perfumer's Lightning Core
+        8514,  # Perfumer's Frenzy Core
         # DLC cookbooks
         2009301,
         2009302,
@@ -363,6 +690,14 @@ def _global_next_acq_index(slot) -> int:
 def _first_empty_inv_slot(inventory) -> int:
     """Return index of first common_items slot with gaitem_handle == 0, or -1."""
     for i, it in enumerate(inventory.common_items):
+        if it.gaitem_handle == 0:
+            return i
+    return -1
+
+
+def _first_empty_key_slot(inventory) -> int:
+    """Return index of first key_items slot with gaitem_handle == 0, or -1."""
+    for i, it in enumerate(inventory.key_items):
         if it.gaitem_handle == 0:
             return i
     return -1
@@ -746,31 +1081,46 @@ def add_item(
 
     # Reject if already in inventory (talismans allow duplicates)
     if cat != _CAT_TALISMAN:
-        for it in inventory.common_items:
+        item_list = (
+            inventory.key_items
+            if _is_key_item(full_item_id)
+            else inventory.common_items
+        )
+        for it in item_list:
             if it.gaitem_handle == handle and it.quantity > 0:
                 raise ValueError(
                     f"item 0x{full_item_id:08X} already present (handle 0x{handle:08X})"
                 )
 
     acq_idx = _global_next_acq_index(slot)
-    inv_slot = _first_empty_inv_slot(inventory)
-    if inv_slot == -1:
-        if location == "held":
-            # Held inventory full - fall back to storage
-            location = "storage"
-            inventory = _select_inventory(slot, location)
-            inv_slot = _first_empty_inv_slot(inventory)
-            if inv_slot == -1:
-                raise ValueError("both held and storage inventories are full")
-        else:
-            raise ValueError("storage inventory is full")
+
+    is_key = _is_key_item(full_item_id)
+    if is_key:
+        inv_slot = _first_empty_key_slot(inventory)
+        if inv_slot == -1:
+            raise ValueError(f"key_items inventory is full in {location}")
+    else:
+        inv_slot = _first_empty_inv_slot(inventory)
+        if inv_slot == -1:
+            if location == "held":
+                # Held inventory full - fall back to storage
+                location = "storage"
+                inventory = _select_inventory(slot, location)
+                inv_slot = _first_empty_inv_slot(inventory)
+                if inv_slot == -1:
+                    raise ValueError("both held and storage inventories are full")
+            else:
+                raise ValueError("storage inventory is full")
 
     entry = InventoryItem()
     entry.gaitem_handle = handle
     entry.quantity = quantity
     entry.acquisition_index = acq_idx
 
-    inventory.common_items[inv_slot] = entry
+    if is_key:
+        inventory.key_items[inv_slot] = entry
+    else:
+        inventory.common_items[inv_slot] = entry
     inventory.common_item_count += 1
     _update_inv_counters(slot, inventory, location, acq_idx)
 
@@ -829,7 +1179,10 @@ def remove_item(
 
     inv_slot = -1
     old_qty = 0
-    for i, it in enumerate(inventory.common_items):
+    item_list = (
+        inventory.key_items if _is_key_item(full_item_id) else inventory.common_items
+    )
+    for i, it in enumerate(item_list):
         if it.gaitem_handle == handle:
             inv_slot = i
             old_qty = it.quantity
@@ -841,7 +1194,10 @@ def remove_item(
             f"(handle 0x{handle:08X})"
         )
 
-    inventory.common_items[inv_slot] = InventoryItem()
+    if _is_key_item(full_item_id):
+        inventory.key_items[inv_slot] = InventoryItem()
+    else:
+        inventory.common_items[inv_slot] = InventoryItem()
     inventory.common_item_count = max(0, inventory.common_item_count - 1)
 
     if gaitem_idx != -1:
@@ -903,7 +1259,10 @@ def set_quantity(
 
     inv_slot = -1
     old_qty = 0
-    for i, it in enumerate(inventory.common_items):
+    item_list = (
+        inventory.key_items if _is_key_item(full_item_id) else inventory.common_items
+    )
+    for i, it in enumerate(item_list):
         if it.gaitem_handle == handle:
             inv_slot = i
             old_qty = it.quantity
@@ -915,7 +1274,7 @@ def set_quantity(
             f"(handle 0x{handle:08X})"
         )
 
-    inventory.common_items[inv_slot].quantity = quantity
+    item_list[inv_slot].quantity = quantity
     _patch_slot(save, slot_idx, slot)
 
     return {
