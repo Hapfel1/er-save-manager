@@ -169,6 +169,13 @@ _KEY_ITEM_BASE_IDS: frozenset[int] = frozenset(
         8980,  # Weathered Dagger
         # Great Rune of the Unborn
         10080,
+        # Containers and upgrades
+        10030,  # Memory Stone
+        10040,  # Talisman Pouch
+        9500,  # Cracked Pot
+        9501,  # Ritual Pot
+        9510,  # Perfume Bottle
+        2009500,  # Hefty Cracked Pot
         # Vanilla cookbooks
         9300,
         9301,
