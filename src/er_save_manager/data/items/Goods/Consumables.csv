@@ -22,7 +22,6 @@ ID,Name,maxNum,category,maxRepositoryNum
 450,Roped Oil Pot,10,Consumables,600
 460,Roped Magic Pot,10,Consumables,600
 470,Roped Fly Pot,10,Consumables,600
-480,Roped Freezing Pot,10,Consumables,600
 490,Roped Volcano Pot,10,Consumables,600
 510,Roped Holy Water Pot,10,Consumables,600
 600,Volcano Pot,10,Consumables,600
@@ -54,7 +53,6 @@ ID,Name,maxNum,category,maxRepositoryNum
 1190,Silver-Pickled Fowl Foot,10,Consumables,999
 1200,Gold-Pickled Fowl Foot,10,Consumables,999
 1210,Exalted Flesh,10,Consumables,999
-1220,Deathsbane Jerky,10,Consumables,999
 1235,Raw Meat Dumpling,3,Consumables,999
 1240,Shabriri Grape,99,Consumables,999
 1290,Starlight Shards,10,Consumables,999
@@ -62,7 +60,6 @@ ID,Name,maxNum,category,maxRepositoryNum
 1320,Invigorating White Cured Meat,10,Consumables,999
 1330,Clarifying White Cured Meat,10,Consumables,999
 1340,Dappled White Cured Meat,10,Consumables,999
-1350,Deathsbane White Jerky,10,Consumables,999
 1400,Fire Grease,10,Consumables,600
 1410,Lightning Grease,10,Consumables,600
 1420,Magic Grease,10,Consumables,600
@@ -80,7 +77,6 @@ ID,Name,maxNum,category,maxRepositoryNum
 1540,Drawstring Blood Grease,30,Consumables,600
 1550,Drawstring Soporific Grease,30,Consumables,600
 1560,Drawstring Poison Grease,30,Consumables,600
-1570,Drawstring Freezing Grease,30,Consumables,600
 1590,Drawstring Rot Grease,30,Consumables,600
 1690,Shield Grease,10,Consumables,600
 1700,Throwing Dagger,40,Consumables,600
@@ -143,7 +139,6 @@ ID,Name,maxNum,category,maxRepositoryNum
 3060,Gravity Stone Fan,10,Consumables,600
 3070,Gravity Stone Chunk,10,Consumables,600
 3080,Wraith Calling Bell,1,Consumables,600
-3300,Holy Water Grease,5,Consumables,600
 3310,Warming Stone,10,Consumables,600
 3311,Frenzyflame Stone,10,Consumables,600
 3320,Scriptstone,10,Consumables,600
