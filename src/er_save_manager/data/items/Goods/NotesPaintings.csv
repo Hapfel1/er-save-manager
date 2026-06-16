@@ -1,30 +1,31 @@
 ID,Name
-8200,"Homing Instinct" Painting
-8201,"Resurrection" Painting
-8202,"Champion's Song" Painting
-8203,"Sorcerer" Painting
-8204,"Prophecy" Painting
-8205,"Flightless Bird" Painting
-8206,"Redmane" Painting
+8200,Homing Instinct Painting
+8201,Resurrection Painting
+8202,Champion's Song Painting
+8203,Sorcerer Painting
+8204,Prophecy Painting
+8205,Flightless Bird Painting
+8206,Redmane Painting
 8221,Zorayas's Letter
+8222,Alexander's Innards
 8223,Rogier's Letter
-8224,Note: The Preceptor's Secret
+8224,Note: The Preceptor's Secrets
 8225,Weathered Map
 8226,Note: The Preceptor's Secret
 8227,Weathered Map
-8600,Map: Limgrave, West
+8600,Map: Limgrave- West
 8601,Map: Weeping Peninsula
-8602,Map: Limgrave, East
-8603,Map: Liurnia, East
-8604,Map: Liurnia, North
-8605,Map: Liurnia, West
+8602,Map: Limgrave- East
+8603,Map: Liurnia- East
+8604,Map: Liurnia- North
+8605,Map: Liurnia- West
 8606,Map: Altus Plateau
-8607,Map: Leyndell, Royal Capital
+8607,Map: Leyndell- Royal Capital
 8608,Map: Mt. Gelmir
 8609,Map: Caelid
 8610,Map: Dragonbarrow
-8611,Map: Mountaintops of the Giants, West
-8612,Map: Mountaintops of the Giants, East
+8611,Map: Mountaintops of the Giants- West
+8612,Map: Mountaintops of the Giants- East
 8613,Map: Ainsel River
 8614,Map: Lake of Rot
 8615,Map: Siofra River
@@ -50,22 +51,6 @@ ID,Name
 8715,Note: Frenzied Flame Village
 8716,Note: The Lord of Frenzied Flame
 8717,Note: Below the Capital
-8750,Note: Hidden Cave
-8751,Note: Imp Shades
-8752,Note: Flask of Wondrous Physick
-8753,Note: Stonedigger Trolls
-8754,Note: Walking Mausoleum
-8755,Note: Unseen Assassins
-8756,Note: Great Coffins
-8757,Note: Flame Chariots
-8758,Note: Demi-human Mobs
-8759,Note: Land Squirts
-8760,Note: Gravity's Advantage
-8761,Note: Revenants
-8762,Note: Waypoint Ruins
-8763,Note: Gateway
-8765,Note: Frenzied Flame Village
-8767,Note: Below the Capital
 9100,About Sites of Grace
 9101,About Sorceries and Incantations
 9102,About Bows
@@ -110,4 +95,3 @@ ID,Name
 9151,About United Combat and Combat Ordeals
 9152,About Combat with Spirit Ashes
 9153,About Marika's Effigy at the Roundtable
-9195,About Multiplayer

@@ -12,7 +12,6 @@ ID,Name,maxNum,category,maxRepositoryNum
 110,Small Red Effigy,1,KeyItems,1
 111,Festering Bloody Finger,99,KeyItems,99
 112,Recusant Finger,1,KeyItems,1
-113,Phantom Bloody Finger,99,KeyItems,99
 114,Phantom Recusant Finger,99,KeyItems,99
 115,Memory of Grace,1,KeyItems,1
 130,Spectral Steed Whistle,1,KeyItems,1
@@ -26,7 +25,6 @@ ID,Name,maxNum,category,maxRepositoryNum
 2090,Deathroot,99,KeyItems,600
 8000,Stonesword Key,99,KeyItems,600
 8010,Rusty Key,1,KeyItems,1
-8102,Lucent Baldachin's Blessing,1,KeyItems,1
 8105,Dectus Medallion (Left),1,KeyItems,1
 8106,Dectus Medallion (Right),1,KeyItems,1
 8107,Rold Medallion,1,KeyItems,1
@@ -37,12 +35,10 @@ ID,Name,maxNum,category,maxRepositoryNum
 8127,Letter from Volcano Manor,1,KeyItems,1
 8128,Tonic of Forgetfulness,1,KeyItems,1
 8129,Serpent's Amnion,1,KeyItems,1
-8130,Rya's Necklace,1,KeyItems,1
 8131,Irina's Letter,1,KeyItems,1
 8132,Letter from Volcano Manor,1,KeyItems,1
 8133,Red Letter,1,KeyItems,1
 8134,Drawing-Room Key,1,KeyItems,1
-8136,Rya's Necklace,1,KeyItems,1
 8137,Volcano Manor Invitation,1,KeyItems,1
 8142,Amber Starlight,1,KeyItems,1
 8143,Seluvis's Introduction,1,KeyItems,1
@@ -56,7 +52,6 @@ ID,Name,maxNum,category,maxRepositoryNum
 8153,Malenia's Great Rune (Unpowered),1,KeyItems,1
 8154,Lord of Blood's Favor,1,KeyItems,1
 8155,Lord of Blood's Favor (Soaked),1,KeyItems,1
-8156,Burial Crow's Letter,1,KeyItems,1
 8158,Spirit Calling Bell,1,KeyItems,1
 8159,Fingerslayer Blade,1,KeyItems,1
 8161,Sewing Needle,1,KeyItems,1
@@ -73,7 +68,6 @@ ID,Name,maxNum,category,maxRepositoryNum
 8174,Academy Glintstone Key (Spare),1,KeyItems,1
 8175,Haligtree Secret Medallion (Left),1,KeyItems,1
 8176,Haligtree Secret Medallion (Right),1,KeyItems,1
-8181,Burial Crow's Letter,1,KeyItems,1
 8182,Mending Rune of Perfect Order,1,KeyItems,1
 8183,Mending Rune of the Death-Prince,1,KeyItems,1
 8184,Mending Rune of the Fell Curse,1,KeyItems,1
@@ -81,10 +75,8 @@ ID,Name,maxNum,category,maxRepositoryNum
 8186,Imbued Sword Key,99,KeyItems,1
 8187,Miniature Ranni (Lifeless),1,KeyItems,1
 8188,Golden Tailoring Tools,1,KeyItems,1
-8189,Iji's Confession,1,KeyItems,1
 8190,Knifeprint Clue,1,KeyItems,1
 8191,Cursemark of Death,1,KeyItems,1
-8192,Asimi's Husk,1,KeyItems,1
 8193,Seedbed Curse,99,KeyItems,1
 8194,The Stormhawk King,1,KeyItems,1
 8196,Unalloyed Gold Needle,1,KeyItems,1
