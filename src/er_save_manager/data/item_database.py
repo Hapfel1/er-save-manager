@@ -330,6 +330,17 @@ def get_item_name(
             if item and "Ashes" in item.category_name:
                 return f"{item.name} +{delta}"
 
+    # Weapons: trick weapon alternate forms are base_id + 5000.
+    # If the ID is not in the DB, check if base_id - 5000 resolves.
+    if category == ItemCategory.WEAPON:
+        trick_base = base_id - 5000
+        if trick_base > 0:
+            item = db.get_item_by_id(category | trick_base, is_convergence)
+            if item:
+                if upgrade_level > 0:
+                    return f"{item.name} +{upgrade_level}"
+                return item.name
+
     # Weapons: strip affinity+upgrade (last 4 digits)
     if category == ItemCategory.WEAPON:
         true_base = (base_id // 10000) * 10000

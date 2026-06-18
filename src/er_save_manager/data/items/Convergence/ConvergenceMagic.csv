@@ -1,5 +1,6 @@
-﻿ID,Name
+ID,Name
 4130,[Sorcery] Terra Magicus
+4131,[Sorcery] Corpa Magica
 4150,[Sorcery] Glintbeam Orb
 4160,[Sorcery] Energy Shell
 4170,[Sorcery] Carian Acuity
@@ -10,11 +11,18 @@
 4412,[Sorcery] Renna's Barrier
 4413,[Sorcery] Armor of Rime
 4414,[Sorcery] Snow Witch's Cunning
+4415,[Sorcery] Ice Guardian's Reckoning
+4416,[Sorcery] Armor of Ice
 4421,[Sorcery] Icecrag Burst
 4422,[Sorcery] Ice Shards
 4423,[Sorcery] Frozen Phalanx
 4424,[Sorcery] Zamor Ice Storm (New)
+4432,[Sorcery] Freeze Solid
 4491,[Sorcery] Whiteout
+4492,[Sorcery] Divine Iceburst
+4493,[Sorcery] Shatter the Shards
+4494,[Sorcery] Mass Freeze
+4495,[Sorcery] IceQuake
 4530,[Sorcery] Cragbolt Wisp
 4531,[Sorcery] Cragbolt Spear
 4540,[Sorcery] Cragbolt Upwelling
@@ -28,9 +36,14 @@
 4601,[Sorcery] Quicksilver Affliction
 4602,[Sorcery] Curse of Midnight
 4603,[Sorcery] Quicksilver Shard
+4604,[Sorcery] Curse of Shadow
+4605,[Sorcery] Fulminated Quicksilver
 4621,[Sorcery] Quicksilver Comet
+4651,[Sorcery] Black Moon Eulogy
+4652,[Sorcery] Pure Darkness
 4671,[Sorcery] Oath of Darkness
 4672,[Sorcery] Attune of the Black Moon
+4690,[Sorcery] Shadow Arc
 4702,[Sorcery] Stellar Bombardment
 4711,[Sorcery] Rock Burst
 4712,[Sorcery] Meteor Sling
@@ -39,9 +52,11 @@
 4731,[Sorcery] Distortion Field
 4740,[Sorcery] Rock Heave
 4750,[Sorcery] Gravity Beam
+4760,[Sorcery] Crush
 4770,[Sorcery] Gravity Armor
 4780,[Sorcery] Cosmic Tunnel
 4790,[Sorcery] Astral Alignment
+4791,[Sorcery] Meteoric Alignment
 4801,[Sorcery] Lava Dart
 4802,[Sorcery] Burning Rancor
 4811,[Sorcery] Lava Spray
@@ -51,11 +66,17 @@
 4850,[Sorcery] Familial Consumption
 4851,[Sorcery] Blasphemer's Outrage
 4852,[Sorcery] Embrace the Devourer
+4853,[Sorcery] Superheat
+4854,[Sorcery] Living Forge
 4860,[Sorcery] Lava Pool
 4861,[Sorcery] Molten Stride
 4870,[Sorcery] Magma Missile
 4871,[Sorcery] Vortex of Eiglay
 4872,[Sorcery] Inferno
+4880,[Sorcery] Slag Spears
+4881,[Sorcery] Annealed Slag
+4890,[Sorcery] Molten Spikes
+4891,[Sorcery] Furnace Maul
 4901,[Sorcery] Thorn Burst
 4911,[Sorcery] Crimson Rose
 4920,[Sorcery] Body of Briar
@@ -91,11 +112,18 @@
 5070,[Sorcery] Blighted Armament
 5080,[Sorcery] Accursed Binding
 5081,[Sorcery] Rally the Legion
+5082,[Sorcery] Reassemble
 5090,[Sorcery] Godwyn's Vengeance
 5091,[Sorcery] Phoenix of Death
 5120,[Sorcery] Great Bubble Volley
 5130,[Sorcery] Armor of Bubbles
 5131,[Sorcery] Underworld Bubbleshield
+5140,[Sorcery] Dragonkin Enervation
+5150,[Sorcery] Bubble Snare
+5160,[Sorcery] Galvanic Barrier
+5170,[Sorcery] Cragbolt Dynamo
+5180,[Sorcery] Galvanic Icefang
+5190,[Sorcery] Maker's Lament
 5200,[Sorcery] Storm Gust
 5201,[Sorcery] Twister
 5202,[Sorcery] Storm Strike
@@ -105,6 +133,7 @@
 5221,[Sorcery] Cyclone
 5222,[Sorcery] Tornado
 5230,[Sorcery] Gale Blast
+5232,[Sorcery] Tempest Lance
 5240,[Sorcery] Storm Arc
 5241,[Sorcery] Storm Call
 5242,[Sorcery] Storm Shatter
@@ -115,6 +144,11 @@
 5271,[Sorcery] Air Tax
 5280,[Sorcery] Stormcaller's Sublimity
 5281,[Sorcery] Tempest Form
+5282,[Sorcery] Tempest Embrace
+5290,[Sorcery] Windborne Vault
+5291,[Sorcery] Zephyr Strike
+5292,[Sorcery] Storm Arc Volley
+5293,[Sorcery] Lion's Breath
 6001,[Incantation] O- Flame!
 6020,[Incantation] Flame Fall Upon Them
 6030,[Incantation] Whirl- O Flame
@@ -137,6 +171,11 @@
 6202,[Incantation] Godslayer Sickle
 6211,[Incantation] Burrowing Black Flame
 6220,[Incantation] Surge- O Flame
+6221,[Incantation] Twilight Wisp
+6222,[Incantation] Entwined Flare
+6223,[Incantation] Twilight Vortex
+6224,[Incantation] Soul Tether
+6225,[Incantation] Sever the Thread
 6231,[Incantation] Black Flame Wave
 6261,[Incantation] Godslayer's Devotion
 6262,[Incantation] Wrath of the Queen
@@ -213,14 +252,21 @@
 7221,[Incantation] Poison Orb
 7222,[Incantation] Rotten Mist
 7241,[Incantation] Rotten Burst
+7242,[Incantation] Rotten Cataclysm
 7250,[Incantation] Chitonous Shell
 7251,[Incantation] Pest's Tenacity
 7252,[Incantation] Convert Corruption
 7260,[Incantation] Carrion Swarm
 7270,[Incantation] Rot Spray
 7271,[Incantation] Blighted Contagion
+7280,[Incantation] Toxic Spear
+7281,[Incantation] Scion's Reaping
+7282,[Incantation] Toxic Rupture
+7283,[Incantation] Orb of Pestilence
+7284,[Incantation] Pest-Thread Storm
 7290,[Incantation] Aspect of the Scorpion
 7291,[Incantation] Blessing of the Sealed God
+7292,[Incantation] Gaze of the Basilisk
 7301,[Incantation] Touch of Frenzy
 7312,[Incantation] Chaos Beam
 7321,[Incantation] Frenzied Flare
@@ -254,6 +300,35 @@
 7442,[Incantation] Ancestral Conduit
 7450,[Incantation] Spirit Seekers
 7460,[Incantation] Seeker Salvo
+7470,[Incantation] Fleeting Vapor-fly
+7471,[Incantation] Lulling Dart-fly
 7480,[Incantation] Spirit Weaving
 7481,[Incantation] Dream Meld
+7482,[Incantation] Spiritual Equilibrium
+7490,[Incantation] Soothing Aura
+7491,[Incantation] Tranquility
+7492,[Incantation] Invocation of Saint Trina
 7903,[Incantation] Golden Light Fortification
+2004520,[Sorcery] Nail Constellation
+2004530,[Sorcery] Nail Burst
+2004920,[Sorcery] Creeping Vines
+2004930,[Sorcery] Thorn Field
+2004940,[Sorcery] Scadutree Coruscation
+2006220,[Sorcery] Putrid Salvo
+2006230,[Sorcery] Putrid Shardstorm
+2006250,[Sorcery] Scadu Rebirth
+2006260,[Sorcery] Shadow of Death
+2006310,[Incantation] Bloodboon Quagmire
+2006320,[Incantation] Seeker Swarm
+2006330,[Incantation] Sanguine Traversal
+2006340,[Incantation] Fiendish Ritual
+2006350,[Incantation] Blood of the Maiden
+2007310,[Incantation] Frenzied Lunge
+2007320,[Incantation] Maddening Orb
+2007330,[Incantation] Terrifying Presence
+2007400,[Sorcery] Cosmic Surge
+2007430,[Sorcery] Gaze of Metyr
+2007440,[Sorcery] Microcosmic Spree
+2007610,[Incantation] Watchful Seekers
+2007750,[Incantation] Horn Spike
+2007760,[Incantation] Immortal Coil
