@@ -392,6 +392,7 @@ class InventoryEditor:
     _CONVERGENCE_CATS = {
         "Convergence Melee Weapons",
         "Convergence Reworked Weapons",
+        "Convergence Ranged Weapons",
         "Convergence Shields",
         "Convergence Armor",
         "Convergence Spell Tools",
