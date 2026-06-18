@@ -37,6 +37,7 @@ ID,Name
 1160100,Berserker Battlewear
 1160200,Berserker Bracers
 1160300,Berserker Legwraps
+1161000,Berserker Leather Helm (Altered)
 1170000,Dreadnought Helm
 1170100,Dreadnought Armor
 1170200,Dreadnought Gauntlets
@@ -111,8 +112,12 @@ ID,Name
 1950000,Millicent's Headband
 1990200,High Page Gloves
 1990300,High Page Trousers
+2000200,Rotten Duelist Wraps
 3020000,Golem Helm
 3020100,Golem Armor
 3020200,Golem Gauntlets
 3020300,Golem Greaves
-
+5360000,Quicksilver Circlet
+5360100,Quicksilver Scale Robe
+5360200,Quicksilver Cuffs
+5360300,Quicksilver Greaves

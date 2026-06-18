@@ -1,4 +1,58 @@
 ID,Name,maxNum,category,maxRepositoryNum
+8300,Faint Rune of Beasts,5,Convergence Runes,5
+8301,Shimmering Rune of Beasts,5,Convergence Runes,5
+8302,Glowing Rune of Beasts,5,Convergence Runes,5
+8303,Shining Rune of Beasts,5,Convergence Runes,5
+8304,Radiant Rune of Beasts,5,Convergence Runes,5
+8400,Shadow Rune of Beasts,5,Convergence Runes,5
+8305,Faint Rune of Order,5,Convergence Runes,5
+8306,Shimmering Rune of Order,5,Convergence Runes,5
+8307,Glowing Rune of Order,5,Convergence Runes,5
+8308,Shining Rune of Order,5,Convergence Runes,5
+8309,Radiant Rune of Order,5,Convergence Runes,5
+8405,Shadow Rune of Order,5,Convergence Runes,5
+8310,Faint Rune of Fell Flame,5,Convergence Runes,5
+8311,Shimmering Rune of Fell Flame,5,Convergence Runes,5
+8312,Glowing Rune of Fell Flame,5,Convergence Runes,5
+8313,Shining Rune of Fell Flame,5,Convergence Runes,5
+8314,Radiant Rune of Fell Flame,5,Convergence Runes,5
+8410,Shadow Rune of Fell Flame,5,Convergence Runes,5
+8315,Faint Rune of Lightning,5,Convergence Runes,5
+8316,Shimmering Rune of Lightning,5,Convergence Runes,5
+8317,Glowing Rune of Lightning,5,Convergence Runes,5
+8318,Shining Rune of Lightning,5,Convergence Runes,5
+8319,Radiant Rune of Lightning,5,Convergence Runes,5
+8415,Shadow Rune of Lightning,5,Convergence Runes,5
+8320,Faint Rune of Black Flame,5,Convergence Runes,5
+8321,Shimmering Rune of Black Flame,5,Convergence Runes,5
+8322,Glowing Rune of Black Flame,5,Convergence Runes,5
+8323,Shining Rune of Black Flame,5,Convergence Runes,5
+8324,Radiant Rune of Black Flame,5,Convergence Runes,5
+8420,Shadow Rune of Blackflame,5,Convergence Runes,5
+8325,Faint Rune of Frenzied Flame,5,Convergence Runes,5
+8326,Shimmering Rune of Frenzied Flame,5,Convergence Runes,5
+8327,Glowing Rune of Frenzied Flame,5,Convergence Runes,5
+8328,Shining Rune of Frenzied Flame,5,Convergence Runes,5
+8329,Radiant Rune of Frenzied Flame,5,Convergence Runes,5
+8425,Shadow Rune of Frenzy,5,Convergence Runes,5
+8330,Faint Rune of Bloodflame,5,Convergence Runes,5
+8331,Shimmering Rune of Bloodflame,5,Convergence Runes,5
+8332,Glowing Rune of Bloodflame,5,Convergence Runes,5
+8333,Shining Rune of Bloodflame,5,Convergence Runes,5
+8334,Radiant Rune of Bloodflame,5,Convergence Runes,5
+8430,Shadow Rune of Bloodflame,5,Convergence Runes,5
+8335,Faint Rune of Rot,5,Convergence Runes,5
+8336,Shimmering Rune of Rot,5,Convergence Runes,5
+8337,Glowing Rune of Rot,5,Convergence Runes,5
+8338,Shining Rune of Rot,5,Convergence Runes,5
+8339,Radiant Rune of Rot,5,Convergence Runes,5
+8435,Shadow Rune of Rot,5,Convergence Runes,5
+8340,Faint Rune of Ancestors,5,Convergence Runes,5
+8341,Shimmering Rune of Ancestors,5,Convergence Runes,5
+8342,Glowing Rune of Ancestors,5,Convergence Runes,5
+8343,Shining Rune of Ancestors,5,Convergence Runes,5
+8344,Radiant Rune of Ancestors,5,Convergence Runes,5
+8440,Shadow Rune of Ancestors,5,Convergence Runes,5
 8345,Faint Rune of Glintstone,5,Convergence Runes,5
 8346,Shimmering Rune of Glintstone,5,Convergence Runes,5
 8347,Glowing Rune of Glintstone,5,Convergence Runes,5
@@ -16,85 +70,40 @@ ID,Name,maxNum,category,maxRepositoryNum
 8357,Glowing Rune of the Dragonkin,5,Convergence Runes,5
 8358,Shining Rune of the Dragonkin,5,Convergence Runes,5
 8359,Radiant Rune of the Dragonkin,5,Convergence Runes,5
+8455,Shadow Rune of the Dragonkin,5,Convergence Runes,5
 8360,Faint Rune of Magma,5,Convergence Runes,5
 8361,Shimmering Rune of Magma,5,Convergence Runes,5
 8362,Glowing Rune of Magma,5,Convergence Runes,5
 8363,Shining Rune of Magma,5,Convergence Runes,5
 8364,Radiant Rune of Magma,5,Convergence Runes,5
-8375,Faint Rune of the Storm,5,Convergence Runes,5
-8376,Shimmering Rune of the Storm,5,Convergence Runes,5
-8377,Glowing Rune of the Storm,5,Convergence Runes,5
-8378,Shining Rune of the Storm,5,Convergence Runes,5
-8379,Radiant Rune of the Storm,5,Convergence Runes,5
+8460,Shadow Rune of Magma,5,Convergence Runes,5
 8365,Faint Rune of Night,5,Convergence Runes,5
 8366,Shimmering Rune of Night,5,Convergence Runes,5
 8367,Glowing Rune of Night,5,Convergence Runes,5
 8368,Shining Rune of Night,5,Convergence Runes,5
 8369,Radiant Rune of Night,5,Convergence Runes,5
+8465,Shadow Rune of Night,5,Convergence Runes,5
 8370,Faint Rune of Necromancy,5,Convergence Runes,5
 8371,Shimmering Rune of Necromancy,5,Convergence Runes,5
 8372,Glowing Rune of Necromancy,5,Convergence Runes,5
 8373,Shining Rune of Necromancy,5,Convergence Runes,5
 8374,Radiant Rune of Necromancy,5,Convergence Runes,5
 8470,Shadow Rune of Necromancy,5,Convergence Runes,5
+8375,Faint Rune of the Storm,5,Convergence Runes,5
+8376,Shimmering Rune of the Storm,5,Convergence Runes,5
+8377,Glowing Rune of the Storm,5,Convergence Runes,5
+8378,Shining Rune of the Storm,5,Convergence Runes,5
+8379,Radiant Rune of the Storm,5,Convergence Runes,5
+8475,Shadow Rune of the Storm,5,Convergence Runes,5
 8380,Faint Rune of Frost,5,Convergence Runes,5
 8381,Shimmering Rune of Frost,5,Convergence Runes,5
 8382,Glowing Rune of Frost,5,Convergence Runes,5
 8383,Shining Rune of Frost,5,Convergence Runes,5
 8384,Radiant Rune of Frost,5,Convergence Runes,5
+8480,Shadow Rune of Frost,5,Convergence Runes,5
 8385,Faint Rune of Thorns,5,Convergence Runes,5
 8386,Shimmering Rune of Thorns,5,Convergence Runes,5
 8387,Glowing Rune of Thorns,5,Convergence Runes,5
 8388,Shining Rune of Thorns,5,Convergence Runes,5
 8389,Radiant Rune of Thorns,5,Convergence Runes,5
 8485,Shadow Rune of Thorns,5,Convergence Runes,5
-8310,Faint Rune of Fell Flame,5,Convergence Runes,5
-8311,Shimmering Rune of Fell Flame,5,Convergence Runes,5
-8312,Glowing Rune of Fell Flame,5,Convergence Runes,5
-8313,Shining Rune of Fell Flame,5,Convergence Runes,5
-8314,Radiant Rune of Fell Flame,5,Convergence Runes,5
-8410,Shadow Rune of Fell Flame,5,Convergence Runes,5
-8305,Faint Rune of Order,5,Convergence Runes,5
-8306,Shimmering Rune of Order,5,Convergence Runes,5
-8307,Glowing Rune of Order,5,Convergence Runes,5
-8308,Shining Rune of Order,5,Convergence Runes,5
-8309,Radiant Rune of Order,5,Convergence Runes,5
-8405,Shadow Rune of Order,5,Convergence Runes,5
-8300,Faint Rune of Beasts,5,Convergence Runes,5
-8301,Shimmering Rune of Beasts,5,Convergence Runes,5
-8302,Glowing Rune of Beasts,5,Convergence Runes,5
-8303,Shining Rune of Beasts,5,Convergence Runes,5
-8304,Radiant Rune of Beasts,5,Convergence Runes,5
-8400,Shadow Rune of Beasts,5,Convergence Runes,5
-8315,Faint Rune of Lightning,5,Convergence Runes,5
-8316,Shimmering Rune of Lightning,5,Convergence Runes,5
-8317,Glowing Rune of Lightning,5,Convergence Runes,5
-8318,Shining Rune of Lightning,5,Convergence Runes,5
-8319,Radiant Rune of Lightning,5,Convergence Runes,5
-8415,Shadow Rune of Lightning,5,Convergence Runes,5
-8320,Faint Rune of Black Flame,5,Convergence Runes,5
-8321,Shimmering Rune of Black Flame,5,Convergence Runes,5
-8322,Glowing Rune of Black Flame,5,Convergence Runes,5
-8323,Shining Rune of Black Flame,5,Convergence Runes,5
-8324,Radiant Rune of Black Flame,5,Convergence Runes,5
-8325,Faint Rune of Frenzied Flame,5,Convergence Runes,5
-8326,Shimmering Rune of Frenzied Flame,5,Convergence Runes,5
-8327,Glowing Rune of Frenzied Flame,5,Convergence Runes,5
-8328,Shining Rune of Frenzied Flame,5,Convergence Runes,5
-8329,Radiant Rune of Frenzied Flame,5,Convergence Runes,5
-8330,Faint Rune of Bloodflame,5,Convergence Runes,5
-8331,Shimmering Rune of Bloodflame,5,Convergence Runes,5
-8332,Glowing Rune of Bloodflame,5,Convergence Runes,5
-8333,Shining Rune of Bloodflame,5,Convergence Runes,5
-8334,Radiant Rune of Bloodflame,5,Convergence Runes,5
-8335,Faint Rune of Rot,5,Convergence Runes,5
-8336,Shimmering Rune of Rot,5,Convergence Runes,5
-8337,Glowing Rune of Rot,5,Convergence Runes,5
-8338,Shining Rune of Rot,5,Convergence Runes,5
-8339,Radiant Rune of Rot,5,Convergence Runes,5
-8340,Faint Rune of Ancestors,5,Convergence Runes,5
-8341,Shimmering Rune of Ancestors,5,Convergence Runes,5
-8342,Glowing Rune of Ancestors,5,Convergence Runes,5
-8343,Shining Rune of Ancestors,5,Convergence Runes,5
-8344,Radiant Rune of Ancestors,5,Convergence Runes,5
-8440,Shadow Rune of Ancestors,5,Convergence Runes,5

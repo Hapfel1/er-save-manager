@@ -59,6 +59,8 @@ def _norm_icon(s: str) -> str:
     # Strip Convergence weapon prefix and numeric ID suffix
     s = re.sub(r"^wep-", "", s, flags=re.I)
     s = re.sub(r"-\d+$", "", s)
+    # Split camelCase so "CorpaMagica" -> "Corpa Magica"
+    s = re.sub(r"([a-z])([A-Z])", r"\1 \2", s)
     # Normalize colon spacing ("Note : X" -> "Note: X")
     s = re.sub(r"\s*:\s*", ": ", s)
     # Strip diacritics to match _norm_db (consistent both directions)
@@ -128,13 +130,25 @@ _NAME_OVERRIDES: dict[str, str] = {
     "shining rune of beasts": "radiant rune of beasts",
     "shining rune of lightning": "radiant rune of lightning",
     "shining rune of ancestors": "radiant rune of ancestors",
-    # Convergence rune tier 6: pack uses "Empyrean", DB uses "Shadow"
-    "shadow rune of necromancy": "empyrean rune of necromancy",
-    "shadow rune of thorns": "empyrean rune of thorns",
-    "shadow rune of fell flame": "empyrean rune of fell flame",
-    "shadow rune of order": "empyrean rune of order",
-    "shadow rune of beasts": "empyrean rune of beasts",
-    "shadow rune of ancestors": "empyrean rune of ancestors",
+    # Convergence rune tier 6: icon filenames use "6_Shadow_Rune_of_X" prefix
+    "shadow rune of ancestors": "6_shadow_rune_of_ancestors",
+    "shadow rune of beasts": "6_shadow_rune_of_beasts",
+    "shadow rune of blackflame": "6_shadow_rune_of_blackflame",
+    "shadow rune of bloodflame": "6_shadow_rune_of_bloodflame",
+    "shadow rune of fell flame": "6_shadow_rune_of_fell_flame",
+    "shadow rune of frenzy": "6_shadow_rune_of_frenzy",
+    "shadow rune of frost": "6_shadow_rune_of_frost",
+    "shadow rune of glintstone": "6_shadow_rune_of_glint",
+    "shadow rune of gravity": "6_shadow_rune_of_gravity",
+    "shadow rune of lightning": "6_shadow_rune_of_lightning",
+    "shadow rune of magma": "6_shadow_rune_of_magma",
+    "shadow rune of necromancy": "6_shadow_rune_of_necromancy",
+    "shadow rune of night": "6_shadow_rune_of_night",
+    "shadow rune of order": "6_shadow_rune_of_order",
+    "shadow rune of rot": "6_shadow_rune_of_rot",
+    "shadow rune of the dragonkin": "6_shadow_dragonkin_rune",
+    "shadow rune of the storm": "6_shadow_rune_of_storm",
+    "shadow rune of thorns": "6_shadow_rune_of_thorns",
     # Merchant items
     "golden order principles": "golden order principia",
     # Prattling Pate "You're beautiful" - double quotes in DB name, plain name in icon
@@ -158,6 +172,63 @@ _NAME_OVERRIDES: dict[str, str] = {
     "putrescence sorcerer": "putrescent sorcerer",
     # Convergence melee - typo in pack ("ride" instead of "rite")
     "deathrite dagger": "deathride-dagger",
+    # 3.0 spell icons - apostrophe, abbreviation and underscore mismatches
+    "ice guardian's reckoning": "ice guardian reckoning",
+    "maker's lament": "makers lament",
+    "lion's breath": "lions breath",
+    "shadow of death": "shadow_of_death",
+    "scadu rebirth": "scadu_rebirth",
+    "putrid salvo": "putrid_salvo",
+    "putrid shardstorm": "putrid_shardstorm",
+    "thorn field": "thornfield",
+    "creeping vines": "creep thorns",
+    "terrifying presence": "terr presence",
+    "frenzied lunge": "frenzy lunge",
+    "blood of the maiden": "bloodof the maiden",
+    "lulling dart-fly": "dartfly",
+    "fleeting vapor-fly": "vaporfly",
+    "gaze of the basilisk": "rot_gaze_of_the_basilisk",
+    "frenzied flame blade": "frenzy_armament",
+    # 3.0 weapons - icon filenames don't match item names
+    # values use post-camelCase-split keys produced by _norm_icon
+    "stormcaller's dirk": "storm dagger",
+    "quicksilver fragment": "quicksilver dagger",
+    "maddening brand": "frenzy ss",
+    "maddening brand [frenzy]": "frenzy ss",
+    "regalia of noxumbra": "regalia of noxumbra",
+    "regal splitblade (gs)": "quality trick greatsword",
+    "regal splitblade (dual light greatswords)": "quality trick greatsword",
+    "greatsword of midra": "frenzy ugs",
+    "fingerprint hexmark [frenzy]": "frenzy ugs",
+    "galvanic culling blade [twinblade]": "dragonkin twinblade",
+    "crucifix of eochaid": "crucifix of eochaid big",
+    "cragsplitter": "strength spear",
+    "rhys' swordspear": "rhys spear",
+    "starcaller mattock": "starcaller mandril",
+    "halberd of archea": "archea halberd",
+    "glaive of the crusade": "glaive of crusade",
+    "crystaline claw": "crystal pincer",
+    "fingerslayer blade": "fingerslayer blade",
+    "[conv] fingerslayer blade": "fingerslayer blade",
+    "crescent moons": "moon cirque",
+    "konrad's bloodletter": "konrad sword",
+    "nia's passot": "nias passot",
+    "primeval splinter": "crystal lgs",
+    "[conv] primeval splinter": "crystal lgs",
+    "goras' claw": "goras claws big",
+    "smithscript rosary": "rosary",
+    "scadu sapling": "scadu bow",
+    "[conv] scadu sapling": "scadu bow",
+    "devonia's longbow": "crucible bow",
+    "demi-dragon cleaver": "dragonkin subject cleaver",
+    "maliketh's black blade (restored)": "restored malikeths",
+    # 3.0 spirit ashes
+    "blaidd ashes": "blaidd",
+    "titanus, shell-bound companion": "turtle",
+    "noxumbra gaoler ashes": "jailers",
+    "demidragon ashes": "demi dragons",
+    "tempestcaller ashes": "tempestcaller",
+    "twinned jellyfish ashes": "twin jellyfish",
 }
 
 
@@ -165,6 +236,9 @@ def _lookup(name: str, category_name: str = "") -> str | None:
     if not _ensure_loaded() or _available is None:
         return None
     key = _norm_db(name)
+    # Strip [Sorcery]/[Incantation] prefix before override check so spell
+    # overrides work without needing prefixed duplicate entries
+    key = _CAT_PRE_RE.sub("", key).strip()
 
     # Explicit overrides take priority
     if key in _NAME_OVERRIDES:
