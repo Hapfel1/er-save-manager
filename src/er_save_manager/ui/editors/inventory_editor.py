@@ -56,6 +56,45 @@ def _bump_matchmaking_level(
     save_file._raw_data[off : off + len(data)] = data
 
 
+def _lower_matchmaking_level(save_file, slot_idx: int, full_item_id: int) -> None:
+    """
+    Lower matchmaking_weapon_level after a weapon removal if no remaining
+    weapon justifies the current stored value.
+
+    Rescans all weapons in held and storage inventory after removal and
+    writes back the new maximum if it is lower than the stored value.
+    """
+    if (full_item_id & 0xF0000000) != _CAT_WEAPON:
+        return
+
+    from io import BytesIO
+
+    from er_save_manager.editors.matchmaking_utils import get_max_weapon_upgrade
+
+    slot = save_file.characters[slot_idx]
+    char = slot.player_game_data
+    current_mm = char.matchmaking_weapon_level
+    if current_mm == 0:
+        return
+
+    new_mm = get_max_weapon_upgrade(slot)
+    if new_mm >= current_mm:
+        return
+
+    char.matchmaking_weapon_level = new_mm
+
+    if not (
+        hasattr(slot, "player_game_data_offset") and slot.player_game_data_offset >= 0
+    ):
+        return
+
+    buf = BytesIO()
+    char.write(buf)
+    data = buf.getvalue()
+    off = slot.player_game_data_offset
+    save_file._raw_data[off : off + len(data)] = data
+
+
 def _patch_combo_scroll(combo):
     """Bind mousewheel to CTkComboBox dropdown on Windows. Returns combo."""
     if _platform.system() != "Windows":
@@ -432,7 +471,6 @@ class InventoryEditor:
     _CONVERGENCE_CATS = {
         "Convergence Melee Weapons",
         "Convergence Reworked Weapons",
-        "Convergence Ranged Weapons",
         "Convergence Shields",
         "Convergence Armor",
         "Convergence Spell Tools",
