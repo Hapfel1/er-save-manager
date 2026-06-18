@@ -357,13 +357,6 @@ class StatsEditor:
         )
         self._mm_min_label.grid(row=1, column=2, padx=10, pady=5, sticky=ctk.W)
 
-        ctk.CTkButton(
-            mm_frame,
-            text="Set to Inventory Max",
-            command=self._set_matchmaking_to_max,
-            width=160,
-        ).grid(row=2, column=0, columnspan=2, padx=5, pady=(0, 10), sticky=ctk.W)
-
         # Apply button
         button_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
         button_frame.pack(fill=ctk.X, pady=10, padx=10)
@@ -835,8 +828,3 @@ class StatsEditor:
             self._mm_min_label.configure(
                 text=f"Min from inventory: {self._matchmaking_min}"
             )
-
-    def _set_matchmaking_to_max(self) -> None:
-        """Set the matchmaking level entry to the inventory floor."""
-        if self.matchmaking_level_var is not None:
-            self.matchmaking_level_var.set(self._matchmaking_min)
