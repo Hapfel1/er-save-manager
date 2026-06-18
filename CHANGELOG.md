@@ -3,6 +3,58 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.5.0
+**Released:** June 18, 2026
+
+
+### ✨ New Features
+
+- Add Nightreign save editor `[NR]` ([6df3ac9](https://github.com/Hapfel1/er-save-manager/commit/6df3ac9f5eb5ffe963d9d02fff76860795d613b2))
+
+- Add 3.0 update support `[convergence]` ([80150b5](https://github.com/Hapfel1/er-save-manager/commit/80150b59ba03666b87c57d54845fca949ace8f3b))
+
+
+
+### 🔧 Bug Fixes
+
+- Fix relics tab layout in fixed-height window `[NR]` ([00d8947](https://github.com/Hapfel1/er-save-manager/commit/00d89476735d5a7e24f6afd0c5ee97a72931ba84))
+
+- Removed cut content cookbooks ([b087ab6](https://github.com/Hapfel1/er-save-manager/commit/b087ab6b5b3fd087c183702d876289583e71dd4c))
+
+- Cookbook/whetblade event flags and display fixes `[inventory]` ([66dff69](https://github.com/Hapfel1/er-save-manager/commit/66dff6924939d1d5312492b14ffc4e0180482f3e))
+
+- Expand _KEY_ITEM_BASE_IDS with all confirmed key item categories `[inventory]` ([7ab5a30](https://github.com/Hapfel1/er-save-manager/commit/7ab5a30b4fdffed63e7b09d9daa7da612bcaa3ea))
+
+- Remove cut content and fix item names across goods CSVs `[items]` ([b868b39](https://github.com/Hapfel1/er-save-manager/commit/b868b39ae027a26ad3ed20089758257e2e38d7ae))
+
+- Add containers and upgrade items to _KEY_ITEM_BASE_IDS `[inventory]` ([610e822](https://github.com/Hapfel1/er-save-manager/commit/610e822f1eb92a5bb0191697b1d6c7da3022d59f))
+
+- Add Dragon Heart and Lost Ashes of War to _KEY_ITEM_BASE_IDS `[inventory]` ([36b3d8b](https://github.com/Hapfel1/er-save-manager/commit/36b3d8baf534ae271154e83694ee3a40f5822702))
+
+- Remove two cut content items ([5e13a5d](https://github.com/Hapfel1/er-save-manager/commit/5e13a5dc32241b4e367add5fd1054785c745593d))
+
+
+
+### 🎨 User Interface
+
+- Ui: Fixed Icons being the same for modified variants of certain Items:
+Lord of Blood's Favor
+Unalloyed Gold Needle
+Miniature Ranni
+Academy Glintstone Key
+Larval Tear ([536fa62](https://github.com/Hapfel1/er-save-manager/commit/536fa62e8a3d0e69eaab070455b93d6920deb6df))
+
+- Replace pruning warning with pre-deletion CTk dialog `[backup]` ([2c9828b](https://github.com/Hapfel1/er-save-manager/commit/2c9828b737887edcbd9a61c4bbe7cbacaf23d3b9))
+
+
+
+### 📦 Dependencies
+
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([766486c](https://github.com/Hapfel1/er-save-manager/commit/766486c604394572e3bcaabf3a08bef902ecc418))
+
+
+
+---
 ## 📦 Release 1.4.1
 **Released:** June 09, 2026
 
@@ -1075,6 +1127,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.5.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.4.1..v1.5.0
 [1.4.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.4.0..v1.4.1
 [1.4.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.3.2..v1.4.0
 [1.3.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.3.1..v1.3.2
