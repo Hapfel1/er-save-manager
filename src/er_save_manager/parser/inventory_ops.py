@@ -960,6 +960,7 @@ def insert_gaitem(
     if net_shift != 0:
         slot.inventory_held_offset += net_shift
         slot.inventory_storage_offset += net_shift
+        slot.player_game_data_offset += net_shift
 
     return handle, net_shift
 
@@ -998,6 +999,7 @@ def _remove_gaitem(save: Save, slot_idx: int, slot, gaitem_idx: int) -> int:
             slot.gaitem_offsets[i] += gaitem_size_delta
         slot.inventory_held_offset += net_shift
         slot.inventory_storage_offset += net_shift
+        slot.player_game_data_offset += net_shift
 
     return net_shift
 
