@@ -46,6 +46,7 @@
 //Convergence Mod Categories
 0x00000000 false Items/Convergence/Weapons/ConvergenceMeleeWeapons.csv Convergence Melee Weapons
 0x00000000 false Items/Convergence/Weapons/ConvergenceReworkedWeapons.csv Convergence Reworked Weapons
+0x00000000 false Items/Convergence/Weapons/ConvergenceRangedWeapons.csv Convergence Ranged Weapons
 0x00000000 false Items/Convergence/Weapons/ConvergenceShields.csv Convergence Shields
 0x00000000 false Items/Convergence/Weapons/ConvergenceAmmo.csv Convergence Ammo
 0x80000000 false Items/Convergence/ConvergenceGems.csv Convergence Gems
