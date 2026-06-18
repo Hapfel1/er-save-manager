@@ -47,7 +47,7 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 67540000,Konrad's Bloodletter,somber,0,93,LightGreatsword,1,Standard
 11020000,Leaden Maul,somber,0,21,HammerNormal,1,Standard
 23160000,Lodestone of Gelmir,somber,0,41,AxhammerLarge,1,Standard
-2270000,Maddening Brand [Frenzy],somber,0,3,SwordNormal,1,Standard
+2270000,Maddening Brand,somber,0,3,SwordNormal,1,Standard
 1170000,Midnight Dagger,somber,0,1,Dagger,1,Standard
 13050000,Mohgwyn Censer,somber,0,24,Flail,1,Standard
 2150000,Molten Sword,somber,0,3,SwordNormal,1,Standard
