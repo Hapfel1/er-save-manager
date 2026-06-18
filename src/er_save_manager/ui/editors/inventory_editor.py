@@ -15,6 +15,46 @@ from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.toast import show_toast
 from er_save_manager.ui.utils import bind_mousewheel
 
+_CAT_WEAPON = 0x00000000
+
+
+def _bump_matchmaking_level(
+    save_file, slot_idx: int, full_item_id: int, upgrade: int, reinforcement: str
+) -> None:
+    """
+    Raise matchmaking_weapon_level on the character if the spawned weapon's
+    mm level exceeds the currently stored value.
+
+    Only weapons with upgrade > 0 can change the floor. Writes directly to
+    raw save data using the tracked player_game_data_offset.
+    """
+    if (full_item_id & 0xF0000000) != _CAT_WEAPON or upgrade <= 0:
+        return
+
+    from io import BytesIO
+
+    from er_save_manager.editors.matchmaking_utils import somber_to_mm
+
+    new_mm = somber_to_mm(upgrade) if reinforcement == "somber" else upgrade
+
+    slot = save_file.characters[slot_idx]
+    char = slot.player_game_data
+    if new_mm <= char.matchmaking_weapon_level:
+        return
+
+    char.matchmaking_weapon_level = new_mm
+
+    if not (
+        hasattr(slot, "player_game_data_offset") and slot.player_game_data_offset >= 0
+    ):
+        return
+
+    buf = BytesIO()
+    char.write(buf)
+    data = buf.getvalue()
+    off = slot.player_game_data_offset
+    save_file._raw_data[off : off + len(data)] = data
+
 
 def _patch_combo_scroll(combo):
     """Bind mousewheel to CTkComboBox dropdown on Windows. Returns combo."""
@@ -1571,6 +1611,14 @@ class InventoryEditor:
             )
 
             _apply_item_event_flags(save_file, slot_idx, full_id, True)
+
+            _bump_matchmaking_level(
+                save_file,
+                slot_idx,
+                full_id,
+                upg,
+                getattr(self.selected_item, "reinforcement", "standard"),
+            )
 
             save_file.recalculate_checksums()
             save_path = self.get_save_path()
