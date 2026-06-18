@@ -2,17 +2,17 @@ ID,Name,maxNum,category,maxRepositoryNum
 10101,Smithing Stone,999,Convergence Stones,999
 10105,Large Smithing Stone,999,Convergence Stones,999
 10107,Great Smithing Stone,999,Convergence Stones,999
+10110,Shadow Smithing Stone,999,Convergence Stones,999
+10111,Large Shadow Smithing Stone,999,Convergence Stones,999
+10114,Primordial Shadow Smithing Stone,999,Convergence Stones,999
 10140,Dragon Smithing Stone,999,Convergence Stones,999
 10160,Somber Stone,999,Convergence Stones,999
 10164,Large Somber Stone,999,Convergence Stones,999
 10165,Great Somber Stone,999,Convergence Stones,999
 10167,Colossal Somber Stone,999,Convergence Stones,999
 10168,Dragon Somber Stone,999,Convergence Stones,999
-10110,Shadow Smithing Stone,999,Convergence Upgrade Materials,999
-10111,Large Shadow Smithing Stone,999,Convergence Upgrade Materials,999
-10114,Primordial Shadow Smithing Stone,999,Convergence Upgrade Materials,999
-10170,Somber Shadow Stone,999,Convergence Upgrade Materials,999
-10171,Large Somber Shadow Stone,999,Convergence Upgrade Materials,999
-10172,Great Somber Shadow Stone,999,Convergence Upgrade Materials,999
-10173,Colossal Somber Shadow Stone,999,Convergence Upgrade Materials,999
-10174,Primordial Somber Shadow Stone,999,Convergence Upgrade Materials,999
+10170,Somber Shadow Stone,999,Convergence Stones,999
+10171,Large Somber Shadow Stone,999,Convergence Stones,999
+10172,Great Somber Shadow Stone,999,Convergence Stones,999
+10173,Colossal Somber Shadow Stone,999,Convergence Stones,999
+10174,Primordial Somber Shadow Stone,999,Convergence Stones,999
