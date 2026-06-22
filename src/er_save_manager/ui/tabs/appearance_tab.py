@@ -43,6 +43,7 @@ class AppearanceTab:
         self.show_toast = show_toast_callback
         self.preset_frames = []
         self.selected_slot = None  # Track selected preset slot
+        self._warped_face_btn = None
 
     def setup_ui(self):
         """Setup the appearance tab UI"""
@@ -132,6 +133,93 @@ class AppearanceTab:
             command=self.open_preset_browser,
             width=200,
         ).pack(side=tk.LEFT)
+
+        from er_save_manager.ui.settings import get_settings
+
+        if get_settings().get("debug_warped_face", False):
+            self._warped_face_btn = ctk.CTkButton(
+                btn_row,
+                text="Apply Warped Face",
+                command=self.apply_warped_face,
+                width=160,
+                fg_color=("gray70", "gray30"),
+            )
+            self._warped_face_btn.pack(side=tk.LEFT, padx=(6, 0))
+
+    def apply_warped_face(self):
+        """Zero out _unk0x6c and related fields to produce the warped face effect."""
+        if self.selected_slot is None:
+            from er_save_manager.ui.messagebox import CTkMessageBox
+
+            CTkMessageBox.showwarning(
+                "No Selection", "Please select a preset first.", parent=self.parent
+            )
+            return
+
+        save_file = self.get_save_file()
+        if not save_file:
+            from er_save_manager.ui.messagebox import CTkMessageBox
+
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first.", parent=self.parent
+            )
+            return
+
+        from er_save_manager.ui.messagebox import CTkMessageBox
+
+        if not CTkMessageBox.askyesno(
+            "Apply Warped Face",
+            f"Apply warped face distortion to Preset {self.selected_slot + 1}? This zeroes the secondary face slider block.",
+            parent=self.parent,
+        ):
+            return
+
+        try:
+            presets = save_file.get_character_presets()
+            preset = presets.presets[self.selected_slot]
+
+            if preset.is_empty():
+                CTkMessageBox.showwarning(
+                    "Empty Slot", "Selected preset slot is empty.", parent=self.parent
+                )
+                return
+
+            # Zero the secondary face slider block to produce the warped face effect.
+            preset.unk0x6c = bytes(len(preset.unk0x6c))
+            preset.unk0xb1 = bytes(len(preset.unk0xb1))
+            preset.face_data_marker = 0
+
+            save_path = self.get_save_path()
+            if save_path:
+                from er_save_manager.backup.manager import BackupManager
+
+                manager = BackupManager(Path(save_path))
+                manager.create_backup(
+                    description=f"before_warped_face_slot_{self.selected_slot + 1}",
+                    operation="warped_face",
+                    save=save_file,
+                )
+
+            save_file.import_preset(preset, self.selected_slot)
+            save_file.recalculate_checksums()
+            if save_path:
+                save_file.to_file(Path(save_path))
+
+            if self.reload_save:
+                self.reload_save()
+
+            self.show_toast(
+                f"Warped face applied to Preset {self.selected_slot + 1}!",
+                duration=2500,
+            )
+
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error", f"Failed to apply warped face:\n{e}", parent=self.parent
+            )
+            import traceback
+
+            traceback.print_exc()
 
     def open_preset_browser(self):
         """Open enhanced preset browser dialog."""
