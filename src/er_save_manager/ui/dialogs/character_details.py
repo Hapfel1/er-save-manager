@@ -675,7 +675,8 @@ class CharacterDetailsDialog:
 
         if not CTkMessageBox.askyesno(
             "Confirm",
-            f"Replace the entire CSNetMan block in Slot {slot_idx + 1} with the clean template?\n\nA backup will be created.",
+            f"Use this if you are still getting a Save is corrupted message or are still crashing after fixing corruption via the tool or if it does not detect any corruption."
+            f" Replace the entire CSNetMan block in Slot {slot_idx + 1} with the clean template?\n\nA backup will be created.",
             parent=_parent,
         ):
             return
