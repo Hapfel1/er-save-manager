@@ -55,12 +55,12 @@ jobs:
       next_version: ${{ steps.get-versions.outputs.next_version }}
       version_no_v: ${{ steps.get-versions.outputs.version_no_v }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
           fetch-tags: true
 
-      - uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912 # v2.81.10
+      - uses: taiki-e/install-action@9e1e5806d4a4822de933115878265be9aaa786d9 # v2.82.2
         with:
           tool: git-cliff
 
@@ -119,7 +119,7 @@ jobs:
     env:
       NEXT_VERSION: ${{ needs.plan.outputs.next_version }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -131,7 +131,7 @@ jobs:
 
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
 
-      - uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912 # v2.81.10
+      - uses: taiki-e/install-action@9e1e5806d4a4822de933115878265be9aaa786d9 # v2.82.2
         with:
           tool: git-cliff
 
@@ -192,7 +192,7 @@ jobs:
       NEXT_VERSION: ${{ needs.plan.outputs.next_version }}
       VERSION_NO_V: ${{ needs.plan.outputs.version_no_v }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: release-${{ needs.plan.outputs.next_version }}
 
@@ -268,7 +268,7 @@ jobs:
       GH_TOKEN: ${{ secrets.PUSH_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.PUSH_TOKEN }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: release-${{ needs.plan.outputs.next_version }}
           token: ${{ secrets.PUSH_TOKEN }}
