@@ -109,6 +109,8 @@ class Settings:
             "verbose_logging": False,
             # Debug: show manual CSNetMan replace button in Character Details
             "debug_netman_replace": False,
+            # Debug: show Apply Warped Face button in Appearance tab
+            "debug_warped_face": False,
             # Notify when the loaded save file is modified externally
             "external_file_change_notification": True,
             # UI scaling factor applied via CTk widget/window scaling APIs.
