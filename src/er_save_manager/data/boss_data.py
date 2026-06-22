@@ -202,7 +202,7 @@ BOSSES = {
         "category": "Capital Outskirts",
     },
     "Fell Twins": {
-        "flags": [34140850, 34140851, 34140865, 9174, 510740, 10740, 1174],
+        "flags": [34140850, 34140851, 34140865, 9174, 510740, 61174, 1174],
         "category": "Capital Outskirts",
     },
     "Grave Warden Duelist (Capital Outskirts)": {
