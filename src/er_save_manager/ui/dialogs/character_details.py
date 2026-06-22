@@ -320,27 +320,23 @@ class CharacterDetailsDialog:
             width=150,
         ).pack(side="left", padx=5)
 
-        from er_save_manager.ui.settings import get_settings as _get_settings
+        def _replace_netman():
+            CharacterDetailsDialog._replace_netman(
+                dialog,
+                save_file,
+                slot_idx,
+                save_path,
+                reload_callback,
+            )
 
-        if _get_settings().get("debug_netman_replace", False):
-
-            def _replace_netman():
-                CharacterDetailsDialog._replace_netman(
-                    dialog,
-                    save_file,
-                    slot_idx,
-                    save_path,
-                    reload_callback,
-                )
-
-            ctk.CTkButton(
-                button_frame,
-                text="Replace CSNetMan",
-                command=_replace_netman,
-                width=160,
-                fg_color=("gray60", "gray30"),
-                hover_color=("gray50", "gray20"),
-            ).pack(side="left", padx=5)
+        ctk.CTkButton(
+            button_frame,
+            text="Replace CSNetMan",
+            command=_replace_netman,
+            width=160,
+            fg_color=("gray60", "gray30"),
+            hover_color=("gray50", "gray20"),
+        ).pack(side="left", padx=5)
 
         ctk.CTkButton(
             button_frame,
