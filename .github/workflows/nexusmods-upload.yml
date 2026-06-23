@@ -32,8 +32,8 @@ jobs:
             asset_suffix: Windows.zip
     env:
       GH_TOKEN: ${{ github.token }}
-      NEXUSMODS_FILE_GROUP_ID_LINUX: ${{ vars.NEXUSMODS_FILE_GROUP_ID_LINUX }}
-      NEXUSMODS_FILE_GROUP_ID_WINDOWS: ${{ vars.NEXUSMODS_FILE_GROUP_ID_WINDOWS }}
+      NEXUSMODS_FILE_ID_LINUX: ${{ vars.NEXUSMODS_FILE_ID_LINUX }}
+      NEXUSMODS_FILE_ID_WINDOWS: ${{ vars.NEXUSMODS_FILE_ID_WINDOWS }}
     steps:
       - name: Validate Nexus Mods configuration
         env:
@@ -48,12 +48,12 @@ jobs:
 
           case "${{ matrix.platform }}" in
             Linux)
-              group_id="$NEXUSMODS_FILE_GROUP_ID_LINUX"
-              expected_var="NEXUSMODS_FILE_GROUP_ID_LINUX"
+              group_id="$NEXUSMODS_FILE_ID_LINUX"
+              expected_var="NEXUSMODS_FILE_ID_LINUX"
               ;;
             Windows)
-              group_id="$NEXUSMODS_FILE_GROUP_ID_WINDOWS"
-              expected_var="NEXUSMODS_FILE_GROUP_ID_WINDOWS"
+              group_id="$NEXUSMODS_FILE_ID_WINDOWS"
+              expected_var="NEXUSMODS_FILE_ID_WINDOWS"
               ;;
             *)
               echo "Unsupported platform: ${{ matrix.platform }}" >&2
@@ -92,10 +92,10 @@ jobs:
 
           case "${{ matrix.platform }}" in
             Linux)
-              file_group_id="$NEXUSMODS_FILE_GROUP_ID_LINUX"
+              file_group_id="$NEXUSMODS_FILE_ID_LINUX"
               ;;
             Windows)
-              file_group_id="$NEXUSMODS_FILE_GROUP_ID_WINDOWS"
+              file_group_id="$NEXUSMODS_FILE_ID_WINDOWS"
               ;;
             *)
               echo "Unsupported platform: ${{ matrix.platform }}" >&2
@@ -166,12 +166,12 @@ jobs:
         uses: Nexus-Mods/upload-action@v1.0.0-beta.8
         with:
           api_key: ${{ secrets.NEXUSMODS_API_KEY }}
-          file_group_id: ${{ steps.meta.outputs.file_group_id }}
+          file_id: ${{ steps.meta.outputs.file_group_id }}
           filename: nexusmods-upload/${{ steps.meta.outputs.upload_filename }}
           display_name: Elden Ring Save File Manager ${{ steps.meta.outputs.version_no_v }} - ${{ matrix.platform }}
           description: |
             Automated upload for Elden Ring Save File Manager ${{ steps.download.outputs.resolved_version }} (${{ matrix.platform }}).
             Source release: https://github.com/${{ github.repository }}/releases/tag/${{ steps.download.outputs.resolved_version }}
           version: ${{ steps.meta.outputs.version_no_v }}
-          archive_existing_file: true
+          archive_existing_version: true
           allow_mod_manager_download: false

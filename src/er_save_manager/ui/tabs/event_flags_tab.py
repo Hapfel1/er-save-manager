@@ -10,6 +10,7 @@ import customtkinter as ctk
 from er_save_manager.backup.manager import BackupManager
 from er_save_manager.data.boss_data import (
     BOSS_CATEGORIES,
+    BOSSES,
     get_boss_flags,
     get_bosses_by_category,
 )
@@ -82,6 +83,7 @@ class EventFlagsTab:
         self.flag_states = {}  # Track checkbox states
         self.flag_widgets = {}  # Track checkbox widgets
         self.current_event_flags = None
+        self._search_after_id = None
 
     def _get_slot_display_names(self):
         """Get display names for all slots"""
@@ -202,6 +204,13 @@ class EventFlagsTab:
             text="Boss Respawn...",
             command=self.open_boss_respawn,
             width=140,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+
+        ctk.CTkButton(
+            tools_row,
+            text="Boss Status...",
+            command=self.open_boss_status,
+            width=130,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
@@ -467,15 +476,32 @@ class EventFlagsTab:
         self.flag_states[flag_id] = var.get()
 
     def on_search_changed(self, *args):
-        """Handle search text change"""
+        """Debounce search input - cancel pending callback and reschedule."""
+        if self._search_after_id is not None:
+            self.flags_inner_frame.after_cancel(self._search_after_id)
+            self._search_after_id = None
+
         if self.current_event_flags is None:
             return
 
         query = self.search_var.get().strip().lower()
         if not query:
+            for widget in self.flags_inner_frame.winfo_children():
+                widget.destroy()
+            self.flag_widgets.clear()
+            self.status_label.configure(text="Select a category or search for flags")
             return
 
-        # Clear current display
+        self._search_after_id = self.flags_inner_frame.after(
+            300, lambda: self._run_search(query)
+        )
+
+    def _run_search(self, query: str):
+        """Execute search across all documented flags."""
+        self._search_after_id = None
+        if self.search_var.get().strip().lower() != query:
+            return
+
         for widget in self.flags_inner_frame.winfo_children():
             widget.destroy()
         self.flag_widgets.clear()
@@ -1010,6 +1036,160 @@ class EventFlagsTab:
             "Tip: You can find flag IDs in the event_flags_db.py file in the source code.",
         )
         help_text.configure(state="disabled")
+
+        ctk.CTkButton(dialog, text="Close", command=dialog.destroy, width=120).pack(
+            pady=(0, 15)
+        )
+
+    def open_boss_status(self):
+        """Boss status dialog - defeated/alive for all tracked bosses."""
+        if self.current_event_flags is None:
+            CTkMessageBox.showwarning(
+                "Not Loaded", "Please load event flags for a character first!"
+            )
+            return
+
+        import tkinter.ttk as ttk
+
+        from er_save_manager.ui.utils import force_render_dialog
+
+        dialog = ctk.CTkToplevel(self.parent)
+        dialog.title("Boss Status")
+        width, height = 720, 640
+        dialog.transient(self.parent)
+        dialog.update_idletasks()
+        self.parent.update_idletasks()
+        x = self.parent.winfo_rootx() + (self.parent.winfo_width() // 2) - (width // 2)
+        y = (
+            self.parent.winfo_rooty()
+            + (self.parent.winfo_height() // 2)
+            - (height // 2)
+        )
+        dialog.geometry(f"{width}x{height}+{x}+{y}")
+        force_render_dialog(dialog)
+        dialog.grab_set()
+
+        ctk.CTkLabel(
+            dialog,
+            text="Boss Status",
+            font=("Segoe UI", 14, "bold"),
+        ).pack(pady=(15, 2), padx=15)
+
+        ctk.CTkLabel(
+            dialog,
+            text="Defeated/alive status for all tracked bosses",
+            text_color=("gray50", "gray70"),
+        ).pack(pady=(0, 10), padx=15)
+
+        all_entries: list[tuple[str, str, str]] = []
+        for boss_name, data in BOSSES.items():
+            flags = data.get("flags", [])
+            defeated = bool(flags) and any(
+                self.current_event_flags.get_flag(fid) for fid in flags
+            )
+            all_entries.append(
+                (
+                    boss_name,
+                    data.get("category", ""),
+                    "Defeated" if defeated else "Alive",
+                )
+            )
+
+        defeated_count = sum(1 for _, _, s in all_entries if s == "Defeated")
+        total_count = len(all_entries)
+
+        filter_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        filter_frame.pack(fill=tk.X, padx=15, pady=(0, 8))
+
+        ctk.CTkLabel(filter_frame, text="Show:").pack(side=tk.LEFT, padx=(0, 8))
+        status_filter_var = tk.StringVar(value="All")
+        ctk.CTkComboBox(
+            filter_frame,
+            variable=status_filter_var,
+            values=["All", "Defeated", "Alive"],
+            state="readonly",
+            width=140,
+            command=lambda _v: _refresh(),
+        ).pack(side=tk.LEFT, padx=(0, 16))
+
+        ctk.CTkLabel(filter_frame, text="Region:").pack(side=tk.LEFT, padx=(0, 8))
+        region_filter_var = tk.StringVar(value="All")
+        ctk.CTkComboBox(
+            filter_frame,
+            variable=region_filter_var,
+            values=["All"] + BOSS_CATEGORIES,
+            state="readonly",
+            width=260,
+            command=lambda _v: _refresh(),
+        ).pack(side=tk.LEFT)
+
+        summary_label = ctk.CTkLabel(
+            dialog,
+            text=f"{defeated_count} / {total_count} bosses defeated",
+            font=("Segoe UI", 11),
+        )
+        summary_label.pack(pady=(0, 4), padx=15, anchor="w")
+
+        tree_frame = tk.Frame(dialog)
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
+
+        tree = ttk.Treeview(
+            tree_frame,
+            columns=("status", "boss", "region"),
+            show="headings",
+            selectmode="none",
+        )
+        tree.heading("status", text="Status")
+        tree.heading("boss", text="Boss")
+        tree.heading("region", text="Region")
+        tree.column("status", width=90, anchor="w", stretch=False)
+        tree.column("boss", width=330, anchor="w")
+        tree.column("region", width=230, anchor="w")
+
+        tree.tag_configure("defeated", foreground="#e74c3c")
+        tree.tag_configure("alive", foreground="#4caf50")
+
+        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Tracks current sort: col -> ascending bool
+        sort_state: dict[str, bool] = {}
+
+        def _sort(col: str):
+            asc = not sort_state.get(col, False)
+            sort_state[col] = asc
+            rows = [(tree.set(iid, col), iid) for iid in tree.get_children()]
+            rows.sort(key=lambda x: x[0].lower(), reverse=not asc)
+            for i, (_, iid) in enumerate(rows):
+                tree.move(iid, "", i)
+
+        tree.heading("status", text="Status", command=lambda: _sort("status"))
+        tree.heading("boss", text="Boss", command=lambda: _sort("boss"))
+        tree.heading("region", text="Region", command=lambda: _sort("region"))
+
+        def _refresh():
+            tree.delete(*tree.get_children())
+            s_filter = status_filter_var.get()
+            r_filter = region_filter_var.get()
+            shown = 0
+            for boss_name, category, status in all_entries:
+                if r_filter != "All" and category != r_filter:
+                    continue
+                if s_filter != "All" and status != s_filter:
+                    continue
+                tag = "defeated" if status == "Defeated" else "alive"
+                tree.insert(
+                    "", "end", values=(status, boss_name, category), tags=(tag,)
+                )
+                shown += 1
+            summary_label.configure(
+                text=f"{defeated_count} / {total_count} bosses defeated  -  showing {shown}"
+            )
+            sort_state.clear()
+
+        _refresh()
 
         ctk.CTkButton(dialog, text="Close", command=dialog.destroy, width=120).pack(
             pady=(0, 15)

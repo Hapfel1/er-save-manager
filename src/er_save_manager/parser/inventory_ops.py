@@ -688,12 +688,22 @@ def _global_next_acq_index(slot) -> int:
     max_seen = 0
     for inv in (slot.inventory_held, slot.inventory_storage_box):
         for it in inv.common_items:
-            if it.gaitem_handle != 0 and it.acquisition_index > max_seen:
+            # Ignore corrupted indices that exceed the 32-bit signed integer limit
+            if (
+                it.gaitem_handle != 0
+                and it.acquisition_index < 0x7FFFFFFF
+                and it.acquisition_index > max_seen
+            ):
                 max_seen = it.acquisition_index
         for it in inv.key_items:
-            if it.gaitem_handle != 0 and it.acquisition_index > max_seen:
+            # Ignore corrupted indices that exceed the 32-bit signed integer limit
+            if (
+                it.gaitem_handle != 0
+                and it.acquisition_index < 0x7FFFFFFF
+                and it.acquisition_index > max_seen
+            ):
                 max_seen = it.acquisition_index
-    return min(max_seen + 2, 0xFFFFFFFF)
+    return max_seen + 2
 
 
 def _first_empty_inv_slot(inventory) -> int:
