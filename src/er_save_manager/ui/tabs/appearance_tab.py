@@ -136,21 +136,50 @@ class AppearanceTab:
 
         from er_save_manager.ui.settings import get_settings
 
-        if get_settings().get("debug_warped_face", False):
+        if get_settings().get("debug_warped_face_sliders", False):
             self._warped_face_btn = ctk.CTkButton(
                 btn_row,
-                text="Apply Warped Face",
-                command=self.apply_warped_face,
-                width=160,
+                text="Warped Face Sliders",
+                command=self.open_warped_face_sliders,
+                width=180,
                 fg_color=("gray70", "gray30"),
             )
             self._warped_face_btn.pack(side=tk.LEFT, padx=(6, 0))
 
-    def apply_warped_face(self):
-        """Zero out _unk0x6c and related fields to produce the warped face effect."""
-        if self.selected_slot is None:
-            from er_save_manager.ui.messagebox import CTkMessageBox
+    # Byte indices within unk0x6c and their labels, grouped by face region.
+    # Only indices confirmed active via in-game testing are included.
+    _WARPED_FACE_SLIDERS = [
+        # Eyes / chin area
+        ("Eyes/Chin A", 43),
+        ("Eyes/Chin B", 44),
+        ("Eyes/Chin C", 45),
+        # Upper face (forehead/brow)
+        ("Upper Face A", 47),
+        ("Upper Face B", 48),
+        ("Upper Face C", 49),
+        # Mouth
+        ("Mouth A", 50),
+        ("Mouth B", 51),
+        ("Mouth C", 52),
+        # Chin
+        ("Chin A", 53),
+        ("Chin B", 54),
+        ("Chin C", 55),
+        ("Chin D", 56),
+        ("Chin E", 57),
+        ("Chin F", 58),
+        # Nose
+        ("Nose A", 59),
+        ("Nose B", 60),
+        ("Nose C", 61),
+        ("Nose D", 62),
+    ]
 
+    def open_warped_face_sliders(self):
+        """Open the warped face deformation slider dialog for the selected preset."""
+        from er_save_manager.ui.messagebox import CTkMessageBox
+
+        if self.selected_slot is None:
             CTkMessageBox.showwarning(
                 "No Selection", "Please select a preset first.", parent=self.parent
             )
@@ -158,20 +187,9 @@ class AppearanceTab:
 
         save_file = self.get_save_file()
         if not save_file:
-            from er_save_manager.ui.messagebox import CTkMessageBox
-
             CTkMessageBox.showwarning(
                 "No Save", "Please load a save file first.", parent=self.parent
             )
-            return
-
-        from er_save_manager.ui.messagebox import CTkMessageBox
-
-        if not CTkMessageBox.askyesno(
-            "Apply Warped Face",
-            f"Apply warped face distortion to Preset {self.selected_slot + 1}? This zeroes the secondary face slider block.",
-            parent=self.parent,
-        ):
             return
 
         try:
@@ -183,43 +201,147 @@ class AppearanceTab:
                     "Empty Slot", "Selected preset slot is empty.", parent=self.parent
                 )
                 return
-
-            # Zero the secondary face slider block to produce the warped face effect.
-            preset.unk0x6c = bytes(len(preset.unk0x6c))
-            preset.unk0xb1 = bytes(len(preset.unk0xb1))
-            preset.face_data_marker = 0
-
-            save_path = self.get_save_path()
-            if save_path:
-                from er_save_manager.backup.manager import BackupManager
-
-                manager = BackupManager(Path(save_path))
-                manager.create_backup(
-                    description=f"before_warped_face_slot_{self.selected_slot + 1}",
-                    operation="warped_face",
-                    save=save_file,
-                )
-
-            save_file.import_preset(preset, self.selected_slot)
-            save_file.recalculate_checksums()
-            if save_path:
-                save_file.to_file(Path(save_path))
-
-            if self.reload_save:
-                self.reload_save()
-
-            self.show_toast(
-                f"Warped face applied to Preset {self.selected_slot + 1}!",
-                duration=2500,
-            )
-
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to apply warped face:\n{e}", parent=self.parent
+                "Error", f"Failed to read preset:\n{e}", parent=self.parent
             )
-            import traceback
+            return
 
-            traceback.print_exc()
+        from er_save_manager.ui.utils import force_render_dialog
+
+        dialog = ctk.CTkToplevel(self.parent)
+        dialog.title(f"Warped Face Sliders - Preset {self.selected_slot + 1}")
+        dialog.resizable(False, False)
+        dialog.transient(self.parent)
+
+        dialog.update_idletasks()
+        self.parent.update_idletasks()
+        w, h = 420, 620
+        x = self.parent.winfo_rootx() + (self.parent.winfo_width() - w) // 2
+        y = self.parent.winfo_rooty() + (self.parent.winfo_height() - h) // 2
+        dialog.geometry(f"{w}x{h}+{x}+{y}")
+
+        force_render_dialog(dialog)
+        dialog.grab_set()
+
+        # Read current unk0x6c values into a mutable list
+        unk = list(preset.unk0x6c)
+
+        # Build slider vars from current preset values
+        slider_vars = {}
+        for _label, idx in self._WARPED_FACE_SLIDERS:
+            slider_vars[idx] = tk.IntVar(value=unk[idx])
+
+        scroll_frame = ctk.CTkScrollableFrame(dialog, width=390, height=510)
+        scroll_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(10, 0))
+
+        current_group = None
+        for label, idx in self._WARPED_FACE_SLIDERS:
+            # Derive group name from label prefix
+            group = label.rsplit(" ", 1)[0]
+            if group != current_group:
+                current_group = group
+                ctk.CTkLabel(
+                    scroll_frame,
+                    text=group,
+                    font=("Segoe UI", 11, "bold"),
+                ).pack(anchor="w", padx=8, pady=(10, 2))
+
+            row = ctk.CTkFrame(scroll_frame, fg_color="transparent")
+            row.pack(fill=tk.X, padx=8, pady=2)
+
+            ctk.CTkLabel(row, text=label, width=110, anchor="w").pack(side=tk.LEFT)
+
+            val_label = ctk.CTkLabel(row, text=str(slider_vars[idx].get()), width=35)
+
+            slider = ctk.CTkSlider(
+                row,
+                from_=0,
+                to=255,
+                number_of_steps=255,
+                variable=slider_vars[idx],
+                width=180,
+                command=lambda v, lbl=val_label, var=slider_vars[idx]: (
+                    var.set(int(v)),
+                    lbl.configure(text=str(int(v))),
+                ),
+            )
+            slider.pack(side=tk.LEFT, padx=(4, 4))
+            val_label.pack(side=tk.LEFT)
+
+        btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_row.pack(fill=tk.X, padx=10, pady=10)
+
+        def apply_full_warp():
+            for idx_var in slider_vars.values():
+                idx_var.set(0)
+            # Refresh all value labels
+            for widget in scroll_frame.winfo_children():
+                for _child in (
+                    widget.winfo_children() if hasattr(widget, "winfo_children") else []
+                ):
+                    pass
+
+        def do_confirm():
+            try:
+                new_unk = list(preset.unk0x6c)
+                for idx, var in slider_vars.items():
+                    new_unk[idx] = var.get()
+
+                preset.unk0x6c = bytes(new_unk)
+                preset.unk0xb1 = bytes(len(preset.unk0xb1))
+                preset.face_data_marker = 0
+
+                save_path = self.get_save_path()
+                if save_path:
+                    from er_save_manager.backup.manager import BackupManager
+
+                    manager = BackupManager(Path(save_path))
+                    manager.create_backup(
+                        description=f"before_warped_face_sliders_slot_{self.selected_slot + 1}",
+                        operation="warped_face_sliders",
+                        save=save_file,
+                    )
+
+                save_file.import_preset(preset, self.selected_slot)
+                save_file.recalculate_checksums()
+                if save_path:
+                    save_file.to_file(Path(save_path))
+
+                if self.reload_save:
+                    self.reload_save()
+
+                dialog.destroy()
+                self.show_toast(
+                    f"Warped face sliders saved to Preset {self.selected_slot + 1}!",
+                    duration=2500,
+                )
+
+            except Exception as e:
+                CTkMessageBox.showerror("Error", f"Failed to save:\n{e}", parent=dialog)
+                import traceback
+
+                traceback.print_exc()
+
+        ctk.CTkButton(
+            btn_row,
+            text="Full Warp",
+            command=apply_full_warp,
+            width=100,
+            fg_color=("gray60", "gray25"),
+        ).pack(side=tk.LEFT, padx=5)
+        ctk.CTkButton(
+            btn_row,
+            text="Confirm",
+            command=do_confirm,
+            width=100,
+        ).pack(side=tk.LEFT, padx=5)
+        ctk.CTkButton(
+            btn_row,
+            text="Cancel",
+            command=dialog.destroy,
+            width=100,
+        ).pack(side=tk.LEFT, padx=5)
 
     def open_preset_browser(self):
         """Open enhanced preset browser dialog."""
@@ -1009,8 +1131,51 @@ class AppearanceTab:
             button_frame = ctk.CTkFrame(frame)
             button_frame.grid(row=3, column=0, columnspan=3, pady=20)
 
+            def do_import_all():
+                try:
+                    from er_save_manager.backup.manager import BackupManager
+
+                    save_path = self.get_save_path()
+                    if save_path:
+                        manager = BackupManager(Path(save_path))
+                        manager.create_backup(
+                            description="before_import_all_presets",
+                            operation="import_preset",
+                            save=save_file,
+                        )
+
+                    count = min(len(presets), 15)
+                    for i in range(count):
+                        save_file.import_preset(presets[i], i)
+
+                    save_file.recalculate_checksums()
+                    if save_path:
+                        save_file.to_file(Path(save_path))
+
+                    if self.reload_save:
+                        self.reload_save()
+
+                    dialog.destroy()
+                    self.show_toast(
+                        f"Imported {count} preset(s) to slots 1-{count}!", duration=2500
+                    )
+
+                except Exception as e:
+                    CTkMessageBox.showerror(
+                        "Error", f"Import all failed:\n{str(e)}", parent=self.parent
+                    )
+                    import traceback
+
+                    traceback.print_exc()
+
             ctk.CTkButton(
                 button_frame, text="Import", command=do_import, width=15
+            ).pack(side=tk.LEFT, padx=5)
+            ctk.CTkButton(
+                button_frame,
+                text="Import All to Slots",
+                command=do_import_all,
+                width=15,
             ).pack(side=tk.LEFT, padx=5)
             ctk.CTkButton(
                 button_frame, text="Cancel", command=dialog.destroy, width=15
