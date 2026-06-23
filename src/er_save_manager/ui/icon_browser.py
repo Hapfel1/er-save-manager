@@ -286,6 +286,7 @@ class IconBrowser(ctk.CTkToplevel):
 
         add_row = ctk.CTkFrame(panel, fg_color="transparent")
         add_row.pack(fill=ctk.X, padx=10, pady=(4, 10))
+
         self._add_btn = ctk.CTkButton(
             add_row,
             text="Add Item",
@@ -295,6 +296,26 @@ class IconBrowser(ctk.CTkToplevel):
             state="disabled",
         )
         self._add_btn.pack(side=ctk.LEFT, fill=ctk.X, expand=True)
+
+        self._batch_btn = ctk.CTkButton(
+            add_row,
+            text="Batch Add Category",
+            height=34,
+            fg_color=("#3b82f6", "#2563eb"),
+            hover_color=("#2563eb", "#1d4ed8"),
+            command=self._batch_add_category,
+        )
+        self._batch_btn.pack(side=ctk.LEFT, fill=ctk.X, expand=True, padx=(6, 0))
+
+        self._loadout_switch = ctk.CTkSwitch(
+            add_row,
+            text="Loadout Mode",
+            variable=self._editor.loadout_mode_var,
+            font=("Segoe UI", 11),
+            width=40,
+        )
+        self._loadout_switch.pack(side=ctk.LEFT, padx=(10, 0))
+
         if self._dev_icon_export:
             self._save_icon_btn = ctk.CTkButton(
                 add_row,
@@ -384,6 +405,7 @@ class IconBrowser(ctk.CTkToplevel):
     def _on_scroll_resize(self, event):
         if self._resize_job:
             self.after_cancel(self._resize_job)
+            self._resize_job = None
         self._resize_job = self.after(60, self._reflow)
 
     def _reflow(self):
@@ -768,10 +790,17 @@ class IconBrowser(ctk.CTkToplevel):
         editor.inv_affinity_var.set(self._affinity_var.get())
         editor.inv_location_var.set(self._location_var.get())
         editor._selected_gem_id = self._selected_gem_id
+
         # Parent dialogs to this window so grab_set is not lost on error
         orig_parent = editor.parent
         editor.parent = self
         try:
-            editor.add_item()
+            if editor.loadout_mode_var.get():
+                editor.add_to_loadout()
+            else:
+                editor.add_item()
         finally:
             editor.parent = orig_parent
+
+    def _batch_add_category(self):
+        self._editor.batch_add_category(self._current_cat, parent_window=self)
