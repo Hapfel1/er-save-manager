@@ -107,8 +107,6 @@ class Settings:
             "advanced_mode_unlocked": False,
             "skip_game_running_check": False,
             "verbose_logging": False,
-            # Debug: show manual CSNetMan replace button in Character Details
-            "debug_netman_replace": False,
             # Debug: show Warped Face Sliders button in Appearance tab
             "debug_warped_face_sliders": False,
             # Notify when the loaded save file is modified externally
