@@ -576,12 +576,6 @@ class InventoryEditor:
     # ---- left panel: item browser -------------------------------------------
 
     def _build_browser_panel(self, parent: ctk.CTkFrame):
-        ctk.CTkLabel(
-            parent,
-            text="Add Item",
-            font=("Segoe UI", 13, "bold"),
-        ).pack(anchor=ctk.W, padx=12, pady=(10, 4))
-
         search_row = ctk.CTkFrame(parent, fg_color="transparent")
         search_row.pack(fill=ctk.X, padx=10, pady=(0, 4))
 
