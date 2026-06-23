@@ -3,6 +3,59 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.5.1
+**Released:** June 23, 2026
+
+
+### 🔧 Bug Fixes
+
+- Update player_game_data_offset after gaitem shift and bump mm level on weapon spawn ([9f45343](https://github.com/Hapfel1/er-save-manager/commit/9f45343cd8b5be206a1fae22414eb608169350ee))
+
+- Auto-adjust matchmaking level on weapon removal, remove manual set button ([a8d1a20](https://github.com/Hapfel1/er-save-manager/commit/a8d1a20aa6da0b69703f5017b1cba0f6a5288d36))
+
+- Added missed Convergence Item, Warding Remnant ([70fb917](https://github.com/Hapfel1/er-save-manager/commit/70fb9174eb358d568002e3f366485b2ffdc4d7b7))
+
+- Add boss status dialog, fix bell bearing NG+ flags, fix search debounce (closes #189) ([ed0afb2](https://github.com/Hapfel1/er-save-manager/commit/ed0afb2422e89c427f80e59ecacd8f552b1e861e))
+
+- Prevent integer overflow from corrupted acquisition indices `[inventory]` ([5c4f935](https://github.com/Hapfel1/er-save-manager/commit/5c4f93559df8b0623a4a1a6815972112aac6b9eb))
+
+- Adjust UI spacing and resolve loadout file path `[inventory]` ([19aa279](https://github.com/Hapfel1/er-save-manager/commit/19aa279dadb2f6c8e147455340ac79d871a3844f))
+
+
+
+### 🎨 User Interface
+
+- Made CSNetMan.bin replace button show permanently ([2486af1](https://github.com/Hapfel1/er-save-manager/commit/2486af1d4590d0dc298e24b764eb6361b06ed2b0))
+
+- Made Message about CsNetMan more clear ([902dfdb](https://github.com/Hapfel1/er-save-manager/commit/902dfdba6c2fa1aa27dacbc986db068a051dfd92))
+
+- Add Debug warped face button ([a43e5df](https://github.com/Hapfel1/er-save-manager/commit/a43e5dfa46aa66c9b0632bad5f5284d53e23f17b))
+
+- Add loadout manager, batch spawning, and smart stacking `[inventory]` ([10d3f93](https://github.com/Hapfel1/er-save-manager/commit/10d3f9300cc62897b4f757b6872f698d174925ef))
+
+- Replace warped face button with slider dialog for secondary face deformation ([b13fbe7](https://github.com/Hapfel1/er-save-manager/commit/b13fbe767a57f131f812e1bc37896ea9c465ca5c))
+
+
+
+### ♻️ Code Refactoring
+
+- Remove CSNetMan replace button toggle setting ([92744b0](https://github.com/Hapfel1/er-save-manager/commit/92744b046a41219369a8c7c6f859581148ae2420))
+
+
+
+### 📦 Dependencies
+
+- Bump the github-actions group with 3 updates `[deps]` ([ea4b49e](https://github.com/Hapfel1/er-save-manager/commit/ea4b49ea31f40e5fca10ff0939d9c5d8c5c24f6e))
+
+
+
+### 🧹 Maintenance
+
+- Migrate nexusmods upload action to v1.0.0-beta.8 ([10d8f67](https://github.com/Hapfel1/er-save-manager/commit/10d8f67e5ddabc916eb276cbbf3128c98165a46d))
+
+
+
+---
 ## 📦 Release 1.5.0
 **Released:** June 18, 2026
 
@@ -1127,6 +1180,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.5.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.5.0..v1.5.1
 [1.5.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.4.1..v1.5.0
 [1.4.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.4.0..v1.4.1
 [1.4.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.3.2..v1.4.0
