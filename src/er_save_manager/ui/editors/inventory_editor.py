@@ -669,7 +669,7 @@ class InventoryEditor:
         ).pack(side=ctk.RIGHT, fill=ctk.X, expand=True)
 
         bot_btn_row = ctk.CTkFrame(btn_row, fg_color="transparent")
-        bot_btn_row.pack(fill=ctk.X)
+        bot_btn_row.pack(fill=ctk.X, pady=(6, 0))  # Added vertical padding here
 
         self.loadout_switch = ctk.CTkSwitch(
             bot_btn_row,
@@ -678,21 +678,24 @@ class InventoryEditor:
             font=("Segoe UI", 11),
             width=40,
         )
-        self.loadout_switch.pack(side=ctk.LEFT, padx=(0, 6))
+        self.loadout_switch.pack(
+            side=ctk.LEFT, padx=(0, 12)
+        )  # Increased spacing after switch
 
         ctk.CTkButton(
             bot_btn_row,
             text="Loadouts...",
             command=self.open_loadouts,
-            height=30,
+            height=28,  # Slightly shorter to separate from main actions
             width=90,
             fg_color=("gray70", "gray35"),
-        ).pack(side=ctk.LEFT, padx=(0, 4))
+        ).pack(side=ctk.LEFT)
+
         ctk.CTkButton(
             bot_btn_row,
             text="Import Build",
             command=self._import_nyasu,
-            height=30,
+            height=28,  # Slightly shorter
             width=90,
             fg_color=("gray70", "gray35"),
         ).pack(side=ctk.RIGHT)
@@ -2742,7 +2745,9 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         self.transient(parent)
         self.grab_set()
 
-        self.db_path = Path("user_loadouts.json")
+        from er_save_manager.ui.settings import get_loadouts_path
+
+        self.db_path = get_loadouts_path()
 
         main_frame = ctk.CTkFrame(self, fg_color="transparent")
         main_frame.pack(fill="both", expand=True, padx=10, pady=10)
