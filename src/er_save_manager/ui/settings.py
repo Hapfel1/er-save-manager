@@ -20,40 +20,42 @@ class Settings:
         self.settings = self._load_settings()
 
     @staticmethod
-    def _get_default_settings_path() -> Path:
-        """Get platform-appropriate settings file path."""
+    def get_data_dir() -> Path:
+        """Get platform-appropriate data directory for settings, loadouts, etc."""
         system = platform.system()
 
         if system == "Windows":
-            # Windows: %APPDATA%\ER Save Manager\settings.json
+            # Windows: %APPDATA%\ER Save Manager
             import os
 
             appdata = os.getenv("APPDATA")
             if appdata:
-                return Path(appdata) / "ER Save Manager" / "settings.json"
+                return Path(appdata) / "ER Save Manager"
         elif system == "Darwin":
-            # macOS: ~/Library/Application Support/ER Save Manager/settings.json
-            return (
-                Path.home()
-                / "Library"
-                / "Application Support"
-                / "ER Save Manager"
-                / "settings.json"
-            )
+            # macOS: ~/Library/Application Support/ER Save Manager
+            return Path.home() / "Library" / "Application Support" / "ER Save Manager"
         elif system == "Linux":
-            # Linux: ~/.local/share/er-save-manager/settings.json or $XDG_DATA_HOME
+            # Linux: ~/.local/share/er-save-manager or $XDG_DATA_HOME
             import os
 
             xdg_data = os.getenv("XDG_DATA_HOME")
             if xdg_data:
-                return Path(xdg_data) / "er-save-manager" / "settings.json"
-            return (
-                Path.home() / ".local" / "share" / "er-save-manager" / "settings.json"
-            )
+                return Path(xdg_data) / "er-save-manager"
+            return Path.home() / ".local" / "share" / "er-save-manager"
 
         # Fallback to program directory if platform unknown
         program_dir = Path(__file__).parent.parent.parent.parent
-        return program_dir / "data" / "settings.json"
+        return program_dir / "data"
+
+    @staticmethod
+    def _get_default_settings_path() -> Path:
+        """Get platform-appropriate settings file path."""
+        return Settings.get_data_dir() / "settings.json"
+
+    @staticmethod
+    def get_loadouts_path() -> Path:
+        """Get platform-appropriate loadouts file path."""
+        return Settings.get_data_dir() / "loadouts.json"
 
     def _load_settings(self) -> dict:
         """Load settings from file."""
@@ -150,6 +152,11 @@ def get_settings() -> Settings:
     if _settings is None:
         _settings = Settings()
     return _settings
+
+
+def get_loadouts_path() -> Path:
+    """Get global loadouts.json file path instance."""
+    return Settings.get_loadouts_path()
 
 
 def detect_system_scale() -> float:
