@@ -735,21 +735,21 @@ class SettingsTab:
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
-        # Warped face apply button in Appearance tab
+        # Warped face sliders button in Appearance tab
         self._debug_warped_face_var = tk.BooleanVar(
-            value=self.settings.get("debug_warped_face", False)
+            value=self.settings.get("debug_warped_face_sliders", False)
         )
         ctk.CTkCheckBox(
             frame,
-            text="Show Apply Warped Face button in Appearance tab",
+            text="Show Warped Face Sliders button in Appearance tab",
             variable=self._debug_warped_face_var,
             command=lambda: self.settings.set(
-                "debug_warped_face", self._debug_warped_face_var.get()
+                "debug_warped_face_sliders", self._debug_warped_face_var.get()
             ),
         ).pack(anchor="w", padx=12, pady=5)
         ctk.CTkLabel(
             frame,
-            text="Adds a button to apply the Bloodborne-style warped face distortion to a selected preset.",
+            text="Adds a button to edit the hidden secondary face deformation sliders on a selected preset.",
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
             wraplength=560,
@@ -803,7 +803,7 @@ class SettingsTab:
         self.settings.set("verbose_logging", False)
         self.settings.set("debug_netman_replace", False)
         self.settings.set("icon_export_enabled", False)
-        self.settings.set("debug_warped_face", False)
+        self.settings.set("debug_warped_face_sliders", False)
         if self._advanced_frame is not None:
             self._advanced_frame.destroy()
             self._advanced_frame = None
