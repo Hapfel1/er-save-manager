@@ -4,10 +4,11 @@ Inventory Editor - add, remove, and set quantities using inventory_ops.
 
 from __future__ import annotations
 
-# ---- item-id helpers --------------------------------------------------------
+import json
 import platform as _platform
 import tkinter as tk
 from pathlib import Path
+from tkinter import filedialog
 
 import customtkinter as ctk
 
@@ -471,6 +472,7 @@ class InventoryEditor:
     _CONVERGENCE_CATS = {
         "Convergence Melee Weapons",
         "Convergence Reworked Weapons",
+        "Convergence Ranged Weapons",
         "Convergence Shields",
         "Convergence Armor",
         "Convergence Spell Tools",
@@ -544,6 +546,8 @@ class InventoryEditor:
         self._inv_cat_var: ctk.StringVar | None = None
 
         self.frame: ctk.CTkFrame | None = None
+        self.loadout: list[dict] = []
+        self.loadout_mode_var = ctk.BooleanVar(value=False)
 
     # ---- UI setup -----------------------------------------------------------
 
@@ -643,19 +647,53 @@ class InventoryEditor:
 
         btn_row = ctk.CTkFrame(parent, fg_color="transparent")
         btn_row.pack(fill=ctk.X, padx=10, pady=(0, 10), side=ctk.BOTTOM)
+
+        top_btn_row = ctk.CTkFrame(btn_row, fg_color="transparent")
+        top_btn_row.pack(fill=ctk.X, pady=(0, 4))
+
         ctk.CTkButton(
-            btn_row,
+            top_btn_row,
             text="Add Item",
             command=self.add_item,
-            height=34,
+            height=30,
             font=("Segoe UI", 11, "bold"),
         ).pack(side=ctk.LEFT, fill=ctk.X, expand=True, padx=(0, 4))
+
         ctk.CTkButton(
-            btn_row,
+            top_btn_row,
+            text="Batch Add Category",
+            command=self.batch_add_category,
+            height=30,
+            fg_color=("#3b82f6", "#2563eb"),
+            hover_color=("#2563eb", "#1d4ed8"),
+        ).pack(side=ctk.RIGHT, fill=ctk.X, expand=True)
+
+        bot_btn_row = ctk.CTkFrame(btn_row, fg_color="transparent")
+        bot_btn_row.pack(fill=ctk.X)
+
+        self.loadout_switch = ctk.CTkSwitch(
+            bot_btn_row,
+            text="Loadout Mode",
+            variable=self.loadout_mode_var,
+            font=("Segoe UI", 11),
+            width=40,
+        )
+        self.loadout_switch.pack(side=ctk.LEFT, padx=(0, 6))
+
+        ctk.CTkButton(
+            bot_btn_row,
+            text="Loadouts...",
+            command=self.open_loadouts,
+            height=30,
+            width=90,
+            fg_color=("gray70", "gray35"),
+        ).pack(side=ctk.LEFT, padx=(0, 4))
+        ctk.CTkButton(
+            bot_btn_row,
             text="Import Build",
             command=self._import_nyasu,
-            height=34,
-            width=110,
+            height=30,
+            width=90,
             fg_color=("gray70", "gray35"),
         ).pack(side=ctk.RIGHT)
 
@@ -1251,8 +1289,6 @@ class InventoryEditor:
                 and not is_convergence_save
                 and item.allowed_affinities
             ):
-                # Gem allowed_affinities uses vanilla affinity names; skip in
-                # convergence saves where the affinity name set is different.
                 self._affinity_combo.configure(values=item.allowed_affinities)
                 default = item.default_affinity or item.allowed_affinities[0]
                 self.inv_affinity_var.set(default)
@@ -1473,11 +1509,6 @@ class InventoryEditor:
     ) -> tuple[bool, str]:
         """Pre-flight validation before calling inventory_ops.add_item."""
         from er_save_manager.data.item_database import get_item_database
-        from er_save_manager.parser.inventory_ops import (
-            _direct_handle,
-            _find_gaitem_by_item,
-            _needs_gaitem,
-        )
 
         cat = full_id & 0xF0000000
         db = get_item_database()
@@ -1513,41 +1544,9 @@ class InventoryEditor:
                     f"Quantity must be 1-{max_qty} for this item in {location}.",
                 )
 
-        # Duplicate check (direct-handle items only - gaitem items checked by ops layer)
-        inventory = (
-            slot.inventory_held if location == "held" else slot.inventory_storage_box
-        )
-        if _needs_gaitem(full_id):
-            gaitem_idx, _ = _find_gaitem_by_item(slot, full_id)
-            if gaitem_idx != -1:
-                pass  # ops layer raises correctly
-        else:
-            handle = _direct_handle(full_id)
-            from er_save_manager.parser.inventory_ops import _is_key_item
-
-            item_list = (
-                inventory.key_items if _is_key_item(full_id) else inventory.common_items
-            )
-            for it in item_list:
-                if it.gaitem_handle == handle and it.quantity > 0:
-                    return False, "This item is already in the inventory."
-
         return True, ""
 
-    def add_item(self):
-        save_file = self.get_save_file()
-        if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
-            return
-        if not self.selected_item:
-            CTkMessageBox.showwarning(
-                "No Item", "Select an item from the browser first.", parent=self.parent
-            )
-            return
-
-        slot_idx = self.get_char_slot()
+    def _get_current_item_info(self) -> dict:
         full_id = self.selected_item.full_id
         cat = full_id & 0xF0000000
         is_weapon = cat == 0x00000000
@@ -1571,23 +1570,12 @@ class InventoryEditor:
                 qty = 1
             else:
                 max_qty = self._max_qty_for_location(self.selected_item, location)
-                if qty < 1 or qty > max_qty:
-                    CTkMessageBox.showerror(
-                        "Invalid Quantity",
-                        f"Quantity must be 1-{max_qty} for this ammo.",
-                        parent=self.parent,
-                    )
-                    return
+                qty = max(1, min(qty, max_qty))
         else:
             max_qty = self._max_qty_for_location(self.selected_item, location)
-            if max_qty > 1 and (qty < 1 or qty > max_qty):
-                CTkMessageBox.showerror(
-                    "Invalid Quantity",
-                    f"Quantity must be 1-{max_qty} for this item in {location}.",
-                    parent=self.parent,
-                )
-                return
             qty = max(1, min(qty, max_qty))
+
+        max_qty_for_item = self._max_qty_for_location(self.selected_item, location)
 
         if is_ashes and upg > 0:
             cat_bits = full_id & 0xF0000000
@@ -1595,8 +1583,8 @@ class InventoryEditor:
             full_id = cat_bits | (base + upg)
             upg = 0
 
-        affinity_code = 0
         affinity_label = ""
+        affinity_code = 0
         if is_weapon:
             affinity_name = self.inv_affinity_var.get()
             affinity_code = next(
@@ -1608,55 +1596,165 @@ class InventoryEditor:
             if affinity_code != 0:
                 affinity_label = f" ({affinity_name})"
 
-        auto_storage = False
-        if location == "held":
+        name_label = (
+            f"{self.selected_item.name}" + (f" +{upg}" if upg else "") + affinity_label
+        )
+
+        return {
+            "full_id": full_id,
+            "qty": qty,
+            "upg": upg,
+            "location": location,
+            "aow_id": self._selected_gem_id,
+            "is_ashes": is_ashes,
+            "reinforcement": "ash"
+            if is_ashes
+            else getattr(self.selected_item, "reinforcement", "standard"),
+            "max_qty": max_qty_for_item,
+            "name_label": name_label,
+            "base_name": self.selected_item.name,
+        }
+
+    def _process_single_add(self, save_file, slot_idx, slot, item_info: dict) -> dict:
+        full_id = item_info["full_id"]
+        qty = item_info["qty"]
+        upg = item_info["upg"]
+        location = item_info["location"]
+        max_qty = item_info.get("max_qty", 1)
+        name_label = item_info.get("base_name", "item")
+
+        from er_save_manager.parser.inventory_ops import (
+            _direct_handle,
+            _find_gaitem_by_item,
+            _is_key_item,
+            _needs_gaitem,
+            add_item,
+            set_quantity,
+        )
+
+        found_handle = None
+        if not _needs_gaitem(full_id):
+            found_handle = _direct_handle(full_id)
+        else:
+            gaitem_idx, g = _find_gaitem_by_item(slot, full_id)
+            if gaitem_idx != -1 and g:
+                found_handle = g.gaitem_handle
+
+        existing_qty = 0
+        existing_loc = location
+
+        if found_handle and max_qty > 1:
+            search_order = (location, "storage" if location == "held" else "held")
+            for inv_loc in search_order:
+                inv = (
+                    slot.inventory_held
+                    if inv_loc == "held"
+                    else slot.inventory_storage_box
+                )
+                item_list = inv.key_items if _is_key_item(full_id) else inv.common_items
+                for it in item_list:
+                    if (
+                        getattr(it, "gaitem_handle", 0) == found_handle
+                        and it.quantity > 0
+                    ):
+                        existing_qty = it.quantity
+                        existing_loc = inv_loc
+                        break
+                if existing_qty > 0:
+                    break
+
+        if existing_qty > 0 and max_qty > 1:
+            new_total = existing_qty + qty
+            if new_total > max_qty:
+                raise ValueError(
+                    f"Your selected quantity ({qty}) exceeds the max stack size since you already have ({existing_qty}) of {name_label} in your inventory. Lower it or change the location to storage"
+                )
+
+            set_quantity(save_file, slot_idx, full_id, new_total, existing_loc)
+            return {"stacked": True, "qty": new_total, "location": existing_loc}
+
+        ok, err = self._validate_add_item(full_id, qty, upg, location, slot)
+        if not ok:
+            raise ValueError(err)
+
+        res = add_item(
+            save_file,
+            slot_idx,
+            full_id,
+            qty,
+            location,
+            upgrade=upg,
+            gem_full_id=item_info.get("aow_id", 0),
+            reinforcement=item_info.get("reinforcement", "standard"),
+        )
+        _apply_item_event_flags(save_file, slot_idx, full_id, True)
+        _bump_matchmaking_level(
+            save_file,
+            slot_idx,
+            full_id,
+            upg,
+            item_info.get("reinforcement", "standard"),
+        )
+
+        return {"stacked": False, "qty": res["quantity"], "location": res["location"]}
+
+    def add_to_loadout(self):
+        if not self.selected_item:
+            CTkMessageBox.showwarning(
+                "No Item", "Select an item from the browser first.", parent=self.parent
+            )
+            return
+
+        item_info = self._get_current_item_info()
+        self.loadout.append(item_info)
+        show_toast(
+            self.parent.winfo_toplevel(),
+            f"Added {item_info['name_label']} to Loadout.",
+            type="success",
+        )
+
+    def open_loadouts(self):
+        LoadoutManagerWindow(self.parent, self)
+
+    def add_item(self):
+        if not self.selected_item:
+            CTkMessageBox.showwarning(
+                "No Item", "Select an item from the browser first.", parent=self.parent
+            )
+            return
+
+        if self.loadout_mode_var.get():
+            self.add_to_loadout()
+            return
+
+        save_file = self.get_save_file()
+        if not save_file:
+            CTkMessageBox.showwarning(
+                "No Save", "Load a save file first.", parent=self.parent
+            )
+            return
+
+        slot_idx = self.get_char_slot()
+        item_info = self._get_current_item_info()
+
+        if item_info["location"] == "held":
             try:
                 slot = save_file.characters[slot_idx]
                 held_full = all(
                     it.gaitem_handle != 0 for it in slot.inventory_held.common_items
                 )
                 if held_full:
-                    location = "storage"
+                    item_info["location"] = "storage"
                     self.inv_location_var.set("storage")
-                    auto_storage = True
             except Exception:
                 pass
-
-        try:
-            slot = save_file.characters[slot_idx]
-            ok, err = self._validate_add_item(full_id, qty, upg, location, slot)
-            if not ok:
-                CTkMessageBox.showerror("Validation Error", err, parent=self.parent)
-                return
-        except Exception:
-            pass
 
         try:
             self.ensure_mutable()
             self._create_backup(save_file, slot_idx, "add_item")
 
-            from er_save_manager.parser.inventory_ops import add_item
-
-            result = add_item(
-                save_file,
-                slot_idx,
-                full_id,
-                qty,
-                location,
-                upgrade=upg,
-                gem_full_id=self._selected_gem_id,
-                reinforcement="ash" if is_ashes else "standard",
-            )
-
-            _apply_item_event_flags(save_file, slot_idx, full_id, True)
-
-            _bump_matchmaking_level(
-                save_file,
-                slot_idx,
-                full_id,
-                upg,
-                getattr(self.selected_item, "reinforcement", "standard"),
-            )
+            slot = save_file.characters[slot_idx]
+            res = self._process_single_add(save_file, slot_idx, slot, item_info)
 
             save_file.recalculate_checksums()
             save_path = self.get_save_path()
@@ -1667,17 +1765,151 @@ class InventoryEditor:
             if self._on_inventory_changed:
                 self._on_inventory_changed()
 
-            note = " (held full, sent to storage)" if auto_storage else ""
-            msg = (
-                f"Added {self.selected_item.name}"
-                + (f" +{upg}" if upg else "")
-                + affinity_label
-                + f" x{result['quantity']} to {location}{note}."
+            note = " (stacked)" if res.get("stacked") else ""
+            loc_note = (
+                " (held full, sent to storage)"
+                if res["location"] != self.inv_location_var.get()
+                else ""
             )
+            msg = f"Added {item_info['name_label']} x{res['qty']} to {res['location']}{note}{loc_note}."
             show_toast(self.parent.winfo_toplevel(), msg, type="success")
         except Exception as e:
             CTkMessageBox.showerror(
                 "Error", f"Failed to add item:\n{e}", parent=self.parent
+            )
+
+    def batch_add_category(self, cat=None, parent_window=None):
+        if parent_window is None:
+            parent_window = self.parent
+        if not cat:
+            cat = self._search_cat_var.get()
+        if cat == "All":
+            CTkMessageBox.showwarning(
+                "Batch Add",
+                "Please select a specific category to batch add.",
+                parent=parent_window,
+            )
+            return
+
+        from er_save_manager.data.item_database import get_item_database
+
+        db = get_item_database()
+        items = db.get_items_by_category(cat)
+        if not items:
+            return
+
+        is_loadout = self.loadout_mode_var.get()
+        action_name = "add to Loadout" if is_loadout else "add to Inventory"
+
+        if not CTkMessageBox.askyesno(
+            "Batch Add",
+            f"Batch {action_name} all {len(items)} items from '{cat}'?",
+            parent=parent_window,
+        ):
+            return
+
+        if is_loadout:
+            count = 0
+            for item in items:
+                max_qty = self._max_qty_for_location(item, self.inv_location_var.get())
+                item_info = {
+                    "full_id": item.full_id,
+                    "qty": 1,
+                    "upg": 0,
+                    "location": self.inv_location_var.get(),
+                    "aow_id": 0,
+                    "is_ashes": "Ashes" in getattr(item, "category_name", ""),
+                    "reinforcement": getattr(item, "reinforcement", "standard"),
+                    "max_qty": max_qty,
+                    "name_label": item.name,
+                    "base_name": item.name,
+                }
+                self.loadout.append(item_info)
+                count += 1
+            show_toast(
+                self.parent.winfo_toplevel(),
+                f"Added {count} items from {cat} to Loadout.",
+                type="success",
+            )
+            return
+
+        save_file = self.get_save_file()
+        if not save_file:
+            CTkMessageBox.showwarning(
+                "No Save", "Load a save file first.", parent=parent_window
+            )
+            return
+
+        slot_idx = self.get_char_slot()
+        try:
+            slot = save_file.characters[slot_idx]
+        except Exception:
+            return
+
+        try:
+            self.ensure_mutable()
+            self._create_backup(save_file, slot_idx, "batch_add_category")
+
+            target_upg = 0
+            try:
+                target_upg = int(self.inv_upgrade_var.get())
+            except ValueError:
+                pass
+
+            success = 0
+            errors = []
+            for item in items:
+                max_qty = self._max_qty_for_location(item, self.inv_location_var.get())
+                item_upg = 0
+                if target_upg > 0 and (
+                    item.category == 0x00000000
+                    or "Ashes" in getattr(item, "category_name", "")
+                ):
+                    reinforcement = getattr(item, "reinforcement", "standard")
+                    cap = 25 if reinforcement == "standard" else 10
+                    if self._is_cnv_save() and reinforcement in ("standard", "somber"):
+                        cap = 15
+                    explicit_cap = getattr(item, "max_upgrade", -1)
+                    if explicit_cap >= 0:
+                        cap = explicit_cap
+                    item_upg = min(target_upg, cap)
+
+                item_info = {
+                    "full_id": item.full_id,
+                    "qty": 1,
+                    "upg": item_upg,
+                    "location": self.inv_location_var.get(),
+                    "aow_id": 0,
+                    "is_ashes": "Ashes" in getattr(item, "category_name", ""),
+                    "reinforcement": getattr(item, "reinforcement", "standard"),
+                    "max_qty": max_qty,
+                    "name_label": f"{item.name} +{item_upg}" if item_upg else item.name,
+                    "base_name": item.name,
+                }
+                try:
+                    self._process_single_add(save_file, slot_idx, slot, item_info)
+                    success += 1
+                except Exception as e:
+                    if "already in the inventory" not in str(e):
+                        errors.append(f"{item.name}: {e}")
+
+            save_file.recalculate_checksums()
+            save_path = self.get_save_path()
+            if save_path:
+                save_file.to_file(Path(save_path))
+
+            self.refresh_inventory()
+            if self._on_inventory_changed:
+                self._on_inventory_changed()
+
+            show_toast(
+                self.parent.winfo_toplevel(),
+                f"Batch added {success} items from {cat}.",
+                type="success",
+            )
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error", f"Batch Add Failed:\n{e}", parent=parent_window
             )
 
     def remove_item(self):
@@ -2496,3 +2728,305 @@ class InventoryEditor:
             operation=operation,
             save=save_file,
         )
+
+
+class LoadoutManagerWindow(ctk.CTkToplevel):
+    def __init__(self, parent, editor):
+        super().__init__(parent)
+        self.editor = editor
+        self.title("Loadout Manager")
+        self.geometry("750x550")
+        self.resizable(True, True)
+        self.minsize(650, 400)
+        _center_over(self, parent)
+        self.transient(parent)
+        self.grab_set()
+
+        self.db_path = Path("user_loadouts.json")
+
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        left_frame = ctk.CTkFrame(main_frame)
+        left_frame.pack(side="left", fill="both", expand=False, padx=(0, 5))
+
+        right_frame = ctk.CTkFrame(main_frame)
+        right_frame.pack(side="right", fill="both", expand=True, padx=(5, 0))
+
+        mode = ctk.get_appearance_mode()
+        lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
+        lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
+        lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+
+        # --- Left Side: Database ---
+        ctk.CTkLabel(
+            left_frame, text="Saved Loadouts (DB)", font=("Segoe UI", 12, "bold")
+        ).pack(pady=(5, 0))
+
+        db_lb_frame = ctk.CTkFrame(
+            left_frame, fg_color=("gray82", "gray14"), corner_radius=6
+        )
+        db_lb_frame.pack(fill="both", expand=True, padx=8, pady=5)
+        db_sb = tk.Scrollbar(db_lb_frame)
+        db_sb.pack(side="right", fill="y")
+        self.db_lb = tk.Listbox(
+            db_lb_frame,
+            yscrollcommand=db_sb.set,
+            font=("Consolas", 10),
+            bg=lb_bg,
+            fg=lb_fg,
+            selectbackground=lb_sel,
+            relief="flat",
+            borderwidth=0,
+            activestyle="none",
+            width=26,
+        )
+        self.db_lb.pack(side="left", fill="both", expand=True, padx=2, pady=2)
+        db_sb.config(command=self.db_lb.yview)
+        bind_mousewheel(self.db_lb)
+
+        db_btn_frame = ctk.CTkFrame(left_frame, fg_color="transparent")
+        db_btn_frame.pack(fill="x", padx=8, pady=(0, 8))
+        ctk.CTkButton(
+            db_btn_frame, text="Load Selected", command=self.load_from_db
+        ).pack(fill="x", pady=2)
+        ctk.CTkButton(db_btn_frame, text="Save Current", command=self.save_to_db).pack(
+            fill="x", pady=2
+        )
+        ctk.CTkButton(
+            db_btn_frame,
+            text="Delete Selected",
+            command=self.delete_from_db,
+            fg_color=("gray70", "gray35"),
+        ).pack(fill="x", pady=2)
+
+        # --- Right Side: Current Build ---
+        ctk.CTkLabel(
+            right_frame, text="Current Loadout Items", font=("Segoe UI", 12, "bold")
+        ).pack(pady=(5, 0))
+
+        cur_lb_frame = ctk.CTkFrame(
+            right_frame, fg_color=("gray82", "gray14"), corner_radius=6
+        )
+        cur_lb_frame.pack(fill="both", expand=True, padx=8, pady=5)
+        cur_sb = tk.Scrollbar(cur_lb_frame)
+        cur_sb.pack(side="right", fill="y")
+        self.lb = tk.Listbox(
+            cur_lb_frame,
+            yscrollcommand=cur_sb.set,
+            font=("Consolas", 10),
+            bg=lb_bg,
+            fg=lb_fg,
+            selectbackground=lb_sel,
+            relief="flat",
+            borderwidth=0,
+            activestyle="none",
+        )
+        self.lb.pack(side="left", fill="both", expand=True, padx=2, pady=2)
+        cur_sb.config(command=self.lb.yview)
+        bind_mousewheel(self.lb)
+
+        btn_frame = ctk.CTkFrame(right_frame, fg_color="transparent")
+        btn_frame.pack(fill="x", padx=8, pady=(0, 8))
+
+        row1 = ctk.CTkFrame(btn_frame, fg_color="transparent")
+        row1.pack(fill="x", pady=2)
+        ctk.CTkButton(
+            row1,
+            text="Apply Loadout",
+            command=self.apply_loadout,
+            fg_color=("#16a34a", "#15803d"),
+        ).pack(side="left", fill="x", expand=True, padx=2)
+        ctk.CTkButton(
+            row1,
+            text="Remove Selected",
+            command=self.remove_selected,
+            fg_color=("gray70", "gray35"),
+        ).pack(side="left", fill="x", expand=True, padx=2)
+        ctk.CTkButton(
+            row1,
+            text="Clear",
+            command=self.clear_loadout,
+            fg_color=("gray70", "gray35"),
+        ).pack(side="left", fill="x", expand=True, padx=2)
+
+        row2 = ctk.CTkFrame(btn_frame, fg_color="transparent")
+        row2.pack(fill="x", pady=2)
+        ctk.CTkButton(row2, text="Export JSON", command=self.save_json).pack(
+            side="left", fill="x", expand=True, padx=2
+        )
+        ctk.CTkButton(row2, text="Import JSON", command=self.load_json).pack(
+            side="left", fill="x", expand=True, padx=2
+        )
+
+        self.refresh_list()
+        self.refresh_db_list()
+
+    def _read_db(self) -> dict:
+        if not self.db_path.exists():
+            return {}
+        try:
+            with open(self.db_path, encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+
+    def _write_db(self, data: dict):
+        with open(self.db_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
+
+    def refresh_db_list(self):
+        self.db_lb.delete(0, tk.END)
+        for name in sorted(self._read_db().keys()):
+            self.db_lb.insert(tk.END, name)
+
+    def save_to_db(self):
+        if not self.editor.loadout:
+            CTkMessageBox.showwarning("Empty", "Current loadout is empty.", parent=self)
+            return
+        name = _ask_value("Save Loadout", "Enter loadout name:", self)
+        if not name:
+            return
+        db = self._read_db()
+        if name in db:
+            CTkMessageBox.showwarning(
+                "Name Exists",
+                f"A loadout named '{name}' already exists. Please choose a different name.",
+                parent=self,
+            )
+            return
+        db[name] = self.editor.loadout
+        self._write_db(db)
+        self.refresh_db_list()
+        show_toast(self.winfo_toplevel(), f"Saved to DB: {name}", type="success")
+
+    def load_from_db(self):
+        sel = self.db_lb.curselection()
+        if not sel:
+            CTkMessageBox.showwarning(
+                "Selection", "Select a loadout from the DB first.", parent=self
+            )
+            return
+        name = self.db_lb.get(sel[0])
+        db = self._read_db()
+        if name in db:
+            self.editor.loadout = db[name]
+            self.refresh_list()
+            show_toast(self.winfo_toplevel(), f"Loaded from DB: {name}", type="success")
+
+    def delete_from_db(self):
+        sel = self.db_lb.curselection()
+        if not sel:
+            return
+        name = self.db_lb.get(sel[0])
+        if CTkMessageBox.askyesno(
+            "Confirm Delete", f"Delete loadout '{name}' from the DB?", parent=self
+        ):
+            db = self._read_db()
+            if name in db:
+                del db[name]
+                self._write_db(db)
+                self.refresh_db_list()
+
+    def refresh_list(self):
+        self.lb.delete(0, tk.END)
+        for _i, it in enumerate(self.editor.loadout):
+            self.lb.insert(
+                tk.END, f"[{it['location'].upper()}] {it['name_label']} x{it['qty']}"
+            )
+
+    def remove_selected(self):
+        sel = self.lb.curselection()
+        if not sel:
+            return
+        idx = sel[0]
+        del self.editor.loadout[idx]
+        self.refresh_list()
+
+    def clear_loadout(self):
+        self.editor.loadout.clear()
+        self.refresh_list()
+
+    def save_json(self):
+        if not self.editor.loadout:
+            return
+        path = filedialog.asksaveasfilename(
+            defaultextension=".json", filetypes=[("JSON Files", "*.json")]
+        )
+        if path:
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(self.editor.loadout, f, indent=4)
+            show_toast(self.winfo_toplevel(), "Loadout saved.", type="success")
+
+    def load_json(self):
+        path = filedialog.askopenfilename(filetypes=[("JSON Files", "*.json")])
+        if path:
+            try:
+                with open(path, encoding="utf-8") as f:
+                    data = json.load(f)
+                if isinstance(data, list):
+                    self.editor.loadout = data
+                    self.refresh_list()
+                    show_toast(self.winfo_toplevel(), "Loadout loaded.", type="success")
+            except Exception as e:
+                CTkMessageBox.showerror(
+                    "Error", f"Failed to load JSON:\n{e}", parent=self
+                )
+
+    def apply_loadout(self):
+        if not self.editor.loadout:
+            return
+
+        save_file = self.editor.get_save_file()
+        if not save_file:
+            CTkMessageBox.showwarning("No Save", "Load a save file first.", parent=self)
+            return
+
+        slot_idx = self.editor.get_char_slot()
+
+        try:
+            self.editor.ensure_mutable()
+            self.editor._create_backup(save_file, slot_idx, "apply_loadout")
+
+            slot = save_file.characters[slot_idx]
+            success_count = 0
+            errors = []
+
+            for item_info in self.editor.loadout:
+                try:
+                    self.editor._process_single_add(
+                        save_file, slot_idx, slot, item_info
+                    )
+                    success_count += 1
+                except Exception as ex:
+                    errors.append(f"{item_info.get('name_label', 'item')}: {ex}")
+
+            save_file.recalculate_checksums()
+            save_path = self.editor.get_save_path()
+            if save_path:
+                save_file.to_file(Path(save_path))
+
+            self.editor.refresh_inventory()
+            if self.editor._on_inventory_changed:
+                self.editor._on_inventory_changed()
+
+            if errors:
+                err_text = "\n".join(errors[:5])
+                if len(errors) > 5:
+                    err_text += f"\n...and {len(errors) - 5} more."
+                CTkMessageBox.showwarning(
+                    "Partial Success",
+                    f"Added {success_count} items.\nErrors:\n{err_text}",
+                    parent=self,
+                )
+            else:
+                show_toast(
+                    self.editor.parent.winfo_toplevel(),
+                    f"Loadout applied successfully ({success_count} items).",
+                    type="success",
+                )
+                self.destroy()
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error", f"Failed to apply loadout:\n{e}", parent=self
+            )
