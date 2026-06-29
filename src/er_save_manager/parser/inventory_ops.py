@@ -1149,7 +1149,10 @@ def add_item(
         inventory.key_items[inv_slot] = entry
     else:
         inventory.common_items[inv_slot] = entry
-    inventory.common_item_count += 1
+    if is_key:
+        inventory.key_item_count += 1
+    else:
+        inventory.common_item_count += 1
     _update_inv_counters(slot, inventory, location, acq_idx)
 
     _patch_slot(save, slot_idx, slot)
@@ -1226,7 +1229,10 @@ def remove_item(
         inventory.key_items[inv_slot] = InventoryItem()
     else:
         inventory.common_items[inv_slot] = InventoryItem()
-    inventory.common_item_count = max(0, inventory.common_item_count - 1)
+    if _is_key_item(full_item_id):
+        inventory.key_item_count = max(0, inventory.key_item_count - 1)
+    else:
+        inventory.common_item_count = max(0, inventory.common_item_count - 1)
 
     if gaitem_idx != -1:
         _remove_gaitem(save, slot_idx, slot, gaitem_idx)
