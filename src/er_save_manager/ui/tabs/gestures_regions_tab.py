@@ -105,13 +105,13 @@ class GesturesRegionsTab:
         # Header
         ctk.CTkLabel(
             main_frame,
-            text="Gestures & Invasion Regions",
+            text="Gestures & Unlocked Regions",
             font=("Segoe UI", 18, "bold"),
         ).pack(pady=(15, 5), padx=15, anchor="w")
 
         ctk.CTkLabel(
             main_frame,
-            text="View and manage unlocked gestures as well as invasion regions and game settings.",
+            text="View and manage unlocked gestures as well as unlocked regions and game settings.",
             font=("Segoe UI", 11),
             text_color=("#808080", "#a0a0a0"),
         ).pack(pady=(0, 15), padx=15, anchor="w")
@@ -198,8 +198,8 @@ class GesturesRegionsTab:
 
         ctk.CTkButton(
             tools_row,
-            text="Invasion Regions...",
-            command=self.open_invasion_regions,
+            text="Unlocked Regions...",
+            command=self.open_unlocked_regions,
             width=160,
         ).pack(side=tk.LEFT, padx=(0, 8))
 
@@ -439,8 +439,8 @@ class GesturesRegionsTab:
 
         self.show_toast("All gestures deselected", duration=2000)
 
-    def open_invasion_regions(self):
-        """Open invasion regions editor dialog."""
+    def open_unlocked_regions(self):
+        """Open unlocked regions editor dialog."""
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
@@ -466,7 +466,7 @@ class GesturesRegionsTab:
         from er_save_manager.ui.utils import force_render_dialog
 
         dialog = ctk.CTkToplevel(self.parent)
-        dialog.title("Invasion Regions")
+        dialog.title("Unlocked Regions")
         dialog.geometry("640x540")
         dialog.transient(self.parent)
         dialog.update_idletasks()
@@ -476,13 +476,13 @@ class GesturesRegionsTab:
 
         ctk.CTkLabel(
             dialog,
-            text="Invasion Regions",
+            text="Unlocked Regions",
             font=("Segoe UI", 14, "bold"),
         ).pack(pady=(15, 4), padx=15)
 
         ctk.CTkLabel(
             dialog,
-            text="Unlocked map regions stored in the save. Controls which areas appear as available for invasions and blue summons.",
+            text="Map regions stored in the save file. Controls which areas appear as discovered on the map.",
             font=("Segoe UI", 10),
             text_color=("gray50", "gray70"),
             wraplength=580,
@@ -535,8 +535,8 @@ class GesturesRegionsTab:
             try:
                 backup_mgr = BackupManager(save_path)
                 backup_mgr.create_backup(
-                    description=f"Before invasion region edit (Slot {self.current_slot + 1})",
-                    operation="invasion_regions",
+                    description=f"Before unlocked region edit (Slot {self.current_slot + 1})",
+                    operation="unlocked_regions",
                     save=save_file,
                 )
             except PermissionError:
