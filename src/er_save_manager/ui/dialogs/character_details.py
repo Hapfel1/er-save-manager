@@ -102,6 +102,19 @@ class CharacterDetailsDialog:
         except Exception:
             pass
 
+        # Inventory counter check
+        has_inv_counter_issue = False
+        try:
+            from er_save_manager.fixes.inventory_counters import InventoryCountersFix
+
+            has_inv_counter_issue = InventoryCountersFix().detect(save_file, slot_idx)
+            if has_inv_counter_issue:
+                issues_detected.append(
+                    "inventory_counters:Corrupted inventory item counters (can prevent key item pickups or cause crashes)"
+                )
+        except Exception:
+            pass
+
         info = []
         info.append("=" * 50)
         info.append(f"  CHARACTER: {name}")
@@ -759,6 +772,13 @@ class CharacterDetailsDialog:
                 )
 
             was_fixed, fixes = save_file.fix_character_corruption(slot_idx)
+
+            from er_save_manager.fixes.inventory_counters import InventoryCountersFix
+
+            inv_result = InventoryCountersFix().apply(save_file, slot_idx)
+            if inv_result.applied:
+                fixes.append(inv_result.description)
+                was_fixed = True
 
             slot = save_file.characters[slot_idx]
             has_dlc_location = (

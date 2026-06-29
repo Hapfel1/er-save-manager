@@ -71,7 +71,7 @@ class GameProcessMonitor:
             ...
         }
 
-    One backup per game per tool session to avoid spam.
+    One backup per game launch event.
     """
 
     CHECK_INTERVAL = 5.0  # seconds
@@ -79,8 +79,6 @@ class GameProcessMonitor:
     def __init__(self):
         self._running = False
         self._thread: threading.Thread | None = None
-        # Track whether a backup has been created this session per game key
-        self._backed_up_this_session: set[str] = set()
         self._on_backup_created: Callable[[str, Path], None] | None = None
 
     def set_backup_callback(self, callback: Callable[[str, Path], None]) -> None:
@@ -94,7 +92,6 @@ class GameProcessMonitor:
         if self._running:
             return
         self._running = True
-        self._backed_up_this_session.clear()
         self._thread = threading.Thread(target=self._monitor_loop, daemon=True)
         self._thread.start()
 
@@ -169,12 +166,11 @@ class GameProcessMonitor:
                             if game_cfg.get("enabled", False)
                             else ""
                         )
-                        if save_path and game_key not in self._backed_up_this_session:
+                        if save_path:
                             backup_path = self._create_backup_for_game(
                                 game_key, save_path
                             )
                             if backup_path:
-                                self._backed_up_this_session.add(game_key)
                                 if self._on_backup_created:
                                     self._on_backup_created(game_key, backup_path)
 
