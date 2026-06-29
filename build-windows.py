@@ -66,11 +66,9 @@ build_exe_options = {
     # Include all modules explicitly
     "includes": [],
     "include_files": include_files,
-    # zip_filename renames library.zip so cx_Freeze handles internal references correctly.
-    # Nexus Mods flags .zip files inside the distribution archive as nested archives.
-    "zip_filename": "library.pak",
-    "zip_exclude_packages": ["er_save_manager", "customtkinter", "customtkinterthemes"],
-    "zip_include_packages": ["*"],
+    # Do not compress packages into library.zip to avoid nested archive quarantine on Nexus Mods
+    "zip_include_packages": [],
+    "zip_exclude_packages": ["*"],
     # Exclude unused heavy dependencies found in environment
     "excludes": ["unittest", "pydoc"],
     # Output dir for built executables and dependencies
@@ -144,14 +142,17 @@ setup(
     executables=executables,
 )
 
-# Post-build: rename subpackage .zip files to .pak to avoid Nexus Mods nested archive quarantine.
-# library.zip is already renamed via zip_filename; this covers subpackage zips (e.g. ui.zip).
+# Post-build: rename library.zip to library.pak to avoid Nexus Mods nested archive quarantine.
+# With zip_include_packages=[], library.zip only contains cx_Freeze bootstrap scripts.
+# cx_Freeze locates library.zip via library.dat; patch that file to match the new name.
 if sys.platform == "win32" and len(sys.argv) > 1 and sys.argv[1] == "build":
     lib_dir = Path(build_exe_options["build_exe"]) / "lib"
-    if lib_dir.exists():
-        for zip_path in lib_dir.rglob("*.zip"):
-            pak_path = zip_path.with_suffix(".pak")
-            sys.stdout.write(
-                f"Renaming {zip_path.relative_to(lib_dir)} -> {pak_path.name}\n"
-            )
-            zip_path.rename(pak_path)
+    library_zip = lib_dir / "library.zip"
+    library_pak = lib_dir / "library.pak"
+    library_dat = lib_dir / "library.dat"
+
+    if library_zip.exists():
+        sys.stdout.write(f"Renaming {library_zip.name} to {library_pak.name}...\n")
+        library_zip.rename(library_pak)
+        library_dat.write_bytes(b"library.pak")
+        sys.stdout.write("Done.\n")
