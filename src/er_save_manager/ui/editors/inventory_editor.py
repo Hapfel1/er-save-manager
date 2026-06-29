@@ -373,15 +373,171 @@ _ITEM_EVENT_FLAGS: dict[int, list[int]] = {
     2009343: [68930],
     2009344: [68940],
     2009345: [68950],
+    # Maps: [acquired_flag, visible_flag]
+    8600: [63010, 62010],
+    8601: [63011, 62011],
+    8602: [63012, 62012],
+    8603: [63020, 62020],
+    8604: [63021, 62021],
+    8605: [63022, 62022],
+    8606: [63030, 62030],
+    8607: [63031, 62031],
+    8608: [63032, 62032],
+    8609: [63040, 62040],
+    8610: [63041, 62041],
+    8611: [63050, 62050],
+    8612: [63051, 62051],
+    8613: [63060, 62060],
+    8614: [63061, 62061],
+    8615: [63063, 62063],
+    8616: [63062, 62062],
+    8617: [63064, 62064],
+    8618: [63052, 62052],
+    # DLC maps
+    2008600: [63080, 62080],
+    2008601: [63081, 62081],
+    2008602: [63082, 62082],
+    2008603: [63083, 62083],
+    2008604: [63084, 62084],
+    # Ash of War gems: duplication menu unlock flag
+    10000: [65820],
+    10100: [65810],
+    10200: [65811],
+    10300: [65812],
+    10500: [65833],
+    10600: [65821],
+    10700: [65822],
+    10800: [65876],
+    10900: [65813],
+    11000: [65823],
+    11100: [65836],
+    11200: [65814],
+    11300: [65844],
+    11400: [65815],
+    11500: [65834],
+    11600: [65835],
+    11800: [65852],
+    11900: [65874],
+    12000: [65853],
+    12200: [65837],
+    12300: [65838],
+    12400: [65816],
+    20000: [65854],
+    20100: [65861],
+    20200: [65882],
+    20300: [65855],
+    20400: [65877],
+    20500: [65878],
+    20700: [65845],
+    20800: [65862],
+    20900: [65856],
+    21000: [65839],
+    21200: [65824],
+    21300: [65863],
+    21400: [65846],
+    21600: [65849],
+    21700: [65850],
+    21800: [65857],
+    21900: [65858],
+    22000: [65840],
+    22100: [65847],
+    22200: [65864],
+    22400: [65879],
+    22500: [65870],
+    22600: [65871],
+    22700: [65883],
+    22800: [65875],
+    30000: [65886],
+    30100: [65888],
+    30200: [65889],
+    30500: [65890],
+    30600: [65891],
+    30700: [65892],
+    30800: [65887],
+    30900: [65885],
+    31000: [65893],
+    40000: [65899],
+    40100: [65896],
+    40200: [65897],
+    40400: [65900],
+    40500: [65898],
+    40600: [65901],
+    50100: [65884],
+    50200: [65841],
+    50300: [65825],
+    50400: [65851],
+    50500: [65848],
+    50600: [65826],
+    50700: [65865],
+    50800: [65859],
+    50900: [65827],
+    60000: [65842],
+    60100: [65843],
+    60200: [65880],
+    60300: [65866],
+    60400: [65867],
+    60500: [65868],
+    60600: [65881],
+    60700: [65860],
+    65000: [65828],
+    65100: [65829],
+    65200: [65869],
+    65300: [65830],
+    65400: [65831],
+    70000: [65832],
+    70100: [65895],
+    70200: [65894],
+    80000: [65818],
+    80100: [65819],
+    80200: [65872],
+    85000: [65873],
+    200000: [65910],
+    200100: [65911],
+    400000: [65912],
+    401000: [65913],
+    402000: [65914],
+    403000: [65915],
+    404000: [65916],
+    405000: [65917],
+    406000: [65918],
+    407000: [65919],
+    409000: [65920],
+    410000: [65921],
+    411000: [65922],
+    412000: [65923],
+    413000: [65924],
+    414000: [65925],
+    415000: [65926],
+    416000: [65927],
+    417000: [65928],
+    418000: [65929],
+    419000: [65930],
+    422000: [65931],
+    505000: [65932],
+    548000: [65933],
+    800000: [65934],
 }
 
 _EVENT_FLAGS_SIZE = 0x1BF99F
+
+# All AoW gem base IDs that have a duplication menu entry flag.
+_AOW_BASE_IDS: frozenset[int] = frozenset(
+    base_id
+    for base_id, flags in _ITEM_EVENT_FLAGS.items()
+    if any(65810 <= f <= 65934 for f in flags)
+)
+
+_AOW_MENU_FLAG = 65800
 
 
 def _apply_item_event_flags(
     save_file, slot_idx: int, full_item_id: int, state: bool
 ) -> None:
-    """Set or clear event flags correlated with a key item spawn/removal."""
+    """Set or clear event flags correlated with a key item spawn/removal.
+
+    For AoW gems the duplication menu flag (65800) is set on spawn and cleared
+    on removal only when no other AoW-specific flags remain set.
+    """
     from er_save_manager.parser.event_flags import EventFlags
 
     base_id = full_item_id & 0x0FFFFFFF
@@ -396,6 +552,20 @@ def _apply_item_event_flags(
     buf = bytearray(slot.event_flags)
     for flag_id in flag_ids:
         EventFlags.set_flag(buf, flag_id, state)
+
+    if base_id in _AOW_BASE_IDS:
+        if state:
+            EventFlags.set_flag(buf, _AOW_MENU_FLAG, True)
+        else:
+            any_remaining = any(
+                EventFlags.get_flag(buf, f)
+                for other_base, other_flags in _ITEM_EVENT_FLAGS.items()
+                if other_base in _AOW_BASE_IDS and other_base != base_id
+                for f in other_flags
+            )
+            if not any_remaining:
+                EventFlags.set_flag(buf, _AOW_MENU_FLAG, False)
+
     slot.event_flags = bytes(buf)
 
     if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
@@ -941,6 +1111,101 @@ class InventoryEditor:
             command=self.refresh_inventory,
             width=80,
         ).pack(side=ctk.LEFT)
+
+    def _add_inventory_to_loadout(self, on_done=None):
+        """Add all currently visible inventory rows to the loadout."""
+        from er_save_manager.data.item_database import get_item_database
+
+        save_file = self.get_save_file()
+        if not save_file:
+            CTkMessageBox.showwarning(
+                "No Save", "Load a save file first.", parent=self.parent
+            )
+            return
+
+        slot_idx = self.get_char_slot()
+        try:
+            slot = save_file.characters[slot_idx]
+        except Exception:
+            return
+
+        gaitem_map = {}
+        for g in getattr(slot, "gaitem_map", []):
+            if g.gaitem_handle not in (0, 0xFFFFFFFF):
+                gaitem_map[g.gaitem_handle] = g
+
+        db = get_item_database()
+        is_cnv = self._is_cnv_save()
+        count = 0
+
+        for row in self._all_rows:
+            if len(row) < 3 or row[1] is None:
+                continue
+            _text, full_id, location, *rest = row
+            gaitem_handle = rest[0] if rest else 0
+
+            # Recover quantity from the live inventory entry
+            inv = (
+                slot.inventory_held
+                if location == "held"
+                else slot.inventory_storage_box
+            )
+            from er_save_manager.parser.inventory_ops import _is_key_item
+
+            item_list = inv.key_items if _is_key_item(full_id) else inv.common_items
+            qty = 1
+            for inv_item in item_list:
+                if inv_item.gaitem_handle == gaitem_handle and inv_item.quantity > 0:
+                    qty = inv_item.quantity
+                    break
+
+            # Recover upgrade level from gaitem entry
+            upgrade = 0
+            if gaitem_handle in gaitem_map:
+                g = gaitem_map[gaitem_handle]
+                if (g.gaitem_handle & 0xF0000000) == 0x80000000:
+                    upgrade = g.item_id % 100
+
+            item = db.get_item_by_id(full_id)
+            reinforcement = (
+                getattr(item, "reinforcement", "standard") if item else "standard"
+            )
+            max_qty = self._max_qty_for_location(item, location) if item else qty
+            name = item.name if item else f"0x{full_id:08X}"
+            name_label = f"{name} +{upgrade}" if upgrade else name
+
+            item_info = {
+                "full_id": full_id,
+                "qty": qty,
+                "upg": upgrade,
+                "location": location,
+                "aow_id": 0,
+                "is_ashes": "Ashes" in getattr(item, "category_name", "")
+                if item
+                else False,
+                "reinforcement": reinforcement,
+                "convergence": is_cnv,
+                "max_qty": max_qty,
+                "name_label": name_label,
+                "base_name": name,
+            }
+            self.loadout.append(item_info)
+            count += 1
+
+        if count:
+            if on_done:
+                on_done()
+            show_toast(
+                self.parent.winfo_toplevel(),
+                f"Added {count} inventory items to Loadout.",
+                type="success",
+            )
+        else:
+            CTkMessageBox.showwarning(
+                "Nothing to Add",
+                "No inventory items are currently visible.",
+                parent=self.parent,
+            )
 
     # ---- search browser helpers ---------------------------------------------
 
@@ -1607,6 +1872,7 @@ class InventoryEditor:
             "reinforcement": "ash"
             if is_ashes
             else getattr(self.selected_item, "reinforcement", "standard"),
+            "convergence": self._is_cnv_save(),
             "max_qty": max_qty_for_item,
             "name_label": name_label,
             "base_name": self.selected_item.name,
@@ -1638,37 +1904,28 @@ class InventoryEditor:
                 found_handle = g.gaitem_handle
 
         existing_qty = 0
-        existing_loc = location
 
         if found_handle and max_qty > 1:
-            search_order = (location, "storage" if location == "held" else "held")
-            for inv_loc in search_order:
-                inv = (
-                    slot.inventory_held
-                    if inv_loc == "held"
-                    else slot.inventory_storage_box
-                )
-                item_list = inv.key_items if _is_key_item(full_id) else inv.common_items
-                for it in item_list:
-                    if (
-                        getattr(it, "gaitem_handle", 0) == found_handle
-                        and it.quantity > 0
-                    ):
-                        existing_qty = it.quantity
-                        existing_loc = inv_loc
-                        break
-                if existing_qty > 0:
+            inv = (
+                slot.inventory_held
+                if location == "held"
+                else slot.inventory_storage_box
+            )
+            item_list = inv.key_items if _is_key_item(full_id) else inv.common_items
+            for it in item_list:
+                if getattr(it, "gaitem_handle", 0) == found_handle and it.quantity > 0:
+                    existing_qty = it.quantity
                     break
 
         if existing_qty > 0 and max_qty > 1:
             new_total = existing_qty + qty
             if new_total > max_qty:
                 raise ValueError(
-                    f"Your selected quantity ({qty}) exceeds the max stack size since you already have ({existing_qty}) of {name_label} in your inventory. Lower it or change the location to storage"
+                    f"Your selected quantity ({qty}) exceeds the max stack size since you already have ({existing_qty}) of {name_label} in your inventory. Max for {location} is {max_qty}. Lower it or change the location to storage"
                 )
 
-            set_quantity(save_file, slot_idx, full_id, new_total, existing_loc)
-            return {"stacked": True, "qty": new_total, "location": existing_loc}
+            set_quantity(save_file, slot_idx, full_id, new_total, location)
+            return {"stacked": True, "qty": new_total, "location": location}
 
         ok, err = self._validate_add_item(full_id, qty, upg, location, slot)
         if not ok:
@@ -1683,6 +1940,7 @@ class InventoryEditor:
             upgrade=upg,
             gem_full_id=item_info.get("aow_id", 0),
             reinforcement=item_info.get("reinforcement", "standard"),
+            convergence=item_info.get("convergence", False),
         )
         _apply_item_event_flags(save_file, slot_idx, full_id, True)
         _bump_matchmaking_level(
@@ -1808,15 +2066,22 @@ class InventoryEditor:
         if is_loadout:
             count = 0
             for item in items:
-                max_qty = self._max_qty_for_location(item, self.inv_location_var.get())
+                location = self.inv_location_var.get()
+                max_qty = self._max_qty_for_location(item, location)
+                try:
+                    target_qty = int(self.inv_quantity_var.get())
+                except (ValueError, tk.TclError):
+                    target_qty = 1
+                item_qty = max(1, min(target_qty, max_qty))
                 item_info = {
                     "full_id": item.full_id,
-                    "qty": 1,
+                    "qty": item_qty,
                     "upg": 0,
-                    "location": self.inv_location_var.get(),
+                    "location": location,
                     "aow_id": 0,
                     "is_ashes": "Ashes" in getattr(item, "category_name", ""),
                     "reinforcement": getattr(item, "reinforcement", "standard"),
+                    "convergence": self._is_cnv_save(),
                     "max_qty": max_qty,
                     "name_label": item.name,
                     "base_name": item.name,
@@ -1853,10 +2118,19 @@ class InventoryEditor:
             except ValueError:
                 pass
 
+            target_qty = 1
+            try:
+                target_qty = max(1, int(self.inv_quantity_var.get()))
+            except ValueError:
+                pass
+
+            is_cnv = self._is_cnv_save()
             success = 0
             errors = []
             for item in items:
-                max_qty = self._max_qty_for_location(item, self.inv_location_var.get())
+                location = self.inv_location_var.get()
+                max_qty = self._max_qty_for_location(item, location)
+                item_qty = max(1, min(target_qty, max_qty))
                 item_upg = 0
                 if target_upg > 0 and (
                     item.category == 0x00000000
@@ -1864,7 +2138,7 @@ class InventoryEditor:
                 ):
                     reinforcement = getattr(item, "reinforcement", "standard")
                     cap = 25 if reinforcement == "standard" else 10
-                    if self._is_cnv_save() and reinforcement in ("standard", "somber"):
+                    if is_cnv and reinforcement in ("standard", "somber"):
                         cap = 15
                     explicit_cap = getattr(item, "max_upgrade", -1)
                     if explicit_cap >= 0:
@@ -1873,12 +2147,13 @@ class InventoryEditor:
 
                 item_info = {
                     "full_id": item.full_id,
-                    "qty": 1,
+                    "qty": item_qty,
                     "upg": item_upg,
-                    "location": self.inv_location_var.get(),
+                    "location": location,
                     "aow_id": 0,
                     "is_ashes": "Ashes" in getattr(item, "category_name", ""),
                     "reinforcement": getattr(item, "reinforcement", "standard"),
+                    "convergence": is_cnv,
                     "max_qty": max_qty,
                     "name_label": f"{item.name} +{item_upg}" if item_upg else item.name,
                     "base_name": item.name,
@@ -2857,6 +3132,18 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         ctk.CTkButton(row2, text="Import JSON", command=self.load_json).pack(
             side="left", fill="x", expand=True, padx=2
         )
+
+        row3 = ctk.CTkFrame(btn_frame, fg_color="transparent")
+        row3.pack(fill="x", pady=2)
+        ctk.CTkButton(
+            row3,
+            text="Add Current Inv to Loadout",
+            command=lambda: self.editor._add_inventory_to_loadout(
+                on_done=self.refresh_list
+            ),
+            fg_color=("#4a7a4a", "#3a6a3a"),
+            hover_color=("#5a8a5a", "#4a7a4a"),
+        ).pack(fill="x", padx=2)
 
         self.refresh_list()
         self.refresh_db_list()
