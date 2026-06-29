@@ -535,13 +535,16 @@ def _direct_handle(full_item_id: int) -> int:
     return (_PREFIX_DIRECT | base) & 0xFFFFFFFF
 
 
-def validate_upgrade(upgrade: int, reinforcement: str = "standard") -> int:
+def validate_upgrade(
+    upgrade: int, reinforcement: str = "standard", convergence: bool = False
+) -> int:
     """
     Clamp and validate upgrade level for the given reinforcement type.
 
     Args:
         upgrade: Requested upgrade level.
         reinforcement: "standard" (max 25), "somber" (max 10), or "ash" (max 10).
+        convergence: When True, standard and somber caps are both 15.
 
     Returns:
         Clamped upgrade level.
@@ -557,6 +560,8 @@ def validate_upgrade(upgrade: int, reinforcement: str = "standard") -> int:
     if reinforcement not in caps:
         raise ValueError(f"unknown reinforcement type {reinforcement!r}")
     cap = caps[reinforcement]
+    if convergence and reinforcement in ("standard", "somber"):
+        cap = 15
     if upgrade < 0 or upgrade > cap:
         raise ValueError(f"{reinforcement} upgrade must be 0-{cap}, got {upgrade}")
     return upgrade
@@ -1039,6 +1044,7 @@ def add_item(
     upgrade: int = 0,
     gem_full_id: int = 0,
     reinforcement: str = "standard",
+    convergence: bool = False,
 ) -> dict:
     """
     Add an item to the character's inventory.
@@ -1053,6 +1059,7 @@ def add_item(
         gem_full_id: Full id of an Ash of War to attach to a weapon. The gem
                      is added to the gaitem map only (no inventory entry).
         reinforcement: "standard", "somber", or "ash" - determines upgrade cap.
+        convergence: When True, standard and somber upgrade caps are both 15.
 
     Returns:
         Dict with keys: gaitem_handle, full_item_id, quantity, acquisition_index,
@@ -1071,7 +1078,7 @@ def add_item(
         )
 
     if cat == _CAT_WEAPON and upgrade:
-        upgrade = validate_upgrade(upgrade, reinforcement)
+        upgrade = validate_upgrade(upgrade, reinforcement, convergence)
 
     # AoW: insert gem into gaitem map only (no inventory entry needed).
     gem_handle = 0

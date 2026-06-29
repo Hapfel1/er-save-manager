@@ -942,6 +942,101 @@ class InventoryEditor:
             width=80,
         ).pack(side=ctk.LEFT)
 
+    def _add_inventory_to_loadout(self, on_done=None):
+        """Add all currently visible inventory rows to the loadout."""
+        from er_save_manager.data.item_database import get_item_database
+
+        save_file = self.get_save_file()
+        if not save_file:
+            CTkMessageBox.showwarning(
+                "No Save", "Load a save file first.", parent=self.parent
+            )
+            return
+
+        slot_idx = self.get_char_slot()
+        try:
+            slot = save_file.characters[slot_idx]
+        except Exception:
+            return
+
+        gaitem_map = {}
+        for g in getattr(slot, "gaitem_map", []):
+            if g.gaitem_handle not in (0, 0xFFFFFFFF):
+                gaitem_map[g.gaitem_handle] = g
+
+        db = get_item_database()
+        is_cnv = self._is_cnv_save()
+        count = 0
+
+        for row in self._all_rows:
+            if len(row) < 3 or row[1] is None:
+                continue
+            _text, full_id, location, *rest = row
+            gaitem_handle = rest[0] if rest else 0
+
+            # Recover quantity from the live inventory entry
+            inv = (
+                slot.inventory_held
+                if location == "held"
+                else slot.inventory_storage_box
+            )
+            from er_save_manager.parser.inventory_ops import _is_key_item
+
+            item_list = inv.key_items if _is_key_item(full_id) else inv.common_items
+            qty = 1
+            for inv_item in item_list:
+                if inv_item.gaitem_handle == gaitem_handle and inv_item.quantity > 0:
+                    qty = inv_item.quantity
+                    break
+
+            # Recover upgrade level from gaitem entry
+            upgrade = 0
+            if gaitem_handle in gaitem_map:
+                g = gaitem_map[gaitem_handle]
+                if (g.gaitem_handle & 0xF0000000) == 0x80000000:
+                    upgrade = g.item_id % 100
+
+            item = db.get_item_by_id(full_id)
+            reinforcement = (
+                getattr(item, "reinforcement", "standard") if item else "standard"
+            )
+            max_qty = self._max_qty_for_location(item, location) if item else qty
+            name = item.name if item else f"0x{full_id:08X}"
+            name_label = f"{name} +{upgrade}" if upgrade else name
+
+            item_info = {
+                "full_id": full_id,
+                "qty": qty,
+                "upg": upgrade,
+                "location": location,
+                "aow_id": 0,
+                "is_ashes": "Ashes" in getattr(item, "category_name", "")
+                if item
+                else False,
+                "reinforcement": reinforcement,
+                "convergence": is_cnv,
+                "max_qty": max_qty,
+                "name_label": name_label,
+                "base_name": name,
+            }
+            self.loadout.append(item_info)
+            count += 1
+
+        if count:
+            if on_done:
+                on_done()
+            show_toast(
+                self.parent.winfo_toplevel(),
+                f"Added {count} inventory items to Loadout.",
+                type="success",
+            )
+        else:
+            CTkMessageBox.showwarning(
+                "Nothing to Add",
+                "No inventory items are currently visible.",
+                parent=self.parent,
+            )
+
     # ---- search browser helpers ---------------------------------------------
 
     def _visible_categories(self) -> list[str]:
@@ -1607,6 +1702,7 @@ class InventoryEditor:
             "reinforcement": "ash"
             if is_ashes
             else getattr(self.selected_item, "reinforcement", "standard"),
+            "convergence": self._is_cnv_save(),
             "max_qty": max_qty_for_item,
             "name_label": name_label,
             "base_name": self.selected_item.name,
@@ -1638,37 +1734,28 @@ class InventoryEditor:
                 found_handle = g.gaitem_handle
 
         existing_qty = 0
-        existing_loc = location
 
         if found_handle and max_qty > 1:
-            search_order = (location, "storage" if location == "held" else "held")
-            for inv_loc in search_order:
-                inv = (
-                    slot.inventory_held
-                    if inv_loc == "held"
-                    else slot.inventory_storage_box
-                )
-                item_list = inv.key_items if _is_key_item(full_id) else inv.common_items
-                for it in item_list:
-                    if (
-                        getattr(it, "gaitem_handle", 0) == found_handle
-                        and it.quantity > 0
-                    ):
-                        existing_qty = it.quantity
-                        existing_loc = inv_loc
-                        break
-                if existing_qty > 0:
+            inv = (
+                slot.inventory_held
+                if location == "held"
+                else slot.inventory_storage_box
+            )
+            item_list = inv.key_items if _is_key_item(full_id) else inv.common_items
+            for it in item_list:
+                if getattr(it, "gaitem_handle", 0) == found_handle and it.quantity > 0:
+                    existing_qty = it.quantity
                     break
 
         if existing_qty > 0 and max_qty > 1:
             new_total = existing_qty + qty
             if new_total > max_qty:
                 raise ValueError(
-                    f"Your selected quantity ({qty}) exceeds the max stack size since you already have ({existing_qty}) of {name_label} in your inventory. Lower it or change the location to storage"
+                    f"Your selected quantity ({qty}) exceeds the max stack size since you already have ({existing_qty}) of {name_label} in your inventory. Max for {location} is {max_qty}. Lower it or change the location to storage"
                 )
 
-            set_quantity(save_file, slot_idx, full_id, new_total, existing_loc)
-            return {"stacked": True, "qty": new_total, "location": existing_loc}
+            set_quantity(save_file, slot_idx, full_id, new_total, location)
+            return {"stacked": True, "qty": new_total, "location": location}
 
         ok, err = self._validate_add_item(full_id, qty, upg, location, slot)
         if not ok:
@@ -1683,6 +1770,7 @@ class InventoryEditor:
             upgrade=upg,
             gem_full_id=item_info.get("aow_id", 0),
             reinforcement=item_info.get("reinforcement", "standard"),
+            convergence=item_info.get("convergence", False),
         )
         _apply_item_event_flags(save_file, slot_idx, full_id, True)
         _bump_matchmaking_level(
@@ -1808,15 +1896,22 @@ class InventoryEditor:
         if is_loadout:
             count = 0
             for item in items:
-                max_qty = self._max_qty_for_location(item, self.inv_location_var.get())
+                location = self.inv_location_var.get()
+                max_qty = self._max_qty_for_location(item, location)
+                try:
+                    target_qty = int(self.inv_quantity_var.get())
+                except (ValueError, tk.TclError):
+                    target_qty = 1
+                item_qty = max(1, min(target_qty, max_qty))
                 item_info = {
                     "full_id": item.full_id,
-                    "qty": 1,
+                    "qty": item_qty,
                     "upg": 0,
-                    "location": self.inv_location_var.get(),
+                    "location": location,
                     "aow_id": 0,
                     "is_ashes": "Ashes" in getattr(item, "category_name", ""),
                     "reinforcement": getattr(item, "reinforcement", "standard"),
+                    "convergence": self._is_cnv_save(),
                     "max_qty": max_qty,
                     "name_label": item.name,
                     "base_name": item.name,
@@ -1853,10 +1948,19 @@ class InventoryEditor:
             except ValueError:
                 pass
 
+            target_qty = 1
+            try:
+                target_qty = max(1, int(self.inv_quantity_var.get()))
+            except ValueError:
+                pass
+
+            is_cnv = self._is_cnv_save()
             success = 0
             errors = []
             for item in items:
-                max_qty = self._max_qty_for_location(item, self.inv_location_var.get())
+                location = self.inv_location_var.get()
+                max_qty = self._max_qty_for_location(item, location)
+                item_qty = max(1, min(target_qty, max_qty))
                 item_upg = 0
                 if target_upg > 0 and (
                     item.category == 0x00000000
@@ -1864,7 +1968,7 @@ class InventoryEditor:
                 ):
                     reinforcement = getattr(item, "reinforcement", "standard")
                     cap = 25 if reinforcement == "standard" else 10
-                    if self._is_cnv_save() and reinforcement in ("standard", "somber"):
+                    if is_cnv and reinforcement in ("standard", "somber"):
                         cap = 15
                     explicit_cap = getattr(item, "max_upgrade", -1)
                     if explicit_cap >= 0:
@@ -1873,12 +1977,13 @@ class InventoryEditor:
 
                 item_info = {
                     "full_id": item.full_id,
-                    "qty": 1,
+                    "qty": item_qty,
                     "upg": item_upg,
-                    "location": self.inv_location_var.get(),
+                    "location": location,
                     "aow_id": 0,
                     "is_ashes": "Ashes" in getattr(item, "category_name", ""),
                     "reinforcement": getattr(item, "reinforcement", "standard"),
+                    "convergence": is_cnv,
                     "max_qty": max_qty,
                     "name_label": f"{item.name} +{item_upg}" if item_upg else item.name,
                     "base_name": item.name,
@@ -2857,6 +2962,18 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         ctk.CTkButton(row2, text="Import JSON", command=self.load_json).pack(
             side="left", fill="x", expand=True, padx=2
         )
+
+        row3 = ctk.CTkFrame(btn_frame, fg_color="transparent")
+        row3.pack(fill="x", pady=2)
+        ctk.CTkButton(
+            row3,
+            text="Add Current Inv to Loadout",
+            command=lambda: self.editor._add_inventory_to_loadout(
+                on_done=self.refresh_list
+            ),
+            fg_color=("#4a7a4a", "#3a6a3a"),
+            hover_color=("#5a8a5a", "#4a7a4a"),
+        ).pack(fill="x", padx=2)
 
         self.refresh_list()
         self.refresh_db_list()
