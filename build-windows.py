@@ -46,7 +46,7 @@ include_files = [
     ("resources/", "resources/"),
     ("src/er_save_manager/data/items/", "er_save_manager/data/items/"),
     ("resources/app.manifest", "app.manifest"),
-    ("src/er_save_manager/data/icons.zip", "er_save_manager/data/icons.zip"),
+    ("src/er_save_manager/data/icons.db", "er_save_manager/data/icons.db"),
     ("src/er_save_manager/fixes/CSNetMan.bin", "er_save_manager/fixes/CSNetMan.bin"),
     ("src/er_save_manager/games/DSR/data/", "er_save_manager/games/DSR/data/"),
     ("src/er_save_manager/games/DS3/data/", "er_save_manager/games/DS3/data/"),
@@ -142,3 +142,18 @@ setup(
     options={"build_exe": build_exe_options},
     executables=executables,
 )
+
+# Post-build: rename library.zip to library.pak to avoid Nexus Mods nested archive quarantine.
+# cx_Freeze reads the zip name from library.dat, so patch that too.
+if sys.platform == "win32" and len(sys.argv) > 1 and sys.argv[1] == "build":
+    build_dir = Path(build_exe_options["build_exe"])
+    lib_dir = build_dir / "lib"
+    library_zip = lib_dir / "library.zip"
+    library_pak = lib_dir / "library.pak"
+    library_dat = lib_dir / "library.dat"
+
+    if library_zip.exists():
+        sys.stdout.write(f"Renaming {library_zip.name} to {library_pak.name}...\n")
+        library_zip.rename(library_pak)
+        library_dat.write_bytes(b"library.pak")
+        sys.stdout.write("Done.\n")
