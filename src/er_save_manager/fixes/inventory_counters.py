@@ -15,8 +15,7 @@ class InventoryCountersFix(BaseFix):
     """
     Fix for corrupted common_item_count and key_item_count.
 
-    These counters can become wrong when items are added or removed via
-    external tools. The game uses them to gate new item pickups, so an
+    The game uses these counters to gate new item pickups, so an
     inflated or negative count causes the "no space" message even when
     the inventory arrays have free slots, and in severe cases causes crashes
     on load.
