@@ -46,7 +46,7 @@ include_files = [
     ("resources/", "resources/"),
     ("src/er_save_manager/data/items/", "er_save_manager/data/items/"),
     ("resources/app.manifest", "app.manifest"),
-    ("src/er_save_manager/data/icons.zip", "er_save_manager/data/icons.zip"),
+    ("src/er_save_manager/data/icons.db", "er_save_manager/data/icons.db"),
     ("src/er_save_manager/fixes/CSNetMan.bin", "er_save_manager/fixes/CSNetMan.bin"),
     ("src/er_save_manager/games/DSR/data/", "er_save_manager/games/DSR/data/"),
     ("src/er_save_manager/games/DS3/data/", "er_save_manager/games/DS3/data/"),
