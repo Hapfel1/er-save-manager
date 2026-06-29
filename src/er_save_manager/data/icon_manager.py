@@ -1,7 +1,7 @@
 """
 Icon manager for the item browser.
 
-Icons are stored in icons.zip alongside this file.
+Icons are stored in icons.db (SQLite) alongside this file.
 Images are loaded on demand and cached in memory.
 Returns PIL Images; callers create CTkImage at the desired display size.
 """
@@ -9,8 +9,8 @@ Returns PIL Images; callers create CTkImage at the desired display size.
 from __future__ import annotations
 
 import re
+import sqlite3
 import unicodedata
-import zipfile
 from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from PIL import Image as PILImage
 
-_zip: zipfile.ZipFile | None = None
+_db: sqlite3.Connection | None = None
 _available: dict[str, str] | None = None
 _cache: dict[str, PILImage.Image] = {}
 
@@ -27,25 +27,23 @@ _CAT_PRE_RE = re.compile(r"^\[.*?\]\s*")
 _UPG_RE = re.compile(r"\s*\+\d+$")
 
 
-def _zip_path() -> Path:
-    return Path(__file__).parent / "icons.zip"
+def _db_path() -> Path:
+    return Path(__file__).parent / "icons.db"
 
 
 def _ensure_loaded() -> bool:
-    global _zip, _available
+    global _db, _available
     if _available is not None:
-        return _zip is not None
+        return _db is not None
     _available = {}
-    p = _zip_path()
+    p = _db_path()
     if not p.exists():
         return False
-    _zip = zipfile.ZipFile(p, "r")
-    for entry in _zip.namelist():
-        if not entry.endswith(".webp"):
-            continue
-        key = _norm_icon(entry[:-5])
+    _db = sqlite3.connect(f"file:{p}?mode=ro", uri=True, check_same_thread=False)
+    for (name,) in _db.execute("SELECT name FROM icons"):
+        key = _norm_icon(name[:-5] if name.endswith(".webp") else name)
         if key not in _available:
-            _available[key] = entry
+            _available[key] = name
     return True
 
 
@@ -72,7 +70,7 @@ def _norm_icon(s: str) -> str:
 
 def _norm_db(name: str) -> str:
     s = name.lower().replace("\u2019", "'").replace("\u2018", "'")
-    # Strip diacritics so "Jolán" matches "Jolan", "Épée" matches "Epee"
+    # Strip diacritics so "Jolan" matches "Jolan", "Epee" matches "Epee"
     return "".join(
         c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn"
     )
@@ -235,37 +233,27 @@ _NAME_OVERRIDES: dict[str, str] = {
 def _lookup(name: str, category_name: str = "") -> str | None:
     if not _ensure_loaded() or _available is None:
         return None
+
     key = _norm_db(name)
-    # Strip [Sorcery]/[Incantation] prefix before override check so spell
-    # overrides work without needing prefixed duplicate entries
+    # Strip [Sorcery]/[Incantation] prefix so spell lookups work without prefixed icon entries
     key = _CAT_PRE_RE.sub("", key).strip()
+    key = _UPG_RE.sub("", key).rstrip()
 
-    # Explicit overrides take priority
+    # Direct override
     if key in _NAME_OVERRIDES:
-        target = _NAME_OVERRIDES[key]
-        if target in _available:
-            return _available[target]
-
-    # Category-specific: weapons with name collision (e.g. Beast Claw = spell + weapon)
-    if any(w in category_name.lower() for w in ("weapon", "melee", "shield", "ranged")):
-        weapon_key = f"{key} (weapon)"
-        if weapon_key in _available:
-            return _available[weapon_key]
+        override = _NAME_OVERRIDES[key]
+        if override in _available:
+            return _available[override]
 
     if key in _available:
         return _available[key]
 
-    # Strip [Sorcery]/[Incantation] from DB key (icon already stripped by norm_icon)
-    stripped_cat = _CAT_PRE_RE.sub("", key).strip()
-    if stripped_cat != key and stripped_cat in _available:
-        return _available[stripped_cat]
+    # Category prefix fallback: "Weapon: Longsword" -> "Longsword"
+    if ": " in key:
+        bare = key.split(": ", 1)[1]
+        if bare in _available:
+            return _available[bare]
 
-    # Strip upgrade suffix (+1, +2, ...)
-    base_upg = _UPG_RE.sub("", key).rstrip()
-    if base_upg != key and base_upg in _available:
-        return _available[base_upg]
-
-    # Empty flask: "Flask of X +N (Empty)" -> "Flask of X"
     if "(empty)" in key:
         no_empty = re.sub(r"\s*\(empty\)$", "", key, flags=re.I).rstrip()
         no_empty = _UPG_RE.sub("", no_empty).rstrip()
@@ -349,8 +337,7 @@ def _lookup(name: str, category_name: str = "") -> str | None:
                 return _available[_fallback]
 
     # Convergence icon filenames after merge use camelCase-split names.
-    # This catches any remaining mismatches from the merge normalization.
-    # e.g. "bestial cruciblehorn" (if merge missed camelCase) -> "bestial crucible horn"
+    # Catches remaining mismatches from merge normalization.
     cnv = re.sub(r"([a-z])([A-Z])", r"\1 \2", key).lower()
     cnv = re.sub(r"_s\b", "'s", cnv).replace("_", " ").strip()
     if cnv != key and cnv in _available:
@@ -374,13 +361,15 @@ def get_icon(name: str, category_name: str = "") -> PILImage.Image | None:
         return None
     if entry in _cache:
         return _cache[entry]
-    if _zip is None:
+    if _db is None:
         return None
     try:
         from PIL import Image
 
-        data = _zip.read(entry)
-        img = Image.open(BytesIO(data)).convert("RGBA")
+        row = _db.execute("SELECT data FROM icons WHERE name = ?", (entry,)).fetchone()
+        if row is None:
+            return None
+        img = Image.open(BytesIO(row[0])).convert("RGBA")
         _cache[entry] = img
         return img
     except Exception:
