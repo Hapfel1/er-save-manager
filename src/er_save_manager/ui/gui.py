@@ -494,6 +494,10 @@ class SaveManagerGUI:
         """Open Discord server invite in browser."""
         open_url("https://dsc.gg/er-saveman")
 
+    def _open_youtube(self):
+        """Open YouTube guide in browser."""
+        open_url("https://www.youtube.com/watch?v=OHhM7BF72eg")
+
     def setup_ui(self):
         """Setup main UI structure with optimized layout"""
         # Use grid for main container - more efficient than pack
@@ -527,6 +531,16 @@ class SaveManagerGUI:
             font=("Segoe UI", 11),
         )
         discord_btn.place(relx=0.0, x=12, y=12, anchor="nw")
+
+        youtube_btn = ctk.CTkButton(
+            title_frame,
+            text="Video Guide",
+            command=self._open_youtube,
+            width=100,
+            height=32,
+            font=("Segoe UI", 11),
+        )
+        youtube_btn.place(relx=0.0, x=124, y=12, anchor="nw")
 
         ctk.CTkLabel(
             title_frame,
