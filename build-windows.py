@@ -141,3 +141,15 @@ setup(
     options={"build_exe": build_exe_options},
     executables=executables,
 )
+
+# Post-build: delete any .zip files under lib/ that cx_Freeze may still generate.
+# With zip_include_packages=[], packages are already on the filesystem so the zips are redundant.
+# Nexus Mods flags nested archives; removing them avoids quarantine.
+if sys.platform == "win32" and len(sys.argv) > 1 and sys.argv[1] == "build":
+    lib_dir = Path(build_exe_options["build_exe"]) / "lib"
+    if lib_dir.exists():
+        for zip_path in lib_dir.rglob("*.zip"):
+            sys.stdout.write(
+                f"Removing redundant archive: {zip_path.relative_to(lib_dir)}\n"
+            )
+            zip_path.unlink()
