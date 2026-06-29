@@ -66,9 +66,10 @@ build_exe_options = {
     # Include all modules explicitly
     "includes": [],
     "include_files": include_files,
-    # Do not compress packages into library.zip to avoid nested archive quarantine on Nexus Mods
-    "zip_include_packages": [],
-    "zip_exclude_packages": ["*"],
+    # Compress packages into library.zip to reduce file count (bloat)
+    # Exclude specific packages that rely on __file__ for resource loading
+    "zip_exclude_packages": ["er_save_manager", "customtkinter", "customtkinterthemes"],
+    "zip_include_packages": ["*"],
     # Exclude unused heavy dependencies found in environment
     "excludes": ["unittest", "pydoc"],
     # Output dir for built executables and dependencies
@@ -141,18 +142,3 @@ setup(
     options={"build_exe": build_exe_options},
     executables=executables,
 )
-
-# Post-build: rename library.zip to library.pak to avoid Nexus Mods nested archive quarantine.
-# With zip_include_packages=[], library.zip only contains cx_Freeze bootstrap scripts.
-# cx_Freeze locates library.zip via library.dat; patch that file to match the new name.
-if sys.platform == "win32" and len(sys.argv) > 1 and sys.argv[1] == "build":
-    lib_dir = Path(build_exe_options["build_exe"]) / "lib"
-    library_zip = lib_dir / "library.zip"
-    library_pak = lib_dir / "library.pak"
-    library_dat = lib_dir / "library.dat"
-
-    if library_zip.exists():
-        sys.stdout.write(f"Renaming {library_zip.name} to {library_pak.name}...\n")
-        library_zip.rename(library_pak)
-        library_dat.write_bytes(b"library.pak")
-        sys.stdout.write("Done.\n")
