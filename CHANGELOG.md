@@ -3,6 +3,45 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.5.2
+**Released:** June 29, 2026
+
+
+### 🔧 Bug Fixes
+
+- Correct consumable stack location and convergence upgrade caps (#193) ([ffe3465](https://github.com/Hapfel1/er-save-manager/commit/ffe34656fc52e868db4a312de6c88477c2387753))
+
+- Correct inventory counter updates for key items in add/remove ([e85e039](https://github.com/Hapfel1/er-save-manager/commit/e85e039e280c829b5bfacfd0e295866af0787f16))
+
+- Trigger auto-backup on every game launch, not once per session `[backup]` ([2ee638d](https://github.com/Hapfel1/er-save-manager/commit/2ee638d81dde2d5b92010aa5b21622cd414550ed))
+
+- Rename invasion regions to unlocked regions ([2e9ed01](https://github.com/Hapfel1/er-save-manager/commit/2e9ed010e0ba6a6a60fdb1b077623a1959485c5e))
+
+- Detect and repair corrupted inventory item counters in character details ([fe5aa9c](https://github.com/Hapfel1/er-save-manager/commit/fe5aa9c48d238bd3bb32e8299cdceee876ef8d72))
+
+- Add Event Flag mapping for maps and ashes of war ([6ceba63](https://github.com/Hapfel1/er-save-manager/commit/6ceba634e8d19c8843648d5284388ad88ab5a9eb))
+
+
+
+### 🎨 User Interface
+
+- Add Video Guide button for Ghost's video guide ([74b6f1e](https://github.com/Hapfel1/er-save-manager/commit/74b6f1ec39493a91525cd1843ee0c87b9cda825b))
+
+
+
+### 📦 Dependencies
+
+- Bump the github-actions group with 2 updates `[deps]` ([91cc328](https://github.com/Hapfel1/er-save-manager/commit/91cc328aa490335a822f45aba863c78ba70635ee))
+
+
+
+### Data
+
+- Migrate icon storage from zip to sqlite, fix nexus mods quarantine ([10d42eb](https://github.com/Hapfel1/er-save-manager/commit/10d42eb7e64d403d2e0dcba3d603a44cf629b5a2))
+
+
+
+---
 ## 📦 Release 1.5.1
 **Released:** June 23, 2026
 
@@ -1180,6 +1219,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.5.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.5.1..v1.5.2
 [1.5.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.5.0..v1.5.1
 [1.5.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.4.1..v1.5.0
 [1.4.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.4.0..v1.4.1
