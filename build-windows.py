@@ -68,7 +68,12 @@ build_exe_options = {
     "include_files": include_files,
     # Compress packages into library.zip to reduce file count (bloat)
     # Exclude specific packages that rely on __file__ for resource loading
-    "zip_exclude_packages": ["er_save_manager", "customtkinter", "customtkinterthemes"],
+    "zip_exclude_packages": [
+        "er_save_manager",
+        "customtkinter",
+        "customtkinterthemes",
+        "PIL",
+    ],
     "zip_include_packages": ["*"],
     # Exclude unused heavy dependencies found in environment
     "excludes": ["unittest", "pydoc"],
@@ -142,3 +147,17 @@ setup(
     options={"build_exe": build_exe_options},
     executables=executables,
 )
+
+# Post-build step to rename library.zip to library.pak
+if sys.platform == "win32" and len(sys.argv) > 1 and sys.argv[1] == "build":
+    dist_dir = Path("dist") / f"windows-{VERSION}" / f"er-save-manager_{VERSION}"
+    library_zip = dist_dir / "lib" / "library.zip"
+    library_pak = dist_dir / "lib" / "library.pak"
+    library_dat = dist_dir / "lib" / "library.dat"
+    if library_zip.exists():
+        sys.stdout.write(
+            f"Renaming {library_zip.name} to {library_pak.name} to avoid Nexus Mods quarantine...\n"
+        )
+        library_zip.rename(library_pak)
+        # cx_Freeze base executables read the actual zip name from library.dat
+        library_dat.write_bytes(b"library.pak")
