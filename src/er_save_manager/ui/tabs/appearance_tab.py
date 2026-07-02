@@ -996,8 +996,13 @@ class AppearanceTab:
             #   {"presets": [...]}           - UI export (raw appearance dicts)
             #   {"presets": [{"slot","data"}]} - save.py export
             #   {"description","appearance"} - single NPC preset
+            #   {"base": {...}, "skin_color": {...}, ...} - Elden Bling Auto Sliders
             #   [...]                        - bare list
-            if isinstance(data, dict) and "appearance" in data:
+            if isinstance(data, dict) and "base" in data and "skin_color" in data:
+                from er_save_manager.parser.character_presets import FacePreset
+
+                presets = [FacePreset.from_elden_bling(data).to_dict()]
+            elif isinstance(data, dict) and "appearance" in data:
                 presets = [data["appearance"]]
             elif isinstance(data, dict) and "presets" in data:
                 presets = data["presets"]
