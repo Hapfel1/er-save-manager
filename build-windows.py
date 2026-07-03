@@ -73,6 +73,13 @@ build_exe_options = {
         "customtkinter",
         "customtkinterthemes",
         "PIL",
+        "pydantic_core",
+        "charset_normalizer",
+        "mmh3",
+        "multidict",
+        "propcache",
+        "pyroaring",
+        "yarl",
     ],
     "zip_include_packages": ["*"],
     # Exclude unused heavy dependencies found in environment
