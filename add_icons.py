@@ -34,9 +34,7 @@ def add_icons(input_folder: Path, db_path: Path) -> None:
         sys.exit("Pillow is required: pip install Pillow")
 
     con = sqlite3.connect(db_path)
-    con.execute(
-        "CREATE TABLE IF NOT EXISTS icons (name TEXT PRIMARY KEY, data BLOB)"
-    )
+    con.execute("CREATE TABLE IF NOT EXISTS icons (name TEXT PRIMARY KEY, data BLOB)")
 
     added = updated = errors = 0
 
