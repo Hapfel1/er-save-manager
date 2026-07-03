@@ -21,6 +21,7 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 23170000,Crystaline Claw,somber,0,19,AxeLarge,1,Standard
 21020000,Daergraf’s Opus,somber,0,35,Knuckle,1,Standard
 1180000,Deathrite Dagger,somber,0,1,Dagger,1,Standard
+8530000,Demi-Dragon Cleaver,somber,0,11,SaberLarge,1,Standard
 2250000,Dragonkin Seeker Sword,somber,0,3,SwordNormal,1,Standard
 3240000,Dyru's Greatsword,somber,0,5,SwordLarge,1,Standard
 66530000,Eagle's Edge,somber,0,94,GreatKatana,1,Standard
@@ -30,6 +31,7 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 5080000,Foil Of Caddock,somber,0,15,SwordPierce,1,Standard
 10040000,Frozen Twinshards,somber,0,14,SwordDoubleEdge,1,Standard
 21090000,Furnace Fists,somber,0,35,Knuckle,1,Standard
+16560000,Gaoler's Mancatcher,somber,0,25,SpearNormal,1,Standard
 10200000,Galvanic Culling Blade,somber,0,14,SwordDoubleEdge,1,Standard
 10110000,Gilded Quarterstaff,somber,0,14,SwordDoubleEdge,1,Standard
 18120000,Glaive Of The Ancients,somber,0,29,SpearAxe,1,Standard
@@ -89,5 +91,5 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 2030000,Yura’s Kanabo,somber,0,3,SwordNormal,1,Standard
 11160000,Zamor Star Mace,somber,0,21,HammerNormal,1,Standard
 7090000,Zephyr Blades,somber,0,9,SaberNormal,1,Standard
-64530000,Fingerslayer Blade,somber,0,9,SaberNormal,1,Standard
+64530000,Fingerslayer Blade (Weapon),somber,0,9,SaberNormal,1,Standard
 67700000,Primeval Splinter,somber,1,93,LightGreatsword,1,Standard

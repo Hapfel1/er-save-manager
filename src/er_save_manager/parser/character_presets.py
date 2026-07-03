@@ -1134,6 +1134,390 @@ class FacePreset:
 
         return preset
 
+    @classmethod
+    def from_elden_bling(cls, data: dict) -> FacePreset:
+        """
+        Convert an Elden Bling Auto Sliders JSON object to a FacePreset.
+
+        Elden Bling uses nested sections with string values and 1-based display
+        indices for model selectors. All slider values are direct 0-255 integers
+        stored as strings.
+
+        Known gaps (fields not exposed in FacePreset):
+        - face_template.structure: mapped to face_model as (N-1)*10.
+        - eyelash model (eyelashes.lashes): not an exposed field; dropped.
+        - tattoo/mark model index (tattoo_mark_eyepatch.tattoo): not exposed; dropped.
+        """
+        # CharMakeMenuListItemParam-derived lookup tables (1-based, from param data).
+        # Index N in Elden Bling maps to list[N-1].
+        _HAIR = [
+            0,
+            113,
+            112,
+            1,
+            3,
+            100,
+            5,
+            10,
+            101,
+            9,
+            8,
+            6,
+            7,
+            115,
+            114,
+            2,
+            4,
+            102,
+            103,
+            104,
+            105,
+            106,
+            107,
+            109,
+            108,
+            111,
+            110,
+            117,
+            119,
+            118,
+            116,
+            121,
+            125,
+            122,
+            120,
+            123,
+            124,
+        ]
+        _BROW = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+        _BEARD_M = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        _BEARD_F = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        _ACC = [0, 2, 1, 10]  # eyepatch/accessories
+
+        def _i(section: str, key: str, default: int = 128) -> int:
+            return int(data.get(section, {}).get(key, default))
+
+        def _idx(table: list, eb_index: int, default: int = 0) -> int:
+            # Convert 1-based EB index to param value; 0 means "none" in EB.
+            i = eb_index - 1
+            return table[i] if 0 <= i < len(table) else default
+
+        base = data.get("base", {})
+        body_type = 1 if base.get("body_type", "A") == "B" else 0
+
+        preset = cls()
+        preset.magic = b"FACE"
+        preset.alignment = 4
+        preset.size = 0x120
+        preset.face_data_marker = 32766
+        preset.unk0x6c = bytes(
+            [
+                127,
+                0,
+                0,
+                0,
+                0,
+                128,
+                128,
+                128,
+                128,
+                128,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                128,
+                128,
+                128,
+                128,
+                0,
+                0,
+                0,
+                0,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                0,
+            ]
+        )
+        preset.unk0xb1 = bytes([128, 128])
+        preset.pad = bytes(10)
+        preset.unk0x28 = 1 if body_type == 1 else 3
+
+        our_unk0x00 = [0] * 20
+        our_unk0x00[8] = 0x01
+        our_unk0x00[9] = body_type
+        preset.unk0x00 = bytes(our_unk0x00)
+
+        ft = data.get("face_template", {})
+        # face_model: structure N -> face_partsId (N-1)*10, confirmed from save exports.
+        preset.face_model = (int(ft.get("structure", 1)) - 1) * 10
+        preset.apparent_age = int(ft.get("age", 128))
+        preset.facial_aesthetic = int(ft.get("aesthetic", 128))
+        preset.form_emphasis = int(ft.get("emphasis", 128))
+
+        h = data.get("hair", {})
+        preset.hair_model = _idx(_HAIR, int(h.get("hair", 1)))
+        preset.hair_color_r = int(h.get("hair_r", 128))
+        preset.hair_color_g = int(h.get("hair_g", 128))
+        preset.hair_color_b = int(h.get("hair_b", 128))
+        preset.luster = int(h.get("luster", 128))
+        preset.hair_root_darkness = int(h.get("roots", 128))
+        preset.white_hairs = int(h.get("white", 0))
+
+        eb = data.get("eyebrows", {})
+        preset.eyebrow_model = _idx(_BROW, int(eb.get("brow", 1)))
+        preset.brow_color_r = int(eb.get("brow_r", 128))
+        preset.brow_color_g = int(eb.get("brow_g", 128))
+        preset.brow_color_b = int(eb.get("brow_b", 128))
+        preset.brow_luster = int(eb.get("luster", 128))
+        preset.brow_root_darkness = 0
+        preset.brow_white_hairs = 0
+
+        fh = data.get("facial_hair", {})
+        beard_list = _BEARD_F if body_type == 1 else _BEARD_M
+        preset.beard_model = _idx(beard_list, int(fh.get("beard", 1)))
+        preset.stubble = int(fh.get("stubble", 0))
+        preset.beard_color_r = preset.hair_color_r
+        preset.beard_color_g = preset.hair_color_g
+        preset.beard_color_b = preset.hair_color_b
+        preset.beard_luster = preset.luster
+        preset.beard_root_darkness = preset.hair_root_darkness
+        preset.beard_white_hairs = preset.white_hairs
+
+        el = data.get("eyelashes", {})
+        lash_val = int(el.get("lashes_r", el.get("lashes", 0)))
+        preset.eye_lash_color_r = (
+            lash_val if "lashes_r" not in el else int(el["lashes_r"])
+        )
+        preset.eye_lash_color_g = int(el.get("lashes_g", lash_val))
+        preset.eye_lash_color_b = int(el.get("lashes_b", lash_val))
+
+        tme = data.get("tattoo_mark_eyepatch", {})
+        preset.eyepatch_model = _idx(_ACC, int(tme.get("eyepatch", 1)))
+        preset.eye_patch_color_r = 60
+        preset.eye_patch_color_g = 60
+        preset.eye_patch_color_b = 60
+        # "OFF" -> 0, "ON" -> 1
+        preset.tattoo_mark_flip = (
+            0 if str(tme.get("flip", "OFF")).upper() == "OFF" else 1
+        )
+        # Tattoo model index not exposed in FacePreset; position/color/angle below.
+        preset.tattoo_mark_position_horizontal = 128
+        preset.tattoo_mark_position_vertical = 128
+        preset.tattoo_mark_angle = 128
+        preset.tattoo_mark_expansion = 128
+        preset.tattoo_mark_color_r = 128
+        preset.tattoo_mark_color_g = 128
+        preset.tattoo_mark_color_b = 128
+        preset.unk0xd8 = 128
+
+        sc = data.get("skin_color", {})
+        preset.skin_color_r = int(sc.get("skin_r", 205))
+        preset.skin_color_g = int(sc.get("skin_g", 180))
+        preset.skin_color_b = int(sc.get("skin_b", 165))
+
+        sf = data.get("skin_features", {})
+        preset.skin_luster = int(sf.get("luster", 128))
+        preset.pores = int(sf.get("pores", 0))
+        preset.dark_circles = int(sf.get("dark_circles", 0))
+        preset.dark_circle_color_r = int(sf.get("dark_circles_r", 0))
+        preset.dark_circle_color_g = int(sf.get("dark_circles_g", 0))
+        preset.dark_circle_color_b = int(sf.get("dark_circles_b", 0))
+
+        co = data.get("cosmetics", {})
+        preset.eye_liner = int(co.get("eyeliner", 0))
+        preset.eye_liner_color_r = int(co.get("eyeliner_r", 0))
+        preset.eye_liner_color_g = int(co.get("eyeliner_g", 0))
+        preset.eye_liner_color_b = int(co.get("eyeliner_b", 0))
+        preset.eye_shadow_upper = int(co.get("upper", 0))
+        preset.eye_shadow_upper_color_r = int(co.get("upper_r", 128))
+        preset.eye_shadow_upper_color_g = int(co.get("upper_g", 128))
+        preset.eye_shadow_upper_color_b = int(co.get("upper_b", 128))
+        preset.eye_shadow_lower = int(co.get("lower", 0))
+        preset.eye_shadow_lower_color_r = int(co.get("lower_r", 0))
+        preset.eye_shadow_lower_color_g = int(co.get("lower_g", 0))
+        preset.eye_shadow_lower_color_b = int(co.get("lower_b", 0))
+        preset.cheeks_color_intensity = int(co.get("cheeks", 0))
+        preset.cheek_color_r = int(co.get("cheeks_r", 0))
+        preset.cheek_color_g = int(co.get("cheeks_g", 0))
+        preset.cheek_color_b = int(co.get("cheeks_b", 0))
+        preset.lip_stick = int(co.get("lipstick", 0))
+        preset.lip_stick_color_r = int(co.get("lipstick_r", 0))
+        preset.lip_stick_color_g = int(co.get("lipstick_g", 0))
+        preset.lip_stick_color_b = int(co.get("lipstick_b", 0))
+
+        re = data.get("right_eye", {})
+        preset.right_iris_color_r = int(re.get("iris_r", 128))
+        preset.right_iris_color_g = int(re.get("iris_g", 128))
+        preset.right_iris_color_b = int(re.get("iris_b", 128))
+        preset.right_iris_size = int(re.get("iris_size", 128))
+        preset.right_eye_clouding = int(re.get("clouding", 0))
+        preset.right_eye_clouding_color_r = int(re.get("clouding_r", 100))
+        preset.right_eye_clouding_color_g = int(re.get("clouding_g", 100))
+        preset.right_eye_clouding_color_b = int(re.get("clouding_b", 100))
+        preset.right_eye_white_color_r = int(re.get("white_r", 255))
+        preset.right_eye_white_color_g = int(re.get("white_g", 255))
+        preset.right_eye_white_color_b = int(re.get("white_b", 255))
+        preset.right_eye_position = int(re.get("position", 128))
+
+        # Left eye mirrors right eye when the section is empty.
+        le = data.get("left_eye") or {}
+        preset.left_iris_color_r = int(le.get("iris_r", preset.right_iris_color_r))
+        preset.left_iris_color_g = int(le.get("iris_g", preset.right_iris_color_g))
+        preset.left_iris_color_b = int(le.get("iris_b", preset.right_iris_color_b))
+        preset.left_iris_size = int(le.get("iris_size", preset.right_iris_size))
+        preset.left_eye_clouding = int(le.get("clouding", preset.right_eye_clouding))
+        preset.left_eye_clouding_color_r = int(
+            le.get("clouding_r", preset.right_eye_clouding_color_r)
+        )
+        preset.left_eye_clouding_color_g = int(
+            le.get("clouding_g", preset.right_eye_clouding_color_g)
+        )
+        preset.left_eye_clouding_color_b = int(
+            le.get("clouding_b", preset.right_eye_clouding_color_b)
+        )
+        preset.left_eye_white_color_r = int(
+            le.get("white_r", preset.right_eye_white_color_r)
+        )
+        preset.left_eye_white_color_g = int(
+            le.get("white_g", preset.right_eye_white_color_g)
+        )
+        preset.left_eye_white_color_b = int(
+            le.get("white_b", preset.right_eye_white_color_b)
+        )
+        preset.left_eye_position = int(le.get("position", preset.right_eye_position))
+
+        fb = data.get("face_balance", {})
+        preset.nose_size = int(fb.get("size", 128))
+        preset.nose_forehead_ratio = int(fb.get("ratio", 128))
+        preset.face_protrusion = int(fb.get("protrusion", 128))
+        preset.vertical_face_ratio = int(fb.get("vert", 128))
+        preset.facial_feature_slant = int(fb.get("slant", 128))
+        preset.horizontal_face_ratio = int(fb.get("horiz", 128))
+
+        fo = data.get("forehead", {})
+        preset.forehead_depth = int(fo.get("depth", 128))
+        preset.forehead_protrusion = int(fo.get("protrusion", 128))
+        preset.nose_bridge_height = int(fo.get("height", 128))
+        preset.bridge_protrusion1 = int(fo.get("prot1", 128))
+        preset.bridge_protrusion2 = int(fo.get("prot2", 128))
+        preset.nose_bridge_width = int(fo.get("width", 128))
+
+        br = data.get("brow_ridge", {})
+        preset.brow_ridge_height = int(br.get("height", 128))
+        preset.inner_brow_ridge = int(br.get("inner", 128))
+        preset.outer_brow_ridge = int(br.get("outer", 128))
+
+        ey = data.get("eyes", {})
+        preset.eye_position = int(ey.get("position", 128))
+        preset.eye_size = int(ey.get("size", 128))
+        preset.eye_slant = int(ey.get("slant", 128))
+        preset.eye_spacing = int(ey.get("spacing", 128))
+
+        nr = data.get("nose_ridge", {})
+        preset.nose_ridge_depth = int(nr.get("depth", 128))
+        preset.nose_ridge_length = int(nr.get("length", 128))
+        preset.nose_position = int(nr.get("position", 128))
+        preset.nose_tip_height = int(nr.get("tip_height", 128))
+        preset.nose_protrusion = int(nr.get("protrusion", 128))
+        preset.nose_height = int(nr.get("height", 128))
+        preset.nose_slant = int(nr.get("slant", 128))
+
+        no = data.get("nostrils", {})
+        preset.nostril_slant = int(no.get("slant", 128))
+        preset.nostril_size = int(no.get("size", 128))
+        preset.nostril_width = int(no.get("width", 128))
+
+        ck = data.get("cheeks", {})
+        preset.cheekbone_height = int(ck.get("height", 128))
+        preset.cheekbone_depth = int(ck.get("depth", 128))
+        preset.cheekbone_width = int(ck.get("width", 128))
+        preset.cheekbone_protrusion = int(ck.get("protrusion", 128))
+        preset.cheeks = int(ck.get("cheeks", 128))
+
+        li = data.get("lips", {})
+        preset.lip_shape = int(li.get("shape", 128))
+        preset.mouth_expression = int(li.get("expression", 128))
+        preset.lip_fullness = int(li.get("fullness", 128))
+        preset.lip_size = int(li.get("size", 128))
+        preset.lip_protrusion = int(li.get("protrusion", 128))
+        preset.lip_thickness = int(li.get("thickness", 128))
+
+        mo = data.get("mouth", {})
+        preset.mouth_protrusion = int(mo.get("protrusion", 128))
+        preset.mouth_slant = int(mo.get("slant", 128))
+        preset.occlusion = int(mo.get("occlusion", 128))
+        preset.mouth_position = int(mo.get("position", 128))
+        preset.mouth_width = int(mo.get("width", 128))
+        preset.mouth_chin_distance = int(mo.get("distance", 128))
+
+        ch = data.get("chin", {})
+        preset.chin_tip_position = int(ch.get("tip", 128))
+        preset.chin_length = int(ch.get("length", 128))
+        preset.chin_protrusion = int(ch.get("protrusion", 128))
+        preset.chin_depth = int(ch.get("depth", 128))
+        preset.chin_size = int(ch.get("size", 128))
+        preset.chin_height = int(ch.get("height", 128))
+        preset.chin_width = int(ch.get("width", 128))
+
+        ja = data.get("jaw", {})
+        preset.jaw_protrusion = int(ja.get("protrusion", 128))
+        preset.jaw_width = int(ja.get("width", 128))
+        preset.lower_jaw = int(ja.get("lower", 128))
+        preset.jaw_contour = int(ja.get("contour", 128))
+
+        bo = data.get("body", {})
+        preset.head_size = int(bo.get("head", 128))
+        preset.chest_size = int(bo.get("chest", 128))
+        preset.abdomen_size = int(bo.get("abdomen", 128))
+        preset.arms_size = int(bo.get("arms", 128))
+        preset.legs_size = int(bo.get("legs", 128))
+        preset.body_hair = int(bo.get("body_hair", 0))
+        preset.body_hair_color_r = preset.hair_color_r
+        preset.body_hair_color_g = preset.hair_color_g
+        preset.body_hair_color_b = preset.hair_color_b
+
+        return preset
+
 
 @dataclass
 class CSMenuSystemSaveLoad:
