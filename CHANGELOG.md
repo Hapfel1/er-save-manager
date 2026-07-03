@@ -3,6 +3,31 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.6.0
+**Released:** July 03, 2026
+
+
+### ✨ New Features
+
+- Add Elden Bling Auto Sliders JSON import ([c02048f](https://github.com/Hapfel1/er-save-manager/commit/c02048fa4485f638663b3bd12d23aeb08083fa61))
+
+
+
+### 🔧 Bug Fixes
+
+- Fall back to actual list when removing/setting quantity `[inventory]` ([0f81346](https://github.com/Hapfel1/er-save-manager/commit/0f8134622d5d6f176c75b5c74864bb56eb81b41a))
+
+- Shift all downstream slot offsets on gaitem insert/remove ([7fb685b](https://github.com/Hapfel1/er-save-manager/commit/7fb685b3312ba167e0e80690cdcf1270089557ad))
+
+
+
+### Data
+
+- Add missing convergence items, fix item names, update icons ([df7fe5d](https://github.com/Hapfel1/er-save-manager/commit/df7fe5d61c1c0d194f6bfd6576a9cc6bfa76aaaf))
+
+
+
+---
 ## 📦 Release 1.5.2
 **Released:** June 29, 2026
 
@@ -1219,6 +1244,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.6.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.5.2..v1.6.0
 [1.5.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.5.1..v1.5.2
 [1.5.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.5.0..v1.5.1
 [1.5.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.4.1..v1.5.0
