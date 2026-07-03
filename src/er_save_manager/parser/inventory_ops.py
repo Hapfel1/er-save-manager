@@ -981,9 +981,19 @@ def insert_gaitem(
             slot.gaitem_offsets[i] += size_delta
 
     if net_shift != 0:
+        slot.player_game_data_offset += net_shift
         slot.inventory_held_offset += net_shift
         slot.inventory_storage_offset += net_shift
-        slot.player_game_data_offset += net_shift
+        slot.gestures_offset += net_shift
+        slot.horse_offset += net_shift
+        slot.blood_stain_offset += net_shift
+        slot.event_flags_offset += net_shift
+        slot.coordinates_offset += net_shift
+        slot.net_man_offset += net_shift
+        slot.weather_offset += net_shift
+        slot.time_offset += net_shift
+        slot.steamid_offset += net_shift
+        slot.dlc_offset += net_shift
 
     return handle, net_shift
 
@@ -1020,9 +1030,19 @@ def _remove_gaitem(save: Save, slot_idx: int, slot, gaitem_idx: int) -> int:
     if gaitem_size_delta != 0:
         for i in range(gaitem_idx + 1, len(slot.gaitem_offsets)):
             slot.gaitem_offsets[i] += gaitem_size_delta
+        slot.player_game_data_offset += net_shift
         slot.inventory_held_offset += net_shift
         slot.inventory_storage_offset += net_shift
-        slot.player_game_data_offset += net_shift
+        slot.gestures_offset += net_shift
+        slot.horse_offset += net_shift
+        slot.blood_stain_offset += net_shift
+        slot.event_flags_offset += net_shift
+        slot.coordinates_offset += net_shift
+        slot.net_man_offset += net_shift
+        slot.weather_offset += net_shift
+        slot.time_offset += net_shift
+        slot.steamid_offset += net_shift
+        slot.dlc_offset += net_shift
 
     return net_shift
 
