@@ -727,6 +727,14 @@ def _first_empty_key_slot(inventory) -> int:
     return -1
 
 
+def _find_handle_slot(item_list, handle: int) -> int:
+    """Return index of the entry with the given gaitem_handle, or -1."""
+    for i, it in enumerate(item_list):
+        if it.gaitem_handle == handle:
+            return i
+    return -1
+
+
 def _select_inventory(slot, location: str):
     if location == "held":
         return slot.inventory_held
@@ -1208,28 +1216,29 @@ def remove_item(
         handle = _direct_handle(full_item_id)
         gaitem_idx = -1
 
-    inv_slot = -1
-    old_qty = 0
-    item_list = (
-        inventory.key_items if _is_key_item(full_item_id) else inventory.common_items
-    )
-    for i, it in enumerate(item_list):
-        if it.gaitem_handle == handle:
-            inv_slot = i
-            old_qty = it.quantity
-            break
+    # _is_key_item classifies by display category (KeyItems.csv), which does
+    # not always match the raw list the item is actually stored in. Search
+    # the expected list first, then fall back to the other list.
+    is_key = _is_key_item(full_item_id)
+    item_list = inventory.key_items if is_key else inventory.common_items
+    inv_slot = _find_handle_slot(item_list, handle)
+    if inv_slot == -1:
+        other_list = inventory.common_items if is_key else inventory.key_items
+        other_slot = _find_handle_slot(other_list, handle)
+        if other_slot != -1:
+            is_key = not is_key
+            item_list = other_list
+            inv_slot = other_slot
 
     if inv_slot == -1:
         raise ValueError(
             f"item 0x{full_item_id:08X} not found in {location!r} inventory "
             f"(handle 0x{handle:08X})"
         )
+    old_qty = item_list[inv_slot].quantity
 
-    if _is_key_item(full_item_id):
-        inventory.key_items[inv_slot] = InventoryItem()
-    else:
-        inventory.common_items[inv_slot] = InventoryItem()
-    if _is_key_item(full_item_id):
+    item_list[inv_slot] = InventoryItem()
+    if is_key:
         inventory.key_item_count = max(0, inventory.key_item_count - 1)
     else:
         inventory.common_item_count = max(0, inventory.common_item_count - 1)
@@ -1291,22 +1300,25 @@ def set_quantity(
     else:
         handle = _direct_handle(full_item_id)
 
-    inv_slot = -1
-    old_qty = 0
-    item_list = (
-        inventory.key_items if _is_key_item(full_item_id) else inventory.common_items
-    )
-    for i, it in enumerate(item_list):
-        if it.gaitem_handle == handle:
-            inv_slot = i
-            old_qty = it.quantity
-            break
+    # _is_key_item classifies by display category (KeyItems.csv), which does
+    # not always match the raw list the item is actually stored in. Search
+    # the expected list first, then fall back to the other list.
+    is_key = _is_key_item(full_item_id)
+    item_list = inventory.key_items if is_key else inventory.common_items
+    inv_slot = _find_handle_slot(item_list, handle)
+    if inv_slot == -1:
+        other_list = inventory.common_items if is_key else inventory.key_items
+        other_slot = _find_handle_slot(other_list, handle)
+        if other_slot != -1:
+            item_list = other_list
+            inv_slot = other_slot
 
     if inv_slot == -1:
         raise ValueError(
             f"item 0x{full_item_id:08X} not found in {location!r} inventory "
             f"(handle 0x{handle:08X})"
         )
+    old_qty = item_list[inv_slot].quantity
 
     item_list[inv_slot].quantity = quantity
     _patch_slot(save, slot_idx, slot)
