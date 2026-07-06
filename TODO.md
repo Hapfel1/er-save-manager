@@ -1,3 +1,11 @@
+check corruption
+
+check validation when batch adding
+
+check inv corruption sometimes when adding a lot
+
+write test modules
+
 demi human cleaver
 jewel of the formless
 
