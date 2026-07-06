@@ -10,6 +10,7 @@ Usage with pip (activate venv first):
 """
 
 import sys
+import sysconfig
 import warnings
 from pathlib import Path
 
@@ -40,6 +41,27 @@ warnings.filterwarnings("ignore", category=SyntaxWarning)
 if sys.platform != "win32":
     sys.exit("This script must be run on Windows to build a Windows binary.")
 
+
+def find_compiled_extension_packages() -> set[str]:
+    """Return top-level package names that ship a compiled .pyd extension.
+
+    A compiled extension cannot be imported from inside library.zip, since
+    its package __path__ must be a real filesystem directory for Python to
+    locate the sibling .pyd file. Any such package must be excluded from
+    zipping or its import fails at runtime with ModuleNotFoundError.
+    """
+    site_packages = Path(sysconfig.get_paths()["purelib"])
+    packages = set()
+    for pyd_path in site_packages.rglob("*.pyd"):
+        top_level = pyd_path.relative_to(site_packages).parts[0]
+        # Strip suffixes for extension modules living directly at top level,
+        # e.g. "_pydantic_core.cp313-win_amd64.pyd" -> "_pydantic_core"
+        if top_level.endswith(".pyd"):
+            top_level = top_level.split(".")[0]
+        packages.add(top_level)
+    return packages
+
+
 # Include necessary files without including source code
 include_files = [
     ("src/resources/", "resources/"),
@@ -59,6 +81,17 @@ include_files = [
 # Explicitly include UI submodules for cx_Freeze
 ui_packages = []
 
+# Packages that rely on __file__ for resource loading, not compiled extensions
+file_dependent_packages = {
+    "er_save_manager",
+    "customtkinter",
+    "customtkinterthemes",
+}
+
+zip_exclude_packages = sorted(
+    file_dependent_packages | find_compiled_extension_packages()
+)
+
 # Add additional options like packages and excludes
 build_exe_options = {
     # Explicitly include the entire package to handle relative imports
@@ -67,20 +100,9 @@ build_exe_options = {
     "includes": [],
     "include_files": include_files,
     # Compress packages into library.zip to reduce file count (bloat)
-    # Exclude specific packages that rely on __file__ for resource loading
-    "zip_exclude_packages": [
-        "er_save_manager",
-        "customtkinter",
-        "customtkinterthemes",
-        "PIL",
-        "pydantic_core",
-        "charset_normalizer",
-        "mmh3",
-        "multidict",
-        "propcache",
-        "pyroaring",
-        "yarl",
-    ],
+    # Exclude specific packages that rely on __file__ for resource loading,
+    # plus any package with a compiled extension (see find_compiled_extension_packages)
+    "zip_exclude_packages": zip_exclude_packages,
     "zip_include_packages": ["*"],
     # Exclude unused heavy dependencies found in environment
     "excludes": ["unittest", "pydoc"],
