@@ -1752,6 +1752,19 @@ class InventoryEditor:
 
     # ---- operations ---------------------------------------------------------
 
+    def _resolve_add_location(self, save_file, slot_idx, location: str) -> str:
+        """Fall back to storage when held has no free common item slot."""
+        if location != "held":
+            return location
+        try:
+            slot = save_file.characters[slot_idx]
+            held_full = all(
+                it.gaitem_handle != 0 for it in slot.inventory_held.common_items
+            )
+            return "storage" if held_full else "held"
+        except Exception:
+            return location
+
     def _max_qty_for_location(self, item, location: str) -> int:
         max_arrow = getattr(item, "max_arrow_quantity", 1)
         if max_arrow > 1:
@@ -1992,17 +2005,12 @@ class InventoryEditor:
         slot_idx = self.get_char_slot()
         item_info = self._get_current_item_info()
 
-        if item_info["location"] == "held":
-            try:
-                slot = save_file.characters[slot_idx]
-                held_full = all(
-                    it.gaitem_handle != 0 for it in slot.inventory_held.common_items
-                )
-                if held_full:
-                    item_info["location"] = "storage"
-                    self.inv_location_var.set("storage")
-            except Exception:
-                pass
+        resolved_location = self._resolve_add_location(
+            save_file, slot_idx, item_info["location"]
+        )
+        if resolved_location != item_info["location"]:
+            item_info["location"] = resolved_location
+            self.inv_location_var.set(resolved_location)
 
         try:
             self.ensure_mutable()
@@ -2128,7 +2136,9 @@ class InventoryEditor:
             success = 0
             errors = []
             for item in items:
-                location = self.inv_location_var.get()
+                location = self._resolve_add_location(
+                    save_file, slot_idx, self.inv_location_var.get()
+                )
                 max_qty = self._max_qty_for_location(item, location)
                 item_qty = max(1, min(target_qty, max_qty))
                 item_upg = 0
@@ -3017,6 +3027,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         from er_save_manager.ui.settings import get_loadouts_path
 
         self.db_path = get_loadouts_path()
+        self.current_loadout_name: str | None = None
 
         main_frame = ctk.CTkFrame(self, fg_color="transparent")
         main_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -3067,6 +3078,9 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         ctk.CTkButton(db_btn_frame, text="Save Current", command=self.save_to_db).pack(
             fill="x", pady=2
         )
+        ctk.CTkButton(
+            db_btn_frame, text="Save to Selected", command=self.save_to_selected
+        ).pack(fill="x", pady=2)
         ctk.CTkButton(
             db_btn_frame,
             text="Delete Selected",
@@ -3183,8 +3197,29 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             return
         db[name] = self.editor.loadout
         self._write_db(db)
+        self.current_loadout_name = name
         self.refresh_db_list()
         show_toast(self.winfo_toplevel(), f"Saved to DB: {name}", type="success")
+
+    def save_to_selected(self):
+        if not self.editor.loadout:
+            CTkMessageBox.showwarning("Empty", "Current loadout is empty.", parent=self)
+            return
+        sel = self.db_lb.curselection()
+        name = self.db_lb.get(sel[0]) if sel else self.current_loadout_name
+        if not name:
+            CTkMessageBox.showwarning(
+                "No Loadout Selected",
+                "Select a loadout in the list first, or use Save Current to create one.",
+                parent=self,
+            )
+            return
+        db = self._read_db()
+        db[name] = self.editor.loadout
+        self._write_db(db)
+        self.current_loadout_name = name
+        self.refresh_db_list()
+        show_toast(self.winfo_toplevel(), f"Updated: {name}", type="success")
 
     def load_from_db(self):
         sel = self.db_lb.curselection()
@@ -3197,6 +3232,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         db = self._read_db()
         if name in db:
             self.editor.loadout = db[name]
+            self.current_loadout_name = name
             self.refresh_list()
             show_toast(self.winfo_toplevel(), f"Loaded from DB: {name}", type="success")
 
@@ -3280,9 +3316,14 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
 
             for item_info in self.editor.loadout:
                 try:
-                    self.editor._process_single_add(
-                        save_file, slot_idx, slot, item_info
+                    location = self.editor._resolve_add_location(
+                        save_file, slot_idx, item_info.get("location", "held")
                     )
+                    to_add = item_info
+                    if location != item_info.get("location"):
+                        to_add = dict(item_info)
+                        to_add["location"] = location
+                    self.editor._process_single_add(save_file, slot_idx, slot, to_add)
                     success_count += 1
                 except Exception as ex:
                     errors.append(f"{item_info.get('name_label', 'item')}: {ex}")
