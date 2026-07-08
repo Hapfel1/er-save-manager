@@ -1,3 +1,5 @@
+make batch adding respect location and add to storage if no place in held
+
 check corruption
 
 check validation when batch adding
