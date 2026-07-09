@@ -3,6 +3,25 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.6.2
+**Released:** July 08, 2026
+
+
+### 🔧 Bug Fixes
+
+- Add missed Convergence Armor ([6b983d7](https://github.com/Hapfel1/er-save-manager/commit/6b983d7dca290dc7047f86956b116007efe1c065))
+
+- Fallback to storage on held-full during add/batch/loadout `[inventory]` ([a9b0c31](https://github.com/Hapfel1/er-save-manager/commit/a9b0c31ad4c293edea9b7bdaa9f8e8b4ccb1094d))
+
+
+
+### 📦 Dependencies
+
+- Bump the github-actions group with 2 updates `[deps]` ([335f1e8](https://github.com/Hapfel1/er-save-manager/commit/335f1e8838f724188fa37ae572b3e1b6320acdfb))
+
+
+
+---
 ## 📦 Release 1.6.1
 **Released:** July 03, 2026
 
@@ -1255,6 +1274,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.6.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.6.1..v1.6.2
 [1.6.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.6.0..v1.6.1
 [1.6.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.5.2..v1.6.0
 [1.5.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.5.1..v1.5.2
