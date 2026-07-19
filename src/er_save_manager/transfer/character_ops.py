@@ -44,6 +44,7 @@ class CharacterOperations:
 
     SLOT_SIZE = 0x280000
     SLOT_DATA_SIZE = 0x280000
+    CHECKSUM_SIZE = 0x10
 
     @staticmethod
     def get_slot_offset(save, slot_index: int) -> int:
