@@ -1,5 +1,7 @@
 npc respawner ds3
 
+use different file explorer on linux
+
 fix ng level display from save inspector dsr
 
 add boss killing
