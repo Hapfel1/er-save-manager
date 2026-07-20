@@ -146,6 +146,41 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 - Safe coordinates guaranteed
 - Last resort when other fixes don't work
 
+### 11. Slot Checksum
+
+**Symptom:** Save won't load, no other issue detected
+
+**Cause:** The 16-byte MD5 checksum stored before a character slot doesn't match the slot's actual data. The game refuses to load a slot with an invalid checksum.
+
+**Fix Applied:**
+
+- Recalculates the MD5 over the slot's data region
+- Writes the new checksum immediately before the slot
+
+This fix runs as a final integrity pass, since any edit that changes slot bytes invalidates the existing checksum.
+
+### 12. Deep Scan (Torn Write)
+
+**Symptom:** A character slot loads with a valid checksum but the character is reset, has zeroed stats, or is otherwise blank
+
+**Cause:** A torn write during a previous save inserted or removed bytes partway through the slot instead of overwriting it cleanly. Everything after the tear point is shifted, so the offsets the parser expects no longer line up with the actual data - the slot still hashes correctly because the checksum was computed over the shifted, internally consistent bytes.
+
+**Fix Applied:**
+
+- Locates the character's SteamID64 inside the raw slot bytes and walks backward through fixed-size trailing structures (NetMan, WorldAreaWeather, WorldAreaTime, BaseVersion) to find where NetMan actually starts
+- Compares that against where NetMan should start based on the event flags region and other sized structures
+- The difference between expected and actual position is the shift amount (the delta)
+- Cuts or pads the save right after the event flags region to correct the shift
+- Re-parses the corrected slot to confirm it is valid
+
+**Result includes:**
+
+- Shift delta in bytes
+- Tear location
+- Confidence level for the detected shift
+
+This is currently the primary fix for the character slot corruption seen with Convergence and me3, where a pre-existing FromSoftware race condition during slot writes is amplified by heap churn from the `oversized_regulation_fix_after_er` hook.
+
 ---
 
 ## Usage
@@ -301,7 +336,7 @@ If fix causes issues:
 - Fix didn't fully apply
 
 **Solutions**
-If the tool does not help at all, feel free to contact me on Discord, Username: hapfel
+If the tool does not help at all, feel free to contact me on Discord, server link: https://dsc.gg/er-saveman
 
 ---
 

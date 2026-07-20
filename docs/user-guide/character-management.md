@@ -53,7 +53,7 @@ Copy a complete character to a different slot in the Save file
 2. Go to **Character Management** tab
 3. Select **Copy Character** in the dropdown menu
 4. Select both Slots
-5. Click **ECopy Character...**
+5. Click **Copy Character...**
 
 ---
 

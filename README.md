@@ -13,8 +13,8 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **Save File Fixer**: Automatically detect and fix save corruption issues and infinite loading screens
 - **Character Management**: Export, import, and move characters between saves
 - **Community Character Browser**: Browse, download, and contribute characters with likes and download tracking
-- **Inventory Editor**: Edit your inventory, spawn in items, import builds
 - **Character Editor**: Edit stats, runes, name, level, and build attributes
+- **Inventory Editor**: Edit your inventory, spawn in items, import builds
 - **Appearance Editor**: View, export and import Presets
 - **Community Preset Browser**: Browse, download, and contribute character appearance presets with likes and download tracking
 - **World State / Teleportation**: 451 known safe locations to warp to as well as custom coordinate teleportation. Interactive map of the overworld for teleporting.
@@ -22,14 +22,15 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **Event Flags Editor**: Read and toggle event flags
 - **Boss Respawner**: Respawn any boss for repeated fights
 - **NPC Respawner**: Respawn NPCs
-- **NPC Quest Trakcer**
+- **NPC Quest Tracker**
 - **Gestures**: Unlock gestures
 - **Invasion Regions & Game Settings**: View and edit invasion regions and game settings
 - **Backup Manager**: Automatic and manual backups with restore functionality
-- **Troubleshooting**: Troubleshooter for checking game and save file related issues
+- **Troubleshooting**: Troubleshooter for checking game launch/connection related issues
 - **Backup Manager and SteamID Patcher for**: Elden Ring, Elden Ring Nightreign, Armored Core 6, Sekiro, Dark Souls III, Dark Souls II SotfS, Dark Souls Remastered
 - **DSR**: Stats Editing, Event Flags, Boss Revival, NPC Revival, Item Spawning
 - **DS3**: Stats Editing, Boss Revival, Item Spawning, World State Editing, Supports Convergence and Cinders Mod
+- **Nightreign**: Relic spawning and editing, editing Murk
 
 ### Work in Progress
 
@@ -101,32 +102,30 @@ Automatically detects issues with your game installation, your save file and any
 - Supports Convergence Mod for character submission
 - Allows specifying and contributing any overhaul mod character
 
-### World State / Teleportation
-
-- Display of current location
-- 451 known locations to teleport to
-- Interactive map of the overworld for teleporting
-- Custom Coordinate Teleportation
-- "Move Bloodstain to Player" function
-
 ### Character Editor
 
 - Edit base stats (Vigor, Mind, Endurance, Strength, Dexterity, Intelligence, Faith, Arcane)
 - Modify character name and level
 - Adjust runes held
+- Edit NG level
 
 ### Inventory Editor
 
 - Edit your inventory, remove items, spawn in items
-- Supports SeamlessCoop Items
+- Full Item Validation to avoid any invalid items and allow Item Spawning for Vanilla Saves
+- Supports SeamlessCoop and Convergence Items
+- Visual Item Picker and Visual Inventory Editor with full Icon Support
+- Loadout Mode for creating and sharing loadouts
+- Batch Adding Category functionality
+- Build Import Functionality from the Elden Ring Build & Inventory Planner
 
 ### Appearance Editor
 
 - View Details of a Preset
-- Export/Import a Preset from/to a `.json` file
+- Export/Import a Preset from/to a `.json` file (Supports importing from Elden Bling Sliders)
 - Delete a Preset
-- Copy a Prest to a different Save file
-- Browse community presets
+- Copy a Preset to a different Save file
+- Browse Community presets
 
 ### Community Preset Browser
 
@@ -139,6 +138,14 @@ Automatically detects issues with your game installation, your save file and any
 - Search and filter functionality
 - Report inappropriate content
 - Local cache for fast loading
+
+### World State / Teleportation
+
+- Display of current location
+- 451 known locations to teleport to
+- Interactive map of the overworld for teleporting
+- Custom Coordinate Teleportation
+- "Move Bloodstain to Player" function
 
 ### SteamID Patcher
 
@@ -155,17 +162,23 @@ Automatically detects issues with your game installation, your save file and any
 - Respawn any boss for repeated fights
 - Supports all main game and DLC bosses
 - One-click respawn functionality
+- Check Boss Status
 
 ### NPC Respawner
 
 - Respawn NPCs
 - One-click respawn functionality
 
+### NPC Quest Tracker
+
+- Check NPC quest progress
+- Modify steps, reset progress
+
 ### Gestures
 
 - Unlock gestures
 
-### Invasion Regions & Game Settings
+### Regions & Game Settings
 
 - View and unlock invasion regions
 - View and edit game settings
@@ -177,6 +190,7 @@ Automatically detects issues with your game installation, your save file and any
 - Browse and restore previous backups
 - Backup pruning with configurable retention
 - One-click restore with confirmation
+- Function for Auto-Backup Creation on Game Launch
 
 ### Backup Manager and SteamID Patcher for other Fromsoftware Games
 
@@ -186,6 +200,26 @@ Automatically detects issues with your game installation, your save file and any
 - Dark Souls III
 - Dark Souls II SotfS
 - Dark Souls Remastered
+
+### DSR
+
+- Stats Editing
+- Event Flags
+- Boss Revival
+- NPC Revival
+- Item Spawning (Supports SeamlessCoop Items)
+
+### DS3
+
+- Stats Editing
+- Boss Revival
+- Item Spawning (Supports Cinders and Convergence)
+- World State Editing
+
+### Nightreign 
+
+- Relic spawning and editing
+- Editing Murk
 
 ## Building from Source
 
@@ -202,6 +236,7 @@ MIT License - see [LICENSE](LICENSE)
 - [Sayuri](https://github.com/Umgak) for allowing me to use her contributions to the [TGA Cheat Table](https://github.com/The-Grand-Archives/Elden-Ring-CT-TGA), specifically the Event Flag Manager's tables
 - [?WikiName?](https://soulsmodding.com/doku.php?id=er-refmat:main) for the available documentation
 - [SimpleSekiroSavegameHelper](https://github.com/uberhalit/SimpleSekiroSavegameHelper) for offsets and constants for Sekiro steamid patcher
+
 
 ### Community
 - All preset contributors

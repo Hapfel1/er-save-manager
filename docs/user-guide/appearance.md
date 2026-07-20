@@ -9,7 +9,7 @@ The Appearance tab manages character appearance presets stored in your save file
 - 15 preset slots available
 - View preset details (face, body, colors)
 - Export presets to JSON files
-- Import presets from JSON files
+- Import presets from JSON files (Supports importing from Elden Bling Sliders export)
 - Copy presets to other saves
 - Browse and download community presets
 
@@ -178,26 +178,6 @@ Creates human-readable JSON file with all preset data.
 }
 ```
 
-### Use Cases
-
-**Sharing:**
-
-- Send to friends
-- Upload to community
-- Post in Discord/Reddit
-
-**Backup:**
-
-- Before changing appearance
-- Archive favorite looks
-- Store build-specific appearances
-
-**Editing:**
-
-- Manual tweaking in text editor
-- Batch modifications
-- Custom color schemes
-
 ---
 
 ## Importing Presets
@@ -329,8 +309,8 @@ Access community-shared appearance presets.
 
 1. Find preset in browser
 2. Click preset to view details
-3. Click **Download**
-4. Select target preset slot
+3. Select target preset slot
+4. Click **Apply to Slot**
 5. Preset downloaded and imported
 
 **What You Get:**
@@ -353,7 +333,7 @@ Access community-shared appearance presets.
    - Tags
 4. Attach images
 5. Click **Submit**, a browser window will open where you have to drag the generated zip archive in.
-6. Click **Create** on the prefilled Issue in gitHub and wait for a maintainer to review and merge it
+6. Click **Create** on the prefilled Issue in GitHub and wait for a maintainer to review and merge it
 
 **Guidelines:**
 
