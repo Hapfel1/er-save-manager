@@ -1,6 +1,6 @@
 # Event Flags & Boss Respawner
 
-View, edit, and toggle event flags - including boss respawning functionality with 948 documented flags.
+View, edit, and toggle event flags - including boss respawning functionality with 1,295 documented flags.
 
 ## Overview
 
@@ -15,7 +15,7 @@ Event flags are binary switches (ON/OFF) that track game state:
 
 The Event Flags tab provides:
 
-- 948 documented flags organized by category
+- 1,295 documented flags organized by category
 - Boss respawn functionality
 - Search and filter
 - Bulk operations
@@ -82,7 +82,7 @@ The Event Flags tab provides:
 3. Flag list populates with current states
 4. Category defaults to first category
 
-**Result:** All 948 flags loaded with current ON/OFF states
+**Result:** All 1,295 flags loaded with current ON/OFF states
 
 ### Viewing Flags
 
