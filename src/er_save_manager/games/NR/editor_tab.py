@@ -642,6 +642,7 @@ class NREditorTab:
 
             self._re_item_var.set(str(dlg.result))
             self._re_item_label.configure(text=relic_name(dlg.result))
+            self._set_edit_curse_visible(self._current_is_deep())
 
     def _browse_effect(self, idx: int) -> None:
         try:
@@ -678,6 +679,7 @@ class NREditorTab:
 
             self._spawn_relic_id.set(dlg.result)
             self._spawn_relic_label.configure(text=relic_name(dlg.result))
+            self._set_spawn_curse_visible(self._spawn_is_deep())
 
     def _browse_spawn_effect(self, idx: int) -> None:
         try:
@@ -789,6 +791,7 @@ class NREditorTab:
             self._re_effect_labels[j].configure(text=effect_name(effects[j]))
             self._re_curse_vars[j].set(str(effects[j + 3]))
             self._re_curse_labels[j].configure(text=effect_name(effects[j + 3]))
+        self._set_edit_curse_visible(rs.is_deep)
 
     # ------------------------------------------------------------------
     # Edit / remove

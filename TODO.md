@@ -4,19 +4,19 @@ use different file explorer on linux
 
 fix ng level display from save inspector dsr
 
-add boss killing
-
 ds2
-
-add nr relic editing for drawbacks on don relics
 
 revisit ds3 and fix bugs
 
 write test modules
 
-check corruption on adding alot
+add nr relic editing for drawbacks on don relics done
 
-make batch adding respect location and add to storage if no place in held
+check corruption on adding alot done
+
+add boss killing done
+
+make batch adding respect location and add to storage if no place in held done
 
 check corruption done
 
