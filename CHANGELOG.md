@@ -3,6 +3,27 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.6.3
+**Released:** July 20, 2026
+
+
+### 🔧 Bug Fixes
+
+- Add missing CHECKSUM_SIZE class constant `[character_ops]` ([bbdf7b5](https://github.com/Hapfel1/er-save-manager/commit/bbdf7b578e198066e67820fb2e1ff1b6f1a4cc6d))
+
+- Add Blessed Blue Dew Talisman Convergence variant to Convergence Talismans which reuses the Cerulean Seed Talisman's ID still with its old name in Params ([fd20f2c](https://github.com/Hapfel1/er-save-manager/commit/fd20f2c60436c4dfbb1029135262c86f60c3215f))
+
+
+
+### 📦 Dependencies
+
+- Bump the github-actions group with 2 updates `[deps]` ([f9929e3](https://github.com/Hapfel1/er-save-manager/commit/f9929e3c2a16445b68bef039acd58b84df3d4231))
+
+- Bump the github-actions group with 3 updates `[deps]` ([300306b](https://github.com/Hapfel1/er-save-manager/commit/300306b63927d9130352bcd1a1a2ffa21e34ed00))
+
+
+
+---
 ## 📦 Release 1.6.2
 **Released:** July 08, 2026
 
@@ -1274,6 +1295,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.6.3]: https://github.com/Hapfel1/er-save-manager/compare/v1.6.2..v1.6.3
 [1.6.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.6.1..v1.6.2
 [1.6.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.6.0..v1.6.1
 [1.6.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.5.2..v1.6.0
