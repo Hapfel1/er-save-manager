@@ -163,7 +163,7 @@ jobs:
 
       - name: Upload artifact to Nexus Mods
         id: upload
-        uses: Nexus-Mods/upload-action@v1.0.0-beta.8
+        uses: Nexus-Mods/upload-action@v1.0.0-beta.9
         with:
           api_key: ${{ secrets.NEXUSMODS_API_KEY }}
           file_id: ${{ steps.meta.outputs.file_group_id }}
