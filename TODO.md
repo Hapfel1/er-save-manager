@@ -1,12 +1,20 @@
-make batch adding respect location and add to storage if no place in held
+ds2
 
-check corruption
+add nr relic editing for drawbacks on don relics
 
-check validation when batch adding
-
-check inv corruption sometimes when adding a lot
+revisit ds3 and fix bugs
 
 write test modules
+
+check corruption on adding alot
+
+make batch adding respect location and add to storage if no place in held
+
+check corruption done
+
+check validation when batch adding done
+
+check inv corruption sometimes when adding a lot done
 
 demi human cleaver
 jewel of the formless
