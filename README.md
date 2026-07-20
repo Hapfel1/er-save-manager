@@ -20,7 +20,7 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **World State / Teleportation**: 451 known safe locations to warp to as well as custom coordinate teleportation. Interactive map of the overworld for teleporting.
 - **SteamID Patcher**: Transfer saves between Steam accounts
 - **Event Flags Editor**: Read and toggle event flags
-- **Boss Respawner**: Respawn any boss for repeated fights
+- **Boss Respawner**: Respawn/Kill any boss for repeated fights
 - **NPC Respawner**: Respawn NPCs
 - **NPC Quest Tracker**
 - **Gestures**: Unlock gestures
@@ -160,6 +160,7 @@ Automatically detects issues with your game installation, your save file and any
 ### Boss Respawner
 
 - Respawn any boss for repeated fights
+- Kill any boss
 - Supports all main game and DLC bosses
 - One-click respawn functionality
 - Check Boss Status
