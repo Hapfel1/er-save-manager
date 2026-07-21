@@ -6,7 +6,7 @@ ds2
 
 revisit ds3 and fix bugs
 
-write test modules
+write test modules done
 
 use different file explorer on linux done
 
