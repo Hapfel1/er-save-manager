@@ -104,8 +104,11 @@ build_exe_options = {
     # plus any package with a compiled extension (see find_compiled_extension_packages)
     "zip_exclude_packages": zip_exclude_packages,
     "zip_include_packages": ["*"],
-    # Exclude unused heavy dependencies found in environment
-    "excludes": ["unittest", "pydoc"],
+    # Exclude unused heavy dependencies found in environment, plus the
+    # tests package as a guardrail (it ships save-file fixtures and must
+    # never end up in a build; not imported by run_gui.py, but excluded
+    # explicitly in case that ever changes)
+    "excludes": ["unittest", "pydoc", "tests"],
     # Output dir for built executables and dependencies
     "build_exe": f"dist/windows-{VERSION}/er-save-manager_{VERSION}",
     # Optimize .pyc files (2 strips docstrings)
