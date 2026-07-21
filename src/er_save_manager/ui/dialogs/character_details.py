@@ -115,6 +115,45 @@ class CharacterDetailsDialog:
         except Exception:
             pass
 
+        # Structural checks with a well-defined, safe correction
+        try:
+            from er_save_manager.fixes.structural_scan import (
+                DanglingInventoryHandleFix,
+                StorageInventoryCountersFix,
+            )
+
+            if DanglingInventoryHandleFix().detect(save_file, slot_idx):
+                issues_detected.append(
+                    "dangling_inventory_handle:Inventory rows reference items that no longer exist"
+                )
+            if StorageInventoryCountersFix().detect(save_file, slot_idx):
+                issues_detected.append(
+                    "storage_inventory_counters:Corrupted storage box item counters"
+                )
+        except Exception:
+            pass
+
+        # Structural checks with no safe automatic correction, informational only
+        structural_notes = []
+        try:
+            from er_save_manager.fixes.structural_scan import (
+                DuplicateGaitemHandleFix,
+                RebuildRoundtripFix,
+                WorldStructSizeFix,
+            )
+
+            for fix in (
+                RebuildRoundtripFix(),
+                DuplicateGaitemHandleFix(),
+                WorldStructSizeFix(),
+            ):
+                if fix.detect(save_file, slot_idx):
+                    result = fix.apply(save_file, slot_idx)
+                    structural_notes.append(f"{fix.name}: {result.description}")
+                    structural_notes.extend(f"    {d}" for d in result.details)
+        except Exception:
+            pass
+
         info = []
         info.append("=" * 50)
         info.append(f"  CHARACTER: {name}")
@@ -171,6 +210,14 @@ class CharacterDetailsDialog:
             info.append("=" * 50)
             info.append("")
             info.append("Character appears healthy!")
+
+        if structural_notes:
+            info.append("")
+            info.append("=" * 50)
+            info.append("STRUCTURAL NOTES (informational, no automatic fix):")
+            info.append("=" * 50)
+            for note in structural_notes:
+                info.append(f"  {note}")
 
         dialog = ctk.CTkToplevel(parent)
         dialog.title(f"Character Details - {name}")
@@ -779,6 +826,20 @@ class CharacterDetailsDialog:
             if inv_result.applied:
                 fixes.append(inv_result.description)
                 was_fixed = True
+
+            from er_save_manager.fixes.structural_scan import (
+                DanglingInventoryHandleFix,
+                StorageInventoryCountersFix,
+            )
+
+            for structural_fix in (
+                DanglingInventoryHandleFix(),
+                StorageInventoryCountersFix(),
+            ):
+                result = structural_fix.apply(save_file, slot_idx)
+                if result.applied:
+                    fixes.append(result.description)
+                    was_fixed = True
 
             slot = save_file.characters[slot_idx]
             has_dlc_location = (
