@@ -6,7 +6,7 @@ ds2
 
 revisit ds3 and fix bugs
 
-remove flasks and extra talisman slots, spirit summon level from info editor
+remove flasks and extra talisman slots, spirit summon level from info editor done
 
 check equipped stuff again er for saving loadouts done
 
