@@ -1,10 +1,10 @@
 npc respawner ds3
 
-fix ng level display from save inspector dsr
-
 ds2
 
 revisit ds3 and fix bugs
+
+fix ng level display from save inspector dsr
 
 remove flasks and extra talisman slots, spirit summon level from info editor done
 

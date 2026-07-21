@@ -376,9 +376,8 @@ class _ItemPickerDialog(ctk.CTkToplevel):
         self._items = owned_items
         self._visible: list[tuple[int, int, str, str]] = []
 
-        self.geometry("440x500")
+        _center_over(self, parent, 440, 500)
 
-        self.update_idletasks()
         self.attributes("-alpha", 1)
         self.grab_set()
 
@@ -571,8 +570,7 @@ class _LoadoutBrowserDialog(ctk.CTkToplevel):
         self._on_choice = on_choice
         self._names = sorted(store.keys())
 
-        self.geometry("360x420")
-        self.update_idletasks()
+        _center_over(self, parent, 360, 420)
         self.attributes("-alpha", 1)
         self.grab_set()
 
@@ -705,8 +703,18 @@ def _resolve_icon(key: str, raw: int, is_cnv: bool = False):
 
 # ---- visual grid browser -----------------------------------------------------
 
-_ICON_SIZE = 64
-_CELL_W = 96
+_ICON_SIZE = 84
+_CELL_W = 128
+
+
+def _center_over(window, parent, w: int, h: int) -> None:
+    """Center a toplevel window over its parent at a given size."""
+    window.update_idletasks()
+    px, py = parent.winfo_rootx(), parent.winfo_rooty()
+    pw, ph = parent.winfo_width(), parent.winfo_height()
+    x = px + (pw - w) // 2
+    y = py + (ph - h) // 2
+    window.geometry(f"{w}x{h}+{x}+{y}")
 
 
 def _resolve_icon_by_name(display_name: str):
@@ -754,8 +762,7 @@ class _VisualItemPickerDialog(ctk.CTkToplevel):
         self._sel: int | None = None
         self._job = None
 
-        self.geometry("640x680")
-        self.update_idletasks()
+        _center_over(self, parent, 640, 680)
         self.attributes("-alpha", 1)
         self.grab_set()
 
@@ -876,10 +883,10 @@ class _VisualItemPickerDialog(ctk.CTkToplevel):
                 outline="",
                 tags=(f"cell_{idx}", f"bg_{idx}"),
             )
-            label = name if len(name) <= 28 else name[:25] + "..."
+            label = name if len(name) <= 36 else name[:33] + "..."
             self._cv.create_text(
                 x0 + self._CELL / 2,
-                y0 + self._CELL - 26,
+                y0 + self._CELL - 32,
                 text=label,
                 fill=self._fg,
                 font=("Segoe UI", 9),
@@ -967,8 +974,7 @@ class _VisualEquipmentBrowser(ctk.CTkToplevel):
         self._cells: dict[str, ctk.CTkButton] = {}
         self._captions: dict[str, ctk.CTkLabel] = {}
 
-        self.geometry("900x760")
-        self.update_idletasks()
+        _center_over(self, parent, 660, 760)
         self.attributes("-alpha", 1)
 
         outer = ctk.CTkScrollableFrame(self, fg_color="transparent")
@@ -1062,7 +1068,7 @@ class _VisualEquipmentBrowser(ctk.CTkToplevel):
         )
         btn.pack()
         cap = ctk.CTkLabel(
-            col, text="(empty)", font=("Segoe UI", 8), wraplength=_CELL_W - 4
+            col, text="(empty)", font=("Segoe UI", 10), wraplength=_CELL_W - 4
         )
         cap.pack()
         self._cells[key] = btn
