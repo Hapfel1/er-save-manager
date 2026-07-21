@@ -26,7 +26,7 @@ from er_save_manager.data.summoning_pools_data import (
 )
 from er_save_manager.parser.event_flags import EventFlags
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
 
 class EventFlagsTab:
@@ -690,17 +690,16 @@ class EventFlagsTab:
             return
 
         import json
-        from tkinter import filedialog
 
         save_path = self.get_save_path()
         initial_dir = str(save_path.parent) if save_path else None
         slot_num = (self.current_slot + 1) if self.current_slot is not None else 1
 
-        out_path = filedialog.asksaveasfilename(
-            parent=self.parent,
+        out_path = pick_file(
             title="Export Event Flags",
             initialdir=initial_dir,
             initialfile=f"flags_slot{slot_num}.json",
+            save=True,
             defaultextension=".json",
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
         )
@@ -770,13 +769,11 @@ class EventFlagsTab:
             return
 
         import json
-        from tkinter import filedialog
 
         save_path = self.get_save_path()
         initial_dir = str(save_path.parent) if save_path else None
 
-        in_path = filedialog.askopenfilename(
-            parent=self.parent,
+        in_path = pick_file(
             title="Import Event Flags",
             initialdir=initial_dir,
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
@@ -1084,9 +1081,10 @@ class EventFlagsTab:
         all_entries: list[tuple[str, str, str]] = []
         for boss_name, data in BOSSES.items():
             flags = data.get("flags", [])
-            defeated = bool(flags) and any(
-                self.current_event_flags.get_flag(fid) for fid in flags
-            )
+            # Only flags[0] is the documented encounter "Defeated" trigger flag.
+            # Remaining flags are side effects (stat counters, reward pickups,
+            # grace unlocks) and are not reliable defeat indicators on their own.
+            defeated = bool(flags) and self.current_event_flags.get_flag(flags[0])
             all_entries.append(
                 (
                     boss_name,
@@ -1206,8 +1204,8 @@ class EventFlagsTab:
         from er_save_manager.ui.utils import force_render_dialog
 
         dialog = ctk.CTkToplevel(self.parent)
-        dialog.title("Boss Respawn")
-        width, height = 700, 600
+        dialog.title("Boss Respawn / Kill")
+        width, height = 780, 600
         dialog.transient(self.parent)
         dialog.update_idletasks()
         # Center over parent window
@@ -1225,13 +1223,13 @@ class EventFlagsTab:
 
         ctk.CTkLabel(
             dialog,
-            text="Boss Respawn",
+            text="Boss Respawn / Kill",
             font=("Segoe UI", 14, "bold"),
         ).pack(pady=(15, 5), padx=15)
 
         ctk.CTkLabel(
             dialog,
-            text="Reset boss defeat flags to respawn bosses",
+            text="Reset boss defeat flags to respawn, or set them to mark as defeated",
             text_color=("gray50", "gray70"),
         ).pack(pady=(0, 12), padx=15)
 
@@ -1272,9 +1270,7 @@ class EventFlagsTab:
                 if not flags:
                     continue
 
-                is_defeated = any(
-                    self.current_event_flags.get_flag(fid) for fid in flags
-                )
+                is_defeated = self.current_event_flags.get_flag(flags[0])
                 var = tk.BooleanVar(value=False)
                 boss_vars[boss_name] = (flags, var)
 
@@ -1313,9 +1309,7 @@ class EventFlagsTab:
             count = 0
             for _boss_name, (flags, var) in boss_vars.items():
                 if var.get():  # user explicitly selected this boss
-                    is_defeated_now = any(
-                        self.current_event_flags.get_flag(fid) for fid in flags
-                    )
+                    is_defeated_now = self.current_event_flags.get_flag(flags[0])
                     if is_defeated_now:
                         for flag_id in flags:
                             self.current_event_flags.set_flag(flag_id, False)
@@ -1479,9 +1473,196 @@ class EventFlagsTab:
             )
             dialog.destroy()
 
+        def kill_selected():
+            """Kill selected bosses (set defeat flags true)"""
+            save_path = self.get_save_path()
+            if not save_path or not save_path.is_file():
+                CTkMessageBox.showerror(
+                    "Invalid Save Path",
+                    "Could not locate the save file to back up. Load a valid save (.sl2) first.",
+                )
+                return
+
+            count = 0
+            for _boss_name, (flags, var) in boss_vars.items():
+                if var.get():  # user explicitly selected this boss
+                    is_defeated_now = self.current_event_flags.get_flag(flags[0])
+                    if not is_defeated_now:
+                        for flag_id in flags:
+                            self.current_event_flags.set_flag(flag_id, True)
+                        count += 1
+
+            if count == 0:
+                CTkMessageBox.showinfo(
+                    "No Selection",
+                    "No valid selections. Select alive bosses to kill.",
+                    parent=dialog,
+                )
+                return
+
+            # Get save file for backup
+            save_file = self.get_save_file()
+
+            if save_path and save_path.is_file():
+                try:
+                    backup_mgr = BackupManager(save_path)
+                    backup_mgr.create_backup(
+                        description=f"Before boss kill (Slot {self.current_slot + 1})",
+                        operation="kill_boss",
+                        save=save_file,
+                    )
+                except PermissionError:
+                    CTkMessageBox.showwarning(
+                        "Backup Skipped",
+                        "Could not create backup (permission denied)."
+                        " Continuing without backup.",
+                    )
+            else:
+                CTkMessageBox.showwarning(
+                    "Backup Skipped",
+                    "Could not create backup because the save path is not a file."
+                    " Proceeding without backup.",
+                )
+
+            # Write to raw data and recalculate checksums
+            slot = save_file.character_slots[self.current_slot]
+
+            if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
+                absolute_offset = slot.event_flags_offset
+                event_flags_size = 0x1BF99F
+                save_file._raw_data[
+                    absolute_offset : absolute_offset + event_flags_size
+                ] = slot.event_flags
+
+            save_file.recalculate_checksums()
+            save_file.save(self.get_save_path())
+            self.reload_save()
+
+            # Teleport to Roundtable Hold to force area reload so the game
+            # re-evaluates NPC spawn conditions against the new flag state
+            try:
+                from er_save_manager.fixes.teleport import TeleportFix
+
+                teleport = TeleportFix("roundtable")
+                result = teleport.apply(save_file, self.current_slot)
+                if result.applied:
+                    save_file.recalculate_checksums()
+                    save_file.save(self.get_save_path())
+                    self.reload_save()
+            except Exception as e:
+                CTkMessageBox.showwarning(
+                    "Teleport Failed",
+                    f"Could not teleport to Roundtable Hold: {e}",
+                    parent=dialog,
+                )
+
+            self.show_toast("Boss killed successfully!", duration=2500)
+            dialog.destroy()
+
+        def kill_all():
+            """Kill all bosses in category (set all defeat flags true)"""
+            save_path = self.get_save_path()
+            if not save_path or not save_path.is_file():
+                CTkMessageBox.showerror(
+                    "Invalid Save Path",
+                    "Could not locate the save file to back up. Load a valid save (.sl2) first.",
+                    parent=dialog,
+                )
+                return
+
+            result = CTkMessageBox.askyesno(
+                "Confirm",
+                f"Kill ALL bosses in {boss_category_var.get()}?\n\n"
+                f"This will mark {len(boss_vars)} boss(es) as defeated.",
+                parent=dialog,
+            )
+
+            if not result:
+                return
+
+            count = 0
+            for _boss_name, (flags, _var) in boss_vars.items():
+                for flag_id in flags:
+                    self.current_event_flags.set_flag(flag_id, True)
+                count += 1
+
+            # Get save file for backup
+            save_file = self.get_save_file()
+
+            # Create backup
+            save_path = self.get_save_path()
+            if save_path and save_path.is_file():
+                try:
+                    backup_mgr = BackupManager(save_path)
+                    backup_mgr.create_backup(
+                        description=f"Before kill all ({boss_category_var.get()}, Slot {self.current_slot + 1})",
+                        operation="kill_all_bosses",
+                        save=save_file,
+                    )
+                except PermissionError:
+                    CTkMessageBox.showwarning(
+                        "Backup Skipped",
+                        "Could not create backup (permission denied)."
+                        " Continuing without backup.",
+                        parent=dialog,
+                    )
+            else:
+                CTkMessageBox.showwarning(
+                    "Backup Skipped",
+                    "Could not create backup because the save path is not a file."
+                    " Proceeding without backup.",
+                    parent=dialog,
+                )
+
+            # Write to raw data and recalculate checksums
+            slot = save_file.character_slots[self.current_slot]
+
+            if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
+                absolute_offset = slot.event_flags_offset
+                event_flags_size = 0x1BF99F
+                save_file._raw_data[
+                    absolute_offset : absolute_offset + event_flags_size
+                ] = slot.event_flags
+
+            save_file.recalculate_checksums()
+            save_file.save(self.get_save_path())
+            self.reload_save()
+
+            # Teleport to Roundtable Hold to force area reload so the game
+            # re-evaluates NPC spawn conditions against the new flag state
+            try:
+                from er_save_manager.fixes.teleport import TeleportFix
+
+                teleport = TeleportFix("roundtable")
+                result = teleport.apply(save_file, self.current_slot)
+                if result.applied:
+                    save_file.recalculate_checksums()
+                    save_file.save(self.get_save_path())
+                    self.reload_save()
+            except Exception as e:
+                CTkMessageBox.showwarning(
+                    "Teleport Failed",
+                    f"Could not teleport to Roundtable Hold: {e}",
+                    parent=dialog,
+                )
+
+            self.show_toast(
+                f"Killed all {count} bosses in {boss_category_var.get()}!",
+                duration=2500,
+            )
+            dialog.destroy()
+
         ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=120).pack(
             side=tk.LEFT
         )
+
+        ctk.CTkButton(
+            btn_frame, text="Kill Selected", command=kill_selected, width=140
+        ).pack(side=tk.LEFT, padx=(8, 0))
+
+        ctk.CTkButton(
+            btn_frame, text="Kill All in Category", command=kill_all, width=170
+        ).pack(side=tk.LEFT, padx=(8, 0))
 
         ctk.CTkButton(
             btn_frame, text="Respawn Selected", command=respawn_selected, width=150

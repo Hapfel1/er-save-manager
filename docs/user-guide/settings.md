@@ -198,8 +198,9 @@ ER0000_2026-02-15_18-30-00_game_launch.bak
 
 **Storage location:**
 
-- Windows: `%APPDATA%\EldenRingSaveManager\settings.json`
-- Linux: `~/.local/share/EldenRingSaveManager/settings.json`
+- Windows: `%APPDATA%\ER Save Manager\settings.json`
+- macOS: `~/Library/Application Support/ER Save Manager/settings.json`
+- Linux: `~/.local/share/er-save-manager/settings.json` (or `$XDG_DATA_HOME/er-save-manager/settings.json` if set)
 
 **Format:** JSON file
 
@@ -214,15 +215,30 @@ ER0000_2026-02-15_18-30-00_game_launch.bak
 ```json
 {
   "show_eac_warning": true,
+  "auto_backup": true,
+  "backup_on_save": true,
+  "max_backups": 50,
   "remember_last_location": true,
+  "last_save_path": "",
+  "theme": "dark",
   "show_linux_save_warning": true,
+  "show_backup_pruning_warning": true,
   "show_update_notifications": true,
   "compress_backups": true,
   "auto_backup_on_game_launch": false,
   "auto_backup_save_path": "",
-  "theme": "dark"
+  "auto_backup_first_run_check": true,
+  "auto_backup_first_run_done": [],
+  "auto_backup_games": {},
+  "advanced_mode_unlocked": false,
+  "skip_game_running_check": false,
+  "verbose_logging": false,
+  "external_file_change_notification": true,
+  "ui_scale": 1.0
 }
 ```
+
+`auto_backup_games` holds per-game auto-backup config, keyed by game (e.g. `"elden_ring"`, `"dark_souls_3"`), each with its own `enabled` flag and `save_path`. `auto_backup_on_game_launch` and `auto_backup_save_path` are kept for migrating older single-game settings and are not used once `auto_backup_games` is populated.
 
 ---
 

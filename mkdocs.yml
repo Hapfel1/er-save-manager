@@ -123,6 +123,10 @@ nav:
     - Troubleshooting: user-guide/troubleshooting-tab.md
     - EAC Warning: user-guide/eac-warning.md
     - Linux Save Location: user-guide/linux-compatdata.md
+  - Other Games:
+    - Dark Souls III: user-guide/dark-souls-3.md
+    - Dark Souls Remastered: user-guide/dark-souls-remastered.md
+    - Nightreign: user-guide/nightreign.md
   - Technical:
     - Save File Structure: technical/save-file-structure.md
   - Developer:

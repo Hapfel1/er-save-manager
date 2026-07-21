@@ -153,3 +153,100 @@ def _get_subprocess_env() -> dict:
         env.pop("PYTHONHOME", None)
         env.pop("PYTHONPATH", None)
     return env
+
+
+def pick_file(
+    title: str,
+    initialdir: str | None = None,
+    filetypes: list[tuple[str, str]] | None = None,
+    save: bool = False,
+    defaultextension: str | None = None,
+    initialfile: str | None = None,
+) -> str | None:
+    """Open a file picker for opening or saving a file.
+
+    Uses zenity or kdialog on Linux for the system's native dialog, which
+    supports typing a path (Ctrl+L) and toggling hidden files (Ctrl+H).
+    Falls back to the Tk file dialog on other platforms or when neither
+    zenity nor kdialog is installed.
+
+    Returns the selected path, or None if the user cancelled.
+    """
+    filetypes = filetypes or [("All files", "*.*")]
+
+    if platform_module.system() == "Linux":
+        result = _pick_file_native_linux(
+            title, initialdir, filetypes, save, defaultextension, initialfile
+        )
+        if result is not False:
+            return result or None
+
+    from tkinter import filedialog
+
+    if save:
+        path = filedialog.asksaveasfilename(
+            title=title,
+            initialdir=initialdir,
+            initialfile=initialfile,
+            defaultextension=defaultextension,
+            filetypes=filetypes,
+        )
+    else:
+        path = filedialog.askopenfilename(
+            title=title,
+            initialdir=initialdir,
+            filetypes=filetypes,
+        )
+    return path or None
+
+
+def _pick_file_native_linux(
+    title: str,
+    initialdir: str | None,
+    filetypes: list[tuple[str, str]],
+    save: bool,
+    defaultextension: str | None,
+    initialfile: str | None,
+) -> str | bool:
+    """Native zenity/kdialog backend for pick_file.
+
+    Returns False when neither tool is installed so the caller falls back
+    to the Tk file dialog.
+    """
+    if shutil.which("zenity"):
+        cmd = ["zenity", "--file-selection", f"--title={title}"]
+        if save:
+            cmd += ["--save", "--confirm-overwrite"]
+        start = initialdir or ""
+        if initialfile:
+            start = os.path.join(start, initialfile) if start else initialfile
+        if start:
+            cmd.append(f"--filename={start}")
+        for label, pattern in filetypes:
+            cmd.append(f"--file-filter={label} | {pattern}")
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        path = result.stdout.strip() if result.returncode == 0 else ""
+        return _apply_default_extension(path, save, defaultextension)
+
+    if shutil.which("kdialog"):
+        start = initialdir or os.path.expanduser("~")
+        if initialfile:
+            start = os.path.join(start, initialfile)
+        cmd = ["kdialog", "--title", title]
+        cmd.append("--getsavefilename" if save else "--getopenfilename")
+        cmd.append(start)
+        cmd.append("\n".join(f"{pattern}|{label}" for label, pattern in filetypes))
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        path = result.stdout.strip() if result.returncode == 0 else ""
+        return _apply_default_extension(path, save, defaultextension)
+
+    return False
+
+
+def _apply_default_extension(
+    path: str, save: bool, defaultextension: str | None
+) -> str:
+    """Append defaultextension to a save-dialog result if it is missing."""
+    if path and save and defaultextension and not path.endswith(defaultextension):
+        path += defaultextension
+    return path

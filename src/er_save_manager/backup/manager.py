@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import os
 import re
 import shutil
 import zipfile
@@ -14,6 +15,31 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from er_save_manager.parser import Save
+
+
+def _atomic_write_bytes(path: Path, data: bytes) -> None:
+    """
+    Write bytes to path via a temp file + atomic replace.
+
+    A direct in-place overwrite (open the existing path in "wb" mode, or
+    shutil.copy2 onto an existing destination) can leave a file-watcher
+    holding a stale view of the file - Steam Cloud sync, an antivirus
+    scanner, or the game itself reading a cached view instead of the
+    freshly restored content, since the file's identity never changes
+    for a same-path truncate+write. Atomic replace forces a fresh file
+    identity, and also protects against a corrupt half-written file if
+    the process is interrupted mid-write.
+    """
+    tmp_path = path.with_name(f"{path.name}.tmp{os.getpid()}")
+    try:
+        with open(tmp_path, "wb") as f:
+            f.write(data)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, path)
+    except BaseException:
+        tmp_path.unlink(missing_ok=True)
+        raise
 
 
 @dataclass
@@ -131,7 +157,17 @@ class BackupManager:
     def _generate_backup_name(
         self, description: str = "", operation: str = "", compressed: bool = False
     ) -> str:
-        """Generate a unique backup filename."""
+        """
+        Generate a unique backup filename.
+
+        Two backups created within the same second with the same operation
+        and description would otherwise produce an identical filename, and
+        the second create_backup() call would silently overwrite the first
+        - losing that restore point with no warning. Appends a numeric
+        suffix against what's actually on disk to guarantee uniqueness
+        regardless of call frequency, rather than relying on clock
+        resolution alone.
+        """
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         base_name = self.save_path.stem
 
@@ -142,7 +178,14 @@ class BackupManager:
             parts.append(self._sanitize_filename_part(description).lower()[:30])
 
         extension = ".bak.zip" if compressed else ".bak"
-        return "_".join(parts) + extension
+        stem = "_".join(parts)
+
+        candidate = f"{stem}{extension}"
+        suffix = 2
+        while (self.backup_folder / candidate).exists():
+            candidate = f"{stem}_{suffix}{extension}"
+            suffix += 1
+        return candidate
 
     def _get_character_summary(self, save: Save) -> list[dict]:
         """Extract character summary from save for metadata."""
@@ -334,17 +377,17 @@ class BackupManager:
                 names = zipf.namelist()
                 if not names:
                     raise ValueError(f"Backup zip is empty: {backup_name}")
-                # Extract first file to save path
                 data = zipf.read(names[0])
-                self.save_path.write_bytes(data)
+            _atomic_write_bytes(self.save_path, data)
         elif is_gzip:
             # Legacy gzip support
             with gzip.open(backup_path, "rb") as f_in:
-                with open(self.save_path, "wb") as f_out:
-                    shutil.copyfileobj(f_in, f_out)
+                data = f_in.read()
+            _atomic_write_bytes(self.save_path, data)
         else:
             # Uncompressed backup
-            shutil.copy2(backup_path, self.save_path)
+            data = backup_path.read_bytes()
+            _atomic_write_bytes(self.save_path, data)
 
         return True
 
@@ -374,15 +417,16 @@ class BackupManager:
                 if not names:
                     raise ValueError(f"Backup zip is empty: {backup_name}")
                 data = zipf.read(names[0])
-                target.write_bytes(data)
+            _atomic_write_bytes(target, data)
         elif is_gzip:
             # Legacy gzip support
             with gzip.open(backup_path, "rb") as f_in:
-                with open(target, "wb") as f_out:
-                    shutil.copyfileobj(f_in, f_out)
+                data = f_in.read()
+            _atomic_write_bytes(target, data)
         else:
             # Uncompressed backup
-            shutil.copy2(backup_path, target)
+            data = backup_path.read_bytes()
+            _atomic_write_bytes(target, data)
 
         return True
 

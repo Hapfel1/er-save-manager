@@ -1,12 +1,32 @@
-make batch adding respect location and add to storage if no place in held
+npc respawner ds3
 
-check corruption
+fix ng level display from save inspector dsr
 
-check validation when batch adding
+ds2
 
-check inv corruption sometimes when adding a lot
+revisit ds3 and fix bugs
 
-write test modules
+remove flasks and extra talisman slots, spirit summon level from info editor
+
+check equipped stuff again er for saving loadouts done
+
+write test modules done
+
+use different file explorer on linux done
+
+add nr relic editing for drawbacks on don relics done
+
+check corruption on adding alot done
+
+add boss killing done
+
+make batch adding respect location and add to storage if no place in held done
+
+check corruption done
+
+check validation when batch adding done
+
+check inv corruption sometimes when adding a lot done
 
 demi human cleaver
 jewel of the formless

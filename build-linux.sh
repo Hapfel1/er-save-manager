@@ -67,8 +67,6 @@ pyinstaller --clean --noconfirm \
     --hidden-import er_save_manager.ui.dialogs.preset_browser \
     --hidden-import er_save_manager.ui.dialogs.browser_submission \
     --hidden-import er_save_manager.ui.dialogs.backup_pruning_warning \
-    --hidden-import er_save_manager.ui.widgets \
-    --hidden-import er_save_manager.ui.widgets.scrollable_frame \
     --hidden-import er_save_manager.ui.tabs \
     --hidden-import er_save_manager.ui.tabs.character_management_tab \
     --hidden-import er_save_manager.ui.tabs.save_inspector_tab \
@@ -81,6 +79,7 @@ pyinstaller --clean --noconfirm \
     --hidden-import er_save_manager.ui.tabs.advanced_tools_tab \
     --hidden-import er_save_manager.ui.tabs.backup_manager_tab \
     --hidden-import er_save_manager.ui.map_view \
+    --exclude-module tests \
     $readline_flag \
     --optimize 2 \
     --strip \
