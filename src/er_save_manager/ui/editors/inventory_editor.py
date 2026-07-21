@@ -1766,11 +1766,13 @@ class InventoryEditor:
 
     def _max_qty_for_location(self, item, location: str) -> int:
         max_arrow = getattr(item, "max_arrow_quantity", 1)
-        if max_arrow > 1:
-            return max_arrow
         if location == "storage":
             repo = getattr(item, "max_repository_num", 0)
-            return repo if repo > 0 else getattr(item, "max_num", 1)
+            if repo > 0:
+                return repo
+            return max_arrow if max_arrow > 1 else getattr(item, "max_num", 1)
+        if max_arrow > 1:
+            return max_arrow
         return getattr(item, "max_num", 1)
 
     def _validate_add_item(

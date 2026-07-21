@@ -207,6 +207,10 @@ class ItemDatabase:
                     item.wep_type_col = row.get("wepTypeCol", "")
                     item.max_arrow_quantity = int(row.get("maxArrowQuantity", 1) or 1)
                     item.max_num = 1
+                    # Ammo has no maxRepositoryNum column in EquipParamWeapon;
+                    # storage cap is fixed at 600 regardless of held stack size.
+                    if item.max_arrow_quantity > 1:
+                        item.max_repository_num = 600
                     allowed = row.get("allowed_affinities", "")
                     item.allowed_affinities = (
                         [x for x in allowed.split("|") if x] if allowed else []
