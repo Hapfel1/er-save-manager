@@ -32,11 +32,6 @@ Located inside of the Character Management tab
 - Like count and download count
 - Uploader name
 
-**List View:**
-
-- Compact character list
-- Sortable columns
-- Quick preview on hover
 
 ### Search
 
@@ -46,12 +41,6 @@ Located inside of the Character Management tab
 - Build description
 - Uploader username
 - Tags
-
-**Advanced search:**
-
-- Combine multiple filters
-- Exclude terms
-- Date range
 
 ---
 

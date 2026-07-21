@@ -15,6 +15,8 @@ The Troubleshooting tab runs comprehensive diagnostic checks:
 
 **Purpose:** Identify and help resolve common issues preventing game from launching or loading saves.
 
+**Note:** The Troubleshooter is a separate, standalone addon rather than code bundled into the main app. On first use it downloads and installs to a dedicated addon folder, and updates independently of the main application - it checks its own GitHub releases and prompts to update when a newer version is available.
+
 ---
 
 ## Opening Troubleshooting
@@ -22,6 +24,13 @@ The Troubleshooting tab runs comprehensive diagnostic checks:
 ### Access
 
 **Location:** Troubleshooting tab in main interface
+
+### First-Time Setup
+
+If the addon isn't installed yet, the tab prompts to download it. This fetches the latest release from the [FromSoftware Troubleshooter](https://github.com/Hapfel1/fromsoftware-troubleshooter) repository and installs it to:
+
+- Windows: `%APPDATA%\ER Save Manager\addons\troubleshooter\`
+- Linux: `~/.local/share/er-save-manager/addons/troubleshooter/`
 
 ### Interface
 

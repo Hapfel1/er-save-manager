@@ -78,6 +78,26 @@ include_files = [
     ),
 ]
 
+# Explicitly pull OpenSSL DLLs into the root folder to prevent PATH conflicts
+# when zip_include_packages buries them in lib/
+try:
+    import _ssl
+
+    ssl_dir = Path(_ssl.__file__).parent
+
+    # Try finding the DLLs (Python 3.10+ uses -3.dll, older uses -1_1.dll)
+    for dll_name in [
+        "libcrypto-3.dll",
+        "libssl-3.dll",
+        "libcrypto-1_1.dll",
+        "libssl-1_1.dll",
+    ]:
+        dll_path = ssl_dir / dll_name
+        if dll_path.exists():
+            include_files.append((str(dll_path), dll_name))
+except ImportError:
+    pass
+
 # Explicitly include UI submodules for cx_Freeze
 ui_packages = []
 
@@ -104,8 +124,11 @@ build_exe_options = {
     # plus any package with a compiled extension (see find_compiled_extension_packages)
     "zip_exclude_packages": zip_exclude_packages,
     "zip_include_packages": ["*"],
-    # Exclude unused heavy dependencies found in environment
-    "excludes": ["unittest", "pydoc"],
+    # Exclude unused heavy dependencies found in environment, plus the
+    # tests package as a guardrail (it ships save-file fixtures and must
+    # never end up in a build; not imported by run_gui.py, but excluded
+    # explicitly in case that ever changes)
+    "excludes": ["unittest", "pydoc", "tests"],
     # Output dir for built executables and dependencies
     "build_exe": f"dist/windows-{VERSION}/er-save-manager_{VERSION}",
     # Optimize .pyc files (2 strips docstrings)

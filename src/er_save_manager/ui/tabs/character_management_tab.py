@@ -5,14 +5,13 @@ Handles copy, transfer, swap, export, import, and delete operations
 
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog
 
 import customtkinter as ctk
 
 from er_save_manager.platform import PlatformUtils
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
 
 class CharacterManagementTab:
@@ -722,7 +721,7 @@ class CharacterManagementTab:
         """Open a manual file picker for the target save file."""
         save_path = self._get_current_save_path()
         initialdir = str(save_path.parent) if save_path else None
-        return filedialog.askopenfilename(
+        return pick_file(
             title="Select target save file",
             initialdir=initialdir,
             filetypes=[("Save files", "*.sl2 *.co2 *.cnv"), ("All files", "*.*")],
@@ -910,8 +909,9 @@ class CharacterManagementTab:
         char_name = char.get_character_name() or f"Character_{slot + 1}"
         default_name = f"{char_name}.erc"
 
-        output_path = filedialog.asksaveasfilename(
+        output_path = pick_file(
             title="Export Character",
+            save=True,
             defaultextension=".erc",
             initialfile=default_name,
             filetypes=[("ER Character", "*.erc"), ("All files", "*.*")],
@@ -957,7 +957,7 @@ class CharacterManagementTab:
             )
             return
 
-        import_path = filedialog.askopenfilename(
+        import_path = pick_file(
             title="Import Character",
             filetypes=[("ER Character", "*.erc"), ("All files", "*.*")],
         )

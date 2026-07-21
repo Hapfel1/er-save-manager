@@ -43,10 +43,6 @@ class CharacterInfoEditor:
         self.char_archetype_var = None
         self.char_voice_var = None
         self.char_gift_var = None
-        self.char_talisman_slots_var = None
-        self.char_spirit_level_var = None
-        self.char_crimson_flask_var = None
-        self.char_cerulean_flask_var = None
         self.char_ng_level_var = None
         self.char_playtime_h_var = None
         self.char_playtime_m_var = None
@@ -183,35 +179,11 @@ class CharacterInfoEditor:
             font=("Segoe UI", 12, "bold"),
         ).grid(row=0, column=0, columnspan=6, sticky=ctk.W, padx=5, pady=(5, 0))
 
-        # Additional talisman slots
-        ctk.CTkLabel(
-            progression_frame,
-            text="Extra Talisman Slots:",
-        ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
-        self.char_talisman_slots_var = ctk.IntVar(value=0)
-        ctk.CTkEntry(
-            progression_frame,
-            textvariable=self.char_talisman_slots_var,
-            width=100,
-        ).grid(row=1, column=1, padx=5, pady=5)
-
-        # Spirit summon level
-        ctk.CTkLabel(
-            progression_frame,
-            text="Spirit Summon Level:",
-        ).grid(row=1, column=2, sticky=ctk.W, padx=5, pady=5)
-        self.char_spirit_level_var = ctk.IntVar(value=0)
-        ctk.CTkEntry(
-            progression_frame,
-            textvariable=self.char_spirit_level_var,
-            width=100,
-        ).grid(row=1, column=3, padx=5, pady=5)
-
         # NG+ Level (event flag and ClearCount)
         ctk.CTkLabel(
             progression_frame,
             text="NG+ Level:",
-        ).grid(row=1, column=4, sticky=ctk.W, padx=5, pady=5)
+        ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
         self.char_ng_level_var = ctk.StringVar(value="NG (0)")
         ng_combo = ctk.CTkComboBox(
             progression_frame,
@@ -228,36 +200,7 @@ class CharacterInfoEditor:
             ],
             width=140,
         )
-        ng_combo.grid(row=1, column=5, padx=5, pady=5)
-
-        # Flask info
-        flask_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
-        flask_frame.pack(fill=ctk.X, pady=5, padx=10)
-        ctk.CTkLabel(
-            flask_frame,
-            text="Flasks",
-            font=("Segoe UI", 12, "bold"),
-        ).grid(row=0, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(5, 0))
-
-        ctk.CTkLabel(flask_frame, text="Max Crimson Flasks:").grid(
-            row=1, column=0, sticky=ctk.W, padx=5, pady=5
-        )
-        self.char_crimson_flask_var = ctk.IntVar(value=0)
-        ctk.CTkEntry(
-            flask_frame,
-            textvariable=self.char_crimson_flask_var,
-            width=100,
-        ).grid(row=1, column=1, padx=5, pady=5)
-
-        ctk.CTkLabel(flask_frame, text="Max Cerulean Flasks:").grid(
-            row=1, column=2, sticky=ctk.W, padx=5, pady=5
-        )
-        self.char_cerulean_flask_var = ctk.IntVar(value=0)
-        ctk.CTkEntry(
-            flask_frame,
-            textvariable=self.char_cerulean_flask_var,
-            width=100,
-        ).grid(row=1, column=3, padx=5, pady=5)
+        ng_combo.grid(row=1, column=1, padx=5, pady=5)
 
         # Playtime
         # playtime_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
@@ -356,14 +299,6 @@ class CharacterInfoEditor:
 
             self.char_voice_var.set(getattr(char, "voice_type", 0))
             self.char_gift_var.set(getattr(char, "gift", 0))
-            self.char_talisman_slots_var.set(
-                getattr(char, "additional_talisman_slot_count", 0)
-            )
-            self.char_spirit_level_var.set(getattr(char, "summon_spirit_level", 0))
-            self.char_crimson_flask_var.set(getattr(char, "max_crimson_flask_count", 0))
-            self.char_cerulean_flask_var.set(
-                getattr(char, "max_cerulean_flask_count", 0)
-            )
 
         # Load playtime from ProfileSummary
         # seconds_played = 0
@@ -490,10 +425,6 @@ class CharacterInfoEditor:
 
                 char.voice_type = self.char_voice_var.get()
                 char.gift = self.char_gift_var.get()
-                char.additional_talisman_slot_count = self.char_talisman_slots_var.get()
-                char.summon_spirit_level = self.char_spirit_level_var.get()
-                char.max_crimson_flask_count = self.char_crimson_flask_var.get()
-                char.max_cerulean_flask_count = self.char_cerulean_flask_var.get()
 
                 # Set ClearCount (NG+ playthroughs, raw field) from dropdown
                 if hasattr(slot, "unk_gamedataman_0x120_or_gamedataman_0x130"):

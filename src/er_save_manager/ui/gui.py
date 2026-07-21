@@ -10,8 +10,8 @@ import threading
 import tkinter as tk
 from importlib import resources
 from pathlib import Path
-from tkinter import filedialog, ttk
 from tkinter import font as tkfont
+from tkinter import ttk
 
 import customtkinter as ctk
 
@@ -45,7 +45,7 @@ from er_save_manager.ui.tabs import (
     WorldStateTab,
 )
 from er_save_manager.ui.theme import ThemeManager
-from er_save_manager.ui.utils import open_url, trace_variable
+from er_save_manager.ui.utils import open_url, pick_file, trace_variable
 
 # Nightreign
 try:
@@ -1196,10 +1196,12 @@ class SaveManagerGUI:
         )
         self.stats_editor.setup_ui()
 
-        # Equipment editor - hidden until implementation is complete
-        _equipment_hidden = ctk.CTkFrame(container, fg_color="transparent")
+        # Equipment editor
+        equipment_tab = editor_tabs.add("Equipment")
+        equipment_frame = ctk.CTkFrame(equipment_tab, fg_color="transparent")
+        equipment_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self.equipment_editor = EquipmentEditor(
-            _equipment_hidden,
+            equipment_frame,
             lambda: self.save_file,
             current_slot_index,
             lambda: self.save_path,
@@ -1418,11 +1420,7 @@ class SaveManagerGUI:
             ]
             title = "Select Save File"
 
-        filename = filedialog.askopenfilename(
-            title=title,
-            initialdir=initialdir,
-            filetypes=filetypes,
-        )
+        filename = pick_file(title=title, initialdir=initialdir, filetypes=filetypes)
         if filename:
             self.file_path_var.set(filename)
             self.status_var.set(f"Selected: {os.path.basename(filename)}")

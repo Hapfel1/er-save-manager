@@ -1,23 +1,24 @@
-# EAC Warning & Vanilla Save Files
+# Vanilla Save Files
 
-When loading a `.sl2` save file, the tool shows a warning about Easy Anti-Cheat. This page explains what it means and what precautions to take.
+When loading a `.sl2` save file, the tool shows a warning. This page explains what it means and what precautions to take.
 
 ## What Is the Warning?
 
 Loading a `.sl2` file (the vanilla PC save format) triggers a one-time warning:
 
-> **EAC Warning - Vanilla Save File Detected**
+> **Warning - Vanilla Save File Detected**
 >
-> You are loading a Vanilla save file (.sl2).
->
+> You are loading a Vanilla save file (.sl2)
 > WARNING: Modifying save files can result in a BAN if:
-> - Easy Anti-Cheat (EAC) is enabled
-> - You play online with modified saves
->
-> To avoid bans:
-> 1. Launch Elden Ring with EAC disabled
-> 2. Only play offline with modified saves
-> 3. Do not use modified saves in online/multiplayer
+> • You connect to the official servers having modified saves
+> What should be fine:
+> • Corruption Fixes and Teleports
+> • Spawning in valid items, runes, modifying NG count, gestures, event flags, changing invasion zones
+> What will ban you:
+> • Editing attributes to invalid values, spawning in cut content, spawning in DLC spells without owning it
+> • If you think it might ban you it probably will
+> If you play the vanilla game offline you will be fine.
+> Do you understand and want to continue?
 
 You can dismiss it with **Yes, Continue** or cancel the load with **No, Cancel**. Checking **Don't show this warning again** disables it for future loads (can be re-enabled in [Settings](settings.md)).
 
@@ -25,7 +26,7 @@ You can dismiss it with **Yes, Continue** or cancel the load with **No, Cancel**
 
 ## Why Does This Risk Exist?
 
-When you play online, FromSoftware's servers receive your character data and can flag values that fall outside what the game would normally produce. The tool does not bypass EAC or interact with the game process - it only edits the save file on disk - but a modified save taken online is detectable server-side.
+When you play online, FromSoftware's servers receive your character data and can flag values that fall outside what the game would normally produce. The tool does not bypass EAC or interact with the game process - it only edits the save file on disk - but a modified save taken online is detectable server-side. All the changes made by the tool are validated, so spawning in items, reviving bosses, etc. should be fine but i cannot give any guarantees.
 
 The risk is specifically:
 
@@ -52,19 +53,6 @@ The warning appears every time you load a `.sl2` file unless disabled.
 **To disable:** Check **Don't show this warning again** in the dialog, or go to **Settings → General → Show EAC warning when loading .sl2 files** and uncheck it.
 
 **To re-enable:** Go to **Settings → General → Show EAC warning when loading .sl2 files** and check it.
-
----
-
-## FAQ
-
-**Q: Will the fixer get me banned?**
-The fixer only restores values the game would produce normally (valid HP, correct coordinates, proper flags). If you play offline after fixing, the risk is effectively zero. If you play online with a fixed save, the risk is low but not zero - FromSoftware's servers may still check character state.
-
-**Q: I just fixed an infinite loading screen. Is it safe to go online?**
-After a fix, your save is back to a valid game state. Playing online after fixing a crash bug should be safe, but I don't give any guarantees.
-
-**Q: Does the tool interact with the game while it's running?**
-No. The tool only reads and writes the save file on disk. It does not inject into the game process, modify memory, or interact with EAC in any way.
 
 ---
 

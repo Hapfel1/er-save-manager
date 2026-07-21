@@ -208,6 +208,43 @@ Total number of flasks:
 
 ---
 
+## Great Rune, Rune Arc & Matchmaking
+
+### Great Rune Active
+
+Toggles whether a Great Rune is currently active (as if restored at a Rune-Restoring Altar).
+
+### Active Great Rune
+
+Dropdown to select which Great Rune is held:
+
+- None
+- Godrick's Great Rune
+- Radahn's Great Rune
+- Morgott's Great Rune
+- Rykard's Great Rune
+- Malenia's Great Rune
+- Mohg's Great Rune
+
+### Rune Arc Active
+
+Toggles whether a Rune Arc is currently active.
+
+### Last Rested Grace
+
+Grace ID (hex) for the last Site of Grace the character rested at.
+
+### Matchmaking Weapon Level
+
+Sets the weapon level used for online matchmaking, on the game's 0-25 standard scale. Somber weapon upgrades are mapped to their standard-scale equivalent when computing this (e.g. Somber +5 = matchmaking level 12).
+
+**Constraints:**
+
+- Value cannot be set lower than the highest matchmaking level found across weapons currently in held and storage inventory. This floor is shown next to the field and is recalculated whenever the character is loaded.
+- Values entered below the floor are rejected and reset to the floor with a warning.
+
+---
+
 ## Safety Features
 
 ### Automatic Backup
@@ -298,9 +335,6 @@ All edits are temporary until clicking **Apply Changes**:
 ---
 
 ## FAQ
-
-**Q: Can I change my class after creation?**  
-A: You can change the class field, but it doesn't automatically adjust stats. Manually set stats for desired class.
 
 **Q: Will editing stats break my save?**  
 A: No, tool recalculates checksums. Stats within 1-99 are safe.
