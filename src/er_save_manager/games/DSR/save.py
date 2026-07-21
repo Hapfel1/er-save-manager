@@ -130,10 +130,14 @@ An empty slot has all bytes 0x00 or all 0xFF.
 
 === NPC / EVENT FLAG REGION ===
 
-Pattern1: FF FF FF FF 00 00 00 00 FF FF FF FF 00 00 00 00
-This 16-byte pattern repeats throughout the region starting at 0x1F000.
-The last occurrence in range 0x1F000-0x1FFFF is the base anchor for NPC state bits
-and bonfire flag bytes. All offsets below are relative to this anchor.
+Anchor: fixed absolute offset 0x1F17E in the decrypted slot.
+This byte range holds live flag/counter data (NG+ counter, bonfire state,
+NPC bits), so its content changes with play progress and cannot be found by
+searching for a signature pattern; a fresh, unplayed character still shows
+the marker FF FF FF FF 00 00 00 00 FF FF FF FF 00 00 00 00 at this offset,
+which is how the anchor was originally located, but once flags are set the
+bytes there no longer match that marker. Treat the offset as a fixed
+structural constant, not a search result.
 
 Anchor-relative offsets:
   -0xBC0   NG+ counter (u8; 0=NG, 1=NG+, 2=NG++, etc.)
@@ -246,31 +250,14 @@ KEY_ITEM_SLOTS = 64  # key items occupy slots 0-63
 EMPTY_CHECK_START = 0x0020
 EMPTY_CHECK_END = 0x0090
 
-# Pattern1 search range in decrypted slot data
-PATTERN1_SEARCH_START = 0x1F000
-PATTERN1_SEARCH_END = 0x1FFFF
-PATTERN1 = bytes(
-    [
-        0xFF,
-        0xFF,
-        0xFF,
-        0xFF,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0xFF,
-        0xFF,
-        0xFF,
-        0xFF,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-    ]
-)
+# Fixed absolute offset of the NPC/event flag region anchor in the decrypted
+# slot. Not derived by searching: the region holds live flag data that
+# diverges from its default state as a character is played, so a signature
+# search only finds this offset for untouched characters. Validated against
+# a level 130 character confirmed in-game to be NG+2.
+PATTERN1_ANCHOR = 0x1F17E
 
-# Pattern1-anchor-relative offsets
+# Anchor-relative offsets
 ANCHOR_NG_PLUS = -0xBC0
 ANCHOR_BONFIRE_1 = 0x6B
 ANCHOR_BONFIRE_2 = 0x6C
@@ -973,19 +960,14 @@ class DSRCharacter:
 
     def _find_pattern1(self) -> int:
         """
-        Return absolute offset of the last Pattern1 hit in the search range, or -1.
-        Cached after first computation: writing flags near the anchor would otherwise
-        change the anchor byte and cause subsequent searches to find a different offset.
+        Return the fixed absolute anchor offset, or -1 if the slot is too short.
+        Not a runtime search: see PATTERN1_ANCHOR for why this offset is a
+        constant rather than a pattern match result.
         """
         if self._anchor_cache == -2:
-            pat = PATTERN1
-            plen = len(pat)
-            end = min(PATTERN1_SEARCH_END, len(self._data) - plen)
-            last = -1
-            for i in range(PATTERN1_SEARCH_START, end + 1):
-                if self._data[i : i + plen] == pat:
-                    last = i
-            self._anchor_cache = last
+            self._anchor_cache = (
+                PATTERN1_ANCHOR if PATTERN1_ANCHOR < len(self._data) else -1
+            )
         return self._anchor_cache
 
     def _read_utf16(self, offset: int, length: int) -> str:
