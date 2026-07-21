@@ -1196,10 +1196,12 @@ class SaveManagerGUI:
         )
         self.stats_editor.setup_ui()
 
-        # Equipment editor - hidden until implementation is complete
-        _equipment_hidden = ctk.CTkFrame(container, fg_color="transparent")
+        # Equipment editor
+        equipment_tab = editor_tabs.add("Equipment")
+        equipment_frame = ctk.CTkFrame(equipment_tab, fg_color="transparent")
+        equipment_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self.equipment_editor = EquipmentEditor(
-            _equipment_hidden,
+            equipment_frame,
             lambda: self.save_file,
             current_slot_index,
             lambda: self.save_path,
