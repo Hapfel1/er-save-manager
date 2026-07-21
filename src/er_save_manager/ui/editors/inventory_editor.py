@@ -256,6 +256,8 @@ def _item_name(
 # Maps goods base item ID to the event flag(s) that must be set/cleared with it.
 # Crafting Kit also needs flag 60120 (Crafting Unlocked) in addition to its own.
 _ITEM_EVENT_FLAGS: dict[int, list[int]] = {
+    # Spirit Calling Bell
+    8158: [60110],
     # Crafting Kit
     8500: [60120],
     # Whetstone Knife
@@ -266,6 +268,22 @@ _ITEM_EVENT_FLAGS: dict[int, list[int]] = {
     8972: [65660],
     8973: [65680],
     8974: [65700],
+    # Misc single-pickup key items
+    1051: [60010],  # Flask of Cerulean Tears
+    251: [60020],  # Flask of Wondrous Physick
+    130: [60100],  # Spectral Steed Whistle
+    8163: [60140],  # Tailoring Tools
+    8188: [60150],  # Golden Tailoring Tools
+    106: [60210],  # Tarnished's Wizened Finger
+    100: [60220],  # Tarnished's Furled Finger
+    109: [60230],  # Small Golden Effigy
+    101: [60240],  # Duelist's Furled Finger
+    110: [60250],  # Small Red Effigy
+    112: [60260],  # Recusant Finger
+    102: [60270],  # Bloody Finger
+    104: [60280],  # White Cipher Ring
+    108: [60300],  # Taunter's Tongue
+    103: [60310],  # Finger Severer
     # Vanilla cookbooks
     9300: [67000],
     9301: [67010],
