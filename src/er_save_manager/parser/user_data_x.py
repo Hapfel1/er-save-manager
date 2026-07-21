@@ -75,6 +75,14 @@ class UserDataX:
     inventory_held_offset: int = 0
     inventory_storage_offset: int = 0
     blood_stain_offset: int = 0
+    equipped_items_equip_index_offset: int = 0
+    active_weapon_slots_and_arm_style_offset: int = 0
+    equipped_items_item_id_offset: int = 0
+    equipped_items_gaitem_handle_offset: int = 0
+    equipped_spells_offset: int = 0
+    equipped_items_offset: int = 0
+    equipped_armaments_and_items_offset: int = 0
+    equipped_physics_offset: int = 0
     # Header (4 + 4 + 8 + 16 = 32 bytes)
     version: int = 0
     map_id: MapId = field(default_factory=MapId)
@@ -317,9 +325,13 @@ class UserDataX:
         obj.sp_effects = [SPEffect.read(f) for _ in range(13)]
 
         # Read equipment structures
+        obj.equipped_items_equip_index_offset = f.tell() - data_start
         obj.equipped_items_equip_index = EquippedItemsEquipIndex.read(f)
+        obj.active_weapon_slots_and_arm_style_offset = f.tell() - data_start
         obj.active_weapon_slots_and_arm_style = ActiveWeaponSlotsAndArmStyle.read(f)
+        obj.equipped_items_item_id_offset = f.tell() - data_start
         obj.equipped_items_item_id = EquippedItemsItemIds.read(f)
+        obj.equipped_items_gaitem_handle_offset = f.tell() - data_start
         obj.equipped_items_gaitem_handle = EquippedItemsGaitemHandles.read(f)
 
         # Read inventory held
@@ -329,11 +341,15 @@ class UserDataX:
         obj.inventory_held = Inventory.read(f, held_common_cap, held_key_cap)
 
         # Read more equipment
+        obj.equipped_spells_offset = f.tell() - data_start
         obj.equipped_spells = EquippedSpells.read(f)
+        obj.equipped_items_offset = f.tell() - data_start
         obj.equipped_items = EquippedItems.read(f)
         obj.equipped_gestures = EquippedGestures.read(f)
         obj.acquired_projectiles = AcquiredProjectiles.read(f)
+        obj.equipped_armaments_and_items_offset = f.tell() - data_start
         obj.equipped_armaments_and_items = EquippedArmamentsAndItems.read(f)
+        obj.equipped_physics_offset = f.tell() - data_start
         obj.equipped_physics = EquippedPhysics.read(f)
 
         # Read face data (303 bytes)
@@ -393,10 +409,8 @@ class UserDataX:
         obj.coordinates_offset = f.tell()
         obj.player_coordinates = PlayerCoordinates.read(f)
 
-        # 2 bytes after PlayerCoordinates. Previously discarded via f.read(2);
-        # now captured into the two declared-but-unused fields below so
-        # rebuild_slot can write the real value back instead of zero.
-        obj.game_man_0x5be, obj.game_man_0x5bf = f.read(2)
+        # 2 bytes padding after PlayerCoordinates
+        f.read(2)
         obj.spawn_point_entity_id = struct.unpack("<I", f.read(4))[0]
         # 4 bytes padding
         obj.game_man_0xb64 = struct.unpack("<I", f.read(4))[0]
