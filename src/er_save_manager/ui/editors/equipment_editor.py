@@ -174,7 +174,9 @@ def _resolve_name(key: str, raw_id: int, is_cnv: bool = False) -> str:
     if key in _TALISMAN_KEYS:
         name = get_item_name(0x20000000 | raw_id, is_convergence=is_cnv)
         if name.startswith("Unknown"):
-            name = get_item_name(0x20000000 | (raw_id & 0x00FFFFFF), is_convergence=is_cnv)
+            name = get_item_name(
+                0x20000000 | (raw_id & 0x00FFFFFF), is_convergence=is_cnv
+            )
         return "" if name.startswith("Unknown") else name
 
     if key in _GOODS_KEYS:
@@ -800,9 +802,12 @@ class _VisualItemPickerDialog(ctk.CTkToplevel):
         sb.pack(side=tk.RIGHT, fill=tk.Y)
         self._cv.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
         self._cv.bind("<Button-1>", self._on_click)
-        self._cv.bind("<Double-Button-1>", lambda e: (self._on_click(e), self._confirm()))
         self._cv.bind(
-            "<MouseWheel>", lambda e: self._cv.yview_scroll(int(-e.delta / 120), "units")
+            "<Double-Button-1>", lambda e: (self._on_click(e), self._confirm())
+        )
+        self._cv.bind(
+            "<MouseWheel>",
+            lambda e: self._cv.yview_scroll(int(-e.delta / 120), "units"),
         )
         self._cv.bind("<Button-4>", lambda _e: self._cv.yview_scroll(-1, "units"))
         self._cv.bind("<Button-5>", lambda _e: self._cv.yview_scroll(1, "units"))
@@ -950,7 +955,7 @@ class _VisualItemPickerDialog(ctk.CTkToplevel):
 class _VisualEquipmentBrowser(ctk.CTkToplevel):
     """Icon-grid overview of all equipped slots. Click a slot to pick a new item."""
 
-    def __init__(self, parent, editor: "EquipmentEditor"):
+    def __init__(self, parent, editor: EquipmentEditor):
         super().__init__(parent)
         self.title("Visual Equipment Picker")
         self.resizable(True, True)
@@ -1042,7 +1047,10 @@ class _VisualEquipmentBrowser(ctk.CTkToplevel):
         col = ctk.CTkFrame(parent, fg_color="transparent", width=_CELL_W)
         col.pack(side=ctk.LEFT, padx=3)
         ctk.CTkLabel(
-            col, text=label, font=("Segoe UI", 9, "bold"), text_color=("gray40", "gray65")
+            col,
+            text=label,
+            font=("Segoe UI", 9, "bold"),
+            text_color=("gray40", "gray65"),
         ).pack()
         btn = ctk.CTkButton(
             col,
@@ -1714,9 +1722,7 @@ class EquipmentEditor:
                 continue
             if key in (_QUICKITEM_KEYS | _POUCH_KEYS) and _is_flask(raw):
                 continue  # never touched - equipping via the tool duplicates flasks
-            owned = [
-                o for o in self._owned_items_for_key(key) if o[1] not in claimed
-            ]
+            owned = [o for o in self._owned_items_for_key(key) if o[1] not in claimed]
             match = next((o for o in owned if o[0] == raw), None)
             if match is None:
                 skipped.append(key)
@@ -1751,7 +1757,11 @@ class EquipmentEditor:
                     true_base = (raw & 0x0FFFFFFF) // 10000 * 10000
                     item = db.items_by_id.get(true_base)
                     upgrade = raw % 100
-                    reinf = getattr(item, "reinforcement", "standard") if item else "standard"
+                    reinf = (
+                        getattr(item, "reinforcement", "standard")
+                        if item
+                        else "standard"
+                    )
                 elif key in _ARMOR_KEYS:
                     full_id = 0x10000000 | raw
                     upgrade, reinf = 0, "standard"
@@ -1764,9 +1774,13 @@ class EquipmentEditor:
                 else:
                     continue
 
-                loc = "storage" if all(
-                    it.gaitem_handle != 0 for it in slot.inventory_held.common_items
-                ) else "held"
+                loc = (
+                    "storage"
+                    if all(
+                        it.gaitem_handle != 0 for it in slot.inventory_held.common_items
+                    )
+                    else "held"
+                )
                 add_item(
                     save_file,
                     slot_idx,
