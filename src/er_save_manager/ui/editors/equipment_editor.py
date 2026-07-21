@@ -704,7 +704,7 @@ def _resolve_icon(key: str, raw: int, is_cnv: bool = False):
 # ---- visual grid browser -----------------------------------------------------
 
 _ICON_SIZE = 84
-_CELL_W = 128
+_CELL_W = 150
 
 
 def _center_over(window, parent, w: int, h: int) -> None:
@@ -974,7 +974,7 @@ class _VisualEquipmentBrowser(ctk.CTkToplevel):
         self._cells: dict[str, ctk.CTkButton] = {}
         self._captions: dict[str, ctk.CTkLabel] = {}
 
-        _center_over(self, parent, 660, 760)
+        _center_over(self, parent, 700, 760)
         self.attributes("-alpha", 1)
 
         outer = ctk.CTkScrollableFrame(self, fg_color="transparent")
@@ -1068,7 +1068,7 @@ class _VisualEquipmentBrowser(ctk.CTkToplevel):
         )
         btn.pack()
         cap = ctk.CTkLabel(
-            col, text="(empty)", font=("Segoe UI", 10), wraplength=_CELL_W - 4
+            col, text="(empty)", font=("Segoe UI", 13), wraplength=_CELL_W - 4
         )
         cap.pack()
         self._cells[key] = btn
