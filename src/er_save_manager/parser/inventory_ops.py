@@ -836,9 +836,7 @@ def _patch_slot_with_gaitem_insert(
             # anyway and the trim below cuts into that trailing data
             # rather than blocking the add. That trailing region's exact
             # contents are not currently identified (see slot_rebuild.py
-            # notes on slot.rest) - this is a deliberate tradeoff to keep
-            # adding items uninterrupted rather than requiring a hard
-            # failure on a full slot.
+            # notes on slot.rest).
             rebuilt = rebuild_slot(slot)
             save._raw_data[slot_data_base : slot_data_base + SLOT_DATA_SIZE] = rebuilt
             entry_abs_off = slot_data_base + slot.gaitem_offsets[gaitem_idx]
