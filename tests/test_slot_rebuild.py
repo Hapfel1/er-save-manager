@@ -5,17 +5,7 @@ rebuild_slot re-serializes an entire character slot from the parsed
 UserDataX structure, and is used as a full-slot rewrite path by
 TeleportFix, the inventory_ops gaitem-insert fallback, and
 structural_scan. It must reproduce the original slot bytes exactly for
-an unmodified slot - any drift here is silent save corruption for every
-caller.
-
-Regression coverage for two real bugs found via round-trip testing
-against a real save (see git history for slot_rebuild.py /
-user_data_x.py): a 2-byte gap after PlayerCoordinates that was read and
-discarded instead of captured (game_man_0x5be/game_man_0x5bf), and a
-~400KB trailing region after PlayerGameDataHash that was assumed to be
-always-safe-to-zero padding but is real character data on most real
-saves (already correctly captured into slot.rest on read; rebuild just
-never wrote it back).
+an unmodified slot.
 """
 
 from __future__ import annotations
