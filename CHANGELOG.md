@@ -3,6 +3,71 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.7.0
+**Released:** July 21, 2026
+
+
+### ✨ New Features
+
+- Add kill functionality mirroring respawn `[boss]` ([e5f49d0](https://github.com/Hapfel1/er-save-manager/commit/e5f49d05f936b217a31ea107709b2d7d8b469641))
+
+- Add structural integrity scan module `[fixes]` ([a5e7595](https://github.com/Hapfel1/er-save-manager/commit/a5e7595f5604b2021cab84c6abcb279c405e63f9))
+
+- Add share-code import/export for appearance presets and inventory loadouts `[sharing]` ([f46e61c](https://github.com/Hapfel1/er-save-manager/commit/f46e61c32244f0bdcbdae0147552dba611d6fc4b))
+
+- Complete equipment editor - persistence fix, loadouts, visual picker `[equipment]` ([3bb9943](https://github.com/Hapfel1/er-save-manager/commit/3bb99433d540240255084c5b629369e7cab74093))
+
+
+
+### 🔧 Bug Fixes
+
+- Add missing CHECKSUM_SIZE class constant `[character_ops]` ([bbdf7b5](https://github.com/Hapfel1/er-save-manager/commit/bbdf7b578e198066e67820fb2e1ff1b6f1a4cc6d))
+
+- Add Blessed Blue Dew Talisman Convergence variant to Convergence Talismans which reuses the Cerulean Seed Talisman's ID still with its old name in Params ([fd20f2c](https://github.com/Hapfel1/er-save-manager/commit/fd20f2c60436c4dfbb1029135262c86f60c3215f))
+
+- Remove empty scrollable_frame widget and fix test exit code masking ([f6907bb](https://github.com/Hapfel1/er-save-manager/commit/f6907bb176444c3883baaf6ab5d6727764c30803))
+
+- Include OpenSSL DLLs in root to prevent PATH conflicts under zip_include_packages `[build]` ([f0a769e](https://github.com/Hapfel1/er-save-manager/commit/f0a769e2c81a4a3f110a56c505c3637b1bed1ca5))
+
+- Atomic save writes, unique backup names, preserve rebuild_slot tail data ([8e121a1](https://github.com/Hapfel1/er-save-manager/commit/8e121a106edb35a62e12daaf08b8f935004d4a86))
+
+- Use fixed 600 cap for ammo storage quantity `[inventory]` ([e912fcf](https://github.com/Hapfel1/er-save-manager/commit/e912fcfbb6bd7dde4c6c2634eb3d3df52f186931))
+
+- Added more Item event flag linking ([7b019f5](https://github.com/Hapfel1/er-save-manager/commit/7b019f5cd1d14a9986c47944678c7510b849d634))
+
+- Fixcharacter-info): remove non-functional fields from info editor
+
+Remove extra talisman slots, spirit summon level, max crimson flask, and max cerulean flask fields from the character info editor UI, load, and apply logic. These fields had no in-game effect when edited directly. ([6489450](https://github.com/Hapfel1/er-save-manager/commit/6489450025d8ff2de3e4e84d6ff0b40855331469))
+
+- Fixed earlier byte discarding fix getting reverted ([73f3e91](https://github.com/Hapfel1/er-save-manager/commit/73f3e9174869f6dca1d7f584a614dd7c552c07c2))
+
+- Use fixed offset for NPC/event flag anchor instead of pattern search `[DSR]` ([7f74303](https://github.com/Hapfel1/er-save-manager/commit/7f743032d0c00f0be8bb8b38d5c1689d5aedb903))
+
+
+
+### 🎨 User Interface
+
+- Show curse slot widgets for deep relics in editor `[NR]` ([59b4d80](https://github.com/Hapfel1/er-save-manager/commit/59b4d808093bdce8ae32865835d83aa58167018e))
+
+- Use native Linux file picker for all manual file browse dialogs ([166f552](https://github.com/Hapfel1/er-save-manager/commit/166f552cbfc5d99638732f6923093e599a507f3f))
+
+
+
+### 📖 Documentation
+
+- Fix fixer, character editor, event flags, world state, settings docs; add other-games guides ([05dd716](https://github.com/Hapfel1/er-save-manager/commit/05dd71687ba3aa2e3138ca87ccab5d8b4a2ea7c5))
+
+
+
+### 📦 Dependencies
+
+- Bump the github-actions group with 2 updates `[deps]` ([f9929e3](https://github.com/Hapfel1/er-save-manager/commit/f9929e3c2a16445b68bef039acd58b84df3d4231))
+
+- Bump the github-actions group with 3 updates `[deps]` ([300306b](https://github.com/Hapfel1/er-save-manager/commit/300306b63927d9130352bcd1a1a2ffa21e34ed00))
+
+
+
+---
 ## 📦 Release 1.6.2
 **Released:** July 08, 2026
 
@@ -1274,6 +1339,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.7.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.6.2..v1.7.0
 [1.6.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.6.1..v1.6.2
 [1.6.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.6.0..v1.6.1
 [1.6.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.5.2..v1.6.0
