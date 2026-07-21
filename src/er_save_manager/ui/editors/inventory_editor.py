@@ -3166,6 +3166,15 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             side="left", fill="x", expand=True, padx=2
         )
 
+        row2b = ctk.CTkFrame(btn_frame, fg_color="transparent")
+        row2b.pack(fill="x", pady=2)
+        ctk.CTkButton(row2b, text="Export Code", command=self.export_code).pack(
+            side="left", fill="x", expand=True, padx=2
+        )
+        ctk.CTkButton(row2b, text="Import Code", command=self.import_code).pack(
+            side="left", fill="x", expand=True, padx=2
+        )
+
         row3 = ctk.CTkFrame(btn_frame, fg_color="transparent")
         row3.pack(fill="x", pady=2)
         ctk.CTkButton(
@@ -3316,6 +3325,87 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
                 CTkMessageBox.showerror(
                     "Error", f"Failed to load JSON:\n{e}", parent=self
                 )
+
+    def export_code(self):
+        if not self.editor.loadout:
+            CTkMessageBox.showwarning("Empty", "Current loadout is empty.", parent=self)
+            return
+
+        from er_save_manager.data.inventory_loadout_sharing import share_loadout
+
+        name = self.current_loadout_name or ""
+        code = share_loadout(self.editor.loadout, name=name)
+        if not code:
+            CTkMessageBox.showerror(
+                "Error",
+                "Failed to upload loadout. Check your connection.",
+                parent=self,
+            )
+            return
+
+        self._show_share_code(code)
+
+    def import_code(self):
+        code = _ask_value("Import from Code", "Enter share code:", self)
+        if not code:
+            return
+
+        from er_save_manager.data.inventory_loadout_sharing import fetch_loadout
+
+        data = fetch_loadout(code.strip())
+        if not isinstance(data, list):
+            CTkMessageBox.showerror(
+                "Error",
+                "Code not found, or failed to fetch. Check your connection.",
+                parent=self,
+            )
+            return
+
+        self.editor.loadout = data
+        self.refresh_list()
+        show_toast(self.winfo_toplevel(), "Loadout imported from code.", type="success")
+
+    def _show_share_code(self, code: str):
+        """Show a dialog with the generated share code and a copy button."""
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Share Code")
+        dialog.resizable(False, False)
+        dialog.transient(self)
+        _center_over(dialog, self)
+        dialog.grab_set()
+
+        ctk.CTkLabel(dialog, text="Loadout shared", font=("Segoe UI", 13, "bold")).pack(
+            pady=(15, 5)
+        )
+        ctk.CTkLabel(
+            dialog,
+            text="Send this code to share it:",
+            font=("Segoe UI", 10),
+            text_color=("gray40", "gray70"),
+        ).pack(pady=(0, 10))
+
+        code_entry = ctk.CTkEntry(
+            dialog, width=300, justify="center", font=("Consolas", 12)
+        )
+        code_entry.pack(pady=(0, 15))
+        code_entry.insert(0, code)
+        code_entry.configure(state="readonly")
+
+        def copy_code():
+            dialog.clipboard_clear()
+            dialog.clipboard_append(code)
+            show_toast(
+                self.winfo_toplevel(), "Code copied to clipboard!", type="success"
+            )
+
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(pady=(0, 15))
+        ctk.CTkButton(btn_frame, text="Copy Code", command=copy_code, width=120).pack(
+            side="left", padx=5
+        )
+        ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=100).pack(
+            side="left", padx=5
+        )
 
     def apply_loadout(self):
         if not self.editor.loadout:
