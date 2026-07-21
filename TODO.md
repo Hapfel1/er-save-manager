@@ -1,7 +1,5 @@
 npc respawner ds3
 
-use different file explorer on linux
-
 fix ng level display from save inspector dsr
 
 ds2
@@ -9,6 +7,8 @@ ds2
 revisit ds3 and fix bugs
 
 write test modules
+
+use different file explorer on linux done
 
 add nr relic editing for drawbacks on don relics done
 
