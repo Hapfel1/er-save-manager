@@ -6,6 +6,10 @@ ds2
 
 revisit ds3 and fix bugs
 
+remove flasks and extra talisman slots, spirit summon level from info editor
+
+check equipped stuff again er for saving loadouts done
+
 write test modules done
 
 use different file explorer on linux done
