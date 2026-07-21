@@ -8,13 +8,12 @@ import json
 import platform as _platform
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog
 
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.toast import show_toast
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
 _CAT_WEAPON = 0x00000000
 
@@ -3272,8 +3271,11 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
     def save_json(self):
         if not self.editor.loadout:
             return
-        path = filedialog.asksaveasfilename(
-            defaultextension=".json", filetypes=[("JSON Files", "*.json")]
+        path = pick_file(
+            title="Save Loadout",
+            save=True,
+            defaultextension=".json",
+            filetypes=[("JSON Files", "*.json")],
         )
         if path:
             with open(path, "w", encoding="utf-8") as f:
@@ -3281,7 +3283,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             show_toast(self.winfo_toplevel(), "Loadout saved.", type="success")
 
     def load_json(self):
-        path = filedialog.askopenfilename(filetypes=[("JSON Files", "*.json")])
+        path = pick_file(title="Load Loadout", filetypes=[("JSON Files", "*.json")])
         if path:
             try:
                 with open(path, encoding="utf-8") as f:

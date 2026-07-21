@@ -7,13 +7,12 @@ import json
 import os
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog
 
 import customtkinter as ctk
 
 from er_save_manager.backup.manager import BackupManager
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
 
 class AppearanceTab:
@@ -913,8 +912,9 @@ class AppearanceTab:
                     return
 
                 # Ask for output path
-                output_path = filedialog.asksaveasfilename(
+                output_path = pick_file(
                     title="Export Presets",
+                    save=True,
                     defaultextension=".json",
                     filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
                 )
@@ -980,7 +980,7 @@ class AppearanceTab:
             )
             return
 
-        json_path = filedialog.askopenfilename(
+        json_path = pick_file(
             title="Select Preset JSON File",
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
         )
@@ -1257,9 +1257,7 @@ class AppearanceTab:
         )
 
         def browse_dest():
-            from tkinter import filedialog
-
-            filename = filedialog.askopenfilename(
+            filename = pick_file(
                 title="Select Destination Save File",
                 filetypes=[("Elden Ring Saves", "*.sl2 *.co2"), ("All Files", "*.*")],
             )

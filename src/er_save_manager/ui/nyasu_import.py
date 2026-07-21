@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from tkinter import filedialog
 
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.utils import pick_file
 
 _CLASS_MAP = {
     "Vagabond": 0,
@@ -70,10 +70,9 @@ def import_nyasu(
         parent=parent,
     )
 
-    path = filedialog.askopenfilename(
+    path = pick_file(
         title="Select Nyasu Build JSON",
         filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
-        parent=parent,
     )
     if not path:
         return

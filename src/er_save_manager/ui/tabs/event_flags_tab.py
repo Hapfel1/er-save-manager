@@ -26,7 +26,7 @@ from er_save_manager.data.summoning_pools_data import (
 )
 from er_save_manager.parser.event_flags import EventFlags
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
 
 class EventFlagsTab:
@@ -690,17 +690,16 @@ class EventFlagsTab:
             return
 
         import json
-        from tkinter import filedialog
 
         save_path = self.get_save_path()
         initial_dir = str(save_path.parent) if save_path else None
         slot_num = (self.current_slot + 1) if self.current_slot is not None else 1
 
-        out_path = filedialog.asksaveasfilename(
-            parent=self.parent,
+        out_path = pick_file(
             title="Export Event Flags",
             initialdir=initial_dir,
             initialfile=f"flags_slot{slot_num}.json",
+            save=True,
             defaultextension=".json",
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
         )
@@ -770,13 +769,11 @@ class EventFlagsTab:
             return
 
         import json
-        from tkinter import filedialog
 
         save_path = self.get_save_path()
         initial_dir = str(save_path.parent) if save_path else None
 
-        in_path = filedialog.askopenfilename(
-            parent=self.parent,
+        in_path = pick_file(
             title="Import Event Flags",
             initialdir=initial_dir,
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
