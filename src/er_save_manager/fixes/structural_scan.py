@@ -1,28 +1,12 @@
 """
 Structural integrity checks for character slot data.
 
-Independent of deep_scan.py's NetMan/SteamID torn-write detector and of
-InventoryCountersFix (which already covers held common_item_count /
-key_item_count). These look at internal consistency that neither of
-those checks: gaitem_map handle uniqueness, dangling inventory rows,
+These look at internal consistency of
+gaitem_map handle uniqueness, dangling inventory rows,
 storage counters, and the size of the world-state struct chain.
 
 RebuildRoundtripFix, DuplicateGaitemHandleFix, and WorldStructSizeFix
-are report-only. Each has a detect() but apply() always returns
-applied=False with an explanation, there is no correction that is safe
-to make without knowing what the correct content should have been.
-
-DanglingInventoryHandleFix and StorageInventoryCountersFix have a
-well-defined, reversible correction and behave like any other fix in
-this package.
-
-Two checks that were here (duplicate acquisition_index, and
-acquisition_index_counter vs actual max) were removed after testing
-against real saves. Both assumed acquisition_index and
-acquisition_index_counter are directly comparable, they are not: real
-saves show acquisition_index running roughly double the counter value,
-and legitimate items can share an acquisition_index (simultaneous
-pickups). Revisit only with a confirmed model of that relationship.
+are report-only.
 """
 
 from __future__ import annotations
@@ -68,16 +52,13 @@ _UNRELIABLE_SECTIONS = {"padding_after_player_coordinates"}
 class RebuildRoundtripFix(BaseFix):
     """
     Re-serializes the slot from its parsed fields and compares against
-    the raw bytes on disk, up through the end of player_data_hash,
-    excluding sections rebuild_slot() is known to guess rather than
-    faithfully reproduce (see _UNRELIABLE_SECTIONS). A mismatch outside
+    the raw bytes on disk. A mismatch outside
     those means some size-prefixed struct's declared size no longer
     matches its actual content, or a tracked offset is stale.
 
     slot.rest (whatever follows player_data_hash) is excluded on
     purpose, rebuild_slot() itself never writes it, treating it as
-    discardable padding, and real saves often have non-zero content
-    there that is not corruption.
+    discardable padding.
     """
 
     name = "Rebuild Round-trip"
