@@ -173,5 +173,6 @@ jobs:
             Automated upload for Elden Ring Save File Manager ${{ steps.download.outputs.resolved_version }} (${{ matrix.platform }}).
             Source release: https://github.com/${{ github.repository }}/releases/tag/${{ steps.download.outputs.resolved_version }}
           version: ${{ steps.meta.outputs.version_no_v }}
+          update_mod_version: true
           archive_existing_version: true
           allow_mod_manager_download: false

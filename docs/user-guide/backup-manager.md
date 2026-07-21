@@ -28,12 +28,12 @@ Automatic backups are created before any changes are written by the save manager
 ### Backup Naming
 
 ```
-{save_name}_{date}_{time}_{operation}.bak
+{save_name}_{date}_{time}_{operation}.zip
 
 Examples:
-ER0000_2026-02-15_10-30-00_fix.bak
-ER0000_2026-02-15_10-35-00_character_import.bak
-ER0000_2026-02-15_11-00-00_steamid_patch.bak
+ER0000_2026-02-15_10-30-00_fix.zip
+ER0000_2026-02-15_10-35-00_character_import.zip
+ER0000_2026-02-15_11-00-00_steamid_patch.zip
 ```
 
 ### Metadata
@@ -54,8 +54,6 @@ Each backup includes:
 1. Load save file
 2. Go to **Backup Manager** tab
 3. Click **Create Backup**
-4. Enter optional description
-5. Backup created with timestamp
 
 ---
 
@@ -93,11 +91,7 @@ Replaces current save with selected backup.
 **Steps:**
 
 1. Select backup from list
-2. Click **Restore Backup**
-3. Review what will be replaced
-4. Confirm restoration
-5. Current save backed up first
-6. Backup restored
+2. Click **Restore**
 
 **Result:** Save file replaced with backup state
 
@@ -117,7 +111,7 @@ Replaces current save with selected backup.
 
 **Backup naming (safety):**
 ```
-ER0000_2026-02-15_14-00-00_before_restore.bak
+ER0000_2026-02-15_14-00-00_before_restore.zip
 ```
 
 ---
@@ -129,15 +123,15 @@ ER0000_2026-02-15_14-00-00_before_restore.bak
 ```
 ER0000.co2.backups/
 ├── metadata.json
-├── ER0000_2026-02-15_10-00-00_fix.bak
-├── ER0000_2026-02-15_10-30-00_manual.bak
-├── ER0000_2026-02-15_11-00-00_character_edit.bak
+├── ER0000_2026-02-15_10-00-00_fix.zip
+├── ER0000_2026-02-15_10-30-00_manual.zip
+├── ER0000_2026-02-15_11-00-00_character_edit.zip
 └── ...
 ```
 
 ### Disk Space
 
-- Backups are zipped to a gz file by default to save disk space
+- Backups are zipped to a zip file by default to save disk space
 
 
 ---
@@ -184,7 +178,7 @@ ER0000.co2.backups/
 A: In `.backups` folder next to save file.
 
 **Q: Can I restore from backup without the tool?**  
-A: Yes, manually extract and copy the .backup file and rename it.
+A: Yes, manually extract and copy the file.
 
 **Q: Do backups include all 10 character slots?**  
 A: Yes, complete save file backed up.
