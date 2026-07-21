@@ -15,6 +15,7 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **Community Character Browser**: Browse, download, and contribute characters with likes and download tracking
 - **Character Editor**: Edit stats, runes, name, level, and build attributes
 - **Inventory Editor**: Edit your inventory, spawn in items, import builds
+- **Equipment Editor**: Edit your current equipped items, save and share loadouts
 - **Appearance Editor**: View, export and import Presets
 - **Community Preset Browser**: Browse, download, and contribute character appearance presets with likes and download tracking
 - **World State / Teleportation**: 451 known safe locations to warp to as well as custom coordinate teleportation. Interactive map of the overworld for teleporting.
@@ -116,13 +117,21 @@ Automatically detects issues with your game installation, your save file and any
 - Supports SeamlessCoop and Convergence Items
 - Visual Item Picker and Visual Inventory Editor with full Icon Support
 - Loadout Mode for creating and sharing loadouts
+- Share Loadouts via unique code
 - Batch Adding Category functionality
 - Build Import Functionality from the Elden Ring Build & Inventory Planner
+
+### Equipment Editor
+
+- Edit your current equipped items
+- Save Loadouts and share them via JSON or unique Code
+- Visual Equipment Viewer and Item Picker
 
 ### Appearance Editor
 
 - View Details of a Preset
 - Export/Import a Preset from/to a `.json` file (Supports importing from Elden Bling Sliders)
+- Share Presets via unique Code
 - Delete a Preset
 - Copy a Preset to a different Save file
 - Browse Community presets
