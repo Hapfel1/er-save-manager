@@ -409,8 +409,11 @@ class UserDataX:
         obj.coordinates_offset = f.tell()
         obj.player_coordinates = PlayerCoordinates.read(f)
 
-        # 2 bytes padding after PlayerCoordinates
-        f.read(2)
+        # 2 bytes after PlayerCoordinates. Captured into the declared
+        # game_man_0x5be/0x5bf fields (not just discarded) so a full slot
+        # rebuild (rebuild_slot) can write the real value back instead of
+        # zero - this byte is nonzero on real saves.
+        obj.game_man_0x5be, obj.game_man_0x5bf = f.read(2)
         obj.spawn_point_entity_id = struct.unpack("<I", f.read(4))[0]
         # 4 bytes padding
         obj.game_man_0xb64 = struct.unpack("<I", f.read(4))[0]
