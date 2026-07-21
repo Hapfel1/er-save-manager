@@ -9,7 +9,7 @@ import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.settings import get_settings
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
 
 class SettingsTab:
@@ -373,8 +373,6 @@ class SettingsTab:
         self.settings.set("auto_backup_games", auto_backup_cfg)
 
     def _choose_game_auto_backup_save(self, game_key: str, profile):
-        import tkinter.filedialog as filedialog
-
         from er_save_manager.platform.utils import PlatformUtils
 
         # Offer auto-detected saves first
@@ -437,7 +435,7 @@ class SettingsTab:
                     text="Browse...",
                     width=100,
                     command=lambda: [
-                        setattr(selected, "__browse__", True),
+                        selected.__setitem__(0, "__browse__"),
                         dlg.destroy(),
                     ],
                 ).pack(side=tk.LEFT, padx=15, pady=(0, 12))
@@ -446,16 +444,15 @@ class SettingsTab:
                 )
                 dlg.wait_window()
 
-                if selected[0]:
+                if selected[0] and selected[0] != "__browse__":
                     self._set_game_auto_backup_path(game_key, selected[0])
                     return
 
         # Fallback: file browser
         ext_str = " ".join(f"*{e}" for e in profile.extensions)
-        file_path = filedialog.askopenfilename(
+        file_path = pick_file(
             title=f"Choose Save File for Auto-Backup - {profile.name}",
             filetypes=[(f"{profile.name} Save", ext_str), ("All files", "*.*")],
-            parent=self.parent,
         )
         if file_path:
             self._set_game_auto_backup_path(game_key, file_path)
