@@ -7,8 +7,10 @@ Based on ER-Save-Lib Rust implementation.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from io import BytesIO
+from pathlib import Path
 
 from er_save_manager.parser.user_data_10 import UserData10
 from er_save_manager.parser.user_data_x import UserDataX
@@ -294,14 +296,35 @@ class Save:
         """
         Write save file to disk.
 
+        Writes to a temporary file in the same directory, then atomically
+        replaces the destination. A direct in-place overwrite (open the
+        existing path in "wb" mode) can leave a file-watcher holding a
+        stale view of the file - Steam Cloud sync, an antivirus scanner,
+        or the game itself can end up reading a cached/partial state
+        instead of the freshly written content, since the file's identity
+        never technically changes for a same-path truncate+write. An
+        atomic replace forces a fresh file identity that these can't
+        miss, and also protects against a corrupt half-written file if
+        the process is interrupted mid-write.
+
         Args:
             filepath: Path where save file will be written
         """
         if not hasattr(self, "_raw_data"):
             raise RuntimeError("Cannot write save file: raw data not available")
 
-        with open(filepath, "wb") as f:
-            f.write(self._raw_data)
+        target = Path(filepath)
+        tmp_path = target.with_name(f"{target.name}.tmp{os.getpid()}")
+
+        try:
+            with open(tmp_path, "wb") as f:
+                f.write(self._raw_data)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, target)
+        except BaseException:
+            tmp_path.unlink(missing_ok=True)
+            raise
 
     def get_active_slots(self) -> list[int]:
         """

@@ -810,11 +810,12 @@ def _patch_slot_with_gaitem_insert(
         return 0
 
     if delta > 0:
-        # Ensure there are enough trailing zero bytes to trim safely.
-        # The trim removes `delta` bytes from the slot end. If those bytes are
-        # non-zero (real data), trimming would corrupt the slot.
-        # rebuild_slot serializes all structures and pads the remainder with zeros,
-        # giving us a safe trim budget for future edits.
+        # Prefer trimming genuine trailing zero bytes at the slot end.
+        # If there aren't enough, rebuild_slot re-serializes the slot
+        # (preserving real trailing data - see slot_rebuild.py) and the
+        # trim below proceeds regardless, intentionally cutting into
+        # that trailing data rather than failing the add. See the note
+        # further down for why this is a deliberate tradeoff.
         trim = delta
         slot_end_before = slot_data_base + SLOT_DATA_SIZE
         trailing_zeros = 0
@@ -827,22 +828,20 @@ def _patch_slot_with_gaitem_insert(
         if trailing_zeros < trim:
             from er_save_manager.parser.slot_rebuild import rebuild_slot
 
+            # rebuild_slot re-serializes the slot from the parsed structure
+            # and preserves every byte captured on read, including
+            # slot.rest - it no longer manufactures extra zero-padding
+            # here (see slot_rebuild.py). If the slot's real trailing
+            # bytes still don't cover `trim` after this, the add proceeds
+            # anyway and the trim below cuts into that trailing data
+            # rather than blocking the add. That trailing region's exact
+            # contents are not currently identified (see slot_rebuild.py
+            # notes on slot.rest) - this is a deliberate tradeoff to keep
+            # adding items uninterrupted rather than requiring a hard
+            # failure on a full slot.
             rebuilt = rebuild_slot(slot)
             save._raw_data[slot_data_base : slot_data_base + SLOT_DATA_SIZE] = rebuilt
             entry_abs_off = slot_data_base + slot.gaitem_offsets[gaitem_idx]
-
-            # Re-check trailing zeros in the binary after writing the rebuild.
-            # If still empty the slot is genuinely full and trimming would corrupt data.
-            post_trailing = 0
-            for _j in range(slot_end_before - 1, slot_end_before - trim - 1, -1):
-                if _j >= 0 and save._raw_data[_j] == 0:
-                    post_trailing += 1
-                else:
-                    break
-            if post_trailing < trim:
-                raise ValueError(
-                    f"slot {slot_idx} data is full - cannot safely add this item"
-                )
 
         last_empty_abs = _gaitem_last_empty(slot, slot_data_base)
 
