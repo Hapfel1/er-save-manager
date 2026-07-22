@@ -674,6 +674,25 @@ def _max_spell_slots(slot) -> int:
     return max(computed, highest_filled)
 
 
+def _normalize_icon(img, size: int):
+    """Crop to the image's actual visible content, then fit it into a
+    square canvas without distorting its aspect ratio.
+    """
+    from PIL import Image
+
+    img = img.convert("RGBA")
+    bbox = img.getbbox()
+    if bbox:
+        img = img.crop(bbox)
+
+    img.thumbnail((size, size), Image.LANCZOS)
+    canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    x = (size - img.width) // 2
+    y = (size - img.height) // 2
+    canvas.paste(img, (x, y), img)
+    return canvas
+
+
 def _resolve_icon(key: str, raw: int, is_cnv: bool = False):
     """Return a PIL image for a slot's current item, or None."""
     if raw in _EMPTY_IDS:
@@ -901,7 +920,7 @@ class _VisualItemPickerDialog(ctk.CTkToplevel):
 
     def _load_icons(self, start: int, batch: int = 24):
         try:
-            from PIL import Image, ImageTk
+            from PIL import ImageTk
         except Exception:
             return
         end = min(start + batch, len(self._visible))
@@ -910,7 +929,7 @@ class _VisualItemPickerDialog(ctk.CTkToplevel):
             try:
                 pil = _resolve_icon_by_name(name)
                 if pil:
-                    pil = pil.convert("RGBA").resize((72, 72), Image.LANCZOS)
+                    pil = _normalize_icon(pil, 72)
                     ph = ImageTk.PhotoImage(pil)
                     self._photos.append(ph)
                     row, col = divmod(idx, self._COLS)
@@ -1072,7 +1091,10 @@ class _VisualEquipmentBrowser(ctk.CTkToplevel):
             text="(empty)",
             font=("Segoe UI", 13),
             width=_CELL_W,
+            height=64,
             wraplength=_CELL_W - 4,
+            anchor="n",
+            justify="center",
         )
         cap.pack()
         self._cells[key] = btn
@@ -1103,6 +1125,7 @@ class _VisualEquipmentBrowser(ctk.CTkToplevel):
         is_cnv = self._editor._is_cnv_save()
         img = _resolve_icon(key, raw, is_cnv)
         if img:
+            img = _normalize_icon(img, _ICON_SIZE)
             ctk_img = ctk.CTkImage(
                 light_image=img, dark_image=img, size=(_ICON_SIZE, _ICON_SIZE)
             )
