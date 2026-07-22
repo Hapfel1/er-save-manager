@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.ui.utils import pick_file
+
 if TYPE_CHECKING:
     from er_save_manager.data.item_database import Item
     from er_save_manager.ui.editors.inventory_editor import InventoryEditor
@@ -765,15 +767,13 @@ class IconBrowser(ctk.CTkToplevel):
             )
             return
 
-        from tkinter import filedialog
-
         safe_name = re.sub(r'[\/:*?"<>|]', "_", self._selected_item.name)
-        path = filedialog.asksaveasfilename(
-            parent=self,
+        path = pick_file(
+            title="Save Icon",
+            save=True,
             defaultextension=".webp",
             initialfile=f"{safe_name}.webp",
             filetypes=[("WebP image", "*.webp"), ("PNG image", "*.png")],
-            title="Save Icon",
         )
         if not path:
             return
