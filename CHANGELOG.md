@@ -3,6 +3,23 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.7.2
+**Released:** July 22, 2026
+
+
+### 🔧 Bug Fixes
+
+- Fixed Typo and added flag 3001 which triggers NG on teleport to Roundtable Hold `[event_flags]` ([e5ba4ef](https://github.com/Hapfel1/er-save-manager/commit/e5ba4ef512a94499fd58916fed8d06b9669959f6))
+
+
+
+### 📖 Documentation
+
+- Replace MIT with source-available license `[license]` ([4b507ab](https://github.com/Hapfel1/er-save-manager/commit/4b507ab4818e8406395bd5505b7f0a518da96c58))
+
+
+
+---
 ## 📦 Release 1.7.1
 **Released:** July 22, 2026
 
@@ -1360,6 +1377,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.7.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.7.1..v1.7.2
 [1.7.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.7.0..v1.7.1
 [1.7.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.6.2..v1.7.0
 [1.6.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.6.1..v1.6.2
