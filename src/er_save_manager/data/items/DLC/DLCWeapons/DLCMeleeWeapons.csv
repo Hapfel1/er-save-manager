@@ -53,7 +53,6 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 21510000,Pata,standard,1,35,Knuckle,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
 21530000,Madding Hand,somber,0,35,Knuckle,1,Standard,Standard
 21540000,Golem Fist,standard,1,35,Knuckle,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
-21550000,Shield of Night,somber,0,65,ShieldSmall,1,Standard,Standard
 22500000,Claws of Night,somber,0,37,Claw,1,Standard,Standard
 23500000,Devonia's Hammer,somber,0,41,AxhammerLarge,1,Standard,Standard
 23510000,Shadow Sunflower Blossom,somber,0,41,AxhammerLarge,1,Standard,Standard
@@ -77,7 +76,7 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 67500000,Milady,standard,1,93,LightGreatsword,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
 67510000,Leda's Sword,somber,0,93,LightGreatsword,1,Standard,Standard
 67520000,Rellana's Twin Blades,somber,0,93,LightGreatsword,1,Standard,Standard
-68500000,Beast Claw,standard,1,95,BeastClaw,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
+68500000,Beast Claw (Weapon),standard,1,95,BeastClaw,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
 68510000,Red Bear's Claw,somber,0,95,BeastClaw,1,Standard,Standard
 16550000,Bloodfiend's Sacred Spear,somber,0,28,SpearLarge,1,Standard,Standard
 21520000,Poisoned Hand,standard,1,35,Knuckle,1,Standard,Standard
