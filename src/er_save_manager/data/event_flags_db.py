@@ -81,7 +81,7 @@ EVENT_FLAGS = {
         "subcategory": "NG+ & Endings",
     },
     70: {
-        "name": "Apply DLC Game Clear SpEffect (Occurs if Radahn, Consort of Miquella is beated and NG+ is entered)",
+        "name": "Apply DLC Game Clear SpEffect (Occurs if Radahn, Consort of Miquella is beaten and NG+ is entered)",
         "category": "System",
         "subcategory": "NG+ & Endings",
     },
@@ -484,6 +484,11 @@ EVENT_FLAGS = {
         "name": "default",
         "category": "System",
         "subcategory": "Misc",
+    },
+    3001: {
+        "name": "Triggers NG on teleport to Roundtable Hold",
+        "category": "System",
+        "subcategory": "NG+ & Endings",
     },
     6000: {
         "name": "Always OFF",
