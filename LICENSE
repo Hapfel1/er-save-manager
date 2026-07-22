@@ -26,12 +26,19 @@ Unless prior written permission is given by the copyright holder:
 - The software may not be sublicensed, sold or included in any other package or bundle intended for distribution.
 - Forks may not be used to distribute builds or releases independently of the original repository.
 
-4. Termination
+4. Requesting Additional Permission
+
+Any use beyond that granted in Section 2, including redistribution, 
+commercial use or use in another project, must be requested directly from the copyright holder. 
+Such use is only permitted if the copyright holder grants explicit written permission for the specific request in question.
+No use beyond that granted in Section 2 is permitted by default or by implication.
+
+5. Termination
 
 Any violation of Section 3 automatically terminates the rights granted
 under Section 2 for the violating party.
 
-5. No Warranty
+6. No Warranty
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
 OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
