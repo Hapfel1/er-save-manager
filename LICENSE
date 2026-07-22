@@ -1,21 +1,47 @@
-MIT License
+er-save-manager Source-Available License
 
 Copyright (c) 2026 Hapfel
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. Definitions
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+"Software" means the source code, executables, documentation, and all
+associated files in this repository.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+"Authorised Distribution Points" means:
+- https://github.com/Hapfel1/er-save-manager
+- https://www.nexusmods.com/eldenring/mods/9271
+
+2. Grant of Rights
+
+Permission is granted to any person who obtains a copy of the Software to:
+- view and read the source code
+- build the software from the source code for personal use
+- modify the software for personal, non-distributed use;
+- fork the repository for the sole purpose of submitting contributions (pull requests) back to the original repository.
+
+3. Restrictions
+
+Unless prior written permission is given by the copyright holder:
+- The software, in its original or modified form, whether compiled or in source code form, may not be redistributed, re-uploaded, mirrored or hosted on any platform other than the authorised distribution points.
+- The software may not be sublicensed, sold or included in any other package or bundle intended for distribution.
+- Forks may not be used to distribute builds or releases independently of the original repository.
+
+4. Requesting Additional Permission
+
+Any use beyond that granted in Section 2, including redistribution, 
+commercial use or use in another project, must be requested directly from the copyright holder. 
+Such use is only permitted if the copyright holder grants explicit written permission for the specific request in question.
+No use beyond that granted in Section 2 is permitted by default or by implication.
+
+5. Termination
+
+Any violation of Section 3 automatically terminates the rights granted
+under Section 2 for the violating party.
+
+6. No Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM,
+DAMAGES, OR OTHER LIABILITY ARISING FROM THE USE OF THE SOFTWARE.
