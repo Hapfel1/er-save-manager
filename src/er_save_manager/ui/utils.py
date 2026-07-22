@@ -213,6 +213,8 @@ def _pick_file_native_linux(
     Returns False when neither tool is installed so the caller falls back
     to the Tk file dialog.
     """
+    env = _get_subprocess_env()
+
     if shutil.which("zenity"):
         cmd = ["zenity", "--file-selection", f"--title={title}"]
         if save:
@@ -224,7 +226,9 @@ def _pick_file_native_linux(
             cmd.append(f"--filename={start}")
         for label, pattern in filetypes:
             cmd.append(f"--file-filter={label} | {pattern}")
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, check=False, env=env
+        )
         path = result.stdout.strip() if result.returncode == 0 else ""
         return _apply_default_extension(path, save, defaultextension)
 
@@ -236,7 +240,9 @@ def _pick_file_native_linux(
         cmd.append("--getsavefilename" if save else "--getopenfilename")
         cmd.append(start)
         cmd.append("\n".join(f"{pattern}|{label}" for label, pattern in filetypes))
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, check=False, env=env
+        )
         path = result.stdout.strip() if result.returncode == 0 else ""
         return _apply_default_extension(path, save, defaultextension)
 
