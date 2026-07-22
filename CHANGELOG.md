@@ -3,6 +3,27 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.7.1
+**Released:** July 22, 2026
+
+
+### 🔧 Bug Fixes
+
+- Fixed Browse Button not working on Linux with new native file explorer implementation ([fdaed31](https://github.com/Hapfel1/er-save-manager/commit/fdaed3159080ecf18fe283ed561d6083955d478f))
+
+- Fixed missing Icons and duplicate Item Names ([c0e3ea2](https://github.com/Hapfel1/er-save-manager/commit/c0e3ea2b82d0a8998c41088f6b9c05e793950511))
+
+- Add Native File PIcker for Lnux to "Save Icon" button in Visual Item Picker ([0d6cd67](https://github.com/Hapfel1/er-save-manager/commit/0d6cd67bd0805db2a95503cdd342736482ab4eff))
+
+
+
+### 🎨 User Interface
+
+- Fixed Padding for Icons ([fd45393](https://github.com/Hapfel1/er-save-manager/commit/fd4539314dcfb29136d4168f3f6822530d92473c))
+
+
+
+---
 ## 📦 Release 1.7.0
 **Released:** July 21, 2026
 
@@ -1339,6 +1360,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.7.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.7.0..v1.7.1
 [1.7.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.6.2..v1.7.0
 [1.6.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.6.1..v1.6.2
 [1.6.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.6.0..v1.6.1
