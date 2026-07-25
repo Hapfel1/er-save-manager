@@ -256,6 +256,11 @@ class FixFlags:
     SEALING_TREE_RESTED_AFTER = 20010500
     GRACE_ENIR_ILIM_OUTER_WALL = 72012
 
+    # Missing Romina flags (DLC)
+    # Reuses SPIRIT_TREE_BURNING as well
+    DEFEATED_ROMINA = 9160
+    SEALING_TREE_CUTSCENE = 20010196
+
 
 class CorruptionDetector:
     """Detect quest soft-locks and warp sickness issues."""
@@ -349,6 +354,21 @@ class CorruptionDetector:
         except ValueError:
             return False
 
+    @staticmethod
+    def check_romina_missing(event_flags: bytes) -> bool:
+        """
+        Detect if Romina is missing.
+        Can happen if Sealing Tree flags are inherited.
+
+        Condition: EventFlag(330) && !EventFlag(9160)
+        """
+        try:
+            burning = EventFlags.get_flag(event_flags, FixFlags.SPIRIT_TREE_BURNING)
+            defeated = EventFlags.get_flag(event_flags, FixFlags.DEFEATED_ROMINA)
+            return burning and not defeated
+        except ValueError:
+            return False
+
     @classmethod
     def detect_all(cls, event_flags: bytes) -> list[str]:
         """
@@ -371,6 +391,8 @@ class CorruptionDetector:
             issues.append("radagon_warp")
         if cls.check_sealing_tree_warp(event_flags):
             issues.append("sealing_tree_warp")
+        if cls.check_romina_missing(event_flags):
+            issues.append("romina_missing")
 
         return issues
 
@@ -471,6 +493,21 @@ class CorruptionFixer:
         except Exception:
             return False
 
+    @staticmethod
+    def fix_romina_missing(event_flags: bytearray) -> bool:
+        """
+        Fix Romina missing (DLC).
+
+        Resets the Sealing Tree back to a valid state,
+        which allows Romina to properly spawn as well.
+        """
+        try:
+            EventFlags.set_flag(event_flags, FixFlags.SPIRIT_TREE_BURNING, False)
+            EventFlags.set_flag(event_flags, FixFlags.SEALING_TREE_CUTSCENE, False)
+            return True
+        except Exception:
+            return False
+
     @classmethod
     def fix_all(
         cls, event_flags: bytearray, issues: list[str]
@@ -501,6 +538,7 @@ class CorruptionFixer:
                 cls.fix_sealing_tree_warp,
                 "Sealing Tree warp sickness fixed (DLC)",
             ),
+            "romina_missing": (cls.fix_romina_missing, "Missing Romina fixed"),
         }
 
         fixes_applied = 0
