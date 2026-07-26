@@ -261,6 +261,10 @@ class FixFlags:
     DEFEATED_ROMINA = 9160
     SEALING_TREE_CUTSCENE = 20010196
 
+    # Ruins of Unte Golem stuck flags (DLC)
+    GOLEM_DESTROYED = 2050460300  # Fails to be set in Seamless sometimes
+    GOLEM_DEFEATED = 2250460309
+
 
 class CorruptionDetector:
     """Detect quest soft-locks and warp sickness issues."""
@@ -369,6 +373,20 @@ class CorruptionDetector:
         except ValueError:
             return False
 
+    @staticmethod
+    def check_unte_golem(event_flags: bytes) -> bool:
+        """
+        Detect if the Ruins of Unte golem is stuck
+
+        Condition: EventFlag(2250460309) && !EventFlag(2050460300)
+        """
+        try:
+            destroyed = EventFlags.get_flag(event_flags, FixFlags.GOLEM_DESTROYED)
+            defeated = EventFlags.get_flag(event_flags, FixFlags.GOLEM_DEFEATED)
+            return defeated and not destroyed
+        except ValueError:
+            return False
+
     @classmethod
     def detect_all(cls, event_flags: bytes) -> list[str]:
         """
@@ -393,6 +411,8 @@ class CorruptionDetector:
             issues.append("sealing_tree_warp")
         if cls.check_romina_missing(event_flags):
             issues.append("romina_missing")
+        if cls.check_unte_golem(event_flags):
+            issues.append("unte_golem_stuck")
 
         return issues
 
@@ -508,6 +528,21 @@ class CorruptionFixer:
         except Exception:
             return False
 
+    @staticmethod
+    def fix_unte_golem(event_flags: bytearray) -> bool:
+        """
+        Fix Ruins of Unte Golem (DLC).
+
+        When playing with Seamless Co-op, the flag which
+        destroys the wall never gets set correctly, and
+        the event stalls forever. This destroys the wall.
+        """
+        try:
+            EventFlags.set_flag(event_flags, FixFlags.GOLEM_DESTROYED, True)
+            return True
+        except Exception:
+            return False
+
     @classmethod
     def fix_all(
         cls, event_flags: bytearray, issues: list[str]
@@ -539,6 +574,7 @@ class CorruptionFixer:
                 "Sealing Tree warp sickness fixed (DLC)",
             ),
             "romina_missing": (cls.fix_romina_missing, "Missing Romina fixed"),
+            "unte_golem_stuck": (cls.fix_unte_golem, "Stuck Unte golem removed"),
         }
 
         fixes_applied = 0
