@@ -1177,23 +1177,11 @@ class CharacterOperations:
             Dictionary with equipment info (currently returns empty dict as placeholder)
         """
         try:
-            from er_save_manager.data.convergence_items import (
-                parse_convergence_hex_all,
-                parse_convergence_hex_files,
-            )
             from er_save_manager.data.item_database import get_item_name
 
             equip = getattr(char, "equipped_items_item_id", None)
             if not equip:
                 return {}
-
-            convergence_items = parse_convergence_hex_files()
-            id_to_name = {}
-            for items in convergence_items.values():
-                for item_name, item_id in items.items():
-                    id_to_name[item_id] = item_name
-
-            id_to_name.update(parse_convergence_hex_all())
 
             empty_item_ids = {0x00000000, 0xFFFFFFFF, 0x0001ADB0}
 
@@ -1205,31 +1193,7 @@ class CharacterOperations:
                 if category_bits and (item_id & 0xF0000000) == 0:
                     full_id = category_bits | item_id
 
-                name = get_item_name(full_id)
-                if name and not name.startswith("Unknown "):
-                    return name
-
-                # Try Convergence lookup
-                if full_id in id_to_name:
-                    return id_to_name[full_id]
-                if item_id in id_to_name:
-                    return id_to_name[item_id]
-                base_id = full_id & 0x0FFFFFFF
-                if base_id in id_to_name:
-                    return id_to_name[base_id]
-
-                # Try rounding for weapon-like variants (category 0x0)
-                category = full_id & 0xF0000000
-                base_id = full_id & 0x0FFFFFFF
-                if category == 0x00000000:
-                    rounded_100 = category | ((base_id // 100) * 100)
-                    rounded_10 = category | ((base_id // 10) * 10)
-                    if rounded_100 in id_to_name:
-                        return id_to_name[rounded_100]
-                    if rounded_10 in id_to_name:
-                        return id_to_name[rounded_10]
-
-                return name
+                return get_item_name(full_id)
 
             slots = {
                 "right_hand_1": (equip.right_hand_armament1, 0x00000000),
