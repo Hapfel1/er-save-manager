@@ -1,14 +1,8 @@
-fix icons for remnants
-
-fix storage and amount and upgr level not getting respected when batch adding visual item picker instead of inventory editor
-
 check is game running check for other games
 
 character ops for other games, ds3, ds2
 
 ds3 gestures
-
-atomic save file writing for other games as well
 
 npc respawner ds3
 
@@ -16,7 +10,11 @@ ds2
 
 revisit ds3 and fix bugs
 
-fix ng level display from save inspector dsr
+fix storage and amount and upgr level not getting respected when batch adding visual item picker instead of inventory editor done
+
+fix ng level display from save inspector dsr done
+
+atomic save file writing for other games as well done
 
 remove flasks and extra talisman slots, spirit summon level from info editor done
 

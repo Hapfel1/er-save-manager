@@ -142,7 +142,9 @@ def patch_steamid_generic(
             error=f"SteamID {old_steamid} not found in file",
         )
 
-    save_path.write_bytes(data)
+    tmp_path = save_path.with_suffix(save_path.suffix + ".tmp")
+    tmp_path.write_bytes(data)
+    tmp_path.replace(save_path)
 
     return PatchResult(
         success=True,

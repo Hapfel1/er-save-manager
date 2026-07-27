@@ -149,7 +149,9 @@ def patch_steamid_ds3(save_path: Path, new_steam64: int) -> tuple[bool, str]:
             raw[offset : offset + size] = _encrypt_entry(iv, dec)
             slots_patched += 1
 
-    save_path.write_bytes(bytes(raw))
+    tmp_path = save_path.with_suffix(save_path.suffix + ".tmp")
+    tmp_path.write_bytes(bytes(raw))
+    tmp_path.replace(save_path)
     return True, (
         f"Patched USER_DATA_010 + {slots_patched} character slot(s)\n"
         f"Old SteamID: {old_steam64} (Steam32: {old_steam32})\n"

@@ -151,7 +151,10 @@ class DS3Parser:
                     f"original {entry.size}. Plaintext must not change in length."
                 )
             out[entry.offset : entry.offset + entry.size] = blob
-        Path(path).write_bytes(out)
+        target = Path(path)
+        tmp_path = target.with_suffix(target.suffix + ".tmp")
+        tmp_path.write_bytes(out)
+        tmp_path.replace(target)
 
     def get_slot_plaintext_size(self, index: int) -> int:
         return len(self._entries[index].plaintext)
