@@ -16,7 +16,6 @@ from er_save_manager.fixes.teleport import (
     TeleportFix,
     TeleportLocation,
 )
-from er_save_manager.fixes.time_sync import TimeFix
 from er_save_manager.fixes.torrent import TorrentFix
 from er_save_manager.fixes.weather import WeatherFix
 
@@ -24,7 +23,6 @@ from er_save_manager.fixes.weather import WeatherFix
 ALL_FIXES = [
     TorrentFix,
     SteamIdFix,
-    TimeFix,
     WeatherFix,
     EventFlagsFix,
     DLCFlagFix,
@@ -40,7 +38,6 @@ __all__ = [
     # Individual fixes
     "TorrentFix",
     "SteamIdFix",
-    "TimeFix",
     "WeatherFix",
     "EventFlagsFix",
     "RanniSoftlockFix",
