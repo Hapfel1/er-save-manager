@@ -66,19 +66,19 @@ class PlatformUtils:
         return False
 
     @staticmethod
-    def kill_game_process() -> bool:
-        """Force kill Elden Ring process."""
+    def kill_game_process(process_name: str = "eldenring.exe") -> bool:
+        """Force kill the given game process."""
         try:
             if PlatformUtils.is_windows():
                 subprocess.run(
-                    ["taskkill", "/F", "/IM", "eldenring.exe"],
+                    ["taskkill", "/F", "/IM", process_name],
                     creationflags=subprocess.CREATE_NO_WINDOW,
                     check=True,
                 )
                 return True
             elif PlatformUtils.is_linux():
                 subprocess.run(
-                    ["pkill", "-9", "-f", "eldenring.exe"],
+                    ["pkill", "-9", "-f", process_name],
                     check=True,
                 )
                 return True
