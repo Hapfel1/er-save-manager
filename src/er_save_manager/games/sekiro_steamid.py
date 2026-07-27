@@ -95,7 +95,9 @@ def patch_steamid_sekiro(save_path: Path, new_steam64: int) -> tuple[bool, str]:
     )
     data[_SETTINGS_CHECKSUM : _SETTINGS_CHECKSUM + 16] = new_settings_checksum
 
-    save_path.write_bytes(bytes(data))
+    tmp_path = save_path.with_suffix(save_path.suffix + ".tmp")
+    tmp_path.write_bytes(bytes(data))
+    tmp_path.replace(save_path)
     return True, (
         f"Patched {slots_patched} save slot(s) + settings block\n"
         f"Old SteamID: {old_steam64}\n"
