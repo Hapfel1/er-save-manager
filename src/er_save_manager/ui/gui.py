@@ -935,6 +935,20 @@ class SaveManagerGUI:
             )
             self.ds3_editor_tab.setup_ui()
 
+            from er_save_manager.games.DS3.character_management_tab import (
+                DS3CharacterManagementTab,
+            )
+
+            self.notebook.add("Character Management")
+            self.ds3_char_mgmt_tab = DS3CharacterManagementTab(
+                self.notebook.tab("Character Management"),
+                get_save=lambda: self.ds3_save,
+                get_save_path=lambda: self.save_path,
+                reload_callback=self.load_save,
+                show_toast=self.show_toast,
+            )
+            self.ds3_char_mgmt_tab.setup_ui()
+
             self.notebook.add("Inventory")
             self.ds3_inventory_tab = DS3InventoryTab(
                 self.notebook.tab("Inventory"),
@@ -1025,6 +1039,20 @@ class SaveManagerGUI:
             )
             self.dsr_editor_tab.setup_ui()
 
+            from er_save_manager.games.DSR.character_management_tab import (
+                DSRCharacterManagementTab,
+            )
+
+            self.notebook.add("Character Management")
+            self.dsr_char_mgmt_tab = DSRCharacterManagementTab(
+                self.notebook.tab("Character Management"),
+                get_dsr_save=lambda: self.dsr_save,
+                get_save_path=lambda: self.save_path,
+                reload_callback=self.load_save,
+                show_toast=self.show_toast,
+            )
+            self.dsr_char_mgmt_tab.setup_ui()
+
             self.notebook.add("Inventory")
             self.dsr_inventory_tab = DSRInventoryTab(
                 self.notebook.tab("Inventory"),
@@ -1096,6 +1124,20 @@ class SaveManagerGUI:
             self.show_toast,
         )
         self.nr_editor_tab.setup_ui()
+
+        from er_save_manager.games.NR.character_management_tab import (
+            NRCharacterManagementTab,
+        )
+
+        self.notebook.add("Character Management")
+        self.nr_char_mgmt_tab = NRCharacterManagementTab(
+            self.notebook.tab("Character Management"),
+            get_nr_save=lambda: self._nr_save,
+            get_save_path=lambda: self.save_path,
+            reload_callback=self.reload_save,
+            show_toast=self.show_toast,
+        )
+        self.nr_char_mgmt_tab.setup_ui()
 
         self.notebook.add("SteamID Patcher")
         self.nr_steamid_tab = SteamIDPatcherTab(
@@ -1764,6 +1806,13 @@ class SaveManagerGUI:
             elif tab_name == "SteamID Patcher":
                 if hasattr(self.steamid_tab, "update_steamid_display"):
                     self.steamid_tab.update_steamid_display()
+            elif tab_name == "Character Management":
+                if hasattr(self, "ds3_char_mgmt_tab") and self.ds3_char_mgmt_tab:
+                    self.ds3_char_mgmt_tab.refresh()
+                if hasattr(self, "dsr_char_mgmt_tab") and self.dsr_char_mgmt_tab:
+                    self.dsr_char_mgmt_tab.refresh()
+                if hasattr(self, "nr_char_mgmt_tab") and self.nr_char_mgmt_tab:
+                    self.nr_char_mgmt_tab.refresh()
             elif tab_name == "Hex Editor":
                 if self.save_file:
                     try:
@@ -2017,6 +2066,7 @@ class SaveManagerGUI:
             "dsr_npc_tab",
             "dsr_flags_tab",
             "dsr_world_tab",
+            "dsr_char_mgmt_tab",
         ):
             tab = getattr(self, attr, None)
             if tab is not None:
@@ -2069,6 +2119,7 @@ class SaveManagerGUI:
             "ds3_inventory_tab",
             "ds3_bosses_tab",
             "ds3_world_tab",
+            "ds3_char_mgmt_tab",
         ):
             tab = getattr(self, attr, None)
             if tab is not None:
@@ -2109,7 +2160,7 @@ class SaveManagerGUI:
         self.save_path = Path(save_path)
         self.save_file = None
 
-        for attr in ("nr_inspector_tab", "nr_editor_tab"):
+        for attr in ("nr_inspector_tab", "nr_editor_tab", "nr_char_mgmt_tab"):
             tab = getattr(self, attr, None)
             if tab is not None:
                 tab.refresh()

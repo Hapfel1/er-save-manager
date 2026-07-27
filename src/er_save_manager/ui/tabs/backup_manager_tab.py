@@ -488,12 +488,11 @@ class BackupManagerTab:
                 )
                 return
 
-            # For non-ER games the save is not loaded in the editor, just file-copy
-            is_er_loaded = (
-                profile.key == "elden_ring"
-                and self.get_save_file() is not None
-                and str(self.get_save_path()) == str(save_path)
-            )
+            # get_save_file() only ever reflects the Elden Ring save object;
+            # DSR/DS3/NR keep their loaded save in separate attributes, so the
+            # path match alone is what tells us the restored file is the one
+            # currently open in the editor, regardless of game.
+            is_loaded_here = str(self.get_save_path()) == str(save_path)
 
             if not CTkMessageBox.askyesno(
                 "Confirm Restore",
@@ -510,7 +509,7 @@ class BackupManagerTab:
                 )
                 return
 
-            if is_er_loaded and self.reload_save:
+            if is_loaded_here and self.reload_save:
                 try:
                     self.reload_save()
                 except Exception as e:
