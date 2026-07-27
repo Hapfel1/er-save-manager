@@ -573,12 +573,13 @@ class NightreignSlot:
     )  # abs offsets of empty preset slots
 
     def is_empty(self) -> bool:
-        """Slot has no character data (all item states empty)."""
-        return (
-            not any(t != 0 for t, _, _ in self.item_states[:10])
-            if self.item_states
-            else True
-        )
+        """Slot has no character data.
+
+        Item state slots 0-83 are reserved/system slots and are always zero,
+        even for a used character, so occupancy must be read from the player
+        name and item entry count instead.
+        """
+        return not self.player_name and self.entry_count == 0
 
     @property
     def player_name(self) -> str:
