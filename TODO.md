@@ -1,3 +1,11 @@
+fix icons for remnants
+
+fix storage and amount and upgr level not getting respected when batch adding visual item picker instead of inventory editor
+
+check is game running check for other games
+
+character ops for other games, ds3, ds2
+
 ds3 gestures
 
 atomic save file writing for other games as well
