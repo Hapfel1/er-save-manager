@@ -178,7 +178,9 @@ def patch_steamid_ac6(save_path: Path, new_steamid: int) -> tuple[bool, str]:
             "No 'Steam' section found in any entry. File may not be a valid AC6 save.",
         )
 
-    save_path.write_bytes(bytes(raw))
+    tmp_path = save_path.with_suffix(save_path.suffix + ".tmp")
+    tmp_path.write_bytes(bytes(raw))
+    tmp_path.replace(save_path)
     return True, (
         f"Patched {entries_patched} entry/entries\n"
         f"Old SteamID: {old_steamid}\n"

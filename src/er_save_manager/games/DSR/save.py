@@ -1213,7 +1213,10 @@ class DSRSave:
             new_iv = _md5(ciphertext)
             raw[off : off + 16] = new_iv
             raw[off + 16 : off + 16 + SLOT_DATA_SIZE] = ciphertext
-        Path(path).write_bytes(raw)
+        target = Path(path)
+        tmp_path = target.with_suffix(target.suffix + ".tmp")
+        tmp_path.write_bytes(raw)
+        tmp_path.replace(target)
 
     def verify_checksums(self) -> list[tuple[int, bool]]:
         """

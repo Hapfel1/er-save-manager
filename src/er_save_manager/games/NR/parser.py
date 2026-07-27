@@ -1005,7 +1005,10 @@ class NightreignSave:
         for entry in self.entries:
             enc = entry.patch_and_encrypt()
             out[entry.data_offset : entry.data_offset + entry.size] = enc
-        Path(path).write_bytes(out)
+        target = Path(path)
+        tmp_path = target.with_suffix(target.suffix + ".tmp")
+        tmp_path.write_bytes(out)
+        tmp_path.replace(target)
 
     def get_active_slots(self) -> list[NightreignSlot]:
         """Return only slots that contain a character."""

@@ -157,7 +157,9 @@ def patch_steamid(save_path: Path, new_steam64: int, game_key: str) -> tuple[boo
             "No Steam64 ID found in any entry. The save file may be empty or use an unexpected format.",
         )
 
-    save_path.write_bytes(bytes(raw))
+    tmp_path = save_path.with_suffix(save_path.suffix + ".tmp")
+    tmp_path.write_bytes(bytes(raw))
+    tmp_path.replace(save_path)
     return True, (
         f"Patched {total_replacements} occurrence(s) across {entries_patched} entry/entries\n"
         f"Old SteamID: {old_steam64}\n"
