@@ -421,7 +421,7 @@ class CorruptionDetector:
             pre_giant = not used_giants_forge and not defeated_maliketh
             if not pre_giant:
                 return False
-            return not burning and not falling_sparks and not small_flame
+            return not (not burning and not falling_sparks and not small_flame)
         except ValueError:
             return False
 
@@ -451,7 +451,7 @@ class CorruptionDetector:
             pre_maliketh = used_giants_forge and not defeated_maliketh
             if not pre_maliketh:
                 return False
-            return not burning and not falling_sparks and small_flame
+            return not (not burning and not falling_sparks and small_flame)
         except ValueError:
             return False
 
@@ -481,7 +481,7 @@ class CorruptionDetector:
             post_maliketh = used_giants_forge and defeated_maliketh
             if not post_maliketh:
                 return False
-            return burning and falling_sparks and not small_flame
+            return not (burning and falling_sparks and not small_flame)
         except ValueError:
             return False
 
