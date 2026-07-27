@@ -265,6 +265,13 @@ class FixFlags:
     GOLEM_DESTROYED = 2050460300  # Fails to be set in Seamless sometimes
     GOLEM_DEFEATED = 2250460309
 
+    # Erdtree flags
+    WORLD_TREE_BURNING = 300
+    WORLD_TREE_SPARKS = 301
+    WORLD_TREE_SMALL_FLAME = 302
+    DEFEATED_MALIKETH = 9116
+    USED_CAULDRON = 110
+
 
 class CorruptionDetector:
     """Detect quest soft-locks and warp sickness issues."""
@@ -387,6 +394,97 @@ class CorruptionDetector:
         except ValueError:
             return False
 
+    @staticmethod
+    def check_erdtree_pre_giant(event_flags: bytes) -> bool:
+        """
+        Detect if the Erdtree is in an invalid state, for
+        players who are pre-Fire Giant or have not used
+        the Giant's Cauldron
+
+        Condition(Valid): !EventFlag(110) && !EventFlag(9116) && !EventFlag(300) && !EventFlag(301) && !EventFlag(302)
+        Early-outs if the progression flags are detected
+        to be AFTER the giant's cauldron.
+        """
+        try:
+            burning = EventFlags.get_flag(event_flags, FixFlags.WORLD_TREE_BURNING)
+            falling_sparks = EventFlags.get_flag(
+                event_flags, FixFlags.WORLD_TREE_SPARKS
+            )
+            small_flame = EventFlags.get_flag(
+                event_flags, FixFlags.WORLD_TREE_SMALL_FLAME
+            )
+            defeated_maliketh = EventFlags.get_flag(
+                event_flags, FixFlags.DEFEATED_MALIKETH
+            )
+            used_giants_forge = EventFlags.get_flag(event_flags, FixFlags.USED_CAULDRON)
+
+            pre_giant = not used_giants_forge and not defeated_maliketh
+            if not pre_giant:
+                return False
+            return not burning and not falling_sparks and not small_flame
+        except ValueError:
+            return False
+
+    @staticmethod
+    def check_erdtree_pre_maliketh(event_flags: bytes) -> bool:
+        """
+        Detect if the Erdtree is in an invalid state, for
+        players who are post-Fire Giant but pre-Maliketh
+
+        Condition(Valid): EventFlag(110) && !EventFlag(9116) && !EventFlag(300) && !EventFlag(301) && EventFlag(302)
+        Early-outs if the progression flags are detected
+        to be BEFORE the giant's cauldron, or AFTER Maliketh
+        """
+        try:
+            burning = EventFlags.get_flag(event_flags, FixFlags.WORLD_TREE_BURNING)
+            falling_sparks = EventFlags.get_flag(
+                event_flags, FixFlags.WORLD_TREE_SPARKS
+            )
+            small_flame = EventFlags.get_flag(
+                event_flags, FixFlags.WORLD_TREE_SMALL_FLAME
+            )
+            defeated_maliketh = EventFlags.get_flag(
+                event_flags, FixFlags.DEFEATED_MALIKETH
+            )
+            used_giants_forge = EventFlags.get_flag(event_flags, FixFlags.USED_CAULDRON)
+
+            pre_maliketh = used_giants_forge and not defeated_maliketh
+            if not pre_maliketh:
+                return False
+            return not burning and not falling_sparks and small_flame
+        except ValueError:
+            return False
+
+    @staticmethod
+    def check_erdtree_post_maliketh(event_flags: bytes) -> bool:
+        """
+        Detect if the Erdtree is in an invalid state, for
+        players who are post-Maliketh
+
+        Condition(Valid): EventFlag(110) && EventFlag(9116) && EventFlag(300) && EventFlag(301) && !EventFlag(302)
+        Early-outs if the progression flags are detected
+        to be BEFORE Maliketh
+        """
+        try:
+            burning = EventFlags.get_flag(event_flags, FixFlags.WORLD_TREE_BURNING)
+            falling_sparks = EventFlags.get_flag(
+                event_flags, FixFlags.WORLD_TREE_SPARKS
+            )
+            small_flame = EventFlags.get_flag(
+                event_flags, FixFlags.WORLD_TREE_SMALL_FLAME
+            )
+            defeated_maliketh = EventFlags.get_flag(
+                event_flags, FixFlags.DEFEATED_MALIKETH
+            )
+            used_giants_forge = EventFlags.get_flag(event_flags, FixFlags.USED_CAULDRON)
+
+            post_maliketh = used_giants_forge and defeated_maliketh
+            if not post_maliketh:
+                return False
+            return burning and falling_sparks and not small_flame
+        except ValueError:
+            return False
+
     @classmethod
     def detect_all(cls, event_flags: bytes) -> list[str]:
         """
@@ -413,7 +511,12 @@ class CorruptionDetector:
             issues.append("romina_missing")
         if cls.check_unte_golem(event_flags):
             issues.append("unte_golem_stuck")
-
+        if cls.check_erdtree_pre_giant(event_flags):
+            issues.append("erdtree_pre_giant")
+        if cls.check_erdtree_pre_maliketh(event_flags):
+            issues.append("erdtree_pre_maliketh")
+        if cls.check_erdtree_post_maliketh(event_flags):
+            issues.append("erdtree_post_maliketh")
         return issues
 
 
@@ -543,6 +646,54 @@ class CorruptionFixer:
         except Exception:
             return False
 
+    @staticmethod
+    def fix_erdtree_pre_giant(event_flags: bytearray) -> bool:
+        """
+        Fix Erdtree state prior to Fire Giant
+
+        Un-burns the Erdtree, which will correct Leyndell
+        map connection and fix any invalid appearance
+        """
+        try:
+            EventFlags.set_flag(event_flags, FixFlags.WORLD_TREE_BURNING, False)
+            EventFlags.set_flag(event_flags, FixFlags.WORLD_TREE_SPARKS, False)
+            EventFlags.set_flag(event_flags, FixFlags.WORLD_TREE_SMALL_FLAME, False)
+            return True
+        except Exception:
+            return False
+
+    @staticmethod
+    def fix_erdtree_pre_maliketh(event_flags: bytearray) -> bool:
+        """
+        Fix Erdtree state post-Fire Giant, pre-Maliketh
+
+        Slightly burns the Erdtree, which will correct Leyndell
+        map connection and fix any invalid appearance
+        """
+        try:
+            EventFlags.set_flag(event_flags, FixFlags.WORLD_TREE_BURNING, False)
+            EventFlags.set_flag(event_flags, FixFlags.WORLD_TREE_SPARKS, False)
+            EventFlags.set_flag(event_flags, FixFlags.WORLD_TREE_SMALL_FLAME, True)
+            return True
+        except Exception:
+            return False
+
+    @staticmethod
+    def fix_erdtree_post_maliketh(event_flags: bytearray) -> bool:
+        """
+        Fix Erdtree state post-Maliketh
+
+        Burns the Erdtree, which will correct Leyndell
+        map connection and fix any invalid appearance
+        """
+        try:
+            EventFlags.set_flag(event_flags, FixFlags.WORLD_TREE_BURNING, True)
+            EventFlags.set_flag(event_flags, FixFlags.WORLD_TREE_SPARKS, True)
+            EventFlags.set_flag(event_flags, FixFlags.WORLD_TREE_SMALL_FLAME, False)
+            return True
+        except Exception:
+            return False
+
     @classmethod
     def fix_all(
         cls, event_flags: bytearray, issues: list[str]
@@ -575,6 +726,18 @@ class CorruptionFixer:
             ),
             "romina_missing": (cls.fix_romina_missing, "Missing Romina fixed"),
             "unte_golem_stuck": (cls.fix_unte_golem, "Stuck Unte golem removed"),
+            "erdtree_pre_giant": (
+                cls.fix_erdtree_pre_giant,
+                "Invalid Erdtree state fixed (pre-Fire Giant)",
+            ),
+            "erdtree_pre_maliketh": (
+                cls.fix_erdtree_pre_maliketh,
+                "Invalid Erdtree state fixed (pre-Maliketh)",
+            ),
+            "erdtree_post_maliketh": (
+                cls.fix_erdtree_post_maliketh,
+                "Invalid Erdtree state fixed (post-Maliketh)",
+            ),
         }
 
         fixes_applied = 0
