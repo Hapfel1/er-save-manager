@@ -301,7 +301,7 @@ class SaveManagerGUI:
         if not result:
             return False
 
-        if not PlatformUtils.kill_game_process():
+        if not PlatformUtils.kill_game_process(process_name):
             CTkMessageBox.showerror(
                 "Error",
                 f"Failed to terminate {game_name} process.\n\n"
