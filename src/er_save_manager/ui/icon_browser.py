@@ -803,4 +803,8 @@ class IconBrowser(ctk.CTkToplevel):
             editor.parent = orig_parent
 
     def _batch_add_category(self):
-        self._editor.batch_add_category(self._current_cat, parent_window=self)
+        editor = self._editor
+        editor.inv_quantity_var.set(self._qty_var.get())
+        editor.inv_upgrade_var.set(self._upgrade_var.get())
+        editor.inv_location_var.set(self._location_var.get())
+        editor.batch_add_category(self._current_cat, parent_window=self)
