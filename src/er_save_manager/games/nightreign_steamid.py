@@ -196,7 +196,9 @@ def patch_steamid_nr(
         re_enc = _encrypt_entry(entry.iv, entry.decrypted)
         raw[entry.data_offset : entry.data_offset + entry.size] = re_enc
 
-    save_path.write_bytes(bytes(raw))
+    tmp_path = save_path.with_suffix(save_path.suffix + ".tmp")
+    tmp_path.write_bytes(bytes(raw))
+    tmp_path.replace(save_path)
     return (
         True,
         f"Patched entry 10 + {total_replacements} occurrence(s) in character slots. Old: {old_steamid}  New: {new_steamid}",
