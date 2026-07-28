@@ -5,7 +5,6 @@ Left: current inventory (standard item types only; DS3-internal entries are hidd
 Right: item spawner with category filter, search, mod toggles (Vanilla / Cinders / Convergence).
 
 Weapons and armor use INSERT+TRIM (slot.py). Goods and rings write directly.
-All mutations backup then save immediately.
 """
 
 from __future__ import annotations
@@ -162,7 +161,7 @@ class DS3InventoryTab:
         self._all_items: list[tuple] = []
         self._sort_col: str | None = None
         self._sort_asc = True
-        # Mod toggles - when checked, per-mod category options appear in the dropdown
+        # Mod toggles, when checked, per-mod category options appear in the dropdown
         self._mod_cinders = tk.BooleanVar(value=False)
         self._mod_convergence = tk.BooleanVar(value=False)
 

@@ -8,23 +8,6 @@ Somber weapons must be mapped to their standard equivalent before storing:
 
 The floor is the highest mapped upgrade level found across all weapons in
 held and storage inventory. The stored value may not be set lower than this.
-
-Weapon gaitem_handle prefix: 0x80000000
-Somber detection: materialSetId == 2200 in params, but we detect via
-  upgrade range: item_id % 100 <= 10 with the weapon having a known somber
-  base ID. Since we don't have params at runtime, we use the heuristic that
-  any weapon whose item_id % 100 is in 1-10 AND whose base_id is in the somber
-  set is somber - but that requires DB access.
-
-Simpler runtime approach: map upgrade=N using the somber table if N <= 10,
-otherwise treat as standard. This is safe because standard upgrades in the
-1-10 range always map to themselves on the standard scale anyway (standard +5
-= mm level 5, somber +5 = mm level 12). We must use the higher of the two
-interpretations to avoid under-reporting, so we use the somber mapping for
-any weapon with upgrade <= 10 whose somber-mapped value > raw value.
-
-Actually the correct approach: check the gaitem's item_id base against the
-item database to get reinforcement type.
 """
 
 from __future__ import annotations

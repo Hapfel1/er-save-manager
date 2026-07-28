@@ -24,31 +24,30 @@ class TeleportLocation:
     is_dlc: bool = False
 
 
-# Safe teleport locations
 TELEPORT_LOCATIONS = {
     "limgrave": TeleportLocation(
         name="limgrave",
         display_name="Limgrave - First Step",
-        map_id=MapId(bytes([0, 36, 42, 60])),  # 60 42 36 00
+        map_id=MapId(bytes([0, 36, 42, 60])),
         is_dlc=False,
     ),
     "roundtable": TeleportLocation(
         name="roundtable",
         display_name="Roundtable Hold",
-        map_id=MapId(bytes([0, 0, 10, 11])),  # 11 10 00 00
+        map_id=MapId(bytes([0, 0, 10, 11])),
         coordinates=(-331.0, -22.0, -305.8),
         is_dlc=False,
     ),
     "liurnia": TeleportLocation(
         name="liurnia",
         display_name="Liurnia - Lake-Facing Cliffs",
-        map_id=MapId(bytes([0, 37, 44, 60])),  # 60 44 37 00
+        map_id=MapId(bytes([0, 37, 44, 60])),
         is_dlc=False,
     ),
     "altus": TeleportLocation(
         name="altus",
         display_name="Altus Plateau - Erdtree-Gazing Hill",
-        map_id=MapId(bytes([0, 38, 46, 60])),  # 60 46 38 00
+        map_id=MapId(bytes([0, 38, 46, 60])),
         is_dlc=False,
     ),
 }
@@ -145,7 +144,6 @@ class TeleportFix(BaseFix):
             except (AttributeError, TypeError) as e:
                 details.append(f"Note: Could not set coordinates ({e})")
 
-        # Rebuild slot to persist all changes to raw data
         try:
             rebuilt_data = rebuild_slot(slot)
             slot_data_offset = slot.data_start
@@ -153,7 +151,6 @@ class TeleportFix(BaseFix):
                 rebuilt_data
             )
 
-            # Recalculate checksums
             try:
                 save.recalculate_checksums()
             except Exception:

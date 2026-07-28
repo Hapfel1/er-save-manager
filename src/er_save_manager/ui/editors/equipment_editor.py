@@ -5,12 +5,6 @@ Pickers only ever list items the character actually owns (resolved from
 gaitem_map for weapons/armor, from held inventory direct handles for
 talismans/spells/physick tears/quick items/pouch). This is the validation
 mechanism: whatever is selectable is guaranteed equippable.
-
-Armor gaitem_map.item_id encoding note: inventory_ops.py's _find_gaitem_by_item
-compares it against a full_item_id (category bit included) while this module's
-_resolve_name has always expected a bare base id. Lookups here mask the value
-before OR-ing the category bit back in, and storage always uses the masked
-base id, so either encoding resolves correctly.
 """
 
 from __future__ import annotations

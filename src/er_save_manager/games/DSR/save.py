@@ -306,7 +306,7 @@ def calc_level_from_stats(
     return base_level + (current_sum - base_sum)
 
 
-# VIT -> max HP lookup (game does not recalculate on load; must be set manually)
+# VIT -> max HP lookup
 VIT_TO_HP: dict[int, int] = {
     1: 400,
     2: 415,
@@ -1171,6 +1171,7 @@ class DSRSave:
 
     _raw: bytearray = field(default_factory=bytearray, repr=False)
     characters: list[DSRCharacter | None] = field(default_factory=list)
+    system_data: bytearray = field(default_factory=bytearray, repr=False)
 
     @classmethod
     def from_file(cls, path: str | Path) -> DSRSave:
@@ -1195,6 +1196,11 @@ class DSRSave:
             char = DSRCharacter(slot_index=i, _data=bytearray(plaintext))
             self.characters.append(char if not char.is_empty else None)
 
+        sys_off = SLOTS_OFFSET + 10 * SLOT_SIZE
+        sys_iv = bytes(self._raw[sys_off : sys_off + 16])
+        sys_ciphertext = bytes(self._raw[sys_off + 16 : sys_off + 16 + SLOT_DATA_SIZE])
+        self.system_data = bytearray(_decrypt(sys_iv, sys_ciphertext))
+
     def get_character(self, slot: int) -> DSRCharacter | None:
         """Return the character in slot 0-9, or None if empty."""
         if not 0 <= slot < CHARACTER_SLOTS:
@@ -1213,6 +1219,14 @@ class DSRSave:
             new_iv = _md5(ciphertext)
             raw[off : off + 16] = new_iv
             raw[off + 16 : off + 16 + SLOT_DATA_SIZE] = ciphertext
+
+        sys_off = SLOTS_OFFSET + 10 * SLOT_SIZE
+        sys_iv = bytes(raw[sys_off : sys_off + 16])
+        sys_ciphertext = _encrypt(sys_iv, bytes(self.system_data))
+        sys_new_iv = _md5(sys_ciphertext)
+        raw[sys_off : sys_off + 16] = sys_new_iv
+        raw[sys_off + 16 : sys_off + 16 + SLOT_DATA_SIZE] = sys_ciphertext
+
         target = Path(path)
         tmp_path = target.with_suffix(target.suffix + ".tmp")
         tmp_path.write_bytes(raw)

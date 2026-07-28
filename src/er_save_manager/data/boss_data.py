@@ -1,5 +1,5 @@
 """
-Boss respawn data - 208 bosses extracted from CEA script
+Boss respawn data: 208 bosses extracted from TGA CEA script
 All boss defeat flags for respawn functionality
 Duplicate bosses have location appended to name
 """
