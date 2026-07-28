@@ -8,12 +8,11 @@ from __future__ import annotations
 
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog
 
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
 from . import character_ops
 from .save import CHARACTER_SLOTS, DSRSave
@@ -490,8 +489,9 @@ class DSRCharacterManagementTab:
             return
 
         default_name = f"{char.name or f'Character_{slot + 1}'}.dsrc"
-        output_path = filedialog.asksaveasfilename(
+        output_path = pick_file(
             title="Export Character",
+            save=True,
             defaultextension=".dsrc",
             initialfile=default_name,
             filetypes=[("DSR Character", "*.dsrc"), ("All files", "*.*")],
@@ -519,7 +519,7 @@ class DSRCharacterManagementTab:
             )
             return
 
-        import_path = filedialog.askopenfilename(
+        import_path = pick_file(
             title="Import Character",
             filetypes=[("DSR Character", "*.dsrc"), ("All files", "*.*")],
         )
@@ -580,7 +580,7 @@ class DSRCharacterManagementTab:
             return
 
         current_path = self._get_save_path()
-        target_path = filedialog.askopenfilename(
+        target_path = pick_file(
             title="Select target save file",
             initialdir=str(Path(current_path).parent) if current_path else None,
             filetypes=[("DSR save files", "*.sl2"), ("All files", "*.*")],
