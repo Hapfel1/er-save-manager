@@ -263,11 +263,11 @@ _ITEM_EVENT_FLAGS: dict[int, list[int]] = {
     # Whetstone Knife
     8590: [60130],
     # Whetblades
-    8970: [65610],
-    8971: [65640],
-    8972: [65660],
-    8973: [65680],
-    8974: [65700],
+    8970: [65610, 65620, 65630],  # Iron: Heavy, Keen, Quality
+    8971: [65640, 65650],  # Red-Hot: Fire, Flame Art
+    8972: [65660, 65670],  # Sanctified: Lightning, Sacred
+    8973: [65680, 65690],  # Glintstone: Magic, Frost
+    8974: [65700, 65710, 65720],  # Black: Poison, Blood, Occult
     # Misc single-pickup key items
     1051: [60010],  # Flask of Cerulean Tears
     251: [60020],  # Flask of Wondrous Physick
