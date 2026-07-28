@@ -370,8 +370,10 @@ class DS3CharacterManagementTab:
             if self._reload:
                 self._reload()
             self._show_toast(
-                f"Character '{from_char.name}' copied to Slot {to_slot + 1}!",
-                duration=2500,
+                f"Character '{from_char.name}' copied to Slot {to_slot + 1}! "
+                "In-game, this slot may still show the old character until "
+                "you load it once.",
+                duration=4500,
             )
         except Exception as e:
             CTkMessageBox.showerror(
@@ -632,7 +634,10 @@ class DS3CharacterManagementTab:
             if self._reload:
                 self._reload()
             self._show_toast(
-                f"Character transferred to target Slot {to_slot + 1}!", duration=2500
+                f"Character transferred to target Slot {to_slot + 1}! "
+                "In-game, this slot may still show the old character until "
+                "you load it once.",
+                duration=4500,
             )
         except Exception as e:
             CTkMessageBox.showerror(
