@@ -871,8 +871,8 @@ class FacePreset:
         """
         preset = cls()
 
-        # CRITICAL: Restore unknown fields from JSON or use safe defaults
-        # These fields contain essential face data that must be preserved!
+        # Restore unknown fields from JSON or use safe defaults
+        # These fields contain essential face data that must be preserved
         preset.unk0x00 = bytes(data.get("_unk0x00", [0] * 20))
         preset.face_data_marker = data.get("_face_data_marker", 32767)
 

@@ -1,7 +1,6 @@
 """
-Event Flags Database for Elden Ring - MERGED
+Merged Event Flags Database for Elden Ring
 Combined from Cheat Engine script (Dasaav/Umgak) and community documentation
-Total flags: 1295
 """
 
 EVENT_FLAGS = {

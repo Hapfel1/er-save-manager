@@ -70,8 +70,6 @@ class GameProcessMonitor:
             "nightreign": {"enabled": true, "save_path": "/path/to/NR0000.sl2"},
             ...
         }
-
-    One backup per game launch event.
     """
 
     CHECK_INTERVAL = 5.0  # seconds
@@ -238,7 +236,6 @@ def show_auto_backup_first_run_dialog(
         chosen_path = None
 
         if len(found_paths) == 1:
-            # One save found - confirm with user
             use_found = CTkMessageBox.askyesno(
                 "Save File Found",
                 f"Found save file:\n\n{found_paths[0]}\n\n"
@@ -249,7 +246,6 @@ def show_auto_backup_first_run_dialog(
                 chosen_path = str(found_paths[0])
 
         elif len(found_paths) > 1:
-            # Multiple - show a quick picker dialog
             import tkinter as tk
 
             import customtkinter as ctk
