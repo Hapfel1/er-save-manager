@@ -116,23 +116,15 @@ class DS2EditorTab:
         ctk.CTkEntry(stats_frame, textvariable=self.level_var, width=140).grid(
             row=1, column=1, sticky="w", padx=5, pady=3
         )
-        self.level_status_label = ctk.CTkLabel(
-            stats_frame, text="", font=("Segoe UI", 10)
-        )
-        self.level_status_label.grid(
-            row=1, column=2, columnspan=4, sticky="w", padx=5, pady=3
-        )
+        self.level_status_label = ctk.CTkLabel(stats_frame, text="", font=("Segoe UI", 10))
+        self.level_status_label.grid(row=1, column=2, columnspan=4, sticky="w", padx=5, pady=3)
 
         for i, stat_name in enumerate(LEVEL_STAT_KEYS):
             var = tk.StringVar()
             var.trace_add("write", lambda *_: self._recalc_level())
             self._stat_vars[stat_name] = var
             self._add_field(
-                stats_frame,
-                stat_name.capitalize(),
-                var,
-                row=2 + i // 3,
-                col=(i % 3) * 2,
+                stats_frame, stat_name.capitalize(), var, row=2 + i // 3, col=(i % 3) * 2
             )
 
         ctk.CTkButton(
@@ -309,6 +301,8 @@ class DS2EditorTab:
             self.show_toast("No save path to write to", duration=2000)
             return
 
+        self._backup(save_path, f"before_stats_edit_slot_{self._slot_index}", "edit_stats")
+
         try:
             save.save_to_file(save_path)
         except Exception as e:
@@ -317,3 +311,16 @@ class DS2EditorTab:
 
         self.refresh()
         self.show_toast("Changes saved to disk", duration=2500)
+
+    def _backup(self, save_path, description: str, operation: str) -> None:
+        if not save_path:
+            return
+        try:
+            from er_save_manager.backup.manager import BackupManager
+            from pathlib import Path
+
+            BackupManager(Path(save_path)).create_backup(
+                description=description, operation=operation
+            )
+        except Exception:
+            pass

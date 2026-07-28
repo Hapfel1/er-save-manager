@@ -28,10 +28,11 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **Invasion Regions & Game Settings**: View and edit invasion regions and game settings
 - **Backup Manager**: Automatic and manual backups with restore functionality
 - **Troubleshooting**: Troubleshooter for checking game launch/connection related issues
-- **Backup Manager and SteamID Patcher for**: Elden Ring, Elden Ring Nightreign, Armored Core 6, Sekiro, Dark Souls III, Dark Souls II SotfS, Dark Souls Remastered
-- **DSR**: Stats Editing, Event Flags, Boss Revival, NPC Revival, Item Spawning
-- **DS3**: Stats Editing, Boss Revival, Item Spawning, World State Editing, Supports Convergence and Cinders Mod
-- **Nightreign**: Relic spawning and editing, editing Murk
+- **Backup Manager and SteamID Patcher for**: Elden Ring, Elden Ring Nightreign, Armored Core 6, Sekiro, Dark Souls III, Dark Souls Remastered
+- **DSR**: Stats Editing, Character Management, Event Flags, Boss Revival, NPC Revival, Item Spawning
+- **DS3**: Stats Editing, Character Management, Boss Revival, Item Spawning, World State Editing, Supports Convergence and Cinders Mod
+- **Nightreign**: Relic spawning and editing, Editing Murk, Character Management
+- **DS2**: Stats Editing, Item Spawning, Character Management
 
 ### Work in Progress
 
@@ -214,6 +215,7 @@ Automatically detects issues with your game installation, your save file and any
 ### DSR
 
 - Stats Editing
+- Character Management
 - Event Flags
 - Boss Revival
 - NPC Revival
@@ -222,6 +224,7 @@ Automatically detects issues with your game installation, your save file and any
 ### DS3
 
 - Stats Editing
+- Character Management
 - Boss Revival
 - Item Spawning (Supports Cinders and Convergence)
 - World State Editing
@@ -230,6 +233,13 @@ Automatically detects issues with your game installation, your save file and any
 
 - Relic spawning and editing
 - Editing Murk
+- Character Management
+
+### DS2
+
+- Stats Editing
+- Item Spawning
+- Character Management
 
 ## Building from Source
 
