@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import hashlib
 import struct
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -172,19 +173,19 @@ class DS2CharacterOperations:
         profile_data = bytes(character.raw())
         big_data = bytes(save.container.get_entry(BIG_ENTRY_START + slot_index))
 
-        with open(output_path, "wb") as f:
-            f.write(_EXPORT_MAGIC)
-            f.write(struct.pack("<I", _EXPORT_VERSION))
-            f.write(struct.pack("<I", len(profile_data)))
-            f.write(profile_data)
-            f.write(struct.pack("<I", len(big_data)))
-            f.write(big_data)
+        buffer = bytearray()
+        buffer += _EXPORT_MAGIC
+        buffer += struct.pack("<I", _EXPORT_VERSION)
+        buffer += struct.pack("<I", len(profile_data))
+        buffer += profile_data
+        buffer += struct.pack("<I", len(big_data))
+        buffer += big_data
+        buffer += hashlib.md5(buffer).digest()
 
-        with open(output_path, "rb") as f:
-            checksum = hashlib.md5(f.read()).digest()
-
-        with open(output_path, "ab") as f:
-            f.write(checksum)
+        target = Path(output_path)
+        tmp_path = target.with_suffix(target.suffix + ".tmp")
+        tmp_path.write_bytes(bytes(buffer))
+        tmp_path.replace(target)
 
     @staticmethod
     def import_character(

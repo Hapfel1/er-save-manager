@@ -739,8 +739,6 @@ class SaveManagerGUI:
             "ds3_char_mgmt_tab",
             "ds2_inspector_tab",
             "ds2_editor_tab",
-            "ds2_inventory_tab",
-            "ds2_world_tab",
             "ds2_management_tab",
             "nr_inspector_tab",
             "nr_editor_tab",
@@ -1010,17 +1008,20 @@ class SaveManagerGUI:
             return
 
         if profile.key == "dark_souls_2":
-            # Bosses tab is not included: individual boss/quest flag IDs
-            # are not mapped yet (see save.py module docstring), so there
-            # is nothing concrete to check off yet. World State exposes
-            # the raw candidate flag region instead.
+            # Bosses/World State are not included: individual boss/quest
+            # flag IDs are not mapped yet (see save.py module docstring),
+            # and populating a raw byte browser for an unmapped ~38KB
+            # region was also a real performance cost on every load - it
+            # inserted thousands of rows into a Treeview. Removed rather
+            # than fixed, since there was nothing concrete to show yet.
+            # Inventory is a subtab inside Character Editor, not its own
+            # top-level tab, since it always edits whichever slot
+            # Character Editor has loaded.
             from er_save_manager.games.DS2.character_management_tab import (
                 DS2CharacterManagementTab,
             )
             from er_save_manager.games.DS2.editor_tab import DS2EditorTab
             from er_save_manager.games.DS2.inspector_tab import DS2InspectorTab
-            from er_save_manager.games.DS2.inventory_tab import DS2InventoryTab
-            from er_save_manager.games.DS2.world_state_tab import DS2WorldStateTab
 
             self.notebook.add("Save Inspector")
             self.ds2_inspector_tab = DS2InspectorTab(
@@ -1029,33 +1030,6 @@ class SaveManagerGUI:
                 on_slot_selected=self._on_ds2_slot_selected,
             )
             self.ds2_inspector_tab.setup_ui()
-
-            self.notebook.add("Character Editor")
-            self.ds2_editor_tab = DS2EditorTab(
-                self.notebook.tab("Character Editor"),
-                get_save=lambda: self.ds2_save,
-                get_save_path=lambda: self.save_path,
-                show_toast=self.show_toast,
-            )
-            self.ds2_editor_tab.setup_ui()
-
-            self.notebook.add("Inventory")
-            self.ds2_inventory_tab = DS2InventoryTab(
-                self.notebook.tab("Inventory"),
-                get_save=lambda: self.ds2_save,
-                get_save_path=lambda: self.save_path,
-                show_toast=self.show_toast,
-            )
-            self.ds2_inventory_tab.setup_ui()
-
-            self.notebook.add("World State")
-            self.ds2_world_tab = DS2WorldStateTab(
-                self.notebook.tab("World State"),
-                get_save=lambda: self.ds2_save,
-                get_save_path=lambda: self.save_path,
-                show_toast=self.show_toast,
-            )
-            self.ds2_world_tab.setup_ui()
 
             self.notebook.add("Character Management")
             self.ds2_management_tab = DS2CharacterManagementTab(
@@ -1067,6 +1041,15 @@ class SaveManagerGUI:
                 is_game_running=lambda: self.is_game_running(profile.process_name),
             )
             self.ds2_management_tab.setup_ui()
+
+            self.notebook.add("Character Editor")
+            self.ds2_editor_tab = DS2EditorTab(
+                self.notebook.tab("Character Editor"),
+                get_save=lambda: self.ds2_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.ds2_editor_tab.setup_ui()
 
             self.notebook.add("SteamID Patcher")
             self.steamid_tab = SteamIDPatcherTab(
@@ -1838,9 +1821,15 @@ class SaveManagerGUI:
             return
         if self.active_game == "dark_souls_2":
             try:
-                self.notebook.set("Inventory")
+                self.notebook.set("Character Editor")
             except Exception:
                 pass
+            tab = getattr(self, "ds2_editor_tab", None)
+            if tab is not None and hasattr(tab, "tabview"):
+                try:
+                    tab.tabview.set("Inventory")
+                except Exception:
+                    pass
             return
         # Elden Ring: Character Editor > Inventory sub-tab
         self.notebook.set("Character Editor")
@@ -2272,8 +2261,6 @@ class SaveManagerGUI:
         for attr in (
             "ds2_inspector_tab",
             "ds2_editor_tab",
-            "ds2_inventory_tab",
-            "ds2_world_tab",
             "ds2_management_tab",
         ):
             tab = getattr(self, attr, None)
@@ -2366,20 +2353,19 @@ class SaveManagerGUI:
 
     def _on_ds2_slot_selected(self, slot_idx: int) -> None:
         """Navigate to Character Editor and load the selected slot.
-        Called from the DS2 inspector row double-click.
+        Called from the DS2 inspector row double-click or Edit Character
+        button.
         """
         try:
             self.notebook.set("Character Editor")
         except Exception:
             pass
-        for attr in ("ds2_editor_tab", "ds2_inventory_tab", "ds2_world_tab"):
-            tab = getattr(self, attr, None)
-            if tab is not None:
-                try:
-                    tab.slot_var.set(str(slot_idx))
-                    tab.refresh()
-                except Exception:
-                    pass
+        tab = getattr(self, "ds2_editor_tab", None)
+        if tab is not None:
+            try:
+                tab.slot_var_set(slot_idx)
+            except Exception:
+                pass
 
     def _finalize_save_load(self, save_file, save_path, silent=False):
         """Finalize save loading on main thread"""

@@ -256,7 +256,12 @@ class SteamIDPatcherTab:
         save_path = Path(selected)
 
         try:
-            steamid = detect_steamid_in_file(save_path)
+            if profile.key == "dark_souls_2":
+                from er_save_manager.games.ds2_dsr_steamid import detect_steamid
+
+                steamid = detect_steamid(save_path, profile.key)
+            else:
+                steamid = detect_steamid_in_file(save_path)
         except Exception as e:
             _set(f"Save: {save_path.name}  |  Error: {e}")
             return
@@ -728,7 +733,14 @@ class SteamIDPatcherTab:
             if not steam_users:
                 save_paths = PlatformUtils.find_all_save_files(profile)
                 for save_path in save_paths:
-                    steamid = detect_steamid_in_file(save_path)
+                    if profile and profile.key == "dark_souls_2":
+                        from er_save_manager.games.ds2_dsr_steamid import (
+                            detect_steamid as detect_steamid_ds2,
+                        )
+
+                        steamid = detect_steamid_ds2(save_path, profile.key)
+                    else:
+                        steamid = detect_steamid_in_file(save_path)
                     if steamid and steamid not in {s for _, s in steam_users}:
                         label = f"Account {steamid} ({save_path.name})"
                         steam_users.append((label, steamid))
