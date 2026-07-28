@@ -237,7 +237,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md)
 
 ## License
 
-MIT License - see [LICENSE](LICENSE)
+Source Available License - see [LICENSE](LICENSE)
 
 ## Credits
 
