@@ -1,12 +1,5 @@
 """
 DSR NPCs & Bosses Tab
-
-NPCs section: 27 entries from npc_data.json, multi-bit alive detection.
-Bosses section: all 22 bosses from dsr_named_flags.json.
-  - 14 use global kill flags (IDs 2-17): fully editable.
-  - 8 use map-specific flags (11xxxxxx): displayed read-only. The Pattern1
-    bitfield encoding (anchor + flag_id//8) cannot reach these offsets within
-    the slot's 393KB boundary.
 """
 
 from __future__ import annotations

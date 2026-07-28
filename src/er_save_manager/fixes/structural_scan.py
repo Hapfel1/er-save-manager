@@ -41,11 +41,7 @@ _WORLD_STRUCT_NAMES = (
 )
 
 
-# Sections rebuild_slot() cannot round-trip faithfully. The parser reads
-# these bytes but never stores them anywhere on the slot object, so
-# rebuild_slot() has to guess a fixed value (zero) instead of writing
-# back what was actually there. A real save can have non-zero content
-# here without anything being wrong.
+# Sections rebuild_slot() cannot round-trip.
 _UNRELIABLE_SECTIONS = {"padding_after_player_coordinates"}
 
 
@@ -167,10 +163,7 @@ class WorldStructSizeFix(BaseFix):
     """
     Absolute-bound sanity check on the five variable-size structs between
     event_flags and coordinates (field_area, world_area, world_geom_man,
-    world_geom_man2, rend_man). Does not know the correct size, only
-    flags sizes far outside what has been observed in real saves.
-    Independent of deep_scan.py's NetMan anchor, so this can flag an
-    oversized struct even when NetMan/SteamID still line up. Report-only,
+    world_geom_man2, rend_man). Report-only,
     the correct content cannot be reconstructed from the size alone.
     """
 

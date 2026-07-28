@@ -109,8 +109,7 @@ class WorldStateEditor:
     def teleport_to_map_id(self, map_id_str: str) -> tuple[bool, str]:
         """
         Teleport character to a map by its string ID (e.g. "m60_42_36_00").
-        Uses safe_coords from the location database if available, otherwise
-        preserves current coordinates so the character doesn't void-spawn.
+        Uses safe_coords from the location database if available, otherwise keeps the current coordinates.
         Also adds the region unlock ID from the location database if not already present.
         """
         loc = LOCATIONS.get(map_id_str)
@@ -152,8 +151,7 @@ class WorldStateEditor:
     def _write_map_id_raw(self, map_id: MapId, zero_coords: bool = True) -> None:
         """
         Write map_id to both the header field (offset 0x4) and PlayerCoordinates.map_id
-        (coordinates_offset + 12). Optionally zeroes both xyz and unk_xyz so the game
-        uses its internal spawn point instead of stale coordinates from the old map.
+        (coordinates_offset + 12).
         """
         slot = self._slot
         raw = self._save._raw_data

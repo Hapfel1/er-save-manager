@@ -1,3 +1,5 @@
+gneeral loadouts tab
+
 invasion regions
 
 ds3 gestures
@@ -5,8 +7,6 @@ ds3 gestures
 npc respawner ds3
 
 ds2
-
-revisit ds3 and fix bugs
 
 character ops for other games, ds3, ds2 done
 
