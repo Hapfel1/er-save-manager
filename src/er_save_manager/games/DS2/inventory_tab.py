@@ -5,8 +5,8 @@ DS2 inventory editor panel.
 from __future__ import annotations
 
 import tkinter as tk
-from collections.abc import Callable
 from tkinter import ttk
+from typing import Callable
 
 import customtkinter as ctk
 
@@ -62,6 +62,8 @@ class DS2InventoryPanel:
         self._current_items: list[tuple] = []  # (item, name, category)
         self._search_results: list[str] = []
         self._visible_items: list[tuple] = []
+        self._sort_column: str = "name"
+        self._sort_reverse: bool = False
 
     # ------------------------------------------------------------------
     # Setup
@@ -72,11 +74,7 @@ class DS2InventoryPanel:
         self.frame.pack(fill="both", expand=True)
 
         pane = tk.PanedWindow(
-            self.frame,
-            orient=tk.HORIZONTAL,
-            sashwidth=6,
-            sashrelief=tk.FLAT,
-            bg="#2b2b2b",
+            self.frame, orient=tk.HORIZONTAL, sashwidth=6, sashrelief=tk.FLAT, bg="#2b2b2b"
         )
         pane.pack(fill="both", expand=True, padx=4, pady=4)
 
@@ -98,9 +96,7 @@ class DS2InventoryPanel:
         cat_row = ctk.CTkFrame(parent, fg_color="transparent")
         cat_row.pack(fill="x", padx=10, pady=(0, 4))
         ctk.CTkLabel(cat_row, text="Category:", width=70).pack(side="left")
-        self.add_category_var = tk.StringVar(
-            value=CATEGORY_LABELS[_DISPLAY_CATEGORIES[0]]
-        )
+        self.add_category_var = tk.StringVar(value=CATEGORY_LABELS[_DISPLAY_CATEGORIES[0]])
         ctk.CTkComboBox(
             cat_row,
             variable=self.add_category_var,
@@ -141,9 +137,9 @@ class DS2InventoryPanel:
     def _build_inventory_panel(self, parent) -> None:
         header = ctk.CTkFrame(parent, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 4))
-        ctk.CTkLabel(
-            header, text="Current Inventory", font=("Segoe UI", 13, "bold")
-        ).pack(side="left")
+        ctk.CTkLabel(header, text="Current Inventory", font=("Segoe UI", 13, "bold")).pack(
+            side="left"
+        )
 
         filter_row = ctk.CTkFrame(parent, fg_color="transparent")
         filter_row.pack(fill="x", padx=10, pady=(0, 4))
@@ -171,26 +167,29 @@ class DS2InventoryPanel:
         self._inventory_tree = ttk.Treeview(
             parent, columns=columns, show="headings", height=14
         )
+        self._column_labels = {"name": "Name", "category": "Category", "quantity": "Qty"}
         for col, label, width in (
             ("name", "Name", 240),
             ("category", "Category", 130),
             ("quantity", "Qty", 60),
         ):
-            self._inventory_tree.heading(col, text=label)
+            self._inventory_tree.heading(
+                col, text=label, command=lambda c=col: self._sort_by(c)
+            )
             self._inventory_tree.column(col, width=width)
         self._inventory_tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
 
         actions = ctk.CTkFrame(parent, fg_color="transparent")
         actions.pack(fill="x", padx=10, pady=(0, 10))
-        ctk.CTkButton(
-            actions, text="Remove Selected", command=self._on_remove, width=130
-        ).pack(side="left", padx=(0, 6))
+        ctk.CTkButton(actions, text="Remove Selected", command=self._on_remove, width=130).pack(
+            side="left", padx=(0, 6)
+        )
         ctk.CTkLabel(actions, text="New qty:").pack(side="left", padx=(10, 4))
         self.set_qty_var = tk.StringVar(value="1")
         ctk.CTkEntry(actions, textvariable=self.set_qty_var, width=60).pack(side="left")
-        ctk.CTkButton(
-            actions, text="Set Quantity", command=self._on_set_quantity, width=110
-        ).pack(side="left", padx=6)
+        ctk.CTkButton(actions, text="Set Quantity", command=self._on_set_quantity, width=110).pack(
+            side="left", padx=6
+        )
 
     # ------------------------------------------------------------------
     # Left panel: item browser
@@ -249,7 +248,7 @@ class DS2InventoryPanel:
             self.show_toast("No empty inventory slot available", duration=2500)
             return
 
-        self._write_and_refresh(save)
+        self._write_and_refresh(save, operation="add_item")
         self.show_toast(f"Added {item_name}", duration=2000)
 
     # ------------------------------------------------------------------
@@ -269,22 +268,48 @@ class DS2InventoryPanel:
                 self._current_items.append((item, name, category))
         self._apply_filter()
 
+    def _sort_by(self, column: str) -> None:
+        if self._sort_column == column:
+            self._sort_reverse = not self._sort_reverse
+        else:
+            self._sort_column = column
+            self._sort_reverse = False
+
+        for col, label in self._column_labels.items():
+            if col == self._sort_column:
+                arrow = " \u25bc" if self._sort_reverse else " \u25b2"
+                self._inventory_tree.heading(col, text=label + arrow)
+            else:
+                self._inventory_tree.heading(col, text=label)
+
+        self._apply_filter()
+
     def _apply_filter(self) -> None:
         category_label = self.filter_category_var.get()
         query = self.filter_search_var.get().strip().lower()
 
-        self._inventory_tree.delete(*self._inventory_tree.get_children())
-        self._visible_items = []
+        rows = []
         for item, name, item_category in self._current_items:
             display_category = CATEGORY_LABELS.get(item_category, "Unknown")
             if category_label != "All" and display_category != category_label:
                 continue
             if query and query not in name.lower():
                 continue
+            qty = item.quantity if item_category in STACKABLE_CATEGORIES else -1
+            rows.append((item, name, item_category, display_category, qty))
+
+        sort_key = {
+            "name": lambda r: r[1].lower(),
+            "category": lambda r: r[3].lower(),
+            "quantity": lambda r: r[4],
+        }.get(self._sort_column, lambda r: r[1].lower())
+        rows.sort(key=sort_key, reverse=self._sort_reverse)
+
+        self._inventory_tree.delete(*self._inventory_tree.get_children())
+        self._visible_items = []
+        for item, name, item_category, display_category, qty in rows:
             self._visible_items.append((item, name, item_category))
-            qty_str = (
-                str(item.quantity) if item_category in STACKABLE_CATEGORIES else ""
-            )
+            qty_str = str(qty) if qty >= 0 else ""
             self._inventory_tree.insert(
                 "", "end", values=(name, display_category, qty_str)
             )
@@ -308,7 +333,7 @@ class DS2InventoryPanel:
             self.show_toast("Item not found in inventory", duration=2000)
             return
 
-        self._write_and_refresh(save)
+        self._write_and_refresh(save, operation="remove_item")
         self.show_toast(f"Removed {name}", duration=2000)
 
     def _on_set_quantity(self) -> None:
@@ -342,14 +367,29 @@ class DS2InventoryPanel:
 
         character = save.characters[self.get_slot_index()]
         character.add_item(item.item_id, category, quantity=quantity, stack=True)
-        self._write_and_refresh(save)
+        self._write_and_refresh(save, operation="set_item_quantity")
         self.show_toast(f"Set {name} to x{quantity}", duration=2000)
 
-    def _write_and_refresh(self, save: DS2Save) -> None:
+    def _write_and_refresh(self, save: DS2Save, operation: str = "inventory_edit") -> None:
         save_path = self.get_save_path()
         if save_path:
+            self._backup(save_path, f"before_{operation}", operation)
             try:
                 save.save_to_file(save_path)
             except Exception as e:
                 self.show_toast(f"Failed to write save: {e}", duration=3000)
         self.refresh()
+
+    def _backup(self, save_path, description: str, operation: str) -> None:
+        if not save_path:
+            return
+        try:
+            from pathlib import Path
+
+            from er_save_manager.backup.manager import BackupManager
+
+            BackupManager(Path(save_path)).create_backup(
+                description=description, operation=operation
+            )
+        except Exception:
+            pass
