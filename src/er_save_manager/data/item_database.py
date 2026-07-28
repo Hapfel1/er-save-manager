@@ -325,8 +325,6 @@ def get_item_name(
             return f"{item.name} +{upgrade_level}"
         return item.name
 
-    # Ashes: some older saves have item_id = base + upgrade_level (1 per level).
-    # Walk back up to 10 steps to find the base entry.
     if category == ItemCategory.GOODS:
         for delta in range(1, 11):
             candidate = category | (base_id - delta)
@@ -354,7 +352,7 @@ def get_item_name(
                 return f"{item.name} +{upgrade_level}"
             return item.name
 
-    # Weapons/talismans: strip variant suffix - nearest 100 then nearest 10
+    # Weapons/talismans: strip variant suffix: nearest 100 then nearest 10
     if category in (ItemCategory.WEAPON, ItemCategory.TALISMAN):
         for divisor in (100, 10):
             rounded = (base_id // divisor) * divisor

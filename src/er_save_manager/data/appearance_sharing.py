@@ -2,7 +2,7 @@
 Appearance preset sharing via Supabase.
 
 Mirrors equipment_sharing.py's client pattern (same project, anon key,
-no authentication). A share code is the row id returned on upload -
+no authentication). A share code is the row id returned on upload,
 copy the code, paste it elsewhere to import.
 """
 

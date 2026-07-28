@@ -4,7 +4,7 @@ Maps gesture IDs to names and categories
 Based on Cheat Engine script gesture_ids
 """
 
-# Base game gestures - using actual gesture slot IDs from CE script
+# Base game gestures
 GESTURES_BASE = {
     1: {"name": "Bow", "category": "Greetings", "item_id": 0x40002328},
     3: {"name": "Polite Bow", "category": "Greetings", "item_id": 0x40002329},
@@ -118,8 +118,6 @@ GESTURES_DLC = {
         "dlc": True,
     },
 }
-
-# Combine all gestures
 GESTURES_ALL = {**GESTURES_BASE, **GESTURES_DLC}
 
 # Categories
