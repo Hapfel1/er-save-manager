@@ -16,7 +16,7 @@ class SteamIdFix(BaseFix):
     Fix for SteamID mismatch.
 
     The character slot's SteamID should match the save file's SteamID
-    stored in USER_DATA_10. A mismatch can cause loading issues.
+    stored in USER_DATA_10. A mismatch causes an error and prevents the character from being loaded.
     """
 
     name = "SteamID Mismatch"

@@ -50,9 +50,6 @@ DIR_STRIDE = 400
 DIR_NAME_OFFSET = 0x28
 DIR_LEVEL_OFFSET = 0x4C
 
-# Canonical "unused slot" directory entry, captured from an untouched slot
-# (identical across all 7 never-used slots in the reference save). Used to
-# restore a slot's directory entry to its proper empty state on delete.
 _DIR_EMPTY_TEMPLATE = bytes.fromhex(
     "ffffffffffffffffffffffffffffffffffffffff000000000100000000000000"
     "0000000000000000000000000000000000000000000000000000000000000000"

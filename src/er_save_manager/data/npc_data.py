@@ -70,7 +70,7 @@ NPC_FLAGS = {
     "D's Brother": (4060, "Siofra Aqueduct"),
     "Finger Reader Crone": (3500, "Near Stormveil Castle (Limgrave)"),
     "Jellyfish Spirit Sister": (3840, "Stargazer's Ruins (Mountaintops)"),
-    # Boss NPCs (have status flags but can be "revived" to reset aggro)
+    # Boss NPCs
     "Godrick the Grafted": (3200, "Stormveil Castle"),
     "Margit, the Fell Omen": (3140, "Stormhill"),
     "Mohg, Lord of Blood": (3340, "Mohgwyn Palace"),

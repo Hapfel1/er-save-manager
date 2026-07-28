@@ -55,7 +55,7 @@ class BaseFix(ABC):
         Apply the fix to the given slot.
 
         Args:
-            save: The save file (will be modified)
+            save: The save file
             slot_index: Character slot index (0-9)
 
         Returns:

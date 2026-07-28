@@ -1289,7 +1289,5 @@ class CharacterOperations:
                     if talisman and 2100 <= talisman < 2200:
                         return True
 
-            # TODO: Check inventory items when inventory parsing is implemented
-
         except Exception:
             return False

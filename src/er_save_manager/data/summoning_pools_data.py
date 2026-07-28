@@ -1,6 +1,5 @@
 # Summoning pool event flags for v1.12+ (v2.02.0+).
 # Flags sourced from Cheat Engine script; pre-v1.12 flag IDs are excluded.
-# Duplicate flag IDs are deduplicated; only the first labelled occurrence is kept.
 
 # Each entry: (flag_id, location_label)
 SUMMONING_POOL_FLAGS_BASE: list[tuple[int, str]] = [

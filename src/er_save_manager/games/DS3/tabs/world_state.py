@@ -1,10 +1,8 @@
 """
-DS3 World State tab - bonfire unlock and NG+ editing.
+DS3 World State tab, bonfire unlock and NG+ editing.
 
 Each bonfire has a specific byte (or 2-byte) unlock value stored at a fixed
-offset relative to event_flag_start - 0x12. Both individual and bulk unlock
-are supported since the DS3 bit-to-bonfire mapping is documented via the
-reference editor offsets.
+offset relative to event_flag_start - 0x12.
 """
 
 from __future__ import annotations
