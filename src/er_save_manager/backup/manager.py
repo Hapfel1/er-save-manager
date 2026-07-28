@@ -20,15 +20,6 @@ if TYPE_CHECKING:
 def _atomic_write_bytes(path: Path, data: bytes) -> None:
     """
     Write bytes to path via a temp file + atomic replace.
-
-    A direct in-place overwrite (open the existing path in "wb" mode, or
-    shutil.copy2 onto an existing destination) can leave a file-watcher
-    holding a stale view of the file - Steam Cloud sync, an antivirus
-    scanner, or the game itself reading a cached view instead of the
-    freshly restored content, since the file's identity never changes
-    for a same-path truncate+write. Atomic replace forces a fresh file
-    identity, and also protects against a corrupt half-written file if
-    the process is interrupted mid-write.
     """
     tmp_path = path.with_name(f"{path.name}.tmp{os.getpid()}")
     try:
@@ -53,7 +44,7 @@ class BackupMetadata:
     operation: str = ""
     character_summary: list[dict] = field(default_factory=list)
     file_size: int = 0
-    compressed: bool = False  # Whether backup is compressed
+    compressed: bool = False
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -104,7 +95,7 @@ class BackupManager:
         Initialize backup manager for a save file.
 
         Args:
-            save_path: Path to the save file (.sl2 or .co2)
+            save_path: Path to the save file
         """
         self.save_path = Path(save_path).resolve()
         self.backup_folder = self.save_path.parent / (
@@ -162,8 +153,8 @@ class BackupManager:
 
         Two backups created within the same second with the same operation
         and description would otherwise produce an identical filename, and
-        the second create_backup() call would silently overwrite the first
-        - losing that restore point with no warning. Appends a numeric
+        the second create_backup() call would silently overwrite the first,
+        losing that restore point with no warning. Appends a numeric
         suffix against what's actually on disk to guarantee uniqueness
         regardless of call frequency, rather than relying on clock
         resolution alone.
@@ -234,7 +225,6 @@ class BackupManager:
             except Exception:
                 compress = False
 
-        # Generate backup filename
         backup_name = self._generate_backup_name(description, operation, compress)
         backup_path = self.backup_folder / backup_name
 

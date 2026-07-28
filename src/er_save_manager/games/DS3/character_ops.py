@@ -24,12 +24,7 @@ _ERC_VERSION = 1
 #
 # The load-screen character list is a separate 10-entry directory stored in
 # the global entry, not derived from the character slots themselves. Each
-# entry mirrors the name and level of its character slot. Confirmed
-# empirically against a real save (DS30000): copying a character into a
-# previously-empty slot left its directory entry blank, and the copy was
-# invisible on the in-game load screen despite the character slot itself
-# being correct. character_ops must keep this directory in sync on every
-# slot mutation.
+# entry mirrors the name and level of its character slot.
 #
 # Layout per entry (554 bytes), offsets relative to entry start:
 #   +0x00  34   Character name (UTF-16LE)
