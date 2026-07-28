@@ -419,7 +419,7 @@ class DeepScanFix(BaseFix):
             corrected_steamid,
         )
 
-        # Check for zeroed-out data around the SteamID - indicates the fix
+        # Check for zeroed-out data around the SteamID, indicates the fix
         # landed in padding rather than real data
         check_start = max(0, result.expected_steamid_offset - 64)
         check_end = min(len(corrected), result.expected_steamid_offset + 64)
@@ -494,7 +494,6 @@ class DeepScanFix(BaseFix):
                 netman_note = "NetMan empty - no wipe needed"
                 log.info("[deep_scan] NetMan is empty after reshift, no wipe needed")
 
-        # Recalculate checksum for this slot
         _recalculate_slot_checksum(save, slot_index, slot_data_start)
 
         validation_note = (
@@ -578,7 +577,7 @@ class DeepScanFix(BaseFix):
             result.details.append(f"SteamID64 {correct_steam_id} not found in slot")
             return result
 
-        # Use a single SteamID occurrence - if multiple, take the one that gives a
+        # Use a single SteamID occurrence, if multiple, take the one that gives a
         # netman_start consistent with event_flags_end (i.e. netman_start > ef_end).
         # event_flags_offset is an absolute file offset (f.tell() on the full file stream).
         # Convert to slot-relative by subtracting slot_data_start.
@@ -618,9 +617,8 @@ class DeepScanFix(BaseFix):
         # EF tears can produce false SteamID hits (duplicate values in shifted data)
         # and the parser may store a wrong steamid_offset due to zeroed structs.
         # Iterate all candidates and pick the one where a struct scan from
-        # ef_end_rel+d lands exactly on the candidate - that gives the true delta.
-        # Anchor pairs are used only to locate the splice point, NOT to detect the tear
-        # (anchors can disagree legitimately due to boss flags set in non-standard ways).
+        # ef_end_rel+d lands exactly on the candidate that gives the true delta.
+        # Anchor pairs are used only to locate the splice point, NOT to detect the tear.
         if (
             hasattr(slot, "event_flags_offset")
             and slot.event_flags_offset > slot_data_start
@@ -634,7 +632,7 @@ class DeepScanFix(BaseFix):
             if version_early >= 66:
                 ft += _PRE_NETMAN_V66_EXTRA
             # First check d=0: if struct walk from ef_end_rel already lands on a SteamID,
-            # the file is clean - skip EF tear detection entirely.
+            # the file is clean, skip EF tear detection entirely.
             pos0 = ef_end_rel_early
             ok0 = True
             for _ in range(5):
@@ -662,7 +660,7 @@ class DeepScanFix(BaseFix):
                         break
                     pos_check += 4 + sz
                 if any_nonzero:
-                    pass  # d=0 is a genuine clean match - no EF tear
+                    pass  # d=0 is a genuine clean match, no EF tear
                     ef_delta = 0  # ensure delta scan below is skipped
                 else:
                     # All-zero structs: EF overflow, remove false hit and scan for real delta
@@ -676,7 +674,7 @@ class DeepScanFix(BaseFix):
                 not ok0
                 or pos0 + ft + _NETMAN_SIZE + _TAIL_AFTER_NETMAN not in found_offsets
             ):
-                # Scan negative d first (bytes removed from EF - the common torn-write
+                # Scan negative d first (bytes removed from EF, the common torn-write
                 # case), then positive d (bytes inserted into EF).
                 # Negative d: parser's ef_end is abs(d) bytes too far, struct zone
                 # starts at ef_end - abs(d) in the corrupted file.
@@ -698,7 +696,7 @@ class DeepScanFix(BaseFix):
                             if sz > 0:
                                 any_nonzero = True
                             pos += 4 + sz
-                        # All-zero struct sizes means we landed inside EF data,
+                        # All-zero struct sizes means location inside EF data,
                         # not at the real struct zone boundary.
                         if not ok or not any_nonzero:
                             continue
@@ -709,7 +707,7 @@ class DeepScanFix(BaseFix):
                     if ef_delta != 0:
                         break
             if ef_delta != 0:
-                # Delta confirmed by struct scan - now run anchor scan to locate splice.
+                # run anchor scan to locate splice.
                 ef_early = self._scan_event_flags(save, slot_index)
                 abs_delta = abs(ef_delta)
                 # Find the splice point by scanning for a zero-run of abs_delta bytes.
@@ -790,7 +788,7 @@ class DeepScanFix(BaseFix):
         )
 
         # Walk sized structs from ef_end in raw data to find expected_netman.
-        # Size fields are intact even in a torn write - only content is shifted.
+        # Size fields are intact even in a torn write, only content is shifted.
         # Layout after event_flags_end:
         #   FieldArea:      4 + size
         #   WorldArea:      4 + size
@@ -904,7 +902,7 @@ class DeepScanFix(BaseFix):
         result.expected_steamid_offset = expected_netman + _STEAM_ID_TO_NETMAN_START
 
         # Locate the splice point: walk structs to find which one straddles found_netman.
-        # The torn write removed bytes from inside that struct - splice there.
+        # The torn write removed bytes from inside that struct and splice there.
         splice_point = ef_end_rel  # fallback
         pos = ef_end_rel
         for sname in (
@@ -959,7 +957,7 @@ class DeepScanFix(BaseFix):
         """
         Detect a torn write inside the event flags region.
 
-        Strategy: each boss has two flags that must always agree -
+        Strategy: each boss has two flags that must always agree:
         a global flag (block 9, always early in the array) and a map-local
         flag scattered across the array. A tear at byte position X shifts all
         map flags with block_byte > X, causing them to disagree with their
@@ -1004,7 +1002,7 @@ class DeepScanFix(BaseFix):
             map_val = read_bit(map_bb, map_bo, map_bit)
             if glob_val is None or map_val is None:
                 continue
-            # Skip undefeated bosses - both flags being 0 is consistent but not informative.
+            # Skip undefeated bosses, both flags being 0 is consistent but not informative.
             if not glob_val:
                 continue
             if map_val == glob_val:
@@ -1027,7 +1025,7 @@ class DeepScanFix(BaseFix):
         result.torn = True
 
         if not agreeing:
-            # Some checked pairs disagree with none agreeing - tear is before the
+            # Some checked pairs disagree with none agreeing, tear is before the
             # earliest disagreeing anchor. Use min(disagreeing) as the upper bound,
             # not _EF_ANCHOR_PAIRS[0][0], which may not have been checked at all.
             result.confident = False

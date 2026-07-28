@@ -301,12 +301,7 @@ class NRCharacterManagementTab:
         Nightreign will not display a character written directly into a
         slot that has never been created in-game. The save file looks
         correct and the manager will show it, but the in-game load screen
-        stays blank for that slot. This is a game limitation, not a
-        save-file bug - the same behavior has long been documented in the
-        modding community for Dark Souls Remastered and Dark Souls III, and
-        is confirmed to also apply here. The only known workaround is to
-        create a throwaway character in that slot in-game first, then
-        overwrite it here.
+        stays blank for that slot.
         """
         return CTkMessageBox.askyesno(
             "Empty Slot",

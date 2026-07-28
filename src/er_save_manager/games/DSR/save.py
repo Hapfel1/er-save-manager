@@ -306,7 +306,7 @@ def calc_level_from_stats(
     return base_level + (current_sum - base_sum)
 
 
-# VIT -> max HP lookup (game does not recalculate on load; must be set manually)
+# VIT -> max HP lookup
 VIT_TO_HP: dict[int, int] = {
     1: 400,
     2: 415,

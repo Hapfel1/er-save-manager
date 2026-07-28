@@ -22,7 +22,6 @@ class DiagnosticResult:
 class TroubleshootingChecker:
     """Performs diagnostic checks for Elden Ring and the save manager."""
 
-    # Suspicious files/folders that indicate piracy
     PIRACY_FOLDERS = ["_CommonRedist", "AdvGuide", "ArtbookOST"]
 
     PIRACY_FILES = [
@@ -90,23 +89,19 @@ class TroubleshootingChecker:
         """Run all diagnostic checks and return results."""
         results = []
 
-        # Game installation checks
         results.append(self._check_game_installation())
 
         if self.game_folder and self.game_folder.exists():
             results.extend(self._check_piracy_indicators())
             results.append(self._check_game_executable())
 
-        # Process checks
         results.extend(self._check_problematic_processes())
         results.extend(self._check_vpn_processes())
         results.append(self._check_steam_elevated())
 
-        # Save file checks
         if self.save_file_path:
             results.extend(self._check_save_file_health())
 
-        # Tool configuration checks
         results.extend(self._check_tool_configuration())
 
         return results
@@ -146,12 +141,10 @@ class TroubleshootingChecker:
 
         exe_path = self.game_folder / "Game" / "eldenring.exe"
         if exe_path.exists():
-            # Check file size - legitimate eldenring.exe is around 84964KB (82-87MB range)
             size_bytes = exe_path.stat().st_size
             size_kb = size_bytes // 1024
             size_mb = size_kb / 1024
 
-            # Allow 82-87MB range for legitimate exe
             if 82000 <= size_kb <= 87000:
                 return DiagnosticResult(
                     name="Game Executable",
@@ -199,24 +192,20 @@ class TroubleshootingChecker:
                 )
             )
 
-        # Check for piracy files
         found_files = []
         for file in self.PIRACY_FILES:
             file_path = self.game_folder / "Game" / file
             if file_path.exists():
                 found_files.append(file)
 
-        # Special check for steam_api64.dll size
         steam_api_path = self.game_folder / "Game" / "steam_api64.dll"
         if steam_api_path.exists():
             size_kb = steam_api_path.stat().st_size // 1024
-            # Allow 258-266KB range (legitimate file can be reported as 258-266KB depending on calculation)
             if not (258 <= size_kb <= 266):
                 found_files.append(
                     f"steam_api64.dll (modified - {size_kb}KiB instead of 260KiB)"
                 )
         else:
-            # steam_api64.dll is missing - critical error
             results.append(
                 DiagnosticResult(
                     name="Critical File Missing",
@@ -246,14 +235,12 @@ class TroubleshootingChecker:
                 )
             )
 
-        # Check regulation.bin size
         regulation_path = self.game_folder / "Game" / "regulation.bin"
         if regulation_path.exists():
             size_bytes = regulation_path.stat().st_size
             size_kb = size_bytes // 1024
             size_mb = size_kb / 1024
 
-            # Allow 1.8-2.1MB range for legitimate regulation.bin (around 1989KB)
             if 1800 <= size_kb <= 2100:
                 results.append(
                     DiagnosticResult(

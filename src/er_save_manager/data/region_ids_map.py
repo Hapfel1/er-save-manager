@@ -119,7 +119,7 @@ LOCATION_TO_REGION = {
     # Endgame
     "Fractured Marika": 1900000,
     "Elden Beast": 1900001,
-    # DLC - Shadow of the Erdtree
+    # DLC Shadow of the Erdtree
     "Gravesite Plain": 6900000,
     "Scadu Altus": 6900001,
     "Abyssal Woods": 6900002,
