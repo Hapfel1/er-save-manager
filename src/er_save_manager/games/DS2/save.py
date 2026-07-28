@@ -92,6 +92,7 @@ NAME_SIZE = 32
 SOULS_OFFSET = 60
 HP_OFFSET = 72
 NG_OFFSET = 1028
+NG_PLUS_MAX = 7
 
 STAT_OFFSETS = {
     "level": 0x38,
@@ -105,6 +106,9 @@ STAT_OFFSETS = {
     "faith": 48,
     "adaptability": 44,
 }
+
+LEVEL_STAT_KEYS = [k for k in STAT_OFFSETS if k != "level"]
+
 
 INVENTORY_START = 0x1E2C
 INVENTORY_END = 0x10E1C
@@ -180,11 +184,14 @@ class _Entry:
     size: int
     offset: int
     iv: bytes = field(repr=False)
-    plaintext: bytearray = field(repr=False)
+    ciphertext: bytes = field(repr=False)
+    _plaintext: bytearray | None = field(default=None, repr=False)
 
 
 class DS2Container:
-    """BND4 container for a DS2 SOTFS PC (.sl2) save file."""
+    """
+    BND4 container for a DS2 SOTFS PC save file.
+    """
 
     def __init__(self, raw: bytearray, entries: list[_Entry]) -> None:
         self._raw = raw
@@ -208,21 +215,25 @@ class DS2Container:
             blob = bytes(raw[offset : offset + size])
             iv = blob[_MD5_SIZE : _MD5_SIZE + _IV_SIZE]
             ciphertext = blob[_HEADER_SIZE:]
-            plaintext = _decrypt(iv, ciphertext)
-            entries.append(_Entry(i, size, offset, iv, plaintext))
+            entries.append(_Entry(i, size, offset, iv, ciphertext))
 
         return cls(raw, entries)
 
     def get_entry(self, index: int) -> bytearray:
-        return self._entries[index].plaintext
+        entry = self._entries[index]
+        if entry._plaintext is None:
+            entry._plaintext = _decrypt(entry.iv, entry.ciphertext)
+        return entry._plaintext
 
     def set_entry(self, index: int, data: bytearray) -> None:
-        self._entries[index].plaintext = data
+        self._entries[index]._plaintext = data
 
     def save_to_file(self, path: str | Path) -> None:
         out = bytearray(self._raw)
         for entry in self._entries:
-            ciphertext = _encrypt(entry.iv, entry.plaintext)
+            if entry._plaintext is None:
+                continue
+            ciphertext = _encrypt(entry.iv, entry._plaintext)
             new_md5 = _md5(entry.iv + ciphertext)
             blob = new_md5 + entry.iv + ciphertext
             if len(blob) != entry.size:
@@ -231,7 +242,11 @@ class DS2Container:
                     f"original {entry.size}. Plaintext length must not change."
                 )
             out[entry.offset : entry.offset + entry.size] = blob
-        Path(path).write_bytes(out)
+
+        target = Path(path)
+        tmp_path = target.with_suffix(target.suffix + ".tmp")
+        tmp_path.write_bytes(bytes(out))
+        tmp_path.replace(target)
 
 
 @dataclass

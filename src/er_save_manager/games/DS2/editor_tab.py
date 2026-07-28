@@ -1,14 +1,13 @@
-"""DS2 character editor tab: slot select, stats/souls/hp/ng, inventory list."""
+"""DS2 character editor tab: slot picker + Stats/Inventory subtabs."""
 
 from __future__ import annotations
 
 import tkinter as tk
-from tkinter import ttk
 
 import customtkinter as ctk
 
-from er_save_manager.games.DS2.item_database import build_item_db
-from er_save_manager.games.DS2.save import STAT_OFFSETS, DS2Save
+from er_save_manager.games.DS2.inventory_tab import DS2InventoryPanel
+from er_save_manager.games.DS2.save import LEVEL_STAT_KEYS, NG_PLUS_MAX, DS2Save
 
 
 class DS2EditorTab:
@@ -25,70 +24,120 @@ class DS2EditorTab:
         self.get_save = get_save
         self.get_save_path = get_save_path
         self.show_toast = show_toast
-        self._item_db = build_item_db()
         self._slot_index = 0
         self._stat_vars: dict[str, tk.StringVar] = {}
+        self.inventory_panel: DS2InventoryPanel | None = None
+
+        self._baseline_stats: dict[str, int] = {}
+        self._baseline_level: int = 0
+        self._suppress_recalc = False
+
+    # ------------------------------------------------------------------
+    # Setup
+    # ------------------------------------------------------------------
 
     def setup_ui(self) -> None:
         top = ctk.CTkFrame(self.parent, fg_color="transparent")
         top.pack(fill="x", padx=10, pady=(10, 5))
 
         ctk.CTkLabel(top, text="Character slot:").pack(side="left")
-        self.slot_var = tk.StringVar(value="0")
+        self.slot_var = tk.StringVar(value=self._slot_display_names()[0])
         self.slot_menu = ctk.CTkOptionMenu(
             top,
             variable=self.slot_var,
-            values=[str(i) for i in range(10)],
-            command=self._on_slot_changed,
+            values=self._slot_display_names(),
+            width=220,
         )
         self.slot_menu.pack(side="left", padx=(5, 15))
 
-        ctk.CTkButton(top, text="Refresh", command=self.refresh).pack(
-            side="left", padx=5
-        )
-        ctk.CTkButton(top, text="Save changes", command=self._apply_changes).pack(
+        ctk.CTkButton(top, text="Load Slot", command=self._on_load_slot).pack(
             side="left", padx=5
         )
 
         self.slot_status_label = ctk.CTkLabel(top, text="")
         self.slot_status_label.pack(side="left", padx=(15, 0))
 
-        fields = ctk.CTkFrame(self.parent, fg_color="transparent")
-        fields.pack(fill="x", padx=10, pady=5)
+        self.tabview = ctk.CTkTabview(self.parent)
+        self.tabview.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        self.tabview.add("Stats")
+        self.tabview.add("Inventory")
+
+        self._build_stats_tab(self.tabview.tab("Stats"))
+
+        self.inventory_panel = DS2InventoryPanel(
+            self.tabview.tab("Inventory"),
+            get_save=self.get_save,
+            get_slot_index=lambda: self._slot_index,
+            get_save_path=self.get_save_path,
+            show_toast=self.show_toast,
+        )
+        self.inventory_panel.setup_ui()
+
+        self.refresh()
+
+    def _build_stats_tab(self, parent) -> None:
+        fields = ctk.CTkFrame(parent, fg_color="transparent")
+        fields.pack(fill="x", padx=10, pady=(10, 5))
 
         self.name_var = tk.StringVar()
         self.souls_var = tk.StringVar()
-        self.hp_var = tk.StringVar()
-        self.ng_var = tk.StringVar()
 
         self._add_field(fields, "Name", self.name_var, row=0)
         self._add_field(fields, "Souls", self.souls_var, row=1)
-        self._add_field(fields, "HP", self.hp_var, row=2)
-        self._add_field(fields, "NG+", self.ng_var, row=3)
 
-        stats_frame = ctk.CTkFrame(self.parent, fg_color="transparent")
+        ctk.CTkLabel(fields, text="NG+:").grid(
+            row=2, column=0, sticky="w", padx=5, pady=3
+        )
+        self.ng_var = tk.StringVar(value="0")
+        ctk.CTkComboBox(
+            fields,
+            variable=self.ng_var,
+            values=[str(i) for i in range(NG_PLUS_MAX + 1)],
+            state="readonly",
+            width=140,
+        ).grid(row=2, column=1, sticky="w", padx=5, pady=3)
+
+        ctk.CTkLabel(fields, text="HP:").grid(
+            row=3, column=0, sticky="w", padx=5, pady=3
+        )
+        self.hp_label = ctk.CTkLabel(fields, text="-", text_color=("gray40", "gray70"))
+        self.hp_label.grid(row=3, column=1, sticky="w", padx=5, pady=3)
+
+        stats_frame = ctk.CTkFrame(parent, fg_color="transparent")
         stats_frame.pack(fill="x", padx=10, pady=5)
-        for i, stat_name in enumerate(STAT_OFFSETS):
+        ctk.CTkLabel(
+            stats_frame, text="Level & Attributes", font=("Segoe UI", 12, "bold")
+        ).grid(row=0, column=0, columnspan=6, sticky="w", padx=5, pady=(0, 5))
+
+        ctk.CTkLabel(stats_frame, text="Level:").grid(
+            row=1, column=0, sticky="w", padx=5, pady=3
+        )
+        self.level_var = tk.StringVar()
+        ctk.CTkEntry(stats_frame, textvariable=self.level_var, width=140).grid(
+            row=1, column=1, sticky="w", padx=5, pady=3
+        )
+        self.level_status_label = ctk.CTkLabel(
+            stats_frame, text="", font=("Segoe UI", 10)
+        )
+        self.level_status_label.grid(
+            row=1, column=2, columnspan=4, sticky="w", padx=5, pady=3
+        )
+
+        for i, stat_name in enumerate(LEVEL_STAT_KEYS):
             var = tk.StringVar()
+            var.trace_add("write", lambda *_: self._recalc_level())
             self._stat_vars[stat_name] = var
             self._add_field(
-                stats_frame, stat_name.capitalize(), var, row=i // 3, col=(i % 3) * 2
+                stats_frame,
+                stat_name.capitalize(),
+                var,
+                row=2 + i // 3,
+                col=(i % 3) * 2,
             )
 
-        inv_frame = ctk.CTkFrame(self.parent, fg_color="transparent")
-        inv_frame.pack(fill="both", expand=True, padx=10, pady=(10, 10))
-        ctk.CTkLabel(inv_frame, text="Inventory (read-only)").pack(anchor="w")
-
-        columns = ("name", "category", "item_id")
-        self.inv_tree = ttk.Treeview(
-            inv_frame, columns=columns, show="headings", height=12
-        )
-        for col, width in (("name", 260), ("category", 100), ("item_id", 100)):
-            self.inv_tree.heading(col, text=col.replace("_", " ").title())
-            self.inv_tree.column(col, width=width)
-        self.inv_tree.pack(fill="both", expand=True)
-
-        self.refresh()
+        ctk.CTkButton(
+            parent, text="Apply Changes", command=self._apply_changes, height=34
+        ).pack(side="bottom", fill="x", padx=10, pady=10)
 
     def _add_field(self, parent, label, var, row, col=0):
         ctk.CTkLabel(parent, text=f"{label}:").grid(
@@ -98,13 +147,99 @@ class DS2EditorTab:
             row=row, column=col + 1, sticky="w", padx=5, pady=3
         )
 
-    def _on_slot_changed(self, value: str) -> None:
-        self._slot_index = int(value)
+    # ------------------------------------------------------------------
+    # Slot handling
+    # ------------------------------------------------------------------
+
+    def _slot_display_names(self) -> list[str]:
+        save: DS2Save | None = self.get_save()
+        if save is None:
+            return [f"{i} - (no save loaded)" for i in range(10)]
+
+        occupied = save.slot_occupancy()
+        names = []
+        for i in range(10):
+            if i in occupied:
+                names.append(f"{i} - {occupied[i]}")
+            elif save.is_slot_initialized(i):
+                names.append(f"{i} - (empty)")
+            else:
+                names.append(f"{i} - (never created in-game)")
+        return names
+
+    @staticmethod
+    def _slot_index_from_display(value: str) -> int:
+        try:
+            return int(value.split(" - ")[0])
+        except (ValueError, IndexError):
+            return 0
+
+    def _on_load_slot(self) -> None:
+        self._slot_index = self._slot_index_from_display(self.slot_var.get())
         self.refresh()
 
+    def slot_var_set(self, slot_index: int) -> None:
+        """Programmatically select a slot (e.g. from the inspector's
+        double-click), then load it."""
+        names = self._slot_display_names()
+        if 0 <= slot_index < len(names):
+            self.slot_var.set(names[slot_index])
+        self._on_load_slot()
+
+    # ------------------------------------------------------------------
+    # Level auto-recalc
+    # ------------------------------------------------------------------
+
+    def _recalc_level(self) -> None:
+        """Called whenever a stat entry changes. Updates the Level field
+        to baseline_level + sum of stat deltas since the slot was loaded,
+        and shows whether the current Level field agrees with that."""
+        if self._suppress_recalc or not self._baseline_stats:
+            return
+
+        try:
+            delta = sum(
+                int(var.get()) - self._baseline_stats[stat_name]
+                for stat_name, var in self._stat_vars.items()
+            )
+        except ValueError:
+            self.level_status_label.configure(
+                text="Enter whole numbers for all stats to recalculate level",
+                text_color="orange",
+            )
+            return
+
+        computed_level = self._baseline_level + delta
+        self._suppress_recalc = True
+        self.level_var.set(str(computed_level))
+        self._suppress_recalc = False
+        self.level_status_label.configure(
+            text=f"(auto-calculated from stat changes: {computed_level})",
+            text_color=("gray40", "gray70"),
+        )
+
+    def _expected_level(self) -> int | None:
+        try:
+            delta = sum(
+                int(var.get()) - self._baseline_stats[stat_name]
+                for stat_name, var in self._stat_vars.items()
+            )
+        except ValueError:
+            return None
+        return self._baseline_level + delta
+
+    # ------------------------------------------------------------------
+    # Refresh / apply
+    # ------------------------------------------------------------------
+
     def refresh(self) -> None:
-        self._slot_index = int(self.slot_var.get())
         save: DS2Save | None = self.get_save()
+
+        names = self._slot_display_names()
+        self.slot_menu.configure(values=names)
+        if 0 <= self._slot_index < len(names):
+            self.slot_var.set(names[self._slot_index])
+
         if save is None:
             return
 
@@ -119,19 +254,21 @@ class DS2EditorTab:
         character = save.characters[self._slot_index]
         self.name_var.set(character.name)
         self.souls_var.set(str(character.souls))
-        self.hp_var.set(str(character.hp))
         self.ng_var.set(str(character.new_game_plus))
+        self.hp_label.configure(text=str(character.hp))
+
+        self._suppress_recalc = True
         for stat_name, var in self._stat_vars.items():
             var.set(str(character.get_stat(stat_name)))
+        self._suppress_recalc = False
 
-        for row in self.inv_tree.get_children():
-            self.inv_tree.delete(row)
-        for item in character.inventory():
-            if item.item_id == 0:
-                continue
-            info = self._item_db.get(item.item_id)
-            name, category = info if info else (f"Unknown ({item.item_id})", "?")
-            self.inv_tree.insert("", "end", values=(name, category, item.item_id))
+        self._baseline_stats = {k: character.get_stat(k) for k in LEVEL_STAT_KEYS}
+        self._baseline_level = character.get_stat("level")
+        self.level_var.set(str(self._baseline_level))
+        self.level_status_label.configure(text="")
+
+        if self.inventory_panel is not None:
+            self.inventory_panel.refresh()
 
     def _apply_changes(self) -> None:
         save: DS2Save | None = self.get_save()
@@ -139,17 +276,33 @@ class DS2EditorTab:
             self.show_toast("No save file loaded", duration=2000)
             return
 
-        character = save.characters[self._slot_index]
         try:
-            character.name = self.name_var.get()
-            character.souls = int(self.souls_var.get())
-            character.hp = int(self.hp_var.get())
-            character.new_game_plus = int(self.ng_var.get())
-            for stat_name, var in self._stat_vars.items():
-                character.set_stat(stat_name, int(var.get()))
+            entered_level = int(self.level_var.get())
+            stat_values = {
+                stat_name: int(var.get()) for stat_name, var in self._stat_vars.items()
+            }
+            souls = int(self.souls_var.get())
+            ng_plus = int(self.ng_var.get())
         except ValueError:
             self.show_toast("Invalid numeric value, changes not applied", duration=2500)
             return
+
+        expected_level = self._expected_level()
+        if expected_level is None or entered_level != expected_level:
+            self.show_toast(
+                f"Level ({entered_level}) does not match what these stats add up to "
+                f"({expected_level}). Adjust stats or Level to match before saving.",
+                duration=4000,
+            )
+            return
+
+        character = save.characters[self._slot_index]
+        character.name = self.name_var.get()
+        character.souls = souls
+        character.new_game_plus = ng_plus
+        character.set_stat("level", entered_level)
+        for stat_name, value in stat_values.items():
+            character.set_stat(stat_name, value)
 
         save_path = self.get_save_path()
         if not save_path:
@@ -162,4 +315,5 @@ class DS2EditorTab:
             self.show_toast(f"Failed to write save: {e}", duration=3000)
             return
 
+        self.refresh()
         self.show_toast("Changes saved to disk", duration=2500)
