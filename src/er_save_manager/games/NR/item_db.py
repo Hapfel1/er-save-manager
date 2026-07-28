@@ -9,8 +9,8 @@ Effect tier classification (from AttachEffectParam ID ranges):
 
 Validation rules (verified against 761 relics from a live save):
   Effect slots (1-3):
-    - deep relic:   tier in ("deep", "special", "normal")  -- game allows both
-    - normal relic: tier in ("normal", "special", "deep")  -- both tiers in practice
+    - deep relic:   tier in ("deep", "special", "normal")  - game allows both
+    - normal relic: tier in ("normal", "special", "deep")   both tiers in practice
     Practical filter: show deep effects for deep relics, normal effects for normal relics,
     special effects always. Both tiers work in-game, so the filter is advisory.
   Curse slots (1-3):

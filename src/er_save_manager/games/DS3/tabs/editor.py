@@ -2,7 +2,6 @@
 DS3 Character Editor tab.
 
 Sub-tabs: Stats | Identity.
-Each apply creates a backup then writes immediately.
 """
 
 from __future__ import annotations

@@ -2,7 +2,7 @@
 Inventory loadout sharing via Supabase.
 
 Mirrors equipment_sharing.py's client pattern (same project, anon key,
-no authentication). A share code is the row id returned on upload -
+no authentication). A share code is the row id returned on upload:
 copy the code, paste it elsewhere to import.
 """
 
@@ -12,7 +12,6 @@ from typing import Any
 
 from supabase import Client, create_client
 
-# Same Supabase project as character_metrics.py / equipment_sharing.py
 SUPABASE_URL = "https://rnsrvcfjzsgrgiwvsbub.supabase.co"
 SUPABASE_ANON_KEY = (
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6"

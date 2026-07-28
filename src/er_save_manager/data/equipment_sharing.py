@@ -1,10 +1,5 @@
 """
 Equipment loadout sharing via Supabase.
-
-Mirrors character_metrics.py's client pattern (same project, anon key,
-no authentication). A "share code" is the row id returned on upload -
-there is no web frontend in this project to route an actual clickable
-URL to, so sharing is code-based: copy the code, paste it elsewhere.
 """
 
 from __future__ import annotations
@@ -13,7 +8,6 @@ from typing import Any
 
 from supabase import Client, create_client
 
-# Same Supabase project as character_metrics.py
 SUPABASE_URL = "https://rnsrvcfjzsgrgiwvsbub.supabase.co"
 SUPABASE_ANON_KEY = (
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6"

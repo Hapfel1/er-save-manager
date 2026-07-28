@@ -110,13 +110,13 @@ _NAME_OVERRIDES: dict[str, str] = {
     # Convergence talismans
     "firemonk's filigree": "fire monk's filigree",
     "runebear's claw": "runebears claw",
-    # Convergence rune - Dragonkin uses {N}_Rarity_Dragonkin_Rune filename format
+    # Convergence rune, Dragonkin uses {N}_Rarity_Dragonkin_Rune filename format
     "faint rune of the dragonkin": "faint dragonkin rune",
     "shimmering rune of the dragonkin": "shimmering dragonkin rune",
     "glowing rune of the dragonkin": "glowing dragonkin rune",
     "shining rune of the dragonkin": "4 radiant dragonkin rune",
     "radiant rune of the dragonkin": "5 radient dragonkin rune",
-    # Convergence rune - DB has "Shinning" typo for Glintstone tier 4
+    # Convergence rune, DB has "Shinning" typo for Glintstone tier 4
     "shinning rune of glintstone": "shining rune of glintstone",
     # Convergence rune tier 4: pack uses "Radiant" name, DB uses "Shining"
     "shining rune of magma": "radiant rune of magma",
@@ -149,7 +149,7 @@ _NAME_OVERRIDES: dict[str, str] = {
     "shadow rune of thorns": "6_shadow_rune_of_thorns",
     # Merchant items
     "golden order principles": "golden order principia",
-    # Prattling Pate "You're beautiful" - double quotes in DB name, plain name in icon
+    # Prattling Pate "You're beautiful": double quotes in DB name, plain name in icon
     "prattling pate \u201cyou\u2019re beautiful\u201d": "prattling pate you're beautiful",
     'prattling pate "you\'re beautiful"': "prattling pate you're beautiful",
     # Ashes: DB name without "Ashes" suffix, icon stored with it
@@ -402,7 +402,7 @@ _AFFINITY_ICON_VANILLA: dict[str, str] = {
     "Occult": "Occult",
 }
 
-# Convergence affinity icons - user imports these with matching filenames
+# Convergence affinity icons
 _AFFINITY_ICON_CNV: dict[str, str] = {
     "Standard": "Standard",
     "Heavy": "Heavy",

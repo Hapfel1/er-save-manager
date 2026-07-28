@@ -1,8 +1,5 @@
 """
 DSR Save Inspector Tab
-
-Clicking a row highlights it. Only the "Edit Character" button navigates
-to the Character Editor. Row clicks do not trigger tab switching.
 """
 
 from __future__ import annotations
@@ -88,7 +85,6 @@ class DSRInspectorTab:
             return
 
         def select(slot_idx: int) -> None:
-            # Highlight only - does NOT navigate to another tab
             self.selected_slot = slot_idx
             for val, frame, label in self._rows:
                 if val == slot_idx:

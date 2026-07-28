@@ -6,7 +6,7 @@ DS3 decrypted slot data parser.
 [0x0000:0x0070]  Pre-gaitem header (version, steam pointer, unknown)
 [0x0070:gaitem_end]  Gaitem table (6144 variable-size entries; see below)
 [gaitem_end+120]  Character name (UTF-16LE, 32 bytes / 16 chars)
-[gaitem_end+0x13F]  'fixed' anchor - all character stats use negative offsets from here
+[gaitem_end+0x13F]  'fixed' anchor: all character stats use negative offsets from here
 
 === GAITEM TABLE (starts at 0x70) ===
 
@@ -29,7 +29,7 @@ All offsets are 'fixed + distance' where distances are negative (stats sit befor
 'fixed' = gaitem_end + 0x13F
 
   Souls:       fixed - 219  u32 LE
-  HP:          fixed - 303  u32 LE  (live value; game reads this directly)
+  HP:          fixed - 303  u32 LE
   FP:          fixed - 291  u32 LE
   Stamina:     fixed - 275  u32 LE
   Level:       fixed - 223  u16 LE

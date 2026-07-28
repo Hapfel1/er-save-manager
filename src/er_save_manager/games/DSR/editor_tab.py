@@ -1,8 +1,5 @@
 """
 DSR Character Editor Tab
-
-Stats and Identity sub-tabs matching the ER Character Editor layout.
-Apply creates a backup then writes immediately.
 """
 
 from __future__ import annotations
@@ -120,7 +117,6 @@ class DSREditorTab:
         top_row = ctk.CTkFrame(frame, fg_color="transparent")
         top_row.pack(fill="x", pady=5, padx=10)
 
-        # Attributes column
         af = ctk.CTkFrame(top_row, fg_color="transparent")
         af.pack(side="left", fill="both", expand=True, padx=(0, 5))
         ctk.CTkLabel(af, text="Attributes", font=("Segoe UI", 12, "bold")).pack(

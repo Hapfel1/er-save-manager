@@ -607,7 +607,7 @@ def _find_empty_gaitem_slot(slot, prefix: int) -> int:
     """
     Return index of the best empty gaitem slot for the given prefix.
 
-    Gems go before the first weapon entry (AoW region) - use the first
+    Gems go before the first weapon entry (AoW region), use the first
     available empty there to keep gems compactly packed.
 
     Weapons and armor go after the first weapon entry. Return the LAST
@@ -810,12 +810,6 @@ def _patch_slot_with_gaitem_insert(
         return 0
 
     if delta > 0:
-        # Prefer trimming genuine trailing zero bytes at the slot end.
-        # If there aren't enough, rebuild_slot re-serializes the slot
-        # (preserving real trailing data - see slot_rebuild.py) and the
-        # trim below proceeds regardless, intentionally cutting into
-        # that trailing data rather than failing the add. See the note
-        # further down for why this is a deliberate tradeoff.
         trim = delta
         slot_end_before = slot_data_base + SLOT_DATA_SIZE
         trailing_zeros = 0

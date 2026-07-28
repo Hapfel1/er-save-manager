@@ -1,4 +1,4 @@
-"""DLC flag fix - clears DLC entry flag and invalid DLC data."""
+"""DLC flag fix: clears DLC entry flag and invalid DLC data."""
 
 from __future__ import annotations
 
@@ -45,7 +45,6 @@ class DLCFlagFix(BaseFix):
         # Store original for logging
         original_value = slot.get_dlc_flag_value()
 
-        # Clear the flag
         slot.clear_dlc_flag()
 
         # Write to raw data

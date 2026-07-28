@@ -1,6 +1,6 @@
-check is game running check for other games
+gneeral loadouts tab
 
-character ops for other games, ds3, ds2
+invasion regions
 
 ds3 gestures
 
@@ -8,7 +8,9 @@ npc respawner ds3
 
 ds2
 
-revisit ds3 and fix bugs
+character ops for other games, ds3, ds2 done
+
+check is game running check for other games done
 
 fix storage and amount and upgr level not getting respected when batch adding visual item picker instead of inventory editor done
 

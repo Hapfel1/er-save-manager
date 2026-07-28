@@ -1,5 +1,5 @@
 """
-Character Details Dialog (customtkinter version)
+Character Details Dialog
 Shows detailed character information with corruption detection
 """
 

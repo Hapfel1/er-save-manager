@@ -246,6 +246,7 @@ MIT License - see [LICENSE](LICENSE)
 - [Sayuri](https://github.com/Umgak) for allowing me to use her contributions to the [TGA Cheat Table](https://github.com/The-Grand-Archives/Elden-Ring-CT-TGA), specifically the Event Flag Manager's tables
 - [?WikiName?](https://soulsmodding.com/doku.php?id=er-refmat:main) for the available documentation
 - [SimpleSekiroSavegameHelper](https://github.com/uberhalit/SimpleSekiroSavegameHelper) for offsets and constants for Sekiro steamid patcher
+- [DS3SaveUnpacker](https://github.com/tremwil/DS3SaveUnpacker) for DS3 AES encryption key
 
 
 ### Community

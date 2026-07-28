@@ -222,19 +222,27 @@ class SettingsTab:
         self.max_backups_var = tk.StringVar(
             value=str(self.settings.get("max_backups", 50))
         )
-        ctk.CTkEntry(
+        max_backups_entry = ctk.CTkEntry(
             max_backup_frame, textvariable=self.max_backups_var, width=80
-        ).pack(side="left")
+        )
+        max_backups_entry.pack(side="left")
 
-        def save_backup_limit(*args):
+        MIN_MAX_BACKUPS = 5
+
+        def commit_backup_limit(*args):
+            # Commits only on Enter/focus-out so a partially typed value
+            # (e.g. "1" while changing 50 to 100) never gets saved and
+            # triggers pruning down to that intermediate value.
             try:
                 value = int(self.max_backups_var.get())
-                if value > 0:
-                    self.settings.set("max_backups", value)
             except ValueError:
-                pass
+                value = self.settings.get("max_backups", 50)
+            value = max(value, MIN_MAX_BACKUPS)
+            self.max_backups_var.set(str(value))
+            self.settings.set("max_backups", value)
 
-        self.max_backups_var.trace_add("write", save_backup_limit)
+        max_backups_entry.bind("<Return>", commit_backup_limit)
+        max_backups_entry.bind("<FocusOut>", commit_backup_limit)
 
         ctk.CTkLabel(
             frame,

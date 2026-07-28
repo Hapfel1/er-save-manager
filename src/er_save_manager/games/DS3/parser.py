@@ -26,10 +26,9 @@ On save: re-encrypt with the original IV, compute new MD5 = md5(original_iv + ne
 write [new_md5][original_iv][new_ciphertext] at the same offset. Total size stays constant
 because PKCS7 padding on same-length plaintext produces same-length ciphertext.
 
-AES-128-CBC key (all DS3 saves, PC and Seamless Coop):
+AES-128-CBC key:
   FD 46 4D 69 5E 69 A3 9A 10 E3 19 A7 AC E8 B7 FA
-
-Discovered by Atvaark, published in DS3SaveUnpacker by tremwil.
+Published in DS3SaveUnpacker by tremwil.
 """
 
 from __future__ import annotations
