@@ -356,6 +356,23 @@ class SettingsTab:
             ),
         ).pack(side="right", padx=(6, 0))
 
+        notify_row = ctk.CTkFrame(game_frame, fg_color="transparent")
+        notify_row.pack(fill="x", padx=10, pady=(0, 8))
+
+        self.show_auto_backup_notification_var = tk.BooleanVar(
+            value=self.settings.get("show_auto_backup_notification", True)
+        )
+        ctk.CTkCheckBox(
+            notify_row,
+            text="Show toast notification when a backup is created via game launch",
+            variable=self.show_auto_backup_notification_var,
+            font=("Segoe UI", 11),
+            command=lambda: self.settings.set(
+                "show_auto_backup_notification",
+                self.show_auto_backup_notification_var.get(),
+            ),
+        ).pack(anchor="w")
+
     def _on_game_auto_backup_toggle(self, game_key: str):
         enabled = self._auto_backup_enabled_vars[game_key].get()
         auto_backup_cfg: dict = dict(self.settings.get("auto_backup_games", {}))

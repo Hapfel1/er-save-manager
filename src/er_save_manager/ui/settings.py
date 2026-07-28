@@ -113,6 +113,8 @@ class Settings:
             "debug_warped_face_sliders": False,
             # Notify when the loaded save file is modified externally
             "external_file_change_notification": True,
+            # Show a toast when auto-backup creates a backup on game launch
+            "show_auto_backup_notification": True,
             # UI scaling factor applied via CTk widget/window scaling APIs.
             # None means auto-detect from the system on startup.
             "ui_scale": 1.0,

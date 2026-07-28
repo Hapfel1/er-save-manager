@@ -353,18 +353,18 @@ class SaveManagerGUI:
     def _on_auto_backup_created(self, game_key: str, backup_path):
         """Callback when auto-backup is created."""
         try:
+            if not self.settings.get("show_auto_backup_notification", True):
+                return
+
             from er_save_manager.games.game_profiles import PROFILES_BY_KEY
-            from er_save_manager.ui.messagebox import CTkMessageBox
 
             profile = PROFILES_BY_KEY.get(game_key)
             game_name = profile.name if profile else game_key
 
             self.root.after(
                 0,
-                lambda: CTkMessageBox.showinfo(
-                    "Auto-Backup Created",
-                    f"{game_name} launched - backup created:\n\n{backup_path.name}",
-                    parent=self.root,
+                lambda: self.show_toast(
+                    f"{game_name} launched - backup created: {backup_path.name}"
                 ),
             )
         except Exception:
