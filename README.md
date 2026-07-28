@@ -247,6 +247,8 @@ MIT License - see [LICENSE](LICENSE)
 - [?WikiName?](https://soulsmodding.com/doku.php?id=er-refmat:main) for the available documentation
 - [SimpleSekiroSavegameHelper](https://github.com/uberhalit/SimpleSekiroSavegameHelper) for offsets and constants for Sekiro steamid patcher
 - [DS3SaveUnpacker](https://github.com/tremwil/DS3SaveUnpacker) for DS3 AES encryption key
+- DS2 Save format research based on the [Dark-Souls-2-Save-Editor-PS4-PC](https://github.com/alfizari/Dark-Souls-2-Save-Editor-PS4-PC)
+- DS2 SteamID detection/patching adapted from [souls_givifier](https://github.com/jtesta/souls_givifier)
 
 
 ### Community
