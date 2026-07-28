@@ -7,6 +7,7 @@ import json
 import os
 import re
 import shutil
+import threading
 import zipfile
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
@@ -299,8 +300,30 @@ class BackupManager:
             root = _tk._default_root
             if root is None or not root.winfo_exists():
                 return "delete"
-            dialog = BackupPruningWarningDialog(root, pruned_backups[0], max_backups)
-            return dialog.show()
+
+            if threading.current_thread() is threading.main_thread():
+                dialog = BackupPruningWarningDialog(
+                    root, pruned_backups[0], max_backups
+                )
+                return dialog.show()
+
+            # Called from a background thread (e.g. auto-backup process
+            # monitor). CTk widgets are not thread-safe, so the dialog
+            # must be created on the main thread. Marshal it via root.after
+            # and block this thread until the user closes it.
+            result_holder: list[str] = []
+            done = threading.Event()
+
+            def _create_and_show():
+                dialog = BackupPruningWarningDialog(
+                    root, pruned_backups[0], max_backups
+                )
+                result_holder.append(dialog.show())
+                done.set()
+
+            root.after(0, _create_and_show)
+            done.wait()
+            return result_holder[0] if result_holder else "delete"
         except Exception as e:
             print(f"Backup pruning warning failed: {e}")
             return "delete"
