@@ -5,8 +5,8 @@ DS2 inventory editor panel.
 from __future__ import annotations
 
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import ttk
-from typing import Callable
 
 import customtkinter as ctk
 
@@ -74,7 +74,11 @@ class DS2InventoryPanel:
         self.frame.pack(fill="both", expand=True)
 
         pane = tk.PanedWindow(
-            self.frame, orient=tk.HORIZONTAL, sashwidth=6, sashrelief=tk.FLAT, bg="#2b2b2b"
+            self.frame,
+            orient=tk.HORIZONTAL,
+            sashwidth=6,
+            sashrelief=tk.FLAT,
+            bg="#2b2b2b",
         )
         pane.pack(fill="both", expand=True, padx=4, pady=4)
 
@@ -96,7 +100,9 @@ class DS2InventoryPanel:
         cat_row = ctk.CTkFrame(parent, fg_color="transparent")
         cat_row.pack(fill="x", padx=10, pady=(0, 4))
         ctk.CTkLabel(cat_row, text="Category:", width=70).pack(side="left")
-        self.add_category_var = tk.StringVar(value=CATEGORY_LABELS[_DISPLAY_CATEGORIES[0]])
+        self.add_category_var = tk.StringVar(
+            value=CATEGORY_LABELS[_DISPLAY_CATEGORIES[0]]
+        )
         ctk.CTkComboBox(
             cat_row,
             variable=self.add_category_var,
@@ -137,9 +143,9 @@ class DS2InventoryPanel:
     def _build_inventory_panel(self, parent) -> None:
         header = ctk.CTkFrame(parent, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 4))
-        ctk.CTkLabel(header, text="Current Inventory", font=("Segoe UI", 13, "bold")).pack(
-            side="left"
-        )
+        ctk.CTkLabel(
+            header, text="Current Inventory", font=("Segoe UI", 13, "bold")
+        ).pack(side="left")
 
         filter_row = ctk.CTkFrame(parent, fg_color="transparent")
         filter_row.pack(fill="x", padx=10, pady=(0, 4))
@@ -167,7 +173,11 @@ class DS2InventoryPanel:
         self._inventory_tree = ttk.Treeview(
             parent, columns=columns, show="headings", height=14
         )
-        self._column_labels = {"name": "Name", "category": "Category", "quantity": "Qty"}
+        self._column_labels = {
+            "name": "Name",
+            "category": "Category",
+            "quantity": "Qty",
+        }
         for col, label, width in (
             ("name", "Name", 240),
             ("category", "Category", 130),
@@ -181,15 +191,15 @@ class DS2InventoryPanel:
 
         actions = ctk.CTkFrame(parent, fg_color="transparent")
         actions.pack(fill="x", padx=10, pady=(0, 10))
-        ctk.CTkButton(actions, text="Remove Selected", command=self._on_remove, width=130).pack(
-            side="left", padx=(0, 6)
-        )
+        ctk.CTkButton(
+            actions, text="Remove Selected", command=self._on_remove, width=130
+        ).pack(side="left", padx=(0, 6))
         ctk.CTkLabel(actions, text="New qty:").pack(side="left", padx=(10, 4))
         self.set_qty_var = tk.StringVar(value="1")
         ctk.CTkEntry(actions, textvariable=self.set_qty_var, width=60).pack(side="left")
-        ctk.CTkButton(actions, text="Set Quantity", command=self._on_set_quantity, width=110).pack(
-            side="left", padx=6
-        )
+        ctk.CTkButton(
+            actions, text="Set Quantity", command=self._on_set_quantity, width=110
+        ).pack(side="left", padx=6)
 
     # ------------------------------------------------------------------
     # Left panel: item browser
@@ -370,7 +380,9 @@ class DS2InventoryPanel:
         self._write_and_refresh(save, operation="set_item_quantity")
         self.show_toast(f"Set {name} to x{quantity}", duration=2000)
 
-    def _write_and_refresh(self, save: DS2Save, operation: str = "inventory_edit") -> None:
+    def _write_and_refresh(
+        self, save: DS2Save, operation: str = "inventory_edit"
+    ) -> None:
         save_path = self.get_save_path()
         if save_path:
             self._backup(save_path, f"before_{operation}", operation)
