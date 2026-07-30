@@ -39,6 +39,20 @@ class SettingsTab:
         # Reference to the advanced section frame (created on unlock)
         self._advanced_frame: ctk.CTkFrame | None = None
 
+    def _count_existing_backups(self) -> int:
+        """Count backups on disk for the currently loaded save, if any."""
+        if self.get_save_path is None:
+            return 0
+        save_path = self.get_save_path()
+        if not save_path:
+            return 0
+        try:
+            from er_save_manager.backup.manager import BackupManager
+
+            return len(BackupManager(save_path).list_backups())
+        except Exception:
+            return 0
+
     def setup_ui(self):
         theme_value = self.settings.get("theme", None)
         if theme_value is None or theme_value == "dark":
@@ -233,11 +247,29 @@ class SettingsTab:
             # Commits only on Enter/focus-out so a partially typed value
             # (e.g. "1" while changing 50 to 100) never gets saved and
             # triggers pruning down to that intermediate value.
+            old_value = self.settings.get("max_backups", 50)
             try:
                 value = int(self.max_backups_var.get())
             except ValueError:
-                value = self.settings.get("max_backups", 50)
+                value = old_value
             value = max(value, MIN_MAX_BACKUPS)
+
+            if value < old_value:
+                existing_count = self._count_existing_backups()
+                if existing_count > value:
+                    excess = existing_count - value
+                    proceed = CTkMessageBox.askyesno(
+                        "Lower Backup Limit",
+                        f"You currently have {existing_count} backups for the "
+                        f"loaded save.\n\nLowering the limit to {value} will "
+                        f"delete the {excess} oldest backup(s) the next time "
+                        "a backup is created.\n\nContinue?",
+                        parent=self.root,
+                    )
+                    if not proceed:
+                        self.max_backups_var.set(str(old_value))
+                        return
+
             self.max_backups_var.set(str(value))
             self.settings.set("max_backups", value)
 
