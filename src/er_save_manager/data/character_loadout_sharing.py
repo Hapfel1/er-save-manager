@@ -1,5 +1,5 @@
 """
-Inventory loadout sharing via Supabase.
+Character loadout sharing via Supabase.
 """
 
 from __future__ import annotations
@@ -33,18 +33,14 @@ def _get_client() -> Client | None:
         return None
 
 
-def share_loadout(payload: dict[str, Any] | list, name: str = "") -> str | None:
-    """Upload an inventory loadout, return the share code (row id), or None on failure.
-
-    payload is normally {"items": [...], "save_type": {...}}; a bare list
-    is also accepted for backward compatibility with pre-tagging callers.
-    """
+def share_loadout(payload: dict[str, Any], name: str = "") -> str | None:
+    """Upload a character loadout, return the share code (row id), or None on failure."""
     client = _get_client()
     if client is None:
         return None
     try:
         response = (
-            client.table("inventory_loadouts")
+            client.table("character_loadouts")
             .insert({"name": name, "payload": payload})
             .execute()
         )
@@ -53,18 +49,18 @@ def share_loadout(payload: dict[str, Any] | list, name: str = "") -> str | None:
             return data[0]["id"]
         return None
     except Exception as e:
-        print(f"[InventoryLoadoutSharing] Failed to share loadout: {e}")
+        print(f"[CharacterLoadoutSharing] Failed to share loadout: {e}")
         return None
 
 
-def fetch_loadout(code: str) -> dict[str, Any] | list | None:
-    """Fetch a shared inventory loadout payload by its share code."""
+def fetch_loadout(code: str) -> dict[str, Any] | None:
+    """Fetch a shared character loadout payload by its share code."""
     client = _get_client()
     if client is None:
         return None
     try:
         response = (
-            client.table("inventory_loadouts")
+            client.table("character_loadouts")
             .select("payload")
             .eq("id", code.strip())
             .execute()
@@ -74,5 +70,5 @@ def fetch_loadout(code: str) -> dict[str, Any] | list | None:
             return data[0]["payload"]
         return None
     except Exception as e:
-        print(f"[InventoryLoadoutSharing] Failed to fetch loadout '{code}': {e}")
+        print(f"[CharacterLoadoutSharing] Failed to fetch loadout '{code}': {e}")
         return None

@@ -35,6 +35,7 @@ from er_save_manager.ui.tabs import (
     AdvancedToolsTab,
     AppearanceTab,
     BackupManagerTab,
+    CharacterLoadoutTab,
     CharacterManagementTab,
     EventFlagsTab,
     GesturesRegionsTab,
@@ -873,6 +874,21 @@ class SaveManagerGUI:
         )
         self.gestures_tab.setup_ui()
 
+        # Tab 8.5: Character Loadouts
+        self.notebook.add("Loadouts")
+        tab_loadouts = self.notebook.tab("Loadouts")
+        self.character_loadout_tab = CharacterLoadoutTab(
+            tab_loadouts,
+            lambda: self.save_file,
+            lambda: self.save_path,
+            self.load_save,
+            self.show_toast,
+            self.equipment_editor,
+            self.inventory_editor,
+            self._set_char_slot,
+        )
+        self.character_loadout_tab.setup_ui()
+
         # Tab 9: Hex Editor - hidden for now
         _hex_hidden = ctk.CTkFrame(self.root, fg_color="transparent")
         self.hex_tab = HexEditorTab(_hex_hidden, lambda: self.save_file)
@@ -1279,6 +1295,15 @@ class SaveManagerGUI:
             get_settings_callback=lambda: self.settings,
         )
         self.inventory_editor.setup_ui()
+
+    def _set_char_slot(self, slot_idx: int) -> None:
+        """Sync the Character Editor tab's slot selector to slot_idx.
+
+        Used by the Loadout tab before delegating to equipment_editor or
+        inventory_editor, since both read the current slot from
+        self.char_slot_var.
+        """
+        self.char_slot_var.set(str(slot_idx + 1))
 
     def acknowledge_save_written(self) -> None:
         """Resnapshot the save file mtime after an internal write.
@@ -2223,6 +2248,8 @@ class SaveManagerGUI:
                 self.world_tab.refresh_slot_names()
             if hasattr(self, "event_flags_tab") and self.event_flags_tab:
                 self.event_flags_tab.refresh_slot_names()
+            if hasattr(self, "character_loadout_tab") and self.character_loadout_tab:
+                self.character_loadout_tab.refresh_slot_names()
             if hasattr(self, "gestures_tab") and self.gestures_tab:
                 self.gestures_tab.refresh_slot_names()
             self._update_character_editor_slots()

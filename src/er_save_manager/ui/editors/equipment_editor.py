@@ -1576,7 +1576,7 @@ class EquipmentEditor:
 
     # ---- apply --------------------------------------------------------------
 
-    def apply_changes(self):
+    def apply_changes(self, create_backup: bool = True, silent: bool = False):
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
@@ -1586,9 +1586,10 @@ class EquipmentEditor:
 
         slot_idx = self.get_char_slot()
 
-        if not CTkMessageBox.askyesno(
+        if not silent and not CTkMessageBox.askyesno(
             "Confirm",
-            f"Apply equipment changes to Slot {slot_idx + 1}?\n\nA backup will be created.",
+            f"Apply equipment changes to Slot {slot_idx + 1}?"
+            + ("\n\nA backup will be created." if create_backup else ""),
             parent=self.parent,
         ):
             return
@@ -1598,7 +1599,7 @@ class EquipmentEditor:
                 save_file._raw_data = bytearray(save_file._raw_data)
 
             save_path = self.get_save_path()
-            if save_path:
+            if create_backup and save_path:
                 from er_save_manager.backup.manager import BackupManager
 
                 BackupManager(Path(save_path)).create_backup(
@@ -1705,9 +1706,10 @@ class EquipmentEditor:
             if save_path:
                 save_file.to_file(Path(save_path))
 
-            CTkMessageBox.showinfo(
-                "Done", "Equipment changes applied.", parent=self.parent
-            )
+            if not silent:
+                CTkMessageBox.showinfo(
+                    "Done", "Equipment changes applied.", parent=self.parent
+                )
         except Exception as e:
             CTkMessageBox.showerror(
                 "Error", f"Failed to apply equipment changes:\n{e}", parent=self.parent
@@ -1856,8 +1858,13 @@ class EquipmentEditor:
         if not name:
             return
 
+        from er_save_manager.editors.save_type_utils import detect_save_type
+
         store = self._read_loadout_store()
-        store[name] = self._collect_state()
+        store[name] = {
+            "slots": self._collect_state(),
+            "save_type": detect_save_type(save_file, self.get_save_path()),
+        }
         try:
             self._write_loadout_store(store)
             CTkMessageBox.showinfo(
@@ -1890,18 +1897,43 @@ class EquipmentEditor:
             store.pop(name, None)
             self._write_loadout_store(store)
             return
-        slots = store.get(name, {})
-        self._apply_loadout_data(slots)
+        self._apply_loadout_data(store.get(name, {}))
 
-    def _apply_loadout_data(self, slots: dict) -> None:
+    @staticmethod
+    def _unwrap_loadout_entry(entry: dict) -> tuple[dict, dict]:
+        """Support both the current {"slots":..., "save_type":...} format
+        and the old flat slots-only format for backward compatibility."""
+        if isinstance(entry, dict) and "slots" in entry:
+            return entry.get("slots") or {}, entry.get("save_type") or {}
+        return entry or {}, {}
+
+    def _apply_loadout_data(self, loadout_entry: dict, silent: bool = False) -> dict:
+        """Stage a loadout dict onto equipment_vars, spawning missing items on
+        request. Returns {"skipped": [...], "spawned": int|None, "cancelled": bool}
+        so silent callers can fold the result into their own summary instead
+        of showing these info/warning boxes themselves."""
+        from er_save_manager.editors.save_type_utils import confirm_convergence_mismatch
+
+        slots, save_type = self._unwrap_loadout_entry(loadout_entry)
+
+        if not confirm_convergence_mismatch(
+            self.parent,
+            save_type,
+            self.get_save_file(),
+            self.get_save_path(),
+            check_seamless=True,
+        ):
+            return {"skipped": [], "spawned": None, "cancelled": True}
+
         skipped, unresolved = self._apply_state(slots)
         if not unresolved:
-            CTkMessageBox.showinfo(
-                "Loadout Applied",
-                "Loadout applied. Click Apply Equipment Changes to save.",
-                parent=self.parent,
-            )
-            return
+            if not silent:
+                CTkMessageBox.showinfo(
+                    "Loadout Applied",
+                    "Loadout applied. Click Apply Equipment Changes to save.",
+                    parent=self.parent,
+                )
+            return {"skipped": [], "spawned": None, "cancelled": False}
 
         if CTkMessageBox.askyesno(
             "Items Not Owned",
@@ -1913,26 +1945,34 @@ class EquipmentEditor:
         ):
             spawned = self._spawn_unresolved(unresolved)
             skipped, unresolved = self._apply_state(slots)
-            CTkMessageBox.showinfo(
-                "Loadout Applied",
-                f"Spawned {spawned} item(s). "
-                + (
-                    f"{len(unresolved)} slot(s) still could not be resolved: "
-                    + ", ".join(k for k, _ in unresolved)
-                    if unresolved
-                    else "All slots resolved."
+            if not silent:
+                CTkMessageBox.showinfo(
+                    "Loadout Applied",
+                    f"Spawned {spawned} item(s). "
+                    + (
+                        f"{len(unresolved)} slot(s) still could not be resolved: "
+                        + ", ".join(k for k, _ in unresolved)
+                        if unresolved
+                        else "All slots resolved."
+                    )
+                    + "\n\nClick Apply Equipment Changes to save.",
+                    parent=self.parent,
                 )
-                + "\n\nClick Apply Equipment Changes to save.",
-                parent=self.parent,
-            )
+            return {
+                "skipped": [k for k, _ in unresolved],
+                "spawned": spawned,
+                "cancelled": False,
+            }
         else:
-            CTkMessageBox.showwarning(
-                "Loadout Applied",
-                "Applied, skipping items not owned:\n"
-                + ", ".join(skipped)
-                + "\n\nClick Apply Equipment Changes to save the rest.",
-                parent=self.parent,
-            )
+            if not silent:
+                CTkMessageBox.showwarning(
+                    "Loadout Applied",
+                    "Applied, skipping items not owned:\n"
+                    + ", ".join(skipped)
+                    + "\n\nClick Apply Equipment Changes to save the rest.",
+                    parent=self.parent,
+                )
+            return {"skipped": skipped, "spawned": None, "cancelled": False}
 
     def export_loadout_file(self):
         save_file = self.get_save_file()
@@ -1951,10 +1991,13 @@ class EquipmentEditor:
         if not path:
             return
 
+        from er_save_manager.editors.save_type_utils import detect_save_type
+
         data = {
             "format": "er-save-manager-equipment-loadout",
             "version": 1,
             "slots": self._collect_state(),
+            "save_type": detect_save_type(save_file, self.get_save_path()),
         }
 
         try:
@@ -1988,14 +2031,18 @@ class EquipmentEditor:
         try:
             with open(path) as f:
                 data = json.load(f)
-            slots = data.get("slots", data) if isinstance(data, dict) else {}
         except Exception as e:
             CTkMessageBox.showerror(
                 "Error", f"Failed to import loadout:\n{e}", parent=self.parent
             )
             return
 
-        self._apply_loadout_data(slots)
+        entry = (
+            {"slots": data.get("slots", data), "save_type": data.get("save_type", {})}
+            if isinstance(data, dict)
+            else {}
+        )
+        self._apply_loadout_data(entry)
 
     def _show_share_code(self, code: str, description: str = "loadout"):
         """Show a dialog with a generated share code and a copy button.
@@ -2110,13 +2157,16 @@ class EquipmentEditor:
             return
 
         from er_save_manager.data.equipment_sharing import share_loadout
+        from er_save_manager.editors.save_type_utils import detect_save_type
 
+        save_type_tag = detect_save_type(save_file, self.get_save_path())
         save_type = (
             "cnv"
-            if self._is_cnv_save()
-            else ("co2" if self._is_co2_save() else "vanilla")
+            if save_type_tag["convergence"]
+            else ("co2" if save_type_tag["seamless"] else "vanilla")
         )
-        code = share_loadout(self._collect_state(), save_type=save_type)
+        payload = {"slots": self._collect_state(), "save_type": save_type_tag}
+        code = share_loadout(payload, save_type=save_type)
         if not code:
             CTkMessageBox.showerror(
                 "Error",
@@ -2141,8 +2191,8 @@ class EquipmentEditor:
 
         from er_save_manager.data.equipment_sharing import fetch_loadout
 
-        slots = fetch_loadout(code)
-        if slots is None:
+        payload = fetch_loadout(code)
+        if payload is None:
             CTkMessageBox.showerror(
                 "Not Found",
                 "No loadout found for that code, or the connection failed.",
@@ -2150,4 +2200,4 @@ class EquipmentEditor:
             )
             return
 
-        self._apply_loadout_data(slots)
+        self._apply_loadout_data(payload)

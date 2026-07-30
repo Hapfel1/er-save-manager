@@ -3,6 +3,7 @@
 from er_save_manager.ui.tabs.advanced_tools_tab import AdvancedToolsTab
 from er_save_manager.ui.tabs.appearance_tab import AppearanceTab
 from er_save_manager.ui.tabs.backup_manager_tab import BackupManagerTab
+from er_save_manager.ui.tabs.character_loadout_tab import CharacterLoadoutTab
 from er_save_manager.ui.tabs.character_management_tab import CharacterManagementTab
 from er_save_manager.ui.tabs.event_flags_tab import EventFlagsTab
 from er_save_manager.ui.tabs.gestures_regions_tab import GesturesRegionsTab
@@ -17,6 +18,7 @@ __all__ = [
     "AppearanceTab",
     "BackupManagerTab",
     "CharacterManagementTab",
+    "CharacterLoadoutTab",
     "EventFlagsTab",
     "GesturesRegionsTab",
     "HexEditorTab",

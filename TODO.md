@@ -1,4 +1,4 @@
-gneeral loadouts tab
+add warning when changing max backups deletes backups
 
 invasion regions
 
@@ -7,6 +7,8 @@ ds3 gestures
 npc respawner ds3
 
 ds2
+
+gneeral loadouts tab done
 
 character ops for other games, ds3, ds2 done
 

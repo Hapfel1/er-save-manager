@@ -3047,6 +3047,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
 
         self.db_path = get_loadouts_path()
         self.current_loadout_name: str | None = None
+        self.current_loadout_save_type: dict = {}
 
         main_frame = ctk.CTkFrame(self, fg_color="transparent")
         main_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -3203,6 +3204,14 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         with open(self.db_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4)
 
+    @staticmethod
+    def _unwrap_db_entry(entry) -> tuple[list, dict]:
+        """Support both the current {"items":..., "save_type":...} format
+        and the old flat items-list format for backward compatibility."""
+        if isinstance(entry, dict):
+            return entry.get("items") or [], entry.get("save_type") or {}
+        return entry or [], {}
+
     def refresh_db_list(self):
         self.db_lb.delete(0, tk.END)
         for name in sorted(self._read_db().keys()):
@@ -3223,7 +3232,14 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
                 parent=self,
             )
             return
-        db[name] = self.editor.loadout
+        from er_save_manager.editors.save_type_utils import detect_save_type
+
+        db[name] = {
+            "items": self.editor.loadout,
+            "save_type": detect_save_type(
+                self.editor.get_save_file(), self.editor.get_save_path()
+            ),
+        }
         self._write_db(db)
         self.current_loadout_name = name
         self.refresh_db_list()
@@ -3242,8 +3258,15 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
                 parent=self,
             )
             return
+        from er_save_manager.editors.save_type_utils import detect_save_type
+
         db = self._read_db()
-        db[name] = self.editor.loadout
+        db[name] = {
+            "items": self.editor.loadout,
+            "save_type": detect_save_type(
+                self.editor.get_save_file(), self.editor.get_save_path()
+            ),
+        }
         self._write_db(db)
         self.current_loadout_name = name
         self.refresh_db_list()
@@ -3259,8 +3282,10 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         name = self.db_lb.get(sel[0])
         db = self._read_db()
         if name in db:
-            self.editor.loadout = db[name]
+            items, save_type = self._unwrap_db_entry(db[name])
+            self.editor.loadout = items
             self.current_loadout_name = name
+            self.current_loadout_save_type = save_type
             self.refresh_list()
             show_toast(self.winfo_toplevel(), f"Loaded from DB: {name}", type="success")
 
@@ -3295,6 +3320,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
 
     def clear_loadout(self):
         self.editor.loadout.clear()
+        self.current_loadout_save_type = {}
         self.refresh_list()
 
     def save_json(self):
@@ -3307,8 +3333,16 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             filetypes=[("JSON Files", "*.json")],
         )
         if path:
+            from er_save_manager.editors.save_type_utils import detect_save_type
+
+            data = {
+                "items": self.editor.loadout,
+                "save_type": detect_save_type(
+                    self.editor.get_save_file(), self.editor.get_save_path()
+                ),
+            }
             with open(path, "w", encoding="utf-8") as f:
-                json.dump(self.editor.loadout, f, indent=4)
+                json.dump(data, f, indent=4)
             show_toast(self.winfo_toplevel(), "Loadout saved.", type="success")
 
     def load_json(self):
@@ -3317,10 +3351,11 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             try:
                 with open(path, encoding="utf-8") as f:
                     data = json.load(f)
-                if isinstance(data, list):
-                    self.editor.loadout = data
-                    self.refresh_list()
-                    show_toast(self.winfo_toplevel(), "Loadout loaded.", type="success")
+                items, save_type = self._unwrap_db_entry(data)
+                self.editor.loadout = items
+                self.current_loadout_save_type = save_type
+                self.refresh_list()
+                show_toast(self.winfo_toplevel(), "Loadout loaded.", type="success")
             except Exception as e:
                 CTkMessageBox.showerror(
                     "Error", f"Failed to load JSON:\n{e}", parent=self
@@ -3332,9 +3367,16 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             return
 
         from er_save_manager.data.inventory_loadout_sharing import share_loadout
+        from er_save_manager.editors.save_type_utils import detect_save_type
 
         name = self.current_loadout_name or ""
-        code = share_loadout(self.editor.loadout, name=name)
+        payload = {
+            "items": self.editor.loadout,
+            "save_type": detect_save_type(
+                self.editor.get_save_file(), self.editor.get_save_path()
+            ),
+        }
+        code = share_loadout(payload, name=name)
         if not code:
             CTkMessageBox.showerror(
                 "Error",
@@ -3353,7 +3395,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         from er_save_manager.data.inventory_loadout_sharing import fetch_loadout
 
         data = fetch_loadout(code.strip())
-        if not isinstance(data, list):
+        if not isinstance(data, (list, dict)):
             CTkMessageBox.showerror(
                 "Error",
                 "Code not found, or failed to fetch. Check your connection.",
@@ -3361,7 +3403,9 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             )
             return
 
-        self.editor.loadout = data
+        items, save_type = self._unwrap_db_entry(data)
+        self.editor.loadout = items
+        self.current_loadout_save_type = save_type
         self.refresh_list()
         show_toast(self.winfo_toplevel(), "Loadout imported from code.", type="success")
 
@@ -3416,7 +3460,19 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             CTkMessageBox.showwarning("No Save", "Load a save file first.", parent=self)
             return
 
+        from er_save_manager.editors.save_type_utils import confirm_convergence_mismatch
+
+        if not confirm_convergence_mismatch(
+            self,
+            self.current_loadout_save_type,
+            save_file,
+            self.editor.get_save_path(),
+            check_seamless=True,
+        ):
+            return
+
         slot_idx = self.editor.get_char_slot()
+        save_path = self.editor.get_save_path()
 
         try:
             self.editor.ensure_mutable()
@@ -3441,7 +3497,6 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
                     errors.append(f"{item_info.get('name_label', 'item')}: {ex}")
 
             save_file.recalculate_checksums()
-            save_path = self.editor.get_save_path()
             if save_path:
                 save_file.to_file(Path(save_path))
 
