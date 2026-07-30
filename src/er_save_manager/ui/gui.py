@@ -156,6 +156,8 @@ class SaveManagerGUI:
         self.dsr_save = None
         # DS3-specific parsed save
         self.ds3_save = None
+        # DS2-specific parsed save
+        self.ds2_save = None
         # Nightreign parsed save
         self._nr_save: NightreignSave | None = None
         self._file_load_buttons: list = []
@@ -708,6 +710,7 @@ class SaveManagerGUI:
         # on widgets that are about to be destroyed.
         self.dsr_save = None
         self.ds3_save = None
+        self.ds2_save = None
         self._nr_save = None
 
         for attr in (
@@ -727,14 +730,20 @@ class SaveManagerGUI:
             "dsr_npc_tab",
             "dsr_world_tab",
             "dsr_flags_tab",
+            "dsr_char_mgmt_tab",
             "ds3_inspector_tab",
             "ds3_editor_tab",
             "ds3_inventory_tab",
             "ds3_bosses_tab",
             "ds3_world_tab",
+            "ds3_char_mgmt_tab",
+            "ds2_inspector_tab",
+            "ds2_editor_tab",
+            "ds2_management_tab",
             "nr_inspector_tab",
             "nr_editor_tab",
             "nr_steamid_tab",
+            "nr_char_mgmt_tab",
         ):
             setattr(self, attr, None)
 
@@ -993,6 +1002,74 @@ class SaveManagerGUI:
                 get_save_path_callback=lambda: self.save_path,
                 get_default_save_path_callback=lambda: self.default_save_path,
                 active_game="dark_souls_3",
+                root=self.root,
+            )
+            self.settings_tab.setup_ui()
+            return
+
+        if profile.key == "dark_souls_2":
+            # Bosses/World State are not included: individual boss/quest
+            # flag IDs are not mapped yet (see save.py module docstring),
+            # and populating a raw byte browser for an unmapped ~38KB
+            # region was also a real performance cost on every load - it
+            # inserted thousands of rows into a Treeview. Removed rather
+            # than fixed, since there was nothing concrete to show yet.
+            # Inventory is a subtab inside Character Editor, not its own
+            # top-level tab, since it always edits whichever slot
+            # Character Editor has loaded.
+            from er_save_manager.games.DS2.character_management_tab import (
+                DS2CharacterManagementTab,
+            )
+            from er_save_manager.games.DS2.editor_tab import DS2EditorTab
+            from er_save_manager.games.DS2.inspector_tab import DS2InspectorTab
+
+            self.notebook.add("Save Inspector")
+            self.ds2_inspector_tab = DS2InspectorTab(
+                self.notebook.tab("Save Inspector"),
+                get_save=lambda: self.ds2_save,
+                on_slot_selected=self._on_ds2_slot_selected,
+            )
+            self.ds2_inspector_tab.setup_ui()
+
+            self.notebook.add("Character Management")
+            self.ds2_management_tab = DS2CharacterManagementTab(
+                self.notebook.tab("Character Management"),
+                get_save=lambda: self.ds2_save,
+                get_save_path=lambda: self.save_path,
+                reload_save=lambda: self._load_ds2_save(str(self.save_path)),
+                show_toast=self.show_toast,
+                is_game_running=lambda: self.is_game_running(profile.process_name),
+            )
+            self.ds2_management_tab.setup_ui()
+
+            self.notebook.add("Character Editor")
+            self.ds2_editor_tab = DS2EditorTab(
+                self.notebook.tab("Character Editor"),
+                get_save=lambda: self.ds2_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self.ds2_editor_tab.setup_ui()
+
+            self.notebook.add("SteamID Patcher")
+            self.steamid_tab = SteamIDPatcherTab(
+                self.notebook.tab("SteamID Patcher"),
+                lambda: self.save_file,
+                lambda: self.save_path,
+                self.load_save,
+                self.show_toast,
+            )
+            self.steamid_tab.setup_ui()
+            self.steamid_tab.set_active_profile(
+                "Dark Souls II: Scholar of the First Sin"
+            )
+
+            self.notebook.add("Settings")
+            self.settings_tab = SettingsTab(
+                self.notebook.tab("Settings"),
+                get_save_path_callback=lambda: self.save_path,
+                get_default_save_path_callback=lambda: self.default_save_path,
+                active_game="dark_souls_2",
                 root=self.root,
             )
             self.settings_tab.setup_ui()
@@ -1742,6 +1819,18 @@ class SaveManagerGUI:
             except Exception:
                 pass
             return
+        if self.active_game == "dark_souls_2":
+            try:
+                self.notebook.set("Character Editor")
+            except Exception:
+                pass
+            tab = getattr(self, "ds2_editor_tab", None)
+            if tab is not None and hasattr(tab, "tabview"):
+                try:
+                    tab.tabview.set("Inventory")
+                except Exception:
+                    pass
+            return
         # Elden Ring: Character Editor > Inventory sub-tab
         self.notebook.set("Character Editor")
         if hasattr(self, "inventory_editor"):
@@ -1813,6 +1902,8 @@ class SaveManagerGUI:
                     self.dsr_char_mgmt_tab.refresh()
                 if hasattr(self, "nr_char_mgmt_tab") and self.nr_char_mgmt_tab:
                     self.nr_char_mgmt_tab.refresh()
+                if hasattr(self, "ds2_management_tab") and self.ds2_management_tab:
+                    self.ds2_management_tab.refresh()
             elif tab_name == "Hex Editor":
                 if self.save_file:
                     try:
@@ -1841,6 +1932,8 @@ class SaveManagerGUI:
             self.root.after(500, lambda p=save_path: self._load_dsr_save(p))
         elif self.active_game == "dark_souls_3":
             self.root.after(500, lambda p=save_path: self._load_ds3_save(p))
+        elif self.active_game == "dark_souls_2":
+            self.root.after(500, lambda p=save_path: self._load_ds2_save(p))
         elif self.active_game == "nightreign" and _NR_AVAILABLE:
             self.root.after(500, lambda p=save_path: self._load_nr_save(p))
         else:
@@ -1995,6 +2088,9 @@ class SaveManagerGUI:
         if self.active_game == "dark_souls_3":
             self._load_ds3_save(save_path)
             return
+        if self.active_game == "dark_souls_2":
+            self._load_ds2_save(save_path)
+            return
         if self.active_game == "nightreign" and _NR_AVAILABLE:
             self._load_nr_save(save_path)
             return
@@ -2137,6 +2233,52 @@ class SaveManagerGUI:
             f"DS3 save loaded: {os.path.basename(save_path)}", duration=2500
         )
 
+    def _load_ds2_save(self, save_path: str) -> None:
+        """Parse a DS2 SOTFS save file and refresh the DS2 tabs."""
+        from er_save_manager.games.DS2.save import DS2Save
+
+        profile = self._active_profile()
+        if (
+            not self.settings.get("skip_game_running_check", False)
+            and profile
+            and profile.process_name
+            and self.is_game_running(profile.process_name)
+        ):
+            if not self._handle_game_running_dialog(profile):
+                return
+
+        try:
+            self.ds2_save = DS2Save.from_file(save_path)
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error", f"Failed to load DS2 save:\n{e}", parent=self.root
+            )
+            return
+
+        self.save_path = Path(save_path)
+        self.save_file = None
+
+        for attr in (
+            "ds2_inspector_tab",
+            "ds2_editor_tab",
+            "ds2_management_tab",
+        ):
+            tab = getattr(self, attr, None)
+            if tab is not None:
+                tab.refresh()
+
+        steamid_tab = getattr(self, "steamid_tab", None)
+        if steamid_tab is not None:
+            try:
+                steamid_tab._on_game_changed()
+            except Exception:
+                pass
+
+        self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
+        self.show_toast(
+            f"DS2 save loaded: {os.path.basename(save_path)}", duration=2500
+        )
+
     def _load_nr_save(self, save_path: str) -> None:
         """Parse a Nightreign save file and refresh all NR tabs."""
         profile = self._active_profile()
@@ -2208,6 +2350,22 @@ class SaveManagerGUI:
 
         """Reload the current save file without showing success message"""
         self.load_save(silent=True)
+
+    def _on_ds2_slot_selected(self, slot_idx: int) -> None:
+        """Navigate to Character Editor and load the selected slot.
+        Called from the DS2 inspector row double-click or Edit Character
+        button.
+        """
+        try:
+            self.notebook.set("Character Editor")
+        except Exception:
+            pass
+        tab = getattr(self, "ds2_editor_tab", None)
+        if tab is not None:
+            try:
+                tab.slot_var_set(slot_idx)
+            except Exception:
+                pass
 
     def _finalize_save_load(self, save_file, save_path, silent=False):
         """Finalize save loading on main thread"""
