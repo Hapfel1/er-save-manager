@@ -43,16 +43,6 @@ Entry map (23 total, confirmed against a real DS2SOFS0000.sl2):
   22       Single ~13KB entry: same per-slot name cache as entry 0 (see
            CHARACTER_SELECT_ENTRY below). Rest of the entry unmapped.
 
-The best current lead for event/boss/quest flags is a ~38KB region inside
-the profile slot itself, immediately after the key items table
-(0x11E00 to the end of the slot, 0x1B2FC). It differs substantially
-between an unplayed and a played character, but bit-density analysis does
-not show the sparse "mostly zero" pattern a simple boolean flag array
-would have, so it is likely a mix of flags and other state (counters,
-timers, structured records) rather than a pure bitfield. Not yet mapped
-to individual flag IDs; see FLAG_REGION_START/FLAG_REGION_END below for
-the raw region and games/DS2/world_state_tab.py for a raw browser over it.
-
 Entries 11-22 are decrypted and re-encrypted unchanged on save since their
 internal structure has not been reverse engineered yet.
 
@@ -127,9 +117,6 @@ _OCC_FLAG_OFFSET = 892
 _OCC_NAME_OFFSET = 1286
 _OCC_NAME_SIZE = 28
 
-# Entry 22 (~13KB) caches the same per-slot name at the same stride as
-# entry 0, just with a different base offset. Confirmed against a real
-# save: slot 1's name landed at 938 = 442 + 496 * 1.
 CHARACTER_SELECT_ENTRY = 22
 _SELECT_NAME_OFFSET = 442
 _SELECT_NAME_SIZE = 28
@@ -170,8 +157,6 @@ def _md5(data: bytes) -> bytes:
 
 
 def _read_entry_header(raw: bytes, index: int) -> tuple[int, int]:
-    """Return (size, data_offset) for the entry at index, read via struct
-    rather than assumed, so a differently-sized save still parses correctly."""
     pos = _ENTRIES_START + index * _ENTRY_STRIDE
     size = struct.unpack_from("<I", raw, pos + 8)[0]
     data_offset = struct.unpack_from("<I", raw, pos + 16)[0]
@@ -281,14 +266,6 @@ _VALID_NAME_CHARS = set(
 
 
 def _is_valid_name(name: str) -> bool:
-    """True if name looks like a real player-entered name.
-
-    Slots that have never been used in-game are not zero-initialized;
-    reading NAME_OFFSET from one returns leftover memory, not an empty
-    string. Validating the character set (same rule the community DS2
-    save tools use) keeps that garbage from being copied into entry 0
-    or entry 22 when syncing.
-    """
     return bool(name) and all(c in _VALID_NAME_CHARS for c in name)
 
 
@@ -305,9 +282,6 @@ class Character:
 
     @name.setter
     def name(self, value: str) -> None:
-        # Entry 0 / entry 22 cached name copies are synced separately by
-        # DS2Save._sync_name_caches() at save time, not here, since this
-        # class has no access to those container entries.
         encoded = value.encode("utf-16-le")[:NAME_SIZE].ljust(NAME_SIZE, b"\x00")
         self._data[NAME_OFFSET : NAME_OFFSET + NAME_SIZE] = encoded
 
@@ -365,11 +339,6 @@ class Character:
 
     STACKABLE_CATEGORIES = {"goods", "bolts", "spells", "upgrade"}
 
-    # Default (unk_1, quantity/durability, unk_2) template used when adding
-    # a non-stackable item and no existing item of that category is present
-    # to copy real values from. Values are the defaults used by the
-    # Dark-Souls-2-Save-Editor-PS4-PC project; durability is stored as a
-    # float bit pattern, not a plain count, for these categories.
     _DEFAULT_TEMPLATE = {
         "weapons": (0x00192D50, 0x42200000, 0x00000000),
         "armors": (0x0142E0A4, 0x437F0000, 0x00000000),
@@ -495,11 +464,6 @@ class DS2Save:
         return result
 
     def sync_name_caches(self) -> None:
-        """Propagate each slot's current name into entry 0 and entry 22,
-        which the character-select screen reads instead of the profile
-        slot. Without this a rename applies in-game but the select screen
-        still shows the old name.
-        """
         occ_data = self.container.get_entry(OCCUPANCY_ENTRY)
         select_data = self.container.get_entry(CHARACTER_SELECT_ENTRY)
 
@@ -537,31 +501,6 @@ class DS2Save:
         )
 
     def is_slot_initialized(self, slot_index: int) -> bool:
-        """
-        True if this slot has ever been through the game's own character
-        creation screen, independent of whether it currently holds a
-        named character.
-
-        This is a hard engine limitation shared with DS1R and DS3 (and
-        possibly Nightreign, unconfirmed): the load-screen slot list is
-        not rebuilt purely from save file data. Some part of it is only
-        established the first time the player actually creates a
-        character in that slot in-game. Writing byte-perfect character
-        data into a slot that has never been through character creation
-        will not make it appear at the load screen, no matter how
-        accurate the write is.
-
-        Community workaround (documented for DS1R/DS3 since ~2016):
-        create a real, even throwaway, character in the destination slot
-        in-game first, save and quit, then run the copy/import against
-        that now-initialized slot.
-
-        Confirmed against a real save: the entry 0 flag byte at
-        892 + 496*slot is set for any slot that has been through
-        character creation (including one left as an unnamed level 1
-        default), and 0 for slots that have not, which is a more
-        reliable signal than a non-empty name.
-        """
         occ_data = self.container.get_entry(OCCUPANCY_ENTRY)
         flag_off = _OCC_FLAG_OFFSET + _OCC_STRIDE * slot_index
         if flag_off >= len(occ_data):
