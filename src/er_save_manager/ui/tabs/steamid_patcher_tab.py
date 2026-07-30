@@ -39,6 +39,9 @@ class SteamIDPatcherTab:
         self._note_var: tk.StringVar | None = None
         self._note_frame: ctk.CTkFrame | None = None
         self._patch_btn: ctk.CTkButton | None = None
+        self._ds2_instructions_frame: ctk.CTkFrame | None = None
+        self._current_frame: ctk.CTkFrame | None = None
+        self._patch_frame: ctk.CTkFrame | None = None
 
     def _get_profiles(self):
         if not self._profiles:
@@ -85,6 +88,7 @@ class SteamIDPatcherTab:
         # Current save display
         current_frame = ctk.CTkFrame(main_frame, corner_radius=10)
         current_frame.pack(fill=tk.X, padx=15, pady=(0, 12))
+        self._current_frame = current_frame
 
         ctk.CTkLabel(
             current_frame,
@@ -116,10 +120,64 @@ class SteamIDPatcherTab:
             wraplength=560,
         )
         self._note_label.pack(anchor="w", padx=12, pady=10)
+        self._ds2_instructions_frame = ctk.CTkFrame(
+            main_frame, corner_radius=10, fg_color=("gray90", "gray18")
+        )
+
+        ctk.CTkLabel(
+            self._ds2_instructions_frame,
+            text="You do not need to patch a SteamID for DS2",
+            font=("Segoe UI", 13, "bold"),
+        ).pack(anchor="w", padx=12, pady=(12, 4))
+
+        ctk.CTkLabel(
+            self._ds2_instructions_frame,
+            text=(
+                "To use a save from a different Steam "
+                "account, swap the file in place while the game is running "
+                "instead:"
+            ),
+            font=("Segoe UI", 11),
+            text_color=("gray30", "gray70"),
+            justify=tk.LEFT,
+            wraplength=560,
+        ).pack(anchor="w", padx=12, pady=(0, 8))
+
+        steps = [
+            "Start the game and let it load to the title screen.",
+            "Open your save location (button below) and replace the save "
+            "file with the one you want to use.",
+            "Press Continue in-game. If it jumps to a character select "
+            "screen and shows an error, that's expected, go back.",
+            "Press New Game.",
+            "After the first cutscene finishes, quit to the title screen.",
+            "Press Continue again.",
+            "Delete the new character you just created.",
+            "Load the character from the save you actually wanted to use.",
+        ]
+        for i, step in enumerate(steps, start=1):
+            ctk.CTkLabel(
+                self._ds2_instructions_frame,
+                text=f"{i}. {step}",
+                font=("Segoe UI", 11),
+                text_color=("gray20", "gray85"),
+                justify=tk.LEFT,
+                wraplength=560,
+                anchor="w",
+            ).pack(anchor="w", padx=12, pady=2, fill=tk.X)
+
+        ctk.CTkButton(
+            self._ds2_instructions_frame,
+            text="Open Save Location",
+            command=self._open_ds2_save_location,
+            width=180,
+        ).pack(anchor="w", padx=12, pady=(10, 12))
+        # Not packed here - _on_game_changed shows/hides it based on game.
 
         # Patch section
         patch_frame = ctk.CTkFrame(main_frame, corner_radius=10)
         patch_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+        self._patch_frame = patch_frame
 
         ctk.CTkLabel(
             patch_frame,
@@ -196,12 +254,108 @@ class SteamIDPatcherTab:
             width=140,
         ).pack(pady=(0, 12), padx=12, anchor="w")
 
+    def _open_ds2_save_location(self) -> None:
+        selected = self.get_save_path()
+        if selected and Path(selected).exists():
+            folder = Path(selected).parent
+        else:
+            from er_save_manager.games.game_profiles import (
+                PROFILES_BY_KEY,
+                find_save_paths,
+            )
+
+            found = find_save_paths(PROFILES_BY_KEY["dark_souls_2"])
+            if not found:
+                CTkMessageBox.showwarning(
+                    "Not Found",
+                    "Could not find a DS2 save location automatically. "
+                    "Load a save first, or navigate to it manually.",
+                    parent=self.parent,
+                )
+                return
+            folder = found[0].parent
+
+        import os
+        import platform as platform_module
+        import subprocess
+
+        path = str(folder)
+        try:
+            system = platform_module.system()
+            if system == "Windows":
+                os.startfile(folder)
+                return
+            if system == "Darwin":
+                subprocess.run(["open", path], check=False)
+                return
+            env = os.environ.copy()
+            env.pop("LD_PRELOAD", None)
+
+            result = subprocess.run(
+                ["xdg-open", path], env=env, stderr=subprocess.DEVNULL, timeout=5
+            )
+            if result.returncode == 0:
+                return
+
+            for fm in ("nautilus", "thunar", "dolphin", "nemo", "pcmanfm", "caja"):
+                try:
+                    subprocess.Popen([fm, path], env=env, stderr=subprocess.DEVNULL)
+                    return
+                except FileNotFoundError:
+                    continue
+
+            CTkMessageBox.showerror(
+                "Error", f"Could not open folder.\nPath: {path}", parent=self.parent
+            )
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error", f"Failed to open folder:\n{e}", parent=self.parent
+            )
+
     def _on_game_changed(self, _value=None):
         profile = self._selected_profile()
         if profile is None:
             return
 
         def _update_ui():
+            if profile.key == "dark_souls_2":
+                if self._note_frame:
+                    self._note_frame.pack_forget()
+
+                if self._ds2_instructions_frame:
+                    if (
+                        self._current_frame is not None
+                        and self._current_frame.winfo_ismapped()
+                    ):
+                        # Still mapped, so "before" has a valid anchor - place
+                        # the instructions where Current Save File currently is.
+                        self._ds2_instructions_frame.pack(
+                            fill=tk.X, padx=15, pady=(0, 12), before=self._current_frame
+                        )
+                    else:
+                        self._ds2_instructions_frame.pack(
+                            fill=tk.X, padx=15, pady=(0, 12)
+                        )
+
+                if self._current_frame:
+                    self._current_frame.pack_forget()
+                if self._patch_frame:
+                    self._patch_frame.pack_forget()
+                return
+
+            if self._ds2_instructions_frame:
+                self._ds2_instructions_frame.pack_forget()
+
+            if self._patch_frame and not self._patch_frame.winfo_ismapped():
+                self._patch_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+            if self._current_frame and not self._current_frame.winfo_ismapped():
+                if self._patch_frame is not None:
+                    self._current_frame.pack(
+                        fill=tk.X, padx=15, pady=(0, 12), before=self._patch_frame
+                    )
+                else:
+                    self._current_frame.pack(fill=tk.X, padx=15, pady=(0, 12))
+
             if not profile.supports_steamid_patch:
                 note = (
                     profile.steamid_patch_note
@@ -238,12 +392,23 @@ class SteamIDPatcherTab:
 
         def _set(text: str):
             try:
-                self.current_steamid_var.set(text)
+                self.parent.after(0, lambda: self.current_steamid_var.set(text))
             except Exception:
-                pass
+                try:
+                    self.current_steamid_var.set(text)
+                except Exception:
+                    pass
 
         if profile.key == "elden_ring":
             self.update_steamid_display()
+            return
+
+        if not profile.supports_steamid_patch:
+            note = (
+                profile.steamid_patch_note
+                or "SteamID patching is not supported for this game."
+            )
+            _set(note)
             return
 
         from er_save_manager.games.generic_steamid import detect_steamid_in_file
@@ -516,10 +681,6 @@ class SteamIDPatcherTab:
                 from er_save_manager.games.sekiro_steamid import patch_steamid_sekiro
 
                 success, msg = patch_steamid_sekiro(save_path, new_steamid)
-            elif profile.key == "dark_souls_2":
-                from er_save_manager.games.ds2_dsr_steamid import patch_steamid
-
-                success, msg = patch_steamid(save_path, new_steamid, profile.key)
             elif profile.key == "dark_souls_remastered":
                 success, msg = (
                     True,
@@ -725,7 +886,7 @@ class SteamIDPatcherTab:
                         steam_users.append((label, steamid))
 
             # --- Source 3: byte-scan fallback ---
-            if not steam_users:
+            if not steam_users and not (profile and profile.key == "dark_souls_2"):
                 save_paths = PlatformUtils.find_all_save_files(profile)
                 for save_path in save_paths:
                     steamid = detect_steamid_in_file(save_path)
