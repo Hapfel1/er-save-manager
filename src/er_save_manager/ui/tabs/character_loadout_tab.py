@@ -36,8 +36,6 @@ def _center_over(window, parent, w: int, h: int) -> None:
 
 
 class _CategoryChecklistDialog(ctk.CTkToplevel):
-
-
     def __init__(
         self,
         parent,
