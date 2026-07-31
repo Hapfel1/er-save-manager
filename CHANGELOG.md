@@ -3,6 +3,81 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.8.0
+**Released:** July 30, 2026
+
+
+### ✨ New Features
+
+- Fix for the "Missing Romina" bug ([01c106d](https://github.com/Hapfel1/er-save-manager/commit/01c106da11ec350ec85d191fbd3e35ba4dfcaeaa))
+
+- Ruins of Unte golem fix for Seamless Co-op ([abe0df6](https://github.com/Hapfel1/er-save-manager/commit/abe0df6afdc2b3521f8378cdf8ee54be76e05c88))
+
+- Erdtree state detection ([6e8265a](https://github.com/Hapfel1/er-save-manager/commit/6e8265aa9955108aac9fafc4456876390256c557))
+
+- Add character management for DSR, DS3, and Nightreign `[character-ops]` ([d65bfb1](https://github.com/Hapfel1/er-save-manager/commit/d65bfb1f811d4322def84949420faf037e8014ad))
+
+- Add Support for DS2 Save File Editing ([4a20832](https://github.com/Hapfel1/er-save-manager/commit/4a20832c997d64dd5263c49f7b48dd652958f66f))
+
+- Back up before every write, sortable inventory columns, update steamid docs `[ds2]` ([5d2ec95](https://github.com/Hapfel1/er-save-manager/commit/5d2ec9585d81c2a6f5145c7b6a7b09d71d026639))
+
+
+
+### 🔧 Bug Fixes
+
+- Fixed Typo and added flag 3001 which triggers NG on teleport to Roundtable Hold `[event_flags]` ([e5ba4ef](https://github.com/Hapfel1/er-save-manager/commit/e5ba4ef512a94499fd58916fed8d06b9669959f6))
+
+- Sync qty/upgrade/location vars before batch add `[icon-browser]` ([7a11233](https://github.com/Hapfel1/er-save-manager/commit/7a1123309dabbdb17e7324dfce72cfd24d10eced))
+
+- Use atomic writes in DS3, DSR, NR parsers and steamid patchers `[games]` ([4409565](https://github.com/Hapfel1/er-save-manager/commit/4409565a3f6ee7e6a9283fa26c38e9801391781b))
+
+- Kill correct process when force-terminating non-ER games `[platform]` ([5256584](https://github.com/Hapfel1/er-save-manager/commit/525658429c1954ef1e72a033a2381a28b15b50e5))
+
+- Fixed Poisoned Hand being documented as smithing stone weapon, added unique armor set version to Convergence Armor `[item_db]` ([2d52a1f](https://github.com/Hapfel1/er-save-manager/commit/2d52a1f712544fcd74173fd8a15e7640099e52ea))
+
+- Commit max backups on enter/focus-out instead of every keystroke `[settings]` ([e2811f0](https://github.com/Hapfel1/er-save-manager/commit/e2811f0ed31f292427bf8650cb65cc4b86dcd590))
+
+- Use native file dialogs for export/import/transfer `[character-ops]` ([3ebbec0](https://github.com/Hapfel1/er-save-manager/commit/3ebbec06cdcb3baa858143e405083441ee770ad7))
+
+- Add autofind + manual browse to transfer target picker `[character-ops]` ([a882df1](https://github.com/Hapfel1/er-save-manager/commit/a882df1ffebcc6370d572790910dbc9047dad463))
+
+- Add auto-backup toast instead of popup message and add setting to disable it `[backup]` ([62ec0d3](https://github.com/Hapfel1/er-save-manager/commit/62ec0d3633c2233d4fa22bc114edae3542217dd2))
+
+- Set all affinity unlock flags for whetblades `[inventory]` ([461b3d1](https://github.com/Hapfel1/er-save-manager/commit/461b3d16780d3322032a30e633a047a8d677b0bd))
+
+- Warn before lowering max backups prunes existing backups `[settings]` ([53a3914](https://github.com/Hapfel1/er-save-manager/commit/53a3914db5a015450bbad3e04d802a5bd297fc55))
+
+- More UI fixes `[ds2]` ([e80e7dd](https://github.com/Hapfel1/er-save-manager/commit/e80e7dda0a0af1a32a4e2954d97bebd5292c8485))
+
+
+
+### 🎨 User Interface
+
+- Add note about  stale load-screen summary after copy/transfer `[character-ops]` ([8f694d4](https://github.com/Hapfel1/er-save-manager/commit/8f694d4ddf47614a9ad37ac5959889b050c1cba8))
+
+
+
+### 📖 Documentation
+
+- Replace MIT with source-available license `[license]` ([4b507ab](https://github.com/Hapfel1/er-save-manager/commit/4b507ab4818e8406395bd5505b7f0a518da96c58))
+
+- Update license link in readme ([eb94cff](https://github.com/Hapfel1/er-save-manager/commit/eb94cff7edf868dafb87148ae29dfe2505e631e4))
+
+
+
+### ♻️ Code Refactoring
+
+- Resolve convergence items via item_database instead of missing hex files `[data]` ([ab76414](https://github.com/Hapfel1/er-save-manager/commit/ab764140b78c1a6b48f3255f9d59aa51d7105d6e))
+
+
+
+### 📦 Dependencies
+
+- Bump the github-actions group with 3 updates `[deps]` ([14e0301](https://github.com/Hapfel1/er-save-manager/commit/14e0301acbc72bf04ebc18174ae5477ecbd1dc22))
+
+
+
+---
 ## 📦 Release 1.7.1
 **Released:** July 22, 2026
 
@@ -1360,6 +1435,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.8.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.7.1..v1.8.0
 [1.7.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.7.0..v1.7.1
 [1.7.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.6.2..v1.7.0
 [1.6.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.6.1..v1.6.2
