@@ -20,6 +20,8 @@ from er_save_manager.data.regions import REGIONS
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
+GESTURE_SLOT_EMPTY = 0xFFFFFFFE
+
 
 class GesturesRegionsTab:
     """Tab for viewing and unlocking gestures"""
@@ -254,7 +256,9 @@ class GesturesRegionsTab:
 
         if hasattr(slot, "gestures") and slot.gestures:
             unlocked_gesture_ids = {
-                g for g in slot.gestures.gesture_ids if g != 0 and g != 0xFFFFFFFF
+                g
+                for g in slot.gestures.gesture_ids
+                if g not in (0, 0xFFFFFFFF, GESTURE_SLOT_EMPTY)
             }
 
         # Create checkboxes for all gestures
@@ -339,7 +343,7 @@ class GesturesRegionsTab:
                 )
 
             selected_gestures_sorted = sorted(selected_gestures)
-            new_gesture_ids = selected_gestures_sorted + [0] * (
+            new_gesture_ids = selected_gestures_sorted + [GESTURE_SLOT_EMPTY] * (
                 64 - len(selected_gestures_sorted)
             )
             new_gesture_ids = new_gesture_ids[:64]
