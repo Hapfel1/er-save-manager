@@ -3,6 +3,25 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.8.1
+**Released:** August 07, 2026
+
+
+### 🔧 Bug Fixes
+
+- Use correct empty-slot sentinel when writing gesture array `[gestures]` ([1c401aa](https://github.com/Hapfel1/er-save-manager/commit/1c401aa4216639ba8b93164c0c551e159601ca19))
+
+- Added missed item, Lantern `[item-db]` ([d257897](https://github.com/Hapfel1/er-save-manager/commit/d2578973b849c0702305c0e1e5462224700e39ce))
+
+
+
+### 📦 Dependencies
+
+- Bump the github-actions group with 2 updates `[deps]` ([4f9da42](https://github.com/Hapfel1/er-save-manager/commit/4f9da4286be6a47ddc61e51b1460445b40b8969b))
+
+
+
+---
 ## 📦 Release 1.8.0
 **Released:** July 30, 2026
 
@@ -1435,6 +1454,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.8.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.8.0..v1.8.1
 [1.8.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.7.1..v1.8.0
 [1.7.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.7.0..v1.7.1
 [1.7.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.6.2..v1.7.0
