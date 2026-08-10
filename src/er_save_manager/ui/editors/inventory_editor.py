@@ -1928,21 +1928,18 @@ class InventoryEditor:
         )
 
         found_handle = None
+        inv = slot.inventory_held if location == "held" else slot.inventory_storage_box
+
         if not _needs_gaitem(full_id):
             found_handle = _direct_handle(full_id)
         else:
-            gaitem_idx, g = _find_gaitem_by_item(slot, full_id)
+            gaitem_idx, g = _find_gaitem_by_item(slot, full_id, inventory=inv)
             if gaitem_idx != -1 and g:
                 found_handle = g.gaitem_handle
 
         existing_qty = 0
 
         if found_handle and max_qty > 1:
-            inv = (
-                slot.inventory_held
-                if location == "held"
-                else slot.inventory_storage_box
-            )
             item_list = inv.key_items if _is_key_item(full_id) else inv.common_items
             for it in item_list:
                 if getattr(it, "gaitem_handle", 0) == found_handle and it.quantity > 0:

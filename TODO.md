@@ -1,3 +1,5 @@
+if you want a function like a backup every x hours as long as the game is running that is smth i can add maybe
+
 gneeral loadouts tab
 
 invasion regions
@@ -6,7 +8,7 @@ ds3 gestures
 
 npc respawner ds3
 
-ds2
+ds2 done
 
 character ops for other games, ds3, ds2 done
 
