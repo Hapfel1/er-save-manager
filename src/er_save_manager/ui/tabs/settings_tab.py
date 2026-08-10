@@ -33,6 +33,9 @@ class SettingsTab:
         # Per-game auto-backup path vars - populated in setup_ui
         self._auto_backup_path_vars: dict[str, tk.StringVar] = {}
         self._auto_backup_enabled_vars: dict[str, tk.BooleanVar] = {}
+        self._auto_backup_interval_enabled_vars: dict[str, tk.BooleanVar] = {}
+        self._auto_backup_interval_minutes_vars: dict[str, tk.StringVar] = {}
+        self._auto_backup_interval_widgets: dict[str, tuple] = {}
 
         # Keypress buffer for secret unlock sequence
         self._key_buffer: str = ""
@@ -405,6 +408,63 @@ class SettingsTab:
             ),
         ).pack(anchor="w")
 
+        # Interval backup - requires auto-backup on game launch to be enabled
+        interval_row = ctk.CTkFrame(game_frame, fg_color="transparent")
+        interval_row.pack(fill="x", padx=10, pady=(0, 10))
+
+        interval_minutes = game_cfg.get("interval_minutes", 30)
+        interval_enabled_var = tk.BooleanVar(
+            value=game_cfg.get("interval_enabled", False)
+        )
+        interval_minutes_var = tk.StringVar(value=str(interval_minutes))
+        self._auto_backup_interval_enabled_vars[profile.key] = interval_enabled_var
+        self._auto_backup_interval_minutes_vars[profile.key] = interval_minutes_var
+
+        interval_checkbox = ctk.CTkCheckBox(
+            interval_row,
+            text="Also back up every",
+            variable=interval_enabled_var,
+            font=("Segoe UI", 11),
+            state="normal" if enabled else "disabled",
+            command=lambda k=profile.key: self._on_game_auto_backup_interval_toggle(k),
+        )
+        interval_checkbox.pack(side="left")
+
+        interval_entry = ctk.CTkEntry(
+            interval_row,
+            width=50,
+            textvariable=interval_minutes_var,
+            state="normal" if enabled else "disabled",
+        )
+        interval_entry.pack(side="left", padx=(6, 4))
+        # Restrict keystrokes to digits so non-numeric input is rejected
+        # before it ever reaches the commit/parse step.
+        vcmd = interval_entry.register(lambda s: s == "" or s.isdigit())
+        interval_entry.configure(validate="key", validatecommand=(vcmd, "%P"))
+        interval_entry.bind(
+            "<FocusOut>",
+            lambda e, k=profile.key: self._on_game_auto_backup_interval_minutes_changed(
+                k
+            ),
+        )
+        interval_entry.bind(
+            "<Return>",
+            lambda e, k=profile.key: self._on_game_auto_backup_interval_minutes_changed(
+                k
+            ),
+        )
+
+        ctk.CTkLabel(
+            interval_row,
+            text="minutes while the game is running",
+            font=("Segoe UI", 11),
+        ).pack(side="left")
+
+        self._auto_backup_interval_widgets[profile.key] = (
+            interval_checkbox,
+            interval_entry,
+        )
+
     def _on_game_auto_backup_toggle(self, game_key: str):
         enabled = self._auto_backup_enabled_vars[game_key].get()
         auto_backup_cfg: dict = dict(self.settings.get("auto_backup_games", {}))
@@ -425,9 +485,59 @@ class SettingsTab:
                 profile = PROFILES_BY_KEY.get(game_key)
                 if profile:
                     self._choose_game_auto_backup_save(game_key, profile)
+        else:
+            # Interval backup requires auto-backup on game launch to be enabled
+            game_cfg["interval_enabled"] = False
+            if game_key in self._auto_backup_interval_enabled_vars:
+                self._auto_backup_interval_enabled_vars[game_key].set(False)
 
         auto_backup_cfg[game_key] = game_cfg
         self.settings.set("auto_backup_games", auto_backup_cfg)
+
+        if game_key in self._auto_backup_interval_widgets:
+            checkbox, entry = self._auto_backup_interval_widgets[game_key]
+            state = "normal" if enabled else "disabled"
+            checkbox.configure(state=state)
+            entry.configure(state=state)
+
+    def _on_game_auto_backup_interval_toggle(self, game_key: str):
+        interval_enabled = self._auto_backup_interval_enabled_vars[game_key].get()
+        auto_backup_cfg: dict = dict(self.settings.get("auto_backup_games", {}))
+        game_cfg = dict(auto_backup_cfg.get(game_key, {}))
+        game_cfg["interval_enabled"] = interval_enabled
+        game_cfg.setdefault("interval_minutes", self._parse_interval_minutes(game_key))
+        auto_backup_cfg[game_key] = game_cfg
+        self.settings.set("auto_backup_games", auto_backup_cfg)
+
+    def _on_game_auto_backup_interval_minutes_changed(self, game_key: str):
+        minutes = self._parse_interval_minutes(game_key)
+        self._auto_backup_interval_minutes_vars[game_key].set(str(minutes))
+        auto_backup_cfg: dict = dict(self.settings.get("auto_backup_games", {}))
+        game_cfg = dict(auto_backup_cfg.get(game_key, {}))
+        game_cfg["interval_minutes"] = minutes
+        auto_backup_cfg[game_key] = game_cfg
+        self.settings.set("auto_backup_games", auto_backup_cfg)
+
+    def _parse_interval_minutes(self, game_key: str) -> int:
+        """Parse the interval entry, falling back to the last saved value.
+
+        Clamped to MIN_INTERVAL_MINUTES..MAX_INTERVAL_MINUTES (1 minute to
+        24 hours) so a stray or malicious value can never produce a zero,
+        negative, or absurdly small backup interval.
+        """
+        MIN_INTERVAL_MINUTES = 1
+        MAX_INTERVAL_MINUTES = 1440
+
+        auto_backup_cfg: dict = self.settings.get("auto_backup_games", {})
+        old_value = auto_backup_cfg.get(game_key, {}).get("interval_minutes", 30)
+
+        raw = self._auto_backup_interval_minutes_vars[game_key].get().strip()
+        try:
+            minutes = int(raw)
+        except ValueError:
+            minutes = old_value
+
+        return min(max(minutes, MIN_INTERVAL_MINUTES), MAX_INTERVAL_MINUTES)
 
     def _choose_game_auto_backup_save(self, game_key: str, profile):
         from er_save_manager.platform.utils import PlatformUtils
@@ -864,6 +974,13 @@ class SettingsTab:
                 var.set(False)
             for var in self._auto_backup_path_vars.values():
                 var.set("(not configured)")
+            for var in self._auto_backup_interval_enabled_vars.values():
+                var.set(False)
+            for var in self._auto_backup_interval_minutes_vars.values():
+                var.set("30")
+            for checkbox, entry in self._auto_backup_interval_widgets.values():
+                checkbox.configure(state="disabled")
+                entry.configure(state="disabled")
             # Reset advanced settings
             if self._advanced_frame is not None:
                 self._advanced_frame.destroy()
