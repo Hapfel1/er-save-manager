@@ -78,6 +78,8 @@ class GameProcessMonitor:
         self._running = False
         self._thread: threading.Thread | None = None
         self._on_backup_created: Callable[[str, Path], None] | None = None
+        # Timestamp of the last interval backup per game key, reset on each launch
+        self._interval_last_backup: dict[str, float] = {}
 
     def set_backup_callback(self, callback: Callable[[str, Path], None]) -> None:
         """
@@ -171,6 +173,38 @@ class GameProcessMonitor:
                             if backup_path:
                                 if self._on_backup_created:
                                     self._on_backup_created(game_key, backup_path)
+
+                        # Reset the interval timer for this session regardless of
+                        # whether an on-launch backup was created above.
+                        self._interval_last_backup[game_key] = time.time()
+
+                    elif is_running:
+                        # Interval backups require auto-backup on game launch to
+                        # be enabled for the same monitored save file.
+                        game_cfg = auto_backup_cfg.get(game_key, {})
+                        try:
+                            interval_minutes = int(game_cfg.get("interval_minutes", 0))
+                        except (TypeError, ValueError):
+                            interval_minutes = 0
+                        save_path = game_cfg.get("save_path", "")
+                        if (
+                            game_cfg.get("enabled", False)
+                            and game_cfg.get("interval_enabled", False)
+                            and interval_minutes > 0
+                            and save_path
+                        ):
+                            last = self._interval_last_backup.get(game_key, 0.0)
+                            if time.time() - last >= interval_minutes * 60:
+                                backup_path = self._create_backup_for_game(
+                                    game_key, save_path
+                                )
+                                if backup_path:
+                                    self._interval_last_backup[game_key] = time.time()
+                                    if self._on_backup_created:
+                                        self._on_backup_created(game_key, backup_path)
+
+                    if not is_running:
+                        self._interval_last_backup.pop(game_key, None)
 
                     was_running[game_key] = is_running
 
