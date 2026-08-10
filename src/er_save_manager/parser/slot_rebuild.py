@@ -272,7 +272,7 @@ def rebuild_slot_with_map(slot: UserDataX) -> tuple[bytes, list[dict[str, Any]]]
     write_section("player_coordinates", lambda: slot.player_coordinates.write(buf))
 
     # 2 bytes after PlayerCoordinates. Captured on read into
-    # game_man_0x5be/game_man_0x5bf (see UserDataX.read); real save data
+    # game_man_0x5be/game_man_0x5bf (see UserDataX.read)
     # here is not always zero, so it must be written back verbatim.
     write_section(
         "padding_after_player_coordinates",
@@ -317,17 +317,6 @@ def rebuild_slot_with_map(slot: UserDataX) -> tuple[bytes, list[dict[str, Any]]]
     write_section("dlc", lambda: slot.dlc.write(buf))
     write_section("player_data_hash", lambda: slot.player_data_hash.write(buf))
 
-    # Bytes after PlayerGameDataHash, captured verbatim on read into
-    # slot.rest (see UserDataX.read). This region is real character data
-    # on many real saves, not padding, so it is written back unmodified
-    # rather than zero-filled.
-    #
-    # Note: this removes the "free" zero-padding budget that
-    # inventory_ops._patch_slot_with_gaitem_insert previously assumed was
-    # always available here as a rebuild_slot fallback. A gaitem insert
-    # that needs more room than slot.rest's actual trailing zero bytes
-    # provide will now correctly fail to fit instead of silently
-    # overwriting real trailing data.
     write_section("rest", lambda: buf.write(slot.rest))
 
     slot_size = 0x280000
