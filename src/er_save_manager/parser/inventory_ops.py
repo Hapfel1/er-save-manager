@@ -639,13 +639,15 @@ def _find_empty_gaitem_slot(slot, prefix: int) -> int:
     return result
 
 
-def _find_gaitem_by_item(slot, full_item_id: int):
+def _find_gaitem_by_item(slot, full_item_id: int, inventory=None):
     """
     Find a gaitem entry matching full_item_id.
 
     For weapons, matches on base_id (ignores upgrade suffix and infusion code).
     For gems, matches on either full_item_id or base_id.
     For armor and other types, matches on exact item_id.
+
+    If inventory is provided, ensures the returned gaitem is actually present in that inventory.
 
     Returns (gaitem_index, gaitem_entry) or (-1, None).
     """
@@ -655,24 +657,32 @@ def _find_gaitem_by_item(slot, full_item_id: int):
         if g.gaitem_handle == 0:
             continue
         g_prefix = g.gaitem_handle & 0xF0000000
+
+        match = False
         if cat_bits == _CAT_WEAPON:
-            if g_prefix != _PREFIX_WEAPON:
-                continue
-            stored_base = (g.item_id & 0x0FFFFFFF) // 10000 * 10000
-            want_base = base_id // 10000 * 10000
-            if stored_base == want_base:
-                return i, g
+            if g_prefix == _PREFIX_WEAPON:
+                stored_base = (g.item_id & 0x0FFFFFFF) // 10000 * 10000
+                want_base = base_id // 10000 * 10000
+                if stored_base == want_base:
+                    match = True
         elif cat_bits == _CAT_GEM:
-            if g_prefix != _PREFIX_GEM:
-                continue
-            # Match either base_id or full_item_id
-            if g.item_id == base_id or g.item_id == full_item_id:
-                return i, g
+            if g_prefix == _PREFIX_GEM:
+                if g.item_id == base_id or g.item_id == full_item_id:
+                    match = True
         else:
-            if _category(g.item_id) != cat_bits:
-                continue
-            if g.item_id == full_item_id:
+            if _category(g.item_id) == cat_bits and g.item_id == full_item_id:
+                match = True
+
+        if match:
+            if inventory is None:
                 return i, g
+            else:
+                if (
+                    _find_handle_slot(inventory.common_items, g.gaitem_handle) != -1
+                    or _find_handle_slot(inventory.key_items, g.gaitem_handle) != -1
+                ):
+                    return i, g
+
     return -1, None
 
 
@@ -1122,7 +1132,10 @@ def add_item(
         slot = save.character_slots[slot_idx]
         inventory = _select_inventory(slot, location)
         # Find the gaitem slot we just inserted
-        gaitem_slot, _ = _find_gaitem_by_item(slot, full_item_id)
+        gaitem_slot = next(
+            (i for i, g in enumerate(slot.gaitem_map) if g.gaitem_handle == handle),
+            None,
+        )
     else:
         handle = _direct_handle(full_item_id)
 
@@ -1219,9 +1232,11 @@ def remove_item(
     inventory = _select_inventory(slot, location)
 
     if _needs_gaitem(full_item_id):
-        gaitem_idx, g = _find_gaitem_by_item(slot, full_item_id)
+        gaitem_idx, g = _find_gaitem_by_item(slot, full_item_id, inventory=inventory)
         if gaitem_idx == -1:
-            raise ValueError(f"item 0x{full_item_id:08X} not found in gaitem map")
+            raise ValueError(
+                f"item 0x{full_item_id:08X} not found in gaitem map for {location!r} inventory"
+            )
         handle = g.gaitem_handle
     else:
         handle = _direct_handle(full_item_id)
@@ -1304,9 +1319,11 @@ def set_quantity(
     inventory = _select_inventory(slot, location)
 
     if _needs_gaitem(full_item_id):
-        _, g = _find_gaitem_by_item(slot, full_item_id)
+        _, g = _find_gaitem_by_item(slot, full_item_id, inventory=inventory)
         if g is None:
-            raise ValueError(f"item 0x{full_item_id:08X} not found in gaitem map")
+            raise ValueError(
+                f"item 0x{full_item_id:08X} not found in gaitem map for {location!r} inventory"
+            )
         handle = g.gaitem_handle
     else:
         handle = _direct_handle(full_item_id)
