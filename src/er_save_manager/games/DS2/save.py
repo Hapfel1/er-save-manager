@@ -26,7 +26,7 @@ Decrypted plaintext layout (differs from DS3, which uses plain PKCS7):
 AES-128-CBC key (all DS2 SOTFS PC saves):
   59 9F 9B 69 96 40 A5 52 36 EE 2D 70 83 5E C7 44
 
-Entry map (23 total, confirmed against a real DS2SOFS0000.sl2):
+Entry map (23 total):
   0        Global slot-occupancy summary (name + flag per character slot)
   1-10     Per-character profile slot: name, stats, souls, HP, NG+, inventory
   11-20    Per-character large slot (~501KB), one per character slot.
