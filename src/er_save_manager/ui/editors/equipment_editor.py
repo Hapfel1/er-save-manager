@@ -183,8 +183,7 @@ def _resolve_name(key: str, raw_id: int, is_cnv: bool = False) -> str:
 def _decode_slot_value(raw: int, category_bit: int = 0) -> int:
     """Convert an on-disk item-id-type field to the editor's internal value.
 
-    On-disk empty sentinel for item-id-type fields is 0xFFFFFFFF (confirmed
-    against real save data - never 0). Internally the editor uses 0 for empty.
+    On-disk empty sentinel for item-id-type fields is 0xFFFFFFFF. Internally the editor uses 0 for empty.
     category_bit strips the item database category bit (e.g. 0x40000000 for
     goods) that physick/quickitem/pouch fields carry but weapon/armor/talisman/
     spell fields do not.
@@ -530,8 +529,7 @@ def _patch_equipment(save_file, slot_idx: int, slot) -> None:
 def _find_equip_index(slot, handle: int) -> int:
     """Compute the equip_index value the game's menu expects for a handle.
 
-    Confirmed empirically against real save data (see equipment editor
-    module docstring context): position in key_items as-is, or held key
+     position in key_items as-is, or held key
     capacity (0x180) plus position in common_items. 0xFFFFFFFF if empty or
     not found.
     """
@@ -1636,11 +1634,7 @@ class EquipmentEditor:
 
             # equipped_items_equip_index is a separate identity field the
             # game's inventory/equipment menu reads, distinct from item_id/
-            # gaitem_handle which drive the in-hand model. Confirmed against
-            # real save data (before/after diffs of normal in-game equip
-            # changes): it is a position in a conceptual [key_items,
-            # common_items] concatenation - key_items position used as-is,
-            # common_items position offset by the held key capacity (0x180).
+            # gaitem_handle which drive the in-hand model.
             equip_index = getattr(slot, "equipped_items_equip_index", None)
             if equip_index is not None:
                 for key in _WEAPON_KEYS | _ARMOR_KEYS | _TALISMAN_KEYS:

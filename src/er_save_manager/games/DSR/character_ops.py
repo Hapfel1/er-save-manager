@@ -32,8 +32,7 @@ _STEAM64_MAX = 0x01100001FFFFFFFF
 #
 # The load-screen character list is a separate 10-entry directory stored in
 # slot 10, not derived from the character slots themselves. Each entry mirrors
-# the name and level of its character slot. Confirmed empirically against a
-# real save (DRAKS0005): copying a character into a previously-empty slot left
+# the name and level of its character slot. Copying a character into a previously-empty slot left
 # its directory entry blank, and the copy was invisible on the in-game load
 # screen despite the character slot itself being correct. character_ops must
 # keep this directory in sync on every slot mutation.
