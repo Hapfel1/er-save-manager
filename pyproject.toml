@@ -18,7 +18,7 @@ classifiers = [
     "Topic :: Games/Entertainment",
 ]
 dependencies = [
-    "pillow>=12.1.0",
+    "pillow>=12.3.0",
     "customtkinter>=5.2.2",
     "customtkinterthemes>=1.0.0",
     "requests>=2.32.0",
