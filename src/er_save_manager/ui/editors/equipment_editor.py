@@ -255,16 +255,28 @@ def _owned_gaitem_items(
     (no category bit). Every physical instance is listed separately (not
     deduplicated by raw_value) so owning multiple copies of the same item
     shows every copy and lets each be assigned to a different slot.
+
+    gaitem_map can retain stale entries for items no longer in the held
+    inventory or storage box. Cross-check against
+    both inventories so orphaned entries are not offered as ownable.
     """
     from er_save_manager.data.item_database import get_item_database
 
     db = get_item_database()
     armor_slot = _ARMOR_KEY_TO_SLOT.get(key)
     slot_types = _load_armor_slot_types() if armor_slot else None
+    inv_handles = {it.gaitem_handle for it in slot.inventory_held.common_items}
+    inv_handles |= {it.gaitem_handle for it in slot.inventory_held.key_items}
+    storage = getattr(slot, "inventory_storage_box", None)
+    if storage is not None:
+        inv_handles |= {it.gaitem_handle for it in storage.common_items}
+        inv_handles |= {it.gaitem_handle for it in storage.key_items}
     out = []
     seen_handles = set()
     for g in getattr(slot, "gaitem_map", []):
         if g.gaitem_handle in (0, 0xFFFFFFFF) or g.gaitem_handle in seen_handles:
+            continue
+        if g.gaitem_handle not in inv_handles:
             continue
         if (g.gaitem_handle & 0xF0000000) != prefix:
             continue
