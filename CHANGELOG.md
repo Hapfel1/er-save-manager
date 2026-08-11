@@ -3,6 +3,45 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.9.0
+**Released:** August 11, 2026
+
+
+### ✨ New Features
+
+- Add interval-based auto-backup while game is running `[settings]` ([2c08046](https://github.com/Hapfel1/er-save-manager/commit/2c08046225dd0c2afa1d9ee42f2d394a97afea60))
+
+- CodeQL advanced workflow (actions + python) ([f1df237](https://github.com/Hapfel1/er-save-manager/commit/f1df237774ba1483f2238e27bde5b6ee007ab72b))
+
+
+
+### 🔧 Bug Fixes
+
+- Use correct empty-slot sentinel when writing gesture array `[gestures]` ([1c401aa](https://github.com/Hapfel1/er-save-manager/commit/1c401aa4216639ba8b93164c0c551e159601ca19))
+
+- Added missed item, Lantern `[item-db]` ([d257897](https://github.com/Hapfel1/er-save-manager/commit/d2578973b849c0702305c0e1e5462224700e39ce))
+
+- Add missed items for Convergence `[item_db]` ([bbcde60](https://github.com/Hapfel1/er-save-manager/commit/bbcde601388f8a0f3a000f46d663fa5ce63f075e))
+
+- Scope gaitem lookup to target inventory location `[inventory]` ([ced4e8c](https://github.com/Hapfel1/er-save-manager/commit/ced4e8c0f5c50f9d7e0ed7edb32617647a86dcbe))
+
+- Exclude orphaned gaitem_map entries from weapon/armor picker `[equipment-editor]` ([9bd79e7](https://github.com/Hapfel1/er-save-manager/commit/9bd79e77a5d960376e95ecc180dd44d1e9ef75d7))
+
+
+
+### 📦 Dependencies
+
+- Bump the github-actions group with 2 updates `[deps]` ([4f9da42](https://github.com/Hapfel1/er-save-manager/commit/4f9da4286be6a47ddc61e51b1460445b40b8969b))
+
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([2bcdb07](https://github.com/Hapfel1/er-save-manager/commit/2bcdb07330358b639fc958299c71a0557401cb2e))
+
+- Bump pillow from 12.1.0 to 12.3.0 `[deps]` ([047d3f8](https://github.com/Hapfel1/er-save-manager/commit/047d3f85b2ccc59e34c0fb5d99b55c3ba57f8bd6))
+
+- Bump cryptography from 46.0.3 to 50.0.0 `[deps]` ([260a93a](https://github.com/Hapfel1/er-save-manager/commit/260a93a0aff2abc952ecfca9f6022a7b54d4e374))
+
+
+
+---
 ## 📦 Release 1.8.0
 **Released:** July 30, 2026
 
@@ -1435,6 +1474,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.9.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.8.0..v1.9.0
 [1.8.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.7.1..v1.8.0
 [1.7.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.7.0..v1.7.1
 [1.7.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.6.2..v1.7.0
