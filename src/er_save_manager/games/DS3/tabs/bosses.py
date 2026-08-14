@@ -14,7 +14,12 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
+
+
+def _game_blocks_write(parent) -> bool:
+    return game_blocks_write(parent, "darksoulsiii.exe", "Dark Souls III")
+
 
 _DATA_DIR = Path(__file__).parent.parent / "data"
 _BOSSES: list[dict] | None = None
@@ -187,6 +192,9 @@ class DS3BossesTab:
     def _set_boss(
         self, boss: dict, defeat_val: int, defeated: bool, badge: ctk.CTkLabel
     ) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save, save_path, char = self._get_char()
         if char is None:
             return
@@ -209,6 +217,9 @@ class DS3BossesTab:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
 
     def _bulk(self, defeated: bool) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save, save_path, char = self._get_char()
         if char is None:
             return

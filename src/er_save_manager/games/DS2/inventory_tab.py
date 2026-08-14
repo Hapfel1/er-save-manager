@@ -16,6 +16,12 @@ from er_save_manager.games.DS2.item_database import (
     build_item_db,
 )
 from er_save_manager.games.DS2.save import DS2Save
+from er_save_manager.ui.utils import game_blocks_write
+
+
+def _game_blocks_write(parent) -> bool:
+    return game_blocks_write(parent, "darksoulsii.exe", "Dark Souls II")
+
 
 STACKABLE_CATEGORIES = ("goods", "bolts", "spells", "upgrade")
 
@@ -225,6 +231,9 @@ class DS2InventoryPanel:
             self._results_tree.insert("", "end", values=(name,))
 
     def _on_add(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save: DS2Save | None = self.get_save()
         if save is None:
             self.show_toast("No save file loaded", duration=2000)
@@ -325,6 +334,9 @@ class DS2InventoryPanel:
             )
 
     def _on_remove(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save: DS2Save | None = self.get_save()
         if save is None:
             self.show_toast("No save file loaded", duration=2000)
@@ -347,6 +359,9 @@ class DS2InventoryPanel:
         self.show_toast(f"Removed {name}", duration=2000)
 
     def _on_set_quantity(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save: DS2Save | None = self.get_save()
         if save is None:
             self.show_toast("No save file loaded", duration=2000)

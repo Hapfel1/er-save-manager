@@ -12,7 +12,11 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
+
+
+def _game_blocks_write(parent) -> bool:
+    return game_blocks_write(parent, "darksoulsiii.exe", "Dark Souls III")
 
 
 def _backup_and_save(ds3_save, save_path: Path, operation: str) -> None:
@@ -261,6 +265,9 @@ class DS3EditorTab:
     # --- Apply --------------------------------------------------------------- #
 
     def _apply_stats(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         if self._current_slot < 0:
             CTkMessageBox.showwarning(
                 "No Character", "Load a character first.", parent=self.parent
@@ -304,6 +311,9 @@ class DS3EditorTab:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
 
     def _apply_identity(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         if self._current_slot < 0:
             CTkMessageBox.showwarning(
                 "No Character", "Load a character first.", parent=self.parent

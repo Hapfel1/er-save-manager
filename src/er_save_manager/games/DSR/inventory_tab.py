@@ -21,6 +21,14 @@ from typing import TYPE_CHECKING
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.utils import game_blocks_write
+
+
+def _game_blocks_write(parent) -> bool:
+    return game_blocks_write(
+        parent, "darksoulsremastered.exe", "Dark Souls: Remastered"
+    )
+
 
 if TYPE_CHECKING:
     pass
@@ -422,9 +430,11 @@ class DSRInventoryTab:
             (self._inv_tree.set(k, col), k) for k in self._inv_tree.get_children("")
         ]
         data.sort(
-            key=lambda x: int(x[0])
-            if (numeric and str(x[0]).lstrip("-").isdigit())
-            else str(x[0]).lower(),
+            key=lambda x: (
+                int(x[0])
+                if (numeric and str(x[0]).lstrip("-").isdigit())
+                else str(x[0]).lower()
+            ),
             reverse=self._sort_reverse,
         )
         for i, (_, k) in enumerate(data):
@@ -655,6 +665,9 @@ class DSRInventoryTab:
 
     def _apply_changes(self) -> None:
         """Single Apply button covers quantity, upgrade, and infusion editing."""
+        if _game_blocks_write(self.parent):
+            return
+
         if self._selected_slot_idx < 0:
             return
         save, save_path, char = self._get_char()
@@ -746,6 +759,9 @@ class DSRInventoryTab:
     # --- Add / remove / repair ----------------------------------------------- #
 
     def _remove_selected(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         if self._selected_slot_idx < 0:
             CTkMessageBox.showwarning(
                 "No Selection", "Select an item to remove.", parent=self.parent
@@ -773,6 +789,9 @@ class DSRInventoryTab:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
 
     def _add_item(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         db_item = self._selected_db_item
         if db_item is None:
             CTkMessageBox.showwarning(
@@ -828,6 +847,9 @@ class DSRInventoryTab:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
 
     def _repair_all(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         if self._current_slot < 0:
             CTkMessageBox.showwarning(
                 "No Slot", "Load a character slot first.", parent=self.parent

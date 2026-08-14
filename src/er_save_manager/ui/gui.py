@@ -798,7 +798,12 @@ class SaveManagerGUI:
             lambda: self.save_path,
             self.reload_save,
             self.show_toast,
-            self.is_game_running,
+            # Read at call time so toggling the advanced setting takes effect
+            # without rebuilding the tab.
+            lambda: (
+                not self.settings.get("skip_game_running_check", False)
+                and self.is_game_running()
+            ),
         )
         self.char_mgmt_tab.setup_ui()
 
@@ -955,6 +960,10 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 reload_callback=self.load_save,
                 show_toast=self.show_toast,
+                is_game_running=lambda: (
+                    not self.settings.get("skip_game_running_check", False)
+                    and self.is_game_running(profile.process_name)
+                ),
             )
             self.ds3_char_mgmt_tab.setup_ui()
 
@@ -1008,15 +1017,6 @@ class SaveManagerGUI:
             return
 
         if profile.key == "dark_souls_2":
-            # Bosses/World State are not included: individual boss/quest
-            # flag IDs are not mapped yet (see save.py module docstring),
-            # and populating a raw byte browser for an unmapped ~38KB
-            # region was also a real performance cost on every load - it
-            # inserted thousands of rows into a Treeview. Removed rather
-            # than fixed, since there was nothing concrete to show yet.
-            # Inventory is a subtab inside Character Editor, not its own
-            # top-level tab, since it always edits whichever slot
-            # Character Editor has loaded.
             from er_save_manager.games.DS2.character_management_tab import (
                 DS2CharacterManagementTab,
             )
@@ -1038,7 +1038,10 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 reload_save=lambda: self._load_ds2_save(str(self.save_path)),
                 show_toast=self.show_toast,
-                is_game_running=lambda: self.is_game_running(profile.process_name),
+                is_game_running=lambda: (
+                    not self.settings.get("skip_game_running_check", False)
+                    and self.is_game_running(profile.process_name)
+                ),
             )
             self.ds2_management_tab.setup_ui()
 
@@ -1127,6 +1130,10 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 reload_callback=self.load_save,
                 show_toast=self.show_toast,
+                is_game_running=lambda: (
+                    not self.settings.get("skip_game_running_check", False)
+                    and self.is_game_running(profile.process_name)
+                ),
             )
             self.dsr_char_mgmt_tab.setup_ui()
 
@@ -1213,6 +1220,10 @@ class SaveManagerGUI:
             get_save_path=lambda: self.save_path,
             reload_callback=self.reload_save,
             show_toast=self.show_toast,
+            is_game_running=lambda: (
+                not self.settings.get("skip_game_running_check", False)
+                and self.is_game_running(profile.process_name)
+            ),
         )
         self.nr_char_mgmt_tab.setup_ui()
 

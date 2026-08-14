@@ -16,7 +16,14 @@ from typing import TYPE_CHECKING
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
+
+
+def _game_blocks_write(parent) -> bool:
+    return game_blocks_write(
+        parent, "darksoulsremastered.exe", "Dark Souls: Remastered"
+    )
+
 
 if TYPE_CHECKING:
     pass
@@ -216,6 +223,9 @@ class DSRWorldStateTab:
         self._ng_current_var.set(f"NG+{char.ng_plus}")
 
     def _unlock_bonfires(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save = self._get_dsr_save()
         save_path = self._get_save_path()
         if save is None or save_path is None or self._current_slot < 0:
@@ -237,6 +247,9 @@ class DSRWorldStateTab:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
 
     def _apply_ng(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save = self._get_dsr_save()
         save_path = self._get_save_path()
         if save is None or save_path is None or self._current_slot < 0:
