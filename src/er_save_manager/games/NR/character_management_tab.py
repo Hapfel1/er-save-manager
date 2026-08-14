@@ -24,13 +24,20 @@ from .parser import NightreignSave
 
 class NRCharacterManagementTab:
     def __init__(
-        self, parent, get_nr_save, get_save_path, reload_callback, show_toast
+        self,
+        parent,
+        get_nr_save,
+        get_save_path,
+        reload_callback,
+        show_toast,
+        is_game_running=None,
     ) -> None:
         self.parent = parent
         self._get_save = get_nr_save
         self._get_save_path = get_save_path
         self._reload = reload_callback
         self._show_toast = show_toast
+        self.is_game_running = is_game_running
 
         self._operation_var = None
         self._operation_map: dict[str, str] = {}
@@ -317,7 +324,20 @@ class NRCharacterManagementTab:
             parent=self.parent,
         )
 
+    def _check_game_not_running(self) -> bool:
+        if self.is_game_running and self.is_game_running():
+            CTkMessageBox.showerror(
+                "Game is running",
+                "Please close Elden Ring Nightreign before modifying save files.",
+                parent=self.parent,
+            )
+            return False
+        return True
+
     def _copy_character(self) -> None:
+        if not self._check_game_not_running():
+            return
+
         save = self._get_save()
         if not save:
             CTkMessageBox.showwarning(
@@ -383,6 +403,9 @@ class NRCharacterManagementTab:
             )
 
     def _swap_characters(self) -> None:
+        if not self._check_game_not_running():
+            return
+
         save = self._get_save()
         if not save:
             CTkMessageBox.showwarning(
@@ -431,6 +454,9 @@ class NRCharacterManagementTab:
             )
 
     def _delete_character(self) -> None:
+        if not self._check_game_not_running():
+            return
+
         save = self._get_save()
         if not save:
             CTkMessageBox.showwarning(
@@ -516,6 +542,9 @@ class NRCharacterManagementTab:
             )
 
     def _import_character(self) -> None:
+        if not self._check_game_not_running():
+            return
+
         save = self._get_save()
         if not save:
             CTkMessageBox.showwarning(
@@ -568,6 +597,9 @@ class NRCharacterManagementTab:
             )
 
     def _transfer_character(self) -> None:
+        if not self._check_game_not_running():
+            return
+
         save = self._get_save()
         if not save:
             CTkMessageBox.showwarning(

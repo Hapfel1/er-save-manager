@@ -9,7 +9,7 @@ import re
 import shutil
 import threading
 import zipfile
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -46,13 +46,17 @@ class BackupMetadata:
     character_summary: list[dict] = field(default_factory=list)
     file_size: int = 0
     compressed: bool = False
+    favorite: bool = False
 
     def to_dict(self) -> dict:
         return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> BackupMetadata:
-        return cls(**data)
+        # Drop unknown keys so a metadata.json written by a newer build
+        # does not raise TypeError and wipe the whole history on load.
+        known = {f.name for f in fields(cls)}
+        return cls(**{k: v for k, v in data.items() if k in known})
 
 
 @dataclass
@@ -468,31 +472,39 @@ class BackupManager:
         """
         Get list of backups that would be deleted by pruning.
 
+        Favorites are excluded entirely: they are never returned as
+        prune candidates and do not consume a slot in keep_count, so
+        marking a backup as a favorite pins it regardless of the limit.
+
         Args:
-            keep_count: Number of backups to keep
+            keep_count: Number of non-favorite backups to keep
 
         Returns:
             List of BackupMetadata that would be deleted
         """
-        if len(self.history.backups) <= keep_count:
+        prunable = [b for b in self.history.backups if not b.favorite]
+        if len(prunable) <= keep_count:
             return []
 
-        return self.history.backups[keep_count:]
+        return prunable[keep_count:]
 
     def prune_backups(self, keep_count: int = 10) -> int:
         """
         Delete old backups, keeping only the most recent ones.
 
+        Favorites are skipped and stay on disk.
+
         Args:
-            keep_count: Number of backups to keep
+            keep_count: Number of non-favorite backups to keep
 
         Returns:
             Number of backups deleted
         """
-        if len(self.history.backups) <= keep_count:
+        to_delete = self.get_backups_to_prune(keep_count=keep_count)
+        if not to_delete:
             return 0
 
-        to_delete = self.history.backups[keep_count:]
+        doomed = {b.filename for b in to_delete}
         deleted = 0
 
         for backup in to_delete:
@@ -501,10 +513,32 @@ class BackupManager:
                 backup_path.unlink()
                 deleted += 1
 
-        self.history.backups = self.history.backups[:keep_count]
+        # Filter by filename instead of slicing, since favorites can sit
+        # anywhere in the list and must survive the rewrite.
+        self.history.backups = [
+            b for b in self.history.backups if b.filename not in doomed
+        ]
         self._save_history()
 
         return deleted
+
+    def set_favorite(self, backup_name: str, favorite: bool = True) -> bool:
+        """
+        Mark or unmark a backup as a favorite.
+
+        Args:
+            backup_name: Name of the backup file
+            favorite: True to pin the backup, False to release it
+
+        Returns:
+            True if the backup was found and updated
+        """
+        for backup in self.history.backups:
+            if backup.filename == backup_name:
+                backup.favorite = favorite
+                self._save_history()
+                return True
+        return False
 
     def verify_backup(self, backup_name: str) -> bool:
         """

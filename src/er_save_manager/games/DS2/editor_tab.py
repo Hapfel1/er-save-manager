@@ -8,6 +8,11 @@ import customtkinter as ctk
 
 from er_save_manager.games.DS2.inventory_tab import DS2InventoryPanel
 from er_save_manager.games.DS2.save import LEVEL_STAT_KEYS, NG_PLUS_MAX, DS2Save
+from er_save_manager.ui.utils import game_blocks_write
+
+
+def _game_blocks_write(parent) -> bool:
+    return game_blocks_write(parent, "darksoulsii.exe", "Dark Souls II")
 
 
 class DS2EditorTab:
@@ -271,6 +276,9 @@ class DS2EditorTab:
             self.inventory_panel.refresh()
 
     def _apply_changes(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save: DS2Save | None = self.get_save()
         if save is None:
             self.show_toast("No save file loaded", duration=2000)

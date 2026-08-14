@@ -1131,7 +1131,7 @@ def add_item(
         # Re-read slot after insert_gaitem updated offsets
         slot = save.character_slots[slot_idx]
         inventory = _select_inventory(slot, location)
-        # Find the gaitem slot we just inserted
+        # Locate the gaitem slot created by insert_gaitem
         gaitem_slot = next(
             (i for i, g in enumerate(slot.gaitem_map) if g.gaitem_handle == handle),
             None,

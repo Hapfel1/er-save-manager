@@ -69,7 +69,7 @@ def show_toast(root: tk.Tk, message: str, duration: int = 3000, type: str = "suc
     }
     _active_toasts.append(toast_info)
 
-    # Position then show -- one geometry call before deiconify to prevent flash.
+    # Position then show - one geometry call before deiconify to prevent flash.
     toast.geometry(f"{toast_width}x{toast_height}+{x}+{y}")
     toast.deiconify()
 
@@ -81,7 +81,7 @@ def show_toast(root: tk.Tk, message: str, duration: int = 3000, type: str = "suc
 
 
 def _fade_in(toast, root, duration, toast_info, step=0, steps=10):
-    """Fade in by incrementing alpha -- avoids per-frame geometry calls on Windows."""
+    """Fade in by incrementing alpha - avoids per-frame geometry calls on Windows."""
     if not toast.winfo_exists():
         return
     alpha = min(0.96, (step + 1) / steps * 0.96)
@@ -95,7 +95,7 @@ def _fade_in(toast, root, duration, toast_info, step=0, steps=10):
 
 
 def _slide_in(toast, root, x, y, w, h, duration, toast_info, step=0, steps=15):
-    """Slide in from above (Linux -- geometry calls are cheap there)."""
+    """Slide in from above (Linux - geometry calls are cheap there)."""
     if not toast.winfo_exists():
         return
     start_y = y - 30

@@ -498,7 +498,7 @@ class PlatformUtils:
         does not contain the config directory.
 
         Reading a plain text config file via Path.read_text() does not
-        trigger Windows Defender -- no subprocess, no binary access,
+        trigger Windows Defender - no subprocess, no binary access,
         no credential-store APIs are used.
         """
         import re
