@@ -19,7 +19,14 @@ from typing import TYPE_CHECKING
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
+
+
+def _game_blocks_write(parent) -> bool:
+    return game_blocks_write(
+        parent, "darksoulsremastered.exe", "Dark Souls: Remastered"
+    )
+
 
 if TYPE_CHECKING:
     pass
@@ -211,6 +218,9 @@ class DSREventFlagsTab:
         )
 
     def _toggle_npc(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         sel = self._npc_tree.selection()
         if not sel or sel[0] not in self._npc_iid_map:
             CTkMessageBox.showwarning(
@@ -380,6 +390,9 @@ class DSREventFlagsTab:
         ).grid(row=0, column=3, padx=(0, 8), pady=6)
 
     def _toggle_world(self, flag_id: int, name: str, badge: ctk.CTkLabel) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save, save_path, char = self._get_char()
         if char is None:
             return
@@ -398,6 +411,9 @@ class DSREventFlagsTab:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
 
     def _toggle_gesture(self, flag_id: int, entry: dict, badge: ctk.CTkLabel) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save, save_path, char = self._get_char()
         if char is None:
             return
@@ -481,6 +497,9 @@ class DSREventFlagsTab:
             self._lookup_result_var.set(f"Error: {exc}")
 
     def _lookup_write(self, value: bool) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save, save_path, char = self._get_char()
         if char is None:
             self._lookup_result_var.set("No character loaded.")

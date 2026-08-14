@@ -87,8 +87,8 @@ class CharacterOperations:
         buf.write(struct.pack("<I", level))
 
         # Seconds played (4 bytes) - try to preserve from source, otherwise 0
-        # NOTE: seconds_played is NOT in character slot data, only in profile summary
-        # For transfers, we lose this data - it will be 0 in the target
+        # seconds_played lives in the profile summary, not in character slot
+        # data, so a transfer cannot carry it over. Target gets 0.
         seconds_played = 0
         buf.write(struct.pack("<I", seconds_played))
 
@@ -354,7 +354,8 @@ class CharacterOperations:
             ]
         )
 
-        # Copy profile summary from source to target (preserves seconds_played, equipment preview, etc.)
+        # Copy the profile summary across, preserving seconds_played and the
+        # equipment preview
         _, source_profiles_base = CharacterOperations.get_profile_summary_offsets(
             source_save
         )
@@ -379,7 +380,7 @@ class CharacterOperations:
             to_slot,
         )
 
-        # Re-parse the modified slot first so we have an accurate UserDataX
+        # Re-parse the modified slot first for an accurate UserDataX
         from io import BytesIO
 
         from er_save_manager.parser.user_data_x import UserDataX
@@ -929,8 +930,8 @@ class CharacterOperations:
         # Write to slot
         slot_offset = CharacterOperations.get_slot_offset(save, slot_index)
 
-        # IMPORTANT: Clear the ENTIRE slot first to avoid residual data from previous character
-        # This prevents issues when overwriting a character with a different one
+        # Zero the whole slot first, or bytes from the previous character
+        # survive wherever the new one writes less data
         save._raw_data[slot_offset : slot_offset + CharacterOperations.SLOT_SIZE] = (
             bytes(CharacterOperations.SLOT_SIZE)
         )
@@ -978,8 +979,8 @@ class CharacterOperations:
             CharacterOperations.SLOT_DATA_SIZE,
         )
 
-        # CRITICAL: Recalculate checksums for the modified slot and USER_DATA_10
-        # Without this, the save file will be corrupted and the game won't load it
+        # The slot and USER_DATA_10 checksums must match the new contents
+        # or the game rejects the save as corrupt
         save.recalculate_checksums()
 
         return save.character_slots[slot_index].get_character_name()

@@ -14,7 +14,12 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
+
+
+def _game_blocks_write(parent) -> bool:
+    return game_blocks_write(parent, "darksoulsiii.exe", "Dark Souls III")
+
 
 _DATA_DIR = Path(__file__).parent.parent / "data"
 _BONFIRES: list[dict] | None = None
@@ -162,6 +167,9 @@ class DS3WorldStateTab:
         self._ng_current_var.set(f"NG+{char.ng_plus}")
 
     def _apply_ng(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save, save_path, char = self._get_char()
         if char is None:
             return
@@ -242,6 +250,9 @@ class DS3WorldStateTab:
     def _set_bonfire(
         self, bf: dict, unlock_val: int, unlocked: bool, badge: ctk.CTkLabel
     ) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save, save_path, char = self._get_char()
         if char is None:
             return
@@ -262,6 +273,9 @@ class DS3WorldStateTab:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
 
     def _unlock_all_bonfires(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save, save_path, char = self._get_char()
         if char is None:
             return
@@ -280,6 +294,9 @@ class DS3WorldStateTab:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
 
     def _lock_all_bonfires(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save, save_path, char = self._get_char()
         if char is None:
             return

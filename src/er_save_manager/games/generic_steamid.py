@@ -10,7 +10,7 @@ Does NOT apply to Sekiro (no file-level SteamID check).
 Strategy: scan the file for all 8-byte occurrences of the old SteamID
 (little-endian uint64) and replace them with the new SteamID. This is
 safe because a 64-bit Steam ID in the range 0x01000001_00000001 to
-0x01100001_FFFFFFFF is effectively unique in a save file -- accidental
+0x01100001_FFFFFFFF is effectively unique in a save file - accidental
 collision with game data is negligible, and all known games store the
 ID as a plain LE uint64.
 
@@ -27,7 +27,7 @@ import struct
 from dataclasses import dataclass, field
 from pathlib import Path
 
-# Steam64 ID base constant -- all valid IDs are above this
+# Steam64 ID base constant - all valid IDs are above this
 _STEAM64_BASE = 0x0110000100000000
 _STEAM64_MAX = 0x01100001FFFFFFFF
 

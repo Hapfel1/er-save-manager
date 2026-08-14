@@ -7,7 +7,7 @@ Effect tier classification (from AttachEffectParam ID ranges):
   "special" <100000          - fixed hero/ability effects (any relic type)
   "curse"   6800000-6999999  - curse slot effects (separate from effect slots)
 
-Validation rules (verified against 761 relics from a live save):
+Validation rules:
   Effect slots (1-3):
     - deep relic:   tier in ("deep", "special", "normal")  - game allows both
     - normal relic: tier in ("normal", "special", "deep")   both tiers in practice

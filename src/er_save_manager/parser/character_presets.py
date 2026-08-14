@@ -840,7 +840,7 @@ class FacePreset:
             "eye_patch_color_r": self.eye_patch_color_r,
             "eye_patch_color_g": self.eye_patch_color_g,
             "eye_patch_color_b": self.eye_patch_color_b,
-            # CRITICAL: Unknown/binary fields that must be preserved
+            # Unidentified fields, carried through verbatim on write
             "_unk0x00": list(self.unk0x00),
             "_face_data_marker": self.face_data_marker,
             "_magic": self.magic.decode("ascii", errors="ignore") if self.magic else "",
@@ -1288,7 +1288,7 @@ class FacePreset:
         preset.unk0x00 = bytes(our_unk0x00)
 
         ft = data.get("face_template", {})
-        # face_model: structure N -> face_partsId (N-1)*10, confirmed from save exports.
+        # face_model: structure N maps to face_partsId (N-1)*10
         preset.face_model = (int(ft.get("structure", 1)) - 1) * 10
         preset.apparent_age = int(ft.get("age", 128))
         preset.facial_aesthetic = int(ft.get("aesthetic", 128))

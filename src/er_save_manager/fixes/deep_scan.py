@@ -332,9 +332,9 @@ class DeepScanFix(BaseFix):
         else:
             # NetMan tear: splice at expected_netman + TAIL_AFTER_NETMAN.
             # = expected_steamid_offset - _NETMAN_SIZE
-            # Verified by byte-diff against manual fix: the tear removes bytes from
-            # inside the NetMan block; splicing here restores correct NetMan content
-            # and leaves weather/time/SteamID intact at their expected positions.
+            # The tear removes bytes from inside the NetMan block. Splicing here
+            # restores correct NetMan content and leaves weather, time and
+            # SteamID intact at their expected positions.
             shift_point = result.expected_steamid_offset - _NETMAN_SIZE
             log.info(
                 "[deep_scan] slot %d: NetMan tear, delta=%+d (0x%x), "
@@ -801,10 +801,9 @@ class DeepScanFix(BaseFix):
         #   game_man:        4
         #   (version>=65):   4
         #   (version>=66):   1
-        # Walk 5 sized structs forward from ef_end to find expected_netman.
-        # The struct size fields encode the CORRUPTED sizes (torn write inflated them),
-        # so the walk lands at the wrong var_zone_end relative to found_netman.
-        # That divergence IS the delta.
+        # The struct size fields encode the corrupted sizes (torn write inflated
+        # them), so the walk lands at the wrong var_zone_end relative to
+        # found_netman. That divergence is the delta.
         #
         # walk_netman = walk_end + fixed_tail
         # delta = found_netman - walk_netman

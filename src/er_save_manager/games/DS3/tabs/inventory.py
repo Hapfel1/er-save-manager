@@ -18,6 +18,12 @@ from tkinter import ttk
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.utils import game_blocks_write
+
+
+def _game_blocks_write(parent) -> bool:
+    return game_blocks_write(parent, "darksoulsiii.exe", "Dark Souls III")
+
 
 _DATA_DIR = Path(__file__).parent.parent / "data"
 _DB: dict | None = None
@@ -714,6 +720,9 @@ class DS3InventoryTab:
     # --- Inventory operations ----------------------------------------------- #
 
     def _apply_edit(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         if self._selected_inv_offset < 0:
             CTkMessageBox.showwarning(
                 "No Selection",
@@ -758,6 +767,9 @@ class DS3InventoryTab:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
 
     def _remove_item(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         if self._selected_inv_offset < 0:
             CTkMessageBox.showwarning(
                 "No Selection",
@@ -797,6 +809,9 @@ class DS3InventoryTab:
             self._spawn_in_progress = False
 
     def _do_spawn_item(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         entry = self._selected_db_item
         if entry is None:
             CTkMessageBox.showwarning(

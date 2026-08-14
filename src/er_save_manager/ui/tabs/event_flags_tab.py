@@ -652,9 +652,8 @@ class EventFlagsTab:
         for flag_id, new_state in self.flag_states.items():
             self.current_event_flags.set_flag(flag_id, new_state)
 
-        # CRITICAL: Write the modified event_flags buffer back to _raw_data
-        # The set_flag() updates slot.event_flags in memory, but we must also
-        # update the save file's raw data buffer that gets written to disk
+        # set_flag() only updates slot.event_flags in memory. The raw data
+        # buffer is what gets written to disk, so it needs the same write.
         slot = save_file.character_slots[self.current_slot]
 
         if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:

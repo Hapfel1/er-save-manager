@@ -451,12 +451,12 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             cx = (x0 + x1) // 2
             fill = self._sel_bg if idx == self._sel_idx else self._cell_bg
 
-            # Background rectangle — tag "rect_N"
+            # Background rectangle - tag "rect_N"
             self._canvas.create_rectangle(
                 x0, y0, x1, y1, fill=fill, outline=self._cell_out, tags=f"rect_{idx}"
             )
 
-            # Image placeholder rectangle — tag "imgbg_N"
+            # Image placeholder rectangle - tag "imgbg_N"
             img_y0 = y0 + 6
             img_y1 = img_y0 + _IMG_SZ
             self._canvas.create_rectangle(
@@ -469,7 +469,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
                 tags=f"imgbg_{idx}",
             )
 
-            # Name text — tag "text_N" (separate from rect so colour isn't clobbered)
+            # Name text - tag "text_N" (separate from rect so colour isn't clobbered)
             text, full_id = row[0], row[1]
             if db:
                 item = db.get_item_by_id(full_id)
@@ -579,7 +579,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
                 continue
             fill = self._sel_bg if i == self._sel_idx else self._cell_bg
             try:
-                # Only update rect and imgbg — never touch text colour
+                # Only update rect and imgbg - never touch text colour
                 self._canvas.itemconfigure(f"rect_{i}", fill=fill)
                 self._canvas.itemconfigure(f"imgbg_{i}", fill=fill)
             except Exception:
@@ -631,7 +631,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
                 text=f"Qty: {qty}  |  {location}", text_color=("gray40", "gray60")
             )
 
-            # Button states — same validation rules as the main editor
+            # Button states - same validation rules as the main editor
             is_w = _is_weapon(full_id)
             reinf = getattr(item, "reinforcement", "standard") if item else "standard"
             aow_ok = is_w and (getattr(item, "aow_allowed", True) if item else False)

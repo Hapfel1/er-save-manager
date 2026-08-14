@@ -72,7 +72,7 @@ def bind_mousewheel(widget, target_widget=None):
         target_widget.bind("<Button-4>", scroll_up)
         target_widget.bind("<Button-5>", scroll_down)
 
-        # CRITICAL: Recursively bind to ALL children (for dynamic content)
+        # Bind children recursively so widgets added later also scroll
         def bind_to_children(w):
             try:
                 w.bind("<Button-4>", scroll_up)
@@ -256,3 +256,34 @@ def _apply_default_extension(
     if path and save and defaultextension and not path.endswith(defaultextension):
         path += defaultextension
     return path
+
+
+def game_blocks_write(parent, process_name: str, game_name: str) -> bool:
+    """Report whether a save write must be aborted because the game is running.
+
+    Shows the standard error dialog and returns True when the write should be
+    skipped. Returns False when the advanced "skip_game_running_check" setting
+    is on, so the developer bypass covers per-game tabs the same way it covers
+    the actions wired up in gui.py.
+
+    Args:
+        parent: Widget the error dialog is parented to
+        process_name: Executable to look for, e.g. "darksoulsiii.exe"
+        game_name: Display name used in the error message
+    """
+    from er_save_manager.backup.process_monitor import _is_process_running
+    from er_save_manager.ui.messagebox import CTkMessageBox
+    from er_save_manager.ui.settings import get_settings
+
+    if get_settings().get("skip_game_running_check", False):
+        return False
+
+    if not _is_process_running(process_name):
+        return False
+
+    CTkMessageBox.showerror(
+        "Game is running",
+        f"Please close {game_name} before modifying save files.",
+        parent=parent,
+    )
+    return True

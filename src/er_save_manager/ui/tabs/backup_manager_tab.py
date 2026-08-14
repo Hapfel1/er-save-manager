@@ -5,6 +5,7 @@ Manages save file backups for all supported FromSoftware games.
 
 from __future__ import annotations
 
+import math
 import tkinter as tk
 from pathlib import Path
 
@@ -12,6 +13,52 @@ import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
+
+STAR_SIZE = 20
+STAR_COLOR_ON = "#e5b54a"
+STAR_COLOR_ON_OUTLINE = "#a87520"
+STAR_COLOR_OFF = "#8a8a8a"
+_STAR_IMAGES: dict[bool, ctk.CTkImage] = {}
+
+
+def _star_polygon(cx: float, cy: float, r_outer: float, r_inner: float) -> list:
+    """Vertices of a five-pointed star, first point straight up."""
+    points = []
+    for i in range(10):
+        radius = r_outer if i % 2 == 0 else r_inner
+        angle = -math.pi / 2 + i * math.pi / 5
+        points.append((cx + radius * math.cos(angle), cy + radius * math.sin(angle)))
+    return points
+
+
+def get_star_image(locked: bool) -> ctk.CTkImage:
+    """Cached star icon, filled when locked and outlined when not."""
+    if locked in _STAR_IMAGES:
+        return _STAR_IMAGES[locked]
+
+    from PIL import Image, ImageDraw
+
+    scale = 4
+    canvas = STAR_SIZE * scale
+    img = Image.new("RGBA", (canvas, canvas), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+
+    margin = scale
+    r_outer = (canvas - 2 * margin) / 1.902
+    cy = (canvas - 1.809 * r_outer) / 2 + r_outer
+    points = _star_polygon(canvas / 2, cy, r_outer, r_outer * 0.382)
+
+    if locked:
+        draw.polygon(points, fill=STAR_COLOR_ON, outline=STAR_COLOR_ON_OUTLINE)
+    else:
+        draw.polygon(
+            points, fill=None, outline=STAR_COLOR_OFF, width=round(scale * 1.5)
+        )
+
+    img = img.resize((STAR_SIZE, STAR_SIZE), Image.LANCZOS)
+    image = ctk.CTkImage(light_image=img, dark_image=img, size=(STAR_SIZE, STAR_SIZE))
+    _STAR_IMAGES[locked] = image
+    return image
 
 
 class BackupManagerTab:
@@ -127,7 +174,10 @@ class BackupManagerTab:
             "Backup Format:\n"
             "  Timestamp: YYYY-MM-DD_HH-MM-SS\n"
             "  Location: [save_name].<ext>.backups/\n"
-            "  Metadata: Character info, operation type, changes made"
+            "  Metadata: Character info, operation type, changes made\n\n"
+            "Locked Backups:\n"
+            "  Click the star next to a backup in the backup manager window\n"
+            "  to lock it. Locked backups are never auto-deleted."
         )
 
         ctk.CTkLabel(
@@ -198,9 +248,11 @@ class BackupManagerTab:
                 return
 
             total_size = sum(b.file_size for b in backups)
+            locked = sum(1 for b in backups if b.favorite)
             lines = [
                 f"Save: {save_path.name}",
                 f"Total Backups: {len(backups)}",
+                f"Locked (exempt from limit): {locked}",
                 f"Total Size: {total_size / (1024 * 1024):.1f} MB",
                 f"Latest: {backups[0].timestamp[:19].replace('T', ' ') if backups else 'N/A'}",
             ]
@@ -363,6 +415,13 @@ class BackupManagerTab:
             text="Backups",
             font=("Segoe UI", 12, "bold"),
             text_color=("gray70", "gray50"),
+        ).pack(anchor=tk.W, padx=10, pady=(0, 2))
+
+        ctk.CTkLabel(
+            list_frame,
+            text="Click the star to lock a backup. Locked backups are never removed by the backup limit.",
+            font=("Segoe UI", 10),
+            text_color=("gray40", "gray60"),
         ).pack(anchor=tk.W, padx=10, pady=(0, 5))
 
         sort_var = tk.StringVar(value="Newest")
@@ -372,13 +431,14 @@ class BackupManagerTab:
         ctk.CTkLabel(sort_frame, text="Sort by:", font=("Segoe UI", 10, "bold")).pack(
             side=tk.LEFT, padx=(0, 6)
         )
-        ctk.CTkComboBox(
+        sort_combo = ctk.CTkComboBox(
             sort_frame,
-            values=["Newest", "Oldest", "Operation", "Size"],
+            values=["Newest", "Oldest", "Operation", "Size", "Locked first"],
             variable=sort_var,
             state="readonly",
             width=140,
-        ).pack(side=tk.LEFT)
+        )
+        sort_combo.pack(side=tk.LEFT)
 
         scrollable_frame = ctk.CTkScrollableFrame(list_frame)
         scrollable_frame.pack(fill=tk.BOTH, expand=True)
@@ -395,6 +455,9 @@ class BackupManagerTab:
                 return sorted(backups, key=lambda b: (b.operation or "", b.timestamp))
             if sel == "Size":
                 return sorted(backups, key=lambda b: b.file_size, reverse=True)
+            if sel == "Locked first":
+                by_date = sorted(backups, key=lambda b: b.timestamp, reverse=True)
+                return sorted(by_date, key=lambda b: not b.favorite)
             return sorted(backups, key=lambda b: b.timestamp, reverse=True)
 
         def refresh_list():
@@ -423,8 +486,19 @@ class BackupManagerTab:
                 )
                 item_frame.pack(fill=tk.X, padx=5, pady=3)
 
+                star_label = ctk.CTkLabel(
+                    item_frame,
+                    text="",
+                    image=get_star_image(backup.favorite),
+                    width=STAR_SIZE + 8,
+                    cursor="hand2",
+                )
+                star_label.pack(side=tk.RIGHT, padx=(6, 12))
+
                 content_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
-                content_frame.pack(fill=tk.X, padx=10, pady=8)
+                content_frame.pack(
+                    side=tk.LEFT, fill=tk.X, expand=True, padx=10, pady=8
+                )
 
                 ctk.CTkLabel(
                     content_frame,
@@ -442,9 +516,35 @@ class BackupManagerTab:
                     justify=tk.LEFT,
                 ).pack(anchor=tk.W, pady=(3, 0))
 
+                def make_toggle_lock(fname, meta, label):
+                    def _toggle(event=None):
+                        new_state = not meta.favorite
+                        try:
+                            manager.set_favorite(fname, new_state)
+                        except Exception as e:
+                            CTkMessageBox.showerror(
+                                "Error",
+                                f"Failed to update lock state:\n{e}",
+                                parent=dialog,
+                            )
+                            return
+                        label.configure(image=get_star_image(new_state))
+                        self.update_backup_stats()
+                        self.show_toast(
+                            "Backup locked" if new_state else "Backup unlocked",
+                            duration=2500,
+                        )
+
+                    return _toggle
+
+                star_label.bind(
+                    "<Button-1>", make_toggle_lock(backup.filename, backup, star_label)
+                )
+
                 backup_items[backup.filename] = {
                     "frame": item_frame,
                     "metadata": backup,
+                    "star": star_label,
                 }
 
                 def make_select(fname):
@@ -461,6 +561,9 @@ class BackupManagerTab:
 
                 item_frame.bind("<Button-1>", make_select(backup.filename))
                 for child in item_frame.winfo_children():
+                    # Clicking the star must toggle the lock, not select the row.
+                    if child is star_label:
+                        continue
                     child.bind("<Button-1>", make_select(backup.filename))
                 for grandchild in content_frame.winfo_children():
                     grandchild.bind("<Button-1>", make_select(backup.filename))
@@ -470,9 +573,75 @@ class BackupManagerTab:
         button_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         button_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
+        def ask_backup_label():
+            """
+            Modal prompt for a manual backup label.
+
+            Returns the entered text, "" if left blank, or None if cancelled.
+            """
+            result = [None]
+
+            pd = ctk.CTkToplevel(dialog)
+            pd.title("Name Backup")
+            pd.geometry("440x190")
+            pd.transient(dialog)
+            force_render_dialog(pd)
+            pd.grab_set()
+
+            pd.update_idletasks()
+            dialog.update_idletasks()
+            px = dialog.winfo_rootx() + dialog.winfo_width() // 2 - 220
+            py = dialog.winfo_rooty() + dialog.winfo_height() // 2 - 95
+            pd.geometry(f"440x190+{px}+{py}")
+
+            frame = ctk.CTkFrame(pd)
+            frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+            ctk.CTkLabel(
+                frame,
+                text="Reason or name for this backup:",
+                font=("Segoe UI", 12, "bold"),
+            ).pack(anchor=tk.W, pady=(0, 8))
+
+            entry = ctk.CTkEntry(
+                frame, placeholder_text="e.g. before convergence update"
+            )
+            entry.pack(fill=tk.X)
+            entry.focus_set()
+
+            def confirm(event=None):
+                result[0] = entry.get().strip()
+                pd.destroy()
+
+            entry.bind("<Return>", confirm)
+            pd.bind("<Escape>", lambda _e: pd.destroy())
+
+            row = ctk.CTkFrame(frame, fg_color="transparent")
+            row.pack(fill=tk.X, pady=(16, 0))
+            ctk.CTkButton(row, text="Create", command=confirm, width=100).pack(
+                side=tk.RIGHT, padx=(6, 0)
+            )
+            ctk.CTkButton(
+                row,
+                text="Cancel",
+                command=pd.destroy,
+                width=100,
+                fg_color=("gray70", "gray40"),
+                hover_color=("gray60", "gray30"),
+            ).pack(side=tk.RIGHT)
+
+            dialog.wait_window(pd)
+            dialog.grab_set()
+            return result[0]
+
         def create_backup():
+            label = ask_backup_label()
+            if label is None:
+                return
             try:
-                manager.create_backup(description="manual", operation="manual_backup")
+                manager.create_backup(
+                    description=label or "manual", operation="manual_backup"
+                )
                 refresh_list()
                 self.update_backup_stats()
                 self.show_toast("Backup created", duration=2500)
@@ -487,11 +656,6 @@ class BackupManagerTab:
                     "No Selection", "Select a backup to restore.", parent=dialog
                 )
                 return
-
-            # get_save_file() only ever reflects the Elden Ring save object;
-            # DSR/DS3/NR keep their loaded save in separate attributes, so the
-            # path match alone is what tells us the restored file is the one
-            # currently open in the editor, regardless of game.
             is_loaded_here = str(self.get_save_path()) == str(save_path)
 
             if not CTkMessageBox.askyesno(
@@ -524,6 +688,15 @@ class BackupManagerTab:
             if not selected_backup[0]:
                 CTkMessageBox.showwarning(
                     "No Selection", "Select a backup to delete.", parent=dialog
+                )
+                return
+            item = backup_items.get(selected_backup[0])
+            if item and item["metadata"].favorite:
+                CTkMessageBox.showwarning(
+                    "Backup Locked",
+                    "This backup is locked and cannot be deleted.\n\n"
+                    "Click its star to unlock it first.",
+                    parent=dialog,
                 )
                 return
             if not CTkMessageBox.askyesno(
@@ -669,5 +842,7 @@ class BackupManagerTab:
         ctk.CTkButton(
             button_frame, text="Close", command=dialog.destroy, width=120
         ).pack(side=tk.RIGHT, padx=5)
+
+        sort_combo.configure(command=lambda _choice: refresh_list())
 
         refresh_list()
