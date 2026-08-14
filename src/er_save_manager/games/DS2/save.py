@@ -30,10 +30,10 @@ Entry map (23 total):
   0        Global slot-occupancy summary (name + flag per character slot)
   1-10     Per-character profile slot: name, stats, souls, HP, NG+, inventory
   11-20    Per-character large slot (~501KB), one per character slot.
-           Confirmed to hold per-character data (differs between characters
-           starting at offset 0x732, identical padding after ~0x5A87F), but
-           the internal structure is not mapped. Not floats/ASCII text in
-           any recognizable pattern; contents preserved as-is on save.
+           Holds per-character data (differs between characters starting at
+           offset 0x732, identical padding after ~0x5A87F), but the internal
+           structure is not mapped. Not floats/ASCII text in any recognizable
+           pattern; contents preserved as-is on save.
   21       Single ~2MB entry: zlib-compressed (8-byte size header, then a
            standard zlib stream) nested BND4 archive of ~170 real entries.
            This is the game's static param/regulation data (EnemyParam,

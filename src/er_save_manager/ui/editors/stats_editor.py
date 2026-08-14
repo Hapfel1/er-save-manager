@@ -697,7 +697,7 @@ class StatsEditor:
                 char.great_rune_on = bool(self.great_rune_on_var.get())
                 char.furl_calling_finger_on = bool(self.rune_arc_var.get())
 
-                # Matchmaking weapon level -- clamp to inventory floor
+                # Matchmaking weapon level - clamp to inventory floor
                 mm_value = max(0, min(25, int(self.matchmaking_level_var.get())))
                 if mm_value < self._matchmaking_min:
                     CTkMessageBox.showwarning(

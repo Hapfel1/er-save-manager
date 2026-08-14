@@ -244,7 +244,7 @@ class SaveManagerGUI:
         self._resize_timer = self.root.after(200, self._process_resize)
 
     def _process_resize(self):
-        """Process pending resize -- CTk handles its own layout."""
+        """Process pending resize - CTk handles its own layout."""
         self._resize_timer = None
 
     def _check_for_updates(self):
@@ -1882,7 +1882,7 @@ class SaveManagerGUI:
             self.world_tab.refresh()
 
     def _lazy_load_tab_background(self, tab_name):
-        """Schedule tab data load on the main thread -- all CTk calls must stay on the main thread."""
+        """Schedule tab data load on the main thread - all CTk calls must stay on the main thread."""
         # Nothing here is actually safe to run off-thread; dispatch everything via after().
         self.root.after(0, lambda: self._lazy_load_tab_main(tab_name))
 
@@ -1993,7 +1993,7 @@ class SaveManagerGUI:
             )
             return
 
-        # Check if game is running - MUST be closed
+        # The game must be closed before writing
         profile = self._active_profile()
         process_name = (
             profile.process_name
