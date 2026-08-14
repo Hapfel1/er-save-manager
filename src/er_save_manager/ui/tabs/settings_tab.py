@@ -900,7 +900,7 @@ class SettingsTab:
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
     def _create_launch_settings(self, parent) -> None:
-        """CPU 0 exclusion settings -- Windows only."""
+        """CPU 0 exclusion settings - Windows only."""
         import sys
 
         if sys.platform != "win32":

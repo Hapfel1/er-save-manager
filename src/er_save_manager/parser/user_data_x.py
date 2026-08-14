@@ -131,7 +131,7 @@ class UserDataX:
     # Face data (0x12F = 303 bytes when in_profile_summary=False)
     face_data: FaceData = field(default_factory=FaceData)
 
-    # Inventory storage (CRITICAL: 0x780 common, 0x80 key)
+    # Inventory storage (0x780 common, 0x80 key)
     inventory_storage_box: Inventory = field(default_factory=Inventory)
 
     # Gestures and regions
@@ -262,7 +262,7 @@ class UserDataX:
 
         f.seek(original_pos)
 
-        # Only return if we have a STRONG match (score >= 80)
+        # Only accept a strong match (score >= 80)
         if best_score >= 80 and best_match is not None:
             return best_match
 
@@ -290,7 +290,7 @@ class UserDataX:
         """
         obj = cls()
         obj.data_start = slot_start_offset
-        data_start = f.tell()  # Track where we started reading
+        data_start = f.tell()  # Read start, for offsets tracked below
 
         # Read version (4 bytes)
         obj.version = struct.unpack("<I", f.read(4))[0]

@@ -253,8 +253,7 @@ EMPTY_CHECK_END = 0x0090
 # Fixed absolute offset of the NPC/event flag region anchor in the decrypted
 # slot. Not derived by searching: the region holds live flag data that
 # diverges from its default state as a character is played, so a signature
-# search only finds this offset for untouched characters. Validated against
-# a level 130 character confirmed in-game to be NG+2.
+# search only finds this offset for untouched characters.
 PATTERN1_ANCHOR = 0x1F17E
 
 # Anchor-relative offsets

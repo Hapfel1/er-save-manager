@@ -584,8 +584,8 @@ class Save:
                         + len(event_flags_mutable)
                     ] = event_flags_mutable
                 else:
-                    # Fallback: calculate using tracked slot offset
-                    # Use the offset we found: 0x8F7 within character data
+                    # Fallback: derive from the tracked slot offset.
+                    # Event flags sit at 0x8F7 within character data.
                     EVENT_FLAGS_OFFSET_IN_SLOT = 0x8F7
 
                     event_flags_start = (
@@ -849,8 +849,8 @@ class Save:
         preset.write(preset_stream)
         preset_data = preset_stream.getvalue()
 
-        # The first 8 bytes of Preset 0 physically overlap with the global array header.
-        # We must preserve the existing header in the raw data to avoid corruption.
+        # The first 8 bytes of Preset 0 physically overlap the global array
+        # header. Preserve the existing header or the array is corrupted.
         if slot_idx == 0:
             preset_data = (
                 self._raw_data[preset_offset : preset_offset + 8] + preset_data[8:]

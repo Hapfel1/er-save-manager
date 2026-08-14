@@ -72,7 +72,7 @@ def bind_mousewheel(widget, target_widget=None):
         target_widget.bind("<Button-4>", scroll_up)
         target_widget.bind("<Button-5>", scroll_down)
 
-        # CRITICAL: Recursively bind to ALL children (for dynamic content)
+        # Bind children recursively so widgets added later also scroll
         def bind_to_children(w):
             try:
                 w.bind("<Button-4>", scroll_up)

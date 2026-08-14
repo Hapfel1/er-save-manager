@@ -163,7 +163,7 @@ class AppearanceTab:
         ).pack(side=tk.LEFT, padx=(0, 6))
 
     # Byte indices within unk0x6c and their labels, grouped by face region.
-    # Only indices confirmed active via in-game testing are included.
+    # Indices with no observable effect are omitted.
     _WARPED_FACE_SLIDERS = [
         # Eyes / chin area
         ("Eyes/Chin A", 43),
@@ -1439,7 +1439,7 @@ class AppearanceTab:
                 "Empty Slot", "Selected slot is empty", parent=self.parent
             )
             return
-        # CRITICAL: Capture the slot value NOW to avoid closure issues
+        # Capture the slot before the dialog can change selected_slot
         source_slot = self.selected_slot
 
         # Show copy dialog
