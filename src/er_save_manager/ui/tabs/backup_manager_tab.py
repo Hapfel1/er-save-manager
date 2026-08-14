@@ -561,6 +561,7 @@ class BackupManagerTab:
 
                 item_frame.bind("<Button-1>", make_select(backup.filename))
                 for child in item_frame.winfo_children():
+                    # Clicking the star must toggle the lock, not select the row.
                     if child is star_label:
                         continue
                     child.bind("<Button-1>", make_select(backup.filename))
@@ -572,9 +573,75 @@ class BackupManagerTab:
         button_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         button_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
+        def ask_backup_label():
+            """
+            Modal prompt for a manual backup label.
+
+            Returns the entered text, "" if left blank, or None if cancelled.
+            """
+            result = [None]
+
+            pd = ctk.CTkToplevel(dialog)
+            pd.title("Name Backup")
+            pd.geometry("440x190")
+            pd.transient(dialog)
+            force_render_dialog(pd)
+            pd.grab_set()
+
+            pd.update_idletasks()
+            dialog.update_idletasks()
+            px = dialog.winfo_rootx() + dialog.winfo_width() // 2 - 220
+            py = dialog.winfo_rooty() + dialog.winfo_height() // 2 - 95
+            pd.geometry(f"440x190+{px}+{py}")
+
+            frame = ctk.CTkFrame(pd)
+            frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+            ctk.CTkLabel(
+                frame,
+                text="Reason or name for this backup:",
+                font=("Segoe UI", 12, "bold"),
+            ).pack(anchor=tk.W, pady=(0, 8))
+
+            entry = ctk.CTkEntry(
+                frame, placeholder_text="e.g. before convergence update"
+            )
+            entry.pack(fill=tk.X)
+            entry.focus_set()
+
+            def confirm(event=None):
+                result[0] = entry.get().strip()
+                pd.destroy()
+
+            entry.bind("<Return>", confirm)
+            pd.bind("<Escape>", lambda _e: pd.destroy())
+
+            row = ctk.CTkFrame(frame, fg_color="transparent")
+            row.pack(fill=tk.X, pady=(16, 0))
+            ctk.CTkButton(row, text="Create", command=confirm, width=100).pack(
+                side=tk.RIGHT, padx=(6, 0)
+            )
+            ctk.CTkButton(
+                row,
+                text="Cancel",
+                command=pd.destroy,
+                width=100,
+                fg_color=("gray70", "gray40"),
+                hover_color=("gray60", "gray30"),
+            ).pack(side=tk.RIGHT)
+
+            dialog.wait_window(pd)
+            dialog.grab_set()
+            return result[0]
+
         def create_backup():
+            label = ask_backup_label()
+            if label is None:
+                return
             try:
-                manager.create_backup(description="manual", operation="manual_backup")
+                manager.create_backup(
+                    description=label or "manual", operation="manual_backup"
+                )
                 refresh_list()
                 self.update_backup_stats()
                 self.show_toast("Backup created", duration=2500)
@@ -589,7 +656,6 @@ class BackupManagerTab:
                     "No Selection", "Select a backup to restore.", parent=dialog
                 )
                 return
-
             is_loaded_here = str(self.get_save_path()) == str(save_path)
 
             if not CTkMessageBox.askyesno(
