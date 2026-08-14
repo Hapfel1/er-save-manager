@@ -12,7 +12,14 @@ from typing import TYPE_CHECKING
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
+
+
+def _game_blocks_write(parent) -> bool:
+    return game_blocks_write(
+        parent, "darksoulsremastered.exe", "Dark Souls: Remastered"
+    )
+
 
 if TYPE_CHECKING:
     pass
@@ -300,6 +307,9 @@ class DSRNPCTab:
     # --- Toggles -------------------------------------------------------------- #
 
     def _toggle_npc(self, npc: dict, alive: bool, row: ctk.CTkFrame) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save, save_path, char = self._get_char()
         if char is None:
             return
@@ -330,6 +340,9 @@ class DSRNPCTab:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
 
     def _toggle_boss(self, boss: dict, killed: bool, row: ctk.CTkFrame) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save, save_path, char = self._get_char()
         if char is None:
             return
@@ -356,6 +369,9 @@ class DSRNPCTab:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
 
     def _bulk_npcs(self, alive: bool) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save, save_path, char = self._get_char()
         if char is None:
             CTkMessageBox.showwarning(
@@ -383,6 +399,9 @@ class DSRNPCTab:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
 
     def _bulk_bosses(self, killed: bool) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save, save_path, char = self._get_char()
         if char is None:
             CTkMessageBox.showwarning(
