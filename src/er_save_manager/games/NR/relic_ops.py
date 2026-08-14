@@ -11,10 +11,10 @@ relative to the loop's final cursor.
 
 Adding an 80-byte relic in place of ten 8-byte empty states would reduce the
 number of loop iterations that reach the post-state data by 9 (9 * 8 = 72 bytes
-"missing"). To compensate, we insert 72 null bytes at the spawn position before
-writing the relic. Those 72 bytes are parsed as 9 additional empty 8-byte
-states, so the loop's cursor still lands at the same position relative to the
-player-data block.
+"missing"). Inserting 72 null bytes at the spawn position before writing the
+relic compensates: they are parsed as 9 additional empty 8-byte states, so the
+loop's cursor still lands at the same position relative to the player-data
+block.
 
 Concretely:
   1. Find the first 8-byte empty state slot at or after the last existing relic.

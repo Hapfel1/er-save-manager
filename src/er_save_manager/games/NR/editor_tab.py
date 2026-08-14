@@ -16,7 +16,12 @@ from tkinter import ttk
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
+
+
+def _game_blocks_write(parent) -> bool:
+    return game_blocks_write(parent, "nightreign.exe", "Elden Ring Nightreign")
+
 
 _EMPTY_EFFECT = 0xFFFFFFFF
 
@@ -271,6 +276,9 @@ class NREditorTab:
         self._mon_var.set(str(slot.marks_of_night))
 
     def _apply_overview(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save = self._get_nr_save()
         if save is None or self._current_slot < 0:
             return
@@ -798,6 +806,9 @@ class NREditorTab:
     # ------------------------------------------------------------------
 
     def _apply_relic_edit(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         if self._selected_relic_ga is None:
             CTkMessageBox.showinfo(
                 "No Selection", "Select a relic row first.", parent=self.parent
@@ -859,6 +870,9 @@ class NREditorTab:
             CTkMessageBox.showerror("Save Failed", str(e), parent=self.parent)
 
     def _remove_selected_relic(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         if self._selected_relic_ga is None:
             CTkMessageBox.showinfo(
                 "No Selection", "Select a relic row first.", parent=self.parent
@@ -887,6 +901,9 @@ class NREditorTab:
     # ------------------------------------------------------------------
 
     def _spawn_relic(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+
         save = self._get_nr_save()
         if save is None or self._current_slot < 0:
             CTkMessageBox.showinfo("No Slot", "Load a slot first.", parent=self.parent)
