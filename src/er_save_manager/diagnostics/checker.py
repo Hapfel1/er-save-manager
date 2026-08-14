@@ -444,7 +444,8 @@ class TroubleshootingChecker:
             )
 
         try:
-            # Use PowerShell to check if steam.exe is running elevated by checking process integrity level
+            # PowerShell reports steam.exe's process integrity level, which
+            # indicates whether it is running elevated
             ps_script = """
             Add-Type -TypeDefinition @"
             using System;
