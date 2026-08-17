@@ -75,6 +75,8 @@ NPC_FLAGS = {
     "Margit, the Fell Omen": (3140, "Stormhill"),
     "Mohg, Lord of Blood": (3340, "Mohgwyn Palace"),
     "Morgott, the Omen King": (3320, "Leyndell, Royal Capital"),
+    # DLC NPCs (Shadow of the Erdtree)
+    "Freyja": (4420, "Three-Path-Cross / Shadow Keep / Enir Ilim"),
 }
 
 
