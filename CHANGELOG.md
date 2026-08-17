@@ -3,6 +3,37 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.9.1
+**Released:** August 17, 2026
+
+
+### 🔧 Bug Fixes
+
+- Block save writes while the game is running `[ui]` ([f96fd1e](https://github.com/Hapfel1/er-save-manager/commit/f96fd1ea9cc28b40df4252db866e3fa87ad070d7))
+
+- Allow visual inventory and icon browser open together `[inventory]` ([be1cd94](https://github.com/Hapfel1/er-save-manager/commit/be1cd94cd22c2623ac87503555338d3130e4d102))
+
+
+
+### 🎨 User Interface
+
+- Added option to lock/favorite backups which will never get purged/deleted `[backups]` ([de78ce1](https://github.com/Hapfel1/er-save-manager/commit/de78ce17c1176345402b530a09ee0a6669e81963))
+
+- Added label/reason input field when creating manual backup, falls back to "manual" when left empty `[backup]` ([da58e55](https://github.com/Hapfel1/er-save-manager/commit/da58e554c120a3f62bf06ea26fd3849f7605c440))
+
+- Add sort control to the inventory editor list `[inventory]` ([05a10a4](https://github.com/Hapfel1/er-save-manager/commit/05a10a45a40a148692c15761fa7eb24ec8093f93))
+
+
+
+### 📦 Dependencies
+
+- Bump the github-actions group with 2 updates `[deps]` ([08a8a7c](https://github.com/Hapfel1/er-save-manager/commit/08a8a7c4c1423b47a24a9f8da5d78f9c361e658a))
+
+- Bump pyjwt from 2.10.1 to 2.13.0 `[deps]` ([af89bef](https://github.com/Hapfel1/er-save-manager/commit/af89befd5280df0d7a37da1025d0d4fb7e0e827e))
+
+
+
+---
 ## 📦 Release 1.9.0
 **Released:** August 11, 2026
 
@@ -1474,6 +1505,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.9.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.9.0..v1.9.1
 [1.9.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.8.0..v1.9.0
 [1.8.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.7.1..v1.8.0
 [1.7.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.7.0..v1.7.1
