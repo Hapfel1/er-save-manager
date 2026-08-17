@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import platform as _platform
+import re
 import tkinter as tk
 from pathlib import Path
 
@@ -202,6 +203,32 @@ def _ask_value(title: str, text: str, parent) -> str | None:
     entry.focus_set()
     dialog.wait_window()
     return result[0]
+
+
+INVENTORY_SORT_MODES = ["Default", "Name A-Z", "Name Z-A", "Qty \u2193", "Qty \u2191"]
+
+
+def inventory_sort_key(text: str) -> tuple[str, int]:
+    """Return (lowercase name, quantity) parsed from an inventory row label."""
+    name = re.sub(r"^\s*\[[HS]K?\]\s*", "", text.split("|")[0]).strip()
+    name = re.sub(r"\s*\+\d+$", "", name).strip()
+    qty_m = re.search(r"Qty:\s*(\d+)", text)
+    return name.lower(), int(qty_m.group(1)) if qty_m else 0
+
+
+def sort_inventory_rows(rows: list, mode: str) -> list:
+    """Sort inventory row tuples by display label. Returns rows unchanged for Default."""
+    if mode not in INVENTORY_SORT_MODES or mode == "Default":
+        return list(rows)
+    if "Qty" in mode:
+        return sorted(
+            rows,
+            key=lambda r: inventory_sort_key(r[0])[1],
+            reverse=(mode == "Qty \u2193"),
+        )
+    return sorted(
+        rows, key=lambda r: inventory_sort_key(r[0])[0], reverse=(mode == "Name Z-A")
+    )
 
 
 def _decode_inv_item(inv_item, gaitem_map: dict) -> tuple[int, int]:
@@ -733,6 +760,7 @@ class InventoryEditor:
         self.inv_filter_var: ctk.StringVar | None = None
         self._inv_search_var: ctk.StringVar | None = None
         self._inv_cat_var: ctk.StringVar | None = None
+        self._inv_sort_var: ctk.StringVar | None = None
 
         self.frame: ctk.CTkFrame | None = None
         self.loadout: list[dict] = []
@@ -1034,6 +1062,16 @@ class InventoryEditor:
             width=140,
             command=lambda _e=None: self._apply_inv_filter(),
         ).pack(side=ctk.LEFT, padx=(0, 6))
+
+        ctk.CTkLabel(cat_row, text="Sort:", width=36).pack(side=ctk.LEFT)
+        self._inv_sort_var = ctk.StringVar(value="Default")
+        ctk.CTkComboBox(
+            cat_row,
+            variable=self._inv_sort_var,
+            values=INVENTORY_SORT_MODES,
+            width=120,
+            command=lambda _e=None: self._apply_inv_filter(),
+        ).pack(side=ctk.LEFT)
 
         search_row = ctk.CTkFrame(parent, fg_color="transparent")
         search_row.pack(fill=ctk.X, padx=10, pady=(0, 4))
@@ -1758,6 +1796,7 @@ class InventoryEditor:
             "Gems": 0x80000000,
         }
         cat_mask = _CAT_BITS.get(cat_filter)
+        sort_mode = self._inv_sort_var.get() if self._inv_sort_var else "Default"
 
         self.inventory_listbox.delete(0, tk.END)
         self._item_data = []
@@ -1765,9 +1804,21 @@ class InventoryEditor:
         mode = ctk.get_appearance_mode()
         hdr_fg = "#9d7fc4" if mode == "Dark" else "#6a3fa0"
 
+        # Rows are grouped under section headers, so sorting stays inside a section
+        pending: list[tuple[str, int, str, int]] = []
+
+        def _flush_section() -> None:
+            for text, full_id, location, gaitem_handle in sort_inventory_rows(
+                pending, sort_mode
+            ):
+                self.inventory_listbox.insert(tk.END, text)
+                self._item_data.append((full_id, location, gaitem_handle))
+            pending.clear()
+
         for text, full_id, location, *rest in self._all_rows:
             gaitem_handle = rest[0] if rest else 0
             if full_id is None:
+                _flush_section()
                 self.inventory_listbox.insert(tk.END, text)
                 self.inventory_listbox.itemconfig(tk.END, foreground=hdr_fg)
                 self._item_data.append(None)
@@ -1776,8 +1827,8 @@ class InventoryEditor:
                     continue
                 if query and query not in text.lower():
                     continue
-                self.inventory_listbox.insert(tk.END, text)
-                self._item_data.append((full_id, location, gaitem_handle))
+                pending.append((text, full_id, location, gaitem_handle))
+        _flush_section()
 
     # ---- operations ---------------------------------------------------------
 
