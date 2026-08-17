@@ -9,21 +9,22 @@ msgstr ""
 "Project-Id-Version: ER Save Manager VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-08-17 12:34+0000\n"
-"PO-Revision-Date: 2026-08-17 12:08+0000\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language: de\n"
+"PO-Revision-Date: 2026-08-18 01:46+0200\n"
+"Last-Translator: \n"
 "Language-Team: de <LL@li.org>\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Generated-By: Babel 2.18.0\n"
+"X-Generator: Poedit 3.9\n"
 
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:34
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:176
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:195
 msgid "Launch Failed"
-msgstr ""
+msgstr "Start fehlgeschlagen"
 
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:99
 #, python-brace-format
@@ -31,11 +32,13 @@ msgid ""
 "Current Version: {installed_version}\n"
 "Latest Version: {latest_version}"
 msgstr ""
+"Aktuelle Version: {installed_version}\r\n"
+"Neueste Version: {latest_version}"
 
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:108
 #, python-brace-format
 msgid "Latest Version: {latest_version}"
-msgstr ""
+msgstr "Neueste Version: {latest_version}"
 
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:180
 #: src/er_save_manager/games/DS2/character_management_tab.py:468
@@ -56,23 +59,23 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:602
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:674
 msgid "Success"
-msgstr ""
+msgstr "Erfolg"
 
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:181
 msgid "Troubleshooter installed and launched successfully!"
-msgstr ""
+msgstr "Der Troubleshooter wurde erfolgreich installiert und gestartet!"
 
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:204
 msgid "Update & Launch"
-msgstr ""
+msgstr "Updaten & Starten"
 
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:211
 msgid "Install & Launch"
-msgstr ""
+msgstr "Installieren & Starten"
 
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:220
 msgid "Launch Current Version"
-msgstr ""
+msgstr "Aktuelle Version starten"
 
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:228
 #: src/er_save_manager/games/NR/editor_tab.py:102
@@ -98,7 +101,7 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:787
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:1015
 msgid "Cancel"
-msgstr ""
+msgstr "Abbrechen"
 
 #: src/er_save_manager/backup/process_monitor.py:250
 msgid "Auto-Backup Setup"
@@ -109,8 +112,8 @@ msgstr ""
 msgid ""
 "Would you like to enable automatic backups for {game_name}?\n"
 "\n"
-"When enabled, a backup of your {game_name} save will be created "
-"automatically whenever the game launches.\n"
+"When enabled, a backup of your {game_name} save will be created automatically "
+"whenever the game launches.\n"
 "\n"
 "You can change this later in Settings."
 msgstr ""
@@ -223,8 +226,8 @@ msgstr ""
 #: src/er_save_manager/diagnostics/checker.py:273
 #, python-brace-format
 msgid ""
-"regulation.bin size is unusual ({size_mb:.1f}MB, expected ~1.9MB). May "
-"indicate modified game files."
+"regulation.bin size is unusual ({size_mb:.1f}MB, expected ~1.9MB). May indicate "
+"modified game files."
 msgstr ""
 
 #: src/er_save_manager/diagnostics/checker.py:285
@@ -256,8 +259,8 @@ msgstr ""
 #: src/er_save_manager/diagnostics/checker.py:432
 #, python-brace-format
 msgid ""
-"Running VPN client(s) detected: {join}. VPNs may cause issues when trying"
-" to join other players."
+"Running VPN client(s) detected: {join}. VPNs may cause issues when trying to "
+"join other players."
 msgstr ""
 
 #: src/er_save_manager/diagnostics/checker.py:443
@@ -280,8 +283,8 @@ msgstr ""
 
 #: src/er_save_manager/diagnostics/checker.py:611
 msgid ""
-"Steam is running with elevated privileges. This can cause save file "
-"permission issues and crashes."
+"Steam is running with elevated privileges. This can cause save file permission "
+"issues and crashes."
 msgstr ""
 
 #: src/er_save_manager/diagnostics/checker.py:620
@@ -655,8 +658,7 @@ msgstr ""
 #: src/er_save_manager/ui/gui.py:2015 src/er_save_manager/ui/gui.py:2164
 #: src/er_save_manager/ui/gui.py:2191 src/er_save_manager/ui/gui.py:2250
 #: src/er_save_manager/ui/gui.py:2304 src/er_save_manager/ui/gui.py:2353
-#: src/er_save_manager/ui/gui.py:2596
-#: src/er_save_manager/ui/nyasu_import.py:330
+#: src/er_save_manager/ui/gui.py:2596 src/er_save_manager/ui/nyasu_import.py:330
 #: src/er_save_manager/ui/tabs/advanced_tools_tab.py:292
 #: src/er_save_manager/ui/tabs/appearance_tab.py:227
 #: src/er_save_manager/ui/tabs/appearance_tab.py:347
@@ -928,8 +930,7 @@ msgstr ""
 #: src/er_save_manager/games/DS2/character_management_tab.py:716
 #, python-brace-format
 msgid ""
-"Character transferred to Slot {to_slot} in target save. "
-"{stale_summary_note}"
+"Character transferred to Slot {to_slot} in target save. {stale_summary_note}"
 msgstr ""
 
 #: src/er_save_manager/games/DS2/editor_tab.py:49
@@ -1026,8 +1027,8 @@ msgstr ""
 
 #: src/er_save_manager/games/DS2/inspector_tab.py:47
 msgid ""
-"Select a character slot, then click Edit Character to open it in "
-"Character Editor."
+"Select a character slot, then click Edit Character to open it in Character "
+"Editor."
 msgstr ""
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:103
@@ -1200,9 +1201,9 @@ msgstr ""
 #: src/er_save_manager/games/DSR/character_management_tab.py:171
 #: src/er_save_manager/games/NR/character_management_tab.py:174
 msgid ""
-"Note: if the target slot has never had a character created in it in-game,"
-" the copy will not appear on the in-game load screen. Create a throwaway "
-"character there first, then copy."
+"Note: if the target slot has never had a character created in it in-game, the "
+"copy will not appear on the in-game load screen. Create a throwaway character "
+"there first, then copy."
 msgstr ""
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:192
@@ -1216,9 +1217,9 @@ msgstr ""
 #: src/er_save_manager/games/DSR/character_management_tab.py:200
 #: src/er_save_manager/games/NR/character_management_tab.py:203
 msgid ""
-"Note: if the target slot has never had a character created in it in-game,"
-" the transfer will not appear on the in-game load screen. Create a "
-"throwaway character there first."
+"Note: if the target slot has never had a character created in it in-game, the "
+"transfer will not appear on the in-game load screen. Create a throwaway "
+"character there first."
 msgstr ""
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:223
@@ -1240,9 +1241,9 @@ msgstr ""
 #: src/er_save_manager/games/DSR/character_management_tab.py:263
 #: src/er_save_manager/games/NR/character_management_tab.py:266
 msgid ""
-"Note: if the target slot has never had a character created in it in-game,"
-" the import will not appear on the in-game load screen. Create a "
-"throwaway character there first."
+"Note: if the target slot has never had a character created in it in-game, the "
+"import will not appear on the in-game load screen. Create a throwaway character "
+"there first."
 msgstr ""
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:286
@@ -1286,13 +1287,13 @@ msgstr ""
 msgid ""
 "Slot {to_slot} is currently empty.\n"
 "\n"
-"Dark Souls III will not show a character written directly into a slot "
-"that has never been created in-game, even though the save file and this "
-"manager will look correct.\n"
+"Dark Souls III will not show a character written directly into a slot that has "
+"never been created in-game, even though the save file and this manager will "
+"look correct.\n"
 "\n"
-"If Slot {to_slot} has never had a character created in it before, go "
-"create a quick throwaway character there first (any name, skip the intro,"
-" save and quit), then run this again.\n"
+"If Slot {to_slot} has never had a character created in it before, go create a "
+"quick throwaway character there first (any name, skip the intro, save and "
+"quit), then run this again.\n"
 "\n"
 "Already created a character in this slot? Continue."
 msgstr ""
@@ -1969,13 +1970,13 @@ msgstr ""
 msgid ""
 "Slot {to_slot} is currently empty.\n"
 "\n"
-"Dark Souls Remastered will not show a character written directly into a "
-"slot that has never been created in-game, even though the save file and "
-"this manager will look correct.\n"
+"Dark Souls Remastered will not show a character written directly into a slot "
+"that has never been created in-game, even though the save file and this manager "
+"will look correct.\n"
 "\n"
-"If Slot {to_slot} has never had a character created in it before, go "
-"create a quick throwaway character there first (any name, skip the intro,"
-" save and quit), then run this again.\n"
+"If Slot {to_slot} has never had a character created in it before, go create a "
+"quick throwaway character there first (any name, skip the intro, save and "
+"quit), then run this again.\n"
 "\n"
 "Already created a character in this slot? Continue."
 msgstr ""
@@ -1986,8 +1987,8 @@ msgstr ""
 
 #: src/er_save_manager/games/DSR/editor_tab.py:184
 msgid ""
-"Saving VIT updates derived max HP. Saving END updates max Stamina. Level "
-"is recalculated from stats automatically."
+"Saving VIT updates derived max HP. Saving END updates max Stamina. Level is "
+"recalculated from stats automatically."
 msgstr ""
 
 #: src/er_save_manager/games/DSR/editor_tab.py:236
@@ -1996,8 +1997,7 @@ msgstr ""
 
 #: src/er_save_manager/games/DSR/editor_tab.py:246
 msgid ""
-"Name supports up to 16 characters. Both name copies in the save are "
-"updated."
+"Name supports up to 16 characters. Both name copies in the save are updated."
 msgstr ""
 
 #: src/er_save_manager/games/DSR/editor_tab.py:283
@@ -2024,8 +2024,7 @@ msgstr ""
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:153
 msgid ""
-"Individual quest-state flags for all major NPCs. Select a row and click "
-"Toggle."
+"Individual quest-state flags for all major NPCs. Select a row and click Toggle."
 msgstr ""
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:171
@@ -2067,8 +2066,8 @@ msgstr ""
 #: src/er_save_manager/games/DSR/event_flags_tab.py:269
 msgid ""
 "Persistent: Rite of Kindling, Bottomless Box, Sin flags.\n"
-"Session/cycle flags (*): reset on NG+ or set by event scripts at load. "
-"Editing still takes effect in-game."
+"Session/cycle flags (*): reset on NG+ or set by event scripts at load. Editing "
+"still takes effect in-game."
 msgstr ""
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:305
@@ -2277,9 +2276,9 @@ msgstr ""
 
 #: src/er_save_manager/games/DSR/npc_tab.py:195
 msgid ""
-"The following bosses use map-specific event flags (11xxxxxx) that cannot "
-"be reached via the save file's global flag encoding. State is unknown and"
-" cannot be edited here."
+"The following bosses use map-specific event flags (11xxxxxx) that cannot be "
+"reached via the save file's global flag encoding. State is unknown and cannot "
+"be edited here."
 msgstr ""
 
 #: src/er_save_manager/games/DSR/npc_tab.py:219
@@ -2338,8 +2337,8 @@ msgstr ""
 #: src/er_save_manager/games/DSR/world_state_tab.py:114
 msgid ""
 "Unlocks all 20 warpable bonfires including Firelink Shrine warp.\n"
-"Individual bonfire control is not possible - the bit-to-bonfire mapping "
-"is not publicly documented for DSR."
+"Individual bonfire control is not possible - the bit-to-bonfire mapping is not "
+"publicly documented for DSR."
 msgstr ""
 
 #: src/er_save_manager/games/DSR/world_state_tab.py:130
@@ -2371,13 +2370,13 @@ msgstr ""
 msgid ""
 "Slot {to_slot} is currently empty.\n"
 "\n"
-"Nightreign will not show a character written directly into a slot that "
-"has never been created in-game, even though the save file and this "
-"manager will look correct.\n"
+"Nightreign will not show a character written directly into a slot that has "
+"never been created in-game, even though the save file and this manager will "
+"look correct.\n"
 "\n"
-"If Slot {to_slot} has never had a character created in it before, go "
-"create a quick throwaway character there first (any name, skip the intro,"
-" save and quit), then run this again.\n"
+"If Slot {to_slot} has never had a character created in it before, go create a "
+"quick throwaway character there first (any name, skip the intro, save and "
+"quit), then run this again.\n"
 "\n"
 "Already created a character in this slot? Continue."
 msgstr ""
@@ -2585,8 +2584,8 @@ msgstr ""
 
 #: src/er_save_manager/games/NR/steamid_tab.py:46
 msgid ""
-"Patches the SteamID embedded in the Nightreign save. Required when "
-"copying a save to a different Steam account."
+"Patches the SteamID embedded in the Nightreign save. Required when copying a "
+"save to a different Steam account."
 msgstr ""
 
 #: src/er_save_manager/games/NR/steamid_tab.py:58
@@ -2722,8 +2721,7 @@ msgstr ""
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:279
 msgid ""
-"Share your character build with the community! Provide screenshots and "
-"details."
+"Share your character build with the community! Provide screenshots and details."
 msgstr ""
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:292
@@ -2833,8 +2831,8 @@ msgstr ""
 #: src/er_save_manager/ui/dialogs/character_browser.py:732
 #: src/er_save_manager/ui/dialogs/preset_browser.py:598
 msgid ""
-"Log in to GitHub, then copy and paste this link in your browser to finish"
-" the submission."
+"Log in to GitHub, then copy and paste this link in your browser to finish the "
+"submission."
 msgstr ""
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:746
@@ -3206,10 +3204,10 @@ msgstr ""
 #: src/er_save_manager/ui/dialogs/character_details.py:766
 #, python-brace-format
 msgid ""
-"Use this if you are still getting a Save is corrupted message or are "
-"still crashing after fixing corruption via the tool or if it does not "
-"detect any corruption. Replace the entire CSNetMan block in Slot "
-"{slot_idx} with the clean template?\n"
+"Use this if you are still getting a Save is corrupted message or are still "
+"crashing after fixing corruption via the tool or if it does not detect any "
+"corruption. Replace the entire CSNetMan block in Slot {slot_idx} with the clean "
+"template?\n"
 "\n"
 "A backup will be created."
 msgstr ""
@@ -3351,8 +3349,7 @@ msgstr ""
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:624
 msgid ""
-"Could not generate a submission URL. Please log in to GitHub and try "
-"again."
+"Could not generate a submission URL. Please log in to GitHub and try again."
 msgstr ""
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:771
@@ -4226,8 +4223,8 @@ msgstr ""
 #: src/er_save_manager/ui/editors/stats_editor.py:709
 #, python-brace-format
 msgid ""
-"Matchmaking weapon level cannot be set below {matchmaking_min} (highest "
-"upgrade level found in inventory).\n"
+"Matchmaking weapon level cannot be set below {matchmaking_min} (highest upgrade "
+"level found in inventory).\n"
 "Value has been raised to {matchmaking_min}."
 msgstr ""
 
@@ -4441,15 +4438,14 @@ msgstr ""
 
 #: src/er_save_manager/ui/gui.py:1479
 msgid ""
-"Console saves must be decrypted and exported as memory.dat before you can"
-" load them."
+"Console saves must be decrypted and exported as memory.dat before you can load "
+"them."
 msgstr ""
 
 #: src/er_save_manager/ui/gui.py:1490
 msgid ""
 "Exporting/Decrypting a console save may require custom firmware on your "
-"console, we cannot provide instructions for doing so. Use at your own "
-"risk."
+"console, we cannot provide instructions for doing so. Use at your own risk."
 msgstr ""
 
 #: src/er_save_manager/ui/gui.py:1502
@@ -4885,10 +4881,10 @@ msgstr ""
 msgid ""
 "Reset ALL event flags for {npc_name}'s quest to 0?\n"
 "\n"
-"This will undo all tracked quest progress. A backup will be created. Some"
-" steps may stay applied even if you reset all flags. This is because "
-"those steps only use flags that the game clears back to 0, so they're "
-"indistinguishable from never happened in a save."
+"This will undo all tracked quest progress. A backup will be created. Some steps "
+"may stay applied even if you reset all flags. This is because those steps only "
+"use flags that the game clears back to 0, so they're indistinguishable from "
+"never happened in a save."
 msgstr ""
 
 #: src/er_save_manager/ui/quest_progress_dialog.py:387
@@ -5319,8 +5315,8 @@ msgstr ""
 
 #: src/er_save_manager/ui/tabs/backup_manager_tab.py:428
 msgid ""
-"Click the star to lock a backup. Locked backups are never removed by the "
-"backup limit."
+"Click the star to lock a backup. Locked backups are never removed by the backup "
+"limit."
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/backup_manager_tab.py:439
@@ -5456,8 +5452,8 @@ msgstr ""
 
 #: src/er_save_manager/ui/tabs/character_management_tab.py:85
 msgid ""
-"Transfer characters between save files, copy slots, manage your character"
-" roster, share and download community builds"
+"Transfer characters between save files, copy slots, manage your character "
+"roster, share and download community builds"
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/character_management_tab.py:101
@@ -5951,8 +5947,8 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:1604
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:1700
 msgid ""
-"Could not create backup because the save path is not a file. Proceeding "
-"without backup."
+"Could not create backup because the save path is not a file. Proceeding without "
+"backup."
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:1443
@@ -6114,8 +6110,7 @@ msgstr ""
 
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:118
 msgid ""
-"View and manage unlocked gestures as well as unlocked regions and game "
-"settings."
+"View and manage unlocked gestures as well as unlocked regions and game settings."
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:157
@@ -6193,8 +6188,8 @@ msgstr ""
 
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:519
 msgid ""
-"Map regions stored in the save file. Controls which areas appear as "
-"discovered on the map."
+"Map regions stored in the save file. Controls which areas appear as discovered "
+"on the map."
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:552
@@ -6240,8 +6235,7 @@ msgstr ""
 
 #: src/er_save_manager/ui/tabs/hex_editor_tab.py:55
 msgid ""
-"⚠️  Warning: Direct hex editing can corrupt your save file. Use with "
-"caution!"
+"⚠️  Warning: Direct hex editing can corrupt your save file. Use with caution!"
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/hex_editor_tab.py:65
@@ -6284,8 +6278,8 @@ msgstr ""
 
 #: src/er_save_manager/ui/tabs/save_inspector_tab.py:78
 msgid ""
-"Select a character and click 'View All Issues' to scan for problems and "
-"apply fixes"
+"Select a character and click 'View All Issues' to scan for problems and apply "
+"fixes"
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/save_inspector_tab.py:107
@@ -6381,8 +6375,8 @@ msgstr ""
 msgid ""
 "You currently have {existing_count} backups for the loaded save.\n"
 "\n"
-"Lowering the limit to {value} will delete the {excess} oldest backup(s) "
-"the next time a backup is created.\n"
+"Lowering the limit to {value} will delete the {excess} oldest backup(s) the "
+"next time a backup is created.\n"
 "\n"
 "Continue?"
 msgstr ""
@@ -6402,8 +6396,7 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/settings_tab.py:334
 #, python-brace-format
 msgid ""
-"Automatically create a backup of your {name} save whenever the game "
-"launches."
+"Automatically create a backup of your {name} save whenever the game launches."
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/settings_tab.py:361
@@ -6551,8 +6544,7 @@ msgstr ""
 
 #: src/er_save_manager/ui/tabs/settings_tab.py:938
 msgid ""
-"Adds a Save Icon button to the Visual Item Picker for exporting item "
-"icons."
+"Adds a Save Icon button to the Visual Item Picker for exporting item icons."
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/settings_tab.py:950
@@ -6575,9 +6567,9 @@ msgstr ""
 
 #: src/er_save_manager/ui/tabs/settings_tab.py:1000
 msgid ""
-"When eldenring.exe, nightreign.exe or darksoulsiii.exe is detected, CPU 0"
-" is removed from its affinity mask. Can reduce stutter caused by Windows "
-"scheduling on core 0."
+"When eldenring.exe, nightreign.exe or darksoulsiii.exe is detected, CPU 0 is "
+"removed from its affinity mask. Can reduce stutter caused by Windows scheduling "
+"on core 0."
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/settings_tab.py:1024
@@ -6622,8 +6614,8 @@ msgstr ""
 
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:138
 msgid ""
-"To use a save from a different Steam account, swap the file in place "
-"while the game is running instead:"
+"To use a save from a different Steam account, swap the file in place while the "
+"game is running instead:"
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:174
@@ -7019,8 +7011,8 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/world_state_tab.py:631
 #, python-brace-format
 msgid ""
-"Custom teleportation can corrupt your save if the Map ID or coordinates "
-"are invalid.{dlc_warning}\n"
+"Custom teleportation can corrupt your save if the Map ID or coordinates are "
+"invalid.{dlc_warning}\n"
 "\n"
 "Coords: X={x}, Y={y}, Z={z}\n"
 "\n"
@@ -7067,4 +7059,3 @@ msgstr ""
 #, python-brace-format
 msgid "Qty: {qty}  |  {location}"
 msgstr ""
-
