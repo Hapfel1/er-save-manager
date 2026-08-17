@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
@@ -38,16 +39,16 @@ class NRInspectorTab:
 
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
-        ctk.CTkLabel(header, text="Save Inspector", font=("Segoe UI", 16, "bold")).pack(
-            side="left"
-        )
+        ctk.CTkLabel(
+            header, text=t("Save Inspector"), font=("Segoe UI", 16, "bold")
+        ).pack(side="left")
         ctk.CTkButton(
-            header, text="Edit Slot", command=self._edit_selected, width=130
+            header, text=t("Edit Slot"), command=self._edit_selected, width=130
         ).pack(side="right", padx=(6, 0))
 
         ctk.CTkLabel(
             outer,
-            text="Select a slot then click 'Edit Slot' to open the editor.",
+            text=t("Select a slot then click 'Edit Slot' to open the editor."),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=12, pady=(0, 4))
@@ -94,7 +95,7 @@ class NRInspectorTab:
         if save is None:
             ctk.CTkLabel(
                 self.list_frame,
-                text="No save file loaded.",
+                text=t("No save file loaded."),
                 text_color=("gray50", "gray60"),
             ).pack(anchor="w", padx=6, pady=6)
             return
@@ -153,7 +154,7 @@ class NRInspectorTab:
     def _edit_selected(self) -> None:
         if self.selected_slot is None:
             CTkMessageBox.showinfo(
-                "No Selection", "Select a slot first.", parent=self.parent
+                t("No Selection"), t("Select a slot first."), parent=self.parent
             )
             return
         save = self._get_nr_save()
@@ -162,7 +163,9 @@ class NRInspectorTab:
         slot = save.slots[self.selected_slot]
         if slot.entry_count == 0 and not slot.player_name:
             CTkMessageBox.showinfo(
-                "Empty Slot", "That slot has no character data.", parent=self.parent
+                t("Empty Slot"),
+                t("That slot has no character data."),
+                parent=self.parent,
             )
             return
         if self._on_slot_selected:

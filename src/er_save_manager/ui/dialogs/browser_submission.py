@@ -12,6 +12,7 @@ import zipfile
 from pathlib import Path
 from tkinter import messagebox
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.utils import open_url
 
 
@@ -52,9 +53,11 @@ def submit_preset_via_browser(
         # Validate images - both face AND body required
         if not face_image_path or not body_image_path:
             messagebox.showerror(
-                "Images Required",
-                "Both face AND body screenshots are required!\n\n"
-                "Please select both images before submitting.",
+                t("Images Required"),
+                t(
+                    "Both face AND body screenshots are required!\n\n"
+                    "Please select both images before submitting."
+                ),
             )
             return False, None
 
@@ -326,7 +329,7 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
     # Title
     title = ctk.CTkLabel(
         main_frame,
-        text="✅ Preset Ready to Submit!",
+        text=t("✅ Preset Ready to Submit!"),
         font=("Segoe UI", 20, "bold"),
     )
     title.pack(pady=(0, 20))
@@ -336,7 +339,7 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
 
     info = ctk.CTkLabel(
         main_frame,
-        text="📦 Your images have been packaged:",
+        text=t("📦 Your images have been packaged:"),
         font=("Segoe UI", 14),
         justify=ctk.CENTER,
     )
@@ -358,14 +361,14 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
 
     ctk.CTkLabel(
         info_box,
-        text="Your browser has opened to GitHub.",
+        text=t("Your browser has opened to GitHub."),
         font=("Segoe UI", 13),
         justify=ctk.LEFT,
     ).pack(anchor=ctk.W, padx=20, pady=(15, 12))
 
     ctk.CTkLabel(
         info_box,
-        text="Next steps:",
+        text=t("Next steps:"),
         font=("Segoe UI", 12, "bold"),
         justify=ctk.LEFT,
     ).pack(anchor=ctk.W, padx=20, pady=(0, 10))
@@ -410,7 +413,7 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
     # Large "Open Folder" button
     open_btn = ctk.CTkButton(
         button_frame,
-        text="📁 Open Folder",
+        text=t("📁 Open Folder"),
         command=open_folder,
         width=200,
         height=40,
@@ -421,7 +424,7 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
     # Close button
     close_btn = ctk.CTkButton(
         button_frame,
-        text="Close",
+        text=t("Close"),
         command=dialog.destroy,
         width=150,
         height=40,
@@ -432,7 +435,7 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
     # Show path at bottom (for user reference)
     path_label = ctk.CTkLabel(
         main_frame,
-        text="ZIP Location (for your reference):",
+        text=t("ZIP Location (for your reference):"),
         font=("Segoe UI", 12, "bold"),
     )
     path_label.pack(anchor=ctk.W, pady=(20, 8))

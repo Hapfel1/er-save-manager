@@ -11,6 +11,7 @@ import customtkinter as ctk
 from er_save_manager.backup.manager import BackupManager
 from er_save_manager.data.locations import MapLocation, get_all_locations
 from er_save_manager.editors.world_state import WorldStateEditor
+from er_save_manager.i18n import t
 from er_save_manager.parser.er_types import FloatVector3, MapId
 from er_save_manager.ui.map_view import open_map_window
 from er_save_manager.ui.messagebox import CTkMessageBox
@@ -104,13 +105,13 @@ class WorldStateTab:
         slot_frame.pack(fill=tk.X, padx=10, pady=10)
 
         ctk.CTkLabel(
-            slot_frame, text="Character Slot", font=("Segoe UI", 12, "bold")
+            slot_frame, text=t("Character Slot"), font=("Segoe UI", 12, "bold")
         ).pack(anchor="w", padx=10, pady=(10, 5))
 
         slot_select = ctk.CTkFrame(slot_frame, fg_color="transparent")
         slot_select.pack(fill=tk.X, padx=10, pady=(5, 10))
 
-        ctk.CTkLabel(slot_select, text="Slot:").pack(side=tk.LEFT, padx=(0, 5))
+        ctk.CTkLabel(slot_select, text=t("Slot:")).pack(side=tk.LEFT, padx=(0, 5))
 
         slot_names = self._get_slot_display_names()
         self.slot_combo = ctk.CTkComboBox(
@@ -124,19 +125,19 @@ class WorldStateTab:
         self.slot_combo.pack(side=tk.LEFT, padx=(0, 10))
 
         ctk.CTkButton(
-            slot_select, text="Load", command=self._load_character, width=80
+            slot_select, text=t("Load"), command=self._load_character, width=80
         ).pack(side=tk.LEFT)
 
         location_frame = ctk.CTkFrame(left_frame, corner_radius=12)
         location_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(10, 0))
 
         ctk.CTkLabel(
-            location_frame, text="Current Location", font=("Segoe UI", 12, "bold")
+            location_frame, text=t("Current Location"), font=("Segoe UI", 12, "bold")
         ).pack(anchor="w", padx=10, pady=(10, 5))
 
         map_frame = ctk.CTkFrame(location_frame, fg_color="transparent")
         map_frame.pack(fill=tk.X, padx=10, pady=5)
-        ctk.CTkLabel(map_frame, text="Map:", font=("Segoe UI", 9, "bold")).pack(
+        ctk.CTkLabel(map_frame, text=t("Map:"), font=("Segoe UI", 9, "bold")).pack(
             anchor="w"
         )
         self.map_name_var = tk.StringVar(value="No character loaded")
@@ -147,7 +148,7 @@ class WorldStateTab:
         coords_frame = ctk.CTkFrame(location_frame, fg_color="transparent")
         coords_frame.pack(fill=tk.X, padx=10, pady=5)
         ctk.CTkLabel(
-            coords_frame, text="Coordinates:", font=("Segoe UI", 9, "bold")
+            coords_frame, text=t("Coordinates:"), font=("Segoe UI", 9, "bold")
         ).pack(anchor="w")
         self.coords_var = tk.StringVar(value="N/A")
         ctk.CTkLabel(coords_frame, textvariable=self.coords_var, wraplength=250).pack(
@@ -157,7 +158,7 @@ class WorldStateTab:
         bloodstain_frame = ctk.CTkFrame(location_frame, fg_color="transparent")
         bloodstain_frame.pack(fill=tk.X, padx=10, pady=5)
         ctk.CTkLabel(
-            bloodstain_frame, text="Bloodstain:", font=("Segoe UI", 9, "bold")
+            bloodstain_frame, text=t("Bloodstain:"), font=("Segoe UI", 9, "bold")
         ).pack(anchor="w")
         self.bloodstain_var = tk.StringVar(value="N/A")
         ctk.CTkLabel(
@@ -165,7 +166,7 @@ class WorldStateTab:
         ).pack(fill=tk.X, pady=(2, 4))
         ctk.CTkButton(
             bloodstain_frame,
-            text="Move Bloodstain to Player",
+            text=t("Move Bloodstain to Player"),
             command=self._sync_bloodstain_to_player,
             height=30,
         ).pack(fill=tk.X, pady=(0, 2))
@@ -175,7 +176,7 @@ class WorldStateTab:
         right_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
 
         ctk.CTkLabel(
-            right_frame, text="Teleportation", font=("Segoe UI", 12, "bold")
+            right_frame, text=t("Teleportation"), font=("Segoe UI", 12, "bold")
         ).pack(anchor="w", padx=10, pady=(10, 5))
 
         mode_frame = ctk.CTkFrame(right_frame, fg_color="transparent")
@@ -183,7 +184,7 @@ class WorldStateTab:
 
         ctk.CTkRadioButton(
             mode_frame,
-            text="Map Locations",
+            text=t("Map Locations"),
             variable=self.teleport_mode,
             value="known",
             command=self._on_mode_changed,
@@ -191,7 +192,7 @@ class WorldStateTab:
 
         ctk.CTkRadioButton(
             mode_frame,
-            text="Custom Map ID + Coordinates",
+            text=t("Custom Map ID + Coordinates"),
             variable=self.teleport_mode,
             value="custom",
             command=self._on_mode_changed,
@@ -199,7 +200,7 @@ class WorldStateTab:
 
         ctk.CTkButton(
             mode_frame,
-            text="Open Map",
+            text=t("Open Map"),
             width=100,
             command=self._open_map_window,
         ).pack(side=tk.LEFT)
@@ -213,7 +214,7 @@ class WorldStateTab:
         save = self.get_save_file()
         if not save:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                t("No Save"), t("Please load a save file first."), parent=self.parent
             )
             return
 
@@ -224,24 +225,30 @@ class WorldStateTab:
 
         if not (0 <= slot_idx < 10):
             CTkMessageBox.showerror(
-                "Invalid Slot", "Select a slot between 1 and 10.", parent=self.parent
+                t("Invalid Slot"),
+                t("Select a slot between 1 and 10."),
+                parent=self.parent,
             )
             return
 
         slot = save.character_slots[slot_idx]
         if slot.is_empty():
             CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {slot_idx + 1} is empty.", parent=self.parent
+                t("Empty Slot"),
+                t("Slot {slot_idx} is empty.").format(slot_idx=slot_idx + 1),
+                parent=self.parent,
             )
-            self.map_name_var.set("Empty slot")
-            self.coords_var.set("N/A")
-            self.bloodstain_var.set("N/A")
+            self.map_name_var.set(t("Empty slot"))
+            self.coords_var.set(t("N/A"))
+            self.bloodstain_var.set(t("N/A"))
             self.editor = None
             return
 
         self.editor = WorldStateEditor(save, slot_idx)
         self.refresh()
-        self.show_toast(f"Slot {slot_idx + 1} loaded.", duration=2500)
+        self.show_toast(
+            t("Slot {slot_idx} loaded.").format(slot_idx=slot_idx + 1), duration=2500
+        )
 
     def _reload_editor(self):
         """Recreate editor from the reloaded save so it points to the fresh object."""
@@ -258,13 +265,15 @@ class WorldStateTab:
     def _sync_bloodstain_to_player(self):
         if not self.editor:
             CTkMessageBox.showerror(
-                "Error", "Load a character first.", parent=self.parent
+                t("Error"), t("Load a character first."), parent=self.parent
             )
             return
 
         if not CTkMessageBox.askyesno(
-            "Move Bloodstain",
-            "Move the bloodstain to the player's current position?\n\nThis will overwrite the existing bloodstain location.",
+            t("Move Bloodstain"),
+            t(
+                "Move the bloodstain to the player's current position?\n\nThis will overwrite the existing bloodstain location."
+            ),
             parent=self.parent,
         ):
             return
@@ -287,7 +296,7 @@ class WorldStateTab:
                 self.refresh()
             self.show_toast(message, duration=2500)
         else:
-            CTkMessageBox.showerror("Error", message, parent=self.parent)
+            CTkMessageBox.showerror(t("Error"), message, parent=self.parent)
 
     def set_map_image_path(self, path: str):
         self._map_image_path = path
@@ -295,12 +304,12 @@ class WorldStateTab:
     def _open_map_window(self):
         if not self.editor:
             CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
+                t("No Character"), t("Load a character first."), parent=self.parent
             )
             return
         if not self._map_image_path:
             CTkMessageBox.showwarning(
-                "Map Unavailable", "Map image not found.", parent=self.parent
+                t("Map Unavailable"), t("Map image not found."), parent=self.parent
             )
             return
         m60_locations = [
@@ -331,16 +340,16 @@ class WorldStateTab:
         search_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
         search_frame.pack(fill=tk.X, pady=(0, 5))
 
-        ctk.CTkLabel(search_frame, text="Search:", font=("Segoe UI", 9, "bold")).pack(
-            side=tk.LEFT, padx=(0, 5)
-        )
+        ctk.CTkLabel(
+            search_frame, text=t("Search:"), font=("Segoe UI", 9, "bold")
+        ).pack(side=tk.LEFT, padx=(0, 5))
 
         self.search_var = tk.StringVar(value="")
         self.search_var.trace_add("write", self._on_search_changed)
         ctk.CTkEntry(
             search_frame,
             textvariable=self.search_var,
-            placeholder_text="Filter locations...",
+            placeholder_text=t("Filter locations..."),
         ).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
         self.count_label = ctk.CTkLabel(
@@ -351,7 +360,7 @@ class WorldStateTab:
 
         ctk.CTkButton(
             self.content_frame,
-            text="Teleport to Selected Location",
+            text=t("Teleport to Selected Location"),
             command=self._teleport_to_known,
             height=40,
         ).pack(pady=(5, 8), fill=tk.X, padx=5)
@@ -420,14 +429,14 @@ class WorldStateTab:
     def _teleport_to_known(self):
         if not self.editor:
             CTkMessageBox.showerror(
-                "Error", "Load a character first.", parent=self.parent
+                t("Error"), t("Load a character first."), parent=self.parent
             )
             return
 
         sel = self.location_listbox.curselection()
         if not sel:
             CTkMessageBox.showerror(
-                "Error", "Select a location from the list.", parent=self.parent
+                t("Error"), t("Select a location from the list."), parent=self.parent
             )
             return
 
@@ -436,7 +445,7 @@ class WorldStateTab:
     def _teleport_to_known_loc(self, loc: MapLocation):
         if not self.editor:
             CTkMessageBox.showerror(
-                "Error", "Load a character first.", parent=self.parent
+                t("Error"), t("Load a character first."), parent=self.parent
             )
             return
 
@@ -455,8 +464,10 @@ class WorldStateTab:
 
             if not has_dlc:
                 if not CTkMessageBox.askyesno(
-                    "DLC Warning",
-                    f"{loc.name}\n\nThis is a DLC location. Teleporting without owning the DLC will cause an infinite loading screen.\n\nContinue?",
+                    t("DLC Warning"),
+                    t(
+                        "{name}\n\nThis is a DLC location. Teleporting without owning the DLC will cause an infinite loading screen.\n\nContinue?"
+                    ).format(name=loc.name),
                     parent=self.parent,
                 ):
                     return
@@ -477,21 +488,23 @@ class WorldStateTab:
                 self.reload_save()
                 self._reload_editor()
                 self.refresh()
-            self.show_toast(f"Teleported to {loc.name}", duration=2500)
+            self.show_toast(
+                t("Teleported to {name}").format(name=loc.name), duration=2500
+            )
         else:
-            CTkMessageBox.showerror("Error", message, parent=self.parent)
+            CTkMessageBox.showerror(t("Error"), message, parent=self.parent)
 
     def _build_custom_teleport_ui(self):
         ctk.CTkLabel(
             self.content_frame,
-            text="Advanced: invalid coordinates may corrupt your save!",
+            text=t("Advanced: invalid coordinates may corrupt your save!"),
             text_color="#ff6b6b",
             font=("Segoe UI", 10, "bold"),
         ).pack(pady=(0, 20))
 
         map_frame = ctk.CTkFrame(self.content_frame, corner_radius=12)
         map_frame.pack(fill=tk.X, pady=(0, 15))
-        ctk.CTkLabel(map_frame, text="Map ID", font=("Segoe UI", 11, "bold")).pack(
+        ctk.CTkLabel(map_frame, text=t("Map ID"), font=("Segoe UI", 11, "bold")).pack(
             anchor="w", padx=10, pady=(10, 5)
         )
         id_row = ctk.CTkFrame(map_frame, fg_color="transparent")
@@ -500,12 +513,12 @@ class WorldStateTab:
         ctk.CTkEntry(
             id_row,
             textvariable=self.map_id_var,
-            placeholder_text="e.g. m60_42_36_00",
+            placeholder_text=t("e.g. m60_42_36_00"),
             width=250,
         ).pack(side=tk.LEFT, padx=(0, 10))
         ctk.CTkLabel(
             id_row,
-            text="Format: m60_42_36_00 or 60 42 36 00",
+            text=t("Format: m60_42_36_00 or 60 42 36 00"),
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
         ).pack(side=tk.LEFT)
@@ -513,11 +526,13 @@ class WorldStateTab:
         coords_frame = ctk.CTkFrame(self.content_frame, corner_radius=12)
         coords_frame.pack(fill=tk.X, pady=(0, 15))
         ctk.CTkLabel(
-            coords_frame, text="Coordinates (optional)", font=("Segoe UI", 11, "bold")
+            coords_frame,
+            text=t("Coordinates (optional)"),
+            font=("Segoe UI", 11, "bold"),
         ).pack(anchor="w", padx=10, pady=(10, 5))
         ctk.CTkLabel(
             coords_frame,
-            text="Leave 0.0 to use current coordinates",
+            text=t("Leave 0.0 to use current coordinates"),
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
         ).pack(padx=10, pady=(0, 10))
@@ -545,7 +560,7 @@ class WorldStateTab:
 
         ctk.CTkButton(
             self.content_frame,
-            text="Teleport to Custom Location",
+            text=t("Teleport to Custom Location"),
             command=self._teleport_to_custom,
             height=40,
         ).pack(pady=30, fill=tk.X, padx=5)
@@ -553,7 +568,7 @@ class WorldStateTab:
     def _teleport_to_custom(self):
         if not self.editor:
             CTkMessageBox.showerror(
-                "Error", "Load a character first.", parent=self.parent
+                t("Error"), t("Load a character first."), parent=self.parent
             )
             return
 
@@ -583,8 +598,10 @@ class WorldStateTab:
             map_id = MapId(map_bytes)
         except ValueError as e:
             CTkMessageBox.showerror(
-                "Invalid Map ID",
-                f"{e}\n\nValid formats:\n  m60_42_36_00\n  60 42 36 00\n  00362A3C (hex)",
+                t("Invalid Map ID"),
+                t(
+                    "{e}\n\nValid formats:\n  m60_42_36_00\n  60 42 36 00\n  00362A3C (hex)"
+                ).format(e=e),
                 parent=self.parent,
             )
             return
@@ -600,7 +617,7 @@ class WorldStateTab:
                 coords = FloatVector3(x, y, z)
         except ValueError:
             CTkMessageBox.showerror(
-                "Error", "Coordinates must be numeric.", parent=self.parent
+                t("Error"), t("Coordinates must be numeric."), parent=self.parent
             )
             return
 
@@ -609,9 +626,10 @@ class WorldStateTab:
             dlc_warning = "\n\nThis is a DLC map. Without owning the DLC you will get an infinite loading screen."
 
         if not CTkMessageBox.askyesno(
-            "Confirm Custom Teleport",
-            f"Custom teleportation can corrupt your save if the Map ID or coordinates are invalid.{dlc_warning}\n\n"
-            f"Coords: X={coords.x}, Y={coords.y}, Z={coords.z}\n\nContinue?",
+            t("Confirm Custom Teleport"),
+            t(
+                "Custom teleportation can corrupt your save if the Map ID or coordinates are invalid.{dlc_warning}\n\nCoords: X={x}, Y={y}, Z={z}\n\nContinue?"
+            ).format(dlc_warning=dlc_warning, x=coords.x, y=coords.y, z=coords.z),
             parent=self.parent,
         ):
             return
@@ -634,21 +652,21 @@ class WorldStateTab:
                 self.refresh()
             self.show_toast(message, duration=2500)
         else:
-            CTkMessageBox.showerror("Error", message, parent=self.parent)
+            CTkMessageBox.showerror(t("Error"), message, parent=self.parent)
 
     def refresh(self):
         if not self.editor:
-            self.map_name_var.set("No character loaded")
-            self.coords_var.set("N/A")
-            self.bloodstain_var.set("N/A")
+            self.map_name_var.set(t("No character loaded"))
+            self.coords_var.set(t("N/A"))
+            self.bloodstain_var.set(t("N/A"))
             return
 
         info = self.editor.get_current_location()
 
         if info["map_name"] == "Empty Slot":
-            self.map_name_var.set("Empty slot")
-            self.coords_var.set("N/A")
-            self.bloodstain_var.set("N/A")
+            self.map_name_var.set(t("Empty slot"))
+            self.coords_var.set(t("N/A"))
+            self.bloodstain_var.set(t("N/A"))
             return
 
         self.map_name_var.set(info["map_name"])
@@ -657,10 +675,14 @@ class WorldStateTab:
             c = info["coordinates"]
             self.coords_var.set(f"X: {c.x:.1f}\nY: {c.y:.1f}\nZ: {c.z:.1f}")
         else:
-            self.coords_var.set("N/A")
+            self.coords_var.set(t("N/A"))
 
         blood = self.editor.get_bloodstain_location()
         if blood:
-            self.bloodstain_var.set(f"{blood['map_name']}\n{blood['runes']:,} runes")
+            self.bloodstain_var.set(
+                t("{map_name}\n{runes:,} runes").format(
+                    map_name=blood["map_name"], runes=blood["runes"]
+                )
+            )
         else:
-            self.bloodstain_var.set("No bloodstain")
+            self.bloodstain_var.set(t("No bloodstain"))

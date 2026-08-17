@@ -7,6 +7,7 @@ from __future__ import annotations
 import customtkinter as ctk
 
 from er_save_manager.games.DS2.save import CHARACTER_SELECT_ENTRY, DS2Save
+from er_save_manager.i18n import t
 from er_save_manager.ui.utils import bind_mousewheel
 
 
@@ -33,16 +34,18 @@ class DS2InspectorTab:
         header = ctk.CTkFrame(char_frame, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
 
-        ctk.CTkLabel(header, text="Save Inspector", font=("Segoe UI", 16, "bold")).pack(
-            side="left"
-        )
+        ctk.CTkLabel(
+            header, text=t("Save Inspector"), font=("Segoe UI", 16, "bold")
+        ).pack(side="left")
         ctk.CTkButton(
-            header, text="Edit Character", command=self._edit_selected, width=160
+            header, text=t("Edit Character"), command=self._edit_selected, width=160
         ).pack(side="right")
 
         ctk.CTkLabel(
             char_frame,
-            text="Select a character slot, then click Edit Character to open it in Character Editor.",
+            text=t(
+                "Select a character slot, then click Edit Character to open it in Character Editor."
+            ),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=10, pady=(0, 10))
@@ -61,7 +64,7 @@ class DS2InspectorTab:
 
         save: DS2Save | None = self.get_save()
         if save is None:
-            ctk.CTkLabel(self.list_frame, text="No save file loaded").pack(
+            ctk.CTkLabel(self.list_frame, text=t("No save file loaded")).pack(
                 anchor="w", padx=6, pady=6
             )
             return

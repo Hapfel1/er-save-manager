@@ -17,6 +17,7 @@ from er_save_manager.data.gestures import (
     is_dlc_gesture,
 )
 from er_save_manager.data.regions import REGIONS
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
@@ -107,13 +108,15 @@ class GesturesRegionsTab:
         # Header
         ctk.CTkLabel(
             main_frame,
-            text="Gestures & Unlocked Regions",
+            text=t("Gestures & Unlocked Regions"),
             font=("Segoe UI", 18, "bold"),
         ).pack(pady=(15, 5), padx=15, anchor="w")
 
         ctk.CTkLabel(
             main_frame,
-            text="View and manage unlocked gestures as well as unlocked regions and game settings.",
+            text=t(
+                "View and manage unlocked gestures as well as unlocked regions and game settings."
+            ),
             font=("Segoe UI", 11),
             text_color=("#808080", "#a0a0a0"),
         ).pack(pady=(0, 15), padx=15, anchor="w")
@@ -122,7 +125,7 @@ class GesturesRegionsTab:
         slot_frame = ctk.CTkFrame(main_frame, corner_radius=10)
         slot_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
-        ctk.CTkLabel(slot_frame, text="Character Slot:", font=("Segoe UI", 11)).pack(
+        ctk.CTkLabel(slot_frame, text=t("Character Slot:"), font=("Segoe UI", 11)).pack(
             side=tk.LEFT, padx=(12, 8), pady=12
         )
 
@@ -140,7 +143,7 @@ class GesturesRegionsTab:
 
         ctk.CTkButton(
             slot_frame,
-            text="Load",
+            text=t("Load"),
             command=self.load_gestures,
             width=90,
         ).pack(side=tk.LEFT, pady=12, padx=(0, 12))
@@ -151,7 +154,7 @@ class GesturesRegionsTab:
 
         ctk.CTkLabel(
             gestures_frame,
-            text="Gestures",
+            text=t("Gestures"),
             font=("Segoe UI", 12, "bold"),
         ).pack(pady=(12, 8), padx=12, anchor="w")
 
@@ -168,28 +171,28 @@ class GesturesRegionsTab:
 
         ctk.CTkButton(
             gesture_buttons,
-            text="Apply Changes",
+            text=t("Apply Changes"),
             command=self.apply_gesture_changes,
             width=140,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
             gesture_buttons,
-            text="Select All Base",
+            text=t("Select All Base"),
             command=lambda: self.select_all_gestures("base"),
             width=140,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
             gesture_buttons,
-            text="Select All + DLC",
+            text=t("Select All + DLC"),
             command=lambda: self.select_all_gestures("all"),
             width=140,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
             gesture_buttons,
-            text="Deselect All",
+            text=t("Deselect All"),
             command=self.deselect_all_gestures,
             width=120,
         ).pack(side=tk.LEFT)
@@ -200,14 +203,14 @@ class GesturesRegionsTab:
 
         ctk.CTkButton(
             tools_row,
-            text="Unlocked Regions...",
+            text=t("Unlocked Regions..."),
             command=self.open_unlocked_regions,
             width=160,
         ).pack(side=tk.LEFT, padx=(0, 8))
 
         ctk.CTkButton(
             tools_row,
-            text="Game Settings...",
+            text=t("Game Settings..."),
             command=self.open_game_settings,
             width=140,
         ).pack(side=tk.LEFT)
@@ -217,7 +220,7 @@ class GesturesRegionsTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
@@ -225,13 +228,15 @@ class GesturesRegionsTab:
             slot_idx = int(self.gesture_slot_var.get()) - 1
         except (ValueError, AttributeError):
             CTkMessageBox.showwarning(
-                "Invalid Slot", "Please select a valid slot!", parent=self.parent
+                t("Invalid Slot"), t("Please select a valid slot!"), parent=self.parent
             )
             return
 
         if slot_idx < 0 or slot_idx >= 10:
             CTkMessageBox.showwarning(
-                "Invalid Slot", "Slot must be between 1 and 10!", parent=self.parent
+                t("Invalid Slot"),
+                t("Slot must be between 1 and 10!"),
+                parent=self.parent,
             )
             return
 
@@ -239,7 +244,9 @@ class GesturesRegionsTab:
 
         if slot.is_empty():
             CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {slot_idx + 1} is empty!", parent=self.parent
+                t("Empty Slot"),
+                t("Slot {slot_idx} is empty!").format(slot_idx=slot_idx + 1),
+                parent=self.parent,
             )
             return
 
@@ -283,7 +290,9 @@ class GesturesRegionsTab:
         self._initial_unlocked = unlocked_gesture_ids & set(all_gestures)
 
         self.show_toast(
-            f"Loaded {len(self.gesture_states)} gestures for Slot {slot_idx + 1}",
+            t("Loaded {len} gestures for Slot {slot_idx}").format(
+                len=len(self.gesture_states), slot_idx=slot_idx + 1
+            ),
             duration=2500,
         )
 
@@ -292,13 +301,15 @@ class GesturesRegionsTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
         if self.current_slot is None:
             CTkMessageBox.showwarning(
-                "No Slot", "Please load a character slot first!", parent=self.parent
+                t("No Slot"),
+                t("Please load a character slot first!"),
+                parent=self.parent,
             )
             return
 
@@ -307,7 +318,9 @@ class GesturesRegionsTab:
 
         if slot.is_empty():
             CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {slot_idx + 1} is empty!", parent=self.parent
+                t("Empty Slot"),
+                t("Slot {slot_idx} is empty!").format(slot_idx=slot_idx + 1),
+                parent=self.parent,
             )
             return
 
@@ -318,7 +331,7 @@ class GesturesRegionsTab:
         selected_gestures = sorted(selected_set)
 
         if not CTkMessageBox.askyesno(
-            "Apply Changes",
+            t("Apply Changes"),
             (
                 f"Apply gesture changes to Slot {slot_idx + 1}?\n"
                 f"{len(to_unlock)} gesture(s) will be unlocked"
@@ -350,8 +363,10 @@ class GesturesRegionsTab:
 
             if len(new_gesture_ids) != 64:
                 CTkMessageBox.showerror(
-                    "Error",
-                    f"Invalid gesture count: {len(new_gesture_ids)} (expected 64)",
+                    t("Error"),
+                    t("Invalid gesture count: {len} (expected 64)").format(
+                        len=len(new_gesture_ids)
+                    ),
                     parent=self.parent,
                 )
                 return
@@ -360,8 +375,8 @@ class GesturesRegionsTab:
 
             if not hasattr(slot, "gestures_offset") or slot.gestures_offset < 0:
                 CTkMessageBox.showerror(
-                    "Error",
-                    "Gesture offset not tracked. Cannot write changes.",
+                    t("Error"),
+                    t("Gesture offset not tracked. Cannot write changes."),
                     parent=self.parent,
                 )
                 return
@@ -374,8 +389,10 @@ class GesturesRegionsTab:
 
             if len(gesture_data) != 256:
                 CTkMessageBox.showerror(
-                    "Error",
-                    f"Invalid gesture data size: {len(gesture_data)} bytes (expected 256)",
+                    t("Error"),
+                    t("Invalid gesture data size: {len} bytes (expected 256)").format(
+                        len=len(gesture_data)
+                    ),
                     parent=self.parent,
                 )
                 return
@@ -403,7 +420,9 @@ class GesturesRegionsTab:
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to apply changes:\n{str(e)}", parent=self.parent
+                t("Error"),
+                t("Failed to apply changes:\n{str}").format(str=str(e)),
+                parent=self.parent,
             )
 
     def select_all_gestures(self, select_type: str):
@@ -415,7 +434,9 @@ class GesturesRegionsTab:
         """
         if self.current_slot is None:
             CTkMessageBox.showwarning(
-                "No Slot", "Please load a character slot first!", parent=self.parent
+                t("No Slot"),
+                t("Please load a character slot first!"),
+                parent=self.parent,
             )
             return
 
@@ -426,7 +447,9 @@ class GesturesRegionsTab:
                 var.set(True)
 
         self.show_toast(
-            f"All {'base game + DLC' if include_dlc else 'base game'} gestures selected. Click 'Apply Changes' to save.",
+            t("All {value} gestures selected. Click 'Apply Changes' to save.").format(
+                value="base game + DLC" if include_dlc else "base game"
+            ),
             duration=2500,
         )
 
@@ -434,35 +457,41 @@ class GesturesRegionsTab:
         """Deselect all gestures"""
         if self.current_slot is None:
             CTkMessageBox.showwarning(
-                "No Slot", "Please load a character slot first!", parent=self.parent
+                t("No Slot"),
+                t("Please load a character slot first!"),
+                parent=self.parent,
             )
             return
 
         for var in self.gesture_states.values():
             var.set(False)
 
-        self.show_toast("All gestures deselected", duration=2000)
+        self.show_toast(t("All gestures deselected"), duration=2000)
 
     def open_unlocked_regions(self):
         """Open unlocked regions editor dialog."""
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
         if self.current_slot is None:
             CTkMessageBox.showwarning(
-                "No Slot", "Please load a character slot first!", parent=self.parent
+                t("No Slot"),
+                t("Please load a character slot first!"),
+                parent=self.parent,
             )
             return
 
         slot = save_file.character_slots[self.current_slot]
         if slot.is_empty():
             CTkMessageBox.showwarning(
-                "Empty Slot",
-                f"Slot {self.current_slot + 1} is empty!",
+                t("Empty Slot"),
+                t("Slot {current_slot} is empty!").format(
+                    current_slot=self.current_slot + 1
+                ),
                 parent=self.parent,
             )
             return
@@ -480,13 +509,15 @@ class GesturesRegionsTab:
 
         ctk.CTkLabel(
             dialog,
-            text="Unlocked Regions",
+            text=t("Unlocked Regions"),
             font=("Segoe UI", 14, "bold"),
         ).pack(pady=(15, 4), padx=15)
 
         ctk.CTkLabel(
             dialog,
-            text="Map regions stored in the save file. Controls which areas appear as discovered on the map.",
+            text=t(
+                "Map regions stored in the save file. Controls which areas appear as discovered on the map."
+            ),
             font=("Segoe UI", 10),
             text_color=("gray50", "gray70"),
             wraplength=580,
@@ -518,7 +549,7 @@ class GesturesRegionsTab:
             region_vars[region_id] = var
             ctk.CTkCheckBox(
                 list_frame,
-                text=f"{region_id}: (unknown)",
+                text=t("{region_id}: (unknown)").format(region_id=region_id),
                 variable=var,
             ).pack(anchor="w", padx=8, pady=2)
 
@@ -532,7 +563,9 @@ class GesturesRegionsTab:
             save_path = self.get_save_path()
             if not save_path or not save_path.is_file():
                 CTkMessageBox.showerror(
-                    "Invalid Save Path", "Could not locate save file.", parent=dialog
+                    t("Invalid Save Path"),
+                    t("Could not locate save file."),
+                    parent=dialog,
                 )
                 return
 
@@ -545,8 +578,8 @@ class GesturesRegionsTab:
                 )
             except PermissionError:
                 CTkMessageBox.showwarning(
-                    "Backup Skipped",
-                    "Could not create backup (permission denied). Proceeding.",
+                    t("Backup Skipped"),
+                    t("Could not create backup (permission denied). Proceeding."),
                     parent=dialog,
                 )
 
@@ -563,7 +596,9 @@ class GesturesRegionsTab:
             save_file.save(save_path)
             self.reload_save()
 
-            self.show_toast(f"Saved {len(selected)} region IDs", duration=2500)
+            self.show_toast(
+                t("Saved {len} region IDs").format(len=len(selected)), duration=2500
+            )
             dialog.destroy()
 
         def select_all():
@@ -574,25 +609,25 @@ class GesturesRegionsTab:
             for var in region_vars.values():
                 var.set(False)
 
-        ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=100).pack(
-            side=tk.LEFT
-        )
-        ctk.CTkButton(btn_frame, text="Select All", command=select_all, width=100).pack(
-            side=tk.LEFT, padx=6
-        )
         ctk.CTkButton(
-            btn_frame, text="Deselect All", command=deselect_all, width=110
+            btn_frame, text=t("Close"), command=dialog.destroy, width=100
         ).pack(side=tk.LEFT)
-        ctk.CTkButton(btn_frame, text="Apply", command=apply_regions, width=100).pack(
-            side=tk.RIGHT
-        )
+        ctk.CTkButton(
+            btn_frame, text=t("Select All"), command=select_all, width=100
+        ).pack(side=tk.LEFT, padx=6)
+        ctk.CTkButton(
+            btn_frame, text=t("Deselect All"), command=deselect_all, width=110
+        ).pack(side=tk.LEFT)
+        ctk.CTkButton(
+            btn_frame, text=t("Apply"), command=apply_regions, width=100
+        ).pack(side=tk.RIGHT)
 
     def open_game_settings(self):
         """Open game settings editor (USER_DATA_10 Settings struct)."""
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
@@ -601,8 +636,8 @@ class GesturesRegionsTab:
             or not save_file.user_data_10_parsed.settings
         ):
             CTkMessageBox.showerror(
-                "Unavailable",
-                "Game settings could not be read from this save.",
+                t("Unavailable"),
+                t("Game settings could not be read from this save."),
                 parent=self.parent,
             )
             return
@@ -622,13 +657,13 @@ class GesturesRegionsTab:
 
         ctk.CTkLabel(
             dialog,
-            text="Game Settings",
+            text=t("Game Settings"),
             font=("Segoe UI", 14, "bold"),
         ).pack(pady=(15, 4), padx=15)
 
         ctk.CTkLabel(
             dialog,
-            text="Stored in USER_DATA_10, shared across all characters.",
+            text=t("Stored in USER_DATA_10, shared across all characters."),
             font=("Segoe UI", 10),
             text_color=("gray50", "gray70"),
         ).pack(pady=(0, 10), padx=15)
@@ -693,7 +728,9 @@ class GesturesRegionsTab:
             save_path = self.get_save_path()
             if not save_path or not save_path.is_file():
                 CTkMessageBox.showerror(
-                    "Invalid Save Path", "Could not locate save file.", parent=dialog
+                    t("Invalid Save Path"),
+                    t("Could not locate save file."),
+                    parent=dialog,
                 )
                 return
 
@@ -706,8 +743,8 @@ class GesturesRegionsTab:
                 )
             except PermissionError:
                 CTkMessageBox.showwarning(
-                    "Backup Skipped",
-                    "Could not create backup (permission denied). Proceeding.",
+                    t("Backup Skipped"),
+                    t("Could not create backup (permission denied). Proceeding."),
                     parent=dialog,
                 )
 
@@ -735,12 +772,12 @@ class GesturesRegionsTab:
             save_file._recalculate_userdata10_checksum()
             save_file.save(save_path)
 
-            self.show_toast("Game settings saved", duration=2500)
+            self.show_toast(t("Game settings saved"), duration=2500)
             dialog.destroy()
 
-        ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=100).pack(
-            side=tk.LEFT
-        )
-        ctk.CTkButton(btn_frame, text="Apply", command=apply_settings, width=100).pack(
-            side=tk.RIGHT
-        )
+        ctk.CTkButton(
+            btn_frame, text=t("Close"), command=dialog.destroy, width=100
+        ).pack(side=tk.LEFT)
+        ctk.CTkButton(
+            btn_frame, text=t("Apply"), command=apply_settings, width=100
+        ).pack(side=tk.RIGHT)

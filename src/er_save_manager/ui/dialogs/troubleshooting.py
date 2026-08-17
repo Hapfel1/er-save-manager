@@ -5,6 +5,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.diagnostics.checker import DiagnosticResult, TroubleshootingChecker
+from er_save_manager.i18n import t
 from er_save_manager.ui.utils import bind_mousewheel, force_render_dialog
 
 
@@ -70,13 +71,13 @@ class TroubleshootingDialog:
 
         ctk.CTkLabel(
             title_frame,
-            text="Troubleshooting & Diagnostics",
+            text=t("Troubleshooting & Diagnostics"),
             font=("Segoe UI", 16, "bold"),
         ).pack(side="left")
 
         ctk.CTkButton(
             title_frame,
-            text="Refresh",
+            text=t("Refresh"),
             command=self._run_checks,
             width=100,
         ).pack(side="right")
@@ -89,7 +90,7 @@ class TroubleshootingDialog:
         # Close button
         ctk.CTkButton(
             main_frame,
-            text="Close",
+            text=t("Close"),
             command=self.dialog.destroy,
             width=100,
         ).pack(pady=(5, 0))
@@ -106,7 +107,7 @@ class TroubleshootingDialog:
         # Show loading message
         loading_label = ctk.CTkLabel(
             self.results_frame,
-            text="Running diagnostic checks...",
+            text=t("Running diagnostic checks..."),
             font=("Segoe UI", 12),
         )
         loading_label.pack(pady=20)
@@ -189,7 +190,7 @@ class TroubleshootingDialog:
 
             ctk.CTkLabel(
                 fix_frame,
-                text="💡 Suggested Fix:",
+                text=t("💡 Suggested Fix:"),
                 font=("Segoe UI", 11, "bold"),
             ).pack(anchor="w", padx=8, pady=(5, 2))
 

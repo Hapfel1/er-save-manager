@@ -17,6 +17,7 @@ from tkinter import ttk
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import game_blocks_write
 
@@ -180,17 +181,17 @@ class DS3InventoryTab:
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
         ctk.CTkLabel(
-            header, text="Inventory Editor", font=("Segoe UI", 16, "bold")
+            header, text=t("Inventory Editor"), font=("Segoe UI", 16, "bold")
         ).pack(side="left")
-        ctk.CTkButton(header, text="Load", command=self._load_selected, width=70).pack(
-            side="right", padx=(6, 0)
-        )
+        ctk.CTkButton(
+            header, text=t("Load"), command=self._load_selected, width=70
+        ).pack(side="right", padx=(6, 0))
         self._slot_var = tk.StringVar()
         self._slot_combo = ctk.CTkComboBox(
             header, variable=self._slot_var, values=[], state="readonly", width=240
         )
         self._slot_combo.pack(side="right")
-        ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
+        ctk.CTkLabel(header, text=t("Slot:")).pack(side="right", padx=(0, 6))
 
         body = ctk.CTkFrame(outer, fg_color="transparent")
         body.pack(fill="both", expand=True, padx=10, pady=(0, 10))
@@ -211,7 +212,7 @@ class DS3InventoryTab:
 
         frow = ctk.CTkFrame(left, fg_color="transparent")
         frow.grid(row=0, column=0, columnspan=2, sticky="ew", padx=8, pady=(8, 4))
-        ctk.CTkLabel(frow, text="Filter:").pack(side="left", padx=(0, 4))
+        ctk.CTkLabel(frow, text=t("Filter:")).pack(side="left", padx=(0, 4))
         self._inv_search_var = tk.StringVar()
         self._inv_search_var.trace_add(
             "write", lambda *_: self._refresh_inventory_tree()
@@ -253,23 +254,23 @@ class DS3InventoryTab:
 
         edit_row = ctk.CTkFrame(left, fg_color="transparent")
         edit_row.grid(row=2, column=0, columnspan=2, sticky="ew", padx=8, pady=(0, 8))
-        ctk.CTkLabel(edit_row, text="Qty:").pack(side="left", padx=(0, 2))
+        ctk.CTkLabel(edit_row, text=t("Qty:")).pack(side="left", padx=(0, 2))
         self._edit_qty_var = tk.StringVar(value="1")
         ctk.CTkEntry(edit_row, textvariable=self._edit_qty_var, width=55).pack(
             side="left", padx=(0, 8)
         )
-        ctk.CTkLabel(edit_row, text="Upgrade:").pack(side="left", padx=(0, 2))
+        ctk.CTkLabel(edit_row, text=t("Upgrade:")).pack(side="left", padx=(0, 2))
         self._edit_upg_var = tk.StringVar(value="0")
         self._edit_upg_entry = ctk.CTkEntry(
             edit_row, textvariable=self._edit_upg_var, width=45
         )
         self._edit_upg_entry.pack(side="left", padx=(0, 8))
-        ctk.CTkButton(edit_row, text="Apply", command=self._apply_edit, width=70).pack(
-            side="left", padx=(0, 4)
-        )
+        ctk.CTkButton(
+            edit_row, text=t("Apply"), command=self._apply_edit, width=70
+        ).pack(side="left", padx=(0, 4))
         ctk.CTkButton(
             edit_row,
-            text="Remove",
+            text=t("Remove"),
             command=self._remove_item,
             width=70,
             fg_color=("gray60", "gray35"),
@@ -285,25 +286,25 @@ class DS3InventoryTab:
         right.grid_columnconfigure(0, weight=1)
 
         # Row 0: header
-        ctk.CTkLabel(right, text="Spawn Item", font=("Segoe UI", 12, "bold")).grid(
+        ctk.CTkLabel(right, text=t("Spawn Item"), font=("Segoe UI", 12, "bold")).grid(
             row=0, column=0, columnspan=2, sticky="w", padx=10, pady=(10, 4)
         )
 
         # Row 1: mod source toggles
         mod_row = ctk.CTkFrame(right, fg_color="transparent")
         mod_row.grid(row=1, column=0, columnspan=2, sticky="ew", padx=8, pady=(0, 4))
-        ctk.CTkLabel(mod_row, text="Mod:", font=("Segoe UI", 10)).pack(
+        ctk.CTkLabel(mod_row, text=t("Mod:"), font=("Segoe UI", 10)).pack(
             side="left", padx=(0, 6)
         )
         ctk.CTkCheckBox(
             mod_row,
-            text="Cinders",
+            text=t("Cinders"),
             variable=self._mod_cinders,
             command=self._on_mod_toggle,
         ).pack(side="left", padx=(0, 8))
         ctk.CTkCheckBox(
             mod_row,
-            text="Convergence",
+            text=t("Convergence"),
             variable=self._mod_convergence,
             command=self._on_mod_toggle,
         ).pack(side="left")
@@ -324,14 +325,14 @@ class DS3InventoryTab:
         self._spawn_search_var = tk.StringVar()
         self._spawn_search_var.trace_add("write", lambda *_: self._refresh_spawn_tree())
         ctk.CTkEntry(
-            frow, textvariable=self._spawn_search_var, placeholder_text="Search..."
+            frow, textvariable=self._spawn_search_var, placeholder_text=t("Search...")
         ).pack(side="left", fill="x", expand=True)
 
         # Row 3: spawn tree
         self._spawn_tree = ttk.Treeview(
             right, columns=("name",), show="headings", style="DS3.Treeview", height=18
         )
-        self._spawn_tree.heading("name", text="Item")
+        self._spawn_tree.heading("name", text=t("Item"))
         self._spawn_tree.column("name", width=200, anchor="w")
         self._spawn_tree.grid(row=3, column=0, sticky="nsew", padx=8, pady=(0, 4))
         ssb = ttk.Scrollbar(right, orient="vertical", command=self._spawn_tree.yview)
@@ -344,7 +345,7 @@ class DS3InventoryTab:
         # Row 4: infusion dropdown (convergence weapons only)
         inf_row = ctk.CTkFrame(right, fg_color="transparent")
         inf_row.grid(row=4, column=0, columnspan=2, sticky="ew", padx=8, pady=(0, 2))
-        self._infusion_label = ctk.CTkLabel(inf_row, text="Infusion:")
+        self._infusion_label = ctk.CTkLabel(inf_row, text=t("Infusion:"))
         self._infusion_label.pack(side="left", padx=(0, 4))
         self._infusion_var = tk.StringVar(value="")
         self._infusion_combo = ctk.CTkComboBox(
@@ -363,18 +364,20 @@ class DS3InventoryTab:
         # Row 5: qty / upgrade / spawn
         ctrl = ctk.CTkFrame(right, fg_color="transparent")
         ctrl.grid(row=5, column=0, columnspan=2, sticky="ew", padx=8, pady=(0, 8))
-        ctk.CTkLabel(ctrl, text="Qty:").grid(row=0, column=0, padx=(0, 2), pady=4)
+        ctk.CTkLabel(ctrl, text=t("Qty:")).grid(row=0, column=0, padx=(0, 2), pady=4)
         self._spawn_qty_var = tk.StringVar(value="1")
         ctk.CTkEntry(ctrl, textvariable=self._spawn_qty_var, width=50).grid(
             row=0, column=1, padx=(0, 8), pady=4
         )
-        ctk.CTkLabel(ctrl, text="Upgrade:").grid(row=0, column=2, padx=(0, 2), pady=4)
+        ctk.CTkLabel(ctrl, text=t("Upgrade:")).grid(
+            row=0, column=2, padx=(0, 2), pady=4
+        )
         self._spawn_upg_var = tk.StringVar(value="0")
         self._spawn_upg_entry = ctk.CTkEntry(
             ctrl, textvariable=self._spawn_upg_var, width=40
         )
         self._spawn_upg_entry.grid(row=0, column=3, padx=(0, 8), pady=4)
-        ctk.CTkButton(ctrl, text="Spawn", command=self._spawn_item, width=80).grid(
+        ctk.CTkButton(ctrl, text=t("Spawn"), command=self._spawn_item, width=80).grid(
             row=0, column=4, pady=4
         )
         self._spawn_info = ctk.CTkLabel(
@@ -411,7 +414,9 @@ class DS3InventoryTab:
         save = self._get_save()
         if save is None or save.characters[idx] is None:
             CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {idx + 1} is empty.", parent=self.parent
+                t("Empty Slot"),
+                t("Slot {idx} is empty.").format(idx=idx + 1),
+                parent=self.parent,
             )
             return
         self._current_slot = idx
@@ -725,8 +730,8 @@ class DS3InventoryTab:
 
         if self._selected_inv_offset < 0:
             CTkMessageBox.showwarning(
-                "No Selection",
-                "Select an item from the inventory first.",
+                t("No Selection"),
+                t("Select an item from the inventory first."),
                 parent=self.parent,
             )
             return
@@ -738,7 +743,7 @@ class DS3InventoryTab:
             upg = int(self._edit_upg_var.get())
         except ValueError:
             CTkMessageBox.showerror(
-                "Invalid Value", "Enter valid integers.", parent=self.parent
+                t("Invalid Value"), t("Enter valid integers."), parent=self.parent
             )
             return
 
@@ -764,7 +769,7 @@ class DS3InventoryTab:
             self._reload_inventory()
             self._show_toast("Item updated. Backup created.")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     def _remove_item(self) -> None:
         if _game_blocks_write(self.parent):
@@ -772,8 +777,8 @@ class DS3InventoryTab:
 
         if self._selected_inv_offset < 0:
             CTkMessageBox.showwarning(
-                "No Selection",
-                "Select an item from the inventory first.",
+                t("No Selection"),
+                t("Select an item from the inventory first."),
                 parent=self.parent,
             )
             return
@@ -781,8 +786,8 @@ class DS3InventoryTab:
         if char is None:
             return
         if not CTkMessageBox.askyesno(
-            "Confirm Remove",
-            "Remove the selected item from inventory?",
+            t("Confirm Remove"),
+            t("Remove the selected item from inventory?"),
             parent=self.parent,
         ):
             return
@@ -797,7 +802,7 @@ class DS3InventoryTab:
             self._reload_inventory()
             self._show_toast("Item removed. Backup created.")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     def _spawn_item(self) -> None:
         if getattr(self, "_spawn_in_progress", False):
@@ -815,15 +820,15 @@ class DS3InventoryTab:
         entry = self._selected_db_item
         if entry is None:
             CTkMessageBox.showwarning(
-                "No Item",
-                "Select an item from the spawner list first.",
+                t("No Item"),
+                t("Select an item from the spawner list first."),
                 parent=self.parent,
             )
             return
         save, save_path, char = self._get_char()
         if char is None:
             CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
+                t("No Character"), t("Load a character first."), parent=self.parent
             )
             return
         try:
@@ -831,7 +836,7 @@ class DS3InventoryTab:
             upg = int(self._spawn_upg_var.get())
         except ValueError:
             CTkMessageBox.showerror(
-                "Invalid Value", "Enter valid integers.", parent=self.parent
+                t("Invalid Value"), t("Enter valid integers."), parent=self.parent
             )
             return
 
@@ -858,8 +863,10 @@ class DS3InventoryTab:
         item_type = type_map.get(type_nibble)
         if item_type is None:
             CTkMessageBox.showerror(
-                "Unknown Type",
-                f"Item type {type_nibble:#x} not handled.",
+                t("Unknown Type"),
+                t("Item type {type_nibble:#x} not handled.").format(
+                    type_nibble=type_nibble
+                ),
                 parent=self.parent,
             )
             return
@@ -872,8 +879,8 @@ class DS3InventoryTab:
 
         if not ok:
             CTkMessageBox.showerror(
-                "Full",
-                "Inventory and storage both full, or no empty gaitem slots.",
+                t("Full"),
+                t("Inventory and storage both full, or no empty gaitem slots."),
                 parent=self.parent,
             )
             return
@@ -887,7 +894,7 @@ class DS3InventoryTab:
             self._reload_inventory()
             self._show_toast(f"Spawned: {entry['Name']}. Backup created.")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     # --- Helpers ------------------------------------------------------------ #
 

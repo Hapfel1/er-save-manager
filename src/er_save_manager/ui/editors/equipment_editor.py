@@ -15,6 +15,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, pick_file, trace_variable
 
@@ -389,7 +390,7 @@ class _ItemPickerDialog(ctk.CTkToplevel):
         # Search row
         top = ctk.CTkFrame(self, fg_color="transparent")
         top.pack(fill=ctk.X, padx=10, pady=(10, 4))
-        ctk.CTkLabel(top, text="Search:").pack(side=ctk.LEFT, padx=(0, 6))
+        ctk.CTkLabel(top, text=t("Search:")).pack(side=ctk.LEFT, padx=(0, 6))
         self._search_var = ctk.StringVar()
         self._search_var.trace_add("write", lambda *_: self._filter())
         ctk.CTkEntry(top, textvariable=self._search_var, width=250).pack(side=ctk.LEFT)
@@ -397,7 +398,7 @@ class _ItemPickerDialog(ctk.CTkToplevel):
         # Category + sort row
         filt_row = ctk.CTkFrame(self, fg_color="transparent")
         filt_row.pack(fill=ctk.X, padx=10, pady=(0, 4))
-        ctk.CTkLabel(filt_row, text="Category:").pack(side=ctk.LEFT, padx=(0, 6))
+        ctk.CTkLabel(filt_row, text=t("Category:")).pack(side=ctk.LEFT, padx=(0, 6))
         categories = ["All"] + sorted({i[3] for i in owned_items})
         self._cat_var = ctk.StringVar(value="All")
         ctk.CTkComboBox(
@@ -407,7 +408,7 @@ class _ItemPickerDialog(ctk.CTkToplevel):
             width=150,
             command=lambda _v: self._filter(),
         ).pack(side=ctk.LEFT, padx=(0, 12))
-        ctk.CTkLabel(filt_row, text="Sort:").pack(side=ctk.LEFT, padx=(0, 6))
+        ctk.CTkLabel(filt_row, text=t("Sort:")).pack(side=ctk.LEFT, padx=(0, 6))
         self._sort_var = ctk.StringVar(value="Name (A-Z)")
         ctk.CTkComboBox(
             filt_row,
@@ -447,7 +448,7 @@ class _ItemPickerDialog(ctk.CTkToplevel):
         if not owned_items:
             ctk.CTkLabel(
                 self,
-                text="No owned items found in inventory for this slot.",
+                text=t("No owned items found in inventory for this slot."),
                 text_color=("gray40", "gray60"),
                 wraplength=380,
             ).pack(padx=10, pady=(0, 4))
@@ -455,17 +456,17 @@ class _ItemPickerDialog(ctk.CTkToplevel):
         # Buttons
         btn_row = ctk.CTkFrame(self, fg_color="transparent")
         btn_row.pack(fill=ctk.X, padx=10, pady=(6, 10))
-        ctk.CTkButton(btn_row, text="Select", command=self._confirm, width=120).pack(
+        ctk.CTkButton(btn_row, text=t("Select"), command=self._confirm, width=120).pack(
             side=ctk.LEFT, padx=(0, 6)
         )
         ctk.CTkButton(
             btn_row,
-            text="Clear Slot",
+            text=t("Clear Slot"),
             command=self._clear,
             width=100,
             fg_color=("gray70", "gray35"),
         ).pack(side=ctk.LEFT, padx=(0, 6))
-        ctk.CTkButton(btn_row, text="Cancel", command=self.destroy, width=80).pack(
+        ctk.CTkButton(btn_row, text=t("Cancel"), command=self.destroy, width=80).pack(
             side=ctk.RIGHT
         )
 
@@ -608,17 +609,17 @@ class _LoadoutBrowserDialog(ctk.CTkToplevel):
 
         btn_row = ctk.CTkFrame(self, fg_color="transparent")
         btn_row.pack(fill=ctk.X, padx=10, pady=(0, 10))
-        ctk.CTkButton(btn_row, text="Load", command=self._load, width=100).pack(
+        ctk.CTkButton(btn_row, text=t("Load"), command=self._load, width=100).pack(
             side=ctk.LEFT, padx=(0, 6)
         )
         ctk.CTkButton(
             btn_row,
-            text="Delete",
+            text=t("Delete"),
             command=self._delete,
             width=100,
             fg_color=("gray70", "gray35"),
         ).pack(side=ctk.LEFT, padx=(0, 6))
-        ctk.CTkButton(btn_row, text="Cancel", command=self.destroy, width=80).pack(
+        ctk.CTkButton(btn_row, text=t("Cancel"), command=self.destroy, width=80).pack(
             side=ctk.RIGHT
         )
 
@@ -640,7 +641,9 @@ class _LoadoutBrowserDialog(ctk.CTkToplevel):
         if not name:
             return
         if not CTkMessageBox.askyesno(
-            "Delete Loadout", f"Delete loadout '{name}'?", parent=self
+            t("Delete Loadout"),
+            t("Delete loadout '{name}'?").format(name=name),
+            parent=self,
         ):
             return
         self._on_choice(name, "delete", self._store)
@@ -796,14 +799,14 @@ class _VisualItemPickerDialog(ctk.CTkToplevel):
 
         top = ctk.CTkFrame(self, fg_color="transparent")
         top.pack(fill=ctk.X, padx=10, pady=(10, 4))
-        ctk.CTkLabel(top, text="Search:").pack(side=ctk.LEFT, padx=(0, 6))
+        ctk.CTkLabel(top, text=t("Search:")).pack(side=ctk.LEFT, padx=(0, 6))
         self._search_var = ctk.StringVar()
         self._search_var.trace_add("write", lambda *_: self._filter())
         ctk.CTkEntry(top, textvariable=self._search_var, width=250).pack(side=ctk.LEFT)
 
         filt_row = ctk.CTkFrame(self, fg_color="transparent")
         filt_row.pack(fill=ctk.X, padx=10, pady=(0, 4))
-        ctk.CTkLabel(filt_row, text="Category:").pack(side=ctk.LEFT, padx=(0, 6))
+        ctk.CTkLabel(filt_row, text=t("Category:")).pack(side=ctk.LEFT, padx=(0, 6))
         categories = ["All"] + sorted({i[3] for i in owned_items})
         self._cat_var = ctk.StringVar(value="All")
         ctk.CTkComboBox(
@@ -813,7 +816,7 @@ class _VisualItemPickerDialog(ctk.CTkToplevel):
             width=150,
             command=lambda _v: self._filter(),
         ).pack(side=ctk.LEFT, padx=(0, 12))
-        ctk.CTkLabel(filt_row, text="Sort:").pack(side=ctk.LEFT, padx=(0, 6))
+        ctk.CTkLabel(filt_row, text=t("Sort:")).pack(side=ctk.LEFT, padx=(0, 6))
         self._sort_var = ctk.StringVar(value="Name (A-Z)")
         ctk.CTkComboBox(
             filt_row,
@@ -845,7 +848,7 @@ class _VisualItemPickerDialog(ctk.CTkToplevel):
         if not owned_items:
             ctk.CTkLabel(
                 self,
-                text="No owned items found in inventory for this slot.",
+                text=t("No owned items found in inventory for this slot."),
                 text_color=("gray40", "gray60"),
             ).pack(padx=10, pady=(0, 4))
 
@@ -853,12 +856,12 @@ class _VisualItemPickerDialog(ctk.CTkToplevel):
         btn_row.pack(fill=ctk.X, padx=10, pady=(6, 10))
         ctk.CTkButton(
             btn_row,
-            text="Clear Slot",
+            text=t("Clear Slot"),
             command=self._clear,
             width=100,
             fg_color=("gray70", "gray35"),
         ).pack(side=ctk.LEFT)
-        ctk.CTkButton(btn_row, text="Cancel", command=self.destroy, width=80).pack(
+        ctk.CTkButton(btn_row, text=t("Cancel"), command=self.destroy, width=80).pack(
             side=ctk.RIGHT
         )
 
@@ -1059,7 +1062,7 @@ class _VisualEquipmentBrowser(ctk.CTkToplevel):
                     btn = self._cells.get(key)
                     if btn:
                         btn.configure(state="disabled")
-                        self._captions[key].configure(text="locked")
+                        self._captions[key].configure(text=t("locked"))
 
         self.refresh_all()
 
@@ -1067,7 +1070,7 @@ class _VisualEquipmentBrowser(ctk.CTkToplevel):
         btn_row.pack(fill=ctk.X, padx=10, pady=(0, 10))
         ctk.CTkButton(
             btn_row,
-            text="Apply Equipment Changes",
+            text=t("Apply Equipment Changes"),
             command=editor.apply_changes,
             width=240,
         ).pack(pady=6)
@@ -1092,7 +1095,7 @@ class _VisualEquipmentBrowser(ctk.CTkToplevel):
         btn.pack()
         cap = ctk.CTkLabel(
             col,
-            text="(empty)",
+            text=t("(empty)"),
             font=("Segoe UI", 13),
             width=_CELL_W,
             height=64,
@@ -1136,12 +1139,12 @@ class _VisualEquipmentBrowser(ctk.CTkToplevel):
             self._ctk_images.append(ctk_img)
             btn.configure(image=ctk_img, text="")
         else:
-            btn.configure(image=None, text="empty")
+            btn.configure(image=None, text=t("empty"))
         btn.update_idletasks()
         if cap is not None:
             name = _resolve_name(key, raw, is_cnv)
             if not name:
-                cap.configure(text="(empty)")
+                cap.configure(text=t("(empty)"))
             else:
                 cap.configure(text=name if len(name) <= 40 else name[:37] + "...")
 
@@ -1290,32 +1293,32 @@ class EquipmentEditor:
         loadout_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
         loadout_frame.pack(fill="x", pady=(5, 0))
         ctk.CTkLabel(
-            loadout_frame, text="Loadouts", font=("Segoe UI", 12, "bold")
+            loadout_frame, text=t("Loadouts"), font=("Segoe UI", 12, "bold")
         ).pack(anchor="w", padx=8, pady=(6, 0))
         loadout_btns = ctk.CTkFrame(loadout_frame, fg_color="transparent")
         loadout_btns.pack(fill="x", padx=6, pady=(2, 8))
         ctk.CTkButton(
             loadout_btns,
-            text="Save Loadout",
+            text=t("Save Loadout"),
             command=self.save_loadout,
             width=150,
         ).pack(side="left", padx=(0, 6))
         ctk.CTkButton(
             loadout_btns,
-            text="Load Loadout",
+            text=t("Load Loadout"),
             command=self.load_loadout,
             width=150,
         ).pack(side="left", padx=(0, 12))
         ctk.CTkButton(
             loadout_btns,
-            text="Export to File...",
+            text=t("Export to File..."),
             command=self.export_loadout_file,
             width=150,
             fg_color=("gray70", "gray35"),
         ).pack(side="left", padx=(0, 6))
         ctk.CTkButton(
             loadout_btns,
-            text="Import from File...",
+            text=t("Import from File..."),
             command=self.import_loadout_file,
             width=150,
             fg_color=("gray70", "gray35"),
@@ -1325,13 +1328,13 @@ class EquipmentEditor:
         loadout_btns2.pack(fill="x", padx=6, pady=(0, 8))
         ctk.CTkButton(
             loadout_btns2,
-            text="Share via Code...",
+            text=t("Share via Code..."),
             command=self.share_loadout_code,
             width=150,
         ).pack(side="left", padx=(0, 6))
         ctk.CTkButton(
             loadout_btns2,
-            text="Import via Code...",
+            text=t("Import via Code..."),
             command=self.import_loadout_code,
             width=150,
         ).pack(side="left")
@@ -1340,14 +1343,14 @@ class EquipmentEditor:
         btn_frame.pack(fill="x", pady=10)
         ctk.CTkButton(
             btn_frame,
-            text="Visual Picker...",
+            text=t("Visual Picker..."),
             command=self.open_visual_picker,
             width=180,
             fg_color=("gray70", "gray35"),
         ).pack(side="left", padx=(6, 6), pady=6)
         ctk.CTkButton(
             btn_frame,
-            text="Apply Equipment Changes",
+            text=t("Apply Equipment Changes"),
             command=self.apply_changes,
             width=240,
         ).pack(side="left", pady=6)
@@ -1377,7 +1380,7 @@ class EquipmentEditor:
             # Read-only display showing the resolved item name; click to pick
             name_label = ctk.CTkLabel(
                 grid,
-                text="(empty)",
+                text=t("(empty)"),
                 text_color="#60a5fa",
                 width=220,
                 anchor="w",
@@ -1455,7 +1458,7 @@ class EquipmentEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                t("No Save"), t("Please load a save file first."), parent=self.parent
             )
             return
         _VisualEquipmentBrowser(self.parent, self)
@@ -1563,7 +1566,7 @@ class EquipmentEditor:
             if label:
                 if locked:
                     label.unbind("<Button-1>")
-                    label.configure(text="locked", cursor="arrow")
+                    label.configure(text=t("locked"), cursor="arrow")
                 else:
                     label.bind("<Button-1>", lambda _e, k=key: self._open_picker(k))
                     label.configure(cursor="hand2")
@@ -1576,13 +1579,13 @@ class EquipmentEditor:
             raw = self._get_raw(key)
             name = _resolve_name(key, raw, self._is_cnv_save())
             if not name:
-                label.configure(text="(empty)", text_color=("gray50", "gray55"))
+                label.configure(text=t("(empty)"), text_color=("gray50", "gray55"))
                 return
             if len(name) > 32:
                 name = name[:29] + "..."
             label.configure(text=name, text_color="#60a5fa")
         except Exception:
-            label.configure(text="(empty)", text_color=("gray50", "gray55"))
+            label.configure(text=t("(empty)"), text_color=("gray50", "gray55"))
 
     # ---- apply --------------------------------------------------------------
 
@@ -1590,15 +1593,17 @@ class EquipmentEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                t("No Save"), t("Please load a save file first."), parent=self.parent
             )
             return
 
         slot_idx = self.get_char_slot()
 
         if not CTkMessageBox.askyesno(
-            "Confirm",
-            f"Apply equipment changes to Slot {slot_idx + 1}?\n\nA backup will be created.",
+            t("Confirm"),
+            t(
+                "Apply equipment changes to Slot {slot_idx}?\n\nA backup will be created."
+            ).format(slot_idx=slot_idx + 1),
             parent=self.parent,
         ):
             return
@@ -1623,7 +1628,9 @@ class EquipmentEditor:
                 or not slot.equipped_items_item_id
             ):
                 CTkMessageBox.showerror(
-                    "Error", "Character has no equipment data.", parent=self.parent
+                    t("Error"),
+                    t("Character has no equipment data."),
+                    parent=self.parent,
                 )
                 return
 
@@ -1712,11 +1719,13 @@ class EquipmentEditor:
                 save_file.to_file(Path(save_path))
 
             CTkMessageBox.showinfo(
-                "Done", "Equipment changes applied.", parent=self.parent
+                t("Done"), t("Equipment changes applied."), parent=self.parent
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to apply equipment changes:\n{e}", parent=self.parent
+                t("Error"),
+                t("Failed to apply equipment changes:\n{e}").format(e=e),
+                parent=self.parent,
             )
 
     def _get_raw(self, key: str) -> int:
@@ -1854,7 +1863,7 @@ class EquipmentEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                t("No Save"), t("Please load a save file first."), parent=self.parent
             )
             return
 
@@ -1867,25 +1876,29 @@ class EquipmentEditor:
         try:
             self._write_loadout_store(store)
             CTkMessageBox.showinfo(
-                "Saved", f"Loadout '{name}' saved.", parent=self.parent
+                t("Saved"),
+                t("Loadout '{name}' saved.").format(name=name),
+                parent=self.parent,
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to save loadout:\n{e}", parent=self.parent
+                t("Error"),
+                t("Failed to save loadout:\n{e}").format(e=e),
+                parent=self.parent,
             )
 
     def load_loadout(self):
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                t("No Save"), t("Please load a save file first."), parent=self.parent
             )
             return
 
         store = self._read_loadout_store()
         if not store:
             CTkMessageBox.showinfo(
-                "No Loadouts", "No saved loadouts yet.", parent=self.parent
+                t("No Loadouts"), t("No saved loadouts yet."), parent=self.parent
             )
             return
 
@@ -1903,14 +1916,14 @@ class EquipmentEditor:
         skipped, unresolved = self._apply_state(slots)
         if not unresolved:
             CTkMessageBox.showinfo(
-                "Loadout Applied",
-                "Loadout applied. Click Apply Equipment Changes to save.",
+                t("Loadout Applied"),
+                t("Loadout applied. Click Apply Equipment Changes to save."),
                 parent=self.parent,
             )
             return
 
         if CTkMessageBox.askyesno(
-            "Items Not Owned",
+            t("Items Not Owned"),
             f"{len(unresolved)} item(s) in this loadout are not in your "
             "inventory:\n"
             + ", ".join(k for k, _ in unresolved)
@@ -1920,7 +1933,7 @@ class EquipmentEditor:
             spawned = self._spawn_unresolved(unresolved)
             skipped, unresolved = self._apply_state(slots)
             CTkMessageBox.showinfo(
-                "Loadout Applied",
+                t("Loadout Applied"),
                 f"Spawned {spawned} item(s). "
                 + (
                     f"{len(unresolved)} slot(s) still could not be resolved: "
@@ -1933,7 +1946,7 @@ class EquipmentEditor:
             )
         else:
             CTkMessageBox.showwarning(
-                "Loadout Applied",
+                t("Loadout Applied"),
                 "Applied, skipping items not owned:\n"
                 + ", ".join(skipped)
                 + "\n\nClick Apply Equipment Changes to save the rest.",
@@ -1944,12 +1957,12 @@ class EquipmentEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                t("No Save"), t("Please load a save file first."), parent=self.parent
             )
             return
 
         path = pick_file(
-            title="Export Equipment Loadout",
+            title=t("Export Equipment Loadout"),
             save=True,
             defaultextension=".json",
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
@@ -1967,25 +1980,27 @@ class EquipmentEditor:
             with open(path, "w") as f:
                 json.dump(data, f, indent=2)
             CTkMessageBox.showinfo(
-                "Exported",
-                f"Loadout exported to:\n{Path(path).name}",
+                t("Exported"),
+                t("Loadout exported to:\n{name}").format(name=Path(path).name),
                 parent=self.parent,
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to export loadout:\n{e}", parent=self.parent
+                t("Error"),
+                t("Failed to export loadout:\n{e}").format(e=e),
+                parent=self.parent,
             )
 
     def import_loadout_file(self):
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                t("No Save"), t("Please load a save file first."), parent=self.parent
             )
             return
 
         path = pick_file(
-            title="Import Equipment Loadout",
+            title=t("Import Equipment Loadout"),
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
         )
         if not path:
@@ -1997,7 +2012,9 @@ class EquipmentEditor:
             slots = data.get("slots", data) if isinstance(data, dict) else {}
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to import loadout:\n{e}", parent=self.parent
+                t("Error"),
+                t("Failed to import loadout:\n{e}").format(e=e),
+                parent=self.parent,
             )
             return
 
@@ -2030,11 +2047,13 @@ class EquipmentEditor:
         dialog.grab_set()
 
         ctk.CTkLabel(
-            dialog, text=f"Shared {description}", font=("Segoe UI", 13, "bold")
+            dialog,
+            text=t("Shared {description}").format(description=description),
+            font=("Segoe UI", 13, "bold"),
         ).pack(pady=(15, 5))
         ctk.CTkLabel(
             dialog,
-            text="Send this code to share it:",
+            text=t("Send this code to share it:"),
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
         ).pack(pady=(0, 10))
@@ -2052,12 +2071,12 @@ class EquipmentEditor:
 
         btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_frame.pack()
-        ctk.CTkButton(btn_frame, text="Copy Code", command=copy_code, width=120).pack(
-            side=tk.LEFT, padx=5
-        )
-        ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=100).pack(
-            side=tk.LEFT, padx=5
-        )
+        ctk.CTkButton(
+            btn_frame, text=t("Copy Code"), command=copy_code, width=120
+        ).pack(side=tk.LEFT, padx=5)
+        ctk.CTkButton(
+            btn_frame, text=t("Close"), command=dialog.destroy, width=100
+        ).pack(side=tk.LEFT, padx=5)
 
     def _ask_code(self, title: str, text: str) -> str | None:
         """Centered modal single-line input dialog, mirrors appearance_tab.py's _ask_code."""
@@ -2097,12 +2116,12 @@ class EquipmentEditor:
 
         btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_frame.pack()
-        ctk.CTkButton(btn_frame, text="OK", command=confirm, width=100).pack(
+        ctk.CTkButton(btn_frame, text=t("OK"), command=confirm, width=100).pack(
             side=tk.LEFT, padx=5
         )
-        ctk.CTkButton(btn_frame, text="Cancel", command=dialog.destroy, width=100).pack(
-            side=tk.LEFT, padx=5
-        )
+        ctk.CTkButton(
+            btn_frame, text=t("Cancel"), command=dialog.destroy, width=100
+        ).pack(side=tk.LEFT, padx=5)
 
         self.parent.wait_window(dialog)
         return result[0]
@@ -2111,7 +2130,7 @@ class EquipmentEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                t("No Save"), t("Please load a save file first."), parent=self.parent
             )
             return
 
@@ -2125,8 +2144,8 @@ class EquipmentEditor:
         code = share_loadout(self._collect_state(), save_type=save_type)
         if not code:
             CTkMessageBox.showerror(
-                "Error",
-                "Failed to share loadout. Check your internet connection.",
+                t("Error"),
+                t("Failed to share loadout. Check your internet connection."),
                 parent=self.parent,
             )
             return
@@ -2137,7 +2156,7 @@ class EquipmentEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                t("No Save"), t("Please load a save file first."), parent=self.parent
             )
             return
 
@@ -2150,8 +2169,8 @@ class EquipmentEditor:
         slots = fetch_loadout(code)
         if slots is None:
             CTkMessageBox.showerror(
-                "Not Found",
-                "No loadout found for that code, or the connection failed.",
+                t("Not Found"),
+                t("No loadout found for that code, or the connection failed."),
                 parent=self.parent,
             )
             return

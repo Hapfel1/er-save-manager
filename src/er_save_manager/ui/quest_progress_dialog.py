@@ -8,6 +8,7 @@ import tkinter as tk
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, force_render_dialog
 
@@ -51,7 +52,7 @@ class QuestProgressDialog:
 
         ctk.CTkLabel(
             top_frame,
-            text="Quest Progress",
+            text=t("Quest Progress"),
             font=("Segoe UI", 15, "bold"),
         ).pack(side=tk.LEFT)
 
@@ -59,7 +60,7 @@ class QuestProgressDialog:
         search_entry = ctk.CTkEntry(
             top_frame,
             textvariable=search_var,
-            placeholder_text="Search NPCs or steps...",
+            placeholder_text=t("Search NPCs or steps..."),
             width=220,
         )
         search_entry.pack(side=tk.RIGHT)
@@ -84,7 +85,7 @@ class QuestProgressDialog:
 
         npc_header = ctk.CTkLabel(
             steps_outer,
-            text="Select an NPC",
+            text=t("Select an NPC"),
             font=("Segoe UI", 13, "bold"),
             anchor="w",
         )
@@ -102,7 +103,7 @@ class QuestProgressDialog:
 
         apply_all_btn = ctk.CTkButton(
             bottom,
-            text="Apply All Steps to Here",
+            text=t("Apply All Steps to Here"),
             width=180,
             state="disabled",
         )
@@ -110,7 +111,7 @@ class QuestProgressDialog:
 
         reset_btn = ctk.CTkButton(
             bottom,
-            text="Reset All Quest Flags",
+            text=t("Reset All Quest Flags"),
             width=160,
             fg_color=("gray70", "gray30"),
             hover_color=("gray60", "gray25"),
@@ -118,7 +119,7 @@ class QuestProgressDialog:
         )
         reset_btn.pack(side=tk.LEFT)
 
-        ctk.CTkButton(bottom, text="Close", command=dialog.destroy, width=100).pack(
+        ctk.CTkButton(bottom, text=t("Close"), command=dialog.destroy, width=100).pack(
             side=tk.RIGHT
         )
 
@@ -150,7 +151,11 @@ class QuestProgressDialog:
 
             steps = QUEST_FLAGS[npc_name]
             done, total = _count_complete(npc_name)
-            npc_header.configure(text=f"{npc_name}  ({done}/{total} steps complete)")
+            npc_header.configure(
+                text=t("{npc_name}  ({done}/{total} steps complete)").format(
+                    npc_name=npc_name, done=done, total=total
+                )
+            )
 
             for i, step in enumerate(steps):
                 complete = _step_is_complete(step)
@@ -255,8 +260,10 @@ class QuestProgressDialog:
             if last_complete < 0:
                 # None complete - ask if user wants to apply all or just the first
                 if not CTkMessageBox.askyesno(
-                    "No Complete Steps",
-                    f"No steps are currently complete for {npc_name}.\n\nApply the first step only?",
+                    t("No Complete Steps"),
+                    t(
+                        "No steps are currently complete for {npc_name}.\n\nApply the first step only?"
+                    ).format(npc_name=npc_name),
                     parent=dialog,
                 ):
                     return
@@ -265,8 +272,14 @@ class QuestProgressDialog:
             target = last_complete
             steps_to_apply = steps[: target + 1]
             if not CTkMessageBox.askyesno(
-                "Apply Quest Progress",
-                f'Apply {len(steps_to_apply)} step(s) for {npc_name} up to:\n\n"{steps[target]["description"][:80]}"\n\nA backup will be created.',
+                t("Apply Quest Progress"),
+                t(
+                    'Apply {len} step(s) for {npc_name} up to:\n\n"{steps_target___description}"\n\nA backup will be created.'
+                ).format(
+                    len=len(steps_to_apply),
+                    npc_name=npc_name,
+                    steps_target___description=steps[target]["description"][:80],
+                ),
                 parent=dialog,
             ):
                 return
@@ -282,8 +295,10 @@ class QuestProgressDialog:
         def _reset_quest(npc_name):
             """Reset all flags for this NPC's quest to 0."""
             if not CTkMessageBox.askyesno(
-                "Reset Quest",
-                f"Reset ALL event flags for {npc_name}'s quest to 0?\n\nThis will undo all tracked quest progress. A backup will be created. Some steps may stay applied even if you reset all flags. This is because those steps only use flags that the game clears back to 0, so they're indistinguishable from never happened in a save.",
+                t("Reset Quest"),
+                t(
+                    "Reset ALL event flags for {npc_name}'s quest to 0?\n\nThis will undo all tracked quest progress. A backup will be created. Some steps may stay applied even if you reset all flags. This is because those steps only use flags that the game clears back to 0, so they're indistinguishable from never happened in a save."
+                ).format(npc_name=npc_name),
                 parent=dialog,
             ):
                 return
@@ -369,7 +384,7 @@ class QuestProgressDialog:
 
                 ctk.CTkLabel(
                     btn_frame,
-                    text=f"{done}/{total} steps",
+                    text=t("{done}/{total} steps").format(done=done, total=total),
                     font=("Segoe UI", 10),
                     text_color=("gray50", "gray60"),
                     anchor="w",

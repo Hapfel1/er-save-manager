@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 import customtkinter as ctk
 from PIL import Image, ImageTk
 
+from er_save_manager.i18n import t
+
 if TYPE_CHECKING:
     from er_save_manager.data.locations import MapLocation
 
@@ -125,7 +127,7 @@ class MapWindow:
 
         self._teleport_btn = ctk.CTkButton(
             info_bar,
-            text="Teleport",
+            text=t("Teleport"),
             width=100,
             state="disabled",
             command=self._on_teleport,
@@ -134,7 +136,7 @@ class MapWindow:
 
         ctk.CTkButton(
             info_bar,
-            text="Close",
+            text=t("Close"),
             width=80,
             fg_color="transparent",
             border_width=1,
@@ -144,9 +146,9 @@ class MapWindow:
         legend = ctk.CTkFrame(info_bar, fg_color="transparent")
         legend.pack(side=tk.RIGHT, padx=12)
         for color, label in [
-            ("#00cfff", "You are here"),
-            ("#ff6644", "Selected"),
-            ("#00cc44", "Available"),
+            ("#00cfff", t("You are here")),
+            ("#ff6644", t("Selected")),
+            ("#00cc44", t("Available")),
         ]:
             dot = tk.Canvas(legend, width=10, height=10, bg=color, highlightthickness=0)
             dot.pack(side=tk.LEFT, padx=(4, 2))
@@ -156,7 +158,7 @@ class MapWindow:
 
         ctk.CTkLabel(
             info_bar,
-            text="Ctrl+scroll to zoom",
+            text=t("Ctrl+scroll to zoom"),
             font=("Segoe UI", 9),
             text_color=("gray40", "gray60"),
         ).pack(side=tk.RIGHT, padx=(0, 12))

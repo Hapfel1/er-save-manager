@@ -9,6 +9,7 @@ import tkinter as tk
 import customtkinter as ctk
 
 from er_save_manager.data import calculate_level_from_stats, get_class_data
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
@@ -93,7 +94,7 @@ class StatsEditor:
 
         ctk.CTkLabel(
             stats_frame,
-            text="Attributes",
+            text=t("Attributes"),
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
 
@@ -145,7 +146,7 @@ class StatsEditor:
 
         ctk.CTkLabel(
             resources_frame,
-            text="Max Health/FP/Stamina",
+            text=t("Max Health/FP/Stamina"),
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
 
@@ -180,7 +181,7 @@ class StatsEditor:
 
         ctk.CTkLabel(
             other_frame,
-            text="Level & Runes",
+            text=t("Level & Runes"),
             font=("Segoe UI", 12, "bold"),
             text_color=("black", "white"),
         ).grid(row=0, column=0, columnspan=5, sticky=ctk.W, padx=5, pady=(5, 0))
@@ -188,7 +189,7 @@ class StatsEditor:
         content_row = 1
 
         # Level row
-        ctk.CTkLabel(other_frame, text="Level:", text_color=("black", "white")).grid(
+        ctk.CTkLabel(other_frame, text=t("Level:"), text_color=("black", "white")).grid(
             row=content_row, column=0, sticky=ctk.W, padx=5, pady=5
         )
 
@@ -204,7 +205,7 @@ class StatsEditor:
         ).grid(row=content_row, column=1, padx=5, pady=5)
 
         ctk.CTkLabel(
-            other_frame, text="Calculated Level:", text_color=("black", "white")
+            other_frame, text=t("Calculated Level:"), text_color=("black", "white")
         ).grid(row=content_row, column=2, sticky=ctk.W, padx=(20, 5), pady=5)
 
         self.calculated_level_var = ctk.IntVar(value=0)
@@ -228,7 +229,7 @@ class StatsEditor:
         )
 
         # Runes row
-        ctk.CTkLabel(other_frame, text="Runes:", text_color=("black", "white")).grid(
+        ctk.CTkLabel(other_frame, text=t("Runes:"), text_color=("black", "white")).grid(
             row=content_row + 1, column=0, sticky=ctk.W, padx=5, pady=5
         )
 
@@ -251,7 +252,7 @@ class StatsEditor:
 
         ctk.CTkLabel(
             rune_frame,
-            text="Great Rune & Rune Arc",
+            text=t("Great Rune & Rune Arc"),
             font=("Segoe UI", 12, "bold"),
             text_color=("black", "white"),
         ).grid(row=0, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(5, 0))
@@ -259,7 +260,7 @@ class StatsEditor:
         self.great_rune_on_var = ctk.BooleanVar(value=False)
         ctk.CTkCheckBox(
             rune_frame,
-            text="Great Rune active",
+            text=t("Great Rune active"),
             variable=self.great_rune_on_var,
             text_color=("black", "white"),
         ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
@@ -267,13 +268,13 @@ class StatsEditor:
         self.rune_arc_var = ctk.BooleanVar(value=False)
         ctk.CTkCheckBox(
             rune_frame,
-            text="Rune Arc active",
+            text=t("Rune Arc active"),
             variable=self.rune_arc_var,
             text_color=("black", "white"),
         ).grid(row=1, column=1, sticky=ctk.W, padx=(20, 5), pady=5)
 
         ctk.CTkLabel(
-            rune_frame, text="Active Great Rune:", text_color=("black", "white")
+            rune_frame, text=t("Active Great Rune:"), text_color=("black", "white")
         ).grid(row=2, column=0, sticky=ctk.W, padx=5, pady=5)
 
         _GREAT_RUNES = [
@@ -301,13 +302,13 @@ class StatsEditor:
 
         ctk.CTkLabel(
             grace_frame,
-            text="Last Rested Grace",
+            text=t("Last Rested Grace"),
             font=("Segoe UI", 12, "bold"),
             text_color=("black", "white"),
         ).grid(row=0, column=0, columnspan=2, sticky=ctk.W, padx=5, pady=(5, 0))
 
         ctk.CTkLabel(
-            grace_frame, text="Grace ID (hex):", text_color=("black", "white")
+            grace_frame, text=t("Grace ID (hex):"), text_color=("black", "white")
         ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
 
         self.last_grace_var = tk.StringVar(value="0")
@@ -327,14 +328,14 @@ class StatsEditor:
 
         ctk.CTkLabel(
             mm_frame,
-            text="Matchmaking Weapon Level",
+            text=t("Matchmaking Weapon Level"),
             font=("Segoe UI", 12, "bold"),
             text_color=("black", "white"),
         ).grid(row=0, column=0, columnspan=3, sticky=ctk.W, padx=5, pady=(5, 0))
 
         ctk.CTkLabel(
             mm_frame,
-            text="Level (0-25):",
+            text=t("Level (0-25):"),
             text_color=("black", "white"),
         ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
 
@@ -351,7 +352,7 @@ class StatsEditor:
 
         self._mm_min_label = ctk.CTkLabel(
             mm_frame,
-            text="Min from inventory: --",
+            text=t("Min from inventory: --"),
             text_color=("gray50", "gray60"),
             font=("Segoe UI", 10),
         )
@@ -363,14 +364,14 @@ class StatsEditor:
 
         ctk.CTkLabel(
             button_frame,
-            text="Actions",
+            text=t("Actions"),
             font=("Segoe UI", 12, "bold"),
             text_color=("black", "white"),
         ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
 
         self.apply_button = ctk.CTkButton(
             button_frame,
-            text="Apply Changes",
+            text=t("Apply Changes"),
             command=self.apply_changes,
             width=160,
         )
@@ -577,10 +578,10 @@ class StatsEditor:
         if violations:
             violation_text = "\n".join(violations)
             CTkMessageBox.showwarning(
-                "Class Minimum Conflict",
-                f"The following stats are below the minimum for {class_data['name']}:\n\n"
-                f"{violation_text}\n\n"
-                f"Please raise these stats to at least the minimum before applying.",
+                t("Class Minimum Conflict"),
+                t(
+                    "The following stats are below the minimum for {class_data}:\n\n{violation_text}\n\nPlease raise these stats to at least the minimum before applying."
+                ).format(class_data=class_data["name"], violation_text=violation_text),
                 parent=self.parent,
             )
 
@@ -627,8 +628,8 @@ class StatsEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save",
-                "Please load a save file first!",
+                t("No Save"),
+                t("Please load a save file first!"),
                 parent=self.parent,
             )
             return
@@ -644,8 +645,10 @@ class StatsEditor:
         self.level_var.set(str(calculated_level))
 
         response = CTkMessageBox.askyesno(
-            "Confirm",
-            f"Apply stat changes to Slot {slot_idx + 1}?\n\nA backup will be created.",
+            t("Confirm"),
+            t(
+                "Apply stat changes to Slot {slot_idx}?\n\nA backup will be created."
+            ).format(slot_idx=slot_idx + 1),
             parent=self.parent,
         )
 
@@ -701,10 +704,10 @@ class StatsEditor:
                 mm_value = max(0, min(25, int(self.matchmaking_level_var.get())))
                 if mm_value < self._matchmaking_min:
                     CTkMessageBox.showwarning(
-                        "Invalid Value",
-                        f"Matchmaking weapon level cannot be set below {self._matchmaking_min} "
-                        f"(highest upgrade level found in inventory).\n"
-                        f"Value has been raised to {self._matchmaking_min}.",
+                        t("Invalid Value"),
+                        t(
+                            "Matchmaking weapon level cannot be set below {matchmaking_min} (highest upgrade level found in inventory).\nValue has been raised to {matchmaking_min}."
+                        ).format(matchmaking_min=self._matchmaking_min),
                         parent=self.parent,
                     )
                     mm_value = self._matchmaking_min
@@ -795,27 +798,29 @@ class StatsEditor:
                         save_file.to_file(Path(save_path))
 
                     CTkMessageBox.showinfo(
-                        "Success",
-                        "Stats updated successfully!\n\nBackup saved to backup manager.",
+                        t("Success"),
+                        t(
+                            "Stats updated successfully!\n\nBackup saved to backup manager."
+                        ),
                         parent=self.parent,
                     )
                 else:
                     CTkMessageBox.showwarning(
-                        "Error",
-                        "Offset not tracked - cannot save changes.",
+                        t("Error"),
+                        t("Offset not tracked - cannot save changes."),
                         parent=self.parent,
                     )
             else:
                 CTkMessageBox.showwarning(
-                    "Error",
-                    "Character has no game data",
+                    t("Error"),
+                    t("Character has no game data"),
                     parent=self.parent,
                 )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error",
-                f"Failed to apply stat changes:\n{e}",
+                t("Error"),
+                t("Failed to apply stat changes:\n{e}").format(e=e),
                 parent=self.parent,
             )
 
@@ -826,5 +831,7 @@ class StatsEditor:
         self._matchmaking_min = get_max_weapon_upgrade(slot)
         if hasattr(self, "_mm_min_label") and self._mm_min_label:
             self._mm_min_label.configure(
-                text=f"Min from inventory: {self._matchmaking_min}"
+                text=t("Min from inventory: {matchmaking_min}").format(
+                    matchmaking_min=self._matchmaking_min
+                )
             )

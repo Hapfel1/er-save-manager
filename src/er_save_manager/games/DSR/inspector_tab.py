@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
@@ -42,16 +43,18 @@ class DSRInspectorTab:
 
         header = ctk.CTkFrame(char_frame, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
-        ctk.CTkLabel(header, text="Save Inspector", font=("Segoe UI", 16, "bold")).pack(
-            side="left"
-        )
+        ctk.CTkLabel(
+            header, text=t("Save Inspector"), font=("Segoe UI", 16, "bold")
+        ).pack(side="left")
         ctk.CTkButton(
-            header, text="Edit Character", command=self._edit_selected, width=160
+            header, text=t("Edit Character"), command=self._edit_selected, width=160
         ).pack(side="right")
 
         ctk.CTkLabel(
             ctk.CTkFrame(char_frame, fg_color="transparent"),
-            text="Select a character and click 'Edit Character' to open the editor tabs.",
+            text=t(
+                "Select a character and click 'Edit Character' to open the editor tabs."
+            ),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         ).pack(side="left", anchor="w")
@@ -72,14 +75,14 @@ class DSRInspectorTab:
         if save is None:
             ctk.CTkLabel(
                 self.list_frame,
-                text="No save file loaded.",
+                text=t("No save file loaded."),
                 text_color=("gray50", "gray60"),
             ).pack(anchor="w", padx=6, pady=6)
             return
 
         occupied = [(i, c) for i, c in enumerate(save.characters) if c is not None]
         if not occupied:
-            ctk.CTkLabel(self.list_frame, text="No active characters found.").pack(
+            ctk.CTkLabel(self.list_frame, text=t("No active characters found.")).pack(
                 anchor="w", padx=6, pady=6
             )
             return
@@ -122,7 +125,9 @@ class DSRInspectorTab:
     def _edit_selected(self) -> None:
         if self.selected_slot is None:
             CTkMessageBox.showwarning(
-                "No Selection", "Please select a character first.", parent=self.parent
+                t("No Selection"),
+                t("Please select a character first."),
+                parent=self.parent,
             )
             return
         if self._on_slot_selected:

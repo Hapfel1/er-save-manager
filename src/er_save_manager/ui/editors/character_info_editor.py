@@ -8,6 +8,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.data.starting_classes import get_class_data
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, trace_variable
 
@@ -66,12 +67,12 @@ class CharacterInfoEditor:
         creation_frame.pack(fill=ctk.X, pady=5, padx=10)
         ctk.CTkLabel(
             creation_frame,
-            text="Character Creation",
+            text=t("Character Creation"),
             font=("Segoe UI", 12, "bold"),
         ).grid(row=0, column=0, columnspan=5, sticky=ctk.W, padx=5, pady=(5, 0))
 
         # Name
-        ctk.CTkLabel(creation_frame, text="Name:").grid(
+        ctk.CTkLabel(creation_frame, text=t("Name:")).grid(
             row=1, column=0, sticky=ctk.W, padx=5, pady=5
         )
         self.char_name_var = ctk.StringVar(value="")
@@ -106,7 +107,7 @@ class CharacterInfoEditor:
         trace_variable(self.char_name_var, "w", update_name_count)
 
         # Body Type
-        ctk.CTkLabel(creation_frame, text="Body Type:").grid(
+        ctk.CTkLabel(creation_frame, text=t("Body Type:")).grid(
             row=2, column=0, sticky=ctk.W, padx=5, pady=5
         )
         self.char_body_type_var = ctk.IntVar(value=0)
@@ -119,7 +120,7 @@ class CharacterInfoEditor:
         body_type_combo.grid(row=2, column=1, padx=5, pady=5)
 
         # Archetype (starting class)
-        ctk.CTkLabel(creation_frame, text="Archetype:").grid(
+        ctk.CTkLabel(creation_frame, text=t("Archetype:")).grid(
             row=2, column=2, sticky=ctk.W, padx=5, pady=5
         )
         self.char_archetype_var = ctk.StringVar(value="Vagabond")
@@ -147,7 +148,7 @@ class CharacterInfoEditor:
         self.char_archetype_var.trace_add("write", _on_archetype_combo_change)
 
         # Voice type
-        ctk.CTkLabel(creation_frame, text="Voice Type:").grid(
+        ctk.CTkLabel(creation_frame, text=t("Voice Type:")).grid(
             row=3, column=0, sticky=ctk.W, padx=5, pady=5
         )
         self.char_voice_var = ctk.IntVar(value=0)
@@ -160,7 +161,7 @@ class CharacterInfoEditor:
         voice_combo.grid(row=3, column=1, padx=5, pady=5)
 
         # Keepsake gift
-        ctk.CTkLabel(creation_frame, text="Keepsake:").grid(
+        ctk.CTkLabel(creation_frame, text=t("Keepsake:")).grid(
             row=3, column=2, sticky=ctk.W, padx=5, pady=5
         )
         self.char_gift_var = ctk.IntVar(value=0)
@@ -175,14 +176,14 @@ class CharacterInfoEditor:
         progression_frame.pack(fill=ctk.X, pady=5, padx=10)
         ctk.CTkLabel(
             progression_frame,
-            text="Game Progression",
+            text=t("Game Progression"),
             font=("Segoe UI", 12, "bold"),
         ).grid(row=0, column=0, columnspan=6, sticky=ctk.W, padx=5, pady=(5, 0))
 
         # NG+ Level (event flag and ClearCount)
         ctk.CTkLabel(
             progression_frame,
-            text="NG+ Level:",
+            text=t("NG+ Level:"),
         ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
         self.char_ng_level_var = ctk.StringVar(value="NG (0)")
         ng_combo = ctk.CTkComboBox(
@@ -246,13 +247,13 @@ class CharacterInfoEditor:
         button_frame.pack(fill=ctk.X, pady=10, padx=10)
         ctk.CTkLabel(
             button_frame,
-            text="Actions",
+            text=t("Actions"),
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
 
         ctk.CTkButton(
             button_frame,
-            text="Apply Changes",
+            text=t("Apply Changes"),
             command=self.apply_changes,
             width=180,
         ).pack(side=ctk.LEFT, padx=5, pady=5)
@@ -340,15 +341,17 @@ class CharacterInfoEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
         slot_idx = self.get_char_slot()
 
         if not CTkMessageBox.askyesno(
-            "Confirm",
-            f"Apply character info changes to Slot {slot_idx + 1}?\n\nA backup will be created.",
+            t("Confirm"),
+            t(
+                "Apply character info changes to Slot {slot_idx}?\n\nA backup will be created."
+            ).format(slot_idx=slot_idx + 1),
             parent=self.parent,
         ):
             return
@@ -477,22 +480,26 @@ class CharacterInfoEditor:
                     self.load_character_info()
 
                     CTkMessageBox.showinfo(
-                        "Success",
-                        "Character info updated successfully!\n\nBackup saved to backup manager.",
+                        t("Success"),
+                        t(
+                            "Character info updated successfully!\n\nBackup saved to backup manager."
+                        ),
                         parent=self.parent,
                     )
                 else:
                     CTkMessageBox.showerror(
-                        "Error", "Offset not tracked", parent=self.parent
+                        t("Error"), t("Offset not tracked"), parent=self.parent
                     )
             else:
                 CTkMessageBox.showerror(
-                    "Error", "Could not access character data", parent=self.parent
+                    t("Error"), t("Could not access character data"), parent=self.parent
                 )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to apply changes:\n{str(e)}", parent=self.parent
+                t("Error"),
+                t("Failed to apply changes:\n{str}").format(str=str(e)),
+                parent=self.parent,
             )
 
     def _load_ng_level(self, save_file, slot_idx):

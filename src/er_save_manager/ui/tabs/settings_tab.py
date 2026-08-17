@@ -7,6 +7,8 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager import i18n
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.settings import get_settings
 from er_save_manager.ui.utils import bind_mousewheel, pick_file
@@ -78,13 +80,13 @@ class SettingsTab:
 
         ctk.CTkLabel(
             title_frame,
-            text="Settings",
+            text=t("Settings"),
             font=("Segoe UI", 16, "bold"),
         ).pack(side="left")
 
         ctk.CTkButton(
             title_frame,
-            text="Reset to Defaults",
+            text=t("Reset to Defaults"),
             command=self.reset_to_defaults,
             width=140,
         ).pack(side="right")
@@ -103,7 +105,7 @@ class SettingsTab:
 
         ctk.CTkLabel(
             frame,
-            text="General",
+            text=t("General"),
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
@@ -114,7 +116,7 @@ class SettingsTab:
             )
             ctk.CTkCheckBox(
                 frame,
-                text="Show EAC warning when loading .sl2 files",
+                text=t("Show EAC warning when loading .sl2 files"),
                 variable=self.show_eac_warning_var,
                 command=lambda: self.settings.set(
                     "show_eac_warning", self.show_eac_warning_var.get()
@@ -122,7 +124,7 @@ class SettingsTab:
             ).pack(anchor="w", padx=12, pady=5)
             ctk.CTkLabel(
                 frame,
-                text="Disabling this will skip the anti-cheat warning dialog.",
+                text=t("Disabling this will skip the anti-cheat warning dialog."),
                 text_color=("gray40", "gray70"),
                 font=("Segoe UI", 11),
             ).pack(anchor="w", padx=32, pady=(0, 10))
@@ -135,7 +137,7 @@ class SettingsTab:
         )
         ctk.CTkCheckBox(
             frame,
-            text="Remember last opened save file location",
+            text=t("Remember last opened save file location"),
             variable=self.remember_location_var,
             command=lambda: self.settings.set(
                 "remember_last_location", self.remember_location_var.get()
@@ -148,7 +150,7 @@ class SettingsTab:
         )
         ctk.CTkCheckBox(
             frame,
-            text="Show Linux save location warnings (non-default compatdata)",
+            text=t("Show Linux save location warnings (non-default compatdata)"),
             variable=self.show_linux_save_warning_var,
             command=lambda: self.settings.set(
                 "show_linux_save_warning", self.show_linux_save_warning_var.get()
@@ -156,7 +158,7 @@ class SettingsTab:
         ).pack(anchor="w", padx=12, pady=5)
         ctk.CTkLabel(
             frame,
-            text="Linux: Warns when save is not in the default compatdata folder.",
+            text=t("Linux: Warns when save is not in the default compatdata folder."),
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 10))
@@ -167,7 +169,7 @@ class SettingsTab:
         )
         ctk.CTkCheckBox(
             frame,
-            text="Show update notifications on startup",
+            text=t("Show update notifications on startup"),
             variable=self.show_update_notifications_var,
             command=lambda: self.settings.set(
                 "show_update_notifications",
@@ -176,7 +178,7 @@ class SettingsTab:
         ).pack(anchor="w", padx=12, pady=5)
         ctk.CTkLabel(
             frame,
-            text="Check for new versions and show notification dialog.",
+            text=t("Check for new versions and show notification dialog."),
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
@@ -187,7 +189,7 @@ class SettingsTab:
         )
         ctk.CTkCheckBox(
             frame,
-            text="Notify when save file is modified externally",
+            text=t("Notify when save file is modified externally"),
             variable=self.external_file_change_var,
             command=lambda: self.settings.set(
                 "external_file_change_notification",
@@ -196,7 +198,7 @@ class SettingsTab:
         ).pack(anchor="w", padx=12, pady=5)
         ctk.CTkLabel(
             frame,
-            text="Shows a dialog when another program modifies the loaded save.",
+            text=t("Shows a dialog when another program modifies the loaded save."),
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
@@ -207,7 +209,7 @@ class SettingsTab:
 
         ctk.CTkLabel(
             frame,
-            text="Backups",
+            text=t("Backups"),
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
@@ -217,7 +219,7 @@ class SettingsTab:
         )
         ctk.CTkCheckBox(
             frame,
-            text="Compress backups (zip) to save disk space",
+            text=t("Compress backups (zip) to save disk space"),
             variable=self.compress_backups_var,
             command=lambda: self.settings.set(
                 "compress_backups", self.compress_backups_var.get()
@@ -225,7 +227,9 @@ class SettingsTab:
         ).pack(anchor="w", padx=12, pady=5)
         ctk.CTkLabel(
             frame,
-            text="Reduces backup size by ~90% but takes slightly longer to create/restore.",
+            text=t(
+                "Reduces backup size by ~90% but takes slightly longer to create/restore."
+            ),
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 10))
@@ -233,7 +237,7 @@ class SettingsTab:
         # Max Backups
         max_backup_frame = ctk.CTkFrame(frame, fg_color="transparent")
         max_backup_frame.pack(fill="x", padx=12, pady=(0, 5))
-        ctk.CTkLabel(max_backup_frame, text="Maximum backups to keep:").pack(
+        ctk.CTkLabel(max_backup_frame, text=t("Maximum backups to keep:")).pack(
             side="left", padx=(0, 10)
         )
         self.max_backups_var = tk.StringVar(
@@ -262,11 +266,12 @@ class SettingsTab:
                 if existing_count > value:
                     excess = existing_count - value
                     proceed = CTkMessageBox.askyesno(
-                        "Lower Backup Limit",
-                        f"You currently have {existing_count} backups for the "
-                        f"loaded save.\n\nLowering the limit to {value} will "
-                        f"delete the {excess} oldest backup(s) the next time "
-                        "a backup is created.\n\nContinue?",
+                        t("Lower Backup Limit"),
+                        t(
+                            "You currently have {existing_count} backups for the loaded save.\n\nLowering the limit to {value} will delete the {excess} oldest backup(s) the next time a backup is created.\n\nContinue?"
+                        ).format(
+                            existing_count=existing_count, value=value, excess=excess
+                        ),
                         parent=self.root,
                     )
                     if not proceed:
@@ -281,7 +286,9 @@ class SettingsTab:
 
         ctk.CTkLabel(
             frame,
-            text="Older backups are automatically deleted when this limit is reached.",
+            text=t(
+                "Older backups are automatically deleted when this limit is reached."
+            ),
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 10))
@@ -292,7 +299,7 @@ class SettingsTab:
         )
         ctk.CTkCheckBox(
             frame,
-            text="Show warning when backups are automatically deleted",
+            text=t("Show warning when backups are automatically deleted"),
             variable=self.show_backup_pruning_warning_var,
             command=lambda: self.settings.set(
                 "show_backup_pruning_warning",
@@ -316,15 +323,16 @@ class SettingsTab:
 
         ctk.CTkLabel(
             parent,
-            text="Auto-Backup on Game Launch",
+            text=t("Auto-Backup on Game Launch"),
             font=("Segoe UI", 11, "bold"),
         ).pack(anchor="w", padx=12, pady=(0, 4))
 
         ctk.CTkLabel(
             parent,
             text=(
-                f"Automatically create a backup of your {profile.name} save "
-                "whenever the game launches."
+                t(
+                    "Automatically create a backup of your {name} save whenever the game launches."
+                ).format(name=profile.name)
             ),
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
@@ -350,7 +358,7 @@ class SettingsTab:
 
         ctk.CTkCheckBox(
             header_row,
-            text=f"Enable auto-backup for {profile.name}",
+            text=t("Enable auto-backup for {name}").format(name=profile.name),
             variable=enabled_var,
             font=("Segoe UI", 11),
             command=lambda k=profile.key: self._on_game_auto_backup_toggle(k),
@@ -364,7 +372,7 @@ class SettingsTab:
 
         ctk.CTkLabel(
             path_row,
-            text="Monitored save file:",
+            text=t("Monitored save file:"),
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w")
@@ -384,7 +392,7 @@ class SettingsTab:
 
         ctk.CTkButton(
             file_row,
-            text="Choose...",
+            text=t("Choose..."),
             width=80,
             command=lambda k=profile.key, p=profile: self._choose_game_auto_backup_save(
                 k, p
@@ -399,7 +407,7 @@ class SettingsTab:
         )
         ctk.CTkCheckBox(
             notify_row,
-            text="Show toast notification when a backup is created via game launch",
+            text=t("Show toast notification when a backup is created via game launch"),
             variable=self.show_auto_backup_notification_var,
             font=("Segoe UI", 11),
             command=lambda: self.settings.set(
@@ -422,7 +430,7 @@ class SettingsTab:
 
         interval_checkbox = ctk.CTkCheckBox(
             interval_row,
-            text="Also back up every",
+            text=t("Also back up every"),
             variable=interval_enabled_var,
             font=("Segoe UI", 11),
             state="normal" if enabled else "disabled",
@@ -456,7 +464,7 @@ class SettingsTab:
 
         ctk.CTkLabel(
             interval_row,
-            text="minutes while the game is running",
+            text=t("minutes while the game is running"),
             font=("Segoe UI", 11),
         ).pack(side="left")
 
@@ -475,8 +483,8 @@ class SettingsTab:
             save_path = game_cfg.get("save_path", "")
             if not save_path or not Path(save_path).exists():
                 CTkMessageBox.showwarning(
-                    "Configure Save File",
-                    "Please choose which save file to monitor for auto-backup.",
+                    t("Configure Save File"),
+                    t("Please choose which save file to monitor for auto-backup."),
                     parent=self.parent,
                 )
                 # Find the profile
@@ -548,8 +556,10 @@ class SettingsTab:
             options = [str(p) for p in found]
             if len(options) == 1:
                 choice = CTkMessageBox.askyesno(
-                    "Use Detected Save",
-                    f"Found save file:\n\n{options[0]}\n\nUse this for auto-backup?",
+                    t("Use Detected Save"),
+                    t(
+                        "Found save file:\n\n{options}\n\nUse this for auto-backup?"
+                    ).format(options=options[0]),
                     parent=self.parent,
                 )
                 if choice:
@@ -570,7 +580,7 @@ class SettingsTab:
 
                 ctk.CTkLabel(
                     dlg,
-                    text="Select save file to monitor:",
+                    text=t("Select save file to monitor:"),
                     font=("Segoe UI", 11),
                 ).pack(pady=(15, 8), padx=15)
 
@@ -599,16 +609,16 @@ class SettingsTab:
 
                 ctk.CTkButton(
                     dlg,
-                    text="Browse...",
+                    text=t("Browse..."),
                     width=100,
                     command=lambda: [
                         selected.__setitem__(0, "__browse__"),
                         dlg.destroy(),
                     ],
                 ).pack(side=tk.LEFT, padx=15, pady=(0, 12))
-                ctk.CTkButton(dlg, text="Cancel", width=80, command=dlg.destroy).pack(
-                    side=tk.RIGHT, padx=15, pady=(0, 12)
-                )
+                ctk.CTkButton(
+                    dlg, text=t("Cancel"), width=80, command=dlg.destroy
+                ).pack(side=tk.RIGHT, padx=15, pady=(0, 12))
                 dlg.wait_window()
 
                 if selected[0] and selected[0] != "__browse__":
@@ -618,7 +628,9 @@ class SettingsTab:
         # Fallback: file browser
         ext_str = " ".join(f"*{e}" for e in profile.extensions)
         file_path = pick_file(
-            title=f"Choose Save File for Auto-Backup - {profile.name}",
+            title=t("Choose Save File for Auto-Backup - {name}").format(
+                name=profile.name
+            ),
             filetypes=[(f"{profile.name} Save", ext_str), ("All files", "*.*")],
         )
         if file_path:
@@ -640,14 +652,48 @@ class SettingsTab:
 
         ctk.CTkLabel(
             frame,
-            text="User Interface",
+            text=t("User Interface"),
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
+
+        language_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        language_frame.pack(fill="x", padx=12, pady=5)
+
+        ctk.CTkLabel(language_frame, text=t("Language:")).pack(
+            side="left", padx=(0, 10)
+        )
+
+        # Endonyms keep the selector readable regardless of the active language
+        auto_label = t("Auto (system)")
+        self._language_options = {auto_label: "auto"}
+        for code in i18n.available_languages():
+            self._language_options[i18n.language_display_name(code)] = code
+        code_to_label = {v: k for k, v in self._language_options.items()}
+
+        saved_language = self.settings.get("language", "auto")
+        self.language_var = tk.StringVar(
+            value=code_to_label.get(saved_language, auto_label)
+        )
+        ctk.CTkComboBox(
+            language_frame,
+            variable=self.language_var,
+            values=list(self._language_options.keys()),
+            state="readonly",
+            width=150,
+            command=self._on_language_changed,
+        ).pack(side="left")
+
+        ctk.CTkLabel(
+            frame,
+            text=t("Restart required to apply."),
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+        ).pack(anchor="w", padx=32, pady=(0, 12))
 
         theme_frame = ctk.CTkFrame(frame, fg_color="transparent")
         theme_frame.pack(fill="x", padx=12, pady=5)
 
-        ctk.CTkLabel(theme_frame, text="Theme:").pack(side="left", padx=(0, 10))
+        ctk.CTkLabel(theme_frame, text=t("Theme:")).pack(side="left", padx=(0, 10))
 
         theme_value = self.settings.get("theme", "dark")
         if theme_value == "default":
@@ -664,7 +710,7 @@ class SettingsTab:
 
         ctk.CTkLabel(
             frame,
-            text="(Restart required for full theme application)",
+            text=t("(Restart required for full theme application)"),
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
@@ -672,7 +718,7 @@ class SettingsTab:
         scale_frame = ctk.CTkFrame(frame, fg_color="transparent")
         scale_frame.pack(fill="x", padx=12, pady=5)
 
-        ctk.CTkLabel(scale_frame, text="UI Scale:").pack(side="left", padx=(0, 10))
+        ctk.CTkLabel(scale_frame, text=t("UI Scale:")).pack(side="left", padx=(0, 10))
 
         _SCALE_OPTIONS = [
             "100%",
@@ -713,12 +759,23 @@ class SettingsTab:
 
         ctk.CTkLabel(
             frame,
-            text="Restart required to apply.",
+            text=t("Restart required to apply."),
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
             wraplength=520,
             justify="left",
         ).pack(anchor="w", padx=32, pady=(0, 12))
+
+    def _on_language_changed(self, value: str) -> None:
+        code = self._language_options.get(value, "auto")
+        self.settings.set("language", code)
+        CTkMessageBox.showinfo(
+            t("Language Changed"),
+            t("Language set to {name}.\n\nRestart the application to apply.").format(
+                name=value
+            ),
+            parent=self.parent,
+        )
 
     def _on_scale_changed(self, value: str, str_to_scale: dict) -> None:
         if value == "Auto":
@@ -726,8 +783,10 @@ class SettingsTab:
         else:
             self.settings.set("ui_scale", str_to_scale.get(value, 1.0))
         CTkMessageBox.showinfo(
-            "Scale Changed",
-            f"UI scale set to {value}.\n\nRestart the application to apply.",
+            t("Scale Changed"),
+            t("UI scale set to {value}.\n\nRestart the application to apply.").format(
+                value=value
+            ),
             parent=self.parent,
         )
 
@@ -773,12 +832,12 @@ class SettingsTab:
         ).pack(pady=(16, 4))
         ctk.CTkLabel(
             popup,
-            text="You found it!",
+            text=t("You found it!"),
             font=("Segoe UI", 13, "bold"),
         ).pack()
         ctk.CTkButton(
             popup,
-            text="OK",
+            text=t("OK"),
             width=80,
             command=popup.destroy,
         ).pack(pady=(10, 0))
@@ -801,13 +860,13 @@ class SettingsTab:
 
         ctk.CTkLabel(
             header,
-            text="Advanced",
+            text=t("Advanced"),
             font=("Segoe UI", 12, "bold"),
         ).pack(side="left")
 
         ctk.CTkButton(
             header,
-            text="Lock",
+            text=t("Lock"),
             width=60,
             fg_color=("gray70", "gray30"),
             hover_color=("gray60", "gray20"),
@@ -816,7 +875,7 @@ class SettingsTab:
 
         ctk.CTkLabel(
             frame,
-            text="These settings bypass safety checks. Use with care.",
+            text=t("These settings bypass safety checks. Use with care."),
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=12, pady=(0, 8))
@@ -827,7 +886,7 @@ class SettingsTab:
         )
         ctk.CTkCheckBox(
             frame,
-            text="Skip game-running check when loading saves",
+            text=t("Skip game-running check when loading saves"),
             variable=self.skip_game_check_var,
             command=lambda: self.settings.set(
                 "skip_game_running_check", self.skip_game_check_var.get()
@@ -835,7 +894,9 @@ class SettingsTab:
         ).pack(anchor="w", padx=12, pady=5)
         ctk.CTkLabel(
             frame,
-            text="Allows loading saves while the game is running. Risk of data loss.",
+            text=t(
+                "Allows loading saves while the game is running. Risk of data loss."
+            ),
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 10))
@@ -846,7 +907,7 @@ class SettingsTab:
         )
         ctk.CTkCheckBox(
             frame,
-            text="Verbose logging to file",
+            text=t("Verbose logging to file"),
             variable=self.verbose_logging_var,
             command=lambda: self.settings.set(
                 "verbose_logging", self.verbose_logging_var.get()
@@ -854,7 +915,7 @@ class SettingsTab:
         ).pack(anchor="w", padx=12, pady=5)
         ctk.CTkLabel(
             frame,
-            text="Writes er_save_manager.log next to the loaded save file.",
+            text=t("Writes er_save_manager.log next to the loaded save file."),
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
@@ -865,7 +926,7 @@ class SettingsTab:
         )
         ctk.CTkCheckBox(
             frame,
-            text="Enable icon export in Visual Item Picker",
+            text=t("Enable icon export in Visual Item Picker"),
             variable=self._icon_export_var,
             command=lambda: self.settings.set(
                 "icon_export_enabled", self._icon_export_var.get()
@@ -873,7 +934,9 @@ class SettingsTab:
         ).pack(anchor="w", padx=12, pady=5)
         ctk.CTkLabel(
             frame,
-            text="Adds a Save Icon button to the Visual Item Picker for exporting item icons.",
+            text=t(
+                "Adds a Save Icon button to the Visual Item Picker for exporting item icons."
+            ),
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
@@ -884,7 +947,7 @@ class SettingsTab:
         )
         ctk.CTkCheckBox(
             frame,
-            text="Show Warped Face Sliders button in Appearance tab",
+            text=t("Show Warped Face Sliders button in Appearance tab"),
             variable=self._debug_warped_face_var,
             command=lambda: self.settings.set(
                 "debug_warped_face_sliders", self._debug_warped_face_var.get()
@@ -892,7 +955,9 @@ class SettingsTab:
         ).pack(anchor="w", padx=12, pady=5)
         ctk.CTkLabel(
             frame,
-            text="Adds a button to edit the hidden secondary face deformation sliders on a selected preset.",
+            text=t(
+                "Adds a button to edit the hidden secondary face deformation sliders on a selected preset."
+            ),
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
             wraplength=560,
@@ -911,7 +976,7 @@ class SettingsTab:
 
         ctk.CTkLabel(
             frame,
-            text="Performance",
+            text=t("Performance"),
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
@@ -920,7 +985,9 @@ class SettingsTab:
         )
         ctk.CTkCheckBox(
             frame,
-            text="Exclude CPU 0 from Elden Ring, Nightreign and DS3 affinity on launch",
+            text=t(
+                "Exclude CPU 0 from Elden Ring, Nightreign and DS3 affinity on launch"
+            ),
             variable=self._cpu0_exclude_var,
             command=lambda: self.settings.set(
                 "cpu0_exclude_on_launch", self._cpu0_exclude_var.get()
@@ -929,9 +996,11 @@ class SettingsTab:
         ctk.CTkLabel(
             frame,
             text=(
-                "When eldenring.exe, nightreign.exe or darksoulsiii.exe is detected, "
-                "CPU 0 is removed from its affinity mask. "
-                "Can reduce stutter caused by Windows scheduling on core 0."
+                t(
+                    "When eldenring.exe, nightreign.exe or darksoulsiii.exe is detected, "
+                    "CPU 0 is removed from its affinity mask. "
+                    "Can reduce stutter caused by Windows scheduling on core 0."
+                )
             ),
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
@@ -952,8 +1021,10 @@ class SettingsTab:
 
     def reset_to_defaults(self):
         if CTkMessageBox.askyesno(
-            "Reset Settings",
-            "Are you sure you want to reset all settings to defaults?\n\nThis cannot be undone.",
+            t("Reset Settings"),
+            t(
+                "Are you sure you want to reset all settings to defaults?\n\nThis cannot be undone."
+            ),
             parent=self.parent,
         ):
             self.settings.reset_to_defaults()
@@ -997,14 +1068,18 @@ class SettingsTab:
             if hasattr(self, "_debug_warped_face_var"):
                 self._debug_warped_face_var.set(False)
             CTkMessageBox.showinfo(
-                "Success", "Settings have been reset to defaults.", parent=self.parent
+                t("Success"),
+                t("Settings have been reset to defaults."),
+                parent=self.parent,
             )
 
     def _on_theme_changed(self, value=None):
         theme = self.theme_var.get()
         self.settings.set("theme", theme)
         CTkMessageBox.showinfo(
-            "Theme Changed",
-            f"Theme changed to {theme}.\n\nPlease restart the application for full effect.",
+            t("Theme Changed"),
+            t(
+                "Theme changed to {theme}.\n\nPlease restart the application for full effect."
+            ).format(theme=theme),
             parent=self.parent,
         )

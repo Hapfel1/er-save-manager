@@ -14,6 +14,7 @@ import customtkinter as ctk
 
 from er_save_manager.character_manager import CharacterManager
 from er_save_manager.character_metrics import CharacterMetrics
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.progress_dialog import ProgressDialog
 from er_save_manager.ui.utils import bind_mousewheel, open_url, trace_variable
@@ -146,25 +147,25 @@ class CharacterBrowser:
 
         ctk.CTkLabel(
             top_frame,
-            text="Browse Community Characters",
+            text=t("Browse Community Characters"),
             font=("Segoe UI", 18, "bold"),
         ).pack(side=ctk.LEFT)
 
         ctk.CTkButton(
-            top_frame, text="Refresh", command=self.refresh_characters, width=90
+            top_frame, text=t("Refresh"), command=self.refresh_characters, width=90
         ).pack(side=ctk.RIGHT)
 
         filter_frame = ctk.CTkFrame(main_frame)
         filter_frame.pack(fill=ctk.X, pady=(0, 14))
 
-        ctk.CTkLabel(filter_frame, text="Search:").pack(side=ctk.LEFT, padx=(0, 8))
+        ctk.CTkLabel(filter_frame, text=t("Search:")).pack(side=ctk.LEFT, padx=(0, 8))
         self.search_var = ctk.StringVar(value="")
         trace_variable(self.search_var, "w", lambda *args: self.apply_filters())
         ctk.CTkEntry(filter_frame, textvariable=self.search_var, width=240).pack(
             side=ctk.LEFT
         )
 
-        ctk.CTkLabel(filter_frame, text="Filter:").pack(side=ctk.LEFT, padx=(18, 8))
+        ctk.CTkLabel(filter_frame, text=t("Filter:")).pack(side=ctk.LEFT, padx=(18, 8))
         self.filter_var = ctk.StringVar(value="All")
         filter_combo = ctk.CTkComboBox(
             filter_frame,
@@ -181,7 +182,7 @@ class CharacterBrowser:
         filter_combo.pack(side=ctk.LEFT)
         filter_combo.bind("<<ComboboxSelected>>", lambda _e=None: self.apply_filters())
 
-        ctk.CTkLabel(filter_frame, text="Sort:").pack(side=ctk.LEFT, padx=(18, 8))
+        ctk.CTkLabel(filter_frame, text=t("Sort:")).pack(side=ctk.LEFT, padx=(18, 8))
         self.sort_var = ctk.StringVar(value="Recent")
         sort_combo = ctk.CTkComboBox(
             filter_frame,
@@ -218,7 +219,7 @@ class CharacterBrowser:
 
         ctk.CTkLabel(
             preview_scroll,
-            text="Preview",
+            text=t("Preview"),
             font=("Segoe UI", 14, "bold"),
         ).pack(anchor=ctk.W, padx=10, pady=(10, 2))
 
@@ -234,7 +235,9 @@ class CharacterBrowser:
         slot_frame = ctk.CTkFrame(preview_scroll)
         slot_frame.pack(fill=ctk.X, padx=10, pady=(60, 10))
 
-        ctk.CTkLabel(slot_frame, text="Target Slot:").pack(side=ctk.LEFT, padx=(0, 8))
+        ctk.CTkLabel(slot_frame, text=t("Target Slot:")).pack(
+            side=ctk.LEFT, padx=(0, 8)
+        )
         self.target_slot_var = tk.IntVar(value=1)
         slot_names = self._get_slot_display_names()
         self.target_slot_combo = ctk.CTkComboBox(
@@ -249,7 +252,7 @@ class CharacterBrowser:
 
         import_button = ctk.CTkButton(
             slot_frame,
-            text="Download & Import",
+            text=t("Download & Import"),
             command=self.import_to_slot,
             width=180,
         )
@@ -265,14 +268,16 @@ class CharacterBrowser:
 
         title_label = ctk.CTkLabel(
             scroll_frame,
-            text="Contribute Your Character",
+            text=t("Contribute Your Character"),
             font=("Segoe UI", 18, "bold"),
         )
         title_label.pack(pady=(10, 5))
 
         desc_label = ctk.CTkLabel(
             scroll_frame,
-            text="Share your character build with the community! Provide screenshots and details.",
+            text=t(
+                "Share your character build with the community! Provide screenshots and details."
+            ),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         )
@@ -284,13 +289,13 @@ class CharacterBrowser:
         notice.pack(fill=ctk.X, pady=(0, 20), padx=20)
         ctk.CTkLabel(
             notice,
-            text="⚠ GitHub Account Required",
+            text=t("⚠ GitHub Account Required"),
             font=("Segoe UI", 14, "bold"),
             text_color=("#b45309", "#fbbf24"),
         ).pack(pady=(12, 4))
         ctk.CTkLabel(
             notice,
-            text="Log into GitHub in your browser before submitting",
+            text=t("Log into GitHub in your browser before submitting"),
             font=("Segoe UI", 12),
             text_color=("#6b7280", "#d1d5db"),
         ).pack(pady=(0, 12))
@@ -306,7 +311,7 @@ class CharacterBrowser:
 
         ctk.CTkLabel(
             slot_section,
-            text="Character Slot:",
+            text=t("Character Slot:"),
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor=ctk.W, pady=(0, 5))
 
@@ -333,7 +338,7 @@ class CharacterBrowser:
 
         ctk.CTkLabel(
             desc_section,
-            text="Description:",
+            text=t("Description:"),
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor=ctk.W, pady=(0, 5))
 
@@ -352,7 +357,7 @@ class CharacterBrowser:
 
         ctk.CTkLabel(
             screenshots_section,
-            text="Screenshots (Required):",
+            text=t("Screenshots (Required):"),
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor=ctk.W, pady=(0, 8))
 
@@ -380,14 +385,14 @@ class CharacterBrowser:
 
         ctk.CTkLabel(
             mod_section,
-            text="Overhaul Mod:",
+            text=t("Overhaul Mod:"),
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor=ctk.W, pady=(0, 8))
 
         self.overhaul_used_var = ctk.BooleanVar(value=False)
         ctk.CTkCheckBox(
             mod_section,
-            text="Uses an overhaul mod",
+            text=t("Uses an overhaul mod"),
             variable=self.overhaul_used_var,
             command=self._toggle_overhaul_details,
         ).pack(anchor=ctk.W, pady=(0, 8))
@@ -400,7 +405,7 @@ class CharacterBrowser:
             self.overhaul_details_frame, fg_color="transparent"
         )
         overhaul_name_frame.pack(fill=ctk.X, pady=(10, 0), padx=10)
-        ctk.CTkLabel(overhaul_name_frame, text="Overhaul:").pack(
+        ctk.CTkLabel(overhaul_name_frame, text=t("Overhaul:")).pack(
             side=ctk.LEFT, padx=(0, 8)
         )
         self.overhaul_name_var = ctk.StringVar(value="Convergence")
@@ -439,8 +444,10 @@ class CharacterBrowser:
         ctk.CTkLabel(
             login_notice,
             text=(
-                "Make sure you're logged into GitHub in your browser before submitting.\n"
-                "If the GitHub home page opens, log in first then submit again."
+                t(
+                    "Make sure you're logged into GitHub in your browser before submitting.\n"
+                    "If the GitHub home page opens, log in first then submit again."
+                )
             ),
             justify=ctk.LEFT,
             font=("Segoe UI", 11),
@@ -448,7 +455,7 @@ class CharacterBrowser:
 
         link = ctk.CTkLabel(
             login_notice,
-            text="https://github.com/login",
+            text=t("https://github.com/login"),
             text_color=("#2563eb", "#60a5fa"),
             cursor="hand2",
             font=("Segoe UI", 11),
@@ -461,7 +468,7 @@ class CharacterBrowser:
 
         ctk.CTkButton(
             submit_frame,
-            text="Submit to GitHub",
+            text=t("Submit to GitHub"),
             command=self.submit_contribution,
             width=200,
             height=40,
@@ -495,7 +502,7 @@ class CharacterBrowser:
         )
         file_label.pack(side=ctk.LEFT, fill=ctk.X, expand=True)
 
-        ctk.CTkButton(frame, text="Browse...", command=command, width=100).pack(
+        ctk.CTkButton(frame, text=t("Browse..."), command=command, width=100).pack(
             side=ctk.RIGHT
         )
 
@@ -524,7 +531,7 @@ class CharacterBrowser:
     # ---------------------- Image selection ----------------------
     def select_face_image(self):
         path = filedialog.askopenfilename(
-            title="Select Face Screenshot",
+            title=t("Select Face Screenshot"),
             filetypes=[("Image Files", "*.png *.jpg *.jpeg")],
         )
         if path:
@@ -535,7 +542,7 @@ class CharacterBrowser:
 
     def select_body_image(self):
         path = filedialog.askopenfilename(
-            title="Select Body Screenshot",
+            title=t("Select Body Screenshot"),
             filetypes=[("Image Files", "*.png *.jpg *.jpeg")],
         )
         if path:
@@ -546,7 +553,7 @@ class CharacterBrowser:
 
     def select_preview_image(self):
         path = filedialog.askopenfilename(
-            title="Select Preview Screenshot",
+            title=t("Select Preview Screenshot"),
             filetypes=[("Image Files", "*.png *.jpg *.jpeg")],
         )
         if path:
@@ -581,7 +588,7 @@ class CharacterBrowser:
 
         if all_missing:
             CTkMessageBox.showwarning(
-                "Missing Information",
+                t("Missing Information"),
                 "Please provide the following:\n\n• " + "\n• ".join(all_missing),
                 parent=self.dialog,
             )
@@ -589,8 +596,8 @@ class CharacterBrowser:
 
         if not self.save_file:
             CTkMessageBox.showerror(
-                "No Save File",
-                "No save file loaded. Please load a save file first.",
+                t("No Save File"),
+                t("No save file loaded. Please load a save file first."),
                 parent=self.dialog,
             )
             return
@@ -600,8 +607,10 @@ class CharacterBrowser:
         char = self.save_file.character_slots[slot_index]
         if char.is_empty():
             CTkMessageBox.showerror(
-                "Empty Slot",
-                f"Slot {slot_index + 1} is empty. Please select a slot with a character.",
+                t("Empty Slot"),
+                t(
+                    "Slot {slot_index} is empty. Please select a slot with a character."
+                ).format(slot_index=slot_index + 1),
                 parent=self.dialog,
             )
             return
@@ -689,8 +698,10 @@ class CharacterBrowser:
 
             traceback.print_exc()
             CTkMessageBox.showerror(
-                "Submission Failed",
-                f"Failed to prepare character submission:\n\n{str(e)}",
+                t("Submission Failed"),
+                t("Failed to prepare character submission:\n\n{str}").format(
+                    str=str(e)
+                ),
                 parent=self.dialog,
             )
 
@@ -711,13 +722,15 @@ class CharacterBrowser:
 
         ctk.CTkLabel(
             frame,
-            text="GitHub not logged in",
+            text=t("GitHub not logged in"),
             font=("Segoe UI", 14, "bold"),
         ).pack(anchor=ctk.W, pady=(0, 10))
 
         ctk.CTkLabel(
             frame,
-            text="Log in to GitHub, then copy and paste this link in your browser to finish the submission.",
+            text=t(
+                "Log in to GitHub, then copy and paste this link in your browser to finish the submission."
+            ),
             justify=ctk.LEFT,
         ).pack(anchor=ctk.W)
 
@@ -730,22 +743,22 @@ class CharacterBrowser:
             def copy_url():
                 self.dialog.clipboard_clear()
                 self.dialog.clipboard_append(submission_url)
-                copy_btn.configure(text="✓ Copied!")
-                self.dialog.after(2000, lambda: copy_btn.configure(text="Copy Link"))
+                copy_btn.configure(text=t("✓ Copied!"))
+                self.dialog.after(2000, lambda: copy_btn.configure(text=t("Copy Link")))
 
             copy_btn = ctk.CTkButton(
-                frame, text="Copy Link", command=copy_url, width=120
+                frame, text=t("Copy Link"), command=copy_url, width=120
             )
             copy_btn.pack(pady=6)
         else:
             ctk.CTkLabel(
                 frame,
-                text="Failed to generate submission URL. Please try again.",
+                text=t("Failed to generate submission URL. Please try again."),
                 text_color=("red", "lightcoral"),
             ).pack(pady=10)
 
         ctk.CTkButton(
-            frame, text="Close", command=error_dialog.destroy, width=120
+            frame, text=t("Close"), command=error_dialog.destroy, width=120
         ).pack(pady=(6, 0))
 
     # ---------------------- Browse logic ----------------------
@@ -794,7 +807,9 @@ class CharacterBrowser:
                         widget.destroy()
                     error_label = ctk.CTkLabel(
                         self.grid_container,
-                        text=f"Failed to load characters:\n{error_msg}",
+                        text=t("Failed to load characters:\n{error_msg}").format(
+                            error_msg=error_msg
+                        ),
                         font=("Segoe UI", 12),
                         text_color=("red", "red"),
                     )
@@ -866,7 +881,7 @@ class CharacterBrowser:
         if not self.filtered_characters:
             no_results = ctk.CTkLabel(
                 self.grid_container,
-                text="No characters found",
+                text=t("No characters found"),
                 font=("Segoe UI", 14),
                 text_color=("gray50", "gray60"),
             )
@@ -1110,7 +1125,7 @@ class CharacterBrowser:
         author = character.get("author", "Unknown")
         ctk.CTkLabel(
             self.preview_area,
-            text=f"by {author}",
+            text=t("by {author}").format(author=author),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         ).pack(pady=(0, 15))
@@ -1150,7 +1165,7 @@ class CharacterBrowser:
 
                 if face_url:
                     face_label = ctk.CTkLabel(
-                        screenshot_container, text="Loading face..."
+                        screenshot_container, text=t("Loading face...")
                     )
                     face_label.pack(side=ctk.LEFT, padx=5, expand=True)
                     self._load_screenshot(
@@ -1159,7 +1174,7 @@ class CharacterBrowser:
 
                 if body_url:
                     body_label = ctk.CTkLabel(
-                        screenshot_container, text="Loading body..."
+                        screenshot_container, text=t("Loading body...")
                     )
                     body_label.pack(side=ctk.LEFT, padx=5, expand=True)
                     self._load_screenshot(
@@ -1177,7 +1192,9 @@ class CharacterBrowser:
 
         stats_header = ctk.CTkLabel(
             self.details_frame,
-            text=f"Level {level} {char_class}{ng_text}",
+            text=t("Level {level} {char_class}{ng_text}").format(
+                level=level, char_class=char_class, ng_text=ng_text
+            ),
             font=("Segoe UI", 14, "bold"),
         )
         stats_header.pack(anchor=ctk.W, pady=(0, 10))
@@ -1186,7 +1203,7 @@ class CharacterBrowser:
         if playtime:
             playtime_label = ctk.CTkLabel(
                 self.details_frame,
-                text=f"Playtime: {playtime}",
+                text=t("Playtime: {playtime}").format(playtime=playtime),
                 font=("Segoe UI", 11),
                 text_color=("gray40", "gray70"),
             )
@@ -1242,7 +1259,7 @@ class CharacterBrowser:
 
             ctk.CTkLabel(
                 resources_frame,
-                text="Max Resources:",
+                text=t("Max Resources:"),
                 font=("Segoe UI", 11, "bold"),
                 text_color=("#0369a1", "#7dd3fc"),
             ).pack(anchor=ctk.W, padx=10, pady=(8, 4))
@@ -1280,7 +1297,7 @@ class CharacterBrowser:
 
             ctk.CTkLabel(
                 prog_frame,
-                text="Progression:",
+                text=t("Progression:"),
                 font=("Segoe UI", 11, "bold"),
                 text_color=("#1e40af", "#93c5fd"),
             ).pack(anchor=ctk.W, padx=10, pady=(8, 2))
@@ -1291,7 +1308,7 @@ class CharacterBrowser:
             if ng_level:
                 ctk.CTkLabel(
                     prog_stats,
-                    text=f"🔄 Playthrough: {ng_level}",
+                    text=t("🔄 Playthrough: {ng_level}").format(ng_level=ng_level),
                     font=("Segoe UI", 10),
                     text_color=("#1e40af", "#93c5fd"),
                 ).pack(anchor=ctk.W, pady=1)
@@ -1299,7 +1316,9 @@ class CharacterBrowser:
             if bosses_defeated is not None:
                 ctk.CTkLabel(
                     prog_stats,
-                    text=f"⚔️ Bosses Defeated: {bosses_defeated}",
+                    text=t("⚔️ Bosses Defeated: {bosses_defeated}").format(
+                        bosses_defeated=bosses_defeated
+                    ),
                     font=("Segoe UI", 10),
                     text_color=("#1e40af", "#93c5fd"),
                 ).pack(anchor=ctk.W, pady=1)
@@ -1307,7 +1326,9 @@ class CharacterBrowser:
             if graces_unlocked is not None:
                 ctk.CTkLabel(
                     prog_stats,
-                    text=f"🔥 Graces Unlocked: {graces_unlocked}",
+                    text=t("🔥 Graces Unlocked: {graces_unlocked}").format(
+                        graces_unlocked=graces_unlocked
+                    ),
                     font=("Segoe UI", 10),
                     text_color=("#1e40af", "#93c5fd"),
                 ).pack(anchor=ctk.W, pady=1)
@@ -1323,7 +1344,7 @@ class CharacterBrowser:
 
             ctk.CTkLabel(
                 conv_frame,
-                text="⚡ Convergence Mod Items:",
+                text=t("⚡ Convergence Mod Items:"),
                 font=("Segoe UI", 11, "bold"),
                 text_color=("#92400e", "#fbbf24"),
             ).pack(anchor=ctk.W, padx=10, pady=(8, 4))
@@ -1354,7 +1375,7 @@ class CharacterBrowser:
         if equipment and isinstance(equipment, dict):
             equip_label = ctk.CTkLabel(
                 self.details_frame,
-                text="Equipment:",
+                text=t("Equipment:"),
                 font=("Segoe UI", 12, "bold"),
             )
             equip_label.pack(anchor=ctk.W, pady=(10, 5))
@@ -1377,7 +1398,7 @@ class CharacterBrowser:
         if description:
             desc_label = ctk.CTkLabel(
                 self.details_frame,
-                text="Description:",
+                text=t("Description:"),
                 font=("Segoe UI", 12, "bold"),
             )
             desc_label.pack(anchor=ctk.W, pady=(10, 5))
@@ -1395,7 +1416,7 @@ class CharacterBrowser:
         if tags:
             tags_label = ctk.CTkLabel(
                 self.details_frame,
-                text=f"Tags: {', '.join(tags)}",
+                text=t("Tags: {join}").format(join=", ".join(tags)),
                 font=("Segoe UI", 11),
                 text_color=("gray40", "gray70"),
             )
@@ -1442,7 +1463,9 @@ class CharacterBrowser:
 
         stats_label = ctk.CTkLabel(
             metrics_frame,
-            text=f"👍 {likes} likes  |  ⬇ {downloads} downloads",
+            text=t("👍 {likes} likes  |  ⬇ {downloads} downloads").format(
+                likes=likes, downloads=downloads
+            ),
             font=("Segoe UI", 12),
             text_color=("gray40", "gray70"),
         )
@@ -1456,7 +1479,7 @@ class CharacterBrowser:
 
         like_btn = ctk.CTkButton(
             metrics_frame,
-            text="👍 Like" if not has_liked else "👍 Liked",
+            text=t("👍 Like") if not has_liked else t("👍 Liked"),
             command=vote_like,
             width=90,
             height=32,
@@ -1467,7 +1490,7 @@ class CharacterBrowser:
 
         report_btn = ctk.CTkButton(
             metrics_frame,
-            text="🚩 Report",
+            text=t("🚩 Report"),
             command=lambda: self._show_report_dialog(character),
             width=90,
             height=32,
@@ -1497,7 +1520,7 @@ class CharacterBrowser:
         def _download_and_set():
             path = self.manager.download_screenshot(char_id, screenshot_url, suffix)
             if not path or not path.exists():
-                self.dialog.after(0, lambda: label.configure(text="No image"))
+                self.dialog.after(0, lambda: label.configure(text=t("No image")))
                 return
             try:
                 img = Image.open(path)
@@ -1513,7 +1536,7 @@ class CharacterBrowser:
 
                 self.dialog.after(0, _apply)
             except Exception:
-                self.dialog.after(0, lambda: label.configure(text="Failed to load"))
+                self.dialog.after(0, lambda: label.configure(text=t("Failed to load")))
 
         threading.Thread(target=_download_and_set, daemon=True).start()
 
@@ -1521,16 +1544,16 @@ class CharacterBrowser:
         """Import selected character to chosen slot."""
         if not self.current_character:
             CTkMessageBox.showwarning(
-                "No Character Selected",
-                "Please select a character to import",
+                t("No Character Selected"),
+                t("Please select a character to import"),
                 parent=self.dialog,
             )
             return
 
         if not self.save_file:
             CTkMessageBox.showerror(
-                "No Save File",
-                "No save file loaded. Please load a save file first.",
+                t("No Save File"),
+                t("No save file loaded. Please load a save file first."),
                 parent=self.dialog,
             )
             return
@@ -1578,7 +1601,7 @@ class CharacterBrowser:
         message += "\n\nThe character's SteamID will be automatically synced to match your save file."
 
         if not CTkMessageBox.askyesno(
-            "Confirm Import",
+            t("Confirm Import"),
             message,
             parent=self.dialog,
             font_size=12,
@@ -1695,8 +1718,10 @@ class CharacterBrowser:
                     slot_str = f"Slot {target_slot + 1}"
                     self.refresh_slot_names()
                     CTkMessageBox.showinfo(
-                        "Import Successful",
-                        f"'{imported_name}' has been imported to {slot_str}!",
+                        t("Import Successful"),
+                        t("'{imported_name}' has been imported to {slot_str}!").format(
+                            imported_name=imported_name, slot_str=slot_str
+                        ),
                         parent=self.dialog,
                     )
 
@@ -1708,8 +1733,10 @@ class CharacterBrowser:
                 def show_error(error_msg=e):
                     progress.close()
                     CTkMessageBox.showerror(
-                        "Import Failed",
-                        f"Failed to import character:\n{error_msg}",
+                        t("Import Failed"),
+                        t("Failed to import character:\n{error_msg}").format(
+                            error_msg=error_msg
+                        ),
                         parent=self.dialog,
                     )
 
@@ -1739,26 +1766,26 @@ class CharacterBrowser:
         notice_frame.pack(fill=ctk.X, pady=(0, 15))
         ctk.CTkLabel(
             notice_frame,
-            text="⚠ GitHub Account Required",
+            text=t("⚠ GitHub Account Required"),
             font=("Segoe UI", 13, "bold"),
             text_color=("#b45309", "#fbbf24"),
         ).pack(pady=(10, 4))
         ctk.CTkLabel(
             notice_frame,
-            text="Log into GitHub in your browser before reporting",
+            text=t("Log into GitHub in your browser before reporting"),
             font=("Segoe UI", 11),
             text_color=("#6b7280", "#d1d5db"),
         ).pack(pady=(0, 10))
 
         ctk.CTkLabel(
             main_frame,
-            text=f"Report: {character.get('name', 'Character')}",
+            text=t("Report: {get}").format(get=character.get("name", "Character")),
             font=("Segoe UI", 16, "bold"),
         ).pack(anchor=ctk.W, pady=(0, 5))
 
         ctk.CTkLabel(
             main_frame,
-            text=f"by {character.get('author', 'Unknown')}",
+            text=t("by {get}").format(get=character.get("author", "Unknown")),
             font=("Segoe UI", 11),
             text_color=("#6b7280", "#9ca3af"),
         ).pack(anchor=ctk.W, pady=(0, 15))
@@ -1769,7 +1796,7 @@ class CharacterBrowser:
         info_frame.pack(fill=ctk.X, pady=(0, 20))
         ctk.CTkLabel(
             info_frame,
-            text="⚠️ Please report only genuine issues (inappropriate content, etc.)",
+            text=t("⚠️ Please report only genuine issues (inappropriate content, etc.)"),
             font=("Segoe UI", 11),
             text_color=("#92400e", "#fbbf24"),
             wraplength=550,
@@ -1777,7 +1804,7 @@ class CharacterBrowser:
 
         ctk.CTkLabel(
             main_frame,
-            text="Reason for report:",
+            text=t("Reason for report:"),
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor=ctk.W, pady=(0, 8))
 
@@ -1792,8 +1819,8 @@ class CharacterBrowser:
             message = report_text.get("1.0", tk.END).strip()
             if not message:
                 CTkMessageBox.showerror(
-                    "Error",
-                    "Please enter a reason for the report.",
+                    t("Error"),
+                    t("Please enter a reason for the report."),
                     parent=report_dialog,
                 )
                 return
@@ -1802,7 +1829,7 @@ class CharacterBrowser:
 
         ctk.CTkButton(
             button_frame,
-            text="Submit Report",
+            text=t("Submit Report"),
             command=submit_report,
             width=150,
             height=35,
@@ -1812,7 +1839,7 @@ class CharacterBrowser:
 
         ctk.CTkButton(
             button_frame,
-            text="Cancel",
+            text=t("Cancel"),
             command=report_dialog.destroy,
             width=120,
             height=35,
@@ -1859,7 +1886,9 @@ class CharacterBrowser:
 
         # Show confirmation
         CTkMessageBox.showinfo(
-            "Report Submitted",
-            "Your browser has opened to GitHub.\n\nClick 'Submit new issue' to complete the report.",
+            t("Report Submitted"),
+            t(
+                "Your browser has opened to GitHub.\n\nClick 'Submit new issue' to complete the report."
+            ),
             parent=self.dialog,
         )

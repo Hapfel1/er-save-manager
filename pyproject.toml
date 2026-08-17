@@ -41,6 +41,7 @@ packages = ["src/er_save_manager"]
 
 [dependency-groups]
 dev = [
+    "babel>=2.16",
     "pyinstaller>=6.0",
     "cx_Freeze>=7.0",
     "tomlkit>=0.12.0",

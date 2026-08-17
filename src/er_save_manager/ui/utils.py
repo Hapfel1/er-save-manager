@@ -6,6 +6,8 @@ import shutil
 import subprocess
 import webbrowser
 
+from er_save_manager.i18n import t
+
 
 def trace_variable(var, mode, callback):
     """
@@ -282,8 +284,10 @@ def game_blocks_write(parent, process_name: str, game_name: str) -> bool:
         return False
 
     CTkMessageBox.showerror(
-        "Game is running",
-        f"Please close {game_name} before modifying save files.",
+        t("Game is running"),
+        t("Please close {game_name} before modifying save files.").format(
+            game_name=game_name
+        ),
         parent=parent,
     )
     return True

@@ -11,6 +11,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.toast import show_toast
 from er_save_manager.ui.utils import bind_mousewheel, pick_file
@@ -188,10 +189,10 @@ def _ask_value(title: str, text: str, parent) -> str | None:
 
     entry.bind("<Return>", _ok)
     entry.bind("<Escape>", lambda _e: dialog.destroy())
-    ctk.CTkButton(btn_row, text="OK", command=_ok, width=80).pack(side="left")
+    ctk.CTkButton(btn_row, text=t("OK"), command=_ok, width=80).pack(side="left")
     ctk.CTkButton(
         btn_row,
-        text="Cancel",
+        text=t("Cancel"),
         command=dialog.destroy,
         width=80,
         fg_color=("gray70", "gray35"),
@@ -720,8 +721,6 @@ class InventoryEditor:
         self._forced_selection: tuple | None = None
         self._affinity_icon_lbl: ctk.CTkLabel | None = None
         self._aow_icon_lbl: ctk.CTkLabel | None = None
-        self._visual_inventory_win = None
-        self._icon_browser_win = None
 
         self._search_var: ctk.StringVar | None = None
         self._search_cat_var: ctk.StringVar | None = None
@@ -768,7 +767,7 @@ class InventoryEditor:
         search_row = ctk.CTkFrame(parent, fg_color="transparent")
         search_row.pack(fill=ctk.X, padx=10, pady=(0, 4))
 
-        ctk.CTkLabel(search_row, text="Search:", width=54).pack(side=ctk.LEFT)
+        ctk.CTkLabel(search_row, text=t("Search:"), width=54).pack(side=ctk.LEFT)
         self._search_var = ctk.StringVar()
         self._search_var.trace_add("write", lambda *_: self._search_items())
         ctk.CTkEntry(search_row, textvariable=self._search_var, width=160).pack(
@@ -790,7 +789,7 @@ class InventoryEditor:
         browse_row.pack(fill=ctk.X, padx=10, pady=(0, 4))
         self._browse_btn = ctk.CTkButton(
             browse_row,
-            text="Visual Item Picker...",
+            text=t("Visual Item Picker..."),
             height=28,
             command=self._open_icon_browser,
             fg_color=("#6a3fa0", "#7c4dac"),
@@ -836,7 +835,7 @@ class InventoryEditor:
 
         ctk.CTkButton(
             top_btn_row,
-            text="Add Item",
+            text=t("Add Item"),
             command=self.add_item,
             height=30,
             font=("Segoe UI", 11, "bold"),
@@ -844,7 +843,7 @@ class InventoryEditor:
 
         ctk.CTkButton(
             top_btn_row,
-            text="Batch Add Category",
+            text=t("Batch Add Category"),
             command=self.batch_add_category,
             height=30,
             fg_color=("#3b82f6", "#2563eb"),
@@ -856,7 +855,7 @@ class InventoryEditor:
 
         self.loadout_switch = ctk.CTkSwitch(
             bot_btn_row,
-            text="Loadout Mode",
+            text=t("Loadout Mode"),
             variable=self.loadout_mode_var,
             font=("Segoe UI", 11),
             width=40,
@@ -867,7 +866,7 @@ class InventoryEditor:
 
         ctk.CTkButton(
             bot_btn_row,
-            text="Loadouts...",
+            text=t("Loadouts..."),
             command=self.open_loadouts,
             height=28,  # Slightly shorter to separate from main actions
             width=90,
@@ -876,7 +875,7 @@ class InventoryEditor:
 
         ctk.CTkButton(
             bot_btn_row,
-            text="Import Build",
+            text=t("Import Build"),
             command=self._import_nyasu,
             height=28,  # Slightly shorter
             width=90,
@@ -888,7 +887,7 @@ class InventoryEditor:
         opts.columnconfigure(1, weight=1)
         opts.columnconfigure(3, weight=1)
 
-        ctk.CTkLabel(opts, text="Quantity:", anchor="w").grid(
+        ctk.CTkLabel(opts, text=t("Quantity:"), anchor="w").grid(
             row=0, column=0, sticky=ctk.W, padx=(0, 6), pady=4
         )
         self.inv_quantity_var = ctk.IntVar(value=1)
@@ -897,7 +896,7 @@ class InventoryEditor:
         )
         self._quantity_entry.grid(row=0, column=1, sticky=ctk.W, pady=4)
 
-        ctk.CTkLabel(opts, text="Upgrade:", anchor="w").grid(
+        ctk.CTkLabel(opts, text=t("Upgrade:"), anchor="w").grid(
             row=0, column=2, sticky=ctk.W, padx=(14, 6), pady=4
         )
         self.inv_upgrade_var = ctk.StringVar(value="0")
@@ -911,7 +910,7 @@ class InventoryEditor:
         self._upgrade_combo.grid(row=0, column=3, sticky=ctk.W, pady=4)
         _patch_combo_scroll(self._upgrade_combo)
 
-        ctk.CTkLabel(opts, text="Affinity:", anchor="w").grid(
+        ctk.CTkLabel(opts, text=t("Affinity:"), anchor="w").grid(
             row=1, column=0, sticky=ctk.W, padx=(0, 6), pady=4
         )
         self.inv_affinity_var = ctk.StringVar(value="Standard")
@@ -930,7 +929,7 @@ class InventoryEditor:
         self._affinity_combo.pack(side=ctk.LEFT)
         _patch_combo_scroll(self._affinity_combo)
 
-        ctk.CTkLabel(opts, text="Location:", anchor="w").grid(
+        ctk.CTkLabel(opts, text=t("Location:"), anchor="w").grid(
             row=1, column=2, sticky=ctk.W, padx=(14, 6), pady=4
         )
         self.inv_location_var = ctk.StringVar(value="held")
@@ -942,7 +941,7 @@ class InventoryEditor:
         )
         self._location_combo.grid(row=1, column=3, sticky=ctk.W, pady=4)
 
-        ctk.CTkLabel(opts, text="Ash of War:", anchor="w").grid(
+        ctk.CTkLabel(opts, text=t("Ash of War:"), anchor="w").grid(
             row=2, column=0, sticky=ctk.W, padx=(0, 6), pady=4
         )
         self.inv_aow_var = ctk.StringVar(value="None")
@@ -960,7 +959,7 @@ class InventoryEditor:
         self._aow_label.pack(side=ctk.LEFT)
         self._aow_pick_btn = ctk.CTkButton(
             opts,
-            text="Pick...",
+            text=t("Pick..."),
             width=60,
             height=24,
             command=self._pick_aow,
@@ -969,7 +968,7 @@ class InventoryEditor:
         self._aow_pick_btn.grid(row=2, column=2, sticky=ctk.W, pady=4)
         self._aow_clear_btn = ctk.CTkButton(
             opts,
-            text="Clear",
+            text=t("Clear"),
             width=55,
             height=24,
             command=self._clear_aow,
@@ -984,7 +983,7 @@ class InventoryEditor:
 
         self._selected_item_label = ctk.CTkLabel(
             parent,
-            text="No item selected",
+            text=t("No item selected"),
             text_color=("gray50", "gray60"),
             font=("Segoe UI", 10),
             anchor="w",
@@ -1009,7 +1008,7 @@ class InventoryEditor:
 
         ctk.CTkLabel(
             header,
-            text="Current Inventory",
+            text=t("Current Inventory"),
             font=("Segoe UI", 13, "bold"),
         ).pack(side=ctk.LEFT)
 
@@ -1021,11 +1020,11 @@ class InventoryEditor:
             width=120,
             command=lambda _e=None: self.refresh_inventory(),
         ).pack(side=ctk.RIGHT, padx=(6, 0))
-        ctk.CTkLabel(header, text="Show:").pack(side=ctk.RIGHT)
+        ctk.CTkLabel(header, text=t("Show:")).pack(side=ctk.RIGHT)
 
         cat_row = ctk.CTkFrame(parent, fg_color="transparent")
         cat_row.pack(fill=ctk.X, padx=10, pady=(0, 4))
-        ctk.CTkLabel(cat_row, text="Category:", width=60).pack(side=ctk.LEFT)
+        ctk.CTkLabel(cat_row, text=t("Category:"), width=60).pack(side=ctk.LEFT)
         self._inv_cat_var = ctk.StringVar(value="All")
         ctk.CTkComboBox(
             cat_row,
@@ -1038,25 +1037,25 @@ class InventoryEditor:
         search_row = ctk.CTkFrame(parent, fg_color="transparent")
         search_row.pack(fill=ctk.X, padx=10, pady=(0, 4))
 
-        ctk.CTkLabel(search_row, text="Filter:", width=42).pack(side=ctk.LEFT)
+        ctk.CTkLabel(search_row, text=t("Filter:"), width=42).pack(side=ctk.LEFT)
         self._inv_search_var = ctk.StringVar()
         self._inv_search_var.trace_add("write", lambda *_: self._apply_inv_filter())
         ctk.CTkEntry(
             search_row,
             textvariable=self._inv_search_var,
-            placeholder_text="Filter items...",
+            placeholder_text=t("Filter items..."),
             width=220,
         ).pack(side=ctk.LEFT, padx=(0, 6))
         ctk.CTkButton(
             search_row,
-            text="Clear",
+            text=t("Clear"),
             width=60,
             height=28,
             command=lambda: self._inv_search_var.set(""),
         ).pack(side=ctk.LEFT)
         ctk.CTkButton(
             search_row,
-            text="Visual Inventory...",
+            text=t("Visual Inventory..."),
             width=130,
             height=28,
             fg_color=("#6a3fa0", "#7c4dac"),
@@ -1096,37 +1095,37 @@ class InventoryEditor:
 
         ctk.CTkButton(
             actions,
-            text="Remove Selected",
+            text=t("Remove Selected"),
             command=self.remove_item,
             width=125,
         ).pack(side=ctk.LEFT, padx=(0, 6))
         ctk.CTkButton(
             actions,
-            text="Set Quantity",
+            text=t("Set Quantity"),
             command=self.set_quantity,
             width=110,
         ).pack(side=ctk.LEFT, padx=(0, 6))
         ctk.CTkButton(
             actions,
-            text="Set Upgrade",
+            text=t("Set Upgrade"),
             command=self.set_upgrade,
             width=100,
         ).pack(side=ctk.LEFT, padx=(0, 6))
         ctk.CTkButton(
             actions,
-            text="Set Affinity",
+            text=t("Set Affinity"),
             command=self.set_affinity,
             width=100,
         ).pack(side=ctk.LEFT, padx=(0, 6))
         ctk.CTkButton(
             actions,
-            text="Set AoW",
+            text=t("Set AoW"),
             command=self.set_aow,
             width=80,
         ).pack(side=ctk.LEFT, padx=(0, 6))
         ctk.CTkButton(
             actions,
-            text="Refresh",
+            text=t("Refresh"),
             command=self.refresh_inventory,
             width=80,
         ).pack(side=ctk.LEFT)
@@ -1138,7 +1137,7 @@ class InventoryEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
+                t("No Save"), t("Load a save file first."), parent=self.parent
             )
             return
 
@@ -1216,13 +1215,13 @@ class InventoryEditor:
                 on_done()
             show_toast(
                 self.parent.winfo_toplevel(),
-                f"Added {count} inventory items to Loadout.",
+                t("Added {count} inventory items to Loadout.").format(count=count),
                 type="success",
             )
         else:
             CTkMessageBox.showwarning(
-                "Nothing to Add",
-                "No inventory items are currently visible.",
+                t("Nothing to Add"),
+                t("No inventory items are currently visible."),
                 parent=self.parent,
             )
 
@@ -1299,7 +1298,7 @@ class InventoryEditor:
         """Apply item selection state - called from listbox and icon browser."""
         self.selected_item = item
         self._selected_item_label.configure(
-            text=f"Selected: {item.name}",
+            text=t("Selected: {name}").format(name=item.name),
             text_color=("#7c4dac", "#c084fc"),
         )
 
@@ -1402,14 +1401,9 @@ class InventoryEditor:
         self._browse_btn.configure(state="normal")
 
     def _open_visual_inventory(self) -> None:
-        win = self._visual_inventory_win
-        if win is not None and win.winfo_exists():
-            win.raise_window()
-            return
-
         from er_save_manager.ui.visual_inventory import VisualInventoryBrowser
 
-        self._visual_inventory_win = VisualInventoryBrowser(self.parent, self)
+        VisualInventoryBrowser(self.parent, self)
 
     def _on_affinity_combo_changed(self, value: str) -> None:
         self._update_affinity_icon(value)
@@ -1454,11 +1448,6 @@ class InventoryEditor:
             self._update_browse_state()
 
     def _open_icon_browser(self):
-        win = self._icon_browser_win
-        if win is not None and win.winfo_exists():
-            win.raise_window()
-            return
-
         cat = self._search_cat_var.get() if hasattr(self, "_search_cat_var") else "All"
         cats = self._visible_categories()
         if cat == "All":
@@ -1469,7 +1458,7 @@ class InventoryEditor:
         dev_icon_export = (
             settings.get("icon_export_enabled", False) if settings else False
         )
-        self._icon_browser_win = IconBrowser(
+        IconBrowser(
             self.parent, self, initial_category=cat, dev_icon_export=dev_icon_export
         )
 
@@ -1495,7 +1484,7 @@ class InventoryEditor:
         lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
 
         search_var = ctk.StringVar()
-        ctk.CTkLabel(dialog, text="Search:").pack(anchor="w", padx=10, pady=(10, 0))
+        ctk.CTkLabel(dialog, text=t("Search:")).pack(anchor="w", padx=10, pady=(10, 0))
         ctk.CTkEntry(dialog, textvariable=search_var, width=340).pack(
             padx=10, pady=(0, 4)
         )
@@ -1599,10 +1588,10 @@ class InventoryEditor:
 
         btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_row.pack(fill=ctk.X, padx=10, pady=(4, 10))
-        ctk.CTkButton(btn_row, text="Select", command=_confirm, width=100).pack(
+        ctk.CTkButton(btn_row, text=t("Select"), command=_confirm, width=100).pack(
             side=ctk.LEFT, padx=(0, 6)
         )
-        ctk.CTkButton(btn_row, text="Cancel", command=dialog.destroy, width=80).pack(
+        ctk.CTkButton(btn_row, text=t("Cancel"), command=dialog.destroy, width=80).pack(
             side=ctk.RIGHT
         )
 
@@ -1635,7 +1624,7 @@ class InventoryEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                t("No Save"), t("Please load a save file first."), parent=self.parent
             )
             return
 
@@ -1644,7 +1633,9 @@ class InventoryEditor:
             slot = save_file.characters[slot_idx]
             if not slot or slot.is_empty():
                 CTkMessageBox.showwarning(
-                    "Empty Slot", f"Slot {slot_idx + 1} is empty.", parent=self.parent
+                    t("Empty Slot"),
+                    t("Slot {slot_idx} is empty.").format(slot_idx=slot_idx + 1),
+                    parent=self.parent,
                 )
                 return
 
@@ -1702,7 +1693,9 @@ class InventoryEditor:
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to refresh inventory:\n{e}", parent=self.parent
+                t("Error"),
+                t("Failed to refresh inventory:\n{e}").format(e=e),
+                parent=self.parent,
             )
 
     def _collect_section(
@@ -1997,7 +1990,9 @@ class InventoryEditor:
     def add_to_loadout(self):
         if not self.selected_item:
             CTkMessageBox.showwarning(
-                "No Item", "Select an item from the browser first.", parent=self.parent
+                t("No Item"),
+                t("Select an item from the browser first."),
+                parent=self.parent,
             )
             return
 
@@ -2005,7 +2000,9 @@ class InventoryEditor:
         self.loadout.append(item_info)
         show_toast(
             self.parent.winfo_toplevel(),
-            f"Added {item_info['name_label']} to Loadout.",
+            t("Added {item_info} to Loadout.").format(
+                item_info=item_info["name_label"]
+            ),
             type="success",
         )
 
@@ -2015,7 +2012,9 @@ class InventoryEditor:
     def add_item(self):
         if not self.selected_item:
             CTkMessageBox.showwarning(
-                "No Item", "Select an item from the browser first.", parent=self.parent
+                t("No Item"),
+                t("Select an item from the browser first."),
+                parent=self.parent,
             )
             return
 
@@ -2026,7 +2025,7 @@ class InventoryEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
+                t("No Save"), t("Load a save file first."), parent=self.parent
             )
             return
 
@@ -2066,7 +2065,9 @@ class InventoryEditor:
             show_toast(self.parent.winfo_toplevel(), msg, type="success")
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to add item:\n{e}", parent=self.parent
+                t("Error"),
+                t("Failed to add item:\n{e}").format(e=e),
+                parent=self.parent,
             )
 
     def batch_add_category(self, cat=None, parent_window=None):
@@ -2076,8 +2077,8 @@ class InventoryEditor:
             cat = self._search_cat_var.get()
         if cat == "All":
             CTkMessageBox.showwarning(
-                "Batch Add",
-                "Please select a specific category to batch add.",
+                t("Batch Add"),
+                t("Please select a specific category to batch add."),
                 parent=parent_window,
             )
             return
@@ -2093,8 +2094,10 @@ class InventoryEditor:
         action_name = "add to Loadout" if is_loadout else "add to Inventory"
 
         if not CTkMessageBox.askyesno(
-            "Batch Add",
-            f"Batch {action_name} all {len(items)} items from '{cat}'?",
+            t("Batch Add"),
+            t("Batch {action_name} all {len} items from '{cat}'?").format(
+                action_name=action_name, len=len(items), cat=cat
+            ),
             parent=parent_window,
         ):
             return
@@ -2126,7 +2129,9 @@ class InventoryEditor:
                 count += 1
             show_toast(
                 self.parent.winfo_toplevel(),
-                f"Added {count} items from {cat} to Loadout.",
+                t("Added {count} items from {cat} to Loadout.").format(
+                    count=count, cat=cat
+                ),
                 type="success",
             )
             return
@@ -2134,7 +2139,7 @@ class InventoryEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=parent_window
+                t("No Save"), t("Load a save file first."), parent=parent_window
             )
             return
 
@@ -2214,19 +2219,23 @@ class InventoryEditor:
 
             show_toast(
                 self.parent.winfo_toplevel(),
-                f"Batch added {success} items from {cat}.",
+                t("Batch added {success} items from {cat}.").format(
+                    success=success, cat=cat
+                ),
                 type="success",
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Batch Add Failed:\n{e}", parent=parent_window
+                t("Error"),
+                t("Batch Add Failed:\n{e}").format(e=e),
+                parent=parent_window,
             )
 
     def remove_item(self):
         result = self._get_forced_or_listbox()
         if result is None:
             CTkMessageBox.showwarning(
-                "No Selection", "Select an item to remove.", parent=self.parent
+                t("No Selection"), t("Select an item to remove."), parent=self.parent
             )
             return
         full_id, location, gaitem_handle = result
@@ -2237,8 +2246,10 @@ class InventoryEditor:
                 item_label = self.inventory_listbox.get(sel[0]).strip()
 
         if not CTkMessageBox.askyesno(
-            "Confirm Remove",
-            f"Remove this item from {location}?\n\n{item_label}",
+            t("Confirm Remove"),
+            t("Remove this item from {location}?\n\n{item_label}").format(
+                location=location, item_label=item_label
+            ),
             parent=self.parent,
         ):
             return
@@ -2264,17 +2275,19 @@ class InventoryEditor:
             self.refresh_inventory()
             if self._on_inventory_changed:
                 self._on_inventory_changed()
-            show_toast(self.parent.winfo_toplevel(), "Item removed.", type="success")
+            show_toast(self.parent.winfo_toplevel(), t("Item removed."), type="success")
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to remove item:\n{e}", parent=self.parent
+                t("Error"),
+                t("Failed to remove item:\n{e}").format(e=e),
+                parent=self.parent,
             )
 
     def set_quantity(self):
         result = self._get_forced_or_listbox()
         if result is None:
             CTkMessageBox.showwarning(
-                "No Selection", "Select an item first.", parent=self.parent
+                t("No Selection"), t("Select an item first."), parent=self.parent
             )
             return
         full_id, location, gaitem_handle = result
@@ -2300,8 +2313,8 @@ class InventoryEditor:
 
         if (is_weapon and not is_ammo) or is_armor or is_gem:
             CTkMessageBox.showinfo(
-                "Not Stackable",
-                "Quantity editing does not apply to this item type.",
+                t("Not Stackable"),
+                t("Quantity editing does not apply to this item type."),
                 parent=self.parent,
             )
             return
@@ -2317,19 +2330,21 @@ class InventoryEditor:
             new_qty = int(qty_str)
         except ValueError:
             CTkMessageBox.showerror(
-                "Input Error", "Quantity must be an integer.", parent=self.parent
+                t("Input Error"), t("Quantity must be an integer."), parent=self.parent
             )
             return
 
         if new_qty < 1:
             CTkMessageBox.showerror(
-                "Input Error", "Quantity must be at least 1.", parent=self.parent
+                t("Input Error"), t("Quantity must be at least 1."), parent=self.parent
             )
             return
         if max_qty is not None and new_qty > max_qty:
             CTkMessageBox.showerror(
-                "Invalid Quantity",
-                f"Maximum quantity for this item is {max_qty}.",
+                t("Invalid Quantity"),
+                t("Maximum quantity for this item is {max_qty}.").format(
+                    max_qty=max_qty
+                ),
                 parent=self.parent,
             )
             return
@@ -2351,7 +2366,9 @@ class InventoryEditor:
                 self._on_inventory_changed()
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to set quantity:\n{e}", parent=self.parent
+                t("Error"),
+                t("Failed to set quantity:\n{e}").format(e=e),
+                parent=self.parent,
             )
 
     def _patch_gaitem(self, save_file, slot_idx: int, slot, gaitem_idx: int) -> None:
@@ -2384,8 +2401,8 @@ class InventoryEditor:
             full_id, location, gaitem_handle = self._forced_selection
             if (full_id & 0xF0000000) != 0x00000000:
                 CTkMessageBox.showinfo(
-                    "Not a Weapon",
-                    "This operation only applies to weapons.",
+                    t("Not a Weapon"),
+                    t("This operation only applies to weapons."),
                     parent=self.parent,
                 )
                 return None
@@ -2394,7 +2411,7 @@ class InventoryEditor:
         sel = self.inventory_listbox.curselection()
         if not sel:
             CTkMessageBox.showwarning(
-                "No Selection", "Select an item first.", parent=self.parent
+                t("No Selection"), t("Select an item first."), parent=self.parent
             )
             return None
         idx = sel[0]
@@ -2403,8 +2420,8 @@ class InventoryEditor:
         full_id, location, gaitem_handle = self._item_data[idx]
         if (full_id & 0xF0000000) != 0x00000000:
             CTkMessageBox.showinfo(
-                "Not a Weapon",
-                "This operation only applies to weapons.",
+                t("Not a Weapon"),
+                t("This operation only applies to weapons."),
                 parent=self.parent,
             )
             return None
@@ -2436,7 +2453,9 @@ class InventoryEditor:
 
         if reinforcement == "none":
             CTkMessageBox.showinfo(
-                "Not Upgradable", "This weapon cannot be upgraded.", parent=self.parent
+                t("Not Upgradable"),
+                t("This weapon cannot be upgraded."),
+                parent=self.parent,
             )
             return
 
@@ -2458,12 +2477,16 @@ class InventoryEditor:
             new_upg = int(upg_str)
         except ValueError:
             CTkMessageBox.showerror(
-                "Input Error", "Upgrade level must be an integer.", parent=self.parent
+                t("Input Error"),
+                t("Upgrade level must be an integer."),
+                parent=self.parent,
             )
             return
         if new_upg < 0 or new_upg > cap:
             CTkMessageBox.showerror(
-                "Invalid Upgrade", f"Upgrade must be 0-{cap}.", parent=self.parent
+                t("Invalid Upgrade"),
+                t("Upgrade must be 0-{cap}.").format(cap=cap),
+                parent=self.parent,
             )
             return
 
@@ -2487,16 +2510,18 @@ class InventoryEditor:
                     self._on_inventory_changed()
                 show_toast(
                     self.parent.winfo_toplevel(),
-                    f"Upgrade set to +{new_upg}.",
+                    t("Upgrade set to +{new_upg}.").format(new_upg=new_upg),
                     type="success",
                 )
                 return
             CTkMessageBox.showerror(
-                "Not Found", "Weapon gaitem entry not found.", parent=self.parent
+                t("Not Found"), t("Weapon gaitem entry not found."), parent=self.parent
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to set upgrade:\n{e}", parent=self.parent
+                t("Error"),
+                t("Failed to set upgrade:\n{e}").format(e=e),
+                parent=self.parent,
             )
 
     def set_affinity(
@@ -2549,7 +2574,9 @@ class InventoryEditor:
         item = self._lookup_weapon_item(full_id)
         if item and not getattr(item, "aow_allowed", True):
             CTkMessageBox.showinfo(
-                "Not Infusable", "This weapon cannot be infused.", parent=self.parent
+                t("Not Infusable"),
+                t("This weapon cannot be infused."),
+                parent=self.parent,
             )
             return
 
@@ -2693,11 +2720,15 @@ class InventoryEditor:
                         self._on_inventory_changed()
                     return
                 CTkMessageBox.showerror(
-                    "Not Found", "Weapon gaitem entry not found.", parent=self.parent
+                    t("Not Found"),
+                    t("Weapon gaitem entry not found."),
+                    parent=self.parent,
                 )
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Failed to set affinity:\n{e}", parent=self.parent
+                    t("Error"),
+                    t("Failed to set affinity:\n{e}").format(e=e),
+                    parent=self.parent,
                 )
 
         def _confirm():
@@ -2712,10 +2743,10 @@ class InventoryEditor:
 
         btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_row.pack(fill=ctk.X, padx=10, pady=(0, 10))
-        ctk.CTkButton(btn_row, text="Apply", command=_confirm, width=90).pack(
+        ctk.CTkButton(btn_row, text=t("Apply"), command=_confirm, width=90).pack(
             side=ctk.LEFT, padx=(0, 6)
         )
-        ctk.CTkButton(btn_row, text="Cancel", command=dialog.destroy, width=80).pack(
+        ctk.CTkButton(btn_row, text=t("Cancel"), command=dialog.destroy, width=80).pack(
             side=ctk.RIGHT
         )
 
@@ -2728,8 +2759,8 @@ class InventoryEditor:
         item = self._lookup_weapon_item(full_id)
         if item and not getattr(item, "aow_allowed", True):
             CTkMessageBox.showinfo(
-                "AoW Not Supported",
-                "This weapon does not accept an Ash of War.",
+                t("AoW Not Supported"),
+                t("This weapon does not accept an Ash of War."),
                 parent=self.parent,
             )
             return
@@ -2783,7 +2814,7 @@ class InventoryEditor:
 
         cur_frame = ctk.CTkFrame(dialog, fg_color=("gray78", "gray18"), corner_radius=6)
         cur_frame.pack(fill=ctk.X, padx=10, pady=(8, 2))
-        ctk.CTkLabel(cur_frame, text="Current:", anchor="w", width=60).pack(
+        ctk.CTkLabel(cur_frame, text=t("Current:"), anchor="w", width=60).pack(
             side=ctk.LEFT, padx=6, pady=4
         )
         ctk.CTkLabel(
@@ -2796,7 +2827,7 @@ class InventoryEditor:
         ).pack(side=ctk.LEFT, padx=4, pady=4)
 
         search_var = ctk.StringVar()
-        ctk.CTkLabel(dialog, text="Search:").pack(anchor="w", padx=10, pady=(4, 0))
+        ctk.CTkLabel(dialog, text=t("Search:")).pack(anchor="w", padx=10, pady=(4, 0))
         ctk.CTkEntry(dialog, textvariable=search_var, width=340).pack(
             padx=10, pady=(0, 4)
         )
@@ -2973,15 +3004,17 @@ class InventoryEditor:
                         )
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Failed to set AoW:\n{e}", parent=self.parent
+                    t("Error"),
+                    t("Failed to set AoW:\n{e}").format(e=e),
+                    parent=self.parent,
                 )
 
         btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_row.pack(fill=ctk.X, padx=10, pady=(4, 10))
-        ctk.CTkButton(btn_row, text="Apply", command=_confirm, width=90).pack(
+        ctk.CTkButton(btn_row, text=t("Apply"), command=_confirm, width=90).pack(
             side=ctk.LEFT, padx=(0, 6)
         )
-        ctk.CTkButton(btn_row, text="Cancel", command=dialog.destroy, width=80).pack(
+        ctk.CTkButton(btn_row, text=t("Cancel"), command=dialog.destroy, width=80).pack(
             side=ctk.RIGHT
         )
 
@@ -2991,7 +3024,7 @@ class InventoryEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
+                t("No Save"), t("Load a save file first."), parent=self.parent
             )
             return
 
@@ -3000,11 +3033,11 @@ class InventoryEditor:
             slot = save_file.characters[slot_idx]
             if not slot or slot.is_empty():
                 CTkMessageBox.showwarning(
-                    "Empty Slot", "Select a character first.", parent=self.parent
+                    t("Empty Slot"), t("Select a character first."), parent=self.parent
                 )
                 return
         except Exception as e:
-            CTkMessageBox.showerror("Error", str(e), parent=self.parent)
+            CTkMessageBox.showerror(t("Error"), str(e), parent=self.parent)
             return
 
         from er_save_manager.ui.nyasu_import import import_nyasu
@@ -3073,7 +3106,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
 
         # --- Left Side: Database ---
         ctk.CTkLabel(
-            left_frame, text="Saved Loadouts (DB)", font=("Segoe UI", 12, "bold")
+            left_frame, text=t("Saved Loadouts (DB)"), font=("Segoe UI", 12, "bold")
         ).pack(pady=(5, 0))
 
         db_lb_frame = ctk.CTkFrame(
@@ -3101,24 +3134,24 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         db_btn_frame = ctk.CTkFrame(left_frame, fg_color="transparent")
         db_btn_frame.pack(fill="x", padx=8, pady=(0, 8))
         ctk.CTkButton(
-            db_btn_frame, text="Load Selected", command=self.load_from_db
+            db_btn_frame, text=t("Load Selected"), command=self.load_from_db
         ).pack(fill="x", pady=2)
-        ctk.CTkButton(db_btn_frame, text="Save Current", command=self.save_to_db).pack(
-            fill="x", pady=2
-        )
         ctk.CTkButton(
-            db_btn_frame, text="Save to Selected", command=self.save_to_selected
+            db_btn_frame, text=t("Save Current"), command=self.save_to_db
+        ).pack(fill="x", pady=2)
+        ctk.CTkButton(
+            db_btn_frame, text=t("Save to Selected"), command=self.save_to_selected
         ).pack(fill="x", pady=2)
         ctk.CTkButton(
             db_btn_frame,
-            text="Delete Selected",
+            text=t("Delete Selected"),
             command=self.delete_from_db,
             fg_color=("gray70", "gray35"),
         ).pack(fill="x", pady=2)
 
         # --- Right Side: Current Build ---
         ctk.CTkLabel(
-            right_frame, text="Current Loadout Items", font=("Segoe UI", 12, "bold")
+            right_frame, text=t("Current Loadout Items"), font=("Segoe UI", 12, "bold")
         ).pack(pady=(5, 0))
 
         cur_lb_frame = ctk.CTkFrame(
@@ -3149,38 +3182,38 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         row1.pack(fill="x", pady=2)
         ctk.CTkButton(
             row1,
-            text="Apply Loadout",
+            text=t("Apply Loadout"),
             command=self.apply_loadout,
             fg_color=("#16a34a", "#15803d"),
         ).pack(side="left", fill="x", expand=True, padx=2)
         ctk.CTkButton(
             row1,
-            text="Remove Selected",
+            text=t("Remove Selected"),
             command=self.remove_selected,
             fg_color=("gray70", "gray35"),
         ).pack(side="left", fill="x", expand=True, padx=2)
         ctk.CTkButton(
             row1,
-            text="Clear",
+            text=t("Clear"),
             command=self.clear_loadout,
             fg_color=("gray70", "gray35"),
         ).pack(side="left", fill="x", expand=True, padx=2)
 
         row2 = ctk.CTkFrame(btn_frame, fg_color="transparent")
         row2.pack(fill="x", pady=2)
-        ctk.CTkButton(row2, text="Export JSON", command=self.save_json).pack(
+        ctk.CTkButton(row2, text=t("Export JSON"), command=self.save_json).pack(
             side="left", fill="x", expand=True, padx=2
         )
-        ctk.CTkButton(row2, text="Import JSON", command=self.load_json).pack(
+        ctk.CTkButton(row2, text=t("Import JSON"), command=self.load_json).pack(
             side="left", fill="x", expand=True, padx=2
         )
 
         row2b = ctk.CTkFrame(btn_frame, fg_color="transparent")
         row2b.pack(fill="x", pady=2)
-        ctk.CTkButton(row2b, text="Export Code", command=self.export_code).pack(
+        ctk.CTkButton(row2b, text=t("Export Code"), command=self.export_code).pack(
             side="left", fill="x", expand=True, padx=2
         )
-        ctk.CTkButton(row2b, text="Import Code", command=self.import_code).pack(
+        ctk.CTkButton(row2b, text=t("Import Code"), command=self.import_code).pack(
             side="left", fill="x", expand=True, padx=2
         )
 
@@ -3188,7 +3221,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         row3.pack(fill="x", pady=2)
         ctk.CTkButton(
             row3,
-            text="Add Current Inv to Loadout",
+            text=t("Add Current Inv to Loadout"),
             command=lambda: self.editor._add_inventory_to_loadout(
                 on_done=self.refresh_list
             ),
@@ -3219,7 +3252,9 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
 
     def save_to_db(self):
         if not self.editor.loadout:
-            CTkMessageBox.showwarning("Empty", "Current loadout is empty.", parent=self)
+            CTkMessageBox.showwarning(
+                t("Empty"), t("Current loadout is empty."), parent=self
+            )
             return
         name = _ask_value("Save Loadout", "Enter loadout name:", self)
         if not name:
@@ -3227,8 +3262,10 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         db = self._read_db()
         if name in db:
             CTkMessageBox.showwarning(
-                "Name Exists",
-                f"A loadout named '{name}' already exists. Please choose a different name.",
+                t("Name Exists"),
+                t(
+                    "A loadout named '{name}' already exists. Please choose a different name."
+                ).format(name=name),
                 parent=self,
             )
             return
@@ -3236,18 +3273,26 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         self._write_db(db)
         self.current_loadout_name = name
         self.refresh_db_list()
-        show_toast(self.winfo_toplevel(), f"Saved to DB: {name}", type="success")
+        show_toast(
+            self.winfo_toplevel(),
+            t("Saved to DB: {name}").format(name=name),
+            type="success",
+        )
 
     def save_to_selected(self):
         if not self.editor.loadout:
-            CTkMessageBox.showwarning("Empty", "Current loadout is empty.", parent=self)
+            CTkMessageBox.showwarning(
+                t("Empty"), t("Current loadout is empty."), parent=self
+            )
             return
         sel = self.db_lb.curselection()
         name = self.db_lb.get(sel[0]) if sel else self.current_loadout_name
         if not name:
             CTkMessageBox.showwarning(
-                "No Loadout Selected",
-                "Select a loadout in the list first, or use Save Current to create one.",
+                t("No Loadout Selected"),
+                t(
+                    "Select a loadout in the list first, or use Save Current to create one."
+                ),
                 parent=self,
             )
             return
@@ -3256,13 +3301,17 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         self._write_db(db)
         self.current_loadout_name = name
         self.refresh_db_list()
-        show_toast(self.winfo_toplevel(), f"Updated: {name}", type="success")
+        show_toast(
+            self.winfo_toplevel(),
+            t("Updated: {name}").format(name=name),
+            type="success",
+        )
 
     def load_from_db(self):
         sel = self.db_lb.curselection()
         if not sel:
             CTkMessageBox.showwarning(
-                "Selection", "Select a loadout from the DB first.", parent=self
+                t("Selection"), t("Select a loadout from the DB first."), parent=self
             )
             return
         name = self.db_lb.get(sel[0])
@@ -3271,7 +3320,11 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             self.editor.loadout = db[name]
             self.current_loadout_name = name
             self.refresh_list()
-            show_toast(self.winfo_toplevel(), f"Loaded from DB: {name}", type="success")
+            show_toast(
+                self.winfo_toplevel(),
+                t("Loaded from DB: {name}").format(name=name),
+                type="success",
+            )
 
     def delete_from_db(self):
         sel = self.db_lb.curselection()
@@ -3279,7 +3332,9 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             return
         name = self.db_lb.get(sel[0])
         if CTkMessageBox.askyesno(
-            "Confirm Delete", f"Delete loadout '{name}' from the DB?", parent=self
+            t("Confirm Delete"),
+            t("Delete loadout '{name}' from the DB?").format(name=name),
+            parent=self,
         ):
             db = self._read_db()
             if name in db:
@@ -3310,7 +3365,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         if not self.editor.loadout:
             return
         path = pick_file(
-            title="Save Loadout",
+            title=t("Save Loadout"),
             save=True,
             defaultextension=".json",
             filetypes=[("JSON Files", "*.json")],
@@ -3318,10 +3373,10 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         if path:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(self.editor.loadout, f, indent=4)
-            show_toast(self.winfo_toplevel(), "Loadout saved.", type="success")
+            show_toast(self.winfo_toplevel(), t("Loadout saved."), type="success")
 
     def load_json(self):
-        path = pick_file(title="Load Loadout", filetypes=[("JSON Files", "*.json")])
+        path = pick_file(title=t("Load Loadout"), filetypes=[("JSON Files", "*.json")])
         if path:
             try:
                 with open(path, encoding="utf-8") as f:
@@ -3329,15 +3384,19 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
                 if isinstance(data, list):
                     self.editor.loadout = data
                     self.refresh_list()
-                    show_toast(self.winfo_toplevel(), "Loadout loaded.", type="success")
+                    show_toast(
+                        self.winfo_toplevel(), t("Loadout loaded."), type="success"
+                    )
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Failed to load JSON:\n{e}", parent=self
+                    t("Error"), t("Failed to load JSON:\n{e}").format(e=e), parent=self
                 )
 
     def export_code(self):
         if not self.editor.loadout:
-            CTkMessageBox.showwarning("Empty", "Current loadout is empty.", parent=self)
+            CTkMessageBox.showwarning(
+                t("Empty"), t("Current loadout is empty."), parent=self
+            )
             return
 
         from er_save_manager.data.inventory_loadout_sharing import share_loadout
@@ -3346,8 +3405,8 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         code = share_loadout(self.editor.loadout, name=name)
         if not code:
             CTkMessageBox.showerror(
-                "Error",
-                "Failed to upload loadout. Check your connection.",
+                t("Error"),
+                t("Failed to upload loadout. Check your connection."),
                 parent=self,
             )
             return
@@ -3364,15 +3423,17 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         data = fetch_loadout(code.strip())
         if not isinstance(data, list):
             CTkMessageBox.showerror(
-                "Error",
-                "Code not found, or failed to fetch. Check your connection.",
+                t("Error"),
+                t("Code not found, or failed to fetch. Check your connection."),
                 parent=self,
             )
             return
 
         self.editor.loadout = data
         self.refresh_list()
-        show_toast(self.winfo_toplevel(), "Loadout imported from code.", type="success")
+        show_toast(
+            self.winfo_toplevel(), t("Loadout imported from code."), type="success"
+        )
 
     def _show_share_code(self, code: str):
         """Show a dialog with the generated share code and a copy button."""
@@ -3383,12 +3444,12 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         _center_over(dialog, self)
         dialog.grab_set()
 
-        ctk.CTkLabel(dialog, text="Loadout shared", font=("Segoe UI", 13, "bold")).pack(
-            pady=(15, 5)
-        )
+        ctk.CTkLabel(
+            dialog, text=t("Loadout shared"), font=("Segoe UI", 13, "bold")
+        ).pack(pady=(15, 5))
         ctk.CTkLabel(
             dialog,
-            text="Send this code to share it:",
+            text=t("Send this code to share it:"),
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
         ).pack(pady=(0, 10))
@@ -3404,17 +3465,17 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             dialog.clipboard_clear()
             dialog.clipboard_append(code)
             show_toast(
-                self.winfo_toplevel(), "Code copied to clipboard!", type="success"
+                self.winfo_toplevel(), t("Code copied to clipboard!"), type="success"
             )
 
         btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_frame.pack(pady=(0, 15))
-        ctk.CTkButton(btn_frame, text="Copy Code", command=copy_code, width=120).pack(
-            side="left", padx=5
-        )
-        ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=100).pack(
-            side="left", padx=5
-        )
+        ctk.CTkButton(
+            btn_frame, text=t("Copy Code"), command=copy_code, width=120
+        ).pack(side="left", padx=5)
+        ctk.CTkButton(
+            btn_frame, text=t("Close"), command=dialog.destroy, width=100
+        ).pack(side="left", padx=5)
 
     def apply_loadout(self):
         if not self.editor.loadout:
@@ -3422,7 +3483,9 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
 
         save_file = self.editor.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Load a save file first.", parent=self)
+            CTkMessageBox.showwarning(
+                t("No Save"), t("Load a save file first."), parent=self
+            )
             return
 
         slot_idx = self.editor.get_char_slot()
@@ -3463,18 +3526,22 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
                 if len(errors) > 5:
                     err_text += f"\n...and {len(errors) - 5} more."
                 CTkMessageBox.showwarning(
-                    "Partial Success",
-                    f"Added {success_count} items.\nErrors:\n{err_text}",
+                    t("Partial Success"),
+                    t("Added {success_count} items.\nErrors:\n{err_text}").format(
+                        success_count=success_count, err_text=err_text
+                    ),
                     parent=self,
                 )
             else:
                 show_toast(
                     self.editor.parent.winfo_toplevel(),
-                    f"Loadout applied successfully ({success_count} items).",
+                    t("Loadout applied successfully ({success_count} items).").format(
+                        success_count=success_count
+                    ),
                     type="success",
                 )
                 self.destroy()
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to apply loadout:\n{e}", parent=self
+                t("Error"), t("Failed to apply loadout:\n{e}").format(e=e), parent=self
             )

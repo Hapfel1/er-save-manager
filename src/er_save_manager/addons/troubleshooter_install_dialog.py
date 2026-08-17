@@ -8,6 +8,7 @@ import tkinter as tk
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import force_render_dialog
 
@@ -30,7 +31,7 @@ def show_troubleshooter_dialog(parent, addon_manager):
     if is_installed and not has_update:
 
         def show_error(msg):
-            CTkMessageBox.showerror("Launch Failed", msg, parent=parent)
+            CTkMessageBox.showerror(t("Launch Failed"), msg, parent=parent)
 
         if addon_manager.launch(show_error=show_error):
             return
@@ -94,13 +95,19 @@ def show_troubleshooter_dialog(parent, addon_manager):
     if is_installed:
         ctk.CTkLabel(
             info_frame,
-            text=f"Current Version: {installed_version}\nLatest Version: {latest_version}",
+            text=t(
+                "Current Version: {installed_version}\nLatest Version: {latest_version}"
+            ).format(
+                installed_version=installed_version, latest_version=latest_version
+            ),
             font=("Segoe UI", 11),
         ).pack(padx=12, pady=10)
     else:
         ctk.CTkLabel(
             info_frame,
-            text=f"Latest Version: {latest_version}",
+            text=t("Latest Version: {latest_version}").format(
+                latest_version=latest_version
+            ),
             font=("Segoe UI", 11),
         ).pack(padx=12, pady=10)
 
@@ -166,12 +173,12 @@ Source: github.com/Hapfel1/fromsoftware-troubleshooter"""
 
             # Launch the troubleshooter
             def show_error(msg):
-                CTkMessageBox.showwarning("Launch Failed", msg, parent=parent)
+                CTkMessageBox.showwarning(t("Launch Failed"), msg, parent=parent)
 
             if addon_manager.launch(show_error=show_error):
                 CTkMessageBox.showinfo(
-                    "Success",
-                    "Troubleshooter installed and launched successfully!",
+                    t("Success"),
+                    t("Troubleshooter installed and launched successfully!"),
                     parent=parent,
                 )
         else:
@@ -185,7 +192,7 @@ Source: github.com/Hapfel1/fromsoftware-troubleshooter"""
             dialog.destroy()
 
             def show_error(msg):
-                CTkMessageBox.showerror("Launch Failed", msg, parent=parent)
+                CTkMessageBox.showerror(t("Launch Failed"), msg, parent=parent)
 
             addon_manager.launch(show_error=show_error)
         else:
@@ -194,14 +201,14 @@ Source: github.com/Hapfel1/fromsoftware-troubleshooter"""
     if is_installed:
         install_btn = ctk.CTkButton(
             button_frame,
-            text="Update & Launch",
+            text=t("Update & Launch"),
             command=on_install,
             width=150,
         )
     else:
         install_btn = ctk.CTkButton(
             button_frame,
-            text="Install & Launch",
+            text=t("Install & Launch"),
             command=on_install,
             width=150,
         )
@@ -210,7 +217,7 @@ Source: github.com/Hapfel1/fromsoftware-troubleshooter"""
     if is_installed:
         cancel_btn = ctk.CTkButton(
             button_frame,
-            text="Launch Current Version",
+            text=t("Launch Current Version"),
             command=on_launch_skip,
             width=180,
             fg_color=("gray70", "gray30"),
@@ -218,7 +225,7 @@ Source: github.com/Hapfel1/fromsoftware-troubleshooter"""
     else:
         cancel_btn = ctk.CTkButton(
             button_frame,
-            text="Cancel",
+            text=t("Cancel"),
             command=dialog.destroy,
             width=100,
             fg_color=("gray70", "gray30"),

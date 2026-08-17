@@ -29,6 +29,32 @@ jobs:
         if: success() || failure()
         run: uv run ruff format --check
 
+  i18n:
+    name: Translations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version-file: ".python-version"
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: false
+      - name: Install dependencies
+        run: uv sync --locked --dev
+      # Fails when user-facing text was added or edited without re-running
+      # extract, which would leave translators unaware the strings changed
+      - name: Check translation template is current
+        run: uv run scripts/i18n_check.py --summary
+      # Guards the whole project. DS2/world_state_tab.py is work in progress and
+      # excluded until it stabilises.
+      - name: Check for untranslated strings
+        if: success() || failure()
+        run: uv run scripts/i18n_lint.py --exclude DS2/world_state_tab.py
+      - name: Verify catalogs compile
+        if: success() || failure()
+        run: uv run scripts/i18n_tool.py compile
+
   test:
     name: Tests
     runs-on: ubuntu-latest

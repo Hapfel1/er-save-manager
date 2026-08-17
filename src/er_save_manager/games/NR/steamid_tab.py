@@ -11,6 +11,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 
 
@@ -35,14 +36,16 @@ class NRSteamIDTab:
         outer = ctk.CTkFrame(self.parent, corner_radius=12)
         outer.pack(fill="both", expand=True, pady=(0, 10))
 
-        ctk.CTkLabel(outer, text="SteamID Patcher", font=("Segoe UI", 16, "bold")).pack(
-            anchor="w", padx=14, pady=(12, 6)
-        )
+        ctk.CTkLabel(
+            outer, text=t("SteamID Patcher"), font=("Segoe UI", 16, "bold")
+        ).pack(anchor="w", padx=14, pady=(12, 6))
         ctk.CTkLabel(
             outer,
             text=(
-                "Patches the SteamID embedded in the Nightreign save. "
-                "Required when copying a save to a different Steam account."
+                t(
+                    "Patches the SteamID embedded in the Nightreign save. "
+                    "Required when copying a save to a different Steam account."
+                )
             ),
             wraplength=700,
             justify="left",
@@ -52,13 +55,13 @@ class NRSteamIDTab:
         grid = ctk.CTkFrame(outer, fg_color="transparent")
         grid.pack(anchor="nw", padx=14)
 
-        ctk.CTkLabel(grid, text="Detected SteamID:", anchor="w", width=160).grid(
+        ctk.CTkLabel(grid, text=t("Detected SteamID:"), anchor="w", width=160).grid(
             row=0, column=0, sticky="w", pady=6
         )
         ctk.CTkLabel(grid, textvariable=self._detected_var, anchor="w").grid(
             row=0, column=1, sticky="w", padx=(6, 0), pady=6
         )
-        ctk.CTkLabel(grid, text="New SteamID (64-bit):", anchor="w", width=160).grid(
+        ctk.CTkLabel(grid, text=t("New SteamID (64-bit):"), anchor="w", width=160).grid(
             row=1, column=0, sticky="w", pady=6
         )
         ctk.CTkEntry(grid, textvariable=self._new_id_var, width=220).grid(
@@ -66,11 +69,11 @@ class NRSteamIDTab:
         )
 
         ctk.CTkButton(
-            outer, text="Apply SteamID Patch", command=self._apply, width=200
+            outer, text=t("Apply SteamID Patch"), command=self._apply, width=200
         ).pack(anchor="w", padx=14, pady=(12, 4))
         ctk.CTkLabel(
             outer,
-            text="Creates a backup before patching.",
+            text=t("Creates a backup before patching."),
             font=("Segoe UI", 10),
             text_color=("gray45", "gray60"),
         ).pack(anchor="w", padx=14)
@@ -86,21 +89,21 @@ class NRSteamIDTab:
         save_path = self._get_save_path()
         if not save_path:
             CTkMessageBox.showerror(
-                "No Save", "Load a save file first.", parent=self.parent
+                t("No Save"), t("Load a save file first."), parent=self.parent
             )
             return
         raw = self._new_id_var.get().strip()
         if not raw:
             CTkMessageBox.showerror(
-                "Missing Input", "Enter the new SteamID64.", parent=self.parent
+                t("Missing Input"), t("Enter the new SteamID64."), parent=self.parent
             )
             return
         try:
             new_id = int(raw)
         except ValueError:
             CTkMessageBox.showerror(
-                "Invalid Input",
-                "SteamID must be a decimal integer.",
+                t("Invalid Input"),
+                t("SteamID must be a decimal integer."),
                 parent=self.parent,
             )
             return
@@ -117,6 +120,6 @@ class NRSteamIDTab:
                 self._reload()
                 self._show_toast("SteamID patched.")
             else:
-                CTkMessageBox.showerror("Patch Failed", msg, parent=self.parent)
+                CTkMessageBox.showerror(t("Patch Failed"), msg, parent=self.parent)
         except Exception as e:
-            CTkMessageBox.showerror("Patch Failed", str(e), parent=self.parent)
+            CTkMessageBox.showerror(t("Patch Failed"), str(e), parent=self.parent)

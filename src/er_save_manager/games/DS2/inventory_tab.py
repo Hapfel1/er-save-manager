@@ -16,6 +16,7 @@ from er_save_manager.games.DS2.item_database import (
     build_item_db,
 )
 from er_save_manager.games.DS2.save import DS2Save
+from er_save_manager.i18n import t
 from er_save_manager.ui.utils import game_blocks_write
 
 
@@ -99,13 +100,13 @@ class DS2InventoryPanel:
         self.refresh()
 
     def _build_browser_panel(self, parent) -> None:
-        ctk.CTkLabel(parent, text="Add Item", font=("Segoe UI", 13, "bold")).pack(
+        ctk.CTkLabel(parent, text=t("Add Item"), font=("Segoe UI", 13, "bold")).pack(
             anchor="w", padx=10, pady=(10, 4)
         )
 
         cat_row = ctk.CTkFrame(parent, fg_color="transparent")
         cat_row.pack(fill="x", padx=10, pady=(0, 4))
-        ctk.CTkLabel(cat_row, text="Category:", width=70).pack(side="left")
+        ctk.CTkLabel(cat_row, text=t("Category:"), width=70).pack(side="left")
         self.add_category_var = tk.StringVar(
             value=CATEGORY_LABELS[_DISPLAY_CATEGORIES[0]]
         )
@@ -120,7 +121,7 @@ class DS2InventoryPanel:
 
         search_row = ctk.CTkFrame(parent, fg_color="transparent")
         search_row.pack(fill="x", padx=10, pady=(0, 4))
-        ctk.CTkLabel(search_row, text="Search:", width=70).pack(side="left")
+        ctk.CTkLabel(search_row, text=t("Search:"), width=70).pack(side="left")
         self.add_search_var = tk.StringVar()
         self.add_search_var.trace_add("write", lambda *_: self._search_items())
         ctk.CTkEntry(search_row, textvariable=self.add_search_var, width=200).pack(
@@ -130,17 +131,17 @@ class DS2InventoryPanel:
         self._results_tree = ttk.Treeview(
             parent, columns=("name",), show="headings", height=14
         )
-        self._results_tree.heading("name", text="Item")
+        self._results_tree.heading("name", text=t("Item"))
         self._results_tree.column("name", width=260)
         self._results_tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
 
         qty_row = ctk.CTkFrame(parent, fg_color="transparent")
         qty_row.pack(fill="x", padx=10, pady=(0, 6))
-        ctk.CTkLabel(qty_row, text="Quantity:", width=70).pack(side="left")
+        ctk.CTkLabel(qty_row, text=t("Quantity:"), width=70).pack(side="left")
         self.add_qty_var = tk.StringVar(value="1")
         ctk.CTkEntry(qty_row, textvariable=self.add_qty_var, width=70).pack(side="left")
 
-        ctk.CTkButton(parent, text="Add Item", command=self._on_add, height=32).pack(
+        ctk.CTkButton(parent, text=t("Add Item"), command=self._on_add, height=32).pack(
             fill="x", padx=10, pady=(0, 10)
         )
 
@@ -150,12 +151,12 @@ class DS2InventoryPanel:
         header = ctk.CTkFrame(parent, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 4))
         ctk.CTkLabel(
-            header, text="Current Inventory", font=("Segoe UI", 13, "bold")
+            header, text=t("Current Inventory"), font=("Segoe UI", 13, "bold")
         ).pack(side="left")
 
         filter_row = ctk.CTkFrame(parent, fg_color="transparent")
         filter_row.pack(fill="x", padx=10, pady=(0, 4))
-        ctk.CTkLabel(filter_row, text="Category:", width=70).pack(side="left")
+        ctk.CTkLabel(filter_row, text=t("Category:"), width=70).pack(side="left")
         self.filter_category_var = tk.StringVar(value="All")
         ctk.CTkComboBox(
             filter_row,
@@ -168,7 +169,7 @@ class DS2InventoryPanel:
 
         search_row = ctk.CTkFrame(parent, fg_color="transparent")
         search_row.pack(fill="x", padx=10, pady=(0, 4))
-        ctk.CTkLabel(search_row, text="Filter:", width=70).pack(side="left")
+        ctk.CTkLabel(search_row, text=t("Filter:"), width=70).pack(side="left")
         self.filter_search_var = tk.StringVar()
         self.filter_search_var.trace_add("write", lambda *_: self._apply_filter())
         ctk.CTkEntry(search_row, textvariable=self.filter_search_var, width=200).pack(
@@ -198,13 +199,13 @@ class DS2InventoryPanel:
         actions = ctk.CTkFrame(parent, fg_color="transparent")
         actions.pack(fill="x", padx=10, pady=(0, 10))
         ctk.CTkButton(
-            actions, text="Remove Selected", command=self._on_remove, width=130
+            actions, text=t("Remove Selected"), command=self._on_remove, width=130
         ).pack(side="left", padx=(0, 6))
-        ctk.CTkLabel(actions, text="New qty:").pack(side="left", padx=(10, 4))
+        ctk.CTkLabel(actions, text=t("New qty:")).pack(side="left", padx=(10, 4))
         self.set_qty_var = tk.StringVar(value="1")
         ctk.CTkEntry(actions, textvariable=self.set_qty_var, width=60).pack(side="left")
         ctk.CTkButton(
-            actions, text="Set Quantity", command=self._on_set_quantity, width=110
+            actions, text=t("Set Quantity"), command=self._on_set_quantity, width=110
         ).pack(side="left", padx=6)
 
     # ------------------------------------------------------------------
@@ -236,39 +237,41 @@ class DS2InventoryPanel:
 
         save: DS2Save | None = self.get_save()
         if save is None:
-            self.show_toast("No save file loaded", duration=2000)
+            self.show_toast(t("No save file loaded"), duration=2000)
             return
 
         selection = self._results_tree.selection()
         if not selection:
-            self.show_toast("Select an item to add", duration=2000)
+            self.show_toast(t("Select an item to add"), duration=2000)
             return
 
         item_name = self._results_tree.item(selection[0], "values")[0]
         category = self._selected_add_category()
         hex_id = CATEGORIES.get(category, {}).get(item_name)
         if hex_id is None:
-            self.show_toast("Item not found in database", duration=2000)
+            self.show_toast(t("Item not found in database"), duration=2000)
             return
 
         try:
             quantity = int(self.add_qty_var.get())
         except ValueError:
-            self.show_toast("Quantity must be a number", duration=2000)
+            self.show_toast(t("Quantity must be a number"), duration=2000)
             return
         if quantity < 1:
-            self.show_toast("Quantity must be at least 1", duration=2000)
+            self.show_toast(t("Quantity must be at least 1"), duration=2000)
             return
 
         item_id = _hex_id_to_int(hex_id)
         character = save.characters[self.get_slot_index()]
         added = character.add_item(item_id, category, quantity=quantity)
         if not added:
-            self.show_toast("No empty inventory slot available", duration=2500)
+            self.show_toast(t("No empty inventory slot available"), duration=2500)
             return
 
         self._write_and_refresh(save, operation="add_item")
-        self.show_toast(f"Added {item_name}", duration=2000)
+        self.show_toast(
+            t("Added {item_name}").format(item_name=item_name), duration=2000
+        )
 
     # ------------------------------------------------------------------
     # Right panel: current inventory
@@ -339,12 +342,12 @@ class DS2InventoryPanel:
 
         save: DS2Save | None = self.get_save()
         if save is None:
-            self.show_toast("No save file loaded", duration=2000)
+            self.show_toast(t("No save file loaded"), duration=2000)
             return
 
         selection = self._inventory_tree.selection()
         if not selection:
-            self.show_toast("No item selected", duration=2000)
+            self.show_toast(t("No item selected"), duration=2000)
             return
 
         index = self._inventory_tree.index(selection[0])
@@ -352,11 +355,11 @@ class DS2InventoryPanel:
         character = save.characters[self.get_slot_index()]
         deleted = character.delete_item(item.item_id, category)
         if not deleted:
-            self.show_toast("Item not found in inventory", duration=2000)
+            self.show_toast(t("Item not found in inventory"), duration=2000)
             return
 
         self._write_and_refresh(save, operation="remove_item")
-        self.show_toast(f"Removed {name}", duration=2000)
+        self.show_toast(t("Removed {name}").format(name=name), duration=2000)
 
     def _on_set_quantity(self) -> None:
         if _game_blocks_write(self.parent):
@@ -364,19 +367,21 @@ class DS2InventoryPanel:
 
         save: DS2Save | None = self.get_save()
         if save is None:
-            self.show_toast("No save file loaded", duration=2000)
+            self.show_toast(t("No save file loaded"), duration=2000)
             return
 
         selection = self._inventory_tree.selection()
         if not selection:
-            self.show_toast("No item selected", duration=2000)
+            self.show_toast(t("No item selected"), duration=2000)
             return
 
         index = self._inventory_tree.index(selection[0])
         item, name, category = self._visible_items[index]
         if category not in STACKABLE_CATEGORIES:
             self.show_toast(
-                "Quantity only applies to goods, bolts, spells, and upgrade materials",
+                t(
+                    "Quantity only applies to goods, bolts, spells, and upgrade materials"
+                ),
                 duration=3000,
             )
             return
@@ -384,16 +389,19 @@ class DS2InventoryPanel:
         try:
             quantity = int(self.set_qty_var.get())
         except ValueError:
-            self.show_toast("Quantity must be a number", duration=2000)
+            self.show_toast(t("Quantity must be a number"), duration=2000)
             return
         if not (1 <= quantity <= 99):
-            self.show_toast("Quantity must be between 1 and 99", duration=2500)
+            self.show_toast(t("Quantity must be between 1 and 99"), duration=2500)
             return
 
         character = save.characters[self.get_slot_index()]
         character.add_item(item.item_id, category, quantity=quantity, stack=True)
         self._write_and_refresh(save, operation="set_item_quantity")
-        self.show_toast(f"Set {name} to x{quantity}", duration=2000)
+        self.show_toast(
+            t("Set {name} to x{quantity}").format(name=name, quantity=quantity),
+            duration=2000,
+        )
 
     def _write_and_refresh(
         self, save: DS2Save, operation: str = "inventory_edit"
@@ -404,7 +412,9 @@ class DS2InventoryPanel:
             try:
                 save.save_to_file(save_path)
             except Exception as e:
-                self.show_toast(f"Failed to write save: {e}", duration=3000)
+                self.show_toast(
+                    t("Failed to write save: {e}").format(e=e), duration=3000
+                )
         self.refresh()
 
     def _backup(self, save_path, description: str, operation: str) -> None:

@@ -15,6 +15,7 @@ from tkinter import ttk
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
@@ -62,7 +63,7 @@ class _PickerDialog(ctk.CTkToplevel):
         search_var = tk.StringVar()
         search_var.trace_add("write", lambda *_: self._filter(search_var.get()))
         ctk.CTkEntry(
-            self, textvariable=search_var, placeholder_text="Search...", width=480
+            self, textvariable=search_var, placeholder_text=t("Search..."), width=480
         ).pack(padx=12, pady=(10, 4))
 
         frame = ctk.CTkFrame(self, corner_radius=8)
@@ -92,13 +93,13 @@ class _PickerDialog(ctk.CTkToplevel):
 
         btn_row = ctk.CTkFrame(self, fg_color="transparent")
         btn_row.pack(fill="x", padx=12, pady=(0, 10))
-        ctk.CTkButton(btn_row, text="Select", command=self._on_confirm, width=100).pack(
-            side="left"
-        )
         ctk.CTkButton(
-            btn_row, text="Clear / Empty", command=self._on_clear, width=120
+            btn_row, text=t("Select"), command=self._on_confirm, width=100
+        ).pack(side="left")
+        ctk.CTkButton(
+            btn_row, text=t("Clear / Empty"), command=self._on_clear, width=120
         ).pack(side="left", padx=8)
-        ctk.CTkButton(btn_row, text="Cancel", command=self.destroy, width=80).pack(
+        ctk.CTkButton(btn_row, text=t("Cancel"), command=self.destroy, width=80).pack(
             side="right"
         )
 
@@ -166,11 +167,11 @@ class NREditorTab:
 
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
-        ctk.CTkLabel(header, text="Slot Editor", font=("Segoe UI", 16, "bold")).pack(
+        ctk.CTkLabel(header, text=t("Slot Editor"), font=("Segoe UI", 16, "bold")).pack(
             side="left"
         )
         ctk.CTkButton(
-            header, text="Load Slot", command=self._load_selected, width=120
+            header, text=t("Load Slot"), command=self._load_selected, width=120
         ).pack(side="right", padx=(6, 0))
         self._slot_var = tk.StringVar()
         self._slot_combo = ctk.CTkComboBox(
@@ -181,7 +182,7 @@ class NREditorTab:
             width=220,
         )
         self._slot_combo.pack(side="right")
-        ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
+        ctk.CTkLabel(header, text=t("Slot:")).pack(side="right", padx=(0, 6))
 
         self._tabs = ctk.CTkTabview(outer, corner_radius=10)
         self._tabs.pack(fill="both", expand=True, padx=10, pady=(0, 10))
@@ -246,9 +247,9 @@ class NREditorTab:
         f = ctk.CTkFrame(parent, corner_radius=10, fg_color=("gray86", "gray22"))
         f.pack(fill="both", expand=True, padx=10, pady=10)
 
-        ctk.CTkLabel(f, text="Character Overview", font=("Segoe UI", 14, "bold")).pack(
-            anchor="w", padx=14, pady=(12, 6)
-        )
+        ctk.CTkLabel(
+            f, text=t("Character Overview"), font=("Segoe UI", 14, "bold")
+        ).pack(anchor="w", padx=14, pady=(12, 6))
         grid = ctk.CTkFrame(f, fg_color="transparent")
         grid.pack(anchor="nw", padx=14)
 
@@ -266,7 +267,7 @@ class NREditorTab:
                 row=row, column=1, padx=(6, 0), pady=4
             )
 
-        ctk.CTkButton(f, text="Apply", command=self._apply_overview, width=100).pack(
+        ctk.CTkButton(f, text=t("Apply"), command=self._apply_overview, width=100).pack(
             anchor="w", padx=14, pady=(12, 4)
         )
 
@@ -288,14 +289,14 @@ class NREditorTab:
             mon = int(self._mon_var.get())
         except ValueError:
             CTkMessageBox.showerror(
-                "Invalid Input",
-                "murk and Sovereign Sigils must be integers.",
+                t("Invalid Input"),
+                t("murk and Sovereign Sigils must be integers."),
                 parent=self.parent,
             )
             return
         if murk < 0 or mon < 0:
             CTkMessageBox.showerror(
-                "Invalid Input", "Values must be >= 0.", parent=self.parent
+                t("Invalid Input"), t("Values must be >= 0."), parent=self.parent
             )
             return
         slot.murk = murk
@@ -304,8 +305,8 @@ class NREditorTab:
         if name:
             if len(name) > 16:
                 CTkMessageBox.showerror(
-                    "Name Too Long",
-                    "Player name cannot exceed 16 characters.",
+                    t("Name Too Long"),
+                    t("Player name cannot exceed 16 characters."),
                     parent=self.parent,
                 )
                 return
@@ -314,7 +315,7 @@ class NREditorTab:
             _backup_and_save(save, self._get_save_path(), "nr_overview")
             self._show_toast("Overview saved.")
         except Exception as e:
-            CTkMessageBox.showerror("Save Failed", str(e), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(e), parent=self.parent)
 
     # ------------------------------------------------------------------
     # Relics
@@ -339,7 +340,7 @@ class NREditorTab:
         # Search bar
         top = ctk.CTkFrame(scroll, fg_color="transparent")
         top.pack(fill="x", padx=10, pady=(8, 4))
-        ctk.CTkLabel(top, text="Relics", font=("Segoe UI", 14, "bold")).pack(
+        ctk.CTkLabel(top, text=t("Relics"), font=("Segoe UI", 14, "bold")).pack(
             side="left"
         )
         self._relic_search_var = tk.StringVar()
@@ -347,10 +348,10 @@ class NREditorTab:
         ctk.CTkEntry(
             top,
             textvariable=self._relic_search_var,
-            placeholder_text="Search name or effect...",
+            placeholder_text=t("Search name or effect..."),
             width=240,
         ).pack(side="right")
-        ctk.CTkLabel(top, text="Search:").pack(side="right", padx=(0, 4))
+        ctk.CTkLabel(top, text=t("Search:")).pack(side="right", padx=(0, 4))
 
         # Treeview - fixed height so edit panel always visible below
         tree_frame = ctk.CTkFrame(scroll, corner_radius=8)
@@ -405,16 +406,16 @@ class NREditorTab:
         ep_title = ctk.CTkFrame(self._edit_panel, fg_color="transparent")
         ep_title.pack(fill="x", padx=8, pady=(6, 2))
         ctk.CTkLabel(
-            ep_title, text="Edit selected relic:", font=("Segoe UI", 11, "bold")
+            ep_title, text=t("Edit selected relic:"), font=("Segoe UI", 11, "bold")
         ).pack(side="left")
         ep_btns = ctk.CTkFrame(ep_title, fg_color="transparent")
         ep_btns.pack(side="right")
         ctk.CTkButton(
-            ep_btns, text="Apply Edit", command=self._apply_relic_edit, width=100
+            ep_btns, text=t("Apply Edit"), command=self._apply_relic_edit, width=100
         ).pack(side="left", padx=(0, 6))
         ctk.CTkButton(
             ep_btns,
-            text="Remove",
+            text=t("Remove"),
             command=self._remove_selected_relic,
             width=80,
             fg_color=("gray65", "gray35"),
@@ -422,16 +423,16 @@ class NREditorTab:
 
         relic_row = ctk.CTkFrame(self._edit_panel, fg_color="transparent")
         relic_row.pack(fill="x", padx=8, pady=2)
-        ctk.CTkLabel(relic_row, text="Relic type:", width=90, anchor="w").pack(
+        ctk.CTkLabel(relic_row, text=t("Relic type:"), width=90, anchor="w").pack(
             side="left"
         )
         self._re_item_label = ctk.CTkLabel(
-            relic_row, text="(none selected)", anchor="w", width=280
+            relic_row, text=t("(none selected)"), anchor="w", width=280
         )
         self._re_item_label.pack(side="left", padx=(4, 6))
         ctk.CTkButton(
             relic_row,
-            text="Browse",
+            text=t("Browse"),
             command=self._browse_relic_type,
             width=70,
             height=26,
@@ -452,10 +453,12 @@ class NREditorTab:
         for j in range(3):
             row = ctk.CTkFrame(slots_frame, fg_color="transparent")
             row.pack(fill="x", pady=1)
-            ctk.CTkLabel(row, text=f"E{j + 1}:", width=28, anchor="w").pack(side="left")
+            ctk.CTkLabel(
+                row, text=t("E{j}:").format(j=j + 1), width=28, anchor="w"
+            ).pack(side="left")
             lbl_e = ctk.CTkLabel(
                 row,
-                text="(empty)",
+                text=t("(empty)"),
                 anchor="w",
                 width=240,
                 font=("Segoe UI", 10),
@@ -464,14 +467,14 @@ class NREditorTab:
             lbl_e.pack(side="left", padx=(2, 4))
             ctk.CTkButton(
                 row,
-                text="Browse",
+                text=t("Browse"),
                 width=65,
                 height=24,
                 command=lambda jj=j: self._browse_effect(jj),
             ).pack(side="left", padx=(0, 16))
             lbl_c = ctk.CTkLabel(
                 row,
-                text=f"C{j + 1}: (empty)",
+                text=t("C{j}: (empty)").format(j=j + 1),
                 anchor="w",
                 width=240,
                 font=("Segoe UI", 10),
@@ -479,7 +482,7 @@ class NREditorTab:
             )
             btn_c = ctk.CTkButton(
                 row,
-                text="Browse",
+                text=t("Browse"),
                 width=65,
                 height=24,
                 command=lambda jj=j: self._browse_curse(jj),
@@ -499,22 +502,24 @@ class NREditorTab:
         spawn_title = ctk.CTkFrame(spawn_outer, fg_color="transparent")
         spawn_title.pack(fill="x", padx=8, pady=(6, 2))
         ctk.CTkLabel(
-            spawn_title, text="Spawn Relic", font=("Segoe UI", 12, "bold")
+            spawn_title, text=t("Spawn Relic"), font=("Segoe UI", 12, "bold")
         ).pack(side="left")
         ctk.CTkButton(
-            spawn_title, text="Spawn", command=self._spawn_relic, width=80
+            spawn_title, text=t("Spawn"), command=self._spawn_relic, width=80
         ).pack(side="right")
 
         sr_row = ctk.CTkFrame(spawn_outer, fg_color="transparent")
         sr_row.pack(fill="x", padx=8, pady=2)
-        ctk.CTkLabel(sr_row, text="Relic type:", width=90, anchor="w").pack(side="left")
+        ctk.CTkLabel(sr_row, text=t("Relic type:"), width=90, anchor="w").pack(
+            side="left"
+        )
         self._spawn_relic_label = ctk.CTkLabel(
-            sr_row, text="(none selected)", anchor="w", width=280
+            sr_row, text=t("(none selected)"), anchor="w", width=280
         )
         self._spawn_relic_label.pack(side="left", padx=(4, 6))
         ctk.CTkButton(
             sr_row,
-            text="Browse",
+            text=t("Browse"),
             command=self._browse_spawn_relic,
             width=70,
             height=26,
@@ -537,10 +542,12 @@ class NREditorTab:
         for j in range(3):
             row = ctk.CTkFrame(spawn_slots, fg_color="transparent")
             row.pack(fill="x", pady=1)
-            ctk.CTkLabel(row, text=f"E{j + 1}:", width=28, anchor="w").pack(side="left")
+            ctk.CTkLabel(
+                row, text=t("E{j}:").format(j=j + 1), width=28, anchor="w"
+            ).pack(side="left")
             lbl_e = ctk.CTkLabel(
                 row,
-                text="(empty)",
+                text=t("(empty)"),
                 anchor="w",
                 width=240,
                 font=("Segoe UI", 10),
@@ -549,14 +556,14 @@ class NREditorTab:
             lbl_e.pack(side="left", padx=(2, 4))
             ctk.CTkButton(
                 row,
-                text="Browse",
+                text=t("Browse"),
                 width=65,
                 height=24,
                 command=lambda jj=j: self._browse_spawn_effect(jj),
             ).pack(side="left", padx=(0, 16))
             lbl_c = ctk.CTkLabel(
                 row,
-                text=f"C{j + 1}: (empty)",
+                text=t("C{j}: (empty)").format(j=j + 1),
                 anchor="w",
                 width=240,
                 font=("Segoe UI", 10),
@@ -564,7 +571,7 @@ class NREditorTab:
             )
             btn_c = ctk.CTkButton(
                 row,
-                text="Browse",
+                text=t("Browse"),
                 width=65,
                 height=24,
                 command=lambda jj=j: self._browse_spawn_curse(jj),
@@ -811,7 +818,7 @@ class NREditorTab:
 
         if self._selected_relic_ga is None:
             CTkMessageBox.showinfo(
-                "No Selection", "Select a relic row first.", parent=self.parent
+                t("No Selection"), t("Select a relic row first."), parent=self.parent
             )
             return
         save = self._get_nr_save()
@@ -823,7 +830,7 @@ class NREditorTab:
             curses = [int(v.get()) for v in self._re_curse_vars]
         except ValueError:
             CTkMessageBox.showerror(
-                "Invalid Input", "Could not parse IDs.", parent=self.parent
+                t("Invalid Input"), t("Could not parse IDs."), parent=self.parent
             )
             return
 
@@ -845,7 +852,7 @@ class NREditorTab:
             if err:
                 errors.append(f"C{i + 1}: {err}")
         if errors and not CTkMessageBox.askyesno(
-            "Validation Warning",
+            t("Validation Warning"),
             "Issues found:\n" + "\n".join(errors) + "\n\nApply anyway?",
             parent=self.parent,
         ):
@@ -867,7 +874,7 @@ class NREditorTab:
             self._populate_relics(save.slots[self._current_slot])
             self._show_toast("Relic saved.")
         except Exception as e:
-            CTkMessageBox.showerror("Save Failed", str(e), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(e), parent=self.parent)
 
     def _remove_selected_relic(self) -> None:
         if _game_blocks_write(self.parent):
@@ -875,11 +882,11 @@ class NREditorTab:
 
         if self._selected_relic_ga is None:
             CTkMessageBox.showinfo(
-                "No Selection", "Select a relic row first.", parent=self.parent
+                t("No Selection"), t("Select a relic row first."), parent=self.parent
             )
             return
         if not CTkMessageBox.askyesno(
-            "Confirm Remove", "Remove this relic permanently?", parent=self.parent
+            t("Confirm Remove"), t("Remove this relic permanently?"), parent=self.parent
         ):
             return
         save = self._get_nr_save()
@@ -894,7 +901,7 @@ class NREditorTab:
             self._populate_relics(save.slots[self._current_slot])
             self._show_toast("Relic removed.")
         except Exception as e:
-            CTkMessageBox.showerror("Remove Failed", str(e), parent=self.parent)
+            CTkMessageBox.showerror(t("Remove Failed"), str(e), parent=self.parent)
 
     # ------------------------------------------------------------------
     # Spawn
@@ -906,12 +913,14 @@ class NREditorTab:
 
         save = self._get_nr_save()
         if save is None or self._current_slot < 0:
-            CTkMessageBox.showinfo("No Slot", "Load a slot first.", parent=self.parent)
+            CTkMessageBox.showinfo(
+                t("No Slot"), t("Load a slot first."), parent=self.parent
+            )
             return
         rid = self._spawn_relic_id.get()
         if rid < 0:
             CTkMessageBox.showinfo(
-                "No Relic", "Select a relic type first.", parent=self.parent
+                t("No Relic"), t("Select a relic type first."), parent=self.parent
             )
             return
         try:
@@ -919,7 +928,7 @@ class NREditorTab:
             curses = [int(v.get()) for v in self._spawn_curse_vars]
         except ValueError:
             CTkMessageBox.showerror(
-                "Invalid Input", "Could not parse IDs.", parent=self.parent
+                t("Invalid Input"), t("Could not parse IDs."), parent=self.parent
             )
             return
         try:
@@ -939,4 +948,4 @@ class NREditorTab:
             self._populate_relics(save.slots[self._current_slot])
             self._show_toast("Relic spawned.")
         except Exception as e:
-            CTkMessageBox.showerror("Spawn Failed", str(e), parent=self.parent)
+            CTkMessageBox.showerror(t("Spawn Failed"), str(e), parent=self.parent)

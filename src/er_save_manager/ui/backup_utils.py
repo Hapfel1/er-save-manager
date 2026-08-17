@@ -4,6 +4,7 @@ from pathlib import Path
 from tkinter import messagebox
 
 from er_save_manager.backup.manager import BackupManager, BackupMetadata
+from er_save_manager.i18n import t
 from er_save_manager.parser import Save
 from er_save_manager.ui.settings import get_settings
 
@@ -52,7 +53,7 @@ def create_backup_with_warning(
 
                 # Show messagebox with don't show again option
                 result = messagebox.showwarning(
-                    "Backups Pruned",
+                    t("Backups Pruned"),
                     message,
                     default=messagebox.OK,
                 )
