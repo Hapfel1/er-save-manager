@@ -127,7 +127,8 @@ class IconBrowser(ctk.CTkToplevel):
         self.update_idletasks()
         _center_over(self, parent, w, 800, top=True)
         self.attributes("-alpha", 1)
-        self.grab_set()
+        # Non-modal by design: the visual inventory may be open at the same time
+        self.raise_window()
 
         self._build_ui()
 
@@ -139,6 +140,14 @@ class IconBrowser(ctk.CTkToplevel):
 
         self._scroll.bind("<Configure>", self._on_scroll_resize)
         self.after(120, self._reflow)
+
+    def raise_window(self) -> None:
+        """Bring the window forward. Called on open and when reopened from the editor."""
+        if not self.winfo_exists():
+            return
+        self.deiconify()
+        self.lift()
+        self.focus_force()
 
     # ---- UI ------------------------------------------------------------------
 

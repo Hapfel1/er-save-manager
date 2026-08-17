@@ -189,13 +189,22 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         self.minsize(500, 400)
         self.resizable(True, True)
         self.transient(parent)
-        self.after(100, self.grab_set)
 
         self._build_ui()
         self._rebuild()
         _center_over(self, parent, 760, 680, top=True)
+        # Non-modal by design: the icon browser may be open at the same time
+        self.after(100, self.raise_window)
         self._editor._inventory_change_listeners.append(self._on_editor_changed)
         self.protocol("WM_DELETE_WINDOW", self._on_close)
+
+    def raise_window(self) -> None:
+        """Bring the window forward. Called on open and when reopened from the editor."""
+        if not self.winfo_exists():
+            return
+        self.deiconify()
+        self.lift()
+        self.focus_force()
 
     # ---- UI ------------------------------------------------------------------
 
