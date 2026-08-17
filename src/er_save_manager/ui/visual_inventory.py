@@ -10,6 +10,11 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.ui.editors.inventory_editor import (
+    INVENTORY_SORT_MODES,
+    sort_inventory_rows,
+)
+
 if TYPE_CHECKING:
     from er_save_manager.ui.editors.inventory_editor import InventoryEditor
 
@@ -274,7 +279,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             row2,
             variable=self._sort_var,
             width=120,
-            values=["Default", "Name A-Z", "Name Z-A", "Qty \u2193", "Qty \u2191"],
+            values=INVENTORY_SORT_MODES,
             command=self._on_sort_changed,
         ).pack(side=ctk.LEFT, padx=(4, 0))
 
@@ -403,26 +408,8 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             and (self._cat_filter == "All" or self._row_cat(row) == self._cat_filter)
             and (not q or q in row[0].lower())
         ]
-        # Sort
         sort_mode = getattr(self, "_sort_mode", "Name A-Z")
-        if sort_mode != "Default":
-
-            def _sort_key(row):
-                text = row[0]
-                name = re.sub(r"^\s*\[[HS]K?\]\s*", "", text.split("|")[0]).strip()
-                name = re.sub(r"\s*\+\d+$", "", name).strip()
-                qty_m = re.search(r"Qty:\s*(\d+)", text)
-                qty = int(qty_m.group(1)) if qty_m else 0
-                return name.lower(), qty
-
-            if "Qty" in sort_mode:
-                self._visible.sort(
-                    key=lambda r: _sort_key(r)[1], reverse=(sort_mode == "Qty \u2191")
-                )
-            else:
-                self._visible.sort(
-                    key=lambda r: _sort_key(r)[0], reverse=(sort_mode == "Name Z-A")
-                )
+        self._visible = sort_inventory_rows(self._visible, sort_mode)
         self._sel_idx = None
         self._clear_bottom()
         self._stop_loading()
