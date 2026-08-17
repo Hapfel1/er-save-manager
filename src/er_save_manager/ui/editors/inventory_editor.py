@@ -720,6 +720,8 @@ class InventoryEditor:
         self._forced_selection: tuple | None = None
         self._affinity_icon_lbl: ctk.CTkLabel | None = None
         self._aow_icon_lbl: ctk.CTkLabel | None = None
+        self._visual_inventory_win = None
+        self._icon_browser_win = None
 
         self._search_var: ctk.StringVar | None = None
         self._search_cat_var: ctk.StringVar | None = None
@@ -1400,9 +1402,14 @@ class InventoryEditor:
         self._browse_btn.configure(state="normal")
 
     def _open_visual_inventory(self) -> None:
+        win = self._visual_inventory_win
+        if win is not None and win.winfo_exists():
+            win.raise_window()
+            return
+
         from er_save_manager.ui.visual_inventory import VisualInventoryBrowser
 
-        VisualInventoryBrowser(self.parent, self)
+        self._visual_inventory_win = VisualInventoryBrowser(self.parent, self)
 
     def _on_affinity_combo_changed(self, value: str) -> None:
         self._update_affinity_icon(value)
@@ -1447,6 +1454,11 @@ class InventoryEditor:
             self._update_browse_state()
 
     def _open_icon_browser(self):
+        win = self._icon_browser_win
+        if win is not None and win.winfo_exists():
+            win.raise_window()
+            return
+
         cat = self._search_cat_var.get() if hasattr(self, "_search_cat_var") else "All"
         cats = self._visible_categories()
         if cat == "All":
@@ -1457,7 +1469,7 @@ class InventoryEditor:
         dev_icon_export = (
             settings.get("icon_export_enabled", False) if settings else False
         )
-        IconBrowser(
+        self._icon_browser_win = IconBrowser(
             self.parent, self, initial_category=cat, dev_icon_export=dev_icon_export
         )
 
