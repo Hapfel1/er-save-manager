@@ -7,6 +7,7 @@ import tkinter as tk
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
@@ -56,13 +57,13 @@ class SaveInspectorTab:
 
         ctk.CTkLabel(
             header,
-            text="Save Fixer",
+            text=t("Save Fixer"),
             font=("Segoe UI", 16, "bold"),
         ).pack(side="left")
 
         ctk.CTkButton(
             header,
-            text="View All Issues",
+            text=t("View All Issues"),
             command=self.show_character_details,
             width=180,
         ).pack(side="right")
@@ -73,7 +74,9 @@ class SaveInspectorTab:
 
         ctk.CTkLabel(
             instructions_frame,
-            text="Select a character and click 'View All Issues' to scan for problems and apply fixes",
+            text=t(
+                "Select a character and click 'View All Issues' to scan for problems and apply fixes"
+            ),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         ).pack(side="left", anchor="w")
@@ -100,9 +103,9 @@ class SaveInspectorTab:
             active_slots = save_file.get_active_slots()
 
             if not active_slots:
-                ctk.CTkLabel(self.list_frame, text="No active characters found").pack(
-                    anchor="w", padx=6, pady=6
-                )
+                ctk.CTkLabel(
+                    self.list_frame, text=t("No active characters found")
+                ).pack(anchor="w", padx=6, pady=6)
                 return
 
             # Get profiles safely
@@ -181,7 +184,9 @@ class SaveInspectorTab:
                 except Exception as e:
                     error_row = ctk.CTkLabel(
                         self.list_frame,
-                        text=f"Slot {slot_idx + 1:2d} | Error loading data",
+                        text=t("Slot {slot_idx:2d} | Error loading data").format(
+                            slot_idx=slot_idx + 1
+                        ),
                         anchor="w",
                     )
                     error_row.pack(fill="x", padx=4, pady=4)
@@ -192,11 +197,13 @@ class SaveInspectorTab:
                 select_slot(self.rows[0][0])
 
         except Exception as e:
-            ctk.CTkLabel(self.list_frame, text="Error loading characters").pack(
+            ctk.CTkLabel(self.list_frame, text=t("Error loading characters")).pack(
                 anchor="w", padx=6, pady=6
             )
             CTkMessageBox.showerror(
-                "Error", f"Failed to load character list:\n{str(e)}", parent=self.parent
+                t("Error"),
+                t("Failed to load character list:\n{str}").format(str=str(e)),
+                parent=self.parent,
             )
             import traceback
 
@@ -215,7 +222,9 @@ class SaveInspectorTab:
         """Show character details dialog"""
         if self.selected_slot is None:
             CTkMessageBox.showwarning(
-                "No Selection", "Please select a character first!", parent=self.parent
+                t("No Selection"),
+                t("Please select a character first!"),
+                parent=self.parent,
             )
             return
 

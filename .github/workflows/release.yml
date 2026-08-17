@@ -205,6 +205,11 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --dev
 
+      # Compile before packaging so a translator PR carrying only a .po still
+      # ships an up to date .mo
+      - name: Compile translation catalogs
+        run: uv run scripts/i18n_tool.py compile
+
       - name: Build Linux AppImage
         if: matrix.os == 'ubuntu-latest'
         run: |

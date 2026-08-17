@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
+
 if TYPE_CHECKING:
     from er_save_manager.ui.editors.inventory_editor import InventoryEditor
 
@@ -189,22 +191,13 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         self.minsize(500, 400)
         self.resizable(True, True)
         self.transient(parent)
+        self.after(100, self.grab_set)
 
         self._build_ui()
         self._rebuild()
         _center_over(self, parent, 760, 680, top=True)
-        # Non-modal by design: the icon browser may be open at the same time
-        self.after(100, self.raise_window)
         self._editor._inventory_change_listeners.append(self._on_editor_changed)
         self.protocol("WM_DELETE_WINDOW", self._on_close)
-
-    def raise_window(self) -> None:
-        """Bring the window forward. Called on open and when reopened from the editor."""
-        if not self.winfo_exists():
-            return
-        self.deiconify()
-        self.lift()
-        self.focus_force()
 
     # ---- UI ------------------------------------------------------------------
 
@@ -223,7 +216,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         tab_f.pack(side=ctk.LEFT)
         self._btn_held = ctk.CTkButton(
             tab_f,
-            text="Held",
+            text=t("Held"),
             width=72,
             height=28,
             command=lambda: self._switch_tab("held"),
@@ -231,7 +224,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         self._btn_held.pack(side=ctk.LEFT, padx=(0, 4))
         self._btn_stor = ctk.CTkButton(
             tab_f,
-            text="Storage",
+            text=t("Storage"),
             width=80,
             height=28,
             fg_color=("gray70", "gray35"),
@@ -240,7 +233,9 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         self._btn_stor.pack(side=ctk.LEFT)
 
         self._cat_var = ctk.StringVar(value="All")
-        ctk.CTkLabel(top, text="Category:", width=68).pack(side=ctk.LEFT, padx=(12, 0))
+        ctk.CTkLabel(top, text=t("Category:"), width=68).pack(
+            side=ctk.LEFT, padx=(12, 0)
+        )
         self._cat_combo = ctk.CTkComboBox(
             top,
             variable=self._cat_var,
@@ -253,13 +248,16 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
 
         self._filter_var = ctk.StringVar()
         self._filter_var.trace_add("write", lambda *_: self._apply_filter())
-        ctk.CTkLabel(top, text="Filter:").pack(side=ctk.LEFT)
+        ctk.CTkLabel(top, text=t("Filter:")).pack(side=ctk.LEFT)
         ctk.CTkEntry(
-            top, textvariable=self._filter_var, placeholder_text="Search...", width=150
+            top,
+            textvariable=self._filter_var,
+            placeholder_text=t("Search..."),
+            width=150,
         ).pack(side=ctk.LEFT, padx=(4, 0))
         ctk.CTkButton(
             top,
-            text="Close",
+            text=t("Close"),
             width=68,
             height=28,
             fg_color=("gray70", "gray35"),
@@ -269,7 +267,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         row2 = ctk.CTkFrame(self, fg_color="transparent")
         row2.pack(fill=ctk.X, padx=10, pady=(0, 2))
         self._sort_var = ctk.StringVar(value="Name A-Z")
-        ctk.CTkLabel(row2, text="Sort:").pack(side=ctk.LEFT)
+        ctk.CTkLabel(row2, text=t("Sort:")).pack(side=ctk.LEFT)
         ctk.CTkComboBox(
             row2,
             variable=self._sort_var,
@@ -299,7 +297,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
 
         self._name_lbl = ctk.CTkLabel(
             bot,
-            text="No item selected",
+            text=t("No item selected"),
             font=("Segoe UI", 10, "bold"),
             anchor="w",
             text_color=("gray50", "gray60"),
@@ -599,7 +597,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
 
     def _clear_bottom(self):
         self._name_lbl.configure(
-            text="No item selected", text_color=("gray50", "gray60")
+            text=t("No item selected"), text_color=("gray50", "gray60")
         )
         self._detail_lbl.configure(text="")
         for b in (
@@ -637,7 +635,8 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             qty_m = re.search(r"Qty:\s*(\d+)", text)
             qty = int(qty_m.group(1)) if qty_m else 1
             self._detail_lbl.configure(
-                text=f"Qty: {qty}  |  {location}", text_color=("gray40", "gray60")
+                text=t("Qty: {qty}  |  {location}").format(qty=qty, location=location),
+                text_color=("gray40", "gray60"),
             )
 
             # Button states - same validation rules as the main editor

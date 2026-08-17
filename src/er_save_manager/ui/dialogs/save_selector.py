@@ -4,6 +4,8 @@ from importlib import resources
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
+
 
 class SaveSelectorDialog:
     """Dialog for selecting from multiple save files using customtkinter."""
@@ -66,7 +68,7 @@ class SaveSelectorDialog:
 
         title = ctk.CTkLabel(
             dialog,
-            text=f"Found {len(saves)} save files:",
+            text=t("Found {len} save files:").format(len=len(saves)),
             font=("Segoe UI", 14, "bold"),
             pady=10,
         )
@@ -146,7 +148,7 @@ class SaveSelectorDialog:
             browse_button.pack(side="right", padx=(0, 15))
 
         button = ctk.CTkButton(
-            button_frame, text="Select", command=select_save, width=140
+            button_frame, text=t("Select"), command=select_save, width=140
         )
         button.pack(side="right", padx=15)
 

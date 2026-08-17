@@ -10,6 +10,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from er_save_manager.backup.manager import BackupManager
+from er_save_manager.i18n import t
 from er_save_manager.ui.settings import get_settings
 
 # Map game key -> process name to detect
@@ -246,11 +247,10 @@ def show_auto_backup_first_run_dialog(
         settings.set("auto_backup_first_run_check", False)
 
         result = CTkMessageBox.askyesno(
-            "Auto-Backup Setup",
-            f"Would you like to enable automatic backups for {game_name}?\n\n"
-            f"When enabled, a backup of your {game_name} save will be created "
-            "automatically whenever the game launches.\n\n"
-            "You can change this later in Settings.",
+            t("Auto-Backup Setup"),
+            t(
+                "Would you like to enable automatic backups for {game_name}?\n\nWhen enabled, a backup of your {game_name} save will be created automatically whenever the game launches.\n\nYou can change this later in Settings."
+            ).format(game_name=game_name),
             parent=parent,
         )
 
@@ -271,9 +271,10 @@ def show_auto_backup_first_run_dialog(
 
         if len(found_paths) == 1:
             use_found = CTkMessageBox.askyesno(
-                "Save File Found",
-                f"Found save file:\n\n{found_paths[0]}\n\n"
-                "Use this file for auto-backup?",
+                t("Save File Found"),
+                t(
+                    "Found save file:\n\n{found_paths}\n\nUse this file for auto-backup?"
+                ).format(found_paths=found_paths[0]),
                 parent=parent,
             )
             if use_found:
@@ -297,7 +298,7 @@ def show_auto_backup_first_run_dialog(
 
             ctk.CTkLabel(
                 dlg,
-                text="Multiple save files found. Select the one to monitor:",
+                text=t("Multiple save files found. Select the one to monitor:"),
                 font=("Segoe UI", 11),
             ).pack(pady=(15, 8), padx=15)
 
@@ -327,11 +328,11 @@ def show_auto_backup_first_run_dialog(
 
             ctk.CTkButton(
                 dlg,
-                text="Browse...",
+                text=t("Browse..."),
                 command=lambda: [setattr(selected, "__browse__", True), dlg.destroy()],
                 width=100,
             ).pack(side=tk.LEFT, padx=15, pady=(0, 12))
-            ctk.CTkButton(dlg, text="Skip", command=dlg.destroy, width=80).pack(
+            ctk.CTkButton(dlg, text=t("Skip"), command=dlg.destroy, width=80).pack(
                 side=tk.RIGHT, padx=15, pady=(0, 12)
             )
 
@@ -344,7 +345,9 @@ def show_auto_backup_first_run_dialog(
                 f"*{e}" for e in (profile.extensions if profile else [".sl2"])
             )
             file_path = filedialog.askopenfilename(
-                title=f"Choose Save File for Auto-Backup - {game_name}",
+                title=t("Choose Save File for Auto-Backup - {game_name}").format(
+                    game_name=game_name
+                ),
                 filetypes=[(f"{game_name} Save", ext_str), ("All files", "*.*")],
                 parent=parent,
             )
@@ -363,10 +366,10 @@ def show_auto_backup_first_run_dialog(
         settings.set("auto_backup_games", auto_backup_cfg)
 
         CTkMessageBox.showinfo(
-            "Auto-Backup Enabled",
-            f"Auto-backup is now enabled for {game_name}.\n\n"
-            f"Monitored file:\n{chosen_path}\n\n"
-            "A backup will be created automatically each time the game launches.",
+            t("Auto-Backup Enabled"),
+            t(
+                "Auto-backup is now enabled for {game_name}.\n\nMonitored file:\n{chosen_path}\n\nA backup will be created automatically each time the game launches."
+            ).format(game_name=game_name, chosen_path=chosen_path),
             parent=parent,
         )
         return True

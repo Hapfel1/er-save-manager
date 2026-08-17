@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.utils import pick_file
 
 if TYPE_CHECKING:
@@ -127,8 +128,7 @@ class IconBrowser(ctk.CTkToplevel):
         self.update_idletasks()
         _center_over(self, parent, w, 800, top=True)
         self.attributes("-alpha", 1)
-        # Non-modal by design: the visual inventory may be open at the same time
-        self.raise_window()
+        self.grab_set()
 
         self._build_ui()
 
@@ -141,31 +141,23 @@ class IconBrowser(ctk.CTkToplevel):
         self._scroll.bind("<Configure>", self._on_scroll_resize)
         self.after(120, self._reflow)
 
-    def raise_window(self) -> None:
-        """Bring the window forward. Called on open and when reopened from the editor."""
-        if not self.winfo_exists():
-            return
-        self.deiconify()
-        self.lift()
-        self.focus_force()
-
     # ---- UI ------------------------------------------------------------------
 
     def _build_ui(self):
         top = ctk.CTkFrame(self, fg_color="transparent")
         top.pack(fill=ctk.X, padx=10, pady=(10, 4))
 
-        ctk.CTkLabel(top, text="Search:", width=52).pack(side=ctk.LEFT)
+        ctk.CTkLabel(top, text=t("Search:"), width=52).pack(side=ctk.LEFT)
         self._search_var = ctk.StringVar()
         self._search_var.trace_add(
             "write", lambda *_: self._apply_filter(self._search_var.get())
         )
         ctk.CTkEntry(
-            top, textvariable=self._search_var, placeholder_text="Filter..."
+            top, textvariable=self._search_var, placeholder_text=t("Filter...")
         ).pack(side=ctk.LEFT, fill=ctk.X, expand=True, padx=(0, 8))
         ctk.CTkButton(
             top,
-            text="Close",
+            text=t("Close"),
             width=72,
             height=28,
             fg_color=("gray70", "gray35"),
@@ -174,7 +166,7 @@ class IconBrowser(ctk.CTkToplevel):
 
         cat_row = ctk.CTkFrame(self, fg_color="transparent")
         cat_row.pack(fill=ctk.X, padx=10, pady=(0, 6))
-        ctk.CTkLabel(cat_row, text="Category:", width=68).pack(side=ctk.LEFT)
+        ctk.CTkLabel(cat_row, text=t("Category:"), width=68).pack(side=ctk.LEFT)
         cats = self._editor._visible_categories()
         self._cat_var = ctk.StringVar(value=self._current_cat)
         _patch_combo_scroll(
@@ -197,7 +189,7 @@ class IconBrowser(ctk.CTkToplevel):
 
         self._sel_lbl = ctk.CTkLabel(
             panel,
-            text="No item selected",
+            text=t("No item selected"),
             font=("Segoe UI", 10, "bold"),
             anchor="w",
             text_color=("gray50", "gray60"),
@@ -210,7 +202,7 @@ class IconBrowser(ctk.CTkToplevel):
         opts.columnconfigure(3, weight=1)
 
         # Quantity + Upgrade
-        ctk.CTkLabel(opts, text="Quantity:", anchor="w").grid(
+        ctk.CTkLabel(opts, text=t("Quantity:"), anchor="w").grid(
             row=0, column=0, sticky=ctk.W, padx=(0, 6), pady=3
         )
         self._qty_var = ctk.IntVar(value=1)
@@ -219,7 +211,7 @@ class IconBrowser(ctk.CTkToplevel):
         )
         self._qty_entry.grid(row=0, column=1, sticky=ctk.W, pady=3)
 
-        ctk.CTkLabel(opts, text="Upgrade:", anchor="w").grid(
+        ctk.CTkLabel(opts, text=t("Upgrade:"), anchor="w").grid(
             row=0, column=2, sticky=ctk.W, padx=(14, 6), pady=3
         )
         self._upgrade_var = ctk.StringVar(value="0")
@@ -230,7 +222,7 @@ class IconBrowser(ctk.CTkToplevel):
         _patch_combo_scroll(self._upgrade_combo)
 
         # Affinity + Location
-        ctk.CTkLabel(opts, text="Affinity:", anchor="w").grid(
+        ctk.CTkLabel(opts, text=t("Affinity:"), anchor="w").grid(
             row=1, column=0, sticky=ctk.W, padx=(0, 6), pady=3
         )
         aff_frame = ctk.CTkFrame(opts, fg_color="transparent")
@@ -249,7 +241,7 @@ class IconBrowser(ctk.CTkToplevel):
         self._affinity_combo.pack(side=ctk.LEFT)
         _patch_combo_scroll(self._affinity_combo)
 
-        ctk.CTkLabel(opts, text="Location:", anchor="w").grid(
+        ctk.CTkLabel(opts, text=t("Location:"), anchor="w").grid(
             row=1, column=2, sticky=ctk.W, padx=(14, 6), pady=3
         )
         self._location_var = ctk.StringVar(value="held")
@@ -258,7 +250,7 @@ class IconBrowser(ctk.CTkToplevel):
         ).grid(row=1, column=3, sticky=ctk.W, pady=3)
 
         # AoW
-        ctk.CTkLabel(opts, text="Ash of War:", anchor="w").grid(
+        ctk.CTkLabel(opts, text=t("Ash of War:"), anchor="w").grid(
             row=2, column=0, sticky=ctk.W, padx=(0, 6), pady=3
         )
         aow_frame = ctk.CTkFrame(opts, fg_color="transparent")
@@ -277,7 +269,7 @@ class IconBrowser(ctk.CTkToplevel):
 
         self._aow_pick_btn = ctk.CTkButton(
             opts,
-            text="Pick...",
+            text=t("Pick..."),
             width=60,
             height=24,
             command=self._pick_aow,
@@ -286,7 +278,7 @@ class IconBrowser(ctk.CTkToplevel):
         self._aow_pick_btn.grid(row=2, column=2, sticky=ctk.W, pady=3)
         self._aow_clear_btn = ctk.CTkButton(
             opts,
-            text="Clear",
+            text=t("Clear"),
             width=55,
             height=24,
             command=self._clear_aow,
@@ -300,7 +292,7 @@ class IconBrowser(ctk.CTkToplevel):
 
         self._add_btn = ctk.CTkButton(
             add_row,
-            text="Add Item",
+            text=t("Add Item"),
             height=34,
             font=("Segoe UI", 11, "bold"),
             command=self._do_add,
@@ -310,7 +302,7 @@ class IconBrowser(ctk.CTkToplevel):
 
         self._batch_btn = ctk.CTkButton(
             add_row,
-            text="Batch Add Category",
+            text=t("Batch Add Category"),
             height=34,
             fg_color=("#3b82f6", "#2563eb"),
             hover_color=("#2563eb", "#1d4ed8"),
@@ -320,7 +312,7 @@ class IconBrowser(ctk.CTkToplevel):
 
         self._loadout_switch = ctk.CTkSwitch(
             add_row,
-            text="Loadout Mode",
+            text=t("Loadout Mode"),
             variable=self._editor.loadout_mode_var,
             font=("Segoe UI", 11),
             width=40,
@@ -330,7 +322,7 @@ class IconBrowser(ctk.CTkToplevel):
         if self._dev_icon_export:
             self._save_icon_btn = ctk.CTkButton(
                 add_row,
-                text="Save Icon",
+                text=t("Save Icon"),
                 height=34,
                 width=100,
                 fg_color=("gray70", "gray35"),
@@ -431,7 +423,8 @@ class IconBrowser(ctk.CTkToplevel):
     def _on_item_click(self, item: Item):
         self._selected_item = item
         self._sel_lbl.configure(
-            text=f"Selected: {item.name}", text_color=("#7c4dac", "#c084fc")
+            text=t("Selected: {name}").format(name=item.name),
+            text_color=("#7c4dac", "#c084fc"),
         )
         self._update_form(item)
 
@@ -588,7 +581,7 @@ class IconBrowser(ctk.CTkToplevel):
         lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
 
         search_var = ctk.StringVar()
-        ctk.CTkLabel(dialog, text="Search:").pack(anchor="w", padx=10, pady=(10, 0))
+        ctk.CTkLabel(dialog, text=t("Search:")).pack(anchor="w", padx=10, pady=(10, 0))
         ctk.CTkEntry(dialog, textvariable=search_var, width=360).pack(
             padx=10, pady=(0, 4)
         )
@@ -748,10 +741,10 @@ class IconBrowser(ctk.CTkToplevel):
 
         btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_row.pack(fill=ctk.X, padx=10, pady=(4, 10))
-        ctk.CTkButton(btn_row, text="Select", command=_confirm, width=100).pack(
+        ctk.CTkButton(btn_row, text=t("Select"), command=_confirm, width=100).pack(
             side=ctk.LEFT, padx=(0, 6)
         )
-        ctk.CTkButton(btn_row, text="Cancel", command=dialog.destroy, width=80).pack(
+        ctk.CTkButton(btn_row, text=t("Cancel"), command=dialog.destroy, width=80).pack(
             side=ctk.RIGHT
         )
 
@@ -770,15 +763,15 @@ class IconBrowser(ctk.CTkToplevel):
             from er_save_manager.ui.messagebox import CTkMessageBox
 
             CTkMessageBox.showwarning(
-                "No Icon",
-                f"No icon found for {self._selected_item.name}.",
+                t("No Icon"),
+                t("No icon found for {name}.").format(name=self._selected_item.name),
                 parent=self,
             )
             return
 
         safe_name = re.sub(r'[\/:*?"<>|]', "_", self._selected_item.name)
         path = pick_file(
-            title="Save Icon",
+            title=t("Save Icon"),
             save=True,
             defaultextension=".webp",
             initialfile=f"{safe_name}.webp",

@@ -11,6 +11,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
@@ -113,13 +114,13 @@ class BackupManagerTab:
 
         ctk.CTkLabel(
             title_frame,
-            text="Backup Manager",
+            text=t("Backup Manager"),
             font=("Segoe UI", 16, "bold"),
         ).pack()
 
         ctk.CTkLabel(
             title_frame,
-            text="Manage save file backups for all supported FromSoftware games",
+            text=t("Manage save file backups for all supported FromSoftware games"),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         ).pack()
@@ -132,7 +133,7 @@ class BackupManagerTab:
         # Main button
         ctk.CTkButton(
             self.parent,
-            text="Open Backup Manager Window",
+            text=t("Open Backup Manager Window"),
             command=self.show_backup_manager,
         ).pack(pady=(10, 10))
 
@@ -142,7 +143,7 @@ class BackupManagerTab:
 
         ctk.CTkLabel(
             stats_frame,
-            text="Quick Stats",
+            text=t("Quick Stats"),
             font=("Segoe UI", 12, "bold"),
             text_color=("gray70", "gray50"),
         ).pack(anchor=tk.W, padx=15, pady=(10, 5))
@@ -162,7 +163,7 @@ class BackupManagerTab:
 
         ctk.CTkLabel(
             info_frame,
-            text="Backup Information",
+            text=t("Backup Information"),
             font=("Segoe UI", 12, "bold"),
             text_color=("gray70", "gray50"),
         ).pack(anchor=tk.W, padx=15, pady=(10, 5))
@@ -195,7 +196,7 @@ class BackupManagerTab:
             return
         # Show note for Elden Ring (currently loaded game context)
         if profile.key == "elden_ring":
-            self._game_note_var.set("(currently loaded game)")
+            self._game_note_var.set(t("(currently loaded game)"))
         else:
             self._game_note_var.set("")
         self.update_backup_stats()
@@ -299,10 +300,10 @@ class BackupManagerTab:
 
         if not save_path:
             CTkMessageBox.showwarning(
-                "No Save File",
-                f"No save file found for {profile.name}.\n\n"
-                "Launch the game at least once so the save file is created,\n"
-                "then try again.",
+                t("No Save File"),
+                t(
+                    "No save file found for {name}.\n\nLaunch the game at least once so the save file is created,\nthen try again."
+                ).format(name=profile.name),
                 parent=self.parent,
             )
             return
@@ -334,14 +335,16 @@ class BackupManagerTab:
 
             traceback.print_exc()
             CTkMessageBox.showerror(
-                "Error", f"Failed to open backup manager:\n{e}", parent=self.parent
+                t("Error"),
+                t("Failed to open backup manager:\n{e}").format(e=e),
+                parent=self.parent,
             )
 
     def show_backup_manager(self):
         profile = self._selected_profile()
         if profile is None:
             CTkMessageBox.showwarning(
-                "No Game", "Please select a game.", parent=self.parent
+                t("No Game"), t("Please select a game."), parent=self.parent
             )
             return
 
@@ -349,10 +352,10 @@ class BackupManagerTab:
         save_path = self._resolve_save_path_for_profile()
         if not save_path:
             CTkMessageBox.showwarning(
-                "No Save File",
-                f"No save file found for {profile.name}.\n\n"
-                "Launch the game at least once so the save file is created,\n"
-                "then try again.",
+                t("No Save File"),
+                t(
+                    "No save file found for {name}.\n\nLaunch the game at least once so the save file is created,\nthen try again."
+                ).format(name=profile.name),
                 parent=self.parent,
             )
             return
@@ -388,7 +391,9 @@ class BackupManagerTab:
 
             traceback.print_exc()
             CTkMessageBox.showerror(
-                "Error", f"Failed to open backup manager:\n{e}", parent=self.parent
+                t("Error"),
+                t("Failed to open backup manager:\n{e}").format(e=e),
+                parent=self.parent,
             )
 
     def _build_backup_dialog_content(self, dialog, manager, profile, save_path: Path):
@@ -396,7 +401,7 @@ class BackupManagerTab:
 
         ctk.CTkLabel(
             dialog,
-            text=f"Backup Manager - {profile.name}",
+            text=t("Backup Manager - {name}").format(name=profile.name),
             font=("Segoe UI", 14, "bold"),
         ).pack(pady=10)
 
@@ -412,14 +417,16 @@ class BackupManagerTab:
 
         ctk.CTkLabel(
             list_frame,
-            text="Backups",
+            text=t("Backups"),
             font=("Segoe UI", 12, "bold"),
             text_color=("gray70", "gray50"),
         ).pack(anchor=tk.W, padx=10, pady=(0, 2))
 
         ctk.CTkLabel(
             list_frame,
-            text="Click the star to lock a backup. Locked backups are never removed by the backup limit.",
+            text=t(
+                "Click the star to lock a backup. Locked backups are never removed by the backup limit."
+            ),
             font=("Segoe UI", 10),
             text_color=("gray40", "gray60"),
         ).pack(anchor=tk.W, padx=10, pady=(0, 5))
@@ -428,9 +435,9 @@ class BackupManagerTab:
         sort_frame = ctk.CTkFrame(list_frame, fg_color="transparent")
         sort_frame.pack(fill=tk.X, padx=10, pady=(0, 6))
 
-        ctk.CTkLabel(sort_frame, text="Sort by:", font=("Segoe UI", 10, "bold")).pack(
-            side=tk.LEFT, padx=(0, 6)
-        )
+        ctk.CTkLabel(
+            sort_frame, text=t("Sort by:"), font=("Segoe UI", 10, "bold")
+        ).pack(side=tk.LEFT, padx=(0, 6))
         sort_combo = ctk.CTkComboBox(
             sort_frame,
             values=["Newest", "Oldest", "Operation", "Size", "Locked first"],
@@ -470,7 +477,7 @@ class BackupManagerTab:
             if not backups:
                 ctk.CTkLabel(
                     scrollable_frame,
-                    text="No backups found",
+                    text=t("No backups found"),
                     text_color=("gray70", "gray50"),
                 ).pack(pady=20)
                 return
@@ -523,15 +530,15 @@ class BackupManagerTab:
                             manager.set_favorite(fname, new_state)
                         except Exception as e:
                             CTkMessageBox.showerror(
-                                "Error",
-                                f"Failed to update lock state:\n{e}",
+                                t("Error"),
+                                t("Failed to update lock state:\n{e}").format(e=e),
                                 parent=dialog,
                             )
                             return
                         label.configure(image=get_star_image(new_state))
                         self.update_backup_stats()
                         self.show_toast(
-                            "Backup locked" if new_state else "Backup unlocked",
+                            t("Backup locked") if new_state else t("Backup unlocked"),
                             duration=2500,
                         )
 
@@ -599,12 +606,12 @@ class BackupManagerTab:
 
             ctk.CTkLabel(
                 frame,
-                text="Reason or name for this backup:",
+                text=t("Reason or name for this backup:"),
                 font=("Segoe UI", 12, "bold"),
             ).pack(anchor=tk.W, pady=(0, 8))
 
             entry = ctk.CTkEntry(
-                frame, placeholder_text="e.g. before convergence update"
+                frame, placeholder_text=t("e.g. before convergence update")
             )
             entry.pack(fill=tk.X)
             entry.focus_set()
@@ -618,12 +625,12 @@ class BackupManagerTab:
 
             row = ctk.CTkFrame(frame, fg_color="transparent")
             row.pack(fill=tk.X, pady=(16, 0))
-            ctk.CTkButton(row, text="Create", command=confirm, width=100).pack(
+            ctk.CTkButton(row, text=t("Create"), command=confirm, width=100).pack(
                 side=tk.RIGHT, padx=(6, 0)
             )
             ctk.CTkButton(
                 row,
-                text="Cancel",
+                text=t("Cancel"),
                 command=pd.destroy,
                 width=100,
                 fg_color=("gray70", "gray40"),
@@ -644,23 +651,27 @@ class BackupManagerTab:
                 )
                 refresh_list()
                 self.update_backup_stats()
-                self.show_toast("Backup created", duration=2500)
+                self.show_toast(t("Backup created"), duration=2500)
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Failed to create backup:\n{e}", parent=dialog
+                    t("Error"),
+                    t("Failed to create backup:\n{e}").format(e=e),
+                    parent=dialog,
                 )
 
         def restore_backup():
             if not selected_backup[0]:
                 CTkMessageBox.showwarning(
-                    "No Selection", "Select a backup to restore.", parent=dialog
+                    t("No Selection"), t("Select a backup to restore."), parent=dialog
                 )
                 return
             is_loaded_here = str(self.get_save_path()) == str(save_path)
 
             if not CTkMessageBox.askyesno(
-                "Confirm Restore",
-                f"Restore backup '{selected_backup[0]}'?\n\nCurrent save will be backed up first.",
+                t("Confirm Restore"),
+                t(
+                    "Restore backup '{selected_backup}'?\n\nCurrent save will be backed up first."
+                ).format(selected_backup=selected_backup[0]),
                 parent=dialog,
             ):
                 return
@@ -669,7 +680,9 @@ class BackupManagerTab:
                 manager.restore_backup(selected_backup[0])
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Failed to restore backup:\n{e}", parent=dialog
+                    t("Error"),
+                    t("Failed to restore backup:\n{e}").format(e=e),
+                    parent=dialog,
                 )
                 return
 
@@ -682,26 +695,30 @@ class BackupManagerTab:
             if dialog.winfo_exists():
                 refresh_list()
             self.update_backup_stats()
-            self.show_toast("Backup restored", duration=3000)
+            self.show_toast(t("Backup restored"), duration=3000)
 
         def delete_backup():
             if not selected_backup[0]:
                 CTkMessageBox.showwarning(
-                    "No Selection", "Select a backup to delete.", parent=dialog
+                    t("No Selection"), t("Select a backup to delete."), parent=dialog
                 )
                 return
             item = backup_items.get(selected_backup[0])
             if item and item["metadata"].favorite:
                 CTkMessageBox.showwarning(
-                    "Backup Locked",
-                    "This backup is locked and cannot be deleted.\n\n"
-                    "Click its star to unlock it first.",
+                    t("Backup Locked"),
+                    t(
+                        "This backup is locked and cannot be deleted.\n\n"
+                        "Click its star to unlock it first."
+                    ),
                     parent=dialog,
                 )
                 return
             if not CTkMessageBox.askyesno(
-                "Confirm Delete",
-                f"Delete backup '{selected_backup[0]}'?\n\nThis cannot be undone.",
+                t("Confirm Delete"),
+                t(
+                    "Delete backup '{selected_backup}'?\n\nThis cannot be undone."
+                ).format(selected_backup=selected_backup[0]),
                 parent=dialog,
             ):
                 return
@@ -709,23 +726,25 @@ class BackupManagerTab:
                 manager.delete_backup(selected_backup[0])
                 refresh_list()
                 self.update_backup_stats()
-                self.show_toast("Backup deleted", duration=2500)
+                self.show_toast(t("Backup deleted"), duration=2500)
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Failed to delete backup:\n{e}", parent=dialog
+                    t("Error"),
+                    t("Failed to delete backup:\n{e}").format(e=e),
+                    parent=dialog,
                 )
 
         def view_details():
             if not selected_backup[0]:
                 CTkMessageBox.showwarning(
-                    "No Selection", "Select a backup to view.", parent=dialog
+                    t("No Selection"), t("Select a backup to view."), parent=dialog
                 )
                 return
 
             info = manager.get_backup_info(selected_backup[0])
             if not info:
                 CTkMessageBox.showwarning(
-                    "Not Found", "Backup metadata not found.", parent=dialog
+                    t("Not Found"), t("Backup metadata not found."), parent=dialog
                 )
                 return
 
@@ -747,7 +766,7 @@ class BackupManagerTab:
 
             ctk.CTkLabel(
                 main_frame,
-                text="Backup Information",
+                text=t("Backup Information"),
                 font=("Segoe UI", 16, "bold"),
             ).pack(pady=(0, 15))
 
@@ -775,7 +794,7 @@ class BackupManagerTab:
             details_text.configure(state="disabled")
 
             ctk.CTkButton(
-                main_frame, text="Close", command=dd.destroy, width=120
+                main_frame, text=t("Close"), command=dd.destroy, width=120
             ).pack()
 
         def open_backup_folder():
@@ -818,13 +837,15 @@ class BackupManagerTab:
                         continue
 
                 CTkMessageBox.showerror(
-                    "Error",
-                    f"Could not open folder.\nPath: {path}",
+                    t("Error"),
+                    t("Could not open folder.\nPath: {path}").format(path=path),
                     parent=dialog,
                 )
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Failed to open folder:\n{e}", parent=dialog
+                    t("Error"),
+                    t("Failed to open folder:\n{e}").format(e=e),
+                    parent=dialog,
                 )
 
         for text, cmd in [
@@ -840,7 +861,7 @@ class BackupManagerTab:
             )
 
         ctk.CTkButton(
-            button_frame, text="Close", command=dialog.destroy, width=120
+            button_frame, text=t("Close"), command=dialog.destroy, width=120
         ).pack(side=tk.RIGHT, padx=5)
 
         sort_combo.configure(command=lambda _choice: refresh_list())

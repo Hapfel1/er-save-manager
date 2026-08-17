@@ -6,6 +6,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.backup.manager import BackupManager
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 
 
@@ -47,7 +48,7 @@ class AdvancedToolsTab:
 
         ctk.CTkLabel(
             scroll_frame,
-            text="Advanced Tools",
+            text=t("Advanced Tools"),
             font=("Segoe UI", 14, "bold"),
         ).pack(pady=10)
 
@@ -57,7 +58,7 @@ class AdvancedToolsTab:
 
         ctk.CTkLabel(
             info_frame,
-            text="Save Information",
+            text=t("Save Information"),
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
@@ -83,27 +84,27 @@ class AdvancedToolsTab:
 
         ctk.CTkLabel(
             tools_frame,
-            text="Tools",
+            text=t("Tools"),
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
         ctk.CTkButton(
             tools_frame,
-            text="Validate Save File",
+            text=t("Validate Save File"),
             command=self.validate_save,
             width=200,
         ).pack(pady=5, padx=12)
 
         ctk.CTkButton(
             tools_frame,
-            text="Recalculate All Checksums",
+            text=t("Recalculate All Checksums"),
             command=self.recalculate_checksums,
             width=200,
         ).pack(pady=5, padx=12)
 
         ctk.CTkButton(
             tools_frame,
-            text="Refresh Information",
+            text=t("Refresh Information"),
             command=self.update_save_info,
             width=200,
         ).pack(pady=(5, 12), padx=12)
@@ -154,7 +155,7 @@ class AdvancedToolsTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
@@ -232,20 +233,20 @@ class AdvancedToolsTab:
 
             if not issues:
                 CTkMessageBox.showinfo(
-                    "Validation Complete",
-                    "Save file validation passed!\n\nNo critical issues detected.",
+                    t("Validation Complete"),
+                    t("Save file validation passed!\n\nNo critical issues detected."),
                     parent=self.parent,
                 )
             else:
                 message = "Validation found potential issues:\n\n" + "\n".join(issues)
                 CTkMessageBox.showwarning(
-                    "Validation Results", message, parent=self.parent
+                    t("Validation Results"), message, parent=self.parent
                 )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Validation Error",
-                f"Failed to validate save:\n{e}",
+                t("Validation Error"),
+                t("Failed to validate save:\n{e}").format(e=e),
                 parent=self.parent,
             )
 
@@ -254,14 +255,14 @@ class AdvancedToolsTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
         if getattr(save_file, "is_ps", False):
             CTkMessageBox.showinfo(
-                "Not Applicable",
-                "PlayStation saves do not use slot checksums.",
+                t("Not Applicable"),
+                t("PlayStation saves do not use slot checksums."),
                 parent=self.parent,
             )
             return
@@ -285,15 +286,15 @@ class AdvancedToolsTab:
                 # Refresh info panel
                 self.reload_save()
                 self.update_save_info()
-                self.show_toast("Checksums recalculated successfully", duration=2500)
+                self.show_toast(t("Checksums recalculated successfully"), duration=2500)
             else:
                 CTkMessageBox.showerror(
-                    "Error", "Save path not available", parent=self.parent
+                    t("Error"), t("Save path not available"), parent=self.parent
                 )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Recalculation Error",
-                f"Failed to recalculate checksums:\n{e}",
+                t("Recalculation Error"),
+                t("Failed to recalculate checksums:\n{e}").format(e=e),
                 parent=self.parent,
             )

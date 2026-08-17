@@ -13,6 +13,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
@@ -54,31 +55,31 @@ class DS3BossesTab:
 
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
-        ctk.CTkLabel(header, text="Bosses", font=("Segoe UI", 16, "bold")).pack(
+        ctk.CTkLabel(header, text=t("Bosses"), font=("Segoe UI", 16, "bold")).pack(
             side="left"
         )
-        ctk.CTkButton(header, text="Load", command=self._load_selected, width=70).pack(
-            side="right", padx=(6, 0)
-        )
+        ctk.CTkButton(
+            header, text=t("Load"), command=self._load_selected, width=70
+        ).pack(side="right", padx=(6, 0))
         self._slot_var = ctk.StringVar()
         self._slot_combo = ctk.CTkComboBox(
             header, variable=self._slot_var, values=[], state="readonly", width=240
         )
         self._slot_combo.pack(side="right")
-        ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
+        ctk.CTkLabel(header, text=t("Slot:")).pack(side="right", padx=(0, 6))
 
         bulk = ctk.CTkFrame(outer, fg_color="transparent")
         bulk.pack(fill="x", padx=10, pady=(0, 6))
         ctk.CTkButton(
             bulk,
-            text="Kill All Bosses",
+            text=t("Kill All Bosses"),
             width=130,
             fg_color=("gray55", "gray35"),
             command=lambda: self._bulk(True),
         ).pack(side="left", padx=(0, 8))
         ctk.CTkButton(
             bulk,
-            text="Respawn All Bosses",
+            text=t("Respawn All Bosses"),
             width=160,
             command=lambda: self._bulk(False),
         ).pack(side="left")
@@ -122,7 +123,7 @@ class DS3BossesTab:
         if char is None:
             ctk.CTkLabel(
                 self._scroll,
-                text="Empty slot or no save loaded.",
+                text=t("Empty slot or no save loaded."),
                 text_color=("gray50", "gray60"),
             ).pack(anchor="w", padx=6, pady=40)
             return
@@ -168,7 +169,7 @@ class DS3BossesTab:
 
         ctk.CTkButton(
             row,
-            text="Kill",
+            text=t("Kill"),
             width=65,
             fg_color=("gray55", "gray35"),
             command=lambda b=boss, dv=defeat_val, bg=badge: self._set_boss(
@@ -177,7 +178,7 @@ class DS3BossesTab:
         ).grid(row=0, column=2, rowspan=2, padx=4, pady=6)
         ctk.CTkButton(
             row,
-            text="Respawn",
+            text=t("Respawn"),
             width=80,
             fg_color=("#2a5a9a", "#1e4a8a"),
             command=lambda b=boss, dv=defeat_val, bg=badge: self._set_boss(
@@ -208,13 +209,13 @@ class DS3BossesTab:
             )
             badge_color = ("gray55", "gray45") if defeated else ("#2a6e2a", "#1e7e1e")
             badge.configure(
-                text="KILLED" if defeated else "ALIVE", fg_color=badge_color
+                text=t("KILLED") if defeated else t("ALIVE"), fg_color=badge_color
             )
             self._show_toast(
                 f"{boss['name']} {'killed' if defeated else 'respawned'}. Backup created."
             )
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     def _bulk(self, defeated: bool) -> None:
         if _game_blocks_write(self.parent):
@@ -224,8 +225,11 @@ class DS3BossesTab:
         if char is None:
             return
         if not CTkMessageBox.askyesno(
-            "Confirm",
-            f"{'Kill' if defeated else 'Respawn'} all bosses in Slot {self._current_slot + 1}?",
+            t("Confirm"),
+            t("{value} all bosses in Slot {current_slot}?").format(
+                value="Kill" if defeated else "Respawn",
+                current_slot=self._current_slot + 1,
+            ),
             parent=self.parent,
         ):
             return
@@ -242,7 +246,7 @@ class DS3BossesTab:
                 f"All bosses {'killed' if defeated else 'respawned'}. Backup created."
             )
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     # --- Helpers ------------------------------------------------------------- #
 
@@ -253,7 +257,9 @@ class DS3BossesTab:
         idx = self._slot_idx()
         if idx < 0 or save.characters[idx] is None:
             CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {idx + 1} is empty.", parent=self.parent
+                t("Empty Slot"),
+                t("Slot {idx} is empty.").format(idx=idx + 1),
+                parent=self.parent,
             )
             return
         self._current_slot = idx
@@ -264,13 +270,13 @@ class DS3BossesTab:
         save_path = self._get_save_path()
         if save is None or save_path is None:
             CTkMessageBox.showwarning(
-                "No Save", "No DS3 save loaded.", parent=self.parent
+                t("No Save"), t("No DS3 save loaded."), parent=self.parent
             )
             return None, None, None
         char = save.characters[self._current_slot]
         if char is None:
             CTkMessageBox.showwarning(
-                "Empty Slot", "No character in this slot.", parent=self.parent
+                t("Empty Slot"), t("No character in this slot."), parent=self.parent
             )
             return None, None, None
         return save, save_path, char

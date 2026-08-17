@@ -8,6 +8,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.platform import PlatformUtils
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.messagebox import CTkMessageBox
@@ -72,7 +73,7 @@ class CharacterManagementTab:
         # Title
         title_label = ctk.CTkLabel(
             scroll_frame,
-            text="Character Management",
+            text=t("Character Management"),
             font=("Segoe UI", 16, "bold"),
         )
         title_label.pack(pady=10)
@@ -80,7 +81,9 @@ class CharacterManagementTab:
         # Info label
         info_text = ctk.CTkLabel(
             scroll_frame,
-            text="Transfer characters between save files, copy slots, manage your character roster, share and download community builds",
+            text=t(
+                "Transfer characters between save files, copy slots, manage your character roster, share and download community builds"
+            ),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         )
@@ -95,7 +98,7 @@ class CharacterManagementTab:
 
         ctk.CTkButton(
             browser_frame,
-            text="🌐 Browse Character Library",
+            text=t("🌐 Browse Character Library"),
             command=self.open_character_browser,
             width=250,
             height=40,
@@ -103,7 +106,7 @@ class CharacterManagementTab:
 
         ctk.CTkLabel(
             browser_frame,
-            text="Download complete character builds from the community",
+            text=t("Download complete character builds from the community"),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         ).pack(side=tk.LEFT, padx=(10, 15))
@@ -118,7 +121,7 @@ class CharacterManagementTab:
         # Add label to selector frame
         selector_label = ctk.CTkLabel(
             selector_frame,
-            text="Select Operation",
+            text=t("Select Operation"),
             font=("Segoe UI", 12, "bold"),
         )
         selector_label.pack(anchor=tk.W, padx=15, pady=(10, 5))
@@ -139,7 +142,7 @@ class CharacterManagementTab:
         ]
 
         # Operation label
-        op_label = ctk.CTkLabel(selector_controls, text="Operation:")
+        op_label = ctk.CTkLabel(selector_controls, text=t("Operation:"))
         op_label.pack(side=tk.LEFT, padx=(0, 10))
 
         # Dropdown selector
@@ -170,7 +173,7 @@ class CharacterManagementTab:
         # Add label to operation panel
         panel_label = ctk.CTkLabel(
             self.char_ops_panel,
-            text="Operation Details",
+            text=t("Operation Details"),
             font=("Segoe UI", 12, "bold"),
         )
         panel_label.pack(anchor=tk.W, padx=15, pady=(10, 5))
@@ -259,7 +262,7 @@ class CharacterManagementTab:
         """Setup copy operation panel"""
         desc_label = ctk.CTkLabel(
             self.ops_scrollable,
-            text="Copy a character from one slot to another in the same save file",
+            text=t("Copy a character from one slot to another in the same save file"),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         )
@@ -268,7 +271,7 @@ class CharacterManagementTab:
         controls = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
         controls.pack(fill=tk.X, pady=10)
 
-        from_label = ctk.CTkLabel(controls, text="From Slot:")
+        from_label = ctk.CTkLabel(controls, text=t("From Slot:"))
         from_label.pack(side=tk.LEFT, padx=5)
 
         self.copy_from_var = tk.IntVar(value=1)
@@ -283,7 +286,7 @@ class CharacterManagementTab:
         from_combo.set(slot_names[0])
         from_combo.pack(side=tk.LEFT, padx=5)
 
-        to_label = ctk.CTkLabel(controls, text="To Slot:")
+        to_label = ctk.CTkLabel(controls, text=t("To Slot:"))
         to_label.pack(side=tk.LEFT, padx=15)
 
         self.copy_to_var = tk.IntVar(value=2)
@@ -300,7 +303,7 @@ class CharacterManagementTab:
 
         copy_button = ctk.CTkButton(
             controls,
-            text="Copy Character",
+            text=t("Copy Character"),
             command=self.copy_character,
             width=150,
         )
@@ -310,7 +313,7 @@ class CharacterManagementTab:
         """Setup transfer operation panel"""
         desc_label = ctk.CTkLabel(
             self.ops_scrollable,
-            text="Transfer a character to a different save file",
+            text=t("Transfer a character to a different save file"),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         )
@@ -319,7 +322,7 @@ class CharacterManagementTab:
         controls = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
         controls.pack(fill=tk.X, pady=10)
 
-        from_label = ctk.CTkLabel(controls, text="From Slot:")
+        from_label = ctk.CTkLabel(controls, text=t("From Slot:"))
         from_label.pack(side=tk.LEFT, padx=5)
 
         self.transfer_from_var = tk.IntVar(value=1)
@@ -336,7 +339,7 @@ class CharacterManagementTab:
 
         transfer_button = ctk.CTkButton(
             controls,
-            text="Select Target Save...",
+            text=t("Select Target Save..."),
             command=self.transfer_character,
             width=180,
         )
@@ -346,7 +349,7 @@ class CharacterManagementTab:
         """Setup swap operation panel"""
         desc_label = ctk.CTkLabel(
             self.ops_scrollable,
-            text="Exchange two character slots",
+            text=t("Exchange two character slots"),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         )
@@ -355,7 +358,7 @@ class CharacterManagementTab:
         controls = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
         controls.pack(fill=tk.X, pady=10)
 
-        slot_a_label = ctk.CTkLabel(controls, text="Slot A:")
+        slot_a_label = ctk.CTkLabel(controls, text=t("Slot A:"))
         slot_a_label.pack(side=tk.LEFT, padx=5)
 
         self.swap_a_var = tk.IntVar(value=1)
@@ -370,7 +373,7 @@ class CharacterManagementTab:
         slot_a_combo.set(slot_names[0])
         slot_a_combo.pack(side=tk.LEFT, padx=5)
 
-        slot_b_label = ctk.CTkLabel(controls, text="Slot B:")
+        slot_b_label = ctk.CTkLabel(controls, text=t("Slot B:"))
         slot_b_label.pack(side=tk.LEFT, padx=15)
 
         self.swap_b_var = tk.IntVar(value=2)
@@ -386,7 +389,7 @@ class CharacterManagementTab:
 
         swap_button = ctk.CTkButton(
             controls,
-            text="Swap Slots",
+            text=t("Swap Slots"),
             command=self.swap_characters,
             width=150,
         )
@@ -396,7 +399,7 @@ class CharacterManagementTab:
         """Setup export operation panel"""
         desc_label = ctk.CTkLabel(
             self.ops_scrollable,
-            text="Save character to a standalone .erc file for backup or sharing",
+            text=t("Save character to a standalone .erc file for backup or sharing"),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         )
@@ -405,7 +408,7 @@ class CharacterManagementTab:
         controls = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
         controls.pack(fill=tk.X, pady=10)
 
-        slot_label = ctk.CTkLabel(controls, text="Slot:")
+        slot_label = ctk.CTkLabel(controls, text=t("Slot:"))
         slot_label.pack(side=tk.LEFT, padx=5)
 
         self.export_slot_var = tk.IntVar(value=1)
@@ -422,7 +425,7 @@ class CharacterManagementTab:
 
         export_button = ctk.CTkButton(
             controls,
-            text="Export Character...",
+            text=t("Export Character..."),
             command=self.export_character,
             width=180,
         )
@@ -432,7 +435,7 @@ class CharacterManagementTab:
         """Setup import operation panel"""
         desc_label = ctk.CTkLabel(
             self.ops_scrollable,
-            text="Load a character from a .erc file into a slot",
+            text=t("Load a character from a .erc file into a slot"),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         )
@@ -441,7 +444,7 @@ class CharacterManagementTab:
         controls = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
         controls.pack(fill=tk.X, pady=10)
 
-        slot_label = ctk.CTkLabel(controls, text="To Slot:")
+        slot_label = ctk.CTkLabel(controls, text=t("To Slot:"))
         slot_label.pack(side=tk.LEFT, padx=5)
 
         self.import_slot_var = tk.IntVar(value=1)
@@ -458,7 +461,7 @@ class CharacterManagementTab:
 
         import_button = ctk.CTkButton(
             controls,
-            text="Import Character...",
+            text=t("Import Character..."),
             command=self.import_character,
             width=180,
         )
@@ -468,7 +471,7 @@ class CharacterManagementTab:
         """Setup delete operation panel"""
         desc_label = ctk.CTkLabel(
             self.ops_scrollable,
-            text="Clear a character slot (creates backup)",
+            text=t("Clear a character slot (creates backup)"),
             font=("Segoe UI", 11),
             text_color=("red", "red"),
         )
@@ -477,7 +480,7 @@ class CharacterManagementTab:
         controls = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
         controls.pack(fill=tk.X, pady=10)
 
-        slot_label = ctk.CTkLabel(controls, text="Slot:")
+        slot_label = ctk.CTkLabel(controls, text=t("Slot:"))
         slot_label.pack(side=tk.LEFT, padx=5)
 
         self.delete_slot_var = tk.IntVar(value=1)
@@ -494,7 +497,7 @@ class CharacterManagementTab:
 
         delete_button = ctk.CTkButton(
             controls,
-            text="Delete Character",
+            text=t("Delete Character"),
             command=self.delete_character,
             width=150,
             fg_color=("red", "darkred"),
@@ -509,8 +512,8 @@ class CharacterManagementTab:
         # Check if game is running
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
-                "Elden Ring is Running!",
-                "Please close Elden Ring before modifying save files.",
+                t("Elden Ring is Running!"),
+                t("Please close Elden Ring before modifying save files."),
                 parent=self.parent,
             )
             return
@@ -518,7 +521,7 @@ class CharacterManagementTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
@@ -527,8 +530,8 @@ class CharacterManagementTab:
 
         if from_slot == to_slot:
             CTkMessageBox.showerror(
-                "Error",
-                "Source and destination slots must be different!",
+                t("Error"),
+                t("Source and destination slots must be different!"),
                 parent=self.parent,
             )
             return
@@ -538,7 +541,9 @@ class CharacterManagementTab:
 
         if from_char.is_empty():
             CTkMessageBox.showerror(
-                "Error", f"Slot {from_slot + 1} is empty!", parent=self.parent
+                t("Error"),
+                t("Slot {from_slot} is empty!").format(from_slot=from_slot + 1),
+                parent=self.parent,
             )
             return
 
@@ -558,8 +563,10 @@ class CharacterManagementTab:
         if not to_char.is_empty() and to_is_active:
             to_name = to_char.get_character_name()
             response = CTkMessageBox.askyesno(
-                "Overwrite?",
-                f"Slot {to_slot + 1} contains '{to_name}'.\n\nOverwrite with '{from_name}'?",
+                t("Overwrite?"),
+                t(
+                    "Slot {to_slot} contains '{to_name}'.\n\nOverwrite with '{from_name}'?"
+                ).format(to_slot=to_slot + 1, to_name=to_name, from_name=from_name),
                 parent=self.parent,
             )
             if not response:
@@ -598,14 +605,18 @@ class CharacterManagementTab:
             # Delay message to ensure it appears on top after reload
             (
                 self.show_toast(
-                    f"Character '{from_name}' copied to Slot {to_slot + 1}!",
+                    t("Character '{from_name}' copied to Slot {to_slot}!").format(
+                        from_name=from_name, to_slot=to_slot + 1
+                    ),
                     duration=2500,
                 ),
             )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Copy failed:\n{str(e)}", parent=self.parent
+                t("Error"),
+                t("Copy failed:\n{str}").format(str=str(e)),
+                parent=self.parent,
             )
             import traceback
 
@@ -616,8 +627,8 @@ class CharacterManagementTab:
         # Check if game is running
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
-                "Elden Ring is Running!",
-                "Please close Elden Ring before modifying save files.",
+                t("Elden Ring is Running!"),
+                t("Please close Elden Ring before modifying save files."),
                 parent=self.parent,
             )
             return
@@ -625,7 +636,7 @@ class CharacterManagementTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
@@ -634,7 +645,9 @@ class CharacterManagementTab:
 
         if from_char.is_empty():
             CTkMessageBox.showerror(
-                "Error", f"Slot {from_slot + 1} is empty!", parent=self.parent
+                t("Error"),
+                t("Slot {from_slot} is empty!").format(from_slot=from_slot + 1),
+                parent=self.parent,
             )
             return
 
@@ -658,8 +671,8 @@ class CharacterManagementTab:
             source_path = self._get_current_save_path()
             if source_path and Path(target_path).resolve() == source_path.resolve():
                 CTkMessageBox.showerror(
-                    "Error",
-                    "Select a different target save file for transfer.",
+                    t("Error"),
+                    t("Select a different target save file for transfer."),
                     parent=self.parent,
                 )
                 return
@@ -699,12 +712,17 @@ class CharacterManagementTab:
 
             # Delay message to ensure it appears on top after reload
             self.show_toast(
-                f"Character transferred to target Slot {to_slot + 1}!", duration=2500
+                t("Character transferred to target Slot {to_slot}!").format(
+                    to_slot=to_slot + 1
+                ),
+                duration=2500,
             )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Transfer failed:\n{str(e)}", parent=self.parent
+                t("Error"),
+                t("Transfer failed:\n{str}").format(str=str(e)),
+                parent=self.parent,
             )
             import traceback
 
@@ -722,7 +740,7 @@ class CharacterManagementTab:
         save_path = self._get_current_save_path()
         initialdir = str(save_path.parent) if save_path else None
         return pick_file(
-            title="Select target save file",
+            title=t("Select target save file"),
             initialdir=initialdir,
             filetypes=[("Save files", "*.sl2 *.co2 *.cnv"), ("All files", "*.*")],
         )
@@ -765,7 +783,7 @@ class CharacterManagementTab:
 
         dialog_label = ctk.CTkLabel(
             slot_dialog,
-            text="Select destination slot in target save:",
+            text=t("Select destination slot in target save:"),
             font=("Segoe UI", 12),
         )
         dialog_label.pack(padx=10, pady=(12, 6))
@@ -801,7 +819,7 @@ class CharacterManagementTab:
 
         confirm_button = ctk.CTkButton(
             slot_dialog,
-            text="Transfer",
+            text=t("Transfer"),
             command=confirm,
             width=140,
         )
@@ -818,8 +836,8 @@ class CharacterManagementTab:
         # Check if game is running
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
-                "Elden Ring is Running!",
-                "Please close Elden Ring before modifying save files.",
+                t("Elden Ring is Running!"),
+                t("Please close Elden Ring before modifying save files."),
                 parent=self.parent,
             )
             return
@@ -827,7 +845,7 @@ class CharacterManagementTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
@@ -836,7 +854,7 @@ class CharacterManagementTab:
 
         if slot_a == slot_b:
             CTkMessageBox.showerror(
-                "Error", "Slots must be different!", parent=self.parent
+                t("Error"), t("Slots must be different!"), parent=self.parent
             )
             return
 
@@ -867,12 +885,17 @@ class CharacterManagementTab:
 
             # Delay message to ensure it appears on top after reload
             self.show_toast(
-                f"Swapped Slot {slot_a + 1} and Slot {slot_b + 1}!", duration=2500
+                t("Swapped Slot {slot_a} and Slot {slot_b}!").format(
+                    slot_a=slot_a + 1, slot_b=slot_b + 1
+                ),
+                duration=2500,
             )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Swap failed:\n{str(e)}", parent=self.parent
+                t("Error"),
+                t("Swap failed:\n{str}").format(str=str(e)),
+                parent=self.parent,
             )
             import traceback
 
@@ -883,8 +906,8 @@ class CharacterManagementTab:
         # Check if game is running
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
-                "Elden Ring is Running!",
-                "Please close Elden Ring before modifying save files.",
+                t("Elden Ring is Running!"),
+                t("Please close Elden Ring before modifying save files."),
                 parent=self.parent,
             )
             return
@@ -892,7 +915,7 @@ class CharacterManagementTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
@@ -901,7 +924,9 @@ class CharacterManagementTab:
 
         if char.is_empty():
             CTkMessageBox.showerror(
-                "Error", f"Slot {slot + 1} is empty!", parent=self.parent
+                t("Error"),
+                t("Slot {slot} is empty!").format(slot=slot + 1),
+                parent=self.parent,
             )
             return
 
@@ -910,7 +935,7 @@ class CharacterManagementTab:
         default_name = f"{char_name}.erc"
 
         output_path = pick_file(
-            title="Export Character",
+            title=t("Export Character"),
             save=True,
             defaultextension=".erc",
             initialfile=default_name,
@@ -926,14 +951,18 @@ class CharacterManagementTab:
             CharacterOperations.export_character(save_file, slot, Path(output_path))
 
             CTkMessageBox.showinfo(
-                "Success",
-                f"Character '{char_name}' exported to:\n{output_path}",
+                t("Success"),
+                t("Character '{char_name}' exported to:\n{output_path}").format(
+                    char_name=char_name, output_path=output_path
+                ),
                 parent=self.parent,
             )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Export failed:\n{str(e)}", parent=self.parent
+                t("Error"),
+                t("Export failed:\n{str}").format(str=str(e)),
+                parent=self.parent,
             )
             import traceback
 
@@ -944,8 +973,8 @@ class CharacterManagementTab:
         # Check if game is running
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
-                "Elden Ring is Running!",
-                "Please close Elden Ring before modifying save files.",
+                t("Elden Ring is Running!"),
+                t("Please close Elden Ring before modifying save files."),
                 parent=self.parent,
             )
             return
@@ -953,12 +982,12 @@ class CharacterManagementTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
         import_path = pick_file(
-            title="Import Character",
+            title=t("Import Character"),
             filetypes=[("ER Character", "*.erc"), ("All files", "*.*")],
         )
 
@@ -982,8 +1011,10 @@ class CharacterManagementTab:
         if not to_char.is_empty() and to_is_active:
             to_name = to_char.get_character_name()
             response = CTkMessageBox.askyesno(
-                "Overwrite?",
-                f"Slot {to_slot + 1} contains '{to_name}'.\n\nOverwrite?",
+                t("Overwrite?"),
+                t("Slot {to_slot} contains '{to_name}'.\n\nOverwrite?").format(
+                    to_slot=to_slot + 1, to_name=to_name
+                ),
                 parent=self.parent,
             )
             if not response:
@@ -1015,11 +1046,16 @@ class CharacterManagementTab:
                 self.reload_save()
 
             # Delay message to ensure it appears on top after reload
-            self.show_toast(f"Character imported to Slot {to_slot + 1}!", duration=2500)
+            self.show_toast(
+                t("Character imported to Slot {to_slot}!").format(to_slot=to_slot + 1),
+                duration=2500,
+            )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Import failed:\n{str(e)}", parent=self.parent
+                t("Error"),
+                t("Import failed:\n{str}").format(str=str(e)),
+                parent=self.parent,
             )
             import traceback
 
@@ -1032,8 +1068,8 @@ class CharacterManagementTab:
         save = self.get_save_file()
         if not save:
             CTkMessageBox.showwarning(
-                "No Save File",
-                "Please load a save file first",
+                t("No Save File"),
+                t("Please load a save file first"),
                 parent=self.parent,
             )
             return
@@ -1046,8 +1082,8 @@ class CharacterManagementTab:
         # Check if game is running
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
-                "Elden Ring is Running!",
-                "Please close Elden Ring before modifying save files.",
+                t("Elden Ring is Running!"),
+                t("Please close Elden Ring before modifying save files."),
                 parent=self.parent,
             )
             return
@@ -1055,7 +1091,7 @@ class CharacterManagementTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
@@ -1064,15 +1100,19 @@ class CharacterManagementTab:
 
         if char.is_empty():
             CTkMessageBox.showinfo(
-                "Info", f"Slot {slot + 1} is already empty.", parent=self.parent
+                t("Info"),
+                t("Slot {slot} is already empty.").format(slot=slot + 1),
+                parent=self.parent,
             )
             return
 
         char_name = char.get_character_name()
 
         response = CTkMessageBox.askyesno(
-            "Confirm Delete",
-            f"Delete character '{char_name}' from Slot {slot + 1}?\n\nThis will create a backup first.",
+            t("Confirm Delete"),
+            t(
+                "Delete character '{char_name}' from Slot {slot}?\n\nThis will create a backup first."
+            ).format(char_name=char_name, slot=slot + 1),
             parent=self.parent,
         )
         if not response:
@@ -1104,11 +1144,16 @@ class CharacterManagementTab:
                 self.reload_save()
 
             # Delay message to ensure it appears on top after reload
-            self.show_toast(f"Character deleted from Slot {slot + 1}", duration=2500)
+            self.show_toast(
+                t("Character deleted from Slot {slot}").format(slot=slot + 1),
+                duration=2500,
+            )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Delete failed:\n{str(e)}", parent=self.parent
+                t("Error"),
+                t("Delete failed:\n{str}").format(str=str(e)),
+                parent=self.parent,
             )
             import traceback
 

@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import pick_file
 
@@ -59,19 +60,21 @@ def import_nyasu(
     on_refresh,
 ) -> None:
     CTkMessageBox.showinfo(
-        "Import from Nyasu",
+        t("Import from Nyasu"),
         (
-            "How to get your build JSON:\n\n"
-            "1. Go to https://er-inventory.nyasu.business\n"
-            "2. Open your build\n"
-            "3. Click Load/Save  ->  JSON  ->  Download\n\n"
-            "Click OK, then select the downloaded file."
+            t(
+                "How to get your build JSON:\n\n"
+                "1. Go to https://er-inventory.nyasu.business\n"
+                "2. Open your build\n"
+                "3. Click Load/Save  ->  JSON  ->  Download\n\n"
+                "Click OK, then select the downloaded file."
+            )
         ),
         parent=parent,
     )
 
     path = pick_file(
-        title="Select Nyasu Build JSON",
+        title=t("Select Nyasu Build JSON"),
         filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
     )
     if not path:
@@ -82,13 +85,13 @@ def import_nyasu(
             data = json.load(fh)
     except Exception as e:
         CTkMessageBox.showerror(
-            "Import Error", f"Failed to read JSON:\n{e}", parent=parent
+            t("Import Error"), t("Failed to read JSON:\n{e}").format(e=e), parent=parent
         )
         return
 
     apply_stats = CTkMessageBox.askyesno(
-        "Apply Stats",
-        "Also apply stats and starting class from this build?",
+        t("Apply Stats"),
+        t("Also apply stats and starting class from this build?"),
         parent=parent,
     )
 
@@ -316,14 +319,16 @@ def import_nyasu(
             )
 
     if not queue and not apply_stats:
-        CTkMessageBox.showinfo("Import", "No items found in JSON.", parent=parent)
+        CTkMessageBox.showinfo(t("Import"), t("No items found in JSON."), parent=parent)
         return
 
     try:
         ensure_mutable()
         create_backup(save_file, slot_idx, "import_nyasu")
     except Exception as e:
-        CTkMessageBox.showerror("Error", f"Cannot modify save:\n{e}", parent=parent)
+        CTkMessageBox.showerror(
+            t("Error"), t("Cannot modify save:\n{e}").format(e=e), parent=parent
+        )
         return
 
     failed: list[str] = [f"[parse] {m}" for m in failed_parse]
@@ -420,7 +425,9 @@ def import_nyasu(
         if sp:
             save_file.to_file(Path(sp))
     except Exception as e:
-        CTkMessageBox.showerror("Save Error", f"Failed to save:\n{e}", parent=parent)
+        CTkMessageBox.showerror(
+            t("Save Error"), t("Failed to save:\n{e}").format(e=e), parent=parent
+        )
         return
 
     on_refresh()
@@ -439,4 +446,4 @@ def import_nyasu(
         lines.extend(f"  {f}" for f in failed[:12])
         if len(failed) > 12:
             lines.append(f"  ...and {len(failed) - 12} more")
-        CTkMessageBox.showerror("Import Errors", "\n".join(lines), parent=parent)
+        CTkMessageBox.showerror(t("Import Errors"), "\n".join(lines), parent=parent)

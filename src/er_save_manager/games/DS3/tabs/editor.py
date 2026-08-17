@@ -11,6 +11,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
@@ -47,10 +48,10 @@ class DS3EditorTab:
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
         ctk.CTkLabel(
-            header, text="Character Editor", font=("Segoe UI", 16, "bold")
+            header, text=t("Character Editor"), font=("Segoe UI", 16, "bold")
         ).pack(side="left")
         ctk.CTkButton(
-            header, text="Load Character", command=self._load_selected, width=130
+            header, text=t("Load Character"), command=self._load_selected, width=130
         ).pack(side="right", padx=(6, 0))
         self._slot_var = tk.StringVar()
         self._slot_combo = ctk.CTkComboBox(
@@ -61,7 +62,7 @@ class DS3EditorTab:
             width=240,
         )
         self._slot_combo.pack(side="right")
-        ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
+        ctk.CTkLabel(header, text=t("Slot:")).pack(side="right", padx=(0, 6))
 
         tabs = ctk.CTkTabview(
             outer,
@@ -87,7 +88,7 @@ class DS3EditorTab:
         # Attributes column
         af = ctk.CTkFrame(top, fg_color="transparent")
         af.pack(side="left", fill="both", expand=True, padx=(0, 5))
-        ctk.CTkLabel(af, text="Attributes", font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(af, text=t("Attributes"), font=("Segoe UI", 12, "bold")).pack(
             anchor="w", padx=5, pady=(5, 0)
         )
         ag = ctk.CTkFrame(af, fg_color="transparent")
@@ -117,7 +118,7 @@ class DS3EditorTab:
         # Resources column
         rf = ctk.CTkFrame(top, fg_color="transparent")
         rf.pack(side="left", fill="both", expand=True, padx=(5, 0))
-        ctk.CTkLabel(rf, text="Resources", font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(rf, text=t("Resources"), font=("Segoe UI", 12, "bold")).pack(
             anchor="w", padx=5, pady=(5, 0)
         )
         rg = ctk.CTkFrame(rf, fg_color="transparent")
@@ -141,7 +142,7 @@ class DS3EditorTab:
             )
 
         ctk.CTkButton(
-            frame, text="Apply Changes", command=self._apply_stats, width=200
+            frame, text=t("Apply Changes"), command=self._apply_stats, width=200
         ).pack(pady=16)
 
     # --- Identity tab -------------------------------------------------------- #
@@ -153,14 +154,18 @@ class DS3EditorTab:
 
         cf = ctk.CTkFrame(frame, fg_color="transparent")
         cf.pack(fill="x", pady=5, padx=10)
-        ctk.CTkLabel(cf, text="Character Identity", font=("Segoe UI", 12, "bold")).grid(
-            row=0, column=0, columnspan=2, sticky="w", padx=5, pady=(5, 0)
+        ctk.CTkLabel(
+            cf, text=t("Character Identity"), font=("Segoe UI", 12, "bold")
+        ).grid(row=0, column=0, columnspan=2, sticky="w", padx=5, pady=(5, 0))
+        ctk.CTkLabel(cf, text=t("Name:")).grid(
+            row=1, column=0, sticky="w", padx=5, pady=5
         )
-        ctk.CTkLabel(cf, text="Name:").grid(row=1, column=0, sticky="w", padx=5, pady=5)
         ctk.CTkEntry(cf, textvariable=self._name_var, width=200).grid(
             row=1, column=1, padx=5, pady=5, sticky="w"
         )
-        ctk.CTkLabel(cf, text="NG+:").grid(row=2, column=0, sticky="w", padx=5, pady=5)
+        ctk.CTkLabel(cf, text=t("NG+:")).grid(
+            row=2, column=0, sticky="w", padx=5, pady=5
+        )
         ctk.CTkComboBox(
             cf,
             variable=self._ng_var,
@@ -171,12 +176,12 @@ class DS3EditorTab:
 
         ctk.CTkLabel(
             frame,
-            text="Name supports up to 16 characters.",
+            text=t("Name supports up to 16 characters."),
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=15, pady=(4, 0))
         ctk.CTkButton(
-            frame, text="Apply Changes", command=self._apply_identity, width=200
+            frame, text=t("Apply Changes"), command=self._apply_identity, width=200
         ).pack(pady=16)
 
     # --- Refresh ------------------------------------------------------------- #
@@ -207,7 +212,9 @@ class DS3EditorTab:
         save = self._get_save()
         if save is None or save.characters[idx] is None:
             CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {idx + 1} is empty.", parent=self.parent
+                t("Empty Slot"),
+                t("Slot {idx} is empty.").format(idx=idx + 1),
+                parent=self.parent,
             )
             return
         self._current_slot = idx
@@ -270,7 +277,7 @@ class DS3EditorTab:
 
         if self._current_slot < 0:
             CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
+                t("No Character"), t("Load a character first."), parent=self.parent
             )
             return
         save = self._get_save()
@@ -278,8 +285,10 @@ class DS3EditorTab:
         if save is None or save_path is None:
             return
         if not CTkMessageBox.askyesno(
-            "Confirm",
-            f"Apply stat changes to Slot {self._current_slot + 1}?\n\nA backup will be created.",
+            t("Confirm"),
+            t(
+                "Apply stat changes to Slot {current_slot}?\n\nA backup will be created."
+            ).format(current_slot=self._current_slot + 1),
             parent=self.parent,
         ):
             return
@@ -300,7 +309,7 @@ class DS3EditorTab:
             char.fp = int(self._stat_vars["fp"].get())
             char.stamina = int(self._stat_vars["stamina"].get())
         except ValueError as exc:
-            CTkMessageBox.showerror("Invalid Value", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Invalid Value"), str(exc), parent=self.parent)
             return
         try:
             _backup_and_save(
@@ -308,7 +317,7 @@ class DS3EditorTab:
             )
             self._show_toast("Stats applied. Backup created.")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     def _apply_identity(self) -> None:
         if _game_blocks_write(self.parent):
@@ -316,7 +325,7 @@ class DS3EditorTab:
 
         if self._current_slot < 0:
             CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
+                t("No Character"), t("Load a character first."), parent=self.parent
             )
             return
         save = self._get_save()
@@ -324,8 +333,10 @@ class DS3EditorTab:
         if save is None or save_path is None:
             return
         if not CTkMessageBox.askyesno(
-            "Confirm",
-            f"Apply identity changes to Slot {self._current_slot + 1}?\n\nA backup will be created.",
+            t("Confirm"),
+            t(
+                "Apply identity changes to Slot {current_slot}?\n\nA backup will be created."
+            ).format(current_slot=self._current_slot + 1),
             parent=self.parent,
         ):
             return
@@ -336,7 +347,7 @@ class DS3EditorTab:
             char.name = self._name_var.get()
             char.ng_plus = int(self._ng_var.get())
         except (ValueError, Exception) as exc:
-            CTkMessageBox.showerror("Invalid Value", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Invalid Value"), str(exc), parent=self.parent)
             return
         try:
             _backup_and_save(
@@ -344,7 +355,7 @@ class DS3EditorTab:
             )
             self._show_toast("Identity applied. Backup created.")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     def _slot_idx(self) -> int:
         val = self._slot_var.get()

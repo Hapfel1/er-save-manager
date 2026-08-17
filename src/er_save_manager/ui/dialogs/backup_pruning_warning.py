@@ -3,6 +3,7 @@
 import customtkinter as ctk
 
 from er_save_manager.backup.manager import BackupMetadata
+from er_save_manager.i18n import t
 
 
 class BackupPruningWarningDialog(ctk.CTkToplevel):
@@ -47,16 +48,16 @@ class BackupPruningWarningDialog(ctk.CTkToplevel):
 
         ctk.CTkLabel(
             main,
-            text="Backup Limit Reached",
+            text=t("Backup Limit Reached"),
             font=("Segoe UI", 13, "bold"),
         ).pack(anchor="w")
 
         ctk.CTkLabel(
             main,
             text=(
-                f"The backup limit ({self._max_backups}) has been reached.\n"
-                f"The oldest backup will be deleted:\n\n"
-                f"  {self._oldest.filename}"
+                t(
+                    "The backup limit ({max_backups}) has been reached.\nThe oldest backup will be deleted:\n\n  {filename}"
+                ).format(max_backups=self._max_backups, filename=self._oldest.filename)
             ),
             font=("Segoe UI", 11),
             justify="left",
@@ -66,20 +67,20 @@ class BackupPruningWarningDialog(ctk.CTkToplevel):
         limit_row = ctk.CTkFrame(main, fg_color="transparent")
         limit_row.pack(anchor="w", pady=(0, 12))
 
-        ctk.CTkLabel(limit_row, text="Set new limit:").pack(side="left", padx=(0, 8))
+        ctk.CTkLabel(limit_row, text=t("Set new limit:")).pack(side="left", padx=(0, 8))
         ctk.CTkEntry(limit_row, textvariable=self._new_limit_var, width=70).pack(
             side="left", padx=(0, 8)
         )
         ctk.CTkButton(
             limit_row,
-            text="Apply and Keep Backup",
+            text=t("Apply and Keep Backup"),
             width=160,
             command=self._on_raise_limit,
         ).pack(side="left")
 
         ctk.CTkCheckBox(
             main,
-            text="Don't show this warning again",
+            text=t("Don't show this warning again"),
             variable=self._dont_show_var,
         ).pack(anchor="w", pady=(0, 12))
 
@@ -87,7 +88,7 @@ class BackupPruningWarningDialog(ctk.CTkToplevel):
         btn_row.pack(fill="x")
         ctk.CTkButton(
             btn_row,
-            text="Close (Delete Oldest)",
+            text=t("Close (Delete Oldest)"),
             command=self._on_close,
             fg_color=("gray70", "gray35"),
             width=160,

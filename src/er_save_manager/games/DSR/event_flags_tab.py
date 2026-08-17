@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
@@ -87,18 +88,18 @@ class DSREventFlagsTab:
 
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
-        ctk.CTkLabel(header, text="Event Flags", font=("Segoe UI", 16, "bold")).pack(
+        ctk.CTkLabel(header, text=t("Event Flags"), font=("Segoe UI", 16, "bold")).pack(
             side="left"
         )
-        ctk.CTkButton(header, text="Load", command=self._load_selected, width=70).pack(
-            side="right", padx=(6, 0)
-        )
+        ctk.CTkButton(
+            header, text=t("Load"), command=self._load_selected, width=70
+        ).pack(side="right", padx=(6, 0))
         self._slot_var = ctk.StringVar()
         self._slot_combo = ctk.CTkComboBox(
             header, variable=self._slot_var, values=[], state="readonly", width=220
         )
         self._slot_combo.pack(side="right")
-        ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
+        ctk.CTkLabel(header, text=t("Slot:")).pack(side="right", padx=(0, 6))
 
         self._tabs = ctk.CTkTabview(
             outer,
@@ -114,11 +115,13 @@ class DSREventFlagsTab:
         self._world_parent = self._tabs.add("World Flags")
         self._lookup_parent = self._tabs.add("Flag Lookup")
 
-        for p, t in [
-            (self._npc_parent, "Load a character to view NPC state flags."),
-            (self._world_parent, "Load a character to view world flags."),
+        for parent, placeholder in [
+            (self._npc_parent, t("Load a character to view NPC state flags.")),
+            (self._world_parent, t("Load a character to view world flags.")),
         ]:
-            ctk.CTkLabel(p, text=t, text_color=("gray50", "gray60")).pack(pady=40)
+            ctk.CTkLabel(
+                parent, text=placeholder, text_color=("gray50", "gray60")
+            ).pack(pady=40)
 
         self._build_lookup_ui()
         _apply_treeview_style()
@@ -146,7 +149,9 @@ class DSREventFlagsTab:
 
         ctk.CTkLabel(
             self._npc_parent,
-            text="Individual quest-state flags for all major NPCs. Select a row and click Toggle.",
+            text=t(
+                "Individual quest-state flags for all major NPCs. Select a row and click Toggle."
+            ),
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=12, pady=(8, 4))
@@ -163,10 +168,10 @@ class DSREventFlagsTab:
             style="Flags.Treeview",
             selectmode="browse",
         )
-        self._npc_tree.heading("#0", text="NPC")
-        self._npc_tree.heading("flag_id", text="ID")
-        self._npc_tree.heading("label", text="Description")
-        self._npc_tree.heading("state", text="State")
+        self._npc_tree.heading("#0", text=t("NPC"))
+        self._npc_tree.heading("flag_id", text=t("ID"))
+        self._npc_tree.heading("label", text=t("Description"))
+        self._npc_tree.heading("state", text=t("State"))
         self._npc_tree.column("#0", width=180, minwidth=120)
         self._npc_tree.column("flag_id", width=80, minwidth=60, anchor="center")
         self._npc_tree.column("label", width=260, minwidth=140)
@@ -180,7 +185,7 @@ class DSREventFlagsTab:
         btn_row = ctk.CTkFrame(self._npc_parent, fg_color="transparent")
         btn_row.pack(fill="x", padx=12, pady=(2, 8))
         ctk.CTkButton(
-            btn_row, text="Toggle Selected", command=self._toggle_npc, width=140
+            btn_row, text=t("Toggle Selected"), command=self._toggle_npc, width=140
         ).pack(side="left", padx=(0, 10))
         self._npc_sel_label = ctk.CTkLabel(
             btn_row, text="", font=("Segoe UI", 10), text_color=("gray40", "gray70")
@@ -214,7 +219,9 @@ class DSREventFlagsTab:
         _, _, char = self._get_char()
         state = "ON" if (char and char.get_flag(fid)) else "OFF"
         self._npc_sel_label.configure(
-            text=f"Flag {fid}  -  {entry['label']}  -  Currently: {state}"
+            text=t("Flag {fid}  -  {entry}  -  Currently: {state}").format(
+                fid=fid, entry=entry["label"], state=state
+            )
         )
 
     def _toggle_npc(self) -> None:
@@ -224,7 +231,7 @@ class DSREventFlagsTab:
         sel = self._npc_tree.selection()
         if not sel or sel[0] not in self._npc_iid_map:
             CTkMessageBox.showwarning(
-                "No Selection", "Select a flag row to toggle.", parent=self.parent
+                t("No Selection"), t("Select a flag row to toggle."), parent=self.parent
             )
             return
         save, save_path, char = self._get_char()
@@ -240,11 +247,13 @@ class DSREventFlagsTab:
             state = "ON" if new_val else "OFF"
             self._npc_tree.set(sel[0], "state", state)
             self._npc_sel_label.configure(
-                text=f"Flag {fid}  -  {entry['label']}  -  Now: {state}"
+                text=t("Flag {fid}  -  {entry}  -  Now: {state}").format(
+                    fid=fid, entry=entry["label"], state=state
+                )
             )
             self._show_toast(f"Flag {fid} ({entry['label']}) -> {state}.")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     # --- World Flags ---------------------------------------------------------- #
 
@@ -256,9 +265,11 @@ class DSREventFlagsTab:
         ctk.CTkLabel(
             self._world_parent,
             text=(
-                "Persistent: Rite of Kindling, Bottomless Box, Sin flags.\n"
-                "Session/cycle flags (*): reset on NG+ or set by event scripts at load. "
-                "Editing still takes effect in-game."
+                t(
+                    "Persistent: Rite of Kindling, Bottomless Box, Sin flags.\n"
+                    "Session/cycle flags (*): reset on NG+ or set by event scripts at load. "
+                    "Editing still takes effect in-game."
+                )
             ),
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
@@ -291,12 +302,14 @@ class DSREventFlagsTab:
 
         ctk.CTkLabel(
             self._world_scroll,
-            text="Gestures (CanLearn flags)",
+            text=t("Gestures (CanLearn flags)"),
             font=("Segoe UI", 11, "bold"),
         ).pack(anchor="w", padx=12, pady=(10, 2))
         ctk.CTkLabel(
             self._world_scroll,
-            text="1 = not yet taught by NPC.  0 = NPC has taught it.  Resets on NG+.",
+            text=t(
+                "1 = not yet taught by NPC.  0 = NPC has taught it.  Resets on NG+."
+            ),
             font=("Segoe UI", 9),
             text_color=("gray50", "gray60"),
         ).pack(anchor="w", padx=12, pady=(0, 4))
@@ -321,7 +334,7 @@ class DSREventFlagsTab:
         badge_color = ("#2a6e2a", "#1e7e1e") if value else ("#555", "#444")
         badge = ctk.CTkLabel(
             row,
-            text="ON" if value else "OFF",
+            text=t("ON") if value else t("OFF"),
             fg_color=badge_color,
             corner_radius=4,
             width=35,
@@ -337,7 +350,7 @@ class DSREventFlagsTab:
         ).grid(row=0, column=2, sticky="w", padx=4, pady=(6, 0 if note else 6))
         ctk.CTkButton(
             row,
-            text="Toggle",
+            text=t("Toggle"),
             width=65,
             command=lambda fid=flag_id, n=name, b=badge: self._toggle_world(fid, n, b),
         ).grid(row=0, column=3, rowspan=(2 if note else 1), padx=(0, 8), pady=6)
@@ -368,7 +381,7 @@ class DSREventFlagsTab:
         ).grid(row=0, column=0, padx=(8, 4), pady=6)
         badge = ctk.CTkLabel(
             row,
-            text="AVAILABLE" if value else "TAUGHT",
+            text=t("AVAILABLE") if value else t("TAUGHT"),
             fg_color=badge_color,
             corner_radius=4,
             width=70,
@@ -384,7 +397,7 @@ class DSREventFlagsTab:
         ).grid(row=0, column=2, sticky="w", padx=4, pady=6)
         ctk.CTkButton(
             row,
-            text="Toggle",
+            text=t("Toggle"),
             width=65,
             command=lambda f=fid, e=entry, b=badge: self._toggle_gesture(f, e, b),
         ).grid(row=0, column=3, padx=(0, 8), pady=6)
@@ -403,12 +416,12 @@ class DSREventFlagsTab:
                 save, save_path, f"flag_{flag_id}_slot_{self._current_slot + 1}"
             )
             badge.configure(
-                text="ON" if new_val else "OFF",
+                text=t("ON") if new_val else t("OFF"),
                 fg_color=("#2a6e2a", "#1e7e1e") if new_val else ("#555", "#444"),
             )
             self._show_toast(f"{name.lstrip('* ')} -> {'ON' if new_val else 'OFF'}.")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     def _toggle_gesture(self, flag_id: int, entry: dict, badge: ctk.CTkLabel) -> None:
         if _game_blocks_write(self.parent):
@@ -424,14 +437,14 @@ class DSREventFlagsTab:
                 save, save_path, f"gesture_{flag_id}_slot_{self._current_slot + 1}"
             )
             badge.configure(
-                text="AVAILABLE" if new_val else "TAUGHT",
+                text=t("AVAILABLE") if new_val else t("TAUGHT"),
                 fg_color=("#555", "#444") if new_val else ("#2a6e2a", "#1e7e1e"),
             )
             self._show_toast(
                 f"{entry['name']} -> {'AVAILABLE' if new_val else 'TAUGHT'}."
             )
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     # --- Flag Lookup ---------------------------------------------------------- #
 
@@ -441,7 +454,7 @@ class DSREventFlagsTab:
 
         ctk.CTkLabel(
             outer,
-            text="Read or write any event flag by numeric ID.",
+            text=t("Read or write any event flag by numeric ID."),
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", pady=(0, 8))
@@ -449,23 +462,26 @@ class DSREventFlagsTab:
         input_row = ctk.CTkFrame(outer, fg_color="transparent")
         input_row.pack(fill="x", pady=(0, 6))
 
-        ctk.CTkLabel(input_row, text="Flag ID:").pack(side="left", padx=(0, 6))
+        ctk.CTkLabel(input_row, text=t("Flag ID:")).pack(side="left", padx=(0, 6))
         self._lookup_id_var = tk.StringVar()
         ctk.CTkEntry(
             input_row,
             textvariable=self._lookup_id_var,
             width=120,
-            placeholder_text="e.g. 11010000",
+            placeholder_text=t("e.g. 11010000"),
         ).pack(side="left", padx=(0, 8))
-        ctk.CTkButton(input_row, text="Read", command=self._lookup_read, width=70).pack(
-            side="left", padx=(0, 4)
-        )
         ctk.CTkButton(
-            input_row, text="Set ON", command=lambda: self._lookup_write(True), width=75
+            input_row, text=t("Read"), command=self._lookup_read, width=70
         ).pack(side="left", padx=(0, 4))
         ctk.CTkButton(
             input_row,
-            text="Set OFF",
+            text=t("Set ON"),
+            command=lambda: self._lookup_write(True),
+            width=75,
+        ).pack(side="left", padx=(0, 4))
+        ctk.CTkButton(
+            input_row,
+            text=t("Set OFF"),
             command=lambda: self._lookup_write(False),
             width=75,
         ).pack(side="left")
@@ -548,7 +564,7 @@ class DSREventFlagsTab:
         save = self._get_dsr_save()
         if save is None:
             CTkMessageBox.showwarning(
-                "No Save", "No DSR save loaded.", parent=self.parent
+                t("No Save"), t("No DSR save loaded."), parent=self.parent
             )
             return
         idx = self._slot_idx()
@@ -556,7 +572,9 @@ class DSREventFlagsTab:
             return
         if save.characters[idx] is None:
             CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {idx + 1} is empty.", parent=self.parent
+                t("Empty Slot"),
+                t("Slot {idx} is empty.").format(idx=idx + 1),
+                parent=self.parent,
             )
             return
         self._current_slot = idx

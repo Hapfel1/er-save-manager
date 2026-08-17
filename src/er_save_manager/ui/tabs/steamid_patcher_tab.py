@@ -10,6 +10,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
@@ -74,13 +75,13 @@ class SteamIDPatcherTab:
 
         ctk.CTkLabel(
             main_frame,
-            text="SteamID Patcher",
+            text=t("SteamID Patcher"),
             font=("Segoe UI", 18, "bold"),
         ).pack(pady=(15, 5), padx=15, anchor="w")
 
         ctk.CTkLabel(
             main_frame,
-            text="Transfer save files between Steam accounts by patching SteamID",
+            text=t("Transfer save files between Steam accounts by patching SteamID"),
             font=("Segoe UI", 11),
             text_color=("#808080", "#a0a0a0"),
         ).pack(pady=(0, 10), padx=15, anchor="w")
@@ -92,7 +93,7 @@ class SteamIDPatcherTab:
 
         ctk.CTkLabel(
             current_frame,
-            text="Current Save File",
+            text=t("Current Save File"),
             font=("Segoe UI", 12, "bold"),
         ).pack(pady=(12, 6), padx=12, anchor="w")
 
@@ -126,16 +127,18 @@ class SteamIDPatcherTab:
 
         ctk.CTkLabel(
             self._ds2_instructions_frame,
-            text="You do not need to patch a SteamID for DS2",
+            text=t("You do not need to patch a SteamID for DS2"),
             font=("Segoe UI", 13, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 4))
 
         ctk.CTkLabel(
             self._ds2_instructions_frame,
             text=(
-                "To use a save from a different Steam "
-                "account, swap the file in place while the game is running "
-                "instead:"
+                t(
+                    "To use a save from a different Steam "
+                    "account, swap the file in place while the game is running "
+                    "instead:"
+                )
             ),
             font=("Segoe UI", 11),
             text_color=("gray30", "gray70"),
@@ -168,7 +171,7 @@ class SteamIDPatcherTab:
 
         ctk.CTkButton(
             self._ds2_instructions_frame,
-            text="Open Save Location",
+            text=t("Open Save Location"),
             command=self._open_ds2_save_location,
             width=180,
         ).pack(anchor="w", padx=12, pady=(10, 12))
@@ -181,13 +184,13 @@ class SteamIDPatcherTab:
 
         ctk.CTkLabel(
             patch_frame,
-            text="Patch SteamID",
+            text=t("Patch SteamID"),
             font=("Segoe UI", 12, "bold"),
         ).pack(pady=(12, 8), padx=12, anchor="w")
 
         ctk.CTkLabel(
             patch_frame,
-            text="Enter new SteamID (17-digit number):",
+            text=t("Enter new SteamID (17-digit number):"),
             font=("Segoe UI", 12),
             text_color=("gray40", "gray70"),
         ).pack(pady=(0, 6), padx=12, anchor="w")
@@ -206,7 +209,7 @@ class SteamIDPatcherTab:
 
         self._patch_btn = ctk.CTkButton(
             entry_row,
-            text="Patch SteamID",
+            text=t("Patch SteamID"),
             command=self.patch_steamid,
             width=120,
         )
@@ -214,7 +217,7 @@ class SteamIDPatcherTab:
 
         ctk.CTkButton(
             entry_row,
-            text="Auto-Detect",
+            text=t("Auto-Detect"),
             command=self.auto_detect_steamid,
             width=110,
         ).pack(side=tk.LEFT)
@@ -222,7 +225,7 @@ class SteamIDPatcherTab:
         # Steam profile URL
         ctk.CTkLabel(
             patch_frame,
-            text="Or paste Steam profile URL:",
+            text=t("Or paste Steam profile URL:"),
             font=("Segoe UI", 12),
             text_color=("gray40", "gray70"),
         ).pack(pady=(12, 6), padx=12, anchor="w")
@@ -235,19 +238,19 @@ class SteamIDPatcherTab:
             url_row,
             textvariable=self.steam_url_var,
             font=("Consolas", 10),
-            placeholder_text="https://steamcommunity.com/profiles/...",
+            placeholder_text=t("https://steamcommunity.com/profiles/..."),
         ).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
 
         ctk.CTkButton(
             url_row,
-            text="Parse URL",
+            text=t("Parse URL"),
             command=self.parse_steam_url,
             width=100,
         ).pack(side=tk.LEFT)
 
         ctk.CTkButton(
             patch_frame,
-            text="How to Use / Help",
+            text=t("How to Use / Help"),
             command=self._show_help_dialog,
             text_color=("#2a5f3f", "#a8d5ba"),
             fg_color=("#d0f0e5", "#1a3a2a"),
@@ -267,9 +270,11 @@ class SteamIDPatcherTab:
             found = find_save_paths(PROFILES_BY_KEY["dark_souls_2"])
             if not found:
                 CTkMessageBox.showwarning(
-                    "Not Found",
-                    "Could not find a DS2 save location automatically. "
-                    "Load a save first, or navigate to it manually.",
+                    t("Not Found"),
+                    t(
+                        "Could not find a DS2 save location automatically. "
+                        "Load a save first, or navigate to it manually."
+                    ),
                     parent=self.parent,
                 )
                 return
@@ -305,11 +310,15 @@ class SteamIDPatcherTab:
                     continue
 
             CTkMessageBox.showerror(
-                "Error", f"Could not open folder.\nPath: {path}", parent=self.parent
+                t("Error"),
+                t("Could not open folder.\nPath: {path}").format(path=path),
+                parent=self.parent,
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to open folder:\n{e}", parent=self.parent
+                t("Error"),
+                t("Failed to open folder:\n{e}").format(e=e),
+                parent=self.parent,
             )
 
     def _on_game_changed(self, _value=None):
@@ -465,13 +474,13 @@ class SteamIDPatcherTab:
         profile = self._selected_profile()
         if profile is None:
             CTkMessageBox.showwarning(
-                "No Game", "Please select a game.", parent=self.parent
+                t("No Game"), t("Please select a game."), parent=self.parent
             )
             return
 
         if not profile.supports_steamid_patch:
             CTkMessageBox.showwarning(
-                "Not Supported",
+                t("Not Supported"),
                 profile.steamid_patch_note
                 or "SteamID patching is not supported for this game.",
                 parent=self.parent,
@@ -481,8 +490,8 @@ class SteamIDPatcherTab:
         new_steamid_str = self.new_steamid_var.get().strip()
         if not new_steamid_str.isdigit() or len(new_steamid_str) != 17:
             CTkMessageBox.showerror(
-                "Invalid SteamID",
-                "SteamID must be exactly 17 digits",
+                t("Invalid SteamID"),
+                t("SteamID must be exactly 17 digits"),
                 parent=self.parent,
             )
             return
@@ -494,7 +503,7 @@ class SteamIDPatcherTab:
         else:
             # Disable button during patch to prevent double-click and avoid UI freeze
             if self._patch_btn:
-                self._patch_btn.configure(state="disabled", text="Patching...")
+                self._patch_btn.configure(state="disabled", text=t("Patching..."))
             import threading
 
             def _run():
@@ -504,11 +513,13 @@ class SteamIDPatcherTab:
                     try:
                         self.parent.after(
                             0,
-                            lambda: self._patch_btn.configure(
-                                state="normal", text="Patch SteamID"
-                            )
-                            if self._patch_btn
-                            else None,
+                            lambda: (
+                                self._patch_btn.configure(
+                                    state="normal", text=t("Patch SteamID")
+                                )
+                                if self._patch_btn
+                                else None
+                            ),
                         )
                     except Exception:
                         pass
@@ -522,15 +533,17 @@ class SteamIDPatcherTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save",
-                "Please load an Elden Ring save file first.",
+                t("No Save"),
+                t("Please load an Elden Ring save file first."),
                 parent=self.parent,
             )
             return
 
         if not CTkMessageBox.askyesno(
-            "Confirm Patch",
-            f"Patch all character slots to SteamID: {new_steamid}?\n\nA backup will be created.",
+            t("Confirm Patch"),
+            t(
+                "Patch all character slots to SteamID: {new_steamid}?\n\nA backup will be created."
+            ).format(new_steamid=new_steamid),
             parent=self.parent,
         ):
             return
@@ -586,20 +599,23 @@ class SteamIDPatcherTab:
             self.parent.after(
                 100,
                 lambda: CTkMessageBox.showinfo(
-                    "Success",
-                    f"Updated USER_DATA_10 SteamID\n"
-                    f"Updated profile summary\n"
-                    f"Synced {patched_count} character slot(s)\n\n"
-                    f"Old SteamID: {old_steamid}\n"
-                    f"New SteamID: {new_steamid}\n\n"
-                    f"Backup saved to backup manager.",
+                    t("Success"),
+                    t(
+                        "Updated USER_DATA_10 SteamID\nUpdated profile summary\nSynced {patched_count} character slot(s)\n\nOld SteamID: {old_steamid}\nNew SteamID: {new_steamid}\n\nBackup saved to backup manager."
+                    ).format(
+                        patched_count=patched_count,
+                        old_steamid=old_steamid,
+                        new_steamid=new_steamid,
+                    ),
                     parent=self.parent,
                 ),
             )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"SteamID patch failed:\n{e}", parent=self.parent
+                t("Error"),
+                t("SteamID patch failed:\n{e}").format(e=e),
+                parent=self.parent,
             )
 
     def _patch_generic(self, profile, new_steamid: int):
@@ -610,8 +626,8 @@ class SteamIDPatcherTab:
             self.parent.after(
                 0,
                 lambda: CTkMessageBox.showwarning(
-                    "No Save File",
-                    "Please select a save file first using Browse or Auto-Find.",
+                    t("No Save File"),
+                    t("Please select a save file first using Browse or Auto-Find."),
                     parent=self.parent,
                 ),
             )
@@ -626,8 +642,10 @@ class SteamIDPatcherTab:
 
         def _ask():
             result = CTkMessageBox.askyesno(
-                "Confirm Patch",
-                f"Patch SteamID in:\n{save_path}\n\nNew SteamID: {new_steamid}\n\nA backup will be created.",
+                t("Confirm Patch"),
+                t(
+                    "Patch SteamID in:\n{save_path}\n\nNew SteamID: {new_steamid}\n\nA backup will be created."
+                ).format(save_path=save_path, new_steamid=new_steamid),
                 parent=self.parent,
             )
             confirmed_result[0] = result
@@ -642,7 +660,9 @@ class SteamIDPatcherTab:
             self.parent.after(
                 0,
                 lambda: CTkMessageBox.showerror(
-                    "Patch Failed", f"SteamID patch failed:\n{msg}", parent=self.parent
+                    t("Patch Failed"),
+                    t("SteamID patch failed:\n{msg}").format(msg=msg),
+                    parent=self.parent,
                 ),
             )
 
@@ -651,8 +671,8 @@ class SteamIDPatcherTab:
             self.parent.after(
                 0,
                 lambda: CTkMessageBox.showinfo(
-                    "Success",
-                    f"{msg}\n\nBackup created before patching.",
+                    t("Success"),
+                    t("{msg}\n\nBackup created before patching.").format(msg=msg),
                     parent=self.parent,
                 ),
             )
@@ -716,7 +736,9 @@ class SteamIDPatcherTab:
             self.parent.after(
                 0,
                 lambda: CTkMessageBox.showerror(
-                    "Error", f"SteamID patch failed:\n{err}", parent=self.parent
+                    t("Error"),
+                    t("SteamID patch failed:\n{err}").format(err=err),
+                    parent=self.parent,
                 ),
             )
 
@@ -734,7 +756,7 @@ class SteamIDPatcherTab:
 
         ctk.CTkLabel(
             dialog,
-            text="Multiple save files found.\nSelect the one to patch:",
+            text=t("Multiple save files found.\nSelect the one to patch:"),
             font=("Segoe UI", 11),
         ).pack(pady=(15, 12), padx=15)
 
@@ -762,7 +784,7 @@ class SteamIDPatcherTab:
                 anchor="w",
             ).pack(fill=tk.X, padx=6, pady=4)
 
-        ctk.CTkButton(dialog, text="Cancel", command=dialog.destroy, width=100).pack(
+        ctk.CTkButton(dialog, text=t("Cancel"), command=dialog.destroy, width=100).pack(
             pady=(0, 12)
         )
 
@@ -773,7 +795,9 @@ class SteamIDPatcherTab:
         url = self.steam_url_var.get().strip()
         if not url:
             CTkMessageBox.showwarning(
-                "Empty URL", "Please enter a Steam profile URL", parent=self.parent
+                t("Empty URL"),
+                t("Please enter a Steam profile URL"),
+                parent=self.parent,
             )
             return
 
@@ -782,7 +806,7 @@ class SteamIDPatcherTab:
         if url.isdigit() and len(url) == 17:
             self.new_steamid_var.set(url)
             self.steam_url_var.set("")
-            self.show_toast(f"SteamID: {url}", duration=2000)
+            self.show_toast(t("SteamID: {url}").format(url=url), duration=2000)
             return
 
         match = re.search(r"/profiles/(\d{17})", url)
@@ -790,7 +814,9 @@ class SteamIDPatcherTab:
             steamid = match.group(1)
             self.new_steamid_var.set(steamid)
             self.steam_url_var.set("")
-            self.show_toast(f"Extracted SteamID: {steamid}", duration=2500)
+            self.show_toast(
+                t("Extracted SteamID: {steamid}").format(steamid=steamid), duration=2500
+            )
             return
 
         # Try to resolve vanity URL
@@ -801,10 +827,12 @@ class SteamIDPatcherTab:
             return
 
         CTkMessageBox.showerror(
-            "Invalid URL",
-            "Could not extract SteamID from URL.\n\nSupported formats:\n"
-            "  https://steamcommunity.com/profiles/76561198012345678\n"
-            "  https://steamcommunity.com/id/username",
+            t("Invalid URL"),
+            t(
+                "Could not extract SteamID from URL.\n\nSupported formats:\n"
+                "  https://steamcommunity.com/profiles/76561198012345678\n"
+                "  https://steamcommunity.com/id/username"
+            ),
             parent=self.parent,
         )
 
@@ -825,19 +853,23 @@ class SteamIDPatcherTab:
                 steamid = match.group(1)
                 self.new_steamid_var.set(steamid)
                 self.steam_url_var.set("")
-                self.show_toast(f"Resolved: {steamid}", duration=2500)
+                self.show_toast(
+                    t("Resolved: {steamid}").format(steamid=steamid), duration=2500
+                )
             else:
                 CTkMessageBox.showerror(
-                    "Not Found",
-                    f"Could not resolve Steam vanity URL: {custom_name}\n\n"
-                    "The profile may be private or the name may be incorrect.\n"
-                    "Enter the SteamID directly instead.",
+                    t("Not Found"),
+                    t(
+                        "Could not resolve Steam vanity URL: {custom_name}\n\nThe profile may be private or the name may be incorrect.\nEnter the SteamID directly instead."
+                    ).format(custom_name=custom_name),
                     parent=self.parent,
                 )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Resolution Failed",
-                f"Failed to resolve vanity URL: {custom_name}\n\nError: {e}",
+                t("Resolution Failed"),
+                t("Failed to resolve vanity URL: {custom_name}\n\nError: {e}").format(
+                    custom_name=custom_name, e=e
+                ),
                 parent=self.parent,
             )
 
@@ -897,10 +929,10 @@ class SteamIDPatcherTab:
             if not steam_users:
                 game_name = profile.name if profile else "this game"
                 CTkMessageBox.showwarning(
-                    "Not Found",
-                    f"Could not detect any Steam accounts for {game_name}.\n\n"
-                    "Make sure the game has been launched at least once,\n"
-                    "then try again. Or enter the SteamID manually.",
+                    t("Not Found"),
+                    t(
+                        "Could not detect any Steam accounts for {game_name}.\n\nMake sure the game has been launched at least once,\nthen try again. Or enter the SteamID manually."
+                    ).format(game_name=game_name),
                     parent=self.parent,
                 )
                 return
@@ -914,15 +946,20 @@ class SteamIDPatcherTab:
 
             if len(steam_users) == 1:
                 self.new_steamid_var.set(str(steam_users[0][1]))
-                self.show_toast(f"SteamID detected: {steam_users[0][1]}", duration=2500)
+                self.show_toast(
+                    t("SteamID detected: {steam_users_0}").format(
+                        steam_users_0=steam_users[0][1]
+                    ),
+                    duration=2500,
+                )
                 return
 
             self._show_account_selection_dialog(steam_users)
 
         except Exception as e:
             CTkMessageBox.showwarning(
-                "Detection Failed",
-                f"Could not auto-detect SteamID:\n{e}",
+                t("Detection Failed"),
+                t("Could not auto-detect SteamID:\n{e}").format(e=e),
                 parent=self.parent,
             )
 
@@ -940,7 +977,7 @@ class SteamIDPatcherTab:
 
         ctk.CTkLabel(
             dialog,
-            text="Multiple Steam accounts detected.\nSelect the account to use:",
+            text=t("Multiple Steam accounts detected.\nSelect the account to use:"),
             font=("Segoe UI", 11),
         ).pack(pady=(15, 12), padx=15)
 
@@ -954,7 +991,9 @@ class SteamIDPatcherTab:
                 def select_account():
                     self.new_steamid_var.set(str(sid))
                     dialog.destroy()
-                    self.show_toast(f"Selected: {name}", duration=2500)
+                    self.show_toast(
+                        t("Selected: {name}").format(name=name), duration=2500
+                    )
 
                 return select_account
 
@@ -973,7 +1012,7 @@ class SteamIDPatcherTab:
                 hover_color=("#c9a0dc", "#3b2f5c"),
             ).pack(fill=tk.BOTH, expand=True, padx=8, pady=6)
 
-        ctk.CTkButton(dialog, text="Cancel", command=dialog.destroy, width=100).pack(
+        ctk.CTkButton(dialog, text=t("Cancel"), command=dialog.destroy, width=100).pack(
             pady=(0, 15), side=tk.RIGHT, padx=15
         )
 
@@ -1000,12 +1039,12 @@ class SteamIDPatcherTab:
         header.pack(fill=tk.X, padx=14, pady=(14, 8))
         ctk.CTkLabel(
             header,
-            text="SteamID Patcher - Help",
+            text=t("SteamID Patcher - Help"),
             font=("Segoe UI", 16, "bold"),
         ).pack(anchor="w", pady=(8, 2), padx=10)
         ctk.CTkLabel(
             header,
-            text="Patch SteamIDs when moving saves between Steam accounts.",
+            text=t("Patch SteamIDs when moving saves between Steam accounts."),
             font=("Segoe UI", 12),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=10, pady=(0, 8))
@@ -1052,6 +1091,6 @@ class SteamIDPatcherTab:
             "4) Load the patched save on the new account.",
         )
 
-        ctk.CTkButton(dialog, text="Close", command=dialog.destroy, width=110).pack(
+        ctk.CTkButton(dialog, text=t("Close"), command=dialog.destroy, width=110).pack(
             pady=(0, 14)
         )

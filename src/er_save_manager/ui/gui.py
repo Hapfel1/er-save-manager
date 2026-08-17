@@ -17,6 +17,7 @@ import customtkinter as ctk
 
 from er_save_manager import VersionChecker, __version__
 from er_save_manager.games.game_profiles import GAME_PROFILES, PROFILES_BY_KEY
+from er_save_manager.i18n import t
 from er_save_manager.parser import Save
 from er_save_manager.platform import PlatformUtils
 
@@ -293,10 +294,10 @@ class SaveManagerGUI:
         )
 
         result = CTkMessageBox.askyesno(
-            "Game is Running",
-            f"{game_name} is currently running.\n\n"
-            "The save file cannot be loaded while the game is running.\n\n"
-            "Would you like to force kill the game process?",
+            t("Game is Running"),
+            t(
+                "{game_name} is currently running.\n\nThe save file cannot be loaded while the game is running.\n\nWould you like to force kill the game process?"
+            ).format(game_name=game_name),
             parent=self.root,
         )
 
@@ -305,9 +306,10 @@ class SaveManagerGUI:
 
         if not PlatformUtils.kill_game_process(process_name):
             CTkMessageBox.showerror(
-                "Error",
-                f"Failed to terminate {game_name} process.\n\n"
-                "The game may require manual closing or administrator permissions.",
+                t("Error"),
+                t(
+                    "Failed to terminate {game_name} process.\n\nThe game may require manual closing or administrator permissions."
+                ).format(game_name=game_name),
                 parent=self.root,
             )
             return False
@@ -321,9 +323,10 @@ class SaveManagerGUI:
         while elapsed < max_wait:
             if not self.is_game_running(process_name):
                 CTkMessageBox.showinfo(
-                    "Success",
-                    f"{game_name} process terminated successfully.\n\n"
-                    "You can now proceed safely.",
+                    t("Success"),
+                    t(
+                        "{game_name} process terminated successfully.\n\nYou can now proceed safely."
+                    ).format(game_name=game_name),
                     parent=self.root,
                 )
                 return True
@@ -332,9 +335,10 @@ class SaveManagerGUI:
             self.root.update()
 
         CTkMessageBox.showerror(
-            "Timeout",
-            f"Game process is still running after kill attempt.\n\n"
-            f"Please close {game_name} manually and try again.",
+            t("Timeout"),
+            t(
+                "Game process is still running after kill attempt.\n\nPlease close {game_name} manually and try again."
+            ).format(game_name=game_name),
             parent=self.root,
         )
         return False
@@ -366,7 +370,9 @@ class SaveManagerGUI:
             self.root.after(
                 0,
                 lambda: self.show_toast(
-                    f"{game_name} launched - backup created: {backup_path.name}"
+                    t("{game_name} launched - backup created: {name}").format(
+                        game_name=game_name, name=backup_path.name
+                    )
                 ),
             )
         except Exception:
@@ -412,7 +418,7 @@ class SaveManagerGUI:
         # Title
         ctk.CTkLabel(
             main_frame,
-            text="🎉 Update Available!",
+            text=t("🎉 Update Available!"),
             font=("Segoe UI", 16, "bold"),
         ).pack(pady=(0, 15))
 
@@ -432,7 +438,7 @@ class SaveManagerGUI:
         # Download options label
         ctk.CTkLabel(
             main_frame,
-            text="Download from:",
+            text=t("Download from:"),
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor=ctk.W, pady=(0, 10))
 
@@ -450,7 +456,7 @@ class SaveManagerGUI:
 
         ctk.CTkButton(
             button_frame,
-            text="📦 GitHub Releases",
+            text=t("📦 GitHub Releases"),
             command=open_github,
             width=240,
             height=40,
@@ -458,7 +464,7 @@ class SaveManagerGUI:
 
         ctk.CTkButton(
             button_frame,
-            text="🔗 Nexus Mods",
+            text=t("🔗 Nexus Mods"),
             command=open_nexus,
             width=240,
             height=40,
@@ -468,7 +474,7 @@ class SaveManagerGUI:
         dont_show_var = ctk.BooleanVar(value=False)
         checkbox = ctk.CTkCheckBox(
             main_frame,
-            text="Don't show update notifications in the future",
+            text=t("Don't show update notifications in the future"),
             variable=dont_show_var,
             font=("Segoe UI", 10),
         )
@@ -482,7 +488,7 @@ class SaveManagerGUI:
 
         ctk.CTkButton(
             main_frame,
-            text="Close",
+            text=t("Close"),
             command=on_close,
             width=120,
             height=32,
@@ -516,7 +522,7 @@ class SaveManagerGUI:
         # Support button (top right corner)
         support_btn = ctk.CTkButton(
             title_frame,
-            text="☕ Support me",
+            text=t("☕ Support me"),
             command=self._open_kofi,
             width=100,
             height=32,
@@ -526,7 +532,7 @@ class SaveManagerGUI:
 
         discord_btn = ctk.CTkButton(
             title_frame,
-            text="Discord Server",
+            text=t("Discord Server"),
             command=self._open_discord,
             width=100,
             height=32,
@@ -536,7 +542,7 @@ class SaveManagerGUI:
 
         youtube_btn = ctk.CTkButton(
             title_frame,
-            text="Video Guide",
+            text=t("Video Guide"),
             command=self._open_youtube,
             width=100,
             height=32,
@@ -546,13 +552,13 @@ class SaveManagerGUI:
 
         ctk.CTkLabel(
             title_frame,
-            text="Elden Ring Save Manager",
+            text=t("Elden Ring Save Manager"),
             font=("Segoe UI", 20, "bold"),
         ).pack(pady=(10, 2))
 
         ctk.CTkLabel(
             title_frame,
-            text="Complete save editor, backup manager, and corruption fixer",
+            text=t("Complete save editor, backup manager, and corruption fixer"),
             font=("Segoe UI", 11),
         ).pack(pady=(0, 10))
 
@@ -564,7 +570,7 @@ class SaveManagerGUI:
         game_row = ctk.CTkFrame(file_frame, fg_color="transparent")
         game_row.pack(fill=tk.X, padx=12, pady=(12, 4))
 
-        ctk.CTkLabel(game_row, text="Game:", font=("Segoe UI", 11)).pack(
+        ctk.CTkLabel(game_row, text=t("Game:"), font=("Segoe UI", 11)).pack(
             side=tk.LEFT, padx=(0, 8)
         )
 
@@ -582,7 +588,7 @@ class SaveManagerGUI:
 
         ctk.CTkLabel(
             file_frame,
-            text="Select a Save File",
+            text=t("Select a Save File"),
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(4, 4))
 
@@ -599,7 +605,7 @@ class SaveManagerGUI:
 
         _browse_btn = ctk.CTkButton(
             path_frame,
-            text="Browse",
+            text=t("Browse"),
             command=self.browse_file,
             width=110,
         )
@@ -608,7 +614,7 @@ class SaveManagerGUI:
 
         _autofind_btn = ctk.CTkButton(
             path_frame,
-            text="Auto-Find",
+            text=t("Auto-Find"),
             command=self.auto_detect,
             width=110,
         )
@@ -621,7 +627,7 @@ class SaveManagerGUI:
 
         _reload_btn = ctk.CTkButton(
             buttons_frame,
-            text="Reload",
+            text=t("Reload"),
             command=self.load_save,
             width=160,
         )
@@ -630,21 +636,21 @@ class SaveManagerGUI:
 
         ctk.CTkButton(
             buttons_frame,
-            text="Backup Manager",
+            text=t("Backup Manager"),
             command=self.show_backup_manager_standalone,
             width=160,
         ).pack(side=tk.LEFT, padx=6, pady=10)
 
         ctk.CTkButton(
             buttons_frame,
-            text="Troubleshooting",
+            text=t("Troubleshooting"),
             command=self.open_troubleshooting,
             width=160,
         ).pack(side=tk.RIGHT, padx=6, pady=10)
 
         self._ps_save_btn = ctk.CTkButton(
             buttons_frame,
-            text="PS / Switch Save?",
+            text=t("PS / Switch Save?"),
             command=self.show_console_save_info,
             width=160,
         )
@@ -652,7 +658,7 @@ class SaveManagerGUI:
 
         _itemgib_btn = ctk.CTkButton(
             buttons_frame,
-            text="Item Gib",
+            text=t("Item Gib"),
             command=self._open_inventory_editor,
             width=200,
         )
@@ -1258,7 +1264,7 @@ class SaveManagerGUI:
         """Setup character editor tab with modular editors"""
         header = ctk.CTkLabel(
             parent,
-            text="Character Editor",
+            text=t("Character Editor"),
             font=("Segoe UI", 18, "bold"),
         )
         header.pack(pady=(6, 12))
@@ -1272,7 +1278,7 @@ class SaveManagerGUI:
         select_frame = ctk.CTkFrame(container, fg_color=("gray76", "gray24"))
         select_frame.pack(fill=tk.X, padx=10, pady=(12, 8))
 
-        ctk.CTkLabel(select_frame, text="Character Slot:").pack(
+        ctk.CTkLabel(select_frame, text=t("Character Slot:")).pack(
             side=ctk.LEFT, padx=(0, 10)
         )
 
@@ -1289,7 +1295,7 @@ class SaveManagerGUI:
 
         ctk.CTkButton(
             select_frame,
-            text="Load Character",
+            text=t("Load Character"),
             command=self.load_character_for_edit,
             width=140,
         ).pack(side=ctk.LEFT)
@@ -1392,7 +1398,7 @@ class SaveManagerGUI:
 
         if not self.save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.root
+                t("No Save"), t("Please load a save file first!"), parent=self.root
             )
             return
 
@@ -1402,7 +1408,9 @@ class SaveManagerGUI:
             slot_idx = int(slot_display.split(" - ")[0]) - 1
         except Exception:
             CTkMessageBox.showwarning(
-                "Invalid Slot", "Please choose a character slot.", parent=self.root
+                t("Invalid Slot"),
+                t("Please choose a character slot."),
+                parent=self.root,
             )
             return
 
@@ -1410,7 +1418,9 @@ class SaveManagerGUI:
 
         if slot.is_empty():
             CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {slot_idx + 1} is empty!", parent=self.root
+                t("Empty Slot"),
+                t("Slot {slot_idx} is empty!").format(slot_idx=slot_idx + 1),
+                parent=self.root,
             )
             return
 
@@ -1459,13 +1469,15 @@ class SaveManagerGUI:
 
         ctk.CTkLabel(
             main_frame,
-            text="PS / Switch Saves",
+            text=t("PS / Switch Saves"),
             font=("Segoe UI", 18, "bold"),
         ).pack(pady=(10, 4))
 
         ctk.CTkLabel(
             main_frame,
-            text="Console saves must be decrypted and exported as memory.dat before you can load them.",
+            text=t(
+                "Console saves must be decrypted and exported as memory.dat before you can load them."
+            ),
             font=("Segoe UI", 12),
             wraplength=580,
             justify=ctk.CENTER,
@@ -1474,8 +1486,10 @@ class SaveManagerGUI:
         disclaimer = ctk.CTkLabel(
             main_frame,
             text=(
-                "Exporting/Decrypting a console save may require custom firmware on your console, "
-                "we cannot provide instructions for doing so. Use at your own risk."
+                t(
+                    "Exporting/Decrypting a console save may require custom firmware on your console, "
+                    "we cannot provide instructions for doing so. Use at your own risk."
+                )
             ),
             font=("Segoe UI", 12),
             wraplength=570,
@@ -1485,14 +1499,14 @@ class SaveManagerGUI:
 
         ctk.CTkLabel(
             main_frame,
-            text="Auto-Find will not work for memory.dat files.",
+            text=t("Auto-Find will not work for memory.dat files."),
             font=("Segoe UI", 11),
             text_color=("gray35", "gray75"),
         ).pack(pady=(0, 14))
 
-        ctk.CTkButton(main_frame, text="Close", width=120, command=dialog.destroy).pack(
-            pady=(0, 4)
-        )
+        ctk.CTkButton(
+            main_frame, text=t("Close"), width=120, command=dialog.destroy
+        ).pack(pady=(0, 4))
 
     def browse_file(self):
         """Browse for a save file for the active game."""
@@ -1576,16 +1590,16 @@ class SaveManagerGUI:
         if not found_saves:
             if PlatformUtils.is_linux():
                 CTkMessageBox.showinfo(
-                    "No Saves Found",
-                    f"No {game_name} save files found.\n\n"
-                    "Make sure you have launched the game at least once.\n"
-                    "On Linux, saves are stored in Steam's compatdata folder.",
+                    t("No Saves Found"),
+                    t(
+                        "No {game_name} save files found.\n\nMake sure you have launched the game at least once.\nOn Linux, saves are stored in Steam's compatdata folder."
+                    ).format(game_name=game_name),
                     parent=self.root,
                 )
             else:
                 CTkMessageBox.showwarning(
-                    "Not Found",
-                    f"No {game_name} save files found.",
+                    t("Not Found"),
+                    t("No {game_name} save files found.").format(game_name=game_name),
                     parent=self.root,
                 )
             return
@@ -1618,7 +1632,7 @@ class SaveManagerGUI:
 
         ttk.Label(
             msg_frame,
-            text="Non-Standard Save Location",
+            text=t("Non-Standard Save Location"),
             font=("Segoe UI", 12, "bold"),
             foreground="orange",
         ).pack(pady=(0, 10))
@@ -1645,7 +1659,7 @@ class SaveManagerGUI:
         if launch_option:
             ttk.Label(
                 msg_frame,
-                text="Add this to the custom launcher's Steam launch options:",
+                text=t("Add this to the custom launcher's Steam launch options:"),
                 font=("Segoe UI", 9, "bold"),
             ).pack(anchor=tk.W, pady=(10, 5))
 
@@ -1662,11 +1676,11 @@ class SaveManagerGUI:
                 dialog.clipboard_append(launch_option)
                 dialog.update()
                 CTkMessageBox.showinfo(
-                    "Copied", "Launch option copied to clipboard!", parent=dialog
+                    t("Copied"), t("Launch option copied to clipboard!"), parent=dialog
                 )
 
             ctk.CTkButton(
-                option_frame, text="Copy", command=copy_to_clipboard, width=80
+                option_frame, text=t("Copy"), command=copy_to_clipboard, width=80
             ).pack(side=tk.LEFT, padx=5)
 
         def copy_to_default():
@@ -1678,8 +1692,10 @@ class SaveManagerGUI:
 
             if target_dir:
                 if CTkMessageBox.askyesno(
-                    "Copy Save",
-                    f"Copy save file to:\n{target_dir}\n\nThe original file will remain in its current location.",
+                    t("Copy Save"),
+                    t(
+                        "Copy save file to:\n{target_dir}\n\nThe original file will remain in its current location."
+                    ).format(target_dir=target_dir),
                     parent=self.root,
                 ):
                     try:
@@ -1690,14 +1706,18 @@ class SaveManagerGUI:
                         shutil.copy2(save_path, new_path)
                         self.file_path_var.set(str(new_path))
                         CTkMessageBox.showinfo(
-                            "Success",
-                            f"Save file copied to:\n{new_path}\n\nOriginal file remains at:\n{save_path}",
+                            t("Success"),
+                            t(
+                                "Save file copied to:\n{new_path}\n\nOriginal file remains at:\n{save_path}"
+                            ).format(new_path=new_path, save_path=save_path),
                             parent=self.root,
                         )
                         dialog.destroy()
                     except Exception as e:
                         CTkMessageBox.showerror(
-                            "Error", f"Failed to copy save:\n{e}", parent=self.root
+                            t("Error"),
+                            t("Failed to copy save:\n{e}").format(e=e),
+                            parent=self.root,
                         )
 
         def dont_show_again():
@@ -1708,13 +1728,13 @@ class SaveManagerGUI:
         button_frame.pack(pady=10)
 
         ttk.Button(
-            button_frame, text="Copy to Default", command=copy_to_default, width=18
+            button_frame, text=t("Copy to Default"), command=copy_to_default, width=18
         ).pack(side=tk.LEFT, padx=5)
         ttk.Button(
-            button_frame, text="Keep Current", command=dialog.destroy, width=15
+            button_frame, text=t("Keep Current"), command=dialog.destroy, width=15
         ).pack(side=tk.LEFT, padx=5)
         ttk.Button(
-            button_frame, text="Don't Show Again", command=dont_show_again, width=18
+            button_frame, text=t("Don't Show Again"), command=dont_show_again, width=18
         ).pack(side=tk.LEFT, padx=5)
 
     def is_game_running(self, process_name: str = "eldenring.exe") -> bool:
@@ -1966,7 +1986,10 @@ class SaveManagerGUI:
         self.save_file = None
         self.status_var.set(f"Selected: {os.path.basename(save_path)}")
         self.show_toast(
-            f"Save file loaded: {os.path.basename(save_path)}", duration=2500
+            t("Save file loaded: {basename}").format(
+                basename=os.path.basename(save_path)
+            ),
+            duration=2500,
         )
         if hasattr(self, "steamid_tab") and self.steamid_tab:
             import threading
@@ -1989,7 +2012,9 @@ class SaveManagerGUI:
 
         if not save_path or not os.path.exists(save_path):
             CTkMessageBox.showerror(
-                "Error", "Please select a valid save file first!", parent=self.root
+                t("Error"),
+                t("Please select a valid save file first!"),
+                parent=self.root,
             )
             return
 
@@ -2028,7 +2053,7 @@ class SaveManagerGUI:
 
             ttk.Label(
                 msg_frame,
-                text="⚠️ Warning - Vanilla Save File Detected",
+                text=t("⚠️ Warning - Vanilla Save File Detected"),
                 font=("Segoe UI", 12, "bold"),
                 foreground="red",
             ).pack(pady=(0, 10))
@@ -2058,7 +2083,7 @@ class SaveManagerGUI:
             dont_show_var = tk.BooleanVar(value=False)
             ttk.Checkbutton(
                 msg_frame,
-                text="Don't show this warning again",
+                text=t("Don't show this warning again"),
                 variable=dont_show_var,
             ).pack(pady=10)
 
@@ -2079,11 +2104,11 @@ class SaveManagerGUI:
                 warning_dialog.destroy()
 
             ttk.Button(
-                button_frame, text="Yes, Continue", command=on_yes, width=15
+                button_frame, text=t("Yes, Continue"), command=on_yes, width=15
             ).pack(side=tk.LEFT, padx=5)
-            ttk.Button(button_frame, text="No, Cancel", command=on_no, width=15).pack(
-                side=tk.LEFT, padx=5
-            )
+            ttk.Button(
+                button_frame, text=t("No, Cancel"), command=on_no, width=15
+            ).pack(side=tk.LEFT, padx=5)
 
             # Wait for dialog to close
             self.root.wait_window(warning_dialog)
@@ -2136,7 +2161,11 @@ class SaveManagerGUI:
             self.root.after(
                 0,
                 lambda: CTkMessageBox.showerror(
-                    "Error", f"Failed to load save file:\n{error_msg}", parent=self.root
+                    t("Error"),
+                    t("Failed to load save file:\n{error_msg}").format(
+                        error_msg=error_msg
+                    ),
+                    parent=self.root,
                 ),
             )
             self.root.after(0, lambda: self.status_var.set("Load failed"))
@@ -2159,7 +2188,9 @@ class SaveManagerGUI:
             self.dsr_save = DSRSave.from_file(save_path)
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to load DSR save:\n{e}", parent=self.root
+                t("Error"),
+                t("Failed to load DSR save:\n{e}").format(e=e),
+                parent=self.root,
             )
             return
 
@@ -2181,7 +2212,10 @@ class SaveManagerGUI:
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         self.show_toast(
-            f"DSR save loaded: {os.path.basename(save_path)}", duration=2500
+            t("DSR save loaded: {basename}").format(
+                basename=os.path.basename(save_path)
+            ),
+            duration=2500,
         )
 
     def _on_dsr_slot_edit(self, slot_idx: int) -> None:
@@ -2213,7 +2247,9 @@ class SaveManagerGUI:
             self.ds3_save = DS3Save.from_file(save_path)
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to load DS3 save:\n{e}", parent=self.root
+                t("Error"),
+                t("Failed to load DS3 save:\n{e}").format(e=e),
+                parent=self.root,
             )
             return
 
@@ -2241,7 +2277,10 @@ class SaveManagerGUI:
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         self.show_toast(
-            f"DS3 save loaded: {os.path.basename(save_path)}", duration=2500
+            t("DS3 save loaded: {basename}").format(
+                basename=os.path.basename(save_path)
+            ),
+            duration=2500,
         )
 
     def _load_ds2_save(self, save_path: str) -> None:
@@ -2262,7 +2301,9 @@ class SaveManagerGUI:
             self.ds2_save = DS2Save.from_file(save_path)
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to load DS2 save:\n{e}", parent=self.root
+                t("Error"),
+                t("Failed to load DS2 save:\n{e}").format(e=e),
+                parent=self.root,
             )
             return
 
@@ -2287,7 +2328,10 @@ class SaveManagerGUI:
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         self.show_toast(
-            f"DS2 save loaded: {os.path.basename(save_path)}", duration=2500
+            t("DS2 save loaded: {basename}").format(
+                basename=os.path.basename(save_path)
+            ),
+            duration=2500,
         )
 
     def _load_nr_save(self, save_path: str) -> None:
@@ -2306,7 +2350,9 @@ class SaveManagerGUI:
             self._nr_save = NightreignSave.from_file(save_path)
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to load Nightreign save:\n{e}", parent=self.root
+                t("Error"),
+                t("Failed to load Nightreign save:\n{e}").format(e=e),
+                parent=self.root,
             )
             return
 
@@ -2334,7 +2380,10 @@ class SaveManagerGUI:
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         self.show_toast(
-            f"Nightreign save loaded: {os.path.basename(save_path)}", duration=2500
+            t("Nightreign save loaded: {basename}").format(
+                basename=os.path.basename(save_path)
+            ),
+            duration=2500,
         )
 
     def reload_save(self):
@@ -2424,7 +2473,7 @@ class SaveManagerGUI:
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         if not silent:
             # Show toast notification instead of blocking popup
-            self.show_toast("Save file loaded successfully!", duration=2500)
+            self.show_toast(t("Save file loaded successfully!"), duration=2500)
 
     def _rebuild_er_notebook(self) -> None:
         """Rebuild the ER notebook in place, preserving save state.
@@ -2544,7 +2593,9 @@ class SaveManagerGUI:
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to open backup manager:\n{e}", parent=self.root
+                t("Error"),
+                t("Failed to open backup manager:\n{e}").format(e=e),
+                parent=self.root,
             )
 
     def _update_watched_mtime(self) -> None:
@@ -2614,15 +2665,16 @@ class SaveManagerGUI:
 
         ctk.CTkLabel(
             main,
-            text="Save Modified Externally",
+            text=t("Save Modified Externally"),
             font=("Segoe UI", 16, "bold"),
         ).pack(pady=(0, 22))
 
         ctk.CTkLabel(
             main,
             text=(
-                f"{self.save_path.name} was changed while the save manager\n"
-                "had it loaded. Reload to avoid overwriting those changes."
+                t(
+                    "{name} was changed while the save manager\nhad it loaded. Reload to avoid overwriting those changes."
+                ).format(name=self.save_path.name)
             ),
             font=("Segoe UI", 14),
             justify=ctk.CENTER,
@@ -2645,12 +2697,12 @@ class SaveManagerGUI:
 
         dialog.protocol("WM_DELETE_WINDOW", on_dismiss)
 
-        ctk.CTkButton(btn_row, text="Reload Now", width=120, command=on_reload).pack(
+        ctk.CTkButton(btn_row, text=t("Reload Now"), width=120, command=on_reload).pack(
             side=ctk.LEFT, padx=(0, 8)
         )
         ctk.CTkButton(
             btn_row,
-            text="Dismiss",
+            text=t("Dismiss"),
             width=100,
             fg_color="transparent",
             border_width=1,
@@ -2660,7 +2712,7 @@ class SaveManagerGUI:
         disable_var = ctk.BooleanVar(value=False)
         ctk.CTkCheckBox(
             main,
-            text="Don't show this again",
+            text=t("Don't show this again"),
             variable=disable_var,
             font=("Segoe UI", 11),
         ).pack(pady=(14, 0))
@@ -2682,6 +2734,13 @@ class SaveManagerGUI:
 
 def main():
     """Main entry point for GUI"""
+    # Activate the catalog before any widget is constructed, since CustomTkinter
+    # resolves text at construction time.
+    from er_save_manager.i18n import init as init_i18n
+    from er_save_manager.ui.settings import Settings
+
+    init_i18n(Settings().get("language", "auto"))
+
     root = ctk.CTk()
     app = SaveManagerGUI(root)
 

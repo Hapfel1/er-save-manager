@@ -14,6 +14,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.utils import open_url
 
 
@@ -356,7 +357,7 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
     # Title
     title = ctk.CTkLabel(
         main_frame,
-        text="✅ Character Ready to Submit!",
+        text=t("✅ Character Ready to Submit!"),
         font=("Segoe UI", 20, "bold"),
     )
     title.pack(pady=(0, 20))
@@ -366,7 +367,7 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
 
     info = ctk.CTkLabel(
         main_frame,
-        text="📦 Your character package has been created:",
+        text=t("📦 Your character package has been created:"),
         font=("Segoe UI", 14),
         justify=ctk.CENTER,
     )
@@ -388,14 +389,14 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
 
     ctk.CTkLabel(
         info_box,
-        text="Your browser has opened to GitHub.",
+        text=t("Your browser has opened to GitHub."),
         font=("Segoe UI", 13),
         justify=ctk.LEFT,
     ).pack(anchor=ctk.W, padx=20, pady=(15, 12))
 
     ctk.CTkLabel(
         info_box,
-        text="Next steps:",
+        text=t("Next steps:"),
         font=("Segoe UI", 12, "bold"),
         justify=ctk.LEFT,
     ).pack(anchor=ctk.W, padx=20, pady=(0, 10))
@@ -437,7 +438,7 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
     # Large "Open Folder" button
     open_btn = ctk.CTkButton(
         button_frame,
-        text="📁 Open Folder",
+        text=t("📁 Open Folder"),
         command=open_folder,
         width=200,
         height=40,
@@ -448,7 +449,7 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
     # Close button
     close_btn = ctk.CTkButton(
         button_frame,
-        text="Close",
+        text=t("Close"),
         command=dialog.destroy,
         width=150,
         height=40,
@@ -459,7 +460,7 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
     # Show path at bottom (for user reference)
     path_label = ctk.CTkLabel(
         main_frame,
-        text="Package Location (for your reference):",
+        text=t("Package Location (for your reference):"),
         font=("Segoe UI", 12, "bold"),
     )
     path_label.pack(anchor=ctk.W, pady=(20, 8))

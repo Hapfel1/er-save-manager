@@ -13,6 +13,7 @@ from typing import Any
 import customtkinter as ctk
 
 from er_save_manager.backup.manager import BackupManager
+from er_save_manager.i18n import t
 from er_save_manager.preset_manager import PresetManager
 from er_save_manager.preset_metrics import PresetMetrics
 from er_save_manager.ui.messagebox import CTkMessageBox
@@ -99,25 +100,25 @@ class EnhancedPresetBrowser:
 
         ctk.CTkLabel(
             top_frame,
-            text="Browse Community Presets",
+            text=t("Browse Community Presets"),
             font=("Segoe UI", 18, "bold"),
         ).pack(side=ctk.LEFT)
 
         ctk.CTkButton(
-            top_frame, text="Refresh", command=self.refresh_presets, width=90
+            top_frame, text=t("Refresh"), command=self.refresh_presets, width=90
         ).pack(side=ctk.RIGHT)
 
         filter_frame = ctk.CTkFrame(main_frame)
         filter_frame.pack(fill=ctk.X, pady=(0, 14))
 
-        ctk.CTkLabel(filter_frame, text="Search:").pack(side=ctk.LEFT, padx=(0, 8))
+        ctk.CTkLabel(filter_frame, text=t("Search:")).pack(side=ctk.LEFT, padx=(0, 8))
         self.search_var = ctk.StringVar(value="")
         trace_variable(self.search_var, "w", lambda *args: self.apply_filters())
         ctk.CTkEntry(filter_frame, textvariable=self.search_var, width=240).pack(
             side=ctk.LEFT
         )
 
-        ctk.CTkLabel(filter_frame, text="Filter:").pack(side=ctk.LEFT, padx=(18, 8))
+        ctk.CTkLabel(filter_frame, text=t("Filter:")).pack(side=ctk.LEFT, padx=(18, 8))
         self.filter_var = ctk.StringVar(value="All")
         filter_combo = ctk.CTkComboBox(
             filter_frame,
@@ -130,7 +131,7 @@ class EnhancedPresetBrowser:
         filter_combo.pack(side=ctk.LEFT)
         filter_combo.bind("<<ComboboxSelected>>", lambda _e=None: self.apply_filters())
 
-        ctk.CTkLabel(filter_frame, text="Sort:").pack(side=ctk.LEFT, padx=(18, 8))
+        ctk.CTkLabel(filter_frame, text=t("Sort:")).pack(side=ctk.LEFT, padx=(18, 8))
         self.sort_var = ctk.StringVar(value="Recent")
         sort_combo = ctk.CTkComboBox(
             filter_frame,
@@ -167,7 +168,7 @@ class EnhancedPresetBrowser:
 
         ctk.CTkLabel(
             preview_panel,
-            text="Preview",
+            text=t("Preview"),
             font=("Segoe UI", 14, "bold"),
         ).pack(anchor=ctk.W, padx=10, pady=(10, 2))
 
@@ -180,7 +181,9 @@ class EnhancedPresetBrowser:
         slot_frame = ctk.CTkFrame(preview_panel)
         slot_frame.pack(fill=ctk.X, padx=10, pady=(0, 10))
 
-        ctk.CTkLabel(slot_frame, text="Preset Slot:").pack(side=ctk.LEFT, padx=(0, 8))
+        ctk.CTkLabel(slot_frame, text=t("Preset Slot:")).pack(
+            side=ctk.LEFT, padx=(0, 8)
+        )
         self.target_slot_var = ctk.StringVar(value="Slot 1")
         ctk.CTkComboBox(
             slot_frame,
@@ -192,7 +195,7 @@ class EnhancedPresetBrowser:
 
         self.apply_button = ctk.CTkButton(
             slot_frame,
-            text="Apply to Slot",
+            text=t("Apply to Slot"),
             command=self.apply_to_slot,
             state="disabled",
             width=170,
@@ -217,7 +220,7 @@ class EnhancedPresetBrowser:
 
         ctk.CTkLabel(
             main_frame,
-            text="Contribute Your Character Preset",
+            text=t("Contribute Your Character Preset"),
             font=("Segoe UI", 18, "bold"),
         ).grid(row=0, column=0, columnspan=2, pady=(0, 12), sticky="w")
 
@@ -227,13 +230,13 @@ class EnhancedPresetBrowser:
         notice.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 20), padx=0)
         ctk.CTkLabel(
             notice,
-            text="⚠ GitHub Account Required",
+            text=t("⚠ GitHub Account Required"),
             font=("Segoe UI", 14, "bold"),
             text_color=("#b45309", "#fbbf24"),
         ).pack(pady=(12, 4))
         ctk.CTkLabel(
             notice,
-            text="Log into GitHub in your browser before submitting",
+            text=t("Log into GitHub in your browser before submitting"),
             font=("Segoe UI", 12),
             text_color=("#6b7280", "#d1d5db"),
         ).pack(pady=(0, 12))
@@ -250,12 +253,12 @@ class EnhancedPresetBrowser:
         slot_section.pack(fill=ctk.X, pady=(0, 20))
         ctk.CTkLabel(
             slot_section,
-            text="1) Select Appearance Preset Slot",
+            text=t("1) Select Appearance Preset Slot"),
             font=("Segoe UI", 14, "bold"),
         ).pack(anchor=ctk.W, pady=(0, 8), padx=0)
         ctk.CTkLabel(
             slot_section,
-            text="Slots from the in-game 'Detailed Appearance' menu",
+            text=t("Slots from the in-game 'Detailed Appearance' menu"),
             justify=ctk.LEFT,
             font=("Segoe UI", 11),
             text_color=("#666666", "#999999"),
@@ -283,7 +286,7 @@ class EnhancedPresetBrowser:
         images_section.pack(fill=ctk.X, pady=(0, 0))
         ctk.CTkLabel(
             images_section,
-            text="2) Add Images (Face & Body required)",
+            text=t("2) Add Images (Face & Body required)"),
             font=("Segoe UI", 14, "bold"),
         ).pack(anchor=ctk.W, padx=0, pady=(0, 12))
 
@@ -306,7 +309,7 @@ class EnhancedPresetBrowser:
         meta_section = ctk.CTkFrame(right_col, fg_color="transparent")
         meta_section.pack(fill=ctk.BOTH, expand=True, padx=0, pady=0)
         ctk.CTkLabel(
-            meta_section, text="3) Preset Information", font=("Segoe UI", 14, "bold")
+            meta_section, text=t("3) Preset Information"), font=("Segoe UI", 14, "bold")
         ).pack(anchor=ctk.W, padx=0, pady=(0, 12))
 
         self.preset_name_var = ctk.StringVar(value="")
@@ -318,7 +321,7 @@ class EnhancedPresetBrowser:
 
         desc_frame = ctk.CTkFrame(meta_section, fg_color="transparent")
         desc_frame.pack(fill=ctk.BOTH, expand=True, padx=0, pady=(0, 12))
-        ctk.CTkLabel(desc_frame, text="Description", font=("Segoe UI", 11)).pack(
+        ctk.CTkLabel(desc_frame, text=t("Description"), font=("Segoe UI", 11)).pack(
             anchor=ctk.W, pady=(0, 4)
         )
         self.description_text = ctk.CTkTextbox(desc_frame, height=100)
@@ -327,7 +330,7 @@ class EnhancedPresetBrowser:
         tags_section = ctk.CTkFrame(meta_section, fg_color="transparent")
         tags_section.pack(fill=ctk.X, padx=0, pady=(0, 12))
         ctk.CTkLabel(
-            tags_section, text="Tags (select all that apply)", font=("Segoe UI", 11)
+            tags_section, text=t("Tags (select all that apply)"), font=("Segoe UI", 11)
         ).pack(anchor=ctk.W, pady=(0, 6))
 
         tags_container = ctk.CTkFrame(tags_section, fg_color="transparent")
@@ -362,7 +365,7 @@ class EnhancedPresetBrowser:
         custom_tags_frame.pack(fill=ctk.X, padx=0, pady=(0, 12))
         ctk.CTkLabel(
             custom_tags_frame,
-            text="Custom Tags (comma-separated)",
+            text=t("Custom Tags (comma-separated)"),
             font=("Segoe UI", 11),
         ).pack(anchor=ctk.W, pady=(0, 4))
         ctk.CTkEntry(custom_tags_frame, textvariable=self.custom_tags_var).pack(
@@ -376,8 +379,10 @@ class EnhancedPresetBrowser:
         ctk.CTkLabel(
             login_notice,
             text=(
-                "Make sure you're logged into GitHub in your browser before submitting.\n"
-                "If the GitHub home page opens, log in first then submit again."
+                t(
+                    "Make sure you're logged into GitHub in your browser before submitting.\n"
+                    "If the GitHub home page opens, log in first then submit again."
+                )
             ),
             justify=ctk.LEFT,
             font=("Segoe UI", 11),
@@ -385,7 +390,7 @@ class EnhancedPresetBrowser:
 
         link = ctk.CTkLabel(
             login_notice,
-            text="https://github.com/login",
+            text=t("https://github.com/login"),
             text_color=("#2563eb", "#60a5fa"),
             cursor="hand2",
             font=("Segoe UI", 11),
@@ -398,7 +403,7 @@ class EnhancedPresetBrowser:
         submit_frame.pack(fill=ctk.X, pady=(12, 0))
         self.submit_button = ctk.CTkButton(
             submit_frame,
-            text="Submit Preset",
+            text=t("Submit Preset"),
             command=self.submit_contribution,
             width=150,
             height=38,
@@ -422,7 +427,7 @@ class EnhancedPresetBrowser:
             text_color=("#808080", "#a0a0a0"),
         )
         value_label.pack(side=ctk.LEFT, padx=0, expand=True, fill=ctk.X)
-        ctk.CTkButton(row, text="Browse...", width=90, command=command).pack(
+        ctk.CTkButton(row, text=t("Browse..."), width=90, command=command).pack(
             side=ctk.LEFT, padx=(12, 0)
         )
         return value_label
@@ -449,7 +454,7 @@ class EnhancedPresetBrowser:
     # ---------------------- Image selection ----------------------
     def select_face_image(self):
         path = filedialog.askopenfilename(
-            title="Select Face Screenshot",
+            title=t("Select Face Screenshot"),
             filetypes=[("Image files", "*.png *.jpg *.jpeg"), ("All files", "*.*")],
         )
         if path:
@@ -458,7 +463,7 @@ class EnhancedPresetBrowser:
 
     def select_body_image(self):
         path = filedialog.askopenfilename(
-            title="Select Full Body Screenshot",
+            title=t("Select Full Body Screenshot"),
             filetypes=[("Image files", "*.png *.jpg *.jpeg"), ("All files", "*.*")],
         )
         if path:
@@ -467,7 +472,7 @@ class EnhancedPresetBrowser:
 
     def select_preview_image(self):
         path = filedialog.askopenfilename(
-            title="Select Preview Thumbnail",
+            title=t("Select Preview Thumbnail"),
             filetypes=[("Image files", "*.png *.jpg *.jpeg"), ("All files", "*.*")],
         )
         if path:
@@ -479,21 +484,21 @@ class EnhancedPresetBrowser:
         preset_name = self.preset_name_var.get().strip()
         if not preset_name:
             CTkMessageBox.showerror(
-                "Error", "Preset name is required", parent=self.dialog
+                t("Error"), t("Preset name is required"), parent=self.dialog
             )
             return
 
         author = self.author_var.get().strip()
         if not author:
             CTkMessageBox.showerror(
-                "Error", "Author name is required", parent=self.dialog
+                t("Error"), t("Author name is required"), parent=self.dialog
             )
             return
 
         description = self.description_text.get("1.0", tk.END).strip()
         if not description:
             CTkMessageBox.showerror(
-                "Error", "Description is required", parent=self.dialog
+                t("Error"), t("Description is required"), parent=self.dialog
             )
             return
 
@@ -504,7 +509,7 @@ class EnhancedPresetBrowser:
         selected_tags.extend(custom_tags)
         if not selected_tags:
             CTkMessageBox.showerror(
-                "Error", "At least one tag is required", parent=self.dialog
+                t("Error"), t("At least one tag is required"), parent=self.dialog
             )
             return
 
@@ -515,14 +520,16 @@ class EnhancedPresetBrowser:
             save_file = self.appearance_tab.get_save_file()
             if not save_file:
                 CTkMessageBox.showerror(
-                    "Error", "No save file loaded", parent=self.dialog
+                    t("Error"), t("No save file loaded"), parent=self.dialog
                 )
                 return
 
             if slot_index >= self.NUM_SLOTS:
                 CTkMessageBox.showerror(
-                    "Error",
-                    f"Preset slot {slot_index + 1} is invalid (max {self.NUM_SLOTS})",
+                    t("Error"),
+                    t("Preset slot {slot_index} is invalid (max {num_slots})").format(
+                        slot_index=slot_index + 1, num_slots=self.NUM_SLOTS
+                    ),
                     parent=self.dialog,
                 )
                 return
@@ -530,8 +537,10 @@ class EnhancedPresetBrowser:
             presets_data = save_file.get_character_presets()
             if not presets_data or slot_index >= len(presets_data.presets):
                 CTkMessageBox.showerror(
-                    "Error",
-                    f"Character slot {slot_index + 1} preset doesn't exist",
+                    t("Error"),
+                    t("Character slot {slot_index} preset doesn't exist").format(
+                        slot_index=slot_index + 1
+                    ),
                     parent=self.dialog,
                 )
                 return
@@ -556,7 +565,9 @@ class EnhancedPresetBrowser:
                 self._show_submission_error_dialog(submission_url)
         except Exception as exc:  # pragma: no cover - UI path
             CTkMessageBox.showerror(
-                "Error", f"Failed to create submission:\n{exc}", parent=self.dialog
+                t("Error"),
+                t("Failed to create submission:\n{exc}").format(exc=exc),
+                parent=self.dialog,
             )
 
     def _show_submission_error_dialog(self, submission_url: str | None):
@@ -576,14 +587,16 @@ class EnhancedPresetBrowser:
 
         ctk.CTkLabel(
             frame,
-            text="GitHub not logged in",
+            text=t("GitHub not logged in"),
             font=("Segoe UI", 14, "bold"),
         ).pack(anchor=ctk.W, pady=(0, 10))
 
         ctk.CTkLabel(
             frame,
             text=(
-                "Log in to GitHub, then copy and paste this link in your browser to finish the submission."
+                t(
+                    "Log in to GitHub, then copy and paste this link in your browser to finish the submission."
+                )
             ),
             justify=ctk.LEFT,
         ).pack(anchor=ctk.W)
@@ -598,20 +611,22 @@ class EnhancedPresetBrowser:
                 dialog.clipboard_clear()
                 dialog.clipboard_append(submission_url)
                 CTkMessageBox.showinfo(
-                    "Copied", "URL copied to clipboard.", parent=dialog
+                    t("Copied"), t("URL copied to clipboard."), parent=dialog
                 )
 
-            ctk.CTkButton(frame, text="Copy URL", command=copy_url, width=140).pack(
+            ctk.CTkButton(frame, text=t("Copy URL"), command=copy_url, width=140).pack(
                 pady=6
             )
         else:
             ctk.CTkLabel(
                 frame,
-                text="Could not generate a submission URL. Please log in to GitHub and try again.",
+                text=t(
+                    "Could not generate a submission URL. Please log in to GitHub and try again."
+                ),
                 text_color=("#dc2626", "#fca5a5"),
             ).pack(anchor=ctk.W, pady=10)
 
-        ctk.CTkButton(frame, text="Close", command=dialog.destroy, width=120).pack(
+        ctk.CTkButton(frame, text=t("Close"), command=dialog.destroy, width=120).pack(
             pady=(6, 0)
         )
 
@@ -753,7 +768,7 @@ class EnhancedPresetBrowser:
 
         if not self.filtered_presets:
             empty = ctk.CTkLabel(
-                self.grid_container, text="No presets match your search"
+                self.grid_container, text=t("No presets match your search")
             )
             empty.grid(row=0, column=0, pady=30, padx=10)
             self.preset_widgets.append(empty)
@@ -785,14 +800,14 @@ class EnhancedPresetBrowser:
         frame = ctk.CTkFrame(self.grid_container, corner_radius=6, border_width=1)
         frame.preset = preset
 
-        thumb = ctk.CTkLabel(frame, text="[Loading...]")
+        thumb = ctk.CTkLabel(frame, text=t("[Loading...]"))
         thumb.pack(pady=(8, 4))
         frame.thumb_label = thumb
 
         if HAS_PIL:
             self.load_thumbnail(preset, thumb)
         else:
-            thumb.configure(text="[No image]")
+            thumb.configure(text=t("[No image]"))
 
         ctk.CTkLabel(
             frame,
@@ -802,7 +817,7 @@ class EnhancedPresetBrowser:
         ).pack(pady=(0, 2))
         ctk.CTkLabel(
             frame,
-            text=f"by {preset.get('author', 'Unknown')}",
+            text=t("by {get}").format(get=preset.get("author", "Unknown")),
             font=("Segoe UI", 10),
             text_color=("#6b7280", "#d1d5db"),
         ).pack()
@@ -874,7 +889,7 @@ class EnhancedPresetBrowser:
                     def _no_img():
                         try:
                             if label.winfo_exists():
-                                label.configure(text="[No Image]")
+                                label.configure(text=t("[No Image]"))
                         except Exception:
                             pass
 
@@ -895,7 +910,7 @@ class EnhancedPresetBrowser:
 
         if not cached:
             CTkMessageBox.showerror(
-                "Error", "Failed to download preset", parent=self.dialog
+                t("Error"), t("Failed to download preset"), parent=self.dialog
             )
             return
 
@@ -920,12 +935,12 @@ class EnhancedPresetBrowser:
                         face_col = ctk.CTkFrame(img_row)
                         face_col.pack(side=ctk.LEFT, padx=8)
                         ctk.CTkLabel(face_col, image=face_img, text="").pack()
-                        ctk.CTkLabel(face_col, text="Face").pack()
+                        ctk.CTkLabel(face_col, text=t("Face")).pack()
                     if body_img:
                         body_col = ctk.CTkFrame(img_row)
                         body_col.pack(side=ctk.LEFT, padx=8)
                         ctk.CTkLabel(body_col, image=body_img, text="").pack()
-                        ctk.CTkLabel(body_col, text="Body").pack()
+                        ctk.CTkLabel(body_col, text=t("Body")).pack()
                 elif "screenshot_path" in cached:
                     try:
                         img = Image.open(cached["screenshot_path"])
@@ -939,26 +954,26 @@ class EnhancedPresetBrowser:
                             ).pack(pady=10)
                         else:
                             ctk.CTkLabel(
-                                self.preview_area, text="[Preview not available]"
+                                self.preview_area, text=t("[Preview not available]")
                             ).pack(pady=10)
                     except Exception:
                         ctk.CTkLabel(
-                            self.preview_area, text="[Preview not available]"
+                            self.preview_area, text=t("[Preview not available]")
                         ).pack(pady=10)
                 else:
-                    ctk.CTkLabel(self.preview_area, text="[No preview available]").pack(
-                        pady=10
-                    )
+                    ctk.CTkLabel(
+                        self.preview_area, text=t("[No preview available]")
+                    ).pack(pady=10)
             except Exception as e:
                 # Handle any PIL/Tkinter integration errors
                 print(f"[Preview] Image display error: {e}")
-                ctk.CTkLabel(self.preview_area, text="[Preview not available]").pack(
+                ctk.CTkLabel(self.preview_area, text=t("[Preview not available]")).pack(
                     pady=10
                 )
         else:
-            ctk.CTkLabel(self.preview_area, text="[Install Pillow for previews]").pack(
-                pady=10
-            )
+            ctk.CTkLabel(
+                self.preview_area, text=t("[Install Pillow for previews]")
+            ).pack(pady=10)
 
         for widget in self.details_frame.winfo_children():
             widget.destroy()
@@ -969,10 +984,12 @@ class EnhancedPresetBrowser:
             font=("Segoe UI", 13, "bold"),
         ).pack(anchor=ctk.W)
         ctk.CTkLabel(
-            self.details_frame, text=f"Author: {preset.get('author', 'Unknown')}"
+            self.details_frame,
+            text=t("Author: {get}").format(get=preset.get("author", "Unknown")),
         ).pack(anchor=ctk.W, pady=(2, 0))
         ctk.CTkLabel(
-            self.details_frame, text=f"Tags: {', '.join(preset.get('tags', []))}"
+            self.details_frame,
+            text=t("Tags: {join}").format(join=", ".join(preset.get("tags", []))),
         ).pack(anchor=ctk.W, pady=(2, 0))
 
         if "description" in preset:
@@ -995,7 +1012,9 @@ class EnhancedPresetBrowser:
         # Display current metrics
         stats_label = ctk.CTkLabel(
             metrics_section,
-            text=f"👍 {likes} likes  |  ⬇ {downloads} downloads",
+            text=t("👍 {likes} likes  |  ⬇ {downloads} downloads").format(
+                likes=likes, downloads=downloads
+            ),
             font=("Segoe UI", 11),
             text_color=("#6b7280", "#9ca3af"),
         )
@@ -1022,7 +1041,7 @@ class EnhancedPresetBrowser:
 
         like_btn = ctk.CTkButton(
             vote_frame,
-            text="👍 Like" if not has_liked else "👍 Liked",
+            text=t("👍 Like") if not has_liked else t("👍 Liked"),
             command=vote_like,
             width=90,
             height=32,
@@ -1034,7 +1053,7 @@ class EnhancedPresetBrowser:
         # Report button
         report_btn = ctk.CTkButton(
             vote_frame,
-            text="🚩 Report",
+            text=t("🚩 Report"),
             command=lambda: self._show_report_dialog(preset),
             width=90,
             height=32,
@@ -1115,10 +1134,15 @@ class EnhancedPresetBrowser:
             char_name = "the current character"
 
         if not CTkMessageBox.askyesno(
-            "Apply Preset",
+            t("Apply Preset"),
             (
-                f"Apply '{self.current_preset.get('name', 'preset')}' to {char_name}'s {slot_str}?\n\n"
-                "This will add the preset to that character's appearance menu."
+                t(
+                    "Apply '{get}' to {char_name}'s {slot_str}?\n\nThis will add the preset to that character's appearance menu."
+                ).format(
+                    get=self.current_preset.get("name", "preset"),
+                    char_name=char_name,
+                    slot_str=slot_str,
+                )
             ),
             parent=self.dialog,
         ):
@@ -1130,7 +1154,7 @@ class EnhancedPresetBrowser:
 
             if not preset_data or "appearance" not in preset_data:
                 CTkMessageBox.showerror(
-                    "Error", "Invalid preset data", parent=self.dialog
+                    t("Error"), t("Invalid preset data"), parent=self.dialog
                 )
                 return
 
@@ -1139,14 +1163,16 @@ class EnhancedPresetBrowser:
 
             if not save_file or not save_path:
                 CTkMessageBox.showerror(
-                    "Error", "No save file loaded", parent=self.dialog
+                    t("Error"), t("No save file loaded"), parent=self.dialog
                 )
                 return
 
             if target_slot >= self.NUM_SLOTS:
                 CTkMessageBox.showerror(
-                    "Error",
-                    f"Preset slot {target_slot + 1} is invalid (max {self.NUM_SLOTS})",
+                    t("Error"),
+                    t("Preset slot {target_slot} is invalid (max {num_slots})").format(
+                        target_slot=target_slot + 1, num_slots=self.NUM_SLOTS
+                    ),
                     parent=self.dialog,
                 )
                 return
@@ -1174,8 +1200,11 @@ class EnhancedPresetBrowser:
                 self.preview_preset(self.current_preset)
 
             CTkMessageBox.showinfo(
-                "Success",
-                f"Applied '{self.current_preset.get('name', 'preset')}' to Preset Slot {target_slot + 1}.",
+                t("Success"),
+                t("Applied '{get}' to Preset Slot {target_slot}.").format(
+                    get=self.current_preset.get("name", "preset"),
+                    target_slot=target_slot + 1,
+                ),
                 parent=self.dialog,
             )
 
@@ -1189,7 +1218,9 @@ class EnhancedPresetBrowser:
 
         except Exception as exc:  # pragma: no cover - UI path
             CTkMessageBox.showerror(
-                "Error", f"Failed to apply preset:\n{exc}", parent=self.dialog
+                t("Error"),
+                t("Failed to apply preset:\n{exc}").format(exc=exc),
+                parent=self.dialog,
             )
 
     def _show_report_dialog(self, preset: dict[str, Any]):
@@ -1215,13 +1246,13 @@ class EnhancedPresetBrowser:
         notice_frame.pack(fill=ctk.X, pady=(0, 15))
         ctk.CTkLabel(
             notice_frame,
-            text="⚠ GitHub Account Required",
+            text=t("⚠ GitHub Account Required"),
             font=("Segoe UI", 13, "bold"),
             text_color=("#b45309", "#fbbf24"),
         ).pack(pady=(10, 4))
         ctk.CTkLabel(
             notice_frame,
-            text="Log into GitHub in your browser before reporting",
+            text=t("Log into GitHub in your browser before reporting"),
             font=("Segoe UI", 11),
             text_color=("#6b7280", "#d1d5db"),
         ).pack(pady=(0, 10))
@@ -1229,13 +1260,13 @@ class EnhancedPresetBrowser:
         # Title
         ctk.CTkLabel(
             main_frame,
-            text=f"Report: {preset.get('name', 'Preset')}",
+            text=t("Report: {get}").format(get=preset.get("name", "Preset")),
             font=("Segoe UI", 16, "bold"),
         ).pack(anchor=ctk.W, pady=(0, 5))
 
         ctk.CTkLabel(
             main_frame,
-            text=f"by {preset.get('author', 'Unknown')}",
+            text=t("by {get}").format(get=preset.get("author", "Unknown")),
             font=("Segoe UI", 11),
             text_color=("#6b7280", "#9ca3af"),
         ).pack(anchor=ctk.W, pady=(0, 15))
@@ -1247,7 +1278,7 @@ class EnhancedPresetBrowser:
         info_frame.pack(fill=ctk.X, pady=(0, 20))
         ctk.CTkLabel(
             info_frame,
-            text="⚠️ Please report only genuine issues (inappropriate content, etc.)",
+            text=t("⚠️ Please report only genuine issues (inappropriate content, etc.)"),
             font=("Segoe UI", 11),
             text_color=("#92400e", "#fbbf24"),
             wraplength=550,
@@ -1256,7 +1287,7 @@ class EnhancedPresetBrowser:
         # Reason label
         ctk.CTkLabel(
             main_frame,
-            text="Reason for report:",
+            text=t("Reason for report:"),
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor=ctk.W, pady=(0, 8))
 
@@ -1273,8 +1304,8 @@ class EnhancedPresetBrowser:
             message = report_text.get("1.0", tk.END).strip()
             if not message:
                 CTkMessageBox.showerror(
-                    "Error",
-                    "Please enter a reason for the report.",
+                    t("Error"),
+                    t("Please enter a reason for the report."),
                     parent=report_dialog,
                 )
                 return
@@ -1285,7 +1316,7 @@ class EnhancedPresetBrowser:
 
         ctk.CTkButton(
             button_frame,
-            text="Submit Report",
+            text=t("Submit Report"),
             command=submit_report,
             width=150,
             height=35,
@@ -1295,7 +1326,7 @@ class EnhancedPresetBrowser:
 
         ctk.CTkButton(
             button_frame,
-            text="Cancel",
+            text=t("Cancel"),
             command=report_dialog.destroy,
             width=120,
             height=35,
@@ -1344,8 +1375,10 @@ class EnhancedPresetBrowser:
 
         # Show confirmation
         CTkMessageBox.showinfo(
-            "Report Submitted",
-            "Your browser has opened to GitHub.\n\nClick 'Submit new issue' to complete the report.",
+            t("Report Submitted"),
+            t(
+                "Your browser has opened to GitHub.\n\nClick 'Submit new issue' to complete the report."
+            ),
             parent=self.dialog,
         )
 
@@ -1370,11 +1403,11 @@ class PresetBrowserDialog:
         frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=20)
 
         ctk.CTkLabel(
-            frame, text="Community Character Presets", font=("Segoe UI", 16, "bold")
+            frame, text=t("Community Character Presets"), font=("Segoe UI", 16, "bold")
         ).pack(pady=(0, 12))
         ctk.CTkLabel(
             frame,
-            text="Community Character Presets",
+            text=t("Community Character Presets"),
             font=("Segoe UI", 16, "bold"),
             text_color=("#f59e0b", "#fcd34d"),
         ).pack(pady=6)
@@ -1389,6 +1422,6 @@ class PresetBrowserDialog:
             "Database hosted externally and auto-updates!"
         )
         ctk.CTkLabel(frame, text=desc, justify=ctk.LEFT).pack(pady=8)
-        ctk.CTkButton(frame, text="Close", command=dialog.destroy, width=120).pack(
+        ctk.CTkButton(frame, text=t("Close"), command=dialog.destroy, width=120).pack(
             pady=8
         )

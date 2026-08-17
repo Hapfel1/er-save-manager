@@ -35,6 +35,8 @@ jobs:
         run: uv sync --locked --dev
       - name: Get version from pyproject.toml
         run: echo "version=$(uv version --short)" >> "$GITHUB_ENV"
+      - name: Compile translation catalogs
+        run: uv run scripts/i18n_tool.py compile
       - name: Build Linux with pyinstaller
         run: uv run ./build-linux.sh
       - name: Package as AppImage
@@ -59,6 +61,8 @@ jobs:
         run: uv sync --locked --dev
       - name: Get version
         run: echo "version=$(uv version --short)" >> $env:GITHUB_ENV
+      - name: Compile translation catalogs
+        run: uv run scripts/i18n_tool.py compile
       - name: Build Windows with cx_Freeze
         run: uv run ./build-windows.py build
       - name: Upload artifacts

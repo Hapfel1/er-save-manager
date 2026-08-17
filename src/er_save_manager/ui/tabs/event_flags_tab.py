@@ -24,6 +24,7 @@ from er_save_manager.data.summoning_pools_data import (
     SUMMONING_POOL_FLAGS_BASE,
     SUMMONING_POOL_FLAGS_DLC,
 )
+from er_save_manager.i18n import t
 from er_save_manager.parser.event_flags import EventFlags
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, pick_file
@@ -136,13 +137,13 @@ class EventFlagsTab:
         # Header
         ctk.CTkLabel(
             main_frame,
-            text="Event Flags",
+            text=t("Event Flags"),
             font=("Segoe UI", 18, "bold"),
         ).pack(pady=(15, 5), padx=15, anchor="w")
 
         ctk.CTkLabel(
             main_frame,
-            text="View and edit event flags and respawn bosses",
+            text=t("View and edit event flags and respawn bosses"),
             font=("Segoe UI", 11),
             text_color=("gray50", "gray70"),
         ).pack(pady=(0, 12), padx=15, anchor="w")
@@ -151,7 +152,7 @@ class EventFlagsTab:
         slot_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         slot_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
-        ctk.CTkLabel(slot_frame, text="Character Slot:", font=("Segoe UI", 11)).pack(
+        ctk.CTkLabel(slot_frame, text=t("Character Slot:"), font=("Segoe UI", 11)).pack(
             side=tk.LEFT, padx=(0, 8)
         )
 
@@ -169,28 +170,28 @@ class EventFlagsTab:
 
         ctk.CTkButton(
             slot_frame,
-            text="Load Flags",
+            text=t("Load Flags"),
             command=self.load_event_flags,
             width=130,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
             slot_frame,
-            text="Advanced...",
+            text=t("Advanced..."),
             command=self.open_advanced_editor,
             width=110,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
             slot_frame,
-            text="Apply Changes",
+            text=t("Apply Changes"),
             command=self.apply_changes,
             width=130,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
             slot_frame,
-            text="Unlock All in Category",
+            text=t("Unlock All in Category"),
             command=self.unlock_all_in_category,
             width=160,
         ).pack(side=tk.LEFT)
@@ -201,49 +202,49 @@ class EventFlagsTab:
 
         ctk.CTkButton(
             tools_row,
-            text="Boss Respawn...",
+            text=t("Boss Respawn..."),
             command=self.open_boss_respawn,
             width=140,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
             tools_row,
-            text="Boss Status...",
+            text=t("Boss Status..."),
             command=self.open_boss_status,
             width=130,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
             tools_row,
-            text="NPC Revival...",
+            text=t("NPC Revival..."),
             command=self.open_npc_revival,
             width=130,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
             tools_row,
-            text="Quest Progress...",
+            text=t("Quest Progress..."),
             command=self.open_quest_progress,
             width=145,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
             tools_row,
-            text="Summoning Pools...",
+            text=t("Summoning Pools..."),
             command=self.open_summoning_pools,
             width=155,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
             tools_row,
-            text="Export Flags...",
+            text=t("Export Flags..."),
             command=self.export_flags,
             width=120,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
             tools_row,
-            text="Import Flags...",
+            text=t("Import Flags..."),
             command=self.import_flags,
             width=120,
         ).pack(side=tk.LEFT)
@@ -254,14 +255,14 @@ class EventFlagsTab:
 
         ctk.CTkLabel(
             filter_frame,
-            text="Browse by Category",
+            text=t("Browse by Category"),
             font=("Segoe UI", 12, "bold"),
         ).pack(pady=(10, 8), padx=12, anchor="w")
 
         cat_inner = ctk.CTkFrame(filter_frame, fg_color="transparent")
         cat_inner.pack(fill=tk.X, padx=12, pady=(0, 12))
 
-        ctk.CTkLabel(cat_inner, text="Category:").pack(side=tk.LEFT, padx=(0, 8))
+        ctk.CTkLabel(cat_inner, text=t("Category:")).pack(side=tk.LEFT, padx=(0, 8))
         self.category_var = tk.StringVar(value="")
         cat_combo = ctk.CTkComboBox(
             cat_inner,
@@ -273,7 +274,7 @@ class EventFlagsTab:
         )
         cat_combo.pack(side=tk.LEFT, padx=(0, 20))
 
-        ctk.CTkLabel(cat_inner, text="Subcategory:").pack(side=tk.LEFT, padx=(0, 8))
+        ctk.CTkLabel(cat_inner, text=t("Subcategory:")).pack(side=tk.LEFT, padx=(0, 8))
         self.subcategory_var = tk.StringVar(value="")
         self.subcat_combo = ctk.CTkComboBox(
             cat_inner,
@@ -290,14 +291,14 @@ class EventFlagsTab:
 
         ctk.CTkLabel(
             search_frame,
-            text="Search Flags",
+            text=t("Search Flags"),
             font=("Segoe UI", 12, "bold"),
         ).pack(pady=(10, 8), padx=12, anchor="w")
 
         search_inner = ctk.CTkFrame(search_frame, fg_color="transparent")
         search_inner.pack(fill=tk.X, padx=12, pady=(0, 12))
 
-        ctk.CTkLabel(search_inner, text="Search:").pack(side=tk.LEFT, padx=(0, 8))
+        ctk.CTkLabel(search_inner, text=t("Search:")).pack(side=tk.LEFT, padx=(0, 8))
         self.search_var = tk.StringVar(value="")
         self.search_var.trace_add("write", self.on_search_changed)
         search_entry = ctk.CTkEntry(
@@ -307,12 +308,12 @@ class EventFlagsTab:
 
         ctk.CTkLabel(
             search_inner,
-            text="(Search by flag ID or name)",
+            text=t("(Search by flag ID or name)"),
             text_color=("gray50", "gray70"),
         ).pack(side=tk.LEFT, padx=(0, 12))
 
         ctk.CTkButton(
-            search_inner, text="Clear", command=self.clear_search, width=90
+            search_inner, text=t("Clear"), command=self.clear_search, width=90
         ).pack(side=tk.LEFT)
 
         # Flags viewer
@@ -321,7 +322,7 @@ class EventFlagsTab:
 
         ctk.CTkLabel(
             flags_frame,
-            text="Event Flags",
+            text=t("Event Flags"),
             font=("Segoe UI", 12, "bold"),
         ).pack(pady=(10, 8), padx=12, anchor="w")
 
@@ -338,7 +339,7 @@ class EventFlagsTab:
 
         self.status_label = ctk.CTkLabel(
             action_frame,
-            text="Select a category or search for flags",
+            text=t("Select a category or search for flags"),
             text_color=("gray50", "gray70"),
         )
         self.status_label.pack(side=tk.LEFT)
@@ -348,7 +349,7 @@ class EventFlagsTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
@@ -357,7 +358,9 @@ class EventFlagsTab:
 
         if slot.is_empty():
             CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {slot_idx + 1} is empty!", parent=self.parent
+                t("Empty Slot"),
+                t("Slot {slot_idx} is empty!").format(slot_idx=slot_idx + 1),
+                parent=self.parent,
             )
             return
 
@@ -365,7 +368,7 @@ class EventFlagsTab:
 
         if not hasattr(slot, "event_flags") or not slot.event_flags:
             CTkMessageBox.showerror(
-                "Error", "Event flags not available", parent=self.parent
+                t("Error"), t("Event flags not available"), parent=self.parent
             )
             return
 
@@ -376,16 +379,21 @@ class EventFlagsTab:
             widget.destroy()
 
         self.status_label.configure(
-            text=f"Loaded Slot {slot_idx + 1}. Select category or search."
+            text=t("Loaded Slot {slot_idx}. Select category or search.").format(
+                slot_idx=slot_idx + 1
+            )
         )
 
-        self.show_toast(f"Loaded event flags for Slot {slot_idx + 1}", duration=2500)
+        self.show_toast(
+            t("Loaded event flags for Slot {slot_idx}").format(slot_idx=slot_idx + 1),
+            duration=2500,
+        )
 
     def on_category_changed(self, choice=None):
         """Handle category selection"""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                t("Not Loaded"), t("Please load event flags for a character first!")
             )
             return
 
@@ -426,7 +434,11 @@ class EventFlagsTab:
         total = len(flags)
 
         label = f"{category} > {subcategory}" if subcategory else category
-        self.status_label.configure(text=f"Loading {total} flags in {label}...")
+        self.status_label.configure(
+            text=t("Loading {total} flags in {label}...").format(
+                total=total, label=label
+            )
+        )
 
         self._render_flags_chunk(flags, 0, total, label)
 
@@ -462,14 +474,20 @@ class EventFlagsTab:
         next_offset = offset + self._RENDER_CHUNK
         if next_offset < total:
             self.status_label.configure(
-                text=f"Loading {next_offset}/{total} flags in {label}..."
+                text=t("Loading {next_offset}/{total} flags in {label}...").format(
+                    next_offset=next_offset, total=total, label=label
+                )
             )
             self.flags_inner_frame.after(
                 self._RENDER_DELAY,
                 lambda: self._render_flags_chunk(flags, next_offset, total, label),
             )
         else:
-            self.status_label.configure(text=f"Showing {total} flags in {label}")
+            self.status_label.configure(
+                text=t("Showing {total} flags in {label}").format(
+                    total=total, label=label
+                )
+            )
 
     def on_flag_toggled(self, flag_id, var):
         """Handle flag checkbox toggle"""
@@ -489,7 +507,7 @@ class EventFlagsTab:
             for widget in self.flags_inner_frame.winfo_children():
                 widget.destroy()
             self.flag_widgets.clear()
-            self.status_label.configure(text="Select a category or search for flags")
+            self.status_label.configure(text=t("Select a category or search for flags"))
             return
 
         self._search_after_id = self.flags_inner_frame.after(
@@ -524,7 +542,7 @@ class EventFlagsTab:
                     if query in str(flag_id).lower() or query in flag_name.lower():
                         results.append((flag_id, flag_name, category, None))
 
-        self.status_label.configure(text="Searching...")
+        self.status_label.configure(text=t("Searching..."))
         self._render_search_chunk(results, 0)
 
     def _render_search_chunk(self, results, offset):
@@ -561,7 +579,9 @@ class EventFlagsTab:
                 lambda: self._render_search_chunk(results, next_offset),
             )
         else:
-            self.status_label.configure(text=f"Found {total} matching flags")
+            self.status_label.configure(
+                text=t("Found {total} matching flags").format(total=total)
+            )
 
     def clear_search(self):
         """Clear search field"""
@@ -569,20 +589,23 @@ class EventFlagsTab:
         for widget in self.flags_inner_frame.winfo_children():
             widget.destroy()
         self.flag_widgets.clear()
-        self.status_label.configure(text="Select a category or search for flags")
+        self.status_label.configure(text=t("Select a category or search for flags"))
 
     def unlock_all_in_category(self):
         """Unlock all flags in current category"""
         if not self.flag_widgets:
             CTkMessageBox.showwarning(
-                "No Flags", "No flags are currently displayed!", parent=self.parent
+                t("No Flags"),
+                t("No flags are currently displayed!"),
+                parent=self.parent,
             )
             return
 
         result = CTkMessageBox.askyesno(
-            "Confirm",
-            f"Set all {len(self.flag_widgets)} displayed flags to ON?\n\n"
-            f"This will affect only the flags currently visible.",
+            t("Confirm"),
+            t(
+                "Set all {len} displayed flags to ON?\n\nThis will affect only the flags currently visible."
+            ).format(len=len(self.flag_widgets)),
             parent=self.parent,
         )
 
@@ -593,8 +616,10 @@ class EventFlagsTab:
                 checkbox.select()
 
             CTkMessageBox.showinfo(
-                "Success",
-                f"Enabled all {len(self.flag_widgets)} displayed flags.\n\nClick 'Apply Changes' to save.",
+                t("Success"),
+                t(
+                    "Enabled all {len} displayed flags.\n\nClick 'Apply Changes' to save."
+                ).format(len=len(self.flag_widgets)),
                 parent=self.parent,
             )
 
@@ -602,13 +627,13 @@ class EventFlagsTab:
         """Apply flag changes to save file"""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "No event flags loaded!", parent=self.parent
+                t("Not Loaded"), t("No event flags loaded!"), parent=self.parent
             )
             return
 
         if not self.flag_states:
             CTkMessageBox.showwarning(
-                "No Changes", "No flags have been modified!", parent=self.parent
+                t("No Changes"), t("No flags have been modified!"), parent=self.parent
             )
             return
 
@@ -621,14 +646,15 @@ class EventFlagsTab:
 
         if changes == 0:
             CTkMessageBox.showinfo(
-                "No Changes", "No flags were modified!", parent=self.parent
+                t("No Changes"), t("No flags were modified!"), parent=self.parent
             )
             return
 
         result = CTkMessageBox.askyesno(
-            "Confirm Changes",
-            f"Apply {changes} flag changes to Slot {self.current_slot + 1}?\n\n"
-            f"A backup will be created automatically.",
+            t("Confirm Changes"),
+            t(
+                "Apply {changes} flag changes to Slot {current_slot}?\n\nA backup will be created automatically."
+            ).format(changes=changes, current_slot=self.current_slot + 1),
             parent=self.parent,
         )
 
@@ -673,7 +699,9 @@ class EventFlagsTab:
         save_file.save(self.get_save_path())
         self.reload_save()
         self.show_toast(
-            f"Applied {changes} flag changes to Slot {self.current_slot + 1}!",
+            t("Applied {changes} flag changes to Slot {current_slot}!").format(
+                changes=changes, current_slot=self.current_slot + 1
+            ),
             duration=2500,
         )
 
@@ -684,7 +712,7 @@ class EventFlagsTab:
         """Export all set event flags to a JSON file."""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                t("Not Loaded"), t("Please load event flags for a character first!")
             )
             return
 
@@ -695,7 +723,7 @@ class EventFlagsTab:
         slot_num = (self.current_slot + 1) if self.current_slot is not None else 1
 
         out_path = pick_file(
-            title="Export Event Flags",
+            title=t("Export Event Flags"),
             initialdir=initial_dir,
             initialfile=f"flags_slot{slot_num}.json",
             save=True,
@@ -751,11 +779,15 @@ class EventFlagsTab:
             with open(out_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
 
-            self.show_toast(f"Exported {len(set_flags)} set flags", duration=2500)
+            self.show_toast(
+                t("Exported {len} set flags").format(len=len(set_flags)), duration=2500
+            )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Export Failed", f"Could not export flags:\n{e}", parent=self.parent
+                t("Export Failed"),
+                t("Could not export flags:\n{e}").format(e=e),
+                parent=self.parent,
             )
 
     def import_flags(self):
@@ -763,7 +795,7 @@ class EventFlagsTab:
         Backward compatible: entries without a "state" field default to true."""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                t("Not Loaded"), t("Please load event flags for a character first!")
             )
             return
 
@@ -773,7 +805,7 @@ class EventFlagsTab:
         initial_dir = str(save_path.parent) if save_path else None
 
         in_path = pick_file(
-            title="Import Event Flags",
+            title=t("Import Event Flags"),
             initialdir=initial_dir,
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
         )
@@ -785,14 +817,16 @@ class EventFlagsTab:
                 data = json.load(f)
         except Exception as e:
             CTkMessageBox.showerror(
-                "Import Failed", f"Could not read file:\n{e}", parent=self.parent
+                t("Import Failed"),
+                t("Could not read file:\n{e}").format(e=e),
+                parent=self.parent,
             )
             return
 
         if "flags" not in data or not isinstance(data["flags"], list):
             CTkMessageBox.showerror(
-                "Invalid File",
-                "File does not contain a valid flags list.",
+                t("Invalid File"),
+                t("File does not contain a valid flags list."),
                 parent=self.parent,
             )
             return
@@ -809,8 +843,8 @@ class EventFlagsTab:
 
         if not flag_ops:
             CTkMessageBox.showinfo(
-                "Nothing to Import",
-                "No valid flag IDs found in file.",
+                t("Nothing to Import"),
+                t("No valid flag IDs found in file."),
                 parent=self.parent,
             )
             return
@@ -819,8 +853,10 @@ class EventFlagsTab:
         unset_count = len(flag_ops) - set_count
         summary = f"Set {set_count}" + (f", unset {unset_count}" if unset_count else "")
         result = CTkMessageBox.askyesno(
-            "Confirm Import",
-            f"{summary} flags on Slot {self.current_slot + 1}?",
+            t("Confirm Import"),
+            t("{summary} flags on Slot {current_slot}?").format(
+                summary=summary, current_slot=self.current_slot + 1
+            ),
             parent=self.parent,
         )
         if not result:
@@ -837,8 +873,8 @@ class EventFlagsTab:
             )
         except PermissionError:
             CTkMessageBox.showwarning(
-                "Backup Skipped",
-                "Could not create backup (permission denied). Proceeding.",
+                t("Backup Skipped"),
+                t("Could not create backup (permission denied). Proceeding."),
                 parent=self.parent,
             )
 
@@ -869,13 +905,15 @@ class EventFlagsTab:
                 var.set(current)
                 self.flag_states[flag_id] = current
 
-        self.show_toast(f"Imported {applied} flags", duration=2500)
+        self.show_toast(
+            t("Imported {applied} flags").format(applied=applied), duration=2500
+        )
 
     def open_advanced_editor(self):
         """Open advanced flag editor dialog"""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                t("Not Loaded"), t("Please load event flags for a character first!")
             )
             return
 
@@ -903,7 +941,7 @@ class EventFlagsTab:
 
         ctk.CTkLabel(
             dialog,
-            text="Advanced Event Flag Editor",
+            text=t("Advanced Event Flag Editor"),
             font=("Segoe UI", 14, "bold"),
         ).pack(pady=(15, 10), padx=15)
 
@@ -911,7 +949,7 @@ class EventFlagsTab:
         input_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         input_frame.pack(fill=tk.X, padx=15, pady=10)
 
-        ctk.CTkLabel(input_frame, text="Flag ID:").pack(side=tk.LEFT, padx=(0, 8))
+        ctk.CTkLabel(input_frame, text=t("Flag ID:")).pack(side=tk.LEFT, padx=(0, 8))
 
         flag_id_var = tk.StringVar(value="")
         flag_entry = ctk.CTkEntry(input_frame, textvariable=flag_id_var, width=150)
@@ -921,7 +959,9 @@ class EventFlagsTab:
             try:
                 flag_id = int(flag_id_var.get())
             except ValueError:
-                CTkMessageBox.showerror("Error", "Invalid flag ID!", parent=dialog)
+                CTkMessageBox.showerror(
+                    t("Error"), t("Invalid flag ID!"), parent=dialog
+                )
                 return
 
             try:
@@ -930,8 +970,8 @@ class EventFlagsTab:
 
                 if not save_path or not save_path.is_file():
                     CTkMessageBox.showerror(
-                        "Invalid Save Path",
-                        "Could not locate save file.",
+                        t("Invalid Save Path"),
+                        t("Could not locate save file."),
                         parent=dialog,
                     )
                     return
@@ -945,8 +985,8 @@ class EventFlagsTab:
                     )
                 except PermissionError:
                     CTkMessageBox.showwarning(
-                        "Backup Skipped",
-                        "Could not create backup (permission denied). Proceeding.",
+                        t("Backup Skipped"),
+                        t("Could not create backup (permission denied). Proceeding."),
                         parent=dialog,
                     )
 
@@ -967,12 +1007,16 @@ class EventFlagsTab:
                 self.reload_save()
 
                 self.show_toast(
-                    f"Flag {flag_id} set to {'ON' if new_state else 'OFF'}",
+                    t("Flag {flag_id} set to {value}").format(
+                        flag_id=flag_id, value="ON" if new_state else "OFF"
+                    ),
                     duration=2000,
                 )
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Failed to toggle flag: {e}", parent=dialog
+                    t("Error"),
+                    t("Failed to toggle flag: {e}").format(e=e),
+                    parent=dialog,
                 )
 
         def check_flag():
@@ -981,22 +1025,30 @@ class EventFlagsTab:
                 state = self.current_event_flags.get_flag(flag_id)
                 flag_name = get_flag_name(flag_id)
                 CTkMessageBox.showinfo(
-                    "Flag Status",
-                    f"Flag {flag_id}: {flag_name}\n\nState: {'ON' if state else 'OFF'}",
+                    t("Flag Status"),
+                    t("Flag {flag_id}: {flag_name}\n\nState: {value}").format(
+                        flag_id=flag_id,
+                        flag_name=flag_name,
+                        value="ON" if state else "OFF",
+                    ),
                     parent=dialog,
                 )
             except ValueError:
-                CTkMessageBox.showerror("Error", "Invalid flag ID!", parent=dialog)
+                CTkMessageBox.showerror(
+                    t("Error"), t("Invalid flag ID!"), parent=dialog
+                )
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Failed to check flag: {e}", parent=dialog
+                    t("Error"),
+                    t("Failed to check flag: {e}").format(e=e),
+                    parent=dialog,
                 )
 
-        ctk.CTkButton(input_frame, text="Toggle", command=toggle_flag, width=100).pack(
-            side=tk.LEFT, padx=2
-        )
+        ctk.CTkButton(
+            input_frame, text=t("Toggle"), command=toggle_flag, width=100
+        ).pack(side=tk.LEFT, padx=2)
 
-        ctk.CTkButton(input_frame, text="Check", command=check_flag, width=100).pack(
+        ctk.CTkButton(input_frame, text=t("Check"), command=check_flag, width=100).pack(
             side=tk.LEFT, padx=2
         )
 
@@ -1033,7 +1085,7 @@ class EventFlagsTab:
         )
         help_text.configure(state="disabled")
 
-        ctk.CTkButton(dialog, text="Close", command=dialog.destroy, width=120).pack(
+        ctk.CTkButton(dialog, text=t("Close"), command=dialog.destroy, width=120).pack(
             pady=(0, 15)
         )
 
@@ -1041,7 +1093,7 @@ class EventFlagsTab:
         """Boss status dialog - defeated/alive for all tracked bosses."""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                t("Not Loaded"), t("Please load event flags for a character first!")
             )
             return
 
@@ -1067,13 +1119,13 @@ class EventFlagsTab:
 
         ctk.CTkLabel(
             dialog,
-            text="Boss Status",
+            text=t("Boss Status"),
             font=("Segoe UI", 14, "bold"),
         ).pack(pady=(15, 2), padx=15)
 
         ctk.CTkLabel(
             dialog,
-            text="Defeated/alive status for all tracked bosses",
+            text=t("Defeated/alive status for all tracked bosses"),
             text_color=("gray50", "gray70"),
         ).pack(pady=(0, 10), padx=15)
 
@@ -1098,7 +1150,7 @@ class EventFlagsTab:
         filter_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         filter_frame.pack(fill=tk.X, padx=15, pady=(0, 8))
 
-        ctk.CTkLabel(filter_frame, text="Show:").pack(side=tk.LEFT, padx=(0, 8))
+        ctk.CTkLabel(filter_frame, text=t("Show:")).pack(side=tk.LEFT, padx=(0, 8))
         status_filter_var = tk.StringVar(value="All")
         ctk.CTkComboBox(
             filter_frame,
@@ -1109,7 +1161,7 @@ class EventFlagsTab:
             command=lambda _v: _refresh(),
         ).pack(side=tk.LEFT, padx=(0, 16))
 
-        ctk.CTkLabel(filter_frame, text="Region:").pack(side=tk.LEFT, padx=(0, 8))
+        ctk.CTkLabel(filter_frame, text=t("Region:")).pack(side=tk.LEFT, padx=(0, 8))
         region_filter_var = tk.StringVar(value="All")
         ctk.CTkComboBox(
             filter_frame,
@@ -1122,7 +1174,9 @@ class EventFlagsTab:
 
         summary_label = ctk.CTkLabel(
             dialog,
-            text=f"{defeated_count} / {total_count} bosses defeated",
+            text=t("{defeated_count} / {total_count} bosses defeated").format(
+                defeated_count=defeated_count, total_count=total_count
+            ),
             font=("Segoe UI", 11),
         )
         summary_label.pack(pady=(0, 4), padx=15, anchor="w")
@@ -1136,9 +1190,9 @@ class EventFlagsTab:
             show="headings",
             selectmode="none",
         )
-        tree.heading("status", text="Status")
-        tree.heading("boss", text="Boss")
-        tree.heading("region", text="Region")
+        tree.heading("status", text=t("Status"))
+        tree.heading("boss", text=t("Boss"))
+        tree.heading("region", text=t("Region"))
         tree.column("status", width=90, anchor="w", stretch=False)
         tree.column("boss", width=330, anchor="w")
         tree.column("region", width=230, anchor="w")
@@ -1162,9 +1216,9 @@ class EventFlagsTab:
             for i, (_, iid) in enumerate(rows):
                 tree.move(iid, "", i)
 
-        tree.heading("status", text="Status", command=lambda: _sort("status"))
-        tree.heading("boss", text="Boss", command=lambda: _sort("boss"))
-        tree.heading("region", text="Region", command=lambda: _sort("region"))
+        tree.heading("status", text=t("Status"), command=lambda: _sort("status"))
+        tree.heading("boss", text=t("Boss"), command=lambda: _sort("boss"))
+        tree.heading("region", text=t("Region"), command=lambda: _sort("region"))
 
         def _refresh():
             tree.delete(*tree.get_children())
@@ -1182,13 +1236,17 @@ class EventFlagsTab:
                 )
                 shown += 1
             summary_label.configure(
-                text=f"{defeated_count} / {total_count} bosses defeated  -  showing {shown}"
+                text=t(
+                    "{defeated_count} / {total_count} bosses defeated  -  showing {shown}"
+                ).format(
+                    defeated_count=defeated_count, total_count=total_count, shown=shown
+                )
             )
             sort_state.clear()
 
         _refresh()
 
-        ctk.CTkButton(dialog, text="Close", command=dialog.destroy, width=120).pack(
+        ctk.CTkButton(dialog, text=t("Close"), command=dialog.destroy, width=120).pack(
             pady=(0, 15)
         )
 
@@ -1196,7 +1254,7 @@ class EventFlagsTab:
         """Open boss respawn dialog"""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                t("Not Loaded"), t("Please load event flags for a character first!")
             )
             return
 
@@ -1222,13 +1280,15 @@ class EventFlagsTab:
 
         ctk.CTkLabel(
             dialog,
-            text="Boss Respawn / Kill",
+            text=t("Boss Respawn / Kill"),
             font=("Segoe UI", 14, "bold"),
         ).pack(pady=(15, 5), padx=15)
 
         ctk.CTkLabel(
             dialog,
-            text="Reset boss defeat flags to respawn, or set them to mark as defeated",
+            text=t(
+                "Reset boss defeat flags to respawn, or set them to mark as defeated"
+            ),
             text_color=("gray50", "gray70"),
         ).pack(pady=(0, 12), padx=15)
 
@@ -1236,7 +1296,9 @@ class EventFlagsTab:
         cat_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         cat_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
-        ctk.CTkLabel(cat_frame, text="Boss Category:").pack(side=tk.LEFT, padx=(0, 8))
+        ctk.CTkLabel(cat_frame, text=t("Boss Category:")).pack(
+            side=tk.LEFT, padx=(0, 8)
+        )
 
         boss_category_var = tk.StringVar(value=BOSS_CATEGORIES[0])
         cat_combo = ctk.CTkComboBox(
@@ -1300,8 +1362,10 @@ class EventFlagsTab:
             save_path = self.get_save_path()
             if not save_path or not save_path.is_file():
                 CTkMessageBox.showerror(
-                    "Invalid Save Path",
-                    "Could not locate the save file to back up. Load a valid save (.sl2) first.",
+                    t("Invalid Save Path"),
+                    t(
+                        "Could not locate the save file to back up. Load a valid save (.sl2) first."
+                    ),
                 )
                 return
 
@@ -1316,8 +1380,8 @@ class EventFlagsTab:
 
             if count == 0:
                 CTkMessageBox.showinfo(
-                    "No Selection",
-                    "No valid selections. Select defeated bosses to respawn.",
+                    t("No Selection"),
+                    t("No valid selections. Select defeated bosses to respawn."),
                     parent=dialog,
                 )
                 return
@@ -1335,15 +1399,19 @@ class EventFlagsTab:
                     )
                 except PermissionError:
                     CTkMessageBox.showwarning(
-                        "Backup Skipped",
-                        "Could not create backup (permission denied)."
-                        " Continuing without backup.",
+                        t("Backup Skipped"),
+                        t(
+                            "Could not create backup (permission denied)."
+                            " Continuing without backup."
+                        ),
                     )
             else:
                 CTkMessageBox.showwarning(
-                    "Backup Skipped",
-                    "Could not create backup because the save path is not a file."
-                    " Proceeding without backup.",
+                    t("Backup Skipped"),
+                    t(
+                        "Could not create backup because the save path is not a file."
+                        " Proceeding without backup."
+                    ),
                 )
 
             # Write to raw data and recalculate checksums
@@ -1372,12 +1440,12 @@ class EventFlagsTab:
                     self.reload_save()
             except Exception as e:
                 CTkMessageBox.showwarning(
-                    "Teleport Failed",
-                    f"Could not teleport to Roundtable Hold: {e}",
+                    t("Teleport Failed"),
+                    t("Could not teleport to Roundtable Hold: {e}").format(e=e),
                     parent=dialog,
                 )
 
-            self.show_toast("Boss respawned successfully!", duration=2500)
+            self.show_toast(t("Boss respawned successfully!"), duration=2500)
             dialog.destroy()
 
         def respawn_all():
@@ -1385,16 +1453,19 @@ class EventFlagsTab:
             save_path = self.get_save_path()
             if not save_path or not save_path.is_file():
                 CTkMessageBox.showerror(
-                    "Invalid Save Path",
-                    "Could not locate the save file to back up. Load a valid save (.sl2) first.",
+                    t("Invalid Save Path"),
+                    t(
+                        "Could not locate the save file to back up. Load a valid save (.sl2) first."
+                    ),
                     parent=dialog,
                 )
                 return
 
             result = CTkMessageBox.askyesno(
-                "Confirm",
-                f"Respawn ALL bosses in {boss_category_var.get()}?\n\n"
-                f"This will reset {len(boss_vars)} boss(es).",
+                t("Confirm"),
+                t(
+                    "Respawn ALL bosses in {get}?\n\nThis will reset {len} boss(es)."
+                ).format(get=boss_category_var.get(), len=len(boss_vars)),
                 parent=dialog,
             )
 
@@ -1422,16 +1493,20 @@ class EventFlagsTab:
                     )
                 except PermissionError:
                     CTkMessageBox.showwarning(
-                        "Backup Skipped",
-                        "Could not create backup (permission denied)."
-                        " Continuing without backup.",
+                        t("Backup Skipped"),
+                        t(
+                            "Could not create backup (permission denied)."
+                            " Continuing without backup."
+                        ),
                         parent=dialog,
                     )
             else:
                 CTkMessageBox.showwarning(
-                    "Backup Skipped",
-                    "Could not create backup because the save path is not a file."
-                    " Proceeding without backup.",
+                    t("Backup Skipped"),
+                    t(
+                        "Could not create backup because the save path is not a file."
+                        " Proceeding without backup."
+                    ),
                     parent=dialog,
                 )
 
@@ -1461,13 +1536,15 @@ class EventFlagsTab:
                     self.reload_save()
             except Exception as e:
                 CTkMessageBox.showwarning(
-                    "Teleport Failed",
-                    f"Could not teleport to Roundtable Hold: {e}",
+                    t("Teleport Failed"),
+                    t("Could not teleport to Roundtable Hold: {e}").format(e=e),
                     parent=dialog,
                 )
 
             self.show_toast(
-                f"Respawned all {count} bosses in {boss_category_var.get()}!",
+                t("Respawned all {count} bosses in {get}!").format(
+                    count=count, get=boss_category_var.get()
+                ),
                 duration=2500,
             )
             dialog.destroy()
@@ -1477,8 +1554,10 @@ class EventFlagsTab:
             save_path = self.get_save_path()
             if not save_path or not save_path.is_file():
                 CTkMessageBox.showerror(
-                    "Invalid Save Path",
-                    "Could not locate the save file to back up. Load a valid save (.sl2) first.",
+                    t("Invalid Save Path"),
+                    t(
+                        "Could not locate the save file to back up. Load a valid save (.sl2) first."
+                    ),
                 )
                 return
 
@@ -1493,8 +1572,8 @@ class EventFlagsTab:
 
             if count == 0:
                 CTkMessageBox.showinfo(
-                    "No Selection",
-                    "No valid selections. Select alive bosses to kill.",
+                    t("No Selection"),
+                    t("No valid selections. Select alive bosses to kill."),
                     parent=dialog,
                 )
                 return
@@ -1512,15 +1591,19 @@ class EventFlagsTab:
                     )
                 except PermissionError:
                     CTkMessageBox.showwarning(
-                        "Backup Skipped",
-                        "Could not create backup (permission denied)."
-                        " Continuing without backup.",
+                        t("Backup Skipped"),
+                        t(
+                            "Could not create backup (permission denied)."
+                            " Continuing without backup."
+                        ),
                     )
             else:
                 CTkMessageBox.showwarning(
-                    "Backup Skipped",
-                    "Could not create backup because the save path is not a file."
-                    " Proceeding without backup.",
+                    t("Backup Skipped"),
+                    t(
+                        "Could not create backup because the save path is not a file."
+                        " Proceeding without backup."
+                    ),
                 )
 
             # Write to raw data and recalculate checksums
@@ -1550,12 +1633,12 @@ class EventFlagsTab:
                     self.reload_save()
             except Exception as e:
                 CTkMessageBox.showwarning(
-                    "Teleport Failed",
-                    f"Could not teleport to Roundtable Hold: {e}",
+                    t("Teleport Failed"),
+                    t("Could not teleport to Roundtable Hold: {e}").format(e=e),
                     parent=dialog,
                 )
 
-            self.show_toast("Boss killed successfully!", duration=2500)
+            self.show_toast(t("Boss killed successfully!"), duration=2500)
             dialog.destroy()
 
         def kill_all():
@@ -1563,16 +1646,19 @@ class EventFlagsTab:
             save_path = self.get_save_path()
             if not save_path or not save_path.is_file():
                 CTkMessageBox.showerror(
-                    "Invalid Save Path",
-                    "Could not locate the save file to back up. Load a valid save (.sl2) first.",
+                    t("Invalid Save Path"),
+                    t(
+                        "Could not locate the save file to back up. Load a valid save (.sl2) first."
+                    ),
                     parent=dialog,
                 )
                 return
 
             result = CTkMessageBox.askyesno(
-                "Confirm",
-                f"Kill ALL bosses in {boss_category_var.get()}?\n\n"
-                f"This will mark {len(boss_vars)} boss(es) as defeated.",
+                t("Confirm"),
+                t(
+                    "Kill ALL bosses in {get}?\n\nThis will mark {len} boss(es) as defeated."
+                ).format(get=boss_category_var.get(), len=len(boss_vars)),
                 parent=dialog,
             )
 
@@ -1600,16 +1686,20 @@ class EventFlagsTab:
                     )
                 except PermissionError:
                     CTkMessageBox.showwarning(
-                        "Backup Skipped",
-                        "Could not create backup (permission denied)."
-                        " Continuing without backup.",
+                        t("Backup Skipped"),
+                        t(
+                            "Could not create backup (permission denied)."
+                            " Continuing without backup."
+                        ),
                         parent=dialog,
                     )
             else:
                 CTkMessageBox.showwarning(
-                    "Backup Skipped",
-                    "Could not create backup because the save path is not a file."
-                    " Proceeding without backup.",
+                    t("Backup Skipped"),
+                    t(
+                        "Could not create backup because the save path is not a file."
+                        " Proceeding without backup."
+                    ),
                     parent=dialog,
                 )
 
@@ -1640,42 +1730,44 @@ class EventFlagsTab:
                     self.reload_save()
             except Exception as e:
                 CTkMessageBox.showwarning(
-                    "Teleport Failed",
-                    f"Could not teleport to Roundtable Hold: {e}",
+                    t("Teleport Failed"),
+                    t("Could not teleport to Roundtable Hold: {e}").format(e=e),
                     parent=dialog,
                 )
 
             self.show_toast(
-                f"Killed all {count} bosses in {boss_category_var.get()}!",
+                t("Killed all {count} bosses in {get}!").format(
+                    count=count, get=boss_category_var.get()
+                ),
                 duration=2500,
             )
             dialog.destroy()
 
-        ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=120).pack(
-            side=tk.LEFT
-        )
+        ctk.CTkButton(
+            btn_frame, text=t("Close"), command=dialog.destroy, width=120
+        ).pack(side=tk.LEFT)
 
         ctk.CTkButton(
-            btn_frame, text="Kill Selected", command=kill_selected, width=140
+            btn_frame, text=t("Kill Selected"), command=kill_selected, width=140
         ).pack(side=tk.LEFT, padx=(8, 0))
 
         ctk.CTkButton(
-            btn_frame, text="Kill All in Category", command=kill_all, width=170
+            btn_frame, text=t("Kill All in Category"), command=kill_all, width=170
         ).pack(side=tk.LEFT, padx=(8, 0))
 
         ctk.CTkButton(
-            btn_frame, text="Respawn Selected", command=respawn_selected, width=150
+            btn_frame, text=t("Respawn Selected"), command=respawn_selected, width=150
         ).pack(side=tk.RIGHT, padx=(0, 8))
 
         ctk.CTkButton(
-            btn_frame, text="Respawn All in Category", command=respawn_all, width=180
+            btn_frame, text=t("Respawn All in Category"), command=respawn_all, width=180
         ).pack(side=tk.RIGHT)
 
     def open_npc_revival(self):
         """Open NPC revival dialog"""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                t("Not Loaded"), t("Please load event flags for a character first!")
             )
             return
 
@@ -1703,13 +1795,13 @@ class EventFlagsTab:
 
         ctk.CTkLabel(
             dialog,
-            text="NPC Revival",
+            text=t("NPC Revival"),
             font=("Segoe UI", 14, "bold"),
         ).pack(pady=(15, 5), padx=15)
 
         ctk.CTkLabel(
             dialog,
-            text="Revive dead NPCs (does not restore quest progress)",
+            text=t("Revive dead NPCs (does not restore quest progress)"),
             text_color=("gray50", "gray70"),
         ).pack(pady=(0, 12), padx=15)
 
@@ -1756,8 +1848,8 @@ class EventFlagsTab:
             save_path = self.get_save_path()
             if not save_path or not save_path.is_file():
                 CTkMessageBox.showerror(
-                    "Invalid Save Path",
-                    "Could not locate save file. Load a valid save first.",
+                    t("Invalid Save Path"),
+                    t("Could not locate save file. Load a valid save first."),
                     parent=dialog,
                 )
                 return
@@ -1770,8 +1862,8 @@ class EventFlagsTab:
 
             if count == 0:
                 CTkMessageBox.showinfo(
-                    "No Selection",
-                    "No NPCs selected for revival.",
+                    t("No Selection"),
+                    t("No NPCs selected for revival."),
                     parent=dialog,
                 )
                 return
@@ -1788,8 +1880,8 @@ class EventFlagsTab:
                     )
                 except PermissionError:
                     CTkMessageBox.showwarning(
-                        "Backup Skipped",
-                        "Could not create backup (permission denied).",
+                        t("Backup Skipped"),
+                        t("Could not create backup (permission denied)."),
                         parent=dialog,
                     )
 
@@ -1806,21 +1898,23 @@ class EventFlagsTab:
             save_file.save(self.get_save_path())
             self.reload_save()
 
-            self.show_toast(f"Revived {count} NPC(s)!", duration=2500)
+            self.show_toast(
+                t("Revived {count} NPC(s)!").format(count=count), duration=2500
+            )
             dialog.destroy()
 
-        ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=120).pack(
-            side=tk.LEFT
-        )
+        ctk.CTkButton(
+            btn_frame, text=t("Close"), command=dialog.destroy, width=120
+        ).pack(side=tk.LEFT)
 
         ctk.CTkButton(
-            btn_frame, text="Revive Selected", command=revive_selected, width=150
+            btn_frame, text=t("Revive Selected"), command=revive_selected, width=150
         ).pack(side=tk.RIGHT)
 
     def open_quest_progress(self):
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                t("Not Loaded"), t("Please load event flags for a character first!")
             )
             return
 
@@ -1840,7 +1934,7 @@ class EventFlagsTab:
         """Open the summoning pool enable/disable dialog."""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                t("Not Loaded"), t("Please load event flags for a character first!")
             )
             return
 
@@ -1866,13 +1960,13 @@ class EventFlagsTab:
 
         ctk.CTkLabel(
             dialog,
-            text="Summoning Pools",
+            text=t("Summoning Pools"),
             font=("Segoe UI", 14, "bold"),
         ).pack(pady=(15, 2), padx=15)
 
         ctk.CTkLabel(
             dialog,
-            text="Enable or disable summoning pool activation flags",
+            text=t("Enable or disable summoning pool activation flags"),
             text_color=("gray50", "gray70"),
         ).pack(pady=(0, 10), padx=15)
 
@@ -1902,21 +1996,24 @@ class EventFlagsTab:
 
         ctk.CTkButton(
             sel_frame,
-            text="Select Base",
+            text=t("Select Base"),
             command=lambda: select_group("base"),
             width=110,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
-            sel_frame, text="Select DLC", command=lambda: select_group("dlc"), width=110
+            sel_frame,
+            text=t("Select DLC"),
+            command=lambda: select_group("dlc"),
+            width=110,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
-        ctk.CTkButton(sel_frame, text="Select All", command=select_all, width=100).pack(
-            side=tk.LEFT, padx=(0, 6)
-        )
+        ctk.CTkButton(
+            sel_frame, text=t("Select All"), command=select_all, width=100
+        ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
-            sel_frame, text="Unselect All", command=unselect_all, width=110
+            sel_frame, text=t("Unselect All"), command=unselect_all, width=110
         ).pack(side=tk.LEFT)
 
         # Scrollable pool list
@@ -1966,15 +2063,18 @@ class EventFlagsTab:
             selected = [fid for fid, var in pool_vars.items() if var.get()]
             if not selected:
                 CTkMessageBox.showinfo(
-                    "No Selection", "No pools selected.", parent=dialog
+                    t("No Selection"), t("No pools selected."), parent=dialog
                 )
                 return
 
             action = "Enable" if state else "Disable"
             result = CTkMessageBox.askyesno(
-                "Confirm",
-                f"{action} {len(selected)} summoning pool flags on Slot {self.current_slot + 1}?\n\n"
-                "A backup will be created automatically.",
+                t("Confirm"),
+                t(
+                    "{action} {len} summoning pool flags on Slot {current_slot}?\n\nA backup will be created automatically."
+                ).format(
+                    action=action, len=len(selected), current_slot=self.current_slot + 1
+                ),
                 parent=dialog,
             )
             if not result:
@@ -1993,8 +2093,10 @@ class EventFlagsTab:
                     )
                 except PermissionError:
                     CTkMessageBox.showwarning(
-                        "Backup Skipped",
-                        "Could not create backup (permission denied). Continuing without backup.",
+                        t("Backup Skipped"),
+                        t(
+                            "Could not create backup (permission denied). Continuing without backup."
+                        ),
                         parent=dialog,
                     )
 
@@ -2014,25 +2116,27 @@ class EventFlagsTab:
             self.reload_save()
 
             self.show_toast(
-                f"{action}d {len(selected)} summoning pool flags on Slot {self.current_slot + 1}",
+                t("{action}d {len} summoning pool flags on Slot {current_slot}").format(
+                    action=action, len=len(selected), current_slot=self.current_slot + 1
+                ),
                 duration=2500,
             )
             dialog.destroy()
 
-        ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=120).pack(
-            side=tk.LEFT
-        )
+        ctk.CTkButton(
+            btn_frame, text=t("Close"), command=dialog.destroy, width=120
+        ).pack(side=tk.LEFT)
 
         ctk.CTkButton(
             btn_frame,
-            text="Disable Selected",
+            text=t("Disable Selected"),
             command=lambda: _apply(False),
             width=150,
         ).pack(side=tk.RIGHT, padx=(8, 0))
 
         ctk.CTkButton(
             btn_frame,
-            text="Enable Selected",
+            text=t("Enable Selected"),
             command=lambda: _apply(True),
             width=150,
         ).pack(side=tk.RIGHT)

@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import game_blocks_write
 
@@ -166,21 +167,21 @@ class DSRInventoryTab:
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
         ctk.CTkLabel(
-            header, text="Inventory Editor", font=("Segoe UI", 16, "bold")
+            header, text=t("Inventory Editor"), font=("Segoe UI", 16, "bold")
         ).pack(side="left")
         self._count_label = ctk.CTkLabel(
             header, text="", font=("Segoe UI", 10), text_color=("gray40", "gray70")
         )
         self._count_label.pack(side="right", padx=8)
-        ctk.CTkButton(header, text="Load", command=self._load_selected, width=70).pack(
-            side="right", padx=(6, 0)
-        )
+        ctk.CTkButton(
+            header, text=t("Load"), command=self._load_selected, width=70
+        ).pack(side="right", padx=(6, 0))
         self._slot_var = tk.StringVar()
         self._slot_combo = ctk.CTkComboBox(
             header, variable=self._slot_var, values=[], state="readonly", width=220
         )
         self._slot_combo.pack(side="right")
-        ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
+        ctk.CTkLabel(header, text=t("Slot:")).pack(side="right", padx=(0, 6))
 
         main = ctk.CTkFrame(outer, fg_color="transparent")
         main.pack(fill="both", expand=True, padx=10, pady=(0, 10))
@@ -201,20 +202,20 @@ class DSRInventoryTab:
         frame.grid_columnconfigure(0, weight=1)
 
         ctk.CTkLabel(
-            frame, text="Current Inventory", font=("Segoe UI", 12, "bold")
+            frame, text=t("Current Inventory"), font=("Segoe UI", 12, "bold")
         ).grid(row=0, column=0, pady=(10, 4), padx=12, sticky="w")
 
         # Search + category filter
         frow = ctk.CTkFrame(frame, fg_color="transparent")
         frow.grid(row=1, column=0, sticky="ew", padx=8, pady=(0, 4))
         frow.grid_columnconfigure(1, weight=1)
-        ctk.CTkLabel(frow, text="Filter:").grid(row=0, column=0, padx=(0, 4))
+        ctk.CTkLabel(frow, text=t("Filter:")).grid(row=0, column=0, padx=(0, 4))
         self._inv_search_var = tk.StringVar()
         self._inv_search_var.trace_add("write", lambda *_: self._apply_filter())
         ctk.CTkEntry(
             frow,
             textvariable=self._inv_search_var,
-            placeholder_text="Search items...",
+            placeholder_text=t("Search items..."),
             width=150,
         ).grid(row=0, column=1, sticky="ew", padx=(0, 6))
         self._inv_cat_var = tk.StringVar(value="All")
@@ -257,7 +258,7 @@ class DSRInventoryTab:
         edit_row = ctk.CTkFrame(frame, fg_color="transparent")
         edit_row.grid(row=3, column=0, sticky="ew", padx=8, pady=(2, 2))
 
-        ctk.CTkLabel(edit_row, text="Quantity:").pack(side="left", padx=(0, 4))
+        ctk.CTkLabel(edit_row, text=t("Quantity:")).pack(side="left", padx=(0, 4))
         self._edit_qty_var = tk.StringVar(value="")
         self._edit_qty_entry = ctk.CTkEntry(
             edit_row,
@@ -268,7 +269,7 @@ class DSRInventoryTab:
         )
         self._edit_qty_entry.pack(side="left", padx=(0, 12))
 
-        ctk.CTkLabel(edit_row, text="Upgrade:").pack(side="left", padx=(0, 4))
+        ctk.CTkLabel(edit_row, text=t("Upgrade:")).pack(side="left", padx=(0, 4))
         self._inv_upg_var = tk.StringVar(value="")
         self._inv_upg_entry = ctk.CTkEntry(
             edit_row,
@@ -279,7 +280,7 @@ class DSRInventoryTab:
         )
         self._inv_upg_entry.pack(side="left", padx=(0, 12))
 
-        ctk.CTkLabel(edit_row, text="Infusion:").pack(side="left", padx=(0, 4))
+        ctk.CTkLabel(edit_row, text=t("Infusion:")).pack(side="left", padx=(0, 4))
         self._inv_inf_var = tk.StringVar(value="Standard")
         self._inv_inf_combo = ctk.CTkComboBox(
             edit_row,
@@ -292,7 +293,7 @@ class DSRInventoryTab:
 
         self._apply_edit_btn = ctk.CTkButton(
             edit_row,
-            text="Apply Changes",
+            text=t("Apply Changes"),
             command=self._apply_changes,
             width=120,
             state="disabled",
@@ -309,17 +310,17 @@ class DSRInventoryTab:
         btn_row.grid(row=4, column=0, sticky="ew", padx=8, pady=(2, 10))
         ctk.CTkButton(
             btn_row,
-            text="Remove Selected",
+            text=t("Remove Selected"),
             command=self._remove_selected,
             width=130,
             fg_color=("#a03030", "#802020"),
             hover_color=("#c03030", "#a02020"),
         ).pack(side="left", padx=4)
         ctk.CTkButton(
-            btn_row, text="Repair All Items", command=self._repair_all, width=120
+            btn_row, text=t("Repair All Items"), command=self._repair_all, width=120
         ).pack(side="left", padx=4)
         ctk.CTkButton(
-            btn_row, text="Refresh", command=self._refresh_inventory, width=80
+            btn_row, text=t("Refresh"), command=self._refresh_inventory, width=80
         ).pack(side="left", padx=4)
 
     # --- Right panel ---------------------------------------------------------- #
@@ -330,7 +331,7 @@ class DSRInventoryTab:
         frame.grid_rowconfigure(2, weight=1)
         frame.grid_columnconfigure(0, weight=1)
 
-        ctk.CTkLabel(frame, text="Add Item", font=("Segoe UI", 12, "bold")).grid(
+        ctk.CTkLabel(frame, text=t("Add Item"), font=("Segoe UI", 12, "bold")).grid(
             row=0, column=0, pady=(10, 6), padx=12, sticky="w"
         )
 
@@ -351,7 +352,10 @@ class DSRInventoryTab:
         self._search_var = tk.StringVar()
         self._search_var.trace_add("write", lambda *_: self._rebuild_item_list())
         ctk.CTkEntry(
-            frow, textvariable=self._search_var, placeholder_text="Search...", width=130
+            frow,
+            textvariable=self._search_var,
+            placeholder_text=t("Search..."),
+            width=130,
         ).grid(row=0, column=1, sticky="ew")
 
         tf2 = tk.Frame(frame, bg="#2b2b2b")
@@ -365,7 +369,7 @@ class DSRInventoryTab:
             style="DSR.Treeview",
             selectmode="browse",
         )
-        self._spawn_tree.heading("name", text="Item Name")
+        self._spawn_tree.heading("name", text=t("Item Name"))
         self._spawn_tree.column("name", width=220)
         self._spawn_tree.grid(row=0, column=0, sticky="nsew")
         self._spawn_tree.bind("<<TreeviewSelect>>", self._on_spawn_select)
@@ -377,20 +381,20 @@ class DSRInventoryTab:
         cfg = ctk.CTkFrame(frame, fg_color="transparent")
         cfg.grid(row=3, column=0, sticky="ew", padx=8, pady=(0, 4))
 
-        ctk.CTkLabel(cfg, text="Quantity:").pack(side="left", padx=(0, 4))
+        ctk.CTkLabel(cfg, text=t("Quantity:")).pack(side="left", padx=(0, 4))
         self._qty_var = tk.StringVar(value="1")
         ctk.CTkEntry(cfg, textvariable=self._qty_var, width=50, justify="center").pack(
             side="left", padx=(0, 10)
         )
 
-        ctk.CTkLabel(cfg, text="Upgrade:").pack(side="left", padx=(0, 4))
+        ctk.CTkLabel(cfg, text=t("Upgrade:")).pack(side="left", padx=(0, 4))
         self._upg_var = tk.StringVar(value="0")
         self._upg_entry = ctk.CTkEntry(
             cfg, textvariable=self._upg_var, width=40, justify="center"
         )
         self._upg_entry.pack(side="left", padx=(0, 10))
 
-        ctk.CTkLabel(cfg, text="Infusion:").pack(side="left", padx=(0, 4))
+        ctk.CTkLabel(cfg, text=t("Infusion:")).pack(side="left", padx=(0, 4))
         self._inf_var = tk.StringVar(value="Standard")
         self._inf_combo = ctk.CTkComboBox(
             cfg,
@@ -405,7 +409,7 @@ class DSRInventoryTab:
         btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
         btn_frame.grid(row=4, column=0, sticky="ew", padx=8, pady=(2, 10))
         ctk.CTkButton(
-            btn_frame, text="Add to Inventory", command=self._add_item, width=180
+            btn_frame, text=t("Add to Inventory"), command=self._add_item, width=180
         ).pack(side="left")
 
         self._rebuild_item_list()
@@ -476,7 +480,7 @@ class DSRInventoryTab:
         total = len(self._all_items)
         shown = len(filtered)
         self._count_label.configure(
-            text=f"{shown} / {total} items" if shown < total else f"{total} items"
+            text=t(f"{shown} / {total} items") if shown < total else t(f"{total} items")
         )
         self._update_header_arrows()
         self._selected_slot_idx = -1
@@ -529,12 +533,14 @@ class DSRInventoryTab:
         save = self._get_dsr_save()
         if save is None:
             CTkMessageBox.showwarning(
-                "No Save", "No DSR save loaded.", parent=self.parent
+                t("No Save"), t("No DSR save loaded."), parent=self.parent
             )
             return
         if save.characters[idx] is None:
             CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {idx + 1} is empty.", parent=self.parent
+                t("Empty Slot"),
+                t("Slot {idx} is empty.").format(idx=idx + 1),
+                parent=self.parent,
             )
             return
         self._current_slot = idx
@@ -602,7 +608,9 @@ class DSRInventoryTab:
         if max_stack > 1:
             self._edit_qty_var.set(str(item.quantity))
             self._edit_qty_entry.configure(state="normal")
-            self._edit_hint.configure(text=f"max qty: {max_stack}")
+            self._edit_hint.configure(
+                text=t("max qty: {max_stack}").format(max_stack=max_stack)
+            )
         else:
             self._edit_qty_entry.configure(state="disabled")
             self._edit_hint.configure(text="")
@@ -684,14 +692,14 @@ class DSRInventoryTab:
                 new_qty = int(self._edit_qty_var.get())
             except ValueError:
                 CTkMessageBox.showerror(
-                    "Invalid", "Enter a valid quantity.", parent=self.parent
+                    t("Invalid"), t("Enter a valid quantity."), parent=self.parent
                 )
                 return
             max_stack = int(entry.get("MaxStackCount") or 1) if entry else 1
             if not 1 <= new_qty <= max_stack:
                 CTkMessageBox.showerror(
-                    "Out of Range",
-                    f"Quantity must be 1-{max_stack}.",
+                    t("Out of Range"),
+                    t("Quantity must be 1-{max_stack}.").format(max_stack=max_stack),
                     parent=self.parent,
                 )
                 return
@@ -708,7 +716,7 @@ class DSRInventoryTab:
                 )
             except ValueError:
                 CTkMessageBox.showerror(
-                    "Invalid", "Enter a valid upgrade level.", parent=self.parent
+                    t("Invalid"), t("Enter a valid upgrade level."), parent=self.parent
                 )
                 return
             inf_name = (
@@ -723,13 +731,15 @@ class DSRInventoryTab:
             max_up = (entry.get("MaxUpgrade") or 0) if entry else 0
             if upg_active and (new_upg < 0 or new_upg > max_up):
                 CTkMessageBox.showerror(
-                    "Invalid Upgrade", f"Range is 0-{max_up}.", parent=self.parent
+                    t("Invalid Upgrade"),
+                    t("Range is 0-{max_up}.").format(max_up=max_up),
+                    parent=self.parent,
                 )
                 return
             if inf_active and new_inf > 0 and entry and not entry.get("CanInfuse"):
                 CTkMessageBox.showerror(
-                    "Cannot Infuse",
-                    f"{entry['Name']} cannot be infused.",
+                    t("Cannot Infuse"),
+                    t("{entry} cannot be infused.").format(entry=entry["Name"]),
                     parent=self.parent,
                 )
                 return
@@ -754,7 +764,7 @@ class DSRInventoryTab:
             self._refresh_inventory()
             self._show_toast("Item updated.")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     # --- Add / remove / repair ----------------------------------------------- #
 
@@ -764,7 +774,7 @@ class DSRInventoryTab:
 
         if self._selected_slot_idx < 0:
             CTkMessageBox.showwarning(
-                "No Selection", "Select an item to remove.", parent=self.parent
+                t("No Selection"), t("Select an item to remove."), parent=self.parent
             )
             return
         save, save_path, char = self._get_char()
@@ -775,7 +785,9 @@ class DSRInventoryTab:
         entry = lookup.get((item.category, item.base_item_id))
         name = entry["Name"] if entry else f"slot {self._selected_slot_idx}"
         if not CTkMessageBox.askyesno(
-            "Confirm Remove", f"Remove {name}?", parent=self.parent
+            t("Confirm Remove"),
+            t("Remove {name}?").format(name=name),
+            parent=self.parent,
         ):
             return
         char.remove_item(self._selected_slot_idx)
@@ -786,7 +798,7 @@ class DSRInventoryTab:
             self._refresh_inventory()
             self._show_toast(f"Removed {name}.")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     def _add_item(self) -> None:
         if _game_blocks_write(self.parent):
@@ -795,12 +807,12 @@ class DSRInventoryTab:
         db_item = self._selected_db_item
         if db_item is None:
             CTkMessageBox.showwarning(
-                "No Item", "Select an item from the list.", parent=self.parent
+                t("No Item"), t("Select an item from the list."), parent=self.parent
             )
             return
         if self._current_slot < 0:
             CTkMessageBox.showwarning(
-                "No Slot", "Load a character slot first.", parent=self.parent
+                t("No Slot"), t("Load a character slot first."), parent=self.parent
             )
             return
         save, save_path, char = self._get_char()
@@ -812,11 +824,11 @@ class DSRInventoryTab:
             inf_name = self._inf_var.get()
             inf = _INFUSION_NAMES.index(inf_name) if inf_name in _INFUSION_NAMES else 0
         except ValueError as exc:
-            CTkMessageBox.showerror("Invalid Value", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Invalid Value"), str(exc), parent=self.parent)
             return
         err = _validate_add(db_item, qty, upg, inf)
         if err:
-            CTkMessageBox.showerror("Invalid Item", err, parent=self.parent)
+            CTkMessageBox.showerror(t("Invalid Item"), err, parent=self.parent)
             return
         type_num = int(db_item["Type"], 16) // 0x10000000
         max_stack = int(db_item.get("MaxStackCount") or 1)
@@ -825,8 +837,10 @@ class DSRInventoryTab:
             for inv_item in char.iter_items():
                 if inv_item.item_id == base_id and inv_item.category == type_num:
                     if not CTkMessageBox.askyesno(
-                        "Already Owned",
-                        f"Already have {db_item['Name']}. Add duplicate?",
+                        t("Already Owned"),
+                        t("Already have {db_item}. Add duplicate?").format(
+                            db_item=db_item["Name"]
+                        ),
                         parent=self.parent,
                     ):
                         return
@@ -834,7 +848,7 @@ class DSRInventoryTab:
         slot = char.add_item(db_item, quantity=qty, upgrade=upg, infusion=inf)
         if slot < 0:
             CTkMessageBox.showerror(
-                "Inventory Full", "No empty slots available.", parent=self.parent
+                t("Inventory Full"), t("No empty slots available."), parent=self.parent
             )
             return
         try:
@@ -844,7 +858,7 @@ class DSRInventoryTab:
             self._refresh_inventory()
             self._show_toast(f"Added {db_item['Name']}.")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     def _repair_all(self) -> None:
         if _game_blocks_write(self.parent):
@@ -852,15 +866,15 @@ class DSRInventoryTab:
 
         if self._current_slot < 0:
             CTkMessageBox.showwarning(
-                "No Slot", "Load a character slot first.", parent=self.parent
+                t("No Slot"), t("Load a character slot first."), parent=self.parent
             )
             return
         save, save_path, char = self._get_char()
         if char is None:
             return
         if not CTkMessageBox.askyesno(
-            "Repair All",
-            "Restore durability on all items?\n\nA backup will be created.",
+            t("Repair All"),
+            t("Restore durability on all items?\n\nA backup will be created."),
             parent=self.parent,
         ):
             return
@@ -888,7 +902,7 @@ class DSRInventoryTab:
             self._refresh_inventory()
             self._show_toast(f"Repaired {repaired} items.")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     # --- Helpers ------------------------------------------------------------- #
 

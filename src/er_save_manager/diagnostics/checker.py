@@ -5,6 +5,7 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+from er_save_manager.i18n import t
 from er_save_manager.platform.utils import PlatformUtils
 
 
@@ -112,7 +113,7 @@ class TroubleshootingChecker:
             return DiagnosticResult(
                 name="Game Installation",
                 status="warning",
-                message="Game folder not specified",
+                message=t("Game folder not specified"),
                 fix_available=False,
             )
 
@@ -120,14 +121,18 @@ class TroubleshootingChecker:
             return DiagnosticResult(
                 name="Game Installation",
                 status="error",
-                message=f"Game folder not found: {self.game_folder}",
+                message=t("Game folder not found: {game_folder}").format(
+                    game_folder=self.game_folder
+                ),
                 fix_available=False,
             )
 
         return DiagnosticResult(
             name="Game Installation",
             status="ok",
-            message=f"Game folder found: {self.game_folder}",
+            message=t("Game folder found: {game_folder}").format(
+                game_folder=self.game_folder
+            ),
         )
 
     def _check_game_executable(self) -> DiagnosticResult:
@@ -136,7 +141,7 @@ class TroubleshootingChecker:
             return DiagnosticResult(
                 name="Game Executable",
                 status="info",
-                message="Game folder not set",
+                message=t("Game folder not set"),
             )
 
         exe_path = self.game_folder / "Game" / "eldenring.exe"
@@ -149,13 +154,17 @@ class TroubleshootingChecker:
                 return DiagnosticResult(
                     name="Game Executable",
                     status="ok",
-                    message=f"eldenring.exe found ({size_mb:.1f}MB)",
+                    message=t("eldenring.exe found ({size_mb:.1f}MB)").format(
+                        size_mb=size_mb
+                    ),
                 )
             else:
                 return DiagnosticResult(
                     name="Game Executable",
                     status="warning",
-                    message=f"eldenring.exe found but size is unusual ({size_mb:.1f}MB, expected ~83MB)",
+                    message=t(
+                        "eldenring.exe found but size is unusual ({size_mb:.1f}MB, expected ~83MB)"
+                    ).format(size_mb=size_mb),
                     fix_available=True,
                     fix_action="Delete the file and verify game integrity via Steam: Right-click Elden Ring > Properties > Installed Files > Verify",
                 )
@@ -163,7 +172,7 @@ class TroubleshootingChecker:
             return DiagnosticResult(
                 name="Game Executable",
                 status="error",
-                message="eldenring.exe not found in Game folder",
+                message=t("eldenring.exe not found in Game folder"),
                 fix_available=True,
                 fix_action="Verify game integrity via Steam: Right-click Elden Ring > Properties > Installed Files > Verify",
             )
@@ -187,7 +196,9 @@ class TroubleshootingChecker:
                 DiagnosticResult(
                     name="Unsupported Folders Detected",
                     status="warning",
-                    message=f"Found unsupported folders: {', '.join(found_folders)}. These may cause issues.",
+                    message=t(
+                        "Found unsupported folders: {join}. These may cause issues."
+                    ).format(join=", ".join(found_folders)),
                     fix_available=False,
                 )
             )
@@ -210,7 +221,7 @@ class TroubleshootingChecker:
                 DiagnosticResult(
                     name="Critical File Missing",
                     status="error",
-                    message="steam_api64.dll is missing from Game folder",
+                    message=t("steam_api64.dll is missing from Game folder"),
                     fix_available=True,
                     fix_action="Verify game integrity via Steam: Right-click Elden Ring > Properties > Installed Files > Verify",
                 )
@@ -221,7 +232,9 @@ class TroubleshootingChecker:
                 DiagnosticResult(
                     name="Unsupported/Damaged Files Detected",
                     status="error",
-                    message=f"Found unsupported files: {', '.join(found_files)}. These can cause issues.",
+                    message=t(
+                        "Found unsupported files: {join}. These can cause issues."
+                    ).format(join=", ".join(found_files)),
                     fix_available=True,
                     fix_action="Delete the unsupported files and verify game integrity via Steam: Right-click Elden Ring > Properties > Installed Files > Verify",
                 )
@@ -231,7 +244,7 @@ class TroubleshootingChecker:
                 DiagnosticResult(
                     name="Game Integrity",
                     status="ok",
-                    message="No issues detected",
+                    message=t("No issues detected"),
                 )
             )
 
@@ -246,7 +259,9 @@ class TroubleshootingChecker:
                     DiagnosticResult(
                         name="Regulation File",
                         status="ok",
-                        message=f"regulation.bin is valid ({size_mb:.1f}MB)",
+                        message=t("regulation.bin is valid ({size_mb:.1f}MB)").format(
+                            size_mb=size_mb
+                        ),
                     )
                 )
             else:
@@ -254,7 +269,9 @@ class TroubleshootingChecker:
                     DiagnosticResult(
                         name="Regulation File",
                         status="warning",
-                        message=f"regulation.bin size is unusual ({size_mb:.1f}MB, expected ~1.9MB). May indicate modified game files.",
+                        message=t(
+                            "regulation.bin size is unusual ({size_mb:.1f}MB, expected ~1.9MB). May indicate modified game files."
+                        ).format(size_mb=size_mb),
                         fix_available=True,
                         fix_action="Delete the file and verify game integrity via Steam: Right-click Elden Ring > Properties > Installed Files > Verify",
                     )
@@ -265,7 +282,7 @@ class TroubleshootingChecker:
                 DiagnosticResult(
                     name="Critical File Missing",
                     status="error",
-                    message="regulation.bin is missing from Game folder",
+                    message=t("regulation.bin is missing from Game folder"),
                     fix_available=True,
                     fix_action="Verify game integrity via Steam: Right-click Elden Ring > Properties > Installed Files > Verify",
                 )
@@ -282,7 +299,7 @@ class TroubleshootingChecker:
                 DiagnosticResult(
                     name="Process Check",
                     status="info",
-                    message="Process checking only available on Windows",
+                    message=t("Process checking only available on Windows"),
                 )
             ]
 
@@ -317,7 +334,9 @@ class TroubleshootingChecker:
                     DiagnosticResult(
                         name="Problematic Processes Running",
                         status="warning",
-                        message=f"Found processes that can cause crashes: {', '.join(running_problematic)}",
+                        message=t(
+                            "Found processes that can cause crashes: {join}"
+                        ).format(join=", ".join(running_problematic)),
                         fix_available=True,
                         fix_action="Close these apps before playing, and disable them in Task Manager > Startup tab to prevent auto-launch.",
                     )
@@ -353,7 +372,7 @@ class TroubleshootingChecker:
                     DiagnosticResult(
                         name="Process Check",
                         status="ok",
-                        message="No problematic processes detected",
+                        message=t("No problematic processes detected"),
                     )
                 )
 
@@ -362,7 +381,7 @@ class TroubleshootingChecker:
                 DiagnosticResult(
                     name="Process Check",
                     status="warning",
-                    message=f"Could not check processes: {e}",
+                    message=t("Could not check processes: {e}").format(e=e),
                 )
             )
 
@@ -377,7 +396,7 @@ class TroubleshootingChecker:
                 DiagnosticResult(
                     name="VPN Check",
                     status="info",
-                    message="VPN checking only available on Windows",
+                    message=t("VPN checking only available on Windows"),
                 )
             ]
 
@@ -409,7 +428,9 @@ class TroubleshootingChecker:
                     DiagnosticResult(
                         name="VPN Detected",
                         status="warning",
-                        message=f"Running VPN client(s) detected: {', '.join(running_vpns)}. VPNs may cause issues when trying to join other players.",
+                        message=t(
+                            "Running VPN client(s) detected: {join}. VPNs may cause issues when trying to join other players."
+                        ).format(join=", ".join(running_vpns)),
                         fix_available=True,
                         fix_action="Disable or exit your VPN client before playing online. VPNs can interfere with multiplayer connections and prevent you from joining other players.",
                     )
@@ -419,7 +440,7 @@ class TroubleshootingChecker:
                     DiagnosticResult(
                         name="VPN Check",
                         status="ok",
-                        message="No VPN clients detected",
+                        message=t("No VPN clients detected"),
                     )
                 )
 
@@ -428,7 +449,7 @@ class TroubleshootingChecker:
                 DiagnosticResult(
                     name="VPN Check",
                     status="warning",
-                    message=f"Could not check for VPN processes: {e}",
+                    message=t("Could not check for VPN processes: {e}").format(e=e),
                 )
             )
 
@@ -440,7 +461,7 @@ class TroubleshootingChecker:
             return DiagnosticResult(
                 name="Steam Elevation Check",
                 status="info",
-                message="Steam elevation check only available on Windows",
+                message=t("Steam elevation check only available on Windows"),
             )
 
         try:
@@ -546,7 +567,7 @@ class TroubleshootingChecker:
                 return DiagnosticResult(
                     name="Steam Elevation Check",
                     status="info",
-                    message="Steam is not currently running",
+                    message=t("Steam is not currently running"),
                 )
             elif output == "elevated":
                 # Steam is running as administrator - this can cause permission issues
@@ -586,7 +607,9 @@ icacls "{appdata}" /grant %USERNAME%:F /T
                 return DiagnosticResult(
                     name="Steam Running as Administrator",
                     status="error",
-                    message="Steam is running with elevated privileges. This can cause save file permission issues and crashes.",
+                    message=t(
+                        "Steam is running with elevated privileges. This can cause save file permission issues and crashes."
+                    ),
                     fix_available=True,
                     fix_action=fix_message,
                 )
@@ -594,26 +617,28 @@ icacls "{appdata}" /grant %USERNAME%:F /T
                 return DiagnosticResult(
                     name="Steam Elevation Check",
                     status="ok",
-                    message="Steam is running with normal privileges",
+                    message=t("Steam is running with normal privileges"),
                 )
             else:  # unknown
                 return DiagnosticResult(
                     name="Steam Elevation Check",
                     status="warning",
-                    message="Could not determine if Steam is elevated (access denied)",
+                    message=t(
+                        "Could not determine if Steam is elevated (access denied)"
+                    ),
                 )
 
         except subprocess.TimeoutExpired:
             return DiagnosticResult(
                 name="Steam Elevation Check",
                 status="warning",
-                message="Steam elevation check timed out",
+                message=t("Steam elevation check timed out"),
             )
         except Exception as e:
             return DiagnosticResult(
                 name="Steam Elevation Check",
                 status="warning",
-                message=f"Could not check Steam elevation: {e}",
+                message=t("Could not check Steam elevation: {e}").format(e=e),
             )
 
     def _check_save_file_health(self) -> list[DiagnosticResult]:
@@ -625,7 +650,7 @@ icacls "{appdata}" /grant %USERNAME%:F /T
                 DiagnosticResult(
                     name="Save File",
                     status="info",
-                    message="No save file loaded",
+                    message=t("No save file loaded"),
                 )
             ]
 
@@ -635,7 +660,9 @@ icacls "{appdata}" /grant %USERNAME%:F /T
                 DiagnosticResult(
                     name="Save File",
                     status="error",
-                    message=f"Save file not found: {self.save_file_path}",
+                    message=t("Save file not found: {save_file_path}").format(
+                        save_file_path=self.save_file_path
+                    ),
                 )
             ]
 
@@ -645,7 +672,7 @@ icacls "{appdata}" /grant %USERNAME%:F /T
                 DiagnosticResult(
                     name="Save File Permissions",
                     status="error",
-                    message="Cannot read save file - check file permissions",
+                    message=t("Cannot read save file - check file permissions"),
                     fix_available=True,
                     fix_action="Run as administrator or check file permissions",
                 )
@@ -655,7 +682,7 @@ icacls "{appdata}" /grant %USERNAME%:F /T
                 DiagnosticResult(
                     name="Save File Permissions",
                     status="ok",
-                    message="Save file is readable",
+                    message=t("Save file is readable"),
                 )
             )
 
@@ -666,7 +693,9 @@ icacls "{appdata}" /grant %USERNAME%:F /T
                 DiagnosticResult(
                     name="Save File Size",
                     status="error",
-                    message=f"Save file is suspiciously small ({file_size} bytes) - may be corrupted",
+                    message=t(
+                        "Save file is suspiciously small ({file_size} bytes) - may be corrupted"
+                    ).format(file_size=file_size),
                 )
             )
         else:
@@ -674,7 +703,9 @@ icacls "{appdata}" /grant %USERNAME%:F /T
                 DiagnosticResult(
                     name="Save File Size",
                     status="ok",
-                    message=f"Save file size is normal ({file_size // 1024}KB)",
+                    message=t("Save file size is normal ({file_size}KB)").format(
+                        file_size=file_size // 1024
+                    ),
                 )
             )
 
@@ -690,7 +721,9 @@ icacls "{appdata}" /grant %USERNAME%:F /T
                         DiagnosticResult(
                             name="Disk Space",
                             status="warning",
-                            message=f"Low disk space for backups: {free_gb}GB free",
+                            message=t(
+                                "Low disk space for backups: {free_gb}GB free"
+                            ).format(free_gb=free_gb),
                             fix_available=True,
                             fix_action="Free up disk space for save backups",
                         )
@@ -700,7 +733,9 @@ icacls "{appdata}" /grant %USERNAME%:F /T
                         DiagnosticResult(
                             name="Disk Space",
                             status="ok",
-                            message=f"Sufficient disk space: {free_gb}GB free",
+                            message=t("Sufficient disk space: {free_gb}GB free").format(
+                                free_gb=free_gb
+                            ),
                         )
                     )
             except Exception:
@@ -721,7 +756,7 @@ icacls "{appdata}" /grant %USERNAME%:F /T
                 DiagnosticResult(
                     name="Settings",
                     status="ok",
-                    message="Settings file is valid",
+                    message=t("Settings file is valid"),
                 )
             )
         except Exception as e:
@@ -729,7 +764,7 @@ icacls "{appdata}" /grant %USERNAME%:F /T
                 DiagnosticResult(
                     name="Settings",
                     status="error",
-                    message=f"Error loading settings: {e}",
+                    message=t("Error loading settings: {e}").format(e=e),
                     fix_available=True,
                     fix_action="Reset settings to defaults",
                 )

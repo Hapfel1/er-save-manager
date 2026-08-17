@@ -13,6 +13,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
@@ -56,18 +57,18 @@ class DS3WorldStateTab:
 
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
-        ctk.CTkLabel(header, text="World State", font=("Segoe UI", 16, "bold")).pack(
+        ctk.CTkLabel(header, text=t("World State"), font=("Segoe UI", 16, "bold")).pack(
             side="left"
         )
-        ctk.CTkButton(header, text="Load", command=self._load_selected, width=70).pack(
-            side="right", padx=(6, 0)
-        )
+        ctk.CTkButton(
+            header, text=t("Load"), command=self._load_selected, width=70
+        ).pack(side="right", padx=(6, 0))
         self._slot_var = ctk.StringVar()
         self._slot_combo = ctk.CTkComboBox(
             header, variable=self._slot_var, values=[], state="readonly", width=240
         )
         self._slot_combo.pack(side="right")
-        ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
+        ctk.CTkLabel(header, text=t("Slot:")).pack(side="right", padx=(0, 6))
 
         scroll = ctk.CTkScrollableFrame(outer, corner_radius=10)
         scroll.pack(fill="both", expand=True, padx=10, pady=(0, 10))
@@ -77,17 +78,17 @@ class DS3WorldStateTab:
         # NG+ section
         ng_card = ctk.CTkFrame(scroll, corner_radius=10)
         ng_card.pack(fill="x", padx=4, pady=(6, 4))
-        ctk.CTkLabel(ng_card, text="New Game+", font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(ng_card, text=t("New Game+"), font=("Segoe UI", 12, "bold")).pack(
             anchor="w", padx=14, pady=(12, 4)
         )
         ng_row = ctk.CTkFrame(ng_card, fg_color="transparent")
         ng_row.pack(fill="x", padx=14, pady=(0, 4))
-        ctk.CTkLabel(ng_row, text="Current:").pack(side="left", padx=(0, 6))
+        ctk.CTkLabel(ng_row, text=t("Current:")).pack(side="left", padx=(0, 6))
         self._ng_current_var = tk.StringVar(value="--")
         ctk.CTkLabel(
             ng_row, textvariable=self._ng_current_var, font=("Segoe UI", 11, "bold")
         ).pack(side="left", padx=(0, 20))
-        ctk.CTkLabel(ng_row, text="Set to:").pack(side="left", padx=(0, 6))
+        ctk.CTkLabel(ng_row, text=t("Set to:")).pack(side="left", padx=(0, 6))
         self._ng_var = ctk.StringVar(value="0")
         ctk.CTkComboBox(
             ng_row,
@@ -96,12 +97,12 @@ class DS3WorldStateTab:
             state="readonly",
             width=80,
         ).pack(side="left", padx=(0, 10))
-        ctk.CTkButton(ng_row, text="Apply", command=self._apply_ng, width=80).pack(
+        ctk.CTkButton(ng_row, text=t("Apply"), command=self._apply_ng, width=80).pack(
             side="left"
         )
         ctk.CTkLabel(
             ng_card,
-            text="0 = NG,  1 = NG+,  2 = NG++  etc.",
+            text=t("0 = NG,  1 = NG+,  2 = NG++  etc."),
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=14, pady=(0, 12))
@@ -109,20 +110,20 @@ class DS3WorldStateTab:
         # Bonfires section
         bf_card = ctk.CTkFrame(scroll, corner_radius=10)
         bf_card.pack(fill="x", padx=4, pady=4)
-        ctk.CTkLabel(bf_card, text="Bonfires", font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(bf_card, text=t("Bonfires"), font=("Segoe UI", 12, "bold")).pack(
             anchor="w", padx=14, pady=(12, 4)
         )
         bulk_row = ctk.CTkFrame(bf_card, fg_color="transparent")
         bulk_row.pack(fill="x", padx=14, pady=(0, 8))
         ctk.CTkButton(
             bulk_row,
-            text="Unlock All Bonfires",
+            text=t("Unlock All Bonfires"),
             width=180,
             command=self._unlock_all_bonfires,
         ).pack(side="left", padx=(0, 10))
         ctk.CTkButton(
             bulk_row,
-            text="Lock All Bonfires",
+            text=t("Lock All Bonfires"),
             width=150,
             fg_color=("gray55", "gray35"),
             command=self._lock_all_bonfires,
@@ -176,7 +177,7 @@ class DS3WorldStateTab:
         try:
             char.ng_plus = int(self._ng_var.get())
         except Exception as exc:
-            CTkMessageBox.showerror("Error", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Error"), str(exc), parent=self.parent)
             return
         try:
             _backup_and_save(
@@ -185,7 +186,7 @@ class DS3WorldStateTab:
             self._refresh_ng()
             self._show_toast(f"NG+ set to {self._ng_var.get()}. Backup created.")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     # --- Bonfires ------------------------------------------------------------ #
 
@@ -214,7 +215,7 @@ class DS3WorldStateTab:
         badge_color = ("#2a6e2a", "#1e7e1e") if unlocked else ("gray55", "gray45")
         badge = ctk.CTkLabel(
             row,
-            text="ON" if unlocked else "OFF",
+            text=t("ON") if unlocked else t("OFF"),
             fg_color=badge_color,
             corner_radius=4,
             width=40,
@@ -229,7 +230,7 @@ class DS3WorldStateTab:
         ).grid(row=0, column=1, sticky="w", padx=4)
         ctk.CTkButton(
             row,
-            text="Unlock",
+            text=t("Unlock"),
             width=70,
             command=lambda b=bf, uv=unlock_val, bg=badge: self._set_bonfire(
                 b, uv, True, bg
@@ -237,7 +238,7 @@ class DS3WorldStateTab:
         ).grid(row=0, column=2, padx=4, pady=6)
         ctk.CTkButton(
             row,
-            text="Lock",
+            text=t("Lock"),
             width=60,
             fg_color=("gray55", "gray35"),
             command=lambda b=bf, uv=unlock_val, bg=badge: self._set_bonfire(
@@ -265,12 +266,14 @@ class DS3WorldStateTab:
                 f"ds3_bonfire_{action}_slot_{self._current_slot + 1}",
             )
             badge_color = ("#2a6e2a", "#1e7e1e") if unlocked else ("gray55", "gray45")
-            badge.configure(text="ON" if unlocked else "OFF", fg_color=badge_color)
+            badge.configure(
+                text=t("ON") if unlocked else t("OFF"), fg_color=badge_color
+            )
             self._show_toast(
                 f"{bf['name']} {'unlocked' if unlocked else 'locked'}. Backup created."
             )
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     def _unlock_all_bonfires(self) -> None:
         if _game_blocks_write(self.parent):
@@ -291,7 +294,7 @@ class DS3WorldStateTab:
             self._rebuild_bonfire_rows()
             self._show_toast("All bonfires unlocked. Backup created.")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     def _lock_all_bonfires(self) -> None:
         if _game_blocks_write(self.parent):
@@ -310,7 +313,7 @@ class DS3WorldStateTab:
             self._rebuild_bonfire_rows()
             self._show_toast("All bonfires locked. Backup created.")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     # --- Helpers ------------------------------------------------------------- #
 
@@ -321,7 +324,9 @@ class DS3WorldStateTab:
         idx = self._slot_idx()
         if idx < 0 or save.characters[idx] is None:
             CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {idx + 1} is empty.", parent=self.parent
+                t("Empty Slot"),
+                t("Slot {idx} is empty.").format(idx=idx + 1),
+                parent=self.parent,
             )
             return
         self._current_slot = idx
@@ -333,13 +338,13 @@ class DS3WorldStateTab:
         save_path = self._get_save_path()
         if save is None or save_path is None:
             CTkMessageBox.showwarning(
-                "No Save", "No DS3 save loaded.", parent=self.parent
+                t("No Save"), t("No DS3 save loaded."), parent=self.parent
             )
             return None, None, None
         char = save.characters[self._current_slot]
         if char is None:
             CTkMessageBox.showwarning(
-                "Empty Slot", "No character in this slot.", parent=self.parent
+                t("Empty Slot"), t("No character in this slot."), parent=self.parent
             )
             return None, None, None
         return save, save_path, char

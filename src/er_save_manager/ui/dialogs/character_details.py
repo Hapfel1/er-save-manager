@@ -7,6 +7,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 
 
@@ -16,7 +17,9 @@ class CharacterDetailsDialog:
     @staticmethod
     def show(parent, save_file, slot_idx, save_path=None, reload_callback=None):
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "No save file loaded!", parent=parent)
+            CTkMessageBox.showwarning(
+                t("No Save"), t("No save file loaded!"), parent=parent
+            )
             return
 
         slot = save_file.characters[slot_idx]
@@ -248,7 +251,7 @@ class CharacterDetailsDialog:
 
         header = ctk.CTkLabel(
             main_frame,
-            text=f"Character Details - {name}",
+            text=t("Character Details - {name}").format(name=name),
             font=("Segoe UI", 16, "bold"),
         )
         header.pack(anchor="w", padx=10, pady=(8, 6))
@@ -275,12 +278,16 @@ class CharacterDetailsDialog:
                 clear_dlc_flag_var = ctk.BooleanVar(value=False)
                 ctk.CTkCheckBox(
                     dlc_frame,
-                    text="Clear Shadow of the Erdtree flag (allows loading without DLC)",
+                    text=t(
+                        "Clear Shadow of the Erdtree flag (allows loading without DLC)"
+                    ),
                     variable=clear_dlc_flag_var,
                 ).pack(anchor="w", pady=(0, 2))
                 ctk.CTkLabel(
                     dlc_frame,
-                    text="   Use if you cannot load the save file without the DLC installed.",
+                    text=t(
+                        "   Use if you cannot load the save file without the DLC installed."
+                    ),
                     font=("Segoe UI", 10),
                     text_color=("gray50", "gray50"),
                 ).pack(anchor="w", pady=(0, 8))
@@ -289,12 +296,14 @@ class CharacterDetailsDialog:
                 clear_invalid_dlc_var = ctk.BooleanVar(value=False)
                 ctk.CTkCheckBox(
                     dlc_frame,
-                    text="Clear invalid DLC data (fixes corrupted DLC flags)",
+                    text=t("Clear invalid DLC data (fixes corrupted DLC flags)"),
                     variable=clear_invalid_dlc_var,
                 ).pack(anchor="w", pady=(0, 2))
                 ctk.CTkLabel(
                     dlc_frame,
-                    text="   Invalid data in unused DLC slots can prevent save from loading.",
+                    text=t(
+                        "   Invalid data in unused DLC slots can prevent save from loading."
+                    ),
                     font=("Segoe UI", 10),
                     text_color=("gray50", "gray50"),
                 ).pack(anchor="w")
@@ -327,7 +336,7 @@ class CharacterDetailsDialog:
 
             ctk.CTkButton(
                 button_frame,
-                text="Fix All Issues",
+                text=t("Fix All Issues"),
                 command=fix_all,
                 width=150,
             ).pack(side="left", padx=5)
@@ -335,7 +344,7 @@ class CharacterDetailsDialog:
         elif has_dlc_flag or (has_invalid_dlc and not deep_scan_available):
             apply_btn = ctk.CTkButton(
                 button_frame,
-                text="Apply",
+                text=t("Apply"),
                 command=lambda: CharacterDetailsDialog._apply_dlc_flags(
                     dialog,
                     save_file,
@@ -375,7 +384,7 @@ class CharacterDetailsDialog:
 
         ctk.CTkButton(
             button_frame,
-            text="Teleport Character",
+            text=t("Teleport Character"),
             command=teleport,
             width=150,
         ).pack(side="left", padx=5)
@@ -391,7 +400,7 @@ class CharacterDetailsDialog:
 
         ctk.CTkButton(
             button_frame,
-            text="Replace CSNetMan",
+            text=t("Replace CSNetMan"),
             command=_replace_netman,
             width=160,
             fg_color=("gray60", "gray30"),
@@ -400,7 +409,7 @@ class CharacterDetailsDialog:
 
         ctk.CTkButton(
             button_frame,
-            text="Close",
+            text=t("Close"),
             command=dialog.destroy,
             width=100,
         ).pack(side="right", padx=5)
@@ -482,14 +491,16 @@ class CharacterDetailsDialog:
             _parent = dialog.master
             dialog.destroy()
             CTkMessageBox.showinfo(
-                "DLC Flags",
-                "DLC flag cleared. The save file has been updated.",
+                t("DLC Flags"),
+                t("DLC flag cleared. The save file has been updated."),
                 parent=_parent,
             )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to apply DLC fix:\n{e}", parent=dialog
+                t("Error"),
+                t("Failed to apply DLC fix:\n{e}").format(e=e),
+                parent=dialog,
             )
 
     @staticmethod
@@ -503,15 +514,15 @@ class CharacterDetailsDialog:
 
             if not result.steamid_found:
                 CTkMessageBox.showwarning(
-                    "Deep Scan",
-                    "SteamID64 not found in slot data.\nCannot determine shift.",
+                    t("Deep Scan"),
+                    t("SteamID64 not found in slot data.\nCannot determine shift."),
                     parent=dialog,
                 )
                 return
 
             if result.delta == 0:
                 CTkMessageBox.showinfo(
-                    "Deep Scan", "No byte shift detected.", parent=dialog
+                    t("Deep Scan"), t("No byte shift detected."), parent=dialog
                 )
                 return
 
@@ -528,7 +539,7 @@ class CharacterDetailsDialog:
             if result.confidence == "low":
                 msg = f"WARNING: Low confidence scan result.\n\n{msg}"
 
-            if not CTkMessageBox.askyesno("Deep Scan Fix", msg, parent=dialog):
+            if not CTkMessageBox.askyesno(t("Deep Scan Fix"), msg, parent=dialog):
                 return
 
             from er_save_manager.backup.manager import BackupManager
@@ -551,21 +562,27 @@ class CharacterDetailsDialog:
                     reload_callback()
                 detail_text = "\n".join(f"  - {d}" for d in fix_result.details)
                 CTkMessageBox.showinfo(
-                    "Deep Scan Fix",
-                    f"{fix_result.description}\n\n{detail_text}\n\nBackup saved.",
+                    t("Deep Scan Fix"),
+                    t("{description}\n\n{detail_text}\n\nBackup saved.").format(
+                        description=fix_result.description, detail_text=detail_text
+                    ),
                     parent=dialog,
                 )
                 dialog.destroy()
             else:
                 CTkMessageBox.showwarning(
-                    "Deep Scan Fix",
-                    f"Fix not applied:\n{fix_result.description}",
+                    t("Deep Scan Fix"),
+                    t("Fix not applied:\n{description}").format(
+                        description=fix_result.description
+                    ),
                     parent=dialog,
                 )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Deep scan failed:\n{str(e)}", parent=dialog
+                t("Error"),
+                t("Deep scan failed:\n{str}").format(str=str(e)),
+                parent=dialog,
             )
             import traceback
 
@@ -605,7 +622,7 @@ class CharacterDetailsDialog:
 
         ctk.CTkLabel(
             main_frame,
-            text=f"Teleport Slot {slot_idx + 1}",
+            text=t("Teleport Slot {slot_idx}").format(slot_idx=slot_idx + 1),
             font=("Segoe UI", 14, "bold"),
         ).pack(pady=(0, 20))
 
@@ -614,13 +631,15 @@ class CharacterDetailsDialog:
 
         ctk.CTkLabel(
             location_frame,
-            text="Roundtable Hold",
+            text=t("Roundtable Hold"),
             font=("Segoe UI", 13, "bold"),
         ).pack(pady=10)
 
         ctk.CTkLabel(
             location_frame,
-            text="Character will be teleported to Roundtable Hold.\nThis is the safest location for unstuck/DLC escape.",
+            text=t(
+                "Character will be teleported to Roundtable Hold.\nThis is the safest location for unstuck/DLC escape."
+            ),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         ).pack(pady=5)
@@ -675,19 +694,25 @@ class CharacterDetailsDialog:
                         reload_callback()
                     fixes_text = "\n".join(f"  - {fix}" for fix in fixes_applied)
                     CTkMessageBox.showinfo(
-                        "Success",
-                        f"Applied fixes:\n\n{fixes_text}\n\nBackup saved to backup manager.",
+                        t("Success"),
+                        t(
+                            "Applied fixes:\n\n{fixes_text}\n\nBackup saved to backup manager."
+                        ).format(fixes_text=fixes_text),
                         parent=teleport_dialog,
                     )
                     teleport_dialog.destroy()
                 else:
                     CTkMessageBox.showwarning(
-                        "Not Applied", "No fixes were applied.", parent=teleport_dialog
+                        t("Not Applied"),
+                        t("No fixes were applied."),
+                        parent=teleport_dialog,
                     )
 
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Teleport failed:\n{str(e)}", parent=teleport_dialog
+                    t("Error"),
+                    t("Teleport failed:\n{str}").format(str=str(e)),
+                    parent=teleport_dialog,
                 )
                 import traceback
 
@@ -697,10 +722,10 @@ class CharacterDetailsDialog:
         button_frame.pack(fill="x", pady=(10, 0))
 
         ctk.CTkButton(
-            button_frame, text="Teleport", command=do_teleport, width=100
+            button_frame, text=t("Teleport"), command=do_teleport, width=100
         ).pack(side="left", padx=5)
         ctk.CTkButton(
-            button_frame, text="Cancel", command=teleport_dialog.destroy, width=100
+            button_frame, text=t("Cancel"), command=teleport_dialog.destroy, width=100
         ).pack(side="right", padx=5)
 
     @staticmethod
@@ -718,8 +743,10 @@ class CharacterDetailsDialog:
         clean = _load_clean_netman()
         if clean is None:
             CTkMessageBox.showerror(
-                "Not Available",
-                "CSNetMan.bin not found or invalid.\nPlace a valid CSNetMan.bin next to the fixes module.",
+                t("Not Available"),
+                t(
+                    "CSNetMan.bin not found or invalid.\nPlace a valid CSNetMan.bin next to the fixes module."
+                ),
                 parent=_parent,
             )
             return
@@ -727,16 +754,17 @@ class CharacterDetailsDialog:
         slot = save_file.characters[slot_idx]
         if not hasattr(slot, "net_man_offset") or slot.net_man_offset <= 0:
             CTkMessageBox.showerror(
-                "Error",
-                "Cannot determine NetMan offset for this slot.",
+                t("Error"),
+                t("Cannot determine NetMan offset for this slot."),
                 parent=_parent,
             )
             return
 
         if not CTkMessageBox.askyesno(
-            "Confirm",
-            f"Use this if you are still getting a Save is corrupted message or are still crashing after fixing corruption via the tool or if it does not detect any corruption."
-            f" Replace the entire CSNetMan block in Slot {slot_idx + 1} with the clean template?\n\nA backup will be created.",
+            t("Confirm"),
+            t(
+                "Use this if you are still getting a Save is corrupted message or are still crashing after fixing corruption via the tool or if it does not detect any corruption. Replace the entire CSNetMan block in Slot {slot_idx} with the clean template?\n\nA backup will be created."
+            ).format(slot_idx=slot_idx + 1),
             parent=_parent,
         ):
             return
@@ -764,14 +792,18 @@ class CharacterDetailsDialog:
                 reload_callback()
 
             CTkMessageBox.showinfo(
-                "Done",
-                f"CSNetMan replaced in Slot {slot_idx + 1}.\nBackup saved to backup manager.",
+                t("Done"),
+                t(
+                    "CSNetMan replaced in Slot {slot_idx}.\nBackup saved to backup manager."
+                ).format(slot_idx=slot_idx + 1),
                 parent=_parent,
             )
             dialog.destroy()
 
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Replace failed:\n{e}", parent=_parent)
+            CTkMessageBox.showerror(
+                t("Error"), t("Replace failed:\n{e}").format(e=e), parent=_parent
+            )
             import traceback
 
             traceback.print_exc()
@@ -803,7 +835,7 @@ class CharacterDetailsDialog:
         confirm_parts.append("\nA backup will be created.")
 
         if not CTkMessageBox.askyesno(
-            "Confirm", "\n".join(confirm_parts), parent=_parent
+            t("Confirm"), "\n".join(confirm_parts), parent=_parent
         ):
             return
 
@@ -897,17 +929,23 @@ class CharacterDetailsDialog:
                     reload_callback()
                 fix_summary = "\n".join(f"  - {fix}" for fix in fixes)
                 CTkMessageBox.showinfo(
-                    "Success",
-                    f"Fixed {len(fixes)} issue(s):\n\n{fix_summary}\n\nBackup saved to backup manager.",
+                    t("Success"),
+                    t(
+                        "Fixed {len} issue(s):\n\n{fix_summary}\n\nBackup saved to backup manager."
+                    ).format(len=len(fixes), fix_summary=fix_summary),
                     parent=_parent,
                 )
             else:
                 CTkMessageBox.showinfo(
-                    "Info", "No fixes were needed or could be applied.", parent=_parent
+                    t("Info"),
+                    t("No fixes were needed or could be applied."),
+                    parent=_parent,
                 )
 
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Fix failed:\n{str(e)}", parent=_parent)
+            CTkMessageBox.showerror(
+                t("Error"), t("Fix failed:\n{str}").format(str=str(e)), parent=_parent
+            )
             import traceback
 
             traceback.print_exc()

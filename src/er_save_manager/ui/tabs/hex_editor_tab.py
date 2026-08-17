@@ -4,6 +4,7 @@ import tkinter as tk
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 
 
@@ -28,13 +29,15 @@ class HexEditorTab:
         # Title and info
         ctk.CTkLabel(
             self.parent,
-            text="Hex Editor",
+            text=t("Hex Editor"),
             font=("Segoe UI", 16, "bold"),
         ).pack(pady=10)
 
         info_text = ctk.CTkLabel(
             self.parent,
-            text="Advanced: View and edit raw save file data in hexadecimal format\n(Full editing coming soon)",
+            text=t(
+                "Advanced: View and edit raw save file data in hexadecimal format\n(Full editing coming soon)"
+            ),
             font=("Segoe UI", 12),
             text_color=("gray40", "gray70"),
         )
@@ -48,7 +51,9 @@ class HexEditorTab:
 
         ctk.CTkLabel(
             warning_frame,
-            text="⚠️  Warning: Direct hex editing can corrupt your save file. Use with caution!",
+            text=t(
+                "⚠️  Warning: Direct hex editing can corrupt your save file. Use with caution!"
+            ),
             font=("Segoe UI", 12, "bold"),
             text_color=("#cc0000", "#ff8080"),
         ).pack(padx=10, pady=8)
@@ -57,7 +62,7 @@ class HexEditorTab:
         control_frame = ctk.CTkFrame(self.parent, fg_color="transparent")
         control_frame.pack(fill="x", padx=20, pady=10)
 
-        ctk.CTkLabel(control_frame, text="Offset:", font=("Segoe UI", 12)).pack(
+        ctk.CTkLabel(control_frame, text=t("Offset:"), font=("Segoe UI", 12)).pack(
             side="left", padx=(0, 5)
         )
 
@@ -72,14 +77,14 @@ class HexEditorTab:
 
         ctk.CTkButton(
             control_frame,
-            text="Go to Offset",
+            text=t("Go to Offset"),
             command=self.hex_goto_offset,
             width=120,
         ).pack(side="left", padx=5)
 
         ctk.CTkButton(
             control_frame,
-            text="Refresh",
+            text=t("Refresh"),
             command=self.hex_refresh,
             width=100,
         ).pack(side="left", padx=5)
@@ -90,7 +95,7 @@ class HexEditorTab:
 
         ctk.CTkLabel(
             hex_frame,
-            text="Hex Data",
+            text=t("Hex Data"),
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
@@ -128,7 +133,7 @@ class HexEditorTab:
 
         ctk.CTkLabel(
             info_panel,
-            text="Save Structure Info",
+            text=t("Save Structure Info"),
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
@@ -151,7 +156,7 @@ class HexEditorTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
@@ -166,8 +171,8 @@ class HexEditorTab:
 
         except ValueError:
             CTkMessageBox.showerror(
-                "Invalid Offset",
-                "Please enter a valid hex offset (e.g., 0x1000, parent=self.parent)",
+                t("Invalid Offset"),
+                t("Please enter a valid hex offset (e.g., 0x1000, parent=self.parent)"),
             )
 
     def hex_display_at_offset(self, offset=0, length=512):
@@ -181,8 +186,10 @@ class HexEditorTab:
 
         if offset >= max_offset:
             CTkMessageBox.showerror(
-                "Invalid Offset",
-                f"Offset {offset} exceeds file size {max_offset}",
+                t("Invalid Offset"),
+                t("Offset {offset} exceeds file size {max_offset}").format(
+                    offset=offset, max_offset=max_offset
+                ),
                 parent=self.parent,
             )
             return
@@ -219,7 +226,7 @@ class HexEditorTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 

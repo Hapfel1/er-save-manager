@@ -12,6 +12,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.games.game_profiles import PROFILES_BY_KEY
+from er_save_manager.i18n import t
 from er_save_manager.platform import PlatformUtils
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.messagebox import CTkMessageBox
@@ -58,11 +59,11 @@ class DS3CharacterManagementTab:
         bind_mousewheel(scroll)
 
         ctk.CTkLabel(
-            scroll, text="Character Management", font=("Segoe UI", 16, "bold")
+            scroll, text=t("Character Management"), font=("Segoe UI", 16, "bold")
         ).pack(pady=10)
         ctk.CTkLabel(
             scroll,
-            text="Copy, transfer, swap, export, import, or delete character slots",
+            text=t("Copy, transfer, swap, export, import, or delete character slots"),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         ).pack(pady=5)
@@ -70,7 +71,7 @@ class DS3CharacterManagementTab:
         selector = ctk.CTkFrame(scroll, corner_radius=10)
         selector.pack(fill=tk.X, padx=20, pady=10)
         ctk.CTkLabel(
-            selector, text="Select Operation", font=("Segoe UI", 12, "bold")
+            selector, text=t("Select Operation"), font=("Segoe UI", 12, "bold")
         ).pack(anchor=tk.W, padx=15, pady=(10, 5))
 
         controls = ctk.CTkFrame(selector, fg_color="transparent")
@@ -87,7 +88,7 @@ class DS3CharacterManagementTab:
         self._operation_map = {op[0]: op[1] for op in operations}
         self._operation_var = tk.StringVar(value=operations[0][0])
 
-        ctk.CTkLabel(controls, text="Operation:").pack(side=tk.LEFT, padx=(0, 10))
+        ctk.CTkLabel(controls, text=t("Operation:")).pack(side=tk.LEFT, padx=(0, 10))
         combo = ctk.CTkComboBox(
             controls,
             variable=self._operation_var,
@@ -101,7 +102,7 @@ class DS3CharacterManagementTab:
         self._ops_panel = ctk.CTkFrame(scroll, corner_radius=10)
         self._ops_panel.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
         ctk.CTkLabel(
-            self._ops_panel, text="Operation Details", font=("Segoe UI", 12, "bold")
+            self._ops_panel, text=t("Operation Details"), font=("Segoe UI", 12, "bold")
         ).pack(anchor=tk.W, padx=15, pady=(10, 5))
 
         self._ops_scrollable = ctk.CTkScrollableFrame(
@@ -159,16 +160,18 @@ class DS3CharacterManagementTab:
     def _setup_copy_panel(self) -> None:
         ctk.CTkLabel(
             self._ops_scrollable,
-            text="Copy a character from one slot to another in the same save file",
+            text=t("Copy a character from one slot to another in the same save file"),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         ).pack(anchor=tk.W, pady=10)
         ctk.CTkLabel(
             self._ops_scrollable,
             text=(
-                "Note: if the target slot has never had a character created "
-                "in it in-game, the copy will not appear on the in-game load "
-                "screen. Create a throwaway character there first, then copy."
+                t(
+                    "Note: if the target slot has never had a character created "
+                    "in it in-game, the copy will not appear on the in-game load "
+                    "screen. Create a throwaway character there first, then copy."
+                )
             ),
             font=("Segoe UI", 10),
             text_color=("darkorange", "orange"),
@@ -180,22 +183,24 @@ class DS3CharacterManagementTab:
         self._slot_picker(controls, "From Slot:", self._copy_from_var, 0)
         self._slot_picker(controls, "To Slot:", self._copy_to_var, 1)
         ctk.CTkButton(
-            controls, text="Copy Character", command=self._copy_character, width=150
+            controls, text=t("Copy Character"), command=self._copy_character, width=150
         ).pack(side=tk.LEFT, padx=20)
 
     def _setup_transfer_panel(self) -> None:
         ctk.CTkLabel(
             self._ops_scrollable,
-            text="Transfer a character to a different save file",
+            text=t("Transfer a character to a different save file"),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         ).pack(anchor=tk.W, pady=10)
         ctk.CTkLabel(
             self._ops_scrollable,
             text=(
-                "Note: if the target slot has never had a character created "
-                "in it in-game, the transfer will not appear on the in-game "
-                "load screen. Create a throwaway character there first."
+                t(
+                    "Note: if the target slot has never had a character created "
+                    "in it in-game, the transfer will not appear on the in-game "
+                    "load screen. Create a throwaway character there first."
+                )
             ),
             font=("Segoe UI", 10),
             text_color=("darkorange", "orange"),
@@ -207,7 +212,7 @@ class DS3CharacterManagementTab:
         self._slot_picker(controls, "From Slot:", self._transfer_from_var, 0)
         ctk.CTkButton(
             controls,
-            text="Select Target Save...",
+            text=t("Select Target Save..."),
             command=self._transfer_character,
             width=180,
         ).pack(side=tk.LEFT, padx=20)
@@ -215,7 +220,7 @@ class DS3CharacterManagementTab:
     def _setup_swap_panel(self) -> None:
         ctk.CTkLabel(
             self._ops_scrollable,
-            text="Exchange two character slots",
+            text=t("Exchange two character slots"),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         ).pack(anchor=tk.W, pady=10)
@@ -224,13 +229,13 @@ class DS3CharacterManagementTab:
         self._slot_picker(controls, "Slot A:", self._swap_a_var, 0)
         self._slot_picker(controls, "Slot B:", self._swap_b_var, 1)
         ctk.CTkButton(
-            controls, text="Swap Slots", command=self._swap_characters, width=150
+            controls, text=t("Swap Slots"), command=self._swap_characters, width=150
         ).pack(side=tk.LEFT, padx=20)
 
     def _setup_export_panel(self) -> None:
         ctk.CTkLabel(
             self._ops_scrollable,
-            text="Save character to a standalone .ds3c file for backup or sharing",
+            text=t("Save character to a standalone .ds3c file for backup or sharing"),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         ).pack(anchor=tk.W, pady=10)
@@ -239,7 +244,7 @@ class DS3CharacterManagementTab:
         self._slot_picker(controls, "Slot:", self._export_slot_var, 0)
         ctk.CTkButton(
             controls,
-            text="Export Character...",
+            text=t("Export Character..."),
             command=self._export_character,
             width=180,
         ).pack(side=tk.LEFT, padx=20)
@@ -247,16 +252,18 @@ class DS3CharacterManagementTab:
     def _setup_import_panel(self) -> None:
         ctk.CTkLabel(
             self._ops_scrollable,
-            text="Load a character from a .ds3c file into a slot",
+            text=t("Load a character from a .ds3c file into a slot"),
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         ).pack(anchor=tk.W, pady=10)
         ctk.CTkLabel(
             self._ops_scrollable,
             text=(
-                "Note: if the target slot has never had a character created "
-                "in it in-game, the import will not appear on the in-game "
-                "load screen. Create a throwaway character there first."
+                t(
+                    "Note: if the target slot has never had a character created "
+                    "in it in-game, the import will not appear on the in-game "
+                    "load screen. Create a throwaway character there first."
+                )
             ),
             font=("Segoe UI", 10),
             text_color=("darkorange", "orange"),
@@ -268,7 +275,7 @@ class DS3CharacterManagementTab:
         self._slot_picker(controls, "To Slot:", self._import_slot_var, 0)
         ctk.CTkButton(
             controls,
-            text="Import Character...",
+            text=t("Import Character..."),
             command=self._import_character,
             width=180,
         ).pack(side=tk.LEFT, padx=20)
@@ -276,7 +283,7 @@ class DS3CharacterManagementTab:
     def _setup_delete_panel(self) -> None:
         ctk.CTkLabel(
             self._ops_scrollable,
-            text="Clear a character slot (creates backup)",
+            text=t("Clear a character slot (creates backup)"),
             font=("Segoe UI", 11),
             text_color=("red", "red"),
         ).pack(anchor=tk.W, pady=10)
@@ -285,7 +292,7 @@ class DS3CharacterManagementTab:
         self._slot_picker(controls, "Slot:", self._delete_slot_var, 0)
         ctk.CTkButton(
             controls,
-            text="Delete Character",
+            text=t("Delete Character"),
             command=self._delete_character,
             width=150,
             fg_color=("red", "darkred"),
@@ -308,24 +315,18 @@ class DS3CharacterManagementTab:
         for that slot.
         """
         return CTkMessageBox.askyesno(
-            "Empty Slot",
-            f"Slot {to_slot + 1} is currently empty.\n\n"
-            "Dark Souls III will not show a character written directly "
-            "into a slot that has never been created in-game, even though "
-            "the save file and this manager will look correct.\n\n"
-            f"If Slot {to_slot + 1} has never had a character created in "
-            "it before, go create a quick throwaway character there first "
-            "(any name, skip the intro, save and quit), then run this "
-            "again.\n\n"
-            "Already created a character in this slot? Continue.",
+            t("Empty Slot"),
+            t(
+                "Slot {to_slot} is currently empty.\n\nDark Souls III will not show a character written directly into a slot that has never been created in-game, even though the save file and this manager will look correct.\n\nIf Slot {to_slot} has never had a character created in it before, go create a quick throwaway character there first (any name, skip the intro, save and quit), then run this again.\n\nAlready created a character in this slot? Continue."
+            ).format(to_slot=to_slot + 1),
             parent=self.parent,
         )
 
     def _check_game_not_running(self) -> bool:
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
-                "Game is running",
-                "Please close Dark Souls III before modifying save files.",
+                t("Game is running"),
+                t("Please close Dark Souls III before modifying save files."),
                 parent=self.parent,
             )
             return False
@@ -338,7 +339,7 @@ class DS3CharacterManagementTab:
         save = self._get_save()
         if not save:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
@@ -346,8 +347,8 @@ class DS3CharacterManagementTab:
         to_slot = self._slot_index(self._copy_to_var.get())
         if from_slot == to_slot:
             CTkMessageBox.showerror(
-                "Error",
-                "Source and destination slots must be different!",
+                t("Error"),
+                t("Source and destination slots must be different!"),
                 parent=self.parent,
             )
             return
@@ -355,15 +356,19 @@ class DS3CharacterManagementTab:
         from_char = save.characters[from_slot]
         if from_char is None:
             CTkMessageBox.showerror(
-                "Error", f"Slot {from_slot + 1} is empty!", parent=self.parent
+                t("Error"),
+                t("Slot {from_slot} is empty!").format(from_slot=from_slot + 1),
+                parent=self.parent,
             )
             return
 
         to_char = save.characters[to_slot]
         if to_char is not None:
             response = CTkMessageBox.askyesno(
-                "Overwrite?",
-                f"Slot {to_slot + 1} contains '{to_char.name}'.\n\nOverwrite with '{from_char.name}'?",
+                t("Overwrite?"),
+                t(
+                    "Slot {to_slot} contains '{name}'.\n\nOverwrite with '{name2}'?"
+                ).format(to_slot=to_slot + 1, name=to_char.name, name2=from_char.name),
                 parent=self.parent,
             )
             if not response:
@@ -395,7 +400,9 @@ class DS3CharacterManagementTab:
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Copy failed:\n{str(e)}", parent=self.parent
+                t("Error"),
+                t("Copy failed:\n{str}").format(str=str(e)),
+                parent=self.parent,
             )
 
     def _swap_characters(self) -> None:
@@ -405,7 +412,7 @@ class DS3CharacterManagementTab:
         save = self._get_save()
         if not save:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
@@ -413,7 +420,7 @@ class DS3CharacterManagementTab:
         slot_b = self._slot_index(self._swap_b_var.get())
         if slot_a == slot_b:
             CTkMessageBox.showerror(
-                "Error", "Slots must be different!", parent=self.parent
+                t("Error"), t("Slots must be different!"), parent=self.parent
             )
             return
 
@@ -446,7 +453,9 @@ class DS3CharacterManagementTab:
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Swap failed:\n{str(e)}", parent=self.parent
+                t("Error"),
+                t("Swap failed:\n{str}").format(str=str(e)),
+                parent=self.parent,
             )
 
     def _delete_character(self) -> None:
@@ -456,7 +465,7 @@ class DS3CharacterManagementTab:
         save = self._get_save()
         if not save:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
@@ -464,14 +473,18 @@ class DS3CharacterManagementTab:
         char = save.characters[slot]
         if char is None:
             CTkMessageBox.showinfo(
-                "Info", f"Slot {slot + 1} is already empty.", parent=self.parent
+                t("Info"),
+                t("Slot {slot} is already empty.").format(slot=slot + 1),
+                parent=self.parent,
             )
             return
 
         name = char.name
         response = CTkMessageBox.askyesno(
-            "Confirm Delete",
-            f"Delete character '{name}' from Slot {slot + 1}?\n\nThis will create a backup first.",
+            t("Confirm Delete"),
+            t(
+                "Delete character '{name}' from Slot {slot}?\n\nThis will create a backup first."
+            ).format(name=name, slot=slot + 1),
             parent=self.parent,
         )
         if not response:
@@ -495,14 +508,16 @@ class DS3CharacterManagementTab:
             self._show_toast(f"Character deleted from Slot {slot + 1}", duration=2500)
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Delete failed:\n{str(e)}", parent=self.parent
+                t("Error"),
+                t("Delete failed:\n{str}").format(str=str(e)),
+                parent=self.parent,
             )
 
     def _export_character(self) -> None:
         save = self._get_save()
         if not save:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
@@ -510,13 +525,15 @@ class DS3CharacterManagementTab:
         char = save.characters[slot]
         if char is None:
             CTkMessageBox.showerror(
-                "Error", f"Slot {slot + 1} is empty!", parent=self.parent
+                t("Error"),
+                t("Slot {slot} is empty!").format(slot=slot + 1),
+                parent=self.parent,
             )
             return
 
         default_name = f"{char.name or f'Character_{slot + 1}'}.ds3c"
         output_path = pick_file(
-            title="Export Character",
+            title=t("Export Character"),
             save=True,
             defaultextension=".ds3c",
             initialfile=default_name,
@@ -528,13 +545,17 @@ class DS3CharacterManagementTab:
         try:
             character_ops.export_character(save, slot, Path(output_path))
             CTkMessageBox.showinfo(
-                "Success",
-                f"Character '{char.name}' exported to:\n{output_path}",
+                t("Success"),
+                t("Character '{name}' exported to:\n{output_path}").format(
+                    name=char.name, output_path=output_path
+                ),
                 parent=self.parent,
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Export failed:\n{str(e)}", parent=self.parent
+                t("Error"),
+                t("Export failed:\n{str}").format(str=str(e)),
+                parent=self.parent,
             )
 
     def _import_character(self) -> None:
@@ -544,12 +565,12 @@ class DS3CharacterManagementTab:
         save = self._get_save()
         if not save:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
         import_path = pick_file(
-            title="Import Character",
+            title=t("Import Character"),
             filetypes=[("DS3 Character", "*.ds3c"), ("All files", "*.*")],
         )
         if not import_path:
@@ -559,8 +580,10 @@ class DS3CharacterManagementTab:
         to_char = save.characters[to_slot]
         if to_char is not None:
             response = CTkMessageBox.askyesno(
-                "Overwrite?",
-                f"Slot {to_slot + 1} contains '{to_char.name}'.\n\nOverwrite?",
+                t("Overwrite?"),
+                t("Slot {to_slot} contains '{name}'.\n\nOverwrite?").format(
+                    to_slot=to_slot + 1, name=to_char.name
+                ),
                 parent=self.parent,
             )
             if not response:
@@ -589,7 +612,9 @@ class DS3CharacterManagementTab:
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Import failed:\n{str(e)}", parent=self.parent
+                t("Error"),
+                t("Import failed:\n{str}").format(str=str(e)),
+                parent=self.parent,
             )
 
     def _transfer_character(self) -> None:
@@ -599,7 +624,7 @@ class DS3CharacterManagementTab:
         save = self._get_save()
         if not save:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                t("No Save"), t("Please load a save file first!"), parent=self.parent
             )
             return
 
@@ -607,7 +632,9 @@ class DS3CharacterManagementTab:
         from_char = save.characters[from_slot]
         if from_char is None:
             CTkMessageBox.showerror(
-                "Error", f"Slot {from_slot + 1} is empty!", parent=self.parent
+                t("Error"),
+                t("Slot {from_slot} is empty!").format(from_slot=from_slot + 1),
+                parent=self.parent,
             )
             return
 
@@ -617,8 +644,8 @@ class DS3CharacterManagementTab:
             return
         if current_path and Path(target_path).resolve() == Path(current_path).resolve():
             CTkMessageBox.showerror(
-                "Error",
-                "Select a different target save file for transfer.",
+                t("Error"),
+                t("Select a different target save file for transfer."),
                 parent=self.parent,
             )
             return
@@ -627,7 +654,9 @@ class DS3CharacterManagementTab:
             target_save = DS3Save.from_file(target_path)
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Could not load target save:\n{str(e)}", parent=self.parent
+                t("Error"),
+                t("Could not load target save:\n{str}").format(str=str(e)),
+                parent=self.parent,
             )
             return
 
@@ -668,7 +697,9 @@ class DS3CharacterManagementTab:
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Transfer failed:\n{str(e)}", parent=self.parent
+                t("Error"),
+                t("Transfer failed:\n{str}").format(str=str(e)),
+                parent=self.parent,
             )
 
     def _browse_target_save_manually(self) -> str | None:
@@ -676,7 +707,7 @@ class DS3CharacterManagementTab:
         current_path = self._get_save_path()
         initialdir = str(Path(current_path).parent) if current_path else None
         return pick_file(
-            title="Select target save file",
+            title=t("Select target save file"),
             initialdir=initialdir,
             filetypes=[("DS3 save files", "*.sl2"), ("All files", "*.*")],
         )
@@ -715,7 +746,7 @@ class DS3CharacterManagementTab:
 
         ctk.CTkLabel(
             dialog,
-            text="Select destination slot in target save:",
+            text=t("Select destination slot in target save:"),
             font=("Segoe UI", 12),
         ).pack(padx=10, pady=(12, 6))
         ctk.CTkLabel(
@@ -741,7 +772,7 @@ class DS3CharacterManagementTab:
                 result["value"] = 0
             dialog.destroy()
 
-        ctk.CTkButton(dialog, text="Transfer", command=confirm, width=140).pack(
+        ctk.CTkButton(dialog, text=t("Transfer"), command=confirm, width=140).pack(
             pady=(0, 12)
         )
         dialog.bind("<Return>", lambda _e: confirm())

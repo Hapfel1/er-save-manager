@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.i18n import t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
@@ -83,11 +84,11 @@ class DSREditorTab:
         header.pack(fill="x", padx=10, pady=(10, 6))
 
         ctk.CTkLabel(
-            header, text="Character Editor", font=("Segoe UI", 16, "bold")
+            header, text=t("Character Editor"), font=("Segoe UI", 16, "bold")
         ).pack(side="left")
         ctk.CTkButton(
             header,
-            text="Load Character",
+            text=t("Load Character"),
             command=self._load_selected,
             width=130,
         ).pack(side="right", padx=(6, 0))
@@ -100,7 +101,7 @@ class DSREditorTab:
             width=240,
         )
         self._slot_combo.pack(side="right")
-        ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
+        ctk.CTkLabel(header, text=t("Slot:")).pack(side="right", padx=(0, 6))
 
         # Sub-tabs
         tabs = ctk.CTkTabview(
@@ -126,7 +127,7 @@ class DSREditorTab:
 
         af = ctk.CTkFrame(top_row, fg_color="transparent")
         af.pack(side="left", fill="both", expand=True, padx=(0, 5))
-        ctk.CTkLabel(af, text="Attributes", font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(af, text=t("Attributes"), font=("Segoe UI", 12, "bold")).pack(
             anchor="w", padx=5, pady=(5, 0)
         )
         ag = ctk.CTkFrame(af, fg_color="transparent")
@@ -156,7 +157,7 @@ class DSREditorTab:
         # Resources column
         rf = ctk.CTkFrame(top_row, fg_color="transparent")
         rf.pack(side="left", fill="both", expand=True, padx=(5, 0))
-        ctk.CTkLabel(rf, text="Resources", font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(rf, text=t("Resources"), font=("Segoe UI", 12, "bold")).pack(
             anchor="w", padx=5, pady=(5, 0)
         )
         rg = ctk.CTkFrame(rf, fg_color="transparent")
@@ -179,12 +180,14 @@ class DSREditorTab:
 
         ctk.CTkLabel(
             frame,
-            text="Saving VIT updates derived max HP. Saving END updates max Stamina. Level is recalculated from stats automatically.",
+            text=t(
+                "Saving VIT updates derived max HP. Saving END updates max Stamina. Level is recalculated from stats automatically."
+            ),
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=15, pady=(4, 0))
         ctk.CTkButton(
-            frame, text="Apply Changes", command=self._apply_stats, width=200
+            frame, text=t("Apply Changes"), command=self._apply_stats, width=200
         ).pack(pady=16)
 
     # --- Identity tab --------------------------------------------------------- #
@@ -196,9 +199,9 @@ class DSREditorTab:
 
         cf = ctk.CTkFrame(frame, fg_color="transparent")
         cf.pack(fill="x", pady=5, padx=10)
-        ctk.CTkLabel(cf, text="Character Identity", font=("Segoe UI", 12, "bold")).grid(
-            row=0, column=0, columnspan=2, sticky="w", padx=5, pady=(5, 0)
-        )
+        ctk.CTkLabel(
+            cf, text=t("Character Identity"), font=("Segoe UI", 12, "bold")
+        ).grid(row=0, column=0, columnspan=2, sticky="w", padx=5, pady=(5, 0))
 
         rows = [
             ("Name:", self._name_var, "entry", None),
@@ -230,7 +233,7 @@ class DSREditorTab:
                 ).grid(row=i, column=1, padx=5, pady=5, sticky="w")
 
         # Play time read-only
-        ctk.CTkLabel(cf, text="Play Time:").grid(
+        ctk.CTkLabel(cf, text=t("Play Time:")).grid(
             row=len(rows) + 1, column=0, sticky="w", padx=5, pady=5
         )
         ctk.CTkLabel(cf, textvariable=self._playtime_var).grid(
@@ -239,12 +242,14 @@ class DSREditorTab:
 
         ctk.CTkLabel(
             frame,
-            text="Name supports up to 16 characters. Both name copies in the save are updated.",
+            text=t(
+                "Name supports up to 16 characters. Both name copies in the save are updated."
+            ),
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=15, pady=(4, 0))
         ctk.CTkButton(
-            frame, text="Apply Changes", command=self._apply_identity, width=200
+            frame, text=t("Apply Changes"), command=self._apply_identity, width=200
         ).pack(pady=16)
 
     # --- Refresh / load ------------------------------------------------------- #
@@ -275,12 +280,14 @@ class DSREditorTab:
         save = self._get_dsr_save()
         if save is None:
             CTkMessageBox.showwarning(
-                "No Save", "No DSR save loaded.", parent=self.parent
+                t("No Save"), t("No DSR save loaded."), parent=self.parent
             )
             return
         if save.characters[idx] is None:
             CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {idx + 1} is empty.", parent=self.parent
+                t("Empty Slot"),
+                t("Slot {idx} is empty.").format(idx=idx + 1),
+                parent=self.parent,
             )
             return
         self._current_slot = idx
@@ -343,15 +350,17 @@ class DSREditorTab:
 
         if self._current_slot < 0:
             CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
+                t("No Character"), t("Load a character first."), parent=self.parent
             )
             return
         save, save_path = self._get_dsr_save(), self._get_save_path()
         if save is None or save_path is None:
             return
         if not CTkMessageBox.askyesno(
-            "Confirm",
-            f"Apply stat changes to Slot {self._current_slot + 1}?\n\nA backup will be created.",
+            t("Confirm"),
+            t(
+                "Apply stat changes to Slot {current_slot}?\n\nA backup will be created."
+            ).format(current_slot=self._current_slot + 1),
             parent=self.parent,
         ):
             return
@@ -365,7 +374,7 @@ class DSREditorTab:
             char.souls = int(self._stat_vars["souls"].get())
             char.humanity = int(self._stat_vars["humanity"].get())
         except ValueError as exc:
-            CTkMessageBox.showerror("Invalid Value", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Invalid Value"), str(exc), parent=self.parent)
             return
         try:
             _backup_and_save(
@@ -373,7 +382,7 @@ class DSREditorTab:
             )
             self._show_toast("Stats applied. Backup created.")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     def _apply_identity(self) -> None:
         if _game_blocks_write(self.parent):
@@ -381,15 +390,17 @@ class DSREditorTab:
 
         if self._current_slot < 0:
             CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
+                t("No Character"), t("Load a character first."), parent=self.parent
             )
             return
         save, save_path = self._get_dsr_save(), self._get_save_path()
         if save is None or save_path is None:
             return
         if not CTkMessageBox.askyesno(
-            "Confirm",
-            f"Apply identity changes to Slot {self._current_slot + 1}?\n\nA backup will be created.",
+            t("Confirm"),
+            t(
+                "Apply identity changes to Slot {current_slot}?\n\nA backup will be created."
+            ).format(current_slot=self._current_slot + 1),
             parent=self.parent,
         ):
             return
@@ -407,7 +418,7 @@ class DSREditorTab:
             )
             char.ng_plus = int(self._ng_var.get())
         except (ValueError, IndexError) as exc:
-            CTkMessageBox.showerror("Invalid Value", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Invalid Value"), str(exc), parent=self.parent)
             return
         try:
             _backup_and_save(
@@ -415,7 +426,7 @@ class DSREditorTab:
             )
             self._show_toast("Identity applied. Backup created.")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            CTkMessageBox.showerror(t("Save Failed"), str(exc), parent=self.parent)
 
     def _slot_idx(self) -> int:
         val = self._slot_var.get()

@@ -8,6 +8,7 @@ import customtkinter as ctk
 
 from er_save_manager.games.DS2.inventory_tab import DS2InventoryPanel
 from er_save_manager.games.DS2.save import LEVEL_STAT_KEYS, NG_PLUS_MAX, DS2Save
+from er_save_manager.i18n import t
 from er_save_manager.ui.utils import game_blocks_write
 
 
@@ -45,7 +46,7 @@ class DS2EditorTab:
         top = ctk.CTkFrame(self.parent, fg_color="transparent")
         top.pack(fill="x", padx=10, pady=(10, 5))
 
-        ctk.CTkLabel(top, text="Character slot:").pack(side="left")
+        ctk.CTkLabel(top, text=t("Character slot:")).pack(side="left")
         self.slot_var = tk.StringVar(value=self._slot_display_names()[0])
         self.slot_menu = ctk.CTkOptionMenu(
             top,
@@ -55,7 +56,7 @@ class DS2EditorTab:
         )
         self.slot_menu.pack(side="left", padx=(5, 15))
 
-        ctk.CTkButton(top, text="Load Slot", command=self._on_load_slot).pack(
+        ctk.CTkButton(top, text=t("Load Slot"), command=self._on_load_slot).pack(
             side="left", padx=5
         )
 
@@ -90,7 +91,7 @@ class DS2EditorTab:
         self._add_field(fields, "Name", self.name_var, row=0)
         self._add_field(fields, "Souls", self.souls_var, row=1)
 
-        ctk.CTkLabel(fields, text="NG+:").grid(
+        ctk.CTkLabel(fields, text=t("NG+:")).grid(
             row=2, column=0, sticky="w", padx=5, pady=3
         )
         self.ng_var = tk.StringVar(value="0")
@@ -102,7 +103,7 @@ class DS2EditorTab:
             width=140,
         ).grid(row=2, column=1, sticky="w", padx=5, pady=3)
 
-        ctk.CTkLabel(fields, text="HP:").grid(
+        ctk.CTkLabel(fields, text=t("HP:")).grid(
             row=3, column=0, sticky="w", padx=5, pady=3
         )
         self.hp_label = ctk.CTkLabel(fields, text="-", text_color=("gray40", "gray70"))
@@ -111,10 +112,10 @@ class DS2EditorTab:
         stats_frame = ctk.CTkFrame(parent, fg_color="transparent")
         stats_frame.pack(fill="x", padx=10, pady=5)
         ctk.CTkLabel(
-            stats_frame, text="Level & Attributes", font=("Segoe UI", 12, "bold")
+            stats_frame, text=t("Level & Attributes"), font=("Segoe UI", 12, "bold")
         ).grid(row=0, column=0, columnspan=6, sticky="w", padx=5, pady=(0, 5))
 
-        ctk.CTkLabel(stats_frame, text="Level:").grid(
+        ctk.CTkLabel(stats_frame, text=t("Level:")).grid(
             row=1, column=0, sticky="w", padx=5, pady=3
         )
         self.level_var = tk.StringVar()
@@ -141,7 +142,7 @@ class DS2EditorTab:
             )
 
         ctk.CTkButton(
-            parent, text="Apply Changes", command=self._apply_changes, height=34
+            parent, text=t("Apply Changes"), command=self._apply_changes, height=34
         ).pack(side="bottom", fill="x", padx=10, pady=10)
 
     def _add_field(self, parent, label, var, row, col=0):
@@ -209,7 +210,7 @@ class DS2EditorTab:
             )
         except ValueError:
             self.level_status_label.configure(
-                text="Enter whole numbers for all stats to recalculate level",
+                text=t("Enter whole numbers for all stats to recalculate level"),
                 text_color="orange",
             )
             return
@@ -219,7 +220,9 @@ class DS2EditorTab:
         self.level_var.set(str(computed_level))
         self._suppress_recalc = False
         self.level_status_label.configure(
-            text=f"(auto-calculated from stat changes: {computed_level})",
+            text=t("(auto-calculated from stat changes: {computed_level})").format(
+                computed_level=computed_level
+            ),
             text_color=("gray40", "gray70"),
         )
 
@@ -250,7 +253,9 @@ class DS2EditorTab:
 
         if not save.is_slot_initialized(self._slot_index):
             self.slot_status_label.configure(
-                text="Never created in-game - edits here will not appear at the load screen",
+                text=t(
+                    "Never created in-game - edits here will not appear at the load screen"
+                ),
                 text_color="orange",
             )
         else:
@@ -281,7 +286,7 @@ class DS2EditorTab:
 
         save: DS2Save | None = self.get_save()
         if save is None:
-            self.show_toast("No save file loaded", duration=2000)
+            self.show_toast(t("No save file loaded"), duration=2000)
             return
 
         try:
@@ -292,14 +297,17 @@ class DS2EditorTab:
             souls = int(self.souls_var.get())
             ng_plus = int(self.ng_var.get())
         except ValueError:
-            self.show_toast("Invalid numeric value, changes not applied", duration=2500)
+            self.show_toast(
+                t("Invalid numeric value, changes not applied"), duration=2500
+            )
             return
 
         expected_level = self._expected_level()
         if expected_level is None or entered_level != expected_level:
             self.show_toast(
-                f"Level ({entered_level}) does not match what these stats add up to "
-                f"({expected_level}). Adjust stats or Level to match before saving.",
+                t(
+                    "Level ({entered_level}) does not match what these stats add up to ({expected_level}). Adjust stats or Level to match before saving."
+                ).format(entered_level=entered_level, expected_level=expected_level),
                 duration=4000,
             )
             return
@@ -314,7 +322,7 @@ class DS2EditorTab:
 
         save_path = self.get_save_path()
         if not save_path:
-            self.show_toast("No save path to write to", duration=2000)
+            self.show_toast(t("No save path to write to"), duration=2000)
             return
 
         self._backup(
@@ -324,11 +332,11 @@ class DS2EditorTab:
         try:
             save.save_to_file(save_path)
         except Exception as e:
-            self.show_toast(f"Failed to write save: {e}", duration=3000)
+            self.show_toast(t("Failed to write save: {e}").format(e=e), duration=3000)
             return
 
         self.refresh()
-        self.show_toast("Changes saved to disk", duration=2500)
+        self.show_toast(t("Changes saved to disk"), duration=2500)
 
     def _backup(self, save_path, description: str, operation: str) -> None:
         if not save_path:
