@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ER Save Manager VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-17 12:34+0000\n"
+"POT-Creation-Date: 2026-08-18 12:29+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -43,14 +43,14 @@ msgstr ""
 #: src/er_save_manager/games/NR/character_management_tab.py:556
 #: src/er_save_manager/ui/dialogs/character_details.py:697
 #: src/er_save_manager/ui/dialogs/character_details.py:932
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1203
-#: src/er_save_manager/ui/editors/character_info_editor.py:483
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1217
+#: src/er_save_manager/ui/editors/character_info_editor.py:487
 #: src/er_save_manager/ui/editors/stats_editor.py:801
-#: src/er_save_manager/ui/gui.py:326 src/er_save_manager/ui/gui.py:1709
+#: src/er_save_manager/ui/gui.py:327 src/er_save_manager/ui/gui.py:1710
 #: src/er_save_manager/ui/tabs/appearance_tab.py:1081
 #: src/er_save_manager/ui/tabs/appearance_tab.py:1589
 #: src/er_save_manager/ui/tabs/character_management_tab.py:954
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:619
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:620
 #: src/er_save_manager/ui/tabs/settings_tab.py:1071
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:602
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:674
@@ -74,25 +74,25 @@ msgid "Launch Current Version"
 msgstr ""
 
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:228
-#: src/er_save_manager/games/NR/editor_tab.py:102
-#: src/er_save_manager/ui/dialogs/character_browser.py:1842
+#: src/er_save_manager/games/NR/editor_tab.py:103
+#: src/er_save_manager/ui/dialogs/character_browser.py:1850
 #: src/er_save_manager/ui/dialogs/character_details.py:728
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1329
-#: src/er_save_manager/ui/editors/equipment_editor.py:469
-#: src/er_save_manager/ui/editors/equipment_editor.py:622
-#: src/er_save_manager/ui/editors/equipment_editor.py:864
-#: src/er_save_manager/ui/editors/equipment_editor.py:2123
-#: src/er_save_manager/ui/editors/inventory_editor.py:195
-#: src/er_save_manager/ui/editors/inventory_editor.py:1594
-#: src/er_save_manager/ui/editors/inventory_editor.py:2749
-#: src/er_save_manager/ui/editors/inventory_editor.py:3017
-#: src/er_save_manager/ui/icon_browser.py:747
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1343
+#: src/er_save_manager/ui/editors/equipment_editor.py:473
+#: src/er_save_manager/ui/editors/equipment_editor.py:626
+#: src/er_save_manager/ui/editors/equipment_editor.py:871
+#: src/er_save_manager/ui/editors/equipment_editor.py:2130
+#: src/er_save_manager/ui/editors/inventory_editor.py:196
+#: src/er_save_manager/ui/editors/inventory_editor.py:1609
+#: src/er_save_manager/ui/editors/inventory_editor.py:2764
+#: src/er_save_manager/ui/editors/inventory_editor.py:3032
+#: src/er_save_manager/ui/icon_browser.py:753
 #: src/er_save_manager/ui/tabs/appearance_tab.py:368
 #: src/er_save_manager/ui/tabs/appearance_tab.py:931
 #: src/er_save_manager/ui/tabs/appearance_tab.py:1040
 #: src/er_save_manager/ui/tabs/appearance_tab.py:1440
 #: src/er_save_manager/ui/tabs/appearance_tab.py:1614
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:633
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:643
 #: src/er_save_manager/ui/tabs/settings_tab.py:620
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:787
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:1015
@@ -133,8 +133,8 @@ msgid "Multiple save files found. Select the one to monitor:"
 msgstr ""
 
 #: src/er_save_manager/backup/process_monitor.py:331
-#: src/er_save_manager/ui/dialogs/character_browser.py:505
-#: src/er_save_manager/ui/dialogs/preset_browser.py:430
+#: src/er_save_manager/ui/dialogs/character_browser.py:513
+#: src/er_save_manager/ui/dialogs/preset_browser.py:444
 #: src/er_save_manager/ui/tabs/settings_tab.py:612
 msgid "Browse..."
 msgstr ""
@@ -299,13 +299,13 @@ msgid "Could not check Steam elevation: {e}"
 msgstr ""
 
 #: src/er_save_manager/diagnostics/checker.py:653
-#: src/er_save_manager/games/DS2/editor_tab.py:289
+#: src/er_save_manager/games/DS2/editor_tab.py:290
 #: src/er_save_manager/games/DS2/inspector_tab.py:67
 #: src/er_save_manager/games/DS2/inventory_tab.py:240
 #: src/er_save_manager/games/DS2/inventory_tab.py:345
 #: src/er_save_manager/games/DS2/inventory_tab.py:370
-#: src/er_save_manager/ui/dialogs/preset_browser.py:523
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1166
+#: src/er_save_manager/ui/dialogs/preset_browser.py:537
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1180
 msgid "No save file loaded"
 msgstr ""
 
@@ -355,6 +355,9 @@ msgstr ""
 #: src/er_save_manager/games/DS3/character_management_tab.py:62
 #: src/er_save_manager/games/DSR/character_management_tab.py:62
 #: src/er_save_manager/games/NR/character_management_tab.py:63
+#: src/er_save_manager/ui/gui.py:800 src/er_save_manager/ui/gui.py:963
+#: src/er_save_manager/ui/gui.py:1041 src/er_save_manager/ui/gui.py:1133
+#: src/er_save_manager/ui/gui.py:1223
 #: src/er_save_manager/ui/tabs/character_management_tab.py:76
 msgid "Character Management"
 msgstr ""
@@ -466,8 +469,8 @@ msgstr ""
 #: src/er_save_manager/games/DSR/character_management_tab.py:520
 #: src/er_save_manager/games/DSR/character_management_tab.py:568
 #: src/er_save_manager/games/DSR/character_management_tab.py:627
-#: src/er_save_manager/games/DSR/editor_tab.py:283
-#: src/er_save_manager/games/DSR/event_flags_tab.py:567
+#: src/er_save_manager/games/DSR/editor_tab.py:284
+#: src/er_save_manager/games/DSR/event_flags_tab.py:568
 #: src/er_save_manager/games/DSR/inventory_tab.py:536
 #: src/er_save_manager/games/DSR/npc_tab.py:381
 #: src/er_save_manager/games/DSR/npc_tab.py:411
@@ -483,23 +486,23 @@ msgstr ""
 #: src/er_save_manager/games/NR/character_management_tab.py:635
 #: src/er_save_manager/games/NR/steamid_tab.py:92
 #: src/er_save_manager/ui/dialogs/character_details.py:21
-#: src/er_save_manager/ui/editors/character_info_editor.py:344
-#: src/er_save_manager/ui/editors/equipment_editor.py:1461
-#: src/er_save_manager/ui/editors/equipment_editor.py:1596
-#: src/er_save_manager/ui/editors/equipment_editor.py:1866
-#: src/er_save_manager/ui/editors/equipment_editor.py:1894
-#: src/er_save_manager/ui/editors/equipment_editor.py:1960
-#: src/er_save_manager/ui/editors/equipment_editor.py:1998
-#: src/er_save_manager/ui/editors/equipment_editor.py:2133
-#: src/er_save_manager/ui/editors/equipment_editor.py:2159
-#: src/er_save_manager/ui/editors/inventory_editor.py:1140
-#: src/er_save_manager/ui/editors/inventory_editor.py:1627
-#: src/er_save_manager/ui/editors/inventory_editor.py:2028
-#: src/er_save_manager/ui/editors/inventory_editor.py:2142
-#: src/er_save_manager/ui/editors/inventory_editor.py:3027
-#: src/er_save_manager/ui/editors/inventory_editor.py:3487
+#: src/er_save_manager/ui/editors/character_info_editor.py:348
+#: src/er_save_manager/ui/editors/equipment_editor.py:1468
+#: src/er_save_manager/ui/editors/equipment_editor.py:1603
+#: src/er_save_manager/ui/editors/equipment_editor.py:1873
+#: src/er_save_manager/ui/editors/equipment_editor.py:1901
+#: src/er_save_manager/ui/editors/equipment_editor.py:1967
+#: src/er_save_manager/ui/editors/equipment_editor.py:2005
+#: src/er_save_manager/ui/editors/equipment_editor.py:2140
+#: src/er_save_manager/ui/editors/equipment_editor.py:2166
+#: src/er_save_manager/ui/editors/inventory_editor.py:1155
+#: src/er_save_manager/ui/editors/inventory_editor.py:1642
+#: src/er_save_manager/ui/editors/inventory_editor.py:2043
+#: src/er_save_manager/ui/editors/inventory_editor.py:2157
+#: src/er_save_manager/ui/editors/inventory_editor.py:3042
+#: src/er_save_manager/ui/editors/inventory_editor.py:3502
 #: src/er_save_manager/ui/editors/stats_editor.py:631
-#: src/er_save_manager/ui/gui.py:1401
+#: src/er_save_manager/ui/gui.py:1402
 #: src/er_save_manager/ui/tabs/advanced_tools_tab.py:158
 #: src/er_save_manager/ui/tabs/advanced_tools_tab.py:258
 #: src/er_save_manager/ui/tabs/appearance_tab.py:210
@@ -517,7 +520,7 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/character_management_tab.py:918
 #: src/er_save_manager/ui/tabs/character_management_tab.py:985
 #: src/er_save_manager/ui/tabs/character_management_tab.py:1094
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:352
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:353
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:223
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:304
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:476
@@ -530,15 +533,15 @@ msgid "No Save"
 msgstr ""
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:303
-#: src/er_save_manager/ui/editors/equipment_editor.py:1461
-#: src/er_save_manager/ui/editors/equipment_editor.py:1596
-#: src/er_save_manager/ui/editors/equipment_editor.py:1866
-#: src/er_save_manager/ui/editors/equipment_editor.py:1894
-#: src/er_save_manager/ui/editors/equipment_editor.py:1960
-#: src/er_save_manager/ui/editors/equipment_editor.py:1998
-#: src/er_save_manager/ui/editors/equipment_editor.py:2133
-#: src/er_save_manager/ui/editors/equipment_editor.py:2159
-#: src/er_save_manager/ui/editors/inventory_editor.py:1627
+#: src/er_save_manager/ui/editors/equipment_editor.py:1468
+#: src/er_save_manager/ui/editors/equipment_editor.py:1603
+#: src/er_save_manager/ui/editors/equipment_editor.py:1873
+#: src/er_save_manager/ui/editors/equipment_editor.py:1901
+#: src/er_save_manager/ui/editors/equipment_editor.py:1967
+#: src/er_save_manager/ui/editors/equipment_editor.py:2005
+#: src/er_save_manager/ui/editors/equipment_editor.py:2140
+#: src/er_save_manager/ui/editors/equipment_editor.py:2166
+#: src/er_save_manager/ui/editors/inventory_editor.py:1642
 #: src/er_save_manager/ui/tabs/appearance_tab.py:210
 #: src/er_save_manager/ui/tabs/world_state_tab.py:217
 msgid "Please load a save file first."
@@ -602,57 +605,57 @@ msgstr ""
 #: src/er_save_manager/games/NR/character_management_tab.py:655
 #: src/er_save_manager/games/NR/character_management_tab.py:665
 #: src/er_save_manager/games/NR/character_management_tab.py:708
-#: src/er_save_manager/ui/dialogs/character_browser.py:1822
+#: src/er_save_manager/ui/dialogs/character_browser.py:1830
 #: src/er_save_manager/ui/dialogs/character_details.py:501
 #: src/er_save_manager/ui/dialogs/character_details.py:583
 #: src/er_save_manager/ui/dialogs/character_details.py:713
 #: src/er_save_manager/ui/dialogs/character_details.py:757
 #: src/er_save_manager/ui/dialogs/character_details.py:805
 #: src/er_save_manager/ui/dialogs/character_details.py:947
-#: src/er_save_manager/ui/dialogs/preset_browser.py:487
-#: src/er_save_manager/ui/dialogs/preset_browser.py:494
 #: src/er_save_manager/ui/dialogs/preset_browser.py:501
-#: src/er_save_manager/ui/dialogs/preset_browser.py:512
-#: src/er_save_manager/ui/dialogs/preset_browser.py:523
-#: src/er_save_manager/ui/dialogs/preset_browser.py:529
-#: src/er_save_manager/ui/dialogs/preset_browser.py:540
-#: src/er_save_manager/ui/dialogs/preset_browser.py:568
-#: src/er_save_manager/ui/dialogs/preset_browser.py:913
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1157
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1166
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1172
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1221
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1307
-#: src/er_save_manager/ui/editors/character_info_editor.py:491
+#: src/er_save_manager/ui/dialogs/preset_browser.py:508
+#: src/er_save_manager/ui/dialogs/preset_browser.py:515
+#: src/er_save_manager/ui/dialogs/preset_browser.py:526
+#: src/er_save_manager/ui/dialogs/preset_browser.py:537
+#: src/er_save_manager/ui/dialogs/preset_browser.py:543
+#: src/er_save_manager/ui/dialogs/preset_browser.py:554
+#: src/er_save_manager/ui/dialogs/preset_browser.py:582
+#: src/er_save_manager/ui/dialogs/preset_browser.py:927
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1171
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1180
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1186
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1235
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1321
 #: src/er_save_manager/ui/editors/character_info_editor.py:495
-#: src/er_save_manager/ui/editors/character_info_editor.py:500
-#: src/er_save_manager/ui/editors/equipment_editor.py:1631
-#: src/er_save_manager/ui/editors/equipment_editor.py:1726
-#: src/er_save_manager/ui/editors/equipment_editor.py:1885
-#: src/er_save_manager/ui/editors/equipment_editor.py:1989
-#: src/er_save_manager/ui/editors/equipment_editor.py:2015
-#: src/er_save_manager/ui/editors/equipment_editor.py:2147
-#: src/er_save_manager/ui/editors/inventory_editor.py:1696
-#: src/er_save_manager/ui/editors/inventory_editor.py:2068
-#: src/er_save_manager/ui/editors/inventory_editor.py:2229
-#: src/er_save_manager/ui/editors/inventory_editor.py:2281
-#: src/er_save_manager/ui/editors/inventory_editor.py:2369
-#: src/er_save_manager/ui/editors/inventory_editor.py:2522
-#: src/er_save_manager/ui/editors/inventory_editor.py:2729
-#: src/er_save_manager/ui/editors/inventory_editor.py:3007
-#: src/er_save_manager/ui/editors/inventory_editor.py:3040
-#: src/er_save_manager/ui/editors/inventory_editor.py:3392
-#: src/er_save_manager/ui/editors/inventory_editor.py:3408
-#: src/er_save_manager/ui/editors/inventory_editor.py:3426
-#: src/er_save_manager/ui/editors/inventory_editor.py:3546
+#: src/er_save_manager/ui/editors/character_info_editor.py:499
+#: src/er_save_manager/ui/editors/character_info_editor.py:504
+#: src/er_save_manager/ui/editors/equipment_editor.py:1638
+#: src/er_save_manager/ui/editors/equipment_editor.py:1733
+#: src/er_save_manager/ui/editors/equipment_editor.py:1892
+#: src/er_save_manager/ui/editors/equipment_editor.py:1996
+#: src/er_save_manager/ui/editors/equipment_editor.py:2022
+#: src/er_save_manager/ui/editors/equipment_editor.py:2154
+#: src/er_save_manager/ui/editors/inventory_editor.py:1711
+#: src/er_save_manager/ui/editors/inventory_editor.py:2083
+#: src/er_save_manager/ui/editors/inventory_editor.py:2244
+#: src/er_save_manager/ui/editors/inventory_editor.py:2296
+#: src/er_save_manager/ui/editors/inventory_editor.py:2384
+#: src/er_save_manager/ui/editors/inventory_editor.py:2537
+#: src/er_save_manager/ui/editors/inventory_editor.py:2744
+#: src/er_save_manager/ui/editors/inventory_editor.py:3022
+#: src/er_save_manager/ui/editors/inventory_editor.py:3055
+#: src/er_save_manager/ui/editors/inventory_editor.py:3407
+#: src/er_save_manager/ui/editors/inventory_editor.py:3423
+#: src/er_save_manager/ui/editors/inventory_editor.py:3441
+#: src/er_save_manager/ui/editors/inventory_editor.py:3561
 #: src/er_save_manager/ui/editors/stats_editor.py:809
 #: src/er_save_manager/ui/editors/stats_editor.py:815
 #: src/er_save_manager/ui/editors/stats_editor.py:822
-#: src/er_save_manager/ui/gui.py:309 src/er_save_manager/ui/gui.py:1718
-#: src/er_save_manager/ui/gui.py:2015 src/er_save_manager/ui/gui.py:2164
-#: src/er_save_manager/ui/gui.py:2191 src/er_save_manager/ui/gui.py:2250
-#: src/er_save_manager/ui/gui.py:2304 src/er_save_manager/ui/gui.py:2353
-#: src/er_save_manager/ui/gui.py:2596
+#: src/er_save_manager/ui/gui.py:310 src/er_save_manager/ui/gui.py:1719
+#: src/er_save_manager/ui/gui.py:2016 src/er_save_manager/ui/gui.py:2165
+#: src/er_save_manager/ui/gui.py:2192 src/er_save_manager/ui/gui.py:2251
+#: src/er_save_manager/ui/gui.py:2305 src/er_save_manager/ui/gui.py:2354
+#: src/er_save_manager/ui/gui.py:2597
 #: src/er_save_manager/ui/nyasu_import.py:330
 #: src/er_save_manager/ui/tabs/advanced_tools_tab.py:292
 #: src/er_save_manager/ui/tabs/appearance_tab.py:227
@@ -679,14 +682,14 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/appearance_tab.py:1599
 #: src/er_save_manager/ui/tabs/appearance_tab.py:1660
 #: src/er_save_manager/ui/tabs/appearance_tab.py:1688
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:338
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:394
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:533
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:657
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:683
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:732
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:840
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:846
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:339
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:395
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:543
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:667
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:693
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:742
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:850
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:856
 #: src/er_save_manager/ui/tabs/character_management_tab.py:533
 #: src/er_save_manager/ui/tabs/character_management_tab.py:544
 #: src/er_save_manager/ui/tabs/character_management_tab.py:617
@@ -699,11 +702,11 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/character_management_tab.py:963
 #: src/er_save_manager/ui/tabs/character_management_tab.py:1056
 #: src/er_save_manager/ui/tabs/character_management_tab.py:1154
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:371
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:963
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1017
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1038
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1042
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:372
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:964
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1018
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1039
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1043
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:366
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:378
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:392
@@ -833,6 +836,7 @@ msgstr ""
 #: src/er_save_manager/games/DSR/character_management_tab.py:476
 #: src/er_save_manager/games/NR/character_management_tab.py:484
 #: src/er_save_manager/ui/dialogs/character_details.py:940
+#: src/er_save_manager/ui/gui.py:1349
 #: src/er_save_manager/ui/tabs/character_management_tab.py:1103
 msgid "Info"
 msgstr ""
@@ -850,9 +854,9 @@ msgstr ""
 #: src/er_save_manager/games/DS3/character_management_tab.py:484
 #: src/er_save_manager/games/DSR/character_management_tab.py:484
 #: src/er_save_manager/games/NR/character_management_tab.py:492
-#: src/er_save_manager/ui/editors/inventory_editor.py:3335
+#: src/er_save_manager/ui/editors/inventory_editor.py:3350
 #: src/er_save_manager/ui/tabs/appearance_tab.py:1636
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:718
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:728
 #: src/er_save_manager/ui/tabs/character_management_tab.py:1112
 msgid "Confirm Delete"
 msgstr ""
@@ -929,82 +933,95 @@ msgid ""
 "{stale_summary_note}"
 msgstr ""
 
-#: src/er_save_manager/games/DS2/editor_tab.py:49
+#: src/er_save_manager/games/DS2/editor_tab.py:50
 msgid "Character slot:"
 msgstr ""
 
-#: src/er_save_manager/games/DS2/editor_tab.py:59
-#: src/er_save_manager/games/NR/editor_tab.py:174
+#: src/er_save_manager/games/DS2/editor_tab.py:60
+#: src/er_save_manager/games/NR/editor_tab.py:175
 msgid "Load Slot"
 msgstr ""
 
-#: src/er_save_manager/games/DS2/editor_tab.py:94
-#: src/er_save_manager/games/DS3/tabs/editor.py:166
+#: src/er_save_manager/games/DS2/editor_tab.py:69
+#: src/er_save_manager/games/DS3/tabs/editor.py:76
+#: src/er_save_manager/games/DSR/editor_tab.py:116
+#: src/er_save_manager/ui/gui.py:1325
+msgid "Stats"
+msgstr ""
+
+#: src/er_save_manager/games/DS2/editor_tab.py:70
+#: src/er_save_manager/ui/gui.py:977 src/er_save_manager/ui/gui.py:1147
+#: src/er_save_manager/ui/gui.py:1364
+msgid "Inventory"
+msgstr ""
+
+#: src/er_save_manager/games/DS2/editor_tab.py:95
+#: src/er_save_manager/games/DS3/tabs/editor.py:167
 msgid "NG+:"
 msgstr ""
 
-#: src/er_save_manager/games/DS2/editor_tab.py:106
+#: src/er_save_manager/games/DS2/editor_tab.py:107
 msgid "HP:"
 msgstr ""
 
-#: src/er_save_manager/games/DS2/editor_tab.py:115
+#: src/er_save_manager/games/DS2/editor_tab.py:116
 msgid "Level & Attributes"
 msgstr ""
 
-#: src/er_save_manager/games/DS2/editor_tab.py:118
+#: src/er_save_manager/games/DS2/editor_tab.py:119
 #: src/er_save_manager/ui/editors/stats_editor.py:192
 msgid "Level:"
 msgstr ""
 
-#: src/er_save_manager/games/DS2/editor_tab.py:145
-#: src/er_save_manager/games/DS3/tabs/editor.py:145
-#: src/er_save_manager/games/DS3/tabs/editor.py:184
-#: src/er_save_manager/games/DSR/editor_tab.py:190
-#: src/er_save_manager/games/DSR/editor_tab.py:252
+#: src/er_save_manager/games/DS2/editor_tab.py:146
+#: src/er_save_manager/games/DS3/tabs/editor.py:146
+#: src/er_save_manager/games/DS3/tabs/editor.py:185
+#: src/er_save_manager/games/DSR/editor_tab.py:191
+#: src/er_save_manager/games/DSR/editor_tab.py:253
 #: src/er_save_manager/games/DSR/inventory_tab.py:296
-#: src/er_save_manager/ui/editors/character_info_editor.py:256
+#: src/er_save_manager/ui/editors/character_info_editor.py:260
 #: src/er_save_manager/ui/editors/stats_editor.py:374
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:187
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:188
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:174
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:334
 msgid "Apply Changes"
 msgstr ""
 
-#: src/er_save_manager/games/DS2/editor_tab.py:213
+#: src/er_save_manager/games/DS2/editor_tab.py:214
 msgid "Enter whole numbers for all stats to recalculate level"
 msgstr ""
 
-#: src/er_save_manager/games/DS2/editor_tab.py:223
+#: src/er_save_manager/games/DS2/editor_tab.py:224
 #, python-brace-format
 msgid "(auto-calculated from stat changes: {computed_level})"
 msgstr ""
 
-#: src/er_save_manager/games/DS2/editor_tab.py:257
+#: src/er_save_manager/games/DS2/editor_tab.py:258
 msgid "Never created in-game - edits here will not appear at the load screen"
 msgstr ""
 
-#: src/er_save_manager/games/DS2/editor_tab.py:301
+#: src/er_save_manager/games/DS2/editor_tab.py:302
 msgid "Invalid numeric value, changes not applied"
 msgstr ""
 
-#: src/er_save_manager/games/DS2/editor_tab.py:309
+#: src/er_save_manager/games/DS2/editor_tab.py:310
 #, python-brace-format
 msgid ""
 "Level ({entered_level}) does not match what these stats add up to "
 "({expected_level}). Adjust stats or Level to match before saving."
 msgstr ""
 
-#: src/er_save_manager/games/DS2/editor_tab.py:325
+#: src/er_save_manager/games/DS2/editor_tab.py:326
 msgid "No save path to write to"
 msgstr ""
 
-#: src/er_save_manager/games/DS2/editor_tab.py:335
+#: src/er_save_manager/games/DS2/editor_tab.py:336
 #: src/er_save_manager/games/DS2/inventory_tab.py:416
 #, python-brace-format
 msgid "Failed to write save: {e}"
 msgstr ""
 
-#: src/er_save_manager/games/DS2/editor_tab.py:339
+#: src/er_save_manager/games/DS2/editor_tab.py:340
 msgid "Changes saved to disk"
 msgstr ""
 
@@ -1012,6 +1029,8 @@ msgstr ""
 #: src/er_save_manager/games/DS3/tabs/inspector.py:27
 #: src/er_save_manager/games/DSR/inspector_tab.py:47
 #: src/er_save_manager/games/NR/inspector_tab.py:43
+#: src/er_save_manager/ui/gui.py:942 src/er_save_manager/ui/gui.py:1033
+#: src/er_save_manager/ui/gui.py:1112
 msgid "Save Inspector"
 msgstr ""
 
@@ -1030,34 +1049,34 @@ msgstr ""
 #: src/er_save_manager/games/DS2/inventory_tab.py:103
 #: src/er_save_manager/games/DS2/inventory_tab.py:144
 #: src/er_save_manager/games/DSR/inventory_tab.py:334
-#: src/er_save_manager/ui/editors/inventory_editor.py:838
-#: src/er_save_manager/ui/icon_browser.py:295
+#: src/er_save_manager/ui/editors/inventory_editor.py:839
+#: src/er_save_manager/ui/icon_browser.py:301
 msgid "Add Item"
 msgstr ""
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:109
 #: src/er_save_manager/games/DS2/inventory_tab.py:159
-#: src/er_save_manager/ui/editors/equipment_editor.py:401
-#: src/er_save_manager/ui/editors/equipment_editor.py:809
-#: src/er_save_manager/ui/editors/inventory_editor.py:1027
-#: src/er_save_manager/ui/icon_browser.py:169
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:265
-#: src/er_save_manager/ui/visual_inventory.py:236
+#: src/er_save_manager/ui/editors/equipment_editor.py:402
+#: src/er_save_manager/ui/editors/equipment_editor.py:813
+#: src/er_save_manager/ui/editors/inventory_editor.py:1032
+#: src/er_save_manager/ui/icon_browser.py:170
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:266
+#: src/er_save_manager/ui/visual_inventory.py:237
 msgid "Category:"
 msgstr ""
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:124
-#: src/er_save_manager/games/NR/editor_tab.py:354
-#: src/er_save_manager/ui/dialogs/character_browser.py:161
-#: src/er_save_manager/ui/dialogs/preset_browser.py:114
-#: src/er_save_manager/ui/editors/equipment_editor.py:393
-#: src/er_save_manager/ui/editors/equipment_editor.py:802
-#: src/er_save_manager/ui/editors/inventory_editor.py:770
-#: src/er_save_manager/ui/editors/inventory_editor.py:1487
-#: src/er_save_manager/ui/editors/inventory_editor.py:2830
-#: src/er_save_manager/ui/icon_browser.py:150
-#: src/er_save_manager/ui/icon_browser.py:584
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:301
+#: src/er_save_manager/games/NR/editor_tab.py:355
+#: src/er_save_manager/ui/dialogs/character_browser.py:163
+#: src/er_save_manager/ui/dialogs/preset_browser.py:116
+#: src/er_save_manager/ui/editors/equipment_editor.py:394
+#: src/er_save_manager/ui/editors/equipment_editor.py:806
+#: src/er_save_manager/ui/editors/inventory_editor.py:771
+#: src/er_save_manager/ui/editors/inventory_editor.py:1502
+#: src/er_save_manager/ui/editors/inventory_editor.py:2845
+#: src/er_save_manager/ui/icon_browser.py:151
+#: src/er_save_manager/ui/icon_browser.py:590
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:302
 #: src/er_save_manager/ui/tabs/world_state_tab.py:344
 msgid "Search:"
 msgstr ""
@@ -1070,31 +1089,31 @@ msgstr ""
 #: src/er_save_manager/games/DS2/inventory_tab.py:140
 #: src/er_save_manager/games/DSR/inventory_tab.py:261
 #: src/er_save_manager/games/DSR/inventory_tab.py:384
-#: src/er_save_manager/ui/editors/inventory_editor.py:890
-#: src/er_save_manager/ui/icon_browser.py:205
+#: src/er_save_manager/ui/editors/inventory_editor.py:891
+#: src/er_save_manager/ui/icon_browser.py:206
 msgid "Quantity:"
 msgstr ""
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:154
 #: src/er_save_manager/games/DSR/inventory_tab.py:205
-#: src/er_save_manager/ui/editors/inventory_editor.py:1011
+#: src/er_save_manager/ui/editors/inventory_editor.py:1014
 msgid "Current Inventory"
 msgstr ""
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:172
 #: src/er_save_manager/games/DS3/tabs/inventory.py:215
 #: src/er_save_manager/games/DSR/inventory_tab.py:212
-#: src/er_save_manager/ui/dialogs/character_browser.py:168
-#: src/er_save_manager/ui/dialogs/preset_browser.py:121
-#: src/er_save_manager/ui/editors/inventory_editor.py:1040
-#: src/er_save_manager/ui/visual_inventory.py:251
+#: src/er_save_manager/ui/dialogs/character_browser.py:170
+#: src/er_save_manager/ui/dialogs/preset_browser.py:123
+#: src/er_save_manager/ui/editors/inventory_editor.py:1055
+#: src/er_save_manager/ui/visual_inventory.py:252
 msgid "Filter:"
 msgstr ""
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:202
 #: src/er_save_manager/games/DSR/inventory_tab.py:313
-#: src/er_save_manager/ui/editors/inventory_editor.py:1098
-#: src/er_save_manager/ui/editors/inventory_editor.py:3191
+#: src/er_save_manager/ui/editors/inventory_editor.py:1113
+#: src/er_save_manager/ui/editors/inventory_editor.py:3206
 msgid "Remove Selected"
 msgstr ""
 
@@ -1103,7 +1122,7 @@ msgid "New qty:"
 msgstr ""
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:208
-#: src/er_save_manager/ui/editors/inventory_editor.py:1104
+#: src/er_save_manager/ui/editors/inventory_editor.py:1119
 msgid "Set Quantity"
 msgstr ""
 
@@ -1135,10 +1154,10 @@ msgstr ""
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:350
 #: src/er_save_manager/games/DS2/inventory_tab.py:375
-#: src/er_save_manager/ui/editors/inventory_editor.py:986
-#: src/er_save_manager/ui/icon_browser.py:192
-#: src/er_save_manager/ui/visual_inventory.py:300
-#: src/er_save_manager/ui/visual_inventory.py:600
+#: src/er_save_manager/ui/editors/inventory_editor.py:989
+#: src/er_save_manager/ui/icon_browser.py:193
+#: src/er_save_manager/ui/visual_inventory.py:310
+#: src/er_save_manager/ui/visual_inventory.py:610
 msgid "No item selected"
 msgstr ""
 
@@ -1250,25 +1269,25 @@ msgstr ""
 #: src/er_save_manager/games/DS3/character_management_tab.py:318
 #: src/er_save_manager/games/DS3/tabs/bosses.py:260
 #: src/er_save_manager/games/DS3/tabs/bosses.py:279
-#: src/er_save_manager/games/DS3/tabs/editor.py:215
+#: src/er_save_manager/games/DS3/tabs/editor.py:216
 #: src/er_save_manager/games/DS3/tabs/inventory.py:417
 #: src/er_save_manager/games/DS3/tabs/world_state.py:327
 #: src/er_save_manager/games/DS3/tabs/world_state.py:347
 #: src/er_save_manager/games/DSR/character_management_tab.py:318
-#: src/er_save_manager/games/DSR/editor_tab.py:288
-#: src/er_save_manager/games/DSR/event_flags_tab.py:575
+#: src/er_save_manager/games/DSR/editor_tab.py:289
+#: src/er_save_manager/games/DSR/event_flags_tab.py:576
 #: src/er_save_manager/games/DSR/inventory_tab.py:541
 #: src/er_save_manager/games/DSR/npc_tab.py:451
 #: src/er_save_manager/games/DSR/world_state_tab.py:199
 #: src/er_save_manager/games/NR/character_management_tab.py:321
 #: src/er_save_manager/games/NR/inspector_tab.py:166
-#: src/er_save_manager/ui/dialogs/character_browser.py:610
-#: src/er_save_manager/ui/editors/inventory_editor.py:1636
-#: src/er_save_manager/ui/editors/inventory_editor.py:3036
-#: src/er_save_manager/ui/gui.py:1421
+#: src/er_save_manager/ui/dialogs/character_browser.py:618
+#: src/er_save_manager/ui/editors/inventory_editor.py:1651
+#: src/er_save_manager/ui/editors/inventory_editor.py:3051
+#: src/er_save_manager/ui/gui.py:1422
 #: src/er_save_manager/ui/tabs/appearance_tab.py:220
 #: src/er_save_manager/ui/tabs/appearance_tab.py:1481
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:361
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:362
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:247
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:321
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:491
@@ -1314,9 +1333,9 @@ msgstr ""
 #: src/er_save_manager/games/NR/character_management_tab.py:528
 #: src/er_save_manager/games/NR/character_management_tab.py:576
 #: src/er_save_manager/games/NR/character_management_tab.py:635
-#: src/er_save_manager/ui/editors/character_info_editor.py:344
+#: src/er_save_manager/ui/editors/character_info_editor.py:348
 #: src/er_save_manager/ui/editors/stats_editor.py:632
-#: src/er_save_manager/ui/gui.py:1401
+#: src/er_save_manager/ui/gui.py:1402
 #: src/er_save_manager/ui/tabs/advanced_tools_tab.py:158
 #: src/er_save_manager/ui/tabs/advanced_tools_tab.py:258
 #: src/er_save_manager/ui/tabs/appearance_tab.py:474
@@ -1331,7 +1350,7 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/character_management_tab.py:918
 #: src/er_save_manager/ui/tabs/character_management_tab.py:985
 #: src/er_save_manager/ui/tabs/character_management_tab.py:1094
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:352
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:353
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:223
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:304
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:476
@@ -1475,32 +1494,33 @@ msgstr ""
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:58
 #: src/er_save_manager/games/DSR/npc_tab.py:186
+#: src/er_save_manager/ui/gui.py:986
 msgid "Bosses"
 msgstr ""
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:62
 #: src/er_save_manager/games/DS3/tabs/inventory.py:187
 #: src/er_save_manager/games/DS3/tabs/world_state.py:64
-#: src/er_save_manager/games/DSR/event_flags_tab.py:95
+#: src/er_save_manager/games/DSR/event_flags_tab.py:96
 #: src/er_save_manager/games/DSR/inventory_tab.py:177
 #: src/er_save_manager/games/DSR/npc_tab.py:87
 #: src/er_save_manager/games/DSR/world_state_tab.py:61
-#: src/er_save_manager/ui/editors/equipment_editor.py:612
+#: src/er_save_manager/ui/editors/equipment_editor.py:616
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:146
 #: src/er_save_manager/ui/tabs/world_state_tab.py:128
 msgid "Load"
 msgstr ""
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:69
-#: src/er_save_manager/games/DS3/tabs/editor.py:65
+#: src/er_save_manager/games/DS3/tabs/editor.py:66
 #: src/er_save_manager/games/DS3/tabs/inventory.py:194
 #: src/er_save_manager/games/DS3/tabs/world_state.py:71
-#: src/er_save_manager/games/DSR/editor_tab.py:104
-#: src/er_save_manager/games/DSR/event_flags_tab.py:102
+#: src/er_save_manager/games/DSR/editor_tab.py:105
+#: src/er_save_manager/games/DSR/event_flags_tab.py:103
 #: src/er_save_manager/games/DSR/inventory_tab.py:184
 #: src/er_save_manager/games/DSR/npc_tab.py:94
 #: src/er_save_manager/games/DSR/world_state_tab.py:72
-#: src/er_save_manager/games/NR/editor_tab.py:185
+#: src/er_save_manager/games/NR/editor_tab.py:186
 #: src/er_save_manager/ui/tabs/character_management_tab.py:411
 #: src/er_save_manager/ui/tabs/character_management_tab.py:483
 #: src/er_save_manager/ui/tabs/world_state_tab.py:114
@@ -1552,8 +1572,8 @@ msgstr ""
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:218
 #: src/er_save_manager/games/DS3/tabs/bosses.py:249
-#: src/er_save_manager/games/DS3/tabs/editor.py:320
-#: src/er_save_manager/games/DS3/tabs/editor.py:358
+#: src/er_save_manager/games/DS3/tabs/editor.py:321
+#: src/er_save_manager/games/DS3/tabs/editor.py:359
 #: src/er_save_manager/games/DS3/tabs/inventory.py:772
 #: src/er_save_manager/games/DS3/tabs/inventory.py:805
 #: src/er_save_manager/games/DS3/tabs/inventory.py:897
@@ -1561,11 +1581,11 @@ msgstr ""
 #: src/er_save_manager/games/DS3/tabs/world_state.py:276
 #: src/er_save_manager/games/DS3/tabs/world_state.py:297
 #: src/er_save_manager/games/DS3/tabs/world_state.py:316
-#: src/er_save_manager/games/DSR/editor_tab.py:385
-#: src/er_save_manager/games/DSR/editor_tab.py:429
-#: src/er_save_manager/games/DSR/event_flags_tab.py:256
-#: src/er_save_manager/games/DSR/event_flags_tab.py:424
-#: src/er_save_manager/games/DSR/event_flags_tab.py:447
+#: src/er_save_manager/games/DSR/editor_tab.py:386
+#: src/er_save_manager/games/DSR/editor_tab.py:430
+#: src/er_save_manager/games/DSR/event_flags_tab.py:257
+#: src/er_save_manager/games/DSR/event_flags_tab.py:425
+#: src/er_save_manager/games/DSR/event_flags_tab.py:448
 #: src/er_save_manager/games/DSR/inventory_tab.py:767
 #: src/er_save_manager/games/DSR/inventory_tab.py:801
 #: src/er_save_manager/games/DSR/inventory_tab.py:861
@@ -1576,28 +1596,28 @@ msgstr ""
 #: src/er_save_manager/games/DSR/npc_tab.py:435
 #: src/er_save_manager/games/DSR/world_state_tab.py:254
 #: src/er_save_manager/games/DSR/world_state_tab.py:280
-#: src/er_save_manager/games/NR/editor_tab.py:318
-#: src/er_save_manager/games/NR/editor_tab.py:877
+#: src/er_save_manager/games/NR/editor_tab.py:319
+#: src/er_save_manager/games/NR/editor_tab.py:878
 msgid "Save Failed"
 msgstr ""
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:228
-#: src/er_save_manager/games/DS3/tabs/editor.py:288
-#: src/er_save_manager/games/DS3/tabs/editor.py:336
-#: src/er_save_manager/games/DSR/editor_tab.py:360
-#: src/er_save_manager/games/DSR/editor_tab.py:400
+#: src/er_save_manager/games/DS3/tabs/editor.py:289
+#: src/er_save_manager/games/DS3/tabs/editor.py:337
+#: src/er_save_manager/games/DSR/editor_tab.py:361
+#: src/er_save_manager/games/DSR/editor_tab.py:401
 #: src/er_save_manager/games/DSR/npc_tab.py:386
 #: src/er_save_manager/games/DSR/npc_tab.py:416
 #: src/er_save_manager/ui/dialogs/character_details.py:764
 #: src/er_save_manager/ui/dialogs/character_details.py:838
-#: src/er_save_manager/ui/editors/character_info_editor.py:351
-#: src/er_save_manager/ui/editors/equipment_editor.py:1603
+#: src/er_save_manager/ui/editors/character_info_editor.py:355
+#: src/er_save_manager/ui/editors/equipment_editor.py:1610
 #: src/er_save_manager/ui/editors/stats_editor.py:648
 #: src/er_save_manager/ui/tabs/appearance_tab.py:362
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:605
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1465
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1658
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:2072
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:606
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1468
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1661
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:2075
 msgid "Confirm"
 msgstr ""
 
@@ -1607,11 +1627,11 @@ msgid "{value} all bosses in Slot {current_slot}?"
 msgstr ""
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:261
-#: src/er_save_manager/games/DS3/tabs/editor.py:216
+#: src/er_save_manager/games/DS3/tabs/editor.py:217
 #: src/er_save_manager/games/DS3/tabs/inventory.py:418
 #: src/er_save_manager/games/DS3/tabs/world_state.py:328
-#: src/er_save_manager/games/DSR/editor_tab.py:289
-#: src/er_save_manager/games/DSR/event_flags_tab.py:576
+#: src/er_save_manager/games/DSR/editor_tab.py:290
+#: src/er_save_manager/games/DSR/event_flags_tab.py:577
 #: src/er_save_manager/games/DSR/inventory_tab.py:542
 #: src/er_save_manager/games/DSR/npc_tab.py:452
 #: src/er_save_manager/games/DSR/world_state_tab.py:200
@@ -1629,48 +1649,55 @@ msgstr ""
 msgid "No character in this slot."
 msgstr ""
 
-#: src/er_save_manager/games/DS3/tabs/editor.py:51
-#: src/er_save_manager/games/DSR/editor_tab.py:87
-#: src/er_save_manager/ui/gui.py:1267
+#: src/er_save_manager/games/DS3/tabs/editor.py:52
+#: src/er_save_manager/games/DSR/editor_tab.py:88
+#: src/er_save_manager/ui/gui.py:818 src/er_save_manager/ui/gui.py:950
+#: src/er_save_manager/ui/gui.py:1055 src/er_save_manager/ui/gui.py:1120
+#: src/er_save_manager/ui/gui.py:1268
 msgid "Character Editor"
 msgstr ""
 
-#: src/er_save_manager/games/DS3/tabs/editor.py:54
-#: src/er_save_manager/games/DSR/editor_tab.py:91
-#: src/er_save_manager/ui/gui.py:1298
+#: src/er_save_manager/games/DS3/tabs/editor.py:55
+#: src/er_save_manager/games/DSR/editor_tab.py:92
+#: src/er_save_manager/ui/gui.py:1299
 msgid "Load Character"
 msgstr ""
 
-#: src/er_save_manager/games/DS3/tabs/editor.py:91
-#: src/er_save_manager/games/DSR/editor_tab.py:130
+#: src/er_save_manager/games/DS3/tabs/editor.py:77
+#: src/er_save_manager/games/DSR/editor_tab.py:117
+msgid "Identity"
+msgstr ""
+
+#: src/er_save_manager/games/DS3/tabs/editor.py:92
+#: src/er_save_manager/games/DSR/editor_tab.py:131
 #: src/er_save_manager/ui/editors/stats_editor.py:97
 msgid "Attributes"
 msgstr ""
 
-#: src/er_save_manager/games/DS3/tabs/editor.py:121
-#: src/er_save_manager/games/DSR/editor_tab.py:160
+#: src/er_save_manager/games/DS3/tabs/editor.py:122
+#: src/er_save_manager/games/DSR/editor_tab.py:161
 msgid "Resources"
 msgstr ""
 
-#: src/er_save_manager/games/DS3/tabs/editor.py:158
-#: src/er_save_manager/games/DSR/editor_tab.py:203
+#: src/er_save_manager/games/DS3/tabs/editor.py:159
+#: src/er_save_manager/games/DSR/editor_tab.py:204
 msgid "Character Identity"
 msgstr ""
 
-#: src/er_save_manager/games/DS3/tabs/editor.py:160
-#: src/er_save_manager/ui/editors/character_info_editor.py:75
+#: src/er_save_manager/games/DS3/tabs/editor.py:161
+#: src/er_save_manager/ui/editors/character_info_editor.py:76
 msgid "Name:"
 msgstr ""
 
-#: src/er_save_manager/games/DS3/tabs/editor.py:179
+#: src/er_save_manager/games/DS3/tabs/editor.py:180
 msgid "Name supports up to 16 characters."
 msgstr ""
 
-#: src/er_save_manager/games/DS3/tabs/editor.py:280
-#: src/er_save_manager/games/DS3/tabs/editor.py:328
+#: src/er_save_manager/games/DS3/tabs/editor.py:281
+#: src/er_save_manager/games/DS3/tabs/editor.py:329
 #: src/er_save_manager/games/DS3/tabs/inventory.py:831
-#: src/er_save_manager/games/DSR/editor_tab.py:353
-#: src/er_save_manager/games/DSR/editor_tab.py:393
+#: src/er_save_manager/games/DSR/editor_tab.py:354
+#: src/er_save_manager/games/DSR/editor_tab.py:394
 #: src/er_save_manager/ui/tabs/world_state_tab.py:268
 #: src/er_save_manager/ui/tabs/world_state_tab.py:307
 #: src/er_save_manager/ui/tabs/world_state_tab.py:432
@@ -1679,17 +1706,17 @@ msgstr ""
 msgid "Load a character first."
 msgstr ""
 
-#: src/er_save_manager/games/DS3/tabs/editor.py:280
-#: src/er_save_manager/games/DS3/tabs/editor.py:328
+#: src/er_save_manager/games/DS3/tabs/editor.py:281
+#: src/er_save_manager/games/DS3/tabs/editor.py:329
 #: src/er_save_manager/games/DS3/tabs/inventory.py:831
-#: src/er_save_manager/games/DSR/editor_tab.py:353
-#: src/er_save_manager/games/DSR/editor_tab.py:393
+#: src/er_save_manager/games/DSR/editor_tab.py:354
+#: src/er_save_manager/games/DSR/editor_tab.py:394
 #: src/er_save_manager/ui/tabs/world_state_tab.py:307
 msgid "No Character"
 msgstr ""
 
-#: src/er_save_manager/games/DS3/tabs/editor.py:290
-#: src/er_save_manager/games/DSR/editor_tab.py:362
+#: src/er_save_manager/games/DS3/tabs/editor.py:291
+#: src/er_save_manager/games/DSR/editor_tab.py:363
 #, python-brace-format
 msgid ""
 "Apply stat changes to Slot {current_slot}?\n"
@@ -1697,19 +1724,19 @@ msgid ""
 "A backup will be created."
 msgstr ""
 
-#: src/er_save_manager/games/DS3/tabs/editor.py:312
-#: src/er_save_manager/games/DS3/tabs/editor.py:350
+#: src/er_save_manager/games/DS3/tabs/editor.py:313
+#: src/er_save_manager/games/DS3/tabs/editor.py:351
 #: src/er_save_manager/games/DS3/tabs/inventory.py:746
 #: src/er_save_manager/games/DS3/tabs/inventory.py:839
-#: src/er_save_manager/games/DSR/editor_tab.py:377
-#: src/er_save_manager/games/DSR/editor_tab.py:421
+#: src/er_save_manager/games/DSR/editor_tab.py:378
+#: src/er_save_manager/games/DSR/editor_tab.py:422
 #: src/er_save_manager/games/DSR/inventory_tab.py:827
 #: src/er_save_manager/ui/editors/stats_editor.py:707
 msgid "Invalid Value"
 msgstr ""
 
-#: src/er_save_manager/games/DS3/tabs/editor.py:338
-#: src/er_save_manager/games/DSR/editor_tab.py:402
+#: src/er_save_manager/games/DS3/tabs/editor.py:339
+#: src/er_save_manager/games/DSR/editor_tab.py:403
 #, python-brace-format
 msgid ""
 "Apply identity changes to Slot {current_slot}?\n"
@@ -1736,27 +1763,27 @@ msgstr ""
 #: src/er_save_manager/games/DS3/tabs/inspector.py:106
 #: src/er_save_manager/games/DS3/tabs/inventory.py:733
 #: src/er_save_manager/games/DS3/tabs/inventory.py:780
-#: src/er_save_manager/games/DSR/event_flags_tab.py:234
+#: src/er_save_manager/games/DSR/event_flags_tab.py:235
 #: src/er_save_manager/games/DSR/inspector_tab.py:128
 #: src/er_save_manager/games/DSR/inventory_tab.py:777
-#: src/er_save_manager/games/NR/editor_tab.py:821
-#: src/er_save_manager/games/NR/editor_tab.py:885
+#: src/er_save_manager/games/NR/editor_tab.py:822
+#: src/er_save_manager/games/NR/editor_tab.py:886
 #: src/er_save_manager/games/NR/inspector_tab.py:157
-#: src/er_save_manager/ui/editors/inventory_editor.py:2238
-#: src/er_save_manager/ui/editors/inventory_editor.py:2290
-#: src/er_save_manager/ui/editors/inventory_editor.py:2414
+#: src/er_save_manager/ui/editors/inventory_editor.py:2253
+#: src/er_save_manager/ui/editors/inventory_editor.py:2305
+#: src/er_save_manager/ui/editors/inventory_editor.py:2429
 #: src/er_save_manager/ui/tabs/appearance_tab.py:201
 #: src/er_save_manager/ui/tabs/appearance_tab.py:481
 #: src/er_save_manager/ui/tabs/appearance_tab.py:915
 #: src/er_save_manager/ui/tabs/appearance_tab.py:1457
 #: src/er_save_manager/ui/tabs/appearance_tab.py:1621
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:665
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:703
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:740
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1383
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1575
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1865
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:2066
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:675
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:713
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:750
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1386
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1578
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1868
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:2069
 #: src/er_save_manager/ui/tabs/save_inspector_tab.py:225
 msgid "No Selection"
 msgstr ""
@@ -1780,25 +1807,25 @@ msgstr ""
 #: src/er_save_manager/games/DS3/tabs/inventory.py:372
 #: src/er_save_manager/games/DSR/inventory_tab.py:272
 #: src/er_save_manager/games/DSR/inventory_tab.py:390
-#: src/er_save_manager/ui/editors/inventory_editor.py:899
-#: src/er_save_manager/ui/icon_browser.py:214
+#: src/er_save_manager/ui/editors/inventory_editor.py:900
+#: src/er_save_manager/ui/icon_browser.py:215
 msgid "Upgrade:"
 msgstr ""
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:269
 #: src/er_save_manager/games/DS3/tabs/world_state.py:100
 #: src/er_save_manager/games/DSR/world_state_tab.py:151
-#: src/er_save_manager/games/NR/editor_tab.py:270
+#: src/er_save_manager/games/NR/editor_tab.py:271
 #: src/er_save_manager/ui/dialogs/character_details.py:347
-#: src/er_save_manager/ui/editors/inventory_editor.py:2746
-#: src/er_save_manager/ui/editors/inventory_editor.py:3014
+#: src/er_save_manager/ui/editors/inventory_editor.py:2761
+#: src/er_save_manager/ui/editors/inventory_editor.py:3029
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:622
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:782
 msgid "Apply"
 msgstr ""
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:273
-#: src/er_save_manager/games/NR/editor_tab.py:418
+#: src/er_save_manager/games/NR/editor_tab.py:419
 msgid "Remove"
 msgstr ""
 
@@ -1815,13 +1842,14 @@ msgid "Cinders"
 msgstr ""
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:307
+#: src/er_save_manager/ui/dialogs/character_browser.py:422
 msgid "Convergence"
 msgstr ""
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:328
 #: src/er_save_manager/games/DSR/inventory_tab.py:357
-#: src/er_save_manager/games/NR/editor_tab.py:66
-#: src/er_save_manager/ui/visual_inventory.py:255
+#: src/er_save_manager/games/NR/editor_tab.py:67
+#: src/er_save_manager/ui/visual_inventory.py:256
 msgid "Search..."
 msgstr ""
 
@@ -1832,7 +1860,8 @@ msgid "Infusion:"
 msgstr ""
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:380
-#: src/er_save_manager/games/NR/editor_tab.py:508
+#: src/er_save_manager/games/NR/editor_tab.py:397
+#: src/er_save_manager/games/NR/editor_tab.py:509
 msgid "Spawn"
 msgstr ""
 
@@ -1848,8 +1877,8 @@ msgstr ""
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:789
 #: src/er_save_manager/games/DSR/inventory_tab.py:788
-#: src/er_save_manager/games/NR/editor_tab.py:889
-#: src/er_save_manager/ui/editors/inventory_editor.py:2249
+#: src/er_save_manager/games/NR/editor_tab.py:890
+#: src/er_save_manager/ui/editors/inventory_editor.py:2264
 msgid "Confirm Remove"
 msgstr ""
 
@@ -1859,8 +1888,8 @@ msgstr ""
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:823
 #: src/er_save_manager/games/DSR/inventory_tab.py:810
-#: src/er_save_manager/ui/editors/inventory_editor.py:1993
-#: src/er_save_manager/ui/editors/inventory_editor.py:2015
+#: src/er_save_manager/ui/editors/inventory_editor.py:2008
+#: src/er_save_manager/ui/editors/inventory_editor.py:2030
 msgid "No Item"
 msgstr ""
 
@@ -1887,6 +1916,8 @@ msgstr ""
 
 #: src/er_save_manager/games/DS3/tabs/world_state.py:60
 #: src/er_save_manager/games/DSR/world_state_tab.py:57
+#: src/er_save_manager/ui/gui.py:835 src/er_save_manager/ui/gui.py:995
+#: src/er_save_manager/ui/gui.py:1176
 msgid "World State"
 msgstr ""
 
@@ -1896,7 +1927,7 @@ msgstr ""
 
 #: src/er_save_manager/games/DS3/tabs/world_state.py:86
 #: src/er_save_manager/games/DSR/world_state_tab.py:135
-#: src/er_save_manager/ui/editors/inventory_editor.py:2817
+#: src/er_save_manager/ui/editors/inventory_editor.py:2832
 msgid "Current:"
 msgstr ""
 
@@ -1924,15 +1955,15 @@ msgstr ""
 
 #: src/er_save_manager/games/DS3/tabs/world_state.py:218
 #: src/er_save_manager/games/DS3/tabs/world_state.py:270
-#: src/er_save_manager/games/DSR/event_flags_tab.py:337
-#: src/er_save_manager/games/DSR/event_flags_tab.py:419
+#: src/er_save_manager/games/DSR/event_flags_tab.py:338
+#: src/er_save_manager/games/DSR/event_flags_tab.py:420
 msgid "ON"
 msgstr ""
 
 #: src/er_save_manager/games/DS3/tabs/world_state.py:218
 #: src/er_save_manager/games/DS3/tabs/world_state.py:270
-#: src/er_save_manager/games/DSR/event_flags_tab.py:337
-#: src/er_save_manager/games/DSR/event_flags_tab.py:419
+#: src/er_save_manager/games/DSR/event_flags_tab.py:338
+#: src/er_save_manager/games/DSR/event_flags_tab.py:420
 msgid "OFF"
 msgstr ""
 
@@ -1973,138 +2004,151 @@ msgstr ""
 msgid "Please close Dark Souls: Remastered before modifying save files."
 msgstr ""
 
-#: src/er_save_manager/games/DSR/editor_tab.py:184
+#: src/er_save_manager/games/DSR/editor_tab.py:185
 msgid ""
 "Saving VIT updates derived max HP. Saving END updates max Stamina. Level "
 "is recalculated from stats automatically."
 msgstr ""
 
-#: src/er_save_manager/games/DSR/editor_tab.py:236
+#: src/er_save_manager/games/DSR/editor_tab.py:237
 msgid "Play Time:"
 msgstr ""
 
-#: src/er_save_manager/games/DSR/editor_tab.py:246
+#: src/er_save_manager/games/DSR/editor_tab.py:247
 msgid ""
 "Name supports up to 16 characters. Both name copies in the save are "
 "updated."
 msgstr ""
 
-#: src/er_save_manager/games/DSR/editor_tab.py:283
-#: src/er_save_manager/games/DSR/event_flags_tab.py:567
+#: src/er_save_manager/games/DSR/editor_tab.py:284
+#: src/er_save_manager/games/DSR/event_flags_tab.py:568
 #: src/er_save_manager/games/DSR/inventory_tab.py:536
 #: src/er_save_manager/games/DSR/npc_tab.py:443
 #: src/er_save_manager/games/DSR/world_state_tab.py:191
 msgid "No DSR save loaded."
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:91
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:140
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:325
+#: src/er_save_manager/games/DSR/event_flags_tab.py:92
+#: src/er_save_manager/ui/gui.py:874 src/er_save_manager/ui/gui.py:1165
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:141
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:326
 msgid "Event Flags"
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:119
-msgid "Load a character to view NPC state flags."
+#: src/er_save_manager/games/DSR/event_flags_tab.py:115
+msgid "NPC States"
+msgstr ""
+
+#: src/er_save_manager/games/DSR/event_flags_tab.py:116
+msgid "World Flags"
+msgstr ""
+
+#: src/er_save_manager/games/DSR/event_flags_tab.py:117
+msgid "Flag Lookup"
 msgstr ""
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:120
+msgid "Load a character to view NPC state flags."
+msgstr ""
+
+#: src/er_save_manager/games/DSR/event_flags_tab.py:121
 msgid "Load a character to view world flags."
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:153
+#: src/er_save_manager/games/DSR/event_flags_tab.py:154
 msgid ""
 "Individual quest-state flags for all major NPCs. Select a row and click "
 "Toggle."
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:171
+#: src/er_save_manager/games/DSR/event_flags_tab.py:172
 msgid "NPC"
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:172
+#: src/er_save_manager/games/DSR/event_flags_tab.py:173
 msgid "ID"
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:173
-#: src/er_save_manager/ui/dialogs/preset_browser.py:324
+#: src/er_save_manager/games/DSR/event_flags_tab.py:174
+#: src/er_save_manager/ui/dialogs/preset_browser.py:338
 msgid "Description"
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:174
+#: src/er_save_manager/games/DSR/event_flags_tab.py:175
 msgid "State"
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:188
+#: src/er_save_manager/games/DSR/event_flags_tab.py:189
 msgid "Toggle Selected"
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:222
+#: src/er_save_manager/games/DSR/event_flags_tab.py:223
 #, python-brace-format
 msgid "Flag {fid}  -  {entry}  -  Currently: {state}"
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:234
+#: src/er_save_manager/games/DSR/event_flags_tab.py:235
 msgid "Select a flag row to toggle."
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:250
+#: src/er_save_manager/games/DSR/event_flags_tab.py:251
 #, python-brace-format
 msgid "Flag {fid}  -  {entry}  -  Now: {state}"
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:269
+#: src/er_save_manager/games/DSR/event_flags_tab.py:270
 msgid ""
 "Persistent: Rite of Kindling, Bottomless Box, Sin flags.\n"
 "Session/cycle flags (*): reset on NG+ or set by event scripts at load. "
 "Editing still takes effect in-game."
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:305
+#: src/er_save_manager/games/DSR/event_flags_tab.py:306
 msgid "Gestures (CanLearn flags)"
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:311
+#: src/er_save_manager/games/DSR/event_flags_tab.py:312
 msgid "1 = not yet taught by NPC.  0 = NPC has taught it.  Resets on NG+."
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:353
-#: src/er_save_manager/games/DSR/event_flags_tab.py:400
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1048
+#: src/er_save_manager/games/DSR/event_flags_tab.py:354
+#: src/er_save_manager/games/DSR/event_flags_tab.py:401
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1049
 msgid "Toggle"
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:384
-#: src/er_save_manager/games/DSR/event_flags_tab.py:440
+#: src/er_save_manager/games/DSR/event_flags_tab.py:385
+#: src/er_save_manager/games/DSR/event_flags_tab.py:441
 msgid "AVAILABLE"
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:384
-#: src/er_save_manager/games/DSR/event_flags_tab.py:440
+#: src/er_save_manager/games/DSR/event_flags_tab.py:385
+#: src/er_save_manager/games/DSR/event_flags_tab.py:441
 msgid "TAUGHT"
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:457
+#: src/er_save_manager/games/DSR/event_flags_tab.py:458
 msgid "Read or write any event flag by numeric ID."
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:465
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:952
+#: src/er_save_manager/games/DSR/event_flags_tab.py:466
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:953
 msgid "Flag ID:"
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:471
+#: src/er_save_manager/games/DSR/event_flags_tab.py:472
 msgid "e.g. 11010000"
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:474
+#: src/er_save_manager/games/DSR/event_flags_tab.py:475
 msgid "Read"
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:478
+#: src/er_save_manager/games/DSR/event_flags_tab.py:479
 msgid "Set ON"
 msgstr ""
 
-#: src/er_save_manager/games/DSR/event_flags_tab.py:484
+#: src/er_save_manager/games/DSR/event_flags_tab.py:485
 msgid "Set OFF"
 msgstr ""
 
@@ -2117,10 +2161,10 @@ msgid "Repair All Items"
 msgstr ""
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:323
-#: src/er_save_manager/ui/dialogs/character_browser.py:155
-#: src/er_save_manager/ui/dialogs/preset_browser.py:108
+#: src/er_save_manager/ui/dialogs/character_browser.py:157
+#: src/er_save_manager/ui/dialogs/preset_browser.py:110
 #: src/er_save_manager/ui/dialogs/troubleshooting.py:80
-#: src/er_save_manager/ui/editors/inventory_editor.py:1128
+#: src/er_save_manager/ui/editors/inventory_editor.py:1143
 #: src/er_save_manager/ui/tabs/hex_editor_tab.py:87
 msgid "Refresh"
 msgstr ""
@@ -2162,7 +2206,7 @@ msgid "Enter a valid upgrade level."
 msgstr ""
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:734
-#: src/er_save_manager/ui/editors/inventory_editor.py:2487
+#: src/er_save_manager/ui/editors/inventory_editor.py:2502
 msgid "Invalid Upgrade"
 msgstr ""
 
@@ -2181,7 +2225,7 @@ msgid "{entry} cannot be infused."
 msgstr ""
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:777
-#: src/er_save_manager/ui/editors/inventory_editor.py:2238
+#: src/er_save_manager/ui/editors/inventory_editor.py:2253
 msgid "Select an item to remove."
 msgstr ""
 
@@ -2201,7 +2245,7 @@ msgstr ""
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:815
 #: src/er_save_manager/games/DSR/inventory_tab.py:869
-#: src/er_save_manager/games/NR/editor_tab.py:917
+#: src/er_save_manager/games/NR/editor_tab.py:918
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:310
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:437
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:460
@@ -2242,6 +2286,7 @@ msgid ""
 msgstr ""
 
 #: src/er_save_manager/games/DSR/npc_tab.py:84
+#: src/er_save_manager/ui/gui.py:1156
 msgid "NPCs & Bosses"
 msgstr ""
 
@@ -2395,148 +2440,157 @@ msgid ""
 "Overwrite?"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:97
+#: src/er_save_manager/games/NR/editor_tab.py:98
 #: src/er_save_manager/ui/dialogs/save_selector.py:151
-#: src/er_save_manager/ui/editors/equipment_editor.py:459
-#: src/er_save_manager/ui/editors/inventory_editor.py:1591
-#: src/er_save_manager/ui/icon_browser.py:744
+#: src/er_save_manager/ui/editors/equipment_editor.py:463
+#: src/er_save_manager/ui/editors/inventory_editor.py:1606
+#: src/er_save_manager/ui/icon_browser.py:750
 msgid "Select"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:100
+#: src/er_save_manager/games/NR/editor_tab.py:101
 msgid "Clear / Empty"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:170
+#: src/er_save_manager/games/NR/editor_tab.py:171
 msgid "Slot Editor"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:251
+#: src/er_save_manager/games/NR/editor_tab.py:191
+msgid "Overview"
+msgstr ""
+
+#: src/er_save_manager/games/NR/editor_tab.py:191
+#: src/er_save_manager/games/NR/editor_tab.py:344
+msgid "Relics"
+msgstr ""
+
+#: src/er_save_manager/games/NR/editor_tab.py:252
 msgid "Character Overview"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:292
-#: src/er_save_manager/games/NR/editor_tab.py:299
-#: src/er_save_manager/games/NR/editor_tab.py:833
-#: src/er_save_manager/games/NR/editor_tab.py:931
+#: src/er_save_manager/games/NR/editor_tab.py:293
+#: src/er_save_manager/games/NR/editor_tab.py:300
+#: src/er_save_manager/games/NR/editor_tab.py:834
+#: src/er_save_manager/games/NR/editor_tab.py:932
 #: src/er_save_manager/games/NR/steamid_tab.py:105
 msgid "Invalid Input"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:293
+#: src/er_save_manager/games/NR/editor_tab.py:294
 msgid "murk and Sovereign Sigils must be integers."
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:299
+#: src/er_save_manager/games/NR/editor_tab.py:300
 msgid "Values must be >= 0."
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:308
+#: src/er_save_manager/games/NR/editor_tab.py:309
 msgid "Name Too Long"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:309
+#: src/er_save_manager/games/NR/editor_tab.py:310
 msgid "Player name cannot exceed 16 characters."
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:343
-msgid "Relics"
-msgstr ""
-
-#: src/er_save_manager/games/NR/editor_tab.py:351
+#: src/er_save_manager/games/NR/editor_tab.py:352
 msgid "Search name or effect..."
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:409
+#: src/er_save_manager/games/NR/editor_tab.py:396
+msgid "Edit"
+msgstr ""
+
+#: src/er_save_manager/games/NR/editor_tab.py:410
 msgid "Edit selected relic:"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:414
+#: src/er_save_manager/games/NR/editor_tab.py:415
 msgid "Apply Edit"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:426
-#: src/er_save_manager/games/NR/editor_tab.py:513
+#: src/er_save_manager/games/NR/editor_tab.py:427
+#: src/er_save_manager/games/NR/editor_tab.py:514
 msgid "Relic type:"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:430
-#: src/er_save_manager/games/NR/editor_tab.py:517
+#: src/er_save_manager/games/NR/editor_tab.py:431
+#: src/er_save_manager/games/NR/editor_tab.py:518
 msgid "(none selected)"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:435
-#: src/er_save_manager/games/NR/editor_tab.py:470
-#: src/er_save_manager/games/NR/editor_tab.py:485
-#: src/er_save_manager/games/NR/editor_tab.py:522
-#: src/er_save_manager/games/NR/editor_tab.py:559
-#: src/er_save_manager/games/NR/editor_tab.py:574
-#: src/er_save_manager/ui/gui.py:608
+#: src/er_save_manager/games/NR/editor_tab.py:436
+#: src/er_save_manager/games/NR/editor_tab.py:471
+#: src/er_save_manager/games/NR/editor_tab.py:486
+#: src/er_save_manager/games/NR/editor_tab.py:523
+#: src/er_save_manager/games/NR/editor_tab.py:560
+#: src/er_save_manager/games/NR/editor_tab.py:575
+#: src/er_save_manager/ui/gui.py:609
 #: src/er_save_manager/ui/tabs/appearance_tab.py:1527
 msgid "Browse"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:457
-#: src/er_save_manager/games/NR/editor_tab.py:546
+#: src/er_save_manager/games/NR/editor_tab.py:458
+#: src/er_save_manager/games/NR/editor_tab.py:547
 #, python-brace-format
 msgid "E{j}:"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:461
-#: src/er_save_manager/games/NR/editor_tab.py:550
-#: src/er_save_manager/ui/editors/equipment_editor.py:1098
-#: src/er_save_manager/ui/editors/equipment_editor.py:1147
-#: src/er_save_manager/ui/editors/equipment_editor.py:1383
-#: src/er_save_manager/ui/editors/equipment_editor.py:1582
-#: src/er_save_manager/ui/editors/equipment_editor.py:1588
+#: src/er_save_manager/games/NR/editor_tab.py:462
+#: src/er_save_manager/games/NR/editor_tab.py:551
+#: src/er_save_manager/ui/editors/equipment_editor.py:1105
+#: src/er_save_manager/ui/editors/equipment_editor.py:1154
+#: src/er_save_manager/ui/editors/equipment_editor.py:1390
+#: src/er_save_manager/ui/editors/equipment_editor.py:1589
+#: src/er_save_manager/ui/editors/equipment_editor.py:1595
 msgid "(empty)"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:477
-#: src/er_save_manager/games/NR/editor_tab.py:566
+#: src/er_save_manager/games/NR/editor_tab.py:478
+#: src/er_save_manager/games/NR/editor_tab.py:567
 #, python-brace-format
 msgid "C{j}: (empty)"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:505
+#: src/er_save_manager/games/NR/editor_tab.py:506
 msgid "Spawn Relic"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:821
-#: src/er_save_manager/games/NR/editor_tab.py:885
+#: src/er_save_manager/games/NR/editor_tab.py:822
+#: src/er_save_manager/games/NR/editor_tab.py:886
 msgid "Select a relic row first."
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:833
-#: src/er_save_manager/games/NR/editor_tab.py:931
+#: src/er_save_manager/games/NR/editor_tab.py:834
+#: src/er_save_manager/games/NR/editor_tab.py:932
 msgid "Could not parse IDs."
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:855
+#: src/er_save_manager/games/NR/editor_tab.py:856
 msgid "Validation Warning"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:889
+#: src/er_save_manager/games/NR/editor_tab.py:890
 msgid "Remove this relic permanently?"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:904
+#: src/er_save_manager/games/NR/editor_tab.py:905
 msgid "Remove Failed"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:917
+#: src/er_save_manager/games/NR/editor_tab.py:918
 msgid "Load a slot first."
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:923
+#: src/er_save_manager/games/NR/editor_tab.py:924
 msgid "No Relic"
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:923
+#: src/er_save_manager/games/NR/editor_tab.py:924
 msgid "Select a relic type first."
 msgstr ""
 
-#: src/er_save_manager/games/NR/editor_tab.py:951
+#: src/er_save_manager/games/NR/editor_tab.py:952
 msgid "Spawn Failed"
 msgstr ""
 
@@ -2557,6 +2611,9 @@ msgid "That slot has no character data."
 msgstr ""
 
 #: src/er_save_manager/games/NR/steamid_tab.py:40
+#: src/er_save_manager/ui/gui.py:862 src/er_save_manager/ui/gui.py:1004
+#: src/er_save_manager/ui/gui.py:1064 src/er_save_manager/ui/gui.py:1093
+#: src/er_save_manager/ui/gui.py:1237
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:78
 msgid "SteamID Patcher"
 msgstr ""
@@ -2584,11 +2641,11 @@ msgid "Creates a backup before patching."
 msgstr ""
 
 #: src/er_save_manager/games/NR/steamid_tab.py:92
-#: src/er_save_manager/ui/editors/inventory_editor.py:1140
-#: src/er_save_manager/ui/editors/inventory_editor.py:2028
-#: src/er_save_manager/ui/editors/inventory_editor.py:2142
-#: src/er_save_manager/ui/editors/inventory_editor.py:3027
-#: src/er_save_manager/ui/editors/inventory_editor.py:3487
+#: src/er_save_manager/ui/editors/inventory_editor.py:1155
+#: src/er_save_manager/ui/editors/inventory_editor.py:2043
+#: src/er_save_manager/ui/editors/inventory_editor.py:2157
+#: src/er_save_manager/ui/editors/inventory_editor.py:3042
+#: src/er_save_manager/ui/editors/inventory_editor.py:3502
 msgid "Load a save file first."
 msgstr ""
 
@@ -2677,123 +2734,179 @@ msgstr ""
 msgid "ZIP Location (for your reference):"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:150
+#: src/er_save_manager/ui/dialogs/character_browser.py:81
+msgid "Browse Characters"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/character_browser.py:82
+msgid "Contribute Character"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/character_browser.py:152
 msgid "Browse Community Characters"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:222
-#: src/er_save_manager/ui/dialogs/preset_browser.py:171
+#: src/er_save_manager/ui/dialogs/character_browser.py:172
+msgid "Overhaul Mod"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/character_browser.py:172
+msgid "No Overhaul"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/character_browser.py:172
+#: src/er_save_manager/ui/dialogs/preset_browser.py:127
+#: src/er_save_manager/ui/editors/inventory_editor.py:1019
+#: src/er_save_manager/ui/editors/inventory_editor.py:1036
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1156
+msgid "All"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/character_browser.py:189
+#: src/er_save_manager/ui/dialogs/preset_browser.py:148
+msgid "Recent"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/character_browser.py:190
+#: src/er_save_manager/ui/dialogs/preset_browser.py:148
+msgid "Likes"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/character_browser.py:191
+#: src/er_save_manager/ui/dialogs/preset_browser.py:148
+msgid "Downloads"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/character_browser.py:192
+#: src/er_save_manager/ui/dialogs/preset_browser.py:148
+msgid "Name"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/character_browser.py:193
+msgid "Level"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/character_browser.py:231
+#: src/er_save_manager/ui/dialogs/preset_browser.py:185
 msgid "Preview"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:238
+#: src/er_save_manager/ui/dialogs/character_browser.py:247
 msgid "Target Slot:"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:255
+#: src/er_save_manager/ui/dialogs/character_browser.py:264
 msgid "Download & Import"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:271
+#: src/er_save_manager/ui/dialogs/character_browser.py:280
 msgid "Contribute Your Character"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:279
+#: src/er_save_manager/ui/dialogs/character_browser.py:288
 msgid ""
 "Share your character build with the community! Provide screenshots and "
 "details."
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:292
-#: src/er_save_manager/ui/dialogs/character_browser.py:1769
-#: src/er_save_manager/ui/dialogs/preset_browser.py:233
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1249
+#: src/er_save_manager/ui/dialogs/character_browser.py:301
+#: src/er_save_manager/ui/dialogs/character_browser.py:1777
+#: src/er_save_manager/ui/dialogs/preset_browser.py:247
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1263
 msgid "⚠ GitHub Account Required"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:298
-#: src/er_save_manager/ui/dialogs/preset_browser.py:239
+#: src/er_save_manager/ui/dialogs/character_browser.py:307
+#: src/er_save_manager/ui/dialogs/preset_browser.py:253
 msgid "Log into GitHub in your browser before submitting"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:341
-#: src/er_save_manager/ui/dialogs/character_browser.py:1401
+#: src/er_save_manager/ui/dialogs/character_browser.py:350
+#: src/er_save_manager/ui/dialogs/character_browser.py:1409
 msgid "Description:"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:360
+#: src/er_save_manager/ui/dialogs/character_browser.py:369
 msgid "Screenshots (Required):"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:388
+#: src/er_save_manager/ui/dialogs/character_browser.py:397
 msgid "Overhaul Mod:"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:395
+#: src/er_save_manager/ui/dialogs/character_browser.py:404
 msgid "Uses an overhaul mod"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:408
+#: src/er_save_manager/ui/dialogs/character_browser.py:417
 msgid "Overhaul:"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:448
-#: src/er_save_manager/ui/dialogs/preset_browser.py:383
+#: src/er_save_manager/ui/dialogs/character_browser.py:422
+msgid "Elden Ring Reforged"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/character_browser.py:422
+msgid "Other"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/character_browser.py:456
+#: src/er_save_manager/ui/dialogs/preset_browser.py:397
 msgid ""
 "Make sure you're logged into GitHub in your browser before submitting.\n"
 "If the GitHub home page opens, log in first then submit again."
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:458
-#: src/er_save_manager/ui/dialogs/preset_browser.py:393
+#: src/er_save_manager/ui/dialogs/character_browser.py:466
+#: src/er_save_manager/ui/dialogs/preset_browser.py:407
 msgid "https://github.com/login"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:471
+#: src/er_save_manager/ui/dialogs/character_browser.py:479
 msgid "Submit to GitHub"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:534
-#: src/er_save_manager/ui/dialogs/preset_browser.py:457
+#: src/er_save_manager/ui/dialogs/character_browser.py:542
+#: src/er_save_manager/ui/dialogs/preset_browser.py:471
 msgid "Select Face Screenshot"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:545
+#: src/er_save_manager/ui/dialogs/character_browser.py:553
 msgid "Select Body Screenshot"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:556
+#: src/er_save_manager/ui/dialogs/character_browser.py:564
 msgid "Select Preview Screenshot"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:591
+#: src/er_save_manager/ui/dialogs/character_browser.py:599
 msgid "Missing Information"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:599
-#: src/er_save_manager/ui/dialogs/character_browser.py:1555
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:303
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:355
+#: src/er_save_manager/ui/dialogs/character_browser.py:607
+#: src/er_save_manager/ui/dialogs/character_browser.py:1563
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:304
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:356
 #: src/er_save_manager/ui/tabs/character_management_tab.py:1071
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:629
 msgid "No Save File"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:600
-#: src/er_save_manager/ui/dialogs/character_browser.py:1556
+#: src/er_save_manager/ui/dialogs/character_browser.py:608
+#: src/er_save_manager/ui/dialogs/character_browser.py:1564
 msgid "No save file loaded. Please load a save file first."
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:612
+#: src/er_save_manager/ui/dialogs/character_browser.py:620
 #, python-brace-format
 msgid "Slot {slot_index} is empty. Please select a slot with a character."
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:701
+#: src/er_save_manager/ui/dialogs/character_browser.py:709
 msgid "Submission Failed"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:702
+#: src/er_save_manager/ui/dialogs/character_browser.py:710
 #, python-brace-format
 msgid ""
 "Failed to prepare character submission:\n"
@@ -2801,210 +2914,210 @@ msgid ""
 "{str}"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:725
-#: src/er_save_manager/ui/dialogs/preset_browser.py:590
+#: src/er_save_manager/ui/dialogs/character_browser.py:733
+#: src/er_save_manager/ui/dialogs/preset_browser.py:604
 msgid "GitHub not logged in"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:732
-#: src/er_save_manager/ui/dialogs/preset_browser.py:598
+#: src/er_save_manager/ui/dialogs/character_browser.py:740
+#: src/er_save_manager/ui/dialogs/preset_browser.py:612
 msgid ""
 "Log in to GitHub, then copy and paste this link in your browser to finish"
 " the submission."
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:746
+#: src/er_save_manager/ui/dialogs/character_browser.py:754
 msgid "✓ Copied!"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:747
-#: src/er_save_manager/ui/dialogs/character_browser.py:750
+#: src/er_save_manager/ui/dialogs/character_browser.py:755
+#: src/er_save_manager/ui/dialogs/character_browser.py:758
 msgid "Copy Link"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:756
+#: src/er_save_manager/ui/dialogs/character_browser.py:764
 msgid "Failed to generate submission URL. Please try again."
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:810
+#: src/er_save_manager/ui/dialogs/character_browser.py:818
 #, python-brace-format
 msgid ""
 "Failed to load characters:\n"
 "{error_msg}"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:884
+#: src/er_save_manager/ui/dialogs/character_browser.py:892
 msgid "No characters found"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1128
+#: src/er_save_manager/ui/dialogs/character_browser.py:1136
 #, python-brace-format
 msgid "by {author}"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1168
+#: src/er_save_manager/ui/dialogs/character_browser.py:1176
 msgid "Loading face..."
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1177
+#: src/er_save_manager/ui/dialogs/character_browser.py:1185
 msgid "Loading body..."
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1195
+#: src/er_save_manager/ui/dialogs/character_browser.py:1203
 #, python-brace-format
 msgid "Level {level} {char_class}{ng_text}"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1206
+#: src/er_save_manager/ui/dialogs/character_browser.py:1214
 #, python-brace-format
 msgid "Playtime: {playtime}"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1262
+#: src/er_save_manager/ui/dialogs/character_browser.py:1270
 msgid "Max Resources:"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1300
+#: src/er_save_manager/ui/dialogs/character_browser.py:1308
 msgid "Progression:"
-msgstr ""
-
-#: src/er_save_manager/ui/dialogs/character_browser.py:1311
-#, python-brace-format
-msgid "🔄 Playthrough: {ng_level}"
 msgstr ""
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1319
 #, python-brace-format
+msgid "🔄 Playthrough: {ng_level}"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/character_browser.py:1327
+#, python-brace-format
 msgid "⚔️ Bosses Defeated: {bosses_defeated}"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1329
+#: src/er_save_manager/ui/dialogs/character_browser.py:1337
 #, python-brace-format
 msgid "🔥 Graces Unlocked: {graces_unlocked}"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1347
+#: src/er_save_manager/ui/dialogs/character_browser.py:1355
 msgid "⚡ Convergence Mod Items:"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1378
+#: src/er_save_manager/ui/dialogs/character_browser.py:1386
 msgid "Equipment:"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1419
-#: src/er_save_manager/ui/dialogs/preset_browser.py:992
+#: src/er_save_manager/ui/dialogs/character_browser.py:1427
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1006
 #, python-brace-format
 msgid "Tags: {join}"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1466
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1015
+#: src/er_save_manager/ui/dialogs/character_browser.py:1474
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1029
 #, python-brace-format
 msgid "👍 {likes} likes  |  ⬇ {downloads} downloads"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1482
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1044
+#: src/er_save_manager/ui/dialogs/character_browser.py:1490
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1058
 msgid "👍 Like"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1482
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1044
+#: src/er_save_manager/ui/dialogs/character_browser.py:1490
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1058
 msgid "👍 Liked"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1493
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1056
+#: src/er_save_manager/ui/dialogs/character_browser.py:1501
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1070
 msgid "🚩 Report"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1523
+#: src/er_save_manager/ui/dialogs/character_browser.py:1531
 msgid "No image"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1539
+#: src/er_save_manager/ui/dialogs/character_browser.py:1547
 msgid "Failed to load"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1547
+#: src/er_save_manager/ui/dialogs/character_browser.py:1555
 msgid "No Character Selected"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1548
+#: src/er_save_manager/ui/dialogs/character_browser.py:1556
 msgid "Please select a character to import"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1604
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:856
+#: src/er_save_manager/ui/dialogs/character_browser.py:1612
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:857
 msgid "Confirm Import"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1721
+#: src/er_save_manager/ui/dialogs/character_browser.py:1729
 msgid "Import Successful"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1722
+#: src/er_save_manager/ui/dialogs/character_browser.py:1730
 #, python-brace-format
 msgid "'{imported_name}' has been imported to {slot_str}!"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1736
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:820
+#: src/er_save_manager/ui/dialogs/character_browser.py:1744
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:821
 msgid "Import Failed"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1737
+#: src/er_save_manager/ui/dialogs/character_browser.py:1745
 #, python-brace-format
 msgid ""
 "Failed to import character:\n"
 "{error_msg}"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1775
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1255
+#: src/er_save_manager/ui/dialogs/character_browser.py:1783
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1269
 msgid "Log into GitHub in your browser before reporting"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1782
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1263
+#: src/er_save_manager/ui/dialogs/character_browser.py:1790
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1277
 #, python-brace-format
 msgid "Report: {get}"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1788
-#: src/er_save_manager/ui/dialogs/preset_browser.py:820
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1269
+#: src/er_save_manager/ui/dialogs/character_browser.py:1796
+#: src/er_save_manager/ui/dialogs/preset_browser.py:834
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1283
 #, python-brace-format
 msgid "by {get}"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1799
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1281
+#: src/er_save_manager/ui/dialogs/character_browser.py:1807
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1295
 msgid "⚠️ Please report only genuine issues (inappropriate content, etc.)"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1807
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1290
+#: src/er_save_manager/ui/dialogs/character_browser.py:1815
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1304
 msgid "Reason for report:"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1823
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1308
+#: src/er_save_manager/ui/dialogs/character_browser.py:1831
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1322
 msgid "Please enter a reason for the report."
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1832
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1319
+#: src/er_save_manager/ui/dialogs/character_browser.py:1840
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1333
 msgid "Submit Report"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1889
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1378
+#: src/er_save_manager/ui/dialogs/character_browser.py:1897
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1392
 msgid "Report Submitted"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:1891
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1380
+#: src/er_save_manager/ui/dialogs/character_browser.py:1899
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1394
 msgid ""
 "Your browser has opened to GitHub.\n"
 "\n"
@@ -3186,7 +3299,7 @@ msgid ""
 msgstr ""
 
 #: src/er_save_manager/ui/dialogs/character_details.py:795
-#: src/er_save_manager/ui/editors/equipment_editor.py:1722
+#: src/er_save_manager/ui/editors/equipment_editor.py:1729
 msgid "Done"
 msgstr ""
 
@@ -3225,158 +3338,182 @@ msgid ""
 "{str}"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:103
+#: src/er_save_manager/ui/dialogs/preset_browser.py:81
+msgid "Browse Presets"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/preset_browser.py:82
+msgid "Contribute Preset"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/preset_browser.py:105
 #: src/er_save_manager/ui/tabs/appearance_tab.py:118
 msgid "Browse Community Presets"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:184
-msgid "Preset Slot:"
+#: src/er_save_manager/ui/dialogs/preset_browser.py:128
+msgid "Male"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/preset_browser.py:129
+msgid "Female"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/preset_browser.py:130
+msgid "Cosplay"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/preset_browser.py:131
+msgid "Original"
 msgstr ""
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:198
+msgid "Preset Slot:"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/preset_browser.py:212
 msgid "Apply to Slot"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:223
+#: src/er_save_manager/ui/dialogs/preset_browser.py:237
 msgid "Contribute Your Character Preset"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:256
+#: src/er_save_manager/ui/dialogs/preset_browser.py:270
 msgid "1) Select Appearance Preset Slot"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:261
+#: src/er_save_manager/ui/dialogs/preset_browser.py:275
 msgid "Slots from the in-game 'Detailed Appearance' menu"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:289
+#: src/er_save_manager/ui/dialogs/preset_browser.py:303
 msgid "2) Add Images (Face & Body required)"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:312
+#: src/er_save_manager/ui/dialogs/preset_browser.py:326
 msgid "3) Preset Information"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:333
+#: src/er_save_manager/ui/dialogs/preset_browser.py:347
 msgid "Tags (select all that apply)"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:368
+#: src/er_save_manager/ui/dialogs/preset_browser.py:382
 msgid "Custom Tags (comma-separated)"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:406
+#: src/er_save_manager/ui/dialogs/preset_browser.py:420
 msgid "Submit Preset"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:466
+#: src/er_save_manager/ui/dialogs/preset_browser.py:480
 msgid "Select Full Body Screenshot"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:475
+#: src/er_save_manager/ui/dialogs/preset_browser.py:489
 msgid "Select Preview Thumbnail"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:487
+#: src/er_save_manager/ui/dialogs/preset_browser.py:501
 msgid "Preset name is required"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:494
+#: src/er_save_manager/ui/dialogs/preset_browser.py:508
 msgid "Author name is required"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:501
+#: src/er_save_manager/ui/dialogs/preset_browser.py:515
 msgid "Description is required"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:512
+#: src/er_save_manager/ui/dialogs/preset_browser.py:526
 msgid "At least one tag is required"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:530
+#: src/er_save_manager/ui/dialogs/preset_browser.py:544
 #, python-brace-format
 msgid "Preset slot {slot_index} is invalid (max {num_slots})"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:541
+#: src/er_save_manager/ui/dialogs/preset_browser.py:555
 #, python-brace-format
 msgid "Character slot {slot_index} preset doesn't exist"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:569
+#: src/er_save_manager/ui/dialogs/preset_browser.py:583
 #, python-brace-format
 msgid ""
 "Failed to create submission:\n"
 "{exc}"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:614
+#: src/er_save_manager/ui/dialogs/preset_browser.py:628
 msgid "URL copied to clipboard."
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:617
+#: src/er_save_manager/ui/dialogs/preset_browser.py:631
 msgid "Copy URL"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:624
+#: src/er_save_manager/ui/dialogs/preset_browser.py:638
 msgid ""
 "Could not generate a submission URL. Please log in to GitHub and try "
 "again."
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:771
+#: src/er_save_manager/ui/dialogs/preset_browser.py:785
 msgid "No presets match your search"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:803
+#: src/er_save_manager/ui/dialogs/preset_browser.py:817
 msgid "[Loading...]"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:810
+#: src/er_save_manager/ui/dialogs/preset_browser.py:824
 msgid "[No image]"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:892
+#: src/er_save_manager/ui/dialogs/preset_browser.py:906
 msgid "[No Image]"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:913
+#: src/er_save_manager/ui/dialogs/preset_browser.py:927
 msgid "Failed to download preset"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:938
+#: src/er_save_manager/ui/dialogs/preset_browser.py:952
 msgid "Face"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:943
+#: src/er_save_manager/ui/dialogs/preset_browser.py:957
 msgid "Body"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:957
-#: src/er_save_manager/ui/dialogs/preset_browser.py:961
-#: src/er_save_manager/ui/dialogs/preset_browser.py:970
+#: src/er_save_manager/ui/dialogs/preset_browser.py:971
+#: src/er_save_manager/ui/dialogs/preset_browser.py:975
+#: src/er_save_manager/ui/dialogs/preset_browser.py:984
 msgid "[Preview not available]"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:965
+#: src/er_save_manager/ui/dialogs/preset_browser.py:979
 msgid "[No preview available]"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:975
+#: src/er_save_manager/ui/dialogs/preset_browser.py:989
 msgid "[Install Pillow for previews]"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:988
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1002
 #, python-brace-format
 msgid "Author: {get}"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1137
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1151
 msgid "Apply Preset"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1140
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1154
 #, python-brace-format
 msgid ""
 "Apply '{get}' to {char_name}'s {slot_str}?\n"
@@ -3384,29 +3521,29 @@ msgid ""
 "This will add the preset to that character's appearance menu."
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1157
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1171
 msgid "Invalid preset data"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1173
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1187
 #, python-brace-format
 msgid "Preset slot {target_slot} is invalid (max {num_slots})"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1204
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1218
 #, python-brace-format
 msgid "Applied '{get}' to Preset Slot {target_slot}."
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1222
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1236
 #, python-brace-format
 msgid ""
 "Failed to apply preset:\n"
 "{exc}"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1406
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1410
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1420
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1424
 msgid "Community Character Presets"
 msgstr ""
 
@@ -3427,40 +3564,72 @@ msgstr ""
 msgid "💡 Suggested Fix:"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/character_info_editor.py:70
+#: src/er_save_manager/ui/editors/character_info_editor.py:71
 msgid "Character Creation"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/character_info_editor.py:110
+#: src/er_save_manager/ui/editors/character_info_editor.py:111
 msgid "Body Type:"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/character_info_editor.py:123
+#: src/er_save_manager/ui/editors/character_info_editor.py:124
 msgid "Archetype:"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/character_info_editor.py:151
+#: src/er_save_manager/ui/editors/character_info_editor.py:152
 msgid "Voice Type:"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/character_info_editor.py:164
+#: src/er_save_manager/ui/editors/character_info_editor.py:165
 msgid "Keepsake:"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/character_info_editor.py:179
+#: src/er_save_manager/ui/editors/character_info_editor.py:180
 msgid "Game Progression"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/character_info_editor.py:186
+#: src/er_save_manager/ui/editors/character_info_editor.py:187
 msgid "NG+ Level:"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/character_info_editor.py:250
+#: src/er_save_manager/ui/editors/character_info_editor.py:192
+msgid "NG (0)"
+msgstr ""
+
+#: src/er_save_manager/ui/editors/character_info_editor.py:193
+msgid "NG+ (1)"
+msgstr ""
+
+#: src/er_save_manager/ui/editors/character_info_editor.py:194
+msgid "NG+2 (2)"
+msgstr ""
+
+#: src/er_save_manager/ui/editors/character_info_editor.py:195
+msgid "NG+3 (3)"
+msgstr ""
+
+#: src/er_save_manager/ui/editors/character_info_editor.py:196
+msgid "NG+4 (4)"
+msgstr ""
+
+#: src/er_save_manager/ui/editors/character_info_editor.py:197
+msgid "NG+5 (5)"
+msgstr ""
+
+#: src/er_save_manager/ui/editors/character_info_editor.py:198
+msgid "NG+6 (6)"
+msgstr ""
+
+#: src/er_save_manager/ui/editors/character_info_editor.py:199
+msgid "NG+7 (7)"
+msgstr ""
+
+#: src/er_save_manager/ui/editors/character_info_editor.py:254
 #: src/er_save_manager/ui/editors/stats_editor.py:367
 msgid "Actions"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/character_info_editor.py:353
+#: src/er_save_manager/ui/editors/character_info_editor.py:357
 #, python-brace-format
 msgid ""
 "Apply character info changes to Slot {slot_idx}?\n"
@@ -3468,22 +3637,22 @@ msgid ""
 "A backup will be created."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/character_info_editor.py:485
+#: src/er_save_manager/ui/editors/character_info_editor.py:489
 msgid ""
 "Character info updated successfully!\n"
 "\n"
 "Backup saved to backup manager."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/character_info_editor.py:491
+#: src/er_save_manager/ui/editors/character_info_editor.py:495
 msgid "Offset not tracked"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/character_info_editor.py:495
+#: src/er_save_manager/ui/editors/character_info_editor.py:499
 msgid "Could not access character data"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/character_info_editor.py:501
+#: src/er_save_manager/ui/editors/character_info_editor.py:505
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:424
 #, python-brace-format
 msgid ""
@@ -3491,78 +3660,93 @@ msgid ""
 "{str}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:451
-#: src/er_save_manager/ui/editors/equipment_editor.py:851
+#: src/er_save_manager/ui/editors/equipment_editor.py:415
+#: src/er_save_manager/ui/editors/equipment_editor.py:826
+msgid "Name (A-Z)"
+msgstr ""
+
+#: src/er_save_manager/ui/editors/equipment_editor.py:415
+#: src/er_save_manager/ui/editors/equipment_editor.py:826
+msgid "Name (Z-A)"
+msgstr ""
+
+#: src/er_save_manager/ui/editors/equipment_editor.py:415
+#: src/er_save_manager/ui/editors/equipment_editor.py:826
+msgid "Category"
+msgstr ""
+
+#: src/er_save_manager/ui/editors/equipment_editor.py:455
+#: src/er_save_manager/ui/editors/equipment_editor.py:858
 msgid "No owned items found in inventory for this slot."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:464
-#: src/er_save_manager/ui/editors/equipment_editor.py:859
+#: src/er_save_manager/ui/editors/equipment_editor.py:468
+#: src/er_save_manager/ui/editors/equipment_editor.py:866
 msgid "Clear Slot"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:617
+#: src/er_save_manager/ui/editors/equipment_editor.py:621
 msgid "Delete"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:644
+#: src/er_save_manager/ui/editors/equipment_editor.py:648
 msgid "Delete Loadout"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:645
+#: src/er_save_manager/ui/editors/equipment_editor.py:649
 #, python-brace-format
 msgid "Delete loadout '{name}'?"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1065
-#: src/er_save_manager/ui/editors/equipment_editor.py:1569
+#: src/er_save_manager/ui/editors/equipment_editor.py:1072
+#: src/er_save_manager/ui/editors/equipment_editor.py:1576
 msgid "locked"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1073
-#: src/er_save_manager/ui/editors/equipment_editor.py:1353
+#: src/er_save_manager/ui/editors/equipment_editor.py:1080
+#: src/er_save_manager/ui/editors/equipment_editor.py:1360
 msgid "Apply Equipment Changes"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1142
+#: src/er_save_manager/ui/editors/equipment_editor.py:1149
 msgid "empty"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1296
+#: src/er_save_manager/ui/editors/equipment_editor.py:1303
 msgid "Loadouts"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1302
-#: src/er_save_manager/ui/editors/inventory_editor.py:3368
+#: src/er_save_manager/ui/editors/equipment_editor.py:1309
+#: src/er_save_manager/ui/editors/inventory_editor.py:3383
 msgid "Save Loadout"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1308
-#: src/er_save_manager/ui/editors/inventory_editor.py:3379
+#: src/er_save_manager/ui/editors/equipment_editor.py:1315
+#: src/er_save_manager/ui/editors/inventory_editor.py:3394
 msgid "Load Loadout"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1314
+#: src/er_save_manager/ui/editors/equipment_editor.py:1321
 msgid "Export to File..."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1321
+#: src/er_save_manager/ui/editors/equipment_editor.py:1328
 msgid "Import from File..."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1331
+#: src/er_save_manager/ui/editors/equipment_editor.py:1338
 msgid "Share via Code..."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1337
+#: src/er_save_manager/ui/editors/equipment_editor.py:1344
 msgid "Import via Code..."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1346
+#: src/er_save_manager/ui/editors/equipment_editor.py:1353
 msgid "Visual Picker..."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1605
+#: src/er_save_manager/ui/editors/equipment_editor.py:1612
 #, python-brace-format
 msgid ""
 "Apply equipment changes to Slot {slot_idx}?\n"
@@ -3570,237 +3754,261 @@ msgid ""
 "A backup will be created."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1632
+#: src/er_save_manager/ui/editors/equipment_editor.py:1639
 msgid "Character has no equipment data."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1722
+#: src/er_save_manager/ui/editors/equipment_editor.py:1729
 msgid "Equipment changes applied."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1727
+#: src/er_save_manager/ui/editors/equipment_editor.py:1734
 #, python-brace-format
 msgid ""
 "Failed to apply equipment changes:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1879
+#: src/er_save_manager/ui/editors/equipment_editor.py:1886
 msgid "Saved"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1880
+#: src/er_save_manager/ui/editors/equipment_editor.py:1887
 #, python-brace-format
 msgid "Loadout '{name}' saved."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1886
+#: src/er_save_manager/ui/editors/equipment_editor.py:1893
 #, python-brace-format
 msgid ""
 "Failed to save loadout:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1901
+#: src/er_save_manager/ui/editors/equipment_editor.py:1908
 msgid "No Loadouts"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1901
+#: src/er_save_manager/ui/editors/equipment_editor.py:1908
 msgid "No saved loadouts yet."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1919
-#: src/er_save_manager/ui/editors/equipment_editor.py:1936
-#: src/er_save_manager/ui/editors/equipment_editor.py:1949
+#: src/er_save_manager/ui/editors/equipment_editor.py:1926
+#: src/er_save_manager/ui/editors/equipment_editor.py:1943
+#: src/er_save_manager/ui/editors/equipment_editor.py:1956
 msgid "Loadout Applied"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1920
+#: src/er_save_manager/ui/editors/equipment_editor.py:1927
 msgid "Loadout applied. Click Apply Equipment Changes to save."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1926
+#: src/er_save_manager/ui/editors/equipment_editor.py:1933
 msgid "Items Not Owned"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1965
+#: src/er_save_manager/ui/editors/equipment_editor.py:1972
 msgid "Export Equipment Loadout"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1983
+#: src/er_save_manager/ui/editors/equipment_editor.py:1990
 msgid "Exported"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1984
+#: src/er_save_manager/ui/editors/equipment_editor.py:1991
 #, python-brace-format
 msgid ""
 "Loadout exported to:\n"
 "{name}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:1990
+#: src/er_save_manager/ui/editors/equipment_editor.py:1997
 #, python-brace-format
 msgid ""
 "Failed to export loadout:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:2003
+#: src/er_save_manager/ui/editors/equipment_editor.py:2010
 msgid "Import Equipment Loadout"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:2016
+#: src/er_save_manager/ui/editors/equipment_editor.py:2023
 #, python-brace-format
 msgid ""
 "Failed to import loadout:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:2051
+#: src/er_save_manager/ui/editors/equipment_editor.py:2058
 #: src/er_save_manager/ui/tabs/appearance_tab.py:967
 #, python-brace-format
 msgid "Shared {description}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:2056
-#: src/er_save_manager/ui/editors/inventory_editor.py:3452
+#: src/er_save_manager/ui/editors/equipment_editor.py:2063
+#: src/er_save_manager/ui/editors/inventory_editor.py:3467
 #: src/er_save_manager/ui/tabs/appearance_tab.py:972
 msgid "Send this code to share it:"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:2075
-#: src/er_save_manager/ui/editors/inventory_editor.py:3474
+#: src/er_save_manager/ui/editors/equipment_editor.py:2082
+#: src/er_save_manager/ui/editors/inventory_editor.py:3489
 #: src/er_save_manager/ui/tabs/appearance_tab.py:992
 msgid "Copy Code"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:2119
-#: src/er_save_manager/ui/editors/inventory_editor.py:192
+#: src/er_save_manager/ui/editors/equipment_editor.py:2126
+#: src/er_save_manager/ui/editors/inventory_editor.py:193
 #: src/er_save_manager/ui/tabs/appearance_tab.py:1036
 #: src/er_save_manager/ui/tabs/settings_tab.py:840
 msgid "OK"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:2148
+#: src/er_save_manager/ui/editors/equipment_editor.py:2155
 msgid "Failed to share loadout. Check your internet connection."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:2173
+#: src/er_save_manager/ui/editors/equipment_editor.py:2180
 msgid "No loadout found for that code, or the connection failed."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:792
+#: src/er_save_manager/ui/editors/inventory_editor.py:793
 msgid "Visual Item Picker..."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:869
+#: src/er_save_manager/ui/editors/inventory_editor.py:870
 msgid "Loadouts..."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:878
+#: src/er_save_manager/ui/editors/inventory_editor.py:879
 msgid "Import Build"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:1023
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1153
+#: src/er_save_manager/ui/editors/inventory_editor.py:1019
+msgid "Key Items"
+msgstr ""
+
+#: src/er_save_manager/ui/editors/inventory_editor.py:1028
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1154
 msgid "Show:"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:1046
+#: src/er_save_manager/ui/editors/inventory_editor.py:1037
+msgid "Weapons"
+msgstr ""
+
+#: src/er_save_manager/ui/editors/inventory_editor.py:1038
+msgid "Armor"
+msgstr ""
+
+#: src/er_save_manager/ui/editors/inventory_editor.py:1039
+msgid "Talismans"
+msgstr ""
+
+#: src/er_save_manager/ui/editors/inventory_editor.py:1040
+msgid "Goods"
+msgstr ""
+
+#: src/er_save_manager/ui/editors/inventory_editor.py:1041
+msgid "Gems"
+msgstr ""
+
+#: src/er_save_manager/ui/editors/inventory_editor.py:1061
 msgid "Filter items..."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:1058
+#: src/er_save_manager/ui/editors/inventory_editor.py:1073
 msgid "Visual Inventory..."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:1110
+#: src/er_save_manager/ui/editors/inventory_editor.py:1125
 msgid "Set Upgrade"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:1116
+#: src/er_save_manager/ui/editors/inventory_editor.py:1131
 msgid "Set Affinity"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:1122
+#: src/er_save_manager/ui/editors/inventory_editor.py:1137
 msgid "Set AoW"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:1218
+#: src/er_save_manager/ui/editors/inventory_editor.py:1233
 #, python-brace-format
 msgid "Added {count} inventory items to Loadout."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:1223
+#: src/er_save_manager/ui/editors/inventory_editor.py:1238
 msgid "Nothing to Add"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:1224
+#: src/er_save_manager/ui/editors/inventory_editor.py:1239
 msgid "No inventory items are currently visible."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:1637
+#: src/er_save_manager/ui/editors/inventory_editor.py:1652
 #: src/er_save_manager/ui/tabs/world_state_tab.py:238
 #, python-brace-format
 msgid "Slot {slot_idx} is empty."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:1697
+#: src/er_save_manager/ui/editors/inventory_editor.py:1712
 #, python-brace-format
 msgid ""
 "Failed to refresh inventory:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:1994
-#: src/er_save_manager/ui/editors/inventory_editor.py:2016
+#: src/er_save_manager/ui/editors/inventory_editor.py:2009
+#: src/er_save_manager/ui/editors/inventory_editor.py:2031
 msgid "Select an item from the browser first."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2003
+#: src/er_save_manager/ui/editors/inventory_editor.py:2018
 #, python-brace-format
 msgid "Added {item_info} to Loadout."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2069
+#: src/er_save_manager/ui/editors/inventory_editor.py:2084
 #, python-brace-format
 msgid ""
 "Failed to add item:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2080
-#: src/er_save_manager/ui/editors/inventory_editor.py:2097
+#: src/er_save_manager/ui/editors/inventory_editor.py:2095
+#: src/er_save_manager/ui/editors/inventory_editor.py:2112
 msgid "Batch Add"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2081
+#: src/er_save_manager/ui/editors/inventory_editor.py:2096
 msgid "Please select a specific category to batch add."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2098
+#: src/er_save_manager/ui/editors/inventory_editor.py:2113
 #, python-brace-format
 msgid "Batch {action_name} all {len} items from '{cat}'?"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2132
+#: src/er_save_manager/ui/editors/inventory_editor.py:2147
 #, python-brace-format
 msgid "Added {count} items from {cat} to Loadout."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2222
+#: src/er_save_manager/ui/editors/inventory_editor.py:2237
 #, python-brace-format
 msgid "Batch added {success} items from {cat}."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2230
+#: src/er_save_manager/ui/editors/inventory_editor.py:2245
 #, python-brace-format
 msgid ""
 "Batch Add Failed:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2250
+#: src/er_save_manager/ui/editors/inventory_editor.py:2265
 #, python-brace-format
 msgid ""
 "Remove this item from {location}?\n"
@@ -3808,285 +4016,285 @@ msgid ""
 "{item_label}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2278
+#: src/er_save_manager/ui/editors/inventory_editor.py:2293
 msgid "Item removed."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2282
+#: src/er_save_manager/ui/editors/inventory_editor.py:2297
 #, python-brace-format
 msgid ""
 "Failed to remove item:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2290
-#: src/er_save_manager/ui/editors/inventory_editor.py:2414
+#: src/er_save_manager/ui/editors/inventory_editor.py:2305
+#: src/er_save_manager/ui/editors/inventory_editor.py:2429
 msgid "Select an item first."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2316
+#: src/er_save_manager/ui/editors/inventory_editor.py:2331
 msgid "Not Stackable"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2317
+#: src/er_save_manager/ui/editors/inventory_editor.py:2332
 msgid "Quantity editing does not apply to this item type."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2333
+#: src/er_save_manager/ui/editors/inventory_editor.py:2348
 msgid "Quantity must be an integer."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2333
-#: src/er_save_manager/ui/editors/inventory_editor.py:2339
-#: src/er_save_manager/ui/editors/inventory_editor.py:2480
+#: src/er_save_manager/ui/editors/inventory_editor.py:2348
+#: src/er_save_manager/ui/editors/inventory_editor.py:2354
+#: src/er_save_manager/ui/editors/inventory_editor.py:2495
 msgid "Input Error"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2339
+#: src/er_save_manager/ui/editors/inventory_editor.py:2354
 msgid "Quantity must be at least 1."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2344
+#: src/er_save_manager/ui/editors/inventory_editor.py:2359
 msgid "Invalid Quantity"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2345
+#: src/er_save_manager/ui/editors/inventory_editor.py:2360
 #, python-brace-format
 msgid "Maximum quantity for this item is {max_qty}."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2370
+#: src/er_save_manager/ui/editors/inventory_editor.py:2385
 #, python-brace-format
 msgid ""
 "Failed to set quantity:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2404
-#: src/er_save_manager/ui/editors/inventory_editor.py:2423
+#: src/er_save_manager/ui/editors/inventory_editor.py:2419
+#: src/er_save_manager/ui/editors/inventory_editor.py:2438
 msgid "Not a Weapon"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2405
-#: src/er_save_manager/ui/editors/inventory_editor.py:2424
+#: src/er_save_manager/ui/editors/inventory_editor.py:2420
+#: src/er_save_manager/ui/editors/inventory_editor.py:2439
 msgid "This operation only applies to weapons."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2456
+#: src/er_save_manager/ui/editors/inventory_editor.py:2471
 msgid "Not Upgradable"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2457
+#: src/er_save_manager/ui/editors/inventory_editor.py:2472
 msgid "This weapon cannot be upgraded."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2481
+#: src/er_save_manager/ui/editors/inventory_editor.py:2496
 msgid "Upgrade level must be an integer."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2488
+#: src/er_save_manager/ui/editors/inventory_editor.py:2503
 #, python-brace-format
 msgid "Upgrade must be 0-{cap}."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2513
+#: src/er_save_manager/ui/editors/inventory_editor.py:2528
 #, python-brace-format
 msgid "Upgrade set to +{new_upg}."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2518
-#: src/er_save_manager/ui/editors/inventory_editor.py:2724
+#: src/er_save_manager/ui/editors/inventory_editor.py:2533
+#: src/er_save_manager/ui/editors/inventory_editor.py:2739
 msgid "Weapon gaitem entry not found."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2523
+#: src/er_save_manager/ui/editors/inventory_editor.py:2538
 #, python-brace-format
 msgid ""
 "Failed to set upgrade:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2577
+#: src/er_save_manager/ui/editors/inventory_editor.py:2592
 msgid "Not Infusable"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2578
+#: src/er_save_manager/ui/editors/inventory_editor.py:2593
 msgid "This weapon cannot be infused."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2730
+#: src/er_save_manager/ui/editors/inventory_editor.py:2745
 #, python-brace-format
 msgid ""
 "Failed to set affinity:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2762
+#: src/er_save_manager/ui/editors/inventory_editor.py:2777
 msgid "AoW Not Supported"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:2763
+#: src/er_save_manager/ui/editors/inventory_editor.py:2778
 msgid "This weapon does not accept an Ash of War."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3008
+#: src/er_save_manager/ui/editors/inventory_editor.py:3023
 #, python-brace-format
 msgid ""
 "Failed to set AoW:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3036
+#: src/er_save_manager/ui/editors/inventory_editor.py:3051
 msgid "Select a character first."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3109
+#: src/er_save_manager/ui/editors/inventory_editor.py:3124
 msgid "Saved Loadouts (DB)"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3137
+#: src/er_save_manager/ui/editors/inventory_editor.py:3152
 msgid "Load Selected"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3140
+#: src/er_save_manager/ui/editors/inventory_editor.py:3155
 msgid "Save Current"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3143
+#: src/er_save_manager/ui/editors/inventory_editor.py:3158
 msgid "Save to Selected"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3147
+#: src/er_save_manager/ui/editors/inventory_editor.py:3162
 msgid "Delete Selected"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3154
+#: src/er_save_manager/ui/editors/inventory_editor.py:3169
 msgid "Current Loadout Items"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3185
+#: src/er_save_manager/ui/editors/inventory_editor.py:3200
 msgid "Apply Loadout"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3204
+#: src/er_save_manager/ui/editors/inventory_editor.py:3219
 msgid "Export JSON"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3207
+#: src/er_save_manager/ui/editors/inventory_editor.py:3222
 msgid "Import JSON"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3213
+#: src/er_save_manager/ui/editors/inventory_editor.py:3228
 msgid "Export Code"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3216
+#: src/er_save_manager/ui/editors/inventory_editor.py:3231
 msgid "Import Code"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3224
+#: src/er_save_manager/ui/editors/inventory_editor.py:3239
 msgid "Add Current Inv to Loadout"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3256
-#: src/er_save_manager/ui/editors/inventory_editor.py:3285
-#: src/er_save_manager/ui/editors/inventory_editor.py:3398
+#: src/er_save_manager/ui/editors/inventory_editor.py:3271
+#: src/er_save_manager/ui/editors/inventory_editor.py:3300
+#: src/er_save_manager/ui/editors/inventory_editor.py:3413
 msgid "Empty"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3256
-#: src/er_save_manager/ui/editors/inventory_editor.py:3285
-#: src/er_save_manager/ui/editors/inventory_editor.py:3398
+#: src/er_save_manager/ui/editors/inventory_editor.py:3271
+#: src/er_save_manager/ui/editors/inventory_editor.py:3300
+#: src/er_save_manager/ui/editors/inventory_editor.py:3413
 msgid "Current loadout is empty."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3265
+#: src/er_save_manager/ui/editors/inventory_editor.py:3280
 msgid "Name Exists"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3267
+#: src/er_save_manager/ui/editors/inventory_editor.py:3282
 #, python-brace-format
 msgid "A loadout named '{name}' already exists. Please choose a different name."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3278
+#: src/er_save_manager/ui/editors/inventory_editor.py:3293
 #, python-brace-format
 msgid "Saved to DB: {name}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3292
+#: src/er_save_manager/ui/editors/inventory_editor.py:3307
 msgid "No Loadout Selected"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3294
+#: src/er_save_manager/ui/editors/inventory_editor.py:3309
 msgid "Select a loadout in the list first, or use Save Current to create one."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3306
+#: src/er_save_manager/ui/editors/inventory_editor.py:3321
 #, python-brace-format
 msgid "Updated: {name}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3314
+#: src/er_save_manager/ui/editors/inventory_editor.py:3329
 msgid "Selection"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3314
+#: src/er_save_manager/ui/editors/inventory_editor.py:3329
 msgid "Select a loadout from the DB first."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3325
+#: src/er_save_manager/ui/editors/inventory_editor.py:3340
 #, python-brace-format
 msgid "Loaded from DB: {name}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3336
+#: src/er_save_manager/ui/editors/inventory_editor.py:3351
 #, python-brace-format
 msgid "Delete loadout '{name}' from the DB?"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3376
+#: src/er_save_manager/ui/editors/inventory_editor.py:3391
 msgid "Loadout saved."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3388
+#: src/er_save_manager/ui/editors/inventory_editor.py:3403
 msgid "Loadout loaded."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3392
+#: src/er_save_manager/ui/editors/inventory_editor.py:3407
 #, python-brace-format
 msgid ""
 "Failed to load JSON:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3409
+#: src/er_save_manager/ui/editors/inventory_editor.py:3424
 msgid "Failed to upload loadout. Check your connection."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3427
+#: src/er_save_manager/ui/editors/inventory_editor.py:3442
 #: src/er_save_manager/ui/tabs/appearance_tab.py:1222
 msgid "Code not found, or failed to fetch. Check your connection."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3435
+#: src/er_save_manager/ui/editors/inventory_editor.py:3450
 msgid "Loadout imported from code."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3448
+#: src/er_save_manager/ui/editors/inventory_editor.py:3463
 msgid "Loadout shared"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3468
+#: src/er_save_manager/ui/editors/inventory_editor.py:3483
 #: src/er_save_manager/ui/tabs/appearance_tab.py:987
 msgid "Code copied to clipboard!"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3529
+#: src/er_save_manager/ui/editors/inventory_editor.py:3544
 msgid "Partial Success"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3530
+#: src/er_save_manager/ui/editors/inventory_editor.py:3545
 #, python-brace-format
 msgid ""
 "Added {success_count} items.\n"
@@ -4094,12 +4302,12 @@ msgid ""
 "{err_text}"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3538
+#: src/er_save_manager/ui/editors/inventory_editor.py:3553
 #, python-brace-format
 msgid "Loadout applied successfully ({success_count} items)."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:3546
+#: src/er_save_manager/ui/editors/inventory_editor.py:3561
 #, python-brace-format
 msgid ""
 "Failed to apply loadout:\n"
@@ -4215,11 +4423,11 @@ msgstr ""
 msgid "Min from inventory: {matchmaking_min}"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:297
+#: src/er_save_manager/ui/gui.py:298
 msgid "Game is Running"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:299
+#: src/er_save_manager/ui/gui.py:300
 #, python-brace-format
 msgid ""
 "{game_name} is currently running.\n"
@@ -4229,7 +4437,7 @@ msgid ""
 "Would you like to force kill the game process?"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:311
+#: src/er_save_manager/ui/gui.py:312
 #, python-brace-format
 msgid ""
 "Failed to terminate {game_name} process.\n"
@@ -4237,7 +4445,7 @@ msgid ""
 "The game may require manual closing or administrator permissions."
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:328
+#: src/er_save_manager/ui/gui.py:329
 #, python-brace-format
 msgid ""
 "{game_name} process terminated successfully.\n"
@@ -4245,11 +4453,11 @@ msgid ""
 "You can now proceed safely."
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:338
+#: src/er_save_manager/ui/gui.py:339
 msgid "Timeout"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:340
+#: src/er_save_manager/ui/gui.py:341
 #, python-brace-format
 msgid ""
 "Game process is still running after kill attempt.\n"
@@ -4257,165 +4465,203 @@ msgid ""
 "Please close {game_name} manually and try again."
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:373
+#: src/er_save_manager/ui/gui.py:374
 #, python-brace-format
 msgid "{game_name} launched - backup created: {name}"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:421
+#: src/er_save_manager/ui/gui.py:422
 msgid "🎉 Update Available!"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:441
+#: src/er_save_manager/ui/gui.py:442
 msgid "Download from:"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:459
+#: src/er_save_manager/ui/gui.py:460
 msgid "📦 GitHub Releases"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:467
+#: src/er_save_manager/ui/gui.py:468
 msgid "🔗 Nexus Mods"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:477
+#: src/er_save_manager/ui/gui.py:478
 msgid "Don't show update notifications in the future"
 msgstr ""
 
 #: src/er_save_manager/ui/dialogs/browser_submission.py:427
-#: src/er_save_manager/ui/dialogs/character_browser.py:761
+#: src/er_save_manager/ui/dialogs/character_browser.py:769
 #: src/er_save_manager/ui/dialogs/character_browser_submission.py:452
 #: src/er_save_manager/ui/dialogs/character_details.py:412
-#: src/er_save_manager/ui/dialogs/preset_browser.py:629
-#: src/er_save_manager/ui/dialogs/preset_browser.py:1425
+#: src/er_save_manager/ui/dialogs/preset_browser.py:643
+#: src/er_save_manager/ui/dialogs/preset_browser.py:1439
 #: src/er_save_manager/ui/dialogs/troubleshooting.py:93
-#: src/er_save_manager/ui/editors/equipment_editor.py:2078
-#: src/er_save_manager/ui/editors/inventory_editor.py:3477
-#: src/er_save_manager/ui/gui.py:491 src/er_save_manager/ui/gui.py:1508
-#: src/er_save_manager/ui/icon_browser.py:160
+#: src/er_save_manager/ui/editors/equipment_editor.py:2085
+#: src/er_save_manager/ui/editors/inventory_editor.py:3492
+#: src/er_save_manager/ui/gui.py:492 src/er_save_manager/ui/gui.py:1509
+#: src/er_save_manager/ui/icon_browser.py:161
 #: src/er_save_manager/ui/map_view.py:139
 #: src/er_save_manager/ui/quest_progress_dialog.py:122
 #: src/er_save_manager/ui/tabs/appearance_tab.py:787
 #: src/er_save_manager/ui/tabs/appearance_tab.py:995
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:797
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:864
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1088
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1249
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1747
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1907
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:2127
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:807
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:874
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1089
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1252
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1750
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1910
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:2130
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:613
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:779
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:1094
-#: src/er_save_manager/ui/visual_inventory.py:260
+#: src/er_save_manager/ui/visual_inventory.py:261
 msgid "Close"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:525
+#: src/er_save_manager/ui/gui.py:526
 msgid "☕ Support me"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:535
+#: src/er_save_manager/ui/gui.py:536
 msgid "Discord Server"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:545
+#: src/er_save_manager/ui/gui.py:546
 msgid "Video Guide"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:555
+#: src/er_save_manager/ui/gui.py:556
 msgid "Elden Ring Save Manager"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:561
+#: src/er_save_manager/ui/gui.py:562
 msgid "Complete save editor, backup manager, and corruption fixer"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:573
+#: src/er_save_manager/ui/gui.py:574
 msgid "Game:"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:591
+#: src/er_save_manager/ui/gui.py:592
 msgid "Select a Save File"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:617
+#: src/er_save_manager/ui/gui.py:618
 msgid "Auto-Find"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:630
+#: src/er_save_manager/ui/gui.py:631
 msgid "Reload"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:639
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:117
+#: src/er_save_manager/ui/gui.py:640
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:118
 msgid "Backup Manager"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:646
+#: src/er_save_manager/ui/gui.py:647
 msgid "Troubleshooting"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:653
+#: src/er_save_manager/ui/gui.py:654
 msgid "PS / Switch Save?"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:661
+#: src/er_save_manager/ui/gui.py:662
 msgid "Item Gib"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/character_browser.py:314
-#: src/er_save_manager/ui/gui.py:1281
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:155
+#: src/er_save_manager/ui/gui.py:787
+#: src/er_save_manager/ui/tabs/save_inspector_tab.py:60
+msgid "Save Fixer"
+msgstr ""
+
+#: src/er_save_manager/ui/gui.py:823
+msgid "Appearance"
+msgstr ""
+
+#: src/er_save_manager/ui/gui.py:886
+#: src/er_save_manager/ui/tabs/gestures_regions_tab.py:157
+msgid "Gestures"
+msgstr ""
+
+#: src/er_save_manager/ui/gui.py:903
+#: src/er_save_manager/ui/tabs/advanced_tools_tab.py:51
+msgid "Advanced Tools"
+msgstr ""
+
+#: src/er_save_manager/ui/gui.py:915 src/er_save_manager/ui/gui.py:1015
+#: src/er_save_manager/ui/gui.py:1077 src/er_save_manager/ui/gui.py:1185
+#: src/er_save_manager/ui/gui.py:1248
+#: src/er_save_manager/ui/tabs/settings_tab.py:83
+msgid "Settings"
+msgstr ""
+
+#: src/er_save_manager/ui/gui.py:1202
+msgid "Inspector"
+msgstr ""
+
+#: src/er_save_manager/ui/gui.py:1210
+msgid "Editor"
+msgstr ""
+
+#: src/er_save_manager/ui/dialogs/character_browser.py:323
+#: src/er_save_manager/ui/gui.py:1282
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:156
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:128
 msgid "Character Slot:"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1411
+#: src/er_save_manager/ui/gui.py:1337
+msgid "Equipment"
+msgstr ""
+
+#: src/er_save_manager/ui/gui.py:1412
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:231
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:237
 #: src/er_save_manager/ui/tabs/world_state_tab.py:228
 msgid "Invalid Slot"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1412
+#: src/er_save_manager/ui/gui.py:1413
 msgid "Please choose a character slot."
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1422
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:362
+#: src/er_save_manager/ui/gui.py:1423
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:363
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:248
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:322
 #, python-brace-format
 msgid "Slot {slot_idx} is empty!"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1472
+#: src/er_save_manager/ui/gui.py:1473
 msgid "PS / Switch Saves"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1479
+#: src/er_save_manager/ui/gui.py:1480
 msgid ""
 "Console saves must be decrypted and exported as memory.dat before you can"
 " load them."
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1490
+#: src/er_save_manager/ui/gui.py:1491
 msgid ""
 "Exporting/Decrypting a console save may require custom firmware on your "
 "console, we cannot provide instructions for doing so. Use at your own "
 "risk."
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1502
+#: src/er_save_manager/ui/gui.py:1503
 msgid "Auto-Find will not work for memory.dat files."
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1593
+#: src/er_save_manager/ui/gui.py:1594
 msgid "No Saves Found"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1595
+#: src/er_save_manager/ui/gui.py:1596
 #, python-brace-format
 msgid ""
 "No {game_name} save files found.\n"
@@ -4424,49 +4670,49 @@ msgid ""
 "On Linux, saves are stored in Steam's compatdata folder."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/equipment_editor.py:2172
-#: src/er_save_manager/ui/editors/inventory_editor.py:2518
-#: src/er_save_manager/ui/editors/inventory_editor.py:2723
-#: src/er_save_manager/ui/gui.py:1601
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:747
+#: src/er_save_manager/ui/editors/equipment_editor.py:2179
+#: src/er_save_manager/ui/editors/inventory_editor.py:2533
+#: src/er_save_manager/ui/editors/inventory_editor.py:2738
+#: src/er_save_manager/ui/gui.py:1602
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:757
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:273
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:861
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:932
 msgid "Not Found"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1602
+#: src/er_save_manager/ui/gui.py:1603
 #, python-brace-format
 msgid "No {game_name} save files found."
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1635
+#: src/er_save_manager/ui/gui.py:1636
 msgid "Non-Standard Save Location"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1662
+#: src/er_save_manager/ui/gui.py:1663
 msgid "Add this to the custom launcher's Steam launch options:"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1679
+#: src/er_save_manager/ui/gui.py:1680
 msgid "Launch option copied to clipboard!"
 msgstr ""
 
-#: src/er_save_manager/ui/dialogs/preset_browser.py:614
-#: src/er_save_manager/ui/gui.py:1679
+#: src/er_save_manager/ui/dialogs/preset_browser.py:628
+#: src/er_save_manager/ui/gui.py:1680
 msgid "Copied"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1683
+#: src/er_save_manager/ui/gui.py:1684
 #: src/er_save_manager/ui/tabs/appearance_tab.py:1610
 msgid "Copy"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1695
+#: src/er_save_manager/ui/gui.py:1696
 msgid "Copy Save"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1697
+#: src/er_save_manager/ui/gui.py:1698
 #, python-brace-format
 msgid ""
 "Copy save file to:\n"
@@ -4475,7 +4721,7 @@ msgid ""
 "The original file will remain in its current location."
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1711
+#: src/er_save_manager/ui/gui.py:1712
 #, python-brace-format
 msgid ""
 "Save file copied to:\n"
@@ -4485,201 +4731,211 @@ msgid ""
 "{save_path}"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1719
+#: src/er_save_manager/ui/gui.py:1720
 #, python-brace-format
 msgid ""
 "Failed to copy save:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1731
+#: src/er_save_manager/ui/gui.py:1732
 msgid "Copy to Default"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1734
+#: src/er_save_manager/ui/gui.py:1735
 msgid "Keep Current"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1737
+#: src/er_save_manager/ui/gui.py:1738
 msgid "Don't Show Again"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:1989
+#: src/er_save_manager/ui/gui.py:1990
 #, python-brace-format
 msgid "Save file loaded: {basename}"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2016
+#: src/er_save_manager/ui/gui.py:2017
 msgid "Please select a valid save file first!"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2056
+#: src/er_save_manager/ui/gui.py:2057
 msgid "⚠️ Warning - Vanilla Save File Detected"
 msgstr ""
 
 #: src/er_save_manager/ui/dialogs/backup_pruning_warning.py:83
-#: src/er_save_manager/ui/gui.py:2086
+#: src/er_save_manager/ui/gui.py:2087
 msgid "Don't show this warning again"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2107
+#: src/er_save_manager/ui/gui.py:2108
 msgid "Yes, Continue"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2110
+#: src/er_save_manager/ui/gui.py:2111
 msgid "No, Cancel"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2165
+#: src/er_save_manager/ui/gui.py:2166
 #, python-brace-format
 msgid ""
 "Failed to load save file:\n"
 "{error_msg}"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2192
+#: src/er_save_manager/ui/gui.py:2193
 #, python-brace-format
 msgid ""
 "Failed to load DSR save:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2215
+#: src/er_save_manager/ui/gui.py:2216
 #, python-brace-format
 msgid "DSR save loaded: {basename}"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2251
+#: src/er_save_manager/ui/gui.py:2252
 #, python-brace-format
 msgid ""
 "Failed to load DS3 save:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2280
+#: src/er_save_manager/ui/gui.py:2281
 #, python-brace-format
 msgid "DS3 save loaded: {basename}"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2305
+#: src/er_save_manager/ui/gui.py:2306
 #, python-brace-format
 msgid ""
 "Failed to load DS2 save:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2331
+#: src/er_save_manager/ui/gui.py:2332
 #, python-brace-format
 msgid "DS2 save loaded: {basename}"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2354
+#: src/er_save_manager/ui/gui.py:2355
 #, python-brace-format
 msgid ""
 "Failed to load Nightreign save:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2383
+#: src/er_save_manager/ui/gui.py:2384
 #, python-brace-format
 msgid "Nightreign save loaded: {basename}"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2476
+#: src/er_save_manager/ui/gui.py:2477
 msgid "Save file loaded successfully!"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2597
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:339
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:395
+#: src/er_save_manager/ui/gui.py:2598
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:340
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:396
 #, python-brace-format
 msgid ""
 "Failed to open backup manager:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2668
+#: src/er_save_manager/ui/gui.py:2669
 msgid "Save Modified Externally"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2676
+#: src/er_save_manager/ui/gui.py:2677
 #, python-brace-format
 msgid ""
 "{name} was changed while the save manager\n"
 "had it loaded. Reload to avoid overwriting those changes."
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2700
+#: src/er_save_manager/ui/gui.py:2701
 msgid "Reload Now"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2705
+#: src/er_save_manager/ui/gui.py:2706
 msgid "Dismiss"
 msgstr ""
 
-#: src/er_save_manager/ui/gui.py:2715
+#: src/er_save_manager/ui/gui.py:2716
 msgid "Don't show this again"
 msgstr ""
 
-#: src/er_save_manager/ui/icon_browser.py:156
+#: src/er_save_manager/ui/icon_browser.py:157
 msgid "Filter..."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:913
-#: src/er_save_manager/ui/icon_browser.py:225
+#: src/er_save_manager/ui/editors/inventory_editor.py:914
+#: src/er_save_manager/ui/icon_browser.py:226
 msgid "Affinity:"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:932
-#: src/er_save_manager/ui/icon_browser.py:244
+#: src/er_save_manager/ui/editors/inventory_editor.py:933
+#: src/er_save_manager/ui/icon_browser.py:245
 msgid "Location:"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:944
-#: src/er_save_manager/ui/icon_browser.py:253
+#: src/er_save_manager/ui/editors/inventory_editor.py:937
+#: src/er_save_manager/ui/icon_browser.py:249
+msgid "held"
+msgstr ""
+
+#: src/er_save_manager/ui/editors/inventory_editor.py:937
+#: src/er_save_manager/ui/icon_browser.py:249
+msgid "storage"
+msgstr ""
+
+#: src/er_save_manager/ui/editors/inventory_editor.py:947
+#: src/er_save_manager/ui/icon_browser.py:259
 msgid "Ash of War:"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:962
-#: src/er_save_manager/ui/icon_browser.py:272
+#: src/er_save_manager/ui/editors/inventory_editor.py:965
+#: src/er_save_manager/ui/icon_browser.py:278
 msgid "Pick..."
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:971
-#: src/er_save_manager/ui/editors/inventory_editor.py:1051
-#: src/er_save_manager/ui/editors/inventory_editor.py:3197
-#: src/er_save_manager/ui/icon_browser.py:281
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:316
+#: src/er_save_manager/ui/editors/inventory_editor.py:974
+#: src/er_save_manager/ui/editors/inventory_editor.py:1066
+#: src/er_save_manager/ui/editors/inventory_editor.py:3212
+#: src/er_save_manager/ui/icon_browser.py:287
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:317
 msgid "Clear"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:846
-#: src/er_save_manager/ui/icon_browser.py:305
+#: src/er_save_manager/ui/editors/inventory_editor.py:847
+#: src/er_save_manager/ui/icon_browser.py:311
 msgid "Batch Add Category"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:858
-#: src/er_save_manager/ui/icon_browser.py:315
+#: src/er_save_manager/ui/editors/inventory_editor.py:859
+#: src/er_save_manager/ui/icon_browser.py:321
 msgid "Loadout Mode"
 msgstr ""
 
-#: src/er_save_manager/ui/icon_browser.py:325
-#: src/er_save_manager/ui/icon_browser.py:774
+#: src/er_save_manager/ui/icon_browser.py:331
+#: src/er_save_manager/ui/icon_browser.py:780
 msgid "Save Icon"
 msgstr ""
 
-#: src/er_save_manager/ui/editors/inventory_editor.py:1301
-#: src/er_save_manager/ui/icon_browser.py:426
+#: src/er_save_manager/ui/editors/inventory_editor.py:1316
+#: src/er_save_manager/ui/icon_browser.py:432
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:995
 #, python-brace-format
 msgid "Selected: {name}"
 msgstr ""
 
-#: src/er_save_manager/ui/icon_browser.py:766
+#: src/er_save_manager/ui/icon_browser.py:772
 msgid "No Icon"
 msgstr ""
 
-#: src/er_save_manager/ui/icon_browser.py:767
+#: src/er_save_manager/ui/icon_browser.py:773
 #, python-brace-format
 msgid "No icon found for {name}."
 msgstr ""
@@ -4844,10 +5100,6 @@ msgstr ""
 #: src/er_save_manager/ui/quest_progress_dialog.py:387
 #, python-brace-format
 msgid "{done}/{total} steps"
-msgstr ""
-
-#: src/er_save_manager/ui/tabs/advanced_tools_tab.py:51
-msgid "Advanced Tools"
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/advanced_tools_tab.py:61
@@ -5039,7 +5291,7 @@ msgid "No presets available to export"
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/appearance_tab.py:879
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:2012
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:2015
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:616
 msgid "Select All"
 msgstr ""
@@ -5214,29 +5466,29 @@ msgstr ""
 msgid "Preset in Slot {deleted_slot} deleted!"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:123
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:124
 msgid "Manage save file backups for all supported FromSoftware games"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:136
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:137
 msgid "Open Backup Manager Window"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:146
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:147
 msgid "Quick Stats"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:166
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:769
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:167
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:779
 msgid "Backup Information"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:199
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:200
 msgid "(currently loaded game)"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:305
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:357
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:306
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:358
 #, python-brace-format
 msgid ""
 "No save file found for {name}.\n"
@@ -5245,87 +5497,107 @@ msgid ""
 "then try again."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:347
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:348
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:477
 msgid "No Game"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:347
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:348
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:477
 msgid "Please select a game."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:404
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:405
 #, python-brace-format
 msgid "Backup Manager - {name}"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:420
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:421
 #: src/er_save_manager/ui/tabs/settings_tab.py:212
 msgid "Backups"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:428
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:429
 msgid ""
 "Click the star to lock a backup. Locked backups are never removed by the "
 "backup limit."
 msgstr ""
 
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:438
+msgid "Newest"
+msgstr ""
+
 #: src/er_save_manager/ui/tabs/backup_manager_tab.py:439
+msgid "Oldest"
+msgstr ""
+
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:440
+msgid "Operation"
+msgstr ""
+
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:441
+msgid "Size"
+msgstr ""
+
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:442
+msgid "Locked first"
+msgstr ""
+
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:449
 msgid "Sort by:"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:480
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:490
 msgid "No backups found"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:534
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:544
 #, python-brace-format
 msgid ""
 "Failed to update lock state:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:541
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:551
 msgid "Backup locked"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:541
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:551
 msgid "Backup unlocked"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:609
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:619
 msgid "Reason or name for this backup:"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:614
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:624
 msgid "e.g. before convergence update"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:628
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:638
 msgid "Create"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:654
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:664
 msgid "Backup created"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:658
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:668
 #, python-brace-format
 msgid ""
 "Failed to create backup:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:665
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:675
 msgid "Select a backup to restore."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:671
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:681
 msgid "Confirm Restore"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:673
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:683
 #, python-brace-format
 msgid ""
 "Restore backup '{selected_backup}'?\n"
@@ -5333,33 +5605,33 @@ msgid ""
 "Current save will be backed up first."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:684
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:694
 #, python-brace-format
 msgid ""
 "Failed to restore backup:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:698
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:708
 msgid "Backup restored"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:703
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:713
 msgid "Select a backup to delete."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:709
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:719
 msgid "Backup Locked"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:711
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:721
 msgid ""
 "This backup is locked and cannot be deleted.\n"
 "\n"
 "Click its star to unlock it first."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:720
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:730
 #, python-brace-format
 msgid ""
 "Delete backup '{selected_backup}'?\n"
@@ -5367,26 +5639,26 @@ msgid ""
 "This cannot be undone."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:729
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:739
 msgid "Backup deleted"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:733
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:743
 #, python-brace-format
 msgid ""
 "Failed to delete backup:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:740
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:750
 msgid "Select a backup to view."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:747
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:757
 msgid "Backup metadata not found."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:841
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:851
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:314
 #, python-brace-format
 msgid ""
@@ -5394,7 +5666,7 @@ msgid ""
 "Path: {path}"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/backup_manager_tab.py:847
+#: src/er_save_manager/ui/tabs/backup_manager_tab.py:857
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:320
 #, python-brace-format
 msgid ""
@@ -5500,144 +5772,144 @@ msgstr ""
 msgid "Character deleted from Slot {slot}"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:146
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:147
 msgid "View and edit event flags and respawn bosses"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:173
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:174
 msgid "Load Flags"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:180
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:181
 msgid "Advanced..."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:194
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:195
 msgid "Unlock All in Category"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:205
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:206
 msgid "Boss Respawn..."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:212
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:213
 msgid "Boss Status..."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:219
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:220
 msgid "NPC Revival..."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:226
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:227
 msgid "Quest Progress..."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:233
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:234
 msgid "Summoning Pools..."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:240
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:241
 msgid "Export Flags..."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:247
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:248
 msgid "Import Flags..."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:258
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:259
 msgid "Browse by Category"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:277
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:278
 msgid "Subcategory:"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:294
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:295
 msgid "Search Flags"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:311
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:312
 msgid "(Search by flag ID or name)"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:342
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:510
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:592
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:343
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:511
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:593
 msgid "Select a category or search for flags"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:371
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:372
 msgid "Event flags not available"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:382
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:383
 #, python-brace-format
 msgid "Loaded Slot {slot_idx}. Select category or search."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:388
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:389
 #, python-brace-format
 msgid "Loaded event flags for Slot {slot_idx}"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:396
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:630
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:715
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:798
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:916
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1096
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1257
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1770
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1917
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1937
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:397
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:631
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:716
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:799
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:917
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1097
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1260
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1773
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1920
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1940
 msgid "Not Loaded"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:396
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:715
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:798
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:916
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1096
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1257
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1770
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1917
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1937
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:397
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:716
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:799
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:917
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1097
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1260
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1773
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1920
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1940
 msgid "Please load event flags for a character first!"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:438
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:439
 #, python-brace-format
 msgid "Loading {total} flags in {label}..."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:477
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:478
 #, python-brace-format
 msgid "Loading {next_offset}/{total} flags in {label}..."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:487
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:488
 #, python-brace-format
 msgid "Showing {total} flags in {label}"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:545
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:546
 msgid "Searching..."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:583
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:584
 #, python-brace-format
 msgid "Found {total} matching flags"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:598
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:599
 msgid "No Flags"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:599
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:600
 msgid "No flags are currently displayed!"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:607
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:608
 #, python-brace-format
 msgid ""
 "Set all {len} displayed flags to ON?\n"
@@ -5645,7 +5917,7 @@ msgid ""
 "This will affect only the flags currently visible."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:621
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:622
 #, python-brace-format
 msgid ""
 "Enabled all {len} displayed flags.\n"
@@ -5653,28 +5925,28 @@ msgid ""
 "Click 'Apply Changes' to save."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:630
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:631
 msgid "No event flags loaded!"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:636
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:637
 msgid "No flags have been modified!"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:636
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:649
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:637
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:650
 msgid "No Changes"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:649
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:650
 msgid "No flags were modified!"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:654
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:655
 msgid "Confirm Changes"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:656
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:657
 #, python-brace-format
 msgid ""
 "Apply {changes} flag changes to Slot {current_slot}?\n"
@@ -5682,133 +5954,133 @@ msgid ""
 "A backup will be created automatically."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:702
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:703
 #, python-brace-format
 msgid "Applied {changes} flag changes to Slot {current_slot}!"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:726
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:727
 msgid "Export Event Flags"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:783
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:784
 #, python-brace-format
 msgid "Exported {len} set flags"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:788
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:789
 msgid "Export Failed"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:789
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:790
 #, python-brace-format
 msgid ""
 "Could not export flags:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:808
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:809
 msgid "Import Event Flags"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:821
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:822
 #, python-brace-format
 msgid ""
 "Could not read file:\n"
 "{e}"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:828
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:829
 msgid "Invalid File"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:829
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:830
 msgid "File does not contain a valid flags list."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:846
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:847
 msgid "Nothing to Import"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:847
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:848
 msgid "No valid flag IDs found in file."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:857
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:858
 #, python-brace-format
 msgid "{summary} flags on Slot {current_slot}?"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:876
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:988
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1402
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1410
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1496
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1505
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1594
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1602
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1689
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1698
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1883
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:2096
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:877
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:989
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1405
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1413
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1499
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1508
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1597
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1605
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1692
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1701
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1886
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:2099
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:581
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:746
 msgid "Backup Skipped"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:877
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:989
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:878
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:990
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:582
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:747
 msgid "Could not create backup (permission denied). Proceeding."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:909
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:910
 #, python-brace-format
 msgid "Imported {applied} flags"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:944
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:945
 msgid "Advanced Event Flag Editor"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:963
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1038
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:964
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1039
 msgid "Invalid flag ID!"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:973
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1365
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1456
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1557
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1649
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1851
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:974
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1368
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1459
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1560
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1652
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1854
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:566
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:731
 msgid "Invalid Save Path"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:974
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:975
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:567
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:732
 msgid "Could not locate save file."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1010
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1011
 #, python-brace-format
 msgid "Flag {flag_id} set to {value}"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1018
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1019
 #, python-brace-format
 msgid "Failed to toggle flag: {e}"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1028
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1029
 msgid "Flag Status"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1029
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1030
 #, python-brace-format
 msgid ""
 "Flag {flag_id}: {flag_name}\n"
@@ -5816,112 +6088,120 @@ msgid ""
 "State: {value}"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1043
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1044
 #, python-brace-format
 msgid "Failed to check flag: {e}"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1051
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1052
 msgid "Check"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1122
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1123
 msgid "Boss Status"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1128
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1129
 msgid "Defeated/alive status for all tracked bosses"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1164
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1156
+msgid "Defeated"
+msgstr ""
+
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1156
+msgid "Alive"
+msgstr ""
+
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1167
 msgid "Region:"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1177
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1180
 #, python-brace-format
 msgid "{defeated_count} / {total_count} bosses defeated"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1193
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1219
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1196
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1222
 msgid "Status"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1194
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1220
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1197
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1223
 msgid "Boss"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1195
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1221
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1198
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1224
 msgid "Region"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1240
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1243
 #, python-brace-format
 msgid "{defeated_count} / {total_count} bosses defeated  -  showing {shown}"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1283
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1286
 msgid "Boss Respawn / Kill"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1290
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1293
 msgid "Reset boss defeat flags to respawn, or set them to mark as defeated"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1299
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1302
 msgid "Boss Category:"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1367
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1458
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1559
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1651
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1370
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1461
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1562
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1654
 msgid "Could not locate the save file to back up. Load a valid save (.sl2) first."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1384
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1387
 msgid "No valid selections. Select defeated bosses to respawn."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1404
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1498
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1596
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1691
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:2098
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1407
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1501
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1599
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1694
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:2101
 msgid "Could not create backup (permission denied). Continuing without backup."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1412
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1507
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1604
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1700
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1415
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1510
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1607
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1703
 msgid ""
 "Could not create backup because the save path is not a file. Proceeding "
 "without backup."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1443
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1539
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1636
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1733
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1446
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1542
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1639
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1736
 msgid "Teleport Failed"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1444
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1540
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1637
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1734
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1447
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1543
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1640
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1737
 #, python-brace-format
 msgid "Could not teleport to Roundtable Hold: {e}"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1448
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1451
 msgid "Boss respawned successfully!"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1467
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1470
 #, python-brace-format
 msgid ""
 "Respawn ALL bosses in {get}?\n"
@@ -5929,20 +6209,20 @@ msgid ""
 "This will reset {len} boss(es)."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1545
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1548
 #, python-brace-format
 msgid "Respawned all {count} bosses in {get}!"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1576
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1579
 msgid "No valid selections. Select alive bosses to kill."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1641
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1644
 msgid "Boss killed successfully!"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1660
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1663
 #, python-brace-format
 msgid ""
 "Kill ALL bosses in {get}?\n"
@@ -5950,81 +6230,81 @@ msgid ""
 "This will mark {len} boss(es) as defeated."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1739
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1742
 #, python-brace-format
 msgid "Killed all {count} bosses in {get}!"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1751
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1754
 msgid "Kill Selected"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1755
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1758
 msgid "Kill All in Category"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1759
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1762
 msgid "Respawn Selected"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1763
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1766
 msgid "Respawn All in Category"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1798
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1801
 msgid "NPC Revival"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1804
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1807
 msgid "Revive dead NPCs (does not restore quest progress)"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1852
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1855
 msgid "Could not locate save file. Load a valid save first."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1866
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1869
 msgid "No NPCs selected for revival."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1884
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1887
 msgid "Could not create backup (permission denied)."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1902
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1905
 #, python-brace-format
 msgid "Revived {count} NPC(s)!"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1911
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1914
 msgid "Revive Selected"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1963
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1966
 msgid "Summoning Pools"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1969
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:1972
 msgid "Enable or disable summoning pool activation flags"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:1999
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:2002
 msgid "Select Base"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:2006
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:2009
 msgid "Select DLC"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:2016
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:2019
 msgid "Unselect All"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:2066
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:2069
 msgid "No pools selected."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:2074
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:2077
 #, python-brace-format
 msgid ""
 "{action} {len} summoning pool flags on Slot {current_slot}?\n"
@@ -6032,16 +6312,16 @@ msgid ""
 "A backup will be created automatically."
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:2119
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:2122
 #, python-brace-format
 msgid "{action}d {len} summoning pool flags on Slot {current_slot}"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:2132
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:2135
 msgid "Disable Selected"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/event_flags_tab.py:2139
+#: src/er_save_manager/ui/tabs/event_flags_tab.py:2142
 msgid "Enable Selected"
 msgstr ""
 
@@ -6053,10 +6333,6 @@ msgstr ""
 msgid ""
 "View and manage unlocked gestures as well as unlocked regions and game "
 "settings."
-msgstr ""
-
-#: src/er_save_manager/ui/tabs/gestures_regions_tab.py:157
-msgid "Gestures"
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:181
@@ -6209,10 +6485,6 @@ msgstr ""
 msgid "Offset {offset} exceeds file size {max_offset}"
 msgstr ""
 
-#: src/er_save_manager/ui/tabs/save_inspector_tab.py:60
-msgid "Save Fixer"
-msgstr ""
-
 #: src/er_save_manager/ui/tabs/save_inspector_tab.py:66
 msgid "View All Issues"
 msgstr ""
@@ -6245,10 +6517,6 @@ msgstr ""
 
 #: src/er_save_manager/ui/tabs/save_inspector_tab.py:226
 msgid "Please select a character first!"
-msgstr ""
-
-#: src/er_save_manager/ui/tabs/settings_tab.py:83
-msgid "Settings"
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/settings_tab.py:89
@@ -6977,23 +7245,45 @@ msgstr ""
 msgid "Please close {game_name} before modifying save files."
 msgstr ""
 
-#: src/er_save_manager/ui/visual_inventory.py:219
+#: src/er_save_manager/ui/editors/inventory_editor.py:1019
+#: src/er_save_manager/ui/visual_inventory.py:220
 msgid "Held"
 msgstr ""
 
-#: src/er_save_manager/ui/visual_inventory.py:227
+#: src/er_save_manager/ui/editors/inventory_editor.py:1019
+#: src/er_save_manager/ui/visual_inventory.py:228
 msgid "Storage"
 msgstr ""
 
+#: src/er_save_manager/ui/visual_inventory.py:273
+msgid "Default"
+msgstr ""
+
+#: src/er_save_manager/ui/visual_inventory.py:274
+msgid "Name A-Z"
+msgstr ""
+
+#: src/er_save_manager/ui/visual_inventory.py:275
+msgid "Name Z-A"
+msgstr ""
+
+#: src/er_save_manager/ui/visual_inventory.py:276
+msgid "Qty ↓"
+msgstr ""
+
+#: src/er_save_manager/ui/visual_inventory.py:277
+msgid "Qty ↑"
+msgstr ""
+
 #: src/er_save_manager/ui/dialogs/character_browser.py:185
-#: src/er_save_manager/ui/dialogs/preset_browser.py:134
-#: src/er_save_manager/ui/editors/equipment_editor.py:411
-#: src/er_save_manager/ui/editors/equipment_editor.py:819
-#: src/er_save_manager/ui/visual_inventory.py:270
+#: src/er_save_manager/ui/dialogs/preset_browser.py:145
+#: src/er_save_manager/ui/editors/equipment_editor.py:412
+#: src/er_save_manager/ui/editors/equipment_editor.py:823
+#: src/er_save_manager/ui/visual_inventory.py:280
 msgid "Sort:"
 msgstr ""
 
-#: src/er_save_manager/ui/visual_inventory.py:638
+#: src/er_save_manager/ui/visual_inventory.py:648
 #, python-brace-format
 msgid "Qty: {qty}  |  {location}"
 msgstr ""

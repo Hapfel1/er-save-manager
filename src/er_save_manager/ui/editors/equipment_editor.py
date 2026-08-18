@@ -15,8 +15,9 @@ from pathlib import Path
 
 import customtkinter as ctk
 
-from er_save_manager.i18n import t
+from er_save_manager.i18n import N_, t
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.translated_var import TranslatedVar
 from er_save_manager.ui.utils import bind_mousewheel, pick_file, trace_variable
 
 # ---- constants --------------------------------------------------------------
@@ -409,10 +410,13 @@ class _ItemPickerDialog(ctk.CTkToplevel):
             command=lambda _v: self._filter(),
         ).pack(side=ctk.LEFT, padx=(0, 12))
         ctk.CTkLabel(filt_row, text=t("Sort:")).pack(side=ctk.LEFT, padx=(0, 6))
-        self._sort_var = ctk.StringVar(value="Name (A-Z)")
+        self._sort_var = TranslatedVar(
+            value="Name (A-Z)",
+            choices=[N_("Name (A-Z)"), N_("Name (Z-A)"), N_("Category")],
+        )
         ctk.CTkComboBox(
             filt_row,
-            values=["Name (A-Z)", "Name (Z-A)", "Category"],
+            values=self._sort_var.labels,
             variable=self._sort_var,
             width=140,
             command=lambda _v: self._filter(),
@@ -817,10 +821,13 @@ class _VisualItemPickerDialog(ctk.CTkToplevel):
             command=lambda _v: self._filter(),
         ).pack(side=ctk.LEFT, padx=(0, 12))
         ctk.CTkLabel(filt_row, text=t("Sort:")).pack(side=ctk.LEFT, padx=(0, 6))
-        self._sort_var = ctk.StringVar(value="Name (A-Z)")
+        self._sort_var = TranslatedVar(
+            value="Name (A-Z)",
+            choices=[N_("Name (A-Z)"), N_("Name (Z-A)"), N_("Category")],
+        )
         ctk.CTkComboBox(
             filt_row,
-            values=["Name (A-Z)", "Name (Z-A)", "Category"],
+            values=self._sort_var.labels,
             variable=self._sort_var,
             width=140,
             command=lambda _v: self._filter(),

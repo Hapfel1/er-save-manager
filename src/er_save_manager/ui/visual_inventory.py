@@ -10,7 +10,8 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
-from er_save_manager.i18n import t
+from er_save_manager.i18n import N_, t
+from er_save_manager.ui.translated_var import TranslatedVar
 
 if TYPE_CHECKING:
     from er_save_manager.ui.editors.inventory_editor import InventoryEditor
@@ -266,13 +267,22 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
 
         row2 = ctk.CTkFrame(self, fg_color="transparent")
         row2.pack(fill=ctk.X, padx=10, pady=(0, 2))
-        self._sort_var = ctk.StringVar(value="Name A-Z")
+        self._sort_var = TranslatedVar(
+            value="Name A-Z",
+            choices=[
+                N_("Default"),
+                N_("Name A-Z"),
+                N_("Name Z-A"),
+                N_("Qty ↓"),
+                N_("Qty ↑"),
+            ],
+        )
         ctk.CTkLabel(row2, text=t("Sort:")).pack(side=ctk.LEFT)
         ctk.CTkComboBox(
             row2,
             variable=self._sort_var,
             width=120,
-            values=["Default", "Name A-Z", "Name Z-A", "Qty \u2193", "Qty \u2191"],
+            values=self._sort_var.labels,
             command=self._on_sort_changed,
         ).pack(side=ctk.LEFT, padx=(4, 0))
 
@@ -374,8 +384,8 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
 
     # ---- filter / tabs -------------------------------------------------------
 
-    def _on_sort_changed(self, value: str) -> None:
-        self._sort_mode = value
+    def _on_sort_changed(self, _value: str) -> None:
+        self._sort_mode = self._sort_var.get()
         self._apply_filter()
 
     def _switch_tab(self, tab: str):

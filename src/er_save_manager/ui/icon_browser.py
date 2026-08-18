@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
-from er_save_manager.i18n import t
+from er_save_manager.i18n import N_, t
+from er_save_manager.ui.translated_var import TranslatedVar
 from er_save_manager.ui.utils import pick_file
 
 if TYPE_CHECKING:
@@ -244,9 +245,14 @@ class IconBrowser(ctk.CTkToplevel):
         ctk.CTkLabel(opts, text=t("Location:"), anchor="w").grid(
             row=1, column=2, sticky=ctk.W, padx=(14, 6), pady=3
         )
-        self._location_var = ctk.StringVar(value="held")
+        self._location_var = TranslatedVar(
+            value="held", choices=[N_("held"), N_("storage")]
+        )
         ctk.CTkComboBox(
-            opts, variable=self._location_var, values=["held", "storage"], width=120
+            opts,
+            variable=self._location_var,
+            values=self._location_var.labels,
+            width=120,
         ).grid(row=1, column=3, sticky=ctk.W, pady=3)
 
         # AoW

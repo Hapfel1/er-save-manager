@@ -93,8 +93,9 @@ class Settings:
             "remember_last_location": True,
             "last_save_path": "",
             "theme": "dark",
-            # "auto" resolves from the system locale on startup
-            "language": "auto",
+            # "auto" is offered in the selector and resolves from the system
+            # locale, but the default is English
+            "language": "en",
             "show_linux_save_warning": True,
             "show_backup_pruning_warning": True,
             "show_update_notifications": True,

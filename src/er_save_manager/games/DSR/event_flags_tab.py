@@ -18,8 +18,9 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
-from er_save_manager.i18n import t
+from er_save_manager.i18n import N_, t
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.translated_tabview import TranslatedTabview
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
 
@@ -101,7 +102,7 @@ class DSREventFlagsTab:
         self._slot_combo.pack(side="right")
         ctk.CTkLabel(header, text=t("Slot:")).pack(side="right", padx=(0, 6))
 
-        self._tabs = ctk.CTkTabview(
+        self._tabs = TranslatedTabview(
             outer,
             fg_color=("gray90", "gray20"),
             segmented_button_fg_color=("gray80", "gray35"),
@@ -111,9 +112,9 @@ class DSREventFlagsTab:
         )
         self._tabs.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
-        self._npc_parent = self._tabs.add("NPC States")
-        self._world_parent = self._tabs.add("World Flags")
-        self._lookup_parent = self._tabs.add("Flag Lookup")
+        self._npc_parent = self._tabs.add(N_("NPC States"))
+        self._world_parent = self._tabs.add(N_("World Flags"))
+        self._lookup_parent = self._tabs.add(N_("Flag Lookup"))
 
         for parent, placeholder in [
             (self._npc_parent, t("Load a character to view NPC state flags.")),

@@ -7,21 +7,22 @@ Translations use the gettext format. Every language lives in
 
 Only the interface: buttons, labels, dialogs, tab names, status messages.
 
-Game data is not translated and will not be. Item names, boss names, NPC names,
-locations and regions come from the game's own files and are already officially
-localized by FromSoftware. Retyping them by hand would produce worse results
-than leaving them in English.
+One further group stays in English: the `description=` argument of
+`create_backup()`, because it becomes part of the backup filename on disk.
 
-Three further groups stay in English for technical reasons:
+Tab names and combobox entries are translated, but they double as lookup keys,
+so they are handled by two helpers rather than by wrapping them in `t()`:
 
-- Tab names. CustomTkinter's `CTkTabview` uses the tab name as both the label
-  and the lookup key, and the names are also used as dictionary keys that
-  control which tabs appear per game. Translating them needs the key separated
-  from the label first.
-- Combobox entries passed as `values=[...]`. These are compared as keys
-  elsewhere in the code, so translating one side alone breaks the comparison.
-- The `description=` argument of `create_backup()`. It becomes part of the
-  backup filename on disk.
+- `TranslatedTabview` (`ui/translated_tabview.py`) keeps the English tab name as
+  the key while drawing a translated label, so `tab()`, `set()` and `get()` all
+  continue to work with English names.
+- `TranslatedVar` (`ui/translated_var.py`) is a `StringVar` that holds the
+  translated label for display but returns the English key from `get()` and
+  accepts the English key in `set()`.
+
+Both take their choices marked with `N_()`, which flags a string for extraction
+without translating it at that point. Use `N_()` for any string that must stay
+English where it is written but still needs translating where it is shown.
 
 ## Contributing a translation
 

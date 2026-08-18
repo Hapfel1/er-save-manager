@@ -24,9 +24,10 @@ from er_save_manager.data.summoning_pools_data import (
     SUMMONING_POOL_FLAGS_BASE,
     SUMMONING_POOL_FLAGS_DLC,
 )
-from er_save_manager.i18n import t
+from er_save_manager.i18n import N_, t
 from er_save_manager.parser.event_flags import EventFlags
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.translated_var import TranslatedVar
 from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
 
@@ -1151,11 +1152,13 @@ class EventFlagsTab:
         filter_frame.pack(fill=tk.X, padx=15, pady=(0, 8))
 
         ctk.CTkLabel(filter_frame, text=t("Show:")).pack(side=tk.LEFT, padx=(0, 8))
-        status_filter_var = tk.StringVar(value="All")
+        status_filter_var = TranslatedVar(
+            value="All", choices=[N_("All"), N_("Defeated"), N_("Alive")]
+        )
         ctk.CTkComboBox(
             filter_frame,
             variable=status_filter_var,
-            values=["All", "Defeated", "Alive"],
+            values=status_filter_var.labels,
             state="readonly",
             width=140,
             command=lambda _v: _refresh(),

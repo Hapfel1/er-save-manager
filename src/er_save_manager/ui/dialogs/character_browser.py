@@ -14,9 +14,11 @@ import customtkinter as ctk
 
 from er_save_manager.character_manager import CharacterManager
 from er_save_manager.character_metrics import CharacterMetrics
-from er_save_manager.i18n import t
+from er_save_manager.i18n import N_, t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.progress_dialog import ProgressDialog
+from er_save_manager.ui.translated_tabview import TranslatedTabview
+from er_save_manager.ui.translated_var import TranslatedVar
 from er_save_manager.ui.utils import bind_mousewheel, open_url, trace_variable
 
 try:
@@ -73,11 +75,11 @@ class CharacterBrowser:
 
         self.dialog.protocol("WM_DELETE_WINDOW", on_close)
 
-        self.tabview = ctk.CTkTabview(self.dialog, width=1150, height=820)
+        self.tabview = TranslatedTabview(self.dialog, width=1150, height=820)
         self.tabview.pack(fill=ctk.BOTH, expand=True, padx=10, pady=10)
 
-        self.browse_tab = self.tabview.add("Browse Characters")
-        self.contribute_tab = self.tabview.add("Contribute Character")
+        self.browse_tab = self.tabview.add(N_("Browse Characters"))
+        self.contribute_tab = self.tabview.add(N_("Contribute Character"))
 
         self.setup_browse_tab()
         self.setup_contribute_tab()
@@ -166,15 +168,13 @@ class CharacterBrowser:
         )
 
         ctk.CTkLabel(filter_frame, text=t("Filter:")).pack(side=ctk.LEFT, padx=(18, 8))
-        self.filter_var = ctk.StringVar(value="All")
+        self.filter_var = TranslatedVar(
+            value="All", choices=[N_("All"), N_("Overhaul Mod"), N_("No Overhaul")]
+        )
         filter_combo = ctk.CTkComboBox(
             filter_frame,
             variable=self.filter_var,
-            values=[
-                "All",
-                "Overhaul Mod",
-                "No Overhaul",
-            ],
+            values=self.filter_var.labels,
             width=150,
             state="readonly",
             command=lambda _value=None: self.apply_filters(),
@@ -183,11 +183,20 @@ class CharacterBrowser:
         filter_combo.bind("<<ComboboxSelected>>", lambda _e=None: self.apply_filters())
 
         ctk.CTkLabel(filter_frame, text=t("Sort:")).pack(side=ctk.LEFT, padx=(18, 8))
-        self.sort_var = ctk.StringVar(value="Recent")
+        self.sort_var = TranslatedVar(
+            value="Recent",
+            choices=[
+                N_("Recent"),
+                N_("Likes"),
+                N_("Downloads"),
+                N_("Name"),
+                N_("Level"),
+            ],
+        )
         sort_combo = ctk.CTkComboBox(
             filter_frame,
             variable=self.sort_var,
-            values=["Recent", "Likes", "Downloads", "Name", "Level"],
+            values=self.sort_var.labels,
             width=150,
             state="readonly",
             command=lambda _value=None: self.apply_filters(),
@@ -408,15 +417,14 @@ class CharacterBrowser:
         ctk.CTkLabel(overhaul_name_frame, text=t("Overhaul:")).pack(
             side=ctk.LEFT, padx=(0, 8)
         )
-        self.overhaul_name_var = ctk.StringVar(value="Convergence")
+        self.overhaul_name_var = TranslatedVar(
+            value="Convergence",
+            choices=[N_("Convergence"), N_("Elden Ring Reforged"), N_("Other")],
+        )
         ctk.CTkComboBox(
             overhaul_name_frame,
             variable=self.overhaul_name_var,
-            values=[
-                "Convergence",
-                "Elden Ring Reforged",
-                "Other",
-            ],
+            values=self.overhaul_name_var.labels,
             width=200,
             state="readonly",
         ).pack(side=ctk.LEFT)

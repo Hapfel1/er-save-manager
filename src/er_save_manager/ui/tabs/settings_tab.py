@@ -670,9 +670,9 @@ class SettingsTab:
             self._language_options[i18n.language_display_name(code)] = code
         code_to_label = {v: k for k, v in self._language_options.items()}
 
-        saved_language = self.settings.get("language", "auto")
+        saved_language = self.settings.get("language", "en")
         self.language_var = tk.StringVar(
-            value=code_to_label.get(saved_language, auto_label)
+            value=code_to_label.get(saved_language, code_to_label["en"])
         )
         ctk.CTkComboBox(
             language_frame,

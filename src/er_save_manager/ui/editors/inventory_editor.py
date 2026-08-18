@@ -11,9 +11,10 @@ from pathlib import Path
 
 import customtkinter as ctk
 
-from er_save_manager.i18n import t
+from er_save_manager.i18n import N_, t
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.toast import show_toast
+from er_save_manager.ui.translated_var import TranslatedVar
 from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
 _CAT_WEAPON = 0x00000000
@@ -932,11 +933,13 @@ class InventoryEditor:
         ctk.CTkLabel(opts, text=t("Location:"), anchor="w").grid(
             row=1, column=2, sticky=ctk.W, padx=(14, 6), pady=4
         )
-        self.inv_location_var = ctk.StringVar(value="held")
+        self.inv_location_var = TranslatedVar(
+            value="held", choices=[N_("held"), N_("storage")]
+        )
         self._location_combo = ctk.CTkComboBox(
             opts,
             variable=self.inv_location_var,
-            values=["held", "storage"],
+            values=self.inv_location_var.labels,
             width=120,
         )
         self._location_combo.grid(row=1, column=3, sticky=ctk.W, pady=4)
@@ -1012,11 +1015,13 @@ class InventoryEditor:
             font=("Segoe UI", 13, "bold"),
         ).pack(side=ctk.LEFT)
 
-        self.inv_filter_var = ctk.StringVar(value="All")
+        self.inv_filter_var = TranslatedVar(
+            value="All", choices=[N_("All"), N_("Held"), N_("Storage"), N_("Key Items")]
+        )
         ctk.CTkComboBox(
             header,
             variable=self.inv_filter_var,
-            values=["All", "Held", "Storage", "Key Items"],
+            values=self.inv_filter_var.labels,
             width=120,
             command=lambda _e=None: self.refresh_inventory(),
         ).pack(side=ctk.RIGHT, padx=(6, 0))
@@ -1025,11 +1030,21 @@ class InventoryEditor:
         cat_row = ctk.CTkFrame(parent, fg_color="transparent")
         cat_row.pack(fill=ctk.X, padx=10, pady=(0, 4))
         ctk.CTkLabel(cat_row, text=t("Category:"), width=60).pack(side=ctk.LEFT)
-        self._inv_cat_var = ctk.StringVar(value="All")
+        self._inv_cat_var = TranslatedVar(
+            value="All",
+            choices=[
+                N_("All"),
+                N_("Weapons"),
+                N_("Armor"),
+                N_("Talismans"),
+                N_("Goods"),
+                N_("Gems"),
+            ],
+        )
         ctk.CTkComboBox(
             cat_row,
             variable=self._inv_cat_var,
-            values=["All", "Weapons", "Armor", "Talismans", "Goods", "Gems"],
+            values=self._inv_cat_var.labels,
             width=140,
             command=lambda _e=None: self._apply_inv_filter(),
         ).pack(side=ctk.LEFT, padx=(0, 6))
