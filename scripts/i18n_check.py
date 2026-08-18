@@ -50,6 +50,8 @@ def _extract_to(target: Path) -> None:
             "tn:1,2",
             "-k",
             "tc:1c,2",
+            "-k",
+            "N_",
             "--add-comments=translators:",
             "--project=ER Save Manager",
             "--copyright-holder=Hapfel",

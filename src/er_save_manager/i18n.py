@@ -79,13 +79,15 @@ def detect_system_language() -> str:
 def init(language: str | None = None) -> str:
     """Activate a translation catalog and return the language actually used.
 
-    ``language`` of None or "auto" resolves via the system locale. Falls back to
-    English if the requested catalog is missing or fails to load.
+    Defaults to English. Only an explicit "auto" resolves via the system locale.
+    Falls back to English if the requested catalog is missing or fails to load.
     """
     global _translation, _active_language
 
-    if language in (None, "", "auto"):
+    if language == "auto":
         language = detect_system_language()
+    elif language in (None, ""):
+        language = "en"
 
     if language == "en":
         _translation = gettext.NullTranslations()
@@ -115,6 +117,20 @@ def get_language() -> str:
 def language_display_name(code: str) -> str:
     """Return the endonym for a language code, or the code itself if unknown."""
     return LANGUAGE_NAMES.get(code, code)
+
+
+def N_(message: str) -> str:
+    """Mark a string for extraction without translating it here.
+
+    For strings that must stay English at the point of use because they double
+    as a lookup key, but still need to reach translators. TranslatedTabview
+    translates tab names at draw time, so the name passed to ``add()`` stays the
+    key while the label the user sees is translated.
+
+        tabs.add(N_("World State"))
+        frame = tabs.tab("World State")
+    """
+    return message
 
 
 def t(message: str) -> str:

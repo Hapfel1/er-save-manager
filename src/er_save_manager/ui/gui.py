@@ -17,7 +17,7 @@ import customtkinter as ctk
 
 from er_save_manager import VersionChecker, __version__
 from er_save_manager.games.game_profiles import GAME_PROFILES, PROFILES_BY_KEY
-from er_save_manager.i18n import t
+from er_save_manager.i18n import N_, t
 from er_save_manager.parser import Save
 from er_save_manager.platform import PlatformUtils
 
@@ -46,6 +46,7 @@ from er_save_manager.ui.tabs import (
     WorldStateTab,
 )
 from er_save_manager.ui.theme import ThemeManager
+from er_save_manager.ui.translated_tabview import TranslatedTabview
 from er_save_manager.ui.utils import open_url, pick_file, trace_variable
 
 # Nightreign
@@ -666,7 +667,7 @@ class SaveManagerGUI:
         self._file_load_buttons.append(_itemgib_btn)
 
         # Main content - tabbed interface (customtkinter)
-        self.notebook = ctk.CTkTabview(
+        self.notebook = TranslatedTabview(
             self.root,
             width=1100,
             height=620,
@@ -755,7 +756,7 @@ class SaveManagerGUI:
 
         # Rebuild notebook
         self.notebook.destroy()
-        self.notebook = ctk.CTkTabview(
+        self.notebook = TranslatedTabview(
             self.root,
             width=1100,
             height=620,
@@ -783,7 +784,7 @@ class SaveManagerGUI:
         """Create all Elden Ring tabs."""
 
         # Tab 1: Save Fixer
-        self.notebook.add("Save Fixer")
+        self.notebook.add(N_("Save Fixer"))
         tab_inspector = self.notebook.tab("Save Fixer")
         self.inspector_tab = SaveInspectorTab(
             tab_inspector,
@@ -796,7 +797,7 @@ class SaveManagerGUI:
         self.inspector_tab.setup_ui()
 
         # Tab 2: Character Management
-        self.notebook.add("Character Management")
+        self.notebook.add(N_("Character Management"))
         tab_char_mgmt = self.notebook.tab("Character Management")
         self.char_mgmt_tab = CharacterManagementTab(
             tab_char_mgmt,
@@ -814,12 +815,12 @@ class SaveManagerGUI:
         self.char_mgmt_tab.setup_ui()
 
         # Tab 3: Character Editor
-        self.notebook.add("Character Editor")
+        self.notebook.add(N_("Character Editor"))
         tab_character = self.notebook.tab("Character Editor")
         self.setup_character_editor_tab(tab_character)
 
         # Tab 4: Appearance
-        self.notebook.add("Appearance")
+        self.notebook.add(N_("Appearance"))
         tab_appearance = self.notebook.tab("Appearance")
         self.appearance_tab = AppearanceTab(
             tab_appearance,
@@ -831,7 +832,7 @@ class SaveManagerGUI:
         self.appearance_tab.setup_ui()
 
         # Tab 5: World State
-        self.notebook.add("World State")
+        self.notebook.add(N_("World State"))
         tab_world = self.notebook.tab("World State")
         self.world_tab = WorldStateTab(
             tab_world,
@@ -858,7 +859,7 @@ class SaveManagerGUI:
             pass
 
         # Tab 6: SteamID Patcher
-        self.notebook.add("SteamID Patcher")
+        self.notebook.add(N_("SteamID Patcher"))
         tab_steamid = self.notebook.tab("SteamID Patcher")
         self.steamid_tab = SteamIDPatcherTab(
             tab_steamid,
@@ -870,7 +871,7 @@ class SaveManagerGUI:
         self.steamid_tab.setup_ui()
 
         # Tab 7: Event Flags
-        self.notebook.add("Event Flags")
+        self.notebook.add(N_("Event Flags"))
         tab_event_flags = self.notebook.tab("Event Flags")
         self.event_flags_tab = EventFlagsTab(
             tab_event_flags,
@@ -882,7 +883,7 @@ class SaveManagerGUI:
         self.event_flags_tab.setup_ui()
 
         # Tab 8: Gestures
-        self.notebook.add("Gestures")
+        self.notebook.add(N_("Gestures"))
         tab_gestures = self.notebook.tab("Gestures")
         self.gestures_tab = GesturesRegionsTab(
             tab_gestures,
@@ -899,7 +900,7 @@ class SaveManagerGUI:
         self.hex_tab.setup_ui()
 
         # Tab 10: Advanced Tools
-        self.notebook.add("Advanced Tools")
+        self.notebook.add(N_("Advanced Tools"))
         tab_advanced = self.notebook.tab("Advanced Tools")
         self.advanced_tab = AdvancedToolsTab(
             tab_advanced,
@@ -911,7 +912,7 @@ class SaveManagerGUI:
         self.advanced_tab.setup_ui()
 
         # Tab 11: Settings
-        self.notebook.add("Settings")
+        self.notebook.add(N_("Settings"))
         tab_settings = self.notebook.tab("Settings")
         self.settings_tab = SettingsTab(
             tab_settings,
@@ -938,7 +939,7 @@ class SaveManagerGUI:
                 DS3WorldStateTab,
             )
 
-            self.notebook.add("Save Inspector")
+            self.notebook.add(N_("Save Inspector"))
             self.ds3_inspector_tab = DS3InspectorTab(
                 self.notebook.tab("Save Inspector"),
                 get_save=lambda: self.ds3_save,
@@ -946,7 +947,7 @@ class SaveManagerGUI:
             )
             self.ds3_inspector_tab.setup_ui()
 
-            self.notebook.add("Character Editor")
+            self.notebook.add(N_("Character Editor"))
             self.ds3_editor_tab = DS3EditorTab(
                 self.notebook.tab("Character Editor"),
                 get_save=lambda: self.ds3_save,
@@ -959,7 +960,7 @@ class SaveManagerGUI:
                 DS3CharacterManagementTab,
             )
 
-            self.notebook.add("Character Management")
+            self.notebook.add(N_("Character Management"))
             self.ds3_char_mgmt_tab = DS3CharacterManagementTab(
                 self.notebook.tab("Character Management"),
                 get_save=lambda: self.ds3_save,
@@ -973,7 +974,7 @@ class SaveManagerGUI:
             )
             self.ds3_char_mgmt_tab.setup_ui()
 
-            self.notebook.add("Inventory")
+            self.notebook.add(N_("Inventory"))
             self.ds3_inventory_tab = DS3InventoryTab(
                 self.notebook.tab("Inventory"),
                 get_save=lambda: self.ds3_save,
@@ -982,7 +983,7 @@ class SaveManagerGUI:
             )
             self.ds3_inventory_tab.setup_ui()
 
-            self.notebook.add("Bosses")
+            self.notebook.add(N_("Bosses"))
             self.ds3_bosses_tab = DS3BossesTab(
                 self.notebook.tab("Bosses"),
                 get_save=lambda: self.ds3_save,
@@ -991,7 +992,7 @@ class SaveManagerGUI:
             )
             self.ds3_bosses_tab.setup_ui()
 
-            self.notebook.add("World State")
+            self.notebook.add(N_("World State"))
             self.ds3_world_tab = DS3WorldStateTab(
                 self.notebook.tab("World State"),
                 get_save=lambda: self.ds3_save,
@@ -1000,7 +1001,7 @@ class SaveManagerGUI:
             )
             self.ds3_world_tab.setup_ui()
 
-            self.notebook.add("SteamID Patcher")
+            self.notebook.add(N_("SteamID Patcher"))
             self.steamid_tab = SteamIDPatcherTab(
                 self.notebook.tab("SteamID Patcher"),
                 lambda: self.save_file,
@@ -1011,7 +1012,7 @@ class SaveManagerGUI:
             self.steamid_tab.setup_ui()
             self.steamid_tab.set_active_profile("Dark Souls III")
 
-            self.notebook.add("Settings")
+            self.notebook.add(N_("Settings"))
             self.settings_tab = SettingsTab(
                 self.notebook.tab("Settings"),
                 get_save_path_callback=lambda: self.save_path,
@@ -1029,7 +1030,7 @@ class SaveManagerGUI:
             from er_save_manager.games.DS2.editor_tab import DS2EditorTab
             from er_save_manager.games.DS2.inspector_tab import DS2InspectorTab
 
-            self.notebook.add("Save Inspector")
+            self.notebook.add(N_("Save Inspector"))
             self.ds2_inspector_tab = DS2InspectorTab(
                 self.notebook.tab("Save Inspector"),
                 get_save=lambda: self.ds2_save,
@@ -1037,7 +1038,7 @@ class SaveManagerGUI:
             )
             self.ds2_inspector_tab.setup_ui()
 
-            self.notebook.add("Character Management")
+            self.notebook.add(N_("Character Management"))
             self.ds2_management_tab = DS2CharacterManagementTab(
                 self.notebook.tab("Character Management"),
                 get_save=lambda: self.ds2_save,
@@ -1051,7 +1052,7 @@ class SaveManagerGUI:
             )
             self.ds2_management_tab.setup_ui()
 
-            self.notebook.add("Character Editor")
+            self.notebook.add(N_("Character Editor"))
             self.ds2_editor_tab = DS2EditorTab(
                 self.notebook.tab("Character Editor"),
                 get_save=lambda: self.ds2_save,
@@ -1060,7 +1061,7 @@ class SaveManagerGUI:
             )
             self.ds2_editor_tab.setup_ui()
 
-            self.notebook.add("SteamID Patcher")
+            self.notebook.add(N_("SteamID Patcher"))
             self.steamid_tab = SteamIDPatcherTab(
                 self.notebook.tab("SteamID Patcher"),
                 lambda: self.save_file,
@@ -1073,7 +1074,7 @@ class SaveManagerGUI:
                 "Dark Souls II: Scholar of the First Sin"
             )
 
-            self.notebook.add("Settings")
+            self.notebook.add(N_("Settings"))
             self.settings_tab = SettingsTab(
                 self.notebook.tab("Settings"),
                 get_save_path_callback=lambda: self.save_path,
@@ -1089,7 +1090,7 @@ class SaveManagerGUI:
         # Backup Manager is available via the top-level button, not as a tab.
 
         if profile.key != "dark_souls_remastered":
-            self.notebook.add("SteamID Patcher")
+            self.notebook.add(N_("SteamID Patcher"))
             tab_steamid = self.notebook.tab("SteamID Patcher")
             self.steamid_tab = SteamIDPatcherTab(
                 tab_steamid,
@@ -1108,7 +1109,7 @@ class SaveManagerGUI:
             from er_save_manager.games.DSR.npc_tab import DSRNPCTab
             from er_save_manager.games.DSR.world_state_tab import DSRWorldStateTab
 
-            self.notebook.add("Save Inspector")
+            self.notebook.add(N_("Save Inspector"))
             self.dsr_inspector_tab = DSRInspectorTab(
                 self.notebook.tab("Save Inspector"),
                 get_dsr_save=lambda: self.dsr_save,
@@ -1116,7 +1117,7 @@ class SaveManagerGUI:
             )
             self.dsr_inspector_tab.setup_ui()
 
-            self.notebook.add("Character Editor")
+            self.notebook.add(N_("Character Editor"))
             self.dsr_editor_tab = DSREditorTab(
                 self.notebook.tab("Character Editor"),
                 get_dsr_save=lambda: self.dsr_save,
@@ -1129,7 +1130,7 @@ class SaveManagerGUI:
                 DSRCharacterManagementTab,
             )
 
-            self.notebook.add("Character Management")
+            self.notebook.add(N_("Character Management"))
             self.dsr_char_mgmt_tab = DSRCharacterManagementTab(
                 self.notebook.tab("Character Management"),
                 get_dsr_save=lambda: self.dsr_save,
@@ -1143,7 +1144,7 @@ class SaveManagerGUI:
             )
             self.dsr_char_mgmt_tab.setup_ui()
 
-            self.notebook.add("Inventory")
+            self.notebook.add(N_("Inventory"))
             self.dsr_inventory_tab = DSRInventoryTab(
                 self.notebook.tab("Inventory"),
                 get_dsr_save=lambda: self.dsr_save,
@@ -1152,7 +1153,7 @@ class SaveManagerGUI:
             )
             self.dsr_inventory_tab.setup_ui()
 
-            self.notebook.add("NPCs & Bosses")
+            self.notebook.add(N_("NPCs & Bosses"))
             self.dsr_npc_tab = DSRNPCTab(
                 self.notebook.tab("NPCs & Bosses"),
                 get_dsr_save=lambda: self.dsr_save,
@@ -1161,7 +1162,7 @@ class SaveManagerGUI:
             )
             self.dsr_npc_tab.setup_ui()
 
-            self.notebook.add("Event Flags")
+            self.notebook.add(N_("Event Flags"))
             from er_save_manager.games.DSR.event_flags_tab import DSREventFlagsTab
 
             self.dsr_flags_tab = DSREventFlagsTab(
@@ -1172,7 +1173,7 @@ class SaveManagerGUI:
             )
             self.dsr_flags_tab.setup_ui()
 
-            self.notebook.add("World State")
+            self.notebook.add(N_("World State"))
             self.dsr_world_tab = DSRWorldStateTab(
                 self.notebook.tab("World State"),
                 get_dsr_save=lambda: self.dsr_save,
@@ -1181,7 +1182,7 @@ class SaveManagerGUI:
             )
             self.dsr_world_tab.setup_ui()
 
-        self.notebook.add("Settings")
+        self.notebook.add(N_("Settings"))
         tab_settings = self.notebook.tab("Settings")
         self.settings_tab = SettingsTab(
             tab_settings,
@@ -1198,7 +1199,7 @@ class SaveManagerGUI:
         self.nr_editor_tab = None
         self.nr_steamid_tab = None
 
-        self.notebook.add("Inspector")
+        self.notebook.add(N_("Inspector"))
         self.nr_inspector_tab = NRInspectorTab(
             self.notebook.tab("Inspector"),
             lambda: self._nr_save,
@@ -1206,7 +1207,7 @@ class SaveManagerGUI:
         )
         self.nr_inspector_tab.setup_ui()
 
-        self.notebook.add("Editor")
+        self.notebook.add(N_("Editor"))
         self.nr_editor_tab = NREditorTab(
             self.notebook.tab("Editor"),
             lambda: self._nr_save,
@@ -1219,7 +1220,7 @@ class SaveManagerGUI:
             NRCharacterManagementTab,
         )
 
-        self.notebook.add("Character Management")
+        self.notebook.add(N_("Character Management"))
         self.nr_char_mgmt_tab = NRCharacterManagementTab(
             self.notebook.tab("Character Management"),
             get_nr_save=lambda: self._nr_save,
@@ -1233,7 +1234,7 @@ class SaveManagerGUI:
         )
         self.nr_char_mgmt_tab.setup_ui()
 
-        self.notebook.add("SteamID Patcher")
+        self.notebook.add(N_("SteamID Patcher"))
         self.nr_steamid_tab = SteamIDPatcherTab(
             self.notebook.tab("SteamID Patcher"),
             lambda: self.save_file,
@@ -1244,7 +1245,7 @@ class SaveManagerGUI:
         self.nr_steamid_tab.setup_ui()
         self.nr_steamid_tab.set_active_profile(profile.name)
 
-        self.notebook.add("Settings")
+        self.notebook.add(N_("Settings"))
         self.settings_tab = SettingsTab(
             self.notebook.tab("Settings"),
             get_save_path_callback=lambda: self.save_path,
@@ -1301,7 +1302,7 @@ class SaveManagerGUI:
         ).pack(side=ctk.LEFT)
 
         # Editor tabs
-        editor_tabs = ctk.CTkTabview(
+        editor_tabs = TranslatedTabview(
             container,
             width=900,
             height=520,
@@ -1321,7 +1322,7 @@ class SaveManagerGUI:
                 return -1
 
         # Stats editor
-        stats_frame = editor_tabs.add("Stats")
+        stats_frame = editor_tabs.add(N_("Stats"))
         stats_frame = ctk.CTkFrame(stats_frame, fg_color="transparent")
         stats_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self.stats_editor = StatsEditor(
@@ -1333,7 +1334,7 @@ class SaveManagerGUI:
         self.stats_editor.setup_ui()
 
         # Equipment editor
-        equipment_tab = editor_tabs.add("Equipment")
+        equipment_tab = editor_tabs.add(N_("Equipment"))
         equipment_frame = ctk.CTkFrame(equipment_tab, fg_color="transparent")
         equipment_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self.equipment_editor = EquipmentEditor(
@@ -1345,7 +1346,7 @@ class SaveManagerGUI:
         self.equipment_editor.setup_ui()
 
         # Character info editor
-        info_tab = editor_tabs.add("Info")
+        info_tab = editor_tabs.add(N_("Info"))
         info_frame = ctk.CTkFrame(info_tab, fg_color="transparent")
         info_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self.char_info_editor = CharacterInfoEditor(
@@ -1360,7 +1361,7 @@ class SaveManagerGUI:
         )
 
         # Inventory editor
-        inventory_tab = editor_tabs.add("Inventory")
+        inventory_tab = editor_tabs.add(N_("Inventory"))
         inventory_frame = ctk.CTkFrame(inventory_tab, fg_color="transparent")
         inventory_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self.inventory_editor = InventoryEditor(
@@ -2482,7 +2483,7 @@ class SaveManagerGUI:
         is re-inserted at its correct position rather than appended at the end.
         """
         self.notebook.destroy()
-        self.notebook = ctk.CTkTabview(
+        self.notebook = TranslatedTabview(
             self.root,
             width=1100,
             height=620,
@@ -2739,7 +2740,7 @@ def main():
     from er_save_manager.i18n import init as init_i18n
     from er_save_manager.ui.settings import Settings
 
-    init_i18n(Settings().get("language", "auto"))
+    init_i18n(Settings().get("language", "en"))
 
     root = ctk.CTk()
     app = SaveManagerGUI(root)

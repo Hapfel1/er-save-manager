@@ -8,7 +8,8 @@ import customtkinter as ctk
 
 from er_save_manager.games.DS2.inventory_tab import DS2InventoryPanel
 from er_save_manager.games.DS2.save import LEVEL_STAT_KEYS, NG_PLUS_MAX, DS2Save
-from er_save_manager.i18n import t
+from er_save_manager.i18n import N_, t
+from er_save_manager.ui.translated_tabview import TranslatedTabview
 from er_save_manager.ui.utils import game_blocks_write
 
 
@@ -63,10 +64,10 @@ class DS2EditorTab:
         self.slot_status_label = ctk.CTkLabel(top, text="")
         self.slot_status_label.pack(side="left", padx=(15, 0))
 
-        self.tabview = ctk.CTkTabview(self.parent)
+        self.tabview = TranslatedTabview(self.parent)
         self.tabview.pack(fill="both", expand=True, padx=10, pady=(0, 10))
-        self.tabview.add("Stats")
-        self.tabview.add("Inventory")
+        self.tabview.add(N_("Stats"))
+        self.tabview.add(N_("Inventory"))
 
         self._build_stats_tab(self.tabview.tab("Stats"))
 

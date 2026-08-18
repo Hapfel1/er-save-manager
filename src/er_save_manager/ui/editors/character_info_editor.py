@@ -8,8 +8,9 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.data.starting_classes import get_class_data
-from er_save_manager.i18n import t
+from er_save_manager.i18n import N_, t
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.translated_var import TranslatedVar
 from er_save_manager.ui.utils import bind_mousewheel, trace_variable
 
 
@@ -185,20 +186,23 @@ class CharacterInfoEditor:
             progression_frame,
             text=t("NG+ Level:"),
         ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
-        self.char_ng_level_var = ctk.StringVar(value="NG (0)")
+        self.char_ng_level_var = TranslatedVar(
+            value="NG (0)",
+            choices=[
+                N_("NG (0)"),
+                N_("NG+ (1)"),
+                N_("NG+2 (2)"),
+                N_("NG+3 (3)"),
+                N_("NG+4 (4)"),
+                N_("NG+5 (5)"),
+                N_("NG+6 (6)"),
+                N_("NG+7 (7)"),
+            ],
+        )
         ng_combo = ctk.CTkComboBox(
             progression_frame,
             variable=self.char_ng_level_var,
-            values=[
-                "NG (0)",
-                "NG+ (1)",
-                "NG+2 (2)",
-                "NG+3 (3)",
-                "NG+4 (4)",
-                "NG+5 (5)",
-                "NG+6 (6)",
-                "NG+7 (7)",
-            ],
+            values=self.char_ng_level_var.labels,
             width=140,
         )
         ng_combo.grid(row=1, column=1, padx=5, pady=5)

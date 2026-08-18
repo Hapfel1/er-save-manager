@@ -11,8 +11,9 @@ from pathlib import Path
 
 import customtkinter as ctk
 
-from er_save_manager.i18n import t
+from er_save_manager.i18n import N_, t
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.translated_tabview import TranslatedTabview
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
 
@@ -64,7 +65,7 @@ class DS3EditorTab:
         self._slot_combo.pack(side="right")
         ctk.CTkLabel(header, text=t("Slot:")).pack(side="right", padx=(0, 6))
 
-        tabs = ctk.CTkTabview(
+        tabs = TranslatedTabview(
             outer,
             fg_color=("gray90", "gray20"),
             segmented_button_fg_color=("gray80", "gray35"),
@@ -72,8 +73,8 @@ class DS3EditorTab:
             segmented_button_unselected_color=("gray70", "gray30"),
         )
         tabs.pack(fill="both", expand=True, padx=10, pady=(0, 10))
-        self._build_stats_tab(tabs.add("Stats"))
-        self._build_identity_tab(tabs.add("Identity"))
+        self._build_stats_tab(tabs.add(N_("Stats")))
+        self._build_identity_tab(tabs.add(N_("Identity")))
 
     # --- Stats tab ----------------------------------------------------------- #
 

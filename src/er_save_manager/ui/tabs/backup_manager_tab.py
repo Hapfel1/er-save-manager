@@ -11,8 +11,9 @@ from pathlib import Path
 
 import customtkinter as ctk
 
-from er_save_manager.i18n import t
+from er_save_manager.i18n import N_, t
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.translated_var import TranslatedVar
 from er_save_manager.ui.utils import bind_mousewheel
 
 STAR_SIZE = 20
@@ -431,7 +432,16 @@ class BackupManagerTab:
             text_color=("gray40", "gray60"),
         ).pack(anchor=tk.W, padx=10, pady=(0, 5))
 
-        sort_var = tk.StringVar(value="Newest")
+        sort_var = TranslatedVar(
+            value="Newest",
+            choices=[
+                N_("Newest"),
+                N_("Oldest"),
+                N_("Operation"),
+                N_("Size"),
+                N_("Locked first"),
+            ],
+        )
         sort_frame = ctk.CTkFrame(list_frame, fg_color="transparent")
         sort_frame.pack(fill=tk.X, padx=10, pady=(0, 6))
 
@@ -440,7 +450,7 @@ class BackupManagerTab:
         ).pack(side=tk.LEFT, padx=(0, 6))
         sort_combo = ctk.CTkComboBox(
             sort_frame,
-            values=["Newest", "Oldest", "Operation", "Size", "Locked first"],
+            values=sort_var.labels,
             variable=sort_var,
             state="readonly",
             width=140,

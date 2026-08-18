@@ -15,8 +15,9 @@ from tkinter import ttk
 
 import customtkinter as ctk
 
-from er_save_manager.i18n import t
+from er_save_manager.i18n import N_, t
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.translated_tabview import TranslatedTabview
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
 
@@ -184,10 +185,10 @@ class NREditorTab:
         self._slot_combo.pack(side="right")
         ctk.CTkLabel(header, text=t("Slot:")).pack(side="right", padx=(0, 6))
 
-        self._tabs = ctk.CTkTabview(outer, corner_radius=10)
+        self._tabs = TranslatedTabview(outer, corner_radius=10)
         self._tabs.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
-        for name in ("Overview", "Relics"):
+        for name in (N_("Overview"), N_("Relics")):
             self._tabs.add(name)
 
         self._build_overview(self._tabs.tab("Overview"))
@@ -390,10 +391,10 @@ class NREditorTab:
         self._tree_ga_map: dict[str, int] = {}
 
         # Sub-tabs: Edit | Spawn
-        action_tabs = ctk.CTkTabview(scroll, corner_radius=8)
+        action_tabs = TranslatedTabview(scroll, corner_radius=8)
         action_tabs.pack(fill="x", padx=10, pady=(0, 6))
-        action_tabs.add("Edit")
-        action_tabs.add("Spawn")
+        action_tabs.add(N_("Edit"))
+        action_tabs.add(N_("Spawn"))
         _edit_parent = action_tabs.tab("Edit")
         _spawn_parent = action_tabs.tab("Spawn")
 
