@@ -9,21 +9,22 @@ msgstr ""
 "Project-Id-Version: ER Save Manager VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-08-18 12:29+0000\n"
-"PO-Revision-Date: 2026-08-17 12:08+0000\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language: de\n"
+"PO-Revision-Date: 2026-08-18 16:58+0200\n"
+"Last-Translator: \n"
 "Language-Team: de <LL@li.org>\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Generated-By: Babel 2.18.0\n"
+"X-Generator: Poedit 3.9\n"
 
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:34
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:176
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:195
 msgid "Launch Failed"
-msgstr ""
+msgstr "Start fehlgeschlagen"
 
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:99
 #, python-brace-format
@@ -31,11 +32,13 @@ msgid ""
 "Current Version: {installed_version}\n"
 "Latest Version: {latest_version}"
 msgstr ""
+"Aktuelle Version: {installed_version}\r\n"
+"Neueste Version: {latest_version}"
 
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:108
 #, python-brace-format
 msgid "Latest Version: {latest_version}"
-msgstr ""
+msgstr "Neueste Version: {latest_version}"
 
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:180
 #: src/er_save_manager/games/DS2/character_management_tab.py:468
@@ -56,23 +59,23 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:602
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:674
 msgid "Success"
-msgstr ""
+msgstr "Erfolg"
 
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:181
 msgid "Troubleshooter installed and launched successfully!"
-msgstr ""
+msgstr "Der Troubleshooter wurde erfolgreich installiert und gestartet!"
 
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:204
 msgid "Update & Launch"
-msgstr ""
+msgstr "Updaten & Starten"
 
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:211
 msgid "Install & Launch"
-msgstr ""
+msgstr "Installieren & Starten"
 
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:220
 msgid "Launch Current Version"
-msgstr ""
+msgstr "Aktuelle Version starten"
 
 #: src/er_save_manager/addons/troubleshooter_install_dialog.py:228
 #: src/er_save_manager/games/NR/editor_tab.py:103
@@ -98,26 +101,32 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:787
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:1015
 msgid "Cancel"
-msgstr ""
+msgstr "Abbrechen"
 
 #: src/er_save_manager/backup/process_monitor.py:250
 msgid "Auto-Backup Setup"
-msgstr ""
+msgstr "Einrichtung des Auto-Backups"
 
 #: src/er_save_manager/backup/process_monitor.py:252
 #, python-brace-format
 msgid ""
 "Would you like to enable automatic backups for {game_name}?\n"
 "\n"
-"When enabled, a backup of your {game_name} save will be created "
-"automatically whenever the game launches.\n"
+"When enabled, a backup of your {game_name} save will be created automatically "
+"whenever the game launches.\n"
 "\n"
 "You can change this later in Settings."
 msgstr ""
+"Möchtest du automatische Backups für {game_name} aktivieren?\n"
+"\n"
+"Wenn diese Option aktiviert ist, wird bei jedem Start des Spiels automatisch "
+"eine Sicherung deines {game_name}-Spielstands erstellt.\n"
+"\n"
+"Du kannst diese Einstellung später in den Einstellungen ändern."
 
 #: src/er_save_manager/backup/process_monitor.py:274
 msgid "Save File Found"
-msgstr ""
+msgstr "Speicher Datei gefunden"
 
 #: src/er_save_manager/backup/process_monitor.py:276
 #, python-brace-format
@@ -128,30 +137,37 @@ msgid ""
 "\n"
 "Use this file for auto-backup?"
 msgstr ""
+"Speicherdatei gefunden:\n"
+"\n"
+"{found_paths}\n"
+"\n"
+"Soll diese Datei für die automatische Backups verwendet werden?"
 
 #: src/er_save_manager/backup/process_monitor.py:301
 msgid "Multiple save files found. Select the one to monitor:"
 msgstr ""
+"Es wurden mehrere Speicherdateien gefunden. Wählen Sie diejenige aus, die "
+"überwacht werden soll:"
 
 #: src/er_save_manager/backup/process_monitor.py:331
 #: src/er_save_manager/ui/dialogs/character_browser.py:513
 #: src/er_save_manager/ui/dialogs/preset_browser.py:444
 #: src/er_save_manager/ui/tabs/settings_tab.py:612
 msgid "Browse..."
-msgstr ""
+msgstr "Durchsuchen..."
 
 #: src/er_save_manager/backup/process_monitor.py:335
 msgid "Skip"
-msgstr ""
+msgstr "Überspringen"
 
 #: src/er_save_manager/backup/process_monitor.py:348
 #, python-brace-format
 msgid "Choose Save File for Auto-Backup - {game_name}"
-msgstr ""
+msgstr "Wähle deine Datei für das Auto-Backup aus - {game_name}"
 
 #: src/er_save_manager/backup/process_monitor.py:369
 msgid "Auto-Backup Enabled"
-msgstr ""
+msgstr "Auto-Backup Aktiviert"
 
 #: src/er_save_manager/backup/process_monitor.py:371
 #, python-brace-format
@@ -163,143 +179,161 @@ msgid ""
 "\n"
 "A backup will be created automatically each time the game launches."
 msgstr ""
+"Auto-backup ist jetzt aktiviert für {game_name}.\n"
+"\n"
+"Überwachte Datei:\n"
+"{chosen_path}\n"
+"\n"
+"Bei dem Start des Spiels wird automatisch eine Sicherungskopie erstellt."
 
 #: src/er_save_manager/diagnostics/checker.py:116
 msgid "Game folder not specified"
-msgstr ""
+msgstr "Spiel-Installationsordner nicht angegeben"
 
 #: src/er_save_manager/diagnostics/checker.py:124
 #, python-brace-format
 msgid "Game folder not found: {game_folder}"
-msgstr ""
+msgstr "Spiel-Installationsordner nicht gefunden: {game_folder}"
 
 #: src/er_save_manager/diagnostics/checker.py:133
 #, python-brace-format
 msgid "Game folder found: {game_folder}"
-msgstr ""
+msgstr "Spiel-Installationsordner gefunden: {game_folder}"
 
 #: src/er_save_manager/diagnostics/checker.py:144
 msgid "Game folder not set"
-msgstr ""
+msgstr "Spiel-Installationsordner nicht festgelegt"
 
 #: src/er_save_manager/diagnostics/checker.py:157
 #, python-brace-format
 msgid "eldenring.exe found ({size_mb:.1f}MB)"
-msgstr ""
+msgstr "eldenring.exe gefunden ({size_mb:.1f}MB)"
 
 #: src/er_save_manager/diagnostics/checker.py:166
 #, python-brace-format
 msgid "eldenring.exe found but size is unusual ({size_mb:.1f}MB, expected ~83MB)"
 msgstr ""
+"eldenring.exe gefunden, aber die Größe ist unerwartet ({size_mb:.1f}MB, "
+"erwartet ~83MB)"
 
 #: src/er_save_manager/diagnostics/checker.py:175
 msgid "eldenring.exe not found in Game folder"
-msgstr ""
+msgstr "eldenring.exe nicht im Spiel-Installationsordner gefunden"
 
 #: src/er_save_manager/diagnostics/checker.py:200
 #, python-brace-format
 msgid "Found unsupported folders: {join}. These may cause issues."
 msgstr ""
+"Es wurden nicht unterstützte Ordner gefunden: {join}. Diese können zu Problemen "
+"führen."
 
 #: src/er_save_manager/diagnostics/checker.py:224
 msgid "steam_api64.dll is missing from Game folder"
-msgstr ""
+msgstr "Die Datei „steam_api64.dll“ fehlt im Spiel-Installationsordner"
 
 #: src/er_save_manager/diagnostics/checker.py:236
 #, python-brace-format
 msgid "Found unsupported files: {join}. These can cause issues."
 msgstr ""
+"Es wurden nicht unterstützte Dateien gefunden: {join}. Diese können zu "
+"Problemen führen."
 
 #: src/er_save_manager/diagnostics/checker.py:247
-#, fuzzy
 msgid "No issues detected"
-msgstr "Ausgewählt"
+msgstr "Keine Probleme gefunden"
 
 #: src/er_save_manager/diagnostics/checker.py:262
 #, python-brace-format
 msgid "regulation.bin is valid ({size_mb:.1f}MB)"
-msgstr ""
+msgstr "„regulation.bin“ ist gültig ({size_mb:.1f} MB)"
 
 #: src/er_save_manager/diagnostics/checker.py:273
 #, python-brace-format
 msgid ""
-"regulation.bin size is unusual ({size_mb:.1f}MB, expected ~1.9MB). May "
-"indicate modified game files."
+"regulation.bin size is unusual ({size_mb:.1f}MB, expected ~1.9MB). May indicate "
+"modified game files."
 msgstr ""
+"Die Größe der Datei „regulation.bin“ ist ungewöhnlich ({size_mb:.1f} MB, "
+"erwartet wurden ca. 1,9 MB). Dies könnte auf geänderte Spieldateien hindeuten."
 
 #: src/er_save_manager/diagnostics/checker.py:285
 msgid "regulation.bin is missing from Game folder"
-msgstr ""
+msgstr "Die Datei \"regulation.bin\" fehlt im Spiel-Installationsordner"
 
 #: src/er_save_manager/diagnostics/checker.py:302
 msgid "Process checking only available on Windows"
-msgstr ""
+msgstr "Prozessüberprüfung nur unter Windows verfügbar"
 
 #: src/er_save_manager/diagnostics/checker.py:338
 #, python-brace-format
 msgid "Found processes that can cause crashes: {join}"
-msgstr ""
+msgstr "Es wurden Prozesse gefunden, die Abstürze verursachen können: {join}"
 
 #: src/er_save_manager/diagnostics/checker.py:375
 msgid "No problematic processes detected"
-msgstr ""
+msgstr "Keine problematischen Prozesse gefunden"
 
 #: src/er_save_manager/diagnostics/checker.py:384
 #, python-brace-format
 msgid "Could not check processes: {e}"
-msgstr ""
+msgstr "Prozesse konnten nicht überprüft werden: {e}"
 
 #: src/er_save_manager/diagnostics/checker.py:399
 msgid "VPN checking only available on Windows"
-msgstr ""
+msgstr "Die VPN-Überprüfung ist nur unter Windows verfügbar"
 
 #: src/er_save_manager/diagnostics/checker.py:432
 #, python-brace-format
 msgid ""
-"Running VPN client(s) detected: {join}. VPNs may cause issues when trying"
-" to join other players."
+"Running VPN client(s) detected: {join}. VPNs may cause issues when trying to "
+"join other players."
 msgstr ""
+"Es wurden laufende VPN-Clients erkannt: {join}. VPNs können zu Problemen "
+"führen, wenn versucht wird, sich mit anderen Spielern zu verbinden."
 
 #: src/er_save_manager/diagnostics/checker.py:443
-#, fuzzy
 msgid "No VPN clients detected"
-msgstr "Ausgewählt"
+msgstr "Es wurden keine VPN-Clients erkannt"
 
 #: src/er_save_manager/diagnostics/checker.py:452
 #, python-brace-format
 msgid "Could not check for VPN processes: {e}"
-msgstr ""
+msgstr "VPN-Prozesse konnten nicht überprüft werden: {e}"
 
 #: src/er_save_manager/diagnostics/checker.py:464
 msgid "Steam elevation check only available on Windows"
-msgstr ""
+msgstr "Die Überprüfung des Steam Admin Status ist nur unter Windows verfügbar"
 
 #: src/er_save_manager/diagnostics/checker.py:570
 msgid "Steam is not currently running"
-msgstr ""
+msgstr "Steam wird derzeit nicht ausgeführt"
 
 #: src/er_save_manager/diagnostics/checker.py:611
 msgid ""
-"Steam is running with elevated privileges. This can cause save file "
-"permission issues and crashes."
+"Steam is running with elevated privileges. This can cause save file permission "
+"issues and crashes."
 msgstr ""
+"Steam wird mit erweiterten Berechtigungen ausgeführt. Dies kann zu Problemen "
+"mit den Zugriffsrechten der Speicherdateien und zu Abstürzen führen."
 
 #: src/er_save_manager/diagnostics/checker.py:620
 msgid "Steam is running with normal privileges"
-msgstr ""
+msgstr "Steam wird mit normalen Berechtigungen ausgeführt"
 
 #: src/er_save_manager/diagnostics/checker.py:627
 msgid "Could not determine if Steam is elevated (access denied)"
 msgstr ""
+"Es konnte nicht festgestellt werden, ob Steam mit erhöhten Rechten ausgeführt "
+"wird (Zugriff verweigert)"
 
 #: src/er_save_manager/diagnostics/checker.py:635
 msgid "Steam elevation check timed out"
-msgstr ""
+msgstr "Zeitüberschreitung bei der Überprüfung des Steam Admin Status"
 
 #: src/er_save_manager/diagnostics/checker.py:641
 #, python-brace-format
 msgid "Could not check Steam elevation: {e}"
-msgstr ""
+msgstr "Der Steam Admin Check konnte nicht durchgeführt werden: {e}"
 
 #: src/er_save_manager/diagnostics/checker.py:653
 #: src/er_save_manager/games/DS2/editor_tab.py:290
@@ -310,49 +344,53 @@ msgstr ""
 #: src/er_save_manager/ui/dialogs/preset_browser.py:537
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1180
 msgid "No save file loaded"
-msgstr ""
+msgstr "Keine Speicherdatei geladen"
 
 #: src/er_save_manager/diagnostics/checker.py:663
 #, python-brace-format
 msgid "Save file not found: {save_file_path}"
-msgstr ""
+msgstr "Speicherdatei nicht gefunden: {save_file_path}"
 
 #: src/er_save_manager/diagnostics/checker.py:675
 msgid "Cannot read save file - check file permissions"
 msgstr ""
+"Die Speicherdatei kann nicht gelesen werden - bitte überprüfen Sie die "
+"Dateiberechtigungen"
 
 #: src/er_save_manager/diagnostics/checker.py:685
 msgid "Save file is readable"
-msgstr ""
+msgstr "Die gespeicherte Datei ist lesbar"
 
 #: src/er_save_manager/diagnostics/checker.py:697
 #, python-brace-format
 msgid "Save file is suspiciously small ({file_size} bytes) - may be corrupted"
 msgstr ""
+"Die gespeicherte Datei ist verdächtig klein ({file_size} Bytes) - "
+"möglicherweise ist sie beschädigt"
 
 #: src/er_save_manager/diagnostics/checker.py:706
 #, python-brace-format
 msgid "Save file size is normal ({file_size}KB)"
-msgstr ""
+msgstr "Die Dateigröße nach dem Speichern ist normal ({file_size} KB)"
 
 #: src/er_save_manager/diagnostics/checker.py:725
 #, python-brace-format
 msgid "Low disk space for backups: {free_gb}GB free"
-msgstr ""
+msgstr "Wenig Speicherplatz für Backups: {free_gb} GB frei"
 
 #: src/er_save_manager/diagnostics/checker.py:736
 #, python-brace-format
 msgid "Sufficient disk space: {free_gb}GB free"
-msgstr ""
+msgstr "Ausreichend Speicherplatz: {free_gb} GB frei"
 
 #: src/er_save_manager/diagnostics/checker.py:759
 msgid "Settings file is valid"
-msgstr ""
+msgstr "Die Einstellungsdatei ist gültig"
 
 #: src/er_save_manager/diagnostics/checker.py:767
 #, python-brace-format
 msgid "Error loading settings: {e}"
-msgstr ""
+msgstr "Fehler beim Laden der Einstellungen: {e}"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:87
 #: src/er_save_manager/games/DS3/character_management_tab.py:62
@@ -363,7 +401,7 @@ msgstr ""
 #: src/er_save_manager/ui/gui.py:1223
 #: src/er_save_manager/ui/tabs/character_management_tab.py:76
 msgid "Character Management"
-msgstr ""
+msgstr "Charakterverwaltung"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:93
 #: src/er_save_manager/games/DS3/character_management_tab.py:74
@@ -371,11 +409,13 @@ msgstr ""
 #: src/er_save_manager/games/NR/character_management_tab.py:75
 #: src/er_save_manager/ui/tabs/character_management_tab.py:124
 msgid "Select Operation"
-msgstr ""
+msgstr "Vorgang auswählen"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:184
 msgid "Copy a character from one slot to another in the same save file."
 msgstr ""
+"Kopiere einen Charakter aus einem Speicherplatz in einen anderen innerhalb "
+"derselben Speicherdatei."
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:194
 #: src/er_save_manager/games/DS3/character_management_tab.py:186
@@ -383,11 +423,11 @@ msgstr ""
 #: src/er_save_manager/games/NR/character_management_tab.py:189
 #: src/er_save_manager/ui/tabs/character_management_tab.py:306
 msgid "Copy Character"
-msgstr ""
+msgstr "Charakter Kopieren"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:201
 msgid "Transfer a character to a slot in a different save file."
-msgstr ""
+msgstr "Einen Charakter in einen Platz in einer anderen Speicherdatei übertragen."
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:211
 #: src/er_save_manager/games/DS3/character_management_tab.py:215
@@ -395,11 +435,11 @@ msgstr ""
 #: src/er_save_manager/games/NR/character_management_tab.py:218
 #: src/er_save_manager/ui/tabs/character_management_tab.py:342
 msgid "Select Target Save..."
-msgstr ""
+msgstr "Zieldatei Auswählen..."
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:217
 msgid "Exchange two character slots in the same save file."
-msgstr ""
+msgstr "Zwei Charakterplätze in derselben Speicherdatei vertauschen."
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:227
 #: src/er_save_manager/games/DS3/character_management_tab.py:232
@@ -407,11 +447,13 @@ msgstr ""
 #: src/er_save_manager/games/NR/character_management_tab.py:235
 #: src/er_save_manager/ui/tabs/character_management_tab.py:392
 msgid "Swap Slots"
-msgstr ""
+msgstr "Plätze Tauschen"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:235
 msgid "Save a character to a standalone .ds2c file for backup or sharing."
 msgstr ""
+"Charakter in einer eigenständigen .ds2c-Datei speichern als Backup oder zum "
+"Teilen."
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:246
 #: src/er_save_manager/games/DS3/character_management_tab.py:247
@@ -419,11 +461,11 @@ msgstr ""
 #: src/er_save_manager/games/NR/character_management_tab.py:250
 #: src/er_save_manager/ui/tabs/character_management_tab.py:428
 msgid "Export Character..."
-msgstr ""
+msgstr "Charakter Exportieren..."
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:252
 msgid "Load a character from a .ds2c file into a slot."
-msgstr ""
+msgstr "Lade einen Charakter aus einer .ds2c-Datei in einen Slot."
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:262
 #: src/er_save_manager/games/DS3/character_management_tab.py:278
@@ -431,11 +473,11 @@ msgstr ""
 #: src/er_save_manager/games/NR/character_management_tab.py:281
 #: src/er_save_manager/ui/tabs/character_management_tab.py:464
 msgid "Import Character..."
-msgstr ""
+msgstr "Charakter Importieren..."
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:268
 msgid "Clear a character slot (creates a backup first)."
-msgstr ""
+msgstr "Einen Charakterplatz löschen."
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:279
 #: src/er_save_manager/games/DS3/character_management_tab.py:295
@@ -443,7 +485,7 @@ msgstr ""
 #: src/er_save_manager/games/NR/character_management_tab.py:298
 #: src/er_save_manager/ui/tabs/character_management_tab.py:500
 msgid "Delete Character"
-msgstr ""
+msgstr "Charakter Löschen"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:292
 #: src/er_save_manager/games/DS3/character_management_tab.py:328
@@ -451,11 +493,11 @@ msgstr ""
 #: src/er_save_manager/games/NR/character_management_tab.py:331
 #: src/er_save_manager/ui/utils.py:287
 msgid "Game is running"
-msgstr ""
+msgstr "Das Spiel läuft"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:293
 msgid "Please close Dark Souls II before modifying save files."
-msgstr ""
+msgstr "Bitte Dark Souls II schließen um die Datei zu bearbeiten."
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:303
 #: src/er_save_manager/games/DS3/character_management_tab.py:342
@@ -533,7 +575,7 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:536
 #: src/er_save_manager/ui/tabs/world_state_tab.py:217
 msgid "No Save"
-msgstr ""
+msgstr "Keine Speicherdatei"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:303
 #: src/er_save_manager/ui/editors/equipment_editor.py:1468
@@ -548,11 +590,11 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/appearance_tab.py:210
 #: src/er_save_manager/ui/tabs/world_state_tab.py:217
 msgid "Please load a save file first."
-msgstr ""
+msgstr "Bitte zuerst eine Datei laden."
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:323
 msgid "Slot never created in-game"
-msgstr ""
+msgstr "Charakterplatz nie im Spiel benutzt"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:351
 #: src/er_save_manager/games/DS2/character_management_tab.py:360
@@ -658,8 +700,7 @@ msgstr ""
 #: src/er_save_manager/ui/gui.py:2016 src/er_save_manager/ui/gui.py:2165
 #: src/er_save_manager/ui/gui.py:2192 src/er_save_manager/ui/gui.py:2251
 #: src/er_save_manager/ui/gui.py:2305 src/er_save_manager/ui/gui.py:2354
-#: src/er_save_manager/ui/gui.py:2597
-#: src/er_save_manager/ui/nyasu_import.py:330
+#: src/er_save_manager/ui/gui.py:2597 src/er_save_manager/ui/nyasu_import.py:330
 #: src/er_save_manager/ui/tabs/advanced_tools_tab.py:292
 #: src/er_save_manager/ui/tabs/appearance_tab.py:227
 #: src/er_save_manager/ui/tabs/appearance_tab.py:347
@@ -729,17 +770,17 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/world_state_tab.py:620
 #: src/er_save_manager/ui/tabs/world_state_tab.py:655
 msgid "Error"
-msgstr ""
+msgstr "Fehler"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:352
 msgid "Source and destination slots must differ."
-msgstr ""
+msgstr "Quell- und Ziel-Slots müssen unterschiedlich sein."
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:361
 #: src/er_save_manager/games/DS2/character_management_tab.py:655
 #, python-brace-format
 msgid "Slot {from_slot} is empty."
-msgstr ""
+msgstr "Der Slot {from_slot} ist leer."
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:368
 #: src/er_save_manager/games/DS2/character_management_tab.py:493
@@ -752,7 +793,7 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/character_management_tab.py:566
 #: src/er_save_manager/ui/tabs/character_management_tab.py:1014
 msgid "Overwrite?"
-msgstr ""
+msgstr "Überschreiben?"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:370
 #: src/er_save_manager/ui/tabs/character_management_tab.py:568
@@ -762,6 +803,9 @@ msgid ""
 "\n"
 "Overwrite with '{from_name}'?"
 msgstr ""
+"Der Slot {to_slot} enthält '{to_name}'.\n"
+"\n"
+"Mit '{from_name}' überschreiben?"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:389
 #, python-brace-format
@@ -769,10 +813,12 @@ msgid ""
 "Copy failed:\n"
 "{e}"
 msgstr ""
+"Kopieren fehlgeschlagen:\n"
+"{e}"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:408
 msgid "Slots must differ."
-msgstr ""
+msgstr "Slots müssen sich voneinander unterscheiden."
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:425
 #, python-brace-format
@@ -780,11 +826,13 @@ msgid ""
 "Swap failed:\n"
 "{e}"
 msgstr ""
+"Swap fehlgeschlagen:\n"
+"{e}"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:441
 #, python-brace-format
 msgid "Slot {slot} is empty."
-msgstr ""
+msgstr "Slot {slot} ist leer."
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:449
 #: src/er_save_manager/games/DS3/character_management_tab.py:536
@@ -792,14 +840,16 @@ msgstr ""
 #: src/er_save_manager/games/NR/character_management_tab.py:544
 #: src/er_save_manager/ui/tabs/character_management_tab.py:938
 msgid "Export Character"
-msgstr ""
+msgstr "Charakter Exportieren"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:463
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid ""
 "Export failed:\n"
 "{e}"
-msgstr "Teleportieren"
+msgstr ""
+"Export fehlgeschlagen:\n"
+"{e}"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:469
 #: src/er_save_manager/games/DS3/character_management_tab.py:549
@@ -809,6 +859,8 @@ msgid ""
 "Character '{name}' exported to:\n"
 "{output_path}"
 msgstr ""
+"Charakter '{name}' exportiert nach:\n"
+"{output_path}"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:485
 #: src/er_save_manager/games/DS3/character_management_tab.py:573
@@ -816,7 +868,7 @@ msgstr ""
 #: src/er_save_manager/games/NR/character_management_tab.py:581
 #: src/er_save_manager/ui/tabs/character_management_tab.py:990
 msgid "Import Character"
-msgstr ""
+msgstr "Charakter Importieren"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:494
 #: src/er_save_manager/ui/tabs/character_management_tab.py:1015
@@ -826,13 +878,18 @@ msgid ""
 "\n"
 "Overwrite?"
 msgstr ""
+"Slot {to_slot} enthält '{to_name}'.\n"
+"\n"
+"Überschreiben?"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:514
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid ""
 "Import failed:\n"
 "{e}"
-msgstr "Teleportieren"
+msgstr ""
+"Import fehlgeschlagen:\n"
+"{e}"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:531
 #: src/er_save_manager/games/DS3/character_management_tab.py:476
@@ -842,7 +899,7 @@ msgstr "Teleportieren"
 #: src/er_save_manager/ui/gui.py:1349
 #: src/er_save_manager/ui/tabs/character_management_tab.py:1103
 msgid "Info"
-msgstr ""
+msgstr "Info"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:532
 #: src/er_save_manager/games/DS3/character_management_tab.py:477
@@ -851,7 +908,7 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/character_management_tab.py:1104
 #, python-brace-format
 msgid "Slot {slot} is already empty."
-msgstr ""
+msgstr "Slot {slot} ist bereits leer."
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:539
 #: src/er_save_manager/games/DS3/character_management_tab.py:484
@@ -862,7 +919,7 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/backup_manager_tab.py:728
 #: src/er_save_manager/ui/tabs/character_management_tab.py:1112
 msgid "Confirm Delete"
-msgstr ""
+msgstr "Löschen Bestätigen"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:541
 #: src/er_save_manager/games/DS3/character_management_tab.py:486
@@ -874,18 +931,23 @@ msgid ""
 "\n"
 "This will create a backup first."
 msgstr ""
+"Charakter '{name}' aus Slot {slot} löschen?\n"
+"\n"
+"Dadurch wird zunächst eine Sicherungskopie erstellt."
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:556
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid ""
 "Delete failed:\n"
 "{e}"
-msgstr "Teleportieren"
+msgstr ""
+"Löschen fehlgeschlagen:\n"
+"{e}"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:566
 #, python-brace-format
 msgid "Character deleted from Slot {slot}."
-msgstr ""
+msgstr "Charakter aus Slot {slot} gelöscht."
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:577
 #: src/er_save_manager/games/DS3/character_management_tab.py:710
@@ -893,7 +955,7 @@ msgstr ""
 #: src/er_save_manager/games/NR/character_management_tab.py:718
 #: src/er_save_manager/ui/tabs/character_management_tab.py:743
 msgid "Select target save file"
-msgstr ""
+msgstr "Ziel-Speicherdatei auswählen"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:612
 #: src/er_save_manager/games/DS3/character_management_tab.py:749
@@ -901,7 +963,7 @@ msgstr ""
 #: src/er_save_manager/games/NR/character_management_tab.py:759
 #: src/er_save_manager/ui/tabs/character_management_tab.py:786
 msgid "Select destination slot in target save:"
-msgstr ""
+msgstr "Zielspeicherplatz in der Ziel-Datei auswählen:"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:635
 #: src/er_save_manager/games/DS3/character_management_tab.py:775
@@ -909,11 +971,11 @@ msgstr ""
 #: src/er_save_manager/games/NR/character_management_tab.py:785
 #: src/er_save_manager/ui/tabs/character_management_tab.py:822
 msgid "Transfer"
-msgstr ""
+msgstr "Übertragen"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:668
 msgid "Select a different target save file."
-msgstr ""
+msgstr "Andere Ziel-Speicherdatei auswählen."
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:678
 #, python-brace-format
@@ -921,6 +983,8 @@ msgid ""
 "Failed to load target save:\n"
 "{e}"
 msgstr ""
+"Laden der ausgewählten Datei fehlgeschlagen:\n"
+"{e}"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:707
 #, python-brace-format
@@ -928,53 +992,55 @@ msgid ""
 "Transfer failed:\n"
 "{e}"
 msgstr ""
+"Transfer fehlgeschlagen:\n"
+"{e}"
 
 #: src/er_save_manager/games/DS2/character_management_tab.py:716
 #, python-brace-format
 msgid ""
-"Character transferred to Slot {to_slot} in target save. "
-"{stale_summary_note}"
+"Character transferred to Slot {to_slot} in target save. {stale_summary_note}"
 msgstr ""
+"Charakter zu Slot {to_slot} in Ziel-Datei transferriert. {stale_summary_note}"
 
 #: src/er_save_manager/games/DS2/editor_tab.py:50
 msgid "Character slot:"
-msgstr ""
+msgstr "Character Slot:"
 
 #: src/er_save_manager/games/DS2/editor_tab.py:60
 #: src/er_save_manager/games/NR/editor_tab.py:175
 msgid "Load Slot"
-msgstr ""
+msgstr "Slot Laden"
 
 #: src/er_save_manager/games/DS2/editor_tab.py:69
 #: src/er_save_manager/games/DS3/tabs/editor.py:76
 #: src/er_save_manager/games/DSR/editor_tab.py:116
 #: src/er_save_manager/ui/gui.py:1325
 msgid "Stats"
-msgstr ""
+msgstr "Statistiken"
 
 #: src/er_save_manager/games/DS2/editor_tab.py:70
 #: src/er_save_manager/ui/gui.py:977 src/er_save_manager/ui/gui.py:1147
 #: src/er_save_manager/ui/gui.py:1364
 msgid "Inventory"
-msgstr ""
+msgstr "Inventar"
 
 #: src/er_save_manager/games/DS2/editor_tab.py:95
 #: src/er_save_manager/games/DS3/tabs/editor.py:167
 msgid "NG+:"
-msgstr ""
+msgstr "NG+:"
 
 #: src/er_save_manager/games/DS2/editor_tab.py:107
 msgid "HP:"
-msgstr ""
+msgstr "HP:"
 
 #: src/er_save_manager/games/DS2/editor_tab.py:116
 msgid "Level & Attributes"
-msgstr ""
+msgstr "Level & Eigenschaften"
 
 #: src/er_save_manager/games/DS2/editor_tab.py:119
 #: src/er_save_manager/ui/editors/stats_editor.py:192
 msgid "Level:"
-msgstr ""
+msgstr "Level:"
 
 #: src/er_save_manager/games/DS2/editor_tab.py:146
 #: src/er_save_manager/games/DS3/tabs/editor.py:146
@@ -988,24 +1054,26 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:174
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:334
 msgid "Apply Changes"
-msgstr ""
+msgstr "Änderungen Speichern"
 
 #: src/er_save_manager/games/DS2/editor_tab.py:214
 msgid "Enter whole numbers for all stats to recalculate level"
-msgstr ""
+msgstr "Für alle Werte ganze Zahlen eingeben, um Level neu zu berechnen"
 
 #: src/er_save_manager/games/DS2/editor_tab.py:224
 #, python-brace-format
 msgid "(auto-calculated from stat changes: {computed_level})"
-msgstr ""
+msgstr "(automatisch neuberechnet aus Leveländerungen: {computed_level})"
 
 #: src/er_save_manager/games/DS2/editor_tab.py:258
 msgid "Never created in-game - edits here will not appear at the load screen"
 msgstr ""
+"Wird nie im Spiel erstellt - hier vorgenommene Änderungen werden auf dem "
+"Ladebildschirm nicht angezeigt"
 
 #: src/er_save_manager/games/DS2/editor_tab.py:302
 msgid "Invalid numeric value, changes not applied"
-msgstr ""
+msgstr "Ungültiger Zahlenwert, Änderungen wurden nicht übernommen"
 
 #: src/er_save_manager/games/DS2/editor_tab.py:310
 #, python-brace-format
@@ -1013,20 +1081,23 @@ msgid ""
 "Level ({entered_level}) does not match what these stats add up to "
 "({expected_level}). Adjust stats or Level to match before saving."
 msgstr ""
+"Das Level ({entered_level}) stimmt nicht mit dem gesamten Level überein, der "
+"sich aus diesen Werten berechnet ({expected_level}). Passe die Level vor dem "
+"Speichern entsprechend an."
 
 #: src/er_save_manager/games/DS2/editor_tab.py:326
 msgid "No save path to write to"
-msgstr ""
+msgstr "Kein Datei-Pfad zum Schreiben vorhanden"
 
 #: src/er_save_manager/games/DS2/editor_tab.py:336
 #: src/er_save_manager/games/DS2/inventory_tab.py:416
 #, python-brace-format
 msgid "Failed to write save: {e}"
-msgstr ""
+msgstr "Speichern ist fehlgeschlagen: {e}"
 
 #: src/er_save_manager/games/DS2/editor_tab.py:340
 msgid "Changes saved to disk"
-msgstr ""
+msgstr "Änderungen gespeichert"
 
 #: src/er_save_manager/games/DS2/inspector_tab.py:38
 #: src/er_save_manager/games/DS3/tabs/inspector.py:27
@@ -1035,19 +1106,21 @@ msgstr ""
 #: src/er_save_manager/ui/gui.py:942 src/er_save_manager/ui/gui.py:1033
 #: src/er_save_manager/ui/gui.py:1112
 msgid "Save Inspector"
-msgstr ""
+msgstr "Save Inspektor"
 
 #: src/er_save_manager/games/DS2/inspector_tab.py:41
 #: src/er_save_manager/games/DS3/tabs/inspector.py:30
 #: src/er_save_manager/games/DSR/inspector_tab.py:50
 msgid "Edit Character"
-msgstr ""
+msgstr "Charakter Bearbeiten"
 
 #: src/er_save_manager/games/DS2/inspector_tab.py:47
 msgid ""
-"Select a character slot, then click Edit Character to open it in "
-"Character Editor."
+"Select a character slot, then click Edit Character to open it in Character "
+"Editor."
 msgstr ""
+"Charakter Slot Auswählen, dann auf \"Charakter Bearbeiten\" klicken um Ihn  im "
+"Charakter Editor zu öffnen."
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:103
 #: src/er_save_manager/games/DS2/inventory_tab.py:144
@@ -1055,7 +1128,7 @@ msgstr ""
 #: src/er_save_manager/ui/editors/inventory_editor.py:839
 #: src/er_save_manager/ui/icon_browser.py:301
 msgid "Add Item"
-msgstr ""
+msgstr "Gegenstand Hinzufügen"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:109
 #: src/er_save_manager/games/DS2/inventory_tab.py:159
@@ -1066,7 +1139,7 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:266
 #: src/er_save_manager/ui/visual_inventory.py:237
 msgid "Category:"
-msgstr ""
+msgstr "Kategorie:"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:124
 #: src/er_save_manager/games/NR/editor_tab.py:355
@@ -1082,12 +1155,12 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:302
 #: src/er_save_manager/ui/tabs/world_state_tab.py:344
 msgid "Search:"
-msgstr ""
+msgstr "Suchen:"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:134
 #: src/er_save_manager/games/DS3/tabs/inventory.py:335
 msgid "Item"
-msgstr ""
+msgstr "Gegenstand"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:140
 #: src/er_save_manager/games/DSR/inventory_tab.py:261
@@ -1095,13 +1168,13 @@ msgstr ""
 #: src/er_save_manager/ui/editors/inventory_editor.py:891
 #: src/er_save_manager/ui/icon_browser.py:206
 msgid "Quantity:"
-msgstr ""
+msgstr "Menge:"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:154
 #: src/er_save_manager/games/DSR/inventory_tab.py:205
 #: src/er_save_manager/ui/editors/inventory_editor.py:1014
 msgid "Current Inventory"
-msgstr ""
+msgstr "Aktuelles Inventar"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:172
 #: src/er_save_manager/games/DS3/tabs/inventory.py:215
@@ -1111,50 +1184,49 @@ msgstr ""
 #: src/er_save_manager/ui/editors/inventory_editor.py:1055
 #: src/er_save_manager/ui/visual_inventory.py:252
 msgid "Filter:"
-msgstr ""
+msgstr "Filter:"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:202
 #: src/er_save_manager/games/DSR/inventory_tab.py:313
 #: src/er_save_manager/ui/editors/inventory_editor.py:1113
 #: src/er_save_manager/ui/editors/inventory_editor.py:3206
-#, fuzzy
 msgid "Remove Selected"
-msgstr "Ausgewählt"
+msgstr "Ausgewähltes Entfernen"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:204
 msgid "New qty:"
-msgstr ""
+msgstr "Neue Anzahl:"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:208
 #: src/er_save_manager/ui/editors/inventory_editor.py:1119
 msgid "Set Quantity"
-msgstr ""
+msgstr "Menge Bearbeiten"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:245
 msgid "Select an item to add"
-msgstr ""
+msgstr "Gegenstand zum Hinzufügen auswählen"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:252
 msgid "Item not found in database"
-msgstr ""
+msgstr "Gegenstand nicht in Datenbank gefunden"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:258
 #: src/er_save_manager/games/DS2/inventory_tab.py:392
 msgid "Quantity must be a number"
-msgstr ""
+msgstr "Menge muss eine Nummer sein"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:261
 msgid "Quantity must be at least 1"
-msgstr ""
+msgstr "Die Menge muss mindestens 1 betragen"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:268
 msgid "No empty inventory slot available"
-msgstr ""
+msgstr "Es ist kein freier Inventarplatz verfügbar"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:273
 #, python-brace-format
 msgid "Added {item_name}"
-msgstr ""
+msgstr "{item_name} hinzugefügt"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:350
 #: src/er_save_manager/games/DS2/inventory_tab.py:375
@@ -1162,51 +1234,53 @@ msgstr ""
 #: src/er_save_manager/ui/icon_browser.py:193
 #: src/er_save_manager/ui/visual_inventory.py:310
 #: src/er_save_manager/ui/visual_inventory.py:610
-#, fuzzy
 msgid "No item selected"
-msgstr "Ausgewählt"
+msgstr "Kein Gegenstand ausgewählt"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:358
 msgid "Item not found in inventory"
-msgstr ""
+msgstr "Gegenstand nicht im Inventar gefunden"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:362
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Removed {name}"
-msgstr "Ausgewählt"
+msgstr "{name} entfernt"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:383
 msgid "Quantity only applies to goods, bolts, spells, and upgrade materials"
 msgstr ""
+"Mengenauswahl gilt nur für Waren, Bolzen, Zaubersprüche und Upgrade-Materialien"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:395
 msgid "Quantity must be between 1 and 99"
-msgstr ""
+msgstr "Mengenwert muss zwischen 1 und 99 liegen"
 
 #: src/er_save_manager/games/DS2/inventory_tab.py:402
 #, python-brace-format
 msgid "Set {name} to x{quantity}"
-msgstr ""
+msgstr "Setze {name} auf x{quantity}"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:66
 #: src/er_save_manager/games/DSR/character_management_tab.py:66
 #: src/er_save_manager/games/NR/character_management_tab.py:67
 msgid "Copy, transfer, swap, export, import, or delete character slots"
 msgstr ""
+"Charakterplätze kopieren, übertragen, tauschen, exportieren, importieren oder "
+"löschen"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:91
 #: src/er_save_manager/games/DSR/character_management_tab.py:91
 #: src/er_save_manager/games/NR/character_management_tab.py:92
 #: src/er_save_manager/ui/tabs/character_management_tab.py:145
 msgid "Operation:"
-msgstr ""
+msgstr "Operation:"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:105
 #: src/er_save_manager/games/DSR/character_management_tab.py:105
 #: src/er_save_manager/games/NR/character_management_tab.py:106
 #: src/er_save_manager/ui/tabs/character_management_tab.py:176
 msgid "Operation Details"
-msgstr ""
+msgstr "Operation Details"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:163
 #: src/er_save_manager/games/DSR/character_management_tab.py:163
@@ -1214,62 +1288,75 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/character_management_tab.py:265
 msgid "Copy a character from one slot to another in the same save file"
 msgstr ""
+"Einen Charakter aus einem Speicherplatz in einen anderen innerhalb derselben "
+"Speicherdatei kopieren"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:171
 #: src/er_save_manager/games/DSR/character_management_tab.py:171
 #: src/er_save_manager/games/NR/character_management_tab.py:174
 msgid ""
-"Note: if the target slot has never had a character created in it in-game,"
-" the copy will not appear on the in-game load screen. Create a throwaway "
-"character there first, then copy."
+"Note: if the target slot has never had a character created in it in-game, the "
+"copy will not appear on the in-game load screen. Create a throwaway character "
+"there first, then copy."
 msgstr ""
+"Hinweis: Wenn auf dem Ziel-Slot im Spiel noch nie ein Charakter erstellt wurde, "
+"erscheint die Kopie nicht auf dem Ladebildschirm im Spiel. Erstelle dort "
+"zunächst einen Charakter und kopiere dann."
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:192
 #: src/er_save_manager/games/DSR/character_management_tab.py:192
 #: src/er_save_manager/games/NR/character_management_tab.py:195
 #: src/er_save_manager/ui/tabs/character_management_tab.py:316
 msgid "Transfer a character to a different save file"
-msgstr ""
+msgstr "Einen Charakter in einen Platz in einer anderen Speicherdatei übertragen"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:200
 #: src/er_save_manager/games/DSR/character_management_tab.py:200
 #: src/er_save_manager/games/NR/character_management_tab.py:203
 msgid ""
-"Note: if the target slot has never had a character created in it in-game,"
-" the transfer will not appear on the in-game load screen. Create a "
-"throwaway character there first."
+"Note: if the target slot has never had a character created in it in-game, the "
+"transfer will not appear on the in-game load screen. Create a throwaway "
+"character there first."
 msgstr ""
+"Hinweis: Wenn auf dem Ziel-Slot im Spiel noch nie ein Charakter erstellt wurde, "
+"erscheint die Kopie nicht auf dem Ladebildschirm im Spiel. Erstelle dort "
+"zunächst einen Charakter und kopiere dann."
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:223
 #: src/er_save_manager/games/DSR/character_management_tab.py:223
 #: src/er_save_manager/games/NR/character_management_tab.py:226
 #: src/er_save_manager/ui/tabs/character_management_tab.py:352
 msgid "Exchange two character slots"
-msgstr ""
+msgstr "Zwei Charakterplätze in derselben Speicherdatei vertauschen"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:238
 msgid "Save character to a standalone .ds3c file for backup or sharing"
 msgstr ""
+"Charakter in einer eigenständigen .ds3c-Datei speichern als Backup oder zum "
+"Teilen"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:255
 msgid "Load a character from a .ds3c file into a slot"
-msgstr ""
+msgstr "Lade einen Charakter aus einer .ds3c-Datei in einen Slot"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:263
 #: src/er_save_manager/games/DSR/character_management_tab.py:263
 #: src/er_save_manager/games/NR/character_management_tab.py:266
 msgid ""
-"Note: if the target slot has never had a character created in it in-game,"
-" the import will not appear on the in-game load screen. Create a "
-"throwaway character there first."
+"Note: if the target slot has never had a character created in it in-game, the "
+"import will not appear on the in-game load screen. Create a throwaway character "
+"there first."
 msgstr ""
+"Hinweis: Wenn auf dem Ziel-Slot im Spiel noch nie ein Charakter erstellt wurde, "
+"erscheint die Kopie nicht auf dem Ladebildschirm im Spiel. Erstelle dort "
+"zunächst einen Charakter und kopiere dann."
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:286
 #: src/er_save_manager/games/DSR/character_management_tab.py:286
 #: src/er_save_manager/games/NR/character_management_tab.py:289
 #: src/er_save_manager/ui/tabs/character_management_tab.py:474
 msgid "Clear a character slot (creates backup)"
-msgstr ""
+msgstr "Einen Charakterplatz löschen"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:318
 #: src/er_save_manager/games/DS3/tabs/bosses.py:260
@@ -1298,27 +1385,37 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:491
 #: src/er_save_manager/ui/tabs/world_state_tab.py:237
 msgid "Empty Slot"
-msgstr ""
+msgstr "Leerer Slot"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:320
 #, python-brace-format
 msgid ""
 "Slot {to_slot} is currently empty.\n"
 "\n"
-"Dark Souls III will not show a character written directly into a slot "
-"that has never been created in-game, even though the save file and this "
-"manager will look correct.\n"
+"Dark Souls III will not show a character written directly into a slot that has "
+"never been created in-game, even though the save file and this manager will "
+"look correct.\n"
 "\n"
-"If Slot {to_slot} has never had a character created in it before, go "
-"create a quick throwaway character there first (any name, skip the intro,"
-" save and quit), then run this again.\n"
+"If Slot {to_slot} has never had a character created in it before, go create a "
+"quick throwaway character there first (any name, skip the intro, save and "
+"quit), then run this again.\n"
 "\n"
 "Already created a character in this slot? Continue."
 msgstr ""
+"Der Slot {to_slot} ist derzeit leer.\n"
+"\n"
+"Dark Souls III zeigt keinen Charakter an, der direkt in einen Slot eingetragen "
+"wurde, der im Spiel noch nie angelegt wurde, auch wenn die Speicherdatei und "
+"dieser Manager korrekt aussehen.\n"
+"\n"
+"Wenn im Slot {to_slot} noch nie ein Charakter angelegt wurde, erstelle dort "
+"zunächst einen einfachen Einmal-Charakter (beliebiger Name, überspringe die "
+"Einleitung, speichere und beende das Spiel) und führe diesen Vorgang dann "
+"erneut aus.\n"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:329
 msgid "Please close Dark Souls III before modifying save files."
-msgstr ""
+msgstr "Bitte Dark Souls III schließen um die Datei zu bearbeiten."
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:342
 #: src/er_save_manager/games/DS3/character_management_tab.py:415
@@ -1363,14 +1460,14 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/hex_editor_tab.py:159
 #: src/er_save_manager/ui/tabs/hex_editor_tab.py:229
 msgid "Please load a save file first!"
-msgstr ""
+msgstr "Bitte zuerst eine Datei laden!"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:351
 #: src/er_save_manager/games/DSR/character_management_tab.py:351
 #: src/er_save_manager/games/NR/character_management_tab.py:354
 #: src/er_save_manager/ui/tabs/character_management_tab.py:534
 msgid "Source and destination slots must be different!"
-msgstr ""
+msgstr "Quell- und Ziel-Slots müssen unterschiedlich sein!"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:360
 #: src/er_save_manager/games/DS3/character_management_tab.py:636
@@ -1382,7 +1479,7 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/character_management_tab.py:649
 #, python-brace-format
 msgid "Slot {from_slot} is empty!"
-msgstr ""
+msgstr "Der Slot {from_slot} ist leer!"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:370
 #: src/er_save_manager/games/DSR/character_management_tab.py:370
@@ -1392,6 +1489,9 @@ msgid ""
 "\n"
 "Overwrite with '{name2}'?"
 msgstr ""
+"Der Slot {to_slot} enthält '{name}'.\n"
+"\n"
+"Mit '{name2}' überschreiben?"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:404
 #: src/er_save_manager/games/DSR/character_management_tab.py:404
@@ -1403,13 +1503,15 @@ msgid ""
 "Copy failed:\n"
 "{str}"
 msgstr ""
+"Kopieren fehlgeschlagen:\n"
+"{str}"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:423
 #: src/er_save_manager/games/DSR/character_management_tab.py:423
 #: src/er_save_manager/games/NR/character_management_tab.py:431
 #: src/er_save_manager/ui/tabs/character_management_tab.py:857
 msgid "Slots must be different!"
-msgstr ""
+msgstr "Slots müssen sich voneinander unterscheiden!"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:457
 #: src/er_save_manager/games/DSR/character_management_tab.py:457
@@ -1420,6 +1522,8 @@ msgid ""
 "Swap failed:\n"
 "{str}"
 msgstr ""
+"Swap fehlgeschlagen:\n"
+"{str}"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:512
 #: src/er_save_manager/games/DSR/character_management_tab.py:512
@@ -1431,6 +1535,8 @@ msgid ""
 "Delete failed:\n"
 "{str}"
 msgstr ""
+"Löschen fehlgeschlagen:\n"
+"{str}"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:529
 #: src/er_save_manager/games/DSR/character_management_tab.py:529
@@ -1438,7 +1544,7 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/character_management_tab.py:928
 #, python-brace-format
 msgid "Slot {slot} is empty!"
-msgstr ""
+msgstr "Slot {slot} ist leer!"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:557
 #: src/er_save_manager/games/DSR/character_management_tab.py:557
@@ -1450,6 +1556,8 @@ msgid ""
 "Export failed:\n"
 "{str}"
 msgstr ""
+"Export fehlgeschlagen:\n"
+"{str}"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:584
 #: src/er_save_manager/games/DSR/character_management_tab.py:584
@@ -1459,6 +1567,9 @@ msgid ""
 "\n"
 "Overwrite?"
 msgstr ""
+"Der Slot {to_slot} enthält '{name}'.\n"
+"\n"
+"Überschreiben?"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:616
 #: src/er_save_manager/games/DSR/character_management_tab.py:616
@@ -1470,13 +1581,15 @@ msgid ""
 "Import failed:\n"
 "{str}"
 msgstr ""
+"Import fehlgeschlagen:\n"
+"{str}"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:648
 #: src/er_save_manager/games/DSR/character_management_tab.py:648
 #: src/er_save_manager/games/NR/character_management_tab.py:656
 #: src/er_save_manager/ui/tabs/character_management_tab.py:675
 msgid "Select a different target save file for transfer."
-msgstr ""
+msgstr "Andere Ziel-Speicherdatei auswählen."
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:658
 #: src/er_save_manager/games/DSR/character_management_tab.py:658
@@ -1486,6 +1599,8 @@ msgid ""
 "Could not load target save:\n"
 "{str}"
 msgstr ""
+"Laden der ausgewählten Datei fehlgeschlagen:\n"
+"{str}"
 
 #: src/er_save_manager/games/DS3/character_management_tab.py:701
 #: src/er_save_manager/games/DSR/character_management_tab.py:701
@@ -1496,12 +1611,13 @@ msgid ""
 "Transfer failed:\n"
 "{str}"
 msgstr ""
+"Transfer fehlgeschlagen:\n"
+"{str}"
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:58
-#: src/er_save_manager/games/DSR/npc_tab.py:186
-#: src/er_save_manager/ui/gui.py:986
+#: src/er_save_manager/games/DSR/npc_tab.py:186 src/er_save_manager/ui/gui.py:986
 msgid "Bosses"
-msgstr ""
+msgstr "Bosse"
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:62
 #: src/er_save_manager/games/DS3/tabs/inventory.py:187
@@ -1514,7 +1630,7 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:146
 #: src/er_save_manager/ui/tabs/world_state_tab.py:128
 msgid "Load"
-msgstr ""
+msgstr "Laden"
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:69
 #: src/er_save_manager/games/DS3/tabs/editor.py:66
@@ -1530,35 +1646,33 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/character_management_tab.py:483
 #: src/er_save_manager/ui/tabs/world_state_tab.py:114
 msgid "Slot:"
-msgstr ""
+msgstr "Slot:"
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:75
-#, fuzzy
 msgid "Kill All Bosses"
-msgstr "Ausgewählt"
+msgstr "Alle Bosse Töten"
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:82
 #: src/er_save_manager/games/DSR/npc_tab.py:120
 msgid "Respawn All Bosses"
-msgstr ""
+msgstr "Alle Bosse Wiederbeleben"
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:126
 #: src/er_save_manager/games/DSR/npc_tab.py:164
 msgid "Empty slot or no save loaded."
-msgstr ""
+msgstr "Leerer Slot or keine Save Datei geladen."
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:172
 #: src/er_save_manager/games/DSR/npc_tab.py:240
 #: src/er_save_manager/games/DSR/npc_tab.py:296
 msgid "Kill"
-msgstr ""
+msgstr "Töten"
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:181
 #: src/er_save_manager/games/DSR/npc_tab.py:234
 #: src/er_save_manager/games/DSR/npc_tab.py:290
-#, fuzzy
 msgid "Respawn"
-msgstr "Ausgewählt"
+msgstr "Wiederbeleben"
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:212
 #: src/er_save_manager/games/DSR/npc_tab.py:219
@@ -1568,15 +1682,14 @@ msgstr "Ausgewählt"
 #: src/er_save_manager/games/DSR/npc_tab.py:364
 #: src/er_save_manager/games/DSR/npc_tab.py:367
 msgid "ALIVE"
-msgstr ""
+msgstr "LEBENDIG"
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:212
 #: src/er_save_manager/games/DSR/npc_tab.py:250
 #: src/er_save_manager/games/DSR/npc_tab.py:363
 #: src/er_save_manager/games/DSR/npc_tab.py:367
-#, fuzzy
 msgid "KILLED"
-msgstr "Ausgewählt"
+msgstr "TOT"
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:218
 #: src/er_save_manager/games/DS3/tabs/bosses.py:249
@@ -1606,9 +1719,8 @@ msgstr "Ausgewählt"
 #: src/er_save_manager/games/DSR/world_state_tab.py:280
 #: src/er_save_manager/games/NR/editor_tab.py:319
 #: src/er_save_manager/games/NR/editor_tab.py:878
-#, fuzzy
 msgid "Save Failed"
-msgstr "Teleportieren"
+msgstr "Speichern fehlgeschlagen"
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:228
 #: src/er_save_manager/games/DS3/tabs/editor.py:289
@@ -1628,12 +1740,12 @@ msgstr "Teleportieren"
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:1661
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:2075
 msgid "Confirm"
-msgstr ""
+msgstr "Bestätigen"
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:229
 #, python-brace-format
 msgid "{value} all bosses in Slot {current_slot}?"
-msgstr ""
+msgstr "{value} alle Bosse in Slot {current_slot}?"
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:261
 #: src/er_save_manager/games/DS3/tabs/editor.py:217
@@ -1646,17 +1758,17 @@ msgstr ""
 #: src/er_save_manager/games/DSR/world_state_tab.py:200
 #, python-brace-format
 msgid "Slot {idx} is empty."
-msgstr ""
+msgstr "Slot {idx} ist leer."
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:273
 #: src/er_save_manager/games/DS3/tabs/world_state.py:341
 msgid "No DS3 save loaded."
-msgstr ""
+msgstr "Keine DS3 Datei geladen."
 
 #: src/er_save_manager/games/DS3/tabs/bosses.py:279
 #: src/er_save_manager/games/DS3/tabs/world_state.py:347
 msgid "No character in this slot."
-msgstr ""
+msgstr "Kein Charakter in diesem Slot."
 
 #: src/er_save_manager/games/DS3/tabs/editor.py:52
 #: src/er_save_manager/games/DSR/editor_tab.py:88
@@ -1664,43 +1776,43 @@ msgstr ""
 #: src/er_save_manager/ui/gui.py:1055 src/er_save_manager/ui/gui.py:1120
 #: src/er_save_manager/ui/gui.py:1268
 msgid "Character Editor"
-msgstr ""
+msgstr "Charakter Bearbeitung"
 
 #: src/er_save_manager/games/DS3/tabs/editor.py:55
 #: src/er_save_manager/games/DSR/editor_tab.py:92
 #: src/er_save_manager/ui/gui.py:1299
 msgid "Load Character"
-msgstr ""
+msgstr "Charakter Laden"
 
 #: src/er_save_manager/games/DS3/tabs/editor.py:77
 #: src/er_save_manager/games/DSR/editor_tab.py:117
 msgid "Identity"
-msgstr ""
+msgstr "Identität"
 
 #: src/er_save_manager/games/DS3/tabs/editor.py:92
 #: src/er_save_manager/games/DSR/editor_tab.py:131
 #: src/er_save_manager/ui/editors/stats_editor.py:97
 msgid "Attributes"
-msgstr ""
+msgstr "Attribute"
 
 #: src/er_save_manager/games/DS3/tabs/editor.py:122
 #: src/er_save_manager/games/DSR/editor_tab.py:161
 msgid "Resources"
-msgstr ""
+msgstr "Ressourcen"
 
 #: src/er_save_manager/games/DS3/tabs/editor.py:159
 #: src/er_save_manager/games/DSR/editor_tab.py:204
 msgid "Character Identity"
-msgstr ""
+msgstr "Charakter Identität"
 
 #: src/er_save_manager/games/DS3/tabs/editor.py:161
 #: src/er_save_manager/ui/editors/character_info_editor.py:76
 msgid "Name:"
-msgstr ""
+msgstr "Name:"
 
 #: src/er_save_manager/games/DS3/tabs/editor.py:180
 msgid "Name supports up to 16 characters."
-msgstr ""
+msgstr "Name unterstützt bis zu 16 Buchstaben."
 
 #: src/er_save_manager/games/DS3/tabs/editor.py:281
 #: src/er_save_manager/games/DS3/tabs/editor.py:329
@@ -1713,7 +1825,7 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/world_state_tab.py:448
 #: src/er_save_manager/ui/tabs/world_state_tab.py:571
 msgid "Load a character first."
-msgstr ""
+msgstr "Bitte zuerst einen Charakter laden."
 
 #: src/er_save_manager/games/DS3/tabs/editor.py:281
 #: src/er_save_manager/games/DS3/tabs/editor.py:329
@@ -1722,7 +1834,7 @@ msgstr ""
 #: src/er_save_manager/games/DSR/editor_tab.py:394
 #: src/er_save_manager/ui/tabs/world_state_tab.py:307
 msgid "No Character"
-msgstr ""
+msgstr "Kein Charakter"
 
 #: src/er_save_manager/games/DS3/tabs/editor.py:291
 #: src/er_save_manager/games/DSR/editor_tab.py:363
@@ -1732,6 +1844,9 @@ msgid ""
 "\n"
 "A backup will be created."
 msgstr ""
+"Sollen die Änderungen auf Slot {current_slot} angewendet werden?\n"
+"\n"
+"Es wird eine Sicherungskopie erstellt."
 
 #: src/er_save_manager/games/DS3/tabs/editor.py:313
 #: src/er_save_manager/games/DS3/tabs/editor.py:351
@@ -1742,7 +1857,7 @@ msgstr ""
 #: src/er_save_manager/games/DSR/inventory_tab.py:827
 #: src/er_save_manager/ui/editors/stats_editor.py:707
 msgid "Invalid Value"
-msgstr ""
+msgstr "Ungültiger Wert"
 
 #: src/er_save_manager/games/DS3/tabs/editor.py:339
 #: src/er_save_manager/games/DSR/editor_tab.py:403
@@ -1752,22 +1867,27 @@ msgid ""
 "\n"
 "A backup will be created."
 msgstr ""
+"Sollen die Änderungen auf Slot {current_slot} angewendet werden?\n"
+"\n"
+"Es wird eine Sicherungskopie erstellt."
 
 #: src/er_save_manager/games/DS3/tabs/inspector.py:38
 #: src/er_save_manager/games/DSR/inspector_tab.py:56
 msgid "Select a character and click 'Edit Character' to open the editor tabs."
 msgstr ""
+"Charakter Slot Auswählen, dann auf \"Charakter Bearbeiten\" klicken um Ihn  im "
+"Charakter Editor zu öffnen."
 
 #: src/er_save_manager/games/DS3/tabs/inspector.py:60
 #: src/er_save_manager/games/DSR/inspector_tab.py:78
 #: src/er_save_manager/games/NR/inspector_tab.py:98
 msgid "No save file loaded."
-msgstr ""
+msgstr "Keine Save Datei geladen."
 
 #: src/er_save_manager/games/DS3/tabs/inspector.py:67
 #: src/er_save_manager/games/DSR/inspector_tab.py:85
 msgid "No active characters found."
-msgstr ""
+msgstr "Keine aktiven Charakter gefunden."
 
 #: src/er_save_manager/games/DS3/tabs/inspector.py:106
 #: src/er_save_manager/games/DS3/tabs/inventory.py:733
@@ -1794,24 +1914,23 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:1868
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:2069
 #: src/er_save_manager/ui/tabs/save_inspector_tab.py:225
-#, fuzzy
 msgid "No Selection"
-msgstr "Ausgewählt"
+msgstr "Keine Auswahl"
 
 #: src/er_save_manager/games/DS3/tabs/inspector.py:107
 #: src/er_save_manager/games/DSR/inspector_tab.py:129
 msgid "Please select a character first."
-msgstr ""
+msgstr "Bitte zuerst einen Charakter laden."
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:184
 #: src/er_save_manager/games/DSR/inventory_tab.py:170
 msgid "Inventory Editor"
-msgstr ""
+msgstr "Inventareditor"
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:257
 #: src/er_save_manager/games/DS3/tabs/inventory.py:367
 msgid "Qty:"
-msgstr ""
+msgstr "Menge:"
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:262
 #: src/er_save_manager/games/DS3/tabs/inventory.py:372
@@ -1820,7 +1939,7 @@ msgstr ""
 #: src/er_save_manager/ui/editors/inventory_editor.py:900
 #: src/er_save_manager/ui/icon_browser.py:215
 msgid "Upgrade:"
-msgstr ""
+msgstr "Upgrade:"
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:269
 #: src/er_save_manager/games/DS3/tabs/world_state.py:100
@@ -1832,204 +1951,216 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:622
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:782
 msgid "Apply"
-msgstr ""
+msgstr "Anwenden"
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:273
 #: src/er_save_manager/games/NR/editor_tab.py:419
 msgid "Remove"
-msgstr ""
+msgstr "Entfernen"
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:289
-#, fuzzy
 msgid "Spawn Item"
-msgstr "Ausgewählt"
+msgstr "Gegenstand Hinzufügen"
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:296
 msgid "Mod:"
-msgstr ""
+msgstr "Mod:"
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:301
 msgid "Cinders"
-msgstr ""
+msgstr "Cinders"
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:307
 #: src/er_save_manager/ui/dialogs/character_browser.py:422
 msgid "Convergence"
-msgstr ""
+msgstr "Convergence"
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:328
 #: src/er_save_manager/games/DSR/inventory_tab.py:357
 #: src/er_save_manager/games/NR/editor_tab.py:67
 #: src/er_save_manager/ui/visual_inventory.py:256
 msgid "Search..."
-msgstr ""
+msgstr "Durchsuchen..."
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:348
 #: src/er_save_manager/games/DSR/inventory_tab.py:283
 #: src/er_save_manager/games/DSR/inventory_tab.py:397
 msgid "Infusion:"
-msgstr ""
+msgstr "Infusion:"
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:380
 #: src/er_save_manager/games/NR/editor_tab.py:397
 #: src/er_save_manager/games/NR/editor_tab.py:509
 msgid "Spawn"
-msgstr ""
+msgstr "Spawnen"
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:734
 #: src/er_save_manager/games/DS3/tabs/inventory.py:781
 msgid "Select an item from the inventory first."
-msgstr ""
+msgstr "Bitte Gegenstand im Inventar auswählen."
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:746
 #: src/er_save_manager/games/DS3/tabs/inventory.py:839
 msgid "Enter valid integers."
-msgstr ""
+msgstr "Gültige Zahlen eingeben."
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:789
 #: src/er_save_manager/games/DSR/inventory_tab.py:788
 #: src/er_save_manager/games/NR/editor_tab.py:890
 #: src/er_save_manager/ui/editors/inventory_editor.py:2264
 msgid "Confirm Remove"
-msgstr ""
+msgstr "Entfernen bestätigen"
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:790
 msgid "Remove the selected item from inventory?"
-msgstr ""
+msgstr "Ausgewählten Gegenstand vom Inventar entfernen?"
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:823
 #: src/er_save_manager/games/DSR/inventory_tab.py:810
 #: src/er_save_manager/ui/editors/inventory_editor.py:2008
 #: src/er_save_manager/ui/editors/inventory_editor.py:2030
 msgid "No Item"
-msgstr ""
+msgstr "Kein Gegenstand"
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:824
 msgid "Select an item from the spawner list first."
-msgstr ""
+msgstr "Bitte Gegenstand aus der Liste auswählen."
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:866
 msgid "Unknown Type"
-msgstr ""
+msgstr "Unbekannter Typ"
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:867
 #, python-brace-format
 msgid "Item type {type_nibble:#x} not handled."
-msgstr ""
+msgstr "Der Gegenstandstyp {type_nibble:#x} wird nicht unterstützt."
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:882
 msgid "Full"
-msgstr ""
+msgstr "Voll"
 
 #: src/er_save_manager/games/DS3/tabs/inventory.py:883
 msgid "Inventory and storage both full, or no empty gaitem slots."
-msgstr ""
+msgstr "Inventar und Lagerbox beide voll, keine leeren Slots verfügbar."
 
 #: src/er_save_manager/games/DS3/tabs/world_state.py:60
 #: src/er_save_manager/games/DSR/world_state_tab.py:57
 #: src/er_save_manager/ui/gui.py:835 src/er_save_manager/ui/gui.py:995
 #: src/er_save_manager/ui/gui.py:1176
 msgid "World State"
-msgstr ""
+msgstr "Welt Status"
 
 #: src/er_save_manager/games/DS3/tabs/world_state.py:81
 msgid "New Game+"
-msgstr ""
+msgstr "New Game+"
 
 #: src/er_save_manager/games/DS3/tabs/world_state.py:86
 #: src/er_save_manager/games/DSR/world_state_tab.py:135
 #: src/er_save_manager/ui/editors/inventory_editor.py:2832
 msgid "Current:"
-msgstr ""
+msgstr "Aktuell:"
 
 #: src/er_save_manager/games/DS3/tabs/world_state.py:91
 #: src/er_save_manager/games/DSR/world_state_tab.py:142
 msgid "Set to:"
-msgstr ""
+msgstr "Set to:"
 
 #: src/er_save_manager/games/DS3/tabs/world_state.py:105
 msgid "0 = NG,  1 = NG+,  2 = NG++  etc."
-msgstr ""
+msgstr "0 = NG,  1 = NG+,  2 = NG++  etc."
 
 #: src/er_save_manager/games/DS3/tabs/world_state.py:113
 #: src/er_save_manager/games/DSR/world_state_tab.py:84
 msgid "Bonfires"
-msgstr ""
+msgstr "Lagerfeuer"
 
 #: src/er_save_manager/games/DS3/tabs/world_state.py:120
 msgid "Unlock All Bonfires"
-msgstr ""
+msgstr "Alle Lagerfeuer freischalten"
 
 #: src/er_save_manager/games/DS3/tabs/world_state.py:126
 msgid "Lock All Bonfires"
-msgstr ""
+msgstr "Alle Lagerfeuer sperren"
 
 #: src/er_save_manager/games/DS3/tabs/world_state.py:218
 #: src/er_save_manager/games/DS3/tabs/world_state.py:270
 #: src/er_save_manager/games/DSR/event_flags_tab.py:338
 #: src/er_save_manager/games/DSR/event_flags_tab.py:420
 msgid "ON"
-msgstr ""
+msgstr "AN"
 
 #: src/er_save_manager/games/DS3/tabs/world_state.py:218
 #: src/er_save_manager/games/DS3/tabs/world_state.py:270
 #: src/er_save_manager/games/DSR/event_flags_tab.py:338
 #: src/er_save_manager/games/DSR/event_flags_tab.py:420
 msgid "OFF"
-msgstr ""
+msgstr "AUS"
 
 #: src/er_save_manager/games/DS3/tabs/world_state.py:233
 msgid "Unlock"
-msgstr ""
+msgstr "Entsperren"
 
 #: src/er_save_manager/games/DS3/tabs/world_state.py:241
 #: src/er_save_manager/ui/tabs/settings_tab.py:869
 msgid "Lock"
-msgstr ""
+msgstr "Sperren"
 
 #: src/er_save_manager/games/DSR/character_management_tab.py:238
 msgid "Save character to a standalone .dsrc file for backup or sharing"
 msgstr ""
+"Charakter in einer eigenständigen .dsrc-Datei speichern als Backup oder zum "
+"Teilen"
 
 #: src/er_save_manager/games/DSR/character_management_tab.py:255
 msgid "Load a character from a .dsrc file into a slot"
-msgstr ""
+msgstr "Lade einen Charakter aus einer .dsrc-Datei in einen Slot"
 
 #: src/er_save_manager/games/DSR/character_management_tab.py:320
 #, python-brace-format
 msgid ""
 "Slot {to_slot} is currently empty.\n"
 "\n"
-"Dark Souls Remastered will not show a character written directly into a "
-"slot that has never been created in-game, even though the save file and "
-"this manager will look correct.\n"
+"Dark Souls Remastered will not show a character written directly into a slot "
+"that has never been created in-game, even though the save file and this manager "
+"will look correct.\n"
 "\n"
-"If Slot {to_slot} has never had a character created in it before, go "
-"create a quick throwaway character there first (any name, skip the intro,"
-" save and quit), then run this again.\n"
+"If Slot {to_slot} has never had a character created in it before, go create a "
+"quick throwaway character there first (any name, skip the intro, save and "
+"quit), then run this again.\n"
 "\n"
 "Already created a character in this slot? Continue."
 msgstr ""
+"Der Slot {to_slot} ist derzeit leer.\n"
+"\n"
+"Dark Souls Remastered zeigt keinen Charakter an, der direkt in einen Slot "
+"eingetragen wurde, der im Spiel noch nie angelegt wurde, auch wenn die "
+"Speicherdatei und dieser Manager korrekt aussehen.\n"
+"\n"
+"Wenn im Slot {to_slot} noch nie ein Charakter angelegt wurde, erstelle dort "
+"zunächst einen einfachen Einmal-Charakter (beliebiger Name, überspringe die "
+"Einleitung, speichere und beende das Spiel) und führe diesen Vorgang dann "
+"erneut aus.\n"
 
 #: src/er_save_manager/games/DSR/character_management_tab.py:329
 msgid "Please close Dark Souls: Remastered before modifying save files."
-msgstr ""
+msgstr "Bitte Dark Souls Remastered schließen um die Datei zu bearbeiten."
 
 #: src/er_save_manager/games/DSR/editor_tab.py:185
 msgid ""
-"Saving VIT updates derived max HP. Saving END updates max Stamina. Level "
-"is recalculated from stats automatically."
+"Saving VIT updates derived max HP. Saving END updates max Stamina. Level is "
+"recalculated from stats automatically."
 msgstr ""
+"Änderungen bei Vitality aktualisieren max HP, bei Endurance max Stamina. Level "
+"wird automatisch neu berechnet."
 
 #: src/er_save_manager/games/DSR/editor_tab.py:237
 msgid "Play Time:"
-msgstr ""
+msgstr "Spielzeit:"
 
 #: src/er_save_manager/games/DSR/editor_tab.py:247
 msgid ""
-"Name supports up to 16 characters. Both name copies in the save are "
-"updated."
-msgstr ""
+"Name supports up to 16 characters. Both name copies in the save are updated."
+msgstr "Name unterstützt bis zu 16 Buchstaben."
 
 #: src/er_save_manager/games/DSR/editor_tab.py:284
 #: src/er_save_manager/games/DSR/event_flags_tab.py:568
@@ -2037,108 +2168,112 @@ msgstr ""
 #: src/er_save_manager/games/DSR/npc_tab.py:443
 #: src/er_save_manager/games/DSR/world_state_tab.py:191
 msgid "No DSR save loaded."
-msgstr ""
+msgstr "Keine Save Datei geladen."
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:92
 #: src/er_save_manager/ui/gui.py:874 src/er_save_manager/ui/gui.py:1165
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:141
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:326
 msgid "Event Flags"
-msgstr ""
+msgstr "Ereignis-Flags"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:115
 msgid "NPC States"
-msgstr ""
+msgstr "NPC-Staaten"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:116
 msgid "World Flags"
-msgstr ""
+msgstr "Welt-Flags"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:117
 msgid "Flag Lookup"
-msgstr ""
+msgstr "Flag-Suche"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:120
 msgid "Load a character to view NPC state flags."
-msgstr ""
+msgstr "Charakter laden um NPC-Staaten anzuzeigen."
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:121
 msgid "Load a character to view world flags."
-msgstr ""
+msgstr "Charakter laden um Welt-Flags anzuzeigen."
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:154
 msgid ""
-"Individual quest-state flags for all major NPCs. Select a row and click "
-"Toggle."
+"Individual quest-state flags for all major NPCs. Select a row and click Toggle."
 msgstr ""
+"Individuelle Queststatus-Markierungen für alle wichtigen NPCs. Wähle eine Zeile "
+"aus und klicke auf „Umschalten“."
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:172
 msgid "NPC"
-msgstr ""
+msgstr "NPC"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:173
 msgid "ID"
-msgstr ""
+msgstr "ID"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:174
 #: src/er_save_manager/ui/dialogs/preset_browser.py:338
 msgid "Description"
-msgstr ""
+msgstr "Beschreibung"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:175
 msgid "State"
-msgstr ""
+msgstr "Status"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:189
-#, fuzzy
 msgid "Toggle Selected"
-msgstr "Ausgewählt"
+msgstr "Umschalten"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:223
 #, python-brace-format
 msgid "Flag {fid}  -  {entry}  -  Currently: {state}"
-msgstr ""
+msgstr "Flag {fid}  -  {entry}  -  Derzeit: {state}"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:235
 msgid "Select a flag row to toggle."
-msgstr ""
+msgstr "Flag-Reihe auswählen zum Umschalten"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:251
 #, python-brace-format
 msgid "Flag {fid}  -  {entry}  -  Now: {state}"
-msgstr ""
+msgstr "Flag {fid}  -  {entry}  -  Derzeit: {state}"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:270
 msgid ""
 "Persistent: Rite of Kindling, Bottomless Box, Sin flags.\n"
-"Session/cycle flags (*): reset on NG+ or set by event scripts at load. "
-"Editing still takes effect in-game."
+"Session/cycle flags (*): reset on NG+ or set by event scripts at load. Editing "
+"still takes effect in-game."
 msgstr ""
+"Persistent: „Rite of Kindling“, „Bottomless Box“, Sünden-Flags.\n"
+"Sitzungs-/Zyklus-Flags (*): werden bei NG+ zurückgesetzt oder beim Laden durch "
+"Ereignisskripte gesetzt. Änderungen werden im Spiel weiterhin wirksam."
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:306
 msgid "Gestures (CanLearn flags)"
-msgstr ""
+msgstr "Gesten (CanLearn-Flaggen)"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:312
 msgid "1 = not yet taught by NPC.  0 = NPC has taught it.  Resets on NG+."
 msgstr ""
+"1 = noch nicht von NPC gelernt.  0 = NPC hat es gelehrt.  Wird bei NG+ "
+"zurückgesetzt."
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:354
 #: src/er_save_manager/games/DSR/event_flags_tab.py:401
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:1049
 msgid "Toggle"
-msgstr ""
+msgstr "Umschalten"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:385
 #: src/er_save_manager/games/DSR/event_flags_tab.py:441
-#, fuzzy
 msgid "AVAILABLE"
-msgstr "Verfügbar"
+msgstr "VERFÜGBAR"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:385
 #: src/er_save_manager/games/DSR/event_flags_tab.py:441
 msgid "TAUGHT"
-msgstr ""
+msgstr "GELERNT"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:458
 msgid "Read or write any event flag by numeric ID."
@@ -2299,8 +2434,7 @@ msgid ""
 "A backup will be created."
 msgstr ""
 
-#: src/er_save_manager/games/DSR/npc_tab.py:84
-#: src/er_save_manager/ui/gui.py:1156
+#: src/er_save_manager/games/DSR/npc_tab.py:84 src/er_save_manager/ui/gui.py:1156
 msgid "NPCs & Bosses"
 msgstr ""
 
@@ -2322,9 +2456,9 @@ msgstr ""
 
 #: src/er_save_manager/games/DSR/npc_tab.py:195
 msgid ""
-"The following bosses use map-specific event flags (11xxxxxx) that cannot "
-"be reached via the save file's global flag encoding. State is unknown and"
-" cannot be edited here."
+"The following bosses use map-specific event flags (11xxxxxx) that cannot be "
+"reached via the save file's global flag encoding. State is unknown and cannot "
+"be edited here."
 msgstr ""
 
 #: src/er_save_manager/games/DSR/npc_tab.py:219
@@ -2383,8 +2517,8 @@ msgstr ""
 #: src/er_save_manager/games/DSR/world_state_tab.py:114
 msgid ""
 "Unlocks all 20 warpable bonfires including Firelink Shrine warp.\n"
-"Individual bonfire control is not possible - the bit-to-bonfire mapping "
-"is not publicly documented for DSR."
+"Individual bonfire control is not possible - the bit-to-bonfire mapping is not "
+"publicly documented for DSR."
 msgstr ""
 
 #: src/er_save_manager/games/DSR/world_state_tab.py:130
@@ -2416,13 +2550,13 @@ msgstr ""
 msgid ""
 "Slot {to_slot} is currently empty.\n"
 "\n"
-"Nightreign will not show a character written directly into a slot that "
-"has never been created in-game, even though the save file and this "
-"manager will look correct.\n"
+"Nightreign will not show a character written directly into a slot that has "
+"never been created in-game, even though the save file and this manager will "
+"look correct.\n"
 "\n"
-"If Slot {to_slot} has never had a character created in it before, go "
-"create a quick throwaway character there first (any name, skip the intro,"
-" save and quit), then run this again.\n"
+"If Slot {to_slot} has never had a character created in it before, go create a "
+"quick throwaway character there first (any name, skip the intro, save and "
+"quit), then run this again.\n"
 "\n"
 "Already created a character in this slot? Continue."
 msgstr ""
@@ -2642,8 +2776,8 @@ msgstr ""
 
 #: src/er_save_manager/games/NR/steamid_tab.py:46
 msgid ""
-"Patches the SteamID embedded in the Nightreign save. Required when "
-"copying a save to a different Steam account."
+"Patches the SteamID embedded in the Nightreign save. Required when copying a "
+"save to a different Steam account."
 msgstr ""
 
 #: src/er_save_manager/games/NR/steamid_tab.py:58
@@ -2829,8 +2963,7 @@ msgstr ""
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:288
 msgid ""
-"Share your character build with the community! Provide screenshots and "
-"details."
+"Share your character build with the community! Provide screenshots and details."
 msgstr ""
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:301
@@ -2948,8 +3081,8 @@ msgstr ""
 #: src/er_save_manager/ui/dialogs/character_browser.py:740
 #: src/er_save_manager/ui/dialogs/preset_browser.py:612
 msgid ""
-"Log in to GitHub, then copy and paste this link in your browser to finish"
-" the submission."
+"Log in to GitHub, then copy and paste this link in your browser to finish the "
+"submission."
 msgstr ""
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:754
@@ -3321,10 +3454,10 @@ msgstr ""
 #: src/er_save_manager/ui/dialogs/character_details.py:766
 #, python-brace-format
 msgid ""
-"Use this if you are still getting a Save is corrupted message or are "
-"still crashing after fixing corruption via the tool or if it does not "
-"detect any corruption. Replace the entire CSNetMan block in Slot "
-"{slot_idx} with the clean template?\n"
+"Use this if you are still getting a Save is corrupted message or are still "
+"crashing after fixing corruption via the tool or if it does not detect any "
+"corruption. Replace the entire CSNetMan block in Slot {slot_idx} with the clean "
+"template?\n"
 "\n"
 "A backup will be created."
 msgstr ""
@@ -3490,8 +3623,7 @@ msgstr ""
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:638
 msgid ""
-"Could not generate a submission URL. Please log in to GitHub and try "
-"again."
+"Could not generate a submission URL. Please log in to GitHub and try again."
 msgstr ""
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:785
@@ -4436,8 +4568,8 @@ msgstr ""
 #: src/er_save_manager/ui/editors/stats_editor.py:709
 #, python-brace-format
 msgid ""
-"Matchmaking weapon level cannot be set below {matchmaking_min} (highest "
-"upgrade level found in inventory).\n"
+"Matchmaking weapon level cannot be set below {matchmaking_min} (highest upgrade "
+"level found in inventory).\n"
 "Value has been raised to {matchmaking_min}."
 msgstr ""
 
@@ -4689,15 +4821,14 @@ msgstr ""
 
 #: src/er_save_manager/ui/gui.py:1480
 msgid ""
-"Console saves must be decrypted and exported as memory.dat before you can"
-" load them."
+"Console saves must be decrypted and exported as memory.dat before you can load "
+"them."
 msgstr ""
 
 #: src/er_save_manager/ui/gui.py:1491
 msgid ""
 "Exporting/Decrypting a console save may require custom firmware on your "
-"console, we cannot provide instructions for doing so. Use at your own "
-"risk."
+"console, we cannot provide instructions for doing so. Use at your own risk."
 msgstr ""
 
 #: src/er_save_manager/ui/gui.py:1503
@@ -5143,10 +5274,10 @@ msgstr ""
 msgid ""
 "Reset ALL event flags for {npc_name}'s quest to 0?\n"
 "\n"
-"This will undo all tracked quest progress. A backup will be created. Some"
-" steps may stay applied even if you reset all flags. This is because "
-"those steps only use flags that the game clears back to 0, so they're "
-"indistinguishable from never happened in a save."
+"This will undo all tracked quest progress. A backup will be created. Some steps "
+"may stay applied even if you reset all flags. This is because those steps only "
+"use flags that the game clears back to 0, so they're indistinguishable from "
+"never happened in a save."
 msgstr ""
 
 #: src/er_save_manager/ui/quest_progress_dialog.py:387
@@ -5573,8 +5704,8 @@ msgstr ""
 
 #: src/er_save_manager/ui/tabs/backup_manager_tab.py:429
 msgid ""
-"Click the star to lock a backup. Locked backups are never removed by the "
-"backup limit."
+"Click the star to lock a backup. Locked backups are never removed by the backup "
+"limit."
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/backup_manager_tab.py:438
@@ -5731,8 +5862,8 @@ msgstr ""
 
 #: src/er_save_manager/ui/tabs/character_management_tab.py:85
 msgid ""
-"Transfer characters between save files, copy slots, manage your character"
-" roster, share and download community builds"
+"Transfer characters between save files, copy slots, manage your character "
+"roster, share and download community builds"
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/character_management_tab.py:101
@@ -6235,8 +6366,8 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:1607
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:1703
 msgid ""
-"Could not create backup because the save path is not a file. Proceeding "
-"without backup."
+"Could not create backup because the save path is not a file. Proceeding without "
+"backup."
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:1446
@@ -6398,8 +6529,7 @@ msgstr ""
 
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:118
 msgid ""
-"View and manage unlocked gestures as well as unlocked regions and game "
-"settings."
+"View and manage unlocked gestures as well as unlocked regions and game settings."
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:181
@@ -6473,8 +6603,8 @@ msgstr ""
 
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:519
 msgid ""
-"Map regions stored in the save file. Controls which areas appear as "
-"discovered on the map."
+"Map regions stored in the save file. Controls which areas appear as discovered "
+"on the map."
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:552
@@ -6520,8 +6650,7 @@ msgstr ""
 
 #: src/er_save_manager/ui/tabs/hex_editor_tab.py:55
 msgid ""
-"⚠️  Warning: Direct hex editing can corrupt your save file. Use with "
-"caution!"
+"⚠️  Warning: Direct hex editing can corrupt your save file. Use with caution!"
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/hex_editor_tab.py:65
@@ -6560,8 +6689,8 @@ msgstr ""
 
 #: src/er_save_manager/ui/tabs/save_inspector_tab.py:78
 msgid ""
-"Select a character and click 'View All Issues' to scan for problems and "
-"apply fixes"
+"Select a character and click 'View All Issues' to scan for problems and apply "
+"fixes"
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/save_inspector_tab.py:107
@@ -6653,8 +6782,8 @@ msgstr ""
 msgid ""
 "You currently have {existing_count} backups for the loaded save.\n"
 "\n"
-"Lowering the limit to {value} will delete the {excess} oldest backup(s) "
-"the next time a backup is created.\n"
+"Lowering the limit to {value} will delete the {excess} oldest backup(s) the "
+"next time a backup is created.\n"
 "\n"
 "Continue?"
 msgstr ""
@@ -6674,8 +6803,7 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/settings_tab.py:334
 #, python-brace-format
 msgid ""
-"Automatically create a backup of your {name} save whenever the game "
-"launches."
+"Automatically create a backup of your {name} save whenever the game launches."
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/settings_tab.py:361
@@ -6823,8 +6951,7 @@ msgstr ""
 
 #: src/er_save_manager/ui/tabs/settings_tab.py:938
 msgid ""
-"Adds a Save Icon button to the Visual Item Picker for exporting item "
-"icons."
+"Adds a Save Icon button to the Visual Item Picker for exporting item icons."
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/settings_tab.py:950
@@ -6847,9 +6974,9 @@ msgstr ""
 
 #: src/er_save_manager/ui/tabs/settings_tab.py:1000
 msgid ""
-"When eldenring.exe, nightreign.exe or darksoulsiii.exe is detected, CPU 0"
-" is removed from its affinity mask. Can reduce stutter caused by Windows "
-"scheduling on core 0."
+"When eldenring.exe, nightreign.exe or darksoulsiii.exe is detected, CPU 0 is "
+"removed from its affinity mask. Can reduce stutter caused by Windows scheduling "
+"on core 0."
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/settings_tab.py:1024
@@ -6894,8 +7021,8 @@ msgstr ""
 
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:138
 msgid ""
-"To use a save from a different Steam account, swap the file in place "
-"while the game is running instead:"
+"To use a save from a different Steam account, swap the file in place while the "
+"game is running instead:"
 msgstr ""
 
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:174
@@ -7291,8 +7418,8 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/world_state_tab.py:631
 #, python-brace-format
 msgid ""
-"Custom teleportation can corrupt your save if the Map ID or coordinates "
-"are invalid.{dlc_warning}\n"
+"Custom teleportation can corrupt your save if the Map ID or coordinates are "
+"invalid.{dlc_warning}\n"
 "\n"
 "Coords: X={x}, Y={y}, Z={z}\n"
 "\n"
@@ -7362,4 +7489,3 @@ msgstr ""
 #, python-brace-format
 msgid "Qty: {qty}  |  {location}"
 msgstr ""
-

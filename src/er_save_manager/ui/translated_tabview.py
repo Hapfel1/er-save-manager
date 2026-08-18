@@ -79,11 +79,27 @@ class TranslatedTabview(ctk.CTkTabview):
     def set(self, name: str) -> None:
         super().set(self._label(name))
 
+    def _display_order(self) -> list[str]:
+        """Labels in the order they are drawn.
+
+        Authoritative for index lookups. CTkTabview's _name_list is not
+        reordered by move() and rename() appends to it, so it can disagree with
+        what the user sees.
+        """
+        return list(self._segmented_button.cget("values"))
+
     def get(self, index: int | None = None) -> str:
-        return self._key(super().get(index))
+        # Index handled here because CTkTabview.get accepts one only from 6.0.0
+        # onward, while the project supports 5.2.2
+        if index is None:
+            return self._key(super().get())
+        return self._key(self._display_order()[index])
 
     def index(self, name: str | None = None) -> int:
-        return super().index(None if name is None else self._label(name))
+        # CTkTabview.index requires a name in 5.2.2 and defaults to the current
+        # tab from 6.0.0, so both cases are resolved here
+        label = super().get() if name is None else self._label(name)
+        return self._display_order().index(label)
 
     def move(self, new_index: int, name: str) -> None:
         super().move(new_index, self._label(name))
