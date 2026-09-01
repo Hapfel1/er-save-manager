@@ -2016,11 +2016,15 @@ class SaveManagerGUI:
         ):
             # Create custom dialog with "Don't show again" option
             warning_dialog = tk.Toplevel(self.root)
-            warning_dialog.title("⚠️ Warning - Vanilla Save File Detected")
+            warning_dialog.title("Warning - Vanilla Save File Detected")
             warning_dialog.geometry("520x600")
             warning_dialog.transient(self.root)
             warning_dialog.update_idletasks()
             warning_dialog.grab_set()
+
+            from er_save_manager.ui.utils import force_render_dialog
+
+            force_render_dialog(warning_dialog)
 
             # Warning message
             msg_frame = ttk.Frame(warning_dialog, padding=20)
@@ -2085,11 +2089,18 @@ class SaveManagerGUI:
                 side=tk.LEFT, padx=5
             )
 
+            # Route the title bar close button through the same explicit
+            # cancel path so dismissing the window is never silently
+            # different from clicking "No, Cancel".
+            warning_dialog.protocol("WM_DELETE_WINDOW", on_no)
+
             # Wait for dialog to close
             self.root.wait_window(warning_dialog)
 
             if not result["continue"]:
-                self.status_var.set("Load cancelled by user")
+                self.status_var.set(
+                    "Load cancelled - click 'Yes, Continue' in the warning to load a vanilla save"
+                )
                 return
 
         # Route non-ER games to their own loaders so the Load button works too
