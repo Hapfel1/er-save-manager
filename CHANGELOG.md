@@ -3,6 +3,33 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.10.0
+**Released:** September 01, 2026
+
+
+### ✨ New Features
+
+- Add Tarnished Pack DLC items and DLC-gated content `[tarnished-pack]` ([dfa6355](https://github.com/Hapfel1/er-save-manager/commit/dfa6355c6ad9d90ef0b49cd8411de4b43856c88c))
+
+
+
+### 🔧 Bug Fixes
+
+- Added Tarnished Pack Starting Classes ([189d4b8](https://github.com/Hapfel1/er-save-manager/commit/189d4b88e8be24ba87025ca69528177880305bea))
+
+- Prevent EAC warning from silently cancelling save load `[gui]` ([1912598](https://github.com/Hapfel1/er-save-manager/commit/1912598663df20bd2ed71932e3d1354f161e5789))
+
+
+
+### 📦 Dependencies
+
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([9a110ea](https://github.com/Hapfel1/er-save-manager/commit/9a110eae9f6ebd5c6a00a3d2a5cb0a11ca52bcb8))
+
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([dd90ef2](https://github.com/Hapfel1/er-save-manager/commit/dd90ef22a50394d91a79e64da572b1f63073e68e))
+
+
+
+---
 ## 📦 Release 1.9.1
 **Released:** August 17, 2026
 
@@ -1505,6 +1532,7 @@ implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f
 
 
 ---
+[1.10.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.9.1..v1.10.0
 [1.9.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.9.0..v1.9.1
 [1.9.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.8.0..v1.9.0
 [1.8.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.7.1..v1.8.0
