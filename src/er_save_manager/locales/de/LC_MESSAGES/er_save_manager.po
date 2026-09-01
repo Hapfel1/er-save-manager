@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: ER Save Manager VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-08-18 12:29+0000\n"
-"PO-Revision-Date: 2026-08-18 16:58+0200\n"
+"PO-Revision-Date: 2026-08-19 23:45+0200\n"
 "Last-Translator: \n"
 "Language-Team: de <LL@li.org>\n"
 "Language: de\n"
@@ -2232,7 +2232,7 @@ msgstr "Flag {fid}  -  {entry}  -  Derzeit: {state}"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:235
 msgid "Select a flag row to toggle."
-msgstr "Flag-Reihe auswählen zum Umschalten"
+msgstr "Flag-Reihe auswählen zum Umschalten."
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:251
 #, python-brace-format
@@ -2277,36 +2277,36 @@ msgstr "GELERNT"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:458
 msgid "Read or write any event flag by numeric ID."
-msgstr ""
+msgstr "Schreibe oder Lese aus Ereignis-Flags anhand deren numerischen ID."
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:466
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:953
 msgid "Flag ID:"
-msgstr ""
+msgstr "Flag ID:"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:472
 msgid "e.g. 11010000"
-msgstr ""
+msgstr "z.B. 11010000"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:475
 msgid "Read"
-msgstr ""
+msgstr "Auslesen"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:479
 msgid "Set ON"
-msgstr ""
+msgstr "Auf \"ON\" stellen"
 
 #: src/er_save_manager/games/DSR/event_flags_tab.py:485
 msgid "Set OFF"
-msgstr ""
+msgstr "Auf \"OFF\" stellen"
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:218
 msgid "Search items..."
-msgstr ""
+msgstr "Gegenstände Suchen..."
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:320
 msgid "Repair All Items"
-msgstr ""
+msgstr "Alle Gegenstände Reparieren"
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:323
 #: src/er_save_manager/ui/dialogs/character_browser.py:157
@@ -2315,81 +2315,81 @@ msgstr ""
 #: src/er_save_manager/ui/editors/inventory_editor.py:1143
 #: src/er_save_manager/ui/tabs/hex_editor_tab.py:87
 msgid "Refresh"
-msgstr ""
+msgstr "Aktualisieren"
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:372
 msgid "Item Name"
-msgstr ""
+msgstr "Gegenstandsname"
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:412
 msgid "Add to Inventory"
-msgstr ""
+msgstr "Zu Inventar hinzufügen"
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:612
 #, python-brace-format
 msgid "max qty: {max_stack}"
-msgstr ""
+msgstr "maximale Menge: {max_stack}"
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:695
 msgid "Enter a valid quantity."
-msgstr ""
+msgstr "Gültige Menge eingeben."
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:695
 #: src/er_save_manager/games/DSR/inventory_tab.py:719
 #: src/er_save_manager/ui/tabs/appearance_tab.py:1337
 msgid "Invalid"
-msgstr ""
+msgstr "Ungültig"
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:701
 msgid "Out of Range"
-msgstr ""
+msgstr "Außerhalb des Bereichs"
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:702
 #, python-brace-format
 msgid "Quantity must be 1-{max_stack}."
-msgstr ""
+msgstr "Menge muss 1-{max_stack} sein."
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:719
 msgid "Enter a valid upgrade level."
-msgstr ""
+msgstr "Gültige Upgrade-Stufe eingeben."
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:734
 #: src/er_save_manager/ui/editors/inventory_editor.py:2502
 msgid "Invalid Upgrade"
-msgstr ""
+msgstr "Ungültiges Upgrade"
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:735
 #, python-brace-format
 msgid "Range is 0-{max_up}."
-msgstr ""
+msgstr "Gültiger Bereich ist 0-{max_up}"
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:741
 msgid "Cannot Infuse"
-msgstr ""
+msgstr "Kann nicht infundieren"
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:742
 #, python-brace-format
 msgid "{entry} cannot be infused."
-msgstr ""
+msgstr "{entry} kann nicht infundiert werden."
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:777
 #: src/er_save_manager/ui/editors/inventory_editor.py:2253
 msgid "Select an item to remove."
-msgstr ""
+msgstr "Gegenstand zum Entfernen auswählen."
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:789
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Remove {name}?"
-msgstr "Ausgewählt"
+msgstr "{name} entfernen?"
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:810
 msgid "Select an item from the list."
-msgstr ""
+msgstr "Bitte Gegenstand aus der Liste auswählen."
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:815
 #: src/er_save_manager/games/DSR/inventory_tab.py:869
 msgid "Load a character slot first."
-msgstr ""
+msgstr "Bitte zuerst einen Charakter laden."
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:815
 #: src/er_save_manager/games/DSR/inventory_tab.py:869
@@ -2399,33 +2399,32 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:460
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:482
 msgid "No Slot"
-msgstr ""
+msgstr "Kein Slot"
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:831
 msgid "Invalid Item"
-msgstr ""
+msgstr "Ungültiger Gegenstand"
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:840
 msgid "Already Owned"
-msgstr ""
+msgstr "Bereits im Besitz"
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:841
 #, python-brace-format
 msgid "Already have {db_item}. Add duplicate?"
-msgstr ""
+msgstr "{db_item} bereits im Besitz. Duplikat hinzufügen?"
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:851
 msgid "Inventory Full"
-msgstr ""
+msgstr "Inventar Voll"
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:851
-#, fuzzy
 msgid "No empty slots available."
-msgstr "Verfügbar"
+msgstr "Keine leeren Slots verfügbar."
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:876
 msgid "Repair All"
-msgstr ""
+msgstr "Alles Reparieren"
 
 #: src/er_save_manager/games/DSR/inventory_tab.py:877
 msgid ""
@@ -2433,26 +2432,29 @@ msgid ""
 "\n"
 "A backup will be created."
 msgstr ""
+"Die Haltbarkeit aller Gegenstände wiederherstellen?\n"
+"\n"
+"Es wird ein Backup erstellt."
 
 #: src/er_save_manager/games/DSR/npc_tab.py:84 src/er_save_manager/ui/gui.py:1156
 msgid "NPCs & Bosses"
-msgstr ""
+msgstr "NPCs & Bosse"
 
 #: src/er_save_manager/games/DSR/npc_tab.py:100
 msgid "Changes apply and backup immediately:"
-msgstr ""
+msgstr "Änderungen werden sofort übernommen:"
 
 #: src/er_save_manager/games/DSR/npc_tab.py:106
 msgid "Respawn All NPCs"
-msgstr ""
+msgstr "Alle NPCs wiederbeleben"
 
 #: src/er_save_manager/games/DSR/npc_tab.py:112
 msgid "Kill All NPCs"
-msgstr ""
+msgstr "Alle NPCs töten"
 
 #: src/er_save_manager/games/DSR/npc_tab.py:171
 msgid "NPCs"
-msgstr ""
+msgstr "NPCs"
 
 #: src/er_save_manager/games/DSR/npc_tab.py:195
 msgid ""
@@ -2460,12 +2462,15 @@ msgid ""
 "reached via the save file's global flag encoding. State is unknown and cannot "
 "be edited here."
 msgstr ""
+"Die folgenden Bosse verwenden kartenbezogene Ereignis-Flags (11xxxxxx), auf die "
+"über die globale Flag-Kodierung der Datei nicht zugegriffen werden kann. Der "
+"Status ist unbekannt und kann hier nicht bearbeitet werden."
 
 #: src/er_save_manager/games/DSR/npc_tab.py:219
 #: src/er_save_manager/games/DSR/npc_tab.py:330
 #: src/er_save_manager/games/DSR/npc_tab.py:336
 msgid "DEAD"
-msgstr ""
+msgstr "TOT"
 
 #: src/er_save_manager/games/DSR/npc_tab.py:253
 #: src/er_save_manager/ui/tabs/world_state_tab.py:242
@@ -2476,18 +2481,18 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/world_state_tab.py:669
 #: src/er_save_manager/ui/tabs/world_state_tab.py:678
 msgid "N/A"
-msgstr ""
+msgstr "k.A."
 
 #: src/er_save_manager/games/DSR/npc_tab.py:305
 msgid "map flag"
-msgstr ""
+msgstr "Karten-Flag"
 
 #: src/er_save_manager/games/DSR/npc_tab.py:381
 #: src/er_save_manager/games/DSR/npc_tab.py:411
 #: src/er_save_manager/games/DSR/world_state_tab.py:240
 #: src/er_save_manager/games/DSR/world_state_tab.py:264
 msgid "No character loaded."
-msgstr ""
+msgstr "Kein Charakter geladen."
 
 #: src/er_save_manager/games/DSR/npc_tab.py:387
 #, python-brace-format
@@ -2496,6 +2501,9 @@ msgid ""
 "\n"
 "A backup will be created."
 msgstr ""
+"{action} alle NPCs?\n"
+"\n"
+"Ein Backup wird erstellt."
 
 #: src/er_save_manager/games/DSR/npc_tab.py:418
 #, python-brace-format
@@ -2505,14 +2513,18 @@ msgid ""
 "Only the 14 globally-tracked bosses can be toggled.\n"
 "A backup will be created."
 msgstr ""
+"{action} alle Bosse?\n"
+"\n"
+"Es können nur die 14 weltweit erfassten Bosse ein- und ausgeschaltet werden.\n"
+"Es wird eine Sicherungskopie erstellt."
 
 #: src/er_save_manager/games/DSR/world_state_tab.py:89
 msgid "Current state:"
-msgstr ""
+msgstr "Aktueller Stand:"
 
 #: src/er_save_manager/games/DSR/world_state_tab.py:103
 msgid "Unlock All Warpable Bonfires"
-msgstr ""
+msgstr "Alle Warp-fähigen Lagerfeuer freischalten"
 
 #: src/er_save_manager/games/DSR/world_state_tab.py:114
 msgid ""
@@ -2520,30 +2532,35 @@ msgid ""
 "Individual bonfire control is not possible - the bit-to-bonfire mapping is not "
 "publicly documented for DSR."
 msgstr ""
+"Schaltet alle 20 Leuchtfeuer frei, zu denen man sich teleportieren kann, "
+"einschließlich des Teleportationspunkts „Firelink Shrine“.\n"
+"Eine individuelle Steuerung der Leuchtfeuer ist nicht möglich."
 
 #: src/er_save_manager/games/DSR/world_state_tab.py:130
 msgid "New Game+ Counter"
-msgstr ""
+msgstr "„New Game+“-Zähler"
 
 #: src/er_save_manager/games/DSR/world_state_tab.py:157
 msgid "0 = NG, 1 = NG+, 2 = NG++, etc."
-msgstr ""
+msgstr "0 = NG, 1 = NG+, 2 = NG++, etc."
 
 #: src/er_save_manager/games/DSR/world_state_tab.py:222
 msgid "All unlocked"
-msgstr ""
+msgstr "Alles freigeschaltet"
 
 #: src/er_save_manager/games/DSR/world_state_tab.py:226
 msgid "Not fully unlocked"
-msgstr ""
+msgstr "Noch nicht vollständig freigeschaltet"
 
 #: src/er_save_manager/games/NR/character_management_tab.py:241
 msgid "Save character to a standalone .nrc file for backup or sharing"
 msgstr ""
+"Charakter in einer eigenständigen .nrc-Datei speichern als Backup oder zum "
+"Teilen"
 
 #: src/er_save_manager/games/NR/character_management_tab.py:258
 msgid "Load a character from a .nrc file into a slot"
-msgstr ""
+msgstr "Lade einen Charakter aus einer .nrc-Datei in einen Slot"
 
 #: src/er_save_manager/games/NR/character_management_tab.py:323
 #, python-brace-format
@@ -2560,10 +2577,20 @@ msgid ""
 "\n"
 "Already created a character in this slot? Continue."
 msgstr ""
+"Der Slot {to_slot} ist derzeit leer.\n"
+"\n"
+"Elden Ring Nightreign zeigt keinen Charakter an, der direkt in einen Slot "
+"eingetragen wurde, der im Spiel noch nie angelegt wurde, auch wenn die "
+"Speicherdatei und dieser Manager korrekt aussehen.\n"
+"\n"
+"Wenn im Slot {to_slot} noch nie ein Charakter angelegt wurde, erstelle dort "
+"zunächst einen einfachen Einmal-Charakter (beliebiger Name, überspringe die "
+"Einleitung, speichere und beende das Spiel) und führe diesen Vorgang dann "
+"erneut aus."
 
 #: src/er_save_manager/games/NR/character_management_tab.py:332
 msgid "Please close Elden Ring Nightreign before modifying save files."
-msgstr ""
+msgstr "Bitte Elden Ring Nightreign schließen um die Datei zu bearbeiten."
 
 #: src/er_save_manager/games/NR/character_management_tab.py:373
 #, python-brace-format
@@ -2572,6 +2599,9 @@ msgid ""
 "\n"
 "Overwrite with '{player_name2}'?"
 msgstr ""
+"Der Slot {to_slot} enthält '{player_name}'.\n"
+"\n"
+"Mit '{player_name2}' überschreiben?"
 
 #: src/er_save_manager/games/NR/character_management_tab.py:557
 #, python-brace-format
@@ -2579,6 +2609,8 @@ msgid ""
 "Character '{player_name}' exported to:\n"
 "{output_path}"
 msgstr ""
+"Charakter '{player_name}' exportiert nach:\n"
+"{output_path}"
 
 #: src/er_save_manager/games/NR/character_management_tab.py:592
 #, python-brace-format
@@ -2587,36 +2619,38 @@ msgid ""
 "\n"
 "Overwrite?"
 msgstr ""
+"Der Slot {to_slot} enthält '{player_name}'.\n"
+"\n"
+"Überschreiben?"
 
 #: src/er_save_manager/games/NR/editor_tab.py:98
 #: src/er_save_manager/ui/dialogs/save_selector.py:151
 #: src/er_save_manager/ui/editors/equipment_editor.py:463
 #: src/er_save_manager/ui/editors/inventory_editor.py:1606
 #: src/er_save_manager/ui/icon_browser.py:750
-#, fuzzy
 msgid "Select"
-msgstr "Ausgewählt"
+msgstr "Auswählen"
 
 #: src/er_save_manager/games/NR/editor_tab.py:101
 msgid "Clear / Empty"
-msgstr ""
+msgstr "Leeren"
 
 #: src/er_save_manager/games/NR/editor_tab.py:171
 msgid "Slot Editor"
-msgstr ""
+msgstr "Slot Editor"
 
 #: src/er_save_manager/games/NR/editor_tab.py:191
 msgid "Overview"
-msgstr ""
+msgstr "Übersicht"
 
 #: src/er_save_manager/games/NR/editor_tab.py:191
 #: src/er_save_manager/games/NR/editor_tab.py:344
 msgid "Relics"
-msgstr ""
+msgstr "Relikte"
 
 #: src/er_save_manager/games/NR/editor_tab.py:252
 msgid "Character Overview"
-msgstr ""
+msgstr "Charakterübersicht"
 
 #: src/er_save_manager/games/NR/editor_tab.py:293
 #: src/er_save_manager/games/NR/editor_tab.py:300
@@ -2624,51 +2658,49 @@ msgstr ""
 #: src/er_save_manager/games/NR/editor_tab.py:932
 #: src/er_save_manager/games/NR/steamid_tab.py:105
 msgid "Invalid Input"
-msgstr ""
+msgstr "Ungültige Eingabe"
 
 #: src/er_save_manager/games/NR/editor_tab.py:294
 msgid "murk and Sovereign Sigils must be integers."
-msgstr ""
+msgstr "„Murk“ und „Sovereign Sigils“ müssen ganze Zahlen sein."
 
 #: src/er_save_manager/games/NR/editor_tab.py:300
 msgid "Values must be >= 0."
-msgstr ""
+msgstr "Werte müssen größer/gleich 0 sein."
 
 #: src/er_save_manager/games/NR/editor_tab.py:309
 msgid "Name Too Long"
-msgstr ""
+msgstr "Name zu lang"
 
 #: src/er_save_manager/games/NR/editor_tab.py:310
 msgid "Player name cannot exceed 16 characters."
-msgstr ""
+msgstr "Name kann nicht länger als 16 Buchstaben sein."
 
 #: src/er_save_manager/games/NR/editor_tab.py:352
 msgid "Search name or effect..."
-msgstr ""
+msgstr "Namen oder Effekt suchen..."
 
 #: src/er_save_manager/games/NR/editor_tab.py:396
 msgid "Edit"
-msgstr ""
+msgstr "Bearbeiten"
 
 #: src/er_save_manager/games/NR/editor_tab.py:410
-#, fuzzy
 msgid "Edit selected relic:"
-msgstr "Ausgewählt"
+msgstr "Ausgewähltes Relikt bearbeiten:"
 
 #: src/er_save_manager/games/NR/editor_tab.py:415
 msgid "Apply Edit"
-msgstr ""
+msgstr "Änderungen Speichern"
 
 #: src/er_save_manager/games/NR/editor_tab.py:427
 #: src/er_save_manager/games/NR/editor_tab.py:514
 msgid "Relic type:"
-msgstr ""
+msgstr "Relikt-Typ"
 
 #: src/er_save_manager/games/NR/editor_tab.py:431
 #: src/er_save_manager/games/NR/editor_tab.py:518
-#, fuzzy
 msgid "(none selected)"
-msgstr "Ausgewählt"
+msgstr "(nichts ausgewählt)"
 
 #: src/er_save_manager/games/NR/editor_tab.py:436
 #: src/er_save_manager/games/NR/editor_tab.py:471
@@ -2679,13 +2711,13 @@ msgstr "Ausgewählt"
 #: src/er_save_manager/ui/gui.py:609
 #: src/er_save_manager/ui/tabs/appearance_tab.py:1527
 msgid "Browse"
-msgstr ""
+msgstr "Durchsuchen"
 
 #: src/er_save_manager/games/NR/editor_tab.py:458
 #: src/er_save_manager/games/NR/editor_tab.py:547
 #, python-brace-format
 msgid "E{j}:"
-msgstr ""
+msgstr "E{j}:"
 
 #: src/er_save_manager/games/NR/editor_tab.py:462
 #: src/er_save_manager/games/NR/editor_tab.py:551
@@ -2695,76 +2727,73 @@ msgstr ""
 #: src/er_save_manager/ui/editors/equipment_editor.py:1589
 #: src/er_save_manager/ui/editors/equipment_editor.py:1595
 msgid "(empty)"
-msgstr ""
+msgstr "(leer)"
 
 #: src/er_save_manager/games/NR/editor_tab.py:478
 #: src/er_save_manager/games/NR/editor_tab.py:567
 #, python-brace-format
 msgid "C{j}: (empty)"
-msgstr ""
+msgstr "C{j}: (leer)"
 
 #: src/er_save_manager/games/NR/editor_tab.py:506
-#, fuzzy
 msgid "Spawn Relic"
-msgstr "Ausgewählt"
+msgstr "Relikt erstellen"
 
 #: src/er_save_manager/games/NR/editor_tab.py:822
 #: src/er_save_manager/games/NR/editor_tab.py:886
 msgid "Select a relic row first."
-msgstr ""
+msgstr "Bitte eine Relikt-Reihe auswählen."
 
 #: src/er_save_manager/games/NR/editor_tab.py:834
 #: src/er_save_manager/games/NR/editor_tab.py:932
 msgid "Could not parse IDs."
-msgstr ""
+msgstr "Die IDs konnten nicht analysiert werden."
 
 #: src/er_save_manager/games/NR/editor_tab.py:856
 msgid "Validation Warning"
-msgstr ""
+msgstr "Validierungswarnung"
 
 #: src/er_save_manager/games/NR/editor_tab.py:890
 msgid "Remove this relic permanently?"
-msgstr ""
+msgstr "Relikt permanent entfernen?"
 
 #: src/er_save_manager/games/NR/editor_tab.py:905
-#, fuzzy
 msgid "Remove Failed"
-msgstr "Teleportieren"
+msgstr "Entfernen fehlgeschlagen"
 
 #: src/er_save_manager/games/NR/editor_tab.py:918
 msgid "Load a slot first."
-msgstr ""
+msgstr "Bitte zuerst einen Charakter laden."
 
 #: src/er_save_manager/games/NR/editor_tab.py:924
-#, fuzzy
 msgid "No Relic"
-msgstr "Ausgewählt"
+msgstr "Kein Relikt"
 
 #: src/er_save_manager/games/NR/editor_tab.py:924
 msgid "Select a relic type first."
-msgstr ""
+msgstr "Bitte einen Relikt-Typ auswählen."
 
 #: src/er_save_manager/games/NR/editor_tab.py:952
-#, fuzzy
 msgid "Spawn Failed"
-msgstr "Ausgewählt"
+msgstr "Erstellen fehlgeschlagen"
 
 #: src/er_save_manager/games/NR/inspector_tab.py:46
 msgid "Edit Slot"
-msgstr ""
+msgstr "Slot bearbeiten"
 
 #: src/er_save_manager/games/NR/inspector_tab.py:51
 msgid "Select a slot then click 'Edit Slot' to open the editor."
 msgstr ""
+"Charakter Slot Auswählen, dann auf \"Charakter Bearbeiten\" klicken um Ihn  im "
+"Charakter Editor zu öffnen."
 
 #: src/er_save_manager/games/NR/inspector_tab.py:157
-#, fuzzy
 msgid "Select a slot first."
-msgstr "Ausgewählt"
+msgstr "Bitte einen Slot auswählen."
 
 #: src/er_save_manager/games/NR/inspector_tab.py:167
 msgid "That slot has no character data."
-msgstr ""
+msgstr "Kein Charakter in diesem Slot."
 
 #: src/er_save_manager/games/NR/steamid_tab.py:40
 #: src/er_save_manager/ui/gui.py:862 src/er_save_manager/ui/gui.py:1004
@@ -2772,29 +2801,31 @@ msgstr ""
 #: src/er_save_manager/ui/gui.py:1237
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:78
 msgid "SteamID Patcher"
-msgstr ""
+msgstr "SteamID-Patcher"
 
 #: src/er_save_manager/games/NR/steamid_tab.py:46
 msgid ""
 "Patches the SteamID embedded in the Nightreign save. Required when copying a "
 "save to a different Steam account."
 msgstr ""
+"orrigiert die in der Nightreign-Speicherdatei eingebettete Steam-ID. Dies ist "
+"erforderlich, wenn eine Speicherdatei auf ein anderes Steam-Konto kopiert wird."
 
 #: src/er_save_manager/games/NR/steamid_tab.py:58
 msgid "Detected SteamID:"
-msgstr ""
+msgstr "Erkannte Steam-ID:"
 
 #: src/er_save_manager/games/NR/steamid_tab.py:64
 msgid "New SteamID (64-bit):"
-msgstr ""
+msgstr "Neue SteamID (64-bit):"
 
 #: src/er_save_manager/games/NR/steamid_tab.py:72
 msgid "Apply SteamID Patch"
-msgstr ""
+msgstr "SteamID-Patch anwenden"
 
 #: src/er_save_manager/games/NR/steamid_tab.py:76
 msgid "Creates a backup before patching."
-msgstr ""
+msgstr "Erstellt ein Backup bevor dem Patch."
 
 #: src/er_save_manager/games/NR/steamid_tab.py:92
 #: src/er_save_manager/ui/editors/inventory_editor.py:1155
@@ -2803,33 +2834,33 @@ msgstr ""
 #: src/er_save_manager/ui/editors/inventory_editor.py:3042
 #: src/er_save_manager/ui/editors/inventory_editor.py:3502
 msgid "Load a save file first."
-msgstr ""
+msgstr "Bitte zuerst eine Datei laden."
 
 #: src/er_save_manager/games/NR/steamid_tab.py:98
 msgid "Missing Input"
-msgstr ""
+msgstr "Leere Eingabe"
 
 #: src/er_save_manager/games/NR/steamid_tab.py:98
 msgid "Enter the new SteamID64."
-msgstr ""
+msgstr "Neue SteamID64 eingeben."
 
 #: src/er_save_manager/games/NR/steamid_tab.py:106
 msgid "SteamID must be a decimal integer."
-msgstr ""
+msgstr "SteamID muss eine Ganzzahl sein."
 
 #: src/er_save_manager/games/NR/steamid_tab.py:123
 #: src/er_save_manager/games/NR/steamid_tab.py:125
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:663
 msgid "Patch Failed"
-msgstr ""
+msgstr "Patch fehlgeschlagen"
 
 #: src/er_save_manager/ui/backup_utils.py:56
 msgid "Backups Pruned"
-msgstr ""
+msgstr "Backups bereinigt"
 
 #: src/er_save_manager/ui/dialogs/backup_pruning_warning.py:51
 msgid "Backup Limit Reached"
-msgstr ""
+msgstr "Backup Limit erreicht"
 
 #: src/er_save_manager/ui/dialogs/backup_pruning_warning.py:59
 #, python-brace-format
@@ -2839,22 +2870,26 @@ msgid ""
 "\n"
 "  {filename}"
 msgstr ""
+"Das Backup-Limit ({max_backups}) wurde erreicht.\n"
+"Die älteste Backup-Datei wird gelöscht werden:\n"
+"\n"
+"  {filename}"
 
 #: src/er_save_manager/ui/dialogs/backup_pruning_warning.py:70
 msgid "Set new limit:"
-msgstr ""
+msgstr "Neues Limit setzen:"
 
 #: src/er_save_manager/ui/dialogs/backup_pruning_warning.py:76
 msgid "Apply and Keep Backup"
-msgstr ""
+msgstr "Anwenden und Backup behalten"
 
 #: src/er_save_manager/ui/dialogs/backup_pruning_warning.py:91
 msgid "Close (Delete Oldest)"
-msgstr ""
+msgstr "Schließen (Löscht ältestes Backup)"
 
 #: src/er_save_manager/ui/dialogs/browser_submission.py:56
 msgid "Images Required"
-msgstr ""
+msgstr "Bilder erforderlich"
 
 #: src/er_save_manager/ui/dialogs/browser_submission.py:58
 msgid ""
@@ -2862,55 +2897,56 @@ msgid ""
 "\n"
 "Please select both images before submitting."
 msgstr ""
+"Es sind sowohl ein Gesichts- als auch ein Körperfoto erforderlich!\n"
+"\n"
+"Bitte beide Bilder auswählen bevor Abgabe."
 
 #: src/er_save_manager/ui/dialogs/browser_submission.py:332
 msgid "✅ Preset Ready to Submit!"
-msgstr ""
+msgstr "✅ Preset bereit zum Absenden!"
 
 #: src/er_save_manager/ui/dialogs/browser_submission.py:342
 msgid "📦 Your images have been packaged:"
-msgstr ""
+msgstr "📦 Die Bilder wurden verpackt:"
 
 #: src/er_save_manager/ui/dialogs/browser_submission.py:364
 #: src/er_save_manager/ui/dialogs/character_browser_submission.py:392
 msgid "Your browser has opened to GitHub."
-msgstr ""
+msgstr "GitHub wurde im Browser geöffnet."
 
 #: src/er_save_manager/ui/dialogs/browser_submission.py:371
 #: src/er_save_manager/ui/dialogs/character_browser_submission.py:399
 msgid "Next steps:"
-msgstr ""
+msgstr "Nächste"
 
 #: src/er_save_manager/ui/dialogs/browser_submission.py:416
 #: src/er_save_manager/ui/dialogs/character_browser_submission.py:441
 msgid "📁 Open Folder"
-msgstr ""
+msgstr "📁 Ordner öffnen"
 
 #: src/er_save_manager/ui/dialogs/browser_submission.py:438
 msgid "ZIP Location (for your reference):"
-msgstr ""
+msgstr "ZIP Speicherort (zur Orientierung):"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:81
-#, fuzzy
 msgid "Browse Characters"
-msgstr "Ausgewählt"
+msgstr "Charaktere durchsuchen"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:82
-#, fuzzy
 msgid "Contribute Character"
-msgstr "Teleportieren"
+msgstr "Charakter beitragen"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:152
 msgid "Browse Community Characters"
-msgstr ""
+msgstr "Community Charaktere durchsuchen"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:172
 msgid "Overhaul Mod"
-msgstr ""
+msgstr "Overhaul Mod"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:172
 msgid "No Overhaul"
-msgstr ""
+msgstr "Keine Overhaul Mod"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:172
 #: src/er_save_manager/ui/dialogs/preset_browser.py:127
@@ -2918,94 +2954,96 @@ msgstr ""
 #: src/er_save_manager/ui/editors/inventory_editor.py:1036
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:1156
 msgid "All"
-msgstr ""
+msgstr "Alle"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:189
 #: src/er_save_manager/ui/dialogs/preset_browser.py:148
 msgid "Recent"
-msgstr ""
+msgstr "Aktuell"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:190
 #: src/er_save_manager/ui/dialogs/preset_browser.py:148
 msgid "Likes"
-msgstr ""
+msgstr "Likes"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:191
 #: src/er_save_manager/ui/dialogs/preset_browser.py:148
 msgid "Downloads"
-msgstr ""
+msgstr "Downloads"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:192
 #: src/er_save_manager/ui/dialogs/preset_browser.py:148
 msgid "Name"
-msgstr ""
+msgstr "Name"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:193
 msgid "Level"
-msgstr ""
+msgstr "Level"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:231
 #: src/er_save_manager/ui/dialogs/preset_browser.py:185
 msgid "Preview"
-msgstr ""
+msgstr "Vorschau"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:247
 msgid "Target Slot:"
-msgstr ""
+msgstr "Zielslot:"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:264
 msgid "Download & Import"
-msgstr ""
+msgstr "Herunterladen & Imoprtieren"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:280
 msgid "Contribute Your Character"
-msgstr ""
+msgstr "Charakter beitragen"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:288
 msgid ""
 "Share your character build with the community! Provide screenshots and details."
 msgstr ""
+"Teile dein Charakter-Build mit der Community! Füge Screenshots und Details "
+"hinzu."
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:301
 #: src/er_save_manager/ui/dialogs/character_browser.py:1777
 #: src/er_save_manager/ui/dialogs/preset_browser.py:247
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1263
 msgid "⚠ GitHub Account Required"
-msgstr ""
+msgstr "⚠ GitHub Account benötigt"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:307
 #: src/er_save_manager/ui/dialogs/preset_browser.py:253
 msgid "Log into GitHub in your browser before submitting"
-msgstr ""
+msgstr "Bitte vor dem Einreichen im Browser bei GitHub anmelden"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:350
 #: src/er_save_manager/ui/dialogs/character_browser.py:1409
 msgid "Description:"
-msgstr ""
+msgstr "Beschreibung:"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:369
 msgid "Screenshots (Required):"
-msgstr ""
+msgstr "Screenshots (benötigt):"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:397
 msgid "Overhaul Mod:"
-msgstr ""
+msgstr "Overhaul Mod:"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:404
 msgid "Uses an overhaul mod"
-msgstr ""
+msgstr "Benutzt eine Overhaul Mod"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:417
 msgid "Overhaul:"
-msgstr ""
+msgstr "Overhaul:"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:422
 msgid "Elden Ring Reforged"
-msgstr ""
+msgstr "Elden Ring Reforged"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:422
 msgid "Other"
-msgstr ""
+msgstr "Andere"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:456
 #: src/er_save_manager/ui/dialogs/preset_browser.py:397
@@ -3013,34 +3051,36 @@ msgid ""
 "Make sure you're logged into GitHub in your browser before submitting.\n"
 "If the GitHub home page opens, log in first then submit again."
 msgstr ""
+"Stelle sicher, dass du in deinem Browser bei GitHub angemeldet bist, bevor du "
+"die Daten übermittelst.\n"
+"Falls die GitHub-Startseite geöffnet wird, melde dich zunächst an und versuche "
+"es dann erneut."
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:466
 #: src/er_save_manager/ui/dialogs/preset_browser.py:407
 msgid "https://github.com/login"
-msgstr ""
+msgstr "https://github.com/login"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:479
 msgid "Submit to GitHub"
-msgstr ""
+msgstr "An GitHub übermitteln"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:542
 #: src/er_save_manager/ui/dialogs/preset_browser.py:471
-#, fuzzy
 msgid "Select Face Screenshot"
-msgstr "Ausgewählt"
+msgstr "Gesichts-Screenshot auswählen"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:553
-#, fuzzy
 msgid "Select Body Screenshot"
-msgstr "Ausgewählt"
+msgstr "Körper-Screenshot auswählen"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:564
 msgid "Select Preview Screenshot"
-msgstr ""
+msgstr "Vorschau-Screenshot auswählen"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:599
 msgid "Missing Information"
-msgstr ""
+msgstr "Fehlende Information"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:607
 #: src/er_save_manager/ui/dialogs/character_browser.py:1563
@@ -3049,21 +3089,22 @@ msgstr ""
 #: src/er_save_manager/ui/tabs/character_management_tab.py:1071
 #: src/er_save_manager/ui/tabs/steamid_patcher_tab.py:629
 msgid "No Save File"
-msgstr ""
+msgstr "Keine Datei gefunden"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:608
 #: src/er_save_manager/ui/dialogs/character_browser.py:1564
 msgid "No save file loaded. Please load a save file first."
-msgstr ""
+msgstr "Keine Datei geladen. Bitte zuerst eine Datei laden."
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:620
 #, python-brace-format
 msgid "Slot {slot_index} is empty. Please select a slot with a character."
 msgstr ""
+"Slot {slot_index} ist leer. Bitte wähle einen Slot mit einem Charakter aus."
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:709
 msgid "Submission Failed"
-msgstr ""
+msgstr "Übermittlung fehlgeschlagen"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:710
 #, python-brace-format
@@ -3072,11 +3113,14 @@ msgid ""
 "\n"
 "{str}"
 msgstr ""
+"Vorbereitung der Charakterübermittlung ist fehlgeschlagen:\n"
+"\n"
+"{str}"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:733
 #: src/er_save_manager/ui/dialogs/preset_browser.py:604
 msgid "GitHub not logged in"
-msgstr ""
+msgstr "Nicht bei GitHub angemeldet"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:740
 #: src/er_save_manager/ui/dialogs/preset_browser.py:612
@@ -3084,19 +3128,22 @@ msgid ""
 "Log in to GitHub, then copy and paste this link in your browser to finish the "
 "submission."
 msgstr ""
+"Bei GitHub anmelden und dann diesen Link kopieren und im Browser einzufügen um "
+"die Übermittlung abzuschließen."
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:754
 msgid "✓ Copied!"
-msgstr ""
+msgstr "✓ Kopiert!"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:755
 #: src/er_save_manager/ui/dialogs/character_browser.py:758
 msgid "Copy Link"
-msgstr ""
+msgstr "Link kopieren"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:764
 msgid "Failed to generate submission URL. Please try again."
 msgstr ""
+"Die Übermittlungs-URL konnte nicht generiert werden. Bitte erneut versuchen."
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:818
 #, python-brace-format
@@ -3104,129 +3151,128 @@ msgid ""
 "Failed to load characters:\n"
 "{error_msg}"
 msgstr ""
+"Charakter-Laden fehlgeschlagen:\n"
+"{error_msg}"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:892
 msgid "No characters found"
-msgstr ""
+msgstr "Keine aktiven Charakter gefunden."
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1136
 #, python-brace-format
 msgid "by {author}"
-msgstr ""
+msgstr "von {author}"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1176
 msgid "Loading face..."
-msgstr ""
+msgstr "Gesicht wird geladen..."
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1185
 msgid "Loading body..."
-msgstr ""
+msgstr "Körper wird geladen..."
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1203
 #, python-brace-format
 msgid "Level {level} {char_class}{ng_text}"
-msgstr ""
+msgstr "Level {level} {char_class}{ng_text}"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1214
 #, python-brace-format
 msgid "Playtime: {playtime}"
-msgstr ""
+msgstr "Spielzeit: {playtime}"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1270
 msgid "Max Resources:"
-msgstr ""
+msgstr "Maximale Ressourcen:"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1308
 msgid "Progression:"
-msgstr ""
+msgstr "Fortschritt:"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1319
 #, python-brace-format
 msgid "🔄 Playthrough: {ng_level}"
-msgstr ""
+msgstr "🔄 Playthrough: {ng_level}"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1327
 #, python-brace-format
 msgid "⚔️ Bosses Defeated: {bosses_defeated}"
-msgstr ""
+msgstr "⚔️ Bosses getötet: {bosses_defeated}"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1337
 #, python-brace-format
 msgid "🔥 Graces Unlocked: {graces_unlocked}"
-msgstr ""
+msgstr "🔥 Graces freigeschaltet: {graces_unlocked}"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1355
 msgid "⚡ Convergence Mod Items:"
-msgstr ""
+msgstr "⚡ Convergence Mod Gegenstände:"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1386
 msgid "Equipment:"
-msgstr ""
+msgstr "Ausstattung:"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1427
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1006
 #, python-brace-format
 msgid "Tags: {join}"
-msgstr ""
+msgstr "Tags: {join}"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1474
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1029
 #, python-brace-format
 msgid "👍 {likes} likes  |  ⬇ {downloads} downloads"
-msgstr ""
+msgstr "👍 {likes} likes  |  ⬇ {downloads} downloads"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1490
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1058
 msgid "👍 Like"
-msgstr ""
+msgstr "👍 Like"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1490
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1058
 msgid "👍 Liked"
-msgstr ""
+msgstr "👍 Geliked"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1501
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1070
-#, fuzzy
 msgid "🚩 Report"
-msgstr "Teleportieren"
+msgstr "🚩 Melden"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1531
-#, fuzzy
 msgid "No image"
-msgstr "Sprache geändert"
+msgstr "Kein Bild"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1547
 msgid "Failed to load"
-msgstr ""
+msgstr "Laden fehlgeschlagen"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1555
-#, fuzzy
 msgid "No Character Selected"
-msgstr "Ausgewählt"
+msgstr "Kein Charakter ausgewählt"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1556
 msgid "Please select a character to import"
-msgstr ""
+msgstr "Bitte Charakter zum Importieren auswählen"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1612
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:857
 msgid "Confirm Import"
-msgstr ""
+msgstr "Import bestätigen"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1729
 msgid "Import Successful"
-msgstr ""
+msgstr "Import erfolgreich"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1730
 #, python-brace-format
 msgid "'{imported_name}' has been imported to {slot_str}!"
-msgstr ""
+msgstr "'{imported_name}' wurde nach {slot_str} importiert!"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1744
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:821
 msgid "Import Failed"
-msgstr ""
+msgstr "Import fehlgeschlagen"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1745
 #, python-brace-format
@@ -3234,49 +3280,51 @@ msgid ""
 "Failed to import character:\n"
 "{error_msg}"
 msgstr ""
+"Charakter-Import fehlgeschlagen:\n"
+"{error_msg}"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1783
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1269
 msgid "Log into GitHub in your browser before reporting"
-msgstr ""
+msgstr "Bitte vor dem Melden im Browser bei GitHub anmelden"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1790
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1277
 #, python-brace-format
 msgid "Report: {get}"
-msgstr ""
+msgstr "Report: {get}"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1796
 #: src/er_save_manager/ui/dialogs/preset_browser.py:834
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1283
 #, python-brace-format
 msgid "by {get}"
-msgstr ""
+msgstr "von {get}"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1807
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1295
 msgid "⚠️ Please report only genuine issues (inappropriate content, etc.)"
-msgstr ""
+msgstr "⚠️ Bitte nur echte Probleme melden (unangemessene Inhalte usw.)."
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1815
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1304
 msgid "Reason for report:"
-msgstr ""
+msgstr "Meldegrund:"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1831
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1322
 msgid "Please enter a reason for the report."
-msgstr ""
+msgstr "Bitte Grund für die Meldung angeben."
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1840
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1333
 msgid "Submit Report"
-msgstr ""
+msgstr "Meldung abschicken"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1897
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1392
 msgid "Report Submitted"
-msgstr ""
+msgstr "Meldung übermittelt"
 
 #: src/er_save_manager/ui/dialogs/character_browser.py:1899
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1394
@@ -3285,64 +3333,70 @@ msgid ""
 "\n"
 "Click 'Submit new issue' to complete the report."
 msgstr ""
+"In deinem Browser hat sich GitHub geöffnet.\n"
+"\n"
+"'Submit' klicken um die Meldung abzuschließen."
 
 #: src/er_save_manager/ui/dialogs/character_browser_submission.py:360
 msgid "✅ Character Ready to Submit!"
-msgstr ""
+msgstr "✅ Charakter bereit zum Absenden!"
 
 #: src/er_save_manager/ui/dialogs/character_browser_submission.py:370
 msgid "📦 Your character package has been created:"
-msgstr ""
+msgstr "📦 Dein Charakter-Paket wurde erstellt:"
 
 #: src/er_save_manager/ui/dialogs/character_browser_submission.py:463
 msgid "Package Location (for your reference):"
-msgstr ""
+msgstr "Paket-Speicherort (zur Orientierung):"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:21
 msgid "No save file loaded!"
-msgstr ""
+msgstr "Keine Save Datei geladen!"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:254
 #, python-brace-format
 msgid "Character Details - {name}"
-msgstr ""
+msgstr "Character Details - {name}"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:282
 msgid "Clear Shadow of the Erdtree flag (allows loading without DLC)"
-msgstr ""
+msgstr "Clear Shadow of the Erdtree flag (ermöglicht das Laden ohne DLC)"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:289
 msgid "   Use if you cannot load the save file without the DLC installed."
 msgstr ""
+"Diese Option verwenden, wenn Sie die Speicherdatei nicht geladen werden kann, "
+"ohne dass das DLC installiert ist."
 
 #: src/er_save_manager/ui/dialogs/character_details.py:299
 msgid "Clear invalid DLC data (fixes corrupted DLC flags)"
-msgstr ""
+msgstr "Ungültige DLC-Daten löschen (behebt beschädigte DLC-Flags)"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:305
 msgid "   Invalid data in unused DLC slots can prevent save from loading."
 msgstr ""
+"Ungültige Daten in ungenutzten DLC-Slots können das Laden des Spielstands "
+"verhindern."
 
 #: src/er_save_manager/ui/dialogs/character_details.py:339
 msgid "Fix All Issues"
-msgstr ""
+msgstr "Alle Probleme beheben"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:387
-#, fuzzy
 msgid "Teleport Character"
-msgstr "Teleportieren"
+msgstr "Charakter teleportieren"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:403
 msgid "Replace CSNetMan"
-msgstr ""
+msgstr "CSNetMan ersetzen"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:494
 msgid "DLC Flags"
-msgstr ""
+msgstr "DLC Flags"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:495
 msgid "DLC flag cleared. The save file has been updated."
-msgstr ""
+msgstr "Das DLC-Flag wurde zurückgesetzt. Die Speicherdatei wurde aktualisiert."
 
 #: src/er_save_manager/ui/dialogs/character_details.py:502
 #, python-brace-format
@@ -3350,27 +3404,31 @@ msgid ""
 "Failed to apply DLC fix:\n"
 "{e}"
 msgstr ""
+"DLC-Fix fehlgeschlagen:\n"
+"{e}"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:517
 #: src/er_save_manager/ui/dialogs/character_details.py:525
 msgid "Deep Scan"
-msgstr ""
+msgstr "Deep Scan"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:518
 msgid ""
 "SteamID64 not found in slot data.\n"
 "Cannot determine shift."
 msgstr ""
+"SteamID64 wurde in den Slot-Daten nicht gefunden.\n"
+"Die Verschiebung kann nicht ermittelt werden."
 
 #: src/er_save_manager/ui/dialogs/character_details.py:525
 msgid "No byte shift detected."
-msgstr ""
+msgstr "Es wurde keine Byte-Verschiebung festgestellt."
 
 #: src/er_save_manager/ui/dialogs/character_details.py:542
 #: src/er_save_manager/ui/dialogs/character_details.py:565
 #: src/er_save_manager/ui/dialogs/character_details.py:574
 msgid "Deep Scan Fix"
-msgstr ""
+msgstr "Deep Scan Fix"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:566
 #, python-brace-format
@@ -3381,6 +3439,11 @@ msgid ""
 "\n"
 "Backup saved."
 msgstr ""
+"{description}\n"
+"\n"
+"{detail_text}\n"
+"\n"
+"Backup gespeichert."
 
 #: src/er_save_manager/ui/dialogs/character_details.py:575
 #, python-brace-format
@@ -3388,6 +3451,8 @@ msgid ""
 "Fix not applied:\n"
 "{description}"
 msgstr ""
+"Fix nicht angewendet:\n"
+"{description}"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:584
 #, python-brace-format
@@ -3395,21 +3460,25 @@ msgid ""
 "Deep scan failed:\n"
 "{str}"
 msgstr ""
+"Deep scan fehlgeschlagen:\n"
+"{str}"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:625
 #, python-brace-format
 msgid "Teleport Slot {slot_idx}"
-msgstr ""
+msgstr "Slot teleportieren {slot_idx}"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:634
 msgid "Roundtable Hold"
-msgstr ""
+msgstr "Roundtable Hold"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:641
 msgid ""
 "Character will be teleported to Roundtable Hold.\n"
 "This is the safest location for unstuck/DLC escape."
 msgstr ""
+"Charakter wird zum Roundtable Hold teleportiert.\n"
+"Dies ist der sicherste Ort für einen „Unstuck“- oder DLC-Escape."
 
 #: src/er_save_manager/ui/dialogs/character_details.py:699
 #, python-brace-format
@@ -3420,36 +3489,44 @@ msgid ""
 "\n"
 "Backup saved to backup manager."
 msgstr ""
+"Fixes angewendet:\n"
+"\n"
+"{fixes_text}\n"
+"\n"
+"Backup abgespeichert."
 
 #: src/er_save_manager/ui/dialogs/character_details.py:706
 msgid "Not Applied"
-msgstr ""
+msgstr "Nicht angewendet"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:707
 msgid "No fixes were applied."
-msgstr ""
+msgstr "Keine Fixes wurden angewandt"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:714
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid ""
 "Teleport failed:\n"
 "{str}"
-msgstr "Teleportieren"
+msgstr ""
+"Teleportieren fehlgeschlagen:\n"
+"{str}"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:746
-#, fuzzy
 msgid "Not Available"
-msgstr "Verfügbar"
+msgstr "Nicht verfügbar"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:748
 msgid ""
 "CSNetMan.bin not found or invalid.\n"
 "Place a valid CSNetMan.bin next to the fixes module."
 msgstr ""
+"CSNetMan.bin wurde nicht gefunden oder ist ungültig.\n"
+"Gültige CSNetMan.bin-Datei neben das Fixes-Modul ablegen."
 
 #: src/er_save_manager/ui/dialogs/character_details.py:758
 msgid "Cannot determine NetMan offset for this slot."
-msgstr ""
+msgstr "Der NetMan-Offset für diesen Steckplatz kann nicht ermittelt werden."
 
 #: src/er_save_manager/ui/dialogs/character_details.py:766
 #, python-brace-format
@@ -3461,11 +3538,18 @@ msgid ""
 "\n"
 "A backup will be created."
 msgstr ""
+"Diese Option verwenden, wenn weiterhin die Meldung „Die Speicherdatei ist "
+"beschädigt“ angezeigt wird, wenn das Spiel nach der Behebung der Beschädigung "
+"mithilfe des Tools weiterhin abstürzt oder wenn das Tool keine Beschädigung "
+"feststellt. Sollen der gesamte CSNetMan-Block in Slot {slot_idx} durch die "
+"fehlerfreie Vorlage ersetzt werden?\n"
+"\n"
+"Es wird ein Backup erstellt."
 
 #: src/er_save_manager/ui/dialogs/character_details.py:795
 #: src/er_save_manager/ui/editors/equipment_editor.py:1729
 msgid "Done"
-msgstr ""
+msgstr "Fertig"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:797
 #, python-brace-format
@@ -3473,6 +3557,8 @@ msgid ""
 "CSNetMan replaced in Slot {slot_idx}.\n"
 "Backup saved to backup manager."
 msgstr ""
+"CSNetMan wurde in Steckplatz {slot_idx} ausgetauscht.\n"
+"Sicherung im Backup-Manager gespeichert."
 
 #: src/er_save_manager/ui/dialogs/character_details.py:805
 #, python-brace-format
@@ -3480,6 +3566,8 @@ msgid ""
 "Replace failed:\n"
 "{e}"
 msgstr ""
+"Ersetzen fehlgeschlagen:\n"
+"{e}"
 
 #: src/er_save_manager/ui/dialogs/character_details.py:934
 #, python-brace-format
@@ -3490,10 +3578,17 @@ msgid ""
 "\n"
 "Backup saved to backup manager."
 msgstr ""
+"{len} Fehler behoben:\n"
+"\n"
+"{fix_summary}\n"
+"\n"
+"Sicherung im Backup-Manager gespeichert."
 
 #: src/er_save_manager/ui/dialogs/character_details.py:941
 msgid "No fixes were needed or could be applied."
 msgstr ""
+"Es waren keine Korrekturen erforderlich und es konnten auch keine vorgenommen "
+"werden."
 
 #: src/er_save_manager/ui/dialogs/character_details.py:947
 #, python-brace-format
@@ -3501,110 +3596,111 @@ msgid ""
 "Fix failed:\n"
 "{str}"
 msgstr ""
+"Korrektur fehlgeschlagen:\n"
+"{str}"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:81
 msgid "Browse Presets"
-msgstr ""
+msgstr "Presets durchsuchen"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:82
 msgid "Contribute Preset"
-msgstr ""
+msgstr "Preset beitragen"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:105
 #: src/er_save_manager/ui/tabs/appearance_tab.py:118
 msgid "Browse Community Presets"
-msgstr ""
+msgstr "Community Presets durchsuchen"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:128
 msgid "Male"
-msgstr ""
+msgstr "Männlich"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:129
 msgid "Female"
-msgstr ""
+msgstr "Weiblich"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:130
 msgid "Cosplay"
-msgstr ""
+msgstr "Cosplay"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:131
 msgid "Original"
-msgstr ""
+msgstr "Originell"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:198
 msgid "Preset Slot:"
-msgstr ""
+msgstr "Preset Slot:"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:212
 msgid "Apply to Slot"
-msgstr ""
+msgstr "An Slot anwenden"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:237
 msgid "Contribute Your Character Preset"
-msgstr ""
+msgstr "Preset beitragen"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:270
 msgid "1) Select Appearance Preset Slot"
-msgstr ""
+msgstr "1) Preset Slot auswählen"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:275
 msgid "Slots from the in-game 'Detailed Appearance' menu"
-msgstr ""
+msgstr "Slots aus dem Menü „Detailliertes Aussehen“ im Spiel"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:303
 msgid "2) Add Images (Face & Body required)"
-msgstr ""
+msgstr "2) Bilder hinzufügen (Gesicht und Körper erforderlich)"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:326
 msgid "3) Preset Information"
-msgstr ""
+msgstr "3) Preset-Information"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:347
 msgid "Tags (select all that apply)"
-msgstr ""
+msgstr "Tags"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:382
 msgid "Custom Tags (comma-separated)"
-msgstr ""
+msgstr "Custom Tags (komma-seperiert)"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:420
 msgid "Submit Preset"
-msgstr ""
+msgstr "Preset übermitteln"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:480
-#, fuzzy
 msgid "Select Full Body Screenshot"
-msgstr "Ausgewählt"
+msgstr "Körper-Screenshot auswählen"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:489
 msgid "Select Preview Thumbnail"
-msgstr ""
+msgstr "Vorschau-Screenshot auswählen"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:501
 msgid "Preset name is required"
-msgstr ""
+msgstr "Preset-Name erforderlich"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:508
 msgid "Author name is required"
-msgstr ""
+msgstr "Authoren-Name erforderlich"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:515
 msgid "Description is required"
-msgstr ""
+msgstr "Beschreibung erforderlich"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:526
 msgid "At least one tag is required"
-msgstr ""
+msgstr "Es muss mindestens 1 Tag ausgewählt werden"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:544
 #, python-brace-format
 msgid "Preset slot {slot_index} is invalid (max {num_slots})"
-msgstr ""
+msgstr "Preset-Slot {slot_index} ist ungültig (max {num_slots})"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:555
 #, python-brace-format
 msgid "Character slot {slot_index} preset doesn't exist"
-msgstr ""
+msgstr "Character-Slot {slot_index} Preset existiert nicht"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:583
 #, python-brace-format
@@ -3612,74 +3708,74 @@ msgid ""
 "Failed to create submission:\n"
 "{exc}"
 msgstr ""
+"Fehler bei der Erstellung der Übermittlung:\n"
+"{exc}"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:628
 msgid "URL copied to clipboard."
-msgstr ""
+msgstr "Die URL wurde in die Zwischenablage kopiert."
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:631
 msgid "Copy URL"
-msgstr ""
+msgstr "Link kopieren"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:638
 msgid ""
 "Could not generate a submission URL. Please log in to GitHub and try again."
 msgstr ""
+"Die Übermittlungs-URL konnte nicht generiert werden. Bitte in GitHub anmelden "
+"und erneut versuchen."
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:785
 msgid "No presets match your search"
-msgstr ""
+msgstr "Es wurden keine Presets gefunden, die der Suche entsprechen."
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:817
 msgid "[Loading...]"
-msgstr ""
+msgstr "[Laden...]"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:824
-#, fuzzy
 msgid "[No image]"
-msgstr "Sprache geändert"
+msgstr "[Kein Bild]"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:906
-#, fuzzy
 msgid "[No Image]"
-msgstr "Sprache geändert"
+msgstr "[Kein Bild]"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:927
 msgid "Failed to download preset"
-msgstr ""
+msgstr "Preset-Download fehlgeschlagen"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:952
 msgid "Face"
-msgstr ""
+msgstr "Gesicht"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:957
 msgid "Body"
-msgstr ""
+msgstr "Körper"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:971
 #: src/er_save_manager/ui/dialogs/preset_browser.py:975
 #: src/er_save_manager/ui/dialogs/preset_browser.py:984
-#, fuzzy
 msgid "[Preview not available]"
-msgstr "Verfügbar"
+msgstr "[Vorschau nicht verfügbar]"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:979
-#, fuzzy
 msgid "[No preview available]"
-msgstr "Verfügbar"
+msgstr "[ Keine Vorschau verfügbar]"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:989
 msgid "[Install Pillow for previews]"
-msgstr ""
+msgstr "[Pillow für Vorschau installieren]"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1002
 #, python-brace-format
 msgid "Author: {get}"
-msgstr ""
+msgstr "von {get}"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1151
 msgid "Apply Preset"
-msgstr ""
+msgstr "Preset anwenden"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1154
 #, python-brace-format
@@ -3688,20 +3784,23 @@ msgid ""
 "\n"
 "This will add the preset to that character's appearance menu."
 msgstr ""
+"„{get}“ auf {char_name}s {slot_str} anwenden?\n"
+"\n"
+"Dadurch wird das Preset zum Aussehen-Menü dieses Charakters hinzugefügt."
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1171
 msgid "Invalid preset data"
-msgstr ""
+msgstr "Ungültige Preset-Daten"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1187
 #, python-brace-format
 msgid "Preset slot {target_slot} is invalid (max {num_slots})"
-msgstr ""
+msgstr "Preset-Slot {target_slot} ist ungültig (max {num_slots})"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1218
 #, python-brace-format
 msgid "Applied '{get}' to Preset Slot {target_slot}."
-msgstr ""
+msgstr "„{get}“ wurde auf den Preset-Slot {target_slot} angewendet."
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1236
 #, python-brace-format
@@ -3709,93 +3808,95 @@ msgid ""
 "Failed to apply preset:\n"
 "{exc}"
 msgstr ""
+"Preset konnte nicht angewendet werden:\n"
+"{exc}"
 
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1420
 #: src/er_save_manager/ui/dialogs/preset_browser.py:1424
 msgid "Community Character Presets"
-msgstr ""
+msgstr "Community Charakter Presets"
 
 #: src/er_save_manager/ui/dialogs/save_selector.py:71
 #, python-brace-format
 msgid "Found {len} save files:"
-msgstr ""
+msgstr "Es wurden {len} Speicherdateien gefunden:"
 
 #: src/er_save_manager/ui/dialogs/troubleshooting.py:74
 msgid "Troubleshooting & Diagnostics"
-msgstr ""
+msgstr "Fehlerbehebung und Diagnose"
 
 #: src/er_save_manager/ui/dialogs/troubleshooting.py:110
 msgid "Running diagnostic checks..."
-msgstr ""
+msgstr "Diagnoseprüfungen werden durchgeführt..."
 
 #: src/er_save_manager/ui/dialogs/troubleshooting.py:193
 msgid "💡 Suggested Fix:"
-msgstr ""
+msgstr "💡 Lösungsvorschlag:"
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:71
 msgid "Character Creation"
-msgstr ""
+msgstr "Charaktererstellung"
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:111
 msgid "Body Type:"
-msgstr ""
+msgstr "Körper-Typ:"
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:124
 msgid "Archetype:"
-msgstr ""
+msgstr "Archetyp:"
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:152
 msgid "Voice Type:"
-msgstr ""
+msgstr "Stimmtyp:"
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:165
 msgid "Keepsake:"
-msgstr ""
+msgstr "Andenken:"
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:180
 msgid "Game Progression"
-msgstr ""
+msgstr "Spielverlauf"
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:187
 msgid "NG+ Level:"
-msgstr ""
+msgstr "NG+ Level:"
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:192
 msgid "NG (0)"
-msgstr ""
+msgstr "NG (0)"
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:193
 msgid "NG+ (1)"
-msgstr ""
+msgstr "NG+ (1)"
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:194
 msgid "NG+2 (2)"
-msgstr ""
+msgstr "NG+2 (2)"
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:195
 msgid "NG+3 (3)"
-msgstr ""
+msgstr "NG+3 (3)"
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:196
 msgid "NG+4 (4)"
-msgstr ""
+msgstr "NG+4 (4)"
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:197
 msgid "NG+5 (5)"
-msgstr ""
+msgstr "NG+5 (5)"
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:198
 msgid "NG+6 (6)"
-msgstr ""
+msgstr "NG+6 (6)"
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:199
 msgid "NG+7 (7)"
-msgstr ""
+msgstr "NG+7 (7)"
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:254
 #: src/er_save_manager/ui/editors/stats_editor.py:367
 msgid "Actions"
-msgstr ""
+msgstr "Optionen"
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:357
 #, python-brace-format
@@ -3804,6 +3905,10 @@ msgid ""
 "\n"
 "A backup will be created."
 msgstr ""
+"Sollen die Änderungen an den Charakterdaten auf Slot {slot_idx} angewendet "
+"werden?\n"
+"\n"
+"Es wird eine Sicherungskopie erstellt."
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:489
 msgid ""
@@ -3811,14 +3916,17 @@ msgid ""
 "\n"
 "Backup saved to backup manager."
 msgstr ""
+"Charakterdaten erfolgreich aktualisiert!\n"
+"\n"
+"Sicherung im Sicherungsmanager gespeichert."
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:495
 msgid "Offset not tracked"
-msgstr ""
+msgstr "Offset wird nicht erfasst"
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:499
 msgid "Could not access character data"
-msgstr ""
+msgstr "Auf die Charakterdaten konnte nicht zugegriffen werden"
 
 #: src/er_save_manager/ui/editors/character_info_editor.py:505
 #: src/er_save_manager/ui/tabs/gestures_regions_tab.py:424
@@ -3827,95 +3935,94 @@ msgid ""
 "Failed to apply changes:\n"
 "{str}"
 msgstr ""
+"Änderungen konnten nicht übernommen werden:\n"
+"{str}"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:415
 #: src/er_save_manager/ui/editors/equipment_editor.py:826
 msgid "Name (A-Z)"
-msgstr ""
+msgstr "Name (A-Z)"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:415
 #: src/er_save_manager/ui/editors/equipment_editor.py:826
 msgid "Name (Z-A)"
-msgstr ""
+msgstr "Name (Z-A)"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:415
 #: src/er_save_manager/ui/editors/equipment_editor.py:826
 msgid "Category"
-msgstr ""
+msgstr "Kategorie"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:455
 #: src/er_save_manager/ui/editors/equipment_editor.py:858
 msgid "No owned items found in inventory for this slot."
-msgstr ""
+msgstr "Gegenstand nicht im Inventar gefunden"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:468
 #: src/er_save_manager/ui/editors/equipment_editor.py:866
-#, fuzzy
 msgid "Clear Slot"
-msgstr "Schließen"
+msgstr "Leeren"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:621
-#, fuzzy
 msgid "Delete"
-msgstr "Ausgewählt"
+msgstr "Löschen"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:648
 msgid "Delete Loadout"
-msgstr ""
+msgstr "Loadout löschen"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:649
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Delete loadout '{name}'?"
-msgstr "Ausgewählt"
+msgstr "Loadout '{name}' löschen?"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1072
 #: src/er_save_manager/ui/editors/equipment_editor.py:1576
 msgid "locked"
-msgstr ""
+msgstr "gesperrt"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1080
 #: src/er_save_manager/ui/editors/equipment_editor.py:1360
 msgid "Apply Equipment Changes"
-msgstr ""
+msgstr "Ausrüstungsänderungen übernehmen"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1149
 msgid "empty"
-msgstr ""
+msgstr "leer"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1303
 msgid "Loadouts"
-msgstr ""
+msgstr "Loadouts"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1309
 #: src/er_save_manager/ui/editors/inventory_editor.py:3383
 msgid "Save Loadout"
-msgstr ""
+msgstr "Loadout speichern"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1315
 #: src/er_save_manager/ui/editors/inventory_editor.py:3394
 msgid "Load Loadout"
-msgstr ""
+msgstr "Loadout laden"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1321
-#, fuzzy
 msgid "Export to File..."
-msgstr "Teleportieren"
+msgstr "In Datei exportieren..."
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1328
 msgid "Import from File..."
-msgstr ""
+msgstr "Aus Datei importieren..."
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1338
 msgid "Share via Code..."
-msgstr ""
+msgstr "Über Code teilen..."
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1344
 msgid "Import via Code..."
-msgstr ""
+msgstr "Über Code importieren..."
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1353
 msgid "Visual Picker..."
-msgstr ""
+msgstr "Visueller Picker..."
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1612
 #, python-brace-format
@@ -3924,14 +4031,18 @@ msgid ""
 "\n"
 "A backup will be created."
 msgstr ""
+"Sollen die Änderungen an der Ausrüstung auf Steckplatz {slot_idx} übernommen "
+"werden?\n"
+"\n"
+"Es wird eine Sicherungskopie erstellt."
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1639
 msgid "Character has no equipment data."
-msgstr ""
+msgstr "Der Charakter verfügt über keine Ausrüstungsdaten."
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1729
 msgid "Equipment changes applied."
-msgstr ""
+msgstr "Ausrüstungsänderungen wurden übernommen."
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1734
 #, python-brace-format
@@ -3939,15 +4050,17 @@ msgid ""
 "Failed to apply equipment changes:\n"
 "{e}"
 msgstr ""
+"Ausrüstungsänderungen konnten nicht übernommen werden:\n"
+"{e}"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1886
 msgid "Saved"
-msgstr ""
+msgstr "Gespeichert"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1887
 #, python-brace-format
 msgid "Loadout '{name}' saved."
-msgstr ""
+msgstr "Loadout '{name}' gespeichert."
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1893
 #, python-brace-format
@@ -3955,37 +4068,40 @@ msgid ""
 "Failed to save loadout:\n"
 "{e}"
 msgstr ""
+"Speichern ist fehlgeschlagen: \n"
+"{e}"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1908
 msgid "No Loadouts"
-msgstr ""
+msgstr "Keine Loadouts"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1908
 msgid "No saved loadouts yet."
-msgstr ""
+msgstr "Noch keine gespeicherten Loadouts verfügbar."
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1926
 #: src/er_save_manager/ui/editors/equipment_editor.py:1943
 #: src/er_save_manager/ui/editors/equipment_editor.py:1956
 msgid "Loadout Applied"
-msgstr ""
+msgstr "Loadout angewendet"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1927
 msgid "Loadout applied. Click Apply Equipment Changes to save."
 msgstr ""
+"Loadout angewendet. Zum Speichern auf „Ausrüstungsänderungen übernehmen“ "
+"klicken."
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1933
 msgid "Items Not Owned"
-msgstr ""
+msgstr "Gegenstände nicht im Besitz"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1972
 msgid "Export Equipment Loadout"
-msgstr ""
+msgstr "Ausrüstungsloadout exportieren"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1990
-#, fuzzy
 msgid "Exported"
-msgstr "Teleportieren"
+msgstr "Exportiert"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1991
 #, python-brace-format
@@ -3993,6 +4109,8 @@ msgid ""
 "Loadout exported to:\n"
 "{name}"
 msgstr ""
+"Loadout exportiert nach:\n"
+"{name}"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:1997
 #, python-brace-format
@@ -4000,10 +4118,12 @@ msgid ""
 "Failed to export loadout:\n"
 "{e}"
 msgstr ""
+"Export fehlgeschlagen:\n"
+"{e}"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:2010
 msgid "Import Equipment Loadout"
-msgstr ""
+msgstr "Ausrüstungsloadout importieren"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:2023
 #, python-brace-format
@@ -4011,119 +4131,125 @@ msgid ""
 "Failed to import loadout:\n"
 "{e}"
 msgstr ""
+"Import fehlgeschlagen:\n"
+"{e}"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:2058
 #: src/er_save_manager/ui/tabs/appearance_tab.py:967
 #, python-brace-format
 msgid "Shared {description}"
-msgstr ""
+msgstr "Geteilt {description}"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:2063
 #: src/er_save_manager/ui/editors/inventory_editor.py:3467
 #: src/er_save_manager/ui/tabs/appearance_tab.py:972
 msgid "Send this code to share it:"
-msgstr ""
+msgstr "Sende diesen Code, um ihn zu teilen:"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:2082
 #: src/er_save_manager/ui/editors/inventory_editor.py:3489
 #: src/er_save_manager/ui/tabs/appearance_tab.py:992
 msgid "Copy Code"
-msgstr ""
+msgstr "Code kopieren"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:2126
 #: src/er_save_manager/ui/editors/inventory_editor.py:193
 #: src/er_save_manager/ui/tabs/appearance_tab.py:1036
 #: src/er_save_manager/ui/tabs/settings_tab.py:840
 msgid "OK"
-msgstr ""
+msgstr "OK"
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:2155
 msgid "Failed to share loadout. Check your internet connection."
 msgstr ""
+"Das Teilen des Loadouts  ist fehlgeschlagen. Bitte Internetverbindung "
+"überprüfen."
 
 #: src/er_save_manager/ui/editors/equipment_editor.py:2180
 msgid "No loadout found for that code, or the connection failed."
 msgstr ""
+"Für diesen Code wurde kein Loadout gefunden, oder die Verbindung ist "
+"fehlgeschlagen."
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:793
 msgid "Visual Item Picker..."
-msgstr ""
+msgstr "Visueller Gegenstands-Picker..."
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:870
 msgid "Loadouts..."
-msgstr ""
+msgstr "Loadouts..."
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:879
 msgid "Import Build"
-msgstr ""
+msgstr "Build importieren"
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:1019
 msgid "Key Items"
-msgstr ""
+msgstr "Key Items"
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:1028
 #: src/er_save_manager/ui/tabs/event_flags_tab.py:1154
 msgid "Show:"
-msgstr ""
+msgstr "Zeigen:"
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:1037
 msgid "Weapons"
-msgstr ""
+msgstr "Waffen"
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:1038
 msgid "Armor"
-msgstr ""
+msgstr "Rüstung"
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:1039
 msgid "Talismans"
-msgstr ""
+msgstr "Talismane"
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:1040
 msgid "Goods"
-msgstr ""
+msgstr "Güter"
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:1041
 msgid "Gems"
-msgstr ""
+msgstr "Gems"
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:1061
 msgid "Filter items..."
-msgstr ""
+msgstr "Gegenstände filtern..."
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:1073
 msgid "Visual Inventory..."
-msgstr ""
+msgstr "Visuelles Inventar..."
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:1125
 msgid "Set Upgrade"
-msgstr ""
+msgstr "Upgrade bearbeiten"
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:1131
 msgid "Set Affinity"
-msgstr ""
+msgstr "Affinität bearbeiten"
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:1137
 msgid "Set AoW"
-msgstr ""
+msgstr "AoW bearbeiten"
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:1233
 #, python-brace-format
 msgid "Added {count} inventory items to Loadout."
-msgstr ""
+msgstr "{count} Inventargegenstände wurden zum Loadout hinzugefügt."
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:1238
 msgid "Nothing to Add"
-msgstr ""
+msgstr "Nichts zum Hinzufügen verfügbar"
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:1239
 msgid "No inventory items are currently visible."
-msgstr ""
+msgstr "Derzeit sind keine Inventargegenstände sichtbar."
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:1652
 #: src/er_save_manager/ui/tabs/world_state_tab.py:238
 #, python-brace-format
 msgid "Slot {slot_idx} is empty."
-msgstr ""
+msgstr "Slot {slot_idx} ist leer."
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:1712
 #, python-brace-format
@@ -4131,11 +4257,13 @@ msgid ""
 "Failed to refresh inventory:\n"
 "{e}"
 msgstr ""
+"Die Inventarsaktualisierung ist fehlgeschlagen:\n"
+"{e}"
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:2009
 #: src/er_save_manager/ui/editors/inventory_editor.py:2031
 msgid "Select an item from the browser first."
-msgstr ""
+msgstr "Bitte zuerst einen Gegenstand auswählen."
 
 #: src/er_save_manager/ui/editors/inventory_editor.py:2018
 #, python-brace-format
