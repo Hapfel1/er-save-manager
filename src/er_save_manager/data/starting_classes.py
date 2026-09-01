@@ -126,6 +126,30 @@ STARTING_CLASSES = {
         "faith": 10,
         "arcane": 10,
     },
+    10: {
+        "name": "Idus Knight",
+        "level": 7,
+        "vigor": 10,
+        "mind": 12,
+        "endurance": 11,
+        "strength": 13,
+        "dexterity": 15,
+        "intelligence": 8,
+        "faith": 11,
+        "arcane": 6,
+    },
+    11: {
+        "name": "Heavy Knight",
+        "level": 10,
+        "vigor": 14,
+        "mind": 8,
+        "endurance": 17,
+        "strength": 15,
+        "dexterity": 11,
+        "intelligence": 7,
+        "faith": 8,
+        "arcane": 9,
+    },
 }
 
 CONVERGENCE_STARTING_CLASSES = {
