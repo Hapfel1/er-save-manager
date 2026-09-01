@@ -573,6 +573,12 @@ _AOW_BASE_IDS: frozenset[int] = frozenset(
 
 _AOW_MENU_FLAG = 65800
 
+# Goods base IDs that require the Tarnished Pack DLC ownership flag before they
+# can be spawned. Just the three Torrent Regalia (Spectral Steed
+# appearance) key items, the other Tarnished Pack items are free to spawn.
+_TARNISHED_PACK_GATED_BASE_IDS: frozenset[int] = frozenset({2009600, 2009610, 2009620})
+_TARNISHED_PACK_FLAG = 6953
+
 
 def _apply_item_event_flags(
     save_file, slot_idx: int, full_item_id: int, state: bool
@@ -1866,9 +1872,23 @@ class InventoryEditor:
     ) -> tuple[bool, str]:
         """Pre-flight validation before calling inventory_ops.add_item."""
         from er_save_manager.data.item_database import get_item_database
+        from er_save_manager.parser.event_flags import EventFlags
 
         cat = full_id & 0xF0000000
         db = get_item_database()
+
+        # Torrent Regalia require the Tarnished Pack ownership flag.
+        base_id = full_id & 0x0FFFFFFF
+        if base_id in _TARNISHED_PACK_GATED_BASE_IDS:
+            owns_dlc = bool(slot.event_flags) and EventFlags.get_flag(
+                slot.event_flags, _TARNISHED_PACK_FLAG
+            )
+            if not owns_dlc:
+                return (
+                    False,
+                    "This character does not own the Tarnished Pack DLC "
+                    "and thus cannot receive this item.",
+                )
 
         # Upgrade range - CNV saves cap standard/somber at +15
         if cat == 0x00000000:

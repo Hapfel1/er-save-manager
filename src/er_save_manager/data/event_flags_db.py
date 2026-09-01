@@ -499,6 +499,31 @@ EVENT_FLAGS = {
         "category": "System",
         "subcategory": "Misc",
     },
+    6700: {
+        "name": "Torrent Appearance: Original",
+        "category": "Torrent",
+        "subcategory": "Appearance",
+    },
+    6701: {
+        "name": "Torrent Appearance: Tree Sentinel",
+        "category": "Torrent",
+        "subcategory": "Appearance",
+    },
+    6702: {
+        "name": "Torrent Appearance: Silver of Caria",
+        "category": "Torrent",
+        "subcategory": "Appearance",
+    },
+    6703: {
+        "name": "Torrent Appearance: Funereal Night",
+        "category": "Torrent",
+        "subcategory": "Appearance",
+    },
+    6953: {
+        "name": "Tarnished Edition (owns Tarnished Pack DLC)",
+        "category": "System",
+        "subcategory": "DLC",
+    },
     9100: {
         "name": "Defeated Godrick the Grafted",
         "category": "Bosses",
@@ -7036,6 +7061,9 @@ EVENT_FLAGS = {
 }
 
 FLAGS_BY_CATEGORY = {
+    "Torrent": {
+        "Appearance": [6700, 6701, 6702, 6703],
+    },
     "Ash of War (Duplication Menu)": {
         None: [
             65800,
@@ -7943,6 +7971,9 @@ FLAGS_BY_CATEGORY = {
         ],
     },
     "System": {
+        "DLC": [
+            6953,
+        ],
         "Great Runes": [
             180,
             181,
