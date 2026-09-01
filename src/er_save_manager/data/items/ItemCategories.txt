@@ -22,6 +22,11 @@
 0x40000000 false Items/Magic.csv Magic
 0x40000000 false Goods/SeamlessCoop.csv Seamless Co-op Items
 
+//Tarnished Pack Categories
+0x00000000 false Items/TarnishedPack/TarnishedPackWeapons.csv Tarnished Pack Weapons
+0x10000000 false Items/TarnishedPack/TarnishedPackArmor.csv Tarnished Pack Armor
+0x40000000 false Items/TarnishedPack/TarnishedPackGoods.csv Tarnished Pack Goods
+
 //DLC Categories
 0x00000000 false Items/DLC/DLCWeapons/DLCMeleeWeapons.csv DLC Melee Weapons
 0x00000000 false Items/DLC/DLCWeapons/DLCRangedWeapons.csv DLC Ranged Weapons
