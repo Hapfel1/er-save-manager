@@ -73,6 +73,9 @@ _KEY_ITEM_BASE_IDS: frozenset[int] = frozenset(
         114,  # Phantom Recusant Finger
         115,  # Memory of Grace
         130,  # Spectral Steed Whistle
+        2009600,  # Spectral Steed Regalia: Tree Sentinel
+        2009610,  # Spectral Steed Regalia: Carian Silver
+        2009620,  # Spectral Steed Regalia: Funeral Night
         135,  # Phantom Great Rune
         # Great Runes (powered)
         191,  # Godrick's Great Rune

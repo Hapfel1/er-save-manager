@@ -11,6 +11,20 @@ from er_save_manager.data.starting_classes import get_class_data
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, trace_variable
 
+# Starting classes added in the Tarnished Pack DLC. Hidden from the class
+# dropdown unless the character owns the DLC (event flag 6953).
+_TARNISHED_PACK_CLASS_NAMES = frozenset({"Idus Knight", "Heavy Knight"})
+_TARNISHED_PACK_FLAG = 6953
+
+
+def _owns_tarnished_pack(slot) -> bool:
+    """Check the Tarnished Pack DLC ownership flag on a character slot."""
+    if not getattr(slot, "event_flags", None):
+        return False
+    from er_save_manager.parser.event_flags import EventFlags
+
+    return EventFlags.get_flag(slot.event_flags, _TARNISHED_PACK_FLAG)
+
 
 class CharacterInfoEditor:
     """Editor for character information and progression"""
@@ -137,7 +151,7 @@ class CharacterInfoEditor:
             class_name = self.char_archetype_var.get()
             save_file = self.get_save_file()
             is_convergence = save_file.is_convergence if save_file else False
-            max_id = 26 if is_convergence else 9
+            max_id = 26 if is_convergence else 11
             for i in range(max_id + 1):
                 c = get_class_data(i, is_convergence)
                 if c and c["name"] == class_name:
@@ -287,12 +301,20 @@ class CharacterInfoEditor:
             # Get all class names for this save type and update combobox
             all_classes = get_class_data(0, is_convergence)
             if all_classes:
+                owns_dlc = _owns_tarnished_pack(slot)
                 class_names = []
-                max_id = 26 if is_convergence else 9
+                max_id = 26 if is_convergence else 11
                 for i in range(max_id + 1):
                     c = get_class_data(i, is_convergence)
-                    if c:
-                        class_names.append(c["name"])
+                    if not c:
+                        continue
+                    if c["name"] in _TARNISHED_PACK_CLASS_NAMES and not owns_dlc:
+                        continue
+                    class_names.append(c["name"])
+                # Always keep the character's current class selectable, even if
+                # it's a gated one and the flag got cleared some other way.
+                if class_name not in class_names:
+                    class_names.append(class_name)
                 self.char_archetype_combo.configure(values=class_names)
 
             self.char_archetype_var.set(class_name)
@@ -414,8 +436,22 @@ class CharacterInfoEditor:
                 # Convert class name back to archetype ID
                 class_name = self.char_archetype_var.get()
                 is_convergence = save_file.is_convergence
+
+                if (
+                    class_name in _TARNISHED_PACK_CLASS_NAMES
+                    and not _owns_tarnished_pack(slot)
+                ):
+                    CTkMessageBox.showwarning(
+                        "Tarnished Pack Required",
+                        f"'{class_name}' requires the Tarnished Pack DLC "
+                        f"(event flag {_TARNISHED_PACK_FLAG}) to be set on this "
+                        "character first.",
+                        parent=self.parent,
+                    )
+                    return
+
                 archetype_id = 0
-                max_id = 26 if is_convergence else 9
+                max_id = 26 if is_convergence else 11
                 for i in range(max_id + 1):
                     c = get_class_data(i, is_convergence)
                     if c and c["name"] == class_name:
