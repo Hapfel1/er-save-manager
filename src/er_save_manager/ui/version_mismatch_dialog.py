@@ -39,7 +39,7 @@ class VersionMismatchDialog(ctk.CTkToplevel):
         self.protocol("WM_DELETE_WINDOW", self.destroy)
         self._build_ui()
 
-        width, height = 520, 420
+        width, height = 520, 520
         self.geometry(f"{width}x{height}")
         self.update_idletasks()
         px = parent.winfo_rootx() + (parent.winfo_width() - width) // 2
