@@ -9,6 +9,7 @@ import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.version_mismatch_dialog import VersionMismatchDialog
 
 
 class SaveInspectorTab:
@@ -66,6 +67,14 @@ class SaveInspectorTab:
             command=self.show_character_details,
             width=180,
         ).pack(side="right")
+
+        ctk.CTkButton(
+            header,
+            text="Mismatched Game/Save Version?",
+            command=self.show_version_mismatch_dialog,
+            fg_color=("gray70", "gray35"),
+            width=220,
+        ).pack(side="right", padx=(0, 8))
 
         # Instructions
         instructions_frame = ctk.CTkFrame(char_frame, fg_color="transparent")
@@ -221,3 +230,19 @@ class SaveInspectorTab:
 
         if self.show_details:
             self.show_details(self.selected_slot)
+
+    def show_version_mismatch_dialog(self):
+        """Open the save/game version mismatch fix dialog."""
+        save_file = self.get_save_file()
+        if not save_file:
+            CTkMessageBox.showwarning(
+                "No Save Loaded", "Please load a save file first!", parent=self.parent
+            )
+            return
+
+        VersionMismatchDialog(
+            self.parent.winfo_toplevel(),
+            save_file,
+            self.get_save_path(),
+            self.reload_save,
+        )
