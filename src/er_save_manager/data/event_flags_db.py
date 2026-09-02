@@ -519,11 +519,6 @@ EVENT_FLAGS = {
         "category": "Torrent",
         "subcategory": "Appearance",
     },
-    6953: {
-        "name": "Tarnished Edition (owns Tarnished Pack DLC)",
-        "category": "System",
-        "subcategory": "DLC",
-    },
     9100: {
         "name": "Defeated Godrick the Grafted",
         "category": "Bosses",
@@ -7971,9 +7966,6 @@ FLAGS_BY_CATEGORY = {
         ],
     },
     "System": {
-        "DLC": [
-            6953,
-        ],
         "Great Runes": [
             180,
             181,
