@@ -1,4 +1,12 @@
-if you want a function like a backup every x hours as long as the game is running that is smth i can add maybe
+check and fix docs
+
+check dlc npc flags
+
+check ds2 weapon spawning
+
+check ds3, nr item spawning
+
+batch remove
 
 gneeral loadouts tab
 
