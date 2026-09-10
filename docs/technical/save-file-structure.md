@@ -68,7 +68,7 @@ version                        uint32                  4
 map_id                         MapId                   4
 unk0x8                         bytes                   8
 unk0x10                        bytes                   16
-gaitem_map                     Gaitem[]                5118×8 or 5120×8
+gaitem_map                     Gaitem[]                variable (see Gaitem below)
 player_game_data               PlayerGameData          432 (0x1B0)
 sp_effects                     SPEffect[13]            208 (0xD0)
 equipped_items_equip_index     EquipmentSlots          88 (0x58)
@@ -99,15 +99,15 @@ gameman_0x8c                   uint8                   1
 gameman_0x8d                   uint8                   1
 gameman_0x8e                   uint8                   1
 total_deaths_count             uint32                  4
-character_type                 uint32                  4
-in_online_session_flag         uint32                  4
+character_type                 int32                   4
+in_online_session_flag         uint8                   1
 character_type_online          uint32                  4
 last_rested_grace              uint32                  4
-not_alone_flag                 uint32                  4
+not_alone_flag                 uint8                   1
 in_game_countdown_timer        uint32                  4
 unk_gamedataman_0x124          uint32                  4
 event_flags                    bytes                   1,833,375 (0x1BF99F)
-event_flags_terminator         uint32                  4
+event_flags_terminator         uint8                   1
 field_area                     FieldArea               variable
 world_area                     WorldArea               variable
 world_geom_man                 WorldGeomMan            variable
@@ -119,7 +119,7 @@ game_man_0x5bf                 uint8                   1
 spawn_point_entity_id          uint32                  4
 game_man_0xb64                 uint32                  4
 temp_spawn_point_entity_id     uint32 (version >= 65)  4 or 0
-game_man_0xcb3                 uint32 (version >= 66)  4 or 0
+game_man_0xcb3                 uint8 (version >= 66)   1 or 0
 net_man                        NetMan                  131,076 (0x20004)
 world_area_weather             WorldAreaWeather        12 (0xC)
 world_area_time                WorldAreaTime           12 (0xC)
@@ -295,6 +295,34 @@ Offset  Size  Field
 ──────────────────────────────
         28    total
 ```
+
+---
+
+## Gaitem - variable size (8, 16, or 21 bytes per entry)
+
+Item instance table. 5118 or 5120 entries back to back (see Gaitem count above), each entry's size depends on its own `gaitem_handle`, so entries must be read sequentially, there is no fixed stride.
+
+```
+Offset  Size  Field               Present when
+────────────────────────────────────────────────────────────────────
+0x00    4     gaitem_handle       always
+0x04    4     item_id             always
+0x08    4     unk0x10             handle != 0 AND (handle & 0xF0000000) != 0xC0000000
+0x0C    4     unk0x14             same as unk0x10
+0x10    4     gem_gaitem_handle   (handle & 0xF0000000) == 0x80000000 (weapon only)
+0x14    1     unk0x1c             same as gem_gaitem_handle
+────────────────────────────────────────────────────────────────────
+```
+
+Handle type is read from the top nibble of `gaitem_handle`: `0x80` = weapon, `0x90` = armor, `0xC0` = gem/Ash of War. A handle of `0` means an empty slot in the map (base 8 bytes only).
+
+Resulting entry size:
+
+- 8 bytes: empty (`handle == 0`), or gem/AoW (`0xC0` prefix)
+- 16 bytes: armor (`0x90` prefix)
+- 21 bytes: weapon (`0x80` prefix)
+
+`gem_gaitem_handle` is a weapon's live reference to the gaitem entry of its equipped Ash of War (that AoW's own entry is a normal 8-byte `0xC0` entry elsewhere in the map, it does not point back). `unk0x10`, `unk0x14`, `unk0x1c` are unidentified, always written as `0` by the manager on item creation, and not read anywhere in the codebase for any effect.
 
 ---
 
