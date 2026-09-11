@@ -273,7 +273,7 @@ CONVERGENCE_STARTING_CLASSES = {
         "faith": 6,
         "arcane": 7,
     },
-    10: {
+    12: {
         "name": "Volcanist",
         "level": 11,
         "vigor": 14,
@@ -285,7 +285,7 @@ CONVERGENCE_STARTING_CLASSES = {
         "faith": 11,
         "arcane": 8,
     },
-    11: {
+    13: {
         "name": "Stormcaller",
         "level": 12,
         "vigor": 13,
@@ -297,7 +297,7 @@ CONVERGENCE_STARTING_CLASSES = {
         "faith": 13,
         "arcane": 8,
     },
-    12: {
+    14: {
         "name": "Nox Oracle",
         "level": 14,
         "vigor": 14,
@@ -309,7 +309,7 @@ CONVERGENCE_STARTING_CLASSES = {
         "faith": 11,
         "arcane": 8,
     },
-    13: {
+    15: {
         "name": "Necromancer",
         "level": 15,
         "vigor": 13,
@@ -321,7 +321,7 @@ CONVERGENCE_STARTING_CLASSES = {
         "faith": 13,
         "arcane": 10,
     },
-    14: {
+    16: {
         "name": "Frost Witch",
         "level": 9,
         "vigor": 12,
@@ -333,7 +333,7 @@ CONVERGENCE_STARTING_CLASSES = {
         "faith": 7,
         "arcane": 11,
     },
-    15: {
+    17: {
         "name": "Aberrant Heretic",
         "level": 10,
         "vigor": 12,
@@ -345,7 +345,7 @@ CONVERGENCE_STARTING_CLASSES = {
         "faith": 7,
         "arcane": 12,
     },
-    16: {
+    18: {
         "name": "Flame Prophet",
         "level": 7,
         "vigor": 10,
@@ -357,7 +357,7 @@ CONVERGENCE_STARTING_CLASSES = {
         "faith": 25,
         "arcane": 6,
     },
-    17: {
+    19: {
         "name": "Fundamentalist",
         "level": 8,
         "vigor": 9,
@@ -369,7 +369,7 @@ CONVERGENCE_STARTING_CLASSES = {
         "faith": 23,
         "arcane": 7,
     },
-    18: {
+    20: {
         "name": "Bestial Devout",
         "level": 9,
         "vigor": 12,
@@ -381,7 +381,7 @@ CONVERGENCE_STARTING_CLASSES = {
         "faith": 20,
         "arcane": 6,
     },
-    19: {
+    21: {
         "name": "Dragon Cultist",
         "level": 10,
         "vigor": 13,
@@ -393,7 +393,7 @@ CONVERGENCE_STARTING_CLASSES = {
         "faith": 21,
         "arcane": 6,
     },
-    20: {
+    22: {
         "name": "Godskin Celebrant",
         "level": 11,
         "vigor": 11,
@@ -405,7 +405,7 @@ CONVERGENCE_STARTING_CLASSES = {
         "faith": 12,
         "arcane": 8,
     },
-    21: {
+    23: {
         "name": "Frenzied Zealot",
         "level": 12,
         "vigor": 13,
@@ -417,7 +417,7 @@ CONVERGENCE_STARTING_CLASSES = {
         "faith": 13,
         "arcane": 8,
     },
-    22: {
+    24: {
         "name": "Blood Initiate",
         "level": 11,
         "vigor": 15,
@@ -429,7 +429,7 @@ CONVERGENCE_STARTING_CLASSES = {
         "faith": 13,
         "arcane": 13,
     },
-    23: {
+    25: {
         "name": "Servant of Rot",
         "level": 12,
         "vigor": 12,
@@ -441,7 +441,7 @@ CONVERGENCE_STARTING_CLASSES = {
         "faith": 12,
         "arcane": 12,
     },
-    24: {
+    26: {
         "name": "Mystic",
         "level": 13,
         "vigor": 12,
@@ -453,7 +453,7 @@ CONVERGENCE_STARTING_CLASSES = {
         "faith": 14,
         "arcane": 14,
     },
-    25: {
+    27: {
         "name": "Perfumer",
         "level": 5,
         "vigor": 10,
@@ -465,7 +465,7 @@ CONVERGENCE_STARTING_CLASSES = {
         "faith": 7,
         "arcane": 15,
     },
-    26: {
+    28: {
         "name": "Prisoner",
         "level": 1,
         "vigor": 10,
