@@ -474,7 +474,7 @@ class CharacterBrowser:
         """Auto-detect Convergence mod from save file extension."""
         if self.save_file and hasattr(self.save_file, "_original_filepath"):
             filepath = self.save_file._original_filepath.lower()
-            if filepath.endswith(".cnv") or filepath.endswith(".cnv.co2"):
+            if ".cnv" in filepath:
                 self.overhaul_used_var.set(True)
                 self.overhaul_name_var.set("Convergence")
                 self._toggle_overhaul_details()

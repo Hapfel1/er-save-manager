@@ -83,11 +83,12 @@ class Save:
         Check if this save is for the Convergence mod.
 
         Returns:
-            True if the save file has .cnv or .cnv.co2 extension
+            True if ".cnv" appears anywhere in the save filename
+            (e.g. .cnv, .cnv.co2, .cnv.co3).
         """
         if hasattr(self, "_original_filepath") and self._original_filepath:
             filepath = self._original_filepath.lower()
-            return filepath.endswith(".cnv") or filepath.endswith(".cnv.co2")
+            return ".cnv" in filepath
         return False
 
     @classmethod
