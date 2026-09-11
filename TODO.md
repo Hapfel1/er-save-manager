@@ -1,7 +1,5 @@
 check dlc npc flags
 
-check ds2 weapon spawning
-
 check ds3, nr item spawning
 
 invasion regions
@@ -9,6 +7,8 @@ invasion regions
 ds3 gestures
 
 npc respawner ds3
+
+check ds2 weapon spawning done
 
 batch remove done
 

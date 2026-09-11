@@ -79,9 +79,12 @@ class DS2InspectorTab:
                     label.configure(text_color=("#333333", "#cccccc"))
 
         for i, character in enumerate(save.characters):
+            if not save.is_slot_initialized(i):
+                continue
+
             name = character.name
             display_name = name if name else "(empty)"
-            status = "Ready" if save.is_slot_initialized(i) else "Never created in-game"
+            status = "Ready"
             check = self._check_slot(i, name, select_data)
 
             display_text = (
