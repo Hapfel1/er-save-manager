@@ -21,10 +21,10 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 23170000,Crystaline Claw,somber,0,19,AxeLarge,1,Standard
 21020000,Daergraf’s Opus,somber,0,35,Knuckle,1,Standard
 1180000,Deathrite Dagger,somber,0,1,Dagger,1,Standard
-8530000,Demi-Dragon Cleaver,somber,0,11,SaberLarge,1,Standard
+8600000,Demi-Dragon Cleaver,somber,0,11,SaberLarge,1,Standard
 2250000,Dragonkin Seeker Sword,somber,0,3,SwordNormal,1,Standard
 3240000,Dyru's Greatsword,somber,0,5,SwordLarge,1,Standard
-66530000,Eagle's Edge,somber,0,94,GreatKatana,1,Standard
+66570000,Eagle's Edge,somber,0,94,GreatKatana,1,Standard
 12090000,Einar's Hammer,somber,0,23,HammerLarge,1,Standard
 22050000,Emyr's Great Talons,somber,0,37,Claw,1,Standard
 4140000,Fingerprint Hexmark,somber,0,7,SwordGigantic,1,Standard
@@ -42,7 +42,7 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 68540000,Goras' Claw,somber,0,95,BeastClaw,1,Standard
 4120000,Gravelstone Arcblades,somber,0,7,SwordGigantic,1,Standard
 23090000,Greatstaff of Decay,somber,0,41,AxhammerLarge,1,Standard
-3560000,Greatsword of Midra,somber,0,5,SwordLarge,1,Standard
+3570000,Greatsword of Midra,somber,0,5,SwordLarge,1,Standard
 18110000,Guardian Spearblade,somber,0,3,SwordNormal,1,Standard
 18250000,Halberd of Archea,somber,0,29,SpearAxe,1,Standard
 11180000,Hammer of Virtue,somber,0,21,HammerNormal,1,Standard
@@ -80,7 +80,7 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 1120000,Surgeons Catlinger,standard,1,1,Dagger,1,Standard
 3230000,Sword Of Hadea,somber,0,5,SwordLarge,1,Standard
 3120000,Sword Of The Cyclops,somber,0,5,SwordLarge,1,Standard
-67530000,Sword of the Cosmos,somber,0,93,LightGreatsword,1,Standard
+67580000,Sword of the Cosmos,somber,0,93,LightGreatsword,1,Standard
 5070000,Thorn Of The Guilty,somber,0,15,SwordPierce,1,Standard
 8090000,Three Finger Blade,somber,0,11,SaberLarge,1,Standard
 68550000,Transcendent Talons,somber,0,95,BeastClaw,1,Standard
@@ -91,5 +91,5 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 2030000,Yura’s Kanabo,somber,0,3,SwordNormal,1,Standard
 11160000,Zamor Star Mace,somber,0,21,HammerNormal,1,Standard
 7090000,Zephyr Blades,somber,0,9,SaberNormal,1,Standard
-64530000,Fingerslayer Blade (Weapon),somber,0,9,SaberNormal,1,Standard
+64570000,Fingerslayer Blade (Weapon),somber,0,9,SaberNormal,1,Standard
 67700000,Primeval Splinter,somber,1,93,LightGreatsword,1,Standard

@@ -256,6 +256,16 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         self._cat_combo.pack(side=ctk.LEFT, padx=(0, 8))
         _patch_combo_scroll(self._cat_combo)
 
+        ctk.CTkButton(
+            top,
+            text="Batch Remove Category",
+            width=150,
+            height=28,
+            fg_color=("#6a3fa0", "#7c4dac"),
+            hover_color=("#7c4dac", "#9d5fd4"),
+            command=self._do_batch_remove,
+        ).pack(side=ctk.LEFT, padx=(0, 8))
+
         self._filter_var = ctk.StringVar()
         self._filter_var.trace_add("write", lambda *_: self._apply_filter())
         ctk.CTkLabel(top, text="Filter:").pack(side=ctk.LEFT)
@@ -685,6 +695,11 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
 
     def _do_aow(self):
         self._run("set_aow")
+
+    def _do_batch_remove(self):
+        self._editor.batch_remove_category(
+            self._cat_filter, self._tab, parent_window=self
+        )
 
     # ---- live update ---------------------------------------------------------
 
