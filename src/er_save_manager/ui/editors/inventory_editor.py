@@ -711,6 +711,9 @@ class InventoryEditor:
         "Convergence Magic",
         "Convergence Bell Bearings",
     }
+    # Redundant on Convergence saves: replaced by per-skin whistle items in
+    # Convergence's own steed category, so hide the vanilla skin selector.
+    _CONVERGENCE_HIDDEN_CATS = {"Tarnished Pack Goods"}
 
     def __init__(
         self,
@@ -1289,6 +1292,7 @@ class InventoryEditor:
             for c in all_cats
             if (c not in self._SEAMLESS_CATS or is_co2)
             and (c not in self._CONVERGENCE_CATS or is_cnv)
+            and (c not in self._CONVERGENCE_HIDDEN_CATS or not is_cnv)
         ]
 
     def _populate_search_categories(self):
@@ -1296,6 +1300,16 @@ class InventoryEditor:
         self._search_cat_combo.configure(values=cats)
         if self._search_cat_var.get() not in cats:
             self._search_cat_var.set("All")
+
+    def refresh_category_visibility(self):
+        """Re-evaluate which categories are visible for the current save.
+
+        Called on save load so Seamless Co-op / Convergence categories unlock
+        as soon as the save file is read, without requiring a character to be
+        loaded first.
+        """
+        if self._search_cat_combo is not None:
+            self._populate_search_categories()
 
     def _search_items(self):
         if self._results_listbox is None:
@@ -1314,11 +1328,18 @@ class InventoryEditor:
 
             if cat == "All":
                 results = db.search_items(query) if query else []
-                if not self._is_cnv_save():
+                is_cnv = self._is_cnv_save()
+                if not is_cnv:
                     results = [
                         i
                         for i in results
                         if i.category_name not in self._CONVERGENCE_CATS
+                    ]
+                else:
+                    results = [
+                        i
+                        for i in results
+                        if i.category_name not in self._CONVERGENCE_HIDDEN_CATS
                     ]
                 if ".co2" not in str(self.get_save_path() or "").lower():
                     results = [
