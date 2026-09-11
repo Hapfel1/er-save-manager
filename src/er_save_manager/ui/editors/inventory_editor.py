@@ -2362,6 +2362,121 @@ class InventoryEditor:
                 "Error", f"Failed to remove item:\n{e}", parent=self.parent
             )
 
+    def batch_remove_category(
+        self, cat: str, location: str, parent_window=None
+    ) -> None:
+        """Remove every item of a given category from one inventory location.
+
+        cat: category name, or "All" to clear the entire location.
+        location: "held" or "storage" - only that inventory is touched.
+        """
+        if parent_window is None:
+            parent_window = self.parent
+
+        save_file = self.get_save_file()
+        if not save_file:
+            CTkMessageBox.showwarning(
+                "No Save", "Load a save file first.", parent=parent_window
+            )
+            return
+
+        slot_idx = self.get_char_slot()
+        try:
+            slot = save_file.characters[slot_idx]
+        except Exception:
+            return
+        if slot.is_empty():
+            CTkMessageBox.showwarning(
+                "Empty Slot", "This character slot is empty.", parent=parent_window
+            )
+            return
+
+        from er_save_manager.data.item_database import get_item_database
+
+        db = get_item_database()
+
+        def _row_category(full_id: int) -> str | None:
+            item = db.get_item_by_id(full_id)
+            if item is None and (full_id & 0xF0000000) == 0x00000000:
+                base_id = (full_id & 0x0FFFFFFF) // 10000 * 10000
+                item = db.get_item_by_id(base_id)
+            return item.category_name if item else None
+
+        matches = [
+            row
+            for row in self._all_rows
+            if row[1] is not None
+            and row[2] == location
+            and (cat == "All" or _row_category(row[1]) == cat)
+        ]
+
+        if not matches:
+            CTkMessageBox.showinfo(
+                "Batch Remove",
+                f"No items found in {location} inventory for '{cat}'.",
+                parent=parent_window,
+            )
+            return
+
+        if cat == "All":
+            confirm_msg = (
+                f"This will remove ALL {len(matches)} items from your "
+                f"{location.upper()} inventory."
+                f"\n\nAre you sure you want to continue?"
+            )
+        else:
+            confirm_msg = (
+                f"Batch remove all {len(matches)} items from '{cat}' in {location}?"
+            )
+
+        if not CTkMessageBox.askyesno(
+            "Batch Remove", confirm_msg, parent=parent_window
+        ):
+            return
+
+        try:
+            self.ensure_mutable()
+            self._create_backup(save_file, slot_idx, "batch_remove_category")
+
+            from er_save_manager.parser.inventory_ops import remove_item
+
+            success = 0
+            errors = []
+            for row in matches:
+                full_id = row[1]
+                try:
+                    remove_item(save_file, slot_idx, full_id, location)
+                    _apply_item_event_flags(save_file, slot_idx, full_id, False)
+                    success += 1
+                except Exception as e:
+                    errors.append(f"0x{full_id:08X}: {e}")
+
+            save_file.recalculate_checksums()
+            save_path = self.get_save_path()
+            if save_path:
+                save_file.to_file(Path(save_path))
+
+            self.refresh_inventory()
+            if self._on_inventory_changed:
+                self._on_inventory_changed()
+
+            show_toast(
+                self.parent.winfo_toplevel(),
+                f"Batch removed {success} items from {cat} ({location}).",
+                type="success",
+            )
+            if errors:
+                CTkMessageBox.showwarning(
+                    "Batch Remove",
+                    f"{len(errors)} item(s) failed to remove:\n"
+                    + "\n".join(errors[:10]),
+                    parent=parent_window,
+                )
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error", f"Batch Remove Failed:\n{e}", parent=parent_window
+            )
+
     def set_quantity(self):
         result = self._get_forced_or_listbox()
         if result is None:
