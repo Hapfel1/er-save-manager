@@ -4,13 +4,13 @@ check ds2 weapon spawning
 
 check ds3, nr item spawning
 
-batch remove
-
 invasion regions
 
 ds3 gestures
 
 npc respawner ds3
+
+batch remove done
 
 check and fix docs done
 
