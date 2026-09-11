@@ -2411,6 +2411,9 @@ class SaveManagerGUI:
         for tab_name in self.tabs_loaded:
             self.tabs_loaded[tab_name] = False
 
+        if hasattr(self, "inventory_editor") and self.inventory_editor:
+            self.inventory_editor.refresh_category_visibility()
+
         # Lazy-load the currently visible tab immediately (ensures live refresh)
         current_tab = self.notebook.get()
         self._lazy_load_tab_background(current_tab)

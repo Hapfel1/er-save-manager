@@ -1,5 +1,3 @@
-check and fix docs
-
 check dlc npc flags
 
 check ds2 weapon spawning
@@ -8,13 +6,13 @@ check ds3, nr item spawning
 
 batch remove
 
-gneeral loadouts tab
-
 invasion regions
 
 ds3 gestures
 
 npc respawner ds3
+
+check and fix docs done
 
 ds2 done
 
