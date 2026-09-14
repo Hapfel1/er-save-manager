@@ -6,6 +6,8 @@ import shutil
 import subprocess
 import webbrowser
 
+import customtkinter as ctk
+
 
 def trace_variable(var, mode, callback):
     """
@@ -89,6 +91,87 @@ def bind_mousewheel(widget, target_widget=None):
             bind_to_children(target_widget)
 
         target_widget.bind("<Map>", on_map, add="+")
+
+
+def patch_combo_scroll(combo, max_visible_rows: int = 20, row_height: int = 28):
+    """
+    Replace a CTkComboBox's dropdown with a scrollable popup.
+    """
+
+    def _open():
+        values = combo.cget("values")
+        if not values:
+            return
+
+        theme = ctk.ThemeManager.theme["DropdownMenu"]
+
+        popup = ctk.CTkToplevel(combo)
+        popup.withdraw()
+        popup.overrideredirect(True)
+        popup.attributes("-topmost", True)
+        combo.update()
+        text_font = ctk.CTkFont()
+        text_width = max(text_font.measure(v) for v in values)
+        pad = int(combo._apply_widget_scaling(48))
+        width = max(combo.winfo_width(), text_width + pad)
+
+        x = combo.winfo_rootx()
+        y = combo.winfo_rooty() + combo.winfo_height() + 2
+        screen_h = popup.winfo_screenheight()
+        available_rows = max((screen_h - y - 40) // row_height, 4)
+        rows = min(len(values), max_visible_rows, available_rows)
+        height = rows * row_height + 8
+
+        geometry = f"{width}x{height}+{x}+{y}"
+        popup.geometry(geometry)
+
+        frame = ctk.CTkScrollableFrame(
+            popup,
+            width=width - 4,
+            height=height - 4,
+            fg_color=theme["fg_color"],
+            corner_radius=0,
+        )
+        frame.pack(fill="both", expand=True)
+        bind_mousewheel(frame)
+
+        def _select(value):
+            popup.destroy()
+            combo.set(value)
+            if combo._command is not None:
+                combo._command(value)
+
+        for value in values:
+            ctk.CTkButton(
+                frame,
+                text=value,
+                anchor="w",
+                width=width - 16,
+                fg_color="transparent",
+                hover_color=theme["hover_color"],
+                text_color=theme["text_color"],
+                height=row_height - 4,
+                command=lambda v=value: _select(v),
+            ).pack(fill="x", pady=1)
+
+        def _close(_e=None):
+            try:
+                popup.destroy()
+            except Exception:
+                pass
+
+        def _arm_close():
+            popup.geometry(geometry)
+            popup.bind("<FocusOut>", _close)
+            popup.focus_force()
+
+        popup.bind("<Escape>", _close)
+        popup.update_idletasks()
+        popup.deiconify()
+        popup.after(100, _arm_close)
+
+    combo._open_dropdown_menu = _open
+    return combo
 
 
 def open_url(url: str) -> bool:
