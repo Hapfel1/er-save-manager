@@ -13,7 +13,7 @@ import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.toast import show_toast
-from er_save_manager.ui.utils import bind_mousewheel, pick_file
+from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_file
 
 _CAT_WEAPON = 0x00000000
 
@@ -93,85 +93,6 @@ def _lower_matchmaking_level(save_file, slot_idx: int, full_item_id: int) -> Non
     data = buf.getvalue()
     off = slot.player_game_data_offset
     save_file._raw_data[off : off + len(data)] = data
-
-
-def _patch_combo_scroll(combo, max_visible_rows: int = 20, row_height: int = 28):
-    """
-    Replace a CTkComboBox's dropdown with a scrollable popup.
-    """
-
-    def _open():
-        values = combo.cget("values")
-        if not values:
-            return
-
-        theme = ctk.ThemeManager.theme["DropdownMenu"]
-
-        popup = ctk.CTkToplevel(combo)
-        popup.withdraw()
-        popup.overrideredirect(True)
-        popup.attributes("-topmost", True)
-
-        combo.update_idletasks()
-        text_font = ctk.CTkFont()
-        text_width = max(text_font.measure(v) for v in values)
-        pad = combo._apply_widget_scaling(48)
-        width = max(combo.winfo_width(), text_width + pad)
-
-        x = combo.winfo_rootx()
-        y = combo.winfo_rooty() + combo.winfo_height() + 2
-        screen_h = popup.winfo_screenheight()
-        available_rows = max((screen_h - y - 40) // row_height, 4)
-        rows = min(len(values), max_visible_rows, available_rows)
-        height = rows * row_height + 8
-
-        popup.geometry(f"{width}x{height}+{x}+{y}")
-
-        frame = ctk.CTkScrollableFrame(
-            popup,
-            width=width - 4,
-            height=height - 4,
-            fg_color=theme["fg_color"],
-            corner_radius=0,
-        )
-        frame.pack(fill="both", expand=True)
-        bind_mousewheel(frame)
-
-        def _select(value):
-            popup.destroy()
-            combo.set(value)
-            if combo._command is not None:
-                combo._command(value)
-
-        for value in values:
-            ctk.CTkButton(
-                frame,
-                text=value,
-                anchor="w",
-                width=width - 16,
-                fg_color="transparent",
-                hover_color=theme["hover_color"],
-                text_color=theme["text_color"],
-                height=row_height - 4,
-                command=lambda v=value: _select(v),
-            ).pack(fill="x", pady=1)
-
-        def _close(_e=None):
-            try:
-                popup.destroy()
-            except Exception:
-                pass
-
-        def _arm_close():
-            popup.bind("<FocusOut>", _close)
-            popup.focus_force()
-
-        popup.bind("<Escape>", _close)
-        popup.deiconify()
-        popup.after(100, _arm_close)
-
-    combo._open_dropdown_menu = _open
-    return combo
 
 
 def _center_over(window, parent, w=None, h=None, *, top=False) -> None:
@@ -848,7 +769,7 @@ class InventoryEditor:
             command=lambda _e=None: (self._search_items(), self._update_browse_state()),
         )
         self._search_cat_combo.pack(side=ctk.LEFT)
-        _patch_combo_scroll(self._search_cat_combo)
+        patch_combo_scroll(self._search_cat_combo)
         self._populate_search_categories()
 
         browse_row = ctk.CTkFrame(parent, fg_color="transparent")
@@ -974,7 +895,7 @@ class InventoryEditor:
             state="disabled",
         )
         self._upgrade_combo.grid(row=0, column=3, sticky=ctk.W, pady=4)
-        _patch_combo_scroll(self._upgrade_combo)
+        patch_combo_scroll(self._upgrade_combo)
 
         ctk.CTkLabel(opts, text="Affinity:", anchor="w").grid(
             row=1, column=0, sticky=ctk.W, padx=(0, 6), pady=4
@@ -993,7 +914,7 @@ class InventoryEditor:
             command=self._on_affinity_combo_changed,
         )
         self._affinity_combo.pack(side=ctk.LEFT)
-        _patch_combo_scroll(self._affinity_combo)
+        patch_combo_scroll(self._affinity_combo)
 
         ctk.CTkLabel(opts, text="Location:", anchor="w").grid(
             row=1, column=2, sticky=ctk.W, padx=(14, 6), pady=4

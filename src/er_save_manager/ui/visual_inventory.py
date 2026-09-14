@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import gc
-import platform as _platform
 import re
 import tkinter as tk
 from typing import TYPE_CHECKING
@@ -14,6 +13,7 @@ from er_save_manager.ui.editors.inventory_editor import (
     INVENTORY_SORT_MODES,
     sort_inventory_rows,
 )
+from er_save_manager.ui.utils import patch_combo_scroll
 
 if TYPE_CHECKING:
     from er_save_manager.ui.editors.inventory_editor import InventoryEditor
@@ -104,56 +104,6 @@ def _cell_icon(full_id, gaitem_handle, slot, aff_code, affinity_names):
         return base_img
     except Exception:
         return None
-
-
-def _patch_combo_scroll(combo):
-    """Bind mousewheel to CTkComboBox dropdown on Windows. Returns combo."""
-    if _platform.system() != "Windows":
-        return combo
-    orig = combo._open_dropdown_menu
-
-    def _open():
-        orig()
-        dm = getattr(combo, "_dropdown_menu", None)
-        if dm is None:
-            return
-
-        def _setup():
-            import tkinter as _tk
-
-            canvas = getattr(dm, "_canvas", None)
-            if canvas is None:
-
-                def _find(w):
-                    if isinstance(w, _tk.Canvas):
-                        return w
-                    for c in w.winfo_children():
-                        found = _find(c)
-                        if found:
-                            return found
-                    return None
-
-                canvas = _find(dm)
-            if canvas is None:
-                return
-
-            def _scroll(e):
-                canvas.yview_scroll(int(-e.delta / 120), "units")
-
-            def _bind_all(w):
-                try:
-                    w.bind("<MouseWheel>", _scroll, add="+")
-                    for child in w.winfo_children():
-                        _bind_all(child)
-                except Exception:
-                    pass
-
-            _bind_all(dm)
-
-        dm.after(50, _setup)
-
-    combo._open_dropdown_menu = _open
-    return combo
 
 
 def _center_over(window, parent, w=None, h=None, *, top=False) -> None:
@@ -254,7 +204,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             command=self._on_cat_changed,
         )
         self._cat_combo.pack(side=ctk.LEFT, padx=(0, 8))
-        _patch_combo_scroll(self._cat_combo)
+        patch_combo_scroll(self._cat_combo)
 
         ctk.CTkButton(
             top,
