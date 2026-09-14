@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import gc
-import platform as _platform
 import re
 import tkinter as tk
 from typing import TYPE_CHECKING
@@ -14,6 +13,7 @@ from er_save_manager.ui.editors.inventory_editor import (
     INVENTORY_SORT_MODES,
     sort_inventory_rows,
 )
+from er_save_manager.ui.utils import patch_combo_scroll
 
 if TYPE_CHECKING:
     from er_save_manager.ui.editors.inventory_editor import InventoryEditor
@@ -106,56 +106,6 @@ def _cell_icon(full_id, gaitem_handle, slot, aff_code, affinity_names):
         return None
 
 
-def _patch_combo_scroll(combo):
-    """Bind mousewheel to CTkComboBox dropdown on Windows. Returns combo."""
-    if _platform.system() != "Windows":
-        return combo
-    orig = combo._open_dropdown_menu
-
-    def _open():
-        orig()
-        dm = getattr(combo, "_dropdown_menu", None)
-        if dm is None:
-            return
-
-        def _setup():
-            import tkinter as _tk
-
-            canvas = getattr(dm, "_canvas", None)
-            if canvas is None:
-
-                def _find(w):
-                    if isinstance(w, _tk.Canvas):
-                        return w
-                    for c in w.winfo_children():
-                        found = _find(c)
-                        if found:
-                            return found
-                    return None
-
-                canvas = _find(dm)
-            if canvas is None:
-                return
-
-            def _scroll(e):
-                canvas.yview_scroll(int(-e.delta / 120), "units")
-
-            def _bind_all(w):
-                try:
-                    w.bind("<MouseWheel>", _scroll, add="+")
-                    for child in w.winfo_children():
-                        _bind_all(child)
-                except Exception:
-                    pass
-
-            _bind_all(dm)
-
-        dm.after(50, _setup)
-
-    combo._open_dropdown_menu = _open
-    return combo
-
-
 def _center_over(window, parent, w=None, h=None, *, top=False) -> None:
     """Center window over parent. Pass w/h explicitly to avoid pre-map size queries."""
     import re as _re
@@ -197,7 +147,10 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
 
         self._build_ui()
         self._rebuild()
+        self.attributes("-alpha", 0)
+        self.update_idletasks()
         _center_over(self, parent, 760, 680, top=True)
+        self.attributes("-alpha", 1)
         # Non-modal by design: the icon browser may be open at the same time
         self.after(100, self.raise_window)
         self._editor._inventory_change_listeners.append(self._on_editor_changed)
@@ -254,7 +207,17 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             command=self._on_cat_changed,
         )
         self._cat_combo.pack(side=ctk.LEFT, padx=(0, 8))
-        _patch_combo_scroll(self._cat_combo)
+        patch_combo_scroll(self._cat_combo)
+
+        ctk.CTkButton(
+            top,
+            text="Batch Remove Category",
+            width=150,
+            height=28,
+            fg_color=("#6a3fa0", "#7c4dac"),
+            hover_color=("#7c4dac", "#9d5fd4"),
+            command=self._do_batch_remove,
+        ).pack(side=ctk.LEFT, padx=(0, 8))
 
         self._filter_var = ctk.StringVar()
         self._filter_var.trace_add("write", lambda *_: self._apply_filter())
@@ -685,6 +648,11 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
 
     def _do_aow(self):
         self._run("set_aow")
+
+    def _do_batch_remove(self):
+        self._editor.batch_remove_category(
+            self._cat_filter, self._tab, parent_window=self
+        )
 
     # ---- live update ---------------------------------------------------------
 

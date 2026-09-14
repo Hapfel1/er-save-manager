@@ -5,7 +5,6 @@ Inventory Editor - add, remove, and set quantities using inventory_ops.
 from __future__ import annotations
 
 import json
-import platform as _platform
 import re
 import tkinter as tk
 from pathlib import Path
@@ -14,7 +13,7 @@ import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.toast import show_toast
-from er_save_manager.ui.utils import bind_mousewheel, pick_file
+from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_file
 
 _CAT_WEAPON = 0x00000000
 
@@ -94,56 +93,6 @@ def _lower_matchmaking_level(save_file, slot_idx: int, full_item_id: int) -> Non
     data = buf.getvalue()
     off = slot.player_game_data_offset
     save_file._raw_data[off : off + len(data)] = data
-
-
-def _patch_combo_scroll(combo):
-    """Bind mousewheel to CTkComboBox dropdown on Windows. Returns combo."""
-    if _platform.system() != "Windows":
-        return combo
-    orig = combo._open_dropdown_menu
-
-    def _open():
-        orig()
-        dm = getattr(combo, "_dropdown_menu", None)
-        if dm is None:
-            return
-
-        def _setup():
-            import tkinter as _tk
-
-            canvas = getattr(dm, "_canvas", None)
-            if canvas is None:
-
-                def _find(w):
-                    if isinstance(w, _tk.Canvas):
-                        return w
-                    for c in w.winfo_children():
-                        found = _find(c)
-                        if found:
-                            return found
-                    return None
-
-                canvas = _find(dm)
-            if canvas is None:
-                return
-
-            def _scroll(e):
-                canvas.yview_scroll(int(-e.delta / 120), "units")
-
-            def _bind_all(w):
-                try:
-                    w.bind("<MouseWheel>", _scroll, add="+")
-                    for child in w.winfo_children():
-                        _bind_all(child)
-                except Exception:
-                    pass
-
-            _bind_all(dm)
-
-        dm.after(50, _setup)
-
-    combo._open_dropdown_menu = _open
-    return combo
 
 
 def _center_over(window, parent, w=None, h=None, *, top=False) -> None:
@@ -711,6 +660,9 @@ class InventoryEditor:
         "Convergence Magic",
         "Convergence Bell Bearings",
     }
+    # Redundant on Convergence saves: replaced by per-skin whistle items in
+    # Convergence's own steed category, so hide the vanilla skin selector.
+    _CONVERGENCE_HIDDEN_CATS = {"Tarnished Pack Goods"}
 
     def __init__(
         self,
@@ -817,7 +769,7 @@ class InventoryEditor:
             command=lambda _e=None: (self._search_items(), self._update_browse_state()),
         )
         self._search_cat_combo.pack(side=ctk.LEFT)
-        _patch_combo_scroll(self._search_cat_combo)
+        patch_combo_scroll(self._search_cat_combo)
         self._populate_search_categories()
 
         browse_row = ctk.CTkFrame(parent, fg_color="transparent")
@@ -943,7 +895,7 @@ class InventoryEditor:
             state="disabled",
         )
         self._upgrade_combo.grid(row=0, column=3, sticky=ctk.W, pady=4)
-        _patch_combo_scroll(self._upgrade_combo)
+        patch_combo_scroll(self._upgrade_combo)
 
         ctk.CTkLabel(opts, text="Affinity:", anchor="w").grid(
             row=1, column=0, sticky=ctk.W, padx=(0, 6), pady=4
@@ -962,7 +914,7 @@ class InventoryEditor:
             command=self._on_affinity_combo_changed,
         )
         self._affinity_combo.pack(side=ctk.LEFT)
-        _patch_combo_scroll(self._affinity_combo)
+        patch_combo_scroll(self._affinity_combo)
 
         ctk.CTkLabel(opts, text="Location:", anchor="w").grid(
             row=1, column=2, sticky=ctk.W, padx=(14, 6), pady=4
@@ -1289,6 +1241,7 @@ class InventoryEditor:
             for c in all_cats
             if (c not in self._SEAMLESS_CATS or is_co2)
             and (c not in self._CONVERGENCE_CATS or is_cnv)
+            and (c not in self._CONVERGENCE_HIDDEN_CATS or not is_cnv)
         ]
 
     def _populate_search_categories(self):
@@ -1296,6 +1249,16 @@ class InventoryEditor:
         self._search_cat_combo.configure(values=cats)
         if self._search_cat_var.get() not in cats:
             self._search_cat_var.set("All")
+
+    def refresh_category_visibility(self):
+        """Re-evaluate which categories are visible for the current save.
+
+        Called on save load so Seamless Co-op / Convergence categories unlock
+        as soon as the save file is read, without requiring a character to be
+        loaded first.
+        """
+        if self._search_cat_combo is not None:
+            self._populate_search_categories()
 
     def _search_items(self):
         if self._results_listbox is None:
@@ -1314,11 +1277,18 @@ class InventoryEditor:
 
             if cat == "All":
                 results = db.search_items(query) if query else []
-                if not self._is_cnv_save():
+                is_cnv = self._is_cnv_save()
+                if not is_cnv:
                     results = [
                         i
                         for i in results
                         if i.category_name not in self._CONVERGENCE_CATS
+                    ]
+                else:
+                    results = [
+                        i
+                        for i in results
+                        if i.category_name not in self._CONVERGENCE_HIDDEN_CATS
                     ]
                 if ".co2" not in str(self.get_save_path() or "").lower():
                     results = [
@@ -2339,6 +2309,121 @@ class InventoryEditor:
         except Exception as e:
             CTkMessageBox.showerror(
                 "Error", f"Failed to remove item:\n{e}", parent=self.parent
+            )
+
+    def batch_remove_category(
+        self, cat: str, location: str, parent_window=None
+    ) -> None:
+        """Remove every item of a given category from one inventory location.
+
+        cat: category name, or "All" to clear the entire location.
+        location: "held" or "storage" - only that inventory is touched.
+        """
+        if parent_window is None:
+            parent_window = self.parent
+
+        save_file = self.get_save_file()
+        if not save_file:
+            CTkMessageBox.showwarning(
+                "No Save", "Load a save file first.", parent=parent_window
+            )
+            return
+
+        slot_idx = self.get_char_slot()
+        try:
+            slot = save_file.characters[slot_idx]
+        except Exception:
+            return
+        if slot.is_empty():
+            CTkMessageBox.showwarning(
+                "Empty Slot", "This character slot is empty.", parent=parent_window
+            )
+            return
+
+        from er_save_manager.data.item_database import get_item_database
+
+        db = get_item_database()
+
+        def _row_category(full_id: int) -> str | None:
+            item = db.get_item_by_id(full_id)
+            if item is None and (full_id & 0xF0000000) == 0x00000000:
+                base_id = (full_id & 0x0FFFFFFF) // 10000 * 10000
+                item = db.get_item_by_id(base_id)
+            return item.category_name if item else None
+
+        matches = [
+            row
+            for row in self._all_rows
+            if row[1] is not None
+            and row[2] == location
+            and (cat == "All" or _row_category(row[1]) == cat)
+        ]
+
+        if not matches:
+            CTkMessageBox.showinfo(
+                "Batch Remove",
+                f"No items found in {location} inventory for '{cat}'.",
+                parent=parent_window,
+            )
+            return
+
+        if cat == "All":
+            confirm_msg = (
+                f"This will remove ALL {len(matches)} items from your "
+                f"{location.upper()} inventory."
+                f"\n\nAre you sure you want to continue?"
+            )
+        else:
+            confirm_msg = (
+                f"Batch remove all {len(matches)} items from '{cat}' in {location}?"
+            )
+
+        if not CTkMessageBox.askyesno(
+            "Batch Remove", confirm_msg, parent=parent_window
+        ):
+            return
+
+        try:
+            self.ensure_mutable()
+            self._create_backup(save_file, slot_idx, "batch_remove_category")
+
+            from er_save_manager.parser.inventory_ops import remove_item
+
+            success = 0
+            errors = []
+            for row in matches:
+                full_id = row[1]
+                try:
+                    remove_item(save_file, slot_idx, full_id, location)
+                    _apply_item_event_flags(save_file, slot_idx, full_id, False)
+                    success += 1
+                except Exception as e:
+                    errors.append(f"0x{full_id:08X}: {e}")
+
+            save_file.recalculate_checksums()
+            save_path = self.get_save_path()
+            if save_path:
+                save_file.to_file(Path(save_path))
+
+            self.refresh_inventory()
+            if self._on_inventory_changed:
+                self._on_inventory_changed()
+
+            show_toast(
+                self.parent.winfo_toplevel(),
+                f"Batch removed {success} items from {cat} ({location}).",
+                type="success",
+            )
+            if errors:
+                CTkMessageBox.showwarning(
+                    "Batch Remove",
+                    f"{len(errors)} item(s) failed to remove:\n"
+                    + "\n".join(errors[:10]),
+                    parent=parent_window,
+                )
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error", f"Batch Remove Failed:\n{e}", parent=parent_window
             )
 
     def set_quantity(self):

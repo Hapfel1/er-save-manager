@@ -22,7 +22,9 @@ def is_convergence_save(save_path: str | Path) -> bool:
     """
     Check if a save file is a Convergence mod save.
 
-    Convergence saves use .cnv or .cnv.co2 extensions.
+    Convergence saves carry ".cnv" anywhere in the filename, e.g. .cnv,
+    .cnv.co2, .cnv.co3. A bare .co2/.co3 with no .cnv segment is an
+    encrypted vanilla save, not Convergence.
 
     Args:
         save_path: Path to save file
@@ -35,16 +37,9 @@ def is_convergence_save(save_path: str | Path) -> bool:
     logger = logging.getLogger(__name__)
 
     path = Path(save_path)
-    suffix = path.suffix.lower()
-    suffixes = [s.lower() for s in path.suffixes]
-    is_cnv = suffix == ".cnv"
-    is_cnv_co2 = len(suffixes) >= 2 and suffixes[-2:] == [".cnv", ".co2"]
-    result = is_cnv or is_cnv_co2
+    result = ".cnv" in path.name.lower()
 
-    logger.debug(
-        f"[is_convergence_save] path={path.name}, suffix={suffix}, "
-        f"suffixes={suffixes}, is_cnv={is_cnv}, is_cnv_co2={is_cnv_co2}, result={result}"
-    )
+    logger.debug(f"[is_convergence_save] path={path.name}, result={result}")
 
     return result
 
