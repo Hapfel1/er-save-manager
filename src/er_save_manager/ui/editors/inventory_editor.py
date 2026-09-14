@@ -5,7 +5,6 @@ Inventory Editor - add, remove, and set quantities using inventory_ops.
 from __future__ import annotations
 
 import json
-import platform as _platform
 import re
 import tkinter as tk
 from pathlib import Path
@@ -96,51 +95,80 @@ def _lower_matchmaking_level(save_file, slot_idx: int, full_item_id: int) -> Non
     save_file._raw_data[off : off + len(data)] = data
 
 
-def _patch_combo_scroll(combo):
-    """Bind mousewheel to CTkComboBox dropdown on Windows. Returns combo."""
-    if _platform.system() != "Windows":
-        return combo
-    orig = combo._open_dropdown_menu
+def _patch_combo_scroll(combo, max_visible_rows: int = 20, row_height: int = 28):
+    """
+    Replace a CTkComboBox's dropdown with a scrollable popup.
+    """
 
     def _open():
-        orig()
-        dm = getattr(combo, "_dropdown_menu", None)
-        if dm is None:
+        values = combo.cget("values")
+        if not values:
             return
 
-        def _setup():
-            import tkinter as _tk
+        theme = ctk.ThemeManager.theme["DropdownMenu"]
 
-            canvas = getattr(dm, "_canvas", None)
-            if canvas is None:
+        popup = ctk.CTkToplevel(combo)
+        popup.withdraw()
+        popup.overrideredirect(True)
+        popup.attributes("-topmost", True)
 
-                def _find(w):
-                    if isinstance(w, _tk.Canvas):
-                        return w
-                    for c in w.winfo_children():
-                        found = _find(c)
-                        if found:
-                            return found
-                    return None
+        combo.update_idletasks()
+        text_font = ctk.CTkFont()
+        text_width = max(text_font.measure(v) for v in values)
+        pad = combo._apply_widget_scaling(48)
+        width = max(combo.winfo_width(), text_width + pad)
 
-                canvas = _find(dm)
-            if canvas is None:
-                return
+        x = combo.winfo_rootx()
+        y = combo.winfo_rooty() + combo.winfo_height() + 2
+        screen_h = popup.winfo_screenheight()
+        available_rows = max((screen_h - y - 40) // row_height, 4)
+        rows = min(len(values), max_visible_rows, available_rows)
+        height = rows * row_height + 8
 
-            def _scroll(e):
-                canvas.yview_scroll(int(-e.delta / 120), "units")
+        popup.geometry(f"{width}x{height}+{x}+{y}")
 
-            def _bind_all(w):
-                try:
-                    w.bind("<MouseWheel>", _scroll, add="+")
-                    for child in w.winfo_children():
-                        _bind_all(child)
-                except Exception:
-                    pass
+        frame = ctk.CTkScrollableFrame(
+            popup,
+            width=width - 4,
+            height=height - 4,
+            fg_color=theme["fg_color"],
+            corner_radius=0,
+        )
+        frame.pack(fill="both", expand=True)
+        bind_mousewheel(frame)
 
-            _bind_all(dm)
+        def _select(value):
+            popup.destroy()
+            combo.set(value)
+            if combo._command is not None:
+                combo._command(value)
 
-        dm.after(50, _setup)
+        for value in values:
+            ctk.CTkButton(
+                frame,
+                text=value,
+                anchor="w",
+                width=width - 16,
+                fg_color="transparent",
+                hover_color=theme["hover_color"],
+                text_color=theme["text_color"],
+                height=row_height - 4,
+                command=lambda v=value: _select(v),
+            ).pack(fill="x", pady=1)
+
+        def _close(_e=None):
+            try:
+                popup.destroy()
+            except Exception:
+                pass
+
+        def _arm_close():
+            popup.bind("<FocusOut>", _close)
+            popup.focus_force()
+
+        popup.bind("<Escape>", _close)
+        popup.deiconify()
+        popup.after(100, _arm_close)
 
     combo._open_dropdown_menu = _open
     return combo
