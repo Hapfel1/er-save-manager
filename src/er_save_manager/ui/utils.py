@@ -1,5 +1,6 @@
 """Utility functions for UI components."""
 
+import logging
 import os
 import platform as platform_module
 import shutil
@@ -7,6 +8,25 @@ import subprocess
 import webbrowser
 
 import customtkinter as ctk
+
+# TEMPORARY: diagnostic logging for the combo-dropdown positioning bug.
+# Remove this logger and the _log_combo_debug() calls in patch_combo_scroll
+# once the Windows positioning issue is diagnosed.
+_combo_debug_logger = logging.getLogger("combo_debug")
+_combo_debug_logger.setLevel(logging.WARNING)
+if not any(
+    isinstance(h, logging.FileHandler)
+    and getattr(h, "baseFilename", "").endswith("er_save_manager.log")
+    for h in _combo_debug_logger.handlers
+):
+    try:
+        _fh = logging.FileHandler("er_save_manager.log", encoding="utf-8")
+        _fh.setFormatter(
+            logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+        )
+        _combo_debug_logger.addHandler(_fh)
+    except Exception:
+        pass
 
 
 def trace_variable(var, mode, callback):
@@ -117,8 +137,6 @@ def patch_combo_scroll(combo, max_visible_rows: int = 20, row_height: int = 28):
         popup.overrideredirect(True)
         popup.attributes("-topmost", True)
 
-        # Full update so a freshly-mapped tab's
-        # geometry from the window manager is settled before reading it.
         combo.update()
         text_font = ctk.CTkFont()
         text_width = max(text_font.measure(v) for v in values)
@@ -134,6 +152,21 @@ def patch_combo_scroll(combo, max_visible_rows: int = 20, row_height: int = 28):
 
         geometry = f"{width}x{height}+{x}+{y}"
         popup.geometry(geometry)
+
+        _combo_debug_logger.warning(
+            "[COMBO_DEBUG] widget=%s toplevel=%s toplevel_geom=%s "
+            "combo_rootx=%s combo_rooty=%s combo_w=%s combo_h=%s "
+            "computed_geometry=%s screen_h=%s",
+            str(combo),
+            str(combo.winfo_toplevel()),
+            combo.winfo_toplevel().wm_geometry(),
+            x,
+            combo.winfo_rooty(),
+            combo.winfo_width(),
+            combo.winfo_height(),
+            geometry,
+            screen_h,
+        )
 
         frame = ctk.CTkScrollableFrame(
             popup,
@@ -178,6 +211,13 @@ def patch_combo_scroll(combo, max_visible_rows: int = 20, row_height: int = 28):
             popup.geometry(geometry)
             popup.bind("<FocusOut>", _close)
             popup.focus_force()
+            _combo_debug_logger.warning(
+                "[COMBO_DEBUG] after reassert: popup_rootx=%s popup_rooty=%s "
+                "requested=%s",
+                popup.winfo_rootx(),
+                popup.winfo_rooty(),
+                geometry,
+            )
 
         popup.bind("<Escape>", _close)
         popup.update_idletasks()
