@@ -147,7 +147,10 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
 
         self._build_ui()
         self._rebuild()
+        self.attributes("-alpha", 0)
+        self.update_idletasks()
         _center_over(self, parent, 760, 680, top=True)
+        self.attributes("-alpha", 1)
         # Non-modal by design: the icon browser may be open at the same time
         self.after(100, self.raise_window)
         self._editor._inventory_change_listeners.append(self._on_editor_changed)
