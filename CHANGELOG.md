@@ -3,19 +3,64 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.10.2
+**Released:** September 14, 2026
+
+
+### 🔧 Bug Fixes
+
+- Match .cnv anywhere in filename, not just as suffix `[convergence]` ([d9c627d](https://github.com/Hapfel1/er-save-manager/commit/d9c627db648dbe9c4411a717c365a43359edd51c))
+
+- Batch remove items by category in visual inventory `[inventory]` ([5e78ca6](https://github.com/Hapfel1/er-save-manager/commit/5e78ca6eca8a908a80b9646cda332b7259aae7ba))
+
+- Added missing icons ([8481dd3](https://github.com/Hapfel1/er-save-manager/commit/8481dd3a6d3d6aee0d3a5ee0743a8a719368567f))
+
+- Combo dropdown popup misplaced at (0,0) on Windows ([0193f15](https://github.com/Hapfel1/er-save-manager/commit/0193f15cc8363f9be506deb44d66fdd7bceae344))
+
+
+
+### 🎨 User Interface
+
+- Add save/game version reference table `[version-mismatch]` ([8dbca69](https://github.com/Hapfel1/er-save-manager/commit/8dbca69a8c77e4c58e5cbec9bf725d2e42434a1d))
+
+- Replace category dropdown with scrollable popup ([d4630e9](https://github.com/Hapfel1/er-save-manager/commit/d4630e9b840618469966a9faef4a2a1da522e9d3))
+
+- Replace CTkComboBox native dropdown with scrollable popup ([72b0768](https://github.com/Hapfel1/er-save-manager/commit/72b07687f934a48a6c1010a6e3aec9fc8e43e92e))
+
+
+
+### 📖 Documentation
+
+- Update Mistakes in Save-File-Structure Docs, added GaItem Description ([f22c53f](https://github.com/Hapfel1/er-save-manager/commit/f22c53fdf1b55838922adbfca13d81b12cbb566c))
+
+
+
+### 📦 Dependencies
+
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([0d704e1](https://github.com/Hapfel1/er-save-manager/commit/0d704e13f878fbcff6a2b838dfa1a3e846301bef))
+
+
+
+### Ds2
+
+- Hide never-created slots from save inspector list ([cf14269](https://github.com/Hapfel1/er-save-manager/commit/cf14269ea07c132229cccb19c550631c9e98b3b3))
+
+
+
+---
 ## 📦 Release 1.10.1
 **Released:** September 02, 2026
 
 
 ### 🔧 Bug Fixes
 
-- Add save/game version mismatch fix `[ui]` ([f2c8e4c](https://github.com/Hapfel1/er-save-manager/commit/f2c8e4c9d6205d5ebd2d1f0d5f8e9a7ec75c59b0))
+- Add save/game version mismatch fix `[ui]` ([d3323fa](https://github.com/Hapfel1/er-save-manager/commit/d3323fa4eb2c16f7d6366f59fa431a74bfbc4802))
 
 
 
 ### 📦 Dependencies
 
-- Bump urllib3 from 2.6.3 to 2.7.0 `[deps]` ([7d8069a](https://github.com/Hapfel1/er-save-manager/commit/7d8069a21935446dbb971c5bfda2f48d9844274a))
+- Bump urllib3 from 2.6.3 to 2.7.0 `[deps]` ([6107be0](https://github.com/Hapfel1/er-save-manager/commit/6107be003ebb1eaf59e8b640b4244f939fdf9f16))
 
 
 
@@ -26,23 +71,23 @@
 
 ### ✨ New Features
 
-- Add Tarnished Pack DLC items and DLC-gated content `[tarnished-pack]` ([dfa6355](https://github.com/Hapfel1/er-save-manager/commit/dfa6355c6ad9d90ef0b49cd8411de4b43856c88c))
+- Add Tarnished Pack DLC items and DLC-gated content `[tarnished-pack]` ([6b7d265](https://github.com/Hapfel1/er-save-manager/commit/6b7d2658e9cd210431df1a2b85adbfb3791713f4))
 
 
 
 ### 🔧 Bug Fixes
 
-- Added Tarnished Pack Starting Classes ([189d4b8](https://github.com/Hapfel1/er-save-manager/commit/189d4b88e8be24ba87025ca69528177880305bea))
+- Added Tarnished Pack Starting Classes ([4d60fde](https://github.com/Hapfel1/er-save-manager/commit/4d60fdeeb95aef0f0113511bf4a32d6e1c2f7e7c))
 
-- Prevent EAC warning from silently cancelling save load `[gui]` ([1912598](https://github.com/Hapfel1/er-save-manager/commit/1912598663df20bd2ed71932e3d1354f161e5789))
+- Prevent EAC warning from silently cancelling save load `[gui]` ([d3a50ea](https://github.com/Hapfel1/er-save-manager/commit/d3a50ead9f85353425d8f0f8cea7a5330d18c254))
 
 
 
 ### 📦 Dependencies
 
-- Bump taiki-e/install-action in the github-actions group `[deps]` ([9a110ea](https://github.com/Hapfel1/er-save-manager/commit/9a110eae9f6ebd5c6a00a3d2a5cb0a11ca52bcb8))
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([c915105](https://github.com/Hapfel1/er-save-manager/commit/c915105839ef22e55b3dec85fcd9ea92246a6ec5))
 
-- Bump taiki-e/install-action in the github-actions group `[deps]` ([dd90ef2](https://github.com/Hapfel1/er-save-manager/commit/dd90ef22a50394d91a79e64da572b1f63073e68e))
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([86f89a6](https://github.com/Hapfel1/er-save-manager/commit/86f89a671cf88f26e5c10825cdf932cf3794b05b))
 
 
 
@@ -53,27 +98,27 @@
 
 ### 🔧 Bug Fixes
 
-- Block save writes while the game is running `[ui]` ([f96fd1e](https://github.com/Hapfel1/er-save-manager/commit/f96fd1ea9cc28b40df4252db866e3fa87ad070d7))
+- Block save writes while the game is running `[ui]` ([0e93040](https://github.com/Hapfel1/er-save-manager/commit/0e9304046650c54107dd59cbeedd947cabe9cf9e))
 
-- Allow visual inventory and icon browser open together `[inventory]` ([be1cd94](https://github.com/Hapfel1/er-save-manager/commit/be1cd94cd22c2623ac87503555338d3130e4d102))
+- Allow visual inventory and icon browser open together `[inventory]` ([68e95d4](https://github.com/Hapfel1/er-save-manager/commit/68e95d4fcefcebd33a18980e6311e35b753db201))
 
 
 
 ### 🎨 User Interface
 
-- Added option to lock/favorite backups which will never get purged/deleted `[backups]` ([de78ce1](https://github.com/Hapfel1/er-save-manager/commit/de78ce17c1176345402b530a09ee0a6669e81963))
+- Added option to lock/favorite backups which will never get purged/deleted `[backups]` ([a78e5c3](https://github.com/Hapfel1/er-save-manager/commit/a78e5c3a11fc795f7b34f3d2993225c8974fed3d))
 
-- Added label/reason input field when creating manual backup, falls back to "manual" when left empty `[backup]` ([da58e55](https://github.com/Hapfel1/er-save-manager/commit/da58e554c120a3f62bf06ea26fd3849f7605c440))
+- Added label/reason input field when creating manual backup, falls back to "manual" when left empty `[backup]` ([190cff4](https://github.com/Hapfel1/er-save-manager/commit/190cff486e23d619623bc3864f530c914c252b1c))
 
-- Add sort control to the inventory editor list `[inventory]` ([05a10a4](https://github.com/Hapfel1/er-save-manager/commit/05a10a45a40a148692c15761fa7eb24ec8093f93))
+- Add sort control to the inventory editor list `[inventory]` ([70d76c3](https://github.com/Hapfel1/er-save-manager/commit/70d76c33c0a206f9e67dd76109b8ba863bd4c31e))
 
 
 
 ### 📦 Dependencies
 
-- Bump the github-actions group with 2 updates `[deps]` ([08a8a7c](https://github.com/Hapfel1/er-save-manager/commit/08a8a7c4c1423b47a24a9f8da5d78f9c361e658a))
+- Bump the github-actions group with 2 updates `[deps]` ([3f845dd](https://github.com/Hapfel1/er-save-manager/commit/3f845dd7524cb821f8f04b9fa6d7bc3709e4b216))
 
-- Bump pyjwt from 2.10.1 to 2.13.0 `[deps]` ([af89bef](https://github.com/Hapfel1/er-save-manager/commit/af89befd5280df0d7a37da1025d0d4fb7e0e827e))
+- Bump pyjwt from 2.10.1 to 2.13.0 `[deps]` ([3bbcc7a](https://github.com/Hapfel1/er-save-manager/commit/3bbcc7adf2b9816631d8a474b4785aa0e05a3a70))
 
 
 
@@ -84,35 +129,35 @@
 
 ### ✨ New Features
 
-- Add interval-based auto-backup while game is running `[settings]` ([2c08046](https://github.com/Hapfel1/er-save-manager/commit/2c08046225dd0c2afa1d9ee42f2d394a97afea60))
+- Add interval-based auto-backup while game is running `[settings]` ([41685ed](https://github.com/Hapfel1/er-save-manager/commit/41685ed25f99eadf2df5ed2d3f3ce25810f93ebf))
 
-- CodeQL advanced workflow (actions + python) ([f1df237](https://github.com/Hapfel1/er-save-manager/commit/f1df237774ba1483f2238e27bde5b6ee007ab72b))
+- CodeQL advanced workflow (actions + python) ([43903a5](https://github.com/Hapfel1/er-save-manager/commit/43903a50bd8eb92ec07f441edbb319d6240c0ef5))
 
 
 
 ### 🔧 Bug Fixes
 
-- Use correct empty-slot sentinel when writing gesture array `[gestures]` ([1c401aa](https://github.com/Hapfel1/er-save-manager/commit/1c401aa4216639ba8b93164c0c551e159601ca19))
+- Use correct empty-slot sentinel when writing gesture array `[gestures]` ([0ef4a2b](https://github.com/Hapfel1/er-save-manager/commit/0ef4a2bd1d4d583bc80a854924e78ddf6f191c5d))
 
-- Added missed item, Lantern `[item-db]` ([d257897](https://github.com/Hapfel1/er-save-manager/commit/d2578973b849c0702305c0e1e5462224700e39ce))
+- Added missed item, Lantern `[item-db]` ([03195e2](https://github.com/Hapfel1/er-save-manager/commit/03195e282e6b8fc8b3e3e31d0f379006ce593c5c))
 
-- Add missed items for Convergence `[item_db]` ([bbcde60](https://github.com/Hapfel1/er-save-manager/commit/bbcde601388f8a0f3a000f46d663fa5ce63f075e))
+- Add missed items for Convergence `[item_db]` ([89a74de](https://github.com/Hapfel1/er-save-manager/commit/89a74de5d9ee30c54e1c8341d6360334688368f0))
 
-- Scope gaitem lookup to target inventory location `[inventory]` ([ced4e8c](https://github.com/Hapfel1/er-save-manager/commit/ced4e8c0f5c50f9d7e0ed7edb32617647a86dcbe))
+- Scope gaitem lookup to target inventory location `[inventory]` ([06fcf16](https://github.com/Hapfel1/er-save-manager/commit/06fcf1608d6370a66169215245edfec6c74a484e))
 
-- Exclude orphaned gaitem_map entries from weapon/armor picker `[equipment-editor]` ([9bd79e7](https://github.com/Hapfel1/er-save-manager/commit/9bd79e77a5d960376e95ecc180dd44d1e9ef75d7))
+- Exclude orphaned gaitem_map entries from weapon/armor picker `[equipment-editor]` ([f851bae](https://github.com/Hapfel1/er-save-manager/commit/f851baeed1cccbb1ed1c10129e91bef48f012fa3))
 
 
 
 ### 📦 Dependencies
 
-- Bump the github-actions group with 2 updates `[deps]` ([4f9da42](https://github.com/Hapfel1/er-save-manager/commit/4f9da4286be6a47ddc61e51b1460445b40b8969b))
+- Bump the github-actions group with 2 updates `[deps]` ([337dbfa](https://github.com/Hapfel1/er-save-manager/commit/337dbfa8ac1a9a31797f834bcb284986ee6dd07c))
 
-- Bump taiki-e/install-action in the github-actions group `[deps]` ([2bcdb07](https://github.com/Hapfel1/er-save-manager/commit/2bcdb07330358b639fc958299c71a0557401cb2e))
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([5d52ae4](https://github.com/Hapfel1/er-save-manager/commit/5d52ae498310dd51c2256a754e1247a8d2becc4f))
 
-- Bump pillow from 12.1.0 to 12.3.0 `[deps]` ([047d3f8](https://github.com/Hapfel1/er-save-manager/commit/047d3f85b2ccc59e34c0fb5d99b55c3ba57f8bd6))
+- Bump pillow from 12.1.0 to 12.3.0 `[deps]` ([763c374](https://github.com/Hapfel1/er-save-manager/commit/763c3745e7773d09545a8f500c53ea6e3da4357d))
 
-- Bump cryptography from 46.0.3 to 50.0.0 `[deps]` ([260a93a](https://github.com/Hapfel1/er-save-manager/commit/260a93a0aff2abc952ecfca9f6022a7b54d4e374))
+- Bump cryptography from 46.0.3 to 50.0.0 `[deps]` ([6f4373d](https://github.com/Hapfel1/er-save-manager/commit/6f4373d8f474af0da7cd077045390ca98aa40392))
 
 
 
@@ -123,71 +168,71 @@
 
 ### ✨ New Features
 
-- Fix for the "Missing Romina" bug ([01c106d](https://github.com/Hapfel1/er-save-manager/commit/01c106da11ec350ec85d191fbd3e35ba4dfcaeaa))
+- Fix for the "Missing Romina" bug ([3727d86](https://github.com/Hapfel1/er-save-manager/commit/3727d86718eaa0a1c76af9a97c6e078f93670b29))
 
-- Ruins of Unte golem fix for Seamless Co-op ([abe0df6](https://github.com/Hapfel1/er-save-manager/commit/abe0df6afdc2b3521f8378cdf8ee54be76e05c88))
+- Ruins of Unte golem fix for Seamless Co-op ([0c6e0d1](https://github.com/Hapfel1/er-save-manager/commit/0c6e0d1e9d314bd1b80d2682dedbc613b5307087))
 
-- Erdtree state detection ([6e8265a](https://github.com/Hapfel1/er-save-manager/commit/6e8265aa9955108aac9fafc4456876390256c557))
+- Erdtree state detection ([793a2dc](https://github.com/Hapfel1/er-save-manager/commit/793a2dc0a1b4d2d16058aa40b45d629edf42a3d9))
 
-- Add character management for DSR, DS3, and Nightreign `[character-ops]` ([d65bfb1](https://github.com/Hapfel1/er-save-manager/commit/d65bfb1f811d4322def84949420faf037e8014ad))
+- Add character management for DSR, DS3, and Nightreign `[character-ops]` ([16a7262](https://github.com/Hapfel1/er-save-manager/commit/16a7262dd189dcfbb692875c108bae29bfe6841c))
 
-- Add Support for DS2 Save File Editing ([4a20832](https://github.com/Hapfel1/er-save-manager/commit/4a20832c997d64dd5263c49f7b48dd652958f66f))
+- Add Support for DS2 Save File Editing ([3590874](https://github.com/Hapfel1/er-save-manager/commit/3590874778484e9ed93b9e7dea7ddee29d3ae699))
 
-- Back up before every write, sortable inventory columns, update steamid docs `[ds2]` ([5d2ec95](https://github.com/Hapfel1/er-save-manager/commit/5d2ec9585d81c2a6f5145c7b6a7b09d71d026639))
+- Back up before every write, sortable inventory columns, update steamid docs `[ds2]` ([7e04d2f](https://github.com/Hapfel1/er-save-manager/commit/7e04d2f568379e4cebd7c9bc622b683cca669f76))
 
 
 
 ### 🔧 Bug Fixes
 
-- Fixed Typo and added flag 3001 which triggers NG on teleport to Roundtable Hold `[event_flags]` ([e5ba4ef](https://github.com/Hapfel1/er-save-manager/commit/e5ba4ef512a94499fd58916fed8d06b9669959f6))
+- Fixed Typo and added flag 3001 which triggers NG on teleport to Roundtable Hold `[event_flags]` ([a38b256](https://github.com/Hapfel1/er-save-manager/commit/a38b2560e6beb981c08647d2ee4a14f3c19857ea))
 
-- Sync qty/upgrade/location vars before batch add `[icon-browser]` ([7a11233](https://github.com/Hapfel1/er-save-manager/commit/7a1123309dabbdb17e7324dfce72cfd24d10eced))
+- Sync qty/upgrade/location vars before batch add `[icon-browser]` ([13e4ddc](https://github.com/Hapfel1/er-save-manager/commit/13e4ddc41ae732a10b79924e7014923344ce9ed0))
 
-- Use atomic writes in DS3, DSR, NR parsers and steamid patchers `[games]` ([4409565](https://github.com/Hapfel1/er-save-manager/commit/4409565a3f6ee7e6a9283fa26c38e9801391781b))
+- Use atomic writes in DS3, DSR, NR parsers and steamid patchers `[games]` ([c010f83](https://github.com/Hapfel1/er-save-manager/commit/c010f83ef2ceaf44825dfe68b7c869294563d745))
 
-- Kill correct process when force-terminating non-ER games `[platform]` ([5256584](https://github.com/Hapfel1/er-save-manager/commit/525658429c1954ef1e72a033a2381a28b15b50e5))
+- Kill correct process when force-terminating non-ER games `[platform]` ([3f32cd8](https://github.com/Hapfel1/er-save-manager/commit/3f32cd852ac8211571ed62da003ac3799db4c147))
 
-- Fixed Poisoned Hand being documented as smithing stone weapon, added unique armor set version to Convergence Armor `[item_db]` ([2d52a1f](https://github.com/Hapfel1/er-save-manager/commit/2d52a1f712544fcd74173fd8a15e7640099e52ea))
+- Fixed Poisoned Hand being documented as smithing stone weapon, added unique armor set version to Convergence Armor `[item_db]` ([8306a20](https://github.com/Hapfel1/er-save-manager/commit/8306a20fa77044e9c6a7096ae70c959cb7e7553a))
 
-- Commit max backups on enter/focus-out instead of every keystroke `[settings]` ([e2811f0](https://github.com/Hapfel1/er-save-manager/commit/e2811f0ed31f292427bf8650cb65cc4b86dcd590))
+- Commit max backups on enter/focus-out instead of every keystroke `[settings]` ([7f826b7](https://github.com/Hapfel1/er-save-manager/commit/7f826b76ff69e2f550634817a4dda3d9a9b70aec))
 
-- Use native file dialogs for export/import/transfer `[character-ops]` ([3ebbec0](https://github.com/Hapfel1/er-save-manager/commit/3ebbec06cdcb3baa858143e405083441ee770ad7))
+- Use native file dialogs for export/import/transfer `[character-ops]` ([0ab47a5](https://github.com/Hapfel1/er-save-manager/commit/0ab47a5684f1690f0c531077c117a36274f2d049))
 
-- Add autofind + manual browse to transfer target picker `[character-ops]` ([a882df1](https://github.com/Hapfel1/er-save-manager/commit/a882df1ffebcc6370d572790910dbc9047dad463))
+- Add autofind + manual browse to transfer target picker `[character-ops]` ([2ea9233](https://github.com/Hapfel1/er-save-manager/commit/2ea9233da2550697bde9849c1cd615f79979a44d))
 
-- Add auto-backup toast instead of popup message and add setting to disable it `[backup]` ([62ec0d3](https://github.com/Hapfel1/er-save-manager/commit/62ec0d3633c2233d4fa22bc114edae3542217dd2))
+- Add auto-backup toast instead of popup message and add setting to disable it `[backup]` ([98941fd](https://github.com/Hapfel1/er-save-manager/commit/98941fd0c972d6186a20adee30c517b7a0b11888))
 
-- Set all affinity unlock flags for whetblades `[inventory]` ([461b3d1](https://github.com/Hapfel1/er-save-manager/commit/461b3d16780d3322032a30e633a047a8d677b0bd))
+- Set all affinity unlock flags for whetblades `[inventory]` ([f67e889](https://github.com/Hapfel1/er-save-manager/commit/f67e889417fcc6c79640e7de1fe14c64088339b4))
 
-- Warn before lowering max backups prunes existing backups `[settings]` ([53a3914](https://github.com/Hapfel1/er-save-manager/commit/53a3914db5a015450bbad3e04d802a5bd297fc55))
+- Warn before lowering max backups prunes existing backups `[settings]` ([de8d835](https://github.com/Hapfel1/er-save-manager/commit/de8d835677518090b186bf3e7dfead09ed6ba216))
 
-- More UI fixes `[ds2]` ([e80e7dd](https://github.com/Hapfel1/er-save-manager/commit/e80e7dda0a0af1a32a4e2954d97bebd5292c8485))
+- More UI fixes `[ds2]` ([4426585](https://github.com/Hapfel1/er-save-manager/commit/44265855c229a0de0d82bb20b30b60fbbdf00e2b))
 
 
 
 ### 🎨 User Interface
 
-- Add note about  stale load-screen summary after copy/transfer `[character-ops]` ([8f694d4](https://github.com/Hapfel1/er-save-manager/commit/8f694d4ddf47614a9ad37ac5959889b050c1cba8))
+- Add note about  stale load-screen summary after copy/transfer `[character-ops]` ([c00382c](https://github.com/Hapfel1/er-save-manager/commit/c00382c1ecd7d98c78b0f1c1f0e5c4937c3e8713))
 
 
 
 ### 📖 Documentation
 
-- Replace MIT with source-available license `[license]` ([4b507ab](https://github.com/Hapfel1/er-save-manager/commit/4b507ab4818e8406395bd5505b7f0a518da96c58))
+- Replace MIT with source-available license `[license]` ([5ae4eb5](https://github.com/Hapfel1/er-save-manager/commit/5ae4eb598c002fbc2f8d28fa95fc52000c816f16))
 
-- Update license link in readme ([eb94cff](https://github.com/Hapfel1/er-save-manager/commit/eb94cff7edf868dafb87148ae29dfe2505e631e4))
+- Update license link in readme ([830214d](https://github.com/Hapfel1/er-save-manager/commit/830214dff784b2c9a9ecd5ff8d9d264260ac80a3))
 
 
 
 ### ♻️ Code Refactoring
 
-- Resolve convergence items via item_database instead of missing hex files `[data]` ([ab76414](https://github.com/Hapfel1/er-save-manager/commit/ab764140b78c1a6b48f3255f9d59aa51d7105d6e))
+- Resolve convergence items via item_database instead of missing hex files `[data]` ([d650262](https://github.com/Hapfel1/er-save-manager/commit/d650262f4ba9fd1105f979215715c81acb01d1db))
 
 
 
 ### 📦 Dependencies
 
-- Bump the github-actions group with 3 updates `[deps]` ([14e0301](https://github.com/Hapfel1/er-save-manager/commit/14e0301acbc72bf04ebc18174ae5477ecbd1dc22))
+- Bump the github-actions group with 3 updates `[deps]` ([fd3fe9e](https://github.com/Hapfel1/er-save-manager/commit/fd3fe9eeb1e2107739c5a1254952dcbe8977d6b0))
 
 
 
@@ -198,17 +243,17 @@
 
 ### 🔧 Bug Fixes
 
-- Fixed Browse Button not working on Linux with new native file explorer implementation ([fdaed31](https://github.com/Hapfel1/er-save-manager/commit/fdaed3159080ecf18fe283ed561d6083955d478f))
+- Fixed Browse Button not working on Linux with new native file explorer implementation ([59270c0](https://github.com/Hapfel1/er-save-manager/commit/59270c0158e4df34a802aba9f4de715f3491adce))
 
-- Fixed missing Icons and duplicate Item Names ([c0e3ea2](https://github.com/Hapfel1/er-save-manager/commit/c0e3ea2b82d0a8998c41088f6b9c05e793950511))
+- Fixed missing Icons and duplicate Item Names ([aa0d664](https://github.com/Hapfel1/er-save-manager/commit/aa0d664159c048ad4f3daec4e5e838a916c9eed0))
 
-- Add Native File PIcker for Lnux to "Save Icon" button in Visual Item Picker ([0d6cd67](https://github.com/Hapfel1/er-save-manager/commit/0d6cd67bd0805db2a95503cdd342736482ab4eff))
+- Add Native File PIcker for Lnux to "Save Icon" button in Visual Item Picker ([b0d78e8](https://github.com/Hapfel1/er-save-manager/commit/b0d78e8e5bfa1d9d3b5a3ec9de2be8c7c201ab69))
 
 
 
 ### 🎨 User Interface
 
-- Fixed Padding for Icons ([fd45393](https://github.com/Hapfel1/er-save-manager/commit/fd4539314dcfb29136d4168f3f6822530d92473c))
+- Fixed Padding for Icons ([34614b2](https://github.com/Hapfel1/er-save-manager/commit/34614b2fc8c26e1765b58059be20d773db71bf58))
 
 
 
@@ -219,61 +264,61 @@
 
 ### ✨ New Features
 
-- Add kill functionality mirroring respawn `[boss]` ([e5f49d0](https://github.com/Hapfel1/er-save-manager/commit/e5f49d05f936b217a31ea107709b2d7d8b469641))
+- Add kill functionality mirroring respawn `[boss]` ([8bd48ff](https://github.com/Hapfel1/er-save-manager/commit/8bd48ff118fe9ef34ea62fbde415c6bba8d2df78))
 
-- Add structural integrity scan module `[fixes]` ([a5e7595](https://github.com/Hapfel1/er-save-manager/commit/a5e7595f5604b2021cab84c6abcb279c405e63f9))
+- Add structural integrity scan module `[fixes]` ([9543a7a](https://github.com/Hapfel1/er-save-manager/commit/9543a7a70565f25d920e915fe183e2ef55d0e6f6))
 
-- Add share-code import/export for appearance presets and inventory loadouts `[sharing]` ([f46e61c](https://github.com/Hapfel1/er-save-manager/commit/f46e61c32244f0bdcbdae0147552dba611d6fc4b))
+- Add share-code import/export for appearance presets and inventory loadouts `[sharing]` ([2c4d259](https://github.com/Hapfel1/er-save-manager/commit/2c4d259abca4cf1da5131ef6ee106c0ac982dc65))
 
-- Complete equipment editor - persistence fix, loadouts, visual picker `[equipment]` ([3bb9943](https://github.com/Hapfel1/er-save-manager/commit/3bb99433d540240255084c5b629369e7cab74093))
+- Complete equipment editor - persistence fix, loadouts, visual picker `[equipment]` ([1303cdc](https://github.com/Hapfel1/er-save-manager/commit/1303cdc49de00c9d8df17cca3353e027c37d0586))
 
 
 
 ### 🔧 Bug Fixes
 
-- Add missing CHECKSUM_SIZE class constant `[character_ops]` ([bbdf7b5](https://github.com/Hapfel1/er-save-manager/commit/bbdf7b578e198066e67820fb2e1ff1b6f1a4cc6d))
+- Add missing CHECKSUM_SIZE class constant `[character_ops]` ([bffbe8b](https://github.com/Hapfel1/er-save-manager/commit/bffbe8beb150d7b9e5de154ca4a0ca43f3012eeb))
 
-- Add Blessed Blue Dew Talisman Convergence variant to Convergence Talismans which reuses the Cerulean Seed Talisman's ID still with its old name in Params ([fd20f2c](https://github.com/Hapfel1/er-save-manager/commit/fd20f2c60436c4dfbb1029135262c86f60c3215f))
+- Add Blessed Blue Dew Talisman Convergence variant to Convergence Talismans which reuses the Cerulean Seed Talisman's ID still with its old name in Params ([8cbd2d9](https://github.com/Hapfel1/er-save-manager/commit/8cbd2d9f3148e7a5a90f5a73637f9624b2d8a86f))
 
-- Remove empty scrollable_frame widget and fix test exit code masking ([f6907bb](https://github.com/Hapfel1/er-save-manager/commit/f6907bb176444c3883baaf6ab5d6727764c30803))
+- Remove empty scrollable_frame widget and fix test exit code masking ([09b667d](https://github.com/Hapfel1/er-save-manager/commit/09b667d37009bd8b0330763a8ac7a61240a9890d))
 
-- Include OpenSSL DLLs in root to prevent PATH conflicts under zip_include_packages `[build]` ([f0a769e](https://github.com/Hapfel1/er-save-manager/commit/f0a769e2c81a4a3f110a56c505c3637b1bed1ca5))
+- Include OpenSSL DLLs in root to prevent PATH conflicts under zip_include_packages `[build]` ([d9c08e7](https://github.com/Hapfel1/er-save-manager/commit/d9c08e77668380f85d669d0dd4e7418ff2f52eb2))
 
-- Atomic save writes, unique backup names, preserve rebuild_slot tail data ([8e121a1](https://github.com/Hapfel1/er-save-manager/commit/8e121a106edb35a62e12daaf08b8f935004d4a86))
+- Atomic save writes, unique backup names, preserve rebuild_slot tail data ([51f938d](https://github.com/Hapfel1/er-save-manager/commit/51f938deee42cdd05e97738c1f9e237c95e8da07))
 
-- Use fixed 600 cap for ammo storage quantity `[inventory]` ([e912fcf](https://github.com/Hapfel1/er-save-manager/commit/e912fcfbb6bd7dde4c6c2634eb3d3df52f186931))
+- Use fixed 600 cap for ammo storage quantity `[inventory]` ([ec655b3](https://github.com/Hapfel1/er-save-manager/commit/ec655b3fb61dc74b80dbfc1ce3cf16cdd25e7b60))
 
-- Added more Item event flag linking ([7b019f5](https://github.com/Hapfel1/er-save-manager/commit/7b019f5cd1d14a9986c47944678c7510b849d634))
+- Added more Item event flag linking ([f72491b](https://github.com/Hapfel1/er-save-manager/commit/f72491b8cf9b7fbcbf4ef2bbaa174e3aa46afa4b))
 
 - Fixcharacter-info): remove non-functional fields from info editor
 
-Remove extra talisman slots, spirit summon level, max crimson flask, and max cerulean flask fields from the character info editor UI, load, and apply logic. These fields had no in-game effect when edited directly. ([6489450](https://github.com/Hapfel1/er-save-manager/commit/6489450025d8ff2de3e4e84d6ff0b40855331469))
+Remove extra talisman slots, spirit summon level, max crimson flask, and max cerulean flask fields from the character info editor UI, load, and apply logic. These fields had no in-game effect when edited directly. ([cf5bc66](https://github.com/Hapfel1/er-save-manager/commit/cf5bc66cad117b3bb6320dcd2baf6997b61f52f0))
 
-- Fixed earlier byte discarding fix getting reverted ([73f3e91](https://github.com/Hapfel1/er-save-manager/commit/73f3e9174869f6dca1d7f584a614dd7c552c07c2))
+- Fixed earlier byte discarding fix getting reverted ([8e443b1](https://github.com/Hapfel1/er-save-manager/commit/8e443b1a78b6375878b1d334ba14e36db2e17966))
 
-- Use fixed offset for NPC/event flag anchor instead of pattern search `[DSR]` ([7f74303](https://github.com/Hapfel1/er-save-manager/commit/7f743032d0c00f0be8bb8b38d5c1689d5aedb903))
+- Use fixed offset for NPC/event flag anchor instead of pattern search `[DSR]` ([0793494](https://github.com/Hapfel1/er-save-manager/commit/07934947ec69ad2ef20fb3b97ebbdc7731556690))
 
 
 
 ### 🎨 User Interface
 
-- Show curse slot widgets for deep relics in editor `[NR]` ([59b4d80](https://github.com/Hapfel1/er-save-manager/commit/59b4d808093bdce8ae32865835d83aa58167018e))
+- Show curse slot widgets for deep relics in editor `[NR]` ([3117279](https://github.com/Hapfel1/er-save-manager/commit/31172792002160479216a63a54535e4d14d8a962))
 
-- Use native Linux file picker for all manual file browse dialogs ([166f552](https://github.com/Hapfel1/er-save-manager/commit/166f552cbfc5d99638732f6923093e599a507f3f))
+- Use native Linux file picker for all manual file browse dialogs ([3c3fc66](https://github.com/Hapfel1/er-save-manager/commit/3c3fc668a1f5356623dc5ade3a3c5a15ebb8505a))
 
 
 
 ### 📖 Documentation
 
-- Fix fixer, character editor, event flags, world state, settings docs; add other-games guides ([05dd716](https://github.com/Hapfel1/er-save-manager/commit/05dd71687ba3aa2e3138ca87ccab5d8b4a2ea7c5))
+- Fix fixer, character editor, event flags, world state, settings docs; add other-games guides ([081b472](https://github.com/Hapfel1/er-save-manager/commit/081b47205cc5757cb209ae7b580e301d617b8d24))
 
 
 
 ### 📦 Dependencies
 
-- Bump the github-actions group with 2 updates `[deps]` ([f9929e3](https://github.com/Hapfel1/er-save-manager/commit/f9929e3c2a16445b68bef039acd58b84df3d4231))
+- Bump the github-actions group with 2 updates `[deps]` ([a2d1bf4](https://github.com/Hapfel1/er-save-manager/commit/a2d1bf41ff429daa6b74380228f7005b47fcc981))
 
-- Bump the github-actions group with 3 updates `[deps]` ([300306b](https://github.com/Hapfel1/er-save-manager/commit/300306b63927d9130352bcd1a1a2ffa21e34ed00))
+- Bump the github-actions group with 3 updates `[deps]` ([cdfa8bb](https://github.com/Hapfel1/er-save-manager/commit/cdfa8bba49c2d690d50c3d901ae796ddc6b27576))
 
 
 
@@ -284,15 +329,15 @@ Remove extra talisman slots, spirit summon level, max crimson flask, and max cer
 
 ### 🔧 Bug Fixes
 
-- Add missed Convergence Armor ([6b983d7](https://github.com/Hapfel1/er-save-manager/commit/6b983d7dca290dc7047f86956b116007efe1c065))
+- Add missed Convergence Armor ([7451875](https://github.com/Hapfel1/er-save-manager/commit/7451875870c3330eea509a158fdecced7ac8f85a))
 
-- Fallback to storage on held-full during add/batch/loadout `[inventory]` ([a9b0c31](https://github.com/Hapfel1/er-save-manager/commit/a9b0c31ad4c293edea9b7bdaa9f8e8b4ccb1094d))
+- Fallback to storage on held-full during add/batch/loadout `[inventory]` ([c13299c](https://github.com/Hapfel1/er-save-manager/commit/c13299c652dbc8768cdfd17099a8722315720006))
 
 
 
 ### 📦 Dependencies
 
-- Bump the github-actions group with 2 updates `[deps]` ([335f1e8](https://github.com/Hapfel1/er-save-manager/commit/335f1e8838f724188fa37ae572b3e1b6320acdfb))
+- Bump the github-actions group with 2 updates `[deps]` ([3f3e1f6](https://github.com/Hapfel1/er-save-manager/commit/3f3e1f6b16e706fa4508a7bcb5e6a82d15f6d378))
 
 
 
@@ -303,7 +348,7 @@ Remove extra talisman slots, spirit summon level, max crimson flask, and max cer
 
 ### 🔧 Bug Fixes
 
-- Exclude compiled extension packages from Windows zip `[build]` ([d6d4b59](https://github.com/Hapfel1/er-save-manager/commit/d6d4b599fce3c7467f20d34940fbfec8151227b4))
+- Exclude compiled extension packages from Windows zip `[build]` ([aa1fea9](https://github.com/Hapfel1/er-save-manager/commit/aa1fea913c0b92f8dd27a6c467ada0ae399e5614))
 
 
 
@@ -314,21 +359,21 @@ Remove extra talisman slots, spirit summon level, max crimson flask, and max cer
 
 ### ✨ New Features
 
-- Add Elden Bling Auto Sliders JSON import ([c02048f](https://github.com/Hapfel1/er-save-manager/commit/c02048fa4485f638663b3bd12d23aeb08083fa61))
+- Add Elden Bling Auto Sliders JSON import ([7812ba0](https://github.com/Hapfel1/er-save-manager/commit/7812ba0ab8f6ef455e7554142191b01f7aeb79ef))
 
 
 
 ### 🔧 Bug Fixes
 
-- Fall back to actual list when removing/setting quantity `[inventory]` ([0f81346](https://github.com/Hapfel1/er-save-manager/commit/0f8134622d5d6f176c75b5c74864bb56eb81b41a))
+- Fall back to actual list when removing/setting quantity `[inventory]` ([228c389](https://github.com/Hapfel1/er-save-manager/commit/228c389443c9580f5a6fcd93660c689e936f5253))
 
-- Shift all downstream slot offsets on gaitem insert/remove ([7fb685b](https://github.com/Hapfel1/er-save-manager/commit/7fb685b3312ba167e0e80690cdcf1270089557ad))
+- Shift all downstream slot offsets on gaitem insert/remove ([7eb3b4d](https://github.com/Hapfel1/er-save-manager/commit/7eb3b4d7fb0d2958177466b22276d57198d4f185))
 
 
 
 ### Data
 
-- Add missing convergence items, fix item names, update icons ([df7fe5d](https://github.com/Hapfel1/er-save-manager/commit/df7fe5d61c1c0d194f6bfd6576a9cc6bfa76aaaf))
+- Add missing convergence items, fix item names, update icons ([1516d4f](https://github.com/Hapfel1/er-save-manager/commit/1516d4f1fb23109d568897437983fd90b02e9c16))
 
 
 
@@ -339,35 +384,35 @@ Remove extra talisman slots, spirit summon level, max crimson flask, and max cer
 
 ### 🔧 Bug Fixes
 
-- Correct consumable stack location and convergence upgrade caps (#193) ([ffe3465](https://github.com/Hapfel1/er-save-manager/commit/ffe34656fc52e868db4a312de6c88477c2387753))
+- Correct consumable stack location and convergence upgrade caps (#193) ([7504329](https://github.com/Hapfel1/er-save-manager/commit/75043296d8e82fe28b49024c36ff325f35d8539b))
 
-- Correct inventory counter updates for key items in add/remove ([e85e039](https://github.com/Hapfel1/er-save-manager/commit/e85e039e280c829b5bfacfd0e295866af0787f16))
+- Correct inventory counter updates for key items in add/remove ([1a483e9](https://github.com/Hapfel1/er-save-manager/commit/1a483e953bcea59eec23eaccede503fc0f707527))
 
-- Trigger auto-backup on every game launch, not once per session `[backup]` ([2ee638d](https://github.com/Hapfel1/er-save-manager/commit/2ee638d81dde2d5b92010aa5b21622cd414550ed))
+- Trigger auto-backup on every game launch, not once per session `[backup]` ([36741ff](https://github.com/Hapfel1/er-save-manager/commit/36741ff435c747854329ac28fd3752090feb3eef))
 
-- Rename invasion regions to unlocked regions ([2e9ed01](https://github.com/Hapfel1/er-save-manager/commit/2e9ed010e0ba6a6a60fdb1b077623a1959485c5e))
+- Rename invasion regions to unlocked regions ([c0cd80d](https://github.com/Hapfel1/er-save-manager/commit/c0cd80d9fcc585f02078e5bf875c838f1c086d9c))
 
-- Detect and repair corrupted inventory item counters in character details ([fe5aa9c](https://github.com/Hapfel1/er-save-manager/commit/fe5aa9c48d238bd3bb32e8299cdceee876ef8d72))
+- Detect and repair corrupted inventory item counters in character details ([f9020be](https://github.com/Hapfel1/er-save-manager/commit/f9020be0bb3738874e222d76f55d0d881ce94ff7))
 
-- Add Event Flag mapping for maps and ashes of war ([6ceba63](https://github.com/Hapfel1/er-save-manager/commit/6ceba634e8d19c8843648d5284388ad88ab5a9eb))
+- Add Event Flag mapping for maps and ashes of war ([9bde103](https://github.com/Hapfel1/er-save-manager/commit/9bde103548005a28fe2756f747faa5c53a730df1))
 
 
 
 ### 🎨 User Interface
 
-- Add Video Guide button for Ghost's video guide ([74b6f1e](https://github.com/Hapfel1/er-save-manager/commit/74b6f1ec39493a91525cd1843ee0c87b9cda825b))
+- Add Video Guide button for Ghost's video guide ([d25fa56](https://github.com/Hapfel1/er-save-manager/commit/d25fa560229ed02b75d2b04846e3abececbb01c2))
 
 
 
 ### 📦 Dependencies
 
-- Bump the github-actions group with 2 updates `[deps]` ([91cc328](https://github.com/Hapfel1/er-save-manager/commit/91cc328aa490335a822f45aba863c78ba70635ee))
+- Bump the github-actions group with 2 updates `[deps]` ([ff228e4](https://github.com/Hapfel1/er-save-manager/commit/ff228e4e5175a48e9e5c1055019ce48a82c4bba0))
 
 
 
 ### Data
 
-- Migrate icon storage from zip to sqlite, fix nexus mods quarantine ([10d42eb](https://github.com/Hapfel1/er-save-manager/commit/10d42eb7e64d403d2e0dcba3d603a44cf629b5a2))
+- Migrate icon storage from zip to sqlite, fix nexus mods quarantine ([439f948](https://github.com/Hapfel1/er-save-manager/commit/439f9485eec4921eaf26ef0e49b954b69f836e36))
 
 
 
@@ -378,49 +423,49 @@ Remove extra talisman slots, spirit summon level, max crimson flask, and max cer
 
 ### 🔧 Bug Fixes
 
-- Update player_game_data_offset after gaitem shift and bump mm level on weapon spawn ([9f45343](https://github.com/Hapfel1/er-save-manager/commit/9f45343cd8b5be206a1fae22414eb608169350ee))
+- Update player_game_data_offset after gaitem shift and bump mm level on weapon spawn ([fc434b1](https://github.com/Hapfel1/er-save-manager/commit/fc434b1ff803312c8f58afc7c30feaafe8a6378b))
 
-- Auto-adjust matchmaking level on weapon removal, remove manual set button ([a8d1a20](https://github.com/Hapfel1/er-save-manager/commit/a8d1a20aa6da0b69703f5017b1cba0f6a5288d36))
+- Auto-adjust matchmaking level on weapon removal, remove manual set button ([a4e25a8](https://github.com/Hapfel1/er-save-manager/commit/a4e25a8936bf26c6284885af8773c29a5b7dd4d2))
 
-- Added missed Convergence Item, Warding Remnant ([70fb917](https://github.com/Hapfel1/er-save-manager/commit/70fb9174eb358d568002e3f366485b2ffdc4d7b7))
+- Added missed Convergence Item, Warding Remnant ([217e7a6](https://github.com/Hapfel1/er-save-manager/commit/217e7a619add1d766d78d0d4283e1ca55b4300b3))
 
-- Add boss status dialog, fix bell bearing NG+ flags, fix search debounce (closes #189) ([ed0afb2](https://github.com/Hapfel1/er-save-manager/commit/ed0afb2422e89c427f80e59ecacd8f552b1e861e))
+- Add boss status dialog, fix bell bearing NG+ flags, fix search debounce (closes #189) ([2ed2d88](https://github.com/Hapfel1/er-save-manager/commit/2ed2d8830c181d51c2b2df5a3a52202f8129b280))
 
-- Prevent integer overflow from corrupted acquisition indices `[inventory]` ([5c4f935](https://github.com/Hapfel1/er-save-manager/commit/5c4f93559df8b0623a4a1a6815972112aac6b9eb))
+- Prevent integer overflow from corrupted acquisition indices `[inventory]` ([c6470f8](https://github.com/Hapfel1/er-save-manager/commit/c6470f8d323e34e084b5d2b147b99489fb650a9c))
 
-- Adjust UI spacing and resolve loadout file path `[inventory]` ([19aa279](https://github.com/Hapfel1/er-save-manager/commit/19aa279dadb2f6c8e147455340ac79d871a3844f))
+- Adjust UI spacing and resolve loadout file path `[inventory]` ([6fe6676](https://github.com/Hapfel1/er-save-manager/commit/6fe6676894eabe43d1cb668b8fe7e650275849c3))
 
 
 
 ### 🎨 User Interface
 
-- Made CSNetMan.bin replace button show permanently ([2486af1](https://github.com/Hapfel1/er-save-manager/commit/2486af1d4590d0dc298e24b764eb6361b06ed2b0))
+- Made CSNetMan.bin replace button show permanently ([14700af](https://github.com/Hapfel1/er-save-manager/commit/14700affc1ef25f904b9ce13af8d0fa2aed3764b))
 
-- Made Message about CsNetMan more clear ([902dfdb](https://github.com/Hapfel1/er-save-manager/commit/902dfdba6c2fa1aa27dacbc986db068a051dfd92))
+- Made Message about CsNetMan more clear ([09b9267](https://github.com/Hapfel1/er-save-manager/commit/09b92670ab4cc9f5479dd4d32371285c1e3fe954))
 
-- Add Debug warped face button ([a43e5df](https://github.com/Hapfel1/er-save-manager/commit/a43e5dfa46aa66c9b0632bad5f5284d53e23f17b))
+- Add Debug warped face button ([04bba00](https://github.com/Hapfel1/er-save-manager/commit/04bba002c301ce2cf5a2855fdc4b7541ab33464e))
 
-- Add loadout manager, batch spawning, and smart stacking `[inventory]` ([10d3f93](https://github.com/Hapfel1/er-save-manager/commit/10d3f9300cc62897b4f757b6872f698d174925ef))
+- Add loadout manager, batch spawning, and smart stacking `[inventory]` ([77b09b6](https://github.com/Hapfel1/er-save-manager/commit/77b09b65dd5e9c118d2318f9519492363dbc4888))
 
-- Replace warped face button with slider dialog for secondary face deformation ([b13fbe7](https://github.com/Hapfel1/er-save-manager/commit/b13fbe767a57f131f812e1bc37896ea9c465ca5c))
+- Replace warped face button with slider dialog for secondary face deformation ([bcb73dd](https://github.com/Hapfel1/er-save-manager/commit/bcb73dd2530aaa8ffd8142c0b1ecf3b5909108c3))
 
 
 
 ### ♻️ Code Refactoring
 
-- Remove CSNetMan replace button toggle setting ([92744b0](https://github.com/Hapfel1/er-save-manager/commit/92744b046a41219369a8c7c6f859581148ae2420))
+- Remove CSNetMan replace button toggle setting ([c6be1d3](https://github.com/Hapfel1/er-save-manager/commit/c6be1d34d70774a411829909774e1f7dc9baf979))
 
 
 
 ### 📦 Dependencies
 
-- Bump the github-actions group with 3 updates `[deps]` ([ea4b49e](https://github.com/Hapfel1/er-save-manager/commit/ea4b49ea31f40e5fca10ff0939d9c5d8c5c24f6e))
+- Bump the github-actions group with 3 updates `[deps]` ([249e547](https://github.com/Hapfel1/er-save-manager/commit/249e54759b33461be16013e184e3f71f31410fe9))
 
 
 
 ### 🧹 Maintenance
 
-- Migrate nexusmods upload action to v1.0.0-beta.8 ([10d8f67](https://github.com/Hapfel1/er-save-manager/commit/10d8f67e5ddabc916eb276cbbf3128c98165a46d))
+- Migrate nexusmods upload action to v1.0.0-beta.8 ([a51f7dc](https://github.com/Hapfel1/er-save-manager/commit/a51f7dc8fd3372978d3668e7e073f1aec33d805d))
 
 
 
@@ -431,29 +476,29 @@ Remove extra talisman slots, spirit summon level, max crimson flask, and max cer
 
 ### ✨ New Features
 
-- Add Nightreign save editor `[NR]` ([6df3ac9](https://github.com/Hapfel1/er-save-manager/commit/6df3ac9f5eb5ffe963d9d02fff76860795d613b2))
+- Add Nightreign save editor `[NR]` ([9606d27](https://github.com/Hapfel1/er-save-manager/commit/9606d27fe98bee7f1d502643c8f34d7efa9d829b))
 
-- Add 3.0 update support `[convergence]` ([80150b5](https://github.com/Hapfel1/er-save-manager/commit/80150b59ba03666b87c57d54845fca949ace8f3b))
+- Add 3.0 update support `[convergence]` ([c0152c7](https://github.com/Hapfel1/er-save-manager/commit/c0152c7f03b2c84a503c06f6b69323cfbcc007df))
 
 
 
 ### 🔧 Bug Fixes
 
-- Fix relics tab layout in fixed-height window `[NR]` ([00d8947](https://github.com/Hapfel1/er-save-manager/commit/00d89476735d5a7e24f6afd0c5ee97a72931ba84))
+- Fix relics tab layout in fixed-height window `[NR]` ([38a778c](https://github.com/Hapfel1/er-save-manager/commit/38a778ce85639916bc0ac3ade9cc1db17fe79de7))
 
-- Removed cut content cookbooks ([b087ab6](https://github.com/Hapfel1/er-save-manager/commit/b087ab6b5b3fd087c183702d876289583e71dd4c))
+- Removed cut content cookbooks ([d68ad4a](https://github.com/Hapfel1/er-save-manager/commit/d68ad4abceb6d720ccacc5c2381ac04c6b4e102f))
 
-- Cookbook/whetblade event flags and display fixes `[inventory]` ([66dff69](https://github.com/Hapfel1/er-save-manager/commit/66dff6924939d1d5312492b14ffc4e0180482f3e))
+- Cookbook/whetblade event flags and display fixes `[inventory]` ([5d3eed4](https://github.com/Hapfel1/er-save-manager/commit/5d3eed4e371594dfa54491dc06c05965d0eb7496))
 
-- Expand _KEY_ITEM_BASE_IDS with all confirmed key item categories `[inventory]` ([7ab5a30](https://github.com/Hapfel1/er-save-manager/commit/7ab5a30b4fdffed63e7b09d9daa7da612bcaa3ea))
+- Expand _KEY_ITEM_BASE_IDS with all confirmed key item categories `[inventory]` ([1d23cec](https://github.com/Hapfel1/er-save-manager/commit/1d23cec7abdc0270e22ff10b5ebb5a4d3e719fb2))
 
-- Remove cut content and fix item names across goods CSVs `[items]` ([b868b39](https://github.com/Hapfel1/er-save-manager/commit/b868b39ae027a26ad3ed20089758257e2e38d7ae))
+- Remove cut content and fix item names across goods CSVs `[items]` ([2527929](https://github.com/Hapfel1/er-save-manager/commit/25279298f5e0589548e5ad7f24fff9180068a7e0))
 
-- Add containers and upgrade items to _KEY_ITEM_BASE_IDS `[inventory]` ([610e822](https://github.com/Hapfel1/er-save-manager/commit/610e822f1eb92a5bb0191697b1d6c7da3022d59f))
+- Add containers and upgrade items to _KEY_ITEM_BASE_IDS `[inventory]` ([8abb756](https://github.com/Hapfel1/er-save-manager/commit/8abb7568182972ca0890136260f7ef352e748f22))
 
-- Add Dragon Heart and Lost Ashes of War to _KEY_ITEM_BASE_IDS `[inventory]` ([36b3d8b](https://github.com/Hapfel1/er-save-manager/commit/36b3d8baf534ae271154e83694ee3a40f5822702))
+- Add Dragon Heart and Lost Ashes of War to _KEY_ITEM_BASE_IDS `[inventory]` ([c226241](https://github.com/Hapfel1/er-save-manager/commit/c226241c94ff3b0e6e78759d1aeb85f80eac1c52))
 
-- Remove two cut content items ([5e13a5d](https://github.com/Hapfel1/er-save-manager/commit/5e13a5dc32241b4e367add5fd1054785c745593d))
+- Remove two cut content items ([ade100e](https://github.com/Hapfel1/er-save-manager/commit/ade100e8cd05c5046f4ff58afa94994b1eebb2d4))
 
 
 
@@ -464,15 +509,15 @@ Lord of Blood's Favor
 Unalloyed Gold Needle
 Miniature Ranni
 Academy Glintstone Key
-Larval Tear ([536fa62](https://github.com/Hapfel1/er-save-manager/commit/536fa62e8a3d0e69eaab070455b93d6920deb6df))
+Larval Tear ([53d9306](https://github.com/Hapfel1/er-save-manager/commit/53d9306fa7eae668e7f8dd9ab070f5be31aa512c))
 
-- Replace pruning warning with pre-deletion CTk dialog `[backup]` ([2c9828b](https://github.com/Hapfel1/er-save-manager/commit/2c9828b737887edcbd9a61c4bbe7cbacaf23d3b9))
+- Replace pruning warning with pre-deletion CTk dialog `[backup]` ([780027e](https://github.com/Hapfel1/er-save-manager/commit/780027e24430b42bdef109d04d7c5e0ca2e2df72))
 
 
 
 ### 📦 Dependencies
 
-- Bump taiki-e/install-action in the github-actions group `[deps]` ([766486c](https://github.com/Hapfel1/er-save-manager/commit/766486c604394572e3bcaabf3a08bef902ecc418))
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([f5f7167](https://github.com/Hapfel1/er-save-manager/commit/f5f716791de66b40387994b29f9260f2d61294c0))
 
 
 
@@ -483,53 +528,53 @@ Larval Tear ([536fa62](https://github.com/Hapfel1/er-save-manager/commit/536fa62
 
 ### 🔧 Bug Fixes
 
-- Ashes Name Resolution, Allow Duplicate Talismans, Fix Melee filter exlcuding infused weapons in visual inventory ([54c9742](https://github.com/Hapfel1/er-save-manager/commit/54c97424d0cb4f7f60413ca89f85af37f4294706))
+- Ashes Name Resolution, Allow Duplicate Talismans, Fix Melee filter exlcuding infused weapons in visual inventory ([4db254e](https://github.com/Hapfel1/er-save-manager/commit/4db254e63b285407e7edfa229d8eb19f875acdc5))
 
-- Removed "No Presets" warning as this is not needed anymore and is possible now ([53bb5e7](https://github.com/Hapfel1/er-save-manager/commit/53bb5e77000ff4dafde6c2fae3171e0d343c9b08))
+- Removed "No Presets" warning as this is not needed anymore and is possible now ([0e50b2f](https://github.com/Hapfel1/er-save-manager/commit/0e50b2fc8f90d761e1f4b7d064211c270bde9087))
 
-- Fix incorrect starting class ID assignment #169 ([b34f070](https://github.com/Hapfel1/er-save-manager/commit/b34f07040a00cb61fc07d76324e246b09f90bd80))
+- Fix incorrect starting class ID assignment #169 ([aaf2c67](https://github.com/Hapfel1/er-save-manager/commit/aaf2c67b330e044c5f879765cdd189162a17e56d))
 
-- Enforce class stat minimums in stats editor, notify on archetype change ([806f742](https://github.com/Hapfel1/er-save-manager/commit/806f7427fe2d87ed10b5c66161912680dd97cbbd))
+- Enforce class stat minimums in stats editor, notify on archetype change ([23921e9](https://github.com/Hapfel1/er-save-manager/commit/23921e917cd8ed2a893ca04f246428acd9b9ef20))
 
-- Correct wrong IDs for 8 ashes in Ashes.csv and DLCAshes.csv #170 ([b0d9c70](https://github.com/Hapfel1/er-save-manager/commit/b0d9c70d728fd90ccec56f5c001c971c50e59df1))
+- Correct wrong IDs for 8 ashes in Ashes.csv and DLCAshes.csv #170 ([2cd8152](https://github.com/Hapfel1/er-save-manager/commit/2cd815200fcaad6b0379957107794dc12683c42c))
 
-- Correct body type encoding, NPC alive/dead offset handling `[DSR]` ([b4a7c4d](https://github.com/Hapfel1/er-save-manager/commit/b4a7c4d70642498822785ce180ea739f019ccf58))
+- Correct body type encoding, NPC alive/dead offset handling `[DSR]` ([a3556b9](https://github.com/Hapfel1/er-save-manager/commit/a3556b95d9bcb17f67d6d843c4a4ed15fab7d210))
 
-- Match gems in gaitem map by base_id via handle prefix ([aa71552](https://github.com/Hapfel1/er-save-manager/commit/aa71552df77d5ed5ace830f2d684a295f41184d8))
+- Match gems in gaitem map by base_id via handle prefix ([83f1810](https://github.com/Hapfel1/er-save-manager/commit/83f1810cb7f2953f524ec8a9b989db56c2c52fb6))
 
-- Hide PS button for non-ER games, fix item gib DS3 nav, restore SteamID tab position on PC save reloadfix: hide PS button for non-ER games, fix item gib DS3 nav, restore SteamID tab position on PC save reload ([6d8a3e2](https://github.com/Hapfel1/er-save-manager/commit/6d8a3e2282342e51bcb26fc0fdc68aa2419cbe92))
+- Hide PS button for non-ER games, fix item gib DS3 nav, restore SteamID tab position on PC save reloadfix: hide PS button for non-ER games, fix item gib DS3 nav, restore SteamID tab position on PC save reload ([cf2f811](https://github.com/Hapfel1/er-save-manager/commit/cf2f811dc6eb111d0078eb1df52234023c20d5f2))
 
-- Mirror gaitem handle second byte from save; add held→storage fallback ([9b05cfd](https://github.com/Hapfel1/er-save-manager/commit/9b05cfdbba7eecdd16e5c955ce3daaa77c06adea))
+- Mirror gaitem handle second byte from save; add held→storage fallback ([5c0e147](https://github.com/Hapfel1/er-save-manager/commit/5c0e1478e4ce7da873d96c2474f318bd4fbe6649))
 
-- Redo Item DB by getting data from Params ([722501a](https://github.com/Hapfel1/er-save-manager/commit/722501ae6ea4330aef7296a5e94e97195af45756))
+- Redo Item DB by getting data from Params ([8ca9edf](https://github.com/Hapfel1/er-save-manager/commit/8ca9edfdba9f3aa55a4ad466922dbe7a66f12772))
 
-- Match gem gaitem by base_id or full_item_id ([63edea5](https://github.com/Hapfel1/er-save-manager/commit/63edea5f15145fd65a1083d7a7faf570b462d829))
+- Match gem gaitem by base_id or full_item_id ([e4b1a97](https://github.com/Hapfel1/er-save-manager/commit/e4b1a97f15fdac97da5c55e953bca1da992ef745))
 
-- Fix weapon spawn `[DS3]` ([0ddffc4](https://github.com/Hapfel1/er-save-manager/commit/0ddffc445c4ad1b24451767f8a24adcaf8e87f02))
+- Fix weapon spawn `[DS3]` ([be6beba](https://github.com/Hapfel1/er-save-manager/commit/be6bebabaa5153a1a215afcfe4e96b7dcfe97602))
 
-- Accept more formats in the appearance tab JSON import ([5bc098a](https://github.com/Hapfel1/er-save-manager/commit/5bc098aa55f18749103853c424407eb75f6c521b))
+- Accept more formats in the appearance tab JSON import ([63b82db](https://github.com/Hapfel1/er-save-manager/commit/63b82db5f5aaf2c30b33b8d844e3de1b1766e9b5))
 
-- Potential PS fix for spawning weapons ([fdc0d52](https://github.com/Hapfel1/er-save-manager/commit/fdc0d524061e2c81a2adf6126c5a608166f10887))
+- Potential PS fix for spawning weapons ([be98eb3](https://github.com/Hapfel1/er-save-manager/commit/be98eb337bf177fad64fe84ead15ad28fa0f3c24))
 
-- Read second byte from first gaitem entry and reuse it for all spawned handle ([3018686](https://github.com/Hapfel1/er-save-manager/commit/3018686fc036913a572a0c06d58e9db42e5ab140))
+- Read second byte from first gaitem entry and reuse it for all spawned handle ([a3ff305](https://github.com/Hapfel1/er-save-manager/commit/a3ff3057ec493882f042e649565b934119b5387a))
 
-- Default UI scale to 100% instead of Auto ([e816c9f](https://github.com/Hapfel1/er-save-manager/commit/e816c9fe802f8bbb33084962dab7f911a5cfade9))
+- Default UI scale to 100% instead of Auto ([bc76ee9](https://github.com/Hapfel1/er-save-manager/commit/bc76ee9540c142c7e4b24cd7b47606dd0b8099d5))
 
-- Lazy-load preset thumbnails in background threads ([e1f1388](https://github.com/Hapfel1/er-save-manager/commit/e1f1388b9f3a39a4681ccd3af70a2e97944ded59))
+- Lazy-load preset thumbnails in background threads ([778d164](https://github.com/Hapfel1/er-save-manager/commit/778d1645d49a5261308c8b1b57f1bfde000f4505))
 
 
 
 ### 🎨 User Interface
 
-- Added Display Scale Setting ([69f462f](https://github.com/Hapfel1/er-save-manager/commit/69f462f37d2d44ee65358af5df02b0667fb35806))
+- Added Display Scale Setting ([07d394d](https://github.com/Hapfel1/er-save-manager/commit/07d394d5b6bd2a89e4dd1b9f7f716fc412b47da8))
 
-- Add 104 NPC appearance presets to the preset browser ([6b07f97](https://github.com/Hapfel1/er-save-manager/commit/6b07f97f1732a749a758d572e1e1f58f3eabe0ac))
+- Add 104 NPC appearance presets to the preset browser ([9664509](https://github.com/Hapfel1/er-save-manager/commit/9664509bfacce1fe257793c2c871d1c35ec7e697))
 
 
 
 ### 📦 Dependencies
 
-- Bump the github-actions group with 3 updates `[deps]` ([4c838e8](https://github.com/Hapfel1/er-save-manager/commit/4c838e84ede334d78e712c2a588dd5464a1dbe16))
+- Bump the github-actions group with 3 updates `[deps]` ([4aa7609](https://github.com/Hapfel1/er-save-manager/commit/4aa7609d0ea920b7ad2ce027d37323e643dd9395))
 
 
 
@@ -540,37 +585,47 @@ Larval Tear ([536fa62](https://github.com/Hapfel1/er-save-manager/commit/536fa62
 
 ### ✨ New Features
 
-- Added PlayStation Save File Reading and Editing `[ER]` ([41d87d7](https://github.com/Hapfel1/er-save-manager/commit/41d87d7eadd6dd118d6991ad34c191741d6b9686))
+- Add DS3 save file editing `[DS3]` ([90b1830](https://github.com/Hapfel1/er-save-manager/commit/90b1830d235844369d4c020ca7990f78554aa582))
 
-- Add DS3 save file editor module `[DS3]` ([132de69](https://github.com/Hapfel1/er-save-manager/commit/132de699b663bd5937d13fca7960d539cc20a3d8))
+- Add Item Spawning `[DS3]` ([4495fea](https://github.com/Hapfel1/er-save-manager/commit/4495fea46ccdaa032852dd2c59969fb9e6f930c1))
+
+- Added PlayStation Save File Reading and Editing `[ER]` ([5cc96a9](https://github.com/Hapfel1/er-save-manager/commit/5cc96a949c388081f935c1befb078740d035f034))
+
+- Add DS3 save file editor module `[DS3]` ([1c18773](https://github.com/Hapfel1/er-save-manager/commit/1c18773290054fb3a41f3c33e906611961344c91))
 
 
 
 ### 🔧 Bug Fixes
 
-- Preserve global array header when writing to preset slot 0 ([d78675f](https://github.com/Hapfel1/er-save-manager/commit/d78675f2f5381ae3c57557d8f3bd6acc192dbef4))
+- Added probing to find correct inventory size ([fb74414](https://github.com/Hapfel1/er-save-manager/commit/fb74414ae89c5157ab05a40ae5dd3aee38efd96e))
 
-- Added mising Convergence Item, Putrid Key ([0a88729](https://github.com/Hapfel1/er-save-manager/commit/0a88729158aa2439d189af2ac8733fbf35bb68cf))
+- Preserve global array header when writing to preset slot 0 ([4bfa53a](https://github.com/Hapfel1/er-save-manager/commit/4bfa53a6cbdb726ea95c0ecee3b79e664ae1ba70))
 
-- Route key items to key_items[] in inventory ops ([5c99b64](https://github.com/Hapfel1/er-save-manager/commit/5c99b6488ad0ba0eb650d436032836db5aaaa634))
+- Added mising Convergence Item, Putrid Key ([79d276d](https://github.com/Hapfel1/er-save-manager/commit/79d276d9ae6cac5d178168197005b2f9d1e260bc))
 
-- Skip checksum prefix on PS saves for all slot writes ([a9069dd](https://github.com/Hapfel1/er-save-manager/commit/a9069dd3b5976e14f9658f2e2ee7a0024b20f06f))
+- Route key items to key_items[] in inventory ops ([89c6576](https://github.com/Hapfel1/er-save-manager/commit/89c65768e7d8785a62dc0b649c10db67c724047b))
 
-- Correct event flag base offset, add level recalc, flag lookup tab `[DSR]` ([64200f4](https://github.com/Hapfel1/er-save-manager/commit/64200f42a85a5974bcc9d7b3381f551adcca74b7))
+- Skip checksum prefix on PS saves for all slot writes ([ace141d](https://github.com/Hapfel1/er-save-manager/commit/ace141d04c19b960f8b69681322cf2ef0e7da59c))
+
+- Correct event flag base offset, add level recalc, flag lookup tab `[DSR]` ([0733060](https://github.com/Hapfel1/er-save-manager/commit/07330607a06803985a7ba6236e4bc6c42b6e8f1d))
 
 
 
 ### 🎨 User Interface
 
-- Fix scroll bar bug in Icon Browser ([196da49](https://github.com/Hapfel1/er-save-manager/commit/196da49a1176fdf0e1bd5ca1c7df3d186e7ada0d))
+- Redid character transferring between files flow to make it more user friendly ([08a9649](https://github.com/Hapfel1/er-save-manager/commit/08a964973bbb70aae74a232edbf86e2854374d6d))
 
-- Rewrite info text to adjust for Switch and Playstation saves ([9ce410a](https://github.com/Hapfel1/er-save-manager/commit/9ce410a804785fafe89b99620117d88b892cc769))
+- Add info about quest steps that stay applied even after fully resetting quest progress ([4855469](https://github.com/Hapfel1/er-save-manager/commit/4855469724289a3c029a5ceb3f7bbe1299a3db63))
+
+- Fix scroll bar bug in Icon Browser ([0ba6589](https://github.com/Hapfel1/er-save-manager/commit/0ba65890345260872f7cdec86d1da11e2f23a7cf))
+
+- Rewrite info text to adjust for Switch and Playstation saves ([0eb0c01](https://github.com/Hapfel1/er-save-manager/commit/0eb0c013e770ca65ec2db50f5dfe8311fa851e64))
 
 
 
 ### 📦 Dependencies
 
-- Bump the github-actions group with 2 updates `[deps]` ([93bf07e](https://github.com/Hapfel1/er-save-manager/commit/93bf07e25a4ffe760c6a2ae1c09fb202731af842))
+- Bump the github-actions group with 2 updates `[deps]` ([3b3747f](https://github.com/Hapfel1/er-save-manager/commit/3b3747f529a391a56742fd3df45202c4076319dd))
 
 
 
@@ -579,39 +634,25 @@ Larval Tear ([536fa62](https://github.com/Hapfel1/er-save-manager/commit/536fa62
 **Released:** May 29, 2026
 
 
-### ✨ New Features
-
-- Add DS3 save file editing `[DS3]` ([0bb980c](https://github.com/Hapfel1/er-save-manager/commit/0bb980c381e54df813ed6b95ff0bfbcc4af7e96f))
-
-- Add Item Spawning `[DS3]` ([fd4960f](https://github.com/Hapfel1/er-save-manager/commit/fd4960fe3201e12a221c5291df207b487becc784))
-
-
-
 ### 🔧 Bug Fixes
 
-- Fixed some convergence weapons having affinity options when they should not have them ([8e60b4a](https://github.com/Hapfel1/er-save-manager/commit/8e60b4a265b4b5ce8deaaef0c6869613dd14112f))
+- Fixed some convergence weapons having affinity options when they should not have them ([9e77aaa](https://github.com/Hapfel1/er-save-manager/commit/9e77aaa2d874f64836206a69d1582dc60fb72b4c))
 
-- Added probing to find correct inventory size ([8b80f93](https://github.com/Hapfel1/er-save-manager/commit/8b80f93f0fc1d19b8c91c614b2859a6dbcee3e4a))
+- Added missed SeamlessCoop Item (Crimson Blossom) `[DSR]` ([6f85f1b](https://github.com/Hapfel1/er-save-manager/commit/6f85f1b3c46bf2d83b5615508281a071f3c994fb))
 
-- Added missed SeamlessCoop Item (Crimson Blossom) `[DSR]` ([81ec6cc](https://github.com/Hapfel1/er-save-manager/commit/81ec6cc9f3418e5ed647f0a08b5b5ba7252939e0))
-
-- Added missing Attribute level validation ([8171902](https://github.com/Hapfel1/er-save-manager/commit/8171902c05f167135781e2253f8c6eeaf338d586))
+- Added missing Attribute level validation ([cadf1a6](https://github.com/Hapfel1/er-save-manager/commit/cadf1a6911f3dfc88d2d873feb05e6dd4b7334fd))
 
 
 
 ### 🎨 User Interface
 
-- Redid character transferring between files flow to make it more user friendly ([a8087f5](https://github.com/Hapfel1/er-save-manager/commit/a8087f53a4015467f284594d922f2ee16173556f))
+- Added SeamlessCoop Items for DSR ([bc3bc3b](https://github.com/Hapfel1/er-save-manager/commit/bc3bc3bc7a225d95388997963aa8ca3718740ee9))
 
-- Add info about quest steps that stay applied even after fully resetting quest progress ([180d876](https://github.com/Hapfel1/er-save-manager/commit/180d87650f9b6b569dc04ab868b1f5f4cefe38eb))
+- Added setting to disable "Save File modified externally" warning ([cabe487](https://github.com/Hapfel1/er-save-manager/commit/cabe487278d6f2c1b7cf35ed16598c1f3aa47c06))
 
-- Added SeamlessCoop Items for DSR ([70fa936](https://github.com/Hapfel1/er-save-manager/commit/70fa936c2241aa28e1bd5c9861c4829fe8b923e2))
+- Fixed Search Indexing Bug in Icon Browser ([1a86722](https://github.com/Hapfel1/er-save-manager/commit/1a867220d65588ba93c97c8c20ae4bf4669e2975))
 
-- Added setting to disable "Save File modified externally" warning ([30256c4](https://github.com/Hapfel1/er-save-manager/commit/30256c47c309e0c84a5219f43cb1075fb44ddc61))
-
-- Fixed Search Indexing Bug in Icon Browser ([1f8a5b6](https://github.com/Hapfel1/er-save-manager/commit/1f8a5b62be0ca4aa3bf17066a51d105838cfc5e0))
-
-- Remove unnecessary popup when editing stats and also instantly change the level total in CSProfileSummary when total level changes ([fdb3188](https://github.com/Hapfel1/er-save-manager/commit/fdb3188c73518bc7c493c03871b7fa44eae8d23e))
+- Remove unnecessary popup when editing stats and also instantly change the level total in CSProfileSummary when total level changes ([43e6a3b](https://github.com/Hapfel1/er-save-manager/commit/43e6a3b29220c05cda77a9cefc64e4cd33674485))
 
 
 
@@ -622,29 +663,29 @@ Larval Tear ([536fa62](https://github.com/Hapfel1/er-save-manager/commit/536fa62
 
 ### 🔧 Bug Fixes
 
-- Added missed Convergence Items (Maps and Perfumer quest items) ([94940cf](https://github.com/Hapfel1/er-save-manager/commit/94940cf8aab71cba06af0c8d6270eb2b7bf95cf6))
+- Added missed Convergence Items (Maps and Perfumer quest items) ([fe6a843](https://github.com/Hapfel1/er-save-manager/commit/fe6a84355359b1fa538b0d3f1c10587b5395b435))
 
-- Fixed issue with interpreting int level making it unable to apply NG+7 ([d33e24e](https://github.com/Hapfel1/er-save-manager/commit/d33e24e63c234705a7d36af09b48f07190d6ddee))
+- Fixed issue with interpreting int level making it unable to apply NG+7 ([1002d35](https://github.com/Hapfel1/er-save-manager/commit/1002d35da7cc05e08e7e7b899c9903d5ed166f6c))
 
-- Fixed build issue ([8fdbf21](https://github.com/Hapfel1/er-save-manager/commit/8fdbf211dddfefb55752a30049c2171544c6ffcd))
+- Fixed build issue ([68ac838](https://github.com/Hapfel1/er-save-manager/commit/68ac8387acfdc0e7b4f09ccc71bd0d3db7d8cbe8))
 
-- Write CSNetMan.bin at net_man_offset - 4 `[netman]` ([f999aa9](https://github.com/Hapfel1/er-save-manager/commit/f999aa9f83350d86ed9a2378c6a0c13026fec26a))
+- Write CSNetMan.bin at net_man_offset - 4 `[netman]` ([c2f73e7](https://github.com/Hapfel1/er-save-manager/commit/c2f73e765ab075633fe08533892d1382dd78cdaf))
 
-- Fully implemented Affinity/Gem Validation for Convergence Saves ([8280c43](https://github.com/Hapfel1/er-save-manager/commit/8280c43a48a0f822888500f93a3e3302c64559cc))
+- Fully implemented Affinity/Gem Validation for Convergence Saves ([4a90b21](https://github.com/Hapfel1/er-save-manager/commit/4a90b2151adaebdea05600d8525db73e94dcba66))
 
 
 
 ### 🎨 User Interface
 
-- Add .cnv to the browse option filter ([a27c3d7](https://github.com/Hapfel1/er-save-manager/commit/a27c3d7745d11642e4ccae226ca267cf5dd41a6e))
+- Add .cnv to the browse option filter ([c860719](https://github.com/Hapfel1/er-save-manager/commit/c8607194afaadff94b8ce33db5cbd273ffe94fc1))
 
-- Fixed "Save File has been modified externally" popping up after modifying the save file with the manager ([7d630e3](https://github.com/Hapfel1/er-save-manager/commit/7d630e3d0c7af31dd860144b90e120fc67e56c13))
+- Fixed "Save File has been modified externally" popping up after modifying the save file with the manager ([7cd52f2](https://github.com/Hapfel1/er-save-manager/commit/7cd52f2083c4ac3371fd3094c1cdd102d5be36f7))
 
 
 
 ### 📦 Dependencies
 
-- Bump taiki-e/install-action in the github-actions group `[deps]` ([ff829da](https://github.com/Hapfel1/er-save-manager/commit/ff829dacb7b04bf987e10c5360ed29b46eabebbe))
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([7c6dafc](https://github.com/Hapfel1/er-save-manager/commit/7c6dafcea0ff5149ca1637d03fab77fd61bddf26))
 
 
 
@@ -655,27 +696,27 @@ Larval Tear ([536fa62](https://github.com/Hapfel1/er-save-manager/commit/536fa62
 
 ### ✨ New Features
 
-- Add DSR Save Editing: Stats Editor, Inventory Editor, NPC&Boss Revival, World State ([acc98e1](https://github.com/Hapfel1/er-save-manager/commit/acc98e154c2ae3b0451d74c9ab698c3165925992))
+- Add DSR Save Editing: Stats Editor, Inventory Editor, NPC&Boss Revival, World State ([91bc158](https://github.com/Hapfel1/er-save-manager/commit/91bc158629cc4d25d81c28bbabeccc7be5cd1434))
 
-- Added Summoning Pool Button to the event flags tab to disable and enable summoning pools ([d2a56a2](https://github.com/Hapfel1/er-save-manager/commit/d2a56a2f6bcecdc7f618a8153c558611915437cb))
+- Added Summoning Pool Button to the event flags tab to disable and enable summoning pools ([9367dc9](https://github.com/Hapfel1/er-save-manager/commit/9367dc916094e801d45b0de3d51df9035c88a3c9))
 
 
 
 ### 🔧 Bug Fixes
 
-- Removed cut magic ([600cf03](https://github.com/Hapfel1/er-save-manager/commit/600cf0325bce17f9019cf3568eaa906e437db3c9))
+- Removed cut magic ([a3b0218](https://github.com/Hapfel1/er-save-manager/commit/a3b0218273cf92edaea3165caa61b806840ab4c3))
 
-- Added early return for a guard that caused a crash ([b116508](https://github.com/Hapfel1/er-save-manager/commit/b1165087382a6be8be8874e0df19283d6bbba321))
+- Added early return for a guard that caused a crash ([2686335](https://github.com/Hapfel1/er-save-manager/commit/2686335ae4d420f095b2e014714b67752492b302))
 
 
 
 ### 🎨 User Interface
 
-- Add new popup when a loaded save file gets modified externally ([b69ecdc](https://github.com/Hapfel1/er-save-manager/commit/b69ecdceadfa3e6e152c2a5961357251676cf5de))
+- Add new popup when a loaded save file gets modified externally ([f4291e9](https://github.com/Hapfel1/er-save-manager/commit/f4291e92d64edf8b9a254cf6b3e6ab372279e403))
 
-- Improve DSR tabs `[DSR]` ([c85c66f](https://github.com/Hapfel1/er-save-manager/commit/c85c66fe42cc3bfb0c582a8099d459b13fb26033))
+- Improve DSR tabs `[DSR]` ([0738dbe](https://github.com/Hapfel1/er-save-manager/commit/0738dbecb5cb509cc89c1dc14f59a9df7a3c30cf))
 
-- Add missing Convergence Armor ([ecbb2ca](https://github.com/Hapfel1/er-save-manager/commit/ecbb2caf7e9a09d3eedf4183ecd3c46a8131ab63))
+- Add missing Convergence Armor ([668be41](https://github.com/Hapfel1/er-save-manager/commit/668be41fcc732f54cc883b9f5e515c560f49366e))
 
 
 
@@ -686,7 +727,7 @@ Larval Tear ([536fa62](https://github.com/Hapfel1/er-save-manager/commit/536fa62
 
 ### 📦 Dependencies
 
-- Bump taiki-e/install-action in the github-actions group `[deps]` ([af11b51](https://github.com/Hapfel1/er-save-manager/commit/af11b51c1a69038814eca7c17fc432a69bcf4ec7))
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([a5dfbd5](https://github.com/Hapfel1/er-save-manager/commit/a5dfbd58fb066fb6668f2694b8e7bbbc075d5516))
 
 
 
@@ -697,25 +738,25 @@ Larval Tear ([536fa62](https://github.com/Hapfel1/er-save-manager/commit/536fa62
 
 ### 🔧 Bug Fixes
 
-- Inventory update operations and crashing issue ([1c8081e](https://github.com/Hapfel1/er-save-manager/commit/1c8081e5eda7844b44b0474c7c7f4ce3d1827130))
+- Inventory update operations and crashing issue ([9faf298](https://github.com/Hapfel1/er-save-manager/commit/9faf298484412d772981df6c0bd24af8974eb808))
 
-- Fixed Convergence IDs that collided with base game IDs overwriting base game item names on non convergence saves ([3c65c8f](https://github.com/Hapfel1/er-save-manager/commit/3c65c8fbca94a7c1d6236cb64195c1f9ed0b3fef))
+- Fixed Convergence IDs that collided with base game IDs overwriting base game item names on non convergence saves ([077e6ba](https://github.com/Hapfel1/er-save-manager/commit/077e6baead17ae130760a4c8ec49ad08c88e8ad0))
 
-- Fixed icon display issues, updated database ([035e717](https://github.com/Hapfel1/er-save-manager/commit/035e717b608f767f61a3bd0106484575d8509838))
+- Fixed icon display issues, updated database ([b2e399a](https://github.com/Hapfel1/er-save-manager/commit/b2e399a4be072e26e1391ca7710b61e991c636e9))
 
-- Fix nyasu import to correctly import talisman pouches and memory slots ([504b6e1](https://github.com/Hapfel1/er-save-manager/commit/504b6e1f471902fe78fa5e8c7c86431d1c9a2e42))
+- Fix nyasu import to correctly import talisman pouches and memory slots ([864c4a2](https://github.com/Hapfel1/er-save-manager/commit/864c4a22f6180cb321fb4d141397dd49aa867a5b))
 
 
 
 ### 🎨 User Interface
 
-- Added view as icons for all items to make it  more user friendly ([3086051](https://github.com/Hapfel1/er-save-manager/commit/3086051271fe8e94d94249a5fd7851bb77b84f03))
+- Added view as icons for all items to make it  more user friendly ([89d17b6](https://github.com/Hapfel1/er-save-manager/commit/89d17b6857f41b4dca17c652314f4fb69f515467))
 
-- Added Visual Inventory ([a2d0ae7](https://github.com/Hapfel1/er-save-manager/commit/a2d0ae71ef70e910edd062c177e3b60b8ca885bd))
+- Added Visual Inventory ([0df8d9b](https://github.com/Hapfel1/er-save-manager/commit/0df8d9b4bdbef98d645640d308f8f7dea39014ff))
 
-- Added full visual Item Picker ([ccb68f3](https://github.com/Hapfel1/er-save-manager/commit/ccb68f3fea3d7cf2b2ea294d904341863851b13c))
+- Added full visual Item Picker ([3950e72](https://github.com/Hapfel1/er-save-manager/commit/3950e72f6bccf55b57ec334be7518f2ad8339a6e))
 
-- Increased Font Size and centered all new popups ([b4f505e](https://github.com/Hapfel1/er-save-manager/commit/b4f505e5281b3632b3aa06240e4c1d7563ed5e7b))
+- Increased Font Size and centered all new popups ([f92ea6b](https://github.com/Hapfel1/er-save-manager/commit/f92ea6b69d882328df02044c8d3e160da4cc0225))
 
 
 
@@ -726,39 +767,39 @@ Larval Tear ([536fa62](https://github.com/Hapfel1/er-save-manager/commit/536fa62
 
 ### ✨ New Features
 
-- Added more modification to existing items in inventory (set affinity, aow, upgrade level) with the correct validation ([5caafc4](https://github.com/Hapfel1/er-save-manager/commit/5caafc43fbf1337de1996e8c912034898a5f2a8c))
+- Added more modification to existing items in inventory (set affinity, aow, upgrade level) with the correct validation ([159a601](https://github.com/Hapfel1/er-save-manager/commit/159a6018f74989a1a01c4f8dea17a1a0ab2be5bc))
 
 
 
 ### 🔧 Bug Fixes
 
-- Fixed unkown item ids showing up ([f950bb7](https://github.com/Hapfel1/er-save-manager/commit/f950bb7078a53152ee6cec9a548a99a6b8fa9caf))
+- Fixed unkown item ids showing up ([6698c2f](https://github.com/Hapfel1/er-save-manager/commit/6698c2f05bc5b244df41f4304c4a3bf5601e8beb))
 
-- Fixed Weapon mm level calculation ([6a24869](https://github.com/Hapfel1/er-save-manager/commit/6a24869dd3073319e9b02d29a9893ccd698c820f))
+- Fixed Weapon mm level calculation ([4556ba3](https://github.com/Hapfel1/er-save-manager/commit/4556ba3e32a0a82989f9f837ba5b7282d7d19e03))
 
-- Correct EF tear false positive and remove unreliable anchor override `[deep_scan]` ([508e170](https://github.com/Hapfel1/er-save-manager/commit/508e1708a717ec9d627a5518570e68fddb469bf4))
+- Correct EF tear false positive and remove unreliable anchor override `[deep_scan]` ([1b7c7e0](https://github.com/Hapfel1/er-save-manager/commit/1b7c7e0d9a592ef511e9e72f24a41cd5c014f38a))
 
 - Fix update inventory ops with rebuild to fix crashing issue
 
-Co-authored-by: Copilot <copilot@github.com> ([24a31f3](https://github.com/Hapfel1/er-save-manager/commit/24a31f3272b9b284a6ac578b79ae714873baeb81))
+Co-authored-by: Copilot <copilot@github.com> ([677bb93](https://github.com/Hapfel1/er-save-manager/commit/677bb930ccca2f75c44c19d8f2874f700dcd82d5))
 
-- Improve Item Spawning to avoid crashing/corruption ([210fb35](https://github.com/Hapfel1/er-save-manager/commit/210fb356a1a3c926d0c1e74f8ab4f98d48b11e70))
+- Improve Item Spawning to avoid crashing/corruption ([debf795](https://github.com/Hapfel1/er-save-manager/commit/debf7959cde268f132e0303178098e1de16a2b94))
 
-- Fixed Item Import and slot rebuild to cause more corruption issues ([d04eb45](https://github.com/Hapfel1/er-save-manager/commit/d04eb457f9597f868356acd8e7f5b58edbfaf99a))
+- Fixed Item Import and slot rebuild to cause more corruption issues ([9ec6054](https://github.com/Hapfel1/er-save-manager/commit/9ec6054a8a73c6a2f82c5e99c246b204e28c2100))
 
-- Add maxrepositorynum ([d3c48a9](https://github.com/Hapfel1/er-save-manager/commit/d3c48a9563226e6a929aa34674d249d04a4135af))
+- Add maxrepositorynum ([bfed293](https://github.com/Hapfel1/er-save-manager/commit/bfed293b477573096afa0f436f4ca77ca04a6235))
 
 
 
 ### 🎨 User Interface
 
-- Add ItemGib button ([8c6c26f](https://github.com/Hapfel1/er-save-manager/commit/8c6c26fe9e6bbdbc81a8c4a417e4917ebb98c388))
+- Add ItemGib button ([05c9c1f](https://github.com/Hapfel1/er-save-manager/commit/05c9c1f0cc1783d7a871390a5467603c2418919b))
 
 
 
 ### 📦 Dependencies
 
-- Bump taiki-e/install-action in the github-actions group `[deps]` ([2811c8f](https://github.com/Hapfel1/er-save-manager/commit/2811c8f8a3dcd8e55389e29575d31ef8ee7449ba))
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([8a4c888](https://github.com/Hapfel1/er-save-manager/commit/8a4c888890363c0405b45c90c485251245acc06c))
 
 
 
@@ -769,21 +810,21 @@ Co-authored-by: Copilot <copilot@github.com> ([24a31f3](https://github.com/Hapfe
 
 ### ✨ New Features
 
-- Structured item data with param validation `[inventory]` ([c12b807](https://github.com/Hapfel1/er-save-manager/commit/c12b807956fdd4a2020ac95a529af0516e98b9f5))
+- Structured item data with param validation `[inventory]` ([28b5b84](https://github.com/Hapfel1/er-save-manager/commit/28b5b84a8faa034d9de3872aba9ad3cd3c9d8d3d))
 
 
 
 ### 🔧 Bug Fixes
 
-- Remove_item was ignoring the delta return value so it did not shift the offsets correctly ([69dfc16](https://github.com/Hapfel1/er-save-manager/commit/69dfc164741a189275ccae21061aedcc2ca3b652))
+- Remove_item was ignoring the delta return value so it did not shift the offsets correctly ([7cccd3d](https://github.com/Hapfel1/er-save-manager/commit/7cccd3d76df24b8a924763ecb1961862dc48db44))
 
-- Converted Database files to csv, added more params to validate each spawned item, split up add_item function ([b29471a](https://github.com/Hapfel1/er-save-manager/commit/b29471aad7755d10a0e1ac3219e13435b185bb19))
+- Converted Database files to csv, added more params to validate each spawned item, split up add_item function ([a18ef1f](https://github.com/Hapfel1/er-save-manager/commit/a18ef1f8290461ff896efd620240faf5e60f7cbd))
 
 
 
 ### 📦 Dependencies
 
-- Bump taiki-e/install-action in the github-actions group `[deps]` ([ae6993d](https://github.com/Hapfel1/er-save-manager/commit/ae6993dd0f3e679ba703f579b245e375ea1f54f7))
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([0d73cd8](https://github.com/Hapfel1/er-save-manager/commit/0d73cd8d90d4ed2eb8d708c374549d284afc2c06))
 
 
 
@@ -794,21 +835,35 @@ Co-authored-by: Copilot <copilot@github.com> ([24a31f3](https://github.com/Hapfe
 
 ### ✨ New Features
 
-- Added Item Spawning ([7141e3f](https://github.com/Hapfel1/er-save-manager/commit/7141e3ff19ad5efce917ef9577435a968843088d))
+- Added Item Spawning ([2bf7b41](https://github.com/Hapfel1/er-save-manager/commit/2bf7b4165f56a02c55d73f398515a2ab87d6f3db))
 
-- Release v1.0.0 ([9d2ff22](https://github.com/Hapfel1/er-save-manager/commit/9d2ff228d4d5c18bfc1cc38c2f5a38f92c6912b9)) ⚠️ **BREAKING CHANGE**
+- Added Equipment Editing ([c6aef6e](https://github.com/Hapfel1/er-save-manager/commit/c6aef6e27113ca6ee01332580ae059fa0db410c9))
+
+- Added Item Spawning ([3569e06](https://github.com/Hapfel1/er-save-manager/commit/3569e067163db9287daad2740381cbf9b9379f00))
+
+- Release v1.0.0 ([d54a0de](https://github.com/Hapfel1/er-save-manager/commit/d54a0de00aefca7388629e4877c8db655d1b37b6)) ⚠️ **BREAKING CHANGE**
 
 
 
 ### 🔧 Bug Fixes
 
-- Fixed deep scan issues ([98ac717](https://github.com/Hapfel1/er-save-manager/commit/98ac717f50c134dd2c55df1c27548179cb531b90))
+- Fixed equipment editor not creating backups ([67abf43](https://github.com/Hapfel1/er-save-manager/commit/67abf43839062a0e6f56f8e67a549d4c787dd847))
+
+- Fixed deep scan issues ([678a99a](https://github.com/Hapfel1/er-save-manager/commit/678a99ad33664e6f2246173cbe9c7936b9c2f803))
+
+
+
+### 🎨 User Interface
+
+- Rework vanilla save warning ([c73b2ca](https://github.com/Hapfel1/er-save-manager/commit/c73b2ca8776b604e66b9151b9235b773b38e6642))
+
+- Remade Inventory Editor UI and added Affinities ([777eb0d](https://github.com/Hapfel1/er-save-manager/commit/777eb0d4a666a5fb8c8209f903f50f1a5ac4a89e))
 
 
 
 ### 📦 Dependencies
 
-- Bump taiki-e/install-action in the github-actions group `[deps]` ([d6fd9be](https://github.com/Hapfel1/er-save-manager/commit/d6fd9bec7902a586653d202884cf8e5c3935a219))
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([288d056](https://github.com/Hapfel1/er-save-manager/commit/288d056ec55d43455a8364f9d66da5bcfb75fbc8))
 
 
 
@@ -819,25 +874,25 @@ Co-authored-by: Copilot <copilot@github.com> ([24a31f3](https://github.com/Hapfe
 
 ### 🔧 Bug Fixes
 
-- Add replacenetman option and button for trashed csnetmans without visible write torns ([44075f5](https://github.com/Hapfel1/er-save-manager/commit/44075f5229e9f16bf2314ca1927b8f348f817e5a))
+- Add replacenetman option and button for trashed csnetmans without visible write torns ([23ff547](https://github.com/Hapfel1/er-save-manager/commit/23ff5474f5db3fab3133dcde17af8e862b8dbd3e))
 
-- Fixed steamid not being synced correctly when importing from a .erc file ([6f7f3fa](https://github.com/Hapfel1/er-save-manager/commit/6f7f3fa2590c95919f102b258bfd00f09adff770))
+- Fixed steamid not being synced correctly when importing from a .erc file ([4d3c9d9](https://github.com/Hapfel1/er-save-manager/commit/4d3c9d91bb0ab9f2dae405e6f0fa49ecbcd85ff2))
 
 
 
 ### 🎨 User Interface
 
-- Add import flags button and add "All" selection for event flag categories with subcategories ([ed9b36c](https://github.com/Hapfel1/er-save-manager/commit/ed9b36c2aa0cbb45a9cb046d2131f85ea933fd5b))
+- Add import flags button and add "All" selection for event flag categories with subcategories ([9c87496](https://github.com/Hapfel1/er-save-manager/commit/9c874962f3f64c05f831de3dfd2b337911a9372b))
 
-- Added Playtime Editor ([6bf0805](https://github.com/Hapfel1/er-save-manager/commit/6bf080529b49a86893d2ace6ffb121ba67d2c371))
+- Added Playtime Editor ([555ed85](https://github.com/Hapfel1/er-save-manager/commit/555ed85fca02ea6924baa1be42fdb0173214cc8b))
 
 
 
 ### 📦 Dependencies
 
-- Bump the github-actions group with 2 updates `[deps]` ([6639df2](https://github.com/Hapfel1/er-save-manager/commit/6639df2b1985f73f8984926bd24f5f536b43e0e5))
+- Bump the github-actions group with 2 updates `[deps]` ([173e6f1](https://github.com/Hapfel1/er-save-manager/commit/173e6f1287b3165f094ac2eccfbe7874c316e42b))
 
-- Bump the github-actions group with 2 updates `[deps]` ([7f7c08c](https://github.com/Hapfel1/er-save-manager/commit/7f7c08ca2cfc4943a833ce622f8aae1bdf6aa0a2))
+- Bump the github-actions group with 2 updates `[deps]` ([1f9f899](https://github.com/Hapfel1/er-save-manager/commit/1f9f8998cc0b27a6bad36babf840c61294387517))
 
 
 
@@ -846,9 +901,55 @@ Co-authored-by: Copilot <copilot@github.com> ([24a31f3](https://github.com/Hapfe
 **Released:** April 10, 2026
 
 
+### ✨ New Features
+
+- Add weapon_matchmaking_level and a check for every weapon upgrade level to combat any tries to abuse modifying it ([e715c02](https://github.com/Hapfel1/er-save-manager/commit/e715c02793ab2d6757911f0510977eeff2563248))
+
+
+
+### 🔧 Bug Fixes
+
+- Fixed SteamID auto-detection on Linux ([debc036](https://github.com/Hapfel1/er-save-manager/commit/debc036c555521cf1f1116ce10187b8922ef8d23))
+
+- Fixed Steam vanity link parsing ([150ed43](https://github.com/Hapfel1/er-save-manager/commit/150ed43545e3b570a17b588e95b5b46cb57f5f63))
+
+- Fix Open folder button on certain Linux distros not working ([ca4edd0](https://github.com/Hapfel1/er-save-manager/commit/ca4edd01297a5e80d4b438740fd2f7ad83794529))
+
+- Fixed the upgrade level detection ([33c9f5d](https://github.com/Hapfel1/er-save-manager/commit/33c9f5dfb55d49c0e2b7c0913a2e24d01a8c1c8f))
+
+- Fixed process monitoring ([f9dfad4](https://github.com/Hapfel1/er-save-manager/commit/f9dfad4e5d7fd6130918170791b655ac53e31db9))
+
+- Fixed process detection for is_game_running ([31eb4e9](https://github.com/Hapfel1/er-save-manager/commit/31eb4e9bb6c66936e0f38c624fb3312f0bdb9589))
+
+- Fixed character name not being read correctly because of garbage data ([a5b40e1](https://github.com/Hapfel1/er-save-manager/commit/a5b40e15842515c940cf4023a838c0f1dfc52a96))
+
+- Format and lint ([d4c374c](https://github.com/Hapfel1/er-save-manager/commit/d4c374c56ea08d1a1832cecf50f889fd5d392d9e))
+
+- Fixed png issue with character browser and impoved loading in the browser ([3e74123](https://github.com/Hapfel1/er-save-manager/commit/3e741233895a947f15544551468d535a4cdedb37))
+
+- Fixed cpu0 feature not applying correctly ([b6ad4a7](https://github.com/Hapfel1/er-save-manager/commit/b6ad4a7beac5779882b406f9430363c3daec5872))
+
+- Lint ([62fab68](https://github.com/Hapfel1/er-save-manager/commit/62fab6810fb5c1bee51d972c7b438e42ad48fbb7))
+
+
+
+### 🎨 User Interface
+
+- Add "Apply CPU 0 fix on game launch" setting for ER, NR and DS3 ([158aedd](https://github.com/Hapfel1/er-save-manager/commit/158aedd53eec8f9d174e95f0387cde299d1a05eb))
+
+- Fix performance issues ([04c441f](https://github.com/Hapfel1/er-save-manager/commit/04c441f8ad1e9b4be05521c15e2a9541306e9673))
+
+
+
 ### 📦 Dependencies
 
-- Bump taiki-e/install-action in the github-actions group `[deps]` ([3ba7626](https://github.com/Hapfel1/er-save-manager/commit/3ba76262255cd967250d33bf44582ea42a0702dc))
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([4f2a231](https://github.com/Hapfel1/er-save-manager/commit/4f2a231eeaf42e49b140a7ab47d158ddd6dbcbd7))
+
+
+
+### Buld
+
+- Lint ([181f197](https://github.com/Hapfel1/er-save-manager/commit/181f19778770e89527be95b464d155715fe0095d))
 
 
 
@@ -859,91 +960,47 @@ Co-authored-by: Copilot <copilot@github.com> ([24a31f3](https://github.com/Hapfe
 
 ### ✨ New Features
 
-- Added Invasion Regions and ingame settings ([1b1097b](https://github.com/Hapfel1/er-save-manager/commit/1b1097bd7bae370995f0dec1cdeb10db9f1450f2))
+- Added Invasion Regions and ingame settings ([e674007](https://github.com/Hapfel1/er-save-manager/commit/e67400780232383d721e675b0085280d1af41bb5))
 
-- Add other Fromsoft Games for SteamID Patching and Backup Manager ([fc2a616](https://github.com/Hapfel1/er-save-manager/commit/fc2a616e832a9d7883aea56f733347ffa2b2d3a4))
+- Add other Fromsoft Games for SteamID Patching and Backup Manager ([b1d6e4b](https://github.com/Hapfel1/er-save-manager/commit/b1d6e4b5325172193f4c6fd4ad9b5f4bbbe5c527))
 
-- Added "Move Bloodstain to player" button in the world state tab ([48cd065](https://github.com/Hapfel1/er-save-manager/commit/48cd0650e40adc9ac90634a1c7e214e2918dedba))
-
-- Add weapon_matchmaking_level and a check for every weapon upgrade level to combat any tries to abuse modifying it ([f68ac2f](https://github.com/Hapfel1/er-save-manager/commit/f68ac2fe3eb5b2402921ded78bf5b314ba361e10))
-
-- Added Item Spawning ([eaceae8](https://github.com/Hapfel1/er-save-manager/commit/eaceae82ab9ca165e35b5b84b43b4ffc36383c12))
-
-- Added Equipment Editing ([47893cb](https://github.com/Hapfel1/er-save-manager/commit/47893cb9c19d1ff55b7ce2dc84e5288498c187d8))
+- Added "Move Bloodstain to player" button in the world state tab ([fed05c7](https://github.com/Hapfel1/er-save-manager/commit/fed05c7c55d8a8a4e06a6b2646c9b70b3ee56793))
 
 
 
 ### 🔧 Bug Fixes
 
-- Fix event flag custom id toggle not creating backups ([74d7434](https://github.com/Hapfel1/er-save-manager/commit/74d7434b17a3130271cef01903ce5afeddcd74b3))
+- Fix event flag custom id toggle not creating backups ([7eae089](https://github.com/Hapfel1/er-save-manager/commit/7eae0894387cbef99f36912529d4a041e2e82a39))
 
-- Fixed rendering issue in Appearance Tab popup window ([fb7b38b](https://github.com/Hapfel1/er-save-manager/commit/fb7b38bcd29fe9f81d9b31ef64bc502a3e6efc08))
+- Fixed rendering issue in Appearance Tab popup window ([f8fc349](https://github.com/Hapfel1/er-save-manager/commit/f8fc3496e5b00fb547d3d1aae121b3c65ade97c0))
 
-- Added change files ([ea91317](https://github.com/Hapfel1/er-save-manager/commit/ea913171336039d22620c44c0f6b8af4c82e0bfe))
+- Added change files ([b502a78](https://github.com/Hapfel1/er-save-manager/commit/b502a786ce1d3ff184d92b2c63ad7f3eca60f6bb))
 
-- Lint ([188f267](https://github.com/Hapfel1/er-save-manager/commit/188f267955f123b87c7ff06aea53f1fc13706861))
+- Lint ([2c6d07c](https://github.com/Hapfel1/er-save-manager/commit/2c6d07c608709e935df37d29949d1ea0a18ed4c9))
 
-- Added correct functionality for steamid patching for each game ([d266428](https://github.com/Hapfel1/er-save-manager/commit/d266428169e8aaec34f642098e990b2508d05c91))
+- Added correct functionality for steamid patching for each game ([6210337](https://github.com/Hapfel1/er-save-manager/commit/6210337fa7c9b01612eecb71baecec338d5d4bb5))
 
-- Fixed Save Loading and Process detection for Non-ER games ([1ca1b68](https://github.com/Hapfel1/er-save-manager/commit/1ca1b68aa2d2c605eb00bf583e8410822e3e7c21))
-
-- Fixed SteamID auto-detection on Linux ([7e2ee39](https://github.com/Hapfel1/er-save-manager/commit/7e2ee39acfe73cee08912268298f3929a9994db5))
-
-- Fixed Steam vanity link parsing ([46458e7](https://github.com/Hapfel1/er-save-manager/commit/46458e79b78f6f6aeeb970cfdd70e858d22cb631))
-
-- Fix Open folder button on certain Linux distros not working ([5617f65](https://github.com/Hapfel1/er-save-manager/commit/5617f65e2d3eb1088f81b206b04837cae1923e19))
-
-- Fixed the upgrade level detection ([96ab048](https://github.com/Hapfel1/er-save-manager/commit/96ab048d629d5a89906fd509ff88c93f42398100))
-
-- Fixed process monitoring ([9aaabfb](https://github.com/Hapfel1/er-save-manager/commit/9aaabfb738f12b62f326031c1965aabcbf004290))
-
-- Fixed process detection for is_game_running ([4b57a80](https://github.com/Hapfel1/er-save-manager/commit/4b57a8013d422c224e2e24369972357c62adf738))
-
-- Fixed character name not being read correctly because of garbage data ([df34500](https://github.com/Hapfel1/er-save-manager/commit/df3450088e16adbe1850891a850af76edccd9209))
-
-- Format and lint ([9f5fd3a](https://github.com/Hapfel1/er-save-manager/commit/9f5fd3ad318d6f37da0b40c267e08ea5912d4d1c))
-
-- Fixed png issue with character browser and impoved loading in the browser ([ffa3e96](https://github.com/Hapfel1/er-save-manager/commit/ffa3e9654a13f23a46ff7d9bc3d5bbf810a79dc8))
-
-- Fixed cpu0 feature not applying correctly ([242cf46](https://github.com/Hapfel1/er-save-manager/commit/242cf4693b911cd4ca904cf53a9635e883158279))
-
-- Lint ([fbdba81](https://github.com/Hapfel1/er-save-manager/commit/fbdba8108e8937d5fa9a3ff0a91fde86a7e1b323))
-
-- Fixed equipment editor not creating backups ([04198a2](https://github.com/Hapfel1/er-save-manager/commit/04198a2c75c4014d6c8575a620452f981f00fd06))
+- Fixed Save Loading and Process detection for Non-ER games ([31c48d9](https://github.com/Hapfel1/er-save-manager/commit/31c48d90f717d909d7a38bb967a9c6b855d3d411))
 
 
 
 ### 🎨 User Interface
 
-- Add Event Flag Export ([9e82142](https://github.com/Hapfel1/er-save-manager/commit/9e82142a1ebf7c08292d411f123a5ef2afb2fdf5))
+- Add Event Flag Export ([9378421](https://github.com/Hapfel1/er-save-manager/commit/9378421cd6452a11828594a33da56052ef5a4415))
 
-- Added Great Rune and Rune Arc display ([16bf210](https://github.com/Hapfel1/er-save-manager/commit/16bf210aa3a11d93d8a3185d9abe9b6440eb1e93))
+- Added Great Rune and Rune Arc display ([61ac096](https://github.com/Hapfel1/er-save-manager/commit/61ac0962801aa6da40795486990666ad08634717))
 
-- Fixed popup centering ([ad7d66a](https://github.com/Hapfel1/er-save-manager/commit/ad7d66ad1dea14bd07190e9a667fd295de496927))
+- Fixed popup centering ([1ceb5dc](https://github.com/Hapfel1/er-save-manager/commit/1ceb5dcd25c62eff97eec2f2c767e93cb1c4aeac))
 
-- Added warning when no apperance presets are saved to first save one in game ([62bcefa](https://github.com/Hapfel1/er-save-manager/commit/62bcefa5f3c89c7a960ff5d735351f407ec37f1f))
+- Added warning when no apperance presets are saved to first save one in game ([580b149](https://github.com/Hapfel1/er-save-manager/commit/580b1490692dedbc6ca4d5c65e5f37449fb582be))
 
-- Add MapID map for the known locations teleport feature ([24d95be](https://github.com/Hapfel1/er-save-manager/commit/24d95be71c1b4264a8b5a32c307cca6fdf4aa910))
-
-- Add "Apply CPU 0 fix on game launch" setting for ER, NR and DS3 ([e4654b4](https://github.com/Hapfel1/er-save-manager/commit/e4654b4f258ba0f028b0622e41a47e1e57beb3f6))
-
-- Fix performance issues ([e1c2ae0](https://github.com/Hapfel1/er-save-manager/commit/e1c2ae012e18ce647991d119e74dd50b0c856af3))
-
-- Rework vanilla save warning ([5faf9f6](https://github.com/Hapfel1/er-save-manager/commit/5faf9f6be829ce2b82f9bc6d8ef8e61abbbddfda))
-
-- Remade Inventory Editor UI and added Affinities ([7fa65a7](https://github.com/Hapfel1/er-save-manager/commit/7fa65a71529f2228558459818ec04b15b521f454))
+- Add MapID map for the known locations teleport feature ([ef62ebc](https://github.com/Hapfel1/er-save-manager/commit/ef62ebc55a6f29aa4e813b2a38a65ce9f5d43d64))
 
 
 
 ### 📦 Dependencies
 
-- Bump the github-actions group with 3 updates `[deps]` ([e630f06](https://github.com/Hapfel1/er-save-manager/commit/e630f06a9675308963fedd3091a6be21d9bc2fbb))
-
-
-
-### Buld
-
-- Lint ([e759435](https://github.com/Hapfel1/er-save-manager/commit/e759435744f1e499aec4cd9f2c29ffaa57788bf7))
+- Bump the github-actions group with 3 updates `[deps]` ([61ca83d](https://github.com/Hapfel1/er-save-manager/commit/61ca83d842fe5ed53ed9920818b0b8bf41215ebc))
 
 
 
@@ -954,37 +1011,37 @@ Co-authored-by: Copilot <copilot@github.com> ([24a31f3](https://github.com/Hapfe
 
 ### ✨ New Features
 
-- Added Event Flag Torn Detection and Fix ([d535ea5](https://github.com/Hapfel1/er-save-manager/commit/d535ea5f2922da4ce3ab2a3a555490f5deb64350))
+- Added Event Flag Torn Detection and Fix ([baa2948](https://github.com/Hapfel1/er-save-manager/commit/baa2948623073ab6b7fdb73bc3f7134361c087ab))
 
 
 
 ### 🔧 Bug Fixes
 
-- Fixed last opened save location not working on Linux ([b65a1da](https://github.com/Hapfel1/er-save-manager/commit/b65a1dabc913e232b3ff85de87833bf9b692367b))
+- Fixed last opened save location not working on Linux ([a6edd49](https://github.com/Hapfel1/er-save-manager/commit/a6edd4938e37a98267ba67a1a4e1f6eb9a2362b6))
 
-- Add netman validation and corruption fixing after byteshift ([7405b3d](https://github.com/Hapfel1/er-save-manager/commit/7405b3d7a9fe25c278ef191803786ea3f99de70e))
+- Add netman validation and corruption fixing after byteshift ([107a868](https://github.com/Hapfel1/er-save-manager/commit/107a86860244e634a16e79d1f46c05dcc83cdf9f))
 
-- Fixed dlc flag detection + added apply button when only checking that checkbox ([f6ed165](https://github.com/Hapfel1/er-save-manager/commit/f6ed16569fef75e41dad2b3700fbf54d0a091f76))
+- Fixed dlc flag detection + added apply button when only checking that checkbox ([ee22bd6](https://github.com/Hapfel1/er-save-manager/commit/ee22bd6101fc0e9d4db8dfd68586eb6d49a12dc2))
 
-- Added Checksum validation for slots ([adebcb8](https://github.com/Hapfel1/er-save-manager/commit/adebcb81b14bef64c57874a2255508add9d7d391))
+- Added Checksum validation for slots ([9928ad6](https://github.com/Hapfel1/er-save-manager/commit/9928ad6da245b0e08546b5ca4f9156cb24725c0a))
 
-- Added event flags for npc quests and a tab for checking progress ([03ebe4b](https://github.com/Hapfel1/er-save-manager/commit/03ebe4ba6b601b4cae4f19c9b633bfdc226125b6))
+- Added event flags for npc quests and a tab for checking progress ([e9a17b8](https://github.com/Hapfel1/er-save-manager/commit/e9a17b8aa38ff9e448a4350179075fffae36b8d4))
 
 
 
 ### 🎨 User Interface
 
-- Add button that links to discord server ([12ff6bc](https://github.com/Hapfel1/er-save-manager/commit/12ff6bcfc1c82ab2ac48fa3dd171ab719cd736c9))
+- Add button that links to discord server ([b3f8d8a](https://github.com/Hapfel1/er-save-manager/commit/b3f8d8a5c7b5e18f066d291c4fdaedbdbc902b05))
 
-- Made popups from character_details appear centered over its parent ([9a814f2](https://github.com/Hapfel1/er-save-manager/commit/9a814f206157460adad1e895473d779e861b7afa))
+- Made popups from character_details appear centered over its parent ([8e1197f](https://github.com/Hapfel1/er-save-manager/commit/8e1197f4337875b70e785ea3710cca72f6b43794))
 
 
 
 ### 📦 Dependencies
 
-- Bump the github-actions group with 2 updates `[deps]` ([285e359](https://github.com/Hapfel1/er-save-manager/commit/285e35912bb1c8b9f301a4f8bbdbb319cddfad34))
+- Bump the github-actions group with 2 updates `[deps]` ([4af85db](https://github.com/Hapfel1/er-save-manager/commit/4af85db09392fb47652ba599876aa7ee9dfd77c6))
 
-- Bump taiki-e/install-action in the github-actions group `[deps]` ([5bb543f](https://github.com/Hapfel1/er-save-manager/commit/5bb543fc3c2f6b0088cfd4596e0fa6f54e0d820c))
+- Bump taiki-e/install-action in the github-actions group `[deps]` ([b11b53d](https://github.com/Hapfel1/er-save-manager/commit/b11b53dc0dc879e61d19d7ca89d05115273a3487))
 
 
 
@@ -996,14 +1053,14 @@ Co-authored-by: Copilot <copilot@github.com> ([24a31f3](https://github.com/Hapfe
 ### 🔧 Bug Fixes
 
 - Fix: use data_start consistently
-fbcbdc3 converted the offsets from slot-relative to absolute, but only
+864a98e converted the offsets from slot-relative to absolute, but only
 in the slot itself - all of the other scripts still expected it to have
 been removed and would re-add the slot data offset back in, corrupting
 the pointer and trashing the save slot. This removes the slot offset
 addition from all of the places where the slot data offset is already
-present in the slot object itself, preventing corruption ([e62ae60](https://github.com/Hapfel1/er-save-manager/commit/e62ae60ec290e7e5b8e5242e8997eada664235ce))
+present in the slot object itself, preventing corruption ([93246a2](https://github.com/Hapfel1/er-save-manager/commit/93246a28010be7adfbfb560a4fd16da2699c703c))
 
-- Fixed offsets being applied twice ([058008f](https://github.com/Hapfel1/er-save-manager/commit/058008f4c65b237da0546b710095363ba64b851f))
+- Fixed offsets being applied twice ([dc6a7da](https://github.com/Hapfel1/er-save-manager/commit/dc6a7da855b98758aa8a96a1585fb96363207037))
 
 
 
@@ -1014,37 +1071,37 @@ present in the slot object itself, preventing corruption ([e62ae60](https://gith
 
 ### ✨ New Features
 
-- Add NPC respawner ([a6cb90d](https://github.com/Hapfel1/er-save-manager/commit/a6cb90dfbae0e38e69f3f3ff3b39f5140560b9f2))
+- Add NPC respawner ([270e0de](https://github.com/Hapfel1/er-save-manager/commit/270e0de67c14b9af76d6d75faa63ac0d076da558))
 
-- Added known locations to the World State Tab for teleporting ([2fba405](https://github.com/Hapfel1/er-save-manager/commit/2fba40548923b0d50fd6f8d45f233c24a791d654))
+- Added known locations to the World State Tab for teleporting ([50ba6d7](https://github.com/Hapfel1/er-save-manager/commit/50ba6d73e99887c5b7a881e9c949784c61d9524a))
 
-- Added more save file corruption detection and Fixes ([fbcbdc3](https://github.com/Hapfel1/er-save-manager/commit/fbcbdc31c7f17a6af4f214bb088e9e9cd6dae4b3))
+- Added more save file corruption detection and Fixes ([864a98e](https://github.com/Hapfel1/er-save-manager/commit/864a98ebf4d560131487b0d417c3518f69b6a258))
 
 
 
 ### 🔧 Bug Fixes
 
-- Fixed window popup render issue on linux ([8d340db](https://github.com/Hapfel1/er-save-manager/commit/8d340db0e9f52e6c4a586bc348df90dfe2bade46))
+- Fixed window popup render issue on linux ([375375a](https://github.com/Hapfel1/er-save-manager/commit/375375a1f5beb9c5e2475aa892c3d34b5a0b7baa))
 
-- Fixed SteamID Patcher AutoDetection ([57b1946](https://github.com/Hapfel1/er-save-manager/commit/57b19469d3092f3f5308babde7ae79a0046be3e8))
+- Fixed SteamID Patcher AutoDetection ([cbdd7d4](https://github.com/Hapfel1/er-save-manager/commit/cbdd7d455bc2f352f829bc55e355741470da95b3))
 
-- Fixed scrolling on Linux ([a593c17](https://github.com/Hapfel1/er-save-manager/commit/a593c17a46f044fd6670c5bbd6243722cd2a2058))
+- Fixed scrolling on Linux ([8fa53d5](https://github.com/Hapfel1/er-save-manager/commit/8fa53d5f6488bde378e4039fdd84f459c7cd8b89))
 
-- Fixed Character Operations also copying ProfileSummary so that the character gets shown correctly instantly ([1d8ef3f](https://github.com/Hapfel1/er-save-manager/commit/1d8ef3fbda28756713520490fc4bfd0ed48066a4))
+- Fixed Character Operations also copying ProfileSummary so that the character gets shown correctly instantly ([50c90c5](https://github.com/Hapfel1/er-save-manager/commit/50c90c5031bf2279b4c31261a181c96d40ec3d4e))
 
 
 
 ### 🎨 User Interface
 
-- Made game running detection more clear and added a button to force quit the game ([aad25ef](https://github.com/Hapfel1/er-save-manager/commit/aad25ef2d4671daa6e1d414821aecb05f0ecc520))
+- Made game running detection more clear and added a button to force quit the game ([9d7afcf](https://github.com/Hapfel1/er-save-manager/commit/9d7afcfa7639946b1b572b138e412c9d6c1d7131))
 
-- Added new Toast info boxes to remove popup spam ([d3acb7b](https://github.com/Hapfel1/er-save-manager/commit/d3acb7bb2e41bc79d93ceb0e0447d52590296f7f))
+- Added new Toast info boxes to remove popup spam ([fe91822](https://github.com/Hapfel1/er-save-manager/commit/fe9182218e56ff7b1880403f1ee80abe60268f29))
 
-- Remade Troubleshooting button to offer an Addon install for the standalone troubleshooter ([a71b5f0](https://github.com/Hapfel1/er-save-manager/commit/a71b5f0e7394f662e44ff36d1cdbe88ed233973b))
+- Remade Troubleshooting button to offer an Addon install for the standalone troubleshooter ([298e1a6](https://github.com/Hapfel1/er-save-manager/commit/298e1a6a20ec5433e46581ce80730ee3aa3dcf6a))
 
-- Changed some info popups to be Toast notifications instead for a better UX ([02dfa6a](https://github.com/Hapfel1/er-save-manager/commit/02dfa6a283c0934ab07c3499168e10c58f8ef42b))
+- Changed some info popups to be Toast notifications instead for a better UX ([27ee698](https://github.com/Hapfel1/er-save-manager/commit/27ee698a1555267f889cc337d3bb2d807bd367d7))
 
-- Added character names next to the slot selections everywhere ([f52c46b](https://github.com/Hapfel1/er-save-manager/commit/f52c46b30f134fc5584cf516b2e7ced46fa6c7bb))
+- Added character names next to the slot selections everywhere ([85be34e](https://github.com/Hapfel1/er-save-manager/commit/85be34ecacbf1c56e171263e159a4009c6bb279e))
 
 
 
@@ -1055,7 +1112,7 @@ present in the slot object itself, preventing corruption ([e62ae60](https://gith
 
 ### 🔧 Bug Fixes
 
-- Fix : fix character ops error ([05df73c](https://github.com/Hapfel1/er-save-manager/commit/05df73cdb79e96d7e9d74a7e772746b3056cf51d))
+- Fix : fix character ops error ([9c60a4c](https://github.com/Hapfel1/er-save-manager/commit/9c60a4c5633608ada3b03a5f6666df2725f720b5))
 
 
 
@@ -1066,51 +1123,51 @@ present in the slot object itself, preventing corruption ([e62ae60](https://gith
 
 ### ✨ New Features
 
-- Added Auto-Backup Feature when booting up the game, changed backups to be zipped by default. ([992ed82](https://github.com/Hapfel1/er-save-manager/commit/992ed82a22d7cd62d1cb9330b64e93f134370a41))
+- Added Auto-Backup Feature when booting up the game, changed backups to be zipped by default. ([12c562c](https://github.com/Hapfel1/er-save-manager/commit/12c562cb0fa3eb0258ac8943bc08cbafeb64a423))
 
-- Added Character Browser ([c78dfe0](https://github.com/Hapfel1/er-save-manager/commit/c78dfe0068022e10b62408771378ee30e9879764))
+- Added Character Browser ([c4199f7](https://github.com/Hapfel1/er-save-manager/commit/c4199f77a20d57d7a15545531e7e9b8f6c74913e))
 
-- Add Convergence Support for the Character Browser ([edc61d4](https://github.com/Hapfel1/er-save-manager/commit/edc61d4a81269c94521f098e1a639489147c94e5))
+- Add Convergence Support for the Character Browser ([b31d77f](https://github.com/Hapfel1/er-save-manager/commit/b31d77f0b258208d7edf229a2f268608a3a0581e))
 
 
 
 ### 🔧 Bug Fixes
 
-- Fixed appimage build to include the custom lavender theme correctly ([381481d](https://github.com/Hapfel1/er-save-manager/commit/381481d5a8fec155b1cf598ce7105008837c96b5))
+- Fixed appimage build to include the custom lavender theme correctly ([69b044c](https://github.com/Hapfel1/er-save-manager/commit/69b044ceb1436dcf3c82b066c6f085919d82d61c))
 
-- Added vpn checker in troubleshooting tab ([d034cf3](https://github.com/Hapfel1/er-save-manager/commit/d034cf301effa169588d5f464af812b7dd9b1f8e))
+- Added vpn checker in troubleshooting tab ([d81e4e9](https://github.com/Hapfel1/er-save-manager/commit/d81e4e9ef5f94f51a283ee8c651fbc7e00f83853))
 
-- Added error for if the program is being run while zipped ([e7cb442](https://github.com/Hapfel1/er-save-manager/commit/e7cb4423c3dce2483aee93713f38d35082d4bb07))
+- Added error for if the program is being run while zipped ([e6f5508](https://github.com/Hapfel1/er-save-manager/commit/e6f5508a370671feba144cd5e3e4c9876461360a))
 
-- Fix steamdeck resolution issue ([2e9af76](https://github.com/Hapfel1/er-save-manager/commit/2e9af76cf060c4f5ddb730f53cd5b0495b47888b))
+- Fix steamdeck resolution issue ([40188fa](https://github.com/Hapfel1/er-save-manager/commit/40188fa015e5ac607b9b6ed31f95abd729090715))
 
-- Fixed wrong cnv save detection ([a213f99](https://github.com/Hapfel1/er-save-manager/commit/a213f99693b3188011b8251866f887cf616b7178))
+- Fixed wrong cnv save detection ([ebaecf7](https://github.com/Hapfel1/er-save-manager/commit/ebaecf790dc366bdd81f97b8285ef359d4d19255))
 
-- Fixed error when copying characters because of invalid filename characters, added sanitization ([22b83bb](https://github.com/Hapfel1/er-save-manager/commit/22b83bb87a162397c474159e1a86e424d1b25e85))
+- Fixed error when copying characters because of invalid filename characters, added sanitization ([efa87ad](https://github.com/Hapfel1/er-save-manager/commit/efa87ad8fecca4b0a2214add81760e3bf5febf2a))
 
-- Made opening links work on Linux ([f716d51](https://github.com/Hapfel1/er-save-manager/commit/f716d515b8329d5339639988a8caf6a4e24751c6))
+- Made opening links work on Linux ([3d33715](https://github.com/Hapfel1/er-save-manager/commit/3d337153c245ed5576aa8136d7fc59b70b1af1ea))
 
-- Fixed transferring characters between Save Files to correctly update Profile Summary and fixed an offset tracking error ([01ca69c](https://github.com/Hapfel1/er-save-manager/commit/01ca69c408244ba13a4bee912291923b1ead03f1))
+- Fixed transferring characters between Save Files to correctly update Profile Summary and fixed an offset tracking error ([e4de080](https://github.com/Hapfel1/er-save-manager/commit/e4de08040c2abe1ff0abcec356133a79bd6bc31b))
 
 
 
 ### 🎨 User Interface
 
-- Made autobackup more clear and easier to use ([572e8a3](https://github.com/Hapfel1/er-save-manager/commit/572e8a304214f6fa358d3bc2ea383670bf7da942))
+- Made autobackup more clear and easier to use ([f11c910](https://github.com/Hapfel1/er-save-manager/commit/f11c910fd91849483694d1f1fe334fce4dab6aac))
 
-- Revamped UI to work better for small resolution displays ([c058bd5](https://github.com/Hapfel1/er-save-manager/commit/c058bd55e846eea9b02592cae0902e6fceb45182))
+- Revamped UI to work better for small resolution displays ([9f13ef9](https://github.com/Hapfel1/er-save-manager/commit/9f13ef99178c8bc900bc0cdbb4c2ef4f2337e39d))
 
 
 
 ### 📖 Documentation
 
-- Updated TODO ([085914d](https://github.com/Hapfel1/er-save-manager/commit/085914dc2cfca94b3a45ab7c45180280fee08634))
+- Updated TODO ([8c165dd](https://github.com/Hapfel1/er-save-manager/commit/8c165dd5b27212585c76555603ef425ae83eef68))
 
 
 
 ### Buld
 
-- Edit todo ([b996d7b](https://github.com/Hapfel1/er-save-manager/commit/b996d7beb4462e7d1110aaa126effdb1eb7c8f5f))
+- Edit todo ([e14dd3e](https://github.com/Hapfel1/er-save-manager/commit/e14dd3ee7d0181deb1f85170307865e5dfbdfa9e))
 
 
 
@@ -1121,21 +1178,21 @@ present in the slot object itself, preventing corruption ([e62ae60](https://gith
 
 ### ✨ New Features
 
-- Added export to JSON preset selection ([d969f24](https://github.com/Hapfel1/er-save-manager/commit/d969f249b0112d137637167d9f0fd238889f7a97))
+- Added export to JSON preset selection ([a72d783](https://github.com/Hapfel1/er-save-manager/commit/a72d783b724798d24d30fd786a282f675c16abba))
 
 
 
 ### 🔧 Bug Fixes
 
-- Correct case sensitivity for theme path on Linux ([88123da](https://github.com/Hapfel1/er-save-manager/commit/88123dabb5667a249d61e6b1eb572dcbd2ae578b))
+- Correct case sensitivity for theme path on Linux ([7c2a48a](https://github.com/Hapfel1/er-save-manager/commit/7c2a48a698216e4dcfcdd7692078dba127d65626))
 
-- Fixed event flags being written incorrectly ([3e21c0d](https://github.com/Hapfel1/er-save-manager/commit/3e21c0dec72c1143b50c22658551dc3ac4faee77))
+- Fixed event flags being written incorrectly ([cc49186](https://github.com/Hapfel1/er-save-manager/commit/cc491863ecdb44fbb60599d33b21d7115b8913c3))
 
-- Fixed save file backup functionality ([c49509e](https://github.com/Hapfel1/er-save-manager/commit/c49509e44d0de1f4e1d980e6542d095be91e0450))
+- Fixed save file backup functionality ([f44c7e6](https://github.com/Hapfel1/er-save-manager/commit/f44c7e65d44fd8688068631fdcf9f7fde79921b1))
 
-- Fixed Character operation issues ([021d891](https://github.com/Hapfel1/er-save-manager/commit/021d8915425ed27d32fe112fd9f0aa13a2124516))
+- Fixed Character operation issues ([70080fb](https://github.com/Hapfel1/er-save-manager/commit/70080fbaba8c68246ad5e796f3a6698b9969cfdb))
 
-- Fixed info message popups appearing behind main window ([9ca2923](https://github.com/Hapfel1/er-save-manager/commit/9ca2923e501aac35bfe42ecabafd13eeb9b35dbb))
+- Fixed info message popups appearing behind main window ([69162ad](https://github.com/Hapfel1/er-save-manager/commit/69162ad08cb60707c0f982b923e8852ce1c1cc56))
 
 
 
@@ -1146,15 +1203,15 @@ present in the slot object itself, preventing corruption ([e62ae60](https://gith
 
 ### ✨ New Features
 
-- Added version checker to notify users of new update ([757c4b1](https://github.com/Hapfel1/er-save-manager/commit/757c4b1a2a1c458e3ad3bc96c17e5147d2e34d72))
+- Added version checker to notify users of new update ([9d49382](https://github.com/Hapfel1/er-save-manager/commit/9d49382af93792e0762eb4572c94c02ecf41ea17))
 
-- Add Troubleshooter for checking game und save file related issues ([f0f850b](https://github.com/Hapfel1/er-save-manager/commit/f0f850b6050e0ef33f5092fdbb7374bfa2d45064))
+- Add Troubleshooter for checking game und save file related issues ([4eb53b7](https://github.com/Hapfel1/er-save-manager/commit/4eb53b7c073e6d412fb5bcd48314f69b124829bf))
 
 
 
 ### 🔧 Bug Fixes
 
-- Fixed SteamDeck not showing Preset Browser correctly bc of SSL errors ([ea6794b](https://github.com/Hapfel1/er-save-manager/commit/ea6794b0cffdf812d1942a4158d79cbf3718e82c))
+- Fixed SteamDeck not showing Preset Browser correctly bc of SSL errors ([c6496ce](https://github.com/Hapfel1/er-save-manager/commit/c6496ce5fd604f41e2425caf74d23e23c7826ce3))
 
 
 
@@ -1165,13 +1222,13 @@ present in the slot object itself, preventing corruption ([e62ae60](https://gith
 
 ### 🔧 Bug Fixes
 
-- Fixed JSON import error msg ([36c73c1](https://github.com/Hapfel1/er-save-manager/commit/36c73c11f1d47fe9937b57b6757e796d83d81d66))
+- Fixed JSON import error msg ([aa67a3b](https://github.com/Hapfel1/er-save-manager/commit/aa67a3b5617b5cfe063668b774227a7dad34795c))
 
 
 
 ### 🎨 User Interface
 
-- Change default theme to dark ([6516a42](https://github.com/Hapfel1/er-save-manager/commit/6516a42182316f9065677645df424c9087ca2c4f))
+- Change default theme to dark ([25a2a64](https://github.com/Hapfel1/er-save-manager/commit/25a2a64c291844c67648573972d953f3ea942c26))
 
 
 
@@ -1182,29 +1239,29 @@ present in the slot object itself, preventing corruption ([e62ae60](https://gith
 
 ### ✨ New Features
 
-- Add ng+ editor in character info tab ([77f71af](https://github.com/Hapfel1/er-save-manager/commit/77f71afaed0bb9236c7ac72f2254e5705df5f971))
+- Add ng+ editor in character info tab ([b79a135](https://github.com/Hapfel1/er-save-manager/commit/b79a1358710cd42716ffcdcb5b666e7c1dc88221))
 
 
 
 ### 🔧 Bug Fixes
 
-- Changed image display in the preset browser to always display the original image's resolution ([041733d](https://github.com/Hapfel1/er-save-manager/commit/041733db7e32cb082891f47039ac59440424338b))
+- Changed image display in the preset browser to always display the original image's resolution ([5f5d609](https://github.com/Hapfel1/er-save-manager/commit/5f5d609bc72574fde4ad38ddc46a7cc2f40485bd))
 
 
 
 ### 🎨 User Interface
 
-- Make save fixer description more clear and add auto loading upon selecting a save file ([7124a5a](https://github.com/Hapfel1/er-save-manager/commit/7124a5a794a42e4dc08224f557c6a2e759470bb7))
+- Make save fixer description more clear and add auto loading upon selecting a save file ([3df841b](https://github.com/Hapfel1/er-save-manager/commit/3df841b162422759694165893adb71c99dc9885b))
 
-- Made all message boxes custom and improved the messagebox module ([dfa8685](https://github.com/Hapfel1/er-save-manager/commit/dfa86856f40c532b21240581bafcd257826a4140))
+- Made all message boxes custom and improved the messagebox module ([8db333e](https://github.com/Hapfel1/er-save-manager/commit/8db333e84a379c42fb7f3be1107643456a20c015))
 
-- Centered all popups to be in the middle of the parent's window ([a672e29](https://github.com/Hapfel1/er-save-manager/commit/a672e29a9ed1d7f8d1edd15434f5f0518c04117b))
+- Centered all popups to be in the middle of the parent's window ([e04cc7d](https://github.com/Hapfel1/er-save-manager/commit/e04cc7d3d820dad961f0875ea938eac28bc516c7))
 
 
 
 ### 📖 Documentation
 
-- Update TODO ([8d5eb68](https://github.com/Hapfel1/er-save-manager/commit/8d5eb68096da0b93ace48d3de33a761b0138d355))
+- Update TODO ([6f0fd88](https://github.com/Hapfel1/er-save-manager/commit/6f0fd88b372f6c650d6a8c9064822c3027c009ac))
 
 
 
@@ -1220,7 +1277,7 @@ present in the slot object itself, preventing corruption ([e62ae60](https://gith
 
 ### 🔧 Bug Fixes
 
-- Fixed error message pop-up when no actual error happened ([a5e6337](https://github.com/Hapfel1/er-save-manager/commit/a5e6337f8d2389588f0e6d3279ed771e4fa61b71))
+- Fixed error message pop-up when no actual error happened ([0ce4231](https://github.com/Hapfel1/er-save-manager/commit/0ce42314ce6e2e6cda7ff7dd2fd57ce0fa503d23))
 
 
 
@@ -1231,21 +1288,21 @@ present in the slot object itself, preventing corruption ([e62ae60](https://gith
 
 ### ✨ New Features
 
-- Add DLC flag clearing with conditional UI and teleport integration ([337cd83](https://github.com/Hapfel1/er-save-manager/commit/337cd837452dbc03910cc5bc5a62603d0dbb5218))
+- Add DLC flag clearing with conditional UI and teleport integration ([9b2c7b9](https://github.com/Hapfel1/er-save-manager/commit/9b2c7b94ff311220969a3a49a437e297222867aa))
 
 
 
 ### 🔧 Bug Fixes
 
-- Made all tabs scrollable, fixed typo ([ed9db29](https://github.com/Hapfel1/er-save-manager/commit/ed9db29da936f20855f262842e9642efbfba5472))
+- Made all tabs scrollable, fixed typo ([320f047](https://github.com/Hapfel1/er-save-manager/commit/320f0474fc2590e0cf6b6dd22ea69bd4e8c99c43))
 
-- Format & lint ([6fe1019](https://github.com/Hapfel1/er-save-manager/commit/6fe101902efe82b62f20116bd55b7fad58d5fa6d))
+- Format & lint ([155c326](https://github.com/Hapfel1/er-save-manager/commit/155c3262a01242143a48e6a294af7d7e6ccd9f66))
 
 
 
 ### 🎨 User Interface
 
-- Fixed color issue in bright mode with character editor tab ([699cc32](https://github.com/Hapfel1/er-save-manager/commit/699cc32f66b0de5ca7b63f36a7ce9bf7a07b2e61))
+- Fixed color issue in bright mode with character editor tab ([448b08d](https://github.com/Hapfel1/er-save-manager/commit/448b08d70e5a56a4336f9b8829453ddace07c78b))
 
 
 
@@ -1256,7 +1313,7 @@ present in the slot object itself, preventing corruption ([e62ae60](https://gith
 
 ### 🔧 Bug Fixes
 
-- Fixed workflow version numbering ([9d6c841](https://github.com/Hapfel1/er-save-manager/commit/9d6c84159c6ac555b9541b1752ee66b13bb85671))
+- Fixed workflow version numbering ([201ec8d](https://github.com/Hapfel1/er-save-manager/commit/201ec8da2587bf7d9a93a7983ef155355a39319d))
 
 
 
@@ -1267,7 +1324,7 @@ present in the slot object itself, preventing corruption ([e62ae60](https://gith
 
 ### 🔧 Bug Fixes
 
-- Fixed version  bumping to include manifest and version info file ([883e0ea](https://github.com/Hapfel1/er-save-manager/commit/883e0ea179a8f48b412ef2509b6673c3fea02a83))
+- Fixed version  bumping to include manifest and version info file ([1af05de](https://github.com/Hapfel1/er-save-manager/commit/1af05de2a757b62618836b5f767e4c97b8c309e9))
 
 
 
@@ -1278,60 +1335,60 @@ present in the slot object itself, preventing corruption ([e62ae60](https://gith
 
 ### ✨ New Features
 
-- Apply dark theme to character editor and fix CTkMessageBox calls `[ui]` ([e4ae35e](https://github.com/Hapfel1/er-save-manager/commit/e4ae35e15a0f57019551931344abeca4174a18b7))
+- Apply dark theme to character editor and fix CTkMessageBox calls `[ui]` ([15cfbb4](https://github.com/Hapfel1/er-save-manager/commit/15cfbb47c894e3174b73be6ddb1736e427911a3a))
 
-- Community preset system with metrics, voting, and reporting ([71b0f50](https://github.com/Hapfel1/er-save-manager/commit/71b0f5078acc9fffff24a4e142d56992b7da6699))
+- Community preset system with metrics, voting, and reporting ([d2f5a0a](https://github.com/Hapfel1/er-save-manager/commit/d2f5a0ab028f653d3dba11edddee957ed120049f))
 
-- Cross-platform save file detection and Linux steam path improvements ([42f58a3](https://github.com/Hapfel1/er-save-manager/commit/42f58a3746695300449e1d3aa1b5dd4456af72ac))
+- Cross-platform save file detection and Linux steam path improvements ([f4954a2](https://github.com/Hapfel1/er-save-manager/commit/f4954a247f6d466f2205968e34b3130ece91ffe3))
 
 
 
 ### 🔧 Bug Fixes
 
-- Improve save file loading and compatdata warnings ([3ed7393](https://github.com/Hapfel1/er-save-manager/commit/3ed739361a4e1c53ef6e435faae6bba958a04457))
+- Improve save file loading and compatdata warnings ([2d3332c](https://github.com/Hapfel1/er-save-manager/commit/2d3332c28396d52845be06e66db294817b4d2db3))
 
-- Format & lint ([e7ee415](https://github.com/Hapfel1/er-save-manager/commit/e7ee415a6a85924090428e01ae0286ee880fcb39))
+- Format & lint ([6112d26](https://github.com/Hapfel1/er-save-manager/commit/6112d26d79c5c267e2b689bc6e25b82cdacbe8db))
 
-- Fixed issues when running the appimage on linux ([cce2cbb](https://github.com/Hapfel1/er-save-manager/commit/cce2cbbf43d787fb63aa214cbd3b0545c381f3d4))
+- Fixed issues when running the appimage on linux ([427011a](https://github.com/Hapfel1/er-save-manager/commit/427011a39eb16c964eb3feaa1a56868a102f28c7))
 
 - Fix: linux tab rendering fixes
-build: added logging to find out issue with appearance browser ([f13188d](https://github.com/Hapfel1/er-save-manager/commit/f13188d749311973b56add619e66a845a964b83c))
+build: added logging to find out issue with appearance browser ([7737830](https://github.com/Hapfel1/er-save-manager/commit/77378301ae20f22c277887f9035c04e81f3d4e6c))
 
-- Format & lint ([76f6856](https://github.com/Hapfel1/er-save-manager/commit/76f68563d0a444c36842db32fff834b3d297057f))
+- Format & lint ([6281eb0](https://github.com/Hapfel1/er-save-manager/commit/6281eb028873de252bb8665eb954da589d2343ba))
 
 - Fix: Fixed PIL/Tkinter ingegration for Linux
 Fixed Resource loading
-Fixed "grab failed" issues ([d882972](https://github.com/Hapfel1/er-save-manager/commit/d882972843695e79647cd3b3a02b502283ab6fa0))
+Fixed "grab failed" issues ([f9cf8a3](https://github.com/Hapfel1/er-save-manager/commit/f9cf8a318f90d1121c84881337314e19b1859cc8))
 
-- Fixed eventflag binary search tree text file loading on linux ([cee75f7](https://github.com/Hapfel1/er-save-manager/commit/cee75f7581ce92b212d141f560fed6138a2fa837))
+- Fixed eventflag binary search tree text file loading on linux ([e58634c](https://github.com/Hapfel1/er-save-manager/commit/e58634c1193b9e335000169876e7e23fc36baa89))
 
-- Fixed correct resources import ([e07509b](https://github.com/Hapfel1/er-save-manager/commit/e07509b14c038afa403ce3e545107212d5e55afb))
+- Fixed correct resources import ([6b58161](https://github.com/Hapfel1/er-save-manager/commit/6b581618baba8c33c160c332d032b409942d0728))
 
 
 
 ### 🎨 User Interface
 
-- Enhance preset browser and application UI ([834ba8c](https://github.com/Hapfel1/er-save-manager/commit/834ba8c6f727de6bca6107ca36b51e550721aad2))
+- Enhance preset browser and application UI ([2a4bfaa](https://github.com/Hapfel1/er-save-manager/commit/2a4bfaa9b1588344fb956bf69d2c05142185a785))
 
 
 
 ### 📖 Documentation
 
-- Complete documentation rewrite with feature status and architecture ([8f6742b](https://github.com/Hapfel1/er-save-manager/commit/8f6742bf6569988d2ca73534a5ae5f31c34578bd))
+- Complete documentation rewrite with feature status and architecture ([25a377a](https://github.com/Hapfel1/er-save-manager/commit/25a377a4bf8fdd4d19917e256a8df6880e5400eb))
 
-- Fixed documentation ([abc108c](https://github.com/Hapfel1/er-save-manager/commit/abc108cab70895e26fcbca92a3cf78954af58248))
+- Fixed documentation ([0936903](https://github.com/Hapfel1/er-save-manager/commit/09369034d090ad99e97170d343d187d83e76ad6e))
 
 
 
 ### ⚡ Performance Improvements
 
-- Optimize preset browser loading and caching ([27042ad](https://github.com/Hapfel1/er-save-manager/commit/27042ad0725bc60e4d31e3652bd0a42a4ce25452))
+- Optimize preset browser loading and caching ([7bfe8b6](https://github.com/Hapfel1/er-save-manager/commit/7bfe8b6e09592ad2a27ecfe3c150c5a85d33fe1d))
 
 
 
 ### 🧹 Maintenance
 
-- Fix gitignore to track source data and fix region_ids_map ([23068a3](https://github.com/Hapfel1/er-save-manager/commit/23068a38a5066ef010490d3ebefc4ed90cfea59a))
+- Fix gitignore to track source data and fix region_ids_map ([f3f10a0](https://github.com/Hapfel1/er-save-manager/commit/f3f10a0d2148277bba22faeaf003a86c738f1c39))
 
 
 
@@ -1342,9 +1399,9 @@ Fixed "grab failed" issues ([d882972](https://github.com/Hapfel1/er-save-manager
 
 ### 🔧 Bug Fixes
 
-- Fixed import/export ([5bfb043](https://github.com/Hapfel1/er-save-manager/commit/5bfb0432cd0fc0db2583ff75129dfcb4e80e6775))
+- Fixed import/export ([5b43c5f](https://github.com/Hapfel1/er-save-manager/commit/5b43c5f6b69850fdd39bc0398607810d5b3eaef0))
 
-- Format & lint ([6f02075](https://github.com/Hapfel1/er-save-manager/commit/6f02075d337ee5083ec3d9949e4f49ed0b8e3ded))
+- Format & lint ([62f285f](https://github.com/Hapfel1/er-save-manager/commit/62f285f9fb5ccc7bd592cab9c46b205cc7de1208))
 
 
 
@@ -1355,37 +1412,37 @@ Fixed "grab failed" issues ([d882972](https://github.com/Hapfel1/er-save-manager
 
 ### ✨ New Features
 
-- Major UI improvements and bug fixes ([b8dccbe](https://github.com/Hapfel1/er-save-manager/commit/b8dccbee8cd639d3545895d8b4807d9e110577eb))
+- Major UI improvements and bug fixes ([ff797d2](https://github.com/Hapfel1/er-save-manager/commit/ff797d2a5136d72f5388c41cf2ee4555a07b5a22))
 
-- Complete SteamID patcher with custom URL resolution `[steamid]` ([f785b38](https://github.com/Hapfel1/er-save-manager/commit/f785b38c5a75a94b8809bc6c1b0672d7dd388e82))
+- Complete SteamID patcher with custom URL resolution `[steamid]` ([5693746](https://github.com/Hapfel1/er-save-manager/commit/56937465fda1f2f53b6bb1831a1ee4c2e7ef8dd4))
 
-- Implement comprehensive event flags and gestures systems ([7a21259](https://github.com/Hapfel1/er-save-manager/commit/7a21259615616e44cc5c127ddd2bc73c28ad9b58))
+- Implement comprehensive event flags and gestures systems ([2cfa82d](https://github.com/Hapfel1/er-save-manager/commit/2cfa82df244a41df1cacbba657d34d021eeb54f3))
 
-- Implement boss respawn function (not finished) ([c53687b](https://github.com/Hapfel1/er-save-manager/commit/c53687bca7459d9b1820fe63edac67b6588f4afe))
+- Implement boss respawn function (not finished) ([31f0af3](https://github.com/Hapfel1/er-save-manager/commit/31f0af34b8c95bf8f8b6966b6ea531800868ce10))
 
-- Implement complete community character preset browser system `[ui]` ([4970826](https://github.com/Hapfel1/er-save-manager/commit/4970826bb953655840252fbd77d841cd54d55840))
+- Implement complete community character preset browser system `[ui]` ([0473d4d](https://github.com/Hapfel1/er-save-manager/commit/0473d4d51589a3c241f8e3da5a004ae110d729a2))
 
 
 
 ### 🔧 Bug Fixes
 
-- Small removal ([dfe4053](https://github.com/Hapfel1/er-save-manager/commit/dfe4053f1f98a76afbd3ac9b853aa516adb57292))
+- Small removal ([22ad8e0](https://github.com/Hapfel1/er-save-manager/commit/22ad8e089e83a784ce80410020d15cbc053e9770))
 
 - Fix: removed temporary testing buttons
-docs: updated tooltips for boss respawner ([fe4a601](https://github.com/Hapfel1/er-save-manager/commit/fe4a601c8e552e7e71701c665e1ec0127f927e5d))
+docs: updated tooltips for boss respawner ([4e1610c](https://github.com/Hapfel1/er-save-manager/commit/4e1610c7111bbb4ce8fa217da0d9fe66a6b77ca1))
 
-- Lint % format ([e02108d](https://github.com/Hapfel1/er-save-manager/commit/e02108deda47e59bb84aab4d2bf5c2bfeabb2ab4))
+- Lint % format ([2e4ca4c](https://github.com/Hapfel1/er-save-manager/commit/2e4ca4cbfc45afff3fcb8b04a76f2c016a76e29b))
 
 - Fix: small fixes for UI
-fix: fix appearance browser + add workflow for submission ([e898db2](https://github.com/Hapfel1/er-save-manager/commit/e898db276234052c419330d7cfb50785c50ecd6f))
+fix: fix appearance browser + add workflow for submission ([f10476e](https://github.com/Hapfel1/er-save-manager/commit/f10476efd0983468b788ab01a65e5f28e23dbe55))
 
 
 
 ### 📖 Documentation
 
-- Updated TODO.md ([9e3b06f](https://github.com/Hapfel1/er-save-manager/commit/9e3b06fe1797ecef9f70737f980f4e347d22bcee))
+- Updated TODO.md ([9673787](https://github.com/Hapfel1/er-save-manager/commit/96737878702ced21cda66e8a4da753b759f47e9f))
 
-- Updated TODO ([0fd8602](https://github.com/Hapfel1/er-save-manager/commit/0fd86026d024c86670d289b2f44ec8283ad37bee))
+- Updated TODO ([34cd7d2](https://github.com/Hapfel1/er-save-manager/commit/34cd7d2110a8a62b4cc5c6745d43f41368491a3d))
 
 
 
@@ -1396,9 +1453,9 @@ fix: fix appearance browser + add workflow for submission ([e898db2](https://git
 
 ### 🔧 Bug Fixes
 
-- License format in pyproject.toml to combat deprecation warning ([0b81a37](https://github.com/Hapfel1/er-save-manager/commit/0b81a377c63a7e92c1d16db3a7420a2c2a4f3878))
+- License format in pyproject.toml to combat deprecation warning ([00c9eed](https://github.com/Hapfel1/er-save-manager/commit/00c9eed93219f627ddb843aaac646e40ea919c6b))
 
-- Fix deprecation issue with license ([336a556](https://github.com/Hapfel1/er-save-manager/commit/336a556cb682d259590550f5d979a71ab1dfba45))
+- Fix deprecation issue with license ([c4834ef](https://github.com/Hapfel1/er-save-manager/commit/c4834ef1f9de5aa93276a7e442312be44f1f5d02))
 
 
 
@@ -1409,27 +1466,27 @@ fix: fix appearance browser + add workflow for submission ([e898db2](https://git
 
 ### ✨ New Features
 
-- Add modular UI components ([1aa8d2a](https://github.com/Hapfel1/er-save-manager/commit/1aa8d2aa33373ab343cadcf14ded79d1038df944))
+- Add modular UI components ([c2f1997](https://github.com/Hapfel1/er-save-manager/commit/c2f1997664666a612bf72b0f48a8401b14a97cf8))
 
-- Add modular GUI coordinator ([a2143bb](https://github.com/Hapfel1/er-save-manager/commit/a2143bb1a14cf1cf2ca430e0e81558ea7c80008a))
+- Add modular GUI coordinator ([3c91776](https://github.com/Hapfel1/er-save-manager/commit/3c91776ffbac9357366b16a0b1504866ed3bf9c7))
 
-- Add item database for user-friendly names ([fd9d173](https://github.com/Hapfel1/er-save-manager/commit/fd9d173c370ffe3383697837883eae5bb5315198))
+- Add item database for user-friendly names ([b78fc48](https://github.com/Hapfel1/er-save-manager/commit/b78fc48571ad18cb7edc44da4afa0e06ac7db0f5))
 
 
 
 ### 🔧 Bug Fixes
 
-- Fixed cli to integrate new ui modules ([458a9dd](https://github.com/Hapfel1/er-save-manager/commit/458a9dddab3f2db80f389193332c9523890a6161))
+- Fixed cli to integrate new ui modules ([61a8b6d](https://github.com/Hapfel1/er-save-manager/commit/61a8b6dd03c161e98ed0229dffc28f6985467083))
 
-- Update parser for GUI compatibility ([dbe8b22](https://github.com/Hapfel1/er-save-manager/commit/dbe8b2264822b4caaf7023e7452f56df2e6701d9))
+- Update parser for GUI compatibility ([67d2019](https://github.com/Hapfel1/er-save-manager/commit/67d2019358077caa02e09d220c2f1feda30adf66))
 
-- Format and lint ([31fbadd](https://github.com/Hapfel1/er-save-manager/commit/31fbadd6a85e6f574ccb1ccebe17246ff3c6d098))
+- Format and lint ([37de52f](https://github.com/Hapfel1/er-save-manager/commit/37de52fcb3384ab3c8cd817c96221e67c948b6db))
 
 
 
 ### 🧹 Maintenance
 
-- Update TODO and backup original GUI ([bf7ed93](https://github.com/Hapfel1/er-save-manager/commit/bf7ed93ac4c8c705c8be10a454a187c9c4fd048c))
+- Update TODO and backup original GUI ([bc3bc46](https://github.com/Hapfel1/er-save-manager/commit/bc3bc463fb8e1e3746ddadc7aeec0aad8a1cf64b))
 
 
 
@@ -1440,21 +1497,21 @@ fix: fix appearance browser + add workflow for submission ([e898db2](https://git
 
 ### ✨ New Features
 
-- Add character operations module with dynamic offset tracking ([2101ae7](https://github.com/Hapfel1/er-save-manager/commit/2101ae77f2625ba83a14ddb7b5471e682fef07f2))
+- Add character operations module with dynamic offset tracking ([d8d58f8](https://github.com/Hapfel1/er-save-manager/commit/d8d58f8f241bde751c67f886d985cdf0876b63c8))
 
-- Implement dynamic offset tracking in save parser ([70561b3](https://github.com/Hapfel1/er-save-manager/commit/70561b373a1f42673bc4d58b360fcfb15926f914))
+- Implement dynamic offset tracking in save parser ([d77305e](https://github.com/Hapfel1/er-save-manager/commit/d77305ee0952193ad36ec053a9c35838e3f732aa))
 
 
 
 ### 🎨 User Interface
 
-- Redesign character management with operation dropdown ([e3141fc](https://github.com/Hapfel1/er-save-manager/commit/e3141fcbba1cb715dac4390cdf324d4a75cf4746))
+- Redesign character management with operation dropdown ([609a478](https://github.com/Hapfel1/er-save-manager/commit/609a478c3ab395292940de0c9bccaa2b499ccf0f))
 
 
 
 ### 📖 Documentation
 
-- Updated TODO.md ([5dcee10](https://github.com/Hapfel1/er-save-manager/commit/5dcee100522b6452ca9633bf26cd7f934ed6b961))
+- Updated TODO.md ([2115d99](https://github.com/Hapfel1/er-save-manager/commit/2115d99d5f78fc9208f7648c49990bd1708ba443))
 
 
 
@@ -1465,13 +1522,13 @@ fix: fix appearance browser + add workflow for submission ([e898db2](https://git
 
 ### 🔧 Bug Fixes
 
-- Convert all relative imports to absolute ([08b1611](https://github.com/Hapfel1/er-save-manager/commit/08b1611fe5b32fa2af9639c64d236d4267fbc614))
+- Convert all relative imports to absolute ([5ea6078](https://github.com/Hapfel1/er-save-manager/commit/5ea607892896cabe1e5ac3b37d784dc891c1669d))
 
 
 
 ### 📖 Documentation
 
-- Add TODO file with feature implementation roadmap ([6da025a](https://github.com/Hapfel1/er-save-manager/commit/6da025a88146e33b0f70a55c1ce34dd7ff1ed9e7))
+- Add TODO file with feature implementation roadmap ([e28e577](https://github.com/Hapfel1/er-save-manager/commit/e28e57723929dfde22919d109195c85374e0eaf9))
 
 
 
@@ -1482,29 +1539,29 @@ fix: fix appearance browser + add workflow for submission ([e898db2](https://git
 
 ### ✨ New Features
 
-- Add GUI launcher and fix Windows executable ([613e1c5](https://github.com/Hapfel1/er-save-manager/commit/613e1c5826cf692ac45f6e1e510665f09cefcc98))
+- Add GUI launcher and fix Windows executable ([12f4911](https://github.com/Hapfel1/er-save-manager/commit/12f4911bd141bb660d13bd276d0d5aa8288259d4))
 
 
 
 ### 🔧 Bug Fixes
 
-- Use absolute import for cx_Freeze compatibility ([fb6bea2](https://github.com/Hapfel1/er-save-manager/commit/fb6bea2e7932d47d28ff78f67fc1836fa16624a2))
+- Use absolute import for cx_Freeze compatibility ([ecabaf3](https://github.com/Hapfel1/er-save-manager/commit/ecabaf3834da0cccdec487aae9c2d52e69a1a55b))
 
-- Convert all relative imports to absolute for cx_Freeze compatibility ([1c5e95b](https://github.com/Hapfel1/er-save-manager/commit/1c5e95b170d6f504d6ae4bf525cfbc9638a9b235))
+- Convert all relative imports to absolute for cx_Freeze compatibility ([cf39803](https://github.com/Hapfel1/er-save-manager/commit/cf3980334b81b4cfdbb82efee0b115da3762b2c4))
 
-- Test auto release trigger ([7491182](https://github.com/Hapfel1/er-save-manager/commit/749118280ad56bb592125f8b1663590b567f1d60))
+- Test auto release trigger ([15f80bc](https://github.com/Hapfel1/er-save-manager/commit/15f80bcbb76495b7db7907b0ed96e55d4b550785))
 
-- Release workflow safety check and changelog extraction ([d87cde1](https://github.com/Hapfel1/er-save-manager/commit/d87cde15bb806602ec30f4de66f24f2080d5f924))
+- Release workflow safety check and changelog extraction ([2998705](https://github.com/Hapfel1/er-save-manager/commit/299870540cf9b922bd07cf8a80073d0407d8f564))
 
-- Correct PR URL in cliff.toml template ([01e3d9e](https://github.com/Hapfel1/er-save-manager/commit/01e3d9eb1221d3cf2f59ec55277a64b9c1e4f065))
+- Correct PR URL in cliff.toml template ([e4b2d56](https://github.com/Hapfel1/er-save-manager/commit/e4b2d564e1d73cd6dbd338f7f98abbb1cbb18283))
 
 
 
 ### 🧹 Maintenance
 
-- Re-trigger release for 0.1.1 ([eef04dc](https://github.com/Hapfel1/er-save-manager/commit/eef04dcaf250bc747b2a8fe3b264aef9be86c242))
+- Re-trigger release for 0.1.1 ([765b99d](https://github.com/Hapfel1/er-save-manager/commit/765b99d65c89c5cb5851025640ea7ec86616d1c3))
 
-- Update repo URLs to upstream (Hapfel1) ([4121855](https://github.com/Hapfel1/er-save-manager/commit/4121855709c1bc82d1684198c83ebfc8e579270e))
+- Update repo URLs to upstream (Hapfel1) ([4402930](https://github.com/Hapfel1/er-save-manager/commit/4402930cf948f4b64a2adbe28fd8c7a113d4c69f))
 
 
 
@@ -1515,40 +1572,41 @@ fix: fix appearance browser + add workflow for submission ([e898db2](https://git
 
 ### ✨ New Features
 
-- Added release workflow ([23d78a0](https://github.com/Hapfel1/er-save-manager/commit/23d78a0f88c0f2ea69ed5f7cce2f530a6c070ab4))
+- Added release workflow ([1020635](https://github.com/Hapfel1/er-save-manager/commit/1020635c64bc24f759f08f96898aad32f645a44b))
 
-- Added gui, implemented functions partially ([f464292](https://github.com/Hapfel1/er-save-manager/commit/f464292b162e50b742a3bebaa77b5909e3d9e8e4))
+- Added gui, implemented functions partially ([252b1a7](https://github.com/Hapfel1/er-save-manager/commit/252b1a7f15b8dc9ed082625f408870f05c7399ef))
 
 - Feat: add new gui features (templates for further
-implementation) ([77f66e6](https://github.com/Hapfel1/er-save-manager/commit/77f66e6a1d4f1b447076077fcc1cfd06a608daab))
+implementation) ([19bee2c](https://github.com/Hapfel1/er-save-manager/commit/19bee2ccc54139c84a885afd66f9ff4be65cfc57))
 
-- Add automatic release workflow and build scripts ([45d2d35](https://github.com/Hapfel1/er-save-manager/commit/45d2d352e042ecb5c6cb918eff391c4e69141107))
+- Add automatic release workflow and build scripts ([a3fade6](https://github.com/Hapfel1/er-save-manager/commit/a3fade69b5c24e72567552adfadf474dd57f9480))
 
 
 
 ### 🔧 Bug Fixes
 
-- Edited readme correctly ([2ac2bbf](https://github.com/Hapfel1/er-save-manager/commit/2ac2bbfd4e9467b2e61b72b8b640a8b095ab6a3a))
+- Edited readme correctly ([08d07c8](https://github.com/Hapfel1/er-save-manager/commit/08d07c8e6e59cae477ffd25d1bbb93287148a154))
 
-- README ([af552da](https://github.com/Hapfel1/er-save-manager/commit/af552da648184d5824f0e9bd3a8ae36fdf5bfdab))
+- README ([68f2635](https://github.com/Hapfel1/er-save-manager/commit/68f263548542be47e011932fe7070e6cc8a9d74f))
 
-- Lint and format ([a248bda](https://github.com/Hapfel1/er-save-manager/commit/a248bdac119d579495ff486ad6edcbcd5d873a11))
+- Lint and format ([156bdc6](https://github.com/Hapfel1/er-save-manager/commit/156bdc62093d20b8ca476366286b5e28562e035a))
 
-- Fix import ([1f2d05c](https://github.com/Hapfel1/er-save-manager/commit/1f2d05cb689939aa6a1a2f11dbcf5bd848401040))
+- Fix import ([856ca9c](https://github.com/Hapfel1/er-save-manager/commit/856ca9c31fb8168775fbe3739ac7b57702448c2d))
 
-- Set executable permissions for shell scripts ([5d47267](https://github.com/Hapfel1/er-save-manager/commit/5d47267d0179b74d6b937e093b47d7fcfaf76256))
+- Set executable permissions for shell scripts ([ef832ac](https://github.com/Hapfel1/er-save-manager/commit/ef832ac9777de8880a3191c223a285aad32778eb))
 
-- Fix ci.yml ([e94a478](https://github.com/Hapfel1/er-save-manager/commit/e94a478dbaf41dce38d8c39ffa313b7d3539d11b))
+- Fix ci.yml ([9b1d27a](https://github.com/Hapfel1/er-save-manager/commit/9b1d27ab844f746377362b23354ee1da1bfee629))
 
 
 
 ### 🧹 Maintenance
 
-- Repo URLs in cliff.toml for upstream ([90bcc63](https://github.com/Hapfel1/er-save-manager/commit/90bcc63dff7db7eeb94e54394131d4fbaf1a01e4))
+- Repo URLs in cliff.toml for upstream ([e889185](https://github.com/Hapfel1/er-save-manager/commit/e889185aa27086d6a4de2d1a25528b3a5d5ee890))
 
 
 
 ---
+[1.10.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.10.1..v1.10.2
 [1.10.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.10.0..v1.10.1
 [1.10.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.9.1..v1.10.0
 [1.9.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.9.0..v1.9.1
