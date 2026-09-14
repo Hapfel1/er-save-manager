@@ -141,7 +141,6 @@ def patch_combo_scroll(combo, max_visible_rows: int = 20, row_height: int = 28):
         geometry = f"{width}x{height}+{x}+{y}"
         popup.geometry(geometry)
 
-
         frame = ctk.CTkScrollableFrame(
             popup,
             width=width - 4,
