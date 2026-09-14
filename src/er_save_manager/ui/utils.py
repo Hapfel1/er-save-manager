@@ -96,13 +96,6 @@ def bind_mousewheel(widget, target_widget=None):
 def patch_combo_scroll(combo, max_visible_rows: int = 20, row_height: int = 28):
     """
     Replace a CTkComboBox's dropdown with a scrollable popup.
-
-    CTkComboBox (customtkinter 5.2.2, the version this project is pinned to)
-    opens its dropdown as a native tkinter.Menu. Native menus have no canvas
-    or scrollbar, so long value lists cannot be scrolled by mousewheel or
-    otherwise on any platform. This overrides _open_dropdown_menu to instead
-    show a borderless CTkToplevel containing a CTkScrollableFrame of buttons,
-    sized to fit the longest value and the available screen space.
     """
 
     def _open():
@@ -116,18 +109,9 @@ def patch_combo_scroll(combo, max_visible_rows: int = 20, row_height: int = 28):
         popup.withdraw()
         popup.overrideredirect(True)
         popup.attributes("-topmost", True)
-
-        # Full update (not just update_idletasks) so a freshly-mapped tab's
-        # geometry from the window manager is settled before reading it -
-        # relevant the first time a combo in a just-shown CTkTabview tab is
-        # opened, where the tab's position may not be flushed yet otherwise.
         combo.update()
         text_font = ctk.CTkFont()
         text_width = max(text_font.measure(v) for v in values)
-        # _apply_widget_scaling always returns a float, even at 1.0x scaling.
-        # Cast to int: a float in the geometry string below (e.g. "194.0x400")
-        # is invalid for Tk and gets silently dropped on Windows, landing the
-        # popup near (0, 0) instead of raising an error.
         pad = int(combo._apply_widget_scaling(48))
         width = max(combo.winfo_width(), text_width + pad)
 
@@ -177,10 +161,6 @@ def patch_combo_scroll(combo, max_visible_rows: int = 20, row_height: int = 28):
                 pass
 
         def _arm_close():
-            # Reassert geometry after mapping: some window managers ignore
-            # the position set on a withdrawn/override-redirect window and
-            # place it at a default location instead (seen as the popup
-            # opening on the wrong monitor in a multi-monitor setup).
             popup.geometry(geometry)
             popup.bind("<FocusOut>", _close)
             popup.focus_force()
