@@ -117,7 +117,9 @@ def patch_combo_scroll(combo, max_visible_rows: int = 20, row_height: int = 28):
         popup.overrideredirect(True)
         popup.attributes("-topmost", True)
 
-        combo.update_idletasks()
+        # Full update so a freshly-mapped tab's
+        # geometry from the window manager is settled before reading it.
+        combo.update()
         text_font = ctk.CTkFont()
         text_width = max(text_font.measure(v) for v in values)
         pad = combo._apply_widget_scaling(48)
