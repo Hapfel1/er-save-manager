@@ -548,13 +548,13 @@ Offset  Size  Type          Field
 Menu profile save and load data.
 
 ```
-Offset  Size  Type    Field   Notes
-──────────────────────────────────────────────────────────────
-0x0     2     uint32  unk0x0  
-0x02    2             unk0x02 
-0x14    4             size    
-0x24    size          data    consists of size bytes (max 64kb)
-──────────────────────────────────────────────────────────────
+Offset  Size  Type    Field    Notes
+────────────────────────────────────────────────────────────────
+0x0     2     uint32  unk0x0
+0x02    2             unk0x02
+0x14    4             size
+0x24    size          data     consists of size bytes (max 64kb)
+────────────────────────────────────────────────────────────────
 ```
 
 ---
@@ -578,14 +578,12 @@ Offset  Size  Type    Field
 
 ## GaitemGameData - 8 bytes + 7000x16 bytes (0x1B588)
 
-
-
 ```
 Offset  Size    Type                   Field
-─────────────────────────────────────────────────────────────────────
-0x0     8       int64                  count 
-0x08    112000  GaitemGameDataEntry[]  entries       
-─────────────────────────────────────────────────────────────────────
+──────────────────────────────────────────────
+0x0     8       int64                  count
+0x08    112000  GaitemGameDataEntry[]  entries
+──────────────────────────────────────────────
         112008  total
 ```
 
@@ -594,16 +592,16 @@ Offset  Size    Type                   Field
 ## GaitemGameDataEntry - 16 bytes (0x10)
 
 ```
-Offset  Size   Type                  Field
-─────────────────────────────────────────────────────────────────────
-0x0     4      uint32                id
-0x4     1      uint8                 unk0x4
-0x5     3                            pad0x5
-0x8     4      uint32                next_item_id
-0xc     1      uint8                 unk0xc
-0x0d    3                            pad0x0d
-─────────────────────────────────────────────────────────────────────
-        16     total
+Offset  Size  Type    Field
+──────────────────────────────────
+0x0     4     uint32  id
+0x4     1     uint8   unk0x4
+0x5     3             pad0x5
+0x8     4     uint32  next_item_id
+0xc     1     uint8   unk0xc
+0x0d    3             pad0x0d
+──────────────────────────────────
+        16    total
 ```
 
 ---
@@ -613,12 +611,12 @@ Offset  Size   Type                  Field
 Contains completion data of tutorials.
 
 ```
-Offset  Size      Type                  Field
+Offset  Size      Type               Field
 ─────────────────────────────────────────────────────────────────────
-0x0     2         uint16                unk0x0
-0x2     2         uint16                unk0x2
-0x4     4         uint32                size
-0x8     variable  TutorialDataChunk
+0x0     2         uint16             unk0x0
+0x2     2         uint16             unk0x2
+0x4     4         uint32             size
+0x8     variable  TutorialDataChunk  data
 ─────────────────────────────────────────────────────────────────────
 ```
 
@@ -627,20 +625,35 @@ Offset  Size      Type                  Field
 ## TutorialDataChunk - variable
 
 ```
-Offset  Size      Type                  Field
-─────────────────────────────────────────────────────────────────────
-0x0     4         uint32                count
-0x4     variable  uint32[]              tutorial_ids
-─────────────────────────────────────────────────────────────────────
+Offset  Size      Type      Field
+────────────────────────────────────────
+0x0     4         uint32    count
+0x4     variable  uint32[]  tutorial_ids
+────────────────────────────────────────
 ```
-
-
 
 ---
 
 ## Event Flags - 1,833,375 bytes (0x1BF99F)
 
 Bitfield encoding all quest flags, boss defeats, grace unlocks, and world state. Each bit corresponds to a specific game event by ID. Followed by a 4-byte `event_flags_terminator`.
+
+---
+
+## FieldArea, WorldArea, WorldGeomMan, WorldGeomMan2 and RendMan - variable
+
+Each has a size, which is followed by size bytes of data.
+
+```
+Offset  Size  Type   Field  Notes
+────────────────────────────────────────────────────
+0x00    4     int32  size   (excludes it's own size)
+0x0C    size         data
+────────────────────────────────────────────────────
+```
+
+FieldArea and WorldArea have a max size of 0x10000 while WorldGeomMan, WorldGeomMan2 and RendMan have a max size of 0x100000.
+Their size should always be greater than 0.
 
 ---
 
