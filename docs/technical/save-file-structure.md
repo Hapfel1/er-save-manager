@@ -543,6 +543,101 @@ Offset  Size  Type          Field
 
 ---
 
+## MenuSaveLoad - variable
+
+Menu profile save and load data.
+
+```
+Offset  Size  Type    Field   Notes
+──────────────────────────────────────────────────────────────
+0x0     2     uint32  unk0x0  
+0x02    2             unk0x02 
+0x14    4             size    
+0x24    size          data    consists of size bytes (max 64kb)
+──────────────────────────────────────────────────────────────
+```
+
+---
+
+## TrophyEquipData - 52 bytes (0x34)
+
+
+
+```
+Offset  Size  Type    Field
+─────────────────────────────
+0x0     4     uint32  unk0x0 
+0x04    16            unk0x04
+0x14    16            unk0x14
+0x24    16            unk0x24
+─────────────────────────────
+        52    total
+```
+
+---
+
+## GaitemGameData - 8 bytes + 7000x16 bytes (0x1B588)
+
+
+
+```
+Offset  Size    Type                   Field
+─────────────────────────────────────────────────────────────────────
+0x0     8       int64                  count 
+0x08    112000  GaitemGameDataEntry[]  entries       
+─────────────────────────────────────────────────────────────────────
+        112008  total
+```
+
+---
+
+## GaitemGameDataEntry - 16 bytes (0x10)
+
+```
+Offset  Size   Type                  Field
+─────────────────────────────────────────────────────────────────────
+0x0     4      uint32                id
+0x4     1      uint8                 unk0x4
+0x5     3                            pad0x5
+0x8     4      uint32                next_item_id
+0xc     1      uint8                 unk0xc
+0x0d    3                            pad0x0d
+─────────────────────────────────────────────────────────────────────
+        16     total
+```
+
+---
+
+## TutorialData - variable
+
+Contains completion data of tutorials.
+
+```
+Offset  Size      Type                  Field
+─────────────────────────────────────────────────────────────────────
+0x0     2         uint16                unk0x0
+0x2     2         uint16                unk0x2
+0x4     4         uint32                size
+0x8     variable  TutorialDataChunk
+─────────────────────────────────────────────────────────────────────
+```
+
+---
+
+## TutorialDataChunk - variable
+
+```
+Offset  Size      Type                  Field
+─────────────────────────────────────────────────────────────────────
+0x0     4         uint32                count
+0x4     variable  uint32[]              tutorial_ids
+─────────────────────────────────────────────────────────────────────
+```
+
+
+
+---
+
 ## Event Flags - 1,833,375 bytes (0x1BF99F)
 
 Bitfield encoding all quest flags, boss defeats, grace unlocks, and world state. Each bit corresponds to a specific game event by ID. Followed by a 4-byte `event_flags_terminator`.
