@@ -620,6 +620,38 @@ class UserDataX:
         if hasattr(self, "dlc") and self.dlc is not None:
             self.dlc.clear_dlc_flag()
 
+    def has_tarnished_pack_flag(self) -> bool:
+        """
+        Check if the Tarnished pack entry flag is set.
+
+        Same failure mode as the Shadow of the Erdtree flag: if someone
+        else teleported the character into content requiring the
+        Tarnished pack and back out, this flag can remain set and cause
+        an infinite loading screen on saves without the pack.
+
+        Returns:
+            True if the Tarnished pack flag is set
+        """
+        if not hasattr(self, "dlc") or self.dlc is None:
+            return False
+        return self.dlc.has_tarnished_pack_flag()
+
+    def get_tarnished_pack_flag_value(self) -> int:
+        """Get the raw Tarnished pack flag value"""
+        if not hasattr(self, "dlc") or self.dlc is None:
+            return 0
+        return self.dlc.get_tarnished_pack_flag_value()
+
+    def clear_tarnished_pack_flag(self):
+        """
+        Clear the Tarnished pack entry flag.
+
+        This allows the character to load without owning the Tarnished
+        pack.
+        """
+        if hasattr(self, "dlc") and self.dlc is not None:
+            self.dlc.clear_tarnished_pack_flag()
+
     def has_invalid_dlc(self) -> bool:
         """
         Check if DLC struct has invalid data in unused slots.
@@ -635,7 +667,8 @@ class UserDataX:
         """
         Clear invalid data in unused DLC slots.
 
-        Sets all unused bytes [3-49] to 0.
+        Sets unused bytes [4-49] to 0. Does not touch the Tarnished
+        pack flag at byte [3].
         """
         if hasattr(self, "dlc") and self.dlc is not None:
             self.dlc.clear_invalid_flags()

@@ -485,7 +485,9 @@ def get_class_data(archetype: int, is_convergence: bool = False) -> dict:
     Get starting class data by archetype ID.
 
     Args:
-        archetype: Class archetype ID (0-9 for vanilla, 0-26 for Convergence)
+        archetype: Class archetype ID (0-11 for vanilla, including the
+            Tarnished Pack classes 10-11; 0-9 and 12-28 for Convergence,
+            which remaps its IDs to skip the vanilla Tarnished Pack slots)
         is_convergence: If True, use Convergence mod classes; otherwise vanilla
 
     Returns:
@@ -493,9 +495,26 @@ def get_class_data(archetype: int, is_convergence: bool = False) -> dict:
     """
     classes = CONVERGENCE_STARTING_CLASSES if is_convergence else STARTING_CLASSES
     default_archetype = (
-        26 if is_convergence else 9
+        28 if is_convergence else 9
     )  # Prisoner for Convergence, Wretch for vanilla
     return classes.get(archetype, classes[default_archetype])
+
+
+def get_all_classes(is_convergence: bool = False) -> dict:
+    """
+    Get the full archetype ID to class data mapping for the given save type.
+
+    Callers that need to enumerate classes (dropdowns, name lookups) should
+    iterate this instead of a numeric ID range, since archetype IDs are not
+    contiguous.
+
+    Args:
+        is_convergence: If True, return Convergence mod classes; otherwise vanilla
+
+    Returns:
+        Dictionary mapping archetype ID to class data
+    """
+    return CONVERGENCE_STARTING_CLASSES if is_convergence else STARTING_CLASSES
 
 
 def calculate_level_from_stats(
