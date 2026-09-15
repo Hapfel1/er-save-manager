@@ -7,12 +7,12 @@ from pathlib import Path
 
 import customtkinter as ctk
 
-from er_save_manager.data.starting_classes import get_class_data
+from er_save_manager.data.starting_classes import get_all_classes, get_class_data
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, trace_variable
 
 # Starting classes added in the Tarnished Pack DLC. Hidden from the class
-# dropdown unless the character owns the DLC (event flag 6953).
+# dropdown unless the character owns the DLC-
 _TARNISHED_PACK_CLASS_NAMES = frozenset({"Idus Knight", "Heavy Knight"})
 _TARNISHED_PACK_FLAG = 6953
 
@@ -151,10 +151,8 @@ class CharacterInfoEditor:
             class_name = self.char_archetype_var.get()
             save_file = self.get_save_file()
             is_convergence = save_file.is_convergence if save_file else False
-            max_id = 26 if is_convergence else 11
-            for i in range(max_id + 1):
-                c = get_class_data(i, is_convergence)
-                if c and c["name"] == class_name:
+            for i, c in get_all_classes(is_convergence).items():
+                if c["name"] == class_name:
                     self.on_archetype_change(i)
                     return
 
@@ -303,11 +301,7 @@ class CharacterInfoEditor:
             if all_classes:
                 owns_dlc = _owns_tarnished_pack(slot)
                 class_names = []
-                max_id = 26 if is_convergence else 11
-                for i in range(max_id + 1):
-                    c = get_class_data(i, is_convergence)
-                    if not c:
-                        continue
+                for _i, c in sorted(get_all_classes(is_convergence).items()):
                     if c["name"] in _TARNISHED_PACK_CLASS_NAMES and not owns_dlc:
                         continue
                     class_names.append(c["name"])
@@ -451,10 +445,8 @@ class CharacterInfoEditor:
                     return
 
                 archetype_id = 0
-                max_id = 26 if is_convergence else 11
-                for i in range(max_id + 1):
-                    c = get_class_data(i, is_convergence)
-                    if c and c["name"] == class_name:
+                for i, c in get_all_classes(is_convergence).items():
+                    if c["name"] == class_name:
                         archetype_id = i
                         break
                 char.archetype = archetype_id
