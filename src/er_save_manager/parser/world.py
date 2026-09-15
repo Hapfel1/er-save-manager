@@ -252,8 +252,8 @@ class MenuSaveLoad:
         obj.size = struct.unpack("<I", f.read(4))[0]
 
         # Validate size to prevent reading corrupted data
-        # MenuSaveLoad is always 0x1008 bytes total (header 8 + data 0x1000)
-        if obj.size > 0x10000 or obj.size < 0:  # Max 64KB, min 0
+        # size is normally 0x1000 (total 0x1008), clamped to that as a fallback if corrupted/out of range
+        if obj.size > 0x10000:
             obj.size = 0x1000
 
         obj.data = f.read(obj.size)
