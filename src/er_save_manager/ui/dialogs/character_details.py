@@ -71,9 +71,11 @@ class CharacterDetailsDialog:
 
         has_dlc_flag = False
         has_invalid_dlc = False
+        has_tarnished_pack_flag = False
         try:
             has_dlc_flag = slot.has_dlc_flag()
             has_invalid_dlc = slot.has_invalid_dlc()
+            has_tarnished_pack_flag = slot.has_tarnished_pack_flag()
         except Exception:
             pass
 
@@ -101,6 +103,12 @@ class CharacterDetailsDialog:
             )
         except Exception:
             pass
+
+        has_dlc_section = (
+            has_dlc_flag
+            or has_tarnished_pack_flag
+            or (has_invalid_dlc and not deep_scan_available)
+        )
 
         # Inventory counter check
         has_inv_counter_issue = False
@@ -165,10 +173,12 @@ class CharacterDetailsDialog:
             info.append("  WARNING: Currently in DLC area!")
         info.append("")
 
-        if has_dlc_flag or (has_invalid_dlc and not deep_scan_available):
+        if has_dlc_section:
             info.append("DLC FLAGS:")
             if has_dlc_flag:
-                info.append("  Has DLC Access: Yes")
+                info.append("  Has Shadow of the Erdtree Access: Yes")
+            if has_tarnished_pack_flag:
+                info.append("  Has Tarnished Pack Access: Yes")
             if has_invalid_dlc and not deep_scan_available:
                 info.append("  WARNING: Invalid data in unused DLC slots")
             info.append("")
@@ -224,10 +234,17 @@ class CharacterDetailsDialog:
 
         width = 640
         height = 520
+        dlc_checkbox_count = sum(
+            [
+                has_dlc_flag,
+                has_tarnished_pack_flag,
+                has_invalid_dlc and not deep_scan_available,
+            ]
+        )
         if deep_scan_available:
             height = 560
-        elif has_dlc_flag or (has_invalid_dlc and not deep_scan_available):
-            height = 560
+        elif has_dlc_section:
+            height = 560 + max(0, dlc_checkbox_count - 1) * 35
         dialog.update_idletasks()
         parent.update_idletasks()
         parent_x = parent.winfo_rootx()
@@ -265,9 +282,10 @@ class CharacterDetailsDialog:
         info_box.configure(state="disabled")
 
         clear_dlc_flag_var = None
+        clear_tarnished_pack_flag_var = None
         clear_invalid_dlc_var = None
 
-        if has_dlc_flag or (has_invalid_dlc and not deep_scan_available):
+        if has_dlc_section:
             dlc_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
             dlc_frame.pack(fill="x", padx=10, pady=(5, 10))
 
@@ -281,6 +299,20 @@ class CharacterDetailsDialog:
                 ctk.CTkLabel(
                     dlc_frame,
                     text="   Use if you cannot load the save file without the DLC installed.",
+                    font=("Segoe UI", 10),
+                    text_color=("gray50", "gray50"),
+                ).pack(anchor="w", pady=(0, 8))
+
+            if has_tarnished_pack_flag:
+                clear_tarnished_pack_flag_var = ctk.BooleanVar(value=False)
+                ctk.CTkCheckBox(
+                    dlc_frame,
+                    text="Clear Tarnished pack flag (allows loading without the Tarnished pack)",
+                    variable=clear_tarnished_pack_flag_var,
+                ).pack(anchor="w", pady=(0, 2))
+                ctk.CTkLabel(
+                    dlc_frame,
+                    text="   Use if you cannot load the save file without the Tarnished pack installed.",
                     font=("Segoe UI", 10),
                     text_color=("gray50", "gray50"),
                 ).pack(anchor="w", pady=(0, 8))
@@ -322,6 +354,7 @@ class CharacterDetailsDialog:
                         save_path,
                         reload_callback,
                         clear_dlc_flag_var,
+                        clear_tarnished_pack_flag_var,
                         clear_invalid_dlc_var,
                     )
 
@@ -332,7 +365,7 @@ class CharacterDetailsDialog:
                 width=150,
             ).pack(side="left", padx=5)
 
-        elif has_dlc_flag or (has_invalid_dlc and not deep_scan_available):
+        elif has_dlc_section:
             apply_btn = ctk.CTkButton(
                 button_frame,
                 text="Apply",
@@ -343,6 +376,7 @@ class CharacterDetailsDialog:
                     save_path,
                     reload_callback,
                     clear_dlc_flag_var,
+                    clear_tarnished_pack_flag_var,
                     clear_invalid_dlc_var,
                 ),
                 width=150,
@@ -351,13 +385,22 @@ class CharacterDetailsDialog:
             apply_btn.pack(side="left", padx=5)
 
             def _on_dlc_checkbox_change(*_):
-                any_ticked = (clear_dlc_flag_var and clear_dlc_flag_var.get()) or (
-                    clear_invalid_dlc_var and clear_invalid_dlc_var.get()
+                any_ticked = (
+                    (clear_dlc_flag_var and clear_dlc_flag_var.get())
+                    or (
+                        clear_tarnished_pack_flag_var
+                        and clear_tarnished_pack_flag_var.get()
+                    )
+                    or (clear_invalid_dlc_var and clear_invalid_dlc_var.get())
                 )
                 apply_btn.configure(state="normal" if any_ticked else "disabled")
 
             if clear_dlc_flag_var:
                 clear_dlc_flag_var.trace_add("write", _on_dlc_checkbox_change)
+            if clear_tarnished_pack_flag_var:
+                clear_tarnished_pack_flag_var.trace_add(
+                    "write", _on_dlc_checkbox_change
+                )
             if clear_invalid_dlc_var:
                 clear_invalid_dlc_var.trace_add("write", _on_dlc_checkbox_change)
 
@@ -370,6 +413,7 @@ class CharacterDetailsDialog:
                 save_path,
                 reload_callback,
                 clear_dlc_flag_var,
+                clear_tarnished_pack_flag_var,
                 clear_invalid_dlc_var,
             )
 
@@ -426,12 +470,20 @@ class CharacterDetailsDialog:
         save_path,
         reload_callback,
         clear_dlc_flag_var=None,
+        clear_tarnished_pack_flag_var=None,
         clear_invalid_dlc_var=None,
     ):
         should_clear_dlc = clear_dlc_flag_var and clear_dlc_flag_var.get()
+        should_clear_tarnished = (
+            clear_tarnished_pack_flag_var and clear_tarnished_pack_flag_var.get()
+        )
         should_clear_invalid = clear_invalid_dlc_var and clear_invalid_dlc_var.get()
 
-        if not should_clear_dlc and not should_clear_invalid:
+        if (
+            not should_clear_dlc
+            and not should_clear_tarnished
+            and not should_clear_invalid
+        ):
             return
 
         try:
@@ -449,6 +501,18 @@ class CharacterDetailsDialog:
 
             if should_clear_dlc:
                 slot.clear_dlc_flag()
+                if hasattr(slot, "dlc_offset") and slot.dlc_offset > 0:
+                    from io import BytesIO
+
+                    dlc_bytes = BytesIO()
+                    slot.dlc.write(dlc_bytes)
+                    dlc_data = dlc_bytes.getvalue()
+                    save_file._raw_data[
+                        slot.dlc_offset : slot.dlc_offset + len(dlc_data)
+                    ] = dlc_data
+
+            if should_clear_tarnished:
+                slot.clear_tarnished_pack_flag()
                 if hasattr(slot, "dlc_offset") and slot.dlc_offset > 0:
                     from io import BytesIO
 
@@ -580,6 +644,7 @@ class CharacterDetailsDialog:
         save_path,
         reload_callback,
         clear_dlc_flag_var=None,
+        clear_tarnished_pack_flag_var=None,
         clear_invalid_dlc_var=None,
     ):
         details_dialog.destroy()
@@ -656,6 +721,17 @@ class CharacterDetailsDialog:
                     dlc_result = DLCFlagFix().apply(save_file, slot_idx)
                     if dlc_result.applied:
                         fixes_applied.append(dlc_result.description)
+
+                should_clear_tarnished = (
+                    clear_tarnished_pack_flag_var
+                    and clear_tarnished_pack_flag_var.get()
+                )
+                if should_clear_tarnished:
+                    from er_save_manager.fixes.dlc import TarnishedPackFlagFix
+
+                    tarnished_result = TarnishedPackFlagFix().apply(save_file, slot_idx)
+                    if tarnished_result.applied:
+                        fixes_applied.append(tarnished_result.description)
 
                 should_clear_invalid = (
                     clear_invalid_dlc_var and clear_invalid_dlc_var.get()
@@ -785,19 +861,25 @@ class CharacterDetailsDialog:
         save_path,
         reload_callback,
         clear_dlc_flag_var=None,
+        clear_tarnished_pack_flag_var=None,
         clear_invalid_dlc_var=None,
     ):
         dialog.destroy()
 
         _parent = dialog.master
         should_clear_dlc = clear_dlc_flag_var and clear_dlc_flag_var.get()
+        should_clear_tarnished = (
+            clear_tarnished_pack_flag_var and clear_tarnished_pack_flag_var.get()
+        )
         should_clear_invalid = clear_invalid_dlc_var and clear_invalid_dlc_var.get()
 
         confirm_parts = [f"Fix all {issue_count} issue(s) in Slot {slot_idx + 1}?"]
-        if should_clear_dlc or should_clear_invalid:
+        if should_clear_dlc or should_clear_tarnished or should_clear_invalid:
             confirm_parts.append("\nAdditional fixes:")
             if should_clear_dlc:
                 confirm_parts.append("  - Clear Shadow of the Erdtree flag")
+            if should_clear_tarnished:
+                confirm_parts.append("  - Clear Tarnished pack flag")
             if should_clear_invalid:
                 confirm_parts.append("  - Clear invalid DLC data")
         confirm_parts.append("\nA backup will be created.")
@@ -858,6 +940,14 @@ class CharacterDetailsDialog:
                 from er_save_manager.fixes.dlc import DLCFlagFix
 
                 result = DLCFlagFix().apply(save_file, slot_idx)
+                if result.applied:
+                    fixes.append(result.description)
+                    was_fixed = True
+
+            if should_clear_tarnished:
+                from er_save_manager.fixes.dlc import TarnishedPackFlagFix
+
+                result = TarnishedPackFlagFix().apply(save_file, slot_idx)
                 if result.applied:
                     fixes.append(result.description)
                     was_fixed = True

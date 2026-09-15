@@ -954,13 +954,15 @@ class DLC:
         [0] = pre-order gesture "The Ring"
         [1] = Shadow of the Erdtree DLC entry flag
         [2] = pre-order gesture "Ring of Miquella"
-        [3-49] = unused (must be 0, non-zero values prevent save from loading)
+        [3] = Tarnished Edition pack flag.
+        [4-49] = unused (must be 0, non-zero values prevent save from loading)
     """
 
     preorder_the_ring: int = 0
     shadow_of_erdtree: int = 0
     preorder_ring_of_miquella: int = 0
-    unused: bytes = field(default_factory=lambda: b"\x00" * 47)
+    tarnished_pack: int = 0
+    unused: bytes = field(default_factory=lambda: b"\x00" * 46)
 
     @classmethod
     def read(cls, f: BytesIO) -> DLC:
@@ -969,7 +971,8 @@ class DLC:
             preorder_the_ring=struct.unpack("<B", f.read(1))[0],
             shadow_of_erdtree=struct.unpack("<B", f.read(1))[0],
             preorder_ring_of_miquella=struct.unpack("<B", f.read(1))[0],
-            unused=f.read(47),
+            tarnished_pack=struct.unpack("<B", f.read(1))[0],
+            unused=f.read(46),
         )
 
     def write(self, f: BytesIO):
@@ -977,6 +980,7 @@ class DLC:
         f.write(struct.pack("<B", self.preorder_the_ring))
         f.write(struct.pack("<B", self.shadow_of_erdtree))
         f.write(struct.pack("<B", self.preorder_ring_of_miquella))
+        f.write(struct.pack("<B", self.tarnished_pack))
         f.write(self.unused)
 
     def has_dlc_flag(self) -> bool:
@@ -989,12 +993,22 @@ class DLC:
     def clear_dlc_flag(self):
         self.shadow_of_erdtree = 0
 
+    def has_tarnished_pack_flag(self) -> bool:
+        """True if the Tarnished pack entry flag is set."""
+        return self.tarnished_pack != 0
+
+    def get_tarnished_pack_flag_value(self) -> int:
+        return self.tarnished_pack
+
+    def clear_tarnished_pack_flag(self):
+        self.tarnished_pack = 0
+
     def has_invalid_flags(self) -> bool:
-        """True if any unused slots [3-49] are non-zero."""
+        """True if any unused slots [4-49] are non-zero."""
         return any(b != 0 for b in self.unused)
 
     def clear_invalid_flags(self):
-        self.unused = b"\x00" * 47
+        self.unused = b"\x00" * 46
 
 
 # ============================================================================
