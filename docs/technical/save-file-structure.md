@@ -550,10 +550,10 @@ Menu profile save and load data.
 ```
 Offset  Size  Type    Field    Notes
 ────────────────────────────────────────────────────────────────
-0x0     2     uint16  unk0x0
-0x2     2     uint16  unk0x02
-0x4     4     uint32  size
-0x8     size          data     consists of size bytes (max 64kb)
+0x00    2     uint16  unk0x0
+0x02    2     uint16  unk0x02
+0x04    4     uint32  size
+0x08    size          data     consists of size bytes (max 64kb)
 ────────────────────────────────────────────────────────────────
 ```
 
@@ -564,7 +564,7 @@ Offset  Size  Type    Field    Notes
 ```
 Offset  Size  Type    Field
 ─────────────────────────────
-0x0     4     uint32  unk0x0 
+0x00    4     uint32  unk0x0 
 0x04    16            unk0x04
 0x14    16            unk0x14
 0x24    16            unk0x24
@@ -579,7 +579,7 @@ Offset  Size  Type    Field
 ```
 Offset  Size    Type                   Field
 ──────────────────────────────────────────────
-0x0     8       int64                  count
+0x00    8       int64                  count
 0x08    112000  GaitemGameDataEntry[]  entries
 ──────────────────────────────────────────────
         112008  total
@@ -592,12 +592,12 @@ Offset  Size    Type                   Field
 ```
 Offset  Size  Type    Field
 ──────────────────────────────────
-0x0     4     uint32  id
-0x4     1     uint8   unk0x4
-0x5     3             pad0x5
-0x8     4     uint32  next_item_id
-0xc     1     uint8   unk0xc
-0x0d    3             pad0x0d
+0x00    4     uint32  id
+0x04    1     uint8   unk0x4
+0x05    3             pad0x5
+0x08    4     uint32  next_item_id
+0x0C    1     uint8   unk0xc
+0x0D    3             pad0x0d
 ──────────────────────────────────
         16    total
 ```
@@ -611,10 +611,10 @@ Contains completion data of tutorials.
 ```
 Offset  Size      Type               Field
 ─────────────────────────────────────────────────────────────────────
-0x0     2         uint16             unk0x0
-0x2     2         uint16             unk0x2
-0x4     4         uint32             size
-0x8     variable  TutorialDataChunk  data
+0x00    2         uint16             unk0x0
+0x02    2         uint16             unk0x2
+0x04    4         uint32             size
+0x08    variable  TutorialDataChunk  data
 ─────────────────────────────────────────────────────────────────────
 ```
 
@@ -625,8 +625,8 @@ Offset  Size      Type               Field
 ```
 Offset  Size      Type      Field
 ────────────────────────────────────────
-0x0     4         uint32    count
-0x4     variable  uint32[]  tutorial_ids
+0x00    4         uint32    count
+0x04    variable  uint32[]  tutorial_ids
 ────────────────────────────────────────
 ```
 
