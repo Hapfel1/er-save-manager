@@ -551,17 +551,15 @@ Menu profile save and load data.
 Offset  Size  Type    Field    Notes
 ────────────────────────────────────────────────────────────────
 0x0     2     uint16  unk0x0
-0x02    2     uint16  unk0x02
-0x14    4     uint32  size
-0x24    size          data     consists of size bytes (max 64kb)
+0x2     2     uint16  unk0x02
+0x4     4     uint32  size
+0x8     size          data     consists of size bytes (max 64kb)
 ────────────────────────────────────────────────────────────────
 ```
 
 ---
 
 ## TrophyEquipData - 52 bytes (0x34)
-
-
 
 ```
 Offset  Size  Type    Field
