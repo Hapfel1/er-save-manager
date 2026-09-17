@@ -1,8 +1,6 @@
-detect 0d out conv saves, scan previous versions windows file properties for files
-
 custom id adder as dev option defining item category etc, also option to show ids
 
-add seamless backups ds2 extra tab + itemids
+add seamless itemids
 
 check dlc npc flags
 

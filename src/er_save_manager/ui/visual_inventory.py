@@ -217,7 +217,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             fg_color=("#6a3fa0", "#7c4dac"),
             hover_color=("#7c4dac", "#9d5fd4"),
             command=self._do_batch_remove,
-        ).pack(side=ctk.LEFT, padx=(0, 8))
+        ).pack(side=ctk.RIGHT, padx=(12, 0))
 
         self._filter_var = ctk.StringVar()
         self._filter_var.trace_add("write", lambda *_: self._apply_filter())
@@ -245,6 +245,16 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             values=INVENTORY_SORT_MODES,
             command=self._on_sort_changed,
         ).pack(side=ctk.LEFT, padx=(4, 0))
+
+        ctk.CTkButton(
+            row2,
+            text="Batch Upgrade Weapons",
+            width=150,
+            height=28,
+            fg_color=("#6a3fa0", "#7c4dac"),
+            hover_color=("#7c4dac", "#9d5fd4"),
+            command=self._do_batch_upgrade,
+        ).pack(side=ctk.RIGHT, padx=(12, 0))
 
         cf = ctk.CTkFrame(self, fg_color=("gray82", "gray14"), corner_radius=6)
         cf.pack(fill=ctk.BOTH, expand=True, padx=6, pady=(4, 0))
@@ -651,6 +661,11 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
 
     def _do_batch_remove(self):
         self._editor.batch_remove_category(
+            self._cat_filter, self._tab, parent_window=self
+        )
+
+    def _do_batch_upgrade(self):
+        self._editor.batch_upgrade_weapons(
             self._cat_filter, self._tab, parent_window=self
         )
 

@@ -227,6 +227,16 @@ def _item_name(
     return name
 
 
+def _weapon_upgrade_cap(item, reinforcement: str, is_cnv: bool) -> int:
+    """Max upgrade level for a weapon, honoring per-item overrides and Convergence caps."""
+    explicit_cap = getattr(item, "max_upgrade", -1) if item else -1
+    if explicit_cap >= 0:
+        return explicit_cap
+    if is_cnv and reinforcement in ("standard", "somber"):
+        return 15
+    return 25 if reinforcement == "standard" else 10
+
+
 # ---- item event flag side-effects -------------------------------------------
 
 # Maps goods base item ID to the event flag(s) that must be set/cleared with it.
@@ -2566,13 +2576,13 @@ class InventoryEditor:
             return None
         return full_id, location, gaitem_handle
 
-    def _lookup_weapon_item(self, full_id: int):
+    def _lookup_weapon_item(self, full_id: int, is_convergence: bool = False):
         try:
             from er_save_manager.data.item_database import get_item_database
 
             db = get_item_database()
             base = (full_id & 0x0FFFFFFF) // 10000 * 10000
-            return db.get_item_by_id(0x00000000 | base)
+            return db.get_item_by_id(0x00000000 | base, is_convergence)
         except Exception:
             return None
 
@@ -2653,6 +2663,265 @@ class InventoryEditor:
         except Exception as e:
             CTkMessageBox.showerror(
                 "Error", f"Failed to set upgrade:\n{e}", parent=self.parent
+            )
+
+    def batch_upgrade_weapons(
+        self, cat: str, location: str, parent_window=None
+    ) -> None:
+        """Open the batch upgrade dialog for weapons in one category and location.
+
+        cat: category name, or "All" to consider every category.
+        location: "held" or "storage" - only that inventory is scanned.
+        """
+        if parent_window is None:
+            parent_window = self.parent
+
+        save_file = self.get_save_file()
+        if not save_file:
+            CTkMessageBox.showwarning(
+                "No Save", "Please load a save file first.", parent=parent_window
+            )
+            return
+
+        from er_save_manager.data.item_database import get_item_database
+
+        db = get_item_database()
+
+        def _row_category(full_id: int) -> str | None:
+            item = db.get_item_by_id(full_id)
+            if item is None and (full_id & 0xF0000000) == 0x00000000:
+                base_id = (full_id & 0x0FFFFFFF) // 10000 * 10000
+                item = db.get_item_by_id(base_id)
+            return item.category_name if item else None
+
+        weapon_rows = [
+            row
+            for row in self._all_rows
+            if row[1] is not None
+            and (row[1] & 0xF0000000) == 0x00000000
+            and row[2] == location
+            and (cat == "All" or _row_category(row[1]) == cat)
+        ]
+        if not weapon_rows:
+            CTkMessageBox.showinfo(
+                "Batch Upgrade",
+                f"No weapons found in {location} inventory for '{cat}'.",
+                parent=parent_window,
+            )
+            return
+
+        self._show_batch_upgrade_dialog(weapon_rows, parent_window)
+
+    def _show_batch_upgrade_dialog(self, weapon_rows: list, parent_window) -> None:
+        """Modal dialog to pick target upgrade levels for standard and somber weapons."""
+        is_cnv = self._is_cnv_save()
+        std_cap = _weapon_upgrade_cap(None, "standard", is_cnv)
+        somber_cap = _weapon_upgrade_cap(None, "somber", is_cnv)
+
+        dialog = ctk.CTkToplevel(parent_window)
+        dialog.title("Batch Upgrade Weapons")
+        dialog.resizable(False, False)
+        dialog.transient(parent_window)
+        dialog.attributes("-alpha", 0)
+
+        ctk.CTkLabel(
+            dialog,
+            text=f"Applies to {len(weapon_rows)} weapon(s) in the current view.",
+            anchor="w",
+        ).pack(padx=20, pady=(16, 8), fill="x")
+
+        std_var = ctk.BooleanVar(value=False)
+        std_level_var = ctk.StringVar(value="0")
+        somber_var = ctk.BooleanVar(value=False)
+        somber_level_var = ctk.StringVar(value="0")
+
+        row1 = ctk.CTkFrame(dialog, fg_color="transparent")
+        row1.pack(fill="x", padx=20, pady=4)
+        ctk.CTkCheckBox(
+            row1, text="Smithing Stone weapons", variable=std_var, width=190
+        ).pack(side="left")
+        ctk.CTkLabel(row1, text=f"Level (0-{std_cap}):").pack(side="left", padx=(10, 4))
+        ctk.CTkEntry(row1, textvariable=std_level_var, width=50).pack(side="left")
+
+        row2 = ctk.CTkFrame(dialog, fg_color="transparent")
+        row2.pack(fill="x", padx=20, pady=4)
+        ctk.CTkCheckBox(
+            row2, text="Somber Smithing Stone weapons", variable=somber_var, width=190
+        ).pack(side="left")
+        ctk.CTkLabel(row2, text=f"Level (0-{somber_cap}):").pack(
+            side="left", padx=(10, 4)
+        )
+        ctk.CTkEntry(row2, textvariable=somber_level_var, width=50).pack(side="left")
+
+        btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_row.pack(fill="x", padx=20, pady=(12, 16))
+
+        def _confirm():
+            apply_std = std_var.get()
+            apply_somber = somber_var.get()
+            if not apply_std and not apply_somber:
+                CTkMessageBox.showwarning(
+                    "Batch Upgrade",
+                    "Select at least one weapon type.",
+                    parent=dialog,
+                )
+                return
+
+            std_level = somber_level = 0
+            if apply_std:
+                try:
+                    std_level = int(std_level_var.get())
+                except ValueError:
+                    CTkMessageBox.showerror(
+                        "Input Error",
+                        "Smithing Stone level must be an integer.",
+                        parent=dialog,
+                    )
+                    return
+                if std_level < 0 or std_level > std_cap:
+                    CTkMessageBox.showerror(
+                        "Invalid Level",
+                        f"Smithing Stone level must be 0-{std_cap}.",
+                        parent=dialog,
+                    )
+                    return
+            if apply_somber:
+                try:
+                    somber_level = int(somber_level_var.get())
+                except ValueError:
+                    CTkMessageBox.showerror(
+                        "Input Error",
+                        "Somber level must be an integer.",
+                        parent=dialog,
+                    )
+                    return
+                if somber_level < 0 or somber_level > somber_cap:
+                    CTkMessageBox.showerror(
+                        "Invalid Level",
+                        f"Somber level must be 0-{somber_cap}.",
+                        parent=dialog,
+                    )
+                    return
+
+            dialog.destroy()
+            self._apply_batch_upgrade(
+                weapon_rows,
+                is_cnv,
+                apply_std,
+                std_level,
+                apply_somber,
+                somber_level,
+                parent_window,
+            )
+
+        ctk.CTkButton(btn_row, text="Apply", command=_confirm, width=90).pack(
+            side="left"
+        )
+        ctk.CTkButton(
+            btn_row,
+            text="Cancel",
+            command=dialog.destroy,
+            width=90,
+            fg_color=("gray70", "gray35"),
+        ).pack(side="right")
+
+        _center_over(dialog, parent_window)
+        dialog.attributes("-alpha", 1)
+        dialog.grab_set()
+        dialog.wait_window()
+
+    def _apply_batch_upgrade(
+        self,
+        weapon_rows: list,
+        is_cnv: bool,
+        apply_std: bool,
+        std_level: int,
+        apply_somber: bool,
+        somber_level: int,
+        parent_window,
+    ) -> None:
+        save_file = self.get_save_file()
+        slot_idx = self.get_char_slot()
+        if not save_file:
+            return
+
+        try:
+            self.ensure_mutable()
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error",
+                f"Failed to prepare save for editing:\n{e}",
+                parent=parent_window,
+            )
+            return
+
+        try:
+            slot = save_file.characters[slot_idx]
+            gaitem_by_handle = {
+                g.gaitem_handle: (i, g) for i, g in enumerate(slot.gaitem_map)
+            }
+
+            updated = 0
+            clamped = 0
+            backed_up = False
+
+            for _text, full_id, _location, gaitem_handle in weapon_rows:
+                entry = gaitem_by_handle.get(gaitem_handle)
+                if entry is None:
+                    continue
+                gaitem_idx, g = entry
+
+                item = self._lookup_weapon_item(full_id, is_cnv)
+                if item is None:
+                    continue
+
+                if item.reinforcement == "standard" and apply_std:
+                    target_level = std_level
+                elif item.reinforcement == "somber" and apply_somber:
+                    target_level = somber_level
+                else:
+                    continue
+
+                cap = _weapon_upgrade_cap(item, item.reinforcement, is_cnv)
+                new_upg = min(target_level, cap)
+                if new_upg != target_level:
+                    clamped += 1
+
+                if not backed_up:
+                    self._create_backup(save_file, slot_idx, "batch_upgrade_weapons")
+                    backed_up = True
+
+                base_id = (full_id & 0x0FFFFFFF) // 100 * 100
+                g.item_id = base_id + new_upg
+                self._patch_gaitem(save_file, slot_idx, slot, gaitem_idx)
+                updated += 1
+
+            if updated == 0:
+                CTkMessageBox.showinfo(
+                    "Batch Upgrade",
+                    "No weapons matched the selected type(s).",
+                    parent=parent_window,
+                )
+                return
+
+            save_file.recalculate_checksums()
+            save_path = self.get_save_path()
+            if save_path:
+                save_file.to_file(Path(save_path))
+
+            self.refresh_inventory()
+            if self._on_inventory_changed:
+                self._on_inventory_changed()
+
+            clamp_note = f" ({clamped} clamped to item cap)" if clamped else ""
+            show_toast(
+                self.parent.winfo_toplevel(),
+                f"Batch upgraded {updated} weapon(s){clamp_note}.",
+                type="success",
+            )
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error", f"Batch upgrade failed:\n{e}", parent=parent_window
             )
 
     def set_affinity(
