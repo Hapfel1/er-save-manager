@@ -3,6 +3,17 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.11.0
+**Released:** September 17, 2026
+
+
+### ✨ New Features
+
+- Added Weapon-Batch-Upgrading to the Visual Inventory Editor: ([a3d30c5](https://github.com/Hapfel1/er-save-manager/commit/a3d30c53982fd6a76b692f457e50a8d89f60c031))
+
+
+
+---
 ## 📦 Release 1.10.3
 **Released:** September 15, 2026
 
@@ -1643,6 +1654,7 @@ implementation) ([19bee2c](https://github.com/Hapfel1/er-save-manager/commit/19b
 
 
 ---
+[1.11.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.10.3..v1.11.0
 [1.10.3]: https://github.com/Hapfel1/er-save-manager/compare/v1.10.2..v1.10.3
 [1.10.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.10.1..v1.10.2
 [1.10.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.10.0..v1.10.1
