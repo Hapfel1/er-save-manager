@@ -8733,7 +8733,7 @@ def is_convergence(flag_id: int) -> bool:
 def get_flag_name(flag_id: int) -> str:
     """Get flag name or return ID as string"""
     info = EVENT_FLAGS.get(flag_id)
-    return info["name"] if info else f"Flag {flag_id}"
+    return info.get("name") if info else f"Flag {flag_id}"
 
 
 def get_category_flags(category: str, subcategory: str = None) -> list[int]:
