@@ -19,6 +19,7 @@ from er_save_manager.data.event_flags_db import (
     get_category_flags,
     get_flag_name,
     get_subcategories,
+    is_convergence,
 )
 from er_save_manager.data.summoning_pools_data import (
     SUMMONING_POOL_FLAGS_BASE,
@@ -423,6 +424,7 @@ class EventFlagsTab:
         self.flag_widgets.clear()
 
         flags = get_category_flags(category, subcategory)
+
         total = len(flags)
 
         label = f"{category} > {subcategory}" if subcategory else category
@@ -437,9 +439,14 @@ class EventFlagsTab:
         """Render one chunk of flags, then schedule the next batch."""
         chunk = flags[offset : offset + self._RENDER_CHUNK]
 
+        is_cnv = self.get_save_file().is_convergence
+
         for flag_id in chunk:
-            flag_name = get_flag_name(flag_id)
             is_set = self.current_event_flags.get_flag(flag_id)
+
+            # Save is not Convergence, but Flag is so we do not render it
+            if not is_cnv and is_convergence(flag_id):
+                continue
 
             if flag_id not in self.flag_states:
                 self.flag_states[flag_id] = is_set
@@ -448,7 +455,7 @@ class EventFlagsTab:
 
             checkbox = ctk.CTkCheckBox(
                 self.flags_inner_frame,
-                text=f"{flag_id}: {flag_name}",
+                text=f"{flag_id}: {get_flag_name(flag_id)}",
                 variable=var,
                 command=lambda fid=flag_id, v=var: self.on_flag_toggled(fid, v),
             )
