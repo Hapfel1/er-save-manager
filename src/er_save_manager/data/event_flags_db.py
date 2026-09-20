@@ -8723,6 +8723,13 @@ def get_flag_info(flag_id: int) -> EventFlagInfo | None:
     return EVENT_FLAGS.get(flag_id)
 
 
+def is_convergence(flag_id: int) -> bool:
+    flag_info = EVENT_FLAGS.get(flag_id)
+    if flag_info is None:
+        return False
+    return EVENT_FLAGS.get(flag_id).get("requires_convergence", False)
+
+
 def get_flag_name(flag_id: int) -> str:
     """Get flag name or return ID as string"""
     info = EVENT_FLAGS.get(flag_id)
