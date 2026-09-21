@@ -5165,7 +5165,7 @@ EVENT_FLAGS: dict[int, EventFlagInfo] = {
         "requires_convergence": True,
     },
     71254: {
-        "name": "[Mohgwyn Palace] Rohrbach- Pureblood Knight",
+        "name": "[Mohgwyn Palace] Rohrbach, Pureblood Knight",
         "category": "Grace",
         "subcategory": "Mohgwyn Palace",
         "requires_convergence": True,
@@ -5213,7 +5213,7 @@ EVENT_FLAGS: dict[int, EventFlagInfo] = {
         "requires_convergence": True,
     },
     71609: {
-        "name": "[Volcano Manor] NEW Temple Canyon",
+        "name": "[Volcano Manor] Temple Canyon",
         "category": "Grace",
         "subcategory": "Volcano Manor",
         "requires_convergence": True,
@@ -5227,11 +5227,11 @@ EVENT_FLAGS: dict[int, EventFlagInfo] = {
     71701: {
         "name": "[Noxumbra, Forsaken City] Defiled Chapel",
         "category": "Grace",
-        "subcategory": "Noxumbra- Forsaken City",
+        "subcategory": "Noxumbra, Forsaken City",
         "requires_convergence": True,
     },
     71702: {
-        "name": "[Noxumbra- Forsaken City] Noxumbra Great Hall",
+        "name": "[Noxumbra, Forsaken City] Noxumbra Great Hall",
         "category": "Grace",
         "subcategory": "Noxumbra, Forsaken City",
         "requires_convergence": True,
@@ -5239,7 +5239,7 @@ EVENT_FLAGS: dict[int, EventFlagInfo] = {
     73021: {
         "name": "[Forbidden Lands] Vulgar Militia Stronghold",
         "category": "Grace",
-        "subcategory": "Forbidden Lands",
+        "subcategory": "Forbiden Lands",
         "requires_convergence": True,
     },
     73183: {
@@ -5383,7 +5383,7 @@ EVENT_FLAGS: dict[int, EventFlagInfo] = {
     76590: {
         "name": "[Forbidden Lands] Rold Reliquary",
         "category": "Grace",
-        "subcategory": "Forbidden Lands",
+        "subcategory": "Forbiden Lands",
         "requires_convergence": True,
     },
     76598: {
@@ -7994,8 +7994,8 @@ FLAGS_BY_CATEGORY = {
     "Grace": {
         "Abyssal Woods": [76860, 76861, 76862, 76863, 76864],
         "Academy of Raya Lucaria": [71400, 71401, 71402, 71403, 71404, 71405],
-        "Ainsel River": [71200, 71210, 71211, 71212, 71213, 71240],
-        "Ainsel River Main": [71214, 71215, 71219],
+        "Ainsel River": [71210, 71211, 71212, 71213, 71240],
+        "Ainsel River Main": [71200, 71214, 71215, 71219],
         "Altus Plateau": [
             73008,
             73012,
@@ -8723,16 +8723,15 @@ def get_flag_info(flag_id: int) -> EventFlagInfo | None:
 
 
 def is_convergence(flag_id: int) -> bool:
+    """Return True if the flag only exists in Convergence mod saves"""
     flag_info = EVENT_FLAGS.get(flag_id)
-    if flag_info is None:
-        return False
-    return EVENT_FLAGS.get(flag_id).get("requires_convergence", False)
+    return flag_info.get("requires_convergence", False) if flag_info else False
 
 
 def get_flag_name(flag_id: int) -> str:
     """Get flag name or return ID as string"""
     info = EVENT_FLAGS.get(flag_id)
-    return info.get("name") if info else f"Flag {flag_id}"
+    return info["name"] if info else f"Flag {flag_id}"
 
 
 def get_category_flags(category: str, subcategory: str = None) -> list[int]:
@@ -8747,8 +8746,17 @@ def get_category_flags(category: str, subcategory: str = None) -> list[int]:
     return sorted(all_flags)
 
 
-def get_subcategories(category: str) -> list[str]:
-    """Get all subcategories for a category"""
+def get_subcategories(category: str, include_convergence: bool = True) -> list[str]:
+    """Get all subcategories for a category.
+
+    With include_convergence=False, subcategories whose flags all require
+    the Convergence mod are omitted.
+    """
     if category not in FLAGS_BY_CATEGORY:
         return []
-    return sorted([k for k in FLAGS_BY_CATEGORY[category].keys() if k is not None])
+    return sorted(
+        sub
+        for sub, flags in FLAGS_BY_CATEGORY[category].items()
+        if sub is not None
+        and (include_convergence or not all(is_convergence(f) for f in flags))
+    )

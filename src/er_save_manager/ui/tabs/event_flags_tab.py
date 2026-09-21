@@ -394,8 +394,8 @@ class EventFlagsTab:
         if not category:
             return
 
-        # Update subcategories
-        subcats = get_subcategories(category)
+        # Update subcategories, hiding Convergence-only ones for other saves
+        subcats = get_subcategories(category, include_convergence=self._is_cnv_save())
         if subcats:
             self.subcat_combo.configure(values=["All"] + subcats, state="readonly")
             self.subcategory_var.set("All")
@@ -417,14 +417,24 @@ class EventFlagsTab:
         if category and subcategory:
             self.display_flags(category, None if subcategory == "All" else subcategory)
 
+    def _is_cnv_save(self) -> bool:
+        """Return True if the loaded save is a Convergence save."""
+        save_file = self.get_save_file()
+        return bool(save_file and save_file.is_convergence)
+
+    def _filter_flags(self, flags):
+        """Drop Convergence-only flags unless the loaded save is a Convergence save."""
+        if self._is_cnv_save():
+            return flags
+        return [f for f in flags if not is_convergence(f)]
+
     def display_flags(self, category, subcategory):
         """Display flags for category/subcategory, rendered in chunks to avoid X11 BadAlloc."""
         for widget in self.flags_inner_frame.winfo_children():
             widget.destroy()
         self.flag_widgets.clear()
 
-        flags = get_category_flags(category, subcategory)
-
+        flags = self._filter_flags(get_category_flags(category, subcategory))
         total = len(flags)
 
         label = f"{category} > {subcategory}" if subcategory else category
@@ -439,14 +449,8 @@ class EventFlagsTab:
         """Render one chunk of flags, then schedule the next batch."""
         chunk = flags[offset : offset + self._RENDER_CHUNK]
 
-        is_cnv = self.get_save_file().is_convergence
-
         for flag_id in chunk:
             is_set = self.current_event_flags.get_flag(flag_id)
-
-            # Save is not Convergence, but Flag is so we do not render it
-            if not is_cnv and is_convergence(flag_id):
-                continue
 
             if flag_id not in self.flag_states:
                 self.flag_states[flag_id] = is_set
@@ -519,13 +523,13 @@ class EventFlagsTab:
             subcats = get_subcategories(category)
             if subcats:
                 for subcat in subcats:
-                    flags = get_category_flags(category, subcat)
+                    flags = self._filter_flags(get_category_flags(category, subcat))
                     for flag_id in flags:
                         flag_name = get_flag_name(flag_id)
                         if query in str(flag_id).lower() or query in flag_name.lower():
                             results.append((flag_id, flag_name, category, subcat))
             else:
-                flags = get_category_flags(category, None)
+                flags = self._filter_flags(get_category_flags(category, None))
                 for flag_id in flags:
                     flag_name = get_flag_name(flag_id)
                     if query in str(flag_id).lower() or query in flag_name.lower():
