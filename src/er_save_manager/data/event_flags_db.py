@@ -3742,9 +3742,9 @@ EVENT_FLAGS: dict[int, EventFlagInfo] = {
         "subcategory": "Consecrated Snowfield",
     },
     73020: {
-        "name": "[Forbiden Lands] Hidden Path to the Haligtree | Unlocked",
+        "name": "[Forbidden Lands] Hidden Path to the Haligtree | Unlocked",
         "category": "Grace",
-        "subcategory": "Forbiden Lands",
+        "subcategory": "Forbidden Lands",
     },
     73100: {
         "name": "[Limgrave] Murkwater Cave | Unlocked",
@@ -3937,14 +3937,14 @@ EVENT_FLAGS: dict[int, EventFlagInfo] = {
         "subcategory": "Greyoll's Dragonbarrow",
     },
     73450: {
-        "name": "[Forbiden Lands] Divine Tower of the East Altus: Gate | Unlocked",
+        "name": "[Forbidden Lands] Divine Tower of the East Altus: Gate | Unlocked",
         "category": "Grace",
-        "subcategory": "Forbiden Lands",
+        "subcategory": "Forbidden Lands",
     },
     73451: {
-        "name": "[Forbiden Lands] Divine Tower of the East Altus | Unlocked",
+        "name": "[Forbidden Lands] Divine Tower of the East Altus | Unlocked",
         "category": "Grace",
-        "subcategory": "Forbiden Lands",
+        "subcategory": "Forbidden Lands",
     },
     73460: {
         "name": "[Greyoll's Dragonbarrow] Isolated Divine Tower | Unlocked",
@@ -4722,9 +4722,9 @@ EVENT_FLAGS: dict[int, EventFlagInfo] = {
         "subcategory": "Greyoll's Dragonbarrow",
     },
     76500: {
-        "name": "[Forbiden Lands] Forbidden Lands | Unlocked",
+        "name": "[Forbidden Lands] Forbidden Lands | Unlocked",
         "category": "Grace",
-        "subcategory": "Forbiden Lands",
+        "subcategory": "Forbidden Lands",
     },
     76501: {
         "name": "[Mountaintops of the Giants] Zamor Ruins | Unlocked",
@@ -4732,9 +4732,9 @@ EVENT_FLAGS: dict[int, EventFlagInfo] = {
         "subcategory": "Mountaintops of the Giants",
     },
     76502: {
-        "name": "[Forbiden Lands] Grand Lift of Rold | Unlocked",
+        "name": "[Forbidden Lands] Grand Lift of Rold | Unlocked",
         "category": "Grace",
-        "subcategory": "Forbiden Lands",
+        "subcategory": "Forbidden Lands",
     },
     76503: {
         "name": "[Mountaintops of the Giants] Ancient Snow Valley Ruins | Unlocked",
@@ -5239,7 +5239,7 @@ EVENT_FLAGS: dict[int, EventFlagInfo] = {
     73021: {
         "name": "[Forbidden Lands] Vulgar Militia Stronghold",
         "category": "Grace",
-        "subcategory": "Forbiden Lands",
+        "subcategory": "Forbidden Lands",
         "requires_convergence": True,
     },
     73183: {
@@ -5383,7 +5383,7 @@ EVENT_FLAGS: dict[int, EventFlagInfo] = {
     76590: {
         "name": "[Forbidden Lands] Rold Reliquary",
         "category": "Grace",
-        "subcategory": "Forbiden Lands",
+        "subcategory": "Forbidden Lands",
         "requires_convergence": True,
     },
     76598: {
@@ -8109,7 +8109,7 @@ FLAGS_BY_CATEGORY = {
         "Flame Peak": [73017, 73018, 76506, 76507, 76508, 76509, 76510, 76598],
         "Finger Ruins of Rhia": [73183],
         "Foot of the Jagged Peak": [76840, 76850, 76966, 76968],
-        "Forbiden Lands": [73020, 73021, 73450, 73451, 76500, 76502, 76590],
+        "Forbidden Lands": [73020, 73021, 73450, 73451, 76500, 76502, 76590],
         "Gravesite Plain": [
             74000,
             74100,
