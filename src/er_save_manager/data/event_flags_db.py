@@ -3,7 +3,18 @@ Merged Event Flags Database for Elden Ring
 Combined from Cheat Engine script (Dasaav/Umgak) and community documentation
 """
 
-EVENT_FLAGS = {
+from typing import NotRequired, TypedDict
+
+
+class EventFlagInfo(TypedDict):
+    name: str
+    category: str
+    subcategory: str | None
+    related_flags: NotRequired[list[int]]
+    requires_convergence: NotRequired[bool]
+
+
+EVENT_FLAGS: dict[int, EventFlagInfo] = {
     20: {
         "name": "Playthrough Complete: Age of Fracture",
         "category": "System",
@@ -3731,9 +3742,9 @@ EVENT_FLAGS = {
         "subcategory": "Consecrated Snowfield",
     },
     73020: {
-        "name": "[Forbiden Lands] Hidden Path to the Haligtree | Unlocked",
+        "name": "[Forbidden Lands] Hidden Path to the Haligtree | Unlocked",
         "category": "Grace",
-        "subcategory": "Forbiden Lands",
+        "subcategory": "Forbidden Lands",
     },
     73100: {
         "name": "[Limgrave] Murkwater Cave | Unlocked",
@@ -3926,14 +3937,14 @@ EVENT_FLAGS = {
         "subcategory": "Greyoll's Dragonbarrow",
     },
     73450: {
-        "name": "[Forbiden Lands] Divine Tower of the East Altus: Gate | Unlocked",
+        "name": "[Forbidden Lands] Divine Tower of the East Altus: Gate | Unlocked",
         "category": "Grace",
-        "subcategory": "Forbiden Lands",
+        "subcategory": "Forbidden Lands",
     },
     73451: {
-        "name": "[Forbiden Lands] Divine Tower of the East Altus | Unlocked",
+        "name": "[Forbidden Lands] Divine Tower of the East Altus | Unlocked",
         "category": "Grace",
-        "subcategory": "Forbiden Lands",
+        "subcategory": "Forbidden Lands",
     },
     73460: {
         "name": "[Greyoll's Dragonbarrow] Isolated Divine Tower | Unlocked",
@@ -4711,9 +4722,9 @@ EVENT_FLAGS = {
         "subcategory": "Greyoll's Dragonbarrow",
     },
     76500: {
-        "name": "[Forbiden Lands] Forbidden Lands | Unlocked",
+        "name": "[Forbidden Lands] Forbidden Lands | Unlocked",
         "category": "Grace",
-        "subcategory": "Forbiden Lands",
+        "subcategory": "Forbidden Lands",
     },
     76501: {
         "name": "[Mountaintops of the Giants] Zamor Ruins | Unlocked",
@@ -4721,9 +4732,9 @@ EVENT_FLAGS = {
         "subcategory": "Mountaintops of the Giants",
     },
     76502: {
-        "name": "[Forbiden Lands] Grand Lift of Rold | Unlocked",
+        "name": "[Forbidden Lands] Grand Lift of Rold | Unlocked",
         "category": "Grace",
-        "subcategory": "Forbiden Lands",
+        "subcategory": "Forbidden Lands",
     },
     76503: {
         "name": "[Mountaintops of the Giants] Ancient Snow Valley Ruins | Unlocked",
@@ -5104,6 +5115,360 @@ EVENT_FLAGS = {
         "name": "[Scaduview] Scadutree Base | Unlocked",
         "category": "Grace",
         "subcategory": "Scaduview",
+    },
+    76599: {
+        "name": "[Consecrated Snowfield] Consecrated Snowfield Minor Erdtree",
+        "category": "Grace",
+        "subcategory": "Consecrated Snowfield",
+        "requires_convergence": True,
+    },
+    71009: {
+        "name": "[Stormveil Castle] Castle Storehouse",
+        "category": "Grace",
+        "subcategory": "Stormveil Castle",
+        "requires_convergence": True,
+    },
+    71217: {
+        "name": "[Lake of Rot] Lake of Rot Overlook",
+        "category": "Grace",
+        "subcategory": "Lake of Rot",
+        "requires_convergence": True,
+    },
+    71200: {
+        "name": "[Ainsel River Main] Ainsel River Minor Erdtree",
+        "category": "Grace",
+        "subcategory": "Ainsel River Main",
+        "requires_convergence": True,
+    },
+    71291: {
+        "name": "[Siofra River] Siofra Plateau",
+        "category": "Grace",
+        "subcategory": "Siofra River",
+        "requires_convergence": True,
+    },
+    71228: {
+        "name": "[Nokron, Eternal City] Night's Sacred Ground",
+        "category": "Grace",
+        "subcategory": "Nokron, Eternal City",
+        "requires_convergence": True,
+    },
+    71229: {
+        "name": "[Siofra River] Below the Well",
+        "category": "Grace",
+        "subcategory": "Siofra River",
+        "requires_convergence": True,
+    },
+    71236: {
+        "name": "[Deeproot Depths] Deeproot Depths Minor Erdtree",
+        "category": "Grace",
+        "subcategory": "Deeproot Depths",
+        "requires_convergence": True,
+    },
+    71254: {
+        "name": "[Mohgwyn Palace] Rohrbach, Pureblood Knight",
+        "category": "Grace",
+        "subcategory": "Mohgwyn Palace",
+        "requires_convergence": True,
+    },
+    71311: {
+        "name": "[Crumbling Farum Azula] Heart of the Storm",
+        "category": "Grace",
+        "subcategory": "Crumbling Farum Azula",
+        "requires_convergence": True,
+    },
+    71312: {
+        "name": "[Crumbling Farum Azula] Dragon's Rest",
+        "category": "Grace",
+        "subcategory": "Crumbling Farum Azula",
+        "requires_convergence": True,
+    },
+    71313: {
+        "name": "[Crumbling Farum Azula] Dragonlord's Annex (Completion Mark)",
+        "category": "Grace",
+        "subcategory": "Crumbling Farum Azula",
+        "requires_convergence": True,
+    },
+    71314: {
+        "name": "[Crumbling Farum Azula] Lost Tribe Spirit Grounds",
+        "category": "Grace",
+        "subcategory": "Crumbling Farum Azula",
+        "requires_convergence": True,
+    },
+    71404: {
+        "name": "[Academy of Raya Lucaria] Academy Rooftops",
+        "category": "Grace",
+        "subcategory": "Academy of Raya Lucaria",
+        "requires_convergence": True,
+    },
+    71405: {
+        "name": "[Academy of Raya Lucaria] Great Water Wheel",
+        "category": "Grace",
+        "subcategory": "Academy of Raya Lucaria",
+        "requires_convergence": True,
+    },
+    71608: {
+        "name": "[Volcano Manor] Manor Passage",
+        "category": "Grace",
+        "subcategory": "Volcano Manor",
+        "requires_convergence": True,
+    },
+    71609: {
+        "name": "[Volcano Manor] Temple Canyon",
+        "category": "Grace",
+        "subcategory": "Volcano Manor",
+        "requires_convergence": True,
+    },
+    71700: {
+        "name": "[Noxumbra, Forsaken City] Noxumbra Annex",
+        "category": "Grace",
+        "subcategory": "Noxumbra, Forsaken City",
+        "requires_convergence": True,
+    },
+    71701: {
+        "name": "[Noxumbra, Forsaken City] Defiled Chapel",
+        "category": "Grace",
+        "subcategory": "Noxumbra, Forsaken City",
+        "requires_convergence": True,
+    },
+    71702: {
+        "name": "[Noxumbra, Forsaken City] Noxumbra Great Hall",
+        "category": "Grace",
+        "subcategory": "Noxumbra, Forsaken City",
+        "requires_convergence": True,
+    },
+    73021: {
+        "name": "[Forbidden Lands] Vulgar Militia Stronghold",
+        "category": "Grace",
+        "subcategory": "Forbidden Lands",
+        "requires_convergence": True,
+    },
+    73183: {
+        "name": "[Finger Ruins of Rhia] Raya Crystalia",
+        "category": "Grace",
+        "subcategory": "Finger Ruins of Rhia",
+        "requires_convergence": True,
+    },
+    73411: {
+        "name": "[Stormhill] Limgrave Tower Inner Bridge",
+        "category": "Grace",
+        "subcategory": "Stormhill",
+        "requires_convergence": True,
+    },
+    76199: {
+        "name": "[Stormhill] Stormhill Overlook",
+        "category": "Grace",
+        "subcategory": "Stormhill",
+        "requires_convergence": True,
+    },
+    76163: {
+        "name": "[Weeping Peninsula] Castle Morne Town",
+        "category": "Grace",
+        "subcategory": "Weeping Peninsula",
+        "requires_convergence": True,
+    },
+    76198: {
+        "name": "[Weeping Peninsula] Weeping Peninsula Minor Erdtree (Completion Mark)",
+        "category": "Grace",
+        "subcategory": "Weeping Peninsula",
+        "requires_convergence": True,
+    },
+    76197: {
+        "name": "[Limgrave] Limgrave Minor Erdtree",
+        "category": "Grace",
+        "subcategory": "Limgrave",
+        "requires_convergence": True,
+    },
+    76961: {
+        "name": "[Gravesite Plain] Gravesite Woodland",
+        "category": "Grace",
+        "subcategory": "Gravesite Plain",
+        "requires_convergence": True,
+    },
+    76814: {
+        "name": "[Gravesite Plain] Rauh Reliquary of Grace",
+        "category": "Grace",
+        "subcategory": "Gravesite Plain",
+        "requires_convergence": True,
+    },
+    76299: {
+        "name": "[Liurnia of the Lakes] West Liurnia Minor Erdtree",
+        "category": "Grace",
+        "subcategory": "Liurnia of the Lakes",
+        "requires_convergence": True,
+    },
+    76261: {
+        "name": "[Liurnia of the Lakes] Einar- Ice Guardian",
+        "category": "Grace",
+        "subcategory": "Liurnia of the Lakes",
+        "requires_convergence": True,
+    },
+    76246: {
+        "name": "[Liurnia of the Lakes] Lucarian Nexus",
+        "category": "Grace",
+        "subcategory": "Liurnia of the Lakes",
+        "requires_convergence": True,
+    },
+    76290: {
+        "name": "[Liurnia of the Lakes] Caria Manor Perimeter",
+        "category": "Grace",
+        "subcategory": "Liurnia of the Lakes",
+        "requires_convergence": True,
+    },
+    76260: {
+        "name": "[Liurnia of the Lakes] Manor Bailey",
+        "category": "Grace",
+        "subcategory": "Liurnia of the Lakes",
+        "requires_convergence": True,
+    },
+    76298: {
+        "name": "[Bellum Highway] North Liurnia Minor Erdtree",
+        "category": "Grace",
+        "subcategory": "Bellum Highway",
+        "requires_convergence": True,
+    },
+    76399: {
+        "name": "[Mt. Gelmir] West Gelmir Minor Erdtree",
+        "category": "Grace",
+        "subcategory": "Mt. Gelmir",
+        "requires_convergence": True,
+    },
+    76398: {
+        "name": "[Mt. Gelmir] East Gelmir Minor Erdtree",
+        "category": "Grace",
+        "subcategory": "Mt. Gelmir",
+        "requires_convergence": True,
+    },
+    76397: {
+        "name": "[Altus Plateau] Central Altus Minor Erdtree",
+        "category": "Grace",
+        "subcategory": "Altus Plateau",
+        "requires_convergence": True,
+    },
+    76396: {
+        "name": "[Capital Outskirts] East Altus Minor Erdtree",
+        "category": "Grace",
+        "subcategory": "Capital Outskirts",
+        "requires_convergence": True,
+    },
+    76499: {
+        "name": "[Caelid] West Caelid Minor Erdtree",
+        "category": "Grace",
+        "subcategory": "Caelid",
+        "requires_convergence": True,
+    },
+    76480: {
+        "name": "[Caelid] Redmane Storehouse",
+        "category": "Grace",
+        "subcategory": "Caelid",
+        "requires_convergence": True,
+    },
+    76479: {
+        "name": "[Caelid] Redmane Gatehouse",
+        "category": "Grace",
+        "subcategory": "Caelid",
+        "requires_convergence": True,
+    },
+    76497: {
+        "name": "[Greyoll's Dragonbarrow] East Caelid Minor Erdtree",
+        "category": "Grace",
+        "subcategory": "Greyoll's Dragonbarrow",
+        "requires_convergence": True,
+    },
+    76490: {
+        "name": "[Greyoll's Dragonbarrow] Sanctum Undercroft",
+        "category": "Grace",
+        "subcategory": "Greyoll's Dragonbarrow",
+        "requires_convergence": True,
+    },
+    76590: {
+        "name": "[Forbidden Lands] Rold Reliquary",
+        "category": "Grace",
+        "subcategory": "Forbidden Lands",
+        "requires_convergence": True,
+    },
+    76598: {
+        "name": "[Flame Peak] South Mountaintops Minor Erdtree",
+        "category": "Grace",
+        "subcategory": "Flame Peak",
+        "requires_convergence": True,
+    },
+    76597: {
+        "name": "[Mountaintops of the Giants] North Mountaintops Minor Erdtree",
+        "category": "Grace",
+        "subcategory": "Mountaintops of the Giants",
+        "requires_convergence": True,
+    },
+    76962: {
+        "name": "[Cerulean Coast] Cerulean Bluffs",
+        "category": "Grace",
+        "subcategory": "Cerulean Coast",
+        "requires_convergence": True,
+    },
+    76842: {
+        "name": "[Gravesite Plain] Rauh Reliquary of the Thunder-Bound",
+        "category": "Grace",
+        "subcategory": "Gravesite Plain",
+        "requires_convergence": True,
+    },
+    76966: {
+        "name": "[Foot of the Jagged Peak] Dragon Resting Grounds",
+        "category": "Grace",
+        "subcategory": "Foot of the Jagged Peak",
+        "requires_convergence": True,
+    },
+    76968: {
+        "name": "[Foot of the Jagged Peak] Valley Town (new)",
+        "category": "Grace",
+        "subcategory": "Foot of the Jagged Peak",
+        "requires_convergence": True,
+    },
+    76854: {
+        "name": "[Jagged Peak] Rauh Reliquary of the Scorched",
+        "category": "Grace",
+        "subcategory": "Jagged Peak",
+        "requires_convergence": True,
+    },
+    76915: {
+        "name": "[Gravesite Plain] Rauh Reliquary of Balance",
+        "category": "Grace",
+        "subcategory": "Gravesite Plain",
+        "requires_convergence": True,
+    },
+    76946: {
+        "name": "[Ancient Ruins of Rauh] Rauh Reliquary of the Rugged",
+        "category": "Grace",
+        "subcategory": "Ancient Ruins of Rauh",
+        "requires_convergence": True,
+    },
+    76965: {
+        "name": "[Ancient Ruins of Rauh] Rauh Steppes",
+        "category": "Grace",
+        "subcategory": "Ancient Ruins of Rauh",
+        "requires_convergence": True,
+    },
+    76964: {
+        "name": "[Scadu Altus] Minor Erdtree Cave",
+        "category": "Grace",
+        "subcategory": "Scadu Altus",
+        "requires_convergence": True,
+    },
+    76967: {
+        "name": "[Scadu Altus] Abyssal Overlook",
+        "category": "Grace",
+        "subcategory": "Scadu Altus",
+        "requires_convergence": True,
+    },
+    76963: {
+        "name": "[Scaduview] Shaman Village",
+        "category": "Grace",
+        "subcategory": "Scaduview",
+        "requires_convergence": True,
+    },
+    76938: {
+        "name": "[Scaduview] Finger Ruins of Dheo",
+        "category": "Grace",
+        "subcategory": "Scaduview",
+        "requires_convergence": True,
     },
     82001: {
         "name": "Show Underground",
@@ -7628,9 +7993,9 @@ FLAGS_BY_CATEGORY = {
     },
     "Grace": {
         "Abyssal Woods": [76860, 76861, 76862, 76863, 76864],
-        "Academy of Raya Lucaria": [71400, 71401, 71402, 71403],
+        "Academy of Raya Lucaria": [71400, 71401, 71402, 71403, 71404, 71405],
         "Ainsel River": [71210, 71211, 71212, 71213, 71240],
-        "Ainsel River Main": [71214, 71215, 71219],
+        "Ainsel River Main": [71200, 71214, 71215, 71219],
         "Altus Plateau": [
             73008,
             73012,
@@ -7651,9 +8016,19 @@ FLAGS_BY_CATEGORY = {
             76320,
             76321,
             76322,
+            76397,
         ],
-        "Ancient Ruins of Rauh": [76940, 76941, 76942, 76943, 76944, 76945],
-        "Bellum Highway": [76207, 76208, 76209, 76239, 76240],
+        "Ancient Ruins of Rauh": [
+            76940,
+            76941,
+            76942,
+            76943,
+            76944,
+            76945,
+            76946,
+            76965,
+        ],
+        "Bellum Highway": [76207, 76208, 76209, 76239, 76240, 76298],
         "Belurat, Tower Settlement": [72000, 72001, 72002, 72003],
         "Caelid": [
             73014,
@@ -7681,6 +8056,9 @@ FLAGS_BY_CATEGORY = {
             76419,
             76420,
             76422,
+            76479,
+            76480,
+            76499,
         ],
         "Capital Outskirts": [
             73010,
@@ -7693,11 +8071,21 @@ FLAGS_BY_CATEGORY = {
             76311,
             76312,
             76314,
+            76396,
         ],
         "Castle Ensis": [76821, 76822, 76823],
-        "Cerulean Coast": [76831, 76832, 76833, 76834, 76835],
+        "Cerulean Coast": [76831, 76832, 76833, 76834, 76835, 76962],
         "Charo's Hidden Grave": [74102, 76841],
-        "Consecrated Snowfield": [73019, 73112, 73211, 76550, 76551, 76652, 76653],
+        "Consecrated Snowfield": [
+            73019,
+            73112,
+            73211,
+            76550,
+            76551,
+            76599,
+            76652,
+            76653,
+        ],
         "Crumbling Farum Azula": [
             71300,
             71301,
@@ -7710,13 +8098,18 @@ FLAGS_BY_CATEGORY = {
             71308,
             71309,
             71310,
+            71311,
+            71312,
+            71313,
+            71314,
         ],
-        "Deeproot Depths": [71230, 71231, 71232, 71233, 71234, 71235],
+        "Deeproot Depths": [71230, 71231, 71232, 71233, 71234, 71235, 71236],
         "Elphael, Brace of the Haligtree": [71500, 71501, 71502, 71503, 71504],
         "Enir-Ilim": [72010, 72012, 72013, 72014, 72015, 72016],
-        "Flame Peak": [73017, 73018, 76506, 76507, 76508, 76509, 76510],
-        "Foot of the Jagged Peak": [76840, 76850],
-        "Forbiden Lands": [73020, 73450, 73451, 76500, 76502],
+        "Flame Peak": [73017, 73018, 76506, 76507, 76508, 76509, 76510, 76598],
+        "Finger Ruins of Rhia": [73183],
+        "Foot of the Jagged Peak": [76840, 76850, 76966, 76968],
+        "Forbidden Lands": [73020, 73021, 73450, 73451, 76500, 76502, 76590],
         "Gravesite Plain": [
             74000,
             74100,
@@ -7734,7 +8127,11 @@ FLAGS_BY_CATEGORY = {
             76811,
             76812,
             76813,
+            76814,
             76830,
+            76842,
+            76915,
+            76961,
         ],
         "Greyoll's Dragonbarrow": [
             73110,
@@ -7749,9 +8146,11 @@ FLAGS_BY_CATEGORY = {
             76454,
             76455,
             76456,
+            76490,
+            76497,
         ],
-        "Jagged Peak": [76851, 76852, 76853],
-        "Lake of Rot": [71216, 71218],
+        "Jagged Peak": [76851, 76852, 76853, 76854],
+        "Lake of Rot": [71216, 71218, 71217],
         "Leyndell, Ashen Capital": [71120, 71121, 71122, 71123, 71124, 71125],
         "Leyndell, Royal Capital": [
             71100,
@@ -7786,6 +8185,7 @@ FLAGS_BY_CATEGORY = {
             76116,
             76119,
             76120,
+            76197,
         ],
         "Liurnia of the Lakes": [
             73003,
@@ -7839,11 +8239,16 @@ FLAGS_BY_CATEGORY = {
             76243,
             76244,
             76245,
+            76246,
             76247,
+            76260,
+            76261,
+            76290,
+            76299,
         ],
         "Midra's Manse": [72800, 72801, 72802, 72803],
         "Miquella's Haligtree": [71505, 71506, 71507, 71508],
-        "Mohgwyn Palace": [71250, 71251, 71252, 71253],
+        "Mohgwyn Palace": [71250, 71251, 71252, 71253, 71254],
         "Moonlight Altar": [76250, 76251, 76252],
         "Mountaintops of the Giants": [
             73122,
@@ -7856,6 +8261,7 @@ FLAGS_BY_CATEGORY = {
             76522,
             76523,
             76524,
+            76597,
         ],
         "Mt. Gelmir": [
             73007,
@@ -7870,9 +8276,12 @@ FLAGS_BY_CATEGORY = {
             76355,
             76356,
             76357,
+            76398,
+            76399,
         ],
-        "Nokron, Eternal City": [71220, 71221, 71224, 71225, 71226, 71271],
+        "Nokron, Eternal City": [71228, 71220, 71221, 71224, 71225, 71226, 71271],
         None: [71190],
+        "Noxumbra, Forsaken City": [71700, 71701, 71702],
         "Rauh Base": [74001, 74203, 76912, 76913, 76914],
         "Ruin-Strewn Precipice": [73900, 73901, 73902],
         "Scadu Altus": [
@@ -7894,20 +8303,44 @@ FLAGS_BY_CATEGORY = {
             76916,
             76917,
             76918,
+            76964,
+            76967,
         ],
-        "Scaduview": [76930, 76931, 76935, 76936, 76937, 76960],
+        "Scaduview": [76930, 76931, 76935, 76936, 76937, 76938, 76960, 76963],
         "Shadow Keep": [72101, 72102],
         "Shadow Keep, Church District": [72106, 72107, 72108, 72109],
-        "Siofra River": [71222, 71223, 71227, 71270],
+        "Siofra River": [71222, 71223, 71227, 71270, 71291, 71229],
         "Specimen Storehouse": [72110, 72111, 72112, 72113, 72114, 72116, 72117, 72120],
         "Stone Coffin Fissure": [72200, 72201, 72202, 72203, 72204],
         "Stone Platform": [71900],
-        "Stormhill": [71001, 71002, 73011, 73410, 73412, 76102, 76117, 76118],
-        "Stormveil Castle": [71000, 71003, 71004, 71005, 71006, 71007, 71008],
+        "Stormhill": [
+            71001,
+            71002,
+            73011,
+            73410,
+            73411,
+            73412,
+            76102,
+            76117,
+            76118,
+            76199,
+        ],
+        "Stormveil Castle": [71000, 71003, 71004, 71005, 71006, 71007, 71008, 71009],
         "Stranded Graveyard": [71800, 71801],
         "Subterranean Shunning-Grounds": [73500, 73501, 73502, 73503, 73504],
         "Swamp of Aeonia": [76406, 76407, 76412, 76413],
-        "Volcano Manor": [71600, 71601, 71602, 71603, 71604, 71605, 71606, 71607],
+        "Volcano Manor": [
+            71600,
+            71601,
+            71602,
+            71603,
+            71604,
+            71605,
+            71606,
+            71607,
+            71608,
+            71609,
+        ],
         "Weeping Peninsula": [
             73000,
             73001,
@@ -7927,6 +8360,8 @@ FLAGS_BY_CATEGORY = {
             76160,
             76161,
             76162,
+            76163,
+            76198,
         ],
     },
     "Maps": {
@@ -8282,9 +8717,15 @@ FLAGS_BY_CATEGORY = {
 CATEGORIES = list(FLAGS_BY_CATEGORY.keys())
 
 
-def get_flag_info(flag_id: int) -> dict | None:
+def get_flag_info(flag_id: int) -> EventFlagInfo | None:
     """Get information about a flag"""
     return EVENT_FLAGS.get(flag_id)
+
+
+def is_convergence(flag_id: int) -> bool:
+    """Return True if the flag only exists in Convergence mod saves"""
+    flag_info = EVENT_FLAGS.get(flag_id)
+    return flag_info.get("requires_convergence", False) if flag_info else False
 
 
 def get_flag_name(flag_id: int) -> str:
@@ -8305,8 +8746,17 @@ def get_category_flags(category: str, subcategory: str = None) -> list[int]:
     return sorted(all_flags)
 
 
-def get_subcategories(category: str) -> list[str]:
-    """Get all subcategories for a category"""
+def get_subcategories(category: str, include_convergence: bool = True) -> list[str]:
+    """Get all subcategories for a category.
+
+    With include_convergence=False, subcategories whose flags all require
+    the Convergence mod are omitted.
+    """
     if category not in FLAGS_BY_CATEGORY:
         return []
-    return sorted([k for k in FLAGS_BY_CATEGORY[category].keys() if k is not None])
+    return sorted(
+        sub
+        for sub, flags in FLAGS_BY_CATEGORY[category].items()
+        if sub is not None
+        and (include_convergence or not all(is_convergence(f) for f in flags))
+    )
