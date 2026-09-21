@@ -127,6 +127,32 @@ class EventFlagsTab:
             self.event_flag_slot_combo.configure(values=slot_names)
             self.event_flag_slot_combo.set(slot_names[0])
 
+        self._refresh_subcategory_filter()
+
+    def _refresh_subcategory_filter(self):
+        """Re-apply convergence filtering to the subcategory dropdown.
+
+        Loading a save does not trigger on_category_changed on its own, so a
+        category selected for a previously loaded save can leave
+        Convergence-only subcategories in the dropdown after a
+        non-Convergence save loads.
+        """
+        if not hasattr(self, "category_var"):
+            return
+
+        category = self.category_var.get()
+        if not category:
+            return
+
+        subcats = get_subcategories(category, include_convergence=self._is_cnv_save())
+        if subcats:
+            self.subcat_combo.configure(values=["All"] + subcats, state="readonly")
+            if self.subcategory_var.get() not in subcats + ["All"]:
+                self.subcategory_var.set("All")
+        else:
+            self.subcat_combo.configure(values=[], state="disabled")
+            self.subcategory_var.set("")
+
     def setup_ui(self):
         """Setup the event flags tab UI"""
         # Main scrollable container
