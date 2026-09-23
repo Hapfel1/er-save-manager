@@ -85,6 +85,23 @@ class EventFlagsTab:
         self.flag_widgets = {}  # Track checkbox widgets
         self.current_event_flags = None
         self._search_after_id = None
+        # Incremented whenever the flag view is cleared. Chunked renders carry
+        # the value they started with and stop once it no longer matches.
+        self._render_token = 0
+
+    def _clear_flag_view(self):
+        """Empty the flag list and invalidate any render still in progress."""
+        self._render_token += 1
+        for widget in self.flags_inner_frame.winfo_children():
+            widget.destroy()
+        self.flag_widgets.clear()
+
+    def _reset_filters(self):
+        """Clear category, subcategory and search selections."""
+        self.category_var.set("")
+        self.subcategory_var.set("")
+        self.subcat_combo.configure(values=[], state="disabled")
+        self.search_var.set("")
 
     def _get_slot_display_names(self):
         """Get display names for all slots"""
@@ -263,6 +280,13 @@ class EventFlagsTab:
 
         ctk.CTkButton(
             tools_row,
+            text="Sites of Grace...",
+            command=self.open_grace_dialog,
+            width=140,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+
+        ctk.CTkButton(
+            tools_row,
             text="Export Flags...",
             command=self.export_flags,
             width=120,
@@ -398,9 +422,8 @@ class EventFlagsTab:
 
         self.current_event_flags = self._EventFlagAccessor(slot)
         self.flag_states.clear()
-        self.flag_widgets.clear()
-        for widget in self.flags_inner_frame.winfo_children():
-            widget.destroy()
+        self._clear_flag_view()
+        self._reset_filters()
 
         self.status_label.configure(
             text=f"Loaded Slot {slot_idx + 1}. Select category or search."
@@ -456,9 +479,7 @@ class EventFlagsTab:
 
     def display_flags(self, category, subcategory):
         """Display flags for category/subcategory, rendered in chunks to avoid X11 BadAlloc."""
-        for widget in self.flags_inner_frame.winfo_children():
-            widget.destroy()
-        self.flag_widgets.clear()
+        self._clear_flag_view()
 
         flags = self._filter_flags(get_category_flags(category, subcategory))
         total = len(flags)
@@ -466,13 +487,19 @@ class EventFlagsTab:
         label = f"{category} > {subcategory}" if subcategory else category
         self.status_label.configure(text=f"Loading {total} flags in {label}...")
 
-        self._render_flags_chunk(flags, 0, total, label)
+        self._render_flags_chunk(flags, 0, total, label, self._render_token)
 
     _RENDER_CHUNK = 25  # flags per batch
     _RENDER_DELAY = 20  # ms between batches - gives X11 time to flush
 
-    def _render_flags_chunk(self, flags, offset, total, label):
-        """Render one chunk of flags, then schedule the next batch."""
+    def _render_flags_chunk(self, flags, offset, total, label, token):
+        """Render one chunk of flags, then schedule the next batch.
+
+        Returns without rendering if the view was cleared since this render
+        started (token mismatch), so stale chunks never reach the new view.
+        """
+        if token != self._render_token:
+            return
         chunk = flags[offset : offset + self._RENDER_CHUNK]
 
         for flag_id in chunk:
@@ -503,7 +530,9 @@ class EventFlagsTab:
             )
             self.flags_inner_frame.after(
                 self._RENDER_DELAY,
-                lambda: self._render_flags_chunk(flags, next_offset, total, label),
+                lambda: self._render_flags_chunk(
+                    flags, next_offset, total, label, token
+                ),
             )
         else:
             self.status_label.configure(text=f"Showing {total} flags in {label}")
@@ -523,9 +552,7 @@ class EventFlagsTab:
 
         query = self.search_var.get().strip().lower()
         if not query:
-            for widget in self.flags_inner_frame.winfo_children():
-                widget.destroy()
-            self.flag_widgets.clear()
+            self._clear_flag_view()
             self.status_label.configure(text="Select a category or search for flags")
             return
 
@@ -539,9 +566,7 @@ class EventFlagsTab:
         if self.search_var.get().strip().lower() != query:
             return
 
-        for widget in self.flags_inner_frame.winfo_children():
-            widget.destroy()
-        self.flag_widgets.clear()
+        self._clear_flag_view()
 
         # Search through all categories
         results = []
@@ -562,10 +587,12 @@ class EventFlagsTab:
                         results.append((flag_id, flag_name, category, None))
 
         self.status_label.configure(text="Searching...")
-        self._render_search_chunk(results, 0)
+        self._render_search_chunk(results, 0, self._render_token)
 
-    def _render_search_chunk(self, results, offset):
+    def _render_search_chunk(self, results, offset, token):
         """Render one chunk of search results, then schedule the next batch."""
+        if token != self._render_token:
+            return
         chunk = results[offset : offset + self._RENDER_CHUNK]
 
         for flag_id, flag_name, category, subcategory in chunk:
@@ -595,7 +622,7 @@ class EventFlagsTab:
         if next_offset < total:
             self.flags_inner_frame.after(
                 self._RENDER_DELAY,
-                lambda: self._render_search_chunk(results, next_offset),
+                lambda: self._render_search_chunk(results, next_offset, token),
             )
         else:
             self.status_label.configure(text=f"Found {total} matching flags")
@@ -603,9 +630,7 @@ class EventFlagsTab:
     def clear_search(self):
         """Clear search field"""
         self.search_var.set("")
-        for widget in self.flags_inner_frame.winfo_children():
-            widget.destroy()
-        self.flag_widgets.clear()
+        self._clear_flag_view()
         self.status_label.configure(text="Select a category or search for flags")
 
     def unlock_all_in_category(self):
@@ -1864,6 +1889,26 @@ class EventFlagsTab:
         from er_save_manager.ui.quest_progress_dialog import QuestProgressDialog
 
         QuestProgressDialog.open(
+            self.parent,
+            self.current_event_flags,
+            self.get_save_file(),
+            self.get_save_path(),
+            self.current_slot,
+            self.reload_save,
+            self.show_toast,
+        )
+
+    def open_grace_dialog(self):
+        """Open the sites of grace unlock/lock dialog."""
+        if self.current_event_flags is None:
+            CTkMessageBox.showwarning(
+                "Not Loaded", "Please load event flags for a character first!"
+            )
+            return
+
+        from er_save_manager.ui.grace_dialog import GraceDialog
+
+        GraceDialog.open(
             self.parent,
             self.current_event_flags,
             self.get_save_file(),

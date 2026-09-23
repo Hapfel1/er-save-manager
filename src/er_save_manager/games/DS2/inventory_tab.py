@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from collections.abc import Callable
+from pathlib import Path
 from tkinter import ttk
 
 import customtkinter as ctk
@@ -23,7 +24,7 @@ def _game_blocks_write(parent) -> bool:
     return game_blocks_write(parent, "darksoulsii.exe", "Dark Souls II")
 
 
-STACKABLE_CATEGORIES = ("goods", "bolts", "spells", "upgrade")
+STACKABLE_CATEGORIES = ("goods", "bolts", "spells", "upgrade", "seamless")
 
 # Internal category key -> display label. Kept separate so backend calls
 # (item_database lookups, Character.add_item/delete_item) always use the
@@ -37,8 +38,12 @@ CATEGORY_LABELS = {
     "bolts": "Bolts",
     "spells": "Spells",
     "upgrade": "Upgrade Materials",
+    "seamless": "Seamless Co-op Items",
 }
 _DISPLAY_CATEGORIES = list(CATEGORY_LABELS.keys())
+
+# Categories that are only offered in the Add Item browser for .co2 saves.
+_SEAMLESS_CATEGORIES = frozenset({"seamless"})
 
 
 class DS2InventoryPanel:
@@ -109,14 +114,15 @@ class DS2InventoryPanel:
         self.add_category_var = tk.StringVar(
             value=CATEGORY_LABELS[_DISPLAY_CATEGORIES[0]]
         )
-        ctk.CTkComboBox(
+        self._add_category_combo = ctk.CTkComboBox(
             cat_row,
             variable=self.add_category_var,
-            values=list(CATEGORY_LABELS.values()),
+            values=self._visible_add_labels(),
             state="readonly",
             width=160,
             command=lambda _v: self._search_items(),
-        ).pack(side="left", padx=(0, 6))
+        )
+        self._add_category_combo.pack(side="left", padx=(0, 6))
 
         search_row = ctk.CTkFrame(parent, fg_color="transparent")
         search_row.pack(fill="x", padx=10, pady=(0, 4))
@@ -127,22 +133,25 @@ class DS2InventoryPanel:
             side="left", padx=(0, 6)
         )
 
-        self._results_tree = ttk.Treeview(
-            parent, columns=("name",), show="headings", height=14
+        # Pack order decides which widgets are clipped when the parent is short.
+        # The button and quantity row are packed to the bottom first so they
+        # always keep their space, and the tree takes whatever remains.
+        ctk.CTkButton(parent, text="Add Item", command=self._on_add, height=32).pack(
+            side="bottom", fill="x", padx=10, pady=(0, 10)
         )
-        self._results_tree.heading("name", text="Item")
-        self._results_tree.column("name", width=260)
-        self._results_tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
 
         qty_row = ctk.CTkFrame(parent, fg_color="transparent")
-        qty_row.pack(fill="x", padx=10, pady=(0, 6))
+        qty_row.pack(side="bottom", fill="x", padx=10, pady=(0, 6))
         ctk.CTkLabel(qty_row, text="Quantity:", width=70).pack(side="left")
         self.add_qty_var = tk.StringVar(value="1")
         ctk.CTkEntry(qty_row, textvariable=self.add_qty_var, width=70).pack(side="left")
 
-        ctk.CTkButton(parent, text="Add Item", command=self._on_add, height=32).pack(
-            fill="x", padx=10, pady=(0, 10)
+        self._results_tree = ttk.Treeview(
+            parent, columns=("name",), show="headings", height=6
         )
+        self._results_tree.heading("name", text="Item")
+        self._results_tree.column("name", width=260)
+        self._results_tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
 
         self._search_items()
 
@@ -176,8 +185,12 @@ class DS2InventoryPanel:
         )
 
         columns = ("name", "category", "quantity")
+        # Action row is packed to the bottom first so it is never clipped.
+        actions = ctk.CTkFrame(parent, fg_color="transparent")
+        actions.pack(side="bottom", fill="x", padx=10, pady=(0, 10))
+
         self._inventory_tree = ttk.Treeview(
-            parent, columns=columns, show="headings", height=14
+            parent, columns=columns, show="headings", height=6
         )
         self._column_labels = {
             "name": "Name",
@@ -195,8 +208,6 @@ class DS2InventoryPanel:
             self._inventory_tree.column(col, width=width)
         self._inventory_tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
 
-        actions = ctk.CTkFrame(parent, fg_color="transparent")
-        actions.pack(fill="x", padx=10, pady=(0, 10))
         ctk.CTkButton(
             actions, text="Remove Selected", command=self._on_remove, width=130
         ).pack(side="left", padx=(0, 6))
@@ -210,6 +221,28 @@ class DS2InventoryPanel:
     # ------------------------------------------------------------------
     # Left panel: item browser
     # ------------------------------------------------------------------
+
+    def _is_co2(self) -> bool:
+        path = self.get_save_path()
+        return bool(path) and Path(path).suffix.lower() == ".co2"
+
+    def _visible_add_labels(self) -> list[str]:
+        """Add Item category labels for the current save. Seamless Co-op
+        categories are only offered for .co2 saves."""
+        is_co2 = self._is_co2()
+        return [
+            label
+            for key, label in CATEGORY_LABELS.items()
+            if key not in _SEAMLESS_CATEGORIES or is_co2
+        ]
+
+    def refresh_category_visibility(self) -> None:
+        """Re-evaluate the Add Item categories after the save path changes."""
+        labels = self._visible_add_labels()
+        self._add_category_combo.configure(values=labels)
+        if self.add_category_var.get() not in labels:
+            self.add_category_var.set(labels[0])
+            self._search_items()
 
     def _selected_add_category(self) -> str:
         label = self.add_category_var.get()
@@ -275,6 +308,7 @@ class DS2InventoryPanel:
     # ------------------------------------------------------------------
 
     def refresh(self) -> None:
+        self.refresh_category_visibility()
         save: DS2Save | None = self.get_save()
         self._current_items = []
         if save is not None:
@@ -411,8 +445,6 @@ class DS2InventoryPanel:
         if not save_path:
             return
         try:
-            from pathlib import Path
-
             from er_save_manager.backup.manager import BackupManager
 
             BackupManager(Path(save_path)).create_backup(
