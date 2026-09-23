@@ -2714,9 +2714,26 @@ class InventoryEditor:
 
     def _show_batch_upgrade_dialog(self, weapon_rows: list, parent_window) -> None:
         """Modal dialog to pick target upgrade levels for standard and somber weapons."""
+        from er_save_manager.editors.matchmaking_utils import (
+            get_max_weapon_upgrade,
+            somber_to_mm,
+        )
+
         is_cnv = self._is_cnv_save()
         std_cap = _weapon_upgrade_cap(None, "standard", is_cnv)
         somber_cap = _weapon_upgrade_cap(None, "somber", is_cnv)
+
+        # Highest weapon level across held and storage, on the standard scale.
+        # Somber weapons are matched to the highest somber level that does not
+        # exceed it, so the matchmaking level is never raised by this action.
+        highest_mm = get_max_weapon_upgrade(
+            self.get_save_file().characters[self.get_char_slot()]
+        )
+        max_std_level = min(highest_mm, std_cap)
+        max_somber_level = max(
+            (lvl for lvl in range(somber_cap + 1) if somber_to_mm(lvl) <= highest_mm),
+            default=0,
+        )
 
         dialog = ctk.CTkToplevel(parent_window)
         dialog.title("Batch Upgrade Weapons")
@@ -2752,6 +2769,30 @@ class InventoryEditor:
             side="left", padx=(10, 4)
         )
         ctk.CTkEntry(row2, textvariable=somber_level_var, width=50).pack(side="left")
+
+        def _fill_max() -> None:
+            if highest_mm == 0:
+                CTkMessageBox.showinfo(
+                    "Batch Upgrade",
+                    "No upgraded weapons found in the inventory.",
+                    parent=dialog,
+                )
+                return
+            std_var.set(True)
+            std_level_var.set(str(max_std_level))
+            somber_var.set(True)
+            somber_level_var.set(str(max_somber_level))
+
+        max_row = ctk.CTkFrame(dialog, fg_color="transparent")
+        max_row.pack(fill="x", padx=20, pady=4)
+        ctk.CTkButton(max_row, text="Max", command=_fill_max, width=60).pack(
+            side="left"
+        )
+        ctk.CTkLabel(
+            max_row,
+            text=f"Highest weapon level in inventory: +{highest_mm}",
+            anchor="w",
+        ).pack(side="left", padx=(10, 0))
 
         btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_row.pack(fill="x", padx=20, pady=(12, 16))
