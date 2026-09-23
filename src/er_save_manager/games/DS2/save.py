@@ -337,7 +337,7 @@ class Character:
     # Inventory add / delete
     # ------------------------------------------------------------------
 
-    STACKABLE_CATEGORIES = {"goods", "bolts", "spells", "upgrade"}
+    STACKABLE_CATEGORIES = {"goods", "bolts", "spells", "upgrade", "seamless"}
 
     _DEFAULT_TEMPLATE = {
         "weapons": (0x00192D50, 0x42200000, 0x00000000),
@@ -462,6 +462,19 @@ class DS2Save:
             if _is_valid_name(name):
                 result[i] = name
         return result
+
+    def slot_display_name(self, slot_index: int) -> str:
+        """Best available name for a slot, or "" if none is trustworthy.
+
+        The profile name is used when it passes _is_valid_name. Otherwise the
+        entry 0 cache is used, since slot_occupancy() already filters it. A
+        profile name that fails validation is treated as uninitialized data
+        and is never returned, so callers do not display garbage characters.
+        """
+        profile_name = self.characters[slot_index].name
+        if _is_valid_name(profile_name):
+            return profile_name
+        return self.slot_occupancy().get(slot_index, "")
 
     def sync_name_caches(self) -> None:
         occ_data = self.container.get_entry(OCCUPANCY_ENTRY)

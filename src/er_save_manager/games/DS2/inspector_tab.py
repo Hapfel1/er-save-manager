@@ -82,7 +82,7 @@ class DS2InspectorTab:
             if not save.is_slot_initialized(i):
                 continue
 
-            name = character.name
+            name = save.slot_display_name(i)
             display_name = name if name else "(empty)"
             status = "Ready"
             check = self._check_slot(i, name, select_data)

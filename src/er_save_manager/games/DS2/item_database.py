@@ -1256,6 +1256,24 @@ UPGRADE_MATERIALS: dict[str, str] = {
 }
 
 
+# Custom items added by the Seamless Co-op mod. IDs are outside the vanilla
+# ranges (decimal 100000000 and up) and are only valid in .co2 saves.
+SEAMLESS_ITEMS: dict[str, str] = {
+    "Pharros' Heliograph": "00 E1 F5 05",
+    "Fragment of Brilliance": "01 E1 F5 05",
+    "Fragment of Malevolance": "02 E1 F5 05",
+    "Obscuring Stone": "03 E1 F5 05",
+    "Petrified Fingers": "04 E1 F5 05",
+    "Hallucinogenic Elixir": "05 E1 F5 05",
+    "Mirror Talisman": "06 E1 F5 05",
+    "Fragment of Sin": "07 E1 F5 05",
+    "Extravagant Bell": "08 E1 F5 05",
+    "Severed Tail": "09 E1 F5 05",
+    "Darkcaller Bell": "0A E1 F5 05",
+    "Ancient Dragon Ring": "0B E1 F5 05",
+}
+
+
 CATEGORIES: dict[str, dict[str, str]] = {
     "goods": GOODS,
     "weapons": WEAPONS,
@@ -1265,6 +1283,7 @@ CATEGORIES: dict[str, dict[str, str]] = {
     "bolts": BOLTS,
     "spells": SPELLS,
     "upgrade": UPGRADE_MATERIALS,
+    "seamless": SEAMLESS_ITEMS,
 }
 
 

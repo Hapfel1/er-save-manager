@@ -1,7 +1,5 @@
 custom id adder as dev option defining item category etc, also option to show ids
 
-add seamless itemids
-
 check dlc npc flags
 
 check ds3, nr item spawning
