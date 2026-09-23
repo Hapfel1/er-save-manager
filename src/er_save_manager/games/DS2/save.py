@@ -339,10 +339,12 @@ class Character:
 
     STACKABLE_CATEGORIES = {"goods", "bolts", "spells", "upgrade", "seamless"}
 
-    _DEFAULT_TEMPLATE = {
-        "weapons": (0x00192D50, 0x42200000, 0x00000000),
-        "armors": (0x0142E0A4, 0x437F0000, 0x00000000),
-        "rings": (0x02628110, 0x42F00000, 0x00000000),
+    # Default durability (float bit pattern) for new weapons, armor and rings
+    # when the inventory holds no item of the same category to copy it from.
+    _DEFAULT_DURABILITY = {
+        "weapons": 0x42200000,
+        "armors": 0x437F0000,
+        "rings": 0x42F00000,
     }
 
     def _region(self, category: str) -> tuple[int, int]:
@@ -389,13 +391,16 @@ class Character:
             new_item = InventoryItem(
                 empty.offset, item_id, 0, min(int(quantity), 99), 0
             )
-        elif category in self._DEFAULT_TEMPLATE:
+        elif category in self._DEFAULT_DURABILITY:
+            # unk_1 and unk_2 are 0 in game-written entries, so only the
+            # durability is copied from an existing item.
             existing = self._find_item_by_category(category, start, end)
-            if existing is not None:
-                unk_1, dur, unk_2 = existing.unk_1, existing.quantity, existing.unk_2
-            else:
-                unk_1, dur, unk_2 = self._DEFAULT_TEMPLATE[category]
-            new_item = InventoryItem(empty.offset, item_id, unk_1, dur, unk_2)
+            dur = (
+                existing.quantity
+                if existing is not None
+                else self._DEFAULT_DURABILITY[category]
+            )
+            new_item = InventoryItem(empty.offset, item_id, 0, dur, 0)
         else:
             new_item = InventoryItem(empty.offset, item_id, 0, 1, 0)
 
@@ -405,8 +410,8 @@ class Character:
     def _find_item_by_category(
         self, category: str, start: int, end: int
     ) -> InventoryItem | None:
-        """Find any existing non-empty item in the region, used to copy a
-        realistic unk_1/durability template for a brand new item."""
+        """Find any existing non-empty item of the category in the region,
+        used to copy a realistic durability for a brand new item."""
         from er_save_manager.games.DS2.item_database import build_item_db
 
         db = build_item_db()
