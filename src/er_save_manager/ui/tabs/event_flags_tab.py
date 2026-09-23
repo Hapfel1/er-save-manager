@@ -280,6 +280,13 @@ class EventFlagsTab:
 
         ctk.CTkButton(
             tools_row,
+            text="Sites of Grace...",
+            command=self.open_grace_dialog,
+            width=140,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+
+        ctk.CTkButton(
+            tools_row,
             text="Export Flags...",
             command=self.export_flags,
             width=120,
@@ -1882,6 +1889,26 @@ class EventFlagsTab:
         from er_save_manager.ui.quest_progress_dialog import QuestProgressDialog
 
         QuestProgressDialog.open(
+            self.parent,
+            self.current_event_flags,
+            self.get_save_file(),
+            self.get_save_path(),
+            self.current_slot,
+            self.reload_save,
+            self.show_toast,
+        )
+
+    def open_grace_dialog(self):
+        """Open the sites of grace unlock/lock dialog."""
+        if self.current_event_flags is None:
+            CTkMessageBox.showwarning(
+                "Not Loaded", "Please load event flags for a character first!"
+            )
+            return
+
+        from er_save_manager.ui.grace_dialog import GraceDialog
+
+        GraceDialog.open(
             self.parent,
             self.current_event_flags,
             self.get_save_file(),
