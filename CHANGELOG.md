@@ -3,6 +3,61 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.11.0
+**Released:** September 23, 2026
+
+
+### ✨ New Features
+
+- Added Weapon-Batch-Upgrading to the Visual Inventory Editor: ([a3d30c5](https://github.com/Hapfel1/er-save-manager/commit/a3d30c53982fd6a76b692f457e50a8d89f60c031))
+
+- Feat: added Convergence Mod sites of grace to EVENT_FLAGS and
+FLAGS_BY_CATEGORY ([1cb7879](https://github.com/Hapfel1/er-save-manager/commit/1cb7879edcc96923bffc9d28fa258a69ee93b175))
+
+- Add is_convergence helper ([d43d49b](https://github.com/Hapfel1/er-save-manager/commit/d43d49b1961e6bd0d419863c8fefba08ee05debd))
+
+- Add Max button to batch weapon upgrade dialog ([baed03d](https://github.com/Hapfel1/er-save-manager/commit/baed03d1099f95562a4181d03e2eae089509be94))
+
+- Add Sites of Grace dialog to the event flags tab `[er]` ([1dc2b67](https://github.com/Hapfel1/er-save-manager/commit/1dc2b67ff3e45258bf83bb8fce0d16a142bbe67b))
+
+- Add show item IDs and custom ID item adder dev options `[er]` ([17a1321](https://github.com/Hapfel1/er-save-manager/commit/17a13216b8a757916563ddee920e5299af989811))
+
+
+
+### 🔧 Bug Fixes
+
+- Fix: get_flag_name now works like before the addition of EventFlagInfo
+again ([ca07cbd](https://github.com/Hapfel1/er-save-manager/commit/ca07cbdc34115a366a458bc053796ac015a653ac))
+
+- Remove duplicate id from wrong category ([bb3e4ec](https://github.com/Hapfel1/er-save-manager/commit/bb3e4ec94f49599b8b3491e9514161eadeac8895))
+
+- Hide convergence-only subcategories and flags on non-convergence saves ([bdebe35](https://github.com/Hapfel1/er-save-manager/commit/bdebe3518dd203ad7f2067fe8c25e84caa5de5c9))
+
+- Correct Forbidden Lands spelling in grace category ([ddc7af3](https://github.com/Hapfel1/er-save-manager/commit/ddc7af3cc01907a161186831618d22e6ad52eb72))
+
+- Refresh subcategory dropdown filter when a save loads ([1c97a9d](https://github.com/Hapfel1/er-save-manager/commit/1c97a9dcdaa3747d839ca5fffcbf28eab57f3824))
+
+- Clipped add button, seamless items, garbled slot names `[ds2]` ([2a3ca45](https://github.com/Hapfel1/er-save-manager/commit/2a3ca45725e5e75f1b599fe7adf8e7f9de3758d2))
+
+- Stale flag render and stale filters in event flags tab ([4117065](https://github.com/Hapfel1/er-save-manager/commit/41170652936d9089e70b6f5fef3b0b03888a19a9))
+
+- Correct item IDs and stop writing bogus unk_1 on new items `[ds2]` ([e70f38e](https://github.com/Hapfel1/er-save-manager/commit/e70f38e6f10e5e3e29b55c8b6537f4084c79e5ed))
+
+
+
+### 🎨 User Interface
+
+- Hide Convergence Mod exclusive flags from non Convergence Mod saves ([d67cb2d](https://github.com/Hapfel1/er-save-manager/commit/d67cb2da805db0798c73758a8c2140e9ec0b7d9a))
+
+
+
+### 📦 Dependencies
+
+- Bump the github-actions group with 2 updates `[deps]` ([c618e33](https://github.com/Hapfel1/er-save-manager/commit/c618e33a2bfc484086aee8b5675e748001e3247f))
+
+
+
+---
 ## 📦 Release 1.10.3
 **Released:** September 15, 2026
 
@@ -1643,6 +1698,7 @@ implementation) ([19bee2c](https://github.com/Hapfel1/er-save-manager/commit/19b
 
 
 ---
+[1.11.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.10.3..v1.11.0
 [1.10.3]: https://github.com/Hapfel1/er-save-manager/compare/v1.10.2..v1.10.3
 [1.10.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.10.1..v1.10.2
 [1.10.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.10.0..v1.10.1
