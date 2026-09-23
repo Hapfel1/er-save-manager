@@ -2,6 +2,7 @@
 
 import json
 import platform
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,7 @@ class Settings:
 
         self.settings_file = settings_file
         self.settings = self._load_settings()
+        self._listeners: list[Callable[[str | None], None]] = []
 
     @staticmethod
     def get_data_dir() -> Path:
@@ -111,6 +113,10 @@ class Settings:
             "verbose_logging": False,
             # Debug: show Warped Face Sliders button in Appearance tab
             "debug_warped_face_sliders": False,
+            # Dev: append item IDs to item names in the inventory editor lists
+            "show_item_ids": False,
+            # Dev: show the custom ID item adder in the inventory editor
+            "custom_item_adder": False,
             # Notify when the loaded save file is modified externally
             "external_file_change_notification": True,
             # Show a toast when auto-backup creates a backup on game launch
@@ -137,11 +143,27 @@ class Settings:
         """Set a setting value."""
         self.settings[key] = value
         self.save()
+        self._notify(key)
+
+    def add_listener(self, callback: Callable[[str | None], None]) -> None:
+        """Register a callback invoked with the changed key after every set().
+
+        reset_to_defaults() calls it with None, meaning any key may have changed.
+        """
+        self._listeners.append(callback)
+
+    def _notify(self, key: str | None) -> None:
+        for callback in list(self._listeners):
+            try:
+                callback(key)
+            except Exception as e:
+                print(f"Settings listener failed: {e}")
 
     def reset_to_defaults(self):
         """Reset all settings to defaults."""
         self.settings = self._get_default_settings()
         self.save()
+        self._notify(None)
 
 
 # Global settings instance

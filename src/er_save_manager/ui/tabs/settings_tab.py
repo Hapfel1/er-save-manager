@@ -899,6 +899,54 @@ class SettingsTab:
             justify="left",
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
+        # Item IDs in the inventory editor lists
+        self._show_item_ids_var = tk.BooleanVar(
+            value=self.settings.get("show_item_ids", False)
+        )
+        ctk.CTkCheckBox(
+            frame,
+            text="Show item IDs in the Inventory editor",
+            variable=self._show_item_ids_var,
+            command=lambda: self.settings.set(
+                "show_item_ids", self._show_item_ids_var.get()
+            ),
+        ).pack(anchor="w", padx=12, pady=5)
+        ctk.CTkLabel(
+            frame,
+            text=(
+                "Appends the full and base item ID to each row of the item browser and "
+                "the current inventory. Items missing from the database are listed too."
+            ),
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+            wraplength=560,
+            justify="left",
+        ).pack(anchor="w", padx=32, pady=(0, 12))
+
+        # Custom ID item adder in the inventory editor
+        self._custom_item_adder_var = tk.BooleanVar(
+            value=self.settings.get("custom_item_adder", False)
+        )
+        ctk.CTkCheckBox(
+            frame,
+            text="Enable custom ID item adder in the Inventory editor",
+            variable=self._custom_item_adder_var,
+            command=lambda: self.settings.set(
+                "custom_item_adder", self._custom_item_adder_var.get()
+            ),
+        ).pack(anchor="w", padx=12, pady=5)
+        ctk.CTkLabel(
+            frame,
+            text=(
+                "Adds a Custom ID button to select an item by raw ID and category. "
+                "IDs that do not exist in the game can crash it."
+            ),
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+            wraplength=560,
+            justify="left",
+        ).pack(anchor="w", padx=32, pady=(0, 12))
+
     def _create_launch_settings(self, parent) -> None:
         """CPU 0 exclusion settings - Windows only."""
         import sys
@@ -946,6 +994,8 @@ class SettingsTab:
         self.settings.set("verbose_logging", False)
         self.settings.set("icon_export_enabled", False)
         self.settings.set("debug_warped_face_sliders", False)
+        self.settings.set("show_item_ids", False)
+        self.settings.set("custom_item_adder", False)
         if self._advanced_frame is not None:
             self._advanced_frame.destroy()
             self._advanced_frame = None
@@ -996,6 +1046,10 @@ class SettingsTab:
                 self._icon_export_var.set(False)
             if hasattr(self, "_debug_warped_face_var"):
                 self._debug_warped_face_var.set(False)
+            if hasattr(self, "_show_item_ids_var"):
+                self._show_item_ids_var.set(False)
+            if hasattr(self, "_custom_item_adder_var"):
+                self._custom_item_adder_var.set(False)
             CTkMessageBox.showinfo(
                 "Success", "Settings have been reset to defaults.", parent=self.parent
             )
