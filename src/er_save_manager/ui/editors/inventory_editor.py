@@ -227,6 +227,11 @@ def _item_name(
     return name
 
 
+def _item_id_label(full_id: int) -> str:
+    """Row suffix with the full item ID and the base ID (param row ID)."""
+    return f"  |  ID: 0x{full_id:08X} ({full_id & 0x0FFFFFFF})"
+
+
 def _weapon_upgrade_cap(item, reinforcement: str, is_cnv: bool) -> int:
     """Max upgrade level for a weapon, honoring per-item overrides and Convergence caps."""
     explicit_cap = getattr(item, "max_upgrade", -1) if item else -1
@@ -674,6 +679,15 @@ class InventoryEditor:
     # Convergence's own steed category, so hide the vanilla skin selector.
     _CONVERGENCE_HIDDEN_CATS = {"Tarnished Pack Goods"}
 
+    # Category names offered by the custom ID item adder -> category bits.
+    _CUSTOM_ITEM_CATEGORIES: dict[str, int] = {
+        "Weapon": 0x00000000,
+        "Armor": 0x10000000,
+        "Talisman": 0x20000000,
+        "Goods": 0x40000000,
+        "Gem (Ash of War)": 0x80000000,
+    }
+
     def __init__(
         self,
         parent,
@@ -717,6 +731,8 @@ class InventoryEditor:
         self._aow_icon_lbl: ctk.CTkLabel | None = None
         self._visual_inventory_win = None
         self._icon_browser_win = None
+        self._custom_id_btn: ctk.CTkButton | None = None
+        self._ids_rendered = False
 
         self._search_var: ctk.StringVar | None = None
         self._search_cat_var: ctk.StringVar | None = None
@@ -758,6 +774,56 @@ class InventoryEditor:
         self._build_browser_panel(left)
         self._build_inventory_panel(right)
 
+        settings = self.get_settings() if self.get_settings else None
+        if settings is not None and hasattr(settings, "add_listener"):
+            settings.add_listener(self._on_setting_changed)
+        self._apply_dev_options()
+
+    # ---- dev options --------------------------------------------------------
+
+    def _dev_option(self, key: str) -> bool:
+        """True if a dev option is enabled and advanced mode is still unlocked."""
+        settings = self.get_settings() if self.get_settings else None
+        return bool(
+            settings
+            and settings.get("advanced_mode_unlocked", False)
+            and settings.get(key, False)
+        )
+
+    def _on_setting_changed(self, key: str | None = None) -> None:
+        if key in (
+            None,
+            "advanced_mode_unlocked",
+            "show_item_ids",
+            "custom_item_adder",
+        ):
+            self._apply_dev_options()
+
+    def _apply_dev_options(self) -> None:
+        """Show or hide the custom ID button and re-render lists after an ID toggle."""
+        btn = self._custom_id_btn
+        if btn is None or not btn.winfo_exists():
+            return
+
+        if self._dev_option("custom_item_adder"):
+            if not btn.winfo_ismapped():
+                btn.pack(side=ctk.LEFT, padx=(4, 0))
+        else:
+            btn.pack_forget()
+
+        if self._dev_option("show_item_ids") == self._ids_rendered:
+            return
+        self._search_items()
+        save_file = self.get_save_file()
+        if not save_file:
+            return
+        try:
+            slot = save_file.characters[self.get_char_slot()]
+            if slot and not slot.is_empty():
+                self.refresh_inventory()
+        except Exception:
+            pass
+
     # ---- left panel: item browser -------------------------------------------
 
     def _build_browser_panel(self, parent: ctk.CTkFrame):
@@ -793,7 +859,15 @@ class InventoryEditor:
             hover_color=("#7c4dac", "#9d5fd4"),
             state="disabled",
         )
-        self._browse_btn.pack(fill=ctk.X)
+        self._browse_btn.pack(side=ctk.LEFT, fill=ctk.X, expand=True)
+        self._custom_id_btn = ctk.CTkButton(
+            browse_row,
+            text="Custom ID...",
+            width=100,
+            height=28,
+            command=self._open_custom_item_dialog,
+            fg_color=("gray70", "gray35"),
+        )
 
         lb_frame = ctk.CTkFrame(parent, fg_color=("gray82", "gray14"), corner_radius=6)
         lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=(0, 4))
@@ -1314,8 +1388,10 @@ class InventoryEditor:
 
             self._results_items = results[:200]
             self._results_listbox.delete(0, tk.END)
+            show_ids = self._dev_option("show_item_ids")
             for item in self._results_items:
-                self._results_listbox.insert(tk.END, item.name)
+                label = item.name + (_item_id_label(item.full_id) if show_ids else "")
+                self._results_listbox.insert(tk.END, label)
         except Exception:
             pass
 
@@ -1412,6 +1488,200 @@ class InventoryEditor:
 
         if self._location_combo:
             self._location_combo.configure(state="normal")
+
+    def _open_custom_item_dialog(self) -> None:
+        """Dev option: select an item by raw ID and category, bypassing the database.
+
+        The item is selected like a browser result, so quantity, upgrade, affinity
+        and location are set with the normal controls and Add Item writes it.
+        """
+        from er_save_manager.data.item_database import Item, ItemCategory
+
+        categories = self._CUSTOM_ITEM_CATEGORIES
+
+        dialog = ctk.CTkToplevel(self.parent)
+        dialog.title("Custom ID Item")
+        dialog.resizable(False, False)
+        dialog.transient(self.parent)
+        dialog.attributes("-alpha", 0)
+
+        ctk.CTkLabel(
+            dialog,
+            text=(
+                "Select an item by raw ID. A full 8-digit hex ID such as 0x400001F4 "
+                "or 0x01406F40 sets the category itself. IDs that do not exist in "
+                "the game can crash it."
+            ),
+            wraplength=340,
+            anchor="w",
+            justify="left",
+            text_color=("gray40", "gray70"),
+        ).pack(padx=20, pady=(16, 8), fill="x")
+
+        form = ctk.CTkFrame(dialog, fg_color="transparent")
+        form.pack(fill="x", padx=20)
+
+        category_var = ctk.StringVar(value="Goods")
+        id_var = ctk.StringVar()
+        stack_var = ctk.StringVar(value="1")
+        reinforcement_var = ctk.StringVar(value="standard")
+        aow_var = ctk.BooleanVar(value=True)
+
+        ctk.CTkLabel(form, text="Category:", anchor="w").grid(
+            row=0, column=0, sticky="w", pady=4
+        )
+        category_combo = ctk.CTkComboBox(
+            form,
+            variable=category_var,
+            values=list(categories),
+            state="readonly",
+            width=180,
+            command=lambda _v: _on_category(),
+        )
+        category_combo.grid(row=0, column=1, sticky="w", padx=(10, 0), pady=4)
+
+        ctk.CTkLabel(form, text="Item ID:", anchor="w").grid(
+            row=1, column=0, sticky="w", pady=4
+        )
+        id_entry = ctk.CTkEntry(
+            form,
+            textvariable=id_var,
+            width=180,
+            placeholder_text="Decimal or 0x hex",
+        )
+        id_entry.grid(row=1, column=1, sticky="w", padx=(10, 0), pady=4)
+
+        ctk.CTkLabel(form, text="Max stack:", anchor="w").grid(
+            row=2, column=0, sticky="w", pady=4
+        )
+        stack_entry = ctk.CTkEntry(form, textvariable=stack_var, width=70)
+        stack_entry.grid(row=2, column=1, sticky="w", padx=(10, 0), pady=4)
+
+        ctk.CTkLabel(form, text="Reinforcement:", anchor="w").grid(
+            row=3, column=0, sticky="w", pady=4
+        )
+        reinforcement_combo = ctk.CTkComboBox(
+            form,
+            variable=reinforcement_var,
+            values=["standard", "somber", "none"],
+            state="readonly",
+            width=120,
+        )
+        reinforcement_combo.grid(row=3, column=1, sticky="w", padx=(10, 0), pady=4)
+
+        aow_check = ctk.CTkCheckBox(form, text="Allow Ash of War", variable=aow_var)
+        aow_check.grid(row=4, column=1, sticky="w", padx=(10, 0), pady=4)
+
+        def _on_category() -> None:
+            cat = categories[category_var.get()]
+            is_weapon = cat == 0x00000000
+            stackable = cat in (0x00000000, 0x40000000)
+            stack_entry.configure(state="normal" if stackable else "disabled")
+            reinforcement_combo.configure(state="readonly" if is_weapon else "disabled")
+            aow_check.configure(state="normal" if is_weapon else "disabled")
+
+        def _parse_id(text: str) -> tuple[int, bool] | None:
+            """Return (value, is_full_id) or None if the text is not a number.
+
+            A full ID is 8 hex digits after 0x, or any value above 0x0FFFFFFF.
+            Its category bits then apply, and 0 in the top digit means weapon.
+            """
+            text = text.strip()
+            try:
+                if text.lower().startswith("0x"):
+                    value = int(text, 16)
+                    return value, len(text) == 10 or value > 0x0FFFFFFF
+                value = int(text)
+            except ValueError:
+                return None
+            return value, value > 0x0FFFFFFF
+
+        def _sync_category_from_id(*_args) -> None:
+            """Follow the category bits of a typed full ID (e.g. 0x400001F4)."""
+            parsed = _parse_id(id_var.get())
+            if parsed is None:
+                return
+            value, is_full = parsed
+            if not is_full or value > 0xFFFFFFFF:
+                return
+            for label, bits in categories.items():
+                if bits == value & 0xF0000000:
+                    category_var.set(label)
+                    _on_category()
+                    return
+
+        id_var.trace_add("write", _sync_category_from_id)
+
+        def _error(message: str) -> None:
+            CTkMessageBox.showerror("Custom ID Item", message, parent=dialog)
+
+        def _confirm() -> None:
+            parsed = _parse_id(id_var.get())
+            if parsed is None:
+                _error("Item ID must be a decimal number or 0x hex.")
+                return
+            value, is_full = parsed
+            if not 0 < value <= 0xFFFFFFFF:
+                _error("Item ID must be between 1 and 0xFFFFFFFF.")
+                return
+
+            if is_full:
+                cat = value & 0xF0000000
+                if cat not in categories.values():
+                    _error(f"Unknown category bits 0x{cat:08X} in the item ID.")
+                    return
+            else:
+                cat = categories[category_var.get()]
+            base_id = value & 0x0FFFFFFF
+            if base_id == 0:
+                _error("Item ID must not be 0.")
+                return
+
+            try:
+                stack = int(stack_var.get()) if cat in (0x00000000, 0x40000000) else 1
+            except ValueError:
+                _error("Max stack must be a whole number.")
+                return
+            if stack < 1:
+                _error("Max stack must be at least 1.")
+                return
+
+            item = Item(
+                id=base_id,
+                name=f"Custom 0x{cat | base_id:08X}",
+                category=ItemCategory(cat),
+                category_name="Custom",
+            )
+            if cat == 0x00000000:
+                item.reinforcement = reinforcement_var.get()
+                item.aow_allowed = bool(aow_var.get())
+                # A weapon-category item with a stack above 1 is treated as ammo.
+                item.max_arrow_quantity = stack
+            elif cat == 0x40000000:
+                item.max_num = stack
+
+            dialog.destroy()
+            self._apply_item_selection(item)
+
+        btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_row.pack(fill="x", padx=20, pady=(12, 16))
+        ctk.CTkButton(btn_row, text="Select Item", command=_confirm, width=110).pack(
+            side="left"
+        )
+        ctk.CTkButton(
+            btn_row,
+            text="Cancel",
+            command=dialog.destroy,
+            width=90,
+            fg_color=("gray70", "gray35"),
+        ).pack(side="right")
+
+        _on_category()
+        _center_over(dialog, self.parent)
+        dialog.attributes("-alpha", 1)
+        dialog.grab_set()
+        id_entry.focus_set()
+        dialog.wait_window()
 
     def _on_result_select(self, _event=None):
         sel = self._results_listbox.curselection()
@@ -1680,6 +1950,7 @@ class InventoryEditor:
             filt = self.inv_filter_var.get() if self.inv_filter_var else "All"
             cnv = self._is_cnv_save()
             self._all_rows = []
+            self._ids_rendered = self._dev_option("show_item_ids")
 
             if filt in ("All", "Held") and hasattr(slot, "inventory_held"):
                 self._collect_section(
@@ -1735,13 +2006,15 @@ class InventoryEditor:
         from er_save_manager.parser.inventory_ops import _is_key_item
 
         rows: list[tuple[str, int, str]] = []
+        show_ids = self._dev_option("show_item_ids")
 
         for inv_item in items:
             if inv_item.gaitem_handle == 0 or inv_item.quantity == 0:
                 continue
             full_id, upgrade = _decode_inv_item(inv_item, gaitem_map)
             name = _item_name(full_id, upgrade, is_convergence)
-            if not name or name.startswith("Unknown"):
+            # Items missing from the database are only listed when IDs are shown.
+            if not name or (name.startswith("Unknown") and not show_ids):
                 continue
 
             cat = full_id & 0xF0000000
@@ -1757,6 +2030,7 @@ class InventoryEditor:
                 f"  [{location[0].upper()}{loc_tag}] "
                 f"{name}{suffix}{affinity_label}"
                 f"  |  Qty: {inv_item.quantity}"
+                f"{_item_id_label(full_id) if show_ids else ''}"
             )
             rows.append((text, full_id, location, inv_item.gaitem_handle))
 
