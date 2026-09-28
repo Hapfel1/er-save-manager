@@ -1,4 +1,8 @@
-custom id adder as dev option defining item category etc, also option to show ids
+ticket 85
+
+serach for "the save editor isnt allocating the right stats
+
+soul vessel ds2 not spawning and crashing
 
 check dlc npc flags
 
@@ -9,6 +13,8 @@ invasion regions
 ds3 gestures
 
 npc respawner ds3
+
+custom id adder as dev option defining item category etc, also option to show ids done
 
 check ds2 weapon spawning done
 

@@ -467,25 +467,30 @@ class SettingsTab:
 
     def _on_game_auto_backup_toggle(self, game_key: str):
         enabled = self._auto_backup_enabled_vars[game_key].get()
+
+        if enabled and not self._game_auto_backup_path_valid(game_key):
+            CTkMessageBox.showwarning(
+                "Configure Save File",
+                "Please choose which save file to monitor for auto-backup.",
+                parent=self.parent,
+            )
+            from er_save_manager.games.game_profiles import PROFILES_BY_KEY
+
+            profile = PROFILES_BY_KEY.get(game_key)
+            if profile:
+                self._choose_game_auto_backup_save(game_key, profile)
+
+            # Enabling without a valid path would silently never back up
+            if not self._game_auto_backup_path_valid(game_key):
+                self._auto_backup_enabled_vars[game_key].set(False)
+                return
+
+        # Read the config after the chooser ran, since it persists the path itself
         auto_backup_cfg: dict = dict(self.settings.get("auto_backup_games", {}))
         game_cfg = dict(auto_backup_cfg.get(game_key, {}))
         game_cfg["enabled"] = enabled
 
-        if enabled:
-            save_path = game_cfg.get("save_path", "")
-            if not save_path or not Path(save_path).exists():
-                CTkMessageBox.showwarning(
-                    "Configure Save File",
-                    "Please choose which save file to monitor for auto-backup.",
-                    parent=self.parent,
-                )
-                # Find the profile
-                from er_save_manager.games.game_profiles import PROFILES_BY_KEY
-
-                profile = PROFILES_BY_KEY.get(game_key)
-                if profile:
-                    self._choose_game_auto_backup_save(game_key, profile)
-        else:
+        if not enabled:
             # Interval backup requires auto-backup on game launch to be enabled
             game_cfg["interval_enabled"] = False
             if game_key in self._auto_backup_interval_enabled_vars:
@@ -499,6 +504,12 @@ class SettingsTab:
             state = "normal" if enabled else "disabled"
             checkbox.configure(state=state)
             entry.configure(state=state)
+
+    def _game_auto_backup_path_valid(self, game_key: str) -> bool:
+        """Return True if the stored auto-backup save path exists on disk."""
+        game_cfg = self.settings.get("auto_backup_games", {}).get(game_key, {})
+        save_path = game_cfg.get("save_path", "")
+        return bool(save_path) and Path(save_path).exists()
 
     def _on_game_auto_backup_interval_toggle(self, game_key: str):
         interval_enabled = self._auto_backup_interval_enabled_vars[game_key].get()
