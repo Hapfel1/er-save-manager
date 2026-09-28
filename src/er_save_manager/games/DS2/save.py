@@ -58,6 +58,7 @@ import struct
 from collections import Counter
 from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
+from enum import Enum
 from functools import cached_property
 from pathlib import Path
 
@@ -147,6 +148,14 @@ _OCC_NAME_SIZE = 28
 CHARACTER_SELECT_ENTRY = 22
 _SELECT_NAME_OFFSET = 442
 _SELECT_NAME_SIZE = 28
+
+
+class SlotState(Enum):
+    """What a character slot holds. The values double as display labels."""
+
+    NEVER_CREATED = "never created in-game"
+    PRE_CREATION = "pre-character creation"
+    CHARACTER = "character"
 
 
 def _make_padding(data_len: int) -> bytes:
@@ -870,6 +879,22 @@ class DS2Save:
         if flag_off >= len(occ_data):
             return False
         return occ_data[flag_off] != 0
+
+    def slot_state(self, slot_index: int) -> SlotState:
+        """Classify a slot.
+
+        The character is named in the tutorial, so a slot that has been
+        entered exists before it has a name. The game writes the slot's entry 0
+        record when the slot is first entered, and a slot that was never
+        entered keeps that record all zero (see is_slot_initialized). Those two
+        cases are told apart by the record, since the profile of an unnamed
+        slot is the same default character in both.
+        """
+        if self.slot_display_name(slot_index):
+            return SlotState.CHARACTER
+        if not self.is_slot_initialized(slot_index):
+            return SlotState.NEVER_CREATED
+        return SlotState.PRE_CREATION
 
     def save_to_file(self, path: str | Path) -> None:
         for i, character in enumerate(self.characters):

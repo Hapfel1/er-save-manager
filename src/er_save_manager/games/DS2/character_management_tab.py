@@ -12,7 +12,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.games.DS2.character_ops import DS2CharacterOperations
-from er_save_manager.games.DS2.save import DS2Save
+from er_save_manager.games.DS2.save import DS2Save, SlotState
 from er_save_manager.games.game_profiles import PROFILES_BY_KEY, find_save_paths
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.messagebox import CTkMessageBox
@@ -150,16 +150,31 @@ class DS2CharacterManagementTab:
         if save is None:
             return [f"{i} - (no save loaded)" for i in range(10)]
 
-        occupied = save.slot_occupancy()
         names = []
         for i in range(10):
-            if i in occupied:
-                names.append(f"{i} - {occupied[i]}")
-            elif save.is_slot_initialized(i):
-                names.append(f"{i} - (empty)")
+            state = save.slot_state(i)
+            if state is SlotState.CHARACTER:
+                names.append(f"{i} - {save.slot_display_name(i)}")
             else:
-                names.append(f"{i} - (never created in-game)")
+                names.append(f"{i} - ({state.value})")
         return names
+
+    def _copy_source_names(self, save: DS2Save | None = None) -> list[str]:
+        """Labels of the slots that can be copied, which are the ones holding a
+        named character. A slot that was never created or is still before
+        character creation has nothing to copy. With no such slot every slot is
+        listed, so the picker is never empty and the copy reports the empty
+        slot."""
+        save = save or self.get_save()
+        names = self._slot_display_names(save)
+        if save is None:
+            return names
+        sources = [
+            name
+            for i, name in enumerate(names)
+            if save.slot_state(i) is SlotState.CHARACTER
+        ]
+        return sources or names
 
     @staticmethod
     def _slot_index_from_display(value: str) -> int:
@@ -187,9 +202,12 @@ class DS2CharacterManagementTab:
         row = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
         row.pack(fill="x", pady=5)
 
+        sources = self._copy_source_names()
         names = self._slot_display_names()
-        self.copy_from_var = self._labeled_slot_combo(row, "From:", names, 0)
-        self.copy_to_var = self._labeled_slot_combo(row, "To:", names, 1)
+        self.copy_from_var = self._labeled_slot_combo(row, "From:", sources, 0)
+        # Default the destination to a slot other than the source.
+        to_index = 1 if self._slot_index_from_display(sources[0]) != 1 else 0
+        self.copy_to_var = self._labeled_slot_combo(row, "To:", names, to_index)
         ctk.CTkButton(row, text="Copy Character", command=self._copy_character).pack(
             side="left", padx=15
         )

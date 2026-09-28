@@ -7,7 +7,13 @@ import tkinter as tk
 import customtkinter as ctk
 
 from er_save_manager.games.DS2.inventory_tab import DS2InventoryPanel
-from er_save_manager.games.DS2.save import LEVEL_STAT_KEYS, NG_PLUS_MAX, DS2Save
+from er_save_manager.games.DS2.save import (
+    CHARACTER_SLOTS,
+    LEVEL_STAT_KEYS,
+    NG_PLUS_MAX,
+    DS2Save,
+    SlotState,
+)
 from er_save_manager.ui.scrollable_frame import ScrollableFrame
 from er_save_manager.ui.utils import game_blocks_write
 
@@ -161,21 +167,29 @@ class DS2EditorTab:
     # Slot handling
     # ------------------------------------------------------------------
 
-    def _slot_display_names(self) -> list[str]:
+    def _slot_labels(self) -> dict[int, str]:
+        """Picker label per offered slot index, in slot order.
+
+        Never-created slots are hidden, as in the inspector, so the picker only
+        offers slots that hold a character or a pre-creation run. A save with no
+        such slot lists all of them so the picker is never empty.
+        """
         save: DS2Save | None = self.get_save()
         if save is None:
-            return [f"{i} - (no save loaded)" for i in range(10)]
+            return {i: f"{i} - (no save loaded)" for i in range(CHARACTER_SLOTS)}
 
-        occupied = save.slot_occupancy()
-        names = []
-        for i in range(10):
-            if i in occupied:
-                names.append(f"{i} - {occupied[i]}")
-            elif save.is_slot_initialized(i):
-                names.append(f"{i} - (empty)")
+        offered = [i for i in range(CHARACTER_SLOTS) if save.is_slot_initialized(i)]
+        labels = {}
+        for i in offered or range(CHARACTER_SLOTS):
+            state = save.slot_state(i)
+            if state is SlotState.CHARACTER:
+                labels[i] = f"{i} - {save.slot_display_name(i)}"
             else:
-                names.append(f"{i} - (never created in-game)")
-        return names
+                labels[i] = f"{i} - ({state.value})"
+        return labels
+
+    def _slot_display_names(self) -> list[str]:
+        return list(self._slot_labels().values())
 
     @staticmethod
     def _slot_index_from_display(value: str) -> int:
@@ -191,9 +205,9 @@ class DS2EditorTab:
     def slot_var_set(self, slot_index: int) -> None:
         """Programmatically select a slot (e.g. from the inspector's
         double-click), then load it."""
-        names = self._slot_display_names()
-        if 0 <= slot_index < len(names):
-            self.slot_var.set(names[slot_index])
+        labels = self._slot_labels()
+        if slot_index in labels:
+            self.slot_var.set(labels[slot_index])
         self._on_load_slot()
 
     # ------------------------------------------------------------------
@@ -245,10 +259,11 @@ class DS2EditorTab:
     def refresh(self) -> None:
         save: DS2Save | None = self.get_save()
 
-        names = self._slot_display_names()
-        self.slot_menu.configure(values=names)
-        if 0 <= self._slot_index < len(names):
-            self.slot_var.set(names[self._slot_index])
+        labels = self._slot_labels()
+        if self._slot_index not in labels:
+            self._slot_index = next(iter(labels))
+        self.slot_menu.configure(values=list(labels.values()))
+        self.slot_var.set(labels[self._slot_index])
 
         if save is None:
             return
