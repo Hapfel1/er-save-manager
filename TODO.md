@@ -1,14 +1,6 @@
-ticket 85
-
-serach for "the save editor isnt allocating the right stats
-
-soul vessel ds2 not spawning and crashing
-
 check dlc npc flags
 
 check ds3, nr item spawning
-
-invasion regions
 
 ds3 gestures
 

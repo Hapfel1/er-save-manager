@@ -55,10 +55,14 @@ project
 from __future__ import annotations
 
 import struct
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
+from functools import cached_property
 from pathlib import Path
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
+from er_save_manager.games.DS2.regulation import Regulation
 
 DS2_KEY = bytes.fromhex("599f9b699640a55236ee2d70835ec744")
 
@@ -108,6 +112,19 @@ LEVEL_STAT_KEYS = [k for k in STAT_OFFSETS if k != "level"]
 INVENTORY_START = 0x1E2C
 INVENTORY_END = 0x10E1C
 INVENTORY_SLOT_SIZE = 16
+
+# Stack limit used for items the regulation does not know.
+_DEFAULT_MAX_STACK = 99
+
+# Categories stored in the key item list instead of the main inventory.
+KEY_LIST_CATEGORIES = frozenset({"keys", "gestures"})
+
+# Categories where an item can be owned only once.
+UNIQUE_CATEGORIES = frozenset({"gestures"})
+
+# Categories whose items carry an upgrade level in their inventory entry.
+UPGRADABLE_CATEGORIES = frozenset({"weapons", "armors"})
+_UPGRADE_MASK = 0xFF
 
 KEY_ITEMS_START = 0x10E30
 KEY_ITEMS_END = 0x11DF0
@@ -255,6 +272,28 @@ class InventoryItem:
     def to_bytes(self) -> bytes:
         return struct.pack("<IIII", self.item_id, self.unk_1, self.quantity, self.unk_2)
 
+    # The upgrade level is the low byte of unk_2 for weapons and armor. Seen
+    # as 1 and 3 on upgraded weapons and 1 and 2 on upgraded armor, and 0 on
+    # everything else. Higher bytes are preserved on write.
+    @property
+    def upgrade(self) -> int:
+        return self.unk_2 & _UPGRADE_MASK
+
+    @upgrade.setter
+    def upgrade(self, level: int) -> None:
+        self.unk_2 = (self.unk_2 & ~_UPGRADE_MASK) | (int(level) & _UPGRADE_MASK)
+
+
+@dataclass
+class BulkAddResult:
+    """Outcome counts of Character.add_items_bulk."""
+
+    added: int = 0
+    updated: int = 0  # existing stacks whose quantity was set
+    skipped_owned: int = 0  # non-stackable items already in the inventory
+    clamped: int = 0  # items whose requested upgrade exceeded their cap
+    no_space: int = 0  # items dropped because no empty slot was left
+
 
 def parse_inventory(data: bytes, start: int, end: int) -> list[InventoryItem]:
     items = []
@@ -277,8 +316,13 @@ def _is_valid_name(name: str) -> bool:
 class Character:
     """View over one decrypted profile slot entry (entries 1-10)."""
 
-    def __init__(self, data: bytearray) -> None:
+    def __init__(
+        self,
+        data: bytearray,
+        regulation_source: Callable[[], Regulation] | None = None,
+    ) -> None:
         self._data = data
+        self._regulation_source = regulation_source
 
     @property
     def name(self) -> str:
@@ -347,16 +391,39 @@ class Character:
     STACKABLE_CATEGORIES = {"goods", "bolts", "spells", "upgrade", "seamless"}
 
     # Fallback durability (float bit pattern) for new weapons, armor and rings
-    # when no owned item can be used as a reference. These are the lowest
-    # values seen on game-written items, so they never exceed an item's max.
+    # when the regulation does not know the item and no owned item can be used
+    # as a reference. These are the lowest values seen on game-written items,
+    # so they never exceed an item's max.
     _DEFAULT_DURABILITY = {
         "weapons": 0x41F00000,  # 30.0
         "armors": 0x420C0000,  # 35.0
         "rings": 0x428C0000,  # 70.0
     }
 
+    def _regulation(self) -> Regulation | None:
+        """The save's regulation, or None when absent or unreadable."""
+        if self._regulation_source is None:
+            return None
+        try:
+            return self._regulation_source()
+        except ValueError:
+            return None
+
+    def max_stack(self, item_id: int) -> int:
+        """Largest stack of an item. Falls back to 99 when the regulation does
+        not know the item."""
+        regulation = self._regulation()
+        held = regulation.max_held(item_id) if regulation else None
+        return held if held else _DEFAULT_MAX_STACK
+
+    def max_upgrade(self, item_id: int, category: str) -> int:
+        """Highest upgrade level, or 0 when unknown or the regulation cannot
+        be read."""
+        regulation = self._regulation()
+        return regulation.max_upgrade(item_id, category) if regulation else 0
+
     def _region(self, category: str) -> tuple[int, int]:
-        if category == "keys":
+        if category in KEY_LIST_CATEGORIES:
             return KEY_ITEMS_START, KEY_ITEMS_END
         return INVENTORY_START, INVENTORY_END
 
@@ -372,6 +439,9 @@ class Character:
                 return item
         return None
 
+    def owns(self, item_id: int) -> bool:
+        return self._find_item_anywhere(item_id) is not None
+
     def _find_item_anywhere(self, item_id: int) -> InventoryItem | None:
         """Find an item in either list, so entries written to the wrong list
         by older versions can still be edited and removed."""
@@ -380,21 +450,31 @@ class Character:
         )
 
     def add_item(
-        self, item_id: int, category: str, quantity: int = 1, stack: bool = True
+        self,
+        item_id: int,
+        category: str,
+        quantity: int = 1,
+        stack: bool = True,
+        upgrade: int = 0,
     ) -> bool:
-        """Add an item to inventory (or the key item list for category "keys").
+        """Add an item to inventory (or the key item list for the categories in
+        KEY_LIST_CATEGORIES).
 
         For stackable categories, sets an existing stack's quantity unless
         stack=False forces a new slot. Returns False if there is no empty
-        slot available.
+        slot available or the item is in a unique category and already owned.
+        quantity is capped at the item's stack limit and upgrade at its maximum
+        level.
         """
+        if category in UNIQUE_CATEGORIES and self.owns(item_id):
+            return False
         start, end = self._region(category)
         stackable = category in self.STACKABLE_CATEGORIES
 
         if stackable and stack:
             existing = self._find_item(item_id, start, end)
             if existing is not None:
-                existing.quantity = min(int(quantity), 99)
+                existing.quantity = min(int(quantity), self.max_stack(item_id))
                 self.write_inventory_slot(existing)
                 return True
 
@@ -404,12 +484,19 @@ class Character:
 
         if stackable:
             new_item = InventoryItem(
-                empty.offset, item_id, 0, min(int(quantity), 99), 0
+                empty.offset, item_id, 0, min(int(quantity), self.max_stack(item_id)), 0
             )
         elif category in self._DEFAULT_DURABILITY:
             # unk_1 and unk_2 are 0 in game-written entries.
+            level = 0
+            if category in UPGRADABLE_CATEGORIES:
+                level = min(int(upgrade), self.max_upgrade(item_id, category))
             new_item = InventoryItem(
-                empty.offset, item_id, 0, self._durability_for(item_id, category), 0
+                empty.offset,
+                item_id,
+                0,
+                self._durability_for(item_id, category),
+                level,
             )
         else:
             new_item = InventoryItem(empty.offset, item_id, 0, 1, 0)
@@ -417,13 +504,16 @@ class Character:
         self.write_inventory_slot(new_item)
         return True
 
-    def _durability_for(self, item_id: int, category: str) -> int:
-        """Durability bit pattern for a new item.
+    def _durability_lookup(self, category: str) -> Callable[[int], int]:
+        """Return a function mapping an item id to the durability bit pattern
+        for a new copy of it.
 
-        Uses the highest durability of an owned copy of the same item (an
-        unused copy holds its max). Otherwise the lowest durability among
-        owned items of the category, so the value never exceeds the item's
-        max. Falls back to _DEFAULT_DURABILITY when nothing is owned.
+        Uses the maximum durability from the regulation. Items the regulation
+        does not know use the highest durability of an owned copy of the same
+        item (an unused copy holds its max), then the lowest durability among
+        owned items of the category so the value never exceeds the item's max,
+        then _DEFAULT_DURABILITY. The inventory is scanned once, so the result
+        reflects the state at call time.
         """
         from er_save_manager.games.DS2.item_database import build_item_db
 
@@ -431,7 +521,7 @@ class Character:
             return struct.unpack("<f", struct.pack("<I", bits))[0]
 
         db = build_item_db()
-        same: list[int] = []
+        best_by_item: dict[int, int] = {}
         same_category: list[int] = []
         for item in parse_inventory(self._data, INVENTORY_START, INVENTORY_END):
             if item.item_id == 0:
@@ -440,14 +530,101 @@ class Character:
             if not info or info[1] != category:
                 continue
             same_category.append(item.quantity)
-            if item.item_id == item_id:
-                same.append(item.quantity)
+            best = best_by_item.get(item.item_id)
+            if best is None or as_float(item.quantity) > as_float(best):
+                best_by_item[item.item_id] = item.quantity
 
-        if same:
-            return max(same, key=as_float)
-        if same_category:
-            return min(same_category, key=as_float)
-        return self._DEFAULT_DURABILITY[category]
+        fallback = (
+            min(same_category, key=as_float)
+            if same_category
+            else self._DEFAULT_DURABILITY[category]
+        )
+        regulation = self._regulation()
+
+        def lookup(item_id: int) -> int:
+            maximum = regulation.durability(item_id) if regulation else None
+            if maximum is not None:
+                return struct.unpack("<I", struct.pack("<f", maximum))[0]
+            return best_by_item.get(item_id, fallback)
+
+        return lookup
+
+    def _durability_for(self, item_id: int, category: str) -> int:
+        return self._durability_lookup(category)(item_id)
+
+    def add_items_bulk(
+        self,
+        item_ids: Iterable[int],
+        category: str,
+        quantity: int = 1,
+        upgrade: int = 0,
+    ) -> BulkAddResult:
+        """Add many items of one category with a single inventory scan.
+
+        Stackable items already owned get their quantity set, matching
+        add_item. Other items already owned are skipped. quantity is capped
+        per item at its stack limit. For weapons and armor, upgrade is
+        clamped per item to its maximum level.
+        """
+        result = BulkAddResult()
+        start, end = self._region(category)
+        slots = parse_inventory(self._data, start, end)
+
+        owned: dict[int, InventoryItem] = {}
+        for slot in slots:
+            if slot.item_id:
+                owned.setdefault(slot.item_id, slot)
+        empty = iter([slot for slot in slots if slot.item_id == 0])
+
+        stackable = category in self.STACKABLE_CATEGORIES
+        upgradable = category in UPGRADABLE_CATEGORIES
+        durability = (
+            self._durability_lookup(category)
+            if category in self._DEFAULT_DURABILITY
+            else None
+        )
+
+        for item_id in item_ids:
+            existing = owned.get(item_id)
+            if existing is not None:
+                if not stackable:
+                    result.skipped_owned += 1
+                    continue
+                existing.quantity = min(int(quantity), self.max_stack(item_id))
+                self.write_inventory_slot(existing)
+                result.updated += 1
+                continue
+
+            slot = next(empty, None)
+            if slot is None:
+                result.no_space += 1
+                continue
+
+            level = 0
+            if upgradable:
+                level = min(int(upgrade), self.max_upgrade(item_id, category))
+                if level < int(upgrade):
+                    result.clamped += 1
+
+            if stackable:
+                new_item = InventoryItem(
+                    slot.offset,
+                    item_id,
+                    0,
+                    min(int(quantity), self.max_stack(item_id)),
+                    0,
+                )
+            elif durability is not None:
+                new_item = InventoryItem(
+                    slot.offset, item_id, 0, durability(item_id), level
+                )
+            else:
+                new_item = InventoryItem(slot.offset, item_id, 0, 1, 0)
+
+            self.write_inventory_slot(new_item)
+            owned[item_id] = new_item
+            result.added += 1
+        return result
 
     def delete_item(self, item_id: int, category: str) -> bool:
         """Zero out the first matching item slot in either list. Returns
@@ -467,9 +644,17 @@ class DS2Save:
     def __init__(self, container: DS2Container) -> None:
         self.container = container
         self.characters = [
-            Character(container.get_entry(PROFILE_ENTRY_START + i))
+            Character(
+                container.get_entry(PROFILE_ENTRY_START + i),
+                regulation_source=lambda: self.regulation,
+            )
             for i in range(CHARACTER_SLOTS)
         ]
+
+    @cached_property
+    def regulation(self) -> Regulation:
+        """Param data embedded in the save, parsed on first use."""
+        return Regulation.from_container(self.container)
 
     @classmethod
     def from_file(cls, path: str | Path) -> DS2Save:

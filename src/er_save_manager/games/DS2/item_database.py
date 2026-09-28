@@ -23,6 +23,9 @@ GOODS: dict[str, str] = {
     "Crimson Water": "C0 5B 95 03",
     "Human Effigy": "D8 D4 95 03",
     "Estus Flask": "78 E4 95 03",
+    "Estus Flask (UNSAFE 60155010)": "82 E4 95 03",
+    "Estus Flask (UNSAFE 60155020)": "8C E4 95 03",
+    "Estus Flask (UNSAFE 60155030)": "96 E4 95 03",
     "Small Blue Burr": "00 F8 95 03",
     "Small Yellow Burr": "10 1F 96 03",
     "Small Orange Burr": "20 46 96 03",
@@ -56,6 +59,9 @@ GOODS: dict[str, str] = {
     "Illusory Talisman": "80 A1 99 03",
     "Dragon Head Stone": "08 B5 99 03",
     "Dragon Torso Stone": "F0 B8 99 03",
+    "Dragon Head Stone (UNSAFE)": "12 B5 99 03",
+    "Dragon Torso Stone (UNSAFE)": "FA B8 99 03",
+    "Torch": "A0 EF 99 03",
     "Repair Powder": "90 C8 99 03",
     "Flame Butterfly": "B0 16 9A 03",
     "Prism Stone": "D0 64 9A 03",
@@ -158,7 +164,6 @@ GOODS: dict[str, str] = {
     "Rubbish": "30 4F 9B 03",
     "Soul of Nadalia, Bride of Ash": "60 CD D8 03",
     "Soul Vessel": "80 96 09 03",
-    "Scorching Iron Scepter": "E0 3D 2A 03",
     "Smelter Wedge": "80 C4 2B 03",
     "Soul of Nadalia": "20 4B 2D 03",
 }
@@ -306,6 +311,7 @@ WEAPONS: dict[str, str] = {
     "Broken Straight Sword": "80 4F 12 00",
     "Shortsword": "90 76 12 00",
     "Longsword": "A0 9D 12 00",
+    "Longsword (variant)": "00 73 55 00",
     "Broadsword": "B0 C4 12 00",
     "Foot Soldier Sword": "C0 EB 12 00",
     "Puzzling Stone Sword": "D0 12 13 00",
@@ -381,6 +387,7 @@ WEAPONS: dict[str, str] = {
     "Silverblack Sickle": "20 0B 20 00",
     "Crescent Axe": "C0 91 21 00",
     "Greataxe": "D0 B8 21 00",
+    "Greataxe (variant)": "40 0F 56 00",
     "Bandit Greataxe": "E0 DF 21 00",
     "Lion Greataxe": "00 2E 22 00",
     "Giant Stone Axe": "10 55 22 00",
@@ -621,6 +628,8 @@ WEAPONS: dict[str, str] = {
     "Transgressor's Leather Shield": "00 AA B4 00",
     "Majestic Greatsword": "70 EC 1B 00",
     "Santier's Spear": "50 97 31 00",
+    "Greatsword of the Forlorn": "C8 78 1E 00",
+    "Scythe of the Forlorn": "40 FF 2E 00",
 }
 
 ARMORS: dict[str, str] = {
@@ -1055,8 +1064,6 @@ ARMORS: dict[str, str] = {
     "Armor of the Forlorn": "C5 12 9B 01",
     "Gauntlets of the Forlorn": "C6 12 9B 01",
     "Leggings of the Forlorn": "C7 12 9B 01",
-    "Greatsword of the Forlorn": "C8 78 1E 00",
-    "Scythe of the Forlorn": "40 FF 2E 00",
     "Helm of Aurous (variant)": "E4 ED 45 01",
     "Armor of Aurous (variant)": "E5 ED 45 01",
     "Gauntlets of Aurous (variant)": "E6 ED 45 01",
@@ -1101,6 +1108,7 @@ KEY_ITEMS: dict[str, str] = {
     "Tower Key": "80 8F 1F 03",
     "Garrison Ward Key": "20 16 21 03",
     "Dragon Stone": "10 60 23 03",
+    "Scorching Iron Scepter": "E0 3D 2A 03",
 }
 
 BOLTS: dict[str, str] = {
@@ -1236,6 +1244,29 @@ SPELLS: dict[str, str] = {
     "Dark Dance": "B0 C9 1A 02",
 }
 
+GESTURES: dict[str, str] = {
+    "Point Gesture": "C0 4D C1 03",
+    "I won't bite Gesture": "A8 51 C1 03",
+    "Bow Gesture": "78 59 C1 03",
+    "Welcome Gesture": "60 5D C1 03",
+    "Duel bow Gesture": "48 61 C1 03",
+    "Wave Gesture": "30 65 C1 03",
+    "Pumped up Gesture": "18 69 C1 03",
+    "Joy Gesture": "00 6D C1 03",
+    "Warcry Gesture": "E8 70 C1 03",
+    "Warmup Gesture": "D0 74 C1 03",
+    "Hurrah! Gesture": "B8 78 C1 03",
+    "Righty-ho! Gesture": "A0 7C C1 03",
+    "No way Gesture": "88 80 C1 03",
+    "This one's me Gesture": "70 84 C1 03",
+    "Have mercy! Gesture": "58 88 C1 03",
+    "Prostration Gesture": "40 8C C1 03",
+    "Decapitate Gesture": "28 90 C1 03",
+    "Fist pump Gesture": "10 94 C1 03",
+    "Mock Gesture": "F8 97 C1 03",
+    "Praise the Sun Gesture": "C8 9F C1 03",
+}
+
 UPGRADE_MATERIALS: dict[str, str] = {
     "Titanite Shard": "10 54 A2 03",
     "Large Titanite Shard": "98 67 A2 03",
@@ -1280,15 +1311,13 @@ CATEGORIES: dict[str, dict[str, str]] = {
     "armors": ARMORS,
     "rings": RINGS,
     "keys": KEY_ITEMS,
+    "gestures": GESTURES,
     "bolts": BOLTS,
     "spells": SPELLS,
     "upgrade": UPGRADE_MATERIALS,
     "seamless": SEAMLESS_ITEMS,
 }
 
-
-# Item ids the Bob Edition cheat table flags "(UNSAFE)" in its spawn list.
-# Spawning them is a known soft-ban risk online.
 UNSAFE_IDS: frozenset[int] = frozenset(
     {
         0x0395E478,  # Estus Flask
@@ -1299,6 +1328,11 @@ UNSAFE_IDS: frozenset[int] = frozenset(
         0x00319B38,  # Santier's Spear - Broken
         60405010,  # Dragon Head Stone (UNSAFE variant)
         60406010,  # Dragon Torso Stone (UNSAFE variant)
+        # Estus Flask variants that exist only in the regulation. Treated like
+        # the base Estus Flask, whose count and level are packed in one value.
+        60155010,
+        60155020,
+        60155030,
     }
 )
 
