@@ -45,7 +45,7 @@ from er_save_manager.ui.tabs import (
     WorldStateTab,
 )
 from er_save_manager.ui.theme import ThemeManager
-from er_save_manager.ui.utils import open_url, pick_file, trace_variable
+from er_save_manager.ui.utils import center_window, open_url, pick_file, trace_variable
 
 # Nightreign
 try:
@@ -149,8 +149,9 @@ class SaveManagerGUI:
         self.selected_slot = None
         self.selected_slot_index = -1  # Current selected character slot (0-9)
 
-        # Active game (key from game_profiles.py); drives which tabs are shown
-        self.active_game = "elden_ring"
+        # Active game (key from game_profiles.py); drives which tabs are shown.
+        # Starts on the saved default game.
+        self.active_game = self._get_default_game_key()
 
         # DSR-specific parsed save (separate from ER save_file)
         self.dsr_save = None
@@ -191,6 +192,12 @@ class SaveManagerGUI:
 
         self.setup_ui()
 
+        # Keep the "default game" button in sync with the Settings tab
+        self.settings.add_listener(self._on_setting_changed)
+
+        # Center after scaling is applied so the scaled size is used
+        center_window(self.root, 1200, 1000)
+
         # Apply theme colors to tk widgets (non-ttk)
         self.theme_manager.apply_tk_widget_colors(self.root)
 
@@ -205,6 +212,30 @@ class SaveManagerGUI:
 
         # Check for updates asynchronously (don't block UI startup)
         self.root.after(1000, self._check_for_updates)
+
+    def _get_default_game_key(self) -> str:
+        """Return the saved default game key, falling back to Elden Ring."""
+        key = self.settings.get("default_game", "elden_ring")
+        return key if key in PROFILES_BY_KEY else "elden_ring"
+
+    def _set_default_game(self) -> None:
+        """Save the currently selected game as the one opened at startup."""
+        self.settings.set("default_game", self.active_game)
+
+    def _update_default_game_button(self) -> None:
+        """Show whether the selected game is the startup default."""
+        if not hasattr(self, "_default_game_btn"):
+            return
+        is_default = self.active_game == self._get_default_game_key()
+        self._default_game_btn.configure(
+            text="Default game" if is_default else "Set as default",
+            state="disabled" if is_default else "normal",
+        )
+
+    def _on_setting_changed(self, key: str | None) -> None:
+        """Settings listener; None means any key may have changed."""
+        if key in ("default_game", None):
+            self._update_default_game_button()
 
     @staticmethod
     def _scale_tk_fonts(scale: float) -> None:
@@ -388,21 +419,7 @@ class SaveManagerGUI:
         dialog.transient(self.root)
 
         force_render_dialog(dialog)
-
-        # Center dialog over parent window
-        dialog.update_idletasks()
-        parent_x = self.root.winfo_x()
-        parent_y = self.root.winfo_y()
-        parent_width = self.root.winfo_width()
-        parent_height = self.root.winfo_height()
-
-        dialog_width = 550
-        dialog_height = 320
-
-        x = parent_x + (parent_width - dialog_width) // 2
-        y = parent_y + (parent_height - dialog_height) // 2
-
-        dialog.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
+        center_window(dialog, 550, 320, parent=self.root)
 
         dialog.grab_set()
 
@@ -568,7 +585,9 @@ class SaveManagerGUI:
             side=tk.LEFT, padx=(0, 8)
         )
 
-        self._game_selector_var = tk.StringVar(value=PROFILES_BY_KEY["elden_ring"].name)
+        self._game_selector_var = tk.StringVar(
+            value=PROFILES_BY_KEY[self.active_game].name
+        )
         game_names = [p.name for p in GAME_PROFILES]
         self._game_combo = ctk.CTkComboBox(
             game_row,
@@ -579,6 +598,15 @@ class SaveManagerGUI:
             command=self._on_game_changed,
         )
         self._game_combo.pack(side=tk.LEFT)
+
+        self._default_game_btn = ctk.CTkButton(
+            game_row,
+            text="",
+            width=130,
+            command=self._set_default_game,
+        )
+        self._default_game_btn.pack(side=tk.LEFT, padx=(8, 0))
+        self._update_default_game_button()
 
         ctk.CTkLabel(
             file_frame,
@@ -648,7 +676,8 @@ class SaveManagerGUI:
             command=self.show_console_save_info,
             width=160,
         )
-        self._ps_save_btn.pack(side=tk.RIGHT, padx=6, pady=10)
+        if self.active_game == "elden_ring":
+            self._ps_save_btn.pack(side=tk.RIGHT, padx=6, pady=10)
 
         _itemgib_btn = ctk.CTkButton(
             buttons_frame,
@@ -669,8 +698,11 @@ class SaveManagerGUI:
         )
         self.notebook.grid(row=2, column=0, padx=12, pady=10, sticky="nsew")
 
-        # Create all tabs
-        self.create_tabs()
+        # Create the tabs for the starting game
+        if self.active_game == "elden_ring":
+            self.create_tabs()
+        else:
+            self._create_other_game_tabs(PROFILES_BY_KEY[self.active_game])
 
         # Status bar
         status_frame = ctk.CTkFrame(self.root, corner_radius=0)
@@ -692,6 +724,7 @@ class SaveManagerGUI:
             return
 
         self.active_game = profile.key
+        self._update_default_game_button()
 
         # PS / Switch button is only relevant for Elden Ring
         if hasattr(self, "_ps_save_btn"):
@@ -1442,15 +1475,7 @@ class SaveManagerGUI:
         dialog.transient(self.root)
 
         force_render_dialog(dialog)
-
-        dialog.update_idletasks()
-        parent_x = self.root.winfo_x()
-        parent_y = self.root.winfo_y()
-        parent_width = self.root.winfo_width()
-        parent_height = self.root.winfo_height()
-        dialog.geometry(
-            f"640x320+{parent_x + (parent_width - 640) // 2}+{parent_y + (parent_height - 320) // 2}"
-        )
+        center_window(dialog, 640, 320, parent=self.root)
 
         dialog.grab_set()
 
@@ -1610,8 +1635,8 @@ class SaveManagerGUI:
         game_name = profile.name if profile else "Elden Ring"
         dialog = tk.Toplevel(self.root)
         dialog.title("Save Location Warning")
-        dialog.geometry("550x500")
         dialog.transient(self.root)
+        center_window(dialog, 550, 500, parent=self.root)
 
         msg_frame = ttk.Frame(dialog, padding=20)
         msg_frame.pack(fill=tk.BOTH, expand=True)
@@ -2017,9 +2042,8 @@ class SaveManagerGUI:
             # Create custom dialog with "Don't show again" option
             warning_dialog = tk.Toplevel(self.root)
             warning_dialog.title("Warning - Vanilla Save File Detected")
-            warning_dialog.geometry("520x600")
             warning_dialog.transient(self.root)
-            warning_dialog.update_idletasks()
+            center_window(warning_dialog, 520, 600, parent=self.root)
             warning_dialog.grab_set()
 
             from er_save_manager.ui.utils import force_render_dialog
@@ -2243,12 +2267,11 @@ class SaveManagerGUI:
             if tab is not None:
                 tab.refresh()
 
+        # The SteamID scan reads the whole save in pure Python; run it off the
+        # UI thread so reloads do not freeze the window.
         steamid_tab = getattr(self, "steamid_tab", None)
         if steamid_tab is not None:
-            try:
-                steamid_tab._on_game_changed()
-            except Exception:
-                pass
+            threading.Thread(target=steamid_tab._on_game_changed, daemon=True).start()
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         self.show_toast(
@@ -2289,12 +2312,11 @@ class SaveManagerGUI:
             if tab is not None:
                 tab.refresh()
 
+        # The SteamID scan reads the whole save in pure Python; run it off the
+        # UI thread so reloads do not freeze the window.
         steamid_tab = getattr(self, "steamid_tab", None)
         if steamid_tab is not None:
-            try:
-                steamid_tab._on_game_changed()
-            except Exception:
-                pass
+            threading.Thread(target=steamid_tab._on_game_changed, daemon=True).start()
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         self.show_toast(
@@ -2618,10 +2640,7 @@ class SaveManagerGUI:
         dialog.transient(self.root)
         dialog.resizable(False, False)
 
-        dialog.update_idletasks()
-        px = self.root.winfo_x() + (self.root.winfo_width() - 440) // 2
-        py = self.root.winfo_y() + (self.root.winfo_height() - 250) // 2
-        dialog.geometry(f"440x250+{px}+{py}")
+        center_window(dialog, 440, 250, parent=self.root)
 
         main = ctk.CTkFrame(dialog, fg_color="transparent")
         main.pack(fill=ctk.BOTH, expand=True, padx=24, pady=24)

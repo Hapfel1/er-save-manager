@@ -55,10 +55,18 @@ project
 from __future__ import annotations
 
 import struct
+from collections import Counter
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
+from enum import Enum
+from functools import cached_property
 from pathlib import Path
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
+from er_save_manager.games.DS2.bonfire_database import BONFIRES
+from er_save_manager.games.DS2.npc_database import NPCS, NpcEntry
+from er_save_manager.games.DS2.regulation import Regulation
 
 DS2_KEY = bytes.fromhex("599f9b699640a55236ee2d70835ec744")
 
@@ -81,9 +89,14 @@ NAME_OFFSET = 960
 NAME_SIZE = 32
 SOULS_OFFSET = 60
 HP_OFFSET = 72
+# Stored 1-based: 1 is the first playthrough, 2 is NG+1, and so on.
+# Character.new_game_plus exposes the 0-based cycle.
 NG_OFFSET = 1028
 NG_PLUS_MAX = 7
 
+# Profile order of the attributes matches the game's class param rows:
+# vigor, endurance, vitality, attunement, strength, dexterity,
+# intelligence (0x2C), faith (0x2E), adaptability (0x30).
 STAT_OFFSETS = {
     "level": 0x38,
     "vigor": 32,
@@ -92,9 +105,9 @@ STAT_OFFSETS = {
     "vitality": 36,
     "strength": 40,
     "dexterity": 42,
-    "intelligence": 46,
-    "faith": 48,
-    "adaptability": 44,
+    "intelligence": 44,
+    "faith": 46,
+    "adaptability": 48,
 }
 
 LEVEL_STAT_KEYS = [k for k in STAT_OFFSETS if k != "level"]
@@ -104,12 +117,95 @@ INVENTORY_START = 0x1E2C
 INVENTORY_END = 0x10E1C
 INVENTORY_SLOT_SIZE = 16
 
+# Stack limit used for items the regulation does not know.
+_DEFAULT_MAX_STACK = 99
+
+# Categories stored in the key item list instead of the main inventory.
+KEY_LIST_CATEGORIES = frozenset({"keys", "gestures"})
+
+# Categories where an item can be owned only once.
+UNIQUE_CATEGORIES = frozenset({"gestures"})
+
+# Non-stackable categories where quantity means separate inventory entries.
+MULTI_COPY_CATEGORIES = frozenset({"weapons"})
+
+# Categories whose items carry an upgrade level in their inventory entry.
+UPGRADABLE_CATEGORIES = frozenset({"weapons", "armors"})
+_UPGRADE_MASK = 0xFF
+_INFUSION_SHIFT = 8
+
 KEY_ITEMS_START = 0x10E30
 KEY_ITEMS_END = 0x11DF0
 
 # Candidate event/quest/boss flag region: unmapped, see module docstring.
 FLAG_REGION_START = 0x11E00
 FLAG_REGION_END = 0x1B2FC
+
+# Bonfire state in a slot's large entry. An array of ascending u16 ids, one per
+# bonfire in BONFIRES, is followed by one level byte per id. The level array
+# starts _BONFIRE_ID_CAPACITY ids after the id array, which is 0x200 bytes at
+# two bytes per id. A level is 0 when unlit and 1 when lit, and grows when
+# Bonfire Ascetics are used. Saves hold up to two copies of the pair, and a
+# slot can lack the second. Both were rewritten when the game lit every bonfire
+# on one slot, so every copy found is updated.
+_BONFIRE_ID_CAPACITY = 256
+# The stored level stops at 99, so a larger byte marks a copy as unreadable.
+_BONFIRE_PLAUSIBLE_LEVEL = 99
+# Highest level the editor writes. Difficulty stops rising at level 8 while the
+# stored level keeps counting up to 99.
+BONFIRE_MAX_LEVEL = 8
+
+# Two more structures sit at fixed distances from the first bonfire id array in
+# the same entry, so they are found through it. Every slot with bonfire data
+# has them at these distances.
+# - The last rested bonfire is a u32 id, _LAST_RESTED_AFTER_IDS bytes after the
+#   id array. It held a valid bonfire id in all four saved characters checked
+#   and nowhere else in the entry did.
+# - The NPC flag object starts _NPC_FLAGS_BEFORE_IDS bytes before the id array.
+#   Killing an NPC changed exactly that NPC's two flag bytes in the layout the
+#   cheat tables describe.
+_LAST_RESTED_AFTER_IDS = 0xC04
+_NPC_FLAGS_BEFORE_IDS = 0x15A0
+# Each entry names the bytes killing that NPC writes, which are zero
+# otherwise, as (offset from the first bonfire id array, length in bytes).
+# Blacksmith Lenigrast's full record is confirmed by two separate kills
+# matching the game's own rewritten save byte for byte. Emerald Herald and
+# Merchant Hag Melentia, Laddersmith Gilligan, Housekeeper Milibeth, Strowen and
+# Darkdiver Grandahl, Lonesome Gavlan and Saulden each have only a single-byte
+# marker, confirmed for Herald, Melentia and Gavlan by two separate kills
+# each, for Strowen by four, and for Gilligan, Milibeth, Grandahl and Saulden
+# by one kill checked against every other sample on hand. 0 while alive, 1 once killed, and 0 in every sample
+# without that kill, including a scan of the 64 bytes around each one. A first
+# attempt also listed a larger record for Herald and one for Melentia, both
+# drawn from a single kill each in a region that holds a large volatile buffer
+# that changes by tens of thousands of bytes on ordinary play with no kill
+# involved; those were false positives and are not listed.
+_NPC_KILL_RECORDS: dict[str, tuple[tuple[int, int], ...]] = {
+    "Blacksmith Lenigrast": (
+        (-0x27576, 1),
+        (-0x27440, 4),
+        (-0x27040, 2),
+        (-0x2703D, 1),
+        (-0x5B8, 2),
+        (0x5A94, 2),
+        (0x119C, 6),
+        (0x11A4, 4),
+    ),
+    "Emerald Herald": ((-0x27570, 1),),
+    "Merchant Hag Melentia": ((-0x26A72, 1),),
+    "Laddersmith Gilligan": ((-0x24948, 1),),
+    "Housekeeper Milibeth": ((-0x28098, 1),),
+    "Strowen": ((-0x28095, 1),),
+    "Darkdiver Grandahl": ((-0x1F0C8, 1),),
+    "Lonesome Gavlan": ((-0x23E34, 1),),
+    "Saulden, the Crestfallen Warrior": ((-0x27582, 1),),
+    "Creighton the Wanderer": ((-0x21D08, 1),),
+    "Benhart of Jugo": ((-0x129A8, 1),),
+}
+# The byte after Lenigrast's last entry held 0 before his kill and 3 after it,
+# but holds other values in slots without that kill, so it is cleared only
+# together with a present record.
+_LENIGRAST_RECORD_TAIL = (0x11A8, 1)
 
 # Occupancy entry (entry 0) layout: fixed stride per character slot.
 _OCC_STRIDE = 496
@@ -120,6 +216,202 @@ _OCC_NAME_SIZE = 28
 CHARACTER_SELECT_ENTRY = 22
 _SELECT_NAME_OFFSET = 442
 _SELECT_NAME_SIZE = 28
+
+
+class Bonfires:
+    """View over the bonfire levels in one slot's large entry.
+
+    The id arrays are found by their content rather than by a fixed offset. A
+    copy whose level bytes are implausible is ignored, so unreadable slot data
+    yields no blocks.
+    """
+
+    def __init__(self, data: bytearray) -> None:
+        self._data = data
+        self._ids = list(BONFIRES)
+        pattern = struct.pack(f"<{len(self._ids)}H", *self._ids)
+        self._id_offsets: list[int] = []
+        self._level_offsets: list[int] = []
+        content = bytes(data)
+        start = 0
+        while (found := content.find(pattern, start)) != -1:
+            levels = found + _BONFIRE_ID_CAPACITY * 2
+            end = levels + len(self._ids)
+            if end <= len(data) and max(data[levels:end]) <= _BONFIRE_PLAUSIBLE_LEVEL:
+                self._id_offsets.append(found)
+                self._level_offsets.append(levels)
+            start = found + len(pattern)
+
+    @property
+    def found(self) -> bool:
+        return bool(self._level_offsets)
+
+    @property
+    def anchor(self) -> int:
+        """Offset of the first bonfire id array, the reference point for the
+        other structures stored beside it."""
+        return self._id_offsets[0]
+
+    def levels(self) -> dict[int, int]:
+        """Bonfire id to level, read from the first copy."""
+        base = self._level_offsets[0]
+        return {
+            bonfire_id: self._data[base + index]
+            for index, bonfire_id in enumerate(self._ids)
+        }
+
+    @property
+    def last_rested(self) -> int | None:
+        """Id of the bonfire the character last rested at, or None when the
+        stored value is not a known bonfire."""
+        offset = self.anchor + _LAST_RESTED_AFTER_IDS
+        if offset + 4 > len(self._data):
+            return None
+        value = struct.unpack_from("<I", self._data, offset)[0]
+        return value if value in BONFIRES else None
+
+    def set_lit(self, bonfire_ids: Iterable[int], lit: bool) -> int:
+        """Light or unlight bonfires in every copy and return how many changed
+        in the first copy. Lighting keeps levels above 0. Unlighting resets the
+        level to 0 and never touches the last rested bonfire, since the game
+        loads the character there."""
+        wanted = {b for b in bonfire_ids if b in BONFIRES}
+        if not lit:
+            wanted.discard(self.last_rested)
+        changed = 0
+        for copy, base in enumerate(self._level_offsets):
+            for index, bonfire_id in enumerate(self._ids):
+                if bonfire_id not in wanted:
+                    continue
+                current = self._data[base + index]
+                if lit and current == 0:
+                    self._data[base + index] = 1
+                elif not lit and current != 0:
+                    self._data[base + index] = 0
+                else:
+                    continue
+                if copy == 0:
+                    changed += 1
+        return changed
+
+    def set_level(self, bonfire_ids: Iterable[int], level: int) -> int:
+        """Set the level of bonfires in every copy and return how many changed
+        in the first copy. A level of 1 or more lights an unlit bonfire. Raises
+        ValueError outside 1 to BONFIRE_MAX_LEVEL, since level 0 is unlighting,
+        which set_lit handles."""
+        if not 1 <= level <= BONFIRE_MAX_LEVEL:
+            raise ValueError(f"Bonfire level must be 1 to {BONFIRE_MAX_LEVEL}")
+        wanted = {b for b in bonfire_ids if b in BONFIRES}
+        changed = 0
+        for copy, base in enumerate(self._level_offsets):
+            for index, bonfire_id in enumerate(self._ids):
+                if bonfire_id not in wanted or self._data[base + index] == level:
+                    continue
+                self._data[base + index] = level
+                if copy == 0:
+                    changed += 1
+        return changed
+
+    def unlock_all(self) -> int:
+        """Light every unlit bonfire in every copy and return how many bonfires
+        were newly lit in the first copy. Levels above 0 are kept."""
+        return self.set_lit(self._ids, True)
+
+
+@dataclass
+class NpcState:
+    entry: NpcEntry
+    hostile: bool
+    dead: bool
+
+
+class NpcStates:
+    """View over the NPC hostile and dead flags in one slot's large entry.
+
+    A flag byte is 0 while clear and holds bits once set, so a flag counts as
+    set when its byte is non-zero. An NPC also counts as dead while his kill
+    record is stored, because with the record left over he stays dead in game
+    even with his flags clear. Reviving clears both flags and the record, which
+    is the state before the kill. Calming clears the hostile flag only.
+    """
+
+    def __init__(self, data: bytearray, base: int, anchor: int) -> None:
+        self._data = data
+        self._base = base
+        self._anchor = anchor
+
+    def _record_spans(self, name: str) -> list[tuple[int, int]]:
+        return [
+            (self._anchor + offset, length)
+            for offset, length in _NPC_KILL_RECORDS.get(name, ())
+            if self._anchor + offset >= 0
+            and self._anchor + offset + length <= len(self._data)
+        ]
+
+    def _record_present(self, name: str) -> bool:
+        return any(any(self._data[o : o + n]) for o, n in self._record_spans(name))
+
+    def _clear_record(self, name: str) -> bool:
+        if not self._record_present(name):
+            return False
+        for offset, length in self._record_spans(name):
+            self._data[offset : offset + length] = bytes(length)
+        if name == "Blacksmith Lenigrast":
+            tail = self._anchor + _LENIGRAST_RECORD_TAIL[0]
+            if tail < len(self._data):
+                self._data[tail] = 0
+        return True
+
+    def states(self) -> list[NpcState]:
+        result = []
+        for entry in NPCS:
+            hostile = entry.hostile is not None and bool(
+                self._data[self._base + entry.hostile]
+            )
+            dead = (
+                entry.dead is not None and bool(self._data[self._base + entry.dead])
+            ) or self._record_present(entry.name)
+            result.append(NpcState(entry, hostile, dead))
+        return result
+
+    def revive(self, names: Iterable[str]) -> int:
+        """Clear the dead and hostile flags and the kill record of the named
+        NPCs and return how many changed."""
+        wanted = set(names)
+        changed = 0
+        for entry in NPCS:
+            if entry.name not in wanted:
+                continue
+            touched = False
+            for offset in (entry.hostile, entry.dead):
+                if offset is not None and self._data[self._base + offset]:
+                    self._data[self._base + offset] = 0
+                    touched = True
+            if self._clear_record(entry.name):
+                touched = True
+            changed += touched
+        return changed
+
+    def calm(self, names: Iterable[str]) -> int:
+        """Clear the hostile flag of the named NPCs and return how many
+        changed."""
+        wanted = set(names)
+        changed = 0
+        for entry in NPCS:
+            if entry.name not in wanted or entry.hostile is None:
+                continue
+            if self._data[self._base + entry.hostile]:
+                self._data[self._base + entry.hostile] = 0
+                changed += 1
+        return changed
+
+
+class SlotState(Enum):
+    """What a character slot holds. The values double as display labels."""
+
+    NEVER_CREATED = "never created in-game"
+    PRE_CREATION = "pre-character creation"
+    CHARACTER = "character"
 
 
 def _make_padding(data_len: int) -> bytes:
@@ -250,6 +542,41 @@ class InventoryItem:
     def to_bytes(self) -> bytes:
         return struct.pack("<IIII", self.item_id, self.unk_1, self.quantity, self.unk_2)
 
+    # unk_2 packs two bytes for equipment. The low byte is the upgrade level of
+    # weapons and armor (seen as 1 and 3 on weapons, 1 and 2 on armor). The
+    # next byte is the weapon infusion index (see regulation.INFUSION_NAMES),
+    # seen as 1 to 9 on one Rapier per infusion. Each setter keeps the other
+    # bytes.
+    @property
+    def upgrade(self) -> int:
+        return self.unk_2 & _UPGRADE_MASK
+
+    @upgrade.setter
+    def upgrade(self, level: int) -> None:
+        self.unk_2 = (self.unk_2 & ~_UPGRADE_MASK) | (int(level) & _UPGRADE_MASK)
+
+    @property
+    def infusion(self) -> int:
+        return (self.unk_2 >> _INFUSION_SHIFT) & 0xFF
+
+    @infusion.setter
+    def infusion(self, index: int) -> None:
+        self.unk_2 = (self.unk_2 & ~(0xFF << _INFUSION_SHIFT)) | (
+            (int(index) & 0xFF) << _INFUSION_SHIFT
+        )
+
+
+@dataclass
+class BulkAddResult:
+    """Outcome counts of Character.add_items_bulk."""
+
+    added: int = 0
+    updated: int = 0  # existing stacks whose quantity was set
+    skipped_owned: int = 0  # non-stackable items already owned
+    clamped: int = 0  # items whose requested upgrade exceeded their cap
+    infusion_fallback: int = 0  # weapons added plain, infusion not allowed
+    no_space: int = 0  # entries dropped because no empty slot was left
+
 
 def parse_inventory(data: bytes, start: int, end: int) -> list[InventoryItem]:
     items = []
@@ -272,8 +599,13 @@ def _is_valid_name(name: str) -> bool:
 class Character:
     """View over one decrypted profile slot entry (entries 1-10)."""
 
-    def __init__(self, data: bytearray) -> None:
+    def __init__(
+        self,
+        data: bytearray,
+        regulation_source: Callable[[], Regulation] | None = None,
+    ) -> None:
         self._data = data
+        self._regulation_source = regulation_source
 
     @property
     def name(self) -> str:
@@ -307,11 +639,13 @@ class Character:
 
     @property
     def new_game_plus(self) -> int:
-        return struct.unpack_from("<H", self._data, NG_OFFSET)[0]
+        stored = struct.unpack_from("<H", self._data, NG_OFFSET)[0]
+        return max(0, stored - 1)
 
     @new_game_plus.setter
     def new_game_plus(self, value: int) -> None:
-        struct.pack_into("<H", self._data, NG_OFFSET, max(0, min(int(value), 0xFFFF)))
+        stored = int(value) + 1
+        struct.pack_into("<H", self._data, NG_OFFSET, max(1, min(stored, 0xFFFF)))
 
     def get_stat(self, stat_name: str) -> int:
         off = STAT_OFFSETS[stat_name]
@@ -339,16 +673,50 @@ class Character:
 
     STACKABLE_CATEGORIES = {"goods", "bolts", "spells", "upgrade", "seamless"}
 
-    # Default durability (float bit pattern) for new weapons, armor and rings
-    # when the inventory holds no item of the same category to copy it from.
+    # Fallback durability (float bit pattern) for new weapons, armor and rings
+    # when the regulation does not know the item and no owned item can be used
+    # as a reference. These are the lowest values seen on game-written items,
+    # so they never exceed an item's max.
     _DEFAULT_DURABILITY = {
-        "weapons": 0x42200000,
-        "armors": 0x437F0000,
-        "rings": 0x42F00000,
+        "weapons": 0x41F00000,  # 30.0
+        "armors": 0x420C0000,  # 35.0
+        "rings": 0x428C0000,  # 70.0
     }
 
+    def _regulation(self) -> Regulation | None:
+        """The save's regulation, or None when absent or unreadable."""
+        if self._regulation_source is None:
+            return None
+        try:
+            return self._regulation_source()
+        except ValueError:
+            return None
+
+    def max_stack(self, item_id: int) -> int:
+        """Largest stack of an item. Falls back to 99 when the regulation does
+        not know the item."""
+        regulation = self._regulation()
+        held = regulation.max_held(item_id) if regulation else None
+        return held if held else _DEFAULT_MAX_STACK
+
+    def max_upgrade(self, item_id: int, category: str) -> int:
+        """Highest upgrade level, or 0 when unknown or the regulation cannot
+        be read."""
+        regulation = self._regulation()
+        return regulation.max_upgrade(item_id, category) if regulation else 0
+
+    def allowed_infusions(self, item_id: int) -> tuple[int, ...]:
+        """Infusion indices a weapon can take. Only 0 (plain) when the item
+        cannot be infused or the regulation cannot be read."""
+        regulation = self._regulation()
+        return regulation.allowed_infusions(item_id) if regulation else (0,)
+
+    def _effective_infusion(self, item_id: int, infusion: int) -> int:
+        """The requested infusion when the weapon allows it, else 0."""
+        return infusion if infusion in self.allowed_infusions(item_id) else 0
+
     def _region(self, category: str) -> tuple[int, int]:
-        if category == "keys":
+        if category in KEY_LIST_CATEGORIES:
             return KEY_ITEMS_START, KEY_ITEMS_END
         return INVENTORY_START, INVENTORY_END
 
@@ -358,28 +726,61 @@ class Character:
                 return item
         return None
 
+    def free_slots(self, category: str) -> int:
+        """Number of empty slots in the list a category is stored in."""
+        start, end = self._region(category)
+        return sum(
+            1
+            for offset in range(start, end, INVENTORY_SLOT_SIZE)
+            if struct.unpack_from("<I", self._data, offset)[0] == 0
+        )
+
     def _find_item(self, item_id: int, start: int, end: int) -> InventoryItem | None:
         for item in parse_inventory(self._data, start, end):
             if item.item_id == item_id:
                 return item
         return None
 
-    def add_item(
-        self, item_id: int, category: str, quantity: int = 1, stack: bool = True
-    ) -> bool:
-        """Add an item to inventory (or key items for category == "keys").
+    def owns(self, item_id: int) -> bool:
+        return self._find_item_anywhere(item_id) is not None
 
-        For stackable categories, increases an existing stack's quantity
-        unless stack=False forces a new slot. Returns False if there is no
-        empty slot available.
+    def _find_item_anywhere(self, item_id: int) -> InventoryItem | None:
+        """Find an item in either list, so entries written to the wrong list
+        by older versions can still be edited and removed."""
+        return self._find_item(item_id, INVENTORY_START, INVENTORY_END) or (
+            self._find_item(item_id, KEY_ITEMS_START, KEY_ITEMS_END)
+        )
+
+    def add_item(
+        self,
+        item_id: int,
+        category: str,
+        quantity: int = 1,
+        stack: bool = True,
+        upgrade: int = 0,
+        infusion: int = 0,
+    ) -> bool:
+        """Add an item to inventory (or the key item list for the categories in
+        KEY_LIST_CATEGORIES).
+
+        For stackable categories, adds to an existing stack's quantity unless
+        stack=False forces a new slot. Returns False if there is no empty
+        slot available or the item is in a unique category and already owned.
+        The resulting quantity is capped at the item's stack limit, and
+        upgrade at its maximum level. A weapon infusion the weapon does not
+        allow is written as 0. Adds one entry, see add_copies for several.
         """
+        if category in UNIQUE_CATEGORIES and self.owns(item_id):
+            return False
         start, end = self._region(category)
         stackable = category in self.STACKABLE_CATEGORIES
 
         if stackable and stack:
             existing = self._find_item(item_id, start, end)
             if existing is not None:
-                existing.quantity = min(int(quantity), 99)
+                existing.quantity = min(
+                    existing.quantity + int(quantity), self.max_stack(item_id)
+                )
                 self.write_inventory_slot(existing)
                 return True
 
@@ -389,44 +790,259 @@ class Character:
 
         if stackable:
             new_item = InventoryItem(
-                empty.offset, item_id, 0, min(int(quantity), 99), 0
+                empty.offset, item_id, 0, min(int(quantity), self.max_stack(item_id)), 0
             )
         elif category in self._DEFAULT_DURABILITY:
-            # unk_1 and unk_2 are 0 in game-written entries, so only the
-            # durability is copied from an existing item.
-            existing = self._find_item_by_category(category, start, end)
-            dur = (
-                existing.quantity
-                if existing is not None
-                else self._DEFAULT_DURABILITY[category]
+            # unk_1 and unk_2 are 0 in game-written entries.
+            level = 0
+            if category in UPGRADABLE_CATEGORIES:
+                level = min(int(upgrade), self.max_upgrade(item_id, category))
+            new_item = InventoryItem(
+                empty.offset,
+                item_id,
+                0,
+                self._durability_for(item_id, category),
+                level,
             )
-            new_item = InventoryItem(empty.offset, item_id, 0, dur, 0)
+            if category == "weapons":
+                new_item.infusion = self._effective_infusion(item_id, int(infusion))
         else:
             new_item = InventoryItem(empty.offset, item_id, 0, 1, 0)
 
         self.write_inventory_slot(new_item)
         return True
 
-    def _find_item_by_category(
-        self, category: str, start: int, end: int
-    ) -> InventoryItem | None:
-        """Find any existing non-empty item of the category in the region,
-        used to copy a realistic durability for a brand new item."""
+    def _durability_lookup(self, category: str) -> Callable[[int], int]:
+        """Return a function mapping an item id to the durability bit pattern
+        for a new copy of it.
+
+        Uses the maximum durability from the regulation. Items the regulation
+        does not know use the highest durability of an owned copy of the same
+        item (an unused copy holds its max), then the lowest durability among
+        owned items of the category so the value never exceeds the item's max,
+        then _DEFAULT_DURABILITY. The inventory is scanned once, so the result
+        reflects the state at call time.
+        """
         from er_save_manager.games.DS2.item_database import build_item_db
 
+        def as_float(bits: int) -> float:
+            return struct.unpack("<f", struct.pack("<I", bits))[0]
+
         db = build_item_db()
-        for item in parse_inventory(self._data, start, end):
+        best_by_item: dict[int, int] = {}
+        same_category: list[int] = []
+        for item in parse_inventory(self._data, INVENTORY_START, INVENTORY_END):
             if item.item_id == 0:
                 continue
             info = db.get(item.item_id)
-            if info and info[1] == category:
-                return item
-        return None
+            if not info or info[1] != category:
+                continue
+            same_category.append(item.quantity)
+            best = best_by_item.get(item.item_id)
+            if best is None or as_float(item.quantity) > as_float(best):
+                best_by_item[item.item_id] = item.quantity
+
+        fallback = (
+            min(same_category, key=as_float)
+            if same_category
+            else self._DEFAULT_DURABILITY[category]
+        )
+        regulation = self._regulation()
+
+        def lookup(item_id: int) -> int:
+            maximum = regulation.durability(item_id) if regulation else None
+            if maximum is not None:
+                return struct.unpack("<I", struct.pack("<f", maximum))[0]
+            return best_by_item.get(item_id, fallback)
+
+        return lookup
+
+    def _durability_for(self, item_id: int, category: str) -> int:
+        return self._durability_lookup(category)(item_id)
+
+    def _write_entries(
+        self,
+        item_id: int,
+        count: int,
+        level: int,
+        infusion: int,
+        empty: Iterator[InventoryItem],
+        durability: Callable[[int], int],
+    ) -> list[InventoryItem]:
+        """Write up to count equipment entries into the empty slots and return
+        the entries written, fewer than count when the slots run out."""
+        written: list[InventoryItem] = []
+        for _ in range(count):
+            slot = next(empty, None)
+            if slot is None:
+                break
+            entry = InventoryItem(slot.offset, item_id, 0, durability(item_id), level)
+            entry.infusion = infusion
+            self.write_inventory_slot(entry)
+            written.append(entry)
+        return written
+
+    def add_copies(
+        self,
+        item_id: int,
+        category: str,
+        count: int,
+        upgrade: int = 0,
+        infusion: int = 0,
+    ) -> int:
+        """Add count separate entries of one weapon, armor piece or ring with a
+        single inventory scan. Upgrade is clamped to the item's maximum and a
+        weapon infusion it does not allow is written as 0. Returns how many
+        entries were written, fewer than count when the inventory is full."""
+        if category not in self._DEFAULT_DURABILITY:
+            raise ValueError(f"{category} has no equipment entries")
+        start, end = self._region(category)
+        empty = iter(
+            [s for s in parse_inventory(self._data, start, end) if s.item_id == 0]
+        )
+        level = 0
+        if category in UPGRADABLE_CATEGORIES:
+            level = min(int(upgrade), self.max_upgrade(item_id, category))
+        effective = (
+            self._effective_infusion(item_id, int(infusion))
+            if category == "weapons"
+            else 0
+        )
+        return len(
+            self._write_entries(
+                item_id,
+                max(0, int(count)),
+                level,
+                effective,
+                empty,
+                self._durability_lookup(category),
+            )
+        )
+
+    def add_items_bulk(
+        self,
+        item_ids: Iterable[int],
+        category: str,
+        quantity: int = 1,
+        upgrade: int = 0,
+        infusion: int = 0,
+    ) -> BulkAddResult:
+        """Add many items of one category with a single inventory scan.
+
+        Stackable items already owned get their quantity set, matching
+        add_item, and quantity is capped per item at its stack limit. For
+        weapons, quantity is the number of copies wanted of each exact variant
+        (same item, upgrade and infusion) and only the missing copies are
+        added. Other items already owned are skipped. Upgrade is clamped per
+        item to its maximum level. A weapon that does not allow the infusion is
+        added plain.
+        """
+        result = BulkAddResult()
+        start, end = self._region(category)
+        slots = parse_inventory(self._data, start, end)
+
+        owned: dict[int, InventoryItem] = {}
+        variants: Counter[tuple[int, int, int]] = Counter()
+        for slot in slots:
+            if slot.item_id:
+                owned.setdefault(slot.item_id, slot)
+                variants[(slot.item_id, slot.upgrade, slot.infusion)] += 1
+        empty = iter([slot for slot in slots if slot.item_id == 0])
+
+        stackable = category in self.STACKABLE_CATEGORIES
+        upgradable = category in UPGRADABLE_CATEGORIES
+        multi_copy = category in MULTI_COPY_CATEGORIES
+        durability = (
+            self._durability_lookup(category)
+            if category in self._DEFAULT_DURABILITY
+            else None
+        )
+
+        for item_id in item_ids:
+            existing = owned.get(item_id)
+            if existing is not None and stackable:
+                existing.quantity = min(
+                    existing.quantity + int(quantity), self.max_stack(item_id)
+                )
+                self.write_inventory_slot(existing)
+                result.updated += 1
+                continue
+            if existing is not None and not multi_copy:
+                result.skipped_owned += 1
+                continue
+
+            level = 0
+            if upgradable:
+                level = min(int(upgrade), self.max_upgrade(item_id, category))
+            effective = (
+                self._effective_infusion(item_id, int(infusion)) if multi_copy else 0
+            )
+
+            wanted = 1
+            if multi_copy:
+                wanted = max(0, int(quantity)) - variants[(item_id, level, effective)]
+                if wanted <= 0:
+                    result.skipped_owned += 1
+                    continue
+
+            if stackable:
+                slot = next(empty, None)
+                if slot is None:
+                    result.no_space += 1
+                    continue
+                new_item = InventoryItem(
+                    slot.offset,
+                    item_id,
+                    0,
+                    min(int(quantity), self.max_stack(item_id)),
+                    0,
+                )
+                self.write_inventory_slot(new_item)
+                owned[item_id] = new_item
+                result.added += 1
+                continue
+
+            if durability is None:
+                slot = next(empty, None)
+                if slot is None:
+                    result.no_space += 1
+                    continue
+                new_item = InventoryItem(slot.offset, item_id, 0, 1, 0)
+                self.write_inventory_slot(new_item)
+                owned[item_id] = new_item
+                result.added += 1
+                continue
+
+            written = self._write_entries(
+                item_id, wanted, level, effective, empty, durability
+            )
+            result.added += len(written)
+            result.no_space += wanted - len(written)
+            if written:
+                variants[(item_id, level, effective)] += len(written)
+                owned.setdefault(item_id, written[0])
+                if upgradable and level < int(upgrade):
+                    result.clamped += 1
+                if multi_copy and effective != int(infusion):
+                    result.infusion_fallback += 1
+        return result
+
+    def delete_entry(self, item: InventoryItem) -> bool:
+        """Zero the exact inventory slot of an entry, as opposed to delete_item
+        which removes the first slot holding the item id. Returns False if the
+        slot no longer holds that item."""
+        current = InventoryItem.from_bytes(self._data, item.offset)
+        if current.item_id != item.item_id:
+            return False
+        self._data[item.offset : item.offset + INVENTORY_SLOT_SIZE] = bytes(
+            INVENTORY_SLOT_SIZE
+        )
+        return True
 
     def delete_item(self, item_id: int, category: str) -> bool:
-        """Zero out the first matching item slot. Returns False if not found."""
-        start, end = self._region(category)
-        existing = self._find_item(item_id, start, end)
+        """Zero out the first matching item slot in either list. Returns
+        False if not found."""
+        existing = self._find_item_anywhere(item_id)
         if existing is None:
             return False
         self._data[existing.offset : existing.offset + INVENTORY_SLOT_SIZE] = bytes(
@@ -441,9 +1057,17 @@ class DS2Save:
     def __init__(self, container: DS2Container) -> None:
         self.container = container
         self.characters = [
-            Character(container.get_entry(PROFILE_ENTRY_START + i))
+            Character(
+                container.get_entry(PROFILE_ENTRY_START + i),
+                regulation_source=lambda: self.regulation,
+            )
             for i in range(CHARACTER_SLOTS)
         ]
+
+    @cached_property
+    def regulation(self) -> Regulation:
+        """Param data embedded in the save, parsed on first use."""
+        return Regulation.from_container(self.container)
 
     @classmethod
     def from_file(cls, path: str | Path) -> DS2Save:
@@ -524,6 +1148,40 @@ class DS2Save:
         if flag_off >= len(occ_data):
             return False
         return occ_data[flag_off] != 0
+
+    def bonfires(self, slot_index: int) -> Bonfires | None:
+        """The slot's bonfire levels, or None when the slot holds none."""
+        view = Bonfires(self.container.get_entry(BIG_ENTRY_START + slot_index))
+        return view if view.found else None
+
+    def npcs(self, slot_index: int) -> NpcStates | None:
+        """The slot's NPC flags, or None when the slot holds no bonfire data to
+        locate them from."""
+        data = self.container.get_entry(BIG_ENTRY_START + slot_index)
+        view = Bonfires(data)
+        if not view.found:
+            return None
+        base = view.anchor - _NPC_FLAGS_BEFORE_IDS
+        top = max(o for e in NPCS for o in (e.hostile, e.dead) if o is not None)
+        if base < 0 or base + top >= len(data):
+            return None
+        return NpcStates(data, base, view.anchor)
+
+    def slot_state(self, slot_index: int) -> SlotState:
+        """Classify a slot.
+
+        The character is named in the tutorial, so a slot that has been
+        entered exists before it has a name. The game writes the slot's entry 0
+        record when the slot is first entered, and a slot that was never
+        entered keeps that record all zero (see is_slot_initialized). Those two
+        cases are told apart by the record, since the profile of an unnamed
+        slot is the same default character in both.
+        """
+        if self.slot_display_name(slot_index):
+            return SlotState.CHARACTER
+        if not self.is_slot_initialized(slot_index):
+            return SlotState.NEVER_CREATED
+        return SlotState.PRE_CREATION
 
     def save_to_file(self, path: str | Path) -> None:
         for i, character in enumerate(self.characters):

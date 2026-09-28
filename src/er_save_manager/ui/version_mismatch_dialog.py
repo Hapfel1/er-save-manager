@@ -9,6 +9,7 @@ from er_save_manager.fixes.version_mismatch import (
     get_version_info,
 )
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.utils import center_window
 
 RECOMMENDED_VERSION = 252
 RECOMMENDED_GAME_LABEL = "1.16.2"
@@ -117,11 +118,8 @@ class VersionInfoDialog(ctk.CTkToplevel):
             anchor="e", pady=(10, 0)
         )
 
-        self.update_idletasks()
         width, height = 460, 560
-        px = parent.winfo_rootx() + (parent.winfo_width() - width) // 2
-        py = parent.winfo_rooty() + (parent.winfo_height() - height) // 2
-        self.geometry(f"{width}x{height}+{px}+{max(0, py)}")
+        center_window(self, width, height, parent=parent)
         self.grab_set()
 
 
@@ -149,11 +147,7 @@ class VersionMismatchDialog(ctk.CTkToplevel):
         self._build_ui()
 
         width, height = 520, 520
-        self.geometry(f"{width}x{height}")
-        self.update_idletasks()
-        px = parent.winfo_rootx() + (parent.winfo_width() - width) // 2
-        py = parent.winfo_rooty() + (parent.winfo_height() - height) // 2
-        self.geometry(f"{width}x{height}+{px}+{py}")
+        center_window(self, width, height, parent=parent)
 
         from er_save_manager.ui.utils import force_render_dialog
 

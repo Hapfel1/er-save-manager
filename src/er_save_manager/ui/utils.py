@@ -2,6 +2,7 @@
 
 import os
 import platform as platform_module
+import re
 import shutil
 import subprocess
 import webbrowser
@@ -45,6 +46,85 @@ def force_render_dialog(dialog):
         dialog.focus_force()
     except Exception:
         pass
+
+
+# Vertical space reserved for the taskbar and window title bar when capping size
+_SCREEN_MARGIN_PX = 80
+
+
+def center_window(
+    window,
+    width: int | None = None,
+    height: int | None = None,
+    parent=None,
+    *,
+    align_top: bool = False,
+) -> None:
+    """Size a window and center it on the screen or over a parent widget.
+
+    CTk scales the width and height passed to geometry() by the window scaling
+    factor but leaves the x/y offset untouched. The offset must therefore be
+    computed from the scaled (physical) size, otherwise the window lands right
+    and below the intended position whenever the scale is not 1.0.
+
+    When width and height are both given the size is applied as well. When
+    either is omitted only the position is set, using the requested size of
+    the window for the missing dimension.
+
+    Args:
+        window: Tk or CTk toplevel to position
+        width: Logical width, before UI scaling
+        height: Logical height, before UI scaling
+        parent: Widget to center over; centers on the screen when None
+        align_top: Align to the top of the parent's toplevel instead of
+            centering vertically
+    """
+    window.update_idletasks()
+
+    get_scale = getattr(window, "_get_window_scaling", None)
+    scale = get_scale() if get_scale else 1.0
+
+    screen_w = window.winfo_screenwidth()
+    screen_h = window.winfo_screenheight()
+
+    # Keep the window fully on screen on small displays
+    if width is not None:
+        width = min(width, int(screen_w / scale))
+        phys_w = round(width * scale)
+    else:
+        phys_w = window.winfo_reqwidth()
+    if height is not None:
+        height = min(height, int((screen_h - _SCREEN_MARGIN_PX) / scale))
+        phys_h = round(height * scale)
+    else:
+        phys_h = window.winfo_reqheight()
+
+    if parent is not None:
+        parent.update_idletasks()
+        ref_x, ref_y = parent.winfo_rootx(), parent.winfo_rooty()
+        ref_w, ref_h = parent.winfo_width(), parent.winfo_height()
+    else:
+        ref_x, ref_y, ref_w, ref_h = 0, 0, screen_w, screen_h
+
+    x = ref_x + (ref_w - phys_w) // 2
+    y = ref_y + (ref_h - phys_h) // 2
+    if align_top and parent is not None:
+        # wm_geometry gives the outer frame Y (includes titlebar) on all platforms
+        m = re.search(r"\+(-?\d+)\+(-?\d+)$", parent.winfo_toplevel().wm_geometry())
+        if m:
+            y = int(m.group(2))
+
+    # Clamp only when the reference is on the primary screen, so windows on
+    # secondary monitors with negative or large coordinates are left alone
+    if 0 <= ref_x < screen_w:
+        x = max(0, min(x, screen_w - phys_w))
+    if 0 <= ref_y < screen_h:
+        y = max(0, min(y, screen_h - phys_h))
+
+    if width is not None and height is not None:
+        window.geometry(f"{width}x{height}+{x}+{y}")
+    else:
+        window.geometry(f"+{x}+{y}")
 
 
 def bind_mousewheel(widget, target_widget=None):

@@ -7,6 +7,8 @@ import tkinter as tk
 
 import customtkinter as ctk
 
+from er_save_manager.ui.utils import center_window
+
 
 class CTkMessageBox:
     """Custom message box dialogs matching the lavender theme"""
@@ -49,26 +51,12 @@ class CTkMessageBox:
         dialog_height = max(180, min(dialog_height, 600))
 
         if position is None:
-            if parent:
-                parent.update_idletasks()
-                px = (
-                    parent.winfo_rootx()
-                    + (parent.winfo_width() // 2)
-                    - (dialog_width // 2)
-                )
-                py = (
-                    parent.winfo_rooty()
-                    + (parent.winfo_height() // 2)
-                    - (dialog_height // 2)
-                )
-            else:
-                screen = dialog.winfo_screenwidth(), dialog.winfo_screenheight()
-                px = (screen[0] // 2) - (dialog_width // 2)
-                py = (screen[1] // 2) - (dialog_height // 2)
+            center_window(
+                dialog, dialog_width, dialog_height, parent=parent if parent else None
+            )
         else:
             px, py = position
-
-        dialog.geometry(f"{dialog_width}x{dialog_height}+{px}+{py}")
+            dialog.geometry(f"{dialog_width}x{dialog_height}+{px}+{py}")
         dialog.resizable(False, False)
 
         force_render_dialog(dialog)

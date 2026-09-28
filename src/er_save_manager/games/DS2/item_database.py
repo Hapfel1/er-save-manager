@@ -23,6 +23,9 @@ GOODS: dict[str, str] = {
     "Crimson Water": "C0 5B 95 03",
     "Human Effigy": "D8 D4 95 03",
     "Estus Flask": "78 E4 95 03",
+    "Estus Flask (UNSAFE 60155010)": "82 E4 95 03",
+    "Estus Flask (UNSAFE 60155020)": "8C E4 95 03",
+    "Estus Flask (UNSAFE 60155030)": "96 E4 95 03",
     "Small Blue Burr": "00 F8 95 03",
     "Small Yellow Burr": "10 1F 96 03",
     "Small Orange Burr": "20 46 96 03",
@@ -56,6 +59,9 @@ GOODS: dict[str, str] = {
     "Illusory Talisman": "80 A1 99 03",
     "Dragon Head Stone": "08 B5 99 03",
     "Dragon Torso Stone": "F0 B8 99 03",
+    "Dragon Head Stone (UNSAFE)": "12 B5 99 03",
+    "Dragon Torso Stone (UNSAFE)": "FA B8 99 03",
+    "Torch": "A0 EF 99 03",
     "Repair Powder": "90 C8 99 03",
     "Flame Butterfly": "B0 16 9A 03",
     "Prism Stone": "D0 64 9A 03",
@@ -151,6 +157,15 @@ GOODS: dict[str, str] = {
     "Soul of Zallen, the King's Pet": "B0 90 D9 03",
     "Loyce Soul": "C0 B7 D9 03",
     "Soul of Lud, the King's Pet": "D0 DE D9 03",
+    "Hello Carving": "F0 B2 9A 03",
+    "Thank You Carving": "00 DA 9A 03",
+    "I'm Sorry Carving": "10 01 9B 03",
+    "Very Good! Carving": "20 28 9B 03",
+    "Rubbish": "30 4F 9B 03",
+    "Soul of Nadalia, Bride of Ash": "60 CD D8 03",
+    "Soul Vessel": "80 96 09 03",
+    "Smelter Wedge": "80 C4 2B 03",
+    "Soul of Nadalia": "20 4B 2D 03",
 }
 
 RINGS: dict[str, str] = {
@@ -277,6 +292,7 @@ RINGS: dict[str, str] = {
     "Ring of the Embedded": "F0 49 73 02",
     "Ring of the Living": "00 71 73 02",
     "Yorgh's Ring": "10 98 73 02",
+    "Agape Ring": "80 DE 80 02",
 }
 
 WEAPONS: dict[str, str] = {
@@ -295,6 +311,7 @@ WEAPONS: dict[str, str] = {
     "Broken Straight Sword": "80 4F 12 00",
     "Shortsword": "90 76 12 00",
     "Longsword": "A0 9D 12 00",
+    "Longsword (variant)": "00 73 55 00",
     "Broadsword": "B0 C4 12 00",
     "Foot Soldier Sword": "C0 EB 12 00",
     "Puzzling Stone Sword": "D0 12 13 00",
@@ -341,7 +358,7 @@ WEAPONS: dict[str, str] = {
     "Bastard Sword": "40 77 1B 00",
     "Flamberge": "50 9E 1B 00",
     "Claymore": "60 C5 1B 00",
-    "Majestic Greatsword": "58 F0 1B 00",
+    "Majestic Greatsword (UNSAFE)": "58 F0 1B 00",
     "Drangleic Sword": "90 3A 1C 00",
     "Thorned Greatsword": "A0 61 1C 00",
     "Bluemoon Greatsword": "B0 88 1C 00",
@@ -370,6 +387,7 @@ WEAPONS: dict[str, str] = {
     "Silverblack Sickle": "20 0B 20 00",
     "Crescent Axe": "C0 91 21 00",
     "Greataxe": "D0 B8 21 00",
+    "Greataxe (variant)": "40 0F 56 00",
     "Bandit Greataxe": "E0 DF 21 00",
     "Lion Greataxe": "00 2E 22 00",
     "Giant Stone Axe": "10 55 22 00",
@@ -434,7 +452,7 @@ WEAPONS: dict[str, str] = {
     "Scythe": "10 FB 30 00",
     "Halberd": "20 22 31 00",
     "Helix Halberd": "40 70 31 00",
-    "Santier's Spear": "38 9B 31 00",
+    "Santier's Spear - Broken (UNSAFE)": "38 9B 31 00",
     "Mastodon Halberd": "70 E5 31 00",
     "Blue Knight's Halberd": "80 0C 32 00",
     "Dragonrider's Halberd": "90 33 32 00",
@@ -510,7 +528,7 @@ WEAPONS: dict[str, str] = {
     "Greatsword": "90 7F 4F 00",
     "Smelter Sword": "A0 A6 4F 00",
     "Aged Smelter Sword": "28 BA 4F 00",
-    "♥♥♥♥♥♥♥♥♥ Ultra Greatsword": "B0 CD 4F 00",
+    "Drakewing Ultra Greatsword": "B0 CD 4F 00",
     "King's Ultra Greatsword": "C0 F4 4F 00",
     "Fume Ultra Greatsword": "D0 1B 50 00",
     "Ivory King Ultra Greatsword": "58 2F 50 00",
@@ -608,6 +626,10 @@ WEAPONS: dict[str, str] = {
     "Bound Wooden Shield": "E0 5B B4 00",
     "Homunculus Wooden Shield": "F0 82 B4 00",
     "Transgressor's Leather Shield": "00 AA B4 00",
+    "Majestic Greatsword": "70 EC 1B 00",
+    "Santier's Spear": "50 97 31 00",
+    "Greatsword of the Forlorn": "C8 78 1E 00",
+    "Scythe of the Forlorn": "40 FF 2E 00",
 }
 
 ARMORS: dict[str, str] = {
@@ -1042,8 +1064,12 @@ ARMORS: dict[str, str] = {
     "Armor of the Forlorn": "C5 12 9B 01",
     "Gauntlets of the Forlorn": "C6 12 9B 01",
     "Leggings of the Forlorn": "C7 12 9B 01",
-    "Greatsword of the Forlorn": "C8 78 1E 00",
-    "Scythe of the Forlorn": "40 FF 2E 00",
+    "Helm of Aurous (variant)": "E4 ED 45 01",
+    "Armor of Aurous (variant)": "E5 ED 45 01",
+    "Gauntlets of Aurous (variant)": "E6 ED 45 01",
+    "Leggings of Aurous (variant)": "E7 ED 45 01",
+    "Prisoner's Hood (variant)": "7C D4 53 01",
+    "Prisoner's Tatters (variant)": "7D D4 53 01",
 }
 
 KEY_ITEMS: dict[str, str] = {
@@ -1069,7 +1095,6 @@ KEY_ITEMS: dict[str, str] = {
     "Tseldora Den Key": "50 21 09 03",
     "Champion's Tablet": "60 48 09 03",
     "Ladder Miniature": "70 6F 09 03",
-    "Soul Vessel": "80 96 09 03",
     "Undead Lockaway Key": "90 BD 09 03",
     "Dull Ember": "B0 0B 0A 03",
     "Crushed Eye Orb": "C0 32 0A 03",
@@ -1083,6 +1108,7 @@ KEY_ITEMS: dict[str, str] = {
     "Tower Key": "80 8F 1F 03",
     "Garrison Ward Key": "20 16 21 03",
     "Dragon Stone": "10 60 23 03",
+    "Scorching Iron Scepter": "E0 3D 2A 03",
 }
 
 BOLTS: dict[str, str] = {
@@ -1218,6 +1244,29 @@ SPELLS: dict[str, str] = {
     "Dark Dance": "B0 C9 1A 02",
 }
 
+GESTURES: dict[str, str] = {
+    "Point Gesture": "C0 4D C1 03",
+    "I won't bite Gesture": "A8 51 C1 03",
+    "Bow Gesture": "78 59 C1 03",
+    "Welcome Gesture": "60 5D C1 03",
+    "Duel bow Gesture": "48 61 C1 03",
+    "Wave Gesture": "30 65 C1 03",
+    "Pumped up Gesture": "18 69 C1 03",
+    "Joy Gesture": "00 6D C1 03",
+    "Warcry Gesture": "E8 70 C1 03",
+    "Warmup Gesture": "D0 74 C1 03",
+    "Hurrah! Gesture": "B8 78 C1 03",
+    "Righty-ho! Gesture": "A0 7C C1 03",
+    "No way Gesture": "88 80 C1 03",
+    "This one's me Gesture": "70 84 C1 03",
+    "Have mercy! Gesture": "58 88 C1 03",
+    "Prostration Gesture": "40 8C C1 03",
+    "Decapitate Gesture": "28 90 C1 03",
+    "Fist pump Gesture": "10 94 C1 03",
+    "Mock Gesture": "F8 97 C1 03",
+    "Praise the Sun Gesture": "C8 9F C1 03",
+}
+
 UPGRADE_MATERIALS: dict[str, str] = {
     "Titanite Shard": "10 54 A2 03",
     "Large Titanite Shard": "98 67 A2 03",
@@ -1262,11 +1311,30 @@ CATEGORIES: dict[str, dict[str, str]] = {
     "armors": ARMORS,
     "rings": RINGS,
     "keys": KEY_ITEMS,
+    "gestures": GESTURES,
     "bolts": BOLTS,
     "spells": SPELLS,
     "upgrade": UPGRADE_MATERIALS,
     "seamless": SEAMLESS_ITEMS,
 }
+
+UNSAFE_IDS: frozenset[int] = frozenset(
+    {
+        0x0395E478,  # Estus Flask
+        0x03990540,  # Darksign
+        0x03B47C80,  # Black Separation Crystal
+        0x030A32C0,  # Crushed Eye Orb
+        0x001BF058,  # Majestic Greatsword (UNSAFE variant)
+        0x00319B38,  # Santier's Spear - Broken
+        60405010,  # Dragon Head Stone (UNSAFE variant)
+        60406010,  # Dragon Torso Stone (UNSAFE variant)
+        # Estus Flask variants that exist only in the regulation. Treated like
+        # the base Estus Flask, whose count and level are packed in one value.
+        60155010,
+        60155020,
+        60155030,
+    }
+)
 
 
 def _hex_id_to_int(hex_str: str) -> int | None:

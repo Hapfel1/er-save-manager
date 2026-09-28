@@ -3,6 +3,7 @@
 import customtkinter as ctk
 
 from er_save_manager.backup.manager import BackupMetadata
+from er_save_manager.ui.utils import center_window
 
 
 class BackupPruningWarningDialog(ctk.CTkToplevel):
@@ -30,11 +31,7 @@ class BackupPruningWarningDialog(ctk.CTkToplevel):
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self._build_ui()
 
-        self.geometry("480x280")
-        self.update_idletasks()
-        px = parent.winfo_rootx() + (parent.winfo_width() - 480) // 2
-        py = parent.winfo_rooty() + (parent.winfo_height() - 280) // 2
-        self.geometry(f"480x280+{px}+{py}")
+        center_window(self, 480, 280, parent=parent)
 
         from er_save_manager.ui.utils import force_render_dialog
 

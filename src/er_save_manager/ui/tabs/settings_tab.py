@@ -9,7 +9,7 @@ import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.settings import get_settings
-from er_save_manager.ui.utils import bind_mousewheel, pick_file
+from er_save_manager.ui.utils import bind_mousewheel, center_window, pick_file
 
 
 class SettingsTab:
@@ -107,6 +107,32 @@ class SettingsTab:
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
+        # Game selected when the application starts
+        from er_save_manager.games.game_profiles import GAME_PROFILES
+
+        self.default_game_var = tk.StringVar(value=self._default_game_name())
+        default_game_row = ctk.CTkFrame(frame, fg_color="transparent")
+        default_game_row.pack(fill="x", padx=12, pady=5)
+        ctk.CTkLabel(default_game_row, text="Default game:").pack(
+            side="left", padx=(0, 10)
+        )
+        self._default_game_combo = ctk.CTkComboBox(
+            default_game_row,
+            variable=self.default_game_var,
+            values=[p.name for p in GAME_PROFILES],
+            state="readonly",
+            width=260,
+            command=self._on_default_game_changed,
+        )
+        self._default_game_combo.pack(side="left")
+        ctk.CTkLabel(
+            frame,
+            text="Game the editor opens on at startup.",
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+        ).pack(anchor="w", padx=32, pady=(0, 10))
+        self.settings.add_listener(self._on_setting_changed)
+
         # EAC Warning - Elden Ring only
         if self.active_game == "elden_ring":
             self.show_eac_warning_var = tk.BooleanVar(
@@ -200,6 +226,36 @@ class SettingsTab:
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
+
+    def _default_game_name(self) -> str:
+        """Return the display name of the saved default game."""
+        from er_save_manager.games.game_profiles import PROFILES_BY_KEY
+
+        key = self.settings.get("default_game", "elden_ring")
+        return PROFILES_BY_KEY.get(key, PROFILES_BY_KEY["elden_ring"]).name
+
+    def _on_default_game_changed(self, name: str) -> None:
+        from er_save_manager.games.game_profiles import GAME_PROFILES
+
+        profile = next((p for p in GAME_PROFILES if p.name == name), None)
+        if profile is not None:
+            self.settings.set("default_game", profile.key)
+
+    def _on_setting_changed(self, key: str | None) -> None:
+        """Mirror default_game changes made elsewhere (e.g. the main window button).
+
+        The tab is rebuilt when the game changes, so drop the listener once
+        its widgets are gone.
+        """
+        if key not in ("default_game", None):
+            return
+        try:
+            if not self._default_game_combo.winfo_exists():
+                self.settings.remove_listener(self._on_setting_changed)
+                return
+            self.default_game_var.set(self._default_game_name())
+        except tk.TclError:
+            self.settings.remove_listener(self._on_setting_changed)
 
     def _create_backup_settings(self, parent):
         frame = ctk.CTkFrame(parent, corner_radius=12)
@@ -467,25 +523,30 @@ class SettingsTab:
 
     def _on_game_auto_backup_toggle(self, game_key: str):
         enabled = self._auto_backup_enabled_vars[game_key].get()
+
+        if enabled and not self._game_auto_backup_path_valid(game_key):
+            CTkMessageBox.showwarning(
+                "Configure Save File",
+                "Please choose which save file to monitor for auto-backup.",
+                parent=self.parent,
+            )
+            from er_save_manager.games.game_profiles import PROFILES_BY_KEY
+
+            profile = PROFILES_BY_KEY.get(game_key)
+            if profile:
+                self._choose_game_auto_backup_save(game_key, profile)
+
+            # Enabling without a valid path would silently never back up
+            if not self._game_auto_backup_path_valid(game_key):
+                self._auto_backup_enabled_vars[game_key].set(False)
+                return
+
+        # Read the config after the chooser ran, since it persists the path itself
         auto_backup_cfg: dict = dict(self.settings.get("auto_backup_games", {}))
         game_cfg = dict(auto_backup_cfg.get(game_key, {}))
         game_cfg["enabled"] = enabled
 
-        if enabled:
-            save_path = game_cfg.get("save_path", "")
-            if not save_path or not Path(save_path).exists():
-                CTkMessageBox.showwarning(
-                    "Configure Save File",
-                    "Please choose which save file to monitor for auto-backup.",
-                    parent=self.parent,
-                )
-                # Find the profile
-                from er_save_manager.games.game_profiles import PROFILES_BY_KEY
-
-                profile = PROFILES_BY_KEY.get(game_key)
-                if profile:
-                    self._choose_game_auto_backup_save(game_key, profile)
-        else:
+        if not enabled:
             # Interval backup requires auto-backup on game launch to be enabled
             game_cfg["interval_enabled"] = False
             if game_key in self._auto_backup_interval_enabled_vars:
@@ -499,6 +560,12 @@ class SettingsTab:
             state = "normal" if enabled else "disabled"
             checkbox.configure(state=state)
             entry.configure(state=state)
+
+    def _game_auto_backup_path_valid(self, game_key: str) -> bool:
+        """Return True if the stored auto-backup save path exists on disk."""
+        game_cfg = self.settings.get("auto_backup_games", {}).get(game_key, {})
+        save_path = game_cfg.get("save_path", "")
+        return bool(save_path) and Path(save_path).exists()
 
     def _on_game_auto_backup_interval_toggle(self, game_key: str):
         interval_enabled = self._auto_backup_interval_enabled_vars[game_key].get()
@@ -562,7 +629,7 @@ class SettingsTab:
                 selected = [None]
                 dlg = ctk.CTkToplevel(self.parent)
                 dlg.title(f"Select Save - {profile.name}")
-                dlg.geometry("620x400")
+                center_window(dlg, 620, 400, parent=self.parent)
                 dlg.resizable(True, True)
                 dlg.minsize(500, 300)
                 force_render_dialog(dlg)
@@ -760,11 +827,7 @@ class SettingsTab:
         popup.transient(root)
         popup.grab_set()
 
-        popup.update_idletasks()
-        w, h = 260, 130
-        rx = root.winfo_rootx() + (root.winfo_width() - w) // 2
-        ry = root.winfo_rooty() + (root.winfo_height() - h) // 2
-        popup.geometry(f"{w}x{h}+{rx}+{ry}")
+        center_window(popup, 260, 130, parent=root)
 
         ctk.CTkLabel(
             popup,

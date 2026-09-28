@@ -124,6 +124,8 @@ class Settings:
             # UI scaling factor applied via CTk widget/window scaling APIs.
             # None means auto-detect from the system on startup.
             "ui_scale": 1.0,
+            # Game key (see game_profiles.py) selected when the application starts
+            "default_game": "elden_ring",
         }
 
     def save(self):
@@ -151,6 +153,11 @@ class Settings:
         reset_to_defaults() calls it with None, meaning any key may have changed.
         """
         self._listeners.append(callback)
+
+    def remove_listener(self, callback: Callable[[str | None], None]) -> None:
+        """Unregister a callback added with add_listener(); ignores unknown ones."""
+        if callback in self._listeners:
+            self._listeners.remove(callback)
 
     def _notify(self, key: str | None) -> None:
         for callback in list(self._listeners):

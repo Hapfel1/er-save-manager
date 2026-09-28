@@ -9,7 +9,7 @@ import tkinter as tk
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, force_render_dialog
+from er_save_manager.ui.utils import bind_mousewheel, center_window, force_render_dialog
 
 
 class QuestProgressDialog:
@@ -38,9 +38,7 @@ class QuestProgressDialog:
         dialog.transient(parent)
         dialog.update_idletasks()
         parent.update_idletasks()
-        x = parent.winfo_rootx() + (parent.winfo_width() // 2) - (width // 2)
-        y = parent.winfo_rooty() + (parent.winfo_height() // 2) - (height // 2)
-        dialog.geometry(f"{width}x{height}+{x}+{y}")
+        center_window(dialog, width, height, parent=parent)
         dialog.resizable(True, True)
         force_render_dialog(dialog)
         dialog.grab_set()

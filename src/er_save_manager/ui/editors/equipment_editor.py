@@ -16,7 +16,12 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, pick_file, trace_variable
+from er_save_manager.ui.utils import (
+    bind_mousewheel,
+    center_window,
+    pick_file,
+    trace_variable,
+)
 
 # ---- constants --------------------------------------------------------------
 
@@ -732,12 +737,7 @@ _CELL_W = 150
 
 def _center_over(window, parent, w: int, h: int) -> None:
     """Center a toplevel window over its parent at a given size."""
-    window.update_idletasks()
-    px, py = parent.winfo_rootx(), parent.winfo_rooty()
-    pw, ph = parent.winfo_width(), parent.winfo_height()
-    x = px + (pw - w) // 2
-    y = py + (ph - h) // 2
-    window.geometry(f"{w}x{h}+{x}+{y}")
+    center_window(window, w, h, parent=parent)
 
 
 def _resolve_icon_by_name(display_name: str):
@@ -2017,14 +2017,8 @@ class EquipmentEditor:
         dialog.transient(self.parent)
 
         dialog.update_idletasks()
-        parent_x = self.parent.winfo_rootx()
-        parent_y = self.parent.winfo_rooty()
-        parent_width = self.parent.winfo_width()
-        parent_height = self.parent.winfo_height()
         width, height = 420, 190
-        x = parent_x + (parent_width - width) // 2
-        y = parent_y + (parent_height - height) // 2
-        dialog.geometry(f"{width}x{height}+{x}+{y}")
+        center_window(dialog, width, height, parent=self.parent)
 
         force_render_dialog(dialog)
         dialog.grab_set()
@@ -2070,14 +2064,8 @@ class EquipmentEditor:
         dialog.transient(self.parent)
 
         dialog.update_idletasks()
-        parent_x = self.parent.winfo_rootx()
-        parent_y = self.parent.winfo_rooty()
-        parent_width = self.parent.winfo_width()
-        parent_height = self.parent.winfo_height()
         width, height = 380, 150
-        x = parent_x + (parent_width - width) // 2
-        y = parent_y + (parent_height - height) // 2
-        dialog.geometry(f"{width}x{height}+{x}+{y}")
+        center_window(dialog, width, height, parent=self.parent)
 
         force_render_dialog(dialog)
         dialog.grab_set()

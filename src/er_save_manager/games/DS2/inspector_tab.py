@@ -83,12 +83,12 @@ class DS2InspectorTab:
                 continue
 
             name = save.slot_display_name(i)
-            display_name = name if name else "(empty)"
+            display_name = name if name else f"({save.slot_state(i).value})"
             status = "Ready"
             check = self._check_slot(i, name, select_data)
 
             display_text = (
-                f"Slot {i} | {display_name:16s} | Lv.{character.get_stat('level'):>3d} "
+                f"Slot {i} | {display_name:24s} | Lv.{character.get_stat('level'):>3d} "
                 f"| Souls: {character.souls:<10d} | {status:24s} | {check}"
             )
 

@@ -5,7 +5,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.diagnostics.checker import DiagnosticResult, TroubleshootingChecker
-from er_save_manager.ui.utils import bind_mousewheel, force_render_dialog
+from er_save_manager.ui.utils import bind_mousewheel, center_window, force_render_dialog
 
 
 class TroubleshootingDialog:
@@ -29,34 +29,11 @@ class TroubleshootingDialog:
         """Show the troubleshooting dialog."""
         self.dialog = ctk.CTkToplevel(self.parent)
         self.dialog.title("Troubleshooting & Diagnostics")
-        self.dialog.geometry("700x600")
         self.dialog.transient(self.parent)
 
         force_render_dialog(self.dialog)
 
-        # Center dialog over parent window
-        dialog_width = 700
-        dialog_height = 600
-
-        # Ensure parent window geometry is updated
-        self.parent.update_idletasks()
-        self.dialog.update_idletasks()
-
-        # Get parent window position and size
-        parent_x = self.parent.winfo_x()
-        parent_y = self.parent.winfo_y()
-        parent_width = self.parent.winfo_width()
-        parent_height = self.parent.winfo_height()
-
-        # Calculate center position
-        x = parent_x + (parent_width - dialog_width) // 2
-        y = parent_y + (parent_height - dialog_height) // 2
-
-        # Ensure dialog doesn't go off-screen
-        x = max(0, x)
-        y = max(0, y)
-
-        self.dialog.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
+        center_window(self.dialog, 700, 600, parent=self.parent)
 
         self.dialog.grab_set()
 

@@ -8,6 +8,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.utils import center_window
 
 
 class CharacterDetailsDialog:
@@ -247,13 +248,7 @@ class CharacterDetailsDialog:
             height = 560 + max(0, dlc_checkbox_count - 1) * 35
         dialog.update_idletasks()
         parent.update_idletasks()
-        parent_x = parent.winfo_rootx()
-        parent_y = parent.winfo_rooty()
-        parent_width = parent.winfo_width()
-        parent_height = parent.winfo_height()
-        x = parent_x + (parent_width // 2) - (width // 2)
-        y = parent_y + (parent_height // 2) - (height // 2)
-        dialog.geometry(f"{width}x{height}+{x}+{y}")
+        center_window(dialog, width, height, parent=parent)
         dialog.resizable(True, True)
 
         dialog.update_idletasks()
@@ -654,13 +649,7 @@ class CharacterDetailsDialog:
         width, height = 400, 250
         teleport_dialog.update_idletasks()
         parent.update_idletasks()
-        parent_x = parent.winfo_rootx()
-        parent_y = parent.winfo_rooty()
-        parent_width = parent.winfo_width()
-        parent_height = parent.winfo_height()
-        x = parent_x + (parent_width // 2) - (width // 2)
-        y = parent_y + (parent_height // 2) - (height // 2)
-        teleport_dialog.geometry(f"{width}x{height}+{x}+{y}")
+        center_window(teleport_dialog, width, height, parent=parent)
         teleport_dialog.grab_set()
         teleport_dialog.lift()
         teleport_dialog.focus_force()

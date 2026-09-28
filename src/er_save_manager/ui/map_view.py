@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 import customtkinter as ctk
 from PIL import Image, ImageTk
 
+from er_save_manager.ui.utils import center_window
+
 if TYPE_CHECKING:
     from er_save_manager.data.locations import MapLocation
 
@@ -97,13 +99,11 @@ class MapWindow:
         self._win.title("Map - Teleport")
         self._win.protocol("WM_DELETE_WINDOW", self._close)
 
+        # Size as a screen fraction; geometry() takes the unscaled size
+        scale = self._win._get_window_scaling()
         sw = self._win.winfo_screenwidth()
         sh = self._win.winfo_screenheight()
-        win_w = int(sw * 0.88)
-        win_h = int(sh * 0.88)
-        x = (sw - win_w) // 2
-        y = (sh - win_h) // 2
-        self._win.geometry(f"{win_w}x{win_h}+{x}+{y}")
+        center_window(self._win, int(sw * 0.88 / scale), int(sh * 0.88 / scale))
         self._win.minsize(800, 600)
 
         self._build_ui()

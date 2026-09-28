@@ -27,7 +27,7 @@ from er_save_manager.data.summoning_pools_data import (
 )
 from er_save_manager.parser.event_flags import EventFlags
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, pick_file
+from er_save_manager.ui.utils import bind_mousewheel, center_window, pick_file
 
 
 class EventFlagsTab:
@@ -951,13 +951,7 @@ class EventFlagsTab:
         # Center dialog over parent window
         dialog.update_idletasks()
         self.parent.update_idletasks()
-        parent_x = self.parent.winfo_rootx()
-        parent_y = self.parent.winfo_rooty()
-        parent_width = self.parent.winfo_width()
-        parent_height = self.parent.winfo_height()
-        x = parent_x + (parent_width // 2) - (width // 2)
-        y = parent_y + (parent_height // 2) - (height // 2)
-        dialog.geometry(f"{width}x{height}+{x}+{y}")
+        center_window(dialog, width, height, parent=self.parent)
 
         # Force rendering on Linux before grab_set
         force_render_dialog(dialog)
@@ -1117,13 +1111,7 @@ class EventFlagsTab:
         dialog.transient(self.parent)
         dialog.update_idletasks()
         self.parent.update_idletasks()
-        x = self.parent.winfo_rootx() + (self.parent.winfo_width() // 2) - (width // 2)
-        y = (
-            self.parent.winfo_rooty()
-            + (self.parent.winfo_height() // 2)
-            - (height // 2)
-        )
-        dialog.geometry(f"{width}x{height}+{x}+{y}")
+        center_window(dialog, width, height, parent=self.parent)
         force_render_dialog(dialog)
         dialog.grab_set()
 
@@ -1271,13 +1259,7 @@ class EventFlagsTab:
         dialog.update_idletasks()
         # Center over parent window
         self.parent.update_idletasks()
-        parent_x = self.parent.winfo_rootx()
-        parent_y = self.parent.winfo_rooty()
-        parent_width = self.parent.winfo_width()
-        parent_height = self.parent.winfo_height()
-        x = parent_x + (parent_width // 2) - (width // 2)
-        y = parent_y + (parent_height // 2) - (height // 2)
-        dialog.geometry(f"{width}x{height}+{x}+{y}")
+        center_window(dialog, width, height, parent=self.parent)
         # Force rendering on Linux before grab_set
         force_render_dialog(dialog)
         dialog.grab_set()
@@ -1752,13 +1734,7 @@ class EventFlagsTab:
 
         # Center dialog
         self.parent.update_idletasks()
-        parent_x = self.parent.winfo_rootx()
-        parent_y = self.parent.winfo_rooty()
-        parent_width = self.parent.winfo_width()
-        parent_height = self.parent.winfo_height()
-        x = parent_x + (parent_width // 2) - (width // 2)
-        y = parent_y + (parent_height // 2) - (height // 2)
-        dialog.geometry(f"{width}x{height}+{x}+{y}")
+        center_window(dialog, width, height, parent=self.parent)
 
         force_render_dialog(dialog)
         dialog.grab_set()
@@ -1935,13 +1911,7 @@ class EventFlagsTab:
         dialog.update_idletasks()
 
         self.parent.update_idletasks()
-        parent_x = self.parent.winfo_rootx()
-        parent_y = self.parent.winfo_rooty()
-        parent_width = self.parent.winfo_width()
-        parent_height = self.parent.winfo_height()
-        x = parent_x + (parent_width // 2) - (width // 2)
-        y = parent_y + (parent_height // 2) - (height // 2)
-        dialog.geometry(f"{width}x{height}+{x}+{y}")
+        center_window(dialog, width, height, parent=self.parent)
 
         force_render_dialog(dialog)
         dialog.grab_set()

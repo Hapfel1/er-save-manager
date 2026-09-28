@@ -71,18 +71,25 @@ def _read_entry(raw: bytes, index: int) -> tuple[int, int]:
     return size, offset
 
 
+# Every valid Steam64 value has this 4-byte little-endian upper half, so the
+# scan only needs a C-speed byte search instead of unpacking every offset.
+_STEAM64_HIGH = struct.pack("<I", _STEAM64_BASE >> 32)
+
+
 def _scan_steam64(dec: bytearray) -> list[int]:
-    """Return list of offsets where a valid Steam64 is stored."""
+    """Return list of offsets where a valid Steam64 is stored.
+
+    Offsets are unaligned and matches do not overlap.
+    """
     offsets = []
-    i = 0
-    end = len(dec) - 8
-    while i <= end:
-        val = struct.unpack_from("<Q", dec, i)[0]
-        if _STEAM64_BASE <= val <= _STEAM64_MAX:
-            offsets.append(i)
-            i += 8
-        else:
-            i += 1
+    next_free = 0
+    pos = dec.find(_STEAM64_HIGH, 4)
+    while pos != -1:
+        start = pos - 4
+        if start >= next_free:
+            offsets.append(start)
+            next_free = start + 8
+        pos = dec.find(_STEAM64_HIGH, pos + 1)
     return offsets
 
 

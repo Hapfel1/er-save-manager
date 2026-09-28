@@ -6,8 +6,17 @@ import tkinter as tk
 
 import customtkinter as ctk
 
+from er_save_manager.games.DS2.bonfire_tab import DS2BonfirePanel
 from er_save_manager.games.DS2.inventory_tab import DS2InventoryPanel
-from er_save_manager.games.DS2.save import LEVEL_STAT_KEYS, NG_PLUS_MAX, DS2Save
+from er_save_manager.games.DS2.npc_tab import DS2NpcPanel
+from er_save_manager.games.DS2.save import (
+    CHARACTER_SLOTS,
+    LEVEL_STAT_KEYS,
+    NG_PLUS_MAX,
+    DS2Save,
+    SlotState,
+)
+from er_save_manager.ui.scrollable_frame import ScrollableFrame
 from er_save_manager.ui.utils import game_blocks_write
 
 
@@ -32,6 +41,8 @@ class DS2EditorTab:
         self._slot_index = 0
         self._stat_vars: dict[str, tk.StringVar] = {}
         self.inventory_panel: DS2InventoryPanel | None = None
+        self.bonfire_panel: DS2BonfirePanel | None = None
+        self.npc_panel: DS2NpcPanel | None = None
 
         self._baseline_stats: dict[str, int] = {}
         self._baseline_level: int = 0
@@ -66,6 +77,8 @@ class DS2EditorTab:
         self.tabview.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         self.tabview.add("Stats")
         self.tabview.add("Inventory")
+        self.tabview.add("Bonfires")
+        self.tabview.add("NPCs")
 
         self._build_stats_tab(self.tabview.tab("Stats"))
 
@@ -78,10 +91,36 @@ class DS2EditorTab:
         )
         self.inventory_panel.setup_ui()
 
+        self.bonfire_panel = DS2BonfirePanel(
+            self.tabview.tab("Bonfires"),
+            get_save=self.get_save,
+            get_slot_index=lambda: self._slot_index,
+            get_save_path=self.get_save_path,
+            show_toast=self.show_toast,
+        )
+        self.bonfire_panel.setup_ui()
+
+        self.npc_panel = DS2NpcPanel(
+            self.tabview.tab("NPCs"),
+            get_save=self.get_save,
+            get_slot_index=lambda: self._slot_index,
+            get_save_path=self.get_save_path,
+            show_toast=self.show_toast,
+        )
+        self.npc_panel.setup_ui()
+
         self.refresh()
 
     def _build_stats_tab(self, parent) -> None:
-        fields = ctk.CTkFrame(parent, fg_color="transparent")
+        # Packed before the scroll area so it stays visible on short windows.
+        ctk.CTkButton(
+            parent, text="Apply Changes", command=self._apply_changes, height=34
+        ).pack(side="bottom", fill="x", padx=10, pady=10)
+
+        body = ScrollableFrame(parent, fg_color="transparent")
+        body.pack(fill="both", expand=True)
+
+        fields = ctk.CTkFrame(body, fg_color="transparent")
         fields.pack(fill="x", padx=10, pady=(10, 5))
 
         self.name_var = tk.StringVar()
@@ -108,7 +147,7 @@ class DS2EditorTab:
         self.hp_label = ctk.CTkLabel(fields, text="-", text_color=("gray40", "gray70"))
         self.hp_label.grid(row=3, column=1, sticky="w", padx=5, pady=3)
 
-        stats_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        stats_frame = ctk.CTkFrame(body, fg_color="transparent")
         stats_frame.pack(fill="x", padx=10, pady=5)
         ctk.CTkLabel(
             stats_frame, text="Level & Attributes", font=("Segoe UI", 12, "bold")
@@ -140,10 +179,6 @@ class DS2EditorTab:
                 col=(i % 3) * 2,
             )
 
-        ctk.CTkButton(
-            parent, text="Apply Changes", command=self._apply_changes, height=34
-        ).pack(side="bottom", fill="x", padx=10, pady=10)
-
     def _add_field(self, parent, label, var, row, col=0):
         ctk.CTkLabel(parent, text=f"{label}:").grid(
             row=row, column=col, sticky="w", padx=5, pady=3
@@ -156,21 +191,29 @@ class DS2EditorTab:
     # Slot handling
     # ------------------------------------------------------------------
 
-    def _slot_display_names(self) -> list[str]:
+    def _slot_labels(self) -> dict[int, str]:
+        """Picker label per offered slot index, in slot order.
+
+        Never-created slots are hidden, as in the inspector, so the picker only
+        offers slots that hold a character or a pre-creation run. A save with no
+        such slot lists all of them so the picker is never empty.
+        """
         save: DS2Save | None = self.get_save()
         if save is None:
-            return [f"{i} - (no save loaded)" for i in range(10)]
+            return {i: f"{i} - (no save loaded)" for i in range(CHARACTER_SLOTS)}
 
-        occupied = save.slot_occupancy()
-        names = []
-        for i in range(10):
-            if i in occupied:
-                names.append(f"{i} - {occupied[i]}")
-            elif save.is_slot_initialized(i):
-                names.append(f"{i} - (empty)")
+        offered = [i for i in range(CHARACTER_SLOTS) if save.is_slot_initialized(i)]
+        labels = {}
+        for i in offered or range(CHARACTER_SLOTS):
+            state = save.slot_state(i)
+            if state is SlotState.CHARACTER:
+                labels[i] = f"{i} - {save.slot_display_name(i)}"
             else:
-                names.append(f"{i} - (never created in-game)")
-        return names
+                labels[i] = f"{i} - ({state.value})"
+        return labels
+
+    def _slot_display_names(self) -> list[str]:
+        return list(self._slot_labels().values())
 
     @staticmethod
     def _slot_index_from_display(value: str) -> int:
@@ -186,9 +229,9 @@ class DS2EditorTab:
     def slot_var_set(self, slot_index: int) -> None:
         """Programmatically select a slot (e.g. from the inspector's
         double-click), then load it."""
-        names = self._slot_display_names()
-        if 0 <= slot_index < len(names):
-            self.slot_var.set(names[slot_index])
+        labels = self._slot_labels()
+        if slot_index in labels:
+            self.slot_var.set(labels[slot_index])
         self._on_load_slot()
 
     # ------------------------------------------------------------------
@@ -240,10 +283,11 @@ class DS2EditorTab:
     def refresh(self) -> None:
         save: DS2Save | None = self.get_save()
 
-        names = self._slot_display_names()
-        self.slot_menu.configure(values=names)
-        if 0 <= self._slot_index < len(names):
-            self.slot_var.set(names[self._slot_index])
+        labels = self._slot_labels()
+        if self._slot_index not in labels:
+            self._slot_index = next(iter(labels))
+        self.slot_menu.configure(values=list(labels.values()))
+        self.slot_var.set(labels[self._slot_index])
 
         if save is None:
             return
@@ -274,6 +318,10 @@ class DS2EditorTab:
 
         if self.inventory_panel is not None:
             self.inventory_panel.refresh()
+        if self.bonfire_panel is not None:
+            self.bonfire_panel.refresh()
+        if self.npc_panel is not None:
+            self.npc_panel.refresh()
 
     def _apply_changes(self) -> None:
         if _game_blocks_write(self.parent):

@@ -1,14 +1,12 @@
-custom id adder as dev option defining item category etc, also option to show ids
-
 check dlc npc flags
 
 check ds3, nr item spawning
 
-invasion regions
-
 ds3 gestures
 
 npc respawner ds3
+
+custom id adder as dev option defining item category etc, also option to show ids done
 
 check ds2 weapon spawning done
 

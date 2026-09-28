@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
-from er_save_manager.ui.utils import patch_combo_scroll, pick_file
+from er_save_manager.ui.utils import center_window, patch_combo_scroll, pick_file
 
 if TYPE_CHECKING:
     from er_save_manager.data.item_database import Item
@@ -24,22 +24,7 @@ _SCROLLBAR_W = 24
 
 def _center_over(window, parent, w=None, h=None, *, top=False) -> None:
     """Center window over parent. Pass w/h explicitly to avoid pre-map size queries."""
-    import re as _re
-
-    if w is None:
-        window.update_idletasks()
-        w = window.winfo_reqwidth()
-    if h is None:
-        window.update_idletasks()
-        h = window.winfo_reqheight()
-    x = max(0, parent.winfo_rootx() + (parent.winfo_width() - w) // 2)
-    if top:
-        # wm_geometry gives the outer frame Y (includes titlebar) on all platforms
-        m = _re.search(r"\+(\-?\d+)\+(\-?\d+)$", parent.winfo_toplevel().wm_geometry())
-        y = int(m.group(2)) if m else parent.winfo_rooty()
-    else:
-        y = max(0, parent.winfo_rooty() + (parent.winfo_height() - h) // 2)
-    window.geometry(f"+{x}+{max(0, y)}")
+    center_window(window, w, h, parent=parent, align_top=top)
 
 
 class IconBrowser(ctk.CTkToplevel):

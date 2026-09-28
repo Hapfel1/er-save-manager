@@ -12,7 +12,7 @@ import customtkinter as ctk
 
 from er_save_manager.backup.manager import BackupManager
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, pick_file
+from er_save_manager.ui.utils import bind_mousewheel, center_window, pick_file
 
 
 class AppearanceTab:
@@ -233,9 +233,7 @@ class AppearanceTab:
         dialog.update_idletasks()
         self.parent.update_idletasks()
         w, h = 420, 620
-        x = self.parent.winfo_rootx() + (self.parent.winfo_width() - w) // 2
-        y = self.parent.winfo_rooty() + (self.parent.winfo_height() - h) // 2
-        dialog.geometry(f"{w}x{h}+{x}+{y}")
+        center_window(dialog, w, h, parent=self.parent)
 
         force_render_dialog(dialog)
         dialog.grab_set()
@@ -506,13 +504,7 @@ class AppearanceTab:
             dialog.update_idletasks()
             # Center over parent window
             self.parent.update_idletasks()
-            parent_x = self.parent.winfo_rootx()
-            parent_y = self.parent.winfo_rooty()
-            parent_width = self.parent.winfo_width()
-            parent_height = self.parent.winfo_height()
-            x = parent_x + (parent_width // 2) - (width // 2)
-            y = parent_y + (parent_height // 2) - (height // 2)
-            dialog.geometry(f"{width}x{height}+{x}+{y}")
+            center_window(dialog, width, height, parent=self.parent)
             # Force rendering on Linux before grab_set
             force_render_dialog(dialog)
             dialog.grab_set()
@@ -824,13 +816,7 @@ class AppearanceTab:
         dialog.transient(self.parent)
 
         dialog.update_idletasks()
-        parent_x = self.parent.winfo_rootx()
-        parent_y = self.parent.winfo_rooty()
-        parent_width = self.parent.winfo_width()
-        parent_height = self.parent.winfo_height()
-        x = parent_x + (parent_width - width) // 2
-        y = parent_y + (parent_height - height) // 2
-        dialog.geometry(f"{width}x{height}+{x}+{y}")
+        center_window(dialog, width, height, parent=self.parent)
 
         force_render_dialog(dialog)
         dialog.grab_set()
@@ -935,14 +921,8 @@ class AppearanceTab:
         dialog.transient(self.parent)
 
         dialog.update_idletasks()
-        parent_x = self.parent.winfo_rootx()
-        parent_y = self.parent.winfo_rooty()
-        parent_width = self.parent.winfo_width()
-        parent_height = self.parent.winfo_height()
         width, height = 420, 190
-        x = parent_x + (parent_width - width) // 2
-        y = parent_y + (parent_height - height) // 2
-        dialog.geometry(f"{width}x{height}+{x}+{y}")
+        center_window(dialog, width, height, parent=self.parent)
 
         force_render_dialog(dialog)
         dialog.grab_set()
@@ -989,14 +969,8 @@ class AppearanceTab:
         dialog.transient(self.parent)
 
         dialog.update_idletasks()
-        parent_x = self.parent.winfo_rootx()
-        parent_y = self.parent.winfo_rooty()
-        parent_width = self.parent.winfo_width()
-        parent_height = self.parent.winfo_height()
         width, height = 380, 150
-        x = parent_x + (parent_width - width) // 2
-        y = parent_y + (parent_height - height) // 2
-        dialog.geometry(f"{width}x{height}+{x}+{y}")
+        center_window(dialog, width, height, parent=self.parent)
 
         force_render_dialog(dialog)
         dialog.grab_set()
@@ -1248,13 +1222,7 @@ class AppearanceTab:
             # Center over parent window
             dialog.update_idletasks()
             self.parent.update_idletasks()
-            parent_x = self.parent.winfo_rootx()
-            parent_y = self.parent.winfo_rooty()
-            parent_width = self.parent.winfo_width()
-            parent_height = self.parent.winfo_height()
-            x = parent_x + (parent_width // 2) - (width // 2)
-            y = parent_y + (parent_height // 2) - (height // 2)
-            dialog.geometry(f"{width}x{height}+{x}+{y}")
+            center_window(dialog, width, height, parent=self.parent)
 
             force_render_dialog(dialog)
             dialog.grab_set()
@@ -1447,7 +1415,7 @@ class AppearanceTab:
 
         dialog = tk.Toplevel(self.parent)
         dialog.title("Copy Preset to Another Save")
-        dialog.geometry("600x250")
+        center_window(dialog, 600, 250, parent=self.parent)
         dialog.transient(self.parent)
         dialog.update_idletasks()
         self.parent.update_idletasks()

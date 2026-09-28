@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import customtkinter as ctk
 
+from er_save_manager.ui.utils import center_window
+
 
 class ProgressDialog:
     """Non-blocking progress dialog with status updates."""
@@ -20,19 +22,11 @@ class ProgressDialog:
         """
         self.dialog = ctk.CTkToplevel(parent)
         self.dialog.title(title)
-        self.dialog.geometry("400x200")
         self.dialog.transient(parent)
         self.dialog.resizable(False, False)
 
         # Center on parent
-        self.dialog.update_idletasks()
-        parent_x = parent.winfo_x()
-        parent_y = parent.winfo_y()
-        parent_width = parent.winfo_width()
-        parent_height = parent.winfo_height()
-        x = parent_x + (parent_width - 400) // 2
-        y = parent_y + (parent_height - 200) // 2
-        self.dialog.geometry(f"+{x}+{y}")
+        center_window(self.dialog, 400, 200, parent=parent)
 
         # Make it non-resizable and on top
         self.dialog.grab_set()

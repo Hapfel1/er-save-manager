@@ -18,7 +18,7 @@ from er_save_manager.data.gestures import (
 )
 from er_save_manager.data.regions import REGIONS
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, center_window
 
 GESTURE_SLOT_EMPTY = 0xFFFFFFFE
 
@@ -471,7 +471,7 @@ class GesturesRegionsTab:
 
         dialog = ctk.CTkToplevel(self.parent)
         dialog.title("Unlocked Regions")
-        dialog.geometry("640x540")
+        center_window(dialog, 640, 540, parent=self.parent)
         dialog.transient(self.parent)
         dialog.update_idletasks()
         self.parent.update_idletasks()
@@ -613,7 +613,7 @@ class GesturesRegionsTab:
 
         dialog = ctk.CTkToplevel(self.parent)
         dialog.title("Game Settings")
-        dialog.geometry("520x600")
+        center_window(dialog, 520, 600, parent=self.parent)
         dialog.transient(self.parent)
         dialog.update_idletasks()
         self.parent.update_idletasks()
