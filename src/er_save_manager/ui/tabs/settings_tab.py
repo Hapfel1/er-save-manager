@@ -107,6 +107,32 @@ class SettingsTab:
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
+        # Game selected when the application starts
+        from er_save_manager.games.game_profiles import GAME_PROFILES
+
+        self.default_game_var = tk.StringVar(value=self._default_game_name())
+        default_game_row = ctk.CTkFrame(frame, fg_color="transparent")
+        default_game_row.pack(fill="x", padx=12, pady=5)
+        ctk.CTkLabel(default_game_row, text="Default game:").pack(
+            side="left", padx=(0, 10)
+        )
+        self._default_game_combo = ctk.CTkComboBox(
+            default_game_row,
+            variable=self.default_game_var,
+            values=[p.name for p in GAME_PROFILES],
+            state="readonly",
+            width=260,
+            command=self._on_default_game_changed,
+        )
+        self._default_game_combo.pack(side="left")
+        ctk.CTkLabel(
+            frame,
+            text="Game the editor opens on at startup.",
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+        ).pack(anchor="w", padx=32, pady=(0, 10))
+        self.settings.add_listener(self._on_setting_changed)
+
         # EAC Warning - Elden Ring only
         if self.active_game == "elden_ring":
             self.show_eac_warning_var = tk.BooleanVar(
@@ -200,6 +226,36 @@ class SettingsTab:
             text_color=("gray40", "gray70"),
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
+
+    def _default_game_name(self) -> str:
+        """Return the display name of the saved default game."""
+        from er_save_manager.games.game_profiles import PROFILES_BY_KEY
+
+        key = self.settings.get("default_game", "elden_ring")
+        return PROFILES_BY_KEY.get(key, PROFILES_BY_KEY["elden_ring"]).name
+
+    def _on_default_game_changed(self, name: str) -> None:
+        from er_save_manager.games.game_profiles import GAME_PROFILES
+
+        profile = next((p for p in GAME_PROFILES if p.name == name), None)
+        if profile is not None:
+            self.settings.set("default_game", profile.key)
+
+    def _on_setting_changed(self, key: str | None) -> None:
+        """Mirror default_game changes made elsewhere (e.g. the main window button).
+
+        The tab is rebuilt when the game changes, so drop the listener once
+        its widgets are gone.
+        """
+        if key not in ("default_game", None):
+            return
+        try:
+            if not self._default_game_combo.winfo_exists():
+                self.settings.remove_listener(self._on_setting_changed)
+                return
+            self.default_game_var.set(self._default_game_name())
+        except tk.TclError:
+            self.settings.remove_listener(self._on_setting_changed)
 
     def _create_backup_settings(self, parent):
         frame = ctk.CTkFrame(parent, corner_radius=12)
