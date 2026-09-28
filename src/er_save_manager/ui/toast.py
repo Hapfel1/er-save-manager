@@ -118,9 +118,8 @@ def _slide_in(toast, root, x, y, w, h, duration, toast_info, step=0, steps=15):
 def _dismiss(toast, root, toast_info):
     """Fade out and destroy."""
     if not toast.winfo_exists():
-        _active_toasts.discard(toast_info) if hasattr(
-            _active_toasts, "discard"
-        ) else None
+        if toast_info in _active_toasts:
+            _active_toasts.remove(toast_info)
         return
 
     def fade_out(step=0, steps=8):

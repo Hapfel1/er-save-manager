@@ -2243,12 +2243,11 @@ class SaveManagerGUI:
             if tab is not None:
                 tab.refresh()
 
+        # The SteamID scan reads the whole save in pure Python; run it off the
+        # UI thread so reloads do not freeze the window.
         steamid_tab = getattr(self, "steamid_tab", None)
         if steamid_tab is not None:
-            try:
-                steamid_tab._on_game_changed()
-            except Exception:
-                pass
+            threading.Thread(target=steamid_tab._on_game_changed, daemon=True).start()
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         self.show_toast(
@@ -2289,12 +2288,11 @@ class SaveManagerGUI:
             if tab is not None:
                 tab.refresh()
 
+        # The SteamID scan reads the whole save in pure Python; run it off the
+        # UI thread so reloads do not freeze the window.
         steamid_tab = getattr(self, "steamid_tab", None)
         if steamid_tab is not None:
-            try:
-                steamid_tab._on_game_changed()
-            except Exception:
-                pass
+            threading.Thread(target=steamid_tab._on_game_changed, daemon=True).start()
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         self.show_toast(
