@@ -39,10 +39,17 @@ Item resolution, keyed by the inventory item id (an ItemParam row id):
            -> ArmorReinforceParam max level. Durability is
            ArmorParam.durability.
   Rings    ItemParam.ring_id -> RingParam.durability.
+  Infusion Weapons only. WeaponReinforceParam.custom_attr_spec_param_id ->
+           CustomAttrSpecParam, whose single s32 is a bit mask. Bit n set
+           means infusion n is allowed. Bit 0 is the plain weapon.
   Spells   ItemParam.spell_id -> SpellParam casts. The inventory quantity of
            a spell is its cast count, so the limit is the highest
            casts_tier value instead of ItemParam.max_held_count.
   Others   ItemParam.max_held_count only.
+Infusion index n is the value stored in the second byte of an inventory
+entry's unk_2. The order is the material order of CustomAttrCostParam, which
+lists one infusion stone per index: Palestone, Firedrake, Faintstone,
+Boltstone, Darknight, Poison, Bleed, Raw, Magic and Old Mundane Stone.
 Items missing from ItemParam are unknown to the regulation and report no
 limits.
 
@@ -66,6 +73,20 @@ _BND4_SUPPORTED_FORMAT = 0x30
 _PARAM_ROW_TABLE_START = 0x40
 _PARAM_ROW_ENTRY_SIZE = 24
 
+# Display names by infusion index, 0 being the plain weapon.
+INFUSION_NAMES = (
+    "Normal",
+    "Fire",
+    "Magic",
+    "Lightning",
+    "Dark",
+    "Poison",
+    "Bleed",
+    "Raw",
+    "Enchanted",
+    "Mundane",
+)
+
 # ItemParam
 _ITEM_WEAPON_ID = 20  # s32
 _ITEM_ARMOR_ID = 24  # s32
@@ -77,6 +98,9 @@ _WEAPON_REINFORCE_ID = 8  # s32
 _WEAPON_DURABILITY = 40  # f32
 # WeaponReinforceParam
 _WEAPON_REINFORCE_MAX_LEVEL = 0x48  # s32
+_WEAPON_REINFORCE_ATTR_SPEC_ID = 232  # s32
+# CustomAttrSpecParam
+_ATTR_SPEC_INFUSION_MASK = 0  # s32
 # ArmorParam
 _ARMOR_REINFORCE_ID = 24  # s32
 _ARMOR_DURABILITY = 56  # f32
@@ -164,11 +188,12 @@ class _ItemLimits:
     max_held: int
     max_upgrade: int = 0
     durability: float | None = None
+    infusion_mask: int = 0
 
 
 class Regulation:
-    """Per-item limits (stack size, upgrade level, durability) resolved from
-    the embedded params."""
+    """Per-item limits (stack size, upgrade level, durability, infusions)
+    resolved from the embedded params."""
 
     def __init__(self, items: dict[int, _ItemLimits]) -> None:
         self._items = items
@@ -198,6 +223,7 @@ class Regulation:
         armor_reinforce = param("ArmorReinforceParam.param")
         rings = param("RingParam.param")
         spells = param("SpellParam.param")
+        attr_specs = param("CustomAttrSpecParam.param")
 
         items: dict[int, _ItemLimits] = {}
         for item_id in item_param.ids():
@@ -208,6 +234,7 @@ class Regulation:
             spell_id = item_param.s32(item_id, _ITEM_SPELL_ID)
 
             max_upgrade = 0
+            infusion_mask = 0
             durability: float | None = None
             if weapons.has(weapon_id):
                 reinforce_id = weapons.s32(weapon_id, _WEAPON_REINFORCE_ID)
@@ -215,6 +242,13 @@ class Regulation:
                     max_upgrade = weapon_reinforce.s32(
                         reinforce_id, _WEAPON_REINFORCE_MAX_LEVEL
                     )
+                    spec_id = weapon_reinforce.s32(
+                        reinforce_id, _WEAPON_REINFORCE_ATTR_SPEC_ID
+                    )
+                    if attr_specs.has(spec_id):
+                        infusion_mask = attr_specs.s32(
+                            spec_id, _ATTR_SPEC_INFUSION_MASK
+                        )
                 durability = weapons.f32(weapon_id, _WEAPON_DURABILITY)
             elif armors.has(armor_id):
                 reinforce_id = armors.s32(armor_id, _ARMOR_REINFORCE_ID)
@@ -232,7 +266,9 @@ class Regulation:
                     for tier in range(_SPELL_TIER_COUNT)
                 )
 
-            items[item_id] = _ItemLimits(max_held, max(0, max_upgrade), durability)
+            items[item_id] = _ItemLimits(
+                max_held, max(0, max_upgrade), durability, infusion_mask
+            )
         return cls(items)
 
     @classmethod
@@ -258,3 +294,10 @@ class Regulation:
         the item has none or is unknown."""
         info = self._items.get(item_id)
         return info.durability if info else None
+
+    def allowed_infusions(self, item_id: int) -> tuple[int, ...]:
+        """Infusion indices a weapon can take, always including 0. Only 0 for
+        items that cannot be infused or are absent from the regulation."""
+        info = self._items.get(item_id)
+        mask = info.infusion_mask if info else 0
+        return tuple(n for n in range(len(INFUSION_NAMES)) if n == 0 or mask >> n & 1)

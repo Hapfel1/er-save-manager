@@ -55,7 +55,8 @@ project
 from __future__ import annotations
 
 import struct
-from collections.abc import Callable, Iterable
+from collections import Counter
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
@@ -122,9 +123,13 @@ KEY_LIST_CATEGORIES = frozenset({"keys", "gestures"})
 # Categories where an item can be owned only once.
 UNIQUE_CATEGORIES = frozenset({"gestures"})
 
+# Non-stackable categories where quantity means separate inventory entries.
+MULTI_COPY_CATEGORIES = frozenset({"weapons"})
+
 # Categories whose items carry an upgrade level in their inventory entry.
 UPGRADABLE_CATEGORIES = frozenset({"weapons", "armors"})
 _UPGRADE_MASK = 0xFF
+_INFUSION_SHIFT = 8
 
 KEY_ITEMS_START = 0x10E30
 KEY_ITEMS_END = 0x11DF0
@@ -272,9 +277,11 @@ class InventoryItem:
     def to_bytes(self) -> bytes:
         return struct.pack("<IIII", self.item_id, self.unk_1, self.quantity, self.unk_2)
 
-    # The upgrade level is the low byte of unk_2 for weapons and armor. Seen
-    # as 1 and 3 on upgraded weapons and 1 and 2 on upgraded armor, and 0 on
-    # everything else. Higher bytes are preserved on write.
+    # unk_2 packs two bytes for equipment. The low byte is the upgrade level of
+    # weapons and armor (seen as 1 and 3 on weapons, 1 and 2 on armor). The
+    # next byte is the weapon infusion index (see regulation.INFUSION_NAMES),
+    # seen as 1 to 9 on one Rapier per infusion. Each setter keeps the other
+    # bytes.
     @property
     def upgrade(self) -> int:
         return self.unk_2 & _UPGRADE_MASK
@@ -283,6 +290,16 @@ class InventoryItem:
     def upgrade(self, level: int) -> None:
         self.unk_2 = (self.unk_2 & ~_UPGRADE_MASK) | (int(level) & _UPGRADE_MASK)
 
+    @property
+    def infusion(self) -> int:
+        return (self.unk_2 >> _INFUSION_SHIFT) & 0xFF
+
+    @infusion.setter
+    def infusion(self, index: int) -> None:
+        self.unk_2 = (self.unk_2 & ~(0xFF << _INFUSION_SHIFT)) | (
+            (int(index) & 0xFF) << _INFUSION_SHIFT
+        )
+
 
 @dataclass
 class BulkAddResult:
@@ -290,9 +307,10 @@ class BulkAddResult:
 
     added: int = 0
     updated: int = 0  # existing stacks whose quantity was set
-    skipped_owned: int = 0  # non-stackable items already in the inventory
+    skipped_owned: int = 0  # non-stackable items already owned
     clamped: int = 0  # items whose requested upgrade exceeded their cap
-    no_space: int = 0  # items dropped because no empty slot was left
+    infusion_fallback: int = 0  # weapons added plain, infusion not allowed
+    no_space: int = 0  # entries dropped because no empty slot was left
 
 
 def parse_inventory(data: bytes, start: int, end: int) -> list[InventoryItem]:
@@ -422,6 +440,16 @@ class Character:
         regulation = self._regulation()
         return regulation.max_upgrade(item_id, category) if regulation else 0
 
+    def allowed_infusions(self, item_id: int) -> tuple[int, ...]:
+        """Infusion indices a weapon can take. Only 0 (plain) when the item
+        cannot be infused or the regulation cannot be read."""
+        regulation = self._regulation()
+        return regulation.allowed_infusions(item_id) if regulation else (0,)
+
+    def _effective_infusion(self, item_id: int, infusion: int) -> int:
+        """The requested infusion when the weapon allows it, else 0."""
+        return infusion if infusion in self.allowed_infusions(item_id) else 0
+
     def _region(self, category: str) -> tuple[int, int]:
         if category in KEY_LIST_CATEGORIES:
             return KEY_ITEMS_START, KEY_ITEMS_END
@@ -456,6 +484,7 @@ class Character:
         quantity: int = 1,
         stack: bool = True,
         upgrade: int = 0,
+        infusion: int = 0,
     ) -> bool:
         """Add an item to inventory (or the key item list for the categories in
         KEY_LIST_CATEGORIES).
@@ -464,7 +493,8 @@ class Character:
         stack=False forces a new slot. Returns False if there is no empty
         slot available or the item is in a unique category and already owned.
         quantity is capped at the item's stack limit and upgrade at its maximum
-        level.
+        level. A weapon infusion the weapon does not allow is written as 0.
+        Adds one entry, see add_copies for several.
         """
         if category in UNIQUE_CATEGORIES and self.owns(item_id):
             return False
@@ -498,6 +528,8 @@ class Character:
                 self._durability_for(item_id, category),
                 level,
             )
+            if category == "weapons":
+                new_item.infusion = self._effective_infusion(item_id, int(infusion))
         else:
             new_item = InventoryItem(empty.offset, item_id, 0, 1, 0)
 
@@ -552,32 +584,98 @@ class Character:
     def _durability_for(self, item_id: int, category: str) -> int:
         return self._durability_lookup(category)(item_id)
 
+    def _write_entries(
+        self,
+        item_id: int,
+        count: int,
+        level: int,
+        infusion: int,
+        empty: Iterator[InventoryItem],
+        durability: Callable[[int], int],
+    ) -> list[InventoryItem]:
+        """Write up to count equipment entries into the empty slots and return
+        the entries written, fewer than count when the slots run out."""
+        written: list[InventoryItem] = []
+        for _ in range(count):
+            slot = next(empty, None)
+            if slot is None:
+                break
+            entry = InventoryItem(slot.offset, item_id, 0, durability(item_id), level)
+            entry.infusion = infusion
+            self.write_inventory_slot(entry)
+            written.append(entry)
+        return written
+
+    def add_copies(
+        self,
+        item_id: int,
+        category: str,
+        count: int,
+        upgrade: int = 0,
+        infusion: int = 0,
+    ) -> int:
+        """Add count separate entries of one weapon, armor piece or ring with a
+        single inventory scan. Upgrade is clamped to the item's maximum and a
+        weapon infusion it does not allow is written as 0. Returns how many
+        entries were written, fewer than count when the inventory is full."""
+        if category not in self._DEFAULT_DURABILITY:
+            raise ValueError(f"{category} has no equipment entries")
+        start, end = self._region(category)
+        empty = iter(
+            [s for s in parse_inventory(self._data, start, end) if s.item_id == 0]
+        )
+        level = 0
+        if category in UPGRADABLE_CATEGORIES:
+            level = min(int(upgrade), self.max_upgrade(item_id, category))
+        effective = (
+            self._effective_infusion(item_id, int(infusion))
+            if category == "weapons"
+            else 0
+        )
+        return len(
+            self._write_entries(
+                item_id,
+                max(0, int(count)),
+                level,
+                effective,
+                empty,
+                self._durability_lookup(category),
+            )
+        )
+
     def add_items_bulk(
         self,
         item_ids: Iterable[int],
         category: str,
         quantity: int = 1,
         upgrade: int = 0,
+        infusion: int = 0,
     ) -> BulkAddResult:
         """Add many items of one category with a single inventory scan.
 
         Stackable items already owned get their quantity set, matching
-        add_item. Other items already owned are skipped. quantity is capped
-        per item at its stack limit. For weapons and armor, upgrade is
-        clamped per item to its maximum level.
+        add_item, and quantity is capped per item at its stack limit. For
+        weapons, quantity is the number of copies wanted of each exact variant
+        (same item, upgrade and infusion) and only the missing copies are
+        added. Other items already owned are skipped. Upgrade is clamped per
+        item to its maximum level. A weapon that does not allow the infusion is
+        added plain.
         """
         result = BulkAddResult()
         start, end = self._region(category)
         slots = parse_inventory(self._data, start, end)
 
         owned: dict[int, InventoryItem] = {}
+        variants: Counter[tuple[int, int, int]] = Counter()
         for slot in slots:
             if slot.item_id:
                 owned.setdefault(slot.item_id, slot)
+                variants[(slot.item_id, slot.upgrade, slot.infusion)] += 1
         empty = iter([slot for slot in slots if slot.item_id == 0])
 
         stackable = category in self.STACKABLE_CATEGORIES
         upgradable = category in UPGRADABLE_CATEGORIES
+        multi_copy = category in MULTI_COPY_CATEGORIES
         durability = (
             self._durability_lookup(category)
             if category in self._DEFAULT_DURABILITY
@@ -586,27 +684,34 @@ class Character:
 
         for item_id in item_ids:
             existing = owned.get(item_id)
-            if existing is not None:
-                if not stackable:
-                    result.skipped_owned += 1
-                    continue
+            if existing is not None and stackable:
                 existing.quantity = min(int(quantity), self.max_stack(item_id))
                 self.write_inventory_slot(existing)
                 result.updated += 1
                 continue
-
-            slot = next(empty, None)
-            if slot is None:
-                result.no_space += 1
+            if existing is not None and not multi_copy:
+                result.skipped_owned += 1
                 continue
 
             level = 0
             if upgradable:
                 level = min(int(upgrade), self.max_upgrade(item_id, category))
-                if level < int(upgrade):
-                    result.clamped += 1
+            effective = (
+                self._effective_infusion(item_id, int(infusion)) if multi_copy else 0
+            )
+
+            wanted = 1
+            if multi_copy:
+                wanted = max(0, int(quantity)) - variants[(item_id, level, effective)]
+                if wanted <= 0:
+                    result.skipped_owned += 1
+                    continue
 
             if stackable:
+                slot = next(empty, None)
+                if slot is None:
+                    result.no_space += 1
+                    continue
                 new_item = InventoryItem(
                     slot.offset,
                     item_id,
@@ -614,17 +719,47 @@ class Character:
                     min(int(quantity), self.max_stack(item_id)),
                     0,
                 )
-            elif durability is not None:
-                new_item = InventoryItem(
-                    slot.offset, item_id, 0, durability(item_id), level
-                )
-            else:
-                new_item = InventoryItem(slot.offset, item_id, 0, 1, 0)
+                self.write_inventory_slot(new_item)
+                owned[item_id] = new_item
+                result.added += 1
+                continue
 
-            self.write_inventory_slot(new_item)
-            owned[item_id] = new_item
-            result.added += 1
+            if durability is None:
+                slot = next(empty, None)
+                if slot is None:
+                    result.no_space += 1
+                    continue
+                new_item = InventoryItem(slot.offset, item_id, 0, 1, 0)
+                self.write_inventory_slot(new_item)
+                owned[item_id] = new_item
+                result.added += 1
+                continue
+
+            written = self._write_entries(
+                item_id, wanted, level, effective, empty, durability
+            )
+            result.added += len(written)
+            result.no_space += wanted - len(written)
+            if written:
+                variants[(item_id, level, effective)] += len(written)
+                owned.setdefault(item_id, written[0])
+                if upgradable and level < int(upgrade):
+                    result.clamped += 1
+                if multi_copy and effective != int(infusion):
+                    result.infusion_fallback += 1
         return result
+
+    def delete_entry(self, item: InventoryItem) -> bool:
+        """Zero the exact inventory slot of an entry, as opposed to delete_item
+        which removes the first slot holding the item id. Returns False if the
+        slot no longer holds that item."""
+        current = InventoryItem.from_bytes(self._data, item.offset)
+        if current.item_id != item.item_id:
+            return False
+        self._data[item.offset : item.offset + INVENTORY_SLOT_SIZE] = bytes(
+            INVENTORY_SLOT_SIZE
+        )
+        return True
 
     def delete_item(self, item_id: int, category: str) -> bool:
         """Zero out the first matching item slot in either list. Returns
