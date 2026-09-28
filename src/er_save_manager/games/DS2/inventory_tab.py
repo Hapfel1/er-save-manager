@@ -13,10 +13,13 @@ import customtkinter as ctk
 
 from er_save_manager.games.DS2.item_database import (
     CATEGORIES,
+    UNSAFE_IDS,
     _hex_id_to_int,
     build_item_db,
 )
 from er_save_manager.games.DS2.save import DS2Save
+from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.scrollable_frame import ScrollableFrame
 from er_save_manager.ui.utils import game_blocks_write
 
 
@@ -25,6 +28,11 @@ def _game_blocks_write(parent) -> bool:
 
 
 STACKABLE_CATEGORIES = ("goods", "bolts", "spells", "upgrade", "seamless")
+
+# The game stores Estus Flask count and flask level packed into one value, so
+# a plain quantity write would corrupt it.
+_ESTUS_FLASK_ID = 0x0395E478
+_MAX_STACK = 99
 
 # Internal category key -> display label. Kept separate so backend calls
 # (item_database lookups, Character.add_item/delete_item) always use the
@@ -41,6 +49,11 @@ CATEGORY_LABELS = {
     "seamless": "Seamless Co-op Items",
 }
 _DISPLAY_CATEGORIES = list(CATEGORY_LABELS.keys())
+
+# Requested height of the browser/inventory split. Without it the paned
+# window reports an unstable height and the surrounding scroll area never
+# settles; below this height the tab scrolls instead of clipping.
+_MIN_PANE_HEIGHT = 380
 
 # Categories that are only offered in the Add Item browser for .co2 saves.
 _SEAMLESS_CATEGORIES = frozenset({"seamless"})
@@ -81,7 +94,7 @@ class DS2InventoryPanel:
     # ------------------------------------------------------------------
 
     def setup_ui(self) -> None:
-        self.frame = ctk.CTkFrame(self.parent, fg_color="transparent")
+        self.frame = ScrollableFrame(self.parent, fg_color="transparent")
         self.frame.pack(fill="both", expand=True)
 
         pane = tk.PanedWindow(
@@ -90,6 +103,7 @@ class DS2InventoryPanel:
             sashwidth=6,
             sashrelief=tk.FLAT,
             bg="#2b2b2b",
+            height=_MIN_PANE_HEIGHT,
         )
         pane.pack(fill="both", expand=True, padx=4, pady=4)
 
@@ -294,6 +308,17 @@ class DS2InventoryPanel:
             return
 
         item_id = _hex_id_to_int(hex_id)
+        if item_id in UNSAFE_IDS and not CTkMessageBox.askyesno(
+            "Unsafe item",
+            f"{item_name} is flagged unsafe by the Dark Souls II cheat table "
+            "community: adding it can get an account soft-banned online.\n\n"
+            "Add it anyway?",
+            parent=self.parent,
+        ):
+            return
+        if category in STACKABLE_CATEGORIES and quantity > _MAX_STACK:
+            quantity = _MAX_STACK
+            self.show_toast(f"Quantity capped at {_MAX_STACK}", duration=2000)
         character = save.characters[self.get_slot_index()]
         added = character.add_item(item_id, category, quantity=quantity)
         if not added:
@@ -408,6 +433,12 @@ class DS2InventoryPanel:
 
         index = self._inventory_tree.index(selection[0])
         item, name, category = self._visible_items[index]
+        if item.item_id == _ESTUS_FLASK_ID:
+            self.show_toast(
+                "Estus Flask count is packed with its level; change it in game",
+                duration=3000,
+            )
+            return
         if category not in STACKABLE_CATEGORIES:
             self.show_toast(
                 "Quantity only applies to goods, bolts, spells, and upgrade materials",

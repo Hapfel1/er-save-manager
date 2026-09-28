@@ -8,6 +8,7 @@ import customtkinter as ctk
 
 from er_save_manager.games.DS2.inventory_tab import DS2InventoryPanel
 from er_save_manager.games.DS2.save import LEVEL_STAT_KEYS, NG_PLUS_MAX, DS2Save
+from er_save_manager.ui.scrollable_frame import ScrollableFrame
 from er_save_manager.ui.utils import game_blocks_write
 
 
@@ -81,7 +82,15 @@ class DS2EditorTab:
         self.refresh()
 
     def _build_stats_tab(self, parent) -> None:
-        fields = ctk.CTkFrame(parent, fg_color="transparent")
+        # Packed before the scroll area so it stays visible on short windows.
+        ctk.CTkButton(
+            parent, text="Apply Changes", command=self._apply_changes, height=34
+        ).pack(side="bottom", fill="x", padx=10, pady=10)
+
+        body = ScrollableFrame(parent, fg_color="transparent")
+        body.pack(fill="both", expand=True)
+
+        fields = ctk.CTkFrame(body, fg_color="transparent")
         fields.pack(fill="x", padx=10, pady=(10, 5))
 
         self.name_var = tk.StringVar()
@@ -108,7 +117,7 @@ class DS2EditorTab:
         self.hp_label = ctk.CTkLabel(fields, text="-", text_color=("gray40", "gray70"))
         self.hp_label.grid(row=3, column=1, sticky="w", padx=5, pady=3)
 
-        stats_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        stats_frame = ctk.CTkFrame(body, fg_color="transparent")
         stats_frame.pack(fill="x", padx=10, pady=5)
         ctk.CTkLabel(
             stats_frame, text="Level & Attributes", font=("Segoe UI", 12, "bold")
@@ -139,10 +148,6 @@ class DS2EditorTab:
                 row=2 + i // 3,
                 col=(i % 3) * 2,
             )
-
-        ctk.CTkButton(
-            parent, text="Apply Changes", command=self._apply_changes, height=34
-        ).pack(side="bottom", fill="x", padx=10, pady=10)
 
     def _add_field(self, parent, label, var, row, col=0):
         ctk.CTkLabel(parent, text=f"{label}:").grid(
