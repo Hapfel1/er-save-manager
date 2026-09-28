@@ -81,9 +81,14 @@ NAME_OFFSET = 960
 NAME_SIZE = 32
 SOULS_OFFSET = 60
 HP_OFFSET = 72
+# Stored 1-based: 1 is the first playthrough, 2 is NG+1, and so on.
+# Character.new_game_plus exposes the 0-based cycle.
 NG_OFFSET = 1028
 NG_PLUS_MAX = 7
 
+# Profile order of the attributes matches the game's class param rows:
+# vigor, endurance, vitality, attunement, strength, dexterity,
+# intelligence (0x2C), faith (0x2E), adaptability (0x30).
 STAT_OFFSETS = {
     "level": 0x38,
     "vigor": 32,
@@ -92,9 +97,9 @@ STAT_OFFSETS = {
     "vitality": 36,
     "strength": 40,
     "dexterity": 42,
-    "intelligence": 46,
-    "faith": 48,
-    "adaptability": 44,
+    "intelligence": 44,
+    "faith": 46,
+    "adaptability": 48,
 }
 
 LEVEL_STAT_KEYS = [k for k in STAT_OFFSETS if k != "level"]
@@ -307,11 +312,13 @@ class Character:
 
     @property
     def new_game_plus(self) -> int:
-        return struct.unpack_from("<H", self._data, NG_OFFSET)[0]
+        stored = struct.unpack_from("<H", self._data, NG_OFFSET)[0]
+        return max(0, stored - 1)
 
     @new_game_plus.setter
     def new_game_plus(self, value: int) -> None:
-        struct.pack_into("<H", self._data, NG_OFFSET, max(0, min(int(value), 0xFFFF)))
+        stored = int(value) + 1
+        struct.pack_into("<H", self._data, NG_OFFSET, max(1, min(stored, 0xFFFF)))
 
     def get_stat(self, stat_name: str) -> int:
         off = STAT_OFFSETS[stat_name]
@@ -339,12 +346,13 @@ class Character:
 
     STACKABLE_CATEGORIES = {"goods", "bolts", "spells", "upgrade", "seamless"}
 
-    # Default durability (float bit pattern) for new weapons, armor and rings
-    # when the inventory holds no item of the same category to copy it from.
+    # Fallback durability (float bit pattern) for new weapons, armor and rings
+    # when no owned item can be used as a reference. These are the lowest
+    # values seen on game-written items, so they never exceed an item's max.
     _DEFAULT_DURABILITY = {
-        "weapons": 0x42200000,
-        "armors": 0x437F0000,
-        "rings": 0x42F00000,
+        "weapons": 0x41F00000,  # 30.0
+        "armors": 0x420C0000,  # 35.0
+        "rings": 0x428C0000,  # 70.0
     }
 
     def _region(self, category: str) -> tuple[int, int]:
@@ -364,14 +372,21 @@ class Character:
                 return item
         return None
 
+    def _find_item_anywhere(self, item_id: int) -> InventoryItem | None:
+        """Find an item in either list, so entries written to the wrong list
+        by older versions can still be edited and removed."""
+        return self._find_item(item_id, INVENTORY_START, INVENTORY_END) or (
+            self._find_item(item_id, KEY_ITEMS_START, KEY_ITEMS_END)
+        )
+
     def add_item(
         self, item_id: int, category: str, quantity: int = 1, stack: bool = True
     ) -> bool:
-        """Add an item to inventory (or key items for category == "keys").
+        """Add an item to inventory (or the key item list for category "keys").
 
-        For stackable categories, increases an existing stack's quantity
-        unless stack=False forces a new slot. Returns False if there is no
-        empty slot available.
+        For stackable categories, sets an existing stack's quantity unless
+        stack=False forces a new slot. Returns False if there is no empty
+        slot available.
         """
         start, end = self._region(category)
         stackable = category in self.STACKABLE_CATEGORIES
@@ -392,41 +407,52 @@ class Character:
                 empty.offset, item_id, 0, min(int(quantity), 99), 0
             )
         elif category in self._DEFAULT_DURABILITY:
-            # unk_1 and unk_2 are 0 in game-written entries, so only the
-            # durability is copied from an existing item.
-            existing = self._find_item_by_category(category, start, end)
-            dur = (
-                existing.quantity
-                if existing is not None
-                else self._DEFAULT_DURABILITY[category]
+            # unk_1 and unk_2 are 0 in game-written entries.
+            new_item = InventoryItem(
+                empty.offset, item_id, 0, self._durability_for(item_id, category), 0
             )
-            new_item = InventoryItem(empty.offset, item_id, 0, dur, 0)
         else:
             new_item = InventoryItem(empty.offset, item_id, 0, 1, 0)
 
         self.write_inventory_slot(new_item)
         return True
 
-    def _find_item_by_category(
-        self, category: str, start: int, end: int
-    ) -> InventoryItem | None:
-        """Find any existing non-empty item of the category in the region,
-        used to copy a realistic durability for a brand new item."""
+    def _durability_for(self, item_id: int, category: str) -> int:
+        """Durability bit pattern for a new item.
+
+        Uses the highest durability of an owned copy of the same item (an
+        unused copy holds its max). Otherwise the lowest durability among
+        owned items of the category, so the value never exceeds the item's
+        max. Falls back to _DEFAULT_DURABILITY when nothing is owned.
+        """
         from er_save_manager.games.DS2.item_database import build_item_db
 
+        def as_float(bits: int) -> float:
+            return struct.unpack("<f", struct.pack("<I", bits))[0]
+
         db = build_item_db()
-        for item in parse_inventory(self._data, start, end):
+        same: list[int] = []
+        same_category: list[int] = []
+        for item in parse_inventory(self._data, INVENTORY_START, INVENTORY_END):
             if item.item_id == 0:
                 continue
             info = db.get(item.item_id)
-            if info and info[1] == category:
-                return item
-        return None
+            if not info or info[1] != category:
+                continue
+            same_category.append(item.quantity)
+            if item.item_id == item_id:
+                same.append(item.quantity)
+
+        if same:
+            return max(same, key=as_float)
+        if same_category:
+            return min(same_category, key=as_float)
+        return self._DEFAULT_DURABILITY[category]
 
     def delete_item(self, item_id: int, category: str) -> bool:
-        """Zero out the first matching item slot. Returns False if not found."""
-        start, end = self._region(category)
-        existing = self._find_item(item_id, start, end)
+        """Zero out the first matching item slot in either list. Returns
+        False if not found."""
+        existing = self._find_item_anywhere(item_id)
         if existing is None:
             return False
         self._data[existing.offset : existing.offset + INVENTORY_SLOT_SIZE] = bytes(
