@@ -10,7 +10,7 @@ import customtkinter as ctk
 
 from er_save_manager.data.grace_data import Grace, get_graces
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import force_render_dialog
+from er_save_manager.ui.utils import center_window, force_render_dialog
 
 _ALL = "All"
 _SCOPES = (_ALL, "Base Game", "DLC")
@@ -46,9 +46,7 @@ class GraceDialog:
         dialog.transient(parent)
         dialog.update_idletasks()
         parent.update_idletasks()
-        x = parent.winfo_rootx() + (parent.winfo_width() // 2) - (width // 2)
-        y = parent.winfo_rooty() + (parent.winfo_height() // 2) - (height // 2)
-        dialog.geometry(f"{width}x{height}+{x}+{y}")
+        center_window(dialog, width, height, parent=parent)
         dialog.resizable(True, True)
         force_render_dialog(dialog)
         dialog.grab_set()

@@ -11,7 +11,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, center_window
 
 
 class SteamIDPatcherTab:
@@ -504,11 +504,13 @@ class SteamIDPatcherTab:
                     try:
                         self.parent.after(
                             0,
-                            lambda: self._patch_btn.configure(
-                                state="normal", text="Patch SteamID"
-                            )
-                            if self._patch_btn
-                            else None,
+                            lambda: (
+                                self._patch_btn.configure(
+                                    state="normal", text="Patch SteamID"
+                                )
+                                if self._patch_btn
+                                else None
+                            ),
                         )
                     except Exception:
                         pass
@@ -727,7 +729,7 @@ class SteamIDPatcherTab:
         selected = [None]
         dialog = ctk.CTkToplevel(self.parent)
         dialog.title("Select Save File")
-        dialog.geometry("500x320")
+        center_window(dialog, 500, 320, parent=self.parent)
         dialog.resizable(False, False)
         force_render_dialog(dialog)
         dialog.grab_set()
@@ -931,7 +933,7 @@ class SteamIDPatcherTab:
 
         dialog = ctk.CTkToplevel(self.parent)
         dialog.title("Select Steam Account")
-        dialog.geometry("450x350")
+        center_window(dialog, 450, 350, parent=self.parent)
         dialog.resizable(False, False)
         force_render_dialog(dialog)
         dialog.lift()
@@ -986,13 +988,7 @@ class SteamIDPatcherTab:
         dialog.resizable(True, True)
         dialog.update_idletasks()
         self.parent.update_idletasks()
-        px = self.parent.winfo_rootx()
-        py = self.parent.winfo_rooty()
-        pw = self.parent.winfo_width()
-        ph = self.parent.winfo_height()
-        dialog.geometry(
-            f"{width}x{height}+{px + pw // 2 - width // 2}+{py + ph // 2 - height // 2}"
-        )
+        center_window(dialog, width, height, parent=self.parent)
         force_render_dialog(dialog)
         dialog.grab_set()
 

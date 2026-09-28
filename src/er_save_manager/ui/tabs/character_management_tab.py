@@ -11,7 +11,7 @@ import customtkinter as ctk
 from er_save_manager.platform import PlatformUtils
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, pick_file
+from er_save_manager.ui.utils import bind_mousewheel, center_window, pick_file
 
 
 class CharacterManagementTab:
@@ -757,7 +757,7 @@ class CharacterManagementTab:
 
         slot_dialog = ctk.CTkToplevel(self.parent)
         slot_dialog.title("Select Target Slot")
-        slot_dialog.geometry("520x220")
+        center_window(slot_dialog, 520, 220, parent=self.parent)
 
         # Force rendering on Linux before grab_set
         force_render_dialog(slot_dialog)

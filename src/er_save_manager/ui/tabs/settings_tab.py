@@ -9,7 +9,7 @@ import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.settings import get_settings
-from er_save_manager.ui.utils import bind_mousewheel, pick_file
+from er_save_manager.ui.utils import bind_mousewheel, center_window, pick_file
 
 
 class SettingsTab:
@@ -573,7 +573,7 @@ class SettingsTab:
                 selected = [None]
                 dlg = ctk.CTkToplevel(self.parent)
                 dlg.title(f"Select Save - {profile.name}")
-                dlg.geometry("620x400")
+                center_window(dlg, 620, 400, parent=self.parent)
                 dlg.resizable(True, True)
                 dlg.minsize(500, 300)
                 force_render_dialog(dlg)
@@ -771,11 +771,7 @@ class SettingsTab:
         popup.transient(root)
         popup.grab_set()
 
-        popup.update_idletasks()
-        w, h = 260, 130
-        rx = root.winfo_rootx() + (root.winfo_width() - w) // 2
-        ry = root.winfo_rooty() + (root.winfo_height() - h) // 2
-        popup.geometry(f"{w}x{h}+{rx}+{ry}")
+        center_window(popup, 260, 130, parent=root)
 
         ctk.CTkLabel(
             popup,

@@ -4,6 +4,8 @@ from importlib import resources
 
 import customtkinter as ctk
 
+from er_save_manager.ui.utils import center_window
+
 
 class SaveSelectorDialog:
     """Dialog for selecting from multiple save files using customtkinter."""
@@ -52,13 +54,7 @@ class SaveSelectorDialog:
         dialog.update_idletasks()
         # Center over parent window
         parent.update_idletasks()
-        parent_x = parent.winfo_rootx()
-        parent_y = parent.winfo_rooty()
-        parent_width = parent.winfo_width()
-        parent_height = parent.winfo_height()
-        x = parent_x + (parent_width // 2) - (width // 2)
-        y = parent_y + (parent_height // 2) - (height // 2)
-        dialog.geometry(f"{width}x{height}+{x}+{y}")
+        center_window(dialog, width, height, parent=parent)
 
         # Force rendering on Linux before grab_set
         force_render_dialog(dialog)

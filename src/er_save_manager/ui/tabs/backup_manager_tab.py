@@ -12,7 +12,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, center_window
 
 STAR_SIZE = 20
 STAR_COLOR_ON = "#e5b54a"
@@ -319,13 +319,7 @@ class BackupManagerTab:
             width, height = 900, 600
             dialog.update_idletasks()
             self.parent.update_idletasks()
-            px = self.parent.winfo_rootx()
-            py = self.parent.winfo_rooty()
-            pw = self.parent.winfo_width()
-            ph = self.parent.winfo_height()
-            dialog.geometry(
-                f"{width}x{height}+{px + pw // 2 - width // 2}+{py + ph // 2 - height // 2}"
-            )
+            center_window(dialog, width, height, parent=self.parent)
             force_render_dialog(dialog)
             dialog.grab_set()
             self._build_backup_dialog_content(dialog, manager, profile, save_path)
@@ -370,13 +364,7 @@ class BackupManagerTab:
             width, height = 900, 600
             dialog.update_idletasks()
             self.parent.update_idletasks()
-            px = self.parent.winfo_rootx()
-            py = self.parent.winfo_rooty()
-            pw = self.parent.winfo_width()
-            ph = self.parent.winfo_height()
-            dialog.geometry(
-                f"{width}x{height}+{px + pw // 2 - width // 2}+{py + ph // 2 - height // 2}"
-            )
+            center_window(dialog, width, height, parent=self.parent)
 
             force_render_dialog(dialog)
             dialog.grab_set()
@@ -583,16 +571,10 @@ class BackupManagerTab:
 
             pd = ctk.CTkToplevel(dialog)
             pd.title("Name Backup")
-            pd.geometry("440x190")
+            center_window(pd, 440, 190, parent=dialog)
             pd.transient(dialog)
             force_render_dialog(pd)
             pd.grab_set()
-
-            pd.update_idletasks()
-            dialog.update_idletasks()
-            px = dialog.winfo_rootx() + dialog.winfo_width() // 2 - 220
-            py = dialog.winfo_rooty() + dialog.winfo_height() // 2 - 95
-            pd.geometry(f"440x190+{px}+{py}")
 
             frame = ctk.CTkFrame(pd)
             frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
@@ -731,16 +713,10 @@ class BackupManagerTab:
 
             dd = ctk.CTkToplevel(dialog)
             dd.title("Backup Details")
-            dd.geometry("600x450")
+            center_window(dd, 600, 450, parent=dialog)
             dd.transient(dialog)
             force_render_dialog(dd)
             dd.grab_set()
-
-            dd.update_idletasks()
-            dialog.update_idletasks()
-            dx = dialog.winfo_rootx() + dialog.winfo_width() // 2 - 300
-            dy = dialog.winfo_rooty() + dialog.winfo_height() // 2 - 225
-            dd.geometry(f"600x450+{dx}+{dy}")
 
             main_frame = ctk.CTkFrame(dd)
             main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)

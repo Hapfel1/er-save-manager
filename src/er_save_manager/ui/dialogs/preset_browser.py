@@ -17,7 +17,12 @@ from er_save_manager.preset_manager import PresetManager
 from er_save_manager.preset_metrics import PresetMetrics
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.progress_dialog import ProgressDialog
-from er_save_manager.ui.utils import bind_mousewheel, open_url, trace_variable
+from er_save_manager.ui.utils import (
+    bind_mousewheel,
+    center_window,
+    open_url,
+    trace_variable,
+)
 
 try:
     from PIL import Image
@@ -59,7 +64,7 @@ class EnhancedPresetBrowser:
 
         self.dialog = ctk.CTkToplevel(self.parent)
         self.dialog.title("Community Appearance Presets")
-        self.dialog.geometry("1400x1000")
+        center_window(self.dialog, 1400, 1000, parent=self.parent)
         self.dialog.transient(self.parent)
 
         # Force rendering before grab_set to avoid "window not viewable" errors
@@ -564,7 +569,7 @@ class EnhancedPresetBrowser:
 
         dialog = ctk.CTkToplevel(self.dialog)
         dialog.title("Use This Link to Submit")
-        dialog.geometry("720x360")
+        center_window(dialog, 720, 360, parent=self.dialog)
         dialog.transient(self.dialog)
 
         # Force rendering on Linux before grab_set
@@ -1198,7 +1203,7 @@ class EnhancedPresetBrowser:
 
         report_dialog = ctk.CTkToplevel(self.dialog)
         report_dialog.title("Report Preset")
-        report_dialog.geometry("600x600")
+        center_window(report_dialog, 600, 600, parent=self.dialog)
         report_dialog.transient(self.dialog)
 
         # Force rendering on Linux before grab_set
@@ -1359,7 +1364,7 @@ class PresetBrowserDialog:
 
         dialog = ctk.CTkToplevel(parent)
         dialog.title("Community Character Presets")
-        dialog.geometry("600x480")
+        center_window(dialog, 600, 480, parent=parent)
         dialog.transient(parent)
 
         # Force rendering on Linux before grab_set

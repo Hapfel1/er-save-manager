@@ -45,7 +45,7 @@ from er_save_manager.ui.tabs import (
     WorldStateTab,
 )
 from er_save_manager.ui.theme import ThemeManager
-from er_save_manager.ui.utils import open_url, pick_file, trace_variable
+from er_save_manager.ui.utils import center_window, open_url, pick_file, trace_variable
 
 # Nightreign
 try:
@@ -190,6 +190,9 @@ class SaveManagerGUI:
         self._pending_file_change: bool = False
 
         self.setup_ui()
+
+        # Center after scaling is applied so the scaled size is used
+        center_window(self.root, 1200, 1000)
 
         # Apply theme colors to tk widgets (non-ttk)
         self.theme_manager.apply_tk_widget_colors(self.root)
@@ -388,21 +391,7 @@ class SaveManagerGUI:
         dialog.transient(self.root)
 
         force_render_dialog(dialog)
-
-        # Center dialog over parent window
-        dialog.update_idletasks()
-        parent_x = self.root.winfo_x()
-        parent_y = self.root.winfo_y()
-        parent_width = self.root.winfo_width()
-        parent_height = self.root.winfo_height()
-
-        dialog_width = 550
-        dialog_height = 320
-
-        x = parent_x + (parent_width - dialog_width) // 2
-        y = parent_y + (parent_height - dialog_height) // 2
-
-        dialog.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
+        center_window(dialog, 550, 320, parent=self.root)
 
         dialog.grab_set()
 
@@ -1442,15 +1431,7 @@ class SaveManagerGUI:
         dialog.transient(self.root)
 
         force_render_dialog(dialog)
-
-        dialog.update_idletasks()
-        parent_x = self.root.winfo_x()
-        parent_y = self.root.winfo_y()
-        parent_width = self.root.winfo_width()
-        parent_height = self.root.winfo_height()
-        dialog.geometry(
-            f"640x320+{parent_x + (parent_width - 640) // 2}+{parent_y + (parent_height - 320) // 2}"
-        )
+        center_window(dialog, 640, 320, parent=self.root)
 
         dialog.grab_set()
 
@@ -1610,8 +1591,8 @@ class SaveManagerGUI:
         game_name = profile.name if profile else "Elden Ring"
         dialog = tk.Toplevel(self.root)
         dialog.title("Save Location Warning")
-        dialog.geometry("550x500")
         dialog.transient(self.root)
+        center_window(dialog, 550, 500, parent=self.root)
 
         msg_frame = ttk.Frame(dialog, padding=20)
         msg_frame.pack(fill=tk.BOTH, expand=True)
@@ -2017,9 +1998,8 @@ class SaveManagerGUI:
             # Create custom dialog with "Don't show again" option
             warning_dialog = tk.Toplevel(self.root)
             warning_dialog.title("Warning - Vanilla Save File Detected")
-            warning_dialog.geometry("520x600")
             warning_dialog.transient(self.root)
-            warning_dialog.update_idletasks()
+            center_window(warning_dialog, 520, 600, parent=self.root)
             warning_dialog.grab_set()
 
             from er_save_manager.ui.utils import force_render_dialog
@@ -2616,10 +2596,7 @@ class SaveManagerGUI:
         dialog.transient(self.root)
         dialog.resizable(False, False)
 
-        dialog.update_idletasks()
-        px = self.root.winfo_x() + (self.root.winfo_width() - 440) // 2
-        py = self.root.winfo_y() + (self.root.winfo_height() - 250) // 2
-        dialog.geometry(f"440x250+{px}+{py}")
+        center_window(dialog, 440, 250, parent=self.root)
 
         main = ctk.CTkFrame(dialog, fg_color="transparent")
         main.pack(fill=ctk.BOTH, expand=True, padx=24, pady=24)

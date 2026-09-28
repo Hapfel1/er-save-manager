@@ -14,7 +14,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
-from er_save_manager.ui.utils import open_url
+from er_save_manager.ui.utils import center_window, open_url
 
 
 def submit_character_via_browser(
@@ -337,10 +337,7 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
     dialog.resizable(False, False)
 
     # Center on screen
-    dialog.update_idletasks()
-    x = (dialog.winfo_screenwidth() // 2) - (width // 2)
-    y = (dialog.winfo_screenheight() // 2) - (height // 2)
-    dialog.geometry(f"{width}x{height}+{x}+{y}")
+    center_window(dialog, width, height)
 
     # Make it stay on top
     dialog.attributes("-topmost", True)

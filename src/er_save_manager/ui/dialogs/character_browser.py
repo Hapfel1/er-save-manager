@@ -16,7 +16,12 @@ from er_save_manager.character_manager import CharacterManager
 from er_save_manager.character_metrics import CharacterMetrics
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.progress_dialog import ProgressDialog
-from er_save_manager.ui.utils import bind_mousewheel, open_url, trace_variable
+from er_save_manager.ui.utils import (
+    bind_mousewheel,
+    center_window,
+    open_url,
+    trace_variable,
+)
 
 try:
     from PIL import Image
@@ -59,7 +64,7 @@ class CharacterBrowser:
 
         self.dialog = ctk.CTkToplevel(self.parent)
         self.dialog.title("Community Character Library")
-        self.dialog.geometry("1400x1000")
+        center_window(self.dialog, 1400, 1000, parent=self.parent)
         self.dialog.transient(self.parent)
 
         # Force rendering before grab_set to avoid "window not viewable" errors
@@ -700,7 +705,7 @@ class CharacterBrowser:
 
         error_dialog = ctk.CTkToplevel(self.dialog)
         error_dialog.title("Use This Link to Submit")
-        error_dialog.geometry("720x360")
+        center_window(error_dialog, 720, 360, parent=self.dialog)
         error_dialog.transient(self.dialog)
 
         force_render_dialog(error_dialog)
@@ -1724,7 +1729,7 @@ class CharacterBrowser:
 
         report_dialog = ctk.CTkToplevel(self.dialog)
         report_dialog.title("Report Character")
-        report_dialog.geometry("600x600")
+        center_window(report_dialog, 600, 600, parent=self.dialog)
         report_dialog.transient(self.dialog)
 
         force_render_dialog(report_dialog)

@@ -13,7 +13,12 @@ import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.toast import show_toast
-from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_file
+from er_save_manager.ui.utils import (
+    bind_mousewheel,
+    center_window,
+    patch_combo_scroll,
+    pick_file,
+)
 
 _CAT_WEAPON = 0x00000000
 
@@ -97,22 +102,7 @@ def _lower_matchmaking_level(save_file, slot_idx: int, full_item_id: int) -> Non
 
 def _center_over(window, parent, w=None, h=None, *, top=False) -> None:
     """Center window over parent. Pass w/h explicitly to avoid pre-map size queries."""
-    import re as _re
-
-    if w is None:
-        window.update_idletasks()
-        w = window.winfo_reqwidth()
-    if h is None:
-        window.update_idletasks()
-        h = window.winfo_reqheight()
-    x = max(0, parent.winfo_rootx() + (parent.winfo_width() - w) // 2)
-    if top:
-        # wm_geometry gives the outer frame Y (includes titlebar) on all platforms
-        m = _re.search(r"\+(\-?\d+)\+(\-?\d+)$", parent.winfo_toplevel().wm_geometry())
-        y = int(m.group(2)) if m else parent.winfo_rooty()
-    else:
-        y = max(0, parent.winfo_rooty() + (parent.winfo_height() - h) // 2)
-    window.geometry(f"+{x}+{max(0, y)}")
+    center_window(window, w, h, parent=parent, align_top=top)
 
 
 def _ask_value(title: str, text: str, parent) -> str | None:
@@ -3788,7 +3778,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         self.geometry("750x550")
         self.resizable(True, True)
         self.minsize(650, 400)
-        _center_over(self, parent)
+        _center_over(self, parent, 750, 550)
         self.transient(parent)
         self.grab_set()
 
@@ -4120,7 +4110,6 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         dialog.title("Share Code")
         dialog.resizable(False, False)
         dialog.transient(self)
-        _center_over(dialog, self)
         dialog.grab_set()
 
         ctk.CTkLabel(dialog, text="Loadout shared", font=("Segoe UI", 13, "bold")).pack(
@@ -4155,6 +4144,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=100).pack(
             side="left", padx=5
         )
+        _center_over(dialog, self)
 
     def apply_loadout(self):
         if not self.editor.loadout:
