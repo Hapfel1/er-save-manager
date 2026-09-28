@@ -151,6 +151,16 @@ GOODS: dict[str, str] = {
     "Soul of Zallen, the King's Pet": "B0 90 D9 03",
     "Loyce Soul": "C0 B7 D9 03",
     "Soul of Lud, the King's Pet": "D0 DE D9 03",
+    "Hello Carving": "F0 B2 9A 03",
+    "Thank You Carving": "00 DA 9A 03",
+    "I'm Sorry Carving": "10 01 9B 03",
+    "Very Good! Carving": "20 28 9B 03",
+    "Rubbish": "30 4F 9B 03",
+    "Soul of Nadalia, Bride of Ash": "60 CD D8 03",
+    "Soul Vessel": "80 96 09 03",
+    "Scorching Iron Scepter": "E0 3D 2A 03",
+    "Smelter Wedge": "80 C4 2B 03",
+    "Soul of Nadalia": "20 4B 2D 03",
 }
 
 RINGS: dict[str, str] = {
@@ -277,6 +287,7 @@ RINGS: dict[str, str] = {
     "Ring of the Embedded": "F0 49 73 02",
     "Ring of the Living": "00 71 73 02",
     "Yorgh's Ring": "10 98 73 02",
+    "Agape Ring": "80 DE 80 02",
 }
 
 WEAPONS: dict[str, str] = {
@@ -341,7 +352,7 @@ WEAPONS: dict[str, str] = {
     "Bastard Sword": "40 77 1B 00",
     "Flamberge": "50 9E 1B 00",
     "Claymore": "60 C5 1B 00",
-    "Majestic Greatsword": "58 F0 1B 00",
+    "Majestic Greatsword (UNSAFE)": "58 F0 1B 00",
     "Drangleic Sword": "90 3A 1C 00",
     "Thorned Greatsword": "A0 61 1C 00",
     "Bluemoon Greatsword": "B0 88 1C 00",
@@ -434,7 +445,7 @@ WEAPONS: dict[str, str] = {
     "Scythe": "10 FB 30 00",
     "Halberd": "20 22 31 00",
     "Helix Halberd": "40 70 31 00",
-    "Santier's Spear": "38 9B 31 00",
+    "Santier's Spear - Broken (UNSAFE)": "38 9B 31 00",
     "Mastodon Halberd": "70 E5 31 00",
     "Blue Knight's Halberd": "80 0C 32 00",
     "Dragonrider's Halberd": "90 33 32 00",
@@ -510,7 +521,7 @@ WEAPONS: dict[str, str] = {
     "Greatsword": "90 7F 4F 00",
     "Smelter Sword": "A0 A6 4F 00",
     "Aged Smelter Sword": "28 BA 4F 00",
-    "♥♥♥♥♥♥♥♥♥ Ultra Greatsword": "B0 CD 4F 00",
+    "Drakewing Ultra Greatsword": "B0 CD 4F 00",
     "King's Ultra Greatsword": "C0 F4 4F 00",
     "Fume Ultra Greatsword": "D0 1B 50 00",
     "Ivory King Ultra Greatsword": "58 2F 50 00",
@@ -608,6 +619,8 @@ WEAPONS: dict[str, str] = {
     "Bound Wooden Shield": "E0 5B B4 00",
     "Homunculus Wooden Shield": "F0 82 B4 00",
     "Transgressor's Leather Shield": "00 AA B4 00",
+    "Majestic Greatsword": "70 EC 1B 00",
+    "Santier's Spear": "50 97 31 00",
 }
 
 ARMORS: dict[str, str] = {
@@ -1044,6 +1057,12 @@ ARMORS: dict[str, str] = {
     "Leggings of the Forlorn": "C7 12 9B 01",
     "Greatsword of the Forlorn": "C8 78 1E 00",
     "Scythe of the Forlorn": "40 FF 2E 00",
+    "Helm of Aurous (variant)": "E4 ED 45 01",
+    "Armor of Aurous (variant)": "E5 ED 45 01",
+    "Gauntlets of Aurous (variant)": "E6 ED 45 01",
+    "Leggings of Aurous (variant)": "E7 ED 45 01",
+    "Prisoner's Hood (variant)": "7C D4 53 01",
+    "Prisoner's Tatters (variant)": "7D D4 53 01",
 }
 
 KEY_ITEMS: dict[str, str] = {
@@ -1069,7 +1088,6 @@ KEY_ITEMS: dict[str, str] = {
     "Tseldora Den Key": "50 21 09 03",
     "Champion's Tablet": "60 48 09 03",
     "Ladder Miniature": "70 6F 09 03",
-    "Soul Vessel": "80 96 09 03",
     "Undead Lockaway Key": "90 BD 09 03",
     "Dull Ember": "B0 0B 0A 03",
     "Crushed Eye Orb": "C0 32 0A 03",
@@ -1267,6 +1285,22 @@ CATEGORIES: dict[str, dict[str, str]] = {
     "upgrade": UPGRADE_MATERIALS,
     "seamless": SEAMLESS_ITEMS,
 }
+
+
+# Item ids the Bob Edition cheat table flags "(UNSAFE)" in its spawn list.
+# Spawning them is a known soft-ban risk online.
+UNSAFE_IDS: frozenset[int] = frozenset(
+    {
+        0x0395E478,  # Estus Flask
+        0x03990540,  # Darksign
+        0x03B47C80,  # Black Separation Crystal
+        0x030A32C0,  # Crushed Eye Orb
+        0x001BF058,  # Majestic Greatsword (UNSAFE variant)
+        0x00319B38,  # Santier's Spear - Broken
+        60405010,  # Dragon Head Stone (UNSAFE variant)
+        60406010,  # Dragon Torso Stone (UNSAFE variant)
+    }
+)
 
 
 def _hex_id_to_int(hex_str: str) -> int | None:
