@@ -470,6 +470,15 @@ class Character:
                 return item
         return None
 
+    def free_slots(self, category: str) -> int:
+        """Number of empty slots in the list a category is stored in."""
+        start, end = self._region(category)
+        return sum(
+            1
+            for offset in range(start, end, INVENTORY_SLOT_SIZE)
+            if struct.unpack_from("<I", self._data, offset)[0] == 0
+        )
+
     def _find_item(self, item_id: int, start: int, end: int) -> InventoryItem | None:
         for item in parse_inventory(self._data, start, end):
             if item.item_id == item_id:
