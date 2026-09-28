@@ -73,6 +73,10 @@ def _patch_checksum(dec: bytearray) -> None:
 
 def _find_steam_section(dec: bytearray) -> list[int]:
     """Return list of offsets where 'Steam' section with 8-byte data is found."""
+    # A match needs the literal ASCII name, so buffers without it (every entry
+    # of a non-AC6 save) skip the byte-by-byte loop below.
+    if b"Steam" not in dec:
+        return []
     offsets = []
     i = 0
     while i < len(dec) - _SECTION_STRING_SIZE:

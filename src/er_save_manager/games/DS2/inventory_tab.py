@@ -310,8 +310,8 @@ class DS2InventoryPanel:
         item_id = _hex_id_to_int(hex_id)
         if item_id in UNSAFE_IDS and not CTkMessageBox.askyesno(
             "Unsafe item",
-            f"{item_name} is flagged unsafe by the Dark Souls II cheat table "
-            "community: adding it can get an account soft-banned online.\n\n"
+            f"{item_name} is flagged unsafe.\n\n"
+            "Adding it can get an account soft-banned online.\n\n"
             "Add it anyway?",
             parent=self.parent,
         ):

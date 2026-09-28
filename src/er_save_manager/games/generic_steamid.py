@@ -48,23 +48,29 @@ def _is_valid_steam64(value: int) -> bool:
     return _STEAM64_BASE <= value <= _STEAM64_MAX
 
 
+# Every valid Steam64 value has this 4-byte little-endian upper half, so the
+# scan only needs a C-speed byte search instead of unpacking every offset.
+_STEAM64_HIGH = struct.pack("<I", _STEAM64_BASE >> 32)
+
+
 def find_steamids_in_file(data: bytes | bytearray) -> dict[int, list[int]]:
     """
     Scan file bytes for all occurrences of valid Steam64 IDs.
 
-    Returns a dict mapping steamid -> list[offset].
+    Returns a dict mapping steamid -> list[offset]. Offsets are unaligned
+    and matches do not overlap.
     """
     found: dict[int, list[int]] = {}
     search = bytes(data)
-    i = 0
-    end = len(search) - 8  # need 8 bytes starting at i, so last valid i = len-8
-    while i <= end:
-        val = struct.unpack_from("<Q", search, i)[0]
-        if _is_valid_steam64(val):
-            found.setdefault(val, []).append(i)
-            i += 8  # Skip past this match
-        else:
-            i += 1
+    next_free = 0
+    pos = search.find(_STEAM64_HIGH, 4)
+    while pos != -1:
+        start = pos - 4
+        if start >= next_free:
+            val = struct.unpack_from("<Q", search, start)[0]
+            found.setdefault(val, []).append(start)
+            next_free = start + 8
+        pos = search.find(_STEAM64_HIGH, pos + 1)
     return found
 
 
