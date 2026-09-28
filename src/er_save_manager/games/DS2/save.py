@@ -155,10 +155,31 @@ _BONFIRE_PLAUSIBLE_LEVEL = 99
 # stored level keeps counting up to 99.
 BONFIRE_MAX_LEVEL = 8
 
+# Two more structures sit at fixed distances from the first bonfire id array in
+# the same entry, so they are found through it. Every slot with bonfire data
+# has them at these distances.
+# - The last rested bonfire is a u32 id, _LAST_RESTED_AFTER_IDS bytes after the
+#   id array. It held a valid bonfire id in all four saved characters checked
+#   and nowhere else in the entry did.
+# - The NPC flag object starts _NPC_FLAGS_BEFORE_IDS bytes before the id array.
+#   Killing an NPC changed exactly that NPC's two flag bytes in the layout the
+#   cheat tables describe.
 _LAST_RESTED_AFTER_IDS = 0xC04
 _NPC_FLAGS_BEFORE_IDS = 0x15A0
 # Each entry names the bytes killing that NPC writes, which are zero
 # otherwise, as (offset from the first bonfire id array, length in bytes).
+# Blacksmith Lenigrast's full record is confirmed by two separate kills
+# matching the game's own rewritten save byte for byte. Emerald Herald and
+# Merchant Hag Melentia, Laddersmith Gilligan, Housekeeper Milibeth, Strowen and
+# Darkdiver Grandahl, Lonesome Gavlan and Saulden each have only a single-byte
+# marker, confirmed for Herald, Melentia and Gavlan by two separate kills
+# each, for Strowen by four, and for Gilligan, Milibeth, Grandahl and Saulden
+# by one kill checked against every other sample on hand. 0 while alive, 1 once killed, and 0 in every sample
+# without that kill, including a scan of the 64 bytes around each one. A first
+# attempt also listed a larger record for Herald and one for Melentia, both
+# drawn from a single kill each in a region that holds a large volatile buffer
+# that changes by tens of thousands of bytes on ordinary play with no kill
+# involved; those were false positives and are not listed.
 _NPC_KILL_RECORDS: dict[str, tuple[tuple[int, int], ...]] = {
     "Blacksmith Lenigrast": (
         (-0x27576, 1),
@@ -180,24 +201,10 @@ _NPC_KILL_RECORDS: dict[str, tuple[tuple[int, int], ...]] = {
     "Saulden, the Crestfallen Warrior": ((-0x27582, 1),),
     "Creighton the Wanderer": ((-0x21D08, 1),),
     "Benhart of Jugo": ((-0x129A8, 1),),
-    "Maughlin the Armourer": ((-0x27580, 1),),
-    "Royal Sorcerer Navlaan": ((-0x13FC6, 1),),
-    "Magerold of Lanafir": ((-0x23326, 1),),
-    "Cromwell the Pardoner": ((-0x25F60, 1),),
-    "The Rat King": ((-0x1E5B8, 1),),
-    "Manscorpion Tark": ((-0x1F0C0, 1),),
-    "Blue Sentinel Targray": ((-0x1FBD6, 1),),
-    "Mild Mannered Pate": ((-0x23E38, 1),),
-    "Rosabeth of Melfia": ((-0x129A4, 1),),
-    "Stone Trader Chloanne": ((-0x129A4, 1),),
-    "Titchy Gren": ((-0x21D04, 1),),
-    "Weaponsmith Ornifex": ((-0x21D04, 1),),
-    "Steady Hand McDuff": ((-0x25451, 1),),
-    "Carhillion of the Fold": ((-0x23E36, 1),),
-    "Straid of Olaphis": ((-0x25452, 1),),
-    "Felkin the Outcast": ((-0x21D06, 1),),
 }
-
+# The byte after Lenigrast's last entry held 0 before his kill and 3 after it,
+# but holds other values in slots without that kill, so it is cleared only
+# together with a present record.
 _LENIGRAST_RECORD_TAIL = (0x11A8, 1)
 
 # Occupancy entry (entry 0) layout: fixed stride per character slot.
@@ -756,12 +763,12 @@ class Character:
         """Add an item to inventory (or the key item list for the categories in
         KEY_LIST_CATEGORIES).
 
-        For stackable categories, sets an existing stack's quantity unless
+        For stackable categories, adds to an existing stack's quantity unless
         stack=False forces a new slot. Returns False if there is no empty
         slot available or the item is in a unique category and already owned.
-        quantity is capped at the item's stack limit and upgrade at its maximum
-        level. A weapon infusion the weapon does not allow is written as 0.
-        Adds one entry, see add_copies for several.
+        The resulting quantity is capped at the item's stack limit, and
+        upgrade at its maximum level. A weapon infusion the weapon does not
+        allow is written as 0. Adds one entry, see add_copies for several.
         """
         if category in UNIQUE_CATEGORIES and self.owns(item_id):
             return False
@@ -771,7 +778,9 @@ class Character:
         if stackable and stack:
             existing = self._find_item(item_id, start, end)
             if existing is not None:
-                existing.quantity = min(int(quantity), self.max_stack(item_id))
+                existing.quantity = min(
+                    existing.quantity + int(quantity), self.max_stack(item_id)
+                )
                 self.write_inventory_slot(existing)
                 return True
 
@@ -952,7 +961,9 @@ class Character:
         for item_id in item_ids:
             existing = owned.get(item_id)
             if existing is not None and stackable:
-                existing.quantity = min(int(quantity), self.max_stack(item_id))
+                existing.quantity = min(
+                    existing.quantity + int(quantity), self.max_stack(item_id)
+                )
                 self.write_inventory_slot(existing)
                 result.updated += 1
                 continue
