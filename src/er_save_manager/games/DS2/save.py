@@ -64,6 +64,8 @@ from pathlib import Path
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
+from er_save_manager.games.DS2.bonfire_database import BONFIRES
+from er_save_manager.games.DS2.npc_database import NPCS, NpcEntry
 from er_save_manager.games.DS2.regulation import Regulation
 
 DS2_KEY = bytes.fromhex("599f9b699640a55236ee2d70835ec744")
@@ -139,6 +141,36 @@ KEY_ITEMS_END = 0x11DF0
 FLAG_REGION_START = 0x11E00
 FLAG_REGION_END = 0x1B2FC
 
+# Bonfire state in a slot's large entry. An array of ascending u16 ids, one per
+# bonfire in BONFIRES, is followed by one level byte per id. The level array
+# starts _BONFIRE_ID_CAPACITY ids after the id array, which is 0x200 bytes at
+# two bytes per id. A level is 0 when unlit and 1 when lit, and grows when
+# Bonfire Ascetics are used. Saves hold up to two copies of the pair, and a
+# slot can lack the second. Both were rewritten when the game lit every bonfire
+# on one slot, so every copy found is updated.
+_BONFIRE_ID_CAPACITY = 256
+# The stored level stops at 99, so a larger byte marks a copy as unreadable.
+_BONFIRE_PLAUSIBLE_LEVEL = 99
+# Highest level the editor writes. Difficulty stops rising at level 8 while the
+# stored level keeps counting up to 99.
+BONFIRE_MAX_LEVEL = 8
+_LAST_RESTED_AFTER_IDS = 0xC04
+_NPC_FLAGS_BEFORE_IDS = 0x15A0
+_NPC_KILL_RECORD = (
+    (-0x27576, 1),
+    (-0x27440, 4),
+    (-0x27040, 2),
+    (-0x2703D, 1),
+    (-0x5B8, 2),
+    (0x5A94, 2),
+    (0x119C, 6),
+    (0x11A4, 4),
+)
+# The byte after the last span held 0 before the kill and 3 after it, but holds
+# other values in slots that never had a kill, so it is cleared only together
+# with a present record.
+_NPC_KILL_RECORD_TAIL = (0x11A8, 1)
+
 # Occupancy entry (entry 0) layout: fixed stride per character slot.
 _OCC_STRIDE = 496
 _OCC_FLAG_OFFSET = 892
@@ -148,6 +180,198 @@ _OCC_NAME_SIZE = 28
 CHARACTER_SELECT_ENTRY = 22
 _SELECT_NAME_OFFSET = 442
 _SELECT_NAME_SIZE = 28
+
+
+class Bonfires:
+    """View over the bonfire levels in one slot's large entry.
+
+    The id arrays are found by their content rather than by a fixed offset. A
+    copy whose level bytes are implausible is ignored, so unreadable slot data
+    yields no blocks.
+    """
+
+    def __init__(self, data: bytearray) -> None:
+        self._data = data
+        self._ids = list(BONFIRES)
+        pattern = struct.pack(f"<{len(self._ids)}H", *self._ids)
+        self._id_offsets: list[int] = []
+        self._level_offsets: list[int] = []
+        content = bytes(data)
+        start = 0
+        while (found := content.find(pattern, start)) != -1:
+            levels = found + _BONFIRE_ID_CAPACITY * 2
+            end = levels + len(self._ids)
+            if end <= len(data) and max(data[levels:end]) <= _BONFIRE_PLAUSIBLE_LEVEL:
+                self._id_offsets.append(found)
+                self._level_offsets.append(levels)
+            start = found + len(pattern)
+
+    @property
+    def found(self) -> bool:
+        return bool(self._level_offsets)
+
+    @property
+    def anchor(self) -> int:
+        """Offset of the first bonfire id array, the reference point for the
+        other structures stored beside it."""
+        return self._id_offsets[0]
+
+    def levels(self) -> dict[int, int]:
+        """Bonfire id to level, read from the first copy."""
+        base = self._level_offsets[0]
+        return {
+            bonfire_id: self._data[base + index]
+            for index, bonfire_id in enumerate(self._ids)
+        }
+
+    @property
+    def last_rested(self) -> int | None:
+        """Id of the bonfire the character last rested at, or None when the
+        stored value is not a known bonfire."""
+        offset = self.anchor + _LAST_RESTED_AFTER_IDS
+        if offset + 4 > len(self._data):
+            return None
+        value = struct.unpack_from("<I", self._data, offset)[0]
+        return value if value in BONFIRES else None
+
+    def set_lit(self, bonfire_ids: Iterable[int], lit: bool) -> int:
+        """Light or unlight bonfires in every copy and return how many changed
+        in the first copy. Lighting keeps levels above 0. Unlighting resets the
+        level to 0 and never touches the last rested bonfire, since the game
+        loads the character there."""
+        wanted = {b for b in bonfire_ids if b in BONFIRES}
+        if not lit:
+            wanted.discard(self.last_rested)
+        changed = 0
+        for copy, base in enumerate(self._level_offsets):
+            for index, bonfire_id in enumerate(self._ids):
+                if bonfire_id not in wanted:
+                    continue
+                current = self._data[base + index]
+                if lit and current == 0:
+                    self._data[base + index] = 1
+                elif not lit and current != 0:
+                    self._data[base + index] = 0
+                else:
+                    continue
+                if copy == 0:
+                    changed += 1
+        return changed
+
+    def set_level(self, bonfire_ids: Iterable[int], level: int) -> int:
+        """Set the level of bonfires in every copy and return how many changed
+        in the first copy. A level of 1 or more lights an unlit bonfire. Raises
+        ValueError outside 1 to BONFIRE_MAX_LEVEL, since level 0 is unlighting,
+        which set_lit handles."""
+        if not 1 <= level <= BONFIRE_MAX_LEVEL:
+            raise ValueError(f"Bonfire level must be 1 to {BONFIRE_MAX_LEVEL}")
+        wanted = {b for b in bonfire_ids if b in BONFIRES}
+        changed = 0
+        for copy, base in enumerate(self._level_offsets):
+            for index, bonfire_id in enumerate(self._ids):
+                if bonfire_id not in wanted or self._data[base + index] == level:
+                    continue
+                self._data[base + index] = level
+                if copy == 0:
+                    changed += 1
+        return changed
+
+    def unlock_all(self) -> int:
+        """Light every unlit bonfire in every copy and return how many bonfires
+        were newly lit in the first copy. Levels above 0 are kept."""
+        return self.set_lit(self._ids, True)
+
+
+@dataclass
+class NpcState:
+    entry: NpcEntry
+    hostile: bool
+    dead: bool
+
+
+class NpcStates:
+    """View over the NPC hostile and dead flags in one slot's large entry.
+
+    A flag byte is 0 while clear and holds bits once set, so a flag counts as
+    set when its byte is non-zero. Reviving clears both flags of an NPC and the
+    kill record, which is the state before the kill. Calming clears the hostile
+    flag only.
+    """
+
+    def __init__(self, data: bytearray, base: int, anchor: int) -> None:
+        self._data = data
+        self._base = base
+        self._anchor = anchor
+
+    def states(self) -> list[NpcState]:
+        result = []
+        for entry in NPCS:
+            hostile = entry.hostile is not None and bool(
+                self._data[self._base + entry.hostile]
+            )
+            dead = entry.dead is not None and bool(self._data[self._base + entry.dead])
+            result.append(NpcState(entry, hostile, dead))
+        return result
+
+    def _record_spans(self) -> list[tuple[int, int]]:
+        return [
+            (self._anchor + offset, length)
+            for offset, length in _NPC_KILL_RECORD
+            if self._anchor + offset >= 0
+            and self._anchor + offset + length <= len(self._data)
+        ]
+
+    @property
+    def kill_record_present(self) -> bool:
+        """True when a kill left values in the kill record."""
+        return any(any(self._data[o : o + n]) for o, n in self._record_spans())
+
+    def clear_kill_record(self) -> bool:
+        """Zero the kill record and return whether it held anything. Nothing is
+        written when the record is empty."""
+        if not self.kill_record_present:
+            return False
+        for offset, length in self._record_spans():
+            self._data[offset : offset + length] = bytes(length)
+        tail = self._anchor + _NPC_KILL_RECORD_TAIL[0]
+        if tail < len(self._data):
+            self._data[tail] = 0
+        return True
+
+    def _clear(self, names: Iterable[str], hostile: bool, dead: bool) -> int:
+        wanted = set(names)
+        changed = 0
+        for entry in NPCS:
+            if entry.name not in wanted:
+                continue
+            offsets = []
+            if hostile and entry.hostile is not None:
+                offsets.append(entry.hostile)
+            if dead and entry.dead is not None:
+                offsets.append(entry.dead)
+            touched = False
+            for offset in offsets:
+                if self._data[self._base + offset]:
+                    self._data[self._base + offset] = 0
+                    touched = True
+            changed += touched
+        return changed
+
+    def revive(self, names: Iterable[str]) -> int:
+        """Clear the dead and hostile flags of the named NPCs and the kill
+        record, and return how many NPCs changed. The kill record is not tied
+        to one NPC, so a revive clears it even for an NPC whose flags were
+        already clear."""
+        names = list(names)
+        changed = self._clear(names, hostile=True, dead=True)
+        if names:
+            self.clear_kill_record()
+        return changed
+
+    def calm(self, names: Iterable[str]) -> int:
+        """Clear the hostile flag of the named NPCs and return how many
+        changed."""
+        return self._clear(names, hostile=True, dead=False)
 
 
 class SlotState(Enum):
@@ -888,6 +1112,24 @@ class DS2Save:
         if flag_off >= len(occ_data):
             return False
         return occ_data[flag_off] != 0
+
+    def bonfires(self, slot_index: int) -> Bonfires | None:
+        """The slot's bonfire levels, or None when the slot holds none."""
+        view = Bonfires(self.container.get_entry(BIG_ENTRY_START + slot_index))
+        return view if view.found else None
+
+    def npcs(self, slot_index: int) -> NpcStates | None:
+        """The slot's NPC flags, or None when the slot holds no bonfire data to
+        locate them from."""
+        data = self.container.get_entry(BIG_ENTRY_START + slot_index)
+        view = Bonfires(data)
+        if not view.found:
+            return None
+        base = view.anchor - _NPC_FLAGS_BEFORE_IDS
+        top = max(o for e in NPCS for o in (e.hostile, e.dead) if o is not None)
+        if base < 0 or base + top >= len(data):
+            return None
+        return NpcStates(data, base, view.anchor)
 
     def slot_state(self, slot_index: int) -> SlotState:
         """Classify a slot.

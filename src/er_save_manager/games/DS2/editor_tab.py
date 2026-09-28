@@ -6,7 +6,9 @@ import tkinter as tk
 
 import customtkinter as ctk
 
+from er_save_manager.games.DS2.bonfire_tab import DS2BonfirePanel
 from er_save_manager.games.DS2.inventory_tab import DS2InventoryPanel
+from er_save_manager.games.DS2.npc_tab import DS2NpcPanel
 from er_save_manager.games.DS2.save import (
     CHARACTER_SLOTS,
     LEVEL_STAT_KEYS,
@@ -39,6 +41,8 @@ class DS2EditorTab:
         self._slot_index = 0
         self._stat_vars: dict[str, tk.StringVar] = {}
         self.inventory_panel: DS2InventoryPanel | None = None
+        self.bonfire_panel: DS2BonfirePanel | None = None
+        self.npc_panel: DS2NpcPanel | None = None
 
         self._baseline_stats: dict[str, int] = {}
         self._baseline_level: int = 0
@@ -73,6 +77,8 @@ class DS2EditorTab:
         self.tabview.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         self.tabview.add("Stats")
         self.tabview.add("Inventory")
+        self.tabview.add("Bonfires")
+        self.tabview.add("NPCs")
 
         self._build_stats_tab(self.tabview.tab("Stats"))
 
@@ -84,6 +90,24 @@ class DS2EditorTab:
             show_toast=self.show_toast,
         )
         self.inventory_panel.setup_ui()
+
+        self.bonfire_panel = DS2BonfirePanel(
+            self.tabview.tab("Bonfires"),
+            get_save=self.get_save,
+            get_slot_index=lambda: self._slot_index,
+            get_save_path=self.get_save_path,
+            show_toast=self.show_toast,
+        )
+        self.bonfire_panel.setup_ui()
+
+        self.npc_panel = DS2NpcPanel(
+            self.tabview.tab("NPCs"),
+            get_save=self.get_save,
+            get_slot_index=lambda: self._slot_index,
+            get_save_path=self.get_save_path,
+            show_toast=self.show_toast,
+        )
+        self.npc_panel.setup_ui()
 
         self.refresh()
 
@@ -294,6 +318,10 @@ class DS2EditorTab:
 
         if self.inventory_panel is not None:
             self.inventory_panel.refresh()
+        if self.bonfire_panel is not None:
+            self.bonfire_panel.refresh()
+        if self.npc_panel is not None:
+            self.npc_panel.refresh()
 
     def _apply_changes(self) -> None:
         if _game_blocks_write(self.parent):
