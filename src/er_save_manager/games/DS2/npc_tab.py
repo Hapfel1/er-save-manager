@@ -21,7 +21,9 @@ def _game_blocks_write(parent) -> bool:
 def _state_text(state: NpcState) -> str:
     if state.dead:
         return "Dead"
-    return "Hostile" if state.hostile else "Alive"
+    if state.hostile:
+        return "Hostile"
+    return "Alive (hostility not tracked)" if state.entry.hostile is None else "Alive"
 
 
 class DS2NpcPanel:
@@ -61,25 +63,18 @@ class DS2NpcPanel:
         self._calm_button = ctk.CTkButton(
             buttons, text="Calm Selected", command=self._on_calm, height=32
         )
-        self._calm_button.pack(side="left", fill="x", expand=True, padx=3)
-        self._record_button = ctk.CTkButton(
-            buttons,
-            text="Clear Kill Record",
-            command=self._on_clear_record,
-            height=32,
-        )
-        self._record_button.pack(side="left", fill="x", expand=True, padx=(3, 0))
+        self._calm_button.pack(side="left", fill="x", expand=True, padx=(3, 0))
 
         ctk.CTkLabel(
             self.parent,
             text=(
-                "Revive clears the dead and hostile flags and the kill record. "
-                "Calm clears the hostile flag only. A kill leaves a record that "
-                "keeps an NPC dead even with his flags cleared. Ctrl or "
-                "Shift+click selects several."
+                "Revive clears the documented dead and hostile flags. Calm clears the "
+                "hostile flag only. Ctrl or Shift+click selects several."
             ),
             text_color=("gray40", "gray60"),
             font=("Segoe UI", 11),
+            wraplength=900,
+            justify="left",
         ).pack(side="bottom", anchor="w", padx=10)
 
         self._tree = ttk.Treeview(
@@ -97,7 +92,6 @@ class DS2NpcPanel:
         self._tree.bind("<<TreeviewSelect>>", lambda _e: self._update_buttons())
 
         self._states: list[NpcState] = []
-        self._record_present = False
         self._has_character = False
         self.refresh()
 
@@ -107,7 +101,6 @@ class DS2NpcPanel:
         npcs = save.npcs(self.get_slot_index()) if save is not None else None
 
         self._states = []
-        self._record_present = False
         if npcs is None:
             self._summary_label.configure(text="No NPC data in this slot")
             self._update_buttons()
@@ -116,12 +109,8 @@ class DS2NpcPanel:
         self._states = npcs.states()
         for state in self._states:
             self._tree.insert("", "end", values=(state.entry.name, _state_text(state)))
-        self._record_present = npcs.kill_record_present
         gone = sum(1 for s in self._states if s.dead or s.hostile)
-        text = f"{gone} hostile or dead"
-        if self._record_present:
-            text += ", kill record present"
-        self._summary_label.configure(text=text)
+        self._summary_label.configure(text=f"{gone} hostile or dead")
 
         self._has_character = (
             save.slot_state(self.get_slot_index()) is SlotState.CHARACTER
@@ -139,7 +128,6 @@ class DS2NpcPanel:
         for button, enabled in (
             (self._revive_button, can_revive),
             (self._calm_button, can_calm),
-            (self._record_button, self._record_present),
         ):
             button.configure(
                 state="normal" if enabled and self._has_character else "disabled"
@@ -179,7 +167,8 @@ class DS2NpcPanel:
         self._apply(
             "Revive NPCs",
             f"Revive {len(names)} selected NPCs?\n\n"
-            "This also clears the kill record. A backup is made first.",
+            "A backup is made first. In game, rest at a bonfire for the NPC to "
+            "return.",
             "revive_npcs",
             lambda npcs: npcs.revive(names),
         )
@@ -191,20 +180,6 @@ class DS2NpcPanel:
             f"Calm {len(names)} selected NPCs?\n\nA backup is made first.",
             "calm_npcs",
             lambda npcs: npcs.calm(names),
-        )
-
-    def _on_clear_record(self) -> None:
-        def clear(npcs) -> int:
-            npcs.clear_kill_record()
-            return 0
-
-        self._apply(
-            "Clear kill record",
-            "Clear the kill record in this slot?\n\n"
-            "An NPC killed earlier whose flags were already cleared should come "
-            "back. A backup is made first.",
-            "clear_kill_record",
-            clear,
         )
 
     def _backup(self, save_path, description: str, operation: str) -> None:

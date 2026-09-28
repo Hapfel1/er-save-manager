@@ -154,22 +154,51 @@ _BONFIRE_PLAUSIBLE_LEVEL = 99
 # Highest level the editor writes. Difficulty stops rising at level 8 while the
 # stored level keeps counting up to 99.
 BONFIRE_MAX_LEVEL = 8
+
 _LAST_RESTED_AFTER_IDS = 0xC04
 _NPC_FLAGS_BEFORE_IDS = 0x15A0
-_NPC_KILL_RECORD = (
-    (-0x27576, 1),
-    (-0x27440, 4),
-    (-0x27040, 2),
-    (-0x2703D, 1),
-    (-0x5B8, 2),
-    (0x5A94, 2),
-    (0x119C, 6),
-    (0x11A4, 4),
-)
-# The byte after the last span held 0 before the kill and 3 after it, but holds
-# other values in slots that never had a kill, so it is cleared only together
-# with a present record.
-_NPC_KILL_RECORD_TAIL = (0x11A8, 1)
+# Each entry names the bytes killing that NPC writes, which are zero
+# otherwise, as (offset from the first bonfire id array, length in bytes).
+_NPC_KILL_RECORDS: dict[str, tuple[tuple[int, int], ...]] = {
+    "Blacksmith Lenigrast": (
+        (-0x27576, 1),
+        (-0x27440, 4),
+        (-0x27040, 2),
+        (-0x2703D, 1),
+        (-0x5B8, 2),
+        (0x5A94, 2),
+        (0x119C, 6),
+        (0x11A4, 4),
+    ),
+    "Emerald Herald": ((-0x27570, 1),),
+    "Merchant Hag Melentia": ((-0x26A72, 1),),
+    "Laddersmith Gilligan": ((-0x24948, 1),),
+    "Housekeeper Milibeth": ((-0x28098, 1),),
+    "Strowen": ((-0x28095, 1),),
+    "Darkdiver Grandahl": ((-0x1F0C8, 1),),
+    "Lonesome Gavlan": ((-0x23E34, 1),),
+    "Saulden, the Crestfallen Warrior": ((-0x27582, 1),),
+    "Creighton the Wanderer": ((-0x21D08, 1),),
+    "Benhart of Jugo": ((-0x129A8, 1),),
+    "Maughlin the Armourer": ((-0x27580, 1),),
+    "Royal Sorcerer Navlaan": ((-0x13FC6, 1),),
+    "Magerold of Lanafir": ((-0x23326, 1),),
+    "Cromwell the Pardoner": ((-0x25F60, 1),),
+    "The Rat King": ((-0x1E5B8, 1),),
+    "Manscorpion Tark": ((-0x1F0C0, 1),),
+    "Blue Sentinel Targray": ((-0x1FBD6, 1),),
+    "Mild Mannered Pate": ((-0x23E38, 1),),
+    "Rosabeth of Melfia": ((-0x129A4, 1),),
+    "Stone Trader Chloanne": ((-0x129A4, 1),),
+    "Titchy Gren": ((-0x21D04, 1),),
+    "Weaponsmith Ornifex": ((-0x21D04, 1),),
+    "Steady Hand McDuff": ((-0x25451, 1),),
+    "Carhillion of the Fold": ((-0x23E36, 1),),
+    "Straid of Olaphis": ((-0x25452, 1),),
+    "Felkin the Outcast": ((-0x21D06, 1),),
+}
+
+_LENIGRAST_RECORD_TAIL = (0x11A8, 1)
 
 # Occupancy entry (entry 0) layout: fixed stride per character slot.
 _OCC_STRIDE = 496
@@ -293,9 +322,10 @@ class NpcStates:
     """View over the NPC hostile and dead flags in one slot's large entry.
 
     A flag byte is 0 while clear and holds bits once set, so a flag counts as
-    set when its byte is non-zero. Reviving clears both flags of an NPC and the
-    kill record, which is the state before the kill. Calming clears the hostile
-    flag only.
+    set when its byte is non-zero. An NPC also counts as dead while his kill
+    record is stored, because with the record left over he stays dead in game
+    even with his flags clear. Reviving clears both flags and the record, which
+    is the state before the kill. Calming clears the hostile flag only.
     """
 
     def __init__(self, data: bytearray, base: int, anchor: int) -> None:
@@ -303,75 +333,70 @@ class NpcStates:
         self._base = base
         self._anchor = anchor
 
+    def _record_spans(self, name: str) -> list[tuple[int, int]]:
+        return [
+            (self._anchor + offset, length)
+            for offset, length in _NPC_KILL_RECORDS.get(name, ())
+            if self._anchor + offset >= 0
+            and self._anchor + offset + length <= len(self._data)
+        ]
+
+    def _record_present(self, name: str) -> bool:
+        return any(any(self._data[o : o + n]) for o, n in self._record_spans(name))
+
+    def _clear_record(self, name: str) -> bool:
+        if not self._record_present(name):
+            return False
+        for offset, length in self._record_spans(name):
+            self._data[offset : offset + length] = bytes(length)
+        if name == "Blacksmith Lenigrast":
+            tail = self._anchor + _LENIGRAST_RECORD_TAIL[0]
+            if tail < len(self._data):
+                self._data[tail] = 0
+        return True
+
     def states(self) -> list[NpcState]:
         result = []
         for entry in NPCS:
             hostile = entry.hostile is not None and bool(
                 self._data[self._base + entry.hostile]
             )
-            dead = entry.dead is not None and bool(self._data[self._base + entry.dead])
+            dead = (
+                entry.dead is not None and bool(self._data[self._base + entry.dead])
+            ) or self._record_present(entry.name)
             result.append(NpcState(entry, hostile, dead))
         return result
 
-    def _record_spans(self) -> list[tuple[int, int]]:
-        return [
-            (self._anchor + offset, length)
-            for offset, length in _NPC_KILL_RECORD
-            if self._anchor + offset >= 0
-            and self._anchor + offset + length <= len(self._data)
-        ]
-
-    @property
-    def kill_record_present(self) -> bool:
-        """True when a kill left values in the kill record."""
-        return any(any(self._data[o : o + n]) for o, n in self._record_spans())
-
-    def clear_kill_record(self) -> bool:
-        """Zero the kill record and return whether it held anything. Nothing is
-        written when the record is empty."""
-        if not self.kill_record_present:
-            return False
-        for offset, length in self._record_spans():
-            self._data[offset : offset + length] = bytes(length)
-        tail = self._anchor + _NPC_KILL_RECORD_TAIL[0]
-        if tail < len(self._data):
-            self._data[tail] = 0
-        return True
-
-    def _clear(self, names: Iterable[str], hostile: bool, dead: bool) -> int:
+    def revive(self, names: Iterable[str]) -> int:
+        """Clear the dead and hostile flags and the kill record of the named
+        NPCs and return how many changed."""
         wanted = set(names)
         changed = 0
         for entry in NPCS:
             if entry.name not in wanted:
                 continue
-            offsets = []
-            if hostile and entry.hostile is not None:
-                offsets.append(entry.hostile)
-            if dead and entry.dead is not None:
-                offsets.append(entry.dead)
             touched = False
-            for offset in offsets:
-                if self._data[self._base + offset]:
+            for offset in (entry.hostile, entry.dead):
+                if offset is not None and self._data[self._base + offset]:
                     self._data[self._base + offset] = 0
                     touched = True
+            if self._clear_record(entry.name):
+                touched = True
             changed += touched
-        return changed
-
-    def revive(self, names: Iterable[str]) -> int:
-        """Clear the dead and hostile flags of the named NPCs and the kill
-        record, and return how many NPCs changed. The kill record is not tied
-        to one NPC, so a revive clears it even for an NPC whose flags were
-        already clear."""
-        names = list(names)
-        changed = self._clear(names, hostile=True, dead=True)
-        if names:
-            self.clear_kill_record()
         return changed
 
     def calm(self, names: Iterable[str]) -> int:
         """Clear the hostile flag of the named NPCs and return how many
         changed."""
-        return self._clear(names, hostile=True, dead=False)
+        wanted = set(names)
+        changed = 0
+        for entry in NPCS:
+            if entry.name not in wanted or entry.hostile is None:
+                continue
+            if self._data[self._base + entry.hostile]:
+                self._data[self._base + entry.hostile] = 0
+                changed += 1
+        return changed
 
 
 class SlotState(Enum):
