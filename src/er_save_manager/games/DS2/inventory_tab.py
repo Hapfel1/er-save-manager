@@ -23,6 +23,9 @@ from er_save_manager.games.DS2.item_database import (
 )
 from er_save_manager.games.DS2.regulation import INFUSION_NAMES, Regulation
 from er_save_manager.games.DS2.save import (
+    INVENTORY_END,
+    INVENTORY_START,
+    KEY_LIST_CATEGORIES,
     MULTI_COPY_CATEGORIES,
     UNIQUE_CATEGORIES,
     UPGRADABLE_CATEGORIES,
@@ -37,7 +40,7 @@ def _game_blocks_write(parent) -> bool:
     return game_blocks_write(parent, "darksoulsii.exe", "Dark Souls II")
 
 
-STACKABLE_CATEGORIES = ("goods", "bolts", "spells", "upgrade", "seamless")
+STACKABLE_CATEGORIES = ("goods", "bolts", "spells", "upgrade")
 
 # The game stores Estus Flask count and flask level packed into one value, so
 # a plain quantity write would corrupt it.
@@ -73,6 +76,20 @@ _DISABLED_TEXT = ("gray60", "gray45")
 _DISABLED_FILL = ("gray78", "gray28")
 _HINT_COLOR = ("gray40", "gray60")
 _HINT_FONT = ("Segoe UI", 11)
+
+
+# Where the item adder puts new items, carried inventory first as the default.
+ADD_LOCATIONS = ("Inventory", "Item Box")
+
+
+def _in_main_list(item) -> bool:
+    """Whether an entry is in the main inventory list, the only list the
+    item box shares."""
+    return INVENTORY_START <= item.offset < INVENTORY_END
+
+
+def _location(item) -> str:
+    return "Item Box" if item.in_box else "Inventory"
 
 
 class _Greyable:
@@ -235,6 +252,20 @@ class DS2InventoryPanel:
         )
         self._free_slots_label.pack(side="bottom", anchor="w", padx=10, pady=(0, 4))
 
+        location_row = ctk.CTkFrame(parent, fg_color="transparent")
+        location_row.pack(side="bottom", fill="x", padx=10, pady=(0, 6))
+        location_label = ctk.CTkLabel(location_row, text="Location:", width=70)
+        location_label.pack(side="left")
+        self.add_location_var = tk.StringVar(value=ADD_LOCATIONS[0])
+        location_combo = ctk.CTkComboBox(
+            location_row,
+            variable=self.add_location_var,
+            values=list(ADD_LOCATIONS),
+            state="readonly",
+            width=120,
+        )
+        location_combo.pack(side="left")
+
         infusion_row = ctk.CTkFrame(parent, fg_color="transparent")
         infusion_row.pack(side="bottom", fill="x", padx=10, pady=(0, 6))
         infusion_label = ctk.CTkLabel(infusion_row, text="Infusion:", width=70)
@@ -304,6 +335,10 @@ class DS2InventoryPanel:
                 _Greyable(infusion_label, "label"),
                 _Greyable(self._add_infusion_combo, "combo"),
             ],
+            "location": [
+                _Greyable(location_label, "label"),
+                _Greyable(location_combo, "combo"),
+            ],
             "add_selected": [_Greyable(add_selected, "button")],
             "add_all": [_Greyable(add_all, "button")],
         }
@@ -345,7 +380,7 @@ class DS2InventoryPanel:
             side="left", padx=(0, 6)
         )
 
-        columns = ("name", "category", "quantity", "upgrade", "infusion")
+        columns = ("name", "category", "location", "quantity", "upgrade", "infusion")
         # Action rows are packed to the bottom first so they are never clipped.
         actions = ctk.CTkFrame(parent, fg_color="transparent")
         actions.pack(side="bottom", fill="x", padx=10, pady=(0, 10))
@@ -364,6 +399,7 @@ class DS2InventoryPanel:
         self._column_labels = {
             "name": "Name",
             "category": "Category",
+            "location": "Location",
             "quantity": "Qty",
             "upgrade": "Upgrade",
             "infusion": "Infusion",
@@ -371,6 +407,7 @@ class DS2InventoryPanel:
         for col, label, width in (
             ("name", "Name", 190),
             ("category", "Category", 90),
+            ("location", "Location", 80),
             ("quantity", "Qty", 45),
             ("upgrade", "Upgrade", 65),
             ("infusion", "Infusion", 80),
@@ -385,6 +422,17 @@ class DS2InventoryPanel:
             actions, text="Remove Selected", command=self._on_remove, width=130
         )
         remove_button.pack(side="left", padx=(0, 6))
+        to_box_button = ctk.CTkButton(
+            actions, text="To Item Box", command=lambda: self._on_move(True), width=100
+        )
+        to_box_button.pack(side="left", padx=(0, 6))
+        to_inventory_button = ctk.CTkButton(
+            actions,
+            text="To Inventory",
+            command=lambda: self._on_move(False),
+            width=100,
+        )
+        to_inventory_button.pack(side="left", padx=(0, 6))
         qty_label = ctk.CTkLabel(actions, text="New qty:")
         qty_label.pack(side="left", padx=(10, 4))
         self.set_qty_var = tk.StringVar(value="1")
@@ -446,6 +494,8 @@ class DS2InventoryPanel:
         )
         self._set_controls = {
             "remove": [_Greyable(remove_button, "button")],
+            "to_box": [_Greyable(to_box_button, "button")],
+            "to_inventory": [_Greyable(to_inventory_button, "button")],
             "quantity": [
                 _Greyable(qty_label, "label"),
                 _Greyable(qty_entry, "entry"),
@@ -617,6 +667,12 @@ class DS2InventoryPanel:
         self._apply_infusion_choices(
             self._add_infusion_combo, self.add_infusion_var, allowed
         )
+        self._apply_group(
+            controls["location"],
+            category not in KEY_LIST_CATEGORIES,
+            self.add_location_var,
+            ADD_LOCATIONS[0],
+        )
         self._apply_group(controls["add_selected"], bool(selection), None, "")
         self._apply_group(controls["add_all"], bool(self._search_results), None, "")
 
@@ -668,7 +724,7 @@ class DS2InventoryPanel:
         ):
             return
         character = save.characters[self.get_slot_index()]
-        if category in UNIQUE_CATEGORIES and character.owns(item_id):
+        if category in UNIQUE_CATEGORIES and character.owns(item_id, include_box=True):
             self.show_toast(f"{item_name} is already owned", duration=2000)
             return
         if category in STACKABLE_CATEGORIES and category != "spells":
@@ -696,15 +752,21 @@ class DS2InventoryPanel:
                 self.show_toast(f"{item_name} allows: {names}", duration=3500)
                 return
 
+        in_box = self._add_to_box()
         copies = quantity if category in MULTI_COPY_CATEGORIES else 1
         if category in MULTI_COPY_CATEGORIES:
             written = character.add_copies(
-                item_id, category, copies, upgrade=upgrade, infusion=infusion
+                item_id,
+                category,
+                copies,
+                upgrade=upgrade,
+                infusion=infusion,
+                in_box=in_box,
             )
         else:
             written = int(
                 character.add_item(
-                    item_id, category, quantity=quantity, upgrade=upgrade
+                    item_id, category, quantity=quantity, upgrade=upgrade, in_box=in_box
                 )
             )
         if not written:
@@ -719,6 +781,8 @@ class DS2InventoryPanel:
         if infusion:
             label += f" {INFUSION_NAMES[infusion]}"
         suffix = " (capped at max upgrade)" if capped else ""
+        if in_box:
+            suffix += " to the item box"
         if written < copies:
             suffix += f", only {written} of {copies} fit"
         self.show_toast(f"Added {label}{suffix}", duration=3000)
@@ -731,6 +795,14 @@ class DS2InventoryPanel:
             self.show_toast("No items listed", duration=2000)
             return
         self._add_many(save, list(self._search_results))
+
+    def _add_to_box(self) -> bool:
+        """Whether new items go to the item box. Key items and gestures stay in
+        the key item list either way."""
+        return (
+            self.add_location_var.get() == ADD_LOCATIONS[1]
+            and self._selected_add_category() not in KEY_LIST_CATEGORIES
+        )
 
     def _writable_save(self) -> DS2Save | None:
         if _game_blocks_write(self.parent):
@@ -803,7 +875,12 @@ class DS2InventoryPanel:
             if self._load_regulation(save) is None:
                 return
 
-        lines = [f"Add {len(safe_ids)} {CATEGORY_LABELS[category]} item(s)?"]
+        in_box = self._add_to_box()
+        where = "item box" if in_box else "inventory"
+        lines = [
+            f"Add {len(safe_ids)} {CATEGORY_LABELS[category]} item(s)"
+            + (f" to the {where}?" if category not in KEY_LIST_CATEGORIES else "?")
+        ]
         if category == "spells":
             lines.append(
                 "Each is added as a new entry with a full set of uses. "
@@ -812,7 +889,7 @@ class DS2InventoryPanel:
         elif category in STACKABLE_CATEGORIES:
             lines.append(
                 f"Quantity {quantity}, capped per item at its stack limit. "
-                "Owned stacks are set to it."
+                f"Items with a stack in the {where} are added onto it."
             )
         elif category in MULTI_COPY_CATEGORIES:
             lines.append(
@@ -842,6 +919,7 @@ class DS2InventoryPanel:
             quantity=quantity,
             upgrade=upgrade,
             infusion=infusion,
+            in_box=in_box,
         )
         summary = ", ".join(
             f"{count} {label}"
@@ -915,8 +993,18 @@ class DS2InventoryPanel:
             qty = item.quantity if item_category in STACKABLE_CATEGORIES else -1
             level = item.upgrade if item_category in UPGRADABLE_CATEGORIES else -1
             infusion = item.infusion if item_category == "weapons" else -1
+            location = _location(item)
             rows.append(
-                (item, name, item_category, display_category, qty, level, infusion)
+                (
+                    item,
+                    name,
+                    item_category,
+                    display_category,
+                    qty,
+                    level,
+                    infusion,
+                    location,
+                )
             )
 
         sort_key = {
@@ -925,12 +1013,22 @@ class DS2InventoryPanel:
             "quantity": lambda r: r[4],
             "upgrade": lambda r: r[5],
             "infusion": lambda r: r[6],
+            "location": lambda r: r[7],
         }.get(self._sort_column, lambda r: r[1].lower())
         rows.sort(key=sort_key, reverse=self._sort_reverse)
 
         self._inventory_tree.delete(*self._inventory_tree.get_children())
         self._visible_items = []
-        for item, name, item_category, display_category, qty, level, infusion in rows:
+        for (
+            item,
+            name,
+            item_category,
+            display_category,
+            qty,
+            level,
+            infusion,
+            location,
+        ) in rows:
             self._visible_items.append((item, name, item_category))
             qty_str = str(qty) if qty >= 0 else ""
             level_str = ""
@@ -949,7 +1047,14 @@ class DS2InventoryPanel:
             self._inventory_tree.insert(
                 "",
                 "end",
-                values=(name, display_category, qty_str, level_str, infusion_str),
+                values=(
+                    name,
+                    display_category,
+                    location,
+                    qty_str,
+                    level_str,
+                    infusion_str,
+                ),
             )
         self._update_inventory_controls()
 
@@ -1018,6 +1123,13 @@ class DS2InventoryPanel:
 
         controls = self._set_controls
         self._apply_group(controls["remove"], bool(picked), None, "")
+        main_list = [item for item, _, _ in picked if _in_main_list(item)]
+        self._apply_group(
+            controls["to_box"], any(not i.in_box for i in main_list), None, ""
+        )
+        self._apply_group(
+            controls["to_inventory"], any(i.in_box for i in main_list), None, ""
+        )
 
         self._apply_group(
             controls["quantity"],
@@ -1095,6 +1207,52 @@ class DS2InventoryPanel:
             else f"Removed {len(removed)} items",
             duration=2000,
         )
+
+    def _on_move(self, to_box: bool) -> None:
+        """Move the selected entries into the item box or back into the
+        inventory. Entries already there or in the key item list are skipped,
+        and entries the move refuses are reported with the reason."""
+        save = self._writable_save()
+        if save is None:
+            return
+        rows = [
+            (item, name, category)
+            for item, name, category in self._selected_inventory_rows()
+            if _in_main_list(item) and item.in_box != to_box
+        ]
+        if not rows:
+            self.show_toast("No selected item can be moved there", duration=2000)
+            return
+
+        character = save.characters[self.get_slot_index()]
+        moved, refused = [], []
+        for item, name, category in rows:
+            # Owning several copies of a spell is normal, so spells never
+            # count as a stack waiting at the destination.
+            stackable = category in STACKABLE_CATEGORIES and category != "spells"
+            try:
+                character.move_entry(item, to_box, stackable)
+            except ValueError as e:
+                refused.append(f"{name}: {e}")
+            else:
+                moved.append(name)
+
+        if moved:
+            self._write_and_refresh(
+                save, operation="move_to_box" if to_box else "move_to_inventory"
+            )
+        where = "item box" if to_box else "inventory"
+        if moved:
+            text = (
+                f"Moved {moved[0]} to the {where}"
+                if len(moved) == 1
+                else f"Moved {len(moved)} items to the {where}"
+            )
+            if refused:
+                text += f". Not moved: {'; '.join(refused)}"
+        else:
+            text = f"Not moved: {'; '.join(refused)}"
+        self.show_toast(text, duration=4000 if refused else 2500)
 
     @staticmethod
     def _edit_toast(value: str, changed: list[str], capped: int, skipped: int) -> str:

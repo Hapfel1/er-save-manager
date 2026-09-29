@@ -26,8 +26,9 @@ def _game_blocks_write(parent) -> bool:
 
 _HINT_COLOR = ("gray40", "gray70")
 
-# Largest torch time the editor accepts, 999:59:59.
-_TORCH_MAX_SECONDS = 999 * 3600 + 59 * 60 + 59
+# Largest torch time the game allows, 99:59:59.
+_TORCH_MAX_SECONDS = 99 * 3600 + 59 * 60 + 59
+_TORCH_FORMAT_HINT = "H:MM:SS, max 99:59:59"
 
 
 def _format_torch(seconds: float) -> str:
@@ -183,8 +184,16 @@ class DS2EditorTab:
         self._torch_entry = ctk.CTkEntry(fields, textvariable=self.torch_var, width=140)
         self._torch_entry.grid(row=4, column=1, sticky="w", padx=5, pady=3)
         self._torch_border = self._torch_entry.cget("border_color")
-        self._torch_hint = ctk.CTkLabel(fields, text="H:MM:SS", text_color=_HINT_COLOR)
-        self._torch_hint.grid(row=4, column=2, sticky="w", padx=5, pady=3)
+        ctk.CTkButton(
+            fields,
+            text="Max",
+            width=50,
+            command=lambda: self.torch_var.set(_format_torch(_TORCH_MAX_SECONDS)),
+        ).grid(row=4, column=2, sticky="w", padx=5, pady=3)
+        self._torch_hint = ctk.CTkLabel(
+            fields, text=_TORCH_FORMAT_HINT, text_color=_HINT_COLOR
+        )
+        self._torch_hint.grid(row=4, column=3, sticky="w", padx=5, pady=3)
         self.torch_var.trace_add("write", lambda *_: self._check_torch())
 
         stats_frame = ctk.CTkFrame(body, fg_color="transparent")
@@ -316,12 +325,12 @@ class DS2EditorTab:
         entry can be applied."""
         text = self.torch_var.get().strip()
         if text == self._torch_loaded:
-            valid, hint = True, "H:MM:SS"
+            valid, hint = True, _TORCH_FORMAT_HINT
         else:
             try:
                 valid, hint = True, f"= {_format_torch(_parse_torch(text))}"
             except ValueError:
-                valid, hint = False, "Use H:MM:SS, up to 999:59:59"
+                valid, hint = False, f"Use {_TORCH_FORMAT_HINT}"
         self._torch_hint.configure(
             text=hint, text_color=_HINT_COLOR if valid else "orange"
         )
@@ -412,9 +421,7 @@ class DS2EditorTab:
         # fraction of a second.
         torch_seconds = None
         if not self._check_torch():
-            self.show_toast(
-                "Torch time must be H:MM:SS, up to 999:59:59", duration=3000
-            )
+            self.show_toast(f"Torch time must be {_TORCH_FORMAT_HINT}", duration=3000)
             return
         if self.torch_var.get().strip() != self._torch_loaded:
             torch_seconds = _parse_torch(self.torch_var.get())

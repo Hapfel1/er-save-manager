@@ -21,6 +21,7 @@ from er_save_manager.games.DS2.icon_manager import (
 )
 from er_save_manager.games.DS2.item_database import CATEGORIES, _hex_id_to_int
 from er_save_manager.games.DS2.regulation import INFUSION_NAMES
+from er_save_manager.games.DS2.save import KEY_LIST_CATEGORIES
 from er_save_manager.ui.utils import center_window, patch_combo_scroll
 
 if TYPE_CHECKING:
@@ -170,6 +171,23 @@ class IconBrowser(ctk.CTkToplevel):
         )
         self._infusion_combo.pack(side="left")
         add_infusion_menu_icons(self._infusion_combo)
+
+        from er_save_manager.games.DS2.inventory_tab import ADD_LOCATIONS
+
+        ctk.CTkLabel(opts, text="Location:").grid(
+            row=2, column=0, sticky="w", padx=(0, 6), pady=(6, 0)
+        )
+        # Shares the panel's variable, since adding goes through the panel.
+        self._location_combo = ctk.CTkComboBox(
+            opts,
+            variable=self._panel.add_location_var,
+            values=list(ADD_LOCATIONS),
+            width=120,
+            state="readonly",
+        )
+        self._location_combo.grid(
+            row=2, column=1, columnspan=3, sticky="w", pady=(6, 0)
+        )
 
         self._add_btn = ctk.CTkButton(
             panel,
@@ -349,6 +367,12 @@ class IconBrowser(ctk.CTkToplevel):
         )
         if self._infusion_var.get() not in names:
             self._infusion_var.set(INFUSION_NAMES[0])
+        from er_save_manager.games.DS2.inventory_tab import ADD_LOCATIONS
+
+        key_list = category in KEY_LIST_CATEGORIES
+        self._location_combo.configure(state="disabled" if key_list else "readonly")
+        if key_list:
+            self._panel.add_location_var.set(ADD_LOCATIONS[0])
 
         self._add_btn.configure(state="normal" if self._selected_name else "disabled")
 
