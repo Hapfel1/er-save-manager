@@ -1,15 +1,13 @@
 """
-Generic SteamID patcher for unencrypted BND4/SL2 save files.
+Generic SteamID patcher for unencrypted BND4/SL2 save files (Elden Ring).
 
-Works for Dark Souls Remastered, Dark Souls II SotFS, Dark Souls III,
-Elden Ring, and Elden Ring Nightreign.
-
-Does NOT work for Armored Core 6 (AES-encrypted SL2).
-Does NOT apply to Sekiro (no file-level SteamID check).
+DS3, Nightreign and AC6 saves are encrypted, so the SteamID is not visible
+in the raw file and they have their own patchers. DS2 needs no patch, and
+Sekiro and DSR are handled separately in the SteamID patcher tab.
 
 Strategy: scan the file for all 8-byte occurrences of the old SteamID
 (little-endian uint64) and replace them with the new SteamID. This is
-safe because a 64-bit Steam ID in the range 0x01000001_00000001 to
+safe because a 64-bit Steam ID in the range 0x01100001_00000000 to
 0x01100001_FFFFFFFF is effectively unique in a save file - accidental
 collision with game data is negligible, and all known games store the
 ID as a plain LE uint64.

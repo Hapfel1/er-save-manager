@@ -202,7 +202,11 @@ class DS2EditorTab:
         if save is None:
             return {i: f"{i} - (no save loaded)" for i in range(CHARACTER_SLOTS)}
 
-        offered = [i for i in range(CHARACTER_SLOTS) if save.is_slot_initialized(i)]
+        offered = [
+            i
+            for i in range(CHARACTER_SLOTS)
+            if save.slot_state(i) is not SlotState.NEVER_CREATED
+        ]
         labels = {}
         for i in offered or range(CHARACTER_SLOTS):
             state = save.slot_state(i)
@@ -292,7 +296,7 @@ class DS2EditorTab:
         if save is None:
             return
 
-        if not save.is_slot_initialized(self._slot_index):
+        if save.slot_state(self._slot_index) is SlotState.NEVER_CREATED:
             self.slot_status_label.configure(
                 text="Never created in-game - edits here will not appear at the load screen",
                 text_color="orange",

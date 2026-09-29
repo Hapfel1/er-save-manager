@@ -4,6 +4,7 @@ Comprehensive event flag viewer and editor with 948 documented flags
 """
 
 import tkinter as tk
+from tkinter import ttk
 
 import customtkinter as ctk
 
@@ -81,20 +82,17 @@ class EventFlagsTab:
         self.category_var = None
         self.subcategory_var = None
         self.search_var = None
-        self.flag_states = {}  # Track checkbox states
-        self.flag_widgets = {}  # Track checkbox widgets
+        self.flag_states = {}  # flag_id -> pending state, written on Apply
+        self.flag_rows = {}  # flag_id -> tree row of every displayed flag
         self.current_event_flags = None
         self._search_after_id = None
-        # Incremented whenever the flag view is cleared. Chunked renders carry
-        # the value they started with and stop once it no longer matches.
-        self._render_token = 0
+        self._fit_job = None
+        self._flag_row_px = None
 
     def _clear_flag_view(self):
-        """Empty the flag list and invalidate any render still in progress."""
-        self._render_token += 1
-        for widget in self.flags_inner_frame.winfo_children():
-            widget.destroy()
-        self.flag_widgets.clear()
+        """Empty the flag list."""
+        self.flags_tree.delete(*self.flags_tree.get_children())
+        self.flag_rows.clear()
 
     def _reset_filters(self):
         """Clear category, subcategory and search selections."""
@@ -176,6 +174,10 @@ class EventFlagsTab:
         main_frame = ctk.CTkScrollableFrame(self.parent, corner_radius=0)
         main_frame.pack(fill=tk.BOTH, expand=True)
         bind_mousewheel(main_frame)
+        self._main_frame = main_frame
+        main_frame._parent_canvas.bind(
+            "<Configure>", lambda _e: self._schedule_fit_flag_list(), add="+"
+        )
 
         # Header
         ctk.CTkLabel(
@@ -376,12 +378,56 @@ class EventFlagsTab:
             font=("Segoe UI", 12, "bold"),
         ).pack(pady=(10, 8), padx=12, anchor="w")
 
-        # Scrollable flags list
-        self.flags_inner_frame = ctk.CTkScrollableFrame(
-            flags_frame, corner_radius=8, fg_color=("#f5f5f5", "#2a2a3e")
+        # A Treeview holds the full flag set without slowing down, where one
+        # checkbox widget per flag took seconds to build on a broad search.
+        tree_frame = ctk.CTkFrame(flags_frame, fg_color="transparent")
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 4))
+        self.flags_tree = ttk.Treeview(
+            tree_frame,
+            columns=("state", "flag_id", "name", "location"),
+            show="headings",
+            selectmode="extended",
+            height=20,
         )
-        self.flags_inner_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 12))
-        bind_mousewheel(self.flags_inner_frame)
+        # The tab sits in a scrollable frame whose wheel bindings would scroll
+        # the page instead of the list, so a tag ahead of them handles the
+        # wheel over the list and stops the event there.
+        wheel_tag = "EventFlagTreeWheel"
+        self.flags_tree.bindtags((wheel_tag, *self.flags_tree.bindtags()))
+        self.flags_tree.bind_class(
+            wheel_tag,
+            "<MouseWheel>",
+            lambda e: self._scroll_tree(-1 if e.delta > 0 else 1),
+        )
+        self.flags_tree.bind_class(
+            wheel_tag, "<Button-4>", lambda _e: self._scroll_tree(-1)
+        )
+        self.flags_tree.bind_class(
+            wheel_tag, "<Button-5>", lambda _e: self._scroll_tree(1)
+        )
+        self.flags_tree.heading("state", text="State")
+        self.flags_tree.heading("flag_id", text="Flag ID")
+        self.flags_tree.heading("name", text="Name")
+        self.flags_tree.heading("location", text="Category")
+        self.flags_tree.column("state", width=60, anchor="center", stretch=False)
+        self.flags_tree.column("flag_id", width=110, anchor="w", stretch=False)
+        self.flags_tree.column("name", width=420, anchor="w")
+        self.flags_tree.column("location", width=260, anchor="w")
+        self.flags_tree.tag_configure("on", foreground="#4caf50")
+        scrollbar = ttk.Scrollbar(
+            tree_frame, orient="vertical", command=self.flags_tree.yview
+        )
+        self.flags_tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.flags_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.flags_tree.bind("<Button-1>", self._on_tree_click)
+        self.flags_tree.bind("<space>", self._toggle_selected)
+
+        ctk.CTkLabel(
+            flags_frame,
+            text="Click a State cell to toggle a flag, or select rows and press Space.",
+            text_color=("gray50", "gray70"),
+        ).pack(padx=12, anchor="w")
 
         # Action buttons area
         action_frame = ctk.CTkFrame(flags_frame, fg_color="transparent")
@@ -478,73 +524,102 @@ class EventFlagsTab:
         return [f for f in flags if not is_convergence(f)]
 
     def display_flags(self, category, subcategory):
-        """Display flags for category/subcategory, rendered in chunks to avoid X11 BadAlloc."""
+        """Display the flags of a category, or of one of its subcategories."""
         self._clear_flag_view()
+        self.flags_tree.configure(displaycolumns=("state", "flag_id", "name"))
 
         flags = self._filter_flags(get_category_flags(category, subcategory))
-        total = len(flags)
+        for flag_id in flags:
+            self._insert_flag_row(flag_id, get_flag_name(flag_id))
 
         label = f"{category} > {subcategory}" if subcategory else category
-        self.status_label.configure(text=f"Loading {total} flags in {label}...")
+        self.status_label.configure(text=f"Showing {len(flags)} flags in {label}")
 
-        self._render_flags_chunk(flags, 0, total, label, self._render_token)
+    def _insert_flag_row(self, flag_id, name, location=""):
+        """Add a flag to the list, showing its pending state if it has one."""
+        state = self.flag_states.setdefault(
+            flag_id, self.current_event_flags.get_flag(flag_id)
+        )
+        self.flag_rows[flag_id] = self.flags_tree.insert(
+            "",
+            "end",
+            values=("ON" if state else "OFF", flag_id, name, location),
+            tags=("on",) if state else (),
+        )
 
-    _RENDER_CHUNK = 25  # flags per batch
-    _RENDER_DELAY = 20  # ms between batches - gives X11 time to flush
+    def _set_flag_state(self, flag_id, state):
+        """Record a pending state and update the flag's row if it is shown."""
+        self.flag_states[flag_id] = state
+        row = self.flag_rows.get(flag_id)
+        if row is not None:
+            self.flags_tree.set(row, "state", "ON" if state else "OFF")
+            self.flags_tree.item(row, tags=("on",) if state else ())
 
-    def _render_flags_chunk(self, flags, offset, total, label, token):
-        """Render one chunk of flags, then schedule the next batch.
+    def _toggle_rows(self, rows):
+        for row in rows:
+            flag_id = int(self.flags_tree.set(row, "flag_id"))
+            self._set_flag_state(flag_id, not self.flag_states[flag_id])
 
-        Returns without rendering if the view was cleared since this render
-        started (token mismatch), so stale chunks never reach the new view.
-        """
-        if token != self._render_token:
+    def _on_tree_click(self, event):
+        """Toggle a flag when its State cell is clicked."""
+        if self.flags_tree.identify_region(event.x, event.y) != "cell":
             return
-        chunk = flags[offset : offset + self._RENDER_CHUNK]
+        # "#1" is the first displayed column, which is always State.
+        if self.flags_tree.identify_column(event.x) != "#1":
+            return
+        row = self.flags_tree.identify_row(event.y)
+        if row:
+            self._toggle_rows([row])
 
-        for flag_id in chunk:
-            is_set = self.current_event_flags.get_flag(flag_id)
+    # Fewest rows the flag list shrinks to on a short window. Below that the
+    # page scrolls instead.
+    _MIN_FLAG_ROWS = 8
 
-            if flag_id not in self.flag_states:
-                self.flag_states[flag_id] = is_set
+    def _schedule_fit_flag_list(self):
+        if self._fit_job is None:
+            self._fit_job = self.flags_tree.after(50, self._fit_flag_list)
 
-            var = tk.BooleanVar(value=is_set)
+    def _row_pixels(self):
+        """Height of one flag row, measured once since the theme sets no
+        fixed row height and the font decides it."""
+        if self._flag_row_px is None:
+            tree = self.flags_tree
+            rows = int(tree.cget("height"))
+            heights = []
+            for probe in (10, 20):
+                tree.configure(height=probe)
+                tree.update_idletasks()
+                heights.append(tree.winfo_reqheight())
+            tree.configure(height=rows)
+            self._flag_row_px = max(1, (heights[1] - heights[0]) // 10)
+        return self._flag_row_px
 
-            checkbox = ctk.CTkCheckBox(
-                self.flags_inner_frame,
-                text=f"{flag_id}: {get_flag_name(flag_id)}",
-                variable=var,
-                command=lambda fid=flag_id, v=var: self.on_flag_toggled(fid, v),
-            )
-            checkbox.pack(anchor="w", padx=8, pady=2)
+    def _fit_flag_list(self):
+        """Give the flag list the height left over in the window, so the list
+        fills the tab and scrolls instead of the page."""
+        self._fit_job = None
+        viewport = self._main_frame._parent_canvas.winfo_height()
+        if viewport <= 1:
+            return
+        # A few pixels of slack keep the page scrollbar from flickering on.
+        spare = viewport - self._main_frame.winfo_reqheight() - 4
+        rows = int(self.flags_tree.cget("height"))
+        fitted = max(self._MIN_FLAG_ROWS, rows + spare // self._row_pixels())
+        if fitted != rows:
+            self.flags_tree.configure(height=fitted)
 
-            self.flag_widgets[flag_id] = (checkbox, var)
+    def _scroll_tree(self, units):
+        self.flags_tree.yview_scroll(units * 3, "units")
+        return "break"
 
-        # Flush pending X11 requests before allocating the next batch
-        self.flags_inner_frame.update_idletasks()
-
-        next_offset = offset + self._RENDER_CHUNK
-        if next_offset < total:
-            self.status_label.configure(
-                text=f"Loading {next_offset}/{total} flags in {label}..."
-            )
-            self.flags_inner_frame.after(
-                self._RENDER_DELAY,
-                lambda: self._render_flags_chunk(
-                    flags, next_offset, total, label, token
-                ),
-            )
-        else:
-            self.status_label.configure(text=f"Showing {total} flags in {label}")
-
-    def on_flag_toggled(self, flag_id, var):
-        """Handle flag checkbox toggle"""
-        self.flag_states[flag_id] = var.get()
+    def _toggle_selected(self, _event=None):
+        self._toggle_rows(self.flags_tree.selection())
+        return "break"
 
     def on_search_changed(self, *args):
         """Debounce search input - cancel pending callback and reschedule."""
         if self._search_after_id is not None:
-            self.flags_inner_frame.after_cancel(self._search_after_id)
+            self.flags_tree.after_cancel(self._search_after_id)
             self._search_after_id = None
 
         if self.current_event_flags is None:
@@ -556,7 +631,7 @@ class EventFlagsTab:
             self.status_label.configure(text="Select a category or search for flags")
             return
 
-        self._search_after_id = self.flags_inner_frame.after(
+        self._search_after_id = self.flags_tree.after(
             300, lambda: self._run_search(query)
         )
 
@@ -586,46 +661,16 @@ class EventFlagsTab:
                     if query in str(flag_id).lower() or query in flag_name.lower():
                         results.append((flag_id, flag_name, category, None))
 
-        self.status_label.configure(text="Searching...")
-        self._render_search_chunk(results, 0, self._render_token)
-
-    def _render_search_chunk(self, results, offset, token):
-        """Render one chunk of search results, then schedule the next batch."""
-        if token != self._render_token:
-            return
-        chunk = results[offset : offset + self._RENDER_CHUNK]
-
-        for flag_id, flag_name, category, subcategory in chunk:
-            is_set = self.current_event_flags.get_flag(flag_id)
-
-            if flag_id not in self.flag_states:
-                self.flag_states[flag_id] = is_set
-
-            var = tk.BooleanVar(value=is_set)
-
+        self.flags_tree.configure(
+            displaycolumns=("state", "flag_id", "name", "location")
+        )
+        for flag_id, flag_name, category, subcategory in results:
+            if flag_id in self.flag_rows:
+                continue
             location = f"{category} > {subcategory}" if subcategory else category
+            self._insert_flag_row(flag_id, flag_name, location)
 
-            checkbox = ctk.CTkCheckBox(
-                self.flags_inner_frame,
-                text=f"{flag_id}: {flag_name} ({location})",
-                variable=var,
-                command=lambda fid=flag_id, v=var: self.on_flag_toggled(fid, v),
-            )
-            checkbox.pack(anchor="w", padx=8, pady=2)
-
-            self.flag_widgets[flag_id] = (checkbox, var)
-
-        self.flags_inner_frame.update_idletasks()
-
-        next_offset = offset + self._RENDER_CHUNK
-        total = len(results)
-        if next_offset < total:
-            self.flags_inner_frame.after(
-                self._RENDER_DELAY,
-                lambda: self._render_search_chunk(results, next_offset, token),
-            )
-        else:
-            self.status_label.configure(text=f"Found {total} matching flags")
+        self.status_label.configure(text=f"Found {len(self.flag_rows)} matching flags")
 
     def clear_search(self):
         """Clear search field"""
@@ -635,7 +680,7 @@ class EventFlagsTab:
 
     def unlock_all_in_category(self):
         """Unlock all flags in current category"""
-        if not self.flag_widgets:
+        if not self.flag_rows:
             CTkMessageBox.showwarning(
                 "No Flags", "No flags are currently displayed!", parent=self.parent
             )
@@ -643,20 +688,18 @@ class EventFlagsTab:
 
         result = CTkMessageBox.askyesno(
             "Confirm",
-            f"Set all {len(self.flag_widgets)} displayed flags to ON?\n\n"
+            f"Set all {len(self.flag_rows)} displayed flags to ON?\n\n"
             f"This will affect only the flags currently visible.",
             parent=self.parent,
         )
 
         if result:
-            for flag_id, (checkbox, var) in self.flag_widgets.items():
-                var.set(True)
-                self.flag_states[flag_id] = True
-                checkbox.select()
+            for flag_id in self.flag_rows:
+                self._set_flag_state(flag_id, True)
 
             CTkMessageBox.showinfo(
                 "Success",
-                f"Enabled all {len(self.flag_widgets)} displayed flags.\n\nClick 'Apply Changes' to save.",
+                f"Enabled all {len(self.flag_rows)} displayed flags.\n\nClick 'Apply Changes' to save.",
                 parent=self.parent,
             )
 
@@ -924,12 +967,9 @@ class EventFlagsTab:
         save_file.save(self.get_save_path())
         self.reload_save()
 
-        # Refresh displayed checkboxes to reflect imported state
-        if self.flag_widgets:
-            for flag_id, (_cb, var) in self.flag_widgets.items():
-                current = self.current_event_flags.get_flag(flag_id)
-                var.set(current)
-                self.flag_states[flag_id] = current
+        # Refresh displayed rows to reflect imported state
+        for flag_id in self.flag_rows:
+            self._set_flag_state(flag_id, self.current_event_flags.get_flag(flag_id))
 
         self.show_toast(f"Imported {applied} flags", duration=2500)
 

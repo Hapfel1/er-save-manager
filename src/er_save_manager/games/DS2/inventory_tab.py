@@ -11,6 +11,10 @@ from tkinter import ttk
 
 import customtkinter as ctk
 
+from er_save_manager.games.DS2.icon_manager import (
+    add_infusion_menu_icons,
+    bind_infusion_icon,
+)
 from er_save_manager.games.DS2.item_database import (
     CATEGORIES,
     UNSAFE_IDS,
@@ -40,7 +44,7 @@ STACKABLE_CATEGORIES = ("goods", "bolts", "spells", "upgrade", "seamless")
 _ESTUS_FLASK_ID = 0x0395E478
 
 # Internal category key -> display label. Kept separate so backend calls
-# (item_database lookups, Character.add_item/delete_item) always use the
+# (item_database lookups, Character.add_item/delete_entry) always use the
 # lowercase key, while the UI only ever shows the capitalized label.
 CATEGORY_LABELS = {
     "goods": "Goods",
@@ -236,6 +240,9 @@ class DS2InventoryPanel:
         infusion_label = ctk.CTkLabel(infusion_row, text="Infusion:", width=70)
         infusion_label.pack(side="left")
         self.add_infusion_var = tk.StringVar(value=INFUSION_NAMES[0])
+        add_infusion_icon = ctk.CTkLabel(infusion_row, text="", width=24)
+        add_infusion_icon.pack(side="left", padx=(0, 4))
+        bind_infusion_icon(add_infusion_icon, self.add_infusion_var)
         self._add_infusion_combo = ctk.CTkComboBox(
             infusion_row,
             variable=self.add_infusion_var,
@@ -244,6 +251,7 @@ class DS2InventoryPanel:
             width=120,
         )
         self._add_infusion_combo.pack(side="left")
+        add_infusion_menu_icons(self._add_infusion_combo)
         self._add_hints["infusion"] = ctk.CTkLabel(
             infusion_row, text="", text_color=_HINT_COLOR, font=_HINT_FONT
         )
@@ -256,6 +264,10 @@ class DS2InventoryPanel:
         self.add_qty_var = tk.StringVar(value="1")
         qty_entry = ctk.CTkEntry(qty_row, textvariable=self.add_qty_var, width=60)
         qty_entry.pack(side="left")
+        self._add_hints["quantity"] = ctk.CTkLabel(
+            qty_row, text="", text_color=_HINT_COLOR, font=_HINT_FONT
+        )
+        self._add_hints["quantity"].pack(side="left", padx=(6, 0))
         upgrade_label = ctk.CTkLabel(qty_row, text="Upgrade:")
         upgrade_label.pack(side="left", padx=(10, 4))
         self.add_upgrade_var = tk.StringVar(value="0")
@@ -405,6 +417,9 @@ class DS2InventoryPanel:
         infusion_label = ctk.CTkLabel(infusion_actions, text="New infusion:")
         infusion_label.pack(side="left", padx=(0, 4))
         self.set_infusion_var = tk.StringVar(value=INFUSION_NAMES[0])
+        set_infusion_icon = ctk.CTkLabel(infusion_actions, text="", width=24)
+        set_infusion_icon.pack(side="left", padx=(0, 4))
+        bind_infusion_icon(set_infusion_icon, self.set_infusion_var)
         self._set_infusion_combo = ctk.CTkComboBox(
             infusion_actions,
             variable=self.set_infusion_var,
@@ -413,6 +428,7 @@ class DS2InventoryPanel:
             width=110,
         )
         self._set_infusion_combo.pack(side="left")
+        add_infusion_menu_icons(self._set_infusion_combo)
         infusion_button = ctk.CTkButton(
             infusion_actions,
             text="Set Infusion",
@@ -559,12 +575,16 @@ class DS2InventoryPanel:
             return
 
         category = self._selected_add_category()
-        quantity = category in STACKABLE_CATEGORIES or category in MULTI_COPY_CATEGORIES
+        is_spell = category == "spells"
+        quantity = (
+            category in STACKABLE_CATEGORIES or category in MULTI_COPY_CATEGORIES
+        ) and not is_spell
         upgrade = category in UPGRADABLE_CATEGORIES
         infusion = category == "weapons"
         allowed = tuple(range(len(INFUSION_NAMES)))
         upgrade_hint = "capped per item" if upgrade else ""
         infusion_hint = "plain if not allowed" if infusion else ""
+        quantity_hint = "always added with full uses" if is_spell else ""
 
         selection = self._results_tree.selection()
         character = self._current_character()
@@ -573,7 +593,7 @@ class DS2InventoryPanel:
             hex_id = CATEGORIES.get(category, {}).get(name)
             item_id = _hex_id_to_int(hex_id) if hex_id else None
             if item_id is not None:
-                if category in STACKABLE_CATEGORIES:
+                if category in STACKABLE_CATEGORIES and not is_spell:
                     quantity = character.max_stack(item_id) > 1
                 if upgrade:
                     limit = character.max_upgrade(item_id, category)
@@ -602,6 +622,7 @@ class DS2InventoryPanel:
 
         self._add_hints["upgrade"].configure(text=upgrade_hint if upgrade else "")
         self._add_hints["infusion"].configure(text=infusion_hint if infusion else "")
+        self._add_hints["quantity"].configure(text=quantity_hint)
         free = character.free_slots(category) if character is not None else None
         self._free_slots_label.configure(
             text="Free slots: -" if free is None else f"Free slots: {free}"
@@ -650,7 +671,7 @@ class DS2InventoryPanel:
         if category in UNIQUE_CATEGORIES and character.owns(item_id):
             self.show_toast(f"{item_name} is already owned", duration=2000)
             return
-        if category in STACKABLE_CATEGORIES:
+        if category in STACKABLE_CATEGORIES and category != "spells":
             stack_limit = character.max_stack(item_id)
             if quantity > stack_limit:
                 quantity = stack_limit
@@ -783,7 +804,12 @@ class DS2InventoryPanel:
                 return
 
         lines = [f"Add {len(safe_ids)} {CATEGORY_LABELS[category]} item(s)?"]
-        if category in STACKABLE_CATEGORIES:
+        if category == "spells":
+            lines.append(
+                "Each is added as a new entry with a full set of uses. "
+                "Copies already owned do not block it."
+            )
+        elif category in STACKABLE_CATEGORIES:
             lines.append(
                 f"Quantity {quantity}, capped per item at its stack limit. "
                 "Owned stacks are set to it."
@@ -853,6 +879,8 @@ class DS2InventoryPanel:
                     continue
                 info = self._item_db.get(item.item_id)
                 name, category = info if info else (f"Unknown ({item.item_id})", None)
+                if category == "weapons" and 0 < item.infusion < len(INFUSION_NAMES):
+                    name = f"{INFUSION_NAMES[item.infusion]} {name}"
                 self._current_items.append((item, name, category))
         self._apply_filter()
         self._update_add_controls()
@@ -935,8 +963,14 @@ class DS2InventoryPanel:
     @staticmethod
     def _quantity_limit(character, item, category) -> int:
         """Largest quantity Set Quantity can write for a row, or 0 when the row
-        takes none. The Estus Flask packs its count with its level."""
-        if category not in STACKABLE_CATEGORIES or item.item_id == _ESTUS_FLASK_ID:
+        takes none. The Estus Flask packs its count with its level. A spell's
+        uses are always its cap, in game and here, so it never takes a custom
+        quantity either."""
+        if (
+            category not in STACKABLE_CATEGORIES
+            or category == "spells"
+            or item.item_id == _ESTUS_FLASK_ID
+        ):
             return 0
         limit = character.max_stack(item.item_id)
         return limit if limit > 1 else 0

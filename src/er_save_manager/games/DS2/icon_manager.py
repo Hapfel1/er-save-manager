@@ -1,8 +1,8 @@
 """
 Icon manager for the DS2 item browser.
 
-Icons are stored in icons.db (SQLite) alongside this file, keyed by item id
-(see build_icon_db.py). Images are loaded on demand and cached in memory.
+Icons are stored in icons.db (SQLite) alongside this file, keyed by item id.
+Images are loaded on demand and cached in memory.
 Returns PIL Images; callers create CTkImage at the desired display size.
 """
 
@@ -47,7 +47,7 @@ def has_icon(item_id: int) -> bool:
 
 
 # A few items have no icon of their own and share another item's exported
-# icon in-game. Verified case by case, not a guess:
+# icon in-game, checked for each one:
 #   - Old Mirrah Greatsword is a unique NPC-drop variant of Mirrah Greatsword
 #     with no separate icon; the base weapon's icon is the one the game uses.
 _FALLBACK_ICON_ID: dict[int, int] = {
@@ -118,8 +118,142 @@ def fit_size(img: PILImage.Image, max_dim: int) -> tuple[int, int]:
     return (max(1, round(w * scale)), max(1, round(h * scale)))
 
 
-# ---- infusion icons ---------------------------------------------------------
+# ------------------------------------------------------------------
+# Infusion icons
+# ------------------------------------------------------------------
 
 
-def get_infusion_icon(_infusion_index: int) -> PILImage.Image | None:
-    return None
+# Icons without an item id live in the named_icons table: infusion icons as
+# "<infusion name>.webp", with names from regulation.INFUSION_NAMES (the plain
+# weapon has none), and bonfire pictures as "<bonfire id>.webp".
+_named_cache: dict[str, PILImage.Image | None] = {}
+
+# Share of the square weapon icon the infusion badge covers.
+_INFUSION_BADGE_FRACTION = 0.42
+
+
+def _named_lookup(name: str) -> PILImage.Image | None:
+    if name in _named_cache:
+        return _named_cache[name]
+    img = None
+    if _ensure_loaded() and _db is not None:
+        try:
+            from PIL import Image
+
+            row = _db.execute(
+                "SELECT data FROM named_icons WHERE name = ?", (name,)
+            ).fetchone()
+            if row is not None:
+                img = Image.open(BytesIO(row[0])).convert("RGBA")
+        except Exception:
+            img = None
+    _named_cache[name] = img
+    return img
+
+
+def get_infusion_icon(infusion_index: int) -> PILImage.Image | None:
+    """Icon of an infusion index, or None for the plain weapon or a missing
+    icon."""
+    from er_save_manager.games.DS2.regulation import INFUSION_NAMES
+
+    if not 0 < infusion_index < len(INFUSION_NAMES):
+        return None
+    return _named_lookup(f"{INFUSION_NAMES[infusion_index]}.webp")
+
+
+def get_infusion_icon_by_name(name: str) -> PILImage.Image | None:
+    """Icon of an infusion by its display name, or None for "Normal"."""
+    from er_save_manager.games.DS2.regulation import INFUSION_NAMES
+
+    if name not in INFUSION_NAMES:
+        return None
+    return get_infusion_icon(INFUSION_NAMES.index(name))
+
+
+def with_infusion_badge(weapon: PILImage.Image, infusion_index: int) -> PILImage.Image:
+    """The weapon icon centered on a square canvas with the infusion icon in
+    the top-right corner. Weapon icons are tall and narrow, so the badge sits
+    in the empty space beside the blade instead of covering it. Returns the
+    weapon unchanged when the infusion has no icon."""
+    badge = get_infusion_icon(infusion_index)
+    if badge is None:
+        return weapon
+    try:
+        from PIL import Image
+
+        side = max(weapon.size)
+        canvas = Image.new("RGBA", (side, side))
+        canvas.alpha_composite(
+            weapon.convert("RGBA"),
+            ((side - weapon.width) // 2, (side - weapon.height) // 2),
+        )
+        size = max(1, round(side * _INFUSION_BADGE_FRACTION))
+        canvas.alpha_composite(
+            badge.resize((size, size), Image.LANCZOS), (side - size, 0)
+        )
+        return canvas
+    except Exception:
+        return weapon
+
+
+def bind_infusion_icon(label, variable, size: int = 22) -> None:
+    """Show the icon of the infusion named by variable on a CTkLabel, kept
+    current through a trace so values set by code update it too."""
+    import customtkinter as ctk
+
+    def update(*_args) -> None:
+        if not label.winfo_exists():
+            return
+        img = get_infusion_icon_by_name(variable.get())
+        if img is None:
+            label.configure(image=None)
+            label._infusion_image = None
+            return
+        ctk_img = ctk.CTkImage(light_image=img, dark_image=img, size=(size, size))
+        label.configure(image=ctk_img)
+        label._infusion_image = ctk_img
+
+    variable.trace_add("write", update)
+    update()
+
+
+def add_infusion_menu_icons(combo, size: int = 20) -> None:
+    """Show each infusion's icon beside its entry in a CTkComboBox's dropdown
+    list. CTk rebuilds the entries whenever the values change, so the icons
+    are applied again after every rebuild. Normal gets a blank image of the
+    same size so all names stay aligned."""
+    from PIL import Image, ImageTk
+
+    menu = combo._dropdown_menu
+    px = max(1, round(menu._apply_widget_scaling(size)))
+    blank = ImageTk.PhotoImage(Image.new("RGBA", (px, px)), master=menu)
+    photos: dict[str, ImageTk.PhotoImage] = {}
+    rebuild = menu._add_menu_commands
+
+    def rebuild_with_icons() -> None:
+        rebuild()
+        for index, value in enumerate(menu._values):
+            if value not in photos:
+                img = get_infusion_icon_by_name(value)
+                photos[value] = (
+                    ImageTk.PhotoImage(img.resize((px, px), Image.LANCZOS), master=menu)
+                    if img is not None
+                    else blank
+                )
+            menu.entryconfigure(index, image=photos[value])
+
+    menu._add_menu_commands = rebuild_with_icons
+    # Tk drops images that Python no longer references.
+    menu._infusion_photos = (blank, photos)
+    rebuild_with_icons()
+
+
+# ------------------------------------------------------------------
+# Bonfire icons
+# ------------------------------------------------------------------
+
+
+def get_bonfire_icon(bonfire_id: int) -> PILImage.Image | None:
+    """Picture of a bonfire by its id in bonfire_database.BONFIRES, or None
+    when it has none."""
+    return _named_lookup(f"{bonfire_id}.webp")

@@ -31,9 +31,10 @@ Entry map (23 total):
   1-10     Per-character profile slot: name, stats, souls, HP, NG+, inventory
   11-20    Per-character large slot (~501KB), one per character slot.
            Holds per-character data (differs between characters starting at
-           offset 0x732, identical padding after ~0x5A87F), but the internal
-           structure is not mapped. Not floats/ASCII text in any recognizable
-           pattern; contents preserved as-is on save.
+           offset 0x732, identical padding after ~0x5A87F). Mostly unmapped.
+           Bonfire levels, the last rested bonfire, NPC flags and NPC kill
+           records are located through the bonfire id array (see Bonfires);
+           everything else is preserved as-is on save.
   21       Single ~2MB entry: zlib-compressed (8-byte size header, then a
            standard zlib stream) nested BND4 archive of ~170 real entries.
            This is the game's static param/regulation data (EnemyParam,
@@ -43,8 +44,8 @@ Entry map (23 total):
   22       Single ~13KB entry: same per-slot name cache as entry 0 (see
            CHARACTER_SELECT_ENTRY below). Rest of the entry unmapped.
 
-Entries 11-22 are decrypted and re-encrypted unchanged on save since their
-internal structure has not been reverse engineered yet.
+Entry 21 is re-encrypted unchanged on save, and entry 22 only gets its name
+cache updated. Entries 11-20 are only changed by bonfire and NPC edits.
 
 Key source: DS2 SOTFS PC AES key from the souls_givifier project (jtesta).
 Profile slot field offsets
@@ -96,18 +97,18 @@ NG_PLUS_MAX = 7
 
 # Profile order of the attributes matches the game's class param rows:
 # vigor, endurance, vitality, attunement, strength, dexterity,
-# intelligence (0x2C), faith (0x2E), adaptability (0x30).
+# intelligence, faith, adaptability.
 STAT_OFFSETS = {
     "level": 0x38,
-    "vigor": 32,
-    "attunement": 38,
-    "endurance": 34,
-    "vitality": 36,
-    "strength": 40,
-    "dexterity": 42,
-    "intelligence": 44,
-    "faith": 46,
-    "adaptability": 48,
+    "vigor": 0x20,
+    "attunement": 0x26,
+    "endurance": 0x22,
+    "vitality": 0x24,
+    "strength": 0x28,
+    "dexterity": 0x2A,
+    "intelligence": 0x2C,
+    "faith": 0x2E,
+    "adaptability": 0x30,
 }
 
 LEVEL_STAT_KEYS = [k for k in STAT_OFFSETS if k != "level"]
@@ -137,7 +138,8 @@ _INFUSION_SHIFT = 8
 KEY_ITEMS_START = 0x10E30
 KEY_ITEMS_END = 0x11DF0
 
-# Candidate event/quest/boss flag region: unmapped, see module docstring.
+# Candidate event/quest/boss flag region in the profile entry. Unmapped,
+# only used by the WIP world state tab.
 FLAG_REGION_START = 0x11E00
 FLAG_REGION_END = 0x1B2FC
 
@@ -166,20 +168,20 @@ BONFIRE_MAX_LEVEL = 8
 #   cheat tables describe.
 _LAST_RESTED_AFTER_IDS = 0xC04
 _NPC_FLAGS_BEFORE_IDS = 0x15A0
-# Each entry names the bytes killing that NPC writes, which are zero
-# otherwise, as (offset from the first bonfire id array, length in bytes).
-# Blacksmith Lenigrast's full record is confirmed by two separate kills
-# matching the game's own rewritten save byte for byte. Emerald Herald and
-# Merchant Hag Melentia, Laddersmith Gilligan, Housekeeper Milibeth, Strowen and
-# Darkdiver Grandahl, Lonesome Gavlan and Saulden each have only a single-byte
-# marker, confirmed for Herald, Melentia and Gavlan by two separate kills
-# each, for Strowen by four, and for Gilligan, Milibeth, Grandahl and Saulden
-# by one kill checked against every other sample on hand. 0 while alive, 1 once killed, and 0 in every sample
-# without that kill, including a scan of the 64 bytes around each one. A first
-# attempt also listed a larger record for Herald and one for Melentia, both
-# drawn from a single kill each in a region that holds a large volatile buffer
-# that changes by tens of thousands of bytes on ordinary play with no kill
-# involved; those were false positives and are not listed.
+# Bytes a kill writes for each NPC, as (offset from the first bonfire id
+# array, length in bytes). They are zero while the NPC was never killed.
+# Everyone except Lenigrast has a single-byte marker, 0 while alive and 1 once
+# killed. Kills checked against a before/after save pair:
+# - Lenigrast (full record, matched the game's save byte for byte), Herald,
+#   Melentia, Gavlan: two kills each.
+# - Strowen: four kills.
+# - Gilligan, Milibeth, Grandahl, Saulden: one kill, 0 in every other sample
+#   including the 64 bytes around each marker.
+# - Creighton, Benhart, Maughlin, Navlaan, Magerold, Cromwell, Rat King, Tark,
+#   Targray, Pate: kill count not recorded.
+# Unconfirmed entries are marked below. Earlier larger records for Herald and
+# Melentia came from a volatile buffer that changes on ordinary play and were
+# false positives.
 _NPC_KILL_RECORDS: dict[str, tuple[tuple[int, int], ...]] = {
     "Blacksmith Lenigrast": (
         (-0x27576, 1),
@@ -201,11 +203,31 @@ _NPC_KILL_RECORDS: dict[str, tuple[tuple[int, int], ...]] = {
     "Saulden, the Crestfallen Warrior": ((-0x27582, 1),),
     "Creighton the Wanderer": ((-0x21D08, 1),),
     "Benhart of Jugo": ((-0x129A8, 1),),
+    "Maughlin the Armourer": ((-0x27580, 1),),
+    "Royal Sorcerer Navlaan": ((-0x13FC6, 1),),
+    "Magerold of Lanafir": ((-0x23326, 1),),
+    "Cromwell the Pardoner": ((-0x25F60, 1),),
+    "The Rat King": ((-0x1E5B8, 1),),
+    "Manscorpion Tark": ((-0x1F0C0, 1),),
+    "Blue Sentinel Targray": ((-0x1FBD6, 1),),
+    "Mild Mannered Pate": ((-0x23E38, 1),),
+    # Unconfirmed: each pair shares its only candidate byte, so clearing it may
+    # not revive the right NPC.
+    "Rosabeth of Melfia": ((-0x129A4, 1),),
+    "Stone Trader Chloanne": ((-0x129A4, 1),),
+    "Titchy Gren": ((-0x21D04, 1),),
+    "Weaponsmith Ornifex": ((-0x21D04, 1),),
+    # Unconfirmed: one kill each with two candidate bytes. The one listed is
+    # the candidate not shared with another NPC.
+    "Steady Hand McDuff": ((-0x25451, 1),),
+    "Carhillion of the Fold": ((-0x23E36, 1),),
+    "Straid of Olaphis": ((-0x25452, 1),),
+    "Felkin the Outcast": ((-0x21D06, 1),),
 }
 # The byte after Lenigrast's last entry held 0 before his kill and 3 after it,
 # but holds other values in slots without that kill, so it is cleared only
 # together with a present record.
-_LENIGRAST_RECORD_TAIL = (0x11A8, 1)
+_LENIGRAST_RECORD_TAIL = 0x11A8
 
 # Occupancy entry (entry 0) layout: fixed stride per character slot.
 _OCC_STRIDE = 496
@@ -329,9 +351,9 @@ class NpcStates:
     """View over the NPC hostile and dead flags in one slot's large entry.
 
     A flag byte is 0 while clear and holds bits once set, so a flag counts as
-    set when its byte is non-zero. An NPC also counts as dead while his kill
-    record is stored, because with the record left over he stays dead in game
-    even with his flags clear. Reviving clears both flags and the record, which
+    set when its byte is non-zero. An NPC also counts as dead while their kill
+    record is stored, because with the record left over they stay dead in game
+    even with their flags clear. Reviving clears both flags and the record, which
     is the state before the kill. Calming clears the hostile flag only.
     """
 
@@ -357,7 +379,7 @@ class NpcStates:
         for offset, length in self._record_spans(name):
             self._data[offset : offset + length] = bytes(length)
         if name == "Blacksmith Lenigrast":
-            tail = self._anchor + _LENIGRAST_RECORD_TAIL[0]
+            tail = self._anchor + _LENIGRAST_RECORD_TAIL
             if tail < len(self._data):
                 self._data[tail] = 0
         return True
@@ -571,7 +593,7 @@ class BulkAddResult:
     """Outcome counts of Character.add_items_bulk."""
 
     added: int = 0
-    updated: int = 0  # existing stacks whose quantity was set
+    updated: int = 0  # existing stacks that were added onto
     skipped_owned: int = 0  # non-stackable items already owned
     clamped: int = 0  # items whose requested upgrade exceeded their cap
     infusion_fallback: int = 0  # weapons added plain, infusion not allowed
@@ -587,13 +609,20 @@ def parse_inventory(data: bytes, start: int, end: int) -> list[InventoryItem]:
     return items
 
 
-_VALID_NAME_CHARS = set(
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_"
-)
+def _decode_name(raw: bytes) -> str:
+    """Name stored as NUL-terminated UTF-16. Bytes after the terminator are
+    ignored, since they can hold leftovers."""
+    return raw.decode("utf-16-le", errors="ignore").split("\x00", 1)[0]
 
 
 def _is_valid_name(name: str) -> bool:
-    return bool(name) and all(c in _VALID_NAME_CHARS for c in name)
+    """Whether a decoded name is a real one rather than uninitialized data.
+
+    The game allows punctuation and non-Latin letters in names, so any
+    printable text counts. Never-created slots hold a default profile whose
+    name starts with a control character, which fails this check.
+    """
+    return bool(name.strip()) and name.isprintable() and "\ufffd" not in name
 
 
 class Character:
@@ -609,8 +638,7 @@ class Character:
 
     @property
     def name(self) -> str:
-        raw = bytes(self._data[NAME_OFFSET : NAME_OFFSET + NAME_SIZE])
-        return raw.decode("utf-16-le", errors="ignore").rstrip("\x00")
+        return _decode_name(bytes(self._data[NAME_OFFSET : NAME_OFFSET + NAME_SIZE]))
 
     @name.setter
     def name(self, value: str) -> None:
@@ -666,10 +694,6 @@ class Character:
 
     def raw(self) -> bytearray:
         return self._data
-
-    # ------------------------------------------------------------------
-    # Inventory add / delete
-    # ------------------------------------------------------------------
 
     STACKABLE_CATEGORIES = {"goods", "bolts", "spells", "upgrade", "seamless"}
 
@@ -769,10 +793,29 @@ class Character:
         The resulting quantity is capped at the item's stack limit, and
         upgrade at its maximum level. A weapon infusion the weapon does not
         allow is written as 0. Adds one entry, see add_copies for several.
+
+        Spells are the exception: quantity and stack are ignored, a new entry
+        is always written with a full set of uses, and an existing copy of
+        the same spell never blocks or absorbs it, matching how a spell is
+        actually learned in game and how owning several copies works.
         """
         if category in UNIQUE_CATEGORIES and self.owns(item_id):
             return False
         start, end = self._region(category)
+
+        if category == "spells":
+            # A spell is always learned with a full set of uses, and owning a
+            # second copy of the same spell is normal, each with its own use
+            # count, so this never merges into an existing entry.
+            empty = self._find_empty_slot(start, end)
+            if empty is None:
+                return False
+            new_item = InventoryItem(
+                empty.offset, item_id, 0, self.max_stack(item_id), 0
+            )
+            self.write_inventory_slot(new_item)
+            return True
+
         stackable = category in self.STACKABLE_CATEGORIES
 
         if stackable and stack:
@@ -929,13 +972,16 @@ class Character:
     ) -> BulkAddResult:
         """Add many items of one category with a single inventory scan.
 
-        Stackable items already owned get their quantity set, matching
-        add_item, and quantity is capped per item at its stack limit. For
+        Stackable items already owned get quantity added to their stack,
+        matching add_item, capped per item at its stack limit. For
         weapons, quantity is the number of copies wanted of each exact variant
         (same item, upgrade and infusion) and only the missing copies are
         added. Other items already owned are skipped. Upgrade is clamped per
         item to its maximum level. A weapon that does not allow the infusion is
         added plain.
+
+        Spells ignore quantity entirely: one new, fully-charged entry is
+        added per id, regardless of copies already owned, matching add_item.
         """
         result = BulkAddResult()
         start, end = self._region(category)
@@ -949,7 +995,8 @@ class Character:
                 variants[(slot.item_id, slot.upgrade, slot.infusion)] += 1
         empty = iter([slot for slot in slots if slot.item_id == 0])
 
-        stackable = category in self.STACKABLE_CATEGORIES
+        is_spell = category == "spells"
+        stackable = category in self.STACKABLE_CATEGORIES and not is_spell
         upgradable = category in UPGRADABLE_CATEGORIES
         multi_copy = category in MULTI_COPY_CATEGORIES
         durability = (
@@ -959,6 +1006,20 @@ class Character:
         )
 
         for item_id in item_ids:
+            if is_spell:
+                # Same reasoning as add_item: always a new, fully-charged
+                # entry, never merged into one already owned.
+                slot = next(empty, None)
+                if slot is None:
+                    result.no_space += 1
+                    continue
+                new_item = InventoryItem(
+                    slot.offset, item_id, 0, self.max_stack(item_id), 0
+                )
+                self.write_inventory_slot(new_item)
+                result.added += 1
+                continue
+
             existing = owned.get(item_id)
             if existing is not None and stackable:
                 existing.quantity = min(
@@ -1039,7 +1100,7 @@ class Character:
         )
         return True
 
-    def delete_item(self, item_id: int, category: str) -> bool:
+    def delete_item(self, item_id: int) -> bool:
         """Zero out the first matching item slot in either list. Returns
         False if not found."""
         existing = self._find_item_anywhere(item_id)
@@ -1086,8 +1147,7 @@ class DS2Save:
             name_off = _OCC_NAME_OFFSET + _OCC_STRIDE * i
             if name_off + _OCC_NAME_SIZE > len(occ_data):
                 continue
-            name_bytes = occ_data[name_off : name_off + _OCC_NAME_SIZE]
-            name = name_bytes.decode("utf-16-le", errors="ignore").rstrip("\x00")
+            name = _decode_name(bytes(occ_data[name_off : name_off + _OCC_NAME_SIZE]))
             if _is_valid_name(name):
                 result[i] = name
         return result
@@ -1143,6 +1203,10 @@ class DS2Save:
         )
 
     def is_slot_initialized(self, slot_index: int) -> bool:
+        """Whether the slot's entry 0 record byte is set. The byte is 0 in
+        slots that were never entered, but it is not a dedicated flag: named
+        characters hold values such as 76, 102 and 240 there. Only use it for
+        slots without a name, see slot_state."""
         occ_data = self.container.get_entry(OCCUPANCY_ENTRY)
         flag_off = _OCC_FLAG_OFFSET + _OCC_STRIDE * slot_index
         if flag_off >= len(occ_data):
@@ -1170,12 +1234,11 @@ class DS2Save:
     def slot_state(self, slot_index: int) -> SlotState:
         """Classify a slot.
 
-        The character is named in the tutorial, so a slot that has been
-        entered exists before it has a name. The game writes the slot's entry 0
-        record when the slot is first entered, and a slot that was never
-        entered keeps that record all zero (see is_slot_initialized). Those two
-        cases are told apart by the record, since the profile of an unnamed
-        slot is the same default character in both.
+        A slot with a name always holds a character. The character is named
+        in the tutorial, so a slot that has been entered exists before it has
+        a name. For unnamed slots the entry 0 record byte tells the two cases
+        apart (see is_slot_initialized), since the profile of an unnamed slot
+        is the same default character in both.
         """
         if self.slot_display_name(slot_index):
             return SlotState.CHARACTER

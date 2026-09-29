@@ -55,6 +55,9 @@ class DS2BonfirePanel:
         )
         self._summary_label = ctk.CTkLabel(header, text="")
         self._summary_label.pack(side="left", padx=(12, 0))
+        ctk.CTkButton(
+            header, text="Visual View", width=110, command=self._open_visual_view
+        ).pack(side="right")
 
         buttons = ctk.CTkFrame(self.parent, fg_color="transparent")
         buttons.pack(side="bottom", fill="x", padx=10, pady=(6, 10))
@@ -154,6 +157,11 @@ class DS2BonfirePanel:
             save.slot_state(self.get_slot_index()) is SlotState.CHARACTER
         )
         self._update_buttons()
+
+    def _open_visual_view(self) -> None:
+        from er_save_manager.games.DS2.visual_bonfires import VisualBonfireBrowser
+
+        VisualBonfireBrowser(self.parent, self)
 
     def _selected_ids(self) -> list[int]:
         return [self._ids[self._tree.index(row)] for row in self._tree.selection()]
