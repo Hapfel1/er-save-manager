@@ -3,6 +3,72 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.12.0
+**Released:** September 29, 2026
+
+
+### ✨ New Features
+
+- feat(ds2): add scroll containers to editor stats and inventory tabs ([6084d4e](https://github.com/Hapfel1/er-save-manager/commit/6084d4e0aec648a2a1a142cee80f4f0c0ed91d6a))
+
+- Feat(ui): add configurable default game
+Add a default_game setting used to pick the game on startup. A button next to the game dropdown shows whether the selected game is the default or sets it. ([af91f04](https://github.com/Hapfel1/er-save-manager/commit/af91f04b8e02380e989bb43ca1fc0c99c1cfcf74))
+
+- Regulation-backed item limits, bulk add and upgrade editing `[ds2]` ([5422614](https://github.com/Hapfel1/er-save-manager/commit/542261438b462206f3b6233e2b5d4d1c5c4b20fb))
+
+- Weapon infusion editing, weapon copies and multi-select remove `[ds2]` ([a067b81](https://github.com/Hapfel1/er-save-manager/commit/a067b8175b3dcb0107a931b0027a3a5026136351))
+
+- Tell pre-character-creation slots apart from never-created ones `[ds2]` ([b0643a2](https://github.com/Hapfel1/er-save-manager/commit/b0643a20b756e0b8b48b360fa3aeb087ef03488e))
+
+- Added Bonfire Editing: Activating/Deactivating bonfires and setting bonfire ascetic level `[ds2]` ([5651ac1](https://github.com/Hapfel1/er-save-manager/commit/5651ac1c0ea7edd207a833cdc564e790bf629595))
+
+- Added NPC Reviver `[ds2]` ([5a0cd59](https://github.com/Hapfel1/er-save-manager/commit/5a0cd59eda68e2e77a1f0d1271c5a8efe2eb8995))
+
+
+
+### 🔧 Bug Fixes
+
+- Fix(settings): keep auto-backup save path when enabling toggle:
+The toggle handler captured the game config before opening the save chooser, then wrote it back afterwards, overwriting the path the chooser had just stored. Re-read the config after the chooser and revert the checkbox when no valid path is chosen. ([323aa6a](https://github.com/Hapfel1/er-save-manager/commit/323aa6ac2af02edebc581f6e543cafd4441ee4fc))
+
+- fix(ds2): correct intelligence/faith/adaptability offsets and 1-based NG+ ([7bb7e02](https://github.com/Hapfel1/er-save-manager/commit/7bb7e022a2f2a083b731d78fa0f6de271b4d1b48))
+
+- fix(ds2): validate item spawns, fixed soul vessel crashing the game ([7552b5c](https://github.com/Hapfel1/er-save-manager/commit/7552b5c85852cea6f34ed6ac6e186a8c085f477c))
+
+- fix(ui): run SteamID refresh off the UI thread for DS2/DS3 loads and fix toast stack cleanup ([e163e29](https://github.com/Hapfel1/er-save-manager/commit/e163e2964ee70c917efda786ebf5324aaca74306))
+
+- Fix(ui): center windows correctly under UI/DPI scaling
+CTk scales the width and height passed to geometry() but not the x/y offset, so every dialog that centered itself from the unscaled size opened right and below its target at scales above 100%. Add center_window() to ui/utils.py, which computes the offset from the scaled size, centers on screen or over a parent, and caps oversized windows. Use it for the main window and all dialogs, and make the duplicated _center_over helpers delegate to it. Windows that had no positioning now open centered over their parent. Fix the map window sizing itself as a screen fraction in unscaled units. ([1e4ed1d](https://github.com/Hapfel1/er-save-manager/commit/1e4ed1df9dc369c935c86b8c4ac20539f52f0b5e))
+
+- Validated and tested all NPC entries `[ds2]` ([13ea43f](https://github.com/Hapfel1/er-save-manager/commit/13ea43fe1af90f262a6d46be397218a8c6118eed))
+
+- Stack goods onto existing quantity instead of overwriting it `[ds2]` ([a0f4f42](https://github.com/Hapfel1/er-save-manager/commit/a0f4f42dc2dc9ae858676cdcb4e0a480d0caf477))
+
+
+
+### 🎨 User Interface
+
+- Grey out inapplicable inventory controls and edit several rows, add tooltips, more userfriendly UI `[ds2]` ([1f9d999](https://github.com/Hapfel1/er-save-manager/commit/1f9d99923ee036c60fcd02dbe0cf36692c9bfd6a))
+
+- Added Visual Item Picker and Visual Inventory Editor `[ds2]` ([7bf854c](https://github.com/Hapfel1/er-save-manager/commit/7bf854c4ffeaffe590f7450e04374822667f8199))
+
+
+
+### ⚡ Performance Improvements
+
+- perf(steamid): use C-speed scans to avoid multi-second UI stalls on save load ([40cfb86](https://github.com/Hapfel1/er-save-manager/commit/40cfb86c4aacbdfcd6bd04a62889439f892bbbd1))
+
+- Use C-speed scans in SteamID detection to avoid multi-second UI stalls on save load `[steamid]` ([081c246](https://github.com/Hapfel1/er-save-manager/commit/081c2462bec745497b824da28797cb25a65c39b2))
+
+
+
+### 📦 Dependencies
+
+- Bump the github-actions group with 2 updates `[deps]` ([17e313f](https://github.com/Hapfel1/er-save-manager/commit/17e313f7a56d1987431d5f8d23b81661acf6360d))
+
+
+
+---
 ## 📦 Release 1.11.0
 **Released:** September 23, 2026
 
@@ -1698,6 +1764,7 @@ implementation) ([19bee2c](https://github.com/Hapfel1/er-save-manager/commit/19b
 
 
 ---
+[1.12.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.11.0..v1.12.0
 [1.11.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.10.3..v1.11.0
 [1.10.3]: https://github.com/Hapfel1/er-save-manager/compare/v1.10.2..v1.10.3
 [1.10.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.10.1..v1.10.2
