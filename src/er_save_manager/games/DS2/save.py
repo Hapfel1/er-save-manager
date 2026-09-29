@@ -769,10 +769,29 @@ class Character:
         The resulting quantity is capped at the item's stack limit, and
         upgrade at its maximum level. A weapon infusion the weapon does not
         allow is written as 0. Adds one entry, see add_copies for several.
+
+        Spells are the exception: quantity and stack are ignored, a new entry
+        is always written with a full set of uses, and an existing copy of
+        the same spell never blocks or absorbs it, matching how a spell is
+        actually learned in game and how owning several copies works.
         """
         if category in UNIQUE_CATEGORIES and self.owns(item_id):
             return False
         start, end = self._region(category)
+
+        if category == "spells":
+            # A spell is always learned with a full set of uses, and owning a
+            # second copy of the same spell is normal, each with its own use
+            # count, so this never merges into an existing entry.
+            empty = self._find_empty_slot(start, end)
+            if empty is None:
+                return False
+            new_item = InventoryItem(
+                empty.offset, item_id, 0, self.max_stack(item_id), 0
+            )
+            self.write_inventory_slot(new_item)
+            return True
+
         stackable = category in self.STACKABLE_CATEGORIES
 
         if stackable and stack:
@@ -936,6 +955,9 @@ class Character:
         added. Other items already owned are skipped. Upgrade is clamped per
         item to its maximum level. A weapon that does not allow the infusion is
         added plain.
+
+        Spells ignore quantity entirely: one new, fully-charged entry is
+        added per id, regardless of copies already owned, matching add_item.
         """
         result = BulkAddResult()
         start, end = self._region(category)
@@ -949,7 +971,8 @@ class Character:
                 variants[(slot.item_id, slot.upgrade, slot.infusion)] += 1
         empty = iter([slot for slot in slots if slot.item_id == 0])
 
-        stackable = category in self.STACKABLE_CATEGORIES
+        is_spell = category == "spells"
+        stackable = category in self.STACKABLE_CATEGORIES and not is_spell
         upgradable = category in UPGRADABLE_CATEGORIES
         multi_copy = category in MULTI_COPY_CATEGORIES
         durability = (
@@ -959,6 +982,20 @@ class Character:
         )
 
         for item_id in item_ids:
+            if is_spell:
+                # Same reasoning as add_item: always a new, fully-charged
+                # entry, never merged into one already owned.
+                slot = next(empty, None)
+                if slot is None:
+                    result.no_space += 1
+                    continue
+                new_item = InventoryItem(
+                    slot.offset, item_id, 0, self.max_stack(item_id), 0
+                )
+                self.write_inventory_slot(new_item)
+                result.added += 1
+                continue
+
             existing = owned.get(item_id)
             if existing is not None and stackable:
                 existing.quantity = min(
