@@ -2,7 +2,7 @@
 Nightreign Save File Parser
 
 Container: BND4 with 14 entries, AES-128-CBC encrypted per-entry.
-Key: 0x18F63266_05BD178A_5524523A_C0A0C609 (same as DS2/ER).
+Key: 0x18F63266_05BD178A_5524523A_C0A0C609.
 IV: prepended 16 bytes of each encrypted entry.
 Checksum: MD5(decrypted[4 : len-28]) stored at decrypted[len-28 : len-12].
           Remaining 12 bytes (len-12 : len) are PKCS7-like padding (0x0C * 12).

@@ -1,6 +1,6 @@
 # Elden Ring Save Manager
 
-A comprehensive save file editor, backup manager, and corruption fixer for Elden Ring with an intuitive GUI, community Browsers, ItemGib and much more.
+A comprehensive save file editor, backup manager, and corruption fixer for Elden Ring with an intuitive GUI, community Browsers, ItemGib and much more. Also supports editing Dark Souls Remastered, Dark Souls 2: Scholar of the first Sin, Dark Souls 3 and Nightreign Save Files.
 
 ## Documentation and User Guides
 
@@ -28,11 +28,11 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **Invasion Regions & Game Settings**: View and edit invasion regions and game settings
 - **Backup Manager**: Automatic and manual backups with restore functionality
 - **Troubleshooting**: Troubleshooter for checking game launch/connection related issues
-- **Backup Manager and SteamID Patcher for**: Elden Ring, Elden Ring Nightreign, Armored Core 6, Sekiro, Dark Souls III, Dark Souls Remastered
+- **Backup Manager and SteamID Patcher for**: Elden Ring, Elden Ring Nightreign, Armored Core 6, Sekiro, Dark Souls III, Dark Souls II SotFS, Dark Souls Remastered
 - **DSR**: Stats Editing, Character Management, Event Flags, Boss Revival, NPC Revival, Item Spawning
 - **DS3**: Stats Editing, Character Management, Boss Revival, Item Spawning, World State Editing, Supports Convergence and Cinders Mod
 - **Nightreign**: Relic spawning and editing, Editing Murk, Character Management
-- **DS2**: Stats Editing, Item Spawning, Character Management
+- **DS2**: Stats Editing, Item Spawning, Character Management, Bonfire Editing, NPC Revival
 
 ### Work in Progress
 
@@ -238,8 +238,10 @@ Automatically detects issues with your game installation, your save file and any
 ### DS2
 
 - Stats Editing
-- Item Spawning
+- Item Spawning (weapon upgrades and infusions, visual item picker)
 - Character Management
+- Bonfire Editing (light/unlight, Bonfire Ascetic level)
+- NPC Revival
 
 ## Building from Source
 
@@ -256,9 +258,12 @@ Source Available License - see [LICENSE](LICENSE)
 - [Sayuri](https://github.com/Umgak) for allowing me to use her contributions to the [TGA Cheat Table](https://github.com/The-Grand-Archives/Elden-Ring-CT-TGA), specifically the Event Flag Manager's tables
 - [?WikiName?](https://soulsmodding.com/doku.php?id=er-refmat:main) for the available documentation
 - [SimpleSekiroSavegameHelper](https://github.com/uberhalit/SimpleSekiroSavegameHelper) for offsets and constants for Sekiro steamid patcher
-- [DS3SaveUnpacker](https://github.com/tremwil/DS3SaveUnpacker) for DS3 AES encryption key
+- DS3 AES encryption key found by Atvaark, published in [DS3SaveUnpacker](https://github.com/tremwil/DS3SaveUnpacker) by tremwil
+- Nightreign AES encryption key: TKGP and EonaCat
 - DS2 Save format research based on the [Dark-Souls-2-Save-Editor-PS4-PC](https://github.com/alfizari/Dark-Souls-2-Save-Editor-PS4-PC)
-- DS2 SteamID detection/patching adapted from [souls_givifier](https://github.com/jtesta/souls_givifier)
+- DS2 AES encryption key and SteamID detection/patching adapted from [souls_givifier](https://github.com/jtesta/souls_givifier)
+- [Smithbox](https://github.com/vawser/Smithbox) param CSV exports, used to derive the DS2 param field layout
+- Elden Ring event flag, boss, gesture and summoning pool data from the Cheat Engine scripts by Dasaav and Sayuri ([TGA Cheat Table](https://github.com/The-Grand-Archives/Elden-Ring-CT-TGA))
 
 
 ### Community
@@ -266,5 +271,5 @@ Source Available License - see [LICENSE](LICENSE)
 - Testers: [2Pz](https://github.com/2Pz), [Ghostlyswat12](https://github.com/Ghostlyswat12)
 
 ### Special Thanks
-- [2Pz](https://github.com/2Pz) for implenting an automated build/release workflow
+- [2Pz](https://github.com/2Pz) for implementing an automated build/release workflow
 - [Sayuri](https://github.com/Umgak) for her invaluable help on save file research and item spawning validation and her patience in answering questions.

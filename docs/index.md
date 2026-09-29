@@ -46,18 +46,29 @@
 - **Character Editor** - Edit stats, runes, name, level, and build attributes
 - **Appearance Editor** - View, export and import 15 preset slots
 - **Community Preset Browser** - Browse and download appearance presets
+- **Inventory Editor** - Edit your inventory, spawn in items, import builds
+- **Equipment Editor** - Edit equipped items, save and share loadouts
+- **World State / Teleportation** - Known locations, custom coordinates and an interactive map
 - **SteamID Patcher** - Transfer saves between Steam accounts
 - **Event Flags Editor** - View and toggle 948+ documented event flags
 - **Boss Respawner** - Respawn any boss for repeated fights
+- **NPC Respawner and Quest Tracker**
 - **Gestures** - Unlock all gestures including DLC and cut content
+- **Invasion Regions & Game Settings**
 - **Backup Manager** - Automatic and manual backups with restore functionality
 - **Troubleshooting** - Diagnostic checks for game and save file issues
 
+### :material-controller: Other FromSoftware Games
+
+- [Nightreign](user-guide/nightreign.md) - Relic spawning and editing, Murk editing, character management
+- [Dark Souls III](user-guide/dark-souls-3.md) - Stats, character management, boss revival, item spawning, world state
+- [Dark Souls Remastered](user-guide/dark-souls-remastered.md) - Stats, character management, event flags, boss and NPC revival, item spawning
+- **Dark Souls II SotFS** - Stats, item spawning, character management, bonfire editing, NPC revival
+- Backup Manager and [SteamID Patcher](user-guide/steamid-patcher.md) for all of the above plus Armored Core 6 and Sekiro
+
 ### :material-wrench: Work in Progress
 
-- **World State / Teleportation** - Custom coordinate teleportation (known location list needs verification)
-- **Inventory Editor** - Item spawning requires additional reverse engineering
-- **Hex Editor** - Not yet implemented
+- **Hex Editor** - Not yet available
 
 ## Installation
 
@@ -115,11 +126,19 @@ The Save File Fixer can detect and repair:
 
 ## Credits
 
-### Research & Development
+### Save File Research
 
-- [ER-Save-Lib](https://github.com/ClayAmore/ER-Save-Lib) - Rust implementation
-- [Umgak](https://github.com/Umgak) - Event Flag Manager tables
+- [ER-Save-Lib](https://github.com/ClayAmore/ER-Save-Lib) - Rust implementation and reverse engineering research
+- [Sayuri](https://github.com/Umgak) - Event Flag Manager tables from the [TGA Cheat Table](https://github.com/The-Grand-Archives/Elden-Ring-CT-TGA)
 - [?WikiName?](https://soulsmodding.com/doku.php?id=er-refmat:main) - Documentation
+- [SimpleSekiroSavegameHelper](https://github.com/uberhalit/SimpleSekiroSavegameHelper) - Sekiro SteamID offsets and constants
+- DS3 AES encryption key found by Atvaark, published in [DS3SaveUnpacker](https://github.com/tremwil/DS3SaveUnpacker) by tremwil
+- Nightreign AES encryption key: TKGP and EonaCat
+- [Dark-Souls-2-Save-Editor-PS4-PC](https://github.com/alfizari/Dark-Souls-2-Save-Editor-PS4-PC) - DS2 save format research and item ID lists
+- [souls_givifier](https://github.com/jtesta/souls_givifier) - DS2 AES encryption key and SteamID detection/patching
+- [Smithbox](https://github.com/vawser/Smithbox) - Param CSV exports, used to derive the DS2 param field layout
+- Elden Ring event flag, boss, gesture and summoning pool data from the Cheat Engine scripts by Dasaav and Umgak
+- Appearance import supports the Elden Bling Auto Sliders JSON format
 
 ### Community
 
@@ -129,7 +148,8 @@ The Save File Fixer can detect and repair:
 ### Special Thanks
 
 - [2Pz](https://github.com/2Pz) - Automated build/release workflow
+- [Sayuri](https://github.com/Umgak) - Save file research, item spawning validation and patience in answering questions
 
 ## License
 
-MIT License - see [LICENSE](https://github.com/Hapfel1/er-save-manager/blob/main/LICENSE)
+Source Available License - see [LICENSE](https://github.com/Hapfel1/er-save-manager/blob/main/LICENSE)

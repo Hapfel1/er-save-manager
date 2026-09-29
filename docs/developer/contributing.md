@@ -339,7 +339,7 @@ class MyCustomFix(BaseFix):
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+By contributing, you agree that your contributions will be licensed under the project's [Source Available License](https://github.com/Hapfel1/er-save-manager/blob/main/LICENSE).
 
 ---
 
