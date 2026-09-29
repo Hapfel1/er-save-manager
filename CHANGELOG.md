@@ -3,6 +3,43 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.12.1
+**Released:** September 29, 2026
+
+
+### 🔧 Bug Fixes
+
+- Made spells quantity fixed and made it possible to spawn multiple copies of the same spell `[ds2]` ([751f613](https://github.com/Hapfel1/er-save-manager/commit/751f613d3aafbd1ce2a4dbddfaa65bdbfa8782dd))
+
+- Readd forgotten npc kill records `[ds2]` ([28e36fd](https://github.com/Hapfel1/er-save-manager/commit/28e36fd67b59546959638c3896b8953bb576c8aa))
+
+- Show named characters that were treated as never created `[ds2]` ([7390e3a](https://github.com/Hapfel1/er-save-manager/commit/7390e3a049a18a4fe0fe84d69d47c92f5de29430))
+
+
+
+### 🎨 User Interface
+
+- Show infusion icons and infused weapon names `[ds2]` ([4c8bb2c](https://github.com/Hapfel1/er-save-manager/commit/4c8bb2c6e00cbe32c2beea390006a86415b6daa5))
+
+- Add a visual bonfire viewer with bonfire pictures `[ds2]` ([1084754](https://github.com/Hapfel1/er-save-manager/commit/10847547cb6b9ef2f942b3d472485b1a42be7742))
+
+
+
+### 📖 Documentation
+
+- Complete credits and fix license and feature listings ([c9504a4](https://github.com/Hapfel1/er-save-manager/commit/c9504a45aa4d22e051750008472489b2abf616c4))
+
+- Correct SteamID patcher coverage ([b8f8459](https://github.com/Hapfel1/er-save-manager/commit/b8f845919333d2f5749ae62b1a56e151160c535f))
+
+
+
+### ⚡ Performance Improvements
+
+- Render the flag list in a Treeview `[event-flags]` ([157262a](https://github.com/Hapfel1/er-save-manager/commit/157262a46d188af7b066f7eb06d419ce39167b9c))
+
+
+
+---
 ## 📦 Release 1.12.0
 **Released:** September 29, 2026
 
@@ -1764,6 +1801,7 @@ implementation) ([19bee2c](https://github.com/Hapfel1/er-save-manager/commit/19b
 
 
 ---
+[1.12.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.12.0..v1.12.1
 [1.12.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.11.0..v1.12.0
 [1.11.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.10.3..v1.11.0
 [1.10.3]: https://github.com/Hapfel1/er-save-manager/compare/v1.10.2..v1.10.3
