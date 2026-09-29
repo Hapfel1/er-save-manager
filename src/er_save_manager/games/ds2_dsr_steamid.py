@@ -6,8 +6,9 @@ Both use the same BND4 entry format:
   [16 bytes IV]
   [AES-128-CBC encrypted payload]
 
-SteamID is stored as Steam64 (uint64 LE) and found by byte-scanning the
-decrypted entries - it is not at a fixed offset.
+DS2 stores the SteamID as Steam64 (uint64 LE), found by byte-scanning the
+decrypted entries since it is not at a fixed offset. DSR saves hold no
+SteamID; the account is identified by the save folder name.
 
 Keys:
   DS2 SotFS: 59 9F 9B 69 96 40 A5 52 36 EE 2D 70 83 5E C7 44

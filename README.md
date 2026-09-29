@@ -28,7 +28,7 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **Invasion Regions & Game Settings**: View and edit invasion regions and game settings
 - **Backup Manager**: Automatic and manual backups with restore functionality
 - **Troubleshooting**: Troubleshooter for checking game launch/connection related issues
-- **Backup Manager and SteamID Patcher for**: Elden Ring, Elden Ring Nightreign, Armored Core 6, Sekiro, Dark Souls III, Dark Souls II SotFS, Dark Souls Remastered
+- **Backup Manager and SteamID Patcher for**: Elden Ring, Elden Ring Nightreign, Armored Core 6, Sekiro, Dark Souls III, Dark Souls Remastered
 - **DSR**: Stats Editing, Character Management, Event Flags, Boss Revival, NPC Revival, Item Spawning
 - **DS3**: Stats Editing, Character Management, Boss Revival, Item Spawning, World State Editing, Supports Convergence and Cinders Mod
 - **Nightreign**: Relic spawning and editing, Editing Murk, Character Management

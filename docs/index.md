@@ -64,7 +64,7 @@
 - [Dark Souls III](user-guide/dark-souls-3.md) - Stats, character management, boss revival, item spawning, world state
 - [Dark Souls Remastered](user-guide/dark-souls-remastered.md) - Stats, character management, event flags, boss and NPC revival, item spawning
 - **Dark Souls II SotFS** - Stats, item spawning, character management, bonfire editing, NPC revival
-- Backup Manager and [SteamID Patcher](user-guide/steamid-patcher.md) for all of the above plus Armored Core 6 and Sekiro
+- Backup Manager and [SteamID Patcher](user-guide/steamid-patcher.md) for all of the above plus Armored Core 6 and Sekiro (DS2 needs no SteamID patch; the tab explains how to move a save instead)
 
 ### :material-wrench: Work in Progress
 
@@ -137,8 +137,7 @@ The Save File Fixer can detect and repair:
 - [Dark-Souls-2-Save-Editor-PS4-PC](https://github.com/alfizari/Dark-Souls-2-Save-Editor-PS4-PC) - DS2 save format research and item ID lists
 - [souls_givifier](https://github.com/jtesta/souls_givifier) - DS2 AES encryption key and SteamID detection/patching
 - [Smithbox](https://github.com/vawser/Smithbox) - Param CSV exports, used to derive the DS2 param field layout
-- Elden Ring event flag, boss, gesture and summoning pool data from the Cheat Engine scripts by Dasaav and Umgak
-- Appearance import supports the Elden Bling Auto Sliders JSON format
+- Elden Ring event flag, boss, gesture and summoning pool data from the Cheat Engine scripts by Dasaav and Sayuri
 
 ### Community
 
