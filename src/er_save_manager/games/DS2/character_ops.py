@@ -17,6 +17,7 @@ from er_save_manager.games.DS2.save import (
     CHARACTER_SLOTS,
     PROFILE_ENTRY_START,
     Character,
+    SlotState,
 )
 
 _EXPORT_MAGIC = b"DS2C\x00"
@@ -43,7 +44,7 @@ class DS2CharacterOperations:
     def slot_warning(save: DS2Save, slot_index: int) -> str | None:
         """Return a warning message if slot_index has never been through
         character creation in-game, or None if it is safe to write into."""
-        if not save.is_slot_initialized(slot_index):
+        if save.slot_state(slot_index) is SlotState.NEVER_CREATED:
             return UNINITIALIZED_SLOT_WARNING.format(slot=slot_index)
         return None
 

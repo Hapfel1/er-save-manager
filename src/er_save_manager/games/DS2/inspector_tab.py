@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import customtkinter as ctk
 
-from er_save_manager.games.DS2.save import CHARACTER_SELECT_ENTRY, DS2Save
+from er_save_manager.games.DS2.save import CHARACTER_SELECT_ENTRY, DS2Save, SlotState
 from er_save_manager.ui.utils import bind_mousewheel
 
 
@@ -79,7 +79,7 @@ class DS2InspectorTab:
                     label.configure(text_color=("#333333", "#cccccc"))
 
         for i, character in enumerate(save.characters):
-            if not save.is_slot_initialized(i):
+            if save.slot_state(i) is SlotState.NEVER_CREATED:
                 continue
 
             name = save.slot_display_name(i)

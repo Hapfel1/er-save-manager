@@ -609,13 +609,20 @@ def parse_inventory(data: bytes, start: int, end: int) -> list[InventoryItem]:
     return items
 
 
-_VALID_NAME_CHARS = set(
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_"
-)
+def _decode_name(raw: bytes) -> str:
+    """Name stored as NUL-terminated UTF-16. Bytes after the terminator are
+    ignored, since they can hold leftovers."""
+    return raw.decode("utf-16-le", errors="ignore").split("\x00", 1)[0]
 
 
 def _is_valid_name(name: str) -> bool:
-    return bool(name) and all(c in _VALID_NAME_CHARS for c in name)
+    """Whether a decoded name is a real one rather than uninitialized data.
+
+    The game allows punctuation and non-Latin letters in names, so any
+    printable text counts. Never-created slots hold a default profile whose
+    name starts with a control character, which fails this check.
+    """
+    return bool(name.strip()) and name.isprintable() and "\ufffd" not in name
 
 
 class Character:
@@ -631,8 +638,7 @@ class Character:
 
     @property
     def name(self) -> str:
-        raw = bytes(self._data[NAME_OFFSET : NAME_OFFSET + NAME_SIZE])
-        return raw.decode("utf-16-le", errors="ignore").rstrip("\x00")
+        return _decode_name(bytes(self._data[NAME_OFFSET : NAME_OFFSET + NAME_SIZE]))
 
     @name.setter
     def name(self, value: str) -> None:
@@ -1141,8 +1147,7 @@ class DS2Save:
             name_off = _OCC_NAME_OFFSET + _OCC_STRIDE * i
             if name_off + _OCC_NAME_SIZE > len(occ_data):
                 continue
-            name_bytes = occ_data[name_off : name_off + _OCC_NAME_SIZE]
-            name = name_bytes.decode("utf-16-le", errors="ignore").rstrip("\x00")
+            name = _decode_name(bytes(occ_data[name_off : name_off + _OCC_NAME_SIZE]))
             if _is_valid_name(name):
                 result[i] = name
         return result
@@ -1198,6 +1203,10 @@ class DS2Save:
         )
 
     def is_slot_initialized(self, slot_index: int) -> bool:
+        """Whether the slot's entry 0 record byte is set. The byte is 0 in
+        slots that were never entered, but it is not a dedicated flag: named
+        characters hold values such as 76, 102 and 240 there. Only use it for
+        slots without a name, see slot_state."""
         occ_data = self.container.get_entry(OCCUPANCY_ENTRY)
         flag_off = _OCC_FLAG_OFFSET + _OCC_STRIDE * slot_index
         if flag_off >= len(occ_data):
@@ -1225,12 +1234,11 @@ class DS2Save:
     def slot_state(self, slot_index: int) -> SlotState:
         """Classify a slot.
 
-        The character is named in the tutorial, so a slot that has been
-        entered exists before it has a name. The game writes the slot's entry 0
-        record when the slot is first entered, and a slot that was never
-        entered keeps that record all zero (see is_slot_initialized). Those two
-        cases are told apart by the record, since the profile of an unnamed
-        slot is the same default character in both.
+        A slot with a name always holds a character. The character is named
+        in the tutorial, so a slot that has been entered exists before it has
+        a name. For unnamed slots the entry 0 record byte tells the two cases
+        apart (see is_slot_initialized), since the profile of an unnamed slot
+        is the same default character in both.
         """
         if self.slot_display_name(slot_index):
             return SlotState.CHARACTER
