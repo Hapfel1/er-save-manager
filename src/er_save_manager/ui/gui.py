@@ -1441,7 +1441,9 @@ class SaveManagerGUI:
 
         slot = self.save_file.characters[slot_idx]
 
-        if slot.is_empty():
+        # A deleted character keeps its slot data until a new one is created
+        # there, so the active flag decides, as in the save fixer.
+        if slot.is_empty() or slot_idx not in self.save_file.get_active_slots():
             CTkMessageBox.showwarning(
                 "Empty Slot", f"Slot {slot_idx + 1} is empty!", parent=self.root
             )
@@ -2507,11 +2509,15 @@ class SaveManagerGUI:
         except Exception:
             pass
 
+        # Deleted characters keep their slot data and profile summary entry
+        # until a new character is created in the slot, so only slots marked
+        # active in the profile summary are listed by name.
+        active = set(self.save_file.get_active_slots())
         for i in range(10):
             slot_num = i + 1
             char = self.save_file.characters[i]
 
-            if char.is_empty():
+            if char.is_empty() or i not in active:
                 slot_names.append(f"{slot_num} - Empty")
                 continue
 
