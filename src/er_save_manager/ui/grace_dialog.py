@@ -10,7 +10,11 @@ import customtkinter as ctk
 
 from er_save_manager.data.grace_data import Grace, get_graces
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import center_window, force_render_dialog
+from er_save_manager.ui.utils import (
+    center_window,
+    force_render_dialog,
+    patch_combo_scroll,
+)
 
 _ALL = "All"
 _SCOPES = (_ALL, "Base Game", "DLC")
@@ -91,6 +95,7 @@ class GraceDialog:
             width=230,
             command=lambda _v: _refresh(),
         )
+        patch_combo_scroll(region_combo)
         region_combo.pack(side=tk.LEFT, padx=(0, 14))
 
         ctk.CTkLabel(filter_frame, text="Show:").pack(side=tk.LEFT, padx=(0, 8))

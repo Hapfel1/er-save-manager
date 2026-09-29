@@ -28,7 +28,12 @@ from er_save_manager.data.summoning_pools_data import (
 )
 from er_save_manager.parser.event_flags import EventFlags
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, center_window, pick_file
+from er_save_manager.ui.utils import (
+    bind_mousewheel,
+    center_window,
+    patch_combo_scroll,
+    pick_file,
+)
 
 
 class EventFlagsTab:
@@ -324,6 +329,7 @@ class EventFlagsTab:
             width=260,
             command=self.on_category_changed,
         )
+        patch_combo_scroll(cat_combo)
         cat_combo.pack(side=tk.LEFT, padx=(0, 20))
 
         ctk.CTkLabel(cat_inner, text="Subcategory:").pack(side=tk.LEFT, padx=(0, 8))
@@ -335,6 +341,7 @@ class EventFlagsTab:
             width=260,
             command=self.on_subcategory_changed,
         )
+        patch_combo_scroll(self.subcat_combo)
         self.subcat_combo.pack(side=tk.LEFT)
 
         # Search bar
@@ -1201,13 +1208,15 @@ class EventFlagsTab:
 
         ctk.CTkLabel(filter_frame, text="Region:").pack(side=tk.LEFT, padx=(0, 8))
         region_filter_var = tk.StringVar(value="All")
-        ctk.CTkComboBox(
-            filter_frame,
-            variable=region_filter_var,
-            values=["All"] + BOSS_CATEGORIES,
-            state="readonly",
-            width=260,
-            command=lambda _v: _refresh(),
+        patch_combo_scroll(
+            ctk.CTkComboBox(
+                filter_frame,
+                variable=region_filter_var,
+                values=["All"] + BOSS_CATEGORIES,
+                state="readonly",
+                width=260,
+                command=lambda _v: _refresh(),
+            )
         ).pack(side=tk.LEFT)
 
         summary_label = ctk.CTkLabel(
@@ -1330,6 +1339,7 @@ class EventFlagsTab:
             state="readonly",
             width=300,
         )
+        patch_combo_scroll(cat_combo)
         cat_combo.pack(side=tk.LEFT)
 
         # Boss list
