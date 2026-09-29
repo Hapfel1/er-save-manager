@@ -1,6 +1,7 @@
 """CustomTkinter Save Selector Dialog with Lavender theme."""
 
 from importlib import resources
+from pathlib import Path
 
 import customtkinter as ctk
 
@@ -83,6 +84,19 @@ class SaveSelectorDialog:
         bind_mousewheel(list_frame)
 
         row_widgets: list[tuple[str, ctk.CTkFrame, ctk.CTkLabel]] = []
+        show_folders_var = ctk.BooleanVar(value=True)
+
+        def row_text(save) -> str:
+            # The file name comes first so its extension stays visible when a
+            # long path is cut off at the right edge.
+            path = Path(save)
+            if not show_folders_var.get():
+                return path.name
+            return f"{path.name}  -  {path.parent}"
+
+        def toggle_folders() -> None:
+            for value, _row, label in row_widgets:
+                label.configure(text=row_text(value))
 
         def apply_selection(value: str):
             selection_var.set(value)
@@ -103,7 +117,7 @@ class SaveSelectorDialog:
             )
             row.pack(fill="x", pady=4, padx=4)
 
-            label = ctk.CTkLabel(row, text=str(save), anchor="w", padx=8, pady=6)
+            label = ctk.CTkLabel(row, text=row_text(save), anchor="w", padx=8, pady=6)
             label.pack(fill="x")
 
             row.bind("<Button-1>", lambda e, v=str(save): apply_selection(v))
@@ -123,6 +137,13 @@ class SaveSelectorDialog:
 
         button_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         button_frame.pack(fill="x", pady=(0, 14))
+
+        ctk.CTkCheckBox(
+            button_frame,
+            text="Show folders",
+            variable=show_folders_var,
+            command=toggle_folders,
+        ).pack(side="left", padx=15)
 
         if browse_callback:
 

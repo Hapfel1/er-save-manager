@@ -215,8 +215,40 @@ def patch_combo_scroll(combo, max_visible_rows: int = 20, row_height: int = 28):
         frame.pack(fill="both", expand=True)
         bind_mousewheel(frame)
 
+        # Clicks go to the popup while it holds the grab, and a click outside
+        # it closes it. FocusOut alone is not enough, since an overrideredirect
+        # window often never gets focus on Linux. The grab of a modal dialog
+        # the combo sits in is handed back on close, so the dialog stays modal.
+        previous_grab = combo.grab_current()
+        closed = False
+
+        def _close(_e=None):
+            nonlocal closed
+            if closed:
+                return
+            closed = True
+            try:
+                popup.grab_release()
+                popup.destroy()
+            except Exception:
+                pass
+            if previous_grab is not None:
+                try:
+                    previous_grab.grab_set()
+                except Exception:
+                    pass
+
+        def _on_click(event):
+            left, top = popup.winfo_rootx(), popup.winfo_rooty()
+            inside = (
+                left <= event.x_root < left + popup.winfo_width()
+                and top <= event.y_root < top + popup.winfo_height()
+            )
+            if not inside:
+                _close()
+
         def _select(value):
-            popup.destroy()
+            _close()
             combo.set(value)
             if combo._command is not None:
                 combo._command(value)
@@ -234,16 +266,15 @@ def patch_combo_scroll(combo, max_visible_rows: int = 20, row_height: int = 28):
                 command=lambda v=value: _select(v),
             ).pack(fill="x", pady=1)
 
-        def _close(_e=None):
-            try:
-                popup.destroy()
-            except Exception:
-                pass
-
         def _arm_close():
             popup.geometry(geometry)
             popup.bind("<FocusOut>", _close)
+            popup.bind("<Button-1>", _on_click, add="+")
             popup.focus_force()
+            try:
+                popup.grab_set()
+            except Exception:
+                pass
 
         popup.bind("<Escape>", _close)
         popup.update_idletasks()

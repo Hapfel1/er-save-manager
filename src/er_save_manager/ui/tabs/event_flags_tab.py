@@ -28,7 +28,12 @@ from er_save_manager.data.summoning_pools_data import (
 )
 from er_save_manager.parser.event_flags import EventFlags
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, center_window, pick_file
+from er_save_manager.ui.utils import (
+    bind_mousewheel,
+    center_window,
+    patch_combo_scroll,
+    pick_file,
+)
 
 
 class EventFlagsTab:
@@ -116,11 +121,15 @@ class EventFlagsTab:
         except Exception:
             pass
 
+        # Deleted characters keep their slot data and profile summary entry
+        # until a new character is created in the slot, so only slots marked
+        # active in the profile summary are listed by name.
+        active = set(save_file.get_active_slots())
         for i in range(10):
             slot_num = i + 1
             char = save_file.characters[i]
 
-            if char.is_empty():
+            if char.is_empty() or i not in active:
                 slot_names.append(f"{slot_num} - Empty")
                 continue
 
@@ -324,6 +333,7 @@ class EventFlagsTab:
             width=260,
             command=self.on_category_changed,
         )
+        patch_combo_scroll(cat_combo)
         cat_combo.pack(side=tk.LEFT, padx=(0, 20))
 
         ctk.CTkLabel(cat_inner, text="Subcategory:").pack(side=tk.LEFT, padx=(0, 8))
@@ -335,6 +345,7 @@ class EventFlagsTab:
             width=260,
             command=self.on_subcategory_changed,
         )
+        patch_combo_scroll(self.subcat_combo)
         self.subcat_combo.pack(side=tk.LEFT)
 
         # Search bar
@@ -452,7 +463,7 @@ class EventFlagsTab:
         slot_idx = int(self.eventflag_slot_var.get()) - 1
         slot = save_file.characters[slot_idx]
 
-        if slot.is_empty():
+        if slot.is_empty() or slot_idx not in save_file.get_active_slots():
             CTkMessageBox.showwarning(
                 "Empty Slot", f"Slot {slot_idx + 1} is empty!", parent=self.parent
             )
@@ -1201,13 +1212,15 @@ class EventFlagsTab:
 
         ctk.CTkLabel(filter_frame, text="Region:").pack(side=tk.LEFT, padx=(0, 8))
         region_filter_var = tk.StringVar(value="All")
-        ctk.CTkComboBox(
-            filter_frame,
-            variable=region_filter_var,
-            values=["All"] + BOSS_CATEGORIES,
-            state="readonly",
-            width=260,
-            command=lambda _v: _refresh(),
+        patch_combo_scroll(
+            ctk.CTkComboBox(
+                filter_frame,
+                variable=region_filter_var,
+                values=["All"] + BOSS_CATEGORIES,
+                state="readonly",
+                width=260,
+                command=lambda _v: _refresh(),
+            )
         ).pack(side=tk.LEFT)
 
         summary_label = ctk.CTkLabel(
@@ -1330,6 +1343,7 @@ class EventFlagsTab:
             state="readonly",
             width=300,
         )
+        patch_combo_scroll(cat_combo)
         cat_combo.pack(side=tk.LEFT)
 
         # Boss list

@@ -22,6 +22,7 @@ from er_save_manager.games.DS2.icon_manager import (
     bind_infusion_icon,
 )
 from er_save_manager.games.DS2.regulation import INFUSION_NAMES
+from er_save_manager.games.DS2.save import INVENTORY_END, INVENTORY_START
 from er_save_manager.ui.utils import center_window, patch_combo_scroll
 
 if TYPE_CHECKING:
@@ -37,6 +38,8 @@ _DEFAULT_COLS = 5
 # see icon_browser.py.
 _BATCH = 12
 _DELAY_MS = 8
+# Show choices, both locations first as the default.
+_LOCATION_FILTERS = ("All", "Inventory", "Item Box")
 
 
 def _center_over(window, parent, w=None, h=None) -> None:
@@ -93,6 +96,17 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
                 command=lambda _v: self._rebuild(),
             )
         ).pack(side="left", padx=(0, 8))
+
+        ctk.CTkLabel(top, text="Show:").pack(side="left")
+        self._location_var = tk.StringVar(value=_LOCATION_FILTERS[0])
+        ctk.CTkComboBox(
+            top,
+            variable=self._location_var,
+            values=list(_LOCATION_FILTERS),
+            state="readonly",
+            width=100,
+            command=lambda _v: self._load_icons(),
+        ).pack(side="left", padx=(4, 8))
 
         ctk.CTkLabel(top, text="Filter:").pack(side="left")
         self._filter_var = tk.StringVar()
@@ -175,6 +189,25 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         )
         self._infusion_btn.grid(row=1, column=3, sticky="w", padx=(4, 0), pady=(6, 0))
 
+        move_row = ctk.CTkFrame(panel, fg_color="transparent")
+        move_row.pack(fill="x", padx=10, pady=(6, 0))
+        self._to_box_btn = ctk.CTkButton(
+            move_row,
+            text="To Item Box",
+            height=30,
+            command=lambda: self._do_move(True),
+            state="disabled",
+        )
+        self._to_box_btn.pack(side="left", fill="x", expand=True, padx=(0, 3))
+        self._to_inventory_btn = ctk.CTkButton(
+            move_row,
+            text="To Inventory",
+            height=30,
+            command=lambda: self._do_move(False),
+            state="disabled",
+        )
+        self._to_inventory_btn.pack(side="left", fill="x", expand=True, padx=(3, 0))
+
         self._remove_btn = ctk.CTkButton(
             panel,
             text="Remove Selected",
@@ -219,7 +252,13 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         self._update_form()
 
         self._grid_count = 0
-        self._pending_indices = deque(range(len(self._panel._visible_items)))
+        location = self._location_var.get()
+        self._pending_indices = deque(
+            index
+            for index, (item, _name, _category) in enumerate(self._panel._visible_items)
+            if location == _LOCATION_FILTERS[0]
+            or item.in_box == (location == _LOCATION_FILTERS[2])
+        )
         self._build_next_batch()
 
     def _build_next_batch(self) -> None:
@@ -254,6 +293,8 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
                 label = f"{name} x{item.quantity}"
             elif category in UPGRADABLE_CATEGORIES and item.upgrade:
                 label = f"{name} +{item.upgrade}"
+            if item.in_box:
+                label = f"{label}\n(Item Box)"
             btn = ctk.CTkButton(
                 self._scroll,
                 image=ctk_img,
@@ -359,6 +400,13 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         if self._infusion_var.get() not in names:
             self._infusion_var.set(names[0])
         self._remove_btn.configure(state="normal" if has_selection else "disabled")
+        can_box = can_unbox = False
+        if has_selection:
+            item = panel._visible_items[self._selected_index][0]
+            if INVENTORY_START <= item.offset < INVENTORY_END:
+                can_box, can_unbox = not item.in_box, item.in_box
+        self._to_box_btn.configure(state="normal" if can_box else "disabled")
+        self._to_inventory_btn.configure(state="normal" if can_unbox else "disabled")
 
     # ------------------------------------------------------------------
     # Actions, delegated to the panel's own Set/Remove
@@ -377,6 +425,10 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
     def _do_infusion(self) -> None:
         self._panel.set_infusion_var.set(self._infusion_var.get())
         self._panel._on_set_infusion()
+        self._rebuild()
+
+    def _do_move(self, to_box: bool) -> None:
+        self._panel._on_move(to_box)
         self._rebuild()
 
     def _do_remove(self) -> None:

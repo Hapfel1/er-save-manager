@@ -60,9 +60,13 @@ class WorldStateTab:
             pass
 
         slot_names = []
+        # Deleted characters keep their slot data and profile summary entry
+        # until a new character is created in the slot, so only slots marked
+        # active in the profile summary are listed by name.
+        active = set(save_file.get_active_slots())
         for i in range(10):
             char = save_file.characters[i]
-            if char.is_empty():
+            if char.is_empty() or i not in active:
                 slot_names.append(f"{i + 1} - Empty")
                 continue
             char_name = "Unknown"
@@ -229,7 +233,7 @@ class WorldStateTab:
             return
 
         slot = save.character_slots[slot_idx]
-        if slot.is_empty():
+        if slot.is_empty() or slot_idx not in save.get_active_slots():
             CTkMessageBox.showwarning(
                 "Empty Slot", f"Slot {slot_idx + 1} is empty.", parent=self.parent
             )
