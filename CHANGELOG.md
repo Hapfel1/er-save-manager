@@ -3,6 +3,31 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 1.12.2
+**Released:** September 29, 2026
+
+
+### 🔧 Bug Fixes
+
+- Support the item box `[ds2]` ([7a121ea](https://github.com/Hapfel1/er-save-manager/commit/7a121eaa60912990dc7abb3448fb271b963c7722))
+
+- Close scrollable dropdowns on a click outside them `[ui]` ([88881b5](https://github.com/Hapfel1/er-save-manager/commit/88881b5a9176e527ca5a74ef18bde2a8837e13d2))
+
+- Hide deleted characters from ER slot dropdowns `[ui]` ([dac5f7b](https://github.com/Hapfel1/er-save-manager/commit/dac5f7b3d3c7a452615e6c58331663cea4361745))
+
+
+
+### 🎨 User Interface
+
+- Added Torch Duration editor `[ds2]` ([6769a67](https://github.com/Hapfel1/er-save-manager/commit/6769a67fd8c47f455e3de6320d10824ced866d78))
+
+- Use scrollable dropdowns for event flag and grace filters `[er]` ([32e1918](https://github.com/Hapfel1/er-save-manager/commit/32e19182963fb9baa2fd52d09692592406a67f4b))
+
+- Show the save file name first in the save selector ([0553406](https://github.com/Hapfel1/er-save-manager/commit/05534069c8b5f3131adfc8983d19e2d56069e4ad))
+
+
+
+---
 ## 📦 Release 1.12.1
 **Released:** September 29, 2026
 
@@ -1801,6 +1826,7 @@ implementation) ([19bee2c](https://github.com/Hapfel1/er-save-manager/commit/19b
 
 
 ---
+[1.12.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.12.1..v1.12.2
 [1.12.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.12.0..v1.12.1
 [1.12.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.11.0..v1.12.0
 [1.11.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.10.3..v1.11.0
