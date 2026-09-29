@@ -95,6 +95,9 @@ HP_OFFSET = 72
 NG_OFFSET = 1028
 NG_PLUS_MAX = 7
 
+# Remaining torch time in seconds, a float32.
+TORCH_TIME_OFFSET = 0x11E94
+
 # Profile order of the attributes matches the game's class param rows:
 # vigor, endurance, vitality, attunement, strength, dexterity,
 # intelligence, faith, adaptability.
@@ -134,6 +137,13 @@ MULTI_COPY_CATEGORIES = frozenset({"weapons"})
 UPGRADABLE_CATEGORIES = frozenset({"weapons", "armors"})
 _UPGRADE_MASK = 0xFF
 _INFUSION_SHIFT = 8
+
+# Bit of an inventory entry's unk_1 that marks it as stored in the item box.
+# Box items share the main inventory list with carried ones. Moving two stacks
+# to the box in game emptied their slots and wrote them, flag set and quantity
+# kept, into the first free slots, in the order they were moved. Carried
+# entries hold 0 here.
+ITEM_BOX_FLAG = 0x100
 
 KEY_ITEMS_START = 0x10E30
 KEY_ITEMS_END = 0x11DF0
@@ -564,6 +574,17 @@ class InventoryItem:
     def to_bytes(self) -> bytes:
         return struct.pack("<IIII", self.item_id, self.unk_1, self.quantity, self.unk_2)
 
+    @property
+    def in_box(self) -> bool:
+        return bool(self.unk_1 & ITEM_BOX_FLAG)
+
+    @in_box.setter
+    def in_box(self, stored: bool) -> None:
+        if stored:
+            self.unk_1 |= ITEM_BOX_FLAG
+        else:
+            self.unk_1 &= ~ITEM_BOX_FLAG
+
     # unk_2 packs two bytes for equipment. The low byte is the upgrade level of
     # weapons and armor (seen as 1 and 3 on weapons, 1 and 2 on armor). The
     # next byte is the weapon infusion index (see regulation.INFUSION_NAMES),
@@ -666,6 +687,14 @@ class Character:
         )
 
     @property
+    def torch_seconds(self) -> float:
+        return struct.unpack_from("<f", self._data, TORCH_TIME_OFFSET)[0]
+
+    @torch_seconds.setter
+    def torch_seconds(self, value: float) -> None:
+        struct.pack_into("<f", self._data, TORCH_TIME_OFFSET, max(0.0, float(value)))
+
+    @property
     def new_game_plus(self) -> int:
         stored = struct.unpack_from("<H", self._data, NG_OFFSET)[0]
         return max(0, stored - 1)
@@ -759,14 +788,23 @@ class Character:
             if struct.unpack_from("<I", self._data, offset)[0] == 0
         )
 
-    def _find_item(self, item_id: int, start: int, end: int) -> InventoryItem | None:
+    def _find_item(
+        self, item_id: int, start: int, end: int, in_box: bool | None = None
+    ) -> InventoryItem | None:
+        """First entry of an item, limited to box or carried entries when
+        in_box is given."""
         for item in parse_inventory(self._data, start, end):
-            if item.item_id == item_id:
+            if item.item_id == item_id and in_box in (None, item.in_box):
                 return item
         return None
 
     def owns(self, item_id: int) -> bool:
-        return self._find_item_anywhere(item_id) is not None
+        """Whether the character carries the item. Copies in the item box do
+        not count."""
+        return (
+            self._find_item(item_id, INVENTORY_START, INVENTORY_END, in_box=False)
+            or self._find_item(item_id, KEY_ITEMS_START, KEY_ITEMS_END)
+        ) is not None
 
     def _find_item_anywhere(self, item_id: int) -> InventoryItem | None:
         """Find an item in either list, so entries written to the wrong list
@@ -787,8 +825,9 @@ class Character:
         """Add an item to inventory (or the key item list for the categories in
         KEY_LIST_CATEGORIES).
 
-        For stackable categories, adds to an existing stack's quantity unless
-        stack=False forces a new slot. Returns False if there is no empty
+        For stackable categories, adds to an existing carried stack's quantity
+        unless stack=False forces a new slot. Stacks in the item box are left
+        alone. Returns False if there is no empty
         slot available or the item is in a unique category and already owned.
         The resulting quantity is capped at the item's stack limit, and
         upgrade at its maximum level. A weapon infusion the weapon does not
@@ -819,7 +858,7 @@ class Character:
         stackable = category in self.STACKABLE_CATEGORIES
 
         if stackable and stack:
-            existing = self._find_item(item_id, start, end)
+            existing = self._find_item(item_id, start, end, in_box=False)
             if existing is not None:
                 existing.quantity = min(
                     existing.quantity + int(quantity), self.max_stack(item_id)
@@ -972,8 +1011,9 @@ class Character:
     ) -> BulkAddResult:
         """Add many items of one category with a single inventory scan.
 
-        Stackable items already owned get quantity added to their stack,
-        matching add_item, capped per item at its stack limit. For
+        Stackable items already carried get quantity added to their stack,
+        matching add_item, capped per item at its stack limit. Copies in the
+        item box are ignored, as in add_item. For
         weapons, quantity is the number of copies wanted of each exact variant
         (same item, upgrade and infusion) and only the missing copies are
         added. Other items already owned are skipped. Upgrade is clamped per
@@ -990,7 +1030,7 @@ class Character:
         owned: dict[int, InventoryItem] = {}
         variants: Counter[tuple[int, int, int]] = Counter()
         for slot in slots:
-            if slot.item_id:
+            if slot.item_id and not slot.in_box:
                 owned.setdefault(slot.item_id, slot)
                 variants[(slot.item_id, slot.upgrade, slot.infusion)] += 1
         empty = iter([slot for slot in slots if slot.item_id == 0])
@@ -1099,6 +1139,54 @@ class Character:
             INVENTORY_SLOT_SIZE
         )
         return True
+
+    def move_entry(
+        self, item: InventoryItem, to_box: bool, stackable: bool
+    ) -> InventoryItem:
+        """Move an entry between the carried inventory and the item box the
+        way the game does: write it with the box flag changed into the first
+        free slot, then empty its old slot. Returns the moved entry.
+
+        Raises ValueError with the reason when the entry changed since it was
+        read, is in the key item list, is already there, has a stack of the
+        same item waiting at the destination (how the game merges those is
+        not known), would carry more than the stack limit, or no slot is free.
+        """
+        current = InventoryItem.from_bytes(self._data, item.offset)
+        if current.item_id != item.item_id or current.item_id == 0:
+            raise ValueError("The entry changed, reload and try again")
+        if not INVENTORY_START <= item.offset < INVENTORY_END:
+            raise ValueError("Key items cannot be stored in the item box")
+        if current.in_box == to_box:
+            raise ValueError(
+                "Already in the item box" if to_box else "Already in the inventory"
+            )
+        if stackable:
+            if self._find_item(
+                current.item_id, INVENTORY_START, INVENTORY_END, in_box=to_box
+            ):
+                where = "item box" if to_box else "inventory"
+                raise ValueError(f"The {where} already has a stack of this item")
+            limit = self.max_stack(current.item_id)
+            if not to_box and current.quantity > limit:
+                raise ValueError(f"Stack is above the carry limit of {limit}")
+        empty = self._find_empty_slot(INVENTORY_START, INVENTORY_END)
+        if empty is None:
+            raise ValueError("No free inventory slot")
+
+        moved = InventoryItem(
+            empty.offset,
+            current.item_id,
+            current.unk_1,
+            current.quantity,
+            current.unk_2,
+        )
+        moved.in_box = to_box
+        self.write_inventory_slot(moved)
+        self._data[item.offset : item.offset + INVENTORY_SLOT_SIZE] = bytes(
+            INVENTORY_SLOT_SIZE
+        )
+        return moved
 
     def delete_item(self, item_id: int) -> bool:
         """Zero out the first matching item slot in either list. Returns

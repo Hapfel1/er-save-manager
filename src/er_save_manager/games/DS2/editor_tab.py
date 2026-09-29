@@ -24,6 +24,34 @@ def _game_blocks_write(parent) -> bool:
     return game_blocks_write(parent, "darksoulsii.exe", "Dark Souls II")
 
 
+_HINT_COLOR = ("gray40", "gray70")
+
+# Largest torch time the editor accepts, 999:59:59.
+_TORCH_MAX_SECONDS = 999 * 3600 + 59 * 60 + 59
+
+
+def _format_torch(seconds: float) -> str:
+    """H:MM:SS, rounded to the second like the game shows it."""
+    total = round(seconds)
+    return f"{total // 3600}:{total % 3600 // 60:02d}:{total % 60:02d}"
+
+
+def _parse_torch(text: str) -> int:
+    """Seconds from "H:MM:SS", "M:SS" or plain seconds. Raises ValueError for
+    anything else or a time above _TORCH_MAX_SECONDS."""
+    parts = [int(part) for part in text.strip().split(":")]
+    if not 1 <= len(parts) <= 3 or any(part < 0 for part in parts):
+        raise ValueError(text)
+    if any(part >= 60 for part in parts[1:]):
+        raise ValueError(text)
+    seconds = 0
+    for part in parts:
+        seconds = seconds * 60 + part
+    if seconds > _TORCH_MAX_SECONDS:
+        raise ValueError(text)
+    return seconds
+
+
 class DS2EditorTab:
     """
     Args:
@@ -146,6 +174,18 @@ class DS2EditorTab:
         )
         self.hp_label = ctk.CTkLabel(fields, text="-", text_color=("gray40", "gray70"))
         self.hp_label.grid(row=3, column=1, sticky="w", padx=5, pady=3)
+
+        ctk.CTkLabel(fields, text="Torch time:").grid(
+            row=4, column=0, sticky="w", padx=5, pady=3
+        )
+        self.torch_var = tk.StringVar()
+        self._torch_loaded = ""
+        self._torch_entry = ctk.CTkEntry(fields, textvariable=self.torch_var, width=140)
+        self._torch_entry.grid(row=4, column=1, sticky="w", padx=5, pady=3)
+        self._torch_border = self._torch_entry.cget("border_color")
+        self._torch_hint = ctk.CTkLabel(fields, text="H:MM:SS", text_color=_HINT_COLOR)
+        self._torch_hint.grid(row=4, column=2, sticky="w", padx=5, pady=3)
+        self.torch_var.trace_add("write", lambda *_: self._check_torch())
 
         stats_frame = ctk.CTkFrame(body, fg_color="transparent")
         stats_frame.pack(fill="x", padx=10, pady=5)
@@ -270,6 +310,26 @@ class DS2EditorTab:
             text_color=("gray40", "gray70"),
         )
 
+    def _check_torch(self) -> bool:
+        """Validate the torch time as it is typed. Shows how a valid entry will
+        be saved, or what is wrong with an invalid one. Returns whether the
+        entry can be applied."""
+        text = self.torch_var.get().strip()
+        if text == self._torch_loaded:
+            valid, hint = True, "H:MM:SS"
+        else:
+            try:
+                valid, hint = True, f"= {_format_torch(_parse_torch(text))}"
+            except ValueError:
+                valid, hint = False, "Use H:MM:SS, up to 999:59:59"
+        self._torch_hint.configure(
+            text=hint, text_color=_HINT_COLOR if valid else "orange"
+        )
+        self._torch_entry.configure(
+            border_color=self._torch_border if valid else "orange"
+        )
+        return valid
+
     def _expected_level(self) -> int | None:
         try:
             delta = sum(
@@ -309,6 +369,8 @@ class DS2EditorTab:
         self.souls_var.set(str(character.souls))
         self.ng_var.set(str(character.new_game_plus))
         self.hp_label.configure(text=str(character.hp))
+        self._torch_loaded = _format_torch(character.torch_seconds)
+        self.torch_var.set(self._torch_loaded)
 
         self._suppress_recalc = True
         for stat_name, var in self._stat_vars.items():
@@ -346,6 +408,16 @@ class DS2EditorTab:
         except ValueError:
             self.show_toast("Invalid numeric value, changes not applied", duration=2500)
             return
+        # Written only when edited, so saving other fields keeps the stored
+        # fraction of a second.
+        torch_seconds = None
+        if not self._check_torch():
+            self.show_toast(
+                "Torch time must be H:MM:SS, up to 999:59:59", duration=3000
+            )
+            return
+        if self.torch_var.get().strip() != self._torch_loaded:
+            torch_seconds = _parse_torch(self.torch_var.get())
 
         expected_level = self._expected_level()
         if expected_level is None or entered_level != expected_level:
@@ -360,6 +432,8 @@ class DS2EditorTab:
         character.name = self.name_var.get()
         character.souls = souls
         character.new_game_plus = ng_plus
+        if torch_seconds is not None:
+            character.torch_seconds = torch_seconds
         character.set_stat("level", entered_level)
         for stat_name, value in stat_values.items():
             character.set_stat(stat_name, value)
