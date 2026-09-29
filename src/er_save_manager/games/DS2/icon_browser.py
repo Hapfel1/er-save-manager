@@ -15,6 +15,10 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.games.DS2.icon_manager import (
+    add_infusion_menu_icons,
+    bind_infusion_icon,
+)
 from er_save_manager.games.DS2.item_database import CATEGORIES, _hex_id_to_int
 from er_save_manager.games.DS2.regulation import INFUSION_NAMES
 from er_save_manager.ui.utils import center_window, patch_combo_scroll
@@ -152,16 +156,20 @@ class IconBrowser(ctk.CTkToplevel):
             row=1, column=0, sticky="w", padx=(0, 6), pady=(6, 0)
         )
         self._infusion_var = tk.StringVar(value=INFUSION_NAMES[0])
+        infusion_cell = ctk.CTkFrame(opts, fg_color="transparent")
+        infusion_cell.grid(row=1, column=1, columnspan=3, sticky="w", pady=(6, 0))
+        infusion_icon = ctk.CTkLabel(infusion_cell, text="", width=24)
+        infusion_icon.pack(side="left", padx=(0, 4))
+        bind_infusion_icon(infusion_icon, self._infusion_var)
         self._infusion_combo = ctk.CTkComboBox(
-            opts,
+            infusion_cell,
             variable=self._infusion_var,
             values=[INFUSION_NAMES[0]],
             width=120,
             state="disabled",
         )
-        self._infusion_combo.grid(
-            row=1, column=1, columnspan=3, sticky="w", pady=(6, 0)
-        )
+        self._infusion_combo.pack(side="left")
+        add_infusion_menu_icons(self._infusion_combo)
 
         self._add_btn = ctk.CTkButton(
             panel,

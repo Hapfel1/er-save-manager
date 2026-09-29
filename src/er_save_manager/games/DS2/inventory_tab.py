@@ -11,6 +11,10 @@ from tkinter import ttk
 
 import customtkinter as ctk
 
+from er_save_manager.games.DS2.icon_manager import (
+    add_infusion_menu_icons,
+    bind_infusion_icon,
+)
 from er_save_manager.games.DS2.item_database import (
     CATEGORIES,
     UNSAFE_IDS,
@@ -236,6 +240,9 @@ class DS2InventoryPanel:
         infusion_label = ctk.CTkLabel(infusion_row, text="Infusion:", width=70)
         infusion_label.pack(side="left")
         self.add_infusion_var = tk.StringVar(value=INFUSION_NAMES[0])
+        add_infusion_icon = ctk.CTkLabel(infusion_row, text="", width=24)
+        add_infusion_icon.pack(side="left", padx=(0, 4))
+        bind_infusion_icon(add_infusion_icon, self.add_infusion_var)
         self._add_infusion_combo = ctk.CTkComboBox(
             infusion_row,
             variable=self.add_infusion_var,
@@ -244,6 +251,7 @@ class DS2InventoryPanel:
             width=120,
         )
         self._add_infusion_combo.pack(side="left")
+        add_infusion_menu_icons(self._add_infusion_combo)
         self._add_hints["infusion"] = ctk.CTkLabel(
             infusion_row, text="", text_color=_HINT_COLOR, font=_HINT_FONT
         )
@@ -409,6 +417,9 @@ class DS2InventoryPanel:
         infusion_label = ctk.CTkLabel(infusion_actions, text="New infusion:")
         infusion_label.pack(side="left", padx=(0, 4))
         self.set_infusion_var = tk.StringVar(value=INFUSION_NAMES[0])
+        set_infusion_icon = ctk.CTkLabel(infusion_actions, text="", width=24)
+        set_infusion_icon.pack(side="left", padx=(0, 4))
+        bind_infusion_icon(set_infusion_icon, self.set_infusion_var)
         self._set_infusion_combo = ctk.CTkComboBox(
             infusion_actions,
             variable=self.set_infusion_var,
@@ -417,6 +428,7 @@ class DS2InventoryPanel:
             width=110,
         )
         self._set_infusion_combo.pack(side="left")
+        add_infusion_menu_icons(self._set_infusion_combo)
         infusion_button = ctk.CTkButton(
             infusion_actions,
             text="Set Infusion",
@@ -867,6 +879,8 @@ class DS2InventoryPanel:
                     continue
                 info = self._item_db.get(item.item_id)
                 name, category = info if info else (f"Unknown ({item.item_id})", None)
+                if category == "weapons" and 0 < item.infusion < len(INFUSION_NAMES):
+                    name = f"{INFUSION_NAMES[item.infusion]} {name}"
                 self._current_items.append((item, name, category))
         self._apply_filter()
         self._update_add_controls()
