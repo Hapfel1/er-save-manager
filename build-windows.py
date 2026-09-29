@@ -76,6 +76,10 @@ include_files = [
         "src/er_save_manager/games/NR/nr_items.json",
         "er_save_manager/games/NR/nr_items.json",
     ),
+    (
+        "src/er_save_manager/games/DS2/icons.db",
+        "er_save_manager/games/DS2/icons.db",
+    ),
 ]
 
 # Explicitly pull OpenSSL DLLs into the root folder to prevent PATH conflicts

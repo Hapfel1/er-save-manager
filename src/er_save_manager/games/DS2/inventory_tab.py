@@ -167,9 +167,18 @@ class DS2InventoryPanel:
         self.refresh()
 
     def _build_browser_panel(self, parent) -> None:
-        ctk.CTkLabel(parent, text="Add Item", font=("Segoe UI", 13, "bold")).pack(
-            anchor="w", padx=10, pady=(10, 4)
+        header = ctk.CTkFrame(parent, fg_color="transparent")
+        header.pack(fill="x", padx=10, pady=(10, 4))
+        ctk.CTkLabel(header, text="Add Item", font=("Segoe UI", 13, "bold")).pack(
+            side="left"
         )
+        ctk.CTkButton(
+            header,
+            text="Visual Picker...",
+            width=120,
+            height=26,
+            command=self._open_icon_browser,
+        ).pack(side="right")
 
         cat_row = ctk.CTkFrame(parent, fg_color="transparent")
         cat_row.pack(fill="x", padx=10, pady=(0, 4))
@@ -294,6 +303,13 @@ class DS2InventoryPanel:
         ctk.CTkLabel(
             header, text="Current Inventory", font=("Segoe UI", 13, "bold")
         ).pack(side="left")
+        ctk.CTkButton(
+            header,
+            text="Visual View...",
+            width=110,
+            height=26,
+            command=self._open_visual_inventory,
+        ).pack(side="right")
 
         filter_row = ctk.CTkFrame(parent, fg_color="transparent")
         filter_row.pack(fill="x", padx=10, pady=(0, 4))
@@ -431,6 +447,28 @@ class DS2InventoryPanel:
             ],
         }
         self._update_inventory_controls()
+
+    def _open_icon_browser(self) -> None:
+        from er_save_manager.games.DS2.icon_browser import IconBrowser
+        from er_save_manager.games.DS2.icon_manager import icons_available
+
+        if not icons_available():
+            self.show_toast(
+                "No icons.db found; run build_icon_db.py to enable icons",
+                duration=3500,
+            )
+        IconBrowser(self.parent, self, initial_category=self._selected_add_category())
+
+    def _open_visual_inventory(self) -> None:
+        from er_save_manager.games.DS2.icon_manager import icons_available
+        from er_save_manager.games.DS2.visual_inventory import VisualInventoryBrowser
+
+        if not icons_available():
+            self.show_toast(
+                "No icons.db found; run build_icon_db.py to enable icons",
+                duration=3500,
+            )
+        VisualInventoryBrowser(self.parent, self)
 
     # ------------------------------------------------------------------
     # Left panel: item browser
