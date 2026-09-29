@@ -123,8 +123,9 @@ def fit_size(img: PILImage.Image, max_dim: int) -> tuple[int, int]:
 # ------------------------------------------------------------------
 
 
-# Infusion icons live in the named_icons table as "<infusion name>.webp",
-# with names from regulation.INFUSION_NAMES. The plain weapon has none.
+# Icons without an item id live in the named_icons table: infusion icons as
+# "<infusion name>.webp", with names from regulation.INFUSION_NAMES (the plain
+# weapon has none), and bonfire pictures as "<bonfire id>.webp".
 _named_cache: dict[str, PILImage.Image | None] = {}
 
 # Share of the square weapon icon the infusion badge covers.
@@ -245,3 +246,14 @@ def add_infusion_menu_icons(combo, size: int = 20) -> None:
     # Tk drops images that Python no longer references.
     menu._infusion_photos = (blank, photos)
     rebuild_with_icons()
+
+
+# ------------------------------------------------------------------
+# Bonfire icons
+# ------------------------------------------------------------------
+
+
+def get_bonfire_icon(bonfire_id: int) -> PILImage.Image | None:
+    """Picture of a bonfire by its id in bonfire_database.BONFIRES, or None
+    when it has none."""
+    return _named_lookup(f"{bonfire_id}.webp")
