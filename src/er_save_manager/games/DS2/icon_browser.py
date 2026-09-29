@@ -3,8 +3,8 @@ Visual add-item popup for DS2.
 
 Shows the same items as the panel's Add Item list as an icon grid. Selecting
 an item and clicking Add Item drives the panel's own controls and _on_add,
-so quantity/upgrade/infusion capping and the unsafe-item check stay in one
-place rather than being duplicated here.
+so quantity/upgrade/infusion capping and the unsafe-item check are shared
+with the text form.
 """
 
 from __future__ import annotations
@@ -73,7 +73,9 @@ class IconBrowser(ctk.CTkToplevel):
         self._scroll.bind("<Configure>", self._on_scroll_resize)
         self.after(120, self._reflow)
 
-    # ---- UI --------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # UI
+    # ------------------------------------------------------------------
 
     def _build_ui(self) -> None:
         top = ctk.CTkFrame(self, fg_color="transparent")
@@ -171,7 +173,9 @@ class IconBrowser(ctk.CTkToplevel):
         )
         self._add_btn.pack(fill="x", padx=10, pady=(6, 10))
 
-    # ---- items -------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # Items
+    # ------------------------------------------------------------------
 
     def _load_category(self, category: str) -> None:
         if self._batch_job is not None:
@@ -225,11 +229,9 @@ class IconBrowser(ctk.CTkToplevel):
                 btn._text_label.configure(wraplength=_CELL_W - 8, justify="center")
             self._buttons.append((btn, name))
             if not self._search_var.get().strip():
-                # No filter active: this is the common "just opened the
-                # category" case. Grid straight to the next slot instead of
-                # re-laying out every button built so far each batch, which
-                # would make the total load cost grow with the square of the
-                # button count on a large category like Armor.
+                # Without a filter, grid straight to the next slot. Re-laying
+                # out every button each batch makes loading quadratic in the
+                # button count, which is slow on large categories like Armor.
                 row, col = divmod(self._grid_count, self._cols)
                 btn.grid(
                     row=row, column=col, padx=_CELL_PAD, pady=_CELL_PAD, sticky="nsew"
@@ -258,7 +260,9 @@ class IconBrowser(ctk.CTkToplevel):
         self.title(f"Add Item - {label}")
         self._load_category(self._current_cat)
 
-    # ---- layout / filter ---------------------------------------------------
+    # ------------------------------------------------------------------
+    # Layout / filter
+    # ------------------------------------------------------------------
 
     def _apply_filter(self) -> None:
         q = self._search_var.get().lower().strip()
@@ -284,7 +288,9 @@ class IconBrowser(ctk.CTkToplevel):
             self._cols = new_cols
             self._apply_filter()
 
-    # ---- selection ----------------------------------------------------------
+    # ------------------------------------------------------------------
+    # Selection
+    # ------------------------------------------------------------------
 
     def _on_item_click(self, name: str) -> None:
         self._selected_name = name
@@ -338,7 +344,9 @@ class IconBrowser(ctk.CTkToplevel):
 
         self._add_btn.configure(state="normal" if self._selected_name else "disabled")
 
-    # ---- add ----------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # Add
+    # ------------------------------------------------------------------
 
     def _do_add(self) -> None:
         if self._selected_name is None:

@@ -1,11 +1,8 @@
 """
 Visual current-inventory popup for DS2.
 
-DS2's inventory is a small, fixed-size slot table (a few thousand slots,
-almost all empty), unlike Elden Ring's dynamic gaitem-backed inventory which
-can hold enough live entries that a plain widget grid becomes a problem. A
-CTkScrollableFrame of buttons is simple and fast enough here, so this does
-not need Elden Ring's raw-Canvas rendering.
+The inventory is a fixed slot table that is almost all empty, so a plain
+button grid is fast enough.
 
 Selecting an icon selects the matching row in the panel's own inventory tree
 and drives its existing Remove/Set Quantity/Set Upgrade/Set Infusion
@@ -32,8 +29,8 @@ _CELL_H = 100
 _CELL_PAD = 4
 _SCROLLBAR_W = 24
 _DEFAULT_COLS = 5
-# See icon_browser.py: decoding + Tk image creation for a big inventory is
-# slow done all at once, so this streams the grid in a few icons per frame.
+# Builds a few icons per frame so a large inventory does not freeze the popup,
+# see icon_browser.py.
 _BATCH = 12
 _DELAY_MS = 8
 
@@ -73,7 +70,9 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         self._rebuild()
         self.protocol("WM_DELETE_WINDOW", self.destroy)
 
-    # ---- UI --------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # UI
+    # ------------------------------------------------------------------
 
     def _build_ui(self) -> None:
         top = ctk.CTkFrame(self, fg_color="transparent")
@@ -184,7 +183,9 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
 
         return CATEGORY_LABELS
 
-    # ---- data ---------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # Data
+    # ------------------------------------------------------------------
 
     def _rebuild(self) -> None:
         """Sync the panel's own filter to this popup's, refresh its tree, then
@@ -256,11 +257,8 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             if getattr(btn, "_text_label", None) is not None:
                 btn._text_label.configure(wraplength=_CELL_W - 8, justify="center")
             self._buttons.append((btn, idx))
-            # Grid straight to the next slot instead of re-laying out every
-            # button built so far each batch (see icon_browser.py for why:
-            # that would make total load cost grow with the square of the
-            # inventory size). A full _layout_grid() still runs on resize
-            # and once more after the last batch.
+            # Grid straight to the next slot, see icon_browser.py. A full
+            # _layout_grid() still runs on resize and after the last batch.
             row, col = divmod(self._grid_count, self._cols)
             btn.grid(row=row, column=col, padx=_CELL_PAD, pady=_CELL_PAD, sticky="nsew")
             self._grid_count += 1
@@ -294,7 +292,9 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             self._cols = new_cols
             self._layout_grid()
 
-    # ---- selection ------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # Selection
+    # ------------------------------------------------------------------
 
     def _select_tree_row(self, index: int) -> None:
         tree = self._panel._inventory_tree
@@ -346,7 +346,9 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             self._infusion_var.set(names[0])
         self._remove_btn.configure(state="normal" if has_selection else "disabled")
 
-    # ---- actions, delegated to the panel's own Set/Remove -------------------
+    # ------------------------------------------------------------------
+    # Actions, delegated to the panel's own Set/Remove
+    # ------------------------------------------------------------------
 
     def _do_qty(self) -> None:
         self._panel.set_qty_var.set(self._qty_var.get())

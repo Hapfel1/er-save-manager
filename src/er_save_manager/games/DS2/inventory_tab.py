@@ -40,7 +40,7 @@ STACKABLE_CATEGORIES = ("goods", "bolts", "spells", "upgrade", "seamless")
 _ESTUS_FLASK_ID = 0x0395E478
 
 # Internal category key -> display label. Kept separate so backend calls
-# (item_database lookups, Character.add_item/delete_item) always use the
+# (item_database lookups, Character.add_item/delete_entry) always use the
 # lowercase key, while the UI only ever shows the capitalized label.
 CATEGORY_LABELS = {
     "goods": "Goods",

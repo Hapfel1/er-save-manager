@@ -23,8 +23,7 @@ from er_save_manager.ui.utils import bind_mousewheel, force_render_dialog, pick_
 # DS2's character-select screen reads its own cached summary (see
 # save.py: entry 0 / entry 22) which this tool keeps in sync for the
 # name, but the game itself only fully refreshes that summary the next
-# time it actually loads the save, same as the DS1R/DS3 first-load
-# quirk documented in DS2Save.is_slot_initialized().
+# time it actually loads the save, same as on DSR and DS3.
 STALE_SUMMARY_NOTE = (
     "In-game, this slot may still show the old character until you load it once."
 )

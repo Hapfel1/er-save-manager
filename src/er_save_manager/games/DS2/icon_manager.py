@@ -1,8 +1,8 @@
 """
 Icon manager for the DS2 item browser.
 
-Icons are stored in icons.db (SQLite) alongside this file, keyed by item id
-(see build_icon_db.py). Images are loaded on demand and cached in memory.
+Icons are stored in icons.db (SQLite) alongside this file, keyed by item id.
+Images are loaded on demand and cached in memory.
 Returns PIL Images; callers create CTkImage at the desired display size.
 """
 
@@ -47,7 +47,7 @@ def has_icon(item_id: int) -> bool:
 
 
 # A few items have no icon of their own and share another item's exported
-# icon in-game. Verified case by case, not a guess:
+# icon in-game, checked for each one:
 #   - Old Mirrah Greatsword is a unique NPC-drop variant of Mirrah Greatsword
 #     with no separate icon; the base weapon's icon is the one the game uses.
 _FALLBACK_ICON_ID: dict[int, int] = {
@@ -118,7 +118,9 @@ def fit_size(img: PILImage.Image, max_dim: int) -> tuple[int, int]:
     return (max(1, round(w * scale)), max(1, round(h * scale)))
 
 
-# ---- infusion icons ---------------------------------------------------------
+# ------------------------------------------------------------------
+# Infusion icons
+# ------------------------------------------------------------------
 
 
 def get_infusion_icon(_infusion_index: int) -> PILImage.Image | None:

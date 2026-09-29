@@ -1,7 +1,7 @@
 """
 DS2 item ID databases, keyed by item name, hex id string (as stored little-endian).
 
-Source: Dark-Souls-2-Save-Editor-PS4-PC project (Resources/Json), used as-is.
+Source: Param Exports, Regulation Data
 """
 
 from __future__ import annotations
