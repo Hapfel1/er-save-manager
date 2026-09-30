@@ -99,6 +99,21 @@ class NRInspectorTab:
             ).pack(anchor="w", padx=6, pady=6)
             return
 
+        if save.trailing_bytes:
+            ctk.CTkLabel(
+                self.list_frame,
+                text=(
+                    f"This file has {save.trailing_bytes} junk bytes past its last "
+                    "entry. They are removed the next time "
+                    "the editor saves this file."
+                ),
+                text_color=("#b35900", "#ffa94d"),
+                font=("Segoe UI", 11),
+                wraplength=640,
+                justify="left",
+                anchor="w",
+            ).pack(fill="x", padx=6, pady=(2, 4))
+
         for i, slot in enumerate(save.slots):
             is_active = slot.entry_count > 0 or bool(slot.player_name)
             name = slot.player_name if slot.player_name else "(empty)"

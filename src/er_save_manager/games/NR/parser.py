@@ -55,31 +55,49 @@ Offset  Size  Field
     +0x08 acquisition_id (u32)
     +0x0C is_favorite (u8)
     +0x0D is_new (u8)
-  After ItemEntries (entry_offset + 3065*14):
-    Vessel/Loadout section starts with magic:
-      C2 00 03 00 00 2C 00 00 03 00 0A 00 04 00 46 00 64 00 00 00
-    After magic (20 bytes): hero loadout section
-      10 heroes, each 120 bytes:
+  After ItemEntries (entries_end = entry_offset + 3065*14):
+    entries_end + 0x6A  next_acquisition_id (u32) - always max(acquisition_id) + 1
+    entries_end + 0x21A relic loadout chunk:
+      +0x00 chunk_id (u16)        - 0x00C2
+      +0x02 chunk_version (u16)   - 3
+      +0x04 chunk_size (u32)      - 0x2C00 in every observed save; payload
+                                    bytes after this field
+      +0x08 unk (u16)             - 3
+      +0x0A hero_count (u16)      - 10
+      +0x0C universal_count (u16) - 4 (vessels usable by every hero, 19xxx)
+      +0x0E hero_vessel_count (u16) - 70 (7 per hero, x000-x006)
+      +0x10 preset_count (u16)    - 100
+      +0x12 pad (u16)
+      +0x14 hero blocks[hero_count], each 8 + universal_count * 28 bytes:
         +0x00 hero_type (u8)
-        +0x01 cur_preset_idx (u8) - 0xFF = none
+        +0x01 cur_preset_idx (u8) - index into presets[], 0xFF = none
         +0x02 pad[2]
         +0x04 cur_vessel_id (u32)
-        +0x08 universal_vessels[4]:
+        +0x08 universal_vessels[universal_count]:
                each vessel: vessel_id(u32) + relics[6](u32 each) = 28 bytes
-      After 10 heroes: additional hero-specific vessels
-        each: vessel_id(u32) + relics[6](u32 each) = 28 bytes
-        terminated by vessel_id == 0
-      After vessels: custom preset slots (up to 100):
-        each preset 80 bytes:
+      hero_vessels[hero_vessel_count], 28 bytes each (same layout)
+      unk (u32)
+      presets[preset_count], 80 bytes each (empty slots are always present):
           +0x00 header (u8)       - 0x01 = valid, 0x00 = empty
           +0x01 hero_id (u8)
           +0x02 unk (u8)
-          +0x03 counter (u8)      - sort order, 0 = newest
+          +0x03 counter (u8)      - recency rank, 0 = newest; dense 0..n-1
+                                    (a new preset takes 0, the rest move up)
           +0x04 name (36 bytes)   - UTF-16LE, max 18 chars
           +0x28 pad[4]
           +0x2C vessel_id (u32)
           +0x30 relics[6] (u32 each) = 24 bytes
-          +0x48 timestamp (u64)
+          +0x48 timestamp (u64)   - Windows FILETIME in local time
+        An empty preset slot is all zeros except vessel_id = 0xFFFFFFFF.
+        Used presets are contiguous from index 0; the game never leaves gaps.
+      Vessel relic slots 0-2 take normal relics, 3-5 deep relics; an empty
+      slot is 0. A relic's color must equal the vessel slot color, except
+      slot color 4 which accepts any color.
+      Vanilla payload uses 11176 of 11264 bytes. Mods that add vessels grow
+      it by 28 bytes per hero vessel and hero_count * 28 per universal
+      vessel. Reports of modded saves losing or corrupting loadouts once 4
+      hero vessels are added match the 88 spare bytes; no modded save has
+      been examined yet.
 
 --- Global Profile Data (entry 10) ---
 
@@ -145,6 +163,7 @@ from __future__ import annotations
 import hashlib
 import struct
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 
 try:
@@ -184,8 +203,19 @@ _ENTRY_MAGIC = bytes([0x40, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF])
 _BND4_HEADER_SZ = 64
 _ENTRY_STRIDE = 32
 
-# Vessel loadout section marker in slot data
-_VESSEL_MAGIC = bytes.fromhex("C2000300002C000003000A000400460064000000")
+# Offsets relative to the end of the ItemEntry array
+_ACQ_COUNTER_REL = 0x6A  # next acquisition_id (u32)
+_LOADOUT_REL = 0x21A  # relic loadout chunk header
+
+_LOADOUT_CHUNK_ID = 0x00C2
+_LOADOUT_HEADER_SZ = 0x14  # chunk header (8) + count fields (12)
+_VESSEL_SZ = 28  # vessel_id + 6 relic handles
+_PRESET_SZ = 80
+_NO_PRESET = 0xFF  # cur_preset_idx value for no selected preset
+# Empty preset slot as the game writes it: zeros except vessel_id 0xFFFFFFFF
+_EMPTY_PRESET = bytes(44) + b"\xff\xff\xff\xff" + bytes(32)
+VANILLA_UNIVERSAL_VESSELS = 4
+VANILLA_HERO_VESSELS = 70
 
 # Item type prefix bits (upper byte of ga_handle)
 ITEM_TYPE_NONE = 0x00000000
@@ -505,6 +535,7 @@ class CustomPreset:
     relics: list[int] = field(default_factory=lambda: [0] * 6)
     timestamp: int = 0
     abs_offset: int = -1  # base of the 80-byte block
+    index: int = -1  # position in the preset array (what cur_preset_idx refers to)
 
     @property
     def is_empty(self) -> bool:
@@ -520,6 +551,41 @@ class CustomPreset:
         struct.pack_into("<I", data, base + 44, self.vessel_id)
         struct.pack_into("<6I", data, base + 48, *self.relics)
         struct.pack_into("<Q", data, base + 72, self.timestamp)
+
+
+@dataclass
+class LoadoutInfo:
+    """Header of the relic loadout chunk and its byte budget."""
+
+    offset: int = -1  # abs offset of the chunk header
+    chunk_size: int = 0  # payload capacity from the header
+    hero_count: int = 0
+    universal_count: int = 0
+    hero_vessel_count: int = 0
+    preset_count: int = 0
+
+    @property
+    def used_bytes(self) -> int:
+        """Payload bytes required by the current counts (excludes the 8-byte chunk header)."""
+        return (
+            _LOADOUT_HEADER_SZ
+            - 8
+            + self.hero_count * (8 + self.universal_count * _VESSEL_SZ)
+            + self.hero_vessel_count * _VESSEL_SZ
+            + 4
+            + self.preset_count * _PRESET_SZ
+        )
+
+    @property
+    def spare_bytes(self) -> int:
+        return self.chunk_size - self.used_bytes
+
+    @property
+    def is_vanilla(self) -> bool:
+        return (
+            self.universal_count == VANILLA_UNIVERSAL_VESSELS
+            and self.hero_vessel_count == VANILLA_HERO_VESSELS
+        )
 
 
 @dataclass
@@ -564,10 +630,13 @@ class NightreignSlot:
     murk_offset: int = -1
     entry_count_offset: int = -1
     entry_offset: int = -1
-    vessel_magic_offset: int = -1
+    acq_counter_offset: int = -1
 
     # Vessel/loadout
+    loadout: LoadoutInfo | None = None
     heroes: dict = field(default_factory=dict)  # hero_type -> HeroLoadout
+    # Hero vessels whose ID does not map to a parsed hero (modded vessel IDs)
+    unassigned_vessels: list = field(default_factory=list)
     free_presets: list = field(
         default_factory=list
     )  # abs offsets of empty preset slots
@@ -625,6 +694,21 @@ class NightreignSlot:
         if self.entry_count_offset < 0:
             return 0
         return struct.unpack_from("<I", self.decrypted, self.entry_count_offset)[0]
+
+    @property
+    def next_acquisition_id(self) -> int:
+        if self.acq_counter_offset < 0:
+            return 0
+        return struct.unpack_from("<I", self.decrypted, self.acq_counter_offset)[0]
+
+    def all_vessels(self) -> list[VesselLoadout]:
+        """Every vessel loadout in the slot (universal per hero and hero-specific)."""
+        return [
+            v for h in self.heroes.values() for v in h.vessels
+        ] + self.unassigned_vessels
+
+    def all_presets(self) -> list[CustomPreset]:
+        return [p for h in self.heroes.values() for p in h.presets]
 
     def _update_entry_count(self) -> None:
         count = sum(1 for e in self.item_entries if not e.is_empty)
@@ -834,39 +918,35 @@ def _parse_slot(dec: bytearray, slot_index: int) -> NightreignSlot:
             slot.relics[entry.ga_handle] = entry
         cursor += 14
 
-    # --- Vessel/loadout section ---
-    idx = dec.find(_VESSEL_MAGIC)
-    if idx == -1:
-        return slot  # no loadout data (empty slot or different format version)
+    # --- Next acquisition counter, relic loadout chunk ---
+    entries_end = cursor
+    slot.acq_counter_offset = entries_end + _ACQ_COUNTER_REL
+    info = _parse_loadout_header(dec, entries_end + _LOADOUT_REL)
+    if info is None:
+        return slot  # empty slot or unknown chunk layout
+    slot.loadout = info
+    if info.spare_bytes < 0:
+        return slot  # counts overflow the chunk; contents are not trustworthy
+    cursor = info.offset + _LOADOUT_HEADER_SZ
 
-    slot.vessel_magic_offset = idx
-    cursor = idx + len(_VESSEL_MAGIC)
+    def read_vessel(off: int) -> VesselLoadout:
+        return VesselLoadout(
+            vessel_id=struct.unpack_from("<I", dec, off)[0],
+            relics=list(struct.unpack_from("<6I", dec, off + 4)),
+            vessel_offset=off,
+            relics_offset=off + 4,
+        )
 
-    # 10 hero blocks (each: hero_type u8, preset_idx u8, pad u16, cur_vessel u32, 4 vessels * 28)
-    for _ in range(10):
+    for _ in range(info.hero_count):
         h_start = cursor
         hero_type = dec[cursor]
         preset_idx = dec[cursor + 1]
-        cursor += 4
-        cur_vessel = struct.unpack_from("<I", dec, cursor)[0]
-        cursor += 4
-
-        vessels: list[VesselLoadout] = []
-        for _ in range(4):
-            v_off = cursor
-            v_id = struct.unpack_from("<I", dec, cursor)[0]
-            r_off = cursor + 4
-            relics = list(struct.unpack_from("<6I", dec, r_off))
-            vessels.append(
-                VesselLoadout(
-                    vessel_id=v_id,
-                    relics=relics,
-                    vessel_offset=v_off,
-                    relics_offset=r_off,
-                )
-            )
-            cursor += 28
-
+        cur_vessel = struct.unpack_from("<I", dec, cursor + 4)[0]
+        cursor += 8
+        vessels = []
+        for _ in range(info.universal_count):
+            vessels.append(read_vessel(cursor))
+            cursor += _VESSEL_SZ
         slot.heroes[hero_type] = HeroLoadout(
             hero_type=hero_type,
             cur_preset_idx=preset_idx,
@@ -875,65 +955,63 @@ def _parse_slot(dec: bytearray, slot_index: int) -> NightreignSlot:
             hero_base_offset=h_start,
         )
 
-    # Additional hero-specific vessels
-    while cursor + 28 <= len(dec):
-        v_off = cursor
-        v_id = struct.unpack_from("<I", dec, cursor)[0]
-        if v_id == 0:
-            cursor += 4
-            break
-        r_off = cursor + 4
-        relics = list(struct.unpack_from("<6I", dec, r_off))
-        cursor += 28
-        # Assign to hero by vessel ID range (thousands digit = hero_type)
-        hero_type = v_id // 1000
-        if hero_type in slot.heroes:
-            slot.heroes[hero_type].vessels.append(
-                VesselLoadout(
-                    vessel_id=v_id,
-                    relics=relics,
-                    vessel_offset=v_off,
-                    relics_offset=r_off,
-                )
-            )
+    # Hero-specific vessels; the thousands digit of the ID is the hero_type
+    for _ in range(info.hero_vessel_count):
+        v = read_vessel(cursor)
+        cursor += _VESSEL_SZ
+        hero = slot.heroes.get(v.vessel_id // 1000)
+        if hero is not None:
+            hero.vessels.append(v)
+        else:
+            slot.unassigned_vessels.append(v)
+    cursor += 4  # unk u32
 
-    # Custom presets
-    MAX_PRESETS = 100
-    for _ in range(MAX_PRESETS):
-        if cursor + 80 > len(dec):
-            break
+    for i in range(info.preset_count):
         p_base = cursor
-        dec[cursor]
-        hero_id = dec[cursor + 1]
-        counter = dec[cursor + 3]
-        name_raw = (
-            dec[cursor + 4 : cursor + 40]
-            .decode("utf-16-le", errors="ignore")
-            .rstrip("\x00")
-        )
-        v_id = struct.unpack_from("<I", dec, cursor + 44)[0]
-        relics = list(struct.unpack_from("<6I", dec, cursor + 48))
-        ts = struct.unpack_from("<Q", dec, cursor + 72)[0]
-        cursor += 80
-
+        cursor += _PRESET_SZ
+        hero_id = dec[p_base + 1]
         if hero_id == 0:
             slot.free_presets.append(p_base)
-        elif hero_id in slot.heroes:
-            slot.heroes[hero_id].presets.append(
-                CustomPreset(
-                    hero_id=hero_id,
-                    counter=counter,
-                    name=name_raw,
-                    vessel_id=v_id,
-                    relics=relics,
-                    timestamp=ts,
-                    abs_offset=p_base,
-                )
-            )
-            if counter == 0:
-                break  # last valid preset (two consecutive counter=0 means end)
+            continue
+        preset = CustomPreset(
+            hero_id=hero_id,
+            counter=dec[p_base + 3],
+            name=dec[p_base + 4 : p_base + 40]
+            .decode("utf-16-le", errors="ignore")
+            .rstrip("\x00"),
+            vessel_id=struct.unpack_from("<I", dec, p_base + 44)[0],
+            relics=list(struct.unpack_from("<6I", dec, p_base + 48)),
+            timestamp=struct.unpack_from("<Q", dec, p_base + 72)[0],
+            abs_offset=p_base,
+            index=i,
+        )
+        if hero_id in slot.heroes:
+            slot.heroes[hero_id].presets.append(preset)
 
     return slot
+
+
+def _parse_loadout_header(dec: bytearray, offset: int) -> LoadoutInfo | None:
+    """Read the loadout chunk header at offset, or None if it is not there."""
+    if offset + _LOADOUT_HEADER_SZ > len(dec):
+        return None
+    chunk_id, _ver, size = struct.unpack_from("<HHI", dec, offset)
+    if chunk_id != _LOADOUT_CHUNK_ID:
+        return None
+    _unk, heroes, universal, hero_vessels, presets = struct.unpack_from(
+        "<5H", dec, offset + 8
+    )
+    info = LoadoutInfo(
+        offset=offset,
+        chunk_size=size,
+        hero_count=heroes,
+        universal_count=universal,
+        hero_vessel_count=hero_vessels,
+        preset_count=presets,
+    )
+    if offset + 8 + size > len(dec):
+        return None
+    return info
 
 
 # ---------------------------------------------------------------------------
@@ -962,6 +1040,31 @@ def _parse_profile(dec: bytearray) -> NightreignProfile:
     return prof
 
 
+def _filetime_now() -> int:
+    """Current local time as a Windows FILETIME, the preset timestamp format."""
+    delta = datetime.now() - datetime(1601, 1, 1)
+    return (delta.days * 86400 + delta.seconds) * 10_000_000 + delta.microseconds * 10
+
+
+def _preset_index(slot: NightreignSlot, abs_offset: int) -> int:
+    """Index in the preset array of the preset block at abs_offset."""
+    info = slot.loadout
+    first = (
+        info.offset
+        + _LOADOUT_HEADER_SZ
+        + info.hero_count * (8 + info.universal_count * _VESSEL_SZ)
+        + info.hero_vessel_count * _VESSEL_SZ
+        + 4
+    )
+    return (abs_offset - first) // _PRESET_SZ
+
+
+def _refresh_slot(slot: NightreignSlot) -> None:
+    """Re-parse a slot in place after its loadout bytes changed."""
+    fresh = _parse_slot(slot.decrypted, slot.slot_index)
+    slot.__dict__.update(fresh.__dict__)
+
+
 # ---------------------------------------------------------------------------
 # Top-level save file
 # ---------------------------------------------------------------------------
@@ -987,6 +1090,16 @@ class NightreignSave:
     slots: list[NightreignSlot] = field(default_factory=list)  # entries 0-9
     profile: NightreignProfile | None = None  # entry 10
 
+    @property
+    def declared_end(self) -> int:
+        """End of the last entry according to the BND4 header."""
+        return max(e.data_offset + e.size for e in self.entries)
+
+    @property
+    def trailing_bytes(self) -> int:
+        """Bytes past declared_end, left by relic spawns before the size fix."""
+        return max(0, len(self.raw) - self.declared_end)
+
     @classmethod
     def from_file(cls, path: str | Path) -> NightreignSave:
         raw = bytearray(Path(path).read_bytes())
@@ -1005,7 +1118,13 @@ class NightreignSave:
         out = bytearray(self.raw)
         for entry in self.entries:
             enc = entry.patch_and_encrypt()
+            if len(enc) != entry.size:
+                raise ValueError(
+                    f"Entry {entry.index} re-encrypted to {len(enc)} bytes, "
+                    f"header declares {entry.size}"
+                )
             out[entry.data_offset : entry.data_offset + entry.size] = enc
+        del out[self.declared_end :]
         target = Path(path)
         tmp_path = target.with_suffix(target.suffix + ".tmp")
         tmp_path.write_bytes(out)
@@ -1091,6 +1210,104 @@ class NightreignSave:
             raise KeyError(f"vessel_id {vessel_id} not found for hero {hero_type}")
         vessel.relics = relics
         vessel.write_to(self.slots[slot_index].decrypted)
+
+    def update_preset(
+        self,
+        slot_index: int,
+        preset_index: int,
+        name: str | None = None,
+        relics: list[int] | None = None,
+    ) -> None:
+        """Rename a preset and/or replace its 6 relic handles (0 = empty)."""
+        slot = self.slots[slot_index]
+        preset = next((p for p in slot.all_presets() if p.index == preset_index), None)
+        if preset is None:
+            raise KeyError(f"preset {preset_index} not found in slot {slot_index}")
+        if name is not None:
+            if len(name) > 18:
+                raise ValueError("Preset name cannot exceed 18 characters")
+            preset.name = name
+        if relics is not None:
+            if len(relics) != 6:
+                raise ValueError("relics must have exactly 6 elements")
+            preset.relics = list(relics)
+        preset.write_to(slot.decrypted)
+
+    def create_preset(
+        self,
+        slot_index: int,
+        hero_type: int,
+        name: str,
+        vessel_id: int,
+        relics: list[int],
+    ) -> int:
+        """Add a preset in the first free slot and return its index.
+
+        Matches the game: the new preset gets counter 0 (newest) and every
+        other preset's counter moves up by one. The hero's current preset
+        selection is left unchanged.
+        """
+        slot = self.slots[slot_index]
+        if slot.loadout is None:
+            raise RuntimeError("slot has no loadout section")
+        if hero_type not in slot.heroes:
+            raise KeyError(f"hero_type {hero_type} not found in slot {slot_index}")
+        if len(name) > 18:
+            raise ValueError("Preset name cannot exceed 18 characters")
+        if len(relics) != 6:
+            raise ValueError("relics must have exactly 6 elements")
+        if not slot.free_presets:
+            raise RuntimeError("All preset slots are in use")
+
+        dec = slot.decrypted
+        for p in slot.all_presets():
+            dec[p.abs_offset + 3] = p.counter + 1
+        base = min(slot.free_presets)
+        preset = CustomPreset(
+            hero_id=hero_type,
+            counter=0,
+            name=name,
+            vessel_id=vessel_id,
+            relics=list(relics),
+            timestamp=_filetime_now(),
+            abs_offset=base,
+        )
+        preset.write_to(dec)
+        index = _preset_index(slot, base)
+        _refresh_slot(slot)
+        return index
+
+    def delete_preset(self, slot_index: int, preset_index: int) -> None:
+        """Delete a preset without leaving a gap in the preset array.
+
+        The last used preset moves into the freed index (game-written saves
+        never contain gaps), counters above the deleted one move down by one,
+        and hero selections pointing at the deleted or moved preset follow.
+        """
+        slot = self.slots[slot_index]
+        presets = slot.all_presets()
+        target = next((p for p in presets if p.index == preset_index), None)
+        if target is None:
+            raise KeyError(f"preset {preset_index} not found in slot {slot_index}")
+        last = max(presets, key=lambda p: p.index)
+        dec = slot.decrypted
+
+        for p in presets:
+            if p.counter > target.counter:
+                dec[p.abs_offset + 3] = p.counter - 1
+        if last.index != target.index:
+            dec[target.abs_offset : target.abs_offset + _PRESET_SZ] = dec[
+                last.abs_offset : last.abs_offset + _PRESET_SZ
+            ]
+        dec[last.abs_offset : last.abs_offset + _PRESET_SZ] = _EMPTY_PRESET
+
+        for hero in slot.heroes.values():
+            sel_off = hero.hero_base_offset + 1
+            if hero.cur_preset_idx == target.index:
+                dec[sel_off] = _NO_PRESET
+            elif hero.cur_preset_idx == last.index:
+                dec[sel_off] = target.index
+        _refresh_slot(slot)
 
     def dump_summary(self, slot_index: int) -> str:
         """Return a human-readable summary of the slot."""

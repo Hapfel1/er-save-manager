@@ -9,24 +9,25 @@ relic, 88 for weapon). The loop reads exactly 5120 states; everything after
 the loop (player name, currencies, item entries) sits at a fixed position
 relative to the loop's final cursor.
 
-Adding an 80-byte relic in place of ten 8-byte empty states would reduce the
-number of loop iterations that reach the post-state data by 9 (9 * 8 = 72 bytes
-"missing"). Inserting 72 null bytes at the spawn position before writing the
-relic compensates: they are parsed as 9 additional empty 8-byte states, so the
-loop's cursor still lands at the same position relative to the player-data
-block.
+Turning one 8-byte empty state into an 80-byte relic state keeps the state
+count at 5120 but makes the section 72 bytes longer, so everything after it
+(player data, item entries, acquisition counter, loadout chunk) moves 72 bytes
+later. The decrypted entry has a fixed size, so the same 72 bytes are taken
+from the unused slack at the end of the slot.
 
 Concretely:
-  1. Find the first 8-byte empty state slot at or after the last existing relic.
+  1. Find the first 8-byte empty state slot after the last existing relic.
   2. Insert 72 null bytes at that offset and trim 72 bytes of trailing slack
      before the checksum tail, so the entry keeps its fixed size.
   3. Write the 80-byte relic block at that offset (overwriting the 72 nulls +
      the original 8-byte slot = 80 bytes total).
-  4. Find and update the ItemEntry slot (also shifted by 72 bytes).
-  5. Increment entry_count at its shifted offset.
+  4. Write the ItemEntry into the first free entry (now 72 bytes later).
+  5. Increment entry_count and advance the acquisition counter.
+  6. Re-parse the slot so every cached offset reflects the shift.
 
-Removal is the inverse: zero the 80-byte relic state, then remove the 72
-compensating null bytes, restoring the original layout.
+Removal is the inverse: clear the relic from vessels and presets, collapse the
+80-byte state back to an empty 8-byte one, return 72 bytes to the slack,
+clear the ItemEntry and decrement entry_count.
 """
 
 from __future__ import annotations
@@ -34,8 +35,10 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
+from er_save_manager.games.NR.parser import _ACQ_COUNTER_REL, ENTRY_SLOT_COUNT
+
 if TYPE_CHECKING:
-    from er_save_manager.games.NR.parser import NightreignSlot
+    from er_save_manager.games.NR.parser import NightreignSlot, RelicState
 
 ITEM_TYPE_RELIC = 0xC0000000
 STATE_KEEP_START = 84
@@ -61,9 +64,10 @@ _CHECKSUM_TAIL = 28  # MD5(16) + padding(12) at the end of each decrypted entry
 def _trim_slack(dec: bytearray, n: int) -> None:
     """Remove n bytes of unused slack directly before the checksum tail.
 
-    The serialized slot payload is followed by unused filler up to the fixed
-    entry size (stale bytes, not parsed by the game), so it absorbs growth
-    of the variable-size state array.
+    The serialized slot payload is followed by unused filler (zeros or stale
+    bytes) up to the fixed entry size. Its start moves with the state array
+    while the payload length after the state array stays constant, so the
+    filler absorbs growth of the variable-size state array.
     """
     tail_pos = len(dec) - _CHECKSUM_TAIL
     del dec[tail_pos - n : tail_pos]
@@ -103,6 +107,19 @@ def _entry_count_offset(dec: bytearray) -> int:
     return _walk_states_cursor(dec) + 0x94 + 0x5B8
 
 
+def _next_acquisition_id(slot: NightreignSlot) -> int:
+    """Next acquisition_id: the stored counter, or past the highest in use."""
+    scanned = max(
+        (
+            e.acquisition_id
+            for e in slot.item_entries
+            if not e.is_empty and e.acquisition_id < 0x7FFFFFFF
+        ),
+        default=0,
+    )
+    return max(slot.next_acquisition_id, scanned + 1)
+
+
 def _next_relic_handle(slot: NightreignSlot) -> int:
     if not slot.relic_states:
         return ITEM_TYPE_RELIC | 0x800001
@@ -127,6 +144,32 @@ def _find_spawn_offset(slot: NightreignSlot) -> int | None:
     return None
 
 
+def validate_relic(real_item_id: int, effects: list[int], curses: list[int]) -> None:
+    """Raise ValueError if the relic ID or any effect/curse is invalid.
+
+    No duplicate check: game-written saves hold many relics sharing one
+    real_item_id (random-roll relics and special relics alike).
+    """
+    from er_save_manager.games.NR.item_db import (
+        get_relic,
+        validate_curse,
+        validate_effect,
+    )
+
+    relic_row = get_relic(real_item_id)
+    if relic_row is None:
+        raise ValueError(f"Unknown relic ID {real_item_id}")
+    is_deep = relic_row["deep"]
+    for slot_num, ef in enumerate(effects, 1):
+        err = validate_effect(ef, is_deep)
+        if err:
+            raise ValueError(f"Effect slot {slot_num}: {err}")
+    for slot_num, ef in enumerate(curses, 1):
+        err = validate_curse(ef)
+        if err:
+            raise ValueError(f"Curse slot {slot_num}: {err}")
+
+
 def spawn_relic(
     slot: NightreignSlot,
     real_item_id: int,
@@ -144,38 +187,18 @@ def spawn_relic(
     Raises RuntimeError if there is no free space.
     """
     if validate:
-        from er_save_manager.games.NR.item_db import (
-            get_relic,
-            validate_curse,
-            validate_effect,
+        validate_relic(
+            real_item_id,
+            [effect_1, effect_2, effect_3],
+            [curse_1, curse_2, curse_3],
         )
 
-        relic_row = get_relic(real_item_id)
-        if relic_row is None:
-            raise ValueError(f"Unknown relic ID {real_item_id}")
-        is_deep = relic_row["deep"]
+    # Named special relics (Besmirched Frame, Silver Tear, ...) carry the
+    # AttachEffect that shares their ID in effect_1. Other relics, including
+    # fixed-roll scene relics below 10000, have no such effect.
+    from er_save_manager.games.NR.item_db import get_effect
 
-        # Warn on duplicate
-        existing = [
-            rs for rs in slot.relic_states.values() if rs.real_item_id == real_item_id
-        ]
-        if existing:
-            raise ValueError(
-                f"This save already contains a '{relic_row['name']}' (ID {real_item_id}). "
-                f"The game will remove duplicates on load."
-            )
-
-        for slot_num, ef in enumerate([effect_1, effect_2, effect_3], 1):
-            err = validate_effect(ef, is_deep)
-            if err:
-                raise ValueError(f"Effect slot {slot_num}: {err}")
-        for slot_num, ef in enumerate([curse_1, curse_2, curse_3], 1):
-            err = validate_curse(ef)
-            if err:
-                raise ValueError(f"Curse slot {slot_num}: {err}")
-
-    # Special relics (real_item_id < 100000) have effect_1 == real_item_id by game convention.
-    if real_item_id < 100000:
+    if get_effect(real_item_id) is not None:
         effect_1 = real_item_id
 
     spawn_offset = _find_spawn_offset(slot)
@@ -189,6 +212,7 @@ def spawn_relic(
     # Read entry_count before expanding the buffer
     old_count = struct.unpack_from("<I", slot.decrypted, slot.entry_count_offset)[0]
     ga_handle = _next_relic_handle(slot)
+    acq_id = _next_acquisition_id(slot)
     item_id = 0x80000000 | (real_item_id & 0x00FFFFFF)
 
     # Insert 72 null bytes at spawn_offset to compensate for the state-loop delta,
@@ -219,7 +243,6 @@ def spawn_relic(
     entry_base = ec_offset + 4
 
     # Find the first empty entry in the shifted data
-    ENTRY_SLOT_COUNT = 3065
     free_entry_off = None
     for i in range(ENTRY_SLOT_COUNT):
         off = entry_base + i * 14
@@ -235,20 +258,23 @@ def spawn_relic(
         raise RuntimeError("No free item entry slots after spawn")
 
     # Write ItemEntry
-    struct.pack_into("<3I", dec, free_entry_off, ga_handle, 1, 0)
+    struct.pack_into("<3I", dec, free_entry_off, ga_handle, 1, acq_id)
     dec[free_entry_off + 12] = 0  # is_favorite
     dec[free_entry_off + 13] = 1  # is_new
 
-    # Write incremented entry_count
+    # Write incremented entry_count and advance the acquisition counter
     struct.pack_into("<I", dec, ec_offset, old_count + 1)
+    acq_counter_off = entry_base + ENTRY_SLOT_COUNT * 14 + _ACQ_COUNTER_REL
+    struct.pack_into("<I", dec, acq_counter_off, acq_id + 1)
 
     _reparse(slot)
     return ga_handle
 
 
-def remove_relic(slot: NightreignSlot, ga_handle: int) -> None:
+def remove_relic(slot: NightreignSlot, ga_handle: int) -> int:
     """
     Remove a relic. Reverses the 72-byte insert made during spawn.
+    Returns the number of vessel/preset slots the relic was cleared from.
     Raises KeyError if ga_handle is not found.
     """
     rs = slot.relic_states.get(ga_handle)
@@ -256,6 +282,9 @@ def remove_relic(slot: NightreignSlot, ga_handle: int) -> None:
         raise KeyError(f"Relic 0x{ga_handle:08X} not in slot")
 
     dec = slot.decrypted
+    # Loadout offsets lie past the state array, so clear references before
+    # the removal shifts them.
+    cleared = clear_loadout_refs(slot, ga_handle)
     spawn_off = rs.abs_offset
     old_count = struct.unpack_from("<I", dec, slot.entry_count_offset)[0]
 
@@ -270,7 +299,6 @@ def remove_relic(slot: NightreignSlot, ga_handle: int) -> None:
     # Zero the ItemEntry (its offset has shifted back by 72 bytes)
     ec_offset = _entry_count_offset(dec)
     entry_base = ec_offset + 4
-    ENTRY_SLOT_COUNT = 3065
     for i in range(ENTRY_SLOT_COUNT):
         off = entry_base + i * 14
         ga_e = struct.unpack_from("<I", dec, off)[0]
@@ -283,3 +311,94 @@ def remove_relic(slot: NightreignSlot, ga_handle: int) -> None:
         struct.pack_into("<I", dec, ec_offset, old_count - 1)
 
     _reparse(slot)
+    return cleared
+
+
+def clear_loadout_refs(slot: NightreignSlot, ga_handle: int) -> int:
+    """Set every vessel and preset relic slot holding ga_handle to empty (0).
+
+    Returns the number of slots cleared.
+    """
+    cleared = 0
+    for v in slot.all_vessels():
+        if ga_handle in v.relics:
+            cleared += v.relics.count(ga_handle)
+            v.relics = [0 if r == ga_handle else r for r in v.relics]
+            v.write_to(slot.decrypted)
+    for p in slot.all_presets():
+        if ga_handle in p.relics:
+            cleared += p.relics.count(ga_handle)
+            p.relics = [0 if r == ga_handle else r for r in p.relics]
+            struct.pack_into("<6I", slot.decrypted, p.abs_offset + 48, *p.relics)
+    return cleared
+
+
+# ---------------------------------------------------------------------------
+# Bulk import/export
+# ---------------------------------------------------------------------------
+
+
+def relic_to_dict(rs: RelicState) -> dict:
+    """Serializable form of a relic, as used by export/import."""
+    from er_save_manager.games.NR.item_db import relic_name
+
+    return {
+        "id": rs.real_item_id,
+        "name": relic_name(rs.real_item_id),
+        "effects": [rs.effect_1, rs.effect_2, rs.effect_3],
+        "curses": [rs.curse_1, rs.curse_2, rs.curse_3],
+    }
+
+
+def _row_to_args(row: dict) -> tuple[int, list[int], list[int]]:
+    empty = 0xFFFFFFFF
+    real_id = int(row["id"])
+    effects = [int(x) for x in row.get("effects", [])][:3]
+    curses = [int(x) for x in row.get("curses", [])][:3]
+    effects += [empty] * (3 - len(effects))
+    curses += [empty] * (3 - len(curses))
+    return real_id, effects, curses
+
+
+def import_relics(slot: NightreignSlot, rows: list[dict]) -> list[int]:
+    """Validate every row, then spawn them all. Returns the new ga_handles.
+
+    Nothing is spawned if any row is invalid or the slot lacks room for all
+    of them, so a failure never leaves a partial import behind.
+    """
+    parsed = []
+    errors = []
+    for i, row in enumerate(rows, 1):
+        try:
+            real_id, effects, curses = _row_to_args(row)
+            validate_relic(real_id, effects, curses)
+            parsed.append((real_id, effects, curses))
+        except (KeyError, TypeError, ValueError) as e:
+            errors.append(f"Row {i}: {e}")
+    if errors:
+        raise ValueError("\n".join(errors))
+
+    free_states = _count_spawnable_states(slot)
+    free_entries = sum(1 for e in slot.item_entries if e.is_empty)
+    if len(parsed) > min(free_states, free_entries):
+        raise RuntimeError(
+            f"Not enough room: {len(parsed)} relics requested, "
+            f"{min(free_states, free_entries)} free"
+        )
+
+    handles = []
+    for real_id, effects, curses in parsed:
+        handles.append(spawn_relic(slot, real_id, *effects, *curses, validate=False))
+    return handles
+
+
+def _count_spawnable_states(slot: NightreignSlot) -> int:
+    """Empty 8-byte states after the last relic (where spawns are placed)."""
+    last_relic_off = max(
+        (rs.abs_offset for rs in slot.relic_states.values()), default=-1
+    )
+    return sum(
+        1
+        for ga, size, off in slot.item_states
+        if off > last_relic_off and ga == 0 and size == 8
+    )
