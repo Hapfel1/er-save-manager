@@ -42,6 +42,7 @@ pyinstaller --clean --noconfirm \
     --copy-metadata er-save-manager \
     --copy-metadata customtkinterthemes \
     --add-data src/resources:resources \
+    --add-data resources/icon:resources/icon \
     --add-data src/er_save_manager/data/items:er_save_manager/data/items \
     --add-data src/er_save_manager/data/icons.db:er_save_manager/data \
     --add-data src/er_save_manager/fixes/CSNetMan.bin:er_save_manager/fixes \
