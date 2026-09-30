@@ -20,7 +20,7 @@ permissions:
 jobs:
   upload-to-nexusmods:
     name: Upload ${{ matrix.platform }} to Nexus Mods
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       max-parallel: 1
