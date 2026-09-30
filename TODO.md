@@ -1,3 +1,5 @@
+mage smith elite cleric set dsr
+
 check dlc npc flags
 
 check ds3, nr item spawning

@@ -18,7 +18,8 @@ block.
 
 Concretely:
   1. Find the first 8-byte empty state slot at or after the last existing relic.
-  2. Insert 72 null bytes at that offset (expanding the bytearray by 72 bytes).
+  2. Insert 72 null bytes at that offset and trim 72 bytes of trailing slack
+     before the checksum tail, so the entry keeps its fixed size.
   3. Write the 80-byte relic block at that offset (overwriting the 72 nulls +
      the original 8-byte slot = 80 bytes total).
   4. Find and update the ItemEntry slot (also shifted by 72 bytes).
@@ -52,6 +53,39 @@ _STATE_SIZE = {
 _RELIC_PAD_1C = bytes.fromhex(
     "ffffffffffffffff000000ff0000000000000000ffffffffffffffff"
 )
+
+
+_CHECKSUM_TAIL = 28  # MD5(16) + padding(12) at the end of each decrypted entry
+
+
+def _trim_slack(dec: bytearray, n: int) -> None:
+    """Remove n bytes of unused slack directly before the checksum tail.
+
+    The serialized slot payload is followed by unused filler up to the fixed
+    entry size (stale bytes, not parsed by the game), so it absorbs growth
+    of the variable-size state array.
+    """
+    tail_pos = len(dec) - _CHECKSUM_TAIL
+    del dec[tail_pos - n : tail_pos]
+
+
+def _restore_slack(dec: bytearray, n: int) -> None:
+    """Re-insert n zero bytes of slack directly before the checksum tail."""
+    tail_pos = len(dec) - _CHECKSUM_TAIL
+    dec[tail_pos:tail_pos] = b"\x00" * n
+
+
+def _reparse(slot: NightreignSlot) -> None:
+    """Re-derive every cached offset after the state array shifted.
+
+    item_states, relic_states, item_entries and the loadout offsets all move
+    by the inserted/removed bytes; stale item_states made a second spawn in
+    the same session land inside the previous relic's 80-byte block.
+    """
+    from er_save_manager.games.NR.parser import _parse_slot
+
+    fresh = _parse_slot(slot.decrypted, slot.slot_index)
+    slot.__dict__.update(fresh.__dict__)
 
 
 def _walk_states_cursor(dec: bytearray) -> int:
@@ -157,12 +191,11 @@ def spawn_relic(
     ga_handle = _next_relic_handle(slot)
     item_id = 0x80000000 | (real_item_id & 0x00FFFFFF)
 
-    # Insert 72 null bytes at spawn_offset to compensate for the state-loop delta.
-    # Insert 8 null bytes before the 28-byte checksum tail so total expansion = 80
-    # bytes (multiple of AES-128 block size = 16).
+    # Insert 72 null bytes at spawn_offset to compensate for the state-loop delta,
+    # then trim the same amount from the slot's trailing slack so the entry keeps
+    # its fixed size (the BND4 header size and downstream offsets are not updated).
     slot.decrypted[spawn_offset:spawn_offset] = b"\x00" * 72
-    tail_pos = len(slot.decrypted) - 28
-    slot.decrypted[tail_pos:tail_pos] = b"\x00" * 8
+    _trim_slack(slot.decrypted, 72)
 
     # Write the 80-byte relic state at spawn_offset
     dec = slot.decrypted
@@ -198,6 +231,7 @@ def spawn_relic(
     if free_entry_off is None:
         # Roll back the insert
         del slot.decrypted[spawn_offset : spawn_offset + 72]
+        _restore_slack(slot.decrypted, 72)
         raise RuntimeError("No free item entry slots after spawn")
 
     # Write ItemEntry
@@ -208,16 +242,7 @@ def spawn_relic(
     # Write incremented entry_count
     struct.pack_into("<I", dec, ec_offset, old_count + 1)
 
-    # Update slot's cached offsets
-    slot.entry_count_offset = ec_offset
-    slot.entry_offset = entry_base
-
-    # Register in in-memory state (abs_offset is the physical position in the expanded buffer)
-    from er_save_manager.games.NR.parser import RelicState
-
-    rs = RelicState.from_bytes(dec, spawn_offset, -1)
-    slot.relic_states[ga_handle] = rs
-
+    _reparse(slot)
     return ga_handle
 
 
@@ -234,12 +259,13 @@ def remove_relic(slot: NightreignSlot, ga_handle: int) -> None:
     spawn_off = rs.abs_offset
     old_count = struct.unpack_from("<I", dec, slot.entry_count_offset)[0]
 
-    # Zero the 80-byte relic state, then remove the 72 compensating null bytes
-    # and the 8 tail bytes that were added for AES alignment.
+    # Zero the 80-byte relic state, remove the 72 compensating null bytes, and
+    # return them to the trailing slack so the entry size is unchanged.
     dec[spawn_off : spawn_off + 80] = b"\x00" * 80
     del dec[spawn_off : spawn_off + 72]
-    tail_pos = len(dec) - 28
-    del dec[tail_pos : tail_pos + 8]
+    _restore_slack(dec, 72)
+    # Empty 8-byte states carry item_id 0xFFFFFFFF, not 0
+    struct.pack_into("<I", dec, spawn_off + 4, 0xFFFFFFFF)
 
     # Zero the ItemEntry (its offset has shifted back by 72 bytes)
     ec_offset = _entry_count_offset(dec)
@@ -256,8 +282,4 @@ def remove_relic(slot: NightreignSlot, ga_handle: int) -> None:
     if old_count > 0:
         struct.pack_into("<I", dec, ec_offset, old_count - 1)
 
-    slot.entry_count_offset = ec_offset
-    slot.entry_offset = entry_base
-
-    del slot.relic_states[ga_handle]
-    slot.relics.pop(ga_handle, None)
+    _reparse(slot)
