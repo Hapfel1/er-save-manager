@@ -2,7 +2,8 @@
 DS3 item catalog: the spawnable item lists and per-item limits.
 
 Each game data source (the vanilla game, Convergence, Cinders) has a full
-item list generated from that source's own files: regulation params for
+item list, data/items.csv and data/<mod>_items.csv, one row per item,
+generated from that source's own files: regulation params for
 ids, limits, sort ids and icon ids; its English item text for names and
 infusion labels; its item lots, shops and starting gear for the Obtainable
 flag. A modded character uses its mod's list for every item, vanilla ones
@@ -14,7 +15,7 @@ entries are level 0 and infused weapons carry their infusion's label.
 
 from __future__ import annotations
 
-import json
+import csv
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -58,15 +59,40 @@ _lookups: dict[str, dict[int, dict]] = {}
 _families: dict[str, dict[int, list[dict]]] = {}
 
 
+def _item_from_row(row: dict[str, str]) -> dict:
+    """One CSV row as an item entry. Optional flags are only set when true or
+    present, so callers can test membership (Infusion) as with a sparse
+    record."""
+    item: dict = {
+        "_cat": row["category"],
+        "Name": row["name"],
+        "Id": row["id"],
+        "MaxQuantity": int(row["max_quantity"]),
+        "MaxUpgrade": int(row["max_upgrade"]),
+        "Durability": int(row["durability"]),
+        "SortId": int(row["sort_id"]),
+        "IconId": int(row["icon_id"]),
+        "KeyItem": row["key_item"] == "1",
+        "Spell": row["spell"] == "1",
+    }
+    if row["infusion"]:
+        item["Infusion"] = row["infusion"]
+    if row.get("obtainable"):
+        item["Obtainable"] = row["obtainable"] == "1"
+    return item
+
+
 def items(source: str = "vanilla") -> dict[str, list[dict]]:
-    """Category key to item list for a source."""
+    """Category key to item list for a source, in the source's param order."""
     if source not in _items:
-        name = "items.json" if source == "vanilla" else f"{source}_items.json"
+        name = "items.csv" if source == "vanilla" else f"{source}_items.csv"
         path = _DATA_DIR / name
-        data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
-        for cat, cat_items in data.items():
-            for item in cat_items:
-                item["_cat"] = cat
+        data: dict[str, list[dict]] = {}
+        if path.exists():
+            with path.open(encoding="utf-8", newline="") as f:
+                for row in csv.DictReader(f):
+                    item = _item_from_row(row)
+                    data.setdefault(item["_cat"], []).append(item)
         _items[source] = data
     return _items[source]
 
@@ -147,11 +173,11 @@ class Limits:
 def limits(item: dict) -> Limits:
     """Limits for a catalog item. The sort key is for upgrade level 0."""
     kind = int(item["Id"], 16) >> 28
-    sort_id = int(item.get("SortId", 0))
+    sort_id = item["SortId"]
     return Limits(
-        max_quantity=int(item.get("MaxQuantity") or item.get("MaxStackCount") or 1),
-        max_upgrade=int(item.get("MaxUpgrade") or 0),
-        durability=int(item.get("Durability") or 0),
+        max_quantity=max(1, item["MaxQuantity"]),
+        max_upgrade=item["MaxUpgrade"],
+        durability=item["Durability"],
         # Weapons and armor sort by sortId * 100 (plus the weapon's level).
         sort_key=sort_id * 100 if kind in (0x0, 0x1) else sort_id,
         key_item=bool(item.get("KeyItem", False)),

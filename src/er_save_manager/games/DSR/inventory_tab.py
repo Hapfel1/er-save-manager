@@ -12,7 +12,7 @@ All mutations backup then write immediately.
 
 from __future__ import annotations
 
-import json
+import csv
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
@@ -38,10 +38,39 @@ _DB: dict | None = None
 _LOOKUP: dict[tuple[int, int], dict] | None = None
 
 
+# items.csv columns: group (the list the item belongs to), then the entry
+# fields. Empty cells are None; CanInfuse holds "true" or "false".
+_INT_FIELDS = ("MaxStackCount", "MaxUpgrade", "Durability")
+
+
+def _entry_from_row(row: dict[str, str]) -> dict:
+    entry: dict = {}
+    for key, value in row.items():
+        if key == "group":
+            continue
+        if value == "":
+            entry[key] = None
+        elif key in _INT_FIELDS:
+            entry[key] = int(value)
+        elif key == "CanInfuse":
+            entry[key] = value == "true"
+        else:
+            entry[key] = value
+    return entry
+
+
+def _load_items() -> dict[str, list[dict]]:
+    db: dict[str, list[dict]] = {}
+    with (_DATA_DIR / "items.csv").open(encoding="utf-8", newline="") as f:
+        for row in csv.DictReader(f):
+            db.setdefault(row["group"], []).append(_entry_from_row(row))
+    return db
+
+
 def _ensure_db() -> tuple[dict, dict]:
     global _DB, _LOOKUP
     if _DB is None:
-        _DB = json.loads((_DATA_DIR / "items.json").read_text(encoding="utf-8"))
+        _DB = _load_items()
         _LOOKUP = {}
         for cat_key, cat_items in _DB.items():
             for item in cat_items:

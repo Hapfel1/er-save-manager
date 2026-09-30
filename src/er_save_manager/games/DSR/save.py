@@ -996,7 +996,7 @@ class DSRCharacter:
         infusion: int = 0,
     ) -> int:
         """
-        Add an item to inventory from a DB entry dict (see data/items.json).
+        Add an item to inventory from a DB entry dict (see data/items.csv).
 
         db_item fields used: Type, Id, MaxStackCount, Category, Durability.
         For weapons, item_id = base_id + infusion*100 + upgrade.
