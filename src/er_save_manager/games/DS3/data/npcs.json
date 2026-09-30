@@ -1,57 +1,182 @@
 [
   {
-    "name": "Blacksmith Andre",
-    "offset_hex": "0108",
-    "alive_value": "0108"
+    "name": "Fire Keeper",
+    "alive_flag": 1015,
+    "dead_flag": 1018,
+    "last_flag": 1019
   },
   {
     "name": "Ludleth of Courland",
-    "offset_hex": null,
-    "note": "limited data"
+    "alive_flag": 1035,
+    "dead_flag": 1038,
+    "last_flag": 1039
   },
   {
-    "name": "Greirat",
-    "offset_hex": null,
-    "note": "limited data"
+    "name": "Yuria of Londor",
+    "alive_flag": 1055,
+    "dead_flag": 1058,
+    "last_flag": 1059
   },
   {
-    "name": "Hawkwood",
-    "offset_hex": null,
-    "note": "limited data"
+    "name": "Stone-humped Hag (Undead Settlement)",
+    "alive_flag": 1075,
+    "dead_flag": 1078,
+    "last_flag": 1079
   },
   {
-    "name": "Yoel of Londor",
-    "offset_hex": null,
-    "note": "limited data"
+    "name": "Yorshka",
+    "alive_flag": 1095,
+    "dead_flag": 1098,
+    "last_flag": 1099
   },
   {
-    "name": "Irina of Carim",
-    "offset_hex": null,
-    "note": "limited data"
+    "name": "Hawkwood the Deserter",
+    "alive_flag": 1115,
+    "dead_flag": 1118,
+    "last_flag": 1119
   },
   {
     "name": "Sirris of the Sunless Realms",
-    "offset_hex": null,
-    "note": "limited data"
+    "alive_flag": 1135,
+    "dead_flag": 1138,
+    "last_flag": 1139
+  },
+  {
+    "name": "Ringfinger Leonhard",
+    "alive_flag": 1155,
+    "dead_flag": 1158,
+    "last_flag": 1159
+  },
+  {
+    "name": "Andre",
+    "alive_flag": 1175,
+    "dead_flag": 1178,
+    "last_flag": 1179
+  },
+  {
+    "name": "Greirat of the Undead Settlement",
+    "alive_flag": 1215,
+    "dead_flag": 1218,
+    "last_flag": 1219
   },
   {
     "name": "Orbeck of Vinheim",
-    "offset_hex": null,
-    "note": "limited data"
-  },
-  {
-    "name": "Karla",
-    "offset_hex": null,
-    "note": "limited data"
+    "alive_flag": 1235,
+    "dead_flag": 1238,
+    "last_flag": 1239
   },
   {
     "name": "Cornyx of the Great Swamp",
-    "offset_hex": null,
-    "note": "limited data"
+    "alive_flag": 1255,
+    "dead_flag": 1258,
+    "last_flag": 1259
+  },
+  {
+    "name": "Karla",
+    "alive_flag": 1275,
+    "dead_flag": 1278,
+    "last_flag": 1279
+  },
+  {
+    "name": "Irina of Carim",
+    "alive_flag": 1295,
+    "dead_flag": 1298,
+    "last_flag": 1299
+  },
+  {
+    "name": "Eygon of Carim",
+    "alive_flag": 1315,
+    "dead_flag": 1318,
+    "last_flag": 1319
+  },
+  {
+    "name": "Anri of Astora",
+    "alive_flag": 1355,
+    "dead_flag": 1358,
+    "last_flag": 1359
   },
   {
     "name": "Unbreakable Patches",
-    "offset_hex": null,
-    "note": "limited data"
+    "alive_flag": 1375,
+    "dead_flag": 1378,
+    "last_flag": 1379
+  },
+  {
+    "name": "Siegward of Catarina",
+    "alive_flag": 1395,
+    "dead_flag": 1398,
+    "last_flag": 1399
+  },
+  {
+    "name": "Emma",
+    "alive_flag": 1435,
+    "dead_flag": 1438,
+    "last_flag": 1439
+  },
+  {
+    "name": "Horace the Hushed",
+    "alive_flag": 1495,
+    "dead_flag": 1498,
+    "last_flag": 1499
+  },
+  {
+    "name": "Stone-humped Hag (Irithyll)",
+    "alive_flag": 1575,
+    "dead_flag": 1578,
+    "last_flag": 1579
+  },
+  {
+    "name": "Holy Knight Hodrick",
+    "alive_flag": 1595,
+    "dead_flag": 1598,
+    "last_flag": 1599
+  },
+  {
+    "name": "Shrine Handmaid",
+    "alive_flag": 1615,
+    "dead_flag": 1618,
+    "last_flag": 1619
+  },
+  {
+    "name": "Slave Knight Gael",
+    "alive_flag": 1635,
+    "dead_flag": 1638,
+    "last_flag": 1639
+  },
+  {
+    "name": "Sir Vilhelm",
+    "alive_flag": 1655,
+    "dead_flag": 1658,
+    "last_flag": 1659
+  },
+  {
+    "name": "Painting Woman (Ariandel)",
+    "alive_flag": 1675,
+    "dead_flag": 1678,
+    "last_flag": 1679
+  },
+  {
+    "name": "Corvian Settler",
+    "alive_flag": 1695,
+    "dead_flag": 1698,
+    "last_flag": 1699
+  },
+  {
+    "name": "Amnesiac Lapp",
+    "alive_flag": 1815,
+    "dead_flag": 1818,
+    "last_flag": 1819
+  },
+  {
+    "name": "Shira",
+    "alive_flag": 1835,
+    "dead_flag": 1838,
+    "last_flag": 1839
+  },
+  {
+    "name": "Stone-humped Hag (Dreg Heap)",
+    "alive_flag": 1875,
+    "dead_flag": 1878,
+    "last_flag": 1879
   }
 ]
