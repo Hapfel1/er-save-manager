@@ -1,202 +1,247 @@
 """
-DS3 decrypted slot data parser.
+DS3 decrypted character slot.
 
-=== SLOT STRUCTURE OVERVIEW ===
+All offsets are derived from the slot's own data at parse time: the section
+directory in the slot header, the gaitem table walk, and the fixed-size
+structures that follow it. Nothing is addressed by absolute position.
 
-[0x0000:0x0070]  Pre-gaitem header (version, steam pointer, unknown)
-[0x0070:gaitem_end]  Gaitem table (6144 variable-size entries; see below)
-[gaitem_end+120]  Character name (UTF-16LE, 32 bytes / 16 chars)
-[gaitem_end+0x13F]  'fixed' anchor: all character stats use negative offsets from here
+=== SLOT HEADER ===
 
-=== GAITEM TABLE (starts at 0x70) ===
+[0x00]  u32  Plaintext size after this field (0xC0000)
+[0x04]  u32  Version (0x62)
+[0x0C]  u32  Play time
+[0x10..0x60]  Section directory, (u32 offset, u32 size) pairs:
+  0x10  Player data: everything from the gaitem table to the event flags
+  0x18  Player game data: gaitem table through the gesture list
+  0x28, 0x30  Two small sections chained after 0x18, inside 0x10; the
+              NG+ counter (u16) is the first field after the 0x30 section
+  0x38  Event flags ([u32 prefix][flag blocks]), right after 0x10
+  0x40, 0x48, 0x50, 0x58  Remaining sections, back to back
+The pair at 0x20 is (0x5C, u32 value) and is not a section. The directory
+is the only record of section offsets, so any change in data size must
+grow the sections containing it and shift every section after it.
+Everything after the last section is stale buffer content that the game
+ignores, which is what absorbs growth.
 
-6144 total slots. Entry size depends on type:
-  Empty / Goods / Rings: 8 bytes  (gaitem_handle == 0, or type 0xA/0xB)
-  Weapons (type 0x8xxx):  60 bytes
-  Armor   (type 0x9xxx):  60 bytes
+=== GAITEM TABLE ===
 
-Weapon/armor 60-byte entry layout:
-  [0:4]   gaitem_handle u32 LE  (bits 31-28 = type, bits 15-0 = sequential index)
-  [4:8]   item_id u32 LE        (base weapon/armor ID from params)
-  [8:12]  durability u32 LE        (current/max durability; set to max on spawn)
-  [12:16] upgrade_level u32 LE  (0-10 for regular, 0-5 for special)
-  [16:20] unknown u32
-  [20:60] gem sockets (5 x 8 bytes; 0x80000000 = empty socket)
+Starts 4 bytes into the player data section. 6144 entries; entry k holds a
+handle whose low 16 bits equal k, or handle 0 when unused. The game
+renumbers handles on every save, so handles are position indices.
+  Unused / goods / rings: 8 bytes  [u32 handle][u32 item id]
+  Weapons (0x8...) and armor (0x9...): 60 bytes
+    +0x00 u32 handle   +0x04 u32 item id   +0x08 u32 durability
+    +0x0C u32 unknown (0 on new items)     +0x10 u32 1
+    +0x14 5 x (u32 0x80000000, u32 0)      empty gem slots
+Weapon item ids encode infusion and upgrade: base + infusion*100 + level.
+Orphaned weapon/armor entries (no inventory reference) are dropped by the
+game on its next save, so removing an item never needs to shrink the table.
 
-=== CHARACTER STATS (relative to 'fixed' anchor) ===
+=== PLAYER BLOCK (relative to gaitem end) ===
 
-All offsets are 'fixed + distance' where distances are negative (stats sit before anchor).
-'fixed' = gaitem_end + 0x13F
+  +0x10 base max HP, +0x1C base max FP, +0x2C base max stamina (u32)
+  +0x34 Vigor, Attunement, Endurance, Strength, Dexterity, Intelligence,
+        Faith, Luck (u32 each), +0x5C Vitality, +0x60 level, +0x64 souls
+  +0x78 name, UTF-16LE, 16 characters + terminator
+  +0x1F0 22 x u32 equip slots, each an inventory index or 0xFFFFFFFF
+  +0x318 inventory
 
-  Souls:       fixed - 219  u32 LE
-  HP:          fixed - 303  u32 LE
-  FP:          fixed - 291  u32 LE
-  Stamina:     fixed - 275  u32 LE
-  Level:       fixed - 223  u16 LE
-  Vigor:       fixed - 267  u16 LE
-  Attunement:  fixed - 263  u16 LE
-  Endurance:   fixed - 259  u16 LE
-  Vitality:    fixed - 227  u16 LE
-  Strength:    fixed - 255  u16 LE
-  Dexterity:   fixed - 251  u16 LE
-  Intelligence:fixed - 247  u16 LE
-  Faith:       fixed - 243  u16 LE
-  Luck:        fixed - 239  u16 LE
+=== INVENTORY (same layout for the storage box) ===
 
-=== INVENTORY TABLE ===
+  [u32 count] common[0x780]   count is real common items + 2 in held
+                              inventory, the exact count in storage
+  [u32 count] key[0x80]       key items (goodsType 1), held inventory only
+  [u32 count] third[0x80]     unused by editing
+  [u32 last index]
+Entry: [u32 handle][u32 item id][u32 quantity][u32 index]
+  Empty entry: handle 0, item id 0xFFFFFFFF.
+  Index low 12 bits: 0x80 + position for common items, position for key
+  items (equip slots and quick slots reference this); high 20 bits: sort
+  key, param sortId (x100 for weapons and armor, plus weapon level).
+Goods and ring handles are the item id with the type nibble replaced by
+0xB / 0xA and never have gaitem entries.
 
-Starts at: inventory_start = fixed + 0x1DD
-Each entry: 16 bytes
-  [0:4]   gaitem_handle u32 LE
-  [4:8]   item_id u32 LE
-  [8:12]  quantity u32 LE
-  [12:16] index u32 LE  (byte 0 = sequential counter, byte 1 = 0x00, bytes 2-3 = 0x65/0xFE armor or 0x00/0x00 weapon)
+After the held inventory: 8-byte (handle, index) quick/belt slots, then a
+count-prefixed table of 8-byte records, the storage box, the gesture list
+and a count-prefixed list of visited region ids.
 
-Sentinel values:
-  h=0x00000000, iid=0xFFFFFFFF  pre-allocated weapon/armor placeholder (overwritten on spawn)
-  h=0x00000000, iid=0x00000000  empty goods/ring slot
+=== GESTURES ===
 
-Counters (signed i16 LE):
-  first:  inventory_start - 4
-  second: inventory_start + 0x8808  (= inventory_end)
+41 x [u16 value][u16 k] directly after the storage box. value is
+2*(k+1) + unlocked; k is the gesture id from the executable's gesture table.
 
-=== STORAGE BOX ===
+=== EVENT FLAGS ===
 
-Computed via dynamic chain from fixed:
-  inventory_end      = inventory_start + 0x8808
-  above_storage_ctr  = inventory_end + 0x11C
-  above_storage_size = u32 at above_storage_ctr
-  table_1_end        = above_storage_ctr + 4 + above_storage_size * 8
-  storage_box_start  = table_1_end + 0x190
-  storage_box_end    = storage_box_start + 0x8800
-
-=== NEW GAME PLUS / EVENT FLAGS ===
-
-  gesture_end        = storage_box_end + 0xC + 0xA4
-  table_2_size       = u32 at gesture_end
-  table_2_end        = gesture_end + 4 + table_2_size * 4
-  new_game_plus_off  = table_2_end + 0x92           (u16 LE; 0=NG, 1=NG+, ...)
-  event_flag_start   = new_game_plus_off + 0xBCC
-
-Boss/bonfire state base: event_flag_start - 0x12
+Flags live in 1280-byte blocks of 10 groups x 128 bytes; each group holds
+1000 flags as u32 little-endian words with the lowest flag in the most
+significant bit. Block 0 holds global flags 0-9999; map flags
+(1AAB0000-1AAB9999) use the per-map block in _EVENT_FLAG_BLOCKS.
 """
 
 from __future__ import annotations
 
-import os
 import struct
 from dataclasses import dataclass
+from itertools import pairwise
 
-# Item type bits (upper nibble of gaitem_handle)
 ITEM_TYPE_WEAPON = 0x80000000
 ITEM_TYPE_ARMOR = 0x90000000
 ITEM_TYPE_RING = 0xA0000000
 ITEM_TYPE_GOOD = 0xB0000000
 
-GAITEM_TABLE_OFFSET = 0x70
+# Item id type prefixes (upper nibble of the id, not the handle).
+ID_WEAPON = 0x0
+ID_ARMOR = 0x1
+ID_RING = 0x2
+ID_GOOD = 0x4
+_HANDLE_FOR_ID = {
+    ID_WEAPON: ITEM_TYPE_WEAPON,
+    ID_ARMOR: ITEM_TYPE_ARMOR,
+    ID_RING: ITEM_TYPE_RING,
+    ID_GOOD: ITEM_TYPE_GOOD,
+}
+
+# --- Slot header ------------------------------------------------------------- #
+
+_DIR_PLAYER_DATA = 0x10
+_DIR_EVENT_FLAGS = 0x38
+# Directory pairs that describe byte ranges in the slot, in file order.
+_DIR_PAIRS = (0x10, 0x18, 0x28, 0x30, 0x38, 0x40, 0x48, 0x50, 0x58)
+_GAITEM_FROM_PLAYER_DATA = 4
+
+# --- Gaitem table ------------------------------------------------------------ #
+
 GAITEM_SLOT_COUNT = 6144
 GAITEM_BASE_SIZE = 8
 GAITEM_WA_SIZE = 60
+_GAITEM_GROWTH = GAITEM_WA_SIZE - GAITEM_BASE_SIZE
+_GAITEM_UNKNOWN_ONE = 1
+_EMPTY_GEM_SLOT = 0x80000000
+_GEM_SLOTS = 5
+_WA_HANDLE_FLAGS = 0x00800000
 
-# Offsets relative to gaitem_end
-_NAME_REL = 120
-_FIXED_REL = 0x13F
-_NAME_LEN = 32  # bytes (16 UTF-16LE chars)
+# --- Player block (relative to gaitem end) ----------------------------------- #
 
-# Distances from 'fixed' (all negative - stats precede the anchor)
-_SOULS_DIST = -219
-_HP_DIST = -303
-_FP_DIST = -291
-_STAMINA_DIST = -275
-_LEVEL_DIST = -223
-_VIGOR_DIST = -267
-_ATN_DIST = -263
-_END_DIST = -259
-_VIT_DIST = -227
-_STR_DIST = -255
-_DEX_DIST = -251
-_INT_DIST = -247
-_FTH_DIST = -243
-_LUCK_DIST = -239
+_HP_REL = 0x10
+_FP_REL = 0x1C
+_STAMINA_REL = 0x2C
+_STAT_REL = {
+    "vig": 0x34,
+    "atn": 0x38,
+    "end": 0x3C,
+    "str": 0x40,
+    "dex": 0x44,
+    "int": 0x48,
+    "fth": 0x4C,
+    "lck": 0x50,
+    "vit": 0x5C,
+}
+_LEVEL_REL = 0x60
+_SOULS_REL = 0x64
+_NAME_REL = 0x78
+_NAME_LEN = 32  # bytes, 16 UTF-16 code units including the terminator
+_EQUIP_SLOTS_REL = 0x1F0
+_EQUIP_SLOT_COUNT = 22
+_INVENTORY_REL = 0x318
 
-# Inventory
-_INV_REL_FIXED = 0x1DD  # inventory_start = fixed + _INV_REL_FIXED
-_INV_SIZE = 0x880C  # total inventory section (entries + 12 bytes of counters/pad)
-_INV_DATA_SIZE = 0x8800  # entry area only: 2176 x 16-byte entries
-_INV_C2_REL = 0x8808  # second counter = inv_start + _INV_C2_REL (i16)
-_INV_ENTRY_SIZE = 16
-_MAX_INV_SLOTS = _INV_DATA_SIZE // _INV_ENTRY_SIZE  # 2176
+# Level equals the attribute sum minus this for every starting class.
+LEVEL_STAT_OFFSET = 89
 
-# Storage box chain offsets from inventory_end
-_ABOVE_STORAGE_CTR_REL = 0x11C  # inventory_end + this = above_storage_counter offset
-_STORAGE_BOX_FROM_TABLE1 = 0x190  # table_1_end + this = storage_box_start
-_STORAGE_BOX_SIZE = 0x8800
-_GESTURE_FROM_STORAGE_END = 0x0C
-_GESTURE_SIZE = 0xA4
+# --- Inventory --------------------------------------------------------------- #
 
-# Null gaitem placeholder: pre-allocated 60-byte weapon/armor entries in the gaitem table.
-# These have iid=_NULL_WEAPON_ID and are overwritten in-place when spawning an item.
-_NULL_WEAPON_ID = 0x0001ADB0
+_ENTRY_SIZE = 16
+_COMMON_CAP = 0x780
+_KEY_CAP = 0x80
+_THIRD_CAP = 0x80
+_COMMON_BYTES = 4 + _COMMON_CAP * _ENTRY_SIZE
+_KEY_BYTES = 4 + _KEY_CAP * _ENTRY_SIZE
+_THIRD_BYTES = 4 + _THIRD_CAP * _ENTRY_SIZE
+_INVENTORY_BYTES = _COMMON_BYTES + _KEY_BYTES + _THIRD_BYTES + 4
+_COMMON_INDEX_BASE = 0x80
+_INDEX_POS_MASK = 0xFFF
+_EMPTY_ID = 0xFFFFFFFF
+# The game keeps one entry with this handle among new characters' goods.
+_PLACEHOLDER_HANDLE = 0xB0FFFFFF
 
-# FFFF inventory sentinel: pre-allocated 16-byte slots that pair with null gaitem entries.
-# h=0, iid=0xFFFFFFFF. Overwritten in-place when the paired gaitem is consumed.
-_INV_FFFF_IID = 0xFFFFFFFF
+# Held inventory end to the count of an 8-byte record table; the storage
+# box count follows that table after a fixed gap.
+_TABLE1_FROM_INV_END = 0x118
+_TABLE1_ENTRY = 8
+_STORAGE_FROM_TABLE1_END = 0x18C
+
+# --- Gestures, NG+ ------------------------------------------------------------ #
+
+GESTURE_COUNT = 41
+_GESTURE_ENTRY = 4
+_DIR_BEFORE_NG = 0x30
+_NG_MAX = 7
+# Global flags 50-58 mark the current playthrough (NG, NG+, ... NG+8).
+_LAP_FLAG_BASE = 50
+_LAP_FLAG_MAX = 8
+
+# --- Event flags ------------------------------------------------------------- #
+
+_FLAG_BLOCK_BYTES = 1280
+_FLAG_GROUP_BYTES = 128
+_FLAG_PREFIX = 4
+# Map block key (flag // 10000) to block index, one block per map. Derived
+# from boss, bonfire and NPC flags whose state is known in real saves.
+_EVENT_FLAG_BLOCKS = {
+    1300: 3,  # High Wall of Lothric
+    1301: 4,  # Lothric Castle
+    1310: 5,  # Undead Settlement
+    1320: 7,  # Archdragon Peak
+    1330: 9,  # Road of Sacrifices, Farron Keep
+    1341: 11,  # Grand Archives
+    1350: 12,  # Cathedral of the Deep
+    1370: 15,  # Irithyll, Anor Londo
+    1380: 16,  # Catacombs, Smouldering Lake
+    1390: 17,  # Irithyll Dungeon, Profaned Capital
+    1400: 18,  # Cemetery of Ash, Firelink Shrine, Untended Graves
+    1410: 19,  # Kiln of the First Flame
+    1450: 20,  # Painted World of Ariandel
+    1500: 23,  # The Dreg Heap
+    1510: 24,  # The Ringed City
+    1511: 25,  # Filianore's Rest
+}
+_GLOBAL_FLAG_LIMIT = 10000
 
 
-def _scan_gaitem(
-    data: bytearray, start: int = GAITEM_TABLE_OFFSET, slots: int = GAITEM_SLOT_COUNT
-) -> int:
-    """
-    Scan the gaitem table and return the offset immediately after all entries.
-    Variable-length: weapons/armor are 60 bytes; everything else is 8 bytes.
-
-    After the loop, if the final position lands on a WA entry that was not consumed
-    (step count exhausted), advance past it so gaitem_end is always past the last entry.
-    """
-    offset = start
-    for _ in range(slots):
-        if offset + GAITEM_BASE_SIZE > len(data):
-            break
-        handle = struct.unpack_from("<I", data, offset)[0]
-        type_bits = handle & 0xF0000000
-        if handle != 0 and type_bits in (ITEM_TYPE_WEAPON, ITEM_TYPE_ARMOR):
-            offset += GAITEM_WA_SIZE
-        else:
-            offset += GAITEM_BASE_SIZE
-    # If the slot count was exhausted mid-table, advance past any WA entry at the
-    # current position so gaitem_end is never left pointing into an unprocessed entry.
-    if offset + GAITEM_BASE_SIZE <= len(data):
-        handle = struct.unpack_from("<I", data, offset)[0]
-        type_bits = handle & 0xF0000000
-        if handle != 0 and type_bits in (ITEM_TYPE_WEAPON, ITEM_TYPE_ARMOR):
-            offset += GAITEM_WA_SIZE
-    return offset
-
-
-def _read_u16(data: bytearray, off: int) -> int:
-    return struct.unpack_from("<H", data, off)[0]
+class LayoutError(Exception):
+    """The slot does not match the known DS3 layout."""
 
 
 def _read_u32(data: bytearray, off: int) -> int:
     return struct.unpack_from("<I", data, off)[0]
 
 
-def _write_u16(data: bytearray, off: int, val: int) -> None:
-    struct.pack_into("<H", data, off, val & 0xFFFF)
-
-
 def _write_u32(data: bytearray, off: int, val: int) -> None:
     struct.pack_into("<I", data, off, val & 0xFFFFFFFF)
 
 
+def _scan_gaitem(data: bytearray, start: int) -> int:
+    """Return the offset just past the gaitem table starting at start."""
+    offset = start
+    for _ in range(GAITEM_SLOT_COUNT):
+        handle = _read_u32(data, offset)
+        if handle and handle & 0xF0000000 in (ITEM_TYPE_WEAPON, ITEM_TYPE_ARMOR):
+            offset += GAITEM_WA_SIZE
+        else:
+            offset += GAITEM_BASE_SIZE
+    return offset
+
+
+def id_kind(item_id: int) -> int:
+    """Return the id type prefix (ID_WEAPON, ID_ARMOR, ID_RING, ID_GOOD)."""
+    return item_id >> 28
+
+
 @dataclass
 class DS3GaitemEntry:
-    """Single 8- or 60-byte gaitem table entry."""
-
     handle: int
     item_id: int
-    offset: int  # absolute offset within slot data
-    size: int  # 8 or 60
+    offset: int
+    size: int
 
     @property
     def type_bits(self) -> int:
@@ -209,13 +254,13 @@ class DS3GaitemEntry:
 
 @dataclass
 class DS3InventoryEntry:
-    """Single 16-byte inventory table entry."""
-
     handle: int
     item_id: int
     quantity: int
     index: int
-    offset: int  # absolute offset within slot data
+    offset: int
+    position: int
+    is_key: bool = False
 
     @property
     def type_bits(self) -> int:
@@ -223,572 +268,668 @@ class DS3InventoryEntry:
 
     @property
     def is_empty(self) -> bool:
-        return self.handle == 0 and self.item_id == 0
+        return self.handle == 0 or self.item_id == _EMPTY_ID
+
+
+@dataclass
+class _Layout:
+    gaitem_start: int
+    gaitem_end: int
+    inv: int  # held inventory count field
+    storage: int  # storage count field
+    gestures: int
+    ng_plus: int
+    flags: int  # first flag byte (block 0)
+    used_end: int  # end of the last directory section
 
 
 class DS3Slot:
     """
-    Parsed character slot from a single decrypted DS3 save entry.
-
-    All offsets tracked from the gaitem scan - no hardcoded absolute positions.
-    The gaitem_end value is the primary anchor; everything else derives from it.
+    Parsed character slot. Offsets are recomputed after any operation that
+    changes the data size; everything else writes in place.
     """
 
     def __init__(self, slot_index: int, data: bytearray) -> None:
         self.slot_index = slot_index
         self._data = data
-        self._gaitem_end: int | None = None  # cached
-        self._dynamic: dict | None = None  # cached dynamic chain
+        self._gaitem_end: int | None = None
+        self._layout: _Layout | None = None
+        self._layout_error: str | None = None
+        # "" once validated, a message when invalid, None before checking.
+        self._inventory_error: str | None = None
 
-    # --- Empty check --------------------------------------------------------- #
+    # --- Layout ------------------------------------------------------------ #
 
     @property
     def is_empty(self) -> bool:
-        """Slot has no character if name bytes are all zero."""
-        # Fast path: empty slots have zeros at bytes 4-12 (before any character data).
-        # This avoids a 6144-iteration gaitem scan for each of the 9 unused slots.
-        if self._data[4:12] == b"\x00" * 8:
+        """Empty slots have no data after the size field."""
+        if self._data[4:12] == bytes(8):
             return True
         try:
-            ge = self._get_gaitem_end()
-            name_off = ge + _NAME_REL
-            if name_off + _NAME_LEN > len(self._data):
-                return True
-            return all(b == 0 for b in self._data[name_off : name_off + _NAME_LEN])
-        except Exception:
+            return not self.name
+        except LayoutError:
             return True
 
-    # --- Gaitem/anchor computation ------------------------------------------- #
+    def _dir(self, field: int) -> tuple[int, int]:
+        return struct.unpack_from("<II", self._data, field)
 
-    def _get_gaitem_end(self) -> int:
-        if self._gaitem_end is None:
-            self._gaitem_end = _scan_gaitem(self._data)
-        return self._gaitem_end
+    def _check_directory(self) -> tuple[int, int]:
+        """Validate the section directory; return (flag data start, used end)."""
+        pairs = [self._dir(f) for f in _DIR_PAIRS]
+        (player_off, player_size), pgd = pairs[0], pairs[1]
+        # 0x18, 0x28 and 0x30 chain inside the player data section, which
+        # ends where the event flags start; 0x38 onward are contiguous.
+        chained = [pgd, pairs[2], pairs[3]]
+        outer = [(player_off, player_size)] + pairs[4:]
+        if player_off != pgd[0]:
+            raise LayoutError("slot section directory is not consistent")
+        for (a_off, a_size), (b_off, _) in [*pairwise(chained), *pairwise(outer)]:
+            if a_off + a_size != b_off:
+                raise LayoutError("slot section directory is not contiguous")
+        used_end = pairs[-1][0] + pairs[-1][1]
+        if used_end > len(self._data):
+            raise LayoutError("slot sections extend past the slot")
+        return self._dir(_DIR_EVENT_FLAGS)[0] + _FLAG_PREFIX, used_end
 
-    def _get_fixed(self) -> int:
-        return self._get_gaitem_end() + _FIXED_REL
+    def _parse_layout(self) -> _Layout:
+        data = self._data
+        flags, used_end = self._check_directory()
+        player_off = self._dir(_DIR_PLAYER_DATA)[0]
+        pgd_off, pgd_size = self._dir(_DIR_PAIRS[1])
+
+        gaitem_start = player_off + _GAITEM_FROM_PLAYER_DATA
+        gaitem_end = _scan_gaitem(data, gaitem_start)
+        inv = gaitem_end + _INVENTORY_REL
+        table1 = inv + _INVENTORY_BYTES + _TABLE1_FROM_INV_END
+        table1_count = _read_u32(data, table1)
+        if table1_count > 0x10000:
+            raise LayoutError("storage box offset chain is not valid")
+        storage = table1 + 4 + table1_count * _TABLE1_ENTRY + _STORAGE_FROM_TABLE1_END
+        gestures = storage + _INVENTORY_BYTES
+        if gestures + GESTURE_COUNT * _GESTURE_ENTRY > pgd_off + pgd_size:
+            raise LayoutError("player data offsets exceed their section")
+        # The gesture list has a fixed, self-describing shape, which confirms
+        # the whole chain from the gaitem table to here.
+        for k in range(GESTURE_COUNT):
+            value, order = struct.unpack_from(
+                "<HH", data, gestures + k * _GESTURE_ENTRY
+            )
+            if order != k or value >> 1 != k + 1:
+                raise LayoutError("character data is not where expected")
+        ng_off, ng_size = self._dir(_DIR_BEFORE_NG)
+        ng_plus = ng_off + ng_size
+        if struct.unpack_from("<H", data, ng_plus)[0] > _NG_MAX:
+            raise LayoutError("NG+ counter is out of range")
+        return _Layout(
+            gaitem_start, gaitem_end, inv, storage, gestures, ng_plus, flags, used_end
+        )
+
+    def _validate_lists(self) -> None:
+        """Reject inventory lists that are misaligned or malformed."""
+        layout = self._get_layout()
+        for base, where in ((layout.inv, "inventory"), (layout.storage, "storage")):
+            key_count = _read_u32(self._data, base + _COMMON_BYTES)
+            third_count = _read_u32(self._data, base + _COMMON_BYTES + _KEY_BYTES)
+            if key_count > _KEY_CAP or third_count > _THIRD_CAP:
+                raise LayoutError(
+                    f"{where} list counts are out of range; the slot may "
+                    "have been edited by an older tool version"
+                )
+            for entry in self._iter_list(base, _COMMON_CAP, False) + self._iter_list(
+                base + _COMMON_BYTES, _KEY_CAP, True
+            ):
+                if not self._entry_ok(entry):
+                    kind = "key item" if entry.is_key else where
+                    raise LayoutError(
+                        f"malformed {kind} entry at position {entry.position}; "
+                        "the slot may have been edited by an older tool version"
+                    )
 
     @staticmethod
-    def _probe_inv_size(data: bytearray, inv_start: int) -> int:
-        """
-        Determine the inventory section size by validating the full dynamic chain.
+    def _entry_ok(e: DS3InventoryEntry) -> bool:
+        if e.handle == 0:
+            return e.item_id in (_EMPTY_ID, 0)
+        if e.handle == _PLACEHOLDER_HANDLE:
+            return True
+        return _HANDLE_FOR_ID.get(id_kind(e.item_id)) == e.handle & 0xF0000000
 
-        Tries known candidate sizes in order; the first that produces a plausible chain
-        (in-bounds offsets, valid above_storage_size, and NG+ value 0-9) wins.
-        NG+ > 9 is used as the primary discriminator since false-positive chains that
-        stay in-bounds almost always land at 0xFFFF or other junk NG+ bytes.
-        """
-        buf = len(data)
-        for candidate in (
-            0x8808,
-            0x880C,
-            0x8800,
-            0x8810,
-            0x8804,
-            0x8814,
-            0x8818,
-            0x8820,
-        ):
-            above_ctr = inv_start + candidate + _ABOVE_STORAGE_CTR_REL
-            if above_ctr + 4 > buf:
-                continue
-            above_size = struct.unpack_from("<I", data, above_ctr)[0]
-            if above_size >= 100000:
-                continue
-            table1_end = above_ctr + 4 + above_size * 8
-            storage_start = table1_end + _STORAGE_BOX_FROM_TABLE1
-            gesture_end = (
-                storage_start
-                + _STORAGE_BOX_SIZE
-                + _GESTURE_FROM_STORAGE_END
-                + _GESTURE_SIZE
-            )
-            if gesture_end + 4 > buf:
-                continue
-            table2_size = struct.unpack_from("<I", data, gesture_end)[0]
-            if table2_size >= 100000:
-                continue
-            table2_end = gesture_end + 4 + table2_size * 4
-            ng_off = table2_end + 0x92
-            if ng_off + 2 > buf:
-                continue
-            ng_plus = struct.unpack_from("<H", data, ng_off)[0]
-            if ng_plus > 9:
-                # Value out of valid DS3 range; chain landed on wrong data
-                continue
-            return candidate
-        return 0x8808  # last-resort fallback
+    def _get_layout(self) -> _Layout:
+        if self._layout is None:
+            if self._layout_error is not None:
+                raise LayoutError(self._layout_error)
+            try:
+                self._layout = self._parse_layout()
+            except LayoutError as exc:
+                self._layout_error = str(exc)
+                raise
+            except struct.error as exc:
+                self._layout_error = f"slot data is truncated ({exc})"
+                raise LayoutError(self._layout_error) from exc
+        return self._layout
 
-    def _get_dynamic(self) -> dict:
-        """
-        Compute all dynamic offsets from fixed anchor.
-        Result is cached; call _invalidate_cache() after any INSERT/TRIM.
-        """
-        if self._dynamic is not None:
-            return self._dynamic
+    @property
+    def layout_error(self) -> str | None:
+        """None when gestures, NG+ and inventory offsets resolve, else why not."""
+        try:
+            self._get_layout()
+        except LayoutError as exc:
+            return str(exc)
+        return None
 
-        fixed = self._get_fixed()
-        inv_start = fixed + _INV_REL_FIXED
-        inv_size = self._probe_inv_size(self._data, inv_start)
-        inv_end = inv_start + inv_size  # used for above_ctr_off only
-        inv_data_end = inv_start + _INV_DATA_SIZE  # iteration bound (2176 entries)
-        inv_c2_off = inv_start + (inv_size - 4)  # second counter (i16)
-        above_ctr_off = inv_end + _ABOVE_STORAGE_CTR_REL
-        above_size = _read_u32(self._data, above_ctr_off)
-        table1_end = above_ctr_off + 4 + above_size * 8
-        storage_start = table1_end + _STORAGE_BOX_FROM_TABLE1
-        storage_end = storage_start + _STORAGE_BOX_SIZE
-        gesture_start = storage_end + _GESTURE_FROM_STORAGE_END
-        gesture_end = gesture_start + _GESTURE_SIZE
-        table2_size = _read_u32(self._data, gesture_end)
-        table2_end = gesture_end + 4 + table2_size * 4
-        ng_plus_off = table2_end + 0x92
-        ef_start = ng_plus_off + 0xBCC
-        boss_base = ef_start - 0x12
+    @property
+    def flags_error(self) -> str | None:
+        """None when event flags can be read and written, else why not."""
+        try:
+            self._check_directory()
+        except (LayoutError, struct.error) as exc:
+            return str(exc)
+        return None
 
-        self._dynamic = {
-            "inv_start": inv_start,
-            "inv_end": inv_end,
-            "inv_data_end": inv_data_end,
-            "inv_c2_off": inv_c2_off,
-            "storage_start": storage_start,
-            "storage_end": storage_end,
-            "ng_plus_off": ng_plus_off,
-            "ef_start": ef_start,
-            "boss_base": boss_base,
-        }
-        return self._dynamic
+    @property
+    def inventory_error(self) -> str | None:
+        """None when the inventory can be edited safely, else why not."""
+        if self._inventory_error is None:
+            try:
+                self._validate_lists()
+                self._inventory_error = ""
+            except LayoutError as exc:
+                self._inventory_error = str(exc)
+        return self._inventory_error or None
 
-    def _invalidate_cache(self) -> None:
-        """Must be called after any operation that shifts offsets (INSERT/TRIM)."""
+    def _require_inventory(self) -> None:
+        error = self.inventory_error
+        if error:
+            raise LayoutError(error)
+
+    def _invalidate(self) -> None:
         self._gaitem_end = None
-        self._dynamic = None
+        self._layout = None
+        self._layout_error = None
+        self._inventory_error = None
 
-    # --- Character name ------------------------------------------------------ #
+    def _player(self, rel: int) -> int:
+        """Absolute offset of a player block field. Needs only the gaitem walk,
+        so identity and stats stay readable when a later list is malformed."""
+        if self._gaitem_end is None:
+            start = self._dir(_DIR_PLAYER_DATA)[0] + _GAITEM_FROM_PLAYER_DATA
+            self._gaitem_end = _scan_gaitem(self._data, start)
+        return self._gaitem_end + rel
+
+    # --- Identity and stats ------------------------------------------------ #
 
     @property
     def name(self) -> str:
-        ge = self._get_gaitem_end()
-        off = ge + _NAME_REL
+        off = self._player(_NAME_REL)
         raw = bytes(self._data[off : off + _NAME_LEN])
-        # Stop at first UTF-16LE null pair (0x00 0x00 on even boundary)
         end = 0
-        while end + 1 < _NAME_LEN:
-            if raw[end] == 0 and raw[end + 1] == 0:
-                break
+        while end + 1 < _NAME_LEN and raw[end : end + 2] != b"\x00\x00":
             end += 2
         return raw[:end].decode("utf-16-le", errors="replace")
 
     @name.setter
     def name(self, value: str) -> None:
-        ge = self._get_gaitem_end()
-        off = ge + _NAME_REL
-        self._data[off : off + _NAME_LEN] = b"\x00" * _NAME_LEN
-        encoded = value.encode("utf-16-le")
-        max_bytes = _NAME_LEN - 2
-        self._data[off : off + min(len(encoded), max_bytes)] = encoded[:max_bytes]
+        off = self._player(_NAME_REL)
+        encoded = value.encode("utf-16-le")[: _NAME_LEN - 2]
+        self._data[off : off + _NAME_LEN] = encoded.ljust(_NAME_LEN, b"\x00")
 
-    # --- Stats --------------------------------------------------------------- #
+    def _u32_prop(rel: int):  # noqa: N805
+        def getter(self) -> int:
+            return _read_u32(self._data, self._player(rel))
 
-    @property
-    def souls(self) -> int:
-        return _read_u32(self._data, self._get_fixed() + _SOULS_DIST)
+        def setter(self, val: int) -> None:
+            _write_u32(self._data, self._player(rel), val)
 
-    @souls.setter
-    def souls(self, val: int) -> None:
-        _write_u32(self._data, self._get_fixed() + _SOULS_DIST, val)
+        return property(getter, setter)
 
-    @property
-    def hp(self) -> int:
-        return _read_u32(self._data, self._get_fixed() + _HP_DIST)
-
-    @hp.setter
-    def hp(self, val: int) -> None:
-        _write_u32(self._data, self._get_fixed() + _HP_DIST, val)
-
-    @property
-    def fp(self) -> int:
-        return _read_u32(self._data, self._get_fixed() + _FP_DIST)
-
-    @fp.setter
-    def fp(self, val: int) -> None:
-        _write_u32(self._data, self._get_fixed() + _FP_DIST, val)
-
-    @property
-    def stamina(self) -> int:
-        return _read_u32(self._data, self._get_fixed() + _STAMINA_DIST)
-
-    @stamina.setter
-    def stamina(self, val: int) -> None:
-        _write_u32(self._data, self._get_fixed() + _STAMINA_DIST, val)
-
-    @property
-    def level(self) -> int:
-        return _read_u16(self._data, self._get_fixed() + _LEVEL_DIST)
-
-    @level.setter
-    def level(self, val: int) -> None:
-        _write_u16(self._data, self._get_fixed() + _LEVEL_DIST, val)
+    souls = _u32_prop(_SOULS_REL)
+    hp = _u32_prop(_HP_REL)
+    fp = _u32_prop(_FP_REL)
+    stamina = _u32_prop(_STAMINA_REL)
+    level = _u32_prop(_LEVEL_REL)
+    del _u32_prop
 
     def get_stat(self, key: str) -> int:
-        dist = _STAT_DISTS.get(key.lower())
-        if dist is None:
+        rel = _STAT_REL.get(key.lower())
+        if rel is None:
             raise ValueError(f"Unknown stat: {key!r}")
-        return _read_u16(self._data, self._get_fixed() + dist)
+        return _read_u32(self._data, self._player(rel))
 
     def set_stat(self, key: str, val: int) -> None:
-        dist = _STAT_DISTS.get(key.lower())
-        if dist is None:
+        rel = _STAT_REL.get(key.lower())
+        if rel is None:
             raise ValueError(f"Unknown stat: {key!r}")
-        _write_u16(self._data, self._get_fixed() + dist, val)
+        _write_u32(self._data, self._player(rel), val)
 
-    # --- NG+ ----------------------------------------------------------------- #
+    # --- NG+ ------------------------------------------------------------------ #
 
     @property
     def ng_plus(self) -> int:
-        off = self._get_dynamic()["ng_plus_off"]
-        return _read_u16(self._data, off)
+        return struct.unpack_from("<H", self._data, self._get_layout().ng_plus)[0]
 
     @ng_plus.setter
     def ng_plus(self, val: int) -> None:
-        off = self._get_dynamic()["ng_plus_off"]
-        _write_u16(self._data, off, val)
+        struct.pack_into("<H", self._data, self._get_layout().ng_plus, val)
+        # The playthrough flags are one-hot; keep them consistent with the
+        # counter so scripts that check the current lap agree with it.
+        lap = min(val, _LAP_FLAG_MAX)
+        for n in range(_LAP_FLAG_MAX + 1):
+            self.set_flag(_LAP_FLAG_BASE + n, n == lap)
 
-    # --- Gaitem iteration ---------------------------------------------------- #
+    # --- Event flags ------------------------------------------------------- #
+
+    @staticmethod
+    def flag_supported(flag_id: int) -> bool:
+        return (
+            0 <= flag_id < _GLOBAL_FLAG_LIMIT or flag_id // 10000 in _EVENT_FLAG_BLOCKS
+        )
+
+    def _flag_pos(self, flag_id: int) -> tuple[int, int]:
+        if 0 <= flag_id < _GLOBAL_FLAG_LIMIT:
+            block = 0
+        else:
+            block = _EVENT_FLAG_BLOCKS.get(flag_id // 10000)
+            if block is None:
+                raise ValueError(f"Event flag {flag_id} is in an unmapped block")
+        group = (flag_id // 1000) % 10
+        bit = flag_id % 1000
+        flags_start = self._check_directory()[0]
+        word = flags_start + block * _FLAG_BLOCK_BYTES + group * _FLAG_GROUP_BYTES
+        word += (bit // 32) * 4
+        # Little-endian u32 with flag 0 in bit 31: byte 3 holds flags 0-7.
+        byte = word + 3 - (bit % 32) // 8
+        return byte, 0x80 >> (bit % 8)
+
+    def get_flag(self, flag_id: int) -> bool:
+        byte, mask = self._flag_pos(flag_id)
+        return bool(self._data[byte] & mask)
+
+    def set_flag(self, flag_id: int, on: bool) -> None:
+        byte, mask = self._flag_pos(flag_id)
+        if on:
+            self._data[byte] |= mask
+        else:
+            self._data[byte] &= ~mask & 0xFF
+
+    # --- Gestures -------------------------------------------------------------- #
+
+    def gesture_unlocked(self, gesture_id: int) -> bool:
+        off = self._get_layout().gestures + gesture_id * _GESTURE_ENTRY
+        return bool(struct.unpack_from("<H", self._data, off)[0] & 1)
+
+    def set_gesture_unlocked(self, gesture_id: int, unlocked: bool) -> None:
+        if not 0 <= gesture_id < GESTURE_COUNT:
+            raise ValueError(f"Gesture id {gesture_id} out of range")
+        off = self._get_layout().gestures + gesture_id * _GESTURE_ENTRY
+        struct.pack_into("<H", self._data, off, 2 * (gesture_id + 1) + int(unlocked))
+
+    # --- Gaitem table ------------------------------------------------------ #
 
     def iter_gaitem(self) -> list[DS3GaitemEntry]:
-        """Return all gaitem entries (including empties)."""
         entries = []
-        offset = GAITEM_TABLE_OFFSET
+        offset = self._get_layout().gaitem_start
         for _ in range(GAITEM_SLOT_COUNT):
-            if offset + GAITEM_BASE_SIZE > len(self._data):
-                break
             handle = _read_u32(self._data, offset)
             item_id = _read_u32(self._data, offset + 4)
-            type_bits = handle & 0xF0000000
-            if handle != 0 and type_bits in (ITEM_TYPE_WEAPON, ITEM_TYPE_ARMOR):
-                size = GAITEM_WA_SIZE
-            else:
-                size = GAITEM_BASE_SIZE
+            wa = handle and handle & 0xF0000000 in (ITEM_TYPE_WEAPON, ITEM_TYPE_ARMOR)
+            size = GAITEM_WA_SIZE if wa else GAITEM_BASE_SIZE
             entries.append(DS3GaitemEntry(handle, item_id, offset, size))
             offset += size
         return entries
 
-    # --- Inventory iteration ------------------------------------------------- #
+    def _find_gaitem(self, handle: int) -> DS3GaitemEntry | None:
+        for entry in self.iter_gaitem():
+            if entry.handle == handle:
+                return entry
+        return None
+
+    def _alloc_gaitem(self, item_id: int, handle_type: int, durability: int) -> int:
+        """
+        Turn an unused 8-byte gaitem entry into a 60-byte weapon/armor entry
+        and return its handle. The slot grows by 52 bytes at that point; every
+        directory section after it shifts and the stale tail shrinks.
+        """
+        layout = self._get_layout()
+        if layout.used_end + _GAITEM_GROWTH > len(self._data):
+            raise ValueError(
+                "No room left in the slot for another weapon or armor entry"
+            )
+        entries = self.iter_gaitem()
+        used = [i for i, e in enumerate(entries) if not e.is_empty]
+        # The game assigns positions in acquisition order; continue after the
+        # highest one in use and wrap around to the first free position.
+        start = (max(used) + 1) if used else 0
+        order = list(range(start, GAITEM_SLOT_COUNT)) + list(range(0, start))
+        pos = next((i for i in order if entries[i].is_empty), None)
+        if pos is None:
+            raise ValueError("Gaitem table is full")
+        entry_off = entries[pos].offset
+        insert_at = entry_off + GAITEM_BASE_SIZE
+
+        self._shift_directory(insert_at, _GAITEM_GROWTH)
+        tail = len(self._data) - _GAITEM_GROWTH
+        self._data[insert_at:] = bytes(_GAITEM_GROWTH) + self._data[insert_at:tail]
+
+        handle = handle_type | _WA_HANDLE_FLAGS | pos
+        body = struct.pack(
+            "<IIIII", handle, item_id, durability, 0, _GAITEM_UNKNOWN_ONE
+        )
+        body += struct.pack("<II", _EMPTY_GEM_SLOT, 0) * _GEM_SLOTS
+        self._data[entry_off : entry_off + GAITEM_WA_SIZE] = body
+        self._invalidate()
+        return handle
+
+    def _shift_directory(self, at: int, delta: int) -> None:
+        for field in _DIR_PAIRS:
+            off, size = self._dir(field)
+            if off >= at:
+                off += delta
+            elif at < off + size:
+                size += delta
+            struct.pack_into("<II", self._data, field, off, size)
+
+    # --- Inventory iteration ---------------------------------------------- #
+
+    def _iter_list(
+        self, count_off: int, cap: int, is_key: bool
+    ) -> list[DS3InventoryEntry]:
+        out = []
+        base = count_off + 4
+        for pos in range(cap):
+            off = base + pos * _ENTRY_SIZE
+            h, iid, qty, idx = struct.unpack_from("<IIII", self._data, off)
+            out.append(DS3InventoryEntry(h, iid, qty, idx, off, pos, is_key))
+        return out
 
     def iter_inventory(self) -> list[DS3InventoryEntry]:
-        dyn = self._get_dynamic()
-        entries = []
-        off = dyn["inv_start"]
-        end = dyn["inv_data_end"]
-        while off < end:
-            handle = _read_u32(self._data, off)
-            item_id = _read_u32(self._data, off + 4)
-            qty = _read_u32(self._data, off + 8)
-            idx = _read_u32(self._data, off + 12)
-            entries.append(DS3InventoryEntry(handle, item_id, qty, idx, off))
-            off += _INV_ENTRY_SIZE
-        return entries
+        """Held common and key items, including empty entries."""
+        inv = self._get_layout().inv
+        return self._iter_list(inv, _COMMON_CAP, False) + self._iter_list(
+            inv + _COMMON_BYTES, _KEY_CAP, True
+        )
 
     def iter_storage(self) -> list[DS3InventoryEntry]:
-        dyn = self._get_dynamic()
-        entries = []
-        off = dyn["storage_start"]
-        end = dyn["storage_end"]
-        while off < end:
-            handle = _read_u32(self._data, off)
-            item_id = _read_u32(self._data, off + 4)
-            qty = _read_u32(self._data, off + 8)
-            idx = _read_u32(self._data, off + 12)
-            entries.append(DS3InventoryEntry(handle, item_id, qty, idx, off))
-            off += _INV_ENTRY_SIZE
-        return entries
+        return self._iter_list(self._get_layout().storage, _COMMON_CAP, False)
 
-    # --- Boss / bonfire flags ------------------------------------------------ #
+    @staticmethod
+    def is_real_item(entry: DS3InventoryEntry) -> bool:
+        return not entry.is_empty and entry.handle != _PLACEHOLDER_HANDLE
 
-    def get_boss_defeated(self, offset: int, defeat_value: int) -> bool:
-        """
-        Read boss defeat state.
-        offset is relative to boss_base (event_flag_start - 0x12).
-        defeat_value is the byte value that means 'defeated'.
-        """
-        base = self._get_dynamic()["boss_base"]
-        abs_off = base + offset
-        if abs_off >= len(self._data):
+    def entry_at(self, offset: int) -> DS3InventoryEntry | None:
+        for entry in self.iter_inventory() + self.iter_storage():
+            if entry.offset == offset:
+                return entry
+        return None
+
+    def in_storage(self, entry: DS3InventoryEntry) -> bool:
+        storage = self._get_layout().storage
+        return storage < entry.offset < storage + _COMMON_BYTES
+
+    # --- Equipped / quick slot references -------------------------------- #
+
+    def is_equipped(self, entry: DS3InventoryEntry) -> bool:
+        """True when an equip slot or a quick/belt slot references the entry."""
+        if self.in_storage(entry):
             return False
-        fmt = "<H" if defeat_value > 0xFF else "<B"
-        val = struct.unpack_from(fmt, self._data, abs_off)[0]
-        return val == defeat_value
-
-    def set_boss_defeated(self, offset: int, defeat_value: int, defeated: bool) -> None:
-        base = self._get_dynamic()["boss_base"]
-        abs_off = base + offset
-        fmt = "<H" if defeat_value > 0xFF else "<B"
-        val = defeat_value if defeated else 0
-        struct.pack_into(fmt, self._data, abs_off, val)
-
-    def get_bonfire_unlocked(self, offset: int, unlock_value: int) -> bool:
-        base = self._get_dynamic()["boss_base"]
-        abs_off = base + offset
-        if abs_off >= len(self._data):
-            return False
-        fmt = "<H" if unlock_value > 0xFF else "<B"
-        val = struct.unpack_from(fmt, self._data, abs_off)[0]
-        return val == unlock_value
-
-    def set_bonfire_unlocked(
-        self, offset: int, unlock_value: int, unlocked: bool
-    ) -> None:
-        base = self._get_dynamic()["boss_base"]
-        abs_off = base + offset
-        fmt = "<H" if unlock_value > 0xFF else "<B"
-        val = unlock_value if unlocked else 0
-        struct.pack_into(fmt, self._data, abs_off, val)
-
-    # --- Inventory counters -------------------------------------------------- #
-
-    def _increment_inv_counters(self) -> None:
-        dyn = self._get_dynamic()
-        inv_start = dyn["inv_start"]
-        c1_off = inv_start - 4
-        c1 = struct.unpack_from("<h", self._data, c1_off)[0] + 1
-        struct.pack_into("<h", self._data, c1_off, c1)
-        c2_off = dyn["inv_c2_off"]
-        c2 = struct.unpack_from("<h", self._data, c2_off)[0] + 1
-        struct.pack_into("<h", self._data, c2_off, c2)
-
-    def _increment_storage_counter(self) -> None:
-        dyn = self._get_dynamic()
-        ctr_off = dyn["storage_start"] - 4
-        ctr = _read_u32(self._data, ctr_off) + 1
-        _write_u32(self._data, ctr_off, ctr)
-
-    # --- Item index helper --------------------------------------------------- #
-
-    def _next_inv_index(self) -> tuple[int, ...]:
-        """Compute sequential counter + random nibble for new inventory entries."""
-        all_entries = self.iter_inventory()
-        highest = (
-            max(
-                (
-                    e.index & 0x00000FFF
-                    for e in all_entries
-                    if e.index & 0x00000FFF != 0
-                ),
-                default=0,
-            )
-            + 1
-        )
-        hi = highest.to_bytes(2, "little")
-        rb = os.urandom(1)[0]
-        return hi[0], (rb & 0xF0) | (hi[1] & 0x0F)
-
-    # --- Add goods / rings --------------------------------------------------- #
-
-    def add_goods_rings(self, item_id: int, item_type: int, quantity: int) -> bool:
-        """
-        Add a goods or ring item to inventory.
-
-        item_id: raw item ID from params (e.g., 0x4000006C for goods)
-        item_type: ITEM_TYPE_GOOD or ITEM_TYPE_RING
-        quantity: desired stack size (clamped to 1-99)
-
-        Updates an existing stack if one exists (goods only).
-        Falls back to storage if inventory is full.
-        Returns True on success.
-        """
-        qty = max(1, min(quantity, 99))
-        dyn = self._get_dynamic()
-        inv_start = dyn["inv_start"]
-        inv_end = dyn["inv_data_end"]
-
-        # Update existing goods stack
-        if item_type == ITEM_TYPE_GOOD:
-            off = inv_start
-            while off < inv_end:
-                h = _read_u32(self._data, off)
-                iid = _read_u32(self._data, off + 4)
-                if (h & 0xF0000000) == ITEM_TYPE_GOOD and iid == item_id:
-                    _write_u32(self._data, off + 8, qty)
-                    return True
-                off += _INV_ENTRY_SIZE
-
-        # Find first empty inventory slot
-        first_empty = None
-        off = inv_start
-        while off < inv_end:
-            h = _read_u32(self._data, off)
-            iid = _read_u32(self._data, off + 4)
-            if h == 0:
-                first_empty = off
-                break
-            off += _INV_ENTRY_SIZE
-
-        if first_empty is None:
-            return self._add_to_storage(item_id, item_type, qty)
-
-        # Build 16-byte entry
-        slot = _build_goods_ring_slot(item_id, item_type, qty, self._next_inv_index())
-        self._data[first_empty : first_empty + _INV_ENTRY_SIZE] = slot
-        self._increment_inv_counters()
-        return True
-
-    # --- Add weapons / armor ------------------------------------------------- #
-
-    def add_weapon_armor(
-        self, item_id: int, item_type: int, upgrade: int = 0, durability: int = 50
-    ) -> bool:
-        """
-        Spawn a weapon or armor item using pre-allocated null slots.
-
-        Two save formats exist:
-        - Old: inventory has null-weapon entries (h=real_handle, iid=_NULL_WEAPON_ID)
-          paired 1:1 with their gaitem entry. The matching inv entry must be used.
-        - New: inventory has FFFF sentinels (h=0, iid=0xFFFFFFFF); the null gaitem
-          handle is written into the first available sentinel.
-
-        Using a FFFF sentinel when the paired null-weapon-inv entry exists would
-        leave that entry pointing at the now-real gaitem, causing a duplicate item.
-        Returns True on success, False if no null slots remain.
-        """
-        dyn = self._get_dynamic()
-        inv_start = dyn["inv_start"]
-        inv_data_end = dyn["inv_data_end"]
-
-        # Locate first null gaitem entry.
-        ga_off = GAITEM_TABLE_OFFSET
-        null_ga_off: int | None = None
-        null_ga_handle: int = 0
-        for _ in range(GAITEM_SLOT_COUNT):
-            if ga_off + GAITEM_BASE_SIZE > len(self._data):
-                break
-            gh = _read_u32(self._data, ga_off)
-            giid = _read_u32(self._data, ga_off + 4)
-            type_bits = gh & 0xF0000000
-            if type_bits in (ITEM_TYPE_WEAPON, ITEM_TYPE_ARMOR):
-                if giid == _NULL_WEAPON_ID:
-                    null_ga_off = ga_off
-                    null_ga_handle = gh
-                    break
-                ga_off += GAITEM_WA_SIZE
-            else:
-                ga_off += GAITEM_BASE_SIZE
-
-        if null_ga_off is None:
-            return False
-
-        # Locate the paired inventory slot.
-        # Prefer the matched null-weapon-inv entry (old saves) to avoid leaving a
-        # stale handle pointing at the newly written gaitem. Fall back to FFFF sentinel.
-        inv_off: int | None = None
-        ffff_off: int | None = None
-        off = inv_start
-        while off < inv_data_end:
-            h = _read_u32(self._data, off)
-            iid = _read_u32(self._data, off + 4)
-            if h == null_ga_handle and iid == _NULL_WEAPON_ID:
-                inv_off = off
-                break
-            if ffff_off is None and h == 0 and iid == _INV_FFFF_IID:
-                ffff_off = off
-            off += _INV_ENTRY_SIZE
-
-        if inv_off is None:
-            inv_off = ffff_off
-        if inv_off is None:
-            return False
-
-        # Overwrite gaitem entry in-place (60 bytes).
-        # For armor, update the top byte of the handle from 0x80 to 0x90; byte 2 stays 0x80.
-        ga_handle = null_ga_handle
-        if item_type == ITEM_TYPE_ARMOR:
-            ga_handle = (0x90000000) | (null_ga_handle & 0x00FFFFFF)
-        _write_u32(self._data, null_ga_off, ga_handle)
-        _write_u32(self._data, null_ga_off + 4, item_id)
-        _write_u32(self._data, null_ga_off + 8, durability)
-        _write_u32(self._data, null_ga_off + 12, upgrade)
-        _write_u32(self._data, null_ga_off + 16, 1)  # unk, always 1
-        for i in range(5):
-            _write_u32(self._data, null_ga_off + 20 + i * 8, 0x80000000)
-
-        # Overwrite inventory slot in-place (16 bytes).
-        idx_bytes = self._next_inv_index()
-        is_armor = item_type == ITEM_TYPE_ARMOR
-        _write_u32(self._data, inv_off, ga_handle)
-        _write_u32(self._data, inv_off + 4, item_id)
-        _write_u32(self._data, inv_off + 8, 1)
-        self._data[inv_off + 12] = idx_bytes[0]
-        self._data[inv_off + 13] = idx_bytes[1]
-        self._data[inv_off + 14] = 0x65 if is_armor else 0x00
-        self._data[inv_off + 15] = 0xFE if is_armor else 0x00
-
-        self._increment_inv_counters()
-        return True
-
-    # --- Remove item --------------------------------------------------------- #
-
-    def remove_item(self, inv_offset: int) -> None:
-        """Zero out an inventory entry at the given absolute offset."""
-        self._data[inv_offset : inv_offset + _INV_ENTRY_SIZE] = (
-            b"\x00" * _INV_ENTRY_SIZE
-        )
-
-    # --- Storage fallback ---------------------------------------------------- #
-
-    def _add_to_storage(self, item_id: int, item_type: int, quantity: int) -> bool:
-        slot = _build_goods_ring_slot(
-            item_id, item_type, quantity, self._next_inv_index()
-        )
-        return self._add_raw_to_storage(slot)
-
-    def _add_raw_to_storage(self, slot: bytearray) -> bool:
-        dyn = self._get_dynamic()
-        off = dyn["storage_start"]
-        end = dyn["storage_end"]
-        while off < end:
-            h = _read_u32(self._data, off)
-            _read_u32(self._data, off + 4)
-            if h == 0:
-                self._data[off : off + _INV_ENTRY_SIZE] = slot
-                self._increment_storage_counter()
+        layout = self._get_layout()
+        eq = layout.gaitem_end + _EQUIP_SLOTS_REL
+        for k in range(_EQUIP_SLOT_COUNT):
+            if (
+                _read_u32(self._data, eq + k * 4) == entry.index & _INDEX_POS_MASK
+                and not entry.is_key
+            ):
                 return True
-            off += _INV_ENTRY_SIZE
-        return False
+        # Quick and belt slots are (handle, index) pairs between the held
+        # inventory and the storage box.
+        start = layout.inv + _INVENTORY_BYTES
+        pair = struct.pack("<II", entry.handle, entry.index & _INDEX_POS_MASK)
+        return self._data.find(pair, start, layout.storage) != -1
+
+    # --- Counters and sort keys ------------------------------------------ #
+
+    def _held_count(self, delta: int) -> None:
+        off = self._get_layout().inv
+        _write_u32(self._data, off, _read_u32(self._data, off) + delta)
+
+    def _key_count(self, delta: int) -> None:
+        off = self._get_layout().inv + _COMMON_BYTES
+        _write_u32(self._data, off, _read_u32(self._data, off) + delta)
+
+    def _storage_count(self, delta: int) -> None:
+        off = self._get_layout().storage
+        _write_u32(self._data, off, _read_u32(self._data, off) + delta)
+
+    def _last_index_off(self, list_base: int) -> int:
+        return list_base + _COMMON_BYTES + _KEY_BYTES + _THIRD_BYTES
+
+    @staticmethod
+    def _index(sort_key: int, position_index: int) -> int:
+        return ((sort_key << 12) | (position_index & _INDEX_POS_MASK)) & 0xFFFFFFFF
+
+    # --- Adding items ---------------------------------------------------- #
+
+    def add_item(
+        self,
+        item_id: int,
+        quantity: int = 1,
+        *,
+        sort_key: int = 0,
+        durability: int = 0,
+        key_item: bool = False,
+        max_quantity: int = 99,
+        to_storage: bool = False,
+    ) -> DS3InventoryEntry:
+        """
+        Add an item the way the game stores a pickup.
+
+        Stackable items (goods and ammo) merge into an existing stack of the
+        same id, capped at max_quantity. Weapons and armor get a new gaitem
+        entry. Key items go to the key list and cannot be stored.
+        Raises ValueError when the item cannot be placed.
+        """
+        self._require_inventory()
+        kind = id_kind(item_id)
+        handle_type = _HANDLE_FOR_ID.get(kind)
+        if handle_type is None:
+            raise ValueError(f"Unsupported item id {item_id:#010x}")
+        if key_item and to_storage:
+            raise ValueError("Key items cannot be placed in the storage box")
+        layout = self._get_layout()
+        quantity = max(1, min(quantity, max_quantity))
+        stackable = kind == ID_GOOD or (kind == ID_WEAPON and max_quantity > 1)
+
+        if key_item:
+            list_off, cap, is_key = layout.inv + _COMMON_BYTES, _KEY_CAP, True
+        elif to_storage:
+            list_off, cap, is_key = layout.storage, _COMMON_CAP, False
+        else:
+            list_off, cap, is_key = layout.inv, _COMMON_CAP, False
+        entries = self._iter_list(list_off, cap, is_key)
+
+        if stackable:
+            for entry in entries:
+                if self.is_real_item(entry) and entry.item_id == item_id:
+                    new_qty = min(entry.quantity + quantity, max_quantity)
+                    _write_u32(self._data, entry.offset + 8, new_qty)
+                    entry.quantity = new_qty
+                    return entry
+
+        free = next(
+            (e for e in entries if e.handle == 0 and e.item_id in (_EMPTY_ID, 0)), None
+        )
+        if free is None:
+            raise ValueError("No free inventory slot")
+        position = free.position
+
+        if kind in (ID_WEAPON, ID_ARMOR):
+            handle = self._alloc_gaitem(item_id, handle_type, durability)
+            # The insert shifted everything after the gaitem table.
+            layout = self._get_layout()
+            if key_item:
+                list_off = layout.inv + _COMMON_BYTES
+            elif to_storage:
+                list_off = layout.storage
+            else:
+                list_off = layout.inv
+        else:
+            handle = handle_type | (item_id & 0x0FFFFFFF)
+
+        if is_key:
+            pos_index = position
+        else:
+            last_off = self._last_index_off(list_off)
+            last = _read_u32(self._data, last_off)
+            if to_storage:
+                # Stored items keep the index they had when held; new ones
+                # continue the storage box's own counter.
+                pos_index = (last + 1) & _INDEX_POS_MASK
+                _write_u32(self._data, last_off, pos_index)
+            else:
+                pos_index = _COMMON_INDEX_BASE + position
+                _write_u32(self._data, last_off, max(last, pos_index))
+
+        offset = list_off + 4 + position * _ENTRY_SIZE
+        index = self._index(sort_key, pos_index)
+        struct.pack_into("<IIII", self._data, offset, handle, item_id, quantity, index)
+
+        if is_key:
+            self._key_count(1)
+        elif to_storage:
+            self._storage_count(1)
+        else:
+            self._held_count(1)
+        return DS3InventoryEntry(
+            handle, item_id, quantity, index, offset, position, is_key
+        )
+
+    # --- Editing existing entries ------------------------------------------ #
+
+    def set_quantity(self, entry: DS3InventoryEntry, quantity: int) -> None:
+        self._require_inventory()
+        _write_u32(self._data, entry.offset + 8, max(1, quantity))
+
+    def set_weapon_level(self, entry: DS3InventoryEntry, level: int) -> int:
+        """Change a weapon's upgrade level. Returns the new item id."""
+        if id_kind(entry.item_id) != ID_WEAPON:
+            raise ValueError("Only weapons have upgrade levels")
+        index = _read_u32(self._data, entry.offset + 12)
+        old_level = entry.item_id % 100
+        sort_key = ((index >> 12) - old_level + level) & 0xFFFFF
+        return self.set_weapon_id(entry, entry.item_id - old_level + level, sort_key)
+
+    def set_weapon_id(
+        self, entry: DS3InventoryEntry, new_id: int, sort_key: int
+    ) -> int:
+        """
+        Turn a weapon into another weapon id (another level or infusion of
+        the same weapon). The gaitem entry and handle stay, so equip and
+        quick slots keep pointing at it. Returns the new item id.
+        """
+        self._require_inventory()
+        if id_kind(entry.item_id) != ID_WEAPON or id_kind(new_id) != ID_WEAPON:
+            raise ValueError("Only weapons can change id")
+        gaitem = self._find_gaitem(entry.handle)
+        if gaitem is None or gaitem.size != GAITEM_WA_SIZE:
+            raise ValueError("Weapon has no gaitem entry")
+        _write_u32(self._data, gaitem.offset + 4, new_id)
+        _write_u32(self._data, entry.offset + 4, new_id)
+        index = _read_u32(self._data, entry.offset + 12)
+        _write_u32(self._data, entry.offset + 12, self._index(sort_key, index))
+        entry.item_id = new_id
+        return new_id
+
+    def move_item(
+        self, entry: DS3InventoryEntry, max_quantity: int = 0
+    ) -> DS3InventoryEntry:
+        """
+        Move a held common item to the storage box or a stored item back.
+
+        The entry keeps its handle, so weapons and armor keep their gaitem
+        entry. Stored items keep the index they had when held, as the game
+        does; items taken out get the held index for their new position.
+        With max_quantity > 1 the stack merges into an existing stack of the
+        same item at the destination, capped at max_quantity.
+        """
+        self._require_inventory()
+        if entry.is_key:
+            raise ValueError("Key items cannot be placed in the storage box")
+        if self.is_equipped(entry):
+            raise ValueError("Item is equipped; unequip it in game first")
+        layout = self._get_layout()
+        to_storage = not self.in_storage(entry)
+        dest = layout.storage if to_storage else layout.inv
+        entries = self._iter_list(dest, _COMMON_CAP, False)
+
+        target = None
+        if max_quantity > 1:
+            target = next(
+                (
+                    e
+                    for e in entries
+                    if self.is_real_item(e) and e.item_id == entry.item_id
+                ),
+                None,
+            )
+        if target is not None:
+            moved = min(entry.quantity, max_quantity - target.quantity)
+            if moved <= 0:
+                raise ValueError("The destination stack is already full")
+            _write_u32(self._data, target.offset + 8, target.quantity + moved)
+            if moved < entry.quantity:
+                _write_u32(self._data, entry.offset + 8, entry.quantity - moved)
+                return self.entry_at(target.offset)
+        else:
+            free = next((e for e in entries if e.handle == 0), None)
+            if free is None:
+                raise ValueError("No free slot at the destination")
+            last_off = self._last_index_off(dest)
+            last = _read_u32(self._data, last_off)
+            if to_storage:
+                index = entry.index
+                pos_index = entry.index & _INDEX_POS_MASK
+            else:
+                pos_index = _COMMON_INDEX_BASE + free.position
+                index = (entry.index & ~_INDEX_POS_MASK & 0xFFFFFFFF) | pos_index
+            _write_u32(self._data, last_off, max(last, pos_index))
+            struct.pack_into(
+                "<IIII",
+                self._data,
+                free.offset,
+                entry.handle,
+                entry.item_id,
+                entry.quantity,
+                index,
+            )
+            target = free
+
+        struct.pack_into("<IIII", self._data, entry.offset, 0, _EMPTY_ID, 0, 0)
+        if to_storage:
+            self._held_count(-1)
+            if target.handle == 0:
+                self._storage_count(1)
+        else:
+            self._storage_count(-1)
+            if target.handle == 0:
+                self._held_count(1)
+        return self.entry_at(target.offset)
+
+    def remove_item(self, entry: DS3InventoryEntry) -> None:
+        """
+        Clear an inventory or storage entry. Equipped items are refused, since
+        an equip slot pointing at a cleared entry leaves the character in a
+        state the game never produces. The item's gaitem entry is left in
+        place; the game drops unreferenced entries on its next save.
+        """
+        self._require_inventory()
+        if self.is_equipped(entry):
+            raise ValueError("Item is equipped; unequip it in game first")
+        storage = self.in_storage(entry)
+        struct.pack_into("<IIII", self._data, entry.offset, 0, _EMPTY_ID, 0, 0)
+        if entry.is_key:
+            self._key_count(-1)
+        elif storage:
+            self._storage_count(-1)
+        elif entry.handle != _PLACEHOLDER_HANDLE:
+            self._held_count(-1)
 
     def get_raw(self) -> bytearray:
         return self._data
-
-
-# --- Stat key to distance map ------------------------------------------------ #
-
-_STAT_DISTS: dict[str, int] = {
-    "vig": _VIGOR_DIST,
-    "atn": _ATN_DIST,
-    "end": _END_DIST,
-    "vit": _VIT_DIST,
-    "str": _STR_DIST,
-    "dex": _DEX_DIST,
-    "int": _INT_DIST,
-    "fth": _FTH_DIST,
-    "lck": _LUCK_DIST,
-}
-
-
-# --- Slot builder helpers ---------------------------------------------------- #
-
-
-def _build_goods_ring_slot(
-    item_id: int, item_type: int, qty: int, idx_bytes: tuple[int, int]
-) -> bytearray:
-    """Build a 16-byte inventory entry for a goods or ring item."""
-    slot = bytearray(16)
-    # gaitem_handle: type nibble + lower 24 bits of item_id
-    gh = (item_type & 0xFF000000) | (item_id & 0x00FFFFFF)
-    _write_u32(slot, 0, gh)
-    _write_u32(slot, 4, item_id)
-    _write_u32(slot, 8, qty)
-    slot[12] = idx_bytes[0]
-    slot[13] = idx_bytes[1]
-    slot[14] = 0xCF
-    slot[15] = 0x1F
-    return slot
