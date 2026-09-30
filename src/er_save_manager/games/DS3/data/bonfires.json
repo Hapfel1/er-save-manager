@@ -1,92 +1,551 @@
 [
   {
-    "name": "Activate Lord of Cinders in Firelink Shrine",
-    "offset": 1288,
-    "unlock_value": "3F"
+    "name": "Firelink Shrine",
+    "area": "Cemetery of Ash / Firelink Shrine / Untended Graves",
+    "flags": [
+      14000000
+    ]
   },
   {
     "name": "Cemetery of Ash",
-    "offset": 23154,
-    "unlock_value": "F8"
+    "area": "Cemetery of Ash / Firelink Shrine / Untended Graves",
+    "flags": [
+      14000001
+    ]
+  },
+  {
+    "name": "Iudex Gundyr",
+    "area": "Cemetery of Ash / Firelink Shrine / Untended Graves",
+    "flags": [
+      14000002
+    ]
+  },
+  {
+    "name": "Untended Graves",
+    "area": "Cemetery of Ash / Firelink Shrine / Untended Graves",
+    "flags": [
+      14000003
+    ]
+  },
+  {
+    "name": "Champion Gundyr",
+    "area": "Cemetery of Ash / Firelink Shrine / Untended Graves",
+    "flags": [
+      14000004
+    ]
   },
   {
     "name": "High Wall of Lothric",
-    "offset": 3953,
-    "unlock_value": "EC40"
+    "area": "High Wall of Lothric",
+    "flags": [
+      13000009,
+      13000000,
+      13000003,
+      13000008
+    ]
   },
   {
-    "name": "Undead Settlement",
-    "offset": 6514,
-    "unlock_value": "F8"
+    "name": "Tower on the Wall",
+    "area": "High Wall of Lothric",
+    "flags": [
+      13000005
+    ]
   },
   {
-    "name": "Archdragon Peak",
-    "offset": 9074,
-    "unlock_value": "F0"
+    "name": "Vordt of the Boreal Valley",
+    "area": "High Wall of Lothric",
+    "flags": [
+      13000002
+    ]
   },
   {
-    "name": "Kiln of the First Flame",
-    "offset": 24434,
-    "unlock_value": "E0"
+    "name": "Dancer of the Boreal Valley",
+    "area": "High Wall of Lothric",
+    "flags": [
+      13000004
+    ]
   },
   {
-    "name": "Catacombs of Carthus",
-    "offset": 20594,
-    "unlock_value": "FA"
-  },
-  {
-    "name": "Irithyll of the Boreal Valley",
-    "offset": 19313,
-    "unlock_value": "FF80"
-  },
-  {
-    "name": "Unlock Ariandel's Room",
-    "offset": 25789,
-    "unlock_value": "08"
-  },
-  {
-    "name": "The Dreg Heap",
-    "offset": 29554,
-    "unlock_value": "F0"
-  },
-  {
-    "name": "Irithyll Dungeon",
-    "offset": 21874,
-    "unlock_value": "E0"
-  },
-  {
-    "name": "Road of Sacrifices",
-    "offset": 11633,
-    "unlock_value": "FF80"
-  },
-  {
-    "name": "Cathedral of the Deep",
-    "offset": 15474,
-    "unlock_value": "F0"
+    "name": "Oceiros, the Consumed King",
+    "area": "High Wall of Lothric",
+    "flags": [
+      13000001
+    ]
   },
   {
     "name": "Lothric Castle",
-    "offset": 5234,
-    "unlock_value": "E0"
+    "area": "Lothric Castle",
+    "flags": [
+      13010000
+    ]
+  },
+  {
+    "name": "Dragon Barracks",
+    "area": "Lothric Castle",
+    "flags": [
+      13010002
+    ]
+  },
+  {
+    "name": "Dragonslayer Armour",
+    "area": "Lothric Castle",
+    "flags": [
+      13010001
+    ]
   },
   {
     "name": "Grand Archives",
-    "offset": 14194,
-    "unlock_value": "C0"
+    "area": "Grand Archives",
+    "flags": [
+      13410001
+    ]
   },
   {
-    "name": "Painted World of Ariandel",
-    "offset": 25714,
-    "unlock_value": "FF"
+    "name": "Twin Princes",
+    "area": "Grand Archives",
+    "flags": [
+      13410000
+    ]
   },
   {
-    "name": "The Ringed City",
-    "offset": 30834,
-    "unlock_value": "FC"
+    "name": "Foot of the High Wall",
+    "area": "Undead Settlement",
+    "flags": [
+      13100004
+    ]
+  },
+  {
+    "name": "Undead Settlement",
+    "area": "Undead Settlement",
+    "flags": [
+      13100000
+    ]
+  },
+  {
+    "name": "Cliff Underside",
+    "area": "Undead Settlement",
+    "flags": [
+      13100002
+    ]
+  },
+  {
+    "name": "Dilapidated Bridge",
+    "area": "Undead Settlement",
+    "flags": [
+      13100003
+    ]
+  },
+  {
+    "name": "Pit of Hollows",
+    "area": "Undead Settlement",
+    "flags": [
+      13100001
+    ]
+  },
+  {
+    "name": "Archdragon Peak",
+    "area": "Archdragon Peak",
+    "flags": [
+      13200000
+    ]
+  },
+  {
+    "name": "Dragon-Kin Mausoleum",
+    "area": "Archdragon Peak",
+    "flags": [
+      13200003
+    ]
+  },
+  {
+    "name": "Great Belfry",
+    "area": "Archdragon Peak",
+    "flags": [
+      13200002
+    ]
+  },
+  {
+    "name": "Nameless King",
+    "area": "Archdragon Peak",
+    "flags": [
+      13200001
+    ]
+  },
+  {
+    "name": "Road of Sacrifices",
+    "area": "Road of Sacrifices / Farron Keep",
+    "flags": [
+      13300006
+    ]
+  },
+  {
+    "name": "Halfway Fortress",
+    "area": "Road of Sacrifices / Farron Keep",
+    "flags": [
+      13300000
+    ]
+  },
+  {
+    "name": "Crucifixion Woods",
+    "area": "Road of Sacrifices / Farron Keep",
+    "flags": [
+      13300007
+    ]
+  },
+  {
+    "name": "Crystal Sage",
+    "area": "Road of Sacrifices / Farron Keep",
+    "flags": [
+      13300002
+    ]
+  },
+  {
+    "name": "Farron Keep",
+    "area": "Road of Sacrifices / Farron Keep",
+    "flags": [
+      13300003
+    ]
+  },
+  {
+    "name": "Keep Ruins",
+    "area": "Road of Sacrifices / Farron Keep",
+    "flags": [
+      13300004
+    ]
+  },
+  {
+    "name": "Farron Keep Perimeter",
+    "area": "Road of Sacrifices / Farron Keep",
+    "flags": [
+      13300008
+    ]
+  },
+  {
+    "name": "Old Wolf of Farron",
+    "area": "Road of Sacrifices / Farron Keep",
+    "flags": [
+      13300005
+    ]
+  },
+  {
+    "name": "Abyss Watchers",
+    "area": "Road of Sacrifices / Farron Keep",
+    "flags": [
+      13300001
+    ]
+  },
+  {
+    "name": "Cathedral of the Deep",
+    "area": "Cathedral of the Deep",
+    "flags": [
+      13500003
+    ]
+  },
+  {
+    "name": "Cleansing Chapel",
+    "area": "Cathedral of the Deep",
+    "flags": [
+      13500000
+    ]
+  },
+  {
+    "name": "Deacons of the Deep",
+    "area": "Cathedral of the Deep",
+    "flags": [
+      13500001
+    ]
+  },
+  {
+    "name": "Rosaria's Bed Chamber",
+    "area": "Cathedral of the Deep",
+    "flags": [
+      13500002
+    ]
+  },
+  {
+    "name": "Irithyll of the Boreal Valley",
+    "area": "Irithyll / Anor Londo",
+    "flags": [
+      13700007
+    ]
+  },
+  {
+    "name": "Central Irithyll",
+    "area": "Irithyll / Anor Londo",
+    "flags": [
+      13700004
+    ]
+  },
+  {
+    "name": "Church of Yorshka",
+    "area": "Irithyll / Anor Londo",
+    "flags": [
+      13700000
+    ]
+  },
+  {
+    "name": "Distant Manor",
+    "area": "Irithyll / Anor Londo",
+    "flags": [
+      13700005
+    ]
+  },
+  {
+    "name": "Pontiff Sulyvahn",
+    "area": "Irithyll / Anor Londo",
+    "flags": [
+      13700001
+    ]
+  },
+  {
+    "name": "Water Reserve",
+    "area": "Irithyll / Anor Londo",
+    "flags": [
+      13700006
+    ]
+  },
+  {
+    "name": "Anor Londo",
+    "area": "Irithyll / Anor Londo",
+    "flags": [
+      13700003
+    ]
+  },
+  {
+    "name": "Prison Tower",
+    "area": "Irithyll / Anor Londo",
+    "flags": [
+      13700008
+    ]
+  },
+  {
+    "name": "Aldrich, Devourer of Gods",
+    "area": "Irithyll / Anor Londo",
+    "flags": [
+      13700002
+    ]
+  },
+  {
+    "name": "Catacombs of Carthus",
+    "area": "Catacombs / Smouldering Lake",
+    "flags": [
+      13800006
+    ]
+  },
+  {
+    "name": "High Lord Wolnir",
+    "area": "Catacombs / Smouldering Lake",
+    "flags": [
+      13800000
+    ]
+  },
+  {
+    "name": "Abandoned Tomb",
+    "area": "Catacombs / Smouldering Lake",
+    "flags": [
+      13800001
+    ]
+  },
+  {
+    "name": "Old King's Antechamber",
+    "area": "Catacombs / Smouldering Lake",
+    "flags": [
+      13800002
+    ]
+  },
+  {
+    "name": "Demon Ruins",
+    "area": "Catacombs / Smouldering Lake",
+    "flags": [
+      13800003
+    ]
+  },
+  {
+    "name": "Old Demon King",
+    "area": "Catacombs / Smouldering Lake",
+    "flags": [
+      13800004
+    ]
+  },
+  {
+    "name": "Irithyll Dungeon",
+    "area": "Irithyll Dungeon / Profaned Capital",
+    "flags": [
+      13900000
+    ]
+  },
+  {
+    "name": "Profaned Capital",
+    "area": "Irithyll Dungeon / Profaned Capital",
+    "flags": [
+      13900002
+    ]
+  },
+  {
+    "name": "Yhorm the Giant",
+    "area": "Irithyll Dungeon / Profaned Capital",
+    "flags": [
+      13900001
+    ]
+  },
+  {
+    "name": "Flameless Shrine",
+    "area": "Kiln of the First Flame",
+    "flags": [
+      14100000
+    ]
+  },
+  {
+    "name": "Kiln of the First Flame",
+    "area": "Kiln of the First Flame",
+    "flags": [
+      14100001
+    ]
+  },
+  {
+    "name": "The First Flame",
+    "area": "Kiln of the First Flame",
+    "flags": [
+      14100002
+    ]
+  },
+  {
+    "name": "Snowfield",
+    "area": "Painted World of Ariandel",
+    "flags": [
+      14500001
+    ]
+  },
+  {
+    "name": "Rope Bridge Cave",
+    "area": "Painted World of Ariandel",
+    "flags": [
+      14500002
+    ]
+  },
+  {
+    "name": "Corvian Settlement",
+    "area": "Painted World of Ariandel",
+    "flags": [
+      14500003
+    ]
+  },
+  {
+    "name": "Snowy Mountain Pass",
+    "area": "Painted World of Ariandel",
+    "flags": [
+      14500004
+    ]
+  },
+  {
+    "name": "Ariandel Chapel",
+    "area": "Painted World of Ariandel",
+    "flags": [
+      14500005
+    ]
+  },
+  {
+    "name": "Sister Friede",
+    "area": "Painted World of Ariandel",
+    "flags": [
+      14500000
+    ]
+  },
+  {
+    "name": "Depths of the Painting",
+    "area": "Painted World of Ariandel",
+    "flags": [
+      14500007
+    ]
+  },
+  {
+    "name": "Champion's Gravetender",
+    "area": "Painted World of Ariandel",
+    "flags": [
+      14500006
+    ]
+  },
+  {
+    "name": "The Dreg Heap",
+    "area": "The Dreg Heap",
+    "flags": [
+      15000001
+    ]
+  },
+  {
+    "name": "Earthen Peak Ruins",
+    "area": "The Dreg Heap",
+    "flags": [
+      15000002
+    ]
+  },
+  {
+    "name": "Within the Earthen Peak Ruins",
+    "area": "The Dreg Heap",
+    "flags": [
+      15000003
+    ]
+  },
+  {
+    "name": "The Demon Prince",
+    "area": "The Dreg Heap",
+    "flags": [
+      15000000
+    ]
+  },
+  {
+    "name": "Mausoleum Lookout",
+    "area": "The Ringed City",
+    "flags": [
+      15100002
+    ]
+  },
+  {
+    "name": "Ringed Inner Wall",
+    "area": "The Ringed City",
+    "flags": [
+      15100003
+    ]
+  },
+  {
+    "name": "Ringed City Streets",
+    "area": "The Ringed City",
+    "flags": [
+      15100004
+    ]
+  },
+  {
+    "name": "Shared Grave",
+    "area": "The Ringed City",
+    "flags": [
+      15100005
+    ]
+  },
+  {
+    "name": "Church of Filianore",
+    "area": "The Ringed City",
+    "flags": [
+      15100000
+    ]
+  },
+  {
+    "name": "Darkeater Midir",
+    "area": "The Ringed City",
+    "flags": [
+      15100001
+    ]
   },
   {
     "name": "Filianore's Rest",
-    "offset": 32114,
-    "unlock_value": "C0"
+    "area": "Filianore's Rest",
+    "flags": [
+      15110001
+    ]
+  },
+  {
+    "name": "Slave Knight Gael",
+    "area": "Filianore's Rest",
+    "flags": [
+      15110000
+    ]
   }
 ]
