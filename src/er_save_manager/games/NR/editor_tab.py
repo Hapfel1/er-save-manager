@@ -3,7 +3,10 @@ Nightreign Slot Editor Tab
 
 Sub-tabs:
   Overview - player name, murk, sovereign sigils
-  Relics   - searchable treeview, edit panel with name pickers, spawner, remove
+  Relics   - searchable treeview, edit panel with name pickers, spawner, remove,
+             copy to spawn, JSON import/export
+  Loadouts - per-hero chalice and preset relic slots, preset rename/create/
+             delete, loadout chunk budget
 """
 
 from __future__ import annotations
@@ -186,11 +189,12 @@ class NREditorTab:
         self._tabs = ctk.CTkTabview(outer, corner_radius=10)
         self._tabs.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
-        for name in ("Overview", "Relics"):
+        for name in ("Overview", "Relics", "Loadouts"):
             self._tabs.add(name)
 
         self._build_overview(self._tabs.tab("Overview"))
         self._build_relics(self._tabs.tab("Relics"))
+        self._build_loadouts(self._tabs.tab("Loadouts"))
 
     # ------------------------------------------------------------------
     # Slot selector
@@ -219,6 +223,7 @@ class NREditorTab:
         slot = save.slots[slot_index]
         self._populate_overview(slot)
         self._populate_relics(slot)
+        self._populate_loadouts(slot)
 
     def refresh(self) -> None:
         save = self._get_nr_save()
@@ -391,6 +396,7 @@ class NREditorTab:
         # Sub-tabs: Edit | Spawn
         action_tabs = ctk.CTkTabview(scroll, corner_radius=8)
         action_tabs.pack(fill="x", padx=10, pady=(0, 6))
+        self._relic_action_tabs = action_tabs
         action_tabs.add("Edit")
         action_tabs.add("Spawn")
         _edit_parent = action_tabs.tab("Edit")
@@ -411,6 +417,9 @@ class NREditorTab:
         ep_btns.pack(side="right")
         ctk.CTkButton(
             ep_btns, text="Apply Edit", command=self._apply_relic_edit, width=100
+        ).pack(side="left", padx=(0, 6))
+        ctk.CTkButton(
+            ep_btns, text="Copy to Spawn", command=self._copy_to_spawn, width=110
         ).pack(side="left", padx=(0, 6))
         ctk.CTkButton(
             ep_btns,
@@ -504,6 +513,20 @@ class NREditorTab:
         ctk.CTkButton(
             spawn_title, text="Spawn", command=self._spawn_relic, width=80
         ).pack(side="right")
+        ctk.CTkButton(
+            spawn_title,
+            text="Export JSON...",
+            command=self._export_relics_json,
+            width=110,
+            fg_color=("gray65", "gray35"),
+        ).pack(side="right", padx=(0, 6))
+        ctk.CTkButton(
+            spawn_title,
+            text="Import JSON...",
+            command=self._import_relics_json,
+            width=110,
+            fg_color=("gray65", "gray35"),
+        ).pack(side="right", padx=(0, 6))
 
         sr_row = ctk.CTkFrame(spawn_outer, fg_color="transparent")
         sr_row.pack(fill="x", padx=8, pady=2)
@@ -865,6 +888,7 @@ class NREditorTab:
             )
             _backup_and_save(save, self._get_save_path(), "nr_relic_edit")
             self._populate_relics(save.slots[self._current_slot])
+            self._populate_loadouts(save.slots[self._current_slot])
             self._show_toast("Relic saved.")
         except Exception as e:
             CTkMessageBox.showerror("Save Failed", str(e), parent=self.parent)
@@ -888,11 +912,18 @@ class NREditorTab:
         try:
             from er_save_manager.games.NR.relic_ops import remove_relic
 
-            remove_relic(save.slots[self._current_slot], self._selected_relic_ga)
+            cleared = remove_relic(
+                save.slots[self._current_slot], self._selected_relic_ga
+            )
             _backup_and_save(save, self._get_save_path(), "nr_relic_remove")
             self._selected_relic_ga = None
             self._populate_relics(save.slots[self._current_slot])
-            self._show_toast("Relic removed.")
+            self._populate_loadouts(save.slots[self._current_slot])
+            self._show_toast(
+                f"Relic removed and unequipped from {cleared} loadout slot(s)."
+                if cleared
+                else "Relic removed."
+            )
         except Exception as e:
             CTkMessageBox.showerror("Remove Failed", str(e), parent=self.parent)
 
@@ -937,6 +968,580 @@ class NREditorTab:
             )
             _backup_and_save(save, self._get_save_path(), "nr_relic_spawn")
             self._populate_relics(save.slots[self._current_slot])
+            self._populate_loadouts(save.slots[self._current_slot])
             self._show_toast("Relic spawned.")
         except Exception as e:
             CTkMessageBox.showerror("Spawn Failed", str(e), parent=self.parent)
+
+    # ------------------------------------------------------------------
+    # Copy to spawn / JSON import and export
+    # ------------------------------------------------------------------
+
+    def _copy_to_spawn(self) -> None:
+        """Fill the spawn panel with the selected relic's type and rolls."""
+        from er_save_manager.games.NR.item_db import relic_name
+
+        if self._selected_relic_ga is None:
+            CTkMessageBox.showinfo(
+                "No Selection", "Select a relic row first.", parent=self.parent
+            )
+            return
+        save = self._get_nr_save()
+        if save is None or self._current_slot < 0:
+            return
+        rs = save.slots[self._current_slot].relic_states.get(self._selected_relic_ga)
+        if rs is None:
+            return
+        self._spawn_relic_id.set(rs.real_item_id)
+        self._spawn_relic_label.configure(text=relic_name(rs.real_item_id))
+        effects = rs.effects_list()
+        for j in range(3):
+            self._spawn_effect_vars[j].set(str(effects[j]))
+            self._spawn_effect_labels[j].configure(text=_fmt_effect(effects[j]))
+            self._spawn_curse_vars[j].set(str(effects[j + 3]))
+            self._spawn_curse_labels[j].configure(
+                text=f"C{j + 1}: {_fmt_effect(effects[j + 3])}"
+            )
+        self._set_spawn_curse_visible(rs.is_deep)
+        self._relic_action_tabs.set("Spawn")
+
+    def _export_relics_json(self) -> None:
+        import json
+
+        from er_save_manager.games.NR.relic_ops import relic_to_dict
+        from er_save_manager.ui.utils import pick_file
+
+        save = self._get_nr_save()
+        if save is None or self._current_slot < 0:
+            CTkMessageBox.showinfo("No Slot", "Load a slot first.", parent=self.parent)
+            return
+        # Export what the list currently shows, so a search narrows the export
+        shown = set(self._tree_ga_map.values())
+        slot = save.slots[self._current_slot]
+        rows = [
+            relic_to_dict(rs)
+            for rs in slot.relic_states.values()
+            if rs.ga_handle in shown
+        ]
+        path = pick_file(
+            "Export Relics",
+            filetypes=[("JSON", "*.json")],
+            save=True,
+            defaultextension=".json",
+            initialfile=f"nr_relics_{slot.player_name or 'slot'}.json",
+        )
+        if not path:
+            return
+        try:
+            Path(path).write_text(json.dumps(rows, indent=2), encoding="utf-8")
+            self._show_toast(f"Exported {len(rows)} relics.")
+        except OSError as e:
+            CTkMessageBox.showerror("Export Failed", str(e), parent=self.parent)
+
+    def _import_relics_json(self) -> None:
+        import json
+
+        from er_save_manager.games.NR.relic_ops import import_relics
+        from er_save_manager.ui.utils import pick_file
+
+        if _game_blocks_write(self.parent):
+            return
+        save = self._get_nr_save()
+        if save is None or self._current_slot < 0:
+            CTkMessageBox.showinfo("No Slot", "Load a slot first.", parent=self.parent)
+            return
+        path = pick_file("Import Relics", filetypes=[("JSON", "*.json")])
+        if not path:
+            return
+        try:
+            rows = json.loads(Path(path).read_text(encoding="utf-8"))
+            if not isinstance(rows, list):
+                raise ValueError("Expected a JSON list of relics")
+        except (OSError, ValueError) as e:
+            CTkMessageBox.showerror("Import Failed", str(e), parent=self.parent)
+            return
+        if not CTkMessageBox.askyesno(
+            "Confirm Import",
+            f"Spawn {len(rows)} relics into this slot?",
+            parent=self.parent,
+        ):
+            return
+        slot = save.slots[self._current_slot]
+        try:
+            handles = import_relics(slot, rows)
+            _backup_and_save(save, self._get_save_path(), "nr_relic_import")
+        except Exception as e:
+            CTkMessageBox.showerror("Import Failed", str(e), parent=self.parent)
+            return
+        self._populate_relics(slot)
+        self._populate_loadouts(slot)
+        self._show_toast(f"Imported {len(handles)} relics.")
+
+    # ------------------------------------------------------------------
+    # Loadouts (chalices and presets)
+    # ------------------------------------------------------------------
+
+    def _build_loadouts(self, parent) -> None:
+        from er_save_manager.games.NR.parser import HERO_NAMES
+
+        scroll = ctk.CTkScrollableFrame(parent, corner_radius=0, fg_color="transparent")
+        scroll.pack(fill="both", expand=True)
+
+        self._budget_label = ctk.CTkLabel(
+            scroll,
+            text="",
+            anchor="w",
+            justify="left",
+            font=("Segoe UI", 11),
+            wraplength=760,
+        )
+        self._budget_label.pack(fill="x", padx=10, pady=(8, 4))
+
+        top = ctk.CTkFrame(scroll, fg_color="transparent")
+        top.pack(fill="x", padx=10, pady=(0, 4))
+        ctk.CTkLabel(top, text="Hero:").pack(side="left")
+        self._lo_hero_var = tk.StringVar(value=HERO_NAMES[0])
+        ctk.CTkComboBox(
+            top,
+            variable=self._lo_hero_var,
+            values=HERO_NAMES,
+            state="readonly",
+            width=160,
+            command=lambda _v: self._populate_loadout_trees(),
+        ).pack(side="left", padx=(6, 0))
+
+        relic_cols = [(f"r{i}", f"Slot {i}", 150) for i in range(1, 7)]
+        ctk.CTkLabel(scroll, text="Chalices", font=("Segoe UI", 13, "bold")).pack(
+            anchor="w", padx=10, pady=(6, 2)
+        )
+        self._vessel_tree = self._make_loadout_tree(
+            scroll, [("name", "Chalice", 220)] + relic_cols, height=7
+        )
+        ctk.CTkLabel(scroll, text="Presets", font=("Segoe UI", 13, "bold")).pack(
+            anchor="w", padx=10, pady=(6, 2)
+        )
+        self._preset_tree = self._make_loadout_tree(
+            scroll,
+            [("name", "Preset", 140), ("vessel", "Chalice", 200)] + relic_cols,
+            height=5,
+        )
+        self._vessel_tree.bind(
+            "<<TreeviewSelect>>", lambda _e: self._on_loadout_select("vessel")
+        )
+        self._preset_tree.bind(
+            "<<TreeviewSelect>>", lambda _e: self._on_loadout_select("preset")
+        )
+        self._lo_vessel_map: dict[str, object] = {}
+        self._lo_preset_map: dict[str, object] = {}
+
+        # Edit panel shared by chalices and presets
+        panel = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("gray84", "gray24"))
+        panel.pack(fill="x", padx=10, pady=(6, 8))
+        title = ctk.CTkFrame(panel, fg_color="transparent")
+        title.pack(fill="x", padx=8, pady=(6, 2))
+        self._lo_target_label = ctk.CTkLabel(
+            title, text="Select a chalice or preset.", font=("Segoe UI", 11, "bold")
+        )
+        self._lo_target_label.pack(side="left")
+        ctk.CTkButton(title, text="Apply", command=self._apply_loadout, width=90).pack(
+            side="right"
+        )
+        ctk.CTkButton(
+            title,
+            text="Delete Preset",
+            command=self._delete_preset,
+            width=110,
+            fg_color=("gray65", "gray35"),
+        ).pack(side="right", padx=(0, 6))
+        ctk.CTkButton(
+            title,
+            text="Save as New Preset",
+            command=self._save_as_new_preset,
+            width=140,
+            fg_color=("gray65", "gray35"),
+        ).pack(side="right", padx=(0, 6))
+
+        self._lo_name_row = ctk.CTkFrame(panel, fg_color="transparent")
+        ctk.CTkLabel(self._lo_name_row, text="Preset name:", width=90, anchor="w").pack(
+            side="left"
+        )
+        self._lo_name_var = tk.StringVar()
+        ctk.CTkEntry(self._lo_name_row, textvariable=self._lo_name_var, width=220).pack(
+            side="left", padx=(4, 0)
+        )
+
+        self._lo_slot_frame = ctk.CTkFrame(panel, fg_color="transparent")
+        self._lo_slot_frame.pack(fill="x", padx=8, pady=(2, 8))
+        self._lo_slot_titles = []
+        self._lo_slot_labels = []
+        for i in range(6):
+            row = ctk.CTkFrame(self._lo_slot_frame, fg_color="transparent")
+            row.pack(fill="x", pady=1)
+            t = ctk.CTkLabel(row, text=f"Slot {i + 1}:", width=150, anchor="w")
+            t.pack(side="left")
+            lbl = ctk.CTkLabel(
+                row, text="-", anchor="w", width=380, font=("Segoe UI", 10)
+            )
+            lbl.pack(side="left", padx=(2, 4))
+            ctk.CTkButton(
+                row,
+                text="Browse",
+                width=65,
+                height=24,
+                command=lambda ii=i: self._browse_loadout_slot(ii),
+            ).pack(side="left", padx=(0, 6))
+            ctk.CTkButton(
+                row,
+                text="Clear",
+                width=55,
+                height=24,
+                fg_color=("gray65", "gray35"),
+                command=lambda ii=i: self._set_loadout_slot(ii, 0),
+            ).pack(side="left")
+            self._lo_slot_titles.append(t)
+            self._lo_slot_labels.append(lbl)
+
+        self._lo_kind: str | None = None
+        self._lo_target = None
+        self._lo_relics: list[int] = [0] * 6
+
+    def _make_loadout_tree(self, parent, cols, height: int) -> ttk.Treeview:
+        frame = ctk.CTkFrame(parent, corner_radius=8)
+        frame.pack(fill="x", padx=10, pady=(0, 4))
+        tree = ttk.Treeview(
+            frame,
+            columns=[c[0] for c in cols],
+            show="headings",
+            selectmode="browse",
+            height=height,
+        )
+        for col, label, w in cols:
+            tree.heading(col, text=label)
+            tree.column(col, width=w, minwidth=40, anchor="w", stretch=False)
+        vsb = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
+        hsb = ttk.Scrollbar(frame, orient="horizontal", command=tree.xview)
+        tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+        vsb.pack(side="right", fill="y")
+        hsb.pack(side="bottom", fill="x")
+        tree.pack(side="left", fill="both", expand=True)
+        return tree
+
+    def _current_nr_slot(self):
+        save = self._get_nr_save()
+        if save is None or self._current_slot < 0:
+            return None
+        return save.slots[self._current_slot]
+
+    def _relic_short(self, slot, ga: int) -> str:
+        from er_save_manager.games.NR.item_db import effect_name, relic_name
+
+        if ga == 0:
+            return "-"
+        rs = slot.relic_states.get(ga)
+        if rs is None:
+            return f"(missing 0x{ga:08X})"
+        return f"{relic_name(rs.real_item_id)} ({effect_name(rs.effect_1)})"
+
+    def _populate_loadouts(self, slot) -> None:
+        info = slot.loadout
+        if info is None:
+            self._budget_label.configure(
+                text="No relic loadout section found in this slot.",
+                text_color=("gray40", "gray70"),
+            )
+        else:
+            per_universal = info.hero_count * 28
+            lines = [
+                f"Loadout block: {info.used_bytes} / {info.chunk_size} bytes used, "
+                f"{info.spare_bytes} spare. {info.hero_count} heroes, "
+                f"{info.universal_count} universal chalices, "
+                f"{info.hero_vessel_count} hero chalices, {info.preset_count} preset slots.",
+                f"Each chalice a mod adds costs 28 bytes (hero chalice) or "
+                f"{per_universal} bytes (universal chalice).",
+            ]
+            color = ("gray30", "gray75")
+            if not info.is_vanilla:
+                lines.append("Modded chalice counts (vanilla: 4 universal, 70 hero).")
+                color = ("#b35900", "#ffa94d")
+            if info.spare_bytes < 0:
+                lines.append(
+                    f"Over capacity by {-info.spare_bytes} bytes: loadouts past "
+                    "the block's capacity are reported to be dropped or corrupted "
+                    "by the game. Chalice contents are not shown."
+                )
+                color = ("#c0392b", "#ff6b6b")
+            self._budget_label.configure(text="\n".join(lines), text_color=color)
+        self._clear_loadout_edit()
+        self._populate_loadout_trees()
+
+    def _selected_hero_type(self) -> int:
+        from er_save_manager.games.NR.parser import HERO_NAMES
+
+        name = self._lo_hero_var.get()
+        return HERO_NAMES.index(name) + 1 if name in HERO_NAMES else 1
+
+    def _populate_loadout_trees(self) -> None:
+        from er_save_manager.games.NR.item_db import vessel_name
+
+        for tree in (self._vessel_tree, self._preset_tree):
+            for iid in tree.get_children():
+                tree.delete(iid)
+        self._lo_vessel_map.clear()
+        self._lo_preset_map.clear()
+        slot = self._current_nr_slot()
+        if slot is None:
+            return
+        hero = slot.heroes.get(self._selected_hero_type())
+        if hero is None:
+            return
+        for v in hero.vessels:
+            iid = self._vessel_tree.insert(
+                "",
+                "end",
+                values=[vessel_name(v.vessel_id)]
+                + [self._relic_short(slot, r) for r in v.relics],
+            )
+            self._lo_vessel_map[iid] = v
+        for p in sorted(hero.presets, key=lambda p: p.counter):
+            iid = self._preset_tree.insert(
+                "",
+                "end",
+                values=[p.name or "(unnamed)", vessel_name(p.vessel_id)]
+                + [self._relic_short(slot, r) for r in p.relics],
+            )
+            self._lo_preset_map[iid] = p
+
+    def _clear_loadout_edit(self) -> None:
+        self._lo_kind = None
+        self._lo_target = None
+        self._lo_relics = [0] * 6
+        self._lo_target_label.configure(text="Select a chalice or preset.")
+        self._lo_name_row.pack_forget()
+        for i in range(6):
+            self._lo_slot_titles[i].configure(text=f"Slot {i + 1}:")
+            self._lo_slot_labels[i].configure(text="-")
+
+    def _target_vessel_id(self) -> int:
+        return self._lo_target.vessel_id if self._lo_target is not None else 0
+
+    def _on_loadout_select(self, kind: str) -> None:
+        from er_save_manager.games.NR.item_db import (
+            COLOR_NAMES,
+            vessel_name,
+            vessel_slot_color,
+        )
+
+        tree = self._vessel_tree if kind == "vessel" else self._preset_tree
+        mapping = self._lo_vessel_map if kind == "vessel" else self._lo_preset_map
+        sel = tree.selection()
+        if not sel or sel[0] not in mapping:
+            return
+        # Selecting in one tree deselects the other so Apply has one target
+        other = self._preset_tree if kind == "vessel" else self._vessel_tree
+        other.selection_remove(other.selection())
+
+        self._lo_kind = kind
+        self._lo_target = mapping[sel[0]]
+        self._lo_relics = list(self._lo_target.relics)
+        vid = self._lo_target.vessel_id
+        if kind == "preset":
+            self._lo_target_label.configure(
+                text=f"Preset: {self._lo_target.name or '(unnamed)'} ({vessel_name(vid)})"
+            )
+            self._lo_name_var.set(self._lo_target.name)
+        else:
+            self._lo_target_label.configure(text=f"Chalice: {vessel_name(vid)}")
+            # Name is only used when saving this chalice as a new preset
+            self._lo_name_var.set("")
+        self._lo_name_row.pack(fill="x", padx=8, pady=2, before=self._lo_slot_frame)
+        for i in range(6):
+            color = vessel_slot_color(vid, i)
+            kind_txt = "deep" if i >= 3 else "normal"
+            color_txt = COLOR_NAMES.get(color, "?") if color is not None else "?"
+            self._lo_slot_titles[i].configure(
+                text=f"Slot {i + 1} ({color_txt}, {kind_txt}):"
+            )
+        self._refresh_loadout_slot_labels()
+
+    def _refresh_loadout_slot_labels(self) -> None:
+        slot = self._current_nr_slot()
+        if slot is None:
+            return
+        for i in range(6):
+            self._lo_slot_labels[i].configure(
+                text=self._relic_short(slot, self._lo_relics[i])
+            )
+
+    def _set_loadout_slot(self, idx: int, ga: int) -> None:
+        if self._lo_target is None:
+            return
+        self._lo_relics[idx] = ga
+        self._refresh_loadout_slot_labels()
+
+    def _browse_loadout_slot(self, idx: int) -> None:
+        from er_save_manager.games.NR.item_db import (
+            effect_name,
+            relic_name,
+            vessel_slot_error,
+        )
+
+        if self._lo_target is None:
+            CTkMessageBox.showinfo(
+                "No Selection",
+                "Select a chalice or preset first.",
+                parent=self.parent,
+            )
+            return
+        slot = self._current_nr_slot()
+        if slot is None:
+            return
+        vid = self._target_vessel_id()
+        items = []
+        for rs in slot.relic_states.values():
+            if vessel_slot_error(vid, idx, rs.real_item_id):
+                continue
+            effects = ", ".join(
+                effect_name(e)
+                for e in (rs.effect_1, rs.effect_2, rs.effect_3)
+                if e != _EMPTY_EFFECT
+            )
+            items.append(
+                (rs.ga_handle, f"{relic_name(rs.real_item_id)} | {effects or '-'}")
+            )
+        items.sort(key=lambda x: x[1])
+        dlg = _PickerDialog(
+            self.parent,
+            f"Relic for slot {idx + 1} (matching type and color)",
+            items,
+            self._lo_relics[idx],
+        )
+        if dlg.result is None:
+            return
+        self._set_loadout_slot(idx, 0 if dlg.result == _EMPTY_EFFECT else dlg.result)
+
+    def _apply_loadout(self) -> None:
+        from er_save_manager.games.NR.item_db import vessel_slot_error
+
+        if _game_blocks_write(self.parent):
+            return
+        if self._lo_target is None:
+            CTkMessageBox.showinfo(
+                "No Selection",
+                "Select a chalice or preset first.",
+                parent=self.parent,
+            )
+            return
+        save = self._get_nr_save()
+        slot = self._current_nr_slot()
+        if save is None or slot is None:
+            return
+
+        vid = self._target_vessel_id()
+        warnings = []
+        seen: set[int] = set()
+        for i, ga in enumerate(self._lo_relics):
+            if ga == 0:
+                continue
+            rs = slot.relic_states.get(ga)
+            if rs is None:
+                warnings.append(f"Slot {i + 1}: relic 0x{ga:08X} is not in inventory")
+                continue
+            err = vessel_slot_error(vid, i, rs.real_item_id)
+            if err:
+                warnings.append(f"Slot {i + 1}: {err}")
+            if ga in seen:
+                warnings.append(f"Slot {i + 1}: same relic equipped twice")
+            seen.add(ga)
+        if warnings and not CTkMessageBox.askyesno(
+            "Validation Warning",
+            "Issues found:\n" + "\n".join(warnings) + "\n\nApply anyway?",
+            parent=self.parent,
+        ):
+            return
+
+        try:
+            if self._lo_kind == "preset":
+                name = self._lo_name_var.get().strip()
+                save.update_preset(
+                    self._current_slot,
+                    self._lo_target.index,
+                    name=name,
+                    relics=self._lo_relics,
+                )
+            else:
+                self._lo_target.relics = list(self._lo_relics)
+                self._lo_target.write_to(slot.decrypted)
+            _backup_and_save(save, self._get_save_path(), "nr_loadout_edit")
+        except Exception as e:
+            CTkMessageBox.showerror("Save Failed", str(e), parent=self.parent)
+            return
+        self._populate_loadout_trees()
+        self._clear_loadout_edit()
+        self._show_toast("Loadout saved.")
+
+    def _save_as_new_preset(self) -> None:
+        """Store the edit panel's relics as a new preset for the target's hero."""
+        if _game_blocks_write(self.parent):
+            return
+        if self._lo_target is None:
+            CTkMessageBox.showinfo(
+                "No Selection",
+                "Select a chalice or preset first.",
+                parent=self.parent,
+            )
+            return
+        save = self._get_nr_save()
+        if save is None or self._current_slot < 0:
+            return
+        name = self._lo_name_var.get().strip()
+        if len(name) > 18:
+            CTkMessageBox.showerror(
+                "Name Too Long",
+                "Preset name cannot exceed 18 characters.",
+                parent=self.parent,
+            )
+            return
+        hero_type = (
+            self._lo_target.hero_id
+            if self._lo_kind == "preset"
+            else self._selected_hero_type()
+        )
+        try:
+            save.create_preset(
+                self._current_slot,
+                hero_type,
+                name,
+                self._lo_target.vessel_id,
+                self._lo_relics,
+            )
+            _backup_and_save(save, self._get_save_path(), "nr_preset_create")
+        except Exception as e:
+            CTkMessageBox.showerror("Save Failed", str(e), parent=self.parent)
+            return
+        self._populate_loadouts(save.slots[self._current_slot])
+        self._show_toast("Preset created.")
+
+    def _delete_preset(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+        if self._lo_kind != "preset" or self._lo_target is None:
+            CTkMessageBox.showinfo(
+                "No Selection", "Select a preset first.", parent=self.parent
+            )
+            return
+        name = self._lo_target.name or "(unnamed)"
+        if not CTkMessageBox.askyesno(
+            "Confirm Delete", f"Delete preset '{name}'?", parent=self.parent
+        ):
+            return
+        save = self._get_nr_save()
+        if save is None or self._current_slot < 0:
+            return
+        try:
+            save.delete_preset(self._current_slot, self._lo_target.index)
+            _backup_and_save(save, self._get_save_path(), "nr_preset_delete")
+        except Exception as e:
+            CTkMessageBox.showerror("Delete Failed", str(e), parent=self.parent)
+            return
+        self._populate_loadouts(save.slots[self._current_slot])
+        self._show_toast("Preset deleted.")

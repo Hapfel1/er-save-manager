@@ -201,3 +201,44 @@ def vessels_for_hero(hero_type: int) -> list[tuple[int, str]]:
 
 def all_vessels() -> dict[str, dict]:
     return _load()["vessels"]
+
+
+# ---------------------------------------------------------------------------
+# Vessel slot rules
+# ---------------------------------------------------------------------------
+
+# Relic/vessel slot color codes; slot color 4 accepts any relic color
+COLOR_NAMES = {0: "Burning", 1: "Drizzly", 2: "Luminous", 3: "Tranquil", 4: "Any"}
+_COLOR_ANY = 4
+
+
+def vessel_slot_color(vessel_id: int, slot_idx: int) -> int | None:
+    """Color of vessel slot 0-5 (0-2 normal, 3-5 deep), or None if unknown."""
+    v = get_vessel(vessel_id)
+    if v is None:
+        return None
+    colors = v["slots"] + v["deep"]
+    return colors[slot_idx] if 0 <= slot_idx < len(colors) else None
+
+
+def vessel_slot_error(vessel_id: int, slot_idx: int, real_item_id: int) -> str | None:
+    """Return why a relic cannot go into a vessel slot, or None if it fits."""
+    relic = get_relic(real_item_id)
+    if relic is None:
+        return f"unknown relic {real_item_id}"
+    want_deep = slot_idx >= 3
+    if relic["deep"] != want_deep:
+        return (
+            "slots 1-3 take normal relics"
+            if not want_deep
+            else "slots 4-6 take deep relics"
+        )
+    color = vessel_slot_color(vessel_id, slot_idx)
+    if color is None or color == _COLOR_ANY:
+        return None
+    if relic["color"] != color:
+        return (
+            f"slot is {COLOR_NAMES.get(color, color)}, relic is "
+            f"{COLOR_NAMES.get(relic['color'], relic['color'])}"
+        )
+    return None
