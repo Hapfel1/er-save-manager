@@ -1,0 +1,172 @@
+[
+  {
+    "id": 0,
+    "name": "Beckon",
+    "order": 1
+  },
+  {
+    "id": 1,
+    "name": "Praise the Sun",
+    "order": 11
+  },
+  {
+    "id": 2,
+    "name": "Point up",
+    "order": 21
+  },
+  {
+    "id": 3,
+    "name": "Point down",
+    "order": 31
+  },
+  {
+    "id": 4,
+    "name": "Duel bow",
+    "order": 41
+  },
+  {
+    "id": 6,
+    "name": "Welcome",
+    "order": 61
+  },
+  {
+    "id": 7,
+    "name": "Prostration",
+    "order": 71
+  },
+  {
+    "id": 8,
+    "name": "Proper bow",
+    "order": 81
+  },
+  {
+    "id": 9,
+    "name": "Prayer",
+    "order": 91
+  },
+  {
+    "id": 10,
+    "name": "Bow",
+    "order": 101
+  },
+  {
+    "id": 11,
+    "name": "Wave",
+    "order": 111
+  },
+  {
+    "id": 12,
+    "name": "Hurrah!",
+    "order": 121
+  },
+  {
+    "id": 14,
+    "name": "Jump for joy",
+    "order": 131
+  },
+  {
+    "id": 13,
+    "name": "Joy",
+    "order": 141
+  },
+  {
+    "id": 15,
+    "name": "My thanks!",
+    "order": 151
+  },
+  {
+    "id": 16,
+    "name": "Rejoice",
+    "order": 161
+  },
+  {
+    "id": 18,
+    "name": "Rest",
+    "order": 181
+  },
+  {
+    "id": 24,
+    "name": "By my sword",
+    "order": 241
+  },
+  {
+    "id": 29,
+    "name": "Dignified bow",
+    "order": 331
+  },
+  {
+    "id": 30,
+    "name": "Unmannered bow",
+    "order": 391
+  },
+  {
+    "id": 31,
+    "name": "Lord of Cinder",
+    "order": 411
+  },
+  {
+    "id": 32,
+    "name": "Curl up",
+    "order": 421
+  },
+  {
+    "id": 33,
+    "name": "Stretch out",
+    "order": 431
+  },
+  {
+    "id": 34,
+    "name": "Call over",
+    "order": 441
+  },
+  {
+    "id": 35,
+    "name": "Collapse",
+    "order": 451
+  },
+  {
+    "id": 36,
+    "name": "Quiet Resolve",
+    "order": 461
+  },
+  {
+    "id": 37,
+    "name": "Patches Squat",
+    "order": 471
+  },
+  {
+    "id": 38,
+    "name": "Applause",
+    "order": 501
+  },
+  {
+    "id": 39,
+    "name": "Path of the Dragon",
+    "order": 511
+  },
+  {
+    "id": 40,
+    "name": "Legion Etiquette",
+    "order": 521
+  },
+  {
+    "id": 41,
+    "name": "Darkmoon Loyalty",
+    "order": 531
+  },
+  {
+    "id": 42,
+    "name": "Sleep",
+    "order": 541
+  },
+  {
+    "id": 43,
+    "name": "Toast",
+    "order": 551
+  },
+  {
+    "id": 44,
+    "name": "Silent Ally",
+    "order": 561
+  }
+]
