@@ -549,7 +549,10 @@ class DS3InventoryTab:
             ]
             rows += [(e, WHERE_STORAGE) for e in char.iter_storage()]
             for entry, where in rows:
-                if not char.is_real_item(entry) or entry.item_id in catalog.PLACEHOLDER_IDS:
+                if (
+                    not char.is_real_item(entry)
+                    or entry.item_id in catalog.PLACEHOLDER_IDS
+                ):
                     continue
                 self._all_items.append(
                     (

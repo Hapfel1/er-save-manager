@@ -16,6 +16,7 @@ from er_save_manager.games.DS2.save import (
     DS2Save,
     SlotState,
 )
+from er_save_manager.games.DS2.soulsplanner_import import import_soulsplanner
 from er_save_manager.ui.scrollable_frame import ScrollableFrame
 from er_save_manager.ui.utils import game_blocks_write
 
@@ -98,6 +99,9 @@ class DS2EditorTab:
         ctk.CTkButton(top, text="Load Slot", command=self._on_load_slot).pack(
             side="left", padx=5
         )
+        ctk.CTkButton(
+            top, text="Import Soulsplanner Build", command=self._on_import_build
+        ).pack(side="left", padx=5)
 
         self.slot_status_label = ctk.CTkLabel(top, text="")
         self.slot_status_label.pack(side="left", padx=(15, 0))
@@ -462,6 +466,22 @@ class DS2EditorTab:
 
         self.refresh()
         self.show_toast("Changes saved to disk", duration=2500)
+
+    def _on_import_build(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+        save: DS2Save | None = self.get_save()
+        if save is None:
+            self.show_toast("No save file loaded", duration=2000)
+            return
+        import_soulsplanner(
+            self.parent,
+            save,
+            self._slot_index,
+            self.get_save_path,
+            self.show_toast,
+            on_done=self.refresh,
+        )
 
     def _backup(self, save_path, description: str, operation: str) -> None:
         if not save_path:
