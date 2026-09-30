@@ -75,8 +75,9 @@ Offset  Size  Field
         +0x04 cur_vessel_id (u32)
         +0x08 universal_vessels[universal_count]:
                each vessel: vessel_id(u32) + relics[6](u32 each) = 28 bytes
-      hero_vessels[hero_vessel_count], 28 bytes each (same layout)
-      unk (u32)
+      hero_vessels[hero_vessel_count], 28 bytes each (same layout); modded
+        vessels are appended here even with 19xxx IDs
+      zero padding to 8-byte alignment of the payload (4 bytes in vanilla)
       presets[preset_count], 80 bytes each (empty slots are always present):
           +0x00 header (u8)       - 0x01 = valid, 0x00 = empty
           +0x01 hero_id (u8)
@@ -95,9 +96,12 @@ Offset  Size  Field
       slot color 4 which accepts any color.
       Vanilla payload uses 11176 of 11264 bytes. Mods that add vessels grow
       it by 28 bytes per hero vessel and hero_count * 28 per universal
-      vessel. Reports of modded saves losing or corrupting loadouts once 4
-      hero vessels are added match the 88 spare bytes; no modded save has
-      been examined yet.
+      vessel, plus alignment. From modded saves:
+        +3 hero vessels: 11256 bytes, loads normally.
+        +4 hero vessels: 11288 bytes; reported to crash before loading.
+        +1 universal vessel: 11456 bytes; the game still writes the header
+          counts and every preset that fits (97 of 100), but loads no
+          presets, so the stored presets survive in the file.
 
 --- Global Profile Data (entry 10) ---
 
@@ -565,16 +569,35 @@ class LoadoutInfo:
     preset_count: int = 0
 
     @property
-    def used_bytes(self) -> int:
-        """Payload bytes required by the current counts (excludes the 8-byte chunk header)."""
-        return (
+    def presets_rel(self) -> int:
+        """Start of the preset array relative to the payload (after the 8-byte header).
+
+        Presets hold a u64 timestamp, so the array is 8-byte aligned: vanilla
+        pads 4 bytes after the 70 hero vessels, +3 modded vessels pad none.
+        """
+        rel = (
             _LOADOUT_HEADER_SZ
             - 8
             + self.hero_count * (8 + self.universal_count * _VESSEL_SZ)
             + self.hero_vessel_count * _VESSEL_SZ
-            + 4
-            + self.preset_count * _PRESET_SZ
         )
+        return rel + (-rel) % 8
+
+    @property
+    def presets_offset(self) -> int:
+        """Absolute offset of preset 0."""
+        return self.offset + 8 + self.presets_rel
+
+    @property
+    def presets_that_fit(self) -> int:
+        """Preset slots inside the chunk; fewer than preset_count on overflow."""
+        room = max(0, self.chunk_size - self.presets_rel)
+        return min(self.preset_count, room // _PRESET_SZ)
+
+    @property
+    def used_bytes(self) -> int:
+        """Payload bytes required by the current counts (excludes the 8-byte chunk header)."""
+        return self.presets_rel + self.preset_count * _PRESET_SZ
 
     @property
     def spare_bytes(self) -> int:
@@ -925,8 +948,8 @@ def _parse_slot(dec: bytearray, slot_index: int) -> NightreignSlot:
     if info is None:
         return slot  # empty slot or unknown chunk layout
     slot.loadout = info
-    if info.spare_bytes < 0:
-        return slot  # counts overflow the chunk; contents are not trustworthy
+    if info.presets_rel > info.chunk_size:
+        return slot  # vessel data alone exceeds the chunk; layout unknown
     cursor = info.offset + _LOADOUT_HEADER_SZ
 
     def read_vessel(off: int) -> VesselLoadout:
@@ -964,9 +987,9 @@ def _parse_slot(dec: bytearray, slot_index: int) -> NightreignSlot:
             hero.vessels.append(v)
         else:
             slot.unassigned_vessels.append(v)
-    cursor += 4  # unk u32
-
-    for i in range(info.preset_count):
+    # On overflow the game writes only the presets that fit in the chunk
+    cursor = info.presets_offset
+    for i in range(info.presets_that_fit):
         p_base = cursor
         cursor += _PRESET_SZ
         hero_id = dec[p_base + 1]
@@ -1048,15 +1071,7 @@ def _filetime_now() -> int:
 
 def _preset_index(slot: NightreignSlot, abs_offset: int) -> int:
     """Index in the preset array of the preset block at abs_offset."""
-    info = slot.loadout
-    first = (
-        info.offset
-        + _LOADOUT_HEADER_SZ
-        + info.hero_count * (8 + info.universal_count * _VESSEL_SZ)
-        + info.hero_vessel_count * _VESSEL_SZ
-        + 4
-    )
-    return (abs_offset - first) // _PRESET_SZ
+    return (abs_offset - slot.loadout.presets_offset) // _PRESET_SZ
 
 
 def _refresh_slot(slot: NightreignSlot) -> None:

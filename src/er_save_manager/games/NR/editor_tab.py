@@ -27,6 +27,8 @@ def _game_blocks_write(parent) -> bool:
 
 
 _EMPTY_EFFECT = 0xFFFFFFFF
+# Hero selector entry for modded hero vessels whose ID maps to no hero
+_MODDED_HERO_LABEL = "Modded (no hero)"
 
 
 def _backup_and_save(nr_save, save_path: Path, op: str) -> None:
@@ -1101,14 +1103,15 @@ class NREditorTab:
         top.pack(fill="x", padx=10, pady=(0, 4))
         ctk.CTkLabel(top, text="Hero:").pack(side="left")
         self._lo_hero_var = tk.StringVar(value=HERO_NAMES[0])
-        ctk.CTkComboBox(
+        self._lo_hero_combo = ctk.CTkComboBox(
             top,
             variable=self._lo_hero_var,
             values=HERO_NAMES,
             state="readonly",
             width=160,
             command=lambda _v: self._populate_loadout_trees(),
-        ).pack(side="left", padx=(6, 0))
+        )
+        self._lo_hero_combo.pack(side="left", padx=(6, 0))
 
         relic_cols = [(f"r{i}", f"Slot {i}", 150) for i in range(1, 7)]
         ctk.CTkLabel(scroll, text="Chalices", font=("Segoe UI", 13, "bold")).pack(
@@ -1265,12 +1268,20 @@ class NREditorTab:
                 color = ("#b35900", "#ffa94d")
             if info.spare_bytes < 0:
                 lines.append(
-                    f"Over capacity by {-info.spare_bytes} bytes: loadouts past "
-                    "the block's capacity are reported to be dropped or corrupted "
-                    "by the game. Chalice contents are not shown."
+                    f"Over capacity by {-info.spare_bytes} bytes. The game still "
+                    f"writes the {info.presets_that_fit} presets that fit but "
+                    "loads none of them. They stay in the file."
                 )
                 color = ("#c0392b", "#ff6b6b")
             self._budget_label.configure(text="\n".join(lines), text_color=color)
+        from er_save_manager.games.NR.parser import HERO_NAMES
+
+        heroes = list(HERO_NAMES)
+        if slot.unassigned_vessels:
+            heroes.append(_MODDED_HERO_LABEL)
+        self._lo_hero_combo.configure(values=heroes)
+        if self._lo_hero_var.get() not in heroes:
+            self._lo_hero_var.set(HERO_NAMES[0])
         self._clear_loadout_edit()
         self._populate_loadout_trees()
 
@@ -1278,6 +1289,8 @@ class NREditorTab:
         from er_save_manager.games.NR.parser import HERO_NAMES
 
         name = self._lo_hero_var.get()
+        if name == _MODDED_HERO_LABEL:
+            return 0
         return HERO_NAMES.index(name) + 1 if name in HERO_NAMES else 1
 
     def _populate_loadout_trees(self) -> None:
@@ -1291,10 +1304,15 @@ class NREditorTab:
         slot = self._current_nr_slot()
         if slot is None:
             return
-        hero = slot.heroes.get(self._selected_hero_type())
-        if hero is None:
-            return
-        for v in hero.vessels:
+        hero_type = self._selected_hero_type()
+        if hero_type == 0:
+            vessels, presets = slot.unassigned_vessels, []
+        else:
+            hero = slot.heroes.get(hero_type)
+            if hero is None:
+                return
+            vessels, presets = hero.vessels, hero.presets
+        for v in vessels:
             iid = self._vessel_tree.insert(
                 "",
                 "end",
@@ -1302,7 +1320,7 @@ class NREditorTab:
                 + [self._relic_short(slot, r) for r in v.relics],
             )
             self._lo_vessel_map[iid] = v
-        for p in sorted(hero.presets, key=lambda p: p.counter):
+        for p in sorted(presets, key=lambda p: p.counter):
             iid = self._preset_tree.insert(
                 "",
                 "end",
@@ -1506,6 +1524,13 @@ class NREditorTab:
             if self._lo_kind == "preset"
             else self._selected_hero_type()
         )
+        if hero_type == 0:
+            CTkMessageBox.showinfo(
+                "No Hero",
+                "Modded chalices have no known hero, so no preset can be made from them.",
+                parent=self.parent,
+            )
+            return
         try:
             save.create_preset(
                 self._current_slot,
