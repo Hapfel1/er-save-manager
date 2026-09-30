@@ -764,12 +764,13 @@ class BackupManagerTab:
                     os.startfile(manager.backup_folder)
                     return
 
-                # On Linux, xdg-open inherits the process environment which can
-                # trigger a readline symbol lookup error on Arch Linux (/bin/sh
-                # undefined symbol: rl_print_keybinding). Use a sanitized env
-                # and fall back to known file managers if xdg-open fails.
-                env = os.environ.copy()
-                env.pop("LD_PRELOAD", None)
+                # Inside the AppImage, LD_LIBRARY_PATH points at the bundled
+                # libs (readline, libstdc++). The file manager xdg-open spawns
+                # inherits it and fails to load against newer system libs, so
+                # strip it and fall back to known file managers.
+                from er_save_manager.ui.utils import _get_subprocess_env
+
+                env = _get_subprocess_env()
 
                 # Try xdg-open first with a clean environment.
                 result = subprocess.run(

@@ -288,8 +288,9 @@ class SteamIDPatcherTab:
             if system == "Darwin":
                 subprocess.run(["open", path], check=False)
                 return
-            env = os.environ.copy()
-            env.pop("LD_PRELOAD", None)
+            from er_save_manager.ui.utils import _get_subprocess_env
+
+            env = _get_subprocess_env()
 
             result = subprocess.run(
                 ["xdg-open", path], env=env, stderr=subprocess.DEVNULL, timeout=5
