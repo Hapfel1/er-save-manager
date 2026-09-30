@@ -12,7 +12,7 @@ import zipfile
 from pathlib import Path
 from tkinter import messagebox
 
-from er_save_manager.ui.utils import center_window, open_url
+from er_save_manager.ui.utils import _get_subprocess_env, center_window, open_url
 
 
 def submit_preset_via_browser(
@@ -400,7 +400,7 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
             else:  # Linux
                 # Open file manager to directory
                 zip_dir = str(Path(zip_path).parent)
-                subprocess.run(["xdg-open", zip_dir])
+                subprocess.run(["xdg-open", zip_dir], env=_get_subprocess_env())
         except Exception as e:
             print(f"Failed to open file explorer: {e}")
 

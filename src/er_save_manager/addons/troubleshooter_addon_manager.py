@@ -203,9 +203,13 @@ class TroubleshooterAddon:
                     creationflags=subprocess.CREATE_NO_WINDOW,
                 )
             else:
-                # Linux - launch in background
+                # Linux - launch in background, without this AppImage's
+                # bundled library paths leaking into the child process
+                from er_save_manager.ui.utils import _get_subprocess_env
+
                 proc = subprocess.Popen(
                     cmd,
+                    env=_get_subprocess_env(),
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                 )

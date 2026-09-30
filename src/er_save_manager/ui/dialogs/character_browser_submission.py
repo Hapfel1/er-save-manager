@@ -14,7 +14,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
-from er_save_manager.ui.utils import center_window, open_url
+from er_save_manager.ui.utils import _get_subprocess_env, center_window, open_url
 
 
 def submit_character_via_browser(
@@ -327,6 +327,7 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
     """Show success message with ZIP file location and open file explorer."""
     import os
     import platform
+    import subprocess
 
     from er_save_manager.ui.utils import force_render_dialog
 
@@ -425,7 +426,9 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
             elif platform.system() == "Darwin":  # macOS
                 os.system(f'open "{folder_path}"')
             else:  # Linux
-                os.system(f'xdg-open "{folder_path}"')
+                subprocess.run(
+                    ["xdg-open", str(folder_path)], env=_get_subprocess_env()
+                )
         except Exception as e:
             print(f"Failed to open folder: {e}")
             # Fallback: just print the path
