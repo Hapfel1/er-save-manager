@@ -58,6 +58,10 @@ except ImportError:
     _NR_AVAILABLE = False
 
 
+# Pause between building queued tabs, so input is handled in between.
+_TAB_BUILD_DELAY_MS = 15
+
+
 class SaveManagerGUI:
     """Main GUI application for Elden Ring Save Manager"""
 
@@ -189,6 +193,10 @@ class SaveManagerGUI:
         self._file_change_dialog_open: bool = False
         self._file_watcher_running: bool = False
         self._pending_file_change: bool = False
+
+        # Tab widgets built after the visible tab, in tab order (see _build_tab)
+        self._pending_tabs: dict[str, tuple] = {}
+        self._tab_build_job: str | None = None
 
         self.setup_ui()
 
@@ -769,6 +777,7 @@ class SaveManagerGUI:
             "ds3_inventory_tab",
             "ds3_bosses_tab",
             "ds3_world_tab",
+            "ds3_npc_tab",
             "ds3_char_mgmt_tab",
             "ds2_inspector_tab",
             "ds2_editor_tab",
@@ -781,6 +790,7 @@ class SaveManagerGUI:
             setattr(self, attr, None)
 
         # Rebuild notebook
+        self._drop_pending_tabs()
         self.notebook.destroy()
         self.notebook = ctk.CTkTabview(
             self.root,
@@ -820,7 +830,7 @@ class SaveManagerGUI:
             self.show_character_details,
             self.on_slot_selected,
         )
-        self.inspector_tab.setup_ui()
+        self._build_tab("Save Fixer", self.inspector_tab.setup_ui)
 
         # Tab 2: Character Management
         self.notebook.add("Character Management")
@@ -838,12 +848,14 @@ class SaveManagerGUI:
                 and self.is_game_running()
             ),
         )
-        self.char_mgmt_tab.setup_ui()
+        self._build_tab("Character Management", self.char_mgmt_tab.setup_ui)
 
         # Tab 3: Character Editor
         self.notebook.add("Character Editor")
         tab_character = self.notebook.tab("Character Editor")
-        self.setup_character_editor_tab(tab_character)
+        self._build_tab(
+            "Character Editor", lambda: self.setup_character_editor_tab(tab_character)
+        )
 
         # Tab 4: Appearance
         self.notebook.add("Appearance")
@@ -855,7 +867,7 @@ class SaveManagerGUI:
             self.load_save,
             self.show_toast,
         )
-        self.appearance_tab.setup_ui()
+        self._build_tab("Appearance", self.appearance_tab.setup_ui)
 
         # Tab 5: World State
         self.notebook.add("World State")
@@ -868,7 +880,7 @@ class SaveManagerGUI:
             lambda: self.selected_slot_index,
             self.show_toast,
         )
-        self.world_tab.setup_ui()
+        self._build_tab("World State", self.world_tab.setup_ui)
         try:
             if getattr(sys, "frozen", False):
                 _base = (
@@ -894,7 +906,7 @@ class SaveManagerGUI:
             self.load_save,
             self.show_toast,
         )
-        self.steamid_tab.setup_ui()
+        self._build_tab("SteamID Patcher", self.steamid_tab.setup_ui)
 
         # Tab 7: Event Flags
         self.notebook.add("Event Flags")
@@ -906,7 +918,7 @@ class SaveManagerGUI:
             self.load_save,
             self.show_toast,
         )
-        self.event_flags_tab.setup_ui()
+        self._build_tab("Event Flags", self.event_flags_tab.setup_ui)
 
         # Tab 8: Gestures
         self.notebook.add("Gestures")
@@ -918,12 +930,12 @@ class SaveManagerGUI:
             self.load_save,
             self.show_toast,
         )
-        self.gestures_tab.setup_ui()
+        self._build_tab("Gestures", self.gestures_tab.setup_ui)
 
         # Tab 9: Hex Editor - hidden for now
         _hex_hidden = ctk.CTkFrame(self.root, fg_color="transparent")
         self.hex_tab = HexEditorTab(_hex_hidden, lambda: self.save_file)
-        self.hex_tab.setup_ui()
+        self._build_tab("Hex Editor", self.hex_tab.setup_ui)
 
         # Tab 10: Advanced Tools
         self.notebook.add("Advanced Tools")
@@ -935,7 +947,7 @@ class SaveManagerGUI:
             self.load_save,
             self.show_toast,
         )
-        self.advanced_tab.setup_ui()
+        self._build_tab("Advanced Tools", self.advanced_tab.setup_ui)
 
         # Tab 11: Settings
         self.notebook.add("Settings")
@@ -947,7 +959,7 @@ class SaveManagerGUI:
             active_game="elden_ring",
             root=self.root,
         )
-        self.settings_tab.setup_ui()
+        self._build_tab("Settings", self.settings_tab.setup_ui)
 
     def _create_other_game_tabs(self, profile):
         """Create the reduced tab set for non-Elden Ring games."""
@@ -962,6 +974,7 @@ class SaveManagerGUI:
                 DS3EditorTab,
                 DS3InspectorTab,
                 DS3InventoryTab,
+                DS3NpcsTab,
                 DS3WorldStateTab,
             )
 
@@ -971,7 +984,7 @@ class SaveManagerGUI:
                 get_save=lambda: self.ds3_save,
                 on_slot_selected=self._on_ds3_slot_edit,
             )
-            self.ds3_inspector_tab.setup_ui()
+            self._build_tab("Save Inspector", self.ds3_inspector_tab.setup_ui)
 
             self.notebook.add("Character Editor")
             self.ds3_editor_tab = DS3EditorTab(
@@ -980,7 +993,7 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
-            self.ds3_editor_tab.setup_ui()
+            self._build_tab("Character Editor", self.ds3_editor_tab.setup_ui)
 
             from er_save_manager.games.DS3.character_management_tab import (
                 DS3CharacterManagementTab,
@@ -998,7 +1011,7 @@ class SaveManagerGUI:
                     and self.is_game_running(profile.process_name)
                 ),
             )
-            self.ds3_char_mgmt_tab.setup_ui()
+            self._build_tab("Character Management", self.ds3_char_mgmt_tab.setup_ui)
 
             self.notebook.add("Inventory")
             self.ds3_inventory_tab = DS3InventoryTab(
@@ -1007,7 +1020,7 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
-            self.ds3_inventory_tab.setup_ui()
+            self._build_tab("Inventory", self.ds3_inventory_tab.setup_ui)
 
             self.notebook.add("Bosses")
             self.ds3_bosses_tab = DS3BossesTab(
@@ -1016,7 +1029,7 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
-            self.ds3_bosses_tab.setup_ui()
+            self._build_tab("Bosses", self.ds3_bosses_tab.setup_ui)
 
             self.notebook.add("World State")
             self.ds3_world_tab = DS3WorldStateTab(
@@ -1025,7 +1038,16 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
-            self.ds3_world_tab.setup_ui()
+            self._build_tab("World State", self.ds3_world_tab.setup_ui)
+
+            self.notebook.add("NPCs")
+            self.ds3_npc_tab = DS3NpcsTab(
+                self.notebook.tab("NPCs"),
+                get_save=lambda: self.ds3_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+            )
+            self._build_tab("NPCs", self.ds3_npc_tab.setup_ui)
 
             self.notebook.add("SteamID Patcher")
             self.steamid_tab = SteamIDPatcherTab(
@@ -1035,8 +1057,12 @@ class SaveManagerGUI:
                 self.load_save,
                 self.show_toast,
             )
-            self.steamid_tab.setup_ui()
-            self.steamid_tab.set_active_profile("Dark Souls III")
+            steamid_tab = self.steamid_tab
+            self._build_tab(
+                "SteamID Patcher",
+                steamid_tab.setup_ui,
+                lambda: steamid_tab.set_active_profile("Dark Souls III"),
+            )
 
             self.notebook.add("Settings")
             self.settings_tab = SettingsTab(
@@ -1046,7 +1072,7 @@ class SaveManagerGUI:
                 active_game="dark_souls_3",
                 root=self.root,
             )
-            self.settings_tab.setup_ui()
+            self._build_tab("Settings", self.settings_tab.setup_ui)
             return
 
         if profile.key == "dark_souls_2":
@@ -1062,7 +1088,7 @@ class SaveManagerGUI:
                 get_save=lambda: self.ds2_save,
                 on_slot_selected=self._on_ds2_slot_selected,
             )
-            self.ds2_inspector_tab.setup_ui()
+            self._build_tab("Save Inspector", self.ds2_inspector_tab.setup_ui)
 
             self.notebook.add("Character Management")
             self.ds2_management_tab = DS2CharacterManagementTab(
@@ -1076,7 +1102,7 @@ class SaveManagerGUI:
                     and self.is_game_running(profile.process_name)
                 ),
             )
-            self.ds2_management_tab.setup_ui()
+            self._build_tab("Character Management", self.ds2_management_tab.setup_ui)
 
             self.notebook.add("Character Editor")
             self.ds2_editor_tab = DS2EditorTab(
@@ -1085,7 +1111,7 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
-            self.ds2_editor_tab.setup_ui()
+            self._build_tab("Character Editor", self.ds2_editor_tab.setup_ui)
 
             self.notebook.add("SteamID Patcher")
             self.steamid_tab = SteamIDPatcherTab(
@@ -1095,9 +1121,13 @@ class SaveManagerGUI:
                 self.load_save,
                 self.show_toast,
             )
-            self.steamid_tab.setup_ui()
-            self.steamid_tab.set_active_profile(
-                "Dark Souls II: Scholar of the First Sin"
+            steamid_tab = self.steamid_tab
+            self._build_tab(
+                "SteamID Patcher",
+                steamid_tab.setup_ui,
+                lambda: steamid_tab.set_active_profile(
+                    "Dark Souls II: Scholar of the First Sin"
+                ),
             )
 
             self.notebook.add("Settings")
@@ -1108,7 +1138,7 @@ class SaveManagerGUI:
                 active_game="dark_souls_2",
                 root=self.root,
             )
-            self.settings_tab.setup_ui()
+            self._build_tab("Settings", self.settings_tab.setup_ui)
             return
 
         # DSR has no embedded SteamID - SteamID Patcher tab is not shown.
@@ -1125,8 +1155,12 @@ class SaveManagerGUI:
                 self.load_save,
                 self.show_toast,
             )
-            self.steamid_tab.setup_ui()
-            self.steamid_tab.set_active_profile(profile.name)
+            steamid_tab = self.steamid_tab
+            self._build_tab(
+                "SteamID Patcher",
+                steamid_tab.setup_ui,
+                lambda: steamid_tab.set_active_profile(profile.name),
+            )
 
         if profile.key == "dark_souls_remastered":
             from er_save_manager.games.DSR.editor_tab import DSREditorTab
@@ -1141,7 +1175,7 @@ class SaveManagerGUI:
                 get_dsr_save=lambda: self.dsr_save,
                 on_slot_selected=self._on_dsr_slot_edit,
             )
-            self.dsr_inspector_tab.setup_ui()
+            self._build_tab("Save Inspector", self.dsr_inspector_tab.setup_ui)
 
             self.notebook.add("Character Editor")
             self.dsr_editor_tab = DSREditorTab(
@@ -1150,7 +1184,7 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
-            self.dsr_editor_tab.setup_ui()
+            self._build_tab("Character Editor", self.dsr_editor_tab.setup_ui)
 
             from er_save_manager.games.DSR.character_management_tab import (
                 DSRCharacterManagementTab,
@@ -1168,7 +1202,7 @@ class SaveManagerGUI:
                     and self.is_game_running(profile.process_name)
                 ),
             )
-            self.dsr_char_mgmt_tab.setup_ui()
+            self._build_tab("Character Management", self.dsr_char_mgmt_tab.setup_ui)
 
             self.notebook.add("Inventory")
             self.dsr_inventory_tab = DSRInventoryTab(
@@ -1177,7 +1211,7 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
-            self.dsr_inventory_tab.setup_ui()
+            self._build_tab("Inventory", self.dsr_inventory_tab.setup_ui)
 
             self.notebook.add("NPCs & Bosses")
             self.dsr_npc_tab = DSRNPCTab(
@@ -1186,7 +1220,7 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
-            self.dsr_npc_tab.setup_ui()
+            self._build_tab("NPCs & Bosses", self.dsr_npc_tab.setup_ui)
 
             self.notebook.add("Event Flags")
             from er_save_manager.games.DSR.event_flags_tab import DSREventFlagsTab
@@ -1197,7 +1231,7 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
-            self.dsr_flags_tab.setup_ui()
+            self._build_tab("Event Flags", self.dsr_flags_tab.setup_ui)
 
             self.notebook.add("World State")
             self.dsr_world_tab = DSRWorldStateTab(
@@ -1206,7 +1240,7 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
-            self.dsr_world_tab.setup_ui()
+            self._build_tab("World State", self.dsr_world_tab.setup_ui)
 
         self.notebook.add("Settings")
         tab_settings = self.notebook.tab("Settings")
@@ -1217,7 +1251,7 @@ class SaveManagerGUI:
             active_game=profile.key,
             root=self.root,
         )
-        self.settings_tab.setup_ui()
+        self._build_tab("Settings", self.settings_tab.setup_ui)
 
     def _create_nightreign_tabs(self, profile):
         """Create tab set for Nightreign."""
@@ -1231,7 +1265,7 @@ class SaveManagerGUI:
             lambda: self._nr_save,
             on_slot_selected=self._nr_on_slot_selected,
         )
-        self.nr_inspector_tab.setup_ui()
+        self._build_tab("Inspector", self.nr_inspector_tab.setup_ui)
 
         self.notebook.add("Editor")
         self.nr_editor_tab = NREditorTab(
@@ -1240,7 +1274,7 @@ class SaveManagerGUI:
             lambda: self.save_path,
             self.show_toast,
         )
-        self.nr_editor_tab.setup_ui()
+        self._build_tab("Editor", self.nr_editor_tab.setup_ui)
 
         from er_save_manager.games.NR.character_management_tab import (
             NRCharacterManagementTab,
@@ -1258,7 +1292,7 @@ class SaveManagerGUI:
                 and self.is_game_running(profile.process_name)
             ),
         )
-        self.nr_char_mgmt_tab.setup_ui()
+        self._build_tab("Character Management", self.nr_char_mgmt_tab.setup_ui)
 
         self.notebook.add("SteamID Patcher")
         self.nr_steamid_tab = SteamIDPatcherTab(
@@ -1268,8 +1302,12 @@ class SaveManagerGUI:
             self.reload_save,
             self.show_toast,
         )
-        self.nr_steamid_tab.setup_ui()
-        self.nr_steamid_tab.set_active_profile(profile.name)
+        nr_steamid_tab = self.nr_steamid_tab
+        self._build_tab(
+            "SteamID Patcher",
+            nr_steamid_tab.setup_ui,
+            lambda: nr_steamid_tab.set_active_profile(profile.name),
+        )
 
         self.notebook.add("Settings")
         self.settings_tab = SettingsTab(
@@ -1279,10 +1317,11 @@ class SaveManagerGUI:
             active_game=profile.key,
             root=self.root,
         )
-        self.settings_tab.setup_ui()
+        self._build_tab("Settings", self.settings_tab.setup_ui)
 
     def _nr_on_slot_selected(self, slot_index: int) -> None:
         """Navigate from inspector to editor for the selected slot."""
+        self._flush_pending_tabs()
         if hasattr(self, "nr_editor_tab") and self.nr_editor_tab:
             self.nr_editor_tab.load_slot(slot_index)
             self.notebook.set("Editor")
@@ -1332,6 +1371,9 @@ class SaveManagerGUI:
             container,
             width=900,
             height=520,
+            command=lambda: self._ensure_tab_built(
+                f"Character Editor/{editor_tabs.get()}"
+            ),
             fg_color=("gray90", "gray20"),
             segmented_button_fg_color=("gray80", "gray35"),
             segmented_button_selected_color=("#c9a0dc", "#6a4b85"),
@@ -1369,7 +1411,9 @@ class SaveManagerGUI:
             current_slot_index,
             lambda: self.save_path,
         )
-        self.equipment_editor.setup_ui()
+        # Only the visible Stats editor is built now; the others follow in
+        # the background like top-level tabs (see _build_tab).
+        self._build_tab("Character Editor/Equipment", self.equipment_editor.setup_ui)
 
         # Character info editor
         info_tab = editor_tabs.add("Info")
@@ -1381,7 +1425,7 @@ class SaveManagerGUI:
             current_slot_index,
             lambda: self.save_path,
         )
-        self.char_info_editor.setup_ui()
+        self._build_tab("Character Editor/Info", self.char_info_editor.setup_ui)
         self.char_info_editor.on_archetype_change = (
             self.stats_editor.on_archetype_changed
         )
@@ -1399,7 +1443,7 @@ class SaveManagerGUI:
             on_inventory_changed=self._on_inventory_changed,
             get_settings_callback=lambda: self.settings,
         )
-        self.inventory_editor.setup_ui()
+        self._build_tab("Character Editor/Inventory", self.inventory_editor.setup_ui)
 
     def acknowledge_save_written(self) -> None:
         """Resnapshot the save file mtime after an internal write.
@@ -1422,6 +1466,7 @@ class SaveManagerGUI:
 
     def load_character_for_edit(self):
         """Load character data into editors"""
+        self._flush_pending_tabs()
 
         if not self.save_file:
             CTkMessageBox.showwarning(
@@ -1845,6 +1890,7 @@ class SaveManagerGUI:
 
     def _open_inventory_editor(self):
         """Navigate to the inventory editor for the active game."""
+        self._flush_pending_tabs()
         if self.active_game == "dark_souls_remastered":
             try:
                 self.notebook.set("Inventory")
@@ -1894,9 +1940,66 @@ class SaveManagerGUI:
         addon_manager = TroubleshooterAddon()
         show_troubleshooter_dialog(self.root, addon_manager)
 
+    # --- Deferred tab construction -------------------------------------- #
+
+    def _build_tab(self, name: str, *steps) -> None:
+        """Run a tab's widget construction steps.
+
+        CustomTkinter widgets draw themselves on creation, so building every
+        tab of a game at once blocks the window for seconds. The tab that is
+        showing is built immediately; the others are queued and built one per
+        event loop turn, or at once when they are selected or anything reads
+        them (see _flush_pending_tabs).
+        """
+        if not self._pending_tabs and self.notebook.get() == name:
+            for step in steps:
+                step()
+            return
+        self._pending_tabs[name] = steps
+        if self._tab_build_job is None:
+            self._schedule_tab_build()
+
+    def _schedule_tab_build(self) -> None:
+        # Tk runs due timers before the idle callbacks that repaint the window,
+        # so the timer is armed from an idle callback: the window is drawn
+        # (and input handled) before each queued tab is built.
+        self._tab_build_job = self.root.after_idle(
+            lambda: setattr(
+                self,
+                "_tab_build_job",
+                self.root.after(_TAB_BUILD_DELAY_MS, self._build_next_tab),
+            )
+        )
+
+    def _build_next_tab(self) -> None:
+        self._tab_build_job = None
+        if not self._pending_tabs:
+            return
+        name = next(iter(self._pending_tabs))
+        self._ensure_tab_built(name)
+        if self._pending_tabs:
+            self._schedule_tab_build()
+
+    def _ensure_tab_built(self, name: str) -> None:
+        for step in self._pending_tabs.pop(name, ()):
+            step()
+
+    def _flush_pending_tabs(self) -> None:
+        """Finish all queued tabs; call before code that reads tab widgets."""
+        while self._pending_tabs:
+            self._ensure_tab_built(next(iter(self._pending_tabs)))
+
+    def _drop_pending_tabs(self) -> None:
+        """Forget queued tabs whose notebook is about to be destroyed."""
+        if self._tab_build_job is not None:
+            self.root.after_cancel(self._tab_build_job)
+            self._tab_build_job = None
+        self._pending_tabs.clear()
+
     def _on_tab_changed(self, event=None):
         """Handle tab change event - lazy load and refresh tabs."""
         current_tab = self.notebook.get()
+        self._ensure_tab_built(current_tab)
 
         # Load tab content in background for non-blocking UI
         if not self.tabs_loaded.get(current_tab, False):
@@ -1979,6 +2082,7 @@ class SaveManagerGUI:
 
     def _load_non_er_save(self, save_path: str):
         """Store the selected save path for non-ER games and refresh the SteamID display."""
+        self._flush_pending_tabs()
         profile = self._active_profile()
         if (
             not self.settings.get("skip_game_running_check", False)
@@ -2004,6 +2108,7 @@ class SaveManagerGUI:
 
     def on_slot_selected(self, slot_index: int):
         """Handle character slot selection from Fixer tab."""
+        self._flush_pending_tabs()
         self.selected_slot_index = slot_index
 
     def load_save(self, silent=False):
@@ -2012,6 +2117,7 @@ class SaveManagerGUI:
         Args:
             silent: If True, suppress the success message (used for reloads after operations)
         """
+        self._flush_pending_tabs()
         save_path = self.file_path_var.get()
 
         if not save_path or not os.path.exists(save_path):
@@ -2134,7 +2240,7 @@ class SaveManagerGUI:
             self._load_dsr_save(save_path)
             return
         if self.active_game == "dark_souls_3":
-            self._load_ds3_save(save_path)
+            self._load_ds3_save(save_path, running_checked=True)
             return
         if self.active_game == "dark_souls_2":
             self._load_ds2_save(save_path)
@@ -2180,6 +2286,7 @@ class SaveManagerGUI:
 
     def _load_dsr_save(self, save_path: str) -> None:
         """Parse a DSR save file and refresh all DSR tabs."""
+        self._flush_pending_tabs()
         from er_save_manager.games.DSR.save import DSRSave
 
         profile = self._active_profile()
@@ -2225,6 +2332,7 @@ class SaveManagerGUI:
         """Navigate to Character Editor and load the selected slot.
         Called only from the inspector 'Edit Character' button - never from row clicks.
         """
+        self._flush_pending_tabs()
         try:
             self.notebook.set("Character Editor")
         except Exception:
@@ -2232,13 +2340,19 @@ class SaveManagerGUI:
         if hasattr(self, "dsr_editor_tab") and self.dsr_editor_tab:
             self.dsr_editor_tab.load_slot(slot_idx)
 
-    def _load_ds3_save(self, save_path: str) -> None:
-        """Parse a DS3 save file and refresh all DS3 tabs."""
+    def _load_ds3_save(self, save_path: str, running_checked: bool = False) -> None:
+        """Parse a DS3 save file and refresh all DS3 tabs.
+
+        running_checked skips the game-running check when the caller has
+        already done it; the process query is slow on Windows.
+        """
+        self._flush_pending_tabs()
         from er_save_manager.games.DS3.save import DS3Save
 
         profile = self._active_profile()
         if (
-            not self.settings.get("skip_game_running_check", False)
+            not running_checked
+            and not self.settings.get("skip_game_running_check", False)
             and profile
             and profile.process_name
             and self.is_game_running(profile.process_name)
@@ -2263,6 +2377,7 @@ class SaveManagerGUI:
             "ds3_inventory_tab",
             "ds3_bosses_tab",
             "ds3_world_tab",
+            "ds3_npc_tab",
             "ds3_char_mgmt_tab",
         ):
             tab = getattr(self, attr, None)
@@ -2282,6 +2397,7 @@ class SaveManagerGUI:
 
     def _load_ds2_save(self, save_path: str) -> None:
         """Parse a DS2 SOTFS save file and refresh the DS2 tabs."""
+        self._flush_pending_tabs()
         from er_save_manager.games.DS2.save import DS2Save
 
         profile = self._active_profile()
@@ -2327,6 +2443,7 @@ class SaveManagerGUI:
 
     def _load_nr_save(self, save_path: str) -> None:
         """Parse a Nightreign save file and refresh all NR tabs."""
+        self._flush_pending_tabs()
         profile = self._active_profile()
         if (
             not self.settings.get("skip_game_running_check", False)
@@ -2380,6 +2497,7 @@ class SaveManagerGUI:
         """Navigate to Character Editor and load the selected slot.
         Called only from the DS3 inspector 'Edit Character' button.
         """
+        self._flush_pending_tabs()
         try:
             self.notebook.set("Character Editor")
         except Exception:
@@ -2389,19 +2507,18 @@ class SaveManagerGUI:
             "ds3_inventory_tab",
             "ds3_bosses_tab",
             "ds3_world_tab",
+            "ds3_npc_tab",
         ):
             tab = getattr(self, attr, None)
             if tab is not None:
                 tab.load_slot(slot_idx)
-
-        """Reload the current save file without showing success message"""
-        self.load_save(silent=True)
 
     def _on_ds2_slot_selected(self, slot_idx: int) -> None:
         """Navigate to Character Editor and load the selected slot.
         Called from the DS2 inspector row double-click or Edit Character
         button.
         """
+        self._flush_pending_tabs()
         try:
             self.notebook.set("Character Editor")
         except Exception:
@@ -2415,6 +2532,7 @@ class SaveManagerGUI:
 
     def _finalize_save_load(self, save_file, save_path, silent=False):
         """Finalize save loading on main thread"""
+        self._flush_pending_tabs()
         self.save_file = save_file
         self.save_path = Path(save_path)
         self._update_watched_mtime()
@@ -2470,6 +2588,7 @@ class SaveManagerGUI:
         Called when switching from a PS save back to a PC save so SteamID Patcher
         is re-inserted at its correct position rather than appended at the end.
         """
+        self._drop_pending_tabs()
         self.notebook.destroy()
         self.notebook = ctk.CTkTabview(
             self.root,
@@ -2562,6 +2681,7 @@ class SaveManagerGUI:
 
     def show_character_details(self, slot_idx):
         """Show character details dialog"""
+        self._flush_pending_tabs()
         CharacterDetailsDialog.show(
             self.root, self.save_file, slot_idx, self.save_path, self.load_save
         )

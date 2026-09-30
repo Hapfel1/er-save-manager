@@ -11,6 +11,8 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.games.DS3.character_ops import _sync_dir_name_level
+from er_save_manager.games.DS3.slot import LEVEL_STAT_OFFSET, LayoutError
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
@@ -34,8 +36,6 @@ class DS3EditorTab:
         self._show_toast = show_toast
         self._current_slot = -1
         self._stat_vars: dict[str, tk.StringVar] = {}
-        self._base_stats_sum: int = 0  # sum of 9 stats at load time
-        self._base_level: int = 1  # level at load time
         self._name_var = tk.StringVar()
         self._ng_var = tk.StringVar(value="0")
         self._playtime_var = tk.StringVar(value="--")
@@ -229,13 +229,6 @@ class DS3EditorTab:
             self._stat_vars[key].set(str(char.get_stat(key)))
         self._stat_vars["level"].set(str(char.level))
 
-        # Snapshot for delta-based level recalc
-        self._base_stats_sum = sum(
-            char.get_stat(k)
-            for k in ("vig", "atn", "end", "vit", "str", "dex", "int", "fth", "lck")
-        )
-        self._base_level = char.level
-
         # Bind traces so any stat change auto-updates the level field
         for key in ("vig", "atn", "end", "vit", "str", "dex", "int", "fth", "lck"):
             self._stat_vars[key].trace_add(
@@ -246,10 +239,10 @@ class DS3EditorTab:
         self._stat_vars["fp"].set(str(char.fp))
         self._stat_vars["stamina"].set(str(char.stamina))
         self._name_var.set(char.name)
-        self._ng_var.set(str(char.ng_plus))
+        self._ng_var.set("0" if char.layout_error else str(char.ng_plus))
 
     def _auto_recalc_level(self) -> None:
-        """Recalculate level from stat delta relative to the load-time snapshot."""
+        """Level is the attribute sum minus a fixed offset for every class."""
         try:
             current_sum = sum(
                 int(self._stat_vars[k].get())
@@ -257,9 +250,7 @@ class DS3EditorTab:
             )
         except ValueError:
             return  # user mid-typing, skip
-        new_level = max(
-            1, min(802, self._base_level + (current_sum - self._base_stats_sum))
-        )
+        new_level = max(1, min(802, current_sum - LEVEL_STAT_OFFSET))
         self._stat_vars["level"].set(str(new_level))
 
     # --- Apply --------------------------------------------------------------- #
@@ -302,6 +293,8 @@ class DS3EditorTab:
         except ValueError as exc:
             CTkMessageBox.showerror("Invalid Value", str(exc), parent=self.parent)
             return
+        # The load screen reads name and level from its own directory copy.
+        _sync_dir_name_level(save, self._current_slot, char.name, char.level)
         try:
             _backup_and_save(
                 save, save_path, f"ds3_edit_stats_slot_{self._current_slot + 1}"
@@ -334,10 +327,12 @@ class DS3EditorTab:
             return
         try:
             char.name = self._name_var.get()
-            char.ng_plus = int(self._ng_var.get())
-        except (ValueError, Exception) as exc:
+            if int(self._ng_var.get()) != char.ng_plus:
+                char.ng_plus = int(self._ng_var.get())
+        except (ValueError, LayoutError) as exc:
             CTkMessageBox.showerror("Invalid Value", str(exc), parent=self.parent)
             return
+        _sync_dir_name_level(save, self._current_slot, char.name, char.level)
         try:
             _backup_and_save(
                 save, save_path, f"ds3_edit_identity_slot_{self._current_slot + 1}"
