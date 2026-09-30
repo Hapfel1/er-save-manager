@@ -1,146 +1,202 @@
 [
   {
-    "name": "Iudex Gundyr",
-    "offset": 23254,
-    "defeat_value": "E0",
-    "area": "Cemetery of Ash"
-  },
-  {
     "name": "Vordt of the Boreal Valley",
-    "offset": 4054,
-    "defeat_value": "C0",
-    "area": "High Wall of Lothric"
-  },
-  {
-    "name": "Curse-Rotted Greatwood",
-    "offset": 6614,
-    "defeat_value": "C0",
-    "area": "Undead Settlement"
-  },
-  {
-    "name": "Crystal Sage",
-    "offset": 11736,
-    "defeat_value": "28",
-    "area": "Road of Sacrifices"
-  },
-  {
-    "name": "Abyss Watchers",
-    "offset": 11734,
-    "defeat_value": "C0",
-    "area": "Farron Keep"
-  },
-  {
-    "name": "High Lord Wolnir",
-    "offset": 20694,
-    "defeat_value": "C0",
-    "area": "Catacombs of Carthus"
+    "area": "High Wall of Lothric",
+    "dead_flag": 13000800,
+    "progress_flag": 6105,
+    "bonfire_flag": 13000002,
+    "dlc": false
   },
   {
     "name": "Oceiros, the Consumed King",
-    "offset": 4051,
-    "defeat_value": "42",
-    "area": "Consumed King's Garden"
-  },
-  {
-    "name": "Champion Gundyr",
-    "offset": 23251,
-    "defeat_value": "03",
-    "area": "Untended Graves"
+    "area": "High Wall of Lothric",
+    "dead_flag": 13000830,
+    "progress_flag": null,
+    "bonfire_flag": 13000001,
+    "dlc": false
   },
   {
     "name": "Dancer of the Boreal Valley",
-    "offset": 4059,
-    "defeat_value": "20",
-    "area": "High Wall of Lothric"
-  },
-  {
-    "name": "Deacons of the Deep",
-    "offset": 15574,
-    "defeat_value": "C0",
-    "area": "Cathedral of the Deep"
-  },
-  {
-    "name": "Old Demon King",
-    "offset": 20691,
-    "defeat_value": "02",
-    "area": "Smouldering Lake"
-  },
-  {
-    "name": "Pontiff Sulyvahn",
-    "offset": 19416,
-    "defeat_value": "20",
-    "area": "Irithyll of the Boreal Valley"
-  },
-  {
-    "name": "Aldrich, Devourer of Gods",
-    "offset": 19414,
-    "defeat_value": "80",
-    "area": "Anor Londo"
+    "area": "High Wall of Lothric",
+    "dead_flag": 13000890,
+    "progress_flag": 6110,
+    "bonfire_flag": 13000004,
+    "dlc": false
   },
   {
     "name": "Dragonslayer Armour",
-    "offset": 5334,
-    "defeat_value": "80",
-    "area": "Lothric Castle"
+    "area": "Lothric Castle",
+    "dead_flag": 13010800,
+    "progress_flag": 6111,
+    "bonfire_flag": 13010001,
+    "dlc": false
   },
   {
-    "name": "Yhorm the Giant",
-    "offset": 21974,
-    "defeat_value": "C0",
-    "area": "Profaned Capital"
+    "name": "Curse-rotted Greatwood",
+    "area": "Undead Settlement",
+    "dead_flag": 13100800,
+    "progress_flag": null,
+    "bonfire_flag": 13100001,
+    "dlc": false
+  },
+  {
+    "name": "Ancient Wyvern",
+    "area": "Archdragon Peak",
+    "dead_flag": 13200800,
+    "progress_flag": null,
+    "bonfire_flag": null,
+    "dlc": false
   },
   {
     "name": "Nameless King",
-    "offset": 9176,
-    "defeat_value": "21",
-    "area": "Archdragon Peak"
+    "area": "Archdragon Peak",
+    "dead_flag": 13200850,
+    "progress_flag": null,
+    "bonfire_flag": 13200001,
+    "dlc": false
   },
   {
-    "name": "Twin Princes",
-    "offset": 14291,
-    "defeat_value": "03",
-    "area": "Grand Archives"
+    "name": "Abyss Watchers",
+    "area": "Road of Sacrifices / Farron Keep",
+    "dead_flag": 13300800,
+    "progress_flag": 6100,
+    "bonfire_flag": 13300001,
+    "dlc": false
+  },
+  {
+    "name": "Crystal Sage",
+    "area": "Road of Sacrifices / Farron Keep",
+    "dead_flag": 13300850,
+    "progress_flag": 6106,
+    "bonfire_flag": 13300002,
+    "dlc": false
+  },
+  {
+    "name": "The Twin Princes",
+    "area": "Grand Archives",
+    "dead_flag": 13410830,
+    "progress_flag": 6103,
+    "bonfire_flag": 13410000,
+    "dlc": false
+  },
+  {
+    "name": "Deacons of the Deep",
+    "area": "Cathedral of the Deep",
+    "dead_flag": 13500800,
+    "progress_flag": 6107,
+    "bonfire_flag": 13500001,
+    "dlc": false
+  },
+  {
+    "name": "Pontiff Sulyvahn",
+    "area": "Irithyll / Anor Londo",
+    "dead_flag": 13700800,
+    "progress_flag": 6109,
+    "bonfire_flag": 13700002,
+    "dlc": false
+  },
+  {
+    "name": "Aldrich, Devourer of Gods",
+    "area": "Irithyll / Anor Londo",
+    "dead_flag": 13700850,
+    "progress_flag": 6102,
+    "bonfire_flag": 13700001,
+    "dlc": false
+  },
+  {
+    "name": "High Lord Wolnir",
+    "area": "Catacombs / Smouldering Lake",
+    "dead_flag": 13800800,
+    "progress_flag": 6108,
+    "bonfire_flag": 13800000,
+    "dlc": false
+  },
+  {
+    "name": "Old Demon King",
+    "area": "Catacombs / Smouldering Lake",
+    "dead_flag": 13800830,
+    "progress_flag": null,
+    "bonfire_flag": 13800004,
+    "dlc": false
+  },
+  {
+    "name": "Yhorm the Giant",
+    "area": "Irithyll Dungeon / Profaned Capital",
+    "dead_flag": 13900800,
+    "progress_flag": 6101,
+    "bonfire_flag": 13900001,
+    "dlc": false
+  },
+  {
+    "name": "Iudex Gundyr",
+    "area": "Cemetery of Ash / Firelink Shrine / Untended Graves",
+    "dead_flag": 14000800,
+    "progress_flag": 6104,
+    "bonfire_flag": 14000002,
+    "dlc": false
+  },
+  {
+    "name": "Champion Gundyr",
+    "area": "Cemetery of Ash / Firelink Shrine / Untended Graves",
+    "dead_flag": 14000830,
+    "progress_flag": null,
+    "bonfire_flag": 14000004,
+    "dlc": false
   },
   {
     "name": "Soul of Cinder",
-    "offset": 24534,
-    "defeat_value": "C0",
-    "area": "Kiln of the First Flame"
+    "area": "Kiln of the First Flame",
+    "dead_flag": 14100800,
+    "progress_flag": null,
+    "bonfire_flag": null,
+    "dlc": false
   },
   {
-    "name": "Champion's Gravetender",
-    "offset": 25815,
-    "defeat_value": "0C",
-    "area": "Painted World of Ariandel (DLC)"
+    "name": "Sister Friede",
+    "area": "Painted World of Ariandel",
+    "dead_flag": 14500800,
+    "progress_flag": null,
+    "bonfire_flag": 14500000,
+    "dlc": true
   },
   {
-    "name": "Father Ariandel and Sister Friede",
-    "offset": 25814,
-    "defeat_value": "C0",
-    "area": "Painted World of Ariandel (DLC)"
-  },
-  {
-    "name": "Halflight, Spear of the Church",
-    "offset": 30934,
-    "defeat_value": "C0",
-    "area": "Ringed City (DLC)"
-  },
-  {
-    "name": "Darkeater Midir",
-    "offset": 30936,
-    "defeat_value": "30",
-    "area": "Ringed City (DLC)"
-  },
-  {
-    "name": "Slave Knight Gael",
-    "offset": 32214,
-    "defeat_value": "C0",
-    "area": "Ringed City (DLC)"
+    "name": "Champion's Gravetender & Gravetender Greatwolf",
+    "area": "Painted World of Ariandel",
+    "dead_flag": 14500860,
+    "progress_flag": null,
+    "bonfire_flag": 14500006,
+    "dlc": true
   },
   {
     "name": "Demon Prince",
-    "offset": 29654,
-    "defeat_value": "80",
-    "area": "Dreg Heap (DLC)"
+    "area": "The Dreg Heap",
+    "dead_flag": 15000800,
+    "progress_flag": null,
+    "bonfire_flag": 15000000,
+    "dlc": true
+  },
+  {
+    "name": "Halflight, Spear of the Church",
+    "area": "The Ringed City",
+    "dead_flag": 15100800,
+    "progress_flag": null,
+    "bonfire_flag": null,
+    "dlc": true
+  },
+  {
+    "name": "Darkeater Midir",
+    "area": "The Ringed City",
+    "dead_flag": 15100850,
+    "progress_flag": null,
+    "bonfire_flag": 15100001,
+    "dlc": true
+  },
+  {
+    "name": "Slave Knight Gael",
+    "area": "Filianore's Rest",
+    "dead_flag": 15110800,
+    "progress_flag": null,
+    "bonfire_flag": 15110000,
+    "dlc": true
   }
 ]
