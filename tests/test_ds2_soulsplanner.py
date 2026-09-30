@@ -34,6 +34,11 @@ def test_parse_build_id():
         parse_build_id("https://soulsplanner.com/darksouls3/32589")
     with pytest.raises(PlannerError):
         parse_build_id("https://example.com/darksouls2/32589")
+    # The host must match exactly, not just contain the domain.
+    with pytest.raises(PlannerError):
+        parse_build_id("https://soulsplanner.com.example.com/darksouls2/32589")
+    with pytest.raises(PlannerError):
+        parse_build_id("https://soulsplanner.com@example.com/darksouls2/32589")
 
 
 def test_parse_build_html():

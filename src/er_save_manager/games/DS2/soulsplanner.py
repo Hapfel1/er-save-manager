@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import re
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 
@@ -33,20 +34,18 @@ from er_save_manager.games.DS2.soulsplanner_database import (
 )
 
 _BUILD_URL = "https://soulsplanner.com/darksouls2/{build_id}"
-_URL_PATTERN = re.compile(
-    r"^(?:https?://)?(?:www\.)?soulsplanner\.com/darksouls2/(\d+)/?(?:[?#].*)?$",
-    re.IGNORECASE,
-)
+_HOSTS = frozenset({"soulsplanner.com", "www.soulsplanner.com"})
+_PATH_PATTERN = re.compile(r"^/darksouls2/(\d+)/?$")
 _SAVED_BUILD_PATTERN = re.compile(r"savedBuild\s*=\s*\{(.*?)\}\s*;", re.DOTALL)
 # Object literal fields: bare keys, single-quoted strings or integers.
 _FIELD_PATTERN = re.compile(r"(\w+)\s*:\s*(?:'((?:[^'\\]|\\.)*)'|(-?\d+))")
 _FETCH_TIMEOUT = 15
 
-# The planner's empty-slot placeholders.
 # Stacking categories whose amount is chosen at import. Spells stack too, but
 # are always learned with a full set of uses (see Character.add_item).
 QUANTITY_CATEGORIES = frozenset(Character.STACKABLE_CATEGORIES - {"spells"})
 
+# The planner's empty-slot placeholders.
 _EMPTY_SLUGS = frozenset({"Naked", "No_Ring", "No_Spell", "No_Item", "Bare_Fists"})
 _NO_INFUSION = "No_Infusion"
 
@@ -96,18 +95,29 @@ class ImportResult:
 
 
 def parse_build_id(text: str) -> str:
-    """Build id from a planner link or a bare id. Raises PlannerError."""
+    """Build id from a planner link or a bare id. Raises PlannerError.
+
+    The link's host must be exactly one of _HOSTS. Only the id is kept, the
+    page is always fetched from _BUILD_URL.
+    """
     text = text.strip()
     if text.isdigit():
         return text
-    match = _URL_PATTERN.match(text)
-    if match is None:
-        if "soulsplanner.com" in text.lower():
-            raise PlannerError(
-                "Only Dark Souls II builds (soulsplanner.com/darksouls2/...) "
-                "can be imported."
-            )
+    if "://" not in text:
+        text = f"https://{text}"
+    try:
+        parts = urllib.parse.urlsplit(text)
+        host = (parts.hostname or "").lower()
+    except ValueError as e:
+        raise PlannerError("Not a soulsplanner.com build link.") from e
+    if parts.scheme.lower() not in ("http", "https") or host not in _HOSTS:
         raise PlannerError("Not a soulsplanner.com build link.")
+    match = _PATH_PATTERN.match(parts.path)
+    if match is None:
+        raise PlannerError(
+            "Only Dark Souls II builds (soulsplanner.com/darksouls2/...) "
+            "can be imported."
+        )
     return match.group(1)
 
 
