@@ -218,6 +218,8 @@ jobs:
           # Python built for the host (glibc 2.39) that cannot run there; use
           # a separate cache so the 22.04 build is downloaded.
           AGENT_TOOLSDIRECTORY: ${{ matrix.os == 'ubuntu-24.04' && '/opt/toolcache' || '' }}
+          # Container HOME is not owned by root; skip the unused pip cache.
+          PIP_NO_CACHE_DIR: "1"
         with:
           python-version-file: ".python-version"
 

@@ -48,6 +48,8 @@ jobs:
           # (glibc 2.39) that cannot run here; use a separate cache so the
           # 22.04 build is downloaded.
           AGENT_TOOLSDIRECTORY: /opt/toolcache
+          # Container HOME is not owned by root; skip the unused pip cache.
+          PIP_NO_CACHE_DIR: "1"
         with:
           python-version-file: ".python-version"
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
