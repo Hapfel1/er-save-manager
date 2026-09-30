@@ -121,6 +121,29 @@ INVENTORY_START = 0x1E2C
 INVENTORY_END = 0x10E1C
 INVENTORY_SLOT_SIZE = 16
 
+# Equipment block in the profile entry: a u32 header, then equipped items by
+# item id, not by inventory entry (u32 each, 0xFFFFFFFF for an empty slot):
+#   +0x04  6 weapon slots, left and right hand alternating; 3400000 is the
+#          unarmed placeholder
+#   +0x1C  4 armor slots (head, chest, hands, legs) holding the armor param
+#          id, which is the inventory item id minus 10000000
+#   +0x2C  2 u32 of unknown use (0 on every character seen)
+#   +0x34  4 slots, empty on every character seen (arrows and bolts)
+#   +0x44  4 ring slots
+#   +0x54  10 belt item slots
+# Mapped from a before/after pair with a weapon, a helm, a ring and a belt
+# item changed in game, and checked on every created character of two saves.
+EQUIPMENT_OFFSET = 0x188
+EQUIPMENT_HEADER = 0x1E
+_EQUIP_WEAPONS = (0x04, 6)
+_EQUIP_ARMOR = (0x1C, 4)
+_EQUIP_AMMO = (0x34, 4)
+_EQUIP_RINGS = (0x44, 4)
+_EQUIP_BELT = (0x54, 10)
+_UNARMED_ID = 3400000
+_ARMOR_ID_OFFSET = 10000000
+_EMPTY_EQUIP = 0xFFFFFFFF
+
 # Stack limit used for items the regulation does not know.
 _DEFAULT_MAX_STACK = 99
 
@@ -718,6 +741,33 @@ class Character:
 
     def key_items(self) -> list[InventoryItem]:
         return parse_inventory(self._data, KEY_ITEMS_START, KEY_ITEMS_END)
+
+    def equipped_item_ids(self) -> set[int]:
+        """Inventory item ids the character has equipped (weapons, armor,
+        ammo, rings and belt items). Empty when the equipment block does not
+        start with its known header, so an unknown layout never blocks edits
+        it cannot judge. The block names items by id only, so every carried
+        copy of an equipped id counts as possibly equipped."""
+        if (
+            struct.unpack_from("<I", self._data, EQUIPMENT_OFFSET)[0]
+            != EQUIPMENT_HEADER
+        ):
+            return set()
+        ids: set[int] = set()
+        for (rel, count), id_offset in (
+            (_EQUIP_WEAPONS, 0),
+            (_EQUIP_ARMOR, _ARMOR_ID_OFFSET),
+            (_EQUIP_AMMO, 0),
+            (_EQUIP_RINGS, 0),
+            (_EQUIP_BELT, 0),
+        ):
+            for k in range(count):
+                value = struct.unpack_from(
+                    "<I", self._data, EQUIPMENT_OFFSET + rel + 4 * k
+                )[0]
+                if value not in (_EMPTY_EQUIP, 0, _UNARMED_ID):
+                    ids.add(value + id_offset)
+        return ids
 
     def write_inventory_slot(self, item: InventoryItem) -> None:
         self._data[item.offset : item.offset + INVENTORY_SLOT_SIZE] = item.to_bytes()
