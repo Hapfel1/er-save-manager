@@ -194,6 +194,9 @@ jobs:
     env:
       NEXT_VERSION: ${{ needs.plan.outputs.next_version }}
       VERSION_NO_V: ${{ needs.plan.outputs.version_no_v }}
+      # Fail on Linux instead of silently building with a uv-managed Python,
+      # whose Tk lacks Xft and renders bitmap fonts.
+      UV_PYTHON_DOWNLOADS: ${{ matrix.os == 'ubuntu-24.04' && 'never' || 'automatic' }}
     steps:
       - name: Install build dependencies
         if: matrix.os == 'ubuntu-24.04'
@@ -210,6 +213,11 @@ jobs:
           ref: release-${{ needs.plan.outputs.next_version }}
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        env:
+          # In the Linux container, the host's mounted tool cache holds a
+          # Python built for the host (glibc 2.39) that cannot run there; use
+          # a separate cache so the 22.04 build is downloaded.
+          AGENT_TOOLSDIRECTORY: ${{ matrix.os == 'ubuntu-24.04' && '/opt/toolcache' || '' }}
         with:
           python-version-file: ".python-version"
 
