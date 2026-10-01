@@ -281,6 +281,16 @@ FLAG_AREAS = {
     181: 17,
 }  # fmt: skip
 FLAG_AREA_SIZE = 0x500
+
+# Bonfire state lives in the per-map object records of each visited map, not
+# in the event flags: a 20-byte record u32 BONFIRE_RECORD_TYPE, u32 bonfire
+# entity id, u32 kindle value (0 unlit, 10 lit, 20/30/40 kindled), then state
+# bytes. Lighting the Undead Asylum cell bonfire (entity 1811960) in game
+# changed its value from 0 to 10; every played character has one record per
+# bonfire of the maps it visited, valued 0, 10, 20 or 40.
+BONFIRE_RECORD_TYPE = 0x0B
+BONFIRE_LEVEL_OFFSET = 8
+BONFIRE_LIT_LEVEL = 10
 FLAG_SECTION_SIZE = 128
 
 # Starting stats per class: (base_level, vit, atn, end, str, dex, int, fth, res)
@@ -1089,6 +1099,37 @@ class DSRCharacter:
         struct.pack_into(
             "<I", self._data, word, current | mask if value else current & ~mask
         )
+
+    # --- Bonfires --------------------------------------------------------- #
+
+    def _bonfire_record(self, entity: int) -> int:
+        """Offset of a bonfire's record (see BONFIRE_RECORD_TYPE), or -1 when
+        the character has not visited its map."""
+        key = struct.pack("<II", BONFIRE_RECORD_TYPE, entity)
+        data = bytes(self._data)
+        first = data.find(key)
+        if first < 0 or data.find(key, first + 1) >= 0:
+            return -1
+        return first
+
+    def bonfire_level(self, entity: int) -> int | None:
+        """The bonfire's kindle value (0 unlit, 10 lit, 20/30/40 kindled), or
+        None when its map has not been visited."""
+        off = self._bonfire_record(entity)
+        if off < 0:
+            return None
+        return struct.unpack_from("<I", self._data, off + BONFIRE_LEVEL_OFFSET)[0]
+
+    def set_bonfire_lit(self, entity: int, lit: bool) -> bool:
+        """Light (kindle value 10, kept when already kindled) or unlight
+        (0) a bonfire. False when its map has not been visited."""
+        off = self._bonfire_record(entity)
+        if off < 0:
+            return False
+        level = struct.unpack_from("<I", self._data, off + BONFIRE_LEVEL_OFFSET)[0]
+        new = (level or BONFIRE_LIT_LEVEL) if lit else 0
+        struct.pack_into("<I", self._data, off + BONFIRE_LEVEL_OFFSET, new)
+        return True
 
     # --- NPC states ------------------------------------------------------- #
 

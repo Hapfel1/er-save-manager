@@ -1,0 +1,222 @@
+[
+ {
+  "area": "Depths",
+  "name": "Depths",
+  "entity": 1001960
+ },
+ {
+  "area": "Undead Burg / Undead Parish",
+  "name": "Undead Burg / Undead Parish 1",
+  "entity": 1011961
+ },
+ {
+  "area": "Undead Burg / Undead Parish",
+  "name": "Undead Burg / Undead Parish 2",
+  "entity": 1011962
+ },
+ {
+  "area": "Undead Burg / Undead Parish",
+  "name": "Undead Burg / Undead Parish 3",
+  "entity": 1011964
+ },
+ {
+  "area": "Firelink Shrine",
+  "name": "Firelink Shrine",
+  "entity": 1021960
+ },
+ {
+  "area": "Painted World of Ariamis",
+  "name": "Painted World of Ariamis",
+  "entity": 1101960
+ },
+ {
+  "area": "Darkroot Garden / Darkroot Basin",
+  "name": "Darkroot Garden / Darkroot Basin",
+  "entity": 1201961
+ },
+ {
+  "area": "Sanctuary Garden / Oolacile Sanctuary",
+  "name": "Sanctuary Garden / Oolacile Sanctuary 1",
+  "entity": 1211950
+ },
+ {
+  "area": "Sanctuary Garden / Oolacile Sanctuary",
+  "name": "Sanctuary Garden / Oolacile Sanctuary 2",
+  "entity": 1211961
+ },
+ {
+  "area": "Sanctuary Garden / Oolacile Sanctuary",
+  "name": "Sanctuary Garden / Oolacile Sanctuary 3",
+  "entity": 1211962
+ },
+ {
+  "area": "Sanctuary Garden / Oolacile Sanctuary",
+  "name": "Sanctuary Garden / Oolacile Sanctuary 4",
+  "entity": 1211963
+ },
+ {
+  "area": "Sanctuary Garden / Oolacile Sanctuary",
+  "name": "Sanctuary Garden / Oolacile Sanctuary 5",
+  "entity": 1211964
+ },
+ {
+  "area": "The Catacombs",
+  "name": "The Catacombs 1",
+  "entity": 1301960
+ },
+ {
+  "area": "The Catacombs",
+  "name": "The Catacombs 2",
+  "entity": 1301961
+ },
+ {
+  "area": "The Catacombs",
+  "name": "The Catacombs 3",
+  "entity": 1301962
+ },
+ {
+  "area": "Tomb of the Giants",
+  "name": "Tomb of the Giants 1",
+  "entity": 1311950
+ },
+ {
+  "area": "Tomb of the Giants",
+  "name": "Tomb of the Giants 2",
+  "entity": 1311960
+ },
+ {
+  "area": "Tomb of the Giants",
+  "name": "Tomb of the Giants 3",
+  "entity": 1311961
+ },
+ {
+  "area": "The Great Hollow / Ash Lake",
+  "name": "The Great Hollow / Ash Lake 1",
+  "entity": 1321960
+ },
+ {
+  "area": "The Great Hollow / Ash Lake",
+  "name": "The Great Hollow / Ash Lake 2",
+  "entity": 1321961
+ },
+ {
+  "area": "The Great Hollow / Ash Lake",
+  "name": "The Great Hollow / Ash Lake 3",
+  "entity": 1321962
+ },
+ {
+  "area": "Blighttown / Quelaag's Domain",
+  "name": "Blighttown / Quelaag's Domain 1",
+  "entity": 1401960
+ },
+ {
+  "area": "Blighttown / Quelaag's Domain",
+  "name": "Blighttown / Quelaag's Domain 2",
+  "entity": 1401961
+ },
+ {
+  "area": "Blighttown / Quelaag's Domain",
+  "name": "Blighttown / Quelaag's Domain 3",
+  "entity": 1401962
+ },
+ {
+  "area": "Demon Ruins / Lost Izalith",
+  "name": "Demon Ruins / Lost Izalith 1",
+  "entity": 1411950
+ },
+ {
+  "area": "Demon Ruins / Lost Izalith",
+  "name": "Demon Ruins / Lost Izalith 2",
+  "entity": 1411960
+ },
+ {
+  "area": "Demon Ruins / Lost Izalith",
+  "name": "Demon Ruins / Lost Izalith 3",
+  "entity": 1411961
+ },
+ {
+  "area": "Demon Ruins / Lost Izalith",
+  "name": "Demon Ruins / Lost Izalith 4",
+  "entity": 1411962
+ },
+ {
+  "area": "Demon Ruins / Lost Izalith",
+  "name": "Demon Ruins / Lost Izalith 5",
+  "entity": 1411963
+ },
+ {
+  "area": "Demon Ruins / Lost Izalith",
+  "name": "Demon Ruins / Lost Izalith 6",
+  "entity": 1411964
+ },
+ {
+  "area": "Sen's Fortress",
+  "name": "Sen's Fortress",
+  "entity": 1501961
+ },
+ {
+  "area": "Anor Londo",
+  "name": "Anor Londo 1",
+  "entity": 1511950
+ },
+ {
+  "area": "Anor Londo",
+  "name": "Anor Londo 2",
+  "entity": 1511960
+ },
+ {
+  "area": "Anor Londo",
+  "name": "Anor Londo 3",
+  "entity": 1511961
+ },
+ {
+  "area": "Anor Londo",
+  "name": "Anor Londo 4",
+  "entity": 1511962
+ },
+ {
+  "area": "New Londo Ruins / The Abyss",
+  "name": "New Londo Ruins / The Abyss 1",
+  "entity": 1601950
+ },
+ {
+  "area": "New Londo Ruins / The Abyss",
+  "name": "New Londo Ruins / The Abyss 2",
+  "entity": 1601961
+ },
+ {
+  "area": "The Duke's Archives / Crystal Cave",
+  "name": "The Duke's Archives / Crystal Cave 1",
+  "entity": 1701950
+ },
+ {
+  "area": "The Duke's Archives / Crystal Cave",
+  "name": "The Duke's Archives / Crystal Cave 2",
+  "entity": 1701960
+ },
+ {
+  "area": "The Duke's Archives / Crystal Cave",
+  "name": "The Duke's Archives / Crystal Cave 3",
+  "entity": 1701961
+ },
+ {
+  "area": "The Duke's Archives / Crystal Cave",
+  "name": "The Duke's Archives / Crystal Cave 4",
+  "entity": 1701962
+ },
+ {
+  "area": "Kiln of the First Flame / Firelink Altar",
+  "name": "Kiln of the First Flame / Firelink Altar",
+  "entity": 1801960
+ },
+ {
+  "area": "Northern Undead Asylum",
+  "name": "Northern Undead Asylum 1",
+  "entity": 1811960
+ },
+ {
+  "area": "Northern Undead Asylum",
+  "name": "Northern Undead Asylum 2",
+  "entity": 1811961
+ }
+]

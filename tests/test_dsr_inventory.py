@@ -105,3 +105,20 @@ def test_event_flag_layout_matches_save_pairs():
     assert char.npc_state(npc) == "Dead"
     char.set_npc_state(npc, alive=True)
     assert char.npc_state(npc) == "Alive" and char.get_flag(1460)
+
+
+def test_bonfire_record_lighting():
+    """Lighting the Undead Asylum cell bonfire in game changed its record's
+    kindle value from 0 to 10; kindled values are kept when lighting."""
+    char = _character()
+    char._data.extend(bytes(0x40000 - len(char._data)))
+    rec = 0x36000
+    struct.pack_into("<III", char._data, rec, 0x0B, 1811960, 0)
+    struct.pack_into("<III", char._data, rec + 20, 0x0B, 1021960, 20)
+    assert char.bonfire_level(1811960) == 0
+    assert char.set_bonfire_lit(1811960, True)
+    assert char.bonfire_level(1811960) == 10
+    assert char.set_bonfire_lit(1021960, True) and char.bonfire_level(1021960) == 20
+    assert char.set_bonfire_lit(1021960, False) and char.bonfire_level(1021960) == 0
+    assert char.bonfire_level(1501961) is None
+    assert not char.set_bonfire_lit(1501961, True)
