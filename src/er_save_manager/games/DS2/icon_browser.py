@@ -198,15 +198,24 @@ class IconBrowser(ctk.CTkToplevel):
             row=2, column=1, columnspan=3, sticky="w", pady=(6, 0)
         )
 
+        buttons = ctk.CTkFrame(panel, fg_color="transparent")
+        buttons.pack(fill="x", padx=10, pady=(6, 10))
+        buttons.grid_columnconfigure((0, 1), weight=1)
         self._add_btn = ctk.CTkButton(
-            panel,
-            text="Add Item",
+            buttons,
+            text="Add Selected",
             height=34,
             font=("Segoe UI", 11, "bold"),
             command=self._do_add,
             state="disabled",
         )
-        self._add_btn.pack(fill="x", padx=10, pady=(6, 10))
+        self._add_btn.grid(row=0, column=0, sticky="ew", padx=(0, 4))
+        ctk.CTkButton(
+            buttons,
+            text="Add All Shown",
+            height=34,
+            command=self._do_add_all,
+        ).grid(row=0, column=1, sticky="ew", padx=(4, 0))
 
     # ------------------------------------------------------------------
     # Items
@@ -417,6 +426,29 @@ class IconBrowser(ctk.CTkToplevel):
     # ------------------------------------------------------------------
     # Add
     # ------------------------------------------------------------------
+
+    def _sync_panel(self) -> None:
+        """Point the panel's add form at this picker's category and values,
+        since adding goes through the panel."""
+        panel = self._panel
+        panel.add_category_var.set(self._category_labels[self._current_cat])
+        panel._search_items()
+        panel.add_qty_var.set(self._qty_var.get())
+        panel.add_upgrade_var.set(self._upgrade_var.get())
+        panel.add_infusion_var.set(self._infusion_var.get())
+
+    def _do_add_all(self) -> None:
+        """Add every item the grid shows (category and search filter) in one
+        write, with the quantity, upgrade and infusion fields."""
+        names = self._visible_names()
+        if not names:
+            self._panel.show_toast("No items shown", duration=2000)
+            return
+        save = self._panel._writable_save()
+        if save is None:
+            return
+        self._sync_panel()
+        self._panel._add_many(save, names)
 
     def _do_add(self) -> None:
         if self._selected_name is None:
