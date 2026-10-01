@@ -1,6 +1,7 @@
 """Character manager for community character library."""
 
 import json
+import logging
 import os
 import platform
 import ssl
@@ -8,6 +9,8 @@ import tempfile
 import urllib.request
 from datetime import datetime, timedelta
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 class CharacterManager:
@@ -34,21 +37,23 @@ class CharacterManager:
 
         try:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
-            print(f"[Character Cache] Using cache directory: {self.cache_dir}")
+            logger.debug(f"[Character Cache] Using cache directory: {self.cache_dir}")
         except (OSError, PermissionError) as e:
             # Fallback to system temp directory
-            print(f"[Character Cache] Cannot write to {self.cache_dir}: {e}")
+            logger.warning(f"[Character Cache] Cannot write to {self.cache_dir}: {e}")
             self.cache_dir = Path(tempfile.gettempdir()) / "er-save-manager-characters"
             self.cache_dir.mkdir(parents=True, exist_ok=True)
-            print(f"[Character Cache] Fallback cache directory: {self.cache_dir}")
+            logger.debug(
+                f"[Character Cache] Fallback cache directory: {self.cache_dir}"
+            )
 
         self.thumbnails_dir = self.cache_dir / "thumbnails"
         self.thumbnails_dir.mkdir(exist_ok=True)
-        print(f"[Character Cache] Thumbnails directory: {self.thumbnails_dir}")
+        logger.debug(f"[Character Cache] Thumbnails directory: {self.thumbnails_dir}")
 
         self.metadata_dir = self.cache_dir / "metadata"
         self.metadata_dir.mkdir(exist_ok=True)
-        print(f"[Character Cache] Metadata directory: {self.metadata_dir}")
+        logger.debug(f"[Character Cache] Metadata directory: {self.metadata_dir}")
 
         self.base_url = (
             "https://raw.githubusercontent.com/Hapfel1/er-character-library/main/"
@@ -95,7 +100,7 @@ class CharacterManager:
                 if datetime.now() - cache_time < timedelta(
                     hours=self.METADATA_EXPIRY_HOURS
                 ):
-                    print("[Character Manager] Using cached index")
+                    logger.debug("[Character Manager] Using cached index")
                     return cached_data.get(
                         "data", {"version": "0.0.0", "characters": []}
                     )
@@ -120,7 +125,7 @@ class CharacterManager:
             return data
 
         except Exception as e:
-            print(f"[Character Manager] Failed to fetch index: {e}")
+            logger.warning(f"[Character Manager] Failed to fetch index: {e}")
             # Fall back to cache if available
             if self.cache_file.exists():
                 with open(self.cache_file, encoding="utf-8") as f:
@@ -147,7 +152,7 @@ class CharacterManager:
             Metadata dict or None if failed
         """
         try:
-            print(f"[Character Manager] Downloading metadata for {character_id}")
+            logger.debug(f"[Character Manager] Downloading metadata for {character_id}")
 
             full_url = self._resolve_url(metadata_url)
             with urllib.request.urlopen(
@@ -159,11 +164,11 @@ class CharacterManager:
             with open(metadata_path, "w", encoding="utf-8") as f:
                 json.dump(metadata, f, indent=2)
 
-            print(f"[Character Manager] Cached metadata for {character_id}")
+            logger.debug(f"[Character Manager] Cached metadata for {character_id}")
             return metadata
 
         except Exception as e:
-            print(f"[Character Manager] Failed to download metadata: {e}")
+            logger.warning(f"[Character Manager] Failed to download metadata: {e}")
             return None
 
     def get_cached_metadata(self, character_id: str) -> dict | None:
@@ -183,7 +188,9 @@ class CharacterManager:
                 with open(metadata_path, encoding="utf-8") as f:
                     return json.load(f)
             except Exception as e:
-                print(f"[Character Manager] Failed to read cached metadata: {e}")
+                logger.warning(
+                    f"[Character Manager] Failed to read cached metadata: {e}"
+                )
 
         return None
 
@@ -202,7 +209,7 @@ class CharacterManager:
             True if successful
         """
         try:
-            print(f"[Character Manager] Streaming download for {character_id}")
+            logger.debug(f"[Character Manager] Streaming download for {character_id}")
 
             full_url = self._resolve_url(erc_url)
 
@@ -217,11 +224,13 @@ class CharacterManager:
                             break
                         f.write(chunk)
 
-            print(f"[Character Manager] Downloaded {character_id} to {output_path}")
+            logger.debug(
+                f"[Character Manager] Downloaded {character_id} to {output_path}"
+            )
             return True
 
         except Exception as e:
-            print(f"[Character Manager] Failed to download character: {e}")
+            logger.warning(f"[Character Manager] Failed to download character: {e}")
             return False
 
     def download_thumbnail(self, character_id: str, thumbnail_url: str) -> Path | None:
@@ -245,7 +254,7 @@ class CharacterManager:
             if candidate.exists():
                 return candidate
 
-        print(f"[Character Manager] Downloading thumbnail for {character_id}")
+        logger.debug(f"[Character Manager] Downloading thumbnail for {character_id}")
 
         url_ext = Path(thumbnail_url).suffix.lower()
         if url_ext not in (".jpg", ".jpeg", ".png"):
@@ -261,7 +270,7 @@ class CharacterManager:
                 ) as response:
                     with open(thumbnail_path, "wb") as f:
                         f.write(response.read())
-                print(f"[Character Manager] Cached thumbnail for {character_id}")
+                logger.debug(f"[Character Manager] Cached thumbnail for {character_id}")
                 return thumbnail_path
             except Exception:
                 return None
@@ -272,12 +281,16 @@ class CharacterManager:
 
         # rsplit avoids Path.with_suffix corrupting https:// into https:/
         alt_url = thumbnail_url.rsplit(".", 1)[0] + alt_ext
-        print(f"[Character Manager] Primary thumbnail failed, retrying with {alt_ext}")
+        logger.debug(
+            f"[Character Manager] Primary thumbnail failed, retrying with {alt_ext}"
+        )
         result = _try_download(alt_url, alt_ext)
         if result:
             return result
 
-        print(f"[Character Manager] Failed to download thumbnail for {character_id}")
+        logger.warning(
+            f"[Character Manager] Failed to download thumbnail for {character_id}"
+        )
         return None
 
     def download_screenshot(
@@ -307,31 +320,35 @@ class CharacterManager:
                     with open(screenshot_path, "wb") as f:
                         f.write(response.read())
                 screenshot_path.touch()
-                print(f"[Character Manager] Downloaded screenshot to {screenshot_path}")
+                logger.debug(
+                    f"[Character Manager] Downloaded screenshot to {screenshot_path}"
+                )
                 return screenshot_path
             except Exception:
                 return None
 
-        print(f"[Character Manager] Downloading screenshot {character_id}{suffix}")
+        logger.debug(
+            f"[Character Manager] Downloading screenshot {character_id}{suffix}"
+        )
 
         result = _try_download(screenshot_url, url_ext)
         if result:
             return result
 
         alt_url = screenshot_url.rsplit(".", 1)[0] + alt_ext
-        print(f"[Character Manager] Screenshot 404, retrying with {alt_ext}")
+        logger.debug(f"[Character Manager] Screenshot 404, retrying with {alt_ext}")
         result = _try_download(alt_url, alt_ext)
         if result:
             return result
 
-        print(
+        logger.warning(
             f"[Character Manager] Failed to download screenshot {character_id}{suffix}"
         )
         return None
 
     def clear_cache(self):
         """Clear all cached data (metadata and thumbnails)."""
-        print("[Character Manager] Clearing cache")
+        logger.debug("[Character Manager] Clearing cache")
 
         if self.cache_dir.exists():
             import shutil
@@ -369,13 +386,13 @@ class CharacterManager:
                     if (now - atime).days > 7:
                         file_path.unlink()
                         total_size -= size
-                        print(
+                        logger.debug(
                             f"[Character Cache] Deleted old screenshot: {file_path.name}"
                         )
 
             total_mb = total_size / (1024 * 1024)
             if total_mb > self.MAX_CACHE_SIZE_MB:
-                print(
+                logger.debug(
                     f"[Character Cache] Cache size {total_mb:.1f}MB exceeds limit, cleaning up"
                 )
 
@@ -388,12 +405,12 @@ class CharacterManager:
                     if file_path.exists():
                         file_path.unlink()
                         total_mb -= size / (1024 * 1024)
-                        print(
+                        logger.debug(
                             f"[Character Cache] Deleted to reduce size: {file_path.name}"
                         )
 
         except Exception as e:
-            print(f"[Character Cache] Cleanup failed: {e}")
+            logger.warning(f"[Character Cache] Cleanup failed: {e}")
 
     def get_cache_size(self) -> dict:
         """

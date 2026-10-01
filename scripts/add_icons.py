@@ -7,7 +7,7 @@ enough for icon_manager._norm_icon to resolve it; add an entry to
 _NAME_OVERRIDES in icon_manager.py if it does not.
 
 Usage:
-    python add_icons.py <input_folder> [--db icons.db]
+    python scripts/add_icons.py <input_folder> [--db icons.db]
 
 Source filename becomes the DB name, e.g. "Prime Marika's Hammer.png"
 inserts as "Prime Marika's Hammer.webp".

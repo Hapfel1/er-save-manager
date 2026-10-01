@@ -9,11 +9,14 @@ Handles:
 """
 
 import json
+import logging
 import uuid
 from pathlib import Path
 from typing import Any
 
 from supabase import Client, create_client
+
+logger = logging.getLogger(__name__)
 
 
 class CharacterMetrics:
@@ -39,7 +42,7 @@ class CharacterMetrics:
                 self.SUPABASE_URL, self.SUPABASE_ANON_KEY
             )
         except Exception as e:
-            print(f"Failed to initialize Supabase client: {e}")
+            logger.warning(f"Failed to initialize Supabase client: {e}")
             self.supabase = None
 
         # Cache of user actions (character_id -> list of action_types)
@@ -95,7 +98,7 @@ class CharacterMetrics:
         settings = self._load_settings()
         settings["character_user_actions"] = self.user_actions
         self._save_settings(settings)
-        print(
+        logger.debug(
             f"Saved action '{action_type}' for {character_id}. Current actions: {self.user_actions[character_id]}"
         )
 
@@ -216,7 +219,7 @@ class CharacterMetrics:
             return metrics
 
         except Exception as e:
-            print(f"Failed to fetch character metrics: {e}")
+            logger.warning(f"Failed to fetch character metrics: {e}")
             return {}
 
     def record_action(
@@ -233,19 +236,19 @@ class CharacterMetrics:
             Updated metrics dict or None if failed
         """
         if not self.supabase:
-            print("[Metrics] Supabase not initialized")
+            logger.debug("[Metrics] Supabase not initialized")
             return None
 
         # For likes: check if already liked (can only like once)
         if action_type == "like" and self.has_liked(character_id):
-            print(f"Already liked character {character_id}")
+            logger.debug(f"Already liked character {character_id}")
             return None
 
         # For downloads: allow multiple downloads to be recorded
         # (don't check has_downloaded - users can import the same character multiple times)
 
         try:
-            print(
+            logger.debug(
                 f"[Metrics] Recording action: character_id={character_id}, action_type={action_type}"
             )
 
@@ -269,19 +272,19 @@ class CharacterMetrics:
             error_full = str(e)
 
             if "check constraint" in error_str:
-                print(
+                logger.warning(
                     f"[Metrics] Check constraint error - the database may not accept '{action_type}' as an action type"
                 )
-                print(f"[Metrics] Full error: {error_full}")
+                logger.warning(f"[Metrics] Full error: {error_full}")
                 self._save_user_action(character_id, action_type)
                 return None
 
             if "duplicate" in error_str or "unique" in error_str:
-                print("Action already recorded (duplicate)")
+                logger.debug("Action already recorded (duplicate)")
                 self._save_user_action(character_id, action_type)
                 return None
 
-            print(f"[Metrics] Failed to record character action: {error_full}")
+            logger.warning(f"[Metrics] Failed to record character action: {error_full}")
             return None
 
     def like(self, character_id: str) -> dict[str, Any] | None:

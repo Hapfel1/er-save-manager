@@ -2201,7 +2201,7 @@ class SaveManagerGUI:
         except Exception as e:
             error_msg = str(e)
             if self.settings.get("verbose_logging", False):
-                self._verbose_log(f"Load failed: {save_path} -- {error_msg}")
+                self._verbose_log(f"Load failed: {save_path}: {error_msg}")
 
             self.root.after(
                 0,
@@ -2764,6 +2764,9 @@ class SaveManagerGUI:
 
 def main():
     """Main entry point for GUI"""
+    from er_save_manager.ui.emoji_fallback import install as install_emoji_fallback
+
+    install_emoji_fallback()
     root = ctk.CTk()
     app = SaveManagerGUI(root)
 
