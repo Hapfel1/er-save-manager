@@ -1,4 +1,4 @@
-mage smith elite cleric set dsr
+mage smith elite cleric set dsr done
 
 check dlc npc flags done
 
