@@ -30,6 +30,7 @@ from er_save_manager.games.DS3.tabs.inventory import (
     WHERE_HELD,
     WHERE_KEY,
     WHERE_STORAGE,
+    enable,
 )
 from er_save_manager.ui.messagebox import CTkMessageBox
 
@@ -107,20 +108,22 @@ class DS3VisualInventory(ctk.CTkToplevel):
         self._infusion_var = tk.StringVar(value="")
 
         ctk.CTkLabel(rows, text="Quantity:").grid(row=0, column=0, sticky="w")
-        ctk.CTkEntry(rows, textvariable=self._qty_var, width=60).grid(
-            row=0, column=1, sticky="w", padx=6, pady=2
-        )
-        ctk.CTkButton(
+        self._qty_entry = ctk.CTkEntry(rows, textvariable=self._qty_var, width=60)
+        self._qty_entry.grid(row=0, column=1, sticky="w", padx=6, pady=2)
+        self._qty_btn = ctk.CTkButton(
             rows, text="Set Quantity", width=120, command=self._set_quantity
-        ).grid(row=0, column=3, sticky="e", pady=2)
+        )
+        self._qty_btn.grid(row=0, column=3, sticky="e", pady=2)
 
         ctk.CTkLabel(rows, text="Upgrade:").grid(row=1, column=0, sticky="w")
-        ctk.CTkEntry(rows, textvariable=self._upgrade_var, width=60).grid(
-            row=1, column=1, sticky="w", padx=6, pady=2
+        self._upgrade_entry = ctk.CTkEntry(
+            rows, textvariable=self._upgrade_var, width=60
         )
-        ctk.CTkButton(
+        self._upgrade_entry.grid(row=1, column=1, sticky="w", padx=6, pady=2)
+        self._upgrade_btn = ctk.CTkButton(
             rows, text="Set Upgrade", width=120, command=self._set_upgrade
-        ).grid(row=1, column=3, sticky="e", pady=2)
+        )
+        self._upgrade_btn.grid(row=1, column=3, sticky="e", pady=2)
 
         ctk.CTkLabel(rows, text="Infusion:").grid(row=2, column=0, sticky="w")
         inf_cell = ctk.CTkFrame(rows, fg_color="transparent")
@@ -129,18 +132,20 @@ class DS3VisualInventory(ctk.CTkToplevel):
         self._infusion_icon.pack(side="left", padx=(0, 4))
         labels = self._tab.infusion_labels()
         self._infusion_var.set(labels[0] if labels else "")
-        ctk.CTkComboBox(
+        self._infusion_combo = ctk.CTkComboBox(
             inf_cell,
             variable=self._infusion_var,
             values=labels,
             width=140,
             state="readonly",
             command=self._show_infusion_icon,
-        ).pack(side="left")
+        )
+        self._infusion_combo.pack(side="left")
         self._show_infusion_icon(self._infusion_var.get())
-        ctk.CTkButton(
+        self._infusion_btn = ctk.CTkButton(
             rows, text="Set Infusion", width=120, command=self._set_infusion
-        ).grid(row=2, column=3, sticky="e", pady=2)
+        )
+        self._infusion_btn.grid(row=2, column=3, sticky="e", pady=2)
 
         self._info = ctk.CTkLabel(
             panel, text="", font=("Segoe UI", 9), text_color=_HINT
@@ -150,23 +155,27 @@ class DS3VisualInventory(ctk.CTkToplevel):
         buttons = ctk.CTkFrame(panel, fg_color="transparent")
         buttons.pack(fill="x", padx=10, pady=(6, 10))
         buttons.grid_columnconfigure((0, 1, 2), weight=1)
-        ctk.CTkButton(
+        self._to_storage_btn = ctk.CTkButton(
             buttons,
             text="To Storage",
             command=lambda: self._tab.move_entries(self._grid.selected, True, self),
-        ).grid(row=0, column=0, sticky="ew", padx=(0, 4))
-        ctk.CTkButton(
+        )
+        self._to_storage_btn.grid(row=0, column=0, sticky="ew", padx=(0, 4))
+        self._to_inventory_btn = ctk.CTkButton(
             buttons,
             text="To Inventory",
             command=lambda: self._tab.move_entries(self._grid.selected, False, self),
-        ).grid(row=0, column=1, sticky="ew", padx=4)
-        ctk.CTkButton(
+        )
+        self._to_inventory_btn.grid(row=0, column=1, sticky="ew", padx=4)
+        self._remove_btn = ctk.CTkButton(
             buttons,
             text="Remove",
             command=lambda: self._tab.remove_entries(self._grid.selected, self),
             fg_color=("gray60", "gray35"),
             hover_color=("gray50", "gray25"),
-        ).grid(row=0, column=2, sticky="ew", padx=(4, 0))
+        )
+        self._remove_btn.grid(row=0, column=2, sticky="ew", padx=(4, 0))
+        self._apply_states([])
 
     # --- Items ------------------------------------------------------------- #
 
@@ -200,7 +209,23 @@ class DS3VisualInventory(ctk.CTkToplevel):
 
     # --- Selection and actions --------------------------------------------- #
 
+    def _apply_states(self, offsets: list) -> None:
+        edits = self._tab.applicable_edits(offsets)
+        for widget, key in (
+            (self._qty_entry, "quantity"),
+            (self._qty_btn, "quantity"),
+            (self._upgrade_entry, "upgrade"),
+            (self._upgrade_btn, "upgrade"),
+            (self._infusion_combo, "infusion"),
+            (self._infusion_btn, "infusion"),
+            (self._to_storage_btn, "to_storage"),
+            (self._to_inventory_btn, "to_inventory"),
+            (self._remove_btn, "remove"),
+        ):
+            enable(widget, edits[key])
+
     def _on_select(self, offsets: list) -> None:
+        self._apply_states(offsets)
         if len(offsets) != 1:
             self._sel_lbl.configure(
                 text=f"{len(offsets)} items selected"

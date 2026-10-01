@@ -18,7 +18,12 @@ import customtkinter as ctk
 
 from er_save_manager.games.DS3 import catalog
 from er_save_manager.games.DS3.icon_manager import item_icon
-from er_save_manager.games.DS3.tabs.inventory import LOCATIONS, infusion_image
+from er_save_manager.games.DS3.slot import ID_WEAPON, id_kind
+from er_save_manager.games.DS3.tabs.inventory import (
+    LOCATIONS,
+    enable,
+    infusion_image,
+)
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import center_window, patch_combo_scroll
 
@@ -293,16 +298,16 @@ class DS3IconBrowser(ctk.CTkToplevel):
             row=0, column=0, sticky="w", padx=(0, 6)
         )
         self._qty_var = tk.StringVar(value="1")
-        ctk.CTkEntry(opts, textvariable=self._qty_var, width=60).grid(
-            row=0, column=1, sticky="w"
-        )
+        self._qty_entry = ctk.CTkEntry(opts, textvariable=self._qty_var, width=60)
+        self._qty_entry.grid(row=0, column=1, sticky="w")
         ctk.CTkLabel(opts, text="Upgrade:").grid(
             row=0, column=2, sticky="w", padx=(14, 6)
         )
         self._upgrade_var = tk.StringVar(value="0")
-        ctk.CTkEntry(opts, textvariable=self._upgrade_var, width=50).grid(
-            row=0, column=3, sticky="w"
+        self._upgrade_entry = ctk.CTkEntry(
+            opts, textvariable=self._upgrade_var, width=50
         )
+        self._upgrade_entry.grid(row=0, column=3, sticky="w")
 
         ctk.CTkLabel(opts, text="Infusion:").grid(
             row=1, column=0, sticky="w", padx=(0, 6), pady=(6, 0)
@@ -391,6 +396,9 @@ class DS3IconBrowser(ctk.CTkToplevel):
             self._info.configure(
                 text="Quantity and upgrade are capped per item" if keys else ""
             )
+            # Several or no items (Spawn All Shown): both apply, capped per item.
+            enable(self._qty_entry, True)
+            enable(self._upgrade_entry, True)
             return
         label, item, variants = self._rows[keys[0]]
         self._variants = variants
@@ -411,6 +419,9 @@ class DS3IconBrowser(ctk.CTkToplevel):
         self._selected_item = item
         self._infusion_icon.configure(image=infusion_image(item, self._tab.source))
         lim = catalog.limits(item)
+        upgradable = id_kind(int(item["Id"], 16)) == ID_WEAPON and lim.max_upgrade > 0
+        enable(self._qty_entry, lim.max_quantity > 1)
+        enable(self._upgrade_entry, upgradable)
         info = []
         if lim.max_quantity > 1:
             info.append(f"Max stack: {lim.max_quantity}")
