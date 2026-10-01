@@ -1,18 +1,26 @@
 """
-DSR NPCs & Bosses Tab
+DSR NPCs & Bosses tab.
+
+Bosses: the global defeat flags in dsr_named_flags.json (boss_kills). They
+are per playthrough, so bosses read as alive again after starting NG+.
+
+NPCs: data/npcs.json lists each NPC's state range and its dead and hostile
+flags, taken from the game's NPC death and hostility events. Kill and revive
+do what those events do: clear the range, then set the dead flag or the
+first state (alive). Quest progress outside the range is left alone.
 """
 
 from __future__ import annotations
 
 import json
-import re
+import tkinter as tk
 from pathlib import Path
-from typing import TYPE_CHECKING
+from tkinter import ttk
 
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
+from er_save_manager.ui.utils import game_blocks_write
 
 
 def _game_blocks_write(parent) -> bool:
@@ -21,41 +29,19 @@ def _game_blocks_write(parent) -> bool:
     )
 
 
-if TYPE_CHECKING:
-    pass
-
 _DATA_DIR = Path(__file__).parent / "data"
-_NPC_DATA: list[dict] | None = None
-_FLAGS_DB: dict | None = None
+_HINT = ("gray40", "gray60")
 
 
-def _load_npc_data() -> list[dict]:
-    global _NPC_DATA
-    if _NPC_DATA is None:
-        _NPC_DATA = json.loads(
-            (_DATA_DIR / "npc_data.json").read_text(encoding="utf-8")
-        )["npcs"]
-    return _NPC_DATA
+def _load_bosses() -> list[dict]:
+    bosses = json.loads(
+        (_DATA_DIR / "dsr_named_flags.json").read_text(encoding="utf-8")
+    )["boss_kills"]
+    return [b for b in bosses if b.get("accessible", True)]
 
 
-def _load_flags_db() -> dict:
-    global _FLAGS_DB
-    if _FLAGS_DB is None:
-        _FLAGS_DB = json.loads(
-            (_DATA_DIR / "dsr_named_flags.json").read_text(encoding="utf-8")
-        )
-    return _FLAGS_DB
-
-
-def _is_boss(name: str) -> bool:
-    return bool(re.search(r"\(boss\)", name, re.IGNORECASE))
-
-
-def _clean_name(raw: str) -> str:
-    name = re.sub(r"\s*\(boss\)\s*$", "", raw, flags=re.IGNORECASE)
-    name = re.sub(r"\bblackmish\b", "blacksmith", name, flags=re.IGNORECASE)
-    name = re.sub(r"\s*\([^)]+\)\s*$", "", name)
-    return name.strip()
+def _load_npcs() -> list[dict]:
+    return json.loads((_DATA_DIR / "npcs.json").read_text(encoding="utf-8"))
 
 
 def _backup_and_save(dsr_save, save_path: Path, op: str) -> None:
@@ -65,6 +51,24 @@ def _backup_and_save(dsr_save, save_path: Path, op: str) -> None:
     dsr_save.save_to_file(save_path)
 
 
+def _style() -> None:
+    style = ttk.Style()
+    try:
+        style.theme_use("clam")
+    except Exception:
+        pass
+    style.configure(
+        "DSR.Treeview",
+        background="#2b2b2b",
+        foreground="white",
+        fieldbackground="#2b2b2b",
+        rowheight=22,
+        borderwidth=0,
+    )
+    style.configure("DSR.Treeview.Heading", background="#3b3b3b", foreground="white")
+    style.map("DSR.Treeview", background=[("selected", "#5a4a7a")])
+
+
 class DSRNPCTab:
     def __init__(self, parent, get_dsr_save, get_save_path, show_toast) -> None:
         self.parent = parent
@@ -72,8 +76,13 @@ class DSRNPCTab:
         self._get_save_path = get_save_path
         self._show_toast = show_toast
         self._current_slot = 0
+        self._bosses = _load_bosses()
+        self._npcs = _load_npcs()
+
+    # --- Layout ------------------------------------------------------------ #
 
     def setup_ui(self) -> None:
+        _style()
         outer = ctk.CTkFrame(self.parent, corner_radius=12)
         outer.pack(fill="both", expand=True, pady=(0, 10))
 
@@ -92,42 +101,85 @@ class DSRNPCTab:
         self._slot_combo.pack(side="right")
         ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
 
-        bulk_bar = ctk.CTkFrame(outer, fg_color="transparent")
-        bulk_bar.pack(fill="x", padx=10, pady=(0, 6))
+        body = ctk.CTkFrame(outer, fg_color="transparent")
+        body.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        body.grid_columnconfigure((0, 1), weight=1)
+        body.grid_rowconfigure(0, weight=1)
+
+        self._boss_tree = self._panel(
+            body,
+            0,
+            "Bosses",
+            "Defeat flags are per playthrough; NG+ starts them alive again.",
+            [("name", "Boss", 200, "w"), ("area", "Area", 170, "w")],
+            (("Respawn Selected", False), ("Kill Selected", True)),
+            self._set_bosses,
+        )
+        for i, boss in enumerate(self._bosses):
+            self._boss_tree.insert(
+                "", "end", iid=str(i), values=(boss["name"], boss.get("area", ""), "--")
+            )
+
+        self._npc_tree = self._panel(
+            body,
+            1,
+            "NPCs",
+            "Kill or revive. Quest progress outside the NPC's state is kept.",
+            [("name", "NPC", 260, "w")],
+            (("Revive Selected", False), ("Kill Selected", True)),
+            self._set_npcs,
+        )
+        for i, npc in enumerate(self._npcs):
+            self._npc_tree.insert("", "end", iid=str(i), values=(npc["name"], "--"))
+
+    def _panel(self, parent, column, title, hint, columns, actions, setter):
+        panel = ctk.CTkFrame(parent, corner_radius=10)
+        panel.grid(
+            row=0, column=column, sticky="nsew", padx=(0, 5) if column == 0 else (5, 0)
+        )
+        ctk.CTkLabel(panel, text=title, font=("Segoe UI", 12, "bold")).pack(
+            anchor="w", padx=10, pady=(10, 0)
+        )
         ctk.CTkLabel(
-            bulk_bar,
-            text="Changes apply and backup immediately:",
+            panel,
+            text=hint + " Ctrl/Shift click selects several, double-click toggles.",
             font=("Segoe UI", 10),
-            text_color=("gray40", "gray70"),
-        ).pack(side="left", padx=(0, 12))
-        ctk.CTkButton(
-            bulk_bar,
-            text="Respawn All NPCs",
-            width=140,
-            command=lambda: self._bulk_npcs(True),
-        ).pack(side="left", padx=4)
-        ctk.CTkButton(
-            bulk_bar,
-            text="Kill All NPCs",
-            width=110,
-            fg_color=("#a03030", "#802020"),
-            hover_color=("#c03030", "#a02020"),
-            command=lambda: self._bulk_npcs(False),
-        ).pack(side="left", padx=4)
-        ctk.CTkButton(
-            bulk_bar,
-            text="Respawn All Bosses",
-            width=145,
-            command=lambda: self._bulk_bosses(False),
-        ).pack(side="left", padx=4)
+            text_color=_HINT,
+            wraplength=420,
+            justify="left",
+        ).pack(anchor="w", padx=10, pady=(0, 6))
+        row = ctk.CTkFrame(panel, fg_color="transparent")
+        # Packed before the list so a short window shrinks the list, not this.
+        row.pack(side="bottom", fill="x", padx=10, pady=(0, 10))
+        frame = tk.Frame(panel, bg="#2b2b2b")
+        frame.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+        cols = [*columns, ("state", "State", 80, "center")]
+        tree = ttk.Treeview(
+            frame,
+            columns=[c[0] for c in cols],
+            show="headings",
+            style="DSR.Treeview",
+            height=8,
+            selectmode="extended",
+        )
+        for col, text, width, anchor in cols:
+            tree.heading(col, text=text)
+            tree.column(col, width=width, anchor=anchor, stretch=col == "name")
+        sb = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=sb.set)
+        tree.pack(side="left", fill="both", expand=True)
+        sb.pack(side="right", fill="y")
+        for col, (text, kill) in enumerate(actions):
+            row.grid_columnconfigure(col, weight=1, uniform="a")
+            ctk.CTkButton(
+                row,
+                text=text,
+                command=lambda t=tree, k=kill: self._apply(t, setter, k),
+            ).grid(row=0, column=col, sticky="ew", padx=(0 if col == 0 else 4, 0))
+        tree.bind("<Double-1>", lambda e, t=tree: self._toggle(t, e, setter))
+        return tree
 
-        list_outer = ctk.CTkFrame(outer, fg_color="transparent")
-        list_outer.pack(fill="both", expand=True, padx=10, pady=(0, 10))
-        self._scroll = ctk.CTkScrollableFrame(list_outer, corner_radius=10)
-        self._scroll.pack(fill="both", expand=True)
-        bind_mousewheel(self._scroll)
-
-    # --- Refresh -------------------------------------------------------------- #
+    # --- Refresh ----------------------------------------------------------- #
 
     def refresh(self) -> None:
         save = self._get_dsr_save()
@@ -139,308 +191,114 @@ class DSRNPCTab:
             for i, c in enumerate(save.characters)
         ]
         self._slot_combo.configure(values=options)
-        self._slot_var.set(options[0] if options else "")
-        self._current_slot = 0
-        self._rebuild_rows()
+        if not (
+            0 <= self._current_slot < len(options)
+            and save.characters[self._current_slot]
+        ):
+            self._current_slot = next(
+                (i for i, c in enumerate(save.characters) if c is not None), 0
+            )
+        self._slot_var.set(options[self._current_slot] if options else "")
+        self._update_states()
 
     def load_slot(self, slot_idx: int) -> None:
         options = self._slot_combo.cget("values")
         if options and slot_idx < len(options):
             self._slot_var.set(options[slot_idx])
         self._current_slot = slot_idx
-        self._rebuild_rows()
+        self._update_states()
 
-    # --- Build rows ----------------------------------------------------------- #
-
-    def _rebuild_rows(self) -> None:
-        for w in self._scroll.winfo_children():
-            w.destroy()
+    def _char(self):
         save = self._get_dsr_save()
-        char = save.characters[self._current_slot] if save else None
-        if char is None:
-            ctk.CTkLabel(
-                self._scroll,
-                text="Empty slot or no save loaded.",
-                text_color=("gray50", "gray60"),
-            ).pack(anchor="w", padx=6, pady=40)
-            return
+        if save is None or not 0 <= self._current_slot < len(save.characters):
+            return None
+        return save.characters[self._current_slot]
 
-        # NPCs (npc_data.json multi-bit detection)
-        npcs = [n for n in _load_npc_data() if not _is_boss(n["name"])]
-        ctk.CTkLabel(self._scroll, text="NPCs", font=("Segoe UI", 12, "bold")).pack(
-            anchor="w", padx=12, pady=(12, 2)
-        )
-        for npc in npcs:
-            self._add_npc_row(char, npc)
-
-        # Bosses (flags DB)
-        accessible = [
-            b for b in _load_flags_db()["boss_kills"] if b.get("accessible", True)
-        ]
-        inaccessible = [
-            b for b in _load_flags_db()["boss_kills"] if not b.get("accessible", True)
-        ]
-
-        ctk.CTkLabel(self._scroll, text="Bosses", font=("Segoe UI", 12, "bold")).pack(
-            anchor="w", padx=12, pady=(14, 2)
-        )
-        for boss in accessible:
-            self._add_boss_row(char, boss, editable=True)
-
-        if inaccessible:
-            ctk.CTkLabel(
-                self._scroll,
-                text="The following bosses use map-specific event flags (11xxxxxx) that cannot be "
-                "reached via the save file's global flag encoding. State is unknown and cannot "
-                "be edited here.",
-                wraplength=700,
-                justify="left",
-                font=("Segoe UI", 9),
-                text_color=("gray50", "gray60"),
-            ).pack(anchor="w", padx=12, pady=(10, 4))
-            for boss in inaccessible:
-                self._add_boss_row(char, boss, editable=False)
-
-    def _add_npc_row(self, char, npc: dict) -> None:
-        alive = char.get_npc_alive(npc)
-        name = _clean_name(npc["name"])
-        row = ctk.CTkFrame(
-            self._scroll, fg_color=("#f5f5f5", "#2a2a3e"), corner_radius=6
-        )
-        row.pack(fill="x", padx=4, pady=3)
-        row.grid_columnconfigure(1, weight=1)
-
-        badge_color = ("#2a6e2a", "#1e7e1e") if alive else ("#8b2222", "#7a1a1a")
-        ctk.CTkLabel(
-            row,
-            text="ALIVE" if alive else "DEAD",
-            fg_color=badge_color,
-            corner_radius=4,
-            width=50,
-            font=("Segoe UI", 9, "bold"),
-        ).grid(row=0, column=0, padx=(8, 6), pady=6)
-        ctk.CTkLabel(
-            row,
-            text=name,
-            anchor="w",
-            font=("Segoe UI", 11),
-            text_color=("#333333", "#cccccc"),
-        ).grid(row=0, column=1, sticky="w", padx=4, pady=6)
-        ctk.CTkButton(
-            row,
-            text="Respawn",
-            width=80,
-            command=lambda n=npc, r=row: self._toggle_npc(n, True, r),
-        ).grid(row=0, column=2, padx=4, pady=6)
-        ctk.CTkButton(
-            row,
-            text="Kill",
-            width=60,
-            fg_color=("#a03030", "#802020"),
-            hover_color=("#c03030", "#a02020"),
-            command=lambda n=npc, r=row: self._toggle_npc(n, False, r),
-        ).grid(row=0, column=3, padx=(0, 8), pady=6)
-
-    def _add_boss_row(self, char, boss: dict, editable: bool) -> None:
-        if editable:
-            killed = char.get_flag(boss["id"])
-            badge_text = "KILLED" if killed else "ALIVE"
-            badge_color = ("#8b2222", "#7a1a1a") if killed else ("#2a6e2a", "#1e7e1e")
-        else:
-            badge_text = "N/A"
-            badge_color = ("#555", "#444")
-
-        row = ctk.CTkFrame(
-            self._scroll, fg_color=("#f5f5f5", "#2a2a3e"), corner_radius=6
-        )
-        row.pack(fill="x", padx=4, pady=3)
-        row.grid_columnconfigure(1, weight=1)
-
-        ctk.CTkLabel(
-            row,
-            text=badge_text,
-            fg_color=badge_color,
-            corner_radius=4,
-            width=55,
-            font=("Segoe UI", 9, "bold"),
-        ).grid(row=0, column=0, padx=(8, 6), pady=6)
-
-        name_color = ("#333333", "#cccccc") if editable else ("gray50", "gray55")
-        ctk.CTkLabel(
-            row,
-            text=boss["name"],
-            anchor="w",
-            font=("Segoe UI", 11),
-            text_color=name_color,
-        ).grid(row=0, column=1, sticky="w", padx=4, pady=6)
-        ctk.CTkLabel(
-            row,
-            text=boss["area"],
-            anchor="w",
-            font=("Segoe UI", 9),
-            text_color=("gray50", "gray60"),
-        ).grid(row=1, column=1, sticky="w", padx=4, pady=(0, 4))
-
-        if editable:
-            ctk.CTkButton(
-                row,
-                text="Respawn",
-                width=80,
-                command=lambda b=boss, r=row: self._toggle_boss(b, False, r),
-            ).grid(row=0, column=2, rowspan=2, padx=4, pady=6)
-            ctk.CTkButton(
-                row,
-                text="Kill",
-                width=60,
-                fg_color=("#a03030", "#802020"),
-                hover_color=("#c03030", "#a02020"),
-                command=lambda b=boss, r=row: self._toggle_boss(b, True, r),
-            ).grid(row=0, column=3, rowspan=2, padx=(0, 8), pady=6)
-        else:
-            ctk.CTkLabel(
-                row,
-                text="map flag",
-                font=("Segoe UI", 8),
-                text_color=("gray50", "gray55"),
-            ).grid(row=0, column=2, rowspan=2, padx=12, pady=6)
-
-    # --- Toggles -------------------------------------------------------------- #
-
-    def _toggle_npc(self, npc: dict, alive: bool, row: ctk.CTkFrame) -> None:
-        if _game_blocks_write(self.parent):
-            return
-
-        save, save_path, char = self._get_char()
-        if char is None:
-            return
-        char.set_npc_alive(npc, alive)
+    def _update_states(self) -> None:
+        char = self._char()
         try:
-            action = "respawn" if alive else "kill"
-            _backup_and_save(
-                save,
-                save_path,
-                f"npc_{action}_{npc['name'].split()[0].lower()}_slot_{self._current_slot + 1}",
-            )
-            for child in row.winfo_children():
-                if isinstance(child, ctk.CTkLabel) and child.cget("text") in (
-                    "ALIVE",
-                    "DEAD",
-                ):
-                    badge_color = (
-                        ("#2a6e2a", "#1e7e1e") if alive else ("#8b2222", "#7a1a1a")
-                    )
-                    child.configure(
-                        text="ALIVE" if alive else "DEAD", fg_color=badge_color
-                    )
-                    break
-            self._show_toast(
-                f"{_clean_name(npc['name'])} {'respawned' if alive else 'killed'}."
-            )
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            for i, boss in enumerate(self._bosses):
+                state = (
+                    "--"
+                    if char is None
+                    else ("Killed" if char.get_flag(boss["id"]) else "Alive")
+                )
+                self._boss_tree.set(str(i), "state", state)
+            for i, npc in enumerate(self._npcs):
+                self._npc_tree.set(
+                    str(i), "state", "--" if char is None else char.npc_state(npc)
+                )
+        except ValueError:
+            for tree in (self._boss_tree, self._npc_tree):
+                for iid in tree.get_children():
+                    tree.set(iid, "state", "--")
 
-    def _toggle_boss(self, boss: dict, killed: bool, row: ctk.CTkFrame) -> None:
-        if _game_blocks_write(self.parent):
+    # --- Writes ------------------------------------------------------------ #
+
+    def _toggle(self, tree, event, setter) -> None:
+        row = tree.identify_row(event.y)
+        if not row:
             return
+        state = tree.set(row, "state")
+        if state in ("Alive", "Killed", "Dead", "Hostile"):
+            setter([int(row)], state == "Alive")
 
-        save, save_path, char = self._get_char()
-        if char is None:
-            return
-        char.set_flag(boss["id"], killed)
-        try:
-            action = "kill" if killed else "respawn"
-            _backup_and_save(
-                save,
-                save_path,
-                f"boss_{action}_{boss['id']}_slot_{self._current_slot + 1}",
-            )
-            badge_color = ("#8b2222", "#7a1a1a") if killed else ("#2a6e2a", "#1e7e1e")
-            for child in row.winfo_children():
-                if isinstance(child, ctk.CTkLabel) and child.cget("text") in (
-                    "KILLED",
-                    "ALIVE",
-                ):
-                    child.configure(
-                        text="KILLED" if killed else "ALIVE", fg_color=badge_color
-                    )
-                    break
-            self._show_toast(f"{boss['name']} {'killed' if killed else 'respawned'}.")
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
-
-    def _bulk_npcs(self, alive: bool) -> None:
-        if _game_blocks_write(self.parent):
-            return
-
-        save, save_path, char = self._get_char()
-        if char is None:
+    def _apply(self, tree, setter, kill: bool) -> None:
+        rows = [int(i) for i in tree.selection()]
+        if not rows:
             CTkMessageBox.showwarning(
-                "No Save", "No character loaded.", parent=self.parent
+                "No Selection", "Select one or more entries first.", parent=self.parent
             )
             return
-        action = "Respawn" if alive else "Kill"
-        if not CTkMessageBox.askyesno(
-            "Confirm",
-            f"{action} all NPCs?\n\nA backup will be created.",
-            parent=self.parent,
-        ):
-            return
-        for npc in [n for n in _load_npc_data() if not _is_boss(n["name"])]:
-            char.set_npc_alive(npc, alive)
-        try:
-            _backup_and_save(
-                save,
-                save_path,
-                f"bulk_{action.lower()}_npcs_slot_{self._current_slot + 1}",
-            )
-            self._rebuild_rows()
-            self._show_toast(f"All NPCs {action.lower()}ed.")
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+        setter(rows, kill)
 
-    def _bulk_bosses(self, killed: bool) -> None:
+    def _set_bosses(self, rows: list[int], killed: bool) -> None:
+        self._write(
+            lambda char: [char.set_flag(self._bosses[i]["id"], killed) for i in rows],
+            "bosses_killed" if killed else "bosses_respawned",
+            self._bosses[rows[0]]["name"] if len(rows) == 1 else f"{len(rows)} bosses",
+            "killed" if killed else "respawned",
+        )
+
+    def _set_npcs(self, rows: list[int], killed: bool) -> None:
+        self._write(
+            lambda char: [char.set_npc_state(self._npcs[i], not killed) for i in rows],
+            "npcs_killed" if killed else "npcs_revived",
+            self._npcs[rows[0]]["name"] if len(rows) == 1 else f"{len(rows)} NPCs",
+            "killed" if killed else "revived",
+        )
+
+    def _write(self, change, op: str, what: str, verb: str) -> None:
         if _game_blocks_write(self.parent):
             return
-
-        save, save_path, char = self._get_char()
-        if char is None:
+        save = self._get_dsr_save()
+        save_path = self._get_save_path()
+        char = self._char()
+        if char is None or save_path is None:
             CTkMessageBox.showwarning(
-                "No Save", "No character loaded.", parent=self.parent
+                "No Character", "Load a character first.", parent=self.parent
             )
             return
-        action = "Kill" if killed else "Respawn"
-        if not CTkMessageBox.askyesno(
-            "Confirm",
-            f"{action} all bosses?\n\nOnly the 14 globally-tracked bosses can be toggled.\n"
-            "A backup will be created.",
-            parent=self.parent,
-        ):
-            return
-        for boss in _load_flags_db()["boss_kills"]:
-            if boss.get("accessible", True):
-                char.set_flag(boss["id"], killed)
         try:
-            _backup_and_save(
-                save,
-                save_path,
-                f"bulk_{action.lower()}_bosses_slot_{self._current_slot + 1}",
-            )
-            self._rebuild_rows()
-            self._show_toast(f"All accessible bosses {action.lower()}ed.")
+            change(char)
+        except ValueError as exc:
+            CTkMessageBox.showerror("Unavailable", str(exc), parent=self.parent)
+            return
+        try:
+            _backup_and_save(save, save_path, f"{op}_slot_{self._current_slot + 1}")
         except Exception as exc:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
-
-    # --- Helpers -------------------------------------------------------------- #
+            return
+        self._update_states()
+        self._show_toast(f"{what} {verb}. Backup created.")
 
     def _load_selected(self) -> None:
         save = self._get_dsr_save()
         if save is None:
-            CTkMessageBox.showwarning(
-                "No Save", "No DSR save loaded.", parent=self.parent
-            )
             return
-        idx = self._slot_idx()
-        if idx < 0:
+        try:
+            idx = int(self._slot_var.get().split(" - ")[0].replace("Slot", "")) - 1
+        except (ValueError, IndexError):
             return
         if save.characters[idx] is None:
             CTkMessageBox.showwarning(
@@ -448,25 +306,4 @@ class DSRNPCTab:
             )
             return
         self._current_slot = idx
-        self._rebuild_rows()
-
-    def _get_char(self):
-        save = self._get_dsr_save()
-        save_path = self._get_save_path()
-        if save is None or save_path is None:
-            return None, None, None
-        char = (
-            save.characters[self._current_slot]
-            if 0 <= self._current_slot < len(save.characters)
-            else None
-        )
-        return save, save_path, char
-
-    def _slot_idx(self) -> int:
-        val = self._slot_var.get()
-        if not val:
-            return -1
-        try:
-            return int(val.split(" - ")[0].replace("Slot", "").strip()) - 1
-        except (ValueError, IndexError):
-            return -1
+        self._update_states()

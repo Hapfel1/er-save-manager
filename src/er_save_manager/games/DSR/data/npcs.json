@@ -1,0 +1,355 @@
+[
+ {
+  "name": "Knight Solaire",
+  "lo": 1000,
+  "hi": 1029,
+  "dead": [
+   1005,
+   1011
+  ],
+  "hostile": [
+   1004
+  ]
+ },
+ {
+  "name": "Oscar, Knight of Astora",
+  "lo": 1060,
+  "hi": 1074,
+  "dead": [
+   1073,
+   1062
+  ],
+  "hostile": []
+ },
+ {
+  "name": "Big Hat Logan",
+  "lo": 1090,
+  "hi": 1109,
+  "dead": [
+   1097
+  ],
+  "hostile": [
+   1096
+  ]
+ },
+ {
+  "name": "Griggs of Vinheim",
+  "lo": 1110,
+  "hi": 1119,
+  "dead": [
+   1115
+  ],
+  "hostile": [
+   1114
+  ]
+ },
+ {
+  "name": "Dusk of Oolacile",
+  "lo": 1120,
+  "hi": 1139,
+  "dead": [
+   1125
+  ],
+  "hostile": []
+ },
+ {
+  "name": "Rhea of Thorolund",
+  "lo": 1170,
+  "hi": 1189,
+  "dead": [
+   1180,
+   1177
+  ],
+  "hostile": [
+   1179,
+   1176
+  ]
+ },
+ {
+  "name": "Petrus of Thorolund",
+  "lo": 1190,
+  "hi": 1209,
+  "dead": [
+   1198
+  ],
+  "hostile": [
+   1197
+  ]
+ },
+ {
+  "name": "Nico of Thorolund",
+  "lo": 1210,
+  "hi": 1219,
+  "dead": [
+   1214
+  ],
+  "hostile": []
+ },
+ {
+  "name": "Vince of Thorolund",
+  "lo": 1220,
+  "hi": 1229,
+  "dead": [
+   1224
+  ],
+  "hostile": []
+ },
+ {
+  "name": "Griggs of Vinheim (Lower Undead Burg)",
+  "lo": 1250,
+  "hi": 1259,
+  "dead": [
+   1251,
+   1254
+  ],
+  "hostile": [
+   1253
+  ]
+ },
+ {
+  "name": "Quelana of Izalith",
+  "lo": 1290,
+  "hi": 1309,
+  "dead": [
+   1295
+  ],
+  "hostile": [
+   1294
+  ]
+ },
+ {
+  "name": "Ingward",
+  "lo": 1310,
+  "hi": 1319,
+  "dead": [
+   1315
+  ],
+  "hostile": [
+   1314
+  ]
+ },
+ {
+  "name": "Andre of Astora",
+  "lo": 1320,
+  "hi": 1339,
+  "dead": [
+   1322
+  ],
+  "hostile": [
+   1321
+  ]
+ },
+ {
+  "name": "Vamos",
+  "lo": 1340,
+  "hi": 1343,
+  "dead": [
+   1342
+  ],
+  "hostile": [
+   1341
+  ]
+ },
+ {
+  "name": "Giant",
+  "lo": 1360,
+  "hi": 1363,
+  "dead": [
+   1362
+  ],
+  "hostile": [
+   1361
+  ]
+ },
+ {
+  "name": "Blacksmith Rickert",
+  "lo": 1380,
+  "hi": 1399,
+  "dead": [
+   1382
+  ],
+  "hostile": [
+   1381
+  ]
+ },
+ {
+  "name": "Undead Merchant",
+  "lo": 1400,
+  "hi": 1409,
+  "dead": [
+   1402
+  ],
+  "hostile": [
+   1401
+  ]
+ },
+ {
+  "name": "Undead Merchant (2)",
+  "lo": 1410,
+  "hi": 1413,
+  "dead": [
+   1412
+  ],
+  "hostile": [
+   1411
+  ]
+ },
+ {
+  "name": "Crestfallen Merchant",
+  "lo": 1420,
+  "hi": 1429,
+  "dead": [
+   1422
+  ],
+  "hostile": [
+   1421
+  ]
+ },
+ {
+  "name": "Crestfallen Warrior",
+  "lo": 1460,
+  "hi": 1489,
+  "dead": [
+   1462
+  ],
+  "hostile": [
+   1461
+  ]
+ },
+ {
+  "name": "Siegmeyer of Catarina",
+  "lo": 1490,
+  "hi": 1539,
+  "dead": [
+   1513
+  ],
+  "hostile": [
+   1512
+  ]
+ },
+ {
+  "name": "Sieglinde of Catarina",
+  "lo": 1540,
+  "hi": 1569,
+  "dead": [
+   1548
+  ],
+  "hostile": [
+   1547
+  ]
+ },
+ {
+  "name": "Knight Lautrec",
+  "lo": 1570,
+  "hi": 1599,
+  "dead": [
+   1575
+  ],
+  "hostile": [
+   1574
+  ]
+ },
+ {
+  "name": "Shiva of the East",
+  "lo": 1600,
+  "hi": 1619,
+  "dead": [
+   1608,
+   1604
+  ],
+  "hostile": [
+   1603
+  ]
+ },
+ {
+  "name": "Patches",
+  "lo": 1620,
+  "hi": 1629,
+  "dead": [
+   1628
+  ],
+  "hostile": [
+   1627
+  ]
+ },
+ {
+  "name": "Kingseeker Frampt",
+  "lo": 1640,
+  "hi": 1649,
+  "dead": [
+   1647
+  ],
+  "hostile": []
+ },
+ {
+  "name": "Darkstalker Kaathe",
+  "lo": 1670,
+  "hi": 1678,
+  "dead": [
+   1677
+  ],
+  "hostile": []
+ },
+ {
+  "name": "Oswald of Carim",
+  "lo": 1700,
+  "hi": 1709,
+  "dead": [
+   1702
+  ],
+  "hostile": [
+   1701
+  ]
+ },
+ {
+  "name": "Shiva's Bodyguard",
+  "lo": 1760,
+  "hi": 1769,
+  "dead": [
+   1764
+  ],
+  "hostile": []
+ },
+ {
+  "name": "Hawkeye Gough",
+  "lo": 1820,
+  "hi": 1839,
+  "dead": [
+   1823
+  ],
+  "hostile": [
+   1822
+  ]
+ },
+ {
+  "name": "Marvellous Chester",
+  "lo": 1840,
+  "hi": 1859,
+  "dead": [
+   1842
+  ],
+  "hostile": [
+   1841
+  ]
+ },
+ {
+  "name": "Lord's Blade Ciaran",
+  "lo": 1860,
+  "hi": 1869,
+  "dead": [
+   1864
+  ],
+  "hostile": [
+   1863
+  ]
+ },
+ {
+  "name": "Elizabeth",
+  "lo": 1870,
+  "hi": 1889,
+  "dead": [
+   1872
+  ],
+  "hostile": []
+ }
+]
