@@ -3,6 +3,123 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 2.0.0
+**Released:** October 01, 2026
+
+
+### ✨ New Features
+
+- Add loadouts tab, relic copy-to-spawn and JSON import/export `[NR]` ([b153385](https://github.com/Hapfel1/er-save-manager/commit/b153385595c5e69eb234faed31e63c8b5492427f))
+
+- Added Visual Item Picker and Visual Inventory Editor `[DS3]` ([8c075cd](https://github.com/Hapfel1/er-save-manager/commit/8c075cdc8b0bfb477acf6c0915858a70334e1604))
+
+- Added Boss Respawning functionality `[DS3]` ([1ee0559](https://github.com/Hapfel1/er-save-manager/commit/1ee0559b87c1bbcd09e26e39725b93da0308b0cf))
+
+- Added Bonfire Editor `[DS3]` ([4fb23de](https://github.com/Hapfel1/er-save-manager/commit/4fb23de64b09ab0243acbc14a1f6d7236eb9567f))
+
+- Added NPC Respawner `[DS3]` ([86436f5](https://github.com/Hapfel1/er-save-manager/commit/86436f525e8404ccebdf86e7456fb6bb05f25f04))
+
+- Added Gesture Editor `[DS3]` ([a93216c](https://github.com/Hapfel1/er-save-manager/commit/a93216c16cfb1c254cea43b7affb564191cbb730))
+
+- Added import feature for builds from soulsplanner.com `[DS2]` ([3881d33](https://github.com/Hapfel1/er-save-manager/commit/3881d333997aaa021f315e1f2c97a1297523bc40))
+
+- Equip an imported Souls Planner build's loadout `[DS2]` ([0c4a9f4](https://github.com/Hapfel1/er-save-manager/commit/0c4a9f4493e3b15d136e662e392c2ca808ac7c7f))
+
+- Delete several backups at once `[backup]` ([51c242f](https://github.com/Hapfel1/er-save-manager/commit/51c242fb7d033285bb51d411d0f0cd3ad5087b9b))
+
+- Attune an imported Souls Planner build's spells `[DS2]` ([70f511d](https://github.com/Hapfel1/er-save-manager/commit/70f511d494e78fd6fc8985a2a565504605398ce1))
+
+- Revive Shadow of the Erdtree NPCs `[ER]` ([379cf30](https://github.com/Hapfel1/er-save-manager/commit/379cf305b3c34eed98e1ae76f86fd0e184300b8e))
+
+- Added Visual Item Picker and Visual Inventory Editor `[DSR]` ([7b980c3](https://github.com/Hapfel1/er-save-manager/commit/7b980c304eeb071b64b4012de126ba9166b0e448))
+
+- Version 2.0 ([ec3dbf2](https://github.com/Hapfel1/er-save-manager/commit/ec3dbf2fc08cade9a24e66dd9fa063546de23412)) ⚠️ **BREAKING CHANGE**
+
+- Light and unlight bonfires `[DSR]` ([4e00af3](https://github.com/Hapfel1/er-save-manager/commit/4e00af3d2ce5fd8c743d5ea48527594b3501d171))
+
+
+
+### 🔧 Bug Fixes
+
+- Strip AppImage library paths when opening folders on Linux `[ui]` ([76d914e](https://github.com/Hapfel1/er-save-manager/commit/76d914e9ac58e351e6a7475ee1d1ce6430054734))
+
+- Keep slot size fixed and offsets fresh on relic spawn/remove `[NR]` ([d9da1c3](https://github.com/Hapfel1/er-save-manager/commit/d9da1c320ab5b335ebd1d2a3a2b09b4070a6ca26))
+
+- Strip AppImage library paths from remaining external launches `[ui]` ([ce39d57](https://github.com/Hapfel1/er-save-manager/commit/ce39d57f2ba7f4545ee20befe666c7993f8ef0c4))
+
+- Parse loadout chunk from its header and harden relic ops `[NR]` ([db5052d](https://github.com/Hapfel1/er-save-manager/commit/db5052d45cef41b7d740246f88cc1f1a7bcbfdd7))
+
+- Store non-key goods in the main inventory, flag cut content unsafe `[DS2]` ([981e777](https://github.com/Hapfel1/er-save-manager/commit/981e7771fa19f4782aa3f4c721d118f953de639a))
+
+- Align preset array and parse modded or over-capacity loadouts `[NR]` ([3a63823](https://github.com/Hapfel1/er-save-manager/commit/3a63823a56cc01f9e27d22532c3ab29c481ba2e4))
+
+- Reworked item spawning `[DS3]` ([f55e7e9](https://github.com/Hapfel1/er-save-manager/commit/f55e7e9639a0540072f404854a2e4b9aebdc2e33))
+
+- Improved Item Database and added full validation for Vanilla/Convergence/Cinders `[DS3]` ([40b9496](https://github.com/Hapfel1/er-save-manager/commit/40b9496d97b6d1836f95858d33e28e1e966c57db))
+
+- Fixed errors with DS3 Save File Parsing `[DS3]` ([c1d8b4c](https://github.com/Hapfel1/er-save-manager/commit/c1d8b4c3b6125ccc2cb4d5406e03769293edef3a))
+
+- Validate soulsplanner links by parsed host `[DS2]` ([e653ca7](https://github.com/Hapfel1/er-save-manager/commit/e653ca73d7cec6fb80bf913f6a80e8a9bbf23db8))
+
+- Keep equipped items from being removed or stored `[DS2]` ([0e7d7ce](https://github.com/Hapfel1/er-save-manager/commit/0e7d7ce127f7b56d78e7f3e0da4247dcfd01e723))
+
+- Map gestures to table rows and light one state flag per bonfire `[DS3]` ([6960d56](https://github.com/Hapfel1/er-save-manager/commit/6960d569aaed949a775ded768260d4eff26f2d3d))
+
+- Keep list action buttons visible in short windows `[DS3]` ([04314f1](https://github.com/Hapfel1/er-save-manager/commit/04314f1929eae6a4eb286c8d3f6fc9a3af539a61))
+
+- Add Seamless Co-op goods and limit Estus Flasks to one `[DS3]` ([987abed](https://github.com/Hapfel1/er-save-manager/commit/987abedb32347e39c59745002dda7ff24e3d0d07))
+
+- Give boss souls and Seamless Co-op items their icons `[DS2]` ([d21d9cf](https://github.com/Hapfel1/er-save-manager/commit/d21d9cf1bca25ccf6dd592b85e37a6c2d12ef434))
+
+- Use the verified event flag layout; re-enable boss and NPC edits `[DSR]` ([fee937d](https://github.com/Hapfel1/er-save-manager/commit/fee937d870f34d6fdf30351ad86788db2dd8c8e9))
+
+- Fixed event flag layouts `[DSR]` ([e5b1896](https://github.com/Hapfel1/er-save-manager/commit/e5b1896ccb3b9bb487cf8fd952284651e2d9cf31))
+
+- Replace emoji in widget text on Linux `[ui]` ([cdc9476](https://github.com/Hapfel1/er-save-manager/commit/cdc9476d290508e9bae2a2fab26f04341f933390))
+
+- Clear the map death bit when reviving NPCs `[DS3]` ([5f72f18](https://github.com/Hapfel1/er-save-manager/commit/5f72f18c3bc0b15b89c6bee5527abb2f14f4497a))
+
+
+
+### 🎨 User Interface
+
+- Multi-select in the visual picker and inventory `[DS2]` ([e0c80a7](https://github.com/Hapfel1/er-save-manager/commit/e0c80a7f3493114008e023effc3cc97afb3aca2c))
+
+- Always show the spawn infusion and grey out inapplicable fields `[DS3]` ([77396b5](https://github.com/Hapfel1/er-save-manager/commit/77396b53826cbf880c389368f1c2f3b485faabe4))
+
+- Add an Add All Shown button to the visual item picker `[DS2]` ([2ec0323](https://github.com/Hapfel1/er-save-manager/commit/2ec0323f1f4554e2c80b290bc699757553a16185))
+
+
+
+### 📖 Documentation
+
+- Updated docs ([baa1b30](https://github.com/Hapfel1/er-save-manager/commit/baa1b302a51826a2d5d995f2d0e0254ae26f8d91))
+
+- Update README and DS3 guide for the DS3, DS2 and Nightreign changes ([3516586](https://github.com/Hapfel1/er-save-manager/commit/35165866b62210da2e70113896a0a46d77fbf7ff))
+
+- Document bonfire lighting `[DSR]` ([93bd40a](https://github.com/Hapfel1/er-save-manager/commit/93bd40a5f5baf04521e1436b1fb248113189e7ae))
+
+- Add Dark Souls II user guide ([f93e43b](https://github.com/Hapfel1/er-save-manager/commit/f93e43be53d964894d66f32b9a546e5656fd6156))
+
+
+
+### ⚡ Performance Improvements
+
+- Improved Tab Loading times ([ad7b590](https://github.com/Hapfel1/er-save-manager/commit/ad7b590492a433b571dfe7e6def6ef870b8d2d75))
+
+- Store DS3 and DSR item lists as CSV `[data]` ([84e3580](https://github.com/Hapfel1/er-save-manager/commit/84e3580be79bb8c14a85d678c66e29ed2d2da732))
+
+- Cache gaitem positions and scan lists in one pass `[DS3]` ([64a8259](https://github.com/Hapfel1/er-save-manager/commit/64a8259c6f760ddcaeb80617d8cba9f25a0ba348))
+
+
+
+### ♻️ Code Refactoring
+
+- Load ER flag and location tables from JSON `[data]` ([e1bcea1](https://github.com/Hapfel1/er-save-manager/commit/e1bcea1997e36ad8bf3cc162270d836c0321d668))
+
+
+
+---
 ## 📦 Release 1.12.2
 **Released:** September 29, 2026
 
@@ -1826,6 +1943,7 @@ implementation) ([19bee2c](https://github.com/Hapfel1/er-save-manager/commit/19b
 
 
 ---
+[2.0.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.12.2..v2.0.0
 [1.12.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.12.1..v1.12.2
 [1.12.1]: https://github.com/Hapfel1/er-save-manager/compare/v1.12.0..v1.12.1
 [1.12.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.11.0..v1.12.0
