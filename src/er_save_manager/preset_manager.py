@@ -1,6 +1,7 @@
 """Preset manager for community character presets."""
 
 import json
+import logging
 import os
 import platform
 import ssl
@@ -8,6 +9,8 @@ import tempfile
 import time
 import urllib.request
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 class PresetManager:
@@ -32,21 +35,21 @@ class PresetManager:
 
         try:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
-            print(f"[Image Cache] Using cache directory: {self.cache_dir}")
+            logger.debug(f"[Image Cache] Using cache directory: {self.cache_dir}")
         except (OSError, PermissionError) as e:
             # Fallback to system temp directory
-            print(f"[Image Cache] Cannot write to {self.cache_dir}: {e}")
+            logger.warning(f"[Image Cache] Cannot write to {self.cache_dir}: {e}")
             self.cache_dir = Path(tempfile.gettempdir()) / "er-save-manager-cache"
             self.cache_dir.mkdir(parents=True, exist_ok=True)
-            print(f"[Image Cache] Fallback cache directory: {self.cache_dir}")
+            logger.debug(f"[Image Cache] Fallback cache directory: {self.cache_dir}")
 
         self.thumbnails_dir = self.cache_dir / "thumbnails"
         self.thumbnails_dir.mkdir(exist_ok=True)
-        print(f"[Image Cache] Thumbnails directory: {self.thumbnails_dir}")
+        logger.debug(f"[Image Cache] Thumbnails directory: {self.thumbnails_dir}")
 
         self.full_images_dir = self.cache_dir / "full_images"
         self.full_images_dir.mkdir(exist_ok=True)
-        print(f"[Image Cache] Full images directory: {self.full_images_dir}")
+        logger.debug(f"[Image Cache] Full images directory: {self.full_images_dir}")
 
         self.base_url = (
             "https://raw.githubusercontent.com/Hapfel1/er-character-presets/main/"
@@ -132,17 +135,17 @@ class PresetManager:
             Preset data dict or None if failed
         """
         try:
-            print(f"[Preset Download] Starting download for preset {preset_id}")
+            logger.debug(f"[Preset Download] Starting download for preset {preset_id}")
             data_url = self.base_url + preset_info["data_url"]
-            print(f"[Preset Download] Data URL: {data_url}")
+            logger.debug(f"[Preset Download] Data URL: {data_url}")
             with urllib.request.urlopen(
                 data_url, timeout=10, context=self.ssl_context
             ) as response:
                 preset_data = json.loads(response.read().decode("utf-8"))
-            print(f"[Preset Download] Downloaded preset data for {preset_id}")
+            logger.debug(f"[Preset Download] Downloaded preset data for {preset_id}")
 
             screenshot_url = self.base_url + preset_info["screenshot_url"]
-            print(f"[Preset Download] Screenshot URL: {screenshot_url}")
+            logger.debug(f"[Preset Download] Screenshot URL: {screenshot_url}")
             thumbnail_path = self._download_and_create_thumbnail(
                 preset_id, screenshot_url
             )
@@ -155,17 +158,17 @@ class PresetManager:
             }
             with open(preset_path, "w", encoding="utf-8") as f:
                 json.dump(metadata, f)
-            print(f"[Preset Download] Cached preset data to {preset_path}")
+            logger.debug(f"[Preset Download] Cached preset data to {preset_path}")
 
             if thumbnail_path:
                 preset_data["screenshot_path"] = str(thumbnail_path)
-                print(f"[Preset Download] Set screenshot path: {thumbnail_path}")
+                logger.debug(f"[Preset Download] Set screenshot path: {thumbnail_path}")
             else:
-                print(f"[Preset Download] WARNING: No thumbnail for {preset_id}")
+                logger.warning(f"[Preset Download] No thumbnail for {preset_id}")
             return preset_data
 
         except Exception as e:
-            print(f"Failed to download preset {preset_id}: {e}")
+            logger.warning(f"Failed to download preset {preset_id}: {e}")
             return None
 
     def get_cached_preset(self, preset_id: str) -> dict | None:
@@ -195,7 +198,7 @@ class PresetManager:
                         data = cached["data"]
                         stored_hash = cached["hash"]
                         if self._compute_data_hash(data) != stored_hash:
-                            print(
+                            logger.warning(
                                 f"Cache validation failed for {preset_id}: hash mismatch"
                             )
                             return None
@@ -211,7 +214,7 @@ class PresetManager:
 
                     return data
             except Exception as e:
-                print(f"Error reading cached preset {preset_id}: {e}")
+                logger.warning(f"Error reading cached preset {preset_id}: {e}")
                 return None
 
         return None
@@ -235,7 +238,7 @@ class PresetManager:
             return True
 
         except Exception as e:
-            print(f"Failed to apply preset: {e}")
+            logger.warning(f"Failed to apply preset: {e}")
             return False
 
     def download_image(self, preset_id: str, url: str, suffix: str = "") -> Path | None:
@@ -272,7 +275,7 @@ class PresetManager:
 
             return filepath
         except Exception as e:
-            print(f"Failed to download image: {e}")
+            logger.warning(f"Failed to download image: {e}")
             return None
 
     def _compute_data_hash(self, data: dict) -> str:
@@ -310,7 +313,7 @@ class PresetManager:
 
             return True, "Valid"
         except Exception as e:
-            print(f"Error validating preset {preset_id}: {e}")
+            logger.warning(f"Error validating preset {preset_id}: {e}")
             return False, f"Validation error: {e}"
 
     def clear_cache(self):
@@ -383,7 +386,7 @@ class PresetManager:
                     if age > expiry_seconds:
                         try:
                             file.unlink()
-                            print(f"Deleted expired cache file: {file.name}")
+                            logger.debug(f"Deleted expired cache file: {file.name}")
                             continue
                         except Exception:
                             pass
@@ -412,7 +415,7 @@ class PresetManager:
                     try:
                         file_info["path"].unlink()
                         freed += file_info["size"]
-                        print(
+                        logger.debug(
                             f"Deleted cache file to free space: {file_info['path'].name}"
                         )
                     except Exception:
@@ -426,7 +429,7 @@ class PresetManager:
                             pass
 
         except Exception as e:
-            print(f"Cache cleanup error: {e}")
+            logger.warning(f"Cache cleanup error: {e}")
 
     def get_cache_size(self) -> dict:
         """

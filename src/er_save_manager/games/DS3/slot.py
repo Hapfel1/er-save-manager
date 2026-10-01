@@ -76,6 +76,20 @@ Flags live in 1280-byte blocks of 10 groups x 128 bytes; each group holds
 1000 flags as u32 little-endian words with the lowest flag in the most
 significant bit. Block 0 holds global flags 0-9999; map flags
 (1AAB0000-1AAB9999) use the per-map block in _EVENT_FLAG_BLOCKS.
+
+=== CHARACTER DEATH STATE ===
+
+The section at directory pair 0x40 starts with [u32 0][u32 size] and a CHR
+block of that size: [b" RHC"][u32 version], then one record per map the
+character has state for, ended by u32 0xFFFFFFFF:
+  [u32 map key][u32 unknown][u32 bit count][bits, (count + 7) // 8 bytes]
+The map key of mAA_BB is AA << 24 | BB << 16. Each bit is one enemy part of
+that map's MSB in part order (bit k = byte k // 8, mask 1 << k % 8) and is
+set while that character is dead. An NPC whose bit is set is spawned dead
+on load, and its death event then sets the dead flag again, so reviving
+needs the bit cleared as well as the flags. Verified 2026-10-01 from kill
+pairs: Andre (m40_00 bit 95) and the Undead Settlement Stone-humped Hag
+(m31_00 bit 158).
 """
 
 from __future__ import annotations
@@ -205,6 +219,15 @@ _EVENT_FLAG_BLOCKS = {
     1511: 25,  # Filianore's Rest
 }
 _GLOBAL_FLAG_LIMIT = 10000
+
+# --- Character death state --------------------------------------------------- #
+
+_DIR_CHR_STATE = 0x40
+_CHR_SECTION_HEADER = 8
+_CHR_MAGIC = b" RHC"
+_CHR_BLOCK_HEADER = 8
+_CHR_MAP_HEADER = 12
+_CHR_END = 0xFFFFFFFF
 
 
 class LayoutError(Exception):
@@ -567,6 +590,61 @@ class DS3Slot:
             self._data[byte] |= mask
         else:
             self._data[byte] &= ~mask & 0xFF
+
+    # --- Character death state ---------------------------------------------- #
+
+    @staticmethod
+    def _chr_map_key(map_name: str) -> int:
+        """CHR record key of a map name such as "m40_00"."""
+        return int(map_name[1:3]) << 24 | int(map_name[4:6]) << 16
+
+    def _chr_maps(self) -> dict[int, tuple[int, int]]:
+        """Map key -> (bitfield offset, bit count) for each CHR record."""
+        self._check_directory()
+        sec_off, sec_size = self._dir(_DIR_CHR_STATE)
+        start = sec_off + _CHR_SECTION_HEADER
+        end = start + _read_u32(self._data, sec_off + 4)
+        if end > sec_off + sec_size or self._data[start : start + 4] != _CHR_MAGIC:
+            raise LayoutError("character state block is not where expected")
+        maps: dict[int, tuple[int, int]] = {}
+        pos = start + _CHR_BLOCK_HEADER
+        while pos + 4 <= end:
+            key = _read_u32(self._data, pos)
+            if key == _CHR_END:
+                return maps
+            count = _read_u32(self._data, pos + 8)
+            bits = pos + _CHR_MAP_HEADER
+            pos = bits + (count + 7) // 8
+            if pos > end:
+                break
+            maps[key] = (bits, count)
+        raise LayoutError("character state block is malformed")
+
+    def _chr_bit(self, map_name: str, index: int) -> tuple[int, int] | None:
+        """(byte offset, mask) of an enemy part's death bit, None when the
+        save holds no record for its map."""
+        record = self._chr_maps().get(self._chr_map_key(map_name))
+        if record is None or not 0 <= index < record[1]:
+            return None
+        return record[0] + index // 8, 1 << index % 8
+
+    def character_dead(self, map_name: str, index: int) -> bool | None:
+        """Death bit of enemy part index in map_name, None without a record."""
+        pos = self._chr_bit(map_name, index)
+        return None if pos is None else bool(self._data[pos[0]] & pos[1])
+
+    def set_character_dead(self, map_name: str, index: int, dead: bool) -> bool:
+        """Set or clear a death bit; False when the save has no record for
+        the map (nothing to change there)."""
+        pos = self._chr_bit(map_name, index)
+        if pos is None:
+            return False
+        byte, mask = pos
+        if dead:
+            self._data[byte] |= mask
+        else:
+            self._data[byte] &= ~mask & 0xFF
+        return True
 
     # --- Gestures -------------------------------------------------------------- #
 

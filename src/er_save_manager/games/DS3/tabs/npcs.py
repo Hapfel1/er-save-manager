@@ -10,6 +10,12 @@ driven by the game's common NPC events (common_func 20006000-20006002):
 The events clear the whole range before setting one flag, so exactly one is
 on at a time. Revive and Kill do the same; quest progress flags outside the
 range are left alone.
+
+A killed NPC also has its death bit set in the map's character state
+(npcs.json chr_bits, see DS3Slot.character_dead). The game spawns it dead
+from that bit and its death event sets the dead flag again, so Revive clears
+the bits too. Kill leaves them: the dead flag alone makes the events remove
+the NPC.
 """
 
 from __future__ import annotations
@@ -19,6 +25,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.games.DS3.slot import LayoutError
 from er_save_manager.games.DS3.tabs.style import make_tree
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import game_blocks_write
@@ -50,6 +57,11 @@ def _npc_state(char, npc: dict) -> str:
         return "Alive"
     # Nothing set yet: the NPC's area has not been loaded on this character.
     return "Not met"
+
+
+def _clear_death_bits(char, npc: dict) -> None:
+    for part in npc.get("chr_bits", []):
+        char.set_character_dead(part["map"], part["bit"], False)
 
 
 def _set_state(char, npc: dict, flag: int) -> None:
@@ -188,6 +200,15 @@ class DS3NpcsTab:
                 parent=self.parent,
             )
             return
+        if revive:
+            try:
+                for npc in npcs:
+                    _clear_death_bits(char, npc)
+            except LayoutError as exc:
+                # Every NPC reads the same block, so this fails on the first
+                # one, before anything is written.
+                CTkMessageBox.showerror("Unavailable", str(exc), parent=self.parent)
+                return
         for npc in npcs:
             _set_state(char, npc, npc["alive_flag"] if revive else npc["dead_flag"])
         verb = "revived" if revive else "killed"

@@ -2,7 +2,7 @@
 Convert all PNG/JPG/DDS images in a folder to 64x64 WebP.
 
 Usage:
-    python convert_icons.py <input_folder> [output_folder]
+    python scripts/convert_icons.py <input_folder> [output_folder]
 
 If output_folder is omitted, converted files are placed alongside the originals.
 Existing .webp files in the output are skipped unless --overwrite is passed.

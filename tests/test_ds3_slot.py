@@ -277,3 +277,28 @@ def test_seamless_goods_in_every_source():
     for source in catalog.SOURCES:
         item = catalog.lookup(0x4008FCC8, source)
         assert item is not None and catalog.is_seamless(item)
+
+
+def test_character_death_bits(slot, slot_bytes):
+    """Killing Andre in game set m40_00 bit 95 (byte 11, mask 0x80) of the
+    CHR block; revive must clear it or the game spawns him dead again."""
+    andre = next(
+        n
+        for n in json.loads((DATA / "npcs.json").read_text(encoding="utf-8"))
+        if n["name"] == "Andre"
+    )
+    assert andre["chr_bits"] == [{"map": "m40_00", "bit": 95}]
+    assert slot.character_dead("m40_00", 95) is False
+    assert slot.set_character_dead("m40_00", 95, True)
+    changed = [
+        i
+        for i, (a, b) in enumerate(zip(slot_bytes, slot.get_raw(), strict=True))
+        if a != b
+    ]
+    assert len(changed) == 1 and slot.get_raw()[changed[0]] == 0x80
+    assert slot.character_dead("m40_00", 95) is True
+    assert slot.set_character_dead("m40_00", 95, False)
+    assert slot.get_raw() == slot_bytes
+    # No record for a map the character has no state for: nothing to change.
+    assert slot.character_dead("m31_00", 158) is None
+    assert not slot.set_character_dead("m31_00", 158, False)

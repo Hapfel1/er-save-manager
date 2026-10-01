@@ -9,11 +9,14 @@ Handles:
 """
 
 import json
+import logging
 import uuid
 from pathlib import Path
 from typing import Any
 
 from supabase import Client, create_client
+
+logger = logging.getLogger(__name__)
 
 
 class PresetMetrics:
@@ -39,7 +42,7 @@ class PresetMetrics:
                 self.SUPABASE_URL, self.SUPABASE_ANON_KEY
             )
         except Exception as e:
-            print(f"Failed to initialize Supabase client: {e}")
+            logger.warning(f"Failed to initialize Supabase client: {e}")
             self.supabase = None
 
         # Cache of user actions (preset_id -> list of action_types)
@@ -66,7 +69,7 @@ class PresetMetrics:
                     {"email": "anon@local", "password": "anon"}
                 )
             except Exception as e2:
-                print(f"Anonymous authentication failed: {e2}")
+                logger.warning(f"Anonymous authentication failed: {e2}")
 
     def _load_settings(self) -> dict[str, Any]:
         """Load settings from file."""
@@ -108,7 +111,7 @@ class PresetMetrics:
         settings = self._load_settings()
         settings["preset_user_actions"] = self.user_actions
         self._save_settings(settings)
-        print(
+        logger.debug(
             f"Saved action '{action_type}' for {preset_id}. Current actions: {self.user_actions[preset_id]}"
         )
 
@@ -191,7 +194,7 @@ class PresetMetrics:
             }
 
         except Exception as e:
-            print(f"Failed to fetch metrics: {e}")
+            logger.warning(f"Failed to fetch metrics: {e}")
             return {}
 
     def record_action(self, preset_id: str, action_type: str) -> dict[str, Any] | None:
@@ -209,11 +212,11 @@ class PresetMetrics:
             return None
 
         if action_type == "thumbs_up" and self.has_liked(preset_id):
-            print(f"Already liked preset {preset_id}")
+            logger.debug(f"Already liked preset {preset_id}")
             return None
 
         if action_type == "download" and self.has_downloaded(preset_id):
-            print(f"Already downloaded preset {preset_id}")
+            logger.debug(f"Already downloaded preset {preset_id}")
             return None
 
         try:
@@ -235,10 +238,10 @@ class PresetMetrics:
         except Exception as e:
             error_str = str(e).lower()
             if "duplicate" in error_str or "unique" in error_str:
-                print("Action already recorded (duplicate)")
+                logger.debug("Action already recorded (duplicate)")
                 self._save_user_action(preset_id, action_type)
                 return None
-            print(f"Failed to record action: {e}")
+            logger.warning(f"Failed to record action: {e}")
             return None
 
     def like(self, preset_id: str) -> dict[str, Any] | None:
