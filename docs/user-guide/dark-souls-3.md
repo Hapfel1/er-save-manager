@@ -41,6 +41,9 @@ The item spawner is on the left and the character's items (held, key items and t
 - **Editing**: stackable items can have their quantity changed, weapons their upgrade level and infusion, items can move between the inventory and the storage box, and items that are not equipped can be removed. Equipped items and items on the quick/belt slots are protected; unequip them in game first.
 - **Visual Editor** shows the character's items as an icon grid with the same editing options.
 - **Cut content** (vanilla items no item lot, shop or starting class hands out) is hidden by default and asks for confirmation before spawning.
+- **Seamless Co-op items** (the pendants, Ominous Tome and Taunter's Orb) are offered only when a Seamless Co-op `.co2` save is loaded.
+- **Estus Flasks**: a character holds one Estus Flask and one Ashen Estus Flask. Spawning another one while the character already has one is skipped; remove the existing flask first to switch levels.
+- Fields that do not apply to the selection (quantity for unstackable items, upgrade for items without levels, infusion for items without infusions) are greyed out.
 
 If a character's inventory was damaged by an earlier version of this editor, inventory editing is disabled for that character and the reason is shown. Bosses, NPCs, bonfires and gestures stay editable. Restore a backup from before the earlier edit to edit items again.
 
@@ -55,8 +58,8 @@ Kill or respawn any boss, including DLC bosses. This sets or clears the boss's d
 ## World State
 
 - **New Game+**: set the playthrough cycle. The playthrough flags scripts check are kept in step.
-- **Bonfires**: light or unlight bonfires by area. Lit bonfires are warp destinations once the Firelink Shrine bonfire is lit.
-- **Gestures**: unlock or lock gestures.
+- **Bonfires**: light or unlight bonfires by area. Lit bonfires are warp destinations once the Firelink Shrine bonfire is lit. A bonfire the game tracks with several world-state flags (High Wall of Lothric) gets exactly one of them set, so it is listed once in the warp menu.
+- **Gestures**: unlock or lock gestures individually or all at once.
 
 ---
 

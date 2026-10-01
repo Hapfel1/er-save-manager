@@ -66,6 +66,10 @@ from pathlib import Path
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from er_save_manager.games.DS2.bonfire_database import BONFIRES
+from er_save_manager.games.DS2.item_database import (
+    SEAMLESS_ITEMS,
+    SEAMLESS_MAX_STACK,
+)
 from er_save_manager.games.DS2.npc_database import NPCS, NpcEntry
 from er_save_manager.games.DS2.regulation import Regulation
 
@@ -146,6 +150,9 @@ _EMPTY_EQUIP = 0xFFFFFFFF
 
 # Stack limit used for items the regulation does not know.
 _DEFAULT_MAX_STACK = 99
+_SEAMLESS_IDS = frozenset(
+    int.from_bytes(bytes.fromhex(h), "little") for h in SEAMLESS_ITEMS.values()
+)
 
 # Categories stored in the key item list instead of the main inventory.
 KEY_LIST_CATEGORIES = frozenset({"keys", "gestures"})
@@ -799,6 +806,8 @@ class Character:
     def max_stack(self, item_id: int) -> int:
         """Largest stack of an item. Falls back to 99 when the regulation does
         not know the item."""
+        if item_id in _SEAMLESS_IDS:
+            return SEAMLESS_MAX_STACK
         regulation = self._regulation()
         held = regulation.max_held(item_id) if regulation else None
         return held if held else _DEFAULT_MAX_STACK
