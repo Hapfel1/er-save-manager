@@ -1786,7 +1786,14 @@ class EventFlagsTab:
             is_dead = state["dead"]
             is_aggro = state["aggro_absolvable"] or state["aggro_permanent"]
 
-            status = "Dead" if is_dead else ("Hostile" if is_aggro else "Alive")
+            if is_dead:
+                status = "Dead"
+            elif is_aggro:
+                status = "Hostile"
+            elif state["vanished"]:
+                status = "Vanished"
+            else:
+                status = "Alive"
 
             var = tk.BooleanVar(value=False)
             npc_vars[npc_name] = var
