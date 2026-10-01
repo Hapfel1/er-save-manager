@@ -199,6 +199,7 @@ Automatically detects issues with your game installation, your save file and any
 - Automatic backups before any edit
 - Manual backup creation with custom names
 - Browse and restore previous backups
+- Batch delete via Ctrl/Shift multi-select
 - Backup pruning with configurable retention
 - One-click restore with confirmation
 - Function for Auto-Backup Creation on Game Launch
@@ -252,7 +253,7 @@ Automatically detects issues with your game installation, your save file and any
 - Visual Item Picker and Visual Inventory Editor with full Icon Support
 - Multi-select batch editing in the visual picker and inventory
 - Equipped items are protected from removal and storing
-- Build Import from [Souls Planner](https://soulsplanner.com) links (stats and items)
+- Build Import from [Souls Planner](https://soulsplanner.com) links (stats and items, optionally equipping the build's loadout)
 - Character Management
 - Bonfire Editing (light/unlight, Bonfire Ascetic level)
 - NPC Revival

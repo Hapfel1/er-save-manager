@@ -71,6 +71,10 @@ Each backup includes:
 
 **Sorted by:** Most recent first
 
+### Deleting Backups
+
+Select a backup and click **Delete**. Ctrl+click adds or removes single backups from the selection and Shift+click selects a range, so several backups can be deleted with one confirmation. Locked (starred) backups in the selection are kept. Restore and Details work on one selected backup.
+
 ### Backup Information
 
 Click any backup to view:

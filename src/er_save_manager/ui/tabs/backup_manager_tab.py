@@ -15,6 +15,9 @@ from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, center_window
 
 STAR_SIZE = 20
+# Tk event.state modifier bits.
+_SHIFT = 0x0001
+_CONTROL = 0x0004
 STAR_COLOR_ON = "#e5b54a"
 STAR_COLOR_ON_OUTLINE = "#a87520"
 STAR_COLOR_OFF = "#8a8a8a"
@@ -405,7 +408,8 @@ class BackupManagerTab:
 
         ctk.CTkLabel(
             list_frame,
-            text="Click the star to lock a backup. Locked backups are never removed by the backup limit.",
+            text="Click the star to lock a backup. Locked backups are never removed by the backup limit.\n"
+            "Ctrl+click or Shift+click selects several backups to delete at once.",
             font=("Segoe UI", 10),
             text_color=("gray40", "gray60"),
         ).pack(anchor=tk.W, padx=10, pady=(0, 5))
@@ -430,7 +434,10 @@ class BackupManagerTab:
         scrollable_frame.pack(fill=tk.BOTH, expand=True)
         bind_mousewheel(scrollable_frame)
 
-        selected_backup = [None]
+        # Selected filenames in display order; the anchor is the last plain
+        # or Ctrl click, the start of a Shift range.
+        selected: list[str] = []
+        anchor = [None]
         backup_items = {}
 
         def sort_backups(backups):
@@ -450,7 +457,8 @@ class BackupManagerTab:
             for w in scrollable_frame.winfo_children():
                 w.destroy()
             backup_items.clear()
-            selected_backup[0] = None
+            selected.clear()
+            anchor[0] = None
 
             backups = sort_backups(manager.list_backups())
             if not backups:
@@ -535,11 +543,22 @@ class BackupManagerTab:
 
                 def make_select(fname):
                     def _select(event=None):
-                        selected_backup[0] = fname
+                        state = event.state if event is not None else 0
+                        order = list(backup_items)
+                        if state & _SHIFT and anchor[0] in backup_items:
+                            a, b = sorted((order.index(anchor[0]), order.index(fname)))
+                            chosen = set(order[a : b + 1])
+                        elif state & _CONTROL:
+                            chosen = set(selected) ^ {fname}
+                            anchor[0] = fname
+                        else:
+                            chosen = {fname}
+                            anchor[0] = fname
+                        selected[:] = [fn for fn in order if fn in chosen]
                         for fn, item in backup_items.items():
                             item["frame"].configure(
                                 fg_color=("gray75", "gray35")
-                                if fn == fname
+                                if fn in chosen
                                 else ("gray86", "gray25")
                             )
 
@@ -630,23 +649,31 @@ class BackupManagerTab:
                     "Error", f"Failed to create backup:\n{e}", parent=dialog
                 )
 
-        def restore_backup():
-            if not selected_backup[0]:
+        def single_selection(action: str) -> str | None:
+            if len(selected) != 1:
                 CTkMessageBox.showwarning(
-                    "No Selection", "Select a backup to restore.", parent=dialog
+                    "No Selection" if not selected else "Several Selected",
+                    f"Select one backup to {action}.",
+                    parent=dialog,
                 )
+                return None
+            return selected[0]
+
+        def restore_backup():
+            fname = single_selection("restore")
+            if fname is None:
                 return
             is_loaded_here = str(self.get_save_path()) == str(save_path)
 
             if not CTkMessageBox.askyesno(
                 "Confirm Restore",
-                f"Restore backup '{selected_backup[0]}'?\n\nCurrent save will be backed up first.",
+                f"Restore backup '{fname}'?\n\nCurrent save will be backed up first.",
                 parent=dialog,
             ):
                 return
 
             try:
-                manager.restore_backup(selected_backup[0])
+                manager.restore_backup(fname)
             except Exception as e:
                 CTkMessageBox.showerror(
                     "Error", f"Failed to restore backup:\n{e}", parent=dialog
@@ -665,44 +692,62 @@ class BackupManagerTab:
             self.show_toast("Backup restored", duration=3000)
 
         def delete_backup():
-            if not selected_backup[0]:
+            if not selected:
                 CTkMessageBox.showwarning(
-                    "No Selection", "Select a backup to delete.", parent=dialog
-                )
-                return
-            item = backup_items.get(selected_backup[0])
-            if item and item["metadata"].favorite:
-                CTkMessageBox.showwarning(
-                    "Backup Locked",
-                    "This backup is locked and cannot be deleted.\n\n"
-                    "Click its star to unlock it first.",
+                    "No Selection",
+                    "Select one or more backups to delete.",
                     parent=dialog,
                 )
                 return
+            locked = [fn for fn in selected if backup_items[fn]["metadata"].favorite]
+            targets = [fn for fn in selected if fn not in locked]
+            if not targets:
+                CTkMessageBox.showwarning(
+                    "Backup Locked",
+                    "The selected backups are locked and cannot be deleted.\n\n"
+                    "Click a star to unlock it first.",
+                    parent=dialog,
+                )
+                return
+            what = (
+                f"backup '{targets[0]}'"
+                if len(targets) == 1
+                else f"{len(targets)} backups"
+            )
+            note = f"\n\n{len(locked)} locked backup(s) will be kept." if locked else ""
             if not CTkMessageBox.askyesno(
                 "Confirm Delete",
-                f"Delete backup '{selected_backup[0]}'?\n\nThis cannot be undone.",
+                f"Delete {what}?{note}\n\nThis cannot be undone.",
                 parent=dialog,
             ):
                 return
-            try:
-                manager.delete_backup(selected_backup[0])
-                refresh_list()
-                self.update_backup_stats()
-                self.show_toast("Backup deleted", duration=2500)
-            except Exception as e:
+            failed = []
+            for fn in targets:
+                try:
+                    manager.delete_backup(fn)
+                except Exception as e:
+                    failed.append(f"{fn}: {e}")
+            refresh_list()
+            self.update_backup_stats()
+            if failed:
                 CTkMessageBox.showerror(
-                    "Error", f"Failed to delete backup:\n{e}", parent=dialog
+                    "Error",
+                    "Failed to delete:\n" + "\n".join(failed),
+                    parent=dialog,
+                )
+            deleted = len(targets) - len(failed)
+            if deleted:
+                self.show_toast(
+                    "Backup deleted" if deleted == 1 else f"{deleted} backups deleted",
+                    duration=2500,
                 )
 
         def view_details():
-            if not selected_backup[0]:
-                CTkMessageBox.showwarning(
-                    "No Selection", "Select a backup to view.", parent=dialog
-                )
+            fname = single_selection("view")
+            if fname is None:
                 return
 
-            info = manager.get_backup_info(selected_backup[0])
+            info = manager.get_backup_info(fname)
             if not info:
                 CTkMessageBox.showwarning(
                     "Not Found", "Backup metadata not found.", parent=dialog

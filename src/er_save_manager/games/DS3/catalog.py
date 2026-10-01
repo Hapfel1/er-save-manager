@@ -9,11 +9,6 @@ infusion labels; its item lots, shops and starting gear for the Obtainable
 flag. A modded character uses its mod's list for every item, vanilla ones
 included, since mods change vanilla items' limits too.
 
-data/seamless_items.csv lists the goods the Seamless Co-op mod adds at
-runtime (its ds3sc.dll builds their param rows), which no param file
-contains. They are appended to every source and flagged Seamless, so they
-always resolve by id; the spawn lists offer them for .co2 saves only.
-
 Weapon ids are family * 10000 + infusion index * 100 + upgrade level; list
 entries are level 0 and infused weapons carry their infusion's label.
 """
