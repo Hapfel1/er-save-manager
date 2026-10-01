@@ -46,14 +46,10 @@ GOODS: dict[str, str] = {
     "Green Blossom": "F0 41 98 03",
     "Rusted Coin": "00 69 98 03",
     "Rhoy's Stone": "10 90 98 03",
-    "Rhoy's Stone of Knowledge": "20 B7 98 03",
     "Homeward Bone": "30 DE 98 03",
     "Aged Feather": "B8 F1 98 03",
     "Darksign": "40 05 99 03",
     "Silver Talisman": "50 2C 99 03",
-    "Gold Talisman": "60 53 99 03",
-    "Fake Dead Talisman": "70 7A 99 03",
-    "Illusory Talisman": "80 A1 99 03",
     "Dragon Head Stone": "08 B5 99 03",
     "Dragon Torso Stone": "F0 B8 99 03",
     "Torch": "A0 EF 99 03",
@@ -1338,10 +1334,6 @@ UNSAFE_IDS: frozenset[int] = frozenset(
         60220000,  # Yellow Sea Troches
         60245000,  # Pungent Ooze
         60330000,  # Rhoy's Stone
-        60340000,  # Rhoy's Stone of Knowledge
-        60380000,  # Gold Talisman
-        60390000,  # Fake Dead Talisman
-        60400000,  # Illusory Talisman
         60840000,  # Wooden Greatarrow
         60860000,  # Magic Greatarrow
         60890000,  # Dark Greatarrow
