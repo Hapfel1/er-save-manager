@@ -1,6 +1,6 @@
 # Dark Souls Remastered
 
-Save editing support for Dark Souls Remastered (DSR), covering character stats, bonfires, and NG+.
+Save editing support for Dark Souls Remastered (DSR), covering character stats, inventory, bosses, NPCs, bonfires and NG+.
 
 ## Overview
 
@@ -62,13 +62,21 @@ All changes require **Apply Changes**, which creates a backup before writing.
 
 ## Inventory
 
-Edit inventory items, with support for SeamlessCoop items.
+The item spawner is on the left and the character's inventory on the right. The item list, upgrade caps, durability and icons come from the game's own files.
+
+- **Spawning** stores items the way the game does: key items in the key item slots, goods and ammo stacked, weapons with their infusion and upgrade level. Infused weapons are listed once with an **Infusion** choice.
+- **Visual Picker** shows the spawn list as an icon grid.
+- **Editing**: quantity, upgrade level and infusion, removal and **Repair All**. Select several items (Ctrl or Shift click) to edit them in one go; each item is capped at its own limits. Equipped items cannot be removed.
+- **Visual Editor** shows the inventory as an icon grid with the same editing options.
+- **Cut content** (for example the Mage Smith Coat and the Elite Cleric Helm and Armor) is hidden by default, shown by **Cut content** or by searching for it by name, and asks for confirmation before spawning. A character keeps a single Estus Flask.
+- **SeamlessCoop items** are offered only when a SeamlessCoop `.co2` save is loaded.
 
 ---
 
 ## NPCs & Bosses
 
-Boss revival and NPC revival for repeated fights and quest resets.
+- **Bosses**: kill or respawn. Defeat flags are per playthrough, so bosses show as alive again after starting NG+.
+- **NPCs**: kill or revive. Only the NPC's alive/hostile/dead state changes, the way the game's own NPC death event does it; quest progress is kept.
 
 ---
 
@@ -82,8 +90,7 @@ Read and toggle DSR event flags.
 
 ### Bonfires
 
-- **Unlock All Warpable Bonfires** - unlocks all 20 warpable bonfires, including the Firelink Shrine warp
-- Individual bonfire control isn't available: the 3 bytes that encode which bonfires are warpable are bit flags, but no public documentation maps which bit corresponds to which bonfire, so only bulk unlock is offered
+- Light or unlight bonfires, one, several or all at once. A bonfire can only be lit once the character has visited its map; lighting keeps any kindling already done. Bonfires are named by their area.
 
 ### New Game+ Counter
 
@@ -100,7 +107,7 @@ Transfer a DSR save between Steam accounts, same as the Elden Ring version.
 
 ## Safety
 
-Every write (stats, identity, bonfires, NG+) creates a backup first via the Backup Manager, tagged with the operation performed, so any change can be rolled back.
+Every write (stats, identity, inventory, bosses, NPCs, bonfires, NG+) creates a backup first via the Backup Manager, tagged with the operation performed, so any change can be rolled back.
 
 ---
 
