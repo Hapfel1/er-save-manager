@@ -1,0 +1,7 @@
+category,name,id,max_quantity,max_upgrade,durability,sort_id,icon_id,key_item,spell,infusion
+goods_items,Crystalline Pendant,0x4008fcc8,1,0,0,7010,116,0,0,
+goods_items,Stone Pendant,0x4008fcc9,1,0,0,7010,173,0,0,
+goods_items,Blasphemous Pendant,0x4008fcca,1,0,0,7010,174,0,0,
+goods_items,Rusted Pendant,0x4008fccb,1,0,0,7010,99,0,0,
+goods_items,Ominous Tome,0x4008fccc,1,0,0,7010,204,0,0,
+goods_items,Taunter's Orb,0x4008fccd,1,0,0,7010,187,0,0,

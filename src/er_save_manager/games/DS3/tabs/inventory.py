@@ -56,6 +56,32 @@ def _backup_and_save(ds3_save, save_path: Path, op: str) -> None:
     ds3_save.save_to_file(save_path)
 
 
+_DISABLED_FG = ("gray72", "gray28")
+_DISABLED_TEXT = ("gray50", "gray50")
+# Tk path name -> the colour a widget had before enable() greyed it out.
+_enabled_colors: dict[str, object] = {}
+
+
+def enable(widget, on: bool) -> None:
+    """Enable or grey out a CTk entry, button or read-only combo box. CTk's
+    disabled state barely changes buttons and entries, so their colour is
+    swapped as well."""
+    if isinstance(widget, ctk.CTkComboBox):
+        widget.configure(state="readonly" if on else "disabled")
+        return
+    option = "fg_color" if isinstance(widget, ctk.CTkButton) else "text_color"
+    key = str(widget)
+    if not on and key not in _enabled_colors:
+        _enabled_colors[key] = widget.cget(option)
+    if on and key in _enabled_colors:
+        widget.configure(state="normal", **{option: _enabled_colors.pop(key)})
+    elif not on:
+        disabled = _DISABLED_FG if option == "fg_color" else _DISABLED_TEXT
+        widget.configure(state="disabled", **{option: disabled})
+    else:
+        widget.configure(state="normal")
+
+
 def infusion_image(item: dict | None, source: str) -> ctk.CTkImage | None:
     """CTkImage of the item's infusion icon, None for non-infusable items."""
     if item is None or "Infusion" not in item:
@@ -94,6 +120,8 @@ class DS3InventoryTab:
         # Spawn tree row id -> (representative item, infusion variants)
         self._spawn_rows: dict[str, tuple[dict, list[dict]]] = {}
         self._visible_spawn: list[tuple[str, dict, list[dict]]] = []
+        # Whether the spawn list was last built with the Seamless Co-op goods.
+        self._spawn_seamless = False
         # (offset, name, category label, quantity, location, item id)
         self._all_items: list[tuple] = []
         self._sort_col: str | None = None
@@ -181,6 +209,8 @@ class DS3InventoryTab:
 
         self._build_spawner_panel(body)
         self._build_inventory_panel(body)
+        self._apply_edit_states()
+        self._apply_spawn_states()
 
     def _infusion_widgets(self, parent, variable, command):
         """Infusion icon plus dropdown packed into parent; returns both."""
@@ -240,7 +270,7 @@ class DS3InventoryTab:
             columns=("name",),
             show="headings",
             style="DS3.Treeview",
-            height=18,
+            height=10,
             selectmode="extended",
         )
         self._spawn_tree.heading("name", text="Item (Ctrl or Shift click for several)")
@@ -263,7 +293,6 @@ class DS3InventoryTab:
         self._spawn_inf_row.grid(
             row=3, column=0, columnspan=2, sticky="ew", padx=8, pady=(0, 2)
         )
-        self._spawn_inf_row.grid_remove()
 
         ctrl = ctk.CTkFrame(left, fg_color="transparent")
         ctrl.grid(row=4, column=0, columnspan=2, sticky="ew", padx=8, pady=(0, 8))
@@ -352,7 +381,7 @@ class DS3InventoryTab:
             columns=("name", "type", "qty", "where"),
             show="headings",
             style="DS3.Treeview",
-            height=16,
+            height=10,
             selectmode="extended",
         )
         for col, heading, width in self._inv_columns():
@@ -377,17 +406,19 @@ class DS3InventoryTab:
         qty_row = ctk.CTkFrame(edits, fg_color="transparent")
         qty_row.pack(fill="x", pady=2)
         ctk.CTkLabel(qty_row, text="Qty:", width=60, anchor="w").pack(side="left")
-        ctk.CTkEntry(qty_row, textvariable=self._edit_qty_var, width=55).pack(
-            side="left", padx=(0, 6)
+        self._edit_qty_entry = ctk.CTkEntry(
+            qty_row, textvariable=self._edit_qty_var, width=55
         )
+        self._edit_qty_entry.pack(side="left", padx=(0, 6))
         self._set_qty_btn = ctk.CTkButton(
             qty_row, text="Set Quantity", width=110, command=self._set_quantity_rows
         )
         self._set_qty_btn.pack(side="left", padx=(0, 12))
         ctk.CTkLabel(qty_row, text="Upgrade:").pack(side="left", padx=(0, 4))
-        ctk.CTkEntry(qty_row, textvariable=self._edit_upg_var, width=45).pack(
-            side="left", padx=(0, 6)
+        self._edit_upg_entry = ctk.CTkEntry(
+            qty_row, textvariable=self._edit_upg_var, width=45
         )
+        self._edit_upg_entry.pack(side="left", padx=(0, 6))
         self._set_upg_btn = ctk.CTkButton(
             qty_row, text="Set Upgrade", width=110, command=self._set_upgrade_rows
         )
@@ -520,9 +551,16 @@ class DS3InventoryTab:
         else:
             self._error_label.pack_forget()
         self.editing_error = message
-        state = "disabled" if message else "normal"
         for btn in self._write_buttons:
-            btn.configure(state=state)
+            enable(btn, not message)
+        self._apply_edit_states()
+        self._apply_spawn_states()
+
+    def _seamless_save(self) -> bool:
+        """True when the loaded save is a Seamless Co-op (.co2) save, the
+        only kind that may hold the mod's goods."""
+        path = self._get_save_path()
+        return path is not None and Path(path).suffix.lower() == ".co2"
 
     def current_character(self):
         save = self._get_save()
@@ -535,7 +573,7 @@ class DS3InventoryTab:
         if char is None:
             self._clear_inventory()
             return
-        if not self._spawn_tree_ready:
+        if not self._spawn_tree_ready or self._spawn_seamless != self._seamless_save():
             self._spawn_tree_ready = True
             self.parent.after(0, self._refresh_spawn_tree)
 
@@ -651,7 +689,55 @@ class DS3InventoryTab:
             "in_storage": row[4] == WHERE_STORAGE,
         }
 
+    def applicable_edits(self, offsets: list[int]) -> dict[str, bool]:
+        """Which edits apply to a selection: one row enables what that item
+        supports, several rows enable everything (each item is capped or
+        skipped on its own), none enables nothing. All are off while
+        inventory editing is disabled for the character."""
+        opts = self.edit_options(offsets[0]) if len(offsets) == 1 else {}
+        if opts:
+            edits = {
+                "quantity": opts["quantity"],
+                "upgrade": opts["upgrade"],
+                "infusion": bool(opts["variants"]),
+                "to_storage": opts["movable"] and not opts["in_storage"],
+                "to_inventory": opts["in_storage"],
+                "remove": True,
+            }
+        else:
+            many = len(offsets) > 1
+            edits = dict.fromkeys(
+                (
+                    "quantity",
+                    "upgrade",
+                    "infusion",
+                    "to_storage",
+                    "to_inventory",
+                    "remove",
+                ),
+                many,
+            )
+        if self.editing_error:
+            edits = dict.fromkeys(edits, False)
+        return edits
+
+    def _apply_edit_states(self) -> None:
+        edits = self.applicable_edits(self.selected_offsets())
+        for widget, key in (
+            (self._edit_qty_entry, "quantity"),
+            (self._set_qty_btn, "quantity"),
+            (self._edit_upg_entry, "upgrade"),
+            (self._set_upg_btn, "upgrade"),
+            (self._edit_inf_combo, "infusion"),
+            (self._set_inf_btn, "infusion"),
+            (self._to_storage_btn, "to_storage"),
+            (self._to_inventory_btn, "to_inventory"),
+            (self._remove_btn, "remove"),
+        ):
+            enable(widget, edits[key])
+
     def _on_inv_select(self, _event) -> None:
+        self._apply_edit_states()
         offsets = self.selected_offsets()
         labels = self.infusion_labels()
         self._edit_inf_combo.configure(values=labels)
@@ -922,13 +1008,14 @@ class DS3InventoryTab:
             self._spawn_job = None
         self._spawn_tree.delete(*self._spawn_tree.get_children())
         self._spawn_rows.clear()
-        self._spawn_inf_row.grid_remove()
+        self._spawn_variants = []
         self.select_item(None)
 
         query = self._spawn_search_var.get().strip().lower()
         cat_key, spell_filter = self._parse_category()
         show_cut = self._show_cut.get()
         source = self.source
+        self._spawn_seamless = self._seamless_save()
 
         def label(item: dict) -> str:
             name = item["Name"]
@@ -946,6 +1033,8 @@ class DS3InventoryTab:
                 ):
                     continue
                 if not show_cut and not catalog.is_obtainable(item):
+                    continue
+                if catalog.is_seamless(item) and not self._spawn_seamless:
                     continue
                 if spell_filter is not None and catalog.is_spell(item) != spell_filter:
                     continue
@@ -995,7 +1084,7 @@ class DS3InventoryTab:
     def _on_spawn_select(self, _event) -> None:
         sel = self._spawn_tree.selection()
         if len(sel) != 1:
-            self._spawn_inf_row.grid_remove()
+            self._spawn_variants = []
             self.select_item(None)
             if sel:
                 self._spawn_info.configure(
@@ -1007,9 +1096,6 @@ class DS3InventoryTab:
         if variants:
             self._spawn_inf_combo.configure(values=[v["Infusion"] for v in variants])
             self._spawn_inf_var.set(item["Infusion"])
-            self._spawn_inf_row.grid()
-        else:
-            self._spawn_inf_row.grid_remove()
         self.select_item(item)
 
     def _on_spawn_infusion(self, label: str) -> None:
@@ -1020,8 +1106,23 @@ class DS3InventoryTab:
     def select_item(self, item: dict | None) -> None:
         """Select a catalog item for spawning (also used by the visual picker)."""
         self._selected_db_item = item
+        if item is None or not self._spawn_variants:
+            self._spawn_inf_var.set("")
         self._spawn_inf_icon.configure(image=infusion_image(item, self.source))
         self._update_spawn_info()
+        self._apply_spawn_states()
+
+    def _apply_spawn_states(self) -> None:
+        """Grey out spawn fields that do not apply to the single selected
+        item; with several or no rows selected, quantity and upgrade apply
+        (capped per item) and the infusion does not."""
+        item = self._selected_db_item
+        lim = catalog.limits(item) if item is not None else None
+        single = len(self._spawn_tree.selection()) == 1 and lim is not None
+        is_weapon = single and id_kind(int(item["Id"], 16)) == ID_WEAPON
+        enable(self._spawn_qty_entry, not single or lim.max_quantity > 1)
+        enable(self._spawn_upg_entry, not single or (is_weapon and lim.max_upgrade > 0))
+        enable(self._spawn_inf_combo, single and bool(self._spawn_variants))
 
     def selected_limits(self) -> catalog.Limits | None:
         if self._selected_db_item is None:
@@ -1118,6 +1219,8 @@ class DS3InventoryTab:
                 "No Character", "Load a character first.", parent=parent
             )
             return False
+        if self.editing_error:
+            return False
         if quantity is None:
             quantity = self._read_int(self._spawn_qty_var, "Quantity", parent)
         if upgrade is None:
@@ -1140,9 +1243,22 @@ class DS3InventoryTab:
 
         to_storage = self.location_var.get() == LOCATIONS[1]
         spawned, capped, skipped = [], 0, []
+        held_groups = {
+            catalog.single_group(e.item_id)
+            for e in [*char.iter_inventory(), *char.iter_storage()]
+        }
         for item in items:
             lim = catalog.limits(item)
             item_id = int(item["Id"], 16)
+            group = catalog.single_group(item_id)
+            if group is not None:
+                if group in held_groups:
+                    skipped.append(
+                        f"{item['Name']} (the character already has an {group}; "
+                        "remove it first)"
+                    )
+                    continue
+                held_groups.add(group)
             sort_key = lim.sort_key
             if id_kind(item_id) == ID_WEAPON and lim.max_upgrade:
                 level = max(0, min(upgrade, lim.max_upgrade))

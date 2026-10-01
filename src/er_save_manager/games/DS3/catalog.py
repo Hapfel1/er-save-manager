@@ -9,6 +9,11 @@ infusion labels; its item lots, shops and starting gear for the Obtainable
 flag. A modded character uses its mod's list for every item, vanilla ones
 included, since mods change vanilla items' limits too.
 
+data/seamless_items.csv lists the goods the Seamless Co-op mod adds at
+runtime (its ds3sc.dll builds their param rows), which no param file
+contains. They are appended to every source and flagged Seamless, so they
+always resolve by id; the spawn lists offer them for .co2 saves only.
+
 Weapon ids are family * 10000 + infusion index * 100 + upgrade level; list
 entries are level 0 and infused weapons carry their infusion's label.
 """
@@ -46,6 +51,13 @@ PLACEHOLDER_IDS = frozenset(
 WEAPON_FAMILY = 10000
 INFUSION_STEP = 100
 
+# Goods the game keeps exactly one of: each Estus level is its own goods id
+# (even = empty, odd = filled, quantity = charges), the same in every source.
+_SINGLE_GROUPS = {
+    "Estus Flask": range(150, 172),
+    "Ashen Estus Flask": range(190, 212),
+}
+
 _TYPE_LABELS = {0x0: "Weapon", 0x1: "Armor", 0x2: "Ring", 0x4: "Goods"}
 _CATEGORY_FOR_KIND = {
     0x0: "weapon_items",
@@ -53,6 +65,11 @@ _CATEGORY_FOR_KIND = {
     0x2: "ring_items",
     0x4: "goods_items",
 }
+
+# Unnamed goods rows the game itself puts in inventories. Goods 94 is the
+# "dummy for PC animation reproduction when blood character is created"
+# (Smithbox community row name), used for bloodstain replays.
+_SYSTEM_GOODS = {0x4000005E: "Bloodstain Replay Dummy (system item)"}
 
 _items: dict[str, dict] = {}
 _lookups: dict[str, dict[int, dict]] = {}
@@ -82,17 +99,26 @@ def _item_from_row(row: dict[str, str]) -> dict:
     return item
 
 
+def _read_csv(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+    with path.open(encoding="utf-8", newline="") as f:
+        return [_item_from_row(row) for row in csv.DictReader(f)]
+
+
 def items(source: str = "vanilla") -> dict[str, list[dict]]:
-    """Category key to item list for a source, in the source's param order."""
+    """Category key to item list for a source, in the source's param order,
+    followed by the Seamless Co-op goods."""
     if source not in _items:
         name = "items.csv" if source == "vanilla" else f"{source}_items.csv"
-        path = _DATA_DIR / name
         data: dict[str, list[dict]] = {}
-        if path.exists():
-            with path.open(encoding="utf-8", newline="") as f:
-                for row in csv.DictReader(f):
-                    item = _item_from_row(row)
-                    data.setdefault(item["_cat"], []).append(item)
+        for item in _read_csv(_DATA_DIR / name):
+            data.setdefault(item["_cat"], []).append(item)
+        known = {item["Id"] for cat_items in data.values() for item in cat_items}
+        for item in _read_csv(_DATA_DIR / "seamless_items.csv"):
+            if item["Id"] not in known:
+                item["Seamless"] = True
+                data.setdefault(item["_cat"], []).append(item)
         _items[source] = data
     return _items[source]
 
@@ -144,6 +170,8 @@ def category_of(item_id: int, source: str = "vanilla") -> str:
 def display_name(item_id: int, source: str = "vanilla") -> str:
     """Item name with a +N suffix for upgraded weapons."""
     entry = lookup(item_id, source)
+    if entry is None and item_id in _SYSTEM_GOODS:
+        return _SYSTEM_GOODS[item_id]
     if entry is None:
         kind = _TYPE_LABELS.get(item_id >> 28, "Item")
         return f"Unknown {kind} ({item_id:#010x})"
@@ -153,6 +181,19 @@ def display_name(item_id: int, source: str = "vanilla") -> str:
 
 def is_spell(item: dict) -> bool:
     return bool(item.get("Spell"))
+
+
+def single_group(item_id: int) -> str | None:
+    """Name of the one-per-character group an item id belongs to, if any."""
+    if item_id >> 28 != 0x4:
+        return None
+    goods_id = item_id & 0x0FFFFFFF
+    return next((g for g, ids in _SINGLE_GROUPS.items() if goods_id in ids), None)
+
+
+def is_seamless(item: dict) -> bool:
+    """True for goods that only exist while the Seamless Co-op mod runs."""
+    return bool(item.get("Seamless"))
 
 
 def is_obtainable(item: dict) -> bool:
