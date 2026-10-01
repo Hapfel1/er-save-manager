@@ -108,7 +108,7 @@ class EventFlagsTab:
 
     def _get_slot_display_names(self):
         """Get display names for all slots"""
-        save_file = self.get_save_file()  # or self.save_file depending on class
+        save_file = self.get_save_file()
         if not save_file:
             return [str(i) for i in range(1, 11)]
 
@@ -179,7 +179,6 @@ class EventFlagsTab:
 
     def setup_ui(self):
         """Setup the event flags tab UI"""
-        # Main scrollable container
         main_frame = ctk.CTkScrollableFrame(self.parent, corner_radius=0)
         main_frame.pack(fill=tk.BOTH, expand=True)
         bind_mousewheel(main_frame)
@@ -188,7 +187,6 @@ class EventFlagsTab:
             "<Configure>", lambda _e: self._schedule_fit_flag_list(), add="+"
         )
 
-        # Header
         ctk.CTkLabel(
             main_frame,
             text="Event Flags",
@@ -202,7 +200,6 @@ class EventFlagsTab:
             text_color=("gray50", "gray70"),
         ).pack(pady=(0, 12), padx=15, anchor="w")
 
-        # Slot selector
         slot_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         slot_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
@@ -212,7 +209,7 @@ class EventFlagsTab:
 
         self.eventflag_slot_var = tk.IntVar(value=1)
         slot_names = self._get_slot_display_names()
-        self.event_flag_slot_combo = ctk.CTkComboBox(  # Store reference with self.
+        self.event_flag_slot_combo = ctk.CTkComboBox(
             slot_frame,
             values=slot_names,
             width=200,
@@ -310,7 +307,6 @@ class EventFlagsTab:
             width=120,
         ).pack(side=tk.LEFT)
 
-        # Category selector
         filter_frame = ctk.CTkFrame(main_frame, corner_radius=10)
         filter_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
@@ -348,7 +344,6 @@ class EventFlagsTab:
         patch_combo_scroll(self.subcat_combo)
         self.subcat_combo.pack(side=tk.LEFT)
 
-        # Search bar
         search_frame = ctk.CTkFrame(main_frame, corner_radius=10)
         search_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
@@ -379,7 +374,6 @@ class EventFlagsTab:
             search_inner, text="Clear", command=self.clear_search, width=90
         ).pack(side=tk.LEFT)
 
-        # Flags viewer
         flags_frame = ctk.CTkFrame(main_frame, corner_radius=10)
         flags_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
 
@@ -440,7 +434,6 @@ class EventFlagsTab:
             text_color=("gray50", "gray70"),
         ).pack(padx=12, anchor="w")
 
-        # Action buttons area
         action_frame = ctk.CTkFrame(flags_frame, fg_color="transparent")
         action_frame.pack(fill=tk.X, padx=12, pady=(0, 12))
 
@@ -509,7 +502,6 @@ class EventFlagsTab:
         else:
             self.subcat_combo.configure(values=[], state="disabled")
             self.subcategory_var.set("")
-            # Show all flags in category
             self.display_flags(category, None)
 
     def on_subcategory_changed(self, choice=None):
@@ -654,7 +646,6 @@ class EventFlagsTab:
 
         self._clear_flag_view()
 
-        # Search through all categories
         results = []
         for category in CATEGORIES:
             subcats = get_subcategories(category)
@@ -728,7 +719,6 @@ class EventFlagsTab:
             )
             return
 
-        # Count changes
         changes = 0
         for flag_id, new_state in self.flag_states.items():
             current_state = self.current_event_flags.get_flag(flag_id)
@@ -751,10 +741,8 @@ class EventFlagsTab:
         if not result:
             return
 
-        # Get save file for backup
         save_file = self.get_save_file()
 
-        # Create backup
         save_path = self.get_save_path()
         if save_path:
             backup_mgr = BackupManager(save_path)
@@ -764,7 +752,6 @@ class EventFlagsTab:
                 save=save_file,
             )
 
-        # Apply changes
         for flag_id, new_state in self.flag_states.items():
             self.current_event_flags.set_flag(flag_id, new_state)
 
@@ -773,19 +760,15 @@ class EventFlagsTab:
         slot = save_file.character_slots[self.current_slot]
 
         if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
-            # Calculate absolute offset in the raw data
             absolute_offset = slot.event_flags_offset
             event_flags_size = 0x1BF99F  # 1,833,375 bytes
 
-            # Write the modified event_flags buffer to raw_data
             save_file._raw_data[
                 absolute_offset : absolute_offset + event_flags_size
             ] = slot.event_flags
 
-        # Recalculate checksums before saving
         save_file.recalculate_checksums()
 
-        # Save
         save_file.save(self.get_save_path())
         self.reload_save()
         self.show_toast(
@@ -793,7 +776,6 @@ class EventFlagsTab:
             duration=2500,
         )
 
-        # Clear states
         self.flag_states.clear()
 
     def export_flags(self):
@@ -999,7 +981,6 @@ class EventFlagsTab:
         width, height = 600, 500
         dialog.transient(self.parent)
 
-        # Center dialog over parent window
         dialog.update_idletasks()
         self.parent.update_idletasks()
         center_window(dialog, width, height, parent=self.parent)
@@ -1014,7 +995,6 @@ class EventFlagsTab:
             font=("Segoe UI", 14, "bold"),
         ).pack(pady=(15, 10), padx=15)
 
-        # Input frame
         input_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         input_frame.pack(fill=tk.X, padx=15, pady=10)
 
@@ -1107,7 +1087,6 @@ class EventFlagsTab:
             side=tk.LEFT, padx=2
         )
 
-        # Help text
         help_frame = ctk.CTkFrame(dialog, corner_radius=10)
         help_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
 
@@ -1310,7 +1289,6 @@ class EventFlagsTab:
         width, height = 780, 600
         dialog.transient(self.parent)
         dialog.update_idletasks()
-        # Center over parent window
         self.parent.update_idletasks()
         center_window(dialog, width, height, parent=self.parent)
         # Force rendering on Linux before grab_set
@@ -1329,7 +1307,6 @@ class EventFlagsTab:
             text_color=("gray50", "gray70"),
         ).pack(pady=(0, 12), padx=15)
 
-        # Category selector
         cat_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         cat_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
@@ -1346,7 +1323,6 @@ class EventFlagsTab:
         patch_combo_scroll(cat_combo)
         cat_combo.pack(side=tk.LEFT)
 
-        # Boss list
         boss_frame = ctk.CTkScrollableFrame(dialog, corner_radius=10)
         boss_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
         bind_mousewheel(boss_frame)
@@ -1354,7 +1330,6 @@ class EventFlagsTab:
         boss_vars = {}
 
         def populate_bosses(*_args):
-            # Clear current bosses
             for widget in boss_frame.winfo_children():
                 widget.destroy()
             boss_vars.clear()
@@ -1389,7 +1364,6 @@ class EventFlagsTab:
         cat_combo.configure(command=populate_bosses)
         populate_bosses()
 
-        # Action buttons
         btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
@@ -1420,7 +1394,6 @@ class EventFlagsTab:
                 )
                 return
 
-            # Get save file for backup
             save_file = self.get_save_file()
 
             if save_path and save_path.is_file():
@@ -1505,10 +1478,8 @@ class EventFlagsTab:
                     self.current_event_flags.set_flag(flag_id, False)
                 count += 1
 
-            # Get save file for backup
             save_file = self.get_save_file()
 
-            # Create backup
             save_path = self.get_save_path()
             if save_path and save_path.is_file():
                 try:
@@ -1597,7 +1568,6 @@ class EventFlagsTab:
                 )
                 return
 
-            # Get save file for backup
             save_file = self.get_save_file()
 
             if save_path and save_path.is_file():
@@ -1683,10 +1653,8 @@ class EventFlagsTab:
                     self.current_event_flags.set_flag(flag_id, True)
                 count += 1
 
-            # Get save file for backup
             save_file = self.get_save_file()
 
-            # Create backup
             save_path = self.get_save_path()
             if save_path and save_path.is_file():
                 try:
@@ -1786,7 +1754,6 @@ class EventFlagsTab:
         dialog.transient(self.parent)
         dialog.update_idletasks()
 
-        # Center dialog
         self.parent.update_idletasks()
         center_window(dialog, width, height, parent=self.parent)
 
@@ -1805,7 +1772,6 @@ class EventFlagsTab:
             text_color=("gray50", "gray70"),
         ).pack(pady=(0, 12), padx=15)
 
-        # NPC list
         npc_frame = ctk.CTkScrollableFrame(dialog, corner_radius=10)
         npc_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
         bind_mousewheel(npc_frame)
@@ -1839,7 +1805,6 @@ class EventFlagsTab:
             )
             checkbox.pack(side=tk.LEFT, padx=8, pady=6)
 
-        # Action buttons
         btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
@@ -1868,7 +1833,6 @@ class EventFlagsTab:
                 )
                 return
 
-            # Create backup
             save_file = self.get_save_file()
             if save_path:
                 try:
@@ -1982,7 +1946,6 @@ class EventFlagsTab:
             text_color=("gray50", "gray70"),
         ).pack(pady=(0, 10), padx=15)
 
-        # Selection toolbar
         sel_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         sel_frame.pack(fill=tk.X, padx=15, pady=(0, 8))
 
@@ -2025,7 +1988,6 @@ class EventFlagsTab:
             sel_frame, text="Unselect All", command=unselect_all, width=110
         ).pack(side=tk.LEFT)
 
-        # Scrollable pool list
         pool_frame = ctk.CTkScrollableFrame(dialog, corner_radius=10)
         pool_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
         bind_mousewheel(pool_frame)
@@ -2064,7 +2026,6 @@ class EventFlagsTab:
                 variable=var,
             ).pack(anchor="w", pady=2, padx=8)
 
-        # Action buttons
         btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 

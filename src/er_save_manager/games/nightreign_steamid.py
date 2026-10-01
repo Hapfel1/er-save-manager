@@ -149,7 +149,6 @@ def patch_steamid_nr(
     if file_count < 11:
         return False, f"Expected at least 11 entries, found {file_count}"
 
-    # Read entry table
     entries: list[_NrEntry] = []
     for i in range(file_count):
         pos = _ENTRIES_START + i * _ENTRY_STRIDE

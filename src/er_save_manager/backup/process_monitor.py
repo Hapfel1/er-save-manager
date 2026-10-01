@@ -257,7 +257,6 @@ def show_auto_backup_first_run_dialog(
         if not result:
             return False
 
-        # Try to find existing saves automatically
         found_paths = []
         if profile:
             try:
@@ -338,7 +337,6 @@ def show_auto_backup_first_run_dialog(
             dlg.wait_window()
             chosen_path = selected[0]
 
-        # If nothing picked yet, offer file browser
         if not chosen_path:
             ext_str = " ".join(
                 f"*{e}" for e in (profile.extensions if profile else [".sl2"])
@@ -354,7 +352,6 @@ def show_auto_backup_first_run_dialog(
         if not chosen_path:
             return False
 
-        # Save configuration
         from pathlib import Path
 
         chosen_path = str(Path(chosen_path).resolve())

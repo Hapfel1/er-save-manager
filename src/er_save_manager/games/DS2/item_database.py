@@ -1296,6 +1296,9 @@ SEAMLESS_ITEMS: dict[str, str] = {
     "Darkcaller Bell": "0A E1 F5 05",
     "Ancient Dragon Ring": "0B E1 F5 05",
 }
+# The mod's ItemParam rows (built in ds2sc.dll) hold one of each; the
+# regulation embedded in the save does not contain them.
+SEAMLESS_MAX_STACK = 1
 
 
 CATEGORIES: dict[str, dict[str, str]] = {

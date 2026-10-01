@@ -243,15 +243,12 @@ class Inventory:
         """
         obj = cls()
 
-        # Read common items
         obj.common_item_count = struct.unpack("<I", f.read(4))[0]
         obj.common_items = [InventoryItem.read(f) for _ in range(common_capacity)]
 
-        # Read key items
         obj.key_item_count = struct.unpack("<I", f.read(4))[0]
         obj.key_items = [InventoryItem.read(f) for _ in range(key_capacity)]
 
-        # Read counters
         obj.equip_index_counter = struct.unpack("<I", f.read(4))[0]
         obj.acquisition_index_counter = struct.unpack("<I", f.read(4))[0]
 
@@ -259,17 +256,14 @@ class Inventory:
 
     def write(self, f: BytesIO):
         """Write Inventory to stream"""
-        # Write common items
         f.write(struct.pack("<I", self.common_item_count))
         for item in self.common_items:
             item.write(f)
 
-        # Write key items
         f.write(struct.pack("<I", self.key_item_count))
         for item in self.key_items:
             item.write(f)
 
-        # Write counters
         f.write(struct.pack("<I", self.equip_index_counter))
         f.write(struct.pack("<I", self.acquisition_index_counter))
 

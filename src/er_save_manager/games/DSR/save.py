@@ -971,7 +971,6 @@ class DSRCharacter:
 
     def _read_utf16(self, offset: int, length: int) -> str:
         raw = bytes(self._data[offset : offset + length])
-        # find null terminator
         end = 0
         while end < length - 1 and not (raw[end] == 0 and raw[end + 1] == 0):
             end += 2
@@ -1017,7 +1016,6 @@ class DSRCharacter:
         slot_start = 0 if is_key else KEY_ITEM_SLOTS
         slot_end = KEY_ITEM_SLOTS if is_key else MAX_INVENTORY_SLOTS
 
-        # Stack onto existing slot for stackable non-weapons
         if max_stack > 1 and type_numeric != 0:
             for slot_idx in range(slot_start, slot_end):
                 existing = self.read_item(slot_idx)
@@ -1030,7 +1028,6 @@ class DSRCharacter:
                     self.write_item(slot_idx, existing)
                     return slot_idx
 
-        # Find the first empty slot
         for slot_idx in range(slot_start, slot_end):
             if self.read_item(slot_idx).is_empty:
                 new_item = DSRItem(

@@ -92,12 +92,10 @@ class TeleportFix(BaseFix):
         if slot.is_empty():
             return False
 
-        # Check if in DLC area
         if hasattr(slot, "map_id") and slot.map_id:
             if slot.map_id.is_dlc():
                 return True
 
-        # Check for any corruption
         has_corruption, _ = slot.has_corruption()
         return has_corruption
 
@@ -108,12 +106,10 @@ class TeleportFix(BaseFix):
         if slot.is_empty():
             return FixResult(applied=False, description="Slot is empty")
 
-        # Store original location for logging
         original_map = "Unknown"
         if hasattr(slot, "map_id") and slot.map_id:
             original_map = slot.map_id.to_decimal()
 
-        # Update map_id in parsed structure
         slot.map_id = self.destination.map_id
 
         # Keep player coordinate map ID in sync
@@ -125,10 +121,8 @@ class TeleportFix(BaseFix):
             f"To: {self.destination.map_id.to_decimal()}",
         ]
 
-        # Also set coordinates if available
         if self.destination.coordinates and hasattr(slot, "player_coordinates"):
             try:
-                # Update primary coordinates
                 coords = slot.player_coordinates.coordinates
                 coords.x = self.destination.coordinates[0]
                 coords.y = self.destination.coordinates[1]
@@ -200,13 +194,11 @@ class DLCEscapeFix(BaseFix):
 
         details = []
 
-        # Teleport to Limgrave
         teleport = TeleportFix("limgrave")
         teleport_result = teleport.apply(save, slot_index)
         if teleport_result.applied:
             details.extend(teleport_result.details)
 
-        # Clear DLC flag if set
         if slot.has_dlc_flag():
             from .dlc import DLCFlagFix
 

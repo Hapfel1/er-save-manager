@@ -45,14 +45,11 @@ class WeatherFix(BaseFix):
         if not weather or not map_id:
             return FixResult(applied=False, description="Missing weather or map data")
 
-        # Store original for logging
         original_area_id = weather.area_id
         correct_area_id = map_id.data[3]
 
-        # Update in memory
         weather.area_id = correct_area_id
 
-        # Write to raw data
         if hasattr(slot, "weather_offset") and slot.weather_offset > 0:
             weather_bytes = BytesIO()
             weather.write(weather_bytes)

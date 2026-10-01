@@ -48,7 +48,6 @@ class SaveInspectorTab:
 
     def setup_ui(self):
         """Setup the save fixer tab UI"""
-        # Character selection frame
         char_frame = ctk.CTkFrame(self.parent, corner_radius=12)
         char_frame.pack(fill="both", expand=True, pady=(0, 10))
 
@@ -76,7 +75,6 @@ class SaveInspectorTab:
             width=220,
         ).pack(side="right", padx=(0, 8))
 
-        # Instructions
         instructions_frame = ctk.CTkFrame(char_frame, fg_color="transparent")
         instructions_frame.pack(fill="x", padx=10, pady=(0, 10))
 
@@ -95,7 +93,6 @@ class SaveInspectorTab:
 
     def populate_character_list(self):
         """Populate character listbox"""
-        # Clear existing rows
         for child in self.list_frame.winfo_children():
             child.destroy()
         self.rows.clear()
@@ -114,7 +111,6 @@ class SaveInspectorTab:
                 )
                 return
 
-            # Get profiles safely
             profiles = None
             try:
                 if save_file.user_data_10_parsed:
@@ -133,7 +129,6 @@ class SaveInspectorTab:
                         frame.configure(fg_color=("#f5f5f5", "#2a2a3e"))
                         label.configure(text_color=("#333333", "#cccccc"))
 
-                # Notify GUI of slot selection
                 if self.on_slot_selected:
                     self.on_slot_selected(slot_index)
 
@@ -143,7 +138,6 @@ class SaveInspectorTab:
                     if not slot:
                         continue
 
-                    # Get character info safely
                     name = "Unknown"
                     level = "?"
 
@@ -155,7 +149,6 @@ class SaveInspectorTab:
                         except Exception:
                             pass
 
-                    # Get map location safely
                     map_str = "Unknown"
                     try:
                         if hasattr(slot, "map_id") and slot.map_id:
@@ -178,7 +171,7 @@ class SaveInspectorTab:
                         anchor="w",
                         padx=8,
                         pady=8,
-                        font=("Courier", 13),  # Large font for readability
+                        font=("Courier", 13),
                     )
                     label.pack(fill="x")
 
@@ -196,7 +189,6 @@ class SaveInspectorTab:
                     error_row.pack(fill="x", padx=4, pady=4)
                     print(f"Error loading slot {slot_idx}: {e}")
 
-            # Select first item by default
             if self.rows:
                 select_slot(self.rows[0][0])
 

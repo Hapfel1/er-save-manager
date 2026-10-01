@@ -78,7 +78,6 @@ def patch_steamid_sekiro(save_path: Path, new_steam64: int) -> tuple[bool, str]:
         if current == 0:
             continue
 
-        # Patch SteamID
         data[steam_off : steam_off + 8] = new_bytes
 
         # Recalculate slot checksum: MD5 of data[checksum_off+16 : checksum_off+16+slot_len]
@@ -86,10 +85,8 @@ def patch_steamid_sekiro(save_path: Path, new_steam64: int) -> tuple[bool, str]:
         data[checksum_off : checksum_off + 16] = new_checksum
         slots_patched += 1
 
-    # Patch settings block SteamID
     data[_SETTINGS_STEAM_ID : _SETTINGS_STEAM_ID + 8] = new_bytes
 
-    # Recalculate settings checksum
     new_settings_checksum = _md5_range(
         data, _SETTINGS_CHECKSUM + 16, _SETTINGS_CHECK_LEN
     )

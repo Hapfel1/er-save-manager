@@ -70,7 +70,6 @@ def submit_character_via_browser(
             preview_image_path,
         )
 
-        # Create issue body
         issue_body = _create_issue_body(
             char_name,
             author,
@@ -80,10 +79,8 @@ def submit_character_via_browser(
             zip_path,
         )
 
-        # Create issue title
         issue_title = f"[Character Submission] {char_name}"
 
-        # Build URL with query parameters
         params = {
             "title": issue_title,
             "labels": "character-submission",
@@ -93,7 +90,6 @@ def submit_character_via_browser(
         query_string = urllib.parse.urlencode(params, safe="")
         url = f"https://github.com/{repo_owner}/{repo_name}/issues/new?{query_string}"
 
-        # Check URL length
         if len(url) > 8000:
             print("[Character Submission] URL too long, using compact format")
             issue_body = _create_compact_issue_body(
@@ -105,10 +101,8 @@ def submit_character_via_browser(
                 f"https://github.com/{repo_owner}/{repo_name}/issues/new?{query_string}"
             )
 
-        # Open browser
         opened = open_url(url)
 
-        # Show success dialog with ZIP info
         show_submission_success_dialog(char_name, zip_path)
 
         if not opened:
@@ -147,27 +141,21 @@ def _create_character_zip(
     Returns:
         Path to created ZIP file
     """
-    # Create temp directory for output
     output_dir = Path(tempfile.gettempdir()) / "er_character_submissions"
     output_dir.mkdir(exist_ok=True)
 
-    # Clean character name for filename
     safe_name = "".join(c for c in char_name if c.isalnum() or c in (" ", "-", "_"))
     safe_name = safe_name.strip().replace(" ", "_")
 
     zip_filename = f"{safe_name}_package.zip"
     zip_path = output_dir / zip_filename
 
-    # Create ZIP file
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
-        # Add .erc file
         zipf.write(erc_path, "character.erc")
 
-        # Add metadata.json
         metadata_json = json.dumps(metadata, indent=2)
         zipf.writestr("metadata.json", metadata_json)
 
-        # Add images
         if face_image_path:
             ext = Path(face_image_path).suffix or ".jpg"
             zipf.write(face_image_path, f"face{ext}")
@@ -193,13 +181,11 @@ def _create_issue_body(
 ) -> str:
     """Create formatted issue body with ZIP instructions."""
 
-    # Extract key metadata for display
     level = metadata.get("level", "?")
     char_class = metadata.get("class", "Unknown")
     ng_plus = metadata.get("ng_plus", 0)
     ng_text = f" (NG+{ng_plus})" if ng_plus > 0 else ""
 
-    # Extract max resources
     max_hp = metadata.get("max_hp")
     max_fp = metadata.get("max_fp")
     max_stamina = metadata.get("max_stamina")
@@ -260,7 +246,6 @@ Please attach your character files manually:
 
     body += "---\n\n"
 
-    # Add metadata preview
     body += """### 📊 Character Metadata Preview
 
 <details>
@@ -331,16 +316,13 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
 
     from er_save_manager.ui.utils import force_render_dialog
 
-    # Create custom dialog
     dialog = ctk.CTkToplevel()
     dialog.title("Submission Ready")
     width, height = 900, 600
     dialog.resizable(False, False)
 
-    # Center on screen
     center_window(dialog, width, height)
 
-    # Make it stay on top
     dialog.attributes("-topmost", True)
 
     # Force rendering on Linux
@@ -351,7 +333,6 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
     main_frame = ctk.CTkFrame(dialog, fg_color="transparent")
     main_frame.pack(fill=ctk.BOTH, expand=True, padx=30, pady=30)
 
-    # Title
     title = ctk.CTkLabel(
         main_frame,
         text="✅ Character Ready to Submit!",
@@ -359,7 +340,6 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
     )
     title.pack(pady=(0, 20))
 
-    # ZIP info
     zip_filename = Path(zip_path).name
 
     info = ctk.CTkLabel(
@@ -378,7 +358,6 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
     )
     zip_label.pack(pady=(0, 25))
 
-    # Info box
     info_box = ctk.CTkFrame(
         main_frame, fg_color=("#f0f4f8", "#1e2839"), corner_radius=10
     )
@@ -413,7 +392,6 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
         text_color=("#4b5563", "#d0d8e0"),
     ).pack(anchor=ctk.W, padx=20, pady=(0, 15))
 
-    # Buttons frame
     button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
     button_frame.pack(fill=ctk.X, pady=(0, 0))
 
@@ -431,10 +409,8 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
                 )
         except Exception as e:
             print(f"Failed to open folder: {e}")
-            # Fallback: just print the path
             print(f"Package location: {folder_path}")
 
-    # Large "Open Folder" button
     open_btn = ctk.CTkButton(
         button_frame,
         text="📁 Open Folder",
@@ -445,7 +421,6 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
     )
     open_btn.pack(side=ctk.LEFT, padx=(0, 12))
 
-    # Close button
     close_btn = ctk.CTkButton(
         button_frame,
         text="Close",
@@ -456,7 +431,6 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
     )
     close_btn.pack(side=ctk.LEFT)
 
-    # Show path at bottom (for user reference)
     path_label = ctk.CTkLabel(
         main_frame,
         text="Package Location (for your reference):",

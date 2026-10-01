@@ -59,7 +59,6 @@ class BackupPruningWarningDialog(ctk.CTkToplevel):
             justify="left",
         ).pack(anchor="w", pady=(8, 12))
 
-        # Raise limit row
         limit_row = ctk.CTkFrame(main, fg_color="transparent")
         limit_row.pack(anchor="w", pady=(0, 12))
 

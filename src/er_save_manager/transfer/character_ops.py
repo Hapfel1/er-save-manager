@@ -58,7 +58,6 @@ class CharacterOperations:
         if char.is_empty():
             return
 
-        # Get offsets for profile summary
         _, profiles_base = CharacterOperations.get_profile_summary_offsets(save)
         profile_size = 0x24C
         profile_offset = profiles_base + slot_index * profile_size
@@ -74,19 +73,17 @@ class CharacterOperations:
         name = getattr(player, "character_name", "Unknown")
         if not name:
             name = "Unknown"
-        name = name[:16]  # Max 16 wide chars
+        name = name[:16]
         name_bytes = name.encode("utf-16le")
-        # Pad to exactly 32 bytes
         if len(name_bytes) < 32:
             name_bytes = name_bytes + b"\x00" * (32 - len(name_bytes))
         buf.write(name_bytes)
         buf.write(b"\x00\x00")  # 2 byte terminator
 
-        # Level (4 bytes)
         level = getattr(player, "level", 1)
         buf.write(struct.pack("<I", level))
 
-        # Seconds played (4 bytes) - try to preserve from source, otherwise 0
+        # Seconds played (4 bytes)
         # seconds_played lives in the profile summary, not in character slot
         # data, so a transfer cannot carry it over. Target gets 0.
         seconds_played = 0
@@ -96,11 +93,9 @@ class CharacterOperations:
         runes_memory = getattr(player, "runes_memory", 0)
         buf.write(struct.pack("<I", runes_memory))
 
-        # Map ID (4 bytes)
         map_id = getattr(player, "map_id", None)
         if map_id is not None:
             if hasattr(map_id, "data"):
-                # MapId object with .data attribute
                 map_bytes = bytes(map_id.data)[:4]
             elif isinstance(map_id, bytes):
                 map_bytes = map_id[:4]
@@ -110,7 +105,6 @@ class CharacterOperations:
             map_bytes = b"\x00\x00\x00\x00"
         buf.write(map_bytes)
 
-        # Unk0x34 (4 bytes)
         unk0x34 = getattr(player, "unk0x34", 0)
         buf.write(struct.pack("<I", unk0x34))
 
@@ -126,7 +120,6 @@ class CharacterOperations:
         else:
             face_bytes = b"\x00" * 0x124
 
-        # Ensure exactly 0x124 bytes
         if len(face_bytes) < 0x124:
             face_bytes = face_bytes + b"\x00" * (0x124 - len(face_bytes))
         elif len(face_bytes) > 0x124:
@@ -145,38 +138,31 @@ class CharacterOperations:
         else:
             equip_bytes = b"\x00" * 0xE8
 
-        # Ensure exactly 0xE8 bytes
         if len(equip_bytes) < 0xE8:
             equip_bytes = equip_bytes + b"\x00" * (0xE8 - len(equip_bytes))
         elif len(equip_bytes) > 0xE8:
             equip_bytes = equip_bytes[:0xE8]
         buf.write(equip_bytes)
 
-        # Body type (1 byte)
         body_type = getattr(player, "body_type", 0)
         buf.write(struct.pack("<B", body_type))
 
-        # Archetype (1 byte)
         archetype = getattr(player, "archetype", 0)
         buf.write(struct.pack("<B", archetype))
 
-        # Starting gift (1 byte)
         starting_gift = getattr(player, "starting_gift", 0)
         buf.write(struct.pack("<B", starting_gift))
 
         # Padding: 3 bytes + 4 bytes = 7 bytes
         buf.write(b"\x00" * 7)
 
-        # Get final data
         data = buf.getvalue()
 
-        # Verify size and pad/trim to exactly 0x24C bytes
         if len(data) < profile_size:
             data = data + b"\x00" * (profile_size - len(data))
         elif len(data) > profile_size:
             data = data[:profile_size]
 
-        # Write to raw_data at calculated offset
         save._raw_data[profile_offset : profile_offset + profile_size] = data
 
     def get_profile_summary_offsets(save: Save) -> tuple[int, int]:
@@ -192,11 +178,9 @@ class CharacterOperations:
         # Use actual parsed structure to find ProfileSummary location
         from io import BytesIO
 
-        # Simulate reading up to ProfileSummary to get offset
         f = BytesIO(save._raw_data)
         f.seek(CharacterOperations.get_user_data_10_offset(save))
 
-        # Skip checksum if PC
         if not save.is_ps:
             f.read(16)
 
@@ -206,7 +190,6 @@ class CharacterOperations:
         # SteamID (8 bytes)
         f.read(8)
 
-        # Settings - read until size matched
         settings_start = f.tell()
         # Settings expected to take 0x140 bytes total (with padding)
         f.seek(settings_start + 0x140)
@@ -219,7 +202,6 @@ class CharacterOperations:
         # IsProfileActive[10] - 10 bytes
         active_slots_offset = profile_summary_start
 
-        # Profiles start after active slots
         profiles_base = profile_summary_start + 0xA
 
         return (active_slots_offset, profiles_base)
@@ -237,7 +219,6 @@ class CharacterOperations:
         if from_slot == to_slot:
             raise ValueError("Source and destination slots cannot be the same")
 
-        # Log copy intent
         try:
             path = getattr(save, "_original_filepath", "<unknown>")
             logger.info("copy_slot: %s %d -> %d", path, from_slot, to_slot)
@@ -247,7 +228,6 @@ class CharacterOperations:
         if not hasattr(save, "_raw_data"):
             raise RuntimeError("Save does not have raw data")
 
-        # Ensure _raw_data is bytearray
         if isinstance(save._raw_data, bytes):
             save._raw_data = bytearray(save._raw_data)
 
@@ -272,16 +252,12 @@ class CharacterOperations:
             hex(to_offset),
         )
 
-        # Update profile summary in USER_DATA_10
         CharacterOperations._update_profile_summary(save, from_slot, to_slot)
 
-        # Mark slot as active
         CharacterOperations._set_slot_active(save, to_slot, True)
 
-        # Re-parse USER_DATA_10 to update parsed profile data
         CharacterOperations._reparse_user_data_10(save)
 
-        # Re-parse the modified slot
         from io import BytesIO
 
         from er_save_manager.parser.user_data_x import UserDataX
@@ -313,7 +289,6 @@ class CharacterOperations:
         ):
             raise RuntimeError("Both saves must have raw data")
 
-        # Log transfer intent and context
         try:
             s_path = getattr(source_save, "_original_filepath", "<unknown>")
             t_path = getattr(target_save, "_original_filepath", "<unknown>")
@@ -332,7 +307,6 @@ class CharacterOperations:
         except Exception:
             logger.exception("Failed to log transfer context")
 
-        # Ensure both are bytearray
         if isinstance(source_save._raw_data, bytes):
             source_save._raw_data = bytearray(source_save._raw_data)
         if isinstance(target_save._raw_data, bytes):
@@ -347,7 +321,6 @@ class CharacterOperations:
             hex(to_offset),
         )
 
-        # Copy entire slot (character data)
         target_save._raw_data[to_offset : to_offset + CharacterOperations.SLOT_SIZE] = (
             source_save._raw_data[
                 from_offset : from_offset + CharacterOperations.SLOT_SIZE
@@ -367,7 +340,6 @@ class CharacterOperations:
         source_profile_offset = source_profiles_base + from_slot * profile_size
         target_profile_offset = target_profiles_base + to_slot * profile_size
 
-        # Copy profile summary entry from source to target
         target_save._raw_data[
             target_profile_offset : target_profile_offset + profile_size
         ] = source_save._raw_data[
@@ -406,13 +378,11 @@ class CharacterOperations:
         except Exception:
             logger.exception("_patch_steamid_in_slot failed")
 
-        # Mark slot as active
         try:
             CharacterOperations._set_slot_active(target_save, to_slot, True)
         except Exception:
             logger.exception("_set_slot_active failed")
 
-        # Re-parse USER_DATA_10 to update parsed profile data
         try:
             CharacterOperations._reparse_user_data_10(target_save)
         except Exception:
@@ -435,7 +405,6 @@ class CharacterOperations:
             )
             # not fatal
 
-        # Log resulting character info
         try:
             slot_obj = target_save.character_slots[to_slot]
             name = (
@@ -454,7 +423,6 @@ class CharacterOperations:
         except Exception:
             logger.exception("Failed to log transfer result for slot %d", to_slot)
 
-        # Recalculate checksums for the modified target save to ensure integrity
         try:
             if hasattr(target_save, "recalculate_checksums"):
                 target_save.recalculate_checksums()
@@ -474,7 +442,6 @@ class CharacterOperations:
         if not hasattr(save, "_raw_data"):
             raise RuntimeError("Save does not have raw data")
 
-        # Ensure _raw_data is bytearray
         if isinstance(save._raw_data, bytes):
             save._raw_data = bytearray(save._raw_data)
 
@@ -485,16 +452,12 @@ class CharacterOperations:
             bytes(CharacterOperations.SLOT_SIZE)
         )
 
-        # Clear profile summary
         CharacterOperations._clear_profile_summary(save, slot_index)
 
-        # Mark slot as inactive
         CharacterOperations._set_slot_active(save, slot_index, False)
 
-        # Re-parse USER_DATA_10 to update parsed profile data
         CharacterOperations._reparse_user_data_10(save)
 
-        # Replace with empty slot object
         from er_save_manager.parser.user_data_x import UserDataX
 
         save.character_slots[slot_index] = UserDataX()
@@ -515,14 +478,12 @@ class CharacterOperations:
         if not hasattr(save, "_raw_data"):
             raise RuntimeError("Save does not have raw data")
 
-        # Ensure _raw_data is bytearray
         if isinstance(save._raw_data, bytes):
             save._raw_data = bytearray(save._raw_data)
 
         offset_a = CharacterOperations.get_slot_offset(save, slot_a)
         offset_b = CharacterOperations.get_slot_offset(save, slot_b)
 
-        # Swap entire slots using temp buffer
         temp = bytes(
             save._raw_data[offset_a : offset_a + CharacterOperations.SLOT_SIZE]
         )
@@ -531,19 +492,15 @@ class CharacterOperations:
         )
         save._raw_data[offset_b : offset_b + CharacterOperations.SLOT_SIZE] = temp
 
-        # Swap profile summaries
         CharacterOperations._swap_profile_summaries(save, slot_a, slot_b)
 
-        # Swap active flags
         active_a = CharacterOperations._is_slot_active(save, slot_a)
         active_b = CharacterOperations._is_slot_active(save, slot_b)
         CharacterOperations._set_slot_active(save, slot_a, active_b)
         CharacterOperations._set_slot_active(save, slot_b, active_a)
 
-        # Re-parse USER_DATA_10 to update parsed profile data
         CharacterOperations._reparse_user_data_10(save)
 
-        # Re-parse both slots
         from io import BytesIO
 
         from er_save_manager.parser.user_data_x import UserDataX
@@ -565,7 +522,6 @@ class CharacterOperations:
         if not save.user_data_10_parsed or not save.user_data_10_parsed.profile_summary:
             return
 
-        # Get actual ProfileSummary offsets from parsed structure
         _, profiles_base = CharacterOperations.get_profile_summary_offsets(save)
         profile_size = 0x24C
 
@@ -579,17 +535,14 @@ class CharacterOperations:
     @staticmethod
     def _update_profile_summary_from_slot(save: Save, slot_index: int) -> None:
         """Update profile summary for a slot using the character data in that slot."""
-        # Defensive: ensure slot is not empty
         char = save.character_slots[slot_index]
         if char.is_empty():
             return
 
-        # Get offsets for profile summary
         _, profiles_base = CharacterOperations.get_profile_summary_offsets(save)
         profile_size = 0x24C
         profile_offset = profiles_base + slot_index * profile_size
 
-        # Build a new Profile entry from the slot's player_game_data
         import struct
         from io import BytesIO
 
@@ -631,7 +584,6 @@ class CharacterOperations:
         elif len(data) > profile_size:
             data = data[:profile_size]
 
-        # Write to raw_data
         save._raw_data[profile_offset : profile_offset + profile_size] = data
 
     @staticmethod
@@ -688,11 +640,9 @@ class CharacterOperations:
         if not save.user_data_10_parsed:
             return
 
-        # Ensure _raw_data is bytearray
         if isinstance(save._raw_data, bytes):
             save._raw_data = bytearray(save._raw_data)
 
-        # Get SteamID from USER_DATA_10
         target_steamid = save.user_data_10_parsed.steam_id
         if target_steamid == 0:
             return
@@ -717,14 +667,12 @@ class CharacterOperations:
 
         from er_save_manager.parser.user_data_10 import UserData10
 
-        # Re-parse USER_DATA_10 from updated raw data
         f = BytesIO(save._raw_data)
         f.seek(CharacterOperations.get_user_data_10_offset(save))
 
         try:
             save.user_data_10_parsed = UserData10.read(f, save.is_ps)
         except Exception as e:
-            # If parsing fails, clear the old parsed data
             save.user_data_10_parsed = None
             print(f"Warning: Failed to re-parse USER_DATA_10: {e}")
 
@@ -751,7 +699,6 @@ class CharacterOperations:
         if not hasattr(save, "_raw_data"):
             raise RuntimeError("Save does not have raw data")
 
-        # Ensure _raw_data is bytearray
         if isinstance(save._raw_data, bytes):
             save._raw_data = bytearray(save._raw_data)
 
@@ -761,7 +708,6 @@ class CharacterOperations:
 
         slot_offset = CharacterOperations.get_slot_offset(save, slot_index)
 
-        # Get slot data (without checksum prefix)
         raw_slot_start = save._slot_offsets[slot_index]
         slot_data = bytes(
             save._raw_data[slot_offset : raw_slot_start + CharacterOperations.SLOT_SIZE]
@@ -819,29 +765,20 @@ class CharacterOperations:
         elif len(profile_data) > profile_size:
             profile_data = profile_data[:profile_size]
 
-        # Get active flag
         is_active = CharacterOperations._is_slot_active(save, slot_index)
 
-        # Build file
         import hashlib
 
         with open(output_path, "wb") as f:
-            # Magic
             f.write(b"ERC\x00")
-            # Version
             f.write(struct.pack("<I", 1))
             # Active flag (1 byte)
             f.write(struct.pack("<B", 1 if is_active else 0))
-            # Slot data size
             f.write(struct.pack("<I", len(slot_data)))
-            # Slot data
             f.write(slot_data)
-            # Profile size
             f.write(struct.pack("<I", len(profile_data)))
-            # Profile data
             f.write(profile_data)
 
-        # Calculate and append checksum
         with open(output_path, "rb") as f:
             data = f.read()
 
@@ -866,17 +803,14 @@ class CharacterOperations:
         if not hasattr(save, "_raw_data"):
             raise RuntimeError("Save does not have raw data")
 
-        # Ensure _raw_data is bytearray
         if isinstance(save._raw_data, bytes):
             save._raw_data = bytearray(save._raw_data)
 
         with open(input_path, "rb") as f:
-            # Verify magic
             magic = f.read(4)
             if magic != b"ERC\x00":
                 raise ValueError("Invalid .erc file: bad magic")
 
-            # Read version
             version = struct.unpack("<I", f.read(4))[0]
             if version != 1:
                 raise ValueError(f"Unsupported .erc version: {version}")
@@ -885,11 +819,9 @@ class CharacterOperations:
             active_flag = struct.unpack("<B", f.read(1))[0]
             bool(active_flag)
 
-            # Read slot data
             slot_size = struct.unpack("<I", f.read(4))[0]
             slot_data = f.read(slot_size)
 
-            # Read profile data
             profile_size = struct.unpack("<I", f.read(4))[0]
             if profile_size != 0x24C:
                 raise ValueError(
@@ -910,12 +842,9 @@ class CharacterOperations:
                 f"profile_data={len(profile_data)} bytes"
             )
 
-            # Read checksum
             checksum_expected = f.read(16)
 
-        # Verify checksum
         with open(input_path, "rb") as f:
-            # Read everything except last 16 bytes (checksum)
             f.seek(0)
             data_to_hash = f.read()
             data_to_hash = data_to_hash[:-16]  # Remove checksum from end
@@ -927,7 +856,6 @@ class CharacterOperations:
             if checksum_actual != checksum_expected:
                 raise ValueError("Checksum mismatch - file may be corrupted")
 
-        # Write to slot
         slot_offset = CharacterOperations.get_slot_offset(save, slot_index)
 
         # Zero the whole slot first, or bytes from the previous character
@@ -962,7 +890,6 @@ class CharacterOperations:
             CharacterOperations.SLOT_DATA_SIZE,
         )
 
-        # Patch SteamID now that the slot object has the correct offsets.
         CharacterOperations._patch_steamid_in_slot(save, slot_index)
 
         # Re-parse USER_DATA_10 so CSProfileSummary reflects the written profile data
@@ -1008,7 +935,6 @@ class CharacterOperations:
 
         player_data = char.player_game_data
 
-        # Basic character info
         from er_save_manager.data.starting_classes import get_class_data
 
         profile = None
@@ -1026,7 +952,6 @@ class CharacterOperations:
         else:
             archetype_id = player_data.archetype
 
-        # Use Convergence classes if applicable
         is_convergence = (
             save.is_convergence if hasattr(save, "is_convergence") else False
         )
@@ -1045,7 +970,6 @@ class CharacterOperations:
             "level": player_data.level,
             "class": char_class,
             "body_type": body_type,
-            # Stats
             "stats": {
                 "vigor": player_data.vigor,
                 "mind": player_data.mind,
@@ -1056,7 +980,6 @@ class CharacterOperations:
                 "faith": player_data.faith,
                 "arcane": player_data.arcane,
             },
-            # Max resources
             "max_hp": getattr(player_data, "base_max_hp", 0),
             "max_fp": getattr(player_data, "base_max_fp", 0),
             "max_stamina": getattr(player_data, "base_max_sp", 0),
@@ -1064,7 +987,6 @@ class CharacterOperations:
             # Playtime (from USER_DATA_10 ProfileSummary)
             "playtime_seconds": playtime_seconds,
             "playtime": playtime_formatted,
-            # Progression info
             "ng_level": CharacterOperations._get_ng_level(save, slot_index),
             "bosses_defeated": CharacterOperations._count_bosses_defeated(
                 save, slot_index
@@ -1072,11 +994,8 @@ class CharacterOperations:
             "graces_unlocked": CharacterOperations._count_graces_unlocked(
                 save, slot_index
             ),
-            # NG+ detection - check if any NG+1 flags are set
             "ng_plus": CharacterOperations._detect_ng_plus(save, slot_index),
-            # Equipment
             "equipment": CharacterOperations._extract_equipment_summary(char),
-            # DLC access detection (checks if character has Shadow of the Erdtree flag)
             "has_dlc": CharacterOperations._has_dlc_access(char),
         }
 
@@ -1099,12 +1018,10 @@ class CharacterOperations:
         try:
             from er_save_manager.parser.event_flags import EventFlags
 
-            # Get event flags for character
             event_flags = save.character_slots[slot_index].event_flags
             if not event_flags:
                 return 0
 
-            # Check NG+ progression flags
             for ng_cycle in range(7, 0, -1):  # Check NG+7 down to NG+1
                 flag_id = 10000799 + (ng_cycle * 1000)
                 if EventFlags.get_flag(event_flags, flag_id):
@@ -1134,7 +1051,6 @@ class CharacterOperations:
             if not event_flags:
                 return 0
 
-            # Count all flags in "Bosses" category that are set
             boss_count = 0
             for flag_id, flag_data in EVENT_FLAGS.items():
                 if flag_data.get("category") == "Bosses" and EventFlags.get_flag(
@@ -1157,7 +1073,6 @@ class CharacterOperations:
             if not event_flags:
                 return 0
 
-            # Count all flags in "Grace" category that are set
             grace_count = 0
             for flag_id, flag_data in EVENT_FLAGS.items():
                 if flag_data.get("category") == "Grace" and EventFlags.get_flag(
@@ -1255,10 +1170,8 @@ class CharacterOperations:
         - Ashes of War: 850000-860000
         """
         try:
-            # Check equipped items
             equipped = char.equipped_items
             if equipped:
-                # Check weapons
                 for weapon in [
                     equipped.right_hand_armament_1,
                     equipped.right_hand_armament_2,
@@ -1270,7 +1183,6 @@ class CharacterOperations:
                     if weapon and 41000000 <= weapon < 42000000:
                         return True
 
-                # Check armor
                 for armor in [
                     equipped.head_armor,
                     equipped.chest_armor,
@@ -1280,7 +1192,6 @@ class CharacterOperations:
                     if armor and 43000000 <= armor < 44000000:
                         return True
 
-                # Check talismans
                 for talisman in [
                     equipped.talisman_1,
                     equipped.talisman_2,

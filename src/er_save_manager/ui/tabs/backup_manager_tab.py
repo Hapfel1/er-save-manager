@@ -129,14 +129,12 @@ class BackupManagerTab:
         game_names = [p.name for p in profiles]
         self._game_var = tk.StringVar(value=game_names[0] if game_names else "")
 
-        # Main button
         ctk.CTkButton(
             self.parent,
             text="Open Backup Manager Window",
             command=self.show_backup_manager,
         ).pack(pady=(10, 10))
 
-        # Quick stats
         stats_frame = ctk.CTkFrame(self.parent)
         stats_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 

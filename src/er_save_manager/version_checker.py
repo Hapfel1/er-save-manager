@@ -33,7 +33,6 @@ class VersionChecker:
             - download_url: URL to the releases page
         """
         try:
-            # Fetch latest release info from GitHub API
             req = urllib.request.Request(
                 self.GITHUB_API_URL,
                 headers={"Accept": "application/vnd.github.v3+json"},
@@ -51,7 +50,6 @@ class VersionChecker:
             if not latest_version:
                 return False, None, None
 
-            # Compare versions
             try:
                 current = Version(self.current_version)
                 latest = Version(latest_version)

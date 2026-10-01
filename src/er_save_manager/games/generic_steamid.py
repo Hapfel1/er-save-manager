@@ -100,7 +100,6 @@ def patch_steamid_generic(
             error=f"Invalid Steam64 ID: {new_steamid}",
         )
 
-    # Detect old SteamID if not provided
     if old_steamid is None:
         found = find_steamids_in_file(data)
         if not found:

@@ -56,9 +56,7 @@ class Util:
         bytes_to_read = max_chars * 2
         data = f.read(bytes_to_read)
         try:
-            # Decode the full data
             decoded = data.decode("utf-16le", errors="ignore")
-            # Strip trailing null characters
             return decoded.rstrip("\x00")
         except Exception:
             return ""
@@ -199,7 +197,6 @@ class MapId:
         Returns:
             True if this is a DLC Shadow of the Erdtree location
         """
-        # Check the map prefix (data[3])
         map_prefix = self.data[3]
 
         # DLC includes:
@@ -260,7 +257,6 @@ class Gaitem:
 
         obj = cls(gaitem_handle=gaitem_handle, item_id=item_id)
 
-        # Conditional reading based on handle type
         handle_type = gaitem_handle & 0xF0000000
 
         if gaitem_handle != 0 and handle_type != 0xC0000000:
@@ -281,7 +277,6 @@ class Gaitem:
         f.write(struct.pack("<I", self.gaitem_handle))
         f.write(struct.pack("<I", self.item_id))
 
-        # Conditional writing based on handle type
         handle_type = self.gaitem_handle & 0xF0000000
 
         if self.gaitem_handle != 0 and handle_type != 0xC0000000:

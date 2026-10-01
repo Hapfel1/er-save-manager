@@ -84,7 +84,6 @@ class DS3EditorTab:
         top = ctk.CTkFrame(frame, fg_color="transparent")
         top.pack(fill="x", pady=5, padx=10)
 
-        # Attributes column
         af = ctk.CTkFrame(top, fg_color="transparent")
         af.pack(side="left", fill="both", expand=True, padx=(0, 5))
         ctk.CTkLabel(af, text="Attributes", font=("Segoe UI", 12, "bold")).pack(
@@ -114,7 +113,6 @@ class DS3EditorTab:
                 row=i, column=1, padx=5, pady=5
             )
 
-        # Resources column
         rf = ctk.CTkFrame(top, fg_color="transparent")
         rf.pack(side="left", fill="both", expand=True, padx=(5, 0))
         ctk.CTkLabel(rf, text="Resources", font=("Segoe UI", 12, "bold")).pack(

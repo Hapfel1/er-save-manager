@@ -19,8 +19,6 @@ from er_save_manager import VersionChecker, __version__
 from er_save_manager.games.game_profiles import GAME_PROFILES, PROFILES_BY_KEY
 from er_save_manager.parser import Save
 from er_save_manager.platform import PlatformUtils
-
-# Import all modular components
 from er_save_manager.ui.dialogs.character_details import CharacterDetailsDialog
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.editors import (
@@ -71,11 +69,8 @@ class SaveManagerGUI:
         self.root.geometry("1200x1000")
         self.root.minsize(800, 700)
 
-        # Set application icon
         try:
-            # Detect if running as frozen/packaged executable
             if getattr(sys, "frozen", False):
-                # Running as compiled executable
                 if hasattr(sys, "_MEIPASS"):
                     # PyInstaller (Linux)
                     base_path = Path(sys._MEIPASS)
@@ -83,7 +78,6 @@ class SaveManagerGUI:
                     # cx_Freeze (Windows)
                     base_path = Path(sys.executable).parent
             else:
-                # Running as script
                 base_path = Path(__file__).parent.parent.parent
 
             icon_path = base_path / "resources" / "icon" / "icon.ico"
@@ -101,7 +95,6 @@ class SaveManagerGUI:
         except Exception:
             pass
 
-        # Initialize settings
         self.settings = get_settings()
 
         # Configure customtkinter appearance based on saved theme (default to dark)
@@ -113,7 +106,6 @@ class SaveManagerGUI:
             ctk.set_appearance_mode("light")
             theme_name = "bright"
 
-        # Try to load lavender theme from customtkinterthemes
         try:
             import customtkinterthemes as ctt
 
@@ -138,15 +130,12 @@ class SaveManagerGUI:
         # Initialize theme manager for any remaining ttk widgets (during migration)
         self.theme_manager = ThemeManager(theme_name)
 
-        # Configure style for legacy ttk widgets
         style = ttk.Style()
         style.theme_use("clam")
         self.theme_manager.apply_theme(style)
 
-        # Configure background for root window
         self.root.configure(bg=self.theme_manager.get_color("bg"))
 
-        # State
         self.default_save_path = Path(os.environ.get("APPDATA", "")) / "EldenRing"
         self.save_file = None
         self.save_path = None
@@ -159,11 +148,8 @@ class SaveManagerGUI:
 
         # DSR-specific parsed save (separate from ER save_file)
         self.dsr_save = None
-        # DS3-specific parsed save
         self.ds3_save = None
-        # DS2-specific parsed save
         self.ds2_save = None
-        # Nightreign parsed save
         self._nr_save: NightreignSave | None = None
         self._file_load_buttons: list = []
 
@@ -177,7 +163,6 @@ class SaveManagerGUI:
             "Gestures": False,
         }
 
-        # Status
         self.status_var = tk.StringVar(value="Ready")
 
         # Resize debouncing for performance
@@ -185,10 +170,8 @@ class SaveManagerGUI:
         self._last_width = None
         self._last_height = None
 
-        # Auto-backup process monitor
         self.process_monitor = None
 
-        # External file modification watcher
         self._watched_mtime: float | None = None
         self._file_change_dialog_open: bool = False
         self._file_watcher_running: bool = False
@@ -206,16 +189,13 @@ class SaveManagerGUI:
         # Center after scaling is applied so the scaled size is used
         center_window(self.root, 1200, 1000)
 
-        # Apply theme colors to tk widgets (non-ttk)
         self.theme_manager.apply_tk_widget_colors(self.root)
 
-        # Bind resize event with debouncing
         self.root.bind("<Configure>", self._on_window_resize)
 
         # Show external-modification dialog when the user refocuses the window
         self.root.bind("<FocusIn>", self._on_window_focus)
 
-        # Start auto-backup process monitor
         self.root.after(2000, self._init_process_monitor)
 
         # Check for updates asynchronously (don't block UI startup)
@@ -275,7 +255,6 @@ class SaveManagerGUI:
         self._last_width = width
         self._last_height = height
 
-        # Cancel pending resize processing
         if self._resize_timer:
             self.root.after_cancel(self._resize_timer)
 
@@ -291,7 +270,6 @@ class SaveManagerGUI:
 
         def check_in_thread():
             try:
-                # Check if user wants to see update notifications
                 if not self.settings.get("show_update_notifications", True):
                     return
 
@@ -306,10 +284,8 @@ class SaveManagerGUI:
                     )
 
             except Exception as e:
-                # Silently fail on update check errors
                 print(f"Update check failed: {e}")
 
-        # Run check in background thread
         import threading
 
         thread = threading.Thread(target=check_in_thread, daemon=True)
@@ -434,14 +410,12 @@ class SaveManagerGUI:
         main_frame = ctk.CTkFrame(dialog)
         main_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=20)
 
-        # Title
         ctk.CTkLabel(
             main_frame,
             text="🎉 Update Available!",
             font=("Segoe UI", 16, "bold"),
         ).pack(pady=(0, 15))
 
-        # Version info
         info_text = (
             f"A new version of ER Save Manager is available!\n\n"
             f"Current version: {__version__}\n"
@@ -454,14 +428,12 @@ class SaveManagerGUI:
             justify=ctk.LEFT,
         ).pack(pady=(0, 20))
 
-        # Download options label
         ctk.CTkLabel(
             main_frame,
             text="Download from:",
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor=ctk.W, pady=(0, 10))
 
-        # Download buttons
         button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         button_frame.pack(fill=ctk.X, pady=(0, 20))
 
@@ -489,7 +461,6 @@ class SaveManagerGUI:
             height=40,
         ).pack(side=ctk.LEFT)
 
-        # Don't show again checkbox
         dont_show_var = ctk.BooleanVar(value=False)
         checkbox = ctk.CTkCheckBox(
             main_frame,
@@ -499,7 +470,6 @@ class SaveManagerGUI:
         )
         checkbox.pack(anchor=ctk.W, pady=(0, 15))
 
-        # Close button
         def on_close():
             if dont_show_var.get():
                 self.settings.set("show_update_notifications", False)
@@ -527,18 +497,15 @@ class SaveManagerGUI:
 
     def setup_ui(self):
         """Setup main UI structure with optimized layout"""
-        # Use grid for main container - more efficient than pack
         self.root.grid_rowconfigure(0, weight=0)  # Title
         self.root.grid_rowconfigure(1, weight=0)  # File selection
         self.root.grid_rowconfigure(2, weight=1)  # Main content (tabs)
         self.root.grid_rowconfigure(3, weight=0)  # Status bar
         self.root.grid_columnconfigure(0, weight=1)
 
-        # Title
         title_frame = ctk.CTkFrame(self.root, corner_radius=12)
         title_frame.grid(row=0, column=0, padx=12, pady=(12, 6), sticky="ew")
 
-        # Support button (top right corner)
         support_btn = ctk.CTkButton(
             title_frame,
             text="☕ Support me",
@@ -581,11 +548,9 @@ class SaveManagerGUI:
             font=("Segoe UI", 11),
         ).pack(pady=(0, 10))
 
-        # File Selection
         file_frame = ctk.CTkFrame(self.root, corner_radius=12)
         file_frame.grid(row=1, column=0, padx=12, pady=10, sticky="ew")
 
-        # Game selector
         game_row = ctk.CTkFrame(file_frame, fg_color="transparent")
         game_row.pack(fill=tk.X, padx=12, pady=(12, 4))
 
@@ -651,7 +616,6 @@ class SaveManagerGUI:
         _autofind_btn.pack(side=tk.LEFT, padx=4, pady=10)
         self._file_load_buttons.append(_autofind_btn)
 
-        # Load button
         buttons_frame = ctk.CTkFrame(file_frame, corner_radius=8)
         buttons_frame.pack(fill=tk.X, pady=(6, 10), padx=12)
 
@@ -696,7 +660,6 @@ class SaveManagerGUI:
         _itemgib_btn.pack(side=tk.RIGHT, padx=6, pady=10)
         self._file_load_buttons.append(_itemgib_btn)
 
-        # Main content - tabbed interface (customtkinter)
         self.notebook = ctk.CTkTabview(
             self.root,
             width=1100,
@@ -706,13 +669,11 @@ class SaveManagerGUI:
         )
         self.notebook.grid(row=2, column=0, padx=12, pady=10, sticky="nsew")
 
-        # Create the tabs for the starting game
         if self.active_game == "elden_ring":
             self.create_tabs()
         else:
             self._create_other_game_tabs(PROFILES_BY_KEY[self.active_game])
 
-        # Status bar
         status_frame = ctk.CTkFrame(self.root, corner_radius=0)
         status_frame.grid(row=3, column=0, sticky="ew")
 
@@ -789,7 +750,6 @@ class SaveManagerGUI:
         ):
             setattr(self, attr, None)
 
-        # Rebuild notebook
         self._drop_pending_tabs()
         self.notebook.destroy()
         self.notebook = ctk.CTkTabview(
@@ -801,7 +761,6 @@ class SaveManagerGUI:
         )
         self.notebook.grid(row=2, column=0, padx=12, pady=10, sticky="nsew")
 
-        # Reset lazy-load flags
         self.tabs_loaded = {
             "Save Fixer": False,
             "Appearance": False,
@@ -819,7 +778,6 @@ class SaveManagerGUI:
     def create_tabs(self):
         """Create all Elden Ring tabs."""
 
-        # Tab 1: Save Fixer
         self.notebook.add("Save Fixer")
         tab_inspector = self.notebook.tab("Save Fixer")
         self.inspector_tab = SaveInspectorTab(
@@ -832,7 +790,6 @@ class SaveManagerGUI:
         )
         self._build_tab("Save Fixer", self.inspector_tab.setup_ui)
 
-        # Tab 2: Character Management
         self.notebook.add("Character Management")
         tab_char_mgmt = self.notebook.tab("Character Management")
         self.char_mgmt_tab = CharacterManagementTab(
@@ -850,14 +807,12 @@ class SaveManagerGUI:
         )
         self._build_tab("Character Management", self.char_mgmt_tab.setup_ui)
 
-        # Tab 3: Character Editor
         self.notebook.add("Character Editor")
         tab_character = self.notebook.tab("Character Editor")
         self._build_tab(
             "Character Editor", lambda: self.setup_character_editor_tab(tab_character)
         )
 
-        # Tab 4: Appearance
         self.notebook.add("Appearance")
         tab_appearance = self.notebook.tab("Appearance")
         self.appearance_tab = AppearanceTab(
@@ -869,7 +824,6 @@ class SaveManagerGUI:
         )
         self._build_tab("Appearance", self.appearance_tab.setup_ui)
 
-        # Tab 5: World State
         self.notebook.add("World State")
         tab_world = self.notebook.tab("World State")
         self.world_tab = WorldStateTab(
@@ -896,7 +850,6 @@ class SaveManagerGUI:
         except Exception:
             pass
 
-        # Tab 6: SteamID Patcher
         self.notebook.add("SteamID Patcher")
         tab_steamid = self.notebook.tab("SteamID Patcher")
         self.steamid_tab = SteamIDPatcherTab(
@@ -908,7 +861,6 @@ class SaveManagerGUI:
         )
         self._build_tab("SteamID Patcher", self.steamid_tab.setup_ui)
 
-        # Tab 7: Event Flags
         self.notebook.add("Event Flags")
         tab_event_flags = self.notebook.tab("Event Flags")
         self.event_flags_tab = EventFlagsTab(
@@ -920,7 +872,6 @@ class SaveManagerGUI:
         )
         self._build_tab("Event Flags", self.event_flags_tab.setup_ui)
 
-        # Tab 8: Gestures
         self.notebook.add("Gestures")
         tab_gestures = self.notebook.tab("Gestures")
         self.gestures_tab = GesturesRegionsTab(
@@ -937,7 +888,6 @@ class SaveManagerGUI:
         self.hex_tab = HexEditorTab(_hex_hidden, lambda: self.save_file)
         self._build_tab("Hex Editor", self.hex_tab.setup_ui)
 
-        # Tab 10: Advanced Tools
         self.notebook.add("Advanced Tools")
         tab_advanced = self.notebook.tab("Advanced Tools")
         self.advanced_tab = AdvancedToolsTab(
@@ -949,7 +899,6 @@ class SaveManagerGUI:
         )
         self._build_tab("Advanced Tools", self.advanced_tab.setup_ui)
 
-        # Tab 11: Settings
         self.notebook.add("Settings")
         tab_settings = self.notebook.tab("Settings")
         self.settings_tab = SettingsTab(
@@ -1340,7 +1289,6 @@ class SaveManagerGUI:
         )
         container.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 12))
 
-        # Slot selector bar
         select_frame = ctk.CTkFrame(container, fg_color=("gray76", "gray24"))
         select_frame.pack(fill=tk.X, padx=10, pady=(12, 8))
 
@@ -1366,7 +1314,6 @@ class SaveManagerGUI:
             width=140,
         ).pack(side=ctk.LEFT)
 
-        # Editor tabs
         editor_tabs = ctk.CTkTabview(
             container,
             width=900,
@@ -1389,7 +1336,6 @@ class SaveManagerGUI:
             except Exception:
                 return -1
 
-        # Stats editor
         stats_frame = editor_tabs.add("Stats")
         stats_frame = ctk.CTkFrame(stats_frame, fg_color="transparent")
         stats_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -1401,7 +1347,6 @@ class SaveManagerGUI:
         )
         self.stats_editor.setup_ui()
 
-        # Equipment editor
         equipment_tab = editor_tabs.add("Equipment")
         equipment_frame = ctk.CTkFrame(equipment_tab, fg_color="transparent")
         equipment_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -1415,7 +1360,6 @@ class SaveManagerGUI:
         # the background like top-level tabs (see _build_tab).
         self._build_tab("Character Editor/Equipment", self.equipment_editor.setup_ui)
 
-        # Character info editor
         info_tab = editor_tabs.add("Info")
         info_frame = ctk.CTkFrame(info_tab, fg_color="transparent")
         info_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -1430,7 +1374,6 @@ class SaveManagerGUI:
             self.stats_editor.on_archetype_changed
         )
 
-        # Inventory editor
         inventory_tab = editor_tabs.add("Inventory")
         inventory_frame = ctk.CTkFrame(inventory_tab, fg_color="transparent")
         inventory_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -1494,7 +1437,6 @@ class SaveManagerGUI:
             )
             return
 
-        # Load into all editors
         self.stats_editor.load_stats()
         self.equipment_editor.load_equipment()
         self.char_info_editor.load_character_info()
@@ -1589,7 +1531,6 @@ class SaveManagerGUI:
                     initialdir = last_dir
 
         if not initialdir:
-            # Try the game's default save location
             default_loc = PlatformUtils.get_default_save_location(profile)
             if default_loc and default_loc.exists():
                 initialdir = str(default_loc)
@@ -1607,7 +1548,6 @@ class SaveManagerGUI:
         if not initialdir:
             initialdir = str(Path.home())
 
-        # Build file type filter from profile extensions
         if profile:
             ext_str = " ".join(f"*{e}" for e in profile.extensions)
             if profile.key == "elden_ring":
@@ -1712,7 +1652,6 @@ class SaveManagerGUI:
             justify=tk.LEFT,
         ).pack(pady=10)
 
-        # Show launch option
         launch_option = PlatformUtils.get_steam_launch_option_hint(profile)
         if launch_option:
             ttk.Label(
@@ -1827,7 +1766,6 @@ class SaveManagerGUI:
             if PlatformUtils.is_windows():
                 import winreg
 
-                # Try to read Steam install path from registry
                 try:
                     key = winreg.OpenKey(
                         winreg.HKEY_LOCAL_MACHINE,
@@ -1836,12 +1774,10 @@ class SaveManagerGUI:
                     steam_path = Path(winreg.QueryValueEx(key, "InstallPath")[0])
                     winreg.CloseKey(key)
 
-                    # Check common Steam library locations
                     game_folder = steam_path / "steamapps" / "common" / "ELDEN RING"
                     if game_folder.exists():
                         return game_folder
 
-                    # Check libraryfolders.vdf for additional libraries
                     library_file = steam_path / "steamapps" / "libraryfolders.vdf"
                     if library_file.exists():
                         content = library_file.read_text(encoding="utf-8")
@@ -2008,7 +1944,6 @@ class SaveManagerGUI:
             )
             thread.start()
         elif current_tab == "World State" and hasattr(self, "world_tab"):
-            # Already loaded, just refresh
             self.world_tab.refresh()
 
     def _lazy_load_tab_background(self, tab_name):
@@ -2147,7 +2082,6 @@ class SaveManagerGUI:
             )
             and self.settings.get("show_eac_warning", True)
         ):
-            # Create custom dialog with "Don't show again" option
             warning_dialog = tk.Toplevel(self.root)
             warning_dialog.title("Warning - Vanilla Save File Detected")
             warning_dialog.transient(self.root)
@@ -2158,7 +2092,6 @@ class SaveManagerGUI:
 
             force_render_dialog(warning_dialog)
 
-            # Warning message
             msg_frame = ttk.Frame(warning_dialog, padding=20)
             msg_frame.pack(fill=tk.BOTH, expand=True)
 
@@ -2190,7 +2123,6 @@ class SaveManagerGUI:
                 justify=tk.LEFT,
             ).pack(pady=10)
 
-            # Don't show again checkbox
             dont_show_var = tk.BooleanVar(value=False)
             ttk.Checkbutton(
                 msg_frame,
@@ -2198,7 +2130,6 @@ class SaveManagerGUI:
                 variable=dont_show_var,
             ).pack(pady=10)
 
-            # Buttons
             button_frame = ttk.Frame(msg_frame)
             button_frame.pack(pady=10)
 
@@ -2226,7 +2157,6 @@ class SaveManagerGUI:
             # different from clicking "No, Cancel".
             warning_dialog.protocol("WM_DELETE_WINDOW", on_no)
 
-            # Wait for dialog to close
             self.root.wait_window(warning_dialog)
 
             if not result["continue"]:
@@ -2249,7 +2179,6 @@ class SaveManagerGUI:
             self._load_nr_save(save_path)
             return
 
-        # Start loading in background thread
         self.status_var.set("Loading save file...")
         thread = threading.Thread(
             target=self._load_save_background, args=(save_path, silent), daemon=True
@@ -2263,13 +2192,11 @@ class SaveManagerGUI:
             if verbose:
                 self._verbose_log(f"Loading save: {save_path}")
 
-            # Load save file in background
             save_file = Save.from_file(save_path)
 
             if verbose:
                 self._verbose_log(f"Parsed successfully: {save_path}")
 
-            # Update main thread
             self.root.after(0, self._finalize_save_load, save_file, save_path, silent)
         except Exception as e:
             error_msg = str(e)
@@ -2579,7 +2506,6 @@ class SaveManagerGUI:
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         if not silent:
-            # Show toast notification instead of blocking popup
             self.show_toast("Save file loaded successfully!", duration=2500)
 
     def _rebuild_er_notebook(self) -> None:
@@ -2649,7 +2575,6 @@ class SaveManagerGUI:
 
             slot_names.append(f"{slot_num} - {char_name}")
 
-        # Update the combobox values
         if hasattr(self, "char_slot_var"):
             # Find the combobox widget and update its values
             # The combobox is in the character editor tab
@@ -2666,14 +2591,12 @@ class SaveManagerGUI:
                 ):
                     current = self.char_slot_var.get()
                     widget.configure(values=values)
-                    # Restore selection if valid
                     if current.isdigit() and 0 < int(current) <= 10:
                         idx = int(current) - 1
                         if idx < len(values):
                             self.char_slot_var.set(values[idx])
                     return
 
-            # Recurse into children
             for child in widget.winfo_children():
                 self._update_combobox_recursive(child, values)
         except Exception:
@@ -2844,7 +2767,6 @@ def main():
     root = ctk.CTk()
     app = SaveManagerGUI(root)
 
-    # Register cleanup handler
     def on_closing():
         if app.process_monitor:
             app.process_monitor.stop()

@@ -25,14 +25,11 @@ class ProgressDialog:
         self.dialog.transient(parent)
         self.dialog.resizable(False, False)
 
-        # Center on parent
         center_window(self.dialog, 400, 200, parent=parent)
 
-        # Make it non-resizable and on top
         self.dialog.grab_set()
         self.dialog.attributes("-topmost", True)
 
-        # Status message
         self.status_label = ctk.CTkLabel(
             self.dialog,
             text=initial_message,
@@ -41,7 +38,6 @@ class ProgressDialog:
         )
         self.status_label.pack(pady=(20, 10), padx=20)
 
-        # Progress bar
         self.progress = ctk.CTkProgressBar(self.dialog, mode="indeterminate")
         self.progress.pack(pady=10, padx=30, fill=ctk.X)
         self.progress.start()

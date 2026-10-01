@@ -42,13 +42,10 @@ class DLCFlagFix(BaseFix):
         if not slot.has_dlc_flag():
             return FixResult(applied=False, description="DLC flag not set")
 
-        # Store original for logging
         original_value = slot.get_dlc_flag_value()
 
-        # Clear the flag
         slot.clear_dlc_flag()
 
-        # Write to raw data
         if hasattr(slot, "dlc_offset") and slot.dlc_offset > 0:
             dlc_bytes = BytesIO()
             slot.dlc.write(dlc_bytes)
@@ -100,13 +97,10 @@ class TarnishedPackFlagFix(BaseFix):
         if not slot.has_tarnished_pack_flag():
             return FixResult(applied=False, description="Tarnished pack flag not set")
 
-        # Store original for logging
         original_value = slot.get_tarnished_pack_flag_value()
 
-        # Clear the flag
         slot.clear_tarnished_pack_flag()
 
-        # Write to raw data
         if hasattr(slot, "dlc_offset") and slot.dlc_offset > 0:
             dlc_bytes = BytesIO()
             slot.dlc.write(dlc_bytes)
@@ -154,10 +148,8 @@ class InvalidDLCFix(BaseFix):
         if not slot.has_invalid_dlc():
             return FixResult(applied=False, description="No invalid DLC data")
 
-        # Clear invalid data
         slot.clear_invalid_dlc()
 
-        # Write to raw data
         if hasattr(slot, "dlc_offset") and slot.dlc_offset > 0:
             dlc_bytes = BytesIO()
             slot.dlc.write(dlc_bytes)

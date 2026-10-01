@@ -25,7 +25,6 @@ class HexEditorTab:
 
     def setup_ui(self):
         """Setup the hex editor tab UI."""
-        # Title and info
         ctk.CTkLabel(
             self.parent,
             text="Hex Editor",
@@ -40,7 +39,6 @@ class HexEditorTab:
         )
         info_text.pack(pady=5)
 
-        # Warning
         warning_frame = ctk.CTkFrame(
             self.parent, corner_radius=8, fg_color=("#ffe6e6", "#4a2a2a")
         )
@@ -53,7 +51,6 @@ class HexEditorTab:
             text_color=("#cc0000", "#ff8080"),
         ).pack(padx=10, pady=8)
 
-        # Controls
         control_frame = ctk.CTkFrame(self.parent, fg_color="transparent")
         control_frame.pack(fill="x", padx=20, pady=10)
 
@@ -84,7 +81,6 @@ class HexEditorTab:
             width=100,
         ).pack(side="left", padx=5)
 
-        # Hex viewer
         hex_frame = ctk.CTkFrame(self.parent, corner_radius=12)
         hex_frame.pack(fill="both", expand=True, padx=20, pady=10)
 
@@ -122,7 +118,6 @@ class HexEditorTab:
         self.hex_text.insert("1.0", "Load a save file to view hex data")
         self.hex_text.config(state="disabled")
 
-        # Info panel
         info_panel = ctk.CTkFrame(self.parent, corner_radius=12)
         info_panel.pack(fill="x", padx=20, pady=(0, 10))
 
@@ -192,7 +187,6 @@ class HexEditorTab:
         self.hex_text.config(state="normal")
         self.hex_text.delete("1.0", tk.END)
 
-        # Display hex dump
         for i in range(offset, end_offset, 16):
             line_offset = f"{i:08X}: "
             hex_part = ""

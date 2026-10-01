@@ -37,11 +37,9 @@ class TroubleshootingDialog:
 
         self.dialog.grab_set()
 
-        # Main content
         main_frame = ctk.CTkFrame(self.dialog)
         main_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=20)
 
-        # Title
         title_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         title_frame.pack(fill="x", pady=(0, 15))
 
@@ -58,12 +56,10 @@ class TroubleshootingDialog:
             width=100,
         ).pack(side="right")
 
-        # Results scrollable frame
         self.results_frame = ctk.CTkScrollableFrame(main_frame, corner_radius=8)
         self.results_frame.pack(fill=ctk.BOTH, expand=True, pady=(0, 10))
         bind_mousewheel(self.results_frame)
 
-        # Close button
         ctk.CTkButton(
             main_frame,
             text="Close",
@@ -71,16 +67,13 @@ class TroubleshootingDialog:
             width=100,
         ).pack(pady=(5, 0))
 
-        # Run initial checks
         self._run_checks()
 
     def _run_checks(self):
         """Run all diagnostic checks and display results."""
-        # Clear previous results
         for widget in self.results_frame.winfo_children():
             widget.destroy()
 
-        # Show loading message
         loading_label = ctk.CTkLabel(
             self.results_frame,
             text="Running diagnostic checks...",
@@ -91,31 +84,25 @@ class TroubleshootingDialog:
         # Force update to show loading message
         self.results_frame.update_idletasks()
 
-        # Run checks
         checker = TroubleshootingChecker(
             game_folder=self.game_folder,
             save_file_path=self.save_file_path,
         )
         results = checker.run_all_checks()
 
-        # Remove loading message
         loading_label.destroy()
 
-        # Display results
         for result in results:
             self._create_result_widget(result)
 
     def _create_result_widget(self, result: DiagnosticResult):
         """Create a widget to display a diagnostic result."""
-        # Container frame for each result
         result_frame = ctk.CTkFrame(self.results_frame, corner_radius=8)
         result_frame.pack(fill="x", padx=5, pady=5)
 
-        # Status indicator and name
         header_frame = ctk.CTkFrame(result_frame, fg_color="transparent")
         header_frame.pack(fill="x", padx=12, pady=(10, 5))
 
-        # Status icon based on result
         status_icons = {
             "ok": "✅",
             "warning": "⚠️",
@@ -133,14 +120,12 @@ class TroubleshootingDialog:
         icon = status_icons.get(result.status, "ℹ️")
         color = status_colors.get(result.status, ("gray", "lightgray"))
 
-        # Status icon
         ctk.CTkLabel(
             header_frame,
             text=icon,
             font=("Segoe UI", 14),
         ).pack(side="left", padx=(0, 8))
 
-        # Name
         ctk.CTkLabel(
             header_frame,
             text=result.name,
@@ -148,7 +133,6 @@ class TroubleshootingDialog:
             text_color=color,
         ).pack(side="left")
 
-        # Message
         ctk.CTkLabel(
             result_frame,
             text=result.message,
@@ -157,7 +141,6 @@ class TroubleshootingDialog:
             justify="left",
         ).pack(anchor="w", padx=12, pady=(0, 5))
 
-        # Fix action if available
         if result.fix_available and result.fix_action:
             fix_frame = ctk.CTkFrame(
                 result_frame, fg_color=("gray85", "gray25"), corner_radius=6
@@ -177,13 +160,11 @@ class TroubleshootingDialog:
             )
 
             if has_ps_commands:
-                # Split into text and commands
                 current_text = []
 
                 for line in lines:
                     stripped = line.strip()
                     if stripped.startswith(("takeown", "icacls")):
-                        # Flush current text
                         if current_text:
                             text_content = "\n".join(current_text).strip()
                             if text_content:
@@ -196,7 +177,6 @@ class TroubleshootingDialog:
                                 ).pack(anchor="w", padx=8, pady=(0, 5))
                             current_text = []
 
-                        # Create copyable textbox for command
                         cmd_box = ctk.CTkTextbox(
                             fix_frame,
                             height=30,
@@ -211,7 +191,6 @@ class TroubleshootingDialog:
                     else:
                         current_text.append(line)
 
-                # Flush remaining text
                 if current_text:
                     text_content = "\n".join(current_text).strip()
                     if text_content:
@@ -223,7 +202,6 @@ class TroubleshootingDialog:
                             justify="left",
                         ).pack(anchor="w", padx=8, pady=(0, 5))
             else:
-                # No PowerShell commands, just show as regular text
                 ctk.CTkLabel(
                     fix_frame,
                     text=result.fix_action,

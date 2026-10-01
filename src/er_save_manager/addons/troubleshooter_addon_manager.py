@@ -21,7 +21,6 @@ class TroubleshooterAddon:
 
     def __init__(self):
         """Initialize addon manager"""
-        # Get addon installation directory
         if os.name == "nt":  # Windows
             self.addon_dir = (
                 Path(os.environ.get("APPDATA"))
@@ -114,11 +113,9 @@ class TroubleshooterAddon:
             if progress_callback:
                 progress_callback("Downloading troubleshooter...")
 
-            # Download
             response = requests.get(download_url, stream=True, timeout=30)
             response.raise_for_status()
 
-            # Save to temp file
             temp_dir = Path.home() / ".cache" / "er-save-manager"
             temp_dir.mkdir(parents=True, exist_ok=True)
             zip_path = temp_dir / "troubleshooter.zip"
@@ -130,7 +127,6 @@ class TroubleshooterAddon:
             if progress_callback:
                 progress_callback("Extracting files...")
 
-            # Extract
             self.addon_dir.mkdir(parents=True, exist_ok=True)
 
             with zipfile.ZipFile(zip_path, "r") as zip_ref:
@@ -156,15 +152,12 @@ class TroubleshooterAddon:
                             found_path.rename(self.executable_path)
                             break
 
-            # Make executable on Linux
             if os.name != "nt" and self.executable_path.exists():
                 self.executable_path.chmod(0o755)
 
-            # Save version info
             with open(self.version_file, "w") as f:
                 json.dump({"version": version}, f)
 
-            # Cleanup
             zip_path.unlink()
 
             if progress_callback:
@@ -213,12 +206,11 @@ class TroubleshooterAddon:
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                 )
-            # Optionally, check if process starts and does not exit immediately
+            # Detect an executable that exits immediately after launch
             import time
 
             time.sleep(0.5)
             if proc.poll() is not None:
-                # Process exited
                 msg = "Troubleshooter process exited immediately. Check if the executable is valid."
                 print(msg)
                 if show_error:

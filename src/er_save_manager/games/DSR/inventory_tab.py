@@ -233,7 +233,6 @@ class DSRInventoryTab:
             frame, text="Current Inventory", font=("Segoe UI", 12, "bold")
         ).grid(row=0, column=0, pady=(10, 4), padx=12, sticky="w")
 
-        # Search + category filter
         frow = ctk.CTkFrame(frame, fg_color="transparent")
         frow.grid(row=1, column=0, sticky="ew", padx=8, pady=(0, 4))
         frow.grid_columnconfigure(1, weight=1)
@@ -256,7 +255,6 @@ class DSRInventoryTab:
             command=lambda _: self._apply_filter(),
         ).grid(row=0, column=2)
 
-        # Treeview
         tf = tk.Frame(frame, bg="#2b2b2b")
         tf.grid(row=2, column=0, sticky="nsew", padx=8, pady=(0, 4))
         tf.grid_rowconfigure(0, weight=1)
@@ -333,7 +331,6 @@ class DSRInventoryTab:
         )
         self._edit_hint.pack(side="left", padx=(8, 0))
 
-        # Action buttons
         btn_row = ctk.CTkFrame(frame, fg_color="transparent")
         btn_row.grid(row=4, column=0, sticky="ew", padx=8, pady=(2, 10))
         ctk.CTkButton(
@@ -402,7 +399,6 @@ class DSRInventoryTab:
         sb2.grid(row=0, column=1, sticky="ns")
         self._spawn_tree.configure(yscrollcommand=sb2.set)
 
-        # Spawner controls - spelled out
         cfg = ctk.CTkFrame(frame, fg_color="transparent")
         cfg.grid(row=3, column=0, sticky="ew", padx=8, pady=(0, 4))
 
@@ -430,7 +426,6 @@ class DSRInventoryTab:
         )
         self._inf_combo.pack(side="left")
 
-        # Add to Inventory - bottom left
         btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
         btn_frame.grid(row=4, column=0, sticky="ew", padx=8, pady=(2, 10))
         ctk.CTkButton(
@@ -627,7 +622,6 @@ class DSRInventoryTab:
         max_stack = int(entry.get("MaxStackCount") or 1) if entry else 1
         is_weapon = item.category == 0
 
-        # Quantity - enabled for stackable items
         if max_stack > 1:
             self._edit_qty_var.set(str(item.quantity))
             self._edit_qty_entry.configure(state="normal")
@@ -636,7 +630,6 @@ class DSRInventoryTab:
             self._edit_qty_entry.configure(state="disabled")
             self._edit_hint.configure(text="")
 
-        # Upgrade + Infusion - enabled for weapons
         if is_weapon and entry:
             max_up = entry.get("MaxUpgrade") or 0
             can_inf = bool(entry.get("CanInfuse"))
@@ -652,7 +645,6 @@ class DSRInventoryTab:
             self._inv_upg_entry.configure(state="disabled")
             self._inv_inf_combo.configure(state="disabled")
 
-        # Apply Changes button enabled whenever any control is active
         any_active = (max_stack > 1) or (
             is_weapon and entry and entry.get("MaxUpgrade")
         )

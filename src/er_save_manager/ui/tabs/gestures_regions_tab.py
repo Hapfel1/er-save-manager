@@ -58,7 +58,7 @@ class GesturesRegionsTab:
 
     def _get_slot_display_names(self):
         """Get display names for all slots"""
-        save_file = self.get_save_file()  # or self.save_file depending on class
+        save_file = self.get_save_file()
         if not save_file:
             return [str(i) for i in range(1, 11)]
 
@@ -103,12 +103,10 @@ class GesturesRegionsTab:
 
     def setup_ui(self):
         """Setup the gestures tab UI"""
-        # Main scrollable container
         main_frame = ctk.CTkScrollableFrame(self.parent, corner_radius=0)
         main_frame.pack(fill=tk.BOTH, expand=True)
         bind_mousewheel(main_frame)
 
-        # Header
         ctk.CTkLabel(
             main_frame,
             text="Gestures & Unlocked Regions",
@@ -122,7 +120,6 @@ class GesturesRegionsTab:
             text_color=("#808080", "#a0a0a0"),
         ).pack(pady=(0, 15), padx=15, anchor="w")
 
-        # Slot selector frame
         slot_frame = ctk.CTkFrame(main_frame, corner_radius=10)
         slot_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
@@ -132,7 +129,7 @@ class GesturesRegionsTab:
 
         self.gesture_slot_var = tk.IntVar(value=1)
         slot_names = self._get_slot_display_names()
-        self.gesture_slot_combo = ctk.CTkComboBox(  # Store reference with self.
+        self.gesture_slot_combo = ctk.CTkComboBox(
             slot_frame,
             values=slot_names,
             width=200,
@@ -149,7 +146,6 @@ class GesturesRegionsTab:
             width=90,
         ).pack(side=tk.LEFT, pady=12, padx=(0, 12))
 
-        # Gestures frame
         gestures_frame = ctk.CTkFrame(main_frame, corner_radius=10)
         gestures_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
 
@@ -159,14 +155,12 @@ class GesturesRegionsTab:
             font=("Segoe UI", 12, "bold"),
         ).pack(pady=(12, 8), padx=12, anchor="w")
 
-        # Scrollable gestures list
         self.gestures_inner_frame = ctk.CTkScrollableFrame(
             gestures_frame, corner_radius=8, fg_color=("#f5f5f5", "#2a2a3e")
         )
         self.gestures_inner_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 12))
         bind_mousewheel(self.gestures_inner_frame)
 
-        # Gesture action buttons
         gesture_buttons = ctk.CTkFrame(gestures_frame, fg_color="transparent")
         gesture_buttons.pack(fill=tk.X, pady=(0, 12), padx=12)
 
@@ -198,7 +192,6 @@ class GesturesRegionsTab:
             width=120,
         ).pack(side=tk.LEFT)
 
-        # Additional tools row
         tools_row = ctk.CTkFrame(main_frame, fg_color="transparent")
         tools_row.pack(fill=tk.X, padx=15, pady=(0, 15))
 
@@ -249,12 +242,10 @@ class GesturesRegionsTab:
 
         self.current_slot = slot_idx
 
-        # Clear previous gesture checkboxes
         for widget in self.gestures_inner_frame.winfo_children():
             widget.destroy()
         self.gesture_states.clear()
 
-        # Get all possible gestures
         all_gestures = get_all_unlockable_gestures(include_cut_content=False)
         unlocked_gesture_ids = set()
 
@@ -265,7 +256,6 @@ class GesturesRegionsTab:
                 if g not in (0, 0xFFFFFFFF, GESTURE_SLOT_EMPTY)
             }
 
-        # Create checkboxes for all gestures
         for gesture_id in sorted(all_gestures):
             name = get_gesture_name(gesture_id)
             dlc = " [DLC]" if is_dlc_gesture(gesture_id) else ""
@@ -496,7 +486,6 @@ class GesturesRegionsTab:
             wraplength=580,
         ).pack(pady=(0, 10), padx=15)
 
-        # Current region IDs
         current_ids: list[int] = list(slot.unlocked_regions.region_ids)
         region_vars: dict[int, tk.BooleanVar] = {}
 
@@ -526,7 +515,6 @@ class GesturesRegionsTab:
                 variable=var,
             ).pack(anchor="w", padx=8, pady=2)
 
-        # Buttons
         btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 

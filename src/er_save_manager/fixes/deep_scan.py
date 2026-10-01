@@ -463,7 +463,6 @@ class DeepScanFix(BaseFix):
                     "[deep_scan] post-fix NetMan region looks zeroed - may indicate wrong shift point"
                 )
 
-        # Write corrected data back
         save._raw_data[slot_data_start : slot_data_start + slot_size] = corrected
         log.info("[deep_scan] wrote corrected slot data back to file buffer")
 

@@ -168,7 +168,6 @@ def calm_npc(event_flags_accessor, npc_name: str) -> bool:
 
     _alive_flag, aggro1_flag, aggro2_flag, _dead_flag = flags
 
-    # Clear both aggro flags
     event_flags_accessor.set_flag(aggro1_flag, False)
     event_flags_accessor.set_flag(aggro2_flag, False)
 

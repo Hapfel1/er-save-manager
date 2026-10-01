@@ -58,7 +58,6 @@ class ThemeManager:
         button_bg = self.colors["button_bg"]
         button_fg = self.colors["button_fg"]
 
-        # Configure base styles
         style.configure(".", background=bg, foreground=fg)
         style.configure("TFrame", background=bg, foreground=fg)
         style.configure("TLabel", background=bg, foreground=fg)
@@ -95,7 +94,6 @@ class ThemeManager:
             foreground=[("active", button_fg)],
         )
 
-        # Entry styles
         style.configure(
             "TEntry",
             fieldbackground=bg_alt,
@@ -108,10 +106,8 @@ class ThemeManager:
             "TCombobox", fieldbackground=bg_alt, foreground=fg, borderwidth=1
         )
 
-        # Text widget colors
         style.configure("TText", background=bg_alt, foreground=fg, borderwidth=1)
 
-        # Spinbox
         style.configure(
             "TSpinbox", fieldbackground=bg_alt, foreground=fg, borderwidth=1
         )
@@ -122,7 +118,6 @@ class ThemeManager:
         style.configure("TRadiobutton", background=bg, foreground=fg)
         style.map("TRadiobutton", background=[("active", bg)])
 
-        # Treeview with border
         style.configure(
             "Treeview",
             background=bg_alt,
@@ -144,7 +139,6 @@ class ThemeManager:
             foreground=[("selected", button_fg)],
         )
 
-        # Notebook (tabs)
         style.configure("TNotebook", background=bg, borderwidth=1, relief="solid")
         style.configure(
             "TNotebook.Tab",
@@ -160,10 +154,8 @@ class ThemeManager:
             foreground=[("selected", button_fg)],
         )
 
-        # Panedwindow
         style.configure("TPanedwindow", background=bg, borderwidth=1, relief="solid")
 
-        # Scrollbar
         style.configure("TScrollbar", background=button_bg, borderwidth=1)
         style.map("TScrollbar", background=[("active", accent)])
 
@@ -182,7 +174,6 @@ class ThemeManager:
         bg_alt = self.colors["bg_alt"]
         accent = self.colors["accent"]
 
-        # Configure the widget itself
         if isinstance(widget, tk_module.Listbox):
             widget.configure(
                 background=bg_alt,
@@ -203,7 +194,6 @@ class ThemeManager:
         elif isinstance(widget, (tk_module.Label, tk_module.Button)):
             widget.configure(background=bg, foreground=fg)
 
-        # Recursively apply to children
         try:
             for child in widget.winfo_children():
                 self.apply_tk_widget_colors(child)

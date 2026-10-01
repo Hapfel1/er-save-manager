@@ -44,15 +44,12 @@ class CharacterManagementTab:
         self.show_toast = show_toast_callback
         self.is_game_running = is_game_running_callback
 
-        # Operation variables
         self.char_operation_var = None
         self.operation_map = {}
         self.operation_map_reverse = {}
 
-        # Panel widgets
         self.char_ops_panel = None
 
-        # Operation-specific variables
         self.copy_from_var = None
         self.copy_to_var = None
         self.transfer_from_var = None
@@ -64,12 +61,10 @@ class CharacterManagementTab:
 
     def setup_ui(self):
         """Setup the character management tab UI"""
-        # Create scrollable frame wrapper
         scroll_frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
         scroll_frame.pack(fill=tk.BOTH, expand=True)
         bind_mousewheel(scroll_frame)
 
-        # Title
         title_label = ctk.CTkLabel(
             scroll_frame,
             text="Character Management",
@@ -77,7 +72,6 @@ class CharacterManagementTab:
         )
         title_label.pack(pady=10)
 
-        # Info label
         info_text = ctk.CTkLabel(
             scroll_frame,
             text="Transfer characters between save files, copy slots, manage your character roster, share and download community builds",
@@ -86,7 +80,6 @@ class CharacterManagementTab:
         )
         info_text.pack(pady=5)
 
-        # Character Browser button
         browser_frame = ctk.CTkFrame(
             scroll_frame,
             corner_radius=10,
@@ -108,14 +101,12 @@ class CharacterManagementTab:
             text_color=("gray40", "gray70"),
         ).pack(side=tk.LEFT, padx=(10, 15))
 
-        # Operation selector frame
         selector_frame = ctk.CTkFrame(
             scroll_frame,
             corner_radius=10,
         )
         selector_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        # Add label to selector frame
         selector_label = ctk.CTkLabel(
             selector_frame,
             text="Select Operation",
@@ -123,7 +114,6 @@ class CharacterManagementTab:
         )
         selector_label.pack(anchor=tk.W, padx=15, pady=(10, 5))
 
-        # Inner frame for controls
         selector_controls = ctk.CTkFrame(selector_frame, fg_color="transparent")
         selector_controls.pack(fill=tk.X, padx=15, pady=(5, 15))
 
@@ -138,11 +128,9 @@ class CharacterManagementTab:
             ("Delete Character", "delete"),
         ]
 
-        # Operation label
         op_label = ctk.CTkLabel(selector_controls, text="Operation:")
         op_label.pack(side=tk.LEFT, padx=(0, 10))
 
-        # Dropdown selector
         operation_combo = ctk.CTkComboBox(
             selector_controls,
             variable=self.char_operation_var,
@@ -153,21 +141,17 @@ class CharacterManagementTab:
         )
         operation_combo.pack(side=tk.LEFT, padx=5)
 
-        # Map display names to internal values
         self.operation_map = {op[0]: op[1] for op in operations}
         self.operation_map_reverse = {op[1]: op[0] for op in operations}
 
-        # Set initial display value
         operation_combo.set("Copy Character")
 
-        # Operation panel frame
         self.char_ops_panel = ctk.CTkFrame(
             scroll_frame,
             corner_radius=10,
         )
         self.char_ops_panel.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
-        # Add label to operation panel
         panel_label = ctk.CTkLabel(
             self.char_ops_panel,
             text="Operation Details",
@@ -175,30 +159,24 @@ class CharacterManagementTab:
         )
         panel_label.pack(anchor=tk.W, padx=15, pady=(10, 5))
 
-        # Create scrollable frame for operation-specific content
         self.ops_scrollable = ctk.CTkScrollableFrame(
             self.char_ops_panel,
             fg_color="transparent",
         )
         self.ops_scrollable.pack(fill=tk.BOTH, expand=True, padx=15, pady=(5, 15))
 
-        # Bind mousewheel to scrollable frame
         bind_mousewheel(self.ops_scrollable)
 
-        # Initialize with copy operation
         self.update_operation_panel()
 
     def update_operation_panel(self, value=None):
         """Update the operation panel based on selected operation - optimized for performance"""
-        # Clear existing widgets efficiently
         for widget in self.ops_scrollable.winfo_children():
             widget.destroy()
 
-        # Get internal operation value from display name
         display_name = self.char_operation_var.get()
         operation = self.operation_map.get(display_name, "copy")
 
-        # Create appropriate panel based on operation
         if operation == "copy":
             self._setup_copy_panel()
         elif operation == "transfer":
@@ -248,11 +226,9 @@ class CharacterManagementTab:
 
     def refresh_slot_names(self):
         """Refresh slot display names after save file changes"""
-        # Only refresh if panel is visible
         if not hasattr(self, "char_ops_panel"):
             return
 
-        # Re-run current panel setup to refresh names
         self.update_operation_panel()
 
     def _setup_copy_panel(self):
@@ -506,7 +482,6 @@ class CharacterManagementTab:
 
     def copy_character(self):
         """Copy character from one slot to another"""
-        # Check if game is running
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
                 "Elden Ring is Running!",
@@ -578,20 +553,14 @@ class CharacterManagementTab:
                     save=save_file,
                 )
 
-            # (debug logging removed)
-
-            # Copy character data
             CharacterOperations.copy_slot(save_file, from_slot, to_slot)
 
-            # Recalculate checksums
             save_file.recalculate_checksums()
 
-            # Save to file
             save_path = self.get_save_path()
             if save_path:
                 save_file.to_file(Path(save_path))
 
-            # Reload
             if self.reload_save:
                 self.reload_save()
 
@@ -613,7 +582,6 @@ class CharacterManagementTab:
 
     def transfer_character(self):
         """Transfer character to another save file"""
-        # Check if game is running
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
                 "Elden Ring is Running!",
@@ -648,7 +616,6 @@ class CharacterManagementTab:
             from er_save_manager.parser import Save
             from er_save_manager.transfer.character_ops import CharacterOperations
 
-            # Load target save
             target_save = Save.from_file(target_path)
 
             to_slot = self._select_target_slot(target_save, target_path)
@@ -664,7 +631,6 @@ class CharacterManagementTab:
                 )
                 return
 
-            # Create backups
             if source_path:
                 manager = BackupManager(source_path)
                 manager.create_backup(
@@ -680,12 +646,10 @@ class CharacterManagementTab:
                 save=target_save,
             )
 
-            # Transfer
             CharacterOperations.transfer_slot(
                 save_file, from_slot, target_save, to_slot
             )
 
-            # Save both files
             save_file.recalculate_checksums()
             target_save.recalculate_checksums()
 
@@ -693,7 +657,6 @@ class CharacterManagementTab:
                 save_file.to_file(source_path)
             target_save.to_file(Path(target_path))
 
-            # Reload
             if self.reload_save:
                 self.reload_save()
 
@@ -815,7 +778,6 @@ class CharacterManagementTab:
 
     def swap_characters(self):
         """Swap two character slots"""
-        # Check if game is running
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
                 "Elden Ring is Running!",
@@ -853,15 +815,12 @@ class CharacterManagementTab:
                     save=save_file,
                 )
 
-            # Swap
             CharacterOperations.swap_slots(save_file, slot_a, slot_b)
 
-            # Save
             save_file.recalculate_checksums()
             if save_path:
                 save_file.to_file(Path(save_path))
 
-            # Reload
             if self.reload_save:
                 self.reload_save()
 
@@ -880,7 +839,6 @@ class CharacterManagementTab:
 
     def export_character(self):
         """Export character to .erc file"""
-        # Check if game is running
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
                 "Elden Ring is Running!",
@@ -905,7 +863,6 @@ class CharacterManagementTab:
             )
             return
 
-        # Get character name for default filename
         char_name = char.get_character_name() or f"Character_{slot + 1}"
         default_name = f"{char_name}.erc"
 
@@ -941,7 +898,6 @@ class CharacterManagementTab:
 
     def import_character(self):
         """Import character from .erc file"""
-        # Check if game is running
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
                 "Elden Ring is Running!",
@@ -1002,15 +958,12 @@ class CharacterManagementTab:
                     save=save_file,
                 )
 
-            # Import
             CharacterOperations.import_character(save_file, to_slot, Path(import_path))
 
-            # Save
             save_file.recalculate_checksums()
             if save_path:
                 save_file.to_file(Path(save_path))
 
-            # Reload
             if self.reload_save:
                 self.reload_save()
 
@@ -1043,7 +996,6 @@ class CharacterManagementTab:
 
     def delete_character(self):
         """Delete character from slot"""
-        # Check if game is running
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
                 "Elden Ring is Running!",
@@ -1091,15 +1043,12 @@ class CharacterManagementTab:
                     save=save_file,
                 )
 
-            # Delete
             CharacterOperations.delete_slot(save_file, slot)
 
-            # Save
             save_file.recalculate_checksums()
             if save_path:
                 save_file.to_file(Path(save_path))
 
-            # Reload
             if self.reload_save:
                 self.reload_save()
 

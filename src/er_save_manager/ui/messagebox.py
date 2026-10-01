@@ -47,7 +47,6 @@ class CTkMessageBox:
         icon_padding = 40  # top/bottom padding
         dialog_height = text_height + button_area + icon_padding
 
-        # Clamp to reasonable bounds
         dialog_height = max(180, min(dialog_height, 600))
 
         if position is None:

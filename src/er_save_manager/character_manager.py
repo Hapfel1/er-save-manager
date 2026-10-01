@@ -13,16 +13,13 @@ from pathlib import Path
 class CharacterManager:
     """Manage community character library with streaming downloads."""
 
-    # Cache settings
     MAX_CACHE_SIZE_MB = 100  # Maximum total cache size (smaller than presets)
-    METADATA_EXPIRY_HOURS = 1  # Cache metadata for 1 hour
-    THUMBNAIL_SIZE = (200, 200)  # Thumbnail dimensions
+    METADATA_EXPIRY_HOURS = 1
+    THUMBNAIL_SIZE = (200, 200)
 
     def __init__(self):
         """Initialize character manager with platform-appropriate cache location."""
-        # Determine cache directory based on platform
         if platform.system() == "Linux":
-            # Use XDG_CACHE_HOME if available, otherwise ~/.cache
             xdg_cache = os.environ.get("XDG_CACHE_HOME")
             if xdg_cache:
                 self.cache_dir = Path(xdg_cache) / "er-save-manager" / "characters"
@@ -35,7 +32,6 @@ class CharacterManager:
             program_dir = Path(__file__).parent.parent.parent
             self.cache_dir = program_dir / "data" / "characters"
 
-        # Try to create cache directory, fallback to temp if permission denied
         try:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
             print(f"[Character Cache] Using cache directory: {self.cache_dir}")
@@ -46,7 +42,6 @@ class CharacterManager:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
             print(f"[Character Cache] Fallback cache directory: {self.cache_dir}")
 
-        # Separate directories for different cache types
         self.thumbnails_dir = self.cache_dir / "thumbnails"
         self.thumbnails_dir.mkdir(exist_ok=True)
         print(f"[Character Cache] Thumbnails directory: {self.thumbnails_dir}")
@@ -55,7 +50,6 @@ class CharacterManager:
         self.metadata_dir.mkdir(exist_ok=True)
         print(f"[Character Cache] Metadata directory: {self.metadata_dir}")
 
-        # GitHub repo URL
         self.base_url = (
             "https://raw.githubusercontent.com/Hapfel1/er-character-library/main/"
         )
@@ -63,10 +57,8 @@ class CharacterManager:
         self.cache_file = self.cache_dir / "index_cache.json"
         self.index_url = self.base_url + "index.json"
 
-        # Create SSL context for HTTPS requests
         self.ssl_context = self._create_ssl_context()
 
-        # Perform cache maintenance on init
         self._cleanup_cache()
 
     def _create_ssl_context(self):
@@ -77,7 +69,6 @@ class CharacterManager:
 
             return ssl.create_default_context(cafile=certifi.where())
         except ImportError:
-            # Fallback to default context
             try:
                 return ssl.create_default_context()
             except Exception:
@@ -94,7 +85,6 @@ class CharacterManager:
         Returns:
             Index data dict
         """
-        # Check cache first if not forcing refresh
         if not force_refresh and self.cache_file.exists():
             try:
                 with open(self.cache_file, encoding="utf-8") as f:
@@ -112,7 +102,6 @@ class CharacterManager:
             except Exception:
                 pass
 
-        # Download from remote
         try:
             # Add timestamp to bypass GitHub CDN cache
             import time
@@ -124,7 +113,6 @@ class CharacterManager:
             ) as response:
                 data = json.loads(response.read().decode())
 
-            # Cache it with timestamp
             cache_data = {"cached_at": datetime.now().isoformat(), "data": data}
             with open(self.cache_file, "w", encoding="utf-8") as f:
                 json.dump(cache_data, f, indent=2)
@@ -139,7 +127,6 @@ class CharacterManager:
                     cached_data = json.load(f)
                 return cached_data.get("data", {"version": "0.0.0", "characters": []})
 
-            # No cache available
             return {"version": "0.0.0", "characters": []}
 
     def _resolve_url(self, url: str) -> str:
@@ -162,14 +149,12 @@ class CharacterManager:
         try:
             print(f"[Character Manager] Downloading metadata for {character_id}")
 
-            # Download metadata JSON
             full_url = self._resolve_url(metadata_url)
             with urllib.request.urlopen(
                 full_url, timeout=10, context=self.ssl_context
             ) as response:
                 metadata = json.loads(response.read().decode())
 
-            # Cache metadata
             metadata_path = self.metadata_dir / f"{character_id}.json"
             with open(metadata_path, "w", encoding="utf-8") as f:
                 json.dump(metadata, f, indent=2)
@@ -221,12 +206,10 @@ class CharacterManager:
 
             full_url = self._resolve_url(erc_url)
 
-            # Stream download to output path
             with urllib.request.urlopen(
                 full_url, timeout=30, context=self.ssl_context
             ) as response:
                 with open(output_path, "wb") as f:
-                    # Stream in chunks to handle large files
                     chunk_size = 8192
                     while True:
                         chunk = response.read(chunk_size)
@@ -376,7 +359,6 @@ class CharacterManager:
                     size = file_path.stat().st_size
                     total_size += size
 
-                    # Get last access time
                     try:
                         atime = datetime.fromtimestamp(file_path.stat().st_atime)
                     except Exception:
@@ -384,7 +366,6 @@ class CharacterManager:
 
                     files_with_time.append((file_path, atime, size))
 
-                    # Delete if older than 7 days
                     if (now - atime).days > 7:
                         file_path.unlink()
                         total_size -= size
@@ -392,17 +373,14 @@ class CharacterManager:
                             f"[Character Cache] Deleted old screenshot: {file_path.name}"
                         )
 
-            # Check total size
             total_mb = total_size / (1024 * 1024)
             if total_mb > self.MAX_CACHE_SIZE_MB:
                 print(
                     f"[Character Cache] Cache size {total_mb:.1f}MB exceeds limit, cleaning up"
                 )
 
-                # Sort by access time (oldest first)
                 files_with_time.sort(key=lambda x: x[1])
 
-                # Delete oldest files until under limit
                 for file_path, _, size in files_with_time:
                     if total_mb <= self.MAX_CACHE_SIZE_MB:
                         break

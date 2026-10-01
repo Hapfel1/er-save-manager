@@ -38,7 +38,6 @@ class AdvancedToolsTab:
 
     def setup_ui(self):
         """Setup the advanced tools tab UI."""
-        # Main scrollable container
         scroll_frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
         scroll_frame.pack(fill=tk.BOTH, expand=True)
         from er_save_manager.ui.utils import bind_mousewheel
@@ -51,7 +50,6 @@ class AdvancedToolsTab:
             font=("Segoe UI", 14, "bold"),
         ).pack(pady=10)
 
-        # Save info
         info_frame = ctk.CTkFrame(scroll_frame, corner_radius=12)
         info_frame.pack(fill="x", padx=20, pady=10)
 
@@ -77,7 +75,6 @@ class AdvancedToolsTab:
         )
         self.save_info_text.pack(fill="x", padx=12, pady=(0, 12))
 
-        # Tools
         tools_frame = ctk.CTkFrame(scroll_frame, corner_radius=12)
         tools_frame.pack(fill="x", padx=20, pady=10)
 
@@ -132,7 +129,6 @@ class AdvancedToolsTab:
             active_slots = save_file.get_active_slots()
             info.append(f"Active Characters: {len(active_slots)}")
 
-            # File size
             save_path = self.get_save_path()
             if save_path:
                 size_mb = Path(save_path).stat().st_size / (1024 * 1024)
@@ -167,7 +163,6 @@ class AdvancedToolsTab:
             except Exception:
                 issues.append("⚠ Missing/invalid file header (magic bytes)")
 
-            # Check for empty slots
             active_slots = save_file.get_active_slots()
             if len(active_slots) == 0:
                 issues.append("⚠ No active character slots found")
@@ -212,7 +207,6 @@ class AdvancedToolsTab:
                 except Exception:
                     continue
 
-                # Name check
                 name = None
                 try:
                     name = slot.get_character_name()
@@ -221,7 +215,6 @@ class AdvancedToolsTab:
                 if not name:
                     issues.append(f"⚠ Slot {i + 1}: Character has no name")
 
-                # Level check
                 level = None
                 try:
                     level = slot.get_level()
@@ -277,12 +270,10 @@ class AdvancedToolsTab:
                     save=save_file,
                 )
 
-            # Recalculate checksums and save back to file
             save_file.recalculate_checksums()
 
             if save_path:
                 save_file.to_file(save_path)
-                # Refresh info panel
                 self.reload_save()
                 self.update_save_info()
                 self.show_toast("Checksums recalculated successfully", duration=2500)

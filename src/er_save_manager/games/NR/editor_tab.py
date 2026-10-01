@@ -109,7 +109,6 @@ class _PickerDialog(ctk.CTkToplevel):
 
         self._render(items)
 
-        # Pre-select current item
         if current >= 0:
             for idx, (iid, _) in enumerate(self._filtered):
                 if iid == current:
@@ -343,7 +342,6 @@ class NREditorTab:
         scroll = ctk.CTkScrollableFrame(parent, corner_radius=0, fg_color="transparent")
         scroll.pack(fill="both", expand=True)
 
-        # Search bar
         top = ctk.CTkFrame(scroll, fg_color="transparent")
         top.pack(fill="x", padx=10, pady=(8, 4))
         ctk.CTkLabel(top, text="Relics", font=("Segoe UI", 14, "bold")).pack(
@@ -395,7 +393,6 @@ class NREditorTab:
         self._relic_tree.bind("<<TreeviewSelect>>", self._on_relic_select)
         self._tree_ga_map: dict[str, int] = {}
 
-        # Sub-tabs: Edit | Spawn
         action_tabs = ctk.CTkTabview(scroll, corner_radius=8)
         action_tabs.pack(fill="x", padx=10, pady=(0, 6))
         self._relic_action_tabs = action_tabs
@@ -404,7 +401,6 @@ class NREditorTab:
         _edit_parent = action_tabs.tab("Edit")
         _spawn_parent = action_tabs.tab("Spawn")
 
-        # Edit panel
         self._edit_panel = ctk.CTkFrame(
             _edit_parent, corner_radius=10, fg_color=("gray84", "gray24")
         )
@@ -501,7 +497,6 @@ class NREditorTab:
 
         self._set_edit_curse_visible(False)
 
-        # Spawn panel
         spawn_outer = ctk.CTkFrame(
             _spawn_parent, corner_radius=10, fg_color=("gray84", "gray24")
         )
@@ -815,7 +810,6 @@ class NREditorTab:
         if rs is None:
             return
         self._selected_relic_ga = ga
-        # Populate edit panel with names
         self._re_item_var.set(str(rs.real_item_id))
         self._re_item_label.configure(text=relic_name(rs.real_item_id))
         effects = rs.effects_list()

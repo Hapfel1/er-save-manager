@@ -578,7 +578,6 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
                 text=name + suffix, text_color=("gray15", "gray90")
             )
 
-            # Detail: qty + location
             qty_m = re.search(r"Qty:\s*(\d+)", text)
             qty = int(qty_m.group(1)) if qty_m else 1
             self._detail_lbl.configure(

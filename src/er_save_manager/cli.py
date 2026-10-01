@@ -73,7 +73,6 @@ def cmd_list(args: argparse.Namespace) -> int:
         level = slot.get_level()
         map_id = slot.map_id.to_decimal() if slot.map_id else "Unknown"
 
-        # Check for issues
         has_issues, issues = slot.has_corruption()
         status = " [ISSUES]" if has_issues else ""
 
@@ -100,7 +99,6 @@ def cmd_check(args: argparse.Namespace) -> int:
 
         name = slot.get_character_name() or f"Character {slot_idx + 1}"
 
-        # Get correct SteamID for comparison
         correct_steam_id = None
         if save.user_data_10_parsed:
             correct_steam_id = save.user_data_10_parsed.steam_id
@@ -134,12 +132,10 @@ def cmd_fix(args: argparse.Namespace) -> int:
     name = slot.get_character_name() or f"Character {slot_idx + 1}"
     print(f"Fixing slot {slot_idx + 1} ({name})...")
 
-    # Create backup
     backup_mgr = BackupManager(save_path)
     backup_path = backup_mgr.create_pre_write_backup(save, "fix")
     print(f"Backup created: {backup_path.name}")
 
-    # Apply all fixes
     applied_fixes = []
     for fix_class in ALL_FIXES:
         fix = fix_class()
@@ -149,7 +145,6 @@ def cmd_fix(args: argparse.Namespace) -> int:
                 applied_fixes.append(result)
                 print(f"  - {fix.name}: {result.description}")
 
-    # Optional teleport
     if args.teleport:
         teleport = TeleportFix(args.teleport)
         result = teleport.apply(save, slot_idx)
@@ -158,7 +153,6 @@ def cmd_fix(args: argparse.Namespace) -> int:
             print(f"  - Teleport: {result.description}")
 
     if applied_fixes:
-        # Recalculate checksums and save
         save.recalculate_checksums()
         save.to_file(str(save_path))
         print(f"\nFixed {len(applied_fixes)} issue(s). Save file updated.")
@@ -232,23 +226,19 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub = p.add_subparsers(dest="command", metavar="COMMAND")
 
-    # gui command - Launch graphical interface
     p_gui = sub.add_parser("gui", help="Launch the graphical interface (default)")
     p_gui.set_defaults(_handler=cmd_gui)
 
-    # list command
     p_list = sub.add_parser("list", help="List characters in a save file")
     p_list.add_argument("--save", required=True, help="Path to save file")
     p_list.add_argument("-a", "--all", action="store_true", help="Show empty slots")
     p_list.add_argument("-v", "--verbose", action="store_true", help="Show issues")
     p_list.set_defaults(_handler=cmd_list)
 
-    # check command
     p_check = sub.add_parser("check", help="Check save file for corruption")
     p_check.add_argument("--save", required=True, help="Path to save file")
     p_check.set_defaults(_handler=cmd_check)
 
-    # fix command
     p_fix = sub.add_parser("fix", help="Fix corruption in a character slot")
     p_fix.add_argument("--save", required=True, help="Path to save file")
     p_fix.add_argument(
@@ -261,7 +251,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_fix.set_defaults(_handler=cmd_fix)
 
-    # backup commands
     p_backup = sub.add_parser("backup", help="Backup management")
     backup_sub = p_backup.add_subparsers(dest="backup_command", metavar="ACTION")
 

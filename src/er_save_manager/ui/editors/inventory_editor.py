@@ -912,7 +912,7 @@ class InventoryEditor:
         ).pack(side=ctk.RIGHT, fill=ctk.X, expand=True)
 
         bot_btn_row = ctk.CTkFrame(btn_row, fg_color="transparent")
-        bot_btn_row.pack(fill=ctk.X, pady=(6, 0))  # Added vertical padding here
+        bot_btn_row.pack(fill=ctk.X, pady=(6, 0))
 
         self.loadout_switch = ctk.CTkSwitch(
             bot_btn_row,
@@ -921,9 +921,7 @@ class InventoryEditor:
             font=("Segoe UI", 11),
             width=40,
         )
-        self.loadout_switch.pack(
-            side=ctk.LEFT, padx=(0, 12)
-        )  # Increased spacing after switch
+        self.loadout_switch.pack(side=ctk.LEFT, padx=(0, 12))
 
         ctk.CTkButton(
             bot_btn_row,
@@ -938,7 +936,7 @@ class InventoryEditor:
             bot_btn_row,
             text="Import Build",
             command=self._import_nyasu,
-            height=28,  # Slightly shorter
+            height=28,
             width=90,
             fg_color=("gray70", "gray35"),
         ).pack(side=ctk.RIGHT)
@@ -2155,7 +2153,6 @@ class InventoryEditor:
             if upgrade < 0 or upgrade > cap:
                 return False, f"Upgrade must be 0-{cap} for this weapon."
 
-        # Quantity range
         item_for_qty = db.get_item_by_id(full_id)
         if item_for_qty is not None:
             max_qty = self._max_qty_for_location(item_for_qty, location)

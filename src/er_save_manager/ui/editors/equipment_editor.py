@@ -391,7 +391,6 @@ class _ItemPickerDialog(ctk.CTkToplevel):
         self.attributes("-alpha", 1)
         self.grab_set()
 
-        # Search row
         top = ctk.CTkFrame(self, fg_color="transparent")
         top.pack(fill=ctk.X, padx=10, pady=(10, 4))
         ctk.CTkLabel(top, text="Search:").pack(side=ctk.LEFT, padx=(0, 6))
@@ -399,7 +398,6 @@ class _ItemPickerDialog(ctk.CTkToplevel):
         self._search_var.trace_add("write", lambda *_: self._filter())
         ctk.CTkEntry(top, textvariable=self._search_var, width=250).pack(side=ctk.LEFT)
 
-        # Category + sort row
         filt_row = ctk.CTkFrame(self, fg_color="transparent")
         filt_row.pack(fill=ctk.X, padx=10, pady=(0, 4))
         ctk.CTkLabel(filt_row, text="Category:").pack(side=ctk.LEFT, padx=(0, 6))
@@ -422,7 +420,6 @@ class _ItemPickerDialog(ctk.CTkToplevel):
             command=lambda _v: self._filter(),
         ).pack(side=ctk.LEFT)
 
-        # Listbox
         lb_frame = ctk.CTkFrame(self, fg_color=("gray82", "gray14"), corner_radius=6)
         lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=4)
 
@@ -457,7 +454,6 @@ class _ItemPickerDialog(ctk.CTkToplevel):
                 wraplength=380,
             ).pack(padx=10, pady=(0, 4))
 
-        # Buttons
         btn_row = ctk.CTkFrame(self, fg_color="transparent")
         btn_row.pack(fill=ctk.X, padx=10, pady=(6, 10))
         ctk.CTkButton(btn_row, text="Select", command=self._confirm, width=120).pack(
@@ -1387,7 +1383,6 @@ class EquipmentEditor:
             self.equipment_name_labels[key] = name_label
             name_label.bind("<Button-1>", lambda _e, k=key: self._open_picker(k))
 
-            # Small pick button
             pick_btn = ctk.CTkButton(
                 grid,
                 text="...",

@@ -242,7 +242,6 @@ def spawn_relic(
     ec_offset = _entry_count_offset(dec)
     entry_base = ec_offset + 4
 
-    # Find the first empty entry in the shifted data
     free_entry_off = None
     for i in range(ENTRY_SLOT_COUNT):
         off = entry_base + i * 14
@@ -257,7 +256,6 @@ def spawn_relic(
         _restore_slack(slot.decrypted, 72)
         raise RuntimeError("No free item entry slots after spawn")
 
-    # Write ItemEntry
     struct.pack_into("<3I", dec, free_entry_off, ga_handle, 1, acq_id)
     dec[free_entry_off + 12] = 0  # is_favorite
     dec[free_entry_off + 13] = 1  # is_new
@@ -306,7 +304,6 @@ def remove_relic(slot: NightreignSlot, ga_handle: int) -> int:
             dec[off : off + 14] = b"\x00" * 14
             break
 
-    # Decrement entry_count
     if old_count > 0:
         struct.pack_into("<I", dec, ec_offset, old_count - 1)
 

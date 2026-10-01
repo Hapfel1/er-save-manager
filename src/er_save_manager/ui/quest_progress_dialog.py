@@ -141,7 +141,6 @@ class QuestProgressDialog:
             return sum(1 for s in steps if _step_is_complete(s)), len(steps)
 
         def _render_steps(npc_name):
-            # Clear old widgets
             for w in steps_scroll.winfo_children():
                 w.destroy()
             step_widgets.clear()
@@ -178,7 +177,6 @@ class QuestProgressDialog:
                     width=28,
                 ).grid(row=0, column=0, rowspan=2, padx=(8, 4), pady=6, sticky="n")
 
-                # Description
                 ctk.CTkLabel(
                     row_frame,
                     text=step["description"],
@@ -188,7 +186,6 @@ class QuestProgressDialog:
                     wraplength=490,
                 ).grid(row=0, column=1, sticky="ew", padx=(0, 8), pady=(6, 0))
 
-                # Location + flag count
                 meta_parts = []
                 if step["location"]:
                     meta_parts.append(step["location"])
@@ -201,7 +198,6 @@ class QuestProgressDialog:
                     anchor="w",
                 ).grid(row=1, column=1, sticky="ew", padx=(0, 8), pady=(0, 6))
 
-                # Apply button
                 btn_text = "Applied" if complete else "Apply"
                 btn_state = "disabled" if complete else "normal"
                 apply_btn = ctk.CTkButton(
@@ -215,7 +211,6 @@ class QuestProgressDialog:
 
                 step_widgets.append((step, apply_btn))
 
-            # Enable bottom buttons
             apply_all_btn.configure(
                 state="normal",
                 command=lambda: _apply_up_to_last_complete(npc_name),
@@ -244,7 +239,6 @@ class QuestProgressDialog:
             Asks confirmation first.
             """
             steps = QUEST_FLAGS[npc_name]
-            # Find furthest complete step index
             last_complete = -1
             for i, step in enumerate(steps):
                 if _step_is_complete(step):

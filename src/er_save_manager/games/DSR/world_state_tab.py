@@ -45,11 +45,9 @@ class DSRWorldStateTab:
         self._current_slot = 0
 
     def setup_ui(self) -> None:
-        # Outer wrapper fills parent
         outer = ctk.CTkFrame(self.parent, corner_radius=12)
         outer.pack(fill="both", expand=True, pady=(0, 10))
 
-        # Header
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
 
@@ -70,7 +68,6 @@ class DSRWorldStateTab:
         self._slot_combo.pack(side="right")
         ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
 
-        # Scrollable content fills remaining space
         scroll = ctk.CTkScrollableFrame(outer, corner_radius=10)
         scroll.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         bind_mousewheel(scroll)
