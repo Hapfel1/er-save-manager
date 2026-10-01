@@ -142,11 +142,9 @@ class BackupManager:
         text = re.sub(r"[\x00-\x1f\x7f]", "", text)
         # Replace invalid filename characters with underscores
         text = re.sub(r'[<>:"/\\|?*]', "_", text)
-        # Replace spaces with underscores
         text = text.replace(" ", "_")
         # Collapse multiple underscores
         text = re.sub(r"_+", "_", text)
-        # Remove leading/trailing underscores
         text = text.strip("_")
         return text
 
@@ -222,7 +220,6 @@ class BackupManager:
         """
         self.backup_folder.mkdir(parents=True, exist_ok=True)
 
-        # Check compression setting
         if compress is None:
             try:
                 settings = get_settings()
@@ -233,17 +230,14 @@ class BackupManager:
         backup_name = self._generate_backup_name(description, operation, compress)
         backup_path = self.backup_folder / backup_name
 
-        # Copy and optionally zip compress the save file
         if compress:
             with zipfile.ZipFile(
                 backup_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6
             ) as zipf:
-                # Store save file inside zip with original name
                 zipf.write(self.save_path, arcname=self.save_path.name)
         else:
             shutil.copy2(self.save_path, backup_path)
 
-        # Create metadata
         metadata = BackupMetadata(
             filename=backup_name,
             original_file=self.save_path.name,
@@ -254,15 +248,12 @@ class BackupManager:
             compressed=compress,
         )
 
-        # Add character summary if save provided
         if save:
             metadata.character_summary = self._get_character_summary(save)
 
-        # Update history
         self.history.backups.insert(0, metadata)
         self._save_history()
 
-        # Prune old backups if max_backups setting is configured
         pruned_backups = []
         try:
             settings = get_settings()
@@ -383,11 +374,9 @@ class BackupManager:
             operation=f"restore_{backup_name}",
         )
 
-        # Check compression format
         is_zip = backup_name.endswith(".zip")
         is_gzip = backup_name.endswith(".gz")
 
-        # Restore the backup
         if is_zip:
             with zipfile.ZipFile(backup_path, "r") as zipf:
                 # Extract the save file (should be only file in zip)
@@ -402,7 +391,6 @@ class BackupManager:
                 data = f_in.read()
             _atomic_write_bytes(self.save_path, data)
         else:
-            # Uncompressed backup
             data = backup_path.read_bytes()
             _atomic_write_bytes(self.save_path, data)
 
@@ -441,7 +429,6 @@ class BackupManager:
                 data = f_in.read()
             _atomic_write_bytes(target, data)
         else:
-            # Uncompressed backup
             data = backup_path.read_bytes()
             _atomic_write_bytes(target, data)
 
@@ -461,7 +448,6 @@ class BackupManager:
         if backup_path.exists():
             backup_path.unlink()
 
-        # Update history
         self.history.backups = [
             b for b in self.history.backups if b.filename != backup_name
         ]
@@ -555,11 +541,9 @@ class BackupManager:
         if not backup_path.exists():
             return False
 
-        # Check file size
         if backup_path.stat().st_size < 1000:
             return False
 
-        # Check compression format
         is_zip = backup_name.endswith(".zip")
         is_gzip = backup_name.endswith(".gz")
 

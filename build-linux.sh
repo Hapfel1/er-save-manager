@@ -42,8 +42,12 @@ pyinstaller --clean --noconfirm \
     --copy-metadata er-save-manager \
     --copy-metadata customtkinterthemes \
     --add-data src/resources:resources \
+    --add-data resources/icon:resources/icon \
     --add-data src/er_save_manager/data/items:er_save_manager/data/items \
     --add-data src/er_save_manager/data/icons.db:er_save_manager/data \
+    --add-data src/er_save_manager/data/event_flags.json:er_save_manager/data \
+    --add-data src/er_save_manager/data/locations.json:er_save_manager/data \
+    --add-data src/er_save_manager/data/quest_flags.json:er_save_manager/data \
     --add-data src/er_save_manager/fixes/CSNetMan.bin:er_save_manager/fixes \
     --add-data src/er_save_manager/games/DSR/data:er_save_manager/games/DSR/data \
     --add-data src/er_save_manager/games/DS3/data:er_save_manager/games/DS3/data \

@@ -48,13 +48,10 @@ class SteamIdFix(BaseFix):
         if not slot.has_steamid_corruption(correct_steam_id):
             return FixResult(applied=False, description="SteamID already matches")
 
-        # Store original for logging
         original_steam_id = slot.steam_id
 
-        # Update in memory
         slot.steam_id = correct_steam_id
 
-        # Write to raw data
         if hasattr(slot, "steamid_offset") and slot.steamid_offset > 0:
             steamid_bytes = struct.pack("<Q", correct_steam_id)
             save._raw_data[slot.steamid_offset : slot.steamid_offset + 8] = (

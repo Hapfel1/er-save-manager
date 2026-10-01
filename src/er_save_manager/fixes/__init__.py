@@ -32,10 +32,8 @@ ALL_FIXES = [
 ]
 
 __all__ = [
-    # Base
     "BaseFix",
     "FixResult",
-    # Individual fixes
     "TorrentFix",
     "SteamIdFix",
     "WeatherFix",
@@ -47,10 +45,8 @@ __all__ = [
     "check_slot_checksum",
     "TeleportFix",
     "DLCEscapeFix",
-    # Teleport locations
     "TeleportLocation",
     "TELEPORT_LOCATIONS",
-    # All fixes list
     "ALL_FIXES",
     "DeepScanFix",
     "DeepScanResult",

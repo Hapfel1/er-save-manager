@@ -25,14 +25,15 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **NPC Respawner**: Respawn NPCs
 - **NPC Quest Tracker**
 - **Gestures**: Unlock gestures
-- **Invasion Regions & Game Settings**: View and edit invasion regions and game settings
+- **Summoning Pools**: Manage Summoning Pool States for the Vanilla Game
+- **Game Settings**
 - **Backup Manager**: Automatic and manual backups with restore functionality
 - **Troubleshooting**: Troubleshooter for checking game launch/connection related issues
-- **Backup Manager and SteamID Patcher for**: Elden Ring, Elden Ring Nightreign, Armored Core 6, Sekiro, Dark Souls III, Dark Souls Remastered
-- **DSR**: Stats Editing, Character Management, Event Flags, Boss Revival, NPC Revival, Item Spawning
-- **DS3**: Stats Editing, Character Management, Boss Revival, Item Spawning, World State Editing, Supports Convergence and Cinders Mod
-- **Nightreign**: Relic spawning and editing, Editing Murk, Character Management
-- **DS2**: Stats Editing, Item Spawning, Character Management, Bonfire Editing, NPC Revival
+- **Backup Manager and SteamID Patcher for**: Elden Ring, Elden Ring Nightreign, Armored Core 6, Sekiro, Dark Souls III
+- **DSR**: Stats Editing, Character Management, Event Flags, Boss Revival, Item Spawning and Inventory Editing with Visual Item Picker
+- **DS3**: Stats Editing, Character Management, Item Spawning and Inventory Editing with Visual Item Picker, Boss Revival, NPC Revival, Bonfires, Gestures, NG+, Supports Convergence, Cinders and SeamlessCoop
+- **Nightreign**: Relic spawning and editing, Chalice Loadouts and Presets, Editing Murk, Character Management
+- **DS2**: Stats Editing, Item Spawning, Build Import from Souls Planner, Character Management, Bonfire Editing, NPC Revival
 
 ### Work in Progress
 
@@ -189,16 +190,12 @@ Automatically detects issues with your game installation, your save file and any
 
 - Unlock gestures
 
-### Regions & Game Settings
-
-- View and unlock invasion regions
-- View and edit game settings
-
 ### Backup Manager
 
 - Automatic backups before any edit
 - Manual backup creation with custom names
 - Browse and restore previous backups
+- Batch delete via Ctrl/Shift multi-select
 - Backup pruning with configurable retention
 - One-click restore with confirmation
 - Function for Auto-Backup Creation on Game Launch
@@ -218,27 +215,44 @@ Automatically detects issues with your game installation, your save file and any
 - Character Management
 - Event Flags
 - Boss Revival
-- NPC Revival
-- Item Spawning (Supports SeamlessCoop Items)
+- Item Spawning that stores items the way the game does, with item data, upgrade caps and icons read from the game files
+- SeamlessCoop items for `.co2` saves
+- Visual Item Picker and Visual Inventory Editor
+- Batch editing: quantity, upgrade level, infusion, removal, repair
+- Equipped items are protected from removal, cut content is hidden by default and confirmed before spawning
 
 ### DS3
 
-- Stats Editing
+- Stats Editing (level follows the attributes), name and NG+ cycle
 - Character Management
-- Boss Revival
-- Item Spawning (Supports Cinders and Convergence)
-- World State Editing
+- Item Spawning that stores items the way the game does, into the inventory or the storage box
+- Item data, limits and icons read from the game files of Vanilla, Convergence and Cinders, with infusion selection and infusion icons
+- SeamlessCoop items for `.co2` saves
+- Visual Item Picker and Visual Inventory Editor with infused weapon badges
+- Batch spawning and editing: quantity, upgrade level, infusion, moving between inventory and storage box, removal
+- Equipped items are protected from removal, cut content is hidden by default and confirmed before spawning
+- Boss Revival (all bosses including DLC)
+- NPC Revival (revive or kill)
+- Bonfires (light/unlight by area)
+- Gestures (unlock/lock)
+- NG+ cycle editing
 
 ### Nightreign 
 
 - Relic spawning and editing
+- Copy a relic to the spawner, JSON import/export of relics
+- Loadouts tab: edit chalice relic loadouts and custom presets, including modded and over-capacity loadouts
 - Editing Murk
 - Character Management
 
 ### DS2
 
 - Stats Editing
-- Item Spawning (weapon upgrades and infusions, visual item picker)
+- Item Spawning (weapon upgrades and infusions, SeamlessCoop items for `.co2` saves)
+- Visual Item Picker and Visual Inventory Editor with full Icon Support
+- Multi-select batch editing in the visual picker and inventory
+- Equipped items are protected from removal and storing
+- Build Import from [Souls Planner](https://soulsplanner.com) links (stats and items, optionally equipping the build's loadout)
 - Character Management
 - Bonfire Editing (light/unlight, Bonfire Ascetic level)
 - NPC Revival
@@ -264,6 +278,8 @@ Source Available License - see [LICENSE](LICENSE)
 - DS2 AES encryption key and SteamID detection/patching adapted from [souls_givifier](https://github.com/jtesta/souls_givifier)
 - [Smithbox](https://github.com/vawser/Smithbox) param CSV exports, used to derive the DS2 param field layout
 - Elden Ring event flag, boss, gesture and summoning pool data from the Cheat Engine scripts by Dasaav and Sayuri ([TGA Cheat Table](https://github.com/The-Grand-Archives/Elden-Ring-CT-TGA))
+- [UXM Selective Unpack](https://github.com/Nordgaren/UXM-Selective-Unpack) archive keys and file name dictionaries, used to read DS3 game data for item, bonfire, boss, NPC and gesture data
+- Smithbox param definitions, icon layouts and community row names, used for DS3 and DS2 item and icon data
 
 
 ### Community

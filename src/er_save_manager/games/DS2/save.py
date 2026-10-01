@@ -66,6 +66,10 @@ from pathlib import Path
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from er_save_manager.games.DS2.bonfire_database import BONFIRES
+from er_save_manager.games.DS2.item_database import (
+    SEAMLESS_ITEMS,
+    SEAMLESS_MAX_STACK,
+)
 from er_save_manager.games.DS2.npc_database import NPCS, NpcEntry
 from er_save_manager.games.DS2.regulation import Regulation
 
@@ -121,8 +125,78 @@ INVENTORY_START = 0x1E2C
 INVENTORY_END = 0x10E1C
 INVENTORY_SLOT_SIZE = 16
 
+# Equipment block in the profile entry: a u32 header, then equipped items by
+# item id (u32 each, 0xFFFFFFFF for an empty slot). Which carried entry a slot
+# uses is in the index table at EQUIPMENT_INDEX_OFFSET:
+#   +0x04  6 weapon slots, left and right hand alternating; 3400000 is the
+#          unarmed placeholder
+#   +0x1C  4 armor slots (head, chest, hands, legs) holding the armor param
+#          id, which is the inventory item id minus 10000000
+#   +0x2C  2 u32 of unknown use (0 on every character seen)
+#   +0x34  4 slots, empty on every character seen (arrows and bolts)
+#   +0x44  4 ring slots
+#   +0x54  10 belt item slots
+# Mapped from a before/after pair with a weapon, a helm, a ring and a belt
+# item changed in game, and checked on every created character of two saves.
+# The attuned spells follow the block (outside the load screen's copy) as 14
+# slots packed from the first, one per spell whatever its slot cost. Mapped
+# from a before/after pair attuning two 1-slot spells and one attuning the
+# 3-slot Affinity alone, which took a single slot.
+EQUIPMENT_OFFSET = 0x188
+EQUIPMENT_HEADER = 0x1E
+_EQUIP_WEAPONS = (0x04, 6)
+_EQUIP_ARMOR = (0x1C, 4)
+_EQUIP_AMMO = (0x34, 4)
+_EQUIP_RINGS = (0x44, 4)
+_EQUIP_BELT = (0x54, 10)
+_EQUIP_SPELLS = (0x7C, 14)
+_UNARMED_ID = 3400000
+_ARMOR_ID_OFFSET = 10000000
+_EMPTY_EQUIP = 0xFFFFFFFF
+# Armor param ids of the bare head, chest, hands and legs, held by an armor
+# slot with nothing equipped.
+_BARE_ARMOR_IDS = (11001100, 11001101, 11001102, 11001103)
+
+# Which carried entry each equipment slot uses: u16 inventory positions
+# (index into the list at INVENTORY_START), 0xFFFF for an empty slot. Weapons
+# are ordered right then left hand per set (R1, L1, R2, L2, R3, L3), the
+# reverse pairing of the id block, then 4 armor, 4 ring, 4 ammo, 10 belt and
+# 14 spell slots. Mapped from the before/after pairs above (the equip write
+# rebuilt from each matches the game's byte for byte) and checked against the
+# weapon, armor, ring and belt slots of 10 characters.
+EQUIPMENT_INDEX_OFFSET = 0x11E30
+_INDEX_WEAPONS = 0
+_INDEX_ARMOR = 6
+_INDEX_RINGS = 10
+_INDEX_BELT = 18
+_INDEX_SPELLS = 28
+
+# u8 index of the selected attuned spell, 0xFF with none selected. The game
+# set it from 0xFF to 0 on attuning a first spell in both spell pairs, and it
+# is 0 on every character seen with a spell attuned.
+_SELECTED_SPELL_OFFSET = 0x10E2D
+_NO_SELECTED_SPELL = 0xFF
+
+# Equippable items that add attunement slots, by item id: Black Witch Hat and
+# Southern Ritual Band, +1 and +2. Their effect is a SpEffect, which the
+# embedded params do not include, so the counts are soulsplanner.com's.
+_ATTUNEMENT_SLOT_ITEMS = {21501100: 1, 40350000: 1, 40350001: 2, 40350002: 3}
+_EMPTY_INDEX = 0xFFFF
+
+# Entry 22 keeps a copy of every slot's equipment block for the load screen,
+# at this offset plus _OCC_STRIDE per slot. It matched the profile's block on
+# 124 of 128 created characters; the rest had never been written.
+_SELECT_EQUIPMENT_OFFSET = 0xD0
+_EQUIPMENT_BLOCK_SIZE = 0x7C
+
+# Passed to Character.equip for a slot to leave unchanged.
+KEEP_SLOT = object()
+
 # Stack limit used for items the regulation does not know.
 _DEFAULT_MAX_STACK = 99
+_SEAMLESS_IDS = frozenset(
+    int.from_bytes(bytes.fromhex(h), "little") for h in SEAMLESS_ITEMS.values()
+)
 
 # Categories stored in the key item list instead of the main inventory.
 KEY_LIST_CATEGORIES = frozenset({"keys", "gestures"})
@@ -719,6 +793,132 @@ class Character:
     def key_items(self) -> list[InventoryItem]:
         return parse_inventory(self._data, KEY_ITEMS_START, KEY_ITEMS_END)
 
+    def equipped_item_ids(self) -> set[int]:
+        """Inventory item ids the character has equipped (weapons, armor,
+        ammo, rings, belt items and attuned spells). Empty when the
+        equipment block does not start with its known header, so an unknown
+        layout never blocks edits it cannot judge. The block names items by id only, so every carried
+        copy of an equipped id counts as possibly equipped."""
+        if (
+            struct.unpack_from("<I", self._data, EQUIPMENT_OFFSET)[0]
+            != EQUIPMENT_HEADER
+        ):
+            return set()
+        ids: set[int] = set()
+        for (rel, count), id_offset in (
+            (_EQUIP_WEAPONS, 0),
+            (_EQUIP_ARMOR, _ARMOR_ID_OFFSET),
+            (_EQUIP_AMMO, 0),
+            (_EQUIP_RINGS, 0),
+            (_EQUIP_BELT, 0),
+            (_EQUIP_SPELLS, 0),
+        ):
+            for k in range(count):
+                value = struct.unpack_from(
+                    "<I", self._data, EQUIPMENT_OFFSET + rel + 4 * k
+                )[0]
+                if value not in (_EMPTY_EQUIP, 0, _UNARMED_ID):
+                    ids.add(value + id_offset)
+        return ids
+
+    def has_equipment_block(self) -> bool:
+        return (
+            struct.unpack_from("<I", self._data, EQUIPMENT_OFFSET)[0]
+            == EQUIPMENT_HEADER
+        )
+
+    def attunement_slots(self) -> int | None:
+        """Attunement slots from the attunement stat and the equipped items
+        that add some. None when the regulation cannot be read."""
+        regulation = self._regulation()
+        if regulation is None:
+            return None
+        slots = regulation.attunement_slots(self.get_stat("attunement"))
+        if slots is None:
+            return None
+        return slots + sum(
+            _ATTUNEMENT_SLOT_ITEMS.get(item_id, 0)
+            for item_id in self.equipped_item_ids()
+        )
+
+    def spell_slots(self, item_id: int) -> int | None:
+        """Attunement slots a spell takes, or None when unknown."""
+        regulation = self._regulation()
+        return regulation.spell_slots(item_id) if regulation else None
+
+    def equip(
+        self,
+        weapons: list[InventoryItem | object | None] = (),
+        armor: list[InventoryItem | object | None] = (),
+        rings: list[InventoryItem | object | None] = (),
+        belt: list[InventoryItem | object | None] = (),
+        spells: list[InventoryItem | object | None] = (),
+    ) -> None:
+        """Equip carried inventory entries; None empties a slot and KEEP_SLOT
+        leaves it as it is, as do slots past the end of a list. weapons is
+        in the id block's order (L1, R1, L2, R2, L3, R3), armor is head,
+        chest, hands, legs. spells is the attunement list, which the game
+        keeps packed from the first slot. Ammo is left as it is. Raises
+        ValueError for an unknown block layout or an entry that is not
+        carried."""
+        if not self.has_equipment_block():
+            raise ValueError("equipment block not found")
+        for entry in (*weapons, *armor, *rings, *belt, *spells):
+            if isinstance(entry, InventoryItem) and (
+                entry.in_box or not INVENTORY_START <= entry.offset < INVENTORY_END
+            ):
+                raise ValueError(f"item {entry.item_id} is not carried")
+
+        def write(block_rel, index, k, entry, item_id_for_empty, id_offset=0):
+            if entry is KEEP_SLOT:
+                return
+            struct.pack_into(
+                "<I",
+                self._data,
+                EQUIPMENT_OFFSET + block_rel + 4 * k,
+                item_id_for_empty if entry is None else entry.item_id - id_offset,
+            )
+            position = (
+                _EMPTY_INDEX
+                if entry is None
+                else (entry.offset - INVENTORY_START) // INVENTORY_SLOT_SIZE
+            )
+            struct.pack_into(
+                "<H", self._data, EQUIPMENT_INDEX_OFFSET + 2 * index, position
+            )
+
+        for k, entry in enumerate(weapons[: _EQUIP_WEAPONS[1]]):
+            # Block L1, R1, ... and index R1, L1, ...: swap within each set.
+            write(_EQUIP_WEAPONS[0], _INDEX_WEAPONS + (k ^ 1), k, entry, _UNARMED_ID)
+        for k, entry in enumerate(armor[: _EQUIP_ARMOR[1]]):
+            write(
+                _EQUIP_ARMOR[0],
+                _INDEX_ARMOR + k,
+                k,
+                entry,
+                _BARE_ARMOR_IDS[k],
+                _ARMOR_ID_OFFSET,
+            )
+        for k, entry in enumerate(rings[: _EQUIP_RINGS[1]]):
+            write(_EQUIP_RINGS[0], _INDEX_RINGS + k, k, entry, _EMPTY_EQUIP)
+        for k, entry in enumerate(belt[: _EQUIP_BELT[1]]):
+            write(_EQUIP_BELT[0], _INDEX_BELT + k, k, entry, _EMPTY_EQUIP)
+        for k, entry in enumerate(spells[: _EQUIP_SPELLS[1]]):
+            write(_EQUIP_SPELLS[0], _INDEX_SPELLS + k, k, entry, _EMPTY_EQUIP)
+        first_spell = struct.unpack_from(
+            "<I", self._data, EQUIPMENT_OFFSET + _EQUIP_SPELLS[0]
+        )[0]
+        if (
+            first_spell not in (_EMPTY_EQUIP, 0)
+            and self._data[_SELECTED_SPELL_OFFSET] == _NO_SELECTED_SPELL
+        ):
+            self._data[_SELECTED_SPELL_OFFSET] = 0
+
+    def equipment_block(self) -> bytes:
+        return bytes(
+            self._data[EQUIPMENT_OFFSET : EQUIPMENT_OFFSET + _EQUIPMENT_BLOCK_SIZE]
+        )
+
     def write_inventory_slot(self, item: InventoryItem) -> None:
         self._data[item.offset : item.offset + INVENTORY_SLOT_SIZE] = item.to_bytes()
 
@@ -749,6 +949,8 @@ class Character:
     def max_stack(self, item_id: int) -> int:
         """Largest stack of an item. Falls back to 99 when the regulation does
         not know the item."""
+        if item_id in _SEAMLESS_IDS:
+            return SEAMLESS_MAX_STACK
         regulation = self._regulation()
         held = regulation.max_held(item_id) if regulation else None
         return held if held else _DEFAULT_MAX_STACK
@@ -1312,6 +1514,17 @@ class DS2Save:
             select_off = _SELECT_NAME_OFFSET + _OCC_STRIDE * i
             if select_off + _SELECT_NAME_SIZE <= len(select_data):
                 select_data[select_off : select_off + _SELECT_NAME_SIZE] = encoded
+
+    def sync_equipment_cache(self, slot_index: int) -> None:
+        """Copy a slot's equipment block to the load screen's copy in entry
+        22, as the game does when it saves."""
+        character = self.characters[slot_index]
+        if not character.has_equipment_block():
+            return
+        select_data = self.container.get_entry(CHARACTER_SELECT_ENTRY)
+        off = _SELECT_EQUIPMENT_OFFSET + _OCC_STRIDE * slot_index
+        if off + _EQUIPMENT_BLOCK_SIZE <= len(select_data):
+            select_data[off : off + _EQUIPMENT_BLOCK_SIZE] = character.equipment_block()
 
     def clear_name_cache(self, slot_index: int) -> None:
         """Zero the entry 0 / entry 22 cached name for one slot. Needed

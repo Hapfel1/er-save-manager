@@ -73,21 +73,18 @@ class StatsEditor:
 
     def setup_ui(self):
         """Setup the stats editor UI"""
-        # Create scrollable frame
         self.frame = ctk.CTkScrollableFrame(
             self.parent,
             fg_color="transparent",
         )
         self.frame.pack(fill=ctk.BOTH, expand=True)
 
-        # Bind mousewheel
         bind_mousewheel(self.frame)
 
         # Single row: Attributes and Resources side by side
         top_row = ctk.CTkFrame(self.frame, fg_color="transparent")
         top_row.pack(fill=ctk.X, pady=5, padx=10)
 
-        # Attributes on the left
         stats_frame = ctk.CTkFrame(top_row, fg_color="transparent")
         stats_frame.pack(side=ctk.LEFT, fill=ctk.BOTH, expand=True, padx=(0, 5))
 
@@ -187,7 +184,6 @@ class StatsEditor:
 
         content_row = 1
 
-        # Level row
         ctk.CTkLabel(other_frame, text="Level:", text_color=("black", "white")).grid(
             row=content_row, column=0, sticky=ctk.W, padx=5, pady=5
         )
@@ -215,7 +211,6 @@ class StatsEditor:
             font=("Segoe UI", 10, "bold"),
         ).grid(row=content_row, column=3, padx=5, pady=5)
 
-        # Level warning
         self.level_warning_var = ctk.StringVar(value="")
         self.level_warning_label = ctk.CTkLabel(
             other_frame,
@@ -227,7 +222,6 @@ class StatsEditor:
             row=content_row, column=4, padx=10, pady=5, sticky=ctk.W
         )
 
-        # Runes row
         ctk.CTkLabel(other_frame, text="Runes:", text_color=("black", "white")).grid(
             row=content_row + 1, column=0, sticky=ctk.W, padx=5, pady=5
         )
@@ -357,7 +351,6 @@ class StatsEditor:
         )
         self._mm_min_label.grid(row=1, column=2, padx=10, pady=5, sticky=ctk.W)
 
-        # Apply button
         button_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
         button_frame.pack(fill=ctk.X, pady=10, padx=10)
 
@@ -415,7 +408,6 @@ class StatsEditor:
         except Exception:
             self._logger.exception("Failed logging stats for slot %s", slot_idx)
 
-        # Load attributes
         self.stat_vars["vigor"].set(getattr(char, "vigor", 0))
         self.stat_vars["mind"].set(getattr(char, "mind", 0))
         self.stat_vars["endurance"].set(getattr(char, "endurance", 0))
@@ -430,13 +422,9 @@ class StatsEditor:
         self.stat_vars["base_max_fp"].set(getattr(char, "base_max_fp", 0))
         self.stat_vars["base_max_sp"].set(getattr(char, "base_max_sp", 0))
 
-        # Load level and runes
         self.level_var.set(str(getattr(char, "level", 0)))
         self.runes_var.set(getattr(char, "runes", 0))
 
-        # Load flask max counts
-
-        # Load great rune / rune arc
         self.great_rune_on_var.set(bool(getattr(char, "great_rune_on", False)))
         self.rune_arc_var.set(bool(getattr(char, "furl_calling_finger_on", False)))
         rune_id = getattr(slot.equipped_items_item_id, "unk0x28", 0)
@@ -453,13 +441,11 @@ class StatsEditor:
         self.matchmaking_level_var.set(getattr(char, "matchmaking_weapon_level", 0))
         self._refresh_matchmaking_min(slot)
 
-        # Calculate level
         self.calculate_character_level()
 
     def calculate_character_level(self):
         """Calculate expected character level from attributes based on starting class"""
         try:
-            # Get archetype from currently loaded character
             archetype = 9  # Default to Wretch
 
             save_file = self.get_save_file()
@@ -476,7 +462,6 @@ class StatsEditor:
                 except Exception:
                     pass
 
-            # Get current attributes
             vigor = self.stat_vars["vigor"].get()
             mind = self.stat_vars["mind"].get()
             endurance = self.stat_vars["endurance"].get()
@@ -486,13 +471,11 @@ class StatsEditor:
             faith = self.stat_vars["faith"].get()
             arcane = self.stat_vars["arcane"].get()
 
-            # Determine if using Convergence mod
             is_convergence = False
             save_file = self.get_save_file()
             if save_file and hasattr(save_file, "is_convergence"):
                 is_convergence = save_file.is_convergence
 
-            # Calculate level using actual class data
             calculated_level = calculate_level_from_stats(
                 vigor,
                 mind,
@@ -506,14 +489,12 @@ class StatsEditor:
                 is_convergence,
             )
 
-            # Update calculated level display
             self.calculated_level_var.set(str(calculated_level))
 
             # Show class name in warning if available
             class_data = get_class_data(archetype, is_convergence)
             class_name = class_data.get("name", "Unknown")
 
-            # Check if current level matches
             try:
                 current_level = int(self.level_var.get())
             except (ValueError, TypeError):
@@ -653,11 +634,9 @@ class StatsEditor:
             return
 
         try:
-            # Ensure raw_data is mutable
             if isinstance(save_file._raw_data, bytes):
                 save_file._raw_data = bytearray(save_file._raw_data)
 
-            # Create backup
             from pathlib import Path
 
             from er_save_manager.backup.manager import BackupManager
@@ -671,12 +650,10 @@ class StatsEditor:
                     save=save_file,
                 )
 
-            # Modify stats
             slot = save_file.characters[slot_idx]
             if hasattr(slot, "player_game_data") and slot.player_game_data:
                 char = slot.player_game_data
 
-                # Update stats in memory
                 char.vigor = self.stat_vars["vigor"].get()
                 char.mind = self.stat_vars["mind"].get()
                 char.endurance = self.stat_vars["endurance"].get()
@@ -693,7 +670,6 @@ class StatsEditor:
                 char.base_max_fp = self.stat_vars["base_max_fp"].get()
                 char.base_max_sp = self.stat_vars["base_max_sp"].get()
 
-                # Great rune active / rune arc
                 char.great_rune_on = bool(self.great_rune_on_var.get())
                 char.furl_calling_finger_on = bool(self.rune_arc_var.get())
 
@@ -718,12 +694,10 @@ class StatsEditor:
                 ):
                     from io import BytesIO
 
-                    # Serialize character data
                     char_bytes = BytesIO()
                     char.write(char_bytes)
                     char_data = char_bytes.getvalue()
 
-                    # Verify size
                     if len(char_data) != 432:  # PlayerGameData is exactly 432 bytes
                         raise RuntimeError(
                             f"PlayerGameData serialization error: expected 432 bytes, got {len(char_data)}"
@@ -788,7 +762,6 @@ class StatsEditor:
                         slot.data_start : slot.data_start + len(rebuilt)
                     ] = rebuilt
 
-                    # Recalculate checksums and save
                     save_file.recalculate_checksums()
                     save_path = self.get_save_path()
                     if save_path:

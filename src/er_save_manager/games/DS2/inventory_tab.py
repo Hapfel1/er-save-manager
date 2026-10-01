@@ -1195,17 +1195,40 @@ class DS2InventoryPanel:
             return
 
         character = save.characters[self.get_slot_index()]
-        removed = [name for item, name, _ in picked if character.delete_entry(item)]
+        # The equipment block names items by id, so a carried copy of an
+        # equipped id may be the equipped one and is left alone.
+        equipped = character.equipped_item_ids()
+        blocked = [
+            name
+            for item, name, _ in picked
+            if item.item_id in equipped and not item.in_box
+        ]
+        removed = [
+            name
+            for item, name, _ in picked
+            if not (item.item_id in equipped and not item.in_box)
+            and character.delete_entry(item)
+        ]
+        note = (
+            f". Not removed, equipped (unequip in game first): {', '.join(blocked)}"
+            if blocked
+            else ""
+        )
         if not removed:
-            self.show_toast("Item not found in inventory", duration=2000)
+            self.show_toast(
+                note[2:] if blocked else "Item not found in inventory", duration=4000
+            )
             return
 
         self._write_and_refresh(save, operation="remove_item")
         self.show_toast(
-            f"Removed {removed[0]}"
-            if len(removed) == 1
-            else f"Removed {len(removed)} items",
-            duration=2000,
+            (
+                f"Removed {removed[0]}"
+                if len(removed) == 1
+                else f"Removed {len(removed)} items"
+            )
+            + note,
+            duration=4000 if blocked else 2000,
         )
 
     def _on_move(self, to_box: bool) -> None:
@@ -1225,8 +1248,12 @@ class DS2InventoryPanel:
             return
 
         character = save.characters[self.get_slot_index()]
+        equipped = character.equipped_item_ids() if to_box else set()
         moved, refused = [], []
         for item, name, category in rows:
+            if item.item_id in equipped:
+                refused.append(f"{name}: equipped, unequip it in game first")
+                continue
             # Owning several copies of a spell is normal, so spells never
             # count as a stack waiting at the destination.
             stackable = category in STACKABLE_CATEGORIES and category != "spells"

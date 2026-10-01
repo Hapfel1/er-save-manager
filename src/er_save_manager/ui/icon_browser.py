@@ -384,7 +384,6 @@ class IconBrowser(ctk.CTkToplevel):
         aow_allowed = is_weapon and getattr(item, "aow_allowed", True)
         affinity_allowed = is_weapon and reinforcement == "standard" and aow_allowed
 
-        # Quantity
         max_arrow = getattr(item, "max_arrow_quantity", 1)
         is_ammo = is_weapon and max_arrow > 1
         if (is_weapon and not is_ammo) or is_armor or is_gem:
@@ -395,7 +394,6 @@ class IconBrowser(ctk.CTkToplevel):
             self._qty_var.set(1)
             self._qty_entry.configure(state="normal" if max_num > 1 else "disabled")
 
-        # Upgrade
         if is_upgradable:
             if is_ashes:
                 cap = 10
@@ -422,7 +420,6 @@ class IconBrowser(ctk.CTkToplevel):
             self._upgrade_combo.configure(values=["0"], state="disabled")
             self._upgrade_var.set("0")
 
-        # Affinity
         if affinity_allowed:
             is_cnv = self._editor._is_cnv_save()
             weapon_affs = item.get_affinities(is_cnv)
@@ -436,7 +433,6 @@ class IconBrowser(ctk.CTkToplevel):
             self._affinity_var.set("Standard")
             self._update_affinity_icon("Standard")
 
-        # AoW
         aow_state = "normal" if aow_allowed else "disabled"
         self._aow_pick_btn.configure(state=aow_state)
         self._aow_clear_btn.configure(state=aow_state)

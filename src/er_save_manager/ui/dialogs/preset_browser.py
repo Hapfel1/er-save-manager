@@ -46,14 +46,12 @@ class EnhancedPresetBrowser:
         self.filtered_presets: list[dict[str, Any]] = []
         self.preset_widgets: list[ctk.CTkFrame] = []
 
-        # Metrics integration
         from pathlib import Path
 
         settings_path = Path.home() / ".er-save-manager" / "data" / "settings.json"
         self.metrics = PresetMetrics(settings_path)
         self.preset_metrics_cache: dict[str, dict] = {}  # preset_id -> metrics
 
-        # Contribution data
         self.face_image_path: str | None = None
         self.body_image_path: str | None = None
         self.preview_image_path: str | None = None
@@ -398,7 +396,6 @@ class EnhancedPresetBrowser:
         link.pack(anchor=ctk.W, padx=12, pady=(0, 10))
         link.bind("<Button-1>", lambda e: self._open_github_login())
 
-        # Submit button at bottom of right column
         submit_frame = ctk.CTkFrame(meta_section, fg_color="transparent")
         submit_frame.pack(fill=ctk.X, pady=(12, 0))
         self.submit_button = ctk.CTkButton(
@@ -624,7 +621,6 @@ class EnhancedPresetBrowser:
     def refresh_presets(self):
         import threading
 
-        # Show progress dialog
         progress = ProgressDialog(
             self.dialog, "Loading Presets", "Fetching presets from GitHub..."
         )
@@ -696,7 +692,6 @@ class EnhancedPresetBrowser:
                     ),
                 )
 
-        # Start loading in background thread
         thread = threading.Thread(target=load_in_background, daemon=True)
         thread.start()
 
@@ -812,7 +807,6 @@ class EnhancedPresetBrowser:
             text_color=("#6b7280", "#d1d5db"),
         ).pack()
 
-        # Metrics display
         preset_id = preset.get("id", "")
         metrics = self.preset_metrics_cache.get(preset_id, {})
         likes = metrics.get("thumbs_up", 0)
@@ -821,7 +815,6 @@ class EnhancedPresetBrowser:
         metrics_frame = ctk.CTkFrame(frame, fg_color="transparent")
         metrics_frame.pack(pady=(4, 6))
 
-        # Likes
         ctk.CTkLabel(
             metrics_frame,
             text=f"👍 {likes}",
@@ -829,7 +822,6 @@ class EnhancedPresetBrowser:
             text_color=("#6b7280", "#9ca3af"),
         ).pack(side=ctk.LEFT, padx=4)
 
-        # Downloads
         ctk.CTkLabel(
             metrics_frame,
             text=f"⬇ {downloads}",
@@ -955,7 +947,6 @@ class EnhancedPresetBrowser:
                         pady=10
                     )
             except Exception as e:
-                # Handle any PIL/Tkinter integration errors
                 print(f"[Preview] Image display error: {e}")
                 ctk.CTkLabel(self.preview_area, text="[Preview not available]").pack(
                     pady=10
@@ -988,7 +979,6 @@ class EnhancedPresetBrowser:
                 justify=ctk.LEFT,
             ).pack(anchor=ctk.W, pady=(6, 0))
 
-        # Metrics and voting section
         preset_id = preset.get("id", "")
         metrics = self.preset_metrics_cache.get(preset_id, {})
         likes = metrics.get("thumbs_up", 0)
@@ -997,7 +987,6 @@ class EnhancedPresetBrowser:
         metrics_section = ctk.CTkFrame(self.details_frame, fg_color="transparent")
         metrics_section.pack(anchor=ctk.W, pady=(12, 0), fill=ctk.X)
 
-        # Display current metrics
         stats_label = ctk.CTkLabel(
             metrics_section,
             text=f"👍 {likes} likes  |  ⬇ {downloads} downloads",
@@ -1006,7 +995,6 @@ class EnhancedPresetBrowser:
         )
         stats_label.pack(anchor=ctk.W, pady=(0, 8))
 
-        # Like button - check if user has already liked
         has_liked = self.metrics.has_user_liked(preset_id)
 
         vote_frame = ctk.CTkFrame(metrics_section, fg_color="transparent")
@@ -1018,11 +1006,9 @@ class EnhancedPresetBrowser:
                 return
 
             self.metrics.like(preset_id)
-            # Update metrics from server
             updated_metrics = self.metrics.fetch_metrics([preset_id])
             if updated_metrics:
                 self.preset_metrics_cache.update(updated_metrics)
-            # Refresh preview to show updated state
             self.preview_preset(preset)
 
         like_btn = ctk.CTkButton(
@@ -1036,7 +1022,6 @@ class EnhancedPresetBrowser:
         )
         like_btn.pack(side=ctk.LEFT, padx=(0, 8))
 
-        # Report button
         report_btn = ctk.CTkButton(
             vote_frame,
             text="🚩 Report",
@@ -1167,15 +1152,12 @@ class EnhancedPresetBrowser:
             save_file.recalculate_checksums()
             save_file.to_file(Path(save_path))
 
-            # Track download in Supabase
             preset_id = self.current_preset.get("id", "")
             if preset_id:
                 self.metrics.record_download(preset_id)
-                # Update local cache
                 updated_metrics = self.metrics.fetch_metrics([preset_id])
                 if updated_metrics:
                     self.preset_metrics_cache.update(updated_metrics)
-                # Refresh preview to show updated download count
                 self.preview_preset(self.current_preset)
 
             CTkMessageBox.showinfo(
@@ -1213,7 +1195,6 @@ class EnhancedPresetBrowser:
         main_frame = ctk.CTkFrame(report_dialog)
         main_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=20)
 
-        # GitHub Account Required notice
         notice_frame = ctk.CTkFrame(
             main_frame, fg_color=("#fff7ed", "#3b2f1b"), corner_radius=8
         )
@@ -1231,7 +1212,6 @@ class EnhancedPresetBrowser:
             text_color=("#6b7280", "#d1d5db"),
         ).pack(pady=(0, 10))
 
-        # Title
         ctk.CTkLabel(
             main_frame,
             text=f"Report: {preset.get('name', 'Preset')}",
@@ -1245,7 +1225,6 @@ class EnhancedPresetBrowser:
             text_color=("#6b7280", "#9ca3af"),
         ).pack(anchor=ctk.W, pady=(0, 15))
 
-        # Info box
         info_frame = ctk.CTkFrame(
             main_frame, fg_color=("#fef3c7", "#3f2f1e"), corner_radius=8
         )
@@ -1258,19 +1237,16 @@ class EnhancedPresetBrowser:
             wraplength=550,
         ).pack(padx=15, pady=12)
 
-        # Reason label
         ctk.CTkLabel(
             main_frame,
             text="Reason for report:",
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor=ctk.W, pady=(0, 8))
 
-        # Text box for report message
         report_text = ctk.CTkTextbox(main_frame, height=150)
         report_text.pack(fill=ctk.BOTH, expand=True, pady=(0, 20))
         report_text.focus()
 
-        # Button frame
         button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         button_frame.pack(fill=ctk.X)
 
@@ -1284,7 +1260,6 @@ class EnhancedPresetBrowser:
                 )
                 return
 
-            # Submit report
             self._submit_preset_report(preset, message)
             report_dialog.destroy()
 
@@ -1314,10 +1289,8 @@ class EnhancedPresetBrowser:
         preset_author = preset.get("author", "Unknown")
         preset_id = preset.get("id", "unknown")
 
-        # Create issue title
         issue_title = f"[Report] {preset_name}"
 
-        # Create issue body
         issue_body = f"""**Reported Preset:** {preset_name}
 **Author:** {preset_author}
 **Preset ID:** {preset_id}
@@ -1332,7 +1305,6 @@ class EnhancedPresetBrowser:
 *Submitted via ER Save Manager Preset Browser*
 """
 
-        # Build GitHub issue URL
         repo_owner = "Hapfel1"
         repo_name = "er-character-presets"
         params = {
@@ -1344,10 +1316,8 @@ class EnhancedPresetBrowser:
         query_string = urllib.parse.urlencode(params, safe="")
         url = f"https://github.com/{repo_owner}/{repo_name}/issues/new?{query_string}"
 
-        # Open browser
         open_url(url)
 
-        # Show confirmation
         CTkMessageBox.showinfo(
             "Report Submitted",
             "Your browser has opened to GitHub.\n\nClick 'Submit new issue' to complete the report.",

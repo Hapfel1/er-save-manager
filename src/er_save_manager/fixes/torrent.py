@@ -45,13 +45,10 @@ class TorrentFix(BaseFix):
         if not horse:
             return FixResult(applied=False, description="Horse data not found")
 
-        # Store original state for logging
         original_state = horse.state.name
 
-        # Apply fix
         horse.fix_bug()
 
-        # Write to raw data
         if hasattr(slot, "horse_offset") and slot.horse_offset > 0:
             horse_bytes = BytesIO()
             horse.write(horse_bytes)

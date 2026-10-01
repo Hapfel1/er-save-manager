@@ -48,15 +48,12 @@ class EventFlagsFix(BaseFix):
         if not hasattr(slot, "event_flags") or not slot.event_flags:
             return FixResult(applied=False, description="Event flags not found")
 
-        # Detect issues
         issues = CorruptionDetector.detect_all(slot.event_flags)
         if not issues:
             return FixResult(applied=False, description="No event flag issues detected")
 
-        # Make event_flags mutable
         event_flags_mutable = bytearray(slot.event_flags)
 
-        # Apply fixes
         fixes_count, fix_descriptions = CorruptionFixer.fix_all(
             event_flags_mutable, issues
         )
@@ -64,10 +61,8 @@ class EventFlagsFix(BaseFix):
         if fixes_count == 0:
             return FixResult(applied=False, description="Could not apply fixes")
 
-        # Update in memory
         slot.event_flags = bytes(event_flags_mutable)
 
-        # Write to raw data
         if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
             save._raw_data[
                 slot.event_flags_offset : slot.event_flags_offset

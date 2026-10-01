@@ -53,7 +53,6 @@ class SaveSelectorDialog:
 
         width, height = 950, 520
         dialog.update_idletasks()
-        # Center over parent window
         parent.update_idletasks()
         center_window(dialog, width, height, parent=parent)
 
@@ -80,7 +79,6 @@ class SaveSelectorDialog:
         )
         list_frame.pack(fill="both", expand=True, padx=15, pady=10)
 
-        # Bind mousewheel for scrolling on Linux and other platforms
         bind_mousewheel(list_frame)
 
         row_widgets: list[tuple[str, ctk.CTkFrame, ctk.CTkLabel]] = []
@@ -100,14 +98,11 @@ class SaveSelectorDialog:
 
         def apply_selection(value: str):
             selection_var.set(value)
-            # Update row highlight with mode-aware colors
             for val, row, label in row_widgets:
                 if val == value:
-                    # Selected: lavender highlight
                     row.configure(fg_color=("#c9a0dc", "#3b2f5c"))
                     label.configure(text_color=("#1f1f28", "#f0f0f0"))
                 else:
-                    # Unselected: subtle background
                     row.configure(fg_color=("#f5f5f5", "#2a2a3e"))
                     label.configure(text_color=("#333333", "#cccccc"))
 
@@ -167,7 +162,6 @@ class SaveSelectorDialog:
         )
         button.pack(side="right", padx=15)
 
-        # Default selection and keyboard activation
         button.focus_set()
         dialog.bind("<Return>", lambda e: select_save())
         dialog.bind("<Escape>", lambda e: dialog.destroy())

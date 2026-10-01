@@ -41,7 +41,7 @@ class AppearanceTab:
         self.reload_save = reload_callback
         self.show_toast = show_toast_callback
         self.preset_frames = []
-        self.selected_slot = None  # Track selected preset slot
+        self.selected_slot = None
         self._warped_face_btn = None
 
     def setup_ui(self):
@@ -50,7 +50,6 @@ class AppearanceTab:
         scroll_frame.pack(fill=tk.BOTH, expand=True)
         bind_mousewheel(scroll_frame)
 
-        # Header
         header_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
         header_frame.pack(fill=tk.X, padx=15, pady=(15, 10))
 
@@ -67,7 +66,6 @@ class AppearanceTab:
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", pady=(2, 0))
 
-        # Preset list container
         list_container = ctk.CTkFrame(scroll_frame, corner_radius=10)
         list_container.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
 
@@ -77,14 +75,12 @@ class AppearanceTab:
             font=("Segoe UI", 12, "bold"),
         ).pack(pady=(12, 6), padx=12, anchor="w")
 
-        # Scrollable list
         self.list_frame = ctk.CTkScrollableFrame(
             list_container, corner_radius=8, height=280
         )
         self.list_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 12))
         bind_mousewheel(self.list_frame)
 
-        # Action buttons
         action_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
         action_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
@@ -238,10 +234,8 @@ class AppearanceTab:
         force_render_dialog(dialog)
         dialog.grab_set()
 
-        # Read current unk0x6c values into a mutable list
         unk = list(preset.unk0x6c)
 
-        # Build slider vars from current preset values
         slider_vars = {}
         for _label, idx in self._WARPED_FACE_SLIDERS:
             slider_vars[idx] = tk.IntVar(value=unk[idx])
@@ -251,7 +245,6 @@ class AppearanceTab:
 
         current_group = None
         for label, idx in self._WARPED_FACE_SLIDERS:
-            # Derive group name from label prefix
             group = label.rsplit(" ", 1)[0]
             if group != current_group:
                 current_group = group
@@ -289,7 +282,6 @@ class AppearanceTab:
         def apply_full_warp():
             for idx_var in slider_vars.values():
                 idx_var.set(0)
-            # Refresh all value labels
             for widget in scroll_frame.winfo_children():
                 for _child in (
                     widget.winfo_children() if hasattr(widget, "winfo_children") else []
@@ -368,12 +360,10 @@ class AppearanceTab:
         """Handle preset selection"""
         self.selected_slot = slot_idx
 
-        # Get appearance mode for colors
         mode = ctk.get_appearance_mode().lower()
         selected_color = "#c9a0dc" if mode == "light" else "#3b2f5c"
         unselected_color = "#f5f5f5" if mode == "light" else "#2a2a3e"
 
-        # Update all frames
         for i, f in enumerate(self.preset_frames):
             if i == slot_idx:
                 f.configure(fg_color=selected_color)
@@ -382,7 +372,6 @@ class AppearanceTab:
 
     def load_presets(self):
         """Load character presets"""
-        # Clear existing frames
         for widget in self.list_frame.winfo_children():
             widget.destroy()
         self.preset_frames = []
@@ -410,7 +399,6 @@ class AppearanceTab:
                 frame.pack(fill=tk.X, pady=4, padx=4)
                 self.preset_frames.append(frame)
 
-                # Make frame clickable
                 frame.bind(
                     "<Button-1>", lambda e, idx=i, f=frame: self.select_preset(idx, f)
                 )
@@ -493,7 +481,6 @@ class AppearanceTab:
                 )
                 return
 
-            # Create dialog
             from er_save_manager.ui.utils import force_render_dialog
 
             dialog = ctk.CTkToplevel(self.parent)
@@ -502,7 +489,6 @@ class AppearanceTab:
             dialog.resizable(True, True)
             dialog.transient(self.parent)
             dialog.update_idletasks()
-            # Center over parent window
             self.parent.update_idletasks()
             center_window(dialog, width, height, parent=self.parent)
             # Force rendering on Linux before grab_set
@@ -515,7 +501,6 @@ class AppearanceTab:
                 font=("Segoe UI", 14, "bold"),
             ).pack(pady=(15, 10), padx=15)
 
-            # Create scrollable text display
             text_container = ctk.CTkFrame(dialog, corner_radius=8)
             text_container.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
 
@@ -526,7 +511,6 @@ class AppearanceTab:
             )
             text.pack(fill=tk.BOTH, expand=True)
 
-            # Build comprehensive info text - use getattr for safety
             body_type_value = preset.get_body_type()
             body_type = "Type A" if body_type_value == 0 else "Type B"
 
@@ -761,12 +745,10 @@ class AppearanceTab:
             text.insert("1.0", "\n".join(info))
             text.configure(state="disabled")
 
-            # Close button
             ctk.CTkButton(dialog, text="Close", command=dialog.destroy, width=15).pack(
                 pady=10
             )
 
-            # Auto-shown
             dialog.lift()
             dialog.focus_set()
 
@@ -1210,7 +1192,6 @@ class AppearanceTab:
                 )
                 return
 
-            # Create import dialog
             from er_save_manager.ui.utils import force_render_dialog
 
             dialog = ctk.CTkToplevel(self.parent)
@@ -1219,7 +1200,6 @@ class AppearanceTab:
             dialog.resizable(False, False)
             dialog.transient(self.parent)
 
-            # Center over parent window
             dialog.update_idletasks()
             self.parent.update_idletasks()
             center_window(dialog, width, height, parent=self.parent)
@@ -1280,7 +1260,6 @@ class AppearanceTab:
                         )
                         return
 
-                    # Create backup
                     save_path = self.get_save_path()
                     if save_path:
                         manager = BackupManager(Path(save_path))
@@ -1290,15 +1269,12 @@ class AppearanceTab:
                             save=save_file,
                         )
 
-                    # Import
                     save_file.import_preset(presets[source_idx], target_slot)
 
-                    # Save
                     save_file.recalculate_checksums()
                     if save_path:
                         save_file.to_file(Path(save_path))
 
-                    # Reload
                     if self.reload_save:
                         self.reload_save()
 
@@ -1393,7 +1369,6 @@ class AppearanceTab:
             )
             return
 
-        # Get preset info
         presets_data = save_file.get_character_presets()
         if not presets_data or self.selected_slot >= 15:
             CTkMessageBox.showerror(
@@ -1410,7 +1385,6 @@ class AppearanceTab:
         # Capture the slot before the dialog can change selected_slot
         source_slot = self.selected_slot
 
-        # Show copy dialog
         from er_save_manager.ui.utils import force_render_dialog
 
         dialog = tk.Toplevel(self.parent)
@@ -1479,12 +1453,10 @@ class AppearanceTab:
                     )
                     return
 
-                # Load destination save
                 from er_save_manager.parser import Save
 
                 dest_save = Save.from_file(dest_path)
 
-                # Create backup of destination
                 manager = BackupManager(Path(dest_path))
                 manager.create_backup(
                     description=f"before_preset_copy_to_slot_{dest_slot}",
@@ -1492,7 +1464,6 @@ class AppearanceTab:
                     save=dest_save,
                 )
 
-                # Copy preset
                 success = dest_save.copy_preset_to_save(
                     save_file, self.selected_slot, dest_slot - 1
                 )
@@ -1503,7 +1474,6 @@ class AppearanceTab:
                     )
                     return
 
-                # Save destination
                 dest_save.recalculate_checksums()
                 dest_save.to_file(dest_path)
 
@@ -1547,7 +1517,6 @@ class AppearanceTab:
             )
             return
 
-        # Confirm deletion
         if not CTkMessageBox.askyesno(
             "Confirm Delete",
             f"Delete preset in Slot {self.selected_slot + 1}?\n\nThis will clear the slot.",
@@ -1556,7 +1525,6 @@ class AppearanceTab:
             return
 
         try:
-            # Create backup
             save_path = self.get_save_path()
             if save_path:
                 manager = BackupManager(Path(save_path))
@@ -1566,7 +1534,6 @@ class AppearanceTab:
                     save=save_file,
                 )
 
-            # Delete preset
             success = save_file.delete_preset(self.selected_slot)
 
             if not success:
@@ -1575,7 +1542,6 @@ class AppearanceTab:
                 )
                 return
 
-            # Save
             save_file.recalculate_checksums()
             if save_path:
                 save_file.to_file(Path(save_path))
@@ -1583,11 +1549,9 @@ class AppearanceTab:
             # Capture slot number before reload resets selected_slot
             deleted_slot = self.selected_slot
 
-            # Reload
             if self.reload_save:
                 self.reload_save()
 
-            # Refresh preset list so UI matches new state
             self.load_presets()
 
             self.show_toast(

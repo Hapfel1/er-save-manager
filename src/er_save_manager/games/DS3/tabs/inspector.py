@@ -77,10 +77,11 @@ class DS3InspectorTab:
                     label.configure(text_color=("#333333", "#cccccc"))
 
         for slot_idx, char in occupied:
+            ng = "NG+?" if char.layout_error else f"NG+{char.ng_plus}"
             display = (
                 f"Slot {slot_idx + 1:2d} | {char.name:16s} | "
                 f"Lv.{char.level:>3d} | "
-                f"Souls: {char.souls:>8,} | NG+{char.ng_plus}"
+                f"Souls: {char.souls:>8,} | {ng}"
             )
             row = ctk.CTkFrame(
                 self.list_frame, fg_color=("#f5f5f5", "#2a2a3e"), corner_radius=6

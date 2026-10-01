@@ -155,7 +155,6 @@ class SettingsTab:
         else:
             self.show_eac_warning_var = tk.BooleanVar(value=False)
 
-        # Remember Last Location
         self.remember_location_var = tk.BooleanVar(
             value=self.settings.get("remember_last_location", True)
         )
@@ -168,7 +167,6 @@ class SettingsTab:
             ),
         ).pack(anchor="w", padx=12, pady=5)
 
-        # Linux Save Location Warning
         self.show_linux_save_warning_var = tk.BooleanVar(
             value=self.settings.get("show_linux_save_warning", True)
         )
@@ -187,7 +185,6 @@ class SettingsTab:
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 10))
 
-        # Update Notifications
         self.show_update_notifications_var = tk.BooleanVar(
             value=self.settings.get("show_update_notifications", True)
         )
@@ -207,7 +204,6 @@ class SettingsTab:
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
-        # External file change notification
         self.external_file_change_var = tk.BooleanVar(
             value=self.settings.get("external_file_change_notification", True)
         )
@@ -267,7 +263,6 @@ class SettingsTab:
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
-        # Compress Backups
         self.compress_backups_var = tk.BooleanVar(
             value=self.settings.get("compress_backups", True)
         )
@@ -286,7 +281,6 @@ class SettingsTab:
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 10))
 
-        # Max Backups
         max_backup_frame = ctk.CTkFrame(frame, fg_color="transparent")
         max_backup_frame.pack(fill="x", padx=12, pady=(0, 5))
         ctk.CTkLabel(max_backup_frame, text="Maximum backups to keep:").pack(
@@ -342,7 +336,6 @@ class SettingsTab:
             font=("Segoe UI", 11),
         ).pack(anchor="w", padx=32, pady=(0, 10))
 
-        # Backup Pruning Warning
         self.show_backup_pruning_warning_var = tk.BooleanVar(
             value=self.settings.get("show_backup_pruning_warning", True)
         )
@@ -356,7 +349,6 @@ class SettingsTab:
             ),
         ).pack(anchor="w", padx=12, pady=(0, 12))
 
-        # Auto-backup per game
         self._create_auto_backup_section(frame)
 
     def _create_auto_backup_section(self, parent):
@@ -622,7 +614,6 @@ class SettingsTab:
                 if choice:
                     self._set_game_auto_backup_path(game_key, options[0])
                     return
-            # Multiple found - show simple picker
             elif len(options) > 1:
                 from er_save_manager.ui.utils import force_render_dialog
 
@@ -1094,7 +1085,6 @@ class SettingsTab:
             for checkbox, entry in self._auto_backup_interval_widgets.values():
                 checkbox.configure(state="disabled")
                 entry.configure(state="disabled")
-            # Reset advanced settings
             if self._advanced_frame is not None:
                 self._advanced_frame.destroy()
                 self._advanced_frame = None

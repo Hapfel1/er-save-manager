@@ -45,7 +45,6 @@ class EventFlags:
 
         cls._bst_map = {}
 
-        # Check if running as PyInstaller bundle
         if getattr(sys, "_MEIPASS", None):
             # PyInstaller bundle - resources are in _MEIPASS/resources/
             bundle_path = Path(sys._MEIPASS) / "resources" / "eventflag_bst.txt"
@@ -533,15 +532,12 @@ class CorruptionFixer:
         2. Enable all 31 progression flags
         """
         try:
-            # Set blocking flag OFF
             EventFlags.set_flag(event_flags, FixFlags.RANNI_BLOCKING_FLAG, False)
 
-            # Enable all progression flags
             for flag_id in FixFlags.RANNI_FLAGS_TO_ENABLE:
                 try:
                     EventFlags.set_flag(event_flags, flag_id, True)
                 except ValueError:
-                    # Skip flags not in BST
                     continue
 
             return True

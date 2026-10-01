@@ -173,7 +173,6 @@ class Settings:
         self._notify(None)
 
 
-# Global settings instance
 _settings: Settings | None = None
 
 

@@ -40,10 +40,8 @@ def rebuild_slot_with_map(slot: UserDataX) -> tuple[bytes, list[dict[str, Any]]]
         e = buf.tell()
         mark(name, s, e)
 
-    # Version (4 bytes)
     write_section("version", lambda: buf.write(struct.pack("<I", slot.version)))
 
-    # Empty slot check
     if slot.version == 0:
         # Pad to slot size (2,621,440 bytes)
         slot_size = 0x280000
@@ -53,22 +51,18 @@ def rebuild_slot_with_map(slot: UserDataX) -> tuple[bytes, list[dict[str, Any]]]
             write_section("padding_to_slot_end", lambda: buf.write(b"\x00" * remaining))
         return buf.getvalue(), sections
 
-    # Map ID and header
     write_section("map_id", lambda: slot.map_id.write(buf))
     write_section("unk0x8", lambda: buf.write(slot.unk0x8))
     write_section("unk0x10", lambda: buf.write(slot.unk0x10))
 
-    # Gaitem map
     def write_gaitem_map():
         for gaitem in slot.gaitem_map:
             gaitem.write(buf)
 
     write_section("gaitem_map", write_gaitem_map)
 
-    # PlayerGameData
     write_section("player_game_data", lambda: slot.player_game_data.write(buf))
 
-    # SPEffects
     def write_sp_effects():
         for sp_effect in slot.sp_effects:
             sp_effect.write(buf)
@@ -91,7 +85,6 @@ def rebuild_slot_with_map(slot: UserDataX) -> tuple[bytes, list[dict[str, Any]]]
         lambda: slot.equipped_items_gaitem_handle.write(buf),
     )
 
-    # Inventory held
     write_section("inventory_held", lambda: slot.inventory_held.write(buf))
 
     # More equipment
@@ -105,28 +98,23 @@ def rebuild_slot_with_map(slot: UserDataX) -> tuple[bytes, list[dict[str, Any]]]
     )
     write_section("equipped_physics", lambda: slot.equipped_physics.write(buf))
 
-    # Face data
     write_section("face_data", lambda: slot.face_data.write(buf))
 
-    # Inventory storage
     write_section(
         "inventory_storage_box", lambda: slot.inventory_storage_box.write(buf)
     )
 
-    # Gestures and regions (KEY: This is where modifications happen)
+    # Gestures and regions
     write_section("gestures", lambda: slot.gestures.write(buf))
     write_section("unlocked_regions", lambda: slot.unlocked_regions.write(buf))
 
-    # Horse/Torrent
     write_section("horse", lambda: slot.horse.write(buf))
 
-    # Control byte
     write_section(
         "control_byte_maybe",
         lambda: buf.write(struct.pack("<B", slot.control_byte_maybe)),
     )
 
-    # Blood stain
     write_section("blood_stain", lambda: slot.blood_stain.write(buf))
 
     # Unknown fields
@@ -194,7 +182,6 @@ def rebuild_slot_with_map(slot: UserDataX) -> tuple[bytes, list[dict[str, Any]]]
         ),
     )
 
-    # Event flags
     write_section("event_flags", lambda: buf.write(slot.event_flags))
     write_section(
         "event_flags_terminator",
@@ -268,7 +255,6 @@ def rebuild_slot_with_map(slot: UserDataX) -> tuple[bytes, list[dict[str, Any]]]
 
     write_section("rend_man", write_rend_man)
 
-    # Player coordinates
     write_section("player_coordinates", lambda: slot.player_coordinates.write(buf))
 
     # 2 bytes after PlayerCoordinates. Captured on read into
@@ -302,17 +288,14 @@ def rebuild_slot_with_map(slot: UserDataX) -> tuple[bytes, list[dict[str, Any]]]
     # Network and world state
     write_section("net_man", lambda: slot.net_man.write(buf))
 
-    # Weather, time, base version
     write_section("world_area_weather", lambda: slot.world_area_weather.write(buf))
 
     write_section("world_area_time", lambda: slot.world_area_time.write(buf))
 
     write_section("base_version", lambda: slot.base_version.write(buf))
 
-    # Steam ID
     write_section("steam_id", lambda: buf.write(struct.pack("<Q", slot.steam_id)))
 
-    # PS5 Activity and DLC
     write_section("ps5_activity", lambda: slot.ps5_activity.write(buf))
     write_section("dlc", lambda: slot.dlc.write(buf))
     write_section("player_data_hash", lambda: slot.player_data_hash.write(buf))

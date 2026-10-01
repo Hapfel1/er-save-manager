@@ -3,9 +3,9 @@ Character operations for DS3: copy, transfer, swap, delete, export, import.
 
 Each DS3 slot is an independently AES-CBC encrypted BND4 entry, so operations
 work on plaintext bytearrays directly rather than splicing a shared raw
-buffer. SteamID lives inside each character slot at a dynamic offset
-(pointer at 0x58, +0x6F), separate from the slot's own gaitem-based offset
-tracking, and mirrors the offset used by ds3_steamid.py.
+buffer. SteamID lives inside each character slot 0x6F bytes into the last
+section of the slot's section directory (offset stored at 0x58, see
+slot.py), the same location ds3_steamid.py patches.
 """
 
 from __future__ import annotations

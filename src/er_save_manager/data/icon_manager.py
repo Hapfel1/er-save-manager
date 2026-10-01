@@ -70,7 +70,7 @@ def _norm_icon(s: str) -> str:
 
 def _norm_db(name: str) -> str:
     s = name.lower().replace("\u2019", "'").replace("\u2018", "'")
-    # Strip diacritics so "Jolan" matches "Jolan", "Epee" matches "Epee"
+    # Strip diacritics so accented names match their ASCII spelling
     return "".join(
         c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn"
     )
@@ -239,7 +239,6 @@ def _lookup(name: str, category_name: str = "") -> str | None:
     key = _CAT_PRE_RE.sub("", key).strip()
     key = _UPG_RE.sub("", key).rstrip()
 
-    # Direct override
     if key in _NAME_OVERRIDES:
         override = _NAME_OVERRIDES[key]
         if override in _available:

@@ -1,10 +1,12 @@
-check dlc npc flags
+mage smith elite cleric set dsr done
 
-check ds3, nr item spawning
+check dlc npc flags done
 
-ds3 gestures
+check ds3, nr item spawning done
 
-npc respawner ds3
+ds3 gestures done
+
+npc respawner ds3 done
 
 custom id adder as dev option defining item category etc, also option to show ids done
 

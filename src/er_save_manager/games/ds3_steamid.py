@@ -11,6 +11,8 @@ Key found by Atvaark, published in DS3SaveUnpacker by tremwil.
 SteamID storage (all values are Steam32 / account ID, i.e. Steam64 - 0x0110000100000000):
   USER_DATA_010 (global menu): int32 at offset 0x8 of decrypted data
   USER_DATA_000..009 (char slots): int32 at SlotData[int32@0x58 + 0x6F]
+    0x58 holds the offset of the last section in the slot's section
+    directory (see DS3/slot.py); the SteamID is 0x6F bytes into it.
 
 """
 
@@ -136,7 +138,7 @@ def patch_steamid_ds3(save_path: Path, new_steam64: int) -> tuple[bool, str]:
     for i in range(min(10, file_count)):
         size, offset = _read_entry(raw, i)
         _, iv, dec = _decrypt_entry(bytes(raw[offset : offset + size]))
-        # Read the offset pointer at 0x58
+        # Offset of the slot's last directory section, see the module docstring
         if len(dec) < 0x5C:
             continue
         ptr = struct.unpack_from("<i", dec, 0x58)[0]

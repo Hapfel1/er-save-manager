@@ -2,9 +2,11 @@
 Visual add-item popup for DS2.
 
 Shows the same items as the panel's Add Item list as an icon grid. Selecting
-an item and clicking Add Item drives the panel's own controls and _on_add,
+items and clicking Add Item drives the panel's own controls and _on_add,
 so quantity/upgrade/infusion capping and the unsafe-item check are shared
-with the text form.
+with the text form. Click selects one icon, Ctrl click adds or removes one
+and Shift click selects a range; several items go through the panel's
+batch add.
 """
 
 from __future__ import annotations
@@ -38,6 +40,10 @@ _DEFAULT_COLS = 4
 # the popup. Building a few buttons per frame keeps it responsive.
 _BATCH = 12
 _DELAY_MS = 8
+_CELL_COLOR = ("gray82", "gray18")
+_CELL_SELECTED = ("#c9a0dc", "#4b3a6b")
+_SHIFT = 0x0001
+_CONTROL = 0x0004
 
 
 def _center_over(window, parent, w=None, h=None) -> None:
@@ -57,6 +63,9 @@ class IconBrowser(ctk.CTkToplevel):
         self._resize_job: str | None = None
         self._current_cat = initial_category or panel._selected_add_category()
         self._selected_name: str | None = None
+        # Selected item names in grid order, and the last clicked one.
+        self._selected_names: list[str] = []
+        self._anchor: str | None = None
         self._pending_names: deque[str] = deque()
         self._batch_job: str | None = None
         self._grid_count = 0  # buttons already placed, when no filter is active
@@ -189,15 +198,24 @@ class IconBrowser(ctk.CTkToplevel):
             row=2, column=1, columnspan=3, sticky="w", pady=(6, 0)
         )
 
+        buttons = ctk.CTkFrame(panel, fg_color="transparent")
+        buttons.pack(fill="x", padx=10, pady=(6, 10))
+        buttons.grid_columnconfigure((0, 1), weight=1)
         self._add_btn = ctk.CTkButton(
-            panel,
-            text="Add Item",
+            buttons,
+            text="Add Selected",
             height=34,
             font=("Segoe UI", 11, "bold"),
             command=self._do_add,
             state="disabled",
         )
-        self._add_btn.pack(fill="x", padx=10, pady=(6, 10))
+        self._add_btn.grid(row=0, column=0, sticky="ew", padx=(0, 4))
+        ctk.CTkButton(
+            buttons,
+            text="Add All Shown",
+            height=34,
+            command=self._do_add_all,
+        ).grid(row=0, column=1, sticky="ew", padx=(4, 0))
 
     # ------------------------------------------------------------------
     # Items
@@ -212,6 +230,8 @@ class IconBrowser(ctk.CTkToplevel):
         self._buttons.clear()
         self._ctk_images.clear()
         self._selected_name = None
+        self._selected_names = []
+        self._anchor = None
         self._update_form()
 
         self._grid_count = 0
@@ -245,12 +265,12 @@ class IconBrowser(ctk.CTkToplevel):
                 width=_CELL_W,
                 height=_CELL_H,
                 font=("Segoe UI", 11),
-                fg_color=("gray82", "gray18"),
+                fg_color=_CELL_COLOR,
                 hover_color=("gray70", "gray28"),
                 text_color=("gray10", "gray90"),
-                command=lambda n=name: self._on_item_click(n),
                 anchor="center",
             )
+            btn.bind("<Button-1>", lambda e, n=name: self._on_item_click(n, e.state))
             if getattr(btn, "_text_label", None) is not None:
                 btn._text_label.configure(wraplength=_CELL_W - 8, justify="center")
             self._buttons.append((btn, name))
@@ -318,10 +338,37 @@ class IconBrowser(ctk.CTkToplevel):
     # Selection
     # ------------------------------------------------------------------
 
-    def _on_item_click(self, name: str) -> None:
-        self._selected_name = name
+    def _visible_names(self) -> list[str]:
+        q = self._search_var.get().lower().strip()
+        return [name for _, name in self._buttons if not q or q in name.lower()]
+
+    def _on_item_click(self, name: str, state: int = 0) -> None:
+        shown = self._visible_names()
+        if state & _SHIFT and self._anchor in shown and name in shown:
+            a, b = sorted((shown.index(self._anchor), shown.index(name)))
+            chosen = shown[a : b + 1]
+        elif state & _CONTROL:
+            chosen = [n for n in self._selected_names if n != name]
+            if name not in self._selected_names:
+                chosen.append(name)
+            self._anchor = name
+        else:
+            chosen = [name]
+            self._anchor = name
+        order = [n for _, n in self._buttons]
+        self._selected_names = [n for n in order if n in chosen]
+        for btn, n in self._buttons:
+            btn.configure(fg_color=_CELL_SELECTED if n in chosen else _CELL_COLOR)
+        # Single-item controls (infusion choices, caps) follow the first pick.
+        self._selected_name = self._selected_names[0] if self._selected_names else None
+        count = len(self._selected_names)
         self._sel_lbl.configure(
-            text=f"Selected: {name}", text_color=("#7c4dac", "#c084fc")
+            text=f"Selected: {self._selected_name}"
+            if count == 1
+            else f"{count} items selected"
+            if count
+            else "No item selected",
+            text_color=("#7c4dac", "#c084fc"),
         )
         self._update_form()
 
@@ -380,6 +427,29 @@ class IconBrowser(ctk.CTkToplevel):
     # Add
     # ------------------------------------------------------------------
 
+    def _sync_panel(self) -> None:
+        """Point the panel's add form at this picker's category and values,
+        since adding goes through the panel."""
+        panel = self._panel
+        panel.add_category_var.set(self._category_labels[self._current_cat])
+        panel._search_items()
+        panel.add_qty_var.set(self._qty_var.get())
+        panel.add_upgrade_var.set(self._upgrade_var.get())
+        panel.add_infusion_var.set(self._infusion_var.get())
+
+    def _do_add_all(self) -> None:
+        """Add every item the grid shows (category and search filter) in one
+        write, with the quantity, upgrade and infusion fields."""
+        names = self._visible_names()
+        if not names:
+            self._panel.show_toast("No items shown", duration=2000)
+            return
+        save = self._panel._writable_save()
+        if save is None:
+            return
+        self._sync_panel()
+        self._panel._add_many(save, names)
+
     def _do_add(self) -> None:
         if self._selected_name is None:
             return
@@ -389,13 +459,16 @@ class IconBrowser(ctk.CTkToplevel):
         panel.add_category_var.set(label)
         panel._search_items()
 
-        try:
-            idx = panel._search_results.index(self._selected_name)
-        except ValueError:
+        children = panel._results_tree.get_children()
+        rows = [
+            children[panel._search_results.index(name)]
+            for name in self._selected_names
+            if name in panel._search_results
+        ]
+        if not rows:
             panel.show_toast("Item not found in database", duration=2000)
             return
-        children = panel._results_tree.get_children()
-        panel._results_tree.selection_set(children[idx])
+        panel._results_tree.selection_set(rows)
 
         panel.add_qty_var.set(self._qty_var.get())
         panel.add_upgrade_var.set(self._upgrade_var.get())

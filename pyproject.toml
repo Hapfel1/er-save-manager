@@ -48,6 +48,12 @@ dev = [
     "pytest>=8.0",
 ]
 
+[tool.uv]
+# uv-managed Pythons on Linux ship a Tk built without Xft, which renders
+# bitmap fonts and breaks CustomTkinter's shape font. Prefer the system
+# Python and only fall back to a managed one when none matches.
+python-preference = "system"
+
 [tool.ruff]
 line-length = 88
 target-version = "py313"

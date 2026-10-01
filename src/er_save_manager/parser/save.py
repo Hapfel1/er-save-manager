@@ -33,24 +33,18 @@ class Save:
     - Character data (~2.6MB)
     """
 
-    # File identification
     magic: bytes = b""
     is_ps: bool = False
 
-    # Header
     header: bytes = b""
 
-    # Character slots (10 total)
     character_slots: list[UserDataX] = field(default_factory=list)
 
-    # Common section (parsed)
     user_data_10_parsed: UserData10 | None = None
 
-    # Additional data sections (raw)
     user_data_10: bytes = b""
     user_data_11: bytes = b""
 
-    # Offset tracking for modifications
     _user_data_10_offset: int = 0
     _slot_offsets: list[int] = field(default_factory=list)
 
@@ -63,7 +57,6 @@ class Save:
             self._raw_data = bytearray()
         if not hasattr(self, "_original_filepath"):
             self._original_filepath = ""
-        # Ensure _raw_data is always bytearray
         if isinstance(self._raw_data, bytes) and not isinstance(
             self._raw_data, bytearray
         ):
@@ -72,7 +65,6 @@ class Save:
     def __setattr__(self, name, value):
         """Override to ensure _raw_data is always bytearray"""
         if name == "_raw_data":
-            # Force conversion to bytearray
             if isinstance(value, bytes) and not isinstance(value, bytearray):
                 value = bytearray(value)
         super().__setattr__(name, value)
@@ -115,13 +107,11 @@ class Save:
         # Track original filepath for save() method
         obj._original_filepath = filepath
 
-        # Force bytearray, not bytes
         if isinstance(data, bytes):
             obj._raw_data = bytearray(data)
         else:
             obj._raw_data = data
 
-        # Double-check it's actually bytearray
         assert isinstance(obj._raw_data, bytearray), (
             f"_raw_data is {type(obj._raw_data)}, not bytearray!"
         )
@@ -134,10 +124,8 @@ class Save:
                 f"_raw_data is not writable! Type: {type(obj._raw_data)}"
             ) from e
 
-        # Read magic (4 bytes)
         obj.magic = f.read(4)
 
-        # Detect platform.
         # PC saves start with BND4. Both Apollo and Save Wizard PS exports start with cb019c2c.
         if obj.magic in (b"BND4", b"SL2\x00"):
             obj.is_ps = False
@@ -146,7 +134,6 @@ class Save:
         else:
             raise ValueError(f"Invalid save file magic: {obj.magic.hex()}")
 
-        # Read header
         if obj.is_ps:
             header_size = 0x6C
         else:
@@ -154,13 +141,9 @@ class Save:
 
         obj.header = f.read(header_size)
 
-        # Parse 10 character slots
-
         for _slot_index in range(10):
-            # Mark the start position of this slot's data
             slot_start = f.tell()
 
-            # Store slot offset
             obj._slot_offsets.append(slot_start)
 
             # Read checksum (PC only)
@@ -168,28 +151,22 @@ class Save:
             if not obj.is_ps:
                 checksum = f.read(16)
 
-                # Check if full checksum
                 if len(checksum) < 16:
                     obj.character_slots.append(UserDataX())
                     break  # No more slots
 
-                # Display checksum
                 checksum.hex()
 
                 # Check if slot is empty (all zeros checksum)
                 if checksum == bytes(16):
-                    # Skip the character data for this slot
-                    f.read(0x280000)  # Skip empty slot data
-                    obj.character_slots.append(UserDataX())  # Add empty slot
+                    f.read(0x280000)
+                    obj.character_slots.append(UserDataX())
                     continue
 
-            # Mark where character data starts (after checksum)
             char_data_start = f.tell()
 
-            # Calculate slot size (data portion only, without checksum)
             slot_data_size = 0x280000
 
-            # Parse character data
             try:
                 char = UserDataX.read(f, obj.is_ps, char_data_start, slot_data_size)
                 obj.character_slots.append(char)
@@ -197,7 +174,6 @@ class Save:
                 if char.is_empty():
                     pass
                 else:
-                    # Check for issues
                     if char.has_torrent_bug():
                         pass
                     if char.has_weather_corruption():
@@ -207,17 +183,13 @@ class Save:
 
             except Exception:
                 obj.character_slots.append(UserDataX())
-                # Skip to next slot boundary
                 correct_position = slot_start + 0x280010
                 f.seek(correct_position)
-
-        # Read and parse USER_DATA_10
 
         user_data_10_start = f.tell()
         obj._user_data_10_offset = user_data_10_start
 
         try:
-            # Parse USER_DATA_10
             obj.user_data_10_parsed = UserData10.read(f, obj.is_ps)
 
             # Also keep raw bytes
@@ -226,13 +198,11 @@ class Save:
             obj.user_data_10 = f.read(user_data_10_end - user_data_10_start)
             f.seek(user_data_10_end)
         except Exception:
-            # Fall back to reading raw bytes
             f.seek(user_data_10_start)
             if not obj.is_ps:
                 f.read(16)  # Skip checksum
             obj.user_data_10 = f.read(0x60000)
 
-        # Read USER_DATA_11
         if not obj.is_ps:
             f.read(16)  # Skip checksum
 
@@ -262,25 +232,20 @@ class Save:
         SLOT_SIZE = 0x280000
         CHECKSUM_SIZE = 0x10
 
-        # Recalculate for each active slot using tracked offsets
         for slot_idx in range(10):
             slot = self.character_slots[slot_idx]
             if slot.is_empty():
                 continue
 
-            # Use tracked offset for this slot
             slot_offset = self._slot_offsets[slot_idx]
             checksum_offset = slot_offset
             data_offset = slot_offset + CHECKSUM_SIZE
 
-            # Calculate MD5 of character data
             char_data = self._raw_data[data_offset : data_offset + SLOT_SIZE]
             md5_hash = hashlib.md5(char_data).digest()
 
-            # Write checksum
             self._raw_data[checksum_offset : checksum_offset + CHECKSUM_SIZE] = md5_hash
 
-        # Recalculate USER_DATA_10 checksum using tracked offset
         userdata10_offset = self._user_data_10_offset
         userdata10_checksum_offset = userdata10_offset
         userdata10_data_offset = userdata10_offset + CHECKSUM_SIZE
@@ -377,7 +342,6 @@ class Save:
             if char.is_empty():
                 pass
             else:
-                # Show profile summary time played if available
                 if self.user_data_10_parsed and slot_index < len(
                     self.user_data_10_parsed.profile_summary.profiles
                 ):
@@ -387,7 +351,6 @@ class Save:
                     profile.seconds_played // 3600
                     (profile.seconds_played % 3600) // 60
 
-                # Show issues
                 issues = []
                 if char.has_torrent_bug():
                     issues.append("Torrent bug")
@@ -422,7 +385,6 @@ class Save:
     def data(self):
         """Compatibility alias for _raw_data - always returns bytearray"""
         if hasattr(self, "_raw_data"):
-            # Force conversion if it's somehow bytes
             if isinstance(self._raw_data, bytes) and not isinstance(
                 self._raw_data, bytearray
             ):
@@ -469,17 +431,14 @@ class Save:
                     fixes.append(f"State changed to {horse.state.name}")
 
         # Fix 2: SteamId corruption
-        # Get correct SteamId from USER_DATA_10
         correct_steam_id = None
         if self.user_data_10_parsed and hasattr(self.user_data_10_parsed, "steam_id"):
             correct_steam_id = self.user_data_10_parsed.steam_id
 
         if slot.has_steamid_corruption(correct_steam_id):
             if correct_steam_id is not None:
-                # Update in memory
                 slot.steam_id = correct_steam_id
 
-                # Write to file
                 if hasattr(slot, "steamid_offset") and slot.steamid_offset > 0:
                     import struct
 
@@ -490,7 +449,6 @@ class Save:
                     fixes.append(f"SteamId set to {correct_steam_id}")
 
         # Fix 3: Time corruption
-        # Get seconds_played from ProfileSummary
         seconds_played = None
         if self.user_data_10_parsed and hasattr(
             self.user_data_10_parsed, "profile_summary"
@@ -502,7 +460,6 @@ class Save:
         if slot.has_time_corruption(seconds_played):
             time = slot.world_area_time
             if time:
-                # Get seconds_played from ProfileSummary
                 if self.user_data_10_parsed and hasattr(
                     self.user_data_10_parsed, "profile_summary"
                 ):
@@ -511,17 +468,14 @@ class Save:
                         profile = profile_summary.profiles[slot_index]
                         seconds_played = profile.seconds_played
 
-                        # Calculate hours:minutes:seconds
                         hours = seconds_played // 3600
                         minutes = (seconds_played % 3600) // 60
                         seconds = seconds_played % 60
 
-                        # Update in memory
                         time.hour = hours
                         time.minute = minutes
                         time.second = seconds
 
-                        # Write to file
                         if hasattr(slot, "time_offset") and slot.time_offset > 0:
                             time_bytes = BytesIO()
                             time.write(time_bytes)
@@ -537,22 +491,19 @@ class Save:
         if slot.has_weather_corruption():
             weather = slot.world_area_weather
             if weather and hasattr(slot, "map_id") and slot.map_id:
-                # Update in memory - AreaId = MapId[3]
+                # AreaId mirrors MapId[3]
                 weather.area_id = slot.map_id.data[3]
 
-                # Write to file
                 if hasattr(slot, "weather_offset") and slot.weather_offset > 0:
                     weather_bytes = BytesIO()
                     weather.write(weather_bytes)
                     weather_data = weather_bytes.getvalue()
-                    # Calculate absolute offset
                     self._raw_data[
                         slot.weather_offset : slot.weather_offset + len(weather_data)
                     ] = weather_data
                     fixes.append(f"AreaId set to {weather.area_id}")
 
         # Fix 5: Event flag corruption (Ranni quest + warp sickness)
-        # Check if slot has event flag issues
         has_event_corruption, all_issues = slot.has_corruption()
         event_flag_issues = [
             issue for issue in all_issues if issue.startswith("eventflag:")
@@ -562,23 +513,18 @@ class Save:
             try:
                 from .event_flags import CorruptionFixer
 
-                # Extract issue names (remove 'eventflag:' prefix)
                 issue_names = [
                     issue.replace("eventflag:", "") for issue in event_flag_issues
                 ]
 
-                # Make event_flags mutable
                 event_flags_mutable = bytearray(slot.event_flags)
 
-                # Apply fixes
                 fixes_count, fix_descriptions = CorruptionFixer.fix_all(
                     event_flags_mutable, issue_names
                 )
 
-                # Update character's event flags in memory
                 slot.event_flags = bytes(event_flags_mutable)
 
-                # Write back to raw data using the tracked offset
                 if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
                     self._raw_data[
                         slot.event_flags_offset : slot.event_flags_offset
@@ -596,7 +542,6 @@ class Save:
                         event_flags_start : event_flags_start + len(event_flags_mutable)
                     ] = event_flags_mutable
 
-                # Add fix descriptions
                 for fix_desc in fix_descriptions:
                     fixes.append(f"{fix_desc}")
             except Exception:
@@ -673,25 +618,20 @@ class Save:
         from .character_presets import FacePreset
 
         try:
-            # Load JSON
             with open(json_path) as f:
                 data = json.load(f)
 
-            # Validate JSON structure
             if "presets" not in data:
                 return False
 
             if preset_slot < 0 or preset_slot >= len(data["presets"]):
                 return False
 
-            # Get preset data
             preset_entry = data["presets"][preset_slot]
             preset_data = preset_entry.get("data", {})
 
-            # Create FacePreset from dict
             new_preset = FacePreset.from_dict(preset_data)
 
-            # Get destination presets container
             dest_presets = self.get_character_presets()
             if not dest_presets:
                 return False
@@ -699,10 +639,8 @@ class Save:
             if dest_slot < 0 or dest_slot >= 15:
                 return False
 
-            # Set the preset
             dest_presets.presets[dest_slot] = new_preset
 
-            # Update in raw data
             self._update_preset_in_raw_data(dest_slot, new_preset)
 
             return True
@@ -727,7 +665,6 @@ class Save:
         from .character_presets import FacePreset
 
         try:
-            # Handle dict input (from JSON presets list)
             if isinstance(preset, dict):
                 if "data" in preset:
                     # Format: {"original_slot": N, "data": {...}}
@@ -740,7 +677,6 @@ class Save:
                 # Already a FacePreset object
                 new_preset = preset
 
-            # Get destination presets container
             dest_presets = self.get_character_presets()
             if not dest_presets:
                 return False
@@ -748,10 +684,8 @@ class Save:
             if dest_slot < 0 or dest_slot >= 15:
                 return False
 
-            # Set the preset
             dest_presets.presets[dest_slot] = new_preset
 
-            # Update in raw data
             self._update_preset_in_raw_data(dest_slot, new_preset)
 
             return True
@@ -782,13 +716,10 @@ class Save:
             if slot < 0 or slot >= 15:
                 return False
 
-            # Create empty preset
             empty_preset = FacePreset()
 
-            # Set the preset
             presets.presets[slot] = empty_preset
 
-            # Update in raw data
             self._update_preset_in_raw_data(slot, empty_preset)
 
             return True
@@ -827,7 +758,6 @@ class Save:
 
         dest_presets.presets[dest_slot] = FacePreset.read(preset_bytes)
 
-        # Update in raw data
         self._update_preset_in_raw_data(dest_slot, dest_presets.presets[dest_slot])
         return True
 
@@ -835,7 +765,6 @@ class Save:
         """Update preset in raw save data"""
         from io import BytesIO
 
-        # Calculate offset in save file using tracked offsets
         userdata10_start = self._user_data_10_offset + 0x10  # Skip checksum
 
         # MenuSystemSaveLoad offset within USER_DATA_10
@@ -845,7 +774,6 @@ class Save:
         # CSMenuSystemSaveLoad header is 8 bytes, each preset is 0x130
         preset_offset = menu_offset + 8 + (slot_idx * 0x130)
 
-        # Write preset data
         preset_stream = BytesIO()
         preset.write(preset_stream)
         preset_data = preset_stream.getvalue()
@@ -859,7 +787,6 @@ class Save:
 
         self._raw_data[preset_offset : preset_offset + len(preset_data)] = preset_data
 
-        # Recalculate USER_DATA_10 checksum
         self._recalculate_userdata10_checksum()
 
     def _recalculate_userdata10_checksum(self) -> None:
@@ -894,7 +821,6 @@ def load_save(filepath: str) -> Save:
     return Save.from_file(filepath)
 
 
-# Main entry point for testing
 if __name__ == "__main__":
     import sys
 
@@ -904,10 +830,8 @@ if __name__ == "__main__":
     save_path = sys.argv[1]
 
     try:
-        # Load and parse save file
         save = load_save(save_path)
 
-        # Print summary
         save.print_summary()
 
     except Exception:

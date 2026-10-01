@@ -46,14 +46,12 @@ class CharacterBrowser:
         self.filtered_characters: list[dict[str, Any]] = []
         self.character_widgets: list[ctk.CTkFrame] = []
 
-        # Metrics integration
         from pathlib import Path
 
         settings_path = Path.home() / ".er-save-manager" / "data" / "settings.json"
         self.metrics = CharacterMetrics(settings_path)
         self.character_metrics_cache: dict[str, dict] = {}  # character_id -> metrics
 
-        # Contribution data
         self.face_image_path: str | None = None
         self.body_image_path: str | None = None
         self.preview_image_path: str | None = None
@@ -131,12 +129,10 @@ class CharacterBrowser:
         """Refresh slot names in both tabs"""
         slot_names = self._get_slot_display_names()
 
-        # Update browse tab target slot
         if hasattr(self, "target_slot_combo"):
             self.target_slot_combo.configure(values=slot_names)
             self.target_slot_combo.set(slot_names[0])
 
-        # Update contribute tab slot
         if hasattr(self, "contrib_slot_combo"):
             self.contrib_slot_combo.configure(values=slot_names)
             self.contrib_slot_combo.set(slot_names[0])
@@ -1098,11 +1094,9 @@ class CharacterBrowser:
 
             threading.Thread(target=_fetch_and_rerender, daemon=True).start()
 
-        # Clear preview area
         for widget in self.preview_area.winfo_children():
             widget.destroy()
 
-        # Clear details frame
         for widget in self.details_frame.winfo_children():
             widget.destroy()
 
@@ -1847,7 +1841,6 @@ class CharacterBrowser:
 *Submitted via ER Save Manager Character Browser*
 """
 
-        # Build GitHub issue URL
         repo_owner = "Hapfel1"
         repo_name = "er-character-library"
         params = {
@@ -1859,10 +1852,8 @@ class CharacterBrowser:
         query_string = urllib.parse.urlencode(params, safe="")
         url = f"https://github.com/{repo_owner}/{repo_name}/issues/new?{query_string}"
 
-        # Open browser
         open_url(url)
 
-        # Show confirmation
         CTkMessageBox.showinfo(
             "Report Submitted",
             "Your browser has opened to GitHub.\n\nClick 'Submit new issue' to complete the report.",

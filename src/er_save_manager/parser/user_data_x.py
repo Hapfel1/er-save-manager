@@ -138,13 +138,11 @@ class UserDataX:
     gestures: Gestures = field(default_factory=Gestures)
     unlocked_regions: Regions = field(default_factory=Regions)
 
-    # Horse/Torrent
     horse: RideGameData = field(default_factory=RideGameData)
 
     # Control byte (1 byte)
     control_byte_maybe: int = 0
 
-    # Blood stain
     blood_stain: BloodStain = field(default_factory=BloodStain)
 
     # Unknown fields (8 bytes total)
@@ -183,7 +181,6 @@ class UserDataX:
     world_geom_man2: WorldGeomMan = field(default_factory=WorldGeomMan)
     rend_man: RendMan = field(default_factory=RendMan)
 
-    # Player position
     player_coordinates: PlayerCoordinates = field(default_factory=PlayerCoordinates)
 
     # More GameMan bytes
@@ -255,14 +252,12 @@ class UserDataX:
             elif max_consecutive >= 8:
                 score = max(score, 40)
 
-            # Track best match
             if score > best_score:
                 best_score = score
                 best_match = offset
 
         f.seek(original_pos)
 
-        # Only accept a strong match (score >= 80)
         if best_score >= 80 and best_match is not None:
             return best_match
 
@@ -292,10 +287,8 @@ class UserDataX:
         obj.data_start = slot_start_offset
         data_start = f.tell()  # Read start, for offsets tracked below
 
-        # Read version (4 bytes)
         obj.version = struct.unpack("<I", f.read(4))[0]
 
-        # Empty slot check
         if obj.version == 0:
             # Read rest of slot to maintain alignment
             bytes_read = f.tell() - data_start
@@ -324,7 +317,6 @@ class UserDataX:
         # Read SP effects (13 entries)
         obj.sp_effects = [SPEffect.read(f) for _ in range(13)]
 
-        # Read equipment structures
         obj.equipped_items_equip_index_offset = f.tell() - data_start
         obj.equipped_items_equip_index = EquippedItemsEquipIndex.read(f)
         obj.active_weapon_slots_and_arm_style_offset = f.tell() - data_start
@@ -334,13 +326,11 @@ class UserDataX:
         obj.equipped_items_gaitem_handle_offset = f.tell() - data_start
         obj.equipped_items_gaitem_handle = EquippedItemsGaitemHandles.read(f)
 
-        # Read inventory held
         held_common_cap = 0xA80  # 2,688 common items
         held_key_cap = 0x180  # 384 key items
         obj.inventory_held_offset = f.tell() - data_start
         obj.inventory_held = Inventory.read(f, held_common_cap, held_key_cap)
 
-        # Read more equipment
         obj.equipped_spells_offset = f.tell() - data_start
         obj.equipped_spells = EquippedSpells.read(f)
         obj.equipped_items_offset = f.tell() - data_start
@@ -355,11 +345,9 @@ class UserDataX:
         # Read face data (303 bytes)
         obj.face_data = FaceData.read(f, in_profile_summary=False)
 
-        # Read inventory storage
         obj.inventory_storage_offset = f.tell() - data_start
         obj.inventory_storage_box = Inventory.read(f, 0x780, 0x80)
 
-        # Parse remaining structures
         obj.gestures_offset = f.tell()
         obj.gestures = Gestures.read(f)
         obj.unlocked_regions = Regions.read(f)
@@ -438,10 +426,8 @@ class UserDataX:
         current_position = f.tell()
 
         if current_position > slot_end_position:
-            # seek back to slot boundary
             f.seek(slot_end_position)
         elif current_position < slot_end_position:
-            # read them as rest
             remaining = slot_end_position - current_position
             obj.rest = f.read(remaining)
 
@@ -513,7 +499,6 @@ class UserDataX:
         # This indicates desync between map position and weather data
         if weather.area_id == 0:
             if hasattr(self, "map_id") and self.map_id is not None:
-                # Check if map_id shows character is in a real location (not all zeros)
                 if self.map_id.data != b"\x00\x00\x00\x00":
                     # Character is in game world but weather shows no area = corruption
                     return True
@@ -539,13 +524,11 @@ class UserDataX:
         if time.minute > 59 or time.second > 59:
             return True
 
-        # If seconds_played provided, compare with expected time
         if seconds_played is not None:
             expected_hours = seconds_played // 3600
             expected_minutes = (seconds_played % 3600) // 60
             expected_seconds = seconds_played % 60
 
-            # Corrupted if time does not match expected value
             if (
                 time.hour != expected_hours
                 or time.minute != expected_minutes
@@ -581,7 +564,6 @@ class UserDataX:
         if self.steam_id == 0:
             return True
 
-        # Check sync
         if correct_steam_id is not None and correct_steam_id != 0:
             if self.steam_id != correct_steam_id:
                 return True
@@ -684,13 +666,11 @@ class UserDataX:
         """
         issues = []
 
-        # Check Torrent bug
         if self.has_torrent_bug():
             horse = self.horse
             if horse:
                 issues.append(f"torrent_bug:HP = {horse.hp},State = {horse.state.name}")
 
-        # Check weather corruption
         if self.has_weather_corruption():
             weather = self.world_area_weather
             map_id = self.map_id
@@ -709,11 +689,9 @@ class UserDataX:
                     f"time_corruption:Time = {time.hour:02d}:{time.minute:02d}:{time.second:02d}"
                 )
 
-        # Check SteamId corruption
         if self.has_steamid_corruption(correct_steam_id):
             issues.append(f"steamid_corruption:SteamId = {self.steam_id}")
 
-        # Check event flag corruption (Ranni quest and warp sickness)
         if hasattr(self, "event_flags") and self.event_flags:
             try:
                 from .event_flags import CorruptionDetector

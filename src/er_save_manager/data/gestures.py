@@ -174,7 +174,6 @@ def get_all_unlockable_gestures(include_cut_content: bool = False) -> list[int]:
     """
     gestures = []
     for gesture_id, data in GESTURES_ALL.items():
-        # Skip cut content unless requested
         if data.get("cut_content", False) and not include_cut_content:
             continue
         gestures.append(gesture_id)

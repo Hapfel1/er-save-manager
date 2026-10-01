@@ -386,7 +386,6 @@ class TutorialData:
         obj.unk0x2 = struct.unpack("<H", f.read(2))[0]
         obj.size = struct.unpack("<I", f.read(4))[0]
 
-        # Validate size
         if obj.size > 0x10000 or obj.size < 0:
             obj.size = 0x400
 
@@ -502,7 +501,6 @@ class WorldAreaChrData:
         obj.unk0x8 = struct.unpack("<I", f.read(4))[0]
         obj.unk0xc = struct.unpack("<I", f.read(4))[0]
 
-        # Read blocks until size < 1 (with safety limit)
         max_blocks = 100  # Safety limit to prevent infinite loops
         for _ in range(max_blocks):
             block = WorldBlockChrData.read(f)
@@ -535,7 +533,6 @@ class WorldArea:
         obj = cls()
         obj.size = struct.unpack("<i", f.read(4))[0]
 
-        # Size field indicates how many DATA bytes to read
         if obj.size > 0 and obj.size < 0x10000:
             obj.data = f.read(obj.size)
         else:
@@ -600,7 +597,6 @@ class WorldGeomData:
         obj = cls()
         obj.magic = f.read(4)
         obj.unk_0x4 = struct.unpack("<I", f.read(4))[0]
-        # Read chunks until size < 1 (with safety limit)
         max_chunks = 50  # Safety limit to prevent infinite loops
         for _ in range(max_chunks):
             chunk = WorldGeomDataChunk.read(f)
@@ -631,7 +627,6 @@ class WorldGeomMan:
         obj = cls()
         obj.size = struct.unpack("<i", f.read(4))[0]
 
-        # Size field indicates how many DATA bytes to read
         if obj.size > 0 and obj.size < 0x100000:
             obj.data = f.read(obj.size)
         else:
@@ -686,10 +681,9 @@ class StageMan:
         obj = cls()
         obj.count = struct.unpack("<i", f.read(4))[0]
 
-        #  Validate count to prevent hanging on corrupted data
-        if obj.count > 0 and obj.count < 1000:  # Reasonable count limit
+        # Validate count to prevent hanging on corrupted data
+        if obj.count > 0 and obj.count < 1000:
             entry_size = (total_size - 4) // obj.count
-            # Also validate entry_size is reasonable
             if entry_size > 0 and entry_size < 0x10000:
                 obj.entries = [
                     StageManEntry.read(f, entry_size) for _ in range(obj.count)
@@ -719,7 +713,6 @@ class RendMan:
         obj = cls()
         obj.size = struct.unpack("<i", f.read(4))[0]
 
-        # Size field indicates how many DATA bytes to read
         if obj.size > 0 and obj.size < 0x100000:
             obj.data = f.read(obj.size)
         else:

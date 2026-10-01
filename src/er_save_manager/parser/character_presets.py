@@ -229,7 +229,7 @@ class FacePreset:
         obj = cls()
 
         # Header (0x18 bytes)
-        obj.unk0x00 = f.read(0x14)  # 20 bytes
+        obj.unk0x00 = f.read(0x14)
         obj.face_data_marker = struct.unpack("<i", f.read(4))[0]
 
         # Magic section
@@ -1544,7 +1544,6 @@ class CSMenuSystemSaveLoad:
         obj.unk0x2 = struct.unpack("<H", f.read(2))[0]
         obj.size = struct.unpack("<I", f.read(4))[0]
 
-        # Read 15 presets
         obj.presets = []
         for _ in range(15):
             preset = FacePreset.read(f)
@@ -1565,11 +1564,9 @@ class CSMenuSystemSaveLoad:
         f.write(struct.pack("<H", self.unk0x2))
         f.write(struct.pack("<I", self.size))
 
-        # Write 15 presets
         for preset in self.presets:
             preset.write(f)
 
-        # Write padding
         f.write(self.padding)
 
     def get_active_presets(self) -> list[tuple[int, FacePreset]]:

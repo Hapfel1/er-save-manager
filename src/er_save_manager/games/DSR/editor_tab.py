@@ -78,7 +78,6 @@ class DSREditorTab:
         outer = ctk.CTkFrame(self.parent, corner_radius=12)
         outer.pack(fill="both", expand=True, pady=(0, 10))
 
-        # Header
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
 
@@ -102,7 +101,6 @@ class DSREditorTab:
         self._slot_combo.pack(side="right")
         ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
 
-        # Sub-tabs
         tabs = ctk.CTkTabview(
             outer,
             fg_color=("gray90", "gray20"),
@@ -153,7 +151,6 @@ class DSREditorTab:
                 row=i, column=1, padx=5, pady=5
             )
 
-        # Resources column
         rf = ctk.CTkFrame(top_row, fg_color="transparent")
         rf.pack(side="left", fill="both", expand=True, padx=(5, 0))
         ctk.CTkLabel(rf, text="Resources", font=("Segoe UI", 12, "bold")).pack(

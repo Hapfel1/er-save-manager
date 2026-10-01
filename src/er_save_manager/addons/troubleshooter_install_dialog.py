@@ -21,12 +21,10 @@ def show_troubleshooter_dialog(parent, addon_manager):
         addon_manager: TroubleshooterAddon instance
     """
 
-    # Check installation status and updates
     is_installed = addon_manager.is_installed()
     has_update, latest_version = addon_manager.check_for_updates()
     installed_version = addon_manager.get_installed_version()
 
-    # If installed and no updates, just launch
     if is_installed and not has_update:
 
         def show_error(msg):
@@ -37,7 +35,6 @@ def show_troubleshooter_dialog(parent, addon_manager):
         else:
             return
 
-    # Show install/update dialog
     dialog = ctk.CTkToplevel(parent)
 
     if is_installed:
@@ -52,7 +49,6 @@ def show_troubleshooter_dialog(parent, addon_manager):
     force_render_dialog(dialog)
     dialog.grab_set()
 
-    # Center dialog
     dialog.update_idletasks()
     parent.update_idletasks()
     parent_x = parent.winfo_rootx()
@@ -66,7 +62,6 @@ def show_troubleshooter_dialog(parent, addon_manager):
     main_frame = ctk.CTkFrame(dialog)
     main_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=20)
 
-    # Title
     if is_installed:
         title_text = "Update Available"
         subtitle_text = f"Version {latest_version} is available"
@@ -87,7 +82,6 @@ def show_troubleshooter_dialog(parent, addon_manager):
         text_color=("gray40", "gray70"),
     ).pack(pady=(0, 15))
 
-    # Version info
     info_frame = ctk.CTkFrame(main_frame, fg_color=("gray90", "gray20"))
     info_frame.pack(fill=tk.X, pady=(0, 15))
 
@@ -104,7 +98,6 @@ def show_troubleshooter_dialog(parent, addon_manager):
             font=("Segoe UI", 11),
         ).pack(padx=12, pady=10)
 
-    # Description
     desc_frame = ctk.CTkFrame(main_frame, fg_color=("gray90", "gray20"))
     desc_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
 
@@ -133,17 +126,14 @@ Source: github.com/Hapfel1/fromsoftware-troubleshooter"""
         text_color=("gray40", "gray70"),
     )
 
-    # Buttons
     button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
     button_frame.pack(pady=(10, 0))
 
     def on_install():
         """Install/update handler"""
-        # Disable buttons
         install_btn.configure(state="disabled")
         cancel_btn.configure(state="disabled")
 
-        # Show progress
         progress_label.pack(pady=(10, 0))
 
         def install_thread():
@@ -164,7 +154,6 @@ Source: github.com/Hapfel1/fromsoftware-troubleshooter"""
         if success:
             dialog.destroy()
 
-            # Launch the troubleshooter
             def show_error(msg):
                 CTkMessageBox.showwarning("Launch Failed", msg, parent=parent)
 

@@ -175,7 +175,6 @@ class TroubleshootingChecker:
         if not self.game_folder or not self.game_folder.exists():
             return results
 
-        # Check for suspicious folders
         found_folders = []
         for folder in self.PIRACY_FOLDERS:
             folder_path = self.game_folder / "Game" / folder
@@ -260,7 +259,6 @@ class TroubleshootingChecker:
                     )
                 )
         else:
-            # regulation.bin is missing - critical error
             results.append(
                 DiagnosticResult(
                     name="Critical File Missing",
@@ -287,7 +285,6 @@ class TroubleshootingChecker:
             ]
 
         try:
-            # Get list of running processes
             output = subprocess.check_output(
                 ["tasklist", "/FO", "CSV", "/NH"],
                 text=True,
@@ -382,7 +379,6 @@ class TroubleshootingChecker:
             ]
 
         try:
-            # Get list of running processes
             output = subprocess.check_output(
                 ["tasklist", "/FO", "CSV", "/NH"],
                 text=True,
@@ -392,7 +388,6 @@ class TroubleshootingChecker:
             running_vpns = []
             for vpn_process in self.VPN_PROCESSES:
                 if vpn_process.lower() in output.lower():
-                    # Extract clean name without .exe
                     clean_name = (
                         vpn_process.replace(".exe", "")
                         .replace("-service", "")
@@ -629,7 +624,6 @@ icacls "{appdata}" /grant %USERNAME%:F /T
                 )
             ]
 
-        # Check if file exists
         if not self.save_file_path.exists():
             return [
                 DiagnosticResult(
@@ -639,7 +633,6 @@ icacls "{appdata}" /grant %USERNAME%:F /T
                 )
             ]
 
-        # Check read permissions
         if not os.access(self.save_file_path, os.R_OK):
             results.append(
                 DiagnosticResult(
@@ -659,7 +652,6 @@ icacls "{appdata}" /grant %USERNAME%:F /T
                 )
             )
 
-        # Check file size (basic corruption check)
         file_size = self.save_file_path.stat().st_size
         if file_size < 1000:  # Save files should be much larger
             results.append(
@@ -678,7 +670,6 @@ icacls "{appdata}" /grant %USERNAME%:F /T
                 )
             )
 
-        # Check disk space
         if PlatformUtils.is_windows():
             try:
                 import shutil
@@ -712,7 +703,6 @@ icacls "{appdata}" /grant %USERNAME%:F /T
         """Check save manager tool configuration."""
         results = []
 
-        # Check settings file
         from er_save_manager.ui.settings import get_settings
 
         try:

@@ -31,10 +31,8 @@ class PresetMetrics:
         """
         self.settings_path = settings_path
 
-        # Get or create a unique user ID for this client
         self.user_id = self._get_or_create_user_id()
 
-        # Initialize Supabase client with anon key
         # No authentication needed - anon key is sufficient for RLS policies
         try:
             self.supabase: Client = create_client(
@@ -60,7 +58,6 @@ class PresetMetrics:
     def _authenticate_anonymous(self):
         """Authenticate anonymously with Supabase."""
         try:
-            # Sign up anonymously
             self.supabase.auth.sign_up({"email": "anon@local", "password": "anon"})
         except Exception:
             # If signup fails (user already exists), try signing in
@@ -178,13 +175,11 @@ class PresetMetrics:
         try:
             query = self.supabase.table("preset_metrics").select("*")
 
-            # Add filter if specific presets requested
             if preset_ids:
                 query = query.in_("preset_id", preset_ids)
 
             response = query.execute()
 
-            # Convert list to dict keyed by preset_id
             metrics_list = response.data if hasattr(response, "data") else response
             return {
                 item["preset_id"]: {
@@ -213,18 +208,15 @@ class PresetMetrics:
         if not self.supabase:
             return None
 
-        # For likes: check if already liked
         if action_type == "thumbs_up" and self.has_liked(preset_id):
             print(f"Already liked preset {preset_id}")
             return None
 
-        # For downloads: check if already downloaded
         if action_type == "download" and self.has_downloaded(preset_id):
             print(f"Already downloaded preset {preset_id}")
             return None
 
         try:
-            # Call Supabase RPC function with user_id parameter
             response = self.supabase.rpc(
                 "record_action",
                 {
@@ -236,14 +228,12 @@ class PresetMetrics:
 
             result = response.data if hasattr(response, "data") else response
 
-            # Cache the action locally
             self._save_user_action(preset_id, action_type)
 
             return result
 
         except Exception as e:
             error_str = str(e).lower()
-            # Check if it's a duplicate constraint error
             if "duplicate" in error_str or "unique" in error_str:
                 print("Action already recorded (duplicate)")
                 self._save_user_action(preset_id, action_type)

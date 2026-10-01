@@ -47,7 +47,7 @@ jobs:
   # ---------------------------------------------------------------------------
   plan:
     name: Plan Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     outputs:
@@ -114,7 +114,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: needs.plan.outputs.current_version != needs.plan.outputs.next_version
     env:
       NEXT_VERSION: ${{ needs.plan.outputs.next_version }}
@@ -180,23 +180,46 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             build-name: Linux
             artifact-name: er-save-manager-linux-release
           - os: windows-latest
             build-name: Windows
             artifact-name: er-save-manager-windows-release
     runs-on: ${{ matrix.os }}
+    # Build Linux on the oldest supported Ubuntu LTS so the bundled libpython
+    # and system libs only require glibc 2.35, not the runner's newer glibc.
+    container: ${{ matrix.os == 'ubuntu-24.04' && 'ubuntu:22.04' || '' }}
     if: needs.plan.outputs.current_version != needs.plan.outputs.next_version
     env:
       NEXT_VERSION: ${{ needs.plan.outputs.next_version }}
       VERSION_NO_V: ${{ needs.plan.outputs.version_no_v }}
+      # Fail on Linux instead of silently building with a uv-managed Python,
+      # whose Tk lacks Xft and renders bitmap fonts.
+      UV_PYTHON_DOWNLOADS: ${{ matrix.os == 'ubuntu-24.04' && 'never' || 'automatic' }}
     steps:
+      - name: Install build dependencies
+        if: matrix.os == 'ubuntu-24.04'
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            git ca-certificates curl lsb-release binutils file \
+            libtk8.6 libtcl8.6 libreadline8 libxft2 libxss1 libx11-6 libfontconfig1 \
+            libsqlite3-0 libffi8 libssl3 libbz2-1.0 liblzma5 zlib1g libncursesw6 \
+            libuuid1 libgdbm6
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: release-${{ needs.plan.outputs.next_version }}
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        env:
+          # In the Linux container, the host's mounted tool cache holds a
+          # Python built for the host (glibc 2.39) that cannot run there; use
+          # a separate cache so the 22.04 build is downloaded.
+          AGENT_TOOLSDIRECTORY: ${{ matrix.os == 'ubuntu-24.04' && '/opt/toolcache' || '' }}
+          # Container HOME is not owned by root; skip the unused pip cache.
+          PIP_NO_CACHE_DIR: "1"
         with:
           python-version-file: ".python-version"
 
@@ -206,7 +229,7 @@ jobs:
         run: uv sync --locked --dev
 
       - name: Build Linux AppImage
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-24.04'
         run: |
           uv run ./build-linux.sh
           ./package-linux.sh
@@ -232,7 +255,7 @@ jobs:
           Remove-Item sign.pfx
 
       - name: Upload Linux artifact
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-24.04'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ matrix.artifact-name }}
@@ -257,7 +280,7 @@ jobs:
       - create-release-branch
       - build-artifacts
     name: Finalize Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
       pull-requests: write

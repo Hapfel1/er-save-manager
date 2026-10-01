@@ -31,10 +31,8 @@ class CharacterMetrics:
         """
         self.settings_path = settings_path
 
-        # Get or create a unique user ID for this client
         self.user_id = self._get_or_create_user_id()
 
-        # Initialize Supabase client with anon key
         # No authentication needed - anon key is sufficient for RLS policies
         try:
             self.supabase: Client = create_client(
@@ -165,17 +163,14 @@ class CharacterMetrics:
         try:
             metrics = {}
 
-            # Get base metrics from character_metrics table
             query = self.supabase.table("character_metrics").select("*")
 
-            # Add filter if specific characters requested
             if character_ids:
                 query = query.in_("character_id", character_ids)
 
             response = query.execute()
             metrics_list = response.data if hasattr(response, "data") else response
 
-            # Initialize metrics from table
             for item in metrics_list:
                 metrics[item["character_id"]] = {
                     "likes": 0,  # Will be overwritten by action counts
@@ -198,7 +193,6 @@ class CharacterMetrics:
                 else actions_response
             )
 
-            # Count actions by type
             action_counts: dict[str, dict[str, int]] = {}
             for action in actions_list:
                 char_id = action["character_id"]
@@ -210,7 +204,6 @@ class CharacterMetrics:
                 if action_type in action_counts[char_id]:
                     action_counts[char_id][action_type] += 1
 
-            # Update metrics with actual action counts
             for char_id, counts in action_counts.items():
                 if char_id not in metrics:
                     metrics[char_id] = {"likes": 0, "downloads": 0}
@@ -256,7 +249,6 @@ class CharacterMetrics:
                 f"[Metrics] Recording action: character_id={character_id}, action_type={action_type}"
             )
 
-            # Call Supabase RPC function with user_id parameter
             response = self.supabase.rpc(
                 "record_character_action",
                 {
@@ -268,7 +260,6 @@ class CharacterMetrics:
 
             result = response.data if hasattr(response, "data") else response
 
-            # Cache the action locally
             self._save_user_action(character_id, action_type)
 
             return result
@@ -277,17 +268,14 @@ class CharacterMetrics:
             error_str = str(e).lower()
             error_full = str(e)
 
-            # Check for constraint errors
             if "check constraint" in error_str:
                 print(
                     f"[Metrics] Check constraint error - the database may not accept '{action_type}' as an action type"
                 )
                 print(f"[Metrics] Full error: {error_full}")
-                # Still cache it locally
                 self._save_user_action(character_id, action_type)
                 return None
 
-            # Check if it's a duplicate constraint error
             if "duplicate" in error_str or "unique" in error_str:
                 print("Action already recorded (duplicate)")
                 self._save_user_action(character_id, action_type)

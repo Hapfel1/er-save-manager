@@ -189,7 +189,6 @@ class Profile:
         # Terminator (2 bytes)
         f.read(2)
 
-        # Stats
         obj.level = struct.unpack("<I", f.read(4))[0]
         obj.seconds_played = struct.unpack("<I", f.read(4))[0]
         obj.runes_memory = struct.unpack("<I", f.read(4))[0]
@@ -230,7 +229,6 @@ class ProfileSummary:
             bool(struct.unpack("<B", f.read(1))[0]) for _ in range(10)
         ]
 
-        # 10 profiles
         obj.profiles = [Profile.read(f) for _ in range(10)]
 
         return obj
@@ -338,10 +336,8 @@ class UserData10:
         if not is_ps:
             f.read(16)
 
-        # Version (4 bytes)
         obj.version = struct.unpack("<I", f.read(4))[0]
 
-        # SteamID (8 bytes)
         obj.steam_id = struct.unpack("<Q", f.read(8))[0]
 
         # Settings (0x140 bytes based on CSV)

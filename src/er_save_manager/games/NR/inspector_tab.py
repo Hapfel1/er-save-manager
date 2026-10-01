@@ -56,7 +56,6 @@ class NRInspectorTab:
         self.list_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         bind_mousewheel(self.list_frame)
 
-        # Column header row
         hdr = ctk.CTkFrame(
             self.list_frame, fg_color=("gray75", "gray28"), corner_radius=6
         )
@@ -99,6 +98,21 @@ class NRInspectorTab:
             ).pack(anchor="w", padx=6, pady=6)
             return
 
+        if save.trailing_bytes:
+            ctk.CTkLabel(
+                self.list_frame,
+                text=(
+                    f"This file has {save.trailing_bytes} junk bytes past its last "
+                    "entry. They are removed the next time "
+                    "the editor saves this file."
+                ),
+                text_color=("#b35900", "#ffa94d"),
+                font=("Segoe UI", 11),
+                wraplength=640,
+                justify="left",
+                anchor="w",
+            ).pack(fill="x", padx=6, pady=(2, 4))
+
         for i, slot in enumerate(save.slots):
             is_active = slot.entry_count > 0 or bool(slot.player_name)
             name = slot.player_name if slot.player_name else "(empty)"
@@ -140,7 +154,6 @@ class NRInspectorTab:
 
             self._rows.append((i, row, lbl_name))
 
-            # Bind click to select
             for widget in [row, lbl_slot, lbl_name]:
                 widget.bind("<Button-1>", lambda e, idx=i: self._select_row(idx))
 

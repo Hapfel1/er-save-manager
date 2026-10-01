@@ -4,9 +4,11 @@ Visual current-inventory popup for DS2.
 The inventory is a fixed slot table that is almost all empty, so a plain
 button grid is fast enough.
 
-Selecting an icon selects the matching row in the panel's own inventory tree
-and drives its existing Remove/Set Quantity/Set Upgrade/Set Infusion
-controls, so the write logic and its caps stay in one place.
+Selecting icons selects the matching rows in the panel's own inventory tree
+and drives its existing Remove/Set Quantity/Set Upgrade/Set Infusion/move
+controls, so the write logic and its caps stay in one place. Click selects
+one icon, Ctrl click adds or removes one and Shift click selects a range;
+the panel's actions apply to every selected row.
 """
 
 from __future__ import annotations
@@ -40,6 +42,10 @@ _BATCH = 12
 _DELAY_MS = 8
 # Show choices, both locations first as the default.
 _LOCATION_FILTERS = ("All", "Inventory", "Item Box")
+_CELL_COLOR = ("gray82", "gray18")
+_CELL_SELECTED = ("#c9a0dc", "#4b3a6b")
+_SHIFT = 0x0001
+_CONTROL = 0x0004
 
 
 def _center_over(window, parent, w=None, h=None) -> None:
@@ -56,7 +62,9 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         self._buttons: list[tuple[ctk.CTkButton, int]] = []  # (button, tree index)
         self._ctk_images: list = []
         self._resize_job: str | None = None
-        self._selected_index: int | None = None
+        # Selected tree indices in grid order, and the last clicked one.
+        self._selected: list[int] = []
+        self._anchor: int | None = None
         self._pending_indices: deque[int] = deque()
         self._batch_job: str | None = None
         self._grid_count = 0  # buttons already placed this load
@@ -248,7 +256,8 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             btn.destroy()
         self._buttons.clear()
         self._ctk_images.clear()
-        self._selected_index = None
+        self._selected = []
+        self._anchor = None
         self._update_form()
 
         self._grid_count = 0
@@ -303,12 +312,12 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
                 width=_CELL_W,
                 height=_CELL_H,
                 font=("Segoe UI", 10),
-                fg_color=("gray82", "gray18"),
+                fg_color=_CELL_COLOR,
                 hover_color=("gray70", "gray28"),
                 text_color=("gray10", "gray90"),
-                command=lambda i=idx: self._on_item_click(i),
                 anchor="center",
             )
+            btn.bind("<Button-1>", lambda e, i=idx: self._on_item_click(i, e.state))
             if getattr(btn, "_text_label", None) is not None:
                 btn._text_label.configure(wraplength=_CELL_W - 8, justify="center")
             self._buttons.append((btn, idx))
@@ -351,60 +360,85 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
     # Selection
     # ------------------------------------------------------------------
 
-    def _select_tree_row(self, index: int) -> None:
+    def _select_tree_rows(self, indices: list[int]) -> None:
         tree = self._panel._inventory_tree
         children = tree.get_children()
-        if 0 <= index < len(children):
-            tree.selection_set(children[index])
+        tree.selection_set([children[i] for i in indices if 0 <= i < len(children)])
 
-    def _on_item_click(self, index: int) -> None:
-        self._selected_index = index
-        item, name, category = self._panel._visible_items[index]
+    def _on_item_click(self, index: int, state: int = 0) -> None:
+        shown = [i for _, i in self._buttons]
+        if state & _SHIFT and self._anchor in shown and index in shown:
+            a, b = sorted((shown.index(self._anchor), shown.index(index)))
+            chosen = shown[a : b + 1]
+        elif state & _CONTROL:
+            chosen = [i for i in self._selected if i != index]
+            if index not in self._selected:
+                chosen.append(index)
+            self._anchor = index
+        else:
+            chosen = [index]
+            self._anchor = index
+        self._selected = [i for i in shown if i in chosen]
+        for btn, i in self._buttons:
+            btn.configure(fg_color=_CELL_SELECTED if i in chosen else _CELL_COLOR)
+        if len(self._selected) == 1:
+            name = self._panel._visible_items[self._selected[0]][1]
+            text = f"Selected: {name}"
+        else:
+            text = f"{len(self._selected)} items selected"
         self._sel_lbl.configure(
-            text=f"Selected: {name}", text_color=("#7c4dac", "#c084fc")
+            text=text if self._selected else "No item selected",
+            text_color=("#7c4dac", "#c084fc"),
         )
-        self._select_tree_row(index)
+        self._select_tree_rows(self._selected)
         self._panel._update_inventory_controls()
         self._update_form()
 
     def _update_form(self) -> None:
+        """Enable each control when it applies to at least one selected item;
+        the panel's actions skip and report the ones it does not apply to.
+        With one item selected its current values fill the fields."""
         panel = self._panel
         character = panel._current_character()
-        has_selection = self._selected_index is not None
+        rows = [panel._visible_items[i] for i in self._selected]
         quantity = upgrade = infusion = False
-        allowed: tuple[int, ...] = (0,)
+        allowed: set[int] = set()
+        can_box = can_unbox = False
 
-        if has_selection and character is not None:
-            item, name, category = panel._visible_items[self._selected_index]
-            if panel._quantity_limit(character, item, category):
-                quantity = True
-                self._qty_var.set(str(item.quantity))
-            if panel._upgrade_limit(character, item, category):
-                upgrade = True
-                self._upgrade_var.set(str(item.upgrade))
-            choices = panel._infusion_choices(character, item, category)
-            if choices:
-                infusion = True
-                allowed = choices
-                self._infusion_var.set(INFUSION_NAMES[item.infusion])
+        if character is not None:
+            for item, _name, category in rows:
+                if panel._quantity_limit(character, item, category):
+                    quantity = True
+                if panel._upgrade_limit(character, item, category):
+                    upgrade = True
+                choices = panel._infusion_choices(character, item, category)
+                if choices:
+                    infusion = True
+                    allowed.update(choices)
+                if INVENTORY_START <= item.offset < INVENTORY_END:
+                    can_box = can_box or not item.in_box
+                    can_unbox = can_unbox or item.in_box
+            if len(rows) == 1:
+                item, _name, category = rows[0]
+                if quantity:
+                    self._qty_var.set(str(item.quantity))
+                if upgrade:
+                    self._upgrade_var.set(str(item.upgrade))
+                if infusion:
+                    self._infusion_var.set(INFUSION_NAMES[item.infusion])
 
         self._qty_entry.configure(state="normal" if quantity else "disabled")
         self._qty_btn.configure(state="normal" if quantity else "disabled")
         self._upgrade_entry.configure(state="normal" if upgrade else "disabled")
         self._upgrade_btn.configure(state="normal" if upgrade else "disabled")
-        names = [INFUSION_NAMES[n] for n in allowed]
+        names = [INFUSION_NAMES[n] for n in sorted(allowed or {0})]
         self._infusion_combo.configure(
             values=names, state="readonly" if infusion else "disabled"
         )
         self._infusion_btn.configure(state="normal" if infusion else "disabled")
         if self._infusion_var.get() not in names:
             self._infusion_var.set(names[0])
-        self._remove_btn.configure(state="normal" if has_selection else "disabled")
-        can_box = can_unbox = False
-        if has_selection:
-            item = panel._visible_items[self._selected_index][0]
-            if INVENTORY_START <= item.offset < INVENTORY_END:
-                can_box, can_unbox = not item.in_box, item.in_box
+        self._remove_btn.configure(state="normal" if rows else "disabled")
         self._to_box_btn.configure(state="normal" if can_box else "disabled")
         self._to_inventory_btn.configure(state="normal" if can_unbox else "disabled")
 

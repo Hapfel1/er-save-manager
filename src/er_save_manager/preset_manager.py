@@ -13,16 +13,13 @@ from pathlib import Path
 class PresetManager:
     """Manage community character presets."""
 
-    # Cache settings
-    MAX_CACHE_SIZE_MB = 500  # Maximum total cache size
-    FULL_IMAGE_EXPIRY_DAYS = 7  # Delete full images after 7 days
-    THUMBNAIL_SIZE = (150, 150)  # Thumbnail dimensions
+    MAX_CACHE_SIZE_MB = 500
+    FULL_IMAGE_EXPIRY_DAYS = 7
+    THUMBNAIL_SIZE = (150, 150)
 
     def __init__(self):
         """Initialize preset manager with platform-appropriate cache location."""
-        # Determine cache directory based on platform
         if platform.system() == "Linux":
-            # Use XDG_CACHE_HOME if available, otherwise ~/.cache
             xdg_cache = os.environ.get("XDG_CACHE_HOME")
             if xdg_cache:
                 self.cache_dir = Path(xdg_cache) / "er-save-manager"
@@ -33,7 +30,6 @@ class PresetManager:
             program_dir = Path(__file__).parent.parent.parent
             self.cache_dir = program_dir / "data" / "presets"
 
-        # Try to create cache directory, fallback to temp if permission denied
         try:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
             print(f"[Image Cache] Using cache directory: {self.cache_dir}")
@@ -44,7 +40,6 @@ class PresetManager:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
             print(f"[Image Cache] Fallback cache directory: {self.cache_dir}")
 
-        # Separate directories for different cache types
         self.thumbnails_dir = self.cache_dir / "thumbnails"
         self.thumbnails_dir.mkdir(exist_ok=True)
         print(f"[Image Cache] Thumbnails directory: {self.thumbnails_dir}")
@@ -53,7 +48,6 @@ class PresetManager:
         self.full_images_dir.mkdir(exist_ok=True)
         print(f"[Image Cache] Full images directory: {self.full_images_dir}")
 
-        # GitHub repo URL
         self.base_url = (
             "https://raw.githubusercontent.com/Hapfel1/er-character-presets/main/"
         )
@@ -61,11 +55,8 @@ class PresetManager:
         self.cache_file = self.cache_dir / "cache.json"
         self.index_url = self.base_url + "index.json"
 
-        # Create SSL context for HTTPS requests
-        # This handles certificate verification properly across platforms
         self.ssl_context = self._create_ssl_context()
 
-        # Perform cache maintenance on init
         self._cleanup_cache()
 
     def _create_ssl_context(self):
@@ -76,7 +67,6 @@ class PresetManager:
 
             return ssl.create_default_context(cafile=certifi.where())
         except ImportError:
-            # Fallback to default context
             try:
                 return ssl.create_default_context()
             except Exception:
@@ -94,12 +84,10 @@ class PresetManager:
         Returns:
             Index data dict
         """
-        # Check cache first if not forcing refresh
         if not force_refresh and self.cache_file.exists():
             try:
                 import datetime
 
-                # Check if cache is less than 1 hour old
                 cache_age = (
                     datetime.datetime.now().timestamp()
                     - self.cache_file.stat().st_mtime
@@ -111,7 +99,6 @@ class PresetManager:
             except Exception:
                 pass
 
-        # Download from remote
         try:
             with urllib.request.urlopen(
                 self.index_url, timeout=10, context=self.ssl_context
@@ -119,7 +106,6 @@ class PresetManager:
                 raw_data = response.read().decode("utf-8")
                 data = json.loads(raw_data)
 
-            # Cache it
             with open(self.cache_file, "w", encoding="utf-8") as f:
                 json.dump(data, f)
 
@@ -132,7 +118,6 @@ class PresetManager:
                     fallback_data = json.load(f)
                 return fallback_data
 
-            # No cache available
             return {"version": "0.0.0", "presets": []}
 
     def download_preset(self, preset_id: str, preset_info: dict) -> dict | None:
@@ -148,7 +133,6 @@ class PresetManager:
         """
         try:
             print(f"[Preset Download] Starting download for preset {preset_id}")
-            # Download preset JSON
             data_url = self.base_url + preset_info["data_url"]
             print(f"[Preset Download] Data URL: {data_url}")
             with urllib.request.urlopen(
@@ -157,14 +141,12 @@ class PresetManager:
                 preset_data = json.loads(response.read().decode("utf-8"))
             print(f"[Preset Download] Downloaded preset data for {preset_id}")
 
-            # Download and create thumbnail
             screenshot_url = self.base_url + preset_info["screenshot_url"]
             print(f"[Preset Download] Screenshot URL: {screenshot_url}")
             thumbnail_path = self._download_and_create_thumbnail(
                 preset_id, screenshot_url
             )
 
-            # Cache preset data with metadata
             preset_path = self.cache_dir / f"{preset_id}.json"
             metadata = {
                 "data": preset_data,
@@ -209,11 +191,9 @@ class PresetManager:
 
                 # Handle both old format (direct data) and new format (with metadata)
                 if isinstance(cached, dict):
-                    # New format with metadata
                     if "data" in cached and "hash" in cached:
                         data = cached["data"]
                         stored_hash = cached["hash"]
-                        # Validate hash to detect corruption
                         if self._compute_data_hash(data) != stored_hash:
                             print(
                                 f"Cache validation failed for {preset_id}: hash mismatch"
@@ -248,10 +228,8 @@ class PresetManager:
             True if successful
         """
         try:
-            # Get appearance dict from preset
             appearance = preset_data["appearance"]
 
-            # Use CharacterPresets to apply the appearance
             character_presets_module.from_dict(appearance)
 
             return True
@@ -272,18 +250,15 @@ class PresetManager:
             cache_dir = self.full_images_dir / preset_id
             cache_dir.mkdir(parents=True, exist_ok=True)
 
-            # Build full URL
             if not url.startswith("http"):
                 full_url = self.base_url + url
             else:
                 full_url = url
 
-            # Save with suffix
             ext = Path(url).suffix or ".png"
             filename = f"{preset_id}{suffix}{ext}"
             filepath = cache_dir / filename
 
-            # Download if not cached
             if not filepath.exists():
                 with urllib.request.urlopen(
                     full_url, timeout=10, context=self.ssl_context
@@ -293,7 +268,6 @@ class PresetManager:
             # Update access time for LRU tracking
             filepath.touch()
 
-            # Trigger cleanup if cache is too large
             self._cleanup_cache()
 
             return filepath
@@ -327,7 +301,6 @@ class PresetManager:
             with open(preset_path, encoding="utf-8") as f:
                 metadata = json.load(f)
 
-            # Check if it's new format with metadata
             if "preset_info_hash" in metadata:
                 stored_info_hash = metadata["preset_info_hash"]
                 current_info_hash = self._compute_data_hash(preset_info)
@@ -366,17 +339,14 @@ class PresetManager:
         try:
             thumbnail_path = self.thumbnails_dir / f"{preset_id}.png"
 
-            # Return if already cached
             if thumbnail_path.exists():
                 return thumbnail_path
 
-            # Download full image temporarily
             with urllib.request.urlopen(
                 image_url, timeout=10, context=self.ssl_context
             ) as response:
                 image_data = response.read()
 
-            # Try to create thumbnail using PIL if available
             try:
                 import io
 
@@ -404,14 +374,12 @@ class PresetManager:
             current_time = time.time()
             expiry_seconds = self.FULL_IMAGE_EXPIRY_DAYS * 24 * 60 * 60
 
-            # Collect all full image files with their stats
             full_image_files = []
             for file in self.full_images_dir.rglob("*"):
                 if file.is_file():
                     stat = file.stat()
                     age = current_time - stat.st_mtime
 
-                    # Delete expired files
                     if age > expiry_seconds:
                         try:
                             file.unlink()
@@ -420,7 +388,6 @@ class PresetManager:
                         except Exception:
                             pass
 
-                    # Track for LRU cleanup
                     full_image_files.append(
                         {
                             "path": file,
@@ -429,13 +396,10 @@ class PresetManager:
                         }
                     )
 
-            # Check total size
             total_size = sum(f["size"] for f in full_image_files)
             max_bytes = self.MAX_CACHE_SIZE_MB * 1024 * 1024
 
-            # If over limit, delete oldest files (LRU)
             if total_size > max_bytes:
-                # Sort by access time (oldest first)
                 full_image_files.sort(key=lambda f: f["atime"])
 
                 bytes_to_free = total_size - max_bytes
@@ -454,7 +418,6 @@ class PresetManager:
                     except Exception:
                         pass
 
-                # Clean up empty directories
                 for dir_path in self.full_images_dir.iterdir():
                     if dir_path.is_dir() and not any(dir_path.iterdir()):
                         try:

@@ -23,11 +23,33 @@ jobs:
 
   build-linux:
     name: Build Linux
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    # Build on the oldest supported Ubuntu LTS so the bundled libpython and
+    # system libs only require glibc 2.35, not the runner's newer glibc.
+    container: ubuntu:22.04
     needs: checks
+    env:
+      # Fail instead of silently building with a uv-managed Python, whose
+      # Tk lacks Xft and renders bitmap fonts.
+      UV_PYTHON_DOWNLOADS: never
     steps:
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            git ca-certificates curl lsb-release binutils file \
+            libtk8.6 libtcl8.6 libreadline8 libxft2 libxss1 libx11-6 libfontconfig1 \
+            libsqlite3-0 libffi8 libssl3 libbz2-1.0 liblzma5 zlib1g libncursesw6 \
+            libuuid1 libgdbm6
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        env:
+          # The host's mounted tool cache holds a Python built for the host
+          # (glibc 2.39) that cannot run here; use a separate cache so the
+          # 22.04 build is downloaded.
+          AGENT_TOOLSDIRECTORY: /opt/toolcache
+          # Container HOME is not owned by root; skip the unused pip cache.
+          PIP_NO_CACHE_DIR: "1"
         with:
           python-version-file: ".python-version"
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0

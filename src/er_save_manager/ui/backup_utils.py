@@ -34,13 +34,11 @@ def create_backup_with_warning(
             save=save,
         )
 
-        # Show warning if backups were pruned and setting is enabled
         if pruned_backups:
             settings = get_settings()
             if settings.get("show_backup_pruning_warning", True):
                 max_backups = settings.get("max_backups", 50)
 
-                # Format the list of deleted backups
                 deleted_list = "\n".join(
                     f"  • {backup.filename}" for backup in pruned_backups
                 )
@@ -50,7 +48,6 @@ def create_backup_with_warning(
                     f"The following old backups were deleted:\n\n{deleted_list}"
                 )
 
-                # Show messagebox with don't show again option
                 result = messagebox.showwarning(
                     "Backups Pruned",
                     message,

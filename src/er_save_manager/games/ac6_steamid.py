@@ -85,7 +85,6 @@ def _find_steam_section(dec: bytearray) -> list[int]:
             i += 1
             continue
         chunk = dec[i : i + _SECTION_STRING_SIZE]
-        # Decode null-terminated name
         null = chunk.find(0)
         name = (
             chunk[:null].decode("utf-8", errors="ignore")

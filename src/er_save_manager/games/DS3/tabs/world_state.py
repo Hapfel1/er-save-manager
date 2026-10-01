@@ -1,8 +1,15 @@
 """
-DS3 World State tab, bonfire unlock and NG+ editing.
+DS3 World State tab - NG+, bonfires and gestures.
 
-Each bonfire has a specific byte (or 2-byte) unlock value stored at a fixed
-offset relative to event_flag_start - 0x12.
+Bonfires: a bonfire is lit (and a warp target) when the event flag from its
+BonfireWarpParam row is set; bonfires.json lists those flags by area. A
+bonfire whose map has several world states has one flag per state. The game
+sets only one of them, and a second set flag lists the bonfire twice in the
+warp menu, so lighting keeps a single set flag (flags[0], the unconditional
+row, unless exactly one is already set) and unlighting clears all of them.
+Gestures: the character's gesture list stores an unlocked bit per row of
+the executable's gesture table; gestures.json names the rows. Unnamed rows
+are dummies and are not listed.
 """
 
 from __future__ import annotations
@@ -13,8 +20,10 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.games.DS3.slot import GESTURE_COUNT
+from er_save_manager.games.DS3.tabs.style import make_tree
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
+from er_save_manager.ui.utils import game_blocks_write
 
 
 def _game_blocks_write(parent) -> bool:
@@ -22,16 +31,12 @@ def _game_blocks_write(parent) -> bool:
 
 
 _DATA_DIR = Path(__file__).parent.parent / "data"
-_BONFIRES: list[dict] | None = None
+_NG_CHOICES = [str(i) for i in range(8)]
+_HINT = ("gray40", "gray60")
 
 
-def _load_bonfires() -> list[dict]:
-    global _BONFIRES
-    if _BONFIRES is None:
-        _BONFIRES = json.loads(
-            (_DATA_DIR / "bonfires.json").read_text(encoding="utf-8")
-        )
-    return _BONFIRES
+def _load(name: str) -> list[dict]:
+    return json.loads((_DATA_DIR / name).read_text(encoding="utf-8"))
 
 
 def _backup_and_save(ds3_save, save_path: Path, op: str) -> None:
@@ -48,7 +53,14 @@ class DS3WorldStateTab:
         self._get_save_path = get_save_path
         self._show_toast = show_toast
         self._current_slot = 0
-        self._bonfire_badges: list[tuple[dict, ctk.CTkLabel]] = []
+        self._bonfires = _load("bonfires.json")
+        self._gestures = sorted(
+            (g for g in _load("gestures.json") if 0 <= g["id"] < GESTURE_COUNT),
+            key=lambda g: g["order"],
+        )
+        self._gesture_ids = {g["id"] for g in self._gestures}
+
+    # --- Layout ------------------------------------------------------------ #
 
     def setup_ui(self) -> None:
         outer = ctk.CTkFrame(self.parent, corner_radius=12)
@@ -69,69 +81,165 @@ class DS3WorldStateTab:
         self._slot_combo.pack(side="right")
         ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
 
-        scroll = ctk.CTkScrollableFrame(outer, corner_radius=10)
-        scroll.pack(fill="both", expand=True, padx=10, pady=(0, 10))
-        bind_mousewheel(scroll)
-        self._scroll = scroll
+        self._build_ng_row(outer)
 
-        # NG+ section
-        ng_card = ctk.CTkFrame(scroll, corner_radius=10)
-        ng_card.pack(fill="x", padx=4, pady=(6, 4))
-        ctk.CTkLabel(ng_card, text="New Game+", font=("Segoe UI", 12, "bold")).pack(
-            anchor="w", padx=14, pady=(12, 4)
+        body = ctk.CTkFrame(outer, fg_color="transparent")
+        body.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        body.grid_columnconfigure(0, weight=3)
+        body.grid_columnconfigure(1, weight=2)
+        body.grid_rowconfigure(0, weight=1)
+        self._build_bonfires(body)
+        self._build_gestures(body)
+
+    def _build_ng_row(self, parent) -> None:
+        row = ctk.CTkFrame(parent, corner_radius=10)
+        row.pack(fill="x", padx=10, pady=(0, 8))
+        ctk.CTkLabel(row, text="New Game+", font=("Segoe UI", 12, "bold")).pack(
+            side="left", padx=(14, 12), pady=10
         )
-        ng_row = ctk.CTkFrame(ng_card, fg_color="transparent")
-        ng_row.pack(fill="x", padx=14, pady=(0, 4))
-        ctk.CTkLabel(ng_row, text="Current:").pack(side="left", padx=(0, 6))
+        ctk.CTkLabel(row, text="Current:").pack(side="left", padx=(0, 6))
         self._ng_current_var = tk.StringVar(value="--")
         ctk.CTkLabel(
-            ng_row, textvariable=self._ng_current_var, font=("Segoe UI", 11, "bold")
+            row, textvariable=self._ng_current_var, font=("Segoe UI", 11, "bold")
         ).pack(side="left", padx=(0, 20))
-        ctk.CTkLabel(ng_row, text="Set to:").pack(side="left", padx=(0, 6))
+        ctk.CTkLabel(row, text="Set to:").pack(side="left", padx=(0, 6))
         self._ng_var = ctk.StringVar(value="0")
         ctk.CTkComboBox(
-            ng_row,
-            variable=self._ng_var,
-            values=[str(i) for i in range(8)],
-            state="readonly",
-            width=80,
+            row, variable=self._ng_var, values=_NG_CHOICES, state="readonly", width=80
         ).pack(side="left", padx=(0, 10))
-        ctk.CTkButton(ng_row, text="Apply", command=self._apply_ng, width=80).pack(
+        ctk.CTkButton(row, text="Apply", command=self._apply_ng, width=80).pack(
             side="left"
         )
         ctk.CTkLabel(
-            ng_card,
-            text="0 = NG,  1 = NG+,  2 = NG++  etc.",
+            row,
+            text="0 = NG, 1 = NG+. The playthrough flags scripts check are kept in step.",
             font=("Segoe UI", 10),
-            text_color=("gray40", "gray70"),
-        ).pack(anchor="w", padx=14, pady=(0, 12))
+            text_color=_HINT,
+        ).pack(side="left", padx=14)
 
-        # Bonfires section
-        bf_card = ctk.CTkFrame(scroll, corner_radius=10)
-        bf_card.pack(fill="x", padx=4, pady=4)
-        ctk.CTkLabel(bf_card, text="Bonfires", font=("Segoe UI", 12, "bold")).pack(
-            anchor="w", padx=14, pady=(12, 4)
+    def _panel(self, parent, column: int, title: str, hint: str) -> ctk.CTkFrame:
+        panel = ctk.CTkFrame(parent, corner_radius=10)
+        panel.grid(
+            row=0, column=column, sticky="nsew", padx=(0, 5) if column == 0 else (5, 0)
         )
-        bulk_row = ctk.CTkFrame(bf_card, fg_color="transparent")
-        bulk_row.pack(fill="x", padx=14, pady=(0, 8))
-        ctk.CTkButton(
-            bulk_row,
-            text="Unlock All Bonfires",
-            width=180,
-            command=self._unlock_all_bonfires,
-        ).pack(side="left", padx=(0, 10))
-        ctk.CTkButton(
-            bulk_row,
-            text="Lock All Bonfires",
-            width=150,
-            fg_color=("gray55", "gray35"),
-            command=self._lock_all_bonfires,
-        ).pack(side="left")
+        ctk.CTkLabel(panel, text=title, font=("Segoe UI", 12, "bold")).pack(
+            anchor="w", padx=10, pady=(10, 0)
+        )
+        ctk.CTkLabel(
+            panel, text=hint, font=("Segoe UI", 10), text_color=_HINT, justify="left"
+        ).pack(anchor="w", padx=10, pady=(0, 6))
+        return panel
 
-        self._bonfire_list = ctk.CTkFrame(bf_card, fg_color="transparent")
-        self._bonfire_list.pack(fill="x", padx=14, pady=(0, 12))
+    def _actions(self, panel, buttons) -> ctk.CTkLabel:
+        box = ctk.CTkFrame(panel, fg_color="transparent")
+        # Packed before the list so a short window shrinks the list, not this.
+        box.pack(side="bottom", fill="x", padx=10, pady=(0, 10))
+        row = ctk.CTkFrame(box, fg_color="transparent")
+        row.pack(fill="x")
+        for col, (text, command) in enumerate(buttons):
+            row.grid_columnconfigure(col, weight=1, uniform="actions")
+            ctk.CTkButton(row, text=text, width=90, command=command).grid(
+                row=0, column=col, sticky="ew", padx=(0 if col == 0 else 3, 0)
+            )
+        status = ctk.CTkLabel(box, text="", font=("Segoe UI", 10), text_color=_HINT)
+        status.pack(anchor="w")
+        return status
 
-    # --- Refresh ------------------------------------------------------------- #
+    def _build_bonfires(self, parent) -> None:
+        panel = self._panel(
+            parent,
+            0,
+            "Bonfires",
+            "Lit bonfires are warp destinations once the Firelink Shrine "
+            "bonfire is lit.\nDouble-click toggles a bonfire.",
+        )
+        frame, self._bonfire_tree = make_tree(
+            panel, [("name", "Bonfire", 260, "w"), ("state", "State", 80, "center")]
+        )
+        areas: dict[str, str] = {}
+        for i, bonfire in enumerate(self._bonfires):
+            area = bonfire["area"]
+            if area not in areas:
+                areas[area] = self._bonfire_tree.insert(
+                    "",
+                    "end",
+                    iid=f"area{len(areas)}",
+                    text="",
+                    values=(area, ""),
+                    open=True,
+                )
+            self._bonfire_tree.insert(
+                areas[area], "end", iid=str(i), values=(bonfire["name"], "--")
+            )
+        self._bonfire_tree.bind(
+            "<Double-1>",
+            lambda e: self._toggle(self._bonfire_tree, e, self._set_bonfires),
+        )
+        self._bonfire_status = self._actions(
+            panel,
+            (
+                (
+                    "Light Selected",
+                    lambda: self._set_bonfires(self._selected_bonfires(), True),
+                ),
+                (
+                    "Unlight Selected",
+                    lambda: self._set_bonfires(self._selected_bonfires(), False),
+                ),
+                (
+                    "Light All",
+                    lambda: self._set_bonfires(list(range(len(self._bonfires))), True),
+                ),
+            ),
+        )
+        frame.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+
+    def _build_gestures(self, parent) -> None:
+        panel = self._panel(
+            parent,
+            1,
+            "Gestures",
+            "Unlocked gestures appear in the gesture menu.\nDouble-click toggles a gesture.",
+        )
+        frame, self._gesture_tree = make_tree(
+            panel, [("name", "Gesture", 180, "w"), ("state", "State", 80, "center")]
+        )
+        for i, gesture in enumerate(self._gestures):
+            self._gesture_tree.insert(
+                "", "end", iid=str(i), values=(gesture["name"], "--")
+            )
+        self._gesture_tree.bind(
+            "<Double-1>",
+            lambda e: self._toggle(self._gesture_tree, e, self._set_gestures),
+        )
+        self._gesture_status = self._actions(
+            panel,
+            (
+                (
+                    "Unlock Selected",
+                    lambda: self._set_gestures(
+                        self._selected(self._gesture_tree), True
+                    ),
+                ),
+                (
+                    "Lock Selected",
+                    lambda: self._set_gestures(
+                        self._selected(self._gesture_tree), False
+                    ),
+                ),
+                (
+                    "Unlock All",
+                    lambda: self._set_gestures(list(range(len(self._gestures))), True),
+                ),
+                (
+                    "Lock All",
+                    lambda: self._set_gestures(list(range(len(self._gestures))), False),
+                ),
+            ),
+        )
+        frame.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+
+    # --- Refresh ----------------------------------------------------------- #
 
     def refresh(self) -> None:
         save = self._get_save()
@@ -143,176 +251,174 @@ class DS3WorldStateTab:
             for i, c in enumerate(save.characters)
         ]
         self._slot_combo.configure(values=options)
-        self._slot_var.set(options[0] if options else "")
-        self._current_slot = 0
-        self._rebuild_bonfire_rows()
-        self._refresh_ng()
+        if (
+            not (0 <= self._current_slot < len(options))
+            or save.characters[self._current_slot] is None
+        ):
+            self._current_slot = next(
+                (i for i, c in enumerate(save.characters) if c is not None), 0
+            )
+        self._slot_var.set(options[self._current_slot] if options else "")
+        self._update_states()
 
     def load_slot(self, slot_idx: int) -> None:
         options = self._slot_combo.cget("values")
         if options and slot_idx < len(options):
             self._slot_var.set(options[slot_idx])
         self._current_slot = slot_idx
-        self._rebuild_bonfire_rows()
-        self._refresh_ng()
+        self._update_states()
 
-    # --- NG+ ----------------------------------------------------------------- #
-
-    def _refresh_ng(self) -> None:
+    def _char(self):
         save = self._get_save()
-        char = save.characters[self._current_slot] if save else None
-        if char is None:
-            self._ng_current_var.set("--")
+        return save.characters[self._current_slot] if save else None
+
+    def _update_states(self) -> None:
+        char = self._char()
+        layout_error = char.layout_error if char else "no character loaded"
+        flags_error = char.flags_error if char else "no character loaded"
+
+        self._ng_current_var.set("--" if layout_error else f"NG+{char.ng_plus}")
+        if not layout_error:
+            self._ng_var.set(str(char.ng_plus))
+
+        self._bonfire_status.configure(
+            text=f"Unavailable: {flags_error}" if flags_error else ""
+        )
+        for i, bonfire in enumerate(self._bonfires):
+            lit = (
+                None if flags_error else any(char.get_flag(f) for f in bonfire["flags"])
+            )
+            self._bonfire_tree.set(
+                str(i), "state", "--" if lit is None else ("Lit" if lit else "Unlit")
+            )
+
+        self._gesture_status.configure(
+            text=f"Unavailable: {layout_error}" if layout_error else ""
+        )
+        for i, gesture in enumerate(self._gestures):
+            unlocked = None if layout_error else char.gesture_unlocked(gesture["id"])
+            self._gesture_tree.set(
+                str(i),
+                "state",
+                "--" if unlocked is None else ("Unlocked" if unlocked else "Locked"),
+            )
+
+    # --- Selection --------------------------------------------------------- #
+
+    @staticmethod
+    def _selected(tree) -> list[int]:
+        return [int(i) for i in tree.selection() if i.isdigit()]
+
+    def _selected_bonfires(self) -> list[int]:
+        """Selected bonfire rows; selecting an area row selects its bonfires."""
+        picked: set[int] = set()
+        for iid in self._bonfire_tree.selection():
+            if iid.isdigit():
+                picked.add(int(iid))
+            else:
+                picked.update(int(c) for c in self._bonfire_tree.get_children(iid))
+        return sorted(picked)
+
+    def _toggle(self, tree, event, setter) -> None:
+        row = tree.identify_row(event.y)
+        if not row.isdigit():
             return
-        self._ng_current_var.set(f"NG+{char.ng_plus}")
+        state = tree.set(row, "state")
+        if state == "--":
+            return
+        setter([int(row)], state in ("Unlit", "Locked"))
+
+    # --- Writes ------------------------------------------------------------ #
 
     def _apply_ng(self) -> None:
         if _game_blocks_write(self.parent):
             return
-
         save, save_path, char = self._get_char()
         if char is None:
             return
-        try:
-            char.ng_plus = int(self._ng_var.get())
-        except Exception as exc:
-            CTkMessageBox.showerror("Error", str(exc), parent=self.parent)
-            return
-        try:
-            _backup_and_save(
-                save, save_path, f"ds3_set_ng_slot_{self._current_slot + 1}"
+        if char.layout_error:
+            CTkMessageBox.showerror(
+                "Unavailable",
+                f"NG+ cannot be edited for this character: {char.layout_error}",
+                parent=self.parent,
             )
-            self._refresh_ng()
+            return
+        char.ng_plus = int(self._ng_var.get())
+        if self._save(save, save_path, "ds3_set_ng"):
             self._show_toast(f"NG+ set to {self._ng_var.get()}. Backup created.")
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
 
-    # --- Bonfires ------------------------------------------------------------ #
-
-    def _rebuild_bonfire_rows(self) -> None:
-        for w in self._bonfire_list.winfo_children():
-            w.destroy()
-        self._bonfire_badges.clear()
-
-        save = self._get_save()
-        char = save.characters[self._current_slot] if save else None
-        if char is None:
+    def _set_bonfires(self, rows: list[int], lit: bool) -> None:
+        if not rows:
+            CTkMessageBox.showwarning(
+                "No Selection", "Select one or more bonfires first.", parent=self.parent
+            )
             return
-
-        for bf in _load_bonfires():
-            unlock_val = int(bf["unlock_value"], 16)
-            unlocked = char.get_bonfire_unlocked(bf["offset"], unlock_val)
-            self._add_bonfire_row(bf, unlock_val, unlocked)
-
-    def _add_bonfire_row(self, bf: dict, unlock_val: int, unlocked: bool) -> None:
-        row = ctk.CTkFrame(
-            self._bonfire_list, fg_color=("#f5f5f5", "#2a2a3e"), corner_radius=6
-        )
-        row.pack(fill="x", pady=2)
-        row.grid_columnconfigure(1, weight=1)
-
-        badge_color = ("#2a6e2a", "#1e7e1e") if unlocked else ("gray55", "gray45")
-        badge = ctk.CTkLabel(
-            row,
-            text="ON" if unlocked else "OFF",
-            fg_color=badge_color,
-            corner_radius=4,
-            width=40,
-            font=("Segoe UI", 9, "bold"),
-        )
-        badge.grid(row=0, column=0, padx=(8, 6), pady=6)
-        ctk.CTkLabel(
-            row,
-            text=bf["name"],
-            anchor="w",
-            font=("Segoe UI", 11),
-        ).grid(row=0, column=1, sticky="w", padx=4)
-        ctk.CTkButton(
-            row,
-            text="Unlock",
-            width=70,
-            command=lambda b=bf, uv=unlock_val, bg=badge: self._set_bonfire(
-                b, uv, True, bg
-            ),
-        ).grid(row=0, column=2, padx=4, pady=6)
-        ctk.CTkButton(
-            row,
-            text="Lock",
-            width=60,
-            fg_color=("gray55", "gray35"),
-            command=lambda b=bf, uv=unlock_val, bg=badge: self._set_bonfire(
-                b, uv, False, bg
-            ),
-        ).grid(row=0, column=3, padx=(0, 8), pady=6)
-
-        self._bonfire_badges.append((bf, badge))
-
-    def _set_bonfire(
-        self, bf: dict, unlock_val: int, unlocked: bool, badge: ctk.CTkLabel
-    ) -> None:
         if _game_blocks_write(self.parent):
             return
-
         save, save_path, char = self._get_char()
         if char is None:
             return
-        char.set_bonfire_unlocked(bf["offset"], unlock_val, unlocked)
-        try:
-            action = "unlock" if unlocked else "lock"
-            _backup_and_save(
-                save,
-                save_path,
-                f"ds3_bonfire_{action}_slot_{self._current_slot + 1}",
+        if char.flags_error:
+            CTkMessageBox.showerror(
+                "Unavailable",
+                f"Event flags cannot be edited for this character: {char.flags_error}",
+                parent=self.parent,
             )
-            badge_color = ("#2a6e2a", "#1e7e1e") if unlocked else ("gray55", "gray45")
-            badge.configure(text="ON" if unlocked else "OFF", fg_color=badge_color)
+            return
+        for i in rows:
+            flags = self._bonfires[i]["flags"]
+            if not lit:
+                for flag in flags:
+                    char.set_flag(flag, False)
+            else:
+                lit_flags = [f for f in flags if char.get_flag(f)]
+                keep = lit_flags[0] if len(lit_flags) == 1 else flags[0]
+                for flag in flags:
+                    char.set_flag(flag, flag == keep)
+        if self._save(save, save_path, "ds3_bonfires"):
             self._show_toast(
-                f"{bf['name']} {'unlocked' if unlocked else 'locked'}. Backup created."
+                f"{len(rows)} bonfire(s) {'lit' if lit else 'unlit'}. Backup created."
             )
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
 
-    def _unlock_all_bonfires(self) -> None:
+    def _set_gestures(self, rows: list[int], unlocked: bool) -> None:
+        if not rows:
+            CTkMessageBox.showwarning(
+                "No Selection", "Select one or more gestures first.", parent=self.parent
+            )
+            return
         if _game_blocks_write(self.parent):
             return
-
         save, save_path, char = self._get_char()
         if char is None:
             return
-        for bf in _load_bonfires():
-            unlock_val = int(bf["unlock_value"], 16)
-            char.set_bonfire_unlocked(bf["offset"], unlock_val, True)
-        try:
-            _backup_and_save(
-                save,
-                save_path,
-                f"ds3_unlock_all_bonfires_slot_{self._current_slot + 1}",
+        if char.layout_error:
+            CTkMessageBox.showerror(
+                "Unavailable",
+                f"Gestures cannot be edited for this character: {char.layout_error}",
+                parent=self.parent,
             )
-            self._rebuild_bonfire_rows()
-            self._show_toast("All bonfires unlocked. Backup created.")
+            return
+        for i in rows:
+            char.set_gesture_unlocked(self._gestures[i]["id"], unlocked)
+        # Dummy rows are never unlocked by the game; an earlier version of
+        # this tab unlocked some of them.
+        for gesture_id in set(range(GESTURE_COUNT)) - self._gesture_ids:
+            char.set_gesture_unlocked(gesture_id, False)
+        if self._save(save, save_path, "ds3_gestures"):
+            self._show_toast(
+                f"{len(rows)} gesture(s) {'unlocked' if unlocked else 'locked'}. Backup created."
+            )
+
+    def _save(self, save, save_path, op: str) -> bool:
+        try:
+            _backup_and_save(save, save_path, f"{op}_slot_{self._current_slot + 1}")
         except Exception as exc:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            return False
+        self._update_states()
+        return True
 
-    def _lock_all_bonfires(self) -> None:
-        if _game_blocks_write(self.parent):
-            return
-
-        save, save_path, char = self._get_char()
-        if char is None:
-            return
-        for bf in _load_bonfires():
-            unlock_val = int(bf["unlock_value"], 16)
-            char.set_bonfire_unlocked(bf["offset"], unlock_val, False)
-        try:
-            _backup_and_save(
-                save, save_path, f"ds3_lock_all_bonfires_slot_{self._current_slot + 1}"
-            )
-            self._rebuild_bonfire_rows()
-            self._show_toast("All bonfires locked. Backup created.")
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
-
-    # --- Helpers ------------------------------------------------------------- #
+    # --- Helpers ----------------------------------------------------------- #
 
     def _load_selected(self) -> None:
         save = self._get_save()
@@ -325,8 +431,7 @@ class DS3WorldStateTab:
             )
             return
         self._current_slot = idx
-        self._rebuild_bonfire_rows()
-        self._refresh_ng()
+        self._update_states()
 
     def _get_char(self):
         save = self._get_save()

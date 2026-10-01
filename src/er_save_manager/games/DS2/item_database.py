@@ -46,14 +46,10 @@ GOODS: dict[str, str] = {
     "Green Blossom": "F0 41 98 03",
     "Rusted Coin": "00 69 98 03",
     "Rhoy's Stone": "10 90 98 03",
-    "Rhoy's Stone of Knowledge": "20 B7 98 03",
     "Homeward Bone": "30 DE 98 03",
     "Aged Feather": "B8 F1 98 03",
     "Darksign": "40 05 99 03",
     "Silver Talisman": "50 2C 99 03",
-    "Gold Talisman": "60 53 99 03",
-    "Fake Dead Talisman": "70 7A 99 03",
-    "Illusory Talisman": "80 A1 99 03",
     "Dragon Head Stone": "08 B5 99 03",
     "Dragon Torso Stone": "F0 B8 99 03",
     "Torch": "A0 EF 99 03",
@@ -161,6 +157,13 @@ GOODS: dict[str, str] = {
     "Soul Vessel": "80 96 09 03",
     "Smelter Wedge": "80 C4 2B 03",
     "Soul of Nadalia": "20 4B 2D 03",
+    "Smooth & Silky Stone": "00 5E 08 03",
+    "Small Smooth & Silky Stone": "88 71 08 03",
+    "Soul of a Giant": "40 FA 08 03",
+    "Champion's Tablet": "60 48 09 03",
+    "Crushed Eye Orb": "C0 32 0A 03",
+    "Simpleton's Spice": "D0 59 0A 03",
+    "Skeptic's Spice": "E0 80 0A 03",
 }
 
 RINGS: dict[str, str] = {
@@ -1079,20 +1082,13 @@ KEY_ITEMS: dict[str, str] = {
     "Fang Key": "D0 E8 07 03",
     "House Key": "E0 0F 08 03",
     "Lenigrast's Key": "F0 36 08 03",
-    "Smooth & Silky Stone": "00 5E 08 03",
-    "Small Smooth & Silky Stone": "88 71 08 03",
     "Rotunda Lockstone": "10 85 08 03",
     "Giant's Kinship": "20 AC 08 03",
     "Ashen Mist Heart": "30 D3 08 03",
-    "Soul of a Giant": "40 FA 08 03",
     "Tseldora Den Key": "50 21 09 03",
-    "Champion's Tablet": "60 48 09 03",
     "Ladder Miniature": "70 6F 09 03",
     "Undead Lockaway Key": "90 BD 09 03",
     "Dull Ember": "B0 0B 0A 03",
-    "Crushed Eye Orb": "C0 32 0A 03",
-    "Simpleton's Spice": "D0 59 0A 03",
-    "Skeptic's Spice": "E0 80 0A 03",
     "Aldia Key": "F0 A7 0A 03",
     "Dragon Talon": "00 75 19 03",
     "Heavy Iron Key": "A0 FB 1A 03",
@@ -1296,6 +1292,9 @@ SEAMLESS_ITEMS: dict[str, str] = {
     "Darkcaller Bell": "0A E1 F5 05",
     "Ancient Dragon Ring": "0B E1 F5 05",
 }
+# The mod's ItemParam rows (built in ds2sc.dll) hold one of each; the
+# regulation embedded in the save does not contain them.
+SEAMLESS_MAX_STACK = 1
 
 
 CATEGORIES: dict[str, dict[str, str]] = {
@@ -1326,6 +1325,18 @@ UNSAFE_IDS: frozenset[int] = frozenset(
         60155010,
         60155020,
         60155030,
+        # Cut content with no ItemParam row in the vanilla regulation.
+        3510000,  # Shadow Claws
+        21450101,  # Barrel
+        27630101,  # Rosabeth's Dress
+        40560000,  # Illusory Ring of the Vengeful
+        40570000,  # Illusory Ring of the Guilty
+        60220000,  # Yellow Sea Troches
+        60245000,  # Pungent Ooze
+        60330000,  # Rhoy's Stone
+        60840000,  # Wooden Greatarrow
+        60860000,  # Magic Greatarrow
+        60890000,  # Dark Greatarrow
     }
 )
 

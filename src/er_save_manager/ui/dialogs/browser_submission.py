@@ -12,7 +12,7 @@ import zipfile
 from pathlib import Path
 from tkinter import messagebox
 
-from er_save_manager.ui.utils import center_window, open_url
+from er_save_manager.ui.utils import _get_subprocess_env, center_window, open_url
 
 
 def submit_preset_via_browser(
@@ -58,7 +58,6 @@ def submit_preset_via_browser(
             )
             return False, None
 
-        # Create ZIP with images
         zip_path = _create_image_zip(
             preset_name,
             face_image_path,
@@ -66,7 +65,6 @@ def submit_preset_via_browser(
             preview_image_path,
         )
 
-        # Create issue body
         issue_body = _create_issue_body(
             preset_name,
             author,
@@ -76,10 +74,8 @@ def submit_preset_via_browser(
             zip_path,
         )
 
-        # Create issue title
         issue_title = f"[Preset Submission] {preset_name}"
 
-        # Build URL with query parameters
         params = {
             "title": issue_title,
             "labels": "preset-submission",
@@ -89,7 +85,6 @@ def submit_preset_via_browser(
         query_string = urllib.parse.urlencode(params, safe="")
         url = f"https://github.com/{repo_owner}/{repo_name}/issues/new?{query_string}"
 
-        # Check URL length
         if len(url) > 8000:
             # Use compact JSON
             issue_body = _create_compact_issue_body(
@@ -101,10 +96,8 @@ def submit_preset_via_browser(
                 f"https://github.com/{repo_owner}/{repo_name}/issues/new?{query_string}"
             )
 
-        # Open browser
         open_url(url)
 
-        # Show success dialog with ZIP info
         show_submission_success_dialog(preset_name, zip_path)
 
         return True, url
@@ -135,22 +128,19 @@ def _create_image_zip(
     Returns:
         Path to created ZIP file
     """
-    # Create temp directory for output
     output_dir = Path(tempfile.gettempdir()) / "er_preset_submissions"
     output_dir.mkdir(exist_ok=True)
 
-    # Clean preset name for filename
     safe_name = "".join(c for c in preset_name if c.isalnum() or c in (" ", "-", "_"))
     safe_name = safe_name.strip().replace(" ", "_")
 
     zip_filename = f"{safe_name}_images.zip"
     zip_path = output_dir / zip_filename
 
-    # Create ZIP file
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
         if face_image_path:
             src_path = Path(face_image_path)
-            ext = src_path.suffix  # Keep original extension
+            ext = src_path.suffix
             zipf.write(src_path, f"face{ext}")
 
         if body_image_path:
@@ -176,7 +166,6 @@ def _create_issue_body(
 ) -> str:
     """Create formatted issue body with ZIP instructions."""
 
-    # Use formatted JSON for readability
     appearance_json = json.dumps(appearance_data, indent=2)
 
     body = f"""**Preset Name:** {preset_name}
@@ -218,7 +207,6 @@ You can still attach images manually if you have them:
 
     body += "---\n\n"
 
-    # Add appearance JSON
     body += """### Appearance Data
 
 <details>
@@ -250,7 +238,6 @@ def _create_compact_issue_body(
 ) -> str:
     """Create compact issue body to avoid URL length limits."""
 
-    # Compact JSON
     appearance_json = json.dumps(appearance_data, separators=(",", ":"))
 
     body = f"""**Preset Name:** {preset_name}
@@ -300,16 +287,13 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
 
     from er_save_manager.ui.utils import force_render_dialog
 
-    # Create custom dialog
     dialog = ctk.CTkToplevel()
     dialog.title("Submission Ready")
     width, height = 900, 700
     dialog.resizable(False, False)
 
-    # Center on screen
     center_window(dialog, width, height)
 
-    # Make it stay on top
     dialog.attributes("-topmost", True)
 
     # Force rendering on Linux
@@ -320,7 +304,6 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
     main_frame = ctk.CTkFrame(dialog, fg_color="transparent")
     main_frame.pack(fill=ctk.BOTH, expand=True, padx=30, pady=30)
 
-    # Title
     title = ctk.CTkLabel(
         main_frame,
         text="✅ Preset Ready to Submit!",
@@ -328,7 +311,6 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
     )
     title.pack(pady=(0, 20))
 
-    # ZIP info
     zip_filename = Path(zip_path).name
 
     info = ctk.CTkLabel(
@@ -347,7 +329,6 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
     )
     zip_label.pack(pady=(0, 25))
 
-    # Info box
     info_box = ctk.CTkFrame(
         main_frame, fg_color=("#f0f4f8", "#1e2839"), corner_radius=10
     )
@@ -381,7 +362,6 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
         text_color=("#4b5563", "#d0d8e0"),
     ).pack(anchor=ctk.W, padx=20, pady=(0, 15))
 
-    # Buttons frame
     button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
     button_frame.pack(fill=ctk.X, pady=(0, 0))
 
@@ -395,16 +375,13 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
                 abs_path = str(Path(zip_path).resolve())
                 subprocess.run(["explorer", f"/select,{abs_path}"], shell=False)
             elif system == "Darwin":  # macOS
-                # Open Finder and select the file
                 subprocess.run(["open", "-R", str(zip_path)])
             else:  # Linux
-                # Open file manager to directory
                 zip_dir = str(Path(zip_path).parent)
-                subprocess.run(["xdg-open", zip_dir])
+                subprocess.run(["xdg-open", zip_dir], env=_get_subprocess_env())
         except Exception as e:
             print(f"Failed to open file explorer: {e}")
 
-    # Large "Open Folder" button
     open_btn = ctk.CTkButton(
         button_frame,
         text="📁 Open Folder",
@@ -415,7 +392,6 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
     )
     open_btn.pack(side=ctk.LEFT, padx=(0, 12))
 
-    # Close button
     close_btn = ctk.CTkButton(
         button_frame,
         text="Close",
@@ -426,7 +402,6 @@ def show_submission_success_dialog(preset_name: str, zip_path: str):
     )
     close_btn.pack(side=ctk.LEFT)
 
-    # Show path at bottom (for user reference)
     path_label = ctk.CTkLabel(
         main_frame,
         text="ZIP Location (for your reference):",

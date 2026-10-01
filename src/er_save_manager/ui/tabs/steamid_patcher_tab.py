@@ -85,7 +85,6 @@ class SteamIDPatcherTab:
             text_color=("#808080", "#a0a0a0"),
         ).pack(pady=(0, 10), padx=15, anchor="w")
 
-        # Current save display
         current_frame = ctk.CTkFrame(main_frame, corner_radius=10)
         current_frame.pack(fill=tk.X, padx=15, pady=(0, 12))
         self._current_frame = current_frame
@@ -174,7 +173,6 @@ class SteamIDPatcherTab:
         ).pack(anchor="w", padx=12, pady=(10, 12))
         # Not packed here - _on_game_changed shows/hides it based on game.
 
-        # Patch section
         patch_frame = ctk.CTkFrame(main_frame, corner_radius=10)
         patch_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
         self._patch_frame = patch_frame
@@ -219,7 +217,6 @@ class SteamIDPatcherTab:
             width=110,
         ).pack(side=tk.LEFT)
 
-        # Steam profile URL
         ctk.CTkLabel(
             patch_frame,
             text="Or paste Steam profile URL:",
@@ -288,8 +285,9 @@ class SteamIDPatcherTab:
             if system == "Darwin":
                 subprocess.run(["open", path], check=False)
                 return
-            env = os.environ.copy()
-            env.pop("LD_PRELOAD", None)
+            from er_save_manager.ui.utils import _get_subprocess_env
+
+            env = _get_subprocess_env()
 
             result = subprocess.run(
                 ["xdg-open", path], env=env, stderr=subprocess.DEVNULL, timeout=5
@@ -907,7 +905,6 @@ class SteamIDPatcherTab:
                 )
                 return
 
-            # Deduplicate preserving order
             seen: dict[int, str] = {}
             for name, sid in steam_users:
                 if sid not in seen:

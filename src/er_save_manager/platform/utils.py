@@ -219,7 +219,6 @@ class PlatformUtils:
                 / "steamapps"
                 / "compatdata",
             ]
-            # Also check custom Steam library folders
             for lib in PlatformUtils.get_steam_library_folders():
                 compat_bases.append(lib / "steamapps" / "compatdata")
 

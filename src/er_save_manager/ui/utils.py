@@ -146,11 +146,9 @@ def bind_mousewheel(widget, target_widget=None):
             canvas.yview_scroll(1, "units")
             return "break"
 
-        # Bind to canvas itself
         canvas.bind("<Button-4>", scroll_up)
         canvas.bind("<Button-5>", scroll_down)
 
-        # Bind to the scrollable frame
         target_widget.bind("<Button-4>", scroll_up)
         target_widget.bind("<Button-5>", scroll_down)
 
@@ -343,7 +341,7 @@ def _get_subprocess_env() -> dict:
     env = os.environ.copy()
     if env.get("APPIMAGE") or env.get("SNAP") or env.get("FLATPAK_ID"):
         env.pop("LD_LIBRARY_PATH", None)
-        env.pop("LD_PRELOAD", None)  # Add this line
+        env.pop("LD_PRELOAD", None)
         env.pop("PYTHONHOME", None)
         env.pop("PYTHONPATH", None)
     return env

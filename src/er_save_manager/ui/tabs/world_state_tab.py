@@ -331,7 +331,6 @@ class WorldStateTab:
             self._build_custom_teleport_ui()
 
     def _build_known_locations_ui(self):
-        # Search bar
         search_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
         search_frame.pack(fill=tk.X, pady=(0, 5))
 

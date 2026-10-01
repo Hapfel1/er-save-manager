@@ -12,7 +12,7 @@ from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, trace_variable
 
 # Starting classes added in the Tarnished Pack DLC. Hidden from the class
-# dropdown unless the character owns the DLC-
+# dropdown unless the character owns the DLC.
 _TARNISHED_PACK_CLASS_NAMES = frozenset({"Idus Knight", "Heavy Knight"})
 _TARNISHED_PACK_FLAG = 6953
 
@@ -50,7 +50,6 @@ class CharacterInfoEditor:
         self.get_char_slot = get_char_slot_callback
         self.get_save_path = get_save_path_callback
 
-        # Character info variables
         self.char_name_var = None
         self.char_name_count_label = None
         self.char_body_type_var = None
@@ -75,7 +74,6 @@ class CharacterInfoEditor:
         self.frame.pack(fill=ctk.BOTH, expand=True)
         bind_mousewheel(self.frame)
 
-        # Character creation info
         creation_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
         creation_frame.pack(fill=ctk.X, pady=5, padx=10)
         ctk.CTkLabel(
@@ -84,13 +82,11 @@ class CharacterInfoEditor:
             font=("Segoe UI", 12, "bold"),
         ).grid(row=0, column=0, columnspan=5, sticky=ctk.W, padx=5, pady=(5, 0))
 
-        # Name
         ctk.CTkLabel(creation_frame, text="Name:").grid(
             row=1, column=0, sticky=ctk.W, padx=5, pady=5
         )
         self.char_name_var = ctk.StringVar(value="")
 
-        # Add validation for max 16 characters
         def validate_name(new_value):
             return len(new_value) <= 16
 
@@ -104,7 +100,6 @@ class CharacterInfoEditor:
         )
         name_entry.grid(row=1, column=1, columnspan=3, padx=5, pady=5)
 
-        # Add label showing character count
         self.char_name_count_label = ctk.CTkLabel(
             creation_frame,
             text="0/16",
@@ -112,14 +107,12 @@ class CharacterInfoEditor:
         )
         self.char_name_count_label.grid(row=1, column=4, padx=5, pady=5)
 
-        # Update counter on change
         def update_name_count(*args):
             count = len(self.char_name_var.get())
             self.char_name_count_label.configure(text=f"{count}/16")
 
         trace_variable(self.char_name_var, "w", update_name_count)
 
-        # Body Type
         ctk.CTkLabel(creation_frame, text="Body Type:").grid(
             row=2, column=0, sticky=ctk.W, padx=5, pady=5
         )
@@ -158,7 +151,6 @@ class CharacterInfoEditor:
 
         self.char_archetype_var.trace_add("write", _on_archetype_combo_change)
 
-        # Voice type
         ctk.CTkLabel(creation_frame, text="Voice Type:").grid(
             row=3, column=0, sticky=ctk.W, padx=5, pady=5
         )
@@ -171,7 +163,6 @@ class CharacterInfoEditor:
         )
         voice_combo.grid(row=3, column=1, padx=5, pady=5)
 
-        # Keepsake gift
         ctk.CTkLabel(creation_frame, text="Keepsake:").grid(
             row=3, column=2, sticky=ctk.W, padx=5, pady=5
         )
@@ -182,7 +173,6 @@ class CharacterInfoEditor:
             width=100,
         ).grid(row=3, column=3, padx=5, pady=5)
 
-        # Game progression info
         progression_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
         progression_frame.pack(fill=ctk.X, pady=5, padx=10)
         ctk.CTkLabel(
@@ -253,7 +243,6 @@ class CharacterInfoEditor:
         #    width=80,
         # ).grid(row=1, column=5, padx=5, pady=5)
 
-        # Apply button
         button_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
         button_frame.pack(fill=ctk.X, pady=10, padx=10)
         ctk.CTkLabel(
@@ -290,13 +279,11 @@ class CharacterInfoEditor:
             self.char_name_var.set(getattr(char, "character_name", ""))
             self.char_body_type_var.set(getattr(char, "gender", 0))
 
-            # Update archetype combobox with class names from appropriate class set
             archetype_id = getattr(char, "archetype", 0)
             is_convergence = save_file.is_convergence
             class_data = get_class_data(archetype_id, is_convergence)
             class_name = class_data["name"] if class_data else f"Class {archetype_id}"
 
-            # Get all class names for this save type and update combobox
             all_classes = get_class_data(0, is_convergence)
             if all_classes:
                 owns_dlc = _owns_tarnished_pack(slot)
@@ -370,11 +357,9 @@ class CharacterInfoEditor:
             return
 
         try:
-            # Ensure raw_data is mutable
             if isinstance(save_file._raw_data, bytes):
                 save_file._raw_data = bytearray(save_file._raw_data)
 
-            # Create backup
             from er_save_manager.backup.manager import BackupManager
 
             save_path = self.get_save_path()
@@ -386,14 +371,12 @@ class CharacterInfoEditor:
                     save=save_file,
                 )
 
-            # Modify character info
             slot = save_file.characters[slot_idx]
             if hasattr(slot, "player_game_data") and slot.player_game_data:
                 char = slot.player_game_data
                 char_name = self.char_name_var.get()
 
                 char.character_name = char_name
-                # Also set name in profile summary if it exists
                 if (
                     hasattr(save_file, "user_data_10_parsed")
                     and save_file.user_data_10_parsed
@@ -416,7 +399,6 @@ class CharacterInfoEditor:
 
                         # Write character name (16 wide chars = 32 bytes + 2 byte terminator = 34 bytes)
                         name_bytes = char_name.encode("utf-16-le")
-                        # Pad to 32 bytes if needed
                         name_bytes = (name_bytes + b"\x00" * 32)[:32]
                         save_file._raw_data[profile_offset : profile_offset + 32] = (
                             name_bytes
@@ -427,7 +409,6 @@ class CharacterInfoEditor:
 
                 char.gender = self.char_body_type_var.get()
 
-                # Convert class name back to archetype ID
                 class_name = self.char_archetype_var.get()
                 is_convergence = save_file.is_convergence
 
@@ -460,7 +441,6 @@ class CharacterInfoEditor:
                     target_level = int(ng_string.split("(")[1].rstrip(")"))
                     slot.unk_gamedataman_0x120_or_gamedataman_0x130 = target_level
 
-                # Write back using offset
                 if hasattr(slot, "player_game_data_offset"):
                     from io import BytesIO
 
@@ -471,19 +451,16 @@ class CharacterInfoEditor:
                     # player_game_data_offset is absolute in the raw file
                     abs_offset = slot.player_game_data_offset
 
-                    # Write to raw data
                     save_file._raw_data[abs_offset : abs_offset + len(char_data)] = (
                         char_data
                     )
 
-                    # Apply NG+ level changes (event flag and ClearCount sync)
                     self._apply_ng_level(
                         save_file,
                         slot_idx,
                         force_clearcount=target_level,
                     )
 
-                    # Write playtime to ProfileSummary and world_area_time
                     self._apply_playtime(save_file, slot_idx, slot)
 
                     # Rebuild slot bytes and write to _raw_data before saving
@@ -495,13 +472,11 @@ class CharacterInfoEditor:
                         abs_offset : abs_offset + len(rebuilt_bytes)
                     ] = rebuilt_bytes
 
-                    # Recalculate checksums and save
                     save_file.recalculate_checksums()
                     save_path = self.get_save_path()
                     if save_path:
                         save_file.to_file(Path(save_path))
 
-                    # Reload character info to reflect changes
                     self.load_character_info()
 
                     CTkMessageBox.showinfo(
@@ -569,7 +544,6 @@ class CharacterInfoEditor:
         try:
             from er_save_manager.parser.event_flags import EventFlags
 
-            # Get the string value from combo box and extract the number
             ng_string = self.char_ng_level_var.get()
             target_level = int(ng_string.split("(")[1].rstrip(")"))
 
@@ -582,21 +556,18 @@ class CharacterInfoEditor:
                 else slot.event_flags
             )
 
-            # Clear all NG+ level flags first
             for flag_id in ng_flag_ids:
                 try:
                     EventFlags.set_flag(flags, flag_id, False)
                 except Exception:
                     pass
 
-            # Set the target NG+ level flag
             target_flag_id = ng_flag_ids[target_level]
             try:
                 EventFlags.set_flag(flags, target_flag_id, True)
             except Exception:
                 pass
 
-            # Write back as bytes
             slot.event_flags = bytes(flags)
 
             # Update ClearCount (the actual playthrough counter)
