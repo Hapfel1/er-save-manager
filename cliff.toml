@@ -42,14 +42,21 @@ body = """
 **Status:** Development in progress
 
 {% endif -%}
+{#- Entries are prefixed with their game, taken from the commit scope, and
+    listed game by game; any other scope (ui, backup, data) or none is General. -#}
+{%- set games = ["ER", "DS3", "DS2", "DSR", "NR"] -%}
 {% for group, commits in commits | group_by(attribute="group") %}
 ### {{ group | striptags | trim | upper_first }}
-
-{% for commit in commits | unique(attribute="id") %}
+{% for game in games | concat(with="General") -%}
+{% for commit in commits | unique(attribute="id") -%}
+{%- set scope = commit.scope | default(value="") | upper -%}
+{%- if scope in games %}{% set label = scope %}{% else %}{% set label = "General" %}{% endif -%}
+{%- if label == game -%}
 {%- set pr_num = commit.remote.pr_number | default(value=0) -%}
-{%- set short_id = commit.id | truncate(length=7, end="") -%}
-- {{ commit.message | upper_first | trim }}{% if commit.scope %} `[{{ commit.scope }}]`{% endif %}{% if pr_num > 0 %} ([#{{ pr_num }}](https://github.com/Hapfel1/er-save-manager/pull/{{ pr_num }})){% endif %} ([{{ short_id }}](https://github.com/Hapfel1/er-save-manager/commit/{{ commit.id }})){% if commit.breaking %} ⚠️ **BREAKING CHANGE**{% endif %}
-
+{%- set short_id = commit.id | truncate(length=7, end="") %}
+- {{ label }}: {{ commit.message | upper_first | trim }}{% if pr_num > 0 %} ([#{{ pr_num }}](https://github.com/Hapfel1/er-save-manager/pull/{{ pr_num }})){% endif %} ([{{ short_id }}](https://github.com/Hapfel1/er-save-manager/commit/{{ commit.id }})){% if commit.breaking %} ⚠️ **BREAKING CHANGE**{% endif %}
+{% endif -%}
+{% endfor -%}
 {% endfor %}
 {% endfor %}
 ---
