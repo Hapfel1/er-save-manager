@@ -218,7 +218,6 @@ src/er_save_manager/
             steamid_patcher_tab.py
             event_flags_tab.py
             gestures_regions_tab.py
-            hex_editor_tab.py       # WIP
             advanced_tools_tab.py
             backup_manager_tab.py
             settings_tab.py
@@ -236,7 +235,7 @@ src/er_save_manager/
             equipment_editor.py
             stats_editor.py
             character_info_editor.py
-            inventory_editor.py     # WIP
+            inventory_editor.py
         
         widgets/                # Custom widgets
             __init__.py
