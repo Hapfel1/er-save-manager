@@ -1,0 +1,10 @@
+category,name,id,type,max_quantity,max_upgrade,level_step,durability,sort_id,icon_id,key_item,spell,infusion,obtainable,hidden
+seamless,Blessed Eye Orb,389000,4,1,0,1,0,0,2008,0,0,,1,0
+seamless,Crystal Eye Orb,389001,4,1,0,1,0,0,2010,0,0,,1,0
+seamless,Chaos Eye Orb,389002,4,1,0,1,0,0,2002,0,0,,1,0
+seamless,Abyssal Eye Orb,389003,4,1,0,1,0,0,2132,0,0,,1,0
+seamless,Ominous Tome,389004,4,1,0,1,0,0,2007,0,0,,1,0
+seamless,Dried Fingers,389005,4,1,0,1,0,0,2129,0,0,,1,0
+seamless,Cursed Pendant,389006,4,1,0,1,0,0,2037,0,0,,1,0
+seamless,Crimson Blossom,389007,4,5,0,1,0,0,2033,0,0,,1,0
+seamless,Parchment of Deliverance,389008,4,1,0,1,0,0,2067,0,0,,1,0

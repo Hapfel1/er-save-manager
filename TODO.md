@@ -1,6 +1,6 @@
 mage smith elite cleric set dsr
 
-check dlc npc flags
+check dlc npc flags done
 
 check ds3, nr item spawning done
 

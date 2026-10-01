@@ -1,729 +1,1689 @@
-group,Type,Id,Name,Category,MaxStackCount,MaxUpgrade,CanInfuse,Durability,MugenMonkeyName,SoulsplannerName
-weapon_items,0x0,0x4CA90,Great Lord Greatsword,weapons_shields,1,5,false,400,Great Lord Greatsword,Great Lord Greatsword
-weapon_items,0x0,0x119018,Lifehunt Scythe,weapons_shields,1,5,false,100,Lifehunt Scythe,Lifehunt Scythe
-weapon_items,0x0,0x186A0,Dagger,weapons_shields,1,15,true,200,Dagger,Dagger
-weapon_items,0x0,0x18A88,Parrying Dagger,weapons_shields,1,15,true,200,Parrying Dagger,Parrying Dagger
-weapon_items,0x0,0x18E70,Ghost Blade,weapons_shields,1,5,false,100,Ghost Blade,Ghost Blade
-weapon_items,0x0,0x19258,Bandit's Knife,weapons_shields,1,15,true,200,Bandit's Knife,Bandit's Knife
-weapon_items,0x0,0x19640,Priscilla's Dagger,weapons_shields,1,5,false,100,Priscilla's Dagger,Priscilla's Dagger
-weapon_items,0x0,0x30D40,Shortsword,weapons_shields,1,15,true,200,Shortsword,Shortsword
-weapon_items,0x0,0x31128,Longsword,weapons_shields,1,15,true,200,Longsword,Longsword
-weapon_items,0x0,0x31510,Broadsword,weapons_shields,1,15,true,200,Broadsword,Broadsword
-weapon_items,0x0,0x318F8,Broken Straight Sword,weapons_shields,1,15,true,200,Broken Straight Sword,Broken Straight Sword
-weapon_items,0x0,0x31CE0,Balder Side Sword,weapons_shields,1,15,true,120,Balder Side Sword,Balder Side Sword
-weapon_items,0x0,0x320C8,Crystal Straight Sword,weapons_shields,1,5,false,60,Crystal Straight Sword,Crystal Straight Sword
-weapon_items,0x0,0x324B0,Sunlight Straight Sword,weapons_shields,1,15,true,240,Sunlight Straight Sword,Sunlight Straight Sword
-weapon_items,0x0,0x32898,Barbed Straight Sword,weapons_shields,1,15,true,160,Barbed Straight Sword,Barbed Straight Sword
-weapon_items,0x0,0x32C80,Silver Knight Straight Sword,weapons_shields,1,5,false,300,Silver Knight Str. Swd.,Silver Knight Straight Sword
-weapon_items,0x0,0x33068,Astora's Straight Sword,weapons_shields,1,5,false,160,Astora's Str. Sword,Astora's Straight Sword
-weapon_items,0x0,0x33450,Darksword,weapons_shields,1,15,true,200,Darksword,Darksword
-weapon_items,0x0,0x33838,Drake Sword,weapons_shields,1,5,false,360,Drake Sword,Drake Sword
-weapon_items,0x0,0x33C20,Straight Sword Hilt,weapons_shields,1,15,false,200,Straight Sword Hilt,Straight Sword Hilt
-weapon_items,0x0,0x493E0,Bastard Sword,weapons_shields,1,15,true,200,Bastard Sword,Bastard Sword
-weapon_items,0x0,0x497C8,Claymore,weapons_shields,1,15,true,200,Claymore,Claymore
-weapon_items,0x0,0x49BB0,Man-serpent Greatsword,weapons_shields,1,15,true,300,Man-Serpent Greatsword,Man-serpent Greatsword
-weapon_items,0x0,0x49F98,Flamberge,weapons_shields,1,15,true,160,Flamberge,Flamberge
-weapon_items,0x0,0x4A380,Crystal Greatsword,weapons_shields,1,5,false,60,Crystal Greatsword,Crystal Greatsword
-weapon_items,0x0,0x4AB50,Stone Greatsword,weapons_shields,1,5,false,800,Stone Greatsword,Stone Greatsword
-weapon_items,0x0,0x4AF38,Greatsword of Artorias,weapons_shields,1,5,false,400,Greatsword of Artorias,Greatsword of Artorias
-weapon_items,0x0,0x4B708,Moonlight Greatsword,weapons_shields,1,5,false,300,Moonlight Greatsword,Moonlight Greatsword
-weapon_items,0x0,0x4BAF0,Black Knight Sword,weapons_shields,1,5,false,300,Black Knight Sword,Black Knight Sword
-weapon_items,0x0,0x4BED8,Greatsword of Artorias (cursed),weapons_shields,1,5,false,400,Curse Gsword of Artorias,
-weapon_items,0x0,0x4CB58,Great Lord Greatsword,weapons_shields,1,5,false,400,Great Lord Greatsword,Great Lord Greatsword
-weapon_items,0x0,0x55730,Zweihander,weapons_shields,1,15,true,200,Zweihander,Zweihander
-weapon_items,0x0,0x55B18,Greatsword,weapons_shields,1,15,true,200,Greatsword,Greatsword
-weapon_items,0x0,0x55F00,Demon Great Machete,weapons_shields,1,15,true,600,Demon Great Machete,Demon Great Machete
-weapon_items,0x0,0x566D0,Dragon Greatsword,weapons_shields,1,5,false,400,Dragon Greatsword,Dragon Greatsword
-weapon_items,0x0,0x56AB8,Black Knight Greatsword,weapons_shields,1,5,false,300,Black Knight Greatsword,Black Knight Greatsword
-weapon_items,0x0,0x61A80,Scimitar,weapons_shields,1,15,true,160,Scimitar,Scimitar
-weapon_items,0x0,0x61E68,Falchion,weapons_shields,1,15,true,160,Falchion,Falchion
-weapon_items,0x0,0x62250,Shotel,weapons_shields,1,15,true,120,Shotel,Shotel
-weapon_items,0x0,0x62638,Jagged Ghost Blade,weapons_shields,1,5,false,100,Jagged Ghost Blade,Jagged Ghost Blade
-weapon_items,0x0,0x62E08,Painting Guardian Sword,weapons_shields,1,15,true,100,Painting Guardian Sword,Painting Guardian Sword
-weapon_items,0x0,0x63254,Quelaag's Furysword,weapons_shields,1,5,false,600,Quelaag's Furysword,Quelaag's Furysword
-weapon_items,0x0,0x631F0,Quelaag's Furysword,weapons_shields,1,5,false,600,Quelaag's Furysword,Quelaag's Furysword
-weapon_items,0x0,0x6DDD0,Server,weapons_shields,1,15,true,140,Server,Server
-weapon_items,0x0,0x6E1B8,Murakumo,weapons_shields,1,15,true,180,Murakumo,Murakumo
-weapon_items,0x0,0x6E988,Gravelord Sword,weapons_shields,1,5,false,600,Gravelord Sword,Gravelord Sword
-weapon_items,0x0,0x7A120,Uchigatana,weapons_shields,1,15,true,80,Uchigatana,Uchigatana
-weapon_items,0x0,0x7A508,Washing Pole,weapons_shields,1,15,true,60,Washing Pole,Washing Pole
-weapon_items,0x0,0x7A8F0,Iaito,weapons_shields,1,15,true,80,Iaito,Iaito
-weapon_items,0x0,0x7ACD8,Chaos Blade,weapons_shields,1,5,false,120,Chaos Blade,Chaos Blade
-weapon_items,0x0,0x927C0,Mail Breaker,weapons_shields,1,15,true,200,Mail Breaker,Mail Breaker
-weapon_items,0x0,0x92BA8,Rapier,weapons_shields,1,15,true,150,Rapier,Rapier
-weapon_items,0x0,0x92F90,Estoc,weapons_shields,1,15,true,150,Estoc,Estoc
-weapon_items,0x0,0x93378,Velka's Rapier,weapons_shields,1,5,false,130,Velka's Rapier,Velka's Rapier
-weapon_items,0x0,0x93760,Ricard's Rapier,weapons_shields,1,15,true,100,Ricard's Rapier,Ricard's Rapier
-weapon_items,0x0,0xAAE60,Hand Axe,weapons_shields,1,15,true,250,Hand Axe,Hand Axe
-weapon_items,0x0,0xAB248,Battle Axe,weapons_shields,1,15,true,250,Battle Axe,Battle Axe
-weapon_items,0x0,0xAB630,Crescent Axe,weapons_shields,1,5,false,180,Crescent Axe,Crescent Axe
-weapon_items,0x0,0xABA18,Butcher Knife,weapons_shields,1,15,true,250,Butcher Knife,Butcher Knife
-weapon_items,0x0,0xABE64,Golem Axe,weapons_shields,1,5,false,600,Golem Axe,Golem Axe
-weapon_items,0x0,0xABE00,Golem Axe,weapons_shields,1,5,false,600,Golem Axe,Golem Axe
-weapon_items,0x0,0xAC1E8,Gargoyle Tail Axe,weapons_shields,1,15,true,150,Gargoyle Tail Axe,Gargoyle Tail Axe
-weapon_items,0x0,0xB71B0,Greataxe,weapons_shields,1,15,true,230,Greataxe,Greataxe
-weapon_items,0x0,0xB7598,Demon's Greataxe,weapons_shields,1,15,true,600,Demon's Greataxe,Demon's Greataxe
-weapon_items,0x0,0xB7980,Dragon King Greataxe,weapons_shields,1,5,false,400,Dragon King Greataxe,Dragon King Greataxe
-weapon_items,0x0,0xB7D68,Black Knight Greataxe,weapons_shields,1,5,false,300,Black Knight Greataxe,Black Knight Greataxe
-weapon_items,0x0,0xC3500,Club,weapons_shields,1,15,true,250,Club,Club
-weapon_items,0x0,0xC38E8,Mace,weapons_shields,1,15,true,250,Mace,Mace
-weapon_items,0x0,0xC3CD0,Morning Star,weapons_shields,1,15,true,180,Morning Star,Morning Star
-weapon_items,0x0,0xC40B8,Warpick,weapons_shields,1,15,true,220,War Pick,Warpick
-weapon_items,0x0,0xC44A0,Pickaxe,weapons_shields,1,15,true,250,Pickaxe,Pickaxe
-weapon_items,0x0,0xC5828,Reinforced Club,weapons_shields,1,15,true,100,Reinforced Club,Reinforced Club
-weapon_items,0x0,0xC5C10,Blacksmith Hammer,weapons_shields,1,15,true,250,Blacksmith Hammer,Blacksmith Hammer
-weapon_items,0x0,0xC5FF8,Blacksmith Giant Hammer,weapons_shields,1,5,false,250,Blacksmith Giant Hammer,Blacksmith Giant Hammer
-weapon_items,0x0,0xC63E0,Hammer of Vamos,weapons_shields,1,5,false,250,Hammer of Vamos,Hammer of Vamos
-weapon_items,0x0,0xCF850,Great Club,weapons_shields,1,15,true,250,Great Club,Great Club
-weapon_items,0x0,0xCFC38,Grant,weapons_shields,1,5,false,600,Grant,Grant
-weapon_items,0x0,0xD0020,Demon's Great Hammer,weapons_shields,1,15,true,600,Demon's Great Hammer,Demon's Great Hammer
-weapon_items,0x0,0xD07F0,Dragon Tooth,weapons_shields,1,5,false,999,Dragon Tooth,Dragon Tooth
-weapon_items,0x0,0xD0BD8,Large Club,weapons_shields,1,15,true,250,Large Club,Large Club
-weapon_items,0x0,0xD1150,Smough's Hammer,weapons_shields,1,5,false,600,Smough's Hammer,Smough's Hammer
-weapon_items,0x0,000D0FC0,Smough's Hammer,weapons_shields,1,5,false,600,Smough's Hammer,Smough's Hammer
-weapon_items,0x0,0xDBBA0,Fists,weapons_shields,1,0,false,5,Bare Fist,Bare Fists
-weapon_items,0x0,0xDBF88,Caestus,weapons_shields,1,15,true,300,Cestus,Caestus
-weapon_items,0x0,0xDC370,Claw,weapons_shields,1,15,true,150,Claw,Claw
-weapon_items,0x0,0xDC758,Dragon Bone Fist,weapons_shields,1,5,false,999,Dragon Bone Fist,Dragon Bone Fist
-weapon_items,0x0,0xDCB40,Dark Hand,weapons_shields,1,5,false,999,Dark Hand,Dark Hand
-weapon_items,0x0,0xF4240,Spear,weapons_shields,1,15,true,180,Spear,Spear
-weapon_items,0x0,0xF4628,Winged Spear,weapons_shields,1,15,true,140,Winged Spear,Winged Spear
-weapon_items,0x0,0xF4A10,Partizan,weapons_shields,1,15,true,160,Partizan,Partizan
-weapon_items,0x0,0xF4DF8,Demon's Spear,weapons_shields,1,5,false,400,Demon's Spear,Demon's Spear
-weapon_items,0x0,0xF51E0,Channeler's Trident,weapons_shields,1,5,false,240,Channeler's Trident,Channeler's Trident
-weapon_items,0x0,0xF59B0,Silver Knight Spear,weapons_shields,1,5,false,300,Silver Knight Spear,Silver Knight Spear
-weapon_items,0x0,0x100590,Pike,weapons_shields,1,15,true,180,Pike,Pike
-weapon_items,0x0,0x100AA4,Dragonslayer Spear,weapons_shields,1,5,false,300,Dragonslayer Spear,Dragonslayer Spear
-weapon_items,0x0,0x100978,Dragonslayer Spear,weapons_shields,1,5,false,300,Dragonslayer Spear,Dragonslayer Spear
-weapon_items,0x0,0x100E8C,Moonlight Butterfly Horn,weapons_shields,1,5,false,160,Moonlight Butterfly Horn,Moonlight Butterfly Horn
-weapon_items,0x0,0x5A550,Moonlight Butterfly Horn,weapons_shields,1,5,false,160,Moonlight Butterfly Horn,Moonlight Butterfly Horn
-weapon_items,0x0,0x100D60,Moonlight Butterfly Horn,weapons_shields,1,5,false,160,Moonlight Butterfly Horn,Moonlight Butterfly Horn
-weapon_items,0x0,0x10C8E0,Halberd,weapons_shields,1,15,true,200,Halberd,Halberd
-weapon_items,0x0,0x10CCC8,Giant's Halberd,weapons_shields,1,5,false,300,Giant's Halberd,Giant's Halberd
-weapon_items,0x0,0x10D0B0,Titanite Catch Pole,weapons_shields,1,5,false,600,Titanite Catch Pole,Titanite Catch Pole
-weapon_items,0x0,0x10D498,Gargoyle's Halberd,weapons_shields,1,15,true,200,Gargoyle's Halberd,Gargoyle's Halberd
-weapon_items,0x0,0x10DC68,Black Knight Halberd,weapons_shields,1,5,false,300,Black Knight Halberd,Black Knight Halberd
-weapon_items,0x0,0x10E050,Lucerne,weapons_shields,1,15,true,200,Lucerne,Lucerne
-weapon_items,0x0,0x10E438,Scythe,weapons_shields,1,15,true,150,Scythe,Scythe
-weapon_items,0x0,0x118C30,Great Scythe,weapons_shields,1,15,true,130,Great Scythe,Great Scythe
-weapon_items,0x0,0x119270,Lifehunt Scythe,weapons_shields,1,5,false,100,Lifehunt Scythe,Lifehunt Scythe
-weapon_items,0x0,0x124F80,Short Bow,weapons_shields,1,15,true,100,Short Bow,Short Bow
-weapon_items,0x0,0x125368,Longbow,weapons_shields,1,15,true,100,Longbow,Longbow
-weapon_items,0x0,0x125750,Black Bow of Pharis,weapons_shields,1,15,true,100,Black Bow of Pharis,Black Bow of Pharis
-weapon_items,0x0,0x125B38,Dragonslayer Greatbow,weapons_shields,1,5,false,100,Dragonslayer Greatbow,Dragonslayer Greatbow
-weapon_items,0x0,0x125F20,Composite Bow,weapons_shields,1,15,true,100,Composite Bow,Composite Bow
-weapon_items,0x0,0x126308,Darkmoon Bow,weapons_shields,1,5,false,400,Darkmoon Bow,Darkmoon Bow
-weapon_items,0x0,0x1312D0,Light Crossbow,weapons_shields,1,15,true,150,Light Crossbow,Light Crossbow
-weapon_items,0x0,0x1316B8,Heavy Crossbow,weapons_shields,1,15,true,150,Heavy Crossbow,Heavy Crossbow
-weapon_items,0x0,0x131AA0,Avelyn,weapons_shields,1,15,true,150,Avelyn,Avelyn
-weapon_items,0x0,0x131E88,Sniper Crossbow,weapons_shields,1,15,true,150,Sniper Crossbow,Sniper Crossbow
-weapon_items,0x0,0x13D620,Sorcerer's Catalyst,weapons_shields,1,0,false,90,Sorcerer's Catalyst,Sorcerer's Catalyst
-weapon_items,0x0,0x13DA08,Beatrice's Catalyst,weapons_shields,1,0,false,90,Beatrice's Catalyst,Beatrice's Catalyst
-weapon_items,0x0,0x13DDF0,Tin Banishment Catalyst,weapons_shields,1,0,false,160,Tin Banishment Catalyst,Tin Banishment Catalyst
-weapon_items,0x0,0x13E1D8,Logan's Catalyst,weapons_shields,1,0,false,90,Logan's Catalyst,Logan's Catalyst
-weapon_items,0x0,0x13E5C0,Tin Darkmoon Catalyst,weapons_shields,1,0,false,60,Tin Darkmoon Catalyst,Tin Darkmoon Catalyst
-weapon_items,0x0,0x13E9A8,Oolacile Ivory Catalyst,weapons_shields,1,0,false,30,Oolacile Ivory Catalyst,Oolacile Ivory Catalyst
-weapon_items,0x0,0x13ED90,Tin Crystallization Catalyst,weapons_shields,1,0,false,90,Tin Crystallization Catalyst,Tin Crystallization Catalyst
-weapon_items,0x0,0x13F178,Demon's Catalyst,weapons_shields,1,0,false,300,Demon's Catalyst,Demon's Catalyst
-weapon_items,0x0,0x13F560,Izalith Catalyst,weapons_shields,1,0,false,300,Izalith Catalyst,Izalith Catalyst
-weapon_items,0x0,0x144B50,Pyromancy Flame,weapons_shields,1,0,false,30,Pyromancy Flame +15,Pyromancy Flame
-weapon_items,0x0,0x145320,Pyromancy Flame (Ascended),weapons_shields,1,0,false,30,Ascended Flame +5,Ascended Pyromancy Flame
-weapon_items,0x0,0x14C080,Talisman,weapons_shields,1,0,false,50,Talisman,Talisman
-weapon_items,0x0,0x14C468,Canvas Talisman,weapons_shields,1,0,false,50,Canvas Talisman,Canvas Talisman
-weapon_items,0x0,0x14C850,Thorolund Talisman,weapons_shields,1,0,false,50,Thorolund Talisman,Thorolund Talisman
-weapon_items,0x0,0x14CC38,Ivory Talisman,weapons_shields,1,0,false,50,Ivory Talisman,Ivory Talisman
-weapon_items,0x0,0x14D408,Sunlight Talisman,weapons_shields,1,0,false,50,Sunlight Talisman,Sunlight Talisman
-weapon_items,0x0,0x14D7F0,Darkmoon Talisman,weapons_shields,1,0,false,50,Darkmoon Talisman,Darkmoon Talisman
-weapon_items,0x0,0x14DBD8,Velka's Talisman,weapons_shields,1,0,false,50,Velka's Talisman,Velka's Talisman
-weapon_items,0x0,0x154D20,Skull Lantern,weapons_shields,1,0,false,60,Skull Lantern,Skull Lantern
-weapon_items,0x0,0x155CC0,East-West Shield,weapons_shields,1,15,true,160,East-West Shield,East-West Shield
-weapon_items,0x0,0x1560A8,Wooden Shield,weapons_shields,1,15,true,160,Wooden Shield,Wooden Shield
-weapon_items,0x0,0x156490,Large Leather Shield,weapons_shields,1,15,true,200,Large Leather Shield,Large Leather Shield
-weapon_items,0x0,0x156878,Small Leather Shield,weapons_shields,1,15,true,200,Small Leather Shield,Small Leather Shield
-weapon_items,0x0,0x156C60,Target Shield,weapons_shields,1,15,true,150,Target Shield,Target Shield
-weapon_items,0x0,0x157048,Buckler,weapons_shields,1,15,true,140,Buckler,Buckler
-weapon_items,0x0,0x157430,Cracked Round Shield,weapons_shields,1,15,true,60,Cracked Round Shield,Cracked Round Shield
-weapon_items,0x0,0x157C00,Leather Shield,weapons_shields,1,15,true,200,Leather Shield,Leather Shield
-weapon_items,0x0,0x157FE8,Plank Shield,weapons_shields,1,15,true,120,Plank Shield,Plank Shield
-weapon_items,0x0,0x1583D0,Caduceus Round Shield,weapons_shields,1,15,true,180,Caduceus Round Shield,Caduceus Round Shield
-weapon_items,0x0,0x1587B8,Crystal Ring Shield,weapons_shields,1,5,false,120,Crystal Ring Shield,Crystal Ring Shield
-weapon_items,0x0,0x158D30,Crystal Ring Shield,weapons_shields,1,5,false,120,Crystal Ring Shield,Crystal Ring Shield
-weapon_items,0x0,0x162010,Heater Shield,weapons_shields,1,15,true,250,Heater Shield,Heater Shield
-weapon_items,0x0,0x1623F8,Knight Shield,weapons_shields,1,15,true,200,Knight Shield,Knight Shield
-weapon_items,0x0,0x1627E0,Tower Kite Shield,weapons_shields,1,15,true,250,Tower Kite Shield,Tower Kite Shield
-weapon_items,0x0,0x162BC8,Grass Crest Shield,weapons_shields,1,15,true,200,Grass Crest Shield,Grass Crest Shield
-weapon_items,0x0,0x162FB0,Hollow Soldier Shield,weapons_shields,1,15,true,250,Hollow Soldier Shield,Hollow Soldier Shield
-weapon_items,0x0,0x163398,Balder Shield,weapons_shields,1,15,true,220,Balder Shield,Balder Shield
-weapon_items,0x0,0x163780,Crest Shield,weapons_shields,1,5,false,300,Crest Shield,Crest Shield
-weapon_items,0x0,0x163B68,Dragon Crest Shield,weapons_shields,1,5,false,300,Dragon Crest Shield,Dragon Crest Shield
-weapon_items,0x0,0x164720,Warrior's Round Shield,weapons_shields,1,15,true,180,Warrior's Round Shield,Warrior's Round Shield
-weapon_items,0x0,0x164B08,Iron Round Shield,weapons_shields,1,15,true,280,Iron Round Shield,Iron Round Shield
-weapon_items,0x0,0x164EF0,Spider Shield,weapons_shields,1,15,true,230,Spider Shield,Spider Shield
-weapon_items,0x0,0x166E30,Spiked Shield,weapons_shields,1,15,true,160,Spiked Shield,Spiked Shield
-weapon_items,0x0,0x167218,Crystal Shield,weapons_shields,1,0,false,250,Crystal Shield,Crystal Shield
-weapon_items,0x0,0x167600,Sunlight Shield,weapons_shields,1,15,true,280,Sunlight Shield,Sunlight Shield
-weapon_items,0x0,0x1679E8,Silver Knight Shield,weapons_shields,1,5,false,250,Silver Knight Shield,Silver Knight Shield
-weapon_items,0x0,0x167DD0,Black Knight Shield,weapons_shields,1,5,false,250,Black Knight Shield,Black Knight Shield
-weapon_items,0x0,0x1681B8,Pierce Shield,weapons_shields,1,15,true,180,Pierce Shield,Pierce Shield
-weapon_items,0x0,0x1685A0,Red and White Round Shield,weapons_shields,1,15,true,180,Red/White Rnd Shield,Red and White Round Shield
-weapon_items,0x0,0x168988,Caduceus Kite Shield,weapons_shields,1,15,true,250,Caduceus Kite Shield,Caduceus Kite Shield
-weapon_items,0x0,0x168D70,Gargoyle's Shield,weapons_shields,1,15,true,300,Gargoyle's Shield,Gargoyle's Shield
-weapon_items,0x0,0x16E360,Eagle Shield,weapons_shields,1,15,true,300,Eagle Shield,Eagle Shield
-weapon_items,0x0,0x16E748,Tower Shield,weapons_shields,1,15,true,300,Tower Shield,Tower Shield
-weapon_items,0x0,0x16EB30,Giant Shield,weapons_shields,1,15,true,300,Giant Shield,Giant Shield
-weapon_items,0x0,0x16EF18,Stone Greatshield,weapons_shields,1,5,false,400,Stone Greatshield,Stone Greatshield
-weapon_items,0x0,0x16F6E8,Havel's Greatshield,weapons_shields,1,5,false,500,Havel's Greatshield,Havel's Greatshield
-weapon_items,0x0,0x16FAD0,Bonewheel Shield,weapons_shields,1,15,true,200,Bonewheel Shield,Bonewheel Shield
-weapon_items,0x0,0x16FEB8,Greatshield of Artorias,weapons_shields,1,5,false,600,Greatshield of Artorias,Greatshield of Artorias
-weapon_items,0x0,0x170430,Greatshield of Artorias,weapons_shields,1,5,false,600,Greatshield of Artorias,Greatshield of Artorias
-weapon_items,0x0,0x186A00,Whip,weapons_shields,1,15,true,200,Whip,Whip
-weapon_items,0x0,0x186DE8,Notched Whip,weapons_shields,1,15,true,200,Notched Whip,Notched Whip
-weapon_items,0x0,0x895440,Effigy Shield,weapons_shields,1,15,true,180,Effigy Shield,Effigy Shield
-weapon_items,0x0,0x895828,Sanctus,weapons_shields,1,15,true,410,Sanctus,Sanctus
-weapon_items,0x0,0x895C10,Bloodshield,weapons_shields,1,15,true,240,Bloodshield,Bloodshield
-weapon_items,0x0,0x895FF8,Black Iron Greatshield,weapons_shields,1,15,true,230,Black Iron Greatshield,Black Iron Greatshield
-weapon_items,0x0,0x897B50,Gold Tracer,weapons_shields,1,5,false,240,Gold Tracer,Gold Tracer
-weapon_items,0x0,0x897F38,Dark Silver Tracer,weapons_shields,1,5,false,120,Dark Silver Tracer,Dark Silver Tracer
-weapon_items,0x0,0x898320,Abyss Greatsword,weapons_shields,1,5,false,300,Abyss Greatsword,Abyss Greatsword
-weapon_items,0x0,0x898AF0,Cleansing Greatshield,weapons_shields,1,5,false,300,Cleansing Greatshield,Cleansing Greatshield
-weapon_items,0x0,0x898ED8,Stone Greataxe,weapons_shields,1,5,false,700,Stone Greataxe,Stone Greataxe
-weapon_items,0x0,0x8992C0,Four-Pronged Prow,weapons_shields,1,15,true,300,Four-Pronged Plow,Four-Pronged Plow
-weapon_items,0x0,0x8996A8,Manus Catalyst,weapons_shields,1,0,false,200,Manus Catalyst,Manus Catalyst
-weapon_items,0x0,0x899A90,Oolacile Catalyst,weapons_shields,1,0,false,55,Oolacile Catalyst,Oolacile Catalyst
-weapon_items,0x0,0x899E78,Guardian Tail,weapons_shields,1,15,true,250,Guardian Tail,Guardian Tail
-weapon_items,0x0,0x89A260,Obsidian Greatsword,weapons_shields,1,5,false,350,Obsidian Greatsword,Obsidian Greatsword
-weapon_items,0x0,0x89A648,Gough's Great Bow,weapons_shields,1,5,false,100,Gough's Greatbow,Gough's Greatbow
-ring_items,0x20000000,0x64,Havel's Ring,rings,1,,,,Havel's Ring,
-ring_items,0x20000000,0x65,Red Tearstone Ring,rings,1,,,,Red Tearstone Ring,
-ring_items,0x20000000,0x66,Darkmoon Blade Covenant Ring,rings,1,,,,Darkmoon Blade Covenant Ring,
-ring_items,0x20000000,0x67,Cat Covenant Ring,rings,1,,,,Cat Covenant Ring,
-ring_items,0x20000000,0x68,Cloranthy Ring,rings,1,,,,Cloranthy Ring,
-ring_items,0x20000000,0x69,Flame Stoneplate Ring,rings,1,,,,Flame Stoneplate Ring,
-ring_items,0x20000000,0x6A,Thunder Stoneplate Ring,rings,1,,,,Thunder Stoneplate Ring,
-ring_items,0x20000000,0x6B,Spell Stoneplate Ring,rings,1,,,,Spell Stoneplate Ring,
-ring_items,0x20000000,0x6C,Speckled Stoneplate Ring,rings,1,,,,Speckled Stoneplate Ring,
-ring_items,0x20000000,0x6D,Bloodbite Ring,rings,1,,,,Bloodbite Ring,
-ring_items,0x20000000,0x6E,Poisonbite Ring,rings,1,,,,Poisonbite Ring,
-ring_items,0x20000000,0x6F,Tiny Being's Ring,rings,1,,,,Tiny Being's Ring,
-ring_items,0x20000000,0x71,Cursebite Ring,rings,1,,,,Cursebite Ring,
-ring_items,0x20000000,0x72,White Seance Ring,rings,1,,,,White Seance Ring,
-ring_items,0x20000000,0x73,Bellowing Dragoncrest Ring,rings,1,,,,Bellowing Dragoncrest Ring,
-ring_items,0x20000000,0x74,Dusk Crown Ring,rings,1,,,,Dusk Crown Ring,
-ring_items,0x20000000,0x75,Hornet Ring,rings,1,,,,Hornet Ring,
-ring_items,0x20000000,0x77,Hawk Ring,rings,1,,,,Hawk Ring,
-ring_items,0x20000000,0x78,Ring of Steel Protection,rings,1,,,,Ring of Steel Protection,
-ring_items,0x20000000,0x79,Covetous Gold Serpent Ring,rings,1,,,,Covetous Gold Serpent Ring,
-ring_items,0x20000000,0x7A,Covetous Silver Serpent Ring,rings,1,,,,Covetous Silver Serpent Ring,
-ring_items,0x20000000,0x7B,Slumbering Dragoncrest Ring,rings,1,,,,Slumbering Dragoncrest Ring,
-ring_items,0x20000000,0x7C,Ring of Fog,rings,1,,,,Ring of Fog,
-ring_items,0x20000000,0x7D,Rusted Iron Ring,rings,1,,,,Rusted Iron Ring,
-ring_items,0x20000000,0x7E,Ring of Sacrifice,rings,1,,,,Ring of Sacrifice,
-ring_items,0x20000000,0x7F,Rare Ring of Sacrifice,rings,1,,,,Rare Ring of Sacrifice,
-ring_items,0x20000000,0x80,Dark Wood Grain Ring,rings,1,,,,Dark Wood Grain Ring,
-ring_items,0x20000000,0x82,Ring of the Sun Princess,rings,1,,,,Ring of the Sun Princess,
-ring_items,0x20000000,0x89,Old Witch's Ring,rings,1,,,,,
-ring_items,0x20000000,0x8A,Covenant of Artorias,rings,1,,,,Covenant of Artorias,
-ring_items,0x20000000,0x8B,Orange Charred Ring,rings,1,,,,Orange Charred Ring,
-ring_items,0x20000000,0x8D,Lingering Dragoncrest Ring,rings,1,,,,Lingering Dragoncrest Ring,
-ring_items,0x20000000,0x8E,Ring of the Evil Eye,rings,1,,,,Ring of the Evil Eye,
-ring_items,0x20000000,0x8F,Ring of Favor and Protection,rings,1,,,,Ring of Favor and Protection,
-ring_items,0x20000000,0x90,Leo Ring,rings,1,,,,Leo Ring,
-ring_items,0x20000000,0x91,East Wood Grain Ring,rings,1,,,,East Wood Grain Ring,
-ring_items,0x20000000,0x92,Wolf Ring,rings,1,,,,Wolf Ring,
-ring_items,0x20000000,0x93,Blue Tearstone Ring,rings,1,,,,Blue Tearstone Ring,
-ring_items,0x20000000,0x94,Ring of the Sun's Firstborn,rings,1,,,,Ring of the Sun's Firstborn,
-ring_items,0x20000000,0x95,Darkmoon Seance Ring,rings,1,,,,Dark Moon Seance Ring,
-ring_items,0x20000000,0x96,Calamity Ring,rings,1,,,,Calamity Ring,
-armor_items,0x10000000,0x4C004,Holy Robe,armor,1,10,false,350,Holy Robe,Holy Robe
-armor_items,0x10000000,0x2710,Catarina Helm,armor,1,5,false,400,Catarina Helm,Catarina Helm
-armor_items,0x10000000,0x2AF8,Catarina Armor,armor,1,5,false,400,Catarina Armor,Catarina Armor
-armor_items,0x10000000,0x2EE0,Catarina Gauntlets,armor,1,5,false,400,Catarina Gauntlets,Catarina Gauntlets
-armor_items,0x10000000,0x32C8,Catarina Leggings,armor,1,5,false,400,Catarina Leggings,Catarina Leggings
-armor_items,0x10000000,0x4E20,Paladin Helm,armor,1,5,false,500,Paladin Helm,Paladin Helm
-armor_items,0x10000000,0x5208,Paladin Armor,armor,1,5,false,500,Paladin Armor,Paladin Armor
-armor_items,0x10000000,0x55F0,Paladin Gauntlets,armor,1,5,false,500,Paladin Gauntlets,Paladin Gauntlets
-armor_items,0x10000000,0x59D8,Paladin Leggings,armor,1,5,false,500,Paladin Leggings,Paladin Leggings
-armor_items,0x10000000,0x9C40,Dark Mask,armor,1,5,false,300,Dark Mask,Dark Mask
-armor_items,0x10000000,0xA028,Dark Armor,armor,1,5,false,300,Dark Armor,Dark Armor
-armor_items,0x10000000,0xA410,Dark Gauntlets,armor,1,5,false,300,Dark Gauntlets,Dark Gauntlets
-armor_items,0x10000000,0xA7F8,Dark Leggings,armor,1,5,false,300,Dark Leggings,Dark Leggings
-armor_items,0x10000000,0xC350,Brigand Hood,armor,1,10,false,200,Brigand Hood,Brigand Hood
-armor_items,0x10000000,0xC738,Brigand Armor,armor,1,10,false,200,Brigand Armor,Brigand Armor
-armor_items,0x10000000,0xCB20,Brigand Gauntlets,armor,1,10,false,200,Brigand Gauntlets,Brigand Gauntlets
-armor_items,0x10000000,0xCF08,Brigand Trousers,armor,1,10,false,200,Brigand Trousers,Brigand Trousers
-armor_items,0x10000000,0xEA60,Shadow Mask,armor,1,5,false,200,Shadow Mask,Shadow Mask
-armor_items,0x10000000,0xEE48,Shadow Garb,armor,1,5,false,200,Shadow Garb,Shadow Garb
-armor_items,0x10000000,0xF230,Shadow Gauntlets,armor,1,5,false,200,Shadow Gauntlets,Shadow Gauntlets
-armor_items,0x10000000,0xF618,Shadow Leggings,armor,1,5,false,200,Shadow Leggings,Shadow Leggings
-armor_items,0x10000000,0x11170,Black Iron Helm,armor,1,5,false,600,Black Iron Helm,Black Iron Helm
-armor_items,0x10000000,0x11558,Black Iron Armor,armor,1,5,false,600,Black Iron Armor,Black Iron Armor
-armor_items,0x10000000,0x11940,Black Iron Gauntlets,armor,1,5,false,600,Black Iron Gauntlets,Black Iron Gauntlets
-armor_items,0x10000000,0x11D28,Black Iron Leggings,armor,1,5,false,600,Black Iron Leggings,Black Iron Leggings
-armor_items,0x10000000,0x13880,Smough's Helm,armor,1,0,false,700,Smough's Helm,Smough's Helm
-armor_items,0x10000000,0x13C68,Smough's Armor,armor,1,0,false,700,Smough's Armor,Smough's Armor
-armor_items,0x10000000,0x14050,Smough's Gauntlets,armor,1,0,false,700,Smough's Gauntlets,Smough's Gauntlets
-armor_items,0x10000000,0x14438,Smough's Leggings,armor,1,0,false,700,Smough's Leggings,Smough's Leggings
-armor_items,0x10000000,0x15F90,Six-Eyed Helm of the Channelers,armor,1,0,false,300,Six-Eyed Helm of the Channelers,Six-Eyed Helm of the Channelers
-armor_items,0x10000000,0x16378,Robe of the Channelers,armor,1,0,false,300,Robe of the Channelers,Robe of the Channelers
-armor_items,0x10000000,0x16760,Gauntlets of the Channelers,armor,1,0,false,300,Gauntlets of the Channelers,Gauntlets of the Channelers
-armor_items,0x10000000,0x16B48,Waistcloth of the Channelers,armor,1,0,false,300,Waistcloth of the Channelers,Waistcloth of the Channelers
-armor_items,0x10000000,0x186A0,Helm of Favor,armor,1,5,false,500,Helm of Favor,Helm of Favor
-armor_items,0x10000000,0x18A88,Embraced Armor of Favor,armor,1,5,false,500,Embraced Armor of Favor,Embraced Armor of Favor
-armor_items,0x10000000,0x18E70,Gauntlets of Favor,armor,1,5,false,500,Gauntlets of Favor,Gauntlets of Favor
-armor_items,0x10000000,0x19258,Leggings of Favor,armor,1,5,false,500,Leggings of Favor,Leggings of Favor
-armor_items,0x10000000,0x1ADB0,Helm of the Wise,armor,1,0,false,500,Helm of the Wise,Helm of the Wise
-armor_items,0x10000000,0x1B198,Armor of the Glorious,armor,1,0,false,500,Armor of the Glorious,Armor of the Glorious
-armor_items,0x10000000,0x1B580,Gauntlets of the Vanquisher,armor,1,0,false,500,Gauntlets of the Vanquisher,Gauntlets of the Vanquisher
-armor_items,0x10000000,0x1B968,Boots of the Explorer,armor,1,0,false,500,Boots of the Explorer,Boots of the Explorer
-armor_items,0x10000000,0x1D4C0,Stone Helm,armor,1,0,false,800,Stone Helm,Stone Helm
-armor_items,0x10000000,0x1D8A8,Stone Armor,armor,1,0,false,800,Stone Armor,Stone Armor
-armor_items,0x10000000,0x1DC90,Stone Gauntlets,armor,1,0,false,800,Stone Gauntlets,Stone Gauntlets
-armor_items,0x10000000,0x1E078,Stone Leggings,armor,1,0,false,800,Stone Leggings,Stone Leggings
-armor_items,0x10000000,0x1FBD0,Crystalline Helm,armor,1,0,false,150,Crystalline Helm,Crystalline Helm
-armor_items,0x10000000,0x1FFB8,Crystalline Armor,armor,1,0,false,150,Crystalline Armor,Crystalline Armor
-armor_items,0x10000000,0x203A0,Crystalline Gauntlets,armor,1,0,false,150,Crystalline Gauntlets,Crystalline Gauntlets
-armor_items,0x10000000,0x20788,Crystalline Leggings,armor,1,0,false,150,Crystalline Leggings,Crystalline Leggings
-armor_items,0x10000000,0x222E0,Mask of the Sealer,armor,1,5,false,400,Mask of the Sealer,Mask of the Sealer
-armor_items,0x10000000,0x226C8,Crimson Robe,armor,1,5,false,400,Crimson Robe,Crimson Robe
-armor_items,0x10000000,0x22AB0,Crimson Gloves,armor,1,5,false,400,Crimson Gloves,Crimson Gloves
-armor_items,0x10000000,0x22E98,Crimson Waistcloth,armor,1,5,false,400,Crimson Waistcloth,Crimson Waistcloth
-armor_items,0x10000000,0x249F0,Mask of Velka,armor,1,5,false,400,Mask of Velka,Mask of Velka
-armor_items,0x10000000,0x24DD8,Black Cleric Robe,armor,1,5,false,400,Black Cleric Robe,Black Cleric Robe
-armor_items,0x10000000,0x251C0,Black Manchette,armor,1,5,false,400,Black Manchette,Black Manchette
-armor_items,0x10000000,0x255A8,Black Tights,armor,1,5,false,400,Black Tights,Black Tights
-armor_items,0x10000000,0x27100,Iron Helm,armor,1,10,false,350,Iron Helm,Iron Helm
-armor_items,0x10000000,0x274E8,Armor of the Sun,armor,1,10,false,350,Armor of the Sun,Armor of the Sun
-armor_items,0x10000000,0x278D0,Iron Bracelet,armor,1,10,false,350,Iron Bracelet,Iron Bracelet
-armor_items,0x10000000,0x27CB8,Iron Leggings,armor,1,10,false,350,Iron Leggings,Iron Leggings
-armor_items,0x10000000,0x29810,Chain Helm,armor,1,10,false,300,Chain Helm,Chain Helm
-armor_items,0x10000000,0x29BF8,Chain Armor,armor,1,10,false,300,Chain Armor,Chain Armor
-armor_items,0x10000000,0x29FE0,Leather Gauntlets,armor,1,10,false,300,Leather Gauntlets,Leather Gauntlets
-armor_items,0x10000000,0x2A3C8,Chain Leggings,armor,1,10,false,300,Chain Leggings,Chain Leggings
-armor_items,0x10000000,0x2BF20,Cleric Helm,armor,1,10,false,500,Cleric Helm,Cleric Helm
-armor_items,0x10000000,0x2C308,Cleric Armor,armor,1,10,false,500,Cleric Armor,Cleric Armor
-armor_items,0x10000000,0x2C6F0,Cleric Gauntlets,armor,1,10,false,500,Cleric Gauntlets,Cleric Gauntlets
-armor_items,0x10000000,0x2CAD8,Cleric Leggings,armor,1,10,false,500,Cleric Leggings,Cleric Leggings
-armor_items,0x10000000,0x2E630,Sunlight Maggot,armor,1,0,false,80,Sunlight Maggot,Sunlight Maggot
-armor_items,0x10000000,0x30D40,Helm of Thorns,armor,1,5,false,250,Helm of Thorns,Helm of Thorns
-armor_items,0x10000000,0x31128,Armor of Thorns,armor,1,5,false,250,Armor of Thorns,Armor of Thorns
-armor_items,0x10000000,0x31510,Gauntlets of Thorns,armor,1,5,false,250,Gauntlets of Thorns,Gauntlets of Thorns
-armor_items,0x10000000,0x318F8,Leggings of Thorns,armor,1,5,false,250,Leggings of Thorns,Leggings of Thorns
-armor_items,0x10000000,0x33450,Standard Helm,armor,1,10,false,250,Standard Helm,Standard Helm
-armor_items,0x10000000,0x33838,Hard Leather Armor,armor,1,10,false,250,Hard Leather Armor,Hard Leather Armor
-armor_items,0x10000000,0x33C20,Hard Leather Gauntlets,armor,1,10,false,250,Hard Leather Gauntlets,Hard Leather Gauntlets
-armor_items,0x10000000,0x34008,Hard Leather Boots,armor,1,10,false,250,Hard Leather Boots,Hard Leather Boots
-armor_items,0x10000000,0x35B60,Sorcerer Hat,armor,1,10,false,200,Sorcerer Hat,Sorcerer Hat
-armor_items,0x10000000,0x35F48,Sorcerer Cloak,armor,1,10,false,200,Sorcerer Cloak,Sorcerer Cloak
-armor_items,0x10000000,0x36330,Sorcerer Gauntlets,armor,1,10,false,200,Sorcerer Gauntlets,Sorcerer Gauntlets
-armor_items,0x10000000,0x36718,Sorcerer Boots,armor,1,10,false,200,Sorcerer Boots,Sorcerer Boots
-armor_items,0x10000000,0x38270,Tattered Cloth Hood,armor,1,10,false,400,Tattered Cloth Hood,Tattered Cloth Hood
-armor_items,0x10000000,0x38658,Tattered Cloth Robe,armor,1,10,false,400,Tattered Cloth Robe,Tattered Cloth Robe
-armor_items,0x10000000,0x38A40,Tattered Cloth Manchette,armor,1,10,false,400,Tattered Cloth Manchette,Tattered Cloth Manchette
-armor_items,0x10000000,0x38E28,Heavy Boots,armor,1,10,false,400,Heavy Boots,Heavy Boots
-armor_items,0x10000000,0x3A980,Pharis's Hat,armor,1,10,false,250,Pharis's Hat,Pharis's Hat
-armor_items,0x10000000,0x3AD68,Leather Armor,armor,1,10,false,250,Leather Armor,Leather Armor
-armor_items,0x10000000,0x3B150,Leather Gloves,armor,1,10,false,250,Leather Gloves,Leather Gloves
-armor_items,0x10000000,0x3B538,Leather Boots,armor,1,10,false,250,Leather Boots,Leather Boots
-armor_items,0x10000000,0x3D090,Painting Guardian Hood,armor,1,5,false,150,Painting Guardian Hood,Painting Guardian Hood
-armor_items,0x10000000,0x3D478,Painting Guardian Robe,armor,1,5,false,150,Painting Guardian Robe,Painting Guardian Robe
-armor_items,0x10000000,0x3D860,Painting Guardian Gloves,armor,1,5,false,150,Painting Guardian Gloves,Painting Guardian Gloves
-armor_items,0x10000000,0x3DC48,Painting Guardian Waistcloth,armor,1,5,false,150,Painting Guardian Waistcloth,Painting Guardian Waistcloth
-armor_items,0x10000000,0x41EB0,Ornstein's Helm,armor,1,0,false,700,Ornstein's Helm,Ornstein's Helm
-armor_items,0x10000000,0x42298,Ornstein's Armor,armor,1,0,false,700,Ornstein's Armor,Ornstein's Armor
-armor_items,0x10000000,0x42680,Ornstein's Gauntlets,armor,1,0,false,700,Ornstein's Gauntlets,Ornstein's Gauntlets
-armor_items,0x10000000,0x42A68,Ornstein's Leggings,armor,1,0,false,700,Ornstein's Leggings,Ornstein's Leggings
-armor_items,0x10000000,0x445C0,Eastern Helm,armor,1,5,false,450,Eastern Helm,Eastern Helm
-armor_items,0x10000000,0x449A8,Eastern Armor,armor,1,5,false,450,Eastern Armor,Eastern Armor
-armor_items,0x10000000,0x44D90,Eastern Gauntlets,armor,1,5,false,450,Eastern Gauntlets,Eastern Gauntlets
-armor_items,0x10000000,0x45178,Eastern Leggings,armor,1,5,false,450,Eastern Leggings,Eastern Leggings
-armor_items,0x10000000,0x46CD0,Xanthous Crown,armor,1,5,false,400,Xanthous Crown,Xanthous Crown
-armor_items,0x10000000,0x470B8,Xanthous Overcoat,armor,1,5,false,400,Xanthous Overcoat,Xanthous Overcoat
-armor_items,0x10000000,0x474A0,Xanthous Gloves,armor,1,5,false,400,Xanthous Gloves,Xanthous Gloves
-armor_items,0x10000000,0x47888,Xanthous Waistcloth,armor,1,5,false,400,Xanthous Waistcloth,Xanthous Waistcloth
-armor_items,0x10000000,0x493E0,Thief Mask,armor,1,10,false,250,Thief Mask,Thief Mask
-armor_items,0x10000000,0x497C8,Black Leather Armor,armor,1,10,false,250,Black Leather Armor,Black Leather Armor
-armor_items,0x10000000,0x49BB0,Black Leather Gloves,armor,1,10,false,250,Black Leather Gloves,Black Leather Gloves
-armor_items,0x10000000,0x49F98,Black Leather Boots,armor,1,10,false,250,Black Leather Boots,Black Leather Boots
-armor_items,0x10000000,0x4BAF0,Priest's Hat,armor,1,10,false,350,Priest's Hat,Priest's Hat
-armor_items,0x10000000,0x4BED8,Holy Robe,armor,1,10,false,350,Holy Robe,Holy Robe
-armor_items,0x10000000,0x4C2C0,Travelling Gloves,armor,1,10,false,250,Travelling Gloves,Traveling Gloves
-armor_items,0x10000000,0x4C6A8,Holy Trousers,armor,1,10,false,350,Holy Trousers,Holy Trousers
-armor_items,0x10000000,0x4E200,Black Knight Helm,armor,1,5,false,550,Black Knight Helm,Black Knight Helm
-armor_items,0x10000000,0x4E5E8,Black Knight Armor,armor,1,5,false,550,Black Knight Armor,Black Knight Armor
-armor_items,0x10000000,0x4E9D0,Black Knight Gauntlets,armor,1,5,false,550,Black Knight Gauntlets,Black Knight Gauntlets
-armor_items,0x10000000,0x4EDB8,Black Knight Leggings,armor,1,5,false,550,Black Knight Leggings,Black Knight Leggings
-armor_items,0x10000000,0x50910,Crown of Dusk,armor,1,0,false,150,Crown of Dusk,Crown of Dusk
-armor_items,0x10000000,0x50CF8,Antiquated Dress,armor,1,5,false,150,Antiquated Dress,Antiquated Dress
-armor_items,0x10000000,0x510E0,Antiquated Gloves,armor,1,5,false,150,Antiquated Gloves,Antiquated Gloves
-armor_items,0x10000000,0x514C8,Antiquated Skirt,armor,1,5,false,150,Antiquated Skirt,Antiquated Skirt
-armor_items,0x10000000,0x53020,Witch Hat,armor,1,5,false,250,Witch Hat,Witch Hat
-armor_items,0x10000000,0x53408,Witch Cloak,armor,1,5,false,250,Witch Cloak,Witch Cloak
-armor_items,0x10000000,0x537F0,Witch Gloves,armor,1,5,false,250,Witch Gloves,Witch Gloves
-armor_items,0x10000000,0x53BD8,Witch Skirt,armor,1,5,false,250,Witch Skirt,Witch Skirt
-armor_items,0x10000000,0x55730,Elite Knight Helm,armor,1,10,false,450,Elite Knight Helm,Elite Knight Helm
-armor_items,0x10000000,0x55B18,Elite Knight Armor,armor,1,10,false,450,Elite Knight Armor,Elite Knight Armor
-armor_items,0x10000000,0x55F00,Elite Knight Gauntlets,armor,1,10,false,450,Elite Knight Gauntlets,Elite Knight Gauntlets
-armor_items,0x10000000,0x562E8,Elite Knight Leggings,armor,1,10,false,450,Elite Knight Leggings,Elite Knight Leggings
-armor_items,0x10000000,0x57E40,Wanderer Hood,armor,1,10,false,400,,Wanderer Hood
-armor_items,0x10000000,0x58228,Wanderer Coat,armor,1,10,false,400,Wanderer Coat,Wanderer Coat
-armor_items,0x10000000,0x58610,Wanderer Manchette,armor,1,10,false,400,Wanderer Manchette,Wanderer Manchette
-armor_items,0x10000000,0x589F8,Wanderer Boots,armor,1,10,false,400,Wanderer Boots,Wanderer Boots
-armor_items,0x10000000,0x5CC60,Big Hat,armor,1,5,false,250,Big Hat,Big Hat
-armor_items,0x10000000,0x5D048,Sage Robe,armor,1,5,false,250,Sage Robe,Sage Robe
-armor_items,0x10000000,0x5D430,Travelling Gloves,armor,1,10,false,250,Travelling Gloves,Traveling Gloves
-armor_items,0x10000000,0x5D818,Travelling Boots,armor,1,10,false,250,Traveling Gloves,Traveling Boots
-armor_items,0x10000000,0x5F370,Knight Helm,armor,1,10,false,400,Knight Helm,Knight Helm
-armor_items,0x10000000,0x5F758,Knight Armor,armor,1,10,false,400,Knight Armor,Knight Armor
-armor_items,0x10000000,0x5FB40,Knight Gauntlets,armor,1,10,false,400,Knight Gauntlets,Knight Gauntlets
-armor_items,0x10000000,0x5FF28,Knight Leggings,armor,1,10,false,400,Knight Leggings,Knight Leggings
-armor_items,0x10000000,0x61A80,Dingy Hood,armor,1,10,false,150,Dingy Hood,Dingy Hood
-armor_items,0x10000000,0x61E68,Dingy Robe,armor,1,10,false,150,Dingy Robe,Dingy Robe
-armor_items,0x10000000,0x62250,Dingy Gloves,armor,1,10,false,150,Dingy Gloves,Dingy Gloves
-armor_items,0x10000000,0x62638,Blood-Stained Skirt,armor,1,10,false,150,Blood-Stained Skirt,Blood-Stained Skirt
-armor_items,0x10000000,0x64190,Maiden Hood,armor,1,10,false,150,Maiden Hood,Maiden Hood
-armor_items,0x10000000,0x64578,Maiden Robe,armor,1,10,false,150,Maiden Robe,Maiden Robe
-armor_items,0x10000000,0x64960,Maiden Gloves,armor,1,10,false,150,Maiden Gloves,Maiden Gloves
-armor_items,0x10000000,0x64D48,Maiden Skirt,armor,1,10,false,150,Maiden Skirt,Maiden Skirt
-armor_items,0x10000000,0x668A0,Silver Knight Helm,armor,1,5,false,600,Silver Knight Helm,Silver Knight Helm
-armor_items,0x10000000,0x66C88,Silver Knight Armor,armor,1,5,false,600,Silver Knight Armor,Silver Knight Armor
-armor_items,0x10000000,0x67070,Silver Knight Gauntlets,armor,1,5,false,600,Silver Knight Gauntlets,Silver Knight Gauntlets
-armor_items,0x10000000,0x67458,Silver Knight Leggings,armor,1,5,false,600,Silver Knight Leggings,Silver Knight Leggings
-armor_items,0x10000000,0x6B6C0,Havel's Helm,armor,1,0,false,900,Havel's Helm,Havel's Helm
-armor_items,0x10000000,0x6BAA8,Havel's Armor,armor,1,0,false,900,Havel's Armor,Havel's Armor
-armor_items,0x10000000,0x6BE90,Havel's Gauntlets,armor,1,0,false,900,Havel's Gauntlets,Havel's Gauntlets
-armor_items,0x10000000,0x6C278,Havel's Leggings,armor,1,0,false,900,Havel's Leggings,Havel's Leggings
-armor_items,0x10000000,0x6DDD0,Brass Helm,armor,1,5,false,600,Brass Helm,Brass Helm
-armor_items,0x10000000,0x6E1B8,Brass Armor,armor,1,5,false,600,Brass Armor,Brass Armor
-armor_items,0x10000000,0x6E5A0,Brass Gauntlets,armor,1,5,false,600,Brass Gauntlets,Brass Gauntlets
-armor_items,0x10000000,0x6E988,Brass Leggings,armor,1,5,false,600,Brass Leggings,Brass Leggings
-armor_items,0x10000000,0x704E0,Gold-Hemmed Black Hood,armor,1,0,false,400,Gold-Hemmed Black Hood,Gold-Hemmed Black Hood
-armor_items,0x10000000,0x708C8,Gold-Hemmed Black Cloak,armor,1,0,false,400,Gold-Hemmed Black Cloak,Gold-Hemmed Black Cloak
-armor_items,0x10000000,0x70CB0,Gold-Hemmed Black Gloves,armor,1,0,false,400,Gold-Hemmed Black Gloves,Gold-Hemmed Black Gloves
-armor_items,0x10000000,0x71098,Gold-Hemmed Black Skirt,armor,1,0,false,400,Gold-Hemmed Black Skirt,Gold-Hemmed Black Skirt
-armor_items,0x10000000,0x72BF0,Golem Helm,armor,1,0,false,700,Golem Helm,Golem Helm
-armor_items,0x10000000,0x72FD8,Golem Armor,armor,1,0,false,700,Golem Armor,Golem Armor
-armor_items,0x10000000,0x733C0,Golem Gauntlets,armor,1,0,false,700,Golem Gauntlets,Golem Gauntlets
-armor_items,0x10000000,0x737A8,Golem Leggings,armor,1,0,false,700,Golem Leggings,Golem Leggings
-armor_items,0x10000000,0x75300,Hollow Soldier Helm,armor,1,10,false,200,Hollow Soldier Helm,Hollow Soldier Helm
-armor_items,0x10000000,0x756E8,Hollow Soldier Armor,armor,1,10,false,200,Hollow Soldier Armor,Hollow Soldier Armor
-armor_items,0x10000000,0x75EB8,Hollow Soldier Waistcloth,armor,1,10,false,200,Hollow Soldier Waistcloth,Hollow Soldier Waistcloth
-armor_items,0x10000000,0x77A10,Steel Helm,armor,1,10,false,500,Steel Helm,Steel Helm
-armor_items,0x10000000,0x77DF8,Steel Armor,armor,1,10,false,500,Steel Armor,Steel Armor
-armor_items,0x10000000,0x781E0,Steel Gauntlets,armor,1,10,false,500,Steel Gauntlets,Steel Gauntlets
-armor_items,0x10000000,0x785C8,Steel Leggings,armor,1,10,false,500,Steel Leggings,Steel Leggings
-armor_items,0x10000000,0x7A120,Hollow Thief's Hood,armor,1,10,false,250,Hollow Thief's Hood,Hollow Thief's Hood
-armor_items,0x10000000,0x7A508,Hollow Thief's Leather Armor,armor,1,10,false,250,Hollow Thief's Leather Armor,Hollow Thief's Leather Armor
-armor_items,0x10000000,0x7ACD8,Hollow Thief's Tights,armor,1,10,false,250,Hollow Thief's Tights,Hollow Thief's Tights
-armor_items,0x10000000,0x7C830,Balder Helm,armor,1,10,false,450,Balder Helm,Balder Helm
-armor_items,0x10000000,0x7CC18,Balder Armor,armor,1,10,false,450,Balder Armor,Balder Armor
-armor_items,0x10000000,0x7D000,Balder Gauntlets,armor,1,10,false,450,Balder Gauntlets,Balder Gauntlets
-armor_items,0x10000000,0x7D3E8,Balder Leggings,armor,1,10,false,450,Balder Leggings,Balder Leggings
-armor_items,0x10000000,0x7EF40,Hollow Warrior Helm,armor,1,10,false,250,Hollow Warrior Helm,Hollow Warrior Helm
-armor_items,0x10000000,0x7F328,Hollow Warrior Armor,armor,1,10,false,250,Hollow Warrior Armor,Hollow Warrior Armor
-armor_items,0x10000000,0x7FAF8,Hollow Warrior Waistcloth,armor,1,10,false,250,Hollow Warrior Waistcloth,Hollow Warrior Waistcloth
-armor_items,0x10000000,0x81650,Giant Helm,armor,1,5,false,600,Giant Helm,Giant Helm
-armor_items,0x10000000,0x81A38,Giant Armor,armor,1,5,false,600,Giant Armor,Giant Armor
-armor_items,0x10000000,0x81E20,Giant Gauntlets,armor,1,5,false,600,Giant Gauntlets,Giant Gauntlets
-armor_items,0x10000000,0x82208,Giant Leggings,armor,1,5,false,600,Giant Leggings,Giant Leggings
-armor_items,0x10000000,0x83D60,Crown of the Dark Sun,armor,1,0,false,300,Crown of the Dark Sun,Crown of the Dark Sun
-armor_items,0x10000000,0x84148,Moonlight Robe,armor,1,0,false,80,Moonlight Robe,Moonlight Robe
-armor_items,0x10000000,0x84530,Moonlight Gloves,armor,1,0,false,80,Moonlight Gloves,Moonlight Gloves
-armor_items,0x10000000,0x84918,Moonlight Waistcloth,armor,1,0,false,80,Moonlight Waistcloth,Moonlight Waistcloth
-armor_items,0x10000000,0x86470,Crown of the Great Lord,armor,1,0,false,800,Crown of the Great Lord,Crown of the Great Lord
-armor_items,0x10000000,0x86858,Robe of the Great Lord,armor,1,0,false,400,Robe of the Great Lord,Robe of the Great Lord
-armor_items,0x10000000,0x86C40,Bracelet of the Great Lord,armor,1,0,false,400,Bracelet of the Great Lord,Bracelet of the Great Lord
-armor_items,0x10000000,0x87028,Anklet of the Great Lord,armor,1,0,false,400,Anklet of the Great Lord,Anklet of the Great Lord
-armor_items,0x10000000,0x88B80,Sack,armor,1,10,false,150,Sack,Sack
-armor_items,0x10000000,0x8B290,Symbol of Avarice,armor,1,0,false,300,Symbol of Avarice,Symbol of Avarice
-armor_items,0x10000000,0x8D9A0,Royal Helm,armor,1,10,false,500,Royal Helm,Royal Helm
-armor_items,0x10000000,0x900B0,Mask of the Father,armor,1,0,false,200,Mask of the Father,Mask of the Father
-armor_items,0x10000000,0x927C0,Mask of the Mother,armor,1,0,false,200,Mask of the Mother,Mask of the Mother
-armor_items,0x10000000,0x94ED0,Mask of the Child,armor,1,0,false,200,Mask of the Child,Mask of the Child
-armor_items,0x10000000,0x975E0,Fang Boar Helm,armor,1,5,false,600,Fang Boar Helm,Fang Boar Helm
-armor_items,0x10000000,0x99CF0,Gargoyle Helm,armor,1,5,false,500,Gargoyle Helm,Gargoyle Helm
-armor_items,0x10000000,0x9C400,Black Sorcerer Hat,armor,1,10,false,200,Black Sorcerer Hat,Black Sorcerer Hat
-armor_items,0x10000000,0x9C7E8,Black Sorcerer Cloak,armor,1,10,false,200,Black Sorcerer Cloak,Black Sorcerer Cloak
-armor_items,0x10000000,0x9CBD0,Black Sorcerer Gauntlets,armor,1,10,false,200,Black Sorcerer Gauntlets,Black Sorcerer Gauntlets
-armor_items,0x10000000,0x9CFB8,Black Sorcerer Boots,armor,1,10,false,200,Black Sorcerer Boots,Black Sorcerer Boots
-armor_items,0x10000000,0xA1220,Helm of Artorias,armor,1,5,false,600,Helm of Artorias,Helm of Artorias
-armor_items,0x10000000,0xA1608,Armor of Artorias,armor,1,5,false,600,Armor of Artorias,Armor of Artorias
-armor_items,0x10000000,0xA19F0,Gauntlets of Artorias,armor,1,5,false,600,Gauntlets of Artorias,Gauntlets of Artorias
-armor_items,0x10000000,0xA1DD8,Leggings of Artorias,armor,1,5,false,600,Leggings of Artorias,Leggings of Artorias
-armor_items,0x10000000,0xA3930,Porcelain Mask,armor,1,5,false,250,Porcelain Mask,Porcelain Mask
-armor_items,0x10000000,0xA3D18,Lord's Blade Robe,armor,1,5,false,250,Lord's Blade Robe,Lord's Blade Robe
-armor_items,0x10000000,0xA4100,Lord's Blade Gloves,armor,1,5,false,250,Lord's Blade Gloves,Lord's Blade Gloves
-armor_items,0x10000000,0xA44E8,Lord's Blade Waistcloth,armor,1,5,false,250,Lord's Blade Waistcloth,Lord's Blade Waistcloth
-armor_items,0x10000000,0xA6040,Gough's Helm,armor,1,5,false,450,Gough's Helm,Gough's Helm
-armor_items,0x10000000,0xA6428,Gough's Armor,armor,1,5,false,450,Gough's Armor,Gough's Armor
-armor_items,0x10000000,0xA6810,Gough's Gauntlets,armor,1,5,false,450,Gough's Gauntlets,Gough's Gauntlets
-armor_items,0x10000000,0xA6BF8,Gough's Leggings,armor,1,5,false,450,Gough's Leggings,Gough's Leggings
-armor_items,0x10000000,0xA8750,Guardian Helm,armor,1,0,false,800,Guardian Helm,Guardian Helm
-armor_items,0x10000000,0xA8B38,Guardian Armor,armor,1,0,false,800,Guardian Armor,Guardian Armor
-armor_items,0x10000000,0xA8F20,Guardian Gauntlets,armor,1,0,false,800,Guardian Gaunlets,Guardian Gauntlets
-armor_items,0x10000000,0xA9308,Guardian Leggings,armor,1,0,false,800,Guardian Leggings,Guardian Leggings
-armor_items,0x10000000,0xAAE60,Snickering Top Hat,armor,1,5,false,300,Snickering Top Hat,Snickering Top Hat
-armor_items,0x10000000,0xAB248,Chester's Long Coat,armor,1,5,false,300,Chester's Long Coat,Chester`s Long Coat
-armor_items,0x10000000,0xAB630,Chester's Gloves,armor,1,5,false,300,Chester's Gloves,Chester`s Gloves
-armor_items,0x10000000,0xABA18,Chester's Trousers,armor,1,5,false,300,Chester's Trousers,Chester`s Trousers
-armor_items,0x10000000,0xAD570,Bloated Head,armor,1,0,false,150,Bloated Head,Bloated Head
-armor_items,0x10000000,0xAFC80,Bloated Sorcerer Head,armor,1,0,false,150,Bloated Sorcerer Head,Bloated Sorcerer Head
-armor_items,0x10000000,0xDBBA0,No helm,armor,1,0,false,0,Naked,Naked
-armor_items,0x10000000,0xDBF88,No armor,armor,1,0,false,0,Naked,Naked
-armor_items,0x10000000,0xDC370,No gauntlets,armor,1,0,false,0,Naked,Naked
-armor_items,0x10000000,0xDC758,No legs,armor,1,0,false,0,Naked,Naked
-key_items,0x40000000,0x180,Peculiar Doll,key_items,1,,,,,
-key_items,0x40000000,0x320,Large Ember,key_items,1,,,,,
-key_items,0x40000000,0x321,Very Large Ember,key_items,1,,,,,
-key_items,0x40000000,0x322,Crystal Ember,key_items,1,,,,,
-key_items,0x40000000,0x326,Large Magic Ember,key_items,1,,,,,
-key_items,0x40000000,0x327,Enchanted Ember,key_items,1,,,,,
-key_items,0x40000000,0x328,Divine Ember,key_items,1,,,,,
-key_items,0x40000000,0x329,Large Divine Ember,key_items,1,,,,,
-key_items,0x40000000,0x32A,Dark Ember,key_items,1,,,,,
-key_items,0x40000000,0x32C,Large Flame Ember,key_items,1,,,,,
-key_items,0x40000000,0x32D,Chaos Flame Ember,key_items,1,,,,,
-key_items,0x40000000,0x7D1,Basement Key,key_items,1,,,,,
-key_items,0x40000000,0x7D2,Crest of Artorias,key_items,1,,,,,
-key_items,0x40000000,0x7D3,Cage Key,key_items,1,,,,,
-key_items,0x40000000,0x7D4,Archive Tower Cell Key,key_items,1,,,,,
-key_items,0x40000000,0x7D5,Archive Tower Giant Door Key,key_items,1,,,,,
-key_items,0x40000000,0x7D6,Archive Tower Giant Cell Key,key_items,1,,,,,
-key_items,0x40000000,0x7D7,Blighttown Key,key_items,1,,,,,
-key_items,0x40000000,0x7D8,Key to New Londo Ruins,key_items,1,,,,,
-key_items,0x40000000,0x7D9,Annex Key,key_items,1,,,,,
-key_items,0x40000000,0x7DA,Dungeon Cell Key,key_items,1,,,,,
-key_items,0x40000000,0x7DB,Big Pilgrim's Key,key_items,1,,,,,
-key_items,0x40000000,0x7DC,Undead Asylum F2 East Key,key_items,1,,,,,
-key_items,0x40000000,0x7DD,Key to the Seal,key_items,1,,,,,
-key_items,0x40000000,0x7DE,Key to Depths,key_items,1,,,,,
-key_items,0x40000000,0x7E0,Undead Asylum F2 West Key,key_items,1,,,,,
-key_items,0x40000000,0x7E1,Mystery Key,key_items,1,,,,,
-key_items,0x40000000,0x7E2,Sewer Chamber Key,key_items,1,,,,,
-key_items,0x40000000,0x7E3,Watchtower Basement Key,key_items,1,,,,,
-key_items,0x40000000,0x7E4,Archive Tower Extra Key,key_items,1,,,,,
-key_items,0x40000000,0x7E5,Residence Key,key_items,1,,,,,
-key_items,0x40000000,0x7E6,Crest Key,key_items,1,,,,,
-key_items,0x40000000,0x834,Master Key,key_items,1,,,,,
-key_items,0x40000000,0x9C4,Lord Soul (Nito),key_items,1,,,,,
-key_items,0x40000000,0x9C5,Lord Soul (Bed of Chaos),key_items,1,,,,,
-key_items,0x40000000,0x9C6,Bequeathed Lord Soul Shard (Four Kings),key_items,1,,,,,
-key_items,0x40000000,0x9C7,Bequeathed Lord Soul Shard (Seath),key_items,1,,,,,
-key_items,0x40000000,0x9CE,Lordvessel,key_items,1,,,,,
-key_items,0x40000000,0x9D8,Broken Pendant,key_items,1,,,,,
-key_items,0x40000000,0xA28,Weapon Smithbox,key_items,1,,,,,
-key_items,0x40000000,0xA29,Armor Smithbox,key_items,1,,,,,
-key_items,0x40000000,0xA2A,Repairbox,key_items,1,,,,,
-key_items,0x40000000,0xA2F,Rite of Kindling,key_items,1,,,,,
-key_items,0x40000000,0xA30,Bottomless Box,key_items,1,,,,,
-usable_items,0x40000000,0x64,White Sign Soapstone,consumables,1,,,,White Sign Soapstone,
-usable_items,0x40000000,0x65,Red Sign Soapstone,consumables,1,,,,Red Sign Soapstone,
-usable_items,0x40000000,0x66,Red Eye Orb,consumables,1,,,,Red Eye Orb,
-usable_items,0x40000000,0x67,Black Separation Crystal,consumables,1,,,,Black Separation Crysta,
-usable_items,0x40000000,0x6A,Orange Guidance Soapstone,consumables,1,,,,Orange Guidance Soapstone,
-usable_items,0x40000000,0x6C,Book of the Guilty,consumables,1,,,,,
-usable_items,0x40000000,0x6D,Eye of Death,consumables,99,,,,Eye Of Death,
-usable_items,0x40000000,0x6F,Cracked Red Eye Orb,consumables,99,,,,Cracked Red Eye Orb,
-usable_items,0x40000000,0x70,Servant Roster,consumables,1,,,,,
-usable_items,0x40000000,0x71,Blue Eye Orb,consumables,1,,,,Blue Eye Orb,
-usable_items,0x40000000,0x72,Dragon Eye,consumables,1,,,,Dragon Eye,
-usable_items,0x40000000,0x73,Black Eye Orb,consumables,1,,,,,
-usable_items,0x40000000,0x75,Darksign,consumables,1,,,,Darksign,
-usable_items,0x40000000,0x76,Purple Coward's Crystal,consumables,1,,,,Purple Coward's Crystal,
-usable_items,0x40000000,0xC8,Estus Flask (empty),consumables,1,,,,,
-usable_items,0x40000000,0xC9,Estus Flask,consumables,20,,,,Estus Flask,
-usable_items,0x40000000,0xCA,Estus Flask + 1 (empty),consumables,1,,,,,
-usable_items,0x40000000,0xCB,Estus Flask + 1,consumables,20,,,,,
-usable_items,0x40000000,0xCC,Estus Flask + 2 (empty),consumables,1,,,,,
-usable_items,0x40000000,0xCD,Estus Flask + 2,consumables,20,,,,,
-usable_items,0x40000000,0xCE,Estus Flask + 3 (empty),consumables,1,,,,,
-usable_items,0x40000000,0xCF,Estus Flask + 3,consumables,20,,,,,
-usable_items,0x40000000,0xD0,Estus Flask + 4 (empty),consumables,1,,,,,
-usable_items,0x40000000,0xD1,Estus Flask + 4,consumables,20,,,,,
-usable_items,0x40000000,0xD2,Estus Flask + 5 (empty),consumables,1,,,,,
-usable_items,0x40000000,0xD3,Estus Flask + 5,consumables,20,,,,,
-usable_items,0x40000000,0xD4,Estus Flask + 6 (empty),consumables,1,,,,,
-usable_items,0x40000000,0xD5,Estus Flask + 6,consumables,20,,,,,
-usable_items,0x40000000,0xD6,Estus Flask + 7 (empty),consumables,1,,,,,
-usable_items,0x40000000,0xD7,Estus Flask + 7,consumables,20,,,,,
-usable_items,0x40000000,0xDC,Silver Pendant,consumables,99,,,,Silver Pendant,
-usable_items,0x40000000,0xE6,Elizabeth's Mushroom,consumables,99,,,,Elizabeth's Mushroom,
-usable_items,0x40000000,0xF0,Divine Blessing,consumables,99,,,,Divine Blessing,
-usable_items,0x40000000,0x104,Green Blossom,consumables,99,,,,Green Blossom,
-usable_items,0x40000000,0x10E,Bloodred Moss Clump,consumables,99,,,,Bloodred Moss Clump,
-usable_items,0x40000000,0x10F,Purple Moss Clump,consumables,99,,,,Purple Moss Clump,
-usable_items,0x40000000,0x110,Blooming Purple Moss Clump,consumables,99,,,,Blooming Purple Moss Clump,
-usable_items,0x40000000,0x112,Purging Stone,consumables,99,,,,Purging Stone,
-usable_items,0x40000000,0x113,Egg Vermifuge,consumables,99,,,,Egg Vermifuge,
-usable_items,0x40000000,0x118,Repair Powder,consumables,99,,,,Repair Powder,
-usable_items,0x40000000,0x122,Throwing Knife,consumables,99,,,,Throwing Knife,
-usable_items,0x40000000,0x123,Poison Throwing Knife,consumables,99,,,,Poison Throwing Knife,
-usable_items,0x40000000,0x124,Firebomb,consumables,99,,,,Firebomb,
-usable_items,0x40000000,0x125,Dung Pie,consumables,99,,,,Dung Pie,
-usable_items,0x40000000,0x126,Alluring Skull,consumables,99,,,,Alluring Skull,
-usable_items,0x40000000,0x128,Lloyd's Talisman,consumables,99,,,,Lloyd's Talisman,
-usable_items,0x40000000,0x129,Black Firebomb,consumables,99,,,,Black Firebomb,
-usable_items,0x40000000,0x136,Charcoal Pine Resin,consumables,99,,,,Charcoal Pine Resin,
-usable_items,0x40000000,0x137,Gold Pine Resin,consumables,99,,,,Gold Pine Resin,
-usable_items,0x40000000,0x138,Transient Curse,consumables,99,,,,Transient Curse,
-usable_items,0x40000000,0x139,Rotten Pine Resin,consumables,99,,,,Rotten Pine Resin,
-usable_items,0x40000000,0x14A,Homeward Bone,consumables,99,,,,Homeward Bone,
-usable_items,0x40000000,0x172,Prism Stone,consumables,99,,,,Prism Stone,
-usable_items,0x40000000,0x173,Binoculars,consumables,1,,,,Binoculars,
-usable_items,0x40000000,0x175,Indictment,consumables,99,,,,,
-usable_items,0x40000000,0x176,Souvenir of Reprisal,consumables,99,,,,,
-usable_items,0x40000000,0x177,Sunlight Medal,consumables,99,,,,,
-usable_items,0x40000000,0x178,Pendant,consumables,99,,,,,
-usable_items,0x40000000,0x179,Dragon Head Stone,consumables,99,,,,Dragon Head Stone,
-usable_items,0x40000000,0x17A,Dragon Torso Stone,consumables,99,,,,Dragon Torso Stone,
-usable_items,0x40000000,0x17C,Rubbish,consumables,99,,,,,
-usable_items,0x40000000,0x17D,Copper Coin,consumables,99,,,,,
-usable_items,0x40000000,0x17E,Silver Coin,consumables,99,,,,,
-usable_items,0x40000000,0x17F,Gold Coin,consumables,99,,,,,
-usable_items,0x40000000,0x181,Dried Finger,consumables,1,,,,Dried Finger,
-usable_items,0x40000000,0x186,Fire Keeper Soul (Anastacia of Astora),consumables,1,,,,Fire Keeper Soul,
-usable_items,0x40000000,0x187,Fire Keeper Soul (Darkmoon Knightess),consumables,1,,,,Fire Keeper Soul,
-usable_items,0x40000000,0x188,Fire Keeper Soul (Daughter of Chaos),consumables,1,,,,Fire Keeper Soul,
-usable_items,0x40000000,0x189,Fire Keeper Soul (New Londo),consumables,1,,,,Fire Keeper Soul,
-usable_items,0x40000000,0x18A,Fire Keeper Soul (Blighttown),consumables,1,,,,Fire Keeper Soul,
-usable_items,0x40000000,0x18B,Fire Keeper Soul (Duke's Archives),consumables,1,,,,Fire Keeper Soul,
-usable_items,0x40000000,0x18C,Fire Keeper Soul (Undead Parish),consumables,1,,,,Fire Keeper Soul,
-usable_items,0x40000000,0x190,Soul of a Lost Undead,consumables,99,,,,,
-usable_items,0x40000000,0x191,Large Soul of a Lost Undead,consumables,99,,,,,
-usable_items,0x40000000,0x192,Soul of a Nameless Soldier,consumables,99,,,,,
-usable_items,0x40000000,0x193,Large Soul of a Nameless Soldier,consumables,99,,,,,
-usable_items,0x40000000,0x194,Soul of a Proud Knight,consumables,99,,,,,
-usable_items,0x40000000,0x195,Large Soul of a Proud Knight,consumables,99,,,,,
-usable_items,0x40000000,0x196,Soul of a Brave Warrior,consumables,99,,,,,
-usable_items,0x40000000,0x197,Large Soul of a Brave Warrior,consumables,99,,,,,
-usable_items,0x40000000,0x198,Soul of a Hero,consumables,99,,,,,
-usable_items,0x40000000,0x199,Soul of a Great Hero,consumables,99,,,,,
-usable_items,0x40000000,0x1F4,Humanity,consumables,99,,,,Humanity,
-usable_items,0x40000000,0x1F5,Twin Humanities,consumables,99,,,,Twin Humanities,
-usable_items,0x40000000,0x1FE,Hello Carving,consumables,1,,,,,
-usable_items,0x40000000,0x1FF,Thank You Carving,consumables,1,,,,,
-usable_items,0x40000000,0x200,Very Good! Carving,consumables,1,,,,,
-usable_items,0x40000000,0x201,I'm Sorry Carving,consumables,1,,,,,
-usable_items,0x40000000,0x202,Help Me! Carving,consumables,1,,,,,
-usable_items,0x40000000,0x2BC,Soul of Quelaag,consumables,99,,,,,
-usable_items,0x40000000,0x2BD,Soul of Sif,consumables,99,,,,,
-usable_items,0x40000000,0x2BE,Soul of Gwyn,consumables,99,,,,,
-usable_items,0x40000000,0x2BF,Core of an Iron Golem,consumables,99,,,,,
-usable_items,0x40000000,0x2C0,Soul of Ornstein,consumables,99,,,,,
-usable_items,0x40000000,0x2C1,Soul of the Moonlight Butterfly,consumables,99,,,,,
-usable_items,0x40000000,0x2C2,Soul of Smough,consumables,99,,,,,
-usable_items,0x40000000,0x2C3,Soul of Priscilla,consumables,99,,,,,
-usable_items,0x40000000,0x2C4,Soul of Gwyndolin,consumables,99,,,,,
-usable_items,0x40000000,0x2C5,Guardian Soul,consumables,99,,,,,
-usable_items,0x40000000,0x2C6,Soul of Artorias,consumables,99,,,,,
-usable_items,0x40000000,0x2C7,Soul of Manus,consumables,99,,,,,
-ammunition_items,0x0,0x1E8480,Standard Arrow,ammunition,999,,,,,
-ammunition_items,0x0,0x1E8868,Large Arrow,ammunition,999,,,,,
-ammunition_items,0x0,0x1E8C50,Feather Arrow,ammunition,999,,,,,
-ammunition_items,0x0,0x1E9038,Fire Arrow,ammunition,999,,,,,
-ammunition_items,0x0,0x1E9420,Poison Arrow,ammunition,999,,,,,
-ammunition_items,0x0,0x1E9808,Moonlight Arrow,ammunition,999,,,,,
-ammunition_items,0x0,0x1E9BF0,Wooden Arrow,ammunition,999,,,,,
-ammunition_items,0x0,0x1E9FD8,Dragonslayer Arrow,ammunition,999,,,,,
-ammunition_items,0x0,0x1EA3C0,Gough's Great Arrow,ammunition,999,,,,,
-ammunition_items,0x0,0x200B20,Standard Bolt,ammunition,999,,,,,
-ammunition_items,0x0,0x200F08,Heavy Bolt,ammunition,999,,,,,
-ammunition_items,0x0,0x2012F0,Sniper Bolt,ammunition,999,,,,,
-ammunition_items,0x0,0x2016D8,Wood Bolt,ammunition,999,,,,,
-ammunition_items,0x0,0x201AC0,Lightning Bolt,ammunition,999,,,,,
-material_items,0x40000000,0x3E8,Titanite Shard,materials,99,,,,,
-material_items,0x40000000,0x3F2,Large Titanite Shard,materials,99,,,,,
-material_items,0x40000000,0x3FC,Green Titanite Shard,materials,99,,,,,
-material_items,0x40000000,0x406,Titanite Chunk,materials,99,,,,,
-material_items,0x40000000,0x410,Blue Titanite Chunk,materials,99,,,,,
-material_items,0x40000000,0x41A,White Titanite Chunk,materials,99,,,,,
-material_items,0x40000000,0x424,Red Titanite Chunk,materials,99,,,,,
-material_items,0x40000000,0x42E,Titanite Slab,materials,99,,,,,
-material_items,0x40000000,0x438,Blue Titanite Slab,materials,99,,,,,
-material_items,0x40000000,0x442,White Titanite Slab,materials,99,,,,,
-material_items,0x40000000,0x44C,Red Titanite Slab,materials,99,,,,,
-material_items,0x40000000,0x456,Dragon Scale,materials,99,,,,,
-material_items,0x40000000,0x460,Demon Titanite,materials,99,,,,,
-material_items,0x40000000,0x46A,Twinkling Titanite,materials,99,,,,,
-magic_items,0x40000000,0xBB8,Sorcery: Soul Arrow,spells,99,,,,,
-magic_items,0x40000000,0xBC2,Sorcery: Great Soul Arrow,spells,99,,,,,
-magic_items,0x40000000,0xBCC,Sorcery: Heavy Soul Arrow,spells,99,,,,,
-magic_items,0x40000000,0xBD6,Sorcery: Great Heavy Soul Arrow,spells,99,,,,,
-magic_items,0x40000000,0xBE0,Sorcery: Homing Soulmass,spells,99,,,,,
-magic_items,0x40000000,0xBEA,Sorcery: Homing Crystal Soulmass,spells,99,,,,,
-magic_items,0x40000000,0xBF4,Sorcery: Soul Spear,spells,99,,,,,
-magic_items,0x40000000,0xBFE,Sorcery: Crystal Soul Spear,spells,99,,,,,
-magic_items,0x40000000,0xC1C,Sorcery: Magic Weapon,spells,99,,,,,
-magic_items,0x40000000,0xC26,Sorcery: Great Magic Weapon,spells,99,,,,,
-magic_items,0x40000000,0xC30,Sorcery: Crystal Magic Weapon,spells,99,,,,,
-magic_items,0x40000000,0xCE4,Sorcery: Magic Shield,spells,99,,,,,
-magic_items,0x40000000,0xCEE,Sorcery: Strong Magic Shield,spells,99,,,,,
-magic_items,0x40000000,0xD48,Sorcery: Hidden Weapon,spells,99,,,,,
-magic_items,0x40000000,0xD52,Sorcery: Hidden Body,spells,99,,,,,
-magic_items,0x40000000,0xDAC,Sorcery: Cast Light,spells,99,,,,,
-magic_items,0x40000000,0xDB6,Sorcery: Hush,spells,99,,,,,
-magic_items,0x40000000,0xDC0,Sorcery: Aural Decoy,spells,99,,,,,
-magic_items,0x40000000,0xDCA,Sorcery: Repair,spells,99,,,,,
-magic_items,0x40000000,0xDD4,Sorcery: Fall Control,spells,99,,,,,
-magic_items,0x40000000,0xDDE,Sorcery: Chameleon,spells,99,,,,,
-magic_items,0x40000000,0xE10,Sorcery: Resist Curse,spells,99,,,,,
-magic_items,0x40000000,0xE1A,Sorcery: Remedy,spells,99,,,,,
-magic_items,0x40000000,0xE74,Sorcery: White Dragon Breath,spells,99,,,,,
-magic_items,0x40000000,0xE7E,Sorcery: Dark Orb,spells,99,,,,,
-magic_items,0x40000000,0xE88,Sorcery: Dark Bead,spells,99,,,,,
-magic_items,0x40000000,0xE92,Sorcery: Dark Fog,spells,99,,,,,
-magic_items,0x40000000,0xE9C,Sorcery: Pursuers,spells,99,,,,,
-magic_items,0x40000000,0xFA0,Pyromancy: Fireball,spells,99,,,,,
-magic_items,0x40000000,0xFAA,Pyromancy: Fire Orb,spells,99,,,,,
-magic_items,0x40000000,0xFB4,Pyromancy: Great Fireball,spells,99,,,,,
-magic_items,0x40000000,0xFBE,Pyromancy: Firestorm,spells,99,,,,,
-magic_items,0x40000000,0xFC8,Pyromancy: Fire Tempest,spells,99,,,,,
-magic_items,0x40000000,0xFD2,Pyromancy: Fire Surge,spells,99,,,,,
-magic_items,0x40000000,0xFDC,Pyromancy: Fire Whip,spells,99,,,,,
-magic_items,0x40000000,0x1004,Pyromancy: Combustion,spells,99,,,,,
-magic_items,0x40000000,0x100E,Pyromancy: Great Combustion,spells,99,,,,,
-magic_items,0x40000000,0x1068,Pyromancy: Poison Mist,spells,99,,,,,
-magic_items,0x40000000,0x1072,Pyromancy: Toxic Mist,spells,99,,,,,
-magic_items,0x40000000,0x107C,Pyromancy: Acid Surge,spells,99,,,,,
-magic_items,0x40000000,0x10CC,Pyromancy: Iron Flesh,spells,99,,,,,
-magic_items,0x40000000,0x10D6,Pyromancy: Flash Sweat,spells,99,,,,,
-magic_items,0x40000000,0x1108,Pyromancy: Undead Rapport,spells,99,,,,,
-magic_items,0x40000000,0x1130,Pyromancy: Power Within,spells,99,,,,,
-magic_items,0x40000000,0x1194,Pyromancy: Great Chaos Fireball,spells,99,,,,,
-magic_items,0x40000000,0x119E,Pyromancy: Chaos Storm,spells,99,,,,,
-magic_items,0x40000000,0x11A8,Pyromancy: Chaos Fire Whip,spells,99,,,,,
-magic_items,0x40000000,0x11B2,Pyromancy: Black Flame,spells,99,,,,,
-magic_items,0x40000000,0x1388,Miracle: Heal,spells,99,,,,,
-magic_items,0x40000000,0x1392,Miracle: Great Heal,spells,99,,,,,
-magic_items,0x40000000,0x139C,Miracle: Great Heal Excerpt,spells,99,,,,,
-magic_items,0x40000000,0x13A6,Miracle: Soothing Sunlight,spells,99,,,,,
-magic_items,0x40000000,0x13B0,Miracle: Replenishment,spells,99,,,,,
-magic_items,0x40000000,0x13BA,Miracle: Bountiful Sunlight,spells,99,,,,,
-magic_items,0x40000000,0x13EC,Miracle: Gravelord Sword Dance,spells,99,,,,,
-magic_items,0x40000000,0x13F6,Miracle: Gravelord Greatsword Dance,spells,99,,,,,
-magic_items,0x40000000,0x1450,Miracle: Escape Death,spells,99,,,,,
-magic_items,0x40000000,0x145A,Miracle: Homeward,spells,99,,,,,
-magic_items,0x40000000,0x14B4,Miracle: Force,spells,99,,,,,
-magic_items,0x40000000,0x14BE,Miracle: Wrath of the Gods,spells,99,,,,,
-magic_items,0x40000000,0x14C8,Miracle: Emit Force,spells,99,,,,,
-magic_items,0x40000000,0x1518,Miracle: Seek Guidance,spells,99,,,,,
-magic_items,0x40000000,0x157C,Miracle: Lightning Spear,spells,99,,,,,
-magic_items,0x40000000,0x1586,Miracle: Great Lightning Spear,spells,99,,,,,
-magic_items,0x40000000,0x1590,Miracle: Sunlight Spear,spells,99,,,,,
-magic_items,0x40000000,0x15E0,Miracle: Magic Barrier,spells,99,,,,,
-magic_items,0x40000000,0x15EA,Miracle: Great Magic Barrier,spells,99,,,,,
-magic_items,0x40000000,0x1644,Miracle: Karmic Justice,spells,99,,,,,
-magic_items,0x40000000,0x16A8,Miracle: Tranquil Walk of Peace,spells,99,,,,,
-magic_items,0x40000000,0x16B2,Miracle: Vow of Silence,spells,99,,,,,
-magic_items,0x40000000,0x170C,Miracle: Sunlight Blade,spells,99,,,,,
-magic_items,0x40000000,0x1716,Miracle: Darkmoon Blade,spells,99,,,,,
-specials,0x00000000,0xF6950,Egg,,0,,,,,
-specials,0x00000000,0xF9060,Big Egg,,0,,,,,
-seamlesscoop_items,0x40000000,0x5ef88,Blessed Eye Orb,seamlesscoop_items,1,,,,,
-seamlesscoop_items,0x40000000,0x5ef89,Crystal Eye Orb,seamlesscoop_items,1,,,,,
-seamlesscoop_items,0x40000000,0x5ef8a,Chaos Eye Orb,seamlesscoop_items,1,,,,,
-seamlesscoop_items,0x40000000,0x5ef8b,Abyssal Eye Orb,seamlesscoop_items,1,,,,,
-seamlesscoop_items,0x40000000,0x5ef8c,Ominous Tome,seamlesscoop_items,1,,,,,
-seamlesscoop_items,0x40000000,0x5ef8d,Dried Fingers,seamlesscoop_items,1,,,,,
-seamlesscoop_items,0x40000000,0x5ef8e,Cursed Pendant,seamlesscoop_items,1,,,,,
-seamlesscoop_items,0x40000000,0x5ef8f,Crimson Blossom,seamlesscoop_items,10,,,,,
-seamlesscoop_items,0x40000000,0x5ef90,Parchment of Deliverance,seamlesscoop_items,1,,,,,
+category,name,id,type,max_quantity,max_upgrade,level_step,durability,sort_id,icon_id,key_item,spell,infusion,obtainable,hidden
+weapons,Dagger,100000,0,1,15,1,200,1,1,0,0,Normal,1,0
+weapons,Crystal Dagger,100100,0,1,5,1,20,2,1,0,0,Crystal,1,0
+weapons,Lightning Dagger,100200,0,1,5,1,200,3,1,0,0,Lightning,1,0
+weapons,Raw Dagger,100300,0,1,5,1,200,4,1,0,0,Raw,1,0
+weapons,Magic Dagger,100400,0,1,10,1,200,5,1,0,0,Magic,1,0
+weapons,Enchanted Dagger,100500,0,1,5,1,200,6,1,0,0,Enchanted,1,0
+weapons,Divine Dagger,100600,0,1,10,1,200,7,1,0,0,Divine,1,0
+weapons,Occult Dagger,100700,0,1,5,1,200,8,1,0,0,Occult,1,0
+weapons,Fire Dagger,100800,0,1,10,1,200,9,1,0,0,Fire,1,0
+weapons,Chaos Dagger,100900,0,1,5,1,200,10,1,0,0,Chaos,1,0
+weapons,Parrying Dagger,101000,0,1,15,1,200,11,2,0,0,Normal,1,0
+weapons,Crystal Parrying Dagger,101100,0,1,5,1,20,12,2,0,0,Crystal,1,0
+weapons,Lightning Parrying Dagger,101200,0,1,5,1,200,13,2,0,0,Lightning,1,0
+weapons,Raw Parrying Dagger,101300,0,1,5,1,200,14,2,0,0,Raw,1,0
+weapons,Magic Parrying Dagger,101400,0,1,10,1,200,15,2,0,0,Magic,1,0
+weapons,Enchanted Parrying Dagger,101500,0,1,5,1,200,16,2,0,0,Enchanted,1,0
+weapons,Divine Parrying Dagger,101600,0,1,10,1,200,17,2,0,0,Divine,1,0
+weapons,Occult Parrying Dagger,101700,0,1,5,1,200,18,2,0,0,Occult,1,0
+weapons,Fire Parrying Dagger,101800,0,1,10,1,200,19,2,0,0,Fire,1,0
+weapons,Chaos Parrying Dagger,101900,0,1,5,1,200,20,2,0,0,Chaos,1,0
+weapons,Ghost Blade,102000,0,1,5,1,100,31,3,0,0,,1,0
+weapons,Bandit's Knife,103000,0,1,15,1,200,21,4,0,0,Normal,1,0
+weapons,Crystal Knife,103100,0,1,5,1,20,22,4,0,0,Crystal,1,0
+weapons,Lightning Knife,103200,0,1,5,1,200,23,4,0,0,Lightning,1,0
+weapons,Raw Knife,103300,0,1,5,1,200,24,4,0,0,Raw,1,0
+weapons,Magic Knife,103400,0,1,10,1,200,25,4,0,0,Magic,1,0
+weapons,Enchanted Knife,103500,0,1,5,1,200,26,4,0,0,Enchanted,1,0
+weapons,Divine Knife,103600,0,1,10,1,200,27,4,0,0,Divine,1,0
+weapons,Occult Knife,103700,0,1,5,1,200,28,4,0,0,Occult,1,0
+weapons,Fire Knife,103800,0,1,10,1,200,29,4,0,0,Fire,1,0
+weapons,Chaos Knife,103900,0,1,5,1,200,30,4,0,0,Chaos,1,0
+weapons,Priscilla's Dagger,104000,0,1,5,1,100,41,5,0,0,,1,0
+weapons,Shortsword,200000,0,1,15,1,200,101,6,0,0,Normal,1,0
+weapons,Crystal Shortsword,200100,0,1,5,1,20,102,6,0,0,Crystal,1,0
+weapons,Lightning Shortsword,200200,0,1,5,1,200,103,6,0,0,Lightning,1,0
+weapons,Raw Shortsword,200300,0,1,5,1,200,104,6,0,0,Raw,1,0
+weapons,Magic Shortsword,200400,0,1,10,1,200,105,6,0,0,Magic,1,0
+weapons,Enchanted Shortsword,200500,0,1,5,1,200,106,6,0,0,Enchanted,1,0
+weapons,Divine Shortsword,200600,0,1,10,1,200,107,6,0,0,Divine,1,0
+weapons,Occult Shortsword,200700,0,1,5,1,200,108,6,0,0,Occult,1,0
+weapons,Fire Shortsword,200800,0,1,10,1,200,109,6,0,0,Fire,1,0
+weapons,Chaos Shortsword,200900,0,1,5,1,200,110,6,0,0,Chaos,1,0
+weapons,Longsword,201000,0,1,15,1,200,111,7,0,0,Normal,1,0
+weapons,Crystal Longsword,201100,0,1,5,1,20,112,7,0,0,Crystal,1,0
+weapons,Lightning Longsword,201200,0,1,5,1,200,113,7,0,0,Lightning,1,0
+weapons,Raw Longsword,201300,0,1,5,1,200,114,7,0,0,Raw,1,0
+weapons,Magic Longsword,201400,0,1,10,1,200,115,7,0,0,Magic,1,0
+weapons,Enchanted Longsword,201500,0,1,5,1,200,116,7,0,0,Enchanted,1,0
+weapons,Divine Longsword,201600,0,1,10,1,200,117,7,0,0,Divine,1,0
+weapons,Occult Longsword,201700,0,1,5,1,200,118,7,0,0,Occult,1,0
+weapons,Fire Longsword,201800,0,1,10,1,200,119,7,0,0,Fire,1,0
+weapons,Chaos Longsword,201900,0,1,5,1,200,120,7,0,0,Chaos,1,0
+weapons,Broadsword,202000,0,1,15,1,200,121,8,0,0,Normal,1,0
+weapons,Crystal Broadsword,202100,0,1,5,1,20,122,8,0,0,Crystal,1,0
+weapons,Lightning Broadsword,202200,0,1,5,1,200,123,8,0,0,Lightning,1,0
+weapons,Raw Broadsword,202300,0,1,5,1,200,124,8,0,0,Raw,1,0
+weapons,Magic Broadsword,202400,0,1,10,1,200,125,8,0,0,Magic,1,0
+weapons,Enchanted Broadsword,202500,0,1,5,1,200,126,8,0,0,Enchanted,1,0
+weapons,Divine Broadsword,202600,0,1,10,1,200,127,8,0,0,Divine,1,0
+weapons,Occult Broadsword,202700,0,1,5,1,200,128,8,0,0,Occult,1,0
+weapons,Fire Broadsword,202800,0,1,10,1,200,129,8,0,0,Fire,1,0
+weapons,Chaos Broadsword,202900,0,1,5,1,200,130,8,0,0,Chaos,1,0
+weapons,Broken Straight Sword,203000,0,1,15,1,200,211,9,0,0,Normal,1,0
+weapons,Crys. Broken Str. Sword,203100,0,1,5,1,20,212,9,0,0,Crystal,1,0
+weapons,Ltng. Broken Str. Sword,203200,0,1,5,1,200,213,9,0,0,Lightning,1,0
+weapons,Raw Broken Straight Sword,203300,0,1,5,1,200,214,9,0,0,Raw,1,0
+weapons,Magic Broken Straight Sword,203400,0,1,10,1,200,215,9,0,0,Magic,1,0
+weapons,Ench. Broken Str. Sword,203500,0,1,5,1,200,216,9,0,0,Enchanted,1,0
+weapons,Div. Broken Str. Sword,203600,0,1,10,1,200,217,9,0,0,Divine,1,0
+weapons,Occ. Broken Str. Sword,203700,0,1,5,1,200,218,9,0,0,Occult,1,0
+weapons,Fire Broken Straight Sword,203800,0,1,10,1,200,219,9,0,0,Fire,1,0
+weapons,Chaos Broken Straight Sword,203900,0,1,5,1,200,220,9,0,0,Chaos,1,0
+weapons,Balder Side Sword,204000,0,1,15,1,120,131,10,0,0,Normal,1,0
+weapons,Crystal Balder Side Sword,204100,0,1,5,1,12,132,10,0,0,Crystal,1,0
+weapons,Lightning Balder Side Sword,204200,0,1,5,1,120,133,10,0,0,Lightning,1,0
+weapons,Raw Balder Side Sword,204300,0,1,5,1,120,134,10,0,0,Raw,1,0
+weapons,Magic Balder Side Sword,204400,0,1,10,1,120,135,10,0,0,Magic,1,0
+weapons,Enchanted Balder Side Sword,204500,0,1,5,1,120,136,10,0,0,Enchanted,1,0
+weapons,Divine Balder Side Sword,204600,0,1,10,1,120,137,10,0,0,Divine,1,0
+weapons,Occult Balder Side Sword,204700,0,1,5,1,120,138,10,0,0,Occult,1,0
+weapons,Fire Balder Side Sword,204800,0,1,10,1,120,139,10,0,0,Fire,1,0
+weapons,Chaos Balder Side Sword,204900,0,1,5,1,120,140,10,0,0,Chaos,1,0
+weapons,Crystal Straight Sword,205000,0,1,0,1,60,181,11,0,0,Normal,1,0
+weapons,Sunlight Straight Sword,206000,0,1,15,1,240,141,12,0,0,Normal,1,0
+weapons,Crys. Sunlight Str. Sword,206100,0,1,5,1,24,142,12,0,0,Crystal,1,0
+weapons,Ltng. Sunlight Str. Sword,206200,0,1,5,1,240,143,12,0,0,Lightning,1,0
+weapons,Raw Sunlight Straight Sword,206300,0,1,5,1,240,144,12,0,0,Raw,1,0
+weapons,Magic Sunlight Str. Sword,206400,0,1,10,1,240,145,12,0,0,Magic,1,0
+weapons,Ench. Sunlight Str. Sword,206500,0,1,5,1,240,146,12,0,0,Enchanted,1,0
+weapons,Div. Sunlight Str. Sword,206600,0,1,10,1,240,147,12,0,0,Divine,1,0
+weapons,Occ. Sunlight Str. Sword,206700,0,1,5,1,240,148,12,0,0,Occult,1,0
+weapons,Fire Sunlight Str. Sword,206800,0,1,10,1,240,149,12,0,0,Fire,1,0
+weapons,Chaos Sunlight Str. Sword,206900,0,1,5,1,240,150,12,0,0,Chaos,1,0
+weapons,Barbed Straight Sword,207000,0,1,15,1,160,171,13,0,0,Normal,1,0
+weapons,Crys. Barbed Str. Sword,207100,0,1,5,1,16,172,13,0,0,Crystal,1,0
+weapons,Ltng. Barbed Str. Sword,207200,0,1,5,1,160,173,13,0,0,Lightning,1,0
+weapons,Raw Barbed Straight Sword,207300,0,1,5,1,160,174,13,0,0,Raw,1,0
+weapons,Magic Barbed Straight Sword,207400,0,1,10,1,160,175,13,0,0,Magic,1,0
+weapons,Ench. Barbed Str. Sword,207500,0,1,5,1,160,176,13,0,0,Enchanted,1,0
+weapons,Div. Barbed Str. Sword,207600,0,1,10,1,160,177,13,0,0,Divine,1,0
+weapons,Occ. Barbed Str. Sword,207700,0,1,5,1,160,178,13,0,0,Occult,1,0
+weapons,Fire Barbed Straight Sword,207800,0,1,10,1,160,179,13,0,0,Fire,1,0
+weapons,Chaos Barbed Straight Sword,207900,0,1,5,1,160,180,13,0,0,Chaos,1,0
+weapons,Silv. Knight Str. Sword,208000,0,1,5,1,300,191,14,0,0,Normal,1,0
+weapons,Astora's Straight Sword,209000,0,1,5,1,160,192,159,0,0,,1,0
+weapons,Darksword,210000,0,1,15,1,200,161,16,0,0,Normal,1,0
+weapons,Crystal Darksword,210100,0,1,5,1,20,162,16,0,0,Crystal,1,0
+weapons,Lightning Darksword,210200,0,1,5,1,200,163,16,0,0,Lightning,1,0
+weapons,Raw Darksword,210300,0,1,5,1,200,164,16,0,0,Raw,1,0
+weapons,Magic Darksword,210400,0,1,10,1,200,165,16,0,0,Magic,1,0
+weapons,Enchanted Darksword,210500,0,1,5,1,200,166,16,0,0,Enchanted,1,0
+weapons,Divine Darksword,210600,0,1,10,1,200,167,16,0,0,Divine,1,0
+weapons,Occult Darksword,210700,0,1,5,1,200,168,16,0,0,Occult,1,0
+weapons,Fire Darksword,210800,0,1,10,1,200,169,16,0,0,Fire,1,0
+weapons,Chaos Darksword,210900,0,1,5,1,200,170,16,0,0,Chaos,1,0
+weapons,Drake Sword,211000,0,1,5,1,360,202,17,0,0,,1,0
+weapons,Straight Sword Hilt,212000,0,1,15,1,200,221,164,0,0,Normal,1,0
+weapons,Crystal Straight Sword Hilt,212100,0,1,5,1,20,222,164,0,0,Crystal,1,0
+weapons,Ltng. Str. Sword Hilt,212200,0,1,5,1,200,223,164,0,0,Lightning,1,0
+weapons,Raw Straight Sword Hilt,212300,0,1,5,1,200,224,164,0,0,Raw,1,0
+weapons,Magic Straight Sword Hilt,212400,0,1,10,1,200,225,164,0,0,Magic,1,0
+weapons,Ench. Straight Sword Hilt,212500,0,1,5,1,200,226,164,0,0,Enchanted,1,0
+weapons,Divine Straight Sword Hilt,212600,0,1,10,1,200,227,164,0,0,Divine,1,0
+weapons,Occult Straight Sword Hilt,212700,0,1,5,1,200,228,164,0,0,Occult,1,0
+weapons,Fire Straight Sword Hilt,212800,0,1,10,1,200,229,164,0,0,Fire,1,0
+weapons,Chaos Straight Sword Hilt,212900,0,1,5,1,200,230,164,0,0,Chaos,1,0
+weapons,Bastard Sword,300000,0,1,15,1,200,301,18,0,0,Normal,1,0
+weapons,Crystal Bastard Sword,300100,0,1,5,1,20,302,18,0,0,Crystal,1,0
+weapons,Lightning Bastard Sword,300200,0,1,5,1,200,303,18,0,0,Lightning,1,0
+weapons,Raw Bastard Sword,300300,0,1,5,1,200,304,18,0,0,Raw,1,0
+weapons,Magic Bastard Sword,300400,0,1,10,1,200,305,18,0,0,Magic,1,0
+weapons,Enchanted Bastard Sword,300500,0,1,5,1,200,306,18,0,0,Enchanted,1,0
+weapons,Divine Bastard Sword,300600,0,1,10,1,200,307,18,0,0,Divine,1,0
+weapons,Occult Bastard Sword,300700,0,1,5,1,200,308,18,0,0,Occult,1,0
+weapons,Fire Bastard Sword,300800,0,1,10,1,200,309,18,0,0,Fire,1,0
+weapons,Chaos Bastard Sword,300900,0,1,5,1,200,310,18,0,0,Chaos,1,0
+weapons,Claymore,301000,0,1,15,1,200,311,19,0,0,Normal,1,0
+weapons,Crystal Claymore,301100,0,1,5,1,20,312,19,0,0,Crystal,1,0
+weapons,Lightning Claymore,301200,0,1,5,1,200,313,19,0,0,Lightning,1,0
+weapons,Raw Claymore,301300,0,1,5,1,200,314,19,0,0,Raw,1,0
+weapons,Magic Claymore,301400,0,1,10,1,200,315,19,0,0,Magic,1,0
+weapons,Enchanted Claymore,301500,0,1,5,1,200,316,19,0,0,Enchanted,1,0
+weapons,Divine Claymore,301600,0,1,10,1,200,317,19,0,0,Divine,1,0
+weapons,Occult Claymore,301700,0,1,5,1,200,318,19,0,0,Occult,1,0
+weapons,Fire Claymore,301800,0,1,10,1,200,319,19,0,0,Fire,1,0
+weapons,Chaos Claymore,301900,0,1,5,1,200,320,19,0,0,Chaos,1,0
+weapons,Man-serpent Greatsword,302000,0,1,15,1,300,321,20,0,0,Normal,1,0
+weapons,Crys. Man-srp. Greatsword,302100,0,1,5,1,30,322,20,0,0,Crystal,1,0
+weapons,Ltng. Man-srp. Greatsword,302200,0,1,5,1,300,323,20,0,0,Lightning,1,0
+weapons,Raw Man-serpent Greatsword,302300,0,1,5,1,300,324,20,0,0,Raw,1,0
+weapons,Magic Man-srp. Greatsword,302400,0,1,10,1,300,325,20,0,0,Magic,1,0
+weapons,Ench. Man-srp. Greatsword,302500,0,1,5,1,300,326,20,0,0,Enchanted,1,0
+weapons,Div. Man-srp. Greatsword,302600,0,1,10,1,300,327,20,0,0,Divine,1,0
+weapons,Occ. Man-srp. Greatsword,302700,0,1,5,1,300,328,20,0,0,Occult,1,0
+weapons,Fire Man-serpent Greatsword,302800,0,1,10,1,300,329,20,0,0,Fire,1,0
+weapons,Chaos Man-srp. Greatsword,302900,0,1,5,1,300,330,20,0,0,Chaos,1,0
+weapons,Flamberge,303000,0,1,15,1,160,331,21,0,0,Normal,1,0
+weapons,Crystal Flamberge,303100,0,1,5,1,16,332,21,0,0,Crystal,1,0
+weapons,Lightning Flamberge,303200,0,1,5,1,160,333,21,0,0,Lightning,1,0
+weapons,Raw Flamberge,303300,0,1,5,1,160,334,21,0,0,Raw,1,0
+weapons,Magic Flamberge,303400,0,1,10,1,160,335,21,0,0,Magic,1,0
+weapons,Enchanted Flamberge,303500,0,1,5,1,160,336,21,0,0,Enchanted,1,0
+weapons,Divine Flamberge,303600,0,1,10,1,160,337,21,0,0,Divine,1,0
+weapons,Occult Flamberge,303700,0,1,5,1,160,338,21,0,0,Occult,1,0
+weapons,Fire Flamberge,303800,0,1,10,1,160,339,21,0,0,Fire,1,0
+weapons,Chaos Flamberge,303900,0,1,5,1,160,340,21,0,0,Chaos,1,0
+weapons,Crystal Greatsword,304000,0,1,0,1,60,341,22,0,0,Normal,1,0
+weapons,Stone Greatsword,306000,0,1,5,1,800,361,24,0,0,,1,0
+weapons,Greatsword of Artorias,307000,0,1,5,1,400,389,25,0,0,,1,0
+weapons,Greatsword of Artorias,307100,0,1,5,1,400,390,25,0,0,,1,1
+weapons,Moonlight Greatsword,309000,0,1,5,1,300,451,27,0,0,,1,0
+weapons,Black Knight Sword,310000,0,1,5,1,300,351,142,0,0,,1,0
+weapons,Greatsword of Artorias (ID 311000),311000,0,1,5,1,400,371,158,0,0,,1,0
+weapons,Greatsword of Artorias,311100,0,1,5,1,400,372,158,0,0,,1,1
+weapons,Greatsword of Artorias,311200,0,1,5,1,400,373,158,0,0,,1,1
+weapons,Greatsword of Artorias,311300,0,1,5,1,400,374,158,0,0,,1,1
+weapons,Greatsword of Artorias,311400,0,1,5,1,400,375,158,0,0,,1,1
+weapons,Greatsword of Artorias,311500,0,1,5,1,400,376,158,0,0,,1,1
+weapons,Greatsword of Artorias,311600,0,1,5,1,400,377,158,0,0,,1,1
+weapons,Greatsword of Artorias,311700,0,1,5,1,400,378,158,0,0,,1,1
+weapons,Greatsword of Artorias,311800,0,1,5,1,400,379,158,0,0,,1,1
+weapons,Greatsword of Artorias,311900,0,1,5,1,400,380,158,0,0,,1,1
+weapons,Greatsword of Artorias (ID 312000),312000,0,1,5,1,400,381,158,0,0,,1,0
+weapons,Greatsword of Artorias,312100,0,1,5,1,400,382,158,0,0,,1,1
+weapons,Greatsword of Artorias,312200,0,1,5,1,400,383,158,0,0,,1,1
+weapons,Greatsword of Artorias,312300,0,1,5,1,400,384,158,0,0,,1,1
+weapons,Greatsword of Artorias,312400,0,1,5,1,400,385,158,0,0,,1,1
+weapons,Greatsword of Artorias,312500,0,1,5,1,400,386,158,0,0,,1,1
+weapons,Greatsword of Artorias,312600,0,1,5,1,400,387,158,0,0,,1,1
+weapons,Greatsword of Artorias,312700,0,1,5,1,400,388,158,0,0,,1,1
+weapons,Great Lord Greatsword,314000,0,1,5,1,400,421,26,0,0,,1,0
+weapons,Great Lord Greatsword,314100,0,1,5,1,400,422,26,0,0,,1,1
+weapons,Great Lord Greatsword,314200,0,1,5,1,400,423,26,0,0,,1,1
+weapons,Great Lord Greatsword,314300,0,1,5,1,400,424,26,0,0,,1,1
+weapons,Great Lord Greatsword,314400,0,1,5,1,400,425,26,0,0,,1,1
+weapons,Great Lord Greatsword,314500,0,1,5,1,400,426,26,0,0,,1,1
+weapons,Great Lord Greatsword,314600,0,1,5,1,400,427,26,0,0,,1,1
+weapons,Great Lord Greatsword,314700,0,1,5,1,400,428,26,0,0,,1,1
+weapons,Great Lord Greatsword,314800,0,1,5,1,400,429,26,0,0,,1,1
+weapons,Great Lord Greatsword,314900,0,1,5,1,400,430,26,0,0,,1,1
+weapons,Great Lord Greatsword (ID 315000),315000,0,1,5,1,400,431,26,0,0,,1,0
+weapons,Great Lord Greatsword,315100,0,1,5,1,400,432,26,0,0,,1,1
+weapons,Great Lord Greatsword,315200,0,1,5,1,400,433,26,0,0,,1,1
+weapons,Great Lord Greatsword,315300,0,1,5,1,400,434,26,0,0,,1,1
+weapons,Great Lord Greatsword,315400,0,1,5,1,400,435,26,0,0,,1,1
+weapons,Great Lord Greatsword,315500,0,1,5,1,400,436,26,0,0,,1,1
+weapons,Great Lord Greatsword,315600,0,1,5,1,400,437,26,0,0,,1,1
+weapons,Great Lord Greatsword,315700,0,1,5,1,400,438,26,0,0,,1,1
+weapons,Zweihander,350000,0,1,15,1,200,511,28,0,0,Normal,1,0
+weapons,Crystal Zweihander,350100,0,1,5,1,20,512,28,0,0,Crystal,1,0
+weapons,Lightning Zweihander,350200,0,1,5,1,200,513,28,0,0,Lightning,1,0
+weapons,Raw Zweihander,350300,0,1,5,1,200,514,28,0,0,Raw,1,0
+weapons,Magic Zweihander,350400,0,1,10,1,200,515,28,0,0,Magic,1,0
+weapons,Enchanted Zweihander,350500,0,1,5,1,200,516,28,0,0,Enchanted,1,0
+weapons,Divine Zweihander,350600,0,1,10,1,200,517,28,0,0,Divine,1,0
+weapons,Occult Zweihander,350700,0,1,5,1,200,518,28,0,0,Occult,1,0
+weapons,Fire Zweihander,350800,0,1,10,1,200,519,28,0,0,Fire,1,0
+weapons,Chaos Zweihander,350900,0,1,5,1,200,520,28,0,0,Chaos,1,0
+weapons,Greatsword,351000,0,1,15,1,200,501,29,0,0,Normal,1,0
+weapons,Crystal Greatsword (ID 351100),351100,0,1,5,1,20,502,29,0,0,Crystal,1,0
+weapons,Lightning Greatsword,351200,0,1,5,1,200,503,29,0,0,Lightning,1,0
+weapons,Raw Greatsword,351300,0,1,5,1,200,504,29,0,0,Raw,1,0
+weapons,Magic Greatsword,351400,0,1,10,1,200,505,29,0,0,Magic,1,0
+weapons,Enchanted Greatsword,351500,0,1,5,1,200,506,29,0,0,Enchanted,1,0
+weapons,Divine Greatsword,351600,0,1,10,1,200,507,29,0,0,Divine,1,0
+weapons,Occult Greatsword,351700,0,1,5,1,200,508,29,0,0,Occult,1,0
+weapons,Fire Greatsword,351800,0,1,10,1,200,509,29,0,0,Fire,1,0
+weapons,Chaos Greatsword,351900,0,1,5,1,200,510,29,0,0,Chaos,1,0
+weapons,Demon Great Machete,352000,0,1,15,1,600,521,30,0,0,Normal,1,0
+weapons,Crystal Demon Great Machete,352100,0,1,5,1,60,522,30,0,0,Crystal,1,0
+weapons,Ltng. Demon Great Machete,352200,0,1,5,1,600,523,30,0,0,Lightning,1,0
+weapons,Raw Demon Great Machete,352300,0,1,5,1,600,524,30,0,0,Raw,1,0
+weapons,Magic Demon Great Machete,352400,0,1,10,1,600,525,30,0,0,Magic,1,0
+weapons,Ench. Demon Great Machete,352500,0,1,5,1,600,526,30,0,0,Enchanted,1,0
+weapons,Divine Demon Great Machete,352600,0,1,10,1,600,527,30,0,0,Divine,1,0
+weapons,Occult Demon Great Machete,352700,0,1,5,1,600,528,30,0,0,Occult,1,0
+weapons,Fire Demon Great Machete,352800,0,1,10,1,600,529,30,0,0,Fire,1,0
+weapons,Chaos Demon Great Machete,352900,0,1,5,1,600,530,30,0,0,Chaos,1,0
+weapons,Dragon Greatsword,354000,0,1,5,1,400,541,32,0,0,,1,0
+weapons,Black Knight Greatsword,355000,0,1,5,1,300,531,145,0,0,,1,0
+weapons,Scimitar,400000,0,1,15,1,160,601,33,0,0,Normal,1,0
+weapons,Crystal Scimitar,400100,0,1,5,1,16,602,33,0,0,Crystal,1,0
+weapons,Lightning Scimitar,400200,0,1,5,1,160,603,33,0,0,Lightning,1,0
+weapons,Raw Scimitar,400300,0,1,5,1,160,604,33,0,0,Raw,1,0
+weapons,Magic Scimitar,400400,0,1,10,1,160,605,33,0,0,Magic,1,0
+weapons,Enchanted Scimitar,400500,0,1,5,1,160,606,33,0,0,Enchanted,1,0
+weapons,Divine Scimitar,400600,0,1,10,1,160,607,33,0,0,Divine,1,0
+weapons,Occult Scimitar,400700,0,1,5,1,160,608,33,0,0,Occult,1,0
+weapons,Fire Scimitar,400800,0,1,10,1,160,609,33,0,0,Fire,1,0
+weapons,Chaos Scimitar,400900,0,1,5,1,160,610,33,0,0,Chaos,1,0
+weapons,Falchion,401000,0,1,15,1,160,611,34,0,0,Normal,1,0
+weapons,Crystal Falchion,401100,0,1,5,1,16,612,34,0,0,Crystal,1,0
+weapons,Lightning Falchion,401200,0,1,5,1,160,613,34,0,0,Lightning,1,0
+weapons,Raw Falchion,401300,0,1,5,1,160,614,34,0,0,Raw,1,0
+weapons,Magic Falchion,401400,0,1,10,1,160,615,34,0,0,Magic,1,0
+weapons,Enchanted Falchion,401500,0,1,5,1,160,616,34,0,0,Enchanted,1,0
+weapons,Divine Falchion,401600,0,1,10,1,160,617,34,0,0,Divine,1,0
+weapons,Occult Falchion,401700,0,1,5,1,160,618,34,0,0,Occult,1,0
+weapons,Fire Falchion,401800,0,1,10,1,160,619,34,0,0,Fire,1,0
+weapons,Chaos Falchion,401900,0,1,5,1,160,620,34,0,0,Chaos,1,0
+weapons,Shotel,402000,0,1,15,1,120,621,35,0,0,Normal,1,0
+weapons,Crystal Shotel,402100,0,1,5,1,12,622,35,0,0,Crystal,1,0
+weapons,Lightning Shotel,402200,0,1,5,1,120,623,35,0,0,Lightning,1,0
+weapons,Raw Shotel,402300,0,1,5,1,120,624,35,0,0,Raw,1,0
+weapons,Magic Shotel,402400,0,1,10,1,120,625,35,0,0,Magic,1,0
+weapons,Enchanted Shotel,402500,0,1,5,1,120,626,35,0,0,Enchanted,1,0
+weapons,Divine Shotel,402600,0,1,10,1,120,627,35,0,0,Divine,1,0
+weapons,Occult Shotel,402700,0,1,5,1,120,628,35,0,0,Occult,1,0
+weapons,Fire Shotel,402800,0,1,10,1,120,629,35,0,0,Fire,1,0
+weapons,Chaos Shotel,402900,0,1,5,1,120,630,35,0,0,Chaos,1,0
+weapons,Jagged Ghost Blade,403000,0,1,5,1,100,641,36,0,0,,1,0
+weapons,Painting Guardian Sword,405000,0,1,15,1,100,631,37,0,0,Normal,1,0
+weapons,Crys. Ptg. Guardian Sword,405100,0,1,5,1,10,632,37,0,0,Crystal,1,0
+weapons,Ltng. Ptg. Guardian Sword,405200,0,1,5,1,100,633,37,0,0,Lightning,1,0
+weapons,Raw Painting Guardian Sword,405300,0,1,5,1,100,634,37,0,0,Raw,1,0
+weapons,Magic Ptg. Guardian Sword,405400,0,1,10,1,100,635,37,0,0,Magic,1,0
+weapons,Ench. Ptg. Guardian Sword,405500,0,1,5,1,100,636,37,0,0,Enchanted,1,0
+weapons,Div. Ptg. Guardian Sword,405600,0,1,10,1,100,637,37,0,0,Divine,1,0
+weapons,Occ. Ptg. Guardian Sword,405700,0,1,5,1,100,638,37,0,0,Occult,1,0
+weapons,Fire Ptg. Guardian Sword,405800,0,1,10,1,100,639,37,0,0,Fire,1,0
+weapons,Chaos Ptg. Guardian Sword,405900,0,1,5,1,100,640,37,0,0,Chaos,1,0
+weapons,Quelaag's Furysword,406000,0,1,5,1,600,651,15,0,0,,1,0
+weapons,Quelaag's Furysword,406100,0,1,5,1,600,652,15,0,0,,1,1
+weapons,Quelaag's Furysword,406200,0,1,5,1,600,653,15,0,0,,1,1
+weapons,Quelaag's Furysword,406300,0,1,5,1,600,654,15,0,0,,1,1
+weapons,Quelaag's Furysword,406400,0,1,5,1,600,655,15,0,0,,1,1
+weapons,Quelaag's Furysword,406500,0,1,5,1,600,656,15,0,0,,1,1
+weapons,Server,450000,0,1,15,1,140,711,38,0,0,Normal,1,0
+weapons,Crystal Server,450100,0,1,5,1,14,712,38,0,0,Crystal,1,0
+weapons,Lightning Server,450200,0,1,5,1,140,713,38,0,0,Lightning,1,0
+weapons,Raw Server,450300,0,1,5,1,140,714,38,0,0,Raw,1,0
+weapons,Magic Server,450400,0,1,10,1,140,715,38,0,0,Magic,1,0
+weapons,Enchanted Server,450500,0,1,5,1,140,716,38,0,0,Enchanted,1,0
+weapons,Divine Server,450600,0,1,10,1,140,717,38,0,0,Divine,1,0
+weapons,Occult Server,450700,0,1,5,1,140,718,38,0,0,Occult,1,0
+weapons,Fire Server,450800,0,1,10,1,140,719,38,0,0,Fire,1,0
+weapons,Chaos Server,450900,0,1,5,1,140,720,38,0,0,Chaos,1,0
+weapons,Murakumo,451000,0,1,15,1,180,701,39,0,0,Normal,1,0
+weapons,Crystal Murakumo,451100,0,1,5,1,18,702,39,0,0,Crystal,1,0
+weapons,Lightning Murakumo,451200,0,1,5,1,180,703,39,0,0,Lightning,1,0
+weapons,Raw Murakumo,451300,0,1,5,1,180,704,39,0,0,Raw,1,0
+weapons,Magic Murakumo,451400,0,1,10,1,180,705,39,0,0,Magic,1,0
+weapons,Enchanted Murakumo,451500,0,1,5,1,180,706,39,0,0,Enchanted,1,0
+weapons,Divine Murakumo,451600,0,1,10,1,180,707,39,0,0,Divine,1,0
+weapons,Occult Murakumo,451700,0,1,5,1,180,708,39,0,0,Occult,1,0
+weapons,Fire Murakumo,451800,0,1,10,1,180,709,39,0,0,Fire,1,0
+weapons,Chaos Murakumo,451900,0,1,5,1,180,710,39,0,0,Chaos,1,0
+weapons,Gravelord Sword,453000,0,1,5,1,600,721,41,0,0,,1,0
+weapons,Uchigatana,500000,0,1,15,1,80,801,42,0,0,Normal,1,0
+weapons,Crystal Uchigatana,500100,0,1,5,1,8,802,42,0,0,Crystal,1,0
+weapons,Lightning Uchigatana,500200,0,1,5,1,80,803,42,0,0,Lightning,1,0
+weapons,Raw Uchigatana,500300,0,1,5,1,80,804,42,0,0,Raw,1,0
+weapons,Magic Uchigatana,500400,0,1,10,1,80,805,42,0,0,Magic,1,0
+weapons,Enchanted Uchigatana,500500,0,1,5,1,80,806,42,0,0,Enchanted,1,0
+weapons,Divine Uchigatana,500600,0,1,10,1,80,807,42,0,0,Divine,1,0
+weapons,Occult Uchigatana,500700,0,1,5,1,80,808,42,0,0,Occult,1,0
+weapons,Fire Uchigatana,500800,0,1,10,1,80,809,42,0,0,Fire,1,0
+weapons,Chaos Uchigatana,500900,0,1,5,1,80,810,42,0,0,Chaos,1,0
+weapons,Washing Pole,501000,0,1,15,1,60,821,43,0,0,Normal,1,0
+weapons,Crystal Washing Pole,501100,0,1,5,1,6,822,43,0,0,Crystal,1,0
+weapons,Lightning Washing Pole,501200,0,1,5,1,60,823,43,0,0,Lightning,1,0
+weapons,Raw Washing Pole,501300,0,1,5,1,60,824,43,0,0,Raw,1,0
+weapons,Magic Washing Pole,501400,0,1,10,1,60,825,43,0,0,Magic,1,0
+weapons,Enchanted Washing Pole,501500,0,1,5,1,60,826,43,0,0,Enchanted,1,0
+weapons,Divine Washing Pole,501600,0,1,10,1,60,827,43,0,0,Divine,1,0
+weapons,Occult Washing Pole,501700,0,1,5,1,60,828,43,0,0,Occult,1,0
+weapons,Fire Washing Pole,501800,0,1,10,1,60,829,43,0,0,Fire,1,0
+weapons,Chaos Washing Pole,501900,0,1,5,1,60,830,43,0,0,Chaos,1,0
+weapons,Iaito,502000,0,1,15,1,80,811,44,0,0,Normal,1,0
+weapons,Crystal Iaito,502100,0,1,5,1,8,812,44,0,0,Crystal,1,0
+weapons,Lightning Iaito,502200,0,1,5,1,80,813,44,0,0,Lightning,1,0
+weapons,Raw Iaito,502300,0,1,5,1,80,814,44,0,0,Raw,1,0
+weapons,Magic Iaito,502400,0,1,10,1,80,815,44,0,0,Magic,1,0
+weapons,Enchanted Iaito,502500,0,1,5,1,80,816,44,0,0,Enchanted,1,0
+weapons,Divine Iaito,502600,0,1,10,1,80,817,44,0,0,Divine,1,0
+weapons,Occult Iaito,502700,0,1,5,1,80,818,44,0,0,Occult,1,0
+weapons,Fire Iaito,502800,0,1,10,1,80,819,44,0,0,Fire,1,0
+weapons,Chaos Iaito,502900,0,1,5,1,80,820,44,0,0,Chaos,1,0
+weapons,Chaos Blade,503000,0,1,5,1,120,831,45,0,0,,1,0
+weapons,Chaos Blade,503100,0,1,5,1,120,832,45,0,0,,1,1
+weapons,Chaos Blade,503200,0,1,5,1,120,833,45,0,0,,1,1
+weapons,Mail Breaker,600000,0,1,15,1,200,901,46,0,0,Normal,1,0
+weapons,Crystal Mail Breaker,600100,0,1,5,1,20,902,46,0,0,Crystal,1,0
+weapons,Lightning Mail Breaker,600200,0,1,5,1,200,903,46,0,0,Lightning,1,0
+weapons,Raw Mail Breaker,600300,0,1,5,1,200,904,46,0,0,Raw,1,0
+weapons,Magic Mail Breaker,600400,0,1,10,1,200,905,46,0,0,Magic,1,0
+weapons,Enchanted Mail Breaker,600500,0,1,5,1,200,906,46,0,0,Enchanted,1,0
+weapons,Divine Mail Breaker,600600,0,1,10,1,200,907,46,0,0,Divine,1,0
+weapons,Occult Mail Breaker,600700,0,1,5,1,200,908,46,0,0,Occult,1,0
+weapons,Fire Mail Breaker,600800,0,1,10,1,200,909,46,0,0,Fire,1,0
+weapons,Chaos Mail Breaker,600900,0,1,5,1,200,910,46,0,0,Chaos,1,0
+weapons,Rapier,601000,0,1,15,1,150,911,47,0,0,Normal,1,0
+weapons,Crystal Rapier,601100,0,1,5,1,15,912,47,0,0,Crystal,1,0
+weapons,Lightning Rapier,601200,0,1,5,1,150,913,47,0,0,Lightning,1,0
+weapons,Raw Rapier,601300,0,1,5,1,150,914,47,0,0,Raw,1,0
+weapons,Magic Rapier,601400,0,1,10,1,150,915,47,0,0,Magic,1,0
+weapons,Enchanted Rapier,601500,0,1,5,1,150,916,47,0,0,Enchanted,1,0
+weapons,Divine Rapier,601600,0,1,10,1,150,917,47,0,0,Divine,1,0
+weapons,Occult Rapier,601700,0,1,5,1,150,918,47,0,0,Occult,1,0
+weapons,Fire Rapier,601800,0,1,10,1,150,919,47,0,0,Fire,1,0
+weapons,Chaos Rapier,601900,0,1,5,1,150,920,47,0,0,Chaos,1,0
+weapons,Estoc,602000,0,1,15,1,150,921,48,0,0,Normal,1,0
+weapons,Crystal Estoc,602100,0,1,5,1,15,922,48,0,0,Crystal,1,0
+weapons,Lightning Estoc,602200,0,1,5,1,150,923,48,0,0,Lightning,1,0
+weapons,Raw Estoc,602300,0,1,5,1,150,924,48,0,0,Raw,1,0
+weapons,Magic Estoc,602400,0,1,10,1,150,925,48,0,0,Magic,1,0
+weapons,Enchanted Estoc,602500,0,1,5,1,150,926,48,0,0,Enchanted,1,0
+weapons,Divine Estoc,602600,0,1,10,1,150,927,48,0,0,Divine,1,0
+weapons,Occult Estoc,602700,0,1,5,1,150,928,48,0,0,Occult,1,0
+weapons,Fire Estoc,602800,0,1,10,1,150,929,48,0,0,Fire,1,0
+weapons,Chaos Estoc,602900,0,1,5,1,150,930,48,0,0,Chaos,1,0
+weapons,Velka's Rapier,603000,0,1,5,1,130,941,49,0,0,,1,0
+weapons,Ricard's Rapier,604000,0,1,15,1,100,931,50,0,0,Normal,1,0
+weapons,Crystal Ricard's Rapier,604100,0,1,5,1,10,932,50,0,0,Crystal,1,0
+weapons,Lightning Ricard's Rapier,604200,0,1,5,1,100,933,50,0,0,Lightning,1,0
+weapons,Raw Ricard's Rapier,604300,0,1,5,1,100,934,50,0,0,Raw,1,0
+weapons,Magic Ricard's Rapier,604400,0,1,10,1,100,935,50,0,0,Magic,1,0
+weapons,Enchanted Ricard's Rapier,604500,0,1,5,1,100,936,50,0,0,Enchanted,1,0
+weapons,Divine Ricard's Rapier,604600,0,1,10,1,100,937,50,0,0,Divine,1,0
+weapons,Occult Ricard's Rapier,604700,0,1,5,1,100,938,50,0,0,Occult,1,0
+weapons,Fire Ricard's Rapier,604800,0,1,10,1,100,939,50,0,0,Fire,1,0
+weapons,Chaos Ricard's Rapier,604900,0,1,5,1,100,940,50,0,0,Chaos,1,0
+weapons,Hand Axe,700000,0,1,15,1,250,1001,51,0,0,Normal,1,0
+weapons,Crystal Hand Axe,700100,0,1,5,1,25,1002,51,0,0,Crystal,1,0
+weapons,Lightning Hand Axe,700200,0,1,5,1,250,1003,51,0,0,Lightning,1,0
+weapons,Raw Hand Axe,700300,0,1,5,1,250,1004,51,0,0,Raw,1,0
+weapons,Magic Hand Axe,700400,0,1,10,1,250,1005,51,0,0,Magic,1,0
+weapons,Enchanted Hand Axe,700500,0,1,5,1,250,1006,51,0,0,Enchanted,1,0
+weapons,Divine Hand Axe,700600,0,1,10,1,250,1007,51,0,0,Divine,1,0
+weapons,Occult Hand Axe,700700,0,1,5,1,250,1008,51,0,0,Occult,1,0
+weapons,Fire Hand Axe,700800,0,1,10,1,250,1009,51,0,0,Fire,1,0
+weapons,Chaos Hand Axe,700900,0,1,5,1,250,1010,51,0,0,Chaos,1,0
+weapons,Battle Axe,701000,0,1,15,1,250,1011,52,0,0,Normal,1,0
+weapons,Crystal Battle Axe,701100,0,1,5,1,25,1012,52,0,0,Crystal,1,0
+weapons,Lightning Battle Axe,701200,0,1,5,1,250,1013,52,0,0,Lightning,1,0
+weapons,Raw Battle Axe,701300,0,1,5,1,250,1014,52,0,0,Raw,1,0
+weapons,Magic Battle Axe,701400,0,1,10,1,250,1015,52,0,0,Magic,1,0
+weapons,Enchanted Battle Axe,701500,0,1,5,1,250,1016,52,0,0,Enchanted,1,0
+weapons,Divine Battle Axe,701600,0,1,10,1,250,1017,52,0,0,Divine,1,0
+weapons,Occult Battle Axe,701700,0,1,5,1,250,1018,52,0,0,Occult,1,0
+weapons,Fire Battle Axe,701800,0,1,10,1,250,1019,52,0,0,Fire,1,0
+weapons,Chaos Battle Axe,701900,0,1,5,1,250,1020,52,0,0,Chaos,1,0
+weapons,Crescent Axe,702000,0,1,5,1,180,1041,53,0,0,,1,0
+weapons,Butcher Knife,703000,0,1,15,1,250,1021,54,0,0,Normal,1,0
+weapons,Crystal Butcher Knife,703100,0,1,5,1,25,1022,54,0,0,Crystal,1,0
+weapons,Lightning Butcher Knife,703200,0,1,5,1,250,1023,54,0,0,Lightning,1,0
+weapons,Raw Butcher Knife,703300,0,1,5,1,250,1024,54,0,0,Raw,1,0
+weapons,Magic Butcher Knife,703400,0,1,10,1,250,1025,54,0,0,Magic,1,0
+weapons,Enchanted Butcher Knife,703500,0,1,5,1,250,1026,54,0,0,Enchanted,1,0
+weapons,Divine Butcher Knife,703600,0,1,10,1,250,1027,54,0,0,Divine,1,0
+weapons,Occult Butcher Knife,703700,0,1,5,1,250,1028,54,0,0,Occult,1,0
+weapons,Fire Butcher Knife,703800,0,1,10,1,250,1029,54,0,0,Fire,1,0
+weapons,Chaos Butcher Knife,703900,0,1,5,1,250,1030,54,0,0,Chaos,1,0
+weapons,Golem Axe,704000,0,1,5,1,600,1051,55,0,0,,1,0
+weapons,Golem Axe,704100,0,1,5,1,600,1052,55,0,0,,1,1
+weapons,Golem Axe,704200,0,1,5,1,600,1053,55,0,0,,1,1
+weapons,Golem Axe,704300,0,1,5,1,600,1054,55,0,0,,1,1
+weapons,Golem Axe,704400,0,1,5,1,600,1055,55,0,0,,1,1
+weapons,Golem Axe,704500,0,1,5,1,600,1056,55,0,0,,1,1
+weapons,Golem Axe,704600,0,1,5,1,600,1057,55,0,0,,1,1
+weapons,Gargoyle Tail Axe,705000,0,1,15,1,150,1031,166,0,0,Normal,1,0
+weapons,Crystal Gargoyle Tail Axe,705100,0,1,5,1,15,1032,166,0,0,Crystal,1,0
+weapons,Lightning Gargoyle Tail Axe,705200,0,1,5,1,150,1033,166,0,0,Lightning,1,0
+weapons,Raw Gargoyle Tail Axe,705300,0,1,5,1,150,1034,166,0,0,Raw,1,0
+weapons,Magic Gargoyle Tail Axe,705400,0,1,10,1,150,1035,166,0,0,Magic,1,0
+weapons,Enchanted Gargoyle Tail Axe,705500,0,1,5,1,150,1036,166,0,0,Enchanted,1,0
+weapons,Divine Gargoyle Tail Axe,705600,0,1,10,1,150,1037,166,0,0,Divine,1,0
+weapons,Occult Gargoyle Tail Axe,705700,0,1,5,1,150,1038,166,0,0,Occult,1,0
+weapons,Fire Gargoyle Tail Axe,705800,0,1,10,1,150,1039,166,0,0,Fire,1,0
+weapons,Chaos Gargoyle Tail Axe,705900,0,1,5,1,150,1040,166,0,0,Chaos,1,0
+weapons,Greataxe,750000,0,1,15,1,230,1101,56,0,0,Normal,1,0
+weapons,Crystal Greataxe,750100,0,1,5,1,23,1102,56,0,0,Crystal,1,0
+weapons,Lightning Greataxe,750200,0,1,5,1,230,1103,56,0,0,Lightning,1,0
+weapons,Raw Greataxe,750300,0,1,5,1,230,1104,56,0,0,Raw,1,0
+weapons,Magic Greataxe,750400,0,1,10,1,230,1105,56,0,0,Magic,1,0
+weapons,Enchanted Greataxe,750500,0,1,5,1,230,1106,56,0,0,Enchanted,1,0
+weapons,Divine Greataxe,750600,0,1,10,1,230,1107,56,0,0,Divine,1,0
+weapons,Occult Greataxe,750700,0,1,5,1,230,1108,56,0,0,Occult,1,0
+weapons,Fire Greataxe,750800,0,1,10,1,230,1109,56,0,0,Fire,1,0
+weapons,Chaos Greataxe,750900,0,1,5,1,230,1110,56,0,0,Chaos,1,0
+weapons,Demon's Greataxe,751000,0,1,15,1,600,1111,57,0,0,Normal,1,0
+weapons,Crystal Demon's Greataxe,751100,0,1,5,1,60,1112,57,0,0,Crystal,1,0
+weapons,Lightning Demon's Greataxe,751200,0,1,5,1,600,1113,57,0,0,Lightning,1,0
+weapons,Raw Demon's Greataxe,751300,0,1,5,1,600,1114,57,0,0,Raw,1,0
+weapons,Magic Demon's Greataxe,751400,0,1,10,1,600,1115,57,0,0,Magic,1,0
+weapons,Enchanted Demon's Greataxe,751500,0,1,5,1,600,1116,57,0,0,Enchanted,1,0
+weapons,Divine Demon's Greataxe,751600,0,1,10,1,600,1117,57,0,0,Divine,1,0
+weapons,Occult Demon's Greataxe,751700,0,1,5,1,600,1118,57,0,0,Occult,1,0
+weapons,Fire Demon's Greataxe,751800,0,1,10,1,600,1119,57,0,0,Fire,1,0
+weapons,Chaos Demon's Greataxe,751900,0,1,5,1,600,1120,57,0,0,Chaos,1,0
+weapons,Dragon King Greataxe,752000,0,1,5,1,400,1131,58,0,0,Normal,1,0
+weapons,Black Knight Greataxe,753000,0,1,5,1,300,1122,146,0,0,,1,0
+weapons,Club,800000,0,1,15,1,250,1191,59,0,0,Normal,1,0
+weapons,Crystal Club,800100,0,1,5,1,25,1192,59,0,0,Crystal,1,0
+weapons,Lightning Club,800200,0,1,5,1,250,1193,59,0,0,Lightning,1,0
+weapons,Raw Club,800300,0,1,5,1,250,1194,59,0,0,Raw,1,0
+weapons,Magic Club,800400,0,1,10,1,250,1195,59,0,0,Magic,1,0
+weapons,Enchanted Club,800500,0,1,5,1,250,1196,59,0,0,Enchanted,1,0
+weapons,Divine Club,800600,0,1,10,1,250,1197,59,0,0,Divine,1,0
+weapons,Occult Club,800700,0,1,5,1,250,1198,59,0,0,Occult,1,0
+weapons,Fire Club,800800,0,1,10,1,250,1199,59,0,0,Fire,1,0
+weapons,Chaos Club,800900,0,1,5,1,250,1200,59,0,0,Chaos,1,0
+weapons,Mace,801000,0,1,15,1,250,1221,60,0,0,Normal,1,0
+weapons,Crystal Mace,801100,0,1,5,1,25,1222,60,0,0,Crystal,1,0
+weapons,Lightning Mace,801200,0,1,5,1,250,1223,60,0,0,Lightning,1,0
+weapons,Raw Mace,801300,0,1,5,1,250,1224,60,0,0,Raw,1,0
+weapons,Magic Mace,801400,0,1,10,1,250,1225,60,0,0,Magic,1,0
+weapons,Enchanted Mace,801500,0,1,5,1,250,1226,60,0,0,Enchanted,1,0
+weapons,Divine Mace,801600,0,1,10,1,250,1227,60,0,0,Divine,1,0
+weapons,Occult Mace,801700,0,1,5,1,250,1228,60,0,0,Occult,1,0
+weapons,Fire Mace,801800,0,1,10,1,250,1229,60,0,0,Fire,1,0
+weapons,Chaos Mace,801900,0,1,5,1,250,1230,60,0,0,Chaos,1,0
+weapons,Morning Star,802000,0,1,15,1,180,1231,61,0,0,Normal,1,0
+weapons,Crystal Morning Star,802100,0,1,5,1,18,1232,61,0,0,Crystal,1,0
+weapons,Lightning Morning Star,802200,0,1,5,1,180,1233,61,0,0,Lightning,1,0
+weapons,Raw Morning Star,802300,0,1,5,1,180,1234,61,0,0,Raw,1,0
+weapons,Magic Morning Star,802400,0,1,10,1,180,1235,61,0,0,Magic,1,0
+weapons,Enchanted Morning Star,802500,0,1,5,1,180,1236,61,0,0,Enchanted,1,0
+weapons,Divine Morning Star,802600,0,1,10,1,180,1237,61,0,0,Divine,1,0
+weapons,Occult Morning Star,802700,0,1,5,1,180,1238,61,0,0,Occult,1,0
+weapons,Fire Morning Star,802800,0,1,10,1,180,1239,61,0,0,Fire,1,0
+weapons,Chaos Morning Star,802900,0,1,5,1,180,1240,61,0,0,Chaos,1,0
+weapons,Warpick,803000,0,1,15,1,220,1241,62,0,0,Normal,1,0
+weapons,Crystal Warpick,803100,0,1,5,1,22,1242,62,0,0,Crystal,1,0
+weapons,Lightning Warpick,803200,0,1,5,1,220,1243,62,0,0,Lightning,1,0
+weapons,Raw Warpick,803300,0,1,5,1,220,1244,62,0,0,Raw,1,0
+weapons,Magic Warpick,803400,0,1,10,1,220,1245,62,0,0,Magic,1,0
+weapons,Enchanted Warpick,803500,0,1,5,1,220,1246,62,0,0,Enchanted,1,0
+weapons,Divine Warpick,803600,0,1,10,1,220,1247,62,0,0,Divine,1,0
+weapons,Occult Warpick,803700,0,1,5,1,220,1248,62,0,0,Occult,1,0
+weapons,Fire Warpick,803800,0,1,10,1,220,1249,62,0,0,Fire,1,0
+weapons,Chaos Warpick,803900,0,1,5,1,220,1250,62,0,0,Chaos,1,0
+weapons,Pickaxe,804000,0,1,15,1,250,1251,63,0,0,Normal,1,0
+weapons,Crystal Pickaxe,804100,0,1,5,1,25,1252,63,0,0,Crystal,1,0
+weapons,Lightning Pickaxe,804200,0,1,5,1,250,1253,63,0,0,Lightning,1,0
+weapons,Raw Pickaxe,804300,0,1,5,1,250,1254,63,0,0,Raw,1,0
+weapons,Magic Pickaxe,804400,0,1,10,1,250,1255,63,0,0,Magic,1,0
+weapons,Enchanted Pickaxe,804500,0,1,5,1,250,1256,63,0,0,Enchanted,1,0
+weapons,Divine Pickaxe,804600,0,1,10,1,250,1257,63,0,0,Divine,1,0
+weapons,Occult Pickaxe,804700,0,1,5,1,250,1258,63,0,0,Occult,1,0
+weapons,Fire Pickaxe,804800,0,1,10,1,250,1259,63,0,0,Fire,1,0
+weapons,Chaos Pickaxe,804900,0,1,5,1,250,1260,63,0,0,Chaos,1,0
+weapons,Reinforced Club,809000,0,1,15,1,100,1201,144,0,0,Normal,1,0
+weapons,Crystal Reinforced Club,809100,0,1,5,1,10,1202,144,0,0,Crystal,1,0
+weapons,Lightning Reinforced Club,809200,0,1,5,1,100,1203,144,0,0,Lightning,1,0
+weapons,Raw Reinforced Club,809300,0,1,5,1,100,1204,144,0,0,Raw,1,0
+weapons,Magic Reinforced Club,809400,0,1,10,1,100,1205,144,0,0,Magic,1,0
+weapons,Enchanted Reinforced Club,809500,0,1,5,1,100,1206,144,0,0,Enchanted,1,0
+weapons,Divine Reinforced Club,809600,0,1,10,1,100,1207,144,0,0,Divine,1,0
+weapons,Occult Reinforced Club,809700,0,1,5,1,100,1208,144,0,0,Occult,1,0
+weapons,Fire Reinforced Club,809800,0,1,10,1,100,1209,144,0,0,Fire,1,0
+weapons,Chaos Reinforced Club,809900,0,1,5,1,100,1210,144,0,0,Chaos,1,0
+weapons,Blacksmith Hammer,810000,0,1,15,1,250,1261,167,0,0,Normal,1,0
+weapons,Crystal Blacksmith Hammer,810100,0,1,5,1,25,1262,167,0,0,Crystal,1,0
+weapons,Lightning Blacksmith Hammer,810200,0,1,5,1,250,1263,167,0,0,Lightning,1,0
+weapons,Raw Blacksmith Hammer,810300,0,1,5,1,250,1264,167,0,0,Raw,1,0
+weapons,Magic Blacksmith Hammer,810400,0,1,10,1,250,1265,167,0,0,Magic,1,0
+weapons,Enchanted Blacksmith Hammer,810500,0,1,5,1,250,1266,167,0,0,Enchanted,1,0
+weapons,Divine Blacksmith Hammer,810600,0,1,10,1,250,1267,167,0,0,Divine,1,0
+weapons,Occult Blacksmith Hammer,810700,0,1,5,1,250,1268,167,0,0,Occult,1,0
+weapons,Fire Blacksmith Hammer,810800,0,1,10,1,250,1269,167,0,0,Fire,1,0
+weapons,Chaos Blacksmith Hammer,810900,0,1,5,1,250,1270,167,0,0,Chaos,1,0
+weapons,Blacksmith Giant Hammer,811000,0,1,5,1,250,1211,168,0,0,,1,0
+weapons,Hammer of Vamos,812000,0,1,5,1,250,1271,169,0,0,,1,0
+weapons,Great Club,850000,0,1,15,1,250,1311,68,0,0,Normal,1,0
+weapons,Crystal Great Club,850100,0,1,5,1,25,1312,68,0,0,Crystal,1,0
+weapons,Lightning Great Club,850200,0,1,5,1,250,1313,68,0,0,Lightning,1,0
+weapons,Raw Great Club,850300,0,1,5,1,250,1314,68,0,0,Raw,1,0
+weapons,Magic Great Club,850400,0,1,10,1,250,1315,68,0,0,Magic,1,0
+weapons,Enchanted Great Club,850500,0,1,5,1,250,1316,68,0,0,Enchanted,1,0
+weapons,Divine Great Club,850600,0,1,10,1,250,1317,68,0,0,Divine,1,0
+weapons,Occult Great Club,850700,0,1,5,1,250,1318,68,0,0,Occult,1,0
+weapons,Fire Great Club,850800,0,1,10,1,250,1319,68,0,0,Fire,1,0
+weapons,Chaos Great Club,850900,0,1,5,1,250,1320,68,0,0,Chaos,1,0
+weapons,Grant,851000,0,1,5,1,600,1331,66,0,0,,1,0
+weapons,Demon's Great Hammer,852000,0,1,15,1,600,1321,70,0,0,Normal,1,0
+weapons,Crys. Demon's Great Hammer,852100,0,1,5,1,60,1322,70,0,0,Crystal,1,0
+weapons,Ltng. Demon's Gr. Hammer,852200,0,1,5,1,600,1323,70,0,0,Lightning,1,0
+weapons,Raw Demon's Great Hammer,852300,0,1,5,1,600,1324,70,0,0,Raw,1,0
+weapons,Magic Demon's Gr. Hammer,852400,0,1,10,1,600,1325,70,0,0,Magic,1,0
+weapons,Ench. Demon's Gr. Hammer,852500,0,1,5,1,600,1326,70,0,0,Enchanted,1,0
+weapons,Div. Demon's Gr. Hammer,852600,0,1,10,1,600,1327,70,0,0,Divine,1,0
+weapons,Occ. Demon's Gr. Hammer,852700,0,1,5,1,600,1328,70,0,0,Occult,1,0
+weapons,Fire Demon's Great Hammer,852800,0,1,10,1,600,1329,70,0,0,Fire,1,0
+weapons,Chaos Demon's Great Hammer,852900,0,1,5,1,600,1330,70,0,0,Chaos,1,0
+weapons,Dragon Tooth,854000,0,1,5,1,999,1341,157,0,0,Normal,1,0
+weapons,Large Club,855000,0,1,15,1,250,1301,170,0,0,Normal,1,0
+weapons,Crystal Large Club,855100,0,1,5,1,25,1302,170,0,0,Crystal,1,0
+weapons,Lightning Large Club,855200,0,1,5,1,250,1303,170,0,0,Lightning,1,0
+weapons,Raw Large Club,855300,0,1,5,1,250,1304,170,0,0,Raw,1,0
+weapons,Magic Large Club,855400,0,1,10,1,250,1305,170,0,0,Magic,1,0
+weapons,Enchanted Large Club,855500,0,1,5,1,250,1306,170,0,0,Enchanted,1,0
+weapons,Divine Large Club,855600,0,1,10,1,250,1307,170,0,0,Divine,1,0
+weapons,Occult Large Club,855700,0,1,5,1,250,1308,170,0,0,Occult,1,0
+weapons,Fire Large Club,855800,0,1,10,1,250,1309,170,0,0,Fire,1,0
+weapons,Chaos Large Club,855900,0,1,5,1,250,1310,170,0,0,Chaos,1,0
+weapons,Smough's Hammer,856000,0,1,5,1,600,1351,71,0,0,,1,0
+weapons,Smough's Hammer,856100,0,1,5,1,600,1352,71,0,0,,1,1
+weapons,Smough's Hammer,856200,0,1,5,1,600,1353,71,0,0,,1,1
+weapons,Smough's Hammer,856300,0,1,5,1,600,1354,71,0,0,,1,1
+weapons,Smough's Hammer,856400,0,1,5,1,600,1355,71,0,0,,1,1
+weapons,Smough's Hammer,856500,0,1,5,1,600,1356,71,0,0,,1,1
+weapons,Smough's Hammer,856600,0,1,5,1,600,1357,71,0,0,,1,1
+weapons,Smough's Hammer,856700,0,1,5,1,600,1358,71,0,0,,1,1
+weapons,Smough's Hammer,856800,0,1,5,1,600,1359,71,0,0,,1,1
+weapons,Smough's Hammer,856900,0,1,5,1,600,1360,71,0,0,,1,1
+weapons,Smough's Hammer (ID 857000),857000,0,1,5,1,600,1361,71,0,0,,1,0
+weapons,Smough's Hammer,857100,0,1,5,1,600,1362,71,0,0,,1,1
+weapons,Caestus,901000,0,1,15,1,300,1751,73,0,0,Normal,1,0
+weapons,Crystal Caestus,901100,0,1,5,1,30,1752,73,0,0,Crystal,1,0
+weapons,Lightning Caestus,901200,0,1,5,1,300,1753,73,0,0,Lightning,1,0
+weapons,Raw Caestus,901300,0,1,5,1,300,1754,73,0,0,Raw,1,0
+weapons,Magic Caestus,901400,0,1,10,1,300,1755,73,0,0,Magic,1,0
+weapons,Enchanted Caestus,901500,0,1,5,1,300,1756,73,0,0,Enchanted,1,0
+weapons,Divine Caestus,901600,0,1,10,1,300,1757,73,0,0,Divine,1,0
+weapons,Occult Caestus,901700,0,1,5,1,300,1758,73,0,0,Occult,1,0
+weapons,Fire Caestus,901800,0,1,10,1,300,1759,73,0,0,Fire,1,0
+weapons,Chaos Caestus,901900,0,1,5,1,300,1760,73,0,0,Chaos,1,0
+weapons,Claw,902000,0,1,15,1,150,1761,74,0,0,Normal,1,0
+weapons,Crystal Claw,902100,0,1,5,1,15,1762,74,0,0,Crystal,1,0
+weapons,Lightning Claw,902200,0,1,5,1,150,1763,74,0,0,Lightning,1,0
+weapons,Raw Claw,902300,0,1,5,1,150,1764,74,0,0,Raw,1,0
+weapons,Magic Claw,902400,0,1,10,1,150,1765,74,0,0,Magic,1,0
+weapons,Enchanted Claw,902500,0,1,5,1,150,1766,74,0,0,Enchanted,1,0
+weapons,Divine Claw,902600,0,1,10,1,150,1767,74,0,0,Divine,1,0
+weapons,Occult Claw,902700,0,1,5,1,150,1768,74,0,0,Occult,1,0
+weapons,Fire Claw,902800,0,1,10,1,150,1769,74,0,0,Fire,1,0
+weapons,Chaos Claw,902900,0,1,5,1,150,1770,74,0,0,Chaos,1,0
+weapons,Dragon Bone Fist,903000,0,1,5,1,999,1771,75,0,0,Normal,1,0
+weapons,Dragon Bone Fist,903100,0,1,5,1,999,1772,75,0,0,,1,1
+weapons,Dark Hand,904000,0,1,5,1,999,1781,76,0,0,,1,0
+weapons,Spear,1000000,0,1,15,1,180,1401,77,0,0,Normal,1,0
+weapons,Crystal Spear,1000100,0,1,5,1,18,1402,77,0,0,Crystal,1,0
+weapons,Lightning Spear (ID 1000200),1000200,0,1,5,1,180,1403,77,0,0,Lightning,1,0
+weapons,Raw Spear,1000300,0,1,5,1,180,1404,77,0,0,Raw,1,0
+weapons,Magic Spear,1000400,0,1,10,1,180,1405,77,0,0,Magic,1,0
+weapons,Enchanted Spear,1000500,0,1,5,1,180,1406,77,0,0,Enchanted,1,0
+weapons,Divine Spear,1000600,0,1,10,1,180,1407,77,0,0,Divine,1,0
+weapons,Occult Spear,1000700,0,1,5,1,180,1408,77,0,0,Occult,1,0
+weapons,Fire Spear,1000800,0,1,10,1,180,1409,77,0,0,Fire,1,0
+weapons,Chaos Spear,1000900,0,1,5,1,180,1410,77,0,0,Chaos,1,0
+weapons,Winged Spear,1001000,0,1,15,1,140,1411,78,0,0,Normal,1,0
+weapons,Crystal Winged Spear,1001100,0,1,5,1,14,1412,78,0,0,Crystal,1,0
+weapons,Lightning Winged Spear,1001200,0,1,5,1,140,1413,78,0,0,Lightning,1,0
+weapons,Raw Winged Spear,1001300,0,1,5,1,140,1414,78,0,0,Raw,1,0
+weapons,Magic Winged Spear,1001400,0,1,10,1,140,1415,78,0,0,Magic,1,0
+weapons,Enchanted Winged Spear,1001500,0,1,5,1,140,1416,78,0,0,Enchanted,1,0
+weapons,Divine Winged Spear,1001600,0,1,10,1,140,1417,78,0,0,Divine,1,0
+weapons,Occult Winged Spear,1001700,0,1,5,1,140,1418,78,0,0,Occult,1,0
+weapons,Fire Winged Spear,1001800,0,1,10,1,140,1419,78,0,0,Fire,1,0
+weapons,Chaos Winged Spear,1001900,0,1,5,1,140,1420,78,0,0,Chaos,1,0
+weapons,Partizan,1002000,0,1,15,1,160,1421,79,0,0,Normal,1,0
+weapons,Crystal Partizan,1002100,0,1,5,1,16,1422,79,0,0,Crystal,1,0
+weapons,Lightning Partizan,1002200,0,1,5,1,160,1423,79,0,0,Lightning,1,0
+weapons,Raw Partizan,1002300,0,1,5,1,160,1424,79,0,0,Raw,1,0
+weapons,Magic Partizan,1002400,0,1,10,1,160,1425,79,0,0,Magic,1,0
+weapons,Enchanted Partizan,1002500,0,1,5,1,160,1426,79,0,0,Enchanted,1,0
+weapons,Divine Partizan,1002600,0,1,10,1,160,1427,79,0,0,Divine,1,0
+weapons,Occult Partizan,1002700,0,1,5,1,160,1428,79,0,0,Occult,1,0
+weapons,Fire Partizan,1002800,0,1,10,1,160,1429,79,0,0,Fire,1,0
+weapons,Chaos Partizan,1002900,0,1,5,1,160,1430,79,0,0,Chaos,1,0
+weapons,Demon's Spear,1003000,0,1,5,1,400,1452,80,0,0,,1,0
+weapons,Channeler's Trident,1004000,0,1,5,1,240,1451,81,0,0,,1,0
+weapons,Silver Knight Spear,1006000,0,1,5,1,300,1461,83,0,0,,1,0
+weapons,Pike,1050000,0,1,15,1,180,1441,84,0,0,Normal,1,0
+weapons,Crystal Pike,1050100,0,1,5,1,18,1442,84,0,0,Crystal,1,0
+weapons,Lightning Pike,1050200,0,1,5,1,180,1443,84,0,0,Lightning,1,0
+weapons,Raw Pike,1050300,0,1,5,1,180,1444,84,0,0,Raw,1,0
+weapons,Magic Pike,1050400,0,1,10,1,180,1445,84,0,0,Magic,1,0
+weapons,Enchanted Pike,1050500,0,1,5,1,180,1446,84,0,0,Enchanted,1,0
+weapons,Divine Pike,1050600,0,1,10,1,180,1447,84,0,0,Divine,1,0
+weapons,Occult Pike,1050700,0,1,5,1,180,1448,84,0,0,Occult,1,0
+weapons,Fire Pike,1050800,0,1,10,1,180,1449,84,0,0,Fire,1,0
+weapons,Chaos Pike,1050900,0,1,5,1,180,1450,84,0,0,Chaos,1,0
+weapons,Dragonslayer Spear,1051000,0,1,5,1,300,1482,85,0,0,,1,0
+weapons,Dragonslayer Spear,1051100,0,1,5,1,300,1483,85,0,0,,1,1
+weapons,Dragonslayer Spear,1051200,0,1,5,1,300,1484,85,0,0,,1,1
+weapons,Dragonslayer Spear,1051300,0,1,5,1,300,1486,85,0,0,,1,1
+weapons,Dragonslayer Spear,1051400,0,1,5,1,300,1487,85,0,0,,1,1
+weapons,Dragonslayer Spear,1051500,0,1,5,1,300,1488,85,0,0,,1,1
+weapons,Dragonslayer Spear,1051600,0,1,5,1,300,1489,85,0,0,,1,1
+weapons,Dragonslayer Spear,1051700,0,1,5,1,300,1490,85,0,0,,1,1
+weapons,Dragonslayer Spear,1051800,0,1,5,1,300,1491,85,0,0,,1,1
+weapons,Dragonslayer Spear,1051900,0,1,5,1,300,1485,85,0,0,,1,1
+weapons,Moonlight Butterfly Horn,1052000,0,1,5,1,160,1471,31,0,0,,1,0
+weapons,Moonlight Butterfly Horn,1052100,0,1,5,1,160,1472,31,0,0,,1,1
+weapons,Moonlight Butterfly Horn,1052200,0,1,5,1,160,1473,31,0,0,,1,1
+weapons,Moonlight Butterfly Horn,1052300,0,1,5,1,160,1475,31,0,0,,1,1
+weapons,Moonlight Butterfly Horn,1052400,0,1,5,1,160,1476,31,0,0,,1,1
+weapons,Moonlight Butterfly Horn,1052500,0,1,5,1,160,1477,31,0,0,,1,1
+weapons,Moonlight Butterfly Horn,1052600,0,1,5,1,160,1478,31,0,0,,1,1
+weapons,Moonlight Butterfly Horn,1052700,0,1,5,1,160,1479,31,0,0,,1,1
+weapons,Moonlight Butterfly Horn,1052800,0,1,5,1,160,1480,31,0,0,,1,1
+weapons,Moonlight Butterfly Horn,1052900,0,1,5,1,160,1474,31,0,0,,1,1
+weapons,Moonlight Butterfly Horn (ID 1053000),1053000,0,1,5,1,160,1481,31,0,0,,1,0
+weapons,Dragonslayer Spear (ID 1054000),1054000,0,1,5,1,300,1492,85,0,0,,1,0
+weapons,Halberd,1100000,0,1,15,1,200,1501,86,0,0,Normal,1,0
+weapons,Crystal Halberd,1100100,0,1,5,1,20,1502,86,0,0,Crystal,1,0
+weapons,Lightning Halberd,1100200,0,1,5,1,200,1503,86,0,0,Lightning,1,0
+weapons,Raw Halberd,1100300,0,1,5,1,200,1504,86,0,0,Raw,1,0
+weapons,Magic Halberd,1100400,0,1,10,1,200,1505,86,0,0,Magic,1,0
+weapons,Enchanted Halberd,1100500,0,1,5,1,200,1506,86,0,0,Enchanted,1,0
+weapons,Divine Halberd,1100600,0,1,10,1,200,1507,86,0,0,Divine,1,0
+weapons,Occult Halberd,1100700,0,1,5,1,200,1508,86,0,0,Occult,1,0
+weapons,Fire Halberd,1100800,0,1,10,1,200,1509,86,0,0,Fire,1,0
+weapons,Chaos Halberd,1100900,0,1,5,1,200,1510,86,0,0,Chaos,1,0
+weapons,Giant's Halberd,1101000,0,1,5,1,300,1541,87,0,0,,1,0
+weapons,Titanite Catch Pole,1102000,0,1,5,1,600,1551,88,0,0,,1,0
+weapons,Gargoyle's Halberd,1103000,0,1,15,1,200,1531,171,0,0,Normal,1,0
+weapons,Crystal Gargoyle's Halberd,1103100,0,1,5,1,20,1532,171,0,0,Crystal,1,0
+weapons,Ltng. Gargoyle's Halberd,1103200,0,1,5,1,200,1533,171,0,0,Lightning,1,0
+weapons,Raw Gargoyle's Halberd,1103300,0,1,5,1,200,1534,171,0,0,Raw,1,0
+weapons,Magic Gargoyle's Halberd,1103400,0,1,10,1,200,1535,171,0,0,Magic,1,0
+weapons,Ench. Gargoyle's Halberd,1103500,0,1,5,1,200,1536,171,0,0,Enchanted,1,0
+weapons,Divine Gargoyle's Halberd,1103600,0,1,10,1,200,1537,171,0,0,Divine,1,0
+weapons,Occult Gargoyle's Halberd,1103700,0,1,5,1,200,1538,171,0,0,Occult,1,0
+weapons,Fire Gargoyle's Halberd,1103800,0,1,10,1,200,1539,171,0,0,Fire,1,0
+weapons,Chaos Gargoyle's Halberd,1103900,0,1,5,1,200,1540,171,0,0,Chaos,1,0
+weapons,Black Knight Halberd,1105000,0,1,5,1,300,1561,147,0,0,,1,0
+weapons,Lucerne ,1106000,0,1,15,1,200,1511,151,0,0,Normal,1,0
+weapons,Crystal Lucerne ,1106100,0,1,5,1,20,1512,151,0,0,Crystal,1,0
+weapons,Lightning Lucerne ,1106200,0,1,5,1,200,1513,151,0,0,Lightning,1,0
+weapons,Raw Lucerne ,1106300,0,1,5,1,200,1514,151,0,0,Raw,1,0
+weapons,Magic Lucerne ,1106400,0,1,10,1,200,1515,151,0,0,Magic,1,0
+weapons,Enchanted Lucerne ,1106500,0,1,5,1,200,1516,151,0,0,Enchanted,1,0
+weapons,Divine Lucerne ,1106600,0,1,10,1,200,1517,151,0,0,Divine,1,0
+weapons,Occult Lucerne ,1106700,0,1,5,1,200,1518,151,0,0,Occult,1,0
+weapons,Fire Lucerne ,1106800,0,1,10,1,200,1519,151,0,0,Fire,1,0
+weapons,Chaos Lucerne ,1106900,0,1,5,1,200,1520,151,0,0,Chaos,1,0
+weapons,Scythe,1107000,0,1,15,1,150,1521,152,0,0,Normal,1,0
+weapons,Crystal Scythe,1107100,0,1,5,1,15,1522,152,0,0,Crystal,1,0
+weapons,Lightning Scythe,1107200,0,1,5,1,150,1523,152,0,0,Lightning,1,0
+weapons,Raw Scythe,1107300,0,1,5,1,150,1524,152,0,0,Raw,1,0
+weapons,Magic Scythe,1107400,0,1,10,1,150,1525,152,0,0,Magic,1,0
+weapons,Enchanted Scythe,1107500,0,1,5,1,150,1526,152,0,0,Enchanted,1,0
+weapons,Divine Scythe,1107600,0,1,10,1,150,1527,152,0,0,Divine,1,0
+weapons,Occult Scythe,1107700,0,1,5,1,150,1528,152,0,0,Occult,1,0
+weapons,Fire Scythe,1107800,0,1,10,1,150,1529,152,0,0,Fire,1,0
+weapons,Chaos Scythe,1107900,0,1,5,1,150,1530,152,0,0,Chaos,1,0
+weapons,Great Scythe,1150000,0,1,15,1,130,1601,91,0,0,Normal,1,0
+weapons,Crystal Great Scythe,1150100,0,1,5,1,13,1602,91,0,0,Crystal,1,0
+weapons,Lightning Great Scythe,1150200,0,1,5,1,130,1603,91,0,0,Lightning,1,0
+weapons,Raw Great Scythe,1150300,0,1,5,1,130,1604,91,0,0,Raw,1,0
+weapons,Magic Great Scythe,1150400,0,1,10,1,130,1605,91,0,0,Magic,1,0
+weapons,Enchanted Great Scythe,1150500,0,1,5,1,130,1606,91,0,0,Enchanted,1,0
+weapons,Divine Great Scythe,1150600,0,1,10,1,130,1607,91,0,0,Divine,1,0
+weapons,Occult Great Scythe,1150700,0,1,5,1,130,1608,91,0,0,Occult,1,0
+weapons,Fire Great Scythe,1150800,0,1,10,1,130,1609,91,0,0,Fire,1,0
+weapons,Chaos Great Scythe,1150900,0,1,5,1,130,1610,91,0,0,Chaos,1,0
+weapons,Lifehunt Scythe,1151000,0,1,5,1,100,1611,92,0,0,,1,0
+weapons,Lifehunt Scythe,1151100,0,1,5,1,100,1612,92,0,0,,1,1
+weapons,Lifehunt Scythe,1151200,0,1,5,1,100,1613,92,0,0,,1,1
+weapons,Lifehunt Scythe,1151300,0,1,5,1,100,1614,92,0,0,,1,1
+weapons,Lifehunt Scythe,1151400,0,1,5,1,100,1615,92,0,0,,1,1
+weapons,Lifehunt Scythe,1151500,0,1,5,1,100,1616,92,0,0,,1,1
+weapons,Lifehunt Scythe,1151600,0,1,5,1,100,1617,92,0,0,,1,1
+weapons,Lifehunt Scythe,1151700,0,1,5,1,100,1618,92,0,0,,1,1
+weapons,Lifehunt Scythe,1151800,0,1,5,1,100,1619,92,0,0,,1,1
+weapons,Short Bow,1200000,0,1,15,1,100,1801,93,0,0,,1,0
+weapons,Crystal Short Bow,1200100,0,1,5,1,10,1802,93,0,0,Crystal,1,0
+weapons,Lightning Short Bow,1200200,0,1,5,1,100,1803,93,0,0,Lightning,1,0
+weapons,Raw Short Bow,1200300,0,1,5,1,100,1804,93,0,0,Raw,1,0
+weapons,Magic Short Bow,1200400,0,1,10,1,100,1805,93,0,0,Magic,1,0
+weapons,Enchanted Short Bow,1200500,0,1,5,1,100,1806,93,0,0,Enchanted,1,0
+weapons,Divine Short Bow,1200600,0,1,10,1,100,1807,93,0,0,Divine,1,0
+weapons,Occult Short Bow,1200700,0,1,5,1,100,1808,93,0,0,Occult,1,0
+weapons,Fire Short Bow,1200800,0,1,10,1,100,1809,93,0,0,Fire,1,0
+weapons,Chaos Short Bow,1200900,0,1,5,1,100,1810,93,0,0,Chaos,1,0
+weapons,Longbow,1201000,0,1,15,1,100,1821,94,0,0,,1,0
+weapons,Crystal Longbow,1201100,0,1,5,1,10,1822,94,0,0,Crystal,1,0
+weapons,Lightning Longbow,1201200,0,1,5,1,100,1823,94,0,0,Lightning,1,0
+weapons,Raw Longbow,1201300,0,1,5,1,100,1824,94,0,0,Raw,1,0
+weapons,Magic Longbow,1201400,0,1,10,1,100,1825,94,0,0,Magic,1,0
+weapons,Enchanted Longbow,1201500,0,1,5,1,100,1826,94,0,0,Enchanted,1,0
+weapons,Divine Longbow,1201600,0,1,10,1,100,1827,94,0,0,Divine,1,0
+weapons,Occult Longbow,1201700,0,1,5,1,100,1828,94,0,0,Occult,1,0
+weapons,Fire Longbow,1201800,0,1,10,1,100,1829,94,0,0,Fire,1,0
+weapons,Chaos Longbow,1201900,0,1,5,1,100,1830,94,0,0,Chaos,1,0
+weapons,Black Bow of Pharis,1202000,0,1,15,1,100,1831,95,0,0,,1,0
+weapons,Crystal Black Bow of Pharis,1202100,0,1,5,1,10,1832,95,0,0,Crystal,1,0
+weapons,Ltng. Black Bow of Pharis,1202200,0,1,5,1,100,1833,95,0,0,Lightning,1,0
+weapons,Raw Black Bow of Pharis,1202300,0,1,5,1,100,1834,95,0,0,Raw,1,0
+weapons,Magic Black Bow of Pharis,1202400,0,1,10,1,100,1835,95,0,0,Magic,1,0
+weapons,Ench. Black Bow of Pharis,1202500,0,1,5,1,100,1836,95,0,0,Enchanted,1,0
+weapons,Divine Black Bow of Pharis,1202600,0,1,10,1,100,1837,95,0,0,Divine,1,0
+weapons,Occult Black Bow of Pharis,1202700,0,1,5,1,100,1838,95,0,0,Occult,1,0
+weapons,Fire Black Bow of Pharis,1202800,0,1,10,1,100,1839,95,0,0,Fire,1,0
+weapons,Chaos Black Bow of Pharis,1202900,0,1,5,1,100,1840,95,0,0,Chaos,1,0
+weapons,Dragonslayer Greatbow,1203000,0,1,5,1,100,1841,96,0,0,,1,0
+weapons,Composite Bow,1204000,0,1,15,1,100,1811,40,0,0,,1,0
+weapons,Crystal Composite Bow,1204100,0,1,5,1,10,1812,40,0,0,Crystal,1,0
+weapons,Lightning Composite Bow,1204200,0,1,5,1,100,1813,40,0,0,Lightning,1,0
+weapons,Raw Composite Bow,1204300,0,1,5,1,100,1814,40,0,0,Raw,1,0
+weapons,Magic Composite Bow,1204400,0,1,10,1,100,1815,40,0,0,Magic,1,0
+weapons,Enchanted Composite Bow,1204500,0,1,5,1,100,1816,40,0,0,Enchanted,1,0
+weapons,Divine Composite Bow,1204600,0,1,10,1,100,1817,40,0,0,Divine,1,0
+weapons,Occult Composite Bow,1204700,0,1,5,1,100,1818,40,0,0,Occult,1,0
+weapons,Fire Composite Bow,1204800,0,1,10,1,100,1819,40,0,0,Fire,1,0
+weapons,Chaos Composite Bow,1204900,0,1,5,1,100,1820,40,0,0,Chaos,1,0
+weapons,Darkmoon Bow,1205000,0,1,5,1,400,1851,64,0,0,,1,0
+weapons,Darkmoon Bow,1205100,0,1,5,1,400,1852,64,0,0,,1,1
+weapons,Darkmoon Bow,1205200,0,1,5,1,400,1853,64,0,0,,1,1
+weapons,Darkmoon Bow,1205300,0,1,5,1,400,1854,64,0,0,,1,1
+weapons,Light Crossbow,1250000,0,1,15,1,150,1901,97,0,0,,1,0
+weapons,Crystal Light Crossbow,1250100,0,1,5,1,15,1902,97,0,0,Crystal,1,0
+weapons,Lightning Light Crossbow,1250200,0,1,5,1,150,1903,97,0,0,Lightning,1,0
+weapons,Magic Light Crossbow,1250400,0,1,10,1,150,1904,97,0,0,Magic,1,0
+weapons,Divine Light Crossbow,1250600,0,1,10,1,150,1905,97,0,0,Divine,1,0
+weapons,Fire Light Crossbow,1250800,0,1,10,1,150,1906,97,0,0,Fire,1,0
+weapons,Heavy Crossbow,1251000,0,1,15,1,150,1911,98,0,0,,1,0
+weapons,Crystal Heavy Crossbow,1251100,0,1,5,1,15,1912,98,0,0,Crystal,1,0
+weapons,Lightning Heavy Crossbow,1251200,0,1,5,1,150,1913,98,0,0,Lightning,1,0
+weapons,Magic Heavy Crossbow,1251400,0,1,10,1,150,1914,98,0,0,Magic,1,0
+weapons,Divine Heavy Crossbow,1251600,0,1,10,1,150,1915,98,0,0,Divine,1,0
+weapons,Fire Heavy Crossbow,1251800,0,1,10,1,150,1916,98,0,0,Fire,1,0
+weapons,Avelyn,1252000,0,1,15,1,150,1931,99,0,0,,1,0
+weapons,Crystal Avelyn,1252100,0,1,5,1,15,1932,99,0,0,Crystal,1,0
+weapons,Lightning Avelyn,1252200,0,1,5,1,150,1933,99,0,0,Lightning,1,0
+weapons,Magic Avelyn,1252400,0,1,10,1,150,1934,99,0,0,Magic,1,0
+weapons,Divine Avelyn,1252600,0,1,10,1,150,1935,99,0,0,Divine,1,0
+weapons,Fire Avelyn,1252800,0,1,10,1,150,1936,99,0,0,Fire,1,0
+weapons,Sniper Crossbow,1253000,0,1,15,1,150,1921,100,0,0,,1,0
+weapons,Crystal Sniper Crossbow,1253100,0,1,5,1,15,1922,100,0,0,Crystal,1,0
+weapons,Lightning Sniper Crossbow,1253200,0,1,5,1,150,1923,100,0,0,Lightning,1,0
+weapons,Magic Sniper Crossbow,1253400,0,1,10,1,150,1924,100,0,0,Magic,1,0
+weapons,Divine Sniper Crossbow,1253600,0,1,10,1,150,1925,100,0,0,Divine,1,0
+weapons,Fire Sniper Crossbow,1253800,0,1,10,1,150,1926,100,0,0,Fire,1,0
+weapons,Sorcerer's Catalyst,1300000,0,1,15,1,90,2001,101,0,0,,1,0
+weapons,Beatrice's Catalyst,1301000,0,1,15,1,90,2002,102,0,0,,1,0
+weapons,Tin Banishment Catalyst,1302000,0,1,15,1,160,2008,103,0,0,,1,0
+weapons,Logan's Catalyst,1303000,0,1,15,1,90,2003,104,0,0,,1,0
+weapons,Tin Darkmoon Catalyst,1304000,0,1,5,1,60,2011,172,0,0,,1,0
+weapons,Tin Darkmoon Catalyst,1304100,0,1,5,1,60,2012,172,0,0,,1,1
+weapons,Tin Darkmoon Catalyst,1304200,0,1,5,1,60,2013,172,0,0,,1,1
+weapons,Tin Darkmoon Catalyst,1304300,0,1,5,1,60,2014,172,0,0,,1,1
+weapons,Tin Darkmoon Catalyst,1304400,0,1,5,1,60,2015,172,0,0,,1,1
+weapons,Tin Darkmoon Catalyst,1304500,0,1,5,1,60,2016,172,0,0,,1,1
+weapons,Oolacile Ivory Catalyst,1305000,0,1,15,1,30,2004,173,0,0,,1,0
+weapons,Tin Crystallization Ctlyst.,1306000,0,1,0,1,90,2009,174,0,0,,1,0
+weapons,Demon's Catalyst,1307000,0,1,0,1,300,2006,175,0,0,,1,0
+weapons,Izalith Catalyst,1308000,0,1,0,1,300,2007,176,0,0,,1,0
+weapons,Pyromancy Flame,1330000,0,1,15,100,30,2031,105,0,0,,1,0
+weapons,Pyromancy Flame (Ascended),1332000,0,1,5,100,30,2047,107,0,0,,1,0
+weapons,Talisman,1360000,0,1,0,1,50,2053,108,0,0,,1,0
+weapons,Canvas Talisman,1361000,0,1,0,1,50,2054,109,0,0,,1,0
+weapons,Thorolund Talisman,1362000,0,1,0,1,50,2055,110,0,0,,1,0
+weapons,Ivory Talisman,1363000,0,1,0,1,50,2056,111,0,0,,1,0
+weapons,Sunlight Talisman,1365000,0,1,0,1,50,2058,178,0,0,,1,0
+weapons,Darkmoon Talisman,1366000,0,1,0,1,50,2059,179,0,0,,1,0
+weapons,Velka's Talisman,1367000,0,1,0,1,50,2060,180,0,0,,1,0
+weapons,Skull Lantern,1396000,0,1,0,1,60,2061,106,0,0,,1,0
+weapons,East-West Shield,1400000,0,1,15,1,160,2301,113,0,0,,1,0
+weapons,Crystal East-West Shield,1400100,0,1,5,1,16,2302,113,0,0,Crystal,1,0
+weapons,Lightning East-West Shield,1400200,0,1,5,1,160,2303,113,0,0,Lightning,1,0
+weapons,Magic East-West Shield,1400400,0,1,10,1,160,2304,113,0,0,Magic,1,0
+weapons,Divine East-West Shield,1400600,0,1,10,1,160,2305,113,0,0,Divine,1,0
+weapons,Fire East-West Shield,1400800,0,1,10,1,160,2306,113,0,0,Fire,1,0
+weapons,Wooden Shield,1401000,0,1,15,1,160,2311,114,0,0,,1,0
+weapons,Crystal Wooden Shield,1401100,0,1,5,1,16,2312,114,0,0,Crystal,1,0
+weapons,Lightning Wooden Shield,1401200,0,1,5,1,160,2313,114,0,0,Lightning,1,0
+weapons,Magic Wooden Shield,1401400,0,1,10,1,160,2314,114,0,0,Magic,1,0
+weapons,Divine Wooden Shield,1401600,0,1,10,1,160,2315,114,0,0,Divine,1,0
+weapons,Fire Wooden Shield,1401800,0,1,10,1,160,2316,114,0,0,Fire,1,0
+weapons,Large Leather Shield,1402000,0,1,15,1,200,2321,115,0,0,,1,0
+weapons,Crys. Large Leather Shield,1402100,0,1,5,1,20,2322,115,0,0,Crystal,1,0
+weapons,Ltng. Large Leather Shield,1402200,0,1,5,1,200,2323,115,0,0,Lightning,1,0
+weapons,Magic Large Leather Shield,1402400,0,1,10,1,200,2324,115,0,0,Magic,1,0
+weapons,Divine Large Leather Shield,1402600,0,1,10,1,200,2325,115,0,0,Divine,1,0
+weapons,Fire Large Leather Shield,1402800,0,1,10,1,200,2326,115,0,0,Fire,1,0
+weapons,Small Leather Shield,1403000,0,1,15,1,200,2151,116,0,0,,1,0
+weapons,Crys. Small Leather Shield,1403100,0,1,5,1,20,2152,116,0,0,Crystal,1,0
+weapons,Ltng. Small Leather Shield,1403200,0,1,5,1,200,2153,116,0,0,Lightning,1,0
+weapons,Magic Small Leather Shield,1403400,0,1,10,1,200,2154,116,0,0,Magic,1,0
+weapons,Divine Small Leather Shield,1403600,0,1,10,1,200,2155,116,0,0,Divine,1,0
+weapons,Fire Small Leather Shield,1403800,0,1,10,1,200,2156,116,0,0,Fire,1,0
+weapons,Target Shield,1404000,0,1,15,1,150,2181,117,0,0,,1,0
+weapons,Crystal Target Shield,1404100,0,1,5,1,15,2182,117,0,0,Crystal,1,0
+weapons,Lightning Target Shield,1404200,0,1,5,1,150,2183,117,0,0,Lightning,1,0
+weapons,Magic Target Shield,1404400,0,1,10,1,150,2184,117,0,0,Magic,1,0
+weapons,Divine Target Shield,1404600,0,1,10,1,150,2185,117,0,0,Divine,1,0
+weapons,Fire Target Shield,1404800,0,1,10,1,150,2186,117,0,0,Fire,1,0
+weapons,Buckler,1405000,0,1,15,1,140,2171,118,0,0,,1,0
+weapons,Crystal Buckler,1405100,0,1,5,1,14,2172,118,0,0,Crystal,1,0
+weapons,Lightning Buckler,1405200,0,1,5,1,140,2173,118,0,0,Lightning,1,0
+weapons,Magic Buckler,1405400,0,1,10,1,140,2174,118,0,0,Magic,1,0
+weapons,Divine Buckler,1405600,0,1,10,1,140,2175,118,0,0,Divine,1,0
+weapons,Fire Buckler,1405800,0,1,10,1,140,2176,118,0,0,Fire,1,0
+weapons,Cracked Round Shield,1406000,0,1,15,1,60,2133,119,0,0,,1,0
+weapons,Crys. Cracked Round Shield,1406100,0,1,5,1,6,2134,119,0,0,Crystal,1,0
+weapons,Ltng. Cracked Round Shield,1406200,0,1,5,1,60,2135,119,0,0,Lightning,1,0
+weapons,Magic Cracked Round Shield,1406400,0,1,10,1,60,2136,119,0,0,Magic,1,0
+weapons,Divine Cracked Round Shield,1406600,0,1,10,1,60,2137,119,0,0,Divine,1,0
+weapons,Fire Cracked Round Shield,1406800,0,1,10,1,60,2138,119,0,0,Fire,1,0
+weapons,Leather Shield,1408000,0,1,15,1,200,2161,154,0,0,,1,0
+weapons,Crystal Leather Shield,1408100,0,1,5,1,20,2162,154,0,0,Crystal,1,0
+weapons,Lightning Leather Shield,1408200,0,1,5,1,200,2163,154,0,0,Lightning,1,0
+weapons,Magic Leather Shield,1408400,0,1,10,1,200,2164,154,0,0,Magic,1,0
+weapons,Divine Leather Shield,1408600,0,1,10,1,200,2165,154,0,0,Divine,1,0
+weapons,Fire Leather Shield,1408800,0,1,10,1,200,2166,154,0,0,Fire,1,0
+weapons,Plank Shield,1409000,0,1,15,1,120,2141,155,0,0,,1,0
+weapons,Crystal Plank Shield,1409100,0,1,5,1,12,2142,155,0,0,Crystal,1,0
+weapons,Lightning Plank Shield,1409200,0,1,5,1,120,2143,155,0,0,Lightning,1,0
+weapons,Magic Plank Shield,1409400,0,1,10,1,120,2144,155,0,0,Magic,1,0
+weapons,Divine Plank Shield,1409600,0,1,10,1,120,2145,155,0,0,Divine,1,0
+weapons,Fire Plank Shield,1409800,0,1,10,1,120,2146,155,0,0,Fire,1,0
+weapons,Caduceus Round Shield,1410000,0,1,15,1,180,2111,163,0,0,,1,0
+weapons,Crys. Caduceus Round Shield,1410100,0,1,5,1,18,2112,163,0,0,Crystal,1,0
+weapons,Ltng. Caduceus Round Shield,1410200,0,1,5,1,180,2113,163,0,0,Lightning,1,0
+weapons,Magic Caduceus Round Shield,1410400,0,1,10,1,180,2114,163,0,0,Magic,1,0
+weapons,Div. Caduceus Round Shield,1410600,0,1,10,1,180,2115,163,0,0,Divine,1,0
+weapons,Fire Caduceus Round Shield,1410800,0,1,10,1,180,2116,163,0,0,Fire,1,0
+weapons,Crystal Ring Shield,1411000,0,1,5,1,120,2191,120,0,0,,1,0
+weapons,Crystal Ring Shield,1411100,0,1,5,1,120,2192,120,0,0,,1,1
+weapons,Crystal Ring Shield,1411200,0,1,5,1,120,2193,120,0,0,,1,1
+weapons,Crystal Ring Shield,1411300,0,1,5,1,120,2194,120,0,0,,1,1
+weapons,Crystal Ring Shield,1411400,0,1,5,1,120,2195,120,0,0,,1,1
+weapons,Crystal Ring Shield,1411500,0,1,5,1,120,2196,120,0,0,,1,1
+weapons,Crystal Ring Shield,1411600,0,1,5,1,120,2197,120,0,0,,1,1
+weapons,Crystal Ring Shield,1411700,0,1,5,1,120,2198,120,0,0,,1,1
+weapons,Crystal Ring Shield,1411800,0,1,5,1,120,2199,120,0,0,,1,1
+weapons,Crystal Ring Shield,1411900,0,1,5,1,120,2200,120,0,0,,1,1
+weapons,Crystal Ring Shield (ID 1412000),1412000,0,1,5,1,120,2201,120,0,0,,1,0
+weapons,Crystal Ring Shield,1412100,0,1,5,1,120,2202,120,0,0,,1,1
+weapons,Crystal Ring Shield,1412200,0,1,5,1,120,2203,120,0,0,,1,1
+weapons,Crystal Ring Shield,1412300,0,1,5,1,120,2204,120,0,0,,1,1
+weapons,Crystal Ring Shield,1412400,0,1,5,1,120,2205,120,0,0,,1,1
+weapons,Crystal Ring Shield,1412500,0,1,5,1,120,2206,120,0,0,,1,1
+weapons,Crystal Ring Shield,1412600,0,1,5,1,120,2207,120,0,0,,1,1
+weapons,Crystal Ring Shield,1412700,0,1,5,1,120,2208,120,0,0,,1,1
+weapons,Crystal Ring Shield,1412800,0,1,5,1,120,2209,120,0,0,,1,1
+weapons,Crystal Ring Shield,1412900,0,1,5,1,120,2210,120,0,0,,1,1
+weapons,Crystal Ring Shield (ID 1413000),1413000,0,1,5,1,120,2211,120,0,0,,1,0
+weapons,Crystal Ring Shield,1413100,0,1,5,1,120,2212,120,0,0,,1,1
+weapons,Crystal Ring Shield,1413200,0,1,5,1,120,2213,120,0,0,,1,1
+weapons,Crystal Ring Shield,1413300,0,1,5,1,120,2214,120,0,0,,1,1
+weapons,Crystal Ring Shield,1413400,0,1,5,1,120,2215,120,0,0,,1,1
+weapons,Crystal Ring Shield,1413500,0,1,5,1,120,2216,120,0,0,,1,1
+weapons,Crystal Ring Shield,1413600,0,1,5,1,120,2217,120,0,0,,1,1
+weapons,Crystal Ring Shield,1413700,0,1,5,1,120,2218,120,0,0,,1,1
+weapons,Crystal Ring Shield,1413800,0,1,5,1,120,2219,120,0,0,,1,1
+weapons,Crystal Ring Shield,1413900,0,1,5,1,120,2220,120,0,0,,1,1
+weapons,Crystal Ring Shield (ID 1414000),1414000,0,1,5,1,120,2221,120,0,0,,1,0
+weapons,Crystal Ring Shield,1414100,0,1,5,1,120,2222,120,0,0,,1,1
+weapons,Crystal Ring Shield,1414200,0,1,5,1,120,2223,120,0,0,,1,1
+weapons,Crystal Ring Shield,1414300,0,1,5,1,120,2224,120,0,0,,0,1
+weapons,Crystal Ring Shield,1414400,0,1,5,1,120,2225,120,0,0,,0,1
+weapons,Crystal Ring Shield,1414500,0,1,5,1,120,2226,120,0,0,,0,1
+weapons,Crystal Ring Shield,1414600,0,1,5,1,120,2227,120,0,0,,0,1
+weapons,Heater Shield,1450000,0,1,15,1,250,2331,121,0,0,,1,0
+weapons,Crystal Heater Shield,1450100,0,1,5,1,25,2332,121,0,0,Crystal,1,0
+weapons,Lightning Heater Shield,1450200,0,1,5,1,250,2333,121,0,0,Lightning,1,0
+weapons,Magic Heater Shield,1450400,0,1,10,1,250,2334,121,0,0,Magic,1,0
+weapons,Divine Heater Shield,1450600,0,1,10,1,250,2335,121,0,0,Divine,1,0
+weapons,Fire Heater Shield,1450800,0,1,10,1,250,2336,121,0,0,Fire,1,0
+weapons,Knight Shield,1451000,0,1,15,1,200,2371,122,0,0,,1,0
+weapons,Crystal Knight Shield,1451100,0,1,5,1,20,2372,122,0,0,Crystal,1,0
+weapons,Lightning Knight Shield,1451200,0,1,5,1,200,2373,122,0,0,Lightning,1,0
+weapons,Magic Knight Shield,1451400,0,1,10,1,200,2374,122,0,0,Magic,1,0
+weapons,Divine Knight Shield,1451600,0,1,10,1,200,2375,122,0,0,Divine,1,0
+weapons,Fire Knight Shield,1451800,0,1,10,1,200,2376,122,0,0,Fire,1,0
+weapons,Tower Kite Shield,1452000,0,1,15,1,250,2341,123,0,0,,1,0
+weapons,Crystal Tower Kite Shield,1452100,0,1,5,1,25,2342,123,0,0,Crystal,1,0
+weapons,Lightning Tower Kite Shield,1452200,0,1,5,1,250,2343,123,0,0,Lightning,1,0
+weapons,Magic Tower Kite Shield,1452400,0,1,10,1,250,2344,123,0,0,Magic,1,0
+weapons,Divine Tower Kite Shield,1452600,0,1,10,1,250,2345,123,0,0,Divine,1,0
+weapons,Fire Tower Kite Shield,1452800,0,1,10,1,250,2346,123,0,0,Fire,1,0
+weapons,Grass Crest Shield,1453000,0,1,15,1,200,2401,124,0,0,,1,0
+weapons,Crystal Grass Crest Shield,1453100,0,1,5,1,20,2402,124,0,0,Crystal,1,0
+weapons,Ltng. Grass Crest Shield,1453200,0,1,5,1,200,2403,124,0,0,Lightning,1,0
+weapons,Magic Grass Crest Shield,1453400,0,1,10,1,200,2404,124,0,0,Magic,1,0
+weapons,Divine Grass Crest Shield,1453600,0,1,10,1,200,2405,124,0,0,Divine,1,0
+weapons,Fire Grass Crest Shield,1453800,0,1,10,1,200,2406,124,0,0,Fire,1,0
+weapons,Hollow Soldier Shield,1454000,0,1,15,1,250,2361,131,0,0,,1,0
+weapons,Crys. Hollow Soldier Shield,1454100,0,1,5,1,25,2362,131,0,0,Crystal,1,0
+weapons,Ltng. Hollow Soldier Shield,1454200,0,1,5,1,250,2363,131,0,0,Lightning,1,0
+weapons,Magic Hollow Soldier Shield,1454400,0,1,10,1,250,2364,131,0,0,Magic,1,0
+weapons,Div. Hollow Soldier Shield,1454600,0,1,10,1,250,2365,131,0,0,Divine,1,0
+weapons,Fire Hollow Soldier Shield,1454800,0,1,10,1,250,2366,131,0,0,Fire,1,0
+weapons,Balder Shield,1455000,0,1,15,1,220,2383,153,0,0,,1,0
+weapons,Crystal Balder Shield,1455100,0,1,5,1,22,2384,153,0,0,Crystal,1,0
+weapons,Lightning Balder Shield,1455200,0,1,5,1,220,2385,153,0,0,Lightning,1,0
+weapons,Magic Balder Shield,1455400,0,1,10,1,220,2386,153,0,0,Magic,1,0
+weapons,Divine Balder Shield,1455600,0,1,10,1,220,2387,153,0,0,Divine,1,0
+weapons,Fire Balder Shield,1455800,0,1,10,1,220,2388,153,0,0,Fire,1,0
+weapons,Crest Shield,1456000,0,1,5,1,300,2471,156,0,0,,1,0
+weapons,Dragon Crest Shield,1457000,0,1,5,1,300,2472,181,0,0,,1,0
+weapons,Warrior's Round Shield,1460000,0,1,15,1,180,2101,161,0,0,,1,0
+weapons,Crys. Warrior's Rd. Shield,1460100,0,1,5,1,18,2102,161,0,0,Crystal,1,0
+weapons,Ltng. Warrior's Rd. Shield,1460200,0,1,5,1,180,2103,161,0,0,Lightning,1,0
+weapons,Magic Warrior's Rd. Shield,1460400,0,1,10,1,180,2104,161,0,0,Magic,1,0
+weapons,Div. Warrior's Round Shield,1460600,0,1,10,1,180,2105,161,0,0,Divine,1,0
+weapons,Fire Warrior's Round Shield,1460800,0,1,10,1,180,2106,161,0,0,Fire,1,0
+weapons,Iron Round Shield,1461000,0,1,15,1,280,2413,126,0,0,,1,0
+weapons,Crystal Iron Round Shield,1461100,0,1,5,1,28,2414,126,0,0,Crystal,1,0
+weapons,Lightning Iron Round Shield,1461200,0,1,5,1,280,2415,126,0,0,Lightning,1,0
+weapons,Magic Iron Round Shield,1461400,0,1,10,1,280,2416,126,0,0,Magic,1,0
+weapons,Divine Iron Round Shield,1461600,0,1,10,1,280,2417,126,0,0,Divine,1,0
+weapons,Fire Iron Round Shield,1461800,0,1,10,1,280,2418,126,0,0,Fire,1,0
+weapons,Spider Shield,1462000,0,1,15,1,230,2391,127,0,0,,1,0
+weapons,Crystal Spider Shield,1462100,0,1,5,1,23,2392,127,0,0,Crystal,1,0
+weapons,Lightning Spider Shield,1462200,0,1,5,1,230,2393,127,0,0,Lightning,1,0
+weapons,Magic Spider Shield,1462400,0,1,10,1,230,2394,127,0,0,Magic,1,0
+weapons,Divine Spider Shield,1462600,0,1,10,1,230,2395,127,0,0,Divine,1,0
+weapons,Fire Spider Shield,1462800,0,1,10,1,230,2396,127,0,0,Fire,1,0
+weapons,Spiked Shield,1470000,0,1,15,1,160,2441,128,0,0,,1,0
+weapons,Crystal Spiked Shield,1470100,0,1,5,1,16,2442,128,0,0,Crystal,1,0
+weapons,Lightning Spiked Shield,1470200,0,1,5,1,160,2443,128,0,0,Lightning,1,0
+weapons,Magic Spiked Shield,1470400,0,1,10,1,160,2444,128,0,0,Magic,1,0
+weapons,Divine Spiked Shield,1470600,0,1,10,1,160,2445,128,0,0,Divine,1,0
+weapons,Fire Spiked Shield,1470800,0,1,10,1,160,2446,128,0,0,Fire,1,0
+weapons,Crystal Shield,1471000,0,1,0,1,250,2461,129,0,0,,1,0
+weapons,Sunlight Shield,1472000,0,1,15,1,280,2421,130,0,0,,1,0
+weapons,Crystal Sunlight Shield,1472100,0,1,5,1,28,2422,130,0,0,Crystal,1,0
+weapons,Lightning Sunlight Shield,1472200,0,1,5,1,280,2423,130,0,0,Lightning,1,0
+weapons,Magic Sunlight Shield,1472400,0,1,10,1,280,2424,130,0,0,Magic,1,0
+weapons,Divine Sunlight Shield,1472600,0,1,10,1,280,2425,130,0,0,Divine,1,0
+weapons,Fire Sunlight Shield,1472800,0,1,10,1,280,2426,130,0,0,Fire,1,0
+weapons,Silver Knight Shield,1473000,0,1,5,1,250,2481,132,0,0,,1,0
+weapons,Black Knight Shield,1474000,0,1,5,1,250,2482,143,0,0,,1,0
+weapons,Pierce Shield,1475000,0,1,15,1,180,2431,23,0,0,,1,0
+weapons,Crystal Pierce Shield,1475100,0,1,5,1,18,2432,23,0,0,Crystal,1,0
+weapons,Lightning Pierce Shield,1475200,0,1,5,1,180,2433,23,0,0,Lightning,1,0
+weapons,Magic Pierce Shield,1475400,0,1,10,1,180,2434,23,0,0,Magic,1,0
+weapons,Divine Pierce Shield,1475600,0,1,10,1,180,2435,23,0,0,Divine,1,0
+weapons,Fire Pierce Shield,1475800,0,1,10,1,180,2436,23,0,0,Fire,1,0
+weapons,Red and White Round Shield,1476000,0,1,15,1,180,2127,125,0,0,,1,0
+weapons,Crystal R&W Round Shield,1476100,0,1,5,1,18,2128,125,0,0,Crystal,1,0
+weapons,Lightning R&W Round Shield,1476200,0,1,5,1,180,2129,125,0,0,Lightning,1,0
+weapons,Magic R&W Round Shield,1476400,0,1,10,1,180,2130,125,0,0,Magic,1,0
+weapons,Divine R&W Round Shield,1476600,0,1,10,1,180,2131,125,0,0,Divine,1,0
+weapons,Fire R&W Round Shield,1476800,0,1,10,1,180,2132,125,0,0,Fire,1,0
+weapons,Caduceus Kite Shield,1477000,0,1,15,1,250,2351,162,0,0,,1,0
+weapons,Crys. Caduceus Kite Shield,1477100,0,1,5,1,25,2352,162,0,0,Crystal,1,0
+weapons,Ltng. Caduceus Kite Shield,1477200,0,1,5,1,250,2353,162,0,0,Lightning,1,0
+weapons,Magic Caduceus Kite Shield,1477400,0,1,10,1,250,2354,162,0,0,Magic,1,0
+weapons,Divine Caduceus Kite Shield,1477600,0,1,10,1,250,2355,162,0,0,Divine,1,0
+weapons,Fire Caduceus Kite Shield,1477800,0,1,10,1,250,2356,162,0,0,Fire,1,0
+weapons,Gargoyle's Shield,1478000,0,1,15,1,300,2451,182,0,0,,1,0
+weapons,Crystal Gargoyle's Shield,1478100,0,1,5,1,30,2452,182,0,0,Crystal,1,0
+weapons,Lightning Gargoyle's Shield,1478200,0,1,5,1,300,2453,182,0,0,Lightning,1,0
+weapons,Magic Gargoyle's Shield,1478400,0,1,10,1,300,2454,182,0,0,Magic,1,0
+weapons,Divine Gargoyle's Shield,1478600,0,1,10,1,300,2455,182,0,0,Divine,1,0
+weapons,Fire Gargoyle's Shield,1478800,0,1,10,1,300,2456,182,0,0,Fire,1,0
+weapons,Eagle Shield,1500000,0,1,15,1,300,2601,133,0,0,,1,0
+weapons,Crystal Eagle Shield,1500100,0,1,5,1,30,2602,133,0,0,Crystal,1,0
+weapons,Lightning Eagle Shield,1500200,0,1,5,1,300,2603,133,0,0,Lightning,1,0
+weapons,Magic Eagle Shield,1500400,0,1,10,1,300,2604,133,0,0,Magic,1,0
+weapons,Divine Eagle Shield,1500600,0,1,10,1,300,2605,133,0,0,Divine,1,0
+weapons,Fire Eagle Shield,1500800,0,1,10,1,300,2606,133,0,0,Fire,1,0
+weapons,Tower Shield,1501000,0,1,15,1,300,2611,134,0,0,,1,0
+weapons,Crystal Tower Shield,1501100,0,1,5,1,30,2612,134,0,0,Crystal,1,0
+weapons,Lightning Tower Shield,1501200,0,1,5,1,300,2613,134,0,0,Lightning,1,0
+weapons,Magic Tower Shield,1501400,0,1,10,1,300,2614,134,0,0,Magic,1,0
+weapons,Divine Tower Shield,1501600,0,1,10,1,300,2615,134,0,0,Divine,1,0
+weapons,Fire Tower Shield,1501800,0,1,10,1,300,2616,134,0,0,Fire,1,0
+weapons,Giant Shield,1502000,0,1,15,1,300,2623,135,0,0,,1,0
+weapons,Crystal Giant Shield,1502100,0,1,5,1,30,2624,135,0,0,Crystal,1,0
+weapons,Lightning Giant Shield,1502200,0,1,5,1,300,2625,135,0,0,Lightning,1,0
+weapons,Magic Giant Shield,1502400,0,1,10,1,300,2626,135,0,0,Magic,1,0
+weapons,Divine Giant Shield,1502600,0,1,10,1,300,2627,135,0,0,Divine,1,0
+weapons,Fire Giant Shield,1502800,0,1,10,1,300,2628,135,0,0,Fire,1,0
+weapons,Stone Greatshield,1503000,0,1,5,1,400,2641,136,0,0,,1,0
+weapons,Havel's Greatshield,1505000,0,1,5,1,500,2651,138,0,0,,1,0
+weapons,Bonewheel Shield,1506000,0,1,15,1,200,2631,183,0,0,,1,0
+weapons,Crystal Bonewheel Shield,1506100,0,1,5,1,20,2632,183,0,0,Crystal,1,0
+weapons,Lightning Bonewheel Shield,1506200,0,1,5,1,200,2633,183,0,0,Lightning,1,0
+weapons,Magic Bonewheel Shield,1506400,0,1,10,1,200,2634,183,0,0,Magic,1,0
+weapons,Divine Bonewheel Shield,1506600,0,1,10,1,200,2635,183,0,0,Divine,1,0
+weapons,Fire Bonewheel Shield,1506800,0,1,10,1,200,2636,183,0,0,Fire,1,0
+weapons,Greatshield of Artorias,1507000,0,1,5,1,600,2661,137,0,0,,1,0
+weapons,Greatshield of Artorias,1507100,0,1,5,1,600,2662,137,0,0,,1,1
+weapons,Greatshield of Artorias,1507200,0,1,5,1,600,2663,137,0,0,,1,1
+weapons,Greatshield of Artorias,1507300,0,1,5,1,600,2664,137,0,0,,1,1
+weapons,Greatshield of Artorias,1507400,0,1,5,1,600,2665,137,0,0,,1,1
+weapons,Greatshield of Artorias,1507500,0,1,5,1,600,2666,137,0,0,,1,1
+weapons,Greatshield of Artorias,1507600,0,1,5,1,600,2667,137,0,0,,1,1
+weapons,Greatshield of Artorias,1507700,0,1,5,1,600,2668,137,0,0,,1,1
+weapons,Greatshield of Artorias,1507800,0,1,5,1,600,2669,137,0,0,,1,1
+weapons,Greatshield of Artorias,1507900,0,1,5,1,600,2670,137,0,0,,1,1
+weapons,Greatshield of Artorias (ID 1508000),1508000,0,1,5,1,600,2671,137,0,0,,1,0
+weapons,Greatshield of Artorias,1508100,0,1,5,1,600,2672,137,0,0,,1,1
+weapons,Greatshield of Artorias,1508200,0,1,5,1,600,2673,137,0,0,,1,1
+weapons,Greatshield of Artorias,1508300,0,1,5,1,600,2674,137,0,0,,1,1
+weapons,Greatshield of Artorias,1508400,0,1,5,1,600,2675,137,0,0,,1,1
+weapons,Greatshield of Artorias,1508500,0,1,5,1,600,2676,137,0,0,,1,1
+weapons,Greatshield of Artorias,1508600,0,1,5,1,600,2677,137,0,0,,1,1
+weapons,Greatshield of Artorias,1508700,0,1,5,1,600,2678,137,0,0,,1,1
+weapons,Greatshield of Artorias,1508800,0,1,5,1,600,2679,137,0,0,,1,1
+weapons,Greatshield of Artorias,1508900,0,1,5,1,600,2680,137,0,0,,1,1
+weapons,Greatshield of Artorias (ID 1509000),1509000,0,1,5,1,600,2681,137,0,0,,1,0
+weapons,Greatshield of Artorias,1509100,0,1,5,1,600,2682,137,0,0,,1,1
+weapons,Greatshield of Artorias,1509200,0,1,5,1,600,2683,137,0,0,,1,1
+weapons,Greatshield of Artorias,1509300,0,1,5,1,600,2684,137,0,0,,1,1
+weapons,Greatshield of Artorias,1509400,0,1,5,1,600,2685,137,0,0,,1,1
+weapons,Greatshield of Artorias,1509500,0,1,5,1,600,2686,137,0,0,,1,1
+weapons,Greatshield of Artorias,1509600,0,1,5,1,600,2687,137,0,0,,1,1
+weapons,Greatshield of Artorias,1509700,0,1,5,1,600,2688,137,0,0,,1,1
+weapons,Greatshield of Artorias,1509800,0,1,5,1,600,2689,137,0,0,,1,1
+weapons,Greatshield of Artorias,1509900,0,1,5,1,600,2690,137,0,0,,1,1
+weapons,Greatshield of Artorias (ID 1510000),1510000,0,1,5,1,600,2691,137,0,0,,1,0
+weapons,Greatshield of Artorias,1510100,0,1,5,1,600,2692,137,0,0,,1,1
+weapons,Greatshield of Artorias,1510200,0,1,5,1,600,2693,137,0,0,,1,1
+weapons,Greatshield of Artorias,1510300,0,1,5,1,600,2694,137,0,0,,0,1
+weapons,Greatshield of Artorias,1510400,0,1,5,1,600,2695,137,0,0,,0,1
+weapons,Greatshield of Artorias,1510500,0,1,5,1,600,2696,137,0,0,,0,1
+weapons,Greatshield of Artorias,1510600,0,1,5,1,600,2697,137,0,0,,0,1
+weapons,Whip,1600000,0,1,15,1,200,1701,139,0,0,Normal,1,0
+weapons,Crystal Whip,1600100,0,1,5,1,20,1702,139,0,0,Crystal,1,0
+weapons,Lightning Whip,1600200,0,1,5,1,200,1703,139,0,0,Lightning,1,0
+weapons,Raw Whip,1600300,0,1,5,1,200,1704,139,0,0,Raw,1,0
+weapons,Magic Whip,1600400,0,1,10,1,200,1705,139,0,0,Magic,1,0
+weapons,Enchanted Whip,1600500,0,1,5,1,200,1706,139,0,0,Enchanted,1,0
+weapons,Divine Whip,1600600,0,1,10,1,200,1707,139,0,0,Divine,1,0
+weapons,Occult Whip,1600700,0,1,5,1,200,1708,139,0,0,Occult,1,0
+weapons,Fire Whip (ID 1600800),1600800,0,1,10,1,200,1709,139,0,0,Fire,1,0
+weapons,Chaos Whip,1600900,0,1,5,1,200,1710,139,0,0,Chaos,1,0
+weapons,Notched Whip,1601000,0,1,15,1,200,1711,140,0,0,Normal,1,0
+weapons,Crystal Notched Whip,1601100,0,1,5,1,20,1712,140,0,0,Crystal,1,0
+weapons,Lightning Notched Whip,1601200,0,1,5,1,200,1713,140,0,0,Lightning,1,0
+weapons,Raw Notched Whip,1601300,0,1,5,1,200,1714,140,0,0,Raw,1,0
+weapons,Magic Notched Whip,1601400,0,1,10,1,200,1715,140,0,0,Magic,1,0
+weapons,Enchanted Notched Whip,1601500,0,1,5,1,200,1716,140,0,0,Enchanted,1,0
+weapons,Divine Notched Whip,1601600,0,1,10,1,200,1717,140,0,0,Divine,1,0
+weapons,Occult Notched Whip,1601700,0,1,5,1,200,1718,140,0,0,Occult,1,0
+weapons,Fire Notched Whip,1601800,0,1,10,1,200,1719,140,0,0,Fire,1,0
+weapons,Chaos Notched Whip,1601900,0,1,5,1,200,1720,140,0,0,Chaos,1,0
+ammo,Standard Arrow,2000000,0,999,0,1,0,5002,148,0,0,,1,0
+ammo,Large Arrow,2001000,0,999,0,1,0,5003,185,0,0,,1,0
+ammo,Feather Arrow,2002000,0,999,0,1,0,5004,186,0,0,,1,0
+ammo,Fire Arrow,2003000,0,999,0,1,0,5005,149,0,0,,1,0
+ammo,Poison Arrow,2004000,0,999,0,1,0,5006,177,0,0,,1,0
+ammo,Moonlight Arrow,2005000,0,999,0,1,0,5007,187,0,0,,1,0
+ammo,Wooden Arrow,2006000,0,999,0,1,0,5001,191,0,0,,1,0
+ammo,Dragonslayer Arrow,2007000,0,999,0,1,0,5008,160,0,0,,1,0
+ammo,Gough's Great Arrow,2008000,0,999,0,1,0,5009,204,0,0,,1,0
+ammo,Standard Bolt,2100000,0,999,0,1,0,5052,150,0,0,,1,0
+ammo,Heavy Bolt,2101000,0,999,0,1,0,5053,188,0,0,,1,0
+ammo,Sniper Bolt,2102000,0,999,0,1,0,5054,189,0,0,,1,0
+ammo,Wood Bolt,2103000,0,999,0,1,0,5051,192,0,0,,1,0
+ammo,Lightning Bolt,2104000,0,999,0,1,0,5055,190,0,0,,1,0
+weapons,Effigy Shield,9000000,0,1,15,1,180,2121,65,0,0,,1,0
+weapons,Crystal Effigy Shield,9000100,0,1,5,1,18,2122,65,0,0,Crystal,1,0
+weapons,Lightning Effigy Shield,9000200,0,1,5,1,180,2123,65,0,0,Lightning,1,0
+weapons,Magic Effigy Shield,9000400,0,1,10,1,180,2124,65,0,0,Magic,1,0
+weapons,Divine Effigy Shield,9000600,0,1,10,1,180,2125,65,0,0,Divine,1,0
+weapons,Fire Effigy Shield,9000800,0,1,10,1,180,2126,65,0,0,Fire,1,0
+weapons,Sanctus,9001000,0,1,15,1,410,2377,67,0,0,,1,0
+weapons,Crystal Sanctus,9001100,0,1,5,1,41,2378,67,0,0,Crystal,1,0
+weapons,Lightning Sanctus,9001200,0,1,5,1,410,2379,67,0,0,Lightning,1,0
+weapons,Magic Sanctus,9001400,0,1,10,1,410,2380,67,0,0,Magic,1,0
+weapons,Divine Sanctus,9001600,0,1,10,1,410,2381,67,0,0,Divine,1,0
+weapons,Fire Sanctus,9001800,0,1,10,1,410,2382,67,0,0,Fire,1,0
+weapons,Bloodshield,9002000,0,1,15,1,240,2407,69,0,0,,1,0
+weapons,Crystal Bloodshield,9002100,0,1,5,1,24,2408,69,0,0,Crystal,1,0
+weapons,Lightning Bloodshield,9002200,0,1,5,1,240,2409,69,0,0,Lightning,1,0
+weapons,Magic Bloodshield,9002400,0,1,10,1,240,2410,69,0,0,Magic,1,0
+weapons,Divine Bloodshield,9002600,0,1,10,1,240,2411,69,0,0,Divine,1,0
+weapons,Fire Bloodshield,9002800,0,1,10,1,240,2412,69,0,0,Fire,1,0
+weapons,Black Iron Greatshield,9003000,0,1,15,1,230,2617,82,0,0,,1,0
+weapons,Crys. Black Iron Grtshld.,9003100,0,1,5,1,23,2618,82,0,0,Crystal,1,0
+weapons,Ltng. Black Iron Grtshld.,9003200,0,1,5,1,230,2619,82,0,0,Lightning,1,0
+weapons,Mag. Black Iron Grtshld.,9003400,0,1,10,1,230,2620,82,0,0,Magic,1,0
+weapons,Div. Black Iron Greatshield,9003600,0,1,10,1,230,2621,82,0,0,Divine,1,0
+weapons,Fire Black Iron Greatshield,9003800,0,1,10,1,230,2622,82,0,0,Fire,1,0
+weapons,Gold Tracer,9010000,0,1,5,1,240,642,193,0,0,,1,0
+weapons,Dark Silver Tracer,9011000,0,1,5,1,120,32,194,0,0,,1,0
+weapons,Abyss Greatsword,9012000,0,1,5,1,300,391,195,0,0,,1,0
+weapons,Abyss Greatsword,9012100,0,1,5,1,300,392,195,0,0,,1,1
+weapons,Abyss Greatsword,9012200,0,1,5,1,300,393,195,0,0,,1,1
+weapons,Abyss Greatsword,9012300,0,1,5,1,300,394,195,0,0,,1,1
+weapons,Abyss Greatsword,9012400,0,1,5,1,300,395,195,0,0,,1,1
+weapons,Abyss Greatsword,9012500,0,1,5,1,300,396,195,0,0,,1,1
+weapons,Abyss Greatsword,9012600,0,1,5,1,300,397,195,0,0,,1,1
+weapons,Abyss Greatsword,9012700,0,1,5,1,300,398,195,0,0,,1,1
+weapons,Abyss Greatsword,9012800,0,1,5,1,300,399,195,0,0,,1,1
+weapons,Abyss Greatsword (ID 9013000),9013000,0,1,5,1,300,401,195,0,0,,1,0
+weapons,Abyss Greatsword,9013100,0,1,5,1,300,402,195,0,0,,1,1
+weapons,Abyss Greatsword,9013200,0,1,5,1,300,403,195,0,0,,1,1
+weapons,Abyss Greatsword,9013300,0,1,5,1,300,404,195,0,0,,1,1
+weapons,Abyss Greatsword,9013400,0,1,5,1,300,405,195,0,0,,1,1
+weapons,Abyss Greatsword,9013500,0,1,5,1,300,406,195,0,0,,1,1
+weapons,Abyss Greatsword,9013600,0,1,5,1,300,407,195,0,0,,1,1
+weapons,Abyss Greatsword,9013700,0,1,5,1,300,408,195,0,0,,1,1
+weapons,Cleansing Greatshield,9014000,0,1,5,1,300,2698,197,0,0,,1,0
+weapons,Stone Greataxe,9015000,0,1,5,1,700,1121,198,0,0,Normal,1,0
+weapons,Four-pronged Plow,9016000,0,1,15,1,300,1431,199,0,0,Normal,1,0
+weapons,Crystal Plow,9016100,0,1,5,1,30,1432,199,0,0,Crystal,1,0
+weapons,Lightning Plow,9016200,0,1,5,1,300,1433,199,0,0,Lightning,1,0
+weapons,Raw Plow,9016300,0,1,5,1,300,1434,199,0,0,Raw,1,0
+weapons,Magic Plow,9016400,0,1,10,1,300,1435,199,0,0,Magic,1,0
+weapons,Enchanted Plow,9016500,0,1,5,1,300,1436,199,0,0,Enchanted,1,0
+weapons,Divine Plow,9016600,0,1,10,1,300,1437,199,0,0,Divine,1,0
+weapons,Occult Plow,9016700,0,1,5,1,300,1438,199,0,0,Occult,1,0
+weapons,Fire Plow,9016800,0,1,10,1,300,1439,199,0,0,Fire,1,0
+weapons,Chaos Plow,9016900,0,1,5,1,300,1440,199,0,0,Chaos,1,0
+weapons,Manus Catalyst,9017000,0,1,5,1,200,2021,200,0,0,,1,0
+weapons,Manus Catalyst,9017100,0,1,5,1,200,2022,200,0,0,,1,1
+weapons,Manus Catalyst,9017200,0,1,5,1,200,2023,200,0,0,,1,1
+weapons,Manus Catalyst,9017300,0,1,5,1,200,2024,200,0,0,,1,1
+weapons,Manus Catalyst,9017400,0,1,5,1,200,2025,200,0,0,,1,1
+weapons,Manus Catalyst,9017500,0,1,5,1,200,2026,200,0,0,,1,1
+weapons,Oolacile Catalyst,9018000,0,1,15,1,55,2005,201,0,0,,1,0
+weapons,Guardian Tail,9019000,0,1,15,1,250,1721,202,0,0,Normal,1,0
+weapons,Crystal Guardian Tail,9019100,0,1,5,1,25,1722,202,0,0,Crystal,1,0
+weapons,Lightning Guardian Tail,9019200,0,1,5,1,250,1723,202,0,0,Lightning,1,0
+weapons,Raw Guardian Tail,9019300,0,1,5,1,250,1724,202,0,0,Raw,1,0
+weapons,Magic Guardian Tail,9019400,0,1,10,1,250,1725,202,0,0,Magic,1,0
+weapons,Enchanted Guardian Tail,9019500,0,1,5,1,250,1726,202,0,0,Enchanted,1,0
+weapons,Divine Guardian Tail,9019600,0,1,10,1,250,1727,202,0,0,Divine,1,0
+weapons,Occult Guardian Tail,9019700,0,1,5,1,250,1728,202,0,0,Occult,1,0
+weapons,Fire Guardian Tail,9019800,0,1,10,1,250,1729,202,0,0,Fire,1,0
+weapons,Chaos Guardian Tail,9019900,0,1,5,1,250,1730,202,0,0,Chaos,1,0
+weapons,Obsidian Greatsword,9020000,0,1,5,1,350,452,203,0,0,Normal,1,0
+weapons,Gough's Greatbow,9021000,0,1,5,1,100,1842,196,0,0,,1,0
+armor,Catarina Helm,10000,1,1,5,1,400,72,1000,0,0,,1,0
+armor,Catarina Armor,11000,1,1,5,1,400,73,1001,0,0,,1,0
+armor,Catarina Gauntlets,12000,1,1,5,1,400,74,1002,0,0,,1,0
+armor,Catarina Leggings,13000,1,1,5,1,400,75,1003,0,0,,1,0
+armor,Paladin Helm,20000,1,1,5,1,500,215,1004,0,0,,1,0
+armor,Paladin Armor,21000,1,1,5,1,500,216,1005,0,0,,1,0
+armor,Paladin Gauntlets,22000,1,1,5,1,500,217,1006,0,0,,1,0
+armor,Paladin Leggings,23000,1,1,5,1,500,218,1007,0,0,,1,0
+armor,Dark Mask,40000,1,1,5,1,300,203,1012,0,0,,1,0
+armor,Dark Armor,41000,1,1,5,1,300,204,1013,0,0,,1,0
+armor,Dark Gauntlets,42000,1,1,5,1,300,205,1014,0,0,,1,0
+armor,Dark Leggings,43000,1,1,5,1,300,206,1015,0,0,,1,0
+armor,Brigand Hood,50000,1,1,10,1,200,25,1016,0,0,,1,0
+armor,Brigand Armor,51000,1,1,10,1,200,26,1017,0,0,,1,0
+armor,Brigand Gauntlets,52000,1,1,10,1,200,27,1018,0,0,,1,0
+armor,Brigand Trousers,53000,1,1,10,1,200,28,1019,0,0,,1,0
+armor,Shadow Mask,60000,1,1,5,1,200,125,1020,0,0,,1,0
+armor,Shadow Garb,61000,1,1,5,1,200,126,1021,0,0,,1,0
+armor,Shadow Gauntlets,62000,1,1,5,1,200,127,1022,0,0,,1,0
+armor,Shadow Leggings,63000,1,1,5,1,200,128,1023,0,0,,1,0
+armor,Black Iron Helm,70000,1,1,5,1,600,64,1024,0,0,,1,0
+armor,Black Iron Armor,71000,1,1,5,1,600,65,1025,0,0,,1,0
+armor,Black Iron Gauntlets,72000,1,1,5,1,600,66,1026,0,0,,1,0
+armor,Black Iron Leggings,73000,1,1,5,1,600,67,1027,0,0,,1,0
+armor,Smough's Helm,80000,1,1,0,1,700,175,1028,0,0,,1,0
+armor,Smough's Armor,81000,1,1,0,1,700,176,1029,0,0,,1,0
+armor,Smough's Gauntlets,82000,1,1,0,1,700,177,1030,0,0,,1,0
+armor,Smough's Leggings,83000,1,1,0,1,700,178,1031,0,0,,1,0
+armor,Six-Eyed Helm of the Channelers,90000,1,1,0,1,300,161,1032,0,0,,1,0
+armor,Robe of the Channelers,91000,1,1,0,1,300,162,1033,0,0,,1,0
+armor,Gauntlets of the Channelers,92000,1,1,0,1,300,163,1034,0,0,,1,0
+armor,Waistcloth of the Channelers,93000,1,1,0,1,300,164,1035,0,0,,1,0
+armor,Helm of Favor,100000,1,1,5,1,500,211,1036,0,0,,1,0
+armor,Embraced Armor of Favor,101000,1,1,5,1,500,212,1037,0,0,,1,0
+armor,Gauntlets of Favor,102000,1,1,5,1,500,213,1038,0,0,,1,0
+armor,Leggings of Favor,103000,1,1,5,1,500,214,1039,0,0,,1,0
+armor,Helm of the Wise,110000,1,1,0,1,500,68,1040,0,0,,1,0
+armor,Armor of the Glorious,111000,1,1,0,1,500,69,1041,0,0,,1,0
+armor,Gauntlets of the Vanquisher,112000,1,1,0,1,500,70,1042,0,0,,1,0
+armor,Boots of the Explorer,113000,1,1,0,1,500,71,1043,0,0,,1,0
+armor,Stone Helm,120000,1,1,0,1,800,219,1044,0,0,,1,0
+armor,Stone Armor,121000,1,1,0,1,800,220,1045,0,0,,1,0
+armor,Stone Gauntlets,122000,1,1,0,1,800,221,1046,0,0,,1,0
+armor,Stone Leggings,123000,1,1,0,1,800,222,1047,0,0,,1,0
+armor,Crystalline Helm,130000,1,1,0,1,150,76,1048,0,0,,1,0
+armor,Crystalline Armor,131000,1,1,0,1,150,77,1049,0,0,,1,0
+armor,Crystalline Gauntlets,132000,1,1,0,1,150,78,1050,0,0,,1,0
+armor,Crystalline Leggings,133000,1,1,0,1,150,79,1051,0,0,,1,0
+armor,Mask of the Sealer,140000,1,1,5,1,400,89,1052,0,0,,1,0
+armor,Crimson Robe,141000,1,1,5,1,400,90,1053,0,0,,1,0
+armor,Crimson Gloves,142000,1,1,5,1,400,91,1054,0,0,,1,0
+armor,Crimson Waistcloth,143000,1,1,5,1,400,92,1055,0,0,,1,0
+armor,Mask of Velka,150000,1,1,5,1,400,105,1056,0,0,,1,0
+armor,Black Cleric Robe,151000,1,1,5,1,400,106,1057,0,0,,1,0
+armor,Black Manchette,152000,1,1,5,1,400,107,1058,0,0,,1,0
+armor,Black Tights,153000,1,1,5,1,400,108,1059,0,0,,1,0
+armor,Iron Helm,160000,1,1,10,1,350,60,1060,0,0,,1,0
+armor,Armor of the Sun,161000,1,1,10,1,350,61,1061,0,0,,1,0
+armor,Iron Bracelet,162000,1,1,10,1,350,62,1062,0,0,,1,0
+armor,Iron Leggings,163000,1,1,10,1,350,63,1063,0,0,,1,0
+armor,Chain Helm,170000,1,1,10,1,300,5,1064,0,0,,1,0
+armor,Chain Armor,171000,1,1,10,1,300,6,1065,0,0,,1,0
+armor,Leather Gauntlets,172000,1,1,10,1,300,7,1066,0,0,,1,0
+armor,Chain Leggings,173000,1,1,10,1,300,8,1067,0,0,,1,0
+armor,Cleric Helm,180000,1,1,10,1,500,52,1068,0,0,,1,0
+armor,Cleric Armor,181000,1,1,10,1,500,53,1069,0,0,,1,0
+armor,Cleric Gauntlets,182000,1,1,10,1,500,54,1070,0,0,,1,0
+armor,Cleric Leggings,183000,1,1,10,1,500,55,1071,0,0,,1,0
+armor,Sunlight Maggot,190000,1,1,0,1,80,240,1072,0,0,,1,0
+armor,Helm of Thorns,200000,1,1,5,1,250,207,1089,0,0,,1,0
+armor,Armor of Thorns,201000,1,1,5,1,250,208,1090,0,0,,1,0
+armor,Gauntlets of Thorns,202000,1,1,5,1,250,209,1091,0,0,,1,0
+armor,Leggings of Thorns,203000,1,1,5,1,250,210,1092,0,0,,1,0
+armor,Standard Helm,210000,1,1,10,1,250,1,1077,0,0,,1,0
+armor,Hard Leather Armor,211000,1,1,10,1,250,2,1078,0,0,,1,0
+armor,Hard Leather Gauntlets,212000,1,1,10,1,250,3,1079,0,0,,1,0
+armor,Hard Leather Boots,213000,1,1,10,1,250,4,1080,0,0,,1,0
+armor,Sorcerer Hat,220000,1,1,10,1,200,32,1081,0,0,,1,0
+armor,Sorcerer Cloak,221000,1,1,10,1,200,33,1082,0,0,,1,0
+armor,Sorcerer Gauntlets,222000,1,1,10,1,200,34,1083,0,0,,1,0
+armor,Sorcerer Boots,223000,1,1,10,1,200,35,1084,0,0,,1,0
+armor,Tattered Cloth Hood,230000,1,1,10,1,400,44,1085,0,0,,1,0
+armor,Tattered Cloth Robe,231000,1,1,10,1,400,45,1086,0,0,,1,0
+armor,Tattered Cloth Manchette,232000,1,1,10,1,400,46,1087,0,0,,1,0
+armor,Heavy Boots,233000,1,1,10,1,400,47,1088,0,0,,1,0
+armor,Pharis's Hat,240000,1,1,10,1,250,84,1093,0,0,,1,0
+armor,Leather Armor,241000,1,1,10,1,250,29,1094,0,0,,1,0
+armor,Leather Gloves,242000,1,1,10,1,250,30,1095,0,0,,1,0
+armor,Leather Boots,243000,1,1,10,1,250,31,1096,0,0,,1,0
+armor,Painting Guardian Hood,250000,1,1,5,1,150,165,1105,0,0,,1,0
+armor,Painting Guardian Robe,251000,1,1,5,1,150,166,1106,0,0,,1,0
+armor,Painting Guardian Gloves,252000,1,1,5,1,150,167,1107,0,0,,1,0
+armor,Painting Guardian Waistcloth,253000,1,1,5,1,150,168,1108,0,0,,1,0
+armor,Ornstein's Helm,270000,1,1,0,1,700,179,1121,0,0,,1,0
+armor,Ornstein's Armor,271000,1,1,0,1,700,180,1122,0,0,,1,0
+armor,Ornstein's Gauntlets,272000,1,1,0,1,700,181,1123,0,0,,1,0
+armor,Ornstein's Leggings,273000,1,1,0,1,700,182,1124,0,0,,1,0
+armor,Eastern Helm,280000,1,1,5,1,450,121,1125,0,0,,1,0
+armor,Eastern Armor,281000,1,1,5,1,450,122,1126,0,0,,1,0
+armor,Eastern Gauntlets,282000,1,1,5,1,450,123,1127,0,0,,1,0
+armor,Eastern Leggings,283000,1,1,5,1,450,124,1128,0,0,,1,0
+armor,Xanthous Crown,290000,1,1,5,1,400,231,1129,0,0,,1,0
+armor,Xanthous Overcoat,291000,1,1,5,1,400,232,1130,0,0,,1,0
+armor,Xanthous Gloves,292000,1,1,5,1,400,233,1131,0,0,,1,0
+armor,Xanthous Waistcloth,293000,1,1,5,1,400,234,1132,0,0,,1,0
+armor,Thief Mask,300000,1,1,10,1,250,21,1133,0,0,,1,0
+armor,Black Leather Armor,301000,1,1,10,1,250,22,1134,0,0,,1,0
+armor,Black Leather Gloves,302000,1,1,10,1,250,23,1135,0,0,,1,0
+armor,Black Leather Boots,303000,1,1,10,1,250,24,1136,0,0,,1,0
+armor,Priest's Hat,310000,1,1,10,1,350,48,1137,0,0,,1,0
+armor,Holy Robe,311000,1,1,10,1,350,49,1138,0,0,,1,0
+armor,Traveling Gloves,312000,1,1,10,1,350,50,1139,0,0,,1,0
+armor,Holy Trousers,313000,1,1,10,1,350,51,1140,0,0,,1,0
+armor,Black Knight Helm,320000,1,1,5,1,550,153,1141,0,0,,1,0
+armor,Black Knight Armor,321000,1,1,5,1,550,154,1142,0,0,,1,0
+armor,Black Knight Gauntlets,322000,1,1,5,1,550,155,1143,0,0,,1,0
+armor,Black Knight Leggings,323000,1,1,5,1,550,156,1144,0,0,,1,0
+armor,Crown of Dusk,330000,1,1,0,1,150,94,1145,0,0,,1,0
+armor,Antiquated Dress,331000,1,1,5,1,150,95,1146,0,0,,1,0
+armor,Antiquated Gloves,332000,1,1,5,1,150,96,1147,0,0,,1,0
+armor,Antiquated Skirt,333000,1,1,5,1,150,97,1148,0,0,,1,0
+armor,Witch Hat,340000,1,1,5,1,250,93,1149,0,0,,1,0
+armor,Witch Cloak,341000,1,1,5,1,250,98,1150,0,0,,1,0
+armor,Witch Gloves,342000,1,1,5,1,250,99,1151,0,0,,1,0
+armor,Witch Skirt,343000,1,1,5,1,250,100,1152,0,0,,1,0
+armor,Elite Knight Helm,350000,1,1,10,1,450,13,1185,0,0,,1,0
+armor,Elite Knight Armor,351000,1,1,10,1,450,14,1186,0,0,,1,0
+armor,Elite Knight Gauntlets,352000,1,1,10,1,450,15,1187,0,0,,1,0
+armor,Elite Knight Leggings,353000,1,1,10,1,450,16,1188,0,0,,1,0
+armor,Wanderer Hood,360000,1,1,10,1,400,17,1189,0,0,,1,0
+armor,Wanderer Coat,361000,1,1,10,1,400,18,1190,0,0,,1,0
+armor,Wanderer Manchette,362000,1,1,10,1,400,19,1191,0,0,,1,0
+armor,Wanderer Boots,363000,1,1,10,1,400,20,1192,0,0,,1,0
+armor,Mage Smith Hat,370000,1,1,10,1,200,40,1197,0,0,,1,0
+armor,Mage Smith Coat,371000,1,1,10,1,200,41,1198,0,0,,0,0
+armor,Mage Smith Gauntlets,372000,1,1,10,1,200,42,1199,0,0,,1,0
+armor,Mage Smith Boots,373000,1,1,10,1,200,43,1200,0,0,,1,0
+armor,Big Hat,380000,1,1,5,1,250,85,1205,0,0,,1,0
+armor,Sage Robe,381000,1,1,5,1,250,86,1206,0,0,,1,0
+armor,Traveling Gloves (ID 382000),382000,1,1,10,1,250,87,1207,0,0,,1,0
+armor,Traveling Boots,383000,1,1,10,1,250,88,1208,0,0,,1,0
+armor,Knight Helm,390000,1,1,10,1,400,9,1209,0,0,,1,0
+armor,Knight Armor,391000,1,1,10,1,400,10,1210,0,0,,1,0
+armor,Knight Gauntlets,392000,1,1,10,1,400,11,1211,0,0,,1,0
+armor,Knight Leggings,393000,1,1,10,1,400,12,1212,0,0,,1,0
+armor,Dingy Hood,400000,1,1,10,1,150,117,1213,0,0,,1,0
+armor,Dingy Robe,401000,1,1,10,1,150,118,1214,0,0,,1,0
+armor,Dingy Gloves,402000,1,1,10,1,150,119,1215,0,0,,1,0
+armor,Blood-Stained Skirt,403000,1,1,10,1,150,120,1216,0,0,,1,0
+armor,Maiden Hood,410000,1,1,10,1,150,113,1217,0,0,,1,0
+armor,Maiden Robe,411000,1,1,10,1,150,114,1218,0,0,,1,0
+armor,Maiden Gloves,412000,1,1,10,1,150,115,1219,0,0,,1,0
+armor,Maiden Skirt,413000,1,1,10,1,150,116,1220,0,0,,1,0
+armor,Silver Knight Helm,420000,1,1,5,1,600,149,1221,0,0,,1,0
+armor,Silver Knight Armor,421000,1,1,5,1,600,150,1222,0,0,,1,0
+armor,Silver Knight Gauntlets,422000,1,1,5,1,600,151,1223,0,0,,1,0
+armor,Silver Knight Leggings,423000,1,1,5,1,600,152,1224,0,0,,1,0
+armor,Havel's Helm,440000,1,1,0,1,900,227,1229,0,0,,1,0
+armor,Havel's Armor,441000,1,1,0,1,900,228,1230,0,0,,1,0
+armor,Havel's Gauntlets,442000,1,1,0,1,900,229,1231,0,0,,1,0
+armor,Havel's Leggings,443000,1,1,0,1,900,230,1232,0,0,,1,0
+armor,Brass Helm,450000,1,1,5,1,600,80,1233,0,0,,1,0
+armor,Brass Armor,451000,1,1,5,1,600,81,1234,0,0,,1,0
+armor,Brass Gauntlets,452000,1,1,5,1,600,82,1235,0,0,,1,0
+armor,Brass Leggings,453000,1,1,5,1,600,83,1236,0,0,,1,0
+armor,Gold-Hemmed Black Hood,460000,1,1,0,1,400,101,1242,0,0,,1,0
+armor,Gold-Hemmed Black Cloak,461000,1,1,0,1,400,102,1243,0,0,,1,0
+armor,Gold-Hemmed Black Gloves,462000,1,1,0,1,400,103,1244,0,0,,1,0
+armor,Gold-Hemmed Black Skirt,463000,1,1,0,1,400,104,1245,0,0,,1,0
+armor,Golem Helm,470000,1,1,0,1,700,171,1246,0,0,,1,0
+armor,Golem Armor,471000,1,1,0,1,700,172,1247,0,0,,1,0
+armor,Golem Gauntlets,472000,1,1,0,1,700,173,1248,0,0,,1,0
+armor,Golem Leggings,473000,1,1,0,1,700,174,1249,0,0,,1,0
+armor,Hollow Soldier Helm,480000,1,1,10,1,200,133,1250,0,0,,1,0
+armor,Hollow Soldier Armor,481000,1,1,10,1,200,134,1251,0,0,,1,0
+armor,Hollow Soldier Waistcloth,483000,1,1,10,1,200,136,1253,0,0,,1,0
+armor,Steel Helm,490000,1,1,10,1,500,141,1254,0,0,,1,0
+armor,Steel Armor,491000,1,1,10,1,500,142,1255,0,0,,1,0
+armor,Steel Gauntlets,492000,1,1,10,1,500,143,1256,0,0,,1,0
+armor,Steel Leggings,493000,1,1,10,1,500,144,1257,0,0,,1,0
+armor,Hollow Thief's Hood,500000,1,1,10,1,250,145,1258,0,0,,1,0
+armor,Hollow Thief's Leather Armor,501000,1,1,10,1,250,146,1259,0,0,,1,0
+armor,Hollow Thief's Tights,503000,1,1,10,1,250,148,1261,0,0,,1,0
+armor,Balder Helm,510000,1,1,10,1,450,137,1262,0,0,,1,0
+armor,Balder Armor,511000,1,1,10,1,450,138,1263,0,0,,1,0
+armor,Balder Gauntlets,512000,1,1,10,1,450,139,1264,0,0,,1,0
+armor,Balder Leggings,513000,1,1,10,1,450,140,1265,0,0,,1,0
+armor,Hollow Warrior Helm,520000,1,1,10,1,250,129,1266,0,0,,1,0
+armor,Hollow Warrior Armor,521000,1,1,10,1,250,130,1267,0,0,,1,0
+armor,Hollow Warrior Waistcloth,523000,1,1,10,1,250,132,1269,0,0,,1,0
+armor,Giant Helm,530000,1,1,5,1,600,157,1008,0,0,,1,0
+armor,Giant Armor,531000,1,1,5,1,600,158,1009,0,0,,1,0
+armor,Giant Gauntlets,532000,1,1,5,1,600,159,1010,0,0,,1,0
+armor,Giant Leggings,533000,1,1,5,1,600,160,1011,0,0,,1,0
+armor,Crown of the Dark Sun,540000,1,1,0,1,300,195,1109,0,0,,1,0
+armor,Moonlight Robe,541000,1,1,0,1,80,196,1110,0,0,,1,0
+armor,Moonlight Gloves,542000,1,1,0,1,80,197,1111,0,0,,1,0
+armor,Moonlight Waistcloth,543000,1,1,0,1,80,198,1112,0,0,,1,0
+armor,Crown of the Great Lord,550000,1,1,0,1,800,199,1225,0,0,,1,0
+armor,Robe of the Great Lord,551000,1,1,0,1,400,200,1226,0,0,,1,0
+armor,Bracelet of the Great Lord,552000,1,1,0,1,400,201,1227,0,0,,1,0
+armor,Anklet of the Great Lord,553000,1,1,0,1,400,202,1228,0,0,,1,0
+armor,Sack,560000,1,1,10,1,150,239,1270,0,0,,1,0
+armor,Symbol of Avarice,570000,1,1,0,1,300,241,1271,0,0,,1,0
+armor,Royal Helm,580000,1,1,10,1,500,238,1272,0,0,,1,0
+armor,Mask of the Father,590000,1,1,0,1,200,235,1273,0,0,,1,0
+armor,Mask of the Mother,600000,1,1,0,1,200,236,1274,0,0,,1,0
+armor,Mask of the Child,610000,1,1,0,1,200,237,1275,0,0,,1,0
+armor,Fang Boar Helm,620000,1,1,5,1,600,169,1276,0,0,,1,0
+armor,Gargoyle Helm,630000,1,1,5,1,500,170,1277,0,0,,1,0
+armor,Black Sorcerer Hat,640000,1,1,10,1,200,36,1278,0,0,,1,0
+armor,Black Sorcerer Cloak,641000,1,1,10,1,200,37,1279,0,0,,1,0
+armor,Black Sorcerer Gauntlets,642000,1,1,10,1,200,38,1280,0,0,,1,0
+armor,Black Sorcerer Boots,643000,1,1,10,1,200,39,1281,0,0,,1,0
+armor,Elite Cleric Helm,650000,1,1,10,1,500,56,1286,0,0,,0,0
+armor,Elite Cleric Armor,651000,1,1,10,1,500,57,1287,0,0,,0,0
+armor,Elite Cleric Gauntlets,652000,1,1,10,1,500,58,1288,0,0,,1,0
+armor,Elite Cleric Leggings,653000,1,1,10,1,500,59,1289,0,0,,1,0
+armor,Helm of Artorias,660000,1,1,5,1,600,183,1294,0,0,,1,0
+armor,Armor of Artorias,661000,1,1,5,1,600,184,1295,0,0,,1,0
+armor,Gauntlets of Artorias,662000,1,1,5,1,600,185,1296,0,0,,1,0
+armor,Leggings of Artorias,663000,1,1,5,1,600,186,1297,0,0,,1,0
+armor,Porcelain Mask,670000,1,1,5,1,250,191,1298,0,0,,1,0
+armor,Lord's Blade Robe,671000,1,1,5,1,250,192,1299,0,0,,1,0
+armor,Lord's Blade Gloves,672000,1,1,5,1,250,193,1300,0,0,,1,0
+armor,Lord's Blade Waistcloth,673000,1,1,5,1,250,194,1301,0,0,,1,0
+armor,Gough's Helm,680000,1,1,5,1,450,187,1302,0,0,,1,0
+armor,Gough's Armor,681000,1,1,5,1,450,188,1303,0,0,,1,0
+armor,Gough's Gauntlets,682000,1,1,5,1,450,189,1304,0,0,,1,0
+armor,Gough's Leggings,683000,1,1,5,1,450,190,1305,0,0,,1,0
+armor,Guardian Helm,690000,1,1,0,1,800,223,1306,0,0,,1,0
+armor,Guardian Armor,691000,1,1,0,1,800,224,1307,0,0,,1,0
+armor,Guardian Gauntlets,692000,1,1,0,1,800,225,1308,0,0,,1,0
+armor,Guardian Leggings,693000,1,1,0,1,800,226,1309,0,0,,1,0
+armor,Snickering Top Hat,700000,1,1,5,1,300,109,1310,0,0,,1,0
+armor,Chester's Long Coat,701000,1,1,5,1,300,110,1311,0,0,,1,0
+armor,Chester's Gloves,702000,1,1,5,1,300,111,1312,0,0,,1,0
+armor,Chester's Trousers,703000,1,1,5,1,300,112,1313,0,0,,1,0
+armor,Bloated Head,710000,1,1,0,1,150,242,1314,0,0,,1,0
+armor,Bloated Sorcerer Head,720000,1,1,0,1,150,243,1315,0,0,,1,0
+rings,Havel's Ring,100,2,1,0,1,0,3,4000,0,0,,1,0
+rings,Red Tearstone Ring,101,2,1,0,1,0,12,4001,0,0,,1,0
+rings,Darkmoon Blade Covenant Ring,102,2,1,0,1,0,23,4040,0,0,,1,0
+rings,Cat Covenant Ring,103,2,1,0,1,0,37,4041,0,0,,1,0
+rings,Cloranthy Ring,104,2,1,0,1,0,2,4004,0,0,,1,0
+rings,Flame Stoneplate Ring,105,2,1,0,1,0,6,4005,0,0,,1,0
+rings,Thunder Stoneplate Ring,106,2,1,0,1,0,7,4006,0,0,,1,0
+rings,Spell Stoneplate Ring,107,2,1,0,1,0,5,4007,0,0,,1,0
+rings,Speckled Stoneplate Ring,108,2,1,0,1,0,8,4008,0,0,,1,0
+rings,Bloodbite Ring,109,2,1,0,1,0,9,4009,0,0,,1,0
+rings,Poisonbite Ring,110,2,1,0,1,0,10,4010,0,0,,1,0
+rings,Tiny Being's Ring,111,2,1,0,1,0,1,4042,0,0,,1,0
+rings,Cursebite Ring,113,2,1,0,1,0,11,4013,0,0,,1,0
+rings,White Seance Ring,114,2,1,0,1,0,20,4014,0,0,,1,0
+rings,Bellowing Dragoncrest Ring,115,2,1,0,1,0,16,4015,0,0,,1,0
+rings,Dusk Crown Ring,116,2,1,0,1,0,19,4016,0,0,,1,0
+rings,Hornet Ring,117,2,1,0,1,0,28,4017,0,0,,1,0
+rings,Hawk Ring,119,2,1,0,1,0,27,4019,0,0,,1,0
+rings,Ring of Steel Protection,120,2,1,0,1,0,4,4020,0,0,,1,0
+rings,Covetous Gold Serpent Ring,121,2,1,0,1,0,32,4021,0,0,,1,0
+rings,Covetous Silver Serpent Ring,122,2,1,0,1,0,33,4022,0,0,,1,0
+rings,Slumbering Dragoncrest Ring,123,2,1,0,1,0,18,4023,0,0,,1,0
+rings,Ring of Fog,124,2,1,0,1,0,38,4024,0,0,,1,0
+rings,Rusted Iron Ring,125,2,1,0,1,0,31,4025,0,0,,1,0
+rings,Ring of Sacrifice,126,2,1,0,1,0,14,4026,0,0,,1,0
+rings,Rare Ring of Sacrifice,127,2,1,0,1,0,15,4027,0,0,,1,0
+rings,Dark Wood Grain Ring,128,2,1,0,1,0,30,4028,0,0,,1,0
+rings,Ring of the Sun Princess,130,2,1,0,1,0,24,4030,0,0,,1,0
+rings,Old Witch's Ring,137,2,1,0,1,0,36,4037,0,0,,1,0
+rings,Covenant of Artorias,138,2,1,0,1,0,34,4002,0,0,,1,0
+rings,Orange Charred Ring,139,2,1,0,1,0,35,4003,0,0,,1,0
+rings,Lingering Dragoncrest Ring,141,2,1,0,1,0,17,4039,0,0,,1,0
+rings,Ring of the Evil Eye,142,2,1,0,1,0,40,4018,0,0,,1,0
+rings,Ring of Favor and Protection,143,2,1,0,1,0,39,4029,0,0,,1,0
+rings,Leo Ring,144,2,1,0,1,0,25,4031,0,0,,1,0
+rings,East Wood Grain Ring,145,2,1,0,1,0,29,4032,0,0,,1,0
+rings,Wolf Ring,146,2,1,0,1,0,26,4035,0,0,,1,0
+rings,Blue Tearstone Ring,147,2,1,0,1,0,13,4036,0,0,,1,0
+rings,Ring of the Sun's Firstborn,148,2,1,0,1,0,22,4011,0,0,,1,0
+rings,Darkmoon Seance Ring,149,2,1,0,1,0,21,4038,0,0,,1,0
+rings,Calamity Ring,150,2,1,0,1,0,41,4043,0,0,,1,0
+consumables,White Sign Soapstone,100,4,1,0,1,0,18,2000,0,0,,1,0
+consumables,Red Sign Soapstone,101,4,1,0,1,0,20,2001,0,0,,1,0
+consumables,Red Eye Orb,102,4,1,0,1,0,21,2002,0,0,,1,0
+consumables,Black Separation Crystal,103,4,1,0,1,0,31,2003,0,0,,1,0
+consumables,Orange Guidance Soapstone,106,4,1,0,1,0,17,2082,0,0,,1,0
+consumables,Book of the Guilty,108,4,1,0,1,0,33,2009,0,0,,1,0
+consumables,Eye of Death,109,4,99,0,1,0,30,2087,0,0,,1,0
+consumables,Cracked Red Eye Orb,111,4,99,0,1,0,22,2006,0,0,,1,0
+consumables,Servant Roster,112,4,1,0,1,0,35,2007,0,0,,1,0
+consumables,Blue Eye Orb,113,4,1,0,1,0,23,2010,0,0,,1,0
+consumables,Dragon Eye,114,4,1,0,1,0,27,2011,0,0,,1,0
+consumables,Black Eye Orb,115,4,1,0,1,0,25,2132,0,0,,1,0
+consumables,Black Eye Orb (ID 116),116,4,1,0,1,0,26,2144,0,0,,1,0
+consumables,Darksign,117,4,1,0,1,0,110,2145,0,0,,1,0
+consumables,Purple Coward's Crystal,118,4,1,0,1,0,32,2148,0,0,,1,0
+consumables,Estus Flask (Empty),200,4,1,0,1,0,1,2004,0,0,,1,0
+consumables,Estus Flask,201,4,20,0,1,0,2,2005,0,0,,1,0
+consumables,Estus Flask+1 (Empty),202,4,1,0,1,0,3,2004,0,0,,1,0
+consumables,Estus Flask+1,203,4,20,0,1,0,4,2005,0,0,,1,0
+consumables,Estus Flask+2 (Empty),204,4,1,0,1,0,5,2004,0,0,,1,0
+consumables,Estus Flask+2,205,4,20,0,1,0,6,2005,0,0,,1,0
+consumables,Estus Flask+3 (Empty),206,4,1,0,1,0,7,2004,0,0,,1,0
+consumables,Estus Flask+3,207,4,20,0,1,0,8,2005,0,0,,1,0
+consumables,Estus Flask+4 (Empty),208,4,1,0,1,0,9,2004,0,0,,1,0
+consumables,Estus Flask+4,209,4,20,0,1,0,10,2005,0,0,,1,0
+consumables,Estus Flask+5 (Empty),210,4,1,0,1,0,11,2004,0,0,,1,0
+consumables,Estus Flask+5,211,4,20,0,1,0,12,2005,0,0,,1,0
+consumables,Estus Flask+6 (Empty),212,4,1,0,1,0,13,2004,0,0,,1,0
+consumables,Estus Flask+6,213,4,20,0,1,0,14,2005,0,0,,1,0
+consumables,Estus Flask+7 (Empty),214,4,1,0,1,0,15,2004,0,0,,1,0
+consumables,Estus Flask+7,215,4,20,0,1,0,16,2005,0,0,,1,0
+consumables,Silver Pendant,220,4,99,0,1,0,105,2157,0,0,,1,0
+consumables,Elizabeth's Mushroom,230,4,99,0,1,0,37,2158,0,0,,1,0
+consumables,Divine Blessing,240,4,99,0,1,0,43,2012,0,0,,1,0
+consumables,Green Blossom,260,4,99,0,1,0,36,2014,0,0,,1,0
+consumables,Bloodred Moss Clump,270,4,99,0,1,0,38,2015,0,0,,1,0
+consumables,Purple Moss Clump,271,4,99,0,1,0,39,2016,0,0,,1,0
+consumables,Blooming Purple Moss Clump,272,4,99,0,1,0,40,2017,0,0,,1,0
+consumables,Purging Stone,274,4,99,0,1,0,41,2019,0,0,,1,0
+consumables,Egg Vermifuge,275,4,99,0,1,0,42,2013,0,0,,1,0
+consumables,Repair Powder,280,4,99,0,1,0,49,2020,0,0,,1,0
+consumables,Throwing Knife,290,4,99,0,1,0,46,2021,0,0,,1,0
+consumables,Poison Throwing Knife,291,4,99,0,1,0,47,2022,0,0,,1,0
+consumables,Firebomb,292,4,99,0,1,0,44,2023,0,0,,1,0
+consumables,Dung Pie,293,4,99,0,1,0,48,2024,0,0,,1,0
+consumables,Alluring Skull,294,4,99,0,1,0,54,2025,0,0,,1,0
+consumables,Lloyd's Talisman,296,4,99,0,1,0,53,2027,0,0,,1,0
+consumables,Black Firebomb,297,4,99,0,1,0,45,2026,0,0,,1,0
+consumables,Charcoal Pine Resin,310,4,99,0,1,0,50,2028,0,0,,1,0
+consumables,Gold Pine Resin,311,4,99,0,1,0,51,2029,0,0,,1,0
+consumables,Transient Curse,312,4,99,0,1,0,55,2030,0,0,,1,0
+consumables,Rotten Pine Resin,313,4,99,0,1,0,52,2031,0,0,,1,0
+consumables,Homeward Bone,330,4,99,0,1,0,56,2034,0,0,,1,0
+consumables,Prism Stone,370,4,99,0,1,0,57,2042,0,0,,1,0
+consumables,Binoculars,371,4,1,0,1,0,63,2043,0,0,,1,0
+consumables,Indictment,373,4,99,0,1,0,34,2041,0,0,,1,0
+consumables,Souvenir of Reprisal,374,4,99,0,1,0,24,2032,0,0,,1,0
+consumables,Sunlight Medal,375,4,99,0,1,0,19,2035,0,0,,1,0
+consumables,Pendant,376,4,99,0,1,0,104,2037,0,0,,1,0
+consumables,Dragon Head Stone,377,4,99,0,1,0,28,2121,0,0,,1,0
+consumables,Dragon Torso Stone,378,4,99,0,1,0,29,2122,0,0,,1,0
+consumables,Rubbish,380,4,99,0,1,0,106,2038,0,0,,1,0
+consumables,Copper Coin,381,4,99,0,1,0,107,2039,0,0,,1,0
+consumables,Silver Coin,382,4,99,0,1,0,108,2040,0,0,,1,0
+consumables,Gold Coin,383,4,99,0,1,0,109,2055,0,0,,1,0
+key_items,Peculiar Doll,384,4,1,0,1,0,4051,2146,1,0,,1,0
+consumables,Dried Finger,385,4,1,0,1,0,111,2129,0,0,,1,0
+consumables,Fire Keeper Soul,390,4,1,0,1,0,103,2086,0,0,,1,0
+consumables,Fire Keeper Soul (ID 391),391,4,1,0,1,0,75,2130,0,0,,1,0
+consumables,Fire Keeper Soul (ID 392),392,4,1,0,1,0,76,2131,0,0,,1,0
+consumables,Fire Keeper Soul (ID 393),393,4,1,0,1,0,77,2072,0,0,,1,0
+consumables,Fire Keeper Soul (ID 394),394,4,1,0,1,0,78,2101,0,0,,1,0
+consumables,Fire Keeper Soul (ID 395),395,4,1,0,1,0,79,2107,0,0,,1,0
+consumables,Fire Keeper Soul (ID 396),396,4,1,0,1,0,80,2108,0,0,,1,0
+consumables,Soul of a Lost Undead,400,4,99,0,1,0,65,2045,0,0,,1,0
+consumables,Large Soul of a Lost Undead,401,4,99,0,1,0,66,2046,0,0,,1,0
+consumables,Soul of a Nameless Soldier,402,4,99,0,1,0,67,2047,0,0,,1,0
+consumables,Large Soul of a Nameless Soldier,403,4,99,0,1,0,68,2048,0,0,,1,0
+consumables,Soul of a Proud Knight,404,4,99,0,1,0,69,2049,0,0,,1,0
+consumables,Large Soul of a Proud Knight,405,4,99,0,1,0,70,2050,0,0,,1,0
+consumables,Soul of a Brave Warrior,406,4,99,0,1,0,71,2051,0,0,,1,0
+consumables,Large Soul of a Brave Warrior,407,4,99,0,1,0,72,2052,0,0,,1,0
+consumables,Soul of a Hero,408,4,99,0,1,0,73,2053,0,0,,1,0
+consumables,Soul of a Great Hero,409,4,99,0,1,0,74,2054,0,0,,1,0
+consumables,Humanity,500,4,99,0,1,0,101,2112,0,0,,1,0
+consumables,Twin Humanities,501,4,99,0,1,0,102,2113,0,0,,1,0
+consumables,Hello Carving,510,4,1,0,1,0,58,2149,0,0,,1,0
+consumables,Thank you Carving,511,4,1,0,1,0,59,2150,0,0,,1,0
+consumables,Very good! Carving,512,4,1,0,1,0,60,2151,0,0,,1,0
+consumables,I'm sorry Carving,513,4,1,0,1,0,61,2152,0,0,,1,0
+consumables,Help me! Carving,514,4,1,0,1,0,62,2153,0,0,,1,0
+consumables,Soul of Quelaag,700,4,99,0,1,0,82,2114,0,0,,1,0
+consumables,Soul of Sif,701,4,99,0,1,0,86,2115,0,0,,1,0
+consumables,"Soul of Gwyn, Lord of Cinder",702,4,99,0,1,0,92,2116,0,0,,1,0
+consumables,Core of an Iron Golem,703,4,99,0,1,0,83,2117,0,0,,1,0
+consumables,Soul of Ornstein,704,4,99,0,1,0,84,2118,0,0,,1,0
+consumables,Soul of the Moonlight Butterfly,705,4,99,0,1,0,81,2119,0,0,,1,0
+consumables,Soul of Smough,706,4,99,0,1,0,85,2120,0,0,,1,0
+consumables,Soul of Priscilla,707,4,99,0,1,0,88,2133,0,0,,1,0
+consumables,Soul of Gwyndolin,708,4,99,0,1,0,87,2134,0,0,,1,0
+consumables,Guardian Soul,709,4,99,0,1,0,89,2154,0,0,,1,0
+consumables,Soul of Artorias,710,4,99,0,1,0,90,2155,0,0,,1,0
+consumables,Soul of Manus,711,4,99,0,1,0,91,2156,0,0,,1,0
+key_items,Large Ember,800,4,1,0,1,0,4012,2109,1,0,,1,0
+key_items,Very Large Ember,801,4,1,0,1,0,4014,2070,1,0,,1,0
+key_items,Crystal Ember,802,4,1,0,1,0,4016,2071,1,0,,1,0
+key_items,Large Magic Ember,806,4,1,0,1,0,4022,2073,1,0,,1,0
+key_items,Enchanted Ember,807,4,1,0,1,0,4024,2074,1,0,,1,0
+key_items,Divine Ember,808,4,1,0,1,0,4026,2110,1,0,,1,0
+key_items,Large Divine Ember,809,4,1,0,1,0,4028,2075,1,0,,1,0
+key_items,Dark Ember,810,4,1,0,1,0,4030,2076,1,0,,1,0
+key_items,Large Flame Ember,812,4,1,0,1,0,4018,2077,1,0,,1,0
+key_items,Chaos Flame Ember,813,4,1,0,1,0,4020,2078,1,0,,1,0
+materials,Titanite Shard,1000,4,99,0,1,0,1001,2090,0,0,,1,0
+materials,Large Titanite Shard,1010,4,99,0,1,0,1002,2091,0,0,,1,0
+materials,Green Titanite Shard,1020,4,99,0,1,0,1005,2092,0,0,,1,0
+materials,Titanite Chunk,1030,4,99,0,1,0,1003,2093,0,0,,1,0
+materials,Blue Titanite Chunk,1040,4,99,0,1,0,1006,2094,0,0,,1,0
+materials,White Titanite Chunk,1050,4,99,0,1,0,1010,2095,0,0,,1,0
+materials,Red Titanite Chunk,1060,4,99,0,1,0,1008,2096,0,0,,1,0
+materials,Titanite Slab,1070,4,99,0,1,0,1004,2097,0,0,,1,0
+materials,Blue Titanite Slab,1080,4,99,0,1,0,1007,2098,0,0,,1,0
+materials,White Titanite Slab,1090,4,99,0,1,0,1011,2099,0,0,,1,0
+materials,Red Titanite Slab,1100,4,99,0,1,0,1009,2100,0,0,,1,0
+materials,Dragon Scale,1110,4,99,0,1,0,1014,2111,0,0,,1,0
+materials,Demon Titanite,1120,4,99,0,1,0,1013,2036,0,0,,1,0
+materials,Twinkling Titanite,1130,4,99,0,1,0,1012,2123,0,0,,1,0
+key_items,Basement Key,2001,4,1,0,1,0,4068,2135,1,0,,1,0
+key_items,Crest of Artorias,2002,4,1,0,1,0,4054,2136,1,0,,1,0
+key_items,Cage Key,2003,4,1,0,1,0,4082,2137,1,0,,1,0
+key_items,Archive Tower Cell Key,2004,4,1,0,1,0,4084,2138,1,0,,1,0
+key_items,Archive Tower Giant Door Key,2005,4,1,0,1,0,4090,2139,1,0,,1,0
+key_items,Archive Tower Giant Cell Key,2006,4,1,0,1,0,4088,2140,1,0,,1,0
+key_items,Blighttown Key,2007,4,1,0,1,0,4076,2141,1,0,,1,0
+key_items,Key to New Londo Ruins,2008,4,1,0,1,0,4078,2061,1,0,,1,0
+key_items,Annex Key,2009,4,1,0,1,0,4092,2062,1,0,,1,0
+key_items,Dungeon Cell Key,2010,4,1,0,1,0,4056,2079,1,0,,1,0
+key_items,Big Pilgrim's Key,2011,4,1,0,1,0,4062,2080,1,0,,1,0
+key_items,Undead Asylum F2 East Key,2012,4,1,0,1,0,4058,2081,1,0,,1,0
+key_items,Key to the Seal,2013,4,1,0,1,0,4080,2102,1,0,,1,0
+key_items,Key to Depths,2014,4,1,0,1,0,4070,2103,1,0,,1,0
+key_items,Lift Chamber Key,2015,4,1,0,1,0,4094,2104,1,0,,1,0
+key_items,Undead Asylum F2 West Key,2016,4,1,0,1,0,4060,2105,1,0,,1,0
+key_items,Mystery Key,2017,4,1,0,1,0,4066,2106,1,0,,1,0
+key_items,Sewer Chamber Key,2018,4,1,0,1,0,4074,2124,1,0,,1,0
+key_items,Watchtower Basement Key,2019,4,1,0,1,0,4072,2125,1,0,,1,0
+key_items,Archive Prison Extra Key,2020,4,1,0,1,0,4086,2126,1,0,,1,0
+key_items,Residence Key,2021,4,1,0,1,0,4064,2127,1,0,,1,0
+key_items,Crest Key,2022,4,1,0,1,0,4095,2128,1,0,,1,0
+key_items,Master Key,2100,4,1,0,1,0,4053,2142,1,0,,1,0
+key_items,Lord Soul,2500,4,1,0,1,0,4004,2056,1,0,,1,0
+key_items,Lord Soul (ID 2501),2501,4,1,0,1,0,4006,2057,1,0,,1,0
+key_items,Bequeathed Lord Soul Shard,2502,4,1,0,1,0,4008,2058,1,0,,1,0
+key_items,Bequeathed Lord Soul Shard (ID 2503),2503,4,1,0,1,0,4010,2059,1,0,,1,0
+key_items,Lordvessel,2510,4,1,0,1,0,4002,2085,1,0,,1,0
+key_items,Broken Pendant,2520,4,1,0,1,0,4052,2147,1,0,,1,0
+key_items,Weapon Smithbox,2600,4,1,0,1,0,4044,2063,1,0,,1,0
+key_items,Armor Smithbox,2601,4,1,0,1,0,4046,2064,1,0,,1,0
+key_items,Repairbox,2602,4,1,0,1,0,4042,2065,1,0,,1,0
+key_items,Rite of Kindling,2607,4,1,0,1,0,4050,2084,1,0,,1,0
+key_items,Bottomless Box,2608,4,1,0,1,0,4048,2088,1,0,,1,0
+spells,Soul Arrow,3000,4,99,0,1,0,3001,3000,0,1,,1,0
+spells,Great Soul Arrow,3010,4,99,0,1,0,3002,3001,0,1,,1,0
+spells,Heavy Soul Arrow,3020,4,99,0,1,0,3003,3002,0,1,,1,0
+spells,Great Heavy Soul Arrow,3030,4,99,0,1,0,3004,3003,0,1,,1,0
+spells,Homing Soulmass,3040,4,99,0,1,0,3005,3006,0,1,,1,0
+spells,Homing Crystal Soulmass,3050,4,99,0,1,0,3006,3007,0,1,,1,0
+spells,Soul Spear,3060,4,99,0,1,0,3007,3058,0,1,,1,0
+spells,Crystal Soul Spear,3070,4,99,0,1,0,3008,3059,0,1,,1,0
+spells,Magic Weapon,3100,4,99,0,1,0,3010,3004,0,1,,1,0
+spells,Great Magic Weapon,3110,4,99,0,1,0,3011,3005,0,1,,1,0
+spells,Crystal Magic Weapon,3120,4,99,0,1,0,3012,3060,0,1,,1,0
+spells,Magic Shield,3300,4,99,0,1,0,3013,3008,0,1,,1,0
+spells,Strong Magic Shield,3310,4,99,0,1,0,3014,3009,0,1,,1,0
+spells,Hidden Weapon,3400,4,99,0,1,0,3018,3010,0,1,,1,0
+spells,Hidden Body,3410,4,99,0,1,0,3019,3011,0,1,,1,0
+spells,Cast Light,3500,4,99,0,1,0,3021,3012,0,1,,1,0
+spells,Hush,3510,4,99,0,1,0,3016,3013,0,1,,1,0
+spells,Aural Decoy,3520,4,99,0,1,0,3015,3014,0,1,,1,0
+spells,Repair,3530,4,99,0,1,0,3020,3015,0,1,,1,0
+spells,Fall Control,3540,4,99,0,1,0,3017,3016,0,1,,1,0
+spells,Chameleon,3550,4,99,0,1,0,3022,3017,0,1,,1,0
+spells,Resist Curse,3600,4,99,0,1,0,3024,3034,0,1,,1,0
+spells,Remedy,3610,4,99,0,1,0,3023,3041,0,1,,1,0
+spells,White Dragon Breath,3700,4,99,0,1,0,3009,3040,0,1,,1,0
+spells,Dark Orb,3710,4,99,0,1,0,3025,3068,0,1,,1,0
+spells,Dark Bead,3720,4,99,0,1,0,3026,3069,0,1,,1,0
+spells,Dark Fog,3730,4,99,0,1,0,3027,3070,0,1,,1,0
+spells,Pursuers,3740,4,99,0,1,0,3028,3071,0,1,,1,0
+spells,Fireball,4000,4,99,0,1,0,3029,3020,0,1,,1,0
+spells,Fire Orb,4010,4,99,0,1,0,3030,3021,0,1,,1,0
+spells,Great Fireball,4020,4,99,0,1,0,3031,3022,0,1,,1,0
+spells,Firestorm,4030,4,99,0,1,0,3033,3023,0,1,,1,0
+spells,Fire Tempest,4040,4,99,0,1,0,3034,3061,0,1,,1,0
+spells,Fire Surge,4050,4,99,0,1,0,3038,3062,0,1,,1,0
+spells,Fire Whip,4060,4,99,0,1,0,3039,3063,0,1,,1,0
+spells,Combustion,4100,4,99,0,1,0,3036,3024,0,1,,1,0
+spells,Great Combustion,4110,4,99,0,1,0,3037,3025,0,1,,1,0
+spells,Poison Mist,4200,4,99,0,1,0,3041,3027,0,1,,1,0
+spells,Toxic Mist,4210,4,99,0,1,0,3042,3028,0,1,,1,0
+spells,Acid Surge,4220,4,99,0,1,0,3043,3026,0,1,,1,0
+spells,Iron Flesh,4300,4,99,0,1,0,3045,3029,0,1,,1,0
+spells,Flash Sweat,4310,4,99,0,1,0,3044,3030,0,1,,1,0
+spells,Undead Rapport,4360,4,99,0,1,0,3047,3035,0,1,,1,0
+spells,Power Within,4400,4,99,0,1,0,3046,3036,0,1,,1,0
+spells,Great Chaos Fireball,4500,4,99,0,1,0,3032,3064,0,1,,1,0
+spells,Chaos Storm,4510,4,99,0,1,0,3035,3067,0,1,,1,0
+spells,Chaos Fire Whip,4520,4,99,0,1,0,3040,3065,0,1,,1,0
+spells,Black Flame,4530,4,99,0,1,0,3048,3072,0,1,,1,0
+spells,Heal,5000,4,99,0,1,0,3049,3037,0,1,,1,0
+spells,Great Heal,5010,4,99,0,1,0,3051,3038,0,1,,1,0
+spells,Great Heal Excerpt,5020,4,99,0,1,0,3050,3039,0,1,,1,0
+spells,Soothing Sunlight,5030,4,99,0,1,0,3052,3054,0,1,,1,0
+spells,Replenishment,5040,4,99,0,1,0,3053,3031,0,1,,1,0
+spells,Bountiful Sunlight,5050,4,99,0,1,0,3054,3066,0,1,,1,0
+spells,Gravelord Sword Dance,5100,4,99,0,1,0,3071,3018,0,1,,1,0
+spells,Gravelord Greatsword Dance,5110,4,99,0,1,0,3072,3019,0,1,,1,0
+spells,Escape Death,5200,4,99,0,1,0,3061,3042,0,1,,1,0
+spells,Homeward,5210,4,99,0,1,0,3060,3043,0,1,,1,0
+spells,Force,5300,4,99,0,1,0,3055,3044,0,1,,1,0
+spells,Wrath of the Gods,5310,4,99,0,1,0,3056,3045,0,1,,1,0
+spells,Emit Force,5320,4,99,0,1,0,3057,3046,0,1,,1,0
+spells,Seek Guidance,5400,4,99,0,1,0,3062,3047,0,1,,1,0
+spells,Lightning Spear,5500,4,99,0,1,0,3066,3048,0,1,,1,0
+spells,Great Lightning Spear,5510,4,99,0,1,0,3067,3049,0,1,,1,0
+spells,Sunlight Spear,5520,4,99,0,1,0,3068,3050,0,1,,1,0
+spells,Magic Barrier,5600,4,99,0,1,0,3058,3051,0,1,,1,0
+spells,Great Magic Barrier,5610,4,99,0,1,0,3059,3052,0,1,,1,0
+spells,Karmic Justice,5700,4,99,0,1,0,3063,3053,0,1,,1,0
+spells,Tranquil Walk of Peace,5800,4,99,0,1,0,3065,3033,0,1,,1,0
+spells,Vow of Silence,5810,4,99,0,1,0,3064,3056,0,1,,1,0
+spells,Sunlight Blade,5900,4,99,0,1,0,3069,3055,0,1,,1,0
+spells,Darkmoon Blade,5910,4,99,0,1,0,3070,3057,0,1,,1,0

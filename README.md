@@ -25,11 +25,12 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **NPC Respawner**: Respawn NPCs
 - **NPC Quest Tracker**
 - **Gestures**: Unlock gestures
-- **Invasion Regions & Game Settings**: View and edit invasion regions and game settings
+- **Summoning Pools**: Manage Summoning Pool States for the Vanilla Game
+- **Game Settings**
 - **Backup Manager**: Automatic and manual backups with restore functionality
 - **Troubleshooting**: Troubleshooter for checking game launch/connection related issues
-- **Backup Manager and SteamID Patcher for**: Elden Ring, Elden Ring Nightreign, Armored Core 6, Sekiro, Dark Souls III, Dark Souls Remastered
-- **DSR**: Stats Editing, Character Management, Event Flags, Boss Revival, NPC Revival, Item Spawning
+- **Backup Manager and SteamID Patcher for**: Elden Ring, Elden Ring Nightreign, Armored Core 6, Sekiro, Dark Souls III
+- **DSR**: Stats Editing, Character Management, Event Flags, Boss Revival, Item Spawning and Inventory Editing with Visual Item Picker
 - **DS3**: Stats Editing, Character Management, Item Spawning and Inventory Editing with Visual Item Picker, Boss Revival, NPC Revival, Bonfires, Gestures, NG+, Supports Convergence, Cinders and SeamlessCoop
 - **Nightreign**: Relic spawning and editing, Chalice Loadouts and Presets, Editing Murk, Character Management
 - **DS2**: Stats Editing, Item Spawning, Build Import from Souls Planner, Character Management, Bonfire Editing, NPC Revival
@@ -189,11 +190,6 @@ Automatically detects issues with your game installation, your save file and any
 
 - Unlock gestures
 
-### Regions & Game Settings
-
-- View and unlock invasion regions
-- View and edit game settings
-
 ### Backup Manager
 
 - Automatic backups before any edit
@@ -219,8 +215,11 @@ Automatically detects issues with your game installation, your save file and any
 - Character Management
 - Event Flags
 - Boss Revival
-- NPC Revival
-- Item Spawning (Supports SeamlessCoop Items)
+- Item Spawning that stores items the way the game does, with item data, upgrade caps and icons read from the game files
+- SeamlessCoop items for `.co2` saves
+- Visual Item Picker and Visual Inventory Editor
+- Batch editing: quantity, upgrade level, infusion, removal, repair
+- Equipped items are protected from removal, cut content is hidden by default and confirmed before spawning
 
 ### DS3
 

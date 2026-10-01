@@ -5,8 +5,7 @@ data/items.csv is generated from the game's own files: EquipParam* rows for
 ids, sort ids, icon ids, durability and stack sizes, ReinforceParam* for
 upgrade caps, the item text for names, and item lots, shops and starting
 classes for the obtainable flag (smithed and ascended weapons count when
-their source weapon does). data/seamless_items.csv lists the goods the
-Seamless Co-op mod adds at runtime (row fields read from ds1sc.dll).
+their source weapon does).
 
 Weapon ids are family * 1000 + infusion * 100 + upgrade level, except per-
 level families such as the Pyromancy Flame, whose upgrades are rows 100

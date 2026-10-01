@@ -121,7 +121,7 @@ Key items occupy slots 0-63; weapons, armor, rings, consumables use slots 64-204
            Infusions: 0=Standard, 1=Crystal, 2=Lightning, 3=Raw, 4=Magic,
                       5=Enchanted, 6=Divine, 7=Occult, 8=Fire, 9=Chaos
 +0x08  4   Stack quantity (u32 LE)
-+0x0C  4   Inventory order index (u32 LE)
++0x0C  4   Order: (sort key << 12) | slot (see ORDER_SORT_SHIFT)
 +0x10  4   Exists flag: 1=occupied, 0 or 0xFFFFFFFF=empty (u32 LE)
 +0x14  4   Durability (u32 LE); Crystal infusion = base_durability / 10
 +0x18  4   Unknown (u32 LE)
@@ -130,24 +130,15 @@ An empty slot has all bytes 0x00 or all 0xFF.
 
 === NPC / EVENT FLAG REGION ===
 
-Anchor: fixed absolute offset 0x1F17E in the decrypted slot.
-This byte range holds live flag/counter data (NG+ counter, bonfire state,
-NPC bits), so its content changes with play progress and cannot be found by
-searching for a signature pattern; a fresh, unplayed character still shows
-the marker FF FF FF FF 00 00 00 00 FF FF FF FF 00 00 00 00 at this offset,
-which is how the anchor was originally located, but once flags are set the
-bytes there no longer match that marker. Treat the offset as a fixed
-structural constant, not a search result.
++0x1E5BE  1   NG+ counter (u8; 0=NG, 1=NG+, 2=NG++, etc.)
 
-Anchor-relative offsets:
-  -0xBC0   NG+ counter (u8; 0=NG, 1=NG+, 2=NG++, etc.)
-  +0x6B    Bonfire warp data byte 1
-  +0x6C    Bonfire warp data byte 2
-  +0x6D    Bonfire warp data byte 3
-  +0xAE    Bonfire warp enable flag
-
-NPC alive/dead states are stored as individual bits at absolute offsets into
-the decrypted slot data. See npc_data.json for per-NPC offset+bit definitions.
+After it comes a run of 8-byte records repeating FF FF FF FF 00 00 00 00
+whose length varies per character, so everything after the run moves. The
+anchor is the start of the run's last 16-byte marker (0x1F17E on a fresh
+character, 0x1F29A on a level 130 one); event flags start 16 bytes after
+it. Boss kill flags 2-17 (byte = flag // 8, bit = flag % 8) match play
+progress on every character checked; other flag ids and the bonfire bytes
+at anchor +0x6B..+0x6D and +0xAE are not confirmed yet.
 """
 
 from __future__ import annotations
@@ -227,7 +218,8 @@ OFF_EQ_LEGS = 0x02D4
 OFF_EQ_RING1 = 0x02DC
 OFF_EQ_RING2 = 0x02E0
 
-# Equipment cached item IDs (u32 LE each)
+# Equipment cached item IDs (u32 LE each), paired with their slot fields
+# below in _EQUIP_SLOT_ID_PAIRS.
 OFF_EQ_ID_LH1 = 0x0314
 OFF_EQ_ID_RH1 = 0x0318
 OFF_EQ_ID_LH2 = 0x031C
@@ -238,30 +230,68 @@ OFF_EQ_ID_GAUNTLETS = 0x033C
 OFF_EQ_ID_LEGS = 0x0340
 OFF_EQ_ID_RING1 = 0x0348
 OFF_EQ_ID_RING2 = 0x034C
+_EQUIP_SLOT_ID_PAIRS = (
+    (OFF_EQ_LH1, OFF_EQ_ID_LH1),
+    (OFF_EQ_RH1, OFF_EQ_ID_RH1),
+    (OFF_EQ_LH2, OFF_EQ_ID_LH2),
+    (OFF_EQ_RH2, OFF_EQ_ID_RH2),
+    (OFF_EQ_HELM, OFF_EQ_ID_HELM),
+    (OFF_EQ_CHEST, OFF_EQ_ID_CHEST),
+    (OFF_EQ_GAUNTLETS, OFF_EQ_ID_GAUNTLETS),
+    (OFF_EQ_LEGS, OFF_EQ_ID_LEGS),
+    (OFF_EQ_RING1, OFF_EQ_ID_RING1),
+    (OFF_EQ_RING2, OFF_EQ_ID_RING2),
+)
 
 # Inventory
 OFF_INVENTORY = 0x0370  # start of item array
 OFF_ITEMS_COUNT = 0xE370  # highest used slot index (u32 LE)
 ITEM_SIZE = 28
 MAX_INVENTORY_SLOTS = 2048
+# Inventory entry order field: (sort key << 12) | slot. The sort key is the
+# item's sortId, times 100 plus the level for weapons and armor; upgrades and
+# infusions done in game keep the key the item was picked up with.
+ORDER_SORT_SHIFT = 12
+# The Ascended Pyromancy Flame is the per-level weapon family capped at +5;
+# matchmaking counts it as weapon level 15 at any level.
+ASCENDED_FLAME_CAP = 5
 KEY_ITEM_SLOTS = 64  # key items occupy slots 0-63
 
 # Slot occupancy check range: all-zero bytes here means empty character
 EMPTY_CHECK_START = 0x0020
 EMPTY_CHECK_END = 0x0090
 
-# Fixed absolute offset of the NPC/event flag region anchor in the decrypted
-# slot. Not derived by searching: the region holds live flag data that
-# diverges from its default state as a character is played, so a signature
-# search only finds this offset for untouched characters.
-PATTERN1_ANCHOR = 0x1F17E
+# The event flags follow a run of 8-byte records repeating PATTERN1_MARKER's
+# halves; the run's length varies per character, so everything after it,
+# flags included, moves (0x1F17E on a fresh character, 0x1F29A on a level
+# 130 one). The anchor is the start of the run's last 16-byte marker, found
+# by walking the run from NG_PLUS_OFFSET, which lies before it. Boss kill
+# flags read through it match play progress on every character checked.
+PATTERN1_MARKER = bytes.fromhex("ffffffff00000000ffffffff00000000")
+PATTERN1_RUN_STEP = 8
 
-# Anchor-relative offsets
-ANCHOR_NG_PLUS = -0xBC0
+# NG+ counter (u8), before the variable-length run, so at a fixed offset.
+NG_PLUS_OFFSET = 0x1E5BE
+
+# Anchor-relative offsets. The bonfire bytes are not confirmed from a
+# before/after pair; writes to them are refused (see set_bonfire_bytes).
 ANCHOR_BONFIRE_1 = 0x6B
 ANCHOR_BONFIRE_2 = 0x6C
 ANCHOR_BONFIRE_3 = 0x6D
 ANCHOR_BONFIRE_WARP = 0xAE
+
+# Writes refused until confirmed from a before/after save pair. npc_data.json
+# offsets were applied as absolute slot offsets, landing in the stats block
+# and the inventory (Andre: 0xFE, 0x11DB), and the bonfire bytes lie inside
+# the variable-length run on characters whose run is longer than a fresh one.
+NPC_UNVERIFIED = (
+    "NPC state editing is disabled until its save locations are confirmed; "
+    "the previous offsets wrote into unrelated character data."
+)
+BONFIRE_UNVERIFIED = (
+    "Bonfire unlocking is disabled until its save location is confirmed; "
+    "the previous offset wrote into unrelated data on most characters."
+)
 
 # Event flags start immediately after the 16-byte Pattern1 marker.
 # Encoding: byte = flags_base + flag_id // 8, bit = flag_id % 8 (LSB-first).
@@ -813,23 +843,15 @@ class DSRCharacter:
 
     @property
     def ng_plus(self) -> int:
-        anchor = self._find_pattern1()
-        if anchor < 0:
+        if NG_PLUS_OFFSET >= len(self._data):
             return 0
-        off = anchor + ANCHOR_NG_PLUS
-        if off < 0 or off >= len(self._data):
-            return 0
-        return self._data[off]
+        return self._data[NG_PLUS_OFFSET]
 
     @ng_plus.setter
     def ng_plus(self, value: int) -> None:
-        anchor = self._find_pattern1()
-        if anchor < 0:
-            raise ValueError("Pattern1 not found; cannot set NG+ counter")
-        off = anchor + ANCHOR_NG_PLUS
-        if off < 0 or off >= len(self._data):
+        if NG_PLUS_OFFSET >= len(self._data):
             raise ValueError("NG+ offset out of range")
-        self._data[off] = value & 0xFF
+        self._data[NG_PLUS_OFFSET] = value & 0xFF
 
     # --- Inventory ---
 
@@ -931,13 +953,8 @@ class DSRCharacter:
         return (self._data[b1], self._data[b2], self._data[b3], self._data[bf])
 
     def set_bonfire_bytes(self, byte1: int, byte2: int, byte3: int, warp: int) -> None:
-        anchor = self._find_pattern1()
-        if anchor < 0:
-            raise ValueError("Pattern1 not found")
-        self._data[anchor + ANCHOR_BONFIRE_1] = byte1 & 0xFF
-        self._data[anchor + ANCHOR_BONFIRE_2] = byte2 & 0xFF
-        self._data[anchor + ANCHOR_BONFIRE_3] = byte3 & 0xFF
-        self._data[anchor + ANCHOR_BONFIRE_WARP] = warp & 0xFF
+        """Refused: see BONFIRE_UNVERIFIED."""
+        raise ValueError(BONFIRE_UNVERIFIED)
 
     # --- Weapon level calibration ---
 
@@ -949,9 +966,7 @@ class DSRCharacter:
         max_wl = 0
         for item in self.iter_items():
             if item.category == DSRItemCategory.WeaponShield:
-                wl = _weapon_level_from_item(item)
-                if wl > max_wl:
-                    max_wl = wl
+                max_wl = max(max_wl, _weapon_level_from_item(item))
         self.weapon_level = max_wl
         return max_wl
 
@@ -959,14 +974,19 @@ class DSRCharacter:
 
     def _find_pattern1(self) -> int:
         """
-        Return the fixed absolute anchor offset, or -1 if the slot is too short.
-        Not a runtime search: see PATTERN1_ANCHOR for why this offset is a
-        constant rather than a pattern match result.
+        Return the flag anchor (see PATTERN1_MARKER), or -1 when the marker
+        run is missing.
         """
         if self._anchor_cache == -2:
-            self._anchor_cache = (
-                PATTERN1_ANCHOR if PATTERN1_ANCHOR < len(self._data) else -1
-            )
+            data = bytes(self._data)
+            at = data.find(PATTERN1_MARKER, NG_PLUS_OFFSET)
+            if at >= 0:
+                step = PATTERN1_RUN_STEP
+                while data[at + step : at + step + len(PATTERN1_MARKER)] == (
+                    PATTERN1_MARKER
+                ):
+                    at += step
+            self._anchor_cache = at
         return self._anchor_cache
 
     def _read_utf16(self, offset: int, length: int) -> str:
@@ -989,65 +1009,96 @@ class DSRCharacter:
 
     def add_item(
         self,
-        db_item: dict,
+        item_type: int,
+        item_id: int,
         quantity: int = 1,
-        upgrade: int = 0,
-        infusion: int = 0,
+        *,
+        sort_key: int = 0,
+        durability: int = 0,
+        max_quantity: int = 1,
+        key_item: bool = False,
     ) -> int:
         """
-        Add an item to inventory from a DB entry dict (see data/items.csv).
+        Add an item the way the game stores a pickup. Key items use slots
+        0-63, everything else 64-2047. Goods and ammo (max_quantity > 1)
+        stack onto an existing entry of the same id, capped at max_quantity.
+        The entry's order field is (sort_key << 12) | slot, as the game
+        writes it.
 
-        db_item fields used: Type, Id, MaxStackCount, Category, Durability.
-        For weapons, item_id = base_id + infusion*100 + upgrade.
-        Key items (Category="key_items") use slots 0-63; all others 64-2047.
-        Stackable items are stacked onto an existing slot if one exists.
-
-        Returns the slot index used, or -1 if inventory is full.
+        Returns the slot index used, or -1 if the inventory is full.
         """
-        type_numeric = int(db_item["Type"], 16) // 0x10000000
-        base_id = int(db_item["Id"], 16)
-        max_stack = int(db_item.get("MaxStackCount") or 1)
-        clamp_qty = min(max(1, quantity), max_stack)
-
-        # Weapons encode infusion and upgrade in the ID
-        item_id = base_id + infusion * 100 + upgrade if type_numeric == 0 else base_id
-
-        is_key = db_item.get("Category") == "key_items"
-        slot_start = 0 if is_key else KEY_ITEM_SLOTS
-        slot_end = KEY_ITEM_SLOTS if is_key else MAX_INVENTORY_SLOTS
-
-        if max_stack > 1 and type_numeric != 0:
-            for slot_idx in range(slot_start, slot_end):
-                existing = self.read_item(slot_idx)
-                if (
-                    not existing.is_empty
-                    and existing.item_id == item_id
-                    and existing.category == type_numeric
-                ):
-                    existing.quantity = min(existing.quantity + clamp_qty, max_stack)
-                    self.write_item(slot_idx, existing)
-                    return slot_idx
-
+        quantity = max(1, min(quantity, max_quantity))
+        slot_start = 0 if key_item else KEY_ITEM_SLOTS
+        slot_end = KEY_ITEM_SLOTS if key_item else MAX_INVENTORY_SLOTS
+        free = -1
         for slot_idx in range(slot_start, slot_end):
-            if self.read_item(slot_idx).is_empty:
-                new_item = DSRItem(
-                    category=type_numeric,
-                    item_id=item_id,
-                    quantity=clamp_qty,
-                    order=slot_idx,
-                    exists=1,
-                    durability=_calc_durability(db_item, infusion),
-                    unknown=0,
-                    slot_index=slot_idx,
-                )
-                self.write_item(slot_idx, new_item)
-                self._update_max_item_slot(slot_idx)
-                if type_numeric == 0:
-                    wl = _weapon_level_from_item(new_item)
-                    if wl > self.weapon_level:
-                        self.weapon_level = wl
+            existing = self.read_item(slot_idx)
+            if existing.is_empty:
+                if free < 0:
+                    free = slot_idx
+                    if max_quantity <= 1:
+                        break
+                continue
+            if (
+                max_quantity > 1
+                and existing.item_id == item_id
+                and existing.category == item_type
+            ):
+                existing.quantity = min(existing.quantity + quantity, max_quantity)
+                self.write_item(slot_idx, existing)
                 return slot_idx
-        return -1
+        if free < 0:
+            return -1
+        self.write_item(
+            free,
+            DSRItem(
+                category=item_type,
+                item_id=item_id,
+                quantity=quantity,
+                order=((sort_key << ORDER_SORT_SHIFT) | free) & 0xFFFFFFFF,
+                exists=1,
+                durability=durability,
+                unknown=0,
+                slot_index=free,
+            ),
+        )
+        self._update_max_item_slot(free)
+        return free
+
+    def set_item_id(
+        self, slot: int, item_id: int, durability: int | None = None
+    ) -> None:
+        """Change a held item's id (another upgrade level or infusion of the
+        same item), keeping its order field like the game's smithing does.
+        An equipment slot holding this entry gets its cached id updated."""
+        item = self.read_item(slot)
+        item.item_id = item_id
+        if durability is not None:
+            item.durability = durability
+        self.write_item(slot, item)
+        for slot_off, id_off in _EQUIP_SLOT_ID_PAIRS:
+            if struct.unpack_from("<I", self._data, slot_off)[0] == slot:
+                struct.pack_into("<I", self._data, id_off, item_id)
+
+    def equipped_slots(self) -> set[int]:
+        """Inventory slots referenced by the equipment slots."""
+        eq = self.equipment
+        return {
+            slot
+            for slot in (
+                eq.lh1_slot,
+                eq.rh1_slot,
+                eq.lh2_slot,
+                eq.rh2_slot,
+                eq.helm_slot,
+                eq.chest_slot,
+                eq.gauntlets_slot,
+                eq.legs_slot,
+                eq.ring1_slot,
+                eq.ring2_slot,
+            )
+            if slot >= 0
+        }
 
     def remove_item(self, slot: int) -> None:
         """
@@ -1081,21 +1132,8 @@ class DSRCharacter:
         return True
 
     def set_npc_alive(self, npc_def: dict, alive: bool) -> None:
-        """
-        Set all bit conditions in npc_def to the alive or dead state.
-        See get_npc_alive for npc_def format.
-        Offsets are absolute into the decrypted slot data.
-        """
-        for entry in npc_def["bits"]:
-            off = int(entry["offset"], 16)
-            bit = entry["bit"]
-            reverse = entry.get("reverse", False)
-            # reverse=True: alive=clear, dead=set; reverse=False: alive=set, dead=clear
-            write_val = (not alive) if reverse else alive
-            if write_val:
-                self._data[off] |= 1 << bit
-            else:
-                self._data[off] &= ~(1 << bit)
+        """Refused: see NPC_UNVERIFIED."""
+        raise ValueError(NPC_UNVERIFIED)
 
     # --- Bonfires ------------------------------------------------------------ #
 
@@ -1145,14 +1183,6 @@ class DSRCharacter:
 
 
 # --- Utility (module-level) -------------------------------------------------- #
-
-
-def _calc_durability(db_item: dict, infusion: int) -> int:
-    """Return starting durability for a newly spawned item."""
-    dur = int(db_item.get("Durability") or 0)
-    if infusion == DSRInfusion.Crystal:
-        dur = dur // 10
-    return dur
 
 
 # --- Save file --------------------------------------------------------------- #
@@ -1245,51 +1275,28 @@ class DSRSave:
 # --- Utility ----------------------------------------------------------------- #
 
 
-def _weapon_level_from_item(item: DSRItem, db_item: dict | None = None) -> int:
+def _weapon_level_from_item(item: DSRItem) -> int:
     """
-    Compute the DS1 weapon level (WL) used for matchmaking from an inventory item.
-
-    WL scale (0-15):
-      MaxUpgrade=15 (standard path), Standard infusion:   WL = upgrade (0-15)
-      MaxUpgrade=15, Crystal/Lightning/Raw/Enchanted/Occult/Chaos: cap at +5, WL = 10+upgrade
-      MaxUpgrade=15, Magic/Divine/Fire:                   cap at +10, WL = 5+upgrade
-      MaxUpgrade=5  (boss / unique weapons):              WL = 5 + upgrade*2
-      MaxUpgrade=0 or no upgrade:                         WL = 0
-
-    Without a db_item reference (no item DB available), falls back to
-    returning the raw upgrade level (best-effort, never worse than 15).
+    The DS1 weapon level (WL, 0-15) matchmaking uses for a held weapon:
+      15-level paths (plain):                      WL = level
+      10-level paths (Magic, Divine, Fire):        WL = 5 + level
+      5-level paths (other infusions, soul gear):  WL = 10 + level, soul
+                                                   weapons 5 + level * 2
+      Ascended Pyromancy Flame: 15; not upgradable: 0
     """
-    if item.category != DSRItemCategory.WeaponShield:
+    from er_save_manager.games.DSR import catalog
+
+    hit = catalog.lookup(item.category, item.item_id)
+    if hit is None:
         return 0
-    # Pyromancy Flame (Ascended) is always WL 15
-    if item.base_item_id == 0x145520:
+    entry, level = hit
+    cap = entry["max_upgrade"]
+    if entry["level_step"] > 1 and cap == ASCENDED_FLAME_CAP:
         return 15
-    ul = item.upgrade_level
-    if db_item is None:
-        return min(ul, 15)
-    max_up = db_item.get("MaxUpgrade")
-    if not max_up:
-        return 0
-    if max_up == 5:
-        # Boss/unique path: WL = 5 + upgrade*2
-        return min(5 + ul * 2, 15)
-    # Standard path: cap depends on infusion
-    infusion = item.infusion
-    if infusion in (
-        DSRInfusion.Crystal,
-        DSRInfusion.Lightning,
-        DSRInfusion.Raw,
-        DSRInfusion.Enchanted,
-        DSRInfusion.Occult,
-        DSRInfusion.Chaos,
-    ):
-        cap = 5
-    elif infusion in (DSRInfusion.Magic, DSRInfusion.Divine, DSRInfusion.Fire):
-        cap = 10
-    else:
-        cap = 15
     if cap == 15:
-        return ul
+        return level
     if cap == 10:
-        return 5 + ul
-    return 10 + ul  # cap == 5
+        return 5 + level
+    if cap == 5:
+        return 10 + level if entry["infusion"] else min(5 + level * 2, 15)
+    return 0
