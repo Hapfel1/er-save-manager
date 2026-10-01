@@ -66,10 +66,10 @@ _CATEGORY_FOR_KIND = {
     0x4: "goods_items",
 }
 
-# Unnamed goods rows the game itself puts in inventories. Goods 94 is the
-# "dummy for PC animation reproduction when blood character is created"
-# (Smithbox community row name), used for bloodstain replays.
-_SYSTEM_GOODS = {0x4000005E: "Bloodstain Replay Dummy (system item)"}
+# Unnamed goods the game itself keeps in inventories; never shown or offered.
+# Goods 94 is the "dummy for PC animation reproduction when blood character
+# is created" (Smithbox community row name), used for bloodstain replays.
+SYSTEM_IDS = frozenset({0x4000005E})
 
 _items: dict[str, dict] = {}
 _lookups: dict[str, dict[int, dict]] = {}
@@ -170,8 +170,6 @@ def category_of(item_id: int, source: str = "vanilla") -> str:
 def display_name(item_id: int, source: str = "vanilla") -> str:
     """Item name with a +N suffix for upgraded weapons."""
     entry = lookup(item_id, source)
-    if entry is None and item_id in _SYSTEM_GOODS:
-        return _SYSTEM_GOODS[item_id]
     if entry is None:
         kind = _TYPE_LABELS.get(item_id >> 28, "Item")
         return f"Unknown {kind} ({item_id:#010x})"

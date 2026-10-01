@@ -590,6 +590,7 @@ class DS3InventoryTab:
                 if (
                     not char.is_real_item(entry)
                     or entry.item_id in catalog.PLACEHOLDER_IDS
+                    or entry.item_id in catalog.SYSTEM_IDS
                 ):
                     continue
                 self._all_items.append(
@@ -1030,6 +1031,7 @@ class DS3InventoryTab:
                 if (
                     item["Name"].lower() in _HIDDEN_NAMES
                     or int(item["Id"], 16) in catalog.PLACEHOLDER_IDS
+                    or int(item["Id"], 16) in catalog.SYSTEM_IDS
                 ):
                     continue
                 if not show_cut and not catalog.is_obtainable(item):
