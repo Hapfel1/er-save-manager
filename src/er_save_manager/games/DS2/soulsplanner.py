@@ -11,7 +11,9 @@ embeds the build as a JS object literal in an inline script:
     vigor:50,endurance:28,...};
 
 Values are planner slugs (see soulsplanner_database). Builds carry no upgrade
-levels, so those are chosen at import.
+levels, so those are chosen at import. The planner lists weapons left then
+right hand per set (lh1, rh1, lh2, rh2, lh3, rh3), the order of the save's
+equipment block, so a build can also be equipped slot for slot.
 """
 
 from __future__ import annotations
@@ -24,7 +26,7 @@ from dataclasses import dataclass, field
 
 from er_save_manager.games.DS2.item_database import UNSAFE_IDS, build_item_db
 from er_save_manager.games.DS2.regulation import INFUSION_NAMES
-from er_save_manager.games.DS2.save import LEVEL_STAT_KEYS, Character
+from er_save_manager.games.DS2.save import KEEP_SLOT, LEVEL_STAT_KEYS, Character
 from er_save_manager.games.DS2.soulsplanner_database import (
     ARMOR,
     ITEMS,
@@ -73,6 +75,22 @@ class PlannerItem:
     count: int = 1
 
 
+# A build slot: (item id, infusion index), None when the build leaves it
+# empty, or UNKNOWN_SLOT when it holds an item that cannot be imported.
+Slot = tuple[int, int] | None | object
+UNKNOWN_SLOT = object()
+
+
+@dataclass
+class PlannerLoadout:
+    """The build's equipment per slot, in the save's equipment order."""
+
+    weapons: list[Slot] = field(default_factory=list)  # L1, R1, L2, R2, L3, R3
+    armor: list[Slot] = field(default_factory=list)  # head, chest, hands, legs
+    rings: list[Slot] = field(default_factory=list)
+    belt: list[Slot] = field(default_factory=list)
+
+
 @dataclass
 class PlannerBuild:
     build_id: str
@@ -81,6 +99,7 @@ class PlannerBuild:
     items: list[PlannerItem]
     # Slugs with no known item id, never added.
     unknown: list[str] = field(default_factory=list)
+    loadout: PlannerLoadout = field(default_factory=PlannerLoadout)
 
     @property
     def level(self) -> int:
@@ -161,19 +180,22 @@ def parse_build_html(html: str, build_id: str) -> PlannerBuild:
     found: dict[tuple[int, int], PlannerItem] = {}
     unknown: list[str] = []
 
-    def add(slug: str, table: dict[str, int], infusion: int = 0) -> None:
+    loadout = PlannerLoadout()
+
+    def add(slug: str, table: dict[str, int], infusion: int = 0) -> Slot:
         if slug in _EMPTY_SLUGS:
-            return
+            return None
         item_id = table.get(slug)
         info = item_db.get(item_id) if item_id is not None else None
         if info is None or item_id in UNSAFE_IDS:
             unknown.append(slug.replace("_", " "))
-            return
+            return UNKNOWN_SLOT
         key = (item_id, infusion)
         if key in found:
             found[key].count += 1
         else:
             found[key] = PlannerItem(slug, item_id, info[0], info[1], infusion)
+        return key
 
     weapons = _slugs(str(fields.get("weapons", "")))
     for weapon, infusion_slug in zip(weapons[0::2], weapons[1::2], strict=False):
@@ -183,15 +205,17 @@ def parse_build_html(html: str, build_id: str) -> PlannerBuild:
             if infusion_name in INFUSION_NAMES
             else 0
         )
-        add(weapon, WEAPONS, infusion)
-    for key, table in (
-        ("armor", ARMOR),
-        ("rings", RINGS),
-        ("spells", SPELLS),
-        ("items", ITEMS),
+        loadout.weapons.append(add(weapon, WEAPONS, infusion))
+    for key, table, slots in (
+        ("armor", ARMOR, loadout.armor),
+        ("rings", RINGS, loadout.rings),
+        ("spells", SPELLS, None),
+        ("items", ITEMS, loadout.belt),
     ):
         for slug in _slugs(str(fields.get(key, ""))):
-            add(slug, table)
+            slot = add(slug, table)
+            if slots is not None:
+                slots.append(slot)
 
     return PlannerBuild(
         build_id=build_id,
@@ -199,6 +223,7 @@ def parse_build_html(html: str, build_id: str) -> PlannerBuild:
         stats=stats,
         items=list(found.values()),
         unknown=unknown,
+        loadout=loadout,
     )
 
 
@@ -278,3 +303,64 @@ def apply_items(
         else:
             result.no_space.append(name)
     return result
+
+
+def has_loadout(build: PlannerBuild) -> bool:
+    lo = build.loadout
+    return any(
+        isinstance(slot, tuple)
+        for slot in (*lo.weapons, *lo.armor, *lo.rings, *lo.belt)
+    )
+
+
+def equip_build(
+    character: Character,
+    build: PlannerBuild,
+    upgrades: dict[tuple[int, int], int],
+) -> list[str]:
+    """Equip the build slot for slot from the carried inventory, emptying
+    slots the build leaves empty. Each slot takes a different carried copy,
+    preferring one with the build's infusion and the upgrade chosen at
+    import. A slot holding an item that cannot be imported (such as the
+    Estus Flask) keeps what the character has there. Returns the names of
+    build items no carried copy was found for; their slots are left empty."""
+    item_db = build_item_db()
+    carried = [
+        entry for entry in character.inventory() if entry.item_id and not entry.in_box
+    ]
+    used: set[int] = set()
+    missing: list[str] = []
+
+    def pick(slot: Slot, category: str):
+        if slot is None:
+            return None
+        if slot is UNKNOWN_SLOT:
+            return KEEP_SLOT
+        item_id, infusion = slot
+        infusion = infusion if infusion in character.allowed_infusions(item_id) else 0
+        upgrade = upgrades.get(slot, 0)
+        copies = [e for e in carried if e.item_id == item_id and e.offset not in used]
+        if category == "weapons":
+            copies.sort(key=lambda e: (e.infusion != infusion, e.upgrade != upgrade))
+        elif category == "armors":
+            copies.sort(key=lambda e: e.upgrade != upgrade)
+        if not copies:
+            missing.append(item_db.get(item_id, (str(item_id),))[0])
+            return None
+        used.add(copies[0].offset)
+        return copies[0]
+
+    def slots(build_slots: list[Slot], size: int, category: str) -> list:
+        """Picks for every slot of a group; slots past the build's list are
+        empty."""
+        padded = list(build_slots[:size]) + [None] * (size - len(build_slots))
+        return [pick(slot, category) for slot in padded]
+
+    lo = build.loadout
+    character.equip(
+        slots(lo.weapons, 6, "weapons"),
+        slots(lo.armor, 4, "armors"),
+        slots(lo.rings, 4, "rings"),
+        slots(lo.belt, 10, "goods"),
+    )
+    return missing

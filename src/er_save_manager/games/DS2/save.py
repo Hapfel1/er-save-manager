@@ -126,7 +126,8 @@ INVENTORY_END = 0x10E1C
 INVENTORY_SLOT_SIZE = 16
 
 # Equipment block in the profile entry: a u32 header, then equipped items by
-# item id, not by inventory entry (u32 each, 0xFFFFFFFF for an empty slot):
+# item id (u32 each, 0xFFFFFFFF for an empty slot). Which carried entry a slot
+# uses is in the index table at EQUIPMENT_INDEX_OFFSET:
 #   +0x04  6 weapon slots, left and right hand alternating; 3400000 is the
 #          unarmed placeholder
 #   +0x1C  4 armor slots (head, chest, hands, legs) holding the armor param
@@ -147,6 +148,32 @@ _EQUIP_BELT = (0x54, 10)
 _UNARMED_ID = 3400000
 _ARMOR_ID_OFFSET = 10000000
 _EMPTY_EQUIP = 0xFFFFFFFF
+# Armor param ids of the bare head, chest, hands and legs, held by an armor
+# slot with nothing equipped.
+_BARE_ARMOR_IDS = (11001100, 11001101, 11001102, 11001103)
+
+# Which carried entry each equipment slot uses: u16 inventory positions
+# (index into the list at INVENTORY_START), 0xFFFF for an empty slot. Weapons
+# are ordered right then left hand per set (R1, L1, R2, L2, R3, L3), the
+# reverse pairing of the id block, then 4 armor, 4 ring, 4 ammo and 10 belt
+# slots. Mapped from the before/after pair above (the equip write rebuilt from
+# it matches the game's byte for byte) and checked against the weapon, armor,
+# ring and belt slots of 10 characters.
+EQUIPMENT_INDEX_OFFSET = 0x11E30
+_INDEX_WEAPONS = 0
+_INDEX_ARMOR = 6
+_INDEX_RINGS = 10
+_INDEX_BELT = 18
+_EMPTY_INDEX = 0xFFFF
+
+# Entry 22 keeps a copy of every slot's equipment block for the load screen,
+# at this offset plus _OCC_STRIDE per slot. It matched the profile's block on
+# 124 of 128 created characters; the rest had never been written.
+_SELECT_EQUIPMENT_OFFSET = 0xD0
+_EQUIPMENT_BLOCK_SIZE = 0x7C
+
+# Passed to Character.equip for a slot to leave unchanged.
+KEEP_SLOT = object()
 
 # Stack limit used for items the regulation does not know.
 _DEFAULT_MAX_STACK = 99
@@ -776,6 +803,72 @@ class Character:
                     ids.add(value + id_offset)
         return ids
 
+    def has_equipment_block(self) -> bool:
+        return (
+            struct.unpack_from("<I", self._data, EQUIPMENT_OFFSET)[0]
+            == EQUIPMENT_HEADER
+        )
+
+    def equip(
+        self,
+        weapons: list[InventoryItem | object | None],
+        armor: list[InventoryItem | object | None],
+        rings: list[InventoryItem | object | None],
+        belt: list[InventoryItem | object | None],
+    ) -> None:
+        """Equip carried inventory entries; None empties a slot and KEEP_SLOT
+        leaves it as it is. weapons is in the id block's order
+        (L1, R1, L2, R2, L3, R3), armor is head, chest, hands, legs. Ammo is
+        left as it is. Raises ValueError for an unknown block layout or an
+        entry that is not carried."""
+        if not self.has_equipment_block():
+            raise ValueError("equipment block not found")
+        for entry in (*weapons, *armor, *rings, *belt):
+            if isinstance(entry, InventoryItem) and (
+                entry.in_box or not INVENTORY_START <= entry.offset < INVENTORY_END
+            ):
+                raise ValueError(f"item {entry.item_id} is not carried")
+
+        def write(block_rel, index, k, entry, item_id_for_empty, id_offset=0):
+            if entry is KEEP_SLOT:
+                return
+            struct.pack_into(
+                "<I",
+                self._data,
+                EQUIPMENT_OFFSET + block_rel + 4 * k,
+                item_id_for_empty if entry is None else entry.item_id - id_offset,
+            )
+            position = (
+                _EMPTY_INDEX
+                if entry is None
+                else (entry.offset - INVENTORY_START) // INVENTORY_SLOT_SIZE
+            )
+            struct.pack_into(
+                "<H", self._data, EQUIPMENT_INDEX_OFFSET + 2 * index, position
+            )
+
+        for k, entry in enumerate(weapons[: _EQUIP_WEAPONS[1]]):
+            # Block L1, R1, ... and index R1, L1, ...: swap within each set.
+            write(_EQUIP_WEAPONS[0], _INDEX_WEAPONS + (k ^ 1), k, entry, _UNARMED_ID)
+        for k, entry in enumerate(armor[: _EQUIP_ARMOR[1]]):
+            write(
+                _EQUIP_ARMOR[0],
+                _INDEX_ARMOR + k,
+                k,
+                entry,
+                _BARE_ARMOR_IDS[k],
+                _ARMOR_ID_OFFSET,
+            )
+        for k, entry in enumerate(rings[: _EQUIP_RINGS[1]]):
+            write(_EQUIP_RINGS[0], _INDEX_RINGS + k, k, entry, _EMPTY_EQUIP)
+        for k, entry in enumerate(belt[: _EQUIP_BELT[1]]):
+            write(_EQUIP_BELT[0], _INDEX_BELT + k, k, entry, _EMPTY_EQUIP)
+
+    def equipment_block(self) -> bytes:
+        return bytes(
+            self._data[EQUIPMENT_OFFSET : EQUIPMENT_OFFSET + _EQUIPMENT_BLOCK_SIZE]
+        )
+
     def write_inventory_slot(self, item: InventoryItem) -> None:
         self._data[item.offset : item.offset + INVENTORY_SLOT_SIZE] = item.to_bytes()
 
@@ -1371,6 +1464,17 @@ class DS2Save:
             select_off = _SELECT_NAME_OFFSET + _OCC_STRIDE * i
             if select_off + _SELECT_NAME_SIZE <= len(select_data):
                 select_data[select_off : select_off + _SELECT_NAME_SIZE] = encoded
+
+    def sync_equipment_cache(self, slot_index: int) -> None:
+        """Copy a slot's equipment block to the load screen's copy in entry
+        22, as the game does when it saves."""
+        character = self.characters[slot_index]
+        if not character.has_equipment_block():
+            return
+        select_data = self.container.get_entry(CHARACTER_SELECT_ENTRY)
+        off = _SELECT_EQUIPMENT_OFFSET + _OCC_STRIDE * slot_index
+        if off + _EQUIPMENT_BLOCK_SIZE <= len(select_data):
+            select_data[off : off + _EQUIPMENT_BLOCK_SIZE] = character.equipment_block()
 
     def clear_name_cache(self, slot_index: int) -> None:
         """Zero the entry 0 / entry 22 cached name for one slot. Needed

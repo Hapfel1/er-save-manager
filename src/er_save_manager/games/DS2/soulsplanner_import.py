@@ -1,7 +1,7 @@
 """
 Dialog flow importing a soulsplanner.com build into a DS2 character:
-link -> stats/items choice -> already owned items -> upgrades and amounts ->
-write.
+link -> stats/items choice and whether to equip the loadout -> already owned
+items -> upgrades and amounts -> write.
 """
 
 from __future__ import annotations
@@ -31,6 +31,8 @@ from er_save_manager.games.DS2.soulsplanner import (
     apply_items,
     apply_stats,
     display_name,
+    equip_build,
+    has_loadout,
     load_build,
     owned_items,
     stat_problems,
@@ -153,10 +155,12 @@ def _ask_build(parent) -> PlannerBuild | None:
     return result["build"]
 
 
-def _ask_mode(parent, build: PlannerBuild, character) -> str | None:
-    """Show the build and ask what to import. None when cancelled."""
-    dialog = _modal(parent, _TITLE, 560, 560)
+def _ask_mode(parent, build: PlannerBuild, character) -> tuple[str, bool] | None:
+    """Show the build and ask what to import and whether to equip the build's
+    loadout afterwards. None when cancelled."""
+    dialog = _modal(parent, _TITLE, 560, 600)
     result: dict[str, str | None] = {"mode": None}
+    equip_var = tk.BooleanVar(value=has_loadout(build))
 
     def choose(mode: str) -> None:
         result["mode"] = mode
@@ -165,6 +169,13 @@ def _ask_mode(parent, build: PlannerBuild, character) -> str | None:
     problems = stat_problems(build)
     buttons = ctk.CTkFrame(dialog, fg_color="transparent")
     buttons.pack(side="bottom", fill="x", padx=15, pady=15)
+    equip_box = ctk.CTkCheckBox(
+        dialog,
+        text="Equip the build's loadout after adding the items",
+        variable=equip_var,
+        state="normal" if has_loadout(build) else "disabled",
+    )
+    equip_box.pack(side="bottom", anchor="w", padx=20)
     ctk.CTkButton(buttons, text="Cancel", width=90, command=dialog.destroy).pack(
         side="right"
     )
@@ -242,7 +253,9 @@ def _ask_mode(parent, build: PlannerBuild, character) -> str | None:
 
     dialog.bind("<Escape>", lambda _e: dialog.destroy())
     dialog.wait_window()
-    return result["mode"]
+    if result["mode"] is None:
+        return None
+    return result["mode"], equip_var.get() and result["mode"] != _STATS
 
 
 def _ask_owned(parent, items: list[PlannerItem], owned: list[PlannerItem]):
@@ -417,9 +430,10 @@ def import_soulsplanner(
     if build is None:
         return
     character = save.characters[slot_index]
-    mode = _ask_mode(parent, build, character)
-    if mode is None:
+    choice = _ask_mode(parent, build, character)
+    if choice is None:
         return
+    mode, equip = choice
 
     items: list[PlannerItem] = []
     upgrades: dict[tuple[int, int], int] = {}
@@ -450,6 +464,11 @@ def import_soulsplanner(
     result = apply_items(character, items, upgrades, quantities) if items else None
     if result is not None:
         parts.append(f"{result.added} item(s) added")
+    not_equipped: list[str] = []
+    if equip and character.has_equipment_block():
+        not_equipped = equip_build(character, build, upgrades)
+        save.sync_equipment_cache(slot_index)
+        parts.append("loadout equipped")
 
     try:
         save.save_to_file(save_path)
@@ -467,6 +486,10 @@ def import_soulsplanner(
                 "Added plain, infusion not allowed: "
                 + ", ".join(result.infusion_fallback)
             )
+    if not_equipped:
+        problems.append(
+            "Not carried, slot left empty: " + ", ".join(dict.fromkeys(not_equipped))
+        )
     if problems:
         CTkMessageBox.showwarning(
             _TITLE,
