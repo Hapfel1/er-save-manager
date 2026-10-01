@@ -45,7 +45,12 @@ Item resolution, keyed by the inventory item id (an ItemParam row id):
   Spells   ItemParam.spell_id -> SpellParam casts. The inventory quantity of
            a spell is its cast count, so the limit is the highest
            casts_tier value instead of ItemParam.max_held_count.
+           SpellParam.slots_used is the attunement slot cost.
   Others   ItemParam.max_held_count only.
+Attunement slots: PhysicalStatsPerLevelStatValuesParam has one row per stat
+level (row id 1-99) whose attunement_slots is the slot count at that level.
+RelatePhysicalStatToLevelStatParam row 0 names attunement as the stat that
+drives it.
 Infusion index n is the value stored in the second byte of an inventory
 entry's unk_2. The order is the material order of CustomAttrCostParam, which
 lists one infusion stone per index: Palestone, Firedrake, Faintstone,
@@ -106,11 +111,15 @@ _ARMOR_REINFORCE_ID = 0x18  # s32
 _ARMOR_DURABILITY = 0x38  # f32
 # ArmorReinforceParam
 _ARMOR_REINFORCE_MAX_LEVEL = 0x60  # s32
-# SpellParam, one u8 per attunement tier
+# SpellParam
+_SPELL_SLOTS_USED = 0xF0  # u8
+# One u8 per attunement tier
 _SPELL_CASTS_FIRST_TIER = 0xF1
 _SPELL_TIER_COUNT = 10
 # RingParam
 _RING_DURABILITY = 0x4  # f32
+# PhysicalStatsPerLevelStatValuesParam
+_STATS_ATTUNEMENT_SLOTS = 0x2  # u8
 
 
 class _Param:
@@ -189,14 +198,18 @@ class _ItemLimits:
     max_upgrade: int = 0
     durability: float | None = None
     infusion_mask: int = 0
+    spell_slots: int = 0
 
 
 class Regulation:
     """Per-item limits (stack size, upgrade level, durability, infusions)
     resolved from the embedded params."""
 
-    def __init__(self, items: dict[int, _ItemLimits]) -> None:
+    def __init__(
+        self, items: dict[int, _ItemLimits], attunement_slots: dict[int, int]
+    ) -> None:
         self._items = items
+        self._attunement_slots = attunement_slots
 
     @classmethod
     def from_entry(cls, entry: bytes | bytearray) -> Regulation:
@@ -224,6 +237,7 @@ class Regulation:
         rings = param("RingParam.param")
         spells = param("SpellParam.param")
         attr_specs = param("CustomAttrSpecParam.param")
+        stat_values = param("PhysicalStatsPerLevelStatValuesParam.param")
 
         items: dict[int, _ItemLimits] = {}
         for item_id in item_param.ids():
@@ -260,16 +274,22 @@ class Regulation:
             elif rings.has(ring_id):
                 durability = rings.f32(ring_id, _RING_DURABILITY)
 
+            spell_slots = 0
             if spells.has(spell_id):
                 max_held = max(
                     spells.u8(spell_id, _SPELL_CASTS_FIRST_TIER + tier)
                     for tier in range(_SPELL_TIER_COUNT)
                 )
+                spell_slots = spells.u8(spell_id, _SPELL_SLOTS_USED)
 
             items[item_id] = _ItemLimits(
-                max_held, max(0, max_upgrade), durability, infusion_mask
+                max_held, max(0, max_upgrade), durability, infusion_mask, spell_slots
             )
-        return cls(items)
+        attunement_slots = {
+            level: stat_values.u8(level, _STATS_ATTUNEMENT_SLOTS)
+            for level in stat_values.ids()
+        }
+        return cls(items, attunement_slots)
 
     @classmethod
     def from_container(cls, container) -> Regulation:
@@ -288,6 +308,16 @@ class Regulation:
         count for a spell. None for an unknown item."""
         info = self._items.get(item_id)
         return info.max_held if info else None
+
+    def spell_slots(self, item_id: int) -> int | None:
+        """Attunement slots a spell takes, or None for an unknown item."""
+        info = self._items.get(item_id)
+        return info.spell_slots if info else None
+
+    def attunement_slots(self, attunement: int) -> int | None:
+        """Attunement slots at an attunement level, or None for a level
+        the regulation has no row for."""
+        return self._attunement_slots.get(attunement)
 
     def durability(self, item_id: int) -> float | None:
         """Maximum durability of a weapon, armor piece or ring, or None when

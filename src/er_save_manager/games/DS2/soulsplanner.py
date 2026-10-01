@@ -22,7 +22,8 @@ import re
 import urllib.error
 import urllib.parse
 import urllib.request
-from dataclasses import dataclass, field
+from collections import Counter
+from dataclasses import dataclass, field, replace
 
 from er_save_manager.games.DS2.item_database import UNSAFE_IDS, build_item_db
 from er_save_manager.games.DS2.regulation import INFUSION_NAMES
@@ -42,6 +43,10 @@ _SAVED_BUILD_PATTERN = re.compile(r"savedBuild\s*=\s*\{(.*?)\}\s*;", re.DOTALL)
 # Object literal fields: bare keys, single-quoted strings or integers.
 _FIELD_PATTERN = re.compile(r"(\w+)\s*:\s*(?:'((?:[^'\\]|\\.)*)'|(-?\d+))")
 _FETCH_TIMEOUT = 15
+_SPELL_SLOTS = 14
+# Categories added once per build slot holding them, so each slot can equip
+# its own copy.
+_PER_SLOT_CATEGORIES = frozenset({"weapons", "spells"})
 
 # Stacking categories whose amount is chosen at import. Spells stack too, but
 # are always learned with a full set of uses (see Character.add_item).
@@ -89,6 +94,7 @@ class PlannerLoadout:
     armor: list[Slot] = field(default_factory=list)  # head, chest, hands, legs
     rings: list[Slot] = field(default_factory=list)
     belt: list[Slot] = field(default_factory=list)
+    spells: list[Slot] = field(default_factory=list)
 
 
 @dataclass
@@ -104,6 +110,14 @@ class PlannerBuild:
     @property
     def level(self) -> int:
         return sum(self.stats.values()) - LEVEL_STAT_OFFSET
+
+
+@dataclass
+class EquipResult:
+    # Build items no carried copy was found for; their slots are left empty.
+    missing: list[str] = field(default_factory=list)
+    # Spells not attuned because the attunement slots ran out.
+    no_slots: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -209,13 +223,11 @@ def parse_build_html(html: str, build_id: str) -> PlannerBuild:
     for key, table, slots in (
         ("armor", ARMOR, loadout.armor),
         ("rings", RINGS, loadout.rings),
-        ("spells", SPELLS, None),
+        ("spells", SPELLS, loadout.spells),
         ("items", ITEMS, loadout.belt),
     ):
         for slug in _slugs(str(fields.get(key, ""))):
-            slot = add(slug, table)
-            if slots is not None:
-                slots.append(slot)
+            slots.append(add(slug, table))
 
     return PlannerBuild(
         build_id=build_id,
@@ -248,18 +260,55 @@ def apply_stats(character: Character, build: PlannerBuild) -> None:
     character.set_stat("level", build.level)
 
 
-def owned_items(character: Character, items: list[PlannerItem]) -> list[PlannerItem]:
-    """Items the character already has a copy of, carried or in the item box.
-    Weapons count regardless of upgrade and infusion."""
-    return [item for item in items if character.owns(item.item_id, include_box=True)]
+def owned_items(
+    character: Character, items: list[PlannerItem]
+) -> list[tuple[PlannerItem, int]]:
+    """Items the character already has, with how many of the build's copies
+    that covers. Weapons and spells need a carried copy per build slot, so
+    each carried copy covers one, regardless of upgrade and infusion; copies
+    in the item box cannot be equipped and do not count. Other items are
+    added once, so any copy, carried or in the item box, covers them."""
+    carried = Counter(
+        entry.item_id
+        for entry in character.inventory()
+        if entry.item_id and not entry.in_box
+    )
+    owned: list[tuple[PlannerItem, int]] = []
+    for item in items:
+        if item.category in _PER_SLOT_CATEGORIES:
+            have = min(carried[item.item_id], item.count)
+            # Items sharing an id (one weapon in two infusions) share copies.
+            carried[item.item_id] -= have
+        else:
+            have = item.count if character.owns(item.item_id, True) else 0
+        if have:
+            owned.append((item, have))
+    return owned
+
+
+def without_owned(
+    items: list[PlannerItem], owned: list[tuple[PlannerItem, int]]
+) -> list[PlannerItem]:
+    """The items with the copies owned_items found taken off; items fully
+    owned are dropped."""
+    have = {id(item): count for item, count in owned}
+    result = []
+    for item in items:
+        left = item.count - have.get(id(item), 0)
+        if left == item.count:
+            result.append(item)
+        elif left > 0:
+            result.append(replace(item, count=left))
+    return result
 
 
 def display_name(item: PlannerItem) -> str:
     name = item.name
     if item.infusion:
         name = f"{INFUSION_NAMES[item.infusion]} {name}"
-    # Only weapons get one copy per build slot, other items are added once.
-    if item.category == "weapons" and item.count > 1:
+    # Only weapons and spells get one copy per build slot, other items are
+    # added once.
+    if item.category in _PER_SLOT_CATEGORIES and item.count > 1:
         name = f"{name} x{item.count}"
     return name
 
@@ -270,9 +319,10 @@ def apply_items(
     upgrades: dict[tuple[int, int], int],
     quantities: dict[int, int],
 ) -> ImportResult:
-    """Add the items, one copy per build slot for weapons. upgrades maps
-    (item_id, infusion) to the upgrade level of a weapon or armor piece,
-    quantities maps the item id of a QUANTITY_CATEGORIES item to its amount.
+    """Add the items, one copy per build slot for weapons and spells.
+    upgrades maps (item_id, infusion) to the upgrade level of a weapon or
+    armor piece, quantities maps the item id of a QUANTITY_CATEGORIES item
+    to its amount.
     An amount added onto an owned stack is capped at the stack limit."""
     result = ImportResult()
     for item in items:
@@ -294,6 +344,14 @@ def apply_items(
             ):
                 result.infusion_fallback.append(name)
             continue
+        if item.category == "spells":
+            written = sum(
+                character.add_item(item.item_id, "spells") for _ in range(item.count)
+            )
+            result.added += written
+            if written < item.count:
+                result.no_space.append(name)
+            continue
         upgrade = upgrades.get((item.item_id, item.infusion), 0)
         quantity = quantities.get(item.item_id, 1)
         if character.add_item(
@@ -309,7 +367,7 @@ def has_loadout(build: PlannerBuild) -> bool:
     lo = build.loadout
     return any(
         isinstance(slot, tuple)
-        for slot in (*lo.weapons, *lo.armor, *lo.rings, *lo.belt)
+        for slot in (*lo.weapons, *lo.armor, *lo.rings, *lo.belt, *lo.spells)
     )
 
 
@@ -317,19 +375,24 @@ def equip_build(
     character: Character,
     build: PlannerBuild,
     upgrades: dict[tuple[int, int], int],
-) -> list[str]:
+) -> EquipResult:
     """Equip the build slot for slot from the carried inventory, emptying
     slots the build leaves empty. Each slot takes a different carried copy,
     preferring one with the build's infusion and the upgrade chosen at
     import. A slot holding an item that cannot be imported (such as the
-    Estus Flask) keeps what the character has there. Returns the names of
-    build items no carried copy was found for; their slots are left empty."""
+    Estus Flask) keeps what the character has there. Spells are attuned in
+    the build's order, packed from the first slot as the game keeps them, so
+    unimportable or missing spells leave no gap. Like the planner, a spell
+    that does not fit the attunement slots left (counted after the rest of
+    the loadout is equipped, as rings and a hat can add slots) is skipped
+    and later ones still tried."""
     item_db = build_item_db()
     carried = [
         entry for entry in character.inventory() if entry.item_id and not entry.in_box
     ]
     used: set[int] = set()
-    missing: list[str] = []
+    result = EquipResult()
+    missing = result.missing
 
     def pick(slot: Slot, category: str):
         if slot is None:
@@ -363,4 +426,22 @@ def equip_build(
         slots(lo.rings, 4, "rings"),
         slots(lo.belt, 10, "goods"),
     )
-    return missing
+
+    # None when the regulation cannot be read: then every spell is attuned.
+    free = character.attunement_slots()
+    spells = []
+    for slot in lo.spells:
+        if not isinstance(slot, tuple) or len(spells) == _SPELL_SLOTS:
+            continue
+        cost = character.spell_slots(slot[0]) or 1
+        if free is not None and cost > free:
+            result.no_slots.append(item_db.get(slot[0], (str(slot[0]),))[0])
+            continue
+        entry = pick(slot, "spells")
+        if entry is None:
+            continue
+        spells.append(entry)
+        if free is not None:
+            free -= cost
+    character.equip(spells=spells + [None] * (_SPELL_SLOTS - len(spells)))
+    return result

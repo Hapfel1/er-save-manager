@@ -68,7 +68,8 @@ def test_equip_writes_ids_and_inventory_positions():
         character.write_inventory_slot(entry)
         positions.setdefault(item.item_id, []).append(pos)
 
-    assert equip_build(character, build, {}) == []
+    equipped = equip_build(character, build, {})
+    assert equipped.missing == [] and equipped.no_slots == []
 
     def block(rel, k):
         return struct.unpack_from("<I", data, EQUIPMENT_OFFSET + rel + 4 * k)[0]
@@ -96,3 +97,129 @@ def test_equip_writes_ids_and_inventory_positions():
     assert block(0x54, 0) == 60155000  # Estus Flask kept
     assert block(0x54, 1) == lo.belt[1][0]
     assert index(18 + 1) == positions[lo.belt[1][0]][0]
+    # Spells follow the block, index 28 onward; the rest of the list is empty.
+    heal = lo.spells[0][0]
+    assert [block(0x7C, k) for k in range(2)] == [heal, 0xFFFFFFFF]
+    assert index(28) == positions[heal][0] and index(29) == 0xFFFF
+
+
+AFFINITY = 34040000
+HEAL = 32010000
+
+
+class _Regulation:
+    """Attunement 13 gives 2 slots, Affinity takes 3, every
+    other spell 1."""
+
+    def attunement_slots(self, attunement):
+        return {13: 2}.get(attunement, 0)
+
+    def spell_slots(self, item_id):
+        return 3 if item_id == AFFINITY else 1
+
+    def allowed_infusions(self, item_id):
+        return (0,)
+
+    def max_held(self, item_id):
+        return 10
+
+    def max_upgrade(self, item_id, category):
+        return 0
+
+    def durability(self, item_id):
+        return None
+
+
+def _spell_import(ring: str):
+    """Import a build attuning Affinity then Heal twice, with
+    attunement 13 and the given ring, into an empty character."""
+    from er_save_manager.games.DS2.save import EQUIPMENT_INDEX_OFFSET
+    from er_save_manager.games.DS2.soulsplanner import (
+        apply_items,
+        equip_build,
+        parse_build_html,
+    )
+
+    page = (
+        "<script>savedBuild={class_:'sorcerer',armor:'Naked;Naked;Naked;Naked',"
+        f"weapons:'',rings:'{ring}',"
+        "spells:'Affinity;Heal;Heal',items:'',vigor:10,"
+        "endurance:10,vitality:10,attunement:13,strength:10,dexterity:10,"
+        "adaptability:10,intelligence:10,faith:10};</script>"
+    )
+    build = parse_build_html(page, "1")
+    data = bytearray(EQUIPMENT_INDEX_OFFSET + 0x80)
+    data[:INVENTORY_START] = _character().raw()
+    character = Character(data, regulation_source=_Regulation)
+    character.set_stat("attunement", 13)
+    apply_items(character, build.items, {}, {})
+    equipped = equip_build(character, build, {})
+    spells = [
+        struct.unpack_from("<I", data, EQUIPMENT_OFFSET + 0x7C + 4 * k)[0]
+        for k in range(3)
+    ]
+    heal_copies = [e for e in character.inventory() if e.item_id == HEAL]
+    return equipped, spells, heal_copies, data
+
+
+def test_duplicate_spell_spawns_and_attunes_each_copy():
+    from er_save_manager.games.DS2.save import EQUIPMENT_INDEX_OFFSET
+
+    equipped, spells, heal_copies, data = _spell_import("No_Ring")
+    # 2 slots: the 3-slot spell is skipped, both Heals still fit.
+    assert equipped.no_slots == ["Affinity"]
+    assert spells == [HEAL, HEAL, 0xFFFFFFFF]
+    assert len(heal_copies) == 2
+    positions = {
+        struct.unpack_from("<H", data, EQUIPMENT_INDEX_OFFSET + 2 * (28 + k))[0]
+        for k in range(2)
+    }
+    assert positions == {(e.offset - INVENTORY_START) // 16 for e in heal_copies}
+
+
+def test_ring_slots_count_toward_attunement():
+    equipped, spells, _, _ = _spell_import("Southern_Ritual_Band")
+    # 2 slots + 1 from the ring: the 3-slot spell fits and fills them.
+    assert equipped.no_slots == ["Heal", "Heal"]
+    assert spells == [AFFINITY, 0xFFFFFFFF, 0xFFFFFFFF]
+
+
+def test_attuned_spell_counts_as_equipped():
+    character = _character()
+    struct.pack_into("<I", character.raw(), EQUIPMENT_OFFSET + 0x7C, HEAL)
+    assert HEAL in character.equipped_item_ids()
+
+
+def test_owned_copies_only_cover_their_share():
+    from er_save_manager.games.DS2.save import EQUIPMENT_INDEX_OFFSET, InventoryItem
+    from er_save_manager.games.DS2.soulsplanner import (
+        owned_items,
+        parse_build_html,
+        without_owned,
+    )
+
+    page = (
+        "<script>savedBuild={class_:'sorcerer',armor:'',weapons:'',rings:'',"
+        "spells:'Heal;Heal;Affinity',items:'Lifegem;Lifegem',vigor:10,"
+        "endurance:10,vitality:10,attunement:13,strength:10,dexterity:10,"
+        "adaptability:10,intelligence:10,faith:10};</script>"
+    )
+    build = parse_build_html(page, "1")
+    data = bytearray(EQUIPMENT_INDEX_OFFSET + 0x80)
+    character = Character(data, regulation_source=_Regulation)
+    lifegem = next(i.item_id for i in build.items if i.name == "Lifegem")
+    # One Heal carried, one Heal in the item box, which cannot be attuned.
+    for pos, item_id, in_box in (
+        (3, HEAL, False),
+        (4, HEAL, True),
+        (5, lifegem, False),
+    ):
+        entry = InventoryItem(INVENTORY_START + 16 * pos, item_id, 0, 1, 0)
+        entry.in_box = in_box
+        character.write_inventory_slot(entry)
+
+    owned = owned_items(character, build.items)
+    assert {item.name: count for item, count in owned} == {"Heal": 1, "Lifegem": 2}
+    left = {item.name: item.count for item in without_owned(build.items, owned)}
+    assert left == {"Heal": 1, "Affinity": 1}
+    assert next(i for i in build.items if i.name == "Heal").count == 2

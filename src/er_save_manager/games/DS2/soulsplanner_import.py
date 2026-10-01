@@ -36,6 +36,7 @@ from er_save_manager.games.DS2.soulsplanner import (
     load_build,
     owned_items,
     stat_problems,
+    without_owned,
 )
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.scrollable_frame import ScrollableFrame
@@ -258,25 +259,28 @@ def _ask_mode(parent, build: PlannerBuild, character) -> tuple[str, bool] | None
     return result["mode"], equip_var.get() and result["mode"] != _STATS
 
 
-def _ask_owned(parent, items: list[PlannerItem], owned: list[PlannerItem]):
+def _ask_owned(parent, items: list[PlannerItem], owned: list[tuple[PlannerItem, int]]):
     """Ask whether items already owned are added again. Returns the items to
     add, or None when cancelled."""
     if not owned:
         return items
-    names = "\n".join(f"- {display_name(item)}" for item in owned)
+    names = "\n".join(
+        f"- {display_name(item)}"
+        + (f" ({count} carried)" if count < item.count else "")
+        for item, count in owned
+    )
     answer = CTkMessageBox.askyesnocancel(
         _TITLE,
         f"The character already has:\n{names}\n\n"
-        "Add another copy of these anyway?\n"
-        "Yes adds them, No skips them.",
+        "Add the build's copies of these anyway?\n"
+        "Yes adds them all, No adds only the copies still missing.",
         parent=parent,
     )
     if answer is None:
         return None
     if answer:
         return items
-    skip = {id(item) for item in owned}
-    return [item for item in items if id(item) not in skip]
+    return without_owned(items, owned)
 
 
 def _ask_amounts(parent, character, upgradable, stacking):
@@ -464,9 +468,9 @@ def import_soulsplanner(
     result = apply_items(character, items, upgrades, quantities) if items else None
     if result is not None:
         parts.append(f"{result.added} item(s) added")
-    not_equipped: list[str] = []
+    equipped = None
     if equip and character.has_equipment_block():
-        not_equipped = equip_build(character, build, upgrades)
+        equipped = equip_build(character, build, upgrades)
         save.sync_equipment_cache(slot_index)
         parts.append("loadout equipped")
 
@@ -486,9 +490,14 @@ def import_soulsplanner(
                 "Added plain, infusion not allowed: "
                 + ", ".join(result.infusion_fallback)
             )
-    if not_equipped:
+    if equipped is not None and equipped.missing:
         problems.append(
-            "Not carried, slot left empty: " + ", ".join(dict.fromkeys(not_equipped))
+            "Not carried, slot left empty: "
+            + ", ".join(dict.fromkeys(equipped.missing))
+        )
+    if equipped is not None and equipped.no_slots:
+        problems.append(
+            "Not enough attunement slots, not attuned: " + ", ".join(equipped.no_slots)
         )
     if problems:
         CTkMessageBox.showwarning(
