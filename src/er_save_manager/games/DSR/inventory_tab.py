@@ -799,7 +799,8 @@ class DSRInventoryTab:
         self._spawn_seamless = self._seamless_save()
         query = self._spawn_search_var.get().strip().lower()
         cat_key = self._category_key(self._spawn_cat_var.get())
-        show_cut = self._show_cut.get()
+        # A search also finds cut content (labelled), so it can be found by name.
+        show_cut = self._show_cut.get() or bool(query)
 
         def label(item: dict) -> str:
             return item["name"] if item["obtainable"] else f"{item['name']} (cut)"

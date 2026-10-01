@@ -77,3 +77,31 @@ def test_set_item_id_updates_equipped_cache():
     char.set_item_id(slot, 201003)
     assert struct.unpack_from("<I", char._data, OFF_EQ_ID_RH1)[0] == 201003
     assert slot in char.equipped_slots()
+
+
+def test_event_flag_layout_matches_save_pairs():
+    """Positions from real before/after saves: killing Crestfallen Warrior
+    moved its state from 1460 to 1462 (one byte, bit 3 to bit 1), and a
+    pickup set item lot flag 51020000 (top bit of its word's high byte)."""
+    from er_save_manager.games.DSR.save import (
+        FLAG_RECORD_TO_BASE,
+        NG_PLUS_OFFSET,
+    )
+
+    char = _character()
+    char._data.extend(bytes(0x40000 - len(char._data)))
+    record = NG_PLUS_OFFSET + 0x300
+    char._data[record : record + 10] = bytes.fromhex("ffffffff123456000008")
+    base = record + FLAG_RECORD_TO_BASE
+    assert char.flag_base() == base
+    char.set_flag(1460, True)
+    assert char._data[base + 186] == 0x08
+    char.set_flag(1460, False)
+    char.set_flag(1462, True)
+    assert char._data[base + 186] == 0x02
+    char.set_flag(51020000, True)
+    assert char._data[base + 0x5F00 + 3 * 0x500 + 3] == 0x80
+    npc = {"lo": 1460, "hi": 1489, "dead": [1462], "hostile": [1461]}
+    assert char.npc_state(npc) == "Dead"
+    char.set_npc_state(npc, alive=True)
+    assert char.npc_state(npc) == "Alive" and char.get_flag(1460)
