@@ -3,10 +3,13 @@ DS3 World State tab - NG+, bonfires and gestures.
 
 Bonfires: a bonfire is lit (and a warp target) when the event flag from its
 BonfireWarpParam row is set; bonfires.json lists those flags by area. A
-bonfire whose map has several world states has one flag per state, and all
-of them are set together.
-Gestures: the character's gesture list stores an unlocked bit per gesture
-id; gestures.json names the ids from the game's gesture table.
+bonfire whose map has several world states has one flag per state. The game
+sets only one of them, and a second set flag lists the bonfire twice in the
+warp menu, so lighting keeps a single set flag (flags[0], the unconditional
+row, unless exactly one is already set) and unlighting clears all of them.
+Gestures: the character's gesture list stores an unlocked bit per row of
+the executable's gesture table; gestures.json names the rows. Unnamed rows
+are dummies and are not listed.
 """
 
 from __future__ import annotations
@@ -17,6 +20,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.games.DS3.slot import GESTURE_COUNT
 from er_save_manager.games.DS3.tabs.style import make_tree
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import game_blocks_write
@@ -50,7 +54,11 @@ class DS3WorldStateTab:
         self._show_toast = show_toast
         self._current_slot = 0
         self._bonfires = _load("bonfires.json")
-        self._gestures = sorted(_load("gestures.json"), key=lambda g: g["order"])
+        self._gestures = sorted(
+            (g for g in _load("gestures.json") if 0 <= g["id"] < GESTURE_COUNT),
+            key=lambda g: g["order"],
+        )
+        self._gesture_ids = {g["id"] for g in self._gestures}
 
     # --- Layout ------------------------------------------------------------ #
 
@@ -123,14 +131,18 @@ class DS3WorldStateTab:
         return panel
 
     def _actions(self, panel, buttons) -> ctk.CTkLabel:
-        row = ctk.CTkFrame(panel, fg_color="transparent")
-        row.pack(fill="x", padx=10, pady=(0, 10))
-        for text, command in buttons:
-            ctk.CTkButton(row, text=text, width=110, command=command).pack(
-                side="left", padx=(0, 6)
+        box = ctk.CTkFrame(panel, fg_color="transparent")
+        # Packed before the list so a short window shrinks the list, not this.
+        box.pack(side="bottom", fill="x", padx=10, pady=(0, 10))
+        row = ctk.CTkFrame(box, fg_color="transparent")
+        row.pack(fill="x")
+        for col, (text, command) in enumerate(buttons):
+            row.grid_columnconfigure(col, weight=1, uniform="actions")
+            ctk.CTkButton(row, text=text, width=90, command=command).grid(
+                row=0, column=col, sticky="ew", padx=(0 if col == 0 else 3, 0)
             )
-        status = ctk.CTkLabel(row, text="", font=("Segoe UI", 10), text_color=_HINT)
-        status.pack(side="left", padx=6)
+        status = ctk.CTkLabel(box, text="", font=("Segoe UI", 10), text_color=_HINT)
+        status.pack(anchor="w")
         return status
 
     def _build_bonfires(self, parent) -> None:
@@ -144,7 +156,6 @@ class DS3WorldStateTab:
         frame, self._bonfire_tree = make_tree(
             panel, [("name", "Bonfire", 260, "w"), ("state", "State", 80, "center")]
         )
-        frame.pack(fill="both", expand=True, padx=10, pady=(0, 6))
         areas: dict[str, str] = {}
         for i, bonfire in enumerate(self._bonfires):
             area = bonfire["area"]
@@ -181,6 +192,7 @@ class DS3WorldStateTab:
                 ),
             ),
         )
+        frame.pack(fill="both", expand=True, padx=10, pady=(0, 6))
 
     def _build_gestures(self, parent) -> None:
         panel = self._panel(
@@ -192,7 +204,6 @@ class DS3WorldStateTab:
         frame, self._gesture_tree = make_tree(
             panel, [("name", "Gesture", 180, "w"), ("state", "State", 80, "center")]
         )
-        frame.pack(fill="both", expand=True, padx=10, pady=(0, 6))
         for i, gesture in enumerate(self._gestures):
             self._gesture_tree.insert(
                 "", "end", iid=str(i), values=(gesture["name"], "--")
@@ -220,8 +231,13 @@ class DS3WorldStateTab:
                     "Unlock All",
                     lambda: self._set_gestures(list(range(len(self._gestures))), True),
                 ),
+                (
+                    "Lock All",
+                    lambda: self._set_gestures(list(range(len(self._gestures))), False),
+                ),
             ),
         )
+        frame.pack(fill="both", expand=True, padx=10, pady=(0, 6))
 
     # --- Refresh ----------------------------------------------------------- #
 
@@ -350,8 +366,15 @@ class DS3WorldStateTab:
             )
             return
         for i in rows:
-            for flag in self._bonfires[i]["flags"]:
-                char.set_flag(flag, lit)
+            flags = self._bonfires[i]["flags"]
+            if not lit:
+                for flag in flags:
+                    char.set_flag(flag, False)
+            else:
+                lit_flags = [f for f in flags if char.get_flag(f)]
+                keep = lit_flags[0] if len(lit_flags) == 1 else flags[0]
+                for flag in flags:
+                    char.set_flag(flag, flag == keep)
         if self._save(save, save_path, "ds3_bonfires"):
             self._show_toast(
                 f"{len(rows)} bonfire(s) {'lit' if lit else 'unlit'}. Backup created."
@@ -377,6 +400,10 @@ class DS3WorldStateTab:
             return
         for i in rows:
             char.set_gesture_unlocked(self._gestures[i]["id"], unlocked)
+        # Dummy rows are never unlocked by the game; an earlier version of
+        # this tab unlocked some of them.
+        for gesture_id in set(range(GESTURE_COUNT)) - self._gesture_ids:
+            char.set_gesture_unlocked(gesture_id, False)
         if self._save(save, save_path, "ds3_gestures"):
             self._show_toast(
                 f"{len(rows)} gesture(s) {'unlocked' if unlocked else 'locked'}. Backup created."

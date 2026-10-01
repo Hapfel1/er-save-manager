@@ -38,8 +38,8 @@
     "name": "High Wall of Lothric",
     "area": "High Wall of Lothric",
     "flags": [
-      13000009,
       13000000,
+      13000009,
       13000003,
       13000008
     ]
