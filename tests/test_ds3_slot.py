@@ -8,6 +8,7 @@ BND4 data does not compress.
 
 from __future__ import annotations
 
+import json
 import struct
 import zipfile
 from pathlib import Path
@@ -235,3 +236,44 @@ def test_move_merges_stacks(slot):
     assert slot.entry_at(held.offset).quantity == 11
     with pytest.raises(ValueError):
         slot.move_item(slot.entry_at(held.offset), max_quantity=99)
+
+
+def test_cached_offsets_match_fresh_parse_after_many_inserts(slot):
+    weapons = [i for i in catalog.items()["weapon_items"] if catalog.is_obtainable(i)][
+        :40
+    ]
+    for item in weapons:
+        lim = catalog.limits(item)
+        slot.add_item(
+            int(item["Id"], 16),
+            sort_key=lim.sort_key,
+            durability=lim.durability,
+            max_quantity=lim.max_quantity,
+        )
+    fresh = DS3Slot(0, slot._data)
+    assert fresh._get_layout() == slot._get_layout()
+    assert fresh._gaitem_slots() == slot._gaitem_slots()
+    assert fresh.inventory_error is None
+    for entry in _real(slot):
+        if entry.handle >> 28 in (0x8, 0x9):
+            assert slot._find_gaitem(entry.handle).item_id == entry.item_id
+
+
+def test_estus_flasks_are_one_group_per_kind():
+    flasks = [i for i in catalog.items()["goods_items"] if "Estus Flask" in i["Name"]]
+    groups = {catalog.single_group(int(i["Id"], 16)) for i in flasks}
+    assert groups == {"Estus Flask", "Ashen Estus Flask"}
+    assert catalog.single_group(TITANITE_SHARD) is None
+
+
+def test_gesture_data_ids_are_table_rows():
+    gestures = json.loads((DATA / "gestures.json").read_text(encoding="utf-8"))
+    ids = [g["id"] for g in gestures]
+    assert len(ids) == len(set(ids))
+    assert all(0 <= i < GESTURE_COUNT for i in ids)
+
+
+def test_seamless_goods_in_every_source():
+    for source in catalog.SOURCES:
+        item = catalog.lookup(0x4008FCC8, source)
+        assert item is not None and catalog.is_seamless(item)

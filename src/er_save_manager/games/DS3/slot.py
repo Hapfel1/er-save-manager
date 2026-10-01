@@ -81,7 +81,7 @@ significant bit. Block 0 holds global flags 0-9999; map flags
 from __future__ import annotations
 
 import struct
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from itertools import pairwise
 
 ITEM_TYPE_WEAPON = 0x80000000
@@ -293,6 +293,8 @@ class DS3Slot:
         self.slot_index = slot_index
         self._data = data
         self._gaitem_end: int | None = None
+        # (offset, handle) per gaitem position, built on first use.
+        self._gaitem_cache: tuple[list[int], list[int]] | None = None
         self._layout: _Layout | None = None
         self._layout_error: str | None = None
         # "" once validated, a message when invalid, None before checking.
@@ -443,9 +445,25 @@ class DS3Slot:
 
     def _invalidate(self) -> None:
         self._gaitem_end = None
+        self._gaitem_cache = None
         self._layout = None
         self._layout_error = None
         self._inventory_error = None
+
+    def _shift_cached(self, at: int, delta: int) -> None:
+        """Move cached offsets at or after at by delta, matching an insert of
+        delta bytes there; list contents and validity are unchanged."""
+        if self._gaitem_end is not None and self._gaitem_end >= at:
+            self._gaitem_end += delta
+        if self._layout is not None:
+            self._layout = _Layout(
+                *(
+                    getattr(self._layout, f.name) + delta
+                    if getattr(self._layout, f.name) >= at
+                    else getattr(self._layout, f.name)
+                    for f in fields(_Layout)
+                )
+            )
 
     def _player(self, rel: int) -> int:
         """Absolute offset of a player block field. Needs only the gaitem walk,
@@ -576,11 +594,40 @@ class DS3Slot:
             offset += size
         return entries
 
+    def _gaitem_slots(self) -> tuple[list[int], list[int]]:
+        """(offsets, handles) per gaitem position, cached across edits."""
+        if self._gaitem_cache is None:
+            offsets: list[int] = []
+            handles: list[int] = []
+            offset = self._get_layout().gaitem_start
+            for _ in range(GAITEM_SLOT_COUNT):
+                handle = _read_u32(self._data, offset)
+                offsets.append(offset)
+                handles.append(handle)
+                wa = handle and handle & 0xF0000000 in (
+                    ITEM_TYPE_WEAPON,
+                    ITEM_TYPE_ARMOR,
+                )
+                offset += GAITEM_WA_SIZE if wa else GAITEM_BASE_SIZE
+            self._gaitem_cache = (offsets, handles)
+        return self._gaitem_cache
+
     def _find_gaitem(self, handle: int) -> DS3GaitemEntry | None:
-        for entry in self.iter_gaitem():
-            if entry.handle == handle:
-                return entry
-        return None
+        offsets, handles = self._gaitem_slots()
+        # A handle's low 16 bits are its table position.
+        pos = handle & 0xFFFF
+        if not (pos < len(handles) and handles[pos] == handle):
+            pos = next((i for i, h in enumerate(handles) if h == handle), None)
+            if pos is None:
+                return None
+        off = offsets[pos]
+        wa = handle & 0xF0000000 in (ITEM_TYPE_WEAPON, ITEM_TYPE_ARMOR)
+        return DS3GaitemEntry(
+            handle,
+            _read_u32(self._data, off + 4),
+            off,
+            GAITEM_WA_SIZE if wa else GAITEM_BASE_SIZE,
+        )
 
     def _alloc_gaitem(self, item_id: int, handle_type: int, durability: int) -> int:
         """
@@ -593,16 +640,17 @@ class DS3Slot:
             raise ValueError(
                 "No room left in the slot for another weapon or armor entry"
             )
-        entries = self.iter_gaitem()
-        used = [i for i, e in enumerate(entries) if not e.is_empty]
+        offsets, handles = self._gaitem_slots()
         # The game assigns positions in acquisition order; continue after the
         # highest one in use and wrap around to the first free position.
-        start = (max(used) + 1) if used else 0
+        start = next(
+            (i + 1 for i in range(GAITEM_SLOT_COUNT - 1, -1, -1) if handles[i]), 0
+        )
         order = list(range(start, GAITEM_SLOT_COUNT)) + list(range(0, start))
-        pos = next((i for i in order if entries[i].is_empty), None)
+        pos = next((i for i in order if not handles[i]), None)
         if pos is None:
             raise ValueError("Gaitem table is full")
-        entry_off = entries[pos].offset
+        entry_off = offsets[pos]
         insert_at = entry_off + GAITEM_BASE_SIZE
 
         self._shift_directory(insert_at, _GAITEM_GROWTH)
@@ -615,7 +663,9 @@ class DS3Slot:
         )
         body += struct.pack("<II", _EMPTY_GEM_SLOT, 0) * _GEM_SLOTS
         self._data[entry_off : entry_off + GAITEM_WA_SIZE] = body
-        self._invalidate()
+        handles[pos] = handle
+        offsets[pos + 1 :] = [o + _GAITEM_GROWTH for o in offsets[pos + 1 :]]
+        self._shift_cached(insert_at, _GAITEM_GROWTH)
         return handle
 
     def _shift_directory(self, at: int, delta: int) -> None:
@@ -639,6 +689,30 @@ class DS3Slot:
             h, iid, qty, idx = struct.unpack_from("<IIII", self._data, off)
             out.append(DS3InventoryEntry(h, iid, qty, idx, off, pos, is_key))
         return out
+
+    def _iter_entry(self, count_off: int, pos: int, is_key: bool) -> DS3InventoryEntry:
+        off = count_off + 4 + pos * _ENTRY_SIZE
+        h, iid, qty, idx = struct.unpack_from("<IIII", self._data, off)
+        return DS3InventoryEntry(h, iid, qty, idx, off, pos, is_key)
+
+    def _scan_list(
+        self, count_off: int, cap: int, stack_id: int | None
+    ) -> tuple[int | None, int | None]:
+        """(position of a real entry holding stack_id, first free position)
+        in one pass over the raw list; either is None when absent. Batch
+        spawns call this once per item, so it avoids building entries."""
+        base = count_off + 4
+        raw = memoryview(self._data)[base : base + cap * _ENTRY_SIZE]
+        free = None
+        for pos, (h, iid, _qty, _idx) in enumerate(struct.iter_unpack("<IIII", raw)):
+            if h == 0:
+                if free is None and iid in (_EMPTY_ID, 0):
+                    free = pos
+                    if stack_id is None:
+                        break
+            elif iid == stack_id and h != _PLACEHOLDER_HANDLE:
+                return pos, free
+        return None, free
 
     def iter_inventory(self) -> list[DS3InventoryEntry]:
         """Held common and key items, including empty entries."""
@@ -743,22 +817,14 @@ class DS3Slot:
             list_off, cap, is_key = layout.storage, _COMMON_CAP, False
         else:
             list_off, cap, is_key = layout.inv, _COMMON_CAP, False
-        entries = self._iter_list(list_off, cap, is_key)
-
-        if stackable:
-            for entry in entries:
-                if self.is_real_item(entry) and entry.item_id == item_id:
-                    new_qty = min(entry.quantity + quantity, max_quantity)
-                    _write_u32(self._data, entry.offset + 8, new_qty)
-                    entry.quantity = new_qty
-                    return entry
-
-        free = next(
-            (e for e in entries if e.handle == 0 and e.item_id in (_EMPTY_ID, 0)), None
-        )
-        if free is None:
+        stack, position = self._scan_list(list_off, cap, item_id if stackable else None)
+        if stack is not None:
+            entry = self._iter_entry(list_off, stack, is_key)
+            entry.quantity = min(entry.quantity + quantity, max_quantity)
+            _write_u32(self._data, entry.offset + 8, entry.quantity)
+            return entry
+        if position is None:
             raise ValueError("No free inventory slot")
-        position = free.position
 
         if kind in (ID_WEAPON, ID_ARMOR):
             handle = self._alloc_gaitem(item_id, handle_type, durability)
