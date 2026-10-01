@@ -1,10 +1,9 @@
 """
-DSR World State Tab - bonfire unlock and NG+ editing.
+DSR World State Tab - NG+ editing (bonfire unlocking is disabled, see below).
 All writes backup then save immediately.
 
-Individual bonfire control is not available: the 3 bytes at Pattern1+0x6B/6C/6D
-encode 20 warpable bonfires as bit flags, but no public documentation maps which
-bit corresponds to which bonfire. Both reference editors only implement bulk unlock.
+Bonfire unlocking is disabled until its save location is confirmed from a
+before/after pair; the bytes the previous version wrote were not bonfire data.
 """
 
 from __future__ import annotations
@@ -80,33 +79,11 @@ class DSRWorldStateTab:
             anchor="w", padx=14, pady=(12, 4)
         )
 
-        status_row = ctk.CTkFrame(bonfire_card, fg_color="transparent")
-        status_row.pack(fill="x", padx=14, pady=(0, 6))
-        ctk.CTkLabel(status_row, text="Current state:").pack(side="left", padx=(0, 8))
-        self._bonfire_status_var = tk.StringVar(value="--")
-        ctk.CTkLabel(
-            status_row,
-            textvariable=self._bonfire_status_var,
-            font=("Consolas", 11),
-        ).pack(side="left")
-
-        unlock_row = ctk.CTkFrame(bonfire_card, fg_color="transparent")
-        unlock_row.pack(fill="x", padx=14, pady=(0, 4))
-        ctk.CTkButton(
-            unlock_row,
-            text="Unlock All Warpable Bonfires",
-            command=self._unlock_bonfires,
-            width=240,
-        ).pack(side="left", padx=(0, 12))
-        self._bonfire_status_label = ctk.CTkLabel(unlock_row, text="")
-        self._bonfire_status_label.pack(side="left")
-
         ctk.CTkLabel(
             bonfire_card,
             text=(
-                "Unlocks all 20 warpable bonfires including Firelink Shrine warp.\n"
-                "Individual bonfire control is not possible - the bit-to-bonfire mapping "
-                "is not publicly documented for DSR."
+                "Bonfire lighting is not available yet: its save data is being "
+                "confirmed from a before/after save pair."
             ),
             wraplength=680,
             justify="left",
@@ -198,50 +175,9 @@ class DSRWorldStateTab:
         save = self._get_dsr_save()
         char = save.characters[self._current_slot] if save else None
         if char is None:
-            self._bonfire_status_var.set("--")
             self._ng_current_var.set("--")
             return
-        status = char.get_bonfire_status()
-        if status:
-            b1, b2, b3, warp = status
-            self._bonfire_status_var.set(
-                f"[{b1:#04x}, {b2:#04x}, {b3:#04x}]  warp={warp:#04x}"
-            )
-            if b1 == 0xF0 and b2 == 0xFF and b3 == 0xFF and warp == 0x22:
-                self._bonfire_status_label.configure(
-                    text="All unlocked", text_color=("#2a8a2a", "#4caf50")
-                )
-            else:
-                self._bonfire_status_label.configure(
-                    text="Not fully unlocked", text_color=("gray50", "gray60")
-                )
-        else:
-            self._bonfire_status_var.set("(Pattern1 not found)")
         self._ng_current_var.set(f"NG+{char.ng_plus}")
-
-    def _unlock_bonfires(self) -> None:
-        if _game_blocks_write(self.parent):
-            return
-
-        save = self._get_dsr_save()
-        save_path = self._get_save_path()
-        if save is None or save_path is None or self._current_slot < 0:
-            CTkMessageBox.showwarning(
-                "No Save", "No character loaded.", parent=self.parent
-            )
-            return
-        char = save.characters[self._current_slot]
-        if char is None:
-            return
-        char.unlock_all_bonfires()
-        try:
-            _backup_and_save(
-                save, save_path, f"unlock_bonfires_slot_{self._current_slot + 1}"
-            )
-            self._refresh_display()
-            self._show_toast("All bonfires unlocked. Backup created.")
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
 
     def _apply_ng(self) -> None:
         if _game_blocks_write(self.parent):

@@ -128,22 +128,18 @@ Key items occupy slots 0-63; weapons, armor, rings, consumables use slots 64-204
 
 An empty slot has all bytes 0x00 or all 0xFF.
 
-=== NPC / EVENT FLAG REGION ===
+=== NG+ AND EVENT FLAGS ===
 
 +0x1E5BE  1   NG+ counter (u8; 0=NG, 1=NG+, 2=NG++, etc.)
 
-After it comes a run of 8-byte records repeating FF FF FF FF 00 00 00 00
-whose length varies per character, so everything after the run moves. The
-anchor is the start of the run's last 16-byte marker (0x1F17E on a fresh
-character, 0x1F29A on a level 130 one); event flags start 16 bytes after
-it. Boss kill flags 2-17 (byte = flag // 8, bit = flag % 8) match play
-progress on every character checked; other flag ids and the bonfire bytes
-at anchor +0x6B..+0x6D and +0xAE are not confirmed yet.
+The event flag array follows variable-length data; see FLAG_RECORD for how
+it is found and how flag ids map to bits.
 """
 
 from __future__ import annotations
 
 import hashlib
+import re
 import struct
 from dataclasses import dataclass, field
 from enum import IntEnum
@@ -261,41 +257,31 @@ KEY_ITEM_SLOTS = 64  # key items occupy slots 0-63
 EMPTY_CHECK_START = 0x0020
 EMPTY_CHECK_END = 0x0090
 
-# The event flags follow a run of 8-byte records repeating PATTERN1_MARKER's
-# halves; the run's length varies per character, so everything after it,
-# flags included, moves (0x1F17E on a fresh character, 0x1F29A on a level
-# 130 one). The anchor is the start of the run's last 16-byte marker, found
-# by walking the run from NG_PLUS_OFFSET, which lies before it. Boss kill
-# flags read through it match play progress on every character checked.
-PATTERN1_MARKER = bytes.fromhex("ffffffff00000000ffffffff00000000")
-PATTERN1_RUN_STEP = 8
-
-# NG+ counter (u8), before the variable-length run, so at a fixed offset.
+# NG+ counter (u8), at a fixed offset before the variable-length data.
 NG_PLUS_OFFSET = 0x1E5BE
 
-# Anchor-relative offsets. The bonfire bytes are not confirmed from a
-# before/after pair; writes to them are refused (see set_bonfire_bytes).
-ANCHOR_BONFIRE_1 = 0x6B
-ANCHOR_BONFIRE_2 = 0x6C
-ANCHOR_BONFIRE_3 = 0x6D
-ANCHOR_BONFIRE_WARP = 0xAE
-
-# Writes refused until confirmed from a before/after save pair. npc_data.json
-# offsets were applied as absolute slot offsets, landing in the stats block
-# and the inventory (Andre: 0xFE, 0x11DB), and the bonfire bytes lie inside
-# the variable-length run on characters whose run is longer than a fresh one.
-NPC_UNVERIFIED = (
-    "NPC state editing is disabled until its save locations are confirmed; "
-    "the previous offsets wrote into unrelated character data."
-)
-BONFIRE_UNVERIFIED = (
-    "Bonfire unlocking is disabled until its save location is confirmed; "
-    "the previous offset wrote into unrelated data on most characters."
-)
-
-# Event flags start immediately after the 16-byte Pattern1 marker.
-# Encoding: byte = flags_base + flag_id // 8, bit = flag_id % 8 (LSB-first).
-PATTERN1_LEN = 16
+# Event flags: the game's flag array, stored after a variable-length run of
+# records, so its offset differs per character (0x1F1D1 on a fresh one,
+# 0x1F2F5 on a level 76 one). It starts FLAG_RECORD_TO_BASE bytes after the
+# one record matching FLAG_RECORD (FF FF FF FF, a u32 whose top byte is 0,
+# then 00 08). Layout as DS1 keeps it in memory: flag id GAAASNNN (group,
+# area, section, number) lives at FLAG_GROUPS[G] + area index * 0x500 +
+# S * 128 + (N // 32) * 4, a little-endian u32 with flag N % 32 = 0 in the
+# top bit. Confirmed from before/after pairs (an NPC kill moved Crestfallen
+# Warrior from state 1460 to 1462; a pickup set only its item lot flag
+# 51020000) and on every character: the item pickup group's set bits are
+# item lot flags, and a fresh character has none.
+FLAG_RECORD = re.compile(rb"\xff\xff\xff\xff[\x00-\xff]{3}\x00\x00\x08")
+FLAG_RECORD_TO_BASE = 0xD
+FLAG_SEARCH_SPAN = 0x2000
+FLAG_GROUPS = {0: 0x00000, 1: 0x00500, 5: 0x05F00, 6: 0x0B900, 7: 0x11300}
+FLAG_AREAS = {
+    0: 0, 100: 1, 101: 2, 102: 3, 110: 4, 120: 5, 121: 6, 130: 7, 131: 8,
+    132: 9, 140: 10, 141: 11, 150: 12, 151: 13, 160: 14, 170: 15, 180: 16,
+    181: 17,
+}  # fmt: skip
+FLAG_AREA_SIZE = 0x500
+FLAG_SECTION_SIZE = 128
 
 # Starting stats per class: (base_level, vit, atn, end, str, dex, int, fth, res)
 # Used to recalculate total level when individual stats are edited.
@@ -691,8 +677,8 @@ class DSRCharacter:
 
     # Raw decrypted data; all reads/writes go through this buffer
     _data: bytearray = field(default_factory=bytearray, repr=False)
-    # Cached Pattern1 anchor: -2 = not yet computed, -1 = not found, >= 0 = offset
-    _anchor_cache: int = field(default=-2, init=False, repr=False)
+    # Cached flag array offset: -2 = not yet computed, -1 = not found
+    _flag_base_cache: int = field(default=-2, init=False, repr=False)
 
     # --- Character identity ---
     @property
@@ -918,44 +904,6 @@ class DSRCharacter:
             ring2_id=id_at(OFF_EQ_ID_RING2),
         )
 
-    # --- NPC bit flags (Pattern1-relative) ---
-
-    def get_npc_bit(self, byte_offset: int, bit: int) -> bool:
-        """Read a single NPC state bit at anchor+byte_offset, bit position 0-7."""
-        anchor = self._find_pattern1()
-        if anchor < 0:
-            raise ValueError("Pattern1 not found")
-        abs_off = anchor + byte_offset
-        return bool((self._data[abs_off] >> bit) & 1)
-
-    def set_npc_bit(self, byte_offset: int, bit: int, value: bool) -> None:
-        """Write a single NPC state bit at anchor+byte_offset, bit position 0-7."""
-        anchor = self._find_pattern1()
-        if anchor < 0:
-            raise ValueError("Pattern1 not found")
-        abs_off = anchor + byte_offset
-        if value:
-            self._data[abs_off] |= 1 << bit
-        else:
-            self._data[abs_off] &= ~(1 << bit)
-
-    def get_bonfire_status(self) -> tuple[int, int, int, int] | None:
-        """Return (byte1, byte2, byte3, warp_flag) from the bonfire region, or None."""
-        anchor = self._find_pattern1()
-        if anchor < 0:
-            return None
-        b1 = anchor + ANCHOR_BONFIRE_1
-        b2 = anchor + ANCHOR_BONFIRE_2
-        b3 = anchor + ANCHOR_BONFIRE_3
-        bf = anchor + ANCHOR_BONFIRE_WARP
-        if bf >= len(self._data):
-            return None
-        return (self._data[b1], self._data[b2], self._data[b3], self._data[bf])
-
-    def set_bonfire_bytes(self, byte1: int, byte2: int, byte3: int, warp: int) -> None:
-        """Refused: see BONFIRE_UNVERIFIED."""
-        raise ValueError(BONFIRE_UNVERIFIED)
-
     # --- Weapon level calibration ---
 
     def calibrate_weapon_level(self) -> int:
@@ -971,23 +919,6 @@ class DSRCharacter:
         return max_wl
 
     # --- Internal helpers ---
-
-    def _find_pattern1(self) -> int:
-        """
-        Return the flag anchor (see PATTERN1_MARKER), or -1 when the marker
-        run is missing.
-        """
-        if self._anchor_cache == -2:
-            data = bytes(self._data)
-            at = data.find(PATTERN1_MARKER, NG_PLUS_OFFSET)
-            if at >= 0:
-                step = PATTERN1_RUN_STEP
-                while data[at + step : at + step + len(PATTERN1_MARKER)] == (
-                    PATTERN1_MARKER
-                ):
-                    at += step
-            self._anchor_cache = at
-        return self._anchor_cache
 
     def _read_utf16(self, offset: int, length: int) -> str:
         raw = bytes(self._data[offset : offset + length])
@@ -1112,74 +1043,71 @@ class DSRCharacter:
         self._data[off : off + ITEM_SIZE] = b"\xff" * ITEM_SIZE
         struct.pack_into("<I", self._data, off + 16, 0)  # exists = 0
 
-    # --- NPC / boss state ---------------------------------------------------- #
+    # --- Event flags ----------------------------------------------------- #
 
-    def get_npc_alive(self, npc_def: dict) -> bool:
-        """
-        Return True if all bit conditions in npc_def indicate the NPC is alive.
-        npc_def is one entry from data/npc_data.json (keys: name, bits).
-        Each bit entry: offset (hex str), bit (0-7), reverse (bool).
-        reverse=True means bit=0 indicates alive; False means bit=1 indicates alive.
-        Offsets are absolute into the decrypted slot data.
-        """
-        for entry in npc_def["bits"]:
-            off = int(entry["offset"], 16)
-            bit = entry["bit"]
-            reverse = entry.get("reverse", False)
-            val = bool((self._data[off] >> bit) & 1)
-            if not ((not val) if reverse else val):
-                return False
-        return True
+    def flag_base(self) -> int:
+        """Offset of the flag array (see FLAG_RECORD), or -1 when the record
+        is missing or not unique."""
+        if self._flag_base_cache == -2:
+            data = bytes(self._data)
+            hits = [
+                m.start()
+                for m in FLAG_RECORD.finditer(
+                    data, NG_PLUS_OFFSET, NG_PLUS_OFFSET + FLAG_SEARCH_SPAN
+                )
+            ]
+            self._flag_base_cache = (
+                hits[0] + FLAG_RECORD_TO_BASE if len(hits) == 1 else -1
+            )
+        return self._flag_base_cache
 
-    def set_npc_alive(self, npc_def: dict, alive: bool) -> None:
-        """Refused: see NPC_UNVERIFIED."""
-        raise ValueError(NPC_UNVERIFIED)
-
-    # --- Bonfires ------------------------------------------------------------ #
-
-    def unlock_all_bonfires(self) -> None:
-        """
-        Unlock all warpable bonfires.
-        Sets the three bonfire data bytes and the warp enable flag.
-        """
-        self.set_bonfire_bytes(0xF0, 0xFF, 0xFF, 0x22)
-
-    # --- Generic event flags ------------------------------------------------- #
+    def _flag_pos(self, flag_id: int) -> tuple[int, int]:
+        group, rest = divmod(flag_id, 10_000_000)
+        area, rest = divmod(rest, 10_000)
+        section, number = divmod(rest, 1000)
+        if group not in FLAG_GROUPS or area not in FLAG_AREAS:
+            raise ValueError(f"Event flag {flag_id} is outside the known layout")
+        base = self.flag_base()
+        if base < 0:
+            raise ValueError("Event flag data not found in this character")
+        word = (
+            base
+            + FLAG_GROUPS[group]
+            + FLAG_AREAS[area] * FLAG_AREA_SIZE
+            + section * FLAG_SECTION_SIZE
+            + number // 32 * 4
+        )
+        return word, 0x80000000 >> (number % 32)
 
     def get_flag(self, flag_id: int) -> bool:
-        """
-        Read a game event flag.
-
-        Flags are stored immediately after the 16-byte Pattern1 marker.
-        Encoding: byte = anchor + PATTERN1_LEN + flag_id // 8, bit = flag_id % 8 (LSB-first).
-        Covers boss kills (2-17), NPC states, gesture flags, and utility flags.
-        """
-        anchor = self._find_pattern1()
-        if anchor < 0:
-            raise ValueError("Pattern1 not found")
-        off = anchor + PATTERN1_LEN + flag_id // 8
-        if off >= len(self._data):
-            raise IndexError(
-                f"Flag {flag_id} out of range "
-                f"(needs anchor+{PATTERN1_LEN + flag_id // 8:#x})"
-            )
-        return bool((self._data[off] >> (flag_id % 8)) & 1)
+        word, mask = self._flag_pos(flag_id)
+        return bool(struct.unpack_from("<I", self._data, word)[0] & mask)
 
     def set_flag(self, flag_id: int, value: bool) -> None:
-        """Write a game event flag. See get_flag for encoding details."""
-        anchor = self._find_pattern1()
-        if anchor < 0:
-            raise ValueError("Pattern1 not found")
-        off = anchor + PATTERN1_LEN + flag_id // 8
-        if off >= len(self._data):
-            raise IndexError(
-                f"Flag {flag_id} out of range "
-                f"(needs anchor+{PATTERN1_LEN + flag_id // 8:#x})"
-            )
-        if value:
-            self._data[off] |= 1 << (flag_id % 8)
-        else:
-            self._data[off] &= ~(1 << (flag_id % 8))
+        word, mask = self._flag_pos(flag_id)
+        current = struct.unpack_from("<I", self._data, word)[0]
+        struct.pack_into(
+            "<I", self._data, word, current | mask if value else current & ~mask
+        )
+
+    # --- NPC states ------------------------------------------------------- #
+
+    def npc_state(self, npc: dict) -> str:
+        """Alive, Hostile, Dead or Not met, from the NPC's state range in
+        data/npcs.json (lo..hi, with its dead and hostile flags)."""
+        on = {f for f in range(npc["lo"], npc["hi"] + 1) if self.get_flag(f)}
+        if on & set(npc["dead"]):
+            return "Dead"
+        if on & set(npc["hostile"]):
+            return "Hostile"
+        return "Alive" if on else "Not met"
+
+    def set_npc_state(self, npc: dict, alive: bool) -> None:
+        """Clear the NPC's state range and set its first state (alive) or its
+        dead flag, as the game's NPC death event does."""
+        target = npc["lo"] if alive else npc["dead"][0]
+        for f in range(npc["lo"], npc["hi"] + 1):
+            self.set_flag(f, f == target)
 
 
 # --- Utility (module-level) -------------------------------------------------- #
