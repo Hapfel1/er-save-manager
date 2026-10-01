@@ -25,10 +25,11 @@ def apply_treeview_style() -> None:
     style.map(TREE_STYLE, background=[("selected", "#5a4a7a")])
 
 
-def make_tree(parent, columns: list[tuple[str, str, int, str]], height: int = 18):
+def make_tree(parent, columns: list[tuple[str, str, int, str]], height: int = 8):
     """Treeview plus vertical scrollbar in a frame, packed to fill parent.
 
-    columns: (id, heading, width, anchor). Returns (frame, tree).
+    columns: (id, heading, width, anchor). Returns (frame, tree). height is
+    the requested row count; pack the frame with expand to fill the rest.
     """
     apply_treeview_style()
     frame = ttk.Frame(parent)

@@ -98,7 +98,6 @@ class DS3BossesTab:
                 ("state", "State", 90, "center"),
             ],
         )
-        frame.pack(fill="both", expand=True, padx=10, pady=(0, 6))
         for i, boss in enumerate(self._bosses):
             area = boss["area"] + (" (DLC)" if boss.get("dlc") else "")
             self._tree.insert("", "end", iid=str(i), values=(boss["name"], area, "--"))
@@ -108,7 +107,8 @@ class DS3BossesTab:
             text="Select one or more bosses (Ctrl/Shift click). Double-click toggles a boss.",
             font=("Segoe UI", 10),
             text_color=("gray40", "gray60"),
-        ).pack(anchor="w", padx=12, pady=(0, 10))
+        ).pack(side="bottom", anchor="w", padx=12, pady=(0, 10))
+        frame.pack(fill="both", expand=True, padx=10, pady=(0, 6))
 
     # --- Refresh ----------------------------------------------------------- #
 
