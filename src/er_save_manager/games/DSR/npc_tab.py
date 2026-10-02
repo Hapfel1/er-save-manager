@@ -19,6 +19,7 @@ from tkinter import ttk
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import game_blocks_write
 
@@ -66,7 +67,9 @@ def _style() -> None:
         borderwidth=0,
     )
     style.configure("DSR.Treeview.Heading", background="#3b3b3b", foreground="white")
-    style.map("DSR.Treeview", background=[("selected", "#5a4a7a")])
+    style.map(
+        "DSR.Treeview", background=[("selected", palette.pick(palette.PURPLE_SELECT))]
+    )
 
 
 class DSRNPCTab:

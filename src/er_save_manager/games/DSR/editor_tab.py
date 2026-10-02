@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
@@ -111,7 +112,7 @@ class DSREditorTab:
             outer,
             fg_color=("gray90", "gray20"),
             segmented_button_fg_color=("gray80", "gray35"),
-            segmented_button_selected_color=("purple3", "#6a4b85"),
+            segmented_button_selected_color=palette.PURPLE,
             segmented_button_unselected_color=("gray70", "gray30"),
         )
         tabs.pack(fill="both", expand=True, padx=10, pady=(0, 10))

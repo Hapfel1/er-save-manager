@@ -17,6 +17,7 @@ import customtkinter as ctk
 
 from er_save_manager.games.DS2.bonfire_database import BONFIRES
 from er_save_manager.games.DS2.save import BONFIRE_MAX_LEVEL
+from er_save_manager.ui import palette
 from er_save_manager.ui.utils import center_window, debounced_trace
 
 if TYPE_CHECKING:
@@ -35,7 +36,7 @@ _BATCH = 12
 _DELAY_MS = 8
 # Brightness left on an unlit bonfire's greyed picture.
 _UNLIT_BRIGHTNESS = 0.45
-_SELECTED_BORDER = ("#7c4dac", "#c084fc")
+_SELECTED_BORDER = palette.PURPLE_TEXT
 _FILTERS = ("All", "Lit", "Unlit")
 # Bit of a Tk event's state that is set while Ctrl is held.
 _CONTROL_MASK = 0x4

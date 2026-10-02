@@ -1,27 +1,15 @@
 """CustomTkinter Save Selector Dialog with Lavender theme."""
 
-from importlib import resources
 from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.utils import center_window
 
 
 class SaveSelectorDialog:
     """Dialog for selecting from multiple save files using customtkinter."""
-
-    @staticmethod
-    def _load_lavender_theme():
-        """Load the lavender theme from customtkinterthemes if available."""
-        try:
-            import customtkinterthemes as ctt
-
-            theme_path = resources.files(ctt).joinpath("Themes", "lavender.json")
-            ctk.set_default_color_theme(theme_path)
-        except Exception:
-            # Fallback to built-in dark-blue if theme package missing
-            ctk.set_default_color_theme("dark-blue")
 
     @staticmethod
     def show(
@@ -42,9 +30,6 @@ class SaveSelectorDialog:
                 and returns a selected save path.
             browse_button_text: Label for the manual browse button.
         """
-        # Load lavender theme (appearance mode already set in main GUI)
-        SaveSelectorDialog._load_lavender_theme()
-
         from er_save_manager.ui.utils import force_render_dialog
 
         dialog = ctk.CTkToplevel(parent)
@@ -100,7 +85,7 @@ class SaveSelectorDialog:
             selection_var.set(value)
             for val, row, label in row_widgets:
                 if val == value:
-                    row.configure(fg_color=("#c9a0dc", "#3b2f5c"))
+                    row.configure(fg_color=palette.PURPLE_TINT)
                     label.configure(text_color=("#1f1f28", "#f0f0f0"))
                 else:
                     row.configure(fg_color=("#f5f5f5", "#2a2a3e"))

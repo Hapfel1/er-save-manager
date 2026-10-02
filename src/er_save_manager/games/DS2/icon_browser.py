@@ -24,6 +24,7 @@ from er_save_manager.games.DS2.icon_manager import (
 from er_save_manager.games.DS2.item_database import CATEGORIES, _hex_id_to_int
 from er_save_manager.games.DS2.regulation import INFUSION_NAMES
 from er_save_manager.games.DS2.save import KEY_LIST_CATEGORIES
+from er_save_manager.ui import palette
 from er_save_manager.ui.utils import (
     center_window,
     debounced_trace,
@@ -45,7 +46,7 @@ _DEFAULT_COLS = 4
 _BATCH = 12
 _DELAY_MS = 8
 _CELL_COLOR = ("gray82", "gray18")
-_CELL_SELECTED = ("#c9a0dc", "#4b3a6b")
+_CELL_SELECTED = palette.PURPLE_SELECT
 _SHIFT = 0x0001
 _CONTROL = 0x0004
 
@@ -377,7 +378,7 @@ class IconBrowser(ctk.CTkToplevel):
             else f"{count} items selected"
             if count
             else "No item selected",
-            text_color=("#7c4dac", "#c084fc"),
+            text_color=palette.PURPLE_TEXT,
         )
         self._update_form()
 

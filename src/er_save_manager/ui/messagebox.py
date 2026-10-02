@@ -7,6 +7,7 @@ import tkinter as tk
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.utils import center_window
 
 
@@ -70,10 +71,10 @@ class CTkMessageBox:
         }
 
         icon_colors = {
-            "info": ("#2563eb", "#60a5fa"),
+            "info": palette.BLUE_TEXT,
             "warning": ("#ea580c", "#fb923c"),
             "error": ("#dc2626", "#fca5a5"),
-            "question": ("#7c3aed", "#c084fc"),
+            "question": palette.PURPLE_TEXT,
         }
 
         icon_color = icon_colors.get(icon_type, icon_colors["info"])

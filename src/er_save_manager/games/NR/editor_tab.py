@@ -18,6 +18,7 @@ from tkinter import ttk
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
@@ -82,10 +83,8 @@ class _PickerDialog(ctk.CTkToplevel):
             borderwidth=0,
             background="#2b2b2b" if ctk.get_appearance_mode() == "Dark" else "#f0f0f0",
             foreground="#dce4ee" if ctk.get_appearance_mode() == "Dark" else "#1a1a1a",
-            selectbackground="#6f42c1"
-            if ctk.get_appearance_mode() == "Dark"
-            else "#9b72d0",
-            selectforeground="#ffffff",
+            selectbackground=palette.pick(palette.PURPLE_SELECT),
+            selectforeground=palette.pick(("#1a1a1a", "#ffffff")),
             highlightthickness=0,
         )
         vsb = ttk.Scrollbar(frame, orient="vertical", command=self._lb.yview)

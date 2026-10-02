@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from tkinter import ttk
 
+from er_save_manager.ui import palette
+
 TREE_STYLE = "DS3.Treeview"
 
 
@@ -22,7 +24,9 @@ def apply_treeview_style() -> None:
         borderwidth=0,
     )
     style.configure(f"{TREE_STYLE}.Heading", background="#3b3b3b", foreground="white")
-    style.map(TREE_STYLE, background=[("selected", "#5a4a7a")])
+    style.map(
+        TREE_STYLE, background=[("selected", palette.pick(palette.PURPLE_SELECT))]
+    )
 
 
 def make_tree(parent, columns: list[tuple[str, str, int, str]], height: int = 8):

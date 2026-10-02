@@ -7,6 +7,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.settings import get_settings
 from er_save_manager.ui.utils import bind_mousewheel, center_window, pick_file
@@ -662,7 +663,7 @@ class SettingsTab:
                         font=("Consolas", 10),
                         fg_color="transparent",
                         text_color=("#2a2a2a", "#e5e5f5"),
-                        hover_color=("#c9a0dc", "#3b2f5c"),
+                        hover_color=palette.PURPLE_TINT,
                         anchor="w",
                         command=make_sel(opt),
                     ).pack(fill=tk.X, padx=6, pady=3)

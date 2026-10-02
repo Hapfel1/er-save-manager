@@ -22,6 +22,7 @@ from er_save_manager.games.game_profiles import GAME_PROFILES, PROFILES_BY_KEY
 from er_save_manager.own_writes import is_own_write
 from er_save_manager.parser import Save
 from er_save_manager.platform import PlatformUtils
+from er_save_manager.ui import palette
 from er_save_manager.ui.dialogs.character_details import CharacterDetailsDialog
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.editors import (
@@ -114,6 +115,7 @@ class SaveManagerGUI:
 
             theme_path = resources.files(ctt).joinpath("Themes", "lavender.json")
             ctk.set_default_color_theme(theme_path)
+            palette.apply_theme_overrides()
         except Exception:
             ctk.set_default_color_theme("dark-blue")
 
@@ -1352,7 +1354,7 @@ class SaveManagerGUI:
             ),
             fg_color=("gray90", "gray20"),
             segmented_button_fg_color=("gray80", "gray35"),
-            segmented_button_selected_color=("#c9a0dc", "#6a4b85"),
+            segmented_button_selected_color=palette.PURPLE,
             segmented_button_unselected_color=("gray70", "gray30"),
         )
         editor_tabs.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 12))

@@ -24,6 +24,7 @@ from er_save_manager.games.DS3.tabs.inventory import (
     enable,
     infusion_image,
 )
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import (
     center_window,
@@ -46,10 +47,10 @@ BATCH = 16
 DELAY_MS = 8
 
 _CELL_COLOR = ("gray82", "gray18")
-_CELL_SELECTED = ("#c9a0dc", "#4b3a6b")
+_CELL_SELECTED = palette.PURPLE_SELECT
 _SHIFT = 0x0001
 _CONTROL = 0x0004
-SELECTED_TEXT = ("#7c4dac", "#c084fc")
+SELECTED_TEXT = palette.PURPLE_TEXT
 
 
 def item_button(parent, item: dict | None, source: str, text: str, images: list):

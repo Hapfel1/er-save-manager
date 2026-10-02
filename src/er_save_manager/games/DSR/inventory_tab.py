@@ -20,6 +20,7 @@ import customtkinter as ctk
 
 from er_save_manager.games.DS3.tabs.inventory import enable
 from er_save_manager.games.DSR import catalog
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import game_blocks_write, raise_existing_window
 
@@ -57,7 +58,9 @@ def _apply_treeview_style() -> None:
         borderwidth=0,
     )
     style.configure("DSR.Treeview.Heading", background="#3b3b3b", foreground="white")
-    style.map("DSR.Treeview", background=[("selected", "#5a4a7a")])
+    style.map(
+        "DSR.Treeview", background=[("selected", palette.pick(palette.PURPLE_SELECT))]
+    )
 
 
 def _summary(done: str, count: int, skipped: list[str], capped: int = 0) -> str:

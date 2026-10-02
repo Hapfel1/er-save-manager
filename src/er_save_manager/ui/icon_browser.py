@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.utils import (
     center_window,
     debounced_trace,
@@ -29,6 +30,8 @@ _SCROLLBAR_W = 24
 # construction costs a few ms each, so a large category built in one go
 # freezes the window for seconds.
 _BUILD_BATCH = 8
+_CELL_COLOR = ("gray82", "gray18")
+_CELL_SELECTED = palette.PURPLE_SELECT
 
 
 def _center_over(window, parent, w=None, h=None, *, top=False) -> None:
@@ -87,6 +90,12 @@ class IconBrowser(ctk.CTkToplevel):
 
         self._scroll.bind("<Configure>", self._on_scroll_resize)
         self.after(120, self._reflow)
+
+        # Add buttons say where items go while Loadout Mode is on.
+        self._mode_trace = editor.loadout_mode_var.trace_add(
+            "write", lambda *_: self._update_add_labels()
+        )
+        self._update_add_labels()
 
     def raise_window(self) -> None:
         """Bring the window forward. Called on open and when reopened from the editor."""
@@ -259,8 +268,9 @@ class IconBrowser(ctk.CTkToplevel):
             add_row,
             text="Batch Add Category",
             height=34,
-            fg_color=("#3b82f6", "#2563eb"),
-            hover_color=("#2563eb", "#1d4ed8"),
+            fg_color=palette.BLUE,
+            hover_color=palette.BLUE_HOVER,
+            text_color=palette.ON_BLUE,
             command=self._batch_add_category,
         )
         self._batch_btn.pack(side=ctk.LEFT, fill=ctk.X, expand=True, padx=(6, 0))
@@ -334,7 +344,7 @@ class IconBrowser(ctk.CTkToplevel):
                 width=_CELL_W,
                 height=_CELL_H,
                 font=("Segoe UI", 11),
-                fg_color=("gray82", "gray18"),
+                fg_color=_CELL_SELECTED if item is self._selected_item else _CELL_COLOR,
                 hover_color=("gray70", "gray28"),
                 text_color=("gray10", "gray90"),
                 command=lambda it=item: self._on_item_click(it),
@@ -359,7 +369,19 @@ class IconBrowser(ctk.CTkToplevel):
 
     def destroy(self):
         self._cancel_build()
+        trace = getattr(self, "_mode_trace", None)
+        if trace is not None:
+            self._editor.loadout_mode_var.trace_remove("write", trace)
+            self._mode_trace = None
         super().destroy()
+
+    def _update_add_labels(self) -> None:
+        """Mark the add buttons like the editor's while Loadout Mode is on."""
+        from er_save_manager.ui.editors.inventory_editor import style_add_buttons
+
+        style_add_buttons(
+            self._add_btn, self._batch_btn, self._editor.loadout_mode_var.get()
+        )
 
     def _on_category_change(self, value: str):
         self._current_cat = value
@@ -412,9 +434,15 @@ class IconBrowser(ctk.CTkToplevel):
     # ---- item selection ------------------------------------------------------
 
     def _on_item_click(self, item: Item):
+        previous = self._selected_item
         self._selected_item = item
+        for btn, cell_item in self._buttons:
+            if cell_item is item:
+                btn.configure(fg_color=_CELL_SELECTED)
+            elif cell_item is previous:
+                btn.configure(fg_color=_CELL_COLOR)
         self._sel_lbl.configure(
-            text=f"Selected: {item.name}", text_color=("#7c4dac", "#c084fc")
+            text=f"Selected: {item.name}", text_color=palette.PURPLE_TEXT
         )
         self._update_form(item)
 
@@ -564,7 +592,7 @@ class IconBrowser(ctk.CTkToplevel):
         mode = ctk.get_appearance_mode()
         lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
         lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+        lb_sel = palette.pick(palette.PURPLE_SELECT)
 
         search_var = ctk.StringVar()
         ctk.CTkLabel(dialog, text="Search:").pack(anchor="w", padx=10, pady=(10, 0))
@@ -705,7 +733,7 @@ class IconBrowser(ctk.CTkToplevel):
             gem = visible[idx]
             self._selected_gem_id = 0x80000000 | gem.id
             self._aow_var.set(gem.name)
-            self._aow_name_lbl.configure(text_color=("#7c4dac", "#c084fc"))
+            self._aow_name_lbl.configure(text_color=palette.PURPLE_TEXT)
             self._update_aow_icon(gem.name)
             if gem.allowed_affinities and not is_cnv:
                 self._affinity_combo.configure(values=gem.allowed_affinities)

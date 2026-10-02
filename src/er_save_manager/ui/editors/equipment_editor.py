@@ -15,6 +15,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import (
     bind_mousewheel,
@@ -426,7 +427,7 @@ class _ItemPickerDialog(ctk.CTkToplevel):
         mode = ctk.get_appearance_mode()
         lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
         lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+        lb_sel = palette.pick(palette.PURPLE_SELECT)
 
         sb = tk.Scrollbar(lb_frame)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
@@ -585,7 +586,7 @@ class _LoadoutBrowserDialog(ctk.CTkToplevel):
         mode = ctk.get_appearance_mode()
         lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
         lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+        lb_sel = palette.pick(palette.PURPLE_SELECT)
 
         sb = tk.Scrollbar(lb_frame)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
@@ -788,7 +789,7 @@ class _VisualItemPickerDialog(ctk.CTkToplevel):
         mode = ctk.get_appearance_mode()
         self._bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
         self._fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        self._sel_color = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+        self._sel_color = palette.pick(palette.PURPLE_SELECT)
 
         top = ctk.CTkFrame(self, fg_color="transparent")
         top.pack(fill=ctk.X, padx=10, pady=(10, 4))
@@ -1385,7 +1386,7 @@ class EquipmentEditor:
             name_label = ctk.CTkLabel(
                 grid,
                 text="(empty)",
-                text_color="#60a5fa",
+                text_color=palette.BLUE_TEXT,
                 width=220,
                 anchor="w",
                 cursor="hand2",
@@ -1586,7 +1587,7 @@ class EquipmentEditor:
                 return
             if len(name) > 32:
                 name = name[:29] + "..."
-            label.configure(text=name, text_color="#60a5fa")
+            label.configure(text=name, text_color=palette.BLUE_TEXT)
         except Exception:
             label.configure(text="(empty)", text_color=("gray50", "gray55"))
 

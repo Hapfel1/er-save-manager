@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
@@ -88,7 +89,7 @@ class DSRInspectorTab:
             self.selected_slot = slot_idx
             for val, frame, label in self._rows:
                 if val == slot_idx:
-                    frame.configure(fg_color=("#c9a0dc", "#3b2f5c"))
+                    frame.configure(fg_color=palette.PURPLE_TINT)
                     label.configure(text_color=("#1f1f28", "#f0f0f0"))
                 else:
                     frame.configure(fg_color=("#f5f5f5", "#2a2a3e"))

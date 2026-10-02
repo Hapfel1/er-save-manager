@@ -10,6 +10,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from er_save_manager.backup.manager import BackupManager
+from er_save_manager.ui import palette
 from er_save_manager.ui.settings import get_settings
 
 # Map game key -> process name to detect
@@ -319,7 +320,7 @@ def show_auto_backup_first_run_dialog(
                     font=("Consolas", 10),
                     fg_color="transparent",
                     text_color=("#2a2a2a", "#e5e5f5"),
-                    hover_color=("#c9a0dc", "#3b2f5c"),
+                    hover_color=palette.PURPLE_TINT,
                     anchor="w",
                     command=make_sel(p),
                 ).pack(fill=tk.X, padx=6, pady=3)

@@ -25,6 +25,7 @@ from er_save_manager.games.DS2.icon_manager import (
 )
 from er_save_manager.games.DS2.regulation import INFUSION_NAMES
 from er_save_manager.games.DS2.save import INVENTORY_END, INVENTORY_START
+from er_save_manager.ui import palette
 from er_save_manager.ui.utils import (
     center_window,
     patch_combo_scroll,
@@ -46,7 +47,7 @@ _DELAY_MS = 8
 # Show choices, both locations first as the default.
 _LOCATION_FILTERS = ("All", "Inventory", "Item Box")
 _CELL_COLOR = ("gray82", "gray18")
-_CELL_SELECTED = ("#c9a0dc", "#4b3a6b")
+_CELL_SELECTED = palette.PURPLE_SELECT
 _SHIFT = 0x0001
 _CONTROL = 0x0004
 
@@ -411,7 +412,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             text = f"{len(self._selected)} items selected"
         self._sel_lbl.configure(
             text=text if self._selected else "No item selected",
-            text_color=("#7c4dac", "#c084fc"),
+            text_color=palette.PURPLE_TEXT,
         )
         self._select_tree_rows(self._selected)
         self._panel._update_inventory_controls()

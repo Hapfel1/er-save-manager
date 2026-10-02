@@ -15,6 +15,7 @@ import customtkinter as ctk
 from er_save_manager.backup.manager import BackupManager
 from er_save_manager.preset_manager import PresetManager
 from er_save_manager.preset_metrics import PresetMetrics
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.progress_dialog import ProgressDialog
 from er_save_manager.ui.utils import (
@@ -389,7 +390,7 @@ class EnhancedPresetBrowser:
         link = ctk.CTkLabel(
             login_notice,
             text="https://github.com/login",
-            text_color=("#2563eb", "#60a5fa"),
+            text_color=palette.BLUE_TEXT,
             cursor="hand2",
             font=("Segoe UI", 11),
         )

@@ -11,6 +11,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.backup.manager import BackupManager
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, center_window, pick_file
 
@@ -361,7 +362,7 @@ class AppearanceTab:
         self.selected_slot = slot_idx
 
         mode = ctk.get_appearance_mode().lower()
-        selected_color = "#c9a0dc" if mode == "light" else "#3b2f5c"
+        selected_color = palette.pick(palette.PURPLE_TINT)
         unselected_color = "#f5f5f5" if mode == "light" else "#2a2a3e"
 
         for i, f in enumerate(self.preset_frames):

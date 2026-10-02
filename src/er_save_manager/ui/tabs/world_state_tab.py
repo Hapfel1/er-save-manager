@@ -12,6 +12,7 @@ from er_save_manager.backup.manager import BackupManager
 from er_save_manager.data.locations import MapLocation, get_all_locations
 from er_save_manager.editors.world_state import WorldStateEditor
 from er_save_manager.parser.er_types import FloatVector3, MapId
+from er_save_manager.ui import palette
 from er_save_manager.ui.map_view import open_map_window
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
@@ -381,14 +382,14 @@ class WorldStateTab:
                 self.location_listbox.config(
                     bg="#1f1f28",
                     fg="#e5e5f5",
-                    selectbackground="#c9a0dc",
-                    selectforeground="#1f1f28",
+                    selectbackground=palette.PURPLE_SELECT[1],
+                    selectforeground="#e5e5f5",
                 )
             else:
                 self.location_listbox.config(
                     bg="#f5f5f5",
                     fg="#1f1f28",
-                    selectbackground="#c9a0dc",
+                    selectbackground=palette.PURPLE_SELECT[0],
                     selectforeground="#1f1f28",
                 )
         except Exception:
