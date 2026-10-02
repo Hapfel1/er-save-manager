@@ -184,6 +184,7 @@ class SaveManagerGUI:
 
         # Tab widgets built after the visible tab, in tab order (see _build_tab)
         self._pending_tabs: dict[str, deque] = {}
+        self._auto_detect_running = False
         self._tab_build_job: str | None = None
 
         self._bind_select_all()
@@ -1611,9 +1612,33 @@ class SaveManagerGUI:
                 self.show_linux_save_location_warning(Path(filename), profile)
 
     def auto_detect(self):
-        """Auto-detect save file for the active game."""
+        """Auto-detect save file for the active game.
+
+        The search runs on a worker thread: on Linux it globs every Steam
+        library's compatdata, which can stall on a cold cache or a library
+        on a sleeping disk. The result is handled on the UI thread.
+        """
+        if self._auto_detect_running:
+            return
+        self._auto_detect_running = True
         profile = self._active_profile()
-        found_saves = PlatformUtils.find_all_save_files(profile)
+        self.status_var.set("Searching for saves...")
+
+        def search():
+            try:
+                found = PlatformUtils.find_all_save_files(profile)
+            except Exception:
+                found = []
+            self.root.after(0, self._finish_auto_detect, profile, found)
+
+        threading.Thread(target=search, daemon=True).start()
+
+    def _finish_auto_detect(self, profile, found_saves) -> None:
+        self._auto_detect_running = False
+        self.status_var.set("Ready")
+        # The game was switched while searching; that search is stale.
+        if profile is not self._active_profile():
+            return
         game_name = profile.name if profile else "Elden Ring"
 
         if not found_saves:

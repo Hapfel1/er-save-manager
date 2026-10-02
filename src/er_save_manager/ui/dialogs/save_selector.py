@@ -30,20 +30,18 @@ class SaveSelectorDialog:
                 and returns a selected save path.
             browse_button_text: Label for the manual browse button.
         """
-        from er_save_manager.ui.utils import force_render_dialog
-
         dialog = ctk.CTkToplevel(parent)
         dialog.title("Select Save File")
         dialog.resizable(True, True)
-
+        # Stay transparent while the rows are built, so the window never
+        # shows up empty and fills in afterwards. Position it now: window
+        # managers place a window when it is first mapped and may ignore
+        # later moves.
+        dialog.attributes("-alpha", 0)
         width, height = 950, 520
         dialog.update_idletasks()
         parent.update_idletasks()
         center_window(dialog, width, height, parent=parent)
-
-        # Force rendering on Linux before grab_set
-        force_render_dialog(dialog)
-        dialog.grab_set()
 
         title = ctk.CTkLabel(
             dialog,
@@ -146,6 +144,11 @@ class SaveSelectorDialog:
             button_frame, text="Select", command=select_save, width=140
         )
         button.pack(side="right", padx=15)
+
+        dialog.attributes("-alpha", 1)
+        dialog.lift()
+        dialog.focus_force()
+        dialog.grab_set()
 
         button.focus_set()
         dialog.bind("<Return>", lambda e: select_save())
