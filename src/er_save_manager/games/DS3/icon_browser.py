@@ -230,13 +230,19 @@ def open_popup(window: ctk.CTkToplevel, parent, title: str) -> None:
     window.focus_force()
 
 
-def search_row(window, on_change) -> tk.StringVar:
-    """Search entry plus Close button across the top of a popup."""
+def search_row(window, on_change=None, var: tk.StringVar | None = None) -> tk.StringVar:
+    """Search entry plus Close button across the top of a popup.
+
+    on_change gets the lowercased query once typing pauses. var binds the
+    entry to an existing variable instead, such as the tab's spawn search.
+    """
     top = ctk.CTkFrame(window, fg_color="transparent")
     top.pack(fill="x", padx=10, pady=(10, 4))
     ctk.CTkLabel(top, text="Search:", width=52).pack(side="left")
-    var = tk.StringVar()
-    debounced_trace(window, var, lambda: on_change(var.get().lower().strip()))
+    if var is None:
+        var = tk.StringVar()
+    if on_change is not None:
+        debounced_trace(window, var, lambda: on_change(var.get().lower().strip()))
     ctk.CTkEntry(top, textvariable=var).pack(
         side="left", fill="x", expand=True, padx=(0, 8)
     )
@@ -251,6 +257,34 @@ def search_row(window, on_change) -> tk.StringVar:
     return var
 
 
+def follow_spawn_list(window: ctk.CTkToplevel, tab, reload) -> None:
+    """Call reload whenever tab recomputes its spawn list, until window closes.
+
+    The picker shares the tab's search and category, so the tab's spawn list
+    is the only filter; reloads are coalesced while the user types.
+    """
+    job = None
+
+    def fire():
+        nonlocal job
+        job = None
+        if window.winfo_exists():
+            reload()
+
+    def changed():
+        nonlocal job
+        if job is not None:
+            window.after_cancel(job)
+        job = window.after(150, fire)
+
+    def on_destroy(event):
+        if event.widget is window and changed in tab.spawn_listeners:
+            tab.spawn_listeners.remove(changed)
+
+    tab.spawn_listeners.append(changed)
+    window.bind("<Destroy>", on_destroy, add="+")
+
+
 class DS3IconBrowser(ctk.CTkToplevel):
     """Icon grid over the inventory tab's spawn list."""
 
@@ -263,9 +297,12 @@ class DS3IconBrowser(ctk.CTkToplevel):
         open_popup(self, parent, "Spawn Items")
         self._build_ui()
         self._load_items()
+        follow_spawn_list(self, tab, self._load_items)
 
     def _build_ui(self) -> None:
-        search_row(self, lambda q: self._grid.apply_filter(q))
+        # Shares the tab's search and category, so the grid and the spawn
+        # list always show the same items.
+        search_row(self, var=self._tab.spawn_search_var)
 
         cat_row = ctk.CTkFrame(self, fg_color="transparent")
         cat_row.pack(fill="x", padx=10, pady=(0, 6))
@@ -275,7 +312,7 @@ class DS3IconBrowser(ctk.CTkToplevel):
         options = [o for o in self._tab.category_options() if o != "All"]
         if self._tab.category() not in options:
             self._tab.set_category(options[0])
-        self._cat_var = tk.StringVar(value=self._tab.category())
+        self._cat_var = self._tab.spawn_category_var
         patch_combo_scroll(
             ctk.CTkComboBox(
                 cat_row,
@@ -386,7 +423,6 @@ class DS3IconBrowser(ctk.CTkToplevel):
 
     def _on_category_change(self, label: str) -> None:
         self._tab.set_category(label)
-        self._load_items()
 
     # --- Selection and spawn ----------------------------------------------- #
 

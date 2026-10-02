@@ -90,6 +90,24 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
         self._build_ui()
         self._rebuild()
         self.protocol("WM_DELETE_WINDOW", self.destroy)
+        # Rebuild after any panel refresh: edits here or in the panel, or
+        # another character loaded.
+        self._refresh_job: str | None = None
+        panel.listeners.append(self._on_panel_refresh)
+        self.bind("<Destroy>", self._on_destroy, add="+")
+
+    def _on_destroy(self, event) -> None:
+        if event.widget is self and self._on_panel_refresh in self._panel.listeners:
+            self._panel.listeners.remove(self._on_panel_refresh)
+
+    def _on_panel_refresh(self) -> None:
+        if self._refresh_job is None:
+            self._refresh_job = self.after_idle(self._refresh_from_panel)
+
+    def _refresh_from_panel(self) -> None:
+        self._refresh_job = None
+        if self.winfo_exists():
+            self._rebuild()
 
     # ------------------------------------------------------------------
     # UI
@@ -348,18 +366,15 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
     # Actions, delegated to the panel's own handlers
     # ------------------------------------------------------------------
 
+    # The panel refreshes after a change, which rebuilds this view.
     def _do_light(self) -> None:
         self._panel._on_light_selected()
-        self._rebuild()
 
     def _do_unlight(self) -> None:
         self._panel._on_unlight_selected()
-        self._rebuild()
 
     def _do_set_level(self) -> None:
         self._panel._on_set_level()
-        self._rebuild()
 
     def _do_unlock_all(self) -> None:
         self._panel._on_unlock_all()
-        self._rebuild()

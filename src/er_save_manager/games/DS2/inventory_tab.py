@@ -33,7 +33,7 @@ from er_save_manager.games.DS2.save import (
 )
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.scrollable_frame import ScrollableFrame
-from er_save_manager.ui.utils import game_blocks_write
+from er_save_manager.ui.utils import game_blocks_write, raise_existing_window
 
 
 def _game_blocks_write(parent) -> bool:
@@ -147,6 +147,10 @@ class DS2InventoryPanel:
         self._current_items: list[tuple] = []  # (item, name, category)
         self._search_results: list[str] = []
         self._visible_items: list[tuple] = []
+        # Called after _visible_items is recomputed (visual inventory).
+        self.listeners: list = []
+        self._picker_win = None
+        self._visual_win = None
         self._sort_column: str = "name"
         self._sort_reverse: bool = False
         # Only used for the Upgrade column. Edits load it on demand.
@@ -522,6 +526,8 @@ class DS2InventoryPanel:
         self._update_inventory_controls()
 
     def _open_icon_browser(self) -> None:
+        if raise_existing_window(self._picker_win):
+            return
         from er_save_manager.games.DS2.icon_browser import IconBrowser
         from er_save_manager.games.DS2.icon_manager import icons_available
 
@@ -530,9 +536,13 @@ class DS2InventoryPanel:
                 "No icons.db found; run build_icon_db.py to enable icons",
                 duration=3500,
             )
-        IconBrowser(self.parent, self, initial_category=self._selected_add_category())
+        self._picker_win = IconBrowser(
+            self.parent, self, initial_category=self._selected_add_category()
+        )
 
     def _open_visual_inventory(self) -> None:
+        if raise_existing_window(self._visual_win):
+            return
         from er_save_manager.games.DS2.icon_manager import icons_available
         from er_save_manager.games.DS2.visual_inventory import VisualInventoryBrowser
 
@@ -541,7 +551,7 @@ class DS2InventoryPanel:
                 "No icons.db found; run build_icon_db.py to enable icons",
                 duration=3500,
             )
-        VisualInventoryBrowser(self.parent, self)
+        self._visual_win = VisualInventoryBrowser(self.parent, self)
 
     # ------------------------------------------------------------------
     # Left panel: item browser
@@ -1064,6 +1074,8 @@ class DS2InventoryPanel:
                 ),
             )
         self._update_inventory_controls()
+        for listener in list(self.listeners):
+            listener()
 
     def _selected_inventory_rows(self) -> list[tuple]:
         """(item, name, category) of every selected inventory row."""

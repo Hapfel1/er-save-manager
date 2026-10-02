@@ -19,6 +19,7 @@ from er_save_manager.games.DS3.icon_browser import (
     ICON_SIZE,
     SELECTED_TEXT,
     IconGrid,
+    follow_spawn_list,
     open_popup,
     search_row,
 )
@@ -71,13 +72,16 @@ class DSRIconBrowser(ctk.CTkToplevel):
         open_popup(self, parent, "Spawn Items")
         self._build_ui()
         self._load_items()
+        follow_spawn_list(self, tab, self._load_items)
 
     def _build_ui(self) -> None:
-        search_row(self, lambda q: self._grid.apply_filter(q))
+        # Shares the tab's search and category, so the grid and the spawn
+        # list always show the same items.
+        search_row(self, var=self._tab.spawn_search_var)
         cats = ctk.CTkFrame(self, fg_color="transparent")
         cats.pack(fill="x", padx=10, pady=(0, 6))
         ctk.CTkLabel(cats, text="Category:").pack(side="left", padx=(0, 6))
-        self._cat_var = tk.StringVar(value=self._tab.category())
+        self._cat_var = self._tab.spawn_category_var
         combo = ctk.CTkComboBox(
             cats,
             variable=self._cat_var,
@@ -167,7 +171,6 @@ class DSRIconBrowser(ctk.CTkToplevel):
 
     def _on_category(self, label: str) -> None:
         self._tab.set_category(label)
-        self._load_items()
 
     def _on_select(self, keys: list) -> None:
         self._spawn_btn.configure(state="normal" if keys else "disabled")

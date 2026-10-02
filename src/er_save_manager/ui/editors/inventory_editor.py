@@ -1995,6 +1995,16 @@ class InventoryEditor:
                 "Error", f"Failed to refresh inventory:\n{e}", parent=self.parent
             )
 
+    def clear_inventory(self) -> None:
+        """Drop the listed rows and tell open inventory windows."""
+        self._all_rows = []
+        self._apply_inv_filter()
+        for _cb in list(self._inventory_change_listeners):
+            try:
+                _cb()
+            except Exception:
+                pass
+
     def _collect_section(
         self, header, items, gaitem_map, location, key, is_convergence: bool = False
     ):

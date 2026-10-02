@@ -2518,6 +2518,7 @@ class SaveManagerGUI:
 
         if hasattr(self, "inventory_editor") and self.inventory_editor:
             self.inventory_editor.refresh_category_visibility()
+            self._reload_listed_inventory()
 
         # Lazy-load the currently visible tab immediately (ensures live refresh)
         current_tab = self.notebook.get()
@@ -2543,6 +2544,29 @@ class SaveManagerGUI:
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         if not silent:
             self.show_toast(toast_message, duration=2500)
+
+    def _reload_listed_inventory(self) -> None:
+        """Re-read the inventory editor's rows from the newly loaded save.
+
+        Rows listed for the previous file carry its gaitem handles; acting on
+        them, here or in an open Visual Inventory, would hit other items in
+        the new file. Without a character in that slot the rows are cleared.
+        """
+        editor = self.inventory_editor
+        if not editor._all_rows:
+            return
+        try:
+            slot_idx = int(self.char_slot_var.get().split(" - ")[0]) - 1
+            slot = self.save_file.characters[slot_idx]
+            valid = (
+                not slot.is_empty() and slot_idx in self.save_file.get_active_slots()
+            )
+        except Exception:
+            valid = False
+        if valid:
+            editor.refresh_inventory()
+        else:
+            editor.clear_inventory()
 
     def _rebuild_er_notebook(self) -> None:
         """Rebuild the ER notebook in place, preserving save state.

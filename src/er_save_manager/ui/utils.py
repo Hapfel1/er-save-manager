@@ -30,6 +30,20 @@ def trace_variable(var, mode, callback):
         return var.trace(mode, callback)
 
 
+def raise_existing_window(window) -> bool:
+    """Bring an already open popup forward; False if there is none to reuse.
+
+    Popups that edit the same data are opened once each, so a second click
+    raises the existing window instead of stacking another copy.
+    """
+    if window is None or not window.winfo_exists():
+        return False
+    window.deiconify()
+    window.lift()
+    window.focus_force()
+    return True
+
+
 def debounced_trace(widget, var, callback, delay_ms: int = 150) -> None:
     """Call callback() once writes to var pause for delay_ms.
 

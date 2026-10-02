@@ -21,7 +21,7 @@ import customtkinter as ctk
 from er_save_manager.games.DS3.tabs.inventory import enable
 from er_save_manager.games.DSR import catalog
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import game_blocks_write
+from er_save_manager.ui.utils import game_blocks_write, raise_existing_window
 
 
 def _game_blocks_write(parent) -> bool:
@@ -115,6 +115,10 @@ class DSRInventoryTab:
         self.last_offsets: list[int] = []
         # Called after every save write, so open popups can reload.
         self.listeners: list = []
+        # Called after the spawn list is recomputed (visual item picker).
+        self.spawn_listeners: list = []
+        self._picker_win = None
+        self._visual_win = None
 
     # --- Layout ------------------------------------------------------------ #
 
@@ -376,6 +380,16 @@ class DSRInventoryTab:
     def _category_key(self, label: str) -> str | None:
         return next((k for k, v in catalog.CATEGORY_LABELS.items() if v == label), None)
 
+    @property
+    def spawn_search_var(self) -> tk.StringVar:
+        """Spawn list search, shared with the visual item picker."""
+        return self._spawn_search_var
+
+    @property
+    def spawn_category_var(self) -> tk.StringVar:
+        """Spawn list category, shared with the visual item picker."""
+        return self._spawn_cat_var
+
     def category(self) -> str:
         return self._spawn_cat_var.get()
 
@@ -399,6 +413,7 @@ class DSRInventoryTab:
             for i, c in enumerate(save.characters)
         ]
         self._slot_combo.configure(values=options)
+        self.last_offsets = []
         if not (
             0 <= self._current_slot < len(options)
             and save.characters[self._current_slot]
@@ -419,6 +434,7 @@ class DSRInventoryTab:
         if options and slot_idx < len(options):
             self._slot_var.set(options[slot_idx])
         self._current_slot = slot_idx
+        self.last_offsets = []
         self._reload_inventory()
 
     def _load_selected(self) -> None:
@@ -434,6 +450,7 @@ class DSRInventoryTab:
             )
             return
         self._current_slot = idx
+        self.last_offsets = []
         self._reload_inventory()
 
     def current_character(self):
@@ -445,6 +462,16 @@ class DSRInventoryTab:
     # --- Inventory list ---------------------------------------------------- #
 
     def _reload_inventory(self) -> None:
+        """Reload the inventory rows, then tell open windows (visual
+        inventory) so they never act on rows of a previous character."""
+        self._load_inventory_rows()
+        self._notify_listeners()
+
+    def _notify_listeners(self) -> None:
+        for listener in list(self.listeners):
+            listener()
+
+    def _load_inventory_rows(self) -> None:
         char = self.current_character()
         self._all_items = []
         if char is not None:
@@ -626,8 +653,6 @@ class DSRInventoryTab:
             return False
         self._reload_inventory()
         self._show_toast(message)
-        for listener in list(self.listeners):
-            listener()
         return True
 
     def set_quantity(self, slots: list[int], quantity: int, parent=None) -> bool:
@@ -838,6 +863,8 @@ class DSRInventoryTab:
                 (label(variants[0]), first, ordered if len(ordered) > 1 else [])
             )
         self._visible_spawn = rows
+        for listener in list(self.spawn_listeners):
+            listener()
         self._insert_spawn_batch(rows, 0)
 
     _SPAWN_BATCH = 300
@@ -1013,13 +1040,15 @@ class DSRInventoryTab:
         return True
 
     def _open_picker(self) -> None:
-        if self._require_character():
-            from er_save_manager.games.DSR.icon_browser import DSRIconBrowser
+        if not self._require_character() or raise_existing_window(self._picker_win):
+            return
+        from er_save_manager.games.DSR.icon_browser import DSRIconBrowser
 
-            DSRIconBrowser(self.parent.winfo_toplevel(), self)
+        self._picker_win = DSRIconBrowser(self.parent.winfo_toplevel(), self)
 
     def _open_editor(self) -> None:
-        if self._require_character():
-            from er_save_manager.games.DSR.visual_inventory import DSRVisualInventory
+        if not self._require_character() or raise_existing_window(self._visual_win):
+            return
+        from er_save_manager.games.DSR.visual_inventory import DSRVisualInventory
 
-            DSRVisualInventory(self.parent.winfo_toplevel(), self)
+        self._visual_win = DSRVisualInventory(self.parent.winfo_toplevel(), self)

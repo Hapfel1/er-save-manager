@@ -27,7 +27,6 @@ from er_save_manager.games.DS2.regulation import INFUSION_NAMES
 from er_save_manager.games.DS2.save import INVENTORY_END, INVENTORY_START
 from er_save_manager.ui.utils import (
     center_window,
-    debounced_trace,
     patch_combo_scroll,
 )
 
@@ -70,6 +69,10 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         self._selected: list[int] = []
         self._anchor: int | None = None
         self._pending_indices: deque[int] = deque()
+        # Rows the grid was built from; indices above point into this, so a
+        # panel re-filter can never shift them onto other items.
+        self._items: list[tuple] = []
+        self._reload_job: str | None = None
         self._batch_job: str | None = None
         self._grid_count = 0  # buttons already placed this load
 
@@ -86,8 +89,26 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         self.focus_force()
 
         self._build_ui()
-        self._rebuild()
+        self._load_icons()
         self.protocol("WM_DELETE_WINDOW", self.destroy)
+        panel.listeners.append(self._on_panel_filtered)
+        self.bind("<Destroy>", self._on_destroy, add="+")
+
+    def _on_destroy(self, event) -> None:
+        if event.widget is self and self._on_panel_filtered in self._panel.listeners:
+            self._panel.listeners.remove(self._on_panel_filtered)
+
+    def _on_panel_filtered(self) -> None:
+        """The panel's rows changed (filter typed here or in the tab, an edit,
+        another character); reload once changes pause."""
+        if self._reload_job is not None:
+            self.after_cancel(self._reload_job)
+        self._reload_job = self.after(150, self._reload_from_panel)
+
+    def _reload_from_panel(self) -> None:
+        self._reload_job = None
+        if self.winfo_exists():
+            self._load_icons()
 
     # ------------------------------------------------------------------
     # UI
@@ -97,15 +118,16 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         top = ctk.CTkFrame(self, fg_color="transparent")
         top.pack(fill="x", padx=10, pady=(10, 4))
         ctk.CTkLabel(top, text="Category:", width=68).pack(side="left")
-        self._cat_var = tk.StringVar(value=self._panel.filter_category_var.get())
+        # Category and filter share the panel's variables, so the tab and this
+        # window always show the same rows.
         patch_combo_scroll(
             ctk.CTkComboBox(
                 top,
-                variable=self._cat_var,
+                variable=self._panel.filter_category_var,
                 values=["All"] + list(self._category_labels().values()),
                 state="readonly",
                 width=150,
-                command=lambda _v: self._rebuild(),
+                command=lambda _v: self._panel._apply_filter(),
             )
         ).pack(side="left", padx=(0, 8))
 
@@ -121,9 +143,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         ).pack(side="left", padx=(4, 8))
 
         ctk.CTkLabel(top, text="Filter:").pack(side="left")
-        self._filter_var = tk.StringVar()
-        debounced_trace(self, self._filter_var, self._apply_filter)
-        ctk.CTkEntry(top, textvariable=self._filter_var).pack(
+        ctk.CTkEntry(top, textvariable=self._panel.filter_search_var).pack(
             side="left", fill="x", expand=True, padx=(4, 8)
         )
         ctk.CTkButton(
@@ -240,18 +260,6 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
     # Data
     # ------------------------------------------------------------------
 
-    def _rebuild(self) -> None:
-        """Sync the panel's own filter to this popup's, refresh its tree, then
-        rebuild the icon grid from panel._visible_items so both stay in the
-        same order and indices line up for selection."""
-        self._panel.filter_category_var.set(self._cat_var.get())
-        self._panel.filter_search_var.set(self._filter_var.get())
-        self._panel._apply_filter()
-        self._load_icons()
-
-    def _apply_filter(self) -> None:
-        self._rebuild()
-
     def _load_icons(self) -> None:
         if self._batch_job is not None:
             self.after_cancel(self._batch_job)
@@ -266,9 +274,10 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
 
         self._grid_count = 0
         location = self._location_var.get()
+        self._items = list(self._panel._visible_items)
         self._pending_indices = deque(
             index
-            for index, (item, _name, _category) in enumerate(self._panel._visible_items)
+            for index, (item, _name, _category) in enumerate(self._items)
             if location == _LOCATION_FILTERS[0]
             or item.in_box == (location == _LOCATION_FILTERS[2])
         )
@@ -291,7 +300,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             if not self._pending_indices:
                 break
             idx = self._pending_indices.popleft()
-            item, name, category = self._panel._visible_items[idx]
+            item, name, category = self._items[idx]
             img = get_icon(item.item_id, category)
             if img and category == "weapons" and item.infusion:
                 img = with_infusion_badge(img, item.infusion)
@@ -365,9 +374,14 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
     # ------------------------------------------------------------------
 
     def _select_tree_rows(self, indices: list[int]) -> None:
+        """Select the panel tree rows holding these grid items. Rows are
+        matched by item object, not position, so a tree that was re-filtered
+        or reloaded since the grid was built never gets other items selected."""
         tree = self._panel._inventory_tree
         children = tree.get_children()
-        tree.selection_set([children[i] for i in indices if 0 <= i < len(children)])
+        row_of = {id(entry[0]): k for k, entry in enumerate(self._panel._visible_items)}
+        rows = (row_of.get(id(self._items[i][0])) for i in indices)
+        tree.selection_set([children[r] for r in rows if r is not None])
 
     def _on_item_click(self, index: int, state: int = 0) -> None:
         shown = [i for _, i in self._buttons]
@@ -391,7 +405,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             if i in changed:
                 btn.configure(fg_color=_CELL_SELECTED if i in now else _CELL_COLOR)
         if len(self._selected) == 1:
-            name = self._panel._visible_items[self._selected[0]][1]
+            name = self._items[self._selected[0]][1]
             text = f"Selected: {name}"
         else:
             text = f"{len(self._selected)} items selected"
@@ -409,7 +423,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         With one item selected its current values fill the fields."""
         panel = self._panel
         character = panel._current_character()
-        rows = [panel._visible_items[i] for i in self._selected]
+        rows = [self._items[i] for i in self._selected]
         quantity = upgrade = infusion = False
         allowed: set[int] = set()
         can_box = can_unbox = False
@@ -455,25 +469,33 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
     # Actions, delegated to the panel's own Set/Remove
     # ------------------------------------------------------------------
 
+    # Each action re-selects this window's items in the panel tree first (the
+    # tree may have been re-filtered since), then re-filters the panel, which
+    # reloads this grid through the panel listener.
     def _do_qty(self) -> None:
+        self._select_tree_rows(self._selected)
         self._panel.set_qty_var.set(self._qty_var.get())
         self._panel._on_set_quantity()
-        self._rebuild()
+        self._panel._apply_filter()
 
     def _do_upgrade(self) -> None:
+        self._select_tree_rows(self._selected)
         self._panel.set_upgrade_var.set(self._upgrade_var.get())
         self._panel._on_set_upgrade()
-        self._rebuild()
+        self._panel._apply_filter()
 
     def _do_infusion(self) -> None:
+        self._select_tree_rows(self._selected)
         self._panel.set_infusion_var.set(self._infusion_var.get())
         self._panel._on_set_infusion()
-        self._rebuild()
+        self._panel._apply_filter()
 
     def _do_move(self, to_box: bool) -> None:
+        self._select_tree_rows(self._selected)
         self._panel._on_move(to_box)
-        self._rebuild()
+        self._panel._apply_filter()
 
     def _do_remove(self) -> None:
+        self._select_tree_rows(self._selected)
         self._panel._on_remove()
-        self._rebuild()
+        self._panel._apply_filter()
