@@ -97,3 +97,21 @@ def test_does_not_touch_storage_box_counters(sanitized_save):
     assert slot.inventory_storage_box.common_item_count != sum(
         1 for it in slot.inventory_storage_box.common_items if it.gaitem_handle != 0
     )
+
+
+def test_clamps_equip_index_counter_past_array_end(sanitized_save):
+    i = _first_active_slot(sanitized_save)
+    slot = sanitized_save.character_slots[i]
+    held, storage = slot.inventory_held, slot.inventory_storage_box
+    held_top = len(held.key_items) + len(held.common_items) - 1
+    storage_top = len(storage.key_items) + len(storage.common_items) - 1
+    held.equip_index_counter = held_top + 90
+    storage.equip_index_counter = storage_top + 1
+
+    fix = InventoryCountersFix()
+    assert fix.detect(sanitized_save, i) is True
+    result = fix.apply(sanitized_save, i)
+
+    assert result.applied is True
+    assert held.equip_index_counter == held_top
+    assert storage.equip_index_counter == storage_top

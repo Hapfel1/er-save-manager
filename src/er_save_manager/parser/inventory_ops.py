@@ -577,33 +577,67 @@ def _next_gaitem_handle(slot, prefix: int) -> int:
     """
     Generate the next available gaitem handle for weapons, armor, or gems.
 
-    Upper 16 bits encode category. Lower 16 bits are a sequential counter
-    shared across all categories so handles from different categories never collide.
+    Handle layout:
+        bits 28-31  category (0x8 weapon, 0x9 armor, 0xC gem)
+        bits 16-23  generation, 0x80-0xFF. Incremented each time the index
+                    wraps; wraps from 0xFF back to 0x80. Not platform-specific.
+        bits 0-15   index into the game's gaitem array, always below the map
+                    entry count (0x1400) and unique across all categories.
 
-    The second byte (bits 16-23) is mirrored from the first non-empty gaitem entry.
-    PC saves use 0x80; PS/Switch saves use 0x81-0x87. Writing 0x80 on console
-    saves causes the game engine to treat items as phantom/invalid.
+    The game allocates sequentially and skips occupied indices. This mirrors
+    that: continue after the newest handle, wrap the index at the map size,
+    and take the first index no live entry uses. An index at or above the map
+    size is out of bounds for the game's array and crashes the save on load.
+
+    Raises:
+        ValueError: Every index is in use.
     """
-    max_lower16 = 0
-    second_byte = 0x80  # PC default
+    limit = len(slot.gaitem_map)
+    used: set[int] = set()
+    by_gen: dict[int, int] = {}
     for g in slot.gaitem_map:
         if g.gaitem_handle == 0:
             continue
-        g_prefix = g.gaitem_handle & 0xF0000000
-        if g_prefix in (_PREFIX_WEAPON, _PREFIX_ARMOR, _PREFIX_GEM):
-            lower16 = g.gaitem_handle & 0x0000FFFF
-            if lower16 > max_lower16:
-                max_lower16 = lower16
-            if second_byte == 0x80:
-                second_byte = (g.gaitem_handle >> 16) & 0xFF
+        index = g.gaitem_handle & 0xFFFF
+        used.add(index)
+        if (g.gaitem_handle & 0xF0000000) not in (
+            _PREFIX_WEAPON,
+            _PREFIX_ARMOR,
+            _PREFIX_GEM,
+        ) or index >= limit:
+            continue
+        gen = (g.gaitem_handle >> 16) & 0xFF
+        if gen & 0x80:
+            by_gen[gen] = max(by_gen.get(gen, -1), index)
 
-    next_lower16 = (max_lower16 + 1) & 0xFFFF
+    if by_gen:
+        # Generations live on a 0x80-0xFF ring. The newest one is the last
+        # present generation before the widest run of absent ones.
+        gens = sorted(by_gen)
+        gaps = [
+            ((gens[(i + 1) % len(gens)] - g - 1) % 0x80, g) for i, g in enumerate(gens)
+        ]
+        gen = max(gaps)[1]
+        index = by_gen[gen]
+    else:
+        gen, index = 0x80, -1
+
+    for _ in range(limit):
+        index += 1
+        if index >= limit:
+            index = 0
+            gen = 0x80 if gen == 0xFF else gen + 1
+        if index not in used:
+            break
+    else:
+        raise ValueError("gaitem handle space is full")
+
     category_high = {
         _PREFIX_WEAPON: 0x80,
         _PREFIX_ARMOR: 0x90,
         _PREFIX_GEM: 0xC0,
     }[prefix]
-    return (category_high << 24) | (second_byte << 16) | next_lower16
+    return (category_high << 24) | (gen << 16) | index
 
 
 def _find_empty_gaitem_slot(slot, prefix: int) -> int:
@@ -824,29 +858,19 @@ def _patch_slot_with_gaitem_insert(
 
     if delta > 0:
         trim = delta
-        slot_end_before = slot_data_base + SLOT_DATA_SIZE
-        trailing_zeros = 0
-        for i in range(slot_end_before - 1, slot_end_before - trim - 1, -1):
-            if i >= 0 and save._raw_data[i] == 0:
-                trailing_zeros += 1
-            else:
-                break
 
-        if trailing_zeros < trim:
-            from er_save_manager.parser.slot_rebuild import rebuild_slot
+        # The trim removes bytes from the region after PlayerGameDataHash
+        # (slot.rest). That region is stale serialization buffer the game
+        # never parses (leftover asset names, repeated patterns from older
+        # writes), so cutting into it is safe. Cutting past it is not.
+        from io import BytesIO
 
-            # rebuild_slot re-serializes the slot from the parsed structure
-            # and preserves every byte captured on read, including
-            # slot.rest - it no longer manufactures extra zero-padding
-            # here (see slot_rebuild.py). If the slot's real trailing
-            # bytes still don't cover `trim` after this, the add proceeds
-            # anyway and the trim below cuts into that trailing data
-            # rather than blocking the add. That trailing region's exact
-            # contents are not currently identified (see slot_rebuild.py
-            # notes on slot.rest).
-            rebuilt = rebuild_slot(slot)
-            save._raw_data[slot_data_base : slot_data_base + SLOT_DATA_SIZE] = rebuilt
-            entry_abs_off = slot_data_base + slot.gaitem_offsets[gaitem_idx]
+        tail = BytesIO()
+        slot.dlc.write(tail)
+        slot.player_data_hash.write(tail)
+        hash_end_abs = slot.dlc_offset + len(tail.getvalue())
+        if slot_data_base + SLOT_DATA_SIZE - hash_end_abs < trim:
+            raise ValueError(f"slot {slot_idx} has no room left for this item")
 
         last_empty_abs = _gaitem_last_empty(slot, slot_data_base)
 
@@ -970,10 +994,9 @@ def insert_gaitem(
     gaitem_size = len(new_gaitem_bytes)
     size_delta = gaitem_size - 8
 
-    # Patch the binary first so rebuild_slot (called when trailing zeros
-    # are exhausted) serializes the original map without the new weapon.
-    # Updating gaitem_map before the patch caused rebuild to write the weapon
-    # twice, corrupting everything that followed.
+    # Patch the binary before updating gaitem_map: the patch locates the
+    # last empty entry from the map, which must still reflect the original
+    # binary layout.
     net_shift = _patch_slot_with_gaitem_insert(
         save, slot_idx, slot, empty_g, new_gaitem_bytes, old_gaitem_size=8
     )
@@ -1051,17 +1074,33 @@ def _remove_gaitem(save: Save, slot_idx: int, slot, gaitem_idx: int) -> int:
     return net_shift
 
 
-def _update_inv_counters(slot, inventory, location: str, acq_idx: int) -> None:
-    """Update acquisition and equip index counters after adding an inventory entry."""
+def _update_inv_counters(
+    slot, inventory, location: str, acq_idx: int, inv_slot: int, is_key: bool
+) -> None:
+    """
+    Update item counts and index counters after adding an inventory entry.
+
+    Item counts are the number of occupied entries, so they never exceed the
+    array capacity even when the save already had a drifted count.
+
+    equip_index_counter is a high-water mark of entry indices. Key items use
+    indices 0..len(key_items)-1, common items follow at len(key_items) + slot.
+    Game-written saves never exceed len(key_items) + len(common_items) - 1
+    (held 3071, storage 2047); a counter past that crashes the game on load.
+    """
+    inventory.common_item_count = sum(
+        1 for it in inventory.common_items if it.gaitem_handle != 0
+    )
+    inventory.key_item_count = sum(
+        1 for it in inventory.key_items if it.gaitem_handle != 0
+    )
+    index = inv_slot if is_key else len(inventory.key_items) + inv_slot
+    top = len(inventory.key_items) + len(inventory.common_items) - 1
+    inventory.equip_index_counter = min(max(inventory.equip_index_counter, index), top)
+
     slot.inventory_held.acquisition_index_counter = acq_idx
     if location == "storage":
-        inv_s = slot.inventory_storage_box
-        inv_s.equip_index_counter = (
-            0x80 if inv_s.equip_index_counter == 0 else inv_s.equip_index_counter + 1
-        )
-        inv_s.acquisition_index_counter = acq_idx
-    else:
-        slot.inventory_held.equip_index_counter += 1
+        slot.inventory_storage_box.acquisition_index_counter = acq_idx
 
 
 # ---- public API -------------------------------------------------------------
@@ -1111,6 +1150,21 @@ def add_item(
 
     if cat == _CAT_WEAPON and upgrade:
         upgrade = validate_upgrade(upgrade, reinforcement, convergence)
+
+    # Reject a full inventory before touching the gaitem map, otherwise the
+    # gaitem (and AoW) entries inserted below are left with no owner.
+    if _needs_gaitem(full_item_id) and not _is_key_item(full_item_id):
+        pre_slot = save.character_slots[slot_idx]
+        if not pre_slot.is_empty():
+            candidates = [_select_inventory(pre_slot, location)]
+            if location == "held":
+                candidates.append(pre_slot.inventory_storage_box)
+            if all(_first_empty_inv_slot(inv) == -1 for inv in candidates):
+                raise ValueError(
+                    "both held and storage inventories are full"
+                    if location == "held"
+                    else "storage inventory is full"
+                )
 
     # AoW: insert gem into gaitem map only (no inventory entry needed).
     gem_handle = 0
@@ -1184,11 +1238,7 @@ def add_item(
         inventory.key_items[inv_slot] = entry
     else:
         inventory.common_items[inv_slot] = entry
-    if is_key:
-        inventory.key_item_count += 1
-    else:
-        inventory.common_item_count += 1
-    _update_inv_counters(slot, inventory, location, acq_idx)
+    _update_inv_counters(slot, inventory, location, acq_idx, inv_slot, is_key)
 
     _patch_slot(save, slot_idx, slot)
 

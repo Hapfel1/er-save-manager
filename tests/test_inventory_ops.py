@@ -191,6 +191,122 @@ def test_add_item_increments_common_item_count(sanitized_save):
 
 
 # ---------------------------------------------------------------------------
+# gaitem handle allocation
+# ---------------------------------------------------------------------------
+
+
+def _map_with_handles(handles, size=0x1400):
+    from types import SimpleNamespace
+
+    from er_save_manager.parser.er_types import Gaitem
+
+    gaitem_map = []
+    for h in handles:
+        g = Gaitem()
+        g.gaitem_handle = h
+        gaitem_map.append(g)
+    while len(gaitem_map) < size:
+        gaitem_map.append(Gaitem())
+    return SimpleNamespace(gaitem_map=gaitem_map)
+
+
+def test_next_gaitem_handle_wraps_index_and_bumps_generation():
+    from er_save_manager.parser.inventory_ops import _next_gaitem_handle
+
+    slot = _map_with_handles([0x90811234, 0x808113FF, 0xC0800000])
+    assert _next_gaitem_handle(slot, 0x80000000) == 0x80820001
+
+
+def test_next_gaitem_handle_skips_used_indices():
+    from er_save_manager.parser.inventory_ops import _next_gaitem_handle
+
+    slot = _map_with_handles([0x80800010, 0x90800011, 0xC07F0012])
+    assert _next_gaitem_handle(slot, 0x90000000) == 0x90800013
+
+
+def test_next_gaitem_handle_newest_generation_follows_ring_wrap():
+    from er_save_manager.parser.inventory_ops import _next_gaitem_handle
+
+    # 0xFF wrapped to 0x80, so 0x80 is the newest generation.
+    slot = _map_with_handles([0x80FE1000, 0x80FF1200, 0x80800005])
+    assert _next_gaitem_handle(slot, 0xC0000000) == 0xC0800006
+
+
+def test_next_gaitem_handle_raises_when_every_index_is_used():
+    from er_save_manager.parser.inventory_ops import _next_gaitem_handle
+
+    slot = _map_with_handles([0x80800000 | i for i in range(8)], size=8)
+    with pytest.raises(ValueError):
+        _next_gaitem_handle(slot, 0x80000000)
+
+
+def test_bulk_add_keeps_handle_indices_in_range_and_unique(sanitized_save):
+    i = _first_active_slot(sanitized_save)
+    for k in range(150):
+        item = (TEST_ARMOR_ID if k % 2 else TEST_WEAPON_ID) + k * 10000
+        add_item(sanitized_save, i, item, quantity=1, location="held")
+
+    slot = sanitized_save.character_slots[i]
+    indices = [g.gaitem_handle & 0xFFFF for g in slot.gaitem_map if g.gaitem_handle]
+    assert max(indices) < len(slot.gaitem_map)
+    assert len(set(indices)) == len(indices)
+
+
+def test_add_item_full_inventory_leaves_gaitem_map_untouched(sanitized_save):
+    i = _first_active_slot(sanitized_save)
+    slot = sanitized_save.character_slots[i]
+    for inv in (slot.inventory_held, slot.inventory_storage_box):
+        for it in inv.common_items:
+            if it.gaitem_handle == 0:
+                it.gaitem_handle = TEST_GOODS_ID
+    before_map = [g.gaitem_handle for g in slot.gaitem_map]
+    before_raw = bytes(sanitized_save._raw_data)
+
+    with pytest.raises(ValueError):
+        add_item(
+            sanitized_save,
+            i,
+            TEST_WEAPON_ID,
+            quantity=1,
+            location="held",
+            gem_full_id=0x80000000 | 10000,
+        )
+
+    assert [g.gaitem_handle for g in slot.gaitem_map] == before_map
+    assert bytes(sanitized_save._raw_data) == before_raw
+
+
+def test_add_item_counters_follow_entry_positions(sanitized_save):
+    i = _first_active_slot(sanitized_save)
+    slot = sanitized_save.character_slots[i]
+    held = slot.inventory_held
+    top = len(held.key_items) + len(held.common_items) - 1
+    # Drifted state from older versions: count one too high, counter past
+    # the last valid index.
+    held.common_item_count += 1
+    held.equip_index_counter = top + 90
+
+    result = add_item(sanitized_save, i, TEST_WEAPON_ID, quantity=1, location="held")
+
+    assert result["location"] == "held"
+    assert held.common_item_count == sum(
+        1 for it in held.common_items if it.gaitem_handle != 0
+    )
+    assert held.equip_index_counter == top
+
+
+def test_add_item_raises_counter_to_new_entry_index(sanitized_save):
+    i = _first_active_slot(sanitized_save)
+    slot = sanitized_save.character_slots[i]
+    held = slot.inventory_held
+    held.equip_index_counter = 0
+
+    result = add_item(sanitized_save, i, TEST_WEAPON_ID, quantity=1, location="held")
+
+    assert held.equip_index_counter == len(held.key_items) + result["inventory_slot"]
+
+
+# ---------------------------------------------------------------------------
 # The critical offset-shift regression test
 # ---------------------------------------------------------------------------
 
