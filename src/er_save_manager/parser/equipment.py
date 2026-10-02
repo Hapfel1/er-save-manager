@@ -12,6 +12,8 @@ from __future__ import annotations
 import struct
 from dataclasses import dataclass, field
 from io import BytesIO
+from itertools import chain
+from operator import attrgetter
 
 # ============================================================================
 # BASE CLASS FOR EQUIPMENT SLOTS
@@ -211,6 +213,9 @@ class InventoryItem:
         f.write(struct.pack("<I", self.acquisition_index))
 
 
+_INVENTORY_ITEM_FIELDS = attrgetter("gaitem_handle", "quantity", "acquisition_index")
+
+
 @dataclass
 class Inventory:
     """
@@ -256,13 +261,18 @@ class Inventory:
 
     def write(self, f: BytesIO):
         """Write Inventory to stream"""
+
+        # One pack call per item array: same bytes as InventoryItem.write per
+        # entry, but fast enough to re-serialize after every single add.
+        def pack_items(items: list[InventoryItem]) -> bytes:
+            fields = map(_INVENTORY_ITEM_FIELDS, items)
+            return struct.pack(f"<{3 * len(items)}I", *chain.from_iterable(fields))
+
         f.write(struct.pack("<I", self.common_item_count))
-        for item in self.common_items:
-            item.write(f)
+        f.write(pack_items(self.common_items))
 
         f.write(struct.pack("<I", self.key_item_count))
-        for item in self.key_items:
-            item.write(f)
+        f.write(pack_items(self.key_items))
 
         f.write(struct.pack("<I", self.equip_index_counter))
         f.write(struct.pack("<I", self.acquisition_index_counter))

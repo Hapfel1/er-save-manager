@@ -17,6 +17,7 @@ import customtkinter as ctk
 
 from er_save_manager import VersionChecker, __version__
 from er_save_manager.games.game_profiles import GAME_PROFILES, PROFILES_BY_KEY
+from er_save_manager.own_writes import is_own_write
 from er_save_manager.parser import Save
 from er_save_manager.platform import PlatformUtils
 from er_save_manager.ui.dialogs.character_details import CharacterDetailsDialog
@@ -2046,11 +2047,12 @@ class SaveManagerGUI:
         self._flush_pending_tabs()
         self.selected_slot_index = slot_index
 
-    def load_save(self, silent=False):
+    def load_save(self, silent=False, toast_message="Save file loaded successfully!"):
         """Load save file in background thread to prevent UI freezing
 
         Args:
             silent: If True, suppress the success message (used for reloads after operations)
+            toast_message: Success toast shown once loading finishes
         """
         self._flush_pending_tabs()
         save_path = self.file_path_var.get()
@@ -2181,11 +2183,15 @@ class SaveManagerGUI:
 
         self.status_var.set("Loading save file...")
         thread = threading.Thread(
-            target=self._load_save_background, args=(save_path, silent), daemon=True
+            target=self._load_save_background,
+            args=(save_path, silent, toast_message),
+            daemon=True,
         )
         thread.start()
 
-    def _load_save_background(self, save_path, silent=False):
+    def _load_save_background(
+        self, save_path, silent=False, toast_message="Save file loaded successfully!"
+    ):
         """Background thread for loading save file"""
         try:
             verbose = self.settings.get("verbose_logging", False)
@@ -2197,7 +2203,14 @@ class SaveManagerGUI:
             if verbose:
                 self._verbose_log(f"Parsed successfully: {save_path}")
 
-            self.root.after(0, self._finalize_save_load, save_file, save_path, silent)
+            self.root.after(
+                0,
+                self._finalize_save_load,
+                save_file,
+                save_path,
+                silent,
+                toast_message,
+            )
         except Exception as e:
             error_msg = str(e)
             if self.settings.get("verbose_logging", False):
@@ -2457,7 +2470,13 @@ class SaveManagerGUI:
             except Exception:
                 pass
 
-    def _finalize_save_load(self, save_file, save_path, silent=False):
+    def _finalize_save_load(
+        self,
+        save_file,
+        save_path,
+        silent=False,
+        toast_message="Save file loaded successfully!",
+    ):
         """Finalize save loading on main thread"""
         self._flush_pending_tabs()
         self.save_file = save_file
@@ -2506,7 +2525,7 @@ class SaveManagerGUI:
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         if not silent:
-            self.show_toast("Save file loaded successfully!", duration=2500)
+            self.show_toast(toast_message, duration=2500)
 
     def _rebuild_er_notebook(self) -> None:
         """Rebuild the ER notebook in place, preserving save state.
@@ -2665,7 +2684,10 @@ class SaveManagerGUI:
 
         if self._watched_mtime is not None and current_mtime != self._watched_mtime:
             self._watched_mtime = current_mtime
-            self._pending_file_change = True
+            # Writes from any tab, dialog or backup restore go through
+            # Save.to_file or the backup manager, which record them.
+            if not is_own_write(self.save_path):
+                self._pending_file_change = True
 
         self.root.after(3000, self._poll_file_change)
 
@@ -2717,7 +2739,7 @@ class SaveManagerGUI:
         def on_reload():
             self._file_change_dialog_open = False
             dialog.destroy()
-            self.reload_save()
+            self.load_save(toast_message="Save file reloaded")
 
         def on_dismiss():
             if disable_var.get():

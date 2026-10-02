@@ -238,18 +238,21 @@ class SettingsTab:
             self.settings.set("default_game", profile.key)
 
     def _on_setting_changed(self, key: str | None) -> None:
-        """Mirror default_game changes made elsewhere (e.g. the main window button).
+        """Mirror settings changed elsewhere (main window button, dialog checkboxes).
 
         The tab is rebuilt when the game changes, so drop the listener once
         its widgets are gone.
         """
-        if key not in ("default_game", None):
+        if key not in ("default_game", "external_file_change_notification", None):
             return
         try:
             if not self._default_game_combo.winfo_exists():
                 self.settings.remove_listener(self._on_setting_changed)
                 return
             self.default_game_var.set(self._default_game_name())
+            self.external_file_change_var.set(
+                self.settings.get("external_file_change_notification", True)
+            )
         except tk.TclError:
             self.settings.remove_listener(self._on_setting_changed)
 
