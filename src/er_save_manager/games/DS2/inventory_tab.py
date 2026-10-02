@@ -164,6 +164,12 @@ class DS2InventoryPanel:
     # ------------------------------------------------------------------
 
     def setup_ui(self) -> None:
+        for _ in self.setup_steps():
+            pass
+
+    def setup_steps(self):
+        """Build the UI in stages; each yield lets the window redraw and handle
+        input between stages (gui.py resumes it one stage per turn)."""
         self.frame = ScrollableFrame(self.parent, fg_color="transparent")
         self.frame.pack(fill="both", expand=True)
 
@@ -183,6 +189,7 @@ class DS2InventoryPanel:
         pane.add(right, minsize=360)
 
         self._build_browser_panel(left)
+        yield
         self._build_inventory_panel(right)
 
         self.refresh()

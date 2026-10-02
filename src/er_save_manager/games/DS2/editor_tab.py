@@ -83,6 +83,12 @@ class DS2EditorTab:
     # ------------------------------------------------------------------
 
     def setup_ui(self) -> None:
+        for _ in self.setup_steps():
+            pass
+
+    def setup_steps(self):
+        """Build the UI in stages; each yield lets the window redraw and handle
+        input between stages (gui.py resumes it one stage per turn)."""
         top = ctk.CTkFrame(self.parent, fg_color="transparent")
         top.pack(fill="x", padx=10, pady=(10, 5))
 
@@ -115,6 +121,7 @@ class DS2EditorTab:
 
         self._build_stats_tab(self.tabview.tab("Stats"))
 
+        yield
         self.inventory_panel = DS2InventoryPanel(
             self.tabview.tab("Inventory"),
             get_save=self.get_save,
@@ -122,8 +129,9 @@ class DS2EditorTab:
             get_save_path=self.get_save_path,
             show_toast=self.show_toast,
         )
-        self.inventory_panel.setup_ui()
+        yield from self.inventory_panel.setup_steps()
 
+        yield
         self.bonfire_panel = DS2BonfirePanel(
             self.tabview.tab("Bonfires"),
             get_save=self.get_save,
@@ -133,6 +141,7 @@ class DS2EditorTab:
         )
         self.bonfire_panel.setup_ui()
 
+        yield
         self.npc_panel = DS2NpcPanel(
             self.tabview.tab("NPCs"),
             get_save=self.get_save,
@@ -142,6 +151,7 @@ class DS2EditorTab:
         )
         self.npc_panel.setup_ui()
 
+        yield
         self.refresh()
 
     def _build_stats_tab(self, parent) -> None:

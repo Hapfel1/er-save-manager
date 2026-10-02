@@ -743,6 +743,12 @@ class InventoryEditor:
     # ---- UI setup -----------------------------------------------------------
 
     def setup_ui(self):
+        for _ in self.setup_steps():
+            pass
+
+    def setup_steps(self):
+        """Build the UI in stages; each yield lets the window redraw and handle
+        input between stages (gui.py resumes it one stage per turn)."""
         self.frame = ctk.CTkFrame(self.parent, fg_color="transparent")
         self.frame.pack(fill=ctk.BOTH, expand=True)
 
@@ -762,6 +768,7 @@ class InventoryEditor:
         pane.add(right, minsize=340)
 
         self._build_browser_panel(left)
+        yield
         self._build_inventory_panel(right)
 
         settings = self.get_settings() if self.get_settings else None

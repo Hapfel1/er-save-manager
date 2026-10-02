@@ -74,6 +74,12 @@ class DSREditorTab:
         self._loaded_class_idx: int = 0
 
     def setup_ui(self) -> None:
+        for _ in self.setup_steps():
+            pass
+
+    def setup_steps(self):
+        """Build the UI in stages; each yield lets the window redraw and handle
+        input between stages (gui.py resumes it one stage per turn)."""
         # Outer wrapper fills parent - fixes content being pushed down on CTkTabview frames
         outer = ctk.CTkFrame(self.parent, corner_radius=12)
         outer.pack(fill="both", expand=True, pady=(0, 10))
@@ -110,6 +116,7 @@ class DSREditorTab:
         )
         tabs.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         self._build_stats_tab(tabs.add("Stats"))
+        yield
         self._build_identity_tab(tabs.add("Identity"))
 
     # --- Stats tab ------------------------------------------------------------ #

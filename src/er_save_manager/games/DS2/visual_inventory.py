@@ -25,7 +25,11 @@ from er_save_manager.games.DS2.icon_manager import (
 )
 from er_save_manager.games.DS2.regulation import INFUSION_NAMES
 from er_save_manager.games.DS2.save import INVENTORY_END, INVENTORY_START
-from er_save_manager.ui.utils import center_window, patch_combo_scroll
+from er_save_manager.ui.utils import (
+    center_window,
+    debounced_trace,
+    patch_combo_scroll,
+)
 
 if TYPE_CHECKING:
     from er_save_manager.games.DS2.inventory_tab import DS2InventoryPanel
@@ -118,7 +122,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
 
         ctk.CTkLabel(top, text="Filter:").pack(side="left")
         self._filter_var = tk.StringVar()
-        self._filter_var.trace_add("write", lambda *_: self._apply_filter())
+        debounced_trace(self, self._filter_var, self._apply_filter)
         ctk.CTkEntry(top, textvariable=self._filter_var).pack(
             side="left", fill="x", expand=True, padx=(4, 8)
         )
@@ -378,9 +382,14 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         else:
             chosen = [index]
             self._anchor = index
+        previous = set(self._selected)
         self._selected = [i for i in shown if i in chosen]
+        # Recolor only cells whose state changed; each configure redraws.
+        now = set(self._selected)
+        changed = previous ^ now
         for btn, i in self._buttons:
-            btn.configure(fg_color=_CELL_SELECTED if i in chosen else _CELL_COLOR)
+            if i in changed:
+                btn.configure(fg_color=_CELL_SELECTED if i in now else _CELL_COLOR)
         if len(self._selected) == 1:
             name = self._panel._visible_items[self._selected[0]][1]
             text = f"Selected: {name}"

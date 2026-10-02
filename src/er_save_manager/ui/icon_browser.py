@@ -8,7 +8,12 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
-from er_save_manager.ui.utils import center_window, patch_combo_scroll, pick_file
+from er_save_manager.ui.utils import (
+    center_window,
+    debounced_trace,
+    patch_combo_scroll,
+    pick_file,
+)
 
 if TYPE_CHECKING:
     from er_save_manager.data.item_database import Item
@@ -99,8 +104,8 @@ class IconBrowser(ctk.CTkToplevel):
 
         ctk.CTkLabel(top, text="Search:", width=52).pack(side=ctk.LEFT)
         self._search_var = ctk.StringVar()
-        self._search_var.trace_add(
-            "write", lambda *_: self._apply_filter(self._search_var.get())
+        debounced_trace(
+            self, self._search_var, lambda: self._apply_filter(self._search_var.get())
         )
         ctk.CTkEntry(
             top, textvariable=self._search_var, placeholder_text="Filter..."
@@ -359,8 +364,9 @@ class IconBrowser(ctk.CTkToplevel):
     def _on_category_change(self, value: str):
         self._current_cat = value
         self.title(f"Add Item - {value}")
-        self._load_category(value)
+        # Clear the query first so the new category loads unfiltered.
         self._search_var.set("")
+        self._load_category(value)
         self._scroll._parent_canvas.yview_moveto(0)
         self._editor._sync_browse_category(value)
 

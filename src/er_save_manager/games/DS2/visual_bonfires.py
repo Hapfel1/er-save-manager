@@ -17,7 +17,7 @@ import customtkinter as ctk
 
 from er_save_manager.games.DS2.bonfire_database import BONFIRES
 from er_save_manager.games.DS2.save import BONFIRE_MAX_LEVEL
-from er_save_manager.ui.utils import center_window
+from er_save_manager.ui.utils import center_window, debounced_trace
 
 if TYPE_CHECKING:
     from PIL import Image as PILImage
@@ -111,7 +111,7 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
 
         ctk.CTkLabel(top, text="Filter:").pack(side="left")
         self._filter_var = tk.StringVar()
-        self._filter_var.trace_add("write", lambda *_: self._rebuild())
+        debounced_trace(self, self._filter_var, self._rebuild)
         ctk.CTkEntry(top, textvariable=self._filter_var).pack(
             side="left", fill="x", expand=True, padx=(4, 8)
         )

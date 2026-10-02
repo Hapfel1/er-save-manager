@@ -13,7 +13,11 @@ from er_save_manager.ui.editors.inventory_editor import (
     INVENTORY_SORT_MODES,
     sort_inventory_rows,
 )
-from er_save_manager.ui.utils import center_window, patch_combo_scroll
+from er_save_manager.ui.utils import (
+    center_window,
+    debounced_trace,
+    patch_combo_scroll,
+)
 
 if TYPE_CHECKING:
     from er_save_manager.ui.editors.inventory_editor import InventoryEditor
@@ -205,7 +209,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         ).pack(side=ctk.RIGHT, padx=(12, 0))
 
         self._filter_var = ctk.StringVar()
-        self._filter_var.trace_add("write", lambda *_: self._apply_filter())
+        debounced_trace(self, self._filter_var, self._apply_filter)
         ctk.CTkLabel(top, text="Filter:").pack(side=ctk.LEFT)
         ctk.CTkEntry(
             top, textvariable=self._filter_var, placeholder_text="Search...", width=150

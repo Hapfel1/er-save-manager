@@ -1177,6 +1177,12 @@ class EquipmentEditor:
     # ---- UI -----------------------------------------------------------------
 
     def setup_ui(self):
+        for _ in self.setup_steps():
+            pass
+
+    def setup_steps(self):
+        """Build the UI in stages; each yield lets the window redraw and handle
+        input between sections (gui.py resumes it one stage per turn)."""
         self.frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
         self.frame.pack(fill="both", expand=True)
         bind_mousewheel(self.frame)
@@ -1209,6 +1215,7 @@ class EquipmentEditor:
             ],
         )
 
+        yield
         mid_row = ctk.CTkFrame(self.frame, fg_color="transparent")
         mid_row.pack(fill="x", pady=5)
 
@@ -1235,6 +1242,7 @@ class EquipmentEditor:
             ],
         )
 
+        yield
         spell_row = ctk.CTkFrame(self.frame, fg_color="transparent")
         spell_row.pack(fill="x", pady=5)
 
@@ -1251,6 +1259,7 @@ class EquipmentEditor:
             [(f"Spell {i}", f"spell{i}") for i in range(8, 15)],
         )
 
+        yield
         misc_row = ctk.CTkFrame(self.frame, fg_color="transparent")
         misc_row.pack(fill="x", pady=5)
 
@@ -1267,6 +1276,7 @@ class EquipmentEditor:
             [(f"Pouch {i}", f"pouch{i}") for i in range(1, 7)],
         )
 
+        yield
         quick_row = ctk.CTkFrame(self.frame, fg_color="transparent")
         quick_row.pack(fill="x", pady=5)
 
@@ -1283,6 +1293,7 @@ class EquipmentEditor:
             [(f"Quick Item {i}", f"quickitem{i}") for i in range(6, 11)],
         )
 
+        yield
         loadout_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
         loadout_frame.pack(fill="x", pady=(5, 0))
         ctk.CTkLabel(

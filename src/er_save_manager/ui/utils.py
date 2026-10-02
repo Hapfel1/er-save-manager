@@ -30,6 +30,29 @@ def trace_variable(var, mode, callback):
         return var.trace(mode, callback)
 
 
+def debounced_trace(widget, var, callback, delay_ms: int = 150) -> None:
+    """Call callback() once writes to var pause for delay_ms.
+
+    Filtering an icon grid redraws every cell; running it on each keystroke
+    stalls typing. The pending call is dropped if widget is destroyed.
+    """
+    job = None
+
+    def fire():
+        nonlocal job
+        job = None
+        if widget.winfo_exists():
+            callback()
+
+    def on_write(*_):
+        nonlocal job
+        if job is not None:
+            widget.after_cancel(job)
+        job = widget.after(delay_ms, fire)
+
+    var.trace_add("write", on_write)
+
+
 def force_render_dialog(dialog):
     """
     Force proper rendering of a CTkToplevel dialog on Linux and all platforms.

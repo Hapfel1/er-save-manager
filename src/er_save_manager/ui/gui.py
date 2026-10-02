@@ -8,6 +8,8 @@ import subprocess
 import sys
 import threading
 import tkinter as tk
+from collections import deque
+from collections.abc import Iterator
 from importlib import resources
 from pathlib import Path
 from tkinter import font as tkfont
@@ -179,7 +181,7 @@ class SaveManagerGUI:
         self._pending_file_change: bool = False
 
         # Tab widgets built after the visible tab, in tab order (see _build_tab)
-        self._pending_tabs: dict[str, tuple] = {}
+        self._pending_tabs: dict[str, deque] = {}
         self._tab_build_job: str | None = None
 
         self.setup_ui()
@@ -909,7 +911,7 @@ class SaveManagerGUI:
             active_game="elden_ring",
             root=self.root,
         )
-        self._build_tab("Settings", self.settings_tab.setup_ui)
+        self._build_tab("Settings", self.settings_tab.setup_steps)
 
     def _create_other_game_tabs(self, profile):
         """Create the reduced tab set for non-Elden Ring games."""
@@ -943,7 +945,7 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
-            self._build_tab("Character Editor", self.ds3_editor_tab.setup_ui)
+            self._build_tab("Character Editor", self.ds3_editor_tab.setup_steps)
 
             from er_save_manager.games.DS3.character_management_tab import (
                 DS3CharacterManagementTab,
@@ -970,7 +972,7 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
-            self._build_tab("Inventory", self.ds3_inventory_tab.setup_ui)
+            self._build_tab("Inventory", self.ds3_inventory_tab.setup_steps)
 
             self.notebook.add("Bosses")
             self.ds3_bosses_tab = DS3BossesTab(
@@ -1022,7 +1024,7 @@ class SaveManagerGUI:
                 active_game="dark_souls_3",
                 root=self.root,
             )
-            self._build_tab("Settings", self.settings_tab.setup_ui)
+            self._build_tab("Settings", self.settings_tab.setup_steps)
             return
 
         if profile.key == "dark_souls_2":
@@ -1061,7 +1063,7 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
-            self._build_tab("Character Editor", self.ds2_editor_tab.setup_ui)
+            self._build_tab("Character Editor", self.ds2_editor_tab.setup_steps)
 
             self.notebook.add("SteamID Patcher")
             self.steamid_tab = SteamIDPatcherTab(
@@ -1088,7 +1090,7 @@ class SaveManagerGUI:
                 active_game="dark_souls_2",
                 root=self.root,
             )
-            self._build_tab("Settings", self.settings_tab.setup_ui)
+            self._build_tab("Settings", self.settings_tab.setup_steps)
             return
 
         # DSR has no embedded SteamID - SteamID Patcher tab is not shown.
@@ -1134,7 +1136,7 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
-            self._build_tab("Character Editor", self.dsr_editor_tab.setup_ui)
+            self._build_tab("Character Editor", self.dsr_editor_tab.setup_steps)
 
             from er_save_manager.games.DSR.character_management_tab import (
                 DSRCharacterManagementTab,
@@ -1201,7 +1203,7 @@ class SaveManagerGUI:
             active_game=profile.key,
             root=self.root,
         )
-        self._build_tab("Settings", self.settings_tab.setup_ui)
+        self._build_tab("Settings", self.settings_tab.setup_steps)
 
     def _create_nightreign_tabs(self, profile):
         """Create tab set for Nightreign."""
@@ -1224,7 +1226,7 @@ class SaveManagerGUI:
             lambda: self.save_path,
             self.show_toast,
         )
-        self._build_tab("Editor", self.nr_editor_tab.setup_ui)
+        self._build_tab("Editor", self.nr_editor_tab.setup_steps)
 
         from er_save_manager.games.NR.character_management_tab import (
             NRCharacterManagementTab,
@@ -1267,7 +1269,7 @@ class SaveManagerGUI:
             active_game=profile.key,
             root=self.root,
         )
-        self._build_tab("Settings", self.settings_tab.setup_ui)
+        self._build_tab("Settings", self.settings_tab.setup_steps)
 
     def _nr_on_slot_selected(self, slot_index: int) -> None:
         """Navigate from inspector to editor for the selected slot."""
@@ -1359,7 +1361,7 @@ class SaveManagerGUI:
         )
         # Only the visible Stats editor is built now; the others follow in
         # the background like top-level tabs (see _build_tab).
-        self._build_tab("Character Editor/Equipment", self.equipment_editor.setup_ui)
+        self._build_tab("Character Editor/Equipment", self.equipment_editor.setup_steps)
 
         info_tab = editor_tabs.add("Info")
         info_frame = ctk.CTkFrame(info_tab, fg_color="transparent")
@@ -1387,7 +1389,7 @@ class SaveManagerGUI:
             on_inventory_changed=self._on_inventory_changed,
             get_settings_callback=lambda: self.settings,
         )
-        self._build_tab("Character Editor/Inventory", self.inventory_editor.setup_ui)
+        self._build_tab("Character Editor/Inventory", self.inventory_editor.setup_steps)
 
     def acknowledge_save_written(self) -> None:
         """Resnapshot the save file mtime after an internal write.
@@ -1884,22 +1886,23 @@ class SaveManagerGUI:
 
         CustomTkinter widgets draw themselves on creation, so building every
         tab of a game at once blocks the window for seconds. The tab that is
-        showing is built immediately; the others are queued and built one per
-        event loop turn, or at once when they are selected or anything reads
-        them (see _flush_pending_tabs).
+        showing is built immediately; the others are queued and built one
+        step per event loop turn, or at once when they are selected or
+        anything reads them (see _flush_pending_tabs). A step that returns a
+        generator is resumed one yield per turn, so a large tab can split its
+        construction into stages.
         """
-        if not self._pending_tabs and self.notebook.get() == name:
-            for step in steps:
-                step()
+        self._pending_tabs[name] = deque(steps)
+        if len(self._pending_tabs) == 1 and self.notebook.get() == name:
+            self._ensure_tab_built(name)
             return
-        self._pending_tabs[name] = steps
         if self._tab_build_job is None:
             self._schedule_tab_build()
 
     def _schedule_tab_build(self) -> None:
         # Tk runs due timers before the idle callbacks that repaint the window,
         # so the timer is armed from an idle callback: the window is drawn
-        # (and input handled) before each queued tab is built.
+        # (and input handled) before each queued step is run.
         self._tab_build_job = self.root.after_idle(
             lambda: setattr(
                 self,
@@ -1912,14 +1915,28 @@ class SaveManagerGUI:
         self._tab_build_job = None
         if not self._pending_tabs:
             return
-        name = next(iter(self._pending_tabs))
-        self._ensure_tab_built(name)
+        self._advance_tab(next(iter(self._pending_tabs)))
         if self._pending_tabs:
             self._schedule_tab_build()
 
+    def _advance_tab(self, name: str) -> None:
+        """Run the next step of a queued tab, or the next stage of a staged step."""
+        queue = self._pending_tabs[name]
+        if not isinstance(queue[0], Iterator):
+            result = queue.popleft()()
+            if isinstance(result, Iterator):
+                queue.appendleft(result)
+        if queue and isinstance(queue[0], Iterator):
+            try:
+                next(queue[0])
+            except StopIteration:
+                queue.popleft()
+        if not queue:
+            del self._pending_tabs[name]
+
     def _ensure_tab_built(self, name: str) -> None:
-        for step in self._pending_tabs.pop(name, ()):
-            step()
+        while name in self._pending_tabs:
+            self._advance_tab(name)
 
     def _flush_pending_tabs(self) -> None:
         """Finish all queued tabs; call before code that reads tab widgets."""

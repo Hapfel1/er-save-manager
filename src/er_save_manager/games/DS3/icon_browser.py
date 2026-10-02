@@ -25,7 +25,11 @@ from er_save_manager.games.DS3.tabs.inventory import (
     infusion_image,
 )
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import center_window, patch_combo_scroll
+from er_save_manager.ui.utils import (
+    center_window,
+    debounced_trace,
+    patch_combo_scroll,
+)
 
 if TYPE_CHECKING:
     from er_save_manager.games.DS3.tabs.inventory import DS3InventoryTab
@@ -171,10 +175,15 @@ class IconGrid:
 
     def _set_selection(self, keys: list) -> None:
         order = {k: i for i, (_, _, k) in enumerate(self.cells)}
+        previous = set(self.selected)
         self.selected = sorted(keys, key=lambda k: order.get(k, 0))
         chosen = set(self.selected)
+        # Recoloring redraws the button, so touch only cells whose state
+        # changed; repainting every cell made each click scale with the grid.
+        changed = previous ^ chosen
         for btn, _, key in self.cells:
-            btn.configure(fg_color=_CELL_SELECTED if key in chosen else _CELL_COLOR)
+            if key in changed:
+                btn.configure(fg_color=_CELL_SELECTED if key in chosen else _CELL_COLOR)
         self._on_select(self.selected)
 
     def apply_filter(self, query: str | None = None) -> None:
@@ -227,7 +236,7 @@ def search_row(window, on_change) -> tk.StringVar:
     top.pack(fill="x", padx=10, pady=(10, 4))
     ctk.CTkLabel(top, text="Search:", width=52).pack(side="left")
     var = tk.StringVar()
-    var.trace_add("write", lambda *_: on_change(var.get().lower().strip()))
+    debounced_trace(window, var, lambda: on_change(var.get().lower().strip()))
     ctk.CTkEntry(top, textvariable=var).pack(
         side="left", fill="x", expand=True, padx=(0, 8)
     )

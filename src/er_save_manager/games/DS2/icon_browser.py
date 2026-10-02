@@ -24,7 +24,11 @@ from er_save_manager.games.DS2.icon_manager import (
 from er_save_manager.games.DS2.item_database import CATEGORIES, _hex_id_to_int
 from er_save_manager.games.DS2.regulation import INFUSION_NAMES
 from er_save_manager.games.DS2.save import KEY_LIST_CATEGORIES
-from er_save_manager.ui.utils import center_window, patch_combo_scroll
+from er_save_manager.ui.utils import (
+    center_window,
+    debounced_trace,
+    patch_combo_scroll,
+)
 
 if TYPE_CHECKING:
     from er_save_manager.games.DS2.inventory_tab import DS2InventoryPanel
@@ -96,7 +100,7 @@ class IconBrowser(ctk.CTkToplevel):
         top.pack(fill="x", padx=10, pady=(10, 4))
         ctk.CTkLabel(top, text="Search:", width=52).pack(side="left")
         self._search_var = tk.StringVar()
-        self._search_var.trace_add("write", lambda *_: self._apply_filter())
+        debounced_trace(self, self._search_var, self._apply_filter)
         ctk.CTkEntry(top, textvariable=self._search_var).pack(
             side="left", fill="x", expand=True, padx=(0, 8)
         )
@@ -356,9 +360,14 @@ class IconBrowser(ctk.CTkToplevel):
             chosen = [name]
             self._anchor = name
         order = [n for _, n in self._buttons]
+        previous = set(self._selected_names)
         self._selected_names = [n for n in order if n in chosen]
+        # Recolor only cells whose state changed; each configure redraws.
+        now = set(self._selected_names)
+        changed = previous ^ now
         for btn, n in self._buttons:
-            btn.configure(fg_color=_CELL_SELECTED if n in chosen else _CELL_COLOR)
+            if n in changed:
+                btn.configure(fg_color=_CELL_SELECTED if n in now else _CELL_COLOR)
         # Single-item controls (infusion choices, caps) follow the first pick.
         self._selected_name = self._selected_names[0] if self._selected_names else None
         count = len(self._selected_names)

@@ -57,6 +57,12 @@ class SettingsTab:
             return 0
 
     def setup_ui(self):
+        for _ in self.setup_steps():
+            pass
+
+    def setup_steps(self):
+        """Build the UI in stages; each yield lets the window redraw and handle
+        input between stages (gui.py resumes it one stage per turn)."""
         theme_value = self.settings.get("theme", None)
         if theme_value is None or theme_value == "dark":
             ctk.set_appearance_mode("dark")
@@ -90,8 +96,11 @@ class SettingsTab:
         ).pack(side="right")
 
         self._create_general_settings(scroll_frame)
+        yield
         self._create_backup_settings(scroll_frame)
+        yield
         self._create_ui_settings(scroll_frame)
+        yield
         self._create_launch_settings(scroll_frame)
 
         if self.settings.get("advanced_mode_unlocked", False):

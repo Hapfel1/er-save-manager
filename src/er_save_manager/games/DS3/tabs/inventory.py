@@ -164,6 +164,12 @@ class DS3InventoryTab:
     # --- Layout ------------------------------------------------------------ #
 
     def setup_ui(self) -> None:
+        for _ in self.setup_steps():
+            pass
+
+    def setup_steps(self):
+        """Build the UI in stages; each yield lets the window redraw and handle
+        input between stages (gui.py resumes it one stage per turn)."""
         apply_treeview_style()
 
         outer = ctk.CTkFrame(self.parent, corner_radius=12)
@@ -208,6 +214,7 @@ class DS3InventoryTab:
         self._body = body
 
         self._build_spawner_panel(body)
+        yield
         self._build_inventory_panel(body)
         self._apply_edit_states()
         self._apply_spawn_states()

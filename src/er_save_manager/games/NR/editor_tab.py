@@ -165,6 +165,12 @@ class NREditorTab:
         self._mon_var = tk.StringVar()
 
     def setup_ui(self) -> None:
+        for _ in self.setup_steps():
+            pass
+
+    def setup_steps(self):
+        """Build the UI in stages; each yield lets the window redraw and handle
+        input between stages (gui.py resumes it one stage per turn)."""
         outer = ctk.CTkFrame(self.parent, corner_radius=12)
         outer.pack(fill="both", expand=True, pady=(0, 10))
 
@@ -194,7 +200,9 @@ class NREditorTab:
             self._tabs.add(name)
 
         self._build_overview(self._tabs.tab("Overview"))
+        yield
         self._build_relics(self._tabs.tab("Relics"))
+        yield
         self._build_loadouts(self._tabs.tab("Loadouts"))
 
     # ------------------------------------------------------------------
