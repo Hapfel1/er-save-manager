@@ -874,29 +874,37 @@ def _patch_slot_with_gaitem_insert(
 
         last_empty_abs = _gaitem_last_empty(slot, slot_data_base)
 
-        save._raw_data[entry_abs_off:entry_abs_off] = new_gaitem_bytes
+        # Operate on a slot-local copy: the net size change within the slot
+        # is zero, so writing it back as a same-length slice avoids shifting
+        # every later slot in the file three times per item.
+        work = save._raw_data[slot_data_base : slot_data_base + SLOT_DATA_SIZE]
+        entry_rel = entry_abs_off - slot_data_base
+
+        work[entry_rel:entry_rel] = new_gaitem_bytes
 
         if last_empty_abs is not None:
-            shifted = last_empty_abs + new_size
-            del save._raw_data[shifted : shifted + 8]
+            shifted = last_empty_abs - slot_data_base + new_size
+            del work[shifted : shifted + 8]
         else:
-            inv_shifted = slot_data_base + slot.inventory_held_offset + new_size
-            del save._raw_data[inv_shifted - 8 : inv_shifted]
+            inv_shifted = slot.inventory_held_offset + new_size
+            del work[inv_shifted - 8 : inv_shifted]
 
         if trim > 0:
-            current_end = slot_data_base + SLOT_DATA_SIZE + new_size - 8
-            del save._raw_data[current_end - trim : current_end]
+            current_end = SLOT_DATA_SIZE + new_size - 8
+            del work[current_end - trim : current_end]
 
+        save._raw_data[slot_data_base : slot_data_base + SLOT_DATA_SIZE] = work
         return new_size - 8
 
     else:
         abs_delta = -delta
-        save._raw_data[entry_abs_off:entry_abs_off] = new_gaitem_bytes
-        del save._raw_data[
-            entry_abs_off + new_size : entry_abs_off + new_size + old_gaitem_size
-        ]
-        slot_end = slot_data_base + SLOT_DATA_SIZE - abs_delta
-        save._raw_data[slot_end:slot_end] = bytes(abs_delta)
+        work = save._raw_data[slot_data_base : slot_data_base + SLOT_DATA_SIZE]
+        entry_rel = entry_abs_off - slot_data_base
+        work[entry_rel:entry_rel] = new_gaitem_bytes
+        del work[entry_rel + new_size : entry_rel + new_size + old_gaitem_size]
+        slot_end = SLOT_DATA_SIZE - abs_delta
+        work[slot_end:slot_end] = bytes(abs_delta)
+        save._raw_data[slot_data_base : slot_data_base + SLOT_DATA_SIZE] = work
         return -abs_delta
 
 
