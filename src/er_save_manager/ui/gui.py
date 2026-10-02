@@ -2780,7 +2780,7 @@ class SaveManagerGUI:
             self._watched_mtime = current_mtime
             # Writes from any tab, dialog or backup restore go through
             # Save.to_file or the backup manager, which record them.
-            if not is_own_write(self.save_path):
+            if not self._file_change_dialog_open and not is_own_write(self.save_path):
                 self._pending_file_change = True
 
         self.root.after(3000, self._poll_file_change)
