@@ -20,6 +20,10 @@ _CELL_W = 116
 _CELL_H = 110
 _CELL_PAD = 4
 _SCROLLBAR_W = 24
+# Buttons created per event-loop turn when filling a category. CTkButton
+# construction costs a few ms each, so a large category built in one go
+# freezes the window for seconds.
+_BUILD_BATCH = 8
 
 
 def _center_over(window, parent, w=None, h=None, *, top=False) -> None:
@@ -46,6 +50,10 @@ class IconBrowser(ctk.CTkToplevel):
         self._buttons: list[tuple[ctk.CTkButton, Item]] = []
         self._ctk_images: list = []
         self._resize_job: str | None = None
+        self._build_job: str | None = None
+        self._pending_items: list[Item] = []
+        self._filter_q = ""
+        self._grid_count = 0
         self._current_cat = initial_category
         self._selected_item: Item | None = None
         self._selected_gem_id: int = 0
@@ -284,14 +292,27 @@ class IconBrowser(ctk.CTkToplevel):
         self._load_items(items)
 
     def _load_items(self, items: list[Item]):
+        self._cancel_build()
         for btn, _ in self._buttons:
             btn.destroy()
         self._buttons.clear()
         self._ctk_images.clear()
+        self._pending_items = list(items)
+        self._apply_filter(
+            self._search_var.get() if hasattr(self, "_search_var") else ""
+        )
+        self._build_next_batch()
 
+    def _build_next_batch(self):
+        """Create the next batch of item buttons, then yield to the event loop."""
+        self._build_job = None
+        if not self.winfo_exists():
+            return
         from er_save_manager.data.icon_manager import get_icon
 
-        for item in items:
+        batch = self._pending_items[:_BUILD_BATCH]
+        del self._pending_items[:_BUILD_BATCH]
+        for item in batch:
             img = get_icon(item.name, getattr(item, "category_name", ""))
             ctk_img = None
             if img:
@@ -317,10 +338,23 @@ class IconBrowser(ctk.CTkToplevel):
             if hasattr(btn, "_text_label") and btn._text_label is not None:
                 btn._text_label.configure(wraplength=_CELL_W - 8, justify="center")
             self._buttons.append((btn, item))
+            if not self._filter_q or self._filter_q in item.name.lower():
+                self._grid_button(btn, self._grid_count)
+                self._grid_count += 1
 
-        self._apply_filter(
-            self._search_var.get() if hasattr(self, "_search_var") else ""
-        )
+        self._sync_scroll_region()
+        if self._pending_items:
+            self._build_job = self.after(1, self._build_next_batch)
+
+    def _cancel_build(self):
+        if self._build_job:
+            self.after_cancel(self._build_job)
+            self._build_job = None
+        self._pending_items = []
+
+    def destroy(self):
+        self._cancel_build()
+        super().destroy()
 
     def _on_category_change(self, value: str):
         self._current_cat = value
@@ -334,14 +368,23 @@ class IconBrowser(ctk.CTkToplevel):
 
     def _apply_filter(self, q: str):
         q = q.lower().strip()
+        self._filter_q = q
         visible = [
             btn for btn, item in self._buttons if not q or q in item.name.lower()
         ]
         for btn, _ in self._buttons:
             btn.grid_forget()
         for idx, btn in enumerate(visible):
-            row, col = divmod(idx, self._cols)
-            btn.grid(row=row, column=col, padx=_CELL_PAD, pady=_CELL_PAD, sticky="nsew")
+            self._grid_button(btn, idx)
+        # Buttons still being built continue after the visible ones.
+        self._grid_count = len(visible)
+        self._sync_scroll_region()
+
+    def _grid_button(self, btn: ctk.CTkButton, idx: int):
+        row, col = divmod(idx, self._cols)
+        btn.grid(row=row, column=col, padx=_CELL_PAD, pady=_CELL_PAD, sticky="nsew")
+
+    def _sync_scroll_region(self):
         # Let tkinter measure the new grid, then sync the canvas scroll region.
         self._scroll.update_idletasks()
         canvas = self._scroll._parent_canvas
