@@ -24,8 +24,13 @@ from er_save_manager.games.DS3.tabs.inventory import (
     enable,
     infusion_image,
 )
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import center_window, patch_combo_scroll
+from er_save_manager.ui.utils import (
+    center_window,
+    debounced_trace,
+    patch_combo_scroll,
+)
 
 if TYPE_CHECKING:
     from er_save_manager.games.DS3.tabs.inventory import DS3InventoryTab
@@ -42,10 +47,10 @@ BATCH = 16
 DELAY_MS = 8
 
 _CELL_COLOR = ("gray82", "gray18")
-_CELL_SELECTED = ("#c9a0dc", "#4b3a6b")
+_CELL_SELECTED = palette.PURPLE_SELECT
 _SHIFT = 0x0001
 _CONTROL = 0x0004
-SELECTED_TEXT = ("#7c4dac", "#c084fc")
+SELECTED_TEXT = palette.PURPLE_TEXT
 
 
 def item_button(parent, item: dict | None, source: str, text: str, images: list):
@@ -171,10 +176,15 @@ class IconGrid:
 
     def _set_selection(self, keys: list) -> None:
         order = {k: i for i, (_, _, k) in enumerate(self.cells)}
+        previous = set(self.selected)
         self.selected = sorted(keys, key=lambda k: order.get(k, 0))
         chosen = set(self.selected)
+        # Recoloring redraws the button, so touch only cells whose state
+        # changed; repainting every cell made each click scale with the grid.
+        changed = previous ^ chosen
         for btn, _, key in self.cells:
-            btn.configure(fg_color=_CELL_SELECTED if key in chosen else _CELL_COLOR)
+            if key in changed:
+                btn.configure(fg_color=_CELL_SELECTED if key in chosen else _CELL_COLOR)
         self._on_select(self.selected)
 
     def apply_filter(self, query: str | None = None) -> None:
@@ -221,13 +231,19 @@ def open_popup(window: ctk.CTkToplevel, parent, title: str) -> None:
     window.focus_force()
 
 
-def search_row(window, on_change) -> tk.StringVar:
-    """Search entry plus Close button across the top of a popup."""
+def search_row(window, on_change=None, var: tk.StringVar | None = None) -> tk.StringVar:
+    """Search entry plus Close button across the top of a popup.
+
+    on_change gets the lowercased query once typing pauses. var binds the
+    entry to an existing variable instead, such as the tab's spawn search.
+    """
     top = ctk.CTkFrame(window, fg_color="transparent")
     top.pack(fill="x", padx=10, pady=(10, 4))
     ctk.CTkLabel(top, text="Search:", width=52).pack(side="left")
-    var = tk.StringVar()
-    var.trace_add("write", lambda *_: on_change(var.get().lower().strip()))
+    if var is None:
+        var = tk.StringVar()
+    if on_change is not None:
+        debounced_trace(window, var, lambda: on_change(var.get().lower().strip()))
     ctk.CTkEntry(top, textvariable=var).pack(
         side="left", fill="x", expand=True, padx=(0, 8)
     )
@@ -242,6 +258,34 @@ def search_row(window, on_change) -> tk.StringVar:
     return var
 
 
+def follow_spawn_list(window: ctk.CTkToplevel, tab, reload) -> None:
+    """Call reload whenever tab recomputes its spawn list, until window closes.
+
+    The picker shares the tab's search and category, so the tab's spawn list
+    is the only filter; reloads are coalesced while the user types.
+    """
+    job = None
+
+    def fire():
+        nonlocal job
+        job = None
+        if window.winfo_exists():
+            reload()
+
+    def changed():
+        nonlocal job
+        if job is not None:
+            window.after_cancel(job)
+        job = window.after(150, fire)
+
+    def on_destroy(event):
+        if event.widget is window and changed in tab.spawn_listeners:
+            tab.spawn_listeners.remove(changed)
+
+    tab.spawn_listeners.append(changed)
+    window.bind("<Destroy>", on_destroy, add="+")
+
+
 class DS3IconBrowser(ctk.CTkToplevel):
     """Icon grid over the inventory tab's spawn list."""
 
@@ -254,9 +298,12 @@ class DS3IconBrowser(ctk.CTkToplevel):
         open_popup(self, parent, "Spawn Items")
         self._build_ui()
         self._load_items()
+        follow_spawn_list(self, tab, self._load_items)
 
     def _build_ui(self) -> None:
-        search_row(self, lambda q: self._grid.apply_filter(q))
+        # Shares the tab's search and category, so the grid and the spawn
+        # list always show the same items.
+        search_row(self, var=self._tab.spawn_search_var)
 
         cat_row = ctk.CTkFrame(self, fg_color="transparent")
         cat_row.pack(fill="x", padx=10, pady=(0, 6))
@@ -266,7 +313,7 @@ class DS3IconBrowser(ctk.CTkToplevel):
         options = [o for o in self._tab.category_options() if o != "All"]
         if self._tab.category() not in options:
             self._tab.set_category(options[0])
-        self._cat_var = tk.StringVar(value=self._tab.category())
+        self._cat_var = self._tab.spawn_category_var
         patch_combo_scroll(
             ctk.CTkComboBox(
                 cat_row,
@@ -377,7 +424,6 @@ class DS3IconBrowser(ctk.CTkToplevel):
 
     def _on_category_change(self, label: str) -> None:
         self._tab.set_category(label)
-        self._load_items()
 
     # --- Selection and spawn ----------------------------------------------- #
 

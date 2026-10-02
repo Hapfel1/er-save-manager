@@ -26,7 +26,7 @@ from er_save_manager.games.DS3.icon_manager import get_infusion_icon
 from er_save_manager.games.DS3.slot import ID_ARMOR, ID_WEAPON, LayoutError, id_kind
 from er_save_manager.games.DS3.tabs.style import apply_treeview_style
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import game_blocks_write
+from er_save_manager.ui.utils import game_blocks_write, raise_existing_window
 
 
 def _game_blocks_write(parent) -> bool:
@@ -137,6 +137,10 @@ class DS3InventoryTab:
         self.last_offsets: list[int] = []
         # Called after every save write, so open popups can reload.
         self.listeners: list = []
+        # Called after the spawn list is recomputed (visual item picker).
+        self.spawn_listeners: list = []
+        self._picker_win = None
+        self._visual_win = None
 
     # --- Source ------------------------------------------------------------ #
 
@@ -164,6 +168,12 @@ class DS3InventoryTab:
     # --- Layout ------------------------------------------------------------ #
 
     def setup_ui(self) -> None:
+        for _ in self.setup_steps():
+            pass
+
+    def setup_steps(self):
+        """Build the UI in stages; each yield lets the window redraw and handle
+        input between stages (gui.py resumes it one stage per turn)."""
         apply_treeview_style()
 
         outer = ctk.CTkFrame(self.parent, corner_radius=12)
@@ -208,6 +218,7 @@ class DS3InventoryTab:
         self._body = body
 
         self._build_spawner_panel(body)
+        yield
         self._build_inventory_panel(body)
         self._apply_edit_states()
         self._apply_spawn_states()
@@ -502,6 +513,7 @@ class DS3InventoryTab:
             for i, c in enumerate(save.characters)
         ]
         self._slot_combo.configure(values=options)
+        self.last_offsets = []
         if (
             0 <= self._current_slot < len(options)
             and save.characters[self._current_slot]
@@ -512,12 +524,14 @@ class DS3InventoryTab:
             self._current_slot = -1
             self._slot_var.set(options[0] if options else "")
             self._clear_inventory()
+            self._notify_listeners()
 
     def load_slot(self, slot_idx: int) -> None:
         options = self._slot_combo.cget("values")
         if options and slot_idx < len(options):
             self._slot_var.set(options[slot_idx])
         self._current_slot = slot_idx
+        self.last_offsets = []
         self._reload_inventory()
 
     def _load_selected(self) -> None:
@@ -531,6 +545,7 @@ class DS3InventoryTab:
             )
             return
         self._current_slot = idx
+        self.last_offsets = []
         self._reload_inventory()
 
     # --- Inventory list ---------------------------------------------------- #
@@ -569,6 +584,16 @@ class DS3InventoryTab:
         return save.characters[self._current_slot]
 
     def _reload_inventory(self) -> None:
+        """Reload the inventory rows, then tell open windows (visual
+        inventory) so they never act on rows of a previous character."""
+        self._load_inventory_rows()
+        self._notify_listeners()
+
+    def _notify_listeners(self) -> None:
+        for listener in list(self.listeners):
+            listener()
+
+    def _load_inventory_rows(self) -> None:
         char = self.current_character()
         if char is None:
             self._clear_inventory()
@@ -1067,6 +1092,8 @@ class DS3InventoryTab:
                 )
 
         self._visible_spawn = rows
+        for listener in list(self.spawn_listeners):
+            listener()
         self._insert_spawn_batch(rows, 0)
 
     _SPAWN_BATCH = 300
@@ -1145,6 +1172,16 @@ class DS3InventoryTab:
             parts.append("Cut content")
         self._spawn_info.configure(text="  ".join(parts))
 
+    @property
+    def spawn_search_var(self) -> tk.StringVar:
+        """Spawn list search, shared with the visual item picker."""
+        return self._spawn_search_var
+
+    @property
+    def spawn_category_var(self) -> tk.StringVar:
+        """Spawn list category, shared with the visual item picker."""
+        return self._spawn_cat_var
+
     def category(self) -> str:
         return self._spawn_cat_var.get()
 
@@ -1173,8 +1210,6 @@ class DS3InventoryTab:
             return False
         self._reload_inventory()
         self._show_toast(message)
-        for listener in list(self.listeners):
-            listener()
         return True
 
     def _spawn_selected_rows(self) -> None:
@@ -1309,16 +1344,18 @@ class DS3InventoryTab:
         return True
 
     def _open_visual_picker(self) -> None:
-        if self._require_character():
-            from er_save_manager.games.DS3.icon_browser import DS3IconBrowser
+        if not self._require_character() or raise_existing_window(self._picker_win):
+            return
+        from er_save_manager.games.DS3.icon_browser import DS3IconBrowser
 
-            DS3IconBrowser(self.parent.winfo_toplevel(), self)
+        self._picker_win = DS3IconBrowser(self.parent.winfo_toplevel(), self)
 
     def _open_visual_editor(self) -> None:
-        if self._require_character():
-            from er_save_manager.games.DS3.visual_inventory import DS3VisualInventory
+        if not self._require_character() or raise_existing_window(self._visual_win):
+            return
+        from er_save_manager.games.DS3.visual_inventory import DS3VisualInventory
 
-            DS3VisualInventory(self.parent.winfo_toplevel(), self)
+        self._visual_win = DS3VisualInventory(self.parent.winfo_toplevel(), self)
 
     def _slot_idx(self) -> int:
         val = self._slot_var.get()

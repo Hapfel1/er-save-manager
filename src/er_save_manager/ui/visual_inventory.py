@@ -9,11 +9,16 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.editors.inventory_editor import (
     INVENTORY_SORT_MODES,
     sort_inventory_rows,
 )
-from er_save_manager.ui.utils import center_window, patch_combo_scroll
+from er_save_manager.ui.utils import (
+    center_window,
+    debounced_trace,
+    patch_combo_scroll,
+)
 
 if TYPE_CHECKING:
     from er_save_manager.ui.editors.inventory_editor import InventoryEditor
@@ -155,7 +160,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         mode = ctk.get_appearance_mode()
         self._bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
         self._fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        self._sel_bg = "#3a1a6a" if mode == "Dark" else "#b8a0d0"
+        self._sel_bg = palette.pick(palette.PURPLE_SELECT)
         self._cell_bg = "#222230" if mode == "Dark" else "#e8e8f0"
         self._cell_out = "#444460" if mode == "Dark" else "#ccccdd"
 
@@ -199,13 +204,14 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             text="Batch Remove Category",
             width=150,
             height=28,
-            fg_color=("#6a3fa0", "#7c4dac"),
-            hover_color=("#7c4dac", "#9d5fd4"),
+            fg_color=palette.BLUE,
+            hover_color=palette.BLUE_HOVER,
+            text_color=palette.ON_BLUE,
             command=self._do_batch_remove,
         ).pack(side=ctk.RIGHT, padx=(12, 0))
 
         self._filter_var = ctk.StringVar()
-        self._filter_var.trace_add("write", lambda *_: self._apply_filter())
+        debounced_trace(self, self._filter_var, self._apply_filter)
         ctk.CTkLabel(top, text="Filter:").pack(side=ctk.LEFT)
         ctk.CTkEntry(
             top, textvariable=self._filter_var, placeholder_text="Search...", width=150
@@ -236,8 +242,9 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             text="Batch Upgrade Weapons",
             width=150,
             height=28,
-            fg_color=("#6a3fa0", "#7c4dac"),
-            hover_color=("#7c4dac", "#9d5fd4"),
+            fg_color=palette.BLUE,
+            hover_color=palette.BLUE_HOVER,
+            text_color=palette.ON_BLUE,
             command=self._do_batch_upgrade,
         ).pack(side=ctk.RIGHT, padx=(12, 0))
 

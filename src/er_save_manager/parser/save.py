@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from io import BytesIO
 from pathlib import Path
 
+from er_save_manager.own_writes import record_write
 from er_save_manager.parser.user_data_10 import UserData10
 from er_save_manager.parser.user_data_x import UserDataX
 
@@ -291,6 +292,7 @@ class Save:
         except BaseException:
             tmp_path.unlink(missing_ok=True)
             raise
+        record_write(target)
 
     def get_active_slots(self) -> list[int]:
         """

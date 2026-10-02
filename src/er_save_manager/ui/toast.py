@@ -5,6 +5,8 @@ import tkinter as tk
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
+
 _active_toasts: list[dict] = []
 
 # On Windows each geometry() call triggers a DWM redraw; use alpha fade instead.
@@ -14,13 +16,8 @@ _USE_FADE = sys.platform == "win32"
 def show_toast(root: tk.Tk, message: str, duration: int = 3000, type: str = "success"):
     """Show a stacking toast notification."""
 
-    colors = {
-        "success": {"bg": "#a6e3a1", "fg": "#11111b"},
-        "info": {"bg": "#89b4fa", "fg": "#11111b"},
-        "warning": {"bg": "#f9e2af", "fg": "#11111b"},
-        "error": {"bg": "#f38ba8", "fg": "#11111b"},
-    }
-    theme = colors.get(type, colors["success"])
+    bg = palette.TOAST_COLORS.get(type, palette.TOAST_COLORS["success"])
+    theme = {"bg": bg, "fg": palette.TOAST_TEXT}
 
     # Keep the window invisible until fully positioned to avoid white flash.
     toast = ctk.CTkToplevel(root)

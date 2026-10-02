@@ -18,6 +18,7 @@ from tkinter import ttk
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
@@ -82,10 +83,8 @@ class _PickerDialog(ctk.CTkToplevel):
             borderwidth=0,
             background="#2b2b2b" if ctk.get_appearance_mode() == "Dark" else "#f0f0f0",
             foreground="#dce4ee" if ctk.get_appearance_mode() == "Dark" else "#1a1a1a",
-            selectbackground="#6f42c1"
-            if ctk.get_appearance_mode() == "Dark"
-            else "#9b72d0",
-            selectforeground="#ffffff",
+            selectbackground=palette.pick(palette.PURPLE_SELECT),
+            selectforeground=palette.pick(("#1a1a1a", "#ffffff")),
             highlightthickness=0,
         )
         vsb = ttk.Scrollbar(frame, orient="vertical", command=self._lb.yview)
@@ -165,6 +164,12 @@ class NREditorTab:
         self._mon_var = tk.StringVar()
 
     def setup_ui(self) -> None:
+        for _ in self.setup_steps():
+            pass
+
+    def setup_steps(self):
+        """Build the UI in stages; each yield lets the window redraw and handle
+        input between stages (gui.py resumes it one stage per turn)."""
         outer = ctk.CTkFrame(self.parent, corner_radius=12)
         outer.pack(fill="both", expand=True, pady=(0, 10))
 
@@ -194,7 +199,9 @@ class NREditorTab:
             self._tabs.add(name)
 
         self._build_overview(self._tabs.tab("Overview"))
+        yield
         self._build_relics(self._tabs.tab("Relics"))
+        yield
         self._build_loadouts(self._tabs.tab("Loadouts"))
 
     # ------------------------------------------------------------------

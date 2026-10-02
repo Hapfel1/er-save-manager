@@ -8,6 +8,8 @@ import subprocess
 import sys
 import threading
 import tkinter as tk
+from collections import deque
+from collections.abc import Iterator
 from importlib import resources
 from pathlib import Path
 from tkinter import font as tkfont
@@ -17,8 +19,10 @@ import customtkinter as ctk
 
 from er_save_manager import VersionChecker, __version__
 from er_save_manager.games.game_profiles import GAME_PROFILES, PROFILES_BY_KEY
+from er_save_manager.own_writes import is_own_write
 from er_save_manager.parser import Save
 from er_save_manager.platform import PlatformUtils
+from er_save_manager.ui import palette
 from er_save_manager.ui.dialogs.character_details import CharacterDetailsDialog
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.editors import (
@@ -111,6 +115,7 @@ class SaveManagerGUI:
 
             theme_path = resources.files(ctt).joinpath("Themes", "lavender.json")
             ctk.set_default_color_theme(theme_path)
+            palette.apply_theme_overrides()
         except Exception:
             ctk.set_default_color_theme("dark-blue")
 
@@ -178,9 +183,11 @@ class SaveManagerGUI:
         self._pending_file_change: bool = False
 
         # Tab widgets built after the visible tab, in tab order (see _build_tab)
-        self._pending_tabs: dict[str, tuple] = {}
+        self._pending_tabs: dict[str, deque] = {}
+        self._auto_detect_running = False
         self._tab_build_job: str | None = None
 
+        self._bind_select_all()
         self.setup_ui()
 
         # Keep the "default game" button in sync with the Settings tab
@@ -200,6 +207,31 @@ class SaveManagerGUI:
 
         # Check for updates asynchronously (don't block UI startup)
         self.root.after(1000, self._check_for_updates)
+
+    def _bind_select_all(self) -> None:
+        """Make Ctrl+A select all text in entries and text boxes.
+
+        Tk on X11 binds Ctrl+A to "line start" (emacs style) instead. Class
+        bindings cover every CTk entry, combobox and textbox. macOS keeps its
+        own convention (Command+A selects all, Ctrl+A is line start).
+        """
+        if sys.platform == "darwin":
+            return
+
+        def select_entry(event):
+            event.widget.select_range(0, "end")
+            event.widget.icursor("end")
+            return "break"
+
+        def select_text(event):
+            event.widget.tag_add("sel", "1.0", "end-1c")
+            event.widget.mark_set("insert", "end-1c")
+            return "break"
+
+        for sequence in ("<Control-a>", "<Control-A>"):
+            for widget_class in ("Entry", "TEntry", "Spinbox", "TSpinbox", "TCombobox"):
+                self.root.bind_class(widget_class, sequence, select_entry)
+            self.root.bind_class("Text", sequence, select_text)
 
     def _get_default_game_key(self) -> str:
         """Return the saved default game key, falling back to Elden Ring."""
@@ -908,7 +940,7 @@ class SaveManagerGUI:
             active_game="elden_ring",
             root=self.root,
         )
-        self._build_tab("Settings", self.settings_tab.setup_ui)
+        self._build_tab("Settings", self.settings_tab.setup_steps)
 
     def _create_other_game_tabs(self, profile):
         """Create the reduced tab set for non-Elden Ring games."""
@@ -942,7 +974,7 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
-            self._build_tab("Character Editor", self.ds3_editor_tab.setup_ui)
+            self._build_tab("Character Editor", self.ds3_editor_tab.setup_steps)
 
             from er_save_manager.games.DS3.character_management_tab import (
                 DS3CharacterManagementTab,
@@ -969,7 +1001,7 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
-            self._build_tab("Inventory", self.ds3_inventory_tab.setup_ui)
+            self._build_tab("Inventory", self.ds3_inventory_tab.setup_steps)
 
             self.notebook.add("Bosses")
             self.ds3_bosses_tab = DS3BossesTab(
@@ -1021,7 +1053,7 @@ class SaveManagerGUI:
                 active_game="dark_souls_3",
                 root=self.root,
             )
-            self._build_tab("Settings", self.settings_tab.setup_ui)
+            self._build_tab("Settings", self.settings_tab.setup_steps)
             return
 
         if profile.key == "dark_souls_2":
@@ -1060,7 +1092,7 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
-            self._build_tab("Character Editor", self.ds2_editor_tab.setup_ui)
+            self._build_tab("Character Editor", self.ds2_editor_tab.setup_steps)
 
             self.notebook.add("SteamID Patcher")
             self.steamid_tab = SteamIDPatcherTab(
@@ -1087,7 +1119,7 @@ class SaveManagerGUI:
                 active_game="dark_souls_2",
                 root=self.root,
             )
-            self._build_tab("Settings", self.settings_tab.setup_ui)
+            self._build_tab("Settings", self.settings_tab.setup_steps)
             return
 
         # DSR has no embedded SteamID - SteamID Patcher tab is not shown.
@@ -1133,7 +1165,7 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
             )
-            self._build_tab("Character Editor", self.dsr_editor_tab.setup_ui)
+            self._build_tab("Character Editor", self.dsr_editor_tab.setup_steps)
 
             from er_save_manager.games.DSR.character_management_tab import (
                 DSRCharacterManagementTab,
@@ -1200,7 +1232,7 @@ class SaveManagerGUI:
             active_game=profile.key,
             root=self.root,
         )
-        self._build_tab("Settings", self.settings_tab.setup_ui)
+        self._build_tab("Settings", self.settings_tab.setup_steps)
 
     def _create_nightreign_tabs(self, profile):
         """Create tab set for Nightreign."""
@@ -1223,7 +1255,7 @@ class SaveManagerGUI:
             lambda: self.save_path,
             self.show_toast,
         )
-        self._build_tab("Editor", self.nr_editor_tab.setup_ui)
+        self._build_tab("Editor", self.nr_editor_tab.setup_steps)
 
         from er_save_manager.games.NR.character_management_tab import (
             NRCharacterManagementTab,
@@ -1266,7 +1298,7 @@ class SaveManagerGUI:
             active_game=profile.key,
             root=self.root,
         )
-        self._build_tab("Settings", self.settings_tab.setup_ui)
+        self._build_tab("Settings", self.settings_tab.setup_steps)
 
     def _nr_on_slot_selected(self, slot_index: int) -> None:
         """Navigate from inspector to editor for the selected slot."""
@@ -1323,7 +1355,7 @@ class SaveManagerGUI:
             ),
             fg_color=("gray90", "gray20"),
             segmented_button_fg_color=("gray80", "gray35"),
-            segmented_button_selected_color=("#c9a0dc", "#6a4b85"),
+            segmented_button_selected_color=palette.PURPLE,
             segmented_button_unselected_color=("gray70", "gray30"),
         )
         editor_tabs.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 12))
@@ -1358,7 +1390,7 @@ class SaveManagerGUI:
         )
         # Only the visible Stats editor is built now; the others follow in
         # the background like top-level tabs (see _build_tab).
-        self._build_tab("Character Editor/Equipment", self.equipment_editor.setup_ui)
+        self._build_tab("Character Editor/Equipment", self.equipment_editor.setup_steps)
 
         info_tab = editor_tabs.add("Info")
         info_frame = ctk.CTkFrame(info_tab, fg_color="transparent")
@@ -1386,7 +1418,7 @@ class SaveManagerGUI:
             on_inventory_changed=self._on_inventory_changed,
             get_settings_callback=lambda: self.settings,
         )
-        self._build_tab("Character Editor/Inventory", self.inventory_editor.setup_ui)
+        self._build_tab("Character Editor/Inventory", self.inventory_editor.setup_steps)
 
     def acknowledge_save_written(self) -> None:
         """Resnapshot the save file mtime after an internal write.
@@ -1580,9 +1612,33 @@ class SaveManagerGUI:
                 self.show_linux_save_location_warning(Path(filename), profile)
 
     def auto_detect(self):
-        """Auto-detect save file for the active game."""
+        """Auto-detect save file for the active game.
+
+        The search runs on a worker thread: on Linux it globs every Steam
+        library's compatdata, which can stall on a cold cache or a library
+        on a sleeping disk. The result is handled on the UI thread.
+        """
+        if self._auto_detect_running:
+            return
+        self._auto_detect_running = True
         profile = self._active_profile()
-        found_saves = PlatformUtils.find_all_save_files(profile)
+        self.status_var.set("Searching for saves...")
+
+        def search():
+            try:
+                found = PlatformUtils.find_all_save_files(profile)
+            except Exception:
+                found = []
+            self.root.after(0, self._finish_auto_detect, profile, found)
+
+        threading.Thread(target=search, daemon=True).start()
+
+    def _finish_auto_detect(self, profile, found_saves) -> None:
+        self._auto_detect_running = False
+        self.status_var.set("Ready")
+        # The game was switched while searching; that search is stale.
+        if profile is not self._active_profile():
+            return
         game_name = profile.name if profile else "Elden Ring"
 
         if not found_saves:
@@ -1883,22 +1939,23 @@ class SaveManagerGUI:
 
         CustomTkinter widgets draw themselves on creation, so building every
         tab of a game at once blocks the window for seconds. The tab that is
-        showing is built immediately; the others are queued and built one per
-        event loop turn, or at once when they are selected or anything reads
-        them (see _flush_pending_tabs).
+        showing is built immediately; the others are queued and built one
+        step per event loop turn, or at once when they are selected or
+        anything reads them (see _flush_pending_tabs). A step that returns a
+        generator is resumed one yield per turn, so a large tab can split its
+        construction into stages.
         """
-        if not self._pending_tabs and self.notebook.get() == name:
-            for step in steps:
-                step()
+        self._pending_tabs[name] = deque(steps)
+        if len(self._pending_tabs) == 1 and self.notebook.get() == name:
+            self._ensure_tab_built(name)
             return
-        self._pending_tabs[name] = steps
         if self._tab_build_job is None:
             self._schedule_tab_build()
 
     def _schedule_tab_build(self) -> None:
         # Tk runs due timers before the idle callbacks that repaint the window,
         # so the timer is armed from an idle callback: the window is drawn
-        # (and input handled) before each queued tab is built.
+        # (and input handled) before each queued step is run.
         self._tab_build_job = self.root.after_idle(
             lambda: setattr(
                 self,
@@ -1911,14 +1968,28 @@ class SaveManagerGUI:
         self._tab_build_job = None
         if not self._pending_tabs:
             return
-        name = next(iter(self._pending_tabs))
-        self._ensure_tab_built(name)
+        self._advance_tab(next(iter(self._pending_tabs)))
         if self._pending_tabs:
             self._schedule_tab_build()
 
+    def _advance_tab(self, name: str) -> None:
+        """Run the next step of a queued tab, or the next stage of a staged step."""
+        queue = self._pending_tabs[name]
+        if not isinstance(queue[0], Iterator):
+            result = queue.popleft()()
+            if isinstance(result, Iterator):
+                queue.appendleft(result)
+        if queue and isinstance(queue[0], Iterator):
+            try:
+                next(queue[0])
+            except StopIteration:
+                queue.popleft()
+        if not queue:
+            del self._pending_tabs[name]
+
     def _ensure_tab_built(self, name: str) -> None:
-        for step in self._pending_tabs.pop(name, ()):
-            step()
+        while name in self._pending_tabs:
+            self._advance_tab(name)
 
     def _flush_pending_tabs(self) -> None:
         """Finish all queued tabs; call before code that reads tab widgets."""
@@ -2046,11 +2117,12 @@ class SaveManagerGUI:
         self._flush_pending_tabs()
         self.selected_slot_index = slot_index
 
-    def load_save(self, silent=False):
+    def load_save(self, silent=False, toast_message="Save file loaded successfully!"):
         """Load save file in background thread to prevent UI freezing
 
         Args:
             silent: If True, suppress the success message (used for reloads after operations)
+            toast_message: Success toast shown once loading finishes
         """
         self._flush_pending_tabs()
         save_path = self.file_path_var.get()
@@ -2181,11 +2253,15 @@ class SaveManagerGUI:
 
         self.status_var.set("Loading save file...")
         thread = threading.Thread(
-            target=self._load_save_background, args=(save_path, silent), daemon=True
+            target=self._load_save_background,
+            args=(save_path, silent, toast_message),
+            daemon=True,
         )
         thread.start()
 
-    def _load_save_background(self, save_path, silent=False):
+    def _load_save_background(
+        self, save_path, silent=False, toast_message="Save file loaded successfully!"
+    ):
         """Background thread for loading save file"""
         try:
             verbose = self.settings.get("verbose_logging", False)
@@ -2197,7 +2273,14 @@ class SaveManagerGUI:
             if verbose:
                 self._verbose_log(f"Parsed successfully: {save_path}")
 
-            self.root.after(0, self._finalize_save_load, save_file, save_path, silent)
+            self.root.after(
+                0,
+                self._finalize_save_load,
+                save_file,
+                save_path,
+                silent,
+                toast_message,
+            )
         except Exception as e:
             error_msg = str(e)
             if self.settings.get("verbose_logging", False):
@@ -2457,7 +2540,13 @@ class SaveManagerGUI:
             except Exception:
                 pass
 
-    def _finalize_save_load(self, save_file, save_path, silent=False):
+    def _finalize_save_load(
+        self,
+        save_file,
+        save_path,
+        silent=False,
+        toast_message="Save file loaded successfully!",
+    ):
         """Finalize save loading on main thread"""
         self._flush_pending_tabs()
         self.save_file = save_file
@@ -2482,6 +2571,7 @@ class SaveManagerGUI:
 
         if hasattr(self, "inventory_editor") and self.inventory_editor:
             self.inventory_editor.refresh_category_visibility()
+            self._reload_listed_inventory()
 
         # Lazy-load the currently visible tab immediately (ensures live refresh)
         current_tab = self.notebook.get()
@@ -2506,7 +2596,30 @@ class SaveManagerGUI:
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         if not silent:
-            self.show_toast("Save file loaded successfully!", duration=2500)
+            self.show_toast(toast_message, duration=2500)
+
+    def _reload_listed_inventory(self) -> None:
+        """Re-read the inventory editor's rows from the newly loaded save.
+
+        Rows listed for the previous file carry its gaitem handles; acting on
+        them, here or in an open Visual Inventory, would hit other items in
+        the new file. Without a character in that slot the rows are cleared.
+        """
+        editor = self.inventory_editor
+        if not editor._all_rows:
+            return
+        try:
+            slot_idx = int(self.char_slot_var.get().split(" - ")[0]) - 1
+            slot = self.save_file.characters[slot_idx]
+            valid = (
+                not slot.is_empty() and slot_idx in self.save_file.get_active_slots()
+            )
+        except Exception:
+            valid = False
+        if valid:
+            editor.refresh_inventory()
+        else:
+            editor.clear_inventory()
 
     def _rebuild_er_notebook(self) -> None:
         """Rebuild the ER notebook in place, preserving save state.
@@ -2665,7 +2778,10 @@ class SaveManagerGUI:
 
         if self._watched_mtime is not None and current_mtime != self._watched_mtime:
             self._watched_mtime = current_mtime
-            self._pending_file_change = True
+            # Writes from any tab, dialog or backup restore go through
+            # Save.to_file or the backup manager, which record them.
+            if not self._file_change_dialog_open and not is_own_write(self.save_path):
+                self._pending_file_change = True
 
         self.root.after(3000, self._poll_file_change)
 
@@ -2717,7 +2833,7 @@ class SaveManagerGUI:
         def on_reload():
             self._file_change_dialog_open = False
             dialog.destroy()
-            self.reload_save()
+            self.load_save(toast_message="Save file reloaded")
 
         def on_dismiss():
             if disable_var.get():

@@ -11,6 +11,11 @@ if TYPE_CHECKING:
     from er_save_manager.parser import Save
 
 
+def _equip_index_top(inventory) -> int:
+    """Highest entry index the game assigns in this inventory."""
+    return len(inventory.key_items) + len(inventory.common_items) - 1
+
+
 class InventoryCountersFix(BaseFix):
     """
     Fix for corrupted common_item_count and key_item_count.
@@ -22,6 +27,10 @@ class InventoryCountersFix(BaseFix):
 
     The fix counts actual occupied slots in the arrays and writes the
     correct values back.
+
+    equip_index_counter (held and storage) is an entry index high-water mark;
+    game-written saves never exceed len(key_items) + len(common_items) - 1.
+    A larger value crashes the game on load, so it is clamped to that bound.
     """
 
     name = "Inventory Counters"
@@ -35,7 +44,12 @@ class InventoryCountersFix(BaseFix):
         actual_common = sum(1 for it in inv.common_items if it.gaitem_handle != 0)
         actual_key = sum(1 for it in inv.key_items if it.gaitem_handle != 0)
         return (
-            inv.common_item_count != actual_common or inv.key_item_count != actual_key
+            inv.common_item_count != actual_common
+            or inv.key_item_count != actual_key
+            or any(
+                i.equip_index_counter > _equip_index_top(i)
+                for i in (inv, slot.inventory_storage_box)
+            )
         )
 
     def apply(self, save: Save, slot_index: int) -> FixResult:
@@ -61,6 +75,15 @@ class InventoryCountersFix(BaseFix):
             details.append(f"key_item_count: {inv.key_item_count} -> {actual_key}")
             inv.key_item_count = actual_key
             changed = True
+
+        for label, i in (("held", inv), ("storage", slot.inventory_storage_box)):
+            top = _equip_index_top(i)
+            if i.equip_index_counter > top:
+                details.append(
+                    f"{label} equip_index_counter: {i.equip_index_counter} -> {top}"
+                )
+                i.equip_index_counter = top
+                changed = True
 
         if not changed:
             return FixResult(

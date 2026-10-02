@@ -10,6 +10,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, center_window
 
@@ -758,7 +759,7 @@ class SteamIDPatcherTab:
                 command=make_select(path),
                 fg_color="transparent",
                 text_color=("#2a2a2a", "#e5e5f5"),
-                hover_color=("#c9a0dc", "#3b2f5c"),
+                hover_color=palette.PURPLE_TINT,
                 anchor="w",
             ).pack(fill=tk.X, padx=6, pady=4)
 
@@ -969,7 +970,7 @@ class SteamIDPatcherTab:
                 command=make_select(steamid, account_name),
                 fg_color="transparent",
                 text_color=("#2a2a2a", "#e5e5f5"),
-                hover_color=("#c9a0dc", "#3b2f5c"),
+                hover_color=palette.PURPLE_TINT,
             ).pack(fill=tk.BOTH, expand=True, padx=8, pady=6)
 
         ctk.CTkButton(dialog, text="Cancel", command=dialog.destroy, width=100).pack(

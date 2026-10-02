@@ -11,8 +11,9 @@ class ThemeManager:
         "bg": "#eff1f5",
         "fg": "#4c4f69",
         "fg_alt": "#6c6f85",
-        "accent": "#985ce7",  # Mauve
-        "accent_hover": "#a06aec",
+        # Lavender theme purples, matching CTk buttons (ui/palette.py)
+        "accent": "#B19CD9",
+        "accent_hover": "#9370DB",
         "bg_alt": "#e6e9ef",
         "border": "#ccd0da",
         "button_bg": "#eff1f5",
@@ -24,8 +25,9 @@ class ThemeManager:
         "bg": "#1e1e2e",
         "fg": "#cdd6f4",
         "fg_alt": "#a6adc8",
-        "accent": "#cba6f7",  # Mauve
-        "accent_hover": "#b490e3",
+        # Lavender theme purples, matching CTk buttons (ui/palette.py)
+        "accent": "#7A5DC7",
+        "accent_hover": "#9370DB",
         "bg_alt": "#111119",  # Darker for content boxes
         "border": "#313244",
         "button_bg": "#313244",

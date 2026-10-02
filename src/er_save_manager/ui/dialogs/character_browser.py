@@ -14,6 +14,7 @@ import customtkinter as ctk
 
 from er_save_manager.character_manager import CharacterManager
 from er_save_manager.character_metrics import CharacterMetrics
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.progress_dialog import ProgressDialog
 from er_save_manager.ui.utils import (
@@ -450,7 +451,7 @@ class CharacterBrowser:
         link = ctk.CTkLabel(
             login_notice,
             text="https://github.com/login",
-            text_color=("#2563eb", "#60a5fa"),
+            text_color=palette.BLUE_TEXT,
             cursor="hand2",
             font=("Segoe UI", 11),
         )
@@ -985,8 +986,8 @@ class CharacterBrowser:
                     tag_type = tag_data
 
                 if tag_type == "DLC" or tag_text == "DLC":
-                    tag_color = ("#dbeafe", "#1e3a5f")
-                    text_color = ("#1e40af", "#93c5fd")
+                    tag_color = palette.BLUE_TINT
+                    text_color = palette.BLUE_TEXT
                 elif tag_type == "convergence" or "Convergence" in tag_text:
                     tag_color = ("#fef3c7", "#3f2f1e")
                     text_color = ("#92400e", "#fbbf24")
@@ -1234,7 +1235,7 @@ class CharacterBrowser:
         if max_hp or max_fp or max_stamina:
             resources_frame = ctk.CTkFrame(
                 self.details_frame,
-                fg_color=("#e0f2fe", "#1e3a5f"),
+                fg_color=palette.BLUE_TINT,
                 corner_radius=6,
             )
             resources_frame.pack(fill=ctk.X, pady=(0, 10))
@@ -1243,7 +1244,7 @@ class CharacterBrowser:
                 resources_frame,
                 text="Max Resources:",
                 font=("Segoe UI", 11, "bold"),
-                text_color=("#0369a1", "#7dd3fc"),
+                text_color=palette.BLUE_TEXT,
             ).pack(anchor=ctk.W, padx=10, pady=(8, 4))
 
             resources_grid = ctk.CTkFrame(resources_frame, fg_color="transparent")
@@ -1262,7 +1263,7 @@ class CharacterBrowser:
                     resources_grid,
                     text=text,
                     font=("Segoe UI", 10),
-                    text_color=("#0369a1", "#7dd3fc"),
+                    text_color=palette.BLUE_TEXT,
                 ).grid(row=0, column=idx, sticky=ctk.W, padx=(0, 15), pady=1)
 
         bosses_defeated = character.get("bosses_defeated")
@@ -1272,7 +1273,7 @@ class CharacterBrowser:
         if bosses_defeated is not None or graces_unlocked is not None or ng_level:
             prog_frame = ctk.CTkFrame(
                 self.details_frame,
-                fg_color=("#f0f9ff", "#1e3a5f"),
+                fg_color=palette.BLUE_TINT,
                 corner_radius=6,
             )
             prog_frame.pack(fill=ctk.X, pady=(5, 10))
@@ -1281,7 +1282,7 @@ class CharacterBrowser:
                 prog_frame,
                 text="Progression:",
                 font=("Segoe UI", 11, "bold"),
-                text_color=("#1e40af", "#93c5fd"),
+                text_color=palette.BLUE_TEXT,
             ).pack(anchor=ctk.W, padx=10, pady=(8, 2))
 
             prog_stats = ctk.CTkFrame(prog_frame, fg_color="transparent")
@@ -1292,7 +1293,7 @@ class CharacterBrowser:
                     prog_stats,
                     text=f"🔄 Playthrough: {ng_level}",
                     font=("Segoe UI", 10),
-                    text_color=("#1e40af", "#93c5fd"),
+                    text_color=palette.BLUE_TEXT,
                 ).pack(anchor=ctk.W, pady=1)
 
             if bosses_defeated is not None:
@@ -1300,7 +1301,7 @@ class CharacterBrowser:
                     prog_stats,
                     text=f"⚔️ Bosses Defeated: {bosses_defeated}",
                     font=("Segoe UI", 10),
-                    text_color=("#1e40af", "#93c5fd"),
+                    text_color=palette.BLUE_TEXT,
                 ).pack(anchor=ctk.W, pady=1)
 
             if graces_unlocked is not None:
@@ -1308,7 +1309,7 @@ class CharacterBrowser:
                     prog_stats,
                     text=f"🔥 Graces Unlocked: {graces_unlocked}",
                     font=("Segoe UI", 10),
-                    text_color=("#1e40af", "#93c5fd"),
+                    text_color=palette.BLUE_TEXT,
                 ).pack(anchor=ctk.W, pady=1)
 
         convergence = character.get("convergence")

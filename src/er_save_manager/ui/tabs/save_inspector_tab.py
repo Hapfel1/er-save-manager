@@ -7,6 +7,7 @@ import tkinter as tk
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 from er_save_manager.ui.version_mismatch_dialog import VersionMismatchDialog
@@ -123,7 +124,7 @@ class SaveInspectorTab:
                 self.selection_var.set(str(slot_index))
                 for val, frame, label in self.rows:
                     if val == slot_index:
-                        frame.configure(fg_color=("#c9a0dc", "#3b2f5c"))
+                        frame.configure(fg_color=palette.PURPLE_TINT)
                         label.configure(text_color=("#1f1f28", "#f0f0f0"))
                     else:
                         frame.configure(fg_color=("#f5f5f5", "#2a2a3e"))

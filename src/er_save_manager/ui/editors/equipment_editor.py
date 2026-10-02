@@ -15,6 +15,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import (
     bind_mousewheel,
@@ -426,7 +427,7 @@ class _ItemPickerDialog(ctk.CTkToplevel):
         mode = ctk.get_appearance_mode()
         lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
         lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+        lb_sel = palette.pick(palette.PURPLE_SELECT)
 
         sb = tk.Scrollbar(lb_frame)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
@@ -585,7 +586,7 @@ class _LoadoutBrowserDialog(ctk.CTkToplevel):
         mode = ctk.get_appearance_mode()
         lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
         lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+        lb_sel = palette.pick(palette.PURPLE_SELECT)
 
         sb = tk.Scrollbar(lb_frame)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
@@ -788,7 +789,7 @@ class _VisualItemPickerDialog(ctk.CTkToplevel):
         mode = ctk.get_appearance_mode()
         self._bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
         self._fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        self._sel_color = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+        self._sel_color = palette.pick(palette.PURPLE_SELECT)
 
         top = ctk.CTkFrame(self, fg_color="transparent")
         top.pack(fill=ctk.X, padx=10, pady=(10, 4))
@@ -1177,6 +1178,12 @@ class EquipmentEditor:
     # ---- UI -----------------------------------------------------------------
 
     def setup_ui(self):
+        for _ in self.setup_steps():
+            pass
+
+    def setup_steps(self):
+        """Build the UI in stages; each yield lets the window redraw and handle
+        input between sections (gui.py resumes it one stage per turn)."""
         self.frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
         self.frame.pack(fill="both", expand=True)
         bind_mousewheel(self.frame)
@@ -1209,6 +1216,7 @@ class EquipmentEditor:
             ],
         )
 
+        yield
         mid_row = ctk.CTkFrame(self.frame, fg_color="transparent")
         mid_row.pack(fill="x", pady=5)
 
@@ -1235,6 +1243,7 @@ class EquipmentEditor:
             ],
         )
 
+        yield
         spell_row = ctk.CTkFrame(self.frame, fg_color="transparent")
         spell_row.pack(fill="x", pady=5)
 
@@ -1251,6 +1260,7 @@ class EquipmentEditor:
             [(f"Spell {i}", f"spell{i}") for i in range(8, 15)],
         )
 
+        yield
         misc_row = ctk.CTkFrame(self.frame, fg_color="transparent")
         misc_row.pack(fill="x", pady=5)
 
@@ -1267,6 +1277,7 @@ class EquipmentEditor:
             [(f"Pouch {i}", f"pouch{i}") for i in range(1, 7)],
         )
 
+        yield
         quick_row = ctk.CTkFrame(self.frame, fg_color="transparent")
         quick_row.pack(fill="x", pady=5)
 
@@ -1283,6 +1294,7 @@ class EquipmentEditor:
             [(f"Quick Item {i}", f"quickitem{i}") for i in range(6, 11)],
         )
 
+        yield
         loadout_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
         loadout_frame.pack(fill="x", pady=(5, 0))
         ctk.CTkLabel(
@@ -1374,7 +1386,7 @@ class EquipmentEditor:
             name_label = ctk.CTkLabel(
                 grid,
                 text="(empty)",
-                text_color="#60a5fa",
+                text_color=palette.BLUE_TEXT,
                 width=220,
                 anchor="w",
                 cursor="hand2",
@@ -1575,7 +1587,7 @@ class EquipmentEditor:
                 return
             if len(name) > 32:
                 name = name[:29] + "..."
-            label.configure(text=name, text_color="#60a5fa")
+            label.configure(text=name, text_color=palette.BLUE_TEXT)
         except Exception:
             label.configure(text="(empty)", text_color=("gray50", "gray55"))
 

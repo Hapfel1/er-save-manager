@@ -7,6 +7,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.settings import get_settings
 from er_save_manager.ui.utils import bind_mousewheel, center_window, pick_file
@@ -57,6 +58,12 @@ class SettingsTab:
             return 0
 
     def setup_ui(self):
+        for _ in self.setup_steps():
+            pass
+
+    def setup_steps(self):
+        """Build the UI in stages; each yield lets the window redraw and handle
+        input between stages (gui.py resumes it one stage per turn)."""
         theme_value = self.settings.get("theme", None)
         if theme_value is None or theme_value == "dark":
             ctk.set_appearance_mode("dark")
@@ -90,8 +97,11 @@ class SettingsTab:
         ).pack(side="right")
 
         self._create_general_settings(scroll_frame)
+        yield
         self._create_backup_settings(scroll_frame)
+        yield
         self._create_ui_settings(scroll_frame)
+        yield
         self._create_launch_settings(scroll_frame)
 
         if self.settings.get("advanced_mode_unlocked", False):
@@ -238,18 +248,21 @@ class SettingsTab:
             self.settings.set("default_game", profile.key)
 
     def _on_setting_changed(self, key: str | None) -> None:
-        """Mirror default_game changes made elsewhere (e.g. the main window button).
+        """Mirror settings changed elsewhere (main window button, dialog checkboxes).
 
         The tab is rebuilt when the game changes, so drop the listener once
         its widgets are gone.
         """
-        if key not in ("default_game", None):
+        if key not in ("default_game", "external_file_change_notification", None):
             return
         try:
             if not self._default_game_combo.winfo_exists():
                 self.settings.remove_listener(self._on_setting_changed)
                 return
             self.default_game_var.set(self._default_game_name())
+            self.external_file_change_var.set(
+                self.settings.get("external_file_change_notification", True)
+            )
         except tk.TclError:
             self.settings.remove_listener(self._on_setting_changed)
 
@@ -650,7 +663,7 @@ class SettingsTab:
                         font=("Consolas", 10),
                         fg_color="transparent",
                         text_color=("#2a2a2a", "#e5e5f5"),
-                        hover_color=("#c9a0dc", "#3b2f5c"),
+                        hover_color=palette.PURPLE_TINT,
                         anchor="w",
                         command=make_sel(opt),
                     ).pack(fill=tk.X, padx=6, pady=3)

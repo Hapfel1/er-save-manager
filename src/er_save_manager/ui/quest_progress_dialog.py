@@ -8,6 +8,7 @@ import tkinter as tk
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, center_window, force_render_dialog
 
@@ -347,7 +348,7 @@ class QuestProgressDialog:
                 done / total if total else 0
 
                 is_active = npc_name == active
-                bg = ("#e0e7ff", "#1e1b4b") if is_active else "transparent"
+                bg = palette.PURPLE_TINT if is_active else "transparent"
 
                 btn_frame = ctk.CTkFrame(npc_list_frame, fg_color=bg, corner_radius=6)
                 btn_frame.pack(fill=tk.X, pady=2)

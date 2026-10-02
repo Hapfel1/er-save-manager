@@ -8,9 +8,11 @@ import json
 import re
 import tkinter as tk
 from pathlib import Path
+from tkinter import ttk
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.toast import show_toast
 from er_save_manager.ui.utils import (
@@ -18,9 +20,11 @@ from er_save_manager.ui.utils import (
     center_window,
     patch_combo_scroll,
     pick_file,
+    raise_existing_window,
 )
 
 _CAT_WEAPON = 0x00000000
+_DELETE_COLOR = ("#dc2626", "#b91c1c")
 
 
 def _bump_matchmaking_level(
@@ -142,6 +146,82 @@ def _ask_value(title: str, text: str, parent) -> str | None:
     entry.focus_set()
     dialog.wait_window()
     return result[0]
+
+
+def style_add_buttons(add_btn, batch_btn, loadout_mode: bool) -> None:
+    """Label and color the Add / Batch Add buttons for the current mode.
+
+    In Loadout Mode both use the loadout color (Catppuccin Sky); otherwise
+    Add uses the theme purple and Batch Add the bright blue.
+    """
+    if loadout_mode:
+        fill, hover, text = palette.SKY, palette.SKY_HOVER, palette.ON_SKY
+        add_btn.configure(
+            text="Add to Loadout", fg_color=fill, hover_color=hover, text_color=text
+        )
+        batch_btn.configure(
+            text="Batch Add to Loadout",
+            fg_color=fill,
+            hover_color=hover,
+            text_color=text,
+        )
+        return
+    theme = ctk.ThemeManager.theme["CTkButton"]
+    add_btn.configure(
+        text="Add Item",
+        fg_color=theme["fg_color"],
+        hover_color=theme["hover_color"],
+        text_color=theme["text_color"],
+    )
+    batch_btn.configure(
+        text="Batch Add Category",
+        fg_color=palette.BLUE,
+        hover_color=palette.BLUE_HOVER,
+        text_color=palette.ON_BLUE,
+    )
+
+
+# ---- loadout storage --------------------------------------------------------
+
+
+def _loadout_db_path() -> Path:
+    from er_save_manager.ui.settings import get_loadouts_path
+
+    return get_loadouts_path()
+
+
+def _loadout_draft_path() -> Path:
+    """The working loadout while no saved loadout is open, kept next to
+    loadouts.json so items added in Loadout Mode survive a restart."""
+    return _loadout_db_path().with_name("loadout_draft.json")
+
+
+def _read_json(path: Path, expected: type):
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return expected()
+    return data if isinstance(data, expected) else expected()
+
+
+def _write_json(path: Path, data) -> None:
+    """Write via a temp file and atomic replace, so a crash mid-write never
+    leaves a truncated loadouts file."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f"{path.name}.tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4)
+    tmp.replace(path)
+
+
+def read_loadouts() -> dict:
+    """Saved loadouts by name, from loadouts.json."""
+    return _read_json(_loadout_db_path(), dict)
+
+
+def write_loadouts(loadouts: dict) -> None:
+    _write_json(_loadout_db_path(), loadouts)
 
 
 INVENTORY_SORT_MODES = ["Default", "Name A-Z", "Name Z-A", "Qty \u2193", "Qty \u2191"]
@@ -737,12 +817,30 @@ class InventoryEditor:
         self._inv_sort_var: ctk.StringVar | None = None
 
         self.frame: ctk.CTkFrame | None = None
-        self.loadout: list[dict] = []
+        # Working loadout: the saved loadout named loadout_name, or the draft
+        # when it is None. Every change is written immediately (see
+        # loadout_changed), so nothing is lost by closing a window or the app.
+        self.loadout: list[dict] = _read_json(_loadout_draft_path(), list)
+        self.loadout_name: str | None = None
+        self._loadout_listeners: list = []
+        self._loadout_win = None
+        self._add_item_btn: ctk.CTkButton | None = None
+        self._batch_add_btn: ctk.CTkButton | None = None
+        self._loadouts_btn: ctk.CTkButton | None = None
         self.loadout_mode_var = ctk.BooleanVar(value=False)
+        self.loadout_mode_var.trace_add(
+            "write", lambda *_: self._update_loadout_mode_ui()
+        )
 
     # ---- UI setup -----------------------------------------------------------
 
     def setup_ui(self):
+        for _ in self.setup_steps():
+            pass
+
+    def setup_steps(self):
+        """Build the UI in stages; each yield lets the window redraw and handle
+        input between stages (gui.py resumes it one stage per turn)."""
         self.frame = ctk.CTkFrame(self.parent, fg_color="transparent")
         self.frame.pack(fill=ctk.BOTH, expand=True)
 
@@ -762,6 +860,7 @@ class InventoryEditor:
         pane.add(right, minsize=340)
 
         self._build_browser_panel(left)
+        yield
         self._build_inventory_panel(right)
 
         settings = self.get_settings() if self.get_settings else None
@@ -845,8 +944,9 @@ class InventoryEditor:
             text="Visual Item Picker...",
             height=28,
             command=self._open_icon_browser,
-            fg_color=("#6a3fa0", "#7c4dac"),
-            hover_color=("#7c4dac", "#9d5fd4"),
+            fg_color=palette.BLUE,
+            hover_color=palette.BLUE_HOVER,
+            text_color=palette.ON_BLUE,
             state="disabled",
         )
         self._browse_btn.pack(side=ctk.LEFT, fill=ctk.X, expand=True)
@@ -865,7 +965,7 @@ class InventoryEditor:
         mode = ctk.get_appearance_mode()
         lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
         lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+        lb_sel = palette.pick(palette.PURPLE_SELECT)
 
         sb = tk.Scrollbar(lb_frame)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
@@ -894,22 +994,25 @@ class InventoryEditor:
         top_btn_row = ctk.CTkFrame(btn_row, fg_color="transparent")
         top_btn_row.pack(fill=ctk.X, pady=(0, 4))
 
-        ctk.CTkButton(
+        self._add_item_btn = ctk.CTkButton(
             top_btn_row,
             text="Add Item",
             command=self.add_item,
             height=30,
             font=("Segoe UI", 11, "bold"),
-        ).pack(side=ctk.LEFT, fill=ctk.X, expand=True, padx=(0, 4))
+        )
+        self._add_item_btn.pack(side=ctk.LEFT, fill=ctk.X, expand=True, padx=(0, 4))
 
-        ctk.CTkButton(
+        self._batch_add_btn = ctk.CTkButton(
             top_btn_row,
             text="Batch Add Category",
             command=self.batch_add_category,
             height=30,
-            fg_color=("#3b82f6", "#2563eb"),
-            hover_color=("#2563eb", "#1d4ed8"),
-        ).pack(side=ctk.RIGHT, fill=ctk.X, expand=True)
+            fg_color=palette.BLUE,
+            hover_color=palette.BLUE_HOVER,
+            text_color=palette.ON_BLUE,
+        )
+        self._batch_add_btn.pack(side=ctk.RIGHT, fill=ctk.X, expand=True)
 
         bot_btn_row = ctk.CTkFrame(btn_row, fg_color="transparent")
         bot_btn_row.pack(fill=ctk.X, pady=(6, 0))
@@ -923,14 +1026,15 @@ class InventoryEditor:
         )
         self.loadout_switch.pack(side=ctk.LEFT, padx=(0, 12))
 
-        ctk.CTkButton(
+        self._loadouts_btn = ctk.CTkButton(
             bot_btn_row,
             text="Loadouts...",
             command=self.open_loadouts,
             height=28,  # Slightly shorter to separate from main actions
             width=90,
             fg_color=("gray70", "gray35"),
-        ).pack(side=ctk.LEFT)
+        )
+        self._loadouts_btn.pack(side=ctk.LEFT)
 
         ctk.CTkButton(
             bot_btn_row,
@@ -940,6 +1044,7 @@ class InventoryEditor:
             width=90,
             fg_color=("gray70", "gray35"),
         ).pack(side=ctk.RIGHT)
+        self._update_loadout_mode_ui()
 
         opts = ctk.CTkFrame(parent, fg_color="transparent")
         opts.pack(fill=ctk.X, padx=10, pady=(0, 4), side=ctk.BOTTOM)
@@ -1127,8 +1232,9 @@ class InventoryEditor:
             text="Visual Inventory...",
             width=130,
             height=28,
-            fg_color=("#6a3fa0", "#7c4dac"),
-            hover_color=("#7c4dac", "#9d5fd4"),
+            fg_color=palette.BLUE,
+            hover_color=palette.BLUE_HOVER,
+            text_color=palette.ON_BLUE,
             command=self._open_visual_inventory,
         ).pack(side=ctk.RIGHT)
 
@@ -1138,7 +1244,7 @@ class InventoryEditor:
         mode = ctk.get_appearance_mode()
         lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
         lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+        lb_sel = palette.pick(palette.PURPLE_SELECT)
 
         sb = tk.Scrollbar(lb_frame)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
@@ -1280,11 +1386,13 @@ class InventoryEditor:
             count += 1
 
         if count:
+            self.loadout_changed()
             if on_done:
                 on_done()
             show_toast(
                 self.parent.winfo_toplevel(),
-                f"Added {count} inventory items to Loadout.",
+                f"Added {count} inventory items to loadout "
+                f"'{self.loadout_display_name()}'.",
                 type="success",
             )
         else:
@@ -1388,7 +1496,7 @@ class InventoryEditor:
         self.selected_item = item
         self._selected_item_label.configure(
             text=f"Selected: {item.name}",
-            text_color=("#7c4dac", "#c084fc"),
+            text_color=palette.PURPLE_TEXT,
         )
 
         is_weapon = self.selected_item.category == 0x00000000
@@ -1774,7 +1882,7 @@ class InventoryEditor:
         mode = ctk.get_appearance_mode()
         lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
         lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+        lb_sel = palette.pick(palette.PURPLE_SELECT)
 
         search_var = ctk.StringVar()
         ctk.CTkLabel(dialog, text="Search:").pack(anchor="w", padx=10, pady=(10, 0))
@@ -1856,7 +1964,7 @@ class InventoryEditor:
                 self.inv_aow_var.set(item.name)
                 self._update_aow_icon(item.name)
                 if self._aow_label:
-                    self._aow_label.configure(text_color=("#7c4dac", "#c084fc"))
+                    self._aow_label.configure(text_color=palette.PURPLE_TEXT)
             if (
                 self._affinity_combo
                 and not is_convergence_save
@@ -1988,6 +2096,16 @@ class InventoryEditor:
                 "Error", f"Failed to refresh inventory:\n{e}", parent=self.parent
             )
 
+    def clear_inventory(self) -> None:
+        """Drop the listed rows and tell open inventory windows."""
+        self._all_rows = []
+        self._apply_inv_filter()
+        for _cb in list(self._inventory_change_listeners):
+            try:
+                _cb()
+            except Exception:
+                pass
+
     def _collect_section(
         self, header, items, gaitem_map, location, key, is_convergence: bool = False
     ):
@@ -2049,8 +2167,7 @@ class InventoryEditor:
         self.inventory_listbox.delete(0, tk.END)
         self._item_data = []
 
-        mode = ctk.get_appearance_mode()
-        hdr_fg = "#9d7fc4" if mode == "Dark" else "#6a3fa0"
+        hdr_fg = palette.pick(palette.PURPLE_TEXT)
 
         # Rows are grouped under section headers, so sorting stays inside a section
         pending: list[tuple[str, int, str, int]] = []
@@ -2315,14 +2432,74 @@ class InventoryEditor:
 
         item_info = self._get_current_item_info()
         self.loadout.append(item_info)
+        self.loadout_changed()
         show_toast(
             self.parent.winfo_toplevel(),
-            f"Added {item_info['name_label']} to Loadout.",
+            f"Added {item_info['name_label']} to loadout "
+            f"'{self.loadout_display_name()}'.",
             type="success",
         )
 
     def open_loadouts(self):
-        LoadoutManagerWindow(self.parent, self)
+        if raise_existing_window(self._loadout_win):
+            return
+        self._loadout_win = LoadoutManagerWindow(self.parent, self)
+
+    # ---- loadout state ------------------------------------------------------
+
+    def loadout_display_name(self) -> str:
+        return self.loadout_name if self.loadout_name is not None else "Unsaved draft"
+
+    def loadout_changed(self) -> None:
+        """Save the working loadout and refresh everything showing it.
+
+        A saved loadout is written back to loadouts.json, the draft to its
+        own file, so there is no separate save step to forget.
+        """
+        try:
+            if self.loadout_name is not None:
+                loadouts = read_loadouts()
+                loadouts[self.loadout_name] = self.loadout
+                write_loadouts(loadouts)
+            else:
+                _write_json(_loadout_draft_path(), self.loadout)
+        except OSError as e:
+            CTkMessageBox.showerror(
+                "Loadout", f"Could not save the loadout:\n{e}", parent=self.parent
+            )
+        self._notify_loadout()
+
+    def open_loadout(self, name: str | None) -> None:
+        """Make a saved loadout (or the draft, for None) the working one."""
+        if name is None:
+            self.loadout = _read_json(_loadout_draft_path(), list)
+        else:
+            self.loadout = list(read_loadouts().get(name, []))
+        self.loadout_name = name
+        self._notify_loadout()
+
+    def _notify_loadout(self) -> None:
+        for callback in list(self._loadout_listeners):
+            try:
+                callback()
+            except Exception:
+                pass
+        self._update_loadout_mode_ui()
+
+    def _update_loadout_mode_ui(self) -> None:
+        """Mark the add buttons while Loadout Mode is on.
+
+        Relabeled and in the loadout color, so it is clear items go to the
+        loadout, not the save; the Loadouts button shows its item count. The
+        add panel has no spare height or width for a separate status line.
+        """
+        if self._loadouts_btn is None:
+            return
+        on = self.loadout_mode_var.get()
+        style_add_buttons(self._add_item_btn, self._batch_add_btn, on)
+        self._loadouts_btn.configure(
+            text=f"Loadouts ({len(self.loadout)})" if on else "Loadouts..."
+        )
 
     def add_item(self):
         if not self.selected_item:
@@ -2436,9 +2613,11 @@ class InventoryEditor:
                 }
                 self.loadout.append(item_info)
                 count += 1
+            self.loadout_changed()
             show_toast(
                 self.parent.winfo_toplevel(),
-                f"Added {count} items from {cat} to Loadout.",
+                f"Added {count} items from {cat} to loadout "
+                f"'{self.loadout_display_name()}'.",
                 type="success",
             )
             return
@@ -3307,7 +3486,7 @@ class InventoryEditor:
         mode = ctk.get_appearance_mode()
         lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
         lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+        lb_sel = palette.pick(palette.PURPLE_SELECT)
 
         _AFF_ROW_H = 32
         cv_frame = ctk.CTkFrame(dialog, fg_color=("gray82", "gray14"), corner_radius=6)
@@ -3506,7 +3685,7 @@ class InventoryEditor:
         mode = ctk.get_appearance_mode()
         lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
         lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+        lb_sel = palette.pick(palette.PURPLE_SELECT)
 
         cur_frame = ctk.CTkFrame(dialog, fg_color=("gray78", "gray18"), corner_radius=6)
         cur_frame.pack(fill=ctk.X, padx=10, pady=(8, 2))
@@ -3517,7 +3696,7 @@ class InventoryEditor:
             cur_frame,
             text=current_aow_name,
             anchor="w",
-            text_color=("#7c4dac", "#c084fc")
+            text_color=palette.PURPLE_TEXT
             if current_aow_name != "None"
             else ("gray50", "gray60"),
         ).pack(side=ctk.LEFT, padx=4, pady=4)
@@ -3768,21 +3947,25 @@ class InventoryEditor:
 
 
 class LoadoutManagerWindow(ctk.CTkToplevel):
+    """Saved loadouts on the left, the items of the open one on the right.
+
+    Not modal, so items can still be added with the item picker or Loadout
+    Mode while it is open; it follows the editor's loadout listeners. The
+    editor saves every change immediately (InventoryEditor.loadout_changed).
+    """
+
     def __init__(self, parent, editor):
         super().__init__(parent)
         self.editor = editor
-        self.title("Loadout Manager")
-        self.geometry("750x550")
+        self.title("Loadouts")
+        self.geometry("840x600")
         self.resizable(True, True)
-        self.minsize(650, 400)
-        _center_over(self, parent, 750, 550)
+        self.minsize(720, 460)
+        _center_over(self, parent, 840, 600)
         self.transient(parent)
-        self.grab_set()
 
-        from er_save_manager.ui.settings import get_loadouts_path
-
-        self.db_path = get_loadouts_path()
-        self.current_loadout_name: str | None = None
+        # Rows of the loadout list; None is the unsaved draft.
+        self._names: list[str | None] = []
 
         main_frame = ctk.CTkFrame(self, fg_color="transparent")
         main_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -3796,12 +3979,12 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         mode = ctk.get_appearance_mode()
         lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
         lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = "#7c4dac" if mode == "Dark" else "#b8a0d0"
+        lb_sel = palette.pick(palette.PURPLE_SELECT)
 
-        # --- Left Side: Database ---
-        ctk.CTkLabel(
-            left_frame, text="Saved Loadouts (DB)", font=("Segoe UI", 12, "bold")
-        ).pack(pady=(5, 0))
+        # --- Left side: loadout list ---
+        ctk.CTkLabel(left_frame, text="Loadouts", font=("Segoe UI", 12, "bold")).pack(
+            pady=(5, 0)
+        )
 
         db_lb_frame = ctk.CTkFrame(
             left_frame, fg_color=("gray82", "gray14"), corner_radius=6
@@ -3809,6 +3992,8 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         db_lb_frame.pack(fill="both", expand=True, padx=8, pady=5)
         db_sb = tk.Scrollbar(db_lb_frame)
         db_sb.pack(side="right", fill="y")
+        # exportselection off: selecting items on the right must not clear
+        # the highlighted loadout here.
         self.db_lb = tk.Listbox(
             db_lb_frame,
             yscrollcommand=db_sb.set,
@@ -3819,55 +4004,75 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             relief="flat",
             borderwidth=0,
             activestyle="none",
-            width=26,
+            width=28,
+            exportselection=False,
         )
         self.db_lb.pack(side="left", fill="both", expand=True, padx=2, pady=2)
         db_sb.config(command=self.db_lb.yview)
         bind_mousewheel(self.db_lb)
+        self.db_lb.bind("<<ListboxSelect>>", self._on_pick_loadout)
 
         db_btn_frame = ctk.CTkFrame(left_frame, fg_color="transparent")
-        db_btn_frame.pack(fill="x", padx=8, pady=(0, 8))
-        ctk.CTkButton(
-            db_btn_frame, text="Load Selected", command=self.load_from_db
-        ).pack(fill="x", pady=2)
-        ctk.CTkButton(db_btn_frame, text="Save Current", command=self.save_to_db).pack(
+        db_btn_frame.pack(fill="x", padx=8, pady=(0, 4))
+        ctk.CTkButton(db_btn_frame, text="New Loadout", command=self._new_loadout).pack(
             fill="x", pady=2
         )
         ctk.CTkButton(
-            db_btn_frame, text="Save to Selected", command=self.save_to_selected
+            db_btn_frame, text="Save as New Loadout", command=self._save_as_new
         ).pack(fill="x", pady=2)
-        ctk.CTkButton(
+        self._delete_btn = ctk.CTkButton(
             db_btn_frame,
-            text="Delete Selected",
-            command=self.delete_from_db,
-            fg_color=("gray70", "gray35"),
-        ).pack(fill="x", pady=2)
-
-        # --- Right Side: Current Build ---
+            text="Delete Loadout",
+            command=self._delete_loadout,
+            fg_color=_DELETE_COLOR,
+            hover_color=("#b91c1c", "#991b1b"),
+        )
+        self._delete_btn.pack(fill="x", pady=2)
         ctk.CTkLabel(
-            right_frame, text="Current Loadout Items", font=("Segoe UI", 12, "bold")
-        ).pack(pady=(5, 0))
+            left_frame,
+            text="Click a loadout to open it.\nChanges are saved automatically.",
+            font=("Segoe UI", 10),
+            text_color=("gray40", "gray60"),
+            justify="left",
+        ).pack(anchor="w", padx=10, pady=(0, 8))
 
-        cur_lb_frame = ctk.CTkFrame(
-            right_frame, fg_color=("gray82", "gray14"), corner_radius=6
+        # --- Right side: items of the open loadout ---
+        self._title_lbl = ctk.CTkLabel(
+            right_frame, text="", font=("Segoe UI", 12, "bold"), anchor="w"
         )
-        cur_lb_frame.pack(fill="both", expand=True, padx=8, pady=5)
-        cur_sb = tk.Scrollbar(cur_lb_frame)
-        cur_sb.pack(side="right", fill="y")
-        self.lb = tk.Listbox(
-            cur_lb_frame,
-            yscrollcommand=cur_sb.set,
-            font=("Consolas", 10),
-            bg=lb_bg,
-            fg=lb_fg,
-            selectbackground=lb_sel,
-            relief="flat",
-            borderwidth=0,
-            activestyle="none",
+        self._title_lbl.pack(fill="x", padx=10, pady=(5, 0))
+        self._info_lbl = ctk.CTkLabel(
+            right_frame,
+            text="",
+            font=("Segoe UI", 10),
+            text_color=("gray40", "gray60"),
+            anchor="w",
         )
-        self.lb.pack(side="left", fill="both", expand=True, padx=2, pady=2)
-        cur_sb.config(command=self.lb.yview)
-        bind_mousewheel(self.lb)
+        self._info_lbl.pack(fill="x", padx=10)
+
+        tree_frame = tk.Frame(right_frame)
+        tree_frame.pack(fill="both", expand=True, padx=8, pady=5)
+        self.tree = ttk.Treeview(
+            tree_frame,
+            columns=("where", "item", "qty", "remove"),
+            show="headings",
+            selectmode="extended",
+        )
+        self.tree.heading("where", text="Where")
+        self.tree.heading("item", text="Item")
+        self.tree.heading("qty", text="Qty")
+        self.tree.heading("remove", text="")
+        self.tree.column("where", width=70, anchor="w", stretch=False)
+        self.tree.column("item", width=300, anchor="w")
+        self.tree.column("qty", width=50, anchor="e", stretch=False)
+        self.tree.column("remove", width=36, anchor="center", stretch=False)
+        tree_sb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscrollcommand=tree_sb.set)
+        tree_sb.pack(side="right", fill="y")
+        self.tree.pack(side="left", fill="both", expand=True)
+        self.tree.bind("<ButtonRelease-1>", self._on_tree_click)
+        self.tree.bind("<Delete>", lambda _e: self._remove_selected())
+        self.tree.bind("<BackSpace>", lambda _e: self._remove_selected())
 
         btn_frame = ctk.CTkFrame(right_frame, fg_color="transparent")
         btn_frame.pack(fill="x", padx=8, pady=(0, 8))
@@ -3876,162 +4081,238 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         row1.pack(fill="x", pady=2)
         ctk.CTkButton(
             row1,
-            text="Apply Loadout",
-            command=self.apply_loadout,
-            fg_color=("#16a34a", "#15803d"),
-        ).pack(side="left", fill="x", expand=True, padx=2)
-        ctk.CTkButton(
-            row1,
-            text="Remove Selected",
-            command=self.remove_selected,
+            text="Remove Selected Items",
+            command=self._remove_selected,
             fg_color=("gray70", "gray35"),
         ).pack(side="left", fill="x", expand=True, padx=2)
         ctk.CTkButton(
             row1,
-            text="Clear",
-            command=self.clear_loadout,
+            text="Remove All Items",
+            command=self._remove_all,
             fg_color=("gray70", "gray35"),
         ).pack(side="left", fill="x", expand=True, padx=2)
 
         row2 = ctk.CTkFrame(btn_frame, fg_color="transparent")
         row2.pack(fill="x", pady=2)
-        ctk.CTkButton(row2, text="Export JSON", command=self.save_json).pack(
-            side="left", fill="x", expand=True, padx=2
-        )
-        ctk.CTkButton(row2, text="Import JSON", command=self.load_json).pack(
-            side="left", fill="x", expand=True, padx=2
-        )
+        for text, command in (
+            ("Export JSON", self.save_json),
+            ("Import JSON", self.load_json),
+            ("Export Code", self.export_code),
+            ("Import Code", self.import_code),
+        ):
+            ctk.CTkButton(row2, text=text, command=command).pack(
+                side="left", fill="x", expand=True, padx=2
+            )
 
-        row2b = ctk.CTkFrame(btn_frame, fg_color="transparent")
-        row2b.pack(fill="x", pady=2)
-        ctk.CTkButton(row2b, text="Export Code", command=self.export_code).pack(
-            side="left", fill="x", expand=True, padx=2
-        )
-        ctk.CTkButton(row2b, text="Import Code", command=self.import_code).pack(
-            side="left", fill="x", expand=True, padx=2
-        )
-
+        # The two buttons that move items between the loadout and the save.
         row3 = ctk.CTkFrame(btn_frame, fg_color="transparent")
-        row3.pack(fill="x", pady=2)
+        row3.pack(fill="x", pady=(8, 2))
         ctk.CTkButton(
             row3,
-            text="Add Current Inv to Loadout",
-            command=lambda: self.editor._add_inventory_to_loadout(
-                on_done=self.refresh_list
-            ),
-            fg_color=("#4a7a4a", "#3a6a3a"),
-            hover_color=("#5a8a5a", "#4a7a4a"),
-        ).pack(fill="x", padx=2)
+            text="Add Inventory to Loadout",
+            command=self._add_inventory_to_loadout,
+            height=34,
+            fg_color=palette.BLUE,
+            hover_color=palette.BLUE_HOVER,
+            text_color=palette.ON_BLUE,
+        ).pack(side="left", fill="x", expand=True, padx=2)
+        ctk.CTkButton(
+            row3,
+            text="Add Loadout to Inventory",
+            command=self.apply_loadout,
+            height=34,
+            fg_color=("#16a34a", "#15803d"),
+            hover_color=("#15803d", "#166534"),
+        ).pack(side="left", fill="x", expand=True, padx=2)
 
-        self.refresh_list()
-        self.refresh_db_list()
+        editor._loadout_listeners.append(self.refresh)
+        self.bind("<Destroy>", self._on_destroy, add="+")
+        self.refresh()
+        self.lift()
+        self.focus_force()
 
-    def _read_db(self) -> dict:
-        if not self.db_path.exists():
-            return {}
-        try:
-            with open(self.db_path, encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
+    def _on_destroy(self, event) -> None:
+        if event.widget is self and self.refresh in self.editor._loadout_listeners:
+            self.editor._loadout_listeners.remove(self.refresh)
 
-    def _write_db(self, data: dict):
-        with open(self.db_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4)
+    def raise_window(self) -> None:
+        self.deiconify()
+        self.lift()
+        self.focus_force()
 
-    def refresh_db_list(self):
+    # ---- display ------------------------------------------------------------
+
+    def refresh(self) -> None:
+        """Redraw both lists from the editor's working loadout."""
+        if not self.winfo_exists():
+            return
+        editor = self.editor
+        current = editor.loadout_name
+        draft = (
+            editor.loadout
+            if current is None
+            else _read_json(_loadout_draft_path(), list)
+        )
+        self._names = [None, *sorted(read_loadouts())]
         self.db_lb.delete(0, tk.END)
-        for name in sorted(self._read_db().keys()):
-            self.db_lb.insert(tk.END, name)
+        for name in self._names:
+            self.db_lb.insert(
+                tk.END, name if name is not None else f"Unsaved draft ({len(draft)})"
+            )
+        row = self._names.index(current) if current in self._names else 0
+        self.db_lb.selection_clear(0, tk.END)
+        self.db_lb.selection_set(row)
+        self.db_lb.see(row)
 
-    def save_to_db(self):
-        if not self.editor.loadout:
-            CTkMessageBox.showwarning("Empty", "Current loadout is empty.", parent=self)
+        count = len(editor.loadout)
+        items = f"{count} item{'s' if count != 1 else ''}"
+        if current is None:
+            self._title_lbl.configure(text="Unsaved draft")
+            self._info_lbl.configure(
+                text=f"{items} - kept until you use Save as New Loadout"
+            )
+            self._delete_btn.configure(state="disabled", fg_color=("gray70", "gray35"))
+        else:
+            self._title_lbl.configure(text=current)
+            self._info_lbl.configure(text=f"{items} - changes are saved automatically")
+            self._delete_btn.configure(state="normal", fg_color=_DELETE_COLOR)
+
+        self.tree.delete(*self.tree.get_children())
+        for index, it in enumerate(editor.loadout):
+            self.tree.insert(
+                "",
+                "end",
+                iid=str(index),
+                values=(
+                    str(it.get("location", "held")).capitalize(),
+                    it.get("name_label", "?"),
+                    it.get("qty", 1),
+                    "x",
+                ),
+            )
+
+    def _on_pick_loadout(self, _event=None) -> None:
+        sel = self.db_lb.curselection()
+        if not sel:
             return
-        name = _ask_value("Save Loadout", "Enter loadout name:", self)
+        name = self._names[sel[0]]
+        if name != self.editor.loadout_name:
+            self.editor.open_loadout(name)
+
+    def _ask_new_name(self, title: str, prompt: str) -> str | None:
+        name = _ask_value(title, prompt, self)
+        name = name.strip() if name else ""
         if not name:
-            return
-        db = self._read_db()
-        if name in db:
+            return None
+        if name in read_loadouts():
             CTkMessageBox.showwarning(
                 "Name Exists",
-                f"A loadout named '{name}' already exists. Please choose a different name.",
+                f"A loadout named '{name}' already exists. Choose another name.",
                 parent=self,
             )
-            return
-        db[name] = self.editor.loadout
-        self._write_db(db)
-        self.current_loadout_name = name
-        self.refresh_db_list()
-        show_toast(self.winfo_toplevel(), f"Saved to DB: {name}", type="success")
+            return None
+        return name
 
-    def save_to_selected(self):
-        if not self.editor.loadout:
-            CTkMessageBox.showwarning("Empty", "Current loadout is empty.", parent=self)
-            return
-        sel = self.db_lb.curselection()
-        name = self.db_lb.get(sel[0]) if sel else self.current_loadout_name
+    # ---- loadout list actions -----------------------------------------------
+
+    def _new_loadout(self) -> None:
+        name = self._ask_new_name("New Loadout", "Name for the new, empty loadout:")
         if not name:
-            CTkMessageBox.showwarning(
-                "No Loadout Selected",
-                "Select a loadout in the list first, or use Save Current to create one.",
-                parent=self,
-            )
             return
-        db = self._read_db()
-        db[name] = self.editor.loadout
-        self._write_db(db)
-        self.current_loadout_name = name
-        self.refresh_db_list()
-        show_toast(self.winfo_toplevel(), f"Updated: {name}", type="success")
+        loadouts = read_loadouts()
+        loadouts[name] = []
+        write_loadouts(loadouts)
+        self.editor.open_loadout(name)
+        show_toast(self, f"Created loadout '{name}'.", type="success")
 
-    def load_from_db(self):
-        sel = self.db_lb.curselection()
-        if not sel:
-            CTkMessageBox.showwarning(
-                "Selection", "Select a loadout from the DB first.", parent=self
-            )
+    def _save_as_new(self) -> None:
+        editor = self.editor
+        name = self._ask_new_name(
+            "Save as New Loadout",
+            f"Name for a new loadout with these {len(editor.loadout)} items:",
+        )
+        if not name:
             return
-        name = self.db_lb.get(sel[0])
-        db = self._read_db()
-        if name in db:
-            self.editor.loadout = db[name]
-            self.current_loadout_name = name
-            self.refresh_list()
-            show_toast(self.winfo_toplevel(), f"Loaded from DB: {name}", type="success")
+        loadouts = read_loadouts()
+        loadouts[name] = list(editor.loadout)
+        write_loadouts(loadouts)
+        if editor.loadout_name is None:
+            # The draft's items now live in the new loadout.
+            _write_json(_loadout_draft_path(), [])
+        editor.open_loadout(name)
+        show_toast(self, f"Saved loadout '{name}'.", type="success")
 
-    def delete_from_db(self):
-        sel = self.db_lb.curselection()
-        if not sel:
+    def _delete_loadout(self) -> None:
+        name = self.editor.loadout_name
+        if name is None:
             return
-        name = self.db_lb.get(sel[0])
-        if CTkMessageBox.askyesno(
-            "Confirm Delete", f"Delete loadout '{name}' from the DB?", parent=self
+        if not CTkMessageBox.askyesno(
+            "Delete Loadout",
+            f"Delete loadout '{name}'? This cannot be undone.",
+            parent=self,
         ):
-            db = self._read_db()
-            if name in db:
-                del db[name]
-                self._write_db(db)
-                self.refresh_db_list()
-
-    def refresh_list(self):
-        self.lb.delete(0, tk.END)
-        for _i, it in enumerate(self.editor.loadout):
-            self.lb.insert(
-                tk.END, f"[{it['location'].upper()}] {it['name_label']} x{it['qty']}"
-            )
-
-    def remove_selected(self):
-        sel = self.lb.curselection()
-        if not sel:
             return
-        idx = sel[0]
-        del self.editor.loadout[idx]
-        self.refresh_list()
+        loadouts = read_loadouts()
+        loadouts.pop(name, None)
+        write_loadouts(loadouts)
+        self.editor.open_loadout(None)
+        show_toast(self, f"Deleted loadout '{name}'.", type="success")
 
-    def clear_loadout(self):
-        self.editor.loadout.clear()
-        self.refresh_list()
+    # ---- item actions -------------------------------------------------------
+
+    def _remove_rows(self, indices: list[int]) -> None:
+        for index in sorted(set(indices), reverse=True):
+            if 0 <= index < len(self.editor.loadout):
+                del self.editor.loadout[index]
+        self.editor.loadout_changed()
+
+    def _on_tree_click(self, event) -> None:
+        """The last column removes its row."""
+        if self.tree.identify_region(event.x, event.y) != "cell":
+            return
+        if self.tree.identify_column(event.x) != "#4":
+            return
+        row = self.tree.identify_row(event.y)
+        if row:
+            self._remove_rows([int(row)])
+
+    def _remove_selected(self) -> None:
+        rows = self.tree.selection()
+        if not rows:
+            show_toast(self, "Select items to remove first.", type="info")
+            return
+        self._remove_rows([int(r) for r in rows])
+
+    def _remove_all(self) -> None:
+        editor = self.editor
+        if not editor.loadout:
+            return
+        if not CTkMessageBox.askyesno(
+            "Remove All Items",
+            f"Remove all {len(editor.loadout)} items from "
+            f"'{editor.loadout_display_name()}'?",
+            parent=self,
+        ):
+            return
+        editor.loadout.clear()
+        editor.loadout_changed()
+
+    def _replace_items(self, data: list, source: str) -> None:
+        """Replace the open loadout's items with imported ones, after asking
+        when that would drop existing items."""
+        editor = self.editor
+        if editor.loadout and not CTkMessageBox.askyesno(
+            "Replace Items",
+            f"Replace the {len(editor.loadout)} items in "
+            f"'{editor.loadout_display_name()}' with the {len(data)} items from "
+            f"{source}?\n\nTo keep both, open another loadout or use New Loadout "
+            "first.",
+            parent=self,
+        ):
+            return
+        editor.loadout = data
+        editor.loadout_changed()
+        show_toast(self, f"Imported {len(data)} items.", type="success")
 
     def save_json(self):
         if not self.editor.loadout:
@@ -4045,32 +4326,29 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         if path:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(self.editor.loadout, f, indent=4)
-            show_toast(self.winfo_toplevel(), "Loadout saved.", type="success")
+            show_toast(self, "Loadout exported.", type="success")
 
     def load_json(self):
         path = pick_file(title="Load Loadout", filetypes=[("JSON Files", "*.json")])
-        if path:
-            try:
-                with open(path, encoding="utf-8") as f:
-                    data = json.load(f)
-                if isinstance(data, list):
-                    self.editor.loadout = data
-                    self.refresh_list()
-                    show_toast(self.winfo_toplevel(), "Loadout loaded.", type="success")
-            except Exception as e:
-                CTkMessageBox.showerror(
-                    "Error", f"Failed to load JSON:\n{e}", parent=self
-                )
+        if not path:
+            return
+        try:
+            with open(path, encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception as e:
+            CTkMessageBox.showerror("Error", f"Failed to load JSON:\n{e}", parent=self)
+            return
+        if isinstance(data, list):
+            self._replace_items(data, "the file")
 
     def export_code(self):
         if not self.editor.loadout:
-            CTkMessageBox.showwarning("Empty", "Current loadout is empty.", parent=self)
+            CTkMessageBox.showwarning("Empty", "This loadout is empty.", parent=self)
             return
 
         from er_save_manager.data.inventory_loadout_sharing import share_loadout
 
-        name = self.current_loadout_name or ""
-        code = share_loadout(self.editor.loadout, name=name)
+        code = share_loadout(self.editor.loadout, name=self.editor.loadout_name or "")
         if not code:
             CTkMessageBox.showerror(
                 "Error",
@@ -4096,10 +4374,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
                 parent=self,
             )
             return
-
-        self.editor.loadout = data
-        self.refresh_list()
-        show_toast(self.winfo_toplevel(), "Loadout imported from code.", type="success")
+        self._replace_items(data, "the share code")
 
     def _show_share_code(self, code: str):
         """Show a dialog with the generated share code and a copy button."""
@@ -4129,9 +4404,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         def copy_code():
             dialog.clipboard_clear()
             dialog.clipboard_append(code)
-            show_toast(
-                self.winfo_toplevel(), "Code copied to clipboard!", type="success"
-            )
+            show_toast(self, "Code copied to clipboard!", type="success")
 
         btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_frame.pack(pady=(0, 15))
@@ -4143,47 +4416,77 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         )
         _center_over(dialog, self)
 
+    # ---- loadout <-> save ---------------------------------------------------
+
+    def _add_inventory_to_loadout(self) -> None:
+        orig_parent = self.editor.parent
+        self.editor.parent = self
+        try:
+            self.editor._add_inventory_to_loadout()
+        finally:
+            self.editor.parent = orig_parent
+
     def apply_loadout(self):
-        if not self.editor.loadout:
+        editor = self.editor
+        if not editor.loadout:
+            CTkMessageBox.showwarning("Empty", "This loadout is empty.", parent=self)
             return
 
-        save_file = self.editor.get_save_file()
+        save_file = editor.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning("No Save", "Load a save file first.", parent=self)
             return
 
-        slot_idx = self.editor.get_char_slot()
+        slot_idx = editor.get_char_slot()
+        try:
+            slot = save_file.characters[slot_idx]
+            character = slot.get_character_name() or "this character"
+        except Exception:
+            CTkMessageBox.showwarning(
+                "No Character", "Load a character first.", parent=self
+            )
+            return
+        count = len(editor.loadout)
+        if not CTkMessageBox.askyesno(
+            "Add Loadout to Inventory",
+            f"Add the {count} item{'s' if count != 1 else ''} of loadout "
+            f"'{editor.loadout_display_name()}' to {character} "
+            f"(slot {slot_idx + 1})?\n\n"
+            "Items already in the inventory are kept; nothing is removed. "
+            "A backup of the save is made first.",
+            parent=self,
+        ):
+            return
 
         try:
-            self.editor.ensure_mutable()
-            self.editor._create_backup(save_file, slot_idx, "apply_loadout")
+            editor.ensure_mutable()
+            editor._create_backup(save_file, slot_idx, "apply_loadout")
 
-            slot = save_file.characters[slot_idx]
             success_count = 0
             errors = []
 
-            for item_info in self.editor.loadout:
+            for item_info in editor.loadout:
                 try:
-                    location = self.editor._resolve_add_location(
+                    location = editor._resolve_add_location(
                         save_file, slot_idx, item_info.get("location", "held")
                     )
                     to_add = item_info
                     if location != item_info.get("location"):
                         to_add = dict(item_info)
                         to_add["location"] = location
-                    self.editor._process_single_add(save_file, slot_idx, slot, to_add)
+                    editor._process_single_add(save_file, slot_idx, slot, to_add)
                     success_count += 1
                 except Exception as ex:
                     errors.append(f"{item_info.get('name_label', 'item')}: {ex}")
 
             save_file.recalculate_checksums()
-            save_path = self.editor.get_save_path()
+            save_path = editor.get_save_path()
             if save_path:
                 save_file.to_file(Path(save_path))
 
-            self.editor.refresh_inventory()
-            if self.editor._on_inventory_changed:
-                self.editor._on_inventory_changed()
+            editor.refresh_inventory()
+            if editor._on_inventory_changed:
+                editor._on_inventory_changed()
 
             if errors:
                 err_text = "\n".join(errors[:5])
@@ -4196,12 +4499,11 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
                 )
             else:
                 show_toast(
-                    self.editor.parent.winfo_toplevel(),
-                    f"Loadout applied successfully ({success_count} items).",
+                    self,
+                    f"Added {success_count} items to {character}.",
                     type="success",
                 )
-                self.destroy()
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to apply loadout:\n{e}", parent=self
+                "Error", f"Failed to add the loadout:\n{e}", parent=self
             )

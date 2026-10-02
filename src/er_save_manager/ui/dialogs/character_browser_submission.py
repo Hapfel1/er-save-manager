@@ -14,6 +14,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.utils import _get_subprocess_env, center_window, open_url
 
 
@@ -354,7 +355,7 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
         main_frame,
         text=zip_filename,
         font=("Segoe UI", 13, "bold"),
-        text_color=("#2563eb", "#60a5fa"),
+        text_color=palette.BLUE_TEXT,
     )
     zip_label.pack(pady=(0, 25))
 

@@ -30,6 +30,43 @@ def trace_variable(var, mode, callback):
         return var.trace(mode, callback)
 
 
+def raise_existing_window(window) -> bool:
+    """Bring an already open popup forward; False if there is none to reuse.
+
+    Popups that edit the same data are opened once each, so a second click
+    raises the existing window instead of stacking another copy.
+    """
+    if window is None or not window.winfo_exists():
+        return False
+    window.deiconify()
+    window.lift()
+    window.focus_force()
+    return True
+
+
+def debounced_trace(widget, var, callback, delay_ms: int = 150) -> None:
+    """Call callback() once writes to var pause for delay_ms.
+
+    Filtering an icon grid redraws every cell; running it on each keystroke
+    stalls typing. The pending call is dropped if widget is destroyed.
+    """
+    job = None
+
+    def fire():
+        nonlocal job
+        job = None
+        if widget.winfo_exists():
+            callback()
+
+    def on_write(*_):
+        nonlocal job
+        if job is not None:
+            widget.after_cancel(job)
+        job = widget.after(delay_ms, fire)
+
+    var.trace_add("write", on_write)
+
+
 def force_render_dialog(dialog):
     """
     Force proper rendering of a CTkToplevel dialog on Linux and all platforms.

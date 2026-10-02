@@ -13,7 +13,7 @@ import customtkinter as ctk
 from er_save_manager.games.DS2.bonfire_database import BONFIRES
 from er_save_manager.games.DS2.save import BONFIRE_MAX_LEVEL, DS2Save, SlotState
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import game_blocks_write
+from er_save_manager.ui.utils import game_blocks_write, raise_existing_window
 
 
 def _game_blocks_write(parent) -> bool:
@@ -46,6 +46,9 @@ class DS2BonfirePanel:
         self.get_slot_index = get_slot_index
         self.get_save_path = get_save_path
         self.show_toast = show_toast
+        # Called after every refresh (visual bonfire view).
+        self.listeners: list = []
+        self._visual_win = None
 
     def setup_ui(self) -> None:
         header = ctk.CTkFrame(self.parent, fg_color="transparent")
@@ -127,6 +130,11 @@ class DS2BonfirePanel:
         self.refresh()
 
     def refresh(self) -> None:
+        self._load_rows()
+        for listener in list(self.listeners):
+            listener()
+
+    def _load_rows(self) -> None:
         self._tree.delete(*self._tree.get_children())
         save: DS2Save | None = self.get_save()
         bonfires = save.bonfires(self.get_slot_index()) if save is not None else None
@@ -159,9 +167,11 @@ class DS2BonfirePanel:
         self._update_buttons()
 
     def _open_visual_view(self) -> None:
+        if raise_existing_window(self._visual_win):
+            return
         from er_save_manager.games.DS2.visual_bonfires import VisualBonfireBrowser
 
-        VisualBonfireBrowser(self.parent, self)
+        self._visual_win = VisualBonfireBrowser(self.parent, self)
 
     def _selected_ids(self) -> list[int]:
         return [self._ids[self._tree.index(row)] for row in self._tree.selection()]

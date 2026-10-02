@@ -13,6 +13,7 @@ import customtkinter as ctk
 
 from er_save_manager.games.DS3.character_ops import _sync_dir_name_level
 from er_save_manager.games.DS3.slot import LEVEL_STAT_OFFSET, LayoutError
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
@@ -41,6 +42,12 @@ class DS3EditorTab:
         self._playtime_var = tk.StringVar(value="--")
 
     def setup_ui(self) -> None:
+        for _ in self.setup_steps():
+            pass
+
+    def setup_steps(self):
+        """Build the UI in stages; each yield lets the window redraw and handle
+        input between stages (gui.py resumes it one stage per turn)."""
         outer = ctk.CTkFrame(self.parent, corner_radius=12)
         outer.pack(fill="both", expand=True, pady=(0, 10))
 
@@ -67,11 +74,12 @@ class DS3EditorTab:
             outer,
             fg_color=("gray90", "gray20"),
             segmented_button_fg_color=("gray80", "gray35"),
-            segmented_button_selected_color=("purple3", "#6a4b85"),
+            segmented_button_selected_color=palette.PURPLE,
             segmented_button_unselected_color=("gray70", "gray30"),
         )
         tabs.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         self._build_stats_tab(tabs.add("Stats"))
+        yield
         self._build_identity_tab(tabs.add("Identity"))
 
     # --- Stats tab ----------------------------------------------------------- #

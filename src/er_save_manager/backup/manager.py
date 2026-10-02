@@ -14,6 +14,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from er_save_manager.own_writes import record_write
+
 if TYPE_CHECKING:
     from er_save_manager.parser import Save
 
@@ -32,6 +34,7 @@ def _atomic_write_bytes(path: Path, data: bytes) -> None:
     except BaseException:
         tmp_path.unlink(missing_ok=True)
         raise
+    record_write(path)
 
 
 @dataclass
