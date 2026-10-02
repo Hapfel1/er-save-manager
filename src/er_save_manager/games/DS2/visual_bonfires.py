@@ -67,6 +67,9 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
         self._panel = panel
         self._cols = _DEFAULT_COLS
         self._buttons: dict[int, ctk.CTkButton] = {}  # bonfire id -> cell
+        # (level, last rested) each cell currently shows, and its image
+        self._cell_state: dict[int, tuple[int, bool]] = {}
+        self._cell_images: dict[int, ctk.CTkImage | None] = {}
         self._order: list[int] = []  # shown bonfire ids, in grid order
         self._selected: set[int] = set()
         self._ctk_images: list = []
@@ -105,9 +108,20 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
             self._refresh_job = self.after_idle(self._refresh_from_panel)
 
     def _refresh_from_panel(self) -> None:
+        """Follow a panel refresh. When the same bonfires are still shown,
+        only cells whose state changed are updated; rebuilding every button
+        stalls the window (and the toast the panel shows) for ~0.3s."""
         self._refresh_job = None
-        if self.winfo_exists():
+        if not self.winfo_exists():
+            return
+        if self._batch_job is not None or self._visible_ids() != self._order:
             self._rebuild()
+            return
+        for bonfire_id, button in self._buttons.items():
+            if self._cell_state.get(bonfire_id) != self._panel_state(bonfire_id):
+                text, text_color, image = self._cell_content(bonfire_id)
+                button.configure(text=text, text_color=text_color, image=image)
+        self._sync_selection()
 
     # ------------------------------------------------------------------
     # UI
@@ -222,6 +236,8 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
             button.destroy()
         self._buttons.clear()
         self._ctk_images.clear()
+        self._cell_state.clear()
+        self._cell_images.clear()
 
         self._order = self._visible_ids()
         self._selected &= set(self._order)
@@ -233,34 +249,23 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
     def _build_next_batch(self) -> None:
         if not self.winfo_exists():
             return
-        from er_save_manager.games.DS2.icon_manager import get_bonfire_icon
 
         for _ in range(_BATCH):
             if not self._pending:
                 break
             bonfire_id = self._pending.popleft()
-            level = self._panel._levels[bonfire_id]
-            img = get_bonfire_icon(bonfire_id)
-            ctk_img = None
-            if img is not None:
-                if not level:
-                    img = _unlit_picture(img)
-                ctk_img = ctk.CTkImage(
-                    light_image=img, dark_image=img, size=_IMAGE_SIZE
-                )
-                self._ctk_images.append(ctk_img)
-            last_rested = bonfire_id == self._panel._last_rested
+            text, text_color, ctk_img = self._cell_content(bonfire_id)
             button = ctk.CTkButton(
                 self._scroll,
                 image=ctk_img,
-                text=f"{BONFIRES[bonfire_id]}\n{_state_text(level, last_rested)}",
+                text=text,
                 compound="top",
                 width=_CELL_W,
                 height=_CELL_H,
                 font=("Segoe UI", 10),
                 fg_color=("gray82", "gray18"),
                 hover_color=("gray70", "gray28"),
-                text_color=("gray10", "gray90") if level else ("gray40", "gray55"),
+                text_color=text_color,
                 border_color=_SELECTED_BORDER,
                 border_width=0,
                 anchor="center",
@@ -283,6 +288,37 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
         else:
             self._batch_job = None
             self._layout_grid()
+
+    def _panel_state(self, bonfire_id: int) -> tuple[int, bool]:
+        return (
+            self._panel._levels[bonfire_id],
+            bonfire_id == self._panel._last_rested,
+        )
+
+    def _cell_content(self, bonfire_id: int):
+        """Text, text color and image for a cell, from the panel's state.
+        The image is only rebuilt when the bonfire's lit state changed."""
+        from er_save_manager.games.DS2.icon_manager import get_bonfire_icon
+
+        level, last_rested = self._panel_state(bonfire_id)
+        previous = self._cell_state.get(bonfire_id)
+        if previous is not None and bool(previous[0]) == bool(level):
+            ctk_img = self._cell_images[bonfire_id]
+        else:
+            img = get_bonfire_icon(bonfire_id)
+            ctk_img = None
+            if img is not None:
+                if not level:
+                    img = _unlit_picture(img)
+                ctk_img = ctk.CTkImage(
+                    light_image=img, dark_image=img, size=_IMAGE_SIZE
+                )
+                self._ctk_images.append(ctk_img)
+            self._cell_images[bonfire_id] = ctk_img
+        self._cell_state[bonfire_id] = (level, last_rested)
+        text = f"{BONFIRES[bonfire_id]}\n{_state_text(level, last_rested)}"
+        text_color = ("gray10", "gray90") if level else ("gray40", "gray55")
+        return text, text_color, ctk_img
 
     def _layout_grid(self) -> None:
         for index, bonfire_id in enumerate(self._order):

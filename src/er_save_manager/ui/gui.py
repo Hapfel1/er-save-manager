@@ -184,6 +184,7 @@ class SaveManagerGUI:
         self._pending_tabs: dict[str, deque] = {}
         self._tab_build_job: str | None = None
 
+        self._bind_select_all()
         self.setup_ui()
 
         # Keep the "default game" button in sync with the Settings tab
@@ -203,6 +204,31 @@ class SaveManagerGUI:
 
         # Check for updates asynchronously (don't block UI startup)
         self.root.after(1000, self._check_for_updates)
+
+    def _bind_select_all(self) -> None:
+        """Make Ctrl+A select all text in entries and text boxes.
+
+        Tk on X11 binds Ctrl+A to "line start" (emacs style) instead. Class
+        bindings cover every CTk entry, combobox and textbox. macOS keeps its
+        own convention (Command+A selects all, Ctrl+A is line start).
+        """
+        if sys.platform == "darwin":
+            return
+
+        def select_entry(event):
+            event.widget.select_range(0, "end")
+            event.widget.icursor("end")
+            return "break"
+
+        def select_text(event):
+            event.widget.tag_add("sel", "1.0", "end-1c")
+            event.widget.mark_set("insert", "end-1c")
+            return "break"
+
+        for sequence in ("<Control-a>", "<Control-A>"):
+            for widget_class in ("Entry", "TEntry", "Spinbox", "TSpinbox", "TCombobox"):
+                self.root.bind_class(widget_class, sequence, select_entry)
+            self.root.bind_class("Text", sequence, select_text)
 
     def _get_default_game_key(self) -> str:
         """Return the saved default game key, falling back to Elden Ring."""
