@@ -3,6 +3,16 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 2.0.2
+**Released:** October 05, 2026
+
+
+### 📦 Dependencies
+
+- General: Bump taiki-e/install-action ([5c52e54](https://github.com/Hapfel1/er-save-manager/commit/5c52e5480489b66cee684eb2baed13048feeed80))
+
+
+---
 ## 📦 Release 2.0.1
 **Released:** October 02, 2026
 
@@ -1811,6 +1821,7 @@ implementation) ([19bee2c](https://github.com/Hapfel1/er-save-manager/commit/19b
 
 
 ---
+[2.0.2]: https://github.com/Hapfel1/er-save-manager/compare/v2.0.1..v2.0.2
 [2.0.1]: https://github.com/Hapfel1/er-save-manager/compare/v2.0.0..v2.0.1
 [2.0.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.12.2..v2.0.0
 [1.12.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.12.1..v1.12.2
