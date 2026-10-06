@@ -8,6 +8,7 @@ import customtkinter as ctk
 
 from er_save_manager.games.DS2.save import CHARACTER_SELECT_ENTRY, DS2Save, SlotState
 from er_save_manager.ui import palette
+from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
 
@@ -19,8 +20,9 @@ class DS2InspectorTab:
         on_slot_selected: callable(slot_index) invoked by the Edit Character button.
     """
 
-    def __init__(self, parent, get_save, on_slot_selected) -> None:
+    def __init__(self, parent, get_save, on_slot_selected, check_save=None) -> None:
         self.parent = parent
+        self._check_save = check_save
         self.get_save = get_save
         self.on_slot_selected = on_slot_selected
 
@@ -40,6 +42,10 @@ class DS2InspectorTab:
         ctk.CTkButton(
             header, text="Edit Character", command=self._edit_selected, width=160
         ).pack(side="right")
+        if self._check_save is not None:
+            ctk.CTkButton(
+                header, text="View All Issues", command=self._view_issues, width=180
+            ).pack(side="right", padx=(0, 8))
 
         ctk.CTkLabel(
             char_frame,
@@ -137,6 +143,14 @@ class DS2InspectorTab:
         self.selected_slot = slot_index
         if self.on_slot_selected:
             self.on_slot_selected(slot_index)
+
+    def _view_issues(self) -> None:
+        if self.selected_slot is None:
+            CTkMessageBox.showwarning(
+                "No Selection", "Please select a character first!", parent=self.parent
+            )
+            return
+        self._check_save(self.selected_slot)
 
     def _edit_selected(self) -> None:
         if self.selected_slot is None:

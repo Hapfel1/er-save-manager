@@ -966,6 +966,7 @@ class SaveManagerGUI:
                 self.notebook.tab("Save Inspector"),
                 get_save=lambda: self.ds3_save,
                 on_slot_selected=self._on_ds3_slot_edit,
+                check_save=self._check_game_save,
             )
             self._build_tab("Save Inspector", self.ds3_inspector_tab.setup_ui)
 
@@ -1070,6 +1071,7 @@ class SaveManagerGUI:
                 self.notebook.tab("Save Inspector"),
                 get_save=lambda: self.ds2_save,
                 on_slot_selected=self._on_ds2_slot_selected,
+                check_save=self._check_game_save,
             )
             self._build_tab("Save Inspector", self.ds2_inspector_tab.setup_ui)
 
@@ -1157,6 +1159,7 @@ class SaveManagerGUI:
                 self.notebook.tab("Save Inspector"),
                 get_dsr_save=lambda: self.dsr_save,
                 on_slot_selected=self._on_dsr_slot_edit,
+                check_save=self._check_game_save,
             )
             self._build_tab("Save Inspector", self.dsr_inspector_tab.setup_ui)
 
@@ -1247,6 +1250,7 @@ class SaveManagerGUI:
             self.notebook.tab("Inspector"),
             lambda: self._nr_save,
             on_slot_selected=self._nr_on_slot_selected,
+            check_save=self._check_game_save,
         )
         self._build_tab("Inspector", self.nr_inspector_tab.setup_ui)
 
@@ -2245,6 +2249,35 @@ class SaveManagerGUI:
             self.settings.set("show_eac_warning", False)
         self._vanilla_warned_paths.add(key)
         return True
+
+    def _check_game_save(self, slot_idx: int) -> None:
+        """Show the issue view for one character of the active non-ER game."""
+        from er_save_manager.ui.dialogs.save_check_dialog import show_issues
+
+        game = self.active_game
+        if game == "dark_souls_3":
+            loader, char = self._load_ds3_save, self.ds3_save.characters[slot_idx]
+            name = char.name if char else ""
+        elif game == "dark_souls_remastered":
+            loader, char = self._load_dsr_save, self.dsr_save.characters[slot_idx]
+            name = char.name if char else ""
+        elif game == "dark_souls_2":
+            loader = self._load_ds2_save
+            name = self.ds2_save.slot_display_name(slot_idx)
+        elif game == "nightreign":
+            loader = self._load_nr_save
+            name = self._nr_save.slots[slot_idx].player_name
+        else:
+            return
+        path = self.save_path
+        show_issues(
+            self.root,
+            game,
+            path,
+            slot_idx,
+            name or f"Character {slot_idx + 1}",
+            lambda: loader(str(path)),
+        )
 
     def _load_dsr_save(self, save_path: str) -> None:
         """Parse a DSR save file and refresh all DSR tabs."""

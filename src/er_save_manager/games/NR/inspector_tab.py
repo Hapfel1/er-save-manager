@@ -25,8 +25,10 @@ class NRInspectorTab:
         parent,
         get_nr_save: Callable,
         on_slot_selected: Callable | None = None,
+        check_save: Callable | None = None,
     ) -> None:
         self.parent = parent
+        self._check_save = check_save
         self._get_nr_save = get_nr_save
         self._on_slot_selected = on_slot_selected
         self.selected_slot: int | None = None
@@ -44,6 +46,10 @@ class NRInspectorTab:
         ctk.CTkButton(
             header, text="Edit Slot", command=self._edit_selected, width=130
         ).pack(side="right", padx=(6, 0))
+        if self._check_save is not None:
+            ctk.CTkButton(
+                header, text="View All Issues", command=self._view_issues, width=180
+            ).pack(side="right", padx=(0, 8))
 
         ctk.CTkLabel(
             outer,
@@ -162,6 +168,14 @@ class NRInspectorTab:
         for i, row, _ in self._rows:
             color = ("gray78", "gray35") if i == idx else ("gray88", "gray20")
             row.configure(fg_color=color)
+
+    def _view_issues(self) -> None:
+        if self.selected_slot is None:
+            CTkMessageBox.showwarning(
+                "No Selection", "Please select a character first!", parent=self.parent
+            )
+            return
+        self._check_save(self.selected_slot)
 
     def _edit_selected(self) -> None:
         if self.selected_slot is None:

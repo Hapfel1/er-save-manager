@@ -30,8 +30,11 @@ _CLASS_NAMES = [
 
 
 class DSRInspectorTab:
-    def __init__(self, parent, get_dsr_save, on_slot_selected=None) -> None:
+    def __init__(
+        self, parent, get_dsr_save, on_slot_selected=None, check_save=None
+    ) -> None:
         self.parent = parent
+        self._check_save = check_save
         self._get_dsr_save = get_dsr_save
         self._on_slot_selected = on_slot_selected
         self.selected_slot: int | None = None
@@ -49,6 +52,10 @@ class DSRInspectorTab:
         ctk.CTkButton(
             header, text="Edit Character", command=self._edit_selected, width=160
         ).pack(side="right")
+        if self._check_save is not None:
+            ctk.CTkButton(
+                header, text="View All Issues", command=self._view_issues, width=180
+            ).pack(side="right", padx=(0, 8))
 
         ctk.CTkLabel(
             ctk.CTkFrame(char_frame, fg_color="transparent"),
@@ -119,6 +126,14 @@ class DSRInspectorTab:
 
         if self._rows:
             select(self._rows[0][0])
+
+    def _view_issues(self) -> None:
+        if self.selected_slot is None:
+            CTkMessageBox.showwarning(
+                "No Selection", "Please select a character first!", parent=self.parent
+            )
+            return
+        self._check_save(self.selected_slot)
 
     def _edit_selected(self) -> None:
         if self.selected_slot is None:
