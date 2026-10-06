@@ -946,6 +946,42 @@ def _make_gaitem(full_item_id: int, handle: int, upgrade: int = 0):
 # ---- core gaitem operations -------------------------------------------------
 
 
+# Every tracked offset of a section that lies after the gaitem map. A gaitem
+# resize moves all of them by the same amount; any offset missing here goes
+# stale and later writes through it land misaligned.
+_POST_GAITEM_OFFSETS = (
+    "player_game_data_offset",
+    "equipped_items_equip_index_offset",
+    "active_weapon_slots_and_arm_style_offset",
+    "equipped_items_item_id_offset",
+    "equipped_items_gaitem_handle_offset",
+    "inventory_held_offset",
+    "equipped_spells_offset",
+    "equipped_items_offset",
+    "equipped_armaments_and_items_offset",
+    "equipped_physics_offset",
+    "inventory_storage_offset",
+    "gestures_offset",
+    "horse_offset",
+    "blood_stain_offset",
+    "event_flags_offset",
+    "coordinates_offset",
+    "net_man_offset",
+    "weather_offset",
+    "time_offset",
+    "steamid_offset",
+    "dlc_offset",
+)
+
+
+def _shift_slot_offsets(slot, net_shift: int) -> None:
+    """Move every post-gaitem section offset by net_shift bytes."""
+    if net_shift == 0:
+        return
+    for name in _POST_GAITEM_OFFSETS:
+        setattr(slot, name, getattr(slot, name) + net_shift)
+
+
 def insert_gaitem(
     save: Save,
     slot_idx: int,
@@ -1015,20 +1051,7 @@ def insert_gaitem(
         if off > entry_rel:
             slot.gaitem_offsets[i] += size_delta
 
-    if net_shift != 0:
-        slot.player_game_data_offset += net_shift
-        slot.inventory_held_offset += net_shift
-        slot.inventory_storage_offset += net_shift
-        slot.gestures_offset += net_shift
-        slot.horse_offset += net_shift
-        slot.blood_stain_offset += net_shift
-        slot.event_flags_offset += net_shift
-        slot.coordinates_offset += net_shift
-        slot.net_man_offset += net_shift
-        slot.weather_offset += net_shift
-        slot.time_offset += net_shift
-        slot.steamid_offset += net_shift
-        slot.dlc_offset += net_shift
+    _shift_slot_offsets(slot, net_shift)
 
     return handle, net_shift
 
@@ -1065,19 +1088,7 @@ def _remove_gaitem(save: Save, slot_idx: int, slot, gaitem_idx: int) -> int:
     if gaitem_size_delta != 0:
         for i in range(gaitem_idx + 1, len(slot.gaitem_offsets)):
             slot.gaitem_offsets[i] += gaitem_size_delta
-        slot.player_game_data_offset += net_shift
-        slot.inventory_held_offset += net_shift
-        slot.inventory_storage_offset += net_shift
-        slot.gestures_offset += net_shift
-        slot.horse_offset += net_shift
-        slot.blood_stain_offset += net_shift
-        slot.event_flags_offset += net_shift
-        slot.coordinates_offset += net_shift
-        slot.net_man_offset += net_shift
-        slot.weather_offset += net_shift
-        slot.time_offset += net_shift
-        slot.steamid_offset += net_shift
-        slot.dlc_offset += net_shift
+        _shift_slot_offsets(slot, net_shift)
 
     return net_shift
 
