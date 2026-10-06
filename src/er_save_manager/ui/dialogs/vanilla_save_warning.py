@@ -73,9 +73,14 @@ _GAME_TEXT: dict[str, tuple[str, list[tuple[str, list[_Bullet]]]]] = {
             (
                 "Reported",
                 [
-                    "Relics with effect combinations the game cannot roll "
-                    "(wrong effect for the slot color, duplicate or mixed "
-                    "character-specific effects)",
+                    (
+                        "Relics with effect combinations the game cannot roll "
+                        "(wrong effect for the slot color, duplicate or mixed "
+                        "character-specific effects)",
+                        "relic edits reject wrong-tier, duplicate and "
+                        "mixed-hero effects, and chalices only take relics "
+                        "of the slot's color",
+                    ),
                 ],
             ),
             (
@@ -102,7 +107,11 @@ _GAME_TEXT: dict[str, tuple[str, list[tuple[str, list[_Bullet]]]]] = {
             (
                 "Known to ban",
                 [
-                    "Attributes that do not fit your level or starting class",
+                    (
+                        "Attributes that do not fit your starting class",
+                        "attributes are limited to the class minimum and 99",
+                    ),
+                    "A level that does not match your attributes",
                     "Attuning DLC spells without owning that DLC",
                     "Risky: world flags such as restoring fog walls",
                 ],
@@ -146,7 +155,11 @@ _GAME_TEXT: dict[str, tuple[str, list[tuple[str, list[_Bullet]]]]] = {
             (
                 "Reported to ban",
                 [
-                    "Attributes that do not fit your level or starting class",
+                    (
+                        "Attributes that do not fit your level or starting class",
+                        "attributes are limited to the class minimum and 99, "
+                        "and the level is recalculated from them",
+                    ),
                     "Cut content and other items that cannot be obtained "
                     "in normal play",
                     (

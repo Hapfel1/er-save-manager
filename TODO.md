@@ -1,8 +1,10 @@
+overall feature check/improvement check for all games
+
 sekiro save
 
 rework ban meesage warnings on vanilla done
 
-full private safe file docs
+full private safe file docs done
 
 check paramdefs ds2 done
 
