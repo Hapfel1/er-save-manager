@@ -22,7 +22,11 @@ from er_save_manager.games.DS3.slot import (
 )
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
+from er_save_manager.ui.utils import (
+    bind_mousewheel,
+    game_blocks_write,
+    patch_combo_scroll,
+)
 
 
 def _game_blocks_write(parent) -> bool:
@@ -165,13 +169,15 @@ class DS3EditorTab:
         ctk.CTkLabel(rg, text="Class:").grid(
             row=row, column=0, sticky="w", padx=5, pady=5
         )
-        ctk.CTkComboBox(
+        class_combo = ctk.CTkComboBox(
             rg,
             variable=self._class_var,
             values=[name for name, _ in STARTING_CLASSES],
             state="readonly",
             width=120,
-        ).grid(row=row, column=1, padx=5, pady=5)
+        )
+        class_combo.grid(row=row, column=1, padx=5, pady=5)
+        patch_combo_scroll(class_combo)
         self._class_note = ctk.CTkLabel(
             frame,
             text="",

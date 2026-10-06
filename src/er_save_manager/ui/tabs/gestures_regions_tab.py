@@ -18,7 +18,11 @@ from er_save_manager.data.gestures import (
 )
 from er_save_manager.data.regions import REGIONS
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, center_window
+from er_save_manager.ui.utils import (
+    bind_mousewheel,
+    center_window,
+    patch_combo_scroll,
+)
 
 GESTURE_SLOT_EMPTY = 0xFFFFFFFE
 # The 6-slot gesture wheel stores each gesture as its id minus one.
@@ -221,6 +225,7 @@ class GesturesRegionsTab:
                 wheel_grid, variable=var, values=[], state="readonly", width=190
             )
             combo.grid(row=i // 3, column=(i % 3) * 2 + 1, padx=(0, 14), pady=4)
+            patch_combo_scroll(combo)
             self._wheel_vars.append(var)
             self._wheel_combos.append(combo)
         ctk.CTkButton(
