@@ -14,7 +14,7 @@ structures that follow it. Nothing is addressed by absolute position.
   0x10  Player data: everything from the gaitem table to the event flags
   0x18  Player game data: gaitem table through the gesture list
   0x28, 0x30  Two small sections chained after 0x18, inside 0x10; the
-              NG+ counter (u16) is the first field after the 0x30 section
+              0x30 section is [u32 0][u32 NG+ counter]
   0x38  Event flags ([u32 prefix][flag blocks]), right after 0x10
   0x40, 0x48, 0x50, 0x58  Remaining sections, back to back
 The pair at 0x20 is (0x5C, u32 value) and is not a section. The directory
@@ -189,9 +189,12 @@ GESTURE_COUNT = 41
 _GESTURE_ENTRY = 4
 _DIR_BEFORE_NG = 0x30
 _NG_MAX = 7
-# Global flags 50-58 mark the current playthrough (NG, NG+, ... NG+8).
+# common.emevd event 700 sets flag 50 + cycle for NG..NG+5 and flag 56 for
+# NG+6 and above. Flags 57 and 58 are unused by any script; older versions
+# of this tool set them, so they are cleared along with the rest.
 _LAP_FLAG_BASE = 50
-_LAP_FLAG_MAX = 8
+_LAP_FLAG_MAX = 6
+_LAP_FLAG_CLEAR = 8
 
 # --- Event flags ------------------------------------------------------------- #
 
@@ -382,8 +385,8 @@ class DS3Slot:
             if order != k or value >> 1 != k + 1:
                 raise LayoutError("character data is not where expected")
         ng_off, ng_size = self._dir(_DIR_BEFORE_NG)
-        ng_plus = ng_off + ng_size
-        if struct.unpack_from("<H", data, ng_plus)[0] > _NG_MAX:
+        ng_plus = ng_off + ng_size - 4
+        if _read_u32(data, ng_plus) > _NG_MAX:
             raise LayoutError("NG+ counter is out of range")
         return _Layout(
             gaitem_start, gaitem_end, inv, storage, gestures, ng_plus, flags, used_end
@@ -545,15 +548,15 @@ class DS3Slot:
 
     @property
     def ng_plus(self) -> int:
-        return struct.unpack_from("<H", self._data, self._get_layout().ng_plus)[0]
+        return _read_u32(self._data, self._get_layout().ng_plus)
 
     @ng_plus.setter
     def ng_plus(self, val: int) -> None:
-        struct.pack_into("<H", self._data, self._get_layout().ng_plus, val)
+        _write_u32(self._data, self._get_layout().ng_plus, val)
         # The playthrough flags are one-hot; keep them consistent with the
         # counter so scripts that check the current lap agree with it.
         lap = min(val, _LAP_FLAG_MAX)
-        for n in range(_LAP_FLAG_MAX + 1):
+        for n in range(_LAP_FLAG_CLEAR + 1):
             self.set_flag(_LAP_FLAG_BASE + n, n == lap)
 
     # --- Event flags ------------------------------------------------------- #

@@ -1,3 +1,11 @@
+full private safe file docs
+
+check paramdefs ds2
+
+fix equipment editor, check closed ticket
+
+ds2 import soul memory and change starting class
+
 mage smith elite cleric set dsr done
 
 check dlc npc flags done
