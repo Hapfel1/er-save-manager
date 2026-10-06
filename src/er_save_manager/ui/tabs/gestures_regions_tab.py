@@ -21,6 +21,8 @@ from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, center_window
 
 GESTURE_SLOT_EMPTY = 0xFFFFFFFE
+# The 6-slot gesture wheel stores each gesture as its id minus one.
+WHEEL_SLOTS = 6
 
 
 class GesturesRegionsTab:
@@ -55,6 +57,9 @@ class GesturesRegionsTab:
         self.gesture_states = {}
         self._initial_unlocked: set[int] = set()
         self.gestures_inner_frame = None
+        self._wheel_vars: list[tk.StringVar] = []
+        self._wheel_combos: list[ctk.CTkComboBox] = []
+        self._wheel_names: dict[str, int] = {}
 
     def _get_slot_display_names(self):
         """Get display names for all slots"""
@@ -192,6 +197,39 @@ class GesturesRegionsTab:
             width=120,
         ).pack(side=tk.LEFT)
 
+        wheel_frame = ctk.CTkFrame(main_frame, corner_radius=10)
+        wheel_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+        ctk.CTkLabel(
+            wheel_frame,
+            text="Gesture Wheel",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(pady=(12, 2), padx=12, anchor="w")
+        ctk.CTkLabel(
+            wheel_frame,
+            text="The six gestures on the in-game wheel. Only unlocked gestures can be placed.",
+            font=("Segoe UI", 11),
+            text_color=("#808080", "#a0a0a0"),
+        ).pack(pady=(0, 8), padx=12, anchor="w")
+        wheel_grid = ctk.CTkFrame(wheel_frame, fg_color="transparent")
+        wheel_grid.pack(fill=tk.X, padx=12)
+        for i in range(WHEEL_SLOTS):
+            ctk.CTkLabel(wheel_grid, text=f"Slot {i + 1}:").grid(
+                row=i // 3, column=(i % 3) * 2, sticky="w", padx=(0, 6), pady=4
+            )
+            var = tk.StringVar(value="")
+            combo = ctk.CTkComboBox(
+                wheel_grid, variable=var, values=[], state="readonly", width=190
+            )
+            combo.grid(row=i // 3, column=(i % 3) * 2 + 1, padx=(0, 14), pady=4)
+            self._wheel_vars.append(var)
+            self._wheel_combos.append(combo)
+        ctk.CTkButton(
+            wheel_frame,
+            text="Apply Wheel",
+            command=self.apply_gesture_wheel,
+            width=140,
+        ).pack(pady=12, padx=12, anchor="w")
+
         tools_row = ctk.CTkFrame(main_frame, fg_color="transparent")
         tools_row.pack(fill=tk.X, padx=15, pady=(0, 15))
 
@@ -275,6 +313,7 @@ class GesturesRegionsTab:
 
         # Remember initial unlocked set for delta calculation on apply
         self._initial_unlocked = unlocked_gesture_ids & set(all_gestures)
+        self._load_wheel(slot)
 
         self.show_toast(
             f"Loaded {len(self.gesture_states)} gestures for Slot {slot_idx + 1}",
@@ -398,6 +437,86 @@ class GesturesRegionsTab:
         except Exception as e:
             CTkMessageBox.showerror(
                 "Error", f"Failed to apply changes:\n{str(e)}", parent=self.parent
+            )
+
+    def _load_wheel(self, slot) -> None:
+        """Fill the wheel boxes; choices are the unlocked gestures plus
+        whatever the wheel already holds."""
+        equipped = [g + 1 for g in slot.equipped_gestures.gesture_ids]
+        choices = sorted(
+            self._initial_unlocked | set(equipped), key=lambda g: get_gesture_name(g)
+        )
+        self._wheel_names = {self._wheel_label(g): g for g in choices}
+        names = list(self._wheel_names)
+        for combo, var, gesture_id in zip(
+            self._wheel_combos, self._wheel_vars, equipped, strict=True
+        ):
+            combo.configure(values=names)
+            var.set(self._wheel_label(gesture_id))
+
+    @staticmethod
+    def _wheel_label(gesture_id: int) -> str:
+        return f"{get_gesture_name(gesture_id)} ({gesture_id})"
+
+    def apply_gesture_wheel(self):
+        """Write the six wheel gestures to the loaded slot."""
+        save_file = self.get_save_file()
+        if not save_file or self.current_slot is None:
+            CTkMessageBox.showwarning(
+                "No Slot", "Please load a character slot first!", parent=self.parent
+            )
+            return
+        slot = save_file.characters[self.current_slot]
+        try:
+            gesture_ids = [self._wheel_names[var.get()] for var in self._wheel_vars]
+        except KeyError:
+            CTkMessageBox.showwarning(
+                "Incomplete Wheel",
+                "Pick a gesture for every wheel slot.",
+                parent=self.parent,
+            )
+            return
+        if len(set(gesture_ids)) != len(gesture_ids):
+            CTkMessageBox.showwarning(
+                "Duplicate Gesture",
+                "Each gesture can only be on the wheel once.",
+                parent=self.parent,
+            )
+            return
+        if not CTkMessageBox.askyesno(
+            "Apply Wheel",
+            f"Apply the gesture wheel to Slot {self.current_slot + 1}?\n\n"
+            "A backup will be created.",
+            parent=self.parent,
+        ):
+            return
+        try:
+            if isinstance(save_file._raw_data, bytes):
+                save_file._raw_data = bytearray(save_file._raw_data)
+            save_path = self.get_save_path()
+            if save_path:
+                BackupManager(Path(save_path)).create_backup(
+                    description=f"before_gesture_wheel_slot_{self.current_slot + 1}",
+                    operation=f"gesture_wheel_slot_{self.current_slot + 1}",
+                    save=save_file,
+                )
+            slot.equipped_gestures.gesture_ids = [g - 1 for g in gesture_ids]
+            data = BytesIO()
+            slot.equipped_gestures.write(data)
+            start = slot.data_start + slot.equipped_gestures_offset
+            save_file._raw_data[start : start + len(data.getvalue())] = data.getvalue()
+            save_file.recalculate_checksums()
+            save_file.to_file(save_path)
+            if self.reload_save:
+                self.reload_save()
+            self.show_toast(
+                f"Gesture wheel applied to Slot {self.current_slot + 1}",
+                duration=2500,
+            )
+            self.load_gestures()
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Error", f"Failed to apply wheel:\n{e}", parent=self.parent
             )
 
     def select_all_gestures(self, select_type: str):

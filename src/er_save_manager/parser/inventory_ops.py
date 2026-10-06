@@ -958,6 +958,7 @@ _POST_GAITEM_OFFSETS = (
     "inventory_held_offset",
     "equipped_spells_offset",
     "equipped_items_offset",
+    "equipped_gestures_offset",
     "equipped_armaments_and_items_offset",
     "equipped_physics_offset",
     "inventory_storage_offset",
@@ -971,6 +972,7 @@ _POST_GAITEM_OFFSETS = (
     "time_offset",
     "steamid_offset",
     "dlc_offset",
+    "player_data_hash_offset",
 )
 
 

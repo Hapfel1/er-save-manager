@@ -72,6 +72,7 @@ class UserDataX:
     time_offset: int = 0
     steamid_offset: int = 0
     dlc_offset: int = 0
+    player_data_hash_offset: int = 0
     inventory_held_offset: int = 0
     inventory_storage_offset: int = 0
     blood_stain_offset: int = 0
@@ -81,6 +82,7 @@ class UserDataX:
     equipped_items_gaitem_handle_offset: int = 0
     equipped_spells_offset: int = 0
     equipped_items_offset: int = 0
+    equipped_gestures_offset: int = 0
     equipped_armaments_and_items_offset: int = 0
     equipped_physics_offset: int = 0
     # Header (4 + 4 + 8 + 16 = 32 bytes)
@@ -335,6 +337,7 @@ class UserDataX:
         obj.equipped_spells = EquippedSpells.read(f)
         obj.equipped_items_offset = f.tell() - data_start
         obj.equipped_items = EquippedItems.read(f)
+        obj.equipped_gestures_offset = f.tell() - data_start
         obj.equipped_gestures = EquippedGestures.read(f)
         obj.acquired_projectiles = AcquiredProjectiles.read(f)
         obj.equipped_armaments_and_items_offset = f.tell() - data_start
@@ -419,6 +422,7 @@ class UserDataX:
         obj.ps5_activity = PS5Activity.read(f)
         obj.dlc_offset = f.tell()
         obj.dlc = DLC.read(f)
+        obj.player_data_hash_offset = f.tell()
         obj.player_data_hash = PlayerGameDataHash.read(f)
 
         # Always seek to exact slot boundary, then read rest

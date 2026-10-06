@@ -294,19 +294,32 @@ BONFIRE_LIT_LEVEL = 10
 FLAG_SECTION_SIZE = 128
 
 # Starting stats per class: (base_level, vit, atn, end, str, dex, int, fth, res)
-# Used to recalculate total level when individual stats are edited.
+# from CharaInitParam rows 2000-2009 (soulLv, baseVit, baseWil, baseEnd,
+# baseStr, baseDex, baseMag, baseFai, baseDurability). Used to recalculate
+# total level when individual stats are edited.
 _CLASS_BASE_STATS: dict[int, tuple[int, ...]] = {
     0: (4, 11, 8, 12, 13, 13, 9, 9, 11),  # Warrior
     1: (5, 14, 10, 10, 11, 11, 9, 11, 10),  # Knight
-    2: (3, 10, 11, 10, 10, 14, 11, 8, 10),  # Wanderer
+    2: (3, 10, 11, 10, 10, 14, 11, 8, 12),  # Wanderer
     3: (5, 9, 11, 9, 9, 15, 12, 11, 10),  # Thief
     4: (4, 12, 8, 14, 14, 9, 8, 10, 11),  # Bandit
-    5: (4, 11, 9, 11, 12, 14, 9, 8, 10),  # Hunter
+    5: (4, 11, 9, 11, 12, 14, 9, 9, 11),  # Hunter
     6: (3, 8, 15, 8, 9, 11, 15, 8, 8),  # Sorcerer
-    7: (1, 10, 12, 11, 12, 9, 10, 8, 11),  # Pyromancer
+    7: (1, 10, 12, 11, 12, 9, 10, 8, 12),  # Pyromancer
     8: (2, 11, 11, 9, 12, 8, 8, 14, 11),  # Cleric
-    9: (1, 11, 11, 11, 11, 11, 11, 11, 11),  # Deprived
+    9: (6, 11, 11, 11, 11, 11, 11, 11, 11),  # Deprived
 }
+STAT_KEYS = ("vit", "atn", "end", "str", "dex", "int", "fth", "res")
+MAX_STAT = 99
+MAX_SOULS = 999_999_999
+MAX_HUMANITY = 99
+NAME_MAX_CHARS = 16
+
+
+def class_base_stats(player_class: int) -> dict[str, int] | None:
+    """Starting attributes of a class by stat key, or None if unknown."""
+    base = _CLASS_BASE_STATS.get(int(player_class))
+    return dict(zip(STAT_KEYS, base[1:], strict=True)) if base else None
 
 
 def calc_level_from_stats(
