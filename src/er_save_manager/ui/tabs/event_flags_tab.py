@@ -905,10 +905,18 @@ class EventFlagsTab:
                 except (ValueError, TypeError):
                     pass
 
+        missing = sum(1 for flag_id, _ in flag_ops if not EventFlags.has_flag(flag_id))
+        flag_ops = [op for op in flag_ops if EventFlags.has_flag(op[0])]
         if not flag_ops:
             CTkMessageBox.showinfo(
                 "Nothing to Import",
-                "No valid flag IDs found in file.",
+                "No valid flag IDs found in file."
+                + (
+                    f"\n\n{missing} flag(s) are in blocks that do not exist in "
+                    "Elden Ring saves and were skipped."
+                    if missing
+                    else ""
+                ),
                 parent=self.parent,
             )
             return
@@ -916,6 +924,11 @@ class EventFlagsTab:
         set_count = sum(1 for _, s in flag_ops if s)
         unset_count = len(flag_ops) - set_count
         summary = f"Set {set_count}" + (f", unset {unset_count}" if unset_count else "")
+        if missing:
+            summary = (
+                f"{missing} flag(s) are in blocks that do not exist in Elden Ring "
+                f"saves and will be skipped.\n\n{summary}"
+            )
         result = CTkMessageBox.askyesno(
             "Confirm Import",
             f"{summary} flags on Slot {self.current_slot + 1}?",
@@ -1004,11 +1017,23 @@ class EventFlagsTab:
         flag_entry = ctk.CTkEntry(input_frame, textvariable=flag_id_var, width=150)
         flag_entry.pack(side=tk.LEFT, padx=(0, 12))
 
+        def missing_flag_message(flag_id: int) -> str:
+            return (
+                f"Flag {flag_id} is in block {flag_id // EventFlags.FLAG_DIVISOR}, "
+                "which does not exist in Elden Ring saves. The game never reads "
+                "it, so it cannot be set."
+            )
+
         def toggle_flag():
             try:
                 flag_id = int(flag_id_var.get())
             except ValueError:
                 CTkMessageBox.showerror("Error", "Invalid flag ID!", parent=dialog)
+                return
+            if not EventFlags.has_flag(flag_id):
+                CTkMessageBox.showwarning(
+                    "Flag Not In Save", missing_flag_message(flag_id), parent=dialog
+                )
                 return
 
             try:
@@ -1065,6 +1090,11 @@ class EventFlagsTab:
         def check_flag():
             try:
                 flag_id = int(flag_id_var.get())
+                if not EventFlags.has_flag(flag_id):
+                    CTkMessageBox.showwarning(
+                        "Flag Not In Save", missing_flag_message(flag_id), parent=dialog
+                    )
+                    return
                 state = self.current_event_flags.get_flag(flag_id)
                 flag_name = get_flag_name(flag_id)
                 CTkMessageBox.showinfo(
