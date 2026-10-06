@@ -43,6 +43,7 @@ game on its next save, so removing an item never needs to shrink the table.
   +0x34 Vigor, Attunement, Endurance, Strength, Dexterity, Intelligence,
         Faith, Luck (u32 each), +0x5C Vitality, +0x60 level, +0x64 souls
   +0x78 name, UTF-16LE, 16 characters + terminator
+  +0x9E starting class (u8, CharaInitParam row 3000 + class)
   +0x1F0 22 x u32 equip slots, each an inventory index or 0xFFFFFFFF
   +0x318 inventory
 
@@ -153,13 +154,45 @@ _STAT_REL = {
 _LEVEL_REL = 0x60
 _SOULS_REL = 0x64
 _NAME_REL = 0x78
-_NAME_LEN = 32  # bytes, 16 UTF-16 code units including the terminator
+_NAME_LEN = 32  # bytes, 16 UTF-16 code units; a u16 terminator follows
+NAME_MAX_CHARS = _NAME_LEN // 2
+# u8 starting class, index into CharaInitParam rows 3000-3009.
+_CLASS_REL = 0x9E
 _EQUIP_SLOTS_REL = 0x1F0
 _EQUIP_SLOT_COUNT = 22
 _INVENTORY_REL = 0x318
 
 # Level equals the attribute sum minus this for every starting class.
 LEVEL_STAT_OFFSET = 89
+
+MAX_STAT = 99
+MAX_SOULS = 999_999_999
+
+# Starting classes by save index, base attributes from CharaInitParam.
+STARTING_CLASSES: tuple[tuple[str, dict[str, int]], ...] = tuple(
+    (
+        name,
+        dict(
+            zip(
+                ("vig", "atn", "end", "vit", "str", "dex", "int", "fth", "lck"),
+                stats,
+                strict=True,
+            )
+        ),
+    )
+    for name, stats in (
+        ("Knight", (12, 10, 11, 15, 13, 12, 9, 9, 7)),
+        ("Mercenary", (11, 12, 11, 10, 10, 16, 10, 8, 9)),
+        ("Warrior", (14, 6, 12, 11, 16, 9, 8, 9, 11)),
+        ("Herald", (12, 10, 9, 12, 12, 11, 8, 13, 11)),
+        ("Thief", (10, 11, 10, 9, 9, 13, 10, 8, 14)),
+        ("Assassin", (10, 14, 11, 10, 10, 14, 11, 9, 10)),
+        ("Sorcerer", (9, 16, 9, 7, 7, 12, 16, 7, 12)),
+        ("Pyromancer", (11, 12, 10, 8, 12, 9, 14, 14, 7)),
+        ("Cleric", (10, 14, 9, 7, 12, 8, 7, 16, 13)),
+        ("Deprived", (10, 10, 10, 10, 10, 10, 10, 10, 10)),
+    )
+)
 
 # --- Inventory --------------------------------------------------------------- #
 
@@ -513,8 +546,16 @@ class DS3Slot:
     @name.setter
     def name(self, value: str) -> None:
         off = self._player(_NAME_REL)
-        encoded = value.encode("utf-16-le")[: _NAME_LEN - 2]
-        self._data[off : off + _NAME_LEN] = encoded.ljust(_NAME_LEN, b"\x00")
+        encoded = value[:NAME_MAX_CHARS].encode("utf-16-le")[:_NAME_LEN]
+        self._data[off : off + _NAME_LEN + 2] = encoded.ljust(_NAME_LEN + 2, b"\x00")
+
+    @property
+    def starting_class(self) -> int:
+        return self._data[self._player(_CLASS_REL)]
+
+    @starting_class.setter
+    def starting_class(self, value: int) -> None:
+        self._data[self._player(_CLASS_REL)] = value & 0xFF
 
     def _u32_prop(rel: int):  # noqa: N805
         def getter(self) -> int:
