@@ -109,8 +109,8 @@ def _center_over(window, parent, w=None, h=None, *, top=False) -> None:
     center_window(window, w, h, parent=parent, align_top=top)
 
 
-def _ask_value(title: str, text: str, parent) -> str | None:
-    """Centered modal single-line input dialog."""
+def _ask_value(title: str, text: str, parent, initial: str = "") -> str | None:
+    """Centered modal single-line input dialog, prefilled with initial."""
     result: list = [None]
     dialog = ctk.CTkToplevel(parent)
     dialog.title(title)
@@ -120,7 +120,7 @@ def _ask_value(title: str, text: str, parent) -> str | None:
     ctk.CTkLabel(dialog, text=text, wraplength=260, anchor="w").pack(
         padx=20, pady=(16, 6), fill="x"
     )
-    var = ctk.StringVar()
+    var = ctk.StringVar(value=initial)
     entry = ctk.CTkEntry(dialog, textvariable=var, width=260)
     entry.pack(padx=20, pady=(0, 10))
     btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
@@ -144,6 +144,7 @@ def _ask_value(title: str, text: str, parent) -> str | None:
     dialog.attributes("-alpha", 1)
     dialog.grab_set()
     entry.focus_set()
+    entry.select_range(0, "end")
     dialog.wait_window()
     return result[0]
 
@@ -4020,6 +4021,10 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         ctk.CTkButton(
             db_btn_frame, text="Save as New Loadout", command=self._save_as_new
         ).pack(fill="x", pady=2)
+        self._rename_btn = ctk.CTkButton(
+            db_btn_frame, text="Rename Loadout", command=self._rename_loadout
+        )
+        self._rename_btn.pack(fill="x", pady=2)
         self._delete_btn = ctk.CTkButton(
             db_btn_frame,
             text="Delete Loadout",
@@ -4171,10 +4176,12 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             self._info_lbl.configure(
                 text=f"{items} - kept until you use Save as New Loadout"
             )
+            self._rename_btn.configure(state="disabled")
             self._delete_btn.configure(state="disabled", fg_color=("gray70", "gray35"))
         else:
             self._title_lbl.configure(text=current)
             self._info_lbl.configure(text=f"{items} - changes are saved automatically")
+            self._rename_btn.configure(state="normal")
             self._delete_btn.configure(state="normal", fg_color=_DELETE_COLOR)
 
         self.tree.delete(*self.tree.get_children())
@@ -4241,6 +4248,30 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             _write_json(_loadout_draft_path(), [])
         editor.open_loadout(name)
         show_toast(self, f"Saved loadout '{name}'.", type="success")
+
+    def _rename_loadout(self) -> None:
+        old = self.editor.loadout_name
+        if old is None:
+            return
+        name = _ask_value("Rename Loadout", f"New name for '{old}':", self, old)
+        name = name.strip() if name else ""
+        if not name or name == old:
+            return
+        if name in read_loadouts():
+            CTkMessageBox.showwarning(
+                "Name Exists",
+                f"A loadout named '{name}' already exists. Choose another name.",
+                parent=self,
+            )
+            return
+        # Rebuilt in order so the renamed entry keeps its place in the file.
+        loadouts = {
+            (name if key == old else key): items
+            for key, items in read_loadouts().items()
+        }
+        write_loadouts(loadouts)
+        self.editor.open_loadout(name)
+        show_toast(self, f"Renamed loadout '{old}' to '{name}'.", type="success")
 
     def _delete_loadout(self) -> None:
         name = self.editor.loadout_name
