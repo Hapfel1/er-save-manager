@@ -143,27 +143,24 @@ class SettingsTab:
         ).pack(anchor="w", padx=32, pady=(0, 10))
         self.settings.add_listener(self._on_setting_changed)
 
-        # EAC Warning - Elden Ring only
-        if self.active_game == "elden_ring":
-            self.show_eac_warning_var = tk.BooleanVar(
-                value=self.settings.get("show_eac_warning", True)
-            )
-            ctk.CTkCheckBox(
-                frame,
-                text="Show EAC warning when loading .sl2 files",
-                variable=self.show_eac_warning_var,
-                command=lambda: self.settings.set(
-                    "show_eac_warning", self.show_eac_warning_var.get()
-                ),
-            ).pack(anchor="w", padx=12, pady=5)
-            ctk.CTkLabel(
-                frame,
-                text="Disabling this will skip the anti-cheat warning dialog.",
-                text_color=("gray40", "gray70"),
-                font=("Segoe UI", 11),
-            ).pack(anchor="w", padx=32, pady=(0, 10))
-        else:
-            self.show_eac_warning_var = tk.BooleanVar(value=False)
+        # Online ban warning for vanilla saves, all games
+        self.show_eac_warning_var = tk.BooleanVar(
+            value=self.settings.get("show_eac_warning", True)
+        )
+        ctk.CTkCheckBox(
+            frame,
+            text="Show online ban warning when loading vanilla saves",
+            variable=self.show_eac_warning_var,
+            command=lambda: self.settings.set(
+                "show_eac_warning", self.show_eac_warning_var.get()
+            ),
+        ).pack(anchor="w", padx=12, pady=5)
+        ctk.CTkLabel(
+            frame,
+            text="Disabling this will skip the ban warning for .sl2 and PS memory.dat saves.",
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+        ).pack(anchor="w", padx=32, pady=(0, 10))
 
         self.remember_location_var = tk.BooleanVar(
             value=self.settings.get("remember_last_location", True)
@@ -1074,10 +1071,7 @@ class SettingsTab:
             parent=self.parent,
         ):
             self.settings.reset_to_defaults()
-            if self.active_game == "elden_ring" and hasattr(
-                self, "show_eac_warning_var"
-            ):
-                self.show_eac_warning_var.set(True)
+            self.show_eac_warning_var.set(True)
             self.remember_location_var.set(True)
             self.show_linux_save_warning_var.set(True)
             self.show_update_notifications_var.set(True)

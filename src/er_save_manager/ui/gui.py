@@ -144,6 +144,8 @@ class SaveManagerGUI:
         self.default_save_path = Path(os.environ.get("APPDATA", "")) / "EldenRing"
         self.save_file = None
         self.save_path = None
+        # Vanilla saves already confirmed in the ban warning this session
+        self._vanilla_warned_paths: set[str] = set()
         self.selected_slot = None
         self.selected_slot_index = -1  # Current selected character slot (0-9)
 
@@ -2146,96 +2148,10 @@ class SaveManagerGUI:
             if not self._handle_game_running_dialog(profile):
                 return
 
-        # EAC warning applies to Elden Ring vanilla saves (.sl2) and PS saves (.dat)
-        if (
-            self.active_game == "elden_ring"
-            and (
-                save_path.lower().endswith(".sl2") or save_path.lower().endswith(".dat")
-            )
-            and self.settings.get("show_eac_warning", True)
+        if self.active_game == "elden_ring" and not self._confirm_vanilla_save(
+            save_path
         ):
-            warning_dialog = tk.Toplevel(self.root)
-            warning_dialog.title("Warning - Vanilla Save File Detected")
-            warning_dialog.transient(self.root)
-            center_window(warning_dialog, 520, 600, parent=self.root)
-            warning_dialog.grab_set()
-
-            from er_save_manager.ui.utils import force_render_dialog
-
-            force_render_dialog(warning_dialog)
-
-            msg_frame = ttk.Frame(warning_dialog, padding=20)
-            msg_frame.pack(fill=tk.BOTH, expand=True)
-
-            ttk.Label(
-                msg_frame,
-                text="⚠️ Warning - Vanilla Save File Detected",
-                font=("Segoe UI", 12, "bold"),
-                foreground="red",
-            ).pack(pady=(0, 10))
-
-            warning_text = (
-                "You are loading a Vanilla save file (.sl2).\n\n"
-                "WARNING: Modifying save files can result in a BAN if:\n"
-                "• You connect to the official servers having modified saves\n\n"
-                "What should be fine:\n"
-                "• Corruption Fixes and Teleports\n"
-                "• Spawning in valid items, runes, modifying NG count, gestures, event flags, changing invasion zones\n\n"
-                "What will ban you:\n"
-                "• Editing attributes to invalid values, spawning in cut content, spawning in DLC spells without owning it\n"
-                "• If you think it might ban you it probably will\n\n"
-                "If you play the vanilla game offline you will be fine.\n\n"
-                "Do you understand and want to continue?"
-            )
-
-            ttk.Label(
-                msg_frame,
-                text=warning_text,
-                wraplength=470,
-                justify=tk.LEFT,
-            ).pack(pady=10)
-
-            dont_show_var = tk.BooleanVar(value=False)
-            ttk.Checkbutton(
-                msg_frame,
-                text="Don't show this warning again",
-                variable=dont_show_var,
-            ).pack(pady=10)
-
-            button_frame = ttk.Frame(msg_frame)
-            button_frame.pack(pady=10)
-
-            result = {"continue": False}
-
-            def on_yes():
-                if dont_show_var.get():
-                    self.settings.set("show_eac_warning", False)
-                result["continue"] = True
-                warning_dialog.destroy()
-
-            def on_no():
-                result["continue"] = False
-                warning_dialog.destroy()
-
-            ttk.Button(
-                button_frame, text="Yes, Continue", command=on_yes, width=15
-            ).pack(side=tk.LEFT, padx=5)
-            ttk.Button(button_frame, text="No, Cancel", command=on_no, width=15).pack(
-                side=tk.LEFT, padx=5
-            )
-
-            # Route the title bar close button through the same explicit
-            # cancel path so dismissing the window is never silently
-            # different from clicking "No, Cancel".
-            warning_dialog.protocol("WM_DELETE_WINDOW", on_no)
-
-            self.root.wait_window(warning_dialog)
-
-            if not result["continue"]:
-                self.status_var.set(
-                    "Load cancelled - click 'Yes, Continue' in the warning to load a vanilla save"
-                )
-                return
+            return
 
         # Route non-ER games to their own loaders so the Load button works too
         if self.active_game == "dark_souls_remastered":
@@ -2294,6 +2210,42 @@ class SaveManagerGUI:
             )
             self.root.after(0, lambda: self.status_var.set("Load failed"))
 
+    def _confirm_vanilla_save(self, save_path: str) -> bool:
+        """Show the per-game online ban warning for a vanilla save.
+
+        Asked once per path per session, so reloads after edits do not
+        prompt again. Returns False when the user cancels.
+        """
+        from er_save_manager.ui.dialogs.vanilla_save_warning import (
+            VanillaSaveWarningDialog,
+            is_vanilla_save,
+        )
+
+        key = os.path.normcase(os.path.abspath(save_path))
+        if (
+            not is_vanilla_save(save_path)
+            or not self.settings.get("show_eac_warning", True)
+            or key in self._vanilla_warned_paths
+        ):
+            return True
+
+        profile = self._active_profile()
+        dialog = VanillaSaveWarningDialog(
+            self.root,
+            self.active_game,
+            profile.name if profile else "Elden Ring",
+            os.path.basename(save_path),
+        )
+        if not dialog.show():
+            self.status_var.set(
+                "Load cancelled - click 'Continue' in the warning to load a vanilla save"
+            )
+            return False
+        if dialog.dont_show_again:
+            self.settings.set("show_eac_warning", False)
+        self._vanilla_warned_paths.add(key)
+        return True
+
     def _load_dsr_save(self, save_path: str) -> None:
         """Parse a DSR save file and refresh all DSR tabs."""
         self._flush_pending_tabs()
@@ -2308,6 +2260,9 @@ class SaveManagerGUI:
         ):
             if not self._handle_game_running_dialog(profile):
                 return
+
+        if not self._confirm_vanilla_save(save_path):
+            return
 
         try:
             self.dsr_save = DSRSave.from_file(save_path)
@@ -2370,6 +2325,9 @@ class SaveManagerGUI:
             if not self._handle_game_running_dialog(profile):
                 return
 
+        if not self._confirm_vanilla_save(save_path):
+            return
+
         try:
             self.ds3_save = DS3Save.from_file(save_path)
         except Exception as e:
@@ -2420,6 +2378,9 @@ class SaveManagerGUI:
             if not self._handle_game_running_dialog(profile):
                 return
 
+        if not self._confirm_vanilla_save(save_path):
+            return
+
         try:
             self.ds2_save = DS2Save.from_file(save_path)
         except Exception as e:
@@ -2463,6 +2424,9 @@ class SaveManagerGUI:
         ):
             if not self._handle_game_running_dialog(profile):
                 return
+
+        if not self._confirm_vanilla_save(save_path):
+            return
 
         try:
             self._nr_save = NightreignSave.from_file(save_path)

@@ -1,14 +1,14 @@
 sekiro save
 
-rework ban meesage warnings on vanilla
+rework ban meesage warnings on vanilla done
 
 full private safe file docs
 
-check paramdefs ds2
+check paramdefs ds2 done
 
 fix equipment editor, check closed ticket done
 
-ds2 import soul memory and change starting class
+ds2 import soul memory and change starting class done
 
 mage smith elite cleric set dsr done
 
