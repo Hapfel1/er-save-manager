@@ -10,6 +10,15 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.games.DSR.save import (
+    MAX_HUMANITY,
+    MAX_SOULS,
+    MAX_STAT,
+    NAME_MAX_CHARS,
+    STAT_KEYS,
+    calc_level_from_stats,
+    class_base_stats,
+)
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
@@ -73,6 +82,9 @@ class DSREditorTab:
         self._playtime_var = tk.StringVar(value="--")
         # Starting class index at last load; used for level recalc
         self._loaded_class_idx: int = 0
+        # False when the loaded stats sit below their own class's base
+        # (modded or edited character); class minimums are then not enforced.
+        self._enforce_class_min = True
 
     def setup_ui(self) -> None:
         for _ in self.setup_steps():
@@ -178,10 +190,23 @@ class DSREditorTab:
             )
             var = tk.StringVar(value="0")
             self._stat_vars[key] = var
-            ctk.CTkEntry(rg, textvariable=var, width=120).grid(
-                row=i, column=1, padx=5, pady=5
-            )
+            # Level follows from the stats and the starting class.
+            ctk.CTkEntry(
+                rg,
+                textvariable=var,
+                width=120,
+                state="disabled" if key == "level" else "normal",
+            ).grid(row=i, column=1, padx=5, pady=5)
 
+        self._class_note = ctk.CTkLabel(
+            frame,
+            text="",
+            font=("Segoe UI", 10),
+            text_color=("gray40", "gray70"),
+            wraplength=520,
+            justify="left",
+        )
+        self._class_note.pack(anchor="w", padx=15)
         ctk.CTkLabel(
             frame,
             text="Saving VIT updates derived max HP. Saving END updates max Stamina. Level is recalculated from stats automatically.",
@@ -298,9 +323,19 @@ class DSREditorTab:
         char = save.characters[slot_idx]
         if char is None:
             return
+        self._loaded_class_idx = int(char.player_class)
         for key in ("vit", "atn", "end", "str", "dex", "int", "fth", "res"):
             self._stat_vars[key].set(str(char.get_stat(key)))
-        self._loaded_class_idx = int(char.player_class)
+        base = class_base_stats(self._loaded_class_idx)
+        self._enforce_class_min = base is not None and all(
+            char.get_stat(k) >= v for k, v in base.items()
+        )
+        self._class_note.configure(
+            text=""
+            if self._enforce_class_min
+            else "Stats are below this class's starting values (modded or edited "
+            "character), so class minimums are not enforced."
+        )
         self._stat_vars["level"].set(str(char.level))
         self._stat_vars["souls"].set(str(char.souls))
         self._stat_vars["humanity"].set(str(char.humanity))
@@ -320,10 +355,6 @@ class DSREditorTab:
 
     def _recalc_level(self) -> None:
         """Recalculate and update the level field from current stat inputs."""
-        try:
-            from er_save_manager.games.DSR.save import calc_level_from_stats
-        except ImportError:
-            return
         try:
             vit = int(self._stat_vars["vit"].get())
             atn = int(self._stat_vars["atn"].get())
@@ -364,14 +395,33 @@ class DSREditorTab:
         if char is None:
             return
         try:
-            for key in ("vit", "atn", "end", "str", "dex", "int", "fth", "res"):
-                char.set_stat(key, int(self._stat_vars[key].get()), update_derived=True)
-            char.level = int(self._stat_vars["level"].get())
-            char.souls = int(self._stat_vars["souls"].get())
-            char.humanity = int(self._stat_vars["humanity"].get())
-        except ValueError as exc:
-            CTkMessageBox.showerror("Invalid Value", str(exc), parent=self.parent)
+            stats = {key: int(self._stat_vars[key].get()) for key in STAT_KEYS}
+            souls = int(self._stat_vars["souls"].get())
+            humanity = int(self._stat_vars["humanity"].get())
+        except ValueError:
+            CTkMessageBox.showerror(
+                "Invalid Value",
+                "Stats, souls and humanity must be numbers.",
+                parent=self.parent,
+            )
             return
+        problems = self._stat_problems(stats, self._loaded_class_idx)
+        if not 0 <= souls <= MAX_SOULS:
+            problems.append(f"Souls must be 0-{MAX_SOULS:,}")
+        if not 0 <= humanity <= MAX_HUMANITY:
+            problems.append(f"Humanity must be 0-{MAX_HUMANITY}")
+        if problems:
+            CTkMessageBox.showerror(
+                "Invalid Value", "\n".join(problems), parent=self.parent
+            )
+            return
+        for key, value in stats.items():
+            char.set_stat(key, value, update_derived=True)
+        char.level = max(
+            1, calc_level_from_stats(self._loaded_class_idx, *stats.values())
+        )
+        char.souls = souls
+        char.humanity = humanity
         try:
             _backup_and_save(
                 save, save_path, f"edit_stats_slot_{self._current_slot + 1}"
@@ -401,12 +451,37 @@ class DSREditorTab:
         char = save.characters[self._current_slot]
         if char is None:
             return
+        if len(self._name_var.get()) > NAME_MAX_CHARS:
+            CTkMessageBox.showerror(
+                "Name Too Long",
+                f"The name can be at most {NAME_MAX_CHARS} characters.",
+                parent=self.parent,
+            )
+            return
+        new_class = (
+            _CLASSES.index(self._class_var.get())
+            if self._class_var.get() in _CLASSES
+            else int(char.player_class)
+        )
+        stats = {key: char.get_stat(key) for key in STAT_KEYS}
+        problems = self._stat_problems(stats, new_class)
+        if problems:
+            CTkMessageBox.showerror(
+                "Class Minimum Conflict",
+                f"The saved stats do not fit {_CLASSES[new_class]}:\n"
+                + "\n".join(problems),
+                parent=self.parent,
+            )
+            return
         try:
             char.name = self._name_var.get()
             char.body_type = 1 if self._body_type_var.get() == "Type A (Male)" else 0
-            char.player_class = type(char.player_class)(
-                _CLASSES.index(self._class_var.get())
-            )
+            if new_class != int(char.player_class):
+                char.player_class = type(char.player_class)(new_class)
+                # Level counts from the class's own starting level and stats.
+                char.level = max(1, calc_level_from_stats(new_class, *stats.values()))
+                self._loaded_class_idx = new_class
+                self._stat_vars["level"].set(str(char.level))
             char.covenant = type(char.covenant)(
                 _COVENANTS.index(self._covenant_var.get())
             )
@@ -421,6 +496,26 @@ class DSREditorTab:
             self._show_toast("Identity applied. Backup created.")
         except Exception as exc:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+
+    def _stat_problems(self, stats: dict[str, int], class_idx: int) -> list[str]:
+        """Stats above the cap or below the class's starting values."""
+        problems = [
+            f"{key.upper()} above {MAX_STAT}"
+            for key, value in stats.items()
+            if value > MAX_STAT
+        ]
+        base = class_base_stats(class_idx)
+        if self._enforce_class_min and base is not None:
+            problems += [
+                f"{key.upper()} below the class minimum of {base[key]}"
+                for key, value in stats.items()
+                if value < base[key]
+            ]
+        else:
+            problems += [
+                f"{key.upper()} below 1" for key, value in stats.items() if value < 1
+            ]
+        return problems
 
     def _slot_idx(self) -> int:
         val = self._slot_var.get()

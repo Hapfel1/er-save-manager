@@ -39,6 +39,13 @@ def _backup_and_save(dsr_save, save_path: Path, operation: str) -> None:
     dsr_save.save_to_file(save_path)
 
 
+_NOT_VISITED = (
+    "This bonfire's map has not been visited yet. The game only stores a "
+    "bonfire's state once the character has entered its map, so there is no "
+    "record to light. Visit the area once in game, then it can be lit here."
+)
+
+
 class DSRWorldStateTab:
     def __init__(self, parent, get_dsr_save, get_save_path, show_toast) -> None:
         self.parent = parent
@@ -252,7 +259,11 @@ class DSRWorldStateTab:
         if not row:
             return
         state = self._bonfire_tree.set(row, "state")
-        if state not in ("--", "Not visited"):
+        if state == "Not visited":
+            CTkMessageBox.showinfo(
+                "Bonfire Not Visited", _NOT_VISITED, parent=self.parent
+            )
+        elif state != "--":
             self._set_bonfires([int(row)], state == "Unlit")
 
     def _set_bonfires(self, rows: list[int], lit: bool) -> None:
@@ -277,10 +288,18 @@ class DSRWorldStateTab:
             if char.bonfire_level(self._bonfires[i]["entity"]) is not None
             and bool(char.bonfire_level(self._bonfires[i]["entity"])) != lit
         ]
+        unvisited = sum(
+            1 for i in rows if char.bonfire_level(self._bonfires[i]["entity"]) is None
+        )
         for i in changed:
             char.set_bonfire_lit(self._bonfires[i]["entity"], lit)
         if not changed:
-            self._show_toast("Nothing to change (already set or map not visited).")
+            if unvisited:
+                CTkMessageBox.showinfo(
+                    "Bonfire Not Visited", _NOT_VISITED, parent=self.parent
+                )
+            else:
+                self._show_toast("Nothing to change, already set.")
             return
         try:
             _backup_and_save(save, save_path, f"bonfires_slot_{self._current_slot + 1}")
@@ -288,8 +307,12 @@ class DSRWorldStateTab:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
             return
         self._refresh_display()
+        skipped = (
+            f" {unvisited} in maps not visited yet were skipped." if unvisited else ""
+        )
         self._show_toast(
             f"{len(changed)} bonfire(s) {'lit' if lit else 'unlit'}. Backup created."
+            + skipped
         )
 
     def _apply_ng(self) -> None:
