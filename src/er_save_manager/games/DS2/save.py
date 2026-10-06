@@ -92,6 +92,8 @@ BIG_ENTRY_START = PROFILE_ENTRY_START + CHARACTER_SLOTS  # 11-20, one per slot
 # entry's game data (entries 1-10).
 NAME_OFFSET = 960
 NAME_SIZE = 32
+# The load screen caches hold the name in 28 bytes.
+NAME_MAX_CHARS = 14
 SOULS_OFFSET = 60
 HP_OFFSET = 72
 # Stored 1-based: 1 is the first playthrough, 2 is NG+1, and so on.
@@ -351,6 +353,7 @@ _SELECT_NAME_SIZE = 28
 # Per-slot load screen record in entries 0 and 22: u16 level at name + 0x4A,
 # u16 starting class at name + 0x4C. The class matched the profile's on every
 # created character of two saves (15 slots, 6 class values).
+_CACHE_LEVEL_FROM_NAME = 0x4A
 _CACHE_CLASS_FROM_NAME = 0x4C
 
 
@@ -1623,6 +1626,21 @@ class DS2Save:
             if select_off + _SELECT_NAME_SIZE <= len(select_data):
                 select_data[select_off : select_off + _SELECT_NAME_SIZE] = encoded
 
+    def sync_level_caches(self) -> None:
+        """Copy every named character's level to the load screen records in
+        entries 0 and 22."""
+        for entry, name_offset in (
+            (OCCUPANCY_ENTRY, _OCC_NAME_OFFSET),
+            (CHARACTER_SELECT_ENTRY, _SELECT_NAME_OFFSET),
+        ):
+            data = self.container.get_entry(entry)
+            for i, character in enumerate(self.characters):
+                if not _is_valid_name(character.name):
+                    continue
+                off = name_offset + _CACHE_LEVEL_FROM_NAME + _OCC_STRIDE * i
+                if off + 2 <= len(data):
+                    struct.pack_into("<H", data, off, character.get_stat("level"))
+
     def sync_equipment_cache(self, slot_index: int) -> None:
         """Copy a slot's equipment block to the load screen's copy in entry
         22, as the game does when it saves."""
@@ -1712,4 +1730,5 @@ class DS2Save:
         for i, character in enumerate(self.characters):
             self.container.set_entry(PROFILE_ENTRY_START + i, character.raw())
         self.sync_name_caches()
+        self.sync_level_caches()
         self.container.save_to_file(path)

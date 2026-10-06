@@ -13,6 +13,7 @@ from er_save_manager.games.DS2.regulation import ClassBase
 from er_save_manager.games.DS2.save import (
     CHARACTER_SLOTS,
     LEVEL_STAT_KEYS,
+    NAME_MAX_CHARS,
     NG_PLUS_MAX,
     STARTING_CLASSES,
     DS2Save,
@@ -564,6 +565,12 @@ class DS2EditorTab:
             return
         if self.torch_var.get().strip() != self._torch_loaded:
             torch_seconds = _parse_torch(self.torch_var.get())
+
+        if len(self.name_var.get()) > NAME_MAX_CHARS:
+            self.show_toast(
+                f"Name can be at most {NAME_MAX_CHARS} characters", duration=3000
+            )
+            return
 
         expected_level = self._expected_level()
         if expected_level is None or entered_level != expected_level:
