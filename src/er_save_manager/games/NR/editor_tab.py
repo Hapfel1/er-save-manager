@@ -28,6 +28,9 @@ def _game_blocks_write(parent) -> bool:
 
 
 _EMPTY_EFFECT = 0xFFFFFFFF
+# Upper bound for Murk and Sovereign Sigils: FromSoftware's usual currency
+# cap. The game's own cap for these is not confirmed.
+_MAX_CURRENCY = 999_999_999
 # Hero selector entry for modded hero vessels whose ID maps to no hero
 _MODDED_HERO_LABEL = "Modded (no hero)"
 
@@ -306,9 +309,11 @@ class NREditorTab:
                 parent=self.parent,
             )
             return
-        if murk < 0 or mon < 0:
+        if not (0 <= murk <= _MAX_CURRENCY and 0 <= mon <= _MAX_CURRENCY):
             CTkMessageBox.showerror(
-                "Invalid Input", "Values must be >= 0.", parent=self.parent
+                "Invalid Input",
+                f"Values must be between 0 and {_MAX_CURRENCY:,}.",
+                parent=self.parent,
             )
             return
         slot.murk = murk
@@ -854,6 +859,8 @@ class NREditorTab:
             return
 
         from er_save_manager.games.NR.item_db import (
+            combination_errors,
+            get_effect,
             get_relic,
             validate_curse,
             validate_effect,
@@ -861,18 +868,30 @@ class NREditorTab:
 
         relic_row = get_relic(real_id)
         is_deep = relic_row["deep"] if relic_row else False
-        errors = []
-        for i, ef in enumerate(effects):
-            err = validate_effect(ef, is_deep)
-            if err:
-                errors.append(f"E{i + 1}: {err}")
-        for i, ef in enumerate(curses):
-            err = validate_curse(ef)
-            if err:
-                errors.append(f"C{i + 1}: {err}")
-        if errors and not CTkMessageBox.askyesno(
+        # Effects the database does not know (mod data) only warn; every other
+        # problem describes a relic the game cannot roll and blocks the edit.
+        errors, unknown = [], []
+        for label, ids, check in (
+            ("E", effects, lambda ef: validate_effect(ef, is_deep)),
+            ("C", curses, validate_curse),
+        ):
+            for i, ef in enumerate(ids):
+                err = check(ef)
+                if err is None:
+                    continue
+                target = unknown if get_effect(ef) is None else errors
+                target.append(f"{label}{i + 1}: {err}")
+        errors += combination_errors(real_id, effects, curses)
+        if errors:
+            CTkMessageBox.showerror(
+                "Invalid Relic",
+                "This relic cannot exist in the game:\n" + "\n".join(errors),
+                parent=self.parent,
+            )
+            return
+        if unknown and not CTkMessageBox.askyesno(
             "Validation Warning",
-            "Issues found:\n" + "\n".join(errors) + "\n\nApply anyway?",
+            "Issues found:\n" + "\n".join(unknown) + "\n\nApply anyway?",
             parent=self.parent,
         ):
             return
