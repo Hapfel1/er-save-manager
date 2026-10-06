@@ -27,7 +27,12 @@ from dataclasses import dataclass, field, replace
 
 from er_save_manager.games.DS2.item_database import UNSAFE_IDS, build_item_db
 from er_save_manager.games.DS2.regulation import INFUSION_NAMES
-from er_save_manager.games.DS2.save import KEEP_SLOT, LEVEL_STAT_KEYS, Character
+from er_save_manager.games.DS2.save import (
+    KEEP_SLOT,
+    LEVEL_STAT_KEYS,
+    STARTING_CLASSES,
+    Character,
+)
 from er_save_manager.games.DS2.soulsplanner_database import (
     ARMOR,
     ITEMS,
@@ -244,20 +249,38 @@ def load_build(link: str) -> PlannerBuild:
     return parse_build_html(fetch_build_html(build_id), build_id)
 
 
-def stat_problems(build: PlannerBuild) -> list[str]:
-    """Attributes outside the range the game allows."""
-    return [
+def stat_problems(
+    build: PlannerBuild, character: Character, class_id: int | None = None
+) -> list[str]:
+    """Attributes outside the range the game allows, including values below
+    the starting values of a class (the character's own by default)."""
+    problems = [
         f"{name.capitalize()} {value}"
         for name, value in build.stats.items()
         if not STAT_MIN <= value <= STAT_MAX
     ]
+    base = character.class_base(class_id)
+    if base is not None:
+        problems += [
+            f"{name.capitalize()} {build.stats[name]} (class starts at "
+            f"{base.stats[name]})"
+            for name in character.stats_below_class(build.stats, class_id)
+        ]
+    return problems
 
 
-def apply_stats(character: Character, build: PlannerBuild) -> None:
-    """Write the build's attributes and the level they add up to."""
+def build_class_id(build: PlannerBuild) -> int | None:
+    """Starting class id of the build's class, None when not a known class."""
+    return next((k for k, v in STARTING_CLASSES.items() if v == build.class_name), None)
+
+
+def apply_stats(character: Character, build: PlannerBuild) -> int:
+    """Write the build's attributes and the level they add up to, then raise
+    soul memory to cover the new level. Returns the soul memory added."""
     for name, value in build.stats.items():
         character.set_stat(name, value)
     character.set_stat("level", build.level)
+    return character.sync_soul_memory()
 
 
 def owned_items(

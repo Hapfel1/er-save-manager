@@ -1,8 +1,12 @@
+sekiro save
+
+rework ban meesage warnings on vanilla
+
 full private safe file docs
 
 check paramdefs ds2
 
-fix equipment editor, check closed ticket
+fix equipment editor, check closed ticket done
 
 ds2 import soul memory and change starting class
 

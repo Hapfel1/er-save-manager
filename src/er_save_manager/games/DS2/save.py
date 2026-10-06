@@ -71,7 +71,7 @@ from er_save_manager.games.DS2.item_database import (
     SEAMLESS_MAX_STACK,
 )
 from er_save_manager.games.DS2.npc_database import NPCS, NpcEntry
-from er_save_manager.games.DS2.regulation import Regulation
+from er_save_manager.games.DS2.regulation import ClassBase, Regulation
 
 DS2_KEY = bytes.fromhex("599f9b699640a55236ee2d70835ec744")
 
@@ -98,6 +98,31 @@ HP_OFFSET = 72
 # Character.new_game_plus exposes the 0-based cycle.
 NG_OFFSET = 1028
 NG_PLUS_MAX = 7
+
+# Souls gained in total and in the current cycle, both u32. The game adds
+# every soul gained to both; the cycle count restarts on NG+. Online
+# matchmaking uses the total. Over one in-game session soul memory rose by
+# exactly the souls gained (28730), and the two counts match on every
+# unedited first-cycle character.
+SOUL_MEMORY_OFFSET = 0x40
+SOUL_MEMORY_CYCLE_OFFSET = 0x44
+
+# Starting class, a u32 holding PlayerStatusParam row id / 10 - 1. Every
+# unedited character's attributes are at or above that row's (12 characters,
+# 6 classes); Bandit and Deprived are unconfirmed on a real character.
+# Created-but-unused slots hold Deprived. The load screen caches in entries 0
+# and 22 keep a u16 copy (see _CACHE_CLASS_FROM_NAME).
+STARTING_CLASS_OFFSET = 0x400
+STARTING_CLASSES = {
+    1: "Warrior",
+    2: "Knight",
+    4: "Bandit",
+    6: "Cleric",
+    7: "Sorcerer",
+    8: "Explorer",
+    9: "Swordsman",
+    10: "Deprived",
+}
 
 # Remaining torch time in seconds, a float32.
 TORCH_TIME_OFFSET = 0x11E94
@@ -323,6 +348,10 @@ _OCC_NAME_SIZE = 28
 CHARACTER_SELECT_ENTRY = 22
 _SELECT_NAME_OFFSET = 442
 _SELECT_NAME_SIZE = 28
+# Per-slot load screen record in entries 0 and 22: u16 level at name + 0x4A,
+# u16 starting class at name + 0x4C. The class matched the profile's on every
+# created character of two saves (15 slots, 6 class values).
+_CACHE_CLASS_FROM_NAME = 0x4C
 
 
 class Bonfires:
@@ -750,6 +779,85 @@ class Character:
         struct.pack_into(
             "<I", self._data, SOULS_OFFSET, max(0, min(int(value), 0xFFFFFFFF))
         )
+
+    @property
+    def soul_memory(self) -> int:
+        return struct.unpack_from("<I", self._data, SOUL_MEMORY_OFFSET)[0]
+
+    @property
+    def soul_memory_cycle(self) -> int:
+        return struct.unpack_from("<I", self._data, SOUL_MEMORY_CYCLE_OFFSET)[0]
+
+    @property
+    def starting_class(self) -> int:
+        return struct.unpack_from("<I", self._data, STARTING_CLASS_OFFSET)[0]
+
+    @starting_class.setter
+    def starting_class(self, value: int) -> None:
+        if value not in STARTING_CLASSES:
+            raise ValueError(f"unknown starting class {value}")
+        struct.pack_into("<I", self._data, STARTING_CLASS_OFFSET, value)
+
+    @property
+    def starting_class_name(self) -> str | None:
+        return STARTING_CLASSES.get(self.starting_class)
+
+    def class_base(self, class_id: int | None = None) -> ClassBase | None:
+        """Starting level and attributes of a class, the character's own by
+        default. None when the class or the regulation is unknown."""
+        if class_id is None:
+            class_id = self.starting_class
+        if class_id not in STARTING_CLASSES:
+            return None
+        regulation = self._regulation()
+        if regulation is None:
+            return None
+        return regulation.class_base((class_id + 1) * 10)
+
+    def stats_below_class(
+        self, stats: dict[str, int], class_id: int | None = None
+    ) -> list[str]:
+        """Attributes in stats lower than a class (the character's own by
+        default) starts with, which no unedited character can have. Empty when
+        the class is unknown."""
+        base = self.class_base(class_id)
+        if base is None:
+            return []
+        return [name for name, value in stats.items() if value < base.stats[name]]
+
+    def expected_level(self, stats: dict[str, int]) -> int | None:
+        """Level the attributes add up to from the class's start, or None when
+        the class is unknown."""
+        base = self.class_base()
+        if base is None:
+            return None
+        return base.level + sum(stats[name] - base.stats[name] for name in base.stats)
+
+    def required_soul_memory(self) -> int | None:
+        """Least soul memory an unedited character with this level and souls
+        held can have: the cost of every level-up since the class's start plus
+        the souls held. None when the class or level costs are unknown."""
+        base = self.class_base()
+        regulation = self._regulation()
+        if base is None or regulation is None:
+            return None
+        spent = regulation.level_up_souls(base.level, self.get_stat("level"))
+        if spent is None:
+            return None
+        return spent + self.souls
+
+    def sync_soul_memory(self) -> int:
+        """Raise soul memory to required_soul_memory, adding the same amount
+        to the cycle count as gaining those souls in game would. Never lowers
+        either. Returns the amount added, 0 when unchanged or unknown."""
+        required = self.required_soul_memory()
+        if required is None or required <= self.soul_memory:
+            return 0
+        added = min(required, 0xFFFFFFFF) - self.soul_memory
+        cycle = min(self.soul_memory_cycle + added, 0xFFFFFFFF)
+        struct.pack_into("<I", self._data, SOUL_MEMORY_OFFSET, self.soul_memory + added)
+        struct.pack_into("<I", self._data, SOUL_MEMORY_CYCLE_OFFSET, cycle)
+        return added
 
     @property
     def hp(self) -> int:
@@ -1525,6 +1633,19 @@ class DS2Save:
         off = _SELECT_EQUIPMENT_OFFSET + _OCC_STRIDE * slot_index
         if off + _EQUIPMENT_BLOCK_SIZE <= len(select_data):
             select_data[off : off + _EQUIPMENT_BLOCK_SIZE] = character.equipment_block()
+
+    def sync_class_cache(self, slot_index: int) -> None:
+        """Copy a slot's starting class to the load screen records in
+        entries 0 and 22."""
+        value = struct.pack("<H", self.characters[slot_index].starting_class)
+        for entry, name_offset in (
+            (OCCUPANCY_ENTRY, _OCC_NAME_OFFSET),
+            (CHARACTER_SELECT_ENTRY, _SELECT_NAME_OFFSET),
+        ):
+            data = self.container.get_entry(entry)
+            off = name_offset + _CACHE_CLASS_FROM_NAME + _OCC_STRIDE * slot_index
+            if off + 2 <= len(data):
+                data[off : off + 2] = value
 
     def clear_name_cache(self, slot_index: int) -> None:
         """Zero the entry 0 / entry 22 cached name for one slot. Needed
