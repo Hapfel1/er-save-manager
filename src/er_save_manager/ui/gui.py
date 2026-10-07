@@ -1594,7 +1594,7 @@ class SaveManagerGUI:
             title = f"Select {profile.name} Save File"
         else:
             filetypes = [
-                ("Save Files", "*.sl2 *.co2 *.cnv *.dat"),
+                ("Save Files", "*.sl2 *.co2 *.cnv *.cnvco2 *.dat"),
                 ("PlayStation (Save Wizard)", "*"),
                 ("All files", "*.*"),
             ]

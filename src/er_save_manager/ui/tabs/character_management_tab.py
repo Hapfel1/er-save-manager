@@ -687,7 +687,10 @@ class CharacterManagementTab:
         return pick_file(
             title="Select target save file",
             initialdir=initialdir,
-            filetypes=[("Save files", "*.sl2 *.co2 *.cnv"), ("All files", "*.*")],
+            filetypes=[
+                ("Save files", "*.sl2 *.co2 *.cnv *.cnvco2"),
+                ("All files", "*.*"),
+            ],
         )
 
     def _select_target_save_file(self) -> str | None:

@@ -12,6 +12,7 @@ from tkinter import ttk
 
 import customtkinter as ctk
 
+from er_save_manager.data.convergence_items import is_seamless_save
 from er_save_manager.data.item_database import common_affinities
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
@@ -1414,8 +1415,7 @@ class InventoryEditor:
         except Exception:
             return []
 
-        save_path = str(self.get_save_path() or "").lower()
-        is_co2 = ".co2" in save_path
+        is_co2 = is_seamless_save(self.get_save_path() or "")
         is_cnv = self._is_cnv_save()
 
         return [
@@ -1472,7 +1472,7 @@ class InventoryEditor:
                         for i in results
                         if i.category_name not in self._CONVERGENCE_HIDDEN_CATS
                     ]
-                if ".co2" not in str(self.get_save_path() or "").lower():
+                if not is_seamless_save(self.get_save_path() or ""):
                     results = [
                         i for i in results if i.category_name not in self._SEAMLESS_CATS
                     ]

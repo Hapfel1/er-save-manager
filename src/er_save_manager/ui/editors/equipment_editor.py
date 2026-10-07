@@ -1424,7 +1424,9 @@ class EquipmentEditor:
         return ".cnv" in str(self.get_save_path() or "").lower()
 
     def _is_co2_save(self) -> bool:
-        return ".co2" in str(self.get_save_path() or "").lower()
+        from er_save_manager.data.convergence_items import is_seamless_save
+
+        return is_seamless_save(self.get_save_path() or "")
 
     def _owned_items_for_key(self, key: str) -> list[tuple[int, int, str, str]]:
         save_file = self.get_save_file()
