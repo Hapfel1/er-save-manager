@@ -12,6 +12,7 @@ from tkinter import ttk
 
 import customtkinter as ctk
 
+from er_save_manager.data.item_database import common_affinities
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.toast import show_toast
@@ -1494,6 +1495,9 @@ class InventoryEditor:
 
     def _apply_item_selection(self, item) -> None:
         """Apply item selection state - called from listbox and icon browser."""
+        from er_save_manager.data.item_database import get_item_database
+
+        item = get_item_database().resolve(item, self._is_cnv_save())
         self.selected_item = item
         self._selected_item_label.configure(
             text=f"Selected: {item.name}",
@@ -1928,9 +1932,12 @@ class InventoryEditor:
                 cats = ["Gems", "DLC Gems"]
                 if is_convergence_save:
                     cats.append("Convergence Gems")
-                gems = []
+                gems = {}
                 for cat in cats:
-                    gems += db.get_items_by_category(cat)
+                    for g in db.get_items_by_category(cat):
+                        g = db.resolve(g, is_convergence_save)
+                        gems.setdefault(g.full_id, g)
+                gems = list(gems.values())
                 if wep_col:
                     gems = [
                         g
@@ -1961,6 +1968,11 @@ class InventoryEditor:
                 return
             item = gem_items[sel[0]]
             self._selected_gem_id = 0x80000000 | item.id
+            weapon_affs = (
+                self.selected_item.get_affinities(is_convergence_save)
+                if self.selected_item is not None
+                else []
+            )
             aff_state = (
                 "normal"
                 if getattr(self.selected_item, "reinforcement", "standard")
@@ -1977,14 +1989,19 @@ class InventoryEditor:
                 and not is_convergence_save
                 and item.allowed_affinities
             ):
-                self._affinity_combo.configure(
-                    values=item.allowed_affinities, state=aff_state
+                gem_affs = common_affinities(item.allowed_affinities, weapon_affs)
+                self._affinity_combo.configure(values=gem_affs, state=aff_state)
+                default = (
+                    item.default_affinity
+                    if item.default_affinity in gem_affs
+                    else gem_affs[0]
                 )
-                default = item.default_affinity or item.allowed_affinities[0]
                 self.inv_affinity_var.set(default)
                 self._update_affinity_icon(default)
             elif self._affinity_combo:
-                gem_affs = item.get_affinities(is_convergence_save)
+                gem_affs = common_affinities(
+                    item.get_affinities(is_convergence_save), weapon_affs
+                )
                 if gem_affs:
                     self._affinity_combo.configure(values=gem_affs, state=aff_state)
                     default = (
@@ -2261,34 +2278,10 @@ class InventoryEditor:
                     "and thus cannot receive this item.",
                 )
 
-        # Upgrade range - CNV saves cap standard/somber at +15
         if cat == 0x00000000:
-            item = db.get_item_by_id(full_id & 0xFFFF0000)
-            reinforcement = (
-                getattr(item, "reinforcement", "standard") if item else "standard"
-            )
-            sf = self.get_save_file()
-            is_cnv = (
-                sf.is_convergence
-                if sf
-                else (".cnv" in str(self.get_save_path() or "").lower())
-            )
-            if is_cnv and reinforcement in ("standard", "somber"):
-                cap = 15
-            else:
-                cap = {"standard": 25, "somber": 10, "ash": 10, "none": 0}.get(
-                    reinforcement, 25
-                )
-            if upgrade < 0 or upgrade > cap:
-                return False, f"Upgrade must be 0-{cap} for this weapon."
-            # Vanilla only infuses through an Ash of War, so an infused weapon
-            # without one cannot be obtained in game.
-            if not is_cnv and (base_id // 100) % 100 != 0 and not aow_id:
-                return (
-                    False,
-                    "In the base game a weapon can only be infused by applying "
-                    "an Ash of War. Select an Ash of War or use Standard.",
-                )
+            ok, err = self._validate_weapon(db, base_id, upgrade, aow_id)
+            if not ok:
+                return False, err
 
         item_for_qty = db.get_item_by_id(full_id)
         if item_for_qty is not None:
@@ -2299,6 +2292,58 @@ class InventoryEditor:
                     f"Quantity must be 1-{max_qty} for this item in {location}.",
                 )
 
+        return True, ""
+
+    def _validate_weapon(
+        self, db, base_id: int, upgrade: int, aow_id: int
+    ) -> tuple[bool, str]:
+        """Reject weapon, upgrade, affinity and Ash of War combinations the game cannot produce."""
+        is_cnv = self._is_cnv_save()
+        item = db.get_item_by_id(base_id // 10000 * 10000, is_cnv)
+        reinforcement = (
+            getattr(item, "reinforcement", "standard") if item else "standard"
+        )
+        cap = (
+            0
+            if reinforcement == "none"
+            else _weapon_upgrade_cap(item, reinforcement, is_cnv)
+        )
+        if upgrade < 0 or upgrade > cap:
+            return False, f"Upgrade must be 0-{cap} for this weapon."
+
+        affinity_code = (base_id // 100) % 100
+        affinity = self._affinity_by_code().get(affinity_code, f"#{affinity_code}")
+        # Vanilla only infuses through an Ash of War, so an infused weapon
+        # without one cannot be obtained in game.
+        if not is_cnv and affinity_code != 0 and not aow_id:
+            return (
+                False,
+                "In the base game a weapon can only be infused by applying "
+                "an Ash of War. Select an Ash of War or use Standard.",
+            )
+        if item is None:
+            return True, ""
+
+        weapon_affs = item.get_affinities(is_cnv)
+        if affinity_code != 0 and weapon_affs and affinity not in weapon_affs:
+            return False, f"{item.name} cannot have the {affinity} affinity."
+
+        if aow_id:
+            if not item.aow_allowed:
+                return False, f"{item.name} does not accept an Ash of War."
+            gem = db.get_item_by_id(aow_id, is_cnv)
+            if gem is not None:
+                if (
+                    gem.compatible_wep_types
+                    and item.wep_type_col not in gem.compatible_wep_types
+                ):
+                    return False, f"{gem.name} cannot be applied to {item.name}."
+                gem_affs = gem.get_affinities(is_cnv)
+                if gem_affs and affinity not in gem_affs:
+                    return (
+                        False,
+                        f"{gem.name} does not allow the {affinity} affinity.",
+                    )
         return True, ""
 
     def _get_current_item_info(self) -> dict:
@@ -3054,7 +3099,7 @@ class InventoryEditor:
             return
         full_id, location, gaitem_handle = result
 
-        item = self._lookup_weapon_item(full_id)
+        item = self._lookup_weapon_item(full_id, self._is_cnv_save())
         reinforcement = (
             getattr(item, "reinforcement", "standard") if item else "standard"
         )
@@ -3463,7 +3508,8 @@ class InventoryEditor:
                                     )
 
                                     gem_item = get_item_database().get_item_by_id(
-                                        0x80000000 | (gg.item_id & 0x0FFFFFFF)
+                                        0x80000000 | (gg.item_id & 0x0FFFFFFF),
+                                        is_convergence_save,
                                     )
                                     if gem_item:
                                         gem_affs = gem_item.get_affinities(
@@ -3480,7 +3526,7 @@ class InventoryEditor:
                 if not has_gem and not is_convergence_save:
                     allowed = ["Standard"]
 
-        item = self._lookup_weapon_item(full_id)
+        item = self._lookup_weapon_item(full_id, is_convergence_save)
         if item and not getattr(item, "aow_allowed", True):
             CTkMessageBox.showinfo(
                 "Not Infusable", "This weapon cannot be infused.", parent=self.parent
@@ -3659,7 +3705,7 @@ class InventoryEditor:
             return
         full_id, location, gaitem_handle = result
 
-        item = self._lookup_weapon_item(full_id)
+        item = self._lookup_weapon_item(full_id, self._is_cnv_save())
         if item and not getattr(item, "aow_allowed", True):
             CTkMessageBox.showinfo(
                 "AoW Not Supported",
@@ -3836,9 +3882,12 @@ class InventoryEditor:
             cats = ["Gems", "DLC Gems"]
             if is_convergence_save:
                 cats.append("Convergence Gems")
-            all_gems = []
+            unique_gems = {}
             for cat in cats:
-                all_gems += db.get_items_by_category(cat)
+                for g in db.get_items_by_category(cat):
+                    g = db.resolve(g, is_convergence_save)
+                    unique_gems.setdefault(g.full_id, g)
+            all_gems = list(unique_gems.values())
             if wep_col:
                 all_gems = [
                     g

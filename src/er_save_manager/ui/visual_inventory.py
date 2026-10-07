@@ -569,12 +569,14 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             from er_save_manager.data.item_database import get_item_database
 
             db = get_item_database()
+            sf = self._editor.get_save_file()
+            is_cnv = bool(getattr(sf, "is_convergence", False)) if sf else False
             # Weapons encode affinity+upgrade in last 4 digits - look up base ID
             if _is_weapon(full_id):
                 base_id = (full_id & 0x0FFFFFFF) // 10000 * 10000
-                item = db.get_item_by_id(full_id & 0xF0000000 | base_id)
+                item = db.get_item_by_id(full_id & 0xF0000000 | base_id, is_cnv)
             else:
-                item = db.get_item_by_id(full_id)
+                item = db.get_item_by_id(full_id, is_cnv)
             name = (
                 item.name
                 if item

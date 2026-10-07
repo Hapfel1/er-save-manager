@@ -446,9 +446,21 @@ class IconBrowser(ctk.CTkToplevel):
         )
         self._update_form(item)
 
+    def _resolved_item(self) -> Item | None:
+        """The selected item as the loaded save's game version defines it."""
+        if self._selected_item is None:
+            return None
+        from er_save_manager.data.item_database import get_item_database
+
+        return get_item_database().resolve(
+            self._selected_item, self._editor._is_cnv_save()
+        )
+
     def _update_form(self, item: Item):
         """Reset and enable/disable form controls based on item type."""
         from er_save_manager.data.item_database import ItemCategory
+
+        item = self._resolved_item() or item
 
         is_weapon = item.category == ItemCategory.WEAPON
         is_armor = item.category == ItemCategory.ARMOR
@@ -497,8 +509,9 @@ class IconBrowser(ctk.CTkToplevel):
             self._upgrade_combo.configure(values=["0"], state="disabled")
             self._upgrade_var.set("0")
 
-        if affinity_allowed:
-            is_cnv = self._editor._is_cnv_save()
+        is_cnv = self._editor._is_cnv_save()
+        # Vanilla only infuses through an Ash of War
+        if affinity_allowed and (is_cnv or self._selected_gem_id):
             weapon_affs = item.get_affinities(is_cnv)
             self._affinity_combo.configure(
                 values=weapon_affs or self._editor._affinity_names(), state="normal"
@@ -559,14 +572,13 @@ class IconBrowser(ctk.CTkToplevel):
         self._aow_name_lbl.configure(text_color=("gray50", "gray60"))
         self._update_aow_icon("None")
         is_cnv = self._editor._is_cnv_save()
-        weapon_affs = (
-            self._selected_item.get_affinities(is_cnv)
-            if self._selected_item is not None
-            else []
-        )
+        item = self._resolved_item()
+        weapon_affs = item.get_affinities(is_cnv) if item is not None else []
         self._affinity_combo.configure(
             values=weapon_affs or self._editor._affinity_names()
         )
+        if not is_cnv:
+            self._affinity_combo.configure(state="disabled")
         self._affinity_var.set("Standard")
         self._update_affinity_icon("Standard")
 
@@ -615,8 +627,15 @@ class IconBrowser(ctk.CTkToplevel):
         _sel: list[int | None] = [None]
         _job: list = [None]
 
-        wep_col = getattr(self._selected_item, "wep_type_col", "")
         is_cnv = self._editor._is_cnv_save()
+        weapon = self._resolved_item()
+        wep_col = getattr(weapon, "wep_type_col", "")
+        weapon_affs = weapon.get_affinities(is_cnv) if weapon is not None else []
+        aff_state = (
+            "normal"
+            if getattr(weapon, "reinforcement", "standard") == "standard"
+            else "disabled"
+        )
 
         def _draw(gems):
             if _job[0]:
@@ -699,13 +718,19 @@ class IconBrowser(ctk.CTkToplevel):
         cv.bind("<Button-5>", lambda _e: cv.yview_scroll(1, "units"))
 
         try:
-            from er_save_manager.data.item_database import get_item_database
+            from er_save_manager.data.item_database import (
+                common_affinities,
+                get_item_database,
+            )
 
             db = get_item_database()
             gem_cats = ["Gems", "DLC Gems"] + (["Convergence Gems"] if is_cnv else [])
-            all_gems: list = []
+            unique_gems: dict = {}
             for c in gem_cats:
-                all_gems += db.get_items_by_category(c)
+                for g in db.get_items_by_category(c):
+                    g = db.resolve(g, is_cnv)
+                    unique_gems.setdefault(g.full_id, g)
+            all_gems: list = list(unique_gems.values())
             if wep_col:
                 all_gems = [
                     g
@@ -735,22 +760,16 @@ class IconBrowser(ctk.CTkToplevel):
             self._aow_var.set(gem.name)
             self._aow_name_lbl.configure(text_color=palette.PURPLE_TEXT)
             self._update_aow_icon(gem.name)
-            if gem.allowed_affinities and not is_cnv:
-                self._affinity_combo.configure(values=gem.allowed_affinities)
-                default = gem.default_affinity or gem.allowed_affinities[0]
+            gem_affs = common_affinities(gem.get_affinities(is_cnv), weapon_affs)
+            if gem_affs:
+                self._affinity_combo.configure(values=gem_affs, state=aff_state)
+                default = (
+                    gem.default_affinity
+                    if gem.default_affinity in gem_affs
+                    else gem_affs[0]
+                )
                 self._affinity_var.set(default)
                 self._update_affinity_icon(default)
-            elif is_cnv:
-                gem_affs = gem.get_affinities(is_cnv)
-                if gem_affs:
-                    self._affinity_combo.configure(values=gem_affs)
-                    default = (
-                        gem.default_affinity
-                        if gem.default_affinity in gem_affs
-                        else gem_affs[0]
-                    )
-                    self._affinity_var.set(default)
-                    self._update_affinity_icon(default)
             dialog.destroy()
 
         btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
@@ -800,7 +819,7 @@ class IconBrowser(ctk.CTkToplevel):
         if not self._selected_item:
             return
         editor = self._editor
-        editor.selected_item = self._selected_item
+        editor.selected_item = self._resolved_item()
         editor.inv_quantity_var.set(self._qty_var.get())
         editor.inv_upgrade_var.set(self._upgrade_var.get())
         editor.inv_affinity_var.set(self._affinity_var.get())
