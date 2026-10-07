@@ -1,6 +1,6 @@
 """
 Event Flags Tab (customtkinter version)
-Comprehensive event flag viewer and editor with 948 documented flags
+Event flag viewer and editor
 """
 
 import tkinter as tk

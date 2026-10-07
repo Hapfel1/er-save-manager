@@ -263,16 +263,12 @@ EMPTY_CHECK_END = 0x0090
 NG_PLUS_OFFSET = 0x1E5BE
 
 # Event flags: the game's flag array, stored after a variable-length run of
-# records, so its offset differs per character (0x1F1D1 on a fresh one,
-# 0x1F2F5 on a level 76 one). It starts FLAG_RECORD_TO_BASE bytes after the
+# records, so its offset differs per character. It starts FLAG_RECORD_TO_BASE bytes after the
 # one record matching FLAG_RECORD (FF FF FF FF, a u32 whose top byte is 0,
 # then 00 08). Layout as DS1 keeps it in memory: flag id GAAASNNN (group,
 # area, section, number) lives at FLAG_GROUPS[G] + area index * 0x500 +
 # S * 128 + (N // 32) * 4, a little-endian u32 with flag N % 32 = 0 in the
-# top bit. Confirmed from before/after pairs (an NPC kill moved Crestfallen
-# Warrior from state 1460 to 1462; a pickup set only its item lot flag
-# 51020000) and on every character: the item pickup group's set bits are
-# item lot flags, and a fresh character has none.
+# top bit. The item pickup group's set bits are item lot flags.
 FLAG_RECORD = re.compile(rb"\xff\xff\xff\xff[\x00-\xff]{3}\x00\x00\x08")
 FLAG_RECORD_TO_BASE = 0xD
 FLAG_SEARCH_SPAN = 0x2000
@@ -287,9 +283,7 @@ FLAG_AREA_SIZE = 0x500
 # Bonfire state lives in the per-map object records of each visited map, not
 # in the event flags: a 20-byte record u32 BONFIRE_RECORD_TYPE, u32 bonfire
 # entity id, u32 kindle value (0 unlit, 10 lit, 20/30/40 kindled), then state
-# bytes. Lighting the Undead Asylum cell bonfire (entity 1811960) in game
-# changed its value from 0 to 10; every played character has one record per
-# bonfire of the maps it visited, valued 0, 10, 20 or 40.
+# bytes. A character has one record per bonfire of each map it visited.
 BONFIRE_RECORD_TYPE = 0x0B
 BONFIRE_LEVEL_OFFSET = 8
 BONFIRE_LIT_LEVEL = 10

@@ -62,8 +62,7 @@ _EMPTY_SLUGS = frozenset({"Naked", "No_Ring", "No_Spell", "No_Item", "Bare_Fists
 _NO_INFUSION = "No_Infusion"
 
 # Every starting class satisfies level == attribute sum - 53, and so does every
-# level-up, which adds one point. Checked against all eight planner classes and
-# the characters of a real save.
+# level-up, which adds one point.
 LEVEL_STAT_OFFSET = 53
 STAT_MIN = 1
 STAT_MAX = 99

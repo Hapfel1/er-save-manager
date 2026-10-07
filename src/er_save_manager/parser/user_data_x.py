@@ -271,10 +271,10 @@ class UserDataX:
         cls, f: BytesIO, is_ps: bool, slot_start_offset: int, slot_size: int
     ) -> UserDataX:
         """
-        Read complete UserDataX from stream with robust error handling.
+        Read a complete UserDataX from stream.
 
-        This version uses slot boundary tracking to handle
-        version differences and unknown structures added in game updates.
+        Seeks to the slot boundary at the end, so version differences and
+        unknown structures added in game updates do not misalign the rest.
 
         Args:
             f: BytesIO stream positioned at start of character slot data

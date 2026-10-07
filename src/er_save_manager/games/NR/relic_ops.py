@@ -83,8 +83,8 @@ def _reparse(slot: NightreignSlot) -> None:
     """Re-derive every cached offset after the state array shifted.
 
     item_states, relic_states, item_entries and the loadout offsets all move
-    by the inserted/removed bytes; stale item_states made a second spawn in
-    the same session land inside the previous relic's 80-byte block.
+    by the inserted/removed bytes; stale item_states would place a second
+    spawn inside the previous relic's 80-byte block.
     """
     from er_save_manager.games.NR.parser import _parse_slot
 

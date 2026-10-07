@@ -196,7 +196,7 @@ def _longest_inner_zero_run(ef: bytes) -> tuple[int, int]:
 
 
 def _corrupt_ef_and_netman(save, slot_index: int, removed: int, netman_extra: int):
-    """Remove zero bytes inside the event flags and grow NetMan, as seen in the wild."""
+    """Remove zero bytes inside the event flags and grow NetMan, like a torn write does."""
     slot = save.character_slots[slot_index]
     start = slot.data_start
     original = bytes(save._raw_data[start : start + _SLOT_SIZE])

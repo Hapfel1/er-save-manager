@@ -309,15 +309,10 @@ class Save:
         Write save file to disk.
 
         Writes to a temporary file in the same directory, then atomically
-        replaces the destination. A direct in-place overwrite (open the
-        existing path in "wb" mode) can leave a file-watcher holding a
-        stale view of the file - Steam Cloud sync, an antivirus scanner,
-        or the game itself can end up reading a cached/partial state
-        instead of the freshly written content, since the file's identity
-        never technically changes for a same-path truncate+write. An
-        atomic replace forces a fresh file identity that these can't
-        miss, and also protects against a corrupt half-written file if
-        the process is interrupted mid-write.
+        replaces the destination. A same-path truncate and write keeps the
+        file identity, so Steam Cloud sync, an antivirus scanner or the game
+        can keep reading a stale or partial view. The replace gives the file
+        a new identity and never leaves a half-written save behind.
 
         Args:
             filepath: Path where save file will be written

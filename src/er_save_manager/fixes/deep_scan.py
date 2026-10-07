@@ -115,7 +115,7 @@ FLAG_RELOCATION_NOTE = (
 # last_rested_grace u32, not_alone u8, countdown u32, unk u32.
 _CHARACTER_TYPE_ONLINE_BEFORE_EF = 4 + 4 + 1 + 4 + 4
 _CHARACTER_TYPE_BEFORE_EF = 4 + 1 + _CHARACTER_TYPE_ONLINE_BEFORE_EF
-# Values in nearly every clean save, restored when a cut zeroed both
+# Values a normal character holds, restored when a cut zeroed both
 _DEFAULT_CHARACTER_TYPE = -1
 _DEFAULT_CHARACTER_TYPE_ONLINE = 8
 

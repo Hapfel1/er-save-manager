@@ -913,7 +913,7 @@ class CharacterOperations:
     @staticmethod
     def extract_character_metadata(save: Save, slot_index: int) -> dict:
         """
-        Extract comprehensive metadata from a character for community sharing.
+        Extract metadata from a character for community sharing.
 
         Args:
             save: Save instance

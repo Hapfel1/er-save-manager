@@ -104,16 +104,13 @@ NG_PLUS_MAX = 7
 
 # Souls gained in total and in the current cycle, both u32. The game adds
 # every soul gained to both; the cycle count restarts on NG+. Online
-# matchmaking uses the total. Over one in-game session soul memory rose by
-# exactly the souls gained (28730), and the two counts match on every
-# unedited first-cycle character.
+# matchmaking uses the total.
 SOUL_MEMORY_OFFSET = 0x40
 SOUL_MEMORY_CYCLE_OFFSET = 0x44
 
-# Starting class, a u32 holding PlayerStatusParam row id / 10 - 1. Every
-# unedited character's attributes are at or above that row's (12 characters,
-# 6 classes); Bandit and Deprived are unconfirmed on a real character.
-# Created-but-unused slots hold Deprived. The load screen caches in entries 0
+# Starting class, a u32 holding PlayerStatusParam row id / 10 - 1. An
+# unedited character's attributes are at or above that row's. Bandit and
+# Deprived are unconfirmed. Created-but-unused slots hold Deprived. The load screen caches in entries 0
 # and 22 keep a u16 copy (see _CACHE_CLASS_FROM_NAME).
 STARTING_CLASS_OFFSET = 0x400
 STARTING_CLASSES = {
@@ -160,16 +157,13 @@ INVENTORY_SLOT_SIZE = 16
 #          unarmed placeholder
 #   +0x1C  4 armor slots (head, chest, hands, legs) holding the armor param
 #          id, which is the inventory item id minus 10000000
-#   +0x2C  2 u32 of unknown use (0 on every character seen)
-#   +0x34  4 slots, empty on every character seen (arrows and bolts)
+#   +0x2C  2 u32 of unknown use, normally 0
+#   +0x34  4 slots, normally empty (arrows and bolts)
 #   +0x44  4 ring slots
 #   +0x54  10 belt item slots
-# Mapped from a before/after pair with a weapon, a helm, a ring and a belt
-# item changed in game, and checked on every created character of two saves.
 # The attuned spells follow the block (outside the load screen's copy) as 14
-# slots packed from the first, one per spell whatever its slot cost. Mapped
-# from a before/after pair attuning two 1-slot spells and one attuning the
-# 3-slot Affinity alone, which took a single slot.
+# slots packed from the first, one per spell whatever its slot cost (the
+# 3-slot Affinity takes a single slot).
 EQUIPMENT_OFFSET = 0x188
 EQUIPMENT_HEADER = 0x1E
 _EQUIP_WEAPONS = (0x04, 6)
@@ -189,9 +183,7 @@ _BARE_ARMOR_IDS = (11001100, 11001101, 11001102, 11001103)
 # (index into the list at INVENTORY_START), 0xFFFF for an empty slot. Weapons
 # are ordered right then left hand per set (R1, L1, R2, L2, R3, L3), the
 # reverse pairing of the id block, then 4 armor, 4 ring, 4 ammo, 10 belt and
-# 14 spell slots. Mapped from the before/after pairs above (the equip write
-# rebuilt from each matches the game's byte for byte) and checked against the
-# weapon, armor, ring and belt slots of 10 characters.
+# 14 spell slots.
 EQUIPMENT_INDEX_OFFSET = 0x11E30
 _INDEX_WEAPONS = 0
 _INDEX_ARMOR = 6
@@ -200,8 +192,7 @@ _INDEX_BELT = 18
 _INDEX_SPELLS = 28
 
 # u8 index of the selected attuned spell, 0xFF with none selected. The game
-# set it from 0xFF to 0 on attuning a first spell in both spell pairs, and it
-# is 0 on every character seen with a spell attuned.
+# sets it to 0 when the first spell is attuned.
 _SELECTED_SPELL_OFFSET = 0x10E2D
 _NO_SELECTED_SPELL = 0xFF
 
@@ -212,8 +203,8 @@ _ATTUNEMENT_SLOT_ITEMS = {21501100: 1, 40350000: 1, 40350001: 2, 40350002: 3}
 _EMPTY_INDEX = 0xFFFF
 
 # Entry 22 keeps a copy of every slot's equipment block for the load screen,
-# at this offset plus _OCC_STRIDE per slot. It matched the profile's block on
-# 124 of 128 created characters; the rest had never been written.
+# at this offset plus _OCC_STRIDE per slot. It matches the profile's block
+# unless the slot's copy was never written.
 _SELECT_EQUIPMENT_OFFSET = 0xD0
 _EQUIPMENT_BLOCK_SIZE = 0x7C
 
@@ -241,11 +232,10 @@ _UPGRADE_MASK = 0xFF
 _INFUSION_SHIFT = 8
 
 # Bit of an inventory entry's unk_1 that marks it as stored in the item box.
-# Box items share the main inventory list with carried ones. Moving two stacks
-# to the box in game emptied their slots and wrote them, flag set and quantity
-# kept, into the slots after the last used entry, in the order they were
-# moved. The slot the first move freed was not reused by the second. Carried
-# entries hold 0 here.
+# Box items share the main inventory list with carried ones. The game moves
+# an entry by emptying its slot and writing it, flag set and quantity kept,
+# into the slot after the last used entry; freed slots are not reused.
+# Carried entries hold 0 here.
 ITEM_BOX_FLAG = 0x100
 
 KEY_ITEMS_START = 0x10E30
@@ -261,8 +251,8 @@ FLAG_REGION_END = 0x1B2FC
 # starts _BONFIRE_ID_CAPACITY ids after the id array, which is 0x200 bytes at
 # two bytes per id. A level is 0 when unlit and 1 when lit, and grows when
 # Bonfire Ascetics are used. Saves hold up to two copies of the pair, and a
-# slot can lack the second. Both were rewritten when the game lit every bonfire
-# on one slot, so every copy found is updated.
+# slot can lack the second. The game rewrites both, so every copy found is
+# updated.
 _BONFIRE_ID_CAPACITY = 256
 # The stored level stops at 99, so a larger byte marks a copy as unreadable.
 _BONFIRE_PLAUSIBLE_LEVEL = 99
@@ -271,30 +261,17 @@ _BONFIRE_PLAUSIBLE_LEVEL = 99
 BONFIRE_MAX_LEVEL = 8
 
 # Two more structures sit at fixed distances from the first bonfire id array in
-# the same entry, so they are found through it. Every slot with bonfire data
-# has them at these distances.
+# the same entry, so they are found through it.
 # - The last rested bonfire is a u32 id, _LAST_RESTED_AFTER_IDS bytes after the
-#   id array. It held a valid bonfire id in all four saved characters checked
-#   and nowhere else in the entry did.
-# - The NPC flag object starts _NPC_FLAGS_BEFORE_IDS bytes before the id array.
-#   Killing an NPC changed exactly that NPC's two flag bytes in the layout the
-#   cheat tables describe.
+#   id array.
+# - The NPC flag object starts _NPC_FLAGS_BEFORE_IDS bytes before the id array,
+#   two flag bytes per NPC in the layout the cheat tables describe.
 _LAST_RESTED_AFTER_IDS = 0xC04
 _NPC_FLAGS_BEFORE_IDS = 0x15A0
 # Bytes a kill writes for each NPC, as (offset from the first bonfire id
 # array, length in bytes). They are zero while the NPC was never killed.
 # Everyone except Lenigrast has a single-byte marker, 0 while alive and 1 once
-# killed. Kills checked against a before/after save pair:
-# - Lenigrast (full record, matched the game's save byte for byte), Herald,
-#   Melentia, Gavlan: two kills each.
-# - Strowen: four kills.
-# - Gilligan, Milibeth, Grandahl, Saulden: one kill, 0 in every other sample
-#   including the 64 bytes around each marker.
-# - Creighton, Benhart, Maughlin, Navlaan, Magerold, Cromwell, Rat King, Tark,
-#   Targray, Pate: kill count not recorded.
-# Unconfirmed entries are marked below. Earlier larger records for Herald and
-# Melentia came from a volatile buffer that changes on ordinary play and were
-# false positives.
+# killed. Unconfirmed entries are marked below.
 _NPC_KILL_RECORDS: dict[str, tuple[tuple[int, int], ...]] = {
     "Blacksmith Lenigrast": (
         (-0x27576, 1),
@@ -337,8 +314,8 @@ _NPC_KILL_RECORDS: dict[str, tuple[tuple[int, int], ...]] = {
     "Straid of Olaphis": ((-0x25452, 1),),
     "Felkin the Outcast": ((-0x21D06, 1),),
 }
-# The byte after Lenigrast's last entry held 0 before his kill and 3 after it,
-# but holds other values in slots without that kill, so it is cleared only
+# The byte after Lenigrast's last entry goes from 0 to 3 on his kill, but
+# holds other values in slots without that kill, so it is cleared only
 # together with a present record.
 _LENIGRAST_RECORD_TAIL = 0x11A8
 
@@ -352,8 +329,7 @@ CHARACTER_SELECT_ENTRY = 22
 _SELECT_NAME_OFFSET = 442
 _SELECT_NAME_SIZE = 28
 # Per-slot load screen record in entries 0 and 22: u16 level at name + 0x4A,
-# u16 starting class at name + 0x4C. The class matched the profile's on every
-# created character of two saves (15 slots, 6 class values).
+# u16 starting class at name + 0x4C, a copy of the profile's.
 _CACHE_LEVEL_FROM_NAME = 0x4A
 _CACHE_CLASS_FROM_NAME = 0x4C
 
@@ -695,10 +671,8 @@ class InventoryItem:
             self.unk_1 &= ~ITEM_BOX_FLAG
 
     # unk_2 packs two bytes for equipment. The low byte is the upgrade level of
-    # weapons and armor (seen as 1 and 3 on weapons, 1 and 2 on armor). The
-    # next byte is the weapon infusion index (see regulation.INFUSION_NAMES),
-    # seen as 1 to 9 on one Rapier per infusion. Each setter keeps the other
-    # bytes.
+    # weapons and armor. The next byte is the weapon infusion index (see
+    # regulation.INFUSION_NAMES). Each setter keeps the other bytes.
     @property
     def upgrade(self) -> int:
         return self.unk_2 & _UPGRADE_MASK
@@ -1042,8 +1016,7 @@ class Character:
 
     # Fallback durability (float bit pattern) for new weapons, armor and rings
     # when the regulation does not know the item and no owned item can be used
-    # as a reference. These are the lowest values seen on game-written items,
-    # so they never exceed an item's max.
+    # as a reference. Low enough that they never exceed an item's max.
     _DEFAULT_DURABILITY = {
         "weapons": 0x41F00000,  # 30.0
         "armors": 0x420C0000,  # 35.0

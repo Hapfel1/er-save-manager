@@ -55,8 +55,7 @@ Starting classes: PlayerStatusParam rows 20-110 hold each class's starting
 level and attributes. Row 10 and the rows from 500 up are not classes.
 Level-up cost: PlayerLevelUpSoulsParam row N is the soul cost of going from
 level N to N + 1 (row 999 is not a level). Rows 0-850 cover every level the
-game allows. Checked against the soul memory of six unedited characters:
-each held at least the cost of their levels from their class's start.
+game allows.
 Infusion index n is the value stored in the second byte of an inventory
 entry's unk_2. The order is the material order of CustomAttrCostParam, which
 lists one infusion stone per index: Palestone, Firedrake, Faintstone,
@@ -64,9 +63,9 @@ Boltstone, Darknight, Poison, Bleed, Raw, Magic and Old Mundane Stone.
 Items missing from ItemParam are unknown to the regulation and report no
 limits.
 
-Field offsets are byte offsets into a row. They were derived from the column
-order of the Smithbox CSV exports and verified against those CSVs for every
-row. Inventory durability of unused game-written items equals these values.
+Field offsets are byte offsets into a row, following the column order of
+the Smithbox CSV exports. Unused game-written items carry these durability
+values.
 """
 
 from __future__ import annotations

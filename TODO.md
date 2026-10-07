@@ -28,7 +28,7 @@ DSR covenant rank and appearance
 
 DS2 last-bonfire warp
 
-notify when a save is edited externally for other games
+notify when a save is edited externally for other games done
 
 overall feature check/improvement check for all games done
 

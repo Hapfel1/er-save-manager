@@ -232,8 +232,7 @@ _LAP_FLAG_CLEAR = 8
 _FLAG_BLOCK_BYTES = 1280
 _FLAG_GROUP_BYTES = 128
 _FLAG_PREFIX = 4
-# Map block key (flag // 10000) to block index, one block per map. Derived
-# from boss, bonfire and NPC flags whose state is known in real saves.
+# Map block key (flag // 10000) to block index, one block per map.
 _EVENT_FLAG_BLOCKS = {
     1300: 3,  # High Wall of Lothric
     1301: 4,  # Lothric Castle

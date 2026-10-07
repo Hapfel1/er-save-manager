@@ -280,8 +280,8 @@ def test_seamless_goods_in_every_source():
 
 
 def test_character_death_bits(slot, slot_bytes):
-    """Killing Andre in game set m40_00 bit 95 (byte 11, mask 0x80) of the
-    CHR block; revive must clear it or the game spawns him dead again."""
+    """Andre's death bit is m40_00 bit 95 (byte 11, mask 0x80) of the CHR
+    block; revive must clear it or the game spawns him dead again."""
     andre = next(
         n
         for n in json.loads((DATA / "npcs.json").read_text(encoding="utf-8"))

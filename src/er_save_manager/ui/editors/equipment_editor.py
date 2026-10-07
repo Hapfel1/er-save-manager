@@ -661,11 +661,10 @@ def _max_spell_slots(slot, is_cnv: bool = False) -> int:
     Stones (held key items - Memory Stones are stored there, not in
     common_items), plus 2 if Moon of Nokstella is equipped.
 
-    This is a heuristic, not verified ground truth (no persisted "unlocked
-    slots" counter exists anywhere in the save the way there is for
-    talisman slots). It is floored by the highest slot index that already
-    has a real spell, so a wrong guess can only ever block adding something
-    new to an empty slot - it can never hide or overwrite existing data.
+    An estimate: unlike talisman slots, the save has no unlocked spell slot
+    counter. It is floored by the highest slot that already holds a spell,
+    so a wrong estimate only blocks adding to an empty slot and never hides
+    or overwrites an equipped spell.
     """
     base = 3 if is_cnv else 2
     stone_qty = 0
