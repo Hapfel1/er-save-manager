@@ -263,7 +263,7 @@ class EventFlagsTab:
 
         # Row 2: secondary tools
         tools_row = ctk.CTkFrame(main_frame, fg_color="transparent")
-        tools_row.pack(fill=tk.X, padx=15, pady=(6, 20))
+        tools_row.pack(fill=tk.X, padx=15, pady=(6, 6))
 
         ctk.CTkButton(
             tools_row,
@@ -307,11 +307,22 @@ class EventFlagsTab:
             width=140,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
+        # Row 3: item and merchant checklists
+        items_row = ctk.CTkFrame(main_frame, fg_color="transparent")
+        items_row.pack(fill=tk.X, padx=15, pady=(0, 20))
+
         ctk.CTkButton(
-            tools_row,
+            items_row,
             text="Item Pickups...",
             command=self.open_item_pickups,
             width=130,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+
+        ctk.CTkButton(
+            items_row,
+            text="Merchant Restock...",
+            command=self.open_merchant_restock,
+            width=150,
         ).pack(side=tk.LEFT)
 
         filter_frame = ctk.CTkFrame(main_frame, corner_radius=10)
@@ -1967,6 +1978,26 @@ class EventFlagsTab:
         from er_save_manager.ui.item_pickups_dialog import ItemPickupsDialog
 
         ItemPickupsDialog.open(
+            self.parent,
+            self.current_event_flags,
+            self.get_save_file(),
+            self.get_save_path(),
+            self.current_slot,
+            self.reload_save,
+            self.show_toast,
+        )
+
+    def open_merchant_restock(self):
+        """Open the limited merchant stock restock dialog."""
+        if self.current_event_flags is None:
+            CTkMessageBox.showwarning(
+                "Not Loaded", "Please load event flags for a character first!"
+            )
+            return
+
+        from er_save_manager.ui.merchant_restock_dialog import MerchantRestockDialog
+
+        MerchantRestockDialog.open(
             self.parent,
             self.current_event_flags,
             self.get_save_file(),

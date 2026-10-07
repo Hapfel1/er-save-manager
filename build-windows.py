@@ -78,6 +78,18 @@ include_files = [
         "er_save_manager/data/item_pickups.csv",
     ),
     (
+        "src/er_save_manager/data/item_pickups_convergence.csv",
+        "er_save_manager/data/item_pickups_convergence.csv",
+    ),
+    (
+        "src/er_save_manager/data/shop_stock.csv",
+        "er_save_manager/data/shop_stock.csv",
+    ),
+    (
+        "src/er_save_manager/data/shop_stock_convergence.csv",
+        "er_save_manager/data/shop_stock_convergence.csv",
+    ),
+    (
         "src/er_save_manager/data/locations.json",
         "er_save_manager/data/locations.json",
     ),

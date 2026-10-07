@@ -14,8 +14,6 @@ DSR event flags, flag 0 and NPC states
 
 DS3 death-state byte (kill pair in m51_01)
 
-DS3 Yoel flags and death bit
-
 ER unnamed NPC blocks: Finger Reader Crone 3500, bosses 3140/3200/3320/3340, Roundtable 3160/3700/3780/3840/3960, Ensha and Pidia bases
 
 Sekiro save editing

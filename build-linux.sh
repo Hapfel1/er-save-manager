@@ -47,6 +47,9 @@ pyinstaller --clean --noconfirm \
     --add-data src/er_save_manager/data/icons.db:er_save_manager/data \
     --add-data src/er_save_manager/data/event_flags.json:er_save_manager/data \
     --add-data src/er_save_manager/data/item_pickups.csv:er_save_manager/data \
+    --add-data src/er_save_manager/data/item_pickups_convergence.csv:er_save_manager/data \
+    --add-data src/er_save_manager/data/shop_stock.csv:er_save_manager/data \
+    --add-data src/er_save_manager/data/shop_stock_convergence.csv:er_save_manager/data \
     --add-data src/er_save_manager/data/locations.json:er_save_manager/data \
     --add-data src/er_save_manager/data/quest_flags.json:er_save_manager/data \
     --add-data src/er_save_manager/fixes/CSNetMan.bin:er_save_manager/fixes \

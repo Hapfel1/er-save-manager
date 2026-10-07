@@ -1,11 +1,13 @@
 """
-Item pickup flags for Elden Ring (vanilla).
+Item pickup flags for Elden Ring.
 
 Every row is one ItemLotParam getItemFlagId. The game sets the flag when the
 lot is collected and stops placing or awarding the lot while it is set, so
 clearing the flag of a world pickup makes it appear again.
 
-Data lives in item_pickups.csv, generated from the vanilla game files only:
+Data lives in item_pickups.csv (vanilla) and item_pickups_convergence.csv
+(The Convergence: its regulation plus the map, event, talk and item text
+files the mod replaces). Columns:
 
     flag        ItemLotParam getItemFlagId (the event flag this checklist
                 reads and writes)
@@ -18,7 +20,7 @@ Data lives in item_pickups.csv, generated from the vanilla game files only:
                 world tile m60_AA_BB_00 / m61_AA_BB_00.
     grace_flag  event flag of the nearest Site of Grace (event_flags.json,
                 Grace category), 0 if the location is unknown
-    source      pickup = MSB treasure (corpse, chest, shiny item)
+    source      pickup = MSB treasure (corpse, chest)
                 enemy  = NpcParam itemLotId drop of a placed enemy
                 reward = EMEVD Award Item Lot (bosses, scripted events)
                 other  = awarded elsewhere (mostly NPC talk scripts)
@@ -82,6 +84,14 @@ _TYPE_BY_CATEGORY = {
     "Notes and Paintings": "Key Items",
     "Flasks": "Key Items",
     "Upgrade Materials": "Upgrade Materials",
+    # Convergence categories
+    "Reworked Weapons": "Weapons",
+    "Notes": "Key Items",
+    "Keystones and Remnants": "Key Items",
+    "Remembrances": "Key Items",
+    "Bell Bearings": "Key Items",
+    "Steeds": "Key Items",
+    "Stones": "Upgrade Materials",
 }
 _OTHER = "Consumables and Materials"
 
@@ -125,49 +135,55 @@ class Pickup:
         )
 
 
-def _item_name(full_id: int, fallback: str) -> str:
+def _item_name(full_id: int, fallback: str, is_convergence: bool) -> str:
     upgrade = 0
     if full_id & 0xF0000000 == ItemCategory.WEAPON:
         upgrade = full_id % 100
-    name = get_item_name(full_id, upgrade)
+    name = get_item_name(full_id, upgrade, is_convergence)
     if name.startswith("Unknown ") and fallback:
         return fallback
     return name
 
 
-def _item_type(full_ids: list[int]) -> str:
+def _item_type(full_ids: list[int], is_convergence: bool) -> str:
     db = get_item_database()
     types = []
     for full_id in full_ids:
         if full_id in _PROGRESSION_IDS:
             return PROGRESSION
-        item = db.get_item_by_id(full_id)
+        item = db.get_item_by_id(full_id, is_convergence)
         if item is None and full_id & 0xF0000000 == ItemCategory.WEAPON:
-            item = db.get_item_by_id(full_id // 10000 * 10000)
-        category = item.category_name.removeprefix("DLC ") if item else ""
+            item = db.get_item_by_id(full_id // 10000 * 10000, is_convergence)
+        category = item.category_name if item else ""
+        category = category.removeprefix("Convergence ").removeprefix("DLC ")
         types.append(_TYPE_BY_CATEGORY.get(category, _OTHER))
     # A lot mixing types is listed under its most notable item
     return min(types, key=ITEM_TYPES.index) if types else _OTHER
 
 
-def _parse_items(items: str, names: str) -> tuple[tuple[int, int, str], ...]:
+def _parse_items(
+    items: str, names: str, is_convergence: bool
+) -> tuple[tuple[int, int, str], ...]:
     fallbacks = names.split("|")
     parsed = []
     for k, entry in enumerate(items.split("|")):
         kind, item_id, qty = entry.split(":")
         full_id = _KIND_PREFIX[kind] | int(item_id)
         fallback = fallbacks[k] if k < len(fallbacks) else ""
-        parsed.append((full_id, int(qty), _item_name(full_id, fallback)))
+        parsed.append(
+            (full_id, int(qty), _item_name(full_id, fallback, is_convergence))
+        )
     return tuple(parsed)
 
 
 @cache
-def get_pickups() -> tuple[Pickup, ...]:
-    path = Path(__file__).parent / "item_pickups.csv"
+def get_pickups(is_convergence: bool = False) -> tuple[Pickup, ...]:
+    name = "item_pickups_convergence.csv" if is_convergence else "item_pickups.csv"
+    path = Path(__file__).parent / name
     pickups = []
     with path.open(encoding="utf-8", newline="") as fh:
         for row in csv.DictReader(fh):
-            items = _parse_items(row["items"], row["names"])
+            items = _parse_items(row["items"], row["names"], is_convergence)
             pickups.append(
                 Pickup(
                     flag_id=int(row["flag"]),
@@ -177,7 +193,9 @@ def get_pickups() -> tuple[Pickup, ...]:
                     source=row["source"],
                     items=items,
                     is_dlc=row["dlc"] == "1",
-                    item_type=_item_type([full_id for full_id, _, _ in items]),
+                    item_type=_item_type(
+                        [full_id for full_id, _, _ in items], is_convergence
+                    ),
                 )
             )
     return tuple(pickups)
