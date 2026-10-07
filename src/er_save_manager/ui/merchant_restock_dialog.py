@@ -20,9 +20,10 @@ from er_save_manager.ui.utils import (
 
 _ALL = "All"
 _SCOPES = (_ALL, "Base Game", "DLC")
-_BOUGHT = "Bought"
+_BOUGHT = "Any Bought"
+_PARTLY = "Partly Bought"
 _SOLD_OUT = "Sold Out"
-_STATES = (_BOUGHT, _SOLD_OUT, _ALL)
+_STATES = (_BOUGHT, _PARTLY, _SOLD_OUT, _ALL)
 _EVENT_FLAGS_SIZE = 0x1BF99F
 
 
@@ -124,7 +125,7 @@ class MerchantRestockDialog:
             variable=state_var,
             values=list(_STATES),
             state="readonly",
-            width=110,
+            width=140,
             command=lambda _v: _refresh(),
         ).pack(side=tk.LEFT)
 
@@ -212,6 +213,8 @@ class MerchantRestockDialog:
                 count = bought_by_flag[r.flag_id]
                 sold_out = count >= r.quantity
                 if state == _BOUGHT and count == 0:
+                    continue
+                if state == _PARTLY and (count == 0 or sold_out):
                     continue
                 if state == _SOLD_OUT and not sold_out:
                     continue
