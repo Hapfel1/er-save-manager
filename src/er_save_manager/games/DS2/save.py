@@ -72,6 +72,7 @@ from er_save_manager.games.DS2.item_database import (
 )
 from er_save_manager.games.DS2.npc_database import NPCS, NpcEntry
 from er_save_manager.games.DS2.regulation import ClassBase, Regulation
+from er_save_manager.own_writes import record_write
 
 DS2_KEY = bytes.fromhex("599f9b699640a55236ee2d70835ec744")
 
@@ -663,6 +664,7 @@ class DS2Container:
         tmp_path = target.with_suffix(target.suffix + ".tmp")
         tmp_path.write_bytes(bytes(out))
         tmp_path.replace(target)
+        record_write(target)
 
 
 @dataclass

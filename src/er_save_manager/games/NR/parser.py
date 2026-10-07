@@ -170,6 +170,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
+from er_save_manager.own_writes import record_write
+
 try:
     from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
@@ -1144,6 +1146,7 @@ class NightreignSave:
         tmp_path = target.with_suffix(target.suffix + ".tmp")
         tmp_path.write_bytes(out)
         tmp_path.replace(target)
+        record_write(target)
 
     def get_active_slots(self) -> list[NightreignSlot]:
         """Return only slots that contain a character."""

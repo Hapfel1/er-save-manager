@@ -147,6 +147,8 @@ from pathlib import Path
 
 from Crypto.Cipher import AES
 
+from er_save_manager.own_writes import record_write
+
 # --- Constants --------------------------------------------------------------- #
 
 FILE_SIZE = 0x4204D0
@@ -1239,6 +1241,7 @@ class DSRSave:
         tmp_path = target.with_suffix(target.suffix + ".tmp")
         tmp_path.write_bytes(raw)
         tmp_path.replace(target)
+        record_write(target)
 
     def verify_checksums(self) -> list[tuple[int, bool]]:
         """

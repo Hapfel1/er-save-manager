@@ -8,6 +8,10 @@ from __future__ import annotations
 import os
 
 from er_save_manager.backup.manager import _atomic_write_bytes
+from er_save_manager.games.generic_steamid import (
+    detect_steamid_in_file,
+    patch_steamid_generic,
+)
 from er_save_manager.own_writes import is_own_write
 
 
@@ -23,6 +27,14 @@ def test_save_to_file_is_own_write(sanitized_save, sanitized_save_copy):
 def test_backup_restore_write_is_own_write(sanitized_save_copy):
     data = sanitized_save_copy.read_bytes()
     _atomic_write_bytes(sanitized_save_copy, data)
+    assert is_own_write(sanitized_save_copy) is True
+
+
+def test_steamid_patch_is_own_write(sanitized_save_copy):
+    old = detect_steamid_in_file(sanitized_save_copy)
+    assert old is not None
+    result = patch_steamid_generic(sanitized_save_copy, old + 1, old)
+    assert result.success
     assert is_own_write(sanitized_save_copy) is True
 
 

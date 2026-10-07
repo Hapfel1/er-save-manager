@@ -740,6 +740,7 @@ class SaveManagerGUI:
         # This prevents tab setup_ui() calls from accessing stale save data.
         self.save_file = None
         self.save_path = None
+        self._pending_file_change = False
         self.file_path_var.set("")
 
         # Null out all tab references so _finalize_save_load doesn't call methods
@@ -2107,6 +2108,8 @@ class SaveManagerGUI:
 
         self.save_path = Path(save_path)
         self.save_file = None
+        self._update_watched_mtime()
+        self._start_file_watcher()
         self.status_var.set(f"Selected: {os.path.basename(save_path)}")
         self.show_toast(
             f"Save file loaded: {os.path.basename(save_path)}", duration=2500
@@ -2307,6 +2310,8 @@ class SaveManagerGUI:
 
         self.save_path = Path(save_path)
         self.save_file = None
+        self._update_watched_mtime()
+        self._start_file_watcher()
 
         for attr in (
             "dsr_inspector_tab",
@@ -2371,6 +2376,8 @@ class SaveManagerGUI:
 
         self.save_path = Path(save_path)
         self.save_file = None
+        self._update_watched_mtime()
+        self._start_file_watcher()
 
         for attr in (
             "ds3_inspector_tab",
@@ -2424,6 +2431,8 @@ class SaveManagerGUI:
 
         self.save_path = Path(save_path)
         self.save_file = None
+        self._update_watched_mtime()
+        self._start_file_watcher()
 
         for attr in (
             "ds2_inspector_tab",
@@ -2471,6 +2480,8 @@ class SaveManagerGUI:
 
         self.save_path = Path(save_path)
         self.save_file = None
+        self._update_watched_mtime()
+        self._start_file_watcher()
 
         for attr in ("nr_inspector_tab", "nr_editor_tab", "nr_char_mgmt_tab"):
             tab = getattr(self, attr, None)
@@ -2763,7 +2774,7 @@ class SaveManagerGUI:
         Sets a pending flag instead of showing the dialog immediately so the
         user is only notified when they refocus the window.
         """
-        if not self.save_file or not self.save_path:
+        if not self.save_path:
             self._file_watcher_running = False
             return
 
@@ -2775,8 +2786,9 @@ class SaveManagerGUI:
 
         if self._watched_mtime is not None and current_mtime != self._watched_mtime:
             self._watched_mtime = current_mtime
-            # Writes from any tab, dialog or backup restore go through
-            # Save.to_file or the backup manager, which record them.
+            # Writes from any tab, dialog or backup restore go through the
+            # per-game save writers, the SteamID patchers or the backup
+            # manager, which record them.
             if not self._file_change_dialog_open and not is_own_write(self.save_path):
                 self._pending_file_change = True
 
@@ -2830,7 +2842,17 @@ class SaveManagerGUI:
         def on_reload():
             self._file_change_dialog_open = False
             dialog.destroy()
-            self.load_save(toast_message="Save file reloaded")
+            if self.active_game in (
+                "elden_ring",
+                "dark_souls_remastered",
+                "dark_souls_3",
+                "dark_souls_2",
+            ) or (self.active_game == "nightreign" and _NR_AVAILABLE):
+                self.load_save(toast_message="Save file reloaded")
+            else:
+                # SteamID-only games have no parser; load_save would treat
+                # the file as an Elden Ring save.
+                self._load_non_er_save(str(self.save_path))
 
         def on_dismiss():
             if disable_var.get():
