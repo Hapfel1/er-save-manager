@@ -1,8 +1,9 @@
 """
 Build or extend fixes/EventFlagBits.bin.
 
-The bitmap holds every event flag bit found set in a structurally clean
-Elden Ring slot. DeepScanFix scores candidate splice points against it, so
+The bitmap holds every bit found set in a structurally clean Elden Ring
+slot, over the _EF_PRE_TAIL bytes before the event flags followed by the
+event flags themselves. DeepScanFix scores candidate repairs against it, so
 more clean characters mean fewer unknown bits on a healthy layout.
 
 A slot counts as clean when the SteamID sits at its parsed offset and the
@@ -31,6 +32,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from er_save_manager.fixes.deep_scan import (  # noqa: E402
+    _EF_PRE_TAIL,
     _EVENT_FLAGS_SIZE,
     _EVENT_FLAGS_TERMINATOR,
     _world_chain_end,
@@ -54,7 +56,10 @@ def iter_saves(inputs: list[Path]):
 
 
 def clean_event_flags(save: Save, slot_index: int) -> bytes | None:
-    """The slot's event flags when the slot is structurally clean, else None."""
+    """
+    The slot's pre-tail plus event flags when the slot is structurally
+    clean, else None.
+    """
     slot = save.character_slots[slot_index]
     if slot.is_empty():
         return None
@@ -70,7 +75,7 @@ def clean_event_flags(save: Save, slot_index: int) -> bytes | None:
     ef_end = ef_rel + _EVENT_FLAGS_SIZE + _EVENT_FLAGS_TERMINATOR
     if _world_chain_end(slot_raw, ef_end) is None:
         return None
-    return slot_raw[ef_rel : ef_rel + _EVENT_FLAGS_SIZE]
+    return slot_raw[ef_rel - _EF_PRE_TAIL : ef_rel + _EVENT_FLAGS_SIZE]
 
 
 def main() -> int:
@@ -101,15 +106,15 @@ def main() -> int:
             if (path.resolve(), slot_index) in excluded:
                 continue
             try:
-                ef = clean_event_flags(save, slot_index)
+                flags = clean_event_flags(save, slot_index)
             except Exception:
                 continue
-            if ef is None or ef in seen:
+            if flags is None or flags in seen:
                 continue
-            seen.add(ef)
-            acc |= int.from_bytes(ef, "big")
+            seen.add(flags)
+            acc |= int.from_bytes(flags, "big")
 
-    data = acc.to_bytes(_EVENT_FLAGS_SIZE, "big")
+    data = acc.to_bytes(_EF_PRE_TAIL + _EVENT_FLAGS_SIZE, "big")
     args.out.write_bytes(zlib.compress(data, 9))
     print(f"{len(seen)} clean slots, {acc.bit_count()} bits set -> {args.out}")
     return 0

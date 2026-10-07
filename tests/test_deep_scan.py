@@ -227,7 +227,7 @@ def test_ef_splice_fallback_ignores_healthy_slots(sanitized_save):
         _with_steam_id(sanitized_save, i)
         assert fix._scan_ef_splice(sanitized_save, i) is None
         assert fix.detect(sanitized_save, i) is False
-        assert fix.scan_only(sanitized_save, i).tear_location != "event_flags_netman"
+        assert fix.scan_only(sanitized_save, i).tear_location != "event_flags_splice"
 
 
 def test_ef_splice_fallback_repairs_removed_flags_and_oversized_netman(
@@ -244,12 +244,14 @@ def test_ef_splice_fallback_repairs_removed_flags_and_oversized_netman(
 
     fix = DeepScanFix()
     scan = fix.scan_only(sanitized_save, i)
-    assert scan.tear_location == "event_flags_netman"
+    assert scan.tear_location == "event_flags_splice"
     assert scan.delta == -178
     assert fix.detect(sanitized_save, i) is True
 
     result = fix.apply(sanitized_save, i)
     assert result.applied is True
+    assert result.flags_relocated is True
+    assert result.netman_reset is True
 
     start = sanitized_save.character_slots[i].data_start
     repaired = bytes(sanitized_save._raw_data[start : start + _SLOT_SIZE])
@@ -283,7 +285,10 @@ def test_netman_tear_repair_reparses_slot(sanitized_save):
     assert scan.tear_location == "netman"
     assert scan.delta == -13
 
-    assert fix.apply(sanitized_save, i).applied is True
+    result = fix.apply(sanitized_save, i)
+    assert result.applied is True
+    assert result.netman_reset is True
+    assert result.flags_relocated is False
     reparsed = sanitized_save.character_slots[i]
     assert reparsed is not slot
     assert reparsed.steamid_offset == steamid_offset

@@ -25,12 +25,14 @@ NetMan anchor math (backward from steam_id):
   => NetMan start = steam_id_offset - 8 - 16 - 12 - 12 - 0x20004
                   = steam_id_offset - 0x20030
 
-Event flag splice with NetMan size error (fallback, see _scan_ef_splice):
-  Bytes removed inside the event flags while NetMan also has the wrong
-  size. Neither shift alone lines the struct walk up with the SteamID, so
-  the main scan reports nothing. The removal is located by the world
-  struct magics, the splice point by scoring candidate positions against
-  EventFlagBits.bin (every event flag bit seen set in clean saves).
+Event flag splices (fallback, see _scan_ef_splice):
+  Bytes cut from or added to the event flags, possibly at several points
+  and possibly with NetMan at the wrong size as well. The main scan misses
+  these when NetMan hides the shift, or when the parser reads garbage sizes
+  inside the world structs and resyncs onto the right SteamID. The net
+  shift is located by the world struct magics, the cut points by splitting
+  the event flags into runs of one shift each, scored against
+  EventFlagBits.bin (every bit seen set in clean saves).
 """
 
 from __future__ import annotations
@@ -38,6 +40,7 @@ from __future__ import annotations
 import logging
 import struct
 import zlib
+from bisect import bisect_left, bisect_right
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
@@ -78,14 +81,43 @@ _WORLD_STRUCT_COUNT = 5
 _FIELD_AREA_MIN_SIZE = 4
 _WORLD_STRUCT_MAX_SIZE = 0x8000
 
-# Search bounds for the event flag splice fallback
-_EF_SPLICE_MAX_REMOVED = 0x400
+# Event flag splice fallback
+_EF_SPLICE_MAX_REMOVED = 0x400  # net bytes missing, found via the struct chain
 _NETMAN_SIZE_TOLERANCE = 0x1000
-# The chosen splice may leave at most 1/N as many unknown flag bits as
-# either the unspliced or the fully shifted layout.
+# Bytes before the event flags that are scored too (tutorial data tail and
+# GameMan fields); a cut there moves flag data into them.
+_EF_PRE_TAIL = 0x400
+# Largest shift of a single run against its original position
+_EF_SEGMENT_MAX_SHIFT = 0x1000
+# Shift candidates kept, ranked by how many set bits they place on known bits
+_EF_SEGMENT_CANDIDATES = 40
+_EF_SEGMENT_MIN_VOTES = 24
+# Unknown bits an additional cut has to explain to be worth it
+_EF_SEGMENT_CUT_PENALTY = 16
+_EF_SEGMENT_MAX_CUTS = 4
+# The repair may leave at most 1/N as many unknown bits as the unrepaired layout
 _EF_SPLICE_MAX_SCORE_RATIO = 4
 _BASE_VERSION_SIZE = 16
-_EF_SPLICE_LOCATION = "event_flags_netman"
+_EF_SPLICE_LOCATION = "event_flags_splice"
+
+# Shown after a repair, for what it had to give up
+NETMAN_RESET_NOTE = (
+    "Bloodstains and messages were wiped (NetMan reset) to restore the save."
+)
+FLAG_RELOCATION_NOTE = (
+    "Event flag data was moved to restore the save; some progression states, "
+    "such as boss kills, may have changed."
+)
+
+
+# GameMan fields right before the event flags, in UserDataX.read order:
+# character_type i32, in_online_session u8, character_type_online u32,
+# last_rested_grace u32, not_alone u8, countdown u32, unk u32.
+_CHARACTER_TYPE_ONLINE_BEFORE_EF = 4 + 4 + 1 + 4 + 4
+_CHARACTER_TYPE_BEFORE_EF = 4 + 1 + _CHARACTER_TYPE_ONLINE_BEFORE_EF
+# Values in nearly every clean save, restored when a cut zeroed both
+_DEFAULT_CHARACTER_TYPE = -1
+_DEFAULT_CHARACTER_TYPE_ONLINE = 8
 
 # Boss defeat flag pairs for event flag torn write detection.
 # (map_block_byte, glob_block_byte, map_flag_id, glob_flag_id,
@@ -262,6 +294,14 @@ class EFTornScanResult:
 
 
 @dataclass
+class DeepScanFixResult(FixResult):
+    """FixResult that also reports what the repair reset or moved."""
+
+    netman_reset: bool = False  # NetMan replaced: bloodstains, messages gone
+    flags_relocated: bool = False  # event flag bytes moved to inferred positions
+
+
+@dataclass
 class DeepScanResult:
     """Result of deep scan with shift details."""
 
@@ -276,6 +316,9 @@ class DeepScanResult:
     ef_splice_point: int = (
         0  # slot-relative splice point when tear_location=="event_flags"
     )
+    # Splice fallback edits in slot order: (slot-relative position, n), n > 0
+    # reinserts n zero bytes, n < 0 drops -n zero bytes
+    ef_edits: list[tuple[int, int]] = field(default_factory=list)
     details: list[str] = field(default_factory=list)
 
 
@@ -544,8 +587,10 @@ class DeepScanFix(BaseFix):
             " (suspicious)" if zero_ratio > 0.9 else " (ok)"
         )
 
-        return FixResult(
+        return DeepScanFixResult(
             applied=True,
+            netman_reset=netman_note == "NetMan replaced with clean template",
+            flags_relocated=result.tear_location == "event_flags",
             description=f"Torn write corrected ({result.tear_location}): {'+' if delta > 0 else ''}{delta} bytes at slot+0x{shift_point:x}",
             details=result.details
             + [
@@ -1095,19 +1140,20 @@ class DeepScanFix(BaseFix):
 
     def _scan_ef_splice(self, save: Save, slot_index: int) -> DeepScanResult | None:
         """
-        Locate bytes removed inside the event flags when NetMan size is also off.
+        Locate bytes cut from (or added to) the event flags, at one or more
+        points, with or without a NetMan size error.
 
         Every check below must pass, otherwise None:
           - no valid world struct chain right after the parsed event flags
-          - exactly one removal size k with a valid chain k bytes earlier
+          - exactly one net removal k with a valid chain k bytes earlier
           - exactly one SteamID near the NetMan end implied by that chain,
             preceded by a sane BaseVersion
-          - one splice interval scores uniquely best against EventFlagBits.bin
-            and clearly better than both the unspliced and fully shifted layouts
-          - every defeated boss anchor pair agrees after the splice
+          - a segmentation into shift runs (see _segment_ef) with every cut
+            point strictly better than its neighbours and well below the
+            unrepaired score
+          - every defeated boss anchor pair agrees after the repair
 
-        Only removals are handled; an insertion inside the event flags is
-        left to the main scan.
+        A net insertion is left to the main scan.
         """
         slot = self.get_slot(save, slot_index)
         if slot.is_empty():
@@ -1167,17 +1213,32 @@ class DeepScanFix(BaseFix):
         steamid_offset = sid_hits[0]
         netman_size = steamid_offset - _TAIL_AFTER_NETMAN - netman_start
 
-        ef_bits = _load_ef_bits()
-        if ef_bits is None:
+        bits = _load_ef_bits()
+        if bits is None:
             return None
-        ef_raw = slot_raw[ef_rel : ef_rel + _EVENT_FLAGS_SIZE - removed]
-        splice = _locate_ef_splice(ef_raw, ef_bits, removed)
-        if splice is None:
-            log.debug("[deep_scan] ef_splice slot %d: no unique splice", slot_index)
+        segmented = _segment_ef(slot_raw, ef_rel, removed, *bits)
+        if segmented is None:
+            log.debug(
+                "[deep_scan] ef_splice slot %d: no unique segmentation", slot_index
+            )
             return None
-        splice_in_ef, best, unspliced, full_shift = splice
+        edits, unknown, unrepaired = segmented
 
-        repaired_ef = ef_raw[:splice_in_ef] + bytes(removed) + ef_raw[splice_in_ef:]
+        repaired = _apply_ef_edits(slot_raw[:netman_start], edits)
+        if _world_chain_end(repaired, ef_end_rel) is None:
+            return None
+        # Edits only add or drop zero bytes: every set bit survives, none appears
+        span_start = ef_rel - _EF_PRE_TAIL
+        before = slot_raw[span_start : ef_end_rel - removed]
+        after = repaired[span_start:ef_end_rel]
+        set_bits = int.from_bytes(before, "big").bit_count()
+        if int.from_bytes(after, "big").bit_count() != set_bits:
+            log.warning(
+                "[deep_scan] ef_splice slot %d: set bit count changed", slot_index
+            )
+            return None
+        moved_bits = _relocated_bits(slot_raw, edits, ef_end_rel - removed)
+        repaired_ef = repaired[ef_rel : ef_rel + _EVENT_FLAGS_SIZE]
         defeated = 0
         for (
             map_bb,
@@ -1194,7 +1255,7 @@ class DeepScanFix(BaseFix):
                 continue
             if not (repaired_ef[map_bb + map_bo] >> map_bit) & 1:
                 log.debug(
-                    "[deep_scan] ef_splice slot %d: %s disagrees after splice",
+                    "[deep_scan] ef_splice slot %d: %s disagrees after repair",
                     slot_index,
                     name,
                 )
@@ -1210,23 +1271,28 @@ class DeepScanFix(BaseFix):
             + _TAIL_AFTER_NETMAN,
             delta=-removed,
             netman_start=netman_start,
-            confidence="high",
+            confidence="medium",
             tear_location=_EF_SPLICE_LOCATION,
-            ef_splice_point=ef_rel + splice_in_ef,
+            ef_splice_point=edits[0][0],
+            ef_edits=edits,
         )
-        result.details = [
-            f"EF shift: -{removed} (0x{removed:x}) bytes",
-            f"Tear location: event_flags (ef+0x{splice_in_ef:x})",
+        result.details = [f"EF net shift: -{removed} (0x{removed:x}) bytes"]
+        result.details += [
+            f"{'Reinsert' if n > 0 else 'Drop'} {abs(n)} zero bytes at "
+            f"{'ef+0x%x' % (pos - ef_rel) if pos >= ef_rel else 'ef-0x%x' % (ef_rel - pos)}"
+            for pos, n in edits
+        ]
+        result.details += [
             f"NetMan size: 0x{netman_size:x} (expected 0x{_NETMAN_SIZE:x})",
-            f"Unknown flag bits: {best} after splice, "
-            f"{unspliced} unspliced, {full_shift} fully shifted",
-            f"Boss anchor pairs agreeing after splice: {defeated}",
+            f"Set flag bits moved: {moved_bits} of {set_bits} (none created or cleared)",
+            f"Unknown flag bits: {unknown} after repair, {unrepaired} unrepaired",
+            f"Boss anchor pairs agreeing after repair: {defeated}",
         ]
         log.info(
-            "[deep_scan] ef_splice slot %d: removed=%d, splice=ef+0x%x, netman_size=0x%x",
+            "[deep_scan] ef_splice slot %d: removed=%d, edits=%s, netman_size=0x%x",
             slot_index,
             removed,
-            splice_in_ef,
+            [(hex(pos), n) for pos, n in edits],
             netman_size,
         )
         return result
@@ -1238,7 +1304,7 @@ class DeepScanFix(BaseFix):
         result: DeepScanResult,
         correct_steam_id: int,
     ) -> FixResult:
-        """Reinsert the removed event flag bytes and restore NetMan to its fixed size."""
+        """Undo the event flag cuts and restore NetMan to its fixed size."""
         from io import BytesIO
 
         from ..parser.user_data_x import UserDataX
@@ -1248,10 +1314,10 @@ class DeepScanFix(BaseFix):
         slot_size = 0x280000
         slot_raw = bytes(save._raw_data[slot_data_start : slot_data_start + slot_size])
 
-        removed = -result.delta
         netman_end = result.steamid_offset_in_slot - _TAIL_AFTER_NETMAN
         netman = slot_raw[result.netman_start : netman_end]
         netman_note = "NetMan size intact, kept"
+        netman_reset = len(netman) != _NETMAN_SIZE
         if len(netman) != _NETMAN_SIZE:
             clean = _load_clean_netman()
             if clean is None:
@@ -1263,17 +1329,33 @@ class DeepScanFix(BaseFix):
             netman = clean
             netman_note = "NetMan replaced with clean template"
 
-        splice = result.ef_splice_point
-        corrected = (
-            slot_raw[:splice]
-            + bytes(removed)
-            + slot_raw[splice : result.netman_start]
+        corrected = bytearray(
+            _apply_ef_edits(slot_raw[: result.netman_start], result.ef_edits)
             + netman
             + slot_raw[netman_end:]
         )
         if len(corrected) < slot_size:
             corrected += bytes(slot_size - len(corrected))
-        corrected = corrected[:slot_size]
+        corrected = bytes(corrected[:slot_size])
+
+        # A cut before the event flags can take the GameMan fields with it
+        gameman_note = None
+        ef_rel = slot.event_flags_offset - slot_data_start
+        type_pos = ef_rel - _CHARACTER_TYPE_BEFORE_EF
+        online_pos = ef_rel - _CHARACTER_TYPE_ONLINE_BEFORE_EF
+        if (
+            result.ef_edits[0][0] < ef_rel
+            and struct.unpack_from("<i", corrected, type_pos)[0] == 0
+            and struct.unpack_from("<I", corrected, online_pos)[0] == 0
+        ):
+            patched = bytearray(corrected)
+            struct.pack_into("<i", patched, type_pos, _DEFAULT_CHARACTER_TYPE)
+            struct.pack_into("<I", patched, online_pos, _DEFAULT_CHARACTER_TYPE_ONLINE)
+            corrected = bytes(patched)
+            gameman_note = (
+                "GameMan fields were cut: character type restored to defaults, "
+                "death count and last grace stay 0"
+            )
 
         try:
             parsed = UserDataX.read(
@@ -1309,18 +1391,18 @@ class DeepScanFix(BaseFix):
 
         _reparse_slot(save, slot_index, slot_data_start)
 
-        return FixResult(
+        return DeepScanFixResult(
             applied=True,
+            netman_reset=netman_reset,
+            flags_relocated=True,
             description=(
                 f"Torn write corrected ({result.tear_location}): "
-                f"{removed} bytes reinserted at slot+0x{splice:x}"
+                f"{len(result.ef_edits)} cut(s), net {-result.delta} bytes"
             ),
             details=result.details
-            + [
-                "SteamID verified at correct offset",
-                netman_note,
-                "Checksum recalculated",
-            ],
+            + ["SteamID verified at correct offset", netman_note]
+            + ([gameman_note] if gameman_note else [])
+            + ["Checksum recalculated"],
         )
 
     def _get_save_steam_id(self, save: Save) -> int | None:
@@ -1424,10 +1506,13 @@ def _base_version_ok(slot_raw: bytes | bytearray, pos: int, version: int) -> boo
 
 
 @lru_cache(maxsize=1)
-def _load_ef_bits() -> bytes | None:
+def _load_ef_bits() -> tuple[bytes, bytes, list[int]] | None:
     """
-    Load EventFlagBits.bin: zlib-compressed bitmap the size of the event
-    flag array, with every bit set that was found set in a clean save.
+    Load EventFlagBits.bin: zlib-compressed OR of clean saves over the
+    _EF_PRE_TAIL bytes before the event flags followed by the event flags.
+
+    Returns (pre-tail bits, event flag bits, sorted non-zero event flag
+    byte positions), or None when the file is missing or malformed.
     """
     candidate = Path(__file__).parent / "EventFlagBits.bin"
     if not candidate.is_file():
@@ -1438,55 +1523,171 @@ def _load_ef_bits() -> bytes | None:
     except zlib.error as e:
         log.warning("[deep_scan] EventFlagBits.bin unreadable: %s", e)
         return None
-    if len(data) != _EVENT_FLAGS_SIZE:
+    if len(data) != _EF_PRE_TAIL + _EVENT_FLAGS_SIZE:
         log.warning(
             "[deep_scan] EventFlagBits.bin size mismatch: expected 0x%x, got 0x%x",
-            _EVENT_FLAGS_SIZE,
+            _EF_PRE_TAIL + _EVENT_FLAGS_SIZE,
             len(data),
         )
         return None
-    return data
+    pre, ef = data[:_EF_PRE_TAIL], data[_EF_PRE_TAIL:]
+    return pre, ef, [i for i, b in enumerate(ef) if b]
 
 
-def _locate_ef_splice(
-    ef_raw: bytes, ef_bits: bytes, removed: int
-) -> tuple[int, int, int, int] | None:
+def _segment_ef(
+    slot_raw: bytes,
+    ef_rel: int,
+    removed: int,
+    pre_bits: bytes,
+    ef_bits: bytes,
+    ef_nonzero: list[int],
+) -> tuple[list[tuple[int, int]], int, int] | None:
     """
-    Pick where `removed` zero bytes go back into ef_raw (the event flags
-    minus the removed bytes).
+    Split the corrupted event flags into runs that each sit at one shift
+    from their original position, and return the edits that undo it.
 
-    Set bits before the splice stay in place, set bits after it move up by
-    `removed`. A set bit landing where no clean save has one counts against
-    the candidate. The score only changes at non-zero bytes, so one
-    candidate per gap between them covers every position.
+    The span covers _EF_PRE_TAIL bytes before the event flags up to the
+    terminator, which sits `removed` bytes early. Each non-zero byte y is
+    given a shift d (original position y + d). A set bit landing where no
+    clean save has one costs 1; bytes before the event flags never move.
+    The span starts at shift 0 and ends at shift `removed`. A change of
+    shift costs _EF_SEGMENT_CUT_PENALTY; dropping inserted bytes needs a
+    zero gap at least that long. Shifts are limited to the candidates that
+    place the most set bits on known bits.
 
-    Returns (splice offset, best score, unspliced score, fully shifted
-    score), or None when the best gap is not unique or not clearly better
-    than both extremes.
+    Returns (edits, unknown bits after repair, unknown bits unrepaired), or
+    None when the result is not unique: moving any cut point to another
+    gap must strictly raise the cost.
     """
-    nonzero = [i for i, b in enumerate(ef_raw) if b]
-    in_place = [_POPCOUNT[ef_raw[i] & ~ef_bits[i] & 0xFF] for i in nonzero]
-    shifted = [_POPCOUNT[ef_raw[i] & ~ef_bits[i + removed] & 0xFF] for i in nonzero]
-
-    # scores[j]: nonzero[:j] stay in place, nonzero[j:] shift
-    score = sum(shifted)
-    scores = [score]
-    for kept, moved in zip(in_place, shifted, strict=True):
-        score += kept - moved
-        scores.append(score)
-
-    best = min(scores)
-    if scores.count(best) != 1:
+    lo = ef_rel - _EF_PRE_TAIL
+    hi = ef_rel + _EVENT_FLAGS_SIZE - removed
+    if lo < 0:
         return None
-    best_index = scores.index(best)
-    extremes = [
-        s for j, s in ((0, scores[0]), (len(nonzero), scores[-1])) if j != best_index
-    ]
-    if any(best * _EF_SPLICE_MAX_SCORE_RATIO > s for s in extremes):
+    ys = [y for y in range(lo, hi) if slot_raw[y]]
+
+    def cost(y: int, d: int) -> int | None:
+        o = y + d - ef_rel
+        if o < 0:
+            if d:
+                return None
+            return _POPCOUNT[slot_raw[y] & ~pre_bits[o + _EF_PRE_TAIL] & 0xFF]
+        if o >= _EVENT_FLAGS_SIZE:
+            return None
+        return _POPCOUNT[slot_raw[y] & ~ef_bits[o] & 0xFF]
+
+    votes: dict[int, int] = {}
+    for y in ys:
+        if y < ef_rel:
+            continue
+        value = slot_raw[y]
+        o = y - ef_rel
+        first = bisect_left(ef_nonzero, o - _EF_SEGMENT_MAX_SHIFT)
+        last = bisect_right(ef_nonzero, o + _EF_SEGMENT_MAX_SHIFT)
+        for q in ef_nonzero[first:last]:
+            if not value & ~ef_bits[q] & 0xFF:
+                votes[q - o] = votes.get(q - o, 0) + _POPCOUNT[value]
+    ranked = sorted(votes.items(), key=lambda kv: kv[1], reverse=True)
+    shifts = {0, removed} | {
+        d for d, n in ranked[:_EF_SEGMENT_CANDIDATES] if n >= _EF_SEGMENT_MIN_VOTES
+    }
+
+    # Virtual start (shift 0) and end (shift `removed`, the terminator)
+    points = [lo - 1, *ys, hi]
+    layers: list[dict[int, tuple[int, int | None]]] = [{0: (0, None)}]
+    for j in range(1, len(points)):
+        gap = points[j] - points[j - 1] - 1
+        end = j == len(points) - 1
+        layer: dict[int, tuple[int, int | None]] = {}
+        for d in (removed,) if end else shifts:
+            c = 0 if end else cost(points[j], d)
+            if c is None:
+                continue
+            best: tuple[int, int | None] | None = None
+            for prev_d, (prev_cost, _) in layers[-1].items():
+                if prev_d == d:
+                    total = prev_cost
+                elif prev_d > d and gap < prev_d - d:
+                    continue
+                else:
+                    total = prev_cost + _EF_SEGMENT_CUT_PENALTY
+                if best is None or total < best[0]:
+                    best = (total, prev_d)
+            if best is not None:
+                layer[d] = (best[0] + c, best[1])
+        if not layer:
+            return None
+        layers.append(layer)
+
+    total = layers[-1][removed][0]
+    shift_of = [removed]
+    for j in range(len(points) - 1, 0, -1):
+        shift_of.append(layers[j][shift_of[-1]][1])
+    shift_of.reverse()  # shift_of[j] belongs to points[j]
+
+    cuts = [j for j in range(1, len(points)) if shift_of[j] != shift_of[j - 1]]
+    if not cuts or len(cuts) > _EF_SEGMENT_MAX_CUTS:
         return None
 
-    splice = nonzero[best_index - 1] + 1 if best_index else 0
-    return splice, best, scores[-1], scores[0]
+    def gap_ok(left: int, right: int, before: int, after: int) -> bool:
+        return before <= after or points[right] - points[left] - 1 >= before - after
+
+    for j in cuts:
+        before, after = shift_of[j - 1], shift_of[j]
+        # Move the cut left: points j-1, j-2, ... take the shift after it
+        delta, i = 0, j - 1
+        while i >= 1 and shift_of[i] == before and shift_of[i - 1] == before:
+            new, old = cost(points[i], after), cost(points[i], before)
+            if new is None or old is None:
+                break
+            delta += new - old
+            if gap_ok(i - 1, i, before, after) and delta <= 0:
+                return None
+            i -= 1
+        # Move the cut right: points j, j+1, ... take the shift before it
+        delta, i = 0, j
+        while i <= len(points) - 2 and shift_of[i + 1] == after:
+            new, old = cost(points[i], before), cost(points[i], after)
+            if new is None or old is None:
+                break
+            delta += new - old
+            if gap_ok(i, i + 1, before, after) and delta <= 0:
+                return None
+            i += 1
+
+    unknown = total - _EF_SEGMENT_CUT_PENALTY * len(cuts)
+    unrepaired = sum(cost(y, 0) or 0 for y in ys)
+    if unknown * _EF_SPLICE_MAX_SCORE_RATIO > unrepaired:
+        return None
+
+    edits = [(points[j - 1] + 1, shift_of[j] - shift_of[j - 1]) for j in cuts]
+    return edits, unknown, unrepaired
+
+
+def _relocated_bits(slot_raw: bytes, edits: list[tuple[int, int]], end: int) -> int:
+    """Set bits in slot_raw[edits[0][0]:end] that the edits move (shift != 0)."""
+    moved = 0
+    shift = 0
+    bounds = [pos for pos, _ in edits] + [end]
+    for (pos, n), stop in zip(edits, bounds[1:], strict=True):
+        shift += n
+        if shift:
+            moved += int.from_bytes(slot_raw[pos:stop], "big").bit_count()
+    return moved
+
+
+def _apply_ef_edits(data: bytes, edits: list[tuple[int, int]]) -> bytes:
+    """Apply _segment_ef edits (positions in `data`, in ascending order)."""
+    out = bytearray()
+    pos = 0
+    for at, n in edits:
+        out += data[pos:at]
+        if n > 0:
+            out += bytes(n)
+            pos = at
+        else:
+            pos = at - n
+    out += data[pos:]
+    return bytes(out)
 
 
 _POPCOUNT = bytes(bin(i).count("1") for i in range(256))
