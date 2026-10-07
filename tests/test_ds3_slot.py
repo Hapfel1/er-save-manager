@@ -285,7 +285,7 @@ def test_character_death_bits(slot, slot_bytes):
     andre = next(
         n
         for n in json.loads((DATA / "npcs.json").read_text(encoding="utf-8"))
-        if n["name"] == "Andre"
+        if n["name"] == "Blacksmith Andre"
     )
     assert andre["chr_bits"] == [{"map": "m40_00", "bit": 95}]
     assert slot.character_dead("m40_00", 95) is False

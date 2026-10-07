@@ -88,9 +88,7 @@ The map key of mAA_BB is AA << 24 | BB << 16. Each bit is one enemy part of
 that map's MSB in part order (bit k = byte k // 8, mask 1 << k % 8) and is
 set while that character is dead. An NPC whose bit is set is spawned dead
 on load, and its death event then sets the dead flag again, so reviving
-needs the bit cleared as well as the flags. Verified 2026-10-01 from kill
-pairs: Andre (m40_00 bit 95) and the Undead Settlement Stone-humped Hag
-(m31_00 bit 158).
+needs the bit cleared as well as the flags.
 """
 
 from __future__ import annotations
