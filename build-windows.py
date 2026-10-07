@@ -74,6 +74,10 @@ include_files = [
         "er_save_manager/data/event_flags.json",
     ),
     (
+        "src/er_save_manager/data/item_pickups.json",
+        "er_save_manager/data/item_pickups.json",
+    ),
+    (
         "src/er_save_manager/data/locations.json",
         "er_save_manager/data/locations.json",
     ),
@@ -82,6 +86,10 @@ include_files = [
         "er_save_manager/data/quest_flags.json",
     ),
     ("src/er_save_manager/fixes/CSNetMan.bin", "er_save_manager/fixes/CSNetMan.bin"),
+    (
+        "src/er_save_manager/fixes/EventFlagBits.bin",
+        "er_save_manager/fixes/EventFlagBits.bin",
+    ),
     ("src/er_save_manager/games/DSR/data/", "er_save_manager/games/DSR/data/"),
     ("src/er_save_manager/games/DS3/data/", "er_save_manager/games/DS3/data/"),
     (
