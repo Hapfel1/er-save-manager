@@ -245,6 +245,20 @@ class EventFlagsTab:
             text="Unlock All in Category",
             command=self.unlock_all_in_category,
             width=160,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+
+        ctk.CTkButton(
+            slot_frame,
+            text="Export Flags...",
+            command=self.export_flags,
+            width=120,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+
+        ctk.CTkButton(
+            slot_frame,
+            text="Import Flags...",
+            command=self.import_flags,
+            width=120,
         ).pack(side=tk.LEFT)
 
         # Row 2: secondary tools
@@ -295,16 +309,9 @@ class EventFlagsTab:
 
         ctk.CTkButton(
             tools_row,
-            text="Export Flags...",
-            command=self.export_flags,
-            width=120,
-        ).pack(side=tk.LEFT, padx=(0, 6))
-
-        ctk.CTkButton(
-            tools_row,
-            text="Import Flags...",
-            command=self.import_flags,
-            width=120,
+            text="Item Pickups...",
+            command=self.open_item_pickups,
+            width=130,
         ).pack(side=tk.LEFT)
 
         filter_frame = ctk.CTkFrame(main_frame, corner_radius=10)
@@ -1940,6 +1947,26 @@ class EventFlagsTab:
         from er_save_manager.ui.grace_dialog import GraceDialog
 
         GraceDialog.open(
+            self.parent,
+            self.current_event_flags,
+            self.get_save_file(),
+            self.get_save_path(),
+            self.current_slot,
+            self.reload_save,
+            self.show_toast,
+        )
+
+    def open_item_pickups(self):
+        """Open the collected/missed item pickup checklist."""
+        if self.current_event_flags is None:
+            CTkMessageBox.showwarning(
+                "Not Loaded", "Please load event flags for a character first!"
+            )
+            return
+
+        from er_save_manager.ui.item_pickups_dialog import ItemPickupsDialog
+
+        ItemPickupsDialog.open(
             self.parent,
             self.current_event_flags,
             self.get_save_file(),

@@ -74,8 +74,8 @@ include_files = [
         "er_save_manager/data/event_flags.json",
     ),
     (
-        "src/er_save_manager/data/item_pickups.json",
-        "er_save_manager/data/item_pickups.json",
+        "src/er_save_manager/data/item_pickups.csv",
+        "er_save_manager/data/item_pickups.csv",
     ),
     (
         "src/er_save_manager/data/locations.json",

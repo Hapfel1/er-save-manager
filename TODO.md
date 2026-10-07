@@ -1,3 +1,5 @@
+research what csnetman has and corruption instead of the full replacement
+
 extend save file docs
 
 DS2 boss reviver
@@ -27,6 +29,8 @@ DS3 visited regions / warp unlocks
 DSR covenant rank and appearance
 
 DS2 last-bonfire warp
+
+notify when a save is edited externally for other games
 
 overall feature check/improvement check for all games done
 
