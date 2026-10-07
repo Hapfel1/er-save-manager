@@ -36,7 +36,7 @@
     ]
   },
   {
-    "name": "Stone-humped Hag (Undead Settlement)",
+    "name": "Yoel of Londor",
     "alive_flag": 1075,
     "dead_flag": 1078,
     "last_flag": 1079,
@@ -52,7 +52,7 @@
     ]
   },
   {
-    "name": "Yorshka",
+    "name": "Company Captain Yorshka",
     "alive_flag": 1095,
     "dead_flag": 1098,
     "last_flag": 1099,
@@ -116,7 +116,7 @@
     ]
   },
   {
-    "name": "Andre",
+    "name": "Blacksmith Andre",
     "alive_flag": 1175,
     "dead_flag": 1178,
     "last_flag": 1179,
@@ -348,7 +348,7 @@
     ]
   },
   {
-    "name": "Emma",
+    "name": "High Priestess Emma",
     "alive_flag": 1435,
     "dead_flag": 1438,
     "last_flag": 1439,
@@ -380,7 +380,7 @@
     ]
   },
   {
-    "name": "Stone-humped Hag (Irithyll)",
+    "name": "Old Woman of Londor",
     "alive_flag": 1575,
     "dead_flag": 1578,
     "last_flag": 1579,
@@ -444,7 +444,7 @@
     ]
   },
   {
-    "name": "Painting Woman (Ariandel)",
+    "name": "Painting Woman",
     "alive_flag": 1675,
     "dead_flag": 1678,
     "last_flag": 1679,
@@ -508,7 +508,7 @@
     ]
   },
   {
-    "name": "Shira",
+    "name": "Shira, Knight of Filianore",
     "alive_flag": 1835,
     "dead_flag": 1838,
     "last_flag": 1839,
@@ -524,7 +524,7 @@
     ]
   },
   {
-    "name": "Stone-humped Hag (Dreg Heap)",
+    "name": "Stone-humped Hag",
     "alive_flag": 1875,
     "dead_flag": 1878,
     "last_flag": 1879,

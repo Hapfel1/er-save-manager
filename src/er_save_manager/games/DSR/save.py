@@ -147,6 +147,8 @@ from pathlib import Path
 
 from Crypto.Cipher import AES
 
+from er_save_manager.own_writes import record_write
+
 # --- Constants --------------------------------------------------------------- #
 
 FILE_SIZE = 0x4204D0
@@ -261,16 +263,12 @@ EMPTY_CHECK_END = 0x0090
 NG_PLUS_OFFSET = 0x1E5BE
 
 # Event flags: the game's flag array, stored after a variable-length run of
-# records, so its offset differs per character (0x1F1D1 on a fresh one,
-# 0x1F2F5 on a level 76 one). It starts FLAG_RECORD_TO_BASE bytes after the
+# records, so its offset differs per character. It starts FLAG_RECORD_TO_BASE bytes after the
 # one record matching FLAG_RECORD (FF FF FF FF, a u32 whose top byte is 0,
 # then 00 08). Layout as DS1 keeps it in memory: flag id GAAASNNN (group,
 # area, section, number) lives at FLAG_GROUPS[G] + area index * 0x500 +
 # S * 128 + (N // 32) * 4, a little-endian u32 with flag N % 32 = 0 in the
-# top bit. Confirmed from before/after pairs (an NPC kill moved Crestfallen
-# Warrior from state 1460 to 1462; a pickup set only its item lot flag
-# 51020000) and on every character: the item pickup group's set bits are
-# item lot flags, and a fresh character has none.
+# top bit. The item pickup group's set bits are item lot flags.
 FLAG_RECORD = re.compile(rb"\xff\xff\xff\xff[\x00-\xff]{3}\x00\x00\x08")
 FLAG_RECORD_TO_BASE = 0xD
 FLAG_SEARCH_SPAN = 0x2000
@@ -285,28 +283,39 @@ FLAG_AREA_SIZE = 0x500
 # Bonfire state lives in the per-map object records of each visited map, not
 # in the event flags: a 20-byte record u32 BONFIRE_RECORD_TYPE, u32 bonfire
 # entity id, u32 kindle value (0 unlit, 10 lit, 20/30/40 kindled), then state
-# bytes. Lighting the Undead Asylum cell bonfire (entity 1811960) in game
-# changed its value from 0 to 10; every played character has one record per
-# bonfire of the maps it visited, valued 0, 10, 20 or 40.
+# bytes. A character has one record per bonfire of each map it visited.
 BONFIRE_RECORD_TYPE = 0x0B
 BONFIRE_LEVEL_OFFSET = 8
 BONFIRE_LIT_LEVEL = 10
 FLAG_SECTION_SIZE = 128
 
 # Starting stats per class: (base_level, vit, atn, end, str, dex, int, fth, res)
-# Used to recalculate total level when individual stats are edited.
+# from CharaInitParam rows 2000-2009 (soulLv, baseVit, baseWil, baseEnd,
+# baseStr, baseDex, baseMag, baseFai, baseDurability). Used to recalculate
+# total level when individual stats are edited.
 _CLASS_BASE_STATS: dict[int, tuple[int, ...]] = {
     0: (4, 11, 8, 12, 13, 13, 9, 9, 11),  # Warrior
     1: (5, 14, 10, 10, 11, 11, 9, 11, 10),  # Knight
-    2: (3, 10, 11, 10, 10, 14, 11, 8, 10),  # Wanderer
+    2: (3, 10, 11, 10, 10, 14, 11, 8, 12),  # Wanderer
     3: (5, 9, 11, 9, 9, 15, 12, 11, 10),  # Thief
     4: (4, 12, 8, 14, 14, 9, 8, 10, 11),  # Bandit
-    5: (4, 11, 9, 11, 12, 14, 9, 8, 10),  # Hunter
+    5: (4, 11, 9, 11, 12, 14, 9, 9, 11),  # Hunter
     6: (3, 8, 15, 8, 9, 11, 15, 8, 8),  # Sorcerer
-    7: (1, 10, 12, 11, 12, 9, 10, 8, 11),  # Pyromancer
+    7: (1, 10, 12, 11, 12, 9, 10, 8, 12),  # Pyromancer
     8: (2, 11, 11, 9, 12, 8, 8, 14, 11),  # Cleric
-    9: (1, 11, 11, 11, 11, 11, 11, 11, 11),  # Deprived
+    9: (6, 11, 11, 11, 11, 11, 11, 11, 11),  # Deprived
 }
+STAT_KEYS = ("vit", "atn", "end", "str", "dex", "int", "fth", "res")
+MAX_STAT = 99
+MAX_SOULS = 999_999_999
+MAX_HUMANITY = 99
+NAME_MAX_CHARS = 16
+
+
+def class_base_stats(player_class: int) -> dict[str, int] | None:
+    """Starting attributes of a class by stat key, or None if unknown."""
+    base = _CLASS_BASE_STATS.get(int(player_class))
+    return dict(zip(STAT_KEYS, base[1:], strict=True)) if base else None
 
 
 def calc_level_from_stats(
@@ -1226,6 +1235,7 @@ class DSRSave:
         tmp_path = target.with_suffix(target.suffix + ".tmp")
         tmp_path.write_bytes(raw)
         tmp_path.replace(target)
+        record_write(target)
 
     def verify_checksums(self) -> list[tuple[int, bool]]:
         """

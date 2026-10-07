@@ -22,6 +22,8 @@ import hashlib
 import struct
 from pathlib import Path
 
+from er_save_manager.own_writes import record_write
+
 _KEYS = {
     "dark_souls_2": bytes.fromhex("599f9b699640a55236ee2d70835ec744"),
 }
@@ -168,6 +170,7 @@ def patch_steamid(save_path: Path, new_steam64: int, game_key: str) -> tuple[boo
     tmp_path = save_path.with_suffix(save_path.suffix + ".tmp")
     tmp_path.write_bytes(bytes(raw))
     tmp_path.replace(save_path)
+    record_write(save_path)
     return True, (
         f"Patched {total_replacements} occurrence(s) across {entries_patched} entry/entries\n"
         f"Old SteamID: {old_steam64}\n"

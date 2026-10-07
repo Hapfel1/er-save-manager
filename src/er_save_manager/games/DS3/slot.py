@@ -14,7 +14,7 @@ structures that follow it. Nothing is addressed by absolute position.
   0x10  Player data: everything from the gaitem table to the event flags
   0x18  Player game data: gaitem table through the gesture list
   0x28, 0x30  Two small sections chained after 0x18, inside 0x10; the
-              NG+ counter (u16) is the first field after the 0x30 section
+              0x30 section is [u32 0][u32 NG+ counter]
   0x38  Event flags ([u32 prefix][flag blocks]), right after 0x10
   0x40, 0x48, 0x50, 0x58  Remaining sections, back to back
 The pair at 0x20 is (0x5C, u32 value) and is not a section. The directory
@@ -43,6 +43,7 @@ game on its next save, so removing an item never needs to shrink the table.
   +0x34 Vigor, Attunement, Endurance, Strength, Dexterity, Intelligence,
         Faith, Luck (u32 each), +0x5C Vitality, +0x60 level, +0x64 souls
   +0x78 name, UTF-16LE, 16 characters + terminator
+  +0x9E starting class (u8, CharaInitParam row 3000 + class)
   +0x1F0 22 x u32 equip slots, each an inventory index or 0xFFFFFFFF
   +0x318 inventory
 
@@ -87,9 +88,7 @@ The map key of mAA_BB is AA << 24 | BB << 16. Each bit is one enemy part of
 that map's MSB in part order (bit k = byte k // 8, mask 1 << k % 8) and is
 set while that character is dead. An NPC whose bit is set is spawned dead
 on load, and its death event then sets the dead flag again, so reviving
-needs the bit cleared as well as the flags. Verified 2026-10-01 from kill
-pairs: Andre (m40_00 bit 95) and the Undead Settlement Stone-humped Hag
-(m31_00 bit 158).
+needs the bit cleared as well as the flags.
 """
 
 from __future__ import annotations
@@ -153,13 +152,45 @@ _STAT_REL = {
 _LEVEL_REL = 0x60
 _SOULS_REL = 0x64
 _NAME_REL = 0x78
-_NAME_LEN = 32  # bytes, 16 UTF-16 code units including the terminator
+_NAME_LEN = 32  # bytes, 16 UTF-16 code units; a u16 terminator follows
+NAME_MAX_CHARS = _NAME_LEN // 2
+# u8 starting class, index into CharaInitParam rows 3000-3009.
+_CLASS_REL = 0x9E
 _EQUIP_SLOTS_REL = 0x1F0
 _EQUIP_SLOT_COUNT = 22
 _INVENTORY_REL = 0x318
 
 # Level equals the attribute sum minus this for every starting class.
 LEVEL_STAT_OFFSET = 89
+
+MAX_STAT = 99
+MAX_SOULS = 999_999_999
+
+# Starting classes by save index, base attributes from CharaInitParam.
+STARTING_CLASSES: tuple[tuple[str, dict[str, int]], ...] = tuple(
+    (
+        name,
+        dict(
+            zip(
+                ("vig", "atn", "end", "vit", "str", "dex", "int", "fth", "lck"),
+                stats,
+                strict=True,
+            )
+        ),
+    )
+    for name, stats in (
+        ("Knight", (12, 10, 11, 15, 13, 12, 9, 9, 7)),
+        ("Mercenary", (11, 12, 11, 10, 10, 16, 10, 8, 9)),
+        ("Warrior", (14, 6, 12, 11, 16, 9, 8, 9, 11)),
+        ("Herald", (12, 10, 9, 12, 12, 11, 8, 13, 11)),
+        ("Thief", (10, 11, 10, 9, 9, 13, 10, 8, 14)),
+        ("Assassin", (10, 14, 11, 10, 10, 14, 11, 9, 10)),
+        ("Sorcerer", (9, 16, 9, 7, 7, 12, 16, 7, 12)),
+        ("Pyromancer", (11, 12, 10, 8, 12, 9, 14, 14, 7)),
+        ("Cleric", (10, 14, 9, 7, 12, 8, 7, 16, 13)),
+        ("Deprived", (10, 10, 10, 10, 10, 10, 10, 10, 10)),
+    )
+)
 
 # --- Inventory --------------------------------------------------------------- #
 
@@ -189,17 +220,19 @@ GESTURE_COUNT = 41
 _GESTURE_ENTRY = 4
 _DIR_BEFORE_NG = 0x30
 _NG_MAX = 7
-# Global flags 50-58 mark the current playthrough (NG, NG+, ... NG+8).
+# common.emevd event 700 sets flag 50 + cycle for NG..NG+5 and flag 56 for
+# NG+6 and above. Flags 57 and 58 are unused by any script; older versions
+# of this tool set them, so they are cleared along with the rest.
 _LAP_FLAG_BASE = 50
-_LAP_FLAG_MAX = 8
+_LAP_FLAG_MAX = 6
+_LAP_FLAG_CLEAR = 8
 
 # --- Event flags ------------------------------------------------------------- #
 
 _FLAG_BLOCK_BYTES = 1280
 _FLAG_GROUP_BYTES = 128
 _FLAG_PREFIX = 4
-# Map block key (flag // 10000) to block index, one block per map. Derived
-# from boss, bonfire and NPC flags whose state is known in real saves.
+# Map block key (flag // 10000) to block index, one block per map.
 _EVENT_FLAG_BLOCKS = {
     1300: 3,  # High Wall of Lothric
     1301: 4,  # Lothric Castle
@@ -382,8 +415,8 @@ class DS3Slot:
             if order != k or value >> 1 != k + 1:
                 raise LayoutError("character data is not where expected")
         ng_off, ng_size = self._dir(_DIR_BEFORE_NG)
-        ng_plus = ng_off + ng_size
-        if struct.unpack_from("<H", data, ng_plus)[0] > _NG_MAX:
+        ng_plus = ng_off + ng_size - 4
+        if _read_u32(data, ng_plus) > _NG_MAX:
             raise LayoutError("NG+ counter is out of range")
         return _Layout(
             gaitem_start, gaitem_end, inv, storage, gestures, ng_plus, flags, used_end
@@ -510,8 +543,16 @@ class DS3Slot:
     @name.setter
     def name(self, value: str) -> None:
         off = self._player(_NAME_REL)
-        encoded = value.encode("utf-16-le")[: _NAME_LEN - 2]
-        self._data[off : off + _NAME_LEN] = encoded.ljust(_NAME_LEN, b"\x00")
+        encoded = value[:NAME_MAX_CHARS].encode("utf-16-le")[:_NAME_LEN]
+        self._data[off : off + _NAME_LEN + 2] = encoded.ljust(_NAME_LEN + 2, b"\x00")
+
+    @property
+    def starting_class(self) -> int:
+        return self._data[self._player(_CLASS_REL)]
+
+    @starting_class.setter
+    def starting_class(self, value: int) -> None:
+        self._data[self._player(_CLASS_REL)] = value & 0xFF
 
     def _u32_prop(rel: int):  # noqa: N805
         def getter(self) -> int:
@@ -545,15 +586,15 @@ class DS3Slot:
 
     @property
     def ng_plus(self) -> int:
-        return struct.unpack_from("<H", self._data, self._get_layout().ng_plus)[0]
+        return _read_u32(self._data, self._get_layout().ng_plus)
 
     @ng_plus.setter
     def ng_plus(self, val: int) -> None:
-        struct.pack_into("<H", self._data, self._get_layout().ng_plus, val)
+        _write_u32(self._data, self._get_layout().ng_plus, val)
         # The playthrough flags are one-hot; keep them consistent with the
         # counter so scripts that check the current lap agree with it.
         lap = min(val, _LAP_FLAG_MAX)
-        for n in range(_LAP_FLAG_MAX + 1):
+        for n in range(_LAP_FLAG_CLEAR + 1):
             self.set_flag(_LAP_FLAG_BASE + n, n == lap)
 
     # --- Event flags ------------------------------------------------------- #

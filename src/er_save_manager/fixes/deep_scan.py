@@ -24,13 +24,25 @@ NetMan anchor math (backward from steam_id):
   NetMan        0x20004 bytes
   => NetMan start = steam_id_offset - 8 - 16 - 12 - 12 - 0x20004
                   = steam_id_offset - 0x20030
+
+Event flag splices (fallback, see _scan_ef_splice):
+  Bytes cut from or added to the event flags, possibly at several points
+  and possibly with NetMan at the wrong size as well. The main scan misses
+  these when NetMan hides the shift, or when the parser reads garbage sizes
+  inside the world structs and resyncs onto the right SteamID. The net
+  shift is located by the world struct magics, the cut points by splitting
+  the event flags into runs of one shift each, scored against
+  EventFlagBits.bin (every bit seen set in clean saves).
 """
 
 from __future__ import annotations
 
 import logging
 import struct
+import zlib
+from bisect import bisect_left, bisect_right
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -60,6 +72,52 @@ _EVENT_FLAGS_TERMINATOR = 1
 
 # How many bytes to sample for post-fix validation
 _VALIDATION_SAMPLE = 64
+
+# Content tags of WorldArea, WorldGeomMan and WorldGeomMan2 (2nd-4th of the
+# five size-prefixed structs after the event flags) in every non-empty chain.
+_WORLD_STRUCT_MAGICS = (b"CHR ", b"MOEG", b"FOEG")
+_WORLD_STRUCT_COUNT = 5
+# FieldArea content starts with a u32 entry count
+_FIELD_AREA_MIN_SIZE = 4
+_WORLD_STRUCT_MAX_SIZE = 0x8000
+
+# Event flag splice fallback
+_EF_SPLICE_MAX_REMOVED = 0x400  # net bytes missing, found via the struct chain
+_NETMAN_SIZE_TOLERANCE = 0x1000
+# Bytes before the event flags that are scored too (tutorial data tail and
+# GameMan fields); a cut there moves flag data into them.
+_EF_PRE_TAIL = 0x400
+# Largest shift of a single run against its original position
+_EF_SEGMENT_MAX_SHIFT = 0x1000
+# Shift candidates kept, ranked by how many set bits they place on known bits
+_EF_SEGMENT_CANDIDATES = 40
+_EF_SEGMENT_MIN_VOTES = 24
+# Unknown bits an additional cut has to explain to be worth it
+_EF_SEGMENT_CUT_PENALTY = 16
+_EF_SEGMENT_MAX_CUTS = 4
+# The repair may leave at most 1/N as many unknown bits as the unrepaired layout
+_EF_SPLICE_MAX_SCORE_RATIO = 4
+_BASE_VERSION_SIZE = 16
+_EF_SPLICE_LOCATION = "event_flags_splice"
+
+# Shown after a repair, for what it had to give up
+NETMAN_RESET_NOTE = (
+    "Bloodstains and messages were wiped (NetMan reset) to restore the save."
+)
+FLAG_RELOCATION_NOTE = (
+    "Event flag data was moved to restore the save; some progression states, "
+    "such as boss kills, may have changed."
+)
+
+
+# GameMan fields right before the event flags, in UserDataX.read order:
+# character_type i32, in_online_session u8, character_type_online u32,
+# last_rested_grace u32, not_alone u8, countdown u32, unk u32.
+_CHARACTER_TYPE_ONLINE_BEFORE_EF = 4 + 4 + 1 + 4 + 4
+_CHARACTER_TYPE_BEFORE_EF = 4 + 1 + _CHARACTER_TYPE_ONLINE_BEFORE_EF
+# Values a normal character holds, restored when a cut zeroed both
+_DEFAULT_CHARACTER_TYPE = -1
+_DEFAULT_CHARACTER_TYPE_ONLINE = 8
 
 # Boss defeat flag pairs for event flag torn write detection.
 # (map_block_byte, glob_block_byte, map_flag_id, glob_flag_id,
@@ -236,6 +294,14 @@ class EFTornScanResult:
 
 
 @dataclass
+class DeepScanFixResult(FixResult):
+    """FixResult that also reports what the repair reset or moved."""
+
+    netman_reset: bool = False  # NetMan replaced: bloodstains, messages gone
+    flags_relocated: bool = False  # event flag bytes moved to inferred positions
+
+
+@dataclass
 class DeepScanResult:
     """Result of deep scan with shift details."""
 
@@ -250,6 +316,9 @@ class DeepScanResult:
     ef_splice_point: int = (
         0  # slot-relative splice point when tear_location=="event_flags"
     )
+    # Splice fallback edits in slot order: (slot-relative position, n), n > 0
+    # reinserts n zero bytes, n < 0 drops -n zero bytes
+    ef_edits: list[tuple[int, int]] = field(default_factory=list)
     details: list[str] = field(default_factory=list)
 
 
@@ -268,11 +337,15 @@ class DeepScanFix(BaseFix):
     def detect(self, save: Save, slot_index: int) -> bool:
         """Run deep scan to check if a repairable shift exists."""
         result = self._scan(save, slot_index)
-        return (
+        if (
             result.steamid_found
             and result.delta != 0
             and result.confidence in ("high", "medium")
-        )
+        ):
+            return True
+        if _main_scan_acts(result):
+            return False
+        return self._scan_ef_splice(save, slot_index) is not None
 
     def apply(self, save: Save, slot_index: int) -> FixResult:
         """Apply the shift correction."""
@@ -289,6 +362,11 @@ class DeepScanFix(BaseFix):
             )
 
         result = self._scan(save, slot_index)
+
+        if not _main_scan_acts(result):
+            splice = self._scan_ef_splice(save, slot_index)
+            if splice is not None:
+                return self._apply_ef_splice(save, slot_index, splice, correct_steam_id)
 
         if not result.steamid_found:
             log.warning(
@@ -494,6 +572,11 @@ class DeepScanFix(BaseFix):
                 log.info("[deep_scan] NetMan is empty after reshift, no wipe needed")
 
         _recalculate_slot_checksum(save, slot_index, slot_data_start)
+        reparse_note = (
+            None
+            if _reparse_slot(save, slot_index, slot_data_start)
+            else "WARNING: corrected slot does not re-parse, offsets stay stale"
+        )
 
         validation_note = (
             "SteamID verified at correct offset"
@@ -504,8 +587,10 @@ class DeepScanFix(BaseFix):
             " (suspicious)" if zero_ratio > 0.9 else " (ok)"
         )
 
-        return FixResult(
+        return DeepScanFixResult(
             applied=True,
+            netman_reset=netman_note == "NetMan replaced with clean template",
+            flags_relocated=result.tear_location == "event_flags",
             description=f"Torn write corrected ({result.tear_location}): {'+' if delta > 0 else ''}{delta} bytes at slot+0x{shift_point:x}",
             details=result.details
             + [
@@ -516,12 +601,18 @@ class DeepScanFix(BaseFix):
                 zero_note,
             ]
             + ([netman_note] if netman_note else [])
+            + ([reparse_note] if reparse_note else [])
             + ["Checksum recalculated"],
         )
 
     def scan_only(self, save: Save, slot_index: int) -> DeepScanResult:
         """Public method to run scan and return details without modifying."""
-        return self._scan(save, slot_index)
+        result = self._scan(save, slot_index)
+        if not _main_scan_acts(result):
+            splice = self._scan_ef_splice(save, slot_index)
+            if splice is not None:
+                return splice
+        return result
 
     def ef_scan_only(self, save: Save, slot_index: int) -> EFTornScanResult:
         """Public method to run event flag torn write scan without modifying."""
@@ -1047,6 +1138,273 @@ class DeepScanFix(BaseFix):
         )
         return result
 
+    def _scan_ef_splice(self, save: Save, slot_index: int) -> DeepScanResult | None:
+        """
+        Locate bytes cut from (or added to) the event flags, at one or more
+        points, with or without a NetMan size error.
+
+        Every check below must pass, otherwise None:
+          - no valid world struct chain right after the parsed event flags
+          - exactly one net removal k with a valid chain k bytes earlier
+          - exactly one SteamID near the NetMan end implied by that chain,
+            preceded by a sane BaseVersion
+          - a segmentation into shift runs (see _segment_ef) with every cut
+            point strictly better than its neighbours and well below the
+            unrepaired score
+          - every defeated boss anchor pair agrees after the repair
+
+        A net insertion is left to the main scan.
+        """
+        slot = self.get_slot(save, slot_index)
+        if slot.is_empty():
+            return None
+        correct_steam_id = self._get_save_steam_id(save)
+        if not correct_steam_id:
+            return None
+
+        slot_data_start = slot.data_start
+        slot_size = 0x280000
+        slot_raw = bytes(save._raw_data[slot_data_start : slot_data_start + slot_size])
+
+        ef_rel = getattr(slot, "event_flags_offset", 0) - slot_data_start
+        if ef_rel <= 0:
+            return None
+        ef_end_rel = ef_rel + _EVENT_FLAGS_SIZE + _EVENT_FLAGS_TERMINATOR
+        if _world_chain_end(slot_raw, ef_end_rel) is not None:
+            return None
+
+        chains = [
+            (k, end)
+            for k in range(1, _EF_SPLICE_MAX_REMOVED + 1)
+            if (end := _world_chain_end(slot_raw, ef_end_rel - k)) is not None
+        ]
+        if len(chains) != 1:
+            log.debug(
+                "[deep_scan] ef_splice slot %d: %d chain candidates",
+                slot_index,
+                len(chains),
+            )
+            return None
+        removed, chain_end = chains[0]
+
+        version = getattr(slot, "version", 0)
+        fixed_tail = _PRE_NETMAN_FIXED_BASE
+        if version >= 65:
+            fixed_tail += _PRE_NETMAN_V65_EXTRA
+        if version >= 66:
+            fixed_tail += _PRE_NETMAN_V66_EXTRA
+        netman_start = chain_end + fixed_tail
+
+        nominal_sid = netman_start + _STEAM_ID_TO_NETMAN_START
+        sid_hits = [
+            o
+            for o in _find_all(slot_raw, struct.pack("<Q", correct_steam_id))
+            if abs(o - nominal_sid) <= _NETMAN_SIZE_TOLERANCE
+            and _base_version_ok(slot_raw, o - _BASE_VERSION_SIZE, version)
+        ]
+        if len(sid_hits) != 1:
+            log.debug(
+                "[deep_scan] ef_splice slot %d: %d SteamID candidates near 0x%x",
+                slot_index,
+                len(sid_hits),
+                nominal_sid,
+            )
+            return None
+        steamid_offset = sid_hits[0]
+        netman_size = steamid_offset - _TAIL_AFTER_NETMAN - netman_start
+
+        bits = _load_ef_bits()
+        if bits is None:
+            return None
+        segmented = _segment_ef(slot_raw, ef_rel, removed, *bits)
+        if segmented is None:
+            log.debug(
+                "[deep_scan] ef_splice slot %d: no unique segmentation", slot_index
+            )
+            return None
+        edits, unknown, unrepaired = segmented
+
+        repaired = _apply_ef_edits(slot_raw[:netman_start], edits)
+        if _world_chain_end(repaired, ef_end_rel) is None:
+            return None
+        # Edits only add or drop zero bytes: every set bit survives, none appears
+        span_start = ef_rel - _EF_PRE_TAIL
+        before = slot_raw[span_start : ef_end_rel - removed]
+        after = repaired[span_start:ef_end_rel]
+        set_bits = int.from_bytes(before, "big").bit_count()
+        if int.from_bytes(after, "big").bit_count() != set_bits:
+            log.warning(
+                "[deep_scan] ef_splice slot %d: set bit count changed", slot_index
+            )
+            return None
+        moved_bits = _relocated_bits(slot_raw, edits, ef_end_rel - removed)
+        repaired_ef = repaired[ef_rel : ef_rel + _EVENT_FLAGS_SIZE]
+        defeated = 0
+        for (
+            map_bb,
+            glob_bb,
+            _map_id,
+            _glob_id,
+            map_bo,
+            map_bit,
+            glob_bo,
+            glob_bit,
+            name,
+        ) in _EF_ANCHOR_PAIRS:
+            if not (repaired_ef[glob_bb + glob_bo] >> glob_bit) & 1:
+                continue
+            if not (repaired_ef[map_bb + map_bo] >> map_bit) & 1:
+                log.debug(
+                    "[deep_scan] ef_splice slot %d: %s disagrees after repair",
+                    slot_index,
+                    name,
+                )
+                return None
+            defeated += 1
+
+        result = DeepScanResult(
+            steamid_found=True,
+            steamid_offset_in_slot=steamid_offset,
+            expected_steamid_offset=netman_start
+            + removed
+            + _NETMAN_SIZE
+            + _TAIL_AFTER_NETMAN,
+            delta=-removed,
+            netman_start=netman_start,
+            confidence="medium",
+            tear_location=_EF_SPLICE_LOCATION,
+            ef_splice_point=edits[0][0],
+            ef_edits=edits,
+        )
+        result.details = [f"EF net shift: -{removed} (0x{removed:x}) bytes"]
+        result.details += [
+            f"{'Reinsert' if n > 0 else 'Drop'} {abs(n)} zero bytes at "
+            f"{'ef+0x%x' % (pos - ef_rel) if pos >= ef_rel else 'ef-0x%x' % (ef_rel - pos)}"
+            for pos, n in edits
+        ]
+        result.details += [
+            f"NetMan size: 0x{netman_size:x} (expected 0x{_NETMAN_SIZE:x})",
+            f"Set flag bits moved: {moved_bits} of {set_bits} (none created or cleared)",
+            f"Unknown flag bits: {unknown} after repair, {unrepaired} unrepaired",
+            f"Boss anchor pairs agreeing after repair: {defeated}",
+        ]
+        log.info(
+            "[deep_scan] ef_splice slot %d: removed=%d, edits=%s, netman_size=0x%x",
+            slot_index,
+            removed,
+            [(hex(pos), n) for pos, n in edits],
+            netman_size,
+        )
+        return result
+
+    def _apply_ef_splice(
+        self,
+        save: Save,
+        slot_index: int,
+        result: DeepScanResult,
+        correct_steam_id: int,
+    ) -> FixResult:
+        """Undo the event flag cuts and restore NetMan to its fixed size."""
+        from io import BytesIO
+
+        from ..parser.user_data_x import UserDataX
+
+        slot = self.get_slot(save, slot_index)
+        slot_data_start = slot.data_start
+        slot_size = 0x280000
+        slot_raw = bytes(save._raw_data[slot_data_start : slot_data_start + slot_size])
+
+        netman_end = result.steamid_offset_in_slot - _TAIL_AFTER_NETMAN
+        netman = slot_raw[result.netman_start : netman_end]
+        netman_note = "NetMan size intact, kept"
+        netman_reset = len(netman) != _NETMAN_SIZE
+        if len(netman) != _NETMAN_SIZE:
+            clean = _load_clean_netman()
+            if clean is None:
+                return FixResult(
+                    applied=False,
+                    description="CSNetMan.bin not found, cannot rebuild NetMan",
+                    details=result.details,
+                )
+            netman = clean
+            netman_note = "NetMan replaced with clean template"
+
+        corrected = bytearray(
+            _apply_ef_edits(slot_raw[: result.netman_start], result.ef_edits)
+            + netman
+            + slot_raw[netman_end:]
+        )
+        if len(corrected) < slot_size:
+            corrected += bytes(slot_size - len(corrected))
+        corrected = bytes(corrected[:slot_size])
+
+        # A cut before the event flags can take the GameMan fields with it
+        gameman_note = None
+        ef_rel = slot.event_flags_offset - slot_data_start
+        type_pos = ef_rel - _CHARACTER_TYPE_BEFORE_EF
+        online_pos = ef_rel - _CHARACTER_TYPE_ONLINE_BEFORE_EF
+        if (
+            result.ef_edits[0][0] < ef_rel
+            and struct.unpack_from("<i", corrected, type_pos)[0] == 0
+            and struct.unpack_from("<I", corrected, online_pos)[0] == 0
+        ):
+            patched = bytearray(corrected)
+            struct.pack_into("<i", patched, type_pos, _DEFAULT_CHARACTER_TYPE)
+            struct.pack_into("<I", patched, online_pos, _DEFAULT_CHARACTER_TYPE_ONLINE)
+            corrected = bytes(patched)
+            gameman_note = (
+                "GameMan fields were cut: character type restored to defaults, "
+                "death count and last grace stay 0"
+            )
+
+        try:
+            parsed = UserDataX.read(
+                BytesIO(corrected), save.is_ps, slot_data_start, slot_size
+            )
+        except Exception as e:
+            log.warning("[deep_scan] ef_splice re-parse failed: %s", e)
+            return FixResult(
+                applied=False,
+                description=f"Repaired slot does not parse: {e}",
+                details=result.details,
+            )
+        # Offsets from this parse are stream positions, i.e. slot-relative
+        parsed_ef_end = (
+            parsed.event_flags_offset + _EVENT_FLAGS_SIZE + _EVENT_FLAGS_TERMINATOR
+        )
+        if (
+            parsed.steam_id != correct_steam_id
+            or parsed.steamid_offset != result.expected_steamid_offset
+            or _world_chain_end(corrected, parsed_ef_end) is None
+            or not parsed.rest
+        ):
+            log.warning("[deep_scan] ef_splice re-parse validation failed")
+            return FixResult(
+                applied=False,
+                description="Repaired slot failed validation, nothing written",
+                details=result.details,
+            )
+
+        save._raw_data[slot_data_start : slot_data_start + slot_size] = corrected
+        if not save.is_ps:
+            _recalculate_slot_checksum(save, slot_index, slot_data_start)
+
+        _reparse_slot(save, slot_index, slot_data_start)
+
+        return DeepScanFixResult(
+            applied=True,
+            netman_reset=netman_reset,
+            flags_relocated=True,
+            description=(
+                f"Torn write corrected ({result.tear_location}): "
+                f"{len(result.ef_edits)} cut(s), net {-result.delta} bytes"
+            ),
+            details=result.details
+            + ["SteamID verified at correct offset", netman_note]
+            + ([gameman_note] if gameman_note else [])
+            + ["Checksum recalculated"],
+        )
+
     def _get_save_steam_id(self, save: Save) -> int | None:
         if save.user_data_10_parsed and hasattr(save.user_data_10_parsed, "steam_id"):
             return save.user_data_10_parsed.steam_id
@@ -1084,6 +1442,255 @@ def _load_clean_netman() -> bytes | None:
         )
         return None
     return data
+
+
+def _reparse_slot(save: Save, slot_index: int, slot_data_start: int) -> bool:
+    """
+    Replace the parsed slot after its bytes moved, so later writes
+    (PlayerGameDataHash refresh in to_file) use the new offsets.
+
+    Returns False and keeps the old parse when the bytes do not parse.
+    """
+    from io import BytesIO
+
+    from ..parser.user_data_x import UserDataX
+
+    stream = BytesIO(save._raw_data)
+    stream.seek(slot_data_start)
+    try:
+        save.character_slots[slot_index] = UserDataX.read(
+            stream, save.is_ps, slot_data_start, 0x280000
+        )
+    except Exception as e:
+        log.warning("[deep_scan] slot %d re-parse failed: %s", slot_index, e)
+        return False
+    return True
+
+
+def _main_scan_acts(result: DeepScanResult) -> bool:
+    """True when apply() repairs a _scan() result without the splice fallback."""
+    return (
+        result.steamid_found
+        and (result.delta != 0 or result.tear_location == "event_flags")
+        and result.confidence in ("high", "medium")
+    )
+
+
+def _world_chain_end(slot_raw: bytes | bytearray, pos: int) -> int | None:
+    """
+    End of the five size-prefixed world structs starting at pos, or None
+    when a size is out of range or a tagged struct lacks its magic.
+    """
+    for index in range(_WORLD_STRUCT_COUNT):
+        if pos < 0 or pos + 4 > len(slot_raw):
+            return None
+        size = struct.unpack_from("<i", slot_raw, pos)[0]
+        if size < 0 or size > _WORLD_STRUCT_MAX_SIZE:
+            return None
+        if index == 0 and size < _FIELD_AREA_MIN_SIZE:
+            return None
+        if 1 <= index <= len(_WORLD_STRUCT_MAGICS):
+            magic = _WORLD_STRUCT_MAGICS[index - 1]
+            if slot_raw[pos + 4 : pos + 4 + len(magic)] != magic:
+                return None
+        pos += 4 + size
+    return pos
+
+
+def _base_version_ok(slot_raw: bytes | bytearray, pos: int, version: int) -> bool:
+    """BaseVersion sanity: both copies equal, within (0, slot version], flags clear."""
+    if pos < 0 or pos + _BASE_VERSION_SIZE > len(slot_raw):
+        return False
+    copy, base, is_latest, unk = struct.unpack_from("<4I", slot_raw, pos)
+    return copy == base and 0 < base <= version and is_latest in (0, 1) and unk == 0
+
+
+@lru_cache(maxsize=1)
+def _load_ef_bits() -> tuple[bytes, bytes, list[int]] | None:
+    """
+    Load EventFlagBits.bin: zlib-compressed OR of clean saves over the
+    _EF_PRE_TAIL bytes before the event flags followed by the event flags.
+
+    Returns (pre-tail bits, event flag bits, sorted non-zero event flag
+    byte positions), or None when the file is missing or malformed.
+    """
+    candidate = Path(__file__).parent / "EventFlagBits.bin"
+    if not candidate.is_file():
+        log.debug("[deep_scan] EventFlagBits.bin not found at %s", candidate)
+        return None
+    try:
+        data = zlib.decompress(candidate.read_bytes())
+    except zlib.error as e:
+        log.warning("[deep_scan] EventFlagBits.bin unreadable: %s", e)
+        return None
+    if len(data) != _EF_PRE_TAIL + _EVENT_FLAGS_SIZE:
+        log.warning(
+            "[deep_scan] EventFlagBits.bin size mismatch: expected 0x%x, got 0x%x",
+            _EF_PRE_TAIL + _EVENT_FLAGS_SIZE,
+            len(data),
+        )
+        return None
+    pre, ef = data[:_EF_PRE_TAIL], data[_EF_PRE_TAIL:]
+    return pre, ef, [i for i, b in enumerate(ef) if b]
+
+
+def _segment_ef(
+    slot_raw: bytes,
+    ef_rel: int,
+    removed: int,
+    pre_bits: bytes,
+    ef_bits: bytes,
+    ef_nonzero: list[int],
+) -> tuple[list[tuple[int, int]], int, int] | None:
+    """
+    Split the corrupted event flags into runs that each sit at one shift
+    from their original position, and return the edits that undo it.
+
+    The span covers _EF_PRE_TAIL bytes before the event flags up to the
+    terminator, which sits `removed` bytes early. Each non-zero byte y is
+    given a shift d (original position y + d). A set bit landing where no
+    clean save has one costs 1; bytes before the event flags never move.
+    The span starts at shift 0 and ends at shift `removed`. A change of
+    shift costs _EF_SEGMENT_CUT_PENALTY; dropping inserted bytes needs a
+    zero gap at least that long. Shifts are limited to the candidates that
+    place the most set bits on known bits.
+
+    Returns (edits, unknown bits after repair, unknown bits unrepaired), or
+    None when the result is not unique: moving any cut point to another
+    gap must strictly raise the cost.
+    """
+    lo = ef_rel - _EF_PRE_TAIL
+    hi = ef_rel + _EVENT_FLAGS_SIZE - removed
+    if lo < 0:
+        return None
+    ys = [y for y in range(lo, hi) if slot_raw[y]]
+
+    def cost(y: int, d: int) -> int | None:
+        o = y + d - ef_rel
+        if o < 0:
+            if d:
+                return None
+            return _POPCOUNT[slot_raw[y] & ~pre_bits[o + _EF_PRE_TAIL] & 0xFF]
+        if o >= _EVENT_FLAGS_SIZE:
+            return None
+        return _POPCOUNT[slot_raw[y] & ~ef_bits[o] & 0xFF]
+
+    votes: dict[int, int] = {}
+    for y in ys:
+        if y < ef_rel:
+            continue
+        value = slot_raw[y]
+        o = y - ef_rel
+        first = bisect_left(ef_nonzero, o - _EF_SEGMENT_MAX_SHIFT)
+        last = bisect_right(ef_nonzero, o + _EF_SEGMENT_MAX_SHIFT)
+        for q in ef_nonzero[first:last]:
+            if not value & ~ef_bits[q] & 0xFF:
+                votes[q - o] = votes.get(q - o, 0) + _POPCOUNT[value]
+    ranked = sorted(votes.items(), key=lambda kv: kv[1], reverse=True)
+    shifts = {0, removed} | {
+        d for d, n in ranked[:_EF_SEGMENT_CANDIDATES] if n >= _EF_SEGMENT_MIN_VOTES
+    }
+
+    # Virtual start (shift 0) and end (shift `removed`, the terminator)
+    points = [lo - 1, *ys, hi]
+    layers: list[dict[int, tuple[int, int | None]]] = [{0: (0, None)}]
+    for j in range(1, len(points)):
+        gap = points[j] - points[j - 1] - 1
+        end = j == len(points) - 1
+        layer: dict[int, tuple[int, int | None]] = {}
+        for d in (removed,) if end else shifts:
+            c = 0 if end else cost(points[j], d)
+            if c is None:
+                continue
+            best: tuple[int, int | None] | None = None
+            for prev_d, (prev_cost, _) in layers[-1].items():
+                if prev_d == d:
+                    total = prev_cost
+                elif prev_d > d and gap < prev_d - d:
+                    continue
+                else:
+                    total = prev_cost + _EF_SEGMENT_CUT_PENALTY
+                if best is None or total < best[0]:
+                    best = (total, prev_d)
+            if best is not None:
+                layer[d] = (best[0] + c, best[1])
+        if not layer:
+            return None
+        layers.append(layer)
+
+    total = layers[-1][removed][0]
+    shift_of = [removed]
+    for j in range(len(points) - 1, 0, -1):
+        shift_of.append(layers[j][shift_of[-1]][1])
+    shift_of.reverse()  # shift_of[j] belongs to points[j]
+
+    cuts = [j for j in range(1, len(points)) if shift_of[j] != shift_of[j - 1]]
+    if not cuts or len(cuts) > _EF_SEGMENT_MAX_CUTS:
+        return None
+
+    def gap_ok(left: int, right: int, before: int, after: int) -> bool:
+        return before <= after or points[right] - points[left] - 1 >= before - after
+
+    for j in cuts:
+        before, after = shift_of[j - 1], shift_of[j]
+        # Move the cut left: points j-1, j-2, ... take the shift after it
+        delta, i = 0, j - 1
+        while i >= 1 and shift_of[i] == before and shift_of[i - 1] == before:
+            new, old = cost(points[i], after), cost(points[i], before)
+            if new is None or old is None:
+                break
+            delta += new - old
+            if gap_ok(i - 1, i, before, after) and delta <= 0:
+                return None
+            i -= 1
+        # Move the cut right: points j, j+1, ... take the shift before it
+        delta, i = 0, j
+        while i <= len(points) - 2 and shift_of[i + 1] == after:
+            new, old = cost(points[i], before), cost(points[i], after)
+            if new is None or old is None:
+                break
+            delta += new - old
+            if gap_ok(i, i + 1, before, after) and delta <= 0:
+                return None
+            i += 1
+
+    unknown = total - _EF_SEGMENT_CUT_PENALTY * len(cuts)
+    unrepaired = sum(cost(y, 0) or 0 for y in ys)
+    if unknown * _EF_SPLICE_MAX_SCORE_RATIO > unrepaired:
+        return None
+
+    edits = [(points[j - 1] + 1, shift_of[j] - shift_of[j - 1]) for j in cuts]
+    return edits, unknown, unrepaired
+
+
+def _relocated_bits(slot_raw: bytes, edits: list[tuple[int, int]], end: int) -> int:
+    """Set bits in slot_raw[edits[0][0]:end] that the edits move (shift != 0)."""
+    moved = 0
+    shift = 0
+    bounds = [pos for pos, _ in edits] + [end]
+    for (pos, n), stop in zip(edits, bounds[1:], strict=True):
+        shift += n
+        if shift:
+            moved += int.from_bytes(slot_raw[pos:stop], "big").bit_count()
+    return moved
+
+
+def _apply_ef_edits(data: bytes, edits: list[tuple[int, int]]) -> bytes:
+    """Apply _segment_ef edits (positions in `data`, in ascending order)."""
+    out = bytearray()
+    pos = 0
+    for at, n in edits:
+        out += data[pos:at]
+        if n > 0:
+            out += bytes(n)
+            pos = at
+        else:
+            pos = at - n
+    out += data[pos:]
+    return bytes(out)
+
+
+_POPCOUNT = bytes(bin(i).count("1") for i in range(256))
 
 
 def _find_all(data: bytes | bytearray, pattern: bytes) -> list[int]:

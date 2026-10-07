@@ -40,6 +40,8 @@ from pathlib import Path
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
+from er_save_manager.own_writes import record_write
+
 _DS3_KEY = bytes.fromhex("FD464D695E69A39A10E319A7ACE8B7FA")
 
 _BND4_MAGIC = b"BND4"
@@ -154,6 +156,7 @@ class DS3Parser:
         tmp_path = target.with_suffix(target.suffix + ".tmp")
         tmp_path.write_bytes(out)
         tmp_path.replace(target)
+        record_write(target)
 
     def get_slot_plaintext_size(self, index: int) -> int:
         return len(self._entries[index].plaintext)

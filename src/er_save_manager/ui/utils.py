@@ -225,17 +225,26 @@ def patch_combo_scroll(combo, max_visible_rows: int = 20, row_height: int = 28):
         popup.overrideredirect(True)
         popup.attributes("-topmost", True)
         combo.update()
+        # Screen coordinates and winfo sizes are physical pixels, while the
+        # popup geometry and widget sizes are logical and get scaled by CTk.
+        scale = popup._get_window_scaling()
         text_font = ctk.CTkFont()
         text_width = max(text_font.measure(v) for v in values)
         pad = int(combo._apply_widget_scaling(48))
-        width = max(combo.winfo_width(), text_width + pad)
+        width = round(max(combo.winfo_width(), text_width + pad) / scale)
 
         x = combo.winfo_rootx()
-        y = combo.winfo_rooty() + combo.winfo_height() + 2
+        top = combo.winfo_rooty()
+        below = top + combo.winfo_height() + 2
         screen_h = popup.winfo_screenheight()
-        available_rows = max((screen_h - y - 40) // row_height, 4)
-        rows = min(len(values), max_visible_rows, available_rows)
+        row_px = row_height * scale
+        rows_below = int((screen_h - below - 40) // row_px)
+        rows_above = int((top - 2 - 40) // row_px)
+        wanted = min(len(values), max_visible_rows)
+        open_up = rows_below < wanted and rows_above > rows_below
+        rows = max(min(wanted, rows_above if open_up else rows_below), 1)
         height = rows * row_height + 8
+        y = top - 2 - round(height * scale) if open_up else below
 
         geometry = f"{width}x{height}+{x}+{y}"
         popup.geometry(geometry)

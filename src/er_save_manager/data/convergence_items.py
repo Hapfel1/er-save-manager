@@ -23,7 +23,7 @@ def is_convergence_save(save_path: str | Path) -> bool:
     Check if a save file is a Convergence mod save.
 
     Convergence saves carry ".cnv" anywhere in the filename, e.g. .cnv,
-    .cnv.co2, .cnv.co3. A bare .co2/.co3 with no .cnv segment is an
+    .cnvco2, .cnv.co2, .cnv.co3. A bare .co2/.co3 with no .cnv segment is an
     encrypted vanilla save, not Convergence.
 
     Args:
@@ -42,6 +42,17 @@ def is_convergence_save(save_path: str | Path) -> bool:
     logger.debug(f"[is_convergence_save] path={path.name}, result={result}")
 
     return result
+
+
+def is_seamless_save(save_path: str | Path) -> bool:
+    """
+    Check if a save file is a Seamless Co-op save.
+
+    Seamless saves carry ".co2" in the filename (.co2, .cnv.co2). Convergence
+    with Seamless uses .cnvco2, which has no dot before "co2".
+    """
+    name = Path(save_path).name.lower()
+    return ".co2" in name or name.endswith(".cnvco2")
 
 
 def _resolve_convergence_item(full_id: int):

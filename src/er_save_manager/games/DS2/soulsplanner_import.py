@@ -20,6 +20,7 @@ from er_save_manager.games.DS2.icon_manager import (
 )
 from er_save_manager.games.DS2.save import (
     LEVEL_STAT_KEYS,
+    STARTING_CLASSES,
     UPGRADABLE_CATEGORIES,
     DS2Save,
 )
@@ -30,6 +31,7 @@ from er_save_manager.games.DS2.soulsplanner import (
     PlannerItem,
     apply_items,
     apply_stats,
+    build_class_id,
     display_name,
     equip_build,
     has_loadout,
@@ -156,9 +158,13 @@ def _ask_build(parent) -> PlannerBuild | None:
     return result["build"]
 
 
-def _ask_mode(parent, build: PlannerBuild, character) -> tuple[str, bool] | None:
-    """Show the build and ask what to import and whether to equip the build's
-    loadout afterwards. None when cancelled."""
+def _ask_mode(
+    parent, build: PlannerBuild, character
+) -> tuple[str, bool, int | None] | None:
+    """Show the build and ask what to import, whether to equip the build's
+    loadout afterwards and, when the build is for another class, whether to
+    switch the character to it. Returns (mode, equip, class id to switch to
+    or None), or None when cancelled."""
     dialog = _modal(parent, _TITLE, 560, 600)
     result: dict[str, str | None] = {"mode": None}
     equip_var = tk.BooleanVar(value=has_loadout(build))
@@ -167,7 +173,21 @@ def _ask_mode(parent, build: PlannerBuild, character) -> tuple[str, bool] | None
         result["mode"] = mode
         dialog.destroy()
 
-    problems = stat_problems(build)
+    current_problems = stat_problems(build, character)
+    new_class = build_class_id(build)
+    if new_class == character.starting_class or character.class_base(new_class) is None:
+        new_class = None
+    new_problems = (
+        stat_problems(build, character, new_class) if new_class is not None else []
+    )
+    # Switching is preselected when only the build's own class fits its stats.
+    class_var = tk.BooleanVar(
+        value=new_class is not None and bool(current_problems) and not new_problems
+    )
+
+    def problems() -> list[str]:
+        return new_problems if class_var.get() else current_problems
+
     buttons = ctk.CTkFrame(dialog, fg_color="transparent")
     buttons.pack(side="bottom", fill="x", padx=15, pady=15)
     equip_box = ctk.CTkCheckBox(
@@ -177,10 +197,19 @@ def _ask_mode(parent, build: PlannerBuild, character) -> tuple[str, bool] | None
         state="normal" if has_loadout(build) else "disabled",
     )
     equip_box.pack(side="bottom", anchor="w", padx=20)
+    if new_class is not None:
+        ctk.CTkCheckBox(
+            dialog,
+            text=(
+                f"Change the starting class to {STARTING_CLASSES[new_class]} "
+                "when importing stats"
+            ),
+            variable=class_var,
+            command=lambda: update_problems(),
+        ).pack(side="bottom", anchor="w", padx=20, pady=(0, 6))
     ctk.CTkButton(buttons, text="Cancel", width=90, command=dialog.destroy).pack(
         side="right"
     )
-    stats_state = "disabled" if problems else "normal"
     items_state = "normal" if build.items else "disabled"
     ctk.CTkButton(
         buttons,
@@ -189,20 +218,20 @@ def _ask_mode(parent, build: PlannerBuild, character) -> tuple[str, bool] | None
         state=items_state,
         command=lambda: choose(_ITEMS),
     ).pack(side="right", padx=(0, 8))
-    ctk.CTkButton(
+    stats_button = ctk.CTkButton(
         buttons,
         text="Stats Only",
         width=110,
-        state=stats_state,
         command=lambda: choose(_STATS),
-    ).pack(side="right", padx=(0, 8))
-    ctk.CTkButton(
+    )
+    stats_button.pack(side="right", padx=(0, 8))
+    both_button = ctk.CTkButton(
         buttons,
         text="Stats and Items",
         width=130,
-        state="normal" if not problems and build.items else "disabled",
         command=lambda: choose(_BOTH),
-    ).pack(side="right", padx=(0, 8))
+    )
+    both_button.pack(side="right", padx=(0, 8))
 
     body = ScrollableFrame(dialog, fg_color="transparent")
     body.pack(fill="both", expand=True, padx=10, pady=(10, 0))
@@ -221,6 +250,7 @@ def _ask_mode(parent, build: PlannerBuild, character) -> tuple[str, bool] | None
             text_color=color or _HINT_COLOR,
         ).pack(anchor="w", padx=15)
 
+    class_name = character.starting_class_name or "unknown class"
     section(f"Build {build.build_id} ({build.class_name})")
     stat_lines = [f"Level: {character.get_stat('level')} -> {build.level}"] + [
         f"{name.capitalize()}: {character.get_stat(name)} -> {build.stats[name]}"
@@ -228,15 +258,27 @@ def _ask_mode(parent, build: PlannerBuild, character) -> tuple[str, bool] | None
     ]
     line("\n".join(stat_lines))
     line(
-        "The character's starting class is not changed. A build made for a "
-        "different class can end up with attributes below this class's "
-        "starting values."
+        f"The character's starting class is {class_name}. Attributes below the "
+        "starting class's values cannot be imported. Soul memory is raised to "
+        "cover the new level if needed."
     )
-    if problems:
-        line(
-            "Stats cannot be imported, out of range: " + ", ".join(problems),
-            color="orange",
+    problem_label = ctk.CTkLabel(
+        body, text="", justify="left", wraplength=480, text_color="orange"
+    )
+
+    def update_problems() -> None:
+        found = problems()
+        stats_state = "disabled" if found else "normal"
+        stats_button.configure(state=stats_state)
+        both_button.configure(state=stats_state if build.items else "disabled")
+        problem_label.configure(
+            text="Stats cannot be imported, out of range: " + ", ".join(found)
+            if found
+            else ""
         )
+
+    problem_label.pack(anchor="w", padx=15)
+    update_problems()
 
     section(f"Items ({len(build.items)})")
     images: list[ctk.CTkImage] = []
@@ -256,7 +298,11 @@ def _ask_mode(parent, build: PlannerBuild, character) -> tuple[str, bool] | None
     dialog.wait_window()
     if result["mode"] is None:
         return None
-    return result["mode"], equip_var.get() and result["mode"] != _STATS
+    return (
+        result["mode"],
+        equip_var.get() and result["mode"] != _STATS,
+        new_class if class_var.get() and result["mode"] != _ITEMS else None,
+    )
 
 
 def _ask_owned(parent, items: list[PlannerItem], owned: list[tuple[PlannerItem, int]]):
@@ -437,7 +483,7 @@ def import_soulsplanner(
     choice = _ask_mode(parent, build, character)
     if choice is None:
         return
-    mode, equip = choice
+    mode, equip, new_class = choice
 
     items: list[PlannerItem] = []
     upgrades: dict[tuple[int, int], int] = {}
@@ -463,8 +509,16 @@ def import_soulsplanner(
 
     parts = []
     if mode in (_STATS, _BOTH):
-        apply_stats(character, build)
+        if new_class is not None:
+            # Before apply_stats, whose soul memory sync counts level-ups from
+            # the class's starting level.
+            character.starting_class = new_class
+            save.sync_class_cache(slot_index)
+            parts.append(f"class set to {STARTING_CLASSES[new_class]}")
+        soul_memory_added = apply_stats(character, build)
         parts.append(f"stats set, level {build.level}")
+        if soul_memory_added:
+            parts.append(f"soul memory raised by {soul_memory_added:,}")
     result = apply_items(character, items, upgrades, quantities) if items else None
     if result is not None:
         parts.append(f"{result.added} item(s) added")

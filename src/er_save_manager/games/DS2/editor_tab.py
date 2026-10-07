@@ -9,14 +9,18 @@ import customtkinter as ctk
 from er_save_manager.games.DS2.bonfire_tab import DS2BonfirePanel
 from er_save_manager.games.DS2.inventory_tab import DS2InventoryPanel
 from er_save_manager.games.DS2.npc_tab import DS2NpcPanel
+from er_save_manager.games.DS2.regulation import ClassBase
 from er_save_manager.games.DS2.save import (
     CHARACTER_SLOTS,
     LEVEL_STAT_KEYS,
+    NAME_MAX_CHARS,
     NG_PLUS_MAX,
+    STARTING_CLASSES,
     DS2Save,
     SlotState,
 )
 from er_save_manager.games.DS2.soulsplanner_import import import_soulsplanner
+from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.scrollable_frame import ScrollableFrame
 from er_save_manager.ui.utils import game_blocks_write
 
@@ -76,6 +80,11 @@ class DS2EditorTab:
 
         self._baseline_stats: dict[str, int] = {}
         self._baseline_level: int = 0
+        # Starting level and attributes of the loaded character's class, None
+        # when unknown; the level is then derived from the loaded stats.
+        self._class_base: ClassBase | None = None
+        # Starting class picked in the Class box, written on apply.
+        self._class_id: int = 0
         self._suppress_recalc = False
 
     # ------------------------------------------------------------------
@@ -210,6 +219,27 @@ class DS2EditorTab:
         self._torch_hint.grid(row=4, column=3, sticky="w", padx=5, pady=3)
         self.torch_var.trace_add("write", lambda *_: self._check_torch())
 
+        ctk.CTkLabel(fields, text="Class:").grid(
+            row=5, column=0, sticky="w", padx=5, pady=3
+        )
+        self.class_var = tk.StringVar()
+        ctk.CTkComboBox(
+            fields,
+            variable=self.class_var,
+            values=list(STARTING_CLASSES.values()),
+            state="readonly",
+            width=140,
+            command=self._on_class_selected,
+        ).grid(row=5, column=1, sticky="w", padx=5, pady=3)
+
+        ctk.CTkLabel(fields, text="Soul memory:").grid(
+            row=6, column=0, sticky="w", padx=5, pady=3
+        )
+        self.soul_memory_label = ctk.CTkLabel(fields, text="-", text_color=_HINT_COLOR)
+        self.soul_memory_label.grid(
+            row=6, column=1, columnspan=3, sticky="w", padx=5, pady=3
+        )
+
         stats_frame = ctk.CTkFrame(body, fg_color="transparent")
         stats_frame.pack(fill="x", padx=10, pady=5)
         ctk.CTkLabel(
@@ -306,32 +336,48 @@ class DS2EditorTab:
     # ------------------------------------------------------------------
 
     def _recalc_level(self) -> None:
-        """Called whenever a stat entry changes. Updates the Level field
-        to baseline_level + sum of stat deltas since the slot was loaded,
-        and shows whether the current Level field agrees with that."""
+        """Called whenever a stat entry changes. Updates the Level field to
+        what the stats add up to (see _expected_level) and flags stats below
+        the class's starting values."""
         if self._suppress_recalc or not self._baseline_stats:
             return
 
-        try:
-            delta = sum(
-                int(var.get()) - self._baseline_stats[stat_name]
-                for stat_name, var in self._stat_vars.items()
-            )
-        except ValueError:
+        computed_level = self._expected_level()
+        if computed_level is None:
             self.level_status_label.configure(
                 text="Enter whole numbers for all stats to recalculate level",
                 text_color="orange",
             )
             return
 
-        computed_level = self._baseline_level + delta
         self._suppress_recalc = True
         self.level_var.set(str(computed_level))
         self._suppress_recalc = False
+        below = self._stats_below_class()
+        if below:
+            self.level_status_label.configure(
+                text="Below the class's starting value: " + ", ".join(below),
+                text_color="orange",
+            )
+            return
         self.level_status_label.configure(
             text=f"(auto-calculated from stat changes: {computed_level})",
             text_color=("gray40", "gray70"),
         )
+
+    def _stats_below_class(self) -> list[str]:
+        """Stats entered below the class's starting values, as display
+        names. Empty when the class is unknown or a stat is not a number."""
+        if self._class_base is None:
+            return []
+        try:
+            return [
+                f"{stat_name.capitalize()} (min {self._class_base.stats[stat_name]})"
+                for stat_name, var in self._stat_vars.items()
+                if int(var.get()) < self._class_base.stats[stat_name]
+            ]
+        except ValueError:
+            return []
 
     def _check_torch(self) -> bool:
         """Validate the torch time as it is typed. Shows how a valid entry will
@@ -354,14 +400,21 @@ class DS2EditorTab:
         return valid
 
     def _expected_level(self) -> int | None:
+        """Class starting level plus the stats gained over the class's
+        starting values, or the loaded level plus the stat changes when the
+        class is unknown. None when a stat is not a number."""
+        if self._class_base is not None:
+            base_level, base_stats = self._class_base.level, self._class_base.stats
+        else:
+            base_level, base_stats = self._baseline_level, self._baseline_stats
         try:
             delta = sum(
-                int(var.get()) - self._baseline_stats[stat_name]
+                int(var.get()) - base_stats[stat_name]
                 for stat_name, var in self._stat_vars.items()
             )
         except ValueError:
             return None
-        return self._baseline_level + delta
+        return base_level + delta
 
     # ------------------------------------------------------------------
     # Refresh / apply
@@ -404,6 +457,16 @@ class DS2EditorTab:
         self._baseline_level = character.get_stat("level")
         self.level_var.set(str(self._baseline_level))
         self.level_status_label.configure(text="")
+        self._class_id = character.starting_class
+        self._class_base = character.class_base()
+        self.class_var.set(self._class_display(self._class_id))
+        self._show_soul_memory(character)
+        expected_level = self._expected_level()
+        if expected_level is not None and expected_level != self._baseline_level:
+            self.level_status_label.configure(
+                text=f"Stats add up to level {expected_level} for this class",
+                text_color="orange",
+            )
 
         if self.inventory_panel is not None:
             self.inventory_panel.refresh()
@@ -411,6 +474,69 @@ class DS2EditorTab:
             self.bonfire_panel.refresh()
         if self.npc_panel is not None:
             self.npc_panel.refresh()
+
+    @staticmethod
+    def _class_display(class_id: int) -> str:
+        return STARTING_CLASSES.get(class_id, f"Unknown ({class_id})")
+
+    def _on_class_selected(self, class_name: str) -> None:
+        """Switch the starting class used for the level and the minimum
+        stats. Stats below the new class's starting values are raised to
+        them after asking; declining keeps the previous class."""
+        save: DS2Save | None = self.get_save()
+        new_id = next(k for k, v in STARTING_CLASSES.items() if v == class_name)
+        if save is None or new_id == self._class_id:
+            self.class_var.set(self._class_display(self._class_id))
+            return
+        character = save.characters[self._slot_index]
+        base = character.class_base(new_id)
+        if base is None:
+            self.show_toast("Class data unavailable in this save", duration=3000)
+            self.class_var.set(self._class_display(self._class_id))
+            return
+        try:
+            stats = {name: int(var.get()) for name, var in self._stat_vars.items()}
+        except ValueError:
+            self.show_toast("Enter whole numbers for all stats first", duration=3000)
+            self.class_var.set(self._class_display(self._class_id))
+            return
+
+        below = character.stats_below_class(stats, new_id)
+        if below:
+            changes = "\n".join(
+                f"{name.capitalize()}: {stats[name]} -> {base.stats[name]}"
+                for name in below
+            )
+            if not CTkMessageBox.askyesno(
+                "Change Starting Class",
+                f"{class_name} starts with higher values for:\n{changes}\n\n"
+                "Raise these stats to them? The level goes up to match.",
+                parent=self.parent,
+            ):
+                self.class_var.set(self._class_display(self._class_id))
+                return
+
+        self._class_id = new_id
+        self._class_base = base
+        self._suppress_recalc = True
+        for name in below:
+            self._stat_vars[name].set(str(base.stats[name]))
+        self._suppress_recalc = False
+        self._recalc_level()
+
+    def _show_soul_memory(self, character) -> None:
+        text = f"{character.soul_memory:,} (this cycle {character.soul_memory_cycle:,})"
+        required = character.required_soul_memory()
+        if required is not None and required > character.soul_memory:
+            text += f", below the {required:,} its level and souls need"
+        self.soul_memory_label.configure(
+            text=text,
+            text_color=(
+                "orange"
+                if required is not None and required > character.soul_memory
+                else _HINT_COLOR
+            ),
+        )
 
     def _apply_changes(self) -> None:
         if _game_blocks_write(self.parent):
@@ -440,6 +566,12 @@ class DS2EditorTab:
         if self.torch_var.get().strip() != self._torch_loaded:
             torch_seconds = _parse_torch(self.torch_var.get())
 
+        if len(self.name_var.get()) > NAME_MAX_CHARS:
+            self.show_toast(
+                f"Name can be at most {NAME_MAX_CHARS} characters", duration=3000
+            )
+            return
+
         expected_level = self._expected_level()
         if expected_level is None or entered_level != expected_level:
             self.show_toast(
@@ -448,8 +580,21 @@ class DS2EditorTab:
                 duration=4000,
             )
             return
+        below = self._stats_below_class()
+        if below:
+            self.show_toast(
+                "Stats below the class's starting values: " + ", ".join(below),
+                duration=4000,
+            )
+            return
 
         character = save.characters[self._slot_index]
+        class_changed = self._class_id != character.starting_class
+        if class_changed:
+            # Before the soul memory sync, which counts level-ups from the
+            # class's starting level.
+            character.starting_class = self._class_id
+            save.sync_class_cache(self._slot_index)
         character.name = self.name_var.get()
         character.souls = souls
         character.new_game_plus = ng_plus
@@ -458,6 +603,7 @@ class DS2EditorTab:
         character.set_stat("level", entered_level)
         for stat_name, value in stat_values.items():
             character.set_stat(stat_name, value)
+        soul_memory_added = character.sync_soul_memory()
 
         save_path = self.get_save_path()
         if not save_path:
@@ -475,7 +621,12 @@ class DS2EditorTab:
             return
 
         self.refresh()
-        self.show_toast("Changes saved to disk", duration=2500)
+        message = "Changes saved to disk"
+        if class_changed:
+            message += f", class set to {self._class_display(self._class_id)}"
+        if soul_memory_added:
+            message += f", soul memory raised by {soul_memory_added:,}"
+        self.show_toast(message, duration=3000)
 
     def _on_import_build(self) -> None:
         if _game_blocks_write(self.parent):

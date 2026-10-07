@@ -83,8 +83,8 @@ def _reparse(slot: NightreignSlot) -> None:
     """Re-derive every cached offset after the state array shifted.
 
     item_states, relic_states, item_entries and the loadout offsets all move
-    by the inserted/removed bytes; stale item_states made a second spawn in
-    the same session land inside the previous relic's 80-byte block.
+    by the inserted/removed bytes; stale item_states would place a second
+    spawn inside the previous relic's 80-byte block.
     """
     from er_save_manager.games.NR.parser import _parse_slot
 
@@ -151,6 +151,7 @@ def validate_relic(real_item_id: int, effects: list[int], curses: list[int]) -> 
     real_item_id (random-roll relics and special relics alike).
     """
     from er_save_manager.games.NR.item_db import (
+        combination_errors,
         get_relic,
         validate_curse,
         validate_effect,
@@ -168,6 +169,9 @@ def validate_relic(real_item_id: int, effects: list[int], curses: list[int]) -> 
         err = validate_curse(ef)
         if err:
             raise ValueError(f"Curse slot {slot_num}: {err}")
+    errors = combination_errors(real_item_id, effects, curses)
+    if errors:
+        raise ValueError(" ".join(errors))
 
 
 def spawn_relic(

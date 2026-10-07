@@ -1,8 +1,9 @@
 """
-Nyasu build importer - v3 (full).
+Nyasu build importer.
 
-Adds on top of v2: Golden Seeds / Sacred Tears for flask upgrades,
-talisman pouches, Flask of Wondrous Physick, great rune lookup.
+Besides the build's items and stats it adds Golden Seeds / Sacred Tears for
+flask upgrades, talisman pouches, the Flask of Wondrous Physick and the
+great rune.
 """
 
 from __future__ import annotations

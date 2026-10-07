@@ -234,7 +234,7 @@ class CharacterDetailsDialog:
         dialog.title(f"Character Details - {name}")
 
         width = 640
-        height = 520
+        height = 550
         dlc_checkbox_count = sum(
             [
                 has_dlc_flag,
@@ -243,9 +243,9 @@ class CharacterDetailsDialog:
             ]
         )
         if deep_scan_available:
-            height = 560
+            height = 590
         elif has_dlc_section:
-            height = 560 + max(0, dlc_checkbox_count - 1) * 35
+            height = 590 + max(0, dlc_checkbox_count - 1) * 35
         dialog.update_idletasks()
         parent.update_idletasks()
         center_window(dialog, width, height, parent=parent)
@@ -325,6 +325,16 @@ class CharacterDetailsDialog:
                     font=("Segoe UI", 10),
                     text_color=("gray50", "gray50"),
                 ).pack(anchor="w")
+
+        ctk.CTkLabel(
+            main_frame,
+            text="Still corrupted or crashing on load after fixing, or nothing detected?"
+            " Try 'Replace CSNetMan'.",
+            font=("Segoe UI", 11, "bold"),
+            text_color=("#b45309", "#f59e0b"),
+            wraplength=width - 60,
+            justify="left",
+        ).pack(anchor="w", padx=12, pady=(0, 6))
 
         button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         button_frame.pack(fill="x", padx=6, pady=(0, 4))
@@ -555,7 +565,11 @@ class CharacterDetailsDialog:
     def _run_deep_scan_fix(dialog, save_file, slot_idx, save_path, reload_callback):
         """Run deep scan and show result before applying."""
         try:
-            from er_save_manager.fixes.deep_scan import DeepScanFix
+            from er_save_manager.fixes.deep_scan import (
+                FLAG_RELOCATION_NOTE,
+                NETMAN_RESET_NOTE,
+                DeepScanFix,
+            )
 
             deep_fix = DeepScanFix()
             result = deep_fix.scan_only(save_file, slot_idx)
@@ -609,9 +623,17 @@ class CharacterDetailsDialog:
                 if reload_callback:
                     reload_callback()
                 detail_text = "\n".join(f"  - {d}" for d in fix_result.details)
+                note_text = ""
+                if getattr(fix_result, "netman_reset", False):
+                    note_text += f"NOTE: {NETMAN_RESET_NOTE}\n\n"
+                if getattr(fix_result, "flags_relocated", False):
+                    note_text += f"NOTE: {FLAG_RELOCATION_NOTE}\n\n"
                 CTkMessageBox.showinfo(
                     "Deep Scan Fix",
-                    f"{fix_result.description}\n\n{detail_text}\n\nBackup saved.",
+                    f"{fix_result.description}\n\n{detail_text}\n\n{note_text}"
+                    "Backup saved.\n\n"
+                    "If the game still reports the save as corrupted or crashes on load,"
+                    " open Character Details again and click 'Replace CSNetMan'.",
                     parent=dialog,
                 )
                 dialog.destroy()
@@ -778,7 +800,11 @@ class CharacterDetailsDialog:
     ):
         _parent = dialog.master
 
-        from er_save_manager.fixes.deep_scan import _NETMAN_SIZE, _load_clean_netman
+        from er_save_manager.fixes.deep_scan import (
+            _NETMAN_SIZE,
+            NETMAN_RESET_NOTE,
+            _load_clean_netman,
+        )
 
         clean = _load_clean_netman()
         if clean is None:
@@ -830,7 +856,8 @@ class CharacterDetailsDialog:
 
             CTkMessageBox.showinfo(
                 "Done",
-                f"CSNetMan replaced in Slot {slot_idx + 1}.\nBackup saved to backup manager.",
+                f"CSNetMan replaced in Slot {slot_idx + 1}.\n\nNOTE: {NETMAN_RESET_NOTE}"
+                "\n\nBackup saved to backup manager.",
                 parent=_parent,
             )
             dialog.destroy()
@@ -977,7 +1004,9 @@ class CharacterDetailsDialog:
                 fix_summary = "\n".join(f"  - {fix}" for fix in fixes)
                 CTkMessageBox.showinfo(
                     "Success",
-                    f"Fixed {len(fixes)} issue(s):\n\n{fix_summary}\n\nBackup saved to backup manager.",
+                    f"Fixed {len(fixes)} issue(s):\n\n{fix_summary}\n\nBackup saved to backup manager.\n\n"
+                    "If the game still reports the save as corrupted or crashes on load,"
+                    " open Character Details again and click 'Replace CSNetMan'.",
                     parent=_parent,
                 )
             else:

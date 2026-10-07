@@ -51,6 +51,11 @@ Attunement slots: PhysicalStatsPerLevelStatValuesParam has one row per stat
 level (row id 1-99) whose attunement_slots is the slot count at that level.
 RelatePhysicalStatToLevelStatParam row 0 names attunement as the stat that
 drives it.
+Starting classes: PlayerStatusParam rows 20-110 hold each class's starting
+level and attributes. Row 10 and the rows from 500 up are not classes.
+Level-up cost: PlayerLevelUpSoulsParam row N is the soul cost of going from
+level N to N + 1 (row 999 is not a level). Rows 0-850 cover every level the
+game allows.
 Infusion index n is the value stored in the second byte of an inventory
 entry's unk_2. The order is the material order of CustomAttrCostParam, which
 lists one infusion stone per index: Palestone, Firedrake, Faintstone,
@@ -58,9 +63,9 @@ Boltstone, Darknight, Poison, Bleed, Raw, Magic and Old Mundane Stone.
 Items missing from ItemParam are unknown to the regulation and report no
 limits.
 
-Field offsets are byte offsets into a row. They were derived from the column
-order of the Smithbox CSV exports and verified against those CSVs for every
-row. Inventory durability of unused game-written items equals these values.
+Field offsets are byte offsets into a row, following the column order of
+the Smithbox CSV exports. Unused game-written items carry these durability
+values.
 """
 
 from __future__ import annotations
@@ -120,6 +125,24 @@ _SPELL_TIER_COUNT = 10
 _RING_DURABILITY = 0x4  # f32
 # PhysicalStatsPerLevelStatValuesParam
 _STATS_ATTUNEMENT_SLOTS = 0x2  # u8
+# PlayerStatusParam, all u16. The attribute order differs from the profile's:
+# attunement comes before vitality.
+_CLASS_LEVEL = 0x4
+_CLASS_STATS = {
+    "vigor": 0x6,
+    "endurance": 0xC,
+    "attunement": 0xE,
+    "vitality": 0x10,
+    "strength": 0x12,
+    "dexterity": 0x14,
+    "intelligence": 0x16,
+    "faith": 0x18,
+    "adaptability": 0x1A,
+}
+_CLASS_ROWS = range(20, 111, 10)
+# PlayerLevelUpSoulsParam
+_LEVEL_UP_SOULS = 0x8  # s32
+_LEVEL_UP_MAX_ROW = 850
 
 
 class _Param:
@@ -193,6 +216,14 @@ def _read_bnd4(blob: bytes) -> dict[str, tuple[int, int]]:
 
 
 @dataclass(frozen=True)
+class ClassBase:
+    """A starting class's level and attributes."""
+
+    level: int
+    stats: dict[str, int]
+
+
+@dataclass(frozen=True)
 class _ItemLimits:
     max_held: int
     max_upgrade: int = 0
@@ -206,10 +237,16 @@ class Regulation:
     resolved from the embedded params."""
 
     def __init__(
-        self, items: dict[int, _ItemLimits], attunement_slots: dict[int, int]
+        self,
+        items: dict[int, _ItemLimits],
+        attunement_slots: dict[int, int],
+        class_bases: dict[int, ClassBase],
+        level_up_souls: dict[int, int],
     ) -> None:
         self._items = items
         self._attunement_slots = attunement_slots
+        self._class_bases = class_bases
+        self._level_up_souls = level_up_souls
 
     @classmethod
     def from_entry(cls, entry: bytes | bytearray) -> Regulation:
@@ -289,7 +326,28 @@ class Regulation:
             level: stat_values.u8(level, _STATS_ATTUNEMENT_SLOTS)
             for level in stat_values.ids()
         }
-        return cls(items, attunement_slots)
+        # Optional: a regulation without them still gives item limits.
+        class_bases: dict[int, ClassBase] = {}
+        if "PlayerStatusParam.param" in files:
+            statuses = param("PlayerStatusParam.param")
+            for row_id in _CLASS_ROWS:
+                if statuses.has(row_id):
+                    class_bases[row_id] = ClassBase(
+                        statuses.u16(row_id, _CLASS_LEVEL),
+                        {
+                            name: statuses.u16(row_id, off)
+                            for name, off in _CLASS_STATS.items()
+                        },
+                    )
+        level_up_souls: dict[int, int] = {}
+        if "PlayerLevelUpSoulsParam.param" in files:
+            costs = param("PlayerLevelUpSoulsParam.param")
+            level_up_souls = {
+                level: costs.s32(level, _LEVEL_UP_SOULS)
+                for level in costs.ids()
+                if level <= _LEVEL_UP_MAX_ROW
+            }
+        return cls(items, attunement_slots, class_bases, level_up_souls)
 
     @classmethod
     def from_container(cls, container) -> Regulation:
@@ -318,6 +376,22 @@ class Regulation:
         """Attunement slots at an attunement level, or None for a level
         the regulation has no row for."""
         return self._attunement_slots.get(attunement)
+
+    def class_base(self, row_id: int) -> ClassBase | None:
+        """Starting level and attributes of the class in a PlayerStatusParam
+        row, or None when the row is not a class."""
+        return self._class_bases.get(row_id)
+
+    def level_up_souls(self, from_level: int, to_level: int) -> int | None:
+        """Souls the level-ups from from_level to to_level cost, 0 when
+        to_level is not higher. None when a level in between has no row."""
+        total = 0
+        for level in range(from_level, to_level):
+            cost = self._level_up_souls.get(level)
+            if cost is None:
+                return None
+            total += cost
+        return total
 
     def durability(self, item_id: int) -> float | None:
         """Maximum durability of a weapon, armor piece or ring, or None when

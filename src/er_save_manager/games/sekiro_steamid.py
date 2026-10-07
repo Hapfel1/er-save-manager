@@ -14,6 +14,8 @@ import hashlib
 import struct
 from pathlib import Path
 
+from er_save_manager.own_writes import record_write
+
 _BND4_MAGIC = b"BND4\x00\x00\x00\x00"
 _MINIMAL_LENGTH = 0x00A603B0
 
@@ -95,6 +97,7 @@ def patch_steamid_sekiro(save_path: Path, new_steam64: int) -> tuple[bool, str]:
     tmp_path = save_path.with_suffix(save_path.suffix + ".tmp")
     tmp_path.write_bytes(bytes(data))
     tmp_path.replace(save_path)
+    record_write(save_path)
     return True, (
         f"Patched {slots_patched} save slot(s) + settings block\n"
         f"Old SteamID: {old_steam64}\n"

@@ -27,9 +27,8 @@ if TYPE_CHECKING:
 # this module that compares against gaitem_map.
 _GAITEM_PREFIXES = (0x80000000, 0x90000000, 0xC0000000)
 
-# Observed real-save sizes for the five variable structs between
-# event_flags and coordinates stay in the low thousands of bytes at
-# most. Absolute sanity bound, not a precise expected value.
+# The five variable structs between event_flags and coordinates stay
+# in the low thousands of bytes at most. Absolute sanity bound, not a precise expected value.
 _WORLD_STRUCT_SIZE_WARN = 20000
 
 _WORLD_STRUCT_NAMES = (

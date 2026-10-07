@@ -12,6 +12,9 @@ from er_save_manager.data import calculate_level_from_stats, get_class_data
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
+# The game caps held runes at 999,999,999.
+MAX_RUNES = 999_999_999
+
 _ATTR_KEYS = frozenset(
     {
         "vigor",
@@ -162,10 +165,12 @@ class StatsEditor:
 
             var = ctk.IntVar(value=0)
             self.stat_vars[key] = var
+            # Read-only: the game derives these from the attributes on load.
             ctk.CTkEntry(
                 resources_grid,
                 textvariable=var,
                 width=120,
+                state="disabled",
             ).grid(row=i, column=1, padx=5, pady=5)
 
         # Bottom row: Level & Runes in one compact frame
@@ -616,6 +621,18 @@ class StatsEditor:
 
         slot_idx = self.get_char_slot()
 
+        try:
+            runes = int(self.runes_var.get())
+        except (ValueError, tk.TclError):
+            runes = -1
+        if not 0 <= runes <= MAX_RUNES:
+            CTkMessageBox.showwarning(
+                "Invalid Value",
+                f"Runes must be between 0 and {MAX_RUNES:,}.",
+                parent=self.parent,
+            )
+            return
+
         # Silently correct level to match attributes
         calculated_level = (
             int(self.calculated_level_var.get())
@@ -664,11 +681,11 @@ class StatsEditor:
                 char.arcane = self.stat_vars["arcane"].get()
 
                 char.level = int(self.level_var.get()) if self.level_var.get() else 0
-                char.runes = self.runes_var.get()
-
-                char.base_max_hp = self.stat_vars["base_max_hp"].get()
-                char.base_max_fp = self.stat_vars["base_max_fp"].get()
-                char.base_max_sp = self.stat_vars["base_max_sp"].get()
+                # Runes memory counts every rune ever gained, so added runes
+                # raise it by the same amount.
+                runes_gained = max(0, runes - char.runes)
+                char.runes = runes
+                char.runes_memory = min(0xFFFFFFFF, char.runes_memory + runes_gained)
 
                 char.great_rune_on = bool(self.great_rune_on_var.get())
                 char.furl_calling_finger_on = bool(self.rune_arc_var.get())
@@ -728,6 +745,11 @@ class StatsEditor:
                         save_file._raw_data[_level_off : _level_off + 4] = _struct.pack(
                             "<I", char.level
                         )
+                        # Profile: level u32, seconds played u32, runes memory u32
+                        _memory_off = _level_off + 8
+                        save_file._raw_data[_memory_off : _memory_off + 4] = (
+                            _struct.pack("<I", char.runes_memory)
+                        )
                         # Update parsed object to stay in sync
                         if (
                             save_file.user_data_10_parsed
@@ -737,9 +759,13 @@ class StatsEditor:
                                 save_file.user_data_10_parsed.profile_summary.profiles
                             )
                         ):
-                            save_file.user_data_10_parsed.profile_summary.profiles[
-                                slot_idx
-                            ].level = char.level
+                            profile = (
+                                save_file.user_data_10_parsed.profile_summary.profiles[
+                                    slot_idx
+                                ]
+                            )
+                            profile.level = char.level
+                            profile.runes_memory = char.runes_memory
 
                     # Great rune ID and last grace require full slot rebuild
                     # (both live outside PlayerGameData)

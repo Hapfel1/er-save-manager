@@ -24,7 +24,6 @@ class PlayerGameData:
     Complete player/character data structure (0x1B0 = 432 bytes)
 
     Contains all character stats, attributes, online settings, and metadata.
-    This is one of the most important structures in the save file.
     """
 
     # Health, FP, Stamina (0x00-0x33)

@@ -80,9 +80,9 @@ def test_set_item_id_updates_equipped_cache():
 
 
 def test_event_flag_layout_matches_save_pairs():
-    """Positions from real before/after saves: killing Crestfallen Warrior
-    moved its state from 1460 to 1462 (one byte, bit 3 to bit 1), and a
-    pickup set item lot flag 51020000 (top bit of its word's high byte)."""
+    """Killing Crestfallen Warrior moves its state from 1460 to 1462 (one
+    byte, bit 3 to bit 1), and a pickup sets item lot flag 51020000 (top bit
+    of its word's high byte)."""
     from er_save_manager.games.DSR.save import (
         FLAG_RECORD_TO_BASE,
         NG_PLUS_OFFSET,
@@ -108,7 +108,7 @@ def test_event_flag_layout_matches_save_pairs():
 
 
 def test_bonfire_record_lighting():
-    """Lighting the Undead Asylum cell bonfire in game changed its record's
+    """Lighting a bonfire (the Undead Asylum cell one) sets its record's
     kindle value from 0 to 10; kindled values are kept when lighting."""
     char = _character()
     char._data.extend(bytes(0x40000 - len(char._data)))

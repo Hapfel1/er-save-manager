@@ -351,7 +351,7 @@ class AppearanceTab:
         ).pack(side=tk.LEFT, padx=5)
 
     def open_preset_browser(self):
-        """Open enhanced preset browser dialog."""
+        """Open the preset browser dialog."""
         from er_save_manager.ui.dialogs.preset_browser import EnhancedPresetBrowser
 
         browser = EnhancedPresetBrowser(self.parent, self)

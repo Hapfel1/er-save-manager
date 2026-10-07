@@ -146,7 +146,7 @@ def item_id_at(item: dict, level: int) -> int:
 
 def sort_key(item: dict, level: int = 0) -> int:
     """Inventory sort key: sortId * 100 + level for weapons and armor, the
-    sortId for everything else (checked against every held item)."""
+    sortId for everything else."""
     if item["type"] in (TYPE_WEAPON, TYPE_ARMOR):
         return item["sort_id"] * 100 + level
     return item["sort_id"]

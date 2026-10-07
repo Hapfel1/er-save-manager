@@ -1,7 +1,7 @@
 """
 DSR Event Flags Tab - NPC States and World Flags.
 
-Boss kill management has been moved to the NPCs & Bosses tab.
+Boss kills are edited in the NPCs & Bosses tab.
 Sub-tabs: NPC States | World Flags.
 
 Session/cycle flags in World Flags are marked with * and noted as set by event

@@ -1,6 +1,6 @@
-ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_affinities,convergence_affinities
-33510000,Staff of the Great Beyond,somber,0,57,Staff,1,Standard,Standard
-33520000,Maternal Staff,standard,1,57,Staff,1,Standard,Standard
-34500000,Dryleaf Seal,standard,0,61,Sorcery,1,Standard,Standard
-34510000,Fire Knight's Seal,standard,0,61,Sorcery,1,Standard,Standard
-34520000,Spiraltree Seal,standard,0,61,Sorcery,1,Standard,Standard
+ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_affinities,convergence_affinities,convergence_aow_allowed,convergence_wepType,convergence_wepTypeCol,convergence_reinforcement
+33510000,Staff of the Great Beyond,somber,0,57,Staff,1,Standard,Standard,0,57,Staff,somber
+33520000,Maternal Staff,standard,1,57,Staff,1,Standard,Standard,1,57,Staff,standard
+34500000,Dryleaf Seal,standard,0,61,Talisman,1,Standard,Standard,0,61,Talisman,standard
+34510000,Fire Knight's Seal,standard,0,61,Talisman,1,Standard,Standard,0,61,Talisman,standard
+34520000,Spiraltree Seal,standard,0,61,Talisman,1,Standard,Standard,0,61,Talisman,standard

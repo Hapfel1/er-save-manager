@@ -74,6 +74,22 @@ include_files = [
         "er_save_manager/data/event_flags.json",
     ),
     (
+        "src/er_save_manager/data/item_pickups.csv",
+        "er_save_manager/data/item_pickups.csv",
+    ),
+    (
+        "src/er_save_manager/data/item_pickups_convergence.csv",
+        "er_save_manager/data/item_pickups_convergence.csv",
+    ),
+    (
+        "src/er_save_manager/data/shop_stock.csv",
+        "er_save_manager/data/shop_stock.csv",
+    ),
+    (
+        "src/er_save_manager/data/shop_stock_convergence.csv",
+        "er_save_manager/data/shop_stock_convergence.csv",
+    ),
+    (
         "src/er_save_manager/data/locations.json",
         "er_save_manager/data/locations.json",
     ),
@@ -82,6 +98,10 @@ include_files = [
         "er_save_manager/data/quest_flags.json",
     ),
     ("src/er_save_manager/fixes/CSNetMan.bin", "er_save_manager/fixes/CSNetMan.bin"),
+    (
+        "src/er_save_manager/fixes/EventFlagBits.bin",
+        "er_save_manager/fixes/EventFlagBits.bin",
+    ),
     ("src/er_save_manager/games/DSR/data/", "er_save_manager/games/DSR/data/"),
     ("src/er_save_manager/games/DS3/data/", "er_save_manager/games/DS3/data/"),
     (

@@ -10,15 +10,35 @@ CSV column sets:
   Goods:         ID,Name,maxNum,category
   Gems:          ID,Name,compatibleWepTypes  (pipe-separated wepTypeCol values)
   Plain CSV:     ID,Name
+
+Base-game weapon and gem CSVs also carry convergence_* columns holding the
+values the Convergence params use for the same ID. They build a Convergence
+variant of the item, returned by get_item_by_id(..., is_convergence=True)
+and resolve(). A row in a Convergence CSV with the same ID replaces it.
 """
 
 import csv as _csv
 import re as _re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import IntEnum
 from pathlib import Path
 
 _UPGRADE_SUFFIX_RE = _re.compile(r" \+\s*\d+$")
+
+
+def _split_pipe(value: str | None) -> list[str]:
+    return [x for x in (value or "").split("|") if x]
+
+
+def common_affinities(gem_affs: list[str], weapon_affs: list[str]) -> list[str]:
+    """Affinities allowed by both an Ash of War and the weapon it goes on.
+
+    The weapon list is ignored when unknown (custom IDs, items missing from
+    the database).
+    """
+    if not weapon_affs:
+        return list(gem_affs)
+    return [a for a in gem_affs if a in weapon_affs] or ["Standard"]
 
 
 class ItemCategory(IntEnum):
@@ -91,6 +111,7 @@ class ItemDatabase:
         self.items_by_id: dict[int, Item] = {}
         self.items_by_category: dict[str, list[Item]] = {}
         self.categories: list[tuple[str, ItemCategory]] = []
+        self._convergence_overrides: dict[int, Item] = {}
         self._loaded = False
 
     def load(self):
@@ -244,14 +265,46 @@ class ItemDatabase:
                     item.max_num = 1
 
                 self._register(item, is_convergence=convergence)
+                if not convergence and (is_weapon or is_gem):
+                    variant = self._convergence_variant(item, row, is_weapon)
+                    if variant is not None:
+                        self._convergence_overrides.setdefault(item.full_id, variant)
+
+    @staticmethod
+    def _convergence_variant(item: Item, row: dict, is_weapon: bool) -> "Item | None":
+        """Build the Convergence view of a base-game row from its convergence_* columns."""
+        if is_weapon:
+            if not row.get("convergence_aow_allowed"):
+                return None
+            reinforcement = row.get("convergence_reinforcement") or item.reinforcement
+            affinities = _split_pipe(row.get("convergence_affinities"))
+            return replace(
+                item,
+                aow_allowed=row["convergence_aow_allowed"] == "1",
+                wep_type=int(row.get("convergence_wepType") or item.wep_type),
+                wep_type_col=row.get("convergence_wepTypeCol", item.wep_type_col),
+                reinforcement=reinforcement,
+                # Convergence raises both standard and somber cap to +15
+                max_upgrade=15 if reinforcement in ("standard", "somber") else -1,
+                allowed_affinities=affinities,
+                convergence_affinities=affinities,
+            )
+        if not row.get("convergence_compatibleWepTypes"):
+            return None
+        affinities = _split_pipe(row.get("convergence_affinities"))
+        return replace(
+            item,
+            compatible_wep_types=_split_pipe(row["convergence_compatibleWepTypes"]),
+            default_affinity=row.get("convergence_defaultAffinity") or "Standard",
+            allowed_affinities=affinities,
+            convergence_affinities=affinities,
+        )
 
     def _register(self, item: Item, is_convergence: bool = False):
         self.items.append(item)
         if is_convergence and item.full_id in self.items_by_id:
             # Convergence renames a base-game item under the same ID.
             # Store it separately so non-convergence saves keep the original name.
-            if not hasattr(self, "_convergence_overrides"):
-                self._convergence_overrides: dict[int, Item] = {}
             self._convergence_overrides[item.full_id] = item
         else:
             self.items_by_id[item.full_id] = item
@@ -265,11 +318,17 @@ class ItemDatabase:
     def get_item_by_id(
         self, full_item_id: int, is_convergence: bool = False
     ) -> "Item | None":
-        if is_convergence and hasattr(self, "_convergence_overrides"):
+        if is_convergence:
             return self._convergence_overrides.get(
                 full_item_id
             ) or self.items_by_id.get(full_item_id)
         return self.items_by_id.get(full_item_id)
+
+    def resolve(self, item: Item, is_convergence: bool = False) -> Item:
+        """Return the variant of item that applies to the save type."""
+        if is_convergence:
+            return self._convergence_overrides.get(item.full_id, item)
+        return item
 
     def get_item_by_base_id(
         self, base_id: int, category: ItemCategory

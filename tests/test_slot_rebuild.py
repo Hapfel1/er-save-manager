@@ -20,8 +20,8 @@ def _active_slots(save):
 
 
 def test_rebuild_slot_is_byte_identical_for_unmodified_slots(sanitized_save):
-    """The core regression test: every active slot in a real save must
-    round-trip through rebuild_slot with zero byte drift.
+    """Every active slot must round-trip through rebuild_slot with zero
+    byte drift.
     """
     for i in _active_slots(sanitized_save):
         slot = sanitized_save.character_slots[i]

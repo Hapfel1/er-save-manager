@@ -34,7 +34,7 @@ except ImportError:
 
 
 class EnhancedPresetBrowser:
-    """Enhanced preset browser with Browse and Contribute tabs."""
+    """Preset browser with Browse and Contribute tabs."""
 
     NUM_SLOTS = 15
 
@@ -58,7 +58,7 @@ class EnhancedPresetBrowser:
         self.preview_image_path: str | None = None
 
     def show(self):
-        """Show enhanced preset browser with tabs."""
+        """Show the preset browser with tabs."""
         from er_save_manager.ui.utils import force_render_dialog
 
         self.dialog = ctk.CTkToplevel(self.parent)

@@ -653,25 +653,32 @@ class _LoadoutBrowserDialog(ctk.CTkToplevel):
 
 
 _MEMORY_STONE_HANDLE = 0xB0000000 | 10030
+_MOON_OF_NOKSTELLA_ID = 1140  # +2 memory slots while equipped
 
 
-def _max_spell_slots(slot) -> int:
-    """Best-effort spell slot cap: base 3 plus owned Memory Stones (held key
-    items - Memory Stones are stored there, not in common_items).
+def _max_spell_slots(slot, is_cnv: bool = False) -> int:
+    """Best-effort spell slot cap: base 2 (3 on Convergence) plus owned Memory
+    Stones (held key items - Memory Stones are stored there, not in
+    common_items), plus 2 if Moon of Nokstella is equipped.
 
-    This is a heuristic, not verified ground truth (no persisted "unlocked
-    slots" counter exists anywhere in the save the way there is for
-    talisman slots). It is floored by the highest slot index that already
-    has a real spell, so a wrong guess can only ever block adding something
-    new to an empty slot - it can never hide or overwrite existing data.
+    An estimate: unlike talisman slots, the save has no unlocked spell slot
+    counter. It is floored by the highest slot that already holds a spell,
+    so a wrong estimate only blocks adding to an empty slot and never hides
+    or overwrites an equipped spell.
     """
-    base = 3
+    base = 3 if is_cnv else 2
     stone_qty = 0
     for e in slot.inventory_held.key_items:
         if e.gaitem_handle == _MEMORY_STONE_HANDLE:
             stone_qty = getattr(e, "quantity", 0)
             break
     computed = base + stone_qty
+
+    equip_ids = getattr(slot, "equipped_items_item_id", None)
+    if equip_ids and _MOON_OF_NOKSTELLA_ID in (
+        getattr(equip_ids, f"talisman{i}", 0) for i in range(1, 5)
+    ):
+        computed += 2
 
     highest_filled = 0
     for i, s in enumerate(slot.equipped_spells.spell_slots, start=1):
@@ -1049,7 +1056,7 @@ class _VisualEquipmentBrowser(ctk.CTkToplevel):
             except Exception:
                 slot = None
         if slot:
-            max_spells = _max_spell_slots(slot)
+            max_spells = _max_spell_slots(slot, editor._is_cnv_save())
             for i in range(1, 15):
                 key = f"spell{i}"
                 if i > max_spells and editor._get_raw(key) == 0:
@@ -1416,7 +1423,9 @@ class EquipmentEditor:
         return ".cnv" in str(self.get_save_path() or "").lower()
 
     def _is_co2_save(self) -> bool:
-        return ".co2" in str(self.get_save_path() or "").lower()
+        from er_save_manager.data.convergence_items import is_seamless_save
+
+        return is_seamless_save(self.get_save_path() or "")
 
     def _owned_items_for_key(self, key: str) -> list[tuple[int, int, str, str]]:
         save_file = self.get_save_file()
@@ -1559,7 +1568,7 @@ class EquipmentEditor:
         Never touches a slot that already has a real spell in it - see
         _max_spell_slots' docstring for why this must stay non-destructive.
         """
-        max_spells = _max_spell_slots(slot)
+        max_spells = _max_spell_slots(slot, self._is_cnv_save())
         for i in range(1, 15):
             key = f"spell{i}"
             btn = self._pick_buttons.get(key)

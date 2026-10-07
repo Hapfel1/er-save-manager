@@ -47,7 +47,7 @@ def has_icon(item_id: int) -> bool:
 
 
 # A few items have no icon of their own and share another item's exported
-# icon in-game, checked for each one:
+# icon in-game:
 #   - Old Mirrah Greatsword is a unique NPC-drop variant of Mirrah Greatsword
 #     with no separate icon; the base weapon's icon is the one the game uses.
 _FALLBACK_ICON_ID: dict[int, int] = {
@@ -81,8 +81,7 @@ def get_icon(item_id: int, category: str | None = None) -> PILImage.Image | None
     Ring upgrades (e.g. "Bracing Knuckle Ring+1", id ...001) share their base
     ring's icon in-game rather than getting one of their own, so a ring
     lookup falls back to its base id (the id with the trailing +N zeroed)
-    when the exact id has no icon. Verified against every +N ring in the
-    database: the base id is always (item_id // 100) * 100.
+    when the exact id has no icon. The base id is (item_id // 100) * 100.
     """
     img = _direct_lookup(item_id)
     if img is not None:

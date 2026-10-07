@@ -25,6 +25,8 @@ import struct
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from er_save_manager.own_writes import record_write
+
 # Steam64 ID base constant - all valid IDs are above this
 _STEAM64_BASE = 0x0110000100000000
 _STEAM64_MAX = 0x01100001FFFFFFFF
@@ -148,6 +150,7 @@ def patch_steamid_generic(
     tmp_path = save_path.with_suffix(save_path.suffix + ".tmp")
     tmp_path.write_bytes(data)
     tmp_path.replace(save_path)
+    record_write(save_path)
 
     return PatchResult(
         success=True,

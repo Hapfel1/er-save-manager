@@ -1,0 +1,505 @@
+row,flag,quantity,item,price,merchant,map,grace_flag,dlc,name
+100000,100000,2,goods:111,1000,Gatekeeper Gostoc,m10_00_00_00,71003,0,Festering Bloody Finger
+100002,100020,5,goods:1760,100,Gatekeeper Gostoc,m10_00_00_00,71003,0,Ruin Fragment
+100004,100040,1,weapon:30000000,1500,Gatekeeper Gostoc,m10_00_00_00,71003,0,Buckler
+100009,100090,4,goods:150,1000,Gatekeeper Gostoc,m10_00_00_00,71003,0,Furlcalling Finger Remedy
+100010,100100,3,goods:1190,2000,Gatekeeper Gostoc,m10_00_00_00,71003,0,Silver-Pickled Fowl Foot
+100011,100110,5,goods:15430,500,Gatekeeper Gostoc,m10_00_00_00,71003,0,Stormhawk Feather
+100012,100120,1,weapon:21000000,800,Gatekeeper Gostoc,m10_00_00_00,71003,0,Caestus
+100013,100130,5,weapon:51000000,300,Gatekeeper Gostoc,m10_00_00_00,71003,0,Great Arrow
+100014,100140,5,weapon:53000000,300,Gatekeeper Gostoc,m10_00_00_00,71003,0,Ballista Bolt
+100015,100150,1,armor:930200,1000,Gatekeeper Gostoc,m10_00_00_00,71003,0,Bandit Manchettes
+100016,100160,1,armor:930300,1000,Gatekeeper Gostoc,m10_00_00_00,71003,0,Bandit Boots
+100017,100170,1,armor:931100,1500,Gatekeeper Gostoc,m10_00_00_00,71003,0,Bandit Garb
+100018,100180,1,goods:10140,20000,Gatekeeper Gostoc,m10_00_00_00,71003,0,Ancient Dragon Smithing Stone
+100050,100500,1,goods:4000,1000,Sorceress Sellen,m60_44_36_00,76120,0,Glintstone Pebble
+100051,100510,1,goods:4460,3000,Sorceress Sellen,m60_44_36_00,76120,0,Scholar's Armament
+100052,100520,1,goods:4470,2500,Sorceress Sellen,m60_44_36_00,76120,0,Scholar's Shield
+100053,100530,1,goods:4060,1500,Sorceress Sellen,m60_44_36_00,76120,0,Crystal Barrage
+100054,100540,1,goods:4070,1500,Sorceress Sellen,m60_44_36_00,76120,0,Glintstone Arc
+100055,100550,1,goods:4040,3000,Sorceress Sellen,m60_44_36_00,76120,0,Glintstone Stars
+100056,100560,1,goods:4030,8000,Sorceress Sellen,m60_44_36_00,76120,0,Shard Spiral
+100057,100570,1,goods:4020,12000,Sorceress Sellen,m60_44_36_00,76120,0,Glintstone Cometshard
+100058,100580,1,goods:4050,10000,Sorceress Sellen,m60_44_36_00,76120,0,Star Shower
+100059,100590,1,goods:4001,2000,Sorceress Sellen,m60_44_36_00,76120,0,Great Glintstone Shard
+100060,100600,1,goods:4010,600,Sorceress Sellen,m60_44_36_00,76120,0,Swift Glintstone Shard
+100061,100610,1,goods:4300,2500,Sorceress Sellen,m60_44_36_00,76120,0,Glintblade Phalanx
+100062,100620,1,goods:4440,1500,Sorceress Sellen,m60_44_36_00,76120,0,Carian Slicer
+100075,100750,1,gem:10100,1000,Sword of Bernahl,m16_00_00_00,71602,0,Ash of War: Impaling Thrust
+100076,100760,1,gem:10300,1200,Sword of Bernahl,m16_00_00_00,71602,0,Ash of War: Spinning Slash
+100077,100770,1,gem:80000,800,Sword of Bernahl,m16_00_00_00,71602,0,Ash of War: Quickstep
+100078,100780,1,gem:10600,1500,Sword of Bernahl,m16_00_00_00,71602,0,Ash of War: Stamp (Upward Cut)
+100079,100790,1,gem:50300,800,Sword of Bernahl,m16_00_00_00,71602,0,Ash of War: Kick
+100080,100800,1,gem:65100,800,Sword of Bernahl,m16_00_00_00,71602,0,Ash of War: War Cry
+100081,100810,1,gem:70000,600,Sword of Bernahl,m16_00_00_00,71602,0,Ash of War: Endure
+100082,100820,1,gem:30200,600,Sword of Bernahl,m16_00_00_00,71602,0,Ash of War: Parry
+100083,100830,1,gem:21000,1800,Sword of Bernahl,m16_00_00_00,71602,0,Ash of War: Storm Blade
+100084,100840,1,gem:20700,8000,Sword of Bernahl,m16_00_00_00,71602,0,Ash of War: Eruption
+100085,100850,1,gem:60200,6500,Sword of Bernahl,m16_00_00_00,71602,0,Ash of War: Assassin's Gambit
+100086,100860,1,gem:30900,600,Sword of Bernahl,m16_00_00_00,71602,0,Ash of War: No Skill
+100100,110000,1,goods:2140,5000,Patches,m16_00_00_00,71602,0,Margit's Shackle
+100101,67600,1,goods:9360,800,Patches,m16_00_00_00,71602,0,Missionary's Cookbook [2]
+100102,110020,1,goods:8000,5000,Patches,m16_00_00_00,71602,0,Stonesword Key
+100103,110030,3,goods:150,1000,Patches,m16_00_00_00,71602,0,Furlcalling Finger Remedy
+100105,110050,3,goods:1200,600,Patches,m16_00_00_00,71602,0,Gold-Pickled Fowl Foot
+100108,110080,1,weapon:1020000,1600,Patches,m16_00_00_00,71602,0,Parrying Dagger
+100111,110110,1,talisman:6070,5000,Patches,m16_00_00_00,71602,0,Sacrificial Twig
+100112,110120,5,goods:111,1000,Patches,m16_00_00_00,71602,0,Festering Bloody Finger
+100113,110130,15,goods:2050,100,Patches,m16_00_00_00,71602,0,Grace Mimic
+100114,110140,20,goods:1750,160,Patches,m16_00_00_00,71602,0,Fan Daggers
+100115,110150,10,weapon:51000000,300,Patches,m16_00_00_00,71602,0,Great Arrow
+100116,110160,5,weapon:53000000,300,Patches,m16_00_00_00,71602,0,Ballista Bolt
+100117,110170,5,goods:111,1000,Patches,m16_00_00_00,71602,0,Festering Bloody Finger
+100119,110190,1,weapon:5000000,3000,Patches,m16_00_00_00,71602,0,Estoc
+100120,110200,10,weapon:51000000,300,Patches,m16_00_00_00,71602,0,Great Arrow
+100121,110210,5,weapon:53000000,300,Patches,m16_00_00_00,71602,0,Ballista Bolt
+100122,110220,1,weapon:31240000,1000,Patches,m16_00_00_00,71602,0,Horse Crest Wooden Shield
+100150,400300,1,goods:8136,1000,Blackguard,m60_36_43_00,76216,0,Rya's Necklace
+100175,110750,1,goods:4610,4000,Sage Gowry,m60_50_38_00,76418,0,Night Shard
+100176,110760,1,goods:6500,5000,Sage Gowry,m60_50_38_00,76418,0,Night Maiden's Mist
+100177,110770,1,goods:4040,3000,Sage Gowry,m60_50_38_00,76418,0,Glintstone Stars
+100185,110850,1,goods:7200,7500,Sage Gowry,m60_50_38_00,76418,0,Pest Threads
+100200,120000,1,gem:12000,1000,Sorcerer Rogier,m10_00_00_00,71006,0,Ash of War: Spinning Weapon
+100201,120010,1,gem:20300,1500,Sorcerer Rogier,m10_00_00_00,71006,0,Ash of War: Glintstone Pebble
+100202,120020,1,gem:21900,2500,Sorcerer Rogier,m10_00_00_00,71006,0,Ash of War: Carian Greatsword
+100227,120270,3,goods:10162,4000,Smithing Master Iji,m60_34_49_00,76213,0,Somber Smithing Stone [3]
+100228,120280,3,goods:10163,6000,Smithing Master Iji,m60_34_49_00,76213,0,Somber Smithing Stone [4]
+100229,120290,1,talisman:6020,5000,Smithing Master Iji,m60_34_49_00,76213,0,Carian Filigreed Crest
+100250,120500,1,goods:4000,1000,Sorcerer Thops,m60_39_39_00,76200,0,Glintstone Pebble
+100251,120510,1,goods:4070,1500,Sorcerer Thops,m60_39_39_00,76200,0,Glintstone Arc
+100252,120520,1,goods:4140,2500,Sorcerer Thops,m60_39_39_00,76200,0,Starlight
+100275,120750,1,goods:4301,12000,Preceptor Seluvis,m60_34_50_00,76231,0,Carian Phalanx
+100276,120760,1,goods:4400,7500,Preceptor Seluvis,m60_34_50_00,76231,0,Glintstone Icecrag
+100277,120770,1,goods:4420,6000,Preceptor Seluvis,m60_34_50_00,76231,0,Freezing Mist
+100278,120780,1,goods:4640,9000,Preceptor Seluvis,m60_34_50_00,76231,0,Carian Retaliation
+100279,120790,1,goods:4020,12000,Preceptor Seluvis,m60_34_50_00,76231,0,Glintstone Cometshard
+100280,120800,1,goods:4050,10000,Preceptor Seluvis,m60_34_50_00,76231,0,Star Shower
+100281,120810,1,goods:4001,2000,Preceptor Seluvis,m60_34_50_00,76231,0,Great Glintstone Shard
+100282,120820,1,goods:4010,600,Preceptor Seluvis,m60_34_50_00,76231,0,Swift Glintstone Shard
+100283,120830,1,goods:4300,2500,Preceptor Seluvis,m60_34_50_00,76231,0,Glintblade Phalanx
+100284,120840,1,goods:4440,1500,Preceptor Seluvis,m60_34_50_00,76231,0,Carian Slicer
+100300,130000,1,goods:261000,2,Preceptor Seluvis,m60_34_50_00,76231,0,Finger Maiden Therolina Puppet
+100301,130010,1,goods:262000,5,Preceptor Seluvis,m60_34_50_00,76231,0,Dolores the Sleeping Arrow Puppet
+100302,130020,1,goods:263000,3,Preceptor Seluvis,m60_34_50_00,76231,0,Jarwight Puppet
+100310,130100,1,goods:260000,5,Preceptor Seluvis,m60_34_50_00,76231,0,Dung Eater Puppet
+100325,67470,1,goods:9347,2500,"Pidia, Carian Servant",m60_35_50_00,76231,0,Glintstone Craftsman's Cookbook [7]
+100326,66450,1,goods:9501,1500,"Pidia, Carian Servant",m60_35_50_00,76231,0,Ritual Pot
+100329,130290,3,goods:15040,800,"Pidia, Carian Servant",m60_35_50_00,76231,0,Old Fang
+100330,130300,2,goods:15120,600,"Pidia, Carian Servant",m60_35_50_00,76231,0,Slumbering Egg
+100334,130340,1,gem:30500,3000,"Pidia, Carian Servant",m60_35_50_00,76231,0,Ash of War: Carian Retaliation
+100335,130350,1,goods:2130,5000,"Pidia, Carian Servant",m60_35_50_00,76231,0,Celestial Dew
+100336,130360,1,goods:8185,3000,"Pidia, Carian Servant",m60_35_50_00,76231,0,Larval Tear
+100337,130370,2,goods:15050,1500,"Pidia, Carian Servant",m60_35_50_00,76231,0,Budding Horn
+100338,130380,1,weapon:14050000,3500,"Pidia, Carian Servant",m60_35_50_00,76231,0,Ripple Blade
+100339,130390,1,weapon:31340000,2500,"Pidia, Carian Servant",m60_35_50_00,76231,0,Black Leather Shield
+100340,69900,1,goods:8225,600,"Pidia, Carian Servant",m60_35_50_00,76231,0,Weathered Map
+100350,130500,1,goods:6400,1500,Scribe Corhyn,m11_00_00_00,71101,0,Rejection
+100351,130510,1,goods:6420,1000,Scribe Corhyn,m11_00_00_00,71101,0,Urgent Heal
+100352,130520,1,goods:6421,1500,Scribe Corhyn,m11_00_00_00,71101,0,Heal
+100353,130530,1,goods:6440,1000,Scribe Corhyn,m11_00_00_00,71101,0,Cure Poison
+100354,130540,1,goods:6450,3000,Scribe Corhyn,m11_00_00_00,71101,0,Flame Fortification
+100355,130550,1,goods:6460,3500,Scribe Corhyn,m11_00_00_00,71101,0,Magic Fortification
+100356,130560,1,goods:6000,600,Scribe Corhyn,m11_00_00_00,71101,0,Catch Flame
+100357,130570,1,goods:6010,800,Scribe Corhyn,m11_00_00_00,71101,0,Flame Sling
+100358,130580,1,goods:6422,9000,Scribe Corhyn,m11_00_00_00,71101,0,Great Heal
+100359,130590,1,goods:6470,7500,Scribe Corhyn,m11_00_00_00,71101,0,Lightning Fortification
+100360,130600,1,goods:6700,11000,Scribe Corhyn,m11_00_00_00,71101,0,Discus of Light
+100361,130610,1,goods:6740,13000,Scribe Corhyn,m11_00_00_00,71101,0,Immutable Shield
+100362,130620,1,goods:6001,6000,Scribe Corhyn,m11_00_00_00,71101,0,"O, Flame!"
+100363,130630,1,goods:6220,5500,Scribe Corhyn,m11_00_00_00,71101,0,"Surge, O Flame!"
+100364,130640,1,goods:6100,13000,Scribe Corhyn,m11_00_00_00,71101,0,Giantsflame Take Thee
+100365,130650,1,goods:6020,10000,Scribe Corhyn,m11_00_00_00,71101,0,"Flame, Fall Upon Them"
+100366,130660,1,goods:6210,7500,Scribe Corhyn,m11_00_00_00,71101,0,Black Flame
+100367,130670,1,goods:6250,6000,Scribe Corhyn,m11_00_00_00,71101,0,Black Flame Blade
+100368,130680,1,goods:6423,8000,Scribe Corhyn,m11_00_00_00,71101,0,Lord's Heal
+100369,130690,1,goods:6441,2500,Scribe Corhyn,m11_00_00_00,71101,0,Lord's Aid
+100370,130700,1,goods:6510,2000,Scribe Corhyn,m11_00_00_00,71101,0,Assassin's Approach
+100371,130710,1,goods:6530,3500,Scribe Corhyn,m11_00_00_00,71101,0,Darkness
+100372,130720,1,goods:6710,7500,Scribe Corhyn,m11_00_00_00,71101,0,Radagon's Rings of Light
+100373,130730,1,goods:6730,10000,Scribe Corhyn,m11_00_00_00,71101,0,Law of Regression
+100374,130740,1,goods:6900,6000,Scribe Corhyn,m11_00_00_00,71101,0,Lightning Spear
+100375,130750,1,goods:6930,7000,Scribe Corhyn,m11_00_00_00,71101,0,Honed Bolt
+100376,130760,1,goods:6960,4000,Scribe Corhyn,m11_00_00_00,71101,0,Electrify Armament
+100377,130770,1,goods:6940,8500,Scribe Corhyn,m11_00_00_00,71101,0,Ancient Dragons' Lightning Spear
+100378,130780,1,goods:6910,10000,Scribe Corhyn,m11_00_00_00,71101,0,Ancient Dragons' Lightning Strike
+100400,140000,1,goods:4390,3000,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Magic Glintblade
+100401,140010,1,goods:4430,10000,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Carian Greatsword
+100402,140020,1,goods:4020,12000,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Glintstone Cometshard
+100403,140030,1,goods:4050,10000,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Star Shower
+100404,140040,1,goods:4001,2000,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Great Glintstone Shard
+100405,140050,1,goods:4010,600,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Swift Glintstone Shard
+100406,140060,1,goods:4300,2500,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Glintblade Phalanx
+100407,140070,1,goods:4440,1500,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Carian Slicer
+100425,140250,1,goods:6430,4000,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Blessing's Boon
+100426,140260,1,goods:6001,6000,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,"O, Flame!"
+100428,140280,1,goods:6220,5500,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,"Surge, O Flame!"
+100429,140290,1,goods:6100,13000,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Giantsflame Take Thee
+100430,140300,1,goods:6020,10000,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,"Flame, Fall Upon Them"
+100431,140310,1,goods:6210,7500,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Black Flame
+100432,140320,1,goods:6250,6000,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Black Flame Blade
+100433,140330,1,goods:6423,8000,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Lord's Heal
+100434,140340,1,goods:6441,2500,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Lord's Aid
+100435,140350,1,goods:6510,2000,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Assassin's Approach
+100436,140360,1,goods:6530,3500,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Darkness
+100437,140370,1,goods:6710,7500,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Radagon's Rings of Light
+100438,140380,1,goods:6730,10000,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Law of Regression
+100439,140390,1,goods:6900,6000,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Lightning Spear
+100440,140400,1,goods:6930,7000,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Honed Bolt
+100441,140410,1,goods:6960,4000,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Electrify Armament
+100442,140420,1,goods:6940,8500,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Ancient Dragons' Lightning Spear
+100443,140430,1,goods:6910,10000,"Miriel, Pastor of Vows",m60_37_46_00,76224,0,Ancient Dragons' Lightning Strike
+100500,69620,1,goods:8702,200,Merchant Kalé,m60_42_36_00,76100,0,Note: Flask of Wondrous Physick
+100501,60120,1,goods:8500,300,Merchant Kalé,m60_42_36_00,76100,0,Crafting Kit
+100502,67000,1,goods:9300,500,Merchant Kalé,m60_42_36_00,76100,0,Nomadic Warrior's Cookbook [1]
+100503,67110,1,goods:9311,500,Merchant Kalé,m60_42_36_00,76100,0,Nomadic Warrior's Cookbook [2]
+100504,67610,1,goods:9361,1000,Merchant Kalé,m60_42_36_00,76100,0,Missionary's Cookbook [1]
+100505,150050,5,goods:150,1000,Merchant Kalé,m60_42_36_00,76100,0,Furlcalling Finger Remedy
+100506,66030,3,goods:9500,300,Merchant Kalé,m60_42_36_00,76100,0,Cracked Pot
+100510,150100,1,weapon:24000000,200,Merchant Kalé,m60_42_36_00,76100,0,Torch
+100511,150110,1,weapon:31230000,600,Merchant Kalé,m60_42_36_00,76100,0,Large Leather Shield
+100513,150130,1,goods:2040,500,Merchant Kalé,m60_42_36_00,76100,0,Telescope
+100514,69720,1,goods:8712,200,Merchant Kalé,m60_42_36_00,76100,0,Note: Waypoint Ruins
+100515,150150,1,armor:1100000,1000,Merchant Kalé,m60_42_36_00,76100,0,Chain Coif
+100516,150160,1,armor:1100100,1500,Merchant Kalé,m60_42_36_00,76100,0,Chain Armor
+100517,150170,1,armor:1100200,1000,Merchant Kalé,m60_42_36_00,76100,0,Gauntlets
+100518,150180,1,armor:1100300,1000,Merchant Kalé,m60_42_36_00,76100,0,Chain Leggings
+100525,67010,1,goods:9301,500,Nomadic Merchant,m60_44_39_00,76117,0,Nomadic Warrior's Cookbook [3]
+100539,69670,1,goods:8707,300,Nomadic Merchant,m60_44_39_00,76117,0,Note: Flame Chariots
+100540,66060,1,goods:9500,600,Nomadic Merchant,m60_44_39_00,76117,0,Cracked Pot
+100541,150410,3,goods:1100,800,Nomadic Merchant,m60_44_39_00,76117,0,Pickled Turtle Neck
+100542,150420,1,weapon:2010000,600,Nomadic Merchant,m60_44_39_00,76117,0,Short Sword
+100543,150430,1,weapon:18000000,1200,Nomadic Merchant,m60_44_39_00,76117,0,Halberd
+100546,150460,1,armor:1401000,1500,Nomadic Merchant,m60_44_39_00,76117,0,Bandit Mask
+100547,150470,3,goods:10100,200,Nomadic Merchant,m60_44_39_00,76117,0,Smithing Stone [1]
+100550,67830,1,goods:9383,1500,Nomadic Merchant,m60_45_36_00,76105,0,Nomadic Warrior's Cookbook [5]
+100551,67280,1,goods:9328,2000,Nomadic Merchant,m60_45_36_00,76105,0,Armorer's Cookbook [3]
+100552,150520,5,goods:15000,500,Nomadic Merchant,m60_45_36_00,76105,0,Sliver of Meat
+100553,150530,5,goods:15010,500,Nomadic Merchant,m60_45_36_00,76105,0,Beast Liver
+100554,150540,3,goods:15020,800,Nomadic Merchant,m60_45_36_00,76105,0,Lump of Flesh
+100561,150610,5,goods:111,1000,Nomadic Merchant,m60_45_36_00,76105,0,Festering Bloody Finger
+100562,150620,3,goods:20651,1000,Nomadic Merchant,m60_45_36_00,76105,0,Trina's Lily
+100563,150630,1,weapon:14020000,600,Nomadic Merchant,m60_45_36_00,76105,0,Hand Axe
+100564,150640,1,weapon:30090000,600,Nomadic Merchant,m60_45_36_00,76105,0,Riveted Wooden Shield
+100565,150650,1,weapon:31100000,1000,Nomadic Merchant,m60_45_36_00,76105,0,Blue-Gold Kite Shield
+100566,150660,10,weapon:50040000,160,Nomadic Merchant,m60_45_36_00,76105,0,St. Trina's Arrow
+100567,150670,3,goods:10100,200,Nomadic Merchant,m60_45_36_00,76105,0,Smithing Stone [1]
+100568,150680,1,weapon:8530000,2400,Nomadic Merchant,m60_45_36_00,76105,0,Hefty Scimitar
+100575,67210,1,goods:9321,600,Nomadic Merchant,m60_41_36_00,76101,0,Armorer's Cookbook [2]
+100576,69630,1,goods:8703,400,Nomadic Merchant,m60_41_36_00,76101,0,Note: Stonedigger Trolls
+100585,69690,1,goods:8709,200,Nomadic Merchant,m60_41_36_00,76101,0,Note: Land Squirts
+100586,150860,1,weapon:11010000,600,Nomadic Merchant,m60_41_36_00,76101,0,Club
+100587,150870,1,weapon:2020000,1800,Nomadic Merchant,m60_41_36_00,76101,0,Broadsword
+100588,150880,1,weapon:30120000,900,Nomadic Merchant,m60_41_36_00,76101,0,Iron Roundshield
+100589,150890,1,weapon:40000000,600,Nomadic Merchant,m60_41_36_00,76101,0,Shortbow
+100592,150920,5,goods:900,600,Nomadic Merchant,m60_41_36_00,76101,0,Neutralizing Boluses
+100593,150930,3,goods:910,600,Nomadic Merchant,m60_41_36_00,76101,0,Stanching Boluses
+100594,150940,2,goods:930,1500,Nomadic Merchant,m60_41_36_00,76101,0,Stimulating Boluses
+100595,150950,3,goods:10100,200,Nomadic Merchant,m60_41_36_00,76101,0,Smithing Stone [1]
+100600,160000,1,goods:8000,2000,Nomadic Merchant,m60_44_33_00,76151,0,Stonesword Key
+100602,160130,1,weapon:30070000,600,Nomadic Merchant,m60_44_33_00,76151,0,Red Thorn Roundshield
+100603,160140,1,weapon:31070000,1000,Nomadic Merchant,m60_44_33_00,76151,0,Round Shield
+100604,160160,1,talisman:1000,1500,Nomadic Merchant,m60_44_33_00,76151,0,Crimson Amber Medallion
+100605,69680,1,goods:8708,500,Nomadic Merchant,m60_44_33_00,76151,0,Note: Demi-human Mobs
+100606,66070,1,goods:9500,600,Nomadic Merchant,m60_44_33_00,76151,0,Cracked Pot
+100607,160190,1,weapon:3000000,3000,Nomadic Merchant,m60_44_33_00,76151,0,Bastard Sword
+100608,160200,1,weapon:43020000,1500,Nomadic Merchant,m60_44_33_00,76151,0,Light Crossbow
+100611,160230,8,weapon:51000000,300,Nomadic Merchant,m60_44_33_00,76151,0,Great Arrow
+100612,160240,8,weapon:53000000,300,Nomadic Merchant,m60_44_33_00,76151,0,Ballista Bolt
+100613,180500,1,armor:40000,1500,Nomadic Merchant,m60_44_33_00,76151,0,Iron Helmet
+100614,180510,1,armor:40100,2400,Nomadic Merchant,m60_44_33_00,76151,0,Scale Armor
+100615,180520,1,armor:40200,1500,Nomadic Merchant,m60_44_33_00,76151,0,Iron Gauntlets
+100616,180530,1,armor:40300,1500,Nomadic Merchant,m60_44_33_00,76151,0,Leather Trousers
+100617,180540,3,goods:10100,200,Nomadic Merchant,m60_44_33_00,76151,0,Smithing Stone [1]
+100618,180550,1,goods:10101,400,Nomadic Merchant,m60_44_33_00,76151,0,Smithing Stone [2]
+100625,67220,1,goods:9322,1500,Nomadic Merchant,m60_38_41_00,76201,0,Nomadic Warrior's Cookbook [11]
+100626,160330,1,weapon:5000000,3000,Nomadic Merchant,m60_38_41_00,76201,0,Estoc
+100627,160340,1,weapon:31000000,1000,Nomadic Merchant,m60_38_41_00,76201,0,Kite Shield
+100628,160410,1,armor:630000,1000,Nomadic Merchant,m60_38_41_00,76201,0,Astrologer Hood
+100629,160420,1,armor:630100,1500,Nomadic Merchant,m60_38_41_00,76201,0,Astrologer Robe
+100630,160430,1,armor:630200,1000,Nomadic Merchant,m60_38_41_00,76201,0,Astrologer Gloves
+100631,160440,1,armor:630300,1000,Nomadic Merchant,m60_38_41_00,76201,0,Astrologer Trousers
+100632,160450,1,goods:2070,1800,Nomadic Merchant,m60_38_41_00,76201,0,Lantern
+100633,160460,1,weapon:33130000,800,Nomadic Merchant,m60_38_41_00,76201,0,Astrologer's Staff
+100636,160490,5,goods:10100,200,Nomadic Merchant,m60_38_41_00,76201,0,Smithing Stone [1]
+100637,200250,3,goods:10101,400,Nomadic Merchant,m60_38_41_00,76201,0,Smithing Stone [2]
+100650,69640,1,goods:8704,600,Isolated Merchant,m60_41_32_00,76156,0,Note: Wandering Mausoleum
+100652,160520,3,goods:8000,2000,Isolated Merchant,m60_41_32_00,76156,0,Stonesword Key
+100654,160540,5,goods:20691,1000,Isolated Merchant,m60_41_32_00,76156,0,Arteria Leaf
+100656,160560,15,weapon:53000000,300,Isolated Merchant,m60_41_32_00,76156,0,Ballista Bolt
+100657,160570,3,talisman:6070,3000,Isolated Merchant,m60_41_32_00,76156,0,Sacrificial Twig
+100658,160580,1,goods:2070,1800,Isolated Merchant,m60_41_32_00,76156,0,Lantern
+100659,160590,1,goods:10070,3000,Isolated Merchant,m60_41_32_00,76156,0,Lost Ashes of War
+100660,160600,1,weapon:4040000,3500,Isolated Merchant,m60_41_32_00,76156,0,Zweihander
+100663,160630,15,weapon:51000000,300,Isolated Merchant,m60_41_32_00,76156,0,Great Arrow
+100664,160640,5,goods:111,1000,Isolated Merchant,m60_41_32_00,76156,0,Festering Bloody Finger
+100665,160650,3,goods:10101,400,Isolated Merchant,m60_41_32_00,76156,0,Smithing Stone [2]
+100666,160660,1,armor:5370000,1000,Isolated Merchant,m60_41_32_00,76156,0,Steel Helm
+100667,160670,1,armor:5370100,1500,Isolated Merchant,m60_41_32_00,76156,0,Steel Armor
+100668,160680,1,armor:5370200,1000,Isolated Merchant,m60_41_32_00,76156,0,Steel Gauntlets
+100669,160690,1,armor:5370300,1000,Isolated Merchant,m60_41_32_00,76156,0,Steel Greaves
+100675,68220,1,goods:9422,3500,Isolated Merchant,m60_35_45_00,76205,0,Fevor's Cookbook [2]
+100676,160760,3,goods:20651,1000,Isolated Merchant,m60_35_45_00,76205,0,Trina's Lily
+100678,160780,1,goods:20740,1500,Isolated Merchant,m60_35_45_00,76205,0,Eye of Yelough
+100680,160800,3,goods:8000,3000,Isolated Merchant,m60_35_45_00,76205,0,Stonesword Key
+100681,160810,1,goods:10070,4000,Isolated Merchant,m60_35_45_00,76205,0,Lost Ashes of War
+100682,160820,3,talisman:6070,3000,Isolated Merchant,m60_35_45_00,76205,0,Sacrificial Twig
+100686,69710,1,goods:8711,800,Isolated Merchant,m60_35_45_00,76205,0,Note: Revenants
+100687,69750,1,goods:8715,800,Isolated Merchant,m60_35_45_00,76205,0,Note: Frenzied Flame Village
+100688,160880,1,goods:203000,2000,Isolated Merchant,m60_35_45_00,76205,0,Fanged Imp Ashes
+100689,160890,20,weapon:50040000,160,Isolated Merchant,m60_35_45_00,76205,0,St. Trina's Arrow
+100691,160910,1,armor:670000,1000,Isolated Merchant,m60_35_45_00,76205,0,Blue Cloth Cowl
+100692,160920,1,armor:670100,1500,Isolated Merchant,m60_35_45_00,76205,0,Blue Cloth Vest
+100693,160930,1,armor:670200,1000,Isolated Merchant,m60_35_45_00,76205,0,Warrior Gauntlets
+100694,160940,1,armor:670300,1000,Isolated Merchant,m60_35_45_00,76205,0,Warrior Greaves
+100695,160950,8,goods:111,1500,Isolated Merchant,m60_35_45_00,76205,0,Festering Bloody Finger
+100696,69910,1,goods:8224,1200,Isolated Merchant,m60_35_45_00,76205,0,Note: The Preceptor's Secret
+100700,67080,1,goods:9308,2000,Nomadic Merchant,m60_36_49_00,76208,0,Nomadic Warrior's Cookbook [13]
+100704,170040,1,weapon:40050000,3500,Nomadic Merchant,m60_36_49_00,76208,0,Composite Bow
+100705,170050,1,weapon:30110000,1800,Nomadic Merchant,m60_36_49_00,76208,0,Rift Shield
+100706,170060,1,weapon:31300000,1500,Nomadic Merchant,m60_36_49_00,76208,0,Blue Crest Heater Shield
+100709,170090,1,weapon:31540000,2000,Nomadic Merchant,m60_36_49_00,76208,0,Silver Grooved Shield
+100710,170100,1,armor:5350000,1000,Nomadic Merchant,m60_36_49_00,76208,0,Silver Grooved Helm
+100711,170110,1,armor:5350100,1500,Nomadic Merchant,m60_36_49_00,76208,0,Silver Grooved Armor
+100712,170120,1,armor:5350200,1000,Nomadic Merchant,m60_36_49_00,76208,0,Silver Grooved Gauntlets
+100713,170130,1,armor:5350300,1000,Nomadic Merchant,m60_36_49_00,76208,0,Silver Grooved Greaves
+100714,170140,3,goods:190,4000,Nomadic Merchant,m60_36_49_00,76208,0,Rune Arc
+100715,170150,5,goods:3350,1600,Nomadic Merchant,m60_36_49_00,76208,0,Bewitching Branch
+100718,170180,3,goods:1310,2000,Nomadic Merchant,m60_36_49_00,76208,0,Immunizing White Cured Meat
+100719,170190,3,goods:1320,2000,Nomadic Merchant,m60_36_49_00,76208,0,Invigorating White Cured Meat
+100720,170200,3,goods:1330,2000,Nomadic Merchant,m60_36_49_00,76208,0,Clarifying White Cured Meat
+100725,66750,1,goods:9510,2000,Hermit Merchant,m60_43_53_00,76311,0,Perfume Bottle
+100727,170350,1,weapon:24070000,7000,Hermit Merchant,m60_43_53_00,76311,0,Sentry's Torch
+100728,170360,3,goods:190,4000,Hermit Merchant,m60_43_53_00,76311,0,Rune Arc
+100729,170370,10,goods:20683,300,Hermit Merchant,m60_43_53_00,76311,0,Golden Sunflower
+100730,170380,1,weapon:32020000,5500,Hermit Merchant,m60_43_53_00,76311,0,Distinguished Greatshield
+100737,170450,1,armor:962100,2400,Hermit Merchant,m60_43_53_00,76311,0,Upper-Class Robe
+100738,170460,1,armor:960300,1500,Hermit Merchant,m60_43_53_00,76311,0,Consort's Trousers
+100739,170470,1,armor:620000,1000,Hermit Merchant,m60_43_53_00,76311,0,Prophet Blindfold
+100740,170480,1,armor:620300,1000,Hermit Merchant,m60_43_53_00,76311,0,Prophet Trousers
+100741,170490,1,armor:622100,1500,Hermit Merchant,m60_43_53_00,76311,0,Prophet Robe
+100743,69770,1,goods:8717,800,Hermit Merchant,m60_43_53_00,76311,0,Note: Below the Capital
+100750,68010,1,goods:9401,4500,Nomadic Merchant,m60_40_52_00,76304,0,Ancient Dragon Apostle's Cookbook [2]
+100751,69610,1,goods:8701,1200,Nomadic Merchant,m60_40_52_00,76304,0,Note: Imp Shades
+100752,69650,1,goods:8705,2000,Nomadic Merchant,m60_40_52_00,76304,0,Note: Unseen Assassins
+100753,170530,3,goods:8000,4000,Nomadic Merchant,m60_40_52_00,76304,0,Stonesword Key
+100764,170640,1,weapon:31080000,2000,Nomadic Merchant,m60_40_52_00,76304,0,Scorpion Kite Shield
+100765,170650,8,goods:20855,2000,Nomadic Merchant,m60_40_52_00,76304,0,Gravel Stone
+100766,170660,1,weapon:31290000,2500,Nomadic Merchant,m60_40_52_00,76304,0,Red Crest Heater Shield
+100767,170670,1,weapon:32200000,3800,Nomadic Merchant,m60_40_52_00,76304,0,Crossed-Tree Towershield
+100770,170700,1,armor:1102100,3500,Nomadic Merchant,m60_40_52_00,76304,0,Tree Surcoat
+100771,170710,3,goods:111,2000,Nomadic Merchant,m60_40_52_00,76304,0,Festering Bloody Finger
+100775,67230,1,goods:9323,3000,Nomadic Merchant,m60_37_54_00,76352,0,Nomadic Warrior's Cookbook [20]
+100777,170770,1,goods:8000,5000,Nomadic Merchant,m60_37_54_00,76352,0,Stonesword Key
+100794,170940,1,armor:880000,1000,Nomadic Merchant,m60_37_54_00,76352,0,Confessor Hood
+100795,170950,1,armor:880100,1500,Nomadic Merchant,m60_37_54_00,76352,0,Confessor Armor
+100796,170960,1,armor:880200,1000,Nomadic Merchant,m60_37_54_00,76352,0,Confessor Gloves
+100797,170970,1,armor:880300,1000,Nomadic Merchant,m60_37_54_00,76352,0,Confessor Boots
+100798,170980,1,armor:160000,500,Nomadic Merchant,m60_37_54_00,76352,0,Guilty Hood
+100825,67900,1,goods:9390,4000,Nomadic Merchant,m60_49_37_00,76411,0,Nomadic Warrior's Cookbook [15]
+100826,180260,1,goods:8000,4000,Nomadic Merchant,m60_49_37_00,76411,0,Stonesword Key
+100827,66180,1,goods:9500,1500,Nomadic Merchant,m60_49_37_00,76411,0,Cracked Pot
+100837,69700,1,goods:8710,800,Nomadic Merchant,m60_49_37_00,76411,0,Note: Gravity's Advantage
+100841,180410,1,armor:730000,1000,Nomadic Merchant,m60_49_37_00,76411,0,Champion Headband
+100842,180420,1,armor:730100,1500,Nomadic Merchant,m60_49_37_00,76411,0,Champion Pauldron
+100843,180430,1,armor:730200,1000,Nomadic Merchant,m60_49_37_00,76411,0,Champion Bracers
+100844,180440,1,armor:730300,1000,Nomadic Merchant,m60_49_37_00,76411,0,Champion Gaiters
+100845,180450,1,armor:1101000,1800,Nomadic Merchant,m60_49_37_00,76411,0,Greathelm
+100875,69600,1,goods:8700,1200,Isolated Merchant,m60_48_41_00,76451,0,Note: Hidden Cave
+100876,66460,1,goods:9501,3000,Isolated Merchant,m60_48_41_00,76451,0,Ritual Pot
+100877,180770,2,goods:10070,5000,Isolated Merchant,m60_48_41_00,76451,0,Lost Ashes of War
+100878,180780,10,goods:20855,2000,Isolated Merchant,m60_48_41_00,76451,0,Gravel Stone
+100880,180800,3,talisman:6070,3000,Isolated Merchant,m60_48_41_00,76451,0,Sacrificial Twig
+100882,180820,1,armor:870000,1000,Isolated Merchant,m60_48_41_00,76451,0,Land of Reeds Helm
+100883,180830,1,armor:870100,1500,Isolated Merchant,m60_48_41_00,76451,0,Land of Reeds Armor
+100884,180840,1,armor:870200,1000,Isolated Merchant,m60_48_41_00,76451,0,Land of Reeds Gauntlets
+100885,180850,1,armor:870300,1000,Isolated Merchant,m60_48_41_00,76451,0,Land of Reeds Greaves
+100886,69730,1,goods:8713,1200,Isolated Merchant,m60_48_41_00,76451,0,Note: Gateway
+100887,180870,2,goods:1480,3000,Isolated Merchant,m60_48_41_00,76451,0,Dragonwound Grease
+100888,180880,1,weapon:21010000,4000,Isolated Merchant,m60_48_41_00,76451,0,Spiked Caestus
+100889,180890,1,weapon:24060000,1200,Isolated Merchant,m60_48_41_00,76451,0,Beast-Repellent Torch
+100893,180930,8,goods:111,1500,Isolated Merchant,m60_48_41_00,76451,0,Festering Bloody Finger
+100900,68230,1,goods:9423,7500,Hermit Merchant,m60_51_56_00,76503,0,Missionary's Cookbook [7]
+100901,190010,3,goods:8000,5000,Hermit Merchant,m60_51_56_00,76503,0,Stonesword Key
+100903,190030,10,goods:920,1200,Hermit Merchant,m60_51_56_00,76503,0,Thawfrost Boluses
+100909,190090,3,goods:190,8000,Hermit Merchant,m60_51_56_00,76503,0,Rune Arc
+100915,190150,1,armor:660000,1000,Hermit Merchant,m60_51_56_00,76503,0,Vagabond Knight Helm
+100916,190160,1,armor:660100,1500,Hermit Merchant,m60_51_56_00,76503,0,Vagabond Knight Armor
+100917,190170,1,armor:660200,1000,Hermit Merchant,m60_51_56_00,76503,0,Vagabond Knight Gauntlets
+100918,190180,1,armor:660300,1000,Hermit Merchant,m60_51_56_00,76503,0,Vagabond Knight Greaves
+100925,67100,1,goods:9310,1000,Abandoned Merchant,m12_02_00_00,71223,0,Nomadic Warrior's Cookbook [17]
+100926,67270,1,goods:9327,6000,Abandoned Merchant,m12_02_00_00,71223,0,Nomadic Warrior's Cookbook [18]
+100928,190280,3,goods:8000,2000,Abandoned Merchant,m12_02_00_00,71223,0,Stonesword Key
+100935,190350,30,weapon:50100000,160,Abandoned Merchant,m12_02_00_00,71223,0,Dwelling Arrow
+100936,190360,1,goods:8185,3000,Abandoned Merchant,m12_02_00_00,71223,0,Larval Tear
+100937,190370,1,weapon:7020000,2500,Abandoned Merchant,m12_02_00_00,71223,0,Shotel
+100940,190400,3,goods:2120,400,Abandoned Merchant,m12_02_00_00,71223,0,Soap
+100941,190410,5,goods:20800,1500,Abandoned Merchant,m12_02_00_00,71223,0,Nascent Butterfly
+100950,67290,1,goods:9329,2500,Hermit Merchant,m12_01_00_00,71213,0,Nomadic Warrior's Cookbook [16]
+100951,67920,1,goods:9392,3000,Hermit Merchant,m12_01_00_00,71213,0,Perfumer's Cookbook [4]
+100953,190530,1,goods:10070,3000,Hermit Merchant,m12_01_00_00,71213,0,Lost Ashes of War
+100962,190620,1,goods:2130,7500,Hermit Merchant,m12_01_00_00,71213,0,Celestial Dew
+100963,190630,20,goods:3060,200,Hermit Merchant,m12_01_00_00,71213,0,Gravity Stone Fan
+100964,190640,10,goods:3070,300,Hermit Merchant,m12_01_00_00,71213,0,Gravity Stone Chunk
+100965,190650,1,armor:890000,1000,Hermit Merchant,m12_01_00_00,71213,0,Prisoner Iron Mask
+100966,190660,1,armor:890100,1500,Hermit Merchant,m12_01_00_00,71213,0,Prisoner Clothing
+100967,190670,1,armor:890300,1000,Hermit Merchant,m12_01_00_00,71213,0,Prisoner Trousers
+101800,60280,1,goods:104,1000,Twin Maiden Husks,m11_10_00_00,71190,0,White Cipher Ring
+101801,60290,1,goods:105,1000,Twin Maiden Husks,m11_10_00_00,71190,0,Blue Cipher Ring
+101802,60110,1,goods:8158,100,Twin Maiden Husks,m11_10_00_00,71190,0,Spirit Calling Bell
+101803,280030,1,goods:232000,500,Twin Maiden Husks,m11_10_00_00,71190,0,Lone Wolf Ashes
+101804,280040,1,goods:6260,2500,Twin Maiden Husks,m11_10_00_00,71190,0,Black Flame's Protection
+101805,280050,1,goods:6490,3500,Twin Maiden Husks,m11_10_00_00,71190,0,Lord's Divine Fortification
+101806,68210,1,goods:9421,2000,Twin Maiden Husks,m11_10_00_00,71190,0,Fevor's Cookbook [3]
+101807,280070,1,goods:6760,5000,Twin Maiden Husks,m11_10_00_00,71190,0,Law of Causality
+101859,60470,1,goods:10030,3000,Twin Maiden Husks,m11_10_00_00,71190,0,Memory Stone
+101860,250010,3,goods:8000,4000,Twin Maiden Husks,m11_10_00_00,71190,0,Stonesword Key
+101861,250020,5,goods:190,4000,Twin Maiden Husks,m11_10_00_00,71190,0,Rune Arc
+101862,250330,1,talisman:6080,5000,Twin Maiden Husks,m11_10_00_00,71190,0,Furled Finger's Trick-Mirror
+101863,250340,1,talisman:6090,5000,Twin Maiden Husks,m11_10_00_00,71190,0,Host's Trick-Mirror
+101864,250350,1,weapon:1000000,400,Twin Maiden Husks,m11_10_00_00,71190,0,Dagger
+101865,250360,1,weapon:2000000,1000,Twin Maiden Husks,m11_10_00_00,71190,0,Longsword
+101866,250370,1,weapon:7140000,600,Twin Maiden Husks,m11_10_00_00,71190,0,Scimitar
+101867,250380,1,weapon:14000000,800,Twin Maiden Husks,m11_10_00_00,71190,0,Battle Axe
+101868,250390,1,weapon:11000000,800,Twin Maiden Husks,m11_10_00_00,71190,0,Mace
+101869,250400,1,weapon:16000000,600,Twin Maiden Husks,m11_10_00_00,71190,0,Short Spear
+101870,250410,1,weapon:5020000,1000,Twin Maiden Husks,m11_10_00_00,71190,0,Rapier
+101871,250420,1,weapon:34000000,800,Twin Maiden Husks,m11_10_00_00,71190,0,Finger Seal
+101872,250430,1,weapon:41000000,1200,Twin Maiden Husks,m11_10_00_00,71190,0,Longbow
+101873,250440,1,weapon:31330000,1500,Twin Maiden Husks,m11_10_00_00,71190,0,Heater Shield
+101874,250450,1,armor:1500000,3000,Twin Maiden Husks,m11_10_00_00,71190,0,Knight Helm
+101875,250460,1,armor:1500100,4500,Twin Maiden Husks,m11_10_00_00,71190,0,Knight Armor
+101876,250470,1,armor:1500200,3000,Twin Maiden Husks,m11_10_00_00,71190,0,Knight Gauntlets
+101877,250480,1,armor:1500300,3000,Twin Maiden Husks,m11_10_00_00,71190,0,Knight Greaves
+101878,60020,1,goods:250,500,Twin Maiden Husks,m11_10_00_00,71190,0,Flask of Wondrous Physick
+101879,60120,1,goods:8500,500,Twin Maiden Husks,m11_10_00_00,71190,0,Crafting Kit
+101880,60130,1,goods:8590,500,Twin Maiden Husks,m11_10_00_00,71190,0,Whetstone Knife
+101881,60500,1,goods:10040,500,Twin Maiden Husks,m11_10_00_00,71190,0,Talisman Pouch
+101896,280960,1,weapon:64530000,1000,Twin Maiden Husks,m11_10_00_00,71190,0,Reverse-Bladed Sword
+101898,280980,1,talisman:8180,0,Finger Reader Enia,m11_10_00_00,71190,0,Enraged Divine Beast
+101899,280990,1,gem:416000,0,Finger Reader Enia,m11_10_00_00,71190,0,Ash of War: Divine Beast Frost Stomp
+101900,290000,1,weapon:15040000,0,Finger Reader Enia,m11_10_00_00,71190,0,Axe of Godrick
+101901,290010,1,weapon:21060000,2000,Finger Reader Enia,m11_10_00_00,71190,0,Grafted Dragon
+101902,290020,1,weapon:4050000,0,Finger Reader Enia,m11_10_00_00,71190,0,Starscourge Greatsword
+101903,290030,1,weapon:42000000,0,Finger Reader Enia,m11_10_00_00,71190,0,Lion Greatbow
+101904,290040,1,weapon:8100000,0,Finger Reader Enia,m11_10_00_00,71190,0,Morgott's Cursed Sword
+101905,290050,1,goods:3011,5000,Finger Reader Enia,m11_10_00_00,71190,0,Regal Omen Bairn
+101906,290060,1,weapon:3140000,0,Finger Reader Enia,m11_10_00_00,71190,0,Blasphemous Blade
+101907,290070,1,goods:4830,0,Finger Reader Enia,m11_10_00_00,71190,0,Rykard's Rancor
+101908,290080,1,weapon:9020000,0,Finger Reader Enia,m11_10_00_00,71190,0,Hand of Malenia
+101909,290090,1,goods:7240,0,Finger Reader Enia,m11_10_00_00,71190,0,Scarlet Aeonia
+101910,290100,1,weapon:17010000,0,Finger Reader Enia,m11_10_00_00,71190,0,Mohgwyn's Sacred Spear
+101911,290110,1,goods:6310,0,Finger Reader Enia,m11_10_00_00,71190,0,Bloodboon
+101912,290120,1,weapon:4020000,0,Finger Reader Enia,m11_10_00_00,71190,0,Maliketh's Black Blade
+101913,290130,1,goods:7530,0,Finger Reader Enia,m11_10_00_00,71190,0,Black Blade
+101914,290140,1,weapon:23050000,0,Finger Reader Enia,m11_10_00_00,71190,0,Axe of Godfrey
+101915,290150,1,gem:50900,15000,Finger Reader Enia,m11_10_00_00,71190,0,Ash of War: Hoarah Loux's Earthshaker
+101916,290160,1,weapon:6040000,20000,Finger Reader Enia,m11_10_00_00,71190,0,Dragon King's Cragblade
+101917,290170,1,goods:7050,0,Finger Reader Enia,m11_10_00_00,71190,0,Placidusax's Ruin
+101918,290180,1,weapon:33090000,0,Finger Reader Enia,m11_10_00_00,71190,0,Carian Regal Scepter
+101919,290190,1,goods:4360,0,Finger Reader Enia,m11_10_00_00,71190,0,Rennala's Full Moon
+101920,290200,1,goods:6941,0,Finger Reader Enia,m11_10_00_00,71190,0,Fortissax's Lightning Spear
+101921,290210,1,goods:5040,0,Finger Reader Enia,m11_10_00_00,71190,0,Death Lightning
+101922,290220,1,weapon:20060000,10000,Finger Reader Enia,m11_10_00_00,71190,0,Giant's Red Braid
+101923,290230,1,goods:6120,0,Finger Reader Enia,m11_10_00_00,71190,0,"Burn, O Flame!"
+101924,290240,1,weapon:15110000,3000,Finger Reader Enia,m11_10_00_00,71190,0,Winged Greathorn
+101925,290250,1,talisman:6110,3000,Finger Reader Enia,m11_10_00_00,71190,0,Ancestral Spirit's Horn
+101926,290260,1,weapon:11150000,0,Finger Reader Enia,m11_10_00_00,71190,0,Marika's Hammer
+101927,290270,1,weapon:3100000,20000,Finger Reader Enia,m11_10_00_00,71190,0,Sacred Relic Sword
+101928,290280,1,weapon:13030000,10000,Finger Reader Enia,m11_10_00_00,71190,0,Bastard's Stars
+101929,290290,1,gem:50800,10000,Finger Reader Enia,m11_10_00_00,71190,0,Ash of War: Waves of Darkness
+101930,290300,1,weapon:67520000,0,Finger Reader Enia,m11_10_00_00,71190,0,Rellana's Twin Blades
+101931,290310,1,goods:2004320,0,Finger Reader Enia,m11_10_00_00,71190,0,Rellana's Twin Moons
+101933,290330,1,goods:2004700,0,Finger Reader Enia,m11_10_00_00,71190,0,Blades of Stone
+101934,290340,1,weapon:8500000,0,Finger Reader Enia,m11_10_00_00,71190,0,Putrescence Cleaver
+101935,290350,1,goods:2006200,0,Finger Reader Enia,m11_10_00_00,71190,0,Vortex of Putrescence
+101936,290360,1,weapon:18510000,0,Finger Reader Enia,m11_10_00_00,71190,0,Poleblade of the Bud
+101937,290370,1,goods:2007200,0,Finger Reader Enia,m11_10_00_00,71190,0,Rotten Butterflies
+101938,290380,1,weapon:3510000,0,Finger Reader Enia,m11_10_00_00,71190,0,Greatsword of Damnation
+101939,290390,1,goods:2007300,0,Finger Reader Enia,m11_10_00_00,71190,0,Midra's Flame of Frenzy
+101940,290400,1,weapon:23510000,0,Finger Reader Enia,m11_10_00_00,71190,0,Shadow Sunflower Blossom
+101941,290410,1,goods:2006680,0,Finger Reader Enia,m11_10_00_00,71190,0,Land of Shadow
+101942,290420,1,weapon:17500000,0,Finger Reader Enia,m11_10_00_00,71190,0,Spear of the Impaler
+101943,290430,1,goods:2007820,0,Finger Reader Enia,m11_10_00_00,71190,0,Messmer's Orb
+101944,290440,1,weapon:33510000,0,Finger Reader Enia,m11_10_00_00,71190,0,Staff of the Great Beyond
+101945,290450,1,weapon:23520000,0,Finger Reader Enia,m11_10_00_00,71190,0,Gazing Finger
+101946,290460,1,weapon:4530000,0,Finger Reader Enia,m11_10_00_00,71190,0,Greatsword of Radahn (Lord)
+101947,290470,1,weapon:4550000,0,Finger Reader Enia,m11_10_00_00,71190,0,Greatsword of Radahn (Light)
+101948,290480,1,goods:2006700,0,Finger Reader Enia,m11_10_00_00,71190,0,Light of Miquella
+101950,290500,1,goods:7000,1,Cathedral of Dragon Communion,m60_48_36_00,76404,0,Dragonfire
+101951,290510,1,goods:7020,1,Cathedral of Dragon Communion,m60_48_36_00,76404,0,Dragonice
+101952,290520,1,goods:7040,1,Cathedral of Dragon Communion,m60_48_36_00,76404,0,Glintstone Breath
+101953,290530,1,goods:7030,1,Cathedral of Dragon Communion,m60_48_36_00,76404,0,Rotten Breath
+101954,290540,1,goods:7001,2,Cathedral of Dragon Communion,m60_48_36_00,76404,0,Agheel's Flame
+101955,290550,1,goods:7021,2,Cathedral of Dragon Communion,m60_48_36_00,76404,0,Borealis's Mist
+101956,290560,1,goods:7041,2,Cathedral of Dragon Communion,m60_48_36_00,76404,0,Smarag's Glintstone Breath
+101957,290570,1,goods:7031,2,Cathedral of Dragon Communion,m60_48_36_00,76404,0,Ekzykes's Decay
+101958,290750,1,goods:7060,1,Cathedral of Dragon Communion,m60_48_36_00,76404,0,Dragonclaw
+101959,290760,1,goods:7080,1,Cathedral of Dragon Communion,m60_48_36_00,76404,0,Dragonmaw
+101960,290770,1,goods:7010,1,Cathedral of Dragon Communion,m60_48_36_00,76404,0,Magma Breath
+101961,290780,1,goods:7011,2,Cathedral of Dragon Communion,m60_48_36_00,76404,0,Theodorix's Magma
+101962,290790,1,goods:7090,3,Cathedral of Dragon Communion,m60_48_36_00,76404,0,Greyoll's Roar
+101975,290750,1,goods:7060,1,Church of Dragon Communion,m60_41_35_00,76110,0,Dragonclaw
+101976,290760,1,goods:7080,1,Church of Dragon Communion,m60_41_35_00,76110,0,Dragonmaw
+101980,290500,1,goods:7000,1,Church of Dragon Communion,m60_41_35_00,76110,0,Dragonfire
+102250,320500,3,goods:190,8000,Moore,m61_45_42_00,76803,1,Rune Arc
+102255,320550,1,goods:2008031,1000,Moore,m61_45_42_00,76803,1,Note: Sealed Spiritsprings
+102256,320560,10,goods:2020001,800,Moore,m61_45_42_00,76803,1,Rada Fruit
+102257,320570,8,goods:2020002,1500,Moore,m61_45_42_00,76803,1,Redflesh Mushroom
+102258,320580,6,goods:2020003,2000,Moore,m61_45_42_00,76803,1,Whiteflesh Mushroom
+102259,320590,5,goods:2020004,1500,Moore,m61_45_42_00,76803,1,Knot Resin
+102260,320600,2,goods:2001120,4000,Moore,m61_45_42_00,76803,1,Spellproof Pickled Liver
+102261,320610,2,goods:2001130,4000,Moore,m61_45_42_00,76803,1,Fireproof Pickled Liver
+102262,320620,2,goods:2001140,4000,Moore,m61_45_42_00,76803,1,Lightningproof Pickled Liver
+102263,320630,2,goods:2001150,4000,Moore,m61_45_42_00,76803,1,Holyproof Pickled Liver
+102264,320640,1,goods:2001170,2000,Moore,m61_45_42_00,76803,1,Well-Pickled Turtle Neck
+102265,320650,8,goods:2020006,1800,Moore,m61_45_42_00,76803,1,Black Pyrefly
+102266,320660,4,goods:2020012,1800,Moore,m61_45_42_00,76803,1,Sanguine Amaryllis
+102270,320700,1,weapon:61540000,6000,Thiollier,m61_48_43_00,76810,1,Deadly Poison Perfume Bottle
+102271,320710,5,goods:1460,1000,Thiollier,m61_48_43_00,76810,1,Poison Grease
+102272,320720,5,goods:1560,800,Thiollier,m61_48_43_00,76810,1,Drawstring Poison Grease
+102273,320730,20,goods:1720,120,Thiollier,m61_48_43_00,76810,1,Poisonbone Dart
+102274,320740,10,goods:1840,150,Thiollier,m61_48_43_00,76810,1,Poisoned Stone
+102275,320750,5,goods:1841,250,Thiollier,m61_48_43_00,76810,1,Poisoned Stone Clump
+102276,320760,20,goods:20681,500,Thiollier,m61_48_43_00,76810,1,Altus Bloom
+102277,320770,10,goods:15150,800,Thiollier,m61_48_43_00,76810,1,Miranda Powder
+102278,320780,10,goods:20650,1000,Thiollier,m61_48_43_00,76810,1,Poisonbloom
+102279,320790,10,goods:20770,500,Thiollier,m61_48_43_00,76810,1,Toxic Mushroom
+102280,320800,5,goods:2020010,2000,Thiollier,m61_48_43_00,76810,1,Toxic Mossling
+102281,320810,3,goods:20651,1000,Thiollier,m61_48_43_00,76810,1,Trina's Lily
+102300,330000,1,goods:2004300,10000,"Count Ymir, High Priest",m61_50_45_00,76906,1,Miriam's Vanishing
+102301,330010,1,goods:2004500,12000,"Count Ymir, High Priest",m61_50_45_00,76906,1,Glintstone Nail
+102302,330020,1,goods:2004510,12000,"Count Ymir, High Priest",m61_50_45_00,76906,1,Glintstone Nails
+102303,330030,1,goods:2007410,20000,"Count Ymir, High Priest",m61_50_45_00,76906,1,Fleeting Microcosm
+102304,330040,1,goods:4000,1000,"Count Ymir, High Priest",m61_50_45_00,76906,1,Glintstone Pebble
+102305,330050,1,goods:4001,2000,"Count Ymir, High Priest",m61_50_45_00,76906,1,Great Glintstone Shard
+102306,330060,1,goods:4300,2500,"Count Ymir, High Priest",m61_50_45_00,76906,1,Glintblade Phalanx
+102307,330070,1,goods:4301,12000,"Count Ymir, High Priest",m61_50_45_00,76906,1,Carian Phalanx
+102308,330080,1,goods:4640,9000,"Count Ymir, High Priest",m61_50_45_00,76906,1,Carian Retaliation
+102350,290650,1,goods:2007000,1,Grand Altar of Dragon Communion,m61_49_39_00,76840,1,Bayle's Tyranny
+102351,290660,1,goods:2007010,1,Grand Altar of Dragon Communion,m61_49_39_00,76840,1,Bayle's Flame Lightning
+102355,290670,1,goods:2007020,3,Grand Altar of Dragon Communion,m61_49_39_00,76840,1,Ghostflame Breath
+102800,380000,1,goods:2950,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Grafted
+102801,380010,1,goods:2951,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Starscourge
+102802,380020,1,goods:2952,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Omen King
+102803,380030,1,goods:2953,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Blasphemous
+102804,380040,1,goods:2954,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Rot Goddess
+102805,380050,1,goods:2959,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Full Moon Queen
+102806,380060,1,goods:2955,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Blood Lord
+102807,380070,1,goods:2002907,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of a God and a Lord
+102808,380080,1,goods:2002901,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Impaler
+102810,380100,1,goods:2956,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Black Blade
+102811,380110,1,goods:2957,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of Hoarah Loux
+102812,380120,1,goods:2958,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Dragonlord
+102813,380130,1,goods:2960,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Lichdragon
+102814,380140,1,goods:2961,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Fire Giant
+102815,380150,1,goods:2962,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Regal Ancestor
+102816,380160,1,goods:2963,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Elden Remembrance
+102817,380170,1,goods:2964,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Naturalborn
+102818,380180,1,goods:2002900,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Wild Boar Rider
+102820,380200,1,goods:2002902,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Shadow Sunflower
+102821,380210,1,goods:2002903,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Twin Moon Knight
+102822,380220,1,goods:2002904,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Saint of the Bud
+102823,380230,1,goods:2002905,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Dancing Lion
+102824,380240,1,goods:2002908,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Lord of Frenzied Flame
+102825,380250,1,goods:2002909,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Mother of Fingers
+102826,380260,1,goods:2002910,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of Putrescence

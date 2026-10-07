@@ -32,8 +32,6 @@ def submit_preset_via_browser(
     Submit preset by opening GitHub with pre-filled data and packaged images.
 
     Creates a ZIP file with properly named images that user just drags into GitHub.
-    No manual labeling needed!
-
     Args:
         preset_name: Name of preset
         author: Author name

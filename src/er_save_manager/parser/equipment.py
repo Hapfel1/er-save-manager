@@ -3,8 +3,6 @@ Elden Ring Save Parser - Equipment and Inventory Structures
 
 Contains all equipment, inventory, and item-related structures.
 Based on ER-Save-Lib Rust implementation.
-
-Refactored to use base class for equipment slots to reduce code duplication.
 """
 
 from __future__ import annotations

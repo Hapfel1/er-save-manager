@@ -586,6 +586,33 @@ class CharacterOperations:
 
         save._raw_data[profile_offset : profile_offset + profile_size] = data
 
+    # CSProfileSummary entry fields that mirror PlayerGameData, by offset in
+    # the 0x24C-byte entry: name (16 wide chars), level, runes memory, then
+    # body type, class and starting gift after the face and equipment copies.
+    _PROFILE_NAME = 0x0
+    _PROFILE_LEVEL = 0x22
+    _PROFILE_RUNES_MEMORY = 0x2A
+    _PROFILE_BODY_TYPE = 0x242
+    _PROFILE_ARCHETYPE = 0x243
+    _PROFILE_GIFT = 0x244
+
+    @staticmethod
+    def _profile_with_slot_fields(profile: bytes, slot) -> bytes:
+        """Profile entry with the fields the slot also holds taken from it."""
+        import struct
+
+        out = bytearray(profile)
+        player = slot.player_game_data
+        name = player.character_name[:16].encode("utf-16le").ljust(34, b"\x00")
+        ops = CharacterOperations
+        out[ops._PROFILE_NAME : ops._PROFILE_NAME + 34] = name
+        struct.pack_into("<I", out, ops._PROFILE_LEVEL, player.level)
+        struct.pack_into("<I", out, ops._PROFILE_RUNES_MEMORY, player.runes_memory)
+        out[ops._PROFILE_BODY_TYPE] = player.gender
+        out[ops._PROFILE_ARCHETYPE] = player.archetype
+        out[ops._PROFILE_GIFT] = player.gift
+        return bytes(out)
+
     @staticmethod
     def _clear_profile_summary(save: Save, slot_index: int) -> None:
         """Clear profile summary for a slot."""
@@ -713,57 +740,14 @@ class CharacterOperations:
             save._raw_data[slot_offset : raw_slot_start + CharacterOperations.SLOT_SIZE]
         )
 
-        # Get profile summary using calculated offsets, but re-generate from slot for full fidelity
+        # The game-written profile holds play time, map, face and equipment,
+        # none of which can be rebuilt from the slot.
         _, profiles_base = CharacterOperations.get_profile_summary_offsets(save)
         profile_size = 0x24C
-        # Use the same logic as _update_profile_summary_from_slot to build profile_data
-        import struct
-        from io import BytesIO
-
-        player = char.player_game_data
-        buf = BytesIO()
-        name = getattr(player, "character_name", "")[:16]
-        name_bytes = name.encode("utf-16le")
-        name_bytes = name_bytes + b"\x00" * (32 - len(name_bytes))
-        buf.write(name_bytes)
-        buf.write(b"\x00" * 2)
-        buf.write(struct.pack("<I", getattr(player, "level", 1)))
-        buf.write(struct.pack("<I", getattr(player, "seconds_played", 0)))
-        buf.write(struct.pack("<I", getattr(player, "runes_memory", 0)))
-        buf.write(getattr(player, "map_id", b"\x00\x00\x00\x00"))
-        buf.write(struct.pack("<I", getattr(player, "unk0x34", 0)))
-        face_data = getattr(player, "face_data", None)
-        if face_data is not None and hasattr(face_data, "raw_data"):
-            face_bytes = face_data.raw_data
-            if len(face_bytes) > 0x124:
-                face_bytes = face_bytes[:0x124]
-            elif len(face_bytes) < 0x124:
-                face_bytes = face_bytes + b"\x00" * (0x124 - len(face_bytes))
-        else:
-            face_bytes = b"\x00" * 0x124
-        buf.write(face_bytes)
-        equipment = getattr(player, "profile_equipment", None)
-        if equipment is not None:
-            if hasattr(equipment, "raw_data"):
-                equip_bytes = equipment.raw_data
-            else:
-                equip_bytes = equipment
-            if len(equip_bytes) > 0xE8:
-                equip_bytes = equip_bytes[:0xE8]
-            elif len(equip_bytes) < 0xE8:
-                equip_bytes = equip_bytes + b"\x00" * (0xE8 - len(equip_bytes))
-        else:
-            equip_bytes = b"\x00" * 0xE8
-        buf.write(equip_bytes)
-        buf.write(struct.pack("<B", getattr(player, "body_type", 0)))
-        buf.write(struct.pack("<B", getattr(player, "archetype", 0)))
-        buf.write(struct.pack("<B", getattr(player, "starting_gift", 0)))
-        buf.write(b"\x00" * 7)
-        profile_data = buf.getvalue()
-        if len(profile_data) < profile_size:
-            profile_data += b"\x00" * (profile_size - len(profile_data))
-        elif len(profile_data) > profile_size:
-            profile_data = profile_data[:profile_size]
+        profile_offset = profiles_base + slot_index * profile_size
+        profile_data = CharacterOperations._profile_with_slot_fields(
+            save._raw_data[profile_offset : profile_offset + profile_size], char
+        )
 
         is_active = CharacterOperations._is_slot_active(save, slot_index)
 
@@ -867,7 +851,21 @@ class CharacterOperations:
         # Write slot data (checksum prefix already zeroed by the clear above, recalculated later)
         save._raw_data[slot_offset : slot_offset + len(slot_data)] = slot_data
 
-        # Write new profile data (always full 0x24C bytes)
+        # Write new profile data (always full 0x24C bytes). Files from older
+        # versions carry a profile rebuilt with zeroed fields, so the fields
+        # the slot also holds are taken from the slot.
+        from io import BytesIO
+
+        from er_save_manager.parser.user_data_x import UserDataX
+
+        reader = BytesIO(save._raw_data)
+        reader.seek(slot_offset)
+        imported = UserDataX.read(
+            reader, save.is_ps, slot_offset, CharacterOperations.SLOT_DATA_SIZE
+        )
+        profile_data = CharacterOperations._profile_with_slot_fields(
+            profile_data, imported
+        )
         _, profiles_base = CharacterOperations.get_profile_summary_offsets(save)
         profile_offset = profiles_base + slot_index * profile_size
         save._raw_data[profile_offset : profile_offset + profile_size] = profile_data
@@ -915,7 +913,7 @@ class CharacterOperations:
     @staticmethod
     def extract_character_metadata(save: Save, slot_index: int) -> dict:
         """
-        Extract comprehensive metadata from a character for community sharing.
+        Extract metadata from a character for community sharing.
 
         Args:
             save: Save instance

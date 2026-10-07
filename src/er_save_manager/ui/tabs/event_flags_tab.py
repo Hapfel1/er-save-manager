@@ -1,6 +1,6 @@
 """
 Event Flags Tab (customtkinter version)
-Comprehensive event flag viewer and editor with 948 documented flags
+Event flag viewer and editor
 """
 
 import tkinter as tk
@@ -245,11 +245,25 @@ class EventFlagsTab:
             text="Unlock All in Category",
             command=self.unlock_all_in_category,
             width=160,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+
+        ctk.CTkButton(
+            slot_frame,
+            text="Export Flags...",
+            command=self.export_flags,
+            width=120,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+
+        ctk.CTkButton(
+            slot_frame,
+            text="Import Flags...",
+            command=self.import_flags,
+            width=120,
         ).pack(side=tk.LEFT)
 
         # Row 2: secondary tools
         tools_row = ctk.CTkFrame(main_frame, fg_color="transparent")
-        tools_row.pack(fill=tk.X, padx=15, pady=(6, 20))
+        tools_row.pack(fill=tk.X, padx=15, pady=(6, 6))
 
         ctk.CTkButton(
             tools_row,
@@ -293,18 +307,22 @@ class EventFlagsTab:
             width=140,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
+        # Row 3: item and merchant checklists
+        items_row = ctk.CTkFrame(main_frame, fg_color="transparent")
+        items_row.pack(fill=tk.X, padx=15, pady=(0, 20))
+
         ctk.CTkButton(
-            tools_row,
-            text="Export Flags...",
-            command=self.export_flags,
-            width=120,
+            items_row,
+            text="Item Pickups...",
+            command=self.open_item_pickups,
+            width=130,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
-            tools_row,
-            text="Import Flags...",
-            command=self.import_flags,
-            width=120,
+            items_row,
+            text="Merchant Restock...",
+            command=self.open_merchant_restock,
+            width=150,
         ).pack(side=tk.LEFT)
 
         filter_frame = ctk.CTkFrame(main_frame, corner_radius=10)
@@ -905,10 +923,18 @@ class EventFlagsTab:
                 except (ValueError, TypeError):
                     pass
 
+        missing = sum(1 for flag_id, _ in flag_ops if not EventFlags.has_flag(flag_id))
+        flag_ops = [op for op in flag_ops if EventFlags.has_flag(op[0])]
         if not flag_ops:
             CTkMessageBox.showinfo(
                 "Nothing to Import",
-                "No valid flag IDs found in file.",
+                "No valid flag IDs found in file."
+                + (
+                    f"\n\n{missing} flag(s) are in blocks that do not exist in "
+                    "Elden Ring saves and were skipped."
+                    if missing
+                    else ""
+                ),
                 parent=self.parent,
             )
             return
@@ -916,6 +942,11 @@ class EventFlagsTab:
         set_count = sum(1 for _, s in flag_ops if s)
         unset_count = len(flag_ops) - set_count
         summary = f"Set {set_count}" + (f", unset {unset_count}" if unset_count else "")
+        if missing:
+            summary = (
+                f"{missing} flag(s) are in blocks that do not exist in Elden Ring "
+                f"saves and will be skipped.\n\n{summary}"
+            )
         result = CTkMessageBox.askyesno(
             "Confirm Import",
             f"{summary} flags on Slot {self.current_slot + 1}?",
@@ -1004,11 +1035,23 @@ class EventFlagsTab:
         flag_entry = ctk.CTkEntry(input_frame, textvariable=flag_id_var, width=150)
         flag_entry.pack(side=tk.LEFT, padx=(0, 12))
 
+        def missing_flag_message(flag_id: int) -> str:
+            return (
+                f"Flag {flag_id} is in block {flag_id // EventFlags.FLAG_DIVISOR}, "
+                "which does not exist in Elden Ring saves. The game never reads "
+                "it, so it cannot be set."
+            )
+
         def toggle_flag():
             try:
                 flag_id = int(flag_id_var.get())
             except ValueError:
                 CTkMessageBox.showerror("Error", "Invalid flag ID!", parent=dialog)
+                return
+            if not EventFlags.has_flag(flag_id):
+                CTkMessageBox.showwarning(
+                    "Flag Not In Save", missing_flag_message(flag_id), parent=dialog
+                )
                 return
 
             try:
@@ -1065,6 +1108,11 @@ class EventFlagsTab:
         def check_flag():
             try:
                 flag_id = int(flag_id_var.get())
+                if not EventFlags.has_flag(flag_id):
+                    CTkMessageBox.showwarning(
+                        "Flag Not In Save", missing_flag_message(flag_id), parent=dialog
+                    )
+                    return
                 state = self.current_event_flags.get_flag(flag_id)
                 flag_name = get_flag_name(flag_id)
                 CTkMessageBox.showinfo(
@@ -1910,6 +1958,46 @@ class EventFlagsTab:
         from er_save_manager.ui.grace_dialog import GraceDialog
 
         GraceDialog.open(
+            self.parent,
+            self.current_event_flags,
+            self.get_save_file(),
+            self.get_save_path(),
+            self.current_slot,
+            self.reload_save,
+            self.show_toast,
+        )
+
+    def open_item_pickups(self):
+        """Open the collected/missed item pickup checklist."""
+        if self.current_event_flags is None:
+            CTkMessageBox.showwarning(
+                "Not Loaded", "Please load event flags for a character first!"
+            )
+            return
+
+        from er_save_manager.ui.item_pickups_dialog import ItemPickupsDialog
+
+        ItemPickupsDialog.open(
+            self.parent,
+            self.current_event_flags,
+            self.get_save_file(),
+            self.get_save_path(),
+            self.current_slot,
+            self.reload_save,
+            self.show_toast,
+        )
+
+    def open_merchant_restock(self):
+        """Open the limited merchant stock restock dialog."""
+        if self.current_event_flags is None:
+            CTkMessageBox.showwarning(
+                "Not Loaded", "Please load event flags for a character first!"
+            )
+            return
+
+        from er_save_manager.ui.merchant_restock_dialog import MerchantRestockDialog
+
+        MerchantRestockDialog.open(
             self.parent,
             self.current_event_flags,
             self.get_save_file(),

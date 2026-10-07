@@ -60,7 +60,7 @@ Offset  Size  Field
     entries_end + 0x21A relic loadout chunk:
       +0x00 chunk_id (u16)        - 0x00C2
       +0x02 chunk_version (u16)   - 3
-      +0x04 chunk_size (u32)      - 0x2C00 in every observed save; payload
+      +0x04 chunk_size (u32)      - 0x2C00; payload
                                     bytes after this field
       +0x08 unk (u16)             - 3
       +0x0A hero_count (u16)      - 10
@@ -96,7 +96,7 @@ Offset  Size  Field
       slot color 4 which accepts any color.
       Vanilla payload uses 11176 of 11264 bytes. Mods that add vessels grow
       it by 28 bytes per hero vessel and hero_count * 28 per universal
-      vessel, plus alignment. From modded saves:
+      vessel, plus alignment:
         +3 hero vessels: 11256 bytes, loads normally.
         +4 hero vessels: 11288 bytes; reported to crash before loading.
         +1 universal vessel: 11456 bytes; the game still writes the header
@@ -121,7 +121,7 @@ Offset  Size  Field
 0x134C     4  unk_don_5 (u32)
 0x1350     4  unk_don_6 (u32)
 0x1354     4  unk_don_7 (u32)
-0x1358     4  don_nightlord_progress (u32) - bosses cleared (3 in sample)
+0x1358     4  don_nightlord_progress (u32) - bosses cleared
 0x135C     4  unk_don_8 (u32)
 0x1360   256  boss_records[16]:            - 16 boss run records
                each record 16 bytes:
@@ -169,6 +169,8 @@ import struct
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+
+from er_save_manager.own_writes import record_write
 
 try:
     from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -1144,6 +1146,7 @@ class NightreignSave:
         tmp_path = target.with_suffix(target.suffix + ".tmp")
         tmp_path.write_bytes(out)
         tmp_path.replace(target)
+        record_write(target)
 
     def get_active_slots(self) -> list[NightreignSlot]:
         """Return only slots that contain a character."""

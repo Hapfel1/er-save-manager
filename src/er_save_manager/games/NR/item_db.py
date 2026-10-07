@@ -26,9 +26,16 @@ without that table.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 _DATA_FILE = Path(__file__).parent / "nr_items.json"
+_EMPTY = 0xFFFFFFFF
+# Relic ids from here on are randomly rolled; lower ids are fixed relics.
+_FIRST_RANDOM_RELIC = 1_000_000
+# Effect names of hero-specific effects start with "[Relic - Hero]" or
+# "[Special Relic - Hero]".
+_HERO_LABEL = re.compile(r"\[[^\]]*? - ([^\]]+)\]")
 _db: dict | None = None
 
 
@@ -160,6 +167,31 @@ def validate_effect(
         )
         return f"Effect not allowed on {name}."
     return None
+
+
+def combination_errors(
+    real_item_id: int, effects: list[int], curses: list[int]
+) -> list[str]:
+    """Problems with a relic's effects taken together.
+
+    No game-written relic repeats an effect, and a randomly rolled relic
+    (ids from 1000000) never carries effects labelled for two different
+    heroes. Fixed relics below that range can, so the hero rule skips them.
+    """
+    errors = []
+    for label, ids in (("effect", effects), ("curse", curses)):
+        filled = [e for e in ids if e != _EMPTY]
+        if len(filled) != len(set(filled)):
+            errors.append(f"The same {label} appears more than once.")
+    if real_item_id >= _FIRST_RANDOM_RELIC:
+        heroes = set()
+        for effect in filter(None, map(get_effect, effects)):
+            match = _HERO_LABEL.match(effect["name"])
+            if match:
+                heroes.add(match.group(1))
+        if len(heroes) > 1:
+            errors.append("Effects for different heroes cannot share one relic.")
+    return errors
 
 
 def validate_curse(effect_id: int) -> str | None:

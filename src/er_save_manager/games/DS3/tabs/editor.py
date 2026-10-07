@@ -12,10 +12,21 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.games.DS3.character_ops import _sync_dir_name_level
-from er_save_manager.games.DS3.slot import LEVEL_STAT_OFFSET, LayoutError
+from er_save_manager.games.DS3.slot import (
+    LEVEL_STAT_OFFSET,
+    MAX_SOULS,
+    MAX_STAT,
+    NAME_MAX_CHARS,
+    STARTING_CLASSES,
+    LayoutError,
+)
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
+from er_save_manager.ui.utils import (
+    bind_mousewheel,
+    game_blocks_write,
+    patch_combo_scroll,
+)
 
 
 def _game_blocks_write(parent) -> bool:
@@ -39,6 +50,10 @@ class DS3EditorTab:
         self._stat_vars: dict[str, tk.StringVar] = {}
         self._name_var = tk.StringVar()
         self._ng_var = tk.StringVar(value="0")
+        self._class_var = tk.StringVar()
+        # False when the loaded stats sit below their own class's base
+        # (modded or edited character); class minimums are then not enforced.
+        self._enforce_class_min = True
         self._playtime_var = tk.StringVar(value="--")
 
     def setup_ui(self) -> None:
@@ -142,9 +157,36 @@ class DS3EditorTab:
             )
             var = tk.StringVar(value="0")
             self._stat_vars[key] = var
-            ctk.CTkEntry(rg, textvariable=var, width=120).grid(
-                row=i, column=1, padx=5, pady=5
-            )
+            # The game derives HP, FP and stamina from the attributes on load.
+            derived = key in ("hp", "fp", "stamina")
+            ctk.CTkEntry(
+                rg,
+                textvariable=var,
+                width=120,
+                state="disabled" if derived else "normal",
+            ).grid(row=i, column=1, padx=5, pady=5)
+        row = i + 1
+        ctk.CTkLabel(rg, text="Class:").grid(
+            row=row, column=0, sticky="w", padx=5, pady=5
+        )
+        class_combo = ctk.CTkComboBox(
+            rg,
+            variable=self._class_var,
+            values=[name for name, _ in STARTING_CLASSES],
+            state="readonly",
+            width=120,
+        )
+        class_combo.grid(row=row, column=1, padx=5, pady=5)
+        patch_combo_scroll(class_combo)
+        self._class_note = ctk.CTkLabel(
+            frame,
+            text="",
+            font=("Segoe UI", 10),
+            text_color=("gray40", "gray70"),
+            wraplength=520,
+            justify="left",
+        )
+        self._class_note.pack(anchor="w", padx=15)
 
         ctk.CTkButton(
             frame, text="Apply Changes", command=self._apply_stats, width=200
@@ -244,6 +286,22 @@ class DS3EditorTab:
         self._stat_vars["hp"].set(str(char.hp))
         self._stat_vars["fp"].set(str(char.fp))
         self._stat_vars["stamina"].set(str(char.stamina))
+        class_idx = char.starting_class
+        if class_idx < len(STARTING_CLASSES):
+            name, base = STARTING_CLASSES[class_idx]
+            self._class_var.set(name)
+            self._enforce_class_min = all(
+                char.get_stat(k) >= v for k, v in base.items()
+            )
+        else:
+            self._class_var.set("")
+            self._enforce_class_min = False
+        self._class_note.configure(
+            text=""
+            if self._enforce_class_min
+            else "Stats are below this class's starting values (modded or edited "
+            "character), so class minimums are not enforced."
+        )
         self._name_var.set(char.name)
         self._ng_var.set("0" if char.layout_error else str(char.ng_plus))
 
@@ -283,22 +341,65 @@ class DS3EditorTab:
         char = save.characters[self._current_slot]
         if char is None:
             return
+        class_names = [name for name, _ in STARTING_CLASSES]
+        class_idx = (
+            class_names.index(self._class_var.get())
+            if self._class_var.get() in class_names
+            else None
+        )
         try:
-            for key in ("vig", "atn", "end", "vit", "str", "dex", "int", "fth", "lck"):
-                raw = int(self._stat_vars[key].get())
-                char.set_stat(key, max(1, min(99, raw)))
-                self._stat_vars[key].set(str(max(1, min(99, raw))))
+            stats = {
+                key: int(self._stat_vars[key].get())
+                for key in (
+                    "vig",
+                    "atn",
+                    "end",
+                    "vit",
+                    "str",
+                    "dex",
+                    "int",
+                    "fth",
+                    "lck",
+                )
+            }
             level_raw = int(self._stat_vars["level"].get())
-            if not 1 <= level_raw <= 802:
-                raise ValueError(f"Level must be 1-802 (got {level_raw})")
-            char.level = level_raw
-            char.souls = int(self._stat_vars["souls"].get())
-            char.hp = int(self._stat_vars["hp"].get())
-            char.fp = int(self._stat_vars["fp"].get())
-            char.stamina = int(self._stat_vars["stamina"].get())
-        except ValueError as exc:
-            CTkMessageBox.showerror("Invalid Value", str(exc), parent=self.parent)
+            souls = int(self._stat_vars["souls"].get())
+        except ValueError:
+            CTkMessageBox.showerror(
+                "Invalid Value",
+                "Stats, level and souls must be numbers.",
+                parent=self.parent,
+            )
             return
+        problems = [
+            f"{key.upper()} above {MAX_STAT}"
+            for key, v in stats.items()
+            if v > MAX_STAT
+        ]
+        if class_idx is not None and self._enforce_class_min:
+            name, base = STARTING_CLASSES[class_idx]
+            problems += [
+                f"{key.upper()} below the {name} minimum of {base[key]}"
+                for key, v in stats.items()
+                if v < base[key]
+            ]
+        else:
+            problems += [f"{key.upper()} below 1" for key, v in stats.items() if v < 1]
+        if not 1 <= level_raw <= 802:
+            problems.append(f"Level must be 1-802 (got {level_raw})")
+        if not 0 <= souls <= MAX_SOULS:
+            problems.append(f"Souls must be 0-{MAX_SOULS:,}")
+        if problems:
+            CTkMessageBox.showerror(
+                "Invalid Value", "\n".join(problems), parent=self.parent
+            )
+            return
+        for key, v in stats.items():
+            char.set_stat(key, v)
+        char.level = level_raw
+        char.souls = souls
+        if class_idx is not None:
+            char.starting_class = class_idx
         # The load screen reads name and level from its own directory copy.
         _sync_dir_name_level(save, self._current_slot, char.name, char.level)
         try:
@@ -330,6 +431,13 @@ class DS3EditorTab:
             return
         char = save.characters[self._current_slot]
         if char is None:
+            return
+        if len(self._name_var.get()) > NAME_MAX_CHARS:
+            CTkMessageBox.showerror(
+                "Name Too Long",
+                f"The name can be at most {NAME_MAX_CHARS} characters.",
+                parent=self.parent,
+            )
             return
         try:
             char.name = self._name_var.get()

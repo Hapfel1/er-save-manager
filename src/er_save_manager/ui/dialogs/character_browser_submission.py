@@ -35,8 +35,6 @@ def submit_character_via_browser(
     Submit character by opening GitHub with pre-filled data and packaged files.
 
     Creates a ZIP file with .erc + metadata.json + images that user just drags into GitHub.
-    No manual labeling needed!
-
     Args:
         char_name: Character name
         author: Author name

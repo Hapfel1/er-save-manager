@@ -1,8 +1,8 @@
 """
 Nightreign Save Inspector Tab
 
-Shows all 10 slots with name, hero usage, relic count, murk, and Marks of Night.
-Clicking a row selects it. "Edit Slot" navigates to the editor tab.
+Lists the occupied slots with name, murk, Sovereign Sigils and relic count.
+Clicking a row selects it. "Edit Character" navigates to the editor tab.
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
@@ -25,8 +26,10 @@ class NRInspectorTab:
         parent,
         get_nr_save: Callable,
         on_slot_selected: Callable | None = None,
+        check_save: Callable | None = None,
     ) -> None:
         self.parent = parent
+        self._check_save = check_save
         self._get_nr_save = get_nr_save
         self._on_slot_selected = on_slot_selected
         self.selected_slot: int | None = None
@@ -42,49 +45,30 @@ class NRInspectorTab:
             side="left"
         )
         ctk.CTkButton(
-            header, text="Edit Slot", command=self._edit_selected, width=130
-        ).pack(side="right", padx=(6, 0))
+            header, text="Edit Character", command=self._edit_selected, width=160
+        ).pack(side="right")
+        if self._check_save is not None:
+            ctk.CTkButton(
+                header, text="View All Issues", command=self._view_issues, width=180
+            ).pack(side="right", padx=(0, 8))
 
+        hint_frame = ctk.CTkFrame(outer, fg_color="transparent")
+        hint_frame.pack(fill="x", padx=10, pady=(0, 4))
         ctk.CTkLabel(
-            outer,
-            text="Select a slot then click 'Edit Slot' to open the editor.",
+            hint_frame,
+            text="Select a character and click 'Edit Character' to open the editor tabs.",
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
-        ).pack(anchor="w", padx=12, pady=(0, 4))
+        ).pack(side="left", anchor="w")
 
-        self.list_frame = ctk.CTkScrollableFrame(outer, corner_radius=10)
+        self.list_frame = ctk.CTkScrollableFrame(
+            outer, width=900, height=320, corner_radius=10
+        )
         self.list_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         bind_mousewheel(self.list_frame)
 
-        hdr = ctk.CTkFrame(
-            self.list_frame, fg_color=("gray75", "gray28"), corner_radius=6
-        )
-        hdr.pack(fill="x", padx=4, pady=(4, 2))
-        for text, w in [
-            ("Slot", 50),
-            ("Name", 160),
-            ("Murk", 90),
-            ("Sovereign Sigils", 110),
-            ("Relics", 70),
-            ("Entries", 70),
-        ]:
-            ctk.CTkLabel(
-                hdr, text=text, font=("Segoe UI", 11, "bold"), width=w, anchor="w"
-            ).pack(side="left", padx=6)
-
     def refresh(self) -> None:
         for child in self.list_frame.winfo_children():
-            # Keep the header row (first child)
-            if (
-                child == self.list_frame.winfo_children()[0]
-                if self.list_frame.winfo_children()
-                else None
-            ):
-                continue
-            child.destroy()
-        # Destroy all except header
-        children = self.list_frame.winfo_children()
-        for child in children[1:]:
             child.destroy()
         self._rows.clear()
         self.selected_slot = None
@@ -103,70 +87,69 @@ class NRInspectorTab:
                 self.list_frame,
                 text=(
                     f"This file has {save.trailing_bytes} junk bytes past its last "
-                    "entry. They are removed the next time "
-                    "the editor saves this file."
+                    "entry. They are removed the next time the editor saves this file."
                 ),
-                text_color=("#b35900", "#ffa94d"),
+                text_color=palette.PURPLE_TEXT,
                 font=("Segoe UI", 11),
                 wraplength=640,
                 justify="left",
                 anchor="w",
             ).pack(fill="x", padx=6, pady=(2, 4))
 
-        for i, slot in enumerate(save.slots):
-            is_active = slot.entry_count > 0 or bool(slot.player_name)
-            name = slot.player_name if slot.player_name else "(empty)"
-            murk = str(slot.murk) if is_active else "-"
-            mon = str(slot.marks_of_night) if is_active else "-"
-            relics = str(len(slot.relic_states)) if is_active else "-"
-            entries = str(slot.entry_count) if is_active else "-"
+        occupied = [
+            (i, slot)
+            for i, slot in enumerate(save.slots)
+            if slot.entry_count > 0 or slot.player_name
+        ]
+        if not occupied:
+            ctk.CTkLabel(self.list_frame, text="No active characters found.").pack(
+                anchor="w", padx=6, pady=6
+            )
+            return
 
+        for slot_idx, slot in occupied:
+            display = (
+                f"Slot {slot_idx + 1:2d} | {slot.player_name:16s} | "
+                f"Murk: {slot.murk:>11,} | Sigils: {slot.marks_of_night:>6,} | "
+                f"Relics: {len(slot.relic_states):>4d}"
+            )
             row = ctk.CTkFrame(
-                self.list_frame,
-                corner_radius=6,
-                fg_color=("gray88", "gray20"),
+                self.list_frame, fg_color=("#f5f5f5", "#2a2a3e"), corner_radius=6
             )
-            row.pack(fill="x", padx=4, pady=2)
-
-            lbl_slot = ctk.CTkLabel(
-                row,
-                text=str(i + 1),
-                width=50,
-                anchor="w",
-                font=("Segoe UI", 12, "bold" if is_active else "normal"),
+            row.pack(fill="x", padx=4, pady=4)
+            label = ctk.CTkLabel(
+                row, text=display, anchor="w", padx=8, pady=8, font=("Courier", 13)
             )
-            lbl_slot.pack(side="left", padx=6)
+            label.pack(fill="x")
+            row.bind("<Button-1>", lambda _e, v=slot_idx: self._select_row(v))
+            label.bind("<Button-1>", lambda _e, v=slot_idx: self._select_row(v))
+            self._rows.append((slot_idx, row, label))
 
-            lbl_name = ctk.CTkLabel(
-                row,
-                text=name,
-                width=160,
-                anchor="w",
-                font=("Segoe UI", 12),
-                text_color=("gray20", "gray90") if is_active else ("gray50", "gray55"),
-            )
-            lbl_name.pack(side="left", padx=6)
-
-            for val, w in [(murk, 90), (mon, 110), (relics, 70), (entries, 70)]:
-                ctk.CTkLabel(
-                    row, text=val, width=w, anchor="w", font=("Segoe UI", 11)
-                ).pack(side="left", padx=6)
-
-            self._rows.append((i, row, lbl_name))
-
-            for widget in [row, lbl_slot, lbl_name]:
-                widget.bind("<Button-1>", lambda e, idx=i: self._select_row(idx))
+        if self._rows:
+            self._select_row(self._rows[0][0])
 
     def _select_row(self, idx: int) -> None:
         self.selected_slot = idx
-        for i, row, _ in self._rows:
-            color = ("gray78", "gray35") if i == idx else ("gray88", "gray20")
-            row.configure(fg_color=color)
+        for val, frame, label in self._rows:
+            if val == idx:
+                frame.configure(fg_color=palette.PURPLE_TINT)
+                label.configure(text_color=("#1f1f28", "#f0f0f0"))
+            else:
+                frame.configure(fg_color=("#f5f5f5", "#2a2a3e"))
+                label.configure(text_color=("#333333", "#cccccc"))
+
+    def _view_issues(self) -> None:
+        if self.selected_slot is None:
+            CTkMessageBox.showwarning(
+                "No Selection", "Please select a character first!", parent=self.parent
+            )
+            return
+        self._check_save(self.selected_slot)
 
     def _edit_selected(self) -> None:
         if self.selected_slot is None:
-            CTkMessageBox.showinfo(
-                "No Selection", "Select a slot first.", parent=self.parent
+            CTkMessageBox.showwarning(
+                "No Selection", "Please select a character first.", parent=self.parent
             )
             return
         save = self._get_nr_save()

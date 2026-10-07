@@ -12,6 +12,8 @@ from tkinter import ttk
 
 import customtkinter as ctk
 
+from er_save_manager.data.convergence_items import is_seamless_save
+from er_save_manager.data.item_database import common_affinities
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.toast import show_toast
@@ -109,8 +111,8 @@ def _center_over(window, parent, w=None, h=None, *, top=False) -> None:
     center_window(window, w, h, parent=parent, align_top=top)
 
 
-def _ask_value(title: str, text: str, parent) -> str | None:
-    """Centered modal single-line input dialog."""
+def _ask_value(title: str, text: str, parent, initial: str = "") -> str | None:
+    """Centered modal single-line input dialog, prefilled with initial."""
     result: list = [None]
     dialog = ctk.CTkToplevel(parent)
     dialog.title(title)
@@ -120,7 +122,7 @@ def _ask_value(title: str, text: str, parent) -> str | None:
     ctk.CTkLabel(dialog, text=text, wraplength=260, anchor="w").pack(
         padx=20, pady=(16, 6), fill="x"
     )
-    var = ctk.StringVar()
+    var = ctk.StringVar(value=initial)
     entry = ctk.CTkEntry(dialog, textvariable=var, width=260)
     entry.pack(padx=20, pady=(0, 10))
     btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
@@ -144,6 +146,7 @@ def _ask_value(title: str, text: str, parent) -> str | None:
     dialog.attributes("-alpha", 1)
     dialog.grab_set()
     entry.focus_set()
+    entry.select_range(0, "end")
     dialog.wait_window()
     return result[0]
 
@@ -1412,8 +1415,7 @@ class InventoryEditor:
         except Exception:
             return []
 
-        save_path = str(self.get_save_path() or "").lower()
-        is_co2 = ".co2" in save_path
+        is_co2 = is_seamless_save(self.get_save_path() or "")
         is_cnv = self._is_cnv_save()
 
         return [
@@ -1470,7 +1472,7 @@ class InventoryEditor:
                         for i in results
                         if i.category_name not in self._CONVERGENCE_HIDDEN_CATS
                     ]
-                if ".co2" not in str(self.get_save_path() or "").lower():
+                if not is_seamless_save(self.get_save_path() or ""):
                     results = [
                         i for i in results if i.category_name not in self._SEAMLESS_CATS
                     ]
@@ -1493,6 +1495,9 @@ class InventoryEditor:
 
     def _apply_item_selection(self, item) -> None:
         """Apply item selection state - called from listbox and icon browser."""
+        from er_save_manager.data.item_database import get_item_database
+
+        item = get_item_database().resolve(item, self._is_cnv_save())
         self.selected_item = item
         self._selected_item_label.configure(
             text=f"Selected: {item.name}",
@@ -1564,7 +1569,7 @@ class InventoryEditor:
         is_convergence_save = ".cnv" in str(save_path).lower()
 
         if self._affinity_combo:
-            if affinity_allowed:
+            if affinity_allowed and (is_convergence_save or self._selected_gem_id):
                 weapon_affs = self.selected_item.get_affinities(is_convergence_save)
                 affinity_values = weapon_affs or self._affinity_names()
                 self._affinity_combo.configure(values=affinity_values, state="normal")
@@ -1927,9 +1932,12 @@ class InventoryEditor:
                 cats = ["Gems", "DLC Gems"]
                 if is_convergence_save:
                     cats.append("Convergence Gems")
-                gems = []
+                gems = {}
                 for cat in cats:
-                    gems += db.get_items_by_category(cat)
+                    for g in db.get_items_by_category(cat):
+                        g = db.resolve(g, is_convergence_save)
+                        gems.setdefault(g.full_id, g)
+                gems = list(gems.values())
                 if wep_col:
                     gems = [
                         g
@@ -1960,6 +1968,17 @@ class InventoryEditor:
                 return
             item = gem_items[sel[0]]
             self._selected_gem_id = 0x80000000 | item.id
+            weapon_affs = (
+                self.selected_item.get_affinities(is_convergence_save)
+                if self.selected_item is not None
+                else []
+            )
+            aff_state = (
+                "normal"
+                if getattr(self.selected_item, "reinforcement", "standard")
+                == "standard"
+                else "disabled"
+            )
             if self.inv_aow_var:
                 self.inv_aow_var.set(item.name)
                 self._update_aow_icon(item.name)
@@ -1970,14 +1989,21 @@ class InventoryEditor:
                 and not is_convergence_save
                 and item.allowed_affinities
             ):
-                self._affinity_combo.configure(values=item.allowed_affinities)
-                default = item.default_affinity or item.allowed_affinities[0]
+                gem_affs = common_affinities(item.allowed_affinities, weapon_affs)
+                self._affinity_combo.configure(values=gem_affs, state=aff_state)
+                default = (
+                    item.default_affinity
+                    if item.default_affinity in gem_affs
+                    else gem_affs[0]
+                )
                 self.inv_affinity_var.set(default)
                 self._update_affinity_icon(default)
             elif self._affinity_combo:
-                gem_affs = item.get_affinities(is_convergence_save)
+                gem_affs = common_affinities(
+                    item.get_affinities(is_convergence_save), weapon_affs
+                )
                 if gem_affs:
-                    self._affinity_combo.configure(values=gem_affs)
+                    self._affinity_combo.configure(values=gem_affs, state=aff_state)
                     default = (
                         item.default_affinity
                         if item.default_affinity in gem_affs
@@ -2012,6 +2038,8 @@ class InventoryEditor:
             )
             values = weapon_affs or self._affinity_names()
             self._affinity_combo.configure(values=values)
+            if not is_cnv:
+                self._affinity_combo.configure(state="disabled")
             self.inv_affinity_var.set("Standard")
             self._update_affinity_icon("Standard")
 
@@ -2228,6 +2256,7 @@ class InventoryEditor:
         upgrade: int,
         location: str,
         slot,
+        aow_id: int = 0,
     ) -> tuple[bool, str]:
         """Pre-flight validation before calling inventory_ops.add_item."""
         from er_save_manager.data.item_database import get_item_database
@@ -2249,26 +2278,10 @@ class InventoryEditor:
                     "and thus cannot receive this item.",
                 )
 
-        # Upgrade range - CNV saves cap standard/somber at +15
         if cat == 0x00000000:
-            item = db.get_item_by_id(full_id & 0xFFFF0000)
-            reinforcement = (
-                getattr(item, "reinforcement", "standard") if item else "standard"
-            )
-            sf = self.get_save_file()
-            is_cnv = (
-                sf.is_convergence
-                if sf
-                else (".cnv" in str(self.get_save_path() or "").lower())
-            )
-            if is_cnv and reinforcement in ("standard", "somber"):
-                cap = 15
-            else:
-                cap = {"standard": 25, "somber": 10, "ash": 10, "none": 0}.get(
-                    reinforcement, 25
-                )
-            if upgrade < 0 or upgrade > cap:
-                return False, f"Upgrade must be 0-{cap} for this weapon."
+            ok, err = self._validate_weapon(db, base_id, upgrade, aow_id)
+            if not ok:
+                return False, err
 
         item_for_qty = db.get_item_by_id(full_id)
         if item_for_qty is not None:
@@ -2279,6 +2292,58 @@ class InventoryEditor:
                     f"Quantity must be 1-{max_qty} for this item in {location}.",
                 )
 
+        return True, ""
+
+    def _validate_weapon(
+        self, db, base_id: int, upgrade: int, aow_id: int
+    ) -> tuple[bool, str]:
+        """Reject weapon, upgrade, affinity and Ash of War combinations the game cannot produce."""
+        is_cnv = self._is_cnv_save()
+        item = db.get_item_by_id(base_id // 10000 * 10000, is_cnv)
+        reinforcement = (
+            getattr(item, "reinforcement", "standard") if item else "standard"
+        )
+        cap = (
+            0
+            if reinforcement == "none"
+            else _weapon_upgrade_cap(item, reinforcement, is_cnv)
+        )
+        if upgrade < 0 or upgrade > cap:
+            return False, f"Upgrade must be 0-{cap} for this weapon."
+
+        affinity_code = (base_id // 100) % 100
+        affinity = self._affinity_by_code().get(affinity_code, f"#{affinity_code}")
+        # Vanilla only infuses through an Ash of War, so an infused weapon
+        # without one cannot be obtained in game.
+        if not is_cnv and affinity_code != 0 and not aow_id:
+            return (
+                False,
+                "In the base game a weapon can only be infused by applying "
+                "an Ash of War. Select an Ash of War or use Standard.",
+            )
+        if item is None:
+            return True, ""
+
+        weapon_affs = item.get_affinities(is_cnv)
+        if affinity_code != 0 and weapon_affs and affinity not in weapon_affs:
+            return False, f"{item.name} cannot have the {affinity} affinity."
+
+        if aow_id:
+            if not item.aow_allowed:
+                return False, f"{item.name} does not accept an Ash of War."
+            gem = db.get_item_by_id(aow_id, is_cnv)
+            if gem is not None:
+                if (
+                    gem.compatible_wep_types
+                    and item.wep_type_col not in gem.compatible_wep_types
+                ):
+                    return False, f"{gem.name} cannot be applied to {item.name}."
+                gem_affs = gem.get_affinities(is_cnv)
+                if gem_affs and affinity not in gem_affs:
+                    return (
+                        False,
+                        f"{gem.name} does not allow the {affinity} affinity.",
+                    )
         return True, ""
 
     def _get_current_item_info(self) -> dict:
@@ -2397,7 +2462,9 @@ class InventoryEditor:
             set_quantity(save_file, slot_idx, full_id, new_total, location)
             return {"stacked": True, "qty": new_total, "location": location}
 
-        ok, err = self._validate_add_item(full_id, qty, upg, location, slot)
+        ok, err = self._validate_add_item(
+            full_id, qty, upg, location, slot, item_info.get("aow_id", 0)
+        )
         if not ok:
             raise ValueError(err)
 
@@ -3032,7 +3099,7 @@ class InventoryEditor:
             return
         full_id, location, gaitem_handle = result
 
-        item = self._lookup_weapon_item(full_id)
+        item = self._lookup_weapon_item(full_id, self._is_cnv_save())
         reinforcement = (
             getattr(item, "reinforcement", "standard") if item else "standard"
         )
@@ -3424,6 +3491,7 @@ class InventoryEditor:
             full_id, _, gaitem_handle = result
 
             if allowed is None and gaitem_handle is not None:
+                has_gem = False
                 try:
                     slot0 = self.get_save_file().characters[self.get_char_slot()]
                     for g0 in slot0.gaitem_map:
@@ -3434,12 +3502,14 @@ class InventoryEditor:
                             gem_h_u = gem_h & 0xFFFFFFFF
                             for gg in slot0.gaitem_map:
                                 if gg.gaitem_handle == gem_h_u:
+                                    has_gem = True
                                     from er_save_manager.data.item_database import (
                                         get_item_database,
                                     )
 
                                     gem_item = get_item_database().get_item_by_id(
-                                        0x80000000 | (gg.item_id & 0x0FFFFFFF)
+                                        0x80000000 | (gg.item_id & 0x0FFFFFFF),
+                                        is_convergence_save,
                                     )
                                     if gem_item:
                                         gem_affs = gem_item.get_affinities(
@@ -3451,8 +3521,12 @@ class InventoryEditor:
                         break
                 except Exception:
                     pass
+                # Vanilla only infuses through an Ash of War; without one the
+                # weapon can only go back to Standard.
+                if not has_gem and not is_convergence_save:
+                    allowed = ["Standard"]
 
-        item = self._lookup_weapon_item(full_id)
+        item = self._lookup_weapon_item(full_id, is_convergence_save)
         if item and not getattr(item, "aow_allowed", True):
             CTkMessageBox.showinfo(
                 "Not Infusable", "This weapon cannot be infused.", parent=self.parent
@@ -3631,7 +3705,7 @@ class InventoryEditor:
             return
         full_id, location, gaitem_handle = result
 
-        item = self._lookup_weapon_item(full_id)
+        item = self._lookup_weapon_item(full_id, self._is_cnv_save())
         if item and not getattr(item, "aow_allowed", True):
             CTkMessageBox.showinfo(
                 "AoW Not Supported",
@@ -3808,9 +3882,12 @@ class InventoryEditor:
             cats = ["Gems", "DLC Gems"]
             if is_convergence_save:
                 cats.append("Convergence Gems")
-            all_gems = []
+            unique_gems = {}
             for cat in cats:
-                all_gems += db.get_items_by_category(cat)
+                for g in db.get_items_by_category(cat):
+                    g = db.resolve(g, is_convergence_save)
+                    unique_gems.setdefault(g.full_id, g)
+            all_gems = list(unique_gems.values())
             if wep_col:
                 all_gems = [
                     g
@@ -4020,6 +4097,10 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         ctk.CTkButton(
             db_btn_frame, text="Save as New Loadout", command=self._save_as_new
         ).pack(fill="x", pady=2)
+        self._rename_btn = ctk.CTkButton(
+            db_btn_frame, text="Rename Loadout", command=self._rename_loadout
+        )
+        self._rename_btn.pack(fill="x", pady=2)
         self._delete_btn = ctk.CTkButton(
             db_btn_frame,
             text="Delete Loadout",
@@ -4171,10 +4252,12 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             self._info_lbl.configure(
                 text=f"{items} - kept until you use Save as New Loadout"
             )
+            self._rename_btn.configure(state="disabled")
             self._delete_btn.configure(state="disabled", fg_color=("gray70", "gray35"))
         else:
             self._title_lbl.configure(text=current)
             self._info_lbl.configure(text=f"{items} - changes are saved automatically")
+            self._rename_btn.configure(state="normal")
             self._delete_btn.configure(state="normal", fg_color=_DELETE_COLOR)
 
         self.tree.delete(*self.tree.get_children())
@@ -4241,6 +4324,30 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             _write_json(_loadout_draft_path(), [])
         editor.open_loadout(name)
         show_toast(self, f"Saved loadout '{name}'.", type="success")
+
+    def _rename_loadout(self) -> None:
+        old = self.editor.loadout_name
+        if old is None:
+            return
+        name = _ask_value("Rename Loadout", f"New name for '{old}':", self, old)
+        name = name.strip() if name else ""
+        if not name or name == old:
+            return
+        if name in read_loadouts():
+            CTkMessageBox.showwarning(
+                "Name Exists",
+                f"A loadout named '{name}' already exists. Choose another name.",
+                parent=self,
+            )
+            return
+        # Rebuilt in order so the renamed entry keeps its place in the file.
+        loadouts = {
+            (name if key == old else key): items
+            for key, items in read_loadouts().items()
+        }
+        write_loadouts(loadouts)
+        self.editor.open_loadout(name)
+        show_toast(self, f"Renamed loadout '{old}' to '{name}'.", type="success")
 
     def _delete_loadout(self) -> None:
         name = self.editor.loadout_name

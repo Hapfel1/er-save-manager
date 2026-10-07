@@ -313,7 +313,7 @@ def test_add_item_raises_counter_to_new_entry_index(sanitized_save):
 
 def test_add_then_remove_weapon_touches_only_inventory_sections(sanitized_save):
     """
-    The definitive test for the 13-offset shift math: adding a weapon
+    Checks the 13-offset shift math: adding a weapon
     grows the gaitem map, shifting everything after it; removing it
     shrinks it back. Everything outside inventory_held/
     inventory_storage_box/gaitem_map must be byte-identical before and

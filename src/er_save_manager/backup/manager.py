@@ -157,13 +157,10 @@ class BackupManager:
         """
         Generate a unique backup filename.
 
-        Two backups created within the same second with the same operation
-        and description would otherwise produce an identical filename, and
-        the second create_backup() call would silently overwrite the first,
-        losing that restore point with no warning. Appends a numeric
-        suffix against what's actually on disk to guarantee uniqueness
-        regardless of call frequency, rather than relying on clock
-        resolution alone.
+        Two backups with the same operation and description in the same
+        second would get the same name and the second would overwrite the
+        first, so a numeric suffix is appended until the name is free on
+        disk.
         """
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         base_name = self.save_path.stem

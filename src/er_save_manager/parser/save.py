@@ -7,7 +7,9 @@ Based on ER-Save-Lib Rust implementation.
 
 from __future__ import annotations
 
+import logging
 import os
+import struct
 from dataclasses import dataclass, field
 from io import BytesIO
 from pathlib import Path
@@ -15,6 +17,8 @@ from pathlib import Path
 from er_save_manager.own_writes import record_write
 from er_save_manager.parser.user_data_10 import UserData10
 from er_save_manager.parser.user_data_x import UserDataX
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -187,6 +191,8 @@ class Save:
                 correct_position = slot_start + 0x280010
                 f.seek(correct_position)
 
+        obj._slot_digests = obj._digest_slots()
+
         user_data_10_start = f.tell()
         obj._user_data_10_offset = user_data_10_start
 
@@ -213,6 +219,45 @@ class Save:
             obj.user_data_11 = f.read(0x240010)
 
         return obj
+
+    def _digest_slots(self) -> dict[int, bytes]:
+        """MD5 of each non-empty slot's data, to tell which slots were edited."""
+        import hashlib
+
+        digests = {}
+        for idx, slot in enumerate(self.character_slots):
+            if slot.is_empty() or not getattr(slot, "data_start", 0):
+                continue
+            data = self._raw_data[slot.data_start : slot.data_start + 0x280000]
+            digests[idx] = hashlib.md5(data).digest()
+        return digests
+
+    def _refresh_player_data_hashes(self) -> None:
+        """Recompute PlayerGameDataHash for every slot edited since load.
+
+        Untouched slots keep the hash the game wrote. Slot MD5s are redone
+        afterwards when any hash changed.
+        """
+        from er_save_manager.parser import player_data_hash
+
+        if isinstance(self._raw_data, bytes):
+            self._raw_data = bytearray(self._raw_data)
+        before = getattr(self, "_slot_digests", None)
+        current = self._digest_slots()
+        changed = False
+        for idx, digest in current.items():
+            if before is not None and before.get(idx) == digest:
+                continue
+            slot = self.character_slots[idx]
+            if not getattr(slot, "player_data_hash_offset", 0):
+                continue
+            try:
+                changed |= player_data_hash.refresh(self._raw_data, slot)
+            except (struct.error, IndexError):
+                logger.exception("PlayerGameDataHash refresh failed for slot %d", idx)
+        if changed:
+            self.recalculate_checksums()
+        self._slot_digests = self._digest_slots()
 
     def recalculate_checksums(self):
         """
@@ -264,21 +309,18 @@ class Save:
         Write save file to disk.
 
         Writes to a temporary file in the same directory, then atomically
-        replaces the destination. A direct in-place overwrite (open the
-        existing path in "wb" mode) can leave a file-watcher holding a
-        stale view of the file - Steam Cloud sync, an antivirus scanner,
-        or the game itself can end up reading a cached/partial state
-        instead of the freshly written content, since the file's identity
-        never technically changes for a same-path truncate+write. An
-        atomic replace forces a fresh file identity that these can't
-        miss, and also protects against a corrupt half-written file if
-        the process is interrupted mid-write.
+        replaces the destination. A same-path truncate and write keeps the
+        file identity, so Steam Cloud sync, an antivirus scanner or the game
+        can keep reading a stale or partial view. The replace gives the file
+        a new identity and never leaves a half-written save behind.
 
         Args:
             filepath: Path where save file will be written
         """
         if not hasattr(self, "_raw_data"):
             raise RuntimeError("Cannot write save file: raw data not available")
+
+        self._refresh_player_data_hashes()
 
         target = Path(filepath)
         tmp_path = target.with_name(f"{target.name}.tmp{os.getpid()}")

@@ -102,6 +102,15 @@ class EventFlags:
         return cls._bst_map
 
     @classmethod
+    def has_flag(cls, event_id: int) -> bool:
+        """Whether the save has storage for this flag.
+
+        Only blocks in the game's flag tree exist in the save; the game
+        ignores flags outside them.
+        """
+        return event_id >= 0 and event_id // cls.FLAG_DIVISOR in cls._load_bst_map()
+
+    @classmethod
     def get_flag(cls, event_flags: bytes, event_id: int) -> bool:
         """
         Get the state of an event flag.

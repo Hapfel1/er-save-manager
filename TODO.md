@@ -1,3 +1,47 @@
+research what csnetman has and corruption instead of the full replacement
+
+extend save file docs
+
+DS2 boss reviver
+
+DS2 event flag storage layout (single-action pairs + flagdiff.py)
+
+DS2 shared revive bytes (Rosabeth/Chloanne, Gren/Ornifex): check whether the shared byte holds separate bits
+
+DS2 Bonfire Ascetic vs bonfire level byte contradiction
+
+DSR event flags, flag 0 and NPC states
+
+DS3 death-state byte (kill pair in m51_01)
+
+ER unnamed NPC blocks: Finger Reader Crone 3500, bosses 3140/3200/3320/3340, Roundtable 3160/3700/3780/3840/3960, Ensha and Pidia bases
+
+Sekiro save editing
+
+Equipment editor for DS3, DSR and DS2
+
+DS2 attunement editor
+
+DS3 visited regions / warp unlocks
+
+DSR covenant rank and appearance
+
+DS2 last-bonfire warp
+
+notify when a save is edited externally for other games done
+
+overall feature check/improvement check for all games done
+
+rework ban meesage warnings on vanilla done
+
+full private safe file docs done
+
+check paramdefs ds2 done
+
+fix equipment editor, check closed ticket done
+
+ds2 import soul memory and change starting class done
+
 mage smith elite cleric set dsr done
 
 check dlc npc flags done
