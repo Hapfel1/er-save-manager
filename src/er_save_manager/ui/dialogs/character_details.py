@@ -234,7 +234,7 @@ class CharacterDetailsDialog:
         dialog.title(f"Character Details - {name}")
 
         width = 640
-        height = 520
+        height = 550
         dlc_checkbox_count = sum(
             [
                 has_dlc_flag,
@@ -243,9 +243,9 @@ class CharacterDetailsDialog:
             ]
         )
         if deep_scan_available:
-            height = 560
+            height = 590
         elif has_dlc_section:
-            height = 560 + max(0, dlc_checkbox_count - 1) * 35
+            height = 590 + max(0, dlc_checkbox_count - 1) * 35
         dialog.update_idletasks()
         parent.update_idletasks()
         center_window(dialog, width, height, parent=parent)
@@ -325,6 +325,16 @@ class CharacterDetailsDialog:
                     font=("Segoe UI", 10),
                     text_color=("gray50", "gray50"),
                 ).pack(anchor="w")
+
+        ctk.CTkLabel(
+            main_frame,
+            text="Still corrupted or crashing on load after fixing, or nothing detected?"
+            " Try 'Replace CSNetMan'.",
+            font=("Segoe UI", 11, "bold"),
+            text_color=("#b45309", "#f59e0b"),
+            wraplength=width - 60,
+            justify="left",
+        ).pack(anchor="w", padx=12, pady=(0, 6))
 
         button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         button_frame.pack(fill="x", padx=6, pady=(0, 4))
@@ -611,7 +621,9 @@ class CharacterDetailsDialog:
                 detail_text = "\n".join(f"  - {d}" for d in fix_result.details)
                 CTkMessageBox.showinfo(
                     "Deep Scan Fix",
-                    f"{fix_result.description}\n\n{detail_text}\n\nBackup saved.",
+                    f"{fix_result.description}\n\n{detail_text}\n\nBackup saved.\n\n"
+                    "If the game still reports the save as corrupted or crashes on load,"
+                    " open Character Details again and click 'Replace CSNetMan'.",
                     parent=dialog,
                 )
                 dialog.destroy()
@@ -977,7 +989,9 @@ class CharacterDetailsDialog:
                 fix_summary = "\n".join(f"  - {fix}" for fix in fixes)
                 CTkMessageBox.showinfo(
                     "Success",
-                    f"Fixed {len(fixes)} issue(s):\n\n{fix_summary}\n\nBackup saved to backup manager.",
+                    f"Fixed {len(fixes)} issue(s):\n\n{fix_summary}\n\nBackup saved to backup manager.\n\n"
+                    "If the game still reports the save as corrupted or crashes on load,"
+                    " open Character Details again and click 'Replace CSNetMan'.",
                     parent=_parent,
                 )
             else:
