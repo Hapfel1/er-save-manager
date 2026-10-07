@@ -7,7 +7,7 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 2540000,Stone-Sheathed Sword,somber,0,3,SwordNormal,1,Standard,Standard
 2550000,Sword of Light,somber,0,3,SwordNormal,1,Standard,Standard
 2560000,Sword of Darkness,somber,0,3,SwordNormal,1,Standard,Standard
-3500000,Sword Lance,standard,1,16,SpearHeavy,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
+3500000,Sword Lance,standard,1,16,RapierHeavy,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
 3510000,Greatsword of Damnation,somber,0,5,SwordLarge,1,Standard,Standard
 3520000,Lizard Greatsword,standard,1,5,SwordLarge,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
 3550000,Greatsword of Solitude,somber,0,5,SwordLarge,1,Standard,Standard
@@ -16,7 +16,7 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 4530000,Greatsword of Radahn (Lord),somber,0,7,SwordGigantic,1,Standard,Standard
 4540000,Moonrithyll's Knight Sword,somber,0,7,SwordGigantic,1,Standard,Standard
 4550000,Greatsword of Radahn (Light),somber,0,7,SwordGigantic,1,Standard,Standard
-6500000,Queelign's Greatsword,standard,1,16,SpearHeavy,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava
+6500000,Queelign's Greatsword,standard,1,16,RapierHeavy,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava
 7500000,Spirit Sword,somber,0,9,SaberNormal,1,Standard,Standard
 7510000,Falx,somber,0,9,SaberNormal,1,Standard,Standard
 7520000,Dancing Blade of Ranah,somber,0,9,SaberNormal,1,Standard,Standard
@@ -42,9 +42,9 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 16500000,Smithscript Spear,standard,1,25,SpearNormal,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
 16520000,Swift Spear,standard,1,25,SpearNormal,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava
 16540000,Bloodfiend's Fork,standard,1,25,SpearNormal,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava
-17500000,Spear of the Impaler,somber,0,28,SpearLarge,1,Standard,Standard
-17510000,Messmer Soldier's Spear,standard,1,28,SpearLarge,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
-17520000,Barbed Staff-Spear,somber,0,28,SpearLarge,1,Standard,Standard
+17500000,Spear of the Impaler,somber,0,28,SpearHeavy,1,Standard,Standard
+17510000,Messmer Soldier's Spear,standard,1,28,SpearHeavy,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
+17520000,Barbed Staff-Spear,somber,0,28,SpearHeavy,1,Standard,Standard
 18500000,Spirit Glaive,somber,0,29,SpearAxe,1,Standard,Standard
 18510000,Poleblade of the Bud,somber,0,29,SpearAxe,1,Standard,Standard
 19500000,Obsidian Lamina,somber,0,31,Sickle,1,Standard,Standard
@@ -78,5 +78,5 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 67520000,Rellana's Twin Blades,somber,0,93,LightGreatsword,1,Standard,Standard
 68500000,Beast Claw (Weapon),standard,1,95,BeastClaw,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
 68510000,Red Bear's Claw,somber,0,95,BeastClaw,1,Standard,Standard
-16550000,Bloodfiend's Sacred Spear,somber,0,28,SpearLarge,1,Standard,Standard
+16550000,Bloodfiend's Sacred Spear,somber,0,28,SpearHeavy,1,Standard,Standard
 21520000,Poisoned Hand,somber,0,35,Knuckle,1,Standard,Standard

@@ -12,9 +12,9 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 60540000,Bracelet of Gold,standard,0,88,HandToHand,1,Standard
 60530000,Bracelet of Shadow,standard,0,88,HandToHand,1,Standard
 10060000,Caimar's Battlestaff,somber,0,14,SwordDoubleEdge,1,Standard
-6030000,Carwyn’s Épée,somber,0,16,SpearHeavy,1,Standard
+6030000,Carwyn’s Épée,somber,0,16,RapierHeavy,1,Standard
 3110000,Celestial Blade,somber,0,5,SwordLarge,1,Standard
-17090000,Cragsplitter,somber,0,28,SpearLarge,1,Standard
+17090000,Cragsplitter,somber,0,28,SpearHeavy,1,Standard
 64550000,Crescent Moons,somber,0,92,BackhandBlade,1,Standard
 12040000,Crimson Brair-Bough,somber,0,23,HammerLarge,1,Standard
 16180000,Crucifix of Eochaid,somber,0,25,SpearNormal,1,Standard
@@ -71,7 +71,7 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 12070000,Sigur’s Greatmace,somber,0,23,HammerLarge,1,Standard
 69500000,Smithscript Rosary,somber,0,88,HandToHand,1,Standard
 16100000,Spear of Tranquility,somber,0,25,SpearNormal,1,Standard
-17080000,Spear of the Dreaming,somber,0,28,SpearLarge,1,Standard
+17080000,Spear of the Dreaming,somber,0,28,SpearHeavy,1,Standard
 9050000,Star Shadow,somber,0,13,katana,1,Standard
 18190000,Starcaller Mattock,somber,0,29,SpearAxe,1,Standard
 22040000,Stone Claws,somber,0,37,Claw,1,Standard

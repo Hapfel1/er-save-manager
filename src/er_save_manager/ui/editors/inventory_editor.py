@@ -1565,7 +1565,7 @@ class InventoryEditor:
         is_convergence_save = ".cnv" in str(save_path).lower()
 
         if self._affinity_combo:
-            if affinity_allowed:
+            if affinity_allowed and (is_convergence_save or self._selected_gem_id):
                 weapon_affs = self.selected_item.get_affinities(is_convergence_save)
                 affinity_values = weapon_affs or self._affinity_names()
                 self._affinity_combo.configure(values=affinity_values, state="normal")
@@ -1961,6 +1961,12 @@ class InventoryEditor:
                 return
             item = gem_items[sel[0]]
             self._selected_gem_id = 0x80000000 | item.id
+            aff_state = (
+                "normal"
+                if getattr(self.selected_item, "reinforcement", "standard")
+                == "standard"
+                else "disabled"
+            )
             if self.inv_aow_var:
                 self.inv_aow_var.set(item.name)
                 self._update_aow_icon(item.name)
@@ -1971,14 +1977,16 @@ class InventoryEditor:
                 and not is_convergence_save
                 and item.allowed_affinities
             ):
-                self._affinity_combo.configure(values=item.allowed_affinities)
+                self._affinity_combo.configure(
+                    values=item.allowed_affinities, state=aff_state
+                )
                 default = item.default_affinity or item.allowed_affinities[0]
                 self.inv_affinity_var.set(default)
                 self._update_affinity_icon(default)
             elif self._affinity_combo:
                 gem_affs = item.get_affinities(is_convergence_save)
                 if gem_affs:
-                    self._affinity_combo.configure(values=gem_affs)
+                    self._affinity_combo.configure(values=gem_affs, state=aff_state)
                     default = (
                         item.default_affinity
                         if item.default_affinity in gem_affs
@@ -2013,6 +2021,8 @@ class InventoryEditor:
             )
             values = weapon_affs or self._affinity_names()
             self._affinity_combo.configure(values=values)
+            if not is_cnv:
+                self._affinity_combo.configure(state="disabled")
             self.inv_affinity_var.set("Standard")
             self._update_affinity_icon("Standard")
 
@@ -2229,6 +2239,7 @@ class InventoryEditor:
         upgrade: int,
         location: str,
         slot,
+        aow_id: int = 0,
     ) -> tuple[bool, str]:
         """Pre-flight validation before calling inventory_ops.add_item."""
         from er_save_manager.data.item_database import get_item_database
@@ -2270,6 +2281,14 @@ class InventoryEditor:
                 )
             if upgrade < 0 or upgrade > cap:
                 return False, f"Upgrade must be 0-{cap} for this weapon."
+            # Vanilla only infuses through an Ash of War, so an infused weapon
+            # without one cannot be obtained in game.
+            if not is_cnv and (base_id // 100) % 100 != 0 and not aow_id:
+                return (
+                    False,
+                    "In the base game a weapon can only be infused by applying "
+                    "an Ash of War. Select an Ash of War or use Standard.",
+                )
 
         item_for_qty = db.get_item_by_id(full_id)
         if item_for_qty is not None:
@@ -2398,7 +2417,9 @@ class InventoryEditor:
             set_quantity(save_file, slot_idx, full_id, new_total, location)
             return {"stacked": True, "qty": new_total, "location": location}
 
-        ok, err = self._validate_add_item(full_id, qty, upg, location, slot)
+        ok, err = self._validate_add_item(
+            full_id, qty, upg, location, slot, item_info.get("aow_id", 0)
+        )
         if not ok:
             raise ValueError(err)
 
@@ -3425,6 +3446,7 @@ class InventoryEditor:
             full_id, _, gaitem_handle = result
 
             if allowed is None and gaitem_handle is not None:
+                has_gem = False
                 try:
                     slot0 = self.get_save_file().characters[self.get_char_slot()]
                     for g0 in slot0.gaitem_map:
@@ -3435,6 +3457,7 @@ class InventoryEditor:
                             gem_h_u = gem_h & 0xFFFFFFFF
                             for gg in slot0.gaitem_map:
                                 if gg.gaitem_handle == gem_h_u:
+                                    has_gem = True
                                     from er_save_manager.data.item_database import (
                                         get_item_database,
                                     )
@@ -3452,6 +3475,10 @@ class InventoryEditor:
                         break
                 except Exception:
                     pass
+                # Vanilla only infuses through an Ash of War; without one the
+                # weapon can only go back to Standard.
+                if not has_gem and not is_convergence_save:
+                    allowed = ["Standard"]
 
         item = self._lookup_weapon_item(full_id)
         if item and not getattr(item, "aow_allowed", True):

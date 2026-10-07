@@ -74,10 +74,10 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 5040000,Antspur Rapier,standard,1,15,SwordPierce,1,Standard,Standard
 5050000,Frozen Needle,somber,0,15,SwordPierce,1,Standard,Standard
 5060000,Noble's Estoc,standard,1,15,SwordPierce,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
-6000000,Bloody Helice,somber,0,16,SpearHeavy,1,Standard,Standard
-6010000,Godskin Stitcher,standard,1,16,SpearHeavy,1,Standard,Standard
-6020000,Great Épée,standard,1,16,SpearHeavy,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
-6040000,Dragon King's Cragblade,somber,0,16,SpearHeavy,1,Standard,Standard
+6000000,Bloody Helice,somber,0,16,RapierHeavy,1,Standard,Standard
+6010000,Godskin Stitcher,standard,1,16,RapierHeavy,1,Standard,Standard
+6020000,Great Épée,standard,1,16,RapierHeavy,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
+6040000,Dragon King's Cragblade,somber,0,16,RapierHeavy,1,Standard,Standard
 7000000,Falchion,standard,1,9,SaberNormal,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
 7010000,Beastman's Curved Sword,standard,1,9,SaberNormal,1,Standard,Standard
 7020000,Shotel,standard,1,9,SaberNormal,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
@@ -189,12 +189,12 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 16140000,Spiked Spear,standard,1,25,SpearNormal,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
 16150000,Iron Spear,standard,1,25,SpearNormal,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
 16160000,Rotten Crystal Spear,somber,0,25,SpearNormal,1,Standard,Standard
-17010000,Mohgwyn's Sacred Spear,somber,0,28,SpearLarge,1,Standard,Standard
-17020000,Siluria's Tree,somber,0,28,SpearLarge,1,Standard,Standard
-17030000,Serpent-Hunter,somber,0,28,SpearLarge,1,Standard,Standard
-17050000,Vyke's War Spear,somber,0,28,SpearLarge,1,Standard,Standard
-17060000,Lance,standard,1,28,SpearLarge,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
-17070000,Treespear,standard,0,28,SpearLarge,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava
+17010000,Mohgwyn's Sacred Spear,somber,0,28,SpearHeavy,1,Standard,Standard
+17020000,Siluria's Tree,somber,0,28,SpearHeavy,1,Standard,Standard
+17030000,Serpent-Hunter,somber,0,28,SpearHeavy,1,Standard,Standard
+17050000,Vyke's War Spear,somber,0,28,SpearHeavy,1,Standard,Standard
+17060000,Lance,standard,1,28,SpearHeavy,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
+17070000,Treespear,standard,0,28,SpearHeavy,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava
 18000000,Halberd,standard,1,29,SpearAxe,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
 18010000,Pest's Glaive,standard,1,29,SpearAxe,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava
 18020000,Lucerne,standard,1,29,SpearAxe,1,Standard|Heavy|Keen|Quality|Fire|Flame Art|Lightning|Sacred|Magic|Cold|Poison|Blood|Occult,Standard|Heavy|Keen|Quality|Glint|Dragonkin|Gravity|Flame|Golden|Draconic|Bestial|Night|Lava|Frenzy|Death|Godslayer|Frost|Aberrant|Bloodflame|Rotten|Storm|Psionic
