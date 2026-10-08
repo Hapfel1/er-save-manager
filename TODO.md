@@ -6,8 +6,6 @@ DS2 event flag storage layout (single-action pairs + flagdiff.py)
 
 DS2 shared revive bytes (Rosabeth/Chloanne, Gren/Ornifex): check whether the shared byte holds separate bits
 
-DS2 Bonfire Ascetic vs bonfire level byte contradiction
-
 DSR event flags, flag 0 and NPC states
 
 DS3 death-state byte (kill pair in m51_01)
@@ -25,6 +23,8 @@ DS3 visited regions / warp unlocks
 DSR covenant rank and appearance
 
 DS2 last-bonfire warp
+
+DS2 Bonfire Ascetic vs bonfire level byte contradiction
 
 DS2 boss reviver done
 

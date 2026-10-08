@@ -37,8 +37,8 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **Backup Manager and SteamID Patcher for**: Elden Ring, Elden Ring Nightreign, Armored Core 6, Sekiro, Dark Souls III, Dark Souls II SotfS (Dark Souls Remastered: Backup Manager only, its saves hold no SteamID)
 - **DSR**: Stats Editing, Character Management, Save Fixer, Event Flags, Boss Revival, NPC Revival, Bonfire Lighting, NG+, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, Supports SeamlessCoop
 - **DS3**: Stats Editing, Character Management, Save Fixer, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, Boss Revival, NPC Revival, Bonfires, Gestures, NG+, Supports Convergence, Cinders and SeamlessCoop
-- **Nightreign**: Relic spawning and editing, Chalice Loadouts and Presets, Editing Murk and Sovereign Sigils, Character Management, Save Fixer
-- **DS2**: Stats Editing, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, Build Import from Souls Planner, Character Management, Save Fixer, Bonfire Editing, NPC Revival, Supports SeamlessCoop
+- **Nightreign**: Relic spawning and editing, Chalice Loadouts and Presets, Editing Murk and Sovereign Sigils, Character Management, Save Fixer, Supports decrypted PlayStation saves
+- **DS2**: Stats Editing, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, Build Import from Souls Planner, Character Management, Save Fixer, Bonfire Editing, Boss Editing, NPC Revival, Supports SeamlessCoop
 
 ### Work in Progress
 
@@ -168,7 +168,7 @@ Automatically detects issues with your game installation, your save file and any
 ### World State / Teleportation
 
 - Display of current location
-- 451 known locations to teleport to
+- 875 known locations to teleport to, including every Site of Grace
 - Interactive map of the overworld for teleporting
 - Custom Coordinate Teleportation
 - "Move Bloodstain to Player" function
@@ -275,10 +275,11 @@ Automatically detects issues with your game installation, your save file and any
 - Editing Murk and Sovereign Sigils
 - Character Management
 - Save Fixer (checksums, leftover bytes from older relic spawns)
+- Decrypted PlayStation `memory.dat` saves, including transfer between PlayStation and PC
 
 ### DS2
 
-- Stats Editing (Soul Memory follows level and souls edits)
+- Stats Editing (Soul Memory follows level and souls edits, repair of missing cycle Soul Memory on NG characters, which locks the Shrine of Winter)
 - Save Fixer (checksums, load screen name, level and class)
 - Name, NG+ cycle and torch time editing
 - Item Spawning (weapon upgrades and infusions, SeamlessCoop items for `.co2` saves)
@@ -287,7 +288,8 @@ Automatically detects issues with your game installation, your save file and any
 - Equipped items are protected from removal and storing
 - Build Import from [Souls Planner](https://soulsplanner.com) links (stats and items, optionally equipping the build's loadout)
 - Character Management
-- Bonfire Editing (light/unlight, Bonfire Ascetic level)
+- Bonfire Editing (light/unlight, bonfire intensity including the NG+ cycle)
+- Boss Editing: check boss states, repair bosses killed in another world that block Bonfire Ascetic use, respawn, kill and set defeat counts
 - NPC Revival and calming hostile NPCs
 
 ## Building from Source
