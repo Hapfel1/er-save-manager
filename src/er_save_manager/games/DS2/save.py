@@ -838,6 +838,26 @@ class Character:
         struct.pack_into("<I", self._data, SOUL_MEMORY_CYCLE_OFFSET, cycle)
         return added
 
+    def missing_cycle_soul_memory(self) -> int:
+        """Souls the cycle count lacks on a first playthrough, where it
+        should equal the total. Older Seamless Co-op versions only added to
+        the total, so the cycle count gates content (Shrine of Winter) as if
+        those souls were never gained. 0 on NG+, where the cycle's share of
+        the total is unknown."""
+        if self.new_game_plus != 0:
+            return 0
+        return max(0, self.soul_memory - self.soul_memory_cycle)
+
+    def fix_cycle_soul_memory(self) -> int:
+        """Raise the cycle count to the total on a first playthrough.
+        Returns the amount added."""
+        missing = self.missing_cycle_soul_memory()
+        if missing:
+            struct.pack_into(
+                "<I", self._data, SOUL_MEMORY_CYCLE_OFFSET, self.soul_memory
+            )
+        return missing
+
     @property
     def hp(self) -> int:
         return struct.unpack_from("<I", self._data, HP_OFFSET)[0]

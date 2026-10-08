@@ -239,6 +239,14 @@ class DS2EditorTab:
         self.soul_memory_label.grid(
             row=6, column=1, columnspan=3, sticky="w", padx=5, pady=3
         )
+        self._cycle_fix_button = ctk.CTkButton(
+            fields,
+            text="Fix Cycle Soul Memory",
+            width=160,
+            command=self._fix_cycle_soul_memory,
+        )
+        self._cycle_fix_button.grid(row=7, column=1, sticky="w", padx=5, pady=3)
+        self._cycle_fix_button.grid_remove()
 
         stats_frame = ctk.CTkFrame(body, fg_color="transparent")
         stats_frame.pack(fill="x", padx=10, pady=5)
@@ -527,15 +535,48 @@ class DS2EditorTab:
     def _show_soul_memory(self, character) -> None:
         text = f"{character.soul_memory:,} (this cycle {character.soul_memory_cycle:,})"
         required = character.required_soul_memory()
-        if required is not None and required > character.soul_memory:
+        below_required = required is not None and required > character.soul_memory
+        if below_required:
             text += f", below the {required:,} its level and souls need"
+        missing = character.missing_cycle_soul_memory()
+        if missing:
+            text += f", this cycle is {missing:,} short of the total"
+            self._cycle_fix_button.grid()
+        else:
+            self._cycle_fix_button.grid_remove()
         self.soul_memory_label.configure(
             text=text,
-            text_color=(
-                "orange"
-                if required is not None and required > character.soul_memory
-                else _HINT_COLOR
-            ),
+            text_color="orange" if below_required or missing else _HINT_COLOR,
+        )
+
+    def _fix_cycle_soul_memory(self) -> None:
+        """Set the cycle soul memory to the total, which an NG character
+        always has unless an older Seamless Co-op version skipped it."""
+        if _game_blocks_write(self.parent):
+            return
+        save: DS2Save | None = self.get_save()
+        save_path = self.get_save_path()
+        if save is None or not save_path:
+            self.show_toast("No save file loaded", duration=2000)
+            return
+        character = save.characters[self._slot_index]
+        if not character.missing_cycle_soul_memory():
+            return
+        self._backup(
+            save_path,
+            f"before_cycle_soul_memory_fix_slot_{self._slot_index}",
+            "fix_cycle_soul_memory",
+        )
+        added = character.fix_cycle_soul_memory()
+        try:
+            save.save_to_file(save_path)
+        except Exception as e:
+            self.show_toast(f"Failed to write save: {e}", duration=3000)
+            return
+        self.refresh()
+        self.show_toast(
+            f"Cycle soul memory raised by {added:,} to match the total",
+            duration=3000,
         )
 
     def _apply_changes(self) -> None:
