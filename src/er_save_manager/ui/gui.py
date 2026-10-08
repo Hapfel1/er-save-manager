@@ -2814,7 +2814,7 @@ class SaveManagerGUI:
         dialog.transient(self.root)
         dialog.resizable(False, False)
 
-        center_window(dialog, 440, 250, parent=self.root)
+        center_window(dialog, 440, 300, parent=self.root)
 
         main = ctk.CTkFrame(dialog, fg_color="transparent")
         main.pack(fill=ctk.BOTH, expand=True, padx=24, pady=24)
@@ -2828,7 +2828,7 @@ class SaveManagerGUI:
         ctk.CTkLabel(
             main,
             text=(
-                f"{self.save_path.name} was changed while the save manager\n"
+                f"{self.save_path.name} was changed while the save manager "
                 "had it loaded. Reload to avoid overwriting those changes."
             ),
             font=("Segoe UI", 14),
