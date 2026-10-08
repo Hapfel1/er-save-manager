@@ -2,8 +2,6 @@ research what csnetman has and corruption instead of the full replacement
 
 extend save file docs
 
-DS2 boss reviver
-
 DS2 event flag storage layout (single-action pairs + flagdiff.py)
 
 DS2 shared revive bytes (Rosabeth/Chloanne, Gren/Ornifex): check whether the shared byte holds separate bits
@@ -27,6 +25,8 @@ DS3 visited regions / warp unlocks
 DSR covenant rank and appearance
 
 DS2 last-bonfire warp
+
+DS2 boss reviver done
 
 fix er known locations done
 

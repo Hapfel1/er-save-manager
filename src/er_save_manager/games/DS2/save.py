@@ -66,12 +66,13 @@ from pathlib import Path
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from er_save_manager.games.DS2.bonfire_database import BONFIRES
+from er_save_manager.games.DS2.boss_database import BOSS_NAMES
 from er_save_manager.games.DS2.item_database import (
     SEAMLESS_ITEMS,
     SEAMLESS_MAX_STACK,
 )
 from er_save_manager.games.DS2.npc_database import NPCS, NpcEntry
-from er_save_manager.games.DS2.regulation import ClassBase, Regulation
+from er_save_manager.games.DS2.regulation import BossFight, ClassBase, Regulation
 from er_save_manager.own_writes import record_write
 
 DS2_KEY = bytes.fromhex("599f9b699640a55236ee2d70835ec744")
@@ -314,6 +315,34 @@ _NPC_KILL_RECORDS: dict[str, tuple[tuple[int, int], ...]] = {
     "Straid of Olaphis": ((-0x25452, 1),),
     "Felkin the Outcast": ((-0x21D06, 1),),
 }
+# Event data, found through the first bonfire id array like the structures
+# above. Flags are one bit each, most significant bit first.
+# - Global event flags from _GLOBAL_FLAG_FIRST up start _GLOBAL_FLAGS_IN_OBJECT
+#   bytes into the NPC flag object.
+# - Map event flags A BB LLLLLL (map mA0_BB, local flag L) have one block of
+#   _MAP_FLAG_BLOCK_SIZE bytes per map for local flags 0 to 199. The blocks
+#   follow the order of the per-map records, the first one starting
+#   _MAP_FLAGS_BEFORE_IDS bytes before the id array.
+# - Global event values are u32 counters indexed by id, starting
+#   _EVENT_VALUES_BEFORE_IDS bytes before the id array.
+# Global flags and values have a second copy _EVENT_COPY_DISTANCE bytes further
+# on, which the game updates together with the first. The map flags in that
+# copy are not kept in step, so only the first copy's are read and written.
+_GLOBAL_FLAG_FIRST = 100000
+_GLOBAL_FLAGS_IN_OBJECT = 8
+_MAP_FLAGS_BEFORE_IDS = 0xBD0
+_MAP_FLAG_BLOCK_SIZE = 25
+_EVENT_VALUES_BEFORE_IDS = 0x7B4
+_EVENT_COPY_DISTANCE = 0x604C
+# Per-map records, one per map in a fixed order, each starting with a u32 map
+# id (area << 24 | block << 16). The first starts _MAP_RECORDS_BEFORE_IDS bytes
+# before the first bonfire id array.
+_MAP_RECORDS_BEFORE_IDS = 0x282A8
+_MAP_RECORD_SIZE = 0xB10
+# Highest defeat count the editor writes. The game stores a u32 and adds one
+# per win.
+BOSS_MAX_DEFEATS = 999
+
 # The byte after Lenigrast's last entry goes from 0 to 3 on his kill, but
 # holds other values in slots without that kill, so it is cleared only
 # together with a present record.
@@ -519,6 +548,220 @@ class NpcStates:
             if self._data[self._base + entry.hostile]:
                 self._data[self._base + entry.hostile] = 0
                 changed += 1
+        return changed
+
+
+class BossStatus(Enum):
+    """Where a boss stands. The values double as display labels."""
+
+    NOT_DEFEATED = "Not defeated"
+    DEFEATED = "Defeated"
+    RESPAWNED = "Respawned"
+    INVALID = "Invalid"
+
+
+@dataclass
+class BossState:
+    fight: BossFight
+    name: str
+    defeats: int
+    # The map's defeated flag, which keeps the boss out of its arena.
+    gone_from_arena: bool
+    status: BossStatus
+    # Why the stored records disagree, set only for BossStatus.INVALID.
+    problem: str | None = None
+
+
+class BossStates:
+    """View over the boss records in one slot's large entry.
+
+    A win stores three records, all named by the fight's BossBattleParam row:
+    the defeat count (a global event value, in both copies), the "ever
+    defeated" global flag (in both copies) and the map's defeated flag, which
+    keeps the boss out of its arena. A Bonfire Ascetic clears the map flag and
+    leaves the other two, so the boss returns. Records that contradict each
+    other are invalid; a kill credited only partly, as can happen in another
+    player's world, leaves the defeat count at 0, which blocks the Bonfire
+    Ascetic at the boss's bonfire.
+    """
+
+    def __init__(
+        self,
+        data: bytearray,
+        anchor: int,
+        fights: Iterable[BossFight],
+        maps: list[int],
+    ) -> None:
+        self._data = data
+        self._anchor = anchor
+        self._maps = maps
+        self._fights = [f for f in fights if self._in_range(f)]
+
+    def _global_flag_spans(self, flag: int) -> list[tuple[int, int]]:
+        index = flag - _GLOBAL_FLAG_FIRST
+        first = (
+            self._anchor - _NPC_FLAGS_BEFORE_IDS + _GLOBAL_FLAGS_IN_OBJECT + index // 8
+        )
+        mask = 0x80 >> (index % 8)
+        return [(first, mask), (first + _EVENT_COPY_DISTANCE, mask)]
+
+    def _value_offsets(self, value_id: int) -> list[int]:
+        first = self._anchor - _EVENT_VALUES_BEFORE_IDS + 4 * value_id
+        return [first, first + _EVENT_COPY_DISTANCE]
+
+    def _map_flag_span(self, flag: int) -> tuple[int, int] | None:
+        """Byte offset and mask of a map event flag, or None when its map has
+        no record or the local id is outside the map's block."""
+        area = flag // 100_000_000 * 10
+        block = flag // 1_000_000 % 100
+        local = flag % 1_000_000
+        map_id = area << 24 | block << 16
+        if map_id not in self._maps or local >= _MAP_FLAG_BLOCK_SIZE * 8:
+            return None
+        offset = (
+            self._anchor
+            - _MAP_FLAGS_BEFORE_IDS
+            + self._maps.index(map_id) * _MAP_FLAG_BLOCK_SIZE
+            + local // 8
+        )
+        return offset, 0x80 >> (local % 8)
+
+    def _in_range(self, fight: BossFight) -> bool:
+        if fight.once_killed_flag < _GLOBAL_FLAG_FIRST or fight.defeat_value <= 0:
+            return False
+        spans = self._global_flag_spans(fight.once_killed_flag)
+        offsets = [o for o, _ in spans]
+        offsets += [o + 3 for o in self._value_offsets(fight.defeat_value)]
+        if (span := self._map_flag_span(fight.killed_flag)) is not None:
+            offsets.append(span[0])
+        return all(0 <= o < len(self._data) for o in offsets)
+
+    def _read(self, fight: BossFight) -> tuple[list[int], list[bool], bool | None]:
+        counts = [
+            struct.unpack_from("<I", self._data, o)[0]
+            for o in self._value_offsets(fight.defeat_value)
+        ]
+        flags = [
+            bool(self._data[o] & m)
+            for o, m in self._global_flag_spans(fight.once_killed_flag)
+        ]
+        span = self._map_flag_span(fight.killed_flag)
+        in_map = None if span is None else bool(self._data[span[0]] & span[1])
+        return counts, flags, in_map
+
+    def states(self) -> list[BossState]:
+        result = []
+        for fight in self._fights:
+            name = BOSS_NAMES.get(fight.row_id, f"Boss {fight.row_id}")
+            counts, flags, in_map = self._read(fight)
+            defeats = max(counts)
+            problem = None
+            if counts[0] != counts[1]:
+                problem = "Defeat count copies differ"
+            elif flags[0] != flags[1]:
+                problem = "Defeated flag copies differ"
+            elif defeats and not flags[0]:
+                problem = "Defeat count set, defeated flag clear"
+            elif not defeats and flags[0]:
+                problem = "Defeated flag set, defeat count 0"
+            elif not defeats and in_map:
+                problem = "Gone from its arena, defeat count 0"
+            if problem is not None:
+                status = BossStatus.INVALID
+            elif not defeats:
+                status = BossStatus.NOT_DEFEATED
+            elif in_map is False:
+                status = BossStatus.RESPAWNED
+            else:
+                status = BossStatus.DEFEATED
+            result.append(
+                BossState(fight, name, defeats, bool(in_map), status, problem)
+            )
+        return result
+
+    def _selected(self, row_ids: Iterable[int]) -> list[BossFight]:
+        wanted = set(row_ids)
+        return [f for f in self._fights if f.row_id in wanted]
+
+    def repair(self, row_ids: Iterable[int]) -> int:
+        """Complete the records of the selected bosses with any record of a
+        win, the way a full kill writes them: defeat count at least 1 and the
+        defeated flag set, in both copies. The map flag is kept, so a boss
+        still in its arena stays there. Return how many bosses changed."""
+        changed = 0
+        for fight in self._selected(row_ids):
+            counts, flags, in_map = self._read(fight)
+            if not (any(counts) or any(flags) or in_map):
+                continue
+            touched = False
+            defeats = max(max(counts), 1)
+            for offset, count in zip(
+                self._value_offsets(fight.defeat_value), counts, strict=True
+            ):
+                if count != defeats:
+                    struct.pack_into("<I", self._data, offset, defeats)
+                    touched = True
+            for offset, mask in self._global_flag_spans(fight.once_killed_flag):
+                if not self._data[offset] & mask:
+                    self._data[offset] |= mask
+                    touched = True
+            changed += touched
+        return changed
+
+    def respawn(self, row_ids: Iterable[int]) -> int:
+        """Return the selected bosses to their arenas by clearing the map's
+        defeated flag, as a Bonfire Ascetic does. The defeat count and the
+        defeated flag are kept. Return how many bosses changed."""
+        changed = 0
+        for fight in self._selected(row_ids):
+            span = self._map_flag_span(fight.killed_flag)
+            if span is None or not self._data[span[0]] & span[1]:
+                continue
+            self._data[span[0]] &= ~span[1] & 0xFF
+            changed += 1
+        return changed
+
+    def kill(self, row_ids: Iterable[int]) -> int:
+        """Record a win over the selected bosses still in their arenas, as the
+        game does on a kill: defeat count plus one and the defeated flag in
+        both copies, and the map's defeated flag, which keeps the boss out of
+        its arena. Rewards and other effects of the fight are not given.
+        Return how many bosses changed."""
+        changed = 0
+        for fight in self._selected(row_ids):
+            span = self._map_flag_span(fight.killed_flag)
+            if span is None or self._data[span[0]] & span[1]:
+                continue
+            counts, _flags, _in_map = self._read(fight)
+            defeats = min(max(counts) + 1, BOSS_MAX_DEFEATS)
+            for offset in self._value_offsets(fight.defeat_value):
+                struct.pack_into("<I", self._data, offset, defeats)
+            for offset, mask in self._global_flag_spans(fight.once_killed_flag):
+                self._data[offset] |= mask
+            self._data[span[0]] |= span[1]
+            changed += 1
+        return changed
+
+    def set_defeats(self, row_ids: Iterable[int], defeats: int) -> int:
+        """Set the defeat count of the selected bosses in both copies and set
+        their defeated flag, which every counted defeat has. The map flag is
+        kept, so a boss in its arena stays there. Return how many bosses
+        changed. Raises ValueError outside 1 to BOSS_MAX_DEFEATS, since a count
+        of 0 with the defeated flag set is an invalid state."""
+        if not 1 <= defeats <= BOSS_MAX_DEFEATS:
+            raise ValueError(f"Defeat count must be 1 to {BOSS_MAX_DEFEATS}")
+        changed = 0
+        for fight in self._selected(row_ids):
+            touched = False
+            for offset in self._value_offsets(fight.defeat_value):
+                if struct.unpack_from("<I", self._data, offset)[0] != defeats:
+                    struct.pack_into("<I", self._data, offset, defeats)
+                    touched = True
+            for offset, mask in self._global_flag_spans(fight.once_killed_flag):
+                if not self._data[offset] & mask:
+                    self._data[offset] |= mask
+                    touched = True
+            changed += touched
         return changed
 
 
@@ -1705,6 +1948,29 @@ class DS2Save:
         if base < 0 or base + top >= len(data):
             return None
         return NpcStates(data, base, view.anchor)
+
+    def bosses(self, slot_index: int) -> BossStates | None:
+        """The slot's boss records, or None when the slot holds no bonfire data
+        to locate them from or the regulation has no boss fights."""
+        data = self.container.get_entry(BIG_ENTRY_START + slot_index)
+        view = Bonfires(data)
+        if not view.found:
+            return None
+        try:
+            fights = self.regulation.boss_fights()
+        except ValueError:
+            return None
+        if not fights:
+            return None
+        maps = []
+        offset = view.anchor - _MAP_RECORDS_BEFORE_IDS
+        while 0 <= offset and offset + 4 <= len(data):
+            map_id = struct.unpack_from("<I", data, offset)[0]
+            if map_id & 0xFFFF or not map_id:
+                break
+            maps.append(map_id)
+            offset += _MAP_RECORD_SIZE
+        return BossStates(data, view.anchor, fights, maps)
 
     def slot_state(self, slot_index: int) -> SlotState:
         """Classify a slot.

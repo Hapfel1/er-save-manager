@@ -56,6 +56,12 @@ level and attributes. Row 10 and the rows from 500 up are not classes.
 Level-up cost: PlayerLevelUpSoulsParam row N is the soul cost of going from
 level N to N + 1 (row 999 is not a level). Rows 0-850 cover every level the
 game allows.
+Bosses: BossBattleParam has one row per boss fight. killedEventId is the map
+event flag the fight sets on a win, onceKilledEventId the global "ever
+defeated" event flag, bonfireEventValueId the global event value counting
+defeats, and bonfireId the bonfire whose Bonfire Ascetic the fight belongs to.
+Some fights have a second row for a variant (multiplayer, first phase) that
+repeats or zeroes these ids.
 Infusion index n is the value stored in the second byte of an inventory
 entry's unk_2. The order is the material order of CustomAttrCostParam, which
 lists one infusion stone per index: Palestone, Firedrake, Faintstone,
@@ -143,6 +149,11 @@ _CLASS_ROWS = range(20, 111, 10)
 # PlayerLevelUpSoulsParam
 _LEVEL_UP_SOULS = 0x8  # s32
 _LEVEL_UP_MAX_ROW = 850
+# BossBattleParam, ids stored as u32
+_BOSS_KILLED_FLAG = 0x10
+_BOSS_ONCE_KILLED_FLAG = 0x14
+_BOSS_DEFEAT_VALUE = 0x18
+_BOSS_BONFIRE_ID = 0x40  # u16
 
 
 class _Param:
@@ -224,6 +235,17 @@ class ClassBase:
 
 
 @dataclass(frozen=True)
+class BossFight:
+    """Event ids of one boss fight, from its BossBattleParam row."""
+
+    row_id: int
+    killed_flag: int
+    once_killed_flag: int
+    defeat_value: int
+    bonfire_id: int
+
+
+@dataclass(frozen=True)
 class _ItemLimits:
     max_held: int
     max_upgrade: int = 0
@@ -242,11 +264,13 @@ class Regulation:
         attunement_slots: dict[int, int],
         class_bases: dict[int, ClassBase],
         level_up_souls: dict[int, int],
+        boss_fights: tuple[BossFight, ...] = (),
     ) -> None:
         self._items = items
         self._attunement_slots = attunement_slots
         self._class_bases = class_bases
         self._level_up_souls = level_up_souls
+        self._boss_fights = boss_fights
 
     @classmethod
     def from_entry(cls, entry: bytes | bytearray) -> Regulation:
@@ -347,7 +371,26 @@ class Regulation:
                 for level in costs.ids()
                 if level <= _LEVEL_UP_MAX_ROW
             }
-        return cls(items, attunement_slots, class_bases, level_up_souls)
+        boss_fights: list[BossFight] = []
+        if "BossBattleParam.param" in files:
+            battles = param("BossBattleParam.param")
+            seen: set[int] = set()
+            for row_id in battles.ids():
+                fight = BossFight(
+                    row_id,
+                    battles.s32(row_id, _BOSS_KILLED_FLAG),
+                    battles.s32(row_id, _BOSS_ONCE_KILLED_FLAG),
+                    battles.s32(row_id, _BOSS_DEFEAT_VALUE),
+                    battles.u16(row_id, _BOSS_BONFIRE_ID),
+                )
+                # Variant rows either repeat their fight's ids or hold none.
+                if fight.once_killed_flag <= 0 or fight.once_killed_flag in seen:
+                    continue
+                seen.add(fight.once_killed_flag)
+                boss_fights.append(fight)
+        return cls(
+            items, attunement_slots, class_bases, level_up_souls, tuple(boss_fights)
+        )
 
     @classmethod
     def from_container(cls, container) -> Regulation:
@@ -392,6 +435,10 @@ class Regulation:
                 return None
             total += cost
         return total
+
+    def boss_fights(self) -> tuple[BossFight, ...]:
+        """Every boss fight in BossBattleParam order, one per fight."""
+        return self._boss_fights
 
     def durability(self, item_id: int) -> float | None:
         """Maximum durability of a weapon, armor piece or ring, or None when

@@ -7,6 +7,7 @@ import tkinter as tk
 import customtkinter as ctk
 
 from er_save_manager.games.DS2.bonfire_tab import DS2BonfirePanel
+from er_save_manager.games.DS2.boss_tab import DS2BossPanel
 from er_save_manager.games.DS2.inventory_tab import DS2InventoryPanel
 from er_save_manager.games.DS2.npc_tab import DS2NpcPanel
 from er_save_manager.games.DS2.regulation import ClassBase
@@ -77,6 +78,7 @@ class DS2EditorTab:
         self.inventory_panel: DS2InventoryPanel | None = None
         self.bonfire_panel: DS2BonfirePanel | None = None
         self.npc_panel: DS2NpcPanel | None = None
+        self.boss_panel: DS2BossPanel | None = None
 
         self._baseline_stats: dict[str, int] = {}
         self._baseline_level: int = 0
@@ -127,6 +129,7 @@ class DS2EditorTab:
         self.tabview.add("Inventory")
         self.tabview.add("Bonfires")
         self.tabview.add("NPCs")
+        self.tabview.add("Bosses")
 
         self._build_stats_tab(self.tabview.tab("Stats"))
 
@@ -159,6 +162,16 @@ class DS2EditorTab:
             show_toast=self.show_toast,
         )
         self.npc_panel.setup_ui()
+
+        yield
+        self.boss_panel = DS2BossPanel(
+            self.tabview.tab("Bosses"),
+            get_save=self.get_save,
+            get_slot_index=lambda: self._slot_index,
+            get_save_path=self.get_save_path,
+            show_toast=self.show_toast,
+        )
+        self.boss_panel.setup_ui()
 
         yield
         self.refresh()
@@ -482,6 +495,8 @@ class DS2EditorTab:
             self.bonfire_panel.refresh()
         if self.npc_panel is not None:
             self.npc_panel.refresh()
+        if self.boss_panel is not None:
+            self.boss_panel.refresh()
 
     @staticmethod
     def _class_display(class_id: int) -> str:
