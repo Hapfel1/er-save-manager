@@ -3,6 +3,96 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 2.1.0
+**Released:** October 08, 2026
+
+
+### ✨ New Features
+
+- ER: Recalculate PlayerGameDataHash, sync runes memory, edit gesture wheel ([466824c](https://github.com/Hapfel1/er-save-manager/commit/466824cafed2d372f77b4994bccb5db8db31e1a9))
+
+- ER: Add item pickup checklist with respawn option to Event Flags ([5ce41a3](https://github.com/Hapfel1/er-save-manager/commit/5ce41a3d401e8d2eca614e39598737b1c7b7dad0))
+
+- ER: Add merchant restock and Convergence pickup data ([86e65a5](https://github.com/Hapfel1/er-save-manager/commit/86e65a53c936bf723a25560f456a7d99d300644b))
+
+- ER: Add Sites of Grace and missing maps to known locations ([bda73ec](https://github.com/Hapfel1/er-save-manager/commit/bda73ec426b930ff6077150a2a09f7d577d76d94))
+
+- DS3: Read starting class, validate stats, souls and names ([2f5edd2](https://github.com/Hapfel1/er-save-manager/commit/2f5edd20a53a15a5117bcc6416a2b6fa570ae225))
+
+- DS2: Track soul memory and starting class for level and souls edits ([d56fd4e](https://github.com/Hapfel1/er-save-manager/commit/d56fd4e0e05306d7966572160342e358e3293af3))
+
+- DS2: Add boss tab with state check, repair, respawn and kill ([1ef4841](https://github.com/Hapfel1/er-save-manager/commit/1ef4841040d7118facfdaafbc7585eb11c5950e4))
+
+- NR: Support decrypted PlayStation memory.dat saves ([92027f9](https://github.com/Hapfel1/er-save-manager/commit/92027f99e621440e95a69071ff33cf5c20f20d35))
+
+- General: Show per-game adjusted online ban warning for vanilla saves in all games ([b376e97](https://github.com/Hapfel1/er-save-manager/commit/b376e97157249d220b099ac46734bf235c4ddadb))
+
+- General: Add save fixer for DS3, DSR, DS2 and Nightreign ([e679650](https://github.com/Hapfel1/er-save-manager/commit/e6796504ea88e85ee594d514389ce9021d416a66))
+
+
+### 🔧 Bug Fixes
+
+- ER: Shift equipment offsets on gaitem resize, correct spell slot cap ([074150d](https://github.com/Hapfel1/er-save-manager/commit/074150df310b45a4393e2b7e2def1c0e026d4833))
+
+- ER: Explain event flags outside the save's flag blocks ([9b5bd19](https://github.com/Hapfel1/er-save-manager/commit/9b5bd1964d4da336962e052b774e287c3cd48375))
+
+- ER: Keep the load screen profile intact on .erc export and import ([4997919](https://github.com/Hapfel1/er-save-manager/commit/499791951e63076d0496d10870e80fe2684c0c76))
+
+- ER: Match weapon types to gem mount columns, require AoW for infusion ([f0344d2](https://github.com/Hapfel1/er-save-manager/commit/f0344d28f65458095b1b8a47a9760371450c100b))
+
+- ER: Match weapon and AoW data to game params, add Convergence variants ([ebb65bf](https://github.com/Hapfel1/er-save-manager/commit/ebb65bfed20fc24a51fd31554f4967dc10d0a00d))
+
+- ER: Repair save corruption caused by event flag splices hidden by a NetMan size error ([6a277ac](https://github.com/Hapfel1/er-save-manager/commit/6a277aca2cf1924c4f465b9189a1bb927964b481))
+
+- ER: Repair multi-point event flag splices and report what repairs reset ([6221476](https://github.com/Hapfel1/er-save-manager/commit/622147653c6dd38f6804b87d3df8690a539a8afe))
+
+- DS3: Read and write NG+ counter from section 0x30 ([2eaa7f3](https://github.com/Hapfel1/er-save-manager/commit/2eaa7f36623a0e8d316aec0ec8013be680557bdf))
+
+- DS3: Take NPC names from game data, flag 1075 is Yoel of Londor ([ca015fc](https://github.com/Hapfel1/er-save-manager/commit/ca015fc3925eb2406e46abd5648480733dd80746))
+
+- DS2: Sync cached levels on save, cap names at 14 characters ([aa4236a](https://github.com/Hapfel1/er-save-manager/commit/aa4236a364a04e5b9eb48f74fbc909e2986ec223))
+
+- DS2: Repair cycle soul memory ([fdcc670](https://github.com/Hapfel1/er-save-manager/commit/fdcc670665052de26a1052609f5b44d1bbf56d73))
+
+- DS2: Set bonfire intensity in the Ascetic array ([ca7f2e8](https://github.com/Hapfel1/er-save-manager/commit/ca7f2e846f8d480c182ca400533ba22369119537))
+
+- DS2: Include the NG+ cycle in bonfire intensity ([e4fafe5](https://github.com/Hapfel1/er-save-manager/commit/e4fafe518c7830d3b87ba85fdd226dc372017f84))
+
+- DSR: Correct class table, validate stats, hide cut items in search ([b580c1a](https://github.com/Hapfel1/er-save-manager/commit/b580c1a0ca1e582bbf96764ed648b6a4be552617))
+
+- NR: Reject relic effect combinations the game cannot roll ([8f624f7](https://github.com/Hapfel1/er-save-manager/commit/8f624f71fadcbed7519446d0ac3994a4cf7e8d98))
+
+- General: Size scrollable dropdown popups correctly under display scaling ([64e7520](https://github.com/Hapfel1/er-save-manager/commit/64e7520c5214d1b47bdbf2bcd30276ba6b93a204))
+
+- General: Notify on external save changes for all games ([513049f](https://github.com/Hapfel1/er-save-manager/commit/513049f11b333cca82dc7eb78ad3d3f6ebc8c605))
+
+
+### 🎨 User Interface
+
+- ER: Added rename loadout functionality ([bf92a1b](https://github.com/Hapfel1/er-save-manager/commit/bf92a1b754755f0bae10a3ded630c5b21969da3f))
+
+- ER: Surface Replace CSNetMan guidance in Character Details ([b3cc35b](https://github.com/Hapfel1/er-save-manager/commit/b3cc35b992b6208d0634db6af76f5b39008d1328))
+
+- NR: Restyled Save Inspector Tab ([5b18bc1](https://github.com/Hapfel1/er-save-manager/commit/5b18bc1ac43d02c8b7f40063669a48ed70e76f11))
+
+- General: Reworked dropdown fields ([6c78d8c](https://github.com/Hapfel1/er-save-manager/commit/6c78d8c249a92ddab89a5dba08b8fb7f6b947ebc))
+
+- General: Adjust "save modified externally" window ([3600535](https://github.com/Hapfel1/er-save-manager/commit/3600535093689640a3b644b9d2eaeeb812eaf720))
+
+
+### 📖 Documentation
+
+- General: Note new validation in the vanilla save ban warning ([4a5e55c](https://github.com/Hapfel1/er-save-manager/commit/4a5e55c18fd774cbe207760847111055eb4c4f79))
+
+- General: Update README to reflect new additions ([104253d](https://github.com/Hapfel1/er-save-manager/commit/104253db9f80edc512cacc56b00308ca39db86e0))
+
+
+### 📦 Dependencies
+
+- General: Bump taiki-e/install-action ([5c52e54](https://github.com/Hapfel1/er-save-manager/commit/5c52e5480489b66cee684eb2baed13048feeed80))
+
+
+---
 ## 📦 Release 2.0.1
 **Released:** October 02, 2026
 
@@ -1811,6 +1901,7 @@ implementation) ([19bee2c](https://github.com/Hapfel1/er-save-manager/commit/19b
 
 
 ---
+[2.1.0]: https://github.com/Hapfel1/er-save-manager/compare/v2.0.1..v2.1.0
 [2.0.1]: https://github.com/Hapfel1/er-save-manager/compare/v2.0.0..v2.0.1
 [2.0.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.12.2..v2.0.0
 [1.12.2]: https://github.com/Hapfel1/er-save-manager/compare/v1.12.1..v1.12.2
