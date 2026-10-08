@@ -9,7 +9,11 @@ from typing import TYPE_CHECKING
 import customtkinter as ctk
 
 from er_save_manager.backup.manager import BackupManager
-from er_save_manager.data.locations import MapLocation, get_all_locations
+from er_save_manager.data.locations import (
+    MapLocation,
+    get_all_locations,
+    get_grace_locations,
+)
 from er_save_manager.editors.world_state import WorldStateEditor
 from er_save_manager.parser.er_types import FloatVector3, MapId
 from er_save_manager.ui import palette
@@ -42,7 +46,9 @@ class WorldStateTab:
         self.editor: WorldStateEditor | None = None
         self._map_image_path = None  # set via set_map_image_path()
 
-        self.all_locations: list[MapLocation] = get_all_locations()
+        self.all_locations: list[MapLocation] = (
+            get_all_locations() + get_grace_locations()
+        )
         self.filtered_locations: list[MapLocation] = self.all_locations.copy()
 
         self.teleport_mode = tk.StringVar(value="known")
@@ -311,7 +317,7 @@ class WorldStateTab:
         m60_locations = [
             loc
             for loc in self.all_locations
-            if loc.map_id_str.startswith("m60_") and loc.map_id_str.endswith("_00")
+            if loc.tile_type == "small" and loc.map_id_str.startswith("m60_")
         ]
         info = self.editor.get_current_location()
         current_map_id = info.get("map_id_str")
@@ -416,9 +422,10 @@ class WorldStateTab:
     def _update_location_list(self):
         self.location_listbox.delete(0, tk.END)
         for loc in self.filtered_locations:
+            grace_tag = " [Grace]" if loc.tile_type == "grace" else ""
             dlc_tag = " [DLC]" if loc.is_dlc else ""
             self.location_listbox.insert(
-                tk.END, f"{loc.map_id_str}  {loc.name}{dlc_tag}"
+                tk.END, f"{loc.map_id_str}  {loc.name}{grace_tag}{dlc_tag}"
             )
 
     def _teleport_to_known(self):
@@ -473,7 +480,7 @@ class WorldStateTab:
                 save=self.get_save_file(),
             )
 
-        success, message = self.editor.teleport_to_map_id(loc.map_id_str)
+        success, message = self.editor.teleport_to_location(loc)
         if success:
             if save_path:
                 self.get_save_file().recalculate_checksums()

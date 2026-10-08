@@ -4,6 +4,8 @@ One entry per unique map ID. Teleporting sets the map_id field;
 the game spawns the player at the default position for that map.
 
 Tile types:
+  - grace: Site of Grace, safe_coords = the player warp point the game uses
+    for fast travel (several per map, so not part of LOCATIONS)
   - dungeon: Legacy dungeons, mini-dungeons, special areas
   - small (_00): Small overworld tiles (256x256 units, most detailed)
   - medium (_01): Medium overworld tiles (contain some enemies/graces spanning multiple small tiles)
@@ -55,12 +57,15 @@ def _location(
     )
 
 
+_ROWS = json.loads(
+    (Path(__file__).parent / "locations.json").read_text(encoding="utf-8")
+)
+
 LOCATIONS: dict[str, MapLocation] = {
-    row[0]: _location(*row)
-    for row in json.loads(
-        (Path(__file__).parent / "locations.json").read_text(encoding="utf-8")
-    )
+    row[0]: _location(*row) for row in _ROWS if row[2] != "grace"
 }
+
+GRACES: list[MapLocation] = [_location(*row) for row in _ROWS if row[2] == "grace"]
 
 
 def get_name_for_map_id(map_id_str: str) -> str:
@@ -70,6 +75,10 @@ def get_name_for_map_id(map_id_str: str) -> str:
 
 def get_all_locations() -> list[MapLocation]:
     return list(LOCATIONS.values())
+
+
+def get_grace_locations() -> list[MapLocation]:
+    return list(GRACES)
 
 
 def get_locations_by_type(tile_type: str) -> list[MapLocation]:

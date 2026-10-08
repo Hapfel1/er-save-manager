@@ -5,7 +5,11 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-from er_save_manager.data.locations import LOCATIONS, get_name_for_map_id
+from er_save_manager.data.locations import (
+    LOCATIONS,
+    MapLocation,
+    get_name_for_map_id,
+)
 from er_save_manager.parser.er_types import FloatVector3, MapId
 
 if TYPE_CHECKING:
@@ -115,7 +119,10 @@ class WorldStateEditor:
         loc = LOCATIONS.get(map_id_str)
         if loc is None:
             return False, f"Unknown map ID: {map_id_str}"
+        return self.teleport_to_location(loc)
 
+    def teleport_to_location(self, loc: MapLocation) -> tuple[bool, str]:
+        """Teleport character to a map or grace entry from the location database."""
         try:
             if loc.safe_coords is not None:
                 x, y, z = loc.safe_coords
