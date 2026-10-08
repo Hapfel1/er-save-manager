@@ -1,3 +1,5 @@
+fix er known locations
+
 research what csnetman has and corruption instead of the full replacement
 
 extend save file docs

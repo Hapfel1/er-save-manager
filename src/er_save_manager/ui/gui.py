@@ -682,7 +682,7 @@ class SaveManagerGUI:
             command=self.show_console_save_info,
             width=160,
         )
-        if self.active_game == "elden_ring":
+        if self.active_game in ("elden_ring", "nightreign"):
             self._ps_save_btn.pack(side=tk.RIGHT, padx=6, pady=10)
 
         _itemgib_btn = ctk.CTkButton(
@@ -729,9 +729,9 @@ class SaveManagerGUI:
         self.active_game = profile.key
         self._update_default_game_button()
 
-        # PS / Switch button is only relevant for Elden Ring
+        # PS / Switch button applies to Elden Ring and Nightreign
         if hasattr(self, "_ps_save_btn"):
-            if profile.key == "elden_ring":
+            if profile.key in ("elden_ring", "nightreign"):
                 self._ps_save_btn.pack(side=tk.RIGHT, padx=6, pady=10)
             else:
                 self._ps_save_btn.pack_forget()
@@ -1589,7 +1589,7 @@ class SaveManagerGUI:
 
         if profile:
             ext_str = " ".join(f"*{e}" for e in profile.extensions)
-            if profile.key == "elden_ring":
+            if profile.key in ("elden_ring", "nightreign"):
                 ext_str += " *.dat"
             filetypes = [(f"{profile.name} Saves", ext_str), ("All files", "*.*")]
             title = f"Select {profile.name} Save File"

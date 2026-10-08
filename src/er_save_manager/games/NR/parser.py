@@ -7,6 +7,13 @@ IV: prepended 16 bytes of each encrypted entry.
 Checksum: MD5(decrypted[4 : len-28]) stored at decrypted[len-28 : len-12].
           Remaining 12 bytes (len-12 : len) are PKCS7-like padding (0x0C * 12).
 
+PlayStation (decrypted memory.dat): 0x80-byte header, then each entry's
+decrypted[4 : len-28] back to back with no encryption, prefix or checksum.
+There is no size directory, so entries use fixed sizes and the file is
+recognized by its total length. Parsed PS entries are rebuilt into the PC
+decrypted layout (PC prefix + body + empty checksum tail), so slot offsets,
+copies and .nrc files are the same on both platforms.
+
 Entry layout:
   Entry 0-9:  character slots (slot 0 = first character, etc.)
   Entry 10:   global profile data (SteamID, Deep of Night progress, hero appearances)
@@ -208,6 +215,18 @@ _BND4_MAGIC = b"BND4"
 _ENTRY_MAGIC = bytes([0x40, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF])
 _BND4_HEADER_SZ = 64
 _ENTRY_STRIDE = 32
+_ENTRY_PREFIX = 4  # decrypted[0:4], outside the MD5 range
+
+# PS memory.dat: (PC decrypted prefix, body size) per entry
+_PS_HEADER_SZ = 0x80
+_PS_ENTRIES = (
+    *[(bytes.fromhex("10001000"), 0x100000)] * 10,
+    (bytes.fromhex("10000600"), 0x60000),
+    (bytes.fromhex("20002400"), 0x240010),
+    (bytes.fromhex("10004000"), 0x400000),
+    (bytes.fromhex("20002000"), 0x200010),
+)
+_PS_FILE_SIZE = _PS_HEADER_SZ + sum(size for _, size in _PS_ENTRIES)
 
 # Offsets relative to the end of the ItemEntry array
 _ACQ_COUNTER_REL = 0x6A  # next acquisition_id (u32)
@@ -331,15 +350,48 @@ class BND4Entry:
     """Metadata and decrypted content of one BND4 entry."""
 
     index: int
-    size: int  # encrypted size (includes IV)
+    size: int  # encrypted size (includes IV); PS: body size
     data_offset: int  # absolute offset in raw file
-    iv: bytes  # original IV (needed for re-encryption)
+    iv: bytes  # original IV (needed for re-encryption); PS: empty
     decrypted: bytearray = field(default_factory=bytearray)
+    is_ps: bool = False
 
     def patch_and_encrypt(self) -> bytes:
-        """Patch checksum and return re-encrypted bytes (same IV)."""
+        """Patch checksum and return re-encrypted bytes (same IV).
+
+        PS entries return the plain body instead.
+        """
+        if self.is_ps:
+            return bytes(self.decrypted[_ENTRY_PREFIX:-_CHECKSUM_TAIL])
         _patch_checksum(self.decrypted)
         return _encrypt_entry(self.iv, self.decrypted)
+
+
+def _is_ps_save(raw: bytes) -> bool:
+    return raw[:4] != _BND4_MAGIC and len(raw) == _PS_FILE_SIZE
+
+
+def _parse_ps_entries(raw: bytes) -> list[BND4Entry]:
+    """Split a PS memory.dat into entries in the PC decrypted layout."""
+    # Checksum tail as left by PC decryption: MD5 slot, then PKCS7 padding
+    pad = _CHECKSUM_TAIL - 16
+    tail = bytes(16) + bytes([pad]) * pad
+    entries = []
+    offset = _PS_HEADER_SZ
+    for i, (prefix, size) in enumerate(_PS_ENTRIES):
+        body = raw[offset : offset + size]
+        entries.append(
+            BND4Entry(
+                index=i,
+                size=size,
+                data_offset=offset,
+                iv=b"",
+                decrypted=bytearray(prefix + body + tail),
+                is_ps=True,
+            )
+        )
+        offset += size
+    return entries
 
 
 def _parse_bnd4_entries(raw: bytes) -> list[BND4Entry]:
@@ -1102,6 +1154,7 @@ class NightreignSave:
 
     raw: bytearray = field(default_factory=bytearray)
     entries: list[BND4Entry] = field(default_factory=list)  # all 14 entries, decrypted
+    is_ps: bool = False
 
     # Parsed high-level views
     slots: list[NightreignSlot] = field(default_factory=list)  # entries 0-9
@@ -1125,19 +1178,20 @@ class NightreignSave:
     @classmethod
     def from_bytes(cls, raw: bytes | bytearray) -> NightreignSave:
         raw = bytearray(raw)
-        entries = _parse_bnd4_entries(raw)
+        is_ps = _is_ps_save(raw)
+        entries = _parse_ps_entries(raw) if is_ps else _parse_bnd4_entries(raw)
         slots = [_parse_slot(entries[i].decrypted, i) for i in range(10)]
         profile = _parse_profile(entries[10].decrypted)
-        return cls(raw=raw, entries=entries, slots=slots, profile=profile)
+        return cls(raw=raw, entries=entries, slots=slots, profile=profile, is_ps=is_ps)
 
     def write_file(self, path: str | Path) -> None:
-        """Re-encrypt all modified entries and write save file."""
+        """Re-encrypt all modified entries (PS: write plain bodies) and save."""
         out = bytearray(self.raw)
         for entry in self.entries:
             enc = entry.patch_and_encrypt()
             if len(enc) != entry.size:
                 raise ValueError(
-                    f"Entry {entry.index} re-encrypted to {len(enc)} bytes, "
+                    f"Entry {entry.index} rebuilt to {len(enc)} bytes, "
                     f"header declares {entry.size}"
                 )
             out[entry.data_offset : entry.data_offset + entry.size] = enc
