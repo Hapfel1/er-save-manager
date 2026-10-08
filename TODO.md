@@ -1,12 +1,14 @@
 research what csnetman has and corruption instead of the full replacement
 
-extend save file docs
+ER full save documentation: decode and document every remaining unknown save struct
 
 DS2 event flag storage layout (single-action pairs + flagdiff.py)
 
 DS2 shared revive bytes (Rosabeth/Chloanne, Gren/Ornifex): check whether the shared byte holds separate bits
 
 DSR event flags, flag 0 and NPC states
+
+add missing bosses dsr
 
 DS3 death-state byte (kill pair in m51_01)
 

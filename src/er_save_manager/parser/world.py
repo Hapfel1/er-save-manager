@@ -441,83 +441,126 @@ class FieldArea:
 # ============================================================================
 
 
+WORLD_RECORD_TERMINATOR = 0xFFFFFFFF
+
+
+def _map_name(map_id: MapId) -> str:
+    d = map_id.data
+    return f"m{d[3]:02d}_{d[2]:02d}_{d[1]:02d}_{d[0]:02d}"
+
+
 @dataclass
-class WorldBlockChrData:
-    """World block character data (variable size)"""
+class WorldChrEntry:
+    """
+    Enemy part in a non-default state (u32).
 
-    magic: bytes = b"\x00\x00\x00\x00"
+    Bit 30 is always set, bits 16-29 hold the character model (cXXXX),
+    bits 2-15 the MSB part instance and bits 0-1 the state. Model and instance
+    name the MSB enemy part cXXXX_IIII of the owning map. State 3 is a kill
+    since the last rest; 1 and 2 are rare and their meaning is unknown.
+    """
+
+    value: int = 0
+
+    @property
+    def model(self) -> int:
+        return (self.value >> 16) & 0x3FFF
+
+    @property
+    def instance(self) -> int:
+        return (self.value >> 2) & 0x3FFF
+
+    @property
+    def state(self) -> int:
+        return self.value & 0x3
+
+    @property
+    def part_name(self) -> str:
+        return f"c{self.model:04d}_{self.instance:04d}"
+
+
+@dataclass
+class WorldChrMapRecord:
+    """
+    Enemy state of one loaded map ("CSBC" record).
+
+    Header: magic, MapId, u32 record size, u32 (enemy_part_count << 14 | n).
+    Followed by n WorldChrEntry values, zero padded to a 16-byte multiple.
+    enemy_part_count is the number of enemy parts in the map's MSB for the
+    game version that wrote the save.
+    """
+
     map_id: MapId = field(default_factory=MapId)
-    size: int = 0
-    unk0xc: int = 0
-    data: bytes = b""
+    enemy_part_count: int = 0
+    entries: list[WorldChrEntry] = field(default_factory=list)
 
-    @classmethod
-    def read(cls, f: BytesIO) -> WorldBlockChrData:
-        """Read WorldBlockChrData from stream"""
-        obj = cls()
-
-        # Read header (16 bytes total)
-        magic_bytes = f.read(4)
-        if len(magic_bytes) < 4:
-            # Hit end of stream, return terminator block
-            obj.size = -1
-            return obj
-
-        obj.magic = magic_bytes
-        obj.map_id = MapId.read(f)
-        obj.size = struct.unpack("<i", f.read(4))[0]
-        obj.unk0xc = struct.unpack("<I", f.read(4))[0]
-
-        if obj.size > 0x10:
-            obj.data = f.read(obj.size - 0x10)
-        return obj
+    @property
+    def map_name(self) -> str:
+        return _map_name(self.map_id)
 
     def write(self, f: BytesIO):
-        """Write WorldBlockChrData to stream"""
-        f.write(self.magic)
+        n = len(self.entries)
+        size = (16 + 4 * n + 15) // 16 * 16
+        f.write(b"CSBC")
         self.map_id.write(f)
-        f.write(struct.pack("<i", self.size))
-        f.write(struct.pack("<I", self.unk0xc))
-        if self.size > 0x10:
-            f.write(self.data)
+        f.write(struct.pack("<II", size, (self.enemy_part_count << 14) | n))
+        for entry in self.entries:
+            f.write(struct.pack("<I", entry.value))
+        f.write(b"\x00" * (size - 16 - 4 * n))
 
 
 @dataclass
 class WorldAreaChrData:
-    """World area character data (variable size with multiple blocks)"""
+    """
+    Decoded WorldArea data: per-map enemy state for the maps around the player.
 
-    magic: bytes = b"\x00\x00\x00\x00"
-    unk_0x21042700: int = 0
+    Header: magic "CHR ", u32 version (0x21042700), u64 unknown (0).
+    Then WorldChrMapRecord entries, ended by a 16-byte "CSBC" record whose
+    MapId is 0xFFFFFFFF. A record exists while its map is loaded; kills are
+    cleared on rest, event-driven dead/disabled parts are written again on load.
+    """
+
+    magic: bytes = b"CHR "
+    version: int = 0
     unk0x8: int = 0
-    unk0xc: int = 0
-    blocks: list[WorldBlockChrData] = field(default_factory=list)
+    records: list[WorldChrMapRecord] = field(default_factory=list)
+    terminator: bytes = b""
 
     @classmethod
-    def read(cls, f: BytesIO) -> WorldAreaChrData:
-        """Read WorldAreaChrData from stream"""
+    def from_bytes(cls, data: bytes) -> WorldAreaChrData | None:
+        """Decode WorldArea data; None when it does not re-encode byte-identical."""
+        if len(data) < 32 or data[:4] != b"CHR ":
+            return None
         obj = cls()
-        obj.magic = f.read(4)
-        obj.unk_0x21042700 = struct.unpack("<I", f.read(4))[0]
-        obj.unk0x8 = struct.unpack("<I", f.read(4))[0]
-        obj.unk0xc = struct.unpack("<I", f.read(4))[0]
-
-        max_blocks = 100  # Safety limit to prevent infinite loops
-        for _ in range(max_blocks):
-            block = WorldBlockChrData.read(f)
-            obj.blocks.append(block)
-            if block.size < 1:
+        obj.version, obj.unk0x8 = struct.unpack_from("<IQ", data, 4)
+        pos = 16
+        while pos + 16 <= len(data) and data[pos : pos + 4] == b"CSBC":
+            raw_map, size, head = struct.unpack_from("<III", data, pos + 4)
+            if raw_map == WORLD_RECORD_TERMINATOR:
+                obj.terminator = data[pos : pos + 16]
                 break
+            n = head & 0x3FFF
+            if size < 16 + 4 * n or pos + size > len(data):
+                return None
+            entries = struct.unpack_from(f"<{n}I", data, pos + 16)
+            obj.records.append(
+                WorldChrMapRecord(
+                    map_id=MapId(data[pos + 4 : pos + 8]),
+                    enemy_part_count=head >> 14,
+                    entries=[WorldChrEntry(v) for v in entries],
+                )
+            )
+            pos += size
+        return obj if obj.terminator and obj.to_bytes() == data else None
 
-        return obj
-
-    def write(self, f: BytesIO):
-        """Write WorldAreaChrData to stream"""
+    def to_bytes(self) -> bytes:
+        f = BytesIO()
         f.write(self.magic)
-        f.write(struct.pack("<I", self.unk_0x21042700))
-        f.write(struct.pack("<I", self.unk0x8))
-        f.write(struct.pack("<I", self.unk0xc))
-        for block in self.blocks:
-            block.write(f)
+        f.write(struct.pack("<IQ", self.version, self.unk0x8))
+        for record in self.records:
+            record.write(f)
+        f.write(self.terminator)
+        return f.getvalue()
 
 
 @dataclass
@@ -542,6 +585,10 @@ class WorldArea:
 
         return obj
 
+    def parse_chr(self) -> WorldAreaChrData | None:
+        """Decoded enemy state, or None when empty or not decodable."""
+        return WorldAreaChrData.from_bytes(self.data)
+
     def write(self, f: BytesIO):
         """Write WorldArea to stream"""
         f.write(struct.pack("<i", self.size))
@@ -555,63 +602,121 @@ class WorldArea:
 
 
 @dataclass
-class WorldGeomDataChunk:
-    """World geometry data chunk (variable size)"""
+class WorldGeomEntry:
+    """
+    Asset part in a non-default state (u32 key, u32 model).
+
+    key bits 15-31 hold the MSB part instance and bits 0-14 the state;
+    model is 10000000 + the AEG id (AssetEnvironmentGeometryParam row).
+    Together they name the MSB asset part AEGxxx_yyy_iiii of the owning map.
+    WorldGeomMan states: 1 broken, 3 picked since the last rest, 2 picked
+    permanently. WorldGeomMan2 entries are always 1.
+    """
+
+    key: int = 0
+    model: int = 0
+
+    @property
+    def instance(self) -> int:
+        return self.key >> 15
+
+    @property
+    def state(self) -> int:
+        return self.key & 0x7FFF
+
+    @property
+    def aeg_id(self) -> int:
+        return self.model - 10000000
+
+    @property
+    def part_name(self) -> str:
+        aeg = self.aeg_id
+        return f"AEG{aeg // 1000:03d}_{aeg % 1000:03d}_{self.instance:04d}"
+
+
+@dataclass
+class WorldGeomMapRecord:
+    """
+    Asset state of one map.
+
+    Header: MapId, u32 record size (16 + 8n), u32 n, u32 unknown.
+    Followed by n WorldGeomEntry. The unknown u32 is constant per map and
+    game version (same across characters); its meaning is not known.
+    """
 
     map_id: MapId = field(default_factory=MapId)
-    size: int = 0
-    unk_0x8: int = 0
-    data: bytes = b""
+    unk0xc: int = 0
+    entries: list[WorldGeomEntry] = field(default_factory=list)
 
-    @classmethod
-    def read(cls, f: BytesIO) -> WorldGeomDataChunk:
-        """Read WorldGeomDataChunk from stream"""
-        obj = cls()
-        obj.map_id = MapId.read(f)
-        obj.size = struct.unpack("<i", f.read(4))[0]
-        obj.unk_0x8 = struct.unpack("<Q", f.read(8))[0]
-        if obj.size > 0x10:
-            obj.data = f.read(obj.size - 0x10)
-        return obj
+    @property
+    def map_name(self) -> str:
+        return _map_name(self.map_id)
 
     def write(self, f: BytesIO):
-        """Write WorldGeomDataChunk to stream"""
+        n = len(self.entries)
         self.map_id.write(f)
-        f.write(struct.pack("<i", self.size))
-        f.write(struct.pack("<Q", self.unk_0x8))
-        if self.size > 0x10:
-            f.write(self.data)
+        f.write(struct.pack("<III", 16 + 8 * n, n, self.unk0xc))
+        for entry in self.entries:
+            f.write(struct.pack("<II", entry.key, entry.model))
 
 
 @dataclass
 class WorldGeomData:
-    """World geometry data (variable size with multiple chunks)"""
+    """
+    Decoded WorldGeomMan / WorldGeomMan2 data.
 
-    magic: bytes = b"\x00\x00\x00\x00"
-    unk_0x4: int = 0
-    chunks: list[WorldGeomDataChunk] = field(default_factory=list)
+    Header: magic ("MOEG" for WorldGeomMan, "FOEG" for WorldGeomMan2) and a
+    u32 version (0x21042600). Then WorldGeomMapRecord entries, ended by a
+    16-byte record whose MapId is 0xFFFFFFFF.
+
+    WorldGeomMan covers the maps around the player: broken assets and picked
+    assets, cleared on rest except permanent pickups (state 2).
+    WorldGeomMan2 keeps every map ever visited and lists the permanently
+    picked one-time nodes (assets with isEnableRepick set in
+    AssetEnvironmentGeometryParam: Arteria Leaf, smithing stones, gloveworts).
+    """
+
+    magic: bytes = b""
+    version: int = 0
+    records: list[WorldGeomMapRecord] = field(default_factory=list)
+    terminator: bytes = b""
 
     @classmethod
-    def read(cls, f: BytesIO) -> WorldGeomData:
-        """Read WorldGeomData from stream"""
-        obj = cls()
-        obj.magic = f.read(4)
-        obj.unk_0x4 = struct.unpack("<I", f.read(4))[0]
-        max_chunks = 50  # Safety limit to prevent infinite loops
-        for _ in range(max_chunks):
-            chunk = WorldGeomDataChunk.read(f)
-            obj.chunks.append(chunk)
-            if chunk.size < 1:
+    def from_bytes(cls, data: bytes) -> WorldGeomData | None:
+        """Decode WorldGeomMan data; None when it does not re-encode byte-identical."""
+        if len(data) < 24 or data[:4] not in (b"MOEG", b"FOEG"):
+            return None
+        obj = cls(magic=data[:4], version=struct.unpack_from("<I", data, 4)[0])
+        pos = 8
+        while pos + 16 <= len(data):
+            raw_map, size, n, unk = struct.unpack_from("<IIII", data, pos)
+            if raw_map == WORLD_RECORD_TERMINATOR:
+                obj.terminator = data[pos : pos + 16]
                 break
+            if size != 16 + 8 * n or pos + size > len(data):
+                return None
+            values = struct.unpack_from(f"<{2 * n}I", data, pos + 16)
+            obj.records.append(
+                WorldGeomMapRecord(
+                    map_id=MapId(data[pos : pos + 4]),
+                    unk0xc=unk,
+                    entries=[
+                        WorldGeomEntry(values[k], values[k + 1])
+                        for k in range(0, 2 * n, 2)
+                    ],
+                )
+            )
+            pos += size
+        return obj if obj.terminator and obj.to_bytes() == data else None
 
-        return obj
-
-    def write(self, f: BytesIO):
-        """Write WorldGeomData to stream"""
+    def to_bytes(self) -> bytes:
+        f = BytesIO()
         f.write(self.magic)
-        f.write(struct.pack("<I", self.unk_0x4))
-        for chunk in self.chunks:
-            chunk.write(f)
+        f.write(struct.pack("<I", self.version))
+        for record in self.records:
+            record.write(f)
+        f.write(self.terminator)
+        return f.getvalue()
 
 
 @dataclass
@@ -635,6 +740,10 @@ class WorldGeomMan:
                 pass
 
         return obj
+
+    def parse_geom(self) -> WorldGeomData | None:
+        """Decoded asset state, or None when empty or not decodable."""
+        return WorldGeomData.from_bytes(self.data)
 
     def write(self, f: BytesIO):
         """Write WorldGeomMan to stream"""
