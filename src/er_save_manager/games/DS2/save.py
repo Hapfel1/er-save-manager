@@ -32,8 +32,9 @@ Entry map (23 total):
   11-20    Per-character large slot (~501KB), one per character slot.
            Holds per-character data (differs between characters starting at
            offset 0x732, identical padding after ~0x5A87F). Mostly unmapped.
-           Bonfire levels, the last rested bonfire, NPC flags and NPC kill
-           records are located through the bonfire id array (see Bonfires);
+           Bonfire states, the last rested bonfire, NPC flags, NPC kill
+           records and boss records are located through the bonfire id array
+           (see Bonfires);
            everything else is preserved as-is on save.
   21       Single ~2MB entry: zlib-compressed (8-byte size header, then a
            standard zlib stream) nested BND4 archive of ~170 real entries.
@@ -66,12 +67,13 @@ from pathlib import Path
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from er_save_manager.games.DS2.bonfire_database import BONFIRES
+from er_save_manager.games.DS2.boss_database import BOSS_NAMES
 from er_save_manager.games.DS2.item_database import (
     SEAMLESS_ITEMS,
     SEAMLESS_MAX_STACK,
 )
 from er_save_manager.games.DS2.npc_database import NPCS, NpcEntry
-from er_save_manager.games.DS2.regulation import ClassBase, Regulation
+from er_save_manager.games.DS2.regulation import BossFight, ClassBase, Regulation
 from er_save_manager.own_writes import record_write
 
 DS2_KEY = bytes.fromhex("599f9b699640a55236ee2d70835ec744")
@@ -247,18 +249,25 @@ FLAG_REGION_START = 0x11E00
 FLAG_REGION_END = 0x1B2FC
 
 # Bonfire state in a slot's large entry. An array of ascending u16 ids, one per
-# bonfire in BONFIRES, is followed by one level byte per id. The level array
-# starts _BONFIRE_ID_CAPACITY ids after the id array, which is 0x200 bytes at
-# two bytes per id. A level is 0 when unlit and 1 when lit, and grows when
-# Bonfire Ascetics are used. Saves hold up to two copies of the pair, and a
-# slot can lack the second. The game rewrites both, so every copy found is
-# updated.
+# bonfire in BONFIRES, is followed by two byte arrays in the same order:
+# - lit state, _BONFIRE_ID_CAPACITY ids (0x200 bytes) after the id array:
+#   0 unlit, 1 lit
+# - Bonfire Ascetics burned there, _BONFIRE_ID_CAPACITY bytes after the lit
+#   array. The game shows intensity as this count + 1 + the NG+ cycle, up to
+#   BONFIRE_MAX_INTENSITY.
+# Burning an Ascetic also sets an 8-byte value per bonfire, starting
+# _BONFIRE_ASCETIC_MARK_AFTER_IDS bytes after the id array, to -5. Its meaning
+# is unknown and the shown intensity does not depend on it, so it is left
+# untouched.
+# Saves hold up to three copies of the three arrays, and a slot can lack the
+# extra ones. The copies hold the same values, so every copy found is updated.
 _BONFIRE_ID_CAPACITY = 256
-# The stored level stops at 99, so a larger byte marks a copy as unreadable.
+# A lit byte above this marks a copy as unreadable. The game writes only 0 and
+# 1; older editor versions stored levels up to 8 there.
 _BONFIRE_PLAUSIBLE_LEVEL = 99
-# Highest level the editor writes. Difficulty stops rising at level 8 while the
-# stored level keeps counting up to 99.
-BONFIRE_MAX_LEVEL = 8
+_BONFIRE_ASCETIC_MARK_AFTER_IDS = 0x400
+# Highest intensity the game shows. Difficulty stops rising at 8.
+BONFIRE_MAX_INTENSITY = 8
 
 # Two more structures sit at fixed distances from the first bonfire id array in
 # the same entry, so they are found through it.
@@ -314,6 +323,34 @@ _NPC_KILL_RECORDS: dict[str, tuple[tuple[int, int], ...]] = {
     "Straid of Olaphis": ((-0x25452, 1),),
     "Felkin the Outcast": ((-0x21D06, 1),),
 }
+# Event data, found through the first bonfire id array like the structures
+# above. Flags are one bit each, most significant bit first.
+# - Global event flags from _GLOBAL_FLAG_FIRST up start _GLOBAL_FLAGS_IN_OBJECT
+#   bytes into the NPC flag object.
+# - Map event flags A BB LLLLLL (map mA0_BB, local flag L) have one block of
+#   _MAP_FLAG_BLOCK_SIZE bytes per map for local flags 0 to 199. The blocks
+#   follow the order of the per-map records, the first one starting
+#   _MAP_FLAGS_BEFORE_IDS bytes before the id array.
+# - Global event values are u32 counters indexed by id, starting
+#   _EVENT_VALUES_BEFORE_IDS bytes before the id array.
+# Global flags and values have a second copy _EVENT_COPY_DISTANCE bytes further
+# on, which the game updates together with the first. The map flags in that
+# copy are not kept in step, so only the first copy's are read and written.
+_GLOBAL_FLAG_FIRST = 100000
+_GLOBAL_FLAGS_IN_OBJECT = 8
+_MAP_FLAGS_BEFORE_IDS = 0xBD0
+_MAP_FLAG_BLOCK_SIZE = 25
+_EVENT_VALUES_BEFORE_IDS = 0x7B4
+_EVENT_COPY_DISTANCE = 0x604C
+# Per-map records, one per map in a fixed order, each starting with a u32 map
+# id (area << 24 | block << 16). The first starts _MAP_RECORDS_BEFORE_IDS bytes
+# before the first bonfire id array.
+_MAP_RECORDS_BEFORE_IDS = 0x282A8
+_MAP_RECORD_SIZE = 0xB10
+# Highest defeat count the editor writes. The game stores a u32 and adds one
+# per win.
+BOSS_MAX_DEFEATS = 999
+
 # The byte after Lenigrast's last entry goes from 0 to 3 on his kill, but
 # holds other values in slots without that kill, so it is cleared only
 # together with a present record.
@@ -335,32 +372,38 @@ _CACHE_CLASS_FROM_NAME = 0x4C
 
 
 class Bonfires:
-    """View over the bonfire levels in one slot's large entry.
+    """View over the bonfire lit states and intensities in one slot's large
+    entry. cycle is the character's 0-based NG+ cycle, which the game adds to
+    every bonfire's intensity.
 
     The id arrays are found by their content rather than by a fixed offset. A
-    copy whose level bytes are implausible is ignored, so unreadable slot data
+    copy whose lit bytes are implausible is ignored, so unreadable slot data
     yields no blocks.
     """
 
-    def __init__(self, data: bytearray) -> None:
+    def __init__(self, data: bytearray, cycle: int = 0) -> None:
         self._data = data
+        self._cycle = max(0, cycle)
         self._ids = list(BONFIRES)
         pattern = struct.pack(f"<{len(self._ids)}H", *self._ids)
         self._id_offsets: list[int] = []
-        self._level_offsets: list[int] = []
+        self._lit_offsets: list[int] = []
         content = bytes(data)
         start = 0
         while (found := content.find(pattern, start)) != -1:
-            levels = found + _BONFIRE_ID_CAPACITY * 2
-            end = levels + len(self._ids)
-            if end <= len(data) and max(data[levels:end]) <= _BONFIRE_PLAUSIBLE_LEVEL:
+            lit = found + _BONFIRE_ID_CAPACITY * 2
+            end = lit + _BONFIRE_ID_CAPACITY + len(self._ids)
+            if (
+                end <= len(data)
+                and max(data[lit : lit + len(self._ids)]) <= _BONFIRE_PLAUSIBLE_LEVEL
+            ):
                 self._id_offsets.append(found)
-                self._level_offsets.append(levels)
+                self._lit_offsets.append(lit)
             start = found + len(pattern)
 
     @property
     def found(self) -> bool:
-        return bool(self._level_offsets)
+        return bool(self._lit_offsets)
 
     @property
     def anchor(self) -> int:
@@ -368,11 +411,27 @@ class Bonfires:
         other structures stored beside it."""
         return self._id_offsets[0]
 
-    def levels(self) -> dict[int, int]:
-        """Bonfire id to level, read from the first copy."""
-        base = self._level_offsets[0]
+    def lit(self) -> dict[int, bool]:
+        """Bonfire id to lit state, read from the first copy."""
+        base = self._lit_offsets[0]
         return {
-            bonfire_id: self._data[base + index]
+            bonfire_id: bool(self._data[base + index])
+            for index, bonfire_id in enumerate(self._ids)
+        }
+
+    @property
+    def min_intensity(self) -> int:
+        """Intensity of a bonfire without Bonfire Ascetics in this cycle."""
+        return min(self._cycle + 1, BONFIRE_MAX_INTENSITY)
+
+    def intensities(self) -> dict[int, int]:
+        """Bonfire id to the intensity the game shows, read from the first
+        copy."""
+        base = self._lit_offsets[0] + _BONFIRE_ID_CAPACITY
+        return {
+            bonfire_id: min(
+                self._data[base + index] + self.min_intensity, BONFIRE_MAX_INTENSITY
+            )
             for index, bonfire_id in enumerate(self._ids)
         }
 
@@ -388,14 +447,13 @@ class Bonfires:
 
     def set_lit(self, bonfire_ids: Iterable[int], lit: bool) -> int:
         """Light or unlight bonfires in every copy and return how many changed
-        in the first copy. Lighting keeps levels above 0. Unlighting resets the
-        level to 0 and never touches the last rested bonfire, since the game
-        loads the character there."""
+        in the first copy. Intensities are kept. Unlighting never touches the
+        last rested bonfire, since the game loads the character there."""
         wanted = {b for b in bonfire_ids if b in BONFIRES}
         if not lit:
             wanted.discard(self.last_rested)
         changed = 0
-        for copy, base in enumerate(self._level_offsets):
+        for copy, base in enumerate(self._lit_offsets):
             for index, bonfire_id in enumerate(self._ids):
                 if bonfire_id not in wanted:
                     continue
@@ -410,27 +468,36 @@ class Bonfires:
                     changed += 1
         return changed
 
-    def set_level(self, bonfire_ids: Iterable[int], level: int) -> int:
-        """Set the level of bonfires in every copy and return how many changed
-        in the first copy. A level of 1 or more lights an unlit bonfire. Raises
-        ValueError outside 1 to BONFIRE_MAX_LEVEL, since level 0 is unlighting,
-        which set_lit handles."""
-        if not 1 <= level <= BONFIRE_MAX_LEVEL:
-            raise ValueError(f"Bonfire level must be 1 to {BONFIRE_MAX_LEVEL}")
+    def set_intensity(self, bonfire_ids: Iterable[int], intensity: int) -> int:
+        """Set the intensity of bonfires in every copy and return how many
+        changed in the first copy. Unlit bonfires are lit, and a lit byte above
+        1 left by older editor versions is reset to 1. Raises ValueError
+        outside min_intensity to BONFIRE_MAX_INTENSITY."""
+        if not self.min_intensity <= intensity <= BONFIRE_MAX_INTENSITY:
+            raise ValueError(
+                f"Bonfire intensity must be {self.min_intensity} to "
+                f"{BONFIRE_MAX_INTENSITY} in this cycle"
+            )
+        ascetics_wanted = intensity - self.min_intensity
         wanted = {b for b in bonfire_ids if b in BONFIRES}
         changed = 0
-        for copy, base in enumerate(self._level_offsets):
+        for copy, base in enumerate(self._lit_offsets):
             for index, bonfire_id in enumerate(self._ids):
-                if bonfire_id not in wanted or self._data[base + index] == level:
+                if bonfire_id not in wanted:
                     continue
-                self._data[base + index] = level
+                lit = base + index
+                ascetics = lit + _BONFIRE_ID_CAPACITY
+                if self._data[lit] == 1 and self._data[ascetics] == ascetics_wanted:
+                    continue
+                self._data[lit] = 1
+                self._data[ascetics] = ascetics_wanted
                 if copy == 0:
                     changed += 1
         return changed
 
     def unlock_all(self) -> int:
         """Light every unlit bonfire in every copy and return how many bonfires
-        were newly lit in the first copy. Levels above 0 are kept."""
+        were newly lit in the first copy."""
         return self.set_lit(self._ids, True)
 
 
@@ -519,6 +586,220 @@ class NpcStates:
             if self._data[self._base + entry.hostile]:
                 self._data[self._base + entry.hostile] = 0
                 changed += 1
+        return changed
+
+
+class BossStatus(Enum):
+    """Where a boss stands. The values double as display labels."""
+
+    NOT_DEFEATED = "Not defeated"
+    DEFEATED = "Defeated"
+    RESPAWNED = "Respawned"
+    INVALID = "Invalid"
+
+
+@dataclass
+class BossState:
+    fight: BossFight
+    name: str
+    defeats: int
+    # The map's defeated flag, which keeps the boss out of its arena.
+    gone_from_arena: bool
+    status: BossStatus
+    # Why the stored records disagree, set only for BossStatus.INVALID.
+    problem: str | None = None
+
+
+class BossStates:
+    """View over the boss records in one slot's large entry.
+
+    A win stores three records, all named by the fight's BossBattleParam row:
+    the defeat count (a global event value, in both copies), the "ever
+    defeated" global flag (in both copies) and the map's defeated flag, which
+    keeps the boss out of its arena. A Bonfire Ascetic clears the map flag and
+    leaves the other two, so the boss returns. Records that contradict each
+    other are invalid; a kill credited only partly, as can happen in another
+    player's world, leaves the defeat count at 0, which blocks the Bonfire
+    Ascetic at the boss's bonfire.
+    """
+
+    def __init__(
+        self,
+        data: bytearray,
+        anchor: int,
+        fights: Iterable[BossFight],
+        maps: list[int],
+    ) -> None:
+        self._data = data
+        self._anchor = anchor
+        self._maps = maps
+        self._fights = [f for f in fights if self._in_range(f)]
+
+    def _global_flag_spans(self, flag: int) -> list[tuple[int, int]]:
+        index = flag - _GLOBAL_FLAG_FIRST
+        first = (
+            self._anchor - _NPC_FLAGS_BEFORE_IDS + _GLOBAL_FLAGS_IN_OBJECT + index // 8
+        )
+        mask = 0x80 >> (index % 8)
+        return [(first, mask), (first + _EVENT_COPY_DISTANCE, mask)]
+
+    def _value_offsets(self, value_id: int) -> list[int]:
+        first = self._anchor - _EVENT_VALUES_BEFORE_IDS + 4 * value_id
+        return [first, first + _EVENT_COPY_DISTANCE]
+
+    def _map_flag_span(self, flag: int) -> tuple[int, int] | None:
+        """Byte offset and mask of a map event flag, or None when its map has
+        no record or the local id is outside the map's block."""
+        area = flag // 100_000_000 * 10
+        block = flag // 1_000_000 % 100
+        local = flag % 1_000_000
+        map_id = area << 24 | block << 16
+        if map_id not in self._maps or local >= _MAP_FLAG_BLOCK_SIZE * 8:
+            return None
+        offset = (
+            self._anchor
+            - _MAP_FLAGS_BEFORE_IDS
+            + self._maps.index(map_id) * _MAP_FLAG_BLOCK_SIZE
+            + local // 8
+        )
+        return offset, 0x80 >> (local % 8)
+
+    def _in_range(self, fight: BossFight) -> bool:
+        if fight.once_killed_flag < _GLOBAL_FLAG_FIRST or fight.defeat_value <= 0:
+            return False
+        spans = self._global_flag_spans(fight.once_killed_flag)
+        offsets = [o for o, _ in spans]
+        offsets += [o + 3 for o in self._value_offsets(fight.defeat_value)]
+        if (span := self._map_flag_span(fight.killed_flag)) is not None:
+            offsets.append(span[0])
+        return all(0 <= o < len(self._data) for o in offsets)
+
+    def _read(self, fight: BossFight) -> tuple[list[int], list[bool], bool | None]:
+        counts = [
+            struct.unpack_from("<I", self._data, o)[0]
+            for o in self._value_offsets(fight.defeat_value)
+        ]
+        flags = [
+            bool(self._data[o] & m)
+            for o, m in self._global_flag_spans(fight.once_killed_flag)
+        ]
+        span = self._map_flag_span(fight.killed_flag)
+        in_map = None if span is None else bool(self._data[span[0]] & span[1])
+        return counts, flags, in_map
+
+    def states(self) -> list[BossState]:
+        result = []
+        for fight in self._fights:
+            name = BOSS_NAMES.get(fight.row_id, f"Boss {fight.row_id}")
+            counts, flags, in_map = self._read(fight)
+            defeats = max(counts)
+            problem = None
+            if counts[0] != counts[1]:
+                problem = "Defeat count copies differ"
+            elif flags[0] != flags[1]:
+                problem = "Defeated flag copies differ"
+            elif defeats and not flags[0]:
+                problem = "Defeat count set, defeated flag clear"
+            elif not defeats and flags[0]:
+                problem = "Defeated flag set, defeat count 0"
+            elif not defeats and in_map:
+                problem = "Gone from its arena, defeat count 0"
+            if problem is not None:
+                status = BossStatus.INVALID
+            elif not defeats:
+                status = BossStatus.NOT_DEFEATED
+            elif in_map is False:
+                status = BossStatus.RESPAWNED
+            else:
+                status = BossStatus.DEFEATED
+            result.append(
+                BossState(fight, name, defeats, bool(in_map), status, problem)
+            )
+        return result
+
+    def _selected(self, row_ids: Iterable[int]) -> list[BossFight]:
+        wanted = set(row_ids)
+        return [f for f in self._fights if f.row_id in wanted]
+
+    def repair(self, row_ids: Iterable[int]) -> int:
+        """Complete the records of the selected bosses with any record of a
+        win, the way a full kill writes them: defeat count at least 1 and the
+        defeated flag set, in both copies. The map flag is kept, so a boss
+        still in its arena stays there. Return how many bosses changed."""
+        changed = 0
+        for fight in self._selected(row_ids):
+            counts, flags, in_map = self._read(fight)
+            if not (any(counts) or any(flags) or in_map):
+                continue
+            touched = False
+            defeats = max(max(counts), 1)
+            for offset, count in zip(
+                self._value_offsets(fight.defeat_value), counts, strict=True
+            ):
+                if count != defeats:
+                    struct.pack_into("<I", self._data, offset, defeats)
+                    touched = True
+            for offset, mask in self._global_flag_spans(fight.once_killed_flag):
+                if not self._data[offset] & mask:
+                    self._data[offset] |= mask
+                    touched = True
+            changed += touched
+        return changed
+
+    def respawn(self, row_ids: Iterable[int]) -> int:
+        """Return the selected bosses to their arenas by clearing the map's
+        defeated flag, as a Bonfire Ascetic does. The defeat count and the
+        defeated flag are kept. Return how many bosses changed."""
+        changed = 0
+        for fight in self._selected(row_ids):
+            span = self._map_flag_span(fight.killed_flag)
+            if span is None or not self._data[span[0]] & span[1]:
+                continue
+            self._data[span[0]] &= ~span[1] & 0xFF
+            changed += 1
+        return changed
+
+    def kill(self, row_ids: Iterable[int]) -> int:
+        """Record a win over the selected bosses still in their arenas, as the
+        game does on a kill: defeat count plus one and the defeated flag in
+        both copies, and the map's defeated flag, which keeps the boss out of
+        its arena. Rewards and other effects of the fight are not given.
+        Return how many bosses changed."""
+        changed = 0
+        for fight in self._selected(row_ids):
+            span = self._map_flag_span(fight.killed_flag)
+            if span is None or self._data[span[0]] & span[1]:
+                continue
+            counts, _flags, _in_map = self._read(fight)
+            defeats = min(max(counts) + 1, BOSS_MAX_DEFEATS)
+            for offset in self._value_offsets(fight.defeat_value):
+                struct.pack_into("<I", self._data, offset, defeats)
+            for offset, mask in self._global_flag_spans(fight.once_killed_flag):
+                self._data[offset] |= mask
+            self._data[span[0]] |= span[1]
+            changed += 1
+        return changed
+
+    def set_defeats(self, row_ids: Iterable[int], defeats: int) -> int:
+        """Set the defeat count of the selected bosses in both copies and set
+        their defeated flag, which every counted defeat has. The map flag is
+        kept, so a boss in its arena stays there. Return how many bosses
+        changed. Raises ValueError outside 1 to BOSS_MAX_DEFEATS, since a count
+        of 0 with the defeated flag set is an invalid state."""
+        if not 1 <= defeats <= BOSS_MAX_DEFEATS:
+            raise ValueError(f"Defeat count must be 1 to {BOSS_MAX_DEFEATS}")
+        changed = 0
+        for fight in self._selected(row_ids):
+            touched = False
+            for offset in self._value_offsets(fight.defeat_value):
+                if struct.unpack_from("<I", self._data, offset)[0] != defeats:
+                    struct.pack_into("<I", self._data, offset, defeats)
+                    touched = True
+            for offset, mask in self._global_flag_spans(fight.once_killed_flag):
+                if not self._data[offset] & mask:
+                    self._data[offset] |= mask
+                    touched = True
+            changed += touched
         return changed
 
 
@@ -837,6 +1118,26 @@ class Character:
         struct.pack_into("<I", self._data, SOUL_MEMORY_OFFSET, self.soul_memory + added)
         struct.pack_into("<I", self._data, SOUL_MEMORY_CYCLE_OFFSET, cycle)
         return added
+
+    def missing_cycle_soul_memory(self) -> int:
+        """Souls the cycle count lacks on a first playthrough, where it
+        should equal the total. Older Seamless Co-op versions only added to
+        the total, so the cycle count gates content (Shrine of Winter) as if
+        those souls were never gained. 0 on NG+, where the cycle's share of
+        the total is unknown."""
+        if self.new_game_plus != 0:
+            return 0
+        return max(0, self.soul_memory - self.soul_memory_cycle)
+
+    def fix_cycle_soul_memory(self) -> int:
+        """Raise the cycle count to the total on a first playthrough.
+        Returns the amount added."""
+        missing = self.missing_cycle_soul_memory()
+        if missing:
+            struct.pack_into(
+                "<I", self._data, SOUL_MEMORY_CYCLE_OFFSET, self.soul_memory
+            )
+        return missing
 
     @property
     def hp(self) -> int:
@@ -1669,8 +1970,11 @@ class DS2Save:
         return occ_data[flag_off] != 0
 
     def bonfires(self, slot_index: int) -> Bonfires | None:
-        """The slot's bonfire levels, or None when the slot holds none."""
-        view = Bonfires(self.container.get_entry(BIG_ENTRY_START + slot_index))
+        """The slot's bonfire states, or None when the slot holds none."""
+        view = Bonfires(
+            self.container.get_entry(BIG_ENTRY_START + slot_index),
+            self.characters[slot_index].new_game_plus,
+        )
         return view if view.found else None
 
     def npcs(self, slot_index: int) -> NpcStates | None:
@@ -1685,6 +1989,29 @@ class DS2Save:
         if base < 0 or base + top >= len(data):
             return None
         return NpcStates(data, base, view.anchor)
+
+    def bosses(self, slot_index: int) -> BossStates | None:
+        """The slot's boss records, or None when the slot holds no bonfire data
+        to locate them from or the regulation has no boss fights."""
+        data = self.container.get_entry(BIG_ENTRY_START + slot_index)
+        view = Bonfires(data)
+        if not view.found:
+            return None
+        try:
+            fights = self.regulation.boss_fights()
+        except ValueError:
+            return None
+        if not fights:
+            return None
+        maps = []
+        offset = view.anchor - _MAP_RECORDS_BEFORE_IDS
+        while 0 <= offset and offset + 4 <= len(data):
+            map_id = struct.unpack_from("<I", data, offset)[0]
+            if map_id & 0xFFFF or not map_id:
+                break
+            maps.append(map_id)
+            offset += _MAP_RECORD_SIZE
+        return BossStates(data, view.anchor, fights, maps)
 
     def slot_state(self, slot_index: int) -> SlotState:
         """Classify a slot.

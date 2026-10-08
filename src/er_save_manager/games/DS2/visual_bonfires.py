@@ -16,7 +16,6 @@ from typing import TYPE_CHECKING
 import customtkinter as ctk
 
 from er_save_manager.games.DS2.bonfire_database import BONFIRES
-from er_save_manager.games.DS2.save import BONFIRE_MAX_LEVEL
 from er_save_manager.ui import palette
 from er_save_manager.ui.utils import center_window, debounced_trace
 
@@ -42,11 +41,8 @@ _FILTERS = ("All", "Lit", "Unlit")
 _CONTROL_MASK = 0x4
 
 
-def _state_text(level: int, last_rested: bool) -> str:
-    if level == 0:
-        text = "Unlit"
-    else:
-        text = "Lit" if level == 1 else f"Lit, level {level}"
+def _state_text(lit: bool, intensity: int, last_rested: bool) -> str:
+    text = f"Lit, intensity {intensity}" if lit else "Unlit"
     return f"{text}, last rested" if last_rested else text
 
 
@@ -68,8 +64,8 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
         self._panel = panel
         self._cols = _DEFAULT_COLS
         self._buttons: dict[int, ctk.CTkButton] = {}  # bonfire id -> cell
-        # (level, last rested) each cell currently shows, and its image
-        self._cell_state: dict[int, tuple[int, bool]] = {}
+        # (lit, intensity, last rested) each cell currently shows, and its image
+        self._cell_state: dict[int, tuple[bool, int, bool]] = {}
         self._cell_images: dict[int, ctk.CTkImage | None] = {}
         self._order: list[int] = []  # shown bonfire ids, in grid order
         self._selected: set[int] = set()
@@ -115,6 +111,7 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
         self._refresh_job = None
         if not self.winfo_exists():
             return
+        self._intensity_combo.configure(values=self._panel.intensity_choices())
         if self._batch_job is not None or self._visible_ids() != self._order:
             self._rebuild()
             return
@@ -183,20 +180,21 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
             actions, text="Unlight", width=80, command=self._do_unlight
         )
         self._unlight_btn.pack(side="left", padx=4)
-        ctk.CTkLabel(actions, text="Level:").pack(side="left", padx=(12, 4))
-        # Shares the panel's variable, so both show the same level.
-        ctk.CTkComboBox(
+        ctk.CTkLabel(actions, text="Intensity:").pack(side="left", padx=(12, 4))
+        # Shares the panel's variable, so both show the same intensity.
+        self._intensity_combo = ctk.CTkComboBox(
             actions,
-            variable=self._panel._level_var,
-            values=[str(n) for n in range(1, BONFIRE_MAX_LEVEL + 1)],
+            variable=self._panel._intensity_var,
+            values=self._panel.intensity_choices(),
             state="readonly",
             width=70,
             command=lambda _v: self._sync_buttons(),
-        ).pack(side="left")
-        self._level_btn = ctk.CTkButton(
-            actions, text="Set Level", width=90, command=self._do_set_level
         )
-        self._level_btn.pack(side="left", padx=4)
+        self._intensity_combo.pack(side="left")
+        self._intensity_btn = ctk.CTkButton(
+            actions, text="Set Intensity", width=100, command=self._do_set_intensity
+        )
+        self._intensity_btn.pack(side="left", padx=4)
         self._unlock_btn = ctk.CTkButton(
             actions, text="Unlock All", width=100, command=self._do_unlock_all
         )
@@ -219,7 +217,7 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
         query = self._filter_var.get().strip().lower()
         ids = []
         for bonfire_id in self._panel._ids:
-            lit = bool(self._panel._levels[bonfire_id])
+            lit = self._panel._lit[bonfire_id]
             if (show == "Lit" and not lit) or (show == "Unlit" and lit):
                 continue
             if query and query not in BONFIRES[bonfire_id].lower():
@@ -290,9 +288,10 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
             self._batch_job = None
             self._layout_grid()
 
-    def _panel_state(self, bonfire_id: int) -> tuple[int, bool]:
+    def _panel_state(self, bonfire_id: int) -> tuple[bool, int, bool]:
         return (
-            self._panel._levels[bonfire_id],
+            self._panel._lit[bonfire_id],
+            self._panel._intensities[bonfire_id],
             bonfire_id == self._panel._last_rested,
         )
 
@@ -301,24 +300,24 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
         The image is only rebuilt when the bonfire's lit state changed."""
         from er_save_manager.games.DS2.icon_manager import get_bonfire_icon
 
-        level, last_rested = self._panel_state(bonfire_id)
+        lit, intensity, last_rested = self._panel_state(bonfire_id)
         previous = self._cell_state.get(bonfire_id)
-        if previous is not None and bool(previous[0]) == bool(level):
+        if previous is not None and previous[0] == lit:
             ctk_img = self._cell_images[bonfire_id]
         else:
             img = get_bonfire_icon(bonfire_id)
             ctk_img = None
             if img is not None:
-                if not level:
+                if not lit:
                     img = _unlit_picture(img)
                 ctk_img = ctk.CTkImage(
                     light_image=img, dark_image=img, size=_IMAGE_SIZE
                 )
                 self._ctk_images.append(ctk_img)
             self._cell_images[bonfire_id] = ctk_img
-        self._cell_state[bonfire_id] = (level, last_rested)
-        text = f"{BONFIRES[bonfire_id]}\n{_state_text(level, last_rested)}"
-        text_color = ("gray10", "gray90") if level else ("gray40", "gray55")
+        self._cell_state[bonfire_id] = (lit, intensity, last_rested)
+        text = f"{BONFIRES[bonfire_id]}\n{_state_text(lit, intensity, last_rested)}"
+        text_color = ("gray10", "gray90") if lit else ("gray40", "gray55")
         return text, text_color, ctk_img
 
     def _layout_grid(self) -> None:
@@ -394,7 +393,7 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
         for mine, theirs in (
             (self._light_btn, panel._light_button),
             (self._unlight_btn, panel._unlight_button),
-            (self._level_btn, panel._set_level_button),
+            (self._intensity_btn, panel._set_intensity_button),
             (self._unlock_btn, panel._unlock_button),
         ):
             mine.configure(state=theirs.cget("state"))
@@ -410,8 +409,8 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
     def _do_unlight(self) -> None:
         self._panel._on_unlight_selected()
 
-    def _do_set_level(self) -> None:
-        self._panel._on_set_level()
+    def _do_set_intensity(self) -> None:
+        self._panel._on_set_intensity()
 
     def _do_unlock_all(self) -> None:
         self._panel._on_unlock_all()

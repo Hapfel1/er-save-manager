@@ -225,7 +225,8 @@ def _check_nr(path: Path) -> list[Issue]:
 
     save = NightreignSave.from_file(path)
     issues = []
-    for entry in save.entries:
+    # PS memory.dat stores no checksums
+    for entry in [] if save.is_ps else save.entries:
         dec = entry.decrypted
         end = len(dec) - _CHECKSUM_TAIL
         if _md5(bytes(dec[4:end])) != bytes(dec[end : end + 16]):

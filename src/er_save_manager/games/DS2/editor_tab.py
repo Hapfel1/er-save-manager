@@ -7,6 +7,7 @@ import tkinter as tk
 import customtkinter as ctk
 
 from er_save_manager.games.DS2.bonfire_tab import DS2BonfirePanel
+from er_save_manager.games.DS2.boss_tab import DS2BossPanel
 from er_save_manager.games.DS2.inventory_tab import DS2InventoryPanel
 from er_save_manager.games.DS2.npc_tab import DS2NpcPanel
 from er_save_manager.games.DS2.regulation import ClassBase
@@ -77,6 +78,7 @@ class DS2EditorTab:
         self.inventory_panel: DS2InventoryPanel | None = None
         self.bonfire_panel: DS2BonfirePanel | None = None
         self.npc_panel: DS2NpcPanel | None = None
+        self.boss_panel: DS2BossPanel | None = None
 
         self._baseline_stats: dict[str, int] = {}
         self._baseline_level: int = 0
@@ -127,6 +129,7 @@ class DS2EditorTab:
         self.tabview.add("Inventory")
         self.tabview.add("Bonfires")
         self.tabview.add("NPCs")
+        self.tabview.add("Bosses")
 
         self._build_stats_tab(self.tabview.tab("Stats"))
 
@@ -159,6 +162,16 @@ class DS2EditorTab:
             show_toast=self.show_toast,
         )
         self.npc_panel.setup_ui()
+
+        yield
+        self.boss_panel = DS2BossPanel(
+            self.tabview.tab("Bosses"),
+            get_save=self.get_save,
+            get_slot_index=lambda: self._slot_index,
+            get_save_path=self.get_save_path,
+            show_toast=self.show_toast,
+        )
+        self.boss_panel.setup_ui()
 
         yield
         self.refresh()
@@ -239,6 +252,14 @@ class DS2EditorTab:
         self.soul_memory_label.grid(
             row=6, column=1, columnspan=3, sticky="w", padx=5, pady=3
         )
+        self._cycle_fix_button = ctk.CTkButton(
+            fields,
+            text="Fix Cycle Soul Memory",
+            width=160,
+            command=self._fix_cycle_soul_memory,
+        )
+        self._cycle_fix_button.grid(row=7, column=1, sticky="w", padx=5, pady=3)
+        self._cycle_fix_button.grid_remove()
 
         stats_frame = ctk.CTkFrame(body, fg_color="transparent")
         stats_frame.pack(fill="x", padx=10, pady=5)
@@ -474,6 +495,8 @@ class DS2EditorTab:
             self.bonfire_panel.refresh()
         if self.npc_panel is not None:
             self.npc_panel.refresh()
+        if self.boss_panel is not None:
+            self.boss_panel.refresh()
 
     @staticmethod
     def _class_display(class_id: int) -> str:
@@ -527,15 +550,48 @@ class DS2EditorTab:
     def _show_soul_memory(self, character) -> None:
         text = f"{character.soul_memory:,} (this cycle {character.soul_memory_cycle:,})"
         required = character.required_soul_memory()
-        if required is not None and required > character.soul_memory:
+        below_required = required is not None and required > character.soul_memory
+        if below_required:
             text += f", below the {required:,} its level and souls need"
+        missing = character.missing_cycle_soul_memory()
+        if missing:
+            text += f", this cycle is {missing:,} short of the total"
+            self._cycle_fix_button.grid()
+        else:
+            self._cycle_fix_button.grid_remove()
         self.soul_memory_label.configure(
             text=text,
-            text_color=(
-                "orange"
-                if required is not None and required > character.soul_memory
-                else _HINT_COLOR
-            ),
+            text_color="orange" if below_required or missing else _HINT_COLOR,
+        )
+
+    def _fix_cycle_soul_memory(self) -> None:
+        """Set the cycle soul memory to the total, which an NG character
+        always has unless an older Seamless Co-op version skipped it."""
+        if _game_blocks_write(self.parent):
+            return
+        save: DS2Save | None = self.get_save()
+        save_path = self.get_save_path()
+        if save is None or not save_path:
+            self.show_toast("No save file loaded", duration=2000)
+            return
+        character = save.characters[self._slot_index]
+        if not character.missing_cycle_soul_memory():
+            return
+        self._backup(
+            save_path,
+            f"before_cycle_soul_memory_fix_slot_{self._slot_index}",
+            "fix_cycle_soul_memory",
+        )
+        added = character.fix_cycle_soul_memory()
+        try:
+            save.save_to_file(save_path)
+        except Exception as e:
+            self.show_toast(f"Failed to write save: {e}", duration=3000)
+            return
+        self.refresh()
+        self.show_toast(
+            f"Cycle soul memory raised by {added:,} to match the total",
+            duration=3000,
         )
 
     def _apply_changes(self) -> None:
