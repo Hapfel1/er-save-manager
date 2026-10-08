@@ -651,7 +651,166 @@ Offset  Size  Type   Field  Notes
 ```
 
 FieldArea and WorldArea have a max size of 0x10000 while WorldGeomMan, WorldGeomMan2 and RendMan have a max size of 0x100000.
-Their size should always be greater than 0.
+A size of 0 means the block has no data.
+
+WorldArea, WorldGeomMan and WorldGeomMan2 hold the per-map world state: killed enemies, broken assets
+and picked up items. All three are lists of per-map records keyed by a `MapId`. Each entry names a part
+in that map's MSB (`map/mapstudio/<map>.msb`). The parser decodes them with `WorldArea.parse_chr()` and
+`WorldGeomMan.parse_geom()` (`parser/world.py`). Both return `None` if the data does not re-encode
+byte-identical.
+
+### Overview
+
+| Block | Magic | Content | Maps covered | Resting at a grace |
+|-------|-------|---------|--------------|--------------------|
+| WorldArea | `CHR ` | Enemy parts in a non-default state | Maps loaded around the player | Clears kills; event-driven entries come back on map load |
+| WorldGeomMan | `MOEG` | Broken and picked up assets | Maps loaded around the player | Clears state 1 and 3, keeps state 2 |
+| WorldGeomMan2 | `FOEG` | Permanently picked up one-time nodes | Every map ever visited | No change |
+
+A record exists only while the game tracks the map. WorldArea and WorldGeomMan records appear when the
+map loads and are dropped when it unloads, including records with no entries. LOD tiles of the open
+world (`m60_XX_YY_01`, `_02`) get records too. Assets placed on a coarser tile are stored under that
+tile: a breakable on `m60_42_37_00` may be listed under `m60_21_18_01`.
+
+### MapId in records
+
+Records use the same 4-byte `MapId` as `PlayerCoordinates`: bytes `[DD, CC, BB, AA]` name map
+`mAA_BB_CC_DD`. Example: `00 24 2A 3C` is `m60_42_36_00`.
+
+### WorldArea (CHR) - enemy state
+
+```
+Offset  Size  Type    Field
+──────────────────────────────────────────────────────────
+0x00    4     char[4] magic ("CHR ")
+0x04    4     uint32  version (0x21042700)
+0x08    8     uint64  unknown (always 0)
+0x10    ...           records, then a 16-byte terminator record
+──────────────────────────────────────────────────────────
+```
+
+Record (`WorldChrMapRecord`), size is a multiple of 16:
+
+```
+Offset  Size  Type    Field
+──────────────────────────────────────────────────────────
+0x00    4     char[4] magic ("CSBC")
+0x04    4     MapId   map_id (0xFFFFFFFF = terminator)
+0x08    4     uint32  record_size (align16(16 + 4 * n))
+0x0C    4     uint32  enemy_part_count << 14 | n
+0x10    4 * n uint32  entries
+...                   zero padding to record_size
+──────────────────────────────────────────────────────────
+```
+
+`enemy_part_count` is the number of enemy parts in the map's MSB for the game version that wrote the
+save. The terminator record is `CSBC FF FF FF FF` followed by 8 zero bytes.
+
+Entry (`WorldChrEntry`, uint32):
+
+```
+Bits    Field
+──────────────────────────────────────────────────────────
+0-1     state (3 = killed since the last rest; 1 and 2 are rare, meaning unknown)
+2-15    MSB part instance
+16-29   character model (cXXXX)
+30      always 1
+──────────────────────────────────────────────────────────
+```
+
+Model and instance name the MSB enemy part: `0x50D78CAB` is `c4311_9002`, state 3.
+
+Entries include regular enemies killed since the last rest and parts kept dead or disabled by map events.
+For example, an NPC's part at a location they are not currently at is listed as long as that map is
+loaded. Kills are removed when the player rests; event-driven entries are written again on every load.
+
+### WorldGeomMan (MOEG) and WorldGeomMan2 (FOEG) - asset state
+
+Both share one layout and differ only in magic and meaning.
+
+```
+Offset  Size  Type    Field
+──────────────────────────────────────────────────────────
+0x00    4     char[4] magic ("MOEG" or "FOEG")
+0x04    4     uint32  version (0x21042600)
+0x08    ...           records, then a 16-byte terminator record
+──────────────────────────────────────────────────────────
+```
+
+Record (`WorldGeomMapRecord`):
+
+```
+Offset  Size  Type    Field
+──────────────────────────────────────────────────────────
+0x00    4     MapId   map_id (0xFFFFFFFF = terminator)
+0x04    4     uint32  record_size (16 + 8 * n)
+0x08    4     uint32  n
+0x0C    4     uint32  unknown
+0x10    8 * n         entries
+──────────────────────────────────────────────────────────
+```
+
+The unknown u32 is constant for a map across characters but changes between game versions; its meaning
+is not known. The terminator record is `FF FF FF FF` followed by 12 zero bytes.
+
+Entry (`WorldGeomEntry`, 8 bytes):
+
+```
+Offset  Size  Type    Field
+──────────────────────────────────────────────────────────
+0x00    4     uint32  key: instance << 15 | state
+0x04    4     uint32  model: 10000000 + AEG id
+──────────────────────────────────────────────────────────
+```
+
+The AEG id is the AssetEnvironmentGeometryParam row (`AEGxxx_yyy` = `xxx * 1000 + yyy`). AEG id and
+instance name the MSB asset part: key `0x11940003`, model `10099720` is `AEG099_720_9000`.
+
+States:
+
+| Block | State | Meaning |
+|-------|-------|---------|
+| WorldGeomMan | 1 | Asset broken (crates, pots, other breakables) |
+| WorldGeomMan | 3 | Picked up since the last rest |
+| WorldGeomMan | 2 | Picked up permanently (state 3 of a one-time node becomes 2 on rest) |
+| WorldGeomMan2 | 1 | Picked up permanently |
+
+Which pickups are permanent comes from AssetEnvironmentGeometryParam: assets with a
+`pickUpItemLotParamId` and `isEnableRepick = 1` never respawn and are written to WorldGeomMan2. They are
+the one-time nodes: Arteria Leaf, smithing and somber smithing stones, Grave and Ghost Glovewort,
+Trina's and Miquella's Lily, butterflies, Golden Centipede, Formic Rock and the DLC equivalents.
+Other pickups (Rowa Fruit, Erdleaf Flower, Cracked Crystal) respawn on rest and only appear in
+WorldGeomMan with state 3.
+
+### Examples
+
+| Action | WorldArea | WorldGeomMan | WorldGeomMan2 |
+|--------|-----------|--------------|---------------|
+| Kill a regular enemy | `c4311_9002` state 3 added | - | - |
+| Rest | entry removed | - | - |
+| Break a crate | - | `AEG003_071_0103` state 1 added (under `m60_21_18_01`) | - |
+| Rest | - | entry removed | - |
+| Pick Rowa Fruit | - | `AEG099_720_9068` state 3 added | - |
+| Rest | - | entry removed | - |
+| Pick Arteria Leaf | - | `AEG099_691_9000` state 3 added | `AEG099_691_9000` state 1 added |
+| Rest | - | state 3 becomes 2 | unchanged |
+
+### Editing
+
+Adding or removing entries changes the block size, so every later section of the slot moves
+(RendMan, PlayerCoordinates, NetMan, weather, time, BaseVersion, SteamID, DLC, PlayerGameDataHash).
+Patching the bytes in place is not possible; the slot has to be rebuilt:
+
+1. Re-encode the decoded block (`to_bytes()`) and set the block's `data` and `size`.
+2. Rebuild the slot with `rebuild_slot()`, which serializes every section in order and pads or
+   truncates to 0x280000 bytes. A shrinking block leaves zero padding at the slot end; a growing block
+   is absorbed by `rest`, the stale serializer buffer at the end of the slot.
+3. Re-parse the slot so the tracked offsets (coordinates, NetMan, SteamID, PlayerGameDataHash, ...)
+   match the new layout, then update PlayerGameDataHash and the checksum.
+
+A rebuild is only safe on a faithfully parsed slot (byte-identical round trip). On a misparsed slot,
+for example a torn FieldArea, it writes the misread structures back and destroys data, so the
+round trip has to be checked before editing. The editor does not write these blocks yet.
 
 ---
 
