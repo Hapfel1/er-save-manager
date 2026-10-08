@@ -758,55 +758,77 @@ class WorldGeomMan:
 
 
 @dataclass
-class StageManEntry:
-    """Stage manager entry (variable size based on parent size)"""
+class RendManDecal:
+    """
+    Persistent ground decal (40 bytes).
 
-    data: bytes = b""
+    decal_id is a DecalParam row (blood splatter, burn marks, 3000xxxxx trail
+    decals, 6001xxxxx triangle decals). points are three positions in 1/8
+    world units, local to the player's map; point decals repeat one position.
+    The four trailing u32 are unknown (the first three are equal on point
+    decals).
+    """
+
+    decal_id: int = 0
+    points: tuple[tuple[int, int, int], ...] = ((0, 0, 0), (0, 0, 0), (0, 0, 0))
+    pad: int = 0
+    unk: tuple[int, int, int, int] = (0, 0, 0, 0)
+
+    SIZE = 40
 
     @classmethod
-    def read(cls, f: BytesIO, entry_size: int) -> StageManEntry:
-        """Read StageManEntry from stream"""
-        obj = cls()
-        if entry_size > 0:
-            obj.data = f.read(entry_size)
-        return obj
+    def from_bytes(cls, data: bytes, offset: int = 0) -> RendManDecal:
+        v = struct.unpack_from("<I9hH4I", data, offset)
+        return cls(
+            decal_id=v[0],
+            points=(v[1:4], v[4:7], v[7:10]),
+            pad=v[10],
+            unk=v[11:15],
+        )
 
-    def write(self, f: BytesIO):
-        """Write StageManEntry to stream"""
-        if len(self.data) > 0:
-            f.write(self.data)
+    def to_bytes(self) -> bytes:
+        return struct.pack(
+            "<I9hH4I",
+            self.decal_id,
+            *self.points[0],
+            *self.points[1],
+            *self.points[2],
+            self.pad,
+            *self.unk,
+        )
+
+    @property
+    def position(self) -> tuple[float, float, float]:
+        x, y, z = self.points[0]
+        return (x / 8, y / 8, z / 8)
 
 
 @dataclass
-class StageMan:
-    """Stage manager (variable size)"""
+class RendManData:
+    """Decoded RendMan data: u32 count, then count RendManDecal."""
 
-    count: int = 0
-    entries: list[StageManEntry] = field(default_factory=list)
+    decals: list[RendManDecal] = field(default_factory=list)
 
     @classmethod
-    def read(cls, f: BytesIO, total_size: int) -> StageMan:
-        """Read StageMan from stream"""
-        obj = cls()
-        obj.count = struct.unpack("<i", f.read(4))[0]
+    def from_bytes(cls, data: bytes) -> RendManData | None:
+        """Decode RendMan data; None when it does not re-encode byte-identical."""
+        if len(data) < 4:
+            return None
+        count = struct.unpack_from("<I", data, 0)[0]
+        if len(data) != 4 + RendManDecal.SIZE * count:
+            return None
+        obj = cls(
+            decals=[
+                RendManDecal.from_bytes(data, 4 + RendManDecal.SIZE * k)
+                for k in range(count)
+            ]
+        )
+        return obj if obj.to_bytes() == data else None
 
-        # Validate count to prevent hanging on corrupted data
-        if obj.count > 0 and obj.count < 1000:
-            entry_size = (total_size - 4) // obj.count
-            if entry_size > 0 and entry_size < 0x10000:
-                obj.entries = [
-                    StageManEntry.read(f, entry_size) for _ in range(obj.count)
-                ]
-        elif obj.count >= 1000:
-            pass
-
-        return obj
-
-    def write(self, f: BytesIO):
-        """Write StageMan to stream"""
-        f.write(struct.pack("<i", self.count))
-        for entry in self.entries:
-            entry.write(f)
+    def to_bytes(self) -> bytes:
+        return struct.pack("<I", len(self.decals)) + b"".join(
+            d.to_bytes() for d in self.decals
+        )
 
 
 @dataclass
@@ -830,6 +852,10 @@ class RendMan:
                 pass
 
         return obj
+
+    def parse_decals(self) -> RendManData | None:
+        """Decoded decals, or None when empty or not decodable."""
+        return RendManData.from_bytes(self.data)
 
     def write(self, f: BytesIO):
         """Write RendMan to stream"""

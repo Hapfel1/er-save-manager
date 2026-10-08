@@ -1,4 +1,4 @@
-"""Tests for decoding WorldArea (CHR) and WorldGeomMan/WorldGeomMan2 (MOEG/FOEG)."""
+"""Tests for decoding WorldArea (CHR), WorldGeomMan/WorldGeomMan2 (MOEG/FOEG) and RendMan."""
 
 from __future__ import annotations
 
@@ -6,6 +6,8 @@ import struct
 
 from er_save_manager.parser.er_types import MapId
 from er_save_manager.parser.world import (
+    RendManData,
+    RendManDecal,
     WorldAreaChrData,
     WorldChrEntry,
     WorldChrMapRecord,
@@ -28,6 +30,7 @@ def test_fixture_blocks_decode_byte_identical(sanitized_save):
             (slot.world_area.parse_chr(), slot.world_area.data),
             (slot.world_geom_man.parse_geom(), slot.world_geom_man.data),
             (slot.world_geom_man2.parse_geom(), slot.world_geom_man2.data),
+            (slot.rend_man.parse_decals(), slot.rend_man.data),
         ):
             if not data:
                 continue
@@ -92,3 +95,17 @@ def test_geom_round_trip_and_rejects_bad_size():
     broken = bytearray(data)
     struct.pack_into("<I", broken, 12, 0x30)
     assert WorldGeomData.from_bytes(bytes(broken)) is None
+
+
+def test_rend_man_decal_round_trip():
+    decal = RendManDecal(
+        decal_id=300005111,
+        points=((184, 1752, 47),) * 3,
+        unk=(0xFE8657C1, 0xFE8657C1, 0xFE8657C1, 0x0A944E20),
+    )
+    data = RendManData(decals=[decal]).to_bytes()
+    assert len(data) == 4 + 40
+    decoded = RendManData.from_bytes(data)
+    assert decoded.decals[0].decal_id == 300005111
+    assert decoded.decals[0].position == (23.0, 219.0, 5.875)
+    assert RendManData.from_bytes(data[:-1]) is None
