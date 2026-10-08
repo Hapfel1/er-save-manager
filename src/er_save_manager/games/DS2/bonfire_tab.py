@@ -1,6 +1,6 @@
 """
-DS2 bonfire panel: shows which bonfires a slot has lit and their levels, and can
-light, unlight or set the level of them.
+DS2 bonfire panel: shows which bonfires a slot has lit and their intensities,
+and can light, unlight or set the intensity of them.
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from tkinter import ttk
 import customtkinter as ctk
 
 from er_save_manager.games.DS2.bonfire_database import BONFIRES
-from er_save_manager.games.DS2.save import BONFIRE_MAX_LEVEL, DS2Save, SlotState
+from er_save_manager.games.DS2.save import BONFIRE_MAX_INTENSITY, DS2Save, SlotState
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import game_blocks_write, raise_existing_window
 
@@ -20,11 +20,8 @@ def _game_blocks_write(parent) -> bool:
     return game_blocks_write(parent, "darksoulsii.exe", "Dark Souls II")
 
 
-def _level_text(level: int, last_rested: bool) -> str:
-    if level == 0:
-        text = "Unlit"
-    else:
-        text = "Lit" if level == 1 else f"Lit, level {level}"
+def _lit_text(lit: bool, last_rested: bool) -> str:
+    text = "Lit" if lit else "Unlit"
     return f"{text} (last rested)" if last_rested else text
 
 
@@ -80,30 +77,34 @@ class DS2BonfirePanel:
         )
         self._unlock_button.pack(side="left", fill="x", expand=True, padx=(3, 0))
 
-        level_row = ctk.CTkFrame(self.parent, fg_color="transparent")
-        level_row.pack(side="bottom", fill="x", padx=10, pady=(0, 6))
-        ctk.CTkLabel(level_row, text="Level:").pack(side="left", padx=(0, 4))
-        self._level_var = ctk.StringVar(value="1")
-        self._level_combo = ctk.CTkComboBox(
-            level_row,
-            variable=self._level_var,
-            values=[str(n) for n in range(1, BONFIRE_MAX_LEVEL + 1)],
+        intensity_row = ctk.CTkFrame(self.parent, fg_color="transparent")
+        intensity_row.pack(side="bottom", fill="x", padx=10, pady=(0, 6))
+        ctk.CTkLabel(intensity_row, text="Intensity:").pack(side="left", padx=(0, 4))
+        self._intensity_var = ctk.StringVar(value="1")
+        self._intensity_combo = ctk.CTkComboBox(
+            intensity_row,
+            variable=self._intensity_var,
+            values=[str(n) for n in range(1, BONFIRE_MAX_INTENSITY + 1)],
             state="readonly",
             width=70,
             command=lambda _v: self._update_buttons(),
         )
-        self._level_combo.pack(side="left")
-        self._set_level_button = ctk.CTkButton(
-            level_row, text="Set Level", command=self._on_set_level, width=110
+        self._intensity_combo.pack(side="left")
+        self._set_intensity_button = ctk.CTkButton(
+            intensity_row,
+            text="Set Intensity",
+            command=self._on_set_intensity,
+            width=110,
         )
-        self._set_level_button.pack(side="left", padx=6)
+        self._set_intensity_button.pack(side="left", padx=6)
 
         ctk.CTkLabel(
             self.parent,
             text=(
-                "Ctrl or Shift+click selects several. Lighting keeps a bonfire's "
-                "level, unlighting resets it. Set Level also lights unlit bonfires. "
-                "The last rested bonfire stays lit."
+                "Ctrl or Shift+click selects several. Intensity is what Bonfire "
+                "Ascetics raise; it is kept when lighting or unlighting. Set "
+                "Intensity also lights unlit bonfires. The last rested bonfire "
+                "stays lit."
             ),
             text_color=("gray40", "gray60"),
             font=("Segoe UI", 11),
@@ -111,20 +112,23 @@ class DS2BonfirePanel:
 
         self._tree = ttk.Treeview(
             self.parent,
-            columns=("name", "state"),
+            columns=("name", "state", "intensity"),
             show="headings",
             height=8,
             selectmode="extended",
         )
         self._tree.heading("name", text="Bonfire")
         self._tree.heading("state", text="State")
+        self._tree.heading("intensity", text="Intensity")
         self._tree.column("name", width=300)
         self._tree.column("state", width=150)
+        self._tree.column("intensity", width=80, anchor="center")
         self._tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
         self._tree.bind("<<TreeviewSelect>>", lambda _e: self._on_selection())
 
         self._ids: list[int] = []
-        self._levels: dict[int, int] = {}
+        self._lit: dict[int, bool] = {}
+        self._intensities: dict[int, int] = {}
         self._last_rested: int | None = None
         self._has_character = False
         self.refresh()
@@ -139,26 +143,29 @@ class DS2BonfirePanel:
         save: DS2Save | None = self.get_save()
         bonfires = save.bonfires(self.get_slot_index()) if save is not None else None
 
-        self._ids, self._levels, self._last_rested = [], {}, None
+        self._ids, self._lit, self._intensities = [], {}, {}
+        self._last_rested = None
         if bonfires is None:
             self._summary_label.configure(text="No bonfire data in this slot")
             self._update_buttons()
             return
 
-        self._levels = bonfires.levels()
+        self._lit = bonfires.lit()
+        self._intensities = bonfires.intensities()
         self._last_rested = bonfires.last_rested
-        for bonfire_id, level in self._levels.items():
+        for bonfire_id, lit in self._lit.items():
             self._ids.append(bonfire_id)
             self._tree.insert(
                 "",
                 "end",
                 values=(
                     BONFIRES[bonfire_id],
-                    _level_text(level, bonfire_id == self._last_rested),
+                    _lit_text(lit, bonfire_id == self._last_rested),
+                    self._intensities[bonfire_id],
                 ),
             )
-        lit = sum(1 for level in self._levels.values() if level)
-        self._summary_label.configure(text=f"{lit} of {len(self._levels)} lit")
+        lit_count = sum(self._lit.values())
+        self._summary_label.configure(text=f"{lit_count} of {len(self._lit)} lit")
 
         # A slot with no character yet has nothing to travel from.
         self._has_character = (
@@ -177,27 +184,30 @@ class DS2BonfirePanel:
         return [self._ids[self._tree.index(row)] for row in self._tree.selection()]
 
     def _on_selection(self) -> None:
-        """Show the shared level of the selected lit bonfires in the level box."""
-        shared = {self._levels[i] for i in self._selected_ids() if self._levels[i]}
+        """Show the shared intensity of the selected bonfires in the intensity
+        box."""
+        shared = {self._intensities[i] for i in self._selected_ids()}
         if len(shared) == 1:
-            level = shared.pop()
-            if level <= BONFIRE_MAX_LEVEL:
-                self._level_var.set(str(level))
+            intensity = shared.pop()
+            if intensity <= BONFIRE_MAX_INTENSITY:
+                self._intensity_var.set(str(intensity))
         self._update_buttons()
 
     def _update_buttons(self) -> None:
         """Enable each button only when it would change something."""
         picked = self._selected_ids()
-        level = int(self._level_var.get())
-        can_set_level = any(self._levels[i] != level for i in picked)
-        can_light = any(not self._levels[i] for i in picked)
-        can_unlight = any(self._levels[i] and i != self._last_rested for i in picked)
-        can_unlock = any(not level for level in self._levels.values())
+        intensity = int(self._intensity_var.get())
+        can_set_intensity = any(
+            not self._lit[i] or self._intensities[i] != intensity for i in picked
+        )
+        can_light = any(not self._lit[i] for i in picked)
+        can_unlight = any(self._lit[i] and i != self._last_rested for i in picked)
+        can_unlock = not all(self._lit.values())
         for button, enabled in (
             (self._light_button, can_light),
             (self._unlight_button, can_unlight),
             (self._unlock_button, can_unlock),
-            (self._set_level_button, can_set_level),
+            (self._set_intensity_button, can_set_intensity),
         ):
             button.configure(
                 state="normal" if enabled and self._has_character else "disabled"
@@ -233,7 +243,7 @@ class DS2BonfirePanel:
         self.show_toast(f"Changed {changed} bonfires", duration=2500)
 
     def _on_light_selected(self) -> None:
-        ids = [i for i in self._selected_ids() if not self._levels[i]]
+        ids = [i for i in self._selected_ids() if not self._lit[i]]
         self._apply(
             "Light bonfires",
             f"Light {len(ids)} selected bonfires?\n\nA backup is made first.",
@@ -243,31 +253,32 @@ class DS2BonfirePanel:
 
     def _on_unlight_selected(self) -> None:
         ids = [
-            i
-            for i in self._selected_ids()
-            if self._levels[i] and i != self._last_rested
+            i for i in self._selected_ids() if self._lit[i] and i != self._last_rested
         ]
         self._apply(
             "Unlight bonfires",
-            f"Unlight {len(ids)} selected bonfires?\n\n"
-            "Their levels reset to 0. A backup is made first.",
+            f"Unlight {len(ids)} selected bonfires?\n\nA backup is made first.",
             "unlight_bonfires",
             lambda bonfires: bonfires.set_lit(ids, False),
         )
 
-    def _on_set_level(self) -> None:
-        level = int(self._level_var.get())
-        ids = [i for i in self._selected_ids() if self._levels[i] != level]
+    def _on_set_intensity(self) -> None:
+        intensity = int(self._intensity_var.get())
+        ids = [
+            i
+            for i in self._selected_ids()
+            if not self._lit[i] or self._intensities[i] != intensity
+        ]
         self._apply(
-            "Set bonfire level",
-            f"Set {len(ids)} selected bonfires to level {level}?\n\n"
+            "Set bonfire intensity",
+            f"Set {len(ids)} selected bonfires to intensity {intensity}?\n\n"
             "Unlit ones are lit. A backup is made first.",
-            "set_bonfire_level",
-            lambda bonfires: bonfires.set_level(ids, level),
+            "set_bonfire_intensity",
+            lambda bonfires: bonfires.set_intensity(ids, intensity),
         )
 
     def _on_unlock_all(self) -> None:
-        ids = [i for i, level in self._levels.items() if not level]
+        ids = [i for i, lit in self._lit.items() if not lit]
         self._apply(
             "Unlock all bonfires",
             f"Light {len(ids)} unlit bonfires in this slot?\n\nA backup is made first.",

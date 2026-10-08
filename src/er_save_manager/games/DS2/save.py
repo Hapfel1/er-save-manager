@@ -32,8 +32,9 @@ Entry map (23 total):
   11-20    Per-character large slot (~501KB), one per character slot.
            Holds per-character data (differs between characters starting at
            offset 0x732, identical padding after ~0x5A87F). Mostly unmapped.
-           Bonfire levels, the last rested bonfire, NPC flags and NPC kill
-           records are located through the bonfire id array (see Bonfires);
+           Bonfire states, the last rested bonfire, NPC flags, NPC kill
+           records and boss records are located through the bonfire id array
+           (see Bonfires);
            everything else is preserved as-is on save.
   21       Single ~2MB entry: zlib-compressed (8-byte size header, then a
            standard zlib stream) nested BND4 archive of ~170 real entries.
@@ -248,18 +249,19 @@ FLAG_REGION_START = 0x11E00
 FLAG_REGION_END = 0x1B2FC
 
 # Bonfire state in a slot's large entry. An array of ascending u16 ids, one per
-# bonfire in BONFIRES, is followed by one level byte per id. The level array
-# starts _BONFIRE_ID_CAPACITY ids after the id array, which is 0x200 bytes at
-# two bytes per id. A level is 0 when unlit and 1 when lit, and grows when
-# Bonfire Ascetics are used. Saves hold up to two copies of the pair, and a
-# slot can lack the second. The game rewrites both, so every copy found is
-# updated.
+# bonfire in BONFIRES, is followed by two byte arrays in the same order:
+# - lit state, _BONFIRE_ID_CAPACITY ids (0x200 bytes) after the id array:
+#   0 unlit, 1 lit
+# - Bonfire Ascetics burned there, _BONFIRE_ID_CAPACITY bytes after the lit
+#   array. The bonfire's intensity is this count + 1.
+# Saves hold up to three copies of the three arrays, and a slot can lack the
+# extra ones. The copies hold the same values, so every copy found is updated.
 _BONFIRE_ID_CAPACITY = 256
-# The stored level stops at 99, so a larger byte marks a copy as unreadable.
+# A lit byte above this marks a copy as unreadable. The game writes only 0 and
+# 1; older editor versions stored levels up to 8 there.
 _BONFIRE_PLAUSIBLE_LEVEL = 99
-# Highest level the editor writes. Difficulty stops rising at level 8 while the
-# stored level keeps counting up to 99.
-BONFIRE_MAX_LEVEL = 8
+# Highest intensity the editor writes. Difficulty stops rising at 8.
+BONFIRE_MAX_INTENSITY = 8
 
 # Two more structures sit at fixed distances from the first bonfire id array in
 # the same entry, so they are found through it.
@@ -364,10 +366,11 @@ _CACHE_CLASS_FROM_NAME = 0x4C
 
 
 class Bonfires:
-    """View over the bonfire levels in one slot's large entry.
+    """View over the bonfire lit states and intensities in one slot's large
+    entry.
 
     The id arrays are found by their content rather than by a fixed offset. A
-    copy whose level bytes are implausible is ignored, so unreadable slot data
+    copy whose lit bytes are implausible is ignored, so unreadable slot data
     yields no blocks.
     """
 
@@ -376,20 +379,23 @@ class Bonfires:
         self._ids = list(BONFIRES)
         pattern = struct.pack(f"<{len(self._ids)}H", *self._ids)
         self._id_offsets: list[int] = []
-        self._level_offsets: list[int] = []
+        self._lit_offsets: list[int] = []
         content = bytes(data)
         start = 0
         while (found := content.find(pattern, start)) != -1:
-            levels = found + _BONFIRE_ID_CAPACITY * 2
-            end = levels + len(self._ids)
-            if end <= len(data) and max(data[levels:end]) <= _BONFIRE_PLAUSIBLE_LEVEL:
+            lit = found + _BONFIRE_ID_CAPACITY * 2
+            end = lit + _BONFIRE_ID_CAPACITY + len(self._ids)
+            if (
+                end <= len(data)
+                and max(data[lit : lit + len(self._ids)]) <= _BONFIRE_PLAUSIBLE_LEVEL
+            ):
                 self._id_offsets.append(found)
-                self._level_offsets.append(levels)
+                self._lit_offsets.append(lit)
             start = found + len(pattern)
 
     @property
     def found(self) -> bool:
-        return bool(self._level_offsets)
+        return bool(self._lit_offsets)
 
     @property
     def anchor(self) -> int:
@@ -397,11 +403,20 @@ class Bonfires:
         other structures stored beside it."""
         return self._id_offsets[0]
 
-    def levels(self) -> dict[int, int]:
-        """Bonfire id to level, read from the first copy."""
-        base = self._level_offsets[0]
+    def lit(self) -> dict[int, bool]:
+        """Bonfire id to lit state, read from the first copy."""
+        base = self._lit_offsets[0]
         return {
-            bonfire_id: self._data[base + index]
+            bonfire_id: bool(self._data[base + index])
+            for index, bonfire_id in enumerate(self._ids)
+        }
+
+    def intensities(self) -> dict[int, int]:
+        """Bonfire id to intensity, 1 before any Bonfire Ascetic, read from the
+        first copy."""
+        base = self._lit_offsets[0] + _BONFIRE_ID_CAPACITY
+        return {
+            bonfire_id: self._data[base + index] + 1
             for index, bonfire_id in enumerate(self._ids)
         }
 
@@ -417,14 +432,13 @@ class Bonfires:
 
     def set_lit(self, bonfire_ids: Iterable[int], lit: bool) -> int:
         """Light or unlight bonfires in every copy and return how many changed
-        in the first copy. Lighting keeps levels above 0. Unlighting resets the
-        level to 0 and never touches the last rested bonfire, since the game
-        loads the character there."""
+        in the first copy. Intensities are kept. Unlighting never touches the
+        last rested bonfire, since the game loads the character there."""
         wanted = {b for b in bonfire_ids if b in BONFIRES}
         if not lit:
             wanted.discard(self.last_rested)
         changed = 0
-        for copy, base in enumerate(self._level_offsets):
+        for copy, base in enumerate(self._lit_offsets):
             for index, bonfire_id in enumerate(self._ids):
                 if bonfire_id not in wanted:
                     continue
@@ -439,27 +453,32 @@ class Bonfires:
                     changed += 1
         return changed
 
-    def set_level(self, bonfire_ids: Iterable[int], level: int) -> int:
-        """Set the level of bonfires in every copy and return how many changed
-        in the first copy. A level of 1 or more lights an unlit bonfire. Raises
-        ValueError outside 1 to BONFIRE_MAX_LEVEL, since level 0 is unlighting,
-        which set_lit handles."""
-        if not 1 <= level <= BONFIRE_MAX_LEVEL:
-            raise ValueError(f"Bonfire level must be 1 to {BONFIRE_MAX_LEVEL}")
+    def set_intensity(self, bonfire_ids: Iterable[int], intensity: int) -> int:
+        """Set the intensity of bonfires in every copy and return how many
+        changed in the first copy. Unlit bonfires are lit, and a lit byte above
+        1 left by older editor versions is reset to 1. Raises ValueError
+        outside 1 to BONFIRE_MAX_INTENSITY."""
+        if not 1 <= intensity <= BONFIRE_MAX_INTENSITY:
+            raise ValueError(f"Bonfire intensity must be 1 to {BONFIRE_MAX_INTENSITY}")
         wanted = {b for b in bonfire_ids if b in BONFIRES}
         changed = 0
-        for copy, base in enumerate(self._level_offsets):
+        for copy, base in enumerate(self._lit_offsets):
             for index, bonfire_id in enumerate(self._ids):
-                if bonfire_id not in wanted or self._data[base + index] == level:
+                if bonfire_id not in wanted:
                     continue
-                self._data[base + index] = level
+                lit = base + index
+                ascetics = lit + _BONFIRE_ID_CAPACITY
+                if self._data[lit] == 1 and self._data[ascetics] == intensity - 1:
+                    continue
+                self._data[lit] = 1
+                self._data[ascetics] = intensity - 1
                 if copy == 0:
                     changed += 1
         return changed
 
     def unlock_all(self) -> int:
         """Light every unlit bonfire in every copy and return how many bonfires
-        were newly lit in the first copy. Levels above 0 are kept."""
+        were newly lit in the first copy."""
         return self.set_lit(self._ids, True)
 
 
@@ -1932,7 +1951,7 @@ class DS2Save:
         return occ_data[flag_off] != 0
 
     def bonfires(self, slot_index: int) -> Bonfires | None:
-        """The slot's bonfire levels, or None when the slot holds none."""
+        """The slot's bonfire states, or None when the slot holds none."""
         view = Bonfires(self.container.get_entry(BIG_ENTRY_START + slot_index))
         return view if view.found else None
 
