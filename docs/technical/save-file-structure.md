@@ -8,7 +8,7 @@ All sizes and offsets are sourced directly from the parser implementation.
 
 ## File Layout
 
-**File size:** ~26 MB (26,214,400 bytes, PC)  
+**File size:** 28,967,888 bytes (0x1BA03D0, PC)  
 **Endianness:** Little-endian throughout  
 **Checksum:** MD5 per section (PC only)
 
@@ -30,7 +30,7 @@ Offset       Size         Section
 0x1680390    0x280010     Character Slot 9
 ─────────────────────────────────────────────────────────
 0x19003A0    0x60010      USER_DATA_10 (SteamID, profiles)
-0x1F003B0    0x240010     USER_DATA_11 (Regulation data)
+0x19603B0    0x240020     USER_DATA_11 (Regulation data)
 ─────────────────────────────────────────────────────────
 ```
 
@@ -57,7 +57,7 @@ PlayStation slot layout:
   0x00-...     0x280000    Character data (no checksum)
 ```
 
-**Empty slot detection:** checksum bytes are all `0x00`.
+**Empty slot detection:** `version == 0` (first u32 of the character data). On PC the parser also skips a slot whose checksum is all `0x00` without reading it.
 
 The parser reads slots sequentially in this exact order:
 
@@ -476,7 +476,7 @@ Offset  Size  Field
 
 ## FaceData - 303 bytes (0x12F)
 
-Character appearance data. Stored as raw bytes - contains 100+ fields for facial features, body proportions, and color sliders. When read from `ProfileSummary` (USER_DATA_10), reads `0x120` bytes instead of `0x12F`.
+Character appearance data. Stored as raw bytes - contains 100+ fields for facial features, body proportions, and color sliders. The ProfileSummary copy in USER_DATA_10 is `0x124` bytes.
 
 ---
 
@@ -553,7 +553,7 @@ Offset  Size  Type    Field    Notes
 0x00    2     uint16  unk0x0
 0x02    2     uint16  unk0x02
 0x04    4     uint32  size
-0x08    size          data     consists of size bytes (max 64kb)
+0x08    size          data     normally 0x1000 bytes
 ────────────────────────────────────────────────────────────────
 ```
 
@@ -654,10 +654,10 @@ FieldArea and WorldArea have a max size of 0x10000 while WorldGeomMan, WorldGeom
 A size of 0 means the block has no data.
 
 WorldArea, WorldGeomMan and WorldGeomMan2 hold the per-map world state: killed enemies, broken assets
-and picked up items. All three are lists of per-map records keyed by a `MapId`. Each entry names a part
+and picked up items. RendMan holds ground decals (see below). All three are lists of per-map records keyed by a `MapId`. Each entry names a part
 in that map's MSB (`map/mapstudio/<map>.msb`). The parser decodes them with `WorldArea.parse_chr()` and
-`WorldGeomMan.parse_geom()` (`parser/world.py`). Both return `None` if the data does not re-encode
-byte-identical.
+`WorldGeomMan.parse_geom()`, RendMan with `RendMan.parse_decals()` (`parser/world.py`). All return
+`None` if the data does not re-encode byte-identical.
 
 ### Overview
 
@@ -795,6 +795,34 @@ WorldGeomMan with state 3.
 | Pick Arteria Leaf | - | `AEG099_691_9000` state 3 added | `AEG099_691_9000` state 1 added |
 | Rest | - | state 3 becomes 2 | unchanged |
 
+### RendMan - ground decals
+
+```
+Offset  Size     Type    Field
+──────────────────────────────────────────────────────────
+0x00    4        uint32  count
+0x04    40 * n           decals
+──────────────────────────────────────────────────────────
+```
+
+Decal (`RendManDecal`, 40 bytes):
+
+```
+Offset  Size  Type      Field
+──────────────────────────────────────────────────────────
+0x00    4     uint32    decal_id (DecalParam row)
+0x04    18    int16[9]  three points (x, y, z) in 1/8 world units
+0x16    2     uint16    padding (0)
+0x18    16    uint32[4] unknown
+──────────────────────────────────────────────────────────
+```
+
+Persistent decals around the player: blood splatter (445000, 610003), black liquid slashes (442204,
+443400), burn marks (442600), and two unnamed families. 3000xxxxx decals repeat one point three times
+and form trails about 2 units apart; 6001xxxxx decals are triangles with three distinct points.
+Points are local to the player's map: on a point decal written where the player saved, point / 8
+equals the player coordinates. On point decals the first three unknown u32 are equal.
+
 ### Editing
 
 Adding or removing entries changes the block size, so every later section of the slot moves
@@ -833,7 +861,10 @@ Offset  Size  Type          Field
 
 ## NetMan - 131,076 bytes (0x20004)
 
-Network manager state. `unk0x0` (uint32, 4 bytes) followed by `0x20000` bytes of data.
+Network manager state. `unk0x0` (uint32, always 2) followed by `0x20000` bytes of data.
+
+The u32 before it is always 0. A replacement blob (CSNetMan.bin) covers both, 0x20004 bytes, so it is
+written 4 bytes before the parsed `net_man_offset`.
 
 ---
 
@@ -887,10 +918,21 @@ Offset  Size  Type    Field
 
 ## DLC - 50 bytes (0x32)
 
-Raw bytes. Notable fields:
+```
+Offset  Size  Field
+──────────────────────────────────────────────
+0x00    1     preorder_the_ring (gesture)
+0x01    1     shadow_of_erdtree (entered the DLC)
+0x02    1     preorder_ring_of_miquella (gesture)
+0x03    1     tarnished_pack (Tarnished Edition)
+0x04    46    unused
+──────────────────────────────────────────────
+        50    total
+```
 
-- `data[1]` - Shadow of the Erdtree entry flag. Non-zero = character has entered the DLC area. Causes infinite loading if DLC is not owned.
-- `data[3:50]` - Unused. Should be all `0x00`. Non-zero values indicate corruption.
+`shadow_of_erdtree` non-zero means the character has entered the DLC area; it causes a load error
+if the DLC is not owned. `tarnished_pack` has the same failure mode without the Tarnished Edition.
+The unused bytes should be all `0x00`; non-zero values indicate corruption.
 
 ---
 
@@ -902,64 +944,89 @@ Raw bytes. PlayStation-specific activity data.
 
 ## PlayerGameDataHash - 128 bytes (0x80)
 
-Integrity hash computed from player data and equipment.
+One checksum per tracked value, 11 x uint32 followed by 0x54 bytes. The game rewrites it on every save;
+the editor recalculates it after edits (`parser/player_data_hash.py`). It sits at the parsed position
+after DLC, not at the slot end.
+
+Each checksum is an Adler-32 variant over little-endian bytes: `lo` starts at 1 and adds every byte,
+`hi` adds `lo` after every byte, both are reduced modulo 0xFFF1, result `(lo | hi << 16) * 2`.
 
 ```
-Offset  Size  Field
-──────────────────────────────────────────────
-0x00    4     level
-0x04    4     stats
-0x08    4     archetype
-0x0C    4     playergame_data_0xc0
-0x10    4     padding
-0x14    4     runes
-0x18    4     runes_memory
-0x1C    4     equipped_weapons
-0x20    4     equipped_armors_and_talismans
-0x24    4     equipped_items
-0x28    4     equipped_spells
-0x2C    84    rest
-──────────────────────────────────────────────
-        128   total
+Offset  Entry  Input
+──────────────────────────────────────────────────────────────────────
+0x00    0      level (u32)
+0x04    1      vigor..arcane (8 x u32) + PlayerGameData 0x54 (u32)
+0x08    2      archetype (u8 as u32)
+0x0C    3      PlayerGameData 0xB8 (1 byte)
+0x10    4      unknown
+0x14    5      runes held (u32)
+0x18    6      runes memory (u32)
+0x1C    7      equipped weapon item ids: L1, L2, L3, R1, R2, R3, arrows 1, arrows 2, bolts 1, bolts 2
+0x20    8      equipped item id slots 12-15 (armor), 17-20 (talismans) and 21 (unk0x54)
+0x24    9      quick items (inputs unknown)
+0x28    10     14 equipped spell ids
+0x2C    -      0x54 bytes, uninitialized memory in game-written saves
+──────────────────────────────────────────────────────────────────────
 ```
 
 ---
 
 ## USER_DATA_10
 
-Located at `0x19003A0` (PC). Size: `0x60010` bytes including checksum.
+Located at `0x19003A0` (PC). Size: `0x60010` bytes including checksum. Offsets below are from the
+section start on PC; PlayStation has no checksum, so subtract 0x10.
 
 ```
 Offset  Size    Field
 ──────────────────────────────────────────────────────
 0x00    16      checksum (MD5, PC only)
-0x10    8       steam_id (uint64)
-0x18    ...     ProfileSummary (10 × 0x24C = 5,880 bytes)
-...     10      active_slots (uint8[10], 1=in use 0=empty)
+0x10    4       version (uint32)
+0x14    8       steam_id (uint64)
+0x1C    0x140   Settings (camera, volume, HDR, ...), padded
+0x15C   0x1808  MenuSystemSaveLoad (appearance presets)
+0x1964  0x1702  ProfileSummary
+0x3066  5       GameMan bytes
+0x306B  0xB2    PCOptionData (PC only)
+...     var     KeyConfigSaveLoad (u16, u16, u32 size, size bytes)
+...     8       game_man_0x118
+...             unparsed remainder up to 0x60010
 ──────────────────────────────────────────────────────
 ```
+
+**ProfileSummary - 0x1702 bytes:** 10 x uint8 `active_profiles` (1 = slot in use), then 10 x Profile.
 
 **Profile - 0x24C (588 bytes) per slot:**
 
 ```
-Offset  Size  Field
+Offset  Size   Field
 ──────────────────────────────────────────────────
-0x00    32    character_name (UTF-16LE, 16 chars)
-0x20    4     level (uint32)
-0x24    4     seconds_played (uint32)
-0x120   ...   face_data (FaceData, 0x120 bytes in profile context)
-...           additional fields
+0x00    32     character_name (UTF-16LE, 16 chars)
+0x20    2      terminator
+0x22    4      level (uint32)
+0x26    4      seconds_played (uint32)
+0x2A    4      runes_memory (uint32)
+0x2E    4      map_id (MapId)
+0x32    4      unknown
+0x36    0x124  face_data
+0x15A   0xE8   equipment
+0x242   1      body_type
+0x243   1      archetype
+0x244   1      starting_gift
+0x245   7      unknown
 ──────────────────────────────────────────────────
-0x24C         total
+0x24C          total
 ```
+
+ProfileSummary is the load screen copy of each character. Edits that should show on the load screen
+(name, level, playtime, appearance, equipment) have to update it as well.
 
 ---
 
 ## USER_DATA_11
 
-Located at `0x1F003B0` (PC). Size: `0x240010` bytes including checksum.
-
-Game regulation data (item stats, scaling, balance). Not edited by the save editor. MD5 checksum at start (PC only), followed by `0x240000` bytes of regulation blob.
+Located at `0x19603B0` (PC). Size: `0x240020` bytes. MD5 checksum at the start (PC only) over the
+following `0x240010` bytes, which hold the game regulation data (item stats, scaling, balance). Not
+edited by the save editor, so its checksum is never recalculated.
 
 ---
 
@@ -984,7 +1051,7 @@ The parser tracks slot offsets dynamically during read. Checksums are recalculat
 | ...     | ...        | ...       | `0x280000` |
 | Slot 9  | `0x1680390`| `0x16803A0`| `0x280000`|
 | UD10    | `0x19003A0`| `0x19003B0`| `0x60000` |
-| UD11    | `0x1F003B0`| `0x1F003C0`| `0x240000`|
+| UD11    | `0x19603B0`| `0x19603C0`| `0x240010`|
 
 ---
 
