@@ -63,3 +63,21 @@ def test_unlighting_keeps_intensity():
 def test_set_intensity_rejects_out_of_range():
     with pytest.raises(ValueError):
         Bonfires(_data()).set_intensity([CARDINAL_TOWER], 9)
+
+
+def test_ng_plus_cycle_adds_to_intensity():
+    data = _data()
+    data[ARRAY + 0x300 + IDS.index(CARDINAL_TOWER)] = 1
+    bonfires = Bonfires(data, cycle=1)
+    assert bonfires.min_intensity == 2
+    assert bonfires.intensities()[CARDINAL_TOWER] == 3
+    assert bonfires.set_intensity([CARDINAL_TOWER], 5) == 1
+    assert _byte(data, 0x300, CARDINAL_TOWER) == 3
+    with pytest.raises(ValueError):
+        bonfires.set_intensity([CARDINAL_TOWER], 1)
+
+
+def test_intensity_stops_at_eight():
+    data = _data()
+    data[ARRAY + 0x300 + IDS.index(CARDINAL_TOWER)] = 5
+    assert Bonfires(data, cycle=6).intensities()[CARDINAL_TOWER] == 8

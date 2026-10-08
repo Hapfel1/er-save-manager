@@ -102,7 +102,8 @@ class DS2BonfirePanel:
             self.parent,
             text=(
                 "Ctrl or Shift+click selects several. Intensity is what Bonfire "
-                "Ascetics raise; it is kept when lighting or unlighting. Set "
+                "Ascetics raise, plus 1 per NG+ cycle the game adds itself; it is "
+                "kept when lighting or unlighting. Set "
                 "Intensity also lights unlit bonfires. The last rested bonfire "
                 "stays lit."
             ),
@@ -129,6 +130,7 @@ class DS2BonfirePanel:
         self._ids: list[int] = []
         self._lit: dict[int, bool] = {}
         self._intensities: dict[int, int] = {}
+        self._min_intensity = 1
         self._last_rested: int | None = None
         self._has_character = False
         self.refresh()
@@ -152,6 +154,7 @@ class DS2BonfirePanel:
 
         self._lit = bonfires.lit()
         self._intensities = bonfires.intensities()
+        self._set_min_intensity(bonfires.min_intensity)
         self._last_rested = bonfires.last_rested
         for bonfire_id, lit in self._lit.items():
             self._ids.append(bonfire_id)
@@ -182,6 +185,16 @@ class DS2BonfirePanel:
 
     def _selected_ids(self) -> list[int]:
         return [self._ids[self._tree.index(row)] for row in self._tree.selection()]
+
+    def intensity_choices(self) -> list[str]:
+        """Intensities a bonfire can have in the loaded character's cycle."""
+        return [str(n) for n in range(self._min_intensity, BONFIRE_MAX_INTENSITY + 1)]
+
+    def _set_min_intensity(self, minimum: int) -> None:
+        self._min_intensity = minimum
+        self._intensity_combo.configure(values=self.intensity_choices())
+        if int(self._intensity_var.get()) < minimum:
+            self._intensity_var.set(str(minimum))
 
     def _on_selection(self) -> None:
         """Show the shared intensity of the selected bonfires in the intensity

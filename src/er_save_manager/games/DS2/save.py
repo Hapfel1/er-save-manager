@@ -253,14 +253,20 @@ FLAG_REGION_END = 0x1B2FC
 # - lit state, _BONFIRE_ID_CAPACITY ids (0x200 bytes) after the id array:
 #   0 unlit, 1 lit
 # - Bonfire Ascetics burned there, _BONFIRE_ID_CAPACITY bytes after the lit
-#   array. The bonfire's intensity is this count + 1.
+#   array. The game shows intensity as this count + 1 + the NG+ cycle, up to
+#   BONFIRE_MAX_INTENSITY.
+# Burning an Ascetic also sets an 8-byte value per bonfire, starting
+# _BONFIRE_ASCETIC_MARK_AFTER_IDS bytes after the id array, to -5. Its meaning
+# is unknown and the shown intensity does not depend on it, so it is left
+# untouched.
 # Saves hold up to three copies of the three arrays, and a slot can lack the
 # extra ones. The copies hold the same values, so every copy found is updated.
 _BONFIRE_ID_CAPACITY = 256
 # A lit byte above this marks a copy as unreadable. The game writes only 0 and
 # 1; older editor versions stored levels up to 8 there.
 _BONFIRE_PLAUSIBLE_LEVEL = 99
-# Highest intensity the editor writes. Difficulty stops rising at 8.
+_BONFIRE_ASCETIC_MARK_AFTER_IDS = 0x400
+# Highest intensity the game shows. Difficulty stops rising at 8.
 BONFIRE_MAX_INTENSITY = 8
 
 # Two more structures sit at fixed distances from the first bonfire id array in
@@ -367,15 +373,17 @@ _CACHE_CLASS_FROM_NAME = 0x4C
 
 class Bonfires:
     """View over the bonfire lit states and intensities in one slot's large
-    entry.
+    entry. cycle is the character's 0-based NG+ cycle, which the game adds to
+    every bonfire's intensity.
 
     The id arrays are found by their content rather than by a fixed offset. A
     copy whose lit bytes are implausible is ignored, so unreadable slot data
     yields no blocks.
     """
 
-    def __init__(self, data: bytearray) -> None:
+    def __init__(self, data: bytearray, cycle: int = 0) -> None:
         self._data = data
+        self._cycle = max(0, cycle)
         self._ids = list(BONFIRES)
         pattern = struct.pack(f"<{len(self._ids)}H", *self._ids)
         self._id_offsets: list[int] = []
@@ -411,12 +419,19 @@ class Bonfires:
             for index, bonfire_id in enumerate(self._ids)
         }
 
+    @property
+    def min_intensity(self) -> int:
+        """Intensity of a bonfire without Bonfire Ascetics in this cycle."""
+        return min(self._cycle + 1, BONFIRE_MAX_INTENSITY)
+
     def intensities(self) -> dict[int, int]:
-        """Bonfire id to intensity, 1 before any Bonfire Ascetic, read from the
-        first copy."""
+        """Bonfire id to the intensity the game shows, read from the first
+        copy."""
         base = self._lit_offsets[0] + _BONFIRE_ID_CAPACITY
         return {
-            bonfire_id: self._data[base + index] + 1
+            bonfire_id: min(
+                self._data[base + index] + self.min_intensity, BONFIRE_MAX_INTENSITY
+            )
             for index, bonfire_id in enumerate(self._ids)
         }
 
@@ -457,9 +472,13 @@ class Bonfires:
         """Set the intensity of bonfires in every copy and return how many
         changed in the first copy. Unlit bonfires are lit, and a lit byte above
         1 left by older editor versions is reset to 1. Raises ValueError
-        outside 1 to BONFIRE_MAX_INTENSITY."""
-        if not 1 <= intensity <= BONFIRE_MAX_INTENSITY:
-            raise ValueError(f"Bonfire intensity must be 1 to {BONFIRE_MAX_INTENSITY}")
+        outside min_intensity to BONFIRE_MAX_INTENSITY."""
+        if not self.min_intensity <= intensity <= BONFIRE_MAX_INTENSITY:
+            raise ValueError(
+                f"Bonfire intensity must be {self.min_intensity} to "
+                f"{BONFIRE_MAX_INTENSITY} in this cycle"
+            )
+        ascetics_wanted = intensity - self.min_intensity
         wanted = {b for b in bonfire_ids if b in BONFIRES}
         changed = 0
         for copy, base in enumerate(self._lit_offsets):
@@ -468,10 +487,10 @@ class Bonfires:
                     continue
                 lit = base + index
                 ascetics = lit + _BONFIRE_ID_CAPACITY
-                if self._data[lit] == 1 and self._data[ascetics] == intensity - 1:
+                if self._data[lit] == 1 and self._data[ascetics] == ascetics_wanted:
                     continue
                 self._data[lit] = 1
-                self._data[ascetics] = intensity - 1
+                self._data[ascetics] = ascetics_wanted
                 if copy == 0:
                     changed += 1
         return changed
@@ -1952,7 +1971,10 @@ class DS2Save:
 
     def bonfires(self, slot_index: int) -> Bonfires | None:
         """The slot's bonfire states, or None when the slot holds none."""
-        view = Bonfires(self.container.get_entry(BIG_ENTRY_START + slot_index))
+        view = Bonfires(
+            self.container.get_entry(BIG_ENTRY_START + slot_index),
+            self.characters[slot_index].new_game_plus,
+        )
         return view if view.found else None
 
     def npcs(self, slot_index: int) -> NpcStates | None:

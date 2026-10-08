@@ -16,7 +16,6 @@ from typing import TYPE_CHECKING
 import customtkinter as ctk
 
 from er_save_manager.games.DS2.bonfire_database import BONFIRES
-from er_save_manager.games.DS2.save import BONFIRE_MAX_INTENSITY
 from er_save_manager.ui import palette
 from er_save_manager.ui.utils import center_window, debounced_trace
 
@@ -112,6 +111,7 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
         self._refresh_job = None
         if not self.winfo_exists():
             return
+        self._intensity_combo.configure(values=self._panel.intensity_choices())
         if self._batch_job is not None or self._visible_ids() != self._order:
             self._rebuild()
             return
@@ -182,14 +182,15 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
         self._unlight_btn.pack(side="left", padx=4)
         ctk.CTkLabel(actions, text="Intensity:").pack(side="left", padx=(12, 4))
         # Shares the panel's variable, so both show the same intensity.
-        ctk.CTkComboBox(
+        self._intensity_combo = ctk.CTkComboBox(
             actions,
             variable=self._panel._intensity_var,
-            values=[str(n) for n in range(1, BONFIRE_MAX_INTENSITY + 1)],
+            values=self._panel.intensity_choices(),
             state="readonly",
             width=70,
             command=lambda _v: self._sync_buttons(),
-        ).pack(side="left")
+        )
+        self._intensity_combo.pack(side="left")
         self._intensity_btn = ctk.CTkButton(
             actions, text="Set Intensity", width=100, command=self._do_set_intensity
         )
