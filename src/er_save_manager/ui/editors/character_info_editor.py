@@ -11,9 +11,12 @@ from er_save_manager.data.starting_classes import get_all_classes, get_class_dat
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, trace_variable
 
-# Starting classes added in the Tarnished Pack DLC. Hidden from the class
+# Starting classes in the Tarnished Pack DLC slots (archetypes 10-11, which
+# Convergence uses for its Tarnished Edition classes). Hidden from the class
 # dropdown unless the character owns the DLC.
-_TARNISHED_PACK_CLASS_NAMES = frozenset({"Idus Knight", "Heavy Knight"})
+_TARNISHED_PACK_CLASS_NAMES = frozenset(
+    {"Idus Knight", "Heavy Knight", "Retainer (Alt)", "Dreadnought (Alt)"}
+)
 _TARNISHED_PACK_FLAG = 6953
 
 
