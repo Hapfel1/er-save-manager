@@ -3,6 +3,20 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 2.2.0
+**Released:** October 09, 2026
+
+
+### ✨ New Features
+
+- General: Decode ER world state blocks (CHR, MOEG, FOEG) ([a1b61d2](https://github.com/Hapfel1/er-save-manager/commit/a1b61d2f45d5fd2fdb2831410fd6fa1b69ec5301))
+
+- General: Decode RendMan decals, fix save structure docs ([5ba38b3](https://github.com/Hapfel1/er-save-manager/commit/5ba38b3cf4b1682ce87669a8f6824a339d02042f))
+
+- General: Update data for Convergence 3.0.3 ([c996172](https://github.com/Hapfel1/er-save-manager/commit/c9961722a3ca328a624d3301d63605f161b61270))
+
+
+---
 ## 📦 Release 2.1.0
 **Released:** October 08, 2026
 
@@ -1901,6 +1915,7 @@ implementation) ([19bee2c](https://github.com/Hapfel1/er-save-manager/commit/19b
 
 
 ---
+[2.2.0]: https://github.com/Hapfel1/er-save-manager/compare/v2.1.0..v2.2.0
 [2.1.0]: https://github.com/Hapfel1/er-save-manager/compare/v2.0.1..v2.1.0
 [2.0.1]: https://github.com/Hapfel1/er-save-manager/compare/v2.0.0..v2.0.1
 [2.0.0]: https://github.com/Hapfel1/er-save-manager/compare/v1.12.2..v2.0.0
