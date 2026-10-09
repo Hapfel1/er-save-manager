@@ -45,7 +45,9 @@ ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_af
 3570000,Greatsword of Midra,somber,0,5,SwordLarge,1,Standard
 18110000,Guardian Spearblade,somber,0,3,SwordNormal,1,Standard
 18250000,Halberd of Archea,somber,0,29,SpearAxe,1,Standard
+18530000,Halberd of the Deceiver,somber,0,29,SpearAxe,1,Standard
 11180000,Hammer of Virtue,somber,0,21,HammerNormal,1,Standard
+5100000,Huntress's Estoc,somber,0,15,SwordPierce,1,Standard
 67540000,Konrad's Bloodletter,somber,0,93,LightGreatsword,1,Standard
 11020000,Leaden Maul,somber,1,21,HammerNormal,1,Standard
 23160000,Lodestone of Gelmir,somber,0,41,AxhammerLarge,1,Standard

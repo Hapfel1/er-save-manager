@@ -411,6 +411,7 @@ flag,lot,map,grace_flag,source,dlc,items,names
 520670,20670,,0,reward,0,goods:10165:1|goods:10107:5|goods:3070:10|goods:8955:1,Great Somber Stone|Great Smithing Stone|Gravity Stone Chunk|Somberstone Miner's Bell Bearing [1]
 520680,20680,,0,reward,0,goods:8354:1,Radiant Rune of Gravity
 520700,20700,,0,reward,0,goods:8420:1,Shadow Rune of Black Flame
+520701,20701,,0,reward,0,weapon:18530000:1,Halberd of the Deceiver
 520710,20710,,0,reward,0,weapon:15500000:1|goods:8415:1,Death Knight's Longhaft Axe|Shadow Rune of Lightning
 520750,20750,,0,reward,0,goods:8480:1|goods:2206000:1|gem:60800:1,Shadow Rune of Frost|Demi-Human Swordsman Yosh|Ash of War: Stormbreaker's Deflection
 520760,20760,,0,reward,0,goods:2200000:1,Curseblade Meera
@@ -427,6 +428,7 @@ flag,lot,map,grace_flag,source,dlc,items,names
 530170,30170,m60_45_39_00,76119,reward,0,goods:2090:1|goods:212000:1|armor:640200:1,Deathroot|Skeletal Militiaman Ashes|Lionel's Gauntlets
 530180,30180,m60_43_33_00,76152,reward,0,weapon:23070000:1|goods:20900:1|goods:20903:1,Staff of the Avatar|Essence Physick Remnant|Invigorating Physick Remnant
 530200,30200,m60_38_48_00,76298,reward,0,goods:20900:1|goods:20901:1|goods:20904:1,Essence Physick Remnant|Elemental Physick Remnant|Enduring Physick Remnant
+530201,30203,m60_38_48_00,76298,reward,0,weapon:5100000:1,Huntress's Estoc
 530205,30205,m60_33_43_00,76299,reward,0,goods:20900:1|goods:20901:1|goods:20903:1,Essence Physick Remnant|Elemental Physick Remnant|Invigorating Physick Remnant
 530210,30210,m60_34_45_00,76243,reward,0,goods:10060:1,Dragon Heart
 530225,30225,m60_35_42_00,76251,reward,0,goods:20950:1|goods:20951:1,Combat Remnant|Heirloom Remnant
@@ -1070,6 +1072,7 @@ flag,lot,map,grace_flag,source,dlc,items,names
 12027310,12020310,m12_02_00_00,71224,pickup,0,goods:8341:1,Shimmering Rune of Ancestors
 12027315,12020315,m12_02_00_00,71291,pickup,0,goods:2460000:1,Rootman Ashes
 12027320,12020320,m12_02_00_00,71223,pickup,0,goods:2905:1,Golden Rune [6]
+12027325,12020325,m12_02_00_00,71220,pickup,0,goods:148:1,Ancestral Whistle
 12027330,12020330,m12_02_00_00,71224,pickup,0,goods:2902:1,Golden Rune [3]
 12027340,12020340,m12_02_00_00,71224,pickup,0,goods:15000:1,Sliver of Meat
 12027350,12020350,m12_02_00_00,71224,pickup,0,goods:10101:2,Smithing Stone
@@ -1468,6 +1471,7 @@ flag,lot,map,grace_flag,source,dlc,items,names
 13007890,13000890,m13_00_00_00,71307,pickup,0,goods:230000:1,Azula Beastman Ashes
 13007900,13000900,m13_00_00_00,71310,pickup,0,goods:10140:1,Ancient Smithing Stone
 13007910,13000910,m13_00_00_00,71307,pickup,0,goods:8962:1|goods:8344:1,Glovewort Picker's Bell Bearing [3]|Radiant Rune of Ancestors
+13007911,13000912,m13_00_00_00,71307,pickup,0,weapon:17080000:1,Spear of the Dreaming
 13007920,13000920,m13_00_00_00,71309,pickup,0,goods:2913:1,Numen's Rune
 13007940,13000940,m13_00_00_00,71309,pickup,0,goods:8379:1,Radiant Rune of the Storm
 13007950,13000950,m13_00_00_00,71309,pickup,0,goods:20956:1|armor:570000:1|armor:570100:1|armor:570200:1|armor:570300:1,Enchanted Remnant|Crucible Axe Helm|Crucible Axe Armor|Crucible Gauntlets|Crucible Greaves
@@ -1889,7 +1893,7 @@ flag,lot,map,grace_flag,source,dlc,items,names
 20007080,20000080,m20_00_00_00,72002,pickup,1,goods:2020006:3,Black Pyrefly
 20007090,20000090,m20_00_00_00,72002,pickup,1,goods:2001220:1,Silver Horn Tender
 20007100,20000100,m20_00_00_00,72002,pickup,1,goods:2001220:1,Silver Horn Tender
-20007110,20000110,m20_00_00_00,72002,pickup,1,goods:10164:1|goods:2001230:2|goods:10166:1,Large Somber Stone|Golden Horn Tender|Somber Smithing Stone [7]
+20007110,20000110,m20_00_00_00,72002,pickup,1,goods:10164:1|goods:2001230:2|goods:10165:1,Large Somber Stone|Golden Horn Tender|Great Somber Stone
 20007120,20000120,m20_00_00_00,72002,pickup,1,goods:2020001:1,Rada Fruit
 20007130,20000130,m20_00_00_00,72002,pickup,1,goods:2020001:1,Rada Fruit
 20007140,20000140,m20_00_00_00,72002,pickup,1,goods:2020001:1,Rada Fruit
@@ -2013,7 +2017,7 @@ flag,lot,map,grace_flag,source,dlc,items,names
 20017460,20010460,m20_01_00_00,72014,pickup,1,goods:2020001:1,Rada Fruit
 20017470,20010470,m20_01_00_00,72014,pickup,1,goods:10114:1,Primordial Shadow Smithing Stone
 20017480,20010480,m20_01_00_00,72014,pickup,1,goods:2003310:2,Sunwarmth Stone
-20017490,20010490,m20_01_00_00,72014,pickup,1,goods:10166:1,Somber Smithing Stone [7]
+20017490,20010490,m20_01_00_00,72014,pickup,1,goods:10165:1,Great Somber Stone
 20017500,20010500,m20_01_00_00,72014,pickup,1,armor:5230100:1,Gravebird's Blackquill Armor
 20017510,20010510,m20_01_00_00,72014,pickup,1,goods:2020001:1,Rada Fruit
 20017520,20010520,m20_01_00_00,72014,pickup,1,goods:10168:1,Ancient Somber Stone
@@ -2088,11 +2092,11 @@ flag,lot,map,grace_flag,source,dlc,items,names
 21007520,21000520,m21_00_00_00,72107,pickup,1,goods:2020001:1,Rada Fruit
 21007530,21000530,m21_00_00_00,72107,pickup,1,goods:2020001:1,Rada Fruit
 21007540,21000540,m21_00_00_00,72107,pickup,1,goods:2020001:1,Rada Fruit
-21007550,21000550,m21_00_00_00,72107,pickup,1,goods:10200:1,Somber Smithing Stone [9]
+21007550,21000550,m21_00_00_00,72107,pickup,1,goods:10167:1,Colossal Somber Stone
 21007560,21000560,m21_00_00_00,72107,pickup,1,goods:2001170:1,Well-Pickled Turtle Neck
 21007570,21000570,m21_00_00_00,72107,pickup,1,goods:15130:2,Crab Eggs
 21007580,21000580,m21_00_00_00,72107,pickup,1,goods:10916:1,Budding Ghost Glovewort
-21007590,21000590,m21_00_00_00,72107,pickup,1,goods:10166:1,Somber Smithing Stone [7]
+21007590,21000590,m21_00_00_00,72107,pickup,1,goods:10165:1,Great Somber Stone
 21007600,21000600,m21_00_00_00,72106,pickup,1,goods:2002956:1,Shadow Realm Rune [5]
 21007610,21000610,m21_00_00_00,72106,pickup,1,goods:1730:6,Kukri
 21007620,21000620,m21_00_00_00,72106,pickup,1,goods:10105:4,Large Smithing Stone
@@ -2487,7 +2491,7 @@ flag,lot,map,grace_flag,source,dlc,items,names
 31077060,31070060,m31_07_00_00,73107,pickup,0,goods:2906:1,Golden Rune [7]
 31077070,31070070,m31_07_00_00,73107,pickup,0,goods:1110:1,Immunizing Cured Meat
 31097000,31090000,m31_09_00_00,73109,pickup,0,goods:2905:1,Golden Rune [6]
-31097010,31090010,m31_09_00_00,73109,pickup,0,weapon:17080000:1,Spear of the Dreaming
+31097010,31090010,m31_09_00_00,73109,pickup,0,goods:1200:2,Gold-Pickled Fowl Foot
 31097020,31090020,m31_09_00_00,73109,pickup,0,goods:20691:3,Arteria Leaf
 31097030,31090030,m31_09_00_00,73109,pickup,0,goods:15020:5,Lump of Flesh
 31097040,31090040,m31_09_00_00,73109,pickup,0,weapon:30200000:1,Coil Shield
@@ -2800,7 +2804,7 @@ flag,lot,map,grace_flag,source,dlc,items,names
 39207970,420126020,m39_20_00_00,73902,enemy,0,goods:2905:1,Golden Rune [6]
 39207980,420126010,m39_20_00_00,73902,enemy,0,goods:2905:1,Golden Rune [6]
 39207990,420126000,m39_20_00_00,73902,enemy,0,goods:2905:1,Golden Rune [6]
-40007000,40000000,m40_00_00_00,74000,pickup,1,goods:10904:1,Grave Glovewort [5]
+40007000,40000000,m40_00_00_00,74000,pickup,1,goods:10903:1,Seedling Grave Glovewort
 40007010,40000010,m40_00_00_00,74000,pickup,1,goods:10111:2,Large Shadow Smithing Stone
 40007020,40000020,m40_00_00_00,74000,pickup,1,goods:2001430:5,Golden Grease
 40007040,40000040,m40_00_00_00,74000,pickup,1,goods:2003310:3,Sunwarmth Stone
@@ -2921,12 +2925,12 @@ flag,lot,map,grace_flag,source,dlc,items,names
 41027995,575084701,m41_02_00_00,74102,enemy,1,goods:15410:1|goods:1235:1,Living Jar Shard|Raw Meat Dumpling
 42007000,42000000,m42_00_00_00,74200,reward,1,weapon:12510000:1|goods:10140:1,Anvil Hammer|Ancient Smithing Stone
 42007100,42000100,m42_00_00_00,74200,pickup,1,goods:10105:4,Large Smithing Stone
-42007110,42000110,m42_00_00_00,74200,pickup,1,goods:10104:4,Smithing Stone [5]
+42007110,42000110,m42_00_00_00,74200,pickup,1,goods:10105:4,Large Smithing Stone
 42007120,42000120,m42_00_00_00,74200,pickup,1,goods:2000600:5,Hefty Volcano Pot
 42007130,42000130,m42_00_00_00,74200,pickup,1,goods:10105:2,Large Smithing Stone
 42007140,42000140,m42_00_00_00,74200,pickup,1,goods:10107:3,Great Smithing Stone
 42007150,42000150,m42_00_00_00,74200,pickup,1,weapon:63500000:1,Smithscript Dagger
-42007160,42000160,m42_00_00_00,74200,pickup,1,goods:10166:1,Somber Smithing Stone [7]
+42007160,42000160,m42_00_00_00,74200,pickup,1,goods:10165:1,Great Somber Stone
 42007170,42000170,m42_00_00_00,74200,pickup,1,goods:10160:1,Somber Stone
 42007180,42000180,m42_00_00_00,74200,pickup,1,goods:10000:1,Glass Shard
 42027000,42020000,m42_02_00_00,74202,reward,1,weapon:69500000:1|goods:10140:1,Smithscript Rosary|Ancient Smithing Stone
@@ -3004,6 +3008,7 @@ flag,lot,map,grace_flag,source,dlc,items,names
 1034457020,1034450020,m60_34_45_00,76243,pickup,0,goods:1730:6,Kukri
 1034457101,1034450100,m60_34_45_00,76243,pickup,0,goods:10164:2,Large Somber Stone
 1034467100,1034460100,m60_34_46_00,76243,pickup,0,goods:10165:1,Great Somber Stone
+1034467105,1034460105,m60_34_46_00,76243,pickup,0,goods:147:1,Revenant Whistle
 1034477000,1034470000,m60_34_47_00,76227,pickup,0,goods:1700:6,Throwing Dagger
 1034477110,1034471010,m60_34_47_00,76211,pickup,0,goods:2900:1,Golden Rune [1]
 1034477120,1034471020,m60_34_47_00,76211,pickup,0,goods:2902:1,Golden Rune [3]
@@ -4417,7 +4422,7 @@ flag,lot,map,grace_flag,source,dlc,items,names
 1099007006,10163,,0,reward,0,goods:8626:1,Map: Farum Azula
 1099007007,10113,,0,reward,0,goods:8627:1,Map: Underworld
 1099007008,10462,,0,reward,0,goods:8628:1,Map: Realm of Shadows
-2044417000,2044410000,m61_44_41_00,76804,pickup,1,goods:10914:1,Ghost Glovewort [5]
+2044417000,2044410000,m61_44_41_00,76804,pickup,1,goods:10913:1,Seedling Ghost Glovewort
 2044417995,524080714,m61_44_41_00,76804,enemy,1,goods:10171:1|goods:2001220:1,Large Somber Shadow Stone|Silver Horn Tender
 2044457000,2044450000,m61_44_45_00,76944,pickup,1,armor:5253000:1|armor:5253100:1|armor:5253200:1|armor:5253300:1,Divine Bird Helm|Divine Bird Warrior Armor|Divine Bird Warrior Gauntlets|Divine Bird Warrior Greaves
 2044457010,2044450010,m61_44_45_00,76944,pickup,1,goods:15080:3,Four-Toed Fowl Foot
@@ -4441,13 +4446,13 @@ flag,lot,map,grace_flag,source,dlc,items,names
 2044477020,2044470020,m61_44_47_00,76914,pickup,1,goods:15030:2,Beast Blood
 2044477030,2044470030,m61_44_47_00,76914,pickup,1,goods:15020:3,Lump of Flesh
 2044477040,2044470040,m61_44_47_00,76914,pickup,1,goods:2560000:1,Red Bear Ashes
-2044477050,2044470050,m61_44_47_00,76914,pickup,1,goods:10200:1,Somber Smithing Stone [9]
+2044477050,2044470050,m61_44_47_00,76914,pickup,1,goods:10167:1,Colossal Somber Stone
 2044477900,2044470900,m61_44_47_00,76914,pickup,1,goods:2008033:1,Larval Tear
 2045417000,2045410000,m61_45_41_00,76804,pickup,1,goods:15030:2,Beast Blood
 2045417010,2045410010,m61_45_41_00,76804,pickup,1,goods:2020003:3,Whiteflesh Mushroom
 2045417020,2045410020,m61_45_41_00,76804,pickup,1,goods:2020012:2,Sanguine Amaryllis
 2045417030,2045410030,m61_45_41_00,76804,pickup,1,goods:10164:1,Large Somber Stone
-2045417040,2045410040,m61_45_41_00,76804,pickup,1,goods:10105:4|goods:10104:4,Large Smithing Stone|Smithing Stone [5]
+2045417040,2045410040,m61_45_41_00,76804,pickup,1,goods:10105:4,Large Smithing Stone
 2045417050,2045410050,m61_45_41_00,76804,pickup,1,weapon:51000000:10,Great Arrow 
 2045417700,2045410700,m61_45_41_00,76804,pickup,1,goods:10110:2,Shadow Smithing Stone
 2045417710,2045410710,m61_45_41_00,76804,pickup,1,goods:2008909:1,String-Seller's Bell Bearing
@@ -4535,7 +4540,7 @@ flag,lot,map,grace_flag,source,dlc,items,names
 2046407010,2046400010,m61_46_40_00,76800,pickup,1,goods:2000320:5,Hefty Lightning Pot
 2046407020,2046400020,m61_46_40_00,76800,pickup,1,armor:5000100:1,Leda's Armor
 2046407040,2046400040,m61_46_40_00,76832,pickup,1,goods:10909:1,Elder Grave Glovewort
-2046407050,2046400050,m61_46_40_00,76800,pickup,1,goods:10917:1,Ghost Glovewort [8]
+2046407050,2046400050,m61_46_40_00,76800,pickup,1,goods:10918:1,Blooming Ghost Glovewort
 2046407060,2046400060,m61_46_40_00,76800,pickup,1,goods:10918:1,Blooming Ghost Glovewort
 2046407700,2046400700,m61_46_40_00,76800,pickup,1,goods:10170:1,Somber Shadow Stone
 2046427700,2046420700,m61_46_42_00,76802,pickup,1,goods:190:1,Rune Arc
@@ -4655,7 +4660,7 @@ flag,lot,map,grace_flag,source,dlc,items,names
 2047447050,2047440050,m61_47_44_00,76821,pickup,1,goods:15060:2,Flight Pinion
 2047447060,2047440060,m61_47_44_00,76821,pickup,1,goods:1190:1,Silver-Pickled Fowl Foot
 2047447070,2047440070,m61_47_44_00,76821,pickup,1,goods:10160:1,Somber Stone
-2047447080,2047440080,m61_47_44_00,76823,pickup,1,goods:10166:1,Somber Smithing Stone [7]
+2047447080,2047440080,m61_47_44_00,76823,pickup,1,goods:10165:1,Great Somber Stone
 2047447090,2047440090,m61_47_44_00,76821,pickup,1,goods:10171:1,Large Somber Shadow Stone
 2047447100,2047440100,m61_47_44_00,76813,pickup,1,goods:10160:1,Somber Stone
 2047447110,2047440110,m61_47_44_00,76813,pickup,1,goods:2020007:1,Glintslab Firefly
@@ -4690,7 +4695,7 @@ flag,lot,map,grace_flag,source,dlc,items,names
 2047457040,2047450040,m61_47_45_00,76907,pickup,1,goods:2001400:1,Messmerfire Grease
 2047457070,2047450070,m61_47_45_00,76907,pickup,1,goods:2020002:8,Redflesh Mushroom
 2047457080,2047450080,m61_47_45_00,76907,pickup,1,weapon:50010000:10,Fire Arrow 
-2047457180,2047440180,m61_47_44_00,76821,pickup,1,goods:10907:1,Grave Glovewort [8]
+2047457180,2047440180,m61_47_44_00,76821,pickup,1,goods:10908:1,Blooming Grave Glovewort
 2047457700,2047450700,m61_47_45_00,76907,reward,1,goods:10107:9,Great Smithing Stone
 2047457800,2047450800,m61_47_45_00,76907,pickup,1,goods:2008033:1,Larval Tear
 2047457900,2047450900,m61_47_45_00,76907,pickup,1,weapon:13500000:1,Serpent Flail
@@ -4747,7 +4752,7 @@ flag,lot,map,grace_flag,source,dlc,items,names
 2048447020,2048440020,m61_48_44_00,76822,pickup,1,goods:15341:4,Hefty Beast Bone
 2048447030,2048440030,m61_48_44_00,76821,pickup,1,goods:15400:3,String
 2048447040,2048440040,m61_48_44_00,76822,pickup,1,goods:15020:2,Lump of Flesh
-2048447050,2048440050,m61_48_44_00,76822,pickup,1,goods:10166:1,Somber Smithing Stone [7]
+2048447050,2048440050,m61_48_44_00,76822,pickup,1,goods:10165:1,Great Somber Stone
 2048447060,2048440060,m61_48_44_00,76822,pickup,1,goods:10165:1,Great Somber Stone
 2048447070,2048440070,m61_48_44_00,76822,pickup,1,goods:10170:1,Somber Shadow Stone
 2048447080,2048440080,m61_48_44_00,76822,pickup,1,goods:10916:1,Budding Ghost Glovewort
@@ -4759,7 +4764,7 @@ flag,lot,map,grace_flag,source,dlc,items,names
 2048457520,2048450520,m61_48_45_00,76902,pickup,1,goods:10171:1,Large Somber Shadow Stone
 2048467010,2048460010,m61_48_46_00,76912,pickup,1,goods:2003170:2,Golden Vow
 2048467020,2048460020,m61_48_46_00,76912,pickup,1,goods:2001500:5,Drawstring Messmerfire Grease
-2048467030,2048460030,m61_48_46_00,76916,pickup,1,weapon:52020000:20|goods:10166:1,Perfumer's Bolt |Somber Smithing Stone [7]
+2048467030,2048460030,m61_48_46_00,76916,pickup,1,weapon:52020000:20|goods:10165:1,Perfumer's Bolt |Great Somber Stone
 2048467040,2048460040,m61_48_46_00,76912,pickup,1,goods:2020030:6,Ember of Messmer
 2048467050,2048460050,m61_48_46_00,76912,pickup,1,goods:2001500:1,Drawstring Messmerfire Grease
 2048467060,2048460060,m61_48_46_00,76912,pickup,1,goods:10101:5,Smithing Stone
@@ -4869,7 +4874,7 @@ flag,lot,map,grace_flag,source,dlc,items,names
 2049437300,2049430300,m61_49_43_00,76910,pickup,1,goods:2001130:1,Fireproof Pickled Liver
 2049437310,2049430310,m61_49_43_00,76910,pickup,1,goods:2020031:1,Blessed Bone Shard
 2049437320,2049430320,m61_49_43_00,76910,pickup,1,goods:2002951:1,Broken Rune
-2049437330,2049430330,m61_49_43_00,76910,pickup,1,goods:10915:1,Ghost Glovewort [6]
+2049437330,2049430330,m61_49_43_00,76910,pickup,1,goods:10916:1,Budding Ghost Glovewort
 2049437340,2049430340,m61_49_43_00,76910,pickup,1,goods:2002951:1,Broken Rune
 2049437350,2049430350,m61_49_43_00,76910,pickup,1,goods:2020002:5,Redflesh Mushroom
 2049437360,2049430360,m61_49_43_00,76910,pickup,1,goods:1700:8,Throwing Dagger
@@ -5055,7 +5060,7 @@ flag,lot,map,grace_flag,source,dlc,items,names
 2051477030,2051470030,m61_51_47_00,76963,pickup,1,goods:2001110:2,Fingerprint Nostrum
 2051477500,2051470500,m61_51_47_00,76963,pickup,1,goods:2000900:1,Blessing of Marika
 2051477510,2051470510,m61_51_47_00,76963,pickup,1,weapon:41080000:1,Scadu Sapling
-2052407010,2052400010,m61_52_40_00,76864,pickup,1,goods:2003160:1|goods:10200:1,Surging Frenzied Flame|Somber Smithing Stone [9]
+2052407010,2052400010,m61_52_40_00,76864,pickup,1,goods:2003160:1|goods:10167:1,Surging Frenzied Flame|Colossal Somber Stone
 2052417000,2052410000,m61_52_41_00,76864,pickup,1,goods:2002958:1,Shadow Realm Rune [7]
 2052417010,2052410010,m61_52_41_00,76864,pickup,1,goods:960:1,Clarifying Boluses
 2052427500,2052420500,m61_52_42_00,76863,reward,1,weapon:21530000:1,Madding Hand
