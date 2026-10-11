@@ -1,6 +1,12 @@
-research what csnetman has and corruption instead of the full replacement
+wording
 
-ER full save documentation: decode and document every remaining unknown save struct
+playtime editor done
+
+patch steamid for ps save import done
+
+research what csnetman has and corruption instead of the full replacement done
+
+ER full save documentation: decode and document every remaining unknown save struct done
 
 DS2 event flag storage layout (single-action pairs + flagdiff.py)
 

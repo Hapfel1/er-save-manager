@@ -208,43 +208,43 @@ class CharacterInfoEditor:
         ng_combo.grid(row=1, column=1, padx=5, pady=5)
 
         # Playtime
-        # playtime_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
-        # playtime_frame.pack(fill=ctk.X, pady=5, padx=10)
-        # ctk.CTkLabel(
-        #   playtime_frame,
-        #    text="Playtime",
-        #    font=("Segoe UI", 12, "bold"),
-        # ).grid(row=0, column=0, columnspan=6, sticky=ctk.W, padx=5, pady=(5, 0))
+        playtime_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
+        playtime_frame.pack(fill=ctk.X, pady=5, padx=10)
+        ctk.CTkLabel(
+            playtime_frame,
+            text="Playtime",
+            font=("Segoe UI", 12, "bold"),
+        ).grid(row=0, column=0, columnspan=6, sticky=ctk.W, padx=5, pady=(5, 0))
 
-        # ctk.CTkLabel(playtime_frame, text="Hours:").grid(
-        #    row=1, column=0, sticky=ctk.W, padx=5, pady=5
-        # )
-        # self.char_playtime_h_var = ctk.IntVar(value=0)
-        # ctk.CTkEntry(
-        #    playtime_frame,
-        #    textvariable=self.char_playtime_h_var,
-        #    width=80,
-        # ).grid(row=1, column=1, padx=5, pady=5)
+        ctk.CTkLabel(playtime_frame, text="Hours:").grid(
+            row=1, column=0, sticky=ctk.W, padx=5, pady=5
+        )
+        self.char_playtime_h_var = ctk.IntVar(value=0)
+        ctk.CTkEntry(
+            playtime_frame,
+            textvariable=self.char_playtime_h_var,
+            width=80,
+        ).grid(row=1, column=1, padx=5, pady=5)
 
-        # ctk.CTkLabel(playtime_frame, text="Minutes:").grid(
-        #    row=1, column=2, sticky=ctk.W, padx=5, pady=5
-        # )
-        # self.char_playtime_m_var = ctk.IntVar(value=0)
-        # ctk.CTkEntry(
-        #    playtime_frame,
-        #    textvariable=self.char_playtime_m_var,
-        #    width=80,
-        # ).grid(row=1, column=3, padx=5, pady=5)
+        ctk.CTkLabel(playtime_frame, text="Minutes:").grid(
+            row=1, column=2, sticky=ctk.W, padx=5, pady=5
+        )
+        self.char_playtime_m_var = ctk.IntVar(value=0)
+        ctk.CTkEntry(
+            playtime_frame,
+            textvariable=self.char_playtime_m_var,
+            width=80,
+        ).grid(row=1, column=3, padx=5, pady=5)
 
-        # ctk.CTkLabel(playtime_frame, text="Seconds:").grid(
-        #    row=1, column=4, sticky=ctk.W, padx=5, pady=5
-        # )
-        # self.char_playtime_s_var = ctk.IntVar(value=0)
-        # ctk.CTkEntry(
-        #    playtime_frame,
-        #    textvariable=self.char_playtime_s_var,
-        #    width=80,
-        # ).grid(row=1, column=5, padx=5, pady=5)
+        ctk.CTkLabel(playtime_frame, text="Seconds:").grid(
+            row=1, column=4, sticky=ctk.W, padx=5, pady=5
+        )
+        self.char_playtime_s_var = ctk.IntVar(value=0)
+        ctk.CTkEntry(
+            playtime_frame,
+            textvariable=self.char_playtime_s_var,
+            width=80,
+        ).grid(row=1, column=5, padx=5, pady=5)
 
         button_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
         button_frame.pack(fill=ctk.X, pady=10, padx=10)
@@ -306,19 +306,11 @@ class CharacterInfoEditor:
             self.char_voice_var.set(getattr(char, "voice_type", 0))
             self.char_gift_var.set(getattr(char, "gift", 0))
 
-        # Load playtime from ProfileSummary
-        # seconds_played = 0
-        # if (
-        #    hasattr(save_file, "user_data_10_parsed")
-        #    and save_file.user_data_10_parsed
-        #    and save_file.user_data_10_parsed.profile_summary
-        # ):
-        #    profiles = save_file.user_data_10_parsed.profile_summary.profiles
-        #    if profiles and slot_idx < len(profiles):
-        #       seconds_played = profiles[slot_idx].seconds_played or 0
-        # self.char_playtime_h_var.set(seconds_played // 3600)
-        # self.char_playtime_m_var.set((seconds_played % 3600) // 60)
-        # self.char_playtime_s_var.set(seconds_played % 60)
+        # Play time lives in the slot header; the load screen copy follows it
+        seconds_played = getattr(slot, "play_time_ms", 0) // 1000
+        self.char_playtime_h_var.set(seconds_played // 3600)
+        self.char_playtime_m_var.set((seconds_played % 3600) // 60)
+        self.char_playtime_s_var.set(seconds_played % 60)
 
         # Load NG+ level from ClearCount if possible, else from event flags
         clearcount = None
@@ -586,13 +578,10 @@ class CharacterInfoEditor:
 
     def _apply_playtime(self, save_file, slot_idx: int, slot) -> None:
         """
-        Write playtime to ProfileSummary (seconds_played) and world_area_time.
-
-        Both locations must match - desync causes the in-game timer to display
-        incorrectly or triggers time corruption detection.
+        Write play time to the slot header (play_time_ms) and the load screen
+        profile (seconds_played). WorldAreaTime is the time of day and stays.
         """
         import struct
-        from io import BytesIO
 
         if (
             self.char_playtime_h_var is None
@@ -606,7 +595,11 @@ class CharacterInfoEditor:
         s = max(0, min(59, self.char_playtime_s_var.get()))
         total_seconds = h * 3600 + m * 60 + s
 
-        # Write to ProfileSummary.seconds_played (u32 LE at profile_offset + 0x26)
+        slot.play_time_ms = total_seconds * 1000
+        struct.pack_into(
+            "<Q", save_file._raw_data, slot.data_start + 8, slot.play_time_ms
+        )
+
         if (
             hasattr(save_file, "user_data_10_parsed")
             and save_file.user_data_10_parsed
@@ -628,18 +621,3 @@ class CharacterInfoEditor:
             save_file._raw_data[sp_offset : sp_offset + 4] = struct.pack(
                 "<I", total_seconds
             )
-
-        # Write to world_area_time in the character slot
-        if hasattr(slot, "world_area_time") and slot.world_area_time is not None:
-            time = slot.world_area_time
-            time.hour = h
-            time.minute = m
-            time.second = s
-
-            if hasattr(slot, "time_offset") and slot.time_offset > 0:
-                buf = BytesIO()
-                time.write(buf)
-                time_data = buf.getvalue()
-                save_file._raw_data[
-                    slot.time_offset : slot.time_offset + len(time_data)
-                ] = time_data

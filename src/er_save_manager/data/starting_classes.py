@@ -573,3 +573,14 @@ def calculate_level_from_stats(
     )
 
     return base_class["level"] + total_points
+
+
+def level_up_cost(level: int) -> int:
+    """Runes needed to level up from level to level + 1."""
+    x = max(0.0, (level + 81 - 92) * 0.02)
+    return int((x + 0.1) * (level + 81) ** 2) + 1
+
+
+def runes_to_reach_level(start_level: int, level: int) -> int:
+    """Total runes spent leveling from start_level to level."""
+    return sum(level_up_cost(lv) for lv in range(start_level, level))

@@ -8,12 +8,59 @@ import tkinter as tk
 
 import customtkinter as ctk
 
-from er_save_manager.data import calculate_level_from_stats, get_class_data
+from er_save_manager.data import (
+    calculate_level_from_stats,
+    get_class_data,
+    runes_to_reach_level,
+)
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
+logger = logging.getLogger(__name__)
+
 # The game caps held runes at 999,999,999.
 MAX_RUNES = 999_999_999
+# Runes memory is a u32 and keeps counting past the held runes cap.
+MAX_RUNES_MEMORY = 0xFFFFFFFF
+MAX_SCADUTREE = 20
+MAX_REVERED_SPIRIT_ASH = 10
+MAX_MEMORY_STONES = 8
+
+# Memory Stone goods; the held quantity matches PlayerGameData memory_stone_count
+_MEMORY_STONE = 0x4000272E
+
+
+def _clamped(var, limit: int) -> int:
+    try:
+        return max(0, min(limit, int(var.get())))
+    except (ValueError, tk.TclError):
+        return 0
+
+
+def _sync_memory_stones(save_file, slot_idx: int, slot, count: int) -> str | None:
+    """Set the held Memory Stone quantity to count; return a note on failure."""
+    from er_save_manager.parser import inventory_ops
+
+    handle = 0xB0000000 | (_MEMORY_STONE & 0x0FFFFFFF)
+    held = sum(
+        item.quantity
+        for item in slot.inventory_held.key_items + slot.inventory_held.common_items
+        if item.gaitem_handle == handle
+    )
+    if held == count:
+        return None
+    try:
+        if count == 0:
+            inventory_ops.remove_item(save_file, slot_idx, _MEMORY_STONE)
+        elif held:
+            inventory_ops.set_quantity(save_file, slot_idx, _MEMORY_STONE, count)
+        else:
+            inventory_ops.add_item(save_file, slot_idx, _MEMORY_STONE, count)
+    except Exception as e:
+        logger.exception("Memory Stone sync failed")
+        return f"Memory Stone item could not be updated: {e}"
+    return None
+
 
 _ATTR_KEYS = frozenset(
     {
@@ -67,9 +114,11 @@ class StatsEditor:
         self.runes_var = None
         self.great_rune_on_var = None
         self.great_rune_id_var = None
-        self.rune_arc_var = None
         self.last_grace_var = None
         self.matchmaking_level_var = None
+        self.scadutree_blessing_var = None
+        self.revered_spirit_ash_var = None
+        self.memory_stone_var = None
         self._matchmaking_min = 0  # floor derived from inventory scan
 
         self.frame = None
@@ -255,21 +304,14 @@ class StatsEditor:
             text_color=("black", "white"),
         ).grid(row=0, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(5, 0))
 
+        # One flag covers both: using a Rune Arc activates the equipped Great Rune.
         self.great_rune_on_var = ctk.BooleanVar(value=False)
         ctk.CTkCheckBox(
             rune_frame,
-            text="Great Rune active",
+            text="Great Rune active (Rune Arc used)",
             variable=self.great_rune_on_var,
             text_color=("black", "white"),
-        ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
-
-        self.rune_arc_var = ctk.BooleanVar(value=False)
-        ctk.CTkCheckBox(
-            rune_frame,
-            text="Rune Arc active",
-            variable=self.rune_arc_var,
-            text_color=("black", "white"),
-        ).grid(row=1, column=1, sticky=ctk.W, padx=(20, 5), pady=5)
+        ).grid(row=1, column=0, columnspan=2, sticky=ctk.W, padx=5, pady=5)
 
         ctk.CTkLabel(
             rune_frame, text="Active Great Rune:", text_color=("black", "white")
@@ -277,12 +319,12 @@ class StatsEditor:
 
         _GREAT_RUNES = [
             ("None", 0),
-            ("Godrick's Great Rune", 0x40000053),
-            ("Radahn's Great Rune", 0x40000054),
-            ("Morgott's Great Rune", 0x40000055),
-            ("Rykard's Great Rune", 0x40000056),
-            ("Malenia's Great Rune", 0x40000057),
-            ("Mohg's Great Rune", 0x40000058),
+            ("Godrick's Great Rune", 0xB00000BF),
+            ("Radahn's Great Rune", 0xB00000C0),
+            ("Morgott's Great Rune", 0xB00000C1),
+            ("Rykard's Great Rune", 0xB00000C2),
+            ("Mohg's Great Rune", 0xB00000C3),
+            ("Malenia's Great Rune", 0xB00000C4),
         ]
         self._great_rune_options = _GREAT_RUNES
         self.great_rune_id_var = tk.StringVar(value=_GREAT_RUNES[0][0])
@@ -293,6 +335,45 @@ class StatsEditor:
             state="readonly",
             width=260,
         ).grid(row=2, column=1, columnspan=2, sticky=ctk.W, padx=5, pady=(5, 10))
+
+        # Blessings and memory stones
+        blessing_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        blessing_frame.pack(fill=ctk.X, pady=5, padx=10)
+
+        ctk.CTkLabel(
+            blessing_frame,
+            text="Blessings & Memory Stones",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).grid(row=0, column=0, columnspan=3, sticky=ctk.W, padx=5, pady=(5, 0))
+
+        self.scadutree_blessing_var = tk.IntVar(value=0)
+        self.revered_spirit_ash_var = tk.IntVar(value=0)
+        self.memory_stone_var = tk.IntVar(value=0)
+        for row, (label, var, limit) in enumerate(
+            (
+                ("Scadutree Blessing:", self.scadutree_blessing_var, MAX_SCADUTREE),
+                (
+                    "Revered Spirit Ash Blessing:",
+                    self.revered_spirit_ash_var,
+                    MAX_REVERED_SPIRIT_ASH,
+                ),
+                ("Memory Stones:", self.memory_stone_var, MAX_MEMORY_STONES),
+            ),
+            start=1,
+        ):
+            ctk.CTkLabel(
+                blessing_frame, text=label, text_color=("black", "white")
+            ).grid(row=row, column=0, sticky=ctk.W, padx=5, pady=5)
+            ctk.CTkEntry(blessing_frame, textvariable=var, width=80).grid(
+                row=row, column=1, sticky=ctk.W, padx=5, pady=5
+            )
+            ctk.CTkLabel(
+                blessing_frame,
+                text=f"0-{limit}",
+                text_color=("gray50", "gray70"),
+                font=("Segoe UI", 9),
+            ).grid(row=row, column=2, sticky=ctk.W, padx=5, pady=5)
 
         # Last rested grace
         grace_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
@@ -431,8 +512,7 @@ class StatsEditor:
         self.runes_var.set(getattr(char, "runes", 0))
 
         self.great_rune_on_var.set(bool(getattr(char, "great_rune_on", False)))
-        self.rune_arc_var.set(bool(getattr(char, "furl_calling_finger_on", False)))
-        rune_id = getattr(slot.equipped_items_item_id, "unk0x28", 0)
+        rune_id = slot.equipped_items.great_rune
         rune_name = next(
             (n for n, v in self._great_rune_options if v == rune_id),
             self._great_rune_options[0][0],
@@ -444,6 +524,9 @@ class StatsEditor:
 
         # Load matchmaking weapon level and compute inventory floor
         self.matchmaking_level_var.set(getattr(char, "matchmaking_weapon_level", 0))
+        self.scadutree_blessing_var.set(char.scadutree_blessing)
+        self.revered_spirit_ash_var.set(char.revered_spirit_ash_blessing)
+        self.memory_stone_var.set(char.memory_stone_count)
         self._refresh_matchmaking_min(slot)
 
         self.calculate_character_level()
@@ -680,15 +763,25 @@ class StatsEditor:
                 char.faith = self.stat_vars["faith"].get()
                 char.arcane = self.stat_vars["arcane"].get()
 
+                old_level = char.level
                 char.level = int(self.level_var.get()) if self.level_var.get() else 0
-                # Runes memory counts every rune ever gained, so added runes
-                # raise it by the same amount.
+                # Runes memory counts every rune ever gained, so added runes and
+                # the cost of added levels raise it. It never drops below the
+                # cost of all levels above the class start plus held runes.
                 runes_gained = max(0, runes - char.runes)
+                if char.level > old_level:
+                    runes_gained += runes_to_reach_level(old_level, char.level)
                 char.runes = runes
-                char.runes_memory = min(0xFFFFFFFF, char.runes_memory + runes_gained)
+                start_level = get_class_data(
+                    char.archetype, getattr(save_file, "is_convergence", False)
+                )["level"]
+                floor = runes_to_reach_level(start_level, char.level) + runes
+                char.runes_memory = min(
+                    MAX_RUNES_MEMORY,
+                    max(char.runes_memory + runes_gained, floor),
+                )
 
                 char.great_rune_on = bool(self.great_rune_on_var.get())
-                char.furl_calling_finger_on = bool(self.rune_arc_var.get())
 
                 # Matchmaking weapon level - clamp to inventory floor
                 mm_value = max(0, min(25, int(self.matchmaking_level_var.get())))
@@ -703,6 +796,16 @@ class StatsEditor:
                     mm_value = self._matchmaking_min
                     self.matchmaking_level_var.set(mm_value)
                 char.matchmaking_weapon_level = mm_value
+
+                char.scadutree_blessing = _clamped(
+                    self.scadutree_blessing_var, MAX_SCADUTREE
+                )
+                char.revered_spirit_ash_blessing = _clamped(
+                    self.revered_spirit_ash_var, MAX_REVERED_SPIRIT_ASH
+                )
+                char.memory_stone_count = _clamped(
+                    self.memory_stone_var, MAX_MEMORY_STONES
+                )
 
                 # Write back to raw data using tracked offset
                 if (
@@ -770,12 +873,33 @@ class StatsEditor:
                     # Great rune ID and last grace require full slot rebuild
                     # (both live outside PlayerGameData)
                     from er_save_manager.parser.slot_rebuild import rebuild_slot
+                    from er_save_manager.ui.editors.equipment_editor import (
+                        _find_equip_index,
+                    )
 
                     rune_name = self.great_rune_id_var.get()
-                    rune_id = next(
+                    rune_handle = next(
                         (v for n, v in self._great_rune_options if n == rune_name), 0
                     )
-                    slot.equipped_items_item_id.unk0x28 = rune_id
+                    rune_index = _find_equip_index(slot, rune_handle)
+                    if rune_handle and rune_index == 0xFFFFFFFF:
+                        CTkMessageBox.showwarning(
+                            "Great Rune",
+                            f"{rune_name} is not in the held inventory, so it was not "
+                            "equipped. The other changes are still saved.",
+                            parent=self.parent,
+                        )
+                    else:
+                        slot.equipped_items.great_rune = rune_handle
+                        slot.equipped_items.great_rune_equip_index = rune_index
+
+                    stone_note = _sync_memory_stones(
+                        save_file, slot_idx, slot, char.memory_stone_count
+                    )
+                    if stone_note:
+                        CTkMessageBox.showwarning(
+                            "Memory Stones", stone_note, parent=self.parent
+                        )
 
                     try:
                         raw_grace = self.last_grace_var.get().strip()

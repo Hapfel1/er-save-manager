@@ -21,12 +21,15 @@ def read_wstring(f: BytesIO, max_chars: int) -> str:
 
 @dataclass
 class Settings:
-    """Game settings"""
+    """Game options, same byte layout as the in-memory option data at
+    GameDataMan+0x58. Only the first 0x30 bytes of the 0x140-byte block are
+    used; the rest is zero padding.
+    """
 
     camera_speed: int = 0
     controller_vibration: int = 0
     brightness: int = 0
-    unk0x3: int = 0
+    sound_type: int = 0
     music_volume: int = 0
     sound_effects_volume: int = 0
     voice_volume: int = 0
@@ -42,9 +45,9 @@ class Settings:
     reset_camera_y_axis: int = 0
     cinematic_effects: int = 0
     unk0x12: int = 0
-    perform_matchmaking: int = 0
-    unk0x14: int = 0
-    unk0x15: int = 0
+    cross_region_play: int = 0
+    voice_chat: int = 0
+    display_player_names: int = 0
     manual_attack_aim: int = 0
     autotarget: int = 0
     launchsettings: int = 0
@@ -61,6 +64,8 @@ class Settings:
     show_recent_tabs: int = 0
     unk0x24: int = 0
     unk0x2c: int = 0
+    show_tutorials: int = 0
+    camera_auto_rotation: int = 0
 
     @classmethod
     def read(cls, f: BytesIO) -> Settings:
@@ -69,7 +74,7 @@ class Settings:
         obj.camera_speed = struct.unpack("<B", f.read(1))[0]
         obj.controller_vibration = struct.unpack("<B", f.read(1))[0]
         obj.brightness = struct.unpack("<B", f.read(1))[0]
-        obj.unk0x3 = struct.unpack("<B", f.read(1))[0]
+        obj.sound_type = struct.unpack("<B", f.read(1))[0]
         obj.music_volume = struct.unpack("<B", f.read(1))[0]
         obj.sound_effects_volume = struct.unpack("<B", f.read(1))[0]
         obj.voice_volume = struct.unpack("<B", f.read(1))[0]
@@ -85,9 +90,9 @@ class Settings:
         obj.reset_camera_y_axis = struct.unpack("<B", f.read(1))[0]
         obj.cinematic_effects = struct.unpack("<B", f.read(1))[0]
         obj.unk0x12 = struct.unpack("<B", f.read(1))[0]
-        obj.perform_matchmaking = struct.unpack("<B", f.read(1))[0]
-        obj.unk0x14 = struct.unpack("<B", f.read(1))[0]
-        obj.unk0x15 = struct.unpack("<B", f.read(1))[0]
+        obj.cross_region_play = struct.unpack("<B", f.read(1))[0]
+        obj.voice_chat = struct.unpack("<B", f.read(1))[0]
+        obj.display_player_names = struct.unpack("<B", f.read(1))[0]
         obj.manual_attack_aim = struct.unpack("<B", f.read(1))[0]
         obj.autotarget = struct.unpack("<B", f.read(1))[0]
         obj.launchsettings = struct.unpack("<B", f.read(1))[0]
@@ -104,6 +109,8 @@ class Settings:
         obj.show_recent_tabs = struct.unpack("<B", f.read(1))[0]
         obj.unk0x24 = struct.unpack("<Q", f.read(8))[0]
         obj.unk0x2c = struct.unpack("<H", f.read(2))[0]
+        obj.show_tutorials = struct.unpack("<B", f.read(1))[0]
+        obj.camera_auto_rotation = struct.unpack("<B", f.read(1))[0]
         return obj
 
     def write(self, f: BytesIO) -> None:
@@ -111,7 +118,7 @@ class Settings:
         f.write(struct.pack("<B", self.camera_speed))
         f.write(struct.pack("<B", self.controller_vibration))
         f.write(struct.pack("<B", self.brightness))
-        f.write(struct.pack("<B", self.unk0x3))
+        f.write(struct.pack("<B", self.sound_type))
         f.write(struct.pack("<B", self.music_volume))
         f.write(struct.pack("<B", self.sound_effects_volume))
         f.write(struct.pack("<B", self.voice_volume))
@@ -127,9 +134,9 @@ class Settings:
         f.write(struct.pack("<B", self.reset_camera_y_axis))
         f.write(struct.pack("<B", self.cinematic_effects))
         f.write(struct.pack("<B", self.unk0x12))
-        f.write(struct.pack("<B", self.perform_matchmaking))
-        f.write(struct.pack("<B", self.unk0x14))
-        f.write(struct.pack("<B", self.unk0x15))
+        f.write(struct.pack("<B", self.cross_region_play))
+        f.write(struct.pack("<B", self.voice_chat))
+        f.write(struct.pack("<B", self.display_player_names))
         f.write(struct.pack("<B", self.manual_attack_aim))
         f.write(struct.pack("<B", self.autotarget))
         f.write(struct.pack("<B", self.launchsettings))
@@ -146,6 +153,8 @@ class Settings:
         f.write(struct.pack("<B", self.show_recent_tabs))
         f.write(struct.pack("<Q", self.unk0x24))
         f.write(struct.pack("<H", self.unk0x2c))
+        f.write(struct.pack("<B", self.show_tutorials))
+        f.write(struct.pack("<B", self.camera_auto_rotation))
 
 
 @dataclass
@@ -171,7 +180,7 @@ class Profile:
     seconds_played: int = 0
     runes_memory: int = 0
     map_id: bytes = b""
-    unk0x34: int = 0
+    place_name_id: int = 0
     face_data: bytes = b""
     equipment: ProfileEquipment = None
     body_type: int = 0
@@ -193,7 +202,7 @@ class Profile:
         obj.seconds_played = struct.unpack("<I", f.read(4))[0]
         obj.runes_memory = struct.unpack("<I", f.read(4))[0]
         obj.map_id = f.read(4)
-        obj.unk0x34 = struct.unpack("<I", f.read(4))[0]
+        obj.place_name_id = struct.unpack("<I", f.read(4))[0]
 
         # Face data (0x124 bytes)
         obj.face_data = f.read(0x124)
@@ -285,10 +294,33 @@ class PCOptionData:
 
 @dataclass
 class KeyConfigSaveLoad:
-    """Key configuration data"""
+    """Control bindings in the layout of KeyAssignParam.
+
+    data holds one 20-byte record per logical action (KeyAssignParam row
+    order): pad key, keyboard key, keyboard modifier, mouse key, mouse
+    modifier. Control options follow at BINDING_COUNT * 20.
+    """
+
+    BINDING_COUNT = 26
+    # Offset in data of the on-screen prompt device: 0 gamepad, 1 keyboard and mouse
+    PROMPT_DEVICE = 0x210
 
     size: int = 0
     data: bytes = b""
+
+    @property
+    def prompt_device(self) -> int:
+        return (
+            self.data[self.PROMPT_DEVICE] if len(self.data) > self.PROMPT_DEVICE else 0
+        )
+
+    def bindings(self) -> list[tuple[int, int, int, int, int]]:
+        """(pad, keyboard, keyboard modifier, mouse, mouse modifier) per action."""
+        return [
+            struct.unpack_from("<5i", self.data, k * 20)
+            for k in range(self.BINDING_COUNT)
+            if (k + 1) * 20 <= len(self.data)
+        ]
 
     @classmethod
     def read(cls, f: BytesIO) -> KeyConfigSaveLoad:

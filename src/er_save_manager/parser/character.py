@@ -83,7 +83,7 @@ class PlayerGameData:
     voice_type: int = 0
     gift: int = 0
     unk0xbc: int = 0
-    unk0xbd: int = 0
+    memory_stone_count: int = 0
     additional_talisman_slot_count: int = 0
     summon_spirit_level: int = 0
     unk0xc0: bytes = field(default_factory=lambda: b"\x00" * 0x18)
@@ -94,7 +94,10 @@ class PlayerGameData:
     matchmaking_weapon_level: int = 0
     white_cipher_ring_on: bool = False
     blue_cipher_ring_on: bool = False
-    unk0xdd: bytes = field(default_factory=lambda: b"\x00" * 0x1A)
+    unk0xdd: bytes = field(default_factory=lambda: b"\x00" * 0x17)
+    scadutree_blessing: int = 0
+    revered_spirit_ash_blessing: int = 0
+    unk0xf6: int = 0
     great_rune_on: bool = False
     unk0xf8: int = 0
 
@@ -186,7 +189,7 @@ class PlayerGameData:
         obj.voice_type = struct.unpack("<B", f.read(1))[0]
         obj.gift = struct.unpack("<B", f.read(1))[0]
         obj.unk0xbc = struct.unpack("<B", f.read(1))[0]
-        obj.unk0xbd = struct.unpack("<B", f.read(1))[0]
+        obj.memory_stone_count = struct.unpack("<B", f.read(1))[0]
         obj.additional_talisman_slot_count = struct.unpack("<B", f.read(1))[0]
         obj.summon_spirit_level = struct.unpack("<B", f.read(1))[0]
         obj.unk0xc0 = f.read(0x18)
@@ -197,7 +200,12 @@ class PlayerGameData:
         obj.matchmaking_weapon_level = struct.unpack("<B", f.read(1))[0]
         obj.white_cipher_ring_on = struct.unpack("<?", f.read(1))[0]
         obj.blue_cipher_ring_on = struct.unpack("<?", f.read(1))[0]
-        obj.unk0xdd = f.read(0x1A)
+        obj.unk0xdd = f.read(0x17)
+        (
+            obj.scadutree_blessing,
+            obj.revered_spirit_ash_blessing,
+            obj.unk0xf6,
+        ) = f.read(3)
         obj.great_rune_on = struct.unpack("<?", f.read(1))[0]
         obj.unk0xf8 = struct.unpack("<B", f.read(1))[0]
 
@@ -284,7 +292,7 @@ class PlayerGameData:
         f.write(struct.pack("<B", self.voice_type))
         f.write(struct.pack("<B", self.gift))
         f.write(struct.pack("<B", self.unk0xbc))
-        f.write(struct.pack("<B", self.unk0xbd))
+        f.write(struct.pack("<B", self.memory_stone_count))
         f.write(struct.pack("<B", self.additional_talisman_slot_count))
         f.write(struct.pack("<B", self.summon_spirit_level))
         f.write(self.unk0xc0)
@@ -296,6 +304,15 @@ class PlayerGameData:
         f.write(struct.pack("<?", self.white_cipher_ring_on))
         f.write(struct.pack("<?", self.blue_cipher_ring_on))
         f.write(self.unk0xdd)
+        f.write(
+            bytes(
+                (
+                    self.scadutree_blessing,
+                    self.revered_spirit_ash_blessing,
+                    self.unk0xf6,
+                )
+            )
+        )
         f.write(struct.pack("<?", self.great_rune_on))
         f.write(struct.pack("<B", self.unk0xf8))
 

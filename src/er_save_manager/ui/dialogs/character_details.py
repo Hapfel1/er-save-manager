@@ -124,6 +124,19 @@ class CharacterDetailsDialog:
         except Exception:
             pass
 
+        # NetMan chunk chain check (a torn write is handled by the deep scan)
+        if not deep_scan_available:
+            try:
+                from er_save_manager.fixes.netman import NetManFix
+
+                if NetManFix().detect(save_file, slot_idx):
+                    issues_detected.append(
+                        "netman:Damaged network data (CSNetMan), can cause the"
+                        " 'save corrupted' message or crashes on load"
+                    )
+            except Exception:
+                pass
+
         # Structural checks with a well-defined, safe correction
         try:
             from er_save_manager.fixes.structural_scan import (
@@ -800,13 +813,10 @@ class CharacterDetailsDialog:
     ):
         _parent = dialog.master
 
-        from er_save_manager.fixes.deep_scan import (
-            _NETMAN_SIZE,
-            NETMAN_RESET_NOTE,
-            _load_clean_netman,
-        )
+        from er_save_manager.fixes.deep_scan import NETMAN_REPLACED_NOTE
+        from er_save_manager.fixes.netman import NETMAN_SIZE, load_template
 
-        clean = _load_clean_netman()
+        clean = load_template()
         if clean is None:
             CTkMessageBox.showerror(
                 "Not Available",
@@ -843,10 +853,8 @@ class CharacterDetailsDialog:
                     save=save_file,
                 )
 
-            # net_man_offset points 4 bytes into the blob (past the hidden zero prefix
-            # that precedes CSNetMan in the slot). The bin includes that prefix.
-            offset = slot.net_man_offset - 4
-            save_file._raw_data[offset : offset + _NETMAN_SIZE] = clean
+            offset = slot.net_man_offset
+            save_file._raw_data[offset : offset + NETMAN_SIZE] = clean
             save_file.recalculate_checksums()
 
             if save_path:
@@ -856,7 +864,7 @@ class CharacterDetailsDialog:
 
             CTkMessageBox.showinfo(
                 "Done",
-                f"CSNetMan replaced in Slot {slot_idx + 1}.\n\nNOTE: {NETMAN_RESET_NOTE}"
+                f"CSNetMan replaced in Slot {slot_idx + 1}.\n\nNOTE: {NETMAN_REPLACED_NOTE}"
                 "\n\nBackup saved to backup manager.",
                 parent=_parent,
             )
@@ -938,6 +946,13 @@ class CharacterDetailsDialog:
                 if result.applied:
                     fixes.append(result.description)
                     was_fixed = True
+
+            from er_save_manager.fixes.netman import NetManFix
+
+            netman_result = NetManFix().apply(save_file, slot_idx)
+            if netman_result.applied:
+                fixes.append(netman_result.description)
+                was_fixed = True
 
             slot = save_file.characters[slot_idx]
             has_dlc_location = (

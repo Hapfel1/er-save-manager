@@ -109,6 +109,13 @@ Offset  Size  Field
         +1 universal vessel: 11456 bytes; the game still writes the header
           counts and every preset that fits (97 of 100), but loads no
           presets, so the stored presets survive in the file.
+  Further variable-size world data (not parsed), then the same tail as an
+  ER slot, located by a unique scan from the end of the loadout chunk:
+    weather (u16 area, u16 type, u32 timer, u32 0)
+    time (u32 hour, u32 minute, u32 second)
+    base_version (u32 copy, u32 base, u32 is_latest 0/1, u32 0); copy and
+      base are non-zero and <= the slot version (header +0x4)
+    steam_id (u64 LE): owner SteamID on PC, 0 on PlayStation
 
 --- Global Profile Data (entry 10) ---
 
@@ -231,6 +238,10 @@ _PS_FILE_SIZE = _PS_HEADER_SZ + sum(size for _, size in _PS_ENTRIES)
 # Offsets relative to the end of the ItemEntry array
 _ACQ_COUNTER_REL = 0x6A  # next acquisition_id (u32)
 _LOADOUT_REL = 0x21A  # relic loadout chunk header
+
+_SLOT_VERSION = 0x4  # u32 slot version in the slot header
+_STEAM64_MIN = 0x0110000100000000
+_STEAM64_MAX = 0x01100001FFFFFFFF
 
 _LOADOUT_CHUNK_ID = 0x00C2
 _LOADOUT_HEADER_SZ = 0x14  # chunk header (8) + count fields (12)
@@ -708,6 +719,7 @@ class NightreignSlot:
     entry_count_offset: int = -1
     entry_offset: int = -1
     acq_counter_offset: int = -1
+    steam_id_offset: int = -1  # -1 when the slot tail cannot be located
 
     # Vessel/loadout
     loadout: LoadoutInfo | None = None
@@ -771,6 +783,18 @@ class NightreignSlot:
         if self.entry_count_offset < 0:
             return 0
         return struct.unpack_from("<I", self.decrypted, self.entry_count_offset)[0]
+
+    @property
+    def steam_id(self) -> int:
+        if self.steam_id_offset < 0:
+            return 0
+        return struct.unpack_from("<Q", self.decrypted, self.steam_id_offset)[0]
+
+    @steam_id.setter
+    def steam_id(self, value: int) -> None:
+        if self.steam_id_offset < 0:
+            raise RuntimeError("slot SteamID offset not located")
+        struct.pack_into("<Q", self.decrypted, self.steam_id_offset, value)
 
     @property
     def next_acquisition_id(self) -> int:
@@ -950,6 +974,31 @@ def _iter_item_states(data: bytearray, start: int, count: int):
     return cursor
 
 
+def _find_steam_id_offset(dec: bytearray, start: int) -> int:
+    """Locate the slot SteamID from the weather/time/base_version tail before it.
+
+    Returns -1 unless exactly one position in [start, end) fits the layout.
+    """
+    version = struct.unpack_from("<I", dec, _SLOT_VERSION)[0]
+    found = -1
+    # 16 weather + 12 time bytes precede base_version at bv, SteamID follows it
+    for bv in range(start + 28, len(dec) - 24, 4):
+        copy, base, is_latest, unk = struct.unpack_from("<4I", dec, bv)
+        if unk or is_latest > 1 or not (0 < copy <= version and 0 < base <= version):
+            continue
+        hour, minute, second = struct.unpack_from("<3I", dec, bv - 12)
+        weather_pad = struct.unpack_from("<I", dec, bv - 16)[0]
+        if hour > 23 or minute > 59 or second > 59 or weather_pad:
+            continue
+        steam_id = struct.unpack_from("<Q", dec, bv + 16)[0]
+        if steam_id and not _STEAM64_MIN <= steam_id <= _STEAM64_MAX:
+            continue
+        if found >= 0:
+            return -1
+        found = bv + 16
+    return found
+
+
 def _parse_slot(dec: bytearray, slot_index: int) -> NightreignSlot:
     """
     Parse a decrypted character slot into a NightreignSlot.
@@ -1002,6 +1051,7 @@ def _parse_slot(dec: bytearray, slot_index: int) -> NightreignSlot:
     if info is None:
         return slot  # empty slot or unknown chunk layout
     slot.loadout = info
+    slot.steam_id_offset = _find_steam_id_offset(dec, info.offset + 8 + info.chunk_size)
     if info.presets_rel > info.chunk_size:
         return slot  # vessel data alone exceeds the chunk; layout unknown
     cursor = info.offset + _LOADOUT_HEADER_SZ

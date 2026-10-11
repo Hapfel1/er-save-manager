@@ -88,7 +88,7 @@ class UserDataX:
     # Header (4 + 4 + 8 + 16 = 32 bytes)
     version: int = 0
     map_id: MapId = field(default_factory=MapId)
-    unk0x8: bytes = field(default_factory=lambda: b"\x00" * 8)
+    play_time_ms: int = 0
     unk0x10: bytes = field(default_factory=lambda: b"\x00" * 16)
 
     # Gaitem map (VARIABLE LENGTH! 5118 or 5120 entries)
@@ -301,7 +301,7 @@ class UserDataX:
 
         # Read map_id and header (4 + 8 + 16 = 28 bytes)
         obj.map_id = MapId.read(f)
-        obj.unk0x8 = f.read(8)
+        obj.play_time_ms = struct.unpack("<Q", f.read(8))[0]
         obj.unk0x10 = f.read(16)
 
         # Read Gaitem map (VARIABLE LENGTH!)
@@ -511,41 +511,18 @@ class UserDataX:
 
     def has_time_corruption(self, seconds_played: int | None = None) -> bool:
         """
-        Check if time is corrupted by comparing with expected value.
+        Check if the in-game time of day is out of range.
 
-        Args:
-            seconds_played: Expected playtime in seconds from ProfileSummary
+        WorldAreaTime is the time of day, not play time, so it is not compared
+        with seconds_played (kept for existing callers, ignored).
 
         Returns:
-            True if corrupted
+            True if hour > 23, minute > 59 or second > 59
         """
-        if not hasattr(self, "world_area_time") or self.world_area_time is None:
+        time = getattr(self, "world_area_time", None)
+        if time is None:
             return False
-
-        time = self.world_area_time
-
-        # Check for clearly invalid time values
-        if time.minute > 59 or time.second > 59:
-            return True
-
-        if seconds_played is not None:
-            expected_hours = seconds_played // 3600
-            expected_minutes = (seconds_played % 3600) // 60
-            expected_seconds = seconds_played % 60
-
-            if (
-                time.hour != expected_hours
-                or time.minute != expected_minutes
-                or time.second != expected_seconds
-            ):
-                return True
-            return False
-
-        # Without seconds_played, only check for all zeros
-        if time.hour == 0 and time.minute == 0 and time.second == 0:
-            return True
-
-        return False
+        return time.hour > 23 or time.minute > 59 or time.second > 59
 
     def has_steamid_corruption(self, correct_steam_id: int = None) -> bool:
         """

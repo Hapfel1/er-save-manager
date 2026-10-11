@@ -233,7 +233,7 @@ def test_ef_splice_fallback_ignores_healthy_slots(sanitized_save):
 def test_ef_splice_fallback_repairs_removed_flags_and_oversized_netman(
     sanitized_save,
 ):
-    from er_save_manager.fixes.deep_scan import _load_clean_netman
+    from er_save_manager.fixes.netman import netman_problems
 
     i = _clean_slot(sanitized_save)
     _with_steam_id(sanitized_save, i)
@@ -251,13 +251,14 @@ def test_ef_splice_fallback_repairs_removed_flags_and_oversized_netman(
     result = fix.apply(sanitized_save, i)
     assert result.applied is True
     assert result.flags_relocated is True
-    assert result.netman_reset is True
+    # The junk lands in NetMan's zero padding, so every chunk is kept
+    assert result.netman_reset is False
 
     start = sanitized_save.character_slots[i].data_start
     repaired = bytes(sanitized_save._raw_data[start : start + _SLOT_SIZE])
     netman_end = netman_rel + _NETMAN_BLOB_SIZE
-    assert repaired[:netman_rel] == original[:netman_rel]
-    assert repaired[netman_rel:netman_end] == _load_clean_netman()
+    assert repaired[:netman_end] == original[:netman_end]
+    assert not netman_problems(repaired[netman_rel + 4 : netman_end + 4])
     assert repaired[netman_end:parsed_end_rel] == original[netman_end:parsed_end_rel]
 
     assert sanitized_save.character_slots[i].steamid_offset == steamid_offset

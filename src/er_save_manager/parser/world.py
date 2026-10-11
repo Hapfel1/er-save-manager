@@ -274,48 +274,36 @@ class MenuSaveLoad:
 
 @dataclass
 class GaitemGameDataEntry:
-    """Single gaitem game data entry (16 bytes with padding)"""
+    """Acquired item type record (8 bytes)
 
-    id: int = 0
-    unk0x4: int = 0
-    pad0x5: bytes = b"\x00\x00\x00"
-    next_item_id: int = 0
-    unk0xc: int = 0
-    pad0x0d: bytes = b"\x00\x00\x00"
+    item_id is a category-tagged item id: weapon base id (no upgrade or
+    affinity), 0x10000000 | armor, 0x20000000 | talisman, 0x40000000 | goods,
+    0x80000000 | Ash of War. acquired is 1 on every live record. pad holds
+    uninitialized memory on some records and is preserved as read.
+    """
+
+    item_id: int = 0
+    acquired: int = 0
+    pad: bytes = b"\x00\x00\x00"
 
     @classmethod
     def read(cls, f: BytesIO) -> GaitemGameDataEntry:
-        """Read GaitemGameDataEntry from stream (16 bytes)"""
-        obj = cls()
-        obj.id = struct.unpack("<I", f.read(4))[0]
-        obj.unk0x4 = struct.unpack("<B", f.read(1))[0]
-        obj.pad0x5 = f.read(3)
-        obj.next_item_id = struct.unpack("<I", f.read(4))[0]
-        obj.unk0xc = struct.unpack("<B", f.read(1))[0]
-        obj.pad0x0d = f.read(3)
-        return obj
+        """Read GaitemGameDataEntry from stream (8 bytes)"""
+        item_id, acquired, pad = struct.unpack("<IB3s", f.read(8))
+        return cls(item_id=item_id, acquired=acquired, pad=pad)
 
     def write(self, f: BytesIO):
-        """Write GaitemGameDataEntry to stream (16 bytes)"""
-        f.write(struct.pack("<I", self.id))
-        f.write(struct.pack("<B", self.unk0x4))
-        f.write(
-            self.pad0x5
-            if isinstance(self.pad0x5, (bytes, bytearray)) and len(self.pad0x5) == 3
-            else b"\x00\x00\x00"
-        )
-        f.write(struct.pack("<I", self.next_item_id))
-        f.write(struct.pack("<B", self.unk0xc))
-        f.write(
-            self.pad0x0d
-            if isinstance(self.pad0x0d, (bytes, bytearray)) and len(self.pad0x0d) == 3
-            else b"\x00\x00\x00"
-        )
+        """Write GaitemGameDataEntry to stream (8 bytes)"""
+        f.write(struct.pack("<IB3s", self.item_id, self.acquired, self.pad))
 
 
 @dataclass
 class GaitemGameData:
-    """Gaitem game data (8 bytes + 7000 entries x 16 bytes = 0x1B458 bytes total)"""
+    """Item types ever acquired (8 bytes + 14000 records x 8 bytes = 0x1B588 bytes)
+
+    The first count records are live and sorted by item_id; records past
+    count are stale and preserved as read.
+    """
 
     count: int = 0
     entries: list[GaitemGameDataEntry] = field(default_factory=list)
@@ -325,7 +313,7 @@ class GaitemGameData:
         """Read GaitemGameData from stream"""
         obj = cls()
         obj.count = struct.unpack("<q", f.read(8))[0]  # i64
-        obj.entries = [GaitemGameDataEntry.read(f) for _ in range(7000)]
+        obj.entries = [GaitemGameDataEntry.read(f) for _ in range(14000)]
         return obj
 
     def write(self, f: BytesIO):
@@ -873,7 +861,7 @@ class RendMan:
 
 @dataclass
 class PlayerCoordinates:
-    """Player position and coordinates (0x39 = 57 bytes)"""
+    """Player position and coordinates (0x3D = 61 bytes)"""
 
     coordinates: FloatVector3 = field(default_factory=FloatVector3)
     map_id: MapId = field(default_factory=MapId)
@@ -884,7 +872,7 @@ class PlayerCoordinates:
 
     @classmethod
     def read(cls, f: BytesIO) -> PlayerCoordinates:
-        """Read PlayerCoordinates from stream (57 bytes)"""
+        """Read PlayerCoordinates from stream (61 bytes)"""
         return cls(
             coordinates=FloatVector3.read(f),
             map_id=MapId.read(f),
@@ -895,7 +883,7 @@ class PlayerCoordinates:
         )
 
     def write(self, f: BytesIO):
-        """Write PlayerCoordinates to stream (57 bytes)"""
+        """Write PlayerCoordinates to stream (61 bytes)"""
         self.coordinates.write(f)
         self.map_id.write(f)
         self.angle.write(f)
@@ -911,16 +899,14 @@ class PlayerCoordinates:
 
 @dataclass
 class NetMan:
-    """Network manager.
+    """Network manager (0x20004 bytes at net_man_offset).
 
-    Total blob in the save: 0x20004 bytes.
-      [4 bytes, always 0x00000000] - hidden prefix consumed by variable-struct parsing
-                                     before this point; NOT read by NetMan.read()
-      [4 bytes, always 0x00000002] - unk0x0; net_man_offset points here
-      [0x20000 bytes]              - network data
+    unk0x0 is 2; data is a chain of chunks (u16 type, u16 version, u32 size,
+    size bytes) closed by a type 0xFFFF chunk, then zero padding. See
+    fixes/netman.py for the layout and validation.
 
-    CSNetMan.bin captures the full 0x20004-byte blob including the hidden prefix,
-    so it must be written at (net_man_offset - 4), not at net_man_offset.
+    CSNetMan.bin starts 4 bytes earlier: its first 4 bytes overlap the end of
+    temp_spawn_point_entity_id and game_man_0xcb3 and must not be written.
     """
 
     unk0x0: int = 0  # always 2

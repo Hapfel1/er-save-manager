@@ -5,6 +5,8 @@ from .starting_classes import (
     STARTING_CLASSES,
     calculate_level_from_stats,
     get_class_data,
+    level_up_cost,
+    runes_to_reach_level,
 )
 
 __all__ = [
@@ -12,4 +14,6 @@ __all__ = [
     "CONVERGENCE_STARTING_CLASSES",
     "calculate_level_from_stats",
     "get_class_data",
+    "level_up_cost",
+    "runes_to_reach_level",
 ]

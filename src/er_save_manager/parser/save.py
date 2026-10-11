@@ -232,6 +232,45 @@ class Save:
             digests[idx] = hashlib.md5(data).digest()
         return digests
 
+    def _edited_slots(self) -> list[int]:
+        """Non-empty slots whose data changed since load or the last write."""
+        before = getattr(self, "_slot_digests", None)
+        return [
+            idx
+            for idx, digest in self._digest_slots().items()
+            if before is None or before.get(idx) != digest
+        ]
+
+    def _sync_profile_summaries(self, slots: list[int]) -> None:
+        """Rebuild the load screen profile of each given slot from its slot data."""
+        from er_save_manager.parser.profile_sync import PROFILE_SIZE, profile_from_slot
+        from er_save_manager.transfer.character_ops import CharacterOperations
+
+        if not slots or not self.user_data_10_parsed:
+            return
+        try:
+            _, profiles_base = CharacterOperations.get_profile_summary_offsets(self)
+        except Exception:
+            logger.exception("ProfileSummary offsets unavailable, profiles not synced")
+            return
+        changed = False
+        for idx in slots:
+            start = profiles_base + idx * PROFILE_SIZE
+            profile = bytes(self._raw_data[start : start + PROFILE_SIZE])
+            try:
+                synced = profile_from_slot(
+                    self._raw_data, self.character_slots[idx], profile
+                )
+            except (struct.error, IndexError, AttributeError):
+                logger.exception("Profile sync failed for slot %d", idx)
+                continue
+            if synced != profile:
+                self._raw_data[start : start + PROFILE_SIZE] = synced
+                changed = True
+        if changed:
+            CharacterOperations._reparse_user_data_10(self)
+            self.recalculate_checksums()
+
     def _refresh_player_data_hashes(self) -> None:
         """Recompute PlayerGameDataHash for every slot edited since load.
 
@@ -242,12 +281,8 @@ class Save:
 
         if isinstance(self._raw_data, bytes):
             self._raw_data = bytearray(self._raw_data)
-        before = getattr(self, "_slot_digests", None)
-        current = self._digest_slots()
         changed = False
-        for idx, digest in current.items():
-            if before is not None and before.get(idx) == digest:
-                continue
+        for idx in self._edited_slots():
             slot = self.character_slots[idx]
             if not getattr(slot, "player_data_hash_offset", 0):
                 continue
@@ -320,7 +355,9 @@ class Save:
         if not hasattr(self, "_raw_data"):
             raise RuntimeError("Cannot write save file: raw data not available")
 
+        edited = self._edited_slots()
         self._refresh_player_data_hashes()
+        self._sync_profile_summaries(edited)
 
         target = Path(filepath)
         tmp_path = target.with_name(f"{target.name}.tmp{os.getpid()}")
@@ -443,7 +480,7 @@ class Save:
         Fixes:
         1. Torrent bug: HP=0, State=ACTIVE, State=DEAD
         2. SteamId: 0 or not matching the one in USER_DATA_10, Copy from USER_DATA_10
-        3. Time: 00:00:00, Calculate from seconds_played
+        3. Time of day: hour > 23 or minute/second > 59, brought back into range
         4. Weather: AreaId=0, Sync with MapId[3]
 
         Returns:
@@ -492,44 +529,22 @@ class Save:
                     )
                     fixes.append(f"SteamId set to {correct_steam_id}")
 
-        # Fix 3: Time corruption
-        seconds_played = None
-        if self.user_data_10_parsed and hasattr(
-            self.user_data_10_parsed, "profile_summary"
-        ):
-            profile_summary = self.user_data_10_parsed.profile_summary
-            if slot_index < len(profile_summary.profiles):
-                seconds_played = profile_summary.profiles[slot_index].seconds_played
-
-        if slot.has_time_corruption(seconds_played):
+        # Fix 3: Time of day out of range
+        if slot.has_time_corruption():
             time = slot.world_area_time
-            if time:
-                if self.user_data_10_parsed and hasattr(
-                    self.user_data_10_parsed, "profile_summary"
-                ):
-                    profile_summary = self.user_data_10_parsed.profile_summary
-                    if slot_index < len(profile_summary.profiles):
-                        profile = profile_summary.profiles[slot_index]
-                        seconds_played = profile.seconds_played
-
-                        hours = seconds_played // 3600
-                        minutes = (seconds_played % 3600) // 60
-                        seconds = seconds_played % 60
-
-                        time.hour = hours
-                        time.minute = minutes
-                        time.second = seconds
-
-                        if hasattr(slot, "time_offset") and slot.time_offset > 0:
-                            time_bytes = BytesIO()
-                            time.write(time_bytes)
-                            time_data = time_bytes.getvalue()
-                            self._raw_data[
-                                slot.time_offset : slot.time_offset + len(time_data)
-                            ] = time_data
-                            fixes.append(
-                                f"Time set to {hours:02d}:{minutes:02d}:{seconds:02d}"
-                            )
+            time.hour %= 24
+            time.minute = min(time.minute, 59)
+            time.second = min(time.second, 59)
+            if hasattr(slot, "time_offset") and slot.time_offset > 0:
+                time_bytes = BytesIO()
+                time.write(time_bytes)
+                time_data = time_bytes.getvalue()
+                self._raw_data[slot.time_offset : slot.time_offset + len(time_data)] = (
+                    time_data
+                )
+                fixes.append(
+                    f"Time of day set to {time.hour:02d}:{time.minute:02d}:{time.second:02d}"
+                )
 
         # Fix 4: Weather corruption
         if slot.has_weather_corruption():
@@ -836,6 +851,10 @@ class Save:
     def _recalculate_userdata10_checksum(self) -> None:
         """Recalculate USER_DATA_10 MD5 checksum after preset modification"""
         import hashlib
+
+        # PlayStation USER_DATA_10 has no checksum
+        if self.is_ps:
+            return
 
         CHECKSUM_SIZE = 0x10
 

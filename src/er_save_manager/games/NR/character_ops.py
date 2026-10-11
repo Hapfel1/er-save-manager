@@ -5,8 +5,9 @@ Each slot is an independently AES-CBC encrypted BND4 entry (entries 0-9).
 NightreignSlot.decrypted is the same bytearray object as the corresponding
 BND4Entry.decrypted, so all writes go through in-place slice assignment on
 the entry buffer, then the slot is re-parsed so its cached offsets match the
-new content. SteamID is only stored in the global entry (index 10), not in
-character slots, so no per-slot SteamID patch is needed on transfer.
+new content. Each character slot carries its own copy of the owner SteamID
+(the global entry 10 holds the other); PC stores the account SteamID, PS
+stores 0. Transfer and import rewrite it to match the target save.
 """
 
 from __future__ import annotations
@@ -25,6 +26,17 @@ CHARACTER_SLOTS = 10
 def _check_bounds(slot_index: int) -> None:
     if not 0 <= slot_index < CHARACTER_SLOTS:
         raise IndexError(f"Slot {slot_index} out of range (0-{CHARACTER_SLOTS - 1})")
+
+
+def _sync_slot_steam_id(save: NightreignSave, slot_index: int) -> None:
+    """Set the slot SteamID to the target save's owner (0 on PlayStation)."""
+    slot = save.slots[slot_index]
+    if slot.steam_id_offset < 0:
+        return
+    if save.is_ps:
+        slot.steam_id = 0
+    elif save.profile is not None and save.profile.steam_id:
+        slot.steam_id = save.profile.steam_id
 
 
 def copy_slot(save: NightreignSave, from_slot: int, to_slot: int) -> None:
@@ -97,6 +109,7 @@ def transfer_slot(
 
     dst_entry.decrypted[:] = data
     target_save.slots[to_slot] = _parse_slot(dst_entry.decrypted, to_slot)
+    _sync_slot_steam_id(target_save, to_slot)
 
 
 def export_character(
@@ -155,4 +168,5 @@ def import_character(
 
     entry.decrypted[:] = data
     save.slots[slot_index] = _parse_slot(entry.decrypted, slot_index)
+    _sync_slot_steam_id(save, slot_index)
     return save.slots[slot_index].player_name

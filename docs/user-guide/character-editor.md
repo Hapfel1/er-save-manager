@@ -62,10 +62,9 @@ The Character Editor allows you to modify:
 - **Runes Held** - Current runes
 - **Level** - Character level (calculated from stats)
 - **NG Level** - New Game Plus cycle (0-7+)
-- **Talisman Slots** - Number of talisman slots unlocked
-- **Spirit Tuning Level** - Maximum spirit ash upgrade level
-- **Crimson Flask** - Total Crimson Tears flasks
-- **Cerulean Flask** - Total Cerulean Tears flasks
+- **Playtime** - Hours, minutes and seconds played
+- **Scadutree Blessing** / **Revered Spirit Ash Blessing** - Shadow of the Erdtree blessing levels
+- **Memory Stones** - Memory Stones obtained (0-8)
 
 ---
 
@@ -186,49 +185,40 @@ The gift chosen at character creation.
 
 ## Progression Details
 
-### Talisman Slots
+### Playtime
 
-Number of talisman slots unlocked (0-4).
+Hours, minutes and seconds of play time. Written to the character's own play time and to the load screen
+entry. The in-game time of day is not changed.
 
-### Spirit Tuning Level
+### Blessings & Memory Stones
 
-Maximum upgrade level for Spirit Ashes (0-10).
-
-**Unlocks:**
-
-- Glovewort levels through Roderika dialogue
-- Final unlock (+10) after specific quest progression
-
-### Flask Counts
-
-Total number of flasks:
-
-- **Crimson Tears** - HP recovery
-- **Cerulean Tears** - FP recovery
+- **Scadutree Blessing** (0-20) and **Revered Spirit Ash Blessing** (0-10), as shown on the status screen
+- **Memory Stones** (0-8): the number of Memory Stones the character has. The held Memory Stone item is set
+  to the same quantity, added if missing and removed at 0
 
 ---
 
 ## Great Rune, Rune Arc & Matchmaking
 
-### Great Rune Active
+### Great Rune Active (Rune Arc used)
 
-Toggles whether a Great Rune is currently active (as if restored at a Rune-Restoring Altar).
+Toggles whether the equipped Great Rune's effect is active, the state a Rune Arc puts it in. The game
+stores one flag for this, so there is no separate Rune Arc option.
 
 ### Active Great Rune
 
-Dropdown to select which Great Rune is held:
+Dropdown to select which Great Rune is equipped:
 
 - None
 - Godrick's Great Rune
 - Radahn's Great Rune
 - Morgott's Great Rune
 - Rykard's Great Rune
-- Malenia's Great Rune
 - Mohg's Great Rune
+- Malenia's Great Rune
 
-### Rune Arc Active
-
-Toggles whether a Rune Arc is currently active.
+The rune has to be in the held inventory. If it is not, the editor keeps the current Great Rune and
+saves the other changes.
 
 ### Last Rested Grace
 

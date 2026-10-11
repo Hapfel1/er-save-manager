@@ -54,17 +54,17 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 - Updates AreaID from MapId[3]
 - Syncs weather data
 
-### 4. Time Sync
+### 4. Time of Day
 
 **Symptom:** Corruption Error
 
-**Cause:** Time desynchronized from actual playtime
+**Cause:** The in-game time of day holds an hour above 23 or a minute or second above 59. Older versions of
+this tool wrote the play time into this field, which produced such values.
 
 **Fix Applied:**
 
-- Reads seconds_played from profile
-- Calculates hours:minutes:seconds
-- Updates in-game time fields
+- Wraps the hour into 0-23 and clamps minutes and seconds to 59
+- Play time is not touched
 
 ### 5. Ranni Softlock
 
@@ -181,6 +181,22 @@ This fix runs as a final integrity pass, since any edit that changes slot bytes 
 
 This is currently the primary fix for the character slot corruption seen with Convergence and me3, where a pre-existing FromSoftware race condition during slot writes is amplified by heap churn from the `oversized_regulation_fix_after_er` hook.
 
+If the tear runs through NetMan, the damaged NetMan chunks are rebuilt as described in the next section.
+
+### 13. CSNetMan
+
+**Symptom:** The game reports the save as corrupted or crashes on load, while the rest of the slot looks fine
+
+**Cause:** NetMan holds network data such as other players' characters seen in your world. It is a chain of chunks, and a damaged chunk breaks the whole chain.
+
+**Fix Applied:**
+
+- Checks every NetMan chunk and its internal entry list
+- Keeps every intact chunk and rebuilds only the damaged ones from a clean template
+- Other players' data (bloodstains, messages) is only lost when its own chunk was damaged
+
+**Replace CSNetMan** in Character Details still replaces the whole NetMan with the clean template. Use it only when the game keeps reporting corruption after all other fixes.
+
 ---
 
 ## Usage
@@ -262,7 +278,7 @@ This is currently the primary fix for the character slot corruption seen with Co
 3. **Detected:**
    - Torrent bug
    - Weather sync issue
-   - Time sync issue
+   - Time of day out of range
 4. Click Fix All
 5. Enable "Teleport to Roundtable"
 6. Save file

@@ -28,7 +28,8 @@ class EquipmentSlots:
     - 4 ammo slots (arrows/bolts 1/2)
     - 4 armor slots (head/chest/arms/legs)
     - 4 talisman slots
-    - 4 unknown fields
+    - arrows3/bolts3, hair and talisman5: slots of the in-memory ChrAsm that the
+      game never fills (always empty in saves)
 
     Used by: EquippedItemsEquipIndex, EquippedItemsItemIds, EquippedItemsGaitemHandles
     """
@@ -43,18 +44,18 @@ class EquipmentSlots:
     bolts1: int = 0
     arrows2: int = 0
     bolts2: int = 0
-    unk0x28: int = 0
-    unk0x2c: int = 0
+    arrows3: int = 0
+    bolts3: int = 0
     head: int = 0
     chest: int = 0
     arms: int = 0
     legs: int = 0
-    unk0x40: int = 0
+    hair: int = 0
     talisman1: int = 0
     talisman2: int = 0
     talisman3: int = 0
     talisman4: int = 0
-    unk0x54: int = 0
+    talisman5: int = 0
 
     @classmethod
     def read(cls, f: BytesIO):
@@ -70,18 +71,18 @@ class EquipmentSlots:
             bolts1=struct.unpack("<I", f.read(4))[0],
             arrows2=struct.unpack("<I", f.read(4))[0],
             bolts2=struct.unpack("<I", f.read(4))[0],
-            unk0x28=struct.unpack("<I", f.read(4))[0],
-            unk0x2c=struct.unpack("<I", f.read(4))[0],
+            arrows3=struct.unpack("<I", f.read(4))[0],
+            bolts3=struct.unpack("<I", f.read(4))[0],
             head=struct.unpack("<I", f.read(4))[0],
             chest=struct.unpack("<I", f.read(4))[0],
             arms=struct.unpack("<I", f.read(4))[0],
             legs=struct.unpack("<I", f.read(4))[0],
-            unk0x40=struct.unpack("<I", f.read(4))[0],
+            hair=struct.unpack("<I", f.read(4))[0],
             talisman1=struct.unpack("<I", f.read(4))[0],
             talisman2=struct.unpack("<I", f.read(4))[0],
             talisman3=struct.unpack("<I", f.read(4))[0],
             talisman4=struct.unpack("<I", f.read(4))[0],
-            unk0x54=struct.unpack("<I", f.read(4))[0],
+            talisman5=struct.unpack("<I", f.read(4))[0],
         )
 
     def write(self, f: BytesIO):
@@ -96,18 +97,18 @@ class EquipmentSlots:
         f.write(struct.pack("<I", self.bolts1))
         f.write(struct.pack("<I", self.arrows2))
         f.write(struct.pack("<I", self.bolts2))
-        f.write(struct.pack("<I", self.unk0x28))
-        f.write(struct.pack("<I", self.unk0x2c))
+        f.write(struct.pack("<I", self.arrows3))
+        f.write(struct.pack("<I", self.bolts3))
         f.write(struct.pack("<I", self.head))
         f.write(struct.pack("<I", self.chest))
         f.write(struct.pack("<I", self.arms))
         f.write(struct.pack("<I", self.legs))
-        f.write(struct.pack("<I", self.unk0x40))
+        f.write(struct.pack("<I", self.hair))
         f.write(struct.pack("<I", self.talisman1))
         f.write(struct.pack("<I", self.talisman2))
         f.write(struct.pack("<I", self.talisman3))
         f.write(struct.pack("<I", self.talisman4))
-        f.write(struct.pack("<I", self.unk0x54))
+        f.write(struct.pack("<I", self.talisman5))
 
 
 # ============================================================================
@@ -352,13 +353,17 @@ class EquippedItem:
 
 @dataclass
 class EquippedItems:
-    """Equipped items (0x8C = 140 bytes: 10 quick + 6 pouch + 2 fields)"""
+    """Equipped items (0x8C = 140 bytes: 10 quick + 6 pouch + equipped Great Rune)
+
+    great_rune is the Great Rune goods handle (0xB0000000 | goods id, 0 when
+    none); great_rune_equip_index is its key item list index.
+    """
 
     quick_items: list[EquippedItem] = field(default_factory=list)
     active_quick_item_index: int = 0
     pouch_items: list[EquippedItem] = field(default_factory=list)
-    unk0x84: int = 0
-    unk0x88: int = 0
+    great_rune: int = 0
+    great_rune_equip_index: int = 0
 
     @classmethod
     def read(cls, f: BytesIO) -> EquippedItems:
@@ -367,8 +372,8 @@ class EquippedItems:
         obj.quick_items = [EquippedItem.read(f) for _ in range(10)]
         obj.active_quick_item_index = struct.unpack("<I", f.read(4))[0]
         obj.pouch_items = [EquippedItem.read(f) for _ in range(6)]
-        obj.unk0x84 = struct.unpack("<I", f.read(4))[0]
-        obj.unk0x88 = struct.unpack("<I", f.read(4))[0]
+        obj.great_rune = struct.unpack("<I", f.read(4))[0]
+        obj.great_rune_equip_index = struct.unpack("<I", f.read(4))[0]
         return obj
 
     def write(self, f: BytesIO):
@@ -378,8 +383,8 @@ class EquippedItems:
         f.write(struct.pack("<I", self.active_quick_item_index))
         for item in self.pouch_items:
             item.write(f)
-        f.write(struct.pack("<I", self.unk0x84))
-        f.write(struct.pack("<I", self.unk0x88))
+        f.write(struct.pack("<I", self.great_rune))
+        f.write(struct.pack("<I", self.great_rune_equip_index))
 
 
 # ============================================================================
@@ -408,30 +413,38 @@ class EquippedGestures:
 
 @dataclass
 class Projectile:
-    """Single projectile entry (8 bytes)"""
+    """Auto-replenish setting of one item (8 bytes)
+
+    id is a weapon (ammo) or 0x40000000 | goods id; auto_replenish is 1 when
+    the chest's Auto-refill option is on for the item.
+    """
 
     id: int = 0
-    unk0x4: int = 0
+    auto_replenish: int = 0
 
     @classmethod
     def read(cls, f: BytesIO) -> Projectile:
         """Read Projectile from stream (8 bytes)"""
         return cls(
             id=struct.unpack("<I", f.read(4))[0],
-            unk0x4=struct.unpack("<I", f.read(4))[0],
+            auto_replenish=struct.unpack("<I", f.read(4))[0],
         )
 
     def write(self, f: BytesIO):
         """Write Projectile to stream (8 bytes)"""
         f.write(struct.pack("<I", self.id))
-        f.write(struct.pack("<I", self.unk0x4))
+        f.write(struct.pack("<I", self.auto_replenish))
 
 
 @dataclass
 class AcquiredProjectiles:
     """
-    Acquired projectiles (VARIABLE size based on count)
-    Structure: 4 bytes count + (count x 8 bytes projectiles)
+    Auto-replenish settings (VARIABLE size based on count)
+    Structure: 4 bytes count + (count x 8 bytes entries)
+
+    One entry per ammo or goods item with EquipParamGoods autoReplenishType
+    1 (default off) or 2 (default on) the character has obtained; the player
+    can change each entry in game.
     """
 
     count: int = 0
@@ -469,18 +482,18 @@ class EquippedArmamentsAndItems:
     bolts1: int = 0
     arrows2: int = 0
     bolts2: int = 0
-    unk0x28: int = 0
-    unk0x2c: int = 0
+    arrows3: int = 0
+    bolts3: int = 0
     head: int = 0
     chest: int = 0
     arms: int = 0
     legs: int = 0
-    unk0x40: int = 0
+    hair: int = 0
     talisman1: int = 0
     talisman2: int = 0
     talisman3: int = 0
     talisman4: int = 0
-    unk0x54: int = 0
+    talisman5: int = 0
     quickitem1: int = 0
     quickitem2: int = 0
     quickitem3: int = 0
@@ -513,18 +526,18 @@ class EquippedArmamentsAndItems:
             bolts1=struct.unpack("<I", f.read(4))[0],
             arrows2=struct.unpack("<I", f.read(4))[0],
             bolts2=struct.unpack("<I", f.read(4))[0],
-            unk0x28=struct.unpack("<I", f.read(4))[0],
-            unk0x2c=struct.unpack("<I", f.read(4))[0],
+            arrows3=struct.unpack("<I", f.read(4))[0],
+            bolts3=struct.unpack("<I", f.read(4))[0],
             head=struct.unpack("<I", f.read(4))[0],
             chest=struct.unpack("<I", f.read(4))[0],
             arms=struct.unpack("<I", f.read(4))[0],
             legs=struct.unpack("<I", f.read(4))[0],
-            unk0x40=struct.unpack("<I", f.read(4))[0],
+            hair=struct.unpack("<I", f.read(4))[0],
             talisman1=struct.unpack("<I", f.read(4))[0],
             talisman2=struct.unpack("<I", f.read(4))[0],
             talisman3=struct.unpack("<I", f.read(4))[0],
             talisman4=struct.unpack("<I", f.read(4))[0],
-            unk0x54=struct.unpack("<I", f.read(4))[0],
+            talisman5=struct.unpack("<I", f.read(4))[0],
             quickitem1=struct.unpack("<I", f.read(4))[0],
             quickitem2=struct.unpack("<I", f.read(4))[0],
             quickitem3=struct.unpack("<I", f.read(4))[0],
@@ -556,18 +569,18 @@ class EquippedArmamentsAndItems:
         f.write(struct.pack("<I", self.bolts1))
         f.write(struct.pack("<I", self.arrows2))
         f.write(struct.pack("<I", self.bolts2))
-        f.write(struct.pack("<I", self.unk0x28))
-        f.write(struct.pack("<I", self.unk0x2c))
+        f.write(struct.pack("<I", self.arrows3))
+        f.write(struct.pack("<I", self.bolts3))
         f.write(struct.pack("<I", self.head))
         f.write(struct.pack("<I", self.chest))
         f.write(struct.pack("<I", self.arms))
         f.write(struct.pack("<I", self.legs))
-        f.write(struct.pack("<I", self.unk0x40))
+        f.write(struct.pack("<I", self.hair))
         f.write(struct.pack("<I", self.talisman1))
         f.write(struct.pack("<I", self.talisman2))
         f.write(struct.pack("<I", self.talisman3))
         f.write(struct.pack("<I", self.talisman4))
-        f.write(struct.pack("<I", self.unk0x54))
+        f.write(struct.pack("<I", self.talisman5))
         f.write(struct.pack("<I", self.quickitem1))
         f.write(struct.pack("<I", self.quickitem2))
         f.write(struct.pack("<I", self.quickitem3))
@@ -618,26 +631,36 @@ class EquippedPhysics:
 
 @dataclass
 class TrophyEquipData:
-    """Trophy equipment data (0x34 = 52 bytes)"""
+    """Legendary item trophy progress (0x34 = 52 bytes)
+
+    Three 128-bit sets, one bit per legendary item ever acquired (kept after
+    the item is sold or discarded). Bit n is the n-th legendary item of that
+    type in ascending item id order:
+    - legendary_weapons: the 9 Legendary Armaments
+    - legendary_goods: the 7 legendary sorceries/incantations (bits 0-6),
+      then the 6 Legendary Ashen Remains (bits 7-12)
+    - legendary_talismans: the 8 Legendary Talismans
+    unk0x0 is always 0.
+    """
 
     unk0x0: int = 0
-    unk0x4: bytes = field(default_factory=lambda: b"\x00" * 0x10)
-    unk0x14: bytes = field(default_factory=lambda: b"\x00" * 0x10)
-    unk0x24: bytes = field(default_factory=lambda: b"\x00" * 0x10)
+    legendary_weapons: bytes = field(default_factory=lambda: b"\x00" * 0x10)
+    legendary_goods: bytes = field(default_factory=lambda: b"\x00" * 0x10)
+    legendary_talismans: bytes = field(default_factory=lambda: b"\x00" * 0x10)
 
     @classmethod
     def read(cls, f: BytesIO) -> TrophyEquipData:
         """Read TrophyEquipData from stream (52 bytes)"""
         return cls(
             unk0x0=struct.unpack("<I", f.read(4))[0],
-            unk0x4=f.read(0x10),
-            unk0x14=f.read(0x10),
-            unk0x24=f.read(0x10),
+            legendary_weapons=f.read(0x10),
+            legendary_goods=f.read(0x10),
+            legendary_talismans=f.read(0x10),
         )
 
     def write(self, f: BytesIO):
         """Write TrophyEquipData to stream (52 bytes)"""
         f.write(struct.pack("<I", self.unk0x0))
-        f.write(self.unk0x4)
-        f.write(self.unk0x14)
-        f.write(self.unk0x24)
+        f.write(self.legendary_weapons)
+        f.write(self.legendary_goods)
+        f.write(self.legendary_talismans)

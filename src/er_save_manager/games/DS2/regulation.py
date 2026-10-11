@@ -3,7 +3,9 @@ DS2 regulation reader: per-item stack, upgrade and durability limits.
 
 Every DS2 save embeds the game's param data in container entry 21. Upgrade
 caps are read from that copy so they always match the regulation the save was
-written with, including modded regulations. No baked table is used.
+written with, including modded regulations. Some saves hold an archive of
+SpEffect EMEVD files there instead of the params; from_container then falls
+back to the vanilla tables in regulation_vanilla.py.
 
 Entry 21 game data:
   [0x00:0x04]  u32 LE compressed size
@@ -153,7 +155,7 @@ _LEVEL_UP_MAX_ROW = 850
 _BOSS_KILLED_FLAG = 0x10
 _BOSS_ONCE_KILLED_FLAG = 0x14
 _BOSS_DEFEAT_VALUE = 0x18
-_BOSS_BONFIRE_ID = 0x40  # u16
+_BOSS_BONFIRE_ID = 0x3C  # u16
 
 
 class _Param:
@@ -394,7 +396,28 @@ class Regulation:
 
     @classmethod
     def from_container(cls, container) -> Regulation:
-        return cls.from_entry(container.get_entry(REGULATION_ENTRY))
+        """The save's regulation, or the vanilla tables when the entry holds
+        no readable params."""
+        try:
+            return cls.from_entry(container.get_entry(REGULATION_ENTRY))
+        except ValueError:
+            return cls.vanilla()
+
+    @classmethod
+    def vanilla(cls) -> Regulation:
+        """Tables of the unmodded game, baked from a save's regulation."""
+        from er_save_manager.games.DS2 import regulation_vanilla as v
+
+        return cls(
+            {item_id: _ItemLimits(*row) for item_id, row in v.ITEMS.items()},
+            dict(v.ATTUNEMENT_SLOTS),
+            {
+                row_id: ClassBase(level, dict(stats))
+                for row_id, (level, stats) in v.CLASS_BASES.items()
+            },
+            dict(v.LEVEL_UP_SOULS),
+            tuple(BossFight(*row) for row in v.BOSS_FIGHTS),
+        )
 
     def max_upgrade(self, item_id: int, category: str) -> int:
         """Highest upgrade level for a weapon or armor piece. 0 when it

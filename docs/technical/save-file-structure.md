@@ -66,7 +66,7 @@ Field                          Type                    Size
 ──────────────────────────────────────────────────────────────────────
 version                        uint32                  4
 map_id                         MapId                   4
-unk0x8                         bytes                   8
+play_time_ms                   uint64                  8
 unk0x10                        bytes                   16
 gaitem_map                     Gaitem[]                variable (see Gaitem below)
 player_game_data               PlayerGameData          432 (0x1B0)
@@ -113,7 +113,7 @@ world_area                     WorldArea               variable
 world_geom_man                 WorldGeomMan            variable
 world_geom_man2                WorldGeomMan            variable
 rend_man                       RendMan                 variable
-player_coordinates             PlayerCoordinates       57 (0x39)
+player_coordinates             PlayerCoordinates       61 (0x3D)
 game_man_0x5be                 uint8                   1
 game_man_0x5bf                 uint8                   1
 spawn_point_entity_id          uint32                  4
@@ -134,11 +134,23 @@ rest                           bytes                   remainder
 
 Gaitem count: `5118` if `version <= 81`, `5120` if `version > 81`.
 
+Notes on the scalar fields:
+
+- `play_time_ms`: play time in milliseconds; ProfileSummary `seconds_played` is the same value in seconds.
+- `unk0x10`: unknown. Rewritten with a new value on every save.
+- `unk_gamedataman_0x120`: NG+ clear count (GameDataMan+0x120). `unk_gamedataman_0x88` is always 0.
+- `unk_gamedataman_0x124`: unknown, 0-99. Set to a new value on every area load (loading the character,
+  warping, resting).
+- `character_type`: -1 by default. `character_type_online`: 8 by default.
+- `game_man_0x5bf`: 1 after warping to a grace, 0 after resting at one.
+- `game_man_0xb64` (0 or a spawn point entity id) and `game_man_0xcb3` (0/1): unknown.
+
 ---
 
 ## PlayerGameData - 432 bytes (0x1B0)
 
-Character stats, attributes, and metadata.
+Character stats, attributes, and metadata. The block is the in-memory `CS::PlayerGameData` starting at
+its offset 0x8, so memory offsets from cheat tables are save offset + 8.
 
 ```
 Offset  Size  Field
@@ -167,7 +179,7 @@ Offset  Size  Field
 0x50    4     arcane
 0x54    4     unk0x54
 0x58    4     unk0x58
-0x5C    4     unk0x5c
+0x5C    4     unk0x5c              humanity (unused, always 0)
 ──────────────────────────────────────────────────
 0x60    4     level
 0x64    4     runes
@@ -182,19 +194,19 @@ Offset  Size  Field
 0x84    4     sleep_buildup
 0x88    4     madness_buildup
 0x8C    4     unk0x8c
-0x90    4     unk0x90
+0x90    4     unk0x90              character type, 0
 ──────────────────────────────────────────────────
 0x94    32    character_name (UTF-16LE, 16 chars max)
 0xB4    2     terminator
 ──────────────────────────────────────────────────
 0xB6    1     gender
 0xB7    1     archetype
-0xB8    1     unk0xb8
+0xB8    1     unk0xb8              "appearance", 0
 0xB9    1     unk0xb9
 0xBA    1     voice_type
 0xBB    1     gift
 0xBC    1     unk0xbc
-0xBD    1     unk0xbd
+0xBD    1     memory_stone_count (Memory Stones used, 0-8)
 0xBE    1     additional_talisman_slot_count
 0xBF    1     summon_spirit_level
 0xC0    24    unk0xc0
@@ -204,8 +216,11 @@ Offset  Size  Field
 0xDA    1     matchmaking_weapon_level
 0xDB    1     white_cipher_ring_on (bool)
 0xDC    1     blue_cipher_ring_on (bool)
-0xDD    26    unk0xdd
-0xF7    1     great_rune_on (bool)
+0xDD    23    unk0xdd
+0xF4    1     scadutree_blessing (0-20)
+0xF5    1     revered_spirit_ash_blessing (0-10)
+0xF6    1     unk0xf6
+0xF7    1     great_rune_on (bool, set by using a Rune Arc)
 0xF8    1     unk0xf8
 ──────────────────────────────────────────────────
 0xF9    1     max_crimson_flask_count
@@ -219,7 +234,7 @@ Offset  Size  Field
 0x158   18    group_password4
 0x16A   18    group_password5
 ──────────────────────────────────────────────────
-0x17C   52    unk0x17c (padding)
+0x17C   52    unk0x17c (not padding: 0x17C-0x17E and 0x180/0x184 vary, meaning unknown)
 ──────────────────────────────────────────────────
        432    total
 ```
@@ -235,8 +250,8 @@ Offset  Size  Type    Field
 ──────────────────────────────
 0x00    4     int32   sp_effect_id
 0x04    4     float   remaining_time
-0x08    4     uint32  unk0x8
-0x0C    4     uint32  unk0x10
+0x08    4     uint32  unk0x8      always 0
+0x0C    4     uint32  unk0x10     always 0
 ──────────────────────────────
         16    total per entry
 ```
@@ -262,18 +277,18 @@ Offset  Size  Field
 0x1C    4     bolts1
 0x20    4     arrows2
 0x24    4     bolts2
-0x28    4     unk0x28
-0x2C    4     unk0x2c
+0x28    4     arrows3              unused, always empty
+0x2C    4     bolts3               unused, always empty
 0x30    4     head
 0x34    4     chest
 0x38    4     arms
 0x3C    4     legs
-0x40    4     unk0x40
+0x40    4     hair                 unused, always empty
 0x44    4     talisman1
 0x48    4     talisman2
 0x4C    4     talisman3
 0x50    4     talisman4
-0x54    4     unk0x54
+0x54    4     talisman5            unused, always empty
 ──────────────────────────────
         88    total
 ```
@@ -322,7 +337,7 @@ Resulting entry size:
 - 16 bytes: armor (`0x90` prefix)
 - 21 bytes: weapon (`0x80` prefix)
 
-`gem_gaitem_handle` is a weapon's live reference to the gaitem entry of its equipped Ash of War (that AoW's own entry is a normal 8-byte `0xC0` entry elsewhere in the map, it does not point back). `unk0x10`, `unk0x14`, `unk0x1c` are unidentified, always written as `0` by the manager on item creation, and not read anywhere in the codebase for any effect.
+`gem_gaitem_handle` is a weapon's live reference to the gaitem entry of its equipped Ash of War (that AoW's own entry is a normal 8-byte `0xC0` entry elsewhere in the map, it does not point back). `unk0x10`, `unk0x14` and `unk0x1c` are unknown. The game writes `0`, and so does the manager on item creation.
 
 ---
 
@@ -377,7 +392,7 @@ active_index    uint32    4
 Offset  Size  Field
 ──────────────
 0x00    4     spell_id
-0x04    4     unk0x4
+0x04    4     unk0x4       -1 on filled slots, 0 on empty slots
 ```
 
 ---
@@ -392,11 +407,13 @@ Field                   Type           Size   Notes
 quick_items             EquippedItem   80     10 × 8 bytes
 active_quick_item_index uint32         4
 pouch_items             EquippedItem   48     6 × 8 bytes
-unk0x84                 uint32         4
-unk0x88                 uint32         4
+great_rune              uint32         4      goods handle 0xB0000000 | id, 0 if none
+great_rune_equip_index  uint32         4      key item list index, -1 if none
 ──────────────────────────────────────────────────────
                                        140    total
 ```
+
+The equipped Great Rune is goods 191-196 (Godrick, Radahn, Morgott, Rykard, Mohg, Malenia). Whether its effect is active is `PlayerGameData.great_rune_on` (0xF7), set by a Rune Arc.
 
 **EquippedItem - 8 bytes:**
 
@@ -417,6 +434,8 @@ Offset  Size  Field
 
 ## AcquiredProjectiles - variable
 
+Auto-refill settings, despite the name.
+
 ```
 Field        Type          Notes
 ──────────────────────────────────────────
@@ -425,7 +444,9 @@ projectiles  Projectile[]  count × 8 bytes
 ──────────────────────────────────────────
 ```
 
-**Projectile - 8 bytes:** `id` (uint32) + `unk0x4` (uint32).
+**Projectile - 8 bytes:** `id` (uint32, ammo weapon id or `0x40000000 |` goods id) + `auto_replenish` (uint32, 1 = auto-refill from the chest on, toggled in the chest with Auto-refill ON/OFF).
+
+Every ammo or goods item the character has obtained whose EquipParamGoods `autoReplenishType` is 1 (default off) or 2 (default on) gets an entry.
 
 ---
 
@@ -453,7 +474,7 @@ Offset  Size  Field
 0x8C    4     pouch4
 0x90    4     pouch5
 0x94    4     pouch6
-0x98    4     unk0x98
+0x98    4     unk0x98              always -1
 ──────────────────────────────
         156   total
 ```
@@ -469,14 +490,47 @@ Offset  Size  Field
 ──────────────────
 0x00    4     slot1
 0x04    4     slot2
-0x08    4     unk0x8
+0x08    4     unk0x8       always -1
 ```
 
 ---
 
 ## FaceData - 303 bytes (0x12F)
 
-Character appearance data. Stored as raw bytes - contains 100+ fields for facial features, body proportions, and color sliders. The ProfileSummary copy in USER_DATA_10 is `0x124` bytes.
+Character appearance. The parser keeps it as raw bytes. The `FACE` block uses the same layout as the appearance presets in USER_DATA_10 (`FacePreset` in `character_presets.py`, where field names like `unk0x14` are offsets from the `FACE` magic). The ProfileSummary copy in USER_DATA_10 is the first `0x124` bytes.
+
+```
+Offset   Size   Field
+──────────────────────────────────────────────────────────────
+0x000    4      marker (-1)
+0x004    4      magic "FACE"
+0x008    4      uint32 4
+0x00C    4      uint32 size of the FACE block (0x120)
+0x010    32     8 model ids, u8 + 3 padding each: face, hair, eye, eyebrow,
+                beard, accessory, decal (tattoo), eyelash
+0x030    64     facial structure sliders (apparent age .. nose slant)
+0x070    64     FaceGen parameters the character creator does not expose
+                (128 or 0, except 0x8E)
+0x0B0    7      body scale: head, chest, abdomen, right arm, right leg,
+                left arm, left leg
+0x0B7    91     skin, cosmetics, tattoo, body hair, eye, hair, beard, brow,
+                eyelash and accessory colors
+0x112    1      frenzied flame eye effect, normally 0
+0x113    17     zero padding
+0x124    1      uint8, always 1
+0x125    1      uint8, 0/1, unknown
+0x126    1      uint8, 0/1, unknown
+0x127    4      int32 face param override, slot 0 (FaceParam id, -1 = none)
+0x12B    4      int32 face param override, slot 1 (FaceParam id, -1 = none)
+──────────────────────────────────────────────────────────────
+         303    total
+```
+
+The preset field `unk0xb1` (2 bytes) holds the left arm and left leg scale; `arms` and `legs` are the right side.
+
+The face param overrides are set by the EMEVD instruction Set Character Face Param Override. common.emevd
+event 1800 sets slot 0 to FaceParam 81000-81002 together with event flag 9420; event 1801 sets slot 1 to
+80000 together with flag 9421 once flag 9430 (set in m35_00) is on.
 
 ---
 
@@ -541,6 +595,8 @@ Offset  Size  Type          Field
         68    total
 ```
 
+Same layout as the in-memory bloodstain at GameDataMan+0x48. On death the game writes the position, angle, `map_id` and `runes`, sets `unk0x30` from -1 to 0 and updates `unk0x38` (at 0x40). Recovering the runes sets `unk0x30` and `runes` back to -1 and leaves the other fields as they are, so `runes == -1` means there is no bloodstain. `unk0x38` is -1, a small number, or `0x0FF0000n` / `0x8FF0nnnn`; its meaning is unknown. `unk0x1c`-`unk0x2c` and `unk0x3c` are always 0.
+
 ---
 
 ## MenuSaveLoad - variable
@@ -557,6 +613,33 @@ Offset  Size  Type    Field    Notes
 ────────────────────────────────────────────────────────────────
 ```
 
+`data` holds a nested chunk: u16 1, u16 version, u32 size (version 2, size 0xFDC on current saves; version 0,
+size 0xF10 on older ones). Version 2 holds the world map beacons and markers, offsets from the start of
+`data`:
+
+```
+0x008   2 x (float, float), unknown
+0x018   uint32, unknown
+0x01C   zero
+0x108   10 beacon records
+0x1A8   100 marker records
+0x7E8   bitset up to the chunk end, unknown
+```
+
+Beacon and marker record, 16 bytes:
+
+```
+Offset  Size  Type    Field
+──────────────────────────────────────────────────────
+0x00    4     int32   id (-1 = empty); beacons use an increasing sequence number
+0x04    4     float   x on the world map
+0x08    4     float   y on the world map
+0x0C    1     uint8   map (0 = Lands Between, 10 = Realm of Shadow)
+0x0D    1     uint8   marker icon (beacons and empty records: 1)
+0x0E    2     uint16  0, or 0xFFFF on a newly placed beacon
+──────────────────────────────────────────────────────
+```
+
 ---
 
 ## TrophyEquipData - 52 bytes (0x34)
@@ -564,56 +647,65 @@ Offset  Size  Type    Field    Notes
 ```
 Offset  Size  Type    Field
 ─────────────────────────────
-0x00    4     uint32  unk0x0 
-0x04    16            unk0x04
-0x14    16            unk0x14
-0x24    16            unk0x24
+0x00    4     uint32  unk0x0               always 0
+0x04    16            legendary_weapons
+0x14    16            legendary_goods
+0x24    16            legendary_talismans
 ─────────────────────────────
         52    total
 ```
 
+Progress of the four "Legendary" trophies. Each field is a 128-bit set with one bit per legendary item ever acquired; the bit stays set after the item is sold or discarded. Bit n is the n-th legendary item of that type in ascending item id order:
+
+- `legendary_weapons`: Sword of Night and Flame, Dark Moon Greatsword, Marais Executioner's Sword, Golden Order Greatsword, Ruins Greatsword, Grafted Blade Greatsword, Eclipse Shotel, Devourer's Scepter, Bolt of Gransax
+- `legendary_goods`: bits 0-6 Comet Azur, Founding Rain of Stars, Stars of Ruin, Ranni's Dark Moon, Flame of the Fell God, Elden Stars, Greyoll's Roar; bits 7-12 Black Knife Tiche, Mimic Tear, Cleanrot Knight Finlay, Ancient Dragon Knight Kristoff, Redmane Knight Ogha, Lhutel the Headless
+- `legendary_talismans`: Erdtree's Favor +2, Radagon's Soreseal, Moon of Nokstella, Marika's Soreseal, Old Lord's Talisman, Radagon Icon, Godfrey Icon, Dragoncrest Greatshield Talisman
+
 ---
 
-## GaitemGameData - 8 bytes + 7000x16 bytes (0x1B588)
+## GaitemGameData - 8 bytes + 14000x8 bytes (0x1B588)
+
+Every item type the character has ever acquired.
 
 ```
 Offset  Size    Type                   Field
 ──────────────────────────────────────────────
 0x00    8       int64                  count
-0x08    112000  GaitemGameDataEntry[]  entries
+0x08    112000  GaitemGameDataEntry[]  entries (14000)
 ──────────────────────────────────────────────
         112008  total
 ```
 
+The first `count` entries are live and sorted by `item_id`. Entries past `count` hold stale data and are preserved as read.
+
 ---
 
-## GaitemGameDataEntry - 16 bytes (0x10)
+## GaitemGameDataEntry - 8 bytes
 
 ```
 Offset  Size  Type    Field
 ──────────────────────────────────
-0x00    4     uint32  id
-0x04    1     uint8   unk0x4
-0x05    3             pad0x5
-0x08    4     uint32  next_item_id
-0x0C    1     uint8   unk0xc
-0x0D    3             pad0x0d
+0x00    4     uint32  item_id
+0x04    1     uint8   acquired     1 on every live entry
+0x05    3             pad          uninitialized on some entries
 ──────────────────────────────────
-        16    total
+        8     total
 ```
+
+`item_id` carries a category tag: weapons as base id without upgrade or affinity, `0x10000000 |` armor, `0x20000000 |` talisman, `0x40000000 |` goods, `0x80000000 |` Ash of War. Items stay listed after being sold or discarded.
 
 ---
 
 ## TutorialData - variable
 
-Contains completion data of tutorials.
+Tutorial pop-ups the character has already been shown.
 
 ```
 Offset  Size      Type               Field
 ─────────────────────────────────────────────────────────────────────
-0x00    2         uint16             unk0x0
-0x02    2         uint16             unk0x2
-0x04    4         uint32             size
+0x00    2         uint16             unk0x0       always 174
+0x02    2         uint16             unk0x2       always 1
+0x04    4         uint32             size         0x400
 0x08    variable  TutorialDataChunk  data
 ─────────────────────────────────────────────────────────────────────
 ```
@@ -626,7 +718,7 @@ Offset  Size      Type               Field
 Offset  Size      Type      Field
 ────────────────────────────────────────
 0x00    4         uint32    count
-0x04    variable  uint32[]  tutorial_ids
+0x04    variable  uint32[]  tutorial_ids  TutorialParam row ids, first count are live
 ────────────────────────────────────────
 ```
 
@@ -671,6 +763,12 @@ A record exists only while the game tracks the map. WorldArea and WorldGeomMan r
 map loads and are dropped when it unloads, including records with no entries. LOD tiles of the open
 world (`m60_XX_YY_01`, `_02`) get records too. Assets placed on a coarser tile are stored under that
 tile: a breakable on `m60_42_37_00` may be listed under `m60_21_18_01`.
+
+### FieldArea
+
+No magic. `uint32 count`, then `count` records of `MapId map, uint32 n, n x MapId`. The record map is a
+dungeon or legacy dungeon (Stranded Graveyard m18_00, catacombs m30/m31, Leyndell...), and the list holds
+open world tiles (`m60_XX_YY_00`) next to it. `count` is usually 0.
 
 ### MapId in records
 
@@ -842,7 +940,7 @@ round trip has to be checked before editing. The editor does not write these blo
 
 ---
 
-## PlayerCoordinates - 57 bytes (0x39)
+## PlayerCoordinates - 61 bytes (0x3D)
 
 ```
 Offset  Size  Type          Field
@@ -854,8 +952,11 @@ Offset  Size  Type          Field
 0x21    12    FloatVector3  unk_coordinates
 0x2D    16    FloatVector4  unk_angle
 ──────────────────────────────────────────
-        57    total
+        61    total
 ```
+
+`unk_coordinates`/`unk_angle` are a second position and rotation without a map id. Their purpose is
+unknown. Dying, recovering runes, warping between graces and resting do not change them.
 
 ---
 
@@ -863,8 +964,39 @@ Offset  Size  Type          Field
 
 Network manager state. `unk0x0` (uint32, always 2) followed by `0x20000` bytes of data.
 
-The u32 before it is always 0. A replacement blob (CSNetMan.bin) covers both, 0x20004 bytes, so it is
-written 4 bytes before the parsed `net_man_offset`.
+The replacement template CSNetMan.bin starts 4 bytes before `net_man_offset`. Those 4 bytes belong to the
+fields before NetMan (the top 3 bytes of `temp_spawn_point_entity_id` and `game_man_0xcb3`), so only the
+template's bytes from offset 4 on are written.
+
+The data is a list of chunks, each `uint16 type, uint16 version, uint32 size, size bytes`, ending with a
+type `0xFFFF` chunk of size 0. The chunk order is 2, 5, 6, 8, 9, 7, 0xFFFF and the rest of the 0x20000
+bytes is zero. A chain that does not reach the terminator within the buffer indicates corruption.
+
+Every chunk holds a sub-entry list: `uint32 kind, uint32 size, size bytes`, each entry padded to 4 bytes,
+ending with a kind `0xFFFF` entry of size 0. The list starts at the chunk's first byte, except in chunk 8,
+which has a 12-byte header first. Chunks 2, 5, 9 and 7 hold an empty list (the terminator alone). A chunk
+is valid when its list ends exactly at the chunk end.
+
+**Repair:** the save fixer validates every chunk and rebuilds only the damaged ones from CSNetMan.bin. After
+a torn write, intact chunks are found again at their shifted positions and kept.
+
+```
+Type  Version  Size      Content
+──────────────────────────────────────────────────────────────────────
+2     0        8         empty list
+5     0        8         empty list
+6     2        variable  other players' character snapshots
+8     0        variable  12-byte header and a sub-entry list, meaning unknown
+9     0        8         empty list
+7     1        8         empty list
+0xFFFF 0       0         terminator
+──────────────────────────────────────────────────────────────────────
+```
+
+Chunk 6 entries of kind 0 or 1 are player records of about 600 bytes, followed by one kind 2 entry per
+record holding an 8- or 12-byte id. A record holds the other player's equipment item ids, a full `FACE`
+block, the character name (UTF-16) and a world position. The game updates a few bytes of every record on
+each save.
 
 ---
 
@@ -897,7 +1029,8 @@ Offset  Size  Type    Field
         12    total
 ```
 
-Should match `seconds_played` from `ProfileSummary`. All zeros indicates corruption.
+In-game time of day (0-23, 0-59, 0-59). It is independent of play time, which is `play_time_ms` in the slot
+header. New characters start at about 08:00.
 
 ---
 
@@ -909,7 +1042,7 @@ Offset  Size  Type    Field
 0x00    4     uint32  base_version_copy
 0x04    4     uint32  base_version
 0x08    4     uint32  is_latest_version
-0x0C    4     uint32  unk0xc
+0x0C    4     uint32  unk0xc              always 0
 ──────────────────────────────────
         16    total
 ```
@@ -938,7 +1071,23 @@ The unused bytes should be all `0x00`; non-zero values indicate corruption.
 
 ## PS5Activity - 32 bytes (0x20)
 
-Raw bytes. PlayStation-specific activity data.
+Progress of the PlayStation 5 activity cards, one uint8 per activity: 0 not started, 1 in progress,
+2 completed. Present on every platform.
+
+```
+Byte  Activity
+──────────────────────────────────────────────────
+0     main story (2 after Hoarah Loux)
+1     Godrick the Grafted
+2     Starscourge Radahn
+3     Morgott, the Omen King
+4     Fire Giant
+5     Maliketh, the Black Blade
+6     Hoarah Loux
+7     0 or 1, follows event flag 6080; activity unknown
+8-31  always 0
+──────────────────────────────────────────────────
+```
 
 ---
 
@@ -962,10 +1111,10 @@ Offset  Entry  Input
 0x14    5      runes held (u32)
 0x18    6      runes memory (u32)
 0x1C    7      equipped weapon item ids: L1, L2, L3, R1, R2, R3, arrows 1, arrows 2, bolts 1, bolts 2
-0x20    8      equipped item id slots 12-15 (armor), 17-20 (talismans) and 21 (unk0x54)
+0x20    8      equipped item id slots 12-15 (armor), 17-20 (talismans) and 21 (talisman5)
 0x24    9      quick items (inputs unknown)
 0x28    10     14 equipped spell ids
-0x2C    -      0x54 bytes, uninitialized memory in game-written saves
+0x2C    -      0x54 bytes, uninitialized memory
 ──────────────────────────────────────────────────────────────────────
 ```
 
@@ -982,16 +1131,74 @@ Offset  Size    Field
 0x00    16      checksum (MD5, PC only)
 0x10    4       version (uint32)
 0x14    8       steam_id (uint64)
-0x1C    0x140   Settings (camera, volume, HDR, ...), padded
+0x1C    0x140   Settings (see below; first 0x30 bytes used, rest zero)
 0x15C   0x1808  MenuSystemSaveLoad (appearance presets)
 0x1964  0x1702  ProfileSummary
 0x3066  5       GameMan bytes
 0x306B  0xB2    PCOptionData (PC only)
-...     var     KeyConfigSaveLoad (u16, u16, u32 size, size bytes)
+...     var     KeyConfigSaveLoad (u16, u16, u32 size, size bytes; see below)
 ...     8       game_man_0x118
 ...             unparsed remainder up to 0x60010
 ──────────────────────────────────────────────────────
 ```
+
+**Settings:** one uint8 per option, same order as the in-memory option data at GameDataMan+0x58.
+
+```
+Offset  Field                      Offset  Field
+──────────────────────────────────────────────────────────────────────
+0x00    camera_speed               0x18    launchsettings
+0x01    controller_vibration       0x19    send_summon_sign
+0x02    brightness                 0x1A    unknown (default 1)
+0x03    sound_type                 0x1B    hdr
+0x04    music_volume               0x1C    hdr_adjust_brightness
+0x05    sound_effects_volume       0x1D    hdr_maximum_brightness
+0x06    voice_volume               0x1E    hdr_adjust_saturation
+0x07    display_blood              0x1F    unknown (default 1)
+0x08    subtitles                  0x20    master_volume
+0x09    hud                        0x21    is_raytracing_on
+0x0A    camera_x_axis              0x22    mark_new_items
+0x0B    camera_y_axis              0x23    show_recent_tabs
+0x0C    toggle_auto_lockon         0x24    10 bytes, always 0
+0x0D    camera_auto_wall_recovery  0x2E    show_tutorials
+0x0E    unknown (always 0)         0x2F    camera_auto_rotation
+0x0F    unknown (default 1)
+0x10    reset_camera_y_axis
+0x11    cinematic_effects
+0x12    unknown (always 0)
+0x13    cross_region_play
+0x14    voice_chat
+0x15    display_player_names
+0x16    manual_attack_aim
+0x17    autotarget
+──────────────────────────────────────────────────────────────────────
+```
+
+**PCOptionData - 0xB2 bytes (PC only):** 0x00-0x11 is a header (default `00 05 d0 02 00 00 1e 05`, then
+zeros), followed by 40 entries of `uint16 key, uint16 flag` where `key` is a Windows virtual-key code (`0x57`
+W, `0x53` S, `0x44` D, `0x41` A, `0x60`-`0x67` numpad, `0x25`-`0x28` arrows, ...). Rebinding keys in game does
+not change it; the player's bindings are in KeyConfigSaveLoad. Its purpose is unknown.
+
+**KeyConfigSaveLoad - 8 + 0x2000 bytes:** `uint16 0x1F, uint16 1, uint32 size (0x2000)`, then the control
+bindings in the layout of KeyAssignParam: 26 records of 20 bytes, one per logical action in KeyAssignParam row
+order (row index = `key` in KeyAssignMenuItemParam, e.g. 1 Move Forwards, 13 Switch Sorcery/Incantation, 22
+Event Action).
+
+```
+Offset  Size  Type   Field
+──────────────────────────────────────────
+0x00    4     int32  pad key id (-1 = none)
+0x04    4     int32  keyboard key id (-1 = none)
+0x08    4     int32  keyboard modifier key
+0x0C    4     int32  mouse key id
+0x10    4     int32  mouse modifier key
+──────────────────────────────────────────
+```
+
+Binding an input that another action already uses moves it: the other action gets the old input. Data
+offset 0x208 starts a block of control options (`05 01 01 01 01 ...` by default). Data offset 0x210 is the
+on-screen prompt device (0 = gamepad, 1 = keyboard and mouse). The rest of the 0x2000 bytes is
+zero.
 
 **ProfileSummary - 0x1702 bytes:** 10 x uint8 `active_profiles` (1 = slot in use), then 10 x Profile.
 
@@ -1006,19 +1213,39 @@ Offset  Size   Field
 0x26    4      seconds_played (uint32)
 0x2A    4      runes_memory (uint32)
 0x2E    4      map_id (MapId)
-0x32    4      unknown
+0x32    4      place_name_id (PlaceName text id of the load screen location)
 0x36    0x124  face_data
-0x15A   0xE8   equipment
+0x15A   0xE8   equipment (see below)
 0x242   1      body_type
 0x243   1      archetype
 0x244   1      starting_gift
-0x245   7      unknown
+0x245   7      constant 00 00 01 00 00 00 00
 ──────────────────────────────────────────────────
 0x24C          total
 ```
 
-ProfileSummary is the load screen copy of each character. Edits that should show on the load screen
-(name, level, playtime, appearance, equipment) have to update it as well.
+**Profile equipment - 0xE8 bytes (58 uint32):**
+
+```
+Word   Field
+──────────────────────────────────────────────────────────────────────
+0      -1
+1      0
+2-8    ActiveWeaponSlotsAndArmStyle (same 7 values as the slot)
+9-30   22 equipment slots as tagged ids: weapons 0x80000000 | (id & 0x7FFFFF),
+       armor 0x90000000 | id, talismans 0xA0000000 | id, 0 if empty
+31-52  22 equipment slots as item ids (same order and values as
+       equipped_items_item_id)
+53-54  -1, or both 69000000 / 69001000 / 69100000 (meaning unknown)
+55-57  0
+──────────────────────────────────────────────────────────────────────
+```
+
+ProfileSummary is the load screen copy of each character. On every write the manager rebuilds the entry of
+each edited slot from the slot itself (`parser/profile_sync.py`): name, level, play time (`play_time_ms` / 1000),
+runes memory, map, equipment words 2-52, body type, class and starting gift. `place_name_id` and equipment
+words 0-1 and 53-57 are kept. The profile's FACE block is only filled from the slot when the profile has
+none: the game writes the eye colors and the frenzied flame byte differently into the two copies.
 
 ---
 
