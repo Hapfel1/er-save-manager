@@ -8,7 +8,11 @@ import tkinter as tk
 
 import customtkinter as ctk
 
-from er_save_manager.data import calculate_level_from_stats, get_class_data
+from er_save_manager.data import (
+    calculate_level_from_stats,
+    get_class_data,
+    runes_to_reach_level,
+)
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
@@ -16,6 +20,8 @@ logger = logging.getLogger(__name__)
 
 # The game caps held runes at 999,999,999.
 MAX_RUNES = 999_999_999
+# Runes memory is a u32 and keeps counting past the held runes cap.
+MAX_RUNES_MEMORY = 0xFFFFFFFF
 MAX_SCADUTREE = 20
 MAX_REVERED_SPIRIT_ASH = 10
 MAX_MEMORY_STONES = 8
@@ -757,12 +763,23 @@ class StatsEditor:
                 char.faith = self.stat_vars["faith"].get()
                 char.arcane = self.stat_vars["arcane"].get()
 
+                old_level = char.level
                 char.level = int(self.level_var.get()) if self.level_var.get() else 0
-                # Runes memory counts every rune ever gained, so added runes
-                # raise it by the same amount.
+                # Runes memory counts every rune ever gained, so added runes and
+                # the cost of added levels raise it. It never drops below the
+                # cost of all levels above the class start plus held runes.
                 runes_gained = max(0, runes - char.runes)
+                if char.level > old_level:
+                    runes_gained += runes_to_reach_level(old_level, char.level)
                 char.runes = runes
-                char.runes_memory = min(0xFFFFFFFF, char.runes_memory + runes_gained)
+                start_level = get_class_data(
+                    char.archetype, getattr(save_file, "is_convergence", False)
+                )["level"]
+                floor = runes_to_reach_level(start_level, char.level) + runes
+                char.runes_memory = min(
+                    MAX_RUNES_MEMORY,
+                    max(char.runes_memory + runes_gained, floor),
+                )
 
                 char.great_rune_on = bool(self.great_rune_on_var.get())
 

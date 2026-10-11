@@ -335,7 +335,11 @@ def import_nyasu(
         try:
             from io import BytesIO
 
-            from er_save_manager.data import calculate_level_from_stats
+            from er_save_manager.data import (
+                calculate_level_from_stats,
+                get_class_data,
+                runes_to_reach_level,
+            )
 
             s_json = data.get("stats", {})
             cls_name = data.get("characterClass", "")
@@ -363,6 +367,16 @@ def import_nyasu(
                 char.arcane,
                 archetype,
                 save_file.is_convergence,
+            )
+            # Runes memory must cover the levels above the class start plus
+            # held runes.
+            start_level = get_class_data(archetype, save_file.is_convergence)["level"]
+            char.runes_memory = min(
+                0xFFFFFFFF,
+                max(
+                    char.runes_memory,
+                    runes_to_reach_level(start_level, char.level) + char.runes,
+                ),
             )
 
             buf = BytesIO()
