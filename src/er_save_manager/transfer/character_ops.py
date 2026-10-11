@@ -663,16 +663,20 @@ class CharacterOperations:
         IMPORTANT: SteamID is ONLY in the character slot data, NOT in the
         profile summary. The profile summary contains character name, level,
         playtime, and other profile info, but NOT SteamID.
-        """
-        if not save.user_data_10_parsed:
-            return
 
+        PlayStation slots store 0 here, regardless of the USER_DATA_10 value.
+        """
         if isinstance(save._raw_data, bytes):
             save._raw_data = bytearray(save._raw_data)
 
-        target_steamid = save.user_data_10_parsed.steam_id
-        if target_steamid == 0:
-            return
+        if save.is_ps:
+            target_steamid = 0
+        else:
+            if not save.user_data_10_parsed:
+                return
+            target_steamid = save.user_data_10_parsed.steam_id
+            if target_steamid == 0:
+                return
 
         # SteamID is near the end of character data (in the slot, not profile summary)
         slot_char = save.character_slots[slot_index]
