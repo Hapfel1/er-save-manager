@@ -104,7 +104,13 @@ _EF_SPLICE_LOCATION = "event_flags_splice"
 
 # Shown after a repair, for what it had to give up
 NETMAN_RESET_NOTE = (
-    "Bloodstains and messages were wiped (NetMan reset) to restore the save."
+    "Damaged parts of the network data (CSNetMan) were rebuilt from a clean "
+    "template. Intact parts were kept; data from other players in the rebuilt "
+    "parts, such as bloodstains and messages, is gone."
+)
+NETMAN_REPLACED_NOTE = (
+    "All network data (CSNetMan) was replaced with a clean template. Data from "
+    "other players, such as bloodstains and messages, is gone."
 )
 FLAG_RELOCATION_NOTE = (
     "Event flag data was moved to restore the save; some progression states, "
@@ -299,7 +305,7 @@ class EFTornScanResult:
 class DeepScanFixResult(FixResult):
     """FixResult that also reports what the repair reset or moved."""
 
-    netman_reset: bool = False  # NetMan replaced: bloodstains, messages gone
+    netman_reset: bool = False  # NetMan chunks rebuilt from the template
     flags_relocated: bool = False  # event flag bytes moved to inferred positions
 
 

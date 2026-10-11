@@ -813,7 +813,7 @@ class CharacterDetailsDialog:
     ):
         _parent = dialog.master
 
-        from er_save_manager.fixes.deep_scan import NETMAN_RESET_NOTE
+        from er_save_manager.fixes.deep_scan import NETMAN_REPLACED_NOTE
         from er_save_manager.fixes.netman import NETMAN_SIZE, load_template
 
         clean = load_template()
@@ -864,7 +864,7 @@ class CharacterDetailsDialog:
 
             CTkMessageBox.showinfo(
                 "Done",
-                f"CSNetMan replaced in Slot {slot_idx + 1}.\n\nNOTE: {NETMAN_RESET_NOTE}"
+                f"CSNetMan replaced in Slot {slot_idx + 1}.\n\nNOTE: {NETMAN_REPLACED_NOTE}"
                 "\n\nBackup saved to backup manager.",
                 parent=_parent,
             )
