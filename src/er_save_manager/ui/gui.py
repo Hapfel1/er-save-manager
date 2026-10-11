@@ -1492,6 +1492,29 @@ class SaveManagerGUI:
         """Return the GameProfile for the currently selected game."""
         return PROFILES_BY_KEY.get(self.active_game)
 
+    def _reject_wrong_game(self, save_path: str) -> bool:
+        """Show an error and return True if save_path belongs to another game."""
+        from er_save_manager.games.save_identify import KNOWN_GAMES, identify_game
+
+        if self.active_game not in KNOWN_GAMES:
+            return False
+        owner = identify_game(save_path)
+        if owner is None or owner == self.active_game:
+            return False
+        owner_profile = PROFILES_BY_KEY.get(owner)
+        active_profile = self._active_profile()
+        owner_name = owner_profile.name if owner_profile else owner
+        active_name = active_profile.name if active_profile else self.active_game
+        CTkMessageBox.showerror(
+            "Wrong Game",
+            f"{os.path.basename(save_path)} is a {owner_name} save, "
+            f"not a {active_name} save.\n\n"
+            f"Switch to {owner_name} to load it.",
+            parent=self.root,
+        )
+        self.status_var.set("Load cancelled - save belongs to another game")
+        return True
+
     # File operations
     def show_console_save_info(self):
         """Show instructions for loading a PlayStation or Switch save."""
@@ -2096,6 +2119,8 @@ class SaveManagerGUI:
     def _load_non_er_save(self, save_path: str):
         """Store the selected save path for non-ER games and refresh the SteamID display."""
         self._flush_pending_tabs()
+        if self._reject_wrong_game(save_path):
+            return
         profile = self._active_profile()
         if (
             not self.settings.get("skip_game_running_check", False)
@@ -2140,6 +2165,9 @@ class SaveManagerGUI:
             CTkMessageBox.showerror(
                 "Error", "Please select a valid save file first!", parent=self.root
             )
+            return
+
+        if self._reject_wrong_game(save_path):
             return
 
         # The game must be closed before writing
@@ -2285,6 +2313,8 @@ class SaveManagerGUI:
     def _load_dsr_save(self, save_path: str) -> None:
         """Parse a DSR save file and refresh all DSR tabs."""
         self._flush_pending_tabs()
+        if self._reject_wrong_game(save_path):
+            return
         from er_save_manager.games.DSR.save import DSRSave
 
         profile = self._active_profile()
@@ -2350,6 +2380,8 @@ class SaveManagerGUI:
         already done it; the process query is slow on Windows.
         """
         self._flush_pending_tabs()
+        if self._reject_wrong_game(save_path):
+            return
         from er_save_manager.games.DS3.save import DS3Save
 
         profile = self._active_profile()
@@ -2406,6 +2438,8 @@ class SaveManagerGUI:
     def _load_ds2_save(self, save_path: str) -> None:
         """Parse a DS2 SOTFS save file and refresh the DS2 tabs."""
         self._flush_pending_tabs()
+        if self._reject_wrong_game(save_path):
+            return
         from er_save_manager.games.DS2.save import DS2Save
 
         profile = self._active_profile()
@@ -2457,6 +2491,8 @@ class SaveManagerGUI:
     def _load_nr_save(self, save_path: str) -> None:
         """Parse a Nightreign save file and refresh all NR tabs."""
         self._flush_pending_tabs()
+        if self._reject_wrong_game(save_path):
+            return
         profile = self._active_profile()
         if (
             not self.settings.get("skip_game_running_check", False)
