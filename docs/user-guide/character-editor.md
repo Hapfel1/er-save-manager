@@ -62,10 +62,9 @@ The Character Editor allows you to modify:
 - **Runes Held** - Current runes
 - **Level** - Character level (calculated from stats)
 - **NG Level** - New Game Plus cycle (0-7+)
-- **Talisman Slots** - Number of talisman slots unlocked
-- **Spirit Tuning Level** - Maximum spirit ash upgrade level
-- **Crimson Flask** - Total Crimson Tears flasks
-- **Cerulean Flask** - Total Cerulean Tears flasks
+- **Playtime** - Hours, minutes and seconds played
+- **Scadutree Blessing** / **Revered Spirit Ash Blessing** - Shadow of the Erdtree blessing levels
+- **Memory Stones** - Memory Stones obtained (0-8)
 
 ---
 
@@ -186,25 +185,16 @@ The gift chosen at character creation.
 
 ## Progression Details
 
-### Talisman Slots
+### Playtime
 
-Number of talisman slots unlocked (0-4).
+Hours, minutes and seconds of play time. Written to the character's own play time and to the load screen
+entry. The in-game time of day is not changed.
 
-### Spirit Tuning Level
+### Blessings & Memory Stones
 
-Maximum upgrade level for Spirit Ashes (0-10).
-
-**Unlocks:**
-
-- Glovewort levels through Roderika dialogue
-- Final unlock (+10) after specific quest progression
-
-### Flask Counts
-
-Total number of flasks:
-
-- **Crimson Tears** - HP recovery
-- **Cerulean Tears** - FP recovery
+- **Scadutree Blessing** (0-20) and **Revered Spirit Ash Blessing** (0-10), as shown on the status screen
+- **Memory Stones** (0-8): the number of Memory Stones the character has. The held Memory Stone item is set
+  to the same quantity, added if missing and removed at 0
 
 ---
 

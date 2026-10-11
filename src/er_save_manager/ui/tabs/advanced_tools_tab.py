@@ -100,10 +100,25 @@ class AdvancedToolsTab:
 
         ctk.CTkButton(
             tools_frame,
+            text="Game Settings...",
+            command=self.open_game_settings,
+            width=200,
+        ).pack(pady=5, padx=12)
+
+        ctk.CTkButton(
+            tools_frame,
             text="Refresh Information",
             command=self.update_save_info,
             width=200,
         ).pack(pady=(5, 12), padx=12)
+
+    def open_game_settings(self):
+        """Edit the in-game options stored in the save."""
+        from er_save_manager.ui.dialogs.game_settings import open_game_settings
+
+        open_game_settings(
+            self.parent, self.get_save_file(), self.get_save_path(), self.show_toast
+        )
 
     def update_save_info(self):
         """Update save information display."""

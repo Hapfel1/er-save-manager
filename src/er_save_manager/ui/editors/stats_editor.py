@@ -12,8 +12,49 @@ from er_save_manager.data import calculate_level_from_stats, get_class_data
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
+logger = logging.getLogger(__name__)
+
 # The game caps held runes at 999,999,999.
 MAX_RUNES = 999_999_999
+MAX_SCADUTREE = 20
+MAX_REVERED_SPIRIT_ASH = 10
+MAX_MEMORY_STONES = 8
+
+# Memory Stone goods; the held quantity matches PlayerGameData memory_stone_count
+_MEMORY_STONE = 0x4000272E
+
+
+def _clamped(var, limit: int) -> int:
+    try:
+        return max(0, min(limit, int(var.get())))
+    except (ValueError, tk.TclError):
+        return 0
+
+
+def _sync_memory_stones(save_file, slot_idx: int, slot, count: int) -> str | None:
+    """Set the held Memory Stone quantity to count; return a note on failure."""
+    from er_save_manager.parser import inventory_ops
+
+    handle = 0xB0000000 | (_MEMORY_STONE & 0x0FFFFFFF)
+    held = sum(
+        item.quantity
+        for item in slot.inventory_held.key_items + slot.inventory_held.common_items
+        if item.gaitem_handle == handle
+    )
+    if held == count:
+        return None
+    try:
+        if count == 0:
+            inventory_ops.remove_item(save_file, slot_idx, _MEMORY_STONE)
+        elif held:
+            inventory_ops.set_quantity(save_file, slot_idx, _MEMORY_STONE, count)
+        else:
+            inventory_ops.add_item(save_file, slot_idx, _MEMORY_STONE, count)
+    except Exception as e:
+        logger.exception("Memory Stone sync failed")
+        return f"Memory Stone item could not be updated: {e}"
+    return None
+
 
 _ATTR_KEYS = frozenset(
     {
@@ -69,6 +110,9 @@ class StatsEditor:
         self.great_rune_id_var = None
         self.last_grace_var = None
         self.matchmaking_level_var = None
+        self.scadutree_blessing_var = None
+        self.revered_spirit_ash_var = None
+        self.memory_stone_var = None
         self._matchmaking_min = 0  # floor derived from inventory scan
 
         self.frame = None
@@ -286,6 +330,45 @@ class StatsEditor:
             width=260,
         ).grid(row=2, column=1, columnspan=2, sticky=ctk.W, padx=5, pady=(5, 10))
 
+        # Blessings and memory stones
+        blessing_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
+        blessing_frame.pack(fill=ctk.X, pady=5, padx=10)
+
+        ctk.CTkLabel(
+            blessing_frame,
+            text="Blessings & Memory Stones",
+            font=("Segoe UI", 12, "bold"),
+            text_color=("black", "white"),
+        ).grid(row=0, column=0, columnspan=3, sticky=ctk.W, padx=5, pady=(5, 0))
+
+        self.scadutree_blessing_var = tk.IntVar(value=0)
+        self.revered_spirit_ash_var = tk.IntVar(value=0)
+        self.memory_stone_var = tk.IntVar(value=0)
+        for row, (label, var, limit) in enumerate(
+            (
+                ("Scadutree Blessing:", self.scadutree_blessing_var, MAX_SCADUTREE),
+                (
+                    "Revered Spirit Ash Blessing:",
+                    self.revered_spirit_ash_var,
+                    MAX_REVERED_SPIRIT_ASH,
+                ),
+                ("Memory Stones:", self.memory_stone_var, MAX_MEMORY_STONES),
+            ),
+            start=1,
+        ):
+            ctk.CTkLabel(
+                blessing_frame, text=label, text_color=("black", "white")
+            ).grid(row=row, column=0, sticky=ctk.W, padx=5, pady=5)
+            ctk.CTkEntry(blessing_frame, textvariable=var, width=80).grid(
+                row=row, column=1, sticky=ctk.W, padx=5, pady=5
+            )
+            ctk.CTkLabel(
+                blessing_frame,
+                text=f"0-{limit}",
+                text_color=("gray50", "gray70"),
+                font=("Segoe UI", 9),
+            ).grid(row=row, column=2, sticky=ctk.W, padx=5, pady=5)
+
         # Last rested grace
         grace_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
         grace_frame.pack(fill=ctk.X, pady=5, padx=10)
@@ -435,6 +518,9 @@ class StatsEditor:
 
         # Load matchmaking weapon level and compute inventory floor
         self.matchmaking_level_var.set(getattr(char, "matchmaking_weapon_level", 0))
+        self.scadutree_blessing_var.set(char.scadutree_blessing)
+        self.revered_spirit_ash_var.set(char.revered_spirit_ash_blessing)
+        self.memory_stone_var.set(char.memory_stone_count)
         self._refresh_matchmaking_min(slot)
 
         self.calculate_character_level()
@@ -694,6 +780,16 @@ class StatsEditor:
                     self.matchmaking_level_var.set(mm_value)
                 char.matchmaking_weapon_level = mm_value
 
+                char.scadutree_blessing = _clamped(
+                    self.scadutree_blessing_var, MAX_SCADUTREE
+                )
+                char.revered_spirit_ash_blessing = _clamped(
+                    self.revered_spirit_ash_var, MAX_REVERED_SPIRIT_ASH
+                )
+                char.memory_stone_count = _clamped(
+                    self.memory_stone_var, MAX_MEMORY_STONES
+                )
+
                 # Write back to raw data using tracked offset
                 if (
                     hasattr(slot, "player_game_data_offset")
@@ -779,6 +875,14 @@ class StatsEditor:
                     else:
                         slot.equipped_items.great_rune = rune_handle
                         slot.equipped_items.great_rune_equip_index = rune_index
+
+                    stone_note = _sync_memory_stones(
+                        save_file, slot_idx, slot, char.memory_stone_count
+                    )
+                    if stone_note:
+                        CTkMessageBox.showwarning(
+                            "Memory Stones", stone_note, parent=self.parent
+                        )
 
                     try:
                         raw_grace = self.last_grace_var.get().strip()

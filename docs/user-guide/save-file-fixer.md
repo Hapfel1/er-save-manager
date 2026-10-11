@@ -54,17 +54,17 @@ The Save File Fixer scans your save file for known corruption patterns and provi
 - Updates AreaID from MapId[3]
 - Syncs weather data
 
-### 4. Time Sync
+### 4. Time of Day
 
 **Symptom:** Corruption Error
 
-**Cause:** Time desynchronized from actual playtime
+**Cause:** The in-game time of day holds an hour above 23 or a minute or second above 59. Older versions of
+this tool wrote the play time into this field, which produced such values.
 
 **Fix Applied:**
 
-- Reads seconds_played from profile
-- Calculates hours:minutes:seconds
-- Updates in-game time fields
+- Wraps the hour into 0-23 and clamps minutes and seconds to 59
+- Play time is not touched
 
 ### 5. Ranni Softlock
 
@@ -278,7 +278,7 @@ If the tear runs through NetMan, the damaged NetMan chunks are rebuilt as descri
 3. **Detected:**
    - Torrent bug
    - Weather sync issue
-   - Time sync issue
+   - Time of day out of range
 4. Click Fix All
 5. Enable "Teleport to Roundtable"
 6. Save file

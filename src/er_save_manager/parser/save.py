@@ -480,7 +480,7 @@ class Save:
         Fixes:
         1. Torrent bug: HP=0, State=ACTIVE, State=DEAD
         2. SteamId: 0 or not matching the one in USER_DATA_10, Copy from USER_DATA_10
-        3. Time: 00:00:00, Calculate from seconds_played
+        3. Time of day: hour > 23 or minute/second > 59, brought back into range
         4. Weather: AreaId=0, Sync with MapId[3]
 
         Returns:
@@ -529,44 +529,22 @@ class Save:
                     )
                     fixes.append(f"SteamId set to {correct_steam_id}")
 
-        # Fix 3: Time corruption
-        seconds_played = None
-        if self.user_data_10_parsed and hasattr(
-            self.user_data_10_parsed, "profile_summary"
-        ):
-            profile_summary = self.user_data_10_parsed.profile_summary
-            if slot_index < len(profile_summary.profiles):
-                seconds_played = profile_summary.profiles[slot_index].seconds_played
-
-        if slot.has_time_corruption(seconds_played):
+        # Fix 3: Time of day out of range
+        if slot.has_time_corruption():
             time = slot.world_area_time
-            if time:
-                if self.user_data_10_parsed and hasattr(
-                    self.user_data_10_parsed, "profile_summary"
-                ):
-                    profile_summary = self.user_data_10_parsed.profile_summary
-                    if slot_index < len(profile_summary.profiles):
-                        profile = profile_summary.profiles[slot_index]
-                        seconds_played = profile.seconds_played
-
-                        hours = seconds_played // 3600
-                        minutes = (seconds_played % 3600) // 60
-                        seconds = seconds_played % 60
-
-                        time.hour = hours
-                        time.minute = minutes
-                        time.second = seconds
-
-                        if hasattr(slot, "time_offset") and slot.time_offset > 0:
-                            time_bytes = BytesIO()
-                            time.write(time_bytes)
-                            time_data = time_bytes.getvalue()
-                            self._raw_data[
-                                slot.time_offset : slot.time_offset + len(time_data)
-                            ] = time_data
-                            fixes.append(
-                                f"Time set to {hours:02d}:{minutes:02d}:{seconds:02d}"
-                            )
+            time.hour %= 24
+            time.minute = min(time.minute, 59)
+            time.second = min(time.second, 59)
+            if hasattr(slot, "time_offset") and slot.time_offset > 0:
+                time_bytes = BytesIO()
+                time.write(time_bytes)
+                time_data = time_bytes.getvalue()
+                self._raw_data[slot.time_offset : slot.time_offset + len(time_data)] = (
+                    time_data
+                )
+                fixes.append(
+                    f"Time of day set to {time.hour:02d}:{time.minute:02d}:{time.second:02d}"
+                )
 
         # Fix 4: Weather corruption
         if slot.has_weather_corruption():

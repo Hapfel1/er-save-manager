@@ -416,7 +416,7 @@ class Projectile:
     """Auto-replenish setting of one item (8 bytes)
 
     id is a weapon (ammo) or 0x40000000 | goods id; auto_replenish is 1 when
-    the item is refilled from storage on resting at a grace.
+    the chest's Auto-refill option is on for the item.
     """
 
     id: int = 0

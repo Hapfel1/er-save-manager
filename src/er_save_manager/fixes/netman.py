@@ -3,9 +3,9 @@
 The slot's NetMan region starts at net_man_offset and is 0x20004 bytes: u32 2,
 then 0x20000 bytes holding a chain of chunks (u16 type, u16 version, u32 size, size bytes) in the
 order 2, 5, 6, 8, 9, 7, closed by a type 0xFFFF chunk of size 0 and zero
-padding. Chunks 6 and 8 hold sub-entry lists (u32 kind, u32 size, size bytes,
+padding. Every chunk holds a sub-entry list (u32 kind, u32 size, size bytes,
 padded to 4) closed by a kind 0xFFFF entry of size 0; chunk 8 starts with a
-12-byte header before its list.
+12-byte header before its list. Chunks 2, 5, 9 and 7 hold an empty list.
 
 Repair keeps every chunk that is still intact and takes only the damaged
 ones from the clean CSNetMan.bin template, so other players' data survives
@@ -33,9 +33,7 @@ _TERMINATOR = struct.pack("<HHI", 0xFFFF, 0, 0)
 
 # (type, version) in the order the game writes them
 _CHUNK_ORDER = ((2, 0), (5, 0), (6, 2), (8, 0), (9, 0), (7, 1))
-_FIXED_SIZE = {2: 8, 5: 8, 9: 8, 7: 8}
-_LIST_START = {6: 0, 8: 12}
-_MAX_DRIFT = 0x1000
+_LIST_START = {8: 12}
 _CHUNK_NAMES = {
     2: "chunk 2",
     5: "chunk 5",
@@ -60,9 +58,7 @@ def _sub_list_ok(payload: bytes, pos: int) -> bool:
 
 
 def _chunk_ok(ctype: int, payload: bytes) -> bool:
-    if ctype in _FIXED_SIZE:
-        return len(payload) == _FIXED_SIZE[ctype]
-    return len(payload) % 4 == 0 and _sub_list_ok(payload, _LIST_START[ctype])
+    return len(payload) % 4 == 0 and _sub_list_ok(payload, _LIST_START.get(ctype, 0))
 
 
 def _chunk_at(data: bytes, pos: int, ctype: int, version: int) -> bytes | None:
@@ -141,9 +137,7 @@ def repair_netman(blob: bytes, template: bytes) -> tuple[bytes, list[str]]:
         start = pos
         while found is None:
             start = data.find(header, start)
-            # Small fixed-size chunks sit next to their neighbours; a match far
-            # away is an id entry inside chunk 6, not the chunk itself.
-            if start < 0 or (ctype in _FIXED_SIZE and start - pos > _MAX_DRIFT):
+            if start < 0:
                 break
             found = _chunk_at(data, start, ctype, version)
             if found is None:

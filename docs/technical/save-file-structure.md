@@ -179,7 +179,7 @@ Offset  Size  Field
 0x50    4     arcane
 0x54    4     unk0x54
 0x58    4     unk0x58
-0x5C    4     unk0x5c              humanity in memory (unused, always 0)
+0x5C    4     unk0x5c              humanity (unused, always 0)
 ──────────────────────────────────────────────────
 0x60    4     level
 0x64    4     runes
@@ -194,14 +194,14 @@ Offset  Size  Field
 0x84    4     sleep_buildup
 0x88    4     madness_buildup
 0x8C    4     unk0x8c
-0x90    4     unk0x90              character type in memory, 0 in saves
+0x90    4     unk0x90              character type, 0
 ──────────────────────────────────────────────────
 0x94    32    character_name (UTF-16LE, 16 chars max)
 0xB4    2     terminator
 ──────────────────────────────────────────────────
 0xB6    1     gender
 0xB7    1     archetype
-0xB8    1     unk0xb8              "appearance" in memory, 0 in saves
+0xB8    1     unk0xb8              "appearance", 0
 0xB9    1     unk0xb9
 0xBA    1     voice_type
 0xBB    1     gift
@@ -434,7 +434,7 @@ Offset  Size  Field
 
 ## AcquiredProjectiles - variable
 
-Auto-replenish settings, despite the name.
+Auto-refill settings, despite the name.
 
 ```
 Field        Type          Notes
@@ -444,9 +444,9 @@ projectiles  Projectile[]  count × 8 bytes
 ──────────────────────────────────────────
 ```
 
-**Projectile - 8 bytes:** `id` (uint32, ammo weapon id or `0x40000000 |` goods id) + `auto_replenish` (uint32, 1 = refill from storage when resting at a grace).
+**Projectile - 8 bytes:** `id` (uint32, ammo weapon id or `0x40000000 |` goods id) + `auto_replenish` (uint32, 1 = auto-refill from the chest on, toggled in the chest with Auto-refill ON/OFF).
 
-Every ammo or goods item the character has obtained whose EquipParamGoods `autoReplenishType` is 1 (default off) or 2 (default on) gets an entry. The value starts at the default and can be changed by the player.
+Every ammo or goods item the character has obtained whose EquipParamGoods `autoReplenishType` is 1 (default off) or 2 (default on) gets an entry.
 
 ---
 
@@ -972,9 +972,10 @@ The data is a list of chunks, each `uint16 type, uint16 version, uint32 size, si
 type `0xFFFF` chunk of size 0. The chunk order is 2, 5, 6, 8, 9, 7, 0xFFFF and the rest of the 0x20000
 bytes is zero. A chain that does not reach the terminator within the buffer indicates corruption.
 
-Chunks 6 and 8 hold sub-entry lists: `uint32 kind, uint32 size, size bytes`, each entry padded to 4 bytes,
-ending with a kind `0xFFFF` entry of size 0. Chunk 6's list starts at its first byte, chunk 8's after a
-12-byte header. A chunk is valid when its list ends exactly at the chunk end.
+Every chunk holds a sub-entry list: `uint32 kind, uint32 size, size bytes`, each entry padded to 4 bytes,
+ending with a kind `0xFFFF` entry of size 0. The list starts at the chunk's first byte, except in chunk 8,
+which has a 12-byte header first. Chunks 2, 5, 9 and 7 hold an empty list (the terminator alone). A chunk
+is valid when its list ends exactly at the chunk end.
 
 **Repair:** the save fixer validates every chunk and rebuilds only the damaged ones from CSNetMan.bin. After
 a torn write, intact chunks are found again at their shifted positions and kept.
@@ -982,12 +983,12 @@ a torn write, intact chunks are found again at their shifted positions and kept.
 ```
 Type  Version  Size      Content
 ──────────────────────────────────────────────────────────────────────
-2     0        8         ff ff 00 00 00 00 00 00
-5     0        8         ff ff 00 00 00 00 00 00
-6     2        variable  other players' character snapshots (see below)
+2     0        8         empty list
+5     0        8         empty list
+6     2        variable  other players' character snapshots
 8     0        variable  12-byte header and a sub-entry list, meaning unknown
-9     0        8         ff ff 00 00 00 00 00 00
-7     1        8         ff ff 00 00 00 00 00 00
+9     0        8         empty list
+7     1        8         empty list
 0xFFFF 0       0         terminator
 ──────────────────────────────────────────────────────────────────────
 ```
@@ -1028,7 +1029,8 @@ Offset  Size  Type    Field
         12    total
 ```
 
-Should match `seconds_played` from `ProfileSummary`. All zeros indicates corruption.
+In-game time of day (0-23, 0-59, 0-59). It is independent of play time, which is `play_time_ms` in the slot
+header. New characters start at about 08:00.
 
 ---
 

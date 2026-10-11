@@ -26,25 +26,35 @@ def test_no_weather_corruption_false_positive(sanitized_save):
         assert slot.has_weather_corruption() is False, f"slot {i} unexpectedly flagged"
 
 
-def test_time_corruption_flags_all_zero_with_no_reference(sanitized_save):
-    """Without a seconds_played reference, only an all-zero clock counts
-    as corrupted. None of the fixture's active slots have an all-zero
-    clock, so this should never flag here.
-    """
+def test_time_of_day_not_compared_with_play_time(sanitized_save):
+    """WorldAreaTime is the time of day; a different play time is not corruption."""
     for i in _active_slots(sanitized_save):
         slot = sanitized_save.character_slots[i]
-        assert slot.has_time_corruption(seconds_played=None) is False
+        assert slot.has_time_corruption() is False
+        assert slot.has_time_corruption(seconds_played=123456) is False
 
 
-def test_time_corruption_flags_out_of_range_minute_or_second(sanitized_save):
+def test_time_corruption_flags_out_of_range_values(sanitized_save):
+    i = _active_slots(sanitized_save)[0]
+    time = sanitized_save.character_slots[i].world_area_time
+    original = (time.hour, time.minute, time.second)
+    try:
+        for hour, minute, second in ((24, 0, 0), (12, 60, 0), (12, 0, 60)):
+            time.hour, time.minute, time.second = hour, minute, second
+            assert sanitized_save.character_slots[i].has_time_corruption() is True
+        time.hour, time.minute, time.second = 0, 0, 0
+        assert sanitized_save.character_slots[i].has_time_corruption() is False
+    finally:
+        time.hour, time.minute, time.second = original
+
+
+def test_time_fix_wraps_hour_into_a_day(sanitized_save):
     i = _active_slots(sanitized_save)[0]
     slot = sanitized_save.character_slots[i]
-    original_minute = slot.world_area_time.minute
-    slot.world_area_time.minute = 60
-    try:
-        assert slot.has_time_corruption() is True
-    finally:
-        slot.world_area_time.minute = original_minute
+    slot.world_area_time.hour = 108
+    slot.world_area_time.minute = 54
+    sanitized_save.fix_character_corruption(i)
+    assert (slot.world_area_time.hour, slot.world_area_time.minute) == (12, 54)
 
 
 def test_steamid_corruption_detected_after_zeroing_slot_steamid(sanitized_save):
