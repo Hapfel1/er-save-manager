@@ -294,10 +294,33 @@ class PCOptionData:
 
 @dataclass
 class KeyConfigSaveLoad:
-    """Key configuration data"""
+    """Control bindings in the layout of KeyAssignParam.
+
+    data holds one 20-byte record per logical action (KeyAssignParam row
+    order): pad key, keyboard key, keyboard modifier, mouse key, mouse
+    modifier. Control options follow at BINDING_COUNT * 20.
+    """
+
+    BINDING_COUNT = 26
+    # Offset in data of the on-screen prompt device: 0 gamepad, 1 keyboard and mouse
+    PROMPT_DEVICE = 0x210
 
     size: int = 0
     data: bytes = b""
+
+    @property
+    def prompt_device(self) -> int:
+        return (
+            self.data[self.PROMPT_DEVICE] if len(self.data) > self.PROMPT_DEVICE else 0
+        )
+
+    def bindings(self) -> list[tuple[int, int, int, int, int]]:
+        """(pad, keyboard, keyboard modifier, mouse, mouse modifier) per action."""
+        return [
+            struct.unpack_from("<5i", self.data, k * 20)
+            for k in range(self.BINDING_COUNT)
+            if (k + 1) * 20 <= len(self.data)
+        ]
 
     @classmethod
     def read(cls, f: BytesIO) -> KeyConfigSaveLoad:

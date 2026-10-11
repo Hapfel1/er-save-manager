@@ -1136,7 +1136,7 @@ Offset  Size    Field
 0x1964  0x1702  ProfileSummary
 0x3066  5       GameMan bytes
 0x306B  0xB2    PCOptionData (PC only)
-...     var     KeyConfigSaveLoad (u16, u16, u32 size, size bytes)
+...     var     KeyConfigSaveLoad (u16, u16, u32 size, size bytes; see below)
 ...     8       game_man_0x118
 ...             unparsed remainder up to 0x60010
 ──────────────────────────────────────────────────────
@@ -1174,10 +1174,31 @@ Offset  Field                      Offset  Field
 ──────────────────────────────────────────────────────────────────────
 ```
 
-**PCOptionData - 0xB2 bytes (PC only):** keyboard bindings. 0x00-0x11 is a header (default
-`00 05 d0 02 00 00 1e 05`, then zeros), followed by 40 entries of `uint16 key, uint16 flag` where `key` is a
-Windows virtual-key code (`0x57` W, `0x53` S, `0x44` D, `0x41` A, `0x60`-`0x67` numpad, `0x25`-`0x28`
-arrows, ...). The action order and the meaning of `flag` (0 or 4) are unknown.
+**PCOptionData - 0xB2 bytes (PC only):** 0x00-0x11 is a header (default `00 05 d0 02 00 00 1e 05`, then
+zeros), followed by 40 entries of `uint16 key, uint16 flag` where `key` is a Windows virtual-key code (`0x57`
+W, `0x53` S, `0x44` D, `0x41` A, `0x60`-`0x67` numpad, `0x25`-`0x28` arrows, ...). Rebinding keys in game does
+not change it; the player's bindings are in KeyConfigSaveLoad. Its purpose is unknown.
+
+**KeyConfigSaveLoad - 8 + 0x2000 bytes:** `uint16 0x1F, uint16 1, uint32 size (0x2000)`, then the control
+bindings in the layout of KeyAssignParam: 26 records of 20 bytes, one per logical action in KeyAssignParam row
+order (row index = `key` in KeyAssignMenuItemParam, e.g. 1 Move Forwards, 13 Switch Sorcery/Incantation, 22
+Event Action).
+
+```
+Offset  Size  Type   Field
+──────────────────────────────────────────
+0x00    4     int32  pad key id (-1 = none)
+0x04    4     int32  keyboard key id (-1 = none)
+0x08    4     int32  keyboard modifier key
+0x0C    4     int32  mouse key id
+0x10    4     int32  mouse modifier key
+──────────────────────────────────────────
+```
+
+Binding an input that another action already uses moves it: the other action gets the old input. Data
+offset 0x208 starts a block of control options (`05 01 01 01 01 ...` by default). Data offset 0x210 is the
+on-screen prompt device (0 = gamepad, 1 = keyboard and mouse). The rest of the 0x2000 bytes is
+zero.
 
 **ProfileSummary - 0x1702 bytes:** 10 x uint8 `active_profiles` (1 = slot in use), then 10 x Profile.
 
