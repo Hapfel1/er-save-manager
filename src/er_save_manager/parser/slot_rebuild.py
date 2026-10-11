@@ -52,7 +52,9 @@ def rebuild_slot_with_map(slot: UserDataX) -> tuple[bytes, list[dict[str, Any]]]
         return buf.getvalue(), sections
 
     write_section("map_id", lambda: slot.map_id.write(buf))
-    write_section("unk0x8", lambda: buf.write(slot.unk0x8))
+    write_section(
+        "play_time_ms", lambda: buf.write(struct.pack("<Q", slot.play_time_ms))
+    )
     write_section("unk0x10", lambda: buf.write(slot.unk0x10))
 
     def write_gaitem_map():

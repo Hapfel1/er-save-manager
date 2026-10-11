@@ -88,7 +88,7 @@ class UserDataX:
     # Header (4 + 4 + 8 + 16 = 32 bytes)
     version: int = 0
     map_id: MapId = field(default_factory=MapId)
-    unk0x8: bytes = field(default_factory=lambda: b"\x00" * 8)
+    play_time_ms: int = 0
     unk0x10: bytes = field(default_factory=lambda: b"\x00" * 16)
 
     # Gaitem map (VARIABLE LENGTH! 5118 or 5120 entries)
@@ -301,7 +301,7 @@ class UserDataX:
 
         # Read map_id and header (4 + 8 + 16 = 28 bytes)
         obj.map_id = MapId.read(f)
-        obj.unk0x8 = f.read(8)
+        obj.play_time_ms = struct.unpack("<Q", f.read(8))[0]
         obj.unk0x10 = f.read(16)
 
         # Read Gaitem map (VARIABLE LENGTH!)

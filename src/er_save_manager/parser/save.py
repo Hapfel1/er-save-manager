@@ -232,6 +232,45 @@ class Save:
             digests[idx] = hashlib.md5(data).digest()
         return digests
 
+    def _edited_slots(self) -> list[int]:
+        """Non-empty slots whose data changed since load or the last write."""
+        before = getattr(self, "_slot_digests", None)
+        return [
+            idx
+            for idx, digest in self._digest_slots().items()
+            if before is None or before.get(idx) != digest
+        ]
+
+    def _sync_profile_summaries(self, slots: list[int]) -> None:
+        """Rebuild the load screen profile of each given slot from its slot data."""
+        from er_save_manager.parser.profile_sync import PROFILE_SIZE, profile_from_slot
+        from er_save_manager.transfer.character_ops import CharacterOperations
+
+        if not slots or not self.user_data_10_parsed:
+            return
+        try:
+            _, profiles_base = CharacterOperations.get_profile_summary_offsets(self)
+        except Exception:
+            logger.exception("ProfileSummary offsets unavailable, profiles not synced")
+            return
+        changed = False
+        for idx in slots:
+            start = profiles_base + idx * PROFILE_SIZE
+            profile = bytes(self._raw_data[start : start + PROFILE_SIZE])
+            try:
+                synced = profile_from_slot(
+                    self._raw_data, self.character_slots[idx], profile
+                )
+            except (struct.error, IndexError, AttributeError):
+                logger.exception("Profile sync failed for slot %d", idx)
+                continue
+            if synced != profile:
+                self._raw_data[start : start + PROFILE_SIZE] = synced
+                changed = True
+        if changed:
+            CharacterOperations._reparse_user_data_10(self)
+            self.recalculate_checksums()
+
     def _refresh_player_data_hashes(self) -> None:
         """Recompute PlayerGameDataHash for every slot edited since load.
 
@@ -242,12 +281,8 @@ class Save:
 
         if isinstance(self._raw_data, bytes):
             self._raw_data = bytearray(self._raw_data)
-        before = getattr(self, "_slot_digests", None)
-        current = self._digest_slots()
         changed = False
-        for idx, digest in current.items():
-            if before is not None and before.get(idx) == digest:
-                continue
+        for idx in self._edited_slots():
             slot = self.character_slots[idx]
             if not getattr(slot, "player_data_hash_offset", 0):
                 continue
@@ -320,7 +355,9 @@ class Save:
         if not hasattr(self, "_raw_data"):
             raise RuntimeError("Cannot write save file: raw data not available")
 
+        edited = self._edited_slots()
         self._refresh_player_data_hashes()
+        self._sync_profile_summaries(edited)
 
         target = Path(filepath)
         tmp_path = target.with_name(f"{target.name}.tmp{os.getpid()}")
@@ -836,6 +873,10 @@ class Save:
     def _recalculate_userdata10_checksum(self) -> None:
         """Recalculate USER_DATA_10 MD5 checksum after preset modification"""
         import hashlib
+
+        # PlayStation USER_DATA_10 has no checksum
+        if self.is_ps:
+            return
 
         CHECKSUM_SIZE = 0x10
 

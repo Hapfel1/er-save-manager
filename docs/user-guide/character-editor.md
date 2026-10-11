@@ -210,25 +210,25 @@ Total number of flasks:
 
 ## Great Rune, Rune Arc & Matchmaking
 
-### Great Rune Active
+### Great Rune Active (Rune Arc used)
 
-Toggles whether a Great Rune is currently active (as if restored at a Rune-Restoring Altar).
+Toggles whether the equipped Great Rune's effect is active, the state a Rune Arc puts it in. The game
+stores one flag for this, so there is no separate Rune Arc option.
 
 ### Active Great Rune
 
-Dropdown to select which Great Rune is held:
+Dropdown to select which Great Rune is equipped:
 
 - None
 - Godrick's Great Rune
 - Radahn's Great Rune
 - Morgott's Great Rune
 - Rykard's Great Rune
-- Malenia's Great Rune
 - Mohg's Great Rune
+- Malenia's Great Rune
 
-### Rune Arc Active
-
-Toggles whether a Rune Arc is currently active.
+The rune has to be in the held inventory. If it is not, the editor keeps the current Great Rune and
+saves the other changes.
 
 ### Last Rested Grace
 

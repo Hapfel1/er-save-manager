@@ -67,7 +67,6 @@ class StatsEditor:
         self.runes_var = None
         self.great_rune_on_var = None
         self.great_rune_id_var = None
-        self.rune_arc_var = None
         self.last_grace_var = None
         self.matchmaking_level_var = None
         self._matchmaking_min = 0  # floor derived from inventory scan
@@ -255,21 +254,14 @@ class StatsEditor:
             text_color=("black", "white"),
         ).grid(row=0, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(5, 0))
 
+        # One flag covers both: using a Rune Arc activates the equipped Great Rune.
         self.great_rune_on_var = ctk.BooleanVar(value=False)
         ctk.CTkCheckBox(
             rune_frame,
-            text="Great Rune active",
+            text="Great Rune active (Rune Arc used)",
             variable=self.great_rune_on_var,
             text_color=("black", "white"),
-        ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
-
-        self.rune_arc_var = ctk.BooleanVar(value=False)
-        ctk.CTkCheckBox(
-            rune_frame,
-            text="Rune Arc active",
-            variable=self.rune_arc_var,
-            text_color=("black", "white"),
-        ).grid(row=1, column=1, sticky=ctk.W, padx=(20, 5), pady=5)
+        ).grid(row=1, column=0, columnspan=2, sticky=ctk.W, padx=5, pady=5)
 
         ctk.CTkLabel(
             rune_frame, text="Active Great Rune:", text_color=("black", "white")
@@ -277,12 +269,12 @@ class StatsEditor:
 
         _GREAT_RUNES = [
             ("None", 0),
-            ("Godrick's Great Rune", 0x40000053),
-            ("Radahn's Great Rune", 0x40000054),
-            ("Morgott's Great Rune", 0x40000055),
-            ("Rykard's Great Rune", 0x40000056),
-            ("Malenia's Great Rune", 0x40000057),
-            ("Mohg's Great Rune", 0x40000058),
+            ("Godrick's Great Rune", 0xB00000BF),
+            ("Radahn's Great Rune", 0xB00000C0),
+            ("Morgott's Great Rune", 0xB00000C1),
+            ("Rykard's Great Rune", 0xB00000C2),
+            ("Mohg's Great Rune", 0xB00000C3),
+            ("Malenia's Great Rune", 0xB00000C4),
         ]
         self._great_rune_options = _GREAT_RUNES
         self.great_rune_id_var = tk.StringVar(value=_GREAT_RUNES[0][0])
@@ -431,8 +423,7 @@ class StatsEditor:
         self.runes_var.set(getattr(char, "runes", 0))
 
         self.great_rune_on_var.set(bool(getattr(char, "great_rune_on", False)))
-        self.rune_arc_var.set(bool(getattr(char, "furl_calling_finger_on", False)))
-        rune_id = getattr(slot.equipped_items_item_id, "unk0x28", 0)
+        rune_id = slot.equipped_items.great_rune
         rune_name = next(
             (n for n, v in self._great_rune_options if v == rune_id),
             self._great_rune_options[0][0],
@@ -688,7 +679,6 @@ class StatsEditor:
                 char.runes_memory = min(0xFFFFFFFF, char.runes_memory + runes_gained)
 
                 char.great_rune_on = bool(self.great_rune_on_var.get())
-                char.furl_calling_finger_on = bool(self.rune_arc_var.get())
 
                 # Matchmaking weapon level - clamp to inventory floor
                 mm_value = max(0, min(25, int(self.matchmaking_level_var.get())))
@@ -770,12 +760,25 @@ class StatsEditor:
                     # Great rune ID and last grace require full slot rebuild
                     # (both live outside PlayerGameData)
                     from er_save_manager.parser.slot_rebuild import rebuild_slot
+                    from er_save_manager.ui.editors.equipment_editor import (
+                        _find_equip_index,
+                    )
 
                     rune_name = self.great_rune_id_var.get()
-                    rune_id = next(
+                    rune_handle = next(
                         (v for n, v in self._great_rune_options if n == rune_name), 0
                     )
-                    slot.equipped_items_item_id.unk0x28 = rune_id
+                    rune_index = _find_equip_index(slot, rune_handle)
+                    if rune_handle and rune_index == 0xFFFFFFFF:
+                        CTkMessageBox.showwarning(
+                            "Great Rune",
+                            f"{rune_name} is not in the held inventory, so it was not "
+                            "equipped. The other changes are still saved.",
+                            parent=self.parent,
+                        )
+                    else:
+                        slot.equipped_items.great_rune = rune_handle
+                        slot.equipped_items.great_rune_equip_index = rune_index
 
                     try:
                         raw_grace = self.last_grace_var.get().strip()

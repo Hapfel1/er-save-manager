@@ -760,18 +760,22 @@ class GesturesRegionsTab:
             ("Music Volume", "music_volume", 0, 10),
             ("Sound Effects Volume", "sound_effects_volume", 0, 10),
             ("Voice Volume", "voice_volume", 0, 10),
+            ("Sound Type", "sound_type", 0, 2),
             ("Camera Speed", "camera_speed", 0, 10),
             ("Camera X Axis", "camera_x_axis", 0, 1),
             ("Camera Y Axis", "camera_y_axis", 0, 1),
             ("Controller Vibration", "controller_vibration", 0, 1),
             ("Display Blood", "display_blood", 0, 1),
             ("Subtitles", "subtitles", 0, 1),
-            ("HUD", "hud", 0, 1),
+            ("HUD", "hud", 0, 2),
             ("Toggle Auto Lock-On", "toggle_auto_lockon", 0, 1),
             ("Camera Auto Wall Recovery", "camera_auto_wall_recovery", 0, 1),
             ("Reset Camera Y Axis", "reset_camera_y_axis", 0, 1),
+            ("Camera Auto Rotation", "camera_auto_rotation", 0, 1),
             ("Cinematic Effects", "cinematic_effects", 0, 1),
-            ("Perform Matchmaking", "perform_matchmaking", 0, 1),
+            ("Cross-Region Play", "cross_region_play", 0, 1),
+            ("Voice Chat", "voice_chat", 0, 1),
+            ("Display Player Names", "display_player_names", 0, 1),
             ("Manual Attack Aim", "manual_attack_aim", 0, 1),
             ("Autotarget", "autotarget", 0, 1),
             ("Send Summon Sign", "send_summon_sign", 0, 1),
@@ -782,6 +786,7 @@ class GesturesRegionsTab:
             ("Ray Tracing", "is_raytracing_on", 0, 1),
             ("Mark New Items", "mark_new_items", 0, 1),
             ("Show Recent Tabs", "show_recent_tabs", 0, 1),
+            ("Show Tutorials", "show_tutorials", 0, 1),
         ]
 
         vars: dict[str, tk.IntVar] = {}
@@ -833,10 +838,10 @@ class GesturesRegionsTab:
                 except Exception:
                     pass
 
-            # Write Settings back into _raw_data at its fixed offset.
-            # Layout: checksum(16) + version(4) + steam_id(8) + Settings(0x140 with padding)
+            # Settings follow the checksum (PC only), version and steam_id
             ud10_base = save_file._user_data_10_offset
-            settings_offset = ud10_base + 16 + 4 + 8  # skip checksum, version, steam_id
+            checksum_size = 0 if save_file.is_ps else 16
+            settings_offset = ud10_base + checksum_size + 4 + 8
 
             settings_buf = BytesIO()
             settings.write(settings_buf)

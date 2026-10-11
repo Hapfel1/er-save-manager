@@ -643,3 +643,10 @@ class CharacterInfoEditor:
                 save_file._raw_data[
                     slot.time_offset : slot.time_offset + len(time_data)
                 ] = time_data
+
+        # Slot header play time; the load screen profile is rebuilt from it on save
+        if getattr(slot, "data_start", 0):
+            slot.play_time_ms = total_seconds * 1000
+            struct.pack_into(
+                "<Q", save_file._raw_data, slot.data_start + 8, slot.play_time_ms
+            )

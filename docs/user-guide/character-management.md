@@ -127,7 +127,7 @@ Everything from the `.erc` file:
 
 - Character added to save's profile list
 - Active slot flag set
-- Playtime preserved
+- Load screen entry (name, level, playtime, equipment) rebuilt from the character data
 
 **Checksums:**
 
@@ -233,7 +233,7 @@ Transfer character to another save file.
 **Profile Summary:**
 
 - Added to target save's profiles
-- Playtime preserved
+- Load screen entry rebuilt from the character data
 - Active slot marked
 
 ### Use Cases

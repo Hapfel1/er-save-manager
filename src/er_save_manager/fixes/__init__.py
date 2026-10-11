@@ -9,6 +9,7 @@ from er_save_manager.fixes.deep_scan import (
 )
 from er_save_manager.fixes.dlc import DLCFlagFix, InvalidDLCFix
 from er_save_manager.fixes.event_flags import EventFlagsFix, RanniSoftlockFix
+from er_save_manager.fixes.netman import NetManFix
 from er_save_manager.fixes.steamid import SteamIdFix
 from er_save_manager.fixes.teleport import (
     TELEPORT_LOCATIONS,
@@ -29,6 +30,7 @@ ALL_FIXES = [
     InvalidDLCFix,
     SlotChecksumFix,
     DeepScanFix,
+    NetManFix,
 ]
 
 __all__ = [
@@ -49,6 +51,7 @@ __all__ = [
     "TELEPORT_LOCATIONS",
     "ALL_FIXES",
     "DeepScanFix",
+    "NetManFix",
     "DeepScanResult",
     "EFTornScanResult",
 ]

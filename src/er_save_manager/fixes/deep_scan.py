@@ -47,6 +47,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .base import BaseFix, FixResult
+from .netman import NETMAN_SIZE, netman_problems, repair_netman
+from .netman import load_template as load_netman_template
 
 if TYPE_CHECKING:
     from ..parser import Save
@@ -545,31 +547,36 @@ class DeepScanFix(BaseFix):
         log.info("[deep_scan] wrote corrected slot data back to file buffer")
 
         # For NetMan-region tears: after reshifting, NetMan may contain invalid data.
-        # Check if NetMan is non-empty and replace with known-clean binary if so.
+        # Rebuild only the damaged chunks; intact ones are kept.
         netman_note = None
+        netman_replaced: list[str] = []
         if result.tear_location == "netman":
+            # The scan frame starts 4 bytes before the NetMan region proper
             netman_abs = (
                 slot_data_start
                 + result.expected_steamid_offset
                 - _STEAM_ID_TO_NETMAN_START
+                + 4
             )
-            netman_region = save._raw_data[netman_abs : netman_abs + _NETMAN_SIZE]
-            if any(b != 0 for b in netman_region):
-                clean = _load_clean_netman()
-                if clean is not None:
-                    save._raw_data[netman_abs : netman_abs + _NETMAN_SIZE] = clean
-                    netman_note = "NetMan replaced with clean template"
-                    log.info(
-                        "[deep_scan] NetMan had data after reshift - replaced with clean template"
+            netman_region = bytes(save._raw_data[netman_abs : netman_abs + NETMAN_SIZE])
+            if not netman_problems(netman_region):
+                netman_note = "NetMan intact, kept"
+            else:
+                template = load_netman_template()
+                if template is not None:
+                    repaired, netman_replaced = repair_netman(netman_region, template)
+                    save._raw_data[netman_abs : netman_abs + NETMAN_SIZE] = repaired
+                    netman_note = "NetMan repaired" + (
+                        f", rebuilt from template: {', '.join(netman_replaced)}"
+                        if netman_replaced
+                        else ""
                     )
+                    log.info("[deep_scan] %s", netman_note)
                 else:
                     netman_note = "WARNING: clean NetMan template not found - NetMan may be invalid"
                     log.warning(
-                        "[deep_scan] CSNetMan.bin not found, cannot wipe invalid NetMan"
+                        "[deep_scan] CSNetMan.bin not found, cannot repair NetMan"
                     )
-            else:
-                netman_note = "NetMan empty - no wipe needed"
-                log.info("[deep_scan] NetMan is empty after reshift, no wipe needed")
 
         _recalculate_slot_checksum(save, slot_index, slot_data_start)
         reparse_note = (
@@ -589,7 +596,7 @@ class DeepScanFix(BaseFix):
 
         return DeepScanFixResult(
             applied=True,
-            netman_reset=netman_note == "NetMan replaced with clean template",
+            netman_reset=bool(netman_replaced),
             flags_relocated=result.tear_location == "event_flags",
             description=f"Torn write corrected ({result.tear_location}): {'+' if delta > 0 else ''}{delta} bytes at slot+0x{shift_point:x}",
             details=result.details
@@ -1314,25 +1321,32 @@ class DeepScanFix(BaseFix):
         slot_size = 0x280000
         slot_raw = bytes(save._raw_data[slot_data_start : slot_data_start + slot_size])
 
-        netman_end = result.steamid_offset_in_slot - _TAIL_AFTER_NETMAN
-        netman = slot_raw[result.netman_start : netman_end]
-        netman_note = "NetMan size intact, kept"
-        netman_reset = len(netman) != _NETMAN_SIZE
-        if len(netman) != _NETMAN_SIZE:
-            clean = _load_clean_netman()
-            if clean is None:
+        # The scan frame starts 4 bytes before the NetMan region proper; those
+        # bytes belong to the GameMan fields and are kept as they are.
+        region_start = result.netman_start + 4
+        region_end = result.steamid_offset_in_slot - _TAIL_AFTER_NETMAN + 4
+        netman = slot_raw[region_start:region_end]
+        netman_note = "NetMan intact, kept"
+        netman_reset = False
+        if len(netman) != NETMAN_SIZE or netman_problems(netman):
+            template = load_netman_template()
+            if template is None:
                 return FixResult(
                     applied=False,
                     description="CSNetMan.bin not found, cannot rebuild NetMan",
                     details=result.details,
                 )
-            netman = clean
-            netman_note = "NetMan replaced with clean template"
+            netman, replaced = repair_netman(netman, template)
+            netman_reset = bool(replaced)
+            netman_note = "NetMan repaired" + (
+                f", rebuilt from template: {', '.join(replaced)}" if replaced else ""
+            )
 
         corrected = bytearray(
             _apply_ef_edits(slot_raw[: result.netman_start], result.ef_edits)
+            + slot_raw[result.netman_start : region_start]
             + netman
-            + slot_raw[netman_end:]
+            + slot_raw[region_end:]
         )
         if len(corrected) < slot_size:
             corrected += bytes(slot_size - len(corrected))
@@ -1413,35 +1427,6 @@ class DeepScanFix(BaseFix):
 
 # ------------------------------------------------------------------
 # Helpers
-
-
-def _load_clean_netman() -> bytes | None:
-    """
-    Load the clean NetMan template from CSNetMan.bin.
-
-    The file is expected to live alongside this module. Returns None if not found
-    or if the size does not match _NETMAN_SIZE.
-    """
-    candidate = Path(__file__).parent / "CSNetMan.bin"
-    if not candidate.is_file():
-        log.debug("[deep_scan] CSNetMan.bin not found at %s", candidate)
-        return None
-    data = candidate.read_bytes()
-    if len(data) != _NETMAN_SIZE:
-        log.warning(
-            "[deep_scan] CSNetMan.bin size mismatch: expected 0x%x, got 0x%x",
-            _NETMAN_SIZE,
-            len(data),
-        )
-        return None
-    unk0x0 = struct.unpack_from("<I", data, 0)[0]
-    if unk0x0 != 0:
-        log.warning(
-            "[deep_scan] CSNetMan.bin unk0x0=0x%x (non-zero) - template is invalid, ignoring",
-            unk0x0,
-        )
-        return None
-    return data
 
 
 def _reparse_slot(save: Save, slot_index: int, slot_data_start: int) -> bool:
