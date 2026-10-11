@@ -72,7 +72,7 @@ gaitem_map                     Gaitem[]                variable (see Gaitem belo
 player_game_data               PlayerGameData          432 (0x1B0)
 sp_effects                     SPEffect[13]            208 (0xD0)
 equipped_items_equip_index     EquipmentSlots          88 (0x58)
-active_weapon_slots_and_arm    ActiveWeaponSlots        28 (0x1C)
+active_weapon_slots_and_arm    ActiveWeaponSlots       28 (0x1C)
 equipped_items_item_id         EquipmentSlots          88 (0x58)
 equipped_items_gaitem_handle   EquipmentSlots          88 (0x58)
 inventory_held                 Inventory               variable
@@ -150,7 +150,7 @@ Notes on the scalar fields:
 ## PlayerGameData - 432 bytes (0x1B0)
 
 Character stats, attributes, and metadata. The block is the in-memory `CS::PlayerGameData` starting at
-its offset 0x8, so memory offsets from cheat tables are save offset + 8.
+its offset 0x8.
 
 ```
 Offset  Size  Field
@@ -315,7 +315,7 @@ Offset  Size  Field
 
 ## Gaitem - variable size (8, 16, or 21 bytes per entry)
 
-Item instance table. 5118 or 5120 entries back to back (see Gaitem count above), each entry's size depends on its own `gaitem_handle`, so entries must be read sequentially, there is no fixed stride.
+Item instance table. 5118 or 5120 entries back to back (see Gaitem count above), each entry's size depends on its own `gaitem_handle`, so entries must be read sequentially.
 
 ```
 Offset  Size  Field               Present when
@@ -497,7 +497,7 @@ Offset  Size  Field
 
 ## FaceData - 303 bytes (0x12F)
 
-Character appearance. The parser keeps it as raw bytes. The `FACE` block uses the same layout as the appearance presets in USER_DATA_10 (`FacePreset` in `character_presets.py`, where field names like `unk0x14` are offsets from the `FACE` magic). The ProfileSummary copy in USER_DATA_10 is the first `0x124` bytes.
+Character appearance. The `FACE` block uses the same layout as the appearance presets in USER_DATA_10 (`FacePreset` in `character_presets.py`, where field names like `unk0x14` are offsets from the `FACE` magic). The ProfileSummary copy in USER_DATA_10 is the first `0x124` bytes.
 
 ```
 Offset   Size   Field
@@ -936,7 +936,7 @@ Patching the bytes in place is not possible; the slot has to be rebuilt:
 
 A rebuild is only safe on a faithfully parsed slot (byte-identical round trip). On a misparsed slot,
 for example a torn FieldArea, it writes the misread structures back and destroys data, so the
-round trip has to be checked before editing. The editor does not write these blocks yet.
+round trip has to be checked before editing.
 
 ---
 
@@ -1013,7 +1013,7 @@ Offset  Size  Type    Field
         12    total
 ```
 
-**Corruption:** `area_id == 0` when character is in a real location, or `timer > 100000`.
+**Corruption:** `area_id == 0` when character is in a real location.
 
 ---
 
@@ -1095,7 +1095,7 @@ Byte  Activity
 
 One checksum per tracked value, 11 x uint32 followed by 0x54 bytes. The game rewrites it on every save;
 the editor recalculates it after edits (`parser/player_data_hash.py`). It sits at the parsed position
-after DLC, not at the slot end.
+after DLC.
 
 Each checksum is an Adler-32 variant over little-endian bytes: `lo` starts at 1 and adds every byte,
 `hi` adds `lo` after every byte, both are reduced modulo 0xFFF1, result `(lo | hi << 16) * 2`.
@@ -1252,8 +1252,7 @@ none: the game writes the eye colors and the frenzied flame byte differently int
 ## USER_DATA_11
 
 Located at `0x19603B0` (PC). Size: `0x240020` bytes. MD5 checksum at the start (PC only) over the
-following `0x240010` bytes, which hold the game regulation data (item stats, scaling, balance). Not
-edited by the save editor, so its checksum is never recalculated.
+following `0x240010` bytes, which hold the game regulation data.
 
 ---
 
