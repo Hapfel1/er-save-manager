@@ -30,8 +30,11 @@ class FacePreset:
     """
 
     # Header section (0x18 bytes)
-    unk0x00: bytes = b""  # 20 bytes, includes body_type at offset 0x9
-    face_data_marker: int = -1  # -1 = empty, 0 = active
+    # 20 bytes: 0x8 = 1 on a used slot, 0x9 = body_type, 0xA-0x13 uninitialized
+    # memory (pointer fragments, changes on every save)
+    unk0x00: bytes = b""
+    # Also uninitialized on most used slots; emptiness comes from magic
+    face_data_marker: int = -1
 
     # Magic section (0xC bytes)
     magic: bytes = b""  # "FACE" or empty
