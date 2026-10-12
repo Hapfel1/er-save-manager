@@ -94,6 +94,10 @@ include_files = [
         "er_save_manager/data/locations.json",
     ),
     (
+        "src/er_save_manager/data/grace_entities.json",
+        "er_save_manager/data/grace_entities.json",
+    ),
+    (
         "src/er_save_manager/data/quest_flags.json",
         "er_save_manager/data/quest_flags.json",
     ),

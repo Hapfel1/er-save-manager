@@ -105,12 +105,12 @@ _EF_SPLICE_LOCATION = "event_flags_splice"
 # Shown after a repair, for what it had to give up
 NETMAN_RESET_NOTE = (
     "Damaged parts of the network data (CSNetMan) were rebuilt from a clean "
-    "template. Intact parts were kept; data from other players in the rebuilt "
-    "parts, such as bloodstains and messages, is gone."
+    "template. Intact parts were kept; if the message list was rebuilt, the "
+    "locally stored messages (your own and other players') are gone."
 )
 NETMAN_REPLACED_NOTE = (
-    "All network data (CSNetMan) was replaced with a clean template. Data from "
-    "other players, such as bloodstains and messages, is gone."
+    "All network data (CSNetMan) was replaced with a clean template. The "
+    "locally stored messages (your own and other players') are gone."
 )
 FLAG_RELOCATION_NOTE = (
     "Event flag data was moved to restore the save; some progression states, "

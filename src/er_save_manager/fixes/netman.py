@@ -8,8 +8,8 @@ padded to 4) closed by a kind 0xFFFF entry of size 0; chunk 8 starts with a
 12-byte header before its list. Chunks 2, 5, 9 and 7 hold an empty list.
 
 Repair keeps every chunk that is still intact and takes only the damaged
-ones from the clean CSNetMan.bin template, so other players' data survives
-unless its own chunk is broken.
+ones from the clean CSNetMan.bin template, so stored messages (chunk 6)
+survive unless their own chunk is broken.
 
 CSNetMan.bin also covers the 4 bytes before the region (the end of
 temp_spawn_point_entity_id and game_man_0xcb3); load_template() drops them.
@@ -37,7 +37,7 @@ _LIST_START = {8: 12}
 _CHUNK_NAMES = {
     2: "chunk 2",
     5: "chunk 5",
-    6: "other players' data",
+    6: "messages",
     8: "chunk 8",
     9: "chunk 9",
     7: "chunk 7",

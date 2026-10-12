@@ -3,6 +3,7 @@ Character Info Editor Module (customtkinter)
 Handles character information editing (name, body type, class, etc.)
 """
 
+import tkinter as tk
 from pathlib import Path
 
 import customtkinter as ctk
@@ -18,6 +19,31 @@ _TARNISHED_PACK_CLASS_NAMES = frozenset(
     {"Idus Knight", "Heavy Knight", "Retainer (Alt)", "Dreadnought (Alt)"}
 )
 _TARNISHED_PACK_FLAG = 6953
+
+
+# The load screen profile stores seconds played as a u32.
+_MAX_PLAYTIME_SECONDS = 0xFFFFFFFF
+_MAX_PLAYTIME_HOURS = _MAX_PLAYTIME_SECONDS // 3600
+
+
+def _playtime_error(hours: str, minutes: str, seconds: str) -> str:
+    """Return an error message for the playtime fields, or "" if valid."""
+    values = []
+    for name, text, limit in (
+        ("Hours", hours, _MAX_PLAYTIME_HOURS),
+        ("Minutes", minutes, 59),
+        ("Seconds", seconds, 59),
+    ):
+        try:
+            value = int(text.strip())
+        except ValueError:
+            return f"{name} must be a whole number"
+        if not 0 <= value <= limit:
+            return f"{name} must be 0-{limit:,}"
+        values.append(value)
+    if values[0] * 3600 + values[1] * 60 + values[2] > _MAX_PLAYTIME_SECONDS:
+        return "Playtime is too large"
+    return ""
 
 
 def _owns_tarnished_pack(slot) -> bool:
@@ -63,6 +89,8 @@ class CharacterInfoEditor:
         self.char_playtime_h_var = None
         self.char_playtime_m_var = None
         self.char_playtime_s_var = None
+        self.playtime_error_label = None
+        self.apply_button = None
 
         self.frame = None
         # Called with the new archetype int when the user changes the class combo.
@@ -219,7 +247,7 @@ class CharacterInfoEditor:
         ctk.CTkLabel(playtime_frame, text="Hours:").grid(
             row=1, column=0, sticky=ctk.W, padx=5, pady=5
         )
-        self.char_playtime_h_var = ctk.IntVar(value=0)
+        self.char_playtime_h_var = tk.StringVar(value="0")
         ctk.CTkEntry(
             playtime_frame,
             textvariable=self.char_playtime_h_var,
@@ -229,7 +257,7 @@ class CharacterInfoEditor:
         ctk.CTkLabel(playtime_frame, text="Minutes:").grid(
             row=1, column=2, sticky=ctk.W, padx=5, pady=5
         )
-        self.char_playtime_m_var = ctk.IntVar(value=0)
+        self.char_playtime_m_var = tk.StringVar(value="0")
         ctk.CTkEntry(
             playtime_frame,
             textvariable=self.char_playtime_m_var,
@@ -239,12 +267,25 @@ class CharacterInfoEditor:
         ctk.CTkLabel(playtime_frame, text="Seconds:").grid(
             row=1, column=4, sticky=ctk.W, padx=5, pady=5
         )
-        self.char_playtime_s_var = ctk.IntVar(value=0)
+        self.char_playtime_s_var = tk.StringVar(value="0")
         ctk.CTkEntry(
             playtime_frame,
             textvariable=self.char_playtime_s_var,
             width=80,
         ).grid(row=1, column=5, padx=5, pady=5)
+
+        self.playtime_error_label = ctk.CTkLabel(
+            playtime_frame, text="", text_color="red", font=("Segoe UI", 10)
+        )
+        self.playtime_error_label.grid(
+            row=2, column=0, columnspan=6, sticky=ctk.W, padx=5
+        )
+        for var in (
+            self.char_playtime_h_var,
+            self.char_playtime_m_var,
+            self.char_playtime_s_var,
+        ):
+            trace_variable(var, "w", lambda *_a: self._on_playtime_change())
 
         button_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
         button_frame.pack(fill=ctk.X, pady=10, padx=10)
@@ -254,12 +295,27 @@ class CharacterInfoEditor:
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
 
-        ctk.CTkButton(
+        self.apply_button = ctk.CTkButton(
             button_frame,
             text="Apply Changes",
             command=self.apply_changes,
             width=180,
-        ).pack(side=ctk.LEFT, padx=5, pady=5)
+        )
+        self.apply_button.pack(side=ctk.LEFT, padx=5, pady=5)
+
+    def _playtime_error(self) -> str:
+        return _playtime_error(
+            self.char_playtime_h_var.get(),
+            self.char_playtime_m_var.get(),
+            self.char_playtime_s_var.get(),
+        )
+
+    def _on_playtime_change(self) -> None:
+        error = self._playtime_error()
+        if self.playtime_error_label is not None:
+            self.playtime_error_label.configure(text=error)
+        if self.apply_button is not None:
+            self.apply_button.configure(state="disabled" if error else "normal")
 
     def load_character_info(self):
         """Load character info from current character slot"""
@@ -308,9 +364,9 @@ class CharacterInfoEditor:
 
         # Play time lives in the slot header; the load screen copy follows it
         seconds_played = getattr(slot, "play_time_ms", 0) // 1000
-        self.char_playtime_h_var.set(seconds_played // 3600)
-        self.char_playtime_m_var.set((seconds_played % 3600) // 60)
-        self.char_playtime_s_var.set(seconds_played % 60)
+        self.char_playtime_h_var.set(str(seconds_played // 3600))
+        self.char_playtime_m_var.set(str((seconds_played % 3600) // 60))
+        self.char_playtime_s_var.set(str(seconds_played % 60))
 
         # Load NG+ level from ClearCount if possible, else from event flags
         clearcount = None
@@ -343,6 +399,14 @@ class CharacterInfoEditor:
             return
 
         slot_idx = self.get_char_slot()
+
+        playtime_error = self._playtime_error()
+        if playtime_error:
+            self._on_playtime_change()
+            CTkMessageBox.showwarning(
+                "Invalid Playtime", playtime_error, parent=self.parent
+            )
+            return
 
         if not CTkMessageBox.askyesno(
             "Confirm",
@@ -590,10 +654,12 @@ class CharacterInfoEditor:
         ):
             return
 
-        h = max(0, self.char_playtime_h_var.get())
-        m = max(0, min(59, self.char_playtime_m_var.get()))
-        s = max(0, min(59, self.char_playtime_s_var.get()))
-        total_seconds = h * 3600 + m * 60 + s
+        # apply_changes rejects invalid fields before anything is written.
+        total_seconds = (
+            int(self.char_playtime_h_var.get()) * 3600
+            + int(self.char_playtime_m_var.get()) * 60
+            + int(self.char_playtime_s_var.get())
+        )
 
         slot.play_time_ms = total_seconds * 1000
         struct.pack_into(

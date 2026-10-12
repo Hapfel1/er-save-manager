@@ -13,8 +13,18 @@ from er_save_manager.data import (
     get_class_data,
     runes_to_reach_level,
 )
+from er_save_manager.data.grace_data import (
+    Grace,
+    get_graces,
+    grace_from_last_rested,
+    last_rested_grace_value,
+)
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import (
+    bind_mousewheel,
+    patch_combo_scroll,
+    trace_variable,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,16 +35,28 @@ MAX_RUNES_MEMORY = 0xFFFFFFFF
 MAX_SCADUTREE = 20
 MAX_REVERED_SPIRIT_ASH = 10
 MAX_MEMORY_STONES = 8
+MAX_MATCHMAKING_LEVEL = 25
 
 # Memory Stone goods; the held quantity matches PlayerGameData memory_stone_count
 _MEMORY_STONE = 0x4000272E
 
 
-def _clamped(var, limit: int) -> int:
+# Region shown for a last rested grace the dropdowns cannot represent.
+_CURRENT_GRACE_REGION = "Current value"
+
+
+def _range_error(text: str, limit: int) -> str:
+    """Return an error message for text outside 0..limit, or "" if valid."""
+    text = text.strip()
+    if not text:
+        return "cannot be empty"
     try:
-        return max(0, min(limit, int(var.get())))
-    except (ValueError, tk.TclError):
-        return 0
+        value = int(text)
+    except ValueError:
+        return f"whole number 0-{limit}"
+    if not 0 <= value <= limit:
+        return f"must be 0-{limit}"
+    return ""
 
 
 def _sync_memory_stones(save_file, slot_idx: int, slot, count: int) -> str | None:
@@ -119,6 +141,15 @@ class StatsEditor:
         self.scadutree_blessing_var = None
         self.revered_spirit_ash_var = None
         self.memory_stone_var = None
+        # Field name -> (variable, limit, label, hint) for the 0..limit fields;
+        # the label shows the hint, or the error while the value is invalid.
+        self._range_fields: dict[str, tuple[tk.StringVar, int, ctk.CTkLabel, str]] = {}
+        self.grace_region_var = None
+        self.grace_region_combo = None
+        self.grace_combo = None
+        self._grace_options: dict[str, dict[str, Grace]] = {}
+        self._last_grace_raw = 0
+        self._last_grace_loaded: tuple[str, str] = ("", "")
         self._matchmaking_min = 0  # floor derived from inventory scan
 
         self.frame = None
@@ -347,18 +378,29 @@ class StatsEditor:
             text_color=("black", "white"),
         ).grid(row=0, column=0, columnspan=3, sticky=ctk.W, padx=5, pady=(5, 0))
 
-        self.scadutree_blessing_var = tk.IntVar(value=0)
-        self.revered_spirit_ash_var = tk.IntVar(value=0)
-        self.memory_stone_var = tk.IntVar(value=0)
-        for row, (label, var, limit) in enumerate(
+        self.scadutree_blessing_var = tk.StringVar(value="0")
+        self.revered_spirit_ash_var = tk.StringVar(value="0")
+        self.memory_stone_var = tk.StringVar(value="0")
+        for row, (key, label, var, limit) in enumerate(
             (
-                ("Scadutree Blessing:", self.scadutree_blessing_var, MAX_SCADUTREE),
                 (
+                    "scadutree",
+                    "Scadutree Blessing:",
+                    self.scadutree_blessing_var,
+                    MAX_SCADUTREE,
+                ),
+                (
+                    "revered_spirit_ash",
                     "Revered Spirit Ash Blessing:",
                     self.revered_spirit_ash_var,
                     MAX_REVERED_SPIRIT_ASH,
                 ),
-                ("Memory Stones:", self.memory_stone_var, MAX_MEMORY_STONES),
+                (
+                    "memory_stones",
+                    "Memory Stones:",
+                    self.memory_stone_var,
+                    MAX_MEMORY_STONES,
+                ),
             ),
             start=1,
         ):
@@ -368,12 +410,15 @@ class StatsEditor:
             ctk.CTkEntry(blessing_frame, textvariable=var, width=80).grid(
                 row=row, column=1, sticky=ctk.W, padx=5, pady=5
             )
-            ctk.CTkLabel(
+            hint = ctk.CTkLabel(
                 blessing_frame,
                 text=f"0-{limit}",
                 text_color=("gray50", "gray70"),
                 font=("Segoe UI", 9),
-            ).grid(row=row, column=2, sticky=ctk.W, padx=5, pady=5)
+            )
+            hint.grid(row=row, column=2, sticky=ctk.W, padx=5, pady=5)
+            self._range_fields[key] = (var, limit, hint, f"0-{limit}")
+            trace_variable(var, "w", lambda *_a, k=key: self._on_range_change(k))
 
         # Last rested grace
         grace_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
@@ -386,20 +431,34 @@ class StatsEditor:
             text_color=("black", "white"),
         ).grid(row=0, column=0, columnspan=2, sticky=ctk.W, padx=5, pady=(5, 0))
 
-        ctk.CTkLabel(
-            grace_frame, text="Grace ID (hex):", text_color=("black", "white")
-        ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
-
-        self.last_grace_var = tk.StringVar(value="0")
-        ctk.CTkEntry(
+        ctk.CTkLabel(grace_frame, text="Region:", text_color=("black", "white")).grid(
+            row=1, column=0, sticky=ctk.W, padx=5, pady=5
+        )
+        self.grace_region_var = tk.StringVar(value="")
+        self.grace_region_combo = ctk.CTkComboBox(
             grace_frame,
-            textvariable=self.last_grace_var,
-            width=120,
-            fg_color=("gray86", "gray25"),
-            text_color=("black", "white"),
-            border_color=("gray70", "gray40"),
-            border_width=1,
-        ).grid(row=1, column=1, padx=5, pady=(5, 10), sticky=ctk.W)
+            variable=self.grace_region_var,
+            values=[],
+            state="readonly",
+            width=300,
+            command=self._on_grace_region_changed,
+        )
+        patch_combo_scroll(self.grace_region_combo)
+        self.grace_region_combo.grid(row=1, column=1, padx=5, pady=5, sticky=ctk.W)
+
+        ctk.CTkLabel(grace_frame, text="Grace:", text_color=("black", "white")).grid(
+            row=2, column=0, sticky=ctk.W, padx=5, pady=5
+        )
+        self.last_grace_var = tk.StringVar(value="")
+        self.grace_combo = ctk.CTkComboBox(
+            grace_frame,
+            variable=self.last_grace_var,
+            values=[],
+            state="readonly",
+            width=300,
+        )
+        patch_combo_scroll(self.grace_combo)
+        self.grace_combo.grid(row=2, column=1, padx=5, pady=(5, 10), sticky=ctk.W)
 
         # Matchmaking weapon level
         mm_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
@@ -418,7 +477,7 @@ class StatsEditor:
             text_color=("black", "white"),
         ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
 
-        self.matchmaking_level_var = tk.IntVar(value=0)
+        self.matchmaking_level_var = tk.StringVar(value="0")
         ctk.CTkEntry(
             mm_frame,
             textvariable=self.matchmaking_level_var,
@@ -436,6 +495,20 @@ class StatsEditor:
             font=("Segoe UI", 10),
         )
         self._mm_min_label.grid(row=1, column=2, padx=10, pady=5, sticky=ctk.W)
+
+        mm_error = ctk.CTkLabel(mm_frame, text="", font=("Segoe UI", 10))
+        mm_error.grid(row=1, column=3, padx=5, pady=5, sticky=ctk.W)
+        self._range_fields["matchmaking"] = (
+            self.matchmaking_level_var,
+            MAX_MATCHMAKING_LEVEL,
+            mm_error,
+            "",
+        )
+        trace_variable(
+            self.matchmaking_level_var,
+            "w",
+            lambda *_a: self._on_range_change("matchmaking"),
+        )
 
         button_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
         button_frame.pack(fill=ctk.X, pady=10, padx=10)
@@ -519,14 +592,15 @@ class StatsEditor:
         )
         self.great_rune_id_var.set(rune_name)
 
-        # Load last rested grace as hex
-        self.last_grace_var.set(hex(getattr(slot, "last_rested_grace", 0)))
+        self._load_last_grace(slot, bool(getattr(save_file, "is_convergence", False)))
 
         # Load matchmaking weapon level and compute inventory floor
-        self.matchmaking_level_var.set(getattr(char, "matchmaking_weapon_level", 0))
-        self.scadutree_blessing_var.set(char.scadutree_blessing)
-        self.revered_spirit_ash_var.set(char.revered_spirit_ash_blessing)
-        self.memory_stone_var.set(char.memory_stone_count)
+        self.matchmaking_level_var.set(
+            str(getattr(char, "matchmaking_weapon_level", 0))
+        )
+        self.scadutree_blessing_var.set(str(char.scadutree_blessing))
+        self.revered_spirit_ash_var.set(str(char.revered_spirit_ash_blessing))
+        self.memory_stone_var.set(str(char.memory_stone_count))
         self._refresh_matchmaking_min(slot)
 
         self.calculate_character_level()
@@ -682,12 +756,94 @@ class StatsEditor:
         self._update_apply_button()
         self.calculate_character_level()
 
+    def _on_range_change(self, key: str) -> None:
+        var, limit, label, hint = self._range_fields[key]
+        error = _range_error(var.get(), limit)
+        label.configure(
+            text=error or hint,
+            text_color="red" if error else ("gray50", "gray70"),
+        )
+        self._update_apply_button()
+
+    def _range_value(self, key: str) -> int:
+        return int(self._range_fields[key][0].get().strip())
+
+    def _load_last_grace(self, slot, convergence: bool) -> None:
+        """Fill the region/grace dropdowns and select the slot's last grace."""
+        by_region: dict[str, list[Grace]] = {}
+        for grace in get_graces(include_convergence=convergence):
+            if last_rested_grace_value(grace, convergence) is not None:
+                by_region.setdefault(grace.region, []).append(grace)
+        self._grace_options = {}
+        for region, graces in by_region.items():
+            names = [g.name for g in graces]
+            # Convergence has graces sharing a name within a region.
+            self._grace_options[region] = {
+                (f"{g.name} ({g.flag_id})" if names.count(g.name) > 1 else g.name): g
+                for g in graces
+            }
+
+        raw = getattr(slot, "last_rested_grace", 0)
+        self._last_grace_raw = raw
+        grace = grace_from_last_rested(raw, convergence) if raw else None
+        selected = next(
+            (
+                (region, label)
+                for region, graces in self._grace_options.items()
+                for label, g in graces.items()
+                if grace is not None
+                and g.flag_id == grace.flag_id
+                and last_rested_grace_value(g, convergence) == raw
+            ),
+            None,
+        )
+        if selected is None:
+            # Keep values the dropdowns cannot produce (unset, unknown, or a
+            # grace from the other regulation) selectable as they are.
+            if raw == 0:
+                label = "None"
+            elif grace is not None:
+                label = f"{grace.name} ({raw})"
+            else:
+                label = f"Unknown ({raw})"
+            self._grace_options = {
+                _CURRENT_GRACE_REGION: {label: None},
+                **self._grace_options,
+            }
+            selected = (_CURRENT_GRACE_REGION, label)
+        self._last_grace_loaded = selected
+
+        self.grace_region_combo.configure(values=list(self._grace_options))
+        self.grace_region_var.set(selected[0])
+        self.grace_combo.configure(values=list(self._grace_options[selected[0]]))
+        self.last_grace_var.set(selected[1])
+
+    def _on_grace_region_changed(self, region: str) -> None:
+        labels = list(self._grace_options.get(region, {}))
+        self.grace_combo.configure(values=labels)
+        if region == self._last_grace_loaded[0]:
+            self.last_grace_var.set(self._last_grace_loaded[1])
+        else:
+            self.last_grace_var.set(labels[0] if labels else "")
+
+    def _selected_last_grace(self, convergence: bool) -> int:
+        """Return the last_rested_grace value for the current selection."""
+        selected = (self.grace_region_var.get(), self.last_grace_var.get())
+        if selected == self._last_grace_loaded:
+            return self._last_grace_raw
+        grace = self._grace_options.get(selected[0], {}).get(selected[1])
+        value = last_rested_grace_value(grace, convergence) if grace else None
+        return self._last_grace_raw if value is None else value
+
     def _update_apply_button(self) -> None:
-        # Disable apply button when any attribute is invalid.
+        # Disable apply button when any attribute or range field is invalid.
         if self.apply_button is None:
             return
         all_valid = all(
             self._attr_error_labels[k].cget("text") == "" for k in _ATTR_KEYS
+        ) and all(
+            not _range_error(var.get(), limit)
+            for var, limit, _label, _hint in self._range_fields.values()
         )
         self.apply_button.configure(state="normal" if all_valid else "disabled")
 
@@ -703,6 +859,16 @@ class StatsEditor:
             return
 
         slot_idx = self.get_char_slot()
+
+        for key, (var, limit, _label, _hint) in self._range_fields.items():
+            if _range_error(var.get(), limit):
+                self._on_range_change(key)
+                CTkMessageBox.showwarning(
+                    "Invalid Value",
+                    "Fix the values marked in red before applying.",
+                    parent=self.parent,
+                )
+                return
 
         try:
             runes = int(self.runes_var.get())
@@ -784,7 +950,7 @@ class StatsEditor:
                 char.great_rune_on = bool(self.great_rune_on_var.get())
 
                 # Matchmaking weapon level - clamp to inventory floor
-                mm_value = max(0, min(25, int(self.matchmaking_level_var.get())))
+                mm_value = self._range_value("matchmaking")
                 if mm_value < self._matchmaking_min:
                     CTkMessageBox.showwarning(
                         "Invalid Value",
@@ -794,18 +960,14 @@ class StatsEditor:
                         parent=self.parent,
                     )
                     mm_value = self._matchmaking_min
-                    self.matchmaking_level_var.set(mm_value)
+                    self.matchmaking_level_var.set(str(mm_value))
                 char.matchmaking_weapon_level = mm_value
 
-                char.scadutree_blessing = _clamped(
-                    self.scadutree_blessing_var, MAX_SCADUTREE
+                char.scadutree_blessing = self._range_value("scadutree")
+                char.revered_spirit_ash_blessing = self._range_value(
+                    "revered_spirit_ash"
                 )
-                char.revered_spirit_ash_blessing = _clamped(
-                    self.revered_spirit_ash_var, MAX_REVERED_SPIRIT_ASH
-                )
-                char.memory_stone_count = _clamped(
-                    self.memory_stone_var, MAX_MEMORY_STONES
-                )
+                char.memory_stone_count = self._range_value("memory_stones")
 
                 # Write back to raw data using tracked offset
                 if (
@@ -901,11 +1063,9 @@ class StatsEditor:
                             "Memory Stones", stone_note, parent=self.parent
                         )
 
-                    try:
-                        raw_grace = self.last_grace_var.get().strip()
-                        slot.last_rested_grace = int(raw_grace, 16)
-                    except ValueError:
-                        pass
+                    slot.last_rested_grace = self._selected_last_grace(
+                        bool(getattr(save_file, "is_convergence", False))
+                    )
 
                     rebuilt = rebuild_slot(slot)
                     save_file._raw_data[

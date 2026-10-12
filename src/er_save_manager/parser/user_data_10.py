@@ -59,7 +59,7 @@ class Settings:
     hdr_adjust_saturation: int = 0
     unk0x1f: int = 0
     master_volume: int = 0
-    is_raytracing_on: int = 0
+    is_raytracing_on: int = 0  # 0 = Ray Tracing Quality off; quality level is in GraphicsConfig.xml
     mark_new_items: int = 0
     show_recent_tabs: int = 0
     unk0x24: int = 0
@@ -302,17 +302,43 @@ class KeyConfigSaveLoad:
     """
 
     BINDING_COUNT = 26
-    # Offset in data of the on-screen prompt device: 0 gamepad, 1 keyboard and mouse
-    PROMPT_DEVICE = 0x210
+    # Control option bytes, offsets in data
+    MOUSE_SENSITIVITY = 0x208  # 0-10, default 5
+    MOUSE_X_AXIS = 0x209  # 1 normal, 0 reverse
+    MOUSE_Y_AXIS = 0x20A  # 1 normal, 0 reverse
+    MAP_MENU_CURSOR_MOVEMENT = 0x20B  # 1 keyboard and mouse (default), 0 keyboard only
+    TARGET_CHANGE_SENSITIVITY = 0x20C  # default 1
+    PROMPT_DEVICE = 0x210  # on-screen prompts: 0 gamepad, 1 keyboard and mouse
 
     size: int = 0
     data: bytes = b""
 
+    def _option(self, offset: int) -> int:
+        return self.data[offset] if len(self.data) > offset else 0
+
+    @property
+    def mouse_sensitivity(self) -> int:
+        return self._option(self.MOUSE_SENSITIVITY)
+
+    @property
+    def mouse_x_axis(self) -> int:
+        return self._option(self.MOUSE_X_AXIS)
+
+    @property
+    def mouse_y_axis(self) -> int:
+        return self._option(self.MOUSE_Y_AXIS)
+
+    @property
+    def map_menu_cursor_movement(self) -> int:
+        return self._option(self.MAP_MENU_CURSOR_MOVEMENT)
+
+    @property
+    def target_change_sensitivity(self) -> int:
+        return self._option(self.TARGET_CHANGE_SENSITIVITY)
+
     @property
     def prompt_device(self) -> int:
-        return (
-            self.data[self.PROMPT_DEVICE] if len(self.data) > self.PROMPT_DEVICE else 0
-        )
+        return self._option(self.PROMPT_DEVICE)
 
     def bindings(self) -> list[tuple[int, int, int, int, int]]:
         """(pad, keyboard, keyboard modifier, mouse, mouse modifier) per action."""
