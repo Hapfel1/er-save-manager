@@ -361,6 +361,22 @@ class SettingsTab:
 
         self._create_auto_backup_section(frame)
 
+    def scroll_to_auto_backup(self) -> None:
+        """Scroll the settings page so the auto-backup section is at the top."""
+        header = getattr(self, "_auto_backup_header", None)
+        frame = getattr(self, "_scroll_frame", None)
+        if header is None or frame is None:
+            return
+        frame.update_idletasks()
+        canvas = frame._parent_canvas
+        bbox = canvas.bbox("all")
+        if not bbox or bbox[3] <= 0:
+            return
+        # The scrollable frame is the content frame inside the canvas, so
+        # this is the header's position within the content.
+        y = header.winfo_rooty() - frame.winfo_rooty()
+        canvas.yview_moveto(max(0.0, y - 10) / bbox[3])
+
     def _create_auto_backup_section(self, parent):
         """Auto-backup configuration for the currently active game only."""
         from er_save_manager.games.game_profiles import PROFILES_BY_KEY
@@ -372,11 +388,12 @@ class SettingsTab:
         sep = ctk.CTkFrame(parent, height=1, fg_color=("gray70", "gray35"))
         sep.pack(fill="x", padx=12, pady=(4, 10))
 
-        ctk.CTkLabel(
+        self._auto_backup_header = ctk.CTkLabel(
             parent,
             text="Auto-Backup on Game Launch",
             font=("Segoe UI", 11, "bold"),
-        ).pack(anchor="w", padx=12, pady=(0, 4))
+        )
+        self._auto_backup_header.pack(anchor="w", padx=12, pady=(0, 4))
 
         ctk.CTkLabel(
             parent,

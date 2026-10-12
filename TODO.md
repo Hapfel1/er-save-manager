@@ -1,3 +1,7 @@
+bloodstains from other players netman
+
+review all dialogs for layout (oversized button text, off geometry, empty space) and rework them like ui/dialogs/wiped_slot_dialog.py
+
 other faceparamoverides and editing them
 
 wording

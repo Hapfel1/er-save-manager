@@ -2763,8 +2763,22 @@ class SaveManagerGUI:
         """Show character details dialog"""
         self._flush_pending_tabs()
         CharacterDetailsDialog.show(
-            self.root, self.save_file, slot_idx, self.save_path, self.load_save
+            self.root,
+            self.save_file,
+            slot_idx,
+            self.save_path,
+            self.load_save,
+            open_backup_settings=self.open_auto_backup_settings,
         )
+
+    def open_auto_backup_settings(self):
+        """Switch to the Settings tab, scrolled to the auto-backup section."""
+        self._ensure_tab_built("Settings")
+        self.notebook.set("Settings")
+        self._on_tab_changed()
+        tab = getattr(self, "settings_tab", None)
+        if tab is not None:
+            self.root.after(100, tab.scroll_to_auto_backup)
 
     def show_backup_manager_standalone(self):
         """Show backup manager from top button."""
