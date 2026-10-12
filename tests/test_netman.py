@@ -78,10 +78,82 @@ def test_damaged_chunk_is_rebuilt_and_neighbours_kept(sanitized_save, template):
     assert netman_problems(repaired) == []
     old = dict(_chunks(blob))
     rebuilt = dict(_chunks(repaired))
-    assert rebuilt[6] == dict(_chunks(template))[6]
+    # Only the size field was damaged, so every message entry survives
+    assert rebuilt[6] == old[6]
     for ctype in (2, 5, 8, 9, 7):
         assert rebuilt[ctype] == old[ctype]
     assert fix.detect(sanitized_save, i) is False
+
+
+def _message_entries(chunk6):
+    """(kind, entry bytes) of a chunk 6, header and terminator excluded."""
+    pos, out = 8, []
+    while True:
+        kind, size = struct.unpack_from("<II", chunk6, pos)
+        if kind == 0xFFFF:
+            return out
+        out.append((kind, chunk6[pos : pos + 8 + size]))
+        pos += 8 + size + (-size % 4)
+
+
+def _slot_with_messages(save):
+    for i in _slots_with_netman(save):
+        chunk6 = dict(_chunks(_region(save, i)[1]))[6]
+        if len(_message_entries(chunk6)) >= 3:
+            return i, chunk6
+    pytest.skip("fixture has no slot with stored messages")
+
+
+def _damage_and_repair(blob, chunk6_pos, edit, template):
+    damaged = bytearray(blob)
+    edit(damaged)
+    repaired, replaced = repair_netman(bytes(damaged), template)
+    assert netman_problems(repaired) == []
+    assert any(name.startswith("messages (kept") for name in replaced)
+    return dict(_chunks(repaired))
+
+
+def test_damaged_message_is_dropped_and_others_kept(sanitized_save, template):
+    i, chunk6 = _slot_with_messages(sanitized_save)
+    blob = _region(sanitized_save, i)[1]
+    entries = _message_entries(chunk6)
+    victim = 1
+    offset = 4 + 32 + 8 + sum(len(e) + (-len(e) % 4) for _, e in entries[:victim])
+
+    def overwrite(buf):
+        buf[offset + 8 : offset + 8 + 0x100] = b"\xAB" * 0x100
+
+    rebuilt = _damage_and_repair(blob, offset, overwrite, template)
+    kept = _message_entries(rebuilt[6])
+    assert kept == entries[:victim] + entries[victim + 1 :]
+    old = dict(_chunks(blob))
+    for ctype in (2, 5, 8, 9, 7):
+        assert rebuilt[ctype] == old[ctype]
+
+
+def test_bytes_cut_from_a_message_keep_the_rest(sanitized_save, template):
+    i, chunk6 = _slot_with_messages(sanitized_save)
+    blob = _region(sanitized_save, i)[1]
+    entries = _message_entries(chunk6)
+    victim = 1
+    offset = 4 + 32 + 8 + sum(len(e) + (-len(e) % 4) for _, e in entries[:victim])
+    torn = blob[: offset + 0x40] + blob[offset + 0x40 + 52 :]
+    repaired, replaced = repair_netman(torn, template)
+    assert netman_problems(repaired) == []
+    kept = _message_entries(dict(_chunks(repaired))[6])
+    assert kept == entries[:victim] + entries[victim + 1 :]
+    assert dict(_chunks(repaired))[8] == dict(_chunks(blob))[8]
+
+
+def test_destroyed_message_chunk_header_is_salvaged(sanitized_save, template):
+    i, chunk6 = _slot_with_messages(sanitized_save)
+    blob = _region(sanitized_save, i)[1]
+
+    def wipe_header(buf):
+        buf[4 + 32 : 4 + 32 + 8] = b"\xFF" * 8
+
+    rebuilt = _damage_and_repair(blob, 4 + 32, wipe_header, template)
+    assert _message_entries(rebuilt[6]) == _message_entries(chunk6)
 
 
 def test_torn_region_of_any_length_is_rebuilt(template):

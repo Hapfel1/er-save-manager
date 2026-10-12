@@ -65,8 +65,21 @@ def _sub_list_ok(payload: bytes, pos: int) -> bool:
     return False
 
 
+def _messages_ok(payload: bytes) -> bool:
+    """Every chunk 6 entry has a known kind, a known size and its FACE block."""
+    pos = 0
+    while payload[pos : pos + 8] != _SUB_TERMINATOR:
+        length = _message_entry_at(payload, pos)
+        if not length:
+            return False
+        pos += length
+    return True
+
+
 def _chunk_ok(ctype: int, payload: bytes) -> bool:
-    return len(payload) % 4 == 0 and _sub_list_ok(payload, _LIST_START.get(ctype, 0))
+    if len(payload) % 4 or not _sub_list_ok(payload, _LIST_START.get(ctype, 0)):
+        return False
+    return ctype != 6 or _messages_ok(payload)
 
 
 def _chunk_at(data: bytes, pos: int, ctype: int, version: int) -> bytes | None:
@@ -219,7 +232,7 @@ def repair_netman(blob: bytes, template: bytes) -> tuple[bytes, list[str]]:
     body = b"".join(parts) + _TERMINATOR
     if len(_PREFIX) + len(body) > NETMAN_SIZE:
         parts[2] = clean[6]
-        replaced.append(_CHUNK_NAMES[6])
+        replaced.append(f"{_CHUNK_NAMES[6]} (from template)")
         body = b"".join(parts) + _TERMINATOR
     return _PREFIX + body + bytes(NETMAN_SIZE - len(_PREFIX) - len(body)), replaced
 
@@ -264,5 +277,5 @@ class NetManFix(BaseFix):
         return FixResult(
             applied=True,
             description="CSNetMan repaired",
-            details=problems + [f"Rebuilt from template: {name}" for name in replaced],
+            details=problems + [f"Rebuilt {name}" for name in replaced],
         )

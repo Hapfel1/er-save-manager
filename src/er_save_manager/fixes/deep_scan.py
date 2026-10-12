@@ -104,9 +104,8 @@ _EF_SPLICE_LOCATION = "event_flags_splice"
 
 # Shown after a repair, for what it had to give up
 NETMAN_RESET_NOTE = (
-    "Damaged parts of the network data (CSNetMan) were rebuilt from a clean "
-    "template. Intact parts were kept; if the message list was rebuilt, the "
-    "locally stored messages (your own and other players') are gone."
+    "Damaged parts of the network data (CSNetMan) were rebuilt. Intact parts "
+    "and every undamaged message were kept; damaged messages are gone."
 )
 NETMAN_REPLACED_NOTE = (
     "All network data (CSNetMan) was replaced with a clean template. The "
@@ -305,7 +304,7 @@ class EFTornScanResult:
 class DeepScanFixResult(FixResult):
     """FixResult that also reports what the repair reset or moved."""
 
-    netman_reset: bool = False  # NetMan chunks rebuilt from the template
+    netman_reset: bool = False  # NetMan chunks rebuilt or salvaged
     flags_relocated: bool = False  # event flag bytes moved to inferred positions
 
 
@@ -573,7 +572,7 @@ class DeepScanFix(BaseFix):
                     repaired, netman_replaced = repair_netman(netman_region, template)
                     save._raw_data[netman_abs : netman_abs + NETMAN_SIZE] = repaired
                     netman_note = "NetMan repaired" + (
-                        f", rebuilt from template: {', '.join(netman_replaced)}"
+                        f", rebuilt {', '.join(netman_replaced)}"
                         if netman_replaced
                         else ""
                     )
@@ -1345,7 +1344,7 @@ class DeepScanFix(BaseFix):
             netman, replaced = repair_netman(netman, template)
             netman_reset = bool(replaced)
             netman_note = "NetMan repaired" + (
-                f", rebuilt from template: {', '.join(replaced)}" if replaced else ""
+                f", rebuilt {', '.join(replaced)}" if replaced else ""
             )
 
         corrected = bytearray(
