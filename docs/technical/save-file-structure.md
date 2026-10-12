@@ -764,8 +764,8 @@ Deleting a message removes its entry; protecting it sets 0x46. Ratings given to 
 are not stored. When an 11th message is written the oldest one is removed.
 
 **Cached message (kind 1):** author equipment and `FACE` block first, name at 0x190, then MapId at
-0x1C4, position 0x1CC, angle 0x1D8, template 0x1DC, gesture 0x1DE, word 0x1E0. One entry of the list is
-2 bytes shorter, which moves its fields 2 bytes back. The list is refreshed during online play.
+0x1C4, position 0x1CC, angle 0x1D8, template 0x1DC, gesture 0x1DE, word 0x1E0. One entry of the
+list is 602 bytes, 4 bytes shorter, which moves its fields 4 bytes back. The list is refreshed during online play.
 
 ### Chunk 8
 

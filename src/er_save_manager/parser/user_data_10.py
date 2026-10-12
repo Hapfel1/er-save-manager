@@ -59,7 +59,9 @@ class Settings:
     hdr_adjust_saturation: int = 0
     unk0x1f: int = 0
     master_volume: int = 0
-    is_raytracing_on: int = 0  # 0 = Ray Tracing Quality off; quality level is in GraphicsConfig.xml
+    is_raytracing_on: int = (
+        0  # 0 = Ray Tracing Quality off; quality level is in GraphicsConfig.xml
+    )
     mark_new_items: int = 0
     show_recent_tabs: int = 0
     unk0x24: int = 0
