@@ -20,6 +20,14 @@ class CharacterDetailsDialog:
             CTkMessageBox.showwarning("No Save", "No save file loaded!", parent=parent)
             return
 
+        from er_save_manager.fixes.wiped_slot import is_wiped_slot
+
+        if is_wiped_slot(save_file, slot_idx):
+            CharacterDetailsDialog._show_wiped_slot(
+                parent, save_file, slot_idx, save_path
+            )
+            return
+
         slot = save_file.characters[slot_idx]
 
         name = f"Character {slot_idx + 1}"
@@ -470,6 +478,86 @@ class CharacterDetailsDialog:
         dialog.lift()
         dialog.focus_force()
         dialog.grab_set()
+
+    @staticmethod
+    def _show_wiped_slot(parent, save_file, slot_idx, save_path):
+        """Explain a wiped slot and where an older copy can come from."""
+        from er_save_manager.fixes.wiped_slot import (
+            find_game_backups,
+            manager_backup_count,
+        )
+
+        name = f"Character {slot_idx + 1}"
+        level = "?"
+        try:
+            profile = save_file.user_data_10_parsed.profile_summary.profiles[slot_idx]
+            name = profile.character_name or name
+            level = str(profile.level)
+        except Exception:
+            pass
+
+        lines = [
+            f"Slot {slot_idx + 1} ({name}, Lv. {level}) has no character data: "
+            "every byte of the slot is zero, but the load screen still lists "
+            "the character. The game will start a new character here.",
+            "",
+            "The character cannot be repaired from this file. Restore it from "
+            "an older copy of the save:",
+        ]
+        if save_path:
+            baks = find_game_backups(save_path, slot_idx)
+            for bak in baks:
+                if bak.character:
+                    found = f"has {bak.character[0]} (Lv. {bak.character[1]})"
+                else:
+                    found = "does not have this character"
+                lines.append(f"- Game backup {bak.path.name}: {found}")
+            if not baks:
+                lines.append("- No game backup (.bak) next to the save")
+            count = manager_backup_count(save_path)
+            lines.append(
+                f"- Save manager backups: {count} (Backup Manager)"
+                if count
+                else "- No save manager backups for this save"
+            )
+        lines += [
+            "- Windows: right-click the save folder > Properties > Previous "
+            "Versions (needs File History or System Restore)",
+            "",
+            "To restore only this character, load the older copy and use "
+            "Character Management > Transfer to copy it into this save.",
+        ]
+
+        buttons = [("Close", False)]
+        if save_path:
+            buttons.insert(0, ("Open Save Folder", True))
+        if CTkMessageBox._create_dialog(
+            parent,
+            "Character Data Wiped",
+            "\n".join(lines),
+            icon_type="warning",
+            buttons=buttons,
+        ):
+            CharacterDetailsDialog._open_save_folder(Path(save_path))
+
+    @staticmethod
+    def _open_save_folder(save_path: Path) -> None:
+        import platform
+        import subprocess
+
+        from er_save_manager.ui.utils import _get_subprocess_env
+
+        try:
+            if platform.system() == "Windows":
+                subprocess.run(["explorer", f"/select,{save_path.resolve()}"])
+            elif platform.system() == "Darwin":
+                subprocess.run(["open", "-R", str(save_path)])
+            else:
+                subprocess.run(
+                    ["xdg-open", str(save_path.parent)], env=_get_subprocess_env()
+                )
+        except Exception as e:
+            print(f"Failed to open folder: {e}")
 
     @staticmethod
     def _format_playtime(seconds):

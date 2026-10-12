@@ -1,6 +1,6 @@
 # Save File Structure
 
-Technical reference for the Elden Ring save file (`ER0000.sl2`, and the identically structured `.co2`).
+Technical reference for the Elden Ring save file.
 
 - All values are little-endian.
 - Offsets inside a character slot are relative to the start of the character data (after the PC checksum).
@@ -1035,6 +1035,8 @@ def slot_checksum(slot_entry: bytes) -> bytes:
 - **NetMan repair.** CSNetMan.bin, the clean NetMan replacement, covers the 4 bytes before the NetMan
   region as well (the top 3 bytes of `temp_spawn_point_entity_id` and `game_man_0xcb3`); only its bytes
   from offset 4 are written. A damaged chunk can be replaced on its own, keeping the intact ones.
+  A damaged message chunk can be rebuilt from its own bytes: kind, size and the `FACE` block identify
+  every whole entry, so only the damaged entries are lost.
 - **Atomic writes.** Write to a temporary file and rename it over the save.
 
 ---

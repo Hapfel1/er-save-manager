@@ -1,3 +1,5 @@
+other faceparamoverides and editing them
+
 wording
 
 playtime editor done
@@ -32,7 +34,7 @@ DSR covenant rank and appearance
 
 DS2 last-bonfire warp
 
-DS2 Bonfire Ascetic vs bonfire level byte contradiction
+DS2 Bonfire Ascetic vs bonfire level byte contradiction done
 
 DS2 boss reviver done
 

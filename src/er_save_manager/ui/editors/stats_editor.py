@@ -134,6 +134,11 @@ class StatsEditor:
         self._current_archetype: int = 9  # tracks archetype for per-stat minimums
         self.level_warning_label = None
         self.runes_var = None
+        self.recover_runes_button = None
+        self.bloodstain_var = None
+        # Bloodstain runes moved into the runes field, cleared from the
+        # bloodstain on apply
+        self._recovered_runes = 0
         self.great_rune_on_var = None
         self.great_rune_id_var = None
         self.last_grace_var = None
@@ -323,6 +328,24 @@ class StatsEditor:
         ).grid(
             row=content_row + 1, column=1, columnspan=2, sticky=ctk.W, padx=5, pady=5
         )
+
+        self.recover_runes_button = ctk.CTkButton(
+            other_frame,
+            text="Recover Lost Runes",
+            command=self._recover_lost_runes,
+            width=150,
+            state="disabled",
+        )
+        self.recover_runes_button.grid(
+            row=content_row + 1, column=3, padx=5, pady=5, sticky=ctk.W
+        )
+        self.bloodstain_var = ctk.StringVar(value="")
+        ctk.CTkLabel(
+            other_frame,
+            textvariable=self.bloodstain_var,
+            text_color=("black", "white"),
+            font=("Segoe UI", 11),
+        ).grid(row=content_row + 1, column=4, padx=10, pady=5, sticky=ctk.W)
 
         # Great rune / rune arc
         rune_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
@@ -583,6 +606,8 @@ class StatsEditor:
 
         self.level_var.set(str(getattr(char, "level", 0)))
         self.runes_var.set(getattr(char, "runes", 0))
+        self._recovered_runes = 0
+        self._refresh_bloodstain(slot)
 
         self.great_rune_on_var.set(bool(getattr(char, "great_rune_on", False)))
         rune_id = slot.equipped_items.great_rune
@@ -604,6 +629,50 @@ class StatsEditor:
         self._refresh_matchmaking_min(slot)
 
         self.calculate_character_level()
+
+    @staticmethod
+    def _bloodstain_runes(slot) -> int:
+        """Runes held by the bloodstain, 0 if there is none to pick up."""
+        stain = getattr(slot, "blood_stain", None)
+        if stain is None or stain.unk0x30 == -1:
+            return 0
+        return max(0, stain.runes)
+
+    def _refresh_bloodstain(self, slot) -> None:
+        runes = self._bloodstain_runes(slot) if not self._recovered_runes else 0
+        if self._recovered_runes:
+            text = f"{self._recovered_runes:,} runes recovered (apply to save)"
+        elif runes:
+            text = f"Bloodstain: {runes:,} runes"
+        else:
+            text = "No bloodstain"
+        self.bloodstain_var.set(text)
+        self.recover_runes_button.configure(state="normal" if runes else "disabled")
+
+    def _recover_lost_runes(self) -> None:
+        """Move the bloodstain runes into the held runes field."""
+        save_file = self.get_save_file()
+        slot_idx = self.get_char_slot()
+        if not save_file or not 0 <= slot_idx < len(save_file.characters):
+            return
+        slot = save_file.characters[slot_idx]
+        stain_runes = self._bloodstain_runes(slot)
+        if not stain_runes:
+            return
+        try:
+            runes = int(self.runes_var.get())
+        except (ValueError, tk.TclError):
+            runes = slot.player_game_data.runes
+        if runes + stain_runes > MAX_RUNES:
+            CTkMessageBox.showwarning(
+                "Recover Lost Runes",
+                f"Held runes would exceed {MAX_RUNES:,}. The total is capped and "
+                "the excess is lost.",
+                parent=self.parent,
+            )
+        self.runes_var.set(min(MAX_RUNES, runes + stain_runes))
+        self._recovered_runes = stain_runes
+        self._refresh_bloodstain(slot)
 
     def calculate_character_level(self):
         """Calculate expected character level from attributes based on starting class"""
@@ -934,7 +1003,8 @@ class StatsEditor:
                 # Runes memory counts every rune ever gained, so added runes and
                 # the cost of added levels raise it. It never drops below the
                 # cost of all levels above the class start plus held runes.
-                runes_gained = max(0, runes - char.runes)
+                # Bloodstain runes were counted when first gained.
+                runes_gained = max(0, runes - char.runes - self._recovered_runes)
                 if char.level > old_level:
                     runes_gained += runes_to_reach_level(old_level, char.level)
                 char.runes = runes
@@ -1063,6 +1133,12 @@ class StatsEditor:
                             "Memory Stones", stone_note, parent=self.parent
                         )
 
+                    if self._recovered_runes:
+                        # Same state the game writes when the bloodstain is
+                        # picked up
+                        slot.blood_stain.unk0x30 = -1
+                        slot.blood_stain.runes = -1
+
                     slot.last_rested_grace = self._selected_last_grace(
                         bool(getattr(save_file, "is_convergence", False))
                     )
@@ -1076,6 +1152,9 @@ class StatsEditor:
                     save_path = self.get_save_path()
                     if save_path:
                         save_file.to_file(Path(save_path))
+
+                    self._recovered_runes = 0
+                    self._refresh_bloodstain(slot)
 
                     CTkMessageBox.showinfo(
                         "Success",
