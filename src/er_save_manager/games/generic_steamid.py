@@ -2,8 +2,8 @@
 Generic SteamID patcher for unencrypted BND4/SL2 save files (Elden Ring).
 
 DS3, Nightreign and AC6 saves are encrypted, so the SteamID is not visible
-in the raw file and they have their own patchers. DS2 needs no patch, and
-Sekiro and DSR are handled separately in the SteamID patcher tab.
+in the raw file and they have their own patchers. DS2, Sekiro and DSR are
+handled separately in the SteamID patcher tab.
 
 Strategy: scan the file for all 8-byte occurrences of the old SteamID
 (little-endian uint64) and replace them with the new SteamID. This is
@@ -165,7 +165,9 @@ def detect_steamid_in_file(save_path: Path) -> int | None:
     """
     Return the SteamID found in the save file, or None on error.
 
-    For unencrypted BND4 saves (ER, DS3, DS2, DSR): finds the most
+    For DS2: reads the owner SteamID string from decrypted entry 0.
+
+    For unencrypted BND4 saves (ER, DS3, DSR): finds the most
     frequently occurring valid Steam64 value via byte scan.
 
     For Nightreign (AES-CBC encrypted entries): decrypts entry 10 and
@@ -180,6 +182,18 @@ def detect_steamid_in_file(save_path: Path) -> int | None:
 
     if data[:4] != BND4_MAGIC:
         return None
+
+    # DS2: the owner SteamID is a hex string in encrypted entry 0; the
+    # byte scans below return unrelated values for these files.
+    try:
+        from er_save_manager.games.save_identify import identify_game
+
+        if identify_game(save_path) == "dark_souls_2":
+            from er_save_manager.games.ds2_dsr_steamid import detect_steamid
+
+            return detect_steamid(save_path, "dark_souls_2")
+    except Exception:
+        pass
 
     found = find_steamids_in_file(data)
     if found:
@@ -219,16 +233,6 @@ def detect_steamid_in_file(save_path: Path) -> int | None:
         sid = detect_steamid_sekiro(save_path)
         if sid:
             return sid
-    except Exception:
-        pass
-
-    # DS2: AES-encrypted, byte-scan after decrypt
-    try:
-        from er_save_manager.games.ds2_dsr_steamid import detect_steamid
-
-        name = save_path.name.lower()
-        if name.startswith("ds2") or name.startswith("darksii"):
-            return detect_steamid(save_path, "dark_souls_2")
     except Exception:
         pass
 

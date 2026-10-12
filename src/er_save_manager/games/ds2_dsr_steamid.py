@@ -6,9 +6,10 @@ Both use the same BND4 entry format:
   [16 bytes IV]
   [AES-128-CBC encrypted payload]
 
-DS2 stores the SteamID as Steam64 (uint64 LE), found by byte-scanning the
-decrypted entries since it is not at a fixed offset. DSR saves hold no
-SteamID; the account is identified by the save folder name.
+DS2 stores the owning account in decrypted entry 0 at +0x39 as the Steam64
+in 16 lowercase ASCII hex digits plus a NUL, the same string as the save
+folder name. It is the only copy in the file. DSR saves hold no SteamID; the
+account is identified by the save folder name.
 
 Keys:
   DS2 SotFS: 59 9F 9B 69 96 40 A5 52 36 EE 2D 70 83 5E C7 44
@@ -35,6 +36,10 @@ _STEAM64_MAX = 0x01100001FFFFFFFF
 _BND4_MAGIC = b"BND4"
 _ENTRY_STRIDE = 32
 _ENTRIES_START = 64
+
+_OWNER_ENTRY = 0
+_OWNER_OFFSET = 0x39
+_OWNER_LEN = 16
 
 
 def _key_for(game_key: str) -> bytes:
@@ -74,51 +79,38 @@ def _read_entry(raw: bytes, index: int) -> tuple[int, int]:
     return size, offset
 
 
-# Every valid Steam64 value has this 4-byte little-endian upper half, so the
-# scan only needs a C-speed byte search instead of unpacking every offset.
-_STEAM64_HIGH = struct.pack("<I", _STEAM64_BASE >> 32)
-
-
-def _scan_steam64(dec: bytearray) -> list[int]:
-    """Return list of offsets where a valid Steam64 is stored.
-
-    Offsets are unaligned and matches do not overlap.
-    """
-    offsets = []
-    next_free = 0
-    pos = dec.find(_STEAM64_HIGH, 4)
-    while pos != -1:
-        start = pos - 4
-        if start >= next_free:
-            offsets.append(start)
-            next_free = start + 8
-        pos = dec.find(_STEAM64_HIGH, pos + 1)
-    return offsets
+def _read_owner(dec: bytes) -> int | None:
+    """Parse the owner SteamID string, or None if it is not a valid Steam64."""
+    field = bytes(dec[_OWNER_OFFSET : _OWNER_OFFSET + _OWNER_LEN + 1])
+    if len(field) != _OWNER_LEN + 1 or field[-1] != 0:
+        return None
+    try:
+        value = int(field[:-1].decode("ascii"), 16)
+    except ValueError:
+        return None
+    if not _STEAM64_BASE <= value <= _STEAM64_MAX:
+        return None
+    return value
 
 
 def detect_steamid(save_path: Path, game_key: str) -> int | None:
-    """Decrypt all entries and return the first Steam64 found, or None."""
+    """Return the owner SteamID stored in entry 0, or None."""
     try:
         key = _key_for(game_key)
         raw = save_path.read_bytes()
         if raw[:4] != _BND4_MAGIC:
             return None
-        file_count = struct.unpack_from("<I", raw, 0x0C)[0]
-        for i in range(file_count):
-            size, offset = _read_entry(raw, i)
-            _, _, dec = _decrypt(raw[offset : offset + size], key)
-            hits = _scan_steam64(dec)
-            if hits:
-                return struct.unpack_from("<Q", dec, hits[0])[0]
+        size, offset = _read_entry(raw, _OWNER_ENTRY)
+        _, _, dec = _decrypt(raw[offset : offset + size], key)
+        return _read_owner(dec)
     except Exception:
-        pass
-    return None
+        return None
 
 
 def patch_steamid(save_path: Path, new_steam64: int, game_key: str) -> tuple[bool, str]:
     """
-    Patch all Steam64 occurrences in all decrypted entries.
-    Recalculates checksums and re-encrypts. Writes in-place.
+    Rewrite the owner SteamID in entry 0, re-encrypt it with its IV and
+    recompute its MD5. Writes in-place.
     """
     try:
         from cryptography.hazmat.primitives.ciphers import Cipher  # noqa: F401
@@ -130,6 +122,9 @@ def patch_steamid(save_path: Path, new_steam64: int, game_key: str) -> tuple[boo
     except ValueError as e:
         return False, str(e)
 
+    if not _STEAM64_BASE <= new_steam64 <= _STEAM64_MAX:
+        return False, f"Not a valid Steam64 ID: {new_steam64}"
+
     try:
         raw = bytearray(save_path.read_bytes())
     except OSError as e:
@@ -138,41 +133,21 @@ def patch_steamid(save_path: Path, new_steam64: int, game_key: str) -> tuple[boo
     if raw[:4] != _BND4_MAGIC:
         return False, "Not a valid BND4/SL2 file"
 
-    file_count = struct.unpack_from("<I", raw, 0x0C)[0]
-    new_bytes = struct.pack("<Q", new_steam64)
-    old_steam64 = None
-    entries_patched = 0
-    total_replacements = 0
+    size, offset = _read_entry(raw, _OWNER_ENTRY)
+    _, iv, dec = _decrypt(bytes(raw[offset : offset + size]), key)
+    old_steam64 = _read_owner(dec)
+    if old_steam64 is None:
+        return False, "No SteamID found in the save header. The file may be damaged."
+    if old_steam64 == new_steam64:
+        return False, "New SteamID is the same as the current one"
 
-    for i in range(file_count):
-        size, offset = _read_entry(raw, i)
-        _, iv, dec = _decrypt(bytes(raw[offset : offset + size]), key)
-        hits = _scan_steam64(dec)
-        if not hits:
-            continue
-        if old_steam64 is None:
-            old_steam64 = struct.unpack_from("<Q", dec, hits[0])[0]
-        if old_steam64 == new_steam64:
-            return False, "New SteamID is the same as the current one"
-        for h in hits:
-            dec[h : h + 8] = new_bytes
-        total_replacements += len(hits)
-        re_enc = _encrypt(iv, dec, key)
-        raw[offset : offset + size] = re_enc
-        entries_patched += 1
-
-    if entries_patched == 0:
-        return (
-            False,
-            "No Steam64 ID found in any entry. The save file may be empty or use an unexpected format.",
-        )
+    dec[_OWNER_OFFSET : _OWNER_OFFSET + _OWNER_LEN] = f"{new_steam64:016x}".encode(
+        "ascii"
+    )
+    raw[offset : offset + size] = _encrypt(iv, dec, key)
 
     tmp_path = save_path.with_suffix(save_path.suffix + ".tmp")
     tmp_path.write_bytes(bytes(raw))
     tmp_path.replace(save_path)
     record_write(save_path)
-    return True, (
-        f"Patched {total_replacements} occurrence(s) across {entries_patched} entry/entries\n"
-        f"Old SteamID: {old_steam64}\n"
-        f"New SteamID: {new_steam64}"
-    )
+    return True, f"Old SteamID: {old_steam64}\nNew SteamID: {new_steam64}"
