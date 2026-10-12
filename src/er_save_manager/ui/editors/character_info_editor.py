@@ -46,6 +46,22 @@ def _playtime_error(hours: str, minutes: str, seconds: str) -> str:
     return ""
 
 
+def _time_of_day_error(hour: str, minute: str, second: str) -> str:
+    """Return an error message for the time of day fields, or "" if valid."""
+    for name, text, limit in (
+        ("Hour", hour, 23),
+        ("Minute", minute, 59),
+        ("Second", second, 59),
+    ):
+        try:
+            value = int(text.strip())
+        except ValueError:
+            return f"{name} must be a whole number"
+        if not 0 <= value <= limit:
+            return f"{name} must be 0-{limit}"
+    return ""
+
+
 def _owns_tarnished_pack(slot) -> bool:
     """Check the Tarnished Pack DLC ownership flag on a character slot."""
     if not getattr(slot, "event_flags", None):
@@ -90,6 +106,10 @@ class CharacterInfoEditor:
         self.char_playtime_m_var = None
         self.char_playtime_s_var = None
         self.playtime_error_label = None
+        self.time_h_var = None
+        self.time_m_var = None
+        self.time_s_var = None
+        self.time_error_label = None
         self.apply_button = None
 
         self.frame = None
@@ -287,6 +307,38 @@ class CharacterInfoEditor:
         ):
             trace_variable(var, "w", lambda *_a: self._on_playtime_change())
 
+        # In-game time of day (WorldAreaTime)
+        time_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
+        time_frame.pack(fill=ctk.X, pady=5, padx=10)
+        ctk.CTkLabel(
+            time_frame,
+            text="Time of Day",
+            font=("Segoe UI", 12, "bold"),
+        ).grid(row=0, column=0, columnspan=6, sticky=ctk.W, padx=5, pady=(5, 0))
+
+        self.time_h_var = tk.StringVar(value="0")
+        self.time_m_var = tk.StringVar(value="0")
+        self.time_s_var = tk.StringVar(value="0")
+        for col, (label, var) in enumerate(
+            (
+                ("Hour:", self.time_h_var),
+                ("Minute:", self.time_m_var),
+                ("Second:", self.time_s_var),
+            )
+        ):
+            ctk.CTkLabel(time_frame, text=label).grid(
+                row=1, column=col * 2, sticky=ctk.W, padx=5, pady=5
+            )
+            ctk.CTkEntry(time_frame, textvariable=var, width=80).grid(
+                row=1, column=col * 2 + 1, padx=5, pady=5
+            )
+            trace_variable(var, "w", lambda *_a: self._on_playtime_change())
+
+        self.time_error_label = ctk.CTkLabel(
+            time_frame, text="", text_color="red", font=("Segoe UI", 10)
+        )
+        self.time_error_label.grid(row=2, column=0, columnspan=6, sticky=ctk.W, padx=5)
+
         button_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
         button_frame.pack(fill=ctk.X, pady=10, padx=10)
         ctk.CTkLabel(
@@ -310,12 +362,24 @@ class CharacterInfoEditor:
             self.char_playtime_s_var.get(),
         )
 
+    def _time_of_day_error(self) -> str:
+        if self.time_h_var is None:
+            return ""
+        return _time_of_day_error(
+            self.time_h_var.get(), self.time_m_var.get(), self.time_s_var.get()
+        )
+
     def _on_playtime_change(self) -> None:
         error = self._playtime_error()
+        time_error = self._time_of_day_error()
         if self.playtime_error_label is not None:
             self.playtime_error_label.configure(text=error)
+        if self.time_error_label is not None:
+            self.time_error_label.configure(text=time_error)
         if self.apply_button is not None:
-            self.apply_button.configure(state="disabled" if error else "normal")
+            self.apply_button.configure(
+                state="disabled" if error or time_error else "normal"
+            )
 
     def load_character_info(self):
         """Load character info from current character slot"""
@@ -368,6 +432,11 @@ class CharacterInfoEditor:
         self.char_playtime_m_var.set(str((seconds_played % 3600) // 60))
         self.char_playtime_s_var.set(str(seconds_played % 60))
 
+        time_of_day = slot.world_area_time
+        self.time_h_var.set(str(time_of_day.hour))
+        self.time_m_var.set(str(time_of_day.minute))
+        self.time_s_var.set(str(time_of_day.second))
+
         # Load NG+ level from ClearCount if possible, else from event flags
         clearcount = None
         if hasattr(slot, "unk_gamedataman_0x120_or_gamedataman_0x130"):
@@ -400,11 +469,11 @@ class CharacterInfoEditor:
 
         slot_idx = self.get_char_slot()
 
-        playtime_error = self._playtime_error()
+        playtime_error = self._playtime_error() or self._time_of_day_error()
         if playtime_error:
             self._on_playtime_change()
             CTkMessageBox.showwarning(
-                "Invalid Playtime", playtime_error, parent=self.parent
+                "Invalid Time", playtime_error, parent=self.parent
             )
             return
 
@@ -521,6 +590,9 @@ class CharacterInfoEditor:
                     )
 
                     self._apply_playtime(save_file, slot_idx, slot)
+                    slot.world_area_time.hour = int(self.time_h_var.get())
+                    slot.world_area_time.minute = int(self.time_m_var.get())
+                    slot.world_area_time.second = int(self.time_s_var.get())
 
                     # Rebuild slot bytes and write to _raw_data before saving
                     from er_save_manager.parser.slot_rebuild import rebuild_slot

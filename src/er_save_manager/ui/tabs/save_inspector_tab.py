@@ -7,6 +7,7 @@ import tkinter as tk
 
 import customtkinter as ctk
 
+from er_save_manager.fixes.wiped_slot import is_wiped_slot
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
@@ -158,6 +159,8 @@ class SaveInspectorTab:
                         pass
 
                     display_text = f"Slot {slot_idx + 1:2d} | {name:16s} | Lv.{level:>3s} | Map: {map_str}"
+                    if is_wiped_slot(save_file, slot_idx):
+                        display_text = f"Slot {slot_idx + 1:2d} | {name:16s} | Lv.{level:>3s} | DATA WIPED"
 
                     row = ctk.CTkFrame(
                         self.list_frame,
