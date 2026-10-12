@@ -525,7 +525,7 @@ class CharacterDetailsDialog:
             "Versions (needs File History or System Restore)",
             "",
             "To restore only this character, load the older copy and use "
-            "Character Management > Transfer to copy it into this save."
+            "Character Management > Transfer to copy it into this save.",
         ]
 
         buttons = [("Close", False)]
