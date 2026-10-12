@@ -121,7 +121,7 @@ def test_damaged_message_is_dropped_and_others_kept(sanitized_save, template):
     offset = 4 + 32 + 8 + sum(len(e) + (-len(e) % 4) for _, e in entries[:victim])
 
     def overwrite(buf):
-        buf[offset + 8 : offset + 8 + 0x100] = b"\xAB" * 0x100
+        buf[offset + 8 : offset + 8 + 0x100] = b"\xab" * 0x100
 
     rebuilt = _damage_and_repair(blob, offset, overwrite, template)
     kept = _message_entries(rebuilt[6])
@@ -150,7 +150,7 @@ def test_destroyed_message_chunk_header_is_salvaged(sanitized_save, template):
     blob = _region(sanitized_save, i)[1]
 
     def wipe_header(buf):
-        buf[4 + 32 : 4 + 32 + 8] = b"\xFF" * 8
+        buf[4 + 32 : 4 + 32 + 8] = b"\xff" * 8
 
     rebuilt = _damage_and_repair(blob, 4 + 32, wipe_header, template)
     assert _message_entries(rebuilt[6]) == _message_entries(chunk6)
