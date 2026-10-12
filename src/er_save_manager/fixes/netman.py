@@ -8,8 +8,9 @@ padded to 4) closed by a kind 0xFFFF entry of size 0; chunk 8 starts with a
 12-byte header before its list. Chunks 2, 5, 9 and 7 hold an empty list.
 
 Repair keeps every chunk that is still intact and takes only the damaged
-ones from the clean CSNetMan.bin template, so stored messages (chunk 6)
-survive unless their own chunk is broken.
+ones from the clean CSNetMan.bin template. A damaged chunk 6 (messages) is
+rebuilt from its own bytes instead: every message entry that is still whole
+is kept and only the damaged bytes are skipped.
 
 CSNetMan.bin also covers the 4 bytes before the region (the end of
 temp_spawn_point_entity_id and game_man_0xcb3); load_template() drops them.
@@ -44,6 +45,13 @@ _CHUNK_NAMES = {
 }
 
 
+# Chunk 6 sub-entry kinds: 0 own message, 1 cached message, 2 session id.
+# Allowed sizes per kind and where the author's FACE block sits in a message.
+_MESSAGE_SIZES = {0: (600,), 1: (606, 602), 2: (8, 12)}
+_MESSAGE_FACE = {(0, 600): 0xB8, (1, 606): 0x74, (1, 602): 0x70}
+_SUB_TERMINATOR = struct.pack("<II", 0xFFFF, 0)
+
+
 def _sub_list_ok(payload: bytes, pos: int) -> bool:
     """Walk a sub-entry list; True if it ends with the terminator at the payload end."""
     while pos + 8 <= len(payload):
@@ -70,6 +78,48 @@ def _chunk_at(data: bytes, pos: int, ctype: int, version: int) -> bytes | None:
         return None
     payload = data[pos + 8 : pos + 8 + size]
     return data[pos : pos + 8 + size] if _chunk_ok(ctype, payload) else None
+
+
+def _message_entry_at(data: bytes, pos: int) -> int:
+    """Total length (header + padded body) of a whole chunk 6 entry at pos, or 0."""
+    if pos + 8 > len(data):
+        return 0
+    kind, size = struct.unpack_from("<II", data, pos)
+    if size not in _MESSAGE_SIZES.get(kind, ()) or pos + 8 + size > len(data):
+        return 0
+    face = _MESSAGE_FACE.get((kind, size))
+    if face is not None and data[pos + 8 + face : pos + 12 + face] != b"FACE":
+        return 0
+    return 8 + size + (-size % 4)
+
+
+def salvage_messages(region: bytes) -> tuple[bytes, int, int]:
+    """Rebuild chunk 6 from the bytes where it was, keeping every whole entry.
+
+    Entries are recognised by kind, size and (for messages) the author's FACE
+    block; anything else is skipped in 4-byte steps until the next whole
+    entry. Returns the chunk, the number of entries kept and the number of
+    bytes skipped.
+    """
+    pos = 8 if _chunk_at_header(region, 6, 2) else 0
+    entries, skipped = [], 0
+    while pos + 8 <= len(region):
+        if region[pos : pos + 8] == _SUB_TERMINATOR:
+            break
+        length = _message_entry_at(region, pos)
+        if length:
+            size = struct.unpack_from("<I", region, pos + 4)[0]
+            entries.append(region[pos : pos + 8 + size] + bytes(-size % 4))
+            pos += length
+        else:
+            pos += 4
+            skipped += 4
+    payload = b"".join(entries) + _SUB_TERMINATOR
+    return struct.pack("<HHI", 6, 2, len(payload)) + payload, len(entries), skipped
+
+
+def _chunk_at_header(data: bytes, ctype: int, version: int) -> bool:
+    return len(data) >= 8 and struct.unpack_from("<HH", data, 0) == (ctype, version)
 
 
 def netman_problems(blob: bytes) -> list[str]:
@@ -126,11 +176,14 @@ def repair_netman(blob: bytes, template: bytes) -> tuple[bytes, list[str]]:
 
     Each chunk is taken from blob when an intact copy is found at or after the
     end of the previous one (a torn write can shift it), otherwise from the
-    template. Returns the new region and the names of the replaced chunks.
+    template. A missing chunk 6 is salvaged from the bytes between the
+    previous and the next intact chunk instead. Returns the new region and a
+    description of every chunk that was not kept as it was.
     """
     data = blob[len(_PREFIX) :] if blob[: len(_PREFIX)] == _PREFIX else blob
     clean = _template_chunks(template)
     parts, replaced, pos = [], [], 0
+    salvage_from = None
     for ctype, version in _CHUNK_ORDER:
         header = struct.pack("<HH", ctype, version)
         found = None
@@ -142,9 +195,23 @@ def repair_netman(blob: bytes, template: bytes) -> tuple[bytes, list[str]]:
             found = _chunk_at(data, start, ctype, version)
             if found is None:
                 start += 1
+        if salvage_from is not None:
+            # chunk 6 ends where the next intact chunk starts
+            end = start if found is not None else len(data)
+            chunk, kept, skipped = salvage_messages(data[salvage_from:end])
+            parts[2] = chunk
+            replaced.append(
+                f"{_CHUNK_NAMES[6]} (kept {kept} whole entries, "
+                f"skipped {skipped} damaged bytes)"
+            )
+            salvage_from = None
         if found is None:
+            if ctype == 6:
+                salvage_from = pos
+                parts.append(b"")
+                continue
             parts.append(clean[ctype])
-            replaced.append(_CHUNK_NAMES[ctype])
+            replaced.append(f"{_CHUNK_NAMES[ctype]} (from template)")
         else:
             parts.append(found)
             pos = start + len(found)
