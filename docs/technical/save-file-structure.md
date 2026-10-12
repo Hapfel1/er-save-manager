@@ -454,7 +454,7 @@ the gesture table is `2k + 1` (1 Bow, 15 Wave, 41 Point Forwards). Each structur
 | 0x0C | MapId | map_id |
 | 0x10 | float[4] | angle |
 | 0x20 | int32 | hp |
-| 0x24 | uint32 | state: 0 inactive, 3 dead, 13 active |
+| 0x24 | uint32 | state: 1 inactive, 3 dead, 13 active |
 
 `hp == 0` with `state == 13` causes an infinite loading screen; state 3 fixes it.
 
@@ -488,8 +488,12 @@ the start of the data:
 | 0x018 | uint32, unknown |
 | 0x108 | 10 beacon records |
 | 0x1A8 | 100 map marker records |
-| 0x7E8 | 16-byte records up to 0xFD0 (eight 0xFF bytes, uint32 sequence number, 0), unknown |
+| 0x7E8 | int64, -2 |
+| 0x7F0 | 0x7E0 bytes up to 0xFD0, unknown |
 | 0xFD0 | 2 x float: world map cursor position (x, y) |
+| 0xFD8 | 8 bytes, 0 |
+| 0xFE0 | uint32, 0 or 1 (last field of the nested chunk) |
+| 0xFE4 | terminator chunk: `uint16 0xFFFF, uint16 0, uint32 0`; zero up to 0x1000 |
 
 **Beacon / marker record (16 bytes):**
 
@@ -763,9 +767,10 @@ The equipment, weapon slots and appearance are copied from the character when th
 Deleting a message removes its entry; protecting it sets 0x46. Ratings given to other players' messages
 are not stored. When an 11th message is written the oldest one is removed.
 
-**Cached message (kind 1):** author equipment and `FACE` block first, name at 0x190, then MapId at
-0x1C4, position 0x1CC, angle 0x1D8, template 0x1DC, gesture 0x1DE, word 0x1E0. One entry of the
-list is 602 bytes, 4 bytes shorter, which moves its fields 4 bytes back. The list is refreshed during online play.
+**Cached message (kind 1):** author equipment first, `FACE` block at 0x74, name at 0x194 (right after the
+`FACE` block), then MapId at 0x1C4, position 0x1CC, angle 0x1D8, template 0x1DC, gesture 0x1DE, word 0x1E0.
+602-byte entries also occur: their part before the `FACE` block is 4 bytes shorter, which moves every
+later field 4 bytes back (`FACE` at 0x70, name at 0x190). The list is refreshed during online play.
 
 ### Chunk 8
 
@@ -916,12 +921,14 @@ data at GameDataMan+0x58.
 
 ### MenuSystemSaveLoad (0x1808)
 
-`uint16, uint16, uint32 size`, then 15 appearance presets of 0x130 bytes, then a list of 16-byte records
-(empty record: `FF FF 00 00 00 00 00 00 01 00 00 00 00 00 00 00`; meaning unknown).
+`uint16, uint16, uint32 size` (0x1800), then 15 appearance presets of 0x130 bytes, then a list of 16-byte
+records (empty record: `FF FF 00 00 00 00 00 00 01 00 00 00 00 00 00 00`; meaning unknown). The block is
+always 0x1808 bytes, regardless of `size`.
 
 **Preset (0x130):** a 0x18-byte header (0x08 = 1 on a used preset, 0x09 = body type, 0x0A-0x17
-uninitialized memory that changes on every save), then the `FACE` block. A preset is empty when the `FACE`
-magic is missing.
+uninitialized memory that changes on every save, including 0x14 where FaceData has its marker), then the
+`FACE` block, 0x118 bytes long: the slot copy without its last 8 padding bytes. A preset is empty when the
+`FACE` magic is missing.
 
 ### ProfileSummary (0x1702)
 
