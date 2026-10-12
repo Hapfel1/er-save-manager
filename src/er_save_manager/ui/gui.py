@@ -429,47 +429,18 @@ class SaveManagerGUI:
 
     def _show_update_dialog(self, latest_version: str, download_url: str):
         """Show update available dialog with GitHub and Nexus Mods download options"""
-        from er_save_manager.ui.utils import force_render_dialog
+        from er_save_manager.ui import dialog_style as ds
 
-        dialog = ctk.CTkToplevel(self.root)
-        dialog.title("Update Available")
-        dialog.geometry("550x320")
-        dialog.transient(self.root)
+        dialog = ds.create(self.root, "Update Available")
+        main_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        main_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=16)
 
-        force_render_dialog(dialog)
-        center_window(dialog, 550, 320, parent=self.root)
+        dont_show_var = ctk.BooleanVar(value=False)
 
-        dialog.grab_set()
-
-        main_frame = ctk.CTkFrame(dialog)
-        main_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=20)
-
-        ctk.CTkLabel(
-            main_frame,
-            text="🎉 Update Available!",
-            font=("Segoe UI", 16, "bold"),
-        ).pack(pady=(0, 15))
-
-        info_text = (
-            f"A new version of ER Save Manager is available!\n\n"
-            f"Current version: {__version__}\n"
-            f"Latest version: {latest_version}"
-        )
-        ctk.CTkLabel(
-            main_frame,
-            text=info_text,
-            font=("Segoe UI", 11),
-            justify=ctk.LEFT,
-        ).pack(pady=(0, 20))
-
-        ctk.CTkLabel(
-            main_frame,
-            text="Download from:",
-            font=("Segoe UI", 12, "bold"),
-        ).pack(anchor=ctk.W, pady=(0, 10))
-
-        button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        button_frame.pack(fill=ctk.X, pady=(0, 20))
+        def on_close():
+            if dont_show_var.get():
+                self.settings.set("show_update_notifications", False)
+            dialog.destroy()
 
         def open_github():
             open_url(download_url)
@@ -479,43 +450,64 @@ class SaveManagerGUI:
             open_url("https://www.nexusmods.com/eldenring/mods/9271?tab=files")
             dialog.destroy()
 
-        ctk.CTkButton(
-            button_frame,
-            text="📦 GitHub Releases",
-            command=open_github,
-            width=240,
-            height=40,
+        from er_save_manager.ui.utils import icon_image
+
+        _, (github_btn, nexus_btn, _) = ds.button_row(
+            main_frame,
+            [
+                {"text": "GitHub Releases", "command": open_github, "width": 150},
+                {"text": "Nexus Mods", "command": open_nexus, "width": 130},
+                {"text": "Close", "command": on_close, "primary": False},
+            ],
+        )
+        github_icon = icon_image("github", 18)
+        if github_icon:
+            github_btn.configure(image=github_icon, compound="left")
+        nexus_icon = icon_image("nexusmods", 18)
+        if nexus_icon:
+            nexus_btn.configure(image=nexus_icon, compound="left")
+
+        header = ctk.CTkFrame(main_frame, fg_color="transparent")
+        header.pack(fill=ctk.X)
+        update_icon = icon_image("update", 34)
+        ctk.CTkLabel(
+            header,
+            text="" if update_icon else "↑",
+            image=update_icon,
+            font=("Segoe UI Semibold", 24),
+            text_color=palette.PURPLE_TEXT,
         ).pack(side=ctk.LEFT, padx=(0, 10))
-
-        ctk.CTkButton(
-            button_frame,
-            text="🔗 Nexus Mods",
-            command=open_nexus,
-            width=240,
-            height=40,
+        ctk.CTkLabel(
+            header, text="Update Available!", font=("Segoe UI", 19, "bold")
         ).pack(side=ctk.LEFT)
-
-        dont_show_var = ctk.BooleanVar(value=False)
-        checkbox = ctk.CTkCheckBox(
+        versions = ds.box(main_frame, pady=(12, 10))
+        for i, (label, value) in enumerate(
+            (("Current version", __version__), ("Latest version", latest_version))
+        ):
+            ctk.CTkLabel(
+                versions, text=label, font=("Segoe UI", 14), text_color=ds.MUTED
+            ).grid(
+                row=i,
+                column=0,
+                sticky="w",
+                padx=(12, 24),
+                pady=(8 if i == 0 else 2, 8 if i else 2),
+            )
+            ctk.CTkLabel(versions, text=value, font=("Segoe UI", 14, "bold")).grid(
+                row=i,
+                column=1,
+                sticky="w",
+                padx=(0, 12),
+                pady=(8 if i == 0 else 2, 8 if i else 2),
+            )
+        ctk.CTkCheckBox(
             main_frame,
             text="Don't show update notifications in the future",
             variable=dont_show_var,
-            font=("Segoe UI", 10),
-        )
-        checkbox.pack(anchor=ctk.W, pady=(0, 15))
-
-        def on_close():
-            if dont_show_var.get():
-                self.settings.set("show_update_notifications", False)
-            dialog.destroy()
-
-        ctk.CTkButton(
-            main_frame,
-            text="Close",
-            command=on_close,
-            width=120,
-            height=32,
-        ).pack(pady=(5, 0))
+            font=ds.FONT,
+        ).pack(anchor=ctk.W)
+        dialog.protocol("WM_DELETE_WINDOW", on_close)
+        ds.finish(dialog, self.root, min_width=420)
 
     def _open_kofi(self):
         """Open Ko-fi support page in browser."""
@@ -1518,57 +1510,43 @@ class SaveManagerGUI:
     # File operations
     def show_console_save_info(self):
         """Show instructions for loading a PlayStation or Switch save."""
-        from er_save_manager.ui.utils import force_render_dialog
+        from er_save_manager.ui import dialog_style as ds
 
-        dialog = ctk.CTkToplevel(self.root)
-        dialog.title("PS / Switch Saves")
-        dialog.geometry("640x320")
-        dialog.transient(self.root)
+        dialog = ds.create(self.root, "PS / Switch Saves")
+        main_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        main_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=16)
 
-        force_render_dialog(dialog)
-        center_window(dialog, 640, 320, parent=self.root)
-
-        dialog.grab_set()
-
-        main_frame = ctk.CTkFrame(dialog, corner_radius=14)
-        main_frame.pack(fill=ctk.BOTH, expand=True, padx=18, pady=18)
-
+        ds.button_row(main_frame, [{"text": "Close", "command": dialog.destroy}])
+        header = ctk.CTkFrame(main_frame, fg_color="transparent")
+        header.pack(fill=ctk.X)
+        ctk.CTkLabel(
+            header,
+            text="ℹ",
+            font=("Segoe UI", 30, "bold"),
+            text_color=palette.PURPLE_TEXT,
+        ).pack(side=ctk.LEFT, padx=(0, 10))
+        ctk.CTkLabel(
+            header, text="PS / Switch Saves", font=("Segoe UI", 19, "bold")
+        ).pack(side=ctk.LEFT)
         ctk.CTkLabel(
             main_frame,
-            text="PS / Switch Saves",
-            font=("Segoe UI", 18, "bold"),
-        ).pack(pady=(10, 4))
-
+            text="Console saves must be decrypted and exported as memory.dat "
+            "before you can load them. Auto-Find does not find memory.dat files.",
+            font=("Segoe UI", 15),
+            wraplength=500,
+            justify=ctk.LEFT,
+        ).pack(anchor=ctk.W, pady=(10, 10))
+        note = ds.box(main_frame, pady=(0, 0))
         ctk.CTkLabel(
-            main_frame,
-            text="Console saves must be decrypted and exported as memory.dat before you can load them.",
-            font=("Segoe UI", 12),
-            wraplength=580,
-            justify=ctk.CENTER,
-        ).pack(pady=(0, 12))
-
-        disclaimer = ctk.CTkLabel(
-            main_frame,
-            text=(
-                "Exporting/Decrypting a console save may require custom firmware on your console, "
-                "we cannot provide instructions for doing so. Use at your own risk."
-            ),
-            font=("Segoe UI", 12),
-            wraplength=570,
-            justify=ctk.CENTER,
-        )
-        disclaimer.pack(pady=(0, 18))
-
-        ctk.CTkLabel(
-            main_frame,
-            text="Auto-Find will not work for memory.dat files.",
-            font=("Segoe UI", 11),
-            text_color=("gray35", "gray75"),
-        ).pack(pady=(0, 14))
-
-        ctk.CTkButton(main_frame, text="Close", width=120, command=dialog.destroy).pack(
-            pady=(0, 4)
-        )
+            note,
+            text="Exporting or decrypting a console save may require custom "
+            "firmware on your console; there are no instructions for that here. "
+            "Use at your own risk.",
+            font=("Segoe UI", 14),
+            wraplength=476,
+            justify=ctk.LEFT,
+        ).pack(anchor=ctk.W, padx=12, pady=10)
+        ds.finish(dialog, self.root)
 
     def browse_file(self):
         """Browse for a save file for the active game."""
@@ -1706,65 +1684,11 @@ class SaveManagerGUI:
     def show_linux_save_location_warning(self, save_path, profile=None):
         """Show warning about non-default save location on Linux."""
         game_name = profile.name if profile else "Elden Ring"
-        dialog = tk.Toplevel(self.root)
-        dialog.title("Save Location Warning")
-        dialog.transient(self.root)
-        center_window(dialog, 550, 500, parent=self.root)
+        from er_save_manager.ui import dialog_style as ds
 
-        msg_frame = ttk.Frame(dialog, padding=20)
-        msg_frame.pack(fill=tk.BOTH, expand=True)
-
-        ttk.Label(
-            msg_frame,
-            text="Non-Standard Save Location",
-            font=("Segoe UI", 12, "bold"),
-            foreground="orange",
-        ).pack(pady=(0, 10))
-
-        warning_text = (
-            f"Your {game_name} save file is located in:\n"
-            f"{save_path}\n\n"
-            f"This is NOT the default Steam compatdata location!\n\n"
-            f'If you remove the custom launcher (e.g. "ersc_launcher.exe") from Steam, '
-            f"Steam will remove that compatdata folder and your save will get lost.\n\n"
-            f"Recommended: Set a fixed Steam launch option and copy the save file to the "
-            f"default location via the 'Copy Save' button below to prevent this."
-        )
-
-        ttk.Label(
-            msg_frame,
-            text=warning_text,
-            wraplength=500,
-            justify=tk.LEFT,
-        ).pack(pady=10)
-
-        launch_option = PlatformUtils.get_steam_launch_option_hint(profile)
-        if launch_option:
-            ttk.Label(
-                msg_frame,
-                text="Add this to the custom launcher's Steam launch options:",
-                font=("Segoe UI", 9, "bold"),
-            ).pack(anchor=tk.W, pady=(10, 5))
-
-            option_frame = ttk.Frame(msg_frame)
-            option_frame.pack(fill=tk.X, pady=5)
-
-            option_entry = ttk.Entry(option_frame, font=("Consolas", 11))
-            option_entry.insert(0, launch_option)
-            option_entry.config(state="readonly")
-            option_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
-
-            def copy_to_clipboard():
-                dialog.clipboard_clear()
-                dialog.clipboard_append(launch_option)
-                dialog.update()
-                CTkMessageBox.showinfo(
-                    "Copied", "Launch option copied to clipboard!", parent=dialog
-                )
-
-            ctk.CTkButton(
-                option_frame, text="Copy", command=copy_to_clipboard, width=80
-            ).pack(side=tk.LEFT, padx=5)
+        dialog = ds.create(self.root, "Save Location Warning")
+        msg_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        msg_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
 
         def copy_to_default():
             target_dir = PlatformUtils.get_default_save_location(profile)
@@ -1801,18 +1725,77 @@ class SaveManagerGUI:
             self.settings.set("show_linux_save_warning", False)
             dialog.destroy()
 
-        button_frame = ttk.Frame(msg_frame)
-        button_frame.pack(pady=10)
+        ds.button_row(
+            msg_frame,
+            [
+                {
+                    "text": "Don't Show Again",
+                    "command": dont_show_again,
+                    "primary": False,
+                    "width": 140,
+                },
+                {
+                    "text": "Keep Current",
+                    "command": dialog.destroy,
+                    "primary": False,
+                    "width": 120,
+                },
+                {"text": "Copy to Default", "command": copy_to_default, "width": 130},
+            ],
+        )
+        ds.header(msg_frame, "Non-standard save location", icon="⚠")
+        ctk.CTkLabel(
+            msg_frame,
+            text=f"Your {game_name} save is not in the default Steam compatdata folder:",
+            font=ds.FONT,
+            wraplength=500,
+            justify=tk.LEFT,
+        ).pack(anchor=tk.W, pady=(10, 2))
+        ctk.CTkLabel(
+            msg_frame,
+            text=str(save_path),
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+            wraplength=500,
+            justify=tk.LEFT,
+        ).pack(anchor=tk.W, pady=(0, 10))
+        ctk.CTkLabel(
+            msg_frame,
+            text='If you remove the custom launcher (e.g. "ersc_launcher.exe") '
+            "from Steam, Steam removes that compatdata folder and the save is "
+            "lost. Set a fixed Steam launch option and copy the save to the "
+            "default location with Copy to Default.",
+            font=ds.FONT,
+            wraplength=500,
+            justify=tk.LEFT,
+        ).pack(anchor=tk.W)
 
-        ttk.Button(
-            button_frame, text="Copy to Default", command=copy_to_default, width=18
-        ).pack(side=tk.LEFT, padx=5)
-        ttk.Button(
-            button_frame, text="Keep Current", command=dialog.destroy, width=15
-        ).pack(side=tk.LEFT, padx=5)
-        ttk.Button(
-            button_frame, text="Don't Show Again", command=dont_show_again, width=18
-        ).pack(side=tk.LEFT, padx=5)
+        launch_option = PlatformUtils.get_steam_launch_option_hint(profile)
+        if launch_option:
+            ctk.CTkLabel(
+                msg_frame,
+                text="Custom launcher Steam launch options",
+                font=ds.BOLD,
+            ).pack(anchor=tk.W, pady=(12, 0))
+            option_box = ds.box(msg_frame, pady=(4, 0))
+            option_entry = ctk.CTkEntry(option_box, font=("Consolas", 12))
+            option_entry.insert(0, launch_option)
+            option_entry.configure(state="readonly")
+            option_entry.pack(
+                side=tk.LEFT, fill=tk.X, expand=True, padx=(12, 8), pady=10
+            )
+
+            def copy_to_clipboard():
+                dialog.clipboard_clear()
+                dialog.clipboard_append(launch_option)
+                dialog.update()
+                self.show_toast("Launch option copied")
+
+            ds.button(option_box, "Copy", copy_to_clipboard, width=80).pack(
+                side=tk.LEFT, padx=(0, 12), pady=10
+            )
+
+        ds.finish(dialog, self.root, min_width=540)
 
     def is_game_running(self, process_name: str = "eldenring.exe") -> bool:
         """Check if a game process is running."""
@@ -2858,36 +2841,13 @@ class SaveManagerGUI:
         self._pending_file_change = False
         self._file_change_dialog_open = True
 
-        dialog = ctk.CTkToplevel(self.root)
-        dialog.title("Save File Modified")
-        dialog.geometry("440x300")
-        dialog.transient(self.root)
-        dialog.resizable(False, False)
+        from er_save_manager.ui import dialog_style as ds
 
-        center_window(dialog, 440, 300, parent=self.root)
-
+        dialog = ds.create(self.root, "Save File Modified")
         main = ctk.CTkFrame(dialog, fg_color="transparent")
-        main.pack(fill=ctk.BOTH, expand=True, padx=24, pady=24)
+        main.pack(fill=ctk.BOTH, expand=True, padx=20, pady=16)
 
-        ctk.CTkLabel(
-            main,
-            text="Save Modified Externally",
-            font=("Segoe UI", 16, "bold"),
-        ).pack(pady=(0, 22))
-
-        ctk.CTkLabel(
-            main,
-            text=(
-                f"{self.save_path.name} was changed while the save manager "
-                "had it loaded. Reload to avoid overwriting those changes."
-            ),
-            font=("Segoe UI", 14),
-            justify=ctk.CENTER,
-            wraplength=380,
-        ).pack(pady=(0, 24))
-
-        btn_row = ctk.CTkFrame(main, fg_color="transparent")
-        btn_row.pack()
+        disable_var = ctk.BooleanVar(value=False)
 
         def on_reload():
             self._file_change_dialog_open = False
@@ -2912,25 +2872,28 @@ class SaveManagerGUI:
 
         dialog.protocol("WM_DELETE_WINDOW", on_dismiss)
 
-        ctk.CTkButton(btn_row, text="Reload Now", width=120, command=on_reload).pack(
-            side=ctk.LEFT, padx=(0, 8)
-        )
-        ctk.CTkButton(
-            btn_row,
-            text="Dismiss",
-            width=100,
-            fg_color="transparent",
-            border_width=1,
-            command=on_dismiss,
-        ).pack(side=ctk.LEFT)
-
-        disable_var = ctk.BooleanVar(value=False)
-        ctk.CTkCheckBox(
+        ds.button_row(
             main,
-            text="Don't show this again",
-            variable=disable_var,
-            font=("Segoe UI", 11),
-        ).pack(pady=(14, 0))
+            [
+                {"text": "Reload Now", "command": on_reload, "width": 110},
+                {"text": "Dismiss", "command": on_dismiss, "primary": False},
+            ],
+        )
+        ctk.CTkCheckBox(
+            main, text="Don't show this again", variable=disable_var, font=ds.FONT
+        ).pack(side=ctk.BOTTOM, anchor=ctk.W, pady=(12, 0))
+        ds.header(main, "Save modified externally", icon="⚠")
+        ctk.CTkLabel(
+            main,
+            text=(
+                f"{self.save_path.name} was changed while the save manager "
+                "had it loaded. Reload to avoid overwriting those changes."
+            ),
+            font=ds.FONT,
+            justify=ctk.LEFT,
+            wraplength=400,
+        ).pack(anchor=ctk.W, pady=(10, 0))
+        ds.finish(dialog, self.root)
 
     def _verbose_log(self, message: str) -> None:
         """Write a timestamped line to the verbose log file next to the current save."""

@@ -9,8 +9,8 @@ import tkinter as tk
 
 import customtkinter as ctk
 
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
-from er_save_manager.ui.utils import center_window, force_render_dialog
 
 # Extensions of saves that reach the official servers: .sl2 on PC, the
 # PlayStation memory.dat export for Elden Ring. Seamless Co-op (.co2) saves
@@ -193,6 +193,7 @@ class VanillaSaveWarningDialog(ctk.CTkToplevel):
     def __init__(self, parent, game_key: str, game_name: str, file_name: str):
         super().__init__(parent)
         # Hidden until built to prevent a white flash on Windows.
+        self.withdraw()
         self.attributes("-alpha", 0)
         self.title("Vanilla Save File")
         self.resizable(False, False)
@@ -205,118 +206,95 @@ class VanillaSaveWarningDialog(ctk.CTkToplevel):
         self.protocol("WM_DELETE_WINDOW", self._on_cancel)
         self._build_ui(game_key, game_name, file_name)
 
-        center_window(self, 600, 640, parent=parent)
-        force_render_dialog(self)
-        self.attributes("-alpha", 1)
-        self.grab_set()
+        ds.finish(self, parent)
 
     def _build_ui(self, game_key: str, game_name: str, file_name: str):
         intro, sections = _GAME_TEXT.get(game_key, ("", []))
+        wrap = 520
 
         main = ctk.CTkFrame(self, fg_color="transparent")
-        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
 
-        header = ctk.CTkFrame(main, fg_color="transparent")
-        header.pack(fill=tk.X)
-        ctk.CTkLabel(
-            header,
-            text="!",
-            font=("Segoe UI Semibold", 32, "bold"),
-            text_color=palette.PURPLE_TEXT,
-            width=40,
-        ).pack(side=tk.LEFT, anchor="n", padx=(0, 12))
-        title_col = ctk.CTkFrame(header, fg_color="transparent")
-        title_col.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        ctk.CTkLabel(
-            title_col,
-            text=f"Vanilla {game_name} save",
-            font=("Segoe UI Semibold", 18, "bold"),
-            anchor="w",
-        ).pack(fill=tk.X)
-        ctk.CTkLabel(
-            title_col,
-            text=f"{file_name} - edits can get your account banned online.",
-            font=("Segoe UI", 13),
-            text_color=("gray40", "gray70"),
-            anchor="w",
-            wraplength=480,
-            justify=tk.LEFT,
-        ).pack(fill=tk.X)
-
-        body = ctk.CTkScrollableFrame(main, fg_color="transparent")
-        body.pack(fill=tk.BOTH, expand=True, pady=(12, 0))
-        wrap = 500
-
-        if intro:
-            ctk.CTkLabel(
-                body,
-                text=intro,
-                font=("Segoe UI", 13),
-                wraplength=wrap,
-                justify=tk.LEFT,
-                anchor="w",
-            ).pack(fill=tk.X, pady=(0, 6))
-
-        for heading, bullets in sections:
-            ctk.CTkLabel(
-                body,
-                text=heading,
-                font=("Segoe UI Semibold", 14, "bold"),
-                anchor="w",
-            ).pack(fill=tk.X, pady=(8, 2))
-            for bullet in bullets:
-                text, blocked = (bullet, None) if isinstance(bullet, str) else bullet
-                ctk.CTkLabel(
-                    body,
-                    text=f"•  {text}",
-                    font=("Segoe UI", 13),
-                    wraplength=wrap - 16,
-                    justify=tk.LEFT,
-                    anchor="w",
-                ).pack(fill=tk.X, padx=(8, 0))
-                if blocked:
-                    ctk.CTkLabel(
-                        body,
-                        text=f"Not possible with the save manager: {blocked}.",
-                        font=("Segoe UI", 12),
-                        text_color=palette.PURPLE_TEXT,
-                        wraplength=wrap - 32,
-                        justify=tk.LEFT,
-                        anchor="w",
-                    ).pack(fill=tk.X, padx=(24, 0), pady=(0, 2))
-
-        ctk.CTkLabel(
-            body,
-            text=_GUARANTEE_NOTE,
-            font=("Segoe UI", 12),
-            text_color=palette.PURPLE_TEXT,
-            wraplength=wrap,
-            justify=tk.LEFT,
-            anchor="w",
-        ).pack(fill=tk.X, pady=(14, 0))
-
+        ds.button_row(
+            main,
+            [
+                {"text": "Continue", "command": self._on_continue},
+                {"text": "Cancel", "command": self._on_cancel, "primary": False},
+            ],
+        )
         ctk.CTkCheckBox(
             main,
             text="Don't show this warning again",
+            font=ds.FONT,
             variable=self._dont_show_var,
-        ).pack(anchor="w", pady=(12, 0))
+        ).pack(side=tk.BOTTOM, anchor="w", pady=(12, 0))
 
-        btn_row = ctk.CTkFrame(main, fg_color="transparent")
-        btn_row.pack(pady=(12, 0))
-        ctk.CTkButton(
-            btn_row,
-            text="Continue",
-            command=self._on_continue,
-            width=120,
-            font=("Segoe UI Semibold", 18),
-        ).pack(side=tk.LEFT, padx=5)
-        ctk.CTkButton(
-            btn_row,
-            text="Cancel",
-            command=self._on_cancel,
-            width=120,
-            font=("Segoe UI Semibold", 18),
-        ).pack(side=tk.LEFT, padx=5)
+        ds.header(
+            main, f"Vanilla {game_name} save", icon="!", icon_color=palette.PURPLE_TEXT
+        )
+        ctk.CTkLabel(
+            main,
+            text=f"{file_name} - edits can get your account banned online.",
+            font=ds.FONT,
+            text_color=ds.MUTED,
+            anchor="w",
+            wraplength=wrap,
+            justify=tk.LEFT,
+        ).pack(fill=tk.X, pady=(4, 0))
+
+        def build(body):
+            if intro:
+                ctk.CTkLabel(
+                    body,
+                    text=intro,
+                    font=ds.FONT,
+                    wraplength=wrap,
+                    justify=tk.LEFT,
+                    anchor="w",
+                ).pack(fill=tk.X, pady=(0, 4))
+
+            for heading, bullets in sections:
+                ctk.CTkLabel(body, text=heading, font=ds.BOLD, anchor="w").pack(
+                    fill=tk.X, pady=(8, 2)
+                )
+                group = ctk.CTkFrame(body, fg_color=ds.BOX, corner_radius=8)
+                group.pack(fill=tk.X)
+                for i, bullet in enumerate(bullets):
+                    text, blocked = (
+                        (bullet, None) if isinstance(bullet, str) else bullet
+                    )
+                    top = 8 if i == 0 else 2
+                    bottom = 8 if i == len(bullets) - 1 else 2
+                    ctk.CTkLabel(
+                        group,
+                        text=f"•  {text}",
+                        font=ds.FONT,
+                        wraplength=wrap - 24,
+                        justify=tk.LEFT,
+                        anchor="w",
+                    ).pack(fill=tk.X, padx=12, pady=(top, 0 if blocked else bottom))
+                    if blocked:
+                        ctk.CTkLabel(
+                            group,
+                            text=f"Not possible with the save manager: {blocked}.",
+                            font=ds.SMALL,
+                            text_color=palette.PURPLE_TEXT,
+                            wraplength=wrap - 48,
+                            justify=tk.LEFT,
+                            anchor="w",
+                        ).pack(fill=tk.X, padx=(28, 12), pady=(0, bottom))
+
+            ctk.CTkLabel(
+                body,
+                text=_GUARANTEE_NOTE,
+                font=ds.SMALL,
+                text_color=palette.PURPLE_TEXT,
+                wraplength=wrap,
+                justify=tk.LEFT,
+                anchor="w",
+            ).pack(fill=tk.X, pady=(12, 0))
+
+        ds.content(main, build, max_height=460, width=wrap + 10, pady=(12, 0))
 
     def _on_continue(self):
         self._continue = True

@@ -113,42 +113,9 @@ def _center_over(window, parent, w=None, h=None, *, top=False) -> None:
 
 def _ask_value(title: str, text: str, parent, initial: str = "") -> str | None:
     """Centered modal single-line input dialog, prefilled with initial."""
-    result: list = [None]
-    dialog = ctk.CTkToplevel(parent)
-    dialog.title(title)
-    dialog.resizable(False, False)
-    dialog.transient(parent)
-    dialog.attributes("-alpha", 0)
-    ctk.CTkLabel(dialog, text=text, wraplength=260, anchor="w").pack(
-        padx=20, pady=(16, 6), fill="x"
-    )
-    var = ctk.StringVar(value=initial)
-    entry = ctk.CTkEntry(dialog, textvariable=var, width=260)
-    entry.pack(padx=20, pady=(0, 10))
-    btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
-    btn_row.pack(fill="x", padx=20, pady=(0, 16))
+    from er_save_manager.ui import dialog_style as ds
 
-    def _ok(_e=None):
-        result[0] = var.get()
-        dialog.destroy()
-
-    entry.bind("<Return>", _ok)
-    entry.bind("<Escape>", lambda _e: dialog.destroy())
-    ctk.CTkButton(btn_row, text="OK", command=_ok, width=80).pack(side="left")
-    ctk.CTkButton(
-        btn_row,
-        text="Cancel",
-        command=dialog.destroy,
-        width=80,
-        fg_color=("gray70", "gray35"),
-    ).pack(side="right")
-    _center_over(dialog, parent)
-    dialog.attributes("-alpha", 1)
-    dialog.grab_set()
-    entry.focus_set()
-    entry.select_range(0, "end")
-    dialog.wait_window()
-    return result[0]
+    return ds.ask_string(parent, title, text, initial, font=ds.FONT)
 
 
 def style_add_buttons(add_btn, batch_btn, loadout_mode: bool) -> None:
@@ -1600,27 +1567,29 @@ class InventoryEditor:
 
         categories = self._CUSTOM_ITEM_CATEGORIES
 
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title("Custom ID Item")
-        dialog.resizable(False, False)
-        dialog.transient(self.parent)
-        dialog.attributes("-alpha", 0)
+        from er_save_manager.ui import dialog_style as ds
 
+        dialog = ds.create(self.parent, "Custom ID Item")
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill="both", expand=True, padx=20, pady=16)
+        btn_row = ctk.CTkFrame(main, fg_color="transparent")
+        btn_row.pack(side="bottom", fill="x", pady=(16, 0))
+
+        ds.header(main, "Select an item by raw ID")
         ctk.CTkLabel(
-            dialog,
+            main,
             text=(
-                "Select an item by raw ID. A full 8-digit hex ID such as 0x400001F4 "
-                "or 0x01406F40 sets the category itself. IDs that do not exist in "
-                "the game can crash it."
+                "A full 8-digit hex ID such as 0x400001F4 or 0x01406F40 sets the "
+                "category itself. IDs that do not exist in the game can crash it."
             ),
-            wraplength=340,
+            font=ds.SMALL,
+            wraplength=360,
             anchor="w",
             justify="left",
-            text_color=("gray40", "gray70"),
-        ).pack(padx=20, pady=(16, 8), fill="x")
+            text_color=ds.INFO,
+        ).pack(fill="x", pady=(4, 10))
 
-        form = ctk.CTkFrame(dialog, fg_color="transparent")
-        form.pack(fill="x", padx=20)
+        form = ds.box(main, pady=(0, 0))
 
         category_var = ctk.StringVar(value="Goods")
         id_var = ctk.StringVar()
@@ -1628,8 +1597,8 @@ class InventoryEditor:
         reinforcement_var = ctk.StringVar(value="standard")
         aow_var = ctk.BooleanVar(value=True)
 
-        ctk.CTkLabel(form, text="Category:", anchor="w").grid(
-            row=0, column=0, sticky="w", pady=4
+        ctk.CTkLabel(form, text="Category", font=ds.FONT, anchor="w").grid(
+            row=0, column=0, sticky="w", padx=(12, 0), pady=(10, 4)
         )
         category_combo = ctk.CTkComboBox(
             form,
@@ -1637,29 +1606,33 @@ class InventoryEditor:
             values=list(categories),
             state="readonly",
             width=180,
+            font=ds.FONT,
+            dropdown_font=ds.FONT,
             command=lambda _v: _on_category(),
         )
-        category_combo.grid(row=0, column=1, sticky="w", padx=(10, 0), pady=4)
+        category_combo.grid(row=0, column=1, sticky="w", padx=(16, 12), pady=(10, 4))
+        patch_combo_scroll(category_combo)
 
-        ctk.CTkLabel(form, text="Item ID:", anchor="w").grid(
-            row=1, column=0, sticky="w", pady=4
+        ctk.CTkLabel(form, text="Item ID", font=ds.FONT, anchor="w").grid(
+            row=1, column=0, sticky="w", padx=(12, 0), pady=4
         )
         id_entry = ctk.CTkEntry(
             form,
             textvariable=id_var,
             width=180,
+            font=ds.FONT,
             placeholder_text="Decimal or 0x hex",
         )
-        id_entry.grid(row=1, column=1, sticky="w", padx=(10, 0), pady=4)
+        id_entry.grid(row=1, column=1, sticky="w", padx=(16, 12), pady=4)
 
-        ctk.CTkLabel(form, text="Max stack:", anchor="w").grid(
-            row=2, column=0, sticky="w", pady=4
+        ctk.CTkLabel(form, text="Max stack", font=ds.FONT, anchor="w").grid(
+            row=2, column=0, sticky="w", padx=(12, 0), pady=4
         )
-        stack_entry = ctk.CTkEntry(form, textvariable=stack_var, width=70)
-        stack_entry.grid(row=2, column=1, sticky="w", padx=(10, 0), pady=4)
+        stack_entry = ctk.CTkEntry(form, textvariable=stack_var, width=70, font=ds.FONT)
+        stack_entry.grid(row=2, column=1, sticky="w", padx=(16, 12), pady=4)
 
-        ctk.CTkLabel(form, text="Reinforcement:", anchor="w").grid(
-            row=3, column=0, sticky="w", pady=4
+        ctk.CTkLabel(form, text="Reinforcement", font=ds.FONT, anchor="w").grid(
+            row=3, column=0, sticky="w", padx=(12, 0), pady=4
         )
         reinforcement_combo = ctk.CTkComboBox(
             form,
@@ -1667,11 +1640,16 @@ class InventoryEditor:
             values=["standard", "somber", "none"],
             state="readonly",
             width=120,
+            font=ds.FONT,
+            dropdown_font=ds.FONT,
         )
-        reinforcement_combo.grid(row=3, column=1, sticky="w", padx=(10, 0), pady=4)
+        reinforcement_combo.grid(row=3, column=1, sticky="w", padx=(16, 12), pady=4)
+        patch_combo_scroll(reinforcement_combo)
 
-        aow_check = ctk.CTkCheckBox(form, text="Allow Ash of War", variable=aow_var)
-        aow_check.grid(row=4, column=1, sticky="w", padx=(10, 0), pady=4)
+        aow_check = ctk.CTkCheckBox(
+            form, text="Allow Ash of War", font=ds.FONT, variable=aow_var
+        )
+        aow_check.grid(row=4, column=1, sticky="w", padx=(16, 12), pady=(4, 10))
 
         def _on_category() -> None:
             cat = categories[category_var.get()]
@@ -1764,23 +1742,13 @@ class InventoryEditor:
             dialog.destroy()
             self._apply_item_selection(item)
 
-        btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
-        btn_row.pack(fill="x", padx=20, pady=(12, 16))
-        ctk.CTkButton(btn_row, text="Select Item", command=_confirm, width=110).pack(
-            side="left"
+        ds.button(btn_row, "Cancel", dialog.destroy, primary=False).pack(side="right")
+        ds.button(btn_row, "Select Item", _confirm, width=110).pack(
+            side="right", padx=(0, 8)
         )
-        ctk.CTkButton(
-            btn_row,
-            text="Cancel",
-            command=dialog.destroy,
-            width=90,
-            fg_color=("gray70", "gray35"),
-        ).pack(side="right")
 
         _on_category()
-        _center_over(dialog, self.parent)
-        dialog.attributes("-alpha", 1)
-        dialog.grab_set()
+        ds.finish(dialog, self.parent)
         id_entry.focus_set()
         dialog.wait_window()
 
@@ -1869,50 +1837,28 @@ class InventoryEditor:
         )
 
     def _pick_aow(self):
-        import tkinter as tk
+        from er_save_manager.ui import dialog_style as ds
 
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title("Select Ash of War")
-        dialog.geometry("380x400")
+        dialog = ds.create(self.parent, "Select Ash of War")
         dialog.resizable(False, True)
-        dialog.transient(self.parent)
-        dialog.attributes("-alpha", 0)
-        dialog.update_idletasks()
-        _center_over(dialog, self.parent, 380, 400)
-        dialog.attributes("-alpha", 1)
-        dialog.grab_set()
-        dialog.lift()
-        dialog.focus_force()
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=ctk.BOTH, expand=True, padx=20, pady=16)
+        btn_row = ctk.CTkFrame(main, fg_color="transparent")
+        btn_row.pack(side=ctk.BOTTOM, fill=ctk.X, pady=(12, 0))
 
-        mode = ctk.get_appearance_mode()
-        lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
-        lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = palette.pick(palette.PURPLE_SELECT)
-
+        ds.header(main, "Select Ash of War")
         search_var = ctk.StringVar()
-        ctk.CTkLabel(dialog, text="Search:").pack(anchor="w", padx=10, pady=(10, 0))
-        ctk.CTkEntry(dialog, textvariable=search_var, width=340).pack(
-            padx=10, pady=(0, 4)
+        search_entry = ctk.CTkEntry(
+            main,
+            textvariable=search_var,
+            placeholder_text="Search",
+            height=32,
+            font=ds.FONT,
         )
+        search_entry.pack(fill=ctk.X, pady=(10, 8))
 
-        lb_frame = ctk.CTkFrame(dialog, fg_color=("gray82", "gray14"), corner_radius=6)
-        lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=4)
-        sb = tk.Scrollbar(lb_frame)
-        sb.pack(side=tk.RIGHT, fill=tk.Y)
-        lb = tk.Listbox(
-            lb_frame,
-            yscrollcommand=sb.set,
-            font=("Consolas", 10),
-            bg=lb_bg,
-            fg=lb_fg,
-            selectbackground=lb_sel,
-            relief=tk.FLAT,
-            borderwidth=0,
-            activestyle="none",
-        )
-        lb.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2, pady=2)
-        sb.config(command=lb.yview)
-        bind_mousewheel(lb)
+        rows = ds.RowList(main, icon_space=30, on_activate=lambda _i: _confirm())
+        rows.pack(fill=ctk.BOTH, expand=True)
 
         gem_items: list = []
 
@@ -1951,22 +1897,23 @@ class InventoryEditor:
 
         all_gems = _load()
 
+        from er_save_manager.data.icon_manager import get_icon
+
         def _filter(*_):
             q = search_var.get().lower().strip()
             gem_items.clear()
             gem_items.extend(g for g in all_gems if not q or q in g.name.lower())
-            lb.delete(0, tk.END)
-            for g in gem_items[:200]:
-                lb.insert(tk.END, g.name)
+            del gem_items[200:]
+            rows.set_rows([g.name for g in gem_items])
+            rows.load_icons(lambda i: get_icon(gem_items[i].name))
 
         search_var.trace_add("write", _filter)
         _filter()
 
         def _confirm():
-            sel = lb.curselection()
-            if not sel or sel[0] >= len(gem_items):
+            if rows.selected is None or rows.selected >= len(gem_items):
                 return
-            item = gem_items[sel[0]]
+            item = gem_items[rows.selected]
             self._selected_gem_id = 0x80000000 | item.id
             weapon_affs = (
                 self.selected_item.get_affinities(is_convergence_save)
@@ -2013,14 +1960,11 @@ class InventoryEditor:
                     self._update_affinity_icon(default)
             dialog.destroy()
 
-        btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
-        btn_row.pack(fill=ctk.X, padx=10, pady=(4, 10))
-        ctk.CTkButton(btn_row, text="Select", command=_confirm, width=100).pack(
-            side=ctk.LEFT, padx=(0, 6)
-        )
-        ctk.CTkButton(btn_row, text="Cancel", command=dialog.destroy, width=80).pack(
-            side=ctk.RIGHT
-        )
+        ds.button(btn_row, "Cancel", dialog.destroy, primary=False).pack(side=ctk.RIGHT)
+        ds.button(btn_row, "Select", _confirm).pack(side=ctk.RIGHT, padx=(0, 8))
+        dialog.bind("<Escape>", lambda _e: dialog.destroy())
+        ds.finish(dialog, self.parent, width=400, height=480)
+        search_entry.focus_set()
 
     def _clear_aow(self):
         self._selected_gem_id = 0
@@ -3242,40 +3186,50 @@ class InventoryEditor:
             default=0,
         )
 
-        dialog = ctk.CTkToplevel(parent_window)
-        dialog.title("Batch Upgrade Weapons")
-        dialog.resizable(False, False)
-        dialog.transient(parent_window)
-        dialog.attributes("-alpha", 0)
+        from er_save_manager.ui import dialog_style as ds
 
+        dialog = ds.create(parent_window, "Batch Upgrade Weapons")
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill="both", expand=True, padx=20, pady=16)
+        btn_row = ctk.CTkFrame(main, fg_color="transparent")
+        btn_row.pack(side="bottom", fill="x", pady=(16, 0))
+
+        ds.header(main, "Batch upgrade weapons")
         ctk.CTkLabel(
-            dialog,
+            main,
             text=f"Applies to {len(weapon_rows)} weapon(s) in the current view.",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
             anchor="w",
-        ).pack(padx=20, pady=(16, 8), fill="x")
+        ).pack(fill="x", pady=(2, 10))
 
         std_var = ctk.BooleanVar(value=False)
         std_level_var = ctk.StringVar(value="0")
         somber_var = ctk.BooleanVar(value=False)
         somber_level_var = ctk.StringVar(value="0")
 
-        row1 = ctk.CTkFrame(dialog, fg_color="transparent")
-        row1.pack(fill="x", padx=20, pady=4)
-        ctk.CTkCheckBox(
-            row1, text="Smithing Stone weapons", variable=std_var, width=190
-        ).pack(side="left")
-        ctk.CTkLabel(row1, text=f"Level (0-{std_cap}):").pack(side="left", padx=(10, 4))
-        ctk.CTkEntry(row1, textvariable=std_level_var, width=50).pack(side="left")
-
-        row2 = ctk.CTkFrame(dialog, fg_color="transparent")
-        row2.pack(fill="x", padx=20, pady=4)
-        ctk.CTkCheckBox(
-            row2, text="Somber Smithing Stone weapons", variable=somber_var, width=190
-        ).pack(side="left")
-        ctk.CTkLabel(row2, text=f"Level (0-{somber_cap}):").pack(
-            side="left", padx=(10, 4)
-        )
-        ctk.CTkEntry(row2, textvariable=somber_level_var, width=50).pack(side="left")
+        box = ds.box(main, pady=(0, 8))
+        for row, (text, var, level_var, cap) in enumerate(
+            (
+                ("Smithing Stone weapons", std_var, std_level_var, std_cap),
+                (
+                    "Somber Smithing Stone weapons",
+                    somber_var,
+                    somber_level_var,
+                    somber_cap,
+                ),
+            )
+        ):
+            pady = (10, 3) if row == 0 else (3, 10)
+            ctk.CTkCheckBox(box, text=text, variable=var, font=ds.FONT).grid(
+                row=row, column=0, sticky="w", padx=(12, 20), pady=pady
+            )
+            ctk.CTkLabel(
+                box, text=f"Level 0-{cap}", font=ds.FONT, text_color=ds.MUTED
+            ).grid(row=row, column=1, sticky="e", padx=(0, 8), pady=pady)
+            ctk.CTkEntry(box, textvariable=level_var, width=56, font=ds.FONT).grid(
+                row=row, column=2, padx=(0, 12), pady=pady
+            )
 
         def _fill_max() -> None:
             if highest_mm == 0:
@@ -3290,19 +3244,18 @@ class InventoryEditor:
             somber_var.set(True)
             somber_level_var.set(str(max_somber_level))
 
-        max_row = ctk.CTkFrame(dialog, fg_color="transparent")
-        max_row.pack(fill="x", padx=20, pady=4)
-        ctk.CTkButton(max_row, text="Max", command=_fill_max, width=60).pack(
-            side="left"
-        )
+        max_row = ctk.CTkFrame(main, fg_color="transparent")
+        max_row.pack(fill="x")
         ctk.CTkLabel(
             max_row,
             text=f"Highest weapon level in inventory: +{highest_mm}",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
             anchor="w",
-        ).pack(side="left", padx=(10, 0))
-
-        btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
-        btn_row.pack(fill="x", padx=20, pady=(12, 16))
+        ).pack(side="left")
+        ds.button(
+            max_row, "Use Max", _fill_max, primary=False, width=80, height=26
+        ).pack(side="right")
 
         def _confirm():
             apply_std = std_var.get()
@@ -3362,20 +3315,9 @@ class InventoryEditor:
                 parent_window,
             )
 
-        ctk.CTkButton(btn_row, text="Apply", command=_confirm, width=90).pack(
-            side="left"
-        )
-        ctk.CTkButton(
-            btn_row,
-            text="Cancel",
-            command=dialog.destroy,
-            width=90,
-            fg_color=("gray70", "gray35"),
-        ).pack(side="right")
-
-        _center_over(dialog, parent_window)
-        dialog.attributes("-alpha", 1)
-        dialog.grab_set()
+        ds.button(btn_row, "Cancel", dialog.destroy, primary=False).pack(side="right")
+        ds.button(btn_row, "Apply", _confirm).pack(side="right", padx=(0, 8))
+        ds.finish(dialog, parent_window)
         dialog.wait_window()
 
     def _apply_batch_upgrade(
@@ -3544,104 +3486,28 @@ class InventoryEditor:
         if not affinity_list:
             affinity_list = base_list
 
-        import tkinter as tk
+        from er_save_manager.ui import dialog_style as ds
 
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title("Set Affinity")
-        dialog.geometry("260x400")
+        dialog = ds.create(self.parent, "Set Affinity")
         dialog.resizable(False, True)
-        dialog.transient(self.parent)
-        dialog.update_idletasks()
-        _center_over(dialog, self.parent, 260, 400)
-        dialog.grab_set()
-        dialog.lift()
-        dialog.focus_force()
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=ctk.BOTH, expand=True, padx=20, pady=16)
+        btn_row = ctk.CTkFrame(main, fg_color="transparent")
+        btn_row.pack(side=ctk.BOTTOM, fill=ctk.X, pady=(12, 0))
+        ds.header(main, "Set affinity")
 
-        mode = ctk.get_appearance_mode()
-        lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
-        lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = palette.pick(palette.PURPLE_SELECT)
-
-        _AFF_ROW_H = 32
-        cv_frame = ctk.CTkFrame(dialog, fg_color=("gray82", "gray14"), corner_radius=6)
-        cv_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=(10, 4))
-        aff_sb = tk.Scrollbar(cv_frame)
-        aff_sb.pack(side=tk.RIGHT, fill=tk.Y)
-        aff_cv = tk.Canvas(
-            cv_frame, bg=lb_bg, highlightthickness=0, bd=0, yscrollcommand=aff_sb.set
-        )
-        aff_cv.pack(side=tk.LEFT, fill=ctk.BOTH, expand=True, padx=2, pady=2)
-        aff_sb.config(command=aff_cv.yview)
-        aff_cv.bind("<Button-4>", lambda _e: aff_cv.yview_scroll(-1, "units"))
-        aff_cv.bind("<Button-5>", lambda _e: aff_cv.yview_scroll(1, "units"))
-
-        _sel_name: list[str | None] = [None]
-        _sel_aff_idx: list[int | None] = [None]
-        _aff_photos: list = []
+        _AFF_ROW_H = 34
         is_cnv_now = self._is_cnv_save()
+        rows = ds.RowList(main, icon_space=30, on_activate=lambda _i: _confirm())
+        rows.pack(fill=ctk.BOTH, expand=True, pady=(10, 0))
+        rows.set_rows(affinity_list)
 
-        cw_aff = 230
-        for i, name in enumerate(affinity_list):
-            y0 = i * _AFF_ROW_H
-            aff_cv.create_rectangle(
-                0, y0, cw_aff, y0 + _AFF_ROW_H, fill=lb_bg, outline="", tags=f"arow_{i}"
-            )
-            aff_cv.create_text(
-                32,
-                y0 + _AFF_ROW_H // 2,
-                text=name,
-                fill=lb_fg,
-                font=("Consolas", 11),
-                anchor="w",
-                tags=f"atext_{i}",
-            )
-        aff_cv.configure(scrollregion=(0, 0, cw_aff, len(affinity_list) * _AFF_ROW_H))
+        from er_save_manager.data.icon_manager import get_affinity_icon
 
-        def _aff_click(event) -> None:
-            cy = aff_cv.canvasy(event.y)
-            idx = int(cy // _AFF_ROW_H)
-            if 0 <= idx < len(affinity_list):
-                prev = _sel_aff_idx[0]
-                _sel_aff_idx[0] = idx
-                _sel_name[0] = affinity_list[idx]
-                for i in (prev, idx):
-                    if i is None:
-                        continue
-                    aff_cv.itemconfigure(
-                        f"arow_{i}", fill=lb_sel if i == _sel_aff_idx[0] else lb_bg
-                    )
-
-        aff_cv.bind("<Button-1>", _aff_click)
-        aff_cv.bind("<Double-Button-1>", lambda e: (_aff_click(e), _confirm()))
-
-        def _load_aff_icons() -> None:
-            try:
-                from PIL import Image, ImageTk
-
-                from er_save_manager.data.icon_manager import get_affinity_icon
-            except Exception:
-                return
-            for i, name in enumerate(affinity_list):
-                try:
-                    _pil = get_affinity_icon(name, is_convergence=is_cnv_now)
-                    if _pil:
-                        _pil = _pil.convert("RGBA").resize((22, 22), Image.LANCZOS)
-                        _ph = ImageTk.PhotoImage(_pil)
-                        _aff_photos.append(_ph)
-                        y0 = i * _AFF_ROW_H
-                        aff_cv.create_image(
-                            4,
-                            y0 + _AFF_ROW_H // 2,
-                            image=_ph,
-                            anchor="w",
-                            tags=f"arow_{i}",
-                        )
-                except Exception:
-                    pass
-            # Pin list to canvas so PhotoImages are not GC'd
-            aff_cv._photo_refs = _aff_photos
-
-        dialog.after(80, _load_aff_icons)
+        rows.load_icons(
+            lambda i: get_affinity_icon(affinity_list[i], is_convergence=is_cnv_now),
+            size=22,
+        )
 
         def _apply_affinity(affinity_code: int):
             save_file2 = self.get_save_file()
@@ -3681,22 +3547,23 @@ class InventoryEditor:
                 )
 
         def _confirm():
-            if not _sel_name[0]:
+            if rows.selected is None:
                 return
-            affinity_name = _sel_name[0]
+            affinity_name = affinity_list[rows.selected]
             affinity_code = next(
                 (c for c, n in self._affinities() if n == affinity_name), 0
             )
             dialog.destroy()
             _apply_affinity(affinity_code)
 
-        btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
-        btn_row.pack(fill=ctk.X, padx=10, pady=(0, 10))
-        ctk.CTkButton(btn_row, text="Apply", command=_confirm, width=90).pack(
-            side=ctk.LEFT, padx=(0, 6)
-        )
-        ctk.CTkButton(btn_row, text="Cancel", command=dialog.destroy, width=80).pack(
-            side=ctk.RIGHT
+        ds.button(btn_row, "Cancel", dialog.destroy, primary=False).pack(side=ctk.RIGHT)
+        ds.button(btn_row, "Apply", _confirm).pack(side=ctk.RIGHT, padx=(0, 8))
+        dialog.bind("<Escape>", lambda _e: dialog.destroy())
+        ds.finish(
+            dialog,
+            self.parent,
+            width=300,
+            height=min(560, 150 + len(affinity_list) * _AFF_ROW_H),
         )
 
     def set_aow(self):
@@ -3743,137 +3610,44 @@ class InventoryEditor:
         except Exception:
             pass
 
-        import tkinter as tk
+        from er_save_manager.ui import dialog_style as ds
 
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title("Set Ash of War")
-        dialog.geometry("380x440")
+        dialog = ds.create(self.parent, "Set Ash of War")
         dialog.resizable(False, True)
-        dialog.transient(self.parent)
-        dialog.update_idletasks()
-        _center_over(dialog, self.parent, 380, 440)
-        dialog.grab_set()
-        dialog.lift()
-        dialog.focus_force()
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=ctk.BOTH, expand=True, padx=20, pady=16)
+        btn_row = ctk.CTkFrame(main, fg_color="transparent")
+        btn_row.pack(side=ctk.BOTTOM, fill=ctk.X, pady=(12, 0))
 
-        mode = ctk.get_appearance_mode()
-        lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
-        lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = palette.pick(palette.PURPLE_SELECT)
-
-        cur_frame = ctk.CTkFrame(dialog, fg_color=("gray78", "gray18"), corner_radius=6)
-        cur_frame.pack(fill=ctk.X, padx=10, pady=(8, 2))
-        ctk.CTkLabel(cur_frame, text="Current:", anchor="w", width=60).pack(
-            side=ctk.LEFT, padx=6, pady=4
-        )
+        header = ds.header(main, "Set Ash of War")
         ctk.CTkLabel(
-            cur_frame,
+            header,
             text=current_aow_name,
-            anchor="w",
-            text_color=palette.PURPLE_TEXT
-            if current_aow_name != "None"
-            else ("gray50", "gray60"),
-        ).pack(side=ctk.LEFT, padx=4, pady=4)
+            font=ds.FONT,
+            text_color=palette.PURPLE_TEXT if current_aow_name != "None" else ds.MUTED,
+        ).pack(side=ctk.RIGHT)
+        ctk.CTkLabel(header, text="Current", font=ds.SMALL, text_color=ds.MUTED).pack(
+            side=ctk.RIGHT, padx=(0, 8)
+        )
 
         search_var = ctk.StringVar()
-        ctk.CTkLabel(dialog, text="Search:").pack(anchor="w", padx=10, pady=(4, 0))
-        ctk.CTkEntry(dialog, textvariable=search_var, width=340).pack(
-            padx=10, pady=(0, 4)
+        search_entry = ctk.CTkEntry(
+            main,
+            textvariable=search_var,
+            placeholder_text="Search",
+            height=32,
+            font=ds.FONT,
         )
+        search_entry.pack(fill=ctk.X, pady=(10, 8))
 
-        _ROW_H = 34
-        lb_frame = ctk.CTkFrame(dialog, fg_color=("gray82", "gray14"), corner_radius=6)
-        lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=4)
-        sb = tk.Scrollbar(lb_frame)
-        sb.pack(side=tk.RIGHT, fill=tk.Y)
-        cv = tk.Canvas(
-            lb_frame, bg=lb_bg, highlightthickness=0, bd=0, yscrollcommand=sb.set
-        )
-        cv.pack(side=tk.LEFT, fill=ctk.BOTH, expand=True, padx=2, pady=2)
-        sb.config(command=cv.yview)
-        cv.bind("<Button-4>", lambda _e: cv.yview_scroll(-1, "units"))
-        cv.bind("<Button-5>", lambda _e: cv.yview_scroll(1, "units"))
-        _aow_sel_idx: list[int | None] = [None]
-        _aow_photos: list = []
-        _aow_drawn_gems: list = []
-
-        _aow_icon_job: list[str | None] = [None]
+        rows = ds.RowList(main, icon_space=30, on_activate=lambda _i: _confirm())
+        rows.pack(fill=ctk.BOTH, expand=True)
 
         def _draw_aow_rows(gems) -> None:
-            if _aow_icon_job[0]:
-                try:
-                    dialog.after_cancel(_aow_icon_job[0])
-                except Exception:
-                    pass
-                _aow_icon_job[0] = None
-            cv.delete("all")
-            _aow_photos.clear()
-            _aow_drawn_gems.clear()
-            _aow_sel_idx[0] = None
-            cw = max(cv.winfo_width(), 300)
-            for i, g in enumerate(gems):
-                y0 = i * _ROW_H
-                cv.create_rectangle(
-                    0, y0, cw, y0 + _ROW_H, fill=lb_bg, outline="", tags=f"row_{i}"
-                )
-                cv.create_text(
-                    32,
-                    y0 + _ROW_H // 2,
-                    text=g.name,
-                    fill=lb_fg,
-                    font=("Consolas", 10),
-                    anchor="w",
-                    tags=f"text_{i}",
-                )
-                _aow_drawn_gems.append(g)
-            cv.configure(scrollregion=(0, 0, cw, len(gems) * _ROW_H))
-            _aow_icon_job[0] = dialog.after(80, lambda: _load_aow_icons(0))
+            from er_save_manager.data.icon_manager import get_icon
 
-        def _load_aow_icons(start: int, batch: int = 20) -> None:
-            try:
-                from PIL import Image, ImageTk
-
-                from er_save_manager.data.icon_manager import get_icon
-            except Exception:
-                return
-            end = min(start + batch, len(_aow_drawn_gems))
-            max(cv.winfo_width(), 300)
-            for i in range(start, end):
-                g = _aow_drawn_gems[i]
-                try:
-                    _pil = get_icon(g.name)
-                    if _pil:
-                        _pil = _pil.convert("RGBA").resize((24, 24), Image.LANCZOS)
-                        _ph = ImageTk.PhotoImage(_pil)
-                        _aow_photos.append(_ph)
-                        y0 = i * _ROW_H
-                        cv.create_image(
-                            4, y0 + _ROW_H // 2, image=_ph, anchor="w", tags=f"row_{i}"
-                        )
-                except Exception:
-                    pass
-            if end < len(_aow_drawn_gems):
-                _aow_icon_job[0] = dialog.after(30, lambda: _load_aow_icons(end, batch))
-            else:
-                _aow_icon_job[0] = None
-                cv._photo_refs = _aow_photos  # prevent GC
-
-        def _aow_click(event) -> None:
-            cy = cv.canvasy(event.y)
-            idx = int(cy // _ROW_H)
-            if 0 <= idx < len(_aow_drawn_gems):
-                prev = _aow_sel_idx[0]
-                _aow_sel_idx[0] = idx
-                max(cv.winfo_width(), 300)
-                for i in (prev, idx):
-                    if i is None:
-                        continue
-                    cv.itemconfigure(
-                        f"row_{i}", fill=lb_sel if i == _aow_sel_idx[0] else lb_bg
-                    )
-
-        cv.bind("<Button-1>", _aow_click)
-        cv.bind("<Double-Button-1>", lambda e: (_aow_click(e), _confirm()))
+            rows.set_rows([g.name for g in gems])
+            rows.load_icons(lambda i: get_icon(gems[i].name))
 
         try:
             from er_save_manager.data.item_database import get_item_database
@@ -3909,7 +3683,7 @@ class InventoryEditor:
         _filter()
 
         def _confirm():
-            idx2 = _aow_sel_idx[0]
+            idx2 = rows.selected
             if idx2 is None or idx2 >= len(visible_gems):
                 return
             gem_item = visible_gems[idx2]
@@ -3959,14 +3733,11 @@ class InventoryEditor:
                     "Error", f"Failed to set AoW:\n{e}", parent=self.parent
                 )
 
-        btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
-        btn_row.pack(fill=ctk.X, padx=10, pady=(4, 10))
-        ctk.CTkButton(btn_row, text="Apply", command=_confirm, width=90).pack(
-            side=ctk.LEFT, padx=(0, 6)
-        )
-        ctk.CTkButton(btn_row, text="Cancel", command=dialog.destroy, width=80).pack(
-            side=ctk.RIGHT
-        )
+        ds.button(btn_row, "Cancel", dialog.destroy, primary=False).pack(side=ctk.RIGHT)
+        ds.button(btn_row, "Apply", _confirm).pack(side=ctk.RIGHT, padx=(0, 8))
+        dialog.bind("<Escape>", lambda _e: dialog.destroy())
+        ds.finish(dialog, self.parent, width=420, height=520)
+        search_entry.focus_set()
 
     # ---- import build -------------------------------------------------------
 
@@ -4485,43 +4256,15 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
 
     def _show_share_code(self, code: str):
         """Show a dialog with the generated share code and a copy button."""
-        dialog = ctk.CTkToplevel(self)
-        dialog.title("Share Code")
-        dialog.resizable(False, False)
-        dialog.transient(self)
-        dialog.grab_set()
+        from er_save_manager.ui import dialog_style as ds
 
-        ctk.CTkLabel(dialog, text="Loadout shared", font=("Segoe UI", 13, "bold")).pack(
-            pady=(15, 5)
+        ds.show_code(
+            self,
+            "Share Code",
+            "Loadout shared",
+            code,
+            lambda: show_toast(self, "Code copied to clipboard!", type="success"),
         )
-        ctk.CTkLabel(
-            dialog,
-            text="Send this code to share it:",
-            font=("Segoe UI", 10),
-            text_color=("gray40", "gray70"),
-        ).pack(pady=(0, 10))
-
-        code_entry = ctk.CTkEntry(
-            dialog, width=300, justify="center", font=("Consolas", 12)
-        )
-        code_entry.pack(pady=(0, 15))
-        code_entry.insert(0, code)
-        code_entry.configure(state="readonly")
-
-        def copy_code():
-            dialog.clipboard_clear()
-            dialog.clipboard_append(code)
-            show_toast(self, "Code copied to clipboard!", type="success")
-
-        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-        btn_frame.pack(pady=(0, 15))
-        ctk.CTkButton(btn_frame, text="Copy Code", command=copy_code, width=120).pack(
-            side="left", padx=5
-        )
-        ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=100).pack(
-            side="left", padx=5
-        )
-        _center_over(dialog, self)
 
     # ---- loadout <-> save ---------------------------------------------------
 

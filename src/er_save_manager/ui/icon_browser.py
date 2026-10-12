@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-import tkinter as tk
 from typing import TYPE_CHECKING
 
 import customtkinter as ctk
@@ -588,44 +587,26 @@ class IconBrowser(ctk.CTkToplevel):
         if not self._selected_item:
             return
 
-        dialog = ctk.CTkToplevel(self)
-        dialog.title("Select Ash of War")
-        dialog.geometry("400x420")
+        from er_save_manager.ui import dialog_style as ds
+
+        dialog = ds.create(self, "Select Ash of War")
         dialog.resizable(False, True)
-        dialog.transient(self)
-        dialog.attributes("-alpha", 0)
-        dialog.update_idletasks()
-        _center_over(dialog, self, 400, 420)
-        dialog.attributes("-alpha", 1)
-        dialog.grab_set()
-        dialog.lift()
-        dialog.focus_force()
-
-        mode = ctk.get_appearance_mode()
-        lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
-        lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = palette.pick(palette.PURPLE_SELECT)
-
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=ctk.BOTH, expand=True, padx=20, pady=16)
+        btn_row = ctk.CTkFrame(main, fg_color="transparent")
+        btn_row.pack(side=ctk.BOTTOM, fill=ctk.X, pady=(12, 0))
+        ds.header(main, "Select Ash of War")
         search_var = ctk.StringVar()
-        ctk.CTkLabel(dialog, text="Search:").pack(anchor="w", padx=10, pady=(10, 0))
-        ctk.CTkEntry(dialog, textvariable=search_var, width=360).pack(
-            padx=10, pady=(0, 4)
+        search_entry = ctk.CTkEntry(
+            main,
+            textvariable=search_var,
+            placeholder_text="Search",
+            height=32,
+            font=ds.FONT,
         )
-
-        lb_frame = ctk.CTkFrame(dialog, fg_color=("gray82", "gray14"), corner_radius=6)
-        lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=4)
-
-        cv = tk.Canvas(lb_frame, bg=lb_bg, highlightthickness=0, bd=0)
-        sb = tk.Scrollbar(lb_frame, orient="vertical", command=cv.yview)
-        cv.configure(yscrollcommand=sb.set)
-        sb.pack(side=tk.RIGHT, fill=tk.Y)
-        cv.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
-
-        _ROW_H = 32
-        _photos: list = []
-        _drawn: list = []
-        _sel: list[int | None] = [None]
-        _job: list = [None]
+        search_entry.pack(fill=ctk.X, pady=(10, 8))
+        rows = ds.RowList(main, icon_space=30, on_activate=lambda _i: _confirm())
+        rows.pack(fill=ctk.BOTH, expand=True)
 
         is_cnv = self._editor._is_cnv_save()
         weapon = self._resolved_item()
@@ -638,84 +619,10 @@ class IconBrowser(ctk.CTkToplevel):
         )
 
         def _draw(gems):
-            if _job[0]:
-                try:
-                    dialog.after_cancel(_job[0])
-                except Exception:
-                    pass
-                _job[0] = None
-            cv.delete("all")
-            _photos.clear()
-            _drawn.clear()
-            _sel[0] = None
-            cw = max(cv.winfo_width(), 360)
-            for i, g in enumerate(gems):
-                y0 = i * _ROW_H
-                cv.create_rectangle(
-                    0,
-                    y0,
-                    cw,
-                    y0 + _ROW_H,
-                    fill=lb_bg,
-                    outline="",
-                    tags=f"row_{i}",
-                )
-                cv.create_text(
-                    36,
-                    y0 + _ROW_H // 2,
-                    text=g.name,
-                    fill=lb_fg,
-                    font=("Consolas", 10),
-                    anchor="w",
-                    tags=f"text_{i}",
-                )
-                _drawn.append(g)
-            cv.configure(scrollregion=(0, 0, cw, len(gems) * _ROW_H))
-            _job[0] = dialog.after(80, lambda: _load_icons(0))
+            from er_save_manager.data.icon_manager import get_icon
 
-        def _load_icons(start: int, batch: int = 20):
-            try:
-                from PIL import Image, ImageTk
-
-                from er_save_manager.data.icon_manager import get_icon
-            except Exception:
-                return
-            end = min(start + batch, len(_drawn))
-            for i in range(start, end):
-                try:
-                    pil = get_icon(_drawn[i].name)
-                    if pil:
-                        pil = pil.convert("RGBA").resize((24, 24), Image.LANCZOS)
-                        ph = ImageTk.PhotoImage(pil)
-                        _photos.append(ph)
-                        y0 = i * _ROW_H
-                        cv.create_image(
-                            4, y0 + _ROW_H // 2, image=ph, anchor="w", tags=f"icon_{i}"
-                        )
-                except Exception:
-                    pass
-            if end < len(_drawn):
-                _job[0] = dialog.after(30, lambda: _load_icons(end, batch))
-            else:
-                _job[0] = None
-                cv._photo_refs = _photos  # prevent GC
-
-        def _click(event):
-            idx = int(cv.canvasy(event.y) // _ROW_H)
-            if 0 <= idx < len(_drawn):
-                prev = _sel[0]
-                _sel[0] = idx
-                for i in (prev, idx):
-                    if i is not None:
-                        cv.itemconfigure(
-                            f"row_{i}", fill=lb_sel if i == _sel[0] else lb_bg
-                        )
-
-        cv.bind("<Button-1>", _click)
-        cv.bind("<Double-Button-1>", lambda e: (_click(e), _confirm()))
-        cv.bind("<MouseWheel>", lambda e: cv.yview_scroll(int(-e.delta / 120), "units"))
-        cv.bind("<Button-4>", lambda _e: cv.yview_scroll(-1, "units"))
-        cv.bind("<Button-5>", lambda _e: cv.yview_scroll(1, "units"))
+            rows.set_rows([g.name for g in gems])
+            rows.load_icons(lambda i: get_icon(gems[i].name))
 
         try:
             from er_save_manager.data.item_database import (
@@ -752,7 +659,7 @@ class IconBrowser(ctk.CTkToplevel):
         _filter()
 
         def _confirm():
-            idx = _sel[0]
+            idx = rows.selected
             if idx is None or idx >= len(visible):
                 return
             gem = visible[idx]
@@ -772,14 +679,11 @@ class IconBrowser(ctk.CTkToplevel):
                 self._update_affinity_icon(default)
             dialog.destroy()
 
-        btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
-        btn_row.pack(fill=ctk.X, padx=10, pady=(4, 10))
-        ctk.CTkButton(btn_row, text="Select", command=_confirm, width=100).pack(
-            side=ctk.LEFT, padx=(0, 6)
-        )
-        ctk.CTkButton(btn_row, text="Cancel", command=dialog.destroy, width=80).pack(
-            side=ctk.RIGHT
-        )
+        ds.button(btn_row, "Cancel", dialog.destroy, primary=False).pack(side=ctk.RIGHT)
+        ds.button(btn_row, "Select", _confirm).pack(side=ctk.RIGHT, padx=(0, 8))
+        dialog.bind("<Escape>", lambda _e: dialog.destroy())
+        ds.finish(dialog, self, width=420, height=520)
+        search_entry.focus_set()
 
     # ---- add -----------------------------------------------------------------
 

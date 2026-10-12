@@ -18,9 +18,8 @@ from tkinter import ttk
 
 import customtkinter as ctk
 
-from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
+from er_save_manager.ui.utils import game_blocks_write
 
 
 def _game_blocks_write(parent) -> bool:
@@ -60,74 +59,59 @@ class _PickerDialog(ctk.CTkToplevel):
         self, parent, title: str, items: list[tuple[int, str]], current: int = -1
     ):
         super().__init__(parent)
+        from er_save_manager.ui import dialog_style as ds
+
+        self.withdraw()
+        self.attributes("-alpha", 0)
         self.title(title)
-        self.geometry("520x480")
         self.transient(parent)
         self.resizable(True, True)
 
         self.result: int | None = None
         self._items = items
 
+        main = ctk.CTkFrame(self, fg_color="transparent")
+        main.pack(fill="both", expand=True, padx=20, pady=16)
+        btn_row = ctk.CTkFrame(main, fg_color="transparent")
+        btn_row.pack(side="bottom", fill="x", pady=(12, 0))
+        ds.header(main, title, font=ds.TITLE_LARGE)
+
         search_var = tk.StringVar()
         search_var.trace_add("write", lambda *_: self._filter(search_var.get()))
-        ctk.CTkEntry(
-            self, textvariable=search_var, placeholder_text="Search...", width=480
-        ).pack(padx=12, pady=(10, 4))
-
-        frame = ctk.CTkFrame(self, corner_radius=8)
-        frame.pack(fill="both", expand=True, padx=12, pady=(0, 6))
-
-        self._lb = tk.Listbox(
-            frame,
-            selectmode="single",
-            activestyle="none",
-            font=("Segoe UI", 10),
-            relief="flat",
-            borderwidth=0,
-            background="#2b2b2b" if ctk.get_appearance_mode() == "Dark" else "#f0f0f0",
-            foreground="#dce4ee" if ctk.get_appearance_mode() == "Dark" else "#1a1a1a",
-            selectbackground=palette.pick(palette.PURPLE_SELECT),
-            selectforeground=palette.pick(("#1a1a1a", "#ffffff")),
-            highlightthickness=0,
+        search = ctk.CTkEntry(
+            main,
+            textvariable=search_var,
+            placeholder_text="Search name or ID",
+            height=32,
+            font=ds.FONT,
         )
-        vsb = ttk.Scrollbar(frame, orient="vertical", command=self._lb.yview)
-        self._lb.configure(yscrollcommand=vsb.set)
-        vsb.pack(side="right", fill="y")
-        self._lb.pack(side="left", fill="both", expand=True)
-        self._lb.bind("<Double-Button-1>", self._on_confirm)
-        bind_mousewheel(self._lb)
+        search.pack(fill="x", pady=(10, 8))
 
-        btn_row = ctk.CTkFrame(self, fg_color="transparent")
-        btn_row.pack(fill="x", padx=12, pady=(0, 10))
-        ctk.CTkButton(btn_row, text="Select", command=self._on_confirm, width=100).pack(
-            side="left"
-        )
-        ctk.CTkButton(
-            btn_row, text="Clear / Empty", command=self._on_clear, width=120
-        ).pack(side="left", padx=8)
-        ctk.CTkButton(btn_row, text="Cancel", command=self.destroy, width=80).pack(
-            side="right"
-        )
+        self._rows = ds.RowList(main, on_activate=lambda _i: self._on_confirm())
+        self._rows.pack(fill="both", expand=True)
+
+        ds.button(
+            btn_row, "Clear / Empty", self._on_clear, primary=False, width=120
+        ).pack(side="left")
+        ds.button(btn_row, "Cancel", self.destroy, primary=False).pack(side="right")
+        ds.button(btn_row, "Select", self._on_confirm).pack(side="right", padx=(0, 8))
+        self.bind("<Escape>", lambda _e: self.destroy())
 
         self._render(items)
+        ds.finish(self, parent, width=540, height=520)
 
         if current >= 0:
             for idx, (iid, _) in enumerate(self._filtered):
                 if iid == current:
-                    self._lb.selection_set(idx)
-                    self._lb.see(idx)
+                    self._rows.select(idx)
                     break
 
-        self.update_idletasks()
-        self.grab_set()
-        self.focus_set()
+        search.focus_set()
         self.wait_window()
 
     def _render(self, items: list[tuple[int, str]]) -> None:
         self._filtered = items
-        self._lb.delete(0, "end")
-        for _, name in items:
-            self._lb.insert("end", name)
+        self._rows.set_rows([name for _, name in items])
 
     def _filter(self, q: str) -> None:
         q = q.lower()
@@ -139,9 +123,9 @@ class _PickerDialog(ctk.CTkToplevel):
         self._render(filtered)
 
     def _on_confirm(self, _event=None) -> None:
-        sel = self._lb.curselection()
-        if sel:
-            self.result = self._filtered[sel[0]][0]
+        sel = self._rows.selected
+        if sel is not None and sel < len(self._filtered):
+            self.result = self._filtered[sel][0]
         self.destroy()
 
     def _on_clear(self) -> None:

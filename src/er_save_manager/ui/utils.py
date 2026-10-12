@@ -5,7 +5,9 @@ import platform as platform_module
 import re
 import shutil
 import subprocess
+import sys
 import webbrowser
+from pathlib import Path
 
 import customtkinter as ctk
 
@@ -525,3 +527,33 @@ def game_blocks_write(parent, process_name: str, game_name: str) -> bool:
         parent=parent,
     )
     return True
+
+
+def resource_path(*parts: str) -> Path:
+    """Path of a file under the top-level resources/ folder.
+
+    Same lookup as the window icon in gui.py: the PyInstaller bundle, next to
+    the cx_Freeze executable, or the repository root when run from source.
+    """
+    if getattr(sys, "frozen", False):
+        if hasattr(sys, "_MEIPASS"):
+            base = Path(sys._MEIPASS)
+        else:
+            base = Path(sys.executable).parent
+    else:
+        base = Path(__file__).resolve().parents[3]
+    return base.joinpath("resources", *parts)
+
+
+def icon_image(name: str, size: int):
+    """CTkImage from resources/icon/<name>_light.png and <name>_dark.png.
+
+    Returns None when the files are missing, so callers can fall back to text.
+    """
+    light = resource_path("icon", f"{name}_light.png")
+    dark = resource_path("icon", f"{name}_dark.png")
+    if not (light.exists() and dark.exists()):
+        return None
+    from PIL import Image
+
+    return ctk.CTkImage(Image.open(light), Image.open(dark), size=(size, size))

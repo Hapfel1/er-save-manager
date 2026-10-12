@@ -6,8 +6,8 @@ from io import BytesIO
 import customtkinter as ctk
 
 from er_save_manager.backup.manager import BackupManager
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, center_window
 
 
 def open_game_settings(parent, save_file, save_path, show_toast) -> None:
@@ -28,90 +28,97 @@ def open_game_settings(parent, save_file, save_path, show_toast) -> None:
 
     settings = save_file.user_data_10_parsed.settings
 
-    from er_save_manager.ui.utils import force_render_dialog
+    dialog = ds.create(parent, "Game Settings")
 
-    dialog = ctk.CTkToplevel(parent)
-    dialog.title("Game Settings")
-    center_window(dialog, 520, 600, parent=parent)
-    dialog.transient(parent)
-    dialog.update_idletasks()
-    parent.update_idletasks()
-    force_render_dialog(dialog)
-    dialog.grab_set()
+    main = ctk.CTkFrame(dialog, fg_color="transparent")
+    main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
 
-    ctk.CTkLabel(
-        dialog,
-        text="Game Settings",
-        font=("Segoe UI", 14, "bold"),
-    ).pack(pady=(15, 4), padx=15)
-
-    ctk.CTkLabel(
-        dialog,
-        text="Stored in USER_DATA_10, shared across all characters.",
-        font=("Segoe UI", 10),
-        text_color=("gray50", "gray70"),
-    ).pack(pady=(0, 10), padx=15)
-
-    scroll = ctk.CTkScrollableFrame(dialog, corner_radius=8)
-    scroll.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 8))
-    bind_mousewheel(scroll)
-
-    # (label, field_name, min, max)
-    fields = [
-        ("Brightness", "brightness", 0, 10),
-        ("Master Volume", "master_volume", 0, 10),
-        ("Music Volume", "music_volume", 0, 10),
-        ("Sound Effects Volume", "sound_effects_volume", 0, 10),
-        ("Voice Volume", "voice_volume", 0, 10),
-        ("Sound Type", "sound_type", 0, 2),
-        ("Camera Speed", "camera_speed", 0, 10),
-        ("Camera X Axis", "camera_x_axis", 0, 1),
-        ("Camera Y Axis", "camera_y_axis", 0, 1),
-        ("Controller Vibration", "controller_vibration", 0, 1),
-        ("Display Blood", "display_blood", 0, 1),
-        ("Subtitles", "subtitles", 0, 1),
-        ("HUD", "hud", 0, 2),
-        ("Toggle Auto Lock-On", "toggle_auto_lockon", 0, 1),
-        ("Camera Auto Wall Recovery", "camera_auto_wall_recovery", 0, 1),
-        ("Reset Camera Y Axis", "reset_camera_y_axis", 0, 1),
-        ("Camera Auto Rotation", "camera_auto_rotation", 0, 1),
-        ("Cinematic Effects", "cinematic_effects", 0, 1),
-        ("Cross-Region Play", "cross_region_play", 0, 1),
-        ("Voice Chat", "voice_chat", 0, 1),
-        ("Display Player Names", "display_player_names", 0, 1),
-        ("Manual Attack Aim", "manual_attack_aim", 0, 1),
-        ("Autotarget", "autotarget", 0, 1),
-        ("Send Summon Sign", "send_summon_sign", 0, 1),
-        ("HDR", "hdr", 0, 1),
-        ("HDR Adjust Brightness", "hdr_adjust_brightness", 0, 10),
-        ("HDR Maximum Brightness", "hdr_maximum_brightness", 0, 10),
-        ("HDR Adjust Saturation", "hdr_adjust_saturation", 0, 10),
-        ("Ray Tracing", "is_raytracing_on", 0, 1),
-        ("Mark New Items", "mark_new_items", 0, 1),
-        ("Show Recent Tabs", "show_recent_tabs", 0, 1),
-        ("Show Tutorials", "show_tutorials", 0, 1),
+    # (group, [(label, field_name, min, max)])
+    groups = [
+        (
+            "Display",
+            [
+                ("Brightness", "brightness", 0, 10),
+                ("HUD", "hud", 0, 2),
+                ("Display Blood", "display_blood", 0, 1),
+                ("Subtitles", "subtitles", 0, 1),
+                ("Cinematic Effects", "cinematic_effects", 0, 1),
+                ("Ray Tracing", "is_raytracing_on", 0, 1),
+                ("HDR", "hdr", 0, 1),
+                ("HDR Adjust Brightness", "hdr_adjust_brightness", 0, 10),
+                ("HDR Maximum Brightness", "hdr_maximum_brightness", 0, 10),
+                ("HDR Adjust Saturation", "hdr_adjust_saturation", 0, 10),
+            ],
+        ),
+        (
+            "Sound",
+            [
+                ("Master Volume", "master_volume", 0, 10),
+                ("Music Volume", "music_volume", 0, 10),
+                ("Sound Effects Volume", "sound_effects_volume", 0, 10),
+                ("Voice Volume", "voice_volume", 0, 10),
+                ("Sound Type", "sound_type", 0, 2),
+            ],
+        ),
+        (
+            "Camera and Controls",
+            [
+                ("Camera Speed", "camera_speed", 0, 10),
+                ("Camera X Axis", "camera_x_axis", 0, 1),
+                ("Camera Y Axis", "camera_y_axis", 0, 1),
+                ("Camera Auto Wall Recovery", "camera_auto_wall_recovery", 0, 1),
+                ("Reset Camera Y Axis", "reset_camera_y_axis", 0, 1),
+                ("Camera Auto Rotation", "camera_auto_rotation", 0, 1),
+                ("Controller Vibration", "controller_vibration", 0, 1),
+                ("Toggle Auto Lock-On", "toggle_auto_lockon", 0, 1),
+                ("Manual Attack Aim", "manual_attack_aim", 0, 1),
+                ("Autotarget", "autotarget", 0, 1),
+            ],
+        ),
+        (
+            "Network",
+            [
+                ("Cross-Region Play", "cross_region_play", 0, 1),
+                ("Voice Chat", "voice_chat", 0, 1),
+                ("Display Player Names", "display_player_names", 0, 1),
+                ("Send Summon Sign", "send_summon_sign", 0, 1),
+            ],
+        ),
+        (
+            "Interface",
+            [
+                ("Mark New Items", "mark_new_items", 0, 1),
+                ("Show Recent Tabs", "show_recent_tabs", 0, 1),
+                ("Show Tutorials", "show_tutorials", 0, 1),
+            ],
+        ),
     ]
 
     vars: dict[str, tk.IntVar] = {}
-    for label, field, lo, hi in fields:
-        row = ctk.CTkFrame(scroll, fg_color="transparent")
-        row.pack(fill=tk.X, pady=2, padx=4)
 
-        ctk.CTkLabel(row, text=f"{label}:", width=200, anchor="w").pack(
-            side=tk.LEFT, padx=(0, 8)
-        )
-        var = tk.IntVar(value=getattr(settings, field, 0))
-        vars[field] = var
-        ctk.CTkEntry(row, textvariable=var, width=80).pack(side=tk.LEFT)
-        ctk.CTkLabel(
-            row,
-            text=f"[{lo}–{hi}]",
-            text_color=("gray50", "gray70"),
-            font=("Segoe UI", 9),
-        ).pack(side=tk.LEFT, padx=6)
-
-    btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-    btn_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+    def build(body):
+        for group, fields in groups:
+            ctk.CTkLabel(body, text=group, font=ds.BOLD).pack(anchor="w")
+            box = ds.box(body, pady=(4, 12))
+            box.grid_columnconfigure(0, weight=1)
+            for i, (label, field, lo, hi) in enumerate(fields):
+                pady = (8 if i == 0 else 2, 8 if i == len(fields) - 1 else 2)
+                ctk.CTkLabel(box, text=label, font=ds.FONT, anchor="w").grid(
+                    row=i, column=0, sticky=tk.W, padx=(12, 20), pady=pady
+                )
+                var = vars.get(field) or tk.IntVar(value=getattr(settings, field, 0))
+                vars[field] = var
+                ctk.CTkEntry(
+                    box, textvariable=var, width=60, height=28, font=ds.FONT
+                ).grid(row=i, column=1, pady=pady)
+                ctk.CTkLabel(
+                    box,
+                    text=f"{lo}-{hi}",
+                    font=ds.SMALL,
+                    text_color=ds.MUTED,
+                    width=40,
+                    anchor="w",
+                ).grid(row=i, column=2, sticky=tk.W, padx=(8, 12), pady=pady)
 
     def apply_settings():
         if not save_path or not save_path.is_file():
@@ -159,9 +166,19 @@ def open_game_settings(parent, save_file, save_path, show_toast) -> None:
         show_toast("Game settings saved", duration=2500)
         dialog.destroy()
 
-    ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=100).pack(
-        side=tk.LEFT
+    ds.button_row(
+        main,
+        [
+            {"text": "Apply", "command": apply_settings},
+            {"text": "Close", "command": dialog.destroy, "primary": False},
+        ],
     )
-    ctk.CTkButton(btn_frame, text="Apply", command=apply_settings, width=100).pack(
-        side=tk.RIGHT
-    )
+    ds.header(main, "Game Settings", font=ds.TITLE_LARGE)
+    ctk.CTkLabel(
+        main,
+        text="Shared by all characters in this save.",
+        font=ds.SMALL,
+        text_color=ds.MUTED,
+    ).pack(anchor="w")
+    ds.content(main, build, max_height=520, width=380, pady=(12, 0))
+    ds.finish(dialog, parent)

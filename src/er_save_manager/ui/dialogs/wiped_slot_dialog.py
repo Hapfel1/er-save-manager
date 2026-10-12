@@ -15,11 +15,12 @@ from er_save_manager.fixes.wiped_slot import (
     manager_backup_count,
     windows_sources_available,
 )
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import center_window, force_render_dialog
 
-_WARNING = ("#ea580c", "#fb923c")
-_FOUND = ("#15803d", "#86efac")
+_WARNING = palette.WARNING_TEXT
+_FOUND = palette.GREEN_TEXT
 _MUTED = ("gray40", "gray65")
 _BOX = ("gray90", "gray18")
 _FONT = ("Segoe UI", 13)

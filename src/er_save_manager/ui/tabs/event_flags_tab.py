@@ -27,10 +27,10 @@ from er_save_manager.data.summoning_pools_data import (
     SUMMONING_POOL_FLAGS_DLC,
 )
 from er_save_manager.parser.event_flags import EventFlags
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import (
     bind_mousewheel,
-    center_window,
     patch_combo_scroll,
     pick_file,
 )
@@ -1005,35 +1005,30 @@ class EventFlagsTab:
             )
             return
 
-        from er_save_manager.ui.utils import force_render_dialog
+        from er_save_manager.ui import dialog_style as ds
 
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title("Advanced Event Flag Editor")
-        width, height = 600, 500
-        dialog.transient(self.parent)
-
-        dialog.update_idletasks()
-        self.parent.update_idletasks()
-        center_window(dialog, width, height, parent=self.parent)
-
-        # Force rendering on Linux before grab_set
-        force_render_dialog(dialog)
-        dialog.grab_set()
-
+        dialog = ds.create(self.parent, "Advanced Event Flag Editor")
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
+        ds.button_row(main, [{"text": "Close", "command": dialog.destroy}])
+        ds.header(main, "Advanced Event Flag Editor", font=ds.TITLE_LARGE)
         ctk.CTkLabel(
-            dialog,
-            text="Advanced Event Flag Editor",
-            font=("Segoe UI", 14, "bold"),
-        ).pack(pady=(15, 10), padx=15)
+            main,
+            text="Check or toggle a single flag by ID.",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+        ).pack(anchor="w", pady=(2, 10))
 
-        input_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-        input_frame.pack(fill=tk.X, padx=15, pady=10)
-
-        ctk.CTkLabel(input_frame, text="Flag ID:").pack(side=tk.LEFT, padx=(0, 8))
+        input_frame = ds.box(main, pady=(0, 12))
+        ctk.CTkLabel(input_frame, text="Flag ID", font=ds.FONT).pack(
+            side=tk.LEFT, padx=(12, 8), pady=10
+        )
 
         flag_id_var = tk.StringVar(value="")
-        flag_entry = ctk.CTkEntry(input_frame, textvariable=flag_id_var, width=150)
-        flag_entry.pack(side=tk.LEFT, padx=(0, 12))
+        flag_entry = ctk.CTkEntry(
+            input_frame, textvariable=flag_id_var, width=150, height=32, font=ds.FONT
+        )
+        flag_entry.pack(side=tk.LEFT, padx=(0, 12), pady=10)
 
         def missing_flag_message(flag_id: int) -> str:
             return (
@@ -1127,49 +1122,31 @@ class EventFlagsTab:
                     "Error", f"Failed to check flag: {e}", parent=dialog
                 )
 
-        ctk.CTkButton(input_frame, text="Toggle", command=toggle_flag, width=100).pack(
-            side=tk.LEFT, padx=2
+        ds.button(input_frame, "Toggle", toggle_flag, width=90).pack(
+            side=tk.RIGHT, padx=(0, 12), pady=10
         )
-
-        ctk.CTkButton(input_frame, text="Check", command=check_flag, width=100).pack(
-            side=tk.LEFT, padx=2
+        ds.button(input_frame, "Check", check_flag, primary=False, width=90).pack(
+            side=tk.RIGHT, padx=(0, 8), pady=10
         )
+        flag_entry.bind("<Return>", lambda _e: check_flag())
 
-        help_frame = ctk.CTkFrame(dialog, corner_radius=10)
-        help_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
-
-        help_text = tk.Text(
-            help_frame,
-            wrap=tk.WORD,
-            font=("Segoe UI", 10),
-            padx=12,
-            pady=12,
-            bg="#1f1f28",
-            fg="#e5e5f5",
-            relief=tk.FLAT,
-            highlightthickness=0,
+        ctk.CTkLabel(main, text="Warning", font=ds.BOLD, text_color=ds.WARNING).pack(
+            anchor="w"
         )
-        help_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        help_text.insert(
-            "1.0",
-            "Advanced Flag Editor\n\n"
-            "Use this to directly toggle or check individual flags by ID.\n\n"
-            "How to use:\n"
-            "1. Enter a flag ID (e.g., 1035, 10000800)\n"
-            "2. Click 'Check' to see current state\n"
-            "3. Click 'Toggle' to flip the flag on/off\n\n"
-            "Warning:\n"
-            "- Changing unknown flags may break your save\n"
-            "- Always backup before experimenting\n"
-            "- Use the category browser for documented flags\n\n"
-            "Tip: You can find flag IDs in the event_flags_db.py file in the source code.",
-        )
-        help_text.configure(state="disabled")
-
-        ctk.CTkButton(dialog, text="Close", command=dialog.destroy, width=120).pack(
-            pady=(0, 15)
-        )
+        notes = ds.box(main, pady=(4, 0))
+        for i, line in enumerate(
+            (
+                "Changing unknown flags may break your save.",
+                "A backup is made before every toggle.",
+                "Use the category browser for documented flags.",
+                "Flag IDs are listed in event_flags_db.py in the source code.",
+            )
+        ):
+            ctk.CTkLabel(notes, text=f"•  {line}", font=ds.FONT).pack(
+                anchor="w", padx=12, pady=(8 if i == 0 else 2, 8 if i == 3 else 2)
+            )
+        ds.finish(dialog, self.parent, min_width=480)
+        flag_entry.focus_set()
 
     def open_boss_status(self):
         """Boss status dialog - defeated/alive for all tracked bosses."""
@@ -1181,29 +1158,14 @@ class EventFlagsTab:
 
         import tkinter.ttk as ttk
 
-        from er_save_manager.ui.utils import force_render_dialog
+        from er_save_manager.ui import dialog_style as ds
 
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title("Boss Status")
-        width, height = 720, 640
-        dialog.transient(self.parent)
-        dialog.update_idletasks()
-        self.parent.update_idletasks()
-        center_window(dialog, width, height, parent=self.parent)
-        force_render_dialog(dialog)
-        dialog.grab_set()
-
-        ctk.CTkLabel(
-            dialog,
-            text="Boss Status",
-            font=("Segoe UI", 14, "bold"),
-        ).pack(pady=(15, 2), padx=15)
-
-        ctk.CTkLabel(
-            dialog,
-            text="Defeated/alive status for all tracked bosses",
-            text_color=("gray50", "gray70"),
-        ).pack(pady=(0, 10), padx=15)
+        dialog = ds.create(self.parent, "Boss Status")
+        dialog.resizable(True, True)
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
+        ds.button_row(main, [{"text": "Close", "command": dialog.destroy}])
+        ds.header(main, "Boss Status", font=ds.TITLE_LARGE)
 
         all_entries: list[tuple[str, str, str]] = []
         for boss_name, data in BOSSES.items():
@@ -1223,21 +1185,28 @@ class EventFlagsTab:
         defeated_count = sum(1 for _, _, s in all_entries if s == "Defeated")
         total_count = len(all_entries)
 
-        filter_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-        filter_frame.pack(fill=tk.X, padx=15, pady=(0, 8))
+        filter_frame = ds.box(main, pady=(10, 8))
 
-        ctk.CTkLabel(filter_frame, text="Show:").pack(side=tk.LEFT, padx=(0, 8))
+        ctk.CTkLabel(filter_frame, text="Show", font=ds.FONT).pack(
+            side=tk.LEFT, padx=(12, 8), pady=10
+        )
         status_filter_var = tk.StringVar(value="All")
-        ctk.CTkComboBox(
-            filter_frame,
-            variable=status_filter_var,
-            values=["All", "Defeated", "Alive"],
-            state="readonly",
-            width=140,
-            command=lambda _v: _refresh(),
-        ).pack(side=tk.LEFT, padx=(0, 16))
+        patch_combo_scroll(
+            ctk.CTkComboBox(
+                filter_frame,
+                variable=status_filter_var,
+                values=["All", "Defeated", "Alive"],
+                state="readonly",
+                width=130,
+                font=ds.FONT,
+                dropdown_font=ds.FONT,
+                command=lambda _v: _refresh(),
+            )
+        ).pack(side=tk.LEFT, padx=(0, 20), pady=10)
 
-        ctk.CTkLabel(filter_frame, text="Region:").pack(side=tk.LEFT, padx=(0, 8))
+        ctk.CTkLabel(filter_frame, text="Region", font=ds.FONT).pack(
+            side=tk.LEFT, padx=(0, 8), pady=10
+        )
         region_filter_var = tk.StringVar(value="All")
         patch_combo_scroll(
             ctk.CTkComboBox(
@@ -1246,19 +1215,17 @@ class EventFlagsTab:
                 values=["All"] + BOSS_CATEGORIES,
                 state="readonly",
                 width=260,
+                font=ds.FONT,
+                dropdown_font=ds.FONT,
                 command=lambda _v: _refresh(),
             )
-        ).pack(side=tk.LEFT)
+        ).pack(side=tk.LEFT, pady=10)
 
-        summary_label = ctk.CTkLabel(
-            dialog,
-            text=f"{defeated_count} / {total_count} bosses defeated",
-            font=("Segoe UI", 11),
-        )
-        summary_label.pack(pady=(0, 4), padx=15, anchor="w")
+        summary_label = ctk.CTkLabel(main, text="", font=ds.FONT)
+        summary_label.pack(anchor="w", pady=(0, 4))
 
-        tree_frame = tk.Frame(dialog)
-        tree_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
+        tree_frame = tk.Frame(main)
+        tree_frame.pack(fill=tk.BOTH, expand=True)
 
         tree = ttk.Treeview(
             tree_frame,
@@ -1273,8 +1240,8 @@ class EventFlagsTab:
         tree.column("boss", width=330, anchor="w")
         tree.column("region", width=230, anchor="w")
 
-        tree.tag_configure("defeated", foreground="#e74c3c")
-        tree.tag_configure("alive", foreground="#4caf50")
+        tree.tag_configure("defeated", foreground=palette.pick(palette.RED_TEXT))
+        tree.tag_configure("alive", foreground=palette.pick(palette.GREEN_TEXT))
 
         scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
@@ -1317,10 +1284,7 @@ class EventFlagsTab:
             sort_state.clear()
 
         _refresh()
-
-        ctk.CTkButton(dialog, text="Close", command=dialog.destroy, width=120).pack(
-            pady=(0, 15)
-        )
+        ds.finish(dialog, self.parent, width=720, height=640)
 
     def open_boss_respawn(self):
         """Open boss respawn dialog"""
@@ -1330,35 +1294,27 @@ class EventFlagsTab:
             )
             return
 
-        from er_save_manager.ui.utils import force_render_dialog
+        from er_save_manager.ui import dialog_style as ds
 
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title("Boss Respawn / Kill")
-        width, height = 780, 600
-        dialog.transient(self.parent)
-        dialog.update_idletasks()
-        self.parent.update_idletasks()
-        center_window(dialog, width, height, parent=self.parent)
-        # Force rendering on Linux before grab_set
-        force_render_dialog(dialog)
-        dialog.grab_set()
+        dialog = ds.create(self.parent, "Boss Respawn / Kill")
+        dialog.resizable(True, True)
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
+        btn_frame = ctk.CTkFrame(main, fg_color="transparent")
+        btn_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(12, 0))
 
+        ds.header(main, "Boss Respawn / Kill", font=ds.TITLE_LARGE)
         ctk.CTkLabel(
-            dialog,
-            text="Boss Respawn / Kill",
-            font=("Segoe UI", 14, "bold"),
-        ).pack(pady=(15, 5), padx=15)
+            main,
+            text="Clear defeat flags to respawn a boss, or set them to mark it defeated.",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+        ).pack(anchor="w", pady=(2, 10))
 
-        ctk.CTkLabel(
-            dialog,
-            text="Reset boss defeat flags to respawn, or set them to mark as defeated",
-            text_color=("gray50", "gray70"),
-        ).pack(pady=(0, 12), padx=15)
-
-        cat_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-        cat_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
-
-        ctk.CTkLabel(cat_frame, text="Boss Category:").pack(side=tk.LEFT, padx=(0, 8))
+        cat_frame = ds.box(main, pady=(0, 8))
+        ctk.CTkLabel(cat_frame, text="Category", font=ds.FONT).pack(
+            side=tk.LEFT, padx=(12, 8), pady=10
+        )
 
         boss_category_var = tk.StringVar(value=BOSS_CATEGORIES[0])
         cat_combo = ctk.CTkComboBox(
@@ -1367,12 +1323,14 @@ class EventFlagsTab:
             values=BOSS_CATEGORIES,
             state="readonly",
             width=300,
+            font=ds.FONT,
+            dropdown_font=ds.FONT,
         )
         patch_combo_scroll(cat_combo)
-        cat_combo.pack(side=tk.LEFT)
+        cat_combo.pack(side=tk.LEFT, pady=10)
 
-        boss_frame = ctk.CTkScrollableFrame(dialog, corner_radius=10)
-        boss_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
+        boss_frame = ctk.CTkScrollableFrame(main, fg_color=ds.BOX, corner_radius=8)
+        boss_frame.pack(fill=tk.BOTH, expand=True)
         bind_mousewheel(boss_frame)
 
         boss_vars = {}
@@ -1394,26 +1352,20 @@ class EventFlagsTab:
                 var = tk.BooleanVar(value=False)
                 boss_vars[boss_name] = (flags, var)
 
-                item_frame = ctk.CTkFrame(
-                    boss_frame,
-                    corner_radius=6,
-                    fg_color=("#ffffff", "#1f1f28"),
-                )
-                item_frame.pack(fill=tk.X, pady=3, padx=4)
-
-                status = "Defeated" if is_defeated else "Alive"
-                checkbox = ctk.CTkCheckBox(
+                item_frame = ctk.CTkFrame(boss_frame, fg_color="transparent")
+                item_frame.pack(fill=tk.X, pady=1, padx=4)
+                ctk.CTkCheckBox(
+                    item_frame, text=boss_name, variable=var, font=ds.FONT
+                ).pack(side=tk.LEFT, padx=8, pady=3)
+                ctk.CTkLabel(
                     item_frame,
-                    text=f"{boss_name} ({status})",
-                    variable=var,
-                )
-                checkbox.pack(side=tk.LEFT, padx=8, pady=6)
+                    text="Defeated" if is_defeated else "Alive",
+                    font=ds.SMALL,
+                    text_color=ds.ERROR if is_defeated else ds.FOUND,
+                ).pack(side=tk.RIGHT, padx=12)
 
         cat_combo.configure(command=populate_bosses)
         populate_bosses()
-
-        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-        btn_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
         def respawn_selected():
             """Respawn selected bosses"""
@@ -1765,25 +1717,21 @@ class EventFlagsTab:
             )
             dialog.destroy()
 
-        ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=120).pack(
-            side=tk.LEFT
-        )
-
-        ctk.CTkButton(
-            btn_frame, text="Kill Selected", command=kill_selected, width=140
+        # Kill on the left, respawn and close on the right
+        ds.button(
+            btn_frame, "Kill Selected", kill_selected, primary=False, width=110
+        ).pack(side=tk.LEFT)
+        ds.button(
+            btn_frame, "Kill All in Category", kill_all, primary=False, width=150
         ).pack(side=tk.LEFT, padx=(8, 0))
-
-        ctk.CTkButton(
-            btn_frame, text="Kill All in Category", command=kill_all, width=170
-        ).pack(side=tk.LEFT, padx=(8, 0))
-
-        ctk.CTkButton(
-            btn_frame, text="Respawn Selected", command=respawn_selected, width=150
+        ds.button(btn_frame, "Close", dialog.destroy, primary=False).pack(side=tk.RIGHT)
+        ds.button(
+            btn_frame, "Respawn All in Category", respawn_all, primary=False, width=180
         ).pack(side=tk.RIGHT, padx=(0, 8))
-
-        ctk.CTkButton(
-            btn_frame, text="Respawn All in Category", command=respawn_all, width=180
-        ).pack(side=tk.RIGHT)
+        ds.button(btn_frame, "Respawn Selected", respawn_selected, width=140).pack(
+            side=tk.RIGHT, padx=(0, 8)
+        )
+        ds.finish(dialog, self.parent, width=860, height=600)
 
     def open_npc_revival(self):
         """Open NPC revival dialog"""
@@ -1794,37 +1742,48 @@ class EventFlagsTab:
             return
 
         from er_save_manager.data.npc_data import NPC_FLAGS, get_npc_state, revive_npc
-        from er_save_manager.ui.utils import force_render_dialog
+        from er_save_manager.ui import dialog_style as ds
 
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title("NPC Revival")
-        width, height = 700, 600
-        dialog.transient(self.parent)
-        dialog.update_idletasks()
+        dialog = ds.create(self.parent, "NPC Revival")
+        dialog.resizable(True, True)
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
+        btn_frame = ctk.CTkFrame(main, fg_color="transparent")
+        btn_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(12, 0))
 
-        self.parent.update_idletasks()
-        center_window(dialog, width, height, parent=self.parent)
-
-        force_render_dialog(dialog)
-        dialog.grab_set()
-
+        ds.header(main, "NPC Revival", font=ds.TITLE_LARGE)
         ctk.CTkLabel(
-            dialog,
-            text="NPC Revival",
-            font=("Segoe UI", 14, "bold"),
-        ).pack(pady=(15, 5), padx=15)
+            main,
+            text="Revive dead NPCs. Quest progress is not restored. Click, "
+            "Ctrl+click or Shift+click rows to select them.",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+        ).pack(anchor="w", pady=(2, 10))
 
-        ctk.CTkLabel(
-            dialog,
-            text="Revive dead NPCs (does not restore quest progress)",
-            text_color=("gray50", "gray70"),
-        ).pack(pady=(0, 12), padx=15)
-
-        npc_frame = ctk.CTkScrollableFrame(dialog, corner_radius=10)
-        npc_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
-        bind_mousewheel(npc_frame)
-
-        npc_vars = {}
+        tree_frame = tk.Frame(main)
+        tree_frame.pack(fill=tk.BOTH, expand=True)
+        tree = ttk.Treeview(
+            tree_frame,
+            columns=("npc", "location", "status"),
+            show="headings",
+            selectmode="extended",
+        )
+        tree.heading("npc", text="NPC")
+        tree.heading("location", text="Location")
+        tree.heading("status", text="Status")
+        tree.column("npc", width=260, anchor="w")
+        tree.column("location", width=300, anchor="w")
+        tree.column("status", width=90, anchor="w", stretch=False)
+        for status, color in (
+            ("Dead", palette.RED_TEXT),
+            ("Hostile", palette.WARNING_TEXT),
+            ("Alive", palette.GREEN_TEXT),
+        ):
+            tree.tag_configure(status, foreground=palette.pick(color))
+        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         for npc_name, (_base_flag, location) in sorted(NPC_FLAGS.items()):
             state = get_npc_state(self.current_event_flags, npc_name)
@@ -1843,25 +1802,13 @@ class EventFlagsTab:
             else:
                 status = "Alive"
 
-            var = tk.BooleanVar(value=False)
-            npc_vars[npc_name] = var
-
-            item_frame = ctk.CTkFrame(
-                npc_frame,
-                corner_radius=6,
-                fg_color=("#ffffff", "#1f1f28"),
+            tree.insert(
+                "",
+                "end",
+                iid=npc_name,
+                values=(npc_name, location, status),
+                tags=(status,),
             )
-            item_frame.pack(fill=tk.X, pady=3, padx=4)
-
-            checkbox = ctk.CTkCheckBox(
-                item_frame,
-                text=f"{npc_name} ({status}) - {location}",
-                variable=var,
-            )
-            checkbox.pack(side=tk.LEFT, padx=8, pady=6)
-
-        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-        btn_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
         def revive_selected():
             """Revive selected NPCs"""
@@ -1875,10 +1822,9 @@ class EventFlagsTab:
                 return
 
             count = 0
-            for npc_name, var in npc_vars.items():
-                if var.get():
-                    if revive_npc(self.current_event_flags, npc_name):
-                        count += 1
+            for npc_name in tree.selection():
+                if revive_npc(self.current_event_flags, npc_name):
+                    count += 1
 
             if count == 0:
                 CTkMessageBox.showinfo(
@@ -1920,13 +1866,11 @@ class EventFlagsTab:
             self.show_toast(f"Revived {count} NPC(s)!", duration=2500)
             dialog.destroy()
 
-        ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=120).pack(
-            side=tk.LEFT
+        ds.button(btn_frame, "Close", dialog.destroy, primary=False).pack(side=tk.RIGHT)
+        ds.button(btn_frame, "Revive Selected", revive_selected, width=130).pack(
+            side=tk.RIGHT, padx=(0, 8)
         )
-
-        ctk.CTkButton(
-            btn_frame, text="Revive Selected", command=revive_selected, width=150
-        ).pack(side=tk.RIGHT)
+        ds.finish(dialog, self.parent, width=760, height=600)
 
     def open_quest_progress(self):
         if self.current_event_flags is None:
@@ -2015,117 +1959,86 @@ class EventFlagsTab:
             )
             return
 
-        from er_save_manager.ui.utils import force_render_dialog
+        from er_save_manager.ui import dialog_style as ds
 
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title("Summoning Pools")
-        width, height = 720, 640
-        dialog.transient(self.parent)
-        dialog.update_idletasks()
+        dialog = ds.create(self.parent, "Summoning Pools")
+        dialog.resizable(True, True)
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
+        btn_frame = ctk.CTkFrame(main, fg_color="transparent")
+        btn_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(12, 0))
 
-        self.parent.update_idletasks()
-        center_window(dialog, width, height, parent=self.parent)
-
-        force_render_dialog(dialog)
-        dialog.grab_set()
-
+        header = ds.header(main, "Summoning Pools", font=ds.TITLE_LARGE)
+        sel_frame = ctk.CTkFrame(header, fg_color="transparent")
+        sel_frame.pack(side=tk.RIGHT)
         ctk.CTkLabel(
-            dialog,
-            text="Summoning Pools",
-            font=("Segoe UI", 14, "bold"),
-        ).pack(pady=(15, 2), padx=15)
+            main,
+            text="Enable or disable summoning pool activation flags. Click, "
+            "Ctrl+click or Shift+click rows to select them.",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+        ).pack(anchor="w", pady=(2, 10))
 
-        ctk.CTkLabel(
-            dialog,
-            text="Enable or disable summoning pool activation flags",
-            text_color=("gray50", "gray70"),
-        ).pack(pady=(0, 10), padx=15)
+        tree_frame = tk.Frame(main)
+        tree_frame.pack(fill=tk.BOTH, expand=True)
+        tree = ttk.Treeview(
+            tree_frame,
+            columns=("flag", "status"),
+            show="tree headings",
+            selectmode="extended",
+        )
+        tree.heading("#0", text="Pool")
+        tree.heading("flag", text="Flag")
+        tree.heading("status", text="Status")
+        tree.column("#0", width=420, anchor="w")
+        tree.column("flag", width=110, anchor="w", stretch=False)
+        tree.column("status", width=90, anchor="w", stretch=False)
+        tree.tag_configure("active", foreground=palette.pick(palette.GREEN_TEXT))
+        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        sel_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-        sel_frame.pack(fill=tk.X, padx=15, pady=(0, 8))
-
-        # Checkbox vars: {flag_id: BooleanVar} - True means selected for action
-        pool_vars: dict[int, tk.BooleanVar] = {}
-
-        all_flags = [
-            (flag_id, label, "base") for flag_id, label in SUMMONING_POOL_FLAGS_BASE
-        ] + [(flag_id, label, "dlc") for flag_id, label in SUMMONING_POOL_FLAGS_DLC]
+        # Row iids are the flag ids; group rows use these keys
+        groups = {
+            "base": ("Base Game", SUMMONING_POOL_FLAGS_BASE),
+            "dlc": ("Shadow of the Erdtree (DLC)", SUMMONING_POOL_FLAGS_DLC),
+        }
+        for key, (title, pools) in groups.items():
+            tree.insert("", "end", iid=key, text=title, open=True)
+            for flag_id, label in pools:
+                is_active = self.current_event_flags.get_flag(flag_id)
+                tree.insert(
+                    key,
+                    "end",
+                    iid=str(flag_id),
+                    text=label,
+                    values=(flag_id, "Active" if is_active else "Inactive"),
+                    tags=("active",) if is_active else (),
+                )
 
         def select_group(group: str) -> None:
-            for flag_id, _label, g in all_flags:
-                if g == group:
-                    pool_vars[flag_id].set(True)
+            tree.selection_add(tree.get_children(group))
 
         def select_all() -> None:
-            for var in pool_vars.values():
-                var.set(True)
+            for key in groups:
+                tree.selection_add(tree.get_children(key))
 
         def unselect_all() -> None:
-            for var in pool_vars.values():
-                var.set(False)
+            tree.selection_set(())
 
-        ctk.CTkButton(
-            sel_frame,
-            text="Select Base",
-            command=lambda: select_group("base"),
-            width=110,
-        ).pack(side=tk.LEFT, padx=(0, 6))
-
-        ctk.CTkButton(
-            sel_frame, text="Select DLC", command=lambda: select_group("dlc"), width=110
-        ).pack(side=tk.LEFT, padx=(0, 6))
-
-        ctk.CTkButton(sel_frame, text="Select All", command=select_all, width=100).pack(
-            side=tk.LEFT, padx=(0, 6)
-        )
-
-        ctk.CTkButton(
-            sel_frame, text="Unselect All", command=unselect_all, width=110
-        ).pack(side=tk.LEFT)
-
-        pool_frame = ctk.CTkScrollableFrame(dialog, corner_radius=10)
-        pool_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
-        bind_mousewheel(pool_frame)
-
-        def _make_section_header(parent, text: str) -> None:
-            ctk.CTkLabel(
-                parent,
-                text=text,
-                font=("Segoe UI", 11, "bold"),
-                text_color=("gray30", "gray80"),
-            ).pack(anchor="w", padx=8, pady=(10, 4))
-
-        _make_section_header(pool_frame, "Base Game")
-
-        for flag_id, label in SUMMONING_POOL_FLAGS_BASE:
-            is_active = self.current_event_flags.get_flag(flag_id)
-            status = "Active" if is_active else "Inactive"
-            var = tk.BooleanVar(value=False)
-            pool_vars[flag_id] = var
-            ctk.CTkCheckBox(
-                pool_frame,
-                text=f"{flag_id}: {label}  ({status})",
-                variable=var,
-            ).pack(anchor="w", padx=8, pady=2)
-
-        _make_section_header(pool_frame, "Shadow of the Erdtree (DLC)")
-
-        for flag_id, label in SUMMONING_POOL_FLAGS_DLC:
-            is_active = self.current_event_flags.get_flag(flag_id)
-            status = "Active" if is_active else "Inactive"
-            var = tk.BooleanVar(value=False)
-            pool_vars[flag_id] = var
-            ctk.CTkCheckBox(
-                pool_frame,
-                text=f"{flag_id}: {label}  ({status})",
-                variable=var,
-            ).pack(anchor="w", pady=2, padx=8)
-
-        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-        btn_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+        for text, cmd in (
+            ("Base", lambda: select_group("base")),
+            ("DLC", lambda: select_group("dlc")),
+            ("All", select_all),
+            ("None", unselect_all),
+        ):
+            ds.button(sel_frame, text, cmd, primary=False, width=60, height=26).pack(
+                side=tk.LEFT, padx=(6, 0)
+            )
 
         def _apply(state: bool) -> None:
-            selected = [fid for fid, var in pool_vars.items() if var.get()]
+            selected = [int(iid) for iid in tree.selection() if iid not in groups]
             if not selected:
                 CTkMessageBox.showinfo(
                     "No Selection", "No pools selected.", parent=dialog
@@ -2181,20 +2094,15 @@ class EventFlagsTab:
             )
             dialog.destroy()
 
-        ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=120).pack(
-            side=tk.LEFT
+        ds.button(btn_frame, "Close", dialog.destroy, primary=False).pack(side=tk.RIGHT)
+        ds.button(
+            btn_frame,
+            "Disable Selected",
+            lambda: _apply(False),
+            primary=False,
+            width=140,
+        ).pack(side=tk.RIGHT, padx=(0, 8))
+        ds.button(btn_frame, "Enable Selected", lambda: _apply(True), width=140).pack(
+            side=tk.RIGHT, padx=(0, 8)
         )
-
-        ctk.CTkButton(
-            btn_frame,
-            text="Disable Selected",
-            command=lambda: _apply(False),
-            width=150,
-        ).pack(side=tk.RIGHT, padx=(8, 0))
-
-        ctk.CTkButton(
-            btn_frame,
-            text="Enable Selected",
-            command=lambda: _apply(True),
-            width=150,
-        ).pack(side=tk.RIGHT)
+        ds.finish(dialog, self.parent, width=720, height=640)
