@@ -1,3 +1,13 @@
+scripts for zeroing out save files ave file watcher and game hook
+
+appearance editor for non er
+
+steamdeck mode/high display scale windows
+
+bloodstains from other players netman
+
+review all dialogs for layout (oversized button text, off geometry, empty space) and rework them 
+
 other faceparamoverides and editing them
 
 wording

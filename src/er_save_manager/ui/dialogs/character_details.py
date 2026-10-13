@@ -7,15 +7,24 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import center_window
+
+_WRAP = 600
 
 
 class CharacterDetailsDialog:
     """Dialog showing character details with fix/teleport options (customtkinter version)"""
 
     @staticmethod
-    def show(parent, save_file, slot_idx, save_path=None, reload_callback=None):
+    def show(
+        parent,
+        save_file,
+        slot_idx,
+        save_path=None,
+        reload_callback=None,
+        open_backup_settings=None,
+    ):
         if not save_file:
             CTkMessageBox.showwarning("No Save", "No save file loaded!", parent=parent)
             return
@@ -23,8 +32,12 @@ class CharacterDetailsDialog:
         from er_save_manager.fixes.wiped_slot import is_wiped_slot
 
         if is_wiped_slot(save_file, slot_idx):
-            CharacterDetailsDialog._show_wiped_slot(
-                parent, save_file, slot_idx, save_path
+            from er_save_manager.ui.dialogs.wiped_slot_dialog import (
+                show_wiped_slot_dialog,
+            )
+
+            show_wiped_slot_dialog(
+                parent, save_file, slot_idx, save_path, open_backup_settings
             )
             return
 
@@ -184,183 +197,245 @@ class CharacterDetailsDialog:
         except Exception:
             pass
 
-        info = []
-        info.append("=" * 50)
-        info.append(f"  CHARACTER: {name}")
-        info.append("=" * 50)
-        info.append(f"  Level: {level}")
-        info.append(f"  Playtime: {playtime}")
-        info.append(f"  Location: {location}")
-        if is_dlc_location:
-            info.append("  WARNING: Currently in DLC area!")
-        info.append("")
+        dialog = ds.create(parent, f"Character Details - {name}")
 
-        if has_dlc_section:
-            info.append("DLC FLAGS:")
-            if has_dlc_flag:
-                info.append("  Has Shadow of the Erdtree Access: Yes")
-            if has_tarnished_pack_flag:
-                info.append("  Has Tarnished Pack Access: Yes")
-            if has_invalid_dlc and not deep_scan_available:
-                info.append("  WARNING: Invalid data in unused DLC slots")
-            info.append("")
+        main_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=16)
 
-        if deep_scan_available and deep_scan_result:
-            info.append("=" * 50)
-            info.append("TORN WRITE DETECTED:")
-            info.append("=" * 50)
-            delta = deep_scan_result.delta
-            info.append(
-                f"  Shift: {'+' if delta > 0 else ''}{delta} bytes (0x{abs(delta):x})"
-            )
-            tear_loc = getattr(deep_scan_result, "tear_location", "netman")
-            info.append(f"  Location: {tear_loc}")
-            info.append(f"  Confidence: {deep_scan_result.confidence}")
-            info.append("")
-            info.append("RECOMMENDATION:")
-            info.append("  Click 'Fix All Issues' to repair the torn write.")
-        elif issues_detected:
-            info.append("=" * 50)
-            info.append("ISSUES DETECTED:")
-            info.append("=" * 50)
-            for issue in issues_detected:
-                if ":" in issue:
-                    issue_type, issue_detail = issue.split(":", 1)
-                    info.append(f"  - {issue_detail}")
-                else:
-                    info.append(f"  - {issue}")
-            info.append("")
-            if any("dlc_location" in issue for issue in issues_detected):
-                info.append("RECOMMENDATION:")
-                info.append("  Click 'Teleport Character' to escape the DLC area")
-                info.append("  to Roundtable Hold (safest location).")
-                info.append("")
-            info.append("Click 'Fix All Issues' to correct everything")
-        else:
-            info.append("=" * 50)
-            info.append("NO ISSUES DETECTED")
-            info.append("=" * 50)
-            info.append("")
-            info.append("Character appears healthy!")
+        # Buttons first so they keep their place at the bottom
+        button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        button_frame.pack(side="bottom", fill="x", pady=(14, 0))
 
-        if structural_notes:
-            info.append("")
-            info.append("=" * 50)
-            info.append("STRUCTURAL NOTES (informational, no automatic fix):")
-            info.append("=" * 50)
-            for note in structural_notes:
-                info.append(f"  {note}")
-
-        dialog = ctk.CTkToplevel(parent)
-        dialog.title(f"Character Details - {name}")
-
-        width = 640
-        height = 550
-        dlc_checkbox_count = sum(
-            [
-                has_dlc_flag,
-                has_tarnished_pack_flag,
-                has_invalid_dlc and not deep_scan_available,
-            ]
-        )
-        if deep_scan_available:
-            height = 590
-        elif has_dlc_section:
-            height = 590 + max(0, dlc_checkbox_count - 1) * 35
-        dialog.update_idletasks()
-        parent.update_idletasks()
-        center_window(dialog, width, height, parent=parent)
-        dialog.resizable(True, True)
-
-        dialog.update_idletasks()
-        dialog.lift()
-        dialog.focus_force()
-
-        main_frame = ctk.CTkFrame(dialog, corner_radius=10)
-        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
-
-        header = ctk.CTkLabel(
-            main_frame,
-            text=f"Character Details - {name}",
-            font=("Segoe UI", 16, "bold"),
-        )
-        header.pack(anchor="w", padx=10, pady=(8, 6))
-
-        info_box = ctk.CTkTextbox(
-            main_frame,
-            font=("Consolas", 13),
-            wrap="word",
-            fg_color=("#f5f5f5", "#111827"),
-            text_color=("#1f1f28", "#e5e7eb"),
-        )
-        info_box.pack(fill="both", expand=True, padx=10, pady=(0, 10))
-        info_box.insert("1.0", "\n".join(info))
-        info_box.configure(state="disabled")
-
-        clear_dlc_flag_var = None
-        clear_tarnished_pack_flag_var = None
-        clear_invalid_dlc_var = None
-
-        if has_dlc_section:
-            dlc_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-            dlc_frame.pack(fill="x", padx=10, pady=(5, 10))
-
-            if has_dlc_flag:
-                clear_dlc_flag_var = ctk.BooleanVar(value=False)
-                ctk.CTkCheckBox(
-                    dlc_frame,
-                    text="Clear Shadow of the Erdtree flag (allows loading without DLC)",
-                    variable=clear_dlc_flag_var,
-                ).pack(anchor="w", pady=(0, 2))
-                ctk.CTkLabel(
-                    dlc_frame,
-                    text="   Use if you cannot load the save file without the DLC installed.",
-                    font=("Segoe UI", 10),
-                    text_color=("gray50", "gray50"),
-                ).pack(anchor="w", pady=(0, 8))
-
-            if has_tarnished_pack_flag:
-                clear_tarnished_pack_flag_var = ctk.BooleanVar(value=False)
-                ctk.CTkCheckBox(
-                    dlc_frame,
-                    text="Clear Tarnished pack flag (allows loading without the Tarnished pack)",
-                    variable=clear_tarnished_pack_flag_var,
-                ).pack(anchor="w", pady=(0, 2))
-                ctk.CTkLabel(
-                    dlc_frame,
-                    text="   Use if you cannot load the save file without the Tarnished pack installed.",
-                    font=("Segoe UI", 10),
-                    text_color=("gray50", "gray50"),
-                ).pack(anchor="w", pady=(0, 8))
-
-            if has_invalid_dlc and not deep_scan_available:
-                clear_invalid_dlc_var = ctk.BooleanVar(value=False)
-                ctk.CTkCheckBox(
-                    dlc_frame,
-                    text="Clear invalid DLC data (fixes corrupted DLC flags)",
-                    variable=clear_invalid_dlc_var,
-                ).pack(anchor="w", pady=(0, 2))
-                ctk.CTkLabel(
-                    dlc_frame,
-                    text="   Invalid data in unused DLC slots can prevent save from loading.",
-                    font=("Segoe UI", 10),
-                    text_color=("gray50", "gray50"),
-                ).pack(anchor="w")
-
+        # Packed bottom up: this line ends up below the CSNetMan hint
         ctk.CTkLabel(
             main_frame,
-            text="Still corrupted or crashing on load after fixing, or nothing detected?"
-            " Try 'Replace CSNetMan'.",
-            font=("Segoe UI", 11, "bold"),
-            text_color=("#b45309", "#f59e0b"),
-            wraplength=width - 60,
+            text="Infinite loading screen? Try Teleport Character.",
+            font=ds.SMALL,
+            text_color=ds.HINT,
+            wraplength=_WRAP,
             justify="left",
-        ).pack(anchor="w", padx=12, pady=(0, 6))
+        ).pack(side="bottom", anchor="w", pady=(2, 0))
+        ctk.CTkLabel(
+            main_frame,
+            text="Still corrupted or crashing on load after fixing, or nothing "
+            "detected? Try Replace CSNetMan.",
+            font=ds.SMALL,
+            text_color=ds.HINT,
+            wraplength=_WRAP,
+            justify="left",
+        ).pack(side="bottom", anchor="w", pady=(10, 0))
 
-        button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        button_frame.pack(fill="x", padx=6, pady=(0, 4))
+        has_fix = deep_scan_available or bool(issues_detected)
+        if deep_scan_available:
+            ds.header(main_frame, f"{name}: torn write detected", icon="⚠")
+        elif issues_detected:
+            count = len(issues_detected)
+            ds.header(
+                main_frame,
+                f"{name}: {count} issue{'s' if count != 1 else ''} found",
+                icon="⚠",
+            )
+        else:
+            ds.header(
+                main_frame, f"{name}: no issues found", icon="✓", icon_color=ds.FOUND
+            )
 
-        if deep_scan_available or issues_detected:
+        def grid_rows(box, rows):
+            box.grid_columnconfigure(1, weight=1)
+            for i, (label, value, color) in enumerate(rows):
+                pady = (8 if i == 0 else 2, 8 if i == len(rows) - 1 else 2)
+                ctk.CTkLabel(box, text=label, font=ds.FONT, text_color=ds.MUTED).grid(
+                    row=i, column=0, sticky="w", padx=(12, 20), pady=pady
+                )
+                ctk.CTkLabel(
+                    box,
+                    text=value,
+                    font=ds.FONT,
+                    text_color=color,
+                    wraplength=_WRAP - 140,
+                    justify="left",
+                ).grid(row=i, column=1, sticky="w", padx=(0, 12), pady=pady)
+
+        def bullets(box, items, color=None):
+            for i, text in enumerate(items):
+                ctk.CTkLabel(
+                    box,
+                    text=f"•  {text}",
+                    font=ds.FONT,
+                    text_color=color,
+                    wraplength=_WRAP - 24,
+                    justify="left",
+                    anchor="w",
+                ).pack(
+                    fill="x",
+                    padx=12,
+                    pady=(8 if i == 0 else 2, 8 if i == len(items) - 1 else 2),
+                )
+
+        def section(body, title):
+            ctk.CTkLabel(body, text=title, font=ds.BOLD).pack(anchor="w", pady=(10, 0))
+            return ds.box(body, pady=(4, 0))
+
+        clear_dlc_flag_var = ctk.BooleanVar(value=False) if has_dlc_flag else None
+        clear_tarnished_pack_flag_var = (
+            ctk.BooleanVar(value=False) if has_tarnished_pack_flag else None
+        )
+        clear_invalid_dlc_var = (
+            ctk.BooleanVar(value=False)
+            if has_invalid_dlc and not deep_scan_available
+            else None
+        )
+
+        def build(body):
+            location_text = location
+            if is_dlc_location:
+                location_text += "  (Shadow of the Erdtree area)"
+            grid_rows(
+                section(body, "Character"),
+                [
+                    ("Level", level, None),
+                    ("Playtime", playtime, None),
+                    (
+                        "Location",
+                        location_text,
+                        ds.WARNING if is_dlc_location else None,
+                    ),
+                ],
+            )
+
+            if deep_scan_available and deep_scan_result:
+                delta = deep_scan_result.delta
+                grid_rows(
+                    section(body, "Torn write"),
+                    [
+                        (
+                            "Shift",
+                            f"{'+' if delta > 0 else ''}{delta} bytes (0x{abs(delta):x})",
+                            ds.WARNING,
+                        ),
+                        (
+                            "Location",
+                            getattr(deep_scan_result, "tear_location", "netman"),
+                            None,
+                        ),
+                        ("Confidence", deep_scan_result.confidence, None),
+                    ],
+                )
+            elif issues_detected:
+                bullets(
+                    section(body, "Issues"),
+                    [issue.split(":", 1)[-1] for issue in issues_detected],
+                    ds.WARNING,
+                )
+                if any("dlc_location" in issue for issue in issues_detected):
+                    ctk.CTkLabel(
+                        body,
+                        text="Teleport Character moves the character out of the "
+                        "DLC area to Roundtable Hold (safest location).",
+                        font=ds.SMALL,
+                        text_color=ds.MUTED,
+                        wraplength=_WRAP,
+                        justify="left",
+                    ).pack(anchor="w", pady=(4, 0))
+
+            if has_dlc_section:
+                dlc_box = section(body, "DLC flags")
+                options = [
+                    (
+                        clear_dlc_flag_var,
+                        "Clear Shadow of the Erdtree flag",
+                        "Use if the save does not load without the DLC installed.",
+                    ),
+                    (
+                        clear_tarnished_pack_flag_var,
+                        "Clear Tarnished pack flag",
+                        "Use if the save does not load without the Tarnished pack "
+                        "installed.",
+                    ),
+                    (
+                        clear_invalid_dlc_var,
+                        "Clear invalid DLC data",
+                        "Invalid data in unused DLC slots can prevent the save "
+                        "from loading.",
+                    ),
+                ]
+                options = [o for o in options if o[0] is not None]
+                for i, (var, text, hint) in enumerate(options):
+                    ctk.CTkCheckBox(
+                        dlc_box, text=text, font=ds.FONT, variable=var
+                    ).pack(anchor="w", padx=12, pady=(10 if i == 0 else 6, 0))
+                    ctk.CTkLabel(
+                        dlc_box,
+                        text=hint,
+                        font=ds.SMALL,
+                        text_color=ds.MUTED,
+                        wraplength=_WRAP - 60,
+                        justify="left",
+                    ).pack(
+                        anchor="w",
+                        padx=(42, 12),
+                        pady=(0, 10 if i == len(options) - 1 else 0),
+                    )
+
+            if structural_notes:
+                # Technical detail most users never need, so it starts closed
+                notes = [note.strip() for note in structural_notes]
+                # Detail lines are indented under their check
+                count = sum(not n.startswith(" ") for n in structural_notes)
+                ds.collapsible(
+                    body,
+                    f"Structural notes ({count}, no automatic fix)",
+                    lambda box: bullets(box, notes),
+                )
+
+            if has_fix:
+                ctk.CTkLabel(
+                    body,
+                    text="Fix All Issues repairs everything above; a backup is "
+                    "made first.",
+                    font=ds.SMALL,
+                    text_color=ds.MUTED,
+                ).pack(anchor="w", pady=(10, 0))
+
+        ds.content(main_frame, build, max_height=440, width=_WRAP, pady=(4, 0))
+
+        def teleport():
+            CharacterDetailsDialog._show_teleport_dialog(
+                parent,
+                dialog,
+                save_file,
+                slot_idx,
+                save_path,
+                reload_callback,
+                clear_dlc_flag_var,
+                clear_tarnished_pack_flag_var,
+                clear_invalid_dlc_var,
+            )
+
+        def _replace_netman():
+            CharacterDetailsDialog._replace_netman(
+                dialog,
+                save_file,
+                slot_idx,
+                save_path,
+                reload_callback,
+            )
+
+        # Repair tools on the left, dialog actions on the right
+        ds.button(
+            button_frame, "Teleport Character", teleport, primary=False, width=140
+        ).pack(side="left")
+        ds.button(
+            button_frame, "Replace CSNetMan", _replace_netman, primary=False, width=140
+        ).pack(side="left", padx=(8, 0))
+        ds.button(
+            button_frame,
+            "Close",
+            dialog.destroy,
+            primary=not has_fix and not has_dlc_section,
+        ).pack(side="right")
+
+        if has_fix:
 
             def fix_all():
                 if deep_scan_available:
@@ -384,18 +459,15 @@ class CharacterDetailsDialog:
                         clear_invalid_dlc_var,
                     )
 
-            ctk.CTkButton(
-                button_frame,
-                text="Fix All Issues",
-                command=fix_all,
-                width=150,
-            ).pack(side="left", padx=5)
+            ds.button(button_frame, "Fix All Issues", fix_all, width=120).pack(
+                side="right", padx=(0, 8)
+            )
 
         elif has_dlc_section:
-            apply_btn = ctk.CTkButton(
+            apply_btn = ds.button(
                 button_frame,
-                text="Apply",
-                command=lambda: CharacterDetailsDialog._apply_dlc_flags(
+                "Apply",
+                lambda: CharacterDetailsDialog._apply_dlc_flags(
                     dialog,
                     save_file,
                     slot_idx,
@@ -405,159 +477,30 @@ class CharacterDetailsDialog:
                     clear_tarnished_pack_flag_var,
                     clear_invalid_dlc_var,
                 ),
-                width=150,
                 state="disabled",
             )
-            apply_btn.pack(side="left", padx=5)
+            apply_btn.pack(side="right", padx=(0, 8))
 
             def _on_dlc_checkbox_change(*_):
-                any_ticked = (
-                    (clear_dlc_flag_var and clear_dlc_flag_var.get())
-                    or (
-                        clear_tarnished_pack_flag_var
-                        and clear_tarnished_pack_flag_var.get()
+                any_ticked = any(
+                    var is not None and var.get()
+                    for var in (
+                        clear_dlc_flag_var,
+                        clear_tarnished_pack_flag_var,
+                        clear_invalid_dlc_var,
                     )
-                    or (clear_invalid_dlc_var and clear_invalid_dlc_var.get())
                 )
                 apply_btn.configure(state="normal" if any_ticked else "disabled")
 
-            if clear_dlc_flag_var:
-                clear_dlc_flag_var.trace_add("write", _on_dlc_checkbox_change)
-            if clear_tarnished_pack_flag_var:
-                clear_tarnished_pack_flag_var.trace_add(
-                    "write", _on_dlc_checkbox_change
-                )
-            if clear_invalid_dlc_var:
-                clear_invalid_dlc_var.trace_add("write", _on_dlc_checkbox_change)
-
-        def teleport():
-            CharacterDetailsDialog._show_teleport_dialog(
-                parent,
-                dialog,
-                save_file,
-                slot_idx,
-                save_path,
-                reload_callback,
+            for var in (
                 clear_dlc_flag_var,
                 clear_tarnished_pack_flag_var,
                 clear_invalid_dlc_var,
-            )
+            ):
+                if var is not None:
+                    var.trace_add("write", _on_dlc_checkbox_change)
 
-        ctk.CTkButton(
-            button_frame,
-            text="Teleport Character",
-            command=teleport,
-            width=150,
-        ).pack(side="left", padx=5)
-
-        def _replace_netman():
-            CharacterDetailsDialog._replace_netman(
-                dialog,
-                save_file,
-                slot_idx,
-                save_path,
-                reload_callback,
-            )
-
-        ctk.CTkButton(
-            button_frame,
-            text="Replace CSNetMan",
-            command=_replace_netman,
-            width=160,
-            fg_color=("gray60", "gray30"),
-            hover_color=("gray50", "gray20"),
-        ).pack(side="left", padx=5)
-
-        ctk.CTkButton(
-            button_frame,
-            text="Close",
-            command=dialog.destroy,
-            width=100,
-        ).pack(side="right", padx=5)
-
-        dialog.lift()
-        dialog.focus_force()
-        dialog.grab_set()
-
-    @staticmethod
-    def _show_wiped_slot(parent, save_file, slot_idx, save_path):
-        """Explain a wiped slot and where an older copy can come from."""
-        from er_save_manager.fixes.wiped_slot import (
-            find_game_backups,
-            manager_backup_count,
-        )
-
-        name = f"Character {slot_idx + 1}"
-        level = "?"
-        try:
-            profile = save_file.user_data_10_parsed.profile_summary.profiles[slot_idx]
-            name = profile.character_name or name
-            level = str(profile.level)
-        except Exception:
-            pass
-
-        lines = [
-            f"Slot {slot_idx + 1} ({name}, Lv. {level}) has no character data: "
-            "every byte of the slot is zero, but the load screen still lists "
-            "the character. The game will start a new character here.",
-            "",
-            "The character cannot be repaired from this file. Restore it from "
-            "an older copy of the save:",
-        ]
-        if save_path:
-            baks = find_game_backups(save_path, slot_idx)
-            for bak in baks:
-                if bak.character:
-                    found = f"has {bak.character[0]} (Lv. {bak.character[1]})"
-                else:
-                    found = "does not have this character"
-                lines.append(f"- Game backup {bak.path.name}: {found}")
-            if not baks:
-                lines.append("- No game backup (.bak) next to the save")
-            count = manager_backup_count(save_path)
-            lines.append(
-                f"- Save manager backups: {count} (Backup Manager)"
-                if count
-                else "- No save manager backups for this save"
-            )
-        lines += [
-            "- Windows: right-click the save folder > Properties > Previous "
-            "Versions (needs File History or System Restore)",
-            "",
-            "To restore only this character, load the older copy and use "
-            "Character Management > Transfer to copy it into this save.",
-        ]
-
-        buttons = [("Close", False)]
-        if save_path:
-            buttons.insert(0, ("Open Save Folder", True))
-        if CTkMessageBox._create_dialog(
-            parent,
-            "Character Data Wiped",
-            "\n".join(lines),
-            icon_type="warning",
-            buttons=buttons,
-        ):
-            CharacterDetailsDialog._open_save_folder(Path(save_path))
-
-    @staticmethod
-    def _open_save_folder(save_path: Path) -> None:
-        import platform
-        import subprocess
-
-        from er_save_manager.ui.utils import _get_subprocess_env
-
-        try:
-            if platform.system() == "Windows":
-                subprocess.run(["explorer", f"/select,{save_path.resolve()}"])
-            elif platform.system() == "Darwin":
-                subprocess.run(["open", "-R", str(save_path)])
-            else:
-                subprocess.run(
-                    ["xdg-open", str(save_path.parent)], env=_get_subprocess_env()
-                )
-        except Exception as e:
-            print(f"Failed to open folder: {e}")
+        ds.finish(dialog, parent, min_width=_WRAP + 40)
 
     @staticmethod
     def _format_playtime(seconds):
@@ -767,40 +710,37 @@ class CharacterDetailsDialog:
     ):
         details_dialog.destroy()
 
-        teleport_dialog = ctk.CTkToplevel(parent)
-        teleport_dialog.title("Teleport Character")
-        width, height = 400, 250
-        teleport_dialog.update_idletasks()
-        parent.update_idletasks()
-        center_window(teleport_dialog, width, height, parent=parent)
-        teleport_dialog.grab_set()
-        teleport_dialog.lift()
-        teleport_dialog.focus_force()
+        teleport_dialog = ds.create(parent, "Teleport Character")
 
-        main_frame = ctk.CTkFrame(teleport_dialog)
-        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        main_frame = ctk.CTkFrame(teleport_dialog, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=16)
 
+        ds.header(main_frame, f"Teleport Slot {slot_idx + 1} to Roundtable Hold")
         ctk.CTkLabel(
             main_frame,
-            text=f"Teleport Slot {slot_idx + 1}",
-            font=("Segoe UI", 14, "bold"),
-        ).pack(pady=(0, 20))
-
-        location_frame = ctk.CTkFrame(main_frame)
-        location_frame.pack(fill="both", expand=True, pady=10)
-
-        ctk.CTkLabel(
-            location_frame,
-            text="Roundtable Hold",
-            font=("Segoe UI", 13, "bold"),
-        ).pack(pady=10)
-
-        ctk.CTkLabel(
-            location_frame,
-            text="Character will be teleported to Roundtable Hold.\nThis is the safest location for unstuck/DLC escape.",
-            font=("Segoe UI", 11),
-            text_color=("gray40", "gray70"),
-        ).pack(pady=5)
+            text="Roundtable Hold is the safest location to get a stuck "
+            "character out, including out of the DLC area. A backup is made "
+            "first.",
+            font=ds.FONT,
+            wraplength=400,
+            justify="left",
+        ).pack(anchor="w", pady=(10, 0))
+        ticked = [
+            text
+            for var, text in (
+                (clear_dlc_flag_var, "Shadow of the Erdtree flag"),
+                (clear_tarnished_pack_flag_var, "Tarnished pack flag"),
+                (clear_invalid_dlc_var, "invalid DLC data"),
+            )
+            if var is not None and var.get()
+        ]
+        if ticked:
+            ctk.CTkLabel(
+                main_frame,
+                text="Also clears: " + ", ".join(ticked),
+                font=ds.SMALL,
+                text_color=ds.MUTED,
+            ).pack(anchor="w", pady=(6, 0))
 
         def do_teleport():
             try:
@@ -881,15 +821,18 @@ class CharacterDetailsDialog:
 
                 traceback.print_exc()
 
-        button_frame = ctk.CTkFrame(main_frame)
-        button_frame.pack(fill="x", pady=(10, 0))
-
-        ctk.CTkButton(
-            button_frame, text="Teleport", command=do_teleport, width=100
-        ).pack(side="left", padx=5)
-        ctk.CTkButton(
-            button_frame, text="Cancel", command=teleport_dialog.destroy, width=100
-        ).pack(side="right", padx=5)
+        ds.button_row(
+            main_frame,
+            [
+                {"text": "Teleport", "command": do_teleport},
+                {
+                    "text": "Cancel",
+                    "command": teleport_dialog.destroy,
+                    "primary": False,
+                },
+            ],
+        )
+        ds.finish(teleport_dialog, parent, min_width=440)
 
     @staticmethod
     def _replace_netman(

@@ -12,7 +12,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, center_window
+from er_save_manager.ui.utils import bind_mousewheel
 
 STAR_SIZE = 20
 # Tk event.state modifier bits.
@@ -310,20 +310,11 @@ class BackupManagerTab:
 
         try:
             from er_save_manager.backup.manager import BackupManager
-            from er_save_manager.ui.utils import force_render_dialog
 
             self._check_auto_backup_first_run(profile)
 
             manager = BackupManager(save_path)
-            dialog = ctk.CTkToplevel(self.parent)
-            dialog.title(f"Backup Manager - {profile.name}")
-            width, height = 900, 600
-            dialog.update_idletasks()
-            self.parent.update_idletasks()
-            center_window(dialog, width, height, parent=self.parent)
-            force_render_dialog(dialog)
-            dialog.grab_set()
-            self._build_backup_dialog_content(dialog, manager, profile, save_path)
+            self._open_backup_window(manager, profile, save_path)
         except Exception as e:
             import traceback
 
@@ -356,21 +347,9 @@ class BackupManagerTab:
 
         try:
             from er_save_manager.backup.manager import BackupManager
-            from er_save_manager.ui.utils import force_render_dialog
 
             manager = BackupManager(save_path)
-
-            dialog = ctk.CTkToplevel(self.parent)
-            dialog.title(f"Backup Manager - {profile.name}")
-            width, height = 900, 600
-            dialog.update_idletasks()
-            self.parent.update_idletasks()
-            center_window(dialog, width, height, parent=self.parent)
-
-            force_render_dialog(dialog)
-            dialog.grab_set()
-
-            self._build_backup_dialog_content(dialog, manager, profile, save_path)
+            self._open_backup_window(manager, profile, save_path)
 
         except Exception as e:
             import traceback
@@ -380,57 +359,57 @@ class BackupManagerTab:
                 "Error", f"Failed to open backup manager:\n{e}", parent=self.parent
             )
 
+    def _open_backup_window(self, manager, profile, save_path: Path):
+        from er_save_manager.ui import dialog_style as ds
+
+        dialog = ds.create(self.parent, f"Backup Manager - {profile.name}")
+        dialog.resizable(True, True)
+        self._build_backup_dialog_content(dialog, manager, profile, save_path)
+        ds.finish(dialog, self.parent, width=900, height=600)
+
     def _build_backup_dialog_content(self, dialog, manager, profile, save_path: Path):
-        from er_save_manager.ui.utils import force_render_dialog
+        from er_save_manager.ui import dialog_style as ds
+        from er_save_manager.ui.utils import patch_combo_scroll
 
-        ctk.CTkLabel(
-            dialog,
-            text=f"Backup Manager - {profile.name}",
-            font=("Segoe UI", 14, "bold"),
-        ).pack(pady=10)
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
 
-        ctk.CTkLabel(
-            dialog,
-            text=str(save_path),
-            font=("Consolas", 9),
-            text_color=("gray40", "gray60"),
-        ).pack(pady=(0, 6))
+        button_frame = ctk.CTkFrame(main, fg_color="transparent")
+        button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(12, 0))
 
-        list_frame = ctk.CTkFrame(dialog)
-        list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        ctk.CTkLabel(
-            list_frame,
-            text="Backups",
-            font=("Segoe UI", 12, "bold"),
-            text_color=("gray70", "gray50"),
-        ).pack(anchor=tk.W, padx=10, pady=(0, 2))
-
-        ctk.CTkLabel(
-            list_frame,
-            text="Click the star to lock a backup. Locked backups are never removed by the backup limit.\n"
-            "Ctrl+click or Shift+click selects several backups to delete at once.",
-            font=("Segoe UI", 10),
-            text_color=("gray40", "gray60"),
-        ).pack(anchor=tk.W, padx=10, pady=(0, 5))
-
-        sort_var = tk.StringVar(value="Newest")
-        sort_frame = ctk.CTkFrame(list_frame, fg_color="transparent")
-        sort_frame.pack(fill=tk.X, padx=10, pady=(0, 6))
-
-        ctk.CTkLabel(sort_frame, text="Sort by:", font=("Segoe UI", 10, "bold")).pack(
-            side=tk.LEFT, padx=(0, 6)
+        header = ds.header(
+            main, f"Backup Manager - {profile.name}", font=ds.TITLE_LARGE
         )
+        sort_var = tk.StringVar(value="Newest")
         sort_combo = ctk.CTkComboBox(
-            sort_frame,
+            header,
             values=["Newest", "Oldest", "Operation", "Size", "Locked first"],
             variable=sort_var,
             state="readonly",
             width=140,
+            font=ds.FONT,
+            dropdown_font=ds.FONT,
         )
-        sort_combo.pack(side=tk.LEFT)
+        sort_combo.pack(side=tk.RIGHT)
+        patch_combo_scroll(sort_combo)
+        ctk.CTkLabel(header, text="Sort by", font=ds.FONT).pack(
+            side=tk.RIGHT, padx=(0, 8)
+        )
 
-        scrollable_frame = ctk.CTkScrollableFrame(list_frame)
+        ctk.CTkLabel(
+            main, text=str(save_path), font=ds.SMALL, text_color=ds.MUTED
+        ).pack(anchor=tk.W, pady=(2, 0))
+        ctk.CTkLabel(
+            main,
+            text="Click the star to lock a backup; the backup limit never removes "
+            "locked backups. Ctrl+click or Shift+click selects several to delete.",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+            wraplength=840,
+            justify=tk.LEFT,
+        ).pack(anchor=tk.W, pady=(2, 8))
+
+        scrollable_frame = ctk.CTkScrollableFrame(main, fg_color=ds.BOX)
         scrollable_frame.pack(fill=tk.BOTH, expand=True)
         bind_mousewheel(scrollable_frame)
 
@@ -497,7 +476,7 @@ class BackupManagerTab:
                 ctk.CTkLabel(
                     content_frame,
                     text=backup.filename,
-                    font=("Segoe UI", 10, "bold"),
+                    font=ds.BOLD,
                     justify=tk.LEFT,
                 ).pack(anchor=tk.W)
 
@@ -505,7 +484,7 @@ class BackupManagerTab:
                 ctk.CTkLabel(
                     content_frame,
                     text=info_text,
-                    font=("Segoe UI", 11),
+                    font=ds.SMALL,
                     text_color=("gray40", "gray70"),
                     justify=tk.LEFT,
                 ).pack(anchor=tk.W, pady=(3, 0))
@@ -575,9 +554,6 @@ class BackupManagerTab:
 
             self.update_backup_stats()
 
-        button_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-        button_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-
         def ask_backup_label():
             """
             Modal prompt for a manual backup label.
@@ -586,48 +562,35 @@ class BackupManagerTab:
             """
             result = [None]
 
-            pd = ctk.CTkToplevel(dialog)
-            pd.title("Name Backup")
-            center_window(pd, 440, 190, parent=dialog)
-            pd.transient(dialog)
-            force_render_dialog(pd)
-            pd.grab_set()
-
-            frame = ctk.CTkFrame(pd)
-            frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-
-            ctk.CTkLabel(
-                frame,
-                text="Reason or name for this backup:",
-                font=("Segoe UI", 12, "bold"),
-            ).pack(anchor=tk.W, pady=(0, 8))
-
-            entry = ctk.CTkEntry(
-                frame, placeholder_text="e.g. before convergence update"
-            )
-            entry.pack(fill=tk.X)
-            entry.focus_set()
+            pd = ds.create(dialog, "Name Backup")
+            frame = ctk.CTkFrame(pd, fg_color="transparent")
+            frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
 
             def confirm(event=None):
                 result[0] = entry.get().strip()
                 pd.destroy()
 
+            ds.button_row(
+                frame,
+                [
+                    {"text": "Create", "command": confirm},
+                    {"text": "Cancel", "command": pd.destroy, "primary": False},
+                ],
+            )
+            ds.header(frame, "Reason or name for this backup")
+            entry = ctk.CTkEntry(
+                frame,
+                placeholder_text="e.g. before convergence update",
+                font=ds.FONT,
+                height=32,
+                width=380,
+            )
+            entry.pack(fill=tk.X, pady=(10, 0))
+
             entry.bind("<Return>", confirm)
             pd.bind("<Escape>", lambda _e: pd.destroy())
-
-            row = ctk.CTkFrame(frame, fg_color="transparent")
-            row.pack(fill=tk.X, pady=(16, 0))
-            ctk.CTkButton(row, text="Create", command=confirm, width=100).pack(
-                side=tk.RIGHT, padx=(6, 0)
-            )
-            ctk.CTkButton(
-                row,
-                text="Cancel",
-                command=pd.destroy,
-                width=100,
-                fg_color=("gray70", "gray40"),
-                hover_color=("gray60", "gray30"),
-            ).pack(side=tk.RIGHT)
+            ds.finish(pd, dialog)
+            entry.focus_set()
 
             dialog.wait_window(pd)
             dialog.grab_set()
@@ -754,48 +717,52 @@ class BackupManagerTab:
                 )
                 return
 
-            dd = ctk.CTkToplevel(dialog)
-            dd.title("Backup Details")
-            center_window(dd, 600, 450, parent=dialog)
-            dd.transient(dialog)
-            force_render_dialog(dd)
-            dd.grab_set()
+            dd = ds.create(dialog, "Backup Details")
+            main_frame = ctk.CTkFrame(dd, fg_color="transparent")
+            main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
 
-            main_frame = ctk.CTkFrame(dd)
-            main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+            ds.button_row(main_frame, [{"text": "Close", "command": dd.destroy}])
+            ds.header(main_frame, info.filename)
 
-            ctk.CTkLabel(
-                main_frame,
-                text="Backup Information",
-                font=("Segoe UI", 16, "bold"),
-            ).pack(pady=(0, 15))
-
-            details_text = ctk.CTkTextbox(
-                main_frame, width=540, height=280, font=("Segoe UI", 11)
-            )
-            details_text.pack(pady=(0, 15))
-
-            lines = [
-                f"Filename: {info.filename}",
-                f"Timestamp: {info.timestamp}",
-                f"Operation: {info.operation}",
-                f"Description: {info.description}",
-                f"Size: {info.file_size / (1024 * 1024):.2f} MB",
-                f"\nBackup Location:\n{manager.backup_folder}",
+            rows = [
+                ("Created", info.timestamp[:19].replace("T", " ")),
+                ("Operation", info.operation or "manual"),
+                ("Description", info.description or ""),
+                ("Size", f"{info.file_size / (1024 * 1024):.2f} MB"),
+                ("Folder", str(manager.backup_folder)),
             ]
+            box = ds.box(main_frame, pady=(12, 0))
+            box.grid_columnconfigure(1, weight=1)
+            for i, (label, value) in enumerate(rows):
+                pady = (8 if i == 0 else 2, 8 if i == len(rows) - 1 else 2)
+                ctk.CTkLabel(box, text=label, font=ds.FONT, text_color=ds.MUTED).grid(
+                    row=i, column=0, sticky="nw", padx=(12, 20), pady=pady
+                )
+                ctk.CTkLabel(
+                    box, text=value, font=ds.FONT, wraplength=420, justify=tk.LEFT
+                ).grid(row=i, column=1, sticky="w", padx=(0, 12), pady=pady)
+
             if info.character_summary:
-                lines.append("\nCharacters:")
-                for char in info.character_summary:
-                    lines.append(
-                        f"  Slot {char['slot']}: {char['name']} (Lv.{char['level']})"
-                    )
+                ctk.CTkLabel(main_frame, text="Characters", font=ds.BOLD).pack(
+                    anchor=tk.W, pady=(10, 0)
+                )
+                chars = ds.box(main_frame, pady=(4, 0))
+                summary = info.character_summary
+                for i, char in enumerate(summary):
+                    pady = (8 if i == 0 else 1, 8 if i == len(summary) - 1 else 1)
+                    ctk.CTkLabel(
+                        chars,
+                        text=f"Slot {char['slot']}",
+                        font=ds.FONT,
+                        text_color=ds.MUTED,
+                    ).grid(row=i, column=0, sticky="w", padx=(12, 20), pady=pady)
+                    ctk.CTkLabel(
+                        chars,
+                        text=f"{char['name']} (Lv. {char['level']})",
+                        font=ds.FONT,
+                    ).grid(row=i, column=1, sticky="w", padx=(0, 12), pady=pady)
 
-            details_text.insert("1.0", "\n".join(lines))
-            details_text.configure(state="disabled")
-
-            ctk.CTkButton(
-                main_frame, text="Close", command=dd.destroy, width=120
-            ).pack()
+            ds.finish(dd, dialog, min_width=440)
 
         def open_backup_folder():
             import os
@@ -847,21 +814,26 @@ class BackupManagerTab:
                     "Error", f"Failed to open folder:\n{e}", parent=dialog
                 )
 
-        for text, cmd in [
-            ("Create Backup", create_backup),
-            ("Restore", restore_backup),
-            ("View Details", view_details),
-            ("Delete", delete_backup),
-            ("Refresh", refresh_list),
-            ("Open Folder", open_backup_folder),
+        # Actions on the selection on the left, window actions on the right
+        for text, cmd, primary in [
+            ("Create Backup", create_backup, True),
+            ("Restore", restore_backup, True),
+            ("View Details", view_details, False),
+            ("Delete", delete_backup, False),
         ]:
-            ctk.CTkButton(button_frame, text=text, command=cmd, width=120).pack(
-                side=tk.LEFT, padx=5
+            ds.button(button_frame, text, cmd, primary=primary, width=120).pack(
+                side=tk.LEFT, padx=(0, 8)
             )
-
-        ctk.CTkButton(
-            button_frame, text="Close", command=dialog.destroy, width=120
-        ).pack(side=tk.RIGHT, padx=5)
+        ds.button(button_frame, "Close", dialog.destroy, primary=False).pack(
+            side=tk.RIGHT
+        )
+        for text, cmd in [
+            ("Open Folder", open_backup_folder),
+            ("Refresh", refresh_list),
+        ]:
+            ds.button(button_frame, text, cmd, primary=False, width=110).pack(
+                side=tk.RIGHT, padx=(0, 8)
+            )
 
         sort_combo.configure(command=lambda _choice: refresh_list())
 

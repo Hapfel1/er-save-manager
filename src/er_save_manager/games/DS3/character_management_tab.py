@@ -705,46 +705,8 @@ class DS3CharacterManagementTab:
         return self._browse_target_save_manually()
 
     def _pick_target_slot(self, target_save: DS3Save, target_path: str) -> int | None:
-        from er_save_manager.ui.utils import force_render_dialog
+        from er_save_manager.ui.dialogs.slot_picker import pick_target_slot
 
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title("Select Target Slot")
-        dialog.geometry("520x220")
-        force_render_dialog(dialog)
-        dialog.grab_set()
-
-        ctk.CTkLabel(
-            dialog,
-            text="Select destination slot in target save:",
-            font=("Segoe UI", 12),
-        ).pack(padx=10, pady=(12, 6))
-        ctk.CTkLabel(
-            dialog,
-            text=str(target_path),
-            font=("Segoe UI", 10),
-            text_color=("gray40", "gray70"),
-            wraplength=480,
-        ).pack(padx=10, pady=(0, 10))
-
-        names = self._slot_names(target_save)
-        slot_var = tk.StringVar(value=names[0] if names else "")
-        ctk.CTkComboBox(
-            dialog, variable=slot_var, values=names, state="readonly", width=360
-        ).pack(pady=(0, 12))
-
-        result = {"value": None}
-
-        def confirm():
-            try:
-                result["value"] = self._slot_index(slot_var.get())
-            except Exception:
-                result["value"] = 0
-            dialog.destroy()
-
-        ctk.CTkButton(dialog, text="Transfer", command=confirm, width=140).pack(
-            pady=(0, 12)
+        return pick_target_slot(
+            self.parent, target_path, self._slot_names(target_save), self._slot_index
         )
-        dialog.bind("<Return>", lambda _e: confirm())
-        dialog.bind("<Escape>", lambda _e: dialog.destroy())
-        dialog.wait_window()
-        return result["value"]

@@ -13,7 +13,7 @@ import customtkinter as ctk
 from er_save_manager.backup.manager import BackupManager
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, center_window, pick_file
+from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
 
 class AppearanceTab:
@@ -220,74 +220,66 @@ class AppearanceTab:
             )
             return
 
-        from er_save_manager.ui.utils import force_render_dialog
+        from er_save_manager.ui import dialog_style as ds
 
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title(f"Warped Face Sliders - Preset {self.selected_slot + 1}")
-        dialog.resizable(False, False)
-        dialog.transient(self.parent)
-
-        dialog.update_idletasks()
-        self.parent.update_idletasks()
-        w, h = 420, 620
-        center_window(dialog, w, h, parent=self.parent)
-
-        force_render_dialog(dialog)
-        dialog.grab_set()
+        dialog = ds.create(
+            self.parent, f"Warped Face Sliders - Preset {self.selected_slot + 1}"
+        )
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
+        btn_row = ctk.CTkFrame(main, fg_color="transparent")
+        btn_row.pack(side=tk.BOTTOM, fill=tk.X, pady=(14, 0))
+        ds.header(
+            main,
+            f"Warped Face Sliders, Preset {self.selected_slot + 1}",
+            font=ds.TITLE_LARGE,
+        )
 
         unk = list(preset.unk0x6c)
 
         slider_vars = {}
+        value_labels = {}
         for _label, idx in self._WARPED_FACE_SLIDERS:
             slider_vars[idx] = tk.IntVar(value=unk[idx])
 
-        scroll_frame = ctk.CTkScrollableFrame(dialog, width=390, height=510)
-        scroll_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(10, 0))
+        def build(body):
+            groups: dict[str, list] = {}
+            for label, idx in self._WARPED_FACE_SLIDERS:
+                groups.setdefault(label.rsplit(" ", 1)[0], []).append((label, idx))
+            for group, sliders in groups.items():
+                ctk.CTkLabel(body, text=group, font=ds.BOLD).pack(
+                    anchor="w", pady=(10, 0)
+                )
+                box = ds.box(body, pady=(4, 0))
+                for i, (label, idx) in enumerate(sliders):
+                    pady = (8 if i == 0 else 2, 8 if i == len(sliders) - 1 else 2)
+                    ctk.CTkLabel(
+                        box, text=label, font=ds.FONT, width=110, anchor="w"
+                    ).grid(row=i, column=0, sticky="w", padx=(12, 8), pady=pady)
+                    val_label = ctk.CTkLabel(
+                        box, text=str(slider_vars[idx].get()), font=ds.FONT, width=36
+                    )
+                    value_labels[idx] = val_label
+                    ctk.CTkSlider(
+                        box,
+                        from_=0,
+                        to=255,
+                        number_of_steps=255,
+                        variable=slider_vars[idx],
+                        width=200,
+                        command=lambda v, lbl=val_label, var=slider_vars[idx]: (
+                            var.set(int(v)),
+                            lbl.configure(text=str(int(v))),
+                        ),
+                    ).grid(row=i, column=1, pady=pady)
+                    val_label.grid(row=i, column=2, padx=(4, 12), pady=pady)
 
-        current_group = None
-        for label, idx in self._WARPED_FACE_SLIDERS:
-            group = label.rsplit(" ", 1)[0]
-            if group != current_group:
-                current_group = group
-                ctk.CTkLabel(
-                    scroll_frame,
-                    text=group,
-                    font=("Segoe UI", 11, "bold"),
-                ).pack(anchor="w", padx=8, pady=(10, 2))
-
-            row = ctk.CTkFrame(scroll_frame, fg_color="transparent")
-            row.pack(fill=tk.X, padx=8, pady=2)
-
-            ctk.CTkLabel(row, text=label, width=110, anchor="w").pack(side=tk.LEFT)
-
-            val_label = ctk.CTkLabel(row, text=str(slider_vars[idx].get()), width=35)
-
-            slider = ctk.CTkSlider(
-                row,
-                from_=0,
-                to=255,
-                number_of_steps=255,
-                variable=slider_vars[idx],
-                width=180,
-                command=lambda v, lbl=val_label, var=slider_vars[idx]: (
-                    var.set(int(v)),
-                    lbl.configure(text=str(int(v))),
-                ),
-            )
-            slider.pack(side=tk.LEFT, padx=(4, 4))
-            val_label.pack(side=tk.LEFT)
-
-        btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
-        btn_row.pack(fill=tk.X, padx=10, pady=10)
+        ds.content(main, build, max_height=480, width=400, pady=(4, 0))
 
         def apply_full_warp():
-            for idx_var in slider_vars.values():
-                idx_var.set(0)
-            for widget in scroll_frame.winfo_children():
-                for _child in (
-                    widget.winfo_children() if hasattr(widget, "winfo_children") else []
-                ):
-                    pass
+            for idx, var in slider_vars.items():
+                var.set(0)
+                value_labels[idx].configure(text="0")
 
         def do_confirm():
             try:
@@ -330,25 +322,12 @@ class AppearanceTab:
 
                 traceback.print_exc()
 
-        ctk.CTkButton(
-            btn_row,
-            text="Full Warp",
-            command=apply_full_warp,
-            width=100,
-            fg_color=("gray60", "gray25"),
-        ).pack(side=tk.LEFT, padx=5)
-        ctk.CTkButton(
-            btn_row,
-            text="Confirm",
-            command=do_confirm,
-            width=100,
-        ).pack(side=tk.LEFT, padx=5)
-        ctk.CTkButton(
-            btn_row,
-            text="Cancel",
-            command=dialog.destroy,
-            width=100,
-        ).pack(side=tk.LEFT, padx=5)
+        ds.button(btn_row, "Full Warp", apply_full_warp, primary=False).pack(
+            side=tk.LEFT
+        )
+        ds.button(btn_row, "Cancel", dialog.destroy, primary=False).pack(side=tk.RIGHT)
+        ds.button(btn_row, "Confirm", do_confirm).pack(side=tk.RIGHT, padx=(0, 8))
+        ds.finish(dialog, self.parent)
 
     def open_preset_browser(self):
         """Open the preset browser dialog."""
@@ -481,36 +460,6 @@ class AppearanceTab:
                     parent=self.parent,
                 )
                 return
-
-            from er_save_manager.ui.utils import force_render_dialog
-
-            dialog = ctk.CTkToplevel(self.parent)
-            dialog.title(f"Preset {preset_idx + 1} Details")
-            width, height = 700, 600
-            dialog.resizable(True, True)
-            dialog.transient(self.parent)
-            dialog.update_idletasks()
-            self.parent.update_idletasks()
-            center_window(dialog, width, height, parent=self.parent)
-            # Force rendering on Linux before grab_set
-            force_render_dialog(dialog)
-            dialog.grab_set()
-
-            ctk.CTkLabel(
-                dialog,
-                text=f"Preset {preset_idx + 1} - Character Appearance",
-                font=("Segoe UI", 14, "bold"),
-            ).pack(pady=(15, 10), padx=15)
-
-            text_container = ctk.CTkFrame(dialog, corner_radius=8)
-            text_container.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
-
-            text = ctk.CTkTextbox(
-                text_container,
-                font=("Consolas", 11),
-                wrap="word",
-            )
-            text.pack(fill=tk.BOTH, expand=True)
 
             body_type_value = preset.get_body_type()
             body_type = "Type A" if body_type_value == 0 else "Type B"
@@ -743,21 +692,69 @@ class AppearanceTab:
                     f"Tattoo Glow Color: {get_rgb(preset, 'tattoo_glow_color')}"
                 )
 
-            text.insert("1.0", "\n".join(info))
-            text.configure(state="disabled")
-
-            ctk.CTkButton(dialog, text="Close", command=dialog.destroy, width=15).pack(
-                pady=10
-            )
-
-            dialog.lift()
-            dialog.focus_set()
+            self._show_preset_details(preset_idx, info)
 
         except Exception as e:
             CTkMessageBox.showerror("Error", f"Failed to view preset:\n{str(e)}")
             import traceback
 
             traceback.print_exc()
+
+    def _show_preset_details(self, preset_idx, info: list[str]) -> None:
+        """Show the "Key: value" lines of info as boxed sections in two columns.
+
+        A section starts with its title line followed by a line of "=".
+        """
+        from er_save_manager.ui import dialog_style as ds
+
+        sections: list[tuple[str, list[tuple[str, str]]]] = []
+        for i, line in enumerate(info):
+            if line.startswith("="):
+                continue
+            if i + 1 < len(info) and info[i + 1].startswith("="):
+                sections.append((line.title(), []))
+            elif line and sections:
+                key, _, value = line.partition(": ")
+                sections[-1][1].append((key, value))
+
+        dialog = ds.create(self.parent, f"Preset {preset_idx + 1} Details")
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
+        ds.button_row(main, [{"text": "Close", "command": dialog.destroy}])
+        ds.header(
+            main, f"Preset {preset_idx + 1}: Character Appearance", font=ds.TITLE_LARGE
+        )
+
+        def build(body):
+            body.grid_columnconfigure((0, 1), weight=1, uniform="col")
+            # Fill the shorter column first so both end at about the same height
+            heights = [0, 0]
+            for title, rows in sections:
+                col = 0 if heights[0] <= heights[1] else 1
+                heights[col] += len(rows) + 2
+                cell = ctk.CTkFrame(body, fg_color="transparent")
+                cell.grid(
+                    row=len(cell.master.grid_slaves(column=col)),
+                    column=col,
+                    sticky="new",
+                    padx=(0, 10) if col == 0 else (10, 0),
+                )
+                ctk.CTkLabel(cell, text=title, font=ds.BOLD).pack(
+                    anchor="w", pady=(10, 0)
+                )
+                box = ds.box(cell, pady=(4, 0))
+                box.grid_columnconfigure(1, weight=1)
+                for r, (key, value) in enumerate(rows):
+                    pady = (6 if r == 0 else 1, 6 if r == len(rows) - 1 else 1)
+                    ctk.CTkLabel(
+                        box, text=key, font=ds.SMALL, text_color=ds.MUTED
+                    ).grid(row=r, column=0, sticky="w", padx=(12, 12), pady=pady)
+                    ctk.CTkLabel(box, text=value, font=ds.SMALL).grid(
+                        row=r, column=1, sticky="w", padx=(0, 12), pady=pady
+                    )
+
+        ds.content(main, build, max_height=560, width=700, pady=(4, 0))
+        ds.finish(dialog, self.parent)
 
     def _build_preset_export_dialog(
         self, presets_data, title, subtitle, action_label, on_export
@@ -790,35 +787,13 @@ class AppearanceTab:
             )
             return
 
-        from er_save_manager.ui.utils import force_render_dialog
+        from er_save_manager.ui import dialog_style as ds
 
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title(title)
-        width, height = 450, 550
-        dialog.resizable(True, True)
-        dialog.transient(self.parent)
+        dialog = ds.create(self.parent, title)
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
 
-        dialog.update_idletasks()
-        center_window(dialog, width, height, parent=self.parent)
-
-        force_render_dialog(dialog)
-        dialog.grab_set()
-
-        ctk.CTkLabel(
-            dialog,
-            text=title,
-            font=("Segoe UI", 14, "bold"),
-        ).pack(pady=(15, 5))
-
-        ctk.CTkLabel(
-            dialog,
-            text=subtitle,
-            font=("Segoe UI", 10),
-            text_color=("gray40", "gray70"),
-        ).pack(pady=(0, 10))
-
-        controls_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-        controls_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
+        checkbox_data = []
 
         def select_all():
             for var, _idx, label in checkbox_data:
@@ -828,38 +803,6 @@ class AppearanceTab:
         def select_none():
             for var, _idx, _label in checkbox_data:
                 var.set(False)
-
-        ctk.CTkButton(
-            controls_frame, text="Select All", command=select_all, width=100
-        ).pack(side=tk.LEFT, padx=5)
-
-        ctk.CTkButton(
-            controls_frame, text="Deselect All", command=select_none, width=100
-        ).pack(side=tk.LEFT, padx=5)
-
-        list_frame = ctk.CTkScrollableFrame(dialog, corner_radius=8)
-        list_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
-        bind_mousewheel(list_frame)
-
-        checkbox_data = []
-        for idx, label in available_presets:
-            var = tk.BooleanVar(value=False)
-
-            if "Empty" not in label and "Error" not in label:
-                var.set(True)
-
-            cb = ctk.CTkCheckBox(
-                list_frame,
-                text=label,
-                variable=var,
-                font=("Consolas", 11),
-            )
-            cb.pack(anchor=tk.W, padx=10, pady=4)
-
-            if "Empty" in label or "Error" in label:
-                cb.configure(state="disabled")
-
-            checkbox_data.append((var, idx, label))
 
         def do_export():
             selected_indices = [idx for var, idx, label in checkbox_data if var.get()]
@@ -874,16 +817,47 @@ class AppearanceTab:
 
             on_export(selected_indices, dialog)
 
-        button_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-        button_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+        ds.button_row(
+            main,
+            [
+                {"text": action_label, "command": do_export, "width": 140},
+                {"text": "Cancel", "command": dialog.destroy, "primary": False},
+            ],
+        )
+        ds.header(main, title, font=ds.TITLE_LARGE)
+        ctk.CTkLabel(main, text=subtitle, font=ds.SMALL, text_color=ds.MUTED).pack(
+            anchor=tk.W, pady=(2, 10)
+        )
 
-        ctk.CTkButton(
-            button_frame, text=action_label, command=do_export, width=140
-        ).pack(side=tk.LEFT, padx=5)
+        controls = ctk.CTkFrame(main, fg_color="transparent")
+        controls.pack(fill=tk.X)
+        ctk.CTkLabel(controls, text="Presets", font=ds.BOLD).pack(side=tk.LEFT)
+        ds.button(
+            controls, "None", select_none, primary=False, width=70, height=26
+        ).pack(side=tk.RIGHT)
+        ds.button(controls, "All", select_all, primary=False, width=70, height=26).pack(
+            side=tk.RIGHT, padx=(0, 6)
+        )
 
-        ctk.CTkButton(
-            button_frame, text="Cancel", command=dialog.destroy, width=100
-        ).pack(side=tk.LEFT, padx=5)
+        box = ds.box(main, pady=(6, 0))
+        rows = (len(available_presets) + 1) // 2
+        for n, (idx, label) in enumerate(available_presets):
+            usable = "Empty" not in label and "Error" not in label
+            var = tk.BooleanVar(value=usable)
+            cb = ctk.CTkCheckBox(box, text=label, variable=var, font=ds.FONT)
+            row, col = n % rows, n // rows
+            cb.grid(
+                row=row,
+                column=col,
+                sticky="w",
+                padx=(12, 24),
+                pady=(8 if row == 0 else 3, 8 if row == rows - 1 else 3),
+            )
+            if not usable:
+                cb.configure(state="disabled")
+            checkbox_data.append((var, idx, label))
+
+        ds.finish(dialog, self.parent, min_width=420)
 
     def _preset_export_payload(self, presets_data, selected_indices):
         """Build the {"presets": [...]} payload dict for the given preset indices."""
@@ -896,92 +870,23 @@ class AppearanceTab:
 
     def _show_share_code(self, code, description):
         """Show a dialog with a generated share code and a copy button."""
-        from er_save_manager.ui.utils import force_render_dialog
+        from er_save_manager.ui import dialog_style as ds
 
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title("Share Code")
-        dialog.resizable(False, False)
-        dialog.transient(self.parent)
-
-        dialog.update_idletasks()
-        width, height = 420, 190
-        center_window(dialog, width, height, parent=self.parent)
-
-        force_render_dialog(dialog)
-        dialog.grab_set()
-
-        ctk.CTkLabel(
-            dialog, text=f"Shared {description}", font=("Segoe UI", 13, "bold")
-        ).pack(pady=(15, 5))
-        ctk.CTkLabel(
-            dialog,
-            text="Send this code to share it:",
-            font=("Segoe UI", 10),
-            text_color=("gray40", "gray70"),
-        ).pack(pady=(0, 10))
-
-        code_entry = ctk.CTkEntry(
-            dialog, width=300, justify="center", font=("Consolas", 12)
-        )
-        code_entry.pack(pady=(0, 15))
-        code_entry.insert(0, code)
-        code_entry.configure(state="readonly")
-
-        def copy_code():
-            dialog.clipboard_clear()
-            dialog.clipboard_append(code)
-            self.show_toast("Code copied to clipboard!", duration=2000)
-
-        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-        btn_frame.pack()
-        ctk.CTkButton(btn_frame, text="Copy Code", command=copy_code, width=120).pack(
-            side=tk.LEFT, padx=5
-        )
-        ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=100).pack(
-            side=tk.LEFT, padx=5
+        ds.show_code(
+            self.parent,
+            "Share Code",
+            f"Shared {description}",
+            code,
+            lambda: self.show_toast("Code copied to clipboard!", duration=2000),
+            font=ds.TITLE_LARGE,
         )
 
     def _ask_code(self, title, text):
-        """Centered modal single-line input dialog, returns the entered string or None."""
-        from er_save_manager.ui.utils import force_render_dialog
+        """Single-line input dialog for a share code; None when cancelled."""
+        from er_save_manager.ui import dialog_style as ds
 
-        result = [None]
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title(title)
-        dialog.resizable(False, False)
-        dialog.transient(self.parent)
-
-        dialog.update_idletasks()
-        width, height = 380, 150
-        center_window(dialog, width, height, parent=self.parent)
-
-        force_render_dialog(dialog)
-        dialog.grab_set()
-
-        ctk.CTkLabel(dialog, text=text, font=("Segoe UI", 11)).pack(pady=(15, 6))
-        var = tk.StringVar()
-        entry = ctk.CTkEntry(dialog, textvariable=var, width=280, justify="center")
-        entry.pack(pady=(0, 12))
-        entry.focus_set()
-
-        def confirm(_event=None):
-            result[0] = var.get().strip()
-            dialog.destroy()
-
-        entry.bind("<Return>", confirm)
-        entry.bind("<Escape>", lambda _e: dialog.destroy())
-
-        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-        btn_frame.pack()
-        ctk.CTkButton(btn_frame, text="OK", command=confirm, width=100).pack(
-            side=tk.LEFT, padx=5
-        )
-        ctk.CTkButton(btn_frame, text="Cancel", command=dialog.destroy, width=100).pack(
-            side=tk.LEFT, padx=5
-        )
-
-        self.parent.wait_window(dialog)
-        return result[0]
+        code = ds.ask_string(self.parent, title, text, font=ds.TITLE_LARGE)
+        return code.strip() if code is not None else None
 
     def export_presets(self):
         """Export selected presets to JSON"""
@@ -1193,58 +1098,46 @@ class AppearanceTab:
                 )
                 return
 
-            from er_save_manager.ui.utils import force_render_dialog
+            from er_save_manager.ui import dialog_style as ds
+            from er_save_manager.ui.utils import patch_combo_scroll
 
-            dialog = ctk.CTkToplevel(self.parent)
-            dialog.title("Import Presets")
-            width, height = 550, 250
-            dialog.resizable(False, False)
-            dialog.transient(self.parent)
+            dialog = ds.create(self.parent, "Import Presets")
+            main = ctk.CTkFrame(dialog, fg_color="transparent")
+            main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
+            button_frame = ctk.CTkFrame(main, fg_color="transparent")
+            button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(16, 0))
 
-            dialog.update_idletasks()
-            self.parent.update_idletasks()
-            center_window(dialog, width, height, parent=self.parent)
-
-            force_render_dialog(dialog)
-            dialog.grab_set()
-
-            frame = ctk.CTkFrame(dialog)
-            frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-
+            ds.header(main, "Import Presets", font=ds.TITLE_LARGE)
             ctk.CTkLabel(
-                frame,
-                text=f"Import from: {source_label}",
-                font=("Segoe UI", 11, "bold"),
-            ).grid(row=0, column=0, columnspan=3, pady=(0, 15))
+                main, text=f"From {source_label}", font=ds.SMALL, text_color=ds.MUTED
+            ).pack(anchor=tk.W, pady=(2, 10))
 
-            ctk.CTkLabel(frame, text="Select Preset from JSON:").grid(
-                row=1, column=0, sticky=tk.W, pady=5
-            )
-
+            frame = ds.box(main, pady=(0, 0))
             preset_names = [f"Preset {i + 1}" for i in range(len(presets))]
-            preset_combo = ctk.CTkComboBox(
-                frame,
-                values=preset_names,
-                state="readonly",
-                width=200,
-                font=("Segoe UI", 11),
-            )
-            preset_combo.grid(row=1, column=1, padx=10, pady=5)
-            preset_combo.set(preset_names[0])
-
-            ctk.CTkLabel(frame, text="Import to Slot:").grid(
-                row=2, column=0, sticky=tk.W, pady=5
-            )
-
-            slot_combo = ctk.CTkComboBox(
-                frame,
-                values=[str(i) for i in range(1, 16)],
-                state="readonly",
-                width=200,
-                font=("Segoe UI", 11),
-            )
-            slot_combo.grid(row=2, column=1, padx=10, pady=5)
-            slot_combo.set("1")
+            combos = []
+            for row, (label, values) in enumerate(
+                (
+                    ("Preset to import", preset_names),
+                    ("Into slot", [str(i) for i in range(1, 16)]),
+                )
+            ):
+                pady = (10, 3) if row == 0 else (3, 10)
+                ctk.CTkLabel(frame, text=label, font=ds.FONT).grid(
+                    row=row, column=0, sticky=tk.W, padx=(12, 20), pady=pady
+                )
+                combo = ctk.CTkComboBox(
+                    frame,
+                    values=values,
+                    state="readonly",
+                    width=180,
+                    font=ds.FONT,
+                    dropdown_font=ds.FONT,
+                )
+                combo.grid(row=row, column=1, padx=(0, 12), pady=pady)
+                combo.set(values[0])
+                patch_combo_scroll(combo)
+                combos.append(combo)
+            preset_combo, slot_combo = combos
 
             def do_import():
                 try:
@@ -1294,9 +1187,6 @@ class AppearanceTab:
 
                     traceback.print_exc()
 
-            button_frame = ctk.CTkFrame(frame)
-            button_frame.grid(row=3, column=0, columnspan=3, pady=20)
-
             def do_import_all():
                 try:
                     from er_save_manager.backup.manager import BackupManager
@@ -1334,18 +1224,20 @@ class AppearanceTab:
 
                     traceback.print_exc()
 
-            ctk.CTkButton(
-                button_frame, text="Import", command=do_import, width=15
-            ).pack(side=tk.LEFT, padx=5)
-            ctk.CTkButton(
+            ds.button(
                 button_frame,
-                text="Import All to Slots",
-                command=do_import_all,
-                width=15,
-            ).pack(side=tk.LEFT, padx=5)
-            ctk.CTkButton(
-                button_frame, text="Cancel", command=dialog.destroy, width=15
-            ).pack(side=tk.LEFT, padx=5)
+                "Import All to Slots",
+                do_import_all,
+                primary=False,
+                width=150,
+            ).pack(side=tk.LEFT)
+            ds.button(button_frame, "Cancel", dialog.destroy, primary=False).pack(
+                side=tk.RIGHT
+            )
+            ds.button(button_frame, "Import", do_import).pack(
+                side=tk.RIGHT, padx=(0, 8)
+            )
+            ds.finish(dialog, self.parent, min_width=420)
 
         except Exception as e:
             CTkMessageBox.showerror(
@@ -1386,34 +1278,27 @@ class AppearanceTab:
         # Capture the slot before the dialog can change selected_slot
         source_slot = self.selected_slot
 
-        from er_save_manager.ui.utils import force_render_dialog
+        from er_save_manager.ui import dialog_style as ds
+        from er_save_manager.ui.utils import patch_combo_scroll
 
-        dialog = tk.Toplevel(self.parent)
-        dialog.title("Copy Preset to Another Save")
-        center_window(dialog, 600, 250, parent=self.parent)
-        dialog.transient(self.parent)
-        dialog.update_idletasks()
-        self.parent.update_idletasks()
-        force_render_dialog(dialog)
-        dialog.grab_set()
-
-        frame = ctk.CTkFrame(dialog)
-        frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-
-        ctk.CTkLabel(
-            frame,
-            text=f"Copy preset from Slot {source_slot + 1}",
-            font=("TkDefaultFont", 11, "bold"),
-        ).grid(row=0, column=0, columnspan=3, pady=(0, 15))
-
-        ctk.CTkLabel(frame, text="Destination Save File:").grid(
-            row=1, column=0, sticky="w", pady=5
+        dialog = ds.create(self.parent, "Copy Preset to Another Save")
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
+        button_frame = ctk.CTkFrame(main, fg_color="transparent")
+        button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(16, 0))
+        ds.header(
+            main, f"Copy Preset {source_slot + 1} to Another Save", font=ds.TITLE_LARGE
         )
 
+        frame = ds.box(main, pady=(12, 0))
+        frame.grid_columnconfigure(1, weight=1)
+        ctk.CTkLabel(frame, text="Save file", font=ds.FONT).grid(
+            row=0, column=0, sticky="w", padx=(12, 16), pady=(10, 3)
+        )
         dest_path_var = tk.StringVar(value="")
-        ctk.CTkEntry(frame, textvariable=dest_path_var, width=45).grid(
-            row=1, column=1, padx=5
-        )
+        ctk.CTkEntry(
+            frame, textvariable=dest_path_var, width=320, height=32, font=ds.FONT
+        ).grid(row=0, column=1, sticky="ew", pady=(10, 3))
 
         def browse_dest():
             filename = pick_file(
@@ -1423,18 +1308,25 @@ class AppearanceTab:
             if filename:
                 dest_path_var.set(filename)
 
-        ctk.CTkButton(frame, text="Browse", command=browse_dest).grid(
-            row=1, column=2, padx=5
+        ds.button(frame, "Browse", browse_dest, primary=False, width=90).grid(
+            row=0, column=2, padx=(8, 12), pady=(10, 3)
         )
 
-        ctk.CTkLabel(frame, text="Destination Slot (1-15):").grid(
-            row=2, column=0, sticky="w", pady=5
+        ctk.CTkLabel(frame, text="Into slot", font=ds.FONT).grid(
+            row=1, column=0, sticky="w", padx=(12, 16), pady=(3, 10)
         )
-
         dest_slot_var = tk.StringVar(value="1")
-        ctk.CTkEntry(frame, textvariable=dest_slot_var, width=10).grid(
-            row=2, column=1, sticky="w", padx=5
+        slot_combo = ctk.CTkComboBox(
+            frame,
+            variable=dest_slot_var,
+            values=[str(i) for i in range(1, 16)],
+            state="readonly",
+            width=90,
+            font=ds.FONT,
+            dropdown_font=ds.FONT,
         )
+        slot_combo.grid(row=1, column=1, sticky="w", pady=(3, 10))
+        patch_combo_scroll(slot_combo)
 
         def do_copy():
             dest_path = dest_path_var.get()
@@ -1493,15 +1385,11 @@ class AppearanceTab:
 
                 traceback.print_exc()
 
-        button_frame = ctk.CTkFrame(frame)
-        button_frame.grid(row=3, column=0, columnspan=3, pady=20)
-
-        ctk.CTkButton(button_frame, text="Copy", command=do_copy, width=15).pack(
-            side=tk.LEFT, padx=5
+        ds.button(button_frame, "Cancel", dialog.destroy, primary=False).pack(
+            side=tk.RIGHT
         )
-        ctk.CTkButton(
-            button_frame, text="Cancel", command=dialog.destroy, width=15
-        ).pack(side=tk.LEFT, padx=5)
+        ds.button(button_frame, "Copy", do_copy).pack(side=tk.RIGHT, padx=(0, 8))
+        ds.finish(dialog, self.parent)
 
     def delete_preset(self):
         """Delete selected preset"""

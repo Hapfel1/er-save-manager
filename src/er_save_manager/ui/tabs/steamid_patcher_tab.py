@@ -12,7 +12,7 @@ import customtkinter as ctk
 
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, center_window
+from er_save_manager.ui.utils import bind_mousewheel
 
 
 class SteamIDPatcherTab:
@@ -40,7 +40,6 @@ class SteamIDPatcherTab:
         self._note_var: tk.StringVar | None = None
         self._note_frame: ctk.CTkFrame | None = None
         self._patch_btn: ctk.CTkButton | None = None
-        self._ds2_instructions_frame: ctk.CTkFrame | None = None
         self._current_frame: ctk.CTkFrame | None = None
         self._patch_frame: ctk.CTkFrame | None = None
 
@@ -120,60 +119,6 @@ class SteamIDPatcherTab:
             wraplength=560,
         )
         self._note_label.pack(anchor="w", padx=12, pady=10)
-        self._ds2_instructions_frame = ctk.CTkFrame(
-            main_frame, corner_radius=10, fg_color=("gray90", "gray18")
-        )
-
-        ctk.CTkLabel(
-            self._ds2_instructions_frame,
-            text="You do not need to patch a SteamID for DS2",
-            font=("Segoe UI", 13, "bold"),
-        ).pack(anchor="w", padx=12, pady=(12, 4))
-
-        ctk.CTkLabel(
-            self._ds2_instructions_frame,
-            text=(
-                "To use a save from a different Steam "
-                "account, swap the file in place while the game is running "
-                "instead:"
-            ),
-            font=("Segoe UI", 11),
-            text_color=("gray30", "gray70"),
-            justify=tk.LEFT,
-            wraplength=560,
-        ).pack(anchor="w", padx=12, pady=(0, 8))
-
-        steps = [
-            "Start the game and let it load to the title screen.",
-            "Open your save location (button below) and replace the save "
-            "file with the one you want to use.",
-            "Press Continue in-game. If it jumps to a character select "
-            "screen and shows an error, that's expected, go back.",
-            "Press New Game.",
-            "After the first cutscene finishes, quit to the title screen.",
-            "Press Continue again.",
-            "Delete the new character you just created.",
-            "Load the character from the save you actually wanted to use.",
-        ]
-        for i, step in enumerate(steps, start=1):
-            ctk.CTkLabel(
-                self._ds2_instructions_frame,
-                text=f"{i}. {step}",
-                font=("Segoe UI", 11),
-                text_color=("gray20", "gray85"),
-                justify=tk.LEFT,
-                wraplength=560,
-                anchor="w",
-            ).pack(anchor="w", padx=12, pady=2, fill=tk.X)
-
-        ctk.CTkButton(
-            self._ds2_instructions_frame,
-            text="Open Save Location",
-            command=self._open_ds2_save_location,
-            width=180,
-        ).pack(anchor="w", padx=12, pady=(10, 12))
-        # Not packed here - _on_game_changed shows/hides it based on game.
-
         patch_frame = ctk.CTkFrame(main_frame, corner_radius=10)
         patch_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
         self._patch_frame = patch_frame
@@ -252,99 +197,12 @@ class SteamIDPatcherTab:
             width=140,
         ).pack(pady=(0, 12), padx=12, anchor="w")
 
-    def _open_ds2_save_location(self) -> None:
-        selected = self.get_save_path()
-        if selected and Path(selected).exists():
-            folder = Path(selected).parent
-        else:
-            from er_save_manager.games.game_profiles import (
-                PROFILES_BY_KEY,
-                find_save_paths,
-            )
-
-            found = find_save_paths(PROFILES_BY_KEY["dark_souls_2"])
-            if not found:
-                CTkMessageBox.showwarning(
-                    "Not Found",
-                    "Could not find a DS2 save location automatically. "
-                    "Load a save first, or navigate to it manually.",
-                    parent=self.parent,
-                )
-                return
-            folder = found[0].parent
-
-        import os
-        import platform as platform_module
-        import subprocess
-
-        path = str(folder)
-        try:
-            system = platform_module.system()
-            if system == "Windows":
-                os.startfile(folder)
-                return
-            if system == "Darwin":
-                subprocess.run(["open", path], check=False)
-                return
-            from er_save_manager.ui.utils import _get_subprocess_env
-
-            env = _get_subprocess_env()
-
-            result = subprocess.run(
-                ["xdg-open", path], env=env, stderr=subprocess.DEVNULL, timeout=5
-            )
-            if result.returncode == 0:
-                return
-
-            for fm in ("nautilus", "thunar", "dolphin", "nemo", "pcmanfm", "caja"):
-                try:
-                    subprocess.Popen([fm, path], env=env, stderr=subprocess.DEVNULL)
-                    return
-                except FileNotFoundError:
-                    continue
-
-            CTkMessageBox.showerror(
-                "Error", f"Could not open folder.\nPath: {path}", parent=self.parent
-            )
-        except Exception as e:
-            CTkMessageBox.showerror(
-                "Error", f"Failed to open folder:\n{e}", parent=self.parent
-            )
-
     def _on_game_changed(self, _value=None):
         profile = self._selected_profile()
         if profile is None:
             return
 
         def _update_ui():
-            if profile.key == "dark_souls_2":
-                if self._note_frame:
-                    self._note_frame.pack_forget()
-
-                if self._ds2_instructions_frame:
-                    if (
-                        self._current_frame is not None
-                        and self._current_frame.winfo_ismapped()
-                    ):
-                        # Still mapped, so "before" has a valid anchor - place
-                        # the instructions where Current Save File currently is.
-                        self._ds2_instructions_frame.pack(
-                            fill=tk.X, padx=15, pady=(0, 12), before=self._current_frame
-                        )
-                    else:
-                        self._ds2_instructions_frame.pack(
-                            fill=tk.X, padx=15, pady=(0, 12)
-                        )
-
-                if self._current_frame:
-                    self._current_frame.pack_forget()
-                if self._patch_frame:
-                    self._patch_frame.pack_forget()
-                return
-
-            if self._ds2_instructions_frame:
-                self._ds2_instructions_frame.pack_forget()
-
             if self._patch_frame and not self._patch_frame.winfo_ismapped():
                 self._patch_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
             if self._current_frame and not self._current_frame.winfo_ismapped():
@@ -649,6 +507,12 @@ class SteamIDPatcherTab:
 
         def _show_success(msg):
             self._refresh_steamid_display()
+            # The DS2 and DS3 editors keep the decrypted save in memory and
+            # would write the old SteamID back on their next save.
+            if self.reload_save and profile.key in ("dark_souls_2", "dark_souls_3"):
+                self.parent.after(
+                    0, lambda: self.reload_save(toast_message="Save file reloaded")
+                )
             self.parent.after(
                 0,
                 lambda: CTkMessageBox.showinfo(
@@ -678,6 +542,10 @@ class SteamIDPatcherTab:
                 from er_save_manager.games.ds3_steamid import patch_steamid_ds3
 
                 success, msg = patch_steamid_ds3(save_path, new_steamid)
+            elif profile.key == "dark_souls_2":
+                from er_save_manager.games.ds2_dsr_steamid import patch_steamid
+
+                success, msg = patch_steamid(save_path, new_steamid, profile.key)
             elif profile.key == "sekiro":
                 from er_save_manager.games.sekiro_steamid import patch_steamid_sekiro
 
@@ -723,52 +591,10 @@ class SteamIDPatcherTab:
 
     def _pick_save_path(self, paths: list[Path]) -> Path | None:
         """Show dialog to pick from multiple save files."""
-        from er_save_manager.ui.utils import force_render_dialog
+        from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 
-        selected = [None]
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title("Select Save File")
-        center_window(dialog, 500, 320, parent=self.parent)
-        dialog.resizable(False, False)
-        force_render_dialog(dialog)
-        dialog.grab_set()
-
-        ctk.CTkLabel(
-            dialog,
-            text="Multiple save files found.\nSelect the one to patch:",
-            font=("Segoe UI", 11),
-        ).pack(pady=(15, 12), padx=15)
-
-        list_frame = ctk.CTkScrollableFrame(dialog, corner_radius=8)
-        list_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
-        bind_mousewheel(list_frame)
-
-        for path in paths:
-
-            def make_select(p):
-                def _select():
-                    selected[0] = p
-                    dialog.destroy()
-
-                return _select
-
-            ctk.CTkButton(
-                list_frame,
-                text=str(path),
-                font=("Consolas", 10),
-                command=make_select(path),
-                fg_color="transparent",
-                text_color=("#2a2a2a", "#e5e5f5"),
-                hover_color=palette.PURPLE_TINT,
-                anchor="w",
-            ).pack(fill=tk.X, padx=6, pady=4)
-
-        ctk.CTkButton(dialog, text="Cancel", command=dialog.destroy, width=100).pack(
-            pady=(0, 12)
-        )
-
-        dialog.wait_window()
-        return selected[0]
+        chosen = SaveSelectorDialog.show(self.parent, paths, lambda _p: None)
+        return Path(chosen) if chosen else None
 
     def parse_steam_url(self):
         url = self.steam_url_var.get().strip()
@@ -887,7 +713,7 @@ class SteamIDPatcherTab:
                         steam_users.append((label, steamid))
 
             # --- Source 3: byte-scan fallback ---
-            if not steam_users and not (profile and profile.key == "dark_souls_2"):
+            if not steam_users:
                 save_paths = PlatformUtils.find_all_save_files(profile)
                 for save_path in save_paths:
                     steamid = detect_steamid_in_file(save_path)
@@ -927,103 +753,79 @@ class SteamIDPatcherTab:
             )
 
     def _show_account_selection_dialog(self, accounts):
-        from er_save_manager.ui.utils import force_render_dialog
+        from er_save_manager.ui import dialog_style as ds
 
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title("Select Steam Account")
-        center_window(dialog, 450, 350, parent=self.parent)
-        dialog.resizable(False, False)
-        force_render_dialog(dialog)
-        dialog.lift()
-        dialog.focus_force()
-        dialog.grab_set()
+        dialog = ds.create(self.parent, "Select Steam Account")
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
 
-        ctk.CTkLabel(
-            dialog,
-            text="Multiple Steam accounts detected.\nSelect the account to use:",
-            font=("Segoe UI", 11),
-        ).pack(pady=(15, 12), padx=15)
-
-        list_frame = ctk.CTkScrollableFrame(dialog, corner_radius=8)
-        list_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
-        bind_mousewheel(list_frame)
-
-        for account_name, steamid in accounts:
-
-            def make_select(sid, name):
-                def select_account():
-                    self.new_steamid_var.set(str(sid))
-                    dialog.destroy()
-                    self.show_toast(f"Selected: {name}", duration=2500)
-
-                return select_account
-
-            btn_frame = ctk.CTkFrame(
-                list_frame, corner_radius=8, fg_color=("#f0f0f0", "#2a2a3e")
-            )
-            btn_frame.pack(fill=tk.X, pady=4)
-
-            ctk.CTkButton(
-                btn_frame,
-                text=f"{account_name}  ({steamid})",
-                font=("Consolas", 10),
-                command=make_select(steamid, account_name),
-                fg_color="transparent",
-                text_color=("#2a2a2a", "#e5e5f5"),
-                hover_color=palette.PURPLE_TINT,
-            ).pack(fill=tk.BOTH, expand=True, padx=8, pady=6)
-
-        ctk.CTkButton(dialog, text="Cancel", command=dialog.destroy, width=100).pack(
-            pady=(0, 15), side=tk.RIGHT, padx=15
+        ds.button_row(
+            main, [{"text": "Cancel", "command": dialog.destroy, "primary": False}]
         )
+        ds.header(main, "Select Steam Account", font=ds.TITLE_LARGE)
+        ctk.CTkLabel(
+            main, text="Click the account to use.", font=ds.SMALL, text_color=ds.MUTED
+        ).pack(anchor="w", pady=(2, 8))
+
+        def make_select(sid, name):
+            def select_account(_event=None):
+                self.new_steamid_var.set(str(sid))
+                dialog.destroy()
+                self.show_toast(f"Selected: {name}", duration=2500)
+
+            return select_account
+
+        def build(body):
+            for account_name, steamid in accounts:
+                row = ctk.CTkFrame(body, fg_color=ds.BOX, corner_radius=6)
+                row.pack(fill=tk.X, pady=(0, 4))
+                name_label = ctk.CTkLabel(row, text=account_name, font=ds.BOLD)
+                name_label.pack(side=tk.LEFT, padx=(12, 16), pady=8)
+                id_label = ctk.CTkLabel(
+                    row, text=str(steamid), font=ds.FONT, text_color=ds.MUTED
+                )
+                id_label.pack(side=tk.RIGHT, padx=12, pady=8)
+                select = make_select(steamid, account_name)
+                for widget in (row, name_label, id_label):
+                    widget.bind("<Button-1>", select)
+                    widget.bind(
+                        "<Enter>",
+                        lambda _e, r=row: r.configure(fg_color=palette.PURPLE_TINT),
+                    )
+                    widget.bind(
+                        "<Leave>", lambda _e, r=row: r.configure(fg_color=ds.BOX)
+                    )
+
+        ds.content(main, build, max_height=320, width=380)
+        dialog.bind("<Escape>", lambda _e: dialog.destroy())
+        ds.finish(dialog, self.parent, min_width=400)
 
     def _show_help_dialog(self):
-        from er_save_manager.ui.utils import force_render_dialog
+        from er_save_manager.ui import dialog_style as ds
 
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title("SteamID Patcher - Help")
-        width, height = 720, 620
-        dialog.resizable(True, True)
-        dialog.update_idletasks()
-        self.parent.update_idletasks()
-        center_window(dialog, width, height, parent=self.parent)
-        force_render_dialog(dialog)
-        dialog.grab_set()
+        dialog = ds.create(self.parent, "SteamID Patcher - Help")
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
 
-        header = ctk.CTkFrame(dialog, corner_radius=10)
-        header.pack(fill=tk.X, padx=14, pady=(14, 8))
+        ds.button_row(main, [{"text": "Close", "command": dialog.destroy}])
+        ds.header(
+            main,
+            "SteamID Patcher",
+            icon="ℹ",
+            icon_color=palette.PURPLE_TEXT,
+            font=ds.TITLE_LARGE,
+        )
         ctk.CTkLabel(
-            header,
-            text="SteamID Patcher - Help",
-            font=("Segoe UI", 16, "bold"),
-        ).pack(anchor="w", pady=(8, 2), padx=10)
-        ctk.CTkLabel(
-            header,
+            main,
             text="Patch SteamIDs when moving saves between Steam accounts.",
-            font=("Segoe UI", 12),
-            text_color=("gray40", "gray70"),
-        ).pack(anchor="w", padx=10, pady=(0, 8))
+            font=ds.FONT,
+            text_color=ds.MUTED,
+        ).pack(anchor="w", pady=(2, 4))
 
-        body = ctk.CTkScrollableFrame(dialog, corner_radius=10)
-        body.pack(fill=tk.BOTH, expand=True, padx=14, pady=(0, 12))
-        bind_mousewheel(body)
+        sections = []
 
         def add_section(title: str, text: str):
-            section = ctk.CTkFrame(body, fg_color=("gray90", "gray18"), corner_radius=8)
-            section.pack(fill=tk.X, expand=True, padx=8, pady=(0, 10))
-            ctk.CTkLabel(
-                section,
-                text=title,
-                font=("Segoe UI", 12, "bold"),
-                text_color=("#111", "#e7e7ef"),
-            ).pack(anchor="w", padx=10, pady=(8, 2))
-            ctk.CTkLabel(
-                section,
-                text=text,
-                font=("Segoe UI", 12),
-                wraplength=640,
-                justify=ctk.LEFT,
-            ).pack(anchor="w", padx=10, pady=(0, 10))
+            sections.append((title, text.strip()))
 
         add_section(
             "Supported games",
@@ -1046,6 +848,15 @@ class SteamIDPatcherTab:
             "4) Load the patched save on the new account.",
         )
 
-        ctk.CTkButton(dialog, text="Close", command=dialog.destroy, width=110).pack(
-            pady=(0, 14)
-        )
+        def build(body):
+            for title, text in sections:
+                ctk.CTkLabel(body, text=title, font=ds.BOLD).pack(
+                    anchor="w", pady=(10, 0)
+                )
+                box = ds.box(body, pady=(4, 0))
+                ctk.CTkLabel(
+                    box, text=text, font=ds.FONT, wraplength=520, justify=ctk.LEFT
+                ).pack(anchor="w", padx=12, pady=10)
+
+        ds.content(main, build, max_height=480, width=560)
+        ds.finish(dialog, self.parent)

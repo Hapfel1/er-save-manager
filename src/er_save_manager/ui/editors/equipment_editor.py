@@ -20,6 +20,7 @@ from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import (
     bind_mousewheel,
     center_window,
+    patch_combo_scroll,
     pick_file,
     trace_variable,
 )
@@ -378,100 +379,82 @@ class _ItemPickerDialog(ctk.CTkToplevel):
         on_select,
     ):
         super().__init__(parent)
+        from er_save_manager.ui import dialog_style as ds
+
+        self.withdraw()
+        self.attributes("-alpha", 0)
         self.title("Select Item")
         self.resizable(False, True)
         self.transient(parent)
-        self.attributes("-alpha", 0)
 
         self._on_select = on_select
         self._items = owned_items
         self._visible: list[tuple[int, int, str, str]] = []
 
-        _center_over(self, parent, 440, 500)
+        main = ctk.CTkFrame(self, fg_color="transparent")
+        main.pack(fill=ctk.BOTH, expand=True, padx=20, pady=16)
+        btn_row = ctk.CTkFrame(main, fg_color="transparent")
+        btn_row.pack(side=ctk.BOTTOM, fill=ctk.X, pady=(12, 0))
+        ds.header(main, "Select Item", font=ds.TITLE_LARGE)
 
-        self.attributes("-alpha", 1)
-        self.grab_set()
-
-        top = ctk.CTkFrame(self, fg_color="transparent")
-        top.pack(fill=ctk.X, padx=10, pady=(10, 4))
-        ctk.CTkLabel(top, text="Search:").pack(side=ctk.LEFT, padx=(0, 6))
         self._search_var = ctk.StringVar()
         self._search_var.trace_add("write", lambda *_: self._filter())
-        ctk.CTkEntry(top, textvariable=self._search_var, width=250).pack(side=ctk.LEFT)
+        search = ctk.CTkEntry(
+            main,
+            textvariable=self._search_var,
+            placeholder_text="Search",
+            height=32,
+            font=ds.FONT,
+        )
+        search.pack(fill=ctk.X, pady=(10, 6))
 
-        filt_row = ctk.CTkFrame(self, fg_color="transparent")
-        filt_row.pack(fill=ctk.X, padx=10, pady=(0, 4))
-        ctk.CTkLabel(filt_row, text="Category:").pack(side=ctk.LEFT, padx=(0, 6))
+        filt_row = ctk.CTkFrame(main, fg_color="transparent")
+        filt_row.pack(fill=ctk.X, pady=(0, 8))
         categories = ["All"] + sorted({i[3] for i in owned_items})
         self._cat_var = ctk.StringVar(value="All")
-        ctk.CTkComboBox(
-            filt_row,
-            values=categories,
-            variable=self._cat_var,
-            width=150,
-            command=lambda _v: self._filter(),
-        ).pack(side=ctk.LEFT, padx=(0, 12))
-        ctk.CTkLabel(filt_row, text="Sort:").pack(side=ctk.LEFT, padx=(0, 6))
         self._sort_var = ctk.StringVar(value="Name (A-Z)")
-        ctk.CTkComboBox(
-            filt_row,
-            values=["Name (A-Z)", "Name (Z-A)", "Category"],
-            variable=self._sort_var,
-            width=140,
-            command=lambda _v: self._filter(),
-        ).pack(side=ctk.LEFT)
-
-        lb_frame = ctk.CTkFrame(self, fg_color=("gray82", "gray14"), corner_radius=6)
-        lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=4)
-
-        mode = ctk.get_appearance_mode()
-        lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
-        lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = palette.pick(palette.PURPLE_SELECT)
-
-        sb = tk.Scrollbar(lb_frame)
-        sb.pack(side=tk.RIGHT, fill=tk.Y)
-        self._lb = tk.Listbox(
-            lb_frame,
-            yscrollcommand=sb.set,
-            font=("Consolas", 10),
-            bg=lb_bg,
-            fg=lb_fg,
-            selectbackground=lb_sel,
-            relief=tk.FLAT,
-            borderwidth=0,
-            activestyle="none",
-        )
-        self._lb.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2, pady=2)
-        sb.config(command=self._lb.yview)
-        self._lb.bind("<Double-Button-1>", lambda _e: self._confirm())
-        bind_mousewheel(self._lb)
+        for label, var, values, width in (
+            ("Category", self._cat_var, categories, 160),
+            ("Sort", self._sort_var, ["Name (A-Z)", "Name (Z-A)", "Category"], 130),
+        ):
+            ctk.CTkLabel(filt_row, text=label, font=ds.FONT).pack(
+                side=ctk.LEFT, padx=(0, 6)
+            )
+            combo = ctk.CTkComboBox(
+                filt_row,
+                values=values,
+                variable=var,
+                state="readonly",
+                width=width,
+                font=ds.FONT,
+                dropdown_font=ds.FONT,
+                command=lambda _v: self._filter(),
+            )
+            combo.pack(side=ctk.LEFT, padx=(0, 14))
+            patch_combo_scroll(combo)
 
         if not owned_items:
             ctk.CTkLabel(
-                self,
+                main,
                 text="No owned items found in inventory for this slot.",
-                text_color=("gray40", "gray60"),
+                font=ds.FONT,
+                text_color=ds.MUTED,
                 wraplength=380,
-            ).pack(padx=10, pady=(0, 4))
+            ).pack(anchor="w", pady=(0, 6))
 
-        btn_row = ctk.CTkFrame(self, fg_color="transparent")
-        btn_row.pack(fill=ctk.X, padx=10, pady=(6, 10))
-        ctk.CTkButton(btn_row, text="Select", command=self._confirm, width=120).pack(
-            side=ctk.LEFT, padx=(0, 6)
+        self._rows = ds.RowList(
+            main, icon_space=30, on_activate=lambda _i: self._confirm()
         )
-        ctk.CTkButton(
-            btn_row,
-            text="Clear Slot",
-            command=self._clear,
-            width=100,
-            fg_color=("gray70", "gray35"),
-        ).pack(side=ctk.LEFT, padx=(0, 6))
-        ctk.CTkButton(btn_row, text="Cancel", command=self.destroy, width=80).pack(
-            side=ctk.RIGHT
-        )
+        self._rows.pack(fill=ctk.BOTH, expand=True)
+
+        ds.button(btn_row, "Clear Slot", self._clear, primary=False).pack(side=ctk.LEFT)
+        ds.button(btn_row, "Cancel", self.destroy, primary=False).pack(side=ctk.RIGHT)
+        ds.button(btn_row, "Select", self._confirm).pack(side=ctk.RIGHT, padx=(0, 8))
+        self.bind("<Escape>", lambda _e: self.destroy())
 
         self._filter()
+        ds.finish(self, parent, width=460, height=560)
+        search.focus_set()
 
     def _filter(self):
         query = self._search_var.get().lower().strip()
@@ -489,15 +472,14 @@ class _ItemPickerDialog(ctk.CTkToplevel):
             items.sort(key=lambda t: t[2])
 
         self._visible = items
-        self._lb.delete(0, tk.END)
-        for _raw, _handle, name, _cat in self._visible:
-            self._lb.insert(tk.END, name)
+        self._rows.set_rows([name for _raw, _handle, name, _cat in items])
+        self._rows.load_icons(lambda i: _resolve_icon_by_name(items[i][2]))
 
     def _confirm(self):
-        sel = self._lb.curselection()
-        if not sel or sel[0] >= len(self._visible):
+        sel = self._rows.selected
+        if sel is None or sel >= len(self._visible):
             return
-        raw_value, handle, _name, _cat = self._visible[sel[0]]
+        raw_value, handle, _name, _cat = self._visible[sel]
         self._on_select(raw_value, handle)
         self.destroy()
 
@@ -567,68 +549,39 @@ class _LoadoutBrowserDialog(ctk.CTkToplevel):
 
     def __init__(self, parent, store: dict, on_choice):
         super().__init__(parent)
+        from er_save_manager.ui import dialog_style as ds
+
+        self.withdraw()
+        self.attributes("-alpha", 0)
         self.title("Load Loadout")
         self.resizable(False, True)
         self.transient(parent)
-        self.attributes("-alpha", 0)
 
         self._store = store
         self._on_choice = on_choice
         self._names = sorted(store.keys())
 
-        _center_over(self, parent, 360, 420)
-        self.attributes("-alpha", 1)
-        self.grab_set()
+        main = ctk.CTkFrame(self, fg_color="transparent")
+        main.pack(fill=ctk.BOTH, expand=True, padx=20, pady=16)
+        btn_row = ctk.CTkFrame(main, fg_color="transparent")
+        btn_row.pack(side=ctk.BOTTOM, fill=ctk.X, pady=(12, 0))
+        ds.header(main, "Load Loadout", font=ds.TITLE_LARGE)
 
-        lb_frame = ctk.CTkFrame(self, fg_color=("gray82", "gray14"), corner_radius=6)
-        lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=10)
+        self._rows = ds.RowList(main, on_activate=lambda _i: self._load())
+        self._rows.pack(fill=ctk.BOTH, expand=True, pady=(10, 0))
+        self._rows.set_rows(self._names)
 
-        mode = ctk.get_appearance_mode()
-        lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
-        lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = palette.pick(palette.PURPLE_SELECT)
-
-        sb = tk.Scrollbar(lb_frame)
-        sb.pack(side=tk.RIGHT, fill=tk.Y)
-        self._lb = tk.Listbox(
-            lb_frame,
-            yscrollcommand=sb.set,
-            font=("Consolas", 10),
-            bg=lb_bg,
-            fg=lb_fg,
-            selectbackground=lb_sel,
-            relief=tk.FLAT,
-            borderwidth=0,
-            activestyle="none",
-        )
-        self._lb.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2, pady=2)
-        sb.config(command=self._lb.yview)
-        self._lb.bind("<Double-Button-1>", lambda _e: self._load())
-        bind_mousewheel(self._lb)
-        for name in self._names:
-            self._lb.insert(tk.END, name)
-
-        btn_row = ctk.CTkFrame(self, fg_color="transparent")
-        btn_row.pack(fill=ctk.X, padx=10, pady=(0, 10))
-        ctk.CTkButton(btn_row, text="Load", command=self._load, width=100).pack(
-            side=ctk.LEFT, padx=(0, 6)
-        )
-        ctk.CTkButton(
-            btn_row,
-            text="Delete",
-            command=self._delete,
-            width=100,
-            fg_color=("gray70", "gray35"),
-        ).pack(side=ctk.LEFT, padx=(0, 6))
-        ctk.CTkButton(btn_row, text="Cancel", command=self.destroy, width=80).pack(
-            side=ctk.RIGHT
-        )
+        ds.button(btn_row, "Delete", self._delete, primary=False).pack(side=ctk.LEFT)
+        ds.button(btn_row, "Cancel", self.destroy, primary=False).pack(side=ctk.RIGHT)
+        ds.button(btn_row, "Load", self._load).pack(side=ctk.RIGHT, padx=(0, 8))
+        self.bind("<Escape>", lambda _e: self.destroy())
+        ds.finish(self, parent, width=400, height=460)
 
     def _selected_name(self) -> str | None:
-        sel = self._lb.curselection()
-        if not sel:
+        sel = self._rows.selected
+        if sel is None or sel >= len(self._names):
             return None
-        return self._names[sel[0]]
+        return self._names[sel]
 
     def _load(self):
         name = self._selected_name()
@@ -647,9 +600,7 @@ class _LoadoutBrowserDialog(ctk.CTkToplevel):
             return
         self._on_choice(name, "delete", self._store)
         self._names.remove(name)
-        self._lb.delete(0, tk.END)
-        for n in self._names:
-            self._lb.insert(tk.END, n)
+        self._rows.set_rows(self._names)
 
 
 _MEMORY_STONE_HANDLE = 0xB0000000 | 10030
@@ -2020,96 +1971,27 @@ class EquipmentEditor:
         self._apply_loadout_data(slots)
 
     def _show_share_code(self, code: str, description: str = "loadout"):
-        """Show a dialog with a generated share code and a copy button.
+        """Show a dialog with a generated share code and a copy button."""
+        from er_save_manager.ui import dialog_style as ds
+        from er_save_manager.ui.toast import show_toast
 
-        Mirrors appearance_tab.py's _show_share_code - a readonly CTkEntry
-        the user can select/copy manually, plus a Copy Code button.
-        """
-        from er_save_manager.ui.utils import force_render_dialog
-
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title("Share Code")
-        dialog.resizable(False, False)
-        dialog.transient(self.parent)
-
-        dialog.update_idletasks()
-        width, height = 420, 190
-        center_window(dialog, width, height, parent=self.parent)
-
-        force_render_dialog(dialog)
-        dialog.grab_set()
-
-        ctk.CTkLabel(
-            dialog, text=f"Shared {description}", font=("Segoe UI", 13, "bold")
-        ).pack(pady=(15, 5))
-        ctk.CTkLabel(
-            dialog,
-            text="Send this code to share it:",
-            font=("Segoe UI", 10),
-            text_color=("gray40", "gray70"),
-        ).pack(pady=(0, 10))
-
-        code_entry = ctk.CTkEntry(
-            dialog, width=300, justify="center", font=("Consolas", 12)
-        )
-        code_entry.pack(pady=(0, 15))
-        code_entry.insert(0, code)
-        code_entry.configure(state="readonly")
-
-        def copy_code():
-            dialog.clipboard_clear()
-            dialog.clipboard_append(code)
-
-        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-        btn_frame.pack()
-        ctk.CTkButton(btn_frame, text="Copy Code", command=copy_code, width=120).pack(
-            side=tk.LEFT, padx=5
-        )
-        ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=100).pack(
-            side=tk.LEFT, padx=5
+        ds.show_code(
+            self.parent,
+            "Share Code",
+            f"Shared {description}",
+            code,
+            lambda: show_toast(
+                self.parent.winfo_toplevel(), "Code copied to clipboard!"
+            ),
+            font=ds.TITLE_LARGE,
         )
 
     def _ask_code(self, title: str, text: str) -> str | None:
-        """Centered modal single-line input dialog, mirrors appearance_tab.py's _ask_code."""
-        from er_save_manager.ui.utils import force_render_dialog
+        """Single-line input dialog for a share code; None when cancelled."""
+        from er_save_manager.ui import dialog_style as ds
 
-        result = [None]
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title(title)
-        dialog.resizable(False, False)
-        dialog.transient(self.parent)
-
-        dialog.update_idletasks()
-        width, height = 380, 150
-        center_window(dialog, width, height, parent=self.parent)
-
-        force_render_dialog(dialog)
-        dialog.grab_set()
-
-        ctk.CTkLabel(dialog, text=text, font=("Segoe UI", 11)).pack(pady=(15, 6))
-        var = ctk.StringVar()
-        entry = ctk.CTkEntry(dialog, textvariable=var, width=280, justify="center")
-        entry.pack(pady=(0, 12))
-        entry.focus_set()
-
-        def confirm(_event=None):
-            result[0] = var.get().strip()
-            dialog.destroy()
-
-        entry.bind("<Return>", confirm)
-        entry.bind("<Escape>", lambda _e: dialog.destroy())
-
-        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-        btn_frame.pack()
-        ctk.CTkButton(btn_frame, text="OK", command=confirm, width=100).pack(
-            side=tk.LEFT, padx=5
-        )
-        ctk.CTkButton(btn_frame, text="Cancel", command=dialog.destroy, width=100).pack(
-            side=tk.LEFT, padx=5
-        )
-
-        self.parent.wait_window(dialog)
-        return result[0]
+        code = ds.ask_string(self.parent, title, text, font=ds.TITLE_LARGE)
+        return code.strip() if code is not None else None
 
     def share_loadout_code(self):
         save_file = self.get_save_file()

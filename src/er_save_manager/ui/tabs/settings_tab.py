@@ -7,7 +7,6 @@ from pathlib import Path
 
 import customtkinter as ctk
 
-from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.settings import get_settings
 from er_save_manager.ui.utils import bind_mousewheel, center_window, pick_file
@@ -361,6 +360,22 @@ class SettingsTab:
 
         self._create_auto_backup_section(frame)
 
+    def scroll_to_auto_backup(self) -> None:
+        """Scroll the settings page so the auto-backup section is at the top."""
+        header = getattr(self, "_auto_backup_header", None)
+        frame = getattr(self, "_scroll_frame", None)
+        if header is None or frame is None:
+            return
+        frame.update_idletasks()
+        canvas = frame._parent_canvas
+        bbox = canvas.bbox("all")
+        if not bbox or bbox[3] <= 0:
+            return
+        # The scrollable frame is the content frame inside the canvas, so
+        # this is the header's position within the content.
+        y = header.winfo_rooty() - frame.winfo_rooty()
+        canvas.yview_moveto(max(0.0, y - 10) / bbox[3])
+
     def _create_auto_backup_section(self, parent):
         """Auto-backup configuration for the currently active game only."""
         from er_save_manager.games.game_profiles import PROFILES_BY_KEY
@@ -372,11 +387,12 @@ class SettingsTab:
         sep = ctk.CTkFrame(parent, height=1, fg_color=("gray70", "gray35"))
         sep.pack(fill="x", padx=12, pady=(4, 10))
 
-        ctk.CTkLabel(
+        self._auto_backup_header = ctk.CTkLabel(
             parent,
             text="Auto-Backup on Game Launch",
             font=("Segoe UI", 11, "bold"),
-        ).pack(anchor="w", padx=12, pady=(0, 4))
+        )
+        self._auto_backup_header.pack(anchor="w", padx=12, pady=(0, 4))
 
         ctk.CTkLabel(
             parent,
@@ -625,59 +641,19 @@ class SettingsTab:
                     self._set_game_auto_backup_path(game_key, options[0])
                     return
             elif len(options) > 1:
-                from er_save_manager.ui.utils import force_render_dialog
-
-                selected = [None]
-                dlg = ctk.CTkToplevel(self.parent)
-                dlg.title(f"Select Save - {profile.name}")
-                center_window(dlg, 620, 400, parent=self.parent)
-                dlg.resizable(True, True)
-                dlg.minsize(500, 300)
-                force_render_dialog(dlg)
-                dlg.grab_set()
-
-                ctk.CTkLabel(
-                    dlg,
-                    text="Select save file to monitor:",
-                    font=("Segoe UI", 11),
-                ).pack(pady=(15, 8), padx=15)
-
-                sf = ctk.CTkScrollableFrame(dlg, corner_radius=8)
-                sf.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
-
-                for opt in options:
-
-                    def make_sel(v):
-                        def _sel():
-                            selected[0] = v
-                            dlg.destroy()
-
-                        return _sel
-
-                    ctk.CTkButton(
-                        sf,
-                        text=opt,
-                        font=("Consolas", 10),
-                        fg_color="transparent",
-                        text_color=("#2a2a2a", "#e5e5f5"),
-                        hover_color=palette.PURPLE_TINT,
-                        anchor="w",
-                        command=make_sel(opt),
-                    ).pack(fill=tk.X, padx=6, pady=3)
-
-                ctk.CTkButton(
-                    dlg,
-                    text="Browse...",
-                    width=100,
-                    command=lambda: [
-                        selected.__setitem__(0, "__browse__"),
-                        dlg.destroy(),
-                    ],
-                ).pack(side=tk.LEFT, padx=15, pady=(0, 12))
-                ctk.CTkButton(dlg, text="Cancel", width=80, command=dlg.destroy).pack(
-                    side=tk.RIGHT, padx=15, pady=(0, 12)
+                from er_save_manager.ui.dialogs.save_selector import (
+                    SaveSelectorDialog,
                 )
-                dlg.wait_window()
+
+                selected = [
+                    SaveSelectorDialog.show(
+                        self.parent,
+                        found,
+                        lambda _p: None,
+                        browse_callback=lambda: "__browse__",
+                        browse_button_text="Browse...",
+                    )
+                ]
 
                 if selected[0] and selected[0] != "__browse__":
                     self._set_game_auto_backup_path(game_key, selected[0])

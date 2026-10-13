@@ -8,10 +8,10 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.games import save_check
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import center_window
 
-_RULE = "=" * 50
+_WRAP = 540
 
 
 def show_issues(parent, game_key: str, save_path, slot_idx: int, name: str, reload):
@@ -29,73 +29,73 @@ def show_issues(parent, game_key: str, save_path, slot_idx: int, name: str, relo
     fixable = [i for i in own + shared if i.fixable]
     unfixable = [i for i in own + shared if not i.fixable]
 
-    info = [_RULE, f"  CHARACTER: {name}", _RULE, ""]
+    dialog = ds.create(parent, f"Character Details - {name}")
+
+    main = ctk.CTkFrame(dialog, fg_color="transparent")
+    main.pack(fill="both", expand=True, padx=20, pady=16)
+
+    buttons = []
     if fixable:
-        info += [_RULE, "ISSUES DETECTED:", _RULE]
-        info += [f"  - {i.text}" for i in fixable if i.slot is not None]
+        buttons.append(
+            {
+                "text": "Fix All Issues",
+                "width": 130,
+                "command": lambda: _fix_all(
+                    dialog, game_key, Path(save_path), slot_idx, fixable, reload
+                ),
+            }
+        )
+    buttons.append({"text": "Close", "command": dialog.destroy, "primary": not fixable})
+    ds.button_row(main, buttons)
+
+    if fixable:
+        ds.header(main, f"{name}: {len(fixable)} issue(s) found", icon="⚠")
+    elif unfixable:
+        ds.header(main, f"{name}: no fixable issues", icon="ℹ", icon_color=ds.INFO)
+    else:
+        ds.header(main, f"{name}: no issues found", icon="✓", icon_color=ds.FOUND)
+
+    def section(body, title, items, color=None):
+        ctk.CTkLabel(body, text=title, font=ds.BOLD).pack(anchor="w", pady=(10, 0))
+        group = ds.box(body, pady=(4, 0))
+        for i, item in enumerate(items):
+            ctk.CTkLabel(
+                group,
+                text=f"•  {item.text}",
+                font=ds.FONT,
+                text_color=color,
+                wraplength=_WRAP - 24,
+                justify="left",
+                anchor="w",
+            ).pack(
+                fill="x",
+                padx=12,
+                pady=(8 if i == 0 else 2, 8 if i == len(items) - 1 else 2),
+            )
+
+    def build(body):
+        own_fix = [i for i in fixable if i.slot is not None]
         save_wide = [i for i in fixable if i.slot is None]
+        if own_fix:
+            section(body, "Character", own_fix, ds.WARNING)
         if save_wide:
-            info += ["", "  Save file:"]
-            info += [f"  - {i.text}" for i in save_wide]
-        info += ["", "Click 'Fix All Issues' to correct everything"]
-    elif not unfixable:
-        info += [_RULE, "NO ISSUES DETECTED", _RULE, "", "Character appears healthy!"]
-    if unfixable:
-        info += [
-            "",
-            _RULE,
-            "STRUCTURAL NOTES (informational, no automatic fix):",
-            _RULE,
-        ]
-        info += [f"  {i.text}" for i in unfixable]
+            section(body, "Save file", save_wide, ds.WARNING)
+        if unfixable:
+            section(body, "Structural notes (no automatic fix)", unfixable)
+        if not fixable and not unfixable:
+            ctk.CTkLabel(
+                body, text="The character appears healthy.", font=ds.FONT
+            ).pack(anchor="w", pady=(10, 0))
+        elif fixable:
+            ctk.CTkLabel(
+                body,
+                text="Fix All Issues corrects everything above; a backup is made first.",
+                font=ds.SMALL,
+                text_color=ds.MUTED,
+            ).pack(anchor="w", pady=(10, 0))
 
-    dialog = ctk.CTkToplevel(parent)
-    dialog.title(f"Character Details - {name}")
-    dialog.update_idletasks()
-    parent.update_idletasks()
-    center_window(dialog, 640, 520, parent=parent)
-    dialog.resizable(True, True)
-    dialog.update_idletasks()
-    dialog.lift()
-    dialog.focus_force()
-
-    main_frame = ctk.CTkFrame(dialog, corner_radius=10)
-    main_frame.pack(fill="both", expand=True, padx=10, pady=10)
-    ctk.CTkLabel(
-        main_frame,
-        text=f"Character Details - {name}",
-        font=("Segoe UI", 16, "bold"),
-    ).pack(anchor="w", padx=10, pady=(8, 6))
-
-    info_box = ctk.CTkTextbox(
-        main_frame,
-        font=("Consolas", 13),
-        wrap="word",
-        fg_color=("#f5f5f5", "#111827"),
-        text_color=("#1f1f28", "#e5e7eb"),
-    )
-    info_box.pack(fill="both", expand=True, padx=10, pady=(0, 10))
-    info_box.insert("1.0", "\n".join(info))
-    info_box.configure(state="disabled")
-
-    button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-    button_frame.pack(fill="x", padx=6, pady=(0, 4))
-    if fixable:
-        ctk.CTkButton(
-            button_frame,
-            text="Fix All Issues",
-            command=lambda: _fix_all(
-                dialog, game_key, Path(save_path), slot_idx, fixable, reload
-            ),
-            width=150,
-        ).pack(side="left", padx=5)
-    ctk.CTkButton(button_frame, text="Close", command=dialog.destroy, width=100).pack(
-        side="right", padx=5
-    )
-
-    dialog.lift()
-    dialog.focus_force()
-    dialog.grab_set()
+    ds.content(main, build, max_height=440, width=_WRAP)
+    ds.finish(dialog, parent, min_width=460)
 
 
 def _fix_all(dialog, game_key, save_path: Path, slot_idx, fixable, reload) -> None:

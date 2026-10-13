@@ -3,7 +3,7 @@
 import customtkinter as ctk
 
 from er_save_manager.backup.manager import BackupMetadata
-from er_save_manager.ui.utils import center_window
+from er_save_manager.ui import dialog_style as ds
 
 
 class BackupPruningWarningDialog(ctk.CTkToplevel):
@@ -18,6 +18,9 @@ class BackupPruningWarningDialog(ctk.CTkToplevel):
 
     def __init__(self, parent, oldest_backup: BackupMetadata, max_backups: int):
         super().__init__(parent)
+        # Hidden until built to prevent a white flash on Windows.
+        self.withdraw()
+        self.attributes("-alpha", 0)
         self.title("Backup Limit Reached")
         self.resizable(False, False)
         self.transient(parent)
@@ -31,63 +34,56 @@ class BackupPruningWarningDialog(ctk.CTkToplevel):
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self._build_ui()
 
-        center_window(self, 480, 280, parent=parent)
-
-        from er_save_manager.ui.utils import force_render_dialog
-
-        force_render_dialog(self)
-        self.grab_set()
+        ds.finish(self, parent, min_width=440)
 
     def _build_ui(self):
         main = ctk.CTkFrame(self, fg_color="transparent")
         main.pack(fill="both", expand=True, padx=20, pady=16)
 
-        ctk.CTkLabel(
+        ds.button_row(
             main,
-            text="Backup Limit Reached",
-            font=("Segoe UI", 13, "bold"),
-        ).pack(anchor="w")
+            [
+                {
+                    "text": "Delete Oldest",
+                    "command": self._on_close,
+                    "primary": False,
+                    "width": 120,
+                }
+            ],
+        )
 
+        ds.header(main, "Backup limit reached", icon="⚠")
         ctk.CTkLabel(
             main,
             text=(
-                f"The backup limit ({self._max_backups}) has been reached.\n"
-                f"The oldest backup will be deleted:\n\n"
-                f"  {self._oldest.filename}"
+                f"The limit of {self._max_backups} backups has been reached. "
+                "The oldest backup will be deleted:"
             ),
-            font=("Segoe UI", 11),
+            font=ds.FONT,
+            wraplength=420,
             justify="left",
-        ).pack(anchor="w", pady=(8, 12))
+        ).pack(anchor="w", pady=(10, 4))
+        ctk.CTkLabel(
+            main, text=self._oldest.filename, font=ds.SMALL, text_color=ds.MUTED
+        ).pack(anchor="w", pady=(0, 10))
 
-        limit_row = ctk.CTkFrame(main, fg_color="transparent")
-        limit_row.pack(anchor="w", pady=(0, 12))
-
-        ctk.CTkLabel(limit_row, text="Set new limit:").pack(side="left", padx=(0, 8))
-        ctk.CTkEntry(limit_row, textvariable=self._new_limit_var, width=70).pack(
-            side="left", padx=(0, 8)
+        limit_box = ds.box(main, pady=(0, 10))
+        ctk.CTkLabel(limit_box, text="Raise the limit to", font=ds.FONT).pack(
+            side="left", padx=(12, 8), pady=10
         )
-        ctk.CTkButton(
-            limit_row,
-            text="Apply and Keep Backup",
-            width=160,
-            command=self._on_raise_limit,
-        ).pack(side="left")
+        ctk.CTkEntry(
+            limit_box, textvariable=self._new_limit_var, width=70, font=ds.FONT
+        ).pack(side="left", padx=(0, 8), pady=10)
+        ds.button(limit_box, "Raise and Keep", self._on_raise_limit, width=120).pack(
+            side="right", padx=12, pady=10
+        )
 
         ctk.CTkCheckBox(
             main,
             text="Don't show this warning again",
+            font=ds.FONT,
             variable=self._dont_show_var,
-        ).pack(anchor="w", pady=(0, 12))
-
-        btn_row = ctk.CTkFrame(main, fg_color="transparent")
-        btn_row.pack(fill="x")
-        ctk.CTkButton(
-            btn_row,
-            text="Close (Delete Oldest)",
-            command=self._on_close,
-            fg_color=("gray70", "gray35"),
-            width=160,
-        ).pack(side="right")
+        ).pack(anchor="w")
 
     def _on_raise_limit(self):
         try:

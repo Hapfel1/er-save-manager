@@ -64,7 +64,7 @@
 - [Dark Souls III](user-guide/dark-souls-3.md) - Stats, character management, boss revival, item spawning, world state
 - [Dark Souls Remastered](user-guide/dark-souls-remastered.md) - Stats, character management, event flags, boss and NPC revival, item spawning
 - **Dark Souls II SotFS** - Stats, item spawning, character management, bonfire editing, NPC revival
-- Backup Manager and [SteamID Patcher](user-guide/steamid-patcher.md) for all of the above plus Armored Core 6 and Sekiro (DS2 needs no SteamID patch; the tab explains how to move a save instead)
+- Backup Manager and [SteamID Patcher](user-guide/steamid-patcher.md) for all of the above plus Armored Core 6 and Sekiro
 
 ### :material-wrench: Work in Progress
 

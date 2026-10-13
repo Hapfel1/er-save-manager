@@ -20,7 +20,6 @@ from er_save_manager.data.regions import REGIONS
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import (
     bind_mousewheel,
-    center_window,
     patch_combo_scroll,
 )
 
@@ -578,36 +577,33 @@ class GesturesRegionsTab:
             )
             return
 
-        from er_save_manager.ui.utils import force_render_dialog
+        from er_save_manager.ui import dialog_style as ds
 
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title("Unlocked Regions")
-        center_window(dialog, 640, 540, parent=self.parent)
-        dialog.transient(self.parent)
-        dialog.update_idletasks()
-        self.parent.update_idletasks()
-        force_render_dialog(dialog)
-        dialog.grab_set()
+        dialog = ds.create(self.parent, "Unlocked Regions")
+        dialog.resizable(True, True)
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
+        btn_frame = ctk.CTkFrame(main, fg_color="transparent")
+        btn_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(12, 0))
 
+        header = ds.header(main, "Unlocked Regions", font=ds.TITLE_LARGE)
+        sel_frame = ctk.CTkFrame(header, fg_color="transparent")
+        sel_frame.pack(side=tk.RIGHT)
         ctk.CTkLabel(
-            dialog,
-            text="Unlocked Regions",
-            font=("Segoe UI", 14, "bold"),
-        ).pack(pady=(15, 4), padx=15)
-
-        ctk.CTkLabel(
-            dialog,
-            text="Map regions stored in the save file. Controls which areas appear as discovered on the map.",
-            font=("Segoe UI", 10),
-            text_color=("gray50", "gray70"),
+            main,
+            text="Map regions stored in the save. They control which areas show as "
+            "discovered on the map.",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
             wraplength=580,
-        ).pack(pady=(0, 10), padx=15)
+            justify=tk.LEFT,
+        ).pack(anchor="w", pady=(2, 10))
 
         current_ids: list[int] = list(slot.unlocked_regions.region_ids)
         region_vars: dict[int, tk.BooleanVar] = {}
 
-        list_frame = ctk.CTkScrollableFrame(dialog, corner_radius=8)
-        list_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 8))
+        list_frame = ctk.CTkScrollableFrame(main, fg_color=ds.BOX, corner_radius=8)
+        list_frame.pack(fill=tk.BOTH, expand=True)
         bind_mousewheel(list_frame)
 
         # Show all known regions as checkboxes; unknown IDs shown at bottom
@@ -621,6 +617,7 @@ class GesturesRegionsTab:
                 list_frame,
                 text=f"{region_id}: {region_name}",
                 variable=var,
+                font=ds.FONT,
             ).pack(anchor="w", padx=8, pady=2)
 
         for region_id in unknown_ids:
@@ -630,10 +627,8 @@ class GesturesRegionsTab:
                 list_frame,
                 text=f"{region_id}: (unknown)",
                 variable=var,
+                font=ds.FONT,
             ).pack(anchor="w", padx=8, pady=2)
-
-        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-        btn_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
         def apply_regions():
             selected = sorted(rid for rid, var in region_vars.items() if var.get())
@@ -683,15 +678,10 @@ class GesturesRegionsTab:
             for var in region_vars.values():
                 var.set(False)
 
-        ctk.CTkButton(btn_frame, text="Close", command=dialog.destroy, width=100).pack(
-            side=tk.LEFT
-        )
-        ctk.CTkButton(btn_frame, text="Select All", command=select_all, width=100).pack(
-            side=tk.LEFT, padx=6
-        )
-        ctk.CTkButton(
-            btn_frame, text="Deselect All", command=deselect_all, width=110
-        ).pack(side=tk.LEFT)
-        ctk.CTkButton(btn_frame, text="Apply", command=apply_regions, width=100).pack(
-            side=tk.RIGHT
-        )
+        for text, cmd in (("All", select_all), ("None", deselect_all)):
+            ds.button(sel_frame, text, cmd, primary=False, width=60, height=26).pack(
+                side=tk.LEFT, padx=(6, 0)
+            )
+        ds.button(btn_frame, "Close", dialog.destroy, primary=False).pack(side=tk.RIGHT)
+        ds.button(btn_frame, "Apply", apply_regions).pack(side=tk.RIGHT, padx=(0, 8))
+        ds.finish(dialog, self.parent, width=640, height=560)

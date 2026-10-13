@@ -11,7 +11,7 @@ import customtkinter as ctk
 from er_save_manager.platform import PlatformUtils
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, center_window, pick_file
+from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
 
 class CharacterManagementTab:
@@ -719,65 +719,14 @@ class CharacterManagementTab:
 
     def _select_target_slot(self, target_save, target_path: str) -> int | None:
         """Show a target-slot picker using the parsed target save data."""
-        from er_save_manager.ui.utils import force_render_dialog
+        from er_save_manager.ui.dialogs.slot_picker import pick_target_slot
 
-        slot_dialog = ctk.CTkToplevel(self.parent)
-        slot_dialog.title("Select Target Slot")
-        center_window(slot_dialog, 520, 220, parent=self.parent)
-
-        # Force rendering on Linux before grab_set
-        force_render_dialog(slot_dialog)
-        slot_dialog.grab_set()
-
-        dialog_label = ctk.CTkLabel(
-            slot_dialog,
-            text="Select destination slot in target save:",
-            font=("Segoe UI", 12),
+        return pick_target_slot(
+            self.parent,
+            target_path,
+            self._get_slot_display_names(target_save),
+            lambda name: int(name.split(" - ")[0]) - 1,
         )
-        dialog_label.pack(padx=10, pady=(12, 6))
-
-        target_label = ctk.CTkLabel(
-            slot_dialog,
-            text=str(target_path),
-            font=("Segoe UI", 10),
-            text_color=("gray40", "gray70"),
-            wraplength=480,
-        )
-        target_label.pack(padx=10, pady=(0, 10))
-
-        slot_names = self._get_slot_display_names(target_save)
-        to_slot_var = tk.StringVar(value=slot_names[0] if slot_names else "1")
-        slot_combo = ctk.CTkComboBox(
-            slot_dialog,
-            variable=to_slot_var,
-            values=slot_names,
-            state="readonly",
-            width=360,
-        )
-        slot_combo.pack(pady=(0, 12))
-
-        result = {"value": None}
-
-        def confirm():
-            try:
-                result["value"] = int(to_slot_var.get().split(" - ")[0]) - 1
-            except Exception:
-                result["value"] = 0
-            slot_dialog.destroy()
-
-        confirm_button = ctk.CTkButton(
-            slot_dialog,
-            text="Transfer",
-            command=confirm,
-            width=140,
-        )
-        confirm_button.pack(pady=(0, 12))
-
-        slot_dialog.bind("<Return>", lambda _event: confirm())
-        slot_dialog.bind("<Escape>", lambda _event: slot_dialog.destroy())
-
-        slot_dialog.wait_window()
-        return result["value"]
 
     def swap_characters(self):
         """Swap two character slots"""

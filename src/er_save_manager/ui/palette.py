@@ -39,6 +39,14 @@ BLUE_TEXT = ("#1E66F5", "#89B4FA")
 # Background of info boxes and tags.
 BLUE_TINT = ("#CFDCF5", "#313953")
 
+# Status text. Warnings are orange (Catppuccin Yellow and Peach are too faint
+# on the light mode background); hints and other info use the accent purple.
+# Green confirms and Red errors (Catppuccin Latte, Mocha).
+WARNING_TEXT = ("#EA580C", "#FB923C")
+HINT_TEXT = PURPLE_TEXT
+GREEN_TEXT = ("#40A02B", "#A6E3A1")
+RED_TEXT = ("#D20F39", "#F38BA8")
+
 # Catppuccin Sky (Latte, Mocha), Sapphire on hover: Loadout Mode.
 SKY = ("#04A5E5", "#89DCEB")
 SKY_HOVER = ("#209FB5", "#74C7EC")

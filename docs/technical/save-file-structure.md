@@ -88,8 +88,8 @@ Everything inside a slot is identical on both platforms.
 
 ## Character slot
 
-A slot is empty when `version` (its first uint32) is 0. On PC an all-zero checksum also marks an
-empty slot.
+A slot is empty when `version` (its first uint32) is 0. The checksum does not mark empty slots: an empty
+slot carries the MD5 of its data like any other.
 
 Fields in file order:
 
@@ -120,7 +120,7 @@ Fields in file order:
 | horse | RideGameData | 0x28 |
 | control_byte_maybe | uint8 | 1 |
 | blood_stain | BloodStain | 0x44 |
-| unk_gamedataman_0x120 | uint32 | 4 |
+| unk_gamedataman_0x120_or_gamedataman_0x130 | uint32 | 4 |
 | unk_gamedataman_0x88 | uint32 | 4 |
 | menu_profile_save_load | MenuSaveLoad | variable |
 | trophy_equip_data | TrophyEquipData | 0x34 |
@@ -134,7 +134,7 @@ Fields in file order:
 | last_rested_grace | uint32 | 4 |
 | not_alone_flag | uint8 | 1 |
 | in_game_countdown_timer | uint32 | 4 |
-| unk_gamedataman_0x124 | uint32 | 4 |
+| unk_gamedataman_0x124_or_gamedataman_0x134 | uint32 | 4 |
 | event_flags | bytes | 0x1BF99F |
 | event_flags_terminator | uint8 | 1 |
 | field_area | FieldArea | variable |
@@ -172,14 +172,14 @@ buffer: it is never read by the game and absorbs size changes of the blocks befo
 | play_time_ms | play time in milliseconds |
 | unk0x10 | 16 bytes rewritten with a new value whenever the game writes the slot; not a digest of the slot |
 | control_byte_maybe | unknown |
-| unk_gamedataman_0x120 | NG+ cycle (0 = first playthrough) |
+| unk_gamedataman_0x120_or_gamedataman_0x130 | NG+ cycle (0 = first playthrough) |
 | unk_gamedataman_0x88 | always 0 |
 | gameman_0x8c-0x8e | unknown |
 | total_deaths_count | deaths |
 | character_type | -1 by default |
 | character_type_online | 8 by default |
 | last_rested_grace | BonfireWarpParam `bonfireEntityId` + 1000 of the last grace rested at, 0 if none |
-| unk_gamedataman_0x124 | random 0-99, rerolled on every area load |
+| unk_gamedataman_0x124_or_gamedataman_0x134 | random 0-99, rerolled on every area load |
 | game_man_0x5bf | 1 after warping to a grace, 0 after resting at one |
 | spawn_point_entity_id | entity id the character respawns at |
 | game_man_0xb64 | 0, or a spawn point entity id |
@@ -401,7 +401,7 @@ Wondrous Physick tears: slot 1, slot 2, int32 -1.
 | 0x00C | 4 | uint32 block size (0x120) |
 | 0x010 | 32 | 8 model ids (uint8 + 3 padding each): face, hair, eye, eyebrow, beard, accessory, decal, eyelash |
 | 0x030 | 64 | facial structure sliders |
-| 0x070 | 64 | FaceGen parameters not exposed in character creation (128 or 0) |
+| 0x070 | 64 | FaceGen parameters not exposed in character creation (128 or 0; 0x070 and 0x08E vary) |
 | 0x0B0 | 7 | body scale: head, chest, abdomen, right arm, right leg, left arm, left leg |
 | 0x0B7 | 91 | colors: skin, cosmetics, tattoo, body hair, eyes, hair, beard, eyebrows, eyelashes, accessory |
 | 0x112 | 1 | eye effect (255 = Frenzied Flame); only set in the ProfileSummary copy |
@@ -437,7 +437,7 @@ the gesture table is `2k + 1` (1 Bow, 15 Wave, 41 Point Forwards). Each structur
 | Structure | Stored value |
 |---|---|
 | gestures (unlocked list, 64 x uint32) | `2k` or `2k + 1` (low bit unknown), -2 = empty |
-| equipped_gestures (wheel) | `2k` |
+| equipped_gestures (wheel) | `2k`, -2 = empty |
 | message gesture (NetMan) | `k`, 0xFF = none |
 
 **Regions:** `uint32 count`, then `count` region ids (1001000, 1800010, 6100000, ...).
@@ -454,7 +454,7 @@ the gesture table is `2k + 1` (1 Bow, 15 Wave, 41 Point Forwards). Each structur
 | 0x0C | MapId | map_id |
 | 0x10 | float[4] | angle |
 | 0x20 | int32 | hp |
-| 0x24 | uint32 | state: 0 inactive, 3 dead, 13 active |
+| 0x24 | uint32 | state: 1 inactive, 3 dead, 13 active |
 
 `hp == 0` with `state == 13` causes an infinite loading screen; state 3 fixes it.
 
@@ -466,21 +466,23 @@ Same layout as the in-memory bloodstain at GameDataMan+0x48.
 |---|---|---|
 | 0x00 | float[3] | coordinates |
 | 0x0C | float[4] | angle |
-| 0x1C | uint32 x 5 | 0 |
+| 0x1C | uint32 x 5 | unknown; 0, or values with 0x24 = 0x2C and 0x28 = 1 |
 | 0x30 | int32 | 0 while a bloodstain exists, -1 otherwise |
 | 0x34 | int32 | runes (-1 = none) |
 | 0x38 | MapId | map_id |
-| 0x3C | uint32 | 0 |
-| 0x40 | uint32 | `0x8FF0 << 16 \| n`, n set on death and different per death location; meaning unknown |
+| 0x3C | uint32 | 0, or unknown values |
+| 0x40 | uint32 | unknown; a death writes `0x8FF0 << 16 \| n` with n different per death location. Other values: -1, 0, `0x0FF0xxxx` and values with a high half below 0x200 |
 
 On death the game writes position, angle, map, runes and 0x40, and sets 0x30 to 0. Recovering the runes
 sets 0x30 and runes back to -1 and keeps the other fields.
 
 ### MenuSaveLoad (variable)
 
-`uint16, uint16, uint32 size`, then `size` bytes (0x1000). The data is a nested chunk `uint16 1, uint16
-version, uint32 size` (version 2 / size 0xFDC; older characters version 0 / 0xF10). Version 2 offsets from
-the start of the data:
+Outer header `uint16 0, uint16 0, uint32 size`, then `size` bytes of data (0x1000; 0 with no data on some
+level 1 characters). The data starts with a nested chunk header `uint16 1, uint16 version, uint32 size`
+(version 2 / size 0xFDC; older characters version 0 / 0xF10, followed by the terminator chunk at 0xF18).
+Version 2 offsets below are from the start of the data, after the outer header, so
+data+0x000..0x007 is the nested header and 0x008 is its first field:
 
 | Offset | Content |
 |---|---|
@@ -488,8 +490,12 @@ the start of the data:
 | 0x018 | uint32, unknown |
 | 0x108 | 10 beacon records |
 | 0x1A8 | 100 map marker records |
-| 0x7E8 | 16-byte records up to 0xFD0 (eight 0xFF bytes, uint32 sequence number, 0), unknown |
+| 0x7E8 | int64, -2 or -1 |
+| 0x7F0 | 0x7E0 bytes up to 0xFD0, unknown |
 | 0xFD0 | 2 x float: world map cursor position (x, y) |
+| 0xFD8 | 8 bytes, 0 |
+| 0xFE0 | uint8 0 or 1, then 3 bytes of uninitialized memory (last field of the nested chunk) |
+| 0xFE4 | terminator chunk: `uint16 0xFFFF, uint16 0, uint32 0`; zero up to 0x1000 |
 
 **Beacon / marker record (16 bytes):**
 
@@ -530,7 +536,9 @@ discarding), bit n = n-th item of the type in ascending id order.
 
 Every item type the character has ever acquired: `int64 count`, then 14000 entries of 8 bytes
 (`uint32 item_id`, `uint8 1`, 3 bytes padding). The first `count` entries are live and sorted by item id;
-the rest hold stale data. `item_id` carries the category tag: weapons as base id, armor `0x10000000 |`,
+the rest hold stale data. Slots written by older game versions (slot version 151 and below) use the same
+0x1B580 bytes as 7000 records of 16 bytes: `uint32 item_id`, `uint8 1`, 3 bytes (`FF FF FF` or 0),
+`uint32` unknown, `uint32` unknown; `count` is then the number of 16-byte records. `item_id` carries the category tag: weapons as base id, armor `0x10000000 |`,
 talismans `0x20000000 |`, goods `0x40000000 |`, Ashes of War `0x80000000 |`.
 
 ### TutorialData (variable)
@@ -763,13 +771,14 @@ The equipment, weapon slots and appearance are copied from the character when th
 Deleting a message removes its entry; protecting it sets 0x46. Ratings given to other players' messages
 are not stored. When an 11th message is written the oldest one is removed.
 
-**Cached message (kind 1):** author equipment and `FACE` block first, name at 0x190, then MapId at
-0x1C4, position 0x1CC, angle 0x1D8, template 0x1DC, gesture 0x1DE, word 0x1E0. One entry of the
-list is 602 bytes, 4 bytes shorter, which moves its fields 4 bytes back. The list is refreshed during online play.
+**Cached message (kind 1):** author equipment first, `FACE` block at 0x74, name at 0x194 (right after the
+`FACE` block), then MapId at 0x1C4, position 0x1CC, angle 0x1D8, template 0x1DC, gesture 0x1DE, word 0x1E0.
+602-byte entries also occur: their part before the `FACE` block is 4 bytes shorter, which moves every
+later field 4 bytes back (`FACE` at 0x70, name at 0x190). The list is refreshed during online play.
 
 ### Chunk 8
 
-A 12-byte header (three uint32, `1, 1, 13` in current saves) followed by entries of 12 bytes (`uint32 id`,
+A 12-byte header (three uint32: 1, 1, then a value from 1 to 13, unknown) followed by entries of 12 bytes (`uint32 id`,
 `uint32 0 or 10`, 4 flag bytes). The set of entries changes rarely; the game writes them in a different
 order on each save. Meaning unknown.
 
@@ -916,12 +925,14 @@ data at GameDataMan+0x58.
 
 ### MenuSystemSaveLoad (0x1808)
 
-`uint16, uint16, uint32 size`, then 15 appearance presets of 0x130 bytes, then a list of 16-byte records
-(empty record: `FF FF 00 00 00 00 00 00 01 00 00 00 00 00 00 00`; meaning unknown).
+`uint16, uint16, uint32 size` (0x1800), then 15 appearance presets of 0x130 bytes, then a list of 16-byte
+records (empty record: `FF FF 00 00 00 00 00 00 01 00 00 00 00 00 00 00`; meaning unknown). The block is
+always 0x1808 bytes, regardless of `size`.
 
 **Preset (0x130):** a 0x18-byte header (0x08 = 1 on a used preset, 0x09 = body type, 0x0A-0x17
-uninitialized memory that changes on every save), then the `FACE` block. A preset is empty when the `FACE`
-magic is missing.
+uninitialized memory that changes on every save, including 0x14 where FaceData has its marker), then the
+`FACE` block, 0x118 bytes long: the slot copy without its last 8 padding bytes. A preset is empty when the
+`FACE` magic is missing.
 
 ### ProfileSummary (0x1702)
 

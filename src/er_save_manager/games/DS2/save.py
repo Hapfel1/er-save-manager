@@ -28,6 +28,8 @@ AES-128-CBC key (all DS2 SOTFS PC saves):
 
 Entry map (23 total):
   0        Global slot-occupancy summary (name + flag per character slot)
+           +0x39: owner Steam64 as 16 lowercase hex digits + NUL (the save
+           folder name); the game rejects the file under another account.
   1-10     Per-character profile slot: name, stats, souls, HP, NG+, inventory
   11-20    Per-character large slot (~501KB), one per character slot.
            Holds per-character data (differs between characters starting at

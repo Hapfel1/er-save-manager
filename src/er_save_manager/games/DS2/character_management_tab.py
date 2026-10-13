@@ -16,7 +16,7 @@ from er_save_manager.games.DS2.save import DS2Save, SlotState
 from er_save_manager.games.game_profiles import PROFILES_BY_KEY, find_save_paths
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, force_render_dialog, pick_file
+from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
 # Shown after any operation that writes a character into a slot that
 # already had cached load-screen info (copy, swap, transfer, import).
@@ -585,44 +585,14 @@ class DS2CharacterManagementTab:
         return self._browse_target_save_manually()
 
     def _select_target_slot(self, target_save: DS2Save, target_path: str) -> int | None:
-        dialog = ctk.CTkToplevel(self.parent)
-        dialog.title("Select Target Slot")
-        dialog.geometry("520x220")
-        force_render_dialog(dialog)
-        dialog.grab_set()
+        from er_save_manager.ui.dialogs.slot_picker import pick_target_slot
 
-        ctk.CTkLabel(
-            dialog,
-            text="Select destination slot in target save:",
-            font=("Segoe UI", 12),
-        ).pack(padx=10, pady=(12, 6))
-        ctk.CTkLabel(
-            dialog,
-            text=str(target_path),
-            font=("Segoe UI", 10),
-            text_color=("gray40", "gray70"),
-            wraplength=480,
-        ).pack(padx=10, pady=(0, 10))
-
-        names = self._slot_display_names(target_save)
-        slot_var = tk.StringVar(value=names[0])
-        ctk.CTkComboBox(
-            dialog, variable=slot_var, values=names, state="readonly", width=360
-        ).pack(pady=(0, 12))
-
-        result = {"value": None}
-
-        def confirm():
-            result["value"] = self._slot_index_from_display(slot_var.get())
-            dialog.destroy()
-
-        ctk.CTkButton(dialog, text="Transfer", command=confirm, width=140).pack(
-            pady=(0, 12)
+        return pick_target_slot(
+            self.parent,
+            target_path,
+            self._slot_display_names(target_save),
+            self._slot_index_from_display,
         )
-        dialog.bind("<Return>", lambda _e: confirm())
-        dialog.bind("<Escape>", lambda _e: dialog.destroy())
-        dialog.wait_window()
-        return result["value"]
 
     def _transfer_character(self) -> None:
         if not self._check_game_not_running():

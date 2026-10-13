@@ -8,8 +8,8 @@ from er_save_manager.fixes.version_mismatch import (
     apply_version_downgrade,
     get_version_info,
 )
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import center_window
 
 RECOMMENDED_VERSION = 252
 RECOMMENDED_GAME_LABEL = "1.16.2"
@@ -58,6 +58,8 @@ class VersionInfoDialog(ctk.CTkToplevel):
 
     def __init__(self, parent):
         super().__init__(parent)
+        self.withdraw()
+        self.attributes("-alpha", 0)
         self.title("Save Version Reference")
         self.resizable(False, False)
         self.transient(parent)
@@ -65,12 +67,8 @@ class VersionInfoDialog(ctk.CTkToplevel):
         main = ctk.CTkFrame(self, fg_color="transparent")
         main.pack(fill="both", expand=True, padx=20, pady=16)
 
-        ctk.CTkLabel(
-            main,
-            text="Save Version Reference",
-            font=("Segoe UI", 13, "bold"),
-        ).pack(anchor="w")
-
+        ds.button_row(main, [{"text": "Close", "command": self.destroy}])
+        ds.header(main, "Save Version Reference")
         ctk.CTkLabel(
             main,
             text=(
@@ -79,48 +77,24 @@ class VersionInfoDialog(ctk.CTkToplevel):
                 "minor version, the last digit is the patch level within it "
                 "(e.g. 260 = 1.17, 261 = 1.17.1)."
             ),
-            font=("Segoe UI", 11),
+            font=ds.FONT,
             justify="left",
             wraplength=380,
         ).pack(anchor="w", pady=(6, 10))
 
-        header = ctk.CTkFrame(main, fg_color="transparent")
-        header.pack(fill="x", padx=10)
-        ctk.CTkLabel(
-            header,
-            text="Save Ver.",
-            width=70,
-            font=("Segoe UI", 10, "bold"),
-            anchor="w",
-        ).pack(side="left")
-        ctk.CTkLabel(
-            header,
-            text="Game Ver.",
-            width=90,
-            font=("Segoe UI", 10, "bold"),
-            anchor="w",
-        ).pack(side="left")
+        table = ctk.CTkScrollableFrame(main, fg_color=ds.BOX, height=300)
+        table.pack(fill="both", expand=True)
+        for col, text in enumerate(("Save version", "Game version")):
+            ctk.CTkLabel(table, text=text, font=ds.BOLD, anchor="w").grid(
+                row=0, column=col, sticky="w", padx=(12, 24), pady=(6, 2)
+            )
+        for row, (version, game) in enumerate(SAVE_VERSION_TABLE, start=1):
+            for col, text in enumerate((str(version), game)):
+                ctk.CTkLabel(table, text=text, font=ds.FONT, anchor="w").grid(
+                    row=row, column=col, sticky="w", padx=(12, 24), pady=1
+                )
 
-        table = ctk.CTkScrollableFrame(main, fg_color=("gray90", "gray20"), height=260)
-        table.pack(fill="both", expand=True, pady=(2, 0))
-
-        for version, game in SAVE_VERSION_TABLE:
-            row = ctk.CTkFrame(table, fg_color="transparent")
-            row.pack(fill="x", padx=10, pady=2)
-            ctk.CTkLabel(
-                row, text=str(version), width=70, font=("Courier", 11), anchor="w"
-            ).pack(side="left")
-            ctk.CTkLabel(
-                row, text=game, width=90, font=("Courier", 11), anchor="w"
-            ).pack(side="left")
-
-        ctk.CTkButton(main, text="Close", command=self.destroy, width=100).pack(
-            anchor="e", pady=(10, 0)
-        )
-
-        width, height = 460, 560
-        center_window(self, width, height, parent=parent)
-        self.grab_set()
+        ds.finish(self, parent)
 
 
 class VersionMismatchDialog(ctk.CTkToplevel):
@@ -132,6 +106,8 @@ class VersionMismatchDialog(ctk.CTkToplevel):
 
     def __init__(self, parent, save_file, save_path, reload_callback):
         super().__init__(parent)
+        self.withdraw()
+        self.attributes("-alpha", 0)
         self.title("Mismatched Game/Save Version")
         self.resizable(False, False)
         self.transient(parent)
@@ -146,34 +122,28 @@ class VersionMismatchDialog(ctk.CTkToplevel):
         self.protocol("WM_DELETE_WINDOW", self.destroy)
         self._build_ui()
 
-        width, height = 520, 520
-        center_window(self, width, height, parent=parent)
-
-        from er_save_manager.ui.utils import force_render_dialog
-
-        force_render_dialog(self)
-        self.grab_set()
+        ds.finish(self, parent)
 
     def _build_ui(self):
         main = ctk.CTkFrame(self, fg_color="transparent")
         main.pack(fill="both", expand=True, padx=20, pady=16)
 
-        header_row = ctk.CTkFrame(main, fg_color="transparent")
-        header_row.pack(fill="x")
+        ds.button_row(
+            main,
+            [
+                {"text": "Apply Fix", "command": self._on_apply},
+                {"text": "Cancel", "command": self.destroy, "primary": False},
+            ],
+        )
 
-        ctk.CTkLabel(
+        header_row = ds.header(main, "Mismatched game/save version", icon="⚠")
+        ds.button(
             header_row,
-            text="Mismatched Game/Save Version",
-            font=("Segoe UI", 13, "bold"),
-        ).pack(side="left", anchor="w")
-
-        ctk.CTkButton(
-            header_row,
-            text="Version Info",
-            width=100,
-            height=24,
-            fg_color=("gray70", "gray35"),
-            command=self._show_version_info,
+            "Version Info",
+            self._show_version_info,
+            primary=False,
+            width=110,
+            height=28,
         ).pack(side="right")
 
         ctk.CTkLabel(
@@ -187,68 +157,59 @@ class VersionMismatchDialog(ctk.CTkToplevel):
                 "This rewrites the version stamps back down so the save "
                 "opens on an older build again. A backup is made first."
             ),
-            font=("Segoe UI", 11),
+            font=ds.FONT,
             justify="left",
-            wraplength=470,
-        ).pack(anchor="w", pady=(8, 12))
+            wraplength=480,
+        ).pack(anchor="w", pady=(10, 12))
 
-        detected_frame = ctk.CTkFrame(main, fg_color=("gray90", "gray20"))
-        detected_frame.pack(fill="x", pady=(0, 12))
-
-        detected_text = self._describe_detected_versions()
-        ctk.CTkLabel(
-            detected_frame,
-            text=detected_text,
-            font=("Courier", 11),
-            justify="left",
-            anchor="w",
-        ).pack(fill="x", padx=10, pady=8)
+        ctk.CTkLabel(main, text="Detected versions", font=ds.BOLD).pack(anchor="w")
+        detected = ds.box(main, pady=(4, 12))
+        rows = self._detected_versions()
+        for i, (label, version) in enumerate(rows):
+            pady = (8 if i == 0 else 1, 8 if i == len(rows) - 1 else 1)
+            ctk.CTkLabel(detected, text=label, font=ds.FONT).grid(
+                row=i, column=0, sticky="w", padx=(12, 24), pady=pady
+            )
+            ctk.CTkLabel(detected, text=str(version), font=ds.FONT).grid(
+                row=i, column=1, sticky="w", padx=(0, 12), pady=pady
+            )
 
         target_row = ctk.CTkFrame(main, fg_color="transparent")
-        target_row.pack(fill="x", pady=(0, 4))
-
-        ctk.CTkLabel(target_row, text="Target version:").pack(side="left", padx=(0, 8))
-        ctk.CTkEntry(target_row, textvariable=self._target_var, width=80).pack(
+        target_row.pack(fill="x")
+        ctk.CTkLabel(target_row, text="Target version", font=ds.FONT).pack(
             side="left", padx=(0, 8)
         )
-        ctk.CTkButton(
+        ctk.CTkEntry(
+            target_row, textvariable=self._target_var, width=70, font=ds.FONT
+        ).pack(side="left", padx=(0, 8))
+        ds.button(
             target_row,
-            text=f"Use Recommended ({RECOMMENDED_VERSION} / game {RECOMMENDED_GAME_LABEL})",
-            command=self._use_recommended,
-            width=240,
+            "Use Recommended",
+            self._use_recommended,
+            primary=False,
+            width=140,
         ).pack(side="left")
+        ctk.CTkLabel(
+            main,
+            text=f"Recommended: {RECOMMENDED_VERSION} (game {RECOMMENDED_GAME_LABEL})",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+        ).pack(anchor="w", pady=(4, 0))
 
         ctk.CTkLabel(
             main,
             textvariable=self._status_var,
-            font=("Segoe UI", 11),
-            text_color=("#b00020", "#ff6b6b"),
+            font=ds.FONT,
+            text_color=ds.ERROR,
             justify="left",
-            wraplength=470,
-        ).pack(anchor="w", pady=(4, 8))
+            wraplength=480,
+        ).pack(anchor="w")
 
-        btn_row = ctk.CTkFrame(main, fg_color="transparent")
-        btn_row.pack(fill="x", side="bottom")
-        ctk.CTkButton(
-            btn_row,
-            text="Cancel",
-            command=self.destroy,
-            fg_color=("gray70", "gray35"),
-            width=100,
-        ).pack(side="right")
-        ctk.CTkButton(
-            btn_row,
-            text="Apply Fix",
-            command=self._on_apply,
-            width=140,
-        ).pack(side="right", padx=(0, 8))
-
-    def _describe_detected_versions(self) -> str:
+    def _detected_versions(self) -> list[tuple[str, int]]:
         info = get_version_info(self._save_file)
-        lines = [f"Global save version: {info.user_data_10_version}"]
-        for s in info.slots:
-            lines.append(f"Slot {s.slot_index + 1:2d}: version={s.version}")
-        return "\n".join(lines)
+        rows = [("Global save version", info.user_data_10_version)]
+        rows += [(f"Slot {s.slot_index + 1}", s.version) for s in info.slots]
+        return rows
 
     def _use_recommended(self):
         self._target_var.set(str(RECOMMENDED_VERSION))
