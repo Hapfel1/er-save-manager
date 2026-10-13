@@ -429,9 +429,9 @@ class UserData10:
         # game_man_0x118 (8 bytes)
         f.read(8)
 
-        # Skip rest
+        # Skip rest; the PC entry is 0x60000 bytes of data after its checksum
         bytes_read = f.tell() - start_pos
-        remaining = 0x60000 - bytes_read
+        remaining = (0x60000 if is_ps else 0x60010) - bytes_read
         if remaining > 0:
             f.read(remaining)
 
