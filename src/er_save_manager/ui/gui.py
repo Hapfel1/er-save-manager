@@ -861,7 +861,6 @@ class SaveManagerGUI:
             lambda: self.selected_slot_index,
             self.show_toast,
         )
-        self._build_tab("World State", self.world_tab.setup_ui)
         try:
             if getattr(sys, "frozen", False):
                 _base = (
@@ -871,11 +870,12 @@ class SaveManagerGUI:
                 )
             else:
                 _base = Path(__file__).parent.parent.parent
-            _map_path = _base / "resources" / "map.jpeg"
-            if _map_path.exists():
-                self.world_tab.set_map_image_path(str(_map_path))
+            _maps_dir = _base / "resources" / "maps"
+            if (_maps_dir / "maps.json").exists():
+                self.world_tab.set_maps_dir(_maps_dir)
         except Exception:
             pass
+        self._build_tab("World State", self.world_tab.setup_ui)
 
         self.notebook.add("SteamID Patcher")
         tab_steamid = self.notebook.tab("SteamID Patcher")

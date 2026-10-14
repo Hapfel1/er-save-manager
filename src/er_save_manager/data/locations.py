@@ -15,8 +15,8 @@ map_bytes = bytes([d0, d1, d2, d3]) where map_id_str = m{d3}_{d2}_{d1}_{d0:02d}
 region_id = 0 means no region unlock needed for this map.
 
 Data lives in locations.json as rows of
-[map_id_str, name, tile_type, region_id, is_dlc, safe_coords];
-map_bytes is derived from map_id_str.
+[map_id_str, name, tile_type, region_id, is_dlc, safe_coords], plus the
+grace's unlock event flag on grace rows; map_bytes is derived from map_id_str.
 """
 
 from __future__ import annotations
@@ -35,6 +35,7 @@ class MapLocation:
     region_id: int = 0  # unlock ID to add to Regions; 0 = not required
     is_dlc: bool = False
     safe_coords: tuple[float, float, float] | None = None
+    flag_id: int = 0  # grace unlock event flag (graces only)
 
 
 def _location(
@@ -44,6 +45,7 @@ def _location(
     region_id: int,
     is_dlc: bool,
     safe_coords: list[float] | None,
+    flag_id: int = 0,
 ) -> MapLocation:
     d3, d2, d1, d0 = (int(part) for part in map_id_str[1:].split("_"))
     return MapLocation(
@@ -54,6 +56,7 @@ def _location(
         region_id,
         is_dlc,
         tuple(safe_coords) if safe_coords is not None else None,
+        flag_id,
     )
 
 

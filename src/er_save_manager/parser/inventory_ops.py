@@ -965,6 +965,8 @@ _POST_GAITEM_OFFSETS = (
     "gestures_offset",
     "horse_offset",
     "blood_stain_offset",
+    "acquired_projectiles_offset",
+    "menu_profile_save_load_offset",
     "event_flags_offset",
     "coordinates_offset",
     "net_man_offset",

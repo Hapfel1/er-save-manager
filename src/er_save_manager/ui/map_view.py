@@ -1,394 +1,1548 @@
-"""Interactive map popout window - small tile selector."""
+"""World map window: teleport locations and map markers on the game's map."""
 
 from __future__ import annotations
 
+import json
+import math
 import tkinter as tk
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from dataclasses import dataclass
+from pathlib import Path
 
 import customtkinter as ctk
-from PIL import Image, ImageTk
+from PIL import Image, ImageDraw, ImageTk
 
-from er_save_manager.ui.utils import center_window
+from er_save_manager.data.locations import MapLocation
+from er_save_manager.data.world_map import (
+    MAP_LANDS_BETWEEN,
+    MAP_NAMES,
+    MAP_REALM_OF_SHADOW,
+    MAP_UNDERGROUND,
+    location_map_point,
+    map_to_global,
+    parse_map_id,
+    tile_map_rect,
+)
+from er_save_manager.editors.map_markers import (
+    BEACON,
+    MARKER,
+    MARKER_ICONS,
+    MapMarker,
+    MapMarkerEditor,
+)
+from er_save_manager.ui import dialog_style as ds
+from er_save_manager.ui import palette
+from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.utils import bind_mousewheel, center_window, patch_combo_scroll
 
-if TYPE_CHECKING:
-    from er_save_manager.data.locations import MapLocation
+_MAP_ORDER = (MAP_LANDS_BETWEEN, MAP_UNDERGROUND, MAP_REALM_OF_SHADOW)
+_ZOOM_MAX = 2.0  # screen pixels per map unit
+_ZOOM_STEP = 1.2
+_DRAG_THRESHOLD = 4
+# The map is drawn as cached square tiles of this many screen pixels at the
+# current zoom; a pan moves them and only creates tiles that come into view.
+_TILE_PX = 256
+# Icons and outlines are drawn this far outside the view, and drawn again
+# once the view has stopped moving for _SETTLE_MS.
+_RENDER_MARGIN = 300
+_SETTLE_MS = 90
+_BACKGROUND = (20, 20, 22)
+_BACKGROUND_HEX = "#141416"
 
-# Native image resolution calibration
-_IMG_W = 3584
-_IMG_H = 4608
-
-# Big tile grid bounds in native pixels (cols 8-14, rows 7-15)
-_GRID_X0 = 0
-_GRID_X1 = 3584
-_GRID_Y0 = 0
-_GRID_Y1 = 4608
-
-_BIG_COL_MIN = 8
-_BIG_COL_MAX = 14
-_BIG_ROW_MIN = 7
-_BIG_ROW_MAX = 15
-
-_TILE_W = (_GRID_X1 - _GRID_X0) / (_BIG_COL_MAX - _BIG_COL_MIN + 1)
-_TILE_H = (_GRID_Y1 - _GRID_Y0) / (_BIG_ROW_MAX - _BIG_ROW_MIN + 1)
-_SMALL_W = _TILE_W / 4
-_SMALL_H = _TILE_H / 4
-
-_ZOOM_MIN = 0.1
-_ZOOM_MAX = 2.0
-_ZOOM_STEP = 0.15
+_HOVER_COLOR = "#ffffff"
+_GRID_COLOR = "#d8d8c8"
+_SELECT_COLOR = "#ff4466"
+_PLAYER_COLOR = "#00cfff"
+_MODE_SELECT = "Select"
+_MODE_MARKER = "Add Marker"
+_MODE_BEACON = "Add Beacon"
+_MARKER_SIZE = 30
+_BEACON_HEIGHT = 44
+_LIST_ICON = 20
+_GRACE_SIZE = 26
+_DUNGEON_SIZE = 36
+_FILTER_ALL = "All"
+_FILTER_GRACES = "Graces"
+_FILTER_DUNGEONS = "Dungeons"
+_FILTER_TILES = "Tiles"
+_KIND_LABELS = {"grace": "Site of Grace", "dungeon": "Dungeon", "small": "Tile"}
 
 
-def _small_tile_native_rect(col: int, row: int) -> tuple[float, float, float, float]:
-    """Return (x0, y0, x1, y1) in native image pixels for a m60_col_row_00 tile."""
-    big_col = col // 4
-    big_row = row // 4
-    frac_col = col % 4
-    frac_row = row % 4
-    x0 = _GRID_X0 + (big_col - _BIG_COL_MIN) * _TILE_W + frac_col * _SMALL_W
-    y0 = _GRID_Y0 + (_BIG_ROW_MAX - big_row) * _TILE_H + (3 - frac_row) * _SMALL_H
-    return x0, y0, x0 + _SMALL_W, y0 + _SMALL_H
+@dataclass
+class _Placed:
+    loc: MapLocation
+    map_no: int
+    rect: tuple[float, float, float, float] | None = None
+    point: tuple[float, float] | None = None
+    icon: int | None = None  # dungeon map icon id
+
+
+def _place(loc: MapLocation, dungeon_icons: dict[str, int]) -> _Placed | None:
+    """Map position of a teleport location: a tile rectangle for small
+    overworld tiles, a point for graces and dungeons."""
+    if loc.tile_type == "small":
+        area, x, z, lod = parse_map_id(loc.map_id_str)
+        if area not in (60, 61):
+            return None
+        map_no = MAP_LANDS_BETWEEN if area == 60 else MAP_REALM_OF_SHADOW
+        return _Placed(loc, map_no, rect=tile_map_rect(x, z, lod))
+    if loc.safe_coords is None:
+        return None
+    p = location_map_point(loc.map_id_str, loc.safe_coords[0], loc.safe_coords[2])
+    if p is None:
+        return None
+    return _Placed(
+        loc, p[0], point=(p[1], p[2]), icon=dungeon_icons.get(loc.map_id_str, 50)
+    )
+
+
+class _MapImages:
+    """Map images from resources/maps. maps.json gives each image's top-left
+    and size in map units and the image pixels per map unit. Each image keeps
+    halved copies so zoomed-out views do not resample the full image."""
+
+    def __init__(self, maps_dir: Path):
+        self._dir = maps_dir
+        meta = json.loads((maps_dir / "maps.json").read_text(encoding="utf-8"))
+        self.scale = float(meta["scale"])
+        self._meta = {m["map"]: (key, m) for key, m in meta["maps"].items()}
+        self._levels: dict[int, list[Image.Image]] = {}
+
+    def bounds(self, map_no: int) -> tuple[float, float, float, float]:
+        _, m = self._meta[map_no]
+        ox, oy = m["origin"]
+        w, h = m["size"]
+        return ox, oy, ox + w, oy + h
+
+    def levels(self, map_no: int) -> list[Image.Image]:
+        if map_no not in self._levels:
+            key, _ = self._meta[map_no]
+            img = Image.open(self._dir / f"{key}.jpg").convert("RGB")
+            levels = [img]
+            for _ in range(3):
+                levels.append(levels[-1].reduce(2))
+            self._levels[map_no] = levels
+        return self._levels[map_no]
+
+
+class _MapIcons:
+    """The game's map icons as PhotoImages per size, cut from the
+    resources/maps/icons.png atlas (maps.json "icons" gives each one's
+    x, y, w, h): marker_01..10 for the icon numbers the save stores, beacon,
+    grace and dungeon_<WorldMapPointParam icon id>."""
+
+    def __init__(self, maps_dir: Path, rects: dict[str, list[int]]):
+        atlas = Image.open(maps_dir / "icons.png").convert("RGBA")
+        self._sprites = {
+            name: atlas.crop((x, y, x + w, y + h))
+            for name, (x, y, w, h) in rects.items()
+        }
+        self._markers = {i: self._sprites[f"marker_{i:02d}"] for i in MARKER_ICONS}
+        self._beacon = self._sprites["beacon"]
+        self._grace = self._sprites["grace"]
+        self._bloodstain = self._sprites["bloodstain"]
+        self._photos: dict[tuple, ImageTk.PhotoImage] = {}
+
+    @staticmethod
+    def _dimmed(img: Image.Image) -> Image.Image:
+        """Gray, half transparent copy for locked graces."""
+        gray = img.convert("LA").convert("RGBA")
+        gray.putalpha(img.getchannel("A").point(lambda a: a * 55 // 100))
+        return gray
+
+    @staticmethod
+    def _fit(img: Image.Image, size: int) -> Image.Image:
+        scale = size / max(img.width, img.height)
+        return img.resize(
+            (max(1, round(img.width * scale)), max(1, round(img.height * scale))),
+            Image.LANCZOS,
+        )
+
+    def grace(self, size: int, locked: bool = False) -> ImageTk.PhotoImage:
+        key = ("g", size, locked)
+        if key not in self._photos:
+            img = self._fit(self._grace, size)
+            self._photos[key] = ImageTk.PhotoImage(self._dimmed(img) if locked else img)
+        return self._photos[key]
+
+    def dungeon(self, icon: int, size: int) -> ImageTk.PhotoImage:
+        key = ("d", icon, size)
+        if key not in self._photos:
+            sprite = self._sprites.get(f"dungeon_{icon}", self._sprites["dungeon_50"])
+            self._photos[key] = ImageTk.PhotoImage(self._fit(sprite, size))
+        return self._photos[key]
+
+    def marker(self, icon: int, size: int) -> ImageTk.PhotoImage:
+        icon = icon if icon in self._markers else MARKER_ICONS[0]
+        key = ("m", icon, size)
+        if key not in self._photos:
+            img = self._markers[icon].resize((size, size), Image.LANCZOS)
+            self._photos[key] = ImageTk.PhotoImage(img)
+        return self._photos[key]
+
+    def beacon(self, height: int) -> ImageTk.PhotoImage:
+        key = ("b", height)
+        if key not in self._photos:
+            w = max(1, round(self._beacon.width * height / self._beacon.height))
+            img = self._beacon.resize((w, height), Image.LANCZOS)
+            self._photos[key] = ImageTk.PhotoImage(img)
+        return self._photos[key]
+
+    def bloodstain(self, size: int, empty: bool = False) -> ImageTk.PhotoImage:
+        """empty: gray, for a bloodstain that holds no runes."""
+        key = ("s", size, empty)
+        if key not in self._photos:
+            img = self._fit(self._bloodstain, size)
+            self._photos[key] = ImageTk.PhotoImage(self._dimmed(img) if empty else img)
+        return self._photos[key]
+
+    def ctk_sprite(self, name: str, size: int, dimmed: bool = False) -> ctk.CTkImage:
+        img = self._fit(self._sprites[name], size)
+        if dimmed:
+            img = self._dimmed(img)
+        return ctk.CTkImage(img, size=img.size)
+
+    def ctk_marker(self, icon: int, size: int) -> ctk.CTkImage:
+        return ctk.CTkImage(self._markers[icon], size=(size, size))
 
 
 class MapWindow:
-    """Toplevel popout window with the interactive map."""
+    """Toplevel with the world map, teleport targets and the marker editor."""
 
     _instance: MapWindow | None = None
 
     def __init__(
         self,
         parent,
+        maps_dir: Path,
         locations: list[MapLocation],
-        on_select: Callable[[MapLocation], None],
-        map_image_path: str,
-        current_map_id: str | None = None,
+        on_teleport: Callable[[MapLocation], None],
+        player: tuple[int, float, float] | None = None,
+        marker_editor: MapMarkerEditor | None = None,
+        on_apply_markers: Callable[[MapMarkerEditor], MapMarkerEditor | None]
+        | None = None,
+        on_copy_markers: Callable[[dict], None] | None = None,
+        on_import_markers: Callable[[MapMarkerEditor], bool] | None = None,
+        on_export_markers: Callable[[MapMarkerEditor], None] | None = None,
+        grace_state: Callable[[int], bool | None] | None = None,
+        on_set_grace: Callable[[int, bool], None] | None = None,
+        on_set_graces: Callable[[list[int], bool], None] | None = None,
+        on_select_slot: Callable[[str], None] | None = None,
+        on_move_bloodstain: Callable[[], None] | None = None,
     ):
-        if MapWindow._instance is not None:
-            try:
-                MapWindow._instance._win.focus()
-                return
-            except Exception:
-                MapWindow._instance = None
-
         MapWindow._instance = self
-        self._on_select = on_select
-        self._selected: MapLocation | None = None
-        self._hover_id: int | None = None
-        self._rect_map: dict[int, MapLocation] = {}
-        self._current_map_id = current_map_id
-        self._scale = 1.0
-        self._img_cache: ImageTk.PhotoImage | None = None
-        self._player_item: int | None = None
-
-        self._locations = [
-            loc
-            for loc in locations
-            if loc.map_id_str.startswith("m60_") and loc.map_id_str.endswith("_00")
+        self._on_select_slot = on_select_slot
+        self._on_move_bloodstain = on_move_bloodstain
+        # (map number, map x, map y, label, runes) of the bloodstain, None
+        # when there is none
+        self._bloodstain: tuple[int, float, float, str, int] | None = None
+        self._parent = parent
+        self._images = _MapImages(maps_dir)
+        meta = json.loads((maps_dir / "maps.json").read_text(encoding="utf-8"))
+        self._icons = _MapIcons(maps_dir, meta["icons"])
+        self._on_teleport = on_teleport
+        self._on_apply_markers = on_apply_markers
+        self._on_copy_markers = on_copy_markers
+        self._on_import_markers = on_import_markers
+        self._on_export_markers = on_export_markers
+        self._grace_state = grace_state
+        self._on_set_grace = on_set_grace
+        self._on_set_graces = on_set_graces
+        # Dungeon map id -> WorldMapPointParam icon id of the nearest map point.
+        dungeon_icons = meta["dungeon_icons"]
+        self._placed = [
+            p for p in (_place(loc, dungeon_icons) for loc in locations) if p
         ]
+        self._tiles = {p.loc.map_id_str: p for p in self._placed if p.rect is not None}
+        self._hover_tile: _Placed | None = None
+        self._list_rows: list[_Placed] = []
+        self._player = player
+        self._editor = marker_editor
 
-        # Precompute native rects once
-        self._native_rects: dict[str, tuple[float, float, float, float]] = {}
-        for loc in self._locations:
-            parts = loc.map_id_str.split("_")
-            col, row = int(parts[1]), int(parts[2])
-            self._native_rects[loc.map_id_str] = _small_tile_native_rect(col, row)
-
-        self._raw_image = Image.open(map_image_path)
+        self._map_no = player[0] if player else MAP_LANDS_BETWEEN
+        self._zoom = 0.1
+        self._vx = 0.0
+        self._vy = 0.0
+        self._items: dict[int, tuple[str, object]] = {}
+        self._selected_loc: _Placed | None = None
+        self._selected_marker: MapMarker | None = None
+        self._press: tuple[int, int] | None = None
+        self._press_view: tuple[float, float] = (0.0, 0.0)
+        self._pan_origin: tuple[int, int, float, float] = (0, 0, 0.0, 0.0)
+        self._drag_marker: MapMarker | None = None
+        self._dragging = False
+        self._render_pending = False
+        self._list_markers: list[MapMarker] = []
+        self._syncing_list = False
+        self._tile_items: dict[tuple[int, int], tuple[int, ImageTk.PhotoImage]] = {}
+        self._tile_key: tuple[int, float] | None = None
+        self._settle_job = None
+        self._marker_tags: dict[int, str] = {}
 
         self._win = ctk.CTkToplevel(parent)
-        self._win.title("Map - Teleport")
+        self._win.title("World Map")
         self._win.protocol("WM_DELETE_WINDOW", self._close)
+        self._size_to_main_window()
+        self._win.minsize(900, 600)
 
-        # Size as a screen fraction; geometry() takes the unscaled size
-        scale = self._win._get_window_scaling()
-        sw = self._win.winfo_screenwidth()
-        sh = self._win.winfo_screenheight()
-        center_window(self._win, int(sw * 0.88 / scale), int(sh * 0.88 / scale))
-        self._win.minsize(800, 600)
+        self._show_tiles = tk.BooleanVar(value=True)
+        self._show_grid = tk.BooleanVar(value=False)
+        self._show_graces = tk.BooleanVar(value=True)
+        self._show_dungeons = tk.BooleanVar(value=True)
+        self._show_markers = tk.BooleanVar(value=True)
+        self._click_mode = tk.StringVar(value=_MODE_SELECT)
+        self._icon = MARKER_ICONS[0]
+        self._icon_buttons: dict[int, ctk.CTkButton] = {}
 
         self._build_ui()
-        self._win.after(50, self._initial_render)
+        self._refresh_marker_panel()
+        self._win.after(60, self._initial_view)
 
     # ------------------------------------------------------------------
-    # UI
+    # Public
     # ------------------------------------------------------------------
+
+    def focus(self):
+        self._win.deiconify()
+        self._win.lift()
+        self._win.focus_force()
+
+    def set_player(self, player: tuple[int, float, float] | None):
+        self._player = player
+        self._schedule_render()
+
+    def set_character(self, names: list[str], current: str | None):
+        """Slot names for the character picker and the loaded one."""
+        self._char_combo.configure(values=names or [""])
+        self._char_combo.set(current or "")
+
+    def set_bloodstain(self, bloodstain: tuple[int, float, float, str, int] | None):
+        self._bloodstain = bloodstain
+        if bloodstain is None:
+            self._blood_var.set("Bloodstain: none")
+        else:
+            self._blood_var.set(f"Bloodstain: {bloodstain[3]}")
+        movable = bloodstain is not None and bloodstain[4] > 0
+        self._blood_btn.configure(state="normal" if movable else "disabled")
+        self._schedule_render()
+
+    def set_grace_callbacks(
+        self,
+        grace_state: Callable[[int], bool | None] | None,
+        on_set_grace: Callable[[int, bool], None] | None,
+        on_set_graces: Callable[[list[int], bool], None] | None = None,
+    ):
+        self._grace_state = grace_state
+        self._on_set_grace = on_set_grace
+        self._on_set_graces = on_set_graces
+        self._update_location_info()
+        self._schedule_render()
+
+    def set_marker_editor(self, editor: MapMarkerEditor | None):
+        self._editor = editor
+        self._selected_marker = None
+        self._refresh_marker_panel()
+        self._schedule_render()
+
+    # ------------------------------------------------------------------
+    # Layout
+    # ------------------------------------------------------------------
+
+    def _size_to_main_window(self):
+        """Same size as the main window and centered over it. The screen size
+        is not used: on multi-monitor X11 it spans every monitor."""
+        top = self._parent.winfo_toplevel()
+        top.update_idletasks()
+        get_scale = getattr(self._win, "_get_window_scaling", None)
+        scale = get_scale() if get_scale else 1.0
+        width = max(900, round(top.winfo_width() / scale))
+        height = max(600, round(top.winfo_height() / scale))
+        center_window(self._win, width, height, parent=top)
 
     def _build_ui(self):
-        info_bar = ctk.CTkFrame(self._win, corner_radius=0, height=44)
-        info_bar.pack(fill=tk.X, side=tk.TOP)
-        info_bar.pack_propagate(False)
+        bar = ctk.CTkFrame(self._win, corner_radius=0)
+        bar.pack(fill=tk.X, side=tk.TOP)
 
-        self._info_var = tk.StringVar(value="Click a tile to select it")
-        ctk.CTkLabel(info_bar, textvariable=self._info_var, font=("Consolas", 11)).pack(
-            side=tk.LEFT, padx=12, pady=8
+        ctk.CTkLabel(bar, text="Character", font=ds.SMALL).pack(
+            side=tk.LEFT, padx=(10, 4)
+        )
+        self._char_combo = ctk.CTkComboBox(
+            bar,
+            values=[""],
+            width=200,
+            state="readonly",
+            command=self._on_character_chosen,
+        )
+        self._char_combo.pack(side=tk.LEFT, pady=8)
+        patch_combo_scroll(self._char_combo)
+
+        self._map_switch = ctk.CTkSegmentedButton(
+            bar,
+            values=[MAP_NAMES[m] for m in _MAP_ORDER],
+            command=self._on_map_switch,
+            font=ds.FONT,
+        )
+        self._map_switch.set(MAP_NAMES[self._map_no])
+        self._map_switch.pack(side=tk.LEFT, padx=(14, 10), pady=8)
+
+        for text, var in (
+            ("Tiles", self._show_tiles),
+            ("Grid", self._show_grid),
+            ("Graces", self._show_graces),
+            ("Dungeons", self._show_dungeons),
+            ("Markers", self._show_markers),
+        ):
+            ctk.CTkCheckBox(
+                bar,
+                text=text,
+                variable=var,
+                command=self._schedule_render,
+                font=ds.SMALL,
+                width=20,
+            ).pack(side=tk.LEFT, padx=(6, 4))
+
+        ds.button(bar, "Close", self._close, primary=False, width=80).pack(
+            side=tk.RIGHT, padx=10, pady=8
         )
 
-        self._teleport_btn = ctk.CTkButton(
-            info_bar,
-            text="Teleport",
-            width=100,
-            state="disabled",
-            command=self._on_teleport,
-        )
-        self._teleport_btn.pack(side=tk.RIGHT, padx=12, pady=6)
+        body = ctk.CTkFrame(self._win, fg_color="transparent")
+        body.pack(fill=tk.BOTH, expand=True)
 
-        ctk.CTkButton(
-            info_bar,
-            text="Close",
-            width=80,
-            fg_color="transparent",
-            border_width=1,
-            command=self._close,
-        ).pack(side=tk.RIGHT, padx=(0, 6), pady=6)
+        side = ctk.CTkFrame(body, width=320, corner_radius=0)
+        side.pack(side=tk.RIGHT, fill=tk.Y)
+        side.pack_propagate(False)
+        self._build_side_panel(side)
 
-        legend = ctk.CTkFrame(info_bar, fg_color="transparent")
-        legend.pack(side=tk.RIGHT, padx=12)
-        for color, label in [
-            ("#00cfff", "You are here"),
-            ("#ff6644", "Selected"),
-            ("#00cc44", "Available"),
-        ]:
-            dot = tk.Canvas(legend, width=10, height=10, bg=color, highlightthickness=0)
-            dot.pack(side=tk.LEFT, padx=(4, 2))
-            ctk.CTkLabel(legend, text=label, font=("Segoe UI", 9)).pack(
-                side=tk.LEFT, padx=(0, 8)
-            )
+        left = ctk.CTkFrame(body, width=330, corner_radius=0)
+        left.pack(side=tk.LEFT, fill=tk.Y)
+        left.pack_propagate(False)
+        self._build_location_list(left)
 
-        ctk.CTkLabel(
-            info_bar,
-            text="Ctrl+scroll to zoom",
-            font=("Segoe UI", 9),
-            text_color=("gray40", "gray60"),
-        ).pack(side=tk.RIGHT, padx=(0, 12))
-
-        canvas_frame = ctk.CTkFrame(self._win, fg_color="transparent")
-        canvas_frame.pack(fill=tk.BOTH, expand=True)
-
-        h_scroll = tk.Scrollbar(canvas_frame, orient=tk.HORIZONTAL)
-        h_scroll.pack(side=tk.BOTTOM, fill=tk.X)
-        v_scroll = tk.Scrollbar(canvas_frame, orient=tk.VERTICAL)
-        v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-
-        self._canvas = tk.Canvas(
-            canvas_frame,
-            xscrollcommand=h_scroll.set,
-            yscrollcommand=v_scroll.set,
-            highlightthickness=0,
-            bg="#1a1a2e",
-        )
+        self._canvas = tk.Canvas(body, highlightthickness=0, bg=_BACKGROUND_HEX)
         self._canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        h_scroll.config(command=self._canvas.xview)
-        v_scroll.config(command=self._canvas.yview)
-
-        self._canvas.bind("<ButtonPress-1>", self._on_click)
-        self._canvas.bind("<Motion>", self._on_hover)
-        self._canvas.bind("<Leave>", self._on_leave)
-        self._canvas.bind("<Button-4>", self._on_scroll)
-        self._canvas.bind("<Button-5>", self._on_scroll)
-        self._canvas.bind("<MouseWheel>", self._on_scroll)
-        self._canvas.bind(
-            "<Shift-Button-4>", lambda e: self._canvas.xview_scroll(-1, "units")
+        c = self._canvas
+        c.bind("<Configure>", lambda e: self._on_resize())
+        c.bind("<ButtonPress-1>", self._on_press)
+        c.bind("<B1-Motion>", self._on_drag)
+        c.bind("<ButtonRelease-1>", self._on_release)
+        for button in ("2", "3"):
+            c.bind(f"<ButtonPress-{button}>", self._on_pan_press)
+            c.bind(f"<B{button}-Motion>", self._on_pan_drag)
+        c.bind("<Button-4>", lambda e: self._zoom_at(e.x, e.y, _ZOOM_STEP))
+        c.bind("<Button-5>", lambda e: self._zoom_at(e.x, e.y, 1 / _ZOOM_STEP))
+        c.bind(
+            "<MouseWheel>",
+            lambda e: self._zoom_at(
+                e.x, e.y, _ZOOM_STEP if e.delta > 0 else 1 / _ZOOM_STEP
+            ),
         )
-        self._canvas.bind(
-            "<Shift-Button-5>", lambda e: self._canvas.xview_scroll(1, "units")
+        c.bind("<Motion>", self._on_motion)
+        c.bind("<Leave>", lambda e: self._clear_hover())
+        self._win.bind("<Delete>", lambda e: self._delete_selected_marker())
+
+    def _build_side_panel(self, side):
+        pad = {"padx": 12}
+
+        ctk.CTkLabel(side, text="Location", font=ds.BOLD, anchor="w").pack(
+            fill=tk.X, pady=(12, 2), **pad
+        )
+        self._info_var = tk.StringVar(value="")
+        ctk.CTkLabel(
+            side,
+            textvariable=self._info_var,
+            font=ds.SMALL,
+            anchor="w",
+            justify=tk.LEFT,
+            wraplength=290,
+        ).pack(fill=tk.X, **pad)
+        self._teleport_btn = ds.button(
+            side, "Teleport Here", self._teleport, state="disabled"
+        )
+        self._teleport_btn.pack(fill=tk.X, pady=(6, 4), **pad)
+
+        blood_row = ctk.CTkFrame(side, fg_color="transparent")
+        blood_row.pack(side=tk.TOP, fill=tk.X, pady=(2, 6), **pad)
+        self._blood_var = tk.StringVar(value="Bloodstain: none")
+        ctk.CTkLabel(
+            blood_row,
+            textvariable=self._blood_var,
+            font=ds.SMALL,
+            anchor="w",
+            justify=tk.LEFT,
+            wraplength=290,
+        ).pack(fill=tk.X)
+        self._blood_btn = ds.button(
+            blood_row,
+            "Move Bloodstain to Player",
+            self._move_bloodstain,
+            primary=False,
+            state="disabled",
+        )
+        self._blood_btn.pack(fill=tk.X, pady=(4, 0))
+
+        grace_row = ctk.CTkFrame(side, fg_color="transparent")
+        grace_row.pack(fill=tk.X, pady=(0, 6), **pad)
+        self._grace_var = tk.StringVar(value="")
+        self._grace_label = ctk.CTkLabel(
+            grace_row, textvariable=self._grace_var, font=ds.SMALL, anchor="w"
+        )
+        self._grace_label.pack(side=tk.LEFT)
+        self._grace_btn = ds.button(
+            grace_row, "Unlock", self._toggle_grace, primary=False, width=90
+        )
+        self._grace_row = grace_row
+        self._unlock_all_btn = ds.button(
+            side,
+            "Unlock All Graces on This Map",
+            self._unlock_all_graces,
+            primary=False,
+        )
+        self._unlock_all_btn.pack(fill=tk.X, pady=(0, 6), **pad)
+        self._update_location_info()
+
+        ctk.CTkFrame(side, height=2, fg_color=ds.BOX).pack(fill=tk.X, pady=6, **pad)
+
+        ctk.CTkLabel(side, text="Map Markers", font=ds.BOLD, anchor="w").pack(
+            fill=tk.X, pady=(4, 2), **pad
+        )
+        self._marker_status = tk.StringVar(value="")
+        ctk.CTkLabel(
+            side,
+            textvariable=self._marker_status,
+            font=ds.SMALL,
+            anchor="w",
+            justify=tk.LEFT,
+            wraplength=290,
+            text_color=ds.MUTED,
+        ).pack(fill=tk.X, **pad)
+
+        self._marker_frame = ctk.CTkFrame(side, fg_color="transparent")
+        self._marker_frame.pack(fill=tk.BOTH, expand=True, pady=(4, 10), **pad)
+        mf = self._marker_frame
+
+        ctk.CTkSegmentedButton(
+            mf,
+            values=[_MODE_SELECT, _MODE_MARKER, _MODE_BEACON],
+            variable=self._click_mode,
+            font=ds.SMALL,
+        ).pack(fill=tk.X, pady=(0, 6))
+
+        ctk.CTkLabel(mf, text="Marker icon", font=ds.SMALL, anchor="w").pack(fill=tk.X)
+        grid = ctk.CTkFrame(mf, fg_color="transparent")
+        grid.pack(fill=tk.X, pady=(2, 6))
+        for n, icon in enumerate(MARKER_ICONS):
+            button = ctk.CTkButton(
+                grid,
+                text="",
+                image=self._icons.ctk_marker(icon, 32),
+                width=44,
+                height=44,
+                fg_color="transparent",
+                hover_color=palette.PURPLE_TINT,
+                command=lambda i=icon: self._choose_icon(i),
+            )
+            button.grid(row=n // 5, column=n % 5, padx=2, pady=2)
+            self._icon_buttons[icon] = button
+        self._highlight_icon()
+
+        # Buttons are packed from the bottom so the list takes what is left.
+        row = ctk.CTkFrame(mf, fg_color="transparent")
+        row.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 0))
+        ds.button(row, "Apply Changes", self._apply, width=140).pack(side=tk.LEFT)
+        ds.button(row, "Revert", self._revert, primary=False, width=90).pack(
+            side=tk.LEFT, padx=6
         )
 
-    # ------------------------------------------------------------------
-    # Render
-    # ------------------------------------------------------------------
+        row = ctk.CTkFrame(mf, fg_color="transparent")
+        row.pack(side=tk.BOTTOM, fill=tk.X, pady=(6, 0))
+        ds.button(row, "Export...", self._export, primary=False, width=90).pack(
+            side=tk.LEFT
+        )
+        ds.button(row, "Import...", self._import, primary=False, width=90).pack(
+            side=tk.LEFT, padx=6
+        )
+        ds.button(row, "Copy To...", self._copy, primary=False, width=90).pack(
+            side=tk.LEFT
+        )
 
-    def _initial_render(self):
-        self._win.update_idletasks()
-        canvas_w = self._canvas.winfo_width()
-        canvas_h = self._canvas.winfo_height()
-        scale_w = canvas_w / _IMG_W
-        scale_h = canvas_h / _IMG_H
-        self._scale = min(scale_w, scale_h)
-        self._redraw()
+        row = ctk.CTkFrame(mf, fg_color="transparent")
+        row.pack(side=tk.BOTTOM, fill=tk.X, pady=(6, 0))
+        ds.button(row, "Delete", self._delete_selected_marker, width=90).pack(
+            side=tk.LEFT
+        )
+        ds.button(row, "Clear Map", self._clear_map, primary=False, width=90).pack(
+            side=tk.LEFT, padx=6
+        )
+        ds.button(row, "Clear All", self._clear_all, primary=False, width=90).pack(
+            side=tk.LEFT
+        )
 
-        if self._current_map_id and self._current_map_id in self._native_rects:
-            nx0, ny0, nx1, ny1 = self._native_rects[self._current_map_id]
-            cx = int((nx0 + nx1) / 2 * self._scale)
-            cy = int((ny0 + ny1) / 2 * self._scale)
-            self._win.after(80, lambda: self._scroll_to(cx, cy))
+        box, self._marker_list = ds.themed_tree(
+            mf, show="tree", selectmode="browse", height=6
+        )
+        self._marker_list.column("#0", width=260, stretch=True)
+        box.pack(fill=tk.BOTH, expand=True)
+        self._marker_list.bind("<<TreeviewSelect>>", self._on_list_select)
+        bind_mousewheel(self._marker_list)
 
-    def _redraw(self):
-        self._canvas.delete("all")
-        self._rect_map.clear()
-        self._hover_id = None
-        self._player_item = None
+    def _build_location_list(self, left):
+        pad = {"padx": 10}
+        ctk.CTkLabel(left, text="Locations", font=ds.BOLD, anchor="w").pack(
+            fill=tk.X, pady=(12, 4), **pad
+        )
+        self._search_var = tk.StringVar()
+        ctk.CTkEntry(
+            left, textvariable=self._search_var, placeholder_text="Search..."
+        ).pack(fill=tk.X, **pad)
+        self._filter_var = tk.StringVar(value=_FILTER_ALL)
+        ctk.CTkSegmentedButton(
+            left,
+            values=[_FILTER_ALL, _FILTER_GRACES, _FILTER_DUNGEONS, _FILTER_TILES],
+            variable=self._filter_var,
+            command=lambda _v: self._fill_location_list(),
+            font=ds.SMALL,
+        ).pack(fill=tk.X, pady=6, **pad)
+        self._this_map_var = tk.BooleanVar(value=False)
+        ctk.CTkCheckBox(
+            left,
+            text="Only this map",
+            variable=self._this_map_var,
+            command=self._fill_location_list,
+            font=ds.SMALL,
+        ).pack(anchor="w", pady=(0, 6), **pad)
+        box, self._loc_list = ds.themed_tree(left, show="tree", selectmode="browse")
+        self._loc_list.column("#0", width=290, stretch=True)
+        self._build_legend(left)
+        box.pack(fill=tk.BOTH, expand=True, pady=(0, 10), **pad)
+        self._loc_list.bind("<<TreeviewSelect>>", self._on_location_list_select)
+        bind_mousewheel(self._loc_list)
+        self._search_var.trace_add("write", lambda *_: self._fill_location_list())
+        self._fill_location_list()
 
-        scaled_w = int(_IMG_W * self._scale)
-        scaled_h = int(_IMG_H * self._scale)
+    def _build_legend(self, parent):
+        """Icon legend, packed at the bottom of parent."""
+        legend = ctk.CTkFrame(parent, fg_color=ds.BOX, corner_radius=8)
+        legend.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=(0, 10))
+        ctk.CTkLabel(legend, text="Legend", font=ds.BOLD, anchor="w").grid(
+            row=0, column=0, columnspan=4, sticky="w", padx=8, pady=(6, 2)
+        )
+        dot = Image.new("RGBA", (20, 20))
+        draw = ImageDraw.Draw(dot)
+        draw.ellipse((3, 3, 17, 17), fill=_PLAYER_COLOR, outline="white", width=2)
+        tile = Image.new("RGBA", (20, 20))
+        ImageDraw.Draw(tile).rectangle((2, 2, 17, 17), outline="white", width=2)
+        entries = (
+            (ctk.CTkImage(dot, size=(20, 20)), "Character"),
+            (self._icons.ctk_sprite("bloodstain", 22), "Bloodstain"),
+            (self._icons.ctk_sprite("bloodstain", 22, dimmed=True), "No runes"),
+            (self._icons.ctk_sprite("grace", 22), "Site of Grace"),
+            (self._icons.ctk_sprite("grace", 22, dimmed=True), "Locked grace"),
+            (self._icons.ctk_sprite("dungeon_4", 24), "Dungeon"),
+            (ctk.CTkImage(tile, size=(20, 20)), "Tile (hover)"),
+            (self._icons.ctk_marker(1, 22), "Map marker"),
+            (self._icons.ctk_sprite("beacon", 24), "Beacon"),
+        )
+        for n, (image, text) in enumerate(entries):
+            row, col = 1 + n // 2, (n % 2) * 2
+            ctk.CTkLabel(legend, text="", image=image, width=26).grid(
+                row=row, column=col, padx=(8, 2), pady=1
+            )
+            ctk.CTkLabel(legend, text=text, font=ds.SMALL, anchor="w").grid(
+                row=row, column=col + 1, sticky="w", padx=(0, 6), pady=1
+            )
+        ctk.CTkLabel(
+            legend,
+            text="Scroll to zoom, drag to pan (right or middle drag pans too)",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+            anchor="w",
+            justify=tk.LEFT,
+            wraplength=280,
+        ).grid(
+            row=1 + (len(entries) + 1) // 2,
+            column=0,
+            columnspan=4,
+            sticky="w",
+            padx=8,
+            pady=(4, 8),
+        )
 
-        img = self._raw_image.resize((scaled_w, scaled_h), Image.LANCZOS)
-        self._img_cache = ImageTk.PhotoImage(img)
-        self._canvas.create_image(0, 0, anchor=tk.NW, image=self._img_cache)
-        self._canvas.configure(scrollregion=(0, 0, scaled_w, scaled_h))
-
-        dark_mode = ctk.get_appearance_mode() == "Dark"
-        self._fill_color = "#00cc44" if dark_mode else "#00aa33"
-        self._hover_color = "#ffdd00"
-        self._sel_color = "#ff6644"
-        self._player_color = "#00cfff"
-
-        selected_map_id = self._selected.map_id_str if self._selected else None
-        self._selected = None
-
-        for loc in self._locations:
-            nx0, ny0, nx1, ny1 = self._native_rects[loc.map_id_str]
-            sx0 = int(nx0 * self._scale)
-            sy0 = int(ny0 * self._scale)
-            sx1 = int(nx1 * self._scale)
-            sy1 = int(ny1 * self._scale)
-
-            is_player = loc.map_id_str == self._current_map_id
-            is_selected = loc.map_id_str == selected_map_id
-
-            if is_selected:
-                fill = self._sel_color
-                self._selected = loc
-            elif is_player:
-                fill = self._player_color
+    def _fill_location_list(self):
+        query = self._search_var.get().strip().lower()
+        wanted = {
+            _FILTER_GRACES: ("grace",),
+            _FILTER_DUNGEONS: ("dungeon",),
+            _FILTER_TILES: ("small",),
+        }.get(self._filter_var.get())
+        rows = [
+            p
+            for p in self._placed
+            if (wanted is None or p.loc.tile_type in wanted)
+            and (not self._this_map_var.get() or p.map_no == self._map_no)
+            and (not query or query in p.loc.name.lower() or query in p.loc.map_id_str)
+        ]
+        rows.sort(key=lambda p: p.loc.name.lower())
+        self._list_rows = rows
+        tree = self._loc_list
+        tree.delete(*tree.get_children())
+        # "Region - Name" rows go under a region row so the list shows the
+        # name itself; names without a region stay top level.
+        regions = {p.loc.name.partition(" - ")[0] for p in rows if " - " in p.loc.name}
+        groups: dict[str, str] = {}
+        for n, p in enumerate(rows):
+            region, sep, name = p.loc.name.partition(" - ")
+            parent = ""
+            if sep or region in regions:
+                parent = groups.get(region)
+                if parent is None:
+                    parent = groups[region] = f"r:{region}"
+                    tree.insert("", "end", iid=parent, text=region, open=bool(query))
+            if not sep:
+                name = region
+            if p.loc.tile_type == "grace":
+                image = self._icons.grace(_LIST_ICON)
+            elif p.loc.tile_type == "dungeon":
+                image = self._icons.dungeon(p.icon, _LIST_ICON)
             else:
-                fill = self._fill_color
+                image = ""
+            tree.insert(parent, "end", iid=str(n), text=f" {name}", image=image)
 
-            item = self._canvas.create_rectangle(
-                sx0,
-                sy0,
-                sx1,
-                sy1,
-                fill=fill,
-                outline="#003311",
-                width=1,
-                stipple="gray25",
-                tags=("tile",),
+    def _on_location_list_select(self, _event=None):
+        sel = self._loc_list.selection()
+        if not sel:
+            return
+        if sel[0].startswith("r:"):
+            self._loc_list.item(sel[0], open=not self._loc_list.item(sel[0], "open"))
+            return
+        placed = self._list_rows[int(sel[0])]
+        self._show_map(placed.map_no)
+        if placed.point is not None:
+            x, y = placed.point
+        else:
+            x0, y0, x1, y1 = placed.rect
+            x, y = (x0 + x1) / 2, (y0 + y1) / 2
+        self._center_on(x, y, max(self._zoom, self._fit_zoom() * 4))
+        self._select_location(placed)
+
+    # ------------------------------------------------------------------
+    # View
+    # ------------------------------------------------------------------
+
+    def _canvas_size(self) -> tuple[int, int]:
+        return max(1, self._canvas.winfo_width()), max(1, self._canvas.winfo_height())
+
+    def _fit_zoom(self) -> float:
+        w, h = self._canvas_size()
+        x0, y0, x1, y1 = self._images.bounds(self._map_no)
+        return min(w / (x1 - x0), h / (y1 - y0))
+
+    def _fit(self):
+        w, h = self._canvas_size()
+        x0, y0, x1, y1 = self._images.bounds(self._map_no)
+        self._zoom = self._fit_zoom()
+        self._vx = (x0 + x1) / 2 - w / 2 / self._zoom
+        self._vy = (y0 + y1) / 2 - h / 2 / self._zoom
+
+    def _center_on(self, mx: float, my: float, zoom: float | None = None):
+        w, h = self._canvas_size()
+        if zoom is not None:
+            self._zoom = max(self._fit_zoom(), min(_ZOOM_MAX, zoom))
+        self._vx = mx - w / 2 / self._zoom
+        self._vy = my - h / 2 / self._zoom
+        self._clamp_view()
+        self._schedule_render()
+
+    def _initial_view(self):
+        self._win.update_idletasks()
+        self._fit()
+        if self._player and self._player[0] == self._map_no:
+            self._center_on(self._player[1], self._player[2], self._fit_zoom() * 3)
+        else:
+            self._render()
+
+    def _on_resize(self):
+        self._zoom = max(self._zoom, self._fit_zoom())
+        self._clamp_view()
+        self._schedule_render()
+
+    def _clamp_view(self):
+        w, h = self._canvas_size()
+        x0, y0, x1, y1 = self._images.bounds(self._map_no)
+        vw, vh = w / self._zoom, h / self._zoom
+        for attr, lo, hi, span in (("_vx", x0, x1, vw), ("_vy", y0, y1, vh)):
+            if span >= hi - lo:
+                setattr(self, attr, (lo + hi) / 2 - span / 2)
+            else:
+                setattr(self, attr, max(lo, min(getattr(self, attr), hi - span)))
+
+    def _to_screen(self, mx: float, my: float) -> tuple[float, float]:
+        return (mx - self._vx) * self._zoom, (my - self._vy) * self._zoom
+
+    def _to_map(self, sx: float, sy: float) -> tuple[float, float]:
+        return self._vx + sx / self._zoom, self._vy + sy / self._zoom
+
+    def _zoom_at(self, sx: int, sy: int, factor: float):
+        mx, my = self._to_map(sx, sy)
+        self._zoom = max(self._fit_zoom(), min(_ZOOM_MAX, self._zoom * factor))
+        self._vx = mx - sx / self._zoom
+        self._vy = my - sy / self._zoom
+        self._clamp_view()
+        self._schedule_render()
+
+    def _schedule_render(self):
+        if not self._render_pending:
+            self._render_pending = True
+            self._win.after_idle(self._update_view)
+
+    def _update_view(self):
+        """Redraw icons; rebuild map tiles only when zoom or map changed."""
+        self._render_pending = False
+        if not self._win.winfo_exists():
+            return
+        if self._tile_key != (self._map_no, self._zoom):
+            self._render()
+            return
+        # The view may have jumped (center_on, clamp): place the tiles again.
+        ox, oy = self._vx * self._zoom, self._vy * self._zoom
+        for (i, j), (item, _photo) in self._tile_items.items():
+            self._canvas.coords(item, i * _TILE_PX - ox, j * _TILE_PX - oy)
+        self._ensure_tiles()
+        self._draw_overlays()
+
+    def _render(self):
+        """Draw everything again: map tiles for the current zoom and map, and
+        the icons and outlines on top."""
+        self._render_pending = False
+        if not self._win.winfo_exists():
+            return
+        self._canvas.delete("all")
+        self._tile_items.clear()
+        self._tile_key = (self._map_no, self._zoom)
+        self._ensure_tiles(ring=0)
+        self._draw_overlays()
+        # Tiles just outside the view, for the next pan, once this is shown
+        self._win.after(30, self._ensure_tiles)
+
+    def _ensure_tiles(self, ring: int = 1):
+        """Create the map tiles covering the view plus ring tiles around it
+        and drop the ones far outside it."""
+        if self._tile_key != (self._map_no, self._zoom):
+            self._render()
+            return
+        c = self._canvas
+        w, h = self._canvas_size()
+        ox, oy = self._vx * self._zoom, self._vy * self._zoom
+        i0 = math.floor(ox / _TILE_PX) - ring
+        i1 = math.floor((ox + w) / _TILE_PX) + ring
+        j0 = math.floor(oy / _TILE_PX) - ring
+        j1 = math.floor((oy + h) / _TILE_PX) + ring
+        for key in [
+            k
+            for k in self._tile_items
+            if not (i0 - 2 <= k[0] <= i1 + 2 and j0 - 2 <= k[1] <= j1 + 2)
+        ]:
+            item, _photo = self._tile_items.pop(key)
+            c.delete(item)
+        span = _TILE_PX / self._zoom
+        for i in range(i0, i1 + 1):
+            for j in range(j0, j1 + 1):
+                if (i, j) in self._tile_items:
+                    continue
+                img = self._view_image(_TILE_PX, _TILE_PX, i * span, j * span)
+                photo = ImageTk.PhotoImage(img)
+                item = c.create_image(
+                    i * _TILE_PX - ox,
+                    j * _TILE_PX - oy,
+                    anchor=tk.NW,
+                    image=photo,
+                    tags="maptile",
+                )
+                self._tile_items[(i, j)] = (item, photo)
+        c.tag_lower("maptile")
+
+    def _draw_overlays(self):
+        self._cancel_settle()
+        c = self._canvas
+        c.delete("overlay")
+        self._items.clear()
+        self._draw_locations()
+        self._draw_player()
+        self._draw_markers()
+        c.addtag_all("overlay")
+        c.dtag("maptile", "overlay")
+
+    def _view_image(self, w: int, h: int, vx: float, vy: float) -> Image.Image:
+        """The map in a w x h screen box whose top-left is map point (vx, vy)."""
+        x0, y0, x1, y1 = self._images.bounds(self._map_no)
+        levels = self._images.levels(self._map_no)
+        # Image pixels per screen pixel at full resolution; use the smallest
+        # copy that still has at least one pixel per screen pixel.
+        density = self._images.scale / self._zoom
+        level = 0
+        while level + 1 < len(levels) and density / 2 ** (level + 1) >= 1:
+            level += 1
+        src = levels[level]
+        k = self._images.scale / 2**level
+        out = Image.new("RGB", (w, h), _BACKGROUND)
+        # Part of the screen box covered by the map, in map units
+        ax0, ay0 = max(vx, x0), max(vy, y0)
+        ax1, ay1 = min(vx + w / self._zoom, x1), min(vy + h / self._zoom, y1)
+        if ax1 <= ax0 or ay1 <= ay0:
+            return out
+        sx0 = round((ax0 - vx) * self._zoom)
+        sy0 = round((ay0 - vy) * self._zoom)
+        sx1 = round((ax1 - vx) * self._zoom)
+        sy1 = round((ay1 - vy) * self._zoom)
+        if sx1 <= sx0 or sy1 <= sy0:
+            return out
+        box = (
+            min((ax0 - x0) * k, src.width),
+            min((ay0 - y0) * k, src.height),
+            min((ax1 - x0) * k, src.width),
+            min((ay1 - y0) * k, src.height),
+        )
+        part = src.resize((sx1 - sx0, sy1 - sy0), Image.BILINEAR, box=box)
+        out.paste(part, (sx0, sy0))
+        return out
+
+    def _pan_to(self, vx: float, vy: float):
+        """Pan by moving what is drawn, adding map tiles that come into view;
+        icons are drawn again once the view settles."""
+        old_vx, old_vy = self._vx, self._vy
+        self._vx, self._vy = vx, vy
+        self._clamp_view()
+        dx = (old_vx - self._vx) * self._zoom
+        dy = (old_vy - self._vy) * self._zoom
+        if not dx and not dy:
+            return
+        self._canvas.move("all", dx, dy)
+        self._ensure_tiles()
+        self._cancel_settle()
+        self._settle_job = self._win.after(_SETTLE_MS, self._draw_overlays)
+
+    def _cancel_settle(self):
+        job = getattr(self, "_settle_job", None)
+        if job is not None:
+            self._win.after_cancel(job)
+            self._settle_job = None
+
+    def _grace_locked(self, placed: _Placed) -> bool:
+        if self._grace_state is None or not placed.loc.flag_id:
+            return False
+        return self._grace_state(placed.loc.flag_id) is False
+
+    def _draw_locations(self):
+        c = self._canvas
+        w, h = self._canvas_size()
+        m = _RENDER_MARGIN
+        if self._show_grid.get():
+            for p in self._tiles.values():
+                if p.map_no != self._map_no:
+                    continue
+                sx0, sy0 = self._to_screen(p.rect[0], p.rect[1])
+                sx1, sy1 = self._to_screen(p.rect[2], p.rect[3])
+                if sx1 < -m or sy1 < -m or sx0 > w + m or sy0 > h + m:
+                    continue
+                c.create_rectangle(sx0, sy0, sx1, sy1, outline=_GRID_COLOR, width=1)
+        sel = self._selected_loc
+        if sel is not None and sel.rect is not None and sel.map_no == self._map_no:
+            sx0, sy0 = self._to_screen(sel.rect[0], sel.rect[1])
+            sx1, sy1 = self._to_screen(sel.rect[2], sel.rect[3])
+            c.create_rectangle(sx0, sy0, sx1, sy1, outline=_SELECT_COLOR, width=3)
+        for p in self._placed:
+            if p.map_no != self._map_no or p.point is None:
+                continue
+            grace = p.loc.tile_type == "grace"
+            if not (self._show_graces if grace else self._show_dungeons).get():
+                continue
+            sx, sy = self._to_screen(*p.point)
+            if not (-m - 30 < sx < w + m + 30 and -m - 30 < sy < h + m + 30):
+                continue
+            if p is sel:
+                r = (_GRACE_SIZE if grace else _DUNGEON_SIZE) / 2 + 4
+                c.create_oval(
+                    sx - r, sy - r, sx + r, sy + r, outline=_SELECT_COLOR, width=3
+                )
+            image = (
+                self._icons.grace(_GRACE_SIZE, self._grace_locked(p))
+                if grace
+                else self._icons.dungeon(p.icon, _DUNGEON_SIZE)
             )
-            self._rect_map[item] = loc
-            if is_player:
-                self._player_item = item
+            item = c.create_image(sx, sy, image=image)
+            self._items[item] = ("loc", p)
 
-        if self._selected:
-            self._teleport_btn.configure(state="normal")
+    def _tile_at(self, mx: float, my: float) -> _Placed | None:
+        """Small overworld tile under a map point, if it is a teleport target."""
+        if (
+            self._map_no == MAP_UNDERGROUND
+            or not self._show_tiles.get()
+            or self._click_mode.get() != _MODE_SELECT
+        ):
+            return None
+        gx, gz = map_to_global(mx, my)
+        area = 61 if self._map_no == MAP_REALM_OF_SHADOW else 60
+        key = f"m{area}_{int(gx // 256):02d}_{int(gz // 256):02d}_00"
+        return self._tiles.get(key)
 
-    # ------------------------------------------------------------------
-    # Zoom
-    # ------------------------------------------------------------------
+    def _clear_hover(self):
+        self._canvas.delete("hover")
+        self._hover_tile = None
 
-    def _on_scroll(self, event):
-        ctrl = (event.state & 0x4) != 0
-        if event.num == 4 or (event.delta and event.delta > 0):
-            direction = 1
+    def _show_hover(self, sx: int, sy: int, hit):
+        """Outline the tile under the cursor and show a tooltip."""
+        c = self._canvas
+        c.delete("hover")
+        text = None
+        if hit is not None:
+            self._hover_tile = None
+            kind, obj = hit
+            if kind == "loc":
+                text = self._location_text(obj)
+            elif kind == "bloodstain":
+                text = f"Bloodstain\n{obj[3]}"
+            else:
+                text = (
+                    "Beacon" if obj.kind == BEACON else f"Map marker, icon {obj.icon}"
+                )
         else:
-            direction = -1
+            tile = self._tile_at(*self._to_map(sx, sy))
+            self._hover_tile = tile
+            if tile is not None:
+                x0, y0 = self._to_screen(tile.rect[0], tile.rect[1])
+                x1, y1 = self._to_screen(tile.rect[2], tile.rect[3])
+                c.create_rectangle(
+                    x0, y0, x1, y1, outline=_HOVER_COLOR, width=2, tags="hover"
+                )
+                text = self._location_text(tile)
+        if text:
+            tx, ty = sx + 16, sy + 14
+            label = c.create_text(
+                tx + 6,
+                ty + 4,
+                text=text,
+                anchor=tk.NW,
+                fill="#f0f0f0",
+                font=("Segoe UI", 10),
+                tags="hover",
+            )
+            x0, y0, x1, y1 = c.bbox(label)
+            w, h = self._canvas_size()
+            dx = min(0, w - x1 - 4)
+            dy = min(0, h - y1 - 4)
+            c.move(label, dx, dy)
+            box = c.create_rectangle(
+                x0 - 6 + dx,
+                y0 - 4 + dy,
+                x1 + 6 + dx,
+                y1 + 4 + dy,
+                fill="#1e1e2a",
+                outline="#55556a",
+                tags="hover",
+            )
+            c.tag_lower(box, label)
 
-        if ctrl:
-            self._zoom(direction, event)
+    def _location_text(self, placed: _Placed) -> str:
+        loc = placed.loc
+        lines = [
+            loc.name,
+            f"{_KIND_LABELS.get(loc.tile_type, loc.tile_type)}  {loc.map_id_str}",
+        ]
+        if loc.tile_type == "grace" and self._grace_state is not None and loc.flag_id:
+            state = self._grace_state(loc.flag_id)
+            if state is not None:
+                lines.append("Unlocked" if state else "Locked")
+        return "\n".join(lines)
+
+    def _draw_player(self):
+        blood = self._bloodstain
+        if blood is not None and blood[0] == self._map_no:
+            bx, by = self._to_screen(blood[1], blood[2])
+            item = self._canvas.create_image(
+                bx, by, image=self._icons.bloodstain(30, blood[4] <= 0)
+            )
+            self._items[item] = ("bloodstain", blood)
+        if not self._player or self._player[0] != self._map_no:
+            return
+        sx, sy = self._to_screen(self._player[1], self._player[2])
+        r = 7
+        self._canvas.create_oval(
+            sx - r, sy - r, sx + r, sy + r, fill=_PLAYER_COLOR, outline="white", width=2
+        )
+
+    def _draw_markers(self):
+        if self._editor is None or not self._show_markers.get():
+            return
+        c = self._canvas
+        self._marker_tags = {}
+        for n, m in enumerate(self._editor.markers):
+            if m.map != self._map_no:
+                continue
+            tag = f"marker{n}"
+            self._marker_tags[id(m)] = tag
+            sx, sy = self._to_screen(m.x, m.y)
+            selected = m is self._selected_marker
+            if m.kind == BEACON:
+                # The pillar's tip marks the position.
+                if selected:
+                    c.create_oval(
+                        sx - 8,
+                        sy - 4,
+                        sx + 8,
+                        sy + 4,
+                        outline="white",
+                        width=2,
+                        tags=tag,
+                    )
+                item = c.create_image(
+                    sx,
+                    sy,
+                    image=self._icons.beacon(_BEACON_HEIGHT),
+                    anchor=tk.S,
+                    tags=tag,
+                )
+            else:
+                if selected:
+                    r = _MARKER_SIZE / 2 + 3
+                    c.create_oval(
+                        sx - r,
+                        sy - r,
+                        sx + r,
+                        sy + r,
+                        outline="white",
+                        width=3,
+                        tags=tag,
+                    )
+                item = c.create_image(
+                    sx, sy, image=self._icons.marker(m.icon, _MARKER_SIZE), tags=tag
+                )
+            self._items[item] = ("marker", m)
+
+    # ------------------------------------------------------------------
+    # Mouse
+    # ------------------------------------------------------------------
+
+    def _hit(self, sx: int, sy: int) -> tuple[str, object] | None:
+        found = None
+        for item in reversed(
+            self._canvas.find_overlapping(sx - 2, sy - 2, sx + 2, sy + 2)
+        ):
+            hit = self._items.get(item)
+            if hit is None:
+                continue
+            if hit[0] == "marker":
+                return hit
+            if found is None:
+                found = hit
+        return found
+
+    def _markers_editable(self) -> bool:
+        return self._editor is not None and self._editor.supported
+
+    def _on_press(self, event):
+        self._press = (event.x, event.y)
+        self._press_view = (self._vx, self._vy)
+        self._dragging = False
+        hit = self._hit(event.x, event.y)
+        self._drag_marker = (
+            hit[1] if hit and hit[0] == "marker" and self._markers_editable() else None
+        )
+
+    def _on_drag(self, event):
+        if self._press is None:
+            return
+        dx, dy = event.x - self._press[0], event.y - self._press[1]
+        if not self._dragging and math.hypot(dx, dy) < _DRAG_THRESHOLD:
+            return
+        if not self._dragging and self._drag_marker is not None:
+            # Redraw once so the dragged marker shows as selected.
+            self._selected_marker = self._drag_marker
+            self._render()
+        self._dragging = True
+        self._canvas.delete("hover")
+        if self._drag_marker is not None:
+            marker = self._drag_marker
+            old = self._to_screen(marker.x, marker.y)
+            marker.x, marker.y = self._to_map(event.x, event.y)
+            tag = self._marker_tags.get(id(marker))
+            if tag is not None:
+                self._canvas.move(tag, event.x - old[0], event.y - old[1])
         else:
-            self._canvas.yview_scroll(-direction, "units")
+            self._pan_to(
+                self._press_view[0] - dx / self._zoom,
+                self._press_view[1] - dy / self._zoom,
+            )
 
-    def _zoom(self, direction: int, event):
-        new_scale = self._scale * (1 + direction * _ZOOM_STEP)
-        new_scale = max(_ZOOM_MIN, min(_ZOOM_MAX, new_scale))
-        if abs(new_scale - self._scale) < 0.001:
+    def _on_release(self, event):
+        if self._press is None:
             return
-
-        # Point under cursor in canvas coords before zoom
-        cx = self._canvas.canvasx(event.x)
-        cy = self._canvas.canvasy(event.y)
-        ratio = new_scale / self._scale
-
-        self._scale = new_scale
-        self._redraw()
-
-        new_img_w = int(_IMG_W * self._scale)
-        new_img_h = int(_IMG_H * self._scale)
-        fx = max(0.0, min(1.0, (cx * ratio - event.x) / new_img_w))
-        fy = max(0.0, min(1.0, (cy * ratio - event.y) / new_img_h))
-        self._canvas.xview_moveto(fx)
-        self._canvas.yview_moveto(fy)
-
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
-
-    def _scroll_to(self, cx: int, cy: int):
-        canvas_w = self._canvas.winfo_width()
-        canvas_h = self._canvas.winfo_height()
-        img_w = int(_IMG_W * self._scale)
-        img_h = int(_IMG_H * self._scale)
-        fx = max(0.0, min(1.0, (cx - canvas_w / 2) / img_w))
-        fy = max(0.0, min(1.0, (cy - canvas_h / 2) / img_h))
-        self._canvas.xview_moveto(fx)
-        self._canvas.yview_moveto(fy)
-
-    def _tile_color(self, loc: MapLocation) -> str:
-        if loc == self._selected:
-            return self._sel_color
-        if loc.map_id_str == self._current_map_id:
-            return self._player_color
-        return self._fill_color
-
-    def _item_at(self, event) -> int | None:
-        cx = self._canvas.canvasx(event.x)
-        cy = self._canvas.canvasy(event.y)
-        items = self._canvas.find_overlapping(cx - 1, cy - 1, cx + 1, cy + 1)
-        for item in reversed(items):
-            if item in self._rect_map:
-                return item
-        return None
-
-    # ------------------------------------------------------------------
-    # Events
-    # ------------------------------------------------------------------
-
-    def _on_click(self, event):
-        item = self._item_at(event)
-        if item is None:
+        press, self._press = self._press, None
+        if self._dragging:
+            marker, self._drag_marker = self._drag_marker, None
+            if marker is not None and self._editor is not None:
+                self._editor.move(marker, marker.x, marker.y)
+                self._refresh_marker_panel(select=marker)
             return
-        for i, loc in self._rect_map.items():
-            if loc != self._selected:
-                self._canvas.itemconfig(i, fill=self._tile_color(loc))
-        loc = self._rect_map[item]
-        self._selected = loc
-        self._canvas.itemconfig(item, fill=self._sel_color)
-        self._info_var.set(f"{loc.map_id_str}  {loc.name[:80]}")
+        hit = self._hit(*press)
+        mode = self._click_mode.get()
+        if hit and hit[0] == "marker":
+            self._select_marker(hit[1])
+        elif mode != _MODE_SELECT and self._markers_editable():
+            kind = BEACON if mode == _MODE_BEACON else MARKER
+            self._place_marker(*self._to_map(*press), kind)
+        elif hit and hit[0] == "loc":
+            self._select_location(hit[1])
+        else:
+            self._select_location(self._tile_at(*self._to_map(*press)))
+
+    def _on_pan_press(self, event):
+        self._press = None
+        self._pan_origin = (event.x, event.y, self._vx, self._vy)
+
+    def _on_pan_drag(self, event):
+        x, y, vx, vy = self._pan_origin
+        self._canvas.delete("hover")
+        self._pan_to(vx - (event.x - x) / self._zoom, vy - (event.y - y) / self._zoom)
+
+    def _on_motion(self, event):
+        hit = self._hit(event.x, event.y)
+        self._show_hover(event.x, event.y, hit)
+        self._canvas.configure(
+            cursor="hand2" if hit or self._hover_tile is not None else ""
+        )
+
+    # ------------------------------------------------------------------
+    # Selection and teleport
+    # ------------------------------------------------------------------
+
+    def _on_map_switch(self, value: str):
+        self._map_no = next(m for m in _MAP_ORDER if MAP_NAMES[m] == value)
+        self._fit()
+        self._schedule_render()
+        if self._this_map_var.get():
+            self._fill_location_list()
+
+    def _show_map(self, map_no: int):
+        if map_no != self._map_no:
+            self._map_no = map_no
+            self._map_switch.set(MAP_NAMES[map_no])
+            self._fit()
+
+    def _select_location(self, placed: _Placed | None):
+        self._selected_loc = placed
+        self._update_location_info()
+        self._schedule_render()
+
+    def _update_location_info(self):
+        placed = self._selected_loc
+        if placed is None:
+            self._info_var.set(
+                "Click a tile, grace or dungeon, or pick one from the list"
+            )
+            self._teleport_btn.configure(state="disabled")
+            self._grace_row.pack_forget()
+            return
+        loc = placed.loc
+        self._info_var.set(
+            f"{loc.name}\n{_KIND_LABELS.get(loc.tile_type, loc.tile_type)}  "
+            f"{loc.map_id_str}"
+        )
         self._teleport_btn.configure(state="normal")
-
-    def _on_hover(self, event):
-        item = self._item_at(event)
-        if item == self._hover_id:
+        state = None
+        if loc.tile_type == "grace" and loc.flag_id and self._grace_state is not None:
+            state = self._grace_state(loc.flag_id)
+        if state is None:
+            self._grace_row.pack_forget()
             return
-        if self._hover_id is not None and self._hover_id in self._rect_map:
-            self._canvas.itemconfig(
-                self._hover_id, fill=self._tile_color(self._rect_map[self._hover_id])
-            )
-        self._hover_id = item
-        if item is not None and self._rect_map[item] != self._selected:
-            self._canvas.itemconfig(item, fill=self._hover_color)
+        self._grace_var.set(f"Grace {'unlocked' if state else 'locked'}  ")
+        self._grace_label.configure(text_color=ds.FOUND if state else ds.MUTED)
+        self._grace_btn.configure(text="Lock" if state else "Unlock")
+        self._grace_btn.pack(side=tk.RIGHT)
+        self._grace_row.pack(fill=tk.X, pady=(0, 6), padx=12, after=self._teleport_btn)
 
-    def _on_leave(self, event):
-        if self._hover_id is not None and self._hover_id in self._rect_map:
-            self._canvas.itemconfig(
-                self._hover_id, fill=self._tile_color(self._rect_map[self._hover_id])
-            )
-        self._hover_id = None
+    def _on_character_chosen(self, value: str):
+        if self._on_select_slot is not None:
+            self._on_select_slot(value)
 
-    def _on_teleport(self):
-        if self._selected:
-            self._on_select(self._selected)
+    def _move_bloodstain(self):
+        if self._on_move_bloodstain is None:
+            CTkMessageBox.showinfo(
+                "Bloodstain",
+                "Load a character in the World State tab first.",
+                parent=self._win,
+            )
+            return
+        self._on_move_bloodstain()
+
+    def _unlock_all_graces(self):
+        if self._grace_state is None or self._on_set_graces is None:
+            CTkMessageBox.showinfo(
+                "Graces",
+                "Load a character in the World State tab first.",
+                parent=self._win,
+            )
+            return
+        flags = sorted(
+            {
+                p.loc.flag_id
+                for p in self._placed
+                if p.map_no == self._map_no
+                and p.loc.tile_type == "grace"
+                and p.loc.flag_id
+                and self._grace_state(p.loc.flag_id) is False
+            }
+        )
+        name = MAP_NAMES[self._map_no]
+        if not flags:
+            CTkMessageBox.showinfo(
+                "Graces",
+                f"Every grace on the {name} map is unlocked.",
+                parent=self._win,
+            )
+            return
+        if not CTkMessageBox.askyesno(
+            "Unlock Graces",
+            f"Unlock {len(flags)} locked graces on the {name} map?\n\n"
+            "A backup is made before saving.",
+            parent=self._win,
+        ):
+            return
+        self._on_set_graces(flags, True)
+        self._update_location_info()
+        self._schedule_render()
+
+    def _toggle_grace(self):
+        placed = self._selected_loc
+        if placed is None or self._on_set_grace is None or self._grace_state is None:
+            return
+        state = self._grace_state(placed.loc.flag_id)
+        if state is None:
+            return
+        self._on_set_grace(placed.loc.flag_id, not state)
+        self._update_location_info()
+        self._schedule_render()
+
+    def _teleport(self):
+        if self._selected_loc is not None:
+            self._on_teleport(self._selected_loc.loc)
+
+    # ------------------------------------------------------------------
+    # Markers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _marker_label(m: MapMarker) -> str:
+        where = MAP_NAMES.get(m.map, f"Map {m.map}")
+        return f"  {'Beacon' if m.kind == BEACON else 'Marker'}  -  {where}"
+
+    def _refresh_marker_panel(self, select: MapMarker | None = None):
+        editor = self._editor
+        enabled = self._markers_editable()
+        if editor is None:
+            self._marker_status.set("Load a character in the World State tab.")
+        elif not editor.supported:
+            self._marker_status.set(
+                "This character uses the older marker layout "
+                f"(version {editor.layout_version}). The game converts it on "
+                "its next save; markers can be edited after that."
+            )
+        else:
+            changed = "  Unsaved changes." if editor.dirty else ""
+            self._marker_status.set(
+                f"{editor.count(MARKER)} / 100 markers, "
+                f"{editor.count(BEACON)} / 10 beacons.{changed}"
+            )
+        for widget in self._iter_controls(self._marker_frame):
+            widget.configure(state="normal" if enabled else "disabled")
+
+        tree = self._marker_list
+        self._syncing_list = True
+        tree.delete(*tree.get_children())
+        self._list_markers = list(editor.markers) if enabled else []
+        for n, m in enumerate(self._list_markers):
+            image = (
+                self._icons.beacon(_LIST_ICON)
+                if m.kind == BEACON
+                else self._icons.marker(m.icon, _LIST_ICON)
+            )
+            tree.insert("", "end", iid=str(n), text=self._marker_label(m), image=image)
+        target = select or self._selected_marker
+        if target in self._list_markers:
+            iid = str(self._list_markers.index(target))
+            tree.selection_set(iid)
+            tree.see(iid)
+        self._win.after_idle(self._end_list_sync)
+
+    def _end_list_sync(self):
+        self._syncing_list = False
+
+    def _iter_controls(self, widget):
+        for child in widget.winfo_children():
+            if isinstance(
+                child, (ctk.CTkButton, ctk.CTkCheckBox, ctk.CTkSegmentedButton)
+            ):
+                yield child
+            else:
+                yield from self._iter_controls(child)
+
+    def _on_list_select(self, _event=None):
+        sel = self._marker_list.selection()
+        if self._syncing_list or not sel:
+            return
+        marker = self._list_markers[int(sel[0])]
+        self._selected_marker = marker
+        if marker.map in _MAP_ORDER:
+            self._show_map(marker.map)
+            self._center_on(marker.x, marker.y, max(self._zoom, self._fit_zoom() * 3))
+        if marker.kind == MARKER:
+            self._icon = marker.icon
+            self._highlight_icon()
+
+    def _select_marker(self, marker: MapMarker):
+        self._selected_marker = marker
+        if marker.kind == MARKER:
+            self._icon = marker.icon
+            self._highlight_icon()
+        self._refresh_marker_panel(select=marker)
+        self._schedule_render()
+
+    def _highlight_icon(self):
+        for icon, button in self._icon_buttons.items():
+            button.configure(
+                fg_color=palette.PURPLE_SELECT if icon == self._icon else "transparent"
+            )
+
+    def _choose_icon(self, icon: int):
+        """Icon for new markers; also changes the selected marker's icon."""
+        self._icon = icon
+        self._highlight_icon()
+        m = self._selected_marker
+        if self._editor is not None and m is not None and m.kind == MARKER:
+            self._editor.set_icon(m, icon)
+            self._refresh_marker_panel(select=m)
+            self._schedule_render()
+
+    def _place_marker(self, mx: float, my: float, kind: str = MARKER):
+        marker = self._editor.add(mx, my, self._map_no, self._icon, kind)
+        if marker is None:
+            what = "10 beacon" if kind == BEACON else "100 marker"
+            CTkMessageBox.showwarning(
+                "Map Markers",
+                f"All {what} records are in use. Delete one first.",
+                parent=self._win,
+            )
+            return
+        self._selected_marker = marker
+        self._refresh_marker_panel(select=marker)
+        self._schedule_render()
+
+    def _delete_selected_marker(self):
+        m = self._selected_marker
+        if not self._markers_editable() or m is None or m not in self._editor.markers:
+            return
+        self._editor.delete(m)
+        self._selected_marker = None
+        self._refresh_marker_panel()
+        self._schedule_render()
+
+    def _clear_map(self):
+        if not self._markers_editable():
+            return
+        if not CTkMessageBox.askyesno(
+            "Clear Map",
+            f"Remove every marker and beacon on the {MAP_NAMES[self._map_no]} map?",
+            parent=self._win,
+        ):
+            return
+        self._editor.clear(map_no=self._map_no)
+        self._selected_marker = None
+        self._refresh_marker_panel()
+        self._schedule_render()
+
+    def _clear_all(self):
+        if not self._markers_editable():
+            return
+        if not CTkMessageBox.askyesno(
+            "Clear All", "Remove every marker and beacon on all maps?", parent=self._win
+        ):
+            return
+        self._editor.clear()
+        self._selected_marker = None
+        self._refresh_marker_panel()
+        self._schedule_render()
+
+    def _export(self):
+        if self._markers_editable() and self._on_export_markers:
+            self._on_export_markers(self._editor)
+
+    def _import(self):
+        if self._markers_editable() and self._on_import_markers:
+            if self._on_import_markers(self._editor):
+                self._selected_marker = None
+                self._refresh_marker_panel()
+                self._schedule_render()
+
+    def _copy(self):
+        if self._markers_editable() and self._on_copy_markers:
+            self._on_copy_markers(self._editor.to_dict())
+
+    def _apply(self):
+        if not self._markers_editable() or self._on_apply_markers is None:
+            return
+        editor = self._on_apply_markers(self._editor)
+        if editor is not None:
+            self.set_marker_editor(editor)
+
+    def _revert(self):
+        if not self._markers_editable():
+            return
+        self._editor.revert()
+        self._selected_marker = None
+        self._refresh_marker_panel()
+        self._schedule_render()
+
+    # ------------------------------------------------------------------
 
     def _close(self):
+        if self._editor is not None and self._editor.dirty:
+            answer = CTkMessageBox.askyesnocancel(
+                "Unsaved Markers",
+                "Apply the marker changes before closing?",
+                parent=self._win,
+            )
+            if answer is None:
+                return
+            if answer:
+                self._apply()
+                if self._editor is not None and self._editor.dirty:
+                    return
+            else:
+                self._editor.revert()
         MapWindow._instance = None
         self._win.destroy()
 
 
 def open_map_window(
-    parent,
-    locations: list[MapLocation],
-    on_select: Callable[[MapLocation], None],
-    map_image_path: str,
-    current_map_id: str | None = None,
-) -> None:
-    """Open (or focus) the map popout window."""
-    MapWindow(parent, locations, on_select, map_image_path, current_map_id)
+    parent, maps_dir: Path, locations: list[MapLocation], **kwargs
+) -> MapWindow:
+    """Open the map window, or update and focus the one already open."""
+    window = MapWindow._instance
+    if window is not None:
+        try:
+            if window._win.winfo_exists():
+                window.set_player(kwargs.get("player"))
+                window.set_marker_editor(kwargs.get("marker_editor"))
+                window.focus()
+                return window
+        except tk.TclError:
+            pass
+    return MapWindow(parent, maps_dir, locations, **kwargs)
+
+
+def current_window() -> MapWindow | None:
+    window = MapWindow._instance
+    try:
+        if window is not None and window._win.winfo_exists():
+            return window
+    except tk.TclError:
+        pass
+    return None

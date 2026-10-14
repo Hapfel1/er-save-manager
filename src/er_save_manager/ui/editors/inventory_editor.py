@@ -1270,6 +1270,12 @@ class InventoryEditor:
         ).pack(side=ctk.LEFT, padx=(0, 6))
         ctk.CTkButton(
             actions,
+            text="Auto-refill...",
+            command=self.open_auto_refill,
+            width=100,
+        ).pack(side=ctk.LEFT, padx=(0, 6))
+        ctk.CTkButton(
+            actions,
             text="Refresh",
             command=self.refresh_inventory,
             width=80,
@@ -2886,6 +2892,44 @@ class InventoryEditor:
             CTkMessageBox.showerror(
                 "Error", f"Batch Remove Failed:\n{e}", parent=parent_window
             )
+
+    def open_auto_refill(self):
+        save_file = self.get_save_file()
+        if save_file is None:
+            CTkMessageBox.showwarning(
+                "No Save", "Load a save file first.", parent=self.parent
+            )
+            return
+        slot_idx = self.get_char_slot()
+        from er_save_manager.editors.auto_refill import read_entries, write_entries
+        from er_save_manager.ui.dialogs.auto_refill_dialog import show_auto_refill
+
+        entries = read_entries(save_file, slot_idx)
+        if not entries:
+            CTkMessageBox.showinfo(
+                "Auto-refill",
+                "This character has no items with an Auto-refill setting yet.",
+                parent=self.parent,
+            )
+            return
+
+        def apply(changed) -> bool:
+            try:
+                self.ensure_mutable()
+                self._create_backup(save_file, slot_idx, "auto_refill")
+                write_entries(save_file, slot_idx, changed)
+                save_file.recalculate_checksums()
+                save_path = self.get_save_path()
+                if save_path:
+                    save_file.to_file(Path(save_path))
+            except Exception as e:
+                CTkMessageBox.showerror(
+                    "Error", f"Failed to save Auto-refill:\n{e}", parent=self.parent
+                )
+                return False
+            return True
+
+        show_auto_refill(self.parent, entries, bool(save_file.is_convergence), apply)
 
     def set_quantity(self):
         result = self._get_forced_or_listbox()

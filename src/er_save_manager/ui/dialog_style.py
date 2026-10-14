@@ -493,3 +493,88 @@ def collapsible(parent, title, build, *, expanded=False, pady=(10, 0)):
     if expanded:
         body.pack(fill=tk.X, pady=(4, 0))
     return container
+
+
+# Lists and tables sit in an inset well, darker than the panel around them
+LIST_BG = ("gray97", "gray13")
+
+
+def themed_listbox(parent, font=("Consolas", 10), **kwargs):
+    """tk.Listbox in a rounded box with theme colors and a CTk scrollbar.
+
+    Returns (box, listbox); the caller packs box. kwargs go to the listbox.
+    """
+
+    def pick(color):
+        return box._apply_appearance_mode(color)
+
+    box = ctk.CTkFrame(parent, corner_radius=8)
+    bg = pick(LIST_BG)
+    box.configure(fg_color=bg)
+    fg = pick(ctk.ThemeManager.theme["CTkLabel"]["text_color"])
+    sb = ctk.CTkScrollbar(box)
+    sb.pack(side="right", fill="y", padx=(0, 3), pady=6)
+    listbox = tk.Listbox(
+        box,
+        font=font,
+        bg=bg,
+        fg=fg,
+        selectbackground=palette.pick(palette.PURPLE_SELECT),
+        selectforeground=fg,
+        relief="flat",
+        borderwidth=0,
+        highlightthickness=0,
+        activestyle="none",
+        yscrollcommand=sb.set,
+        **kwargs,
+    )
+    listbox.pack(side="left", fill="both", expand=True, padx=(8, 0), pady=6)
+    sb.configure(command=listbox.yview)
+    return box, listbox
+
+
+def themed_tree(parent, xscroll: bool = False, **kwargs):
+    """ttk.Treeview styled like themed_listbox: rounded box, theme colors,
+    CTk scrollbar (plus a horizontal one with xscroll). Returns (box, tree);
+    the caller places box."""
+    from tkinter import ttk
+
+    box = ctk.CTkFrame(parent, corner_radius=8)
+    bg = box._apply_appearance_mode(LIST_BG)
+    box.configure(fg_color=bg)
+    fg = box._apply_appearance_mode(ctk.ThemeManager.theme["CTkLabel"]["text_color"])
+    head_bg = box._apply_appearance_mode(("gray84", "gray24"))
+    select = palette.pick(palette.PURPLE_SELECT)
+    style = ttk.Style()
+    name = "Themed.Treeview"
+    style.configure(
+        name,
+        background=bg,
+        fieldbackground=bg,
+        foreground=fg,
+        rowheight=24,
+        borderwidth=0,
+        font=("Segoe UI", 11),
+    )
+    style.configure(
+        f"{name}.Heading",
+        background=head_bg,
+        foreground=fg,
+        relief="flat",
+        borderwidth=0,
+        font=("Segoe UI Semibold", 11),
+    )
+    style.map(f"{name}.Heading", background=[("active", head_bg)])
+    style.map(name, background=[("selected", select)], foreground=[("selected", fg)])
+    style.layout(name, [("Treeview.treearea", {"sticky": "nswe"})])
+
+    sb = ctk.CTkScrollbar(box)
+    sb.pack(side="right", fill="y", padx=(0, 3), pady=6)
+    tree = ttk.Treeview(box, style=name, yscrollcommand=sb.set, **kwargs)
+    sb.configure(command=tree.yview)
+    if xscroll:
+        hsb = ctk.CTkScrollbar(box, orientation="horizontal", command=tree.xview)
+        hsb.pack(side="bottom", fill="x", padx=(8, 0), pady=(0, 3))
+        tree.configure(xscrollcommand=hsb.set)
+    tree.pack(side="left", fill="both", expand=True, padx=(8, 0), pady=6)
+    return box, tree

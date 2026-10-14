@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from pathlib import Path
+from tkinter import filedialog
 from typing import TYPE_CHECKING
 
 import customtkinter as ctk
@@ -14,12 +15,21 @@ from er_save_manager.data.locations import (
     get_all_locations,
     get_grace_locations,
 )
+from er_save_manager.data.world_map import location_map_point
+from er_save_manager.editors.map_markers import (
+    BEACON,
+    MARKER,
+    MapMarkerEditor,
+    copy_markers,
+)
 from er_save_manager.editors.world_state import WorldStateEditor
 from er_save_manager.parser.er_types import FloatVector3, MapId
+from er_save_manager.parser.event_flags import EventFlags
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
-from er_save_manager.ui.map_view import open_map_window
+from er_save_manager.ui.map_view import current_window, open_map_window
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll
 
 if TYPE_CHECKING:
     pass
@@ -44,7 +54,9 @@ class WorldStateTab:
         self.reload_save = reload_callback
         self.get_selected_slot = selected_slot_callback
         self.editor: WorldStateEditor | None = None
-        self._map_image_path = None  # set via set_map_image_path()
+        self.marker_editor: MapMarkerEditor | None = None
+        self.marker_editor_slot = 0
+        self._maps_dir: Path | None = None  # set via set_maps_dir()
 
         self.all_locations: list[MapLocation] = (
             get_all_locations() + get_grace_locations()
@@ -95,6 +107,52 @@ class WorldStateTab:
                 self.slot_combo.set(current)
             else:
                 self.slot_combo.set(slot_names[0])
+        self._auto_load()
+
+    def _auto_load(self):
+        """Load the selected character, or the first one when none is
+        loaded or the selected slot is empty. A save reload (after an edit
+        anywhere in the app) keeps the slot and staged marker changes."""
+        save = self.get_save_file()
+        if save is None or not hasattr(self, "slot_combo"):
+            return
+        active = [
+            i for i in save.get_active_slots() if not save.character_slots[i].is_empty()
+        ]
+        if not active:
+            self.editor = None
+            self.marker_editor = None
+            self.refresh()
+            self._update_map_window()
+            return
+        slot_idx = self.slot_var.get() - 1
+        if self.editor is not None and slot_idx in active:
+            self._reload_editor()
+            self.refresh()
+            return
+        if slot_idx not in active:
+            slot_idx = active[0]
+        self._select_slot(slot_idx)
+        self._load_character(quiet=True)
+
+    def _select_slot(self, slot_idx: int):
+        self.slot_var.set(slot_idx + 1)
+        for name in self.slot_combo.cget("values"):
+            if name.split(" - ")[0] == str(slot_idx + 1):
+                self.slot_combo.set(name)
+
+    def _on_slot_selected(self, value: str):
+        if self.marker_editor is not None and self.marker_editor.dirty:
+            if not CTkMessageBox.askyesno(
+                "Unsaved Markers",
+                "Discard the unsaved marker changes of this character?",
+                parent=self._dialog_parent(),
+            ):
+                self._select_slot(self.marker_editor_slot)
+                self._update_map_window()
+                return
+        self.slot_var.set(int(value.split(" - ")[0]))
+        self._load_character()
 
     def setup_ui(self):
         scroll_frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
@@ -129,17 +187,45 @@ class WorldStateTab:
             values=slot_names,
             width=200,
             state="readonly",
-            command=lambda v: self.slot_var.set(int(v.split(" - ")[0])),
+            command=self._on_slot_selected,
         )
         self.slot_combo.set(slot_names[0])
         self.slot_combo.pack(side=tk.LEFT, padx=(0, 10))
 
         ctk.CTkButton(
-            slot_select, text="Load", command=self._load_character, width=80
+            slot_select, text="Reload", command=self._load_character, width=80
         ).pack(side=tk.LEFT)
 
+        tools_frame = ctk.CTkFrame(left_frame, corner_radius=12)
+        tools_frame.pack(fill=tk.X, padx=10, pady=(0, 0))
+        ctk.CTkLabel(
+            tools_frame,
+            text="Map Markers and Item History",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(anchor="w", padx=10, pady=(10, 2))
+        self.markers_var = tk.StringVar(value="N/A")
+        ctk.CTkLabel(
+            tools_frame,
+            textvariable=self.markers_var,
+            font=ds.FONT,
+            wraplength=280,
+            justify="left",
+        ).pack(anchor="w", padx=10, pady=(0, 6))
+        buttons = ctk.CTkFrame(tools_frame, fg_color="transparent")
+        buttons.pack(fill=tk.X, padx=10, pady=(0, 10))
+        buttons.grid_columnconfigure((0, 1), weight=1)
+        ctk.CTkButton(
+            buttons,
+            text="Edit Markers on Map",
+            command=self._open_map_window,
+            height=30,
+        ).grid(row=0, column=0, sticky="ew", padx=(0, 4))
+        ctk.CTkButton(
+            buttons, text="Item History", command=self._open_item_history, height=30
+        ).grid(row=0, column=1, sticky="ew", padx=(4, 0))
+
         location_frame = ctk.CTkFrame(left_frame, corner_radius=12)
-        location_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(10, 0))
+        location_frame.pack(fill=tk.X, padx=10, pady=(10, 0))
 
         ctk.CTkLabel(
             location_frame, text="Current Location", font=("Segoe UI", 12, "bold")
@@ -147,39 +233,48 @@ class WorldStateTab:
 
         map_frame = ctk.CTkFrame(location_frame, fg_color="transparent")
         map_frame.pack(fill=tk.X, padx=10, pady=5)
-        ctk.CTkLabel(map_frame, text="Map:", font=("Segoe UI", 9, "bold")).pack(
-            anchor="w"
-        )
+        ctk.CTkLabel(map_frame, text="Map:", font=ds.BOLD).pack(anchor="w")
         self.map_name_var = tk.StringVar(value="No character loaded")
         ctk.CTkLabel(
-            map_frame, textvariable=self.map_name_var, wraplength=250, justify="left"
+            map_frame,
+            textvariable=self.map_name_var,
+            font=ds.FONT,
+            wraplength=280,
+            justify="left",
         ).pack(fill=tk.X, pady=(2, 10))
 
         coords_frame = ctk.CTkFrame(location_frame, fg_color="transparent")
         coords_frame.pack(fill=tk.X, padx=10, pady=5)
-        ctk.CTkLabel(
-            coords_frame, text="Coordinates:", font=("Segoe UI", 9, "bold")
-        ).pack(anchor="w")
+        ctk.CTkLabel(coords_frame, text="Coordinates:", font=ds.BOLD).pack(anchor="w")
         self.coords_var = tk.StringVar(value="N/A")
-        ctk.CTkLabel(coords_frame, textvariable=self.coords_var, wraplength=250).pack(
-            fill=tk.X, pady=(2, 10)
-        )
+        ctk.CTkLabel(
+            coords_frame,
+            textvariable=self.coords_var,
+            font=ds.FONT,
+            wraplength=280,
+            justify="left",
+        ).pack(fill=tk.X, pady=(2, 10))
 
         bloodstain_frame = ctk.CTkFrame(location_frame, fg_color="transparent")
         bloodstain_frame.pack(fill=tk.X, padx=10, pady=5)
-        ctk.CTkLabel(
-            bloodstain_frame, text="Bloodstain:", font=("Segoe UI", 9, "bold")
-        ).pack(anchor="w")
+        ctk.CTkLabel(bloodstain_frame, text="Bloodstain:", font=ds.BOLD).pack(
+            anchor="w"
+        )
         self.bloodstain_var = tk.StringVar(value="N/A")
         ctk.CTkLabel(
-            bloodstain_frame, textvariable=self.bloodstain_var, wraplength=250
+            bloodstain_frame,
+            textvariable=self.bloodstain_var,
+            font=ds.FONT,
+            wraplength=280,
+            justify="left",
         ).pack(fill=tk.X, pady=(2, 4))
-        ctk.CTkButton(
+        self.bloodstain_btn = ctk.CTkButton(
             bloodstain_frame,
             text="Move Bloodstain to Player",
             command=self._sync_bloodstain_to_player,
             height=30,
-        ).pack(fill=tk.X, pady=(0, 2))
+        )
+        self.bloodstain_btn.pack(fill=tk.X, pady=(0, 2))
 
         # Right column: teleportation
         right_frame = ctk.CTkFrame(main_container, corner_radius=12)
@@ -188,6 +283,8 @@ class WorldStateTab:
         ctk.CTkLabel(
             right_frame, text="Teleportation", font=("Segoe UI", 12, "bold")
         ).pack(anchor="w", padx=10, pady=(10, 5))
+
+        self._build_map_card(right_frame)
 
         mode_frame = ctk.CTkFrame(right_frame, fg_color="transparent")
         mode_frame.pack(fill=tk.X, padx=10, pady=(5, 10))
@@ -208,23 +305,67 @@ class WorldStateTab:
             command=self._on_mode_changed,
         ).pack(side=tk.LEFT, padx=(0, 20))
 
-        ctk.CTkButton(
-            mode_frame,
-            text="Open Map",
-            width=100,
-            command=self._open_map_window,
-        ).pack(side=tk.LEFT)
-
         self.content_frame = ctk.CTkFrame(right_frame, fg_color="transparent")
         self.content_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         self._on_mode_changed()
+        self._auto_load()
 
-    def _load_character(self):
+    def _build_map_card(self, parent):
+        """Card advertising the World Map window, with a map thumbnail."""
+        card = ctk.CTkFrame(
+            parent,
+            corner_radius=12,
+            fg_color=ds.BOX,
+            border_width=1,
+            border_color=palette.PURPLE_TEXT,
+        )
+        card.pack(fill=tk.X, padx=10, pady=(5, 10))
+        thumb = None
+        if self._maps_dir and (self._maps_dir / "lands_between.jpg").exists():
+            from PIL import Image
+
+            img = Image.open(self._maps_dir / "lands_between.jpg")
+            # Overworld land area, scaled down
+            img = img.crop((400, 600, 4400, 4300)).resize((300, 186), Image.LANCZOS)
+            thumb = ctk.CTkImage(img, size=(300, 186))
+        if thumb is not None:
+            image_label = ctk.CTkLabel(card, text="", image=thumb, cursor="hand2")
+            image_label.pack(side=tk.LEFT, padx=8, pady=8)
+            image_label.bind("<Button-1>", lambda e: self._open_map_window())
+        text = ctk.CTkFrame(card, fg_color="transparent")
+        text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(8, 12), pady=10)
+        ctk.CTkLabel(text, text="World Map", font=ds.TITLE_LARGE, anchor="w").pack(
+            fill=tk.X
+        )
+        ctk.CTkLabel(
+            text,
+            text="Teleport by clicking graces, dungeons or tiles on the game's map, "
+            "lock or unlock graces, and place, move or copy map markers. "
+            "Lands Between, Underground and Realm of Shadow.",
+            font=ds.FONT,
+            anchor="w",
+            justify="left",
+            wraplength=380,
+        ).pack(fill=tk.X, pady=(4, 10))
+        ctk.CTkButton(
+            text,
+            text="Open World Map",
+            font=("Segoe UI", 15),
+            height=40,
+            width=200,
+            command=self._open_map_window,
+        ).pack(anchor="w")
+
+    def _load_character(self, quiet: bool = False):
         save = self.get_save_file()
         if not save:
+            if quiet:
+                return
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                "No Save",
+                "Please load a save file first.",
+                parent=self._dialog_parent(),
             )
             return
 
@@ -235,24 +376,34 @@ class WorldStateTab:
 
         if not (0 <= slot_idx < 10):
             CTkMessageBox.showerror(
-                "Invalid Slot", "Select a slot between 1 and 10.", parent=self.parent
+                "Invalid Slot",
+                "Select a slot between 1 and 10.",
+                parent=self._dialog_parent(),
             )
             return
 
         slot = save.character_slots[slot_idx]
         if slot.is_empty() or slot_idx not in save.get_active_slots():
-            CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {slot_idx + 1} is empty.", parent=self.parent
-            )
+            if not quiet:
+                CTkMessageBox.showwarning(
+                    "Empty Slot",
+                    f"Slot {slot_idx + 1} is empty.",
+                    parent=self._dialog_parent(),
+                )
             self.map_name_var.set("Empty slot")
             self.coords_var.set("N/A")
             self.bloodstain_var.set("N/A")
             self.editor = None
+            self.marker_editor = None
+            self.refresh()
+            self._update_map_window()
             return
 
         self.editor = WorldStateEditor(save, slot_idx)
+        self.marker_editor = MapMarkerEditor(save, slot_idx)
+        self.marker_editor_slot = slot_idx
         self.refresh()
-        self.show_toast(f"Slot {slot_idx + 1} loaded.", duration=2500)
+        self._update_map_window()
 
     def _reload_editor(self):
         """Recreate editor from the reloaded save so it points to the fresh object."""
@@ -263,20 +414,35 @@ class WorldStateTab:
         slot_idx = self.slot_var.get() - 1
         current_combo = self.slot_combo.get() if hasattr(self, "slot_combo") else None
         self.editor = WorldStateEditor(save, slot_idx)
+        old_markers = self.marker_editor
+        old_slot = self.marker_editor_slot
+        self.marker_editor = MapMarkerEditor(save, slot_idx)
+        self.marker_editor_slot = slot_idx
+        if (
+            old_markers is not None
+            and old_markers.dirty
+            and old_slot == slot_idx
+            and self.marker_editor.supported
+        ):
+            # Saves made elsewhere in the tab do not touch the marker records,
+            # so staged markers keep their record positions.
+            self.marker_editor.markers = old_markers.markers
+            self.marker_editor.dirty = True
         if current_combo and hasattr(self, "slot_combo"):
             self.slot_combo.set(current_combo)
+        self._update_map_window()
 
     def _sync_bloodstain_to_player(self):
         if not self.editor:
             CTkMessageBox.showerror(
-                "Error", "Load a character first.", parent=self.parent
+                "Error", "Load a character first.", parent=self._dialog_parent()
             )
             return
 
         if not CTkMessageBox.askyesno(
             "Move Bloodstain",
             "Move the bloodstain to the player's current position?\n\nThis will overwrite the existing bloodstain location.",
-            parent=self.parent,
+            parent=self._dialog_parent(),
         ):
             return
 
@@ -298,36 +464,321 @@ class WorldStateTab:
                 self.refresh()
             self.show_toast(message, duration=2500)
         else:
-            CTkMessageBox.showerror("Error", message, parent=self.parent)
+            CTkMessageBox.showerror("Error", message, parent=self._dialog_parent())
 
-    def set_map_image_path(self, path: str):
-        self._map_image_path = path
+    def set_maps_dir(self, path: Path):
+        self._maps_dir = path
+
+    def _player_map_point(self) -> tuple[int, float, float] | None:
+        if not self.editor:
+            return None
+        info = self.editor.get_current_location()
+        coords = info.get("coordinates")
+        if not info.get("map_id_str") or coords is None:
+            return None
+        return location_map_point(info["map_id_str"], coords.x, coords.z)
+
+    def _bloodstain_map_point(self) -> tuple[int, float, float, str, int] | None:
+        """Map position and label of the character's bloodstain, None when
+        there is none (BloodStain 0x30 is 0 while one exists)."""
+        if not self.editor:
+            return None
+        save = self.get_save_file()
+        bs = getattr(save.character_slots[self.slot_var.get() - 1], "blood_stain", None)
+        if bs is None or bs.unk0x30 != 0:
+            return None
+        d = bs.map_id.data
+        map_id = f"m{d[3]:02d}_{d[2]:02d}_{d[1]:02d}_{d[0]:02d}"
+        point = location_map_point(map_id, bs.coordinates.x, bs.coordinates.z)
+        if point is None:
+            return None
+        blood = self.editor.get_bloodstain_location() or {}
+        runes = max(bs.runes, 0)
+        label = f"{blood.get('map_name', map_id)}, {runes:,} runes"
+        return (*point, label, runes)
+
+    def _map_slot_selected(self, value: str):
+        """Character picked in the map window."""
+        if value:
+            self.slot_combo.set(value)
+            self._on_slot_selected(value)
+
+    def _update_map_window(self):
+        window = current_window()
+        if window is not None:
+            window.set_character(
+                list(self.slot_combo.cget("values")), self.slot_combo.get()
+            )
+            window.set_bloodstain(self._bloodstain_map_point())
+            window.set_player(self._player_map_point())
+            window.set_marker_editor(self.marker_editor)
+            loaded = self.editor is not None
+            window.set_grace_callbacks(
+                self._grace_state if loaded else None,
+                self._set_grace if loaded else None,
+                self._set_graces if loaded else None,
+            )
+
+    def _grace_state(self, flag_id: int) -> bool | None:
+        save = self.get_save_file()
+        if save is None or self.editor is None:
+            return None
+        slot = save.character_slots[self.slot_var.get() - 1]
+        try:
+            return EventFlags.get_flag(slot.event_flags, flag_id)
+        except (ValueError, KeyError):
+            return None
+
+    def _set_grace(self, flag_id: int, state: bool):
+        self._set_graces([flag_id], state)
+
+    def _set_graces(self, flag_ids: list[int], state: bool):
+        """Lock or unlock graces: write their event flags and save the file."""
+        save = self.get_save_file()
+        if save is None or self.editor is None:
+            return
+        slot = save.character_slots[self.slot_var.get() - 1]
+        flags = bytearray(slot.event_flags)
+        try:
+            for flag_id in flag_ids:
+                EventFlags.set_flag(flags, flag_id, state)
+        except (ValueError, KeyError) as e:
+            CTkMessageBox.showerror(
+                "Grace", f"Could not write the flag:\n{e}", parent=self._dialog_parent()
+            )
+            return
+        slot.event_flags = bytes(flags)
+        off = slot.event_flags_offset
+        save._raw_data[off : off + len(flags)] = flags
+        if self._persist("before_grace_edit", "grace_edit"):
+            what = "Grace" if len(flag_ids) == 1 else f"{len(flag_ids)} graces"
+            self.show_toast(
+                f"{what} {'unlocked' if state else 'locked'}.", duration=2500
+            )
 
     def _open_map_window(self):
+        if not self._maps_dir:
+            CTkMessageBox.showwarning(
+                "Map Unavailable", "Map images not found.", parent=self.parent
+            )
+            return
+        open_map_window(
+            self.parent,
+            self._maps_dir,
+            self.all_locations,
+            on_teleport=self._teleport_to_known_loc,
+            player=self._player_map_point(),
+            marker_editor=self.marker_editor,
+            on_apply_markers=self._apply_markers,
+            on_copy_markers=self._copy_markers,
+            on_import_markers=self._import_markers,
+            on_export_markers=self._export_markers,
+            grace_state=self._grace_state if self.editor else None,
+            on_set_grace=self._set_grace if self.editor else None,
+            on_set_graces=self._set_graces if self.editor else None,
+            on_select_slot=self._map_slot_selected,
+            on_move_bloodstain=self._sync_bloodstain_to_player,
+        )
+        self._update_map_window()
+
+    # ------------------------------------------------------------------
+    # Map markers
+    # ------------------------------------------------------------------
+
+    def _persist(self, description: str, operation: str) -> bool:
+        """Back up the file on disk, write the edited save and reload it."""
+        save_path = self.get_save_path()
+        if not save_path:
+            return False
+        save = self.get_save_file()
+        BackupManager(Path(save_path)).create_backup(
+            description=description, operation=operation, save=save
+        )
+        save.recalculate_checksums()
+        save.to_file(save_path)
+        self.reload_save()
+        self._reload_editor()
+        self.refresh()
+        return True
+
+    def _apply_markers(self, editor: MapMarkerEditor) -> MapMarkerEditor | None:
+        if not self.get_save_path():
+            CTkMessageBox.showerror(
+                "Error", "No save file path.", parent=self._dialog_parent()
+            )
+            return None
+        editor.apply()
+        self._persist("before_map_markers", "world_state_map_markers")
+        self.show_toast("Map markers saved.", duration=2500)
+        return self.marker_editor
+
+    def _export_markers(self, editor: MapMarkerEditor):
+        parent = self._dialog_parent()
+        path = filedialog.asksaveasfilename(
+            parent=parent,
+            title="Export Map Markers",
+            defaultextension=".json",
+            filetypes=[("Map markers", "*.json"), ("All files", "*.*")],
+            initialfile="map_markers.json",
+        )
+        if not path:
+            return
+        editor.export_file(path)
+        self.show_toast(f"Exported {len(editor.markers)} markers.", duration=2500)
+
+    def _ask_replace(self, parent, title: str, message: str) -> bool | None:
+        """True to replace, False to append, None when cancelled."""
+        dialog = ds.create(parent, title)
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
+        ds.header(main, title, font=ds.TITLE_LARGE)
+        ctk.CTkLabel(
+            main, text=message, font=ds.FONT, justify="left", anchor="w", wraplength=420
+        ).pack(fill=tk.X, pady=(10, 0))
+        result: dict[str, bool | None] = {"value": None}
+
+        def choose(value):
+            result["value"] = value
+            dialog.destroy()
+
+        ds.button_row(
+            main,
+            [
+                {"text": "Cancel", "command": dialog.destroy, "primary": False},
+                {"text": "Append", "command": lambda: choose(False)},
+                {"text": "Replace", "command": lambda: choose(True)},
+            ],
+        )
+        ds.finish(dialog, parent, min_width=460)
+        dialog.wait_window()
+        return result["value"]
+
+    def _import_markers(self, editor: MapMarkerEditor) -> bool:
+        parent = self._dialog_parent()
+        path = filedialog.askopenfilename(
+            parent=parent,
+            title="Import Map Markers",
+            filetypes=[("Map markers", "*.json"), ("All files", "*.*")],
+        )
+        if not path:
+            return False
+        replace = self._ask_replace(
+            parent,
+            "Import Map Markers",
+            "Replace this character's markers and beacons with the imported "
+            "ones, or append them to the existing ones?",
+        )
+        if replace is None:
+            return False
+        try:
+            added, skipped = editor.import_file(path, replace)
+        except (OSError, ValueError, KeyError) as e:
+            CTkMessageBox.showerror(
+                "Import Failed", f"Not a map marker file:\n{e}", parent=parent
+            )
+            return False
+        note = f" {skipped} did not fit." if skipped else ""
+        self.show_toast(
+            f"Imported {added} markers. Apply Changes to save.{note}", duration=3500
+        )
+        return True
+
+    def _copy_markers(self, markers: dict):
+        parent = self._dialog_parent()
+        save = self.get_save_file()
+        if save is None or not self.editor:
+            return
+        source = self.slot_var.get() - 1
+        names = [
+            n
+            for i, n in enumerate(self._get_slot_display_names())
+            if i != source and not n.endswith(" - Empty")
+        ]
+        if not names:
+            CTkMessageBox.showinfo(
+                "Copy Markers",
+                "There is no other character in this save.",
+                parent=parent,
+            )
+            return
+
+        dialog = ds.create(parent, "Copy Markers To")
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
+        ds.header(main, "Copy Markers To", font=ds.TITLE_LARGE)
+        ctk.CTkLabel(
+            main,
+            text="Copies this character's markers and beacons as shown on the map, "
+            "unsaved changes included.",
+            font=ds.FONT,
+            justify="left",
+            anchor="w",
+            wraplength=420,
+        ).pack(fill=tk.X, pady=(10, 8))
+        target_var = tk.StringVar(value=names[0])
+        combo = ctk.CTkComboBox(
+            main, values=names, variable=target_var, state="readonly", width=280
+        )
+        combo.pack(anchor="w")
+        patch_combo_scroll(combo)
+        result: dict[str, int | None] = {"value": None}
+
+        def confirm():
+            result["value"] = int(target_var.get().split(" - ")[0]) - 1
+            dialog.destroy()
+
+        ds.button_row(
+            main,
+            [
+                {"text": "Cancel", "command": dialog.destroy, "primary": False},
+                {"text": "Next", "command": confirm},
+            ],
+        )
+        ds.finish(dialog, parent, min_width=460)
+        dialog.wait_window()
+        target = result["value"]
+        if target is None:
+            return
+
+        target_editor = MapMarkerEditor(save, target)
+        if not target_editor.supported:
+            CTkMessageBox.showwarning(
+                "Copy Markers",
+                "The target character uses the older marker layout. Load it in "
+                "game and save once, then copy again.",
+                parent=parent,
+            )
+            return
+        replace = self._ask_replace(
+            parent,
+            "Copy Markers",
+            f"Replace the markers and beacons of slot {target + 1}, or append "
+            "to the ones it has?",
+        )
+        if replace is None:
+            return
+        added, skipped = copy_markers(save, markers, target, replace)
+        if not self._persist("before_copy_map_markers", "world_state_copy_markers"):
+            return
+        note = f" {skipped} did not fit." if skipped else ""
+        self.show_toast(
+            f"Copied {added} markers to slot {target + 1}.{note}", duration=3500
+        )
+
+    # ------------------------------------------------------------------
+    # Item history
+    # ------------------------------------------------------------------
+
+    def _open_item_history(self):
         if not self.editor:
             CTkMessageBox.showwarning(
                 "No Character", "Load a character first.", parent=self.parent
             )
             return
-        if not self._map_image_path:
-            CTkMessageBox.showwarning(
-                "Map Unavailable", "Map image not found.", parent=self.parent
-            )
-            return
-        m60_locations = [
-            loc
-            for loc in self.all_locations
-            if loc.tile_type == "small" and loc.map_id_str.startswith("m60_")
-        ]
-        info = self.editor.get_current_location()
-        current_map_id = info.get("map_id_str")
-        open_map_window(
-            self.parent,
-            m60_locations,
-            self._teleport_to_known_loc,
-            self._map_image_path,
-            current_map_id,
-        )
+        from er_save_manager.ui.dialogs.item_history import show_item_history
+
+        save = self.get_save_file()
+        show_item_history(self.parent, save, self.slot_var.get() - 1)
 
     def _on_mode_changed(self):
         for widget in self.content_frame.winfo_children():
@@ -341,7 +792,7 @@ class WorldStateTab:
         search_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
         search_frame.pack(fill=tk.X, pady=(0, 5))
 
-        ctk.CTkLabel(search_frame, text="Search:", font=("Segoe UI", 9, "bold")).pack(
+        ctk.CTkLabel(search_frame, text="Search:", font=ds.BOLD).pack(
             side=tk.LEFT, padx=(0, 5)
         )
 
@@ -366,41 +817,13 @@ class WorldStateTab:
             height=40,
         ).pack(pady=(5, 8), fill=tk.X, padx=5)
 
-        listbox_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
-        listbox_frame.pack(fill=tk.BOTH, expand=True, pady=5)
-
-        scrollbar = ctk.CTkScrollbar(listbox_frame, orientation="vertical")
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        self.location_listbox = tk.Listbox(
-            listbox_frame,
-            yscrollcommand=scrollbar.set,
-            selectmode=tk.SINGLE,
+        listbox_frame, self.location_listbox = ds.themed_listbox(
+            self.content_frame,
             font=("Consolas", 11),
+            selectmode=tk.SINGLE,
             height=20,
-            highlightthickness=0,
         )
-        self.location_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.configure(command=self.location_listbox.yview)
-
-        try:
-            if ctk.get_appearance_mode() == "Dark":
-                self.location_listbox.config(
-                    bg="#1f1f28",
-                    fg="#e5e5f5",
-                    selectbackground=palette.PURPLE_SELECT[1],
-                    selectforeground="#e5e5f5",
-                )
-            else:
-                self.location_listbox.config(
-                    bg="#f5f5f5",
-                    fg="#1f1f28",
-                    selectbackground=palette.PURPLE_SELECT[0],
-                    selectforeground="#1f1f28",
-                )
-        except Exception:
-            pass
-
+        listbox_frame.pack(fill=tk.BOTH, expand=True, pady=5)
         bind_mousewheel(self.location_listbox)
         self._update_location_list()
 
@@ -444,10 +867,15 @@ class WorldStateTab:
 
         self._teleport_to_known_loc(self.filtered_locations[sel[0]])
 
+    def _dialog_parent(self):
+        """The map window while it is open, so dialogs do not open behind it."""
+        window = current_window()
+        return window._win if window else self.parent
+
     def _teleport_to_known_loc(self, loc: MapLocation):
         if not self.editor:
             CTkMessageBox.showerror(
-                "Error", "Load a character first.", parent=self.parent
+                "Error", "Load a character first.", parent=self._dialog_parent()
             )
             return
 
@@ -468,7 +896,7 @@ class WorldStateTab:
                 if not CTkMessageBox.askyesno(
                     "DLC Warning",
                     f"{loc.name}\n\nThis is a DLC location. Teleporting without owning the DLC will cause an infinite loading screen.\n\nContinue?",
-                    parent=self.parent,
+                    parent=self._dialog_parent(),
                 ):
                     return
 
@@ -490,7 +918,7 @@ class WorldStateTab:
                 self.refresh()
             self.show_toast(f"Teleported to {loc.name}", duration=2500)
         else:
-            CTkMessageBox.showerror("Error", message, parent=self.parent)
+            CTkMessageBox.showerror("Error", message, parent=self._dialog_parent())
 
     def _build_custom_teleport_ui(self):
         ctk.CTkLabel(
@@ -647,7 +1075,34 @@ class WorldStateTab:
         else:
             CTkMessageBox.showerror("Error", message, parent=self.parent)
 
+    def _refresh_marker_summary(self):
+        if not hasattr(self, "markers_var"):
+            return
+        m = self.marker_editor
+        if m is None:
+            self.markers_var.set("N/A")
+        elif not m.supported:
+            self.markers_var.set("Older marker layout (not editable)")
+        else:
+            changed = "\nUnsaved changes" if m.dirty else ""
+            self.markers_var.set(
+                f"{m.count(MARKER)} markers, {m.count(BEACON)} beacons{changed}"
+            )
+
+    def _bloodstain_has_runes(self) -> bool:
+        """A bloodstain exists (BloodStain 0x30 is 0) and holds runes."""
+        save = self.get_save_file()
+        if not self.editor or save is None:
+            return False
+        bs = getattr(save.character_slots[self.slot_var.get() - 1], "blood_stain", None)
+        return bs is not None and bs.unk0x30 == 0 and bs.runes > 0
+
     def refresh(self):
+        self._refresh_marker_summary()
+        if hasattr(self, "bloodstain_btn"):
+            self.bloodstain_btn.configure(
+                state="normal" if self._bloodstain_has_runes() else "disabled"
+            )
         if not self.editor:
             self.map_name_var.set("No character loaded")
             self.coords_var.set("N/A")

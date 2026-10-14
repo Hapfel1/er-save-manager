@@ -374,8 +374,8 @@ Six uint32, one per wheel slot. See [Gestures and regions](#gestures-and-regions
 
 The chest auto-refill settings: `uint32 count`, then `count` x `(uint32 id, uint32 auto_replenish)`. `id` is
 an ammo weapon id or `0x40000000 | goods id`; `auto_replenish` 1 means auto-refill ON. Every ammo or goods
-item the character has obtained whose EquipParamGoods `autoReplenishType` is 1 (default off) or 2 (default on)
-has an entry.
+item the character has obtained whose `autoReplenishType` (EquipParamWeapon for ammo, EquipParamGoods for
+goods) is 1 (default off) or 2 (default on) has an entry.
 
 ### EquippedArmamentsAndItems (0x9C)
 
@@ -507,6 +507,25 @@ data+0x000..0x007 is the nested header and 0x008 is its first field:
 | 0x0C | uint8 | map: 0 Lands Between, 10 Realm of Shadow |
 | 0x0D | uint8 | marker icon (1 for beacons and empty records) |
 | 0x0E | uint16 | 0, or 0xFFFF on a newly placed beacon |
+
+Empty records hold id -1, x and y 0, map 0, icon 1 and leftover memory in the last two bytes.
+Beacons and markers share one id sequence; the save stores no counter.
+
+**World map units.** Marker, beacon and cursor positions are world map units: one unit is one
+pixel of the map menu's finest tiles (`menu/71_maptile.tpfbhd`, level 0, 256 x 256 tiles), origin
+at the top left. The overworld (m60) and the Realm of Shadow (m61) share one transform from global
+world coordinates (`global = tile * 256 + 128 + local` on `_00` tiles):
+
+| Map units | World |
+|---|---|
+| x | global x - 7168 |
+| y | 16640 - global z |
+
+Legacy maps and the underground are placed through WorldMapLegacyConvParam, whose rows pair a
+point in a source map with a point in a destination map. The map menu tile shown for a tile is
+the variant named by `tile mask & revealed pieces`, where the tile mask comes from
+`menu/71_maptile.mtmskbnd.dcx` and bit n is WorldMapPieceParam row n (overworld), 100 + n
+(underground) or 1000 + n (Realm of Shadow).
 
 ---
 

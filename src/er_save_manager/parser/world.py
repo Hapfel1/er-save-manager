@@ -193,7 +193,7 @@ class BloodStain:
     runes: int = 0
     map_id: MapId = field(default_factory=MapId)
     unk0x3c: int = 0
-    unk0x38: int = 0
+    unk0x40: int = 0
 
     @classmethod
     def read(cls, f: BytesIO) -> BloodStain:
@@ -210,7 +210,7 @@ class BloodStain:
             runes=struct.unpack("<i", f.read(4))[0],
             map_id=MapId.read(f),
             unk0x3c=struct.unpack("<I", f.read(4))[0],
-            unk0x38=struct.unpack("<I", f.read(4))[0],
+            unk0x40=struct.unpack("<I", f.read(4))[0],
         )
 
     def write(self, f: BytesIO):
@@ -226,7 +226,7 @@ class BloodStain:
         f.write(struct.pack("<i", self.runes))
         self.map_id.write(f)
         f.write(struct.pack("<I", self.unk0x3c))
-        f.write(struct.pack("<I", self.unk0x38))
+        f.write(struct.pack("<I", self.unk0x40))
 
 
 # ============================================================================
@@ -235,13 +235,102 @@ class BloodStain:
 
 
 @dataclass
+class MapMarkerRecord:
+    """Beacon or map marker record (16 bytes)
+
+    id -1 marks an empty record; beacons and markers share one id sequence.
+    x / y are world map units, map is 0 Lands Between, 1 underground or
+    10 Realm of Shadow, icon is the marker icon (1 on beacons and empty
+    records). flags is 0, or 0xFFFF on a newly placed beacon; empty records
+    keep leftover memory there.
+    """
+
+    FORMAT = "<iffBBH"
+    SIZE = 16
+
+    id: int = -1
+    x: float = 0.0
+    y: float = 0.0
+    map: int = 0
+    icon: int = 1
+    flags: int = 0
+
+    @property
+    def is_empty(self) -> bool:
+        return self.id == -1
+
+    @classmethod
+    def unpack(cls, data: bytes, offset: int) -> MapMarkerRecord:
+        return cls(*struct.unpack_from(cls.FORMAT, data, offset))
+
+    def pack(self) -> bytes:
+        return struct.pack(
+            self.FORMAT, self.id, self.x, self.y, self.map, self.icon, self.flags
+        )
+
+
+@dataclass
 class MenuSaveLoad:
-    """Menu profile save/load data (variable size based on size field)"""
+    """Menu profile save/load data (variable size based on size field)
+
+    size is kept as stored. A size above 0x10000 is a corrupt header; the
+    data is then read as the normal 0x1000 bytes and size is written back
+    unchanged.
+
+    data starts with a nested chunk header (u16 1, u16 version, u32 size).
+    Version 2 holds 10 beacon and 100 marker records and the world map
+    cursor; version 0 (older characters) is not decoded.
+    """
+
+    BEACON_OFFSET = 0x108
+    BEACON_COUNT = 10
+    MARKER_OFFSET = 0x1A8
+    MARKER_COUNT = 100
+    CURSOR_OFFSET = 0xFD0
 
     unk0x0: int = 0
     unk0x2: int = 0
     size: int = 0
     data: bytes = b""
+
+    @property
+    def layout_version(self) -> int | None:
+        """Version of the nested chunk, None when data has no chunk header."""
+        if len(self.data) < 8:
+            return None
+        chunk_type, version = struct.unpack_from("<HH", self.data, 0)
+        return version if chunk_type == 1 else None
+
+    @property
+    def has_marker_layout(self) -> bool:
+        return self.layout_version == 2 and len(self.data) >= self.CURSOR_OFFSET + 8
+
+    def _record_span(self, beacons: bool) -> tuple[int, int]:
+        if beacons:
+            return self.BEACON_OFFSET, self.BEACON_COUNT
+        return self.MARKER_OFFSET, self.MARKER_COUNT
+
+    def records(self, beacons: bool) -> list[MapMarkerRecord]:
+        """All beacon or marker records, empty ones included."""
+        start, count = self._record_span(beacons)
+        return [
+            MapMarkerRecord.unpack(self.data, start + i * MapMarkerRecord.SIZE)
+            for i in range(count)
+        ]
+
+    def set_record(self, beacons: bool, index: int, record: MapMarkerRecord):
+        start, count = self._record_span(beacons)
+        if not 0 <= index < count:
+            raise IndexError(index)
+        off = start + index * MapMarkerRecord.SIZE
+        buf = bytearray(self.data)
+        buf[off : off + MapMarkerRecord.SIZE] = record.pack()
+        self.data = bytes(buf)
+
+    @property
+    def cursor(self) -> tuple[float, float]:
+        """World map cursor position (map units)."""
+        return struct.unpack_from("<ff", self.data, self.CURSOR_OFFSET)
 
     @classmethod
     def read(cls, f: BytesIO) -> MenuSaveLoad:
@@ -250,13 +339,7 @@ class MenuSaveLoad:
         obj.unk0x0 = struct.unpack("<H", f.read(2))[0]
         obj.unk0x2 = struct.unpack("<H", f.read(2))[0]
         obj.size = struct.unpack("<I", f.read(4))[0]
-
-        # Validate size to prevent reading corrupted data
-        # size is normally 0x1000 (total 0x1008), clamped to that as a fallback if corrupted/out of range
-        if obj.size > 0x10000:
-            obj.size = 0x1000
-
-        obj.data = f.read(obj.size)
+        obj.data = f.read(obj.size if obj.size <= 0x10000 else 0x1000)
         return obj
 
     def write(self, f: BytesIO):
@@ -303,6 +386,11 @@ class GaitemGameData:
 
     The first count records are live and sorted by item_id; records past
     count are stale and preserved as read.
+
+    Slots written by older game versions use the same 0x1B580 bytes as 7000
+    records of 16 bytes (u32 item_id, u8 1, 3 bytes, u32, u32). entries
+    always holds the 8-byte view for an exact round trip; record_size tells
+    which layout the data is in.
     """
 
     count: int = 0
@@ -315,6 +403,38 @@ class GaitemGameData:
         obj.count = struct.unpack("<q", f.read(8))[0]  # i64
         obj.entries = [GaitemGameDataEntry.read(f) for _ in range(14000)]
         return obj
+
+    @staticmethod
+    def _is_live_run(entries: list[GaitemGameDataEntry]) -> bool:
+        ids = [e.item_id for e in entries]
+        return all(e.acquired == 1 for e in entries) and ids == sorted(ids)
+
+    @property
+    def record_size(self) -> int:
+        """16 when the data is in the old 16-byte layout, else 8.
+
+        Slot version does not decide it (a few newer slots keep the old
+        layout), so the layout whose first count records form a sorted run
+        of acquired records wins; 8 when both or neither do.
+        """
+        n = self.count
+        if 0 <= n <= 14000 and self._is_live_run(self.entries[:n]):
+            return 8
+        if 0 <= n <= 7000 and self._is_live_run(self.entries[0::2][:n]):
+            return 16
+        return 8
+
+    def acquired_item_ids(self) -> list[int]:
+        """Category-tagged item ids of the live records.
+
+        Records with acquired != 1 are skipped: other tools inflate count
+        over zeroed records.
+        """
+        if self.record_size == 16:
+            live = self.entries[0::2][: max(0, min(self.count, 7000))]
+        else:
+            live = self.entries[: max(0, min(self.count, 14000))]
+        return [e.item_id for e in live if e.acquired == 1]
 
     def write(self, f: BytesIO):
         """Write GaitemGameData to stream"""
