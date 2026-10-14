@@ -54,6 +54,7 @@ from er_save_manager.ui.utils import (
     get_work_area,
     open_url,
     pick_file,
+    style_window_frame,
     title_bar_height,
     trace_variable,
 )
@@ -137,7 +138,11 @@ class SaveManagerGUI:
         from er_save_manager.ui.settings import detect_system_scale
 
         _saved_scale = self.settings.get("ui_scale", 1.0)
-        _scale = detect_system_scale() if _saved_scale is None else _saved_scale
+        _scale = (
+            detect_system_scale(_windows_dpi_ignored())
+            if _saved_scale is None
+            else _saved_scale
+        )
         if _scale != 1.0:
             ctk.set_widget_scaling(_scale)
             ctk.set_window_scaling(_scale)
@@ -210,6 +215,7 @@ class SaveManagerGUI:
         self._normal_geometry: str | None = None
         self._compact = False
         self._restore_window_state()
+        self.root.after(100, lambda: style_window_frame(self.root, dialog=False))
 
         self.theme_manager.apply_tk_widget_colors(self.root)
 
@@ -3061,6 +3067,13 @@ class SaveManagerGUI:
             pass
 
 
+def _windows_dpi_ignored() -> bool:
+    """Whether the "Ignore Windows display scaling" setting applies."""
+    return sys.platform == "win32" and bool(
+        get_settings().get("ignore_windows_dpi", True)
+    )
+
+
 def _set_dpi_aware_unscaled() -> None:
     """Draw at 100% size on Windows while staying sharp.
 
@@ -3086,9 +3099,7 @@ def main():
     from er_save_manager.ui.emoji_fallback import install as install_emoji_fallback
 
     install_emoji_fallback()
-    ignore_dpi = sys.platform == "win32" and get_settings().get(
-        "ignore_windows_dpi", False
-    )
+    ignore_dpi = _windows_dpi_ignored()
     if ignore_dpi:
         _set_dpi_aware_unscaled()
     root = ctk.CTk()

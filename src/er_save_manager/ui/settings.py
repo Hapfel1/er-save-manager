@@ -125,7 +125,7 @@ class Settings:
             # None means auto-detect from the system on startup.
             "ui_scale": 1.0,
             # Windows: draw at 100% size instead of the monitor's DPI scale
-            "ignore_windows_dpi": False,
+            "ignore_windows_dpi": True,
             # Main window size, position and maximized state from the last close
             "window_state": {},
             # Game key (see game_profiles.py) selected when the application starts
@@ -193,16 +193,31 @@ def get_loadouts_path() -> Path:
     return Settings.get_loadouts_path()
 
 
-def detect_system_scale() -> float:
+def detect_system_scale(ignore_windows_dpi: bool = False) -> float:
     """Return the UI scale for the "Auto" setting, or 1.0 as fallback.
 
     Linux: reads GDK_SCALE then QT_SCALE_FACTOR (set by Plasma global scale).
-    Windows and macOS: 1.0. CTk already applies the monitor DPI scale there,
-    so an extra factor would scale twice.
+    Windows: the system DPI scale (GetDpiForSystem / 96) when Windows display
+    scaling is ignored, so "Auto" matches the Windows setting; otherwise 1.0,
+    because CTk already applies the monitor DPI and a factor would scale twice.
+    macOS: 1.0.
     Returns 1.0 when detection fails or the value is out of the 0.5-4.0 range.
     """
     import os
     import sys
+
+    if sys.platform == "win32":
+        if not ignore_windows_dpi:
+            return 1.0
+        try:
+            import ctypes
+
+            dpi = ctypes.windll.user32.GetDpiForSystem()
+            if 0.5 <= dpi / 96.0 <= 4.0:
+                return dpi / 96.0
+        except (AttributeError, OSError):
+            pass
+        return 1.0
 
     if not sys.platform.startswith("linux"):
         return 1.0

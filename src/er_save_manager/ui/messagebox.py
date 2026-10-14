@@ -31,7 +31,11 @@ class CTkMessageBox:
         """
         import tkinter.font as tkfont
 
-        from er_save_manager.ui.utils import bind_mousewheel, force_render_dialog
+        from er_save_manager.ui.utils import (
+            bind_mousewheel,
+            force_render_dialog,
+            style_window_frame,
+        )
 
         dialog = ctk.CTkToplevel(parent if parent else None)
         # Withdrawn until fully built and placed, so it never shows at the
@@ -146,6 +150,7 @@ class CTkMessageBox:
             dialog.geometry(f"{round(width)}x{round(height)}+{px}+{py}")
 
         dialog.deiconify()
+        style_window_frame(dialog)
         force_render_dialog(dialog)
         dialog.attributes("-alpha", 1)
         try:

@@ -766,7 +766,7 @@ class SettingsTab:
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
         self.ignore_windows_dpi_var = tk.BooleanVar(
-            value=self.settings.get("ignore_windows_dpi", False)
+            value=self.settings.get("ignore_windows_dpi", True)
         )
         ctk.CTkCheckBox(
             frame,
@@ -778,8 +778,9 @@ class SettingsTab:
         ctk.CTkLabel(
             frame,
             text=(
-                "Windows only. Draws the app at its 100% size, sharp, even when "
-                "Windows is set to 125% or more. UI Scale still applies on top. "
+                "Windows only, on by default. Draws the app at its 100% size, "
+                "even when Windows is set to 125% or more. UI Scale still "
+                "applies on top; Auto then matches the Windows scale. "
                 "Restart required to apply."
             ),
             text_color=("gray40", "gray70"),

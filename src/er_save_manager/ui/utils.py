@@ -290,6 +290,71 @@ def center_window(
         window.geometry(f"+{x}+{y}")
 
 
+def _colorref(window, color) -> int:
+    """Tk color (name, hex or CTk light/dark tuple) as a Win32 COLORREF."""
+    if isinstance(color, (tuple, list)):
+        color = color[1] if ctk.get_appearance_mode() == "Dark" else color[0]
+    r, g, b = (v // 257 for v in window.winfo_rgb(color))
+    return r | (g << 8) | (b << 16)
+
+
+def style_window_frame(window, *, dialog: bool = True) -> None:
+    """Match the Windows title bar to the app instead of the system default.
+
+    Caption color = the window background, caption text = the theme text
+    color, border = the purple tint (Windows 11; Windows 10 ignores these
+    attributes). Dialogs also lose the minimize and maximize buttons. No-op
+    on other platforms, where the window manager draws the frame.
+    """
+    if sys.platform != "win32":
+        return
+
+    def apply():
+        import ctypes
+
+        from er_save_manager.ui import palette
+
+        try:
+            hwnd = int(window.wm_frame(), 16)
+        except (ValueError, tkinter.TclError):
+            return
+        DWMWA_BORDER_COLOR, DWMWA_CAPTION_COLOR, DWMWA_TEXT_COLOR = 34, 35, 36
+        try:
+            fg = window.cget("fg_color")
+        except (ValueError, tkinter.TclError):
+            fg = ("#EBEBEB", "#242424")
+        colors = {
+            DWMWA_CAPTION_COLOR: fg,
+            DWMWA_TEXT_COLOR: ctk.ThemeManager.theme["CTkLabel"]["text_color"],
+            DWMWA_BORDER_COLOR: palette.PURPLE_TINT,
+        }
+        dwm = ctypes.windll.dwmapi
+        for attr, color in colors.items():
+            try:
+                value = ctypes.c_int(_colorref(window, color))
+                dwm.DwmSetWindowAttribute(
+                    hwnd, attr, ctypes.byref(value), ctypes.sizeof(value)
+                )
+            except (OSError, tkinter.TclError):
+                pass
+        if dialog:
+            user32 = ctypes.windll.user32
+            GWL_STYLE = -16
+            WS_MAXIMIZEBOX, WS_MINIMIZEBOX = 0x00010000, 0x00020000
+            style = user32.GetWindowLongW(hwnd, GWL_STYLE)
+            user32.SetWindowLongW(
+                hwnd, GWL_STYLE, style & ~(WS_MAXIMIZEBOX | WS_MINIMIZEBOX)
+            )
+            # SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED
+            user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x1 | 0x2 | 0x4 | 0x10 | 0x20)
+
+    try:
+        window.update_idletasks()
+        apply()
+    except Exception:
+        pass
+
+
 def bind_mousewheel(widget, target_widget=None):
     """
     Bind mousewheel scrolling to a CTkScrollableFrame (AppImage-compatible).

@@ -11,6 +11,7 @@ from er_save_manager.ui.utils import (
     center_window,
     force_render_dialog,
     get_work_area,
+    style_window_frame,
     title_bar_height,
 )
 
@@ -111,6 +112,7 @@ def finish(dialog, parent, *, min_width=0, width=None, height=None):
         height = round(dialog.winfo_reqheight() / scale)
     center_window(dialog, width, height, parent=parent)
     dialog.deiconify()
+    style_window_frame(dialog)
     force_render_dialog(dialog)
     dialog.attributes("-alpha", 1)
     try:
