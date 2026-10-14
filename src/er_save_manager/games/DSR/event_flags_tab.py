@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
@@ -154,18 +155,13 @@ class DSREventFlagsTab:
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=12, pady=(8, 4))
 
-        tf = tk.Frame(self._npc_parent, bg="#2b2b2b")
-        tf.pack(fill="both", expand=True, padx=12, pady=(0, 4))
-        tf.grid_rowconfigure(0, weight=1)
-        tf.grid_columnconfigure(0, weight=1)
-
-        self._npc_tree = ttk.Treeview(
-            tf,
+        tf, self._npc_tree = ds.themed_tree(
+            self._npc_parent,
             columns=("flag_id", "label", "state"),
             show="tree headings",
-            style="Flags.Treeview",
             selectmode="browse",
         )
+        tf.pack(fill="both", expand=True, padx=12, pady=(0, 4))
         self._npc_tree.heading("#0", text="NPC")
         self._npc_tree.heading("flag_id", text="ID")
         self._npc_tree.heading("label", text="Description")
@@ -174,11 +170,7 @@ class DSREventFlagsTab:
         self._npc_tree.column("flag_id", width=80, minwidth=60, anchor="center")
         self._npc_tree.column("label", width=260, minwidth=140)
         self._npc_tree.column("state", width=60, minwidth=50, anchor="center")
-        self._npc_tree.grid(row=0, column=0, sticky="nsew")
         self._npc_tree.bind("<<TreeviewSelect>>", self._on_npc_select)
-        sb = ttk.Scrollbar(tf, orient="vertical", command=self._npc_tree.yview)
-        sb.grid(row=0, column=1, sticky="ns")
-        self._npc_tree.configure(yscrollcommand=sb.set)
 
         btn_row = ctk.CTkFrame(self._npc_parent, fg_color="transparent")
         btn_row.pack(fill="x", padx=12, pady=(2, 8))

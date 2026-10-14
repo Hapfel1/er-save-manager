@@ -6,13 +6,14 @@ and can light, unlight or set the intensity of them.
 from __future__ import annotations
 
 from pathlib import Path
-from tkinter import ttk
 
 import customtkinter as ctk
 
 from er_save_manager.games.DS2.bonfire_database import BONFIRES
 from er_save_manager.games.DS2.save import BONFIRE_MAX_INTENSITY, DS2Save, SlotState
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write, raise_existing_window
 
 
@@ -101,7 +102,7 @@ class DS2BonfirePanel:
         ctk.CTkLabel(
             self.parent,
             text=(
-                "Ctrl or Shift+click selects several. Intensity is what Bonfire "
+                "Intensity is what Bonfire "
                 "Ascetics raise, plus 1 per NG+ cycle the game adds itself; it is "
                 "kept when lighting or unlighting. Set "
                 "Intensity also lights unlit bonfires. The last rested bonfire "
@@ -111,7 +112,7 @@ class DS2BonfirePanel:
             font=("Segoe UI", 11),
         ).pack(side="bottom", anchor="w", padx=10)
 
-        self._tree = ttk.Treeview(
+        box, self._tree = ds.themed_tree(
             self.parent,
             columns=("name", "state", "intensity"),
             show="headings",
@@ -124,7 +125,8 @@ class DS2BonfirePanel:
         self._tree.column("name", width=300)
         self._tree.column("state", width=150)
         self._tree.column("intensity", width=80, anchor="center")
-        self._tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+        box.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+        add_tooltip(self._tree, MULTI_SELECT_TIP)
         self._tree.bind("<<TreeviewSelect>>", lambda _e: self._on_selection())
 
         self._ids: list[int] = []

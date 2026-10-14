@@ -12,7 +12,6 @@ batch add.
 from __future__ import annotations
 
 import tkinter as tk
-from collections import deque
 from typing import TYPE_CHECKING
 
 import customtkinter as ctk
@@ -25,30 +24,26 @@ from er_save_manager.games.DS2.item_database import CATEGORIES, _hex_id_to_int
 from er_save_manager.games.DS2.regulation import INFUSION_NAMES
 from er_save_manager.games.DS2.save import KEY_LIST_CATEGORIES
 from er_save_manager.ui import palette
+from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import (
     center_window,
     debounced_trace,
     patch_combo_scroll,
 )
+from er_save_manager.ui.virtual_grid import GridEntry, VirtualIconGrid
 
 if TYPE_CHECKING:
     from er_save_manager.games.DS2.inventory_tab import DS2InventoryPanel
 
 _ICON_SIZE = 64
 _CELL_W = 116
-_CELL_H = 106
+_CELL_H = 124
 _CELL_PAD = 4
 _SCROLLBAR_W = 24
 _DEFAULT_COLS = 4
-# Icons are decoded and turned into Tk PhotoImages on first use, and a big
-# category (Armor has 430+ entries) doing that in one pass visibly freezes
-# the popup. Building a few buttons per frame keeps it responsive.
-_BATCH = 12
-_DELAY_MS = 8
-_CELL_COLOR = ("gray82", "gray18")
-_CELL_SELECTED = palette.PURPLE_SELECT
-_SHIFT = 0x0001
-_CONTROL = 0x0004
+# Category key for the "All" entry of the category list
+_ALL = ""
 
 
 def _center_over(window, parent, w=None, h=None) -> None:
@@ -62,18 +57,11 @@ class IconBrowser(ctk.CTkToplevel):
     def __init__(self, parent, panel: DS2InventoryPanel, initial_category: str = ""):
         super().__init__(parent)
         self._panel = panel
-        self._cols = _DEFAULT_COLS
-        self._buttons: list[tuple[ctk.CTkButton, str]] = []
-        self._ctk_images: list = []
-        self._resize_job: str | None = None
         self._current_cat = initial_category or panel._selected_add_category()
+        # Selected (category, name) keys in grid order; the form follows the first.
+        self._selected_keys: list[tuple[str, str]] = []
+        self._selected_cat: str | None = None
         self._selected_name: str | None = None
-        # Selected item names in grid order, and the last clicked one.
-        self._selected_names: list[str] = []
-        self._anchor: str | None = None
-        self._pending_names: deque[str] = deque()
-        self._batch_job: str | None = None
-        self._grid_count = 0  # buttons already placed, when no filter is active
 
         w = _DEFAULT_COLS * (_CELL_W + _CELL_PAD * 2) + 12 + _SCROLLBAR_W + 30
         self.title("Add Item")
@@ -89,8 +77,6 @@ class IconBrowser(ctk.CTkToplevel):
 
         self._build_ui()
         self._load_category(self._current_cat)
-        self._scroll.bind("<Configure>", self._on_scroll_resize)
-        self.after(120, self._reflow)
 
     # ------------------------------------------------------------------
     # UI
@@ -125,15 +111,23 @@ class IconBrowser(ctk.CTkToplevel):
             ctk.CTkComboBox(
                 cat_row,
                 variable=self._cat_var,
-                values=self._panel._visible_add_labels(),
+                values=["All", *self._panel._visible_add_labels()],
                 state="readonly",
                 command=self._on_category_change,
             )
         ).pack(side="left", fill="x", expand=True)
 
-        self._scroll = ctk.CTkScrollableFrame(self)
-        self._scroll.pack(fill="both", expand=True, padx=6, pady=(0, 4))
-
+        self._grid = VirtualIconGrid(
+            self,
+            self._on_select,
+            multi=True,
+            cell_w=_CELL_W,
+            cell_h=_CELL_H,
+            pad=_CELL_PAD,
+            icon_size=_ICON_SIZE,
+        )
+        self._grid.pack(fill="both", expand=True, padx=6, pady=(0, 4))
+        add_tooltip(self._grid._canvas, MULTI_SELECT_TIP)
         panel = ctk.CTkFrame(self, fg_color=("gray88", "gray18"), corner_radius=8)
         panel.pack(fill="x", padx=6, pady=(0, 8))
 
@@ -215,170 +209,71 @@ class IconBrowser(ctk.CTkToplevel):
             state="disabled",
         )
         self._add_btn.grid(row=0, column=0, sticky="ew", padx=(0, 4))
-        ctk.CTkButton(
+        self._add_all_btn = ctk.CTkButton(
             buttons,
             text="Add All Shown",
             height=34,
             command=self._do_add_all,
-        ).grid(row=0, column=1, sticky="ew", padx=(4, 0))
+        )
+        self._add_all_btn.grid(row=0, column=1, sticky="ew", padx=(4, 0))
 
     # ------------------------------------------------------------------
     # Items
     # ------------------------------------------------------------------
 
     def _load_category(self, category: str) -> None:
-        if self._batch_job is not None:
-            self.after_cancel(self._batch_job)
-            self._batch_job = None
-        for btn, _ in self._buttons:
-            btn.destroy()
-        self._buttons.clear()
-        self._ctk_images.clear()
-        self._selected_name = None
-        self._selected_names = []
-        self._anchor = None
-        self._update_form()
+        from er_save_manager.games.DS2.icon_manager import get_icon
 
-        self._grid_count = 0
-        self._pending_names = deque(sorted(CATEGORIES.get(category, {}).keys()))
-        self._build_next_batch(category)
-
-    def _build_next_batch(self, category: str) -> None:
-        """Create up to _BATCH buttons, then reschedule for the rest so the
-        popup stays responsive while a large category loads."""
-        if not self.winfo_exists():
-            return
-        from er_save_manager.games.DS2.icon_manager import fit_size, get_icon
-
-        for _ in range(_BATCH):
-            if not self._pending_names:
-                break
-            name = self._pending_names.popleft()
-            item_id = _hex_id_to_int(CATEGORIES[category][name])
-            img = get_icon(item_id, category) if item_id is not None else None
-            ctk_img = None
-            if img:
-                ctk_img = ctk.CTkImage(
-                    light_image=img, dark_image=img, size=fit_size(img, _ICON_SIZE)
-                )
-                self._ctk_images.append(ctk_img)
-            btn = ctk.CTkButton(
-                self._scroll,
-                image=ctk_img,
-                text=name,
-                compound="top",
-                width=_CELL_W,
-                height=_CELL_H,
-                font=("Segoe UI", 11),
-                fg_color=_CELL_COLOR,
-                hover_color=("gray70", "gray28"),
-                text_color=("gray10", "gray90"),
-                anchor="center",
-            )
-            btn.bind("<Button-1>", lambda e, n=name: self._on_item_click(n, e.state))
-            if getattr(btn, "_text_label", None) is not None:
-                btn._text_label.configure(wraplength=_CELL_W - 8, justify="center")
-            self._buttons.append((btn, name))
-            if not self._search_var.get().strip():
-                # Without a filter, grid straight to the next slot. Re-laying
-                # out every button each batch makes loading quadratic in the
-                # button count, which is slow on large categories like Armor.
-                row, col = divmod(self._grid_count, self._cols)
-                btn.grid(
-                    row=row, column=col, padx=_CELL_PAD, pady=_CELL_PAD, sticky="nsew"
-                )
-                self._grid_count += 1
-
-        if not self._pending_names or self._search_var.get().strip():
-            self._apply_filter()
+        if category == _ALL:
+            shown = self._panel._visible_add_labels()
+            cats = [k for k, label in self._category_labels.items() if label in shown]
         else:
-            self._scroll.update_idletasks()
-            canvas = self._scroll._parent_canvas
-            canvas.configure(scrollregion=canvas.bbox("all"))
+            cats = [category]
 
-        if self._pending_names:
-            self._batch_job = self.after(
-                _DELAY_MS, lambda: self._build_next_batch(category)
-            )
-        else:
-            self._batch_job = None
+        def icon(cat: str, name: str):
+            item_id = _hex_id_to_int(CATEGORIES[cat][name])
+            return get_icon(item_id, cat) if item_id is not None else None
+
+        self._grid.set_entries(
+            [
+                GridEntry(
+                    (cat, name), name, name.lower(), lambda c=cat, n=name: icon(c, n)
+                )
+                for cat in cats
+                for name in sorted(CATEGORIES.get(cat, {}).keys())
+            ]
+        )
+        self._apply_filter()
+        self._on_select([])
 
     def _on_category_change(self, label: str) -> None:
-        for key, value in self._category_labels.items():
-            if value == label:
-                self._current_cat = key
-                break
+        self._current_cat = next(
+            (k for k, v in self._category_labels.items() if v == label), _ALL
+        )
         self.title(f"Add Item - {label}")
         self._load_category(self._current_cat)
 
-    # ------------------------------------------------------------------
-    # Layout / filter
-    # ------------------------------------------------------------------
-
     def _apply_filter(self) -> None:
-        q = self._search_var.get().lower().strip()
-        visible = [btn for btn, name in self._buttons if not q or q in name.lower()]
-        for btn, _ in self._buttons:
-            btn.grid_forget()
-        for idx, btn in enumerate(visible):
-            row, col = divmod(idx, self._cols)
-            btn.grid(row=row, column=col, padx=_CELL_PAD, pady=_CELL_PAD, sticky="nsew")
-        self._scroll.update_idletasks()
-        canvas = self._scroll._parent_canvas
-        canvas.configure(scrollregion=canvas.bbox("all"))
-
-    def _on_scroll_resize(self, _event) -> None:
-        if self._resize_job:
-            self.after_cancel(self._resize_job)
-        self._resize_job = self.after(60, self._reflow)
-
-    def _reflow(self) -> None:
-        available = max(1, self._scroll.winfo_width() - _SCROLLBAR_W)
-        new_cols = max(1, available // (_CELL_W + _CELL_PAD * 2))
-        if new_cols != self._cols:
-            self._cols = new_cols
-            self._apply_filter()
+        self._grid.apply_filter(self._search_var.get())
 
     # ------------------------------------------------------------------
     # Selection
     # ------------------------------------------------------------------
 
     def _visible_names(self) -> list[str]:
-        q = self._search_var.get().lower().strip()
-        return [name for _, name in self._buttons if not q or q in name.lower()]
+        return [name for _, name in self._grid.visible_keys()]
 
-    def _on_item_click(self, name: str, state: int = 0) -> None:
-        shown = self._visible_names()
-        if state & _SHIFT and self._anchor in shown and name in shown:
-            a, b = sorted((shown.index(self._anchor), shown.index(name)))
-            chosen = shown[a : b + 1]
-        elif state & _CONTROL:
-            chosen = [n for n in self._selected_names if n != name]
-            if name not in self._selected_names:
-                chosen.append(name)
-            self._anchor = name
-        else:
-            chosen = [name]
-            self._anchor = name
-        order = [n for _, n in self._buttons]
-        previous = set(self._selected_names)
-        self._selected_names = [n for n in order if n in chosen]
-        # Recolor only cells whose state changed; each configure redraws.
-        now = set(self._selected_names)
-        changed = previous ^ now
-        for btn, n in self._buttons:
-            if n in changed:
-                btn.configure(fg_color=_CELL_SELECTED if n in now else _CELL_COLOR)
-        # Single-item controls (infusion choices, caps) follow the first pick.
-        self._selected_name = self._selected_names[0] if self._selected_names else None
-        count = len(self._selected_names)
+    def _on_select(self, keys: list) -> None:
+        self._selected_keys = list(keys)
+        self._selected_cat, self._selected_name = keys[0] if keys else (None, None)
+        count = len(keys)
         self._sel_lbl.configure(
             text=f"Selected: {self._selected_name}"
             if count == 1
             else f"{count} items selected"
             if count
             else "No item selected",
-            text_color=palette.PURPLE_TEXT,
+            text_color=palette.PURPLE_TEXT if count else ("gray50", "gray60"),
         )
         self._update_form()
 
@@ -391,7 +286,7 @@ class IconBrowser(ctk.CTkToplevel):
             UPGRADABLE_CATEGORIES,
         )
 
-        category = self._current_cat
+        category = self._selected_cat or self._current_cat
         character = self._panel._current_character()
         item_id = None
         if self._selected_name is not None:
@@ -437,11 +332,11 @@ class IconBrowser(ctk.CTkToplevel):
     # Add
     # ------------------------------------------------------------------
 
-    def _sync_panel(self) -> None:
-        """Point the panel's add form at this picker's category and values,
+    def _sync_panel(self, category: str) -> None:
+        """Point the panel's add form at category and this picker's values,
         since adding goes through the panel."""
         panel = self._panel
-        panel.add_category_var.set(self._category_labels[self._current_cat])
+        panel.add_category_var.set(self._category_labels[category])
         panel._search_items()
         panel.add_qty_var.set(self._qty_var.get())
         panel.add_upgrade_var.set(self._upgrade_var.get())
@@ -450,29 +345,68 @@ class IconBrowser(ctk.CTkToplevel):
     def _do_add_all(self) -> None:
         """Add every item the grid shows (category and search filter) in one
         write, with the quantity, upgrade and infusion fields."""
-        names = self._visible_names()
-        if not names:
+        keys = self._grid.visible_keys()
+        if not keys:
             self._panel.show_toast("No items shown", duration=2000)
             return
         save = self._panel._writable_save()
         if save is None:
             return
-        self._sync_panel()
-        self._panel._add_many(save, names)
+        if self._current_cat != _ALL:
+            self._sync_panel(self._current_cat)
+            self._panel._add_many(save, [name for _, name in keys])
+            return
+        if CTkMessageBox._create_dialog(
+            self,
+            "Add All Shown",
+            f"Add all {len(keys)} shown items from every category?\n\n"
+            "This fills most of the inventory. A backup is made first; restore "
+            "it in the Backup Manager to undo.",
+            icon_type="warning",
+            buttons=[("Add All", True), ("Cancel", False)],
+        ):
+            self._add_groups(save, keys)
+
+    def _add_groups(self, save, keys: list[tuple[str, str]]) -> None:
+        """Add (category, name) keys of several categories with one write;
+        the panel adds from one category at a time."""
+        groups: dict[str, list[str]] = {}
+        for cat, name in keys:
+            groups.setdefault(cat, []).append(name)
+        results: list = []
+        for cat, names in groups.items():
+            self._sync_panel(cat)
+            self._panel._add_many(save, names, batch=results)
+        self._panel._report_bulk_add(save, results)
 
     def _do_add(self) -> None:
         if self._selected_name is None:
             return
         panel = self._panel
+        groups: dict[str, list[str]] = {}
+        for cat, name in self._selected_keys:
+            groups.setdefault(cat, []).append(name)
+        if len(groups) > 1:
+            save = panel._writable_save()
+            if save is None:
+                return
+            n = len(self._selected_keys)
+            if CTkMessageBox.askyesno(
+                "Add items",
+                f"Add the {n} selected items from {len(groups)} categories?",
+                parent=self,
+            ):
+                self._add_groups(save, self._selected_keys)
+            return
 
-        label = self._category_labels[self._current_cat]
-        panel.add_category_var.set(label)
+        [(category, names)] = groups.items()
+        panel.add_category_var.set(self._category_labels[category])
         panel._search_items()
 
         children = panel._results_tree.get_children()
         rows = [
             children[panel._search_results.index(name)]
-            for name in self._selected_names
+            for name in names
             if name in panel._search_results
         ]
         if not rows:

@@ -14,7 +14,6 @@ the panel's actions apply to every selected row.
 from __future__ import annotations
 
 import tkinter as tk
-from collections import deque
 from typing import TYPE_CHECKING
 
 import customtkinter as ctk
@@ -26,30 +25,24 @@ from er_save_manager.games.DS2.icon_manager import (
 from er_save_manager.games.DS2.regulation import INFUSION_NAMES
 from er_save_manager.games.DS2.save import INVENTORY_END, INVENTORY_START
 from er_save_manager.ui import palette
+from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import (
     center_window,
     patch_combo_scroll,
 )
+from er_save_manager.ui.virtual_grid import GridEntry, VirtualIconGrid
 
 if TYPE_CHECKING:
     from er_save_manager.games.DS2.inventory_tab import DS2InventoryPanel
 
 _ICON_SIZE = 56
 _CELL_W = 110
-_CELL_H = 100
+_CELL_H = 124
 _CELL_PAD = 4
 _SCROLLBAR_W = 24
 _DEFAULT_COLS = 5
-# Builds a few icons per frame so a large inventory does not freeze the popup,
-# see icon_browser.py.
-_BATCH = 12
-_DELAY_MS = 8
 # Show choices, both locations first as the default.
 _LOCATION_FILTERS = ("All", "Inventory", "Item Box")
-_CELL_COLOR = ("gray82", "gray18")
-_CELL_SELECTED = palette.PURPLE_SELECT
-_SHIFT = 0x0001
-_CONTROL = 0x0004
 
 
 def _center_over(window, parent, w=None, h=None) -> None:
@@ -62,20 +55,12 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
     def __init__(self, parent, panel: DS2InventoryPanel):
         super().__init__(parent)
         self._panel = panel
-        self._cols = _DEFAULT_COLS
-        self._buttons: list[tuple[ctk.CTkButton, int]] = []  # (button, tree index)
-        self._ctk_images: list = []
-        self._resize_job: str | None = None
-        # Selected tree indices in grid order, and the last clicked one.
+        # Selected tree indices in grid order
         self._selected: list[int] = []
-        self._anchor: int | None = None
-        self._pending_indices: deque[int] = deque()
         # Rows the grid was built from; indices above point into this, so a
         # panel re-filter can never shift them onto other items.
         self._items: list[tuple] = []
         self._reload_job: str | None = None
-        self._batch_job: str | None = None
-        self._grid_count = 0  # buttons already placed this load
 
         w = _DEFAULT_COLS * (_CELL_W + _CELL_PAD * 2) + 12 + _SCROLLBAR_W + 30
         self.title("Visual Inventory")
@@ -156,10 +141,17 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             command=self.destroy,
         ).pack(side="right")
 
-        self._scroll = ctk.CTkScrollableFrame(self)
-        self._scroll.pack(fill="both", expand=True, padx=6, pady=(0, 4))
-        self._scroll.bind("<Configure>", self._on_scroll_resize)
-
+        self._grid = VirtualIconGrid(
+            self,
+            self._on_select,
+            multi=True,
+            cell_w=_CELL_W,
+            cell_h=_CELL_H,
+            pad=_CELL_PAD,
+            icon_size=_ICON_SIZE,
+        )
+        self._grid.pack(fill="both", expand=True, padx=6, pady=(0, 4))
+        add_tooltip(self._grid._canvas, MULTI_SELECT_TIP)
         panel = ctk.CTkFrame(self, fg_color=("gray88", "gray18"), corner_radius=8)
         panel.pack(fill="x", padx=6, pady=(0, 8))
 
@@ -247,8 +239,6 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             height=32,
             command=self._do_remove,
             state="disabled",
-            fg_color=("#a03030", "#7c2020"),
-            hover_color=("#c04040", "#9c3030"),
         )
         self._remove_btn.pack(fill="x", padx=10, pady=(6, 10))
 
@@ -262,55 +252,27 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
     # ------------------------------------------------------------------
 
     def _load_icons(self) -> None:
-        if self._batch_job is not None:
-            self.after_cancel(self._batch_job)
-            self._batch_job = None
-        for btn, _ in self._buttons:
-            btn.destroy()
-        self._buttons.clear()
-        self._ctk_images.clear()
-        self._selected = []
-        self._anchor = None
-        self._update_form()
-
-        self._grid_count = 0
-        location = self._location_var.get()
-        self._items = list(self._panel._visible_items)
-        self._pending_indices = deque(
-            index
-            for index, (item, _name, _category) in enumerate(self._items)
-            if location == _LOCATION_FILTERS[0]
-            or item.in_box == (location == _LOCATION_FILTERS[2])
-        )
-        self._build_next_batch()
-
-    def _build_next_batch(self) -> None:
-        """Create up to _BATCH icon buttons, then reschedule for the rest so
-        a large inventory stays responsive while it loads."""
-        if not self.winfo_exists():
-            return
         from er_save_manager.games.DS2.icon_manager import (
-            fit_size,
             get_icon,
             with_infusion_badge,
         )
         from er_save_manager.games.DS2.inventory_tab import STACKABLE_CATEGORIES
         from er_save_manager.games.DS2.save import UPGRADABLE_CATEGORIES
 
-        for _ in range(_BATCH):
-            if not self._pending_indices:
-                break
-            idx = self._pending_indices.popleft()
-            item, name, category = self._items[idx]
+        def icon(item, category):
             img = get_icon(item.item_id, category)
             if img and category == "weapons" and item.infusion:
                 img = with_infusion_badge(img, item.infusion)
-            ctk_img = None
-            if img:
-                ctk_img = ctk.CTkImage(
-                    light_image=img, dark_image=img, size=fit_size(img, _ICON_SIZE)
-                )
-                self._ctk_images.append(ctk_img)
+            return img
+
+        location = self._location_var.get()
+        self._items = list(self._panel._visible_items)
+        entries = []
+        for idx, (item, name, category) in enumerate(self._items):
+            if location != _LOCATION_FILTERS[0] and item.in_box != (
+                location == _LOCATION_FILTERS[2]
+            ):
+                continue
             label = name
             if category in STACKABLE_CATEGORIES and item.quantity > 1:
                 label = f"{name} x{item.quantity}"
@@ -318,57 +280,17 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
                 label = f"{name} +{item.upgrade}"
             if item.in_box:
                 label = f"{label}\n(Item Box)"
-            btn = ctk.CTkButton(
-                self._scroll,
-                image=ctk_img,
-                text=label,
-                compound="top",
-                width=_CELL_W,
-                height=_CELL_H,
-                font=("Segoe UI", 10),
-                fg_color=_CELL_COLOR,
-                hover_color=("gray70", "gray28"),
-                text_color=("gray10", "gray90"),
-                anchor="center",
+            entries.append(
+                GridEntry(
+                    idx, label, name.lower(), lambda i=item, c=category: icon(i, c)
+                )
             )
-            btn.bind("<Button-1>", lambda e, i=idx: self._on_item_click(i, e.state))
-            if getattr(btn, "_text_label", None) is not None:
-                btn._text_label.configure(wraplength=_CELL_W - 8, justify="center")
-            self._buttons.append((btn, idx))
-            # Grid straight to the next slot, see icon_browser.py. A full
-            # _layout_grid() still runs on resize and after the last batch.
-            row, col = divmod(self._grid_count, self._cols)
-            btn.grid(row=row, column=col, padx=_CELL_PAD, pady=_CELL_PAD, sticky="nsew")
-            self._grid_count += 1
-
-        if self._pending_indices:
-            self._scroll.update_idletasks()
-            canvas = self._scroll._parent_canvas
-            canvas.configure(scrollregion=canvas.bbox("all"))
-            self._batch_job = self.after(_DELAY_MS, self._build_next_batch)
-        else:
-            self._layout_grid()
-            self._batch_job = None
-
-    def _layout_grid(self) -> None:
-        for col_idx, (btn, _) in enumerate(self._buttons):
-            row, col = divmod(col_idx, self._cols)
-            btn.grid(row=row, column=col, padx=_CELL_PAD, pady=_CELL_PAD, sticky="nsew")
-        self._scroll.update_idletasks()
-        canvas = self._scroll._parent_canvas
-        canvas.configure(scrollregion=canvas.bbox("all"))
-
-    def _on_scroll_resize(self, _event) -> None:
-        if self._resize_job:
-            self.after_cancel(self._resize_job)
-        self._resize_job = self.after(60, self._reflow)
-
-    def _reflow(self) -> None:
-        available = max(1, self._scroll.winfo_width() - _SCROLLBAR_W)
-        new_cols = max(1, available // (_CELL_W + _CELL_PAD * 2))
-        if new_cols != self._cols:
-            self._cols = new_cols
-            self._layout_grid()
+        self._grid.set_entries(entries)
+        self._selected = []
+        self._sel_lbl.configure(
+            text="No item selected", text_color=("gray50", "gray60")
+        )
+        self._update_form()
 
     # ------------------------------------------------------------------
     # Selection
@@ -384,27 +306,8 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         rows = (row_of.get(id(self._items[i][0])) for i in indices)
         tree.selection_set([children[r] for r in rows if r is not None])
 
-    def _on_item_click(self, index: int, state: int = 0) -> None:
-        shown = [i for _, i in self._buttons]
-        if state & _SHIFT and self._anchor in shown and index in shown:
-            a, b = sorted((shown.index(self._anchor), shown.index(index)))
-            chosen = shown[a : b + 1]
-        elif state & _CONTROL:
-            chosen = [i for i in self._selected if i != index]
-            if index not in self._selected:
-                chosen.append(index)
-            self._anchor = index
-        else:
-            chosen = [index]
-            self._anchor = index
-        previous = set(self._selected)
-        self._selected = [i for i in shown if i in chosen]
-        # Recolor only cells whose state changed; each configure redraws.
-        now = set(self._selected)
-        changed = previous ^ now
-        for btn, i in self._buttons:
-            if i in changed:
-                btn.configure(fg_color=_CELL_SELECTED if i in now else _CELL_COLOR)
+    def _on_select(self, keys: list) -> None:
+        self._selected = list(keys)
         if len(self._selected) == 1:
             name = self._items[self._selected[0]][1]
             text = f"Selected: {name}"

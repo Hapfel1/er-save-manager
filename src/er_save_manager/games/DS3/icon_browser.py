@@ -11,7 +11,6 @@ shared with the text list.
 from __future__ import annotations
 
 import tkinter as tk
-from collections import deque
 from typing import TYPE_CHECKING
 
 import customtkinter as ctk
@@ -26,194 +25,50 @@ from er_save_manager.games.DS3.tabs.inventory import (
 )
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import (
     center_window,
     debounced_trace,
     patch_combo_scroll,
 )
+from er_save_manager.ui.virtual_grid import GridEntry, VirtualIconGrid
 
 if TYPE_CHECKING:
     from er_save_manager.games.DS3.tabs.inventory import DS3InventoryTab
 
 ICON_SIZE = 64
 CELL_W = 116
-CELL_H = 106
+CELL_H = 124
 CELL_PAD = 4
 SCROLLBAR_W = 24
 DEFAULT_COLS = 5
-# Building every button in one pass freezes the popup on large lists, so a
-# few are created per event loop turn.
-BATCH = 16
-DELAY_MS = 8
-
-_CELL_COLOR = ("gray82", "gray18")
-_CELL_SELECTED = palette.PURPLE_SELECT
-_SHIFT = 0x0001
-_CONTROL = 0x0004
 SELECTED_TEXT = palette.PURPLE_TEXT
 
 
-def item_button(parent, item: dict | None, source: str, text: str, images: list):
-    """Icon grid cell for an item; keeps its CTkImage alive in images."""
-    img = item_icon(item, source)
-    ctk_img = None
-    if img is not None:
-        ctk_img = ctk.CTkImage(
-            light_image=img, dark_image=img, size=(ICON_SIZE, ICON_SIZE)
+def item_entry(key, item: dict | None, source: str, text: str, search: str):
+    """Grid entry for an item; the icon loads when the cell scrolls into view."""
+    return GridEntry(key, text, search, lambda: item_icon(item, source))
+
+
+class IconGrid(VirtualIconGrid):
+    """Multi-select grid of item cells. load(entries, make) builds the cells
+    from make(entry), which returns a GridEntry."""
+
+    def __init__(self, parent, on_select) -> None:
+        super().__init__(
+            parent,
+            on_select,
+            multi=True,
+            cell_w=CELL_W,
+            cell_h=CELL_H,
+            pad=CELL_PAD,
+            icon_size=ICON_SIZE,
         )
-        images.append(ctk_img)
-    btn = ctk.CTkButton(
-        parent,
-        image=ctk_img,
-        text=text,
-        compound="top",
-        width=CELL_W,
-        height=CELL_H,
-        font=("Segoe UI", 11),
-        fg_color=_CELL_COLOR,
-        hover_color=("gray70", "gray28"),
-        text_color=("gray10", "gray90"),
-        anchor="center",
-    )
-    if getattr(btn, "_text_label", None) is not None:
-        btn._text_label.configure(wraplength=CELL_W - 8, justify="center")
-    return btn
-
-
-class IconGrid:
-    """Batched, reflowing grid of selectable buttons in a scrollable frame.
-
-    Click selects one cell, Ctrl click toggles a cell and Shift click
-    selects the visible range from the last clicked cell. on_select gets
-    the selected keys in grid order.
-    """
-
-    def __init__(
-        self, window: ctk.CTkToplevel, scroll: ctk.CTkScrollableFrame, on_select
-    ):
-        self._window = window
-        self.scroll = scroll
-        self._on_select = on_select
-        self.cols = DEFAULT_COLS
-        # (button, search text, key)
-        self.cells: list[tuple[ctk.CTkButton, str, object]] = []
-        self.images: list[ctk.CTkImage] = []
-        self.selected: list = []
-        self._anchor = None
-        self._pending: deque = deque()
-        self._make = None
-        self._job: str | None = None
-        self._resize_job: str | None = None
-        self._count = 0
-        self.query = ""
-        scroll.bind("<Configure>", self._on_resize)
 
     def load(self, entries: list, make, keep_selection: bool = False) -> None:
-        """Rebuild the grid; make(entry) returns (button, search text, key)."""
-        if self._job is not None:
-            self._window.after_cancel(self._job)
-            self._job = None
-        for btn, _, _ in self.cells:
-            btn.destroy()
-        self.cells.clear()
-        self.images.clear()
-        if not keep_selection:
-            self.selected = []
-        self._count = 0
-        self._pending = deque(entries)
-        self._make = make
-        self._next_batch()
-
-    def busy(self) -> bool:
-        return self._job is not None
-
-    def _next_batch(self) -> None:
-        if not self._window.winfo_exists():
-            return
-        for _ in range(BATCH):
-            if not self._pending:
-                break
-            btn, text, key = self._make(self._pending.popleft())
-            btn.bind("<Button-1>", lambda e, k=key: self._click(k, e.state))
-            if key in self.selected:
-                btn.configure(fg_color=_CELL_SELECTED)
-            self.cells.append((btn, text, key))
-            if not self.query:
-                # Grid straight into the next cell; re-laying out every
-                # button per batch would be quadratic in the list size.
-                row, col = divmod(self._count, self.cols)
-                btn.grid(
-                    row=row, column=col, padx=CELL_PAD, pady=CELL_PAD, sticky="nsew"
-                )
-                self._count += 1
-        if not self._pending or self.query:
-            self.apply_filter()
-        if self._pending:
-            self._job = self._window.after(DELAY_MS, self._next_batch)
-        else:
-            self._job = None
-            # Keys selected before a reload may be gone now.
-            self._set_selection([k for _, _, k in self.cells if k in self.selected])
-
-    def _visible_keys(self) -> list:
-        return [k for _, text, k in self.cells if not self.query or self.query in text]
-
-    def _click(self, key, state: int) -> None:
-        if state & _SHIFT and self._anchor is not None:
-            keys = self._visible_keys()
-            if self._anchor in keys and key in keys:
-                a, b = sorted((keys.index(self._anchor), keys.index(key)))
-                self._set_selection(keys[a : b + 1])
-                return
-        if state & _CONTROL:
-            chosen = [k for k in self.selected if k != key]
-            if key not in self.selected:
-                chosen.append(key)
-        else:
-            chosen = [key]
-        self._anchor = key
-        self._set_selection(chosen)
-
-    def _set_selection(self, keys: list) -> None:
-        order = {k: i for i, (_, _, k) in enumerate(self.cells)}
-        previous = set(self.selected)
-        self.selected = sorted(keys, key=lambda k: order.get(k, 0))
-        chosen = set(self.selected)
-        # Recoloring redraws the button, so touch only cells whose state
-        # changed; repainting every cell made each click scale with the grid.
-        changed = previous ^ chosen
-        for btn, _, key in self.cells:
-            if key in changed:
-                btn.configure(fg_color=_CELL_SELECTED if key in chosen else _CELL_COLOR)
-        self._on_select(self.selected)
-
-    def apply_filter(self, query: str | None = None) -> None:
-        if query is not None:
-            self.query = query
-        visible = [
-            b for b, text, _ in self.cells if not self.query or self.query in text
-        ]
-        for btn, _, _ in self.cells:
-            btn.grid_forget()
-        for idx, btn in enumerate(visible):
-            row, col = divmod(idx, self.cols)
-            btn.grid(row=row, column=col, padx=CELL_PAD, pady=CELL_PAD, sticky="nsew")
-        self._count = len(visible)
-        self.scroll.update_idletasks()
-        canvas = self.scroll._parent_canvas
-        canvas.configure(scrollregion=canvas.bbox("all"))
-
-    def _on_resize(self, _event) -> None:
-        if self._resize_job:
-            self._window.after_cancel(self._resize_job)
-        self._resize_job = self._window.after(60, self._reflow)
-
-    def _reflow(self) -> None:
-        available = max(1, self.scroll.winfo_width() - SCROLLBAR_W)
-        cols = max(1, available // (CELL_W + CELL_PAD * 2))
-        if cols != self.cols:
-            self.cols = cols
-            self.apply_filter()
+        self.set_entries([make(e) for e in entries], keep_selection)
+        # Keys selected before a reload may be gone now.
+        self.set_selection(self.selected)
 
 
 def open_popup(window: ctk.CTkToplevel, parent, title: str) -> None:
@@ -309,10 +164,7 @@ class DS3IconBrowser(ctk.CTkToplevel):
         cat_row.pack(fill="x", padx=10, pady=(0, 6))
         ctk.CTkLabel(cat_row, text="Category:", width=68).pack(side="left")
         # Drives the tab's own category, so the grid mirrors the spawn list.
-        # "All" would mean thousands of buttons, so the grid starts on Weapons.
-        options = [o for o in self._tab.category_options() if o != "All"]
-        if self._tab.category() not in options:
-            self._tab.set_category(options[0])
+        options = self._tab.category_options()
         self._cat_var = self._tab.spawn_category_var
         patch_combo_scroll(
             ctk.CTkComboBox(
@@ -324,15 +176,14 @@ class DS3IconBrowser(ctk.CTkToplevel):
             )
         ).pack(side="left", fill="x", expand=True)
 
-        scroll = ctk.CTkScrollableFrame(self)
-        scroll.pack(fill="both", expand=True, padx=6, pady=(0, 4))
-        self._grid = IconGrid(self, scroll, self._on_select)
-
+        self._grid = IconGrid(self, self._on_select)
+        self._grid.pack(fill="both", expand=True, padx=6, pady=(0, 4))
+        add_tooltip(self._grid._canvas, MULTI_SELECT_TIP)
         panel = ctk.CTkFrame(self, fg_color=("gray88", "gray18"), corner_radius=8)
         panel.pack(fill="x", padx=6, pady=(0, 8))
         self._sel_lbl = ctk.CTkLabel(
             panel,
-            text="Click to select, Ctrl or Shift click for several",
+            text="No item selected",
             font=("Segoe UI", 10, "bold"),
             anchor="w",
             text_color=("gray50", "gray60"),
@@ -417,8 +268,7 @@ class DS3IconBrowser(ctk.CTkToplevel):
 
         def make(entry):
             index, (label, item, _variants) = entry
-            btn = item_button(self._grid.scroll, item, source, label, self._grid.images)
-            return btn, label.lower(), index
+            return item_entry(index, item, source, label, label.lower())
 
         self._grid.load(list(self._rows.items()), make)
 
@@ -500,5 +350,5 @@ class DS3IconBrowser(ctk.CTkToplevel):
         values = self._read_values()
         if values is None:
             return
-        items = [self._rows[k][1] for k in self._grid._visible_keys()]
+        items = [self._rows[k][1] for k in self._grid.visible_keys()]
         self._tab.spawn_items(items, *values, parent=self)

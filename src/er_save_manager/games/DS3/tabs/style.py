@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from tkinter import ttk
 
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 
 TREE_STYLE = "DS3.Treeview"
@@ -35,13 +36,10 @@ def make_tree(parent, columns: list[tuple[str, str, int, str]], height: int = 8)
     columns: (id, heading, width, anchor). Returns (frame, tree). height is
     the requested row count; pack the frame with expand to fill the rest.
     """
-    apply_treeview_style()
-    frame = ttk.Frame(parent)
-    tree = ttk.Treeview(
-        frame,
+    frame, tree = ds.themed_tree(
+        parent,
         columns=[c[0] for c in columns],
         show="tree headings",
-        style=TREE_STYLE,
         height=height,
         selectmode="extended",
     )
@@ -49,8 +47,4 @@ def make_tree(parent, columns: list[tuple[str, str, int, str]], height: int = 8)
     for col, heading, width, anchor in columns:
         tree.heading(col, text=heading)
         tree.column(col, width=width, anchor=anchor, stretch=col == columns[0][0])
-    vsb = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
-    tree.configure(yscrollcommand=vsb.set)
-    tree.pack(side="left", fill="both", expand=True)
-    vsb.pack(side="right", fill="y")
     return frame, tree

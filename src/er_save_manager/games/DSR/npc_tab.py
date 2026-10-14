@@ -13,14 +13,15 @@ first state (alive). Quest progress outside the range is left alone.
 from __future__ import annotations
 
 import json
-import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
 
 import customtkinter as ctk
 
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write
 
 
@@ -145,7 +146,7 @@ class DSRNPCTab:
         )
         ctk.CTkLabel(
             panel,
-            text=hint + " Ctrl/Shift click selects several, double-click toggles.",
+            text=hint + " Double-click toggles.",
             font=("Segoe UI", 10),
             text_color=_HINT,
             wraplength=420,
@@ -154,24 +155,18 @@ class DSRNPCTab:
         row = ctk.CTkFrame(panel, fg_color="transparent")
         # Packed before the list so a short window shrinks the list, not this.
         row.pack(side="bottom", fill="x", padx=10, pady=(0, 10))
-        frame = tk.Frame(panel, bg="#2b2b2b")
-        frame.pack(fill="both", expand=True, padx=10, pady=(0, 6))
         cols = [*columns, ("state", "State", 80, "center")]
-        tree = ttk.Treeview(
-            frame,
+        frame, tree = ds.themed_tree(
+            panel,
             columns=[c[0] for c in cols],
             show="headings",
-            style="DSR.Treeview",
             height=8,
             selectmode="extended",
         )
+        frame.pack(fill="both", expand=True, padx=10, pady=(0, 6))
         for col, text, width, anchor in cols:
             tree.heading(col, text=text)
             tree.column(col, width=width, anchor=anchor, stretch=col == "name")
-        sb = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
-        tree.configure(yscrollcommand=sb.set)
-        tree.pack(side="left", fill="both", expand=True)
-        sb.pack(side="right", fill="y")
         for col, (text, kill) in enumerate(actions):
             row.grid_columnconfigure(col, weight=1, uniform="a")
             ctk.CTkButton(
@@ -180,6 +175,7 @@ class DSRNPCTab:
                 command=lambda t=tree, k=kill: self._apply(t, setter, k),
             ).grid(row=0, column=col, sticky="ew", padx=(0 if col == 0 else 4, 0))
         tree.bind("<Double-1>", lambda e, t=tree: self._toggle(t, e, setter))
+        add_tooltip(tree, MULTI_SELECT_TIP)
         return tree
 
     # --- Refresh ----------------------------------------------------------- #

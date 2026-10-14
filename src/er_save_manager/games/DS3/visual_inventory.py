@@ -21,7 +21,7 @@ from er_save_manager.games.DS3 import catalog
 from er_save_manager.games.DS3.icon_browser import (
     SELECTED_TEXT,
     IconGrid,
-    item_button,
+    item_entry,
     open_popup,
     search_row,
 )
@@ -33,6 +33,7 @@ from er_save_manager.games.DS3.tabs.inventory import (
     enable,
 )
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 
 if TYPE_CHECKING:
     from er_save_manager.games.DS3.tabs.inventory import DS3InventoryTab
@@ -85,15 +86,14 @@ class DS3VisualInventory(ctk.CTkToplevel):
             command=lambda _: self._load_items(),
         ).pack(side="left")
 
-        scroll = ctk.CTkScrollableFrame(self)
-        scroll.pack(fill="both", expand=True, padx=6, pady=(0, 4))
-        self._grid = IconGrid(self, scroll, self._on_select)
-
+        self._grid = IconGrid(self, self._on_select)
+        self._grid.pack(fill="both", expand=True, padx=6, pady=(0, 4))
+        add_tooltip(self._grid._canvas, MULTI_SELECT_TIP)
         panel = ctk.CTkFrame(self, fg_color=("gray88", "gray18"), corner_radius=8)
         panel.pack(fill="x", padx=6, pady=(0, 8))
         self._sel_lbl = ctk.CTkLabel(
             panel,
-            text="Click to select, Ctrl or Shift click for several",
+            text="No item selected",
             font=("Segoe UI", 10, "bold"),
             anchor="w",
             text_color=("gray50", "gray60"),
@@ -190,14 +190,9 @@ class DS3VisualInventory(ctk.CTkToplevel):
             text = f"{name}\nx{qty}" if qty > 1 else name
             if self._where_var.get() == "All" and where != WHERE_HELD:
                 text += f"\n({where})"
-            btn = item_button(
-                self._grid.scroll,
-                catalog.lookup(item_id, source),
-                source,
-                text,
-                self._grid.images,
+            return item_entry(
+                offset, catalog.lookup(item_id, source), source, text, name.lower()
             )
-            return btn, name.lower(), offset
 
         self._grid.load(rows, make, keep_selection=keep_selection)
 

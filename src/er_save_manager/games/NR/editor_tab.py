@@ -18,6 +18,7 @@ from tkinter import ttk
 
 import customtkinter as ctk
 
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import game_blocks_write
 
@@ -354,11 +355,9 @@ class NREditorTab:
         ctk.CTkLabel(top, text="Search:").pack(side="right", padx=(0, 4))
 
         # Treeview - fixed height so edit panel always visible below
-        tree_frame = ctk.CTkFrame(scroll, corner_radius=8)
-        tree_frame.pack(fill="x", padx=10, pady=(0, 4))
-
-        self._relic_tree = ttk.Treeview(
-            tree_frame,
+        tree_frame, self._relic_tree = ds.themed_tree(
+            scroll,
+            xscroll=True,
             columns=("name", "deep", "e1", "e2", "e3"),
             show="headings",
             selectmode="browse",
@@ -376,16 +375,7 @@ class NREditorTab:
                 col, width=w, minwidth=40, anchor="w", stretch=False
             )
 
-        vsb = ttk.Scrollbar(
-            tree_frame, orient="vertical", command=self._relic_tree.yview
-        )
-        hsb = ttk.Scrollbar(
-            tree_frame, orient="horizontal", command=self._relic_tree.xview
-        )
-        self._relic_tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
-        vsb.pack(side="right", fill="y")
-        hsb.pack(side="bottom", fill="x")
-        self._relic_tree.pack(side="left", fill="both", expand=True)
+        tree_frame.pack(fill="x", padx=10, pady=(0, 4))
         self._relic_tree.bind("<<TreeviewSelect>>", self._on_relic_select)
         self._tree_ga_map: dict[str, int] = {}
 
@@ -1213,10 +1203,9 @@ class NREditorTab:
         self._lo_relics: list[int] = [0] * 6
 
     def _make_loadout_tree(self, parent, cols, height: int) -> ttk.Treeview:
-        frame = ctk.CTkFrame(parent, corner_radius=8)
-        frame.pack(fill="x", padx=10, pady=(0, 4))
-        tree = ttk.Treeview(
-            frame,
+        frame, tree = ds.themed_tree(
+            parent,
+            xscroll=True,
             columns=[c[0] for c in cols],
             show="headings",
             selectmode="browse",
@@ -1225,12 +1214,7 @@ class NREditorTab:
         for col, label, w in cols:
             tree.heading(col, text=label)
             tree.column(col, width=w, minwidth=40, anchor="w", stretch=False)
-        vsb = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
-        hsb = ttk.Scrollbar(frame, orient="horizontal", command=tree.xview)
-        tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
-        vsb.pack(side="right", fill="y")
-        hsb.pack(side="bottom", fill="x")
-        tree.pack(side="left", fill="both", expand=True)
+        frame.pack(fill="x", padx=10, pady=(0, 4))
         return tree
 
     def _current_nr_slot(self):

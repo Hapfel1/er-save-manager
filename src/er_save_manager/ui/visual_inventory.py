@@ -1,10 +1,8 @@
-"""Visual inventory browser popup - Canvas-based to avoid X11 resource exhaustion."""
+"""Visual inventory browser popup."""
 
 from __future__ import annotations
 
-import gc
 import re
-import tkinter as tk
 from typing import TYPE_CHECKING
 
 import customtkinter as ctk
@@ -19,17 +17,10 @@ from er_save_manager.ui.utils import (
     debounced_trace,
     patch_combo_scroll,
 )
+from er_save_manager.ui.virtual_grid import GridEntry, VirtualIconGrid
 
 if TYPE_CHECKING:
     from er_save_manager.ui.editors.inventory_editor import InventoryEditor
-
-_CELL_W = 124
-_CELL_H = 128
-_IMG_SZ = 60
-_PAD = 3
-_BATCH = 10
-_DELAY = 50
-_MAX_IMG = 999
 
 
 def _is_weapon(full_id: int) -> bool:
@@ -117,7 +108,7 @@ def _center_over(window, parent, w=None, h=None, *, top=False) -> None:
 
 
 class VisualInventoryBrowser(ctk.CTkToplevel):
-    """Single Canvas grid view - one X11 window regardless of inventory size."""
+    """Icon grid of the held or storage inventory with the editor's actions."""
 
     def __init__(self, parent, editor: InventoryEditor):
         super().__init__(parent)
@@ -126,8 +117,6 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         self._cat_filter = "All"
         self._visible: list[tuple] = []
         self._sel_idx: int | None = None
-        self._photos: list = []
-        self._load_job: str | None = None
 
         self.title("Visual Inventory")
         self.geometry("760x680")
@@ -157,13 +146,6 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
     # ---- UI ------------------------------------------------------------------
 
     def _build_ui(self):
-        mode = ctk.get_appearance_mode()
-        self._bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
-        self._fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        self._sel_bg = palette.pick(palette.PURPLE_SELECT)
-        self._cell_bg = "#222230" if mode == "Dark" else "#e8e8f0"
-        self._cell_out = "#444460" if mode == "Dark" else "#ccccdd"
-
         top = ctk.CTkFrame(self, fg_color="transparent")
         top.pack(fill=ctk.X, padx=10, pady=(10, 4))
 
@@ -248,24 +230,12 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             command=self._do_batch_upgrade,
         ).pack(side=ctk.RIGHT, padx=(12, 0))
 
-        cf = ctk.CTkFrame(self, fg_color=("gray82", "gray14"), corner_radius=6)
-        cf.pack(fill=ctk.BOTH, expand=True, padx=6, pady=(4, 0))
-        self._canvas = tk.Canvas(cf, bg=self._bg, highlightthickness=0, bd=0)
-        vsb = tk.Scrollbar(cf, orient="vertical", command=self._canvas.yview)
-        self._canvas.configure(yscrollcommand=vsb.set)
-        vsb.pack(side=tk.RIGHT, fill=tk.Y)
-        self._canvas.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
-        self._canvas.bind("<Configure>", lambda _e: self._draw_grid())
-        self._canvas.bind("<Button-1>", self._on_click)
-        self._canvas.bind(
-            "<MouseWheel>", lambda e: self._on_scroll(int(-e.delta / 120))
-        )
-        self._canvas.bind("<Button-4>", lambda _e: self._on_scroll(-1))
-        self._canvas.bind("<Button-5>", lambda _e: self._on_scroll(1))
+        self._grid = VirtualIconGrid(self, self._on_grid_select)
+        self._grid.pack(fill=ctk.BOTH, expand=True, padx=6, pady=(4, 4))
 
         # Fixed-height bottom panel: two label rows
-        bot = ctk.CTkFrame(self, fg_color=("gray88", "gray16"))
-        bot.pack(fill=ctk.X, padx=6, pady=(0, 6))
+        bot = ctk.CTkFrame(self, fg_color=("gray88", "gray18"), corner_radius=8)
+        bot.pack(fill=ctk.X, padx=6, pady=(0, 8))
 
         self._name_lbl = ctk.CTkLabel(
             bot,
@@ -377,175 +347,56 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         self._visible = sort_inventory_rows(self._visible, sort_mode)
         self._sel_idx = None
         self._clear_bottom()
-        self._stop_loading()
-        self._photos.clear()
-        self._icons_loaded_to = 0
-        gc.collect()
-        self._draw_grid()
+        self._grid.set_entries(self._entries())
 
-    # ---- canvas drawing ------------------------------------------------------
-
-    def _cols(self) -> int:
-        return max(1, (self._canvas.winfo_width() or 600) // _CELL_W)
-
-    def _draw_grid(self):
-        self._canvas.delete("all")
-        cols = self._cols()
-        total = len(self._visible)
-        nrows = max(1, (total + cols - 1) // cols)
-        w = self._canvas.winfo_width() or 600
-        self._canvas.configure(scrollregion=(0, 0, w, nrows * _CELL_H + 4))
-
+    def _entries(self) -> list[GridEntry]:
         try:
             from er_save_manager.data.item_database import get_item_database
 
             db = get_item_database()
         except Exception:
             db = None
-
-        for idx, row in enumerate(self._visible):
-            r, c = divmod(idx, cols)
-            x0 = c * _CELL_W + _PAD
-            y0 = r * _CELL_H + _PAD
-            x1 = x0 + _CELL_W - _PAD * 2
-            y1 = y0 + _CELL_H - _PAD * 2
-            cx = (x0 + x1) // 2
-            fill = self._sel_bg if idx == self._sel_idx else self._cell_bg
-
-            # Background rectangle - tag "rect_N"
-            self._canvas.create_rectangle(
-                x0, y0, x1, y1, fill=fill, outline=self._cell_out, tags=f"rect_{idx}"
-            )
-
-            # Image placeholder rectangle - tag "imgbg_N"
-            img_y0 = y0 + 6
-            img_y1 = img_y0 + _IMG_SZ
-            self._canvas.create_rectangle(
-                cx - _IMG_SZ // 2,
-                img_y0,
-                cx + _IMG_SZ // 2,
-                img_y1,
-                fill=fill,
-                outline="",
-                tags=f"imgbg_{idx}",
-            )
-
-            # Name text - tag "text_N" (separate from rect so colour isn't clobbered)
-            text, full_id = row[0], row[1]
-            if db:
-                item = db.get_item_by_id(full_id)
-                raw_name = item.name if item else None
-            else:
-                raw_name = None
-            if not raw_name:
-                raw_name = re.sub(r"^\s*\[[HS]K?\]\s*", "", text.split("|")[0]).strip()
-                raw_name = re.sub(r"\s*\+\d+$", "", raw_name).strip()
-
-            _, suffix = _parse_cell_info(text, full_id)
-            display = raw_name + suffix
-
-            # Centre text in the space below the image
-            text_area_mid = (img_y1 + y1) // 2
-            self._canvas.create_text(
-                cx,
-                text_area_mid,
-                text=display,
-                fill=self._fg,
-                font=("Segoe UI", 9),
-                anchor="center",
-                width=_CELL_W - 10,
-                tags=f"text_{idx}",
-            )
-
-        self._load_icons(0)
-
-    def _load_icons(self, start: int):
-        if start >= len(self._visible) or start >= _MAX_IMG:
-            self._icons_loaded_to = start
-            return
         try:
             sf = self._editor.get_save_file()
             slot = sf.characters[self._editor.get_char_slot()] if sf else None
-        except Exception:
-            slot = None
-        try:
-            sf = self._editor.get_save_file()
             is_c = getattr(sf, "is_convergence", False) if sf else False
         except Exception:
-            is_c = False
+            slot, is_c = None, False
         aff_list = (
             self._editor._AFFINITIES_CNV if is_c else self._editor._AFFINITIES_VANILLA
         )
         affinity_names: dict[int, str] = dict(aff_list)
-        cols = self._cols()
-        end = min(start + _BATCH, len(self._visible), _MAX_IMG)
-        for idx in range(start, end):
-            row = self._visible[idx]
-            full_id = row[1]
+
+        entries = []
+        for idx, row in enumerate(self._visible):
+            text, full_id = row[0], row[1]
+            item = db.get_item_by_id(full_id) if db else None
+            raw_name = item.name if item else None
+            if not raw_name:
+                raw_name = re.sub(r"^\s*\[[HS]K?\]\s*", "", text.split("|")[0]).strip()
+                raw_name = re.sub(r"\s*\+\d+$", "", raw_name).strip()
+            _, suffix = _parse_cell_info(text, full_id)
             gaitem_h = row[3] if len(row) > 3 else None
             aff_code = ((full_id & 0x0FFFFFFF) % 10000) // 100
-            try:
-                pil = _cell_icon(full_id, gaitem_h, slot, aff_code, affinity_names)
-                if pil is None:
-                    continue
-                from PIL import Image, ImageTk
-
-                pil = pil.convert("RGBA").resize((_IMG_SZ, _IMG_SZ), Image.LANCZOS)
-                photo = ImageTk.PhotoImage(pil)
-                self._photos.append(photo)
-                r, c = divmod(idx, cols)
-                cx = c * _CELL_W + _PAD + (_CELL_W - _PAD * 2) // 2
-                img_y = r * _CELL_H + _PAD + 6 + _IMG_SZ // 2
-                self._canvas.create_image(
-                    cx, img_y, image=photo, anchor="center", tags=f"img_{idx}"
+            entries.append(
+                GridEntry(
+                    idx,
+                    raw_name + suffix,
+                    text.lower(),
+                    lambda f=full_id, g=gaitem_h, a=aff_code: _cell_icon(
+                        f, g, slot, a, affinity_names
+                    ),
                 )
-            except Exception:
-                pass
-        self._icons_loaded_to = end
-        if end < len(self._visible) and end < _MAX_IMG:
-            self._load_job = self.after(_DELAY, lambda: self._load_icons(end))
-        else:
-            self._load_job = None
-
-    def _on_scroll(self, units: int) -> None:
-        self._canvas.yview_scroll(units, "units")
-        # Resume icon loading if there are unloaded cells
-        if self._load_job is None:
-            next_idx = getattr(self, "_icons_loaded_to", 0)
-            if next_idx < len(self._visible):
-                self._load_job = self.after(80, lambda: self._load_icons(next_idx))
-
-    def _stop_loading(self):
-        if self._load_job:
-            self.after_cancel(self._load_job)
-            self._load_job = None
+            )
+        return entries
 
     # ---- click / selection ---------------------------------------------------
 
-    def _on_click(self, event: tk.Event):
-        cols = self._cols()
-        cx = self._canvas.canvasx(event.x)
-        cy = self._canvas.canvasy(event.y)
-        c = int(cx // _CELL_W)
-        r = int(cy // _CELL_H)
-        idx = r * cols + c
-        if 0 <= c < cols and 0 <= idx < len(self._visible):
-            self._select(idx)
-
-    def _select(self, idx: int):
-        prev = self._sel_idx
-        self._sel_idx = idx
-        for i in (prev, idx):
-            if i is None or i >= len(self._visible):
-                continue
-            fill = self._sel_bg if i == self._sel_idx else self._cell_bg
-            try:
-                # Only update rect and imgbg - never touch text colour
-                self._canvas.itemconfigure(f"rect_{i}", fill=fill)
-                self._canvas.itemconfigure(f"imgbg_{i}", fill=fill)
-            except Exception:
-                pass
-        self._update_bottom(self._visible[idx])
+    def _on_grid_select(self, keys: list):
+        if not keys:
+            return
+        self._sel_idx = keys[0]
+        self._update_bottom(self._visible[self._sel_idx])
 
     # ---- bottom panel --------------------------------------------------------
 
@@ -666,14 +517,10 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
 
     def _on_editor_changed(self):
         self._sel_idx = None
-        self._stop_loading()
-        self._photos.clear()
-        gc.collect()
         self._clear_bottom()
         self._rebuild()
 
     def _on_close(self):
-        self._stop_loading()
         try:
             self._editor._inventory_change_listeners.remove(self._on_editor_changed)
         except ValueError:

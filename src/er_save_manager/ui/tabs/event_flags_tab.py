@@ -4,7 +4,6 @@ Event flag viewer and editor
 """
 
 import tkinter as tk
-from tkinter import ttk
 
 import customtkinter as ctk
 
@@ -27,8 +26,10 @@ from er_save_manager.data.summoning_pools_data import (
     SUMMONING_POOL_FLAGS_DLC,
 )
 from er_save_manager.parser.event_flags import EventFlags
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import (
     bind_mousewheel,
     patch_combo_scroll,
@@ -403,15 +404,14 @@ class EventFlagsTab:
 
         # A Treeview holds the full flag set without slowing down, where one
         # checkbox widget per flag took seconds to build on a broad search.
-        tree_frame = ctk.CTkFrame(flags_frame, fg_color="transparent")
-        tree_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 4))
-        self.flags_tree = ttk.Treeview(
-            tree_frame,
+        tree_frame, self.flags_tree = ds.themed_tree(
+            flags_frame,
             columns=("state", "flag_id", "name", "location"),
             show="headings",
             selectmode="extended",
             height=20,
         )
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 4))
         # The tab sits in a scrollable frame whose wheel bindings would scroll
         # the page instead of the list, so a tag ahead of them handles the
         # wheel over the list and stops the event there.
@@ -437,12 +437,6 @@ class EventFlagsTab:
         self.flags_tree.column("name", width=420, anchor="w")
         self.flags_tree.column("location", width=260, anchor="w")
         self.flags_tree.tag_configure("on", foreground="#4caf50")
-        scrollbar = ttk.Scrollbar(
-            tree_frame, orient="vertical", command=self.flags_tree.yview
-        )
-        self.flags_tree.configure(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.flags_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.flags_tree.bind("<Button-1>", self._on_tree_click)
         self.flags_tree.bind("<space>", self._toggle_selected)
 
@@ -1156,8 +1150,6 @@ class EventFlagsTab:
             )
             return
 
-        import tkinter.ttk as ttk
-
         from er_save_manager.ui import dialog_style as ds
 
         dialog = ds.create(self.parent, "Boss Status")
@@ -1224,11 +1216,8 @@ class EventFlagsTab:
         summary_label = ctk.CTkLabel(main, text="", font=ds.FONT)
         summary_label.pack(anchor="w", pady=(0, 4))
 
-        tree_frame = tk.Frame(main)
-        tree_frame.pack(fill=tk.BOTH, expand=True)
-
-        tree = ttk.Treeview(
-            tree_frame,
+        tree_frame, tree = ds.themed_tree(
+            main,
             columns=("status", "boss", "region"),
             show="headings",
             selectmode="none",
@@ -1242,12 +1231,7 @@ class EventFlagsTab:
 
         tree.tag_configure("defeated", foreground=palette.pick(palette.RED_TEXT))
         tree.tag_configure("alive", foreground=palette.pick(palette.GREEN_TEXT))
-
-        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
-        tree.configure(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
+        tree_frame.pack(fill=tk.BOTH, expand=True)
         # Tracks current sort: col -> ascending bool
         sort_state: dict[str, bool] = {}
 
@@ -1754,16 +1738,13 @@ class EventFlagsTab:
         ds.header(main, "NPC Revival", font=ds.TITLE_LARGE)
         ctk.CTkLabel(
             main,
-            text="Revive dead NPCs. Quest progress is not restored. Click, "
-            "Ctrl+click or Shift+click rows to select them.",
+            text="Revive dead NPCs. Quest progress is not restored.",
             font=ds.SMALL,
             text_color=ds.MUTED,
         ).pack(anchor="w", pady=(2, 10))
 
-        tree_frame = tk.Frame(main)
-        tree_frame.pack(fill=tk.BOTH, expand=True)
-        tree = ttk.Treeview(
-            tree_frame,
+        tree_frame, tree = ds.themed_tree(
+            main,
             columns=("npc", "location", "status"),
             show="headings",
             selectmode="extended",
@@ -1780,11 +1761,8 @@ class EventFlagsTab:
             ("Alive", palette.GREEN_TEXT),
         ):
             tree.tag_configure(status, foreground=palette.pick(color))
-        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
-        tree.configure(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
+        tree_frame.pack(fill=tk.BOTH, expand=True)
+        add_tooltip(tree, MULTI_SELECT_TIP)
         for npc_name, (_base_flag, location) in sorted(NPC_FLAGS.items()):
             state = get_npc_state(self.current_event_flags, npc_name)
             if not state:
@@ -1973,16 +1951,13 @@ class EventFlagsTab:
         sel_frame.pack(side=tk.RIGHT)
         ctk.CTkLabel(
             main,
-            text="Enable or disable summoning pool activation flags. Click, "
-            "Ctrl+click or Shift+click rows to select them.",
+            text="Enable or disable summoning pool activation flags.",
             font=ds.SMALL,
             text_color=ds.MUTED,
         ).pack(anchor="w", pady=(2, 10))
 
-        tree_frame = tk.Frame(main)
-        tree_frame.pack(fill=tk.BOTH, expand=True)
-        tree = ttk.Treeview(
-            tree_frame,
+        tree_frame, tree = ds.themed_tree(
+            main,
             columns=("flag", "status"),
             show="tree headings",
             selectmode="extended",
@@ -1994,11 +1969,8 @@ class EventFlagsTab:
         tree.column("flag", width=110, anchor="w", stretch=False)
         tree.column("status", width=90, anchor="w", stretch=False)
         tree.tag_configure("active", foreground=palette.pick(palette.GREEN_TEXT))
-        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
-        tree.configure(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
+        tree_frame.pack(fill=tk.BOTH, expand=True)
+        add_tooltip(tree, MULTI_SELECT_TIP)
         # Row iids are the flag ids; group rows use these keys
         groups = {
             "base": ("Base Game", SUMMONING_POOL_FLAGS_BASE),

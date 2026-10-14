@@ -16,7 +16,7 @@ from er_save_manager.data.locations import (
 )
 from er_save_manager.editors.world_state import WorldStateEditor
 from er_save_manager.parser.er_types import FloatVector3, MapId
-from er_save_manager.ui import palette
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.dialogs.message_manager import MessageManagerDialog
 from er_save_manager.ui.map_view import open_map_window
 from er_save_manager.ui.messagebox import CTkMessageBox
@@ -405,41 +405,12 @@ class WorldStateTab:
             height=40,
         ).pack(pady=(5, 8), fill=tk.X, padx=5)
 
-        listbox_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
-        listbox_frame.pack(fill=tk.BOTH, expand=True, pady=5)
-
-        scrollbar = ctk.CTkScrollbar(listbox_frame, orientation="vertical")
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        self.location_listbox = tk.Listbox(
-            listbox_frame,
-            yscrollcommand=scrollbar.set,
+        listbox_frame, self.location_listbox = ds.themed_listbox(
+            self.content_frame,
             selectmode=tk.SINGLE,
-            font=("Consolas", 11),
             height=20,
-            highlightthickness=0,
         )
-        self.location_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.configure(command=self.location_listbox.yview)
-
-        try:
-            if ctk.get_appearance_mode() == "Dark":
-                self.location_listbox.config(
-                    bg="#1f1f28",
-                    fg="#e5e5f5",
-                    selectbackground=palette.PURPLE_SELECT[1],
-                    selectforeground="#e5e5f5",
-                )
-            else:
-                self.location_listbox.config(
-                    bg="#f5f5f5",
-                    fg="#1f1f28",
-                    selectbackground=palette.PURPLE_SELECT[0],
-                    selectforeground="#1f1f28",
-                )
-        except Exception:
-            pass
-
+        listbox_frame.pack(fill=tk.BOTH, expand=True, pady=5)
         bind_mousewheel(self.location_listbox)
         self._update_location_list()
 

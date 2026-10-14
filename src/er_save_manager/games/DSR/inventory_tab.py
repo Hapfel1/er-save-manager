@@ -20,8 +20,10 @@ import customtkinter as ctk
 
 from er_save_manager.games.DS3.tabs.inventory import enable
 from er_save_manager.games.DSR import catalog
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write, raise_existing_window
 
 
@@ -73,25 +75,17 @@ def _summary(done: str, count: int, skipped: list[str], capped: int = 0) -> str:
     return ". ".join(parts) + "." if parts else "Nothing changed."
 
 
-def _tree(parent, columns, height: int = 10) -> ttk.Treeview:
-    frame = tk.Frame(parent, bg="#2b2b2b")
-    frame.grid_rowconfigure(0, weight=1)
-    frame.grid_columnconfigure(0, weight=1)
-    tree = ttk.Treeview(
-        frame,
+def _tree(parent, columns, height: int = 10, show: str = "headings") -> ttk.Treeview:
+    frame, tree = ds.themed_tree(
+        parent,
         columns=[c[0] for c in columns],
-        show="headings",
-        style="DSR.Treeview",
+        show=show,
         height=height,
         selectmode="extended",
     )
     for col, label, width, anchor in columns:
         tree.heading(col, text=label)
         tree.column(col, width=width, anchor=anchor, stretch=col == columns[0][0])
-    tree.grid(row=0, column=0, sticky="nsew")
-    sb = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
-    sb.grid(row=0, column=1, sticky="ns")
-    tree.configure(yscrollcommand=sb.set)
     tree.frame = frame
     return tree
 
@@ -194,12 +188,10 @@ class DSRInventoryTab:
             frow, textvariable=self._spawn_search_var, placeholder_text="Search..."
         ).pack(side="left", fill="x", expand=True)
 
-        self._spawn_tree = _tree(
-            left, [("name", "Item (Ctrl or Shift click for several)", 260, "w")]
-        )
+        self._spawn_tree = _tree(left, [("name", "Item", 260, "w")], show="")
         self._spawn_tree.frame.grid(row=2, column=0, sticky="nsew", padx=8, pady=(0, 4))
         self._spawn_tree.bind("<<TreeviewSelect>>", self._on_spawn_select)
-
+        add_tooltip(self._spawn_tree, MULTI_SELECT_TIP)
         inf_row = ctk.CTkFrame(left, fg_color="transparent")
         inf_row.grid(row=3, column=0, sticky="ew", padx=8, pady=(0, 2))
         ctk.CTkLabel(inf_row, text="Infusion:").pack(side="left", padx=(0, 4))
@@ -292,7 +284,7 @@ class DSRInventoryTab:
             self._inv_tree.heading(col, command=lambda c=col: self._sort_by(c))
         self._inv_tree.frame.grid(row=2, column=0, sticky="nsew", padx=8, pady=(0, 4))
         self._inv_tree.bind("<<TreeviewSelect>>", self._on_inv_select)
-
+        add_tooltip(self._inv_tree, MULTI_SELECT_TIP)
         edits = ctk.CTkFrame(right, fg_color="transparent")
         edits.grid(row=3, column=0, sticky="ew", padx=8, pady=(0, 2))
         self._edit_qty_var = tk.StringVar(value="1")

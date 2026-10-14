@@ -267,6 +267,22 @@ def _item_name(
     return name
 
 
+_ROW_RE = re.compile(
+    r"^\s*\[(?P<tag>[HS]K?)\]\s*(?P<name>.*?)\s*\|\s*Qty:\s*(?P<qty>\d+)(?P<rest>.*)$"
+)
+
+
+def _inventory_columns(text: str, location: str) -> tuple[str, str, str]:
+    """(location, item, qty) table cells from an inventory row label."""
+    m = _ROW_RE.match(text)
+    if m is None:
+        return location.capitalize(), text.strip(), ""
+    where = location.capitalize() + (" (key)" if m["tag"].endswith("K") else "")
+    # rest holds the "  |  ID: ..." suffix when item IDs are shown
+    item = m["name"] + m["rest"].replace("  |  ", "  ")
+    return where, item, m["qty"]
+
+
 def _item_id_label(full_id: int) -> str:
     """Row suffix with the full item ID and the base ID (param row ID)."""
     return f"  |  ID: 0x{full_id:08X} ({full_id & 0x0FFFFFFF})"
@@ -780,7 +796,7 @@ class InventoryEditor:
         self._results_listbox: tk.Listbox | None = None
         self._results_items: list = []
 
-        self.inventory_listbox: tk.Listbox | None = None
+        self.inventory_tree: ttk.Treeview | None = None
         self.inv_filter_var: ctk.StringVar | None = None
         self._inv_search_var: ctk.StringVar | None = None
         self._inv_cat_var: ctk.StringVar | None = None
@@ -886,6 +902,8 @@ class InventoryEditor:
     # ---- left panel: item browser -------------------------------------------
 
     def _build_browser_panel(self, parent: ctk.CTkFrame):
+        from er_save_manager.ui import dialog_style as ds
+
         search_row = ctk.CTkFrame(parent, fg_color="transparent")
         search_row.pack(fill=ctk.X, padx=10, pady=(0, 4))
 
@@ -929,32 +947,7 @@ class InventoryEditor:
             fg_color=("gray70", "gray35"),
         )
 
-        lb_frame = ctk.CTkFrame(parent, fg_color=("gray82", "gray14"), corner_radius=6)
-        lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=(0, 4))
-
-        mode = ctk.get_appearance_mode()
-        lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
-        lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = palette.pick(palette.PURPLE_SELECT)
-
-        sb = tk.Scrollbar(lb_frame)
-        sb.pack(side=tk.RIGHT, fill=tk.Y)
-        self._results_listbox = tk.Listbox(
-            lb_frame,
-            yscrollcommand=sb.set,
-            font=("Consolas", 9),
-            height=5,
-            bg=lb_bg,
-            fg=lb_fg,
-            selectbackground=lb_sel,
-            relief=tk.FLAT,
-            borderwidth=0,
-            activestyle="none",
-        )
-        self._results_listbox.pack(
-            side=tk.LEFT, fill=ctk.BOTH, expand=True, padx=2, pady=2
-        )
-        sb.config(command=self._results_listbox.yview)
+        lb_frame, self._results_listbox = ds.themed_listbox(parent, height=5)
         bind_mousewheel(self._results_listbox)
         self._results_listbox.bind("<<ListboxSelect>>", self._on_result_select)
 
@@ -1127,6 +1120,9 @@ class InventoryEditor:
         self._selected_item_label.pack(
             fill=ctk.X, padx=12, pady=(0, 4), side=ctk.BOTTOM
         )
+        # Packed last: everything docked to the bottom keeps its space and a
+        # short window shrinks the list.
+        lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=(0, 4))
         self._selected_item_label.bind(
             "<Configure>",
             lambda e: self._selected_item_label.configure(
@@ -1137,6 +1133,8 @@ class InventoryEditor:
     # ---- right panel: current inventory -------------------------------------
 
     def _build_inventory_panel(self, parent: ctk.CTkFrame):
+        from er_save_manager.ui import dialog_style as ds
+
         header = ctk.CTkFrame(parent, fg_color="transparent")
         header.pack(fill=ctk.X, padx=10, pady=(10, 4))
 
@@ -1208,35 +1206,26 @@ class InventoryEditor:
             command=self._open_visual_inventory,
         ).pack(side=ctk.RIGHT)
 
-        lb_frame = ctk.CTkFrame(parent, fg_color=("gray82", "gray14"), corner_radius=6)
-        lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=(0, 6))
-
-        mode = ctk.get_appearance_mode()
-        lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
-        lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = palette.pick(palette.PURPLE_SELECT)
-
-        sb = tk.Scrollbar(lb_frame)
-        sb.pack(side=tk.RIGHT, fill=tk.Y)
-        self.inventory_listbox = tk.Listbox(
-            lb_frame,
-            yscrollcommand=sb.set,
-            font=("Consolas", 10),
-            bg=lb_bg,
-            fg=lb_fg,
-            selectbackground=lb_sel,
-            relief=tk.FLAT,
-            borderwidth=0,
-            activestyle="none",
+        lb_frame, self.inventory_tree = ds.themed_tree(
+            parent,
+            columns=("location", "item", "qty"),
+            show="headings",
+            selectmode="browse",
+            height=6,
         )
-        self.inventory_listbox.pack(
-            side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2, pady=2
-        )
-        sb.config(command=self.inventory_listbox.yview)
-        bind_mousewheel(self.inventory_listbox)
+        tree = self.inventory_tree
+        tree.heading("location", text="Location", anchor="w")
+        tree.heading("item", text="Item", anchor="w")
+        tree.heading("qty", text="Qty", anchor="e")
+        tree.column("location", width=110, anchor="w", stretch=False)
+        tree.column("item", width=300, anchor="w")
+        tree.column("qty", width=60, anchor="e", stretch=False)
 
+        # Packed before the table so a short window shrinks the table, not
+        # the buttons.
         actions = ctk.CTkFrame(parent, fg_color="transparent")
-        actions.pack(fill=ctk.X, padx=10, pady=(0, 10))
+        actions.pack(side=ctk.BOTTOM, fill=ctk.X, padx=10, pady=(0, 10))
+        lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=(0, 6))
 
         ctk.CTkButton(
             actions,
@@ -1823,9 +1812,6 @@ class InventoryEditor:
             return
 
         cat = self._search_cat_var.get() if hasattr(self, "_search_cat_var") else "All"
-        cats = self._visible_categories()
-        if cat == "All":
-            cat = cats[0] if cats else ""
         from er_save_manager.ui.icon_browser import IconBrowser
 
         settings = self.get_settings() if self.get_settings else None
@@ -2118,7 +2104,7 @@ class InventoryEditor:
         self._all_rows.extend(rows)
 
     def _apply_inv_filter(self):
-        if self.inventory_listbox is None:
+        if self.inventory_tree is None:
             return
 
         query = (
@@ -2136,36 +2122,32 @@ class InventoryEditor:
         cat_mask = _CAT_BITS.get(cat_filter)
         sort_mode = self._inv_sort_var.get() if self._inv_sort_var else "Default"
 
-        self.inventory_listbox.delete(0, tk.END)
+        tree = self.inventory_tree
+        tree.delete(*tree.get_children())
         self._item_data = []
 
-        hdr_fg = palette.pick(palette.PURPLE_TEXT)
-
-        # Rows are grouped under section headers, so sorting stays inside a section
-        pending: list[tuple[str, int, str, int]] = []
-
-        def _flush_section() -> None:
-            for text, full_id, location, gaitem_handle in sort_inventory_rows(
-                pending, sort_mode
-            ):
-                self.inventory_listbox.insert(tk.END, text)
-                self._item_data.append((full_id, location, gaitem_handle))
-            pending.clear()
-
+        rows: list[tuple[str, int, str, int]] = []
         for text, full_id, location, *rest in self._all_rows:
-            gaitem_handle = rest[0] if rest else 0
+            # Section header rows; the Location column and filter replace them
             if full_id is None:
-                _flush_section()
-                self.inventory_listbox.insert(tk.END, text)
-                self.inventory_listbox.itemconfig(tk.END, foreground=hdr_fg)
-                self._item_data.append(None)
-            else:
-                if cat_mask is not None and (full_id & 0xF0000000) != cat_mask:
-                    continue
-                if query and query not in text.lower():
-                    continue
-                pending.append((text, full_id, location, gaitem_handle))
-        _flush_section()
+                continue
+            if cat_mask is not None and (full_id & 0xF0000000) != cat_mask:
+                continue
+            if query and query not in text.lower():
+                continue
+            rows.append((text, full_id, location, rest[0] if rest else 0))
+
+        for text, full_id, location, gaitem_handle in sort_inventory_rows(
+            rows, sort_mode
+        ):
+            # iid = index into _item_data
+            tree.insert(
+                "",
+                "end",
+                iid=str(len(self._item_data)),
+                values=_inventory_columns(text, location),
+            )
+            self._item_data.append((full_id, location, gaitem_handle))
 
     # ---- operations ---------------------------------------------------------
 
@@ -2574,29 +2556,39 @@ class InventoryEditor:
             parent_window = self.parent
         if not cat:
             cat = self._search_cat_var.get()
-        if cat == "All":
-            CTkMessageBox.showwarning(
-                "Batch Add",
-                "Please select a specific category to batch add.",
-                parent=parent_window,
-            )
-            return
-
         from er_save_manager.data.item_database import get_item_database
 
         db = get_item_database()
-        items = db.get_items_by_category(cat)
+        cats = self._visible_categories() if cat == "All" else [cat]
+        items = [item for c in cats for item in db.get_items_by_category(c)]
         if not items:
             return
 
         is_loadout = self.loadout_mode_var.get()
         action_name = "add to Loadout" if is_loadout else "add to Inventory"
 
-        if not CTkMessageBox.askyesno(
-            "Batch Add",
-            f"Batch {action_name} all {len(items)} items from '{cat}'?",
-            parent=parent_window,
-        ):
+        if cat == "All":
+            confirmed = CTkMessageBox._create_dialog(
+                parent_window,
+                "Batch Add All",
+                f"Batch {action_name} all {len(items)} items from every "
+                "category?"
+                + (
+                    ""
+                    if is_loadout
+                    else "\n\nThis fills most of the inventory. A backup is "
+                    "made first; restore it in the Backup Manager to undo."
+                ),
+                icon_type="warning",
+                buttons=[("Add All", True), ("Cancel", False)],
+            )
+        else:
+            confirmed = CTkMessageBox.askyesno(
+                "Batch Add",
+                f"Batch {action_name} all {len(items)} items from '{cat}'?",
+                parent=parent_window,
+            )
+        if not confirmed:
             return
 
         if is_loadout:
@@ -2733,10 +2725,10 @@ class InventoryEditor:
             return
         full_id, location, gaitem_handle = result
         item_label = f"0x{full_id:08X}"
-        if self._forced_selection is None and self.inventory_listbox:
-            sel = self.inventory_listbox.curselection()
+        if self._forced_selection is None and self.inventory_tree:
+            sel = self.inventory_tree.selection()
             if sel:
-                item_label = self.inventory_listbox.get(sel[0]).strip()
+                item_label = self.inventory_tree.set(sel[0], "item")
 
         if not CTkMessageBox.askyesno(
             "Confirm Remove",
@@ -2985,12 +2977,12 @@ class InventoryEditor:
     def _get_forced_or_listbox(self):
         if self._forced_selection is not None:
             return self._forced_selection
-        if self.inventory_listbox is None:
+        if self.inventory_tree is None:
             return None
-        sel = self.inventory_listbox.curselection()
+        sel = self.inventory_tree.selection()
         if not sel:
             return None
-        idx = sel[0]
+        idx = int(sel[0])
         if idx >= len(self._item_data) or self._item_data[idx] is None:
             return None
         return self._item_data[idx]
@@ -3008,13 +3000,13 @@ class InventoryEditor:
                 return None
             return full_id, location, gaitem_handle
 
-        sel = self.inventory_listbox.curselection()
+        sel = self.inventory_tree.selection()
         if not sel:
             CTkMessageBox.showwarning(
                 "No Selection", "Select an item first.", parent=self.parent
             )
             return None
-        idx = sel[0]
+        idx = int(sel[0])
         if idx >= len(self._item_data) or self._item_data[idx] is None:
             return None
         full_id, location, gaitem_handle = self._item_data[idx]
@@ -3806,6 +3798,9 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         super().__init__(parent)
         self.editor = editor
         self.title("Loadouts")
+
+        from er_save_manager.ui import dialog_style as ds
+
         self.geometry("840x600")
         self.resizable(True, True)
         self.minsize(720, 460)
@@ -3824,39 +3819,17 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         right_frame = ctk.CTkFrame(main_frame)
         right_frame.pack(side="right", fill="both", expand=True, padx=(5, 0))
 
-        mode = ctk.get_appearance_mode()
-        lb_bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
-        lb_fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        lb_sel = palette.pick(palette.PURPLE_SELECT)
-
         # --- Left side: loadout list ---
         ctk.CTkLabel(left_frame, text="Loadouts", font=("Segoe UI", 12, "bold")).pack(
             pady=(5, 0)
         )
 
-        db_lb_frame = ctk.CTkFrame(
-            left_frame, fg_color=("gray82", "gray14"), corner_radius=6
-        )
-        db_lb_frame.pack(fill="both", expand=True, padx=8, pady=5)
-        db_sb = tk.Scrollbar(db_lb_frame)
-        db_sb.pack(side="right", fill="y")
         # exportselection off: selecting items on the right must not clear
         # the highlighted loadout here.
-        self.db_lb = tk.Listbox(
-            db_lb_frame,
-            yscrollcommand=db_sb.set,
-            font=("Consolas", 10),
-            bg=lb_bg,
-            fg=lb_fg,
-            selectbackground=lb_sel,
-            relief="flat",
-            borderwidth=0,
-            activestyle="none",
-            width=28,
-            exportselection=False,
+        db_lb_frame, self.db_lb = ds.themed_listbox(
+            left_frame, width=28, exportselection=False
         )
-        self.db_lb.pack(side="left", fill="both", expand=True, padx=2, pady=2)
-        db_sb.config(command=self.db_lb.yview)
+        db_lb_frame.pack(fill="both", expand=True, padx=8, pady=5)
         bind_mousewheel(self.db_lb)
         self.db_lb.bind("<<ListboxSelect>>", self._on_pick_loadout)
 
@@ -3902,26 +3875,21 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         )
         self._info_lbl.pack(fill="x", padx=10)
 
-        tree_frame = tk.Frame(right_frame)
-        tree_frame.pack(fill="both", expand=True, padx=8, pady=5)
-        self.tree = ttk.Treeview(
-            tree_frame,
+        tree_frame, self.tree = ds.themed_tree(
+            right_frame,
             columns=("where", "item", "qty", "remove"),
             show="headings",
             selectmode="extended",
         )
-        self.tree.heading("where", text="Where")
-        self.tree.heading("item", text="Item")
-        self.tree.heading("qty", text="Qty")
+        tree_frame.pack(fill="both", expand=True, padx=8, pady=5)
+        self.tree.heading("where", text="Location", anchor="w")
+        self.tree.heading("item", text="Item", anchor="w")
+        self.tree.heading("qty", text="Qty", anchor="e")
         self.tree.heading("remove", text="")
-        self.tree.column("where", width=70, anchor="w", stretch=False)
+        self.tree.column("where", width=90, anchor="w", stretch=False)
         self.tree.column("item", width=300, anchor="w")
         self.tree.column("qty", width=50, anchor="e", stretch=False)
         self.tree.column("remove", width=36, anchor="center", stretch=False)
-        tree_sb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
-        self.tree.configure(yscrollcommand=tree_sb.set)
-        tree_sb.pack(side="right", fill="y")
-        self.tree.pack(side="left", fill="both", expand=True)
         self.tree.bind("<ButtonRelease-1>", self._on_tree_click)
         self.tree.bind("<Delete>", lambda _e: self._remove_selected())
         self.tree.bind("<BackSpace>", lambda _e: self._remove_selected())
