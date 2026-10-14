@@ -76,6 +76,8 @@ class UserDataX:
     inventory_held_offset: int = 0
     inventory_storage_offset: int = 0
     blood_stain_offset: int = 0
+    acquired_projectiles_offset: int = 0
+    menu_profile_save_load_offset: int = 0
     equipped_items_equip_index_offset: int = 0
     active_weapon_slots_and_arm_style_offset: int = 0
     equipped_items_item_id_offset: int = 0
@@ -339,6 +341,7 @@ class UserDataX:
         obj.equipped_items = EquippedItems.read(f)
         obj.equipped_gestures_offset = f.tell() - data_start
         obj.equipped_gestures = EquippedGestures.read(f)
+        obj.acquired_projectiles_offset = f.tell()
         obj.acquired_projectiles = AcquiredProjectiles.read(f)
         obj.equipped_armaments_and_items_offset = f.tell() - data_start
         obj.equipped_armaments_and_items = EquippedArmamentsAndItems.read(f)
@@ -365,6 +368,7 @@ class UserDataX:
         obj.unk_gamedataman_0x88 = struct.unpack("<I", f.read(4))[0]
 
         try:
+            obj.menu_profile_save_load_offset = f.tell()
             obj.menu_profile_save_load = MenuSaveLoad.read(f)
             obj.trophy_equip_data = TrophyEquipData.read(f)
             obj.gaitem_game_data = GaitemGameData.read(f)

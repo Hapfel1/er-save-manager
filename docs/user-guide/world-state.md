@@ -1,6 +1,6 @@
 # World State & Teleportation
 
-View character location and teleport to any of 451 known safe locations, a custom coordinate, or a point on an interactive overworld map.
+View character location and teleport to any of 451 known safe locations, a custom coordinate, or a point on the world map. The world map also edits the character's map markers and beacons.
 
 ## Overview
 
@@ -8,9 +8,11 @@ The World State tab displays character location information and provides telepor
 
 - View current map and coordinates
 - Teleport to a known location (searchable list of 451 locations)
-- Teleport by clicking a point on an interactive overworld map
+- Teleport by clicking a tile, grace or dungeon on the world map
 - Custom coordinate teleportation
 - Move bloodstain to player's current position
+- Add, move, delete, export, import and copy map markers
+- Legendary trophy progress and item history
 - List, protect and delete the character's messages
 
 ---
@@ -47,7 +49,6 @@ The World State tab displays character location information and provides telepor
 - Search bar to filter by name or Map ID
 - Scrollable list of all matching locations, tagged `[DLC]` where applicable
 - **Teleport to Selected Location** button
-- **Open Map** button - opens an interactive overworld map image; click a location marker to teleport there directly
 
 **Custom Coordinates Entry:**
 
@@ -107,12 +108,71 @@ Teleporting to a known location also adds that location's region unlock ID if th
 
 ---
 
-## Teleporting via the Interactive Map
+## The World Map
+
+The map window shows the game's own map for the Lands Between, the Underground and the Realm of
+Shadow, fully revealed. Switch between them with the buttons at the top left.
+
+- Scroll to zoom, drag with the left mouse button to pan (right or middle button pans too)
+- Sites of Grace and dungeons use the game's map icons (legacy dungeons, catacombs and caves are
+  drawn at their place on the map); locked graces are grayed out. The blue dot is the character
+- Hovering an overworld tile outlines it; hovering any icon or tile shows its name and, for graces,
+  whether it is unlocked
+- The list on the left searches every grace, dungeon and tile by name or map ID; selecting an
+  entry switches to its map, centers on it and selects it
+- **Character** at the top left switches the character (the same as the slot selector in the tab)
+- The bloodstain shows where the character last died, with its runes; **Move Bloodstain to
+  Player** in the right panel moves it to the character's position
+- The legend under the location list explains the icons
+- The checkboxes at the top hide graces, dungeons or markers, turn tile selection off, or show the
+  outline of every teleport tile (**Grid**). Tile selection is off while adding markers or beacons
+- Open it with **Open World Map** on the World Map card in the Teleportation column, or **Edit
+  Markers on Map** in the left column
+
+### Teleporting from the Map
 
 1. Load character data
 2. Click **Open Map**
-3. The overworld map image opens with all small-tile locations marked, and the character's current map highlighted
-4. Click a marker to teleport there
+3. Click a tile, grace or dungeon, or pick it from the list
+4. Click **Teleport Here**
+
+### Locking and Unlocking Graces
+
+Select a Site of Grace on the map. The panel shows whether it is unlocked; **Unlock** / **Lock**
+sets its event flag (the same as the Sites of Grace dialog in the Event Flags tab), makes a backup
+and saves the file. **Unlock All Graces on This Map** unlocks every locked grace on the map that is
+shown (Lands Between, Underground or Realm of Shadow) in one save.
+
+### Map Markers
+
+The side panel lists the character's map markers and beacons (up to 100 markers and 10 beacons).
+
+- **Place on click**: while checked, a click on the map places a marker with the icon chosen next
+  to it
+- Drag a marker to move it; select one and pick an icon to change its icon
+- **Delete** (or the Delete key) removes the selected marker or beacon; **Clear Map** removes
+  everything on the shown map, **Clear All** everything on all maps
+- **Export...** writes the markers to a JSON file; **Import...** reads one and asks whether to
+  replace or append
+- **Copy To...** copies the markers to another character in the same save, replacing or appending
+- Changes are kept in the window until **Apply Changes**, which makes a backup and saves the file.
+  **Revert** discards them
+
+Marker icons are listed by the number the save stores (1-10). Characters last saved by an old
+game version keep an older marker layout that the editor does not change; loading and saving them
+in game converts it.
+
+---
+
+## Item History
+
+**Show Item History** in the left column lists:
+
+- **Legendary Items**: the items the four Legendary trophies count, and which ones this character
+  has already been credited with
+- **All Items**: every item in the database, marked acquired or missing. The game remembers every
+  item type the character has picked up, also after it was sold, discarded or used up. Filter by
+  base game or DLC, category, state and name
 
 ---
 
