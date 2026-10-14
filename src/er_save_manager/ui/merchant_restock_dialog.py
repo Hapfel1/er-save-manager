@@ -5,12 +5,12 @@ and restocks rows by clearing their purchase counters.
 """
 
 import tkinter as tk
-import tkinter.ttk as ttk
 
 import customtkinter as ctk
 
 from er_save_manager.data.grace_data import get_graces
 from er_save_manager.data.shop_stock import StockRow, bought, get_stock
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import (
     center_window,
@@ -141,9 +141,6 @@ class MerchantRestockDialog:
         summary_label.pack(pady=(0, 4), padx=15, anchor="w")
 
         # ---- Stock list ----
-        tree_frame = tk.Frame(dialog)
-        tree_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
-
         columns = {
             "bought": ("Bought", 90, False),
             "item": ("Item", 300, True),
@@ -152,8 +149,8 @@ class MerchantRestockDialog:
             "grace": ("Nearest Grace", 220, True),
             "price": ("Price", 80, False),
         }
-        tree = ttk.Treeview(
-            tree_frame,
+        tree_frame, tree = ds.themed_tree(
+            dialog,
             columns=tuple(columns),
             show="headings",
             selectmode="extended",
@@ -166,11 +163,7 @@ class MerchantRestockDialog:
         tree.tag_configure("bought", foreground="#ffb74d")
         tree.tag_configure("in_stock", foreground="#4caf50")
 
-        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
-        tree.configure(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
         # Tracks current sort: col -> ascending bool
         sort_state: dict[str, bool] = {}
 

@@ -5,12 +5,13 @@ DS2 NPC panel: shows which NPCs are hostile or dead and can revive or calm them.
 from __future__ import annotations
 
 from pathlib import Path
-from tkinter import ttk
 
 import customtkinter as ctk
 
 from er_save_manager.games.DS2.save import DS2Save, NpcState, SlotState
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write
 
 
@@ -69,7 +70,7 @@ class DS2NpcPanel:
             self.parent,
             text=(
                 "Revive clears the documented dead and hostile flags. Calm clears the "
-                "hostile flag only. Ctrl or Shift+click selects several."
+                "hostile flag only."
             ),
             text_color=("gray40", "gray60"),
             font=("Segoe UI", 11),
@@ -77,7 +78,7 @@ class DS2NpcPanel:
             justify="left",
         ).pack(side="bottom", anchor="w", padx=10)
 
-        self._tree = ttk.Treeview(
+        box, self._tree = ds.themed_tree(
             self.parent,
             columns=("name", "state"),
             show="headings",
@@ -88,7 +89,8 @@ class DS2NpcPanel:
         self._tree.heading("state", text="State")
         self._tree.column("name", width=300)
         self._tree.column("state", width=110)
-        self._tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+        box.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+        add_tooltip(self._tree, MULTI_SELECT_TIP)
         self._tree.bind("<<TreeviewSelect>>", lambda _e: self._update_buttons())
 
         self._states: list[NpcState] = []

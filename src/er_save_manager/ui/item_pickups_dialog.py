@@ -5,7 +5,6 @@ event flags. Clearing a world pickup's flag makes the game place it again.
 """
 
 import tkinter as tk
-import tkinter.ttk as ttk
 
 import customtkinter as ctk
 
@@ -17,6 +16,7 @@ from er_save_manager.data.item_pickups import (
     get_pickups,
 )
 from er_save_manager.data.locations import get_name_for_map_id
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import (
     center_window,
@@ -164,9 +164,6 @@ class ItemPickupsDialog:
         summary_label.pack(pady=(0, 4), padx=15, anchor="w")
 
         # ---- Pickup list ----
-        tree_frame = tk.Frame(dialog)
-        tree_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
-
         columns = {
             "state": ("State", 90, False),
             "item": ("Item", 380, True),
@@ -174,8 +171,8 @@ class ItemPickupsDialog:
             "grace": ("Nearest Grace", 260, True),
             "source": ("Source", 130, False),
         }
-        tree = ttk.Treeview(
-            tree_frame,
+        tree_frame, tree = ds.themed_tree(
+            dialog,
             columns=tuple(columns),
             show="headings",
             selectmode="extended",
@@ -187,11 +184,7 @@ class ItemPickupsDialog:
         tree.tag_configure("collected", foreground="#4caf50")
         tree.tag_configure("missing", foreground="#e57373")
 
-        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
-        tree.configure(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
         # Tracks current sort: col -> ascending bool
         sort_state: dict[str, bool] = {}
 

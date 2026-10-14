@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import tkinter as tk
 from pathlib import Path
-from tkinter import ttk
 
 import customtkinter as ctk
 
@@ -25,7 +24,9 @@ from er_save_manager.games.DS3 import catalog
 from er_save_manager.games.DS3.icon_manager import get_infusion_icon
 from er_save_manager.games.DS3.slot import ID_ARMOR, ID_WEAPON, LayoutError, id_kind
 from er_save_manager.games.DS3.tabs.style import apply_treeview_style
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write, raise_existing_window
 
 
@@ -276,21 +277,19 @@ class DS3InventoryTab:
             frow, textvariable=self._spawn_search_var, placeholder_text="Search..."
         ).pack(side="left", fill="x", expand=True)
 
-        self._spawn_tree = ttk.Treeview(
+        spawn_box, self._spawn_tree = ds.themed_tree(
             left,
             columns=("name",),
-            show="headings",
-            style="DS3.Treeview",
+            show="",
             height=10,
             selectmode="extended",
         )
-        self._spawn_tree.heading("name", text="Item (Ctrl or Shift click for several)")
         self._spawn_tree.column("name", width=260, anchor="w")
-        self._spawn_tree.grid(row=2, column=0, sticky="nsew", padx=8, pady=(0, 4))
-        ssb = ttk.Scrollbar(left, orient="vertical", command=self._spawn_tree.yview)
-        ssb.grid(row=2, column=1, sticky="ns", pady=(0, 4))
-        self._spawn_tree.configure(yscrollcommand=ssb.set)
+        spawn_box.grid(
+            row=2, column=0, columnspan=2, sticky="nsew", padx=8, pady=(0, 4)
+        )
         self._spawn_tree.bind("<<TreeviewSelect>>", self._on_spawn_select)
+        add_tooltip(self._spawn_tree, MULTI_SELECT_TIP)
         # The spawn tree is filled on first character load, not at setup.
 
         self._spawn_inf_row = ctk.CTkFrame(left, fg_color="transparent")
@@ -387,11 +386,10 @@ class DS3InventoryTab:
             command=lambda _: self._refresh_inventory_tree(),
         ).pack(side="left")
 
-        self._inv_tree = ttk.Treeview(
+        inv_box, self._inv_tree = ds.themed_tree(
             right,
             columns=("name", "type", "qty", "where"),
             show="headings",
-            style="DS3.Treeview",
             height=10,
             selectmode="extended",
         )
@@ -402,12 +400,9 @@ class DS3InventoryTab:
             self._inv_tree.column(
                 col, width=width, anchor="w" if col == "name" else "center"
             )
-        self._inv_tree.grid(row=2, column=0, sticky="nsew", padx=8, pady=(0, 4))
-        vsb = ttk.Scrollbar(right, orient="vertical", command=self._inv_tree.yview)
-        vsb.grid(row=2, column=1, sticky="ns", pady=(0, 4))
-        self._inv_tree.configure(yscrollcommand=vsb.set)
+        inv_box.grid(row=2, column=0, columnspan=2, sticky="nsew", padx=8, pady=(0, 4))
         self._inv_tree.bind("<<TreeviewSelect>>", self._on_inv_select)
-
+        add_tooltip(self._inv_tree, MULTI_SELECT_TIP)
         edits = ctk.CTkFrame(right, fg_color="transparent")
         edits.grid(row=3, column=0, columnspan=2, sticky="ew", padx=8, pady=(0, 2))
         self._edit_qty_var = tk.StringVar(value="1")

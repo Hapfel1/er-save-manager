@@ -4,11 +4,11 @@ Unlock or lock sites of grace via their event flags.
 """
 
 import tkinter as tk
-import tkinter.ttk as ttk
 
 import customtkinter as ctk
 
 from er_save_manager.data.grace_data import Grace, get_graces
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import (
     center_window,
@@ -120,11 +120,8 @@ class GraceDialog:
         summary_label.pack(pady=(0, 4), padx=15, anchor="w")
 
         # ---- Grace list ----
-        tree_frame = tk.Frame(dialog)
-        tree_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
-
-        tree = ttk.Treeview(
-            tree_frame,
+        tree_frame, tree = ds.themed_tree(
+            dialog,
             columns=("state", "grace", "region"),
             show="headings",
             selectmode="extended",
@@ -139,11 +136,7 @@ class GraceDialog:
         tree.tag_configure("unlocked", foreground="#4caf50")
         tree.tag_configure("locked", foreground="#9e9e9e")
 
-        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
-        tree.configure(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
         # Tracks current sort: col -> ascending bool
         sort_state: dict[str, bool] = {}
 

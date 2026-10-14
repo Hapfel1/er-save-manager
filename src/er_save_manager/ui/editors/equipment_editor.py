@@ -10,7 +10,6 @@ mechanism: whatever is selectable is guaranteed equippable.
 from __future__ import annotations
 
 import json
-import tkinter as tk
 from pathlib import Path
 
 import customtkinter as ctk
@@ -24,6 +23,7 @@ from er_save_manager.ui.utils import (
     pick_file,
     trace_variable,
 )
+from er_save_manager.ui.virtual_grid import GridEntry, VirtualIconGrid
 
 # ---- constants --------------------------------------------------------------
 
@@ -715,16 +715,9 @@ def _resolve_icon_by_name(display_name: str):
 class _VisualItemPickerDialog(ctk.CTkToplevel):
     """Icon-grid picker limited to items the character actually owns.
 
-    Canvas-based (not one CTkButton/CTkFrame per item) - a weapon slot can
-    have hundreds of owned instances, and creating that many widgets at once
-    triggers X11 BadAlloc. Icons are drawn as raw PhotoImages onto a single
-    Canvas and loaded in small batches via after(), same approach already
-    used for the gem picker in icon_browser.py.
+    A weapon slot can have hundreds of owned instances; the virtual grid
+    only creates widgets for the cells on screen.
     """
-
-    _CELL = 108
-    _COLS = 5
-    _MAX_VISIBLE = 300
 
     def __init__(self, parent, owned_items: list[tuple[int, int, str, str]], on_select):
         super().__init__(parent)
@@ -736,18 +729,11 @@ class _VisualItemPickerDialog(ctk.CTkToplevel):
         self._on_select = on_select
         self._items = owned_items
         self._visible: list[tuple[int, int, str, str]] = []
-        self._photos: list = []
         self._sel: int | None = None
-        self._job = None
 
         _center_over(self, parent, 640, 680)
         self.attributes("-alpha", 1)
         self.grab_set()
-
-        mode = ctk.get_appearance_mode()
-        self._bg = "#1a1a24" if mode == "Dark" else "#f0f0f0"
-        self._fg = "#d4d4e8" if mode == "Dark" else "#111111"
-        self._sel_color = palette.pick(palette.PURPLE_SELECT)
 
         top = ctk.CTkFrame(self, fg_color="transparent")
         top.pack(fill=ctk.X, padx=10, pady=(10, 4))
@@ -778,24 +764,12 @@ class _VisualItemPickerDialog(ctk.CTkToplevel):
             command=lambda _v: self._filter(),
         ).pack(side=ctk.LEFT)
 
-        cv_frame = ctk.CTkFrame(self, fg_color=("gray82", "gray14"), corner_radius=6)
-        cv_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=4)
-
-        self._cv = tk.Canvas(cv_frame, bg=self._bg, highlightthickness=0, bd=0)
-        sb = tk.Scrollbar(cv_frame, orient="vertical", command=self._cv.yview)
-        self._cv.configure(yscrollcommand=sb.set)
-        sb.pack(side=tk.RIGHT, fill=tk.Y)
-        self._cv.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
-        self._cv.bind("<Button-1>", self._on_click)
-        self._cv.bind(
-            "<Double-Button-1>", lambda e: (self._on_click(e), self._confirm())
+        self._grid = VirtualIconGrid(
+            self,
+            self._on_grid_select,
+            on_activate=lambda _k: self._confirm(),
         )
-        self._cv.bind(
-            "<MouseWheel>",
-            lambda e: self._cv.yview_scroll(int(-e.delta / 120), "units"),
-        )
-        self._cv.bind("<Button-4>", lambda _e: self._cv.yview_scroll(-1, "units"))
-        self._cv.bind("<Button-5>", lambda _e: self._cv.yview_scroll(1, "units"))
+        self._grid.pack(fill=ctk.BOTH, expand=True, padx=10, pady=4)
 
         if not owned_items:
             ctk.CTkLabel(
@@ -813,8 +787,15 @@ class _VisualItemPickerDialog(ctk.CTkToplevel):
             width=100,
             fg_color=("gray70", "gray35"),
         ).pack(side=ctk.LEFT)
-        ctk.CTkButton(btn_row, text="Cancel", command=self.destroy, width=80).pack(
-            side=ctk.RIGHT
+        ctk.CTkButton(
+            btn_row,
+            text="Cancel",
+            command=self.destroy,
+            width=80,
+            fg_color=("gray70", "gray35"),
+        ).pack(side=ctk.RIGHT)
+        ctk.CTkButton(btn_row, text="Select", command=self._confirm, width=80).pack(
+            side=ctk.RIGHT, padx=(0, 8)
         )
 
         self._filter()
@@ -834,96 +815,22 @@ class _VisualItemPickerDialog(ctk.CTkToplevel):
         else:
             items.sort(key=lambda t: t[2])
 
-        self._draw(items[: self._MAX_VISIBLE])
-
-    def _draw(self, items: list[tuple[int, int, str, str]]):
-        if self._job:
-            try:
-                self.after_cancel(self._job)
-            except Exception:
-                pass
-            self._job = None
-        self._cv.delete("all")
-        self._photos.clear()
         self._visible = items
         self._sel = None
-
-        cw = max(self._cv.winfo_width(), self._CELL * self._COLS)
-        for idx, (_raw, _handle, name, _cat) in enumerate(items):
-            row, col = divmod(idx, self._COLS)
-            x0, y0 = col * self._CELL, row * self._CELL
-            self._cv.create_rectangle(
-                x0,
-                y0,
-                x0 + self._CELL,
-                y0 + self._CELL,
-                fill=self._bg,
-                outline="",
-                tags=(f"cell_{idx}", f"bg_{idx}"),
-            )
-            label = name if len(name) <= 36 else name[:33] + "..."
-            self._cv.create_text(
-                x0 + self._CELL / 2,
-                y0 + self._CELL - 32,
-                text=label,
-                fill=self._fg,
-                font=("Segoe UI", 9),
-                width=self._CELL - 6,
-                anchor="n",
-                justify="center",
-                tags=f"cell_{idx}",
-            )
-        rows = (len(items) + self._COLS - 1) // self._COLS
-        self._cv.configure(scrollregion=(0, 0, cw, rows * self._CELL))
-        self._job = self.after(60, lambda: self._load_icons(0))
-
-    def _load_icons(self, start: int, batch: int = 24):
-        try:
-            from PIL import ImageTk
-        except Exception:
-            return
-        end = min(start + batch, len(self._visible))
-        for idx in range(start, end):
-            _raw, _handle, name, _cat = self._visible[idx]
-            try:
-                pil = _resolve_icon_by_name(name)
-                if pil:
-                    pil = _normalize_icon(pil, 72)
-                    ph = ImageTk.PhotoImage(pil)
-                    self._photos.append(ph)
-                    row, col = divmod(idx, self._COLS)
-                    x0, y0 = col * self._CELL, row * self._CELL
-                    self._cv.create_image(
-                        x0 + self._CELL / 2,
-                        y0 + self._CELL / 2 - 12,
-                        image=ph,
-                        tags=f"cell_{idx}",
-                    )
-            except Exception:
-                pass
-        if end < len(self._visible):
-            self._job = self.after(20, lambda: self._load_icons(end, batch))
-        else:
-            self._job = None
-            self._cv._photo_refs = self._photos  # prevent GC
-
-    def _on_click(self, event):
-        x, y = self._cv.canvasx(event.x), self._cv.canvasy(event.y)
-        col = int(x // self._CELL)
-        row = int(y // self._CELL)
-        if col < 0 or col >= self._COLS:
-            return
-        idx = row * self._COLS + col
-        if not (0 <= idx < len(self._visible)):
-            return
-        prev = self._sel
-        self._sel = idx
-        for i in (prev, idx):
-            if i is not None:
-                self._cv.itemconfigure(
-                    f"bg_{i}",
-                    fill=self._sel_color if i == self._sel else self._bg,
+        self._grid.set_entries(
+            [
+                GridEntry(
+                    idx,
+                    name,
+                    name.lower(),
+                    lambda n=name: _resolve_icon_by_name(n),
                 )
+                for idx, (_raw, _handle, name, _cat) in enumerate(items)
+            ]
+        )
+
+    def _on_grid_select(self, keys: list):
+        self._sel = keys[0] if keys else None
 
     def _confirm(self):
         if self._sel is None or self._sel >= len(self._visible):

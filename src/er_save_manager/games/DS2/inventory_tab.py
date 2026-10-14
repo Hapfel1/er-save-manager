@@ -7,7 +7,6 @@ from __future__ import annotations
 import tkinter as tk
 from collections.abc import Callable
 from pathlib import Path
-from tkinter import ttk
 
 import customtkinter as ctk
 
@@ -31,8 +30,10 @@ from er_save_manager.games.DS2.save import (
     UPGRADABLE_CATEGORIES,
     DS2Save,
 )
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.scrollable_frame import ScrollableFrame
+from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write, raise_existing_window
 
 
@@ -237,13 +238,6 @@ class DS2InventoryPanel:
             side="left", padx=(0, 6)
         )
 
-        ctk.CTkLabel(
-            parent,
-            text="Ctrl or Shift+click selects several items",
-            text_color=("gray40", "gray60"),
-            font=("Segoe UI", 11),
-        ).pack(anchor="w", padx=10, pady=(0, 2))
-
         # Pack order decides which widgets are clipped when the parent is short.
         # The button and quantity row are packed to the bottom first so they
         # always keep their space, and the tree takes whatever remains.
@@ -322,16 +316,16 @@ class DS2InventoryPanel:
         )
         self._add_hints["upgrade"].pack(side="left", padx=(6, 0))
 
-        self._results_tree = ttk.Treeview(
+        results_box, self._results_tree = ds.themed_tree(
             parent,
             columns=("name",),
-            show="headings",
+            show="",
             height=6,
             selectmode="extended",
         )
-        self._results_tree.heading("name", text="Item")
         self._results_tree.column("name", width=260)
-        self._results_tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+        results_box.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+        add_tooltip(self._results_tree, MULTI_SELECT_TIP)
         self._results_tree.bind(
             "<<TreeviewSelect>>", lambda _e: self._update_add_controls()
         )
@@ -400,7 +394,7 @@ class DS2InventoryPanel:
         infusion_actions = ctk.CTkFrame(parent, fg_color="transparent")
         infusion_actions.pack(side="bottom", fill="x", padx=10, pady=(0, 6))
 
-        self._inventory_tree = ttk.Treeview(
+        inventory_box, self._inventory_tree = ds.themed_tree(
             parent,
             columns=columns,
             show="headings",
@@ -427,8 +421,8 @@ class DS2InventoryPanel:
                 col, text=label, command=lambda c=col: self._sort_by(c)
             )
             self._inventory_tree.column(col, width=width)
-        self._inventory_tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
-
+        inventory_box.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+        add_tooltip(self._inventory_tree, MULTI_SELECT_TIP)
         remove_button = ctk.CTkButton(
             actions, text="Remove Selected", command=self._on_remove, width=130
         )
@@ -866,8 +860,14 @@ class DS2InventoryPanel:
                 self.show_toast(f"Cannot read upgrade caps: {e}", duration=3500)
             return None
 
-    def _add_many(self, save: DS2Save, names: list[str]) -> None:
-        """Add several items of the selected category in one write."""
+    def _add_many(
+        self, save: DS2Save, names: list[str], batch: list | None = None
+    ) -> None:
+        """Add several items of the selected category in one write.
+
+        With batch, the confirmation is skipped and nothing is written: the
+        (result, unsafe count) pair is appended for the caller to report.
+        """
         inputs = self._read_add_inputs()
         if inputs is None:
             return
@@ -883,7 +883,8 @@ class DS2InventoryPanel:
         safe_ids = [i for i in item_ids if i not in UNSAFE_IDS]
         unsafe_count = len(item_ids) - len(safe_ids)
         if not safe_ids:
-            self.show_toast("No addable items", duration=2000)
+            if batch is None:
+                self.show_toast("No addable items", duration=2000)
             return
 
         if (category in UPGRADABLE_CATEGORIES and upgrade > 0) or (
@@ -924,7 +925,7 @@ class DS2InventoryPanel:
             )
         if unsafe_count:
             lines.append(f"{unsafe_count} unsafe item(s) will be skipped.")
-        if not CTkMessageBox.askyesno(
+        if batch is None and not CTkMessageBox.askyesno(
             "Add items", "\n\n".join(lines), parent=self.parent
         ):
             return
@@ -938,20 +939,39 @@ class DS2InventoryPanel:
             infusion=infusion,
             in_box=in_box,
         )
+        if batch is not None:
+            batch.append((result, unsafe_count))
+            return
+        self._report_bulk_add(save, [(result, unsafe_count)])
+
+    def _report_bulk_add(self, save: DS2Save, results: list) -> None:
+        """Write once if anything changed and toast the summed counts."""
+        totals = {
+            field: sum(getattr(r, field) for r, _ in results)
+            for field in (
+                "added",
+                "updated",
+                "skipped_owned",
+                "clamped",
+                "infusion_fallback",
+                "no_space",
+            )
+        }
+        unsafe_count = sum(u for _, u in results)
         summary = ", ".join(
             f"{count} {label}"
             for count, label in (
-                (result.added, "added"),
-                (result.updated, "updated"),
-                (result.skipped_owned, "already owned"),
-                (result.clamped, "capped at max upgrade"),
-                (result.infusion_fallback, "added plain, infusion not allowed"),
-                (result.no_space, "no space"),
+                (totals["added"], "added"),
+                (totals["updated"], "updated"),
+                (totals["skipped_owned"], "already owned"),
+                (totals["clamped"], "capped at max upgrade"),
+                (totals["infusion_fallback"], "added plain, infusion not allowed"),
+                (totals["no_space"], "no space"),
                 (unsafe_count, "unsafe skipped"),
             )
             if count
         )
-        if result.added or result.updated:
+        if totals["added"] or totals["updated"]:
             self._write_and_refresh(save, operation="add_items_bulk")
             self._reset_inputs()
         self.show_toast(summary or "Nothing changed", duration=4000)

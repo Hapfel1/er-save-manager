@@ -6,7 +6,6 @@ defeated bosses to their arenas.
 from __future__ import annotations
 
 from pathlib import Path
-from tkinter import ttk
 
 import customtkinter as ctk
 
@@ -18,7 +17,9 @@ from er_save_manager.games.DS2.save import (
     DS2Save,
     SlotState,
 )
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write
 
 
@@ -109,8 +110,7 @@ class DS2BossPanel:
                 "removes the boss from its arena, without souls, drops or other "
                 "rewards. Set Defeats changes the "
                 f"kill counter (1 to {BOSS_MAX_DEFEATS}) and marks the boss as "
-                "defeated without removing it from its arena. Ctrl or Shift+click "
-                "selects several."
+                "defeated without removing it from its arena."
             ),
             text_color=("gray40", "gray60"),
             font=("Segoe UI", 11),
@@ -118,7 +118,7 @@ class DS2BossPanel:
             justify="left",
         ).pack(side="bottom", anchor="w", padx=10)
 
-        self._tree = ttk.Treeview(
+        box, self._tree = ds.themed_tree(
             self.parent,
             columns=("name", "state", "defeats", "bonfire"),
             show="headings",
@@ -133,7 +133,8 @@ class DS2BossPanel:
         self._tree.column("state", width=300)
         self._tree.column("defeats", width=70, anchor="center")
         self._tree.column("bonfire", width=200)
-        self._tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+        box.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+        add_tooltip(self._tree, MULTI_SELECT_TIP)
         self._tree.bind("<<TreeviewSelect>>", lambda _e: self._update_buttons())
 
         self._states: list[BossState] = []
