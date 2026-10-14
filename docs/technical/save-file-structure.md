@@ -753,8 +753,10 @@ message is read.
 | 0x34 | 2 | uint16 template (BloodMsg FMG id, e.g. 10000 "<?bmsg?> ahead") |
 | 0x36 | 1 | gesture index k, 0xFF = none |
 | 0x37 | 1 | unknown |
-| 0x38 | 4 | uint32 word (BloodMsg FMG id, e.g. 30001 "enemy"); a template with two blanks uses it in both |
-| 0x3C | 4 | 0 |
+| 0x38 | 2 | uint16 word (BloodMsg FMG id, e.g. 30001 "enemy"); a template with two blanks uses it in both |
+| 0x3A | 2 | uint16 conjunction (BloodMsg FMG id 50000-50009, e.g. 50003 "therefore"), 0 = one phrase |
+| 0x3C | 2 | uint16 second template, 0 = one phrase |
+| 0x3E | 2 | uint16 second word, 0 = one phrase |
 | 0x40 | 4 | 2 x uint16: 0 on a new message, growing later; likely the ratings received |
 | 0x44 | 2 | 0 |
 | 0x46 | 1 | protected (1 = cannot be deleted) |
@@ -772,7 +774,8 @@ Deleting a message removes its entry; protecting it sets 0x46. Ratings given to 
 are not stored. When an 11th message is written the oldest one is removed.
 
 **Cached message (kind 1):** author equipment first, `FACE` block at 0x74, name at 0x194 (right after the
-`FACE` block), then MapId at 0x1C4, position 0x1CC, angle 0x1D8, template 0x1DC, gesture 0x1DE, word 0x1E0.
+`FACE` block), then MapId at 0x1C4, position 0x1CC, angle 0x1D8, and the message body at 0x1DC (template, gesture,
+unknown byte, word, conjunction, second template, second word, laid out as at own message 0x34).
 602-byte entries also occur: their part before the `FACE` block is 4 bytes shorter, which moves every
 later field 4 bytes back (`FACE` at 0x70, name at 0x190). The list is refreshed during online play.
 
