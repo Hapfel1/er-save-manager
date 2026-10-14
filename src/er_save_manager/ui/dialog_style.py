@@ -7,7 +7,13 @@ import tkinter as tk
 import customtkinter as ctk
 
 from er_save_manager.ui import palette
-from er_save_manager.ui.utils import center_window, force_render_dialog
+from er_save_manager.ui.utils import (
+    center_window,
+    force_render_dialog,
+    get_work_area,
+    style_window_frame,
+    title_bar_height,
+)
 
 FONT = ("Segoe UI", 13)
 BOLD = ("Segoe UI Semibold", 13)
@@ -106,6 +112,7 @@ def finish(dialog, parent, *, min_width=0, width=None, height=None):
         height = round(dialog.winfo_reqheight() / scale)
     center_window(dialog, width, height, parent=parent)
     dialog.deiconify()
+    style_window_frame(dialog)
     force_render_dialog(dialog)
     dialog.attributes("-alpha", 1)
     try:
@@ -448,7 +455,10 @@ def refit(dialog) -> None:
     dialog.update_idletasks()
     scale = _scale(dialog)
     width = max(dialog.winfo_width(), dialog.winfo_reqwidth())
-    height = min(dialog.winfo_reqheight(), int(dialog.winfo_screenheight() * 0.9))
+    # Not past the bottom of the work area (taskbar) from the current position
+    _, work_y, _, work_h = get_work_area(dialog)
+    room = work_y + work_h - dialog.winfo_y() - title_bar_height(dialog)
+    height = min(dialog.winfo_reqheight(), max(room, int(work_h * 0.5)))
     dialog.geometry(
         f"{round(width / scale)}x{round(height / scale)}"
         f"+{dialog.winfo_x()}+{dialog.winfo_y()}"
@@ -497,9 +507,17 @@ def collapsible(parent, title, build, *, expanded=False, pady=(10, 0)):
 
 # Lists and tables sit in an inset well, darker than the panel around them
 LIST_BG = ("gray97", "gray13")
+# Row text and height in unscaled px, matching the app's 13 px labels
+LIST_TEXT_PX = 13
+LIST_ROW_PX = 26
 
 
-def themed_listbox(parent, font=("Consolas", 10), **kwargs):
+def _list_font(box: ctk.CTkFrame, family: str = "Segoe UI") -> tuple[str, int]:
+    """Font tuple in negative (pixel) size, scaled like CTk fonts."""
+    return (family, -round(box._apply_widget_scaling(LIST_TEXT_PX)))
+
+
+def themed_listbox(parent, **kwargs):
     """tk.Listbox in a rounded box with theme colors and a CTk scrollbar.
 
     Returns (box, listbox); the caller packs box. kwargs go to the listbox.
@@ -512,11 +530,12 @@ def themed_listbox(parent, font=("Consolas", 10), **kwargs):
     bg = pick(LIST_BG)
     box.configure(fg_color=bg)
     fg = pick(ctk.ThemeManager.theme["CTkLabel"]["text_color"])
-    sb = ctk.CTkScrollbar(box)
+    # CTkScrollbar requests 200 px by default; the box should follow the list
+    sb = ctk.CTkScrollbar(box, height=40)
     sb.pack(side="right", fill="y", padx=(0, 3), pady=6)
     listbox = tk.Listbox(
         box,
-        font=font,
+        font=_list_font(box),
         bg=bg,
         fg=fg,
         selectbackground=palette.pick(palette.PURPLE_SELECT),
@@ -552,9 +571,9 @@ def themed_tree(parent, xscroll: bool = False, **kwargs):
         background=bg,
         fieldbackground=bg,
         foreground=fg,
-        rowheight=24,
+        rowheight=round(box._apply_widget_scaling(LIST_ROW_PX)),
         borderwidth=0,
-        font=("Segoe UI", 11),
+        font=_list_font(box),
     )
     style.configure(
         f"{name}.Heading",
@@ -562,18 +581,21 @@ def themed_tree(parent, xscroll: bool = False, **kwargs):
         foreground=fg,
         relief="flat",
         borderwidth=0,
-        font=("Segoe UI Semibold", 11),
+        font=_list_font(box, "Segoe UI Semibold"),
     )
     style.map(f"{name}.Heading", background=[("active", head_bg)])
     style.map(name, background=[("selected", select)], foreground=[("selected", fg)])
     style.layout(name, [("Treeview.treearea", {"sticky": "nswe"})])
 
-    sb = ctk.CTkScrollbar(box)
+    # CTkScrollbar requests 200 px by default; the box should follow the list
+    sb = ctk.CTkScrollbar(box, height=40)
     sb.pack(side="right", fill="y", padx=(0, 3), pady=6)
     tree = ttk.Treeview(box, style=name, yscrollcommand=sb.set, **kwargs)
     sb.configure(command=tree.yview)
     if xscroll:
-        hsb = ctk.CTkScrollbar(box, orientation="horizontal", command=tree.xview)
+        hsb = ctk.CTkScrollbar(
+            box, orientation="horizontal", width=40, command=tree.xview
+        )
         hsb.pack(side="bottom", fill="x", padx=(8, 0), pady=(0, 3))
         tree.configure(xscrollcommand=hsb.set)
     tree.pack(side="left", fill="both", expand=True, padx=(8, 0), pady=6)

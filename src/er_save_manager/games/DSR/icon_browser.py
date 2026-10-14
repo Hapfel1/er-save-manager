@@ -14,9 +14,6 @@ from typing import TYPE_CHECKING
 import customtkinter as ctk
 
 from er_save_manager.games.DS3.icon_browser import (
-    CELL_H,
-    CELL_W,
-    ICON_SIZE,
     SELECTED_TEXT,
     IconGrid,
     follow_spawn_list,
@@ -27,39 +24,19 @@ from er_save_manager.games.DS3.tabs.inventory import enable
 from er_save_manager.games.DSR import catalog
 from er_save_manager.games.DSR.icon_manager import get_icon
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import patch_combo_scroll
+from er_save_manager.ui.virtual_grid import GridEntry
 
 if TYPE_CHECKING:
     from er_save_manager.games.DSR.inventory_tab import DSRInventoryTab
 
-_CELL_COLOR = ("gray82", "gray18")
 
-
-def item_button(parent, item: dict | None, text: str, images: list):
-    """Icon grid cell for an item; keeps its CTkImage alive in images."""
-    img = get_icon(item["icon_id"]) if item else None
-    ctk_img = None
-    if img is not None:
-        ctk_img = ctk.CTkImage(
-            light_image=img, dark_image=img, size=(ICON_SIZE, ICON_SIZE)
-        )
-        images.append(ctk_img)
-    btn = ctk.CTkButton(
-        parent,
-        image=ctk_img,
-        text=text,
-        compound="top",
-        width=CELL_W,
-        height=CELL_H,
-        font=("Segoe UI", 11),
-        fg_color=_CELL_COLOR,
-        hover_color=("gray70", "gray28"),
-        text_color=("gray10", "gray90"),
-        anchor="center",
+def item_entry(key, item: dict | None, text: str, search: str) -> GridEntry:
+    """Grid entry for an item; the icon loads when the cell scrolls into view."""
+    return GridEntry(
+        key, text, search, lambda: get_icon(item["icon_id"]) if item else None
     )
-    if getattr(btn, "_text_label", None) is not None:
-        btn._text_label.configure(wraplength=CELL_W - 8, justify="center")
-    return btn
 
 
 class DSRIconBrowser(ctk.CTkToplevel):
@@ -93,15 +70,14 @@ class DSRIconBrowser(ctk.CTkToplevel):
         combo.pack(side="left")
         patch_combo_scroll(combo)
 
-        scroll = ctk.CTkScrollableFrame(self)
-        scroll.pack(fill="both", expand=True, padx=6, pady=(0, 4))
-        self._grid = IconGrid(self, scroll, self._on_select)
-
+        self._grid = IconGrid(self, self._on_select)
+        self._grid.pack(fill="both", expand=True, padx=6, pady=(0, 4))
+        add_tooltip(self._grid._canvas, MULTI_SELECT_TIP)
         panel = ctk.CTkFrame(self, fg_color=("gray88", "gray18"), corner_radius=8)
         panel.pack(fill="x", padx=6, pady=(0, 8))
         self._sel_lbl = ctk.CTkLabel(
             panel,
-            text="Click to select, Ctrl or Shift click for several",
+            text="No item selected",
             font=("Segoe UI", 10, "bold"),
             anchor="w",
             text_color=("gray50", "gray60"),
@@ -164,8 +140,7 @@ class DSRIconBrowser(ctk.CTkToplevel):
 
         def make(entry):
             index, (label, item, _variants) = entry
-            btn = item_button(self._grid.scroll, item, label, self._grid.images)
-            return btn, label.lower(), index
+            return item_entry(index, item, label, label.lower())
 
         self._grid.load(list(self._rows.items()), make)
 
@@ -241,5 +216,5 @@ class DSRIconBrowser(ctk.CTkToplevel):
         values = self._values()
         if values is None:
             return
-        items = [self._rows[k][1] for k in self._grid._visible_keys()]
+        items = [self._rows[k][1] for k in self._grid.visible_keys()]
         self._tab.spawn_items(items, *values, parent=self)

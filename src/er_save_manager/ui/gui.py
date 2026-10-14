@@ -4,6 +4,7 @@ Modular Elden Ring Save Manager GUI
 """
 
 import os
+import re
 import subprocess
 import sys
 import threading
@@ -47,7 +48,16 @@ from er_save_manager.ui.tabs import (
     WorldStateTab,
 )
 from er_save_manager.ui.theme import ThemeManager
-from er_save_manager.ui.utils import center_window, open_url, pick_file, trace_variable
+from er_save_manager.ui.utils import (
+    center_window,
+    fit_size_to_work_area,
+    get_work_area,
+    open_url,
+    pick_file,
+    style_window_frame,
+    title_bar_height,
+    trace_variable,
+)
 
 # Nightreign
 try:
@@ -63,6 +73,9 @@ except ImportError:
 # Pause between building queued tabs, so input is handled in between.
 _TAB_BUILD_DELAY_MS = 15
 
+# Main window height (logical px) below which the header is compacted
+_COMPACT_HEIGHT = 900
+
 
 class SaveManagerGUI:
     """Main GUI application for Elden Ring Save Manager"""
@@ -71,7 +84,6 @@ class SaveManagerGUI:
         self.root = root
         self.root.title("Elden Ring Save Manager")
         self.root.geometry("1200x1000")
-        self.root.minsize(800, 700)
 
         try:
             if getattr(sys, "frozen", False):
@@ -126,7 +138,11 @@ class SaveManagerGUI:
         from er_save_manager.ui.settings import detect_system_scale
 
         _saved_scale = self.settings.get("ui_scale", 1.0)
-        _scale = detect_system_scale() if _saved_scale is None else _saved_scale
+        _scale = (
+            detect_system_scale(_windows_dpi_ignored())
+            if _saved_scale is None
+            else _saved_scale
+        )
         if _scale != 1.0:
             ctk.set_widget_scaling(_scale)
             ctk.set_window_scaling(_scale)
@@ -195,8 +211,11 @@ class SaveManagerGUI:
         # Keep the "default game" button in sync with the Settings tab
         self.settings.add_listener(self._on_setting_changed)
 
-        # Center after scaling is applied so the scaled size is used
-        center_window(self.root, 1200, 1000)
+        # Placed after scaling is applied so the scaled size is used
+        self._normal_geometry: str | None = None
+        self._compact = False
+        self._restore_window_state()
+        self.root.after(100, lambda: style_window_frame(self.root, dialog=False))
 
         self.theme_manager.apply_tk_widget_colors(self.root)
 
@@ -298,6 +317,140 @@ class SaveManagerGUI:
     def _process_resize(self):
         """Process pending resize - CTk handles its own layout."""
         self._resize_timer = None
+        if not self._is_maximized():
+            self._normal_geometry = self.root.geometry()
+        self._update_compact_header()
+
+    def _update_compact_header(self) -> None:
+        """Compact header below _COMPACT_HEIGHT (logical px), e.g. 1280x800.
+
+        Hides the subtitle and the "Select a Save File" label, moves the game
+        selector into the save path row and tightens the button row, which
+        leaves about 110 px more for the tab content.
+        """
+        if not self.root.winfo_ismapped():
+            return
+        height = self.root.winfo_height() / self.root._get_window_scaling()
+        compact = height < _COMPACT_HEIGHT
+        if compact == self._compact:
+            return
+        self._compact = compact
+        if compact:
+            self._subtitle_label.pack_forget()
+            self._title_label.pack_configure(pady=(14, 14))
+            self._select_save_label.pack_forget()
+            self._game_row.pack_forget()
+            self._game_row.pack(
+                in_=self._path_frame,
+                side=tk.LEFT,
+                padx=(8, 8),
+                pady=6,
+                before=self._path_entry,
+            )
+            # Created before path_frame, so it would be drawn underneath it
+            self._game_row.lift(self._path_frame)
+            self._path_frame.pack_configure(pady=(10, 0))
+            self._buttons_frame.pack_configure(pady=(4, 8))
+            for child in self._buttons_frame.pack_slaves():
+                child.pack_configure(pady=4)
+            for child in self._path_frame.pack_slaves():
+                if child is not self._game_row:
+                    child.pack_configure(pady=6)
+        else:
+            self._title_label.pack_configure(pady=(10, 2))
+            self._subtitle_label.pack(pady=(0, 10))
+            self._game_row.pack_forget()
+            self._game_row.pack(
+                in_=self._game_row.master,
+                fill=tk.X,
+                padx=12,
+                pady=(12, 4),
+                before=self._path_frame,
+            )
+            self._select_save_label.pack(
+                anchor="w", padx=12, pady=(4, 4), before=self._path_frame
+            )
+            self._path_frame.pack_configure(pady=(0, 12))
+            self._buttons_frame.pack_configure(pady=(6, 10))
+            for child in self._buttons_frame.pack_slaves():
+                child.pack_configure(pady=10)
+            for child in self._path_frame.pack_slaves():
+                child.pack_configure(pady=10)
+
+    def _is_maximized(self) -> bool:
+        try:
+            if sys.platform.startswith("linux"):
+                return bool(self.root.attributes("-zoomed"))
+            return self.root.state() == "zoomed"
+        except tk.TclError:
+            return False
+
+    def _maximize(self) -> None:
+        try:
+            if sys.platform.startswith("linux"):
+                self.root.attributes("-zoomed", True)
+            else:
+                self.root.state("zoomed")
+        except tk.TclError:
+            pass
+
+    def _restore_window_state(self) -> None:
+        """Reopen the main window as it was closed, if it still fits.
+
+        window_state holds the logical size (before UI scaling), the physical
+        x/y of the frame and the maximized flag. The position is restored on
+        Windows only: X11 window managers place new windows themselves, and
+        Tk reports the client origin there while geometry() sets the frame,
+        so a restored position would move down by the title bar every start.
+        A saved size or position that no longer fits a work area (monitor
+        removed, scale or resolution changed) falls back to the default size
+        centered on the work area.
+        """
+        min_w, min_h = fit_size_to_work_area(self.root, 800, 700)
+        self.root.minsize(min_w, min_h)
+
+        state = self.settings.get("window_state") or {}
+        try:
+            w, h, x, y = (int(state[k]) for k in ("width", "height", "x", "y"))
+        except (KeyError, TypeError, ValueError):
+            w = h = x = y = None
+        if w is None:
+            center_window(self.root, 1200, 1000)
+        elif sys.platform != "win32":
+            if fit_size_to_work_area(self.root, w, h) == (w, h):
+                center_window(self.root, w, h)
+            else:
+                center_window(self.root, 1200, 1000)
+        elif self._fits_work_area(w, h, x, y):
+            self.root.geometry(f"{w}x{h}+{x}+{y}")
+        else:
+            center_window(self.root, 1200, 1000)
+        if state.get("maximized"):
+            # After the first map; CTk shows the window once mainloop starts
+            self.root.after(50, self._maximize)
+
+    def _fits_work_area(self, width: int, height: int, x: int, y: int) -> bool:
+        """Whether the framed window at (x, y) lies inside one monitor's work area."""
+        scale = self.root._get_window_scaling()
+        phys_w, phys_h = round(width * scale), round(height * scale)
+        outer_h = phys_h + title_bar_height(self.root)
+        wx, wy, ww, wh = get_work_area(self.root, (x + phys_w // 2, y + outer_h // 2))
+        return wx <= x and wy <= y and x + phys_w <= wx + ww and y + outer_h <= wy + wh
+
+    def save_window_state(self) -> None:
+        """Store size, position and maximized state for the next start."""
+        try:
+            maximized = self._is_maximized()
+            geometry = self._normal_geometry if maximized else self.root.geometry()
+            state = dict(self.settings.get("window_state") or {})
+            state["maximized"] = maximized
+            m = re.match(r"(\d+)x(\d+)\+(-?\d+)\+(-?\d+)$", geometry or "")
+            if m and self.root.state() != "iconic":
+                w, h, x, y = (int(v) for v in m.groups())
+                state.update(width=w, height=h, x=x, y=y)
+            self.settings.set("window_state", state)
+        except tk.TclError:
+            pass
 
     def _check_for_updates(self):
         """Check for application updates in a background thread"""
@@ -369,12 +522,7 @@ class SaveManagerGUI:
 
         while elapsed < max_wait:
             if not self.is_game_running(process_name):
-                CTkMessageBox.showinfo(
-                    "Success",
-                    f"{game_name} process terminated successfully.\n\n"
-                    "You can now proceed safely.",
-                    parent=self.root,
-                )
+                self.show_toast(f"{game_name} closed. You can now proceed safely.")
                 return True
             time.sleep(wait_interval)
             elapsed += wait_interval
@@ -562,23 +710,26 @@ class SaveManagerGUI:
         )
         youtube_btn.place(relx=0.0, x=124, y=12, anchor="nw")
 
-        ctk.CTkLabel(
+        self._title_label = ctk.CTkLabel(
             title_frame,
             text="Elden Ring Save Manager",
             font=("Segoe UI", 20, "bold"),
-        ).pack(pady=(10, 2))
+        )
+        self._title_label.pack(pady=(10, 2))
 
-        ctk.CTkLabel(
+        self._subtitle_label = ctk.CTkLabel(
             title_frame,
             text="Complete save editor, backup manager, and corruption fixer",
             font=("Segoe UI", 11),
-        ).pack(pady=(0, 10))
+        )
+        self._subtitle_label.pack(pady=(0, 10))
 
         file_frame = ctk.CTkFrame(self.root, corner_radius=12)
         file_frame.grid(row=1, column=0, padx=12, pady=10, sticky="ew")
 
         game_row = ctk.CTkFrame(file_frame, fg_color="transparent")
         game_row.pack(fill=tk.X, padx=12, pady=(12, 4))
+        self._game_row = game_row
 
         ctk.CTkLabel(game_row, text="Game:", font=("Segoe UI", 11)).pack(
             side=tk.LEFT, padx=(0, 8)
@@ -607,11 +758,12 @@ class SaveManagerGUI:
         self._default_game_btn.pack(side=tk.LEFT, padx=(8, 0))
         self._update_default_game_button()
 
-        ctk.CTkLabel(
+        self._select_save_label = ctk.CTkLabel(
             file_frame,
             text="Select a Save File",
             font=("Segoe UI", 12, "bold"),
-        ).pack(anchor="w", padx=12, pady=(4, 4))
+        )
+        self._select_save_label.pack(anchor="w", padx=12, pady=(4, 4))
 
         self.file_path_var = tk.StringVar(value="")
         # Auto-load when valid file path is entered
@@ -619,8 +771,10 @@ class SaveManagerGUI:
 
         path_frame = ctk.CTkFrame(file_frame, corner_radius=8)
         path_frame.pack(fill=tk.X, padx=12, pady=(0, 12))
+        self._path_frame = path_frame
 
-        ctk.CTkEntry(path_frame, textvariable=self.file_path_var).pack(
+        self._path_entry = ctk.CTkEntry(path_frame, textvariable=self.file_path_var)
+        self._path_entry.pack(
             side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 6), pady=10
         )
 
@@ -644,6 +798,7 @@ class SaveManagerGUI:
 
         buttons_frame = ctk.CTkFrame(file_frame, corner_radius=8)
         buttons_frame.pack(fill=tk.X, pady=(6, 10), padx=12)
+        self._buttons_frame = buttons_frame
 
         _reload_btn = ctk.CTkButton(
             buttons_frame,
@@ -724,7 +879,9 @@ class SaveManagerGUI:
         # PS / Switch button applies to Elden Ring and Nightreign
         if hasattr(self, "_ps_save_btn"):
             if profile.key in ("elden_ring", "nightreign"):
-                self._ps_save_btn.pack(side=tk.RIGHT, padx=6, pady=10)
+                self._ps_save_btn.pack(
+                    side=tk.RIGHT, padx=6, pady=4 if self._compact else 10
+                )
             else:
                 self._ps_save_btn.pack_forget()
 
@@ -2910,15 +3067,49 @@ class SaveManagerGUI:
             pass
 
 
+def _windows_dpi_ignored() -> bool:
+    """Whether the "Ignore Windows display scaling" setting applies."""
+    return sys.platform == "win32" and bool(
+        get_settings().get("ignore_windows_dpi", True)
+    )
+
+
+def _set_dpi_aware_unscaled() -> None:
+    """Draw at 100% size on Windows while staying sharp.
+
+    CTk normally makes the process per-monitor DPI aware and multiplies every
+    size by the monitor scale. Turning its automatic scaling off would also
+    skip the awareness call, and Windows would then bitmap-stretch the window
+    (blurry). Setting the awareness here keeps pixels 1:1 at a factor of 1.0.
+    """
+    import ctypes
+
+    ctk.deactivate_automatic_dpi_awareness()
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)
+    except (AttributeError, OSError):
+        try:
+            ctypes.windll.user32.SetProcessDPIAware()
+        except (AttributeError, OSError):
+            pass
+
+
 def main():
     """Main entry point for GUI"""
     from er_save_manager.ui.emoji_fallback import install as install_emoji_fallback
 
     install_emoji_fallback()
+    ignore_dpi = _windows_dpi_ignored()
+    if ignore_dpi:
+        _set_dpi_aware_unscaled()
     root = ctk.CTk()
+    if ignore_dpi:
+        # Tk sizes point fonts from the monitor DPI; pin it to 96 DPI (100%)
+        root.tk.call("tk", "scaling", 96 / 72)
     app = SaveManagerGUI(root)
 
     def on_closing():
+        app.save_window_state()
         if app.process_monitor:
             app.process_monitor.stop()
         root.destroy()

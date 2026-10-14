@@ -13,6 +13,7 @@ The World State tab displays character location information and provides telepor
 - Move bloodstain to player's current position
 - Add, move, delete, export, import and copy map markers
 - Legendary trophy progress and item history
+- List, protect and delete the character's messages
 
 ---
 
@@ -30,6 +31,11 @@ The World State tab displays character location information and provides telepor
 - Map name (e.g., "Limgrave - First Step")
 - Coordinates (X, Y, Z)
 - Map ID (4-byte array)
+
+**Messages:**
+
+- Number of own messages and of cached messages from other players
+- Manage Messages button
 
 ### Right Column: Teleportation
 
@@ -200,6 +206,21 @@ Directly modify character's position coordinates in save file. Intended for prec
 ## Move Bloodstain to Player
 
 Moves the character's bloodstain (death marker with lost runes) to the character's current coordinates and map. Useful when a bloodstain is stranded in an unreachable or corrupted location.
+
+---
+
+## Messages
+
+**Manage Messages...** opens a list of the messages stored in the slot, with the text as the game shows it,
+the attached gesture and the location.
+
+- **My Messages:** the messages the character wrote (up to 10). Select one or more and use Protect,
+  Unprotect or Delete. A backup is created before every change.
+- **Cached Messages:** messages of other players the game stored for the area the character is in.
+  Read-only; the game refreshes them during online play.
+
+Changes only last in offline play. Online, the game restores the character's messages from its server,
+which undoes deletes and protection changes.
 
 ---
 

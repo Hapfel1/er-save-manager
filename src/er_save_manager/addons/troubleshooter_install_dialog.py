@@ -9,7 +9,7 @@ import tkinter as tk
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import force_render_dialog
+from er_save_manager.ui.utils import center_window, force_render_dialog
 
 
 def show_troubleshooter_dialog(parent, addon_manager):
@@ -49,15 +49,7 @@ def show_troubleshooter_dialog(parent, addon_manager):
     force_render_dialog(dialog)
     dialog.grab_set()
 
-    dialog.update_idletasks()
-    parent.update_idletasks()
-    parent_x = parent.winfo_rootx()
-    parent_y = parent.winfo_rooty()
-    parent_width = parent.winfo_width()
-    parent_height = parent.winfo_height()
-    x = parent_x + (parent_width // 2) - (275)
-    y = parent_y + (parent_height // 2) - (200)
-    dialog.geometry(f"550x400+{x}+{y}")
+    center_window(dialog, 550, 400, parent=parent)
 
     main_frame = ctk.CTkFrame(dialog)
     main_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=20)

@@ -23,8 +23,9 @@ from er_save_manager.games.DS3.icon_browser import (
 )
 from er_save_manager.games.DS3.tabs.inventory import enable
 from er_save_manager.games.DSR import catalog
-from er_save_manager.games.DSR.icon_browser import item_button
+from er_save_manager.games.DSR.icon_browser import item_entry
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 
 if TYPE_CHECKING:
     from er_save_manager.games.DSR.inventory_tab import DSRInventoryTab
@@ -61,15 +62,14 @@ class DSRVisualInventory(ctk.CTkToplevel):
             command=lambda _: self._load_items(),
         ).pack(side="left")
 
-        scroll = ctk.CTkScrollableFrame(self)
-        scroll.pack(fill="both", expand=True, padx=6, pady=(0, 4))
-        self._grid = IconGrid(self, scroll, self._on_select)
-
+        self._grid = IconGrid(self, self._on_select)
+        self._grid.pack(fill="both", expand=True, padx=6, pady=(0, 4))
+        add_tooltip(self._grid._canvas, MULTI_SELECT_TIP)
         panel = ctk.CTkFrame(self, fg_color=("gray88", "gray18"), corner_radius=8)
         panel.pack(fill="x", padx=6, pady=(0, 8))
         self._sel_lbl = ctk.CTkLabel(
             panel,
-            text="Click to select, Ctrl or Shift click for several",
+            text="No item selected",
             font=("Segoe UI", 10, "bold"),
             anchor="w",
             text_color=("gray50", "gray60"),
@@ -152,10 +152,7 @@ class DSRVisualInventory(ctk.CTkToplevel):
             slot, name, _cat, qty, item_type, item_id = row
             hit = catalog.lookup(item_type, item_id)
             text = f"{name}\nx{qty}" if qty > 1 else name
-            btn = item_button(
-                self._grid.scroll, hit[0] if hit else None, text, self._grid.images
-            )
-            return btn, name.lower(), slot
+            return item_entry(slot, hit[0] if hit else None, text, name.lower())
 
         self._grid.load(rows, make, keep_selection=keep_selection)
 

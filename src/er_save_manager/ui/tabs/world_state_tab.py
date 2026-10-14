@@ -27,6 +27,7 @@ from er_save_manager.parser.er_types import FloatVector3, MapId
 from er_save_manager.parser.event_flags import EventFlags
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
+from er_save_manager.ui.dialogs.message_manager import MessageManagerDialog
 from er_save_manager.ui.map_view import current_window, open_map_window
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll
@@ -276,6 +277,22 @@ class WorldStateTab:
         )
         self.bloodstain_btn.pack(fill=tk.X, pady=(0, 2))
 
+        messages_frame = ctk.CTkFrame(left_frame, corner_radius=12)
+        messages_frame.pack(fill=tk.X, padx=10, pady=(10, 0))
+        ctk.CTkLabel(
+            messages_frame, text="Messages", font=("Segoe UI", 12, "bold")
+        ).pack(anchor="w", padx=10, pady=(10, 5))
+        self.messages_var = tk.StringVar(value="N/A")
+        ctk.CTkLabel(messages_frame, textvariable=self.messages_var).pack(
+            anchor="w", padx=10, pady=(0, 4)
+        )
+        ctk.CTkButton(
+            messages_frame,
+            text="Manage Messages...",
+            command=self._open_message_manager,
+            height=30,
+        ).pack(fill=tk.X, padx=10, pady=(0, 10))
+
         # Right column: teleportation
         right_frame = ctk.CTkFrame(main_container, corner_radius=12)
         right_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
@@ -393,6 +410,7 @@ class WorldStateTab:
             self.map_name_var.set("Empty slot")
             self.coords_var.set("N/A")
             self.bloodstain_var.set("N/A")
+            self.messages_var.set("N/A")
             self.editor = None
             self.marker_editor = None
             self.refresh()
@@ -431,6 +449,27 @@ class WorldStateTab:
         if current_combo and hasattr(self, "slot_combo"):
             self.slot_combo.set(current_combo)
         self._update_map_window()
+
+    def _open_message_manager(self):
+        if not self.editor:
+            CTkMessageBox.showerror(
+                "Error", "Load a character first.", parent=self.parent
+            )
+            return
+
+        def reload():
+            self.reload_save()
+            self._reload_editor()
+            self.refresh()
+
+        MessageManagerDialog(
+            self.parent,
+            self.slot_var.get() - 1,
+            self.get_save_file,
+            self.get_save_path,
+            reload,
+            self.show_toast,
+        )
 
     def _sync_bloodstain_to_player(self):
         if not self.editor:
@@ -819,7 +858,6 @@ class WorldStateTab:
 
         listbox_frame, self.location_listbox = ds.themed_listbox(
             self.content_frame,
-            font=("Consolas", 11),
             selectmode=tk.SINGLE,
             height=20,
         )
@@ -1107,6 +1145,7 @@ class WorldStateTab:
             self.map_name_var.set("No character loaded")
             self.coords_var.set("N/A")
             self.bloodstain_var.set("N/A")
+            self.messages_var.set("N/A")
             return
 
         info = self.editor.get_current_location()
@@ -1115,6 +1154,7 @@ class WorldStateTab:
             self.map_name_var.set("Empty slot")
             self.coords_var.set("N/A")
             self.bloodstain_var.set("N/A")
+            self.messages_var.set("N/A")
             return
 
         self.map_name_var.set(info["map_name"])
@@ -1130,3 +1170,10 @@ class WorldStateTab:
             self.bloodstain_var.set(f"{blood['map_name']}\n{blood['runes']:,} runes")
         else:
             self.bloodstain_var.set("No bloodstain")
+
+        messages = self.editor.get_message_counts()
+        if messages is None:
+            self.messages_var.set("Message data unreadable")
+        else:
+            own, cached = messages
+            self.messages_var.set(f"{own} own, {cached} cached")

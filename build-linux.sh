@@ -52,6 +52,7 @@ pyinstaller --clean --noconfirm \
     --add-data src/er_save_manager/data/shop_stock_convergence.csv:er_save_manager/data \
     --add-data src/er_save_manager/data/locations.json:er_save_manager/data \
     --add-data src/er_save_manager/data/grace_entities.json:er_save_manager/data \
+    --add-data src/er_save_manager/data/blood_messages.json:er_save_manager/data \
     --add-data src/er_save_manager/data/quest_flags.json:er_save_manager/data \
     --add-data src/er_save_manager/data/world_map_conversion.json:er_save_manager/data \
     --add-data src/er_save_manager/data/auto_refill_defaults.json:er_save_manager/data \

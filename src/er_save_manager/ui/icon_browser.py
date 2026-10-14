@@ -14,23 +14,17 @@ from er_save_manager.ui.utils import (
     patch_combo_scroll,
     pick_file,
 )
+from er_save_manager.ui.virtual_grid import GridEntry, VirtualIconGrid
 
 if TYPE_CHECKING:
     from er_save_manager.data.item_database import Item
     from er_save_manager.ui.editors.inventory_editor import InventoryEditor
 
 _DEFAULT_COLS = 4
-_ICON_SIZE = 64
 _CELL_W = 116
-_CELL_H = 110
 _CELL_PAD = 4
 _SCROLLBAR_W = 24
-# Buttons created per event-loop turn when filling a category. CTkButton
-# construction costs a few ms each, so a large category built in one go
-# freezes the window for seconds.
-_BUILD_BATCH = 8
-_CELL_COLOR = ("gray82", "gray18")
-_CELL_SELECTED = palette.PURPLE_SELECT
+ALL = "All"
 
 
 def _center_over(window, parent, w=None, h=None, *, top=False) -> None:
@@ -53,14 +47,7 @@ class IconBrowser(ctk.CTkToplevel):
     ):
         super().__init__(parent)
         self._editor = editor
-        self._cols = _DEFAULT_COLS
-        self._buttons: list[tuple[ctk.CTkButton, Item]] = []
-        self._ctk_images: list = []
-        self._resize_job: str | None = None
-        self._build_job: str | None = None
-        self._pending_items: list[Item] = []
-        self._filter_q = ""
-        self._grid_count = 0
+        self._items: list[Item] = []
         self._current_cat = initial_category
         self._selected_item: Item | None = None
         self._selected_gem_id: int = 0
@@ -87,9 +74,6 @@ class IconBrowser(ctk.CTkToplevel):
             self._cat_var.set(self._current_cat)
         self._load_category(self._current_cat)
 
-        self._scroll.bind("<Configure>", self._on_scroll_resize)
-        self.after(120, self._reflow)
-
         # Add buttons say where items go while Loadout Mode is on.
         self._mode_trace = editor.loadout_mode_var.trace_add(
             "write", lambda *_: self._update_add_labels()
@@ -113,7 +97,9 @@ class IconBrowser(ctk.CTkToplevel):
         ctk.CTkLabel(top, text="Search:", width=52).pack(side=ctk.LEFT)
         self._search_var = ctk.StringVar()
         debounced_trace(
-            self, self._search_var, lambda: self._apply_filter(self._search_var.get())
+            self,
+            self._search_var,
+            lambda: self._grid.apply_filter(self._search_var.get()),
         )
         ctk.CTkEntry(
             top, textvariable=self._search_var, placeholder_text="Filter..."
@@ -130,7 +116,7 @@ class IconBrowser(ctk.CTkToplevel):
         cat_row = ctk.CTkFrame(self, fg_color="transparent")
         cat_row.pack(fill=ctk.X, padx=10, pady=(0, 6))
         ctk.CTkLabel(cat_row, text="Category:", width=68).pack(side=ctk.LEFT)
-        cats = self._editor._visible_categories()
+        cats = [ALL, *self._editor._visible_categories()]
         self._cat_var = ctk.StringVar(value=self._current_cat)
         patch_combo_scroll(
             ctk.CTkComboBox(
@@ -141,8 +127,8 @@ class IconBrowser(ctk.CTkToplevel):
             )
         ).pack(side=ctk.LEFT, fill=ctk.X, expand=True)
 
-        self._scroll = ctk.CTkScrollableFrame(self)
-        self._scroll.pack(fill=ctk.BOTH, expand=True, padx=6, pady=(0, 4))
+        self._grid = VirtualIconGrid(self, self._on_grid_select)
+        self._grid.pack(fill=ctk.BOTH, expand=True, padx=6, pady=(0, 4))
 
         self._build_add_panel()
 
@@ -300,74 +286,31 @@ class IconBrowser(ctk.CTkToplevel):
     # ---- items ---------------------------------------------------------------
 
     def _load_category(self, cat: str):
+        from er_save_manager.data.icon_manager import get_icon
         from er_save_manager.data.item_database import get_item_database
 
-        items = list(get_item_database().get_items_by_category(cat)) if cat else []
-        self._load_items(items)
-
-    def _load_items(self, items: list[Item]):
-        self._cancel_build()
-        for btn, _ in self._buttons:
-            btn.destroy()
-        self._buttons.clear()
-        self._ctk_images.clear()
-        self._pending_items = list(items)
-        self._apply_filter(
-            self._search_var.get() if hasattr(self, "_search_var") else ""
+        db = get_item_database()
+        cats = (
+            self._editor._visible_categories() if cat == ALL else [cat] if cat else []
         )
-        self._build_next_batch()
-
-    def _build_next_batch(self):
-        """Create the next batch of item buttons, then yield to the event loop."""
-        self._build_job = None
-        if not self.winfo_exists():
-            return
-        from er_save_manager.data.icon_manager import get_icon
-
-        batch = self._pending_items[:_BUILD_BATCH]
-        del self._pending_items[:_BUILD_BATCH]
-        for item in batch:
-            img = get_icon(item.name, getattr(item, "category_name", ""))
-            ctk_img = None
-            if img:
-                ctk_img = ctk.CTkImage(
-                    light_image=img, dark_image=img, size=(_ICON_SIZE, _ICON_SIZE)
+        self._items = [item for c in cats for item in db.get_items_by_category(c)]
+        self._grid.set_entries(
+            [
+                GridEntry(
+                    i,
+                    item.name,
+                    item.name.lower(),
+                    lambda it=item: get_icon(it.name, getattr(it, "category_name", "")),
                 )
-                self._ctk_images.append(ctk_img)
-
-            btn = ctk.CTkButton(
-                self._scroll,
-                image=ctk_img,
-                text=item.name,
-                compound="top",
-                width=_CELL_W,
-                height=_CELL_H,
-                font=("Segoe UI", 11),
-                fg_color=_CELL_SELECTED if item is self._selected_item else _CELL_COLOR,
-                hover_color=("gray70", "gray28"),
-                text_color=("gray10", "gray90"),
-                command=lambda it=item: self._on_item_click(it),
-                anchor="center",
-            )
-            if hasattr(btn, "_text_label") and btn._text_label is not None:
-                btn._text_label.configure(wraplength=_CELL_W - 8, justify="center")
-            self._buttons.append((btn, item))
-            if not self._filter_q or self._filter_q in item.name.lower():
-                self._grid_button(btn, self._grid_count)
-                self._grid_count += 1
-
-        self._sync_scroll_region()
-        if self._pending_items:
-            self._build_job = self.after(1, self._build_next_batch)
-
-    def _cancel_build(self):
-        if self._build_job:
-            self.after_cancel(self._build_job)
-            self._build_job = None
-        self._pending_items = []
+                for i, item in enumerate(self._items)
+            ]
+        )
+        self._grid.apply_filter(self._search_var.get())
+        # The selection survives a category switch; mark it when listed.
+        keep = [i for i, it in enumerate(self._items) if it is self._selected_item]
+        self._grid.set_selection(keep, notify=False)
 
     def destroy(self):
-        self._cancel_build()
         trace = getattr(self, "_mode_trace", None)
         if trace is not None:
             self._editor.loadout_mode_var.trace_remove("write", trace)
@@ -388,58 +331,15 @@ class IconBrowser(ctk.CTkToplevel):
         # Clear the query first so the new category loads unfiltered.
         self._search_var.set("")
         self._load_category(value)
-        self._scroll._parent_canvas.yview_moveto(0)
         self._editor._sync_browse_category(value)
-
-    # ---- layout / filter -----------------------------------------------------
-
-    def _apply_filter(self, q: str):
-        q = q.lower().strip()
-        self._filter_q = q
-        visible = [
-            btn for btn, item in self._buttons if not q or q in item.name.lower()
-        ]
-        for btn, _ in self._buttons:
-            btn.grid_forget()
-        for idx, btn in enumerate(visible):
-            self._grid_button(btn, idx)
-        # Buttons still being built continue after the visible ones.
-        self._grid_count = len(visible)
-        self._sync_scroll_region()
-
-    def _grid_button(self, btn: ctk.CTkButton, idx: int):
-        row, col = divmod(idx, self._cols)
-        btn.grid(row=row, column=col, padx=_CELL_PAD, pady=_CELL_PAD, sticky="nsew")
-
-    def _sync_scroll_region(self):
-        # Let tkinter measure the new grid, then sync the canvas scroll region.
-        self._scroll.update_idletasks()
-        canvas = self._scroll._parent_canvas
-        canvas.configure(scrollregion=canvas.bbox("all"))
-
-    def _on_scroll_resize(self, event):
-        if self._resize_job:
-            self.after_cancel(self._resize_job)
-            self._resize_job = None
-        self._resize_job = self.after(60, self._reflow)
-
-    def _reflow(self):
-        available = max(1, self._scroll.winfo_width() - _SCROLLBAR_W)
-        new_cols = max(1, available // (_CELL_W + _CELL_PAD * 2))
-        if new_cols != self._cols:
-            self._cols = new_cols
-            self._apply_filter(self._search_var.get())
 
     # ---- item selection ------------------------------------------------------
 
-    def _on_item_click(self, item: Item):
-        previous = self._selected_item
+    def _on_grid_select(self, keys: list):
+        if not keys:
+            return
+        item = self._items[keys[0]]
         self._selected_item = item
-        for btn, cell_item in self._buttons:
-            if cell_item is item:
-                btn.configure(fg_color=_CELL_SELECTED)
-            elif cell_item is previous:
-                btn.configure(fg_color=_CELL_COLOR)
         self._sel_lbl.configure(
             text=f"Selected: {item.name}", text_color=palette.PURPLE_TEXT
         )

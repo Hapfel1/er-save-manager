@@ -17,6 +17,7 @@ import customtkinter as ctk
 
 from er_save_manager.games.DS3.tabs.style import make_tree
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write
 
 
@@ -104,11 +105,12 @@ class DS3BossesTab:
         self._tree.bind("<Double-1>", self._on_double_click)
         ctk.CTkLabel(
             outer,
-            text="Select one or more bosses (Ctrl/Shift click). Double-click toggles a boss.",
+            text="Double-click toggles a boss.",
             font=("Segoe UI", 10),
             text_color=("gray40", "gray60"),
         ).pack(side="bottom", anchor="w", padx=12, pady=(0, 10))
         frame.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+        add_tooltip(self._tree, MULTI_SELECT_TIP)
 
     # --- Refresh ----------------------------------------------------------- #
 

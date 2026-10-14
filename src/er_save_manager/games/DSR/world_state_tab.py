@@ -12,13 +12,14 @@ from __future__ import annotations
 import json
 import tkinter as tk
 from pathlib import Path
-from tkinter import ttk
 from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
 from er_save_manager.games.DSR.npc_tab import _style as _apply_tree_style
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
 
@@ -100,7 +101,7 @@ class DSRWorldStateTab:
             text=(
                 "Lit bonfires are warp destinations once warping is unlocked. "
                 "Bonfires in maps not visited yet cannot be lit here. "
-                "Ctrl/Shift click selects several, double-click toggles."
+                "Double-click toggles."
             ),
             wraplength=680,
             justify="left",
@@ -108,26 +109,19 @@ class DSRWorldStateTab:
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=14, pady=(0, 6))
         _apply_tree_style()
-        tree_frame = tk.Frame(bonfire_card, bg="#2b2b2b")
-        tree_frame.pack(fill="x", padx=14, pady=(0, 6))
-        self._bonfire_tree = ttk.Treeview(
-            tree_frame,
+        tree_frame, self._bonfire_tree = ds.themed_tree(
+            bonfire_card,
             columns=("name", "state"),
             show="headings",
-            style="DSR.Treeview",
             height=12,
             selectmode="extended",
         )
+        tree_frame.pack(fill="x", padx=14, pady=(0, 6))
+        add_tooltip(self._bonfire_tree, MULTI_SELECT_TIP)
         self._bonfire_tree.heading("name", text="Bonfire")
         self._bonfire_tree.heading("state", text="State")
         self._bonfire_tree.column("name", width=360, anchor="w")
         self._bonfire_tree.column("state", width=110, anchor="center", stretch=False)
-        sb = ttk.Scrollbar(
-            tree_frame, orient="vertical", command=self._bonfire_tree.yview
-        )
-        self._bonfire_tree.configure(yscrollcommand=sb.set)
-        self._bonfire_tree.pack(side="left", fill="x", expand=True)
-        sb.pack(side="right", fill="y")
         for i, bonfire in enumerate(self._bonfires):
             self._bonfire_tree.insert(
                 "", "end", iid=str(i), values=(bonfire["name"], "--")
