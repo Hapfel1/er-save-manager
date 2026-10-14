@@ -6,6 +6,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tkinter
 import webbrowser
 from pathlib import Path
 
@@ -87,8 +88,126 @@ def force_render_dialog(dialog):
         pass
 
 
-# Vertical space reserved for the taskbar and window title bar when capping size
-_SCREEN_MARGIN_PX = 80
+# Title bar height used where the window manager does not report it (Linux)
+_TITLE_BAR_FALLBACK_PX = 40
+# Gap kept between a fitted window and the work area edges
+_WORK_AREA_GAP_PX = 8
+
+_linux_work_area: tuple[int, int, int, int] | None = None
+
+
+def _win_work_area(window, point: tuple[int, int] | None):
+    """Work area (x, y, w, h) of the monitor at point, or of the window's monitor."""
+    import ctypes
+    from ctypes import wintypes
+
+    class MONITORINFO(ctypes.Structure):
+        _fields_ = [
+            ("cbSize", wintypes.DWORD),
+            ("rcMonitor", wintypes.RECT),
+            ("rcWork", wintypes.RECT),
+            ("dwFlags", wintypes.DWORD),
+        ]
+
+    user32 = ctypes.windll.user32
+    user32.MonitorFromPoint.restype = wintypes.HMONITOR
+    user32.MonitorFromWindow.restype = wintypes.HMONITOR
+    MONITOR_DEFAULTTONEAREST = 2
+    if point is not None:
+        monitor = user32.MonitorFromPoint(
+            wintypes.POINT(*point), MONITOR_DEFAULTTONEAREST
+        )
+    else:
+        try:
+            hwnd = wintypes.HWND(int(window.wm_frame(), 16))
+            monitor = user32.MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST)
+        except (ValueError, tkinter.TclError):
+            # No frame window yet: use the primary monitor
+            monitor = user32.MonitorFromPoint(
+                wintypes.POINT(0, 0), MONITOR_DEFAULTTONEAREST
+            )
+    info = MONITORINFO()
+    info.cbSize = ctypes.sizeof(MONITORINFO)
+    if not user32.GetMonitorInfoW(wintypes.HMONITOR(monitor), ctypes.byref(info)):
+        return None
+    r = info.rcWork
+    return r.left, r.top, r.right - r.left, r.bottom - r.top
+
+
+def _x11_work_area():
+    """_NET_WORKAREA of the first desktop, read once per process."""
+    global _linux_work_area
+    if _linux_work_area is None:
+        _linux_work_area = (0, 0, 0, 0)
+        try:
+            out = subprocess.run(
+                ["xprop", "-root", "_NET_WORKAREA"],
+                capture_output=True,
+                text=True,
+                timeout=2,
+            ).stdout
+            values = [int(v) for v in re.findall(r"\d+", out.split("=", 1)[1])][:4]
+            if len(values) == 4 and values[2] > 0 and values[3] > 0:
+                _linux_work_area = tuple(values)
+        except Exception:
+            pass
+    return _linux_work_area if _linux_work_area[2] else None
+
+
+def get_work_area(window, point: tuple[int, int] | None = None):
+    """Usable desktop area (x, y, width, height) in physical pixels.
+
+    Excludes the taskbar or panels. On Windows it is the work area of the
+    monitor containing point (screen coordinates), or of the monitor the
+    window is on when point is None. Elsewhere it is the X11 _NET_WORKAREA,
+    falling back to the whole screen.
+    """
+    area = None
+    try:
+        if sys.platform == "win32":
+            area = _win_work_area(window, point)
+        elif sys.platform.startswith("linux"):
+            area = _x11_work_area()
+    except Exception:
+        area = None
+    if area is None:
+        area = (0, 0, window.winfo_screenwidth(), window.winfo_screenheight())
+    return area
+
+
+def title_bar_height(window) -> int:
+    """Height of the window frame above the client area, in physical pixels."""
+    if sys.platform == "win32":
+        try:
+            import ctypes
+
+            user32 = ctypes.windll.user32
+            SM_CYCAPTION, SM_CYSIZEFRAME, SM_CXPADDEDBORDER = 4, 33, 92
+            metrics = (SM_CYCAPTION, SM_CYSIZEFRAME, SM_CXPADDEDBORDER)
+            try:
+                hwnd = int(window.wm_frame(), 16)
+                dpi = user32.GetDpiForWindow(hwnd)
+                if dpi:
+                    return sum(user32.GetSystemMetricsForDpi(m, dpi) for m in metrics)
+            except (AttributeError, OSError, ValueError):
+                pass
+            return sum(user32.GetSystemMetrics(m) for m in metrics)
+        except Exception:
+            pass
+    if sys.platform == "darwin":
+        return 28
+    return _TITLE_BAR_FALLBACK_PX
+
+
+def fit_size_to_work_area(window, width: int, height: int, point=None):
+    """Logical (width, height) shrunk so the framed window fits the work area."""
+    get_scale = getattr(window, "_get_window_scaling", None)
+    scale = get_scale() if get_scale else 1.0
+    _, _, work_w, work_h = get_work_area(window, point)
+    gap = 2 * _WORK_AREA_GAP_PX
+    max_w = int((work_w - gap) / scale)
+    max_h = int((work_h - title_bar_height(window) - gap) / scale)
+    return min(width, max_w), min(height, max_h)
 
 
 def center_window(
@@ -99,12 +218,16 @@ def center_window(
     *,
     align_top: bool = False,
 ) -> None:
-    """Size a window and center it on the screen or over a parent widget.
+    """Size a window and center it on the work area or over a parent widget.
 
     CTk scales the width and height passed to geometry() by the window scaling
     factor but leaves the x/y offset untouched. The offset must therefore be
     computed from the scaled (physical) size, otherwise the window lands right
     and below the intended position whenever the scale is not 1.0.
+
+    The x/y offset places the outer frame (title bar included) while the size
+    is the client area, so the title bar height is added before clamping the
+    window to the work area of its monitor (screen minus taskbar).
 
     When width and height are both given the size is applied as well. When
     either is omitted only the position is set, using the requested size of
@@ -114,7 +237,7 @@ def center_window(
         window: Tk or CTk toplevel to position
         width: Logical width, before UI scaling
         height: Logical height, before UI scaling
-        parent: Widget to center over; centers on the screen when None
+        parent: Widget to center over; centers on the work area when None
         align_top: Align to the top of the parent's toplevel instead of
             centering vertically
     """
@@ -123,42 +246,43 @@ def center_window(
     get_scale = getattr(window, "_get_window_scaling", None)
     scale = get_scale() if get_scale else 1.0
 
-    screen_w = window.winfo_screenwidth()
-    screen_h = window.winfo_screenheight()
-
-    # Keep the window fully on screen on small displays
-    if width is not None:
-        width = min(width, int(screen_w / scale))
-        phys_w = round(width * scale)
-    else:
-        phys_w = window.winfo_reqwidth()
-    if height is not None:
-        height = min(height, int((screen_h - _SCREEN_MARGIN_PX) / scale))
-        phys_h = round(height * scale)
-    else:
-        phys_h = window.winfo_reqheight()
-
     if parent is not None:
         parent.update_idletasks()
         ref_x, ref_y = parent.winfo_rootx(), parent.winfo_rooty()
         ref_w, ref_h = parent.winfo_width(), parent.winfo_height()
+        point = (ref_x + ref_w // 2, ref_y + ref_h // 2)
     else:
-        ref_x, ref_y, ref_w, ref_h = 0, 0, screen_w, screen_h
+        point = None
+    work_x, work_y, work_w, work_h = get_work_area(window, point)
+    if parent is None:
+        ref_x, ref_y, ref_w, ref_h = work_x, work_y, work_w, work_h
+    title_h = title_bar_height(window)
+
+    # Keep the window fully inside the work area on small displays
+    if width is not None or height is not None:
+        fit_w, fit_h = fit_size_to_work_area(window, width or 0, height or 0, point)
+    if width is not None:
+        width = fit_w
+        phys_w = round(width * scale)
+    else:
+        phys_w = window.winfo_reqwidth()
+    if height is not None:
+        height = fit_h
+        phys_h = round(height * scale)
+    else:
+        phys_h = window.winfo_reqheight()
+    outer_h = phys_h + title_h
 
     x = ref_x + (ref_w - phys_w) // 2
-    y = ref_y + (ref_h - phys_h) // 2
+    y = ref_y + (ref_h - outer_h) // 2
     if align_top and parent is not None:
         # wm_geometry gives the outer frame Y (includes titlebar) on all platforms
         m = re.search(r"\+(-?\d+)\+(-?\d+)$", parent.winfo_toplevel().wm_geometry())
         if m:
             y = int(m.group(2))
 
-    # Clamp only when the reference is on the primary screen, so windows on
-    # secondary monitors with negative or large coordinates are left alone
-    if 0 <= ref_x < screen_w:
-        x = max(0, min(x, screen_w - phys_w))
-    if 0 <= ref_y < screen_h:
-        y = max(0, min(y, screen_h - phys_h))
+    x = max(work_x, min(x, work_x + work_w - phys_w))
+    y = max(work_y, min(y, work_y + work_h - outer_h))
 
     if width is not None and height is not None:
         window.geometry(f"{width}x{height}+{x}+{y}")

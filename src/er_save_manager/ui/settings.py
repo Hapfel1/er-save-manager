@@ -124,6 +124,10 @@ class Settings:
             # UI scaling factor applied via CTk widget/window scaling APIs.
             # None means auto-detect from the system on startup.
             "ui_scale": 1.0,
+            # Windows: draw at 100% size instead of the monitor's DPI scale
+            "ignore_windows_dpi": False,
+            # Main window size, position and maximized state from the last close
+            "window_state": {},
             # Game key (see game_profiles.py) selected when the application starts
             "default_game": "elden_ring",
         }
@@ -190,56 +194,26 @@ def get_loadouts_path() -> Path:
 
 
 def detect_system_scale() -> float:
-    """Return the display scale reported by the OS, or 1.0 as fallback.
+    """Return the UI scale for the "Auto" setting, or 1.0 as fallback.
 
     Linux: reads GDK_SCALE then QT_SCALE_FACTOR (set by Plasma global scale).
-    Windows: reads the system DPI via GetDpiForSystem (Win8.1+) with a GDI
-             fallback. 96 DPI = 1.0, 192 DPI = 2.0, etc.
+    Windows and macOS: 1.0. CTk already applies the monitor DPI scale there,
+    so an extra factor would scale twice.
     Returns 1.0 when detection fails or the value is out of the 0.5-4.0 range.
     """
-    import platform as _platform
+    import os
+    import sys
 
-    system = _platform.system()
-
-    if system == "Linux":
-        import os
-
-        for var in ("GDK_SCALE", "QT_SCALE_FACTOR"):
-            raw = os.environ.get(var, "").strip()
-            if raw:
-                try:
-                    value = float(raw)
-                    if 0.5 <= value <= 4.0:
-                        return value
-                except ValueError:
-                    pass
+    if not sys.platform.startswith("linux"):
         return 1.0
 
-    if system == "Windows":
-        import ctypes
-
-        try:
-            # GetDpiForSystem available on Windows 8.1+
-            dpi = ctypes.windll.user32.GetDpiForSystem()
-            if dpi > 0:
-                scale = dpi / 96.0
-                if 0.5 <= scale <= 4.0:
-                    return scale
-        except Exception:
-            pass
-
-        try:
-            # GDI fallback for older Windows
-            hdc = ctypes.windll.user32.GetDC(0)
-            dpi = ctypes.windll.gdi32.GetDeviceCaps(hdc, 88)  # LOGPIXELSX
-            ctypes.windll.user32.ReleaseDC(0, hdc)
-            if dpi > 0:
-                scale = dpi / 96.0
-                if 0.5 <= scale <= 4.0:
-                    return scale
-        except Exception:
-            pass
-
-        return 1.0
-
+    for var in ("GDK_SCALE", "QT_SCALE_FACTOR"):
+        raw = os.environ.get(var, "").strip()
+        if raw:
+            try:
+                value = float(raw)
+                if 0.5 <= value <= 4.0:
+                    return value
+            except ValueError:
+                pass
     return 1.0

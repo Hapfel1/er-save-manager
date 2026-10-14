@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 import tkinter as tk
 from pathlib import Path
 
@@ -742,7 +743,7 @@ class SettingsTab:
         initial_str = (
             _scale_to_str.get(saved_scale, "100%")
             if saved_scale is not None
-            else "100%"
+            else "Auto"
         )
         self.scale_var = tk.StringVar(value=initial_str)
 
@@ -764,6 +765,29 @@ class SettingsTab:
             justify="left",
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
+        self.ignore_windows_dpi_var = tk.BooleanVar(
+            value=self.settings.get("ignore_windows_dpi", False)
+        )
+        ctk.CTkCheckBox(
+            frame,
+            text="Ignore Windows display scaling",
+            variable=self.ignore_windows_dpi_var,
+            state="normal" if sys.platform == "win32" else "disabled",
+            command=self._on_ignore_dpi_changed,
+        ).pack(anchor="w", padx=12, pady=5)
+        ctk.CTkLabel(
+            frame,
+            text=(
+                "Windows only. Draws the app at its 100% size, sharp, even when "
+                "Windows is set to 125% or more. UI Scale still applies on top. "
+                "Restart required to apply."
+            ),
+            text_color=("gray40", "gray70"),
+            font=("Segoe UI", 11),
+            wraplength=520,
+            justify="left",
+        ).pack(anchor="w", padx=32, pady=(0, 12))
+
     def _on_scale_changed(self, value: str, str_to_scale: dict) -> None:
         if value == "Auto":
             self.settings.set("ui_scale", None)
@@ -772,6 +796,14 @@ class SettingsTab:
         CTkMessageBox.showinfo(
             "Scale Changed",
             f"UI scale set to {value}.\n\nRestart the application to apply.",
+            parent=self.parent,
+        )
+
+    def _on_ignore_dpi_changed(self) -> None:
+        self.settings.set("ignore_windows_dpi", self.ignore_windows_dpi_var.get())
+        CTkMessageBox.showinfo(
+            "Display Scaling Changed",
+            "Restart the application to apply.",
             parent=self.parent,
         )
 

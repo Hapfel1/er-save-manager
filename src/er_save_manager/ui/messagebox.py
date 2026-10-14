@@ -154,8 +154,20 @@ class CTkMessageBox:
         except tk.TclError:
             pass
 
+        # force_render_dialog focuses the dialog before it is mapped; focus it
+        # again once visible so Enter and Escape reach it, not the parent.
+        def take_focus():
+            try:
+                dialog.focus_force()
+            except tk.TclError:
+                pass
+
+        take_focus()
+        dialog.after(150, take_focus)
+
         cancel_value = buttons[-1][1]
         dialog.bind("<Return>", lambda _e: choose(buttons[0][1]))
+        dialog.bind("<KP_Enter>", lambda _e: choose(buttons[0][1]))
         dialog.bind("<Escape>", lambda _e: choose(cancel_value))
         dialog.protocol("WM_DELETE_WINDOW", lambda: choose(cancel_value))
 
