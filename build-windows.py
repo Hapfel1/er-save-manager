@@ -98,6 +98,10 @@ include_files = [
         "er_save_manager/data/grace_entities.json",
     ),
     (
+        "src/er_save_manager/data/blood_messages.json",
+        "er_save_manager/data/blood_messages.json",
+    ),
+    (
         "src/er_save_manager/data/quest_flags.json",
         "er_save_manager/data/quest_flags.json",
     ),

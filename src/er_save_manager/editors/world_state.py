@@ -72,6 +72,17 @@ class WorldStateEditor:
         except AttributeError:
             return None
 
+    def get_message_counts(self) -> tuple[int, int] | None:
+        """(own, cached) message counts, or None if the NetMan data is damaged."""
+        from er_save_manager.editors.blood_messages import BloodMessageEditor
+
+        editor = BloodMessageEditor(self._save, self._slot_index)
+        if editor.problems():
+            return None
+        messages = editor.messages()
+        own = sum(m.is_own for m in messages)
+        return own, len(messages) - own
+
     # ------------------------------------------------------------------
     # Write
     # ------------------------------------------------------------------

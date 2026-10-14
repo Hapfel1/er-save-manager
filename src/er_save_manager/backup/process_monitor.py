@@ -284,12 +284,16 @@ def show_auto_backup_first_run_dialog(
 
             import customtkinter as ctk
 
-            from er_save_manager.ui.utils import bind_mousewheel, force_render_dialog
+            from er_save_manager.ui.utils import (
+                bind_mousewheel,
+                center_window,
+                force_render_dialog,
+            )
 
             selected = [None]
             dlg = ctk.CTkToplevel(parent)
             dlg.title(f"Select Save - {game_name}")
-            dlg.geometry("620x400")
+            center_window(dlg, 620, 400, parent=parent)
             dlg.resizable(True, True)
             dlg.minsize(500, 300)
             force_render_dialog(dlg)

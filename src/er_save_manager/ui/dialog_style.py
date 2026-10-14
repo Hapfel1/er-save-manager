@@ -7,7 +7,13 @@ import tkinter as tk
 import customtkinter as ctk
 
 from er_save_manager.ui import palette
-from er_save_manager.ui.utils import center_window, force_render_dialog
+from er_save_manager.ui.utils import (
+    center_window,
+    force_render_dialog,
+    get_work_area,
+    style_window_frame,
+    title_bar_height,
+)
 
 FONT = ("Segoe UI", 13)
 BOLD = ("Segoe UI Semibold", 13)
@@ -106,6 +112,7 @@ def finish(dialog, parent, *, min_width=0, width=None, height=None):
         height = round(dialog.winfo_reqheight() / scale)
     center_window(dialog, width, height, parent=parent)
     dialog.deiconify()
+    style_window_frame(dialog)
     force_render_dialog(dialog)
     dialog.attributes("-alpha", 1)
     try:
@@ -448,7 +455,10 @@ def refit(dialog) -> None:
     dialog.update_idletasks()
     scale = _scale(dialog)
     width = max(dialog.winfo_width(), dialog.winfo_reqwidth())
-    height = min(dialog.winfo_reqheight(), int(dialog.winfo_screenheight() * 0.9))
+    # Not past the bottom of the work area (taskbar) from the current position
+    _, work_y, _, work_h = get_work_area(dialog)
+    room = work_y + work_h - dialog.winfo_y() - title_bar_height(dialog)
+    height = min(dialog.winfo_reqheight(), max(room, int(work_h * 0.5)))
     dialog.geometry(
         f"{round(width / scale)}x{round(height / scale)}"
         f"+{dialog.winfo_x()}+{dialog.winfo_y()}"
