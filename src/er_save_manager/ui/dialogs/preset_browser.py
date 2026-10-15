@@ -5,6 +5,7 @@ Browse and contribute community appearance presets with 15-slot support.
 
 from __future__ import annotations
 
+import queue
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog
@@ -15,15 +16,24 @@ import customtkinter as ctk
 from er_save_manager.backup.manager import BackupManager
 from er_save_manager.preset_manager import PresetManager
 from er_save_manager.preset_metrics import PresetMetrics
-from er_save_manager.ui import palette
+from er_save_manager.ui import dialog_style as ds
+from er_save_manager.ui.dialogs.community_dialogs import (
+    ask_report,
+    github_notice,
+    like_report_row,
+    metrics_text,
+    show_submission_link,
+)
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.progress_dialog import ProgressDialog
 from er_save_manager.ui.utils import (
     bind_mousewheel,
     center_window,
     open_url,
+    patch_combo_scroll,
     trace_variable,
 )
+from er_save_manager.ui.virtual_grid import GridEntry, VirtualIconGrid
 
 try:
     from PIL import Image
@@ -45,7 +55,11 @@ class EnhancedPresetBrowser:
         self.current_preset: dict[str, Any] | None = None
         self.all_presets: list[dict[str, Any]] = []
         self.filtered_presets: list[dict[str, Any]] = []
-        self.preset_widgets: list[ctk.CTkFrame] = []
+        # Grid thumbnails by preset id; None once a download found no image
+        self._thumbs: dict[str, Any] = {}
+        self._thumb_jobs: set[str] = set()
+        self._thumb_done: queue.SimpleQueue[str] = queue.SimpleQueue()
+        self._by_id: dict[str, dict[str, Any]] = {}
 
         from pathlib import Path
 
@@ -59,16 +73,8 @@ class EnhancedPresetBrowser:
 
     def show(self):
         """Show the preset browser with tabs."""
-        from er_save_manager.ui.utils import force_render_dialog
-
-        self.dialog = ctk.CTkToplevel(self.parent)
-        self.dialog.title("Community Appearance Presets")
-        center_window(self.dialog, 1400, 1000, parent=self.parent)
-        self.dialog.transient(self.parent)
-
-        # Force rendering before grab_set to avoid "window not viewable" errors
-        force_render_dialog(self.dialog)
-        self.dialog.grab_set()
+        self.dialog = ds.create(self.parent, "Community Appearance Presets")
+        self.dialog.resizable(True, True)
 
         def on_close():
             self.dialog.grab_release()
@@ -76,271 +82,253 @@ class EnhancedPresetBrowser:
 
         self.dialog.protocol("WM_DELETE_WINDOW", on_close)
 
-        self.tabview = ctk.CTkTabview(self.dialog, width=1150, height=820)
-        self.tabview.pack(fill=ctk.BOTH, expand=True, padx=10, pady=10)
+        self.tabview = ctk.CTkTabview(self.dialog)
+        self.tabview.pack(fill=ctk.BOTH, expand=True, padx=12, pady=(4, 12))
 
         self.browse_tab = self.tabview.add("Browse Presets")
         self.contribute_tab = self.tabview.add("Contribute Preset")
 
         self.setup_browse_tab()
         self.setup_contribute_tab()
-
-        # Force update and rendering on Linux
-        self.dialog.update_idletasks()
-        self.dialog.lift()
-        self.dialog.focus_force()
+        ds.finish(self.dialog, self.parent, width=1240, height=860)
 
         # Load presets asynchronously after dialog is displayed
         self.dialog.after(50, self.refresh_presets)
 
     # ---------------------- Browse tab ----------------------
     def setup_browse_tab(self):
-        main_frame = ctk.CTkFrame(self.browse_tab)
-        main_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=10)
+        main_frame = ctk.CTkFrame(self.browse_tab, fg_color="transparent")
+        main_frame.pack(fill=ctk.BOTH, expand=True, padx=8, pady=4)
 
-        top_frame = ctk.CTkFrame(main_frame)
-        top_frame.pack(fill=ctk.X, pady=(6, 10))
-
+        top_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        top_frame.pack(fill=ctk.X)
         ctk.CTkLabel(
-            top_frame,
-            text="Browse Community Presets",
-            font=("Segoe UI", 18, "bold"),
+            top_frame, text="Browse Community Presets", font=ds.TITLE_LARGE
         ).pack(side=ctk.LEFT)
-
-        ctk.CTkButton(
-            top_frame, text="Refresh", command=self.refresh_presets, width=90
-        ).pack(side=ctk.RIGHT)
-
-        filter_frame = ctk.CTkFrame(main_frame)
-        filter_frame.pack(fill=ctk.X, pady=(0, 14))
-
-        ctk.CTkLabel(filter_frame, text="Search:").pack(side=ctk.LEFT, padx=(0, 8))
-        self.search_var = ctk.StringVar(value="")
-        trace_variable(self.search_var, "w", lambda *args: self.apply_filters())
-        ctk.CTkEntry(filter_frame, textvariable=self.search_var, width=240).pack(
-            side=ctk.LEFT
+        ds.button(top_frame, "Refresh", self.refresh_presets, primary=False).pack(
+            side=ctk.RIGHT
         )
 
-        ctk.CTkLabel(filter_frame, text="Filter:").pack(side=ctk.LEFT, padx=(18, 8))
+        filter_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        filter_frame.pack(fill=ctk.X, pady=(10, 12))
+
+        ctk.CTkLabel(filter_frame, text="Search:", font=ds.FONT).pack(
+            side=ctk.LEFT, padx=(0, 8)
+        )
+        self.search_var = ctk.StringVar(value="")
+        trace_variable(self.search_var, "w", lambda *args: self.apply_filters())
+        ctk.CTkEntry(
+            filter_frame,
+            textvariable=self.search_var,
+            width=240,
+            height=32,
+            font=ds.FONT,
+        ).pack(side=ctk.LEFT)
+
+        ctk.CTkLabel(filter_frame, text="Filter:", font=ds.FONT).pack(
+            side=ctk.LEFT, padx=(18, 8)
+        )
         self.filter_var = ctk.StringVar(value="All")
-        filter_combo = ctk.CTkComboBox(
+        ctk.CTkComboBox(
             filter_frame,
             variable=self.filter_var,
             values=["All", "Male", "Female", "Cosplay", "Original"],
-            width=150,
+            width=140,
+            font=ds.FONT,
+            dropdown_font=ds.FONT,
             state="readonly",
             command=lambda _value=None: self.apply_filters(),
-        )
-        filter_combo.pack(side=ctk.LEFT)
-        filter_combo.bind("<<ComboboxSelected>>", lambda _e=None: self.apply_filters())
+        ).pack(side=ctk.LEFT)
 
-        ctk.CTkLabel(filter_frame, text="Sort:").pack(side=ctk.LEFT, padx=(18, 8))
+        ctk.CTkLabel(filter_frame, text="Sort:", font=ds.FONT).pack(
+            side=ctk.LEFT, padx=(18, 8)
+        )
         self.sort_var = ctk.StringVar(value="Recent")
-        sort_combo = ctk.CTkComboBox(
+        ctk.CTkComboBox(
             filter_frame,
             variable=self.sort_var,
             values=["Recent", "Likes", "Downloads", "Name"],
-            width=150,
+            width=140,
+            font=ds.FONT,
+            dropdown_font=ds.FONT,
             state="readonly",
             command=lambda _value=None: self.apply_filters(),
-        )
-        sort_combo.pack(side=ctk.LEFT)
-        sort_combo.bind("<<ComboboxSelected>>", lambda _e=None: self.apply_filters())
-
-        content = ctk.CTkFrame(main_frame)
-        content.pack(fill=ctk.BOTH, expand=True, pady=(0, 10))
-        # Fixed widths to prevent shifting when preview loads
-        content.columnconfigure(0, weight=1, minsize=750)
-        content.columnconfigure(1, weight=0, minsize=520)
-        content.rowconfigure(0, weight=1)
-
-        self.grid_container = ctk.CTkScrollableFrame(
-            content,
-            fg_color=("gray95", "gray20"),
-            corner_radius=8,
-            border_width=1,
-            width=750,
-        )
-        self.grid_container.grid(row=0, column=0, sticky="nsew", padx=(0, 12))
-        bind_mousewheel(self.grid_container)
-
-        preview_panel = ctk.CTkFrame(content, width=520)
-        preview_panel.grid(row=0, column=1, sticky="nsew")
-        preview_panel.grid_propagate(False)  # Prevent resizing based on content
-        preview_panel.rowconfigure(1, weight=1)
-
-        ctk.CTkLabel(
-            preview_panel,
-            text="Preview",
-            font=("Segoe UI", 14, "bold"),
-        ).pack(anchor=ctk.W, padx=10, pady=(10, 2))
-
-        self.preview_area = ctk.CTkFrame(preview_panel)
-        self.preview_area.pack(fill=ctk.BOTH, expand=True, padx=10, pady=10)
-
-        self.details_frame = ctk.CTkFrame(preview_panel)
-        self.details_frame.pack(fill=ctk.X, padx=10, pady=(0, 12))
-
-        slot_frame = ctk.CTkFrame(preview_panel)
-        slot_frame.pack(fill=ctk.X, padx=10, pady=(0, 10))
-
-        ctk.CTkLabel(slot_frame, text="Preset Slot:").pack(side=ctk.LEFT, padx=(0, 8))
-        self.target_slot_var = ctk.StringVar(value="Slot 1")
-        ctk.CTkComboBox(
-            slot_frame,
-            variable=self.target_slot_var,
-            values=[f"Slot {i + 1}" for i in range(self.NUM_SLOTS)],
-            width=120,
-            state="readonly",
         ).pack(side=ctk.LEFT)
-
-        self.apply_button = ctk.CTkButton(
-            slot_frame,
-            text="Apply to Slot",
-            command=self.apply_to_slot,
-            state="disabled",
-            width=170,
-        )
-        self.apply_button.pack(side=ctk.RIGHT)
 
         self.status_var = ctk.StringVar(value="Loading presets...")
         ctk.CTkLabel(
-            main_frame, textvariable=self.status_var, font=("Segoe UI", 11)
-        ).pack(pady=(4, 0))
+            filter_frame,
+            textvariable=self.status_var,
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+        ).pack(side=ctk.RIGHT)
+
+        content = ctk.CTkFrame(main_frame, fg_color="transparent")
+        content.pack(fill=ctk.BOTH, expand=True)
+        content.columnconfigure(0, weight=1)
+        content.columnconfigure(1, weight=0)
+        content.rowconfigure(0, weight=1)
+
+        self.grid = VirtualIconGrid(
+            content,
+            self._on_grid_select,
+            cell_w=170,
+            cell_h=232,
+            icon_size=150,
+            fg_color=ds.LIST_BG,
+            corner_radius=8,
+        )
+        self.grid.grid(row=0, column=0, sticky="nsew", padx=(0, 12))
+        self._poll_thumbnails()
+
+        preview_panel = ctk.CTkFrame(
+            content, width=460, fg_color=ds.BOX, corner_radius=8
+        )
+        preview_panel.grid(row=0, column=1, sticky="nsew")
+        preview_panel.pack_propagate(False)
+
+        slot_frame = ctk.CTkFrame(preview_panel, fg_color="transparent")
+        slot_frame.pack(side=ctk.BOTTOM, fill=ctk.X, padx=12, pady=12)
+        ctk.CTkLabel(slot_frame, text="Preset slot:", font=ds.FONT).pack(
+            side=ctk.LEFT, padx=(0, 8)
+        )
+        self.target_slot_var = ctk.StringVar(value="Slot 1")
+        patch_combo_scroll(
+            ctk.CTkComboBox(
+                slot_frame,
+                variable=self.target_slot_var,
+                values=[f"Slot {i + 1}" for i in range(self.NUM_SLOTS)],
+                width=110,
+                font=ds.FONT,
+                dropdown_font=ds.FONT,
+                state="readonly",
+            )
+        ).pack(side=ctk.LEFT)
+        self.apply_button = ds.button(
+            slot_frame,
+            "Apply to Slot",
+            self.apply_to_slot,
+            width=130,
+            state="disabled",
+        )
+        self.apply_button.pack(side=ctk.RIGHT)
+
+        ctk.CTkLabel(preview_panel, text="Preview", font=ds.TITLE).pack(
+            anchor=ctk.W, padx=12, pady=(10, 0)
+        )
+        self.preview_area = ctk.CTkFrame(preview_panel, fg_color="transparent")
+        self.preview_area.pack(fill=ctk.BOTH, expand=True, padx=12, pady=(6, 0))
+        ctk.CTkLabel(
+            self.preview_area,
+            text="Select a preset to preview it.",
+            font=ds.FONT,
+            text_color=ds.MUTED,
+        ).pack(pady=40)
+
+        self.details_frame = ctk.CTkFrame(preview_panel, fg_color="transparent")
+        self.details_frame.pack(fill=ctk.X, padx=12, pady=(0, 4))
 
     # ---------------------- Contribute tab ----------------------
     def setup_contribute_tab(self):
         # Make the contribute tab scrollable for smaller screens
-        scrollable_frame = ctk.CTkScrollableFrame(self.contribute_tab)
-        scrollable_frame.pack(fill=ctk.BOTH, expand=True, padx=12, pady=12)
+        scrollable_frame = ctk.CTkScrollableFrame(
+            self.contribute_tab, fg_color="transparent"
+        )
+        scrollable_frame.pack(fill=ctk.BOTH, expand=True, padx=8, pady=4)
         bind_mousewheel(scrollable_frame)
 
         main_frame = ctk.CTkFrame(scrollable_frame, fg_color="transparent")
-        main_frame.pack(fill=ctk.BOTH, expand=True)
-        main_frame.rowconfigure(1, weight=1)
+        main_frame.pack(fill=ctk.BOTH, expand=True, padx=(0, 8))
 
         ctk.CTkLabel(
             main_frame,
             text="Contribute Your Character Preset",
-            font=("Segoe UI", 18, "bold"),
-        ).grid(row=0, column=0, columnspan=2, pady=(0, 12), sticky="w")
-
-        notice = ctk.CTkFrame(
-            main_frame, fg_color=("#fff7ed", "#3b2f1b"), corner_radius=8
+            font=ds.TITLE_LARGE,
+            anchor="w",
+        ).pack(fill=ctk.X, pady=(0, 10))
+        github_notice(
+            main_frame,
+            "submitting",
+            retry="\nIf the GitHub home page opens, log in first then submit again.",
+            pady=(0, 16),
         )
-        notice.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 20), padx=0)
-        ctk.CTkLabel(
-            notice,
-            text="⚠ GitHub Account Required",
-            font=("Segoe UI", 14, "bold"),
-            text_color=("#b45309", "#fbbf24"),
-        ).pack(pady=(12, 4))
-        ctk.CTkLabel(
-            notice,
-            text="Log into GitHub in your browser before submitting",
-            font=("Segoe UI", 12),
-            text_color=("#6b7280", "#d1d5db"),
-        ).pack(pady=(0, 12))
 
-        content = ctk.CTkFrame(main_frame)
-        content.grid(row=2, column=0, columnspan=2, sticky="nsew", padx=0, pady=0)
+        content = ctk.CTkFrame(main_frame, fg_color="transparent")
+        content.pack(fill=ctk.BOTH, expand=True)
         content.columnconfigure(0, weight=1)
-        content.columnconfigure(1, weight=0, minsize=400)
+        content.columnconfigure(1, weight=1)
 
         left_col = ctk.CTkFrame(content, fg_color="transparent")
-        left_col.grid(row=0, column=0, sticky="nsew", padx=(0, 12))
+        left_col.grid(row=0, column=0, sticky="nsew", padx=(0, 24))
 
-        slot_section = ctk.CTkFrame(left_col, fg_color="transparent")
-        slot_section.pack(fill=ctk.X, pady=(0, 20))
         ctk.CTkLabel(
-            slot_section,
-            text="1) Select Appearance Preset Slot",
-            font=("Segoe UI", 14, "bold"),
-        ).pack(anchor=ctk.W, pady=(0, 8), padx=0)
+            left_col, text="1) Select appearance preset slot", font=ds.TITLE
+        ).pack(anchor=ctk.W)
         ctk.CTkLabel(
-            slot_section,
+            left_col,
             text="Slots from the in-game 'Detailed Appearance' menu",
-            justify=ctk.LEFT,
-            font=("Segoe UI", 11),
-            text_color=("#666666", "#999999"),
-        ).pack(anchor=ctk.W, padx=0, pady=(0, 12))
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+        ).pack(anchor=ctk.W, pady=(0, 8))
 
         self.contrib_slot_var = ctk.StringVar(value="Slot 1")
-        slot_grid_frame = ctk.CTkFrame(slot_section, fg_color="transparent")
-        slot_grid_frame.pack(anchor=ctk.W)
+        slot_grid = ds.box(left_col, pady=(0, 20))
+        for slot_num in range(1, self.NUM_SLOTS + 1):
+            row, col = divmod(slot_num - 1, 5)
+            ctk.CTkRadioButton(
+                slot_grid,
+                text=f"{slot_num}",
+                variable=self.contrib_slot_var,
+                value=f"Slot {slot_num}",
+                font=ds.FONT,
+                width=60,
+            ).grid(
+                row=row,
+                column=col,
+                sticky="w",
+                padx=(12, 0),
+                pady=(10 if row == 0 else 4, 10 if row == 2 else 4),
+            )
 
-        for row in range(3):
-            row_frame = ctk.CTkFrame(slot_grid_frame, fg_color="transparent")
-            row_frame.pack(anchor=ctk.W, pady=4)
-            for col in range(5):
-                slot_num = row * 5 + col + 1
-                if slot_num <= self.NUM_SLOTS:
-                    ctk.CTkRadioButton(
-                        row_frame,
-                        text=f"{slot_num}",
-                        variable=self.contrib_slot_var,
-                        value=f"Slot {slot_num}",
-                        font=("Segoe UI", 11),
-                    ).pack(side=ctk.LEFT, padx=6, pady=2)
-
-        images_section = ctk.CTkFrame(left_col, fg_color="transparent")
-        images_section.pack(fill=ctk.X, pady=(0, 0))
         ctk.CTkLabel(
-            images_section,
-            text="2) Add Images (Face & Body required)",
-            font=("Segoe UI", 14, "bold"),
-        ).pack(anchor=ctk.W, padx=0, pady=(0, 12))
-
+            left_col, text="2) Add images (face & body required)", font=ds.TITLE
+        ).pack(anchor=ctk.W, pady=(0, 6))
         self.face_image_label = self._file_selector(
-            images_section, "Face Screenshot", self.select_face_image
+            left_col, "Face screenshot", self.select_face_image
         )
         self.body_image_label = self._file_selector(
-            images_section, "Full Body Screenshot", self.select_body_image
+            left_col, "Full body screenshot", self.select_body_image
         )
         self.preview_image_label = self._file_selector(
-            images_section,
-            "Preview Thumbnail (optional)",
+            left_col,
+            "Preview thumbnail (optional)",
             self.select_preview_image,
             placeholder="Uses face if not set",
         )
 
-        right_col = ctk.CTkFrame(content, fg_color="transparent")
-        right_col.grid(row=0, column=1, sticky="nsew", padx=(0, 0))
-
-        meta_section = ctk.CTkFrame(right_col, fg_color="transparent")
-        meta_section.pack(fill=ctk.BOTH, expand=True, padx=0, pady=0)
-        ctk.CTkLabel(
-            meta_section, text="3) Preset Information", font=("Segoe UI", 14, "bold")
-        ).pack(anchor=ctk.W, padx=0, pady=(0, 12))
+        meta_section = ctk.CTkFrame(content, fg_color="transparent")
+        meta_section.grid(row=0, column=1, sticky="nsew")
+        ctk.CTkLabel(meta_section, text="3) Preset information", font=ds.TITLE).pack(
+            anchor=ctk.W, pady=(0, 8)
+        )
 
         self.preset_name_var = ctk.StringVar(value="")
         self.author_var = ctk.StringVar(value="")
         self.custom_tags_var = ctk.StringVar(value="")
 
-        self._labeled_entry(meta_section, "Preset Name", self.preset_name_var)
-        self._labeled_entry(meta_section, "Your Name", self.author_var)
+        self._labeled_entry(meta_section, "Preset name", self.preset_name_var)
+        self._labeled_entry(meta_section, "Your name", self.author_var)
 
-        desc_frame = ctk.CTkFrame(meta_section, fg_color="transparent")
-        desc_frame.pack(fill=ctk.BOTH, expand=True, padx=0, pady=(0, 12))
-        ctk.CTkLabel(desc_frame, text="Description", font=("Segoe UI", 11)).pack(
+        ctk.CTkLabel(meta_section, text="Description:", font=ds.FONT).pack(
             anchor=ctk.W, pady=(0, 4)
         )
-        self.description_text = ctk.CTkTextbox(desc_frame, height=100)
-        self.description_text.pack(fill=ctk.BOTH, expand=True, pady=0)
+        self.description_text = ctk.CTkTextbox(meta_section, height=100, font=ds.FONT)
+        self.description_text.pack(fill=ctk.X, pady=(0, 12))
 
-        tags_section = ctk.CTkFrame(meta_section, fg_color="transparent")
-        tags_section.pack(fill=ctk.X, padx=0, pady=(0, 12))
         ctk.CTkLabel(
-            tags_section, text="Tags (select all that apply)", font=("Segoe UI", 11)
-        ).pack(anchor=ctk.W, pady=(0, 6))
-
-        tags_container = ctk.CTkFrame(tags_section, fg_color="transparent")
-        tags_container.pack(fill=ctk.X, pady=0)
-        left_tags = ctk.CTkFrame(tags_container, fg_color="transparent")
-        left_tags.pack(side=ctk.LEFT, fill=ctk.X, expand=True)
-        right_tags = ctk.CTkFrame(tags_container, fg_color="transparent")
-        right_tags.pack(side=ctk.LEFT, fill=ctk.X, expand=True)
-
+            meta_section, text="Tags (select all that apply)", font=ds.FONT
+        ).pack(anchor=ctk.W, pady=(0, 4))
+        tags_box = ds.box(meta_section, pady=(0, 12))
         self.tag_vars: dict[str, ctk.BooleanVar] = {}
         available_tags = [
             "male",
@@ -357,86 +345,52 @@ class EnhancedPresetBrowser:
         for i, tag in enumerate(available_tags):
             var = ctk.BooleanVar(value=False)
             self.tag_vars[tag] = var
-            container = left_tags if i < len(available_tags) // 2 else right_tags
-            ctk.CTkCheckBox(container, text=tag, variable=var).pack(
-                anchor=ctk.W, pady=2
+            row, col = divmod(i, 2)
+            ctk.CTkCheckBox(tags_box, text=tag, variable=var, font=ds.FONT).grid(
+                row=row,
+                column=col,
+                sticky="w",
+                padx=12,
+                pady=(10 if row == 0 else 3, 10 if row == 4 else 3),
             )
 
-        custom_tags_frame = ctk.CTkFrame(meta_section, fg_color="transparent")
-        custom_tags_frame.pack(fill=ctk.X, padx=0, pady=(0, 12))
         ctk.CTkLabel(
-            custom_tags_frame,
-            text="Custom Tags (comma-separated)",
-            font=("Segoe UI", 11),
+            meta_section, text="Custom tags (comma-separated)", font=ds.FONT
         ).pack(anchor=ctk.W, pady=(0, 4))
-        ctk.CTkEntry(custom_tags_frame, textvariable=self.custom_tags_var).pack(
-            fill=ctk.X, pady=0
-        )
+        ctk.CTkEntry(
+            meta_section, textvariable=self.custom_tags_var, height=32, font=ds.FONT
+        ).pack(fill=ctk.X)
 
-        login_notice = ctk.CTkFrame(
-            meta_section, fg_color=("#eef2ff", "#1f2937"), corner_radius=8
+        self.submit_button = ds.button(
+            meta_section, "Submit Preset", self.submit_contribution, width=140
         )
-        login_notice.pack(fill=ctk.X, padx=0, pady=(0, 12))
-        ctk.CTkLabel(
-            login_notice,
-            text=(
-                "Make sure you're logged into GitHub in your browser before submitting.\n"
-                "If the GitHub home page opens, log in first then submit again."
-            ),
-            justify=ctk.LEFT,
-            font=("Segoe UI", 11),
-        ).pack(anchor=ctk.W, padx=12, pady=(10, 8))
-
-        link = ctk.CTkLabel(
-            login_notice,
-            text="https://github.com/login",
-            text_color=palette.BLUE_TEXT,
-            cursor="hand2",
-            font=("Segoe UI", 11),
-        )
-        link.pack(anchor=ctk.W, padx=12, pady=(0, 10))
-        link.bind("<Button-1>", lambda e: self._open_github_login())
-
-        submit_frame = ctk.CTkFrame(meta_section, fg_color="transparent")
-        submit_frame.pack(fill=ctk.X, pady=(12, 0))
-        self.submit_button = ctk.CTkButton(
-            submit_frame,
-            text="Submit Preset",
-            command=self.submit_contribution,
-            width=150,
-            height=38,
-            font=("Segoe UI", 12),
-        )
-        self.submit_button.pack(side=ctk.LEFT)
+        self.submit_button.pack(anchor=ctk.E, pady=(16, 4))
 
     # ---------------------- Helpers ----------------------
     def _file_selector(
         self, parent, label: str, command, placeholder: str = "No file selected"
     ):
         row = ctk.CTkFrame(parent, fg_color="transparent")
-        row.pack(fill=ctk.X, pady=8, padx=0)
-        ctk.CTkLabel(
-            row, text=f"{label}:", font=("Segoe UI", 11), width=180, anchor=ctk.W
-        ).pack(side=ctk.LEFT, padx=(0, 12))
+        row.pack(fill=ctk.X, pady=4)
+        ds.button(row, "Browse...", command, primary=False, width=90).pack(
+            side=ctk.RIGHT, padx=(12, 0)
+        )
+        ctk.CTkLabel(row, text=f"{label}:", font=ds.FONT, width=200, anchor=ctk.W).pack(
+            side=ctk.LEFT
+        )
         value_label = ctk.CTkLabel(
-            row,
-            text=placeholder,
-            font=("Segoe UI", 10),
-            text_color=("#808080", "#a0a0a0"),
+            row, text=placeholder, font=ds.SMALL, text_color=ds.MUTED, anchor=ctk.W
         )
-        value_label.pack(side=ctk.LEFT, padx=0, expand=True, fill=ctk.X)
-        ctk.CTkButton(row, text="Browse...", width=90, command=command).pack(
-            side=ctk.LEFT, padx=(12, 0)
-        )
+        value_label.pack(side=ctk.LEFT, expand=True, fill=ctk.X)
         return value_label
 
     def _labeled_entry(self, parent, label: str, var: ctk.StringVar):
-        row = ctk.CTkFrame(parent, fg_color="transparent")
-        row.pack(fill=ctk.X, padx=0, pady=(0, 12))
-        ctk.CTkLabel(row, text=f"{label}:", font=("Segoe UI", 11)).pack(
+        ctk.CTkLabel(parent, text=f"{label}:", font=ds.FONT).pack(
             anchor=ctk.W, pady=(0, 4)
         )
-        ctk.CTkEntry(row, textvariable=var).pack(fill=ctk.X, pady=0)
+        ctk.CTkEntry(parent, textvariable=var, height=32, font=ds.FONT).pack(
+            fill=ctk.X, pady=(0, 12)
+        )
 
     def _open_github_login(self):
         open_url("https://github.com/login")
@@ -482,21 +436,21 @@ class EnhancedPresetBrowser:
         preset_name = self.preset_name_var.get().strip()
         if not preset_name:
             CTkMessageBox.showerror(
-                "Error", "Preset name is required", parent=self.dialog
+                "Missing Information", "Preset name is required", parent=self.dialog
             )
             return
 
         author = self.author_var.get().strip()
         if not author:
             CTkMessageBox.showerror(
-                "Error", "Author name is required", parent=self.dialog
+                "Missing Information", "Author name is required", parent=self.dialog
             )
             return
 
         description = self.description_text.get("1.0", tk.END).strip()
         if not description:
             CTkMessageBox.showerror(
-                "Error", "Description is required", parent=self.dialog
+                "Missing Information", "Description is required", parent=self.dialog
             )
             return
 
@@ -507,7 +461,9 @@ class EnhancedPresetBrowser:
         selected_tags.extend(custom_tags)
         if not selected_tags:
             CTkMessageBox.showerror(
-                "Error", "At least one tag is required", parent=self.dialog
+                "Missing Information",
+                "At least one tag is required",
+                parent=self.dialog,
             )
             return
 
@@ -518,13 +474,13 @@ class EnhancedPresetBrowser:
             save_file = self.appearance_tab.get_save_file()
             if not save_file:
                 CTkMessageBox.showerror(
-                    "Error", "No save file loaded", parent=self.dialog
+                    "No Save Loaded", "No save file loaded", parent=self.dialog
                 )
                 return
 
             if slot_index >= self.NUM_SLOTS:
                 CTkMessageBox.showerror(
-                    "Error",
+                    "Invalid Slot",
                     f"Preset slot {slot_index + 1} is invalid (max {self.NUM_SLOTS})",
                     parent=self.dialog,
                 )
@@ -533,7 +489,7 @@ class EnhancedPresetBrowser:
             presets_data = save_file.get_character_presets()
             if not presets_data or slot_index >= len(presets_data.presets):
                 CTkMessageBox.showerror(
-                    "Error",
+                    "Preset Not Found",
                     f"Character slot {slot_index + 1} preset doesn't exist",
                     parent=self.dialog,
                 )
@@ -559,64 +515,13 @@ class EnhancedPresetBrowser:
                 self._show_submission_error_dialog(submission_url)
         except Exception as exc:  # pragma: no cover - UI path
             CTkMessageBox.showerror(
-                "Error", f"Failed to create submission:\n{exc}", parent=self.dialog
+                "Submission Failed",
+                f"Failed to create submission:\n{exc}",
+                parent=self.dialog,
             )
 
     def _show_submission_error_dialog(self, submission_url: str | None):
-        from er_save_manager.ui.utils import force_render_dialog
-
-        dialog = ctk.CTkToplevel(self.dialog)
-        dialog.title("Use This Link to Submit")
-        center_window(dialog, 720, 360, parent=self.dialog)
-        dialog.transient(self.dialog)
-
-        # Force rendering on Linux before grab_set
-        force_render_dialog(dialog)
-        dialog.grab_set()
-
-        frame = ctk.CTkFrame(dialog)
-        frame.pack(fill=ctk.BOTH, expand=True, padx=14, pady=14)
-
-        ctk.CTkLabel(
-            frame,
-            text="GitHub not logged in",
-            font=("Segoe UI", 14, "bold"),
-        ).pack(anchor=ctk.W, pady=(0, 10))
-
-        ctk.CTkLabel(
-            frame,
-            text=(
-                "Log in to GitHub, then copy and paste this link in your browser to finish the submission."
-            ),
-            justify=ctk.LEFT,
-        ).pack(anchor=ctk.W)
-
-        if submission_url:
-            url_box = ctk.CTkTextbox(frame, height=120)
-            url_box.pack(fill=ctk.BOTH, expand=True, pady=10)
-            url_box.insert("1.0", submission_url)
-            url_box.configure(state="disabled")
-
-            def copy_url():
-                dialog.clipboard_clear()
-                dialog.clipboard_append(submission_url)
-                CTkMessageBox.showinfo(
-                    "Copied", "URL copied to clipboard.", parent=dialog
-                )
-
-            ctk.CTkButton(frame, text="Copy URL", command=copy_url, width=140).pack(
-                pady=6
-            )
-        else:
-            ctk.CTkLabel(
-                frame,
-                text="Could not generate a submission URL. Please log in to GitHub and try again.",
-                text_color=("#dc2626", "#fca5a5"),
-            ).pack(anchor=ctk.W, pady=10)
-
-        ctk.CTkButton(frame, text="Close", command=dialog.destroy, width=120).pack(
-            pady=(6, 0)
-        )
+        show_submission_link(self.dialog, submission_url)
 
     # ---------------------- Browse logic ----------------------
     def refresh_presets(self):
@@ -748,137 +653,73 @@ class EnhancedPresetBrowser:
         self.display_presets()
 
     def display_presets(self):
-        for widget in self.preset_widgets:
-            widget.destroy()
-        self.preset_widgets.clear()
-
-        if not self.filtered_presets:
-            empty = ctk.CTkLabel(
-                self.grid_container, text="No presets match your search"
+        # The window may have closed while the index was loading
+        if not self.grid.winfo_exists():
+            return
+        self._by_id = {p["id"]: p for p in self.filtered_presets if p.get("id")}
+        entries = []
+        for preset in self.filtered_presets:
+            preset_id = preset.get("id")
+            if not preset_id:
+                continue
+            metrics = self.preset_metrics_cache.get(preset_id, {})
+            text = (
+                f"{preset.get('name', 'Unknown')}\n"
+                f"by {preset.get('author', 'Unknown')}\n"
+                + metrics_text(metrics.get("thumbs_up", 0), metrics.get("downloads", 0))
             )
-            empty.grid(row=0, column=0, pady=30, padx=10)
-            self.preset_widgets.append(empty)
+            entries.append(
+                GridEntry(preset_id, text, "", lambda p=preset: self._thumbnail(p))
+            )
+        self.grid.set_entries(entries, keep_selection=True)
+        if not entries and self.all_presets:
+            self.status_var.set("No presets match your search")
+
+    def _on_grid_select(self, keys: list) -> None:
+        if keys and keys[0] in self._by_id:
+            self.preview_preset(self._by_id[keys[0]])
+
+    def _thumbnail(self, preset: dict[str, Any]):
+        """Cached grid thumbnail, or None while it downloads in the background."""
+        preset_id = preset["id"]
+        if preset_id in self._thumbs or not HAS_PIL:
+            return self._thumbs.get(preset_id)
+        if preset_id not in self._thumb_jobs:
+            self._thumb_jobs.add(preset_id)
+            self.load_thumbnail(preset)
+        return None
+
+    def _poll_thumbnails(self) -> None:
+        """Show thumbnails the download threads finished."""
+        if not self.grid.winfo_exists():
             return
+        while True:
+            try:
+                key = self._thumb_done.get_nowait()
+            except queue.Empty:
+                break
+            self.grid.refresh_icon(key)
+        self.grid.after(100, self._poll_thumbnails)
 
-        for i in range(3):
-            self.grid_container.grid_columnconfigure(i, weight=1)
-
-        # Render in batches of 12 so the UI stays responsive
-        self._render_batch(self.filtered_presets, index=0, batch_size=12)
-
-    def _render_batch(self, presets: list, index: int, batch_size: int):
-        # Guard against a filter change mid-render
-        if presets is not self.filtered_presets:
-            return
-
-        end = min(index + batch_size, len(presets))
-        for i in range(index, end):
-            preset = presets[i]
-            card = self.create_preset_card(preset)
-            row, col = divmod(i, 3)
-            card.grid(row=row, column=col, padx=6, pady=6, sticky="nsew")
-            self.preset_widgets.append(card)
-
-        if end < len(presets):
-            self.dialog.after(0, lambda: self._render_batch(presets, end, batch_size))
-
-    def create_preset_card(self, preset: dict[str, Any]):
-        frame = ctk.CTkFrame(self.grid_container, corner_radius=6, border_width=1)
-        frame.preset = preset
-
-        thumb = ctk.CTkLabel(frame, text="[Loading...]")
-        thumb.pack(pady=(8, 4))
-        frame.thumb_label = thumb
-
-        if HAS_PIL:
-            self.load_thumbnail(preset, thumb)
-        else:
-            thumb.configure(text="[No image]")
-
-        ctk.CTkLabel(
-            frame,
-            text=preset.get("name", "Unknown"),
-            font=("Segoe UI", 11, "bold"),
-            wraplength=150,
-        ).pack(pady=(0, 2))
-        ctk.CTkLabel(
-            frame,
-            text=f"by {preset.get('author', 'Unknown')}",
-            font=("Segoe UI", 10),
-            text_color=("#6b7280", "#d1d5db"),
-        ).pack()
-
-        preset_id = preset.get("id", "")
-        metrics = self.preset_metrics_cache.get(preset_id, {})
-        likes = metrics.get("thumbs_up", 0)
-        downloads = metrics.get("downloads", 0)
-
-        metrics_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        metrics_frame.pack(pady=(4, 6))
-
-        ctk.CTkLabel(
-            metrics_frame,
-            text=f"👍 {likes}",
-            font=("Segoe UI", 9),
-            text_color=("#6b7280", "#9ca3af"),
-        ).pack(side=ctk.LEFT, padx=4)
-
-        ctk.CTkLabel(
-            metrics_frame,
-            text=f"⬇ {downloads}",
-            font=("Segoe UI", 9),
-            text_color=("#6b7280", "#9ca3af"),
-        ).pack(side=ctk.LEFT, padx=4)
-
-        for widget in frame.winfo_children():
-            widget.bind("<Button-1>", lambda _e, p=preset: self.preview_preset(p))
-            widget.configure(cursor="hand2")
-        frame.bind("<Button-1>", lambda _e, p=preset: self.preview_preset(p))
-        frame.configure(cursor="hand2")
-        return frame
-
-    def load_thumbnail(self, preset: dict[str, Any], label: ctk.CTkLabel):
+    def load_thumbnail(self, preset: dict[str, Any]):
         import threading
 
+        preset_id = preset["id"]
+
         def _work():
+            img = None
             try:
-                preset_id = preset["id"]
                 cached = self.manager.get_cached_preset(preset_id)
                 if not (cached and "screenshot_path" in cached):
                     cached = self.manager.download_preset(preset_id, preset)
-
                 if cached and "screenshot_path" in cached:
                     img = Image.open(cached["screenshot_path"])
                     img.thumbnail((150, 150))
-                    actual_size = img.size
-                    ctk_img = self._make_ctk_image(img, actual_size)
-
-                    def _apply():
-                        try:
-                            if label.winfo_exists():
-                                label.configure(
-                                    image=ctk_img,
-                                    text="",
-                                    width=actual_size[0],
-                                    height=actual_size[1],
-                                    anchor="center",
-                                )
-                        except Exception:
-                            pass
-
-                    self.dialog.after(0, _apply)
-                else:
-
-                    def _no_img():
-                        try:
-                            if label.winfo_exists():
-                                label.configure(text="[No Image]")
-                        except Exception:
-                            pass
-
-                    self.dialog.after(0, _no_img)
             except Exception:
-                pass
+                img = None
+            self._thumbs[preset_id] = img
+            # Tk is only touched from the main thread (_poll_thumbnails)
+            self._thumb_done.put(preset_id)
 
         threading.Thread(target=_work, daemon=True).start()
 
@@ -893,69 +734,65 @@ class EnhancedPresetBrowser:
 
         if not cached:
             CTkMessageBox.showerror(
-                "Error", "Failed to download preset", parent=self.dialog
+                "Download Failed", "Failed to download preset", parent=self.dialog
             )
             return
 
-        self._refresh_all_thumbnails()
+        # The preview download may have brought a thumbnail the grid lacked
+        if self._thumbs.get(preset["id"]) is None:
+            self._thumbs.pop(preset["id"], None)
+            self._thumb_jobs.discard(preset["id"])
+            self.grid.refresh_icon(preset["id"])
 
         for widget in self.preview_area.winfo_children():
             widget.destroy()
 
+        def placeholder(text: str) -> None:
+            ctk.CTkLabel(
+                self.preview_area, text=text, font=ds.FONT, text_color=ds.MUTED
+            ).pack(pady=10)
+
         if HAS_PIL:
             try:
                 face_img = self._load_cached_image(
-                    preset, cached, suffix="_face", key="face_url", size=(260, 260)
+                    preset, cached, suffix="_face", key="face_url", size=(210, 260)
                 )
                 body_img = self._load_cached_image(
-                    preset, cached, suffix="_body", key="body_url", size=(260, 260)
+                    preset, cached, suffix="_body", key="body_url", size=(210, 260)
                 )
 
                 if face_img or body_img:
-                    img_row = ctk.CTkFrame(self.preview_area)
-                    img_row.pack(pady=10)
-                    if face_img:
-                        face_col = ctk.CTkFrame(img_row)
-                        face_col.pack(side=ctk.LEFT, padx=8)
-                        ctk.CTkLabel(face_col, image=face_img, text="").pack()
-                        ctk.CTkLabel(face_col, text="Face").pack()
-                    if body_img:
-                        body_col = ctk.CTkFrame(img_row)
-                        body_col.pack(side=ctk.LEFT, padx=8)
-                        ctk.CTkLabel(body_col, image=body_img, text="").pack()
-                        ctk.CTkLabel(body_col, text="Body").pack()
+                    img_row = ctk.CTkFrame(self.preview_area, fg_color="transparent")
+                    img_row.pack(pady=(4, 0))
+                    for image, caption in ((face_img, "Face"), (body_img, "Body")):
+                        if not image:
+                            continue
+                        col = ctk.CTkFrame(img_row, fg_color="transparent")
+                        col.pack(side=ctk.LEFT, padx=4)
+                        ctk.CTkLabel(col, image=image, text="").pack()
+                        ctk.CTkLabel(
+                            col, text=caption, font=ds.SMALL, text_color=ds.MUTED
+                        ).pack()
                 elif "screenshot_path" in cached:
                     try:
                         img = Image.open(cached["screenshot_path"])
                         img.thumbnail((320, 320))
-                        ctk_img = self._make_ctk_image(img, (320, 320))
+                        ctk_img = self._make_ctk_image(img, img.size)
                         if ctk_img:
                             ctk.CTkLabel(
-                                self.preview_area,
-                                image=ctk_img,
-                                text="",
-                            ).pack(pady=10)
+                                self.preview_area, image=ctk_img, text=""
+                            ).pack(pady=(4, 0))
                         else:
-                            ctk.CTkLabel(
-                                self.preview_area, text="[Preview not available]"
-                            ).pack(pady=10)
+                            placeholder("Preview not available")
                     except Exception:
-                        ctk.CTkLabel(
-                            self.preview_area, text="[Preview not available]"
-                        ).pack(pady=10)
+                        placeholder("Preview not available")
                 else:
-                    ctk.CTkLabel(self.preview_area, text="[No preview available]").pack(
-                        pady=10
-                    )
+                    placeholder("No preview available")
             except Exception as e:
                 print(f"[Preview] Image display error: {e}")
-                ctk.CTkLabel(self.preview_area, text="[Preview not available]").pack(
-                    pady=10
-                )
+                placeholder("Preview not available")
         else:
-            ctk.CTkLabel(self.preview_area, text="[Install Pillow for previews]").pack(
-                pady=10
-            )
+            placeholder("Install Pillow for previews")
 
         for widget in self.details_frame.winfo_children():
             widget.destroy()
@@ -963,76 +800,68 @@ class EnhancedPresetBrowser:
         ctk.CTkLabel(
             self.details_frame,
             text=preset.get("name", "Preset"),
-            font=("Segoe UI", 13, "bold"),
-        ).pack(anchor=ctk.W)
+            font=ds.TITLE,
+            anchor="w",
+        ).pack(fill=ctk.X)
         ctk.CTkLabel(
-            self.details_frame, text=f"Author: {preset.get('author', 'Unknown')}"
-        ).pack(anchor=ctk.W, pady=(2, 0))
+            self.details_frame,
+            text=f"Author: {preset.get('author', 'Unknown')}",
+            font=ds.FONT,
+            anchor="w",
+        ).pack(fill=ctk.X, pady=(2, 0))
         ctk.CTkLabel(
-            self.details_frame, text=f"Tags: {', '.join(preset.get('tags', []))}"
-        ).pack(anchor=ctk.W, pady=(2, 0))
+            self.details_frame,
+            text=f"Tags: {', '.join(preset.get('tags', []))}",
+            font=ds.FONT,
+            anchor="w",
+            wraplength=420,
+            justify=ctk.LEFT,
+        ).pack(fill=ctk.X, pady=(2, 0))
 
         if "description" in preset:
             ctk.CTkLabel(
                 self.details_frame,
                 text=preset["description"],
-                wraplength=360,
+                font=ds.FONT,
+                wraplength=420,
                 justify=ctk.LEFT,
-            ).pack(anchor=ctk.W, pady=(6, 0))
+                anchor="w",
+            ).pack(fill=ctk.X, pady=(6, 0))
 
         preset_id = preset.get("id", "")
         metrics = self.preset_metrics_cache.get(preset_id, {})
-        likes = metrics.get("thumbs_up", 0)
-        downloads = metrics.get("downloads", 0)
-
-        metrics_section = ctk.CTkFrame(self.details_frame, fg_color="transparent")
-        metrics_section.pack(anchor=ctk.W, pady=(12, 0), fill=ctk.X)
-
-        stats_label = ctk.CTkLabel(
-            metrics_section,
-            text=f"👍 {likes} likes  |  ⬇ {downloads} downloads",
-            font=("Segoe UI", 11),
-            text_color=("#6b7280", "#9ca3af"),
-        )
-        stats_label.pack(anchor=ctk.W, pady=(0, 8))
+        ctk.CTkLabel(
+            self.details_frame,
+            text=metrics_text(metrics.get("thumbs_up", 0), metrics.get("downloads", 0)),
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+            anchor="w",
+        ).pack(fill=ctk.X, pady=(10, 6))
 
         has_liked = self.metrics.has_user_liked(preset_id)
 
-        vote_frame = ctk.CTkFrame(metrics_section, fg_color="transparent")
-        vote_frame.pack(anchor=ctk.W)
-
         def vote_like():
             if has_liked:
-                # Already liked - just return (button should be disabled anyway)
                 return
-
             self.metrics.like(preset_id)
             updated_metrics = self.metrics.fetch_metrics([preset_id])
             if updated_metrics:
                 self.preset_metrics_cache.update(updated_metrics)
             self.preview_preset(preset)
 
-        like_btn = ctk.CTkButton(
-            vote_frame,
-            text="👍 Like" if not has_liked else "👍 Liked",
-            command=vote_like,
-            width=90,
-            height=32,
-            state="disabled" if has_liked else "normal",
-            fg_color=("#10b981", "#059669") if has_liked else None,
-        )
-        like_btn.pack(side=ctk.LEFT, padx=(0, 8))
+        def report():
+            message = ask_report(
+                self.dialog,
+                "Preset",
+                preset.get("name", "Preset"),
+                preset.get("author", "Unknown"),
+            )
+            if message:
+                self._submit_preset_report(preset, message)
 
-        report_btn = ctk.CTkButton(
-            vote_frame,
-            text="🚩 Report",
-            command=lambda: self._show_report_dialog(preset),
-            width=90,
-            height=32,
-            fg_color=("#dc2626", "#b91c1c"),
-            hover_color=("#b91c1c", "#991b1b"),
+        like_report_row(self.details_frame, has_liked, vote_like, report).pack(
+            anchor=ctk.W
         )
-        report_btn.pack(side=ctk.LEFT, padx=(0, 8))
 
         self.apply_button.configure(state="normal")
         self.status_var.set(f"Previewing: {preset.get('name', 'Preset')}")
@@ -1068,30 +897,6 @@ class EnhancedPresetBrowser:
                 return None
         return None
 
-    def _refresh_all_thumbnails(self):
-        for card in self.preset_widgets:
-            if not (hasattr(card, "preset") and hasattr(card, "thumb_label")):
-                continue
-            preset = card.preset
-            label = card.thumb_label
-            cached = self.manager.get_cached_preset(preset["id"])
-            if cached and "screenshot_path" in cached and HAS_PIL:
-                try:
-                    if not label.winfo_exists():
-                        continue
-                    img = Image.open(cached["screenshot_path"])
-                    img.thumbnail((150, 150))
-                    actual_size = img.size
-                    label.configure(
-                        image=self._make_ctk_image(img, actual_size),
-                        text="",
-                        width=actual_size[0],
-                        height=actual_size[1],
-                        anchor="center",
-                    )
-                except Exception:
-                    pass
-
     def apply_to_slot(self):
         if not self.current_preset:
             return
@@ -1121,7 +926,7 @@ class EnhancedPresetBrowser:
 
             if not preset_data or "appearance" not in preset_data:
                 CTkMessageBox.showerror(
-                    "Error", "Invalid preset data", parent=self.dialog
+                    "Preset Unavailable", "Invalid preset data", parent=self.dialog
                 )
                 return
 
@@ -1130,13 +935,13 @@ class EnhancedPresetBrowser:
 
             if not save_file or not save_path:
                 CTkMessageBox.showerror(
-                    "Error", "No save file loaded", parent=self.dialog
+                    "No Save Loaded", "No save file loaded", parent=self.dialog
                 )
                 return
 
             if target_slot >= self.NUM_SLOTS:
                 CTkMessageBox.showerror(
-                    "Error",
+                    "Invalid Slot",
                     f"Preset slot {target_slot + 1} is invalid (max {self.NUM_SLOTS})",
                     parent=self.dialog,
                 )
@@ -1162,7 +967,7 @@ class EnhancedPresetBrowser:
                 self.preview_preset(self.current_preset)
 
             CTkMessageBox.showinfo(
-                "Success",
+                "Preset Applied",
                 f"Applied '{self.current_preset.get('name', 'preset')}' to Preset Slot {target_slot + 1}.",
                 parent=self.dialog,
             )
@@ -1177,110 +982,8 @@ class EnhancedPresetBrowser:
 
         except Exception as exc:  # pragma: no cover - UI path
             CTkMessageBox.showerror(
-                "Error", f"Failed to apply preset:\n{exc}", parent=self.dialog
+                "Apply Failed", f"Failed to apply preset:\n{exc}", parent=self.dialog
             )
-
-    def _show_report_dialog(self, preset: dict[str, Any]):
-        """Show dialog for reporting a preset."""
-        from er_save_manager.ui.utils import force_render_dialog
-
-        report_dialog = ctk.CTkToplevel(self.dialog)
-        report_dialog.title("Report Preset")
-        center_window(report_dialog, 600, 600, parent=self.dialog)
-        report_dialog.transient(self.dialog)
-
-        # Force rendering on Linux before grab_set
-        force_render_dialog(report_dialog)
-        report_dialog.grab_set()
-
-        main_frame = ctk.CTkFrame(report_dialog)
-        main_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=20)
-
-        notice_frame = ctk.CTkFrame(
-            main_frame, fg_color=("#fff7ed", "#3b2f1b"), corner_radius=8
-        )
-        notice_frame.pack(fill=ctk.X, pady=(0, 15))
-        ctk.CTkLabel(
-            notice_frame,
-            text="⚠ GitHub Account Required",
-            font=("Segoe UI", 13, "bold"),
-            text_color=("#b45309", "#fbbf24"),
-        ).pack(pady=(10, 4))
-        ctk.CTkLabel(
-            notice_frame,
-            text="Log into GitHub in your browser before reporting",
-            font=("Segoe UI", 11),
-            text_color=("#6b7280", "#d1d5db"),
-        ).pack(pady=(0, 10))
-
-        ctk.CTkLabel(
-            main_frame,
-            text=f"Report: {preset.get('name', 'Preset')}",
-            font=("Segoe UI", 16, "bold"),
-        ).pack(anchor=ctk.W, pady=(0, 5))
-
-        ctk.CTkLabel(
-            main_frame,
-            text=f"by {preset.get('author', 'Unknown')}",
-            font=("Segoe UI", 11),
-            text_color=("#6b7280", "#9ca3af"),
-        ).pack(anchor=ctk.W, pady=(0, 15))
-
-        info_frame = ctk.CTkFrame(
-            main_frame, fg_color=("#fef3c7", "#3f2f1e"), corner_radius=8
-        )
-        info_frame.pack(fill=ctk.X, pady=(0, 20))
-        ctk.CTkLabel(
-            info_frame,
-            text="⚠️ Please report only genuine issues (inappropriate content, etc.)",
-            font=("Segoe UI", 11),
-            text_color=("#92400e", "#fbbf24"),
-            wraplength=550,
-        ).pack(padx=15, pady=12)
-
-        ctk.CTkLabel(
-            main_frame,
-            text="Reason for report:",
-            font=("Segoe UI", 12, "bold"),
-        ).pack(anchor=ctk.W, pady=(0, 8))
-
-        report_text = ctk.CTkTextbox(main_frame, height=150)
-        report_text.pack(fill=ctk.BOTH, expand=True, pady=(0, 20))
-        report_text.focus()
-
-        button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        button_frame.pack(fill=ctk.X)
-
-        def submit_report():
-            message = report_text.get("1.0", tk.END).strip()
-            if not message:
-                CTkMessageBox.showerror(
-                    "Error",
-                    "Please enter a reason for the report.",
-                    parent=report_dialog,
-                )
-                return
-
-            self._submit_preset_report(preset, message)
-            report_dialog.destroy()
-
-        ctk.CTkButton(
-            button_frame,
-            text="Submit Report",
-            command=submit_report,
-            width=150,
-            height=35,
-            fg_color=("#dc2626", "#b91c1c"),
-            hover_color=("#b91c1c", "#991b1b"),
-        ).pack(side=ctk.LEFT, padx=(0, 10))
-
-        ctk.CTkButton(
-            button_frame,
-            text="Cancel",
-            command=report_dialog.destroy,
-            width=120,
-            height=35,
-        ).pack(side=ctk.LEFT)
 
     def _submit_preset_report(self, preset: dict[str, Any], message: str):
         """Submit a preset report by opening GitHub with pre-filled issue."""
@@ -1356,13 +1059,13 @@ class PresetBrowserDialog:
         ).pack(pady=6)
 
         desc = (
-            "Share and download character appearance presets!\n\n"
+            "Share and download character appearance presets.\n\n"
             "Features:\n"
             "  • Browse community character designs\n"
             "  • Preview with screenshots\n"
             "  • Apply to any character slot (1-15)\n"
             "  • Submit your own creations\n\n"
-            "Database hosted externally and auto-updates!"
+            "Database hosted externally and auto-updates."
         )
         ctk.CTkLabel(frame, text=desc, justify=ctk.LEFT).pack(pady=8)
         ctk.CTkButton(frame, text="Close", command=dialog.destroy, width=120).pack(

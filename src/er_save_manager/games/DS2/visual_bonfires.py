@@ -10,14 +10,15 @@ write and the last rested rule stay in one place.
 from __future__ import annotations
 
 import tkinter as tk
-from collections import deque
 from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
 from er_save_manager.games.DS2.bonfire_database import BONFIRES
 from er_save_manager.ui import palette
+from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import center_window, debounced_trace
+from er_save_manager.ui.virtual_grid import GridEntry, VirtualIconGrid
 
 if TYPE_CHECKING:
     from PIL import Image as PILImage
@@ -27,18 +28,14 @@ if TYPE_CHECKING:
 # The stored pictures are 147x82.
 _IMAGE_SIZE = (147, 82)
 _CELL_W = 172
-_CELL_H = 138
+_CELL_H = 152
 _CELL_PAD = 4
 _SCROLLBAR_W = 24
 _DEFAULT_COLS = 4
-_BATCH = 12
-_DELAY_MS = 8
 # Brightness left on an unlit bonfire's greyed picture.
 _UNLIT_BRIGHTNESS = 0.45
-_SELECTED_BORDER = palette.PURPLE_TEXT
+_SELECTED_TEXT = palette.PURPLE_TEXT
 _FILTERS = ("All", "Lit", "Unlit")
-# Bit of a Tk event's state that is set while Ctrl is held.
-_CONTROL_MASK = 0x4
 
 
 def _state_text(lit: bool, intensity: int, last_rested: bool) -> str:
@@ -62,18 +59,8 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
     def __init__(self, parent, panel: DS2BonfirePanel):
         super().__init__(parent)
         self._panel = panel
-        self._cols = _DEFAULT_COLS
-        self._buttons: dict[int, ctk.CTkButton] = {}  # bonfire id -> cell
-        # (lit, intensity, last rested) each cell currently shows, and its image
-        self._cell_state: dict[int, tuple[bool, int, bool]] = {}
-        self._cell_images: dict[int, ctk.CTkImage | None] = {}
-        self._order: list[int] = []  # shown bonfire ids, in grid order
-        self._selected: set[int] = set()
-        self._ctk_images: list = []
-        self._pending: deque[int] = deque()
-        self._batch_job: str | None = None
-        self._resize_job: str | None = None
-        self._grid_count = 0
+        # (lit, intensity, last rested) per shown bonfire id, in grid order
+        self._shown: dict[int, tuple[bool, int, bool]] = {}
 
         w = _DEFAULT_COLS * (_CELL_W + _CELL_PAD * 2) + 12 + _SCROLLBAR_W + 30
         self.title("Visual Bonfires")
@@ -105,20 +92,13 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
             self._refresh_job = self.after_idle(self._refresh_from_panel)
 
     def _refresh_from_panel(self) -> None:
-        """Follow a panel refresh. When the same bonfires are still shown,
-        only cells whose state changed are updated; rebuilding every button
-        stalls the window (and the toast the panel shows) for ~0.3s."""
+        """Follow a panel refresh; the grid only rebuilds the cells on screen."""
         self._refresh_job = None
         if not self.winfo_exists():
             return
         self._intensity_combo.configure(values=self._panel.intensity_choices())
-        if self._batch_job is not None or self._visible_ids() != self._order:
+        if self._current_state() != self._shown:
             self._rebuild()
-            return
-        for bonfire_id, button in self._buttons.items():
-            if self._cell_state.get(bonfire_id) != self._panel_state(bonfire_id):
-                text, text_color, image = self._cell_content(bonfire_id)
-                button.configure(text=text, text_color=text_color, image=image)
         self._sync_selection()
 
     # ------------------------------------------------------------------
@@ -154,9 +134,18 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
             command=self.destroy,
         ).pack(side="right")
 
-        self._scroll = ctk.CTkScrollableFrame(self)
-        self._scroll.pack(fill="both", expand=True, padx=6, pady=(0, 4))
-        self._scroll.bind("<Configure>", self._on_scroll_resize)
+        self._grid = VirtualIconGrid(
+            self,
+            self._on_grid_select,
+            multi=True,
+            cell_w=_CELL_W,
+            cell_h=_CELL_H,
+            pad=_CELL_PAD,
+            icon_size=_IMAGE_SIZE[0],
+            icon_height=_IMAGE_SIZE[1],
+        )
+        self._grid.pack(fill="both", expand=True, padx=6, pady=(0, 4))
+        add_tooltip(self._grid._canvas, MULTI_SELECT_TIP)
 
         bar = ctk.CTkFrame(self, fg_color=("gray88", "gray18"), corner_radius=8)
         bar.pack(fill="x", padx=6, pady=(0, 8))
@@ -171,7 +160,7 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
         self._sel_lbl.pack(fill="x", padx=10, pady=(8, 4))
 
         actions = ctk.CTkFrame(bar, fg_color="transparent")
-        actions.pack(fill="x", padx=10, pady=(0, 4))
+        actions.pack(fill="x", padx=10, pady=(0, 10))
         self._light_btn = ctk.CTkButton(
             actions, text="Light", width=80, command=self._do_light
         )
@@ -200,14 +189,6 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
         )
         self._unlock_btn.pack(side="right")
 
-        ctk.CTkLabel(
-            bar,
-            text="Click selects a bonfire, Ctrl+click adds or removes one.",
-            text_color=("gray40", "gray60"),
-            font=("Segoe UI", 10),
-            anchor="w",
-        ).pack(fill="x", padx=10, pady=(0, 8))
-
     # ------------------------------------------------------------------
     # Grid
     # ------------------------------------------------------------------
@@ -225,165 +206,69 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
             ids.append(bonfire_id)
         return ids
 
+    def _current_state(self) -> dict[int, tuple[bool, int, bool]]:
+        panel = self._panel
+        return {
+            bonfire_id: (
+                panel._lit[bonfire_id],
+                panel._intensities[bonfire_id],
+                bonfire_id == panel._last_rested,
+            )
+            for bonfire_id in self._visible_ids()
+        }
+
     def _rebuild(self) -> None:
         """Rebuild the grid from the panel's current bonfire data. Selected
         bonfires that are still shown stay selected."""
-        if self._batch_job is not None:
-            self.after_cancel(self._batch_job)
-            self._batch_job = None
-        for button in self._buttons.values():
-            button.destroy()
-        self._buttons.clear()
-        self._ctk_images.clear()
-        self._cell_state.clear()
-        self._cell_images.clear()
-
-        self._order = self._visible_ids()
-        self._selected &= set(self._order)
-        self._grid_count = 0
-        self._pending = deque(self._order)
-        self._build_next_batch()
-        self._sync_selection()
-
-    def _build_next_batch(self) -> None:
-        if not self.winfo_exists():
-            return
-
-        for _ in range(_BATCH):
-            if not self._pending:
-                break
-            bonfire_id = self._pending.popleft()
-            text, text_color, ctk_img = self._cell_content(bonfire_id)
-            button = ctk.CTkButton(
-                self._scroll,
-                image=ctk_img,
-                text=text,
-                compound="top",
-                width=_CELL_W,
-                height=_CELL_H,
-                font=("Segoe UI", 10),
-                fg_color=("gray82", "gray18"),
-                hover_color=("gray70", "gray28"),
-                text_color=text_color,
-                border_color=_SELECTED_BORDER,
-                border_width=0,
-                anchor="center",
+        self._shown = self._current_state()
+        entries = []
+        for bonfire_id, (lit, intensity, last_rested) in self._shown.items():
+            name = BONFIRES[bonfire_id]
+            entries.append(
+                GridEntry(
+                    bonfire_id,
+                    f"{name}\n{_state_text(lit, intensity, last_rested)}",
+                    name.lower(),
+                    lambda b=bonfire_id, lit=lit: self._picture(b, lit),
+                )
             )
-            if getattr(button, "_text_label", None) is not None:
-                button._text_label.configure(wraplength=_CELL_W - 8, justify="center")
-            button.bind(
-                "<Button-1>", lambda e, b=bonfire_id: self._on_click(b, e), add="+"
-            )
-            self._buttons[bonfire_id] = button
-            row, col = divmod(self._grid_count, self._cols)
-            button.grid(
-                row=row, column=col, padx=_CELL_PAD, pady=_CELL_PAD, sticky="nsew"
-            )
-            self._grid_count += 1
-            self._paint_selection(bonfire_id)
+        self._grid.set_entries(entries, keep_selection=True)
 
-        if self._pending:
-            self._batch_job = self.after(_DELAY_MS, self._build_next_batch)
-        else:
-            self._batch_job = None
-            self._layout_grid()
-
-    def _panel_state(self, bonfire_id: int) -> tuple[bool, int, bool]:
-        return (
-            self._panel._lit[bonfire_id],
-            self._panel._intensities[bonfire_id],
-            bonfire_id == self._panel._last_rested,
-        )
-
-    def _cell_content(self, bonfire_id: int):
-        """Text, text color and image for a cell, from the panel's state.
-        The image is only rebuilt when the bonfire's lit state changed."""
+    @staticmethod
+    def _picture(bonfire_id: int, lit: bool):
         from er_save_manager.games.DS2.icon_manager import get_bonfire_icon
 
-        lit, intensity, last_rested = self._panel_state(bonfire_id)
-        previous = self._cell_state.get(bonfire_id)
-        if previous is not None and previous[0] == lit:
-            ctk_img = self._cell_images[bonfire_id]
-        else:
-            img = get_bonfire_icon(bonfire_id)
-            ctk_img = None
-            if img is not None:
-                if not lit:
-                    img = _unlit_picture(img)
-                ctk_img = ctk.CTkImage(
-                    light_image=img, dark_image=img, size=_IMAGE_SIZE
-                )
-                self._ctk_images.append(ctk_img)
-            self._cell_images[bonfire_id] = ctk_img
-        self._cell_state[bonfire_id] = (lit, intensity, last_rested)
-        text = f"{BONFIRES[bonfire_id]}\n{_state_text(lit, intensity, last_rested)}"
-        text_color = ("gray10", "gray90") if lit else ("gray40", "gray55")
-        return text, text_color, ctk_img
-
-    def _layout_grid(self) -> None:
-        for index, bonfire_id in enumerate(self._order):
-            button = self._buttons.get(bonfire_id)
-            if button is None:
-                continue
-            row, col = divmod(index, self._cols)
-            button.grid(
-                row=row, column=col, padx=_CELL_PAD, pady=_CELL_PAD, sticky="nsew"
-            )
-        self._scroll.update_idletasks()
-        canvas = self._scroll._parent_canvas
-        canvas.configure(scrollregion=canvas.bbox("all"))
-
-    def _on_scroll_resize(self, _event) -> None:
-        if self._resize_job:
-            self.after_cancel(self._resize_job)
-        self._resize_job = self.after(60, self._reflow)
-
-    def _reflow(self) -> None:
-        self._resize_job = None
-        available = max(1, self._scroll.winfo_width() - _SCROLLBAR_W)
-        new_cols = max(1, available // (_CELL_W + _CELL_PAD * 2))
-        if new_cols != self._cols:
-            self._cols = new_cols
-            self._layout_grid()
+        img = get_bonfire_icon(bonfire_id)
+        if img is not None and not lit:
+            img = _unlit_picture(img)
+        return img
 
     # ------------------------------------------------------------------
     # Selection
     # ------------------------------------------------------------------
 
-    def _on_click(self, bonfire_id: int, event) -> None:
-        if event.state & _CONTROL_MASK:
-            self._selected ^= {bonfire_id}
-        else:
-            self._selected = {bonfire_id}
-        for shown in self._order:
-            self._paint_selection(shown)
+    def _on_grid_select(self, _keys: list) -> None:
         self._sync_selection()
-
-    def _paint_selection(self, bonfire_id: int) -> None:
-        button = self._buttons.get(bonfire_id)
-        if button is not None:
-            button.configure(border_width=2 if bonfire_id in self._selected else 0)
 
     def _sync_selection(self) -> None:
         """Select the same bonfires in the panel's tree and update the label
         and buttons from the panel's state."""
         panel = self._panel
         rows = panel._tree.get_children()
+        selected = self._grid.selected
         panel._tree.selection_set(
-            [rows[panel._ids.index(b)] for b in self._selected if b in panel._ids]
+            [rows[panel._ids.index(b)] for b in selected if b in panel._ids]
         )
         panel._on_selection()
 
-        if not self._selected:
+        if not selected:
             self._sel_lbl.configure(
                 text="No bonfire selected", text_color=("gray50", "gray60")
             )
         else:
-            names = [BONFIRES[b] for b in self._order if b in self._selected]
+            names = [BONFIRES[b] for b in selected]
             text = names[0] if len(names) == 1 else f"{len(names)} bonfires"
-            self._sel_lbl.configure(
-                text=f"Selected: {text}", text_color=_SELECTED_BORDER
-            )
+            self._sel_lbl.configure(text=f"Selected: {text}", text_color=_SELECTED_TEXT)
         self._sync_buttons()
 
     def _sync_buttons(self) -> None:

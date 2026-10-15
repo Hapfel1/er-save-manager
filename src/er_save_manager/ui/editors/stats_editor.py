@@ -230,7 +230,7 @@ class StatsEditor:
 
         ctk.CTkLabel(
             resources_frame,
-            text="Max Health/FP/Stamina",
+            text="Max health/FP/stamina",
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
 
@@ -267,7 +267,7 @@ class StatsEditor:
 
         ctk.CTkLabel(
             other_frame,
-            text="Level & Runes",
+            text="Level & runes",
             font=("Segoe UI", 12, "bold"),
             text_color=("black", "white"),
         ).grid(row=0, column=0, columnspan=5, sticky=ctk.W, padx=5, pady=(5, 0))
@@ -290,7 +290,7 @@ class StatsEditor:
         ).grid(row=content_row, column=1, padx=5, pady=5)
 
         ctk.CTkLabel(
-            other_frame, text="Calculated Level:", text_color=("black", "white")
+            other_frame, text="Calculated level:", text_color=("black", "white")
         ).grid(row=content_row, column=2, sticky=ctk.W, padx=(20, 5), pady=5)
 
         self.calculated_level_var = ctk.IntVar(value=0)
@@ -449,7 +449,7 @@ class StatsEditor:
 
         ctk.CTkLabel(
             grace_frame,
-            text="Last Rested Grace",
+            text="Last rested grace",
             font=("Segoe UI", 12, "bold"),
             text_color=("black", "white"),
         ).grid(row=0, column=0, columnspan=2, sticky=ctk.W, padx=5, pady=(5, 0))
@@ -489,7 +489,7 @@ class StatsEditor:
 
         ctk.CTkLabel(
             mm_frame,
-            text="Matchmaking Weapon Level",
+            text="Matchmaking weapon level",
             font=("Segoe UI", 12, "bold"),
             text_color=("black", "white"),
         ).grid(row=0, column=0, columnspan=3, sticky=ctk.W, padx=5, pady=(5, 0))
@@ -733,7 +733,7 @@ class StatsEditor:
 
             if current_level != calculated_level:
                 self.level_warning_var.set(
-                    f"⚠ Mismatch! Recommend {calculated_level} (based on {class_name})"
+                    f"⚠ Mismatch. Recommend {calculated_level} (based on {class_name})"
                 )
             else:
                 self.level_warning_var.set("")
@@ -792,7 +792,7 @@ class StatsEditor:
                 "Class Minimum Conflict",
                 f"The following stats are below the minimum for {class_data['name']}:\n\n"
                 f"{violation_text}\n\n"
-                f"Please raise these stats to at least the minimum before applying.",
+                f"Raise these stats to at least the minimum before applying.",
                 parent=self.parent,
             )
 
@@ -922,7 +922,7 @@ class StatsEditor:
         if not save_file:
             CTkMessageBox.showwarning(
                 "No Save",
-                "Please load a save file first!",
+                "Load a save file first.",
                 parent=self.parent,
             )
             return
@@ -960,7 +960,7 @@ class StatsEditor:
         self.level_var.set(str(calculated_level))
 
         response = CTkMessageBox.askyesno(
-            "Confirm",
+            "Apply Stats",
             f"Apply stat changes to Slot {slot_idx + 1}?\n\nA backup will be created.",
             parent=self.parent,
         )
@@ -1157,26 +1157,26 @@ class StatsEditor:
                     self._refresh_bloodstain(slot)
 
                     CTkMessageBox.showinfo(
-                        "Success",
-                        "Stats updated successfully!\n\nBackup saved to backup manager.",
+                        "Stats Updated",
+                        "Stats updated successfully.\n\nBackup saved to backup manager.",
                         parent=self.parent,
                     )
                 else:
                     CTkMessageBox.showwarning(
-                        "Error",
+                        "Offset Not Tracked",
                         "Offset not tracked - cannot save changes.",
                         parent=self.parent,
                     )
             else:
                 CTkMessageBox.showwarning(
-                    "Error",
+                    "Character Unavailable",
                     "Character has no game data",
                     parent=self.parent,
                 )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error",
+                "Apply Failed",
                 f"Failed to apply stat changes:\n{e}",
                 parent=self.parent,
             )

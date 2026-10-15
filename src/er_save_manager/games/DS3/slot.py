@@ -853,6 +853,41 @@ class DS3Slot:
                 return entry
         return None
 
+    def bad_storage_indices(self) -> int:
+        """
+        Number of storage box index problems the game hides items over:
+        stored entries with an index position below 0x80 and a last-index
+        field below 0x80 + the highest used position. Older storage box
+        spawns wrote both.
+        """
+        if self.inventory_error:
+            return 0
+        base = self._get_layout().storage
+        real = [e for e in self._iter_list(base, _COMMON_CAP, False) if e.handle]
+        if not real:
+            return 0
+        bad = sum(1 for e in real if e.index & _INDEX_POS_MASK < _COMMON_INDEX_BASE)
+        last = _read_u32(self._data, self._last_index_off(base))
+        return bad + (last < _COMMON_INDEX_BASE + real[-1].position)
+
+    def fix_storage_indices(self) -> int:
+        """Give stored entries with an index position below 0x80 the position
+        0x80 + their slot, raise the last-index field to 0x80 + the highest
+        used position. Returns the number of problems fixed."""
+        fixed = self.bad_storage_indices()
+        if not fixed:
+            return 0
+        base = self._get_layout().storage
+        real = [e for e in self._iter_list(base, _COMMON_CAP, False) if e.handle]
+        for e in real:
+            if e.index & _INDEX_POS_MASK < _COMMON_INDEX_BASE:
+                index = self._index(e.index >> 12, _COMMON_INDEX_BASE + e.position)
+                _write_u32(self._data, e.offset + 12, index)
+        last_off = self._last_index_off(base)
+        top = _COMMON_INDEX_BASE + real[-1].position
+        _write_u32(self._data, last_off, max(_read_u32(self._data, last_off), top))
+        return fixed
+
     def in_storage(self, entry: DS3InventoryEntry) -> bool:
         storage = self._get_layout().storage
         return storage < entry.offset < storage + _COMMON_BYTES
@@ -915,7 +950,8 @@ class DS3Slot:
         Add an item the way the game stores a pickup.
 
         Stackable items (goods and ammo) merge into an existing stack of the
-        same id, capped at max_quantity. Weapons and armor get a new gaitem
+        same id, capped at max_quantity; a stack already above the cap keeps
+        its quantity. Weapons and armor get a new gaitem
         entry. Key items go to the key list and cannot be stored.
         Raises ValueError when the item cannot be placed.
         """
@@ -939,7 +975,9 @@ class DS3Slot:
         stack, position = self._scan_list(list_off, cap, item_id if stackable else None)
         if stack is not None:
             entry = self._iter_entry(list_off, stack, is_key)
-            entry.quantity = min(entry.quantity + quantity, max_quantity)
+            entry.quantity = max(
+                entry.quantity, min(entry.quantity + quantity, max_quantity)
+            )
             _write_u32(self._data, entry.offset + 8, entry.quantity)
             return entry
         if position is None:
@@ -961,16 +999,12 @@ class DS3Slot:
         if is_key:
             pos_index = position
         else:
+            # The storage box uses the held rule: 0x80 + position, and the
+            # last-index field is 0x80 + the highest used position.
             last_off = self._last_index_off(list_off)
             last = _read_u32(self._data, last_off)
-            if to_storage:
-                # Stored items keep the index they had when held; new ones
-                # continue the storage box's own counter.
-                pos_index = (last + 1) & _INDEX_POS_MASK
-                _write_u32(self._data, last_off, pos_index)
-            else:
-                pos_index = _COMMON_INDEX_BASE + position
-                _write_u32(self._data, last_off, max(last, pos_index))
+            pos_index = _COMMON_INDEX_BASE + position
+            _write_u32(self._data, last_off, max(last, pos_index))
 
         offset = list_off + 4 + position * _ENTRY_SIZE
         index = self._index(sort_key, pos_index)
@@ -1032,7 +1066,9 @@ class DS3Slot:
         entry. Stored items keep the index they had when held, as the game
         does; items taken out get the held index for their new position.
         With max_quantity > 1 the stack merges into an existing stack of the
-        same item at the destination, capped at max_quantity.
+        same item at the destination, capped at max_quantity. Without such a
+        stack, a stack above max_quantity is refused (the remainder would need
+        a second entry).
         """
         self._require_inventory()
         if entry.is_key:
@@ -1063,16 +1099,22 @@ class DS3Slot:
                 _write_u32(self._data, entry.offset + 8, entry.quantity - moved)
                 return self.entry_at(target.offset)
         else:
+            if max_quantity > 1 and entry.quantity > max_quantity:
+                raise ValueError(
+                    f"the destination holds at most {max_quantity}; "
+                    "lower the quantity first"
+                )
             free = next((e for e in entries if e.handle == 0), None)
             if free is None:
                 raise ValueError("No free slot at the destination")
             last_off = self._last_index_off(dest)
             last = _read_u32(self._data, last_off)
+            # Stored items keep the index they had when held; the storage
+            # last-index field still tracks 0x80 + the highest position.
+            pos_index = _COMMON_INDEX_BASE + free.position
             if to_storage:
                 index = entry.index
-                pos_index = entry.index & _INDEX_POS_MASK
             else:
-                pos_index = _COMMON_INDEX_BASE + free.position
                 index = (entry.index & ~_INDEX_POS_MASK & 0xFFFFFFFF) | pos_index
             _write_u32(self._data, last_off, max(last, pos_index))
             struct.pack_into(

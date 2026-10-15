@@ -131,7 +131,7 @@ class GesturesRegionsTab:
         slot_frame = ctk.CTkFrame(main_frame, corner_radius=10)
         slot_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
-        ctk.CTkLabel(slot_frame, text="Character Slot:", font=("Segoe UI", 11)).pack(
+        ctk.CTkLabel(slot_frame, text="Character slot:", font=("Segoe UI", 11)).pack(
             side=tk.LEFT, padx=(12, 8), pady=12
         )
 
@@ -204,7 +204,7 @@ class GesturesRegionsTab:
         wheel_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
         ctk.CTkLabel(
             wheel_frame,
-            text="Gesture Wheel",
+            text="Gesture wheel",
             font=("Segoe UI", 12, "bold"),
         ).pack(pady=(12, 2), padx=12, anchor="w")
         ctk.CTkLabel(
@@ -249,7 +249,7 @@ class GesturesRegionsTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
@@ -257,13 +257,13 @@ class GesturesRegionsTab:
             slot_idx = int(self.gesture_slot_var.get()) - 1
         except (ValueError, AttributeError):
             CTkMessageBox.showwarning(
-                "Invalid Slot", "Please select a valid slot!", parent=self.parent
+                "Invalid Slot", "Select a valid slot.", parent=self.parent
             )
             return
 
         if slot_idx < 0 or slot_idx >= 10:
             CTkMessageBox.showwarning(
-                "Invalid Slot", "Slot must be between 1 and 10!", parent=self.parent
+                "Invalid Slot", "Slot must be between 1 and 10.", parent=self.parent
             )
             return
 
@@ -271,7 +271,7 @@ class GesturesRegionsTab:
 
         if slot.is_empty() or slot_idx not in save_file.get_active_slots():
             CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {slot_idx + 1} is empty!", parent=self.parent
+                "Empty Slot", f"Slot {slot_idx + 1} is empty.", parent=self.parent
             )
             return
 
@@ -322,13 +322,13 @@ class GesturesRegionsTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
         if self.current_slot is None:
             CTkMessageBox.showwarning(
-                "No Slot", "Please load a character slot first!", parent=self.parent
+                "No Slot", "Load a character slot first.", parent=self.parent
             )
             return
 
@@ -337,7 +337,7 @@ class GesturesRegionsTab:
 
         if slot.is_empty():
             CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {slot_idx + 1} is empty!", parent=self.parent
+                "Empty Slot", f"Slot {slot_idx + 1} is empty.", parent=self.parent
             )
             return
 
@@ -380,7 +380,7 @@ class GesturesRegionsTab:
 
             if len(new_gesture_ids) != 64:
                 CTkMessageBox.showerror(
-                    "Error",
+                    "Invalid Gestures",
                     f"Invalid gesture count: {len(new_gesture_ids)} (expected 64)",
                     parent=self.parent,
                 )
@@ -390,7 +390,7 @@ class GesturesRegionsTab:
 
             if not hasattr(slot, "gestures_offset") or slot.gestures_offset < 0:
                 CTkMessageBox.showerror(
-                    "Error",
+                    "Offset Not Tracked",
                     "Gesture offset not tracked. Cannot write changes.",
                     parent=self.parent,
                 )
@@ -404,7 +404,7 @@ class GesturesRegionsTab:
 
             if len(gesture_data) != 256:
                 CTkMessageBox.showerror(
-                    "Error",
+                    "Invalid Gestures",
                     f"Invalid gesture data size: {len(gesture_data)} bytes (expected 256)",
                     parent=self.parent,
                 )
@@ -433,7 +433,9 @@ class GesturesRegionsTab:
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to apply changes:\n{str(e)}", parent=self.parent
+                "Apply Failed",
+                f"Failed to apply changes:\n{str(e)}",
+                parent=self.parent,
             )
 
     def _load_wheel(self, slot) -> None:
@@ -460,7 +462,7 @@ class GesturesRegionsTab:
         save_file = self.get_save_file()
         if not save_file or self.current_slot is None:
             CTkMessageBox.showwarning(
-                "No Slot", "Please load a character slot first!", parent=self.parent
+                "No Slot", "Load a character slot first.", parent=self.parent
             )
             return
         slot = save_file.characters[self.current_slot]
@@ -513,7 +515,7 @@ class GesturesRegionsTab:
             self.load_gestures()
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to apply wheel:\n{e}", parent=self.parent
+                "Apply Failed", f"Failed to apply wheel:\n{e}", parent=self.parent
             )
 
     def select_all_gestures(self, select_type: str):
@@ -525,7 +527,7 @@ class GesturesRegionsTab:
         """
         if self.current_slot is None:
             CTkMessageBox.showwarning(
-                "No Slot", "Please load a character slot first!", parent=self.parent
+                "No Slot", "Load a character slot first.", parent=self.parent
             )
             return
 
@@ -544,7 +546,7 @@ class GesturesRegionsTab:
         """Deselect all gestures"""
         if self.current_slot is None:
             CTkMessageBox.showwarning(
-                "No Slot", "Please load a character slot first!", parent=self.parent
+                "No Slot", "Load a character slot first.", parent=self.parent
             )
             return
 
@@ -558,13 +560,13 @@ class GesturesRegionsTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
         if self.current_slot is None:
             CTkMessageBox.showwarning(
-                "No Slot", "Please load a character slot first!", parent=self.parent
+                "No Slot", "Load a character slot first.", parent=self.parent
             )
             return
 
@@ -572,7 +574,7 @@ class GesturesRegionsTab:
         if slot.is_empty():
             CTkMessageBox.showwarning(
                 "Empty Slot",
-                f"Slot {self.current_slot + 1} is empty!",
+                f"Slot {self.current_slot + 1} is empty.",
                 parent=self.parent,
             )
             return

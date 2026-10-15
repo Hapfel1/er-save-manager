@@ -247,7 +247,7 @@ class NREditorTab:
         f = ctk.CTkFrame(parent, corner_radius=10, fg_color=("gray86", "gray22"))
         f.pack(fill="both", expand=True, padx=10, pady=10)
 
-        ctk.CTkLabel(f, text="Character Overview", font=("Segoe UI", 14, "bold")).pack(
+        ctk.CTkLabel(f, text="Character overview", font=("Segoe UI", 14, "bold")).pack(
             anchor="w", padx=14, pady=(12, 6)
         )
         grid = ctk.CTkFrame(f, fg_color="transparent")
@@ -491,7 +491,7 @@ class NREditorTab:
         spawn_title = ctk.CTkFrame(spawn_outer, fg_color="transparent")
         spawn_title.pack(fill="x", padx=8, pady=(6, 2))
         ctk.CTkLabel(
-            spawn_title, text="Spawn Relic", font=("Segoe UI", 12, "bold")
+            spawn_title, text="Spawn relic", font=("Segoe UI", 12, "bold")
         ).pack(side="left")
         ctk.CTkButton(
             spawn_title, text="Spawn", command=self._spawn_relic, width=80

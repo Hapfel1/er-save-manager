@@ -8,7 +8,8 @@ Checked per game:
   all       entry checksums (the game rejects a save with a bad one)
   DS3, DSR  load screen directory name and level match the character slot
   DSR       event flag 0 is off
-  DS3       slot layout resolves (inventory, gestures, NG+ offsets)
+  DS3       slot layout resolves (inventory, gestures, NG+ offsets);
+            storage box indices (items the game hides)
   DS2       load screen caches (entries 0 and 22) match name, level, class
   NR        no bytes past the last BND4 entry (left by old relic spawns)
 """
@@ -83,6 +84,15 @@ def _check_ds3(path: Path) -> list[Issue]:
         if char is not None and char.layout_error:
             issues.append(Issue(char.layout_error, False, i))
     issues += [Issue(text, True, i) for i, text in _ds3_dir_mismatches(save)]
+    for i, char in enumerate(save.characters):
+        if char is not None and not char.layout_error and char.bad_storage_indices():
+            issues.append(
+                Issue(
+                    "Storage box items with invalid indices (hidden in game)",
+                    True,
+                    i,
+                )
+            )
     return issues
 
 
@@ -94,6 +104,9 @@ def _repair_ds3(path: Path) -> None:
     for i, _ in _ds3_dir_mismatches(save):
         char = save.characters[i]
         _sync_dir_name_level(save, i, char.name, char.level)
+    for char in save.characters:
+        if char is not None and not char.layout_error:
+            char.fix_storage_indices()
     save.save_to_file(path)
 
 

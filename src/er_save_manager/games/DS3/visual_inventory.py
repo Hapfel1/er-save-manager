@@ -246,8 +246,8 @@ class DS3VisualInventory(ctk.CTkToplevel):
             self._show_infusion_icon(self._infusion_var.get())
         lim = opts["limits"]
         info = []
-        if lim is not None and lim.max_quantity > 1:
-            info.append(f"Max stack: {lim.max_quantity}")
+        if opts["quantity"]:
+            info.append(f"Max stack: {opts['cap']}")
         if lim is not None and lim.max_upgrade:
             info.append(f"Max upgrade: +{lim.max_upgrade}")
         if row[4] == WHERE_KEY:

@@ -55,7 +55,7 @@ class AdvancedToolsTab:
 
         ctk.CTkLabel(
             info_frame,
-            text="Save Information",
+            text="Save information",
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
@@ -165,7 +165,7 @@ class AdvancedToolsTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
@@ -241,7 +241,7 @@ class AdvancedToolsTab:
             if not issues:
                 CTkMessageBox.showinfo(
                     "Validation Complete",
-                    "Save file validation passed!\n\nNo critical issues detected.",
+                    "Save file validation passed.\n\nNo critical issues detected.",
                     parent=self.parent,
                 )
             else:
@@ -262,7 +262,7 @@ class AdvancedToolsTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
@@ -294,7 +294,7 @@ class AdvancedToolsTab:
                 self.show_toast("Checksums recalculated successfully", duration=2500)
             else:
                 CTkMessageBox.showerror(
-                    "Error", "Save path not available", parent=self.parent
+                    "No Save File", "Save path not available", parent=self.parent
                 )
 
         except Exception as e:
