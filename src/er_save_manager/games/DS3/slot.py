@@ -83,7 +83,8 @@ significant bit. Block 0 holds global flags 0-9999; map flags
 The section at directory pair 0x40 starts with [u32 0][u32 size] and a CHR
 block of that size: [b" RHC"][u32 version], then one record per map the
 character has state for, ended by u32 0xFFFFFFFF:
-  [u32 map key][u32 unknown][u32 bit count][bits, (count + 7) // 8 bytes]
+  [u32 map key][u32 record size][u32 bit count][bits, (count + 7) // 8 bytes]
+Record size counts the 12 header bytes and the bitfield.
 The map key of mAA_BB is AA << 24 | BB << 16. Each bit is one enemy part of
 that map's MSB in part order (bit k = byte k // 8, mask 1 << k % 8) and is
 set while that character is dead. An NPC whose bit is set is spawned dead
@@ -154,43 +155,15 @@ _SOULS_REL = 0x64
 _NAME_REL = 0x78
 _NAME_LEN = 32  # bytes, 16 UTF-16 code units; a u16 terminator follows
 NAME_MAX_CHARS = _NAME_LEN // 2
-# u8 starting class, index into CharaInitParam rows 3000-3009.
+# u8 starting class, CharaInitParam row 3000 + class (3000-3009 vanilla,
+# more rows in Convergence and Cinders).
 _CLASS_REL = 0x9E
 _EQUIP_SLOTS_REL = 0x1F0
 _EQUIP_SLOT_COUNT = 22
 _INVENTORY_REL = 0x318
 
-# Level equals the attribute sum minus this for every starting class.
-LEVEL_STAT_OFFSET = 89
-
 MAX_STAT = 99
 MAX_SOULS = 999_999_999
-
-# Starting classes by save index, base attributes from CharaInitParam.
-STARTING_CLASSES: tuple[tuple[str, dict[str, int]], ...] = tuple(
-    (
-        name,
-        dict(
-            zip(
-                ("vig", "atn", "end", "vit", "str", "dex", "int", "fth", "lck"),
-                stats,
-                strict=True,
-            )
-        ),
-    )
-    for name, stats in (
-        ("Knight", (12, 10, 11, 15, 13, 12, 9, 9, 7)),
-        ("Mercenary", (11, 12, 11, 10, 10, 16, 10, 8, 9)),
-        ("Warrior", (14, 6, 12, 11, 16, 9, 8, 9, 11)),
-        ("Herald", (12, 10, 9, 12, 12, 11, 8, 13, 11)),
-        ("Thief", (10, 11, 10, 9, 9, 13, 10, 8, 14)),
-        ("Assassin", (10, 14, 11, 10, 10, 14, 11, 9, 10)),
-        ("Sorcerer", (9, 16, 9, 7, 7, 12, 16, 7, 12)),
-        ("Pyromancer", (11, 12, 10, 8, 12, 9, 14, 14, 7)),
-        ("Cleric", (10, 14, 9, 7, 12, 8, 7, 16, 13)),
-        ("Deprived", (10, 10, 10, 10, 10, 10, 10, 10, 10)),
-    )
-)
 
 # --- Inventory --------------------------------------------------------------- #
 
