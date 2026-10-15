@@ -697,17 +697,19 @@ class DS3InventoryTab:
         item = catalog.lookup(item_id, self.source)
         lim = catalog.limits(item) if item else None
         is_weapon = id_kind(item_id) == ID_WEAPON
+        in_storage = row[4] == WHERE_STORAGE
         return {
             "item": item,
             "limits": lim,
-            "quantity": lim is not None and lim.max_quantity > 1,
+            "cap": catalog.stack_cap(lim, in_storage) if lim else 1,
+            "quantity": lim is not None and catalog.stack_cap(lim, in_storage) > 1,
             "upgrade": is_weapon and lim is not None and lim.max_upgrade > 0,
             "level": item_id % catalog.INFUSION_STEP if is_weapon else 0,
             "variants": catalog.infusion_variants(item, self.source)
             if item and "Infusion" in item
             else [],
             "movable": row[4] != WHERE_KEY,
-            "in_storage": row[4] == WHERE_STORAGE,
+            "in_storage": in_storage,
         }
 
     def applicable_edits(self, offsets: list[int]) -> dict[str, bool]:
@@ -778,8 +780,8 @@ class DS3InventoryTab:
         self._edit_upg_var.set(str(opts["level"]))
         lim = opts["limits"]
         info = [row[1]]
-        if lim is not None and lim.max_quantity > 1:
-            info.append(f"max {lim.max_quantity}")
+        if opts["quantity"]:
+            info.append(f"max {opts['cap']}")
         if lim is not None and lim.max_upgrade:
             info.append(f"max +{lim.max_upgrade}")
         self._edit_info.configure(text=", ".join(info))
@@ -859,7 +861,7 @@ class DS3InventoryTab:
             if not opts or not opts["quantity"]:
                 skipped.append(f"{row[1] if row else offset} (not stackable)")
                 continue
-            value = max(1, min(quantity, opts["limits"].max_quantity))
+            value = max(1, min(quantity, opts["cap"]))
             capped += value != quantity
             if value != row[3]:
                 char.set_quantity(char.entry_at(offset), value)
@@ -963,7 +965,8 @@ class DS3InventoryTab:
             lim = opts["limits"]
             try:
                 entry = char.move_item(
-                    char.entry_at(offset), lim.max_quantity if lim else 0
+                    char.entry_at(offset),
+                    catalog.stack_cap(lim, to_storage) if lim else 0,
                 )
             except (ValueError, LayoutError) as exc:
                 skipped.append(f"{row[1]} ({exc})")
@@ -1144,7 +1147,10 @@ class DS3InventoryTab:
         lim = catalog.limits(item) if item is not None else None
         single = len(self._spawn_tree.selection()) == 1 and lim is not None
         is_weapon = single and id_kind(int(item["Id"], 16)) == ID_WEAPON
-        enable(self._spawn_qty_entry, not single or lim.max_quantity > 1)
+        enable(
+            self._spawn_qty_entry,
+            not single or max(lim.max_quantity, lim.max_storage) > 1,
+        )
         enable(self._spawn_upg_entry, not single or (is_weapon and lim.max_upgrade > 0))
         enable(self._spawn_inf_combo, single and bool(self._spawn_variants))
 
@@ -1158,7 +1164,7 @@ class DS3InventoryTab:
         if lim is None:
             self._spawn_info.configure(text="")
             return
-        parts = [f"Max stack: {lim.max_quantity}"]
+        parts = [catalog.stack_text(lim)]
         if lim.max_upgrade:
             parts.append(f"Max upgrade: +{lim.max_upgrade}")
         if lim.key_item:
@@ -1297,8 +1303,9 @@ class DS3InventoryTab:
                 capped += level != upgrade
                 item_id += level
                 sort_key += level
-            qty = max(1, min(quantity, lim.max_quantity))
-            capped += lim.max_quantity > 1 and qty != quantity
+            cap = catalog.stack_cap(lim, to_storage and not lim.key_item)
+            qty = max(1, min(quantity, cap))
+            capped += cap > 1 and qty != quantity
             wears = id_kind(item_id) in (ID_WEAPON, ID_ARMOR)
             try:
                 char.add_item(
@@ -1307,7 +1314,7 @@ class DS3InventoryTab:
                     sort_key=sort_key,
                     durability=lim.durability if wears else 0,
                     key_item=lim.key_item,
-                    max_quantity=lim.max_quantity,
+                    max_quantity=cap,
                     to_storage=to_storage and not lim.key_item,
                 )
             except (ValueError, LayoutError) as exc:

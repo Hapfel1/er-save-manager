@@ -915,7 +915,8 @@ class DS3Slot:
         Add an item the way the game stores a pickup.
 
         Stackable items (goods and ammo) merge into an existing stack of the
-        same id, capped at max_quantity. Weapons and armor get a new gaitem
+        same id, capped at max_quantity; a stack already above the cap keeps
+        its quantity. Weapons and armor get a new gaitem
         entry. Key items go to the key list and cannot be stored.
         Raises ValueError when the item cannot be placed.
         """
@@ -939,7 +940,9 @@ class DS3Slot:
         stack, position = self._scan_list(list_off, cap, item_id if stackable else None)
         if stack is not None:
             entry = self._iter_entry(list_off, stack, is_key)
-            entry.quantity = min(entry.quantity + quantity, max_quantity)
+            entry.quantity = max(
+                entry.quantity, min(entry.quantity + quantity, max_quantity)
+            )
             _write_u32(self._data, entry.offset + 8, entry.quantity)
             return entry
         if position is None:
@@ -1032,7 +1035,9 @@ class DS3Slot:
         entry. Stored items keep the index they had when held, as the game
         does; items taken out get the held index for their new position.
         With max_quantity > 1 the stack merges into an existing stack of the
-        same item at the destination, capped at max_quantity.
+        same item at the destination, capped at max_quantity. Without such a
+        stack, a stack above max_quantity is refused (the remainder would need
+        a second entry).
         """
         self._require_inventory()
         if entry.is_key:
@@ -1063,6 +1068,11 @@ class DS3Slot:
                 _write_u32(self._data, entry.offset + 8, entry.quantity - moved)
                 return self.entry_at(target.offset)
         else:
+            if max_quantity > 1 and entry.quantity > max_quantity:
+                raise ValueError(
+                    f"the destination holds at most {max_quantity}; "
+                    "lower the quantity first"
+                )
             free = next((e for e in entries if e.handle == 0), None)
             if free is None:
                 raise ValueError("No free slot at the destination")
