@@ -711,8 +711,8 @@ def game_blocks_write(parent, process_name: str, game_name: str) -> bool:
         return False
 
     CTkMessageBox.showerror(
-        "Game is running",
-        f"Please close {game_name} before modifying save files.",
+        "Game Is Running",
+        f"Close {game_name} before modifying save files.",
         parent=parent,
     )
     return True

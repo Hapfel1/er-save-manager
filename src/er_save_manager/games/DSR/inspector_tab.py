@@ -130,7 +130,7 @@ class DSRInspectorTab:
     def _view_issues(self) -> None:
         if self.selected_slot is None:
             CTkMessageBox.showwarning(
-                "No Selection", "Please select a character first!", parent=self.parent
+                "No Selection", "Select a character first.", parent=self.parent
             )
             return
         self._check_save(self.selected_slot)
@@ -138,7 +138,7 @@ class DSRInspectorTab:
     def _edit_selected(self) -> None:
         if self.selected_slot is None:
             CTkMessageBox.showwarning(
-                "No Selection", "Please select a character first.", parent=self.parent
+                "No Selection", "Select a character first.", parent=self.parent
             )
             return
         if self._on_slot_selected:

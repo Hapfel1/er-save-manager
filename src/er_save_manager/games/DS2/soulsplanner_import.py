@@ -40,11 +40,10 @@ from er_save_manager.games.DS2.soulsplanner import (
     stat_problems,
     without_owned,
 )
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.scrollable_frame import ScrollableFrame
-from er_save_manager.ui.utils import center_window, force_render_dialog
 
-_HINT_COLOR = ("gray40", "gray70")
 _TITLE = "Import Soulsplanner Build"
 _POLL_MS = 100
 _ICON_SIZE = 36
@@ -55,14 +54,27 @@ _ITEMS = "items"
 _BOTH = "both"
 
 
-def _modal(parent, title: str, width: int, height: int) -> ctk.CTkToplevel:
-    dialog = ctk.CTkToplevel(parent)
-    dialog.title(title)
-    center_window(dialog, width, height, parent=parent)
-    force_render_dialog(dialog)
-    dialog.transient(parent.winfo_toplevel())
-    dialog.grab_set()
-    return dialog
+def _modal(parent, title: str):
+    """Hidden dialog with a padded main frame; the caller
+    fills it and calls ds.finish()."""
+    dialog = ds.create(parent.winfo_toplevel(), title)
+    main = ctk.CTkFrame(dialog, fg_color="transparent")
+    main.pack(fill="both", expand=True, padx=20, pady=16)
+    return dialog, main
+
+
+def _heading(main, heading: str, subtitle: str = "") -> None:
+    ds.header(main, heading, font=ds.TITLE_LARGE)
+    if subtitle:
+        ctk.CTkLabel(
+            main,
+            text=subtitle,
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+            anchor="w",
+            justify="left",
+            wraplength=500,
+        ).pack(fill="x", pady=(2, 0))
 
 
 def _item_icon(item: PlannerItem) -> ctk.CTkImage | None:
@@ -86,7 +98,7 @@ def _icon_row(master, item: PlannerItem, text: str, images: list) -> ctk.CTkFram
     ctk.CTkLabel(row, text="", image=image, width=_ICON_SIZE, height=_ICON_SIZE).pack(
         side="left"
     )
-    ctk.CTkLabel(row, text=text, wraplength=330, justify="left").pack(
+    ctk.CTkLabel(row, text=text, font=ds.FONT, wraplength=330, justify="left").pack(
         side="left", padx=(8, 0)
     )
     return row
@@ -94,36 +106,38 @@ def _icon_row(master, item: PlannerItem, text: str, images: list) -> ctk.CTkFram
 
 def _ask_build(parent) -> PlannerBuild | None:
     """Ask for a build link and download it. None when cancelled."""
-    dialog = _modal(parent, _TITLE, 520, 190)
+    dialog, main = _modal(parent, _TITLE)
     result: dict[str, PlannerBuild | None] = {"build": None}
 
-    ctk.CTkLabel(
-        dialog, text="Paste a soulsplanner.com Dark Souls II build link:"
-    ).pack(padx=15, pady=(15, 5), anchor="w")
+    _, (fetch_button, _) = ds.button_row(
+        main,
+        [
+            {"text": "Fetch Build", "command": None, "width": 120},
+            {"text": "Cancel", "command": dialog.destroy, "primary": False},
+        ],
+    )
+    _heading(main, _TITLE, "Paste a soulsplanner.com Dark Souls II build link.")
     link_var = tk.StringVar()
     entry = ctk.CTkEntry(
-        dialog,
+        main,
         textvariable=link_var,
         placeholder_text="https://soulsplanner.com/darksouls2/12345",
+        width=440,
+        height=32,
+        font=ds.FONT,
     )
-    entry.pack(fill="x", padx=15)
-    status = ctk.CTkLabel(dialog, text="", text_color=_HINT_COLOR, wraplength=480)
-    status.pack(padx=15, pady=5, anchor="w")
-
-    buttons = ctk.CTkFrame(dialog, fg_color="transparent")
-    buttons.pack(fill="x", padx=15, pady=(0, 15))
-    ctk.CTkButton(buttons, text="Cancel", width=100, command=dialog.destroy).pack(
-        side="right"
+    entry.pack(fill="x", pady=(12, 0))
+    status = ctk.CTkLabel(
+        main, text="", font=ds.SMALL, text_color=ds.MUTED, wraplength=440, anchor="w"
     )
-    fetch_button = ctk.CTkButton(buttons, text="Fetch Build", width=120)
-    fetch_button.pack(side="right", padx=(0, 8))
+    status.pack(fill="x", pady=(6, 0))
 
     def fetch() -> None:
         link = link_var.get()
         if not link.strip():
             return
         fetch_button.configure(state="disabled")
-        status.configure(text="Fetching build...", text_color=_HINT_COLOR)
+        status.configure(text="Fetching build...", text_color=ds.MUTED)
         outcome: dict[str, object] = {}
 
         def work() -> None:
@@ -142,7 +156,7 @@ def _ask_build(parent) -> PlannerBuild | None:
                 dialog.after(_POLL_MS, poll)
                 return
             if "error" in outcome:
-                status.configure(text=outcome["error"], text_color="orange")
+                status.configure(text=outcome["error"], text_color=ds.ERROR)
                 fetch_button.configure(state="normal")
                 return
             result["build"] = outcome["build"]
@@ -153,6 +167,7 @@ def _ask_build(parent) -> PlannerBuild | None:
     fetch_button.configure(command=fetch)
     dialog.bind("<Return>", lambda _e: fetch())
     dialog.bind("<Escape>", lambda _e: dialog.destroy())
+    ds.finish(dialog, parent.winfo_toplevel())
     entry.focus_set()
     dialog.wait_window()
     return result["build"]
@@ -165,7 +180,8 @@ def _ask_mode(
     loadout afterwards and, when the build is for another class, whether to
     switch the character to it. Returns (mode, equip, class id to switch to
     or None), or None when cancelled."""
-    dialog = _modal(parent, _TITLE, 560, 600)
+    dialog, main = _modal(parent, _TITLE)
+    dialog.resizable(True, True)
     result: dict[str, str | None] = {"mode": None}
     equip_var = tk.BooleanVar(value=has_loadout(build))
 
@@ -188,56 +204,47 @@ def _ask_mode(
     def problems() -> list[str]:
         return new_problems if class_var.get() else current_problems
 
-    buttons = ctk.CTkFrame(dialog, fg_color="transparent")
-    buttons.pack(side="bottom", fill="x", padx=15, pady=15)
+    items_state = "normal" if build.items else "disabled"
+    _, (both_button, stats_button, _, _) = ds.button_row(
+        main,
+        [
+            {"text": "Stats and Items", "command": lambda: choose(_BOTH), "width": 130},
+            {"text": "Stats Only", "command": lambda: choose(_STATS), "width": 110},
+            {
+                "text": "Items Only",
+                "command": lambda: choose(_ITEMS),
+                "width": 110,
+                "state": items_state,
+            },
+            {"text": "Cancel", "command": dialog.destroy, "primary": False},
+        ],
+    )
     equip_box = ctk.CTkCheckBox(
-        dialog,
+        main,
         text="Equip the build's loadout after adding the items",
+        font=ds.FONT,
         variable=equip_var,
         state="normal" if has_loadout(build) else "disabled",
     )
-    equip_box.pack(side="bottom", anchor="w", padx=20)
+    equip_box.pack(side="bottom", anchor="w", pady=(10, 0))
     if new_class is not None:
         ctk.CTkCheckBox(
-            dialog,
+            main,
             text=(
                 f"Change the starting class to {STARTING_CLASSES[new_class]} "
                 "when importing stats"
             ),
+            font=ds.FONT,
             variable=class_var,
             command=lambda: update_problems(),
-        ).pack(side="bottom", anchor="w", padx=20, pady=(0, 6))
-    ctk.CTkButton(buttons, text="Cancel", width=90, command=dialog.destroy).pack(
-        side="right"
-    )
-    items_state = "normal" if build.items else "disabled"
-    ctk.CTkButton(
-        buttons,
-        text="Items Only",
-        width=110,
-        state=items_state,
-        command=lambda: choose(_ITEMS),
-    ).pack(side="right", padx=(0, 8))
-    stats_button = ctk.CTkButton(
-        buttons,
-        text="Stats Only",
-        width=110,
-        command=lambda: choose(_STATS),
-    )
-    stats_button.pack(side="right", padx=(0, 8))
-    both_button = ctk.CTkButton(
-        buttons,
-        text="Stats and Items",
-        width=130,
-        command=lambda: choose(_BOTH),
-    )
-    both_button.pack(side="right", padx=(0, 8))
+        ).pack(side="bottom", anchor="w", pady=(10, 0))
 
-    body = ScrollableFrame(dialog, fg_color="transparent")
-    body.pack(fill="both", expand=True, padx=10, pady=(10, 0))
+    _heading(main, f"Build {build.build_id} ({build.class_name})")
+    body = ScrollableFrame(main, fg_color="transparent")
+    body.pack(fill="both", expand=True, pady=(8, 0))
 
     def section(title: str) -> None:
-        ctk.CTkLabel(body, text=title, font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(body, text=title, font=ds.BOLD).pack(
             anchor="w", padx=5, pady=(8, 2)
         )
 
@@ -245,13 +252,14 @@ def _ask_mode(
         ctk.CTkLabel(
             body,
             text=text,
+            font=ds.FONT,
             justify="left",
             wraplength=480,
-            text_color=color or _HINT_COLOR,
+            text_color=color or ds.MUTED,
         ).pack(anchor="w", padx=15)
 
     class_name = character.starting_class_name or "unknown class"
-    section(f"Build {build.build_id} ({build.class_name})")
+    section("Attributes")
     stat_lines = [f"Level: {character.get_stat('level')} -> {build.level}"] + [
         f"{name.capitalize()}: {character.get_stat(name)} -> {build.stats[name]}"
         for name in LEVEL_STAT_KEYS
@@ -263,7 +271,12 @@ def _ask_mode(
         "cover the new level if needed."
     )
     problem_label = ctk.CTkLabel(
-        body, text="", justify="left", wraplength=480, text_color="orange"
+        body,
+        text="",
+        font=ds.FONT,
+        justify="left",
+        wraplength=480,
+        text_color=ds.WARNING,
     )
 
     def update_problems() -> None:
@@ -291,10 +304,11 @@ def _ask_mode(
     if build.unknown:
         line(
             "Not importable: " + ", ".join(build.unknown),
-            color="orange",
+            color=ds.WARNING,
         )
 
     dialog.bind("<Escape>", lambda _e: dialog.destroy())
+    ds.finish(dialog, parent.winfo_toplevel(), width=580, height=620)
     dialog.wait_window()
     if result["mode"] is None:
         return None
@@ -335,7 +349,8 @@ def _ask_amounts(parent, character, upgradable, stacking):
     {item_id: amount}), or None when cancelled."""
     if not upgradable and not stacking:
         return {}, {}
-    dialog = _modal(parent, f"{_TITLE} - Upgrades and Amounts", 560, 480)
+    dialog, main = _modal(parent, _TITLE)
+    dialog.resizable(True, True)
     result: dict[str, tuple | None] = {"values": None}
     caps = {
         (item.item_id, item.infusion): character.max_upgrade(
@@ -348,8 +363,8 @@ def _ask_amounts(parent, character, upgradable, stacking):
     amount_vars: dict[int, tk.StringVar] = {}
     amount_entries: dict[int, ctk.CTkEntry] = {}
 
-    buttons = ctk.CTkFrame(dialog, fg_color="transparent")
-    buttons.pack(side="bottom", fill="x", padx=15, pady=15)
+    buttons = ctk.CTkFrame(main, fg_color="transparent")
+    buttons.pack(side="bottom", fill="x", pady=(12, 0))
 
     def set_all(to_max: bool) -> None:
         for key, var in level_vars.items():
@@ -367,7 +382,7 @@ def _ask_amounts(parent, character, upgradable, stacking):
             except ValueError:
                 amount = 0
             valid = 1 <= amount <= stack_caps[item_id]
-            entry.configure(border_color=entry_border if valid else "orange")
+            entry.configure(border_color=entry_border if valid else ds.ERROR)
             if valid:
                 amounts[item_id] = amount
         return amounts if len(amounts) == len(amount_vars) else None
@@ -381,36 +396,35 @@ def _ask_amounts(parent, character, upgradable, stacking):
         result["values"] = (upgrades, amounts)
         dialog.destroy()
 
-    ctk.CTkButton(
-        buttons, text="All Min", width=80, command=lambda: set_all(False)
-    ).pack(side="left")
-    ctk.CTkButton(
-        buttons, text="All Max", width=80, command=lambda: set_all(True)
-    ).pack(side="left", padx=(8, 0))
-    ctk.CTkButton(buttons, text="Cancel", width=90, command=dialog.destroy).pack(
-        side="right"
+    ds.button(buttons, "All Min", lambda: set_all(False), primary=False, width=80).pack(
+        side="left"
     )
-    ctk.CTkButton(buttons, text="Import", width=110, command=confirm).pack(
-        side="right", padx=(0, 8)
+    ds.button(buttons, "All Max", lambda: set_all(True), primary=False, width=80).pack(
+        side="left", padx=(8, 0)
     )
+    ds.button(buttons, "Cancel", dialog.destroy, primary=False).pack(side="right")
+    ds.button(buttons, "Import", confirm, width=110).pack(side="right", padx=(0, 8))
+    status = ctk.CTkLabel(main, text="", font=ds.SMALL, text_color=ds.ERROR, anchor="w")
+    status.pack(side="bottom", fill="x", pady=(6, 0))
 
-    ctk.CTkLabel(
-        dialog,
-        text="Builds do not store upgrade levels or amounts. Pick them per item:",
-    ).pack(anchor="w", padx=15, pady=(15, 5))
+    _heading(
+        main,
+        "Upgrades and Amounts",
+        "Builds do not store upgrade levels or amounts. Pick them per item.",
+    )
     if upgradable and not any(caps.values()):
         ctk.CTkLabel(
-            dialog,
+            main,
             text="Upgrade caps could not be read from this save, items are added at +0.",
-            text_color="orange",
-            wraplength=480,
+            font=ds.FONT,
+            text_color=ds.WARNING,
+            wraplength=500,
             justify="left",
-        ).pack(anchor="w", padx=15)
-    status = ctk.CTkLabel(dialog, text="", text_color="orange")
-    status.pack(side="bottom", anchor="w", padx=15)
+            anchor="w",
+        ).pack(fill="x", pady=(6, 0))
 
-    body = ScrollableFrame(dialog, fg_color="transparent")
-    body.pack(fill="both", expand=True, padx=10)
+    body = ScrollableFrame(main, fg_color="transparent")
+    body.pack(fill="both", expand=True, pady=(8, 0))
     images: list[ctk.CTkImage] = []
     row = 0
     for item in upgradable:
@@ -428,6 +442,7 @@ def _ask_amounts(parent, character, upgradable, stacking):
             variable=var,
             values=[f"+{level}" for level in range(caps[key] + 1)],
             state="readonly",
+            font=ds.FONT,
             width=80,
         ).grid(row=row, column=1, sticky="e", padx=5, pady=3)
         row += 1
@@ -438,7 +453,7 @@ def _ask_amounts(parent, character, upgradable, stacking):
         ).grid(row=row, column=0, sticky="w", padx=5, pady=2)
         var = tk.StringVar(value=str(stack_caps[item.item_id]))
         amount_vars[item.item_id] = var
-        entry = ctk.CTkEntry(body, textvariable=var, width=80)
+        entry = ctk.CTkEntry(body, textvariable=var, font=ds.FONT, width=80)
         entry.grid(row=row, column=1, sticky="e", padx=5, pady=3)
         amount_entries[item.item_id] = entry
         entry_border = entry.cget("border_color")
@@ -447,6 +462,7 @@ def _ask_amounts(parent, character, upgradable, stacking):
 
     dialog.bind("<Return>", lambda _e: confirm())
     dialog.bind("<Escape>", lambda _e: dialog.destroy())
+    ds.finish(dialog, parent.winfo_toplevel(), width=580, height=520)
     dialog.wait_window()
     return result["values"]
 

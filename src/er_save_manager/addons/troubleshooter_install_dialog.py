@@ -8,8 +8,8 @@ import tkinter as tk
 
 import customtkinter as ctk
 
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import center_window, force_render_dialog
 
 
 def show_troubleshooter_dialog(parent, addon_manager):
@@ -35,98 +35,21 @@ def show_troubleshooter_dialog(parent, addon_manager):
         else:
             return
 
-    dialog = ctk.CTkToplevel(parent)
-
-    if is_installed:
-        dialog.title("Troubleshooter Update Available")
-    else:
-        dialog.title("Install Troubleshooter Addon")
-
-    dialog.geometry("550x400")
-    dialog.resizable(False, False)
-    dialog.transient(parent)
-
-    force_render_dialog(dialog)
-    dialog.grab_set()
-
-    center_window(dialog, 550, 400, parent=parent)
-
-    main_frame = ctk.CTkFrame(dialog)
-    main_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=20)
-
-    if is_installed:
-        title_text = "Update Available"
-        subtitle_text = f"Version {latest_version} is available"
-    else:
-        title_text = "FromSoftware Troubleshooter"
-        subtitle_text = "Diagnostic tool addon for common issues"
-
-    ctk.CTkLabel(
-        main_frame,
-        text=title_text,
-        font=("Segoe UI", 16, "bold"),
-    ).pack(pady=(0, 5))
-
-    ctk.CTkLabel(
-        main_frame,
-        text=subtitle_text,
-        font=("Segoe UI", 11),
-        text_color=("gray40", "gray70"),
-    ).pack(pady=(0, 15))
-
-    info_frame = ctk.CTkFrame(main_frame, fg_color=("gray90", "gray20"))
-    info_frame.pack(fill=tk.X, pady=(0, 15))
-
-    if is_installed:
-        ctk.CTkLabel(
-            info_frame,
-            text=f"Current Version: {installed_version}\nLatest Version: {latest_version}",
-            font=("Segoe UI", 11),
-        ).pack(padx=12, pady=10)
-    else:
-        ctk.CTkLabel(
-            info_frame,
-            text=f"Latest Version: {latest_version}",
-            font=("Segoe UI", 11),
-        ).pack(padx=12, pady=10)
-
-    desc_frame = ctk.CTkFrame(main_frame, fg_color=("gray90", "gray20"))
-    desc_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
-
-    desc_text = """The FromSoftware Troubleshooter helps diagnose and fix common issues:
-
-✓ Game installation & folder
-✓ Problematic running processes
-✓ VPN clients
-✓ Steam running as administrator
-
-Source: github.com/Hapfel1/fromsoftware-troubleshooter"""
-
-    ctk.CTkLabel(
-        desc_frame,
-        text=desc_text,
-        font=("Segoe UI", 11),
-        justify=tk.LEFT,
-    ).pack(padx=12, pady=10, anchor="w")
-
-    # Progress label (hidden initially)
-    progress_var = tk.StringVar(value="")
-    progress_label = ctk.CTkLabel(
-        main_frame,
-        textvariable=progress_var,
-        font=("Segoe UI", 11),
-        text_color=("gray40", "gray70"),
+    dialog = ds.create(
+        parent,
+        "Troubleshooter Update Available"
+        if is_installed
+        else "Install Troubleshooter Addon",
     )
-
-    button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-    button_frame.pack(pady=(10, 0))
+    main_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+    main_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=16)
 
     def on_install():
         """Install/update handler"""
         install_btn.configure(state="disabled")
         cancel_btn.configure(state="disabled")
-
-        progress_label.pack(pady=(10, 0))
+        progress_label.configure(text_color=ds.MUTED)
+        progress_label.pack(fill=tk.X, pady=(10, 0))
 
         def install_thread():
             def update_progress(msg):
@@ -151,57 +74,106 @@ Source: github.com/Hapfel1/fromsoftware-troubleshooter"""
 
             if addon_manager.launch(show_error=show_error):
                 CTkMessageBox.showinfo(
-                    "Success",
-                    "Troubleshooter installed and launched successfully!",
+                    "Troubleshooter Installed",
+                    "Troubleshooter installed and launched successfully.",
                     parent=parent,
                 )
         else:
-            progress_var.set("Installation failed!")
+            progress_var.set("Installation failed.")
+            progress_label.configure(text_color=ds.ERROR)
             install_btn.configure(state="normal")
             cancel_btn.configure(state="normal")
 
     def on_launch_skip():
-        """Launch existing installation or cancel"""
-        if is_installed:
-            dialog.destroy()
+        """Launch the installed version without updating"""
+        dialog.destroy()
 
-            def show_error(msg):
-                CTkMessageBox.showerror("Launch Failed", msg, parent=parent)
+        def show_error(msg):
+            CTkMessageBox.showerror("Launch Failed", msg, parent=parent)
 
-            addon_manager.launch(show_error=show_error)
-        else:
-            dialog.destroy()
+        addon_manager.launch(show_error=show_error)
 
     if is_installed:
-        install_btn = ctk.CTkButton(
-            button_frame,
-            text="Update & Launch",
-            command=on_install,
-            width=150,
-        )
+        buttons = [
+            {"text": "Update & Launch", "command": on_install, "width": 150},
+            {
+                "text": "Launch Current Version",
+                "command": on_launch_skip,
+                "primary": False,
+                "width": 180,
+            },
+        ]
     else:
-        install_btn = ctk.CTkButton(
-            button_frame,
-            text="Install & Launch",
-            command=on_install,
-            width=150,
-        )
-    install_btn.pack(side=tk.LEFT, padx=5)
+        buttons = [
+            {"text": "Install & Launch", "command": on_install, "width": 150},
+            {"text": "Cancel", "command": dialog.destroy, "primary": False},
+        ]
+    _, (install_btn, cancel_btn) = ds.button_row(main_frame, buttons)
 
+    # Shown once an install starts
+    progress_var = tk.StringVar(value="")
+    progress_label = ctk.CTkLabel(
+        main_frame,
+        textvariable=progress_var,
+        font=ds.FONT,
+        text_color=ds.MUTED,
+        anchor="w",
+    )
+
+    ds.header(
+        main_frame,
+        "Update Available" if is_installed else "FromSoftware Troubleshooter",
+        font=ds.TITLE_LARGE,
+    )
+    ctk.CTkLabel(
+        main_frame,
+        text=f"Version {latest_version} is available"
+        if is_installed
+        else "Diagnostic tool addon for common issues",
+        font=ds.FONT,
+        text_color=ds.MUTED,
+        anchor="w",
+    ).pack(fill=tk.X, pady=(2, 0))
+
+    versions = ds.box(main_frame, pady=(12, 10))
+    rows = [("Latest version", latest_version)]
     if is_installed:
-        cancel_btn = ctk.CTkButton(
-            button_frame,
-            text="Launch Current Version",
-            command=on_launch_skip,
-            width=180,
-            fg_color=("gray70", "gray30"),
+        rows.insert(0, ("Current version", installed_version))
+    for i, (label, value) in enumerate(rows):
+        pady = (8 if i == 0 else 2, 8 if i == len(rows) - 1 else 2)
+        ctk.CTkLabel(versions, text=label, font=ds.FONT, text_color=ds.MUTED).grid(
+            row=i, column=0, sticky="w", padx=(12, 24), pady=pady
         )
-    else:
-        cancel_btn = ctk.CTkButton(
-            button_frame,
-            text="Cancel",
-            command=dialog.destroy,
-            width=100,
-            fg_color=("gray70", "gray30"),
+        ctk.CTkLabel(versions, text=str(value), font=ds.BOLD).grid(
+            row=i, column=1, sticky="w", padx=(0, 12), pady=pady
         )
-    cancel_btn.pack(side=tk.LEFT, padx=5)
+
+    ctk.CTkLabel(
+        main_frame,
+        text="The FromSoftware Troubleshooter helps diagnose and fix common issues:",
+        font=ds.BOLD,
+        anchor="w",
+    ).pack(fill=tk.X, pady=(4, 2))
+    checks = ds.box(main_frame, pady=(0, 0))
+    items = (
+        "Game installation & folder",
+        "Problematic running processes",
+        "VPN clients",
+        "Steam running as administrator",
+    )
+    for i, text in enumerate(items):
+        ctk.CTkLabel(checks, text=f"•  {text}", font=ds.FONT, anchor="w").pack(
+            fill=tk.X,
+            padx=12,
+            pady=(8 if i == 0 else 2, 8 if i == len(items) - 1 else 2),
+        )
+    ctk.CTkLabel(
+        main_frame,
+        text="Source: github.com/Hapfel1/fromsoftware-troubleshooter",
+        font=ds.SMALL,
+        text_color=ds.MUTED,
+        anchor="w",
+    ).pack(fill=tk.X, pady=(8, 0))
+
+    dialog.bind("<Escape>", lambda _e: dialog.destroy())
+    ds.finish(dialog, parent, min_width=440)

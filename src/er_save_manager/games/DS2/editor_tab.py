@@ -264,7 +264,7 @@ class DS2EditorTab:
         stats_frame = ctk.CTkFrame(body, fg_color="transparent")
         stats_frame.pack(fill="x", padx=10, pady=5)
         ctk.CTkLabel(
-            stats_frame, text="Level & Attributes", font=("Segoe UI", 12, "bold")
+            stats_frame, text="Level & attributes", font=("Segoe UI", 12, "bold")
         ).grid(row=0, column=0, columnspan=6, sticky="w", padx=5, pady=(0, 5))
 
         ctk.CTkLabel(stats_frame, text="Level:").grid(

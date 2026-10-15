@@ -353,7 +353,7 @@ class DS2InventoryPanel:
         header = ctk.CTkFrame(parent, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 4))
         ctk.CTkLabel(
-            header, text="Current Inventory", font=("Segoe UI", 13, "bold")
+            header, text="Current inventory", font=("Segoe UI", 13, "bold")
         ).pack(side="left")
         ctk.CTkButton(
             header,
@@ -727,7 +727,7 @@ class DS2InventoryPanel:
 
         item_id = _hex_id_to_int(hex_id)
         if item_id in UNSAFE_IDS and not CTkMessageBox.askyesno(
-            "Unsafe item",
+            "Unsafe Item",
             f"{item_name} is flagged unsafe.\n\n"
             "Adding it can get an account soft-banned online.\n\n"
             "Add it anyway? (Safe on SeamlessCoop saves)",
@@ -926,7 +926,7 @@ class DS2InventoryPanel:
         if unsafe_count:
             lines.append(f"{unsafe_count} unsafe item(s) will be skipped.")
         if batch is None and not CTkMessageBox.askyesno(
-            "Add items", "\n\n".join(lines), parent=self.parent
+            "Add Items", "\n\n".join(lines), parent=self.parent
         ):
             return
 
@@ -1229,7 +1229,7 @@ class DS2InventoryPanel:
 
         picked = self._selected_inventory_rows()
         if len(picked) > 1 and not CTkMessageBox.askyesno(
-            "Remove items", f"Remove {len(picked)} items?", parent=self.parent
+            "Remove Items", f"Remove {len(picked)} items?", parent=self.parent
         ):
             return
 

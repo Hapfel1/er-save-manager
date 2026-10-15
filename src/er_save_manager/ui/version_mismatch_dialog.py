@@ -268,5 +268,5 @@ class VersionMismatchDialog(ctk.CTkToplevel):
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to apply version fix:\n{e}", parent=self
+                "Apply Failed", f"Failed to apply version fix:\n{e}", parent=self
             )

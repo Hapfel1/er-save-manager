@@ -13,9 +13,7 @@ from er_save_manager.ui.messagebox import CTkMessageBox
 def open_game_settings(parent, save_file, save_path, show_toast) -> None:
     """Open the game settings editor (USER_DATA_10 Settings, shared by all characters)."""
     if not save_file:
-        CTkMessageBox.showwarning(
-            "No Save", "Please load a save file first!", parent=parent
-        )
+        CTkMessageBox.showwarning("No Save", "Load a save file first.", parent=parent)
         return
 
     if not save_file.user_data_10_parsed or not save_file.user_data_10_parsed.settings:

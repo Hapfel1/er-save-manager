@@ -982,7 +982,7 @@ class InventoryEditor:
 
         self.loadout_switch = ctk.CTkSwitch(
             bot_btn_row,
-            text="Loadout Mode",
+            text="Loadout mode",
             variable=self.loadout_mode_var,
             font=("Segoe UI", 11),
             width=40,
@@ -1140,7 +1140,7 @@ class InventoryEditor:
 
         ctk.CTkLabel(
             header,
-            text="Current Inventory",
+            text="Current inventory",
             font=("Segoe UI", 13, "bold"),
         ).pack(side=ctk.LEFT)
 
@@ -1989,7 +1989,7 @@ class InventoryEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
@@ -2057,7 +2057,9 @@ class InventoryEditor:
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to refresh inventory:\n{e}", parent=self.parent
+                "Inventory Refresh Failed",
+                f"Failed to refresh inventory:\n{e}",
+                parent=self.parent,
             )
 
     def clear_inventory(self) -> None:
@@ -2554,7 +2556,7 @@ class InventoryEditor:
             show_toast(self.parent.winfo_toplevel(), msg, type="success")
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to add item:\n{e}", parent=self.parent
+                "Add Item Failed", f"Failed to add item:\n{e}", parent=self.parent
             )
 
     def batch_add_category(self, cat=None, parent_window=None):
@@ -2719,7 +2721,7 @@ class InventoryEditor:
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Batch Add Failed:\n{e}", parent=parent_window
+                "Batch Add Failed", f"Batch Add Failed:\n{e}", parent=parent_window
             )
 
     def remove_item(self):
@@ -2767,7 +2769,7 @@ class InventoryEditor:
             show_toast(self.parent.winfo_toplevel(), "Item removed.", type="success")
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to remove item:\n{e}", parent=self.parent
+                "Remove Item Failed", f"Failed to remove item:\n{e}", parent=self.parent
             )
 
     def batch_remove_category(
@@ -2882,7 +2884,9 @@ class InventoryEditor:
                 )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Batch Remove Failed:\n{e}", parent=parent_window
+                "Batch Remove Failed",
+                f"Batch Remove Failed:\n{e}",
+                parent=parent_window,
             )
 
     def open_auto_refill(self):
@@ -2916,7 +2920,9 @@ class InventoryEditor:
                     save_file.to_file(Path(save_path))
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Failed to save Auto-refill:\n{e}", parent=self.parent
+                    "Auto-refill Not Saved",
+                    f"Failed to save Auto-refill:\n{e}",
+                    parent=self.parent,
                 )
                 return False
             return True
@@ -3004,7 +3010,9 @@ class InventoryEditor:
                 self._on_inventory_changed()
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to set quantity:\n{e}", parent=self.parent
+                "Set Quantity Failed",
+                f"Failed to set quantity:\n{e}",
+                parent=self.parent,
             )
 
     def _patch_gaitem(self, save_file, slot_idx: int, slot, gaitem_idx: int) -> None:
@@ -3149,7 +3157,7 @@ class InventoryEditor:
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to set upgrade:\n{e}", parent=self.parent
+                "Set Upgrade Failed", f"Failed to set upgrade:\n{e}", parent=self.parent
             )
 
     def batch_upgrade_weapons(
@@ -3166,7 +3174,7 @@ class InventoryEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=parent_window
+                "No Save", "Load a save file first.", parent=parent_window
             )
             return
 
@@ -3375,7 +3383,7 @@ class InventoryEditor:
             self.ensure_mutable()
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error",
+                "Save Not Editable",
                 f"Failed to prepare save for editing:\n{e}",
                 parent=parent_window,
             )
@@ -3447,7 +3455,9 @@ class InventoryEditor:
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Batch upgrade failed:\n{e}", parent=parent_window
+                "Batch Upgrade Failed",
+                f"Batch upgrade failed:\n{e}",
+                parent=parent_window,
             )
 
     def set_affinity(
@@ -3579,7 +3589,9 @@ class InventoryEditor:
                 )
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Failed to set affinity:\n{e}", parent=self.parent
+                    "Set Affinity Failed",
+                    f"Failed to set affinity:\n{e}",
+                    parent=self.parent,
                 )
 
         def _confirm():
@@ -3766,7 +3778,9 @@ class InventoryEditor:
                         )
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Failed to set AoW:\n{e}", parent=self.parent
+                    "Set Ash of War Failed",
+                    f"Failed to set AoW:\n{e}",
+                    parent=self.parent,
                 )
 
         ds.button(btn_row, "Cancel", dialog.destroy, primary=False).pack(side=ctk.RIGHT)
@@ -3794,7 +3808,7 @@ class InventoryEditor:
                 )
                 return
         except Exception as e:
-            CTkMessageBox.showerror("Error", str(e), parent=self.parent)
+            CTkMessageBox.showerror("Import Failed", str(e), parent=self.parent)
             return
 
         from er_save_manager.ui.nyasu_import import import_nyasu
@@ -3864,8 +3878,8 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         right_frame.pack(side="right", fill="both", expand=True, padx=(5, 0))
 
         # --- Left side: loadout list ---
-        ctk.CTkLabel(left_frame, text="Loadouts", font=("Segoe UI", 12, "bold")).pack(
-            pady=(5, 0)
+        ctk.CTkLabel(left_frame, text="Loadouts", font=ds.TITLE, anchor="w").pack(
+            fill="x", padx=10, pady=(8, 0)
         )
 
         # exportselection off: selecting items on the right must not clear
@@ -3879,20 +3893,18 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
 
         db_btn_frame = ctk.CTkFrame(left_frame, fg_color="transparent")
         db_btn_frame.pack(fill="x", padx=8, pady=(0, 4))
-        ctk.CTkButton(db_btn_frame, text="New Loadout", command=self._new_loadout).pack(
+        ds.button(db_btn_frame, "New Loadout", self._new_loadout).pack(fill="x", pady=2)
+        ds.button(db_btn_frame, "Save as New Loadout", self._save_as_new).pack(
             fill="x", pady=2
         )
-        ctk.CTkButton(
-            db_btn_frame, text="Save as New Loadout", command=self._save_as_new
-        ).pack(fill="x", pady=2)
-        self._rename_btn = ctk.CTkButton(
-            db_btn_frame, text="Rename Loadout", command=self._rename_loadout
+        self._rename_btn = ds.button(
+            db_btn_frame, "Rename Loadout", self._rename_loadout, primary=False
         )
         self._rename_btn.pack(fill="x", pady=2)
-        self._delete_btn = ctk.CTkButton(
+        self._delete_btn = ds.button(
             db_btn_frame,
-            text="Delete Loadout",
-            command=self._delete_loadout,
+            "Delete Loadout",
+            self._delete_loadout,
             fg_color=_DELETE_COLOR,
             hover_color=("#b91c1c", "#991b1b"),
         )
@@ -3900,21 +3912,19 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             left_frame,
             text="Click a loadout to open it.\nChanges are saved automatically.",
-            font=("Segoe UI", 10),
-            text_color=("gray40", "gray60"),
+            font=ds.SMALL,
+            text_color=ds.MUTED,
             justify="left",
-        ).pack(anchor="w", padx=10, pady=(0, 8))
+        ).pack(anchor="w", padx=10, pady=(2, 8))
 
         # --- Right side: items of the open loadout ---
-        self._title_lbl = ctk.CTkLabel(
-            right_frame, text="", font=("Segoe UI", 12, "bold"), anchor="w"
-        )
-        self._title_lbl.pack(fill="x", padx=10, pady=(5, 0))
+        self._title_lbl = ctk.CTkLabel(right_frame, text="", font=ds.TITLE, anchor="w")
+        self._title_lbl.pack(fill="x", padx=10, pady=(8, 0))
         self._info_lbl = ctk.CTkLabel(
             right_frame,
             text="",
-            font=("Segoe UI", 10),
-            text_color=("gray40", "gray60"),
+            font=ds.SMALL,
+            text_color=ds.MUTED,
             anchor="w",
         )
         self._info_lbl.pack(fill="x", padx=10)
@@ -3943,18 +3953,12 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
 
         row1 = ctk.CTkFrame(btn_frame, fg_color="transparent")
         row1.pack(fill="x", pady=2)
-        ctk.CTkButton(
-            row1,
-            text="Remove Selected Items",
-            command=self._remove_selected,
-            fg_color=("gray70", "gray35"),
+        ds.button(
+            row1, "Remove Selected Items", self._remove_selected, primary=False
         ).pack(side="left", fill="x", expand=True, padx=2)
-        ctk.CTkButton(
-            row1,
-            text="Remove All Items",
-            command=self._remove_all,
-            fg_color=("gray70", "gray35"),
-        ).pack(side="left", fill="x", expand=True, padx=2)
+        ds.button(row1, "Remove All Items", self._remove_all, primary=False).pack(
+            side="left", fill="x", expand=True, padx=2
+        )
 
         row2 = ctk.CTkFrame(btn_frame, fg_color="transparent")
         row2.pack(fill="x", pady=2)
@@ -3964,30 +3968,25 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             ("Export Code", self.export_code),
             ("Import Code", self.import_code),
         ):
-            ctk.CTkButton(row2, text=text, command=command).pack(
+            ds.button(row2, text, command, primary=False).pack(
                 side="left", fill="x", expand=True, padx=2
             )
 
         # The two buttons that move items between the loadout and the save.
         row3 = ctk.CTkFrame(btn_frame, fg_color="transparent")
         row3.pack(fill="x", pady=(8, 2))
-        ctk.CTkButton(
+        ds.button(
             row3,
-            text="Add Inventory to Loadout",
-            command=self._add_inventory_to_loadout,
-            height=34,
+            "Add Inventory to Loadout",
+            self._add_inventory_to_loadout,
+            height=36,
             fg_color=palette.BLUE,
             hover_color=palette.BLUE_HOVER,
             text_color=palette.ON_BLUE,
         ).pack(side="left", fill="x", expand=True, padx=2)
-        ctk.CTkButton(
-            row3,
-            text="Add Loadout to Inventory",
-            command=self.apply_loadout,
-            height=34,
-            fg_color=("#16a34a", "#15803d"),
-            hover_color=("#15803d", "#166534"),
-        ).pack(side="left", fill="x", expand=True, padx=2)
+        ds.button(row3, "Add Loadout to Inventory", self.apply_loadout, height=36).pack(
+            side="left", fill="x", expand=True, padx=2
+        )
 
         editor._loadout_listeners.append(self.refresh)
         self.bind("<Destroy>", self._on_destroy, add="+")
@@ -4226,7 +4225,9 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             with open(path, encoding="utf-8") as f:
                 data = json.load(f)
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Failed to load JSON:\n{e}", parent=self)
+            CTkMessageBox.showerror(
+                "JSON Load Failed", f"Failed to load JSON:\n{e}", parent=self
+            )
             return
         if isinstance(data, list):
             self._replace_items(data, "the file")
@@ -4241,7 +4242,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         code = share_loadout(self.editor.loadout, name=self.editor.loadout_name or "")
         if not code:
             CTkMessageBox.showerror(
-                "Error",
+                "Upload Failed",
                 "Failed to upload loadout. Check your connection.",
                 parent=self,
             )
@@ -4259,7 +4260,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         data = fetch_loadout(code.strip())
         if not isinstance(data, list):
             CTkMessageBox.showerror(
-                "Error",
+                "Code Not Found",
                 "Code not found, or failed to fetch. Check your connection.",
                 parent=self,
             )
@@ -4275,7 +4276,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             "Share Code",
             "Loadout shared",
             code,
-            lambda: show_toast(self, "Code copied to clipboard!", type="success"),
+            lambda: show_toast(self, "Code copied to clipboard.", type="success"),
         )
 
     # ---- loadout <-> save ---------------------------------------------------
@@ -4367,5 +4368,5 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
                 )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to add the loadout:\n{e}", parent=self
+                "Add Loadout Failed", f"Failed to add the loadout:\n{e}", parent=self
             )

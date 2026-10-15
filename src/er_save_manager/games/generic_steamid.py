@@ -112,7 +112,7 @@ def patch_steamid_generic(
                 success=False,
                 error=(
                     f"Multiple distinct Steam64 IDs found: {ids_str}. "
-                    "Please specify old_steamid explicitly."
+                    "Specify old_steamid explicitly."
                 ),
             )
         old_steamid = next(iter(found))

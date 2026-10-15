@@ -20,7 +20,7 @@ def show_issues(parent, game_key: str, save_path, slot_idx: int, name: str, relo
     reload is called after a successful fix.
     """
     if not save_path or not Path(save_path).is_file():
-        CTkMessageBox.showwarning("No Save", "No save file loaded!", parent=parent)
+        CTkMessageBox.showwarning("No Save", "No save file loaded.", parent=parent)
         return
 
     all_issues = save_check.check(game_key, save_path)
@@ -118,13 +118,15 @@ def _fix_all(dialog, game_key, save_path: Path, slot_idx, fixable, reload) -> No
         )
         save_check.repair(game_key, save_path)
     except Exception as exc:
-        CTkMessageBox.showerror("Error", f"Failed to fix issues:\n{exc}", parent=parent)
+        CTkMessageBox.showerror(
+            "Fix Failed", f"Failed to fix issues:\n{exc}", parent=parent
+        )
         return
     if reload:
         reload()
     summary = "\n".join(f"- {i.text}" for i in fixable)
     CTkMessageBox.showinfo(
-        "Success",
+        "Issues Fixed",
         f"Fixed {len(fixable)} issue(s):\n\n{summary}\n\n"
         "Backup saved to backup manager.",
         parent=parent,

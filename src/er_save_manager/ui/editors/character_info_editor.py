@@ -129,7 +129,7 @@ class CharacterInfoEditor:
         creation_frame.pack(fill=ctk.X, pady=5, padx=10)
         ctk.CTkLabel(
             creation_frame,
-            text="Character Creation",
+            text="Character creation",
             font=("Segoe UI", 12, "bold"),
         ).grid(row=0, column=0, columnspan=5, sticky=ctk.W, padx=5, pady=(5, 0))
 
@@ -164,7 +164,7 @@ class CharacterInfoEditor:
 
         trace_variable(self.char_name_var, "w", update_name_count)
 
-        ctk.CTkLabel(creation_frame, text="Body Type:").grid(
+        ctk.CTkLabel(creation_frame, text="Body type:").grid(
             row=2, column=0, sticky=ctk.W, padx=5, pady=5
         )
         self.char_body_type_var = ctk.IntVar(value=0)
@@ -202,7 +202,7 @@ class CharacterInfoEditor:
 
         self.char_archetype_var.trace_add("write", _on_archetype_combo_change)
 
-        ctk.CTkLabel(creation_frame, text="Voice Type:").grid(
+        ctk.CTkLabel(creation_frame, text="Voice type:").grid(
             row=3, column=0, sticky=ctk.W, padx=5, pady=5
         )
         self.char_voice_var = ctk.IntVar(value=0)
@@ -228,14 +228,14 @@ class CharacterInfoEditor:
         progression_frame.pack(fill=ctk.X, pady=5, padx=10)
         ctk.CTkLabel(
             progression_frame,
-            text="Game Progression",
+            text="Game progression",
             font=("Segoe UI", 12, "bold"),
         ).grid(row=0, column=0, columnspan=6, sticky=ctk.W, padx=5, pady=(5, 0))
 
         # NG+ Level (event flag and ClearCount)
         ctk.CTkLabel(
             progression_frame,
-            text="NG+ Level:",
+            text="NG+ level:",
         ).grid(row=1, column=0, sticky=ctk.W, padx=5, pady=5)
         self.char_ng_level_var = ctk.StringVar(value="NG (0)")
         ng_combo = ctk.CTkComboBox(
@@ -312,7 +312,7 @@ class CharacterInfoEditor:
         time_frame.pack(fill=ctk.X, pady=5, padx=10)
         ctk.CTkLabel(
             time_frame,
-            text="Time of Day",
+            text="Time of day",
             font=("Segoe UI", 12, "bold"),
         ).grid(row=0, column=0, columnspan=6, sticky=ctk.W, padx=5, pady=(5, 0))
 
@@ -463,7 +463,7 @@ class CharacterInfoEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
@@ -478,7 +478,7 @@ class CharacterInfoEditor:
             return
 
         if not CTkMessageBox.askyesno(
-            "Confirm",
+            "Apply Character Info",
             f"Apply character info changes to Slot {slot_idx + 1}?\n\nA backup will be created.",
             parent=self.parent,
         ):
@@ -611,22 +611,26 @@ class CharacterInfoEditor:
                     self.load_character_info()
 
                     CTkMessageBox.showinfo(
-                        "Success",
-                        "Character info updated successfully!\n\nBackup saved to backup manager.",
+                        "Character Info Updated",
+                        "Character info updated successfully.\n\nBackup saved to backup manager.",
                         parent=self.parent,
                     )
                 else:
                     CTkMessageBox.showerror(
-                        "Error", "Offset not tracked", parent=self.parent
+                        "Offset Not Tracked", "Offset not tracked", parent=self.parent
                     )
             else:
                 CTkMessageBox.showerror(
-                    "Error", "Could not access character data", parent=self.parent
+                    "Character Unavailable",
+                    "Could not access character data",
+                    parent=self.parent,
                 )
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to apply changes:\n{str(e)}", parent=self.parent
+                "Apply Failed",
+                f"Failed to apply changes:\n{str(e)}",
+                parent=self.parent,
             )
 
     def _load_ng_level(self, save_file, slot_idx):

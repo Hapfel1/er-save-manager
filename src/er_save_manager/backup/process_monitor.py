@@ -10,7 +10,6 @@ from collections.abc import Callable
 from pathlib import Path
 
 from er_save_manager.backup.manager import BackupManager
-from er_save_manager.ui import palette
 from er_save_manager.ui.settings import get_settings
 
 # Map game key -> process name to detect
@@ -280,67 +279,12 @@ def show_auto_backup_first_run_dialog(
                 chosen_path = str(found_paths[0])
 
         elif len(found_paths) > 1:
-            import tkinter as tk
+            from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 
-            import customtkinter as ctk
-
-            from er_save_manager.ui.utils import (
-                bind_mousewheel,
-                center_window,
-                force_render_dialog,
+            # Closing without a pick falls through to the file dialog below
+            chosen_path = SaveSelectorDialog.show(
+                parent, found_paths, lambda _path: None
             )
-
-            selected = [None]
-            dlg = ctk.CTkToplevel(parent)
-            dlg.title(f"Select Save - {game_name}")
-            center_window(dlg, 620, 400, parent=parent)
-            dlg.resizable(True, True)
-            dlg.minsize(500, 300)
-            force_render_dialog(dlg)
-            dlg.grab_set()
-
-            ctk.CTkLabel(
-                dlg,
-                text="Multiple save files found. Select the one to monitor:",
-                font=("Segoe UI", 11),
-            ).pack(pady=(15, 8), padx=15)
-
-            sf = ctk.CTkScrollableFrame(dlg, corner_radius=8)
-            sf.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
-            bind_mousewheel(sf)
-
-            for p in found_paths:
-
-                def make_sel(v):
-                    def _sel():
-                        selected[0] = str(v)
-                        dlg.destroy()
-
-                    return _sel
-
-                ctk.CTkButton(
-                    sf,
-                    text=str(p),
-                    font=("Consolas", 10),
-                    fg_color="transparent",
-                    text_color=("#2a2a2a", "#e5e5f5"),
-                    hover_color=palette.PURPLE_TINT,
-                    anchor="w",
-                    command=make_sel(p),
-                ).pack(fill=tk.X, padx=6, pady=3)
-
-            ctk.CTkButton(
-                dlg,
-                text="Browse...",
-                command=lambda: [setattr(selected, "__browse__", True), dlg.destroy()],
-                width=100,
-            ).pack(side=tk.LEFT, padx=15, pady=(0, 12))
-            ctk.CTkButton(dlg, text="Skip", command=dlg.destroy, width=80).pack(
-                side=tk.RIGHT, padx=15, pady=(0, 12)
-            )
-
-            dlg.wait_window()
-            chosen_path = selected[0]
 
         if not chosen_path:
             ext_str = " ".join(
