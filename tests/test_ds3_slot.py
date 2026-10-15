@@ -155,6 +155,23 @@ def test_storage_and_key_rules(slot):
         slot.add_item(SMALL_DOLL, key_item=True, to_storage=True)
 
 
+def test_storage_stack_cap(slot):
+    lim = catalog.limits(catalog.lookup(TITANITE_SHARD))
+    assert (lim.max_quantity, lim.max_storage) == (99, 600)
+    assert catalog.limits(catalog.lookup(STANDARD_ARROW)).max_storage == 600
+    cap = catalog.stack_cap(lim, True)
+    for _ in range(2):
+        stored = slot.add_item(
+            TITANITE_SHARD, 500, sort_key=16010, max_quantity=cap, to_storage=True
+        )
+    assert stored.quantity == 600
+    # A lower cap never shrinks an existing stack.
+    stored = slot.add_item(
+        TITANITE_SHARD, 1, sort_key=16010, max_quantity=99, to_storage=True
+    )
+    assert stored.quantity == 600
+
+
 def test_equipped_items_cannot_be_removed(slot):
     fists = next(e for e in _real(slot) if e.item_id == 110000)
     assert slot.is_equipped(fists)
