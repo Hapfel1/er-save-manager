@@ -47,13 +47,15 @@ An empty character slot has bytes 0x20-0x90 all zero.
 +0x0020  ...  First non-zero region for occupancy check (through 0x0090)
 
 --- Play time ---
-+0x0060  4    Play time in frames at 30 fps (u32 LE)
++0x001C  4    Play time in milliseconds (u32 LE)
 
---- HP / Stamina (live values, updated by game on load) ---
-+0x0074  2    Unknown HP-related field
-+0x0078  2    Current HP (u16 LE)
-+0x007C  2    Max HP (u16 LE)
-+0x0098  1    Stamina (u8)
+--- HP / Stamina ---
++0x0074  4    Current HP (u32 LE)
++0x0078  4    Max HP including equipment bonuses (u32 LE)
++0x007C  4    Base max HP from Vitality (u32 LE)
++0x0090  4    Current stamina (u32 LE)
++0x0094  4    Max stamina including equipment bonuses (u32 LE)
++0x0098  4    Base max stamina from Endurance (u32 LE)
 
 --- Base stats (each stored as u8 at 8-byte-aligned offsets) ---
 +0x00A0  1    Vitality
@@ -74,7 +76,16 @@ An empty character slot has bytes 0x20-0x90 all zero.
 +0x0108  34   Name, primary copy (UTF-16LE, 16 chars + null terminator)
 +0x012A  1    Body type: 0=Type B (female), 1=Type A (male)
 +0x012E  1    Starting class (see DSRClass enum)
++0x012F  1    Physique
++0x0130  1    Starting gift
++0x014D  7    Covenant offering counts (u8 each): Warrior of Sunlight,
+              Darkwraith, Path of the Dragon, Gravelord Servant, Forest
+              Hunter, Darkmoon Blade, Chaos Servant. Rank 1/2/3 at
+              COVENANT_RANK_COUNTS offerings.
 +0x0173  1    Covenant (see DSRCovenant enum)
++0x0174  1    Face type
++0x0175  1    Hair type
++0x0176  1    Hair and eye color preset
 +0x0179  1    Highest weapon upgrade level (used for matchmaking, must be calibrated)
 +0x018C  34   Name, secondary copy (UTF-16LE, 16 chars + null terminator)
 
@@ -109,6 +120,11 @@ Each field is a u32 LE inventory slot index; 0xFFFFFFFF = nothing equipped.
 
 Key items occupy slots 0-63; weapons, armor, rings, consumables use slots 64-2047.
 
+--- Appearance (after the inventory) ---
++0xE414  16   Hair color RGBA (4 x f32)
++0xE424  16   Eye color RGBA (4 x f32)
++0xE434  100  Face data (one byte per face slider)
+
 === INVENTORY ITEM (28 bytes) ===
 
 +0x00  4   Item type/category, big-endian u32 divided by 16:
@@ -128,12 +144,20 @@ Key items occupy slots 0-63; weapons, armor, rings, consumables use slots 64-204
 
 An empty slot has all bytes 0x00 or all 0xFF.
 
-=== NG+ AND EVENT FLAGS ===
-
-+0x1E5BE  1   NG+ counter (u8; 0=NG, 1=NG+, 2=NG++, etc.)
+=== EVENT FLAGS AND NG+ ===
 
 The event flag array follows variable-length data; see FLAG_RECORD for how
-it is found and how flag ids map to bits.
+it is found and how flag ids map to bits. The NG+ cycle (u32, 0 = NG) sits
+NG_CYCLE_FROM_FLAGS bytes before the flag array, followed by a u32 holding
+the ending that started it (0 none, 1 Link the Fire, 2 Dark Lord).
+
+=== CHR BLOCK ===
+
+After the flag array: u32 size, magic " RHC", u32 version, then one record
+per map the character has loaded: u32 key (area << 24 | block << 16), u32
+record size, u32 enemy part count, then one bit per enemy part of the map's
+MSB in part order (LSB first). A set bit spawns that part dead; the part's
+death event then runs again on load. 0xFFFFFFFF ends the records.
 """
 
 from __future__ import annotations
@@ -181,11 +205,11 @@ AES_KEY = bytes(
 
 # Decrypted slot data offsets
 OFF_STATE_HASH = 0x0000
-OFF_PLAY_FRAMES = 0x0060  # u32 LE, frames at 30 fps
-OFF_HP_CURRENT = 0x0078  # u16 LE
-OFF_HP_MAX = 0x007C  # u16 LE
-OFF_HP_UNKNOWN = 0x0074  # u16 LE, set to 0x000A on HP write
-OFF_STAMINA = 0x0098  # u8
+OFF_PLAY_MS = 0x001C  # u32 LE, milliseconds
+OFF_HP_CURRENT = 0x0074  # u32 LE
+OFF_HP_MAX = 0x0078  # u32 LE, with equipment bonuses
+OFF_HP_BASE = 0x007C  # u32 LE, from Vitality
+OFF_STAMINA = 0x0098  # u32 LE, base max from Endurance
 OFF_VIT = 0x00A0  # u8
 OFF_ATN = 0x00A8  # u8
 OFF_END = 0x00B0  # u8
@@ -200,7 +224,13 @@ OFF_SOULS = 0x00F4  # u32 LE
 OFF_NAME_PRIMARY = 0x0108  # UTF-16LE, 34 bytes (16 chars + null)
 OFF_BODY_TYPE = 0x012A  # u8; 0=Type B (female), 1=Type A (male)
 OFF_CLASS = 0x012E  # u8
+OFF_PHYSIQUE = 0x012F  # u8
+OFF_GIFT = 0x0130  # u8
+OFF_COVENANT_OFFERINGS = 0x014D  # 7 x u8, order of COVENANT_OFFERING_ORDER
 OFF_COVENANT = 0x0173  # u8
+OFF_FACE_TYPE = 0x0174  # u8
+OFF_HAIR_TYPE = 0x0175  # u8
+OFF_HAIR_EYE_COLOR = 0x0176  # u8
 OFF_WEAPON_LEVEL = 0x0179  # u8, highest upgrade, used for matchmaking
 OFF_NAME_SECONDARY = 0x018C  # UTF-16LE, 34 bytes (mirror of primary)
 
@@ -255,12 +285,20 @@ ORDER_SORT_SHIFT = 12
 ASCENDED_FLAME_CAP = 5
 KEY_ITEM_SLOTS = 64  # key items occupy slots 0-63
 
+# Appearance block after the inventory array.
+OFF_HAIR_RGBA = 0xE414  # 4 x f32
+OFF_EYE_RGBA = 0xE424  # 4 x f32
+OFF_FACE_DATA = 0xE434
+FACE_DATA_SIZE = 100
+
 # Slot occupancy check range: all-zero bytes here means empty character
 EMPTY_CHECK_START = 0x0020
 EMPTY_CHECK_END = 0x0090
 
-# NG+ counter (u8), at a fixed offset before the variable-length data.
-NG_PLUS_OFFSET = 0x1E5BE
+# The flag record search starts here; everything before it is fixed layout.
+FLAG_SEARCH_START = 0x1E5BE
+# NG+ cycle (u32): this many bytes before the flag array.
+NG_CYCLE_FROM_FLAGS = 0xC13
 
 # Event flags: the game's flag array, stored after a variable-length run of
 # records, so its offset differs per character. It starts FLAG_RECORD_TO_BASE bytes after the
@@ -279,6 +317,11 @@ FLAG_AREAS = {
     181: 17,
 }  # fmt: skip
 FLAG_AREA_SIZE = 0x500
+
+CHR_MAGIC = b" RHC"
+CHR_RECORDS_FROM_MAGIC = 8  # magic, u32 version
+CHR_RECORD_HEADER = 12  # key, size, part count
+CHR_END = 0xFFFFFFFF
 
 # Bonfire state lives in the per-map object records of each visited map, not
 # in the event flags: a 20-byte record u32 BONFIRE_RECORD_TYPE, u32 bonfire
@@ -309,7 +352,7 @@ STAT_KEYS = ("vit", "atn", "end", "str", "dex", "int", "fth", "res")
 MAX_STAT = 99
 MAX_SOULS = 999_999_999
 MAX_HUMANITY = 99
-NAME_MAX_CHARS = 16
+NAME_MAX_CHARS = 13  # longest name the character creation screen accepts
 
 
 def class_base_stats(player_class: int) -> dict[str, int] | None:
@@ -515,6 +558,27 @@ class DSRCovenant(IntEnum):
     ForestHunter = 7
     DarkmoonBlade = 8
     ChaosServant = 9
+
+
+# Covenants with an offering count, in save order. The count is what the
+# covenant's talk script compares against COVENANT_RANK_COUNTS. Forest Hunter
+# has a count but no rank check.
+COVENANT_OFFERING_ORDER = (
+    DSRCovenant.WarriorOfSunlight,
+    DSRCovenant.Darkwraith,
+    DSRCovenant.PathOfTheDragon,
+    DSRCovenant.GravelordServant,
+    DSRCovenant.ForestHunter,
+    DSRCovenant.DarkmoonBlade,
+    DSRCovenant.ChaosServant,
+)
+COVENANT_RANK_COUNTS = (10, 30, 80)
+MAX_COVENANT_OFFERINGS = 0xFF
+
+
+def covenant_rank(count: int) -> int:
+    """Covenant rank (0-3) for an offering count."""
+    return sum(count >= need for need in COVENANT_RANK_COUNTS)
 
 
 class DSRItemCategory(IntEnum):
@@ -738,6 +802,18 @@ class DSRCharacter:
     def covenant(self, value: DSRCovenant) -> None:
         self._data[OFF_COVENANT] = int(value) & 0xFF
 
+    def covenant_offerings(self, covenant: DSRCovenant) -> int:
+        return self._data[
+            OFF_COVENANT_OFFERINGS + COVENANT_OFFERING_ORDER.index(covenant)
+        ]
+
+    def set_covenant_offerings(self, covenant: DSRCovenant, count: int) -> None:
+        if not 0 <= count <= MAX_COVENANT_OFFERINGS:
+            raise ValueError(f"Offering count must be 0-{MAX_COVENANT_OFFERINGS}")
+        self._data[OFF_COVENANT_OFFERINGS + COVENANT_OFFERING_ORDER.index(covenant)] = (
+            count
+        )
+
     # --- Stats ---
 
     @property
@@ -805,24 +881,21 @@ class DSRCharacter:
             elif name.lower() == "end":
                 stamina = END_TO_STAMINA.get(value)
                 if stamina is not None:
-                    self._data[OFF_STAMINA] = stamina & 0xFF
+                    struct.pack_into("<I", self._data, OFF_STAMINA, stamina)
 
     def set_hp(self, value: int) -> None:
-        """
-        Set both current and max HP.
-        Also sets the unknown HP field at 0x0074 to 0x000A as the game does.
-        """
-        struct.pack_into("<H", self._data, OFF_HP_MAX, value & 0xFFFF)
-        struct.pack_into("<H", self._data, OFF_HP_CURRENT, value & 0xFFFF)
-        struct.pack_into("<H", self._data, OFF_HP_UNKNOWN, 0x000A)
+        """Set base, max and current HP to the same value (full health). The
+        max with equipment bonuses is recalculated by the game on load."""
+        for off in (OFF_HP_BASE, OFF_HP_MAX, OFF_HP_CURRENT):
+            struct.pack_into("<I", self._data, off, value & 0xFFFFFFFF)
 
     @property
     def hp_current(self) -> int:
-        return struct.unpack_from("<H", self._data, OFF_HP_CURRENT)[0]
+        return struct.unpack_from("<I", self._data, OFF_HP_CURRENT)[0]
 
     @property
     def hp_max(self) -> int:
-        return struct.unpack_from("<H", self._data, OFF_HP_MAX)[0]
+        return struct.unpack_from("<I", self._data, OFF_HP_MAX)[0]
 
     @property
     def weapon_level(self) -> int:
@@ -836,27 +909,44 @@ class DSRCharacter:
     # --- Play time ---
 
     @property
-    def play_frames(self) -> int:
-        """Elapsed play time in 30-fps frames."""
-        return struct.unpack_from("<I", self._data, OFF_PLAY_FRAMES)[0]
+    def play_ms(self) -> int:
+        return struct.unpack_from("<I", self._data, OFF_PLAY_MS)[0]
 
     @property
     def play_seconds(self) -> float:
-        return self.play_frames / 30.0
+        return self.play_ms / 1000.0
 
     # --- NG+ ---
 
+    def _ng_cycle_offset(self) -> int:
+        base = self.flag_base()
+        if base < 0:
+            raise ValueError("Event flag data not found in this character")
+        return base - NG_CYCLE_FROM_FLAGS
+
     @property
     def ng_plus(self) -> int:
-        if NG_PLUS_OFFSET >= len(self._data):
+        """NG+ cycle (0 = first playthrough), or 0 when the flag data is
+        not found."""
+        try:
+            off = self._ng_cycle_offset()
+        except ValueError:
             return 0
-        return self._data[NG_PLUS_OFFSET]
+        return struct.unpack_from("<I", self._data, off)[0]
 
     @ng_plus.setter
     def ng_plus(self, value: int) -> None:
-        if NG_PLUS_OFFSET >= len(self._data):
-            raise ValueError("NG+ offset out of range")
-        self._data[NG_PLUS_OFFSET] = value & 0xFF
+        struct.pack_into("<I", self._data, self._ng_cycle_offset(), value)
+
+    @property
+    def last_ending(self) -> int:
+        """Ending that started the current cycle: 0 none, 1 Link the Fire,
+        2 Dark Lord. 0 when the flag data is not found."""
+        try:
+            off = self._ng_cycle_offset() + 4
+        except ValueError:
+            return 0
+        return struct.unpack_from("<I", self._data, off)[0]
 
     # --- Inventory ---
 
@@ -1072,7 +1162,7 @@ class DSRCharacter:
             hits = [
                 m.start()
                 for m in FLAG_RECORD.finditer(
-                    data, NG_PLUS_OFFSET, NG_PLUS_OFFSET + FLAG_SEARCH_SPAN
+                    data, FLAG_SEARCH_START, FLAG_SEARCH_START + FLAG_SEARCH_SPAN
                 )
             ]
             self._flag_base_cache = (
@@ -1140,6 +1230,42 @@ class DSRCharacter:
         struct.pack_into("<I", self._data, off + BONFIRE_LEVEL_OFFSET, new)
         return True
 
+    # --- CHR block -------------------------------------------------------- #
+
+    def chr_records(self) -> dict[tuple[int, int], tuple[int, int]]:
+        """{(area, block): (offset of the part bits, part count)} for every
+        map record of the CHR block (see CHR BLOCK). Empty when the block is
+        not found once after the flag array or a record size does not match
+        its part count."""
+        base = self.flag_base()
+        data = bytes(self._data)
+        magic = data.find(CHR_MAGIC, max(base, 0))
+        if base < 0 or magic < 0 or data.find(CHR_MAGIC, magic + 1) >= 0:
+            return {}
+        out = {}
+        off = magic + CHR_RECORDS_FROM_MAGIC
+        while off + CHR_RECORD_HEADER <= len(data):
+            key, size, count = struct.unpack_from("<III", data, off)
+            if key == CHR_END:
+                return out
+            if size != CHR_RECORD_HEADER + (count + 7) // 8:
+                return {}
+            out[(key >> 24, (key >> 16) & 0xFF)] = (off + CHR_RECORD_HEADER, count)
+            off += size
+        return {}
+
+    def part_spawns_dead(self, area: int, block: int, index: int) -> bool:
+        rec = self.chr_records().get((area, block))
+        if rec is None or index >= rec[1]:
+            return False
+        return bool(self._data[rec[0] + index // 8] >> (index % 8) & 1)
+
+    def clear_part_dead(self, area: int, block: int, index: int) -> None:
+        """Let an enemy part spawn alive; maps without a record are skipped."""
+        rec = self.chr_records().get((area, block))
+        if rec is not None and index < rec[1]:
+            self._data[rec[0] + index // 8] &= ~(1 << (index % 8)) & 0xFF
+
     # --- NPC states ------------------------------------------------------- #
 
     def npc_state(self, npc: dict) -> str:
@@ -1154,10 +1280,20 @@ class DSRCharacter:
 
     def set_npc_state(self, npc: dict, alive: bool) -> None:
         """Clear the NPC's state range and set its first state (alive) or its
-        dead flag, as the game's NPC death event does."""
+        dead flag, as the game's NPC death event does. Reviving also clears
+        the NPC's spawn-dead part bits and its revive_clear flags."""
+        if not alive and not npc["dead"]:
+            raise ValueError(f"{npc['name']} has no death state")
         target = npc["lo"] if alive else npc["dead"][0]
         for f in range(npc["lo"], npc["hi"] + 1):
             self.set_flag(f, f == target)
+        if alive:
+            # Death also leaves the NPC's parts spawning dead and, for some
+            # NPCs, flags outside the range (npcs.json revive_clear).
+            for area, block, index in npc.get("parts", []):
+                self.clear_part_dead(area, block, index)
+            for f in npc.get("revive_clear", []):
+                self.set_flag(f, False)
 
 
 # --- Utility (module-level) -------------------------------------------------- #

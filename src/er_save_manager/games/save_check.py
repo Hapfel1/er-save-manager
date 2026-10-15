@@ -7,6 +7,7 @@ fixable and writes the file in place. Callers make the backup.
 Checked per game:
   all       entry checksums (the game rejects a save with a bad one)
   DS3, DSR  load screen directory name and level match the character slot
+  DSR       event flag 0 is off
   DS3       slot layout resolves (inventory, gestures, NG+ offsets);
             storage box indices (items the game hides)
   DS2       load screen caches (entries 0 and 22) match name, level, class
@@ -133,6 +134,16 @@ def _dsr_dir_mismatches(save) -> list[tuple[int, str]]:
     return out
 
 
+def _dsr_flag0_set(save) -> list[int]:
+    """Slots with event flag 0 on. The game never sets it and treats it as
+    always off; while it is on, items cannot be picked up."""
+    return [
+        i
+        for i, char in enumerate(save.characters)
+        if char is not None and char.flag_base() >= 0 and char.get_flag(0)
+    ]
+
+
 def _check_dsr(path: Path) -> list[Issue]:
     from er_save_manager.games.DSR.save import DSRSave
 
@@ -145,6 +156,10 @@ def _check_dsr(path: Path) -> list[Issue]:
         if not ok
     ]
     issues += [Issue(text, True, i) for i, text in _dsr_dir_mismatches(save)]
+    issues += [
+        Issue("Event flag 0 is set (blocks item pickups)", True, i)
+        for i in _dsr_flag0_set(save)
+    ]
     return issues
 
 
@@ -156,6 +171,8 @@ def _repair_dsr(path: Path) -> None:
     for i, _ in _dsr_dir_mismatches(save):
         char = save.characters[i]
         _sync_dir_name_level(save, i, char.name, char.level)
+    for i in _dsr_flag0_set(save):
+        save.characters[i].set_flag(0, False)
     save.save_to_file(path)
 
 
