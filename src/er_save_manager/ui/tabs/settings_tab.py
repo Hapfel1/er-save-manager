@@ -10,7 +10,12 @@ import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.settings import get_settings
-from er_save_manager.ui.utils import bind_mousewheel, center_window, pick_file
+from er_save_manager.ui.utils import (
+    bind_mousewheel,
+    center_window,
+    pick_file,
+    resource_path,
+)
 
 
 class SettingsTab:
@@ -839,11 +844,22 @@ class SettingsTab:
 
         center_window(popup, 260, 130, parent=root)
 
-        ctk.CTkLabel(
-            popup,
-            text="\U0001f353",
-            font=("Segoe UI", 36),
-        ).pack(pady=(16, 4))
+        # Tk cannot draw color emoji on Linux, so the image is the primary source
+        strawberry = resource_path("icon", "strawberry.png")
+        if strawberry.exists():
+            from PIL import Image
+
+            ctk.CTkLabel(
+                popup,
+                text="",
+                image=ctk.CTkImage(Image.open(strawberry), size=(48, 48)),
+            ).pack(pady=(16, 4))
+        else:
+            ctk.CTkLabel(
+                popup,
+                text="\U0001f353",
+                font=("Segoe UI", 36),
+            ).pack(pady=(16, 4))
         ctk.CTkLabel(
             popup,
             text="You found it",
