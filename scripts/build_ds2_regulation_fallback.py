@@ -40,6 +40,8 @@ CLASS_BASES: PlayerStatusParam row id -> (level, attributes by name).
 LEVEL_UP_SOULS: level N -> soul cost of going to N + 1.
 BOSS_FIGHTS: BossBattleParam (row id, killedEventId, onceKilledEventId,
 bonfireEventValueId, bonfireId).
+BONFIRE_MAPS: bonfire id -> map id (AA << 24 | BB << 16) from
+MapObjectBonfireParam.
 """
 
 from __future__ import annotations
@@ -79,6 +81,10 @@ def build(save_path: Path) -> str:
             f"{f.defeat_value}, {f.bonfire_id}),"
         )
     lines.append(")")
+
+    lines.append("BONFIRE_MAPS: dict[int, int] = {")
+    lines += [f"    {k}: 0x{v:08X}," for k, v in sorted(reg.bonfire_maps().items())]
+    lines.append("}")
     return "\n".join(lines) + "\n"
 
 

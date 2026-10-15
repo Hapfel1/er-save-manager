@@ -98,6 +98,13 @@ class DS2BonfirePanel:
             width=110,
         )
         self._set_intensity_button.pack(side="left", padx=6)
+        self._last_rested_button = ctk.CTkButton(
+            intensity_row,
+            text="Set as Last Rested",
+            command=self._on_set_last_rested,
+            width=140,
+        )
+        self._last_rested_button.pack(side="right")
 
         ctk.CTkLabel(
             self.parent,
@@ -106,7 +113,7 @@ class DS2BonfirePanel:
                 "Ascetics raise, plus 1 per NG+ cycle the game adds itself; it is "
                 "kept when lighting or unlighting. Set "
                 "Intensity also lights unlit bonfires. The last rested bonfire "
-                "stays lit."
+                "stays lit; death and the Homeward Bone return the character there."
             ),
             text_color=("gray40", "gray60"),
             font=("Segoe UI", 11),
@@ -134,6 +141,7 @@ class DS2BonfirePanel:
         self._intensities: dict[int, int] = {}
         self._min_intensity = 1
         self._last_rested: int | None = None
+        self._restable: set[int] = set()
         self._has_character = False
         self.refresh()
 
@@ -149,6 +157,7 @@ class DS2BonfirePanel:
 
         self._ids, self._lit, self._intensities = [], {}, {}
         self._last_rested = None
+        self._restable = set()
         if bonfires is None:
             self._summary_label.configure(text="No bonfire data in this slot")
             self._update_buttons()
@@ -158,6 +167,7 @@ class DS2BonfirePanel:
         self._intensities = bonfires.intensities()
         self._set_min_intensity(bonfires.min_intensity)
         self._last_rested = bonfires.last_rested
+        self._restable = {i for i in self._lit if bonfires.can_set_last_rested(i)}
         for bonfire_id, lit in self._lit.items():
             self._ids.append(bonfire_id)
             self._tree.insert(
@@ -218,11 +228,17 @@ class DS2BonfirePanel:
         can_light = any(not self._lit[i] for i in picked)
         can_unlight = any(self._lit[i] and i != self._last_rested for i in picked)
         can_unlock = not all(self._lit.values())
+        can_rest = (
+            len(picked) == 1
+            and picked[0] != self._last_rested
+            and picked[0] in self._restable
+        )
         for button, enabled in (
             (self._light_button, can_light),
             (self._unlight_button, can_unlight),
             (self._unlock_button, can_unlock),
             (self._set_intensity_button, can_set_intensity),
+            (self._last_rested_button, can_rest),
         ):
             button.configure(
                 state="normal" if enabled and self._has_character else "disabled"
@@ -290,6 +306,17 @@ class DS2BonfirePanel:
             "Unlit ones are lit. A backup is made first.",
             "set_bonfire_intensity",
             lambda bonfires: bonfires.set_intensity(ids, intensity),
+        )
+
+    def _on_set_last_rested(self) -> None:
+        bonfire_id = self._selected_ids()[0]
+        self._apply(
+            "Set last rested bonfire",
+            f"Make {BONFIRES[bonfire_id]} the last rested bonfire?\n\n"
+            "It is lit if needed. The character still loads where they saved; "
+            "death or a Homeward Bone takes them there. A backup is made first.",
+            "set_last_rested_bonfire",
+            lambda bonfires: int(bonfires.set_last_rested(bonfire_id)),
         )
 
     def _on_unlock_all(self) -> None:
