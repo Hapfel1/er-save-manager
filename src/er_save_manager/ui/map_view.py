@@ -51,7 +51,8 @@ _BACKGROUND_HEX = "#141416"
 
 _HOVER_COLOR = "#ffffff"
 _GRID_COLOR = "#d8d8c8"
-_SELECT_COLOR = "#ff4466"
+# Tile selection outline, in the hue of the select_ring sprite.
+_SELECT_COLOR = "#f0d890"
 _PLAYER_COLOR = "#00cfff"
 _MODE_SELECT = "Select"
 _MODE_MARKER = "Add Marker"
@@ -129,7 +130,7 @@ class _MapIcons:
     """The game's map icons as PhotoImages per size, cut from the
     resources/maps/icons.png atlas (maps.json "icons" gives each one's
     x, y, w, h): marker_01..10 for the icon numbers the save stores, beacon,
-    grace and dungeon_<WorldMapPointParam icon id>."""
+    grace, dungeon_<WorldMapPointParam icon id> and select_ring."""
 
     def __init__(self, maps_dir: Path, rects: dict[str, list[int]]):
         atlas = Image.open(maps_dir / "icons.png").convert("RGBA")
@@ -141,6 +142,7 @@ class _MapIcons:
         self._beacon = self._sprites["beacon"]
         self._grace = self._sprites["grace"]
         self._bloodstain = self._sprites["bloodstain"]
+        self._select_ring = self._sprites["select_ring"]
         self._photos: dict[tuple, ImageTk.PhotoImage] = {}
 
     @staticmethod
@@ -194,6 +196,16 @@ class _MapIcons:
         if key not in self._photos:
             img = self._fit(self._bloodstain, size)
             self._photos[key] = ImageTk.PhotoImage(self._dimmed(img) if empty else img)
+        return self._photos[key]
+
+    def select_ring(self, icon_size: int) -> ImageTk.PhotoImage:
+        """The game's map selection ring, sized so its rim (at 0.49 of the
+        sprite's half width) clears an icon of icon_size by 3 px."""
+        size = round((icon_size / 2 + 3) / 0.49 * 2)
+        key = ("r", size)
+        if key not in self._photos:
+            img = self._select_ring.resize((size, size), Image.LANCZOS)
+            self._photos[key] = ImageTk.PhotoImage(img)
         return self._photos[key]
 
     def ctk_sprite(self, name: str, size: int, dimmed: bool = False) -> ctk.CTkImage:
@@ -870,6 +882,9 @@ class MapWindow:
         self._draw_markers()
         c.addtag_all("overlay")
         c.dtag("maptile", "overlay")
+        # The ring's center is opaque: keep it under every icon.
+        c.tag_lower("select_ring")
+        c.tag_lower("maptile")
 
     def _view_image(self, w: int, h: int, vx: float, vy: float) -> Image.Image:
         """The map in a w x h screen box whose top-left is map point (vx, vy)."""
@@ -959,9 +974,13 @@ class MapWindow:
             if not (-m - 30 < sx < w + m + 30 and -m - 30 < sy < h + m + 30):
                 continue
             if p is sel:
-                r = (_GRACE_SIZE if grace else _DUNGEON_SIZE) / 2 + 4
-                c.create_oval(
-                    sx - r, sy - r, sx + r, sy + r, outline=_SELECT_COLOR, width=3
+                c.create_image(
+                    sx,
+                    sy,
+                    image=self._icons.select_ring(
+                        _GRACE_SIZE if grace else _DUNGEON_SIZE
+                    ),
+                    tags="select_ring",
                 )
             image = (
                 self._icons.grace(_GRACE_SIZE, self._grace_locked(p))
@@ -1082,16 +1101,14 @@ class MapWindow:
             sx, sy = self._to_screen(m.x, m.y)
             selected = m is self._selected_marker
             if m.kind == BEACON:
-                # The pillar's tip marks the position.
+                # The pillar's tip marks the position; the ring surrounds the
+                # whole pillar.
                 if selected:
-                    c.create_oval(
-                        sx - 8,
-                        sy - 4,
-                        sx + 8,
-                        sy + 4,
-                        outline="white",
-                        width=2,
-                        tags=tag,
+                    c.create_image(
+                        sx,
+                        sy - _BEACON_HEIGHT / 2,
+                        image=self._icons.select_ring(_BEACON_HEIGHT),
+                        tags=(tag, "select_ring"),
                     )
                 item = c.create_image(
                     sx,
@@ -1102,15 +1119,11 @@ class MapWindow:
                 )
             else:
                 if selected:
-                    r = _MARKER_SIZE / 2 + 3
-                    c.create_oval(
-                        sx - r,
-                        sy - r,
-                        sx + r,
-                        sy + r,
-                        outline="white",
-                        width=3,
-                        tags=tag,
+                    c.create_image(
+                        sx,
+                        sy,
+                        image=self._icons.select_ring(_MARKER_SIZE),
+                        tags=(tag, "select_ring"),
                     )
                 item = c.create_image(
                     sx, sy, image=self._icons.marker(m.icon, _MARKER_SIZE), tags=tag
