@@ -81,3 +81,37 @@ def test_intensity_stops_at_eight():
     data = _data()
     data[ARRAY + 0x300 + IDS.index(CARDINAL_TOWER)] = 5
     assert Bonfires(data, cycle=6).intensities()[CARDINAL_TOWER] == 8
+
+
+MAJULA = 4650
+MAPS = {CARDINAL_TOWER: 0x0A0A0000, MAJULA: 0x0A040000}
+
+
+def _rested_data() -> bytearray:
+    """A slot that last rested at Cardinal Tower, as the game writes it."""
+    data = bytearray(ARRAY + 0x1000)
+    struct.pack_into(f"<{len(IDS)}H", data, ARRAY, *IDS)
+    data[ARRAY + 0x200 + IDS.index(CARDINAL_TOWER)] = 1
+    struct.pack_into("<3I", data, ARRAY + 0xC00, 0x0A0A0000, CARDINAL_TOWER, 0)
+    return data
+
+
+def test_last_rested_reads_the_bonfire_id():
+    assert Bonfires(_rested_data()).last_rested == CARDINAL_TOWER
+
+
+def test_set_last_rested_writes_map_and_bonfire_and_lights_it():
+    data = _rested_data()
+    bonfires = Bonfires(data, bonfire_maps=MAPS)
+    assert bonfires.set_last_rested(MAJULA)
+    assert struct.unpack_from("<3I", data, ARRAY + 0xC00) == (0x0A040000, MAJULA, 0)
+    assert bonfires.last_rested == MAJULA
+    assert bonfires.lit()[MAJULA] is True
+    assert not bonfires.set_last_rested(MAJULA)
+
+
+def test_set_last_rested_needs_the_bonfire_map():
+    bonfires = Bonfires(_rested_data(), bonfire_maps=MAPS)
+    assert not bonfires.can_set_last_rested(2650)
+    with pytest.raises(ValueError):
+        bonfires.set_last_rested(2650)
