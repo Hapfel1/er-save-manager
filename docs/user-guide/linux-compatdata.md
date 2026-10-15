@@ -29,7 +29,7 @@ The tool shows this warning when it detects your save file is inside a compatdat
 > Your save file is located in:
 > `/path/to/your/save/ER0000.sl2`
 >
-> This is NOT the default Steam compatdata location!
+> This is NOT the default Steam compatdata location.
 >
 > If you remove the custom launcher (e.g. `ersc_launcher.exe`) from Steam, Steam will remove that compatdata folder and your save will get lost.
 

@@ -179,7 +179,7 @@ class DS3BossesTab:
         else:
             bosses = self._bosses
             if not CTkMessageBox.askyesno(
-                "Confirm",
+                "Change All Bosses",
                 f"{'Kill' if defeated else 'Respawn'} all bosses in Slot "
                 f"{self._current_slot + 1}?",
                 parent=self.parent,

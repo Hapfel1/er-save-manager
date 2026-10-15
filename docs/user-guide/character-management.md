@@ -37,7 +37,7 @@ The Character Management tab provides complete control over your character slots
 - Import Character
 - Delete Character
 
-**Operation Details**
+**Operation details**
 
 - Displays buttons related to the selected operation
 

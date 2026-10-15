@@ -324,7 +324,7 @@ class SaveManagerGUI:
     def _update_compact_header(self) -> None:
         """Compact header below _COMPACT_HEIGHT (logical px), e.g. 1280x800.
 
-        Hides the subtitle and the "Select a Save File" label, moves the game
+        Hides the subtitle and the "Select a save file" label, moves the game
         selector into the save path row and tightens the button row, which
         leaves about 110 px more for the tab content.
         """
@@ -495,7 +495,7 @@ class SaveManagerGUI:
         )
 
         result = CTkMessageBox.askyesno(
-            "Game is Running",
+            "Game Is Running",
             f"{game_name} is currently running.\n\n"
             "The save file cannot be loaded while the game is running.\n\n"
             "Would you like to force kill the game process?",
@@ -507,7 +507,7 @@ class SaveManagerGUI:
 
         if not PlatformUtils.kill_game_process(process_name):
             CTkMessageBox.showerror(
-                "Error",
+                "Terminate Failed",
                 f"Failed to terminate {game_name} process.\n\n"
                 "The game may require manual closing or administrator permissions.",
                 parent=self.root,
@@ -531,7 +531,7 @@ class SaveManagerGUI:
         CTkMessageBox.showerror(
             "Timeout",
             f"Game process is still running after kill attempt.\n\n"
-            f"Please close {game_name} manually and try again.",
+            f"Close {game_name} manually and try again.",
             parent=self.root,
         )
         return False
@@ -626,7 +626,7 @@ class SaveManagerGUI:
             text_color=palette.PURPLE_TEXT,
         ).pack(side=ctk.LEFT, padx=(0, 10))
         ctk.CTkLabel(
-            header, text="Update Available!", font=("Segoe UI", 19, "bold")
+            header, text="Update Available", font=("Segoe UI", 19, "bold")
         ).pack(side=ctk.LEFT)
         versions = ds.box(main_frame, pady=(12, 10))
         for i, (label, value) in enumerate(
@@ -760,7 +760,7 @@ class SaveManagerGUI:
 
         self._select_save_label = ctk.CTkLabel(
             file_frame,
-            text="Select a Save File",
+            text="Select a save file",
             font=("Segoe UI", 12, "bold"),
         )
         self._select_save_label.pack(anchor="w", padx=12, pady=(4, 4))
@@ -1480,7 +1480,7 @@ class SaveManagerGUI:
         select_frame = ctk.CTkFrame(container, fg_color=("gray76", "gray24"))
         select_frame.pack(fill=tk.X, padx=10, pady=(12, 8))
 
-        ctk.CTkLabel(select_frame, text="Character Slot:").pack(
+        ctk.CTkLabel(select_frame, text="Character slot:").pack(
             side=ctk.LEFT, padx=(0, 10)
         )
 
@@ -1601,7 +1601,7 @@ class SaveManagerGUI:
 
         if not self.save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.root
+                "No Save", "Load a save file first.", parent=self.root
             )
             return
 
@@ -1611,7 +1611,7 @@ class SaveManagerGUI:
             slot_idx = int(slot_display.split(" - ")[0]) - 1
         except Exception:
             CTkMessageBox.showwarning(
-                "Invalid Slot", "Please choose a character slot.", parent=self.root
+                "Invalid Slot", "Choose a character slot.", parent=self.root
             )
             return
 
@@ -1621,7 +1621,7 @@ class SaveManagerGUI:
         # there, so the active flag decides, as in the save fixer.
         if slot.is_empty() or slot_idx not in self.save_file.get_active_slots():
             CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {slot_idx + 1} is empty!", parent=self.root
+                "Empty Slot", f"Slot {slot_idx + 1} is empty.", parent=self.root
             )
             return
 
@@ -1868,14 +1868,16 @@ class SaveManagerGUI:
                         shutil.copy2(save_path, new_path)
                         self.file_path_var.set(str(new_path))
                         CTkMessageBox.showinfo(
-                            "Success",
+                            "Save Copied",
                             f"Save file copied to:\n{new_path}\n\nOriginal file remains at:\n{save_path}",
                             parent=self.root,
                         )
                         dialog.destroy()
                     except Exception as e:
                         CTkMessageBox.showerror(
-                            "Error", f"Failed to copy save:\n{e}", parent=self.root
+                            "Copy Failed",
+                            f"Failed to copy save:\n{e}",
+                            parent=self.root,
                         )
 
         def dont_show_again():
@@ -2291,7 +2293,7 @@ class SaveManagerGUI:
         self._flush_pending_tabs()
         self.selected_slot_index = slot_index
 
-    def load_save(self, silent=False, toast_message="Save file loaded successfully!"):
+    def load_save(self, silent=False, toast_message="Save file loaded successfully."):
         """Load save file in background thread to prevent UI freezing
 
         Args:
@@ -2303,7 +2305,7 @@ class SaveManagerGUI:
 
         if not save_path or not os.path.exists(save_path):
             CTkMessageBox.showerror(
-                "Error", "Please select a valid save file first!", parent=self.root
+                "No Save File", "Select a valid save file first.", parent=self.root
             )
             return
 
@@ -2351,7 +2353,7 @@ class SaveManagerGUI:
         thread.start()
 
     def _load_save_background(
-        self, save_path, silent=False, toast_message="Save file loaded successfully!"
+        self, save_path, silent=False, toast_message="Save file loaded successfully."
     ):
         """Background thread for loading save file"""
         try:
@@ -2380,7 +2382,9 @@ class SaveManagerGUI:
             self.root.after(
                 0,
                 lambda: CTkMessageBox.showerror(
-                    "Error", f"Failed to load save file:\n{error_msg}", parent=self.root
+                    "Load Failed",
+                    f"Failed to load save file:\n{error_msg}",
+                    parent=self.root,
                 ),
             )
             self.root.after(0, lambda: self.status_var.set("Load failed"))
@@ -2474,7 +2478,7 @@ class SaveManagerGUI:
             self.dsr_save = DSRSave.from_file(save_path)
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to load DSR save:\n{e}", parent=self.root
+                "Load Failed", f"Failed to load DSR save:\n{e}", parent=self.root
             )
             return
 
@@ -2542,7 +2546,7 @@ class SaveManagerGUI:
             self.ds3_save = DS3Save.from_file(save_path)
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to load DS3 save:\n{e}", parent=self.root
+                "Load Failed", f"Failed to load DS3 save:\n{e}", parent=self.root
             )
             return
 
@@ -2599,7 +2603,7 @@ class SaveManagerGUI:
             self.ds2_save = DS2Save.from_file(save_path)
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to load DS2 save:\n{e}", parent=self.root
+                "Load Failed", f"Failed to load DS2 save:\n{e}", parent=self.root
             )
             return
 
@@ -2650,7 +2654,7 @@ class SaveManagerGUI:
             self._nr_save = NightreignSave.from_file(save_path)
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to load Nightreign save:\n{e}", parent=self.root
+                "Load Failed", f"Failed to load Nightreign save:\n{e}", parent=self.root
             )
             return
 
@@ -2729,7 +2733,7 @@ class SaveManagerGUI:
         save_file,
         save_path,
         silent=False,
-        toast_message="Save file loaded successfully!",
+        toast_message="Save file loaded successfully.",
     ):
         """Finalize save loading on main thread"""
         self._flush_pending_tabs()
@@ -2940,7 +2944,9 @@ class SaveManagerGUI:
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to open backup manager:\n{e}", parent=self.root
+                "Backup Manager Failed",
+                f"Failed to open backup manager:\n{e}",
+                parent=self.root,
             )
 
     def _update_watched_mtime(self) -> None:

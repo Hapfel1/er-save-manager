@@ -46,7 +46,7 @@ class HexEditorTab:
 
         ctk.CTkLabel(
             warning_frame,
-            text="⚠️  Warning: Direct hex editing can corrupt your save file. Use with caution!",
+            text="Warning: Direct hex editing can corrupt your save file. Use with caution.",
             font=("Segoe UI", 12, "bold"),
             text_color=("#cc0000", "#ff8080"),
         ).pack(padx=10, pady=8)
@@ -86,7 +86,7 @@ class HexEditorTab:
 
         ctk.CTkLabel(
             hex_frame,
-            text="Hex Data",
+            text="Hex data",
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
@@ -123,7 +123,7 @@ class HexEditorTab:
 
         ctk.CTkLabel(
             info_panel,
-            text="Save Structure Info",
+            text="Save structure info",
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
@@ -146,7 +146,7 @@ class HexEditorTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
@@ -162,7 +162,8 @@ class HexEditorTab:
         except ValueError:
             CTkMessageBox.showerror(
                 "Invalid Offset",
-                "Please enter a valid hex offset (e.g., 0x1000, parent=self.parent)",
+                "Enter a valid hex offset (e.g., 0x1000).",
+                parent=self.parent,
             )
 
     def hex_display_at_offset(self, offset=0, length=512):
@@ -213,7 +214,7 @@ class HexEditorTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 

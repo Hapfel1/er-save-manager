@@ -247,7 +247,7 @@ class DS3InventoryTab:
 
         head = ctk.CTkFrame(left, fg_color="transparent")
         head.grid(row=0, column=0, columnspan=2, sticky="ew", padx=10, pady=(10, 4))
-        ctk.CTkLabel(head, text="Spawn Items", font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(head, text="Spawn items", font=("Segoe UI", 12, "bold")).pack(
             side="left"
         )
         ctk.CTkCheckBox(

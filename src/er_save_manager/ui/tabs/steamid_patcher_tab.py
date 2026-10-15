@@ -91,7 +91,7 @@ class SteamIDPatcherTab:
 
         ctk.CTkLabel(
             current_frame,
-            text="Current Save File",
+            text="Current save file",
             font=("Segoe UI", 12, "bold"),
         ).pack(pady=(12, 6), padx=12, anchor="w")
 
@@ -321,9 +321,7 @@ class SteamIDPatcherTab:
     def patch_steamid(self):
         profile = self._selected_profile()
         if profile is None:
-            CTkMessageBox.showwarning(
-                "No Game", "Please select a game.", parent=self.parent
-            )
+            CTkMessageBox.showwarning("No Game", "Select a game.", parent=self.parent)
             return
 
         if not profile.supports_steamid_patch:
@@ -382,7 +380,7 @@ class SteamIDPatcherTab:
         if not save_file:
             CTkMessageBox.showwarning(
                 "No Save",
-                "Please load an Elden Ring save file first.",
+                "Load an Elden Ring save file first.",
                 parent=self.parent,
             )
             return
@@ -445,7 +443,7 @@ class SteamIDPatcherTab:
             self.parent.after(
                 100,
                 lambda: CTkMessageBox.showinfo(
-                    "Success",
+                    "SteamID Patched",
                     f"Updated USER_DATA_10 SteamID\n"
                     f"Updated profile summary\n"
                     f"Synced {patched_count} character slot(s)\n\n"
@@ -458,7 +456,7 @@ class SteamIDPatcherTab:
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"SteamID patch failed:\n{e}", parent=self.parent
+                "Patch Failed", f"SteamID patch failed:\n{e}", parent=self.parent
             )
 
     def _patch_generic(self, profile, new_steamid: int):
@@ -470,7 +468,7 @@ class SteamIDPatcherTab:
                 0,
                 lambda: CTkMessageBox.showwarning(
                     "No Save File",
-                    "Please select a save file first using Browse or Auto-Find.",
+                    "Select a save file first using Browse or Auto-Find.",
                     parent=self.parent,
                 ),
             )
@@ -516,7 +514,7 @@ class SteamIDPatcherTab:
             self.parent.after(
                 0,
                 lambda: CTkMessageBox.showinfo(
-                    "Success",
+                    "SteamID Patched",
                     f"{msg}\n\nBackup created before patching.",
                     parent=self.parent,
                 ),
@@ -585,7 +583,7 @@ class SteamIDPatcherTab:
             self.parent.after(
                 0,
                 lambda: CTkMessageBox.showerror(
-                    "Error", f"SteamID patch failed:\n{err}", parent=self.parent
+                    "Patch Failed", f"SteamID patch failed:\n{err}", parent=self.parent
                 ),
             )
 
@@ -600,7 +598,7 @@ class SteamIDPatcherTab:
         url = self.steam_url_var.get().strip()
         if not url:
             CTkMessageBox.showwarning(
-                "Empty URL", "Please enter a Steam profile URL", parent=self.parent
+                "Empty URL", "Enter a Steam profile URL", parent=self.parent
             )
             return
 

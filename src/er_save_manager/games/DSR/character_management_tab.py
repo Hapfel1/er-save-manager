@@ -70,7 +70,7 @@ class DSRCharacterManagementTab:
         selector = ctk.CTkFrame(scroll, corner_radius=10)
         selector.pack(fill=tk.X, padx=20, pady=10)
         ctk.CTkLabel(
-            selector, text="Select Operation", font=("Segoe UI", 12, "bold")
+            selector, text="Select operation", font=("Segoe UI", 12, "bold")
         ).pack(anchor=tk.W, padx=15, pady=(10, 5))
 
         controls = ctk.CTkFrame(selector, fg_color="transparent")
@@ -101,7 +101,7 @@ class DSRCharacterManagementTab:
         self._ops_panel = ctk.CTkFrame(scroll, corner_radius=10)
         self._ops_panel.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
         ctk.CTkLabel(
-            self._ops_panel, text="Operation Details", font=("Segoe UI", 12, "bold")
+            self._ops_panel, text="Operation details", font=("Segoe UI", 12, "bold")
         ).pack(anchor=tk.W, padx=15, pady=(10, 5))
 
         self._ops_scrollable = ctk.CTkScrollableFrame(
@@ -323,8 +323,8 @@ class DSRCharacterManagementTab:
     def _check_game_not_running(self) -> bool:
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
-                "Game is running",
-                "Please close Dark Souls: Remastered before modifying save files.",
+                "Game Is Running",
+                "Close Dark Souls: Remastered before modifying save files.",
                 parent=self.parent,
             )
             return False
@@ -337,7 +337,7 @@ class DSRCharacterManagementTab:
         save = self._get_save()
         if not save:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
@@ -345,8 +345,8 @@ class DSRCharacterManagementTab:
         to_slot = self._slot_index(self._copy_to_var.get())
         if from_slot == to_slot:
             CTkMessageBox.showerror(
-                "Error",
-                "Source and destination slots must be different!",
+                "Same Slot",
+                "Source and destination slots must be different.",
                 parent=self.parent,
             )
             return
@@ -354,7 +354,7 @@ class DSRCharacterManagementTab:
         from_char = save.characters[from_slot]
         if from_char is None:
             CTkMessageBox.showerror(
-                "Error", f"Slot {from_slot + 1} is empty!", parent=self.parent
+                "Empty Slot", f"Slot {from_slot + 1} is empty.", parent=self.parent
             )
             return
 
@@ -387,14 +387,14 @@ class DSRCharacterManagementTab:
             if self._reload:
                 self._reload()
             self._show_toast(
-                f"Character '{from_char.name}' copied to Slot {to_slot + 1}! "
+                f"Character '{from_char.name}' copied to Slot {to_slot + 1}. "
                 "In-game, this slot may still show the old character until "
                 "you load it once.",
                 duration=4500,
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Copy failed:\n{str(e)}", parent=self.parent
+                "Copy Failed", f"Copy failed:\n{str(e)}", parent=self.parent
             )
 
     def _swap_characters(self) -> None:
@@ -404,7 +404,7 @@ class DSRCharacterManagementTab:
         save = self._get_save()
         if not save:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
@@ -412,7 +412,7 @@ class DSRCharacterManagementTab:
         slot_b = self._slot_index(self._swap_b_var.get())
         if slot_a == slot_b:
             CTkMessageBox.showerror(
-                "Error", "Slots must be different!", parent=self.parent
+                "Same Slot", "Slots must be different.", parent=self.parent
             )
             return
 
@@ -441,11 +441,11 @@ class DSRCharacterManagementTab:
             if self._reload:
                 self._reload()
             self._show_toast(
-                f"Swapped Slot {slot_a + 1} and Slot {slot_b + 1}!", duration=2500
+                f"Swapped Slot {slot_a + 1} and Slot {slot_b + 1}.", duration=2500
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Swap failed:\n{str(e)}", parent=self.parent
+                "Swap Failed", f"Swap failed:\n{str(e)}", parent=self.parent
             )
 
     def _delete_character(self) -> None:
@@ -455,7 +455,7 @@ class DSRCharacterManagementTab:
         save = self._get_save()
         if not save:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
@@ -463,7 +463,9 @@ class DSRCharacterManagementTab:
         char = save.characters[slot]
         if char is None:
             CTkMessageBox.showinfo(
-                "Info", f"Slot {slot + 1} is already empty.", parent=self.parent
+                "Slot Already Empty",
+                f"Slot {slot + 1} is already empty.",
+                parent=self.parent,
             )
             return
 
@@ -494,14 +496,14 @@ class DSRCharacterManagementTab:
             self._show_toast(f"Character deleted from Slot {slot + 1}", duration=2500)
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Delete failed:\n{str(e)}", parent=self.parent
+                "Delete Failed", f"Delete failed:\n{str(e)}", parent=self.parent
             )
 
     def _export_character(self) -> None:
         save = self._get_save()
         if not save:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
@@ -509,7 +511,7 @@ class DSRCharacterManagementTab:
         char = save.characters[slot]
         if char is None:
             CTkMessageBox.showerror(
-                "Error", f"Slot {slot + 1} is empty!", parent=self.parent
+                "Empty Slot", f"Slot {slot + 1} is empty.", parent=self.parent
             )
             return
 
@@ -527,13 +529,13 @@ class DSRCharacterManagementTab:
         try:
             character_ops.export_character(save, slot, Path(output_path))
             CTkMessageBox.showinfo(
-                "Success",
+                "Character Exported",
                 f"Character '{char.name}' exported to:\n{output_path}",
                 parent=self.parent,
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Export failed:\n{str(e)}", parent=self.parent
+                "Export Failed", f"Export failed:\n{str(e)}", parent=self.parent
             )
 
     def _import_character(self) -> None:
@@ -543,7 +545,7 @@ class DSRCharacterManagementTab:
         save = self._get_save()
         if not save:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
@@ -584,11 +586,11 @@ class DSRCharacterManagementTab:
             if self._reload:
                 self._reload()
             self._show_toast(
-                f"Character imported to Slot {to_slot + 1}!", duration=2500
+                f"Character imported to Slot {to_slot + 1}.", duration=2500
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Import failed:\n{str(e)}", parent=self.parent
+                "Import Failed", f"Import failed:\n{str(e)}", parent=self.parent
             )
 
     def _transfer_character(self) -> None:
@@ -598,7 +600,7 @@ class DSRCharacterManagementTab:
         save = self._get_save()
         if not save:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
@@ -606,7 +608,7 @@ class DSRCharacterManagementTab:
         from_char = save.characters[from_slot]
         if from_char is None:
             CTkMessageBox.showerror(
-                "Error", f"Slot {from_slot + 1} is empty!", parent=self.parent
+                "Empty Slot", f"Slot {from_slot + 1} is empty.", parent=self.parent
             )
             return
 
@@ -616,7 +618,7 @@ class DSRCharacterManagementTab:
             return
         if current_path and Path(target_path).resolve() == Path(current_path).resolve():
             CTkMessageBox.showerror(
-                "Error",
+                "Same Save File",
                 "Select a different target save file for transfer.",
                 parent=self.parent,
             )
@@ -626,7 +628,9 @@ class DSRCharacterManagementTab:
             target_save = DSRSave.from_file(target_path)
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Could not load target save:\n{str(e)}", parent=self.parent
+                "Load Failed",
+                f"Could not load target save:\n{str(e)}",
+                parent=self.parent,
             )
             return
 
@@ -660,14 +664,14 @@ class DSRCharacterManagementTab:
             if self._reload:
                 self._reload()
             self._show_toast(
-                f"Character transferred to target Slot {to_slot + 1}! "
+                f"Character transferred to target Slot {to_slot + 1}. "
                 "In-game, this slot may still show the old character until "
                 "you load it once.",
                 duration=4500,
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Transfer failed:\n{str(e)}", parent=self.parent
+                "Transfer Failed", f"Transfer failed:\n{str(e)}", parent=self.parent
             )
 
     def _browse_target_save_manually(self) -> str | None:

@@ -242,7 +242,7 @@ class GraceDialog:
                 return
 
             if not CTkMessageBox.askyesno(
-                "Confirm",
+                "Change Sites of Grace",
                 f"{action} {len(changed)} site(s) of grace on "
                 f"Slot {slot_idx + 1}?\n\n"
                 "A backup will be created automatically.",

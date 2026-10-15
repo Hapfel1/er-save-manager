@@ -195,7 +195,9 @@ class MessageManagerDialog:
                 save.to_file(save_path)
                 self.reload_save()
         if errors:
-            CTkMessageBox.showerror("Error", "\n".join(errors), parent=self.dialog)
+            CTkMessageBox.showerror(
+                "Messages Not Saved", "\n".join(errors), parent=self.dialog
+            )
         self._refresh()
         return done
 

@@ -12,10 +12,7 @@ import urllib.parse
 import zipfile
 from pathlib import Path
 
-import customtkinter as ctk
-
-from er_save_manager.ui import palette
-from er_save_manager.ui.utils import _get_subprocess_env, center_window, open_url
+from er_save_manager.ui.utils import _get_subprocess_env, open_url
 
 
 def submit_character_via_browser(
@@ -112,7 +109,7 @@ def submit_character_via_browser(
     except Exception as e:
         print(f"Failed to prepare character submission: {e}")
         print(
-            "If you're seeing this, please report this error to the developer with the details below:"
+            "If you're seeing this, report this error to the developer with the details below:"
         )
         traceback.print_exc()
         return (False, None)
@@ -211,7 +208,7 @@ def _create_issue_body(
 
 ---
 
-### 📦 Character Package
+### Character Package
 
 """
 
@@ -226,16 +223,16 @@ def _create_issue_body(
 - `body.jpg` - Full body screenshot
 - `preview.jpg` - Preview thumbnail (optional)
 
-**📌 TO COMPLETE SUBMISSION:**
+**To complete the submission:**
 1. Drag and drop `{zip_filename}` into this text box
 2. Wait for upload to complete
 3. Click "Submit new issue"
 
 """
     else:
-        body += """⚠️ **Error:** Failed to create package file.
+        body += """**Error:** Failed to create package file.
 
-Please attach your character files manually:
+Attach your character files manually:
 - Character .erc file
 - Face screenshot
 - Body screenshot
@@ -245,7 +242,7 @@ Please attach your character files manually:
 
     body += "---\n\n"
 
-    body += """### 📊 Character Metadata Preview
+    body += """### Character Metadata Preview
 
 <details>
 <summary>Click to expand metadata</summary>
@@ -289,7 +286,7 @@ def _create_compact_issue_body(
 
 ---
 
-### 📦 Package
+### Package
 """
 
     if zip_path:
@@ -313,86 +310,7 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
     import platform
     import subprocess
 
-    from er_save_manager.ui.utils import force_render_dialog
-
-    dialog = ctk.CTkToplevel()
-    dialog.title("Submission Ready")
-    width, height = 900, 600
-    dialog.resizable(False, False)
-
-    center_window(dialog, width, height)
-
-    dialog.attributes("-topmost", True)
-
-    # Force rendering on Linux
-    force_render_dialog(dialog)
-
-    dialog.grab_set()
-
-    main_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-    main_frame.pack(fill=ctk.BOTH, expand=True, padx=30, pady=30)
-
-    title = ctk.CTkLabel(
-        main_frame,
-        text="✅ Character Ready to Submit!",
-        font=("Segoe UI", 20, "bold"),
-    )
-    title.pack(pady=(0, 20))
-
-    zip_filename = Path(zip_path).name
-
-    info = ctk.CTkLabel(
-        main_frame,
-        text="📦 Your character package has been created:",
-        font=("Segoe UI", 14),
-        justify=ctk.CENTER,
-    )
-    info.pack(pady=(0, 8))
-
-    zip_label = ctk.CTkLabel(
-        main_frame,
-        text=zip_filename,
-        font=("Segoe UI", 13, "bold"),
-        text_color=palette.BLUE_TEXT,
-    )
-    zip_label.pack(pady=(0, 25))
-
-    info_box = ctk.CTkFrame(
-        main_frame, fg_color=("#f0f4f8", "#1e2839"), corner_radius=10
-    )
-    info_box.pack(fill=ctk.BOTH, expand=True, padx=0, pady=(0, 20))
-
-    ctk.CTkLabel(
-        info_box,
-        text="Your browser has opened to GitHub.",
-        font=("Segoe UI", 13),
-        justify=ctk.LEFT,
-    ).pack(anchor=ctk.W, padx=20, pady=(15, 12))
-
-    ctk.CTkLabel(
-        info_box,
-        text="Next steps:",
-        font=("Segoe UI", 12, "bold"),
-        justify=ctk.LEFT,
-    ).pack(anchor=ctk.W, padx=20, pady=(0, 10))
-
-    instructions_text = """1. Click 'Open Folder' below to find your package
-2. Drag the ZIP file into GitHub's text box
-3. Wait for the upload to complete
-4. Click the green 'Submit new issue' button
-5. Wait for maintainer to test and approve
-6. You'll be notified when it's published!"""
-
-    ctk.CTkLabel(
-        info_box,
-        text=instructions_text,
-        justify=ctk.LEFT,
-        font=("Segoe UI", 12),
-        text_color=("#4b5563", "#d0d8e0"),
-    ).pack(anchor=ctk.W, padx=20, pady=(0, 15))
-
-    button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-    button_frame.pack(fill=ctk.X, pady=(0, 0))
+    from er_save_manager.ui.dialogs.community_dialogs import show_submission_ready
 
     def open_folder():
         """Open the folder containing the ZIP file."""
@@ -410,39 +328,17 @@ def show_submission_success_dialog(char_name: str, zip_path: str):
             print(f"Failed to open folder: {e}")
             print(f"Package location: {folder_path}")
 
-    open_btn = ctk.CTkButton(
-        button_frame,
-        text="📁 Open Folder",
-        command=open_folder,
-        width=200,
-        height=40,
-        font=("Segoe UI", 13),
+    show_submission_ready(
+        "Character Ready to Submit",
+        "Your character package has been created.",
+        zip_path,
+        [
+            "Click 'Open Folder' below to find your package",
+            "Drag the ZIP file into GitHub's text box",
+            "Wait for the upload to complete",
+            "Click the green 'Submit new issue' button",
+            "Wait for maintainer to test and approve",
+            "You'll be notified when it's published.",
+        ],
+        open_folder,
     )
-    open_btn.pack(side=ctk.LEFT, padx=(0, 12))
-
-    close_btn = ctk.CTkButton(
-        button_frame,
-        text="Close",
-        command=dialog.destroy,
-        width=150,
-        height=40,
-        font=("Segoe UI", 13),
-    )
-    close_btn.pack(side=ctk.LEFT)
-
-    path_label = ctk.CTkLabel(
-        main_frame,
-        text="Package Location (for your reference):",
-        font=("Segoe UI", 12, "bold"),
-    )
-    path_label.pack(anchor=ctk.W, pady=(20, 8))
-
-    path_display = ctk.CTkLabel(
-        main_frame,
-        text=str(zip_path),
-        font=("Segoe UI", 12),
-        text_color=("#666666", "#999999"),
-        wraplength=800,
-        justify=ctk.LEFT,
-    )
-    path_display.pack(anchor=ctk.W)

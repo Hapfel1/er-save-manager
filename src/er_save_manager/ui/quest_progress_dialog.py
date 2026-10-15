@@ -8,9 +8,10 @@ import tkinter as tk
 
 import customtkinter as ctk
 
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, center_window, force_render_dialog
+from er_save_manager.ui.utils import bind_mousewheel
 
 
 class QuestProgressDialog:
@@ -33,59 +34,72 @@ class QuestProgressDialog:
     ):
         from er_save_manager.data.quest_flags_db import QUEST_FLAGS
 
-        dialog = ctk.CTkToplevel(parent)
-        dialog.title("Quest Progress")
-        width, height = 900, 650
-        dialog.transient(parent)
-        dialog.update_idletasks()
-        parent.update_idletasks()
-        center_window(dialog, width, height, parent=parent)
+        dialog = ds.create(parent, "Quest Progress")
         dialog.resizable(True, True)
-        force_render_dialog(dialog)
-        dialog.grab_set()
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
 
-        # ---- Top bar ----
-        top_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-        top_frame.pack(fill=tk.X, padx=14, pady=(12, 0))
+        # ---- Bottom bar (packed first so a short window shrinks the lists) ----
+        bottom = ctk.CTkFrame(main, fg_color="transparent")
+        bottom.pack(side=tk.BOTTOM, fill=tk.X, pady=(12, 0))
+        apply_all_btn = ds.button(
+            bottom, "Apply All Steps to Here", None, width=180, state="disabled"
+        )
+        apply_all_btn.pack(side=tk.LEFT, padx=(0, 8))
+        reset_btn = ds.button(
+            bottom,
+            "Reset All Quest Flags",
+            None,
+            primary=False,
+            width=160,
+            state="disabled",
+        )
+        reset_btn.pack(side=tk.LEFT)
+        ds.button(bottom, "Close", dialog.destroy, primary=False).pack(side=tk.RIGHT)
 
-        ctk.CTkLabel(
-            top_frame,
-            text="Quest Progress",
-            font=("Segoe UI", 15, "bold"),
-        ).pack(side=tk.LEFT)
-
+        # ---- Header ----
+        top_frame = ctk.CTkFrame(main, fg_color="transparent")
+        top_frame.pack(fill=tk.X)
+        ctk.CTkLabel(top_frame, text="Quest Progress", font=ds.TITLE_LARGE).pack(
+            side=tk.LEFT
+        )
         search_var = tk.StringVar()
         search_entry = ctk.CTkEntry(
             top_frame,
             textvariable=search_var,
             placeholder_text="Search NPCs or steps...",
-            width=220,
+            width=240,
+            height=32,
+            font=ds.FONT,
         )
         search_entry.pack(side=tk.RIGHT)
 
         # ---- Main split layout ----
-        split = ctk.CTkFrame(dialog, fg_color="transparent")
-        split.pack(fill=tk.BOTH, expand=True, padx=14, pady=10)
-        split.columnconfigure(0, weight=0, minsize=200)
+        split = ctk.CTkFrame(main, fg_color="transparent")
+        split.pack(fill=tk.BOTH, expand=True, pady=(12, 0))
+        split.columnconfigure(0, weight=0, minsize=240)
         split.columnconfigure(1, weight=1)
         split.rowconfigure(0, weight=1)
 
         # ---- NPC list (left panel) ----
-        npc_list_frame = ctk.CTkScrollableFrame(split, width=195, corner_radius=8)
-        npc_list_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
-        bind_mousewheel(npc_list_frame)
+        npc_box, npc_tree = ds.themed_tree(
+            split, columns=("npc", "steps"), show="headings", selectmode="browse"
+        )
+        npc_tree.heading("npc", text="NPC")
+        npc_tree.heading("steps", text="Steps")
+        npc_tree.column("npc", width=170, anchor="w")
+        npc_tree.column("steps", width=60, anchor="e", stretch=False)
+        npc_tree.tag_configure("done", foreground=palette.pick(palette.GREEN_TEXT))
+        npc_box.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
 
         # ---- Steps panel (right panel) ----
-        steps_outer = ctk.CTkFrame(split, corner_radius=8)
+        steps_outer = ctk.CTkFrame(split, corner_radius=8, fg_color=ds.BOX)
         steps_outer.grid(row=0, column=1, sticky="nsew")
         steps_outer.rowconfigure(1, weight=1)
         steps_outer.columnconfigure(0, weight=1)
 
         npc_header = ctk.CTkLabel(
-            steps_outer,
-            text="Select an NPC",
-            font=("Segoe UI", 13, "bold"),
-            anchor="w",
+            steps_outer, text="Select an NPC", font=ds.TITLE, anchor="w"
         )
         npc_header.grid(row=0, column=0, sticky="ew", padx=12, pady=(10, 6))
 
@@ -95,36 +109,9 @@ class QuestProgressDialog:
         steps_scroll.grid(row=1, column=0, sticky="nsew", padx=6, pady=(0, 6))
         bind_mousewheel(steps_scroll)
 
-        # ---- Bottom bar ----
-        bottom = ctk.CTkFrame(dialog, fg_color="transparent")
-        bottom.pack(fill=tk.X, padx=14, pady=(0, 12))
-
-        apply_all_btn = ctk.CTkButton(
-            bottom,
-            text="Apply All Steps to Here",
-            width=180,
-            state="disabled",
-        )
-        apply_all_btn.pack(side=tk.LEFT, padx=(0, 8))
-
-        reset_btn = ctk.CTkButton(
-            bottom,
-            text="Reset All Quest Flags",
-            width=160,
-            fg_color=("gray70", "gray30"),
-            hover_color=("gray60", "gray25"),
-            state="disabled",
-        )
-        reset_btn.pack(side=tk.LEFT)
-
-        ctk.CTkButton(bottom, text="Close", command=dialog.destroy, width=100).pack(
-            side=tk.RIGHT
-        )
-
         # ---- State ----
         selected_npc = tk.StringVar(value="")
-        npc_buttons = {}
-        step_widgets = []  # list of (step_dict, completion_label, apply_btn)
+        step_widgets = []  # (step_dict, apply_btn)
 
         def _safe_get_flag(flag_id):
             try:
@@ -152,40 +139,27 @@ class QuestProgressDialog:
 
             for i, step in enumerate(steps):
                 complete = _step_is_complete(step)
-                color = ("#f0fdf4", "#0f2318") if complete else ("#ffffff", "#1a1a2e")
-                border = ("#86efac", "#166534") if complete else ("#e2e8f0", "#2d2d44")
-
-                row_frame = ctk.CTkFrame(
-                    steps_scroll,
-                    corner_radius=6,
-                    fg_color=color,
-                    border_color=border,
-                    border_width=1,
-                )
+                row_frame = ctk.CTkFrame(steps_scroll, corner_radius=8, fg_color=ds.ROW)
                 row_frame.pack(fill=tk.X, pady=3, padx=2)
                 row_frame.columnconfigure(1, weight=1)
 
-                # Step number + status indicator
-                status_char = "✓" if complete else str(i + 1)
-                status_color = (
-                    ("#16a34a", "#4ade80") if complete else ("gray50", "gray60")
-                )
+                # Step number, or a check mark once every flag of the step is set
                 ctk.CTkLabel(
                     row_frame,
-                    text=status_char,
-                    font=("Segoe UI", 12, "bold"),
-                    text_color=status_color,
+                    text="✓" if complete else str(i + 1),
+                    font=ds.BOLD,
+                    text_color=ds.FOUND if complete else ds.MUTED,
                     width=28,
-                ).grid(row=0, column=0, rowspan=2, padx=(8, 4), pady=6, sticky="n")
+                ).grid(row=0, column=0, rowspan=2, padx=(8, 4), pady=8, sticky="n")
 
                 ctk.CTkLabel(
                     row_frame,
                     text=step["description"],
-                    font=("Segoe UI", 11),
+                    font=ds.FONT,
                     anchor="w",
                     justify="left",
-                    wraplength=490,
-                ).grid(row=0, column=1, sticky="ew", padx=(0, 8), pady=(6, 0))
+                    wraplength=470,
+                ).grid(row=0, column=1, sticky="ew", padx=(0, 8), pady=(8, 0))
 
                 meta_parts = []
                 if step["location"]:
@@ -194,21 +168,20 @@ class QuestProgressDialog:
                 ctk.CTkLabel(
                     row_frame,
                     text="  |  ".join(meta_parts),
-                    font=("Segoe UI", 10),
-                    text_color=("gray50", "gray60"),
+                    font=ds.SMALL,
+                    text_color=ds.MUTED,
                     anchor="w",
-                ).grid(row=1, column=1, sticky="ew", padx=(0, 8), pady=(0, 6))
+                ).grid(row=1, column=1, sticky="ew", padx=(0, 8), pady=(0, 8))
 
-                btn_text = "Applied" if complete else "Apply"
-                btn_state = "disabled" if complete else "normal"
-                apply_btn = ctk.CTkButton(
+                apply_btn = ds.button(
                     row_frame,
-                    text=btn_text,
-                    width=70,
-                    state=btn_state,
-                    command=lambda s=step, npc=npc_name: _apply_step(s, npc),
+                    "Applied" if complete else "Apply",
+                    lambda s=step, npc=npc_name: _apply_step(s, npc),
+                    primary=not complete,
+                    width=80,
+                    state="disabled" if complete else "normal",
                 )
-                apply_btn.grid(row=0, column=2, rowspan=2, padx=8, pady=6)
+                apply_btn.grid(row=0, column=2, rowspan=2, padx=8, pady=8)
 
                 step_widgets.append((step, apply_btn))
 
@@ -328,13 +301,8 @@ class QuestProgressDialog:
 
         # ---- NPC button rendering ----
         def _rebuild_npc_list(query=""):
-            for w in npc_list_frame.winfo_children():
-                w.destroy()
-            npc_buttons.clear()
-
+            npc_tree.delete(*npc_tree.get_children())
             query = query.lower().strip()
-            active = selected_npc.get()
-
             for npc_name in sorted(QUEST_FLAGS.keys()):
                 if query and query not in npc_name.lower():
                     # Also check if any step description matches
@@ -343,44 +311,33 @@ class QuestProgressDialog:
                         query in (s["description"] or "").lower() for s in steps
                     ):
                         continue
-
                 done, total = _count_complete(npc_name)
-                done / total if total else 0
-
-                is_active = npc_name == active
-                bg = palette.PURPLE_TINT if is_active else "transparent"
-
-                btn_frame = ctk.CTkFrame(npc_list_frame, fg_color=bg, corner_radius=6)
-                btn_frame.pack(fill=tk.X, pady=2)
-
-                ctk.CTkLabel(
-                    btn_frame,
-                    text=npc_name,
-                    font=("Segoe UI", 12, "bold" if is_active else "normal"),
-                    anchor="w",
-                ).pack(fill=tk.X, padx=8, pady=(4, 0))
-
-                ctk.CTkLabel(
-                    btn_frame,
-                    text=f"{done}/{total} steps",
-                    font=("Segoe UI", 10),
-                    text_color=("gray50", "gray60"),
-                    anchor="w",
-                ).pack(fill=tk.X, padx=8, pady=(0, 4))
-
-                btn_frame.bind("<Button-1>", lambda e, n=npc_name: _select_npc(n))
-                for child in btn_frame.winfo_children():
-                    child.bind("<Button-1>", lambda e, n=npc_name: _select_npc(n))
-
-                npc_buttons[npc_name] = btn_frame
+                npc_tree.insert(
+                    "",
+                    "end",
+                    iid=npc_name,
+                    values=(npc_name, f"{done}/{total}"),
+                    tags=("done",) if total and done == total else (),
+                )
+            active = selected_npc.get()
+            if npc_tree.exists(active):
+                npc_tree.selection_set(active)
+                npc_tree.see(active)
 
         def _select_npc(npc_name):
+            if npc_name == selected_npc.get():
+                return
             selected_npc.set(npc_name)
-            _rebuild_npc_list(search_var.get())
             _render_steps(npc_name)
+
+        npc_tree.bind(
+            "<<TreeviewSelect>>",
+            lambda _e: npc_tree.selection() and _select_npc(npc_tree.selection()[0]),
+        )
 
         def _on_search(*_):
             _rebuild_npc_list(search_var.get())
 
         search_var.trace_add("write", _on_search)
         _rebuild_npc_list()
+        ds.finish(dialog, parent, width=920, height=660)

@@ -143,7 +143,7 @@ class BackupManagerTab:
 
         ctk.CTkLabel(
             stats_frame,
-            text="Quick Stats",
+            text="Quick stats",
             font=("Segoe UI", 12, "bold"),
             text_color=("gray70", "gray50"),
         ).pack(anchor=tk.W, padx=15, pady=(10, 5))
@@ -163,7 +163,7 @@ class BackupManagerTab:
 
         ctk.CTkLabel(
             info_frame,
-            text="Backup Information",
+            text="Backup information",
             font=("Segoe UI", 12, "bold"),
             text_color=("gray70", "gray50"),
         ).pack(anchor=tk.W, padx=15, pady=(10, 5))
@@ -320,15 +320,15 @@ class BackupManagerTab:
 
             traceback.print_exc()
             CTkMessageBox.showerror(
-                "Error", f"Failed to open backup manager:\n{e}", parent=self.parent
+                "Backup Manager Failed",
+                f"Failed to open backup manager:\n{e}",
+                parent=self.parent,
             )
 
     def show_backup_manager(self):
         profile = self._selected_profile()
         if profile is None:
-            CTkMessageBox.showwarning(
-                "No Game", "Please select a game.", parent=self.parent
-            )
+            CTkMessageBox.showwarning("No Game", "Select a game.", parent=self.parent)
             return
 
         # For ER: require a loaded save
@@ -356,7 +356,9 @@ class BackupManagerTab:
 
             traceback.print_exc()
             CTkMessageBox.showerror(
-                "Error", f"Failed to open backup manager:\n{e}", parent=self.parent
+                "Backup Manager Failed",
+                f"Failed to open backup manager:\n{e}",
+                parent=self.parent,
             )
 
     def _open_backup_window(self, manager, profile, save_path: Path):
@@ -496,7 +498,7 @@ class BackupManagerTab:
                             manager.set_favorite(fname, new_state)
                         except Exception as e:
                             CTkMessageBox.showerror(
-                                "Error",
+                                "Lock Change Failed",
                                 f"Failed to update lock state:\n{e}",
                                 parent=dialog,
                             )
@@ -609,7 +611,7 @@ class BackupManagerTab:
                 self.show_toast("Backup created", duration=2500)
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Failed to create backup:\n{e}", parent=dialog
+                    "Backup Failed", f"Failed to create backup:\n{e}", parent=dialog
                 )
 
         def single_selection(action: str) -> str | None:
@@ -639,7 +641,7 @@ class BackupManagerTab:
                 manager.restore_backup(fname)
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Failed to restore backup:\n{e}", parent=dialog
+                    "Restore Failed", f"Failed to restore backup:\n{e}", parent=dialog
                 )
                 return
 
@@ -694,7 +696,7 @@ class BackupManagerTab:
             self.update_backup_stats()
             if failed:
                 CTkMessageBox.showerror(
-                    "Error",
+                    "Delete Failed",
                     "Failed to delete:\n" + "\n".join(failed),
                     parent=dialog,
                 )
@@ -805,13 +807,13 @@ class BackupManagerTab:
                         continue
 
                 CTkMessageBox.showerror(
-                    "Error",
+                    "Folder Not Opened",
                     f"Could not open folder.\nPath: {path}",
                     parent=dialog,
                 )
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Failed to open folder:\n{e}", parent=dialog
+                    "Folder Not Opened", f"Failed to open folder:\n{e}", parent=dialog
                 )
 
         # Actions on the selection on the left, window actions on the right

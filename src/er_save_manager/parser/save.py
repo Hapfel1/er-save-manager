@@ -118,7 +118,7 @@ class Save:
             obj._raw_data = data
 
         assert isinstance(obj._raw_data, bytearray), (
-            f"_raw_data is {type(obj._raw_data)}, not bytearray!"
+            f"_raw_data is {type(obj._raw_data)}, not bytearray."
         )
 
         # Verify it's mutable and non-empty
@@ -126,7 +126,7 @@ class Save:
             obj._raw_data[0] = obj._raw_data[0]  # Test write
         except TypeError as e:
             raise TypeError(
-                f"_raw_data is not writable! Type: {type(obj._raw_data)}"
+                f"_raw_data is not writable. Type: {type(obj._raw_data)}"
             ) from e
 
         obj.magic = f.read(4)

@@ -74,6 +74,7 @@ class VirtualIconGrid(ctk.CTkFrame):
         cell_h: int = 124,
         pad: int = 4,
         icon_size: int = 64,
+        icon_height: int | None = None,
         **kwargs,
     ) -> None:
         super().__init__(parent, **kwargs)
@@ -83,7 +84,9 @@ class VirtualIconGrid(ctk.CTkFrame):
         self._cell_w = cell_w
         self._cell_h = cell_h
         self._pad = pad
+        # Icons fit an icon_size x icon_height box (square by default)
         self._icon_size = icon_size
+        self._icon_h = icon_height if icon_height is not None else icon_size
 
         self._entries: list[GridEntry] = []
         self._order: dict[Hashable, int] = {}
@@ -143,6 +146,16 @@ class VirtualIconGrid(ctk.CTkFrame):
         self._filter()
         self._canvas.yview_moveto(0)
         self._relayout()
+
+    def refresh_icon(self, key: Hashable) -> None:
+        """Load an entry's icon again, e.g. after it finished downloading."""
+        pos = self._order.get(key)
+        if pos is None:
+            return
+        self._images.pop(pos, None)
+        for cell in self._cells.values():
+            if cell.pos == pos:
+                self._canvas.itemconfigure(cell.image, image=self._image(pos) or "")
 
     def visible_keys(self) -> list:
         return [self._entries[p].key for p in self._shown]
@@ -248,7 +261,7 @@ class VirtualIconGrid(ctk.CTkFrame):
             return self._fitted[text]
         font = self._text_font()
         width = self._apply_widget_scaling(self._cell_w - 16)
-        room = self._apply_widget_scaling(self._cell_h - self._icon_size - 16)
+        room = self._apply_widget_scaling(self._cell_h - self._icon_h - 16)
         max_lines = max(1, int(room // self._line_h))
 
         def measure(chunk: str) -> int:
@@ -301,11 +314,11 @@ class VirtualIconGrid(ctk.CTkFrame):
         rect = _round_rect(
             cv, 0, 0, w, h, radius=self._apply_widget_scaling(6), tags=(tag,)
         )
-        icon_y = self._apply_widget_scaling(8 + self._icon_size / 2)
+        icon_y = self._apply_widget_scaling(8 + self._icon_h / 2)
         image = cv.create_image(w / 2, icon_y, anchor="center", tags=(tag,))
         text = cv.create_text(
             w / 2,
-            self._apply_widget_scaling(self._icon_size + 14),
+            self._apply_widget_scaling(self._icon_h + 14),
             anchor="n",
             justify="center",
             font=self._text_font(),
@@ -356,7 +369,10 @@ class VirtualIconGrid(ctk.CTkFrame):
             pil = None
         if pil is not None:
             w, h = pil.size
-            scale = self._apply_widget_scaling(self._icon_size) / max(w, h, 1)
+            scale = min(
+                self._apply_widget_scaling(self._icon_size) / max(w, 1),
+                self._apply_widget_scaling(self._icon_h) / max(h, 1),
+            )
             size = (max(1, round(w * scale)), max(1, round(h * scale)))
             img = ImageTk.PhotoImage(
                 pil.convert("RGBA").resize(size, Image.LANCZOS), master=self._canvas

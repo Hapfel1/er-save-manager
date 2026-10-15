@@ -324,7 +324,9 @@ def import_nyasu(
         ensure_mutable()
         create_backup(save_file, slot_idx, "import_nyasu")
     except Exception as e:
-        CTkMessageBox.showerror("Error", f"Cannot modify save:\n{e}", parent=parent)
+        CTkMessageBox.showerror(
+            "Import Failed", f"Cannot modify save:\n{e}", parent=parent
+        )
         return
 
     failed: list[str] = [f"[parse] {m}" for m in failed_parse]

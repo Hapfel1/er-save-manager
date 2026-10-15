@@ -147,7 +147,7 @@ class DS2InspectorTab:
     def _view_issues(self) -> None:
         if self.selected_slot is None:
             CTkMessageBox.showwarning(
-                "No Selection", "Please select a character first!", parent=self.parent
+                "No Selection", "Select a character first.", parent=self.parent
             )
             return
         self._check_save(self.selected_slot)
