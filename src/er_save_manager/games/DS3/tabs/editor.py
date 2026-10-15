@@ -11,13 +11,12 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.games.DS3 import catalog
 from er_save_manager.games.DS3.character_ops import _sync_dir_name_level
 from er_save_manager.games.DS3.slot import (
-    LEVEL_STAT_OFFSET,
     MAX_SOULS,
     MAX_STAT,
     NAME_MAX_CHARS,
-    STARTING_CLASSES,
     LayoutError,
 )
 from er_save_manager.ui import palette
@@ -41,7 +40,9 @@ def _backup_and_save(ds3_save, save_path: Path, operation: str) -> None:
 
 
 class DS3EditorTab:
-    def __init__(self, parent, get_save, get_save_path, show_toast) -> None:
+    def __init__(
+        self, parent, get_save, get_save_path, show_toast, source_var=None
+    ) -> None:
         self.parent = parent
         self._get_save = get_save
         self._get_save_path = get_save_path
@@ -51,10 +52,18 @@ class DS3EditorTab:
         self._name_var = tk.StringVar()
         self._ng_var = tk.StringVar(value="0")
         self._class_var = tk.StringVar()
+        # Game data source (vanilla or a mod), shared with the Inventory tab;
+        # it selects the class table.
+        self._source_var = source_var or tk.StringVar(value=catalog.SOURCES["vanilla"])
+        self._source_var.trace_add("write", lambda *_: self._on_source_change())
         # False when the loaded stats sit below their own class's base
         # (modded or edited character); class minimums are then not enforced.
         self._enforce_class_min = True
         self._playtime_var = tk.StringVar(value="--")
+        # Level and attribute sum as loaded, for a class index the source has
+        # no row for: the level then moves by the change in the sum.
+        self._loaded_level = 0
+        self._loaded_sum = 0
 
     def setup_ui(self) -> None:
         for _ in self.setup_steps():
@@ -70,6 +79,10 @@ class DS3EditorTab:
         header.pack(fill="x", padx=10, pady=(10, 6))
         ctk.CTkLabel(
             header, text="Character Editor", font=("Segoe UI", 16, "bold")
+        ).pack(side="left")
+        ctk.CTkLabel(header, text="Game data:").pack(side="left", padx=(20, 6))
+        ctk.CTkSegmentedButton(
+            header, values=list(catalog.SOURCES.values()), variable=self._source_var
         ).pack(side="left")
         ctk.CTkButton(
             header, text="Load Character", command=self._load_selected, width=130
@@ -157,8 +170,9 @@ class DS3EditorTab:
             )
             var = tk.StringVar(value="0")
             self._stat_vars[key] = var
-            # The game derives HP, FP and stamina from the attributes on load.
-            derived = key in ("hp", "fp", "stamina")
+            # The game derives HP, FP and stamina from the attributes on load;
+            # level follows from the class and the attributes.
+            derived = key in ("level", "hp", "fp", "stamina")
             ctk.CTkEntry(
                 rg,
                 textvariable=var,
@@ -169,15 +183,16 @@ class DS3EditorTab:
         ctk.CTkLabel(rg, text="Class:").grid(
             row=row, column=0, sticky="w", padx=5, pady=5
         )
-        class_combo = ctk.CTkComboBox(
+        self._class_combo = ctk.CTkComboBox(
             rg,
             variable=self._class_var,
-            values=[name for name, _ in STARTING_CLASSES],
+            values=[c.name for c in self._classes()],
             state="readonly",
-            width=120,
+            width=160,
+            command=lambda _v: self._auto_recalc_level(),
         )
-        class_combo.grid(row=row, column=1, padx=5, pady=5)
-        patch_combo_scroll(class_combo)
+        self._class_combo.grid(row=row, column=1, padx=5, pady=5)
+        patch_combo_scroll(self._class_combo)
         self._class_note = ctk.CTkLabel(
             frame,
             text="",
@@ -269,16 +284,18 @@ class DS3EditorTab:
         if char is None:
             return
         # Remove traces before writing to avoid premature recalc
-        for key in ("vig", "atn", "end", "vit", "str", "dex", "int", "fth", "lck"):
+        for key in catalog.STAT_KEYS:
             for tid in self._stat_vars[key].trace_info():
                 self._stat_vars[key].trace_remove(tid[0], tid[1])
 
-        for key in ("vig", "atn", "end", "vit", "str", "dex", "int", "fth", "lck"):
+        for key in catalog.STAT_KEYS:
             self._stat_vars[key].set(str(char.get_stat(key)))
         self._stat_vars["level"].set(str(char.level))
+        self._loaded_level = char.level
+        self._loaded_sum = sum(char.get_stat(k) for k in catalog.STAT_KEYS)
 
         # Bind traces so any stat change auto-updates the level field
-        for key in ("vig", "atn", "end", "vit", "str", "dex", "int", "fth", "lck"):
+        for key in catalog.STAT_KEYS:
             self._stat_vars[key].trace_add(
                 "write", lambda *_: self._auto_recalc_level()
             )
@@ -286,36 +303,89 @@ class DS3EditorTab:
         self._stat_vars["hp"].set(str(char.hp))
         self._stat_vars["fp"].set(str(char.fp))
         self._stat_vars["stamina"].set(str(char.stamina))
-        class_idx = char.starting_class
-        if class_idx < len(STARTING_CLASSES):
-            name, base = STARTING_CLASSES[class_idx]
-            self._class_var.set(name)
+        self._name_var.set(char.name)
+        self._ng_var.set("0" if char.layout_error else str(char.ng_plus))
+        self._show_loaded_class()
+
+    # --- Class and level ----------------------------------------------------- #
+
+    @property
+    def _source(self) -> str:
+        label = self._source_var.get()
+        return next(k for k, v in catalog.SOURCES.items() if v == label)
+
+    def _classes(self) -> list[catalog.StartingClass]:
+        return catalog.starting_classes(self._source)
+
+    def _selected_class(self) -> catalog.StartingClass | None:
+        name = self._class_var.get()
+        return next((c for c in self._classes() if c.name == name), None)
+
+    def _loaded_char(self):
+        save = self._get_save()
+        if save is None or self._current_slot < 0:
+            return None
+        return save.characters[self._current_slot]
+
+    def _on_source_change(self) -> None:
+        if not hasattr(self, "_class_combo"):
+            return
+        self._class_combo.configure(values=[c.name for c in self._classes()])
+        self._show_loaded_class()
+
+    def _show_loaded_class(self) -> None:
+        """Select the loaded character's class in the current source's table,
+        explain any mismatch, and derive the level."""
+        char = self._loaded_char()
+        if char is None:
+            return
+        classes = self._classes()
+        index = char.starting_class
+        notes = []
+        if index < len(classes):
+            cls = classes[index]
+            self._class_var.set(cls.name)
             self._enforce_class_min = all(
-                char.get_stat(k) >= v for k, v in base.items()
+                char.get_stat(k) >= v for k, v in cls.stats.items()
             )
+            if not self._enforce_class_min:
+                notes.append(
+                    "Stats are below this class's starting values (wrong game "
+                    "data or an edited character), so class minimums are not "
+                    "enforced."
+                )
+            derived = cls.level_for({k: char.get_stat(k) for k in catalog.STAT_KEYS})
+            if derived != char.level:
+                notes.append(
+                    f"The stored level {char.level} does not match the class and "
+                    "attributes (wrong game data or an edited level). Apply "
+                    f"Changes writes level {derived}."
+                )
         else:
             self._class_var.set("")
             self._enforce_class_min = False
-        self._class_note.configure(
-            text=""
-            if self._enforce_class_min
-            else "Stats are below this class's starting values (modded or edited "
-            "character), so class minimums are not enforced."
-        )
-        self._name_var.set(char.name)
-        self._ng_var.set("0" if char.layout_error else str(char.ng_plus))
+            notes.append(
+                f"The character's class (index {index}) is not a "
+                f"{self._source_var.get()} class. "
+                "Select the game data the character was made with."
+            )
+        self._class_note.configure(text="\n".join(notes))
+        self._auto_recalc_level()
+
+    def _derived_level(self, stats: dict[str, int]) -> int:
+        """Class level plus the attribute points above the class base; without
+        a class, the loaded level moved by the change in the attribute sum."""
+        cls = self._selected_class()
+        if cls is not None:
+            return cls.level_for(stats)
+        return self._loaded_level + sum(stats.values()) - self._loaded_sum
 
     def _auto_recalc_level(self) -> None:
-        """Level is the attribute sum minus a fixed offset for every class."""
         try:
-            current_sum = sum(
-                int(self._stat_vars[k].get())
-                for k in ("vig", "atn", "end", "vit", "str", "dex", "int", "fth", "lck")
-            )
+            stats = {k: int(self._stat_vars[k].get()) for k in catalog.STAT_KEYS}
         except ValueError:
             return  # user mid-typing, skip
-        new_level = max(1, min(802, current_sum - LEVEL_STAT_OFFSET))
-        self._stat_vars["level"].set(str(new_level))
+        self._stat_vars["level"].set(str(self._derived_level(stats)))
 
     # --- Apply --------------------------------------------------------------- #
 
@@ -341,52 +411,34 @@ class DS3EditorTab:
         char = save.characters[self._current_slot]
         if char is None:
             return
-        class_names = [name for name, _ in STARTING_CLASSES]
-        class_idx = (
-            class_names.index(self._class_var.get())
-            if self._class_var.get() in class_names
-            else None
-        )
+        cls = self._selected_class()
+        class_idx = self._classes().index(cls) if cls is not None else None
         try:
-            stats = {
-                key: int(self._stat_vars[key].get())
-                for key in (
-                    "vig",
-                    "atn",
-                    "end",
-                    "vit",
-                    "str",
-                    "dex",
-                    "int",
-                    "fth",
-                    "lck",
-                )
-            }
-            level_raw = int(self._stat_vars["level"].get())
+            stats = {key: int(self._stat_vars[key].get()) for key in catalog.STAT_KEYS}
             souls = int(self._stat_vars["souls"].get())
         except ValueError:
             CTkMessageBox.showerror(
                 "Invalid Value",
-                "Stats, level and souls must be numbers.",
+                "Stats and souls must be numbers.",
                 parent=self.parent,
             )
             return
+        level = self._derived_level(stats)
         problems = [
             f"{key.upper()} above {MAX_STAT}"
             for key, v in stats.items()
             if v > MAX_STAT
         ]
-        if class_idx is not None and self._enforce_class_min:
-            name, base = STARTING_CLASSES[class_idx]
+        if cls is not None and self._enforce_class_min:
             problems += [
-                f"{key.upper()} below the {name} minimum of {base[key]}"
+                f"{key.upper()} below the {cls.name} minimum of {cls.stats[key]}"
                 for key, v in stats.items()
-                if v < base[key]
+                if v < cls.stats[key]
             ]
         else:
             problems += [f"{key.upper()} below 1" for key, v in stats.items() if v < 1]
-        if not 1 <= level_raw <= 802:
-            problems.append(f"Level must be 1-802 (got {level_raw})")
+        if level < 1:
+            problems.append(f"Level must be at least 1 (got {level})")
         if not 0 <= souls <= MAX_SOULS:
             problems.append(f"Souls must be 0-{MAX_SOULS:,}")
         if problems:
@@ -396,7 +448,7 @@ class DS3EditorTab:
             return
         for key, v in stats.items():
             char.set_stat(key, v)
-        char.level = level_raw
+        char.level = level
         char.souls = souls
         if class_idx is not None:
             char.starting_class = class_idx
@@ -407,6 +459,7 @@ class DS3EditorTab:
                 save, save_path, f"ds3_edit_stats_slot_{self._current_slot + 1}"
             )
             self._show_toast("Stats applied. Backup created.")
+            self._populate(self._current_slot)
         except Exception as exc:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
 

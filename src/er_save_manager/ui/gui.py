@@ -1155,12 +1155,18 @@ class SaveManagerGUI:
             )
             self._build_tab("Save Inspector", self.ds3_inspector_tab.setup_ui)
 
+            # Game data source (vanilla or a mod), shared by the editor and
+            # inventory tabs.
+            from er_save_manager.games.DS3 import catalog as ds3_catalog
+
+            ds3_source_var = tk.StringVar(value=ds3_catalog.SOURCES["vanilla"])
             self.notebook.add("Character Editor")
             self.ds3_editor_tab = DS3EditorTab(
                 self.notebook.tab("Character Editor"),
                 get_save=lambda: self.ds3_save,
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
+                source_var=ds3_source_var,
             )
             self._build_tab("Character Editor", self.ds3_editor_tab.setup_steps)
 
@@ -1188,6 +1194,7 @@ class SaveManagerGUI:
                 get_save=lambda: self.ds3_save,
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
+                source_var=ds3_source_var,
             )
             self._build_tab("Inventory", self.ds3_inventory_tab.setup_steps)
 

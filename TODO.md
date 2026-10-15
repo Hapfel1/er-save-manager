@@ -119,7 +119,7 @@ check inv corruption sometimes when adding a lot done
 demi human cleaver done
 jewel of the formless done
 
-export params for ds3 durability
+export params for ds3 durability done
 add total level recalc for dsr and ds3 level changing and validate level + name item and data files in csv
 
 add conv + cinders items

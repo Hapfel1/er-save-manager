@@ -108,7 +108,13 @@ def _summary(done: str, count: int, skipped: list[str], capped: int = 0) -> str:
 
 class DS3InventoryTab:
     def __init__(
-        self, parent, get_save, get_save_path, show_toast, reload_save=None
+        self,
+        parent,
+        get_save,
+        get_save_path,
+        show_toast,
+        reload_save=None,
+        source_var=None,
     ) -> None:
         self.parent = parent
         self._get_save = get_save
@@ -127,7 +133,9 @@ class DS3InventoryTab:
         self._all_items: list[tuple] = []
         self._sort_col: str | None = None
         self._sort_asc = True
-        self._source_var = tk.StringVar(value=catalog.SOURCES["vanilla"])
+        # Shared with the Character Editor tab, which can change it too.
+        self._source_var = source_var or tk.StringVar(value=catalog.SOURCES["vanilla"])
+        self._source_var.trace_add("write", lambda *_: self._on_source_change())
         self._show_cut = tk.BooleanVar(value=False)
         self._spawn_job: str | None = None
         self._spawn_variants: list[dict] = []
@@ -150,7 +158,9 @@ class DS3InventoryTab:
         label = self._source_var.get()
         return next(k for k, v in catalog.SOURCES.items() if v == label)
 
-    def _on_source_change(self, _value=None) -> None:
+    def _on_source_change(self) -> None:
+        if not hasattr(self, "_spawn_tree"):
+            return  # UI not built yet
         self._reload_inventory()
         self._refresh_spawn_tree()
 
@@ -190,7 +200,6 @@ class DS3InventoryTab:
             header,
             values=list(catalog.SOURCES.values()),
             variable=self._source_var,
-            command=self._on_source_change,
         ).pack(side="left")
         ctk.CTkButton(header, text="Load", command=self._load_selected, width=70).pack(
             side="right", padx=(6, 0)

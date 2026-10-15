@@ -19,7 +19,6 @@ from er_save_manager.games.DS3 import catalog
 from er_save_manager.games.DS3.slot import (
     _DIR_PAIRS,
     GESTURE_COUNT,
-    LEVEL_STAT_OFFSET,
     DS3Slot,
     LayoutError,
 )
@@ -64,9 +63,22 @@ def test_parses_cleanly(slot):
     assert slot.ng_plus == 0
 
 
-def test_level_matches_stat_sum(slot):
-    stats = ("vig", "atn", "end", "vit", "str", "dex", "int", "fth", "lck")
-    assert slot.level == sum(slot.get_stat(k) for k in stats) - LEVEL_STAT_OFFSET
+def test_level_matches_class_and_stats(slot):
+    cls = catalog.starting_classes("vanilla")[slot.starting_class]
+    stats = {k: slot.get_stat(k) for k in catalog.STAT_KEYS}
+    assert slot.level == cls.level_for(stats)
+
+
+@pytest.mark.parametrize("source", list(catalog.SOURCES))
+def test_starting_classes(source):
+    classes = catalog.starting_classes(source)
+    assert len({c.name for c in classes}) == len(classes)
+    for cls in classes:
+        assert cls.level_for(cls.stats) == cls.level
+    if source == "vanilla":
+        # Every vanilla class sits at attribute sum - 89.
+        assert len(classes) == 10
+        assert all(sum(c.stats.values()) - c.level == 89 for c in classes)
 
 
 def test_event_flags_known_state(slot):

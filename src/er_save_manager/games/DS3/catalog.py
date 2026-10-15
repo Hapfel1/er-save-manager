@@ -1,5 +1,5 @@
 """
-DS3 item catalog: the spawnable item lists and per-item limits.
+DS3 catalog: the spawnable item lists, per-item limits and starting classes.
 
 Each game data source (the vanilla game, Convergence, Cinders) has a full
 item list, data/items.csv and data/<mod>_items.csv, one row per item,
@@ -16,6 +16,7 @@ entries are level 0 and infused weapons carry their infusion's label.
 from __future__ import annotations
 
 import csv
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -231,3 +232,39 @@ def limits(item: dict) -> Limits:
         sort_key=sort_id * 100 if kind in (0x0, 0x1) else sort_id,
         key_item=bool(item.get("KeyItem", False)),
     )
+
+
+# --- Starting classes ------------------------------------------------------- #
+
+STAT_KEYS = ("vig", "atn", "end", "vit", "str", "dex", "int", "fth", "lck")
+
+
+@dataclass(frozen=True)
+class StartingClass:
+    name: str
+    level: int
+    stats: dict[str, int]
+
+    def level_for(self, stats: dict[str, int]) -> int:
+        """Each attribute point above the class base is one level."""
+        return self.level + sum(stats[k] for k in STAT_KEYS) - sum(self.stats.values())
+
+
+_classes: dict[str, list[StartingClass]] = {}
+
+
+def starting_classes(source: str = "vanilla") -> list[StartingClass]:
+    """Classes of a source by the save's class index (CharaInitParam row
+    3000 + index), from data/classes.json."""
+    if not _classes:
+        raw = json.loads((_DATA_DIR / "classes.json").read_text(encoding="utf-8"))
+        for src, rows in raw.items():
+            _classes[src] = [
+                StartingClass(
+                    row["name"],
+                    row["level"],
+                    dict(zip(STAT_KEYS, row["stats"], strict=True)),
+                )
+                for row in rows
+            ]
+    return _classes[source]
