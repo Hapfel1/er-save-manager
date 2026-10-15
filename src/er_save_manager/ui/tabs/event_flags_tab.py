@@ -1725,7 +1725,12 @@ class EventFlagsTab:
             )
             return
 
-        from er_save_manager.data.npc_data import NPC_FLAGS, get_npc_state, revive_npc
+        from er_save_manager.data.npc_data import (
+            get_all_npcs,
+            get_npc_location,
+            get_npc_state,
+            revive_npc,
+        )
         from er_save_manager.ui import dialog_style as ds
 
         dialog = ds.create(self.parent, "NPC Revival")
@@ -1763,7 +1768,8 @@ class EventFlagsTab:
             tree.tag_configure(status, foreground=palette.pick(color))
         tree_frame.pack(fill=tk.BOTH, expand=True)
         add_tooltip(tree, MULTI_SELECT_TIP)
-        for npc_name, (_base_flag, location) in sorted(NPC_FLAGS.items()):
+        for npc_name in get_all_npcs():
+            location = get_npc_location(npc_name)
             state = get_npc_state(self.current_event_flags, npc_name)
             if not state:
                 continue

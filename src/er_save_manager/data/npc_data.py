@@ -21,6 +21,14 @@ in that event is skipped while base is OFF.
 Shadow of the Erdtree NPCs charmed by Miquella vanish on any damage at
 certain spots (common_func 90005749). That sets a per-location map flag
 outside the life block, listed in NPC_VANISH_FLAGS, which revive clears.
+
+NPCs without a life block are tracked by a single defeat flag in
+NPC_DEFEAT_FLAGS: set = dead, revive clears it.
+
+Blocks 3140, 3160, 3200, 3320, 3340 and 3500 are not listed: no map event or
+placed talk script sets their life state. 3500 belongs to Asimi, Silver Tear
+(cut content, talk t218). Finger Reader Crones have no flags; Pidia's talk
+script passes Seluvis's dead flag (3563) to the death handler.
 """
 
 # Format: "NPC Name": (base_flag_id, "First encounter location")
@@ -41,7 +49,6 @@ NPC_FLAGS = {
     # Limgrave NPCs
     "Kalé": (4700, "Church of Elleh (Limgrave)"),
     "White Mask Varré": (3180, "First Step (Limgrave)"),
-    "Melina": (3160, "Chapel of Anticipation (Limgrave)"),
     "Ranni the Witch": (3740, "Church of Elleh (Limgrave, as Renna)"),
     "Gatekeeper Gostoc": (3260, "Stormveil Castle Gate (Limgrave)"),
     "Sorcerer Rogier": (3900, "Stormveil Castle (Limgrave)"),
@@ -75,13 +82,7 @@ NPC_FLAGS = {
     # Special NPCs
     "Yura/Shabriri": (3620, "Murkwater Coast (Limgrave)"),
     "D's Brother": (4060, "Siofra Aqueduct"),
-    "Finger Reader Crone": (3500, "Near Stormveil Castle (Limgrave)"),
     "Jellyfish Spirit Sister": (3840, "Stargazer's Ruins (Mountaintops)"),
-    # Boss NPCs
-    "Godrick the Grafted": (3200, "Stormveil Castle"),
-    "Margit, the Fell Omen": (3140, "Stormhill"),
-    "Mohg, Lord of Blood": (3340, "Mohgwyn Palace"),
-    "Morgott, the Omen King": (3320, "Leyndell, Royal Capital"),
     # Shadow of the Erdtree NPCs (blocks and locations from vanilla EMEVD/MSB)
     "Needle Knight Leda": (4440, "Mohgwyn Palace"),
     "Sir Ansbach": (4400, "Belurat Main Gate Cross (Gravesite Plain)"),
@@ -99,6 +100,12 @@ NPC_FLAGS = {
         4300,
         "Grand Altar of Dragon Communion (Foot of the Jagged Peak)",
     ),
+}
+
+# NPCs without a life block. Format: "NPC Name": (defeat_flag, "Location")
+NPC_DEFEAT_FLAGS = {
+    # Roundtable invasion (m11_10 event 11100680, ceremony 20)
+    "Ensha of the Royal Remains": (11109656, "Roundtable Hold"),
 }
 
 # Map flags set when a Miquella-charmed NPC vanishes after being hit
@@ -142,6 +149,16 @@ def get_npc_state(event_flags_accessor, npc_name: str) -> dict | None:
         Dict with keys: alive, aggro_absolvable, aggro_permanent, dead, vanished
         Or None if NPC not found
     """
+    if npc_name in NPC_DEFEAT_FLAGS:
+        dead = event_flags_accessor.get_flag(NPC_DEFEAT_FLAGS[npc_name][0])
+        return {
+            "alive": not dead,
+            "aggro_absolvable": False,
+            "aggro_permanent": False,
+            "dead": dead,
+            "vanished": False,
+        }
+
     flags = get_npc_flags(npc_name)
     if not flags:
         return None
@@ -169,6 +186,7 @@ def revive_npc(event_flags_accessor, npc_name: str) -> bool:
     - Both aggro flags to OFF
     - Dead flag to OFF
     - Vanish flags (NPC_VANISH_FLAGS) to OFF
+    - Defeat flag (NPC_DEFEAT_FLAGS) to OFF
 
     Args:
         event_flags_accessor: EventFlagAccessor instance with set_flag method
@@ -177,6 +195,10 @@ def revive_npc(event_flags_accessor, npc_name: str) -> bool:
     Returns:
         True if successful, False if NPC not found
     """
+    if npc_name in NPC_DEFEAT_FLAGS:
+        event_flags_accessor.set_flag(NPC_DEFEAT_FLAGS[npc_name][0], False)
+        return True
+
     flags = get_npc_flags(npc_name)
     if not flags:
         return False
@@ -219,11 +241,10 @@ def calm_npc(event_flags_accessor, npc_name: str) -> bool:
 
 def get_npc_location(npc_name: str) -> str | None:
     """Get location string for an NPC"""
-    if npc_name not in NPC_FLAGS:
-        return None
-    return NPC_FLAGS[npc_name][1]
+    entry = NPC_FLAGS.get(npc_name) or NPC_DEFEAT_FLAGS.get(npc_name)
+    return entry[1] if entry else None
 
 
 def get_all_npcs() -> list[str]:
     """Get list of all NPC names"""
-    return sorted(NPC_FLAGS.keys())
+    return sorted([*NPC_FLAGS, *NPC_DEFEAT_FLAGS])
