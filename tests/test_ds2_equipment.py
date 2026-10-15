@@ -223,3 +223,50 @@ def test_owned_copies_only_cover_their_share():
     left = {item.name: item.count for item in without_owned(build.items, owned)}
     assert left == {"Heal": 1, "Affinity": 1}
     assert next(i for i in build.items if i.name == "Heal").count == 2
+
+
+def _spell_character() -> tuple[Character, list]:
+    """Attunement 13 (2 slots) carrying two Heals and Affinity."""
+    from er_save_manager.games.DS2.save import EQUIPMENT_INDEX_OFFSET
+
+    data = bytearray(EQUIPMENT_INDEX_OFFSET + 0x80)
+    data[:INVENTORY_START] = _character().raw()
+    for k in range(14):
+        struct.pack_into("<H", data, EQUIPMENT_INDEX_OFFSET + 2 * (28 + k), 0xFFFF)
+    for k, item_id in enumerate((HEAL, HEAL, AFFINITY)):
+        struct.pack_into("<II", data, INVENTORY_START + 16 * k, item_id, 0)
+        struct.pack_into("<I", data, INVENTORY_START + 16 * k + 8, 1)
+    character = Character(data, regulation_source=_Regulation)
+    character.set_stat("attunement", 13)
+    return character, character.inventory()[:3]
+
+
+def test_attune_writes_and_reads_back_in_order():
+    character, (heal_a, heal_b, _affinity) = _spell_character()
+    character.attune([heal_b, heal_a])
+    assert [e.offset for e in character.attuned_spells()] == [
+        heal_b.offset,
+        heal_a.offset,
+    ]
+    character.attune([heal_a])
+    assert [e.offset for e in character.attuned_spells()] == [heal_a.offset]
+
+
+def test_attune_rejects_more_slots_than_the_character_has():
+    import pytest
+
+    character, (heal_a, _heal_b, affinity) = _spell_character()
+    with pytest.raises(ValueError):
+        character.attune([affinity])
+    with pytest.raises(ValueError):
+        character.attune([heal_a, heal_a])
+    assert character.attuned_spells() == []
+
+
+def test_attune_keeps_empty_slots_stored_as_zero():
+    character, _ = _spell_character()
+    for k in range(14):
+        struct.pack_into("<I", character.raw(), EQUIPMENT_OFFSET + 0x7C + 4 * k, 0)
+    before = bytes(character.raw())
+    character.attune([])
+    assert bytes(character.raw()) == before

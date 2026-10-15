@@ -30,7 +30,7 @@ add missing bosses dsr
 
 DS3 death-state byte (kill pair in m51_01)
 
-ER unnamed NPC blocks: Finger Reader Crone 3500, bosses 3140/3200/3320/3340, Roundtable 3160/3700/3780/3840/3960, Ensha and Pidia bases
+ER unnamed NPC blocks: Finger Reader Crone 3500, bosses 3140/3200/3320/3340, Roundtable 3160/3700/3780/3840/3960, Ensha and Pidia bases done
 
 Sekiro save editing
 
@@ -116,8 +116,8 @@ check validation when batch adding done
 
 check inv corruption sometimes when adding a lot done
 
-demi human cleaver
-jewel of the formless
+demi human cleaver done
+jewel of the formless done
 
 export params for ds3 durability done
 add total level recalc for dsr and ds3 level changing and validate level + name item and data files in csv

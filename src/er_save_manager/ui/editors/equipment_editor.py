@@ -859,52 +859,100 @@ class _VisualEquipmentBrowser(ctk.CTkToplevel):
         self._cells: dict[str, ctk.CTkButton] = {}
         self._captions: dict[str, ctk.CTkLabel] = {}
 
-        _center_over(self, parent, 1000, 760)
+        _center_over(self, parent, 1040, 800)
         self.attributes("-alpha", 1)
 
-        outer = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        outer.pack(fill=ctk.BOTH, expand=True, padx=10, pady=10)
+        from er_save_manager.ui import dialog_style as ds
+
+        main = ctk.CTkFrame(self, fg_color="transparent")
+        main.pack(fill=ctk.BOTH, expand=True, padx=20, pady=16)
+        ds.button_row(
+            main,
+            [
+                {
+                    "text": "Apply Equipment Changes",
+                    "command": editor.apply_changes,
+                    "width": 200,
+                },
+                {"text": "Close", "command": self.destroy, "primary": False},
+            ],
+            pady=(12, 0),
+        )
+        ds.header(main, "Visual Equipment Picker", font=ds.TITLE_LARGE)
+        ctk.CTkLabel(
+            main,
+            text="Click a slot to pick a new item.",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+            anchor="w",
+        ).pack(fill=ctk.X, pady=(2, 8))
+
+        outer = ctk.CTkScrollableFrame(main, fg_color="transparent")
+        outer.pack(fill=ctk.BOTH, expand=True)
         bind_mousewheel(outer)
 
-        def row(items: list[tuple[str, str]], enabled: bool = True):
-            f = ctk.CTkFrame(outer, fg_color="transparent")
-            f.pack(fill=ctk.X, pady=3)
-            for label, key in items:
-                self._build_cell(f, label, key, enabled=enabled)
+        def section(title: str, rows: list[list[tuple[str, str]]]):
+            ctk.CTkLabel(outer, text=title, font=ds.BOLD, anchor="w").pack(
+                fill=ctk.X, pady=(8, 0)
+            )
+            box = ds.box(outer, pady=(4, 0))
+            for i, items in enumerate(rows):
+                f = ctk.CTkFrame(box, fg_color="transparent")
+                f.pack(
+                    fill=ctk.X,
+                    padx=8,
+                    pady=(8 if i == 0 else 0, 4 if i == len(rows) - 1 else 0),
+                )
+                for label, key in items:
+                    self._build_cell(f, label, key)
 
-        row(
+        section(
+            "Weapons",
             [
-                ("RH1", "right_hand_armament1"),
-                ("RH2", "right_hand_armament2"),
-                ("RH3", "right_hand_armament3"),
-                ("Arrow1", "arrows1"),
-                ("Arrow2", "arrows2"),
-            ]
+                [
+                    ("RH1", "right_hand_armament1"),
+                    ("RH2", "right_hand_armament2"),
+                    ("RH3", "right_hand_armament3"),
+                    ("Arrow1", "arrows1"),
+                    ("Arrow2", "arrows2"),
+                ],
+                [
+                    ("LH1", "left_hand_armament1"),
+                    ("LH2", "left_hand_armament2"),
+                    ("LH3", "left_hand_armament3"),
+                    ("Bolt1", "bolts1"),
+                    ("Bolt2", "bolts2"),
+                ],
+            ],
         )
-        row(
+        section(
+            "Armor",
             [
-                ("LH1", "left_hand_armament1"),
-                ("LH2", "left_hand_armament2"),
-                ("LH3", "left_hand_armament3"),
-                ("Bolt1", "bolts1"),
-                ("Bolt2", "bolts2"),
-            ]
+                [
+                    ("Head", "head"),
+                    ("Chest", "chest"),
+                    ("Arms", "arms"),
+                    ("Legs", "legs"),
+                ]
+            ],
         )
-        row(
+        section("Talismans", [[(f"Tal{i}", f"talisman{i}") for i in range(1, 5)]])
+        section(
+            "Quick Items",
             [
-                ("Head", "head"),
-                ("Chest", "chest"),
-                ("Arms", "arms"),
-                ("Legs", "legs"),
-            ]
+                [(f"Item{i}", f"quickitem{i}") for i in range(1, 6)],
+                [(f"Item{i}", f"quickitem{i}") for i in range(6, 11)],
+            ],
         )
-        row([(f"Tal{i}", f"talisman{i}") for i in range(1, 5)])
-        row([(f"Item{i}", f"quickitem{i}") for i in range(1, 6)])
-        row([(f"Item{i}", f"quickitem{i}") for i in range(6, 11)])
-        row([(f"Pouch{i}", f"pouch{i}") for i in range(1, 7)])
-        row([("Tear1", "physick1"), ("Tear2", "physick2")])
-        for lo, hi in ((1, 6), (6, 11), (11, 15)):
-            row([(f"Sp{i}", f"spell{i}") for i in range(lo, hi)])
+        section("Pouch", [[(f"Pouch{i}", f"pouch{i}") for i in range(1, 7)]])
+        section("Physick", [[("Tear1", "physick1"), ("Tear2", "physick2")]])
+        section(
+            "Spells",
+            [
+                [(f"Sp{i}", f"spell{i}") for i in range(lo, hi)]
+                for lo, hi in ((1, 6), (6, 11), (11, 15))
+            ],
+        )
 
         slot = None
         save_file = editor.get_save_file()
@@ -925,24 +973,12 @@ class _VisualEquipmentBrowser(ctk.CTkToplevel):
 
         self.refresh_all()
 
-        btn_row = ctk.CTkFrame(self, fg_color=("gray86", "gray25"))
-        btn_row.pack(fill=ctk.X, padx=10, pady=(0, 10))
-        ctk.CTkButton(
-            btn_row,
-            text="Apply Equipment Changes",
-            command=editor.apply_changes,
-            width=240,
-        ).pack(pady=6)
-
     def _build_cell(self, parent, label: str, key: str, enabled: bool = True):
+        from er_save_manager.ui import dialog_style as ds
+
         col = ctk.CTkFrame(parent, fg_color="transparent", width=_CELL_W)
         col.pack(side=ctk.LEFT, padx=3)
-        ctk.CTkLabel(
-            col,
-            text=label,
-            font=("Segoe UI", 9, "bold"),
-            text_color=("gray40", "gray65"),
-        ).pack()
+        ctk.CTkLabel(col, text=label, font=ds.SMALL, text_color=ds.MUTED).pack()
         btn = ctk.CTkButton(
             col,
             text="",
@@ -955,9 +991,9 @@ class _VisualEquipmentBrowser(ctk.CTkToplevel):
         cap = ctk.CTkLabel(
             col,
             text="(empty)",
-            font=("Segoe UI", 13),
+            font=ds.SMALL,
             width=_CELL_W,
-            height=64,
+            height=36,
             wraplength=_CELL_W - 4,
             anchor="n",
             justify="center",
@@ -1052,6 +1088,20 @@ class EquipmentEditor:
         self.frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
         self.frame.pack(fill="both", expand=True)
         bind_mousewheel(self.frame)
+
+        picker_row = ctk.CTkFrame(self.frame, fg_color="transparent")
+        picker_row.pack(fill="x", padx=4, pady=(5, 0))
+        ctk.CTkButton(
+            picker_row,
+            text="Visual Picker...",
+            command=self.open_visual_picker,
+            width=180,
+        ).pack(side="left")
+        ctk.CTkLabel(
+            picker_row,
+            text="Every slot as an icon; click one to pick a new item.",
+            text_color=("gray40", "gray65"),
+        ).pack(side="left", padx=(10, 0))
 
         top_row = ctk.CTkFrame(self.frame, fg_color="transparent")
         top_row.pack(fill="x", pady=5)
@@ -1213,17 +1263,10 @@ class EquipmentEditor:
         btn_frame.pack(fill="x", pady=10)
         ctk.CTkButton(
             btn_frame,
-            text="Visual Picker...",
-            command=self.open_visual_picker,
-            width=180,
-            fg_color=("gray70", "gray35"),
-        ).pack(side="left", padx=(6, 6), pady=6)
-        ctk.CTkButton(
-            btn_frame,
             text="Apply Equipment Changes",
             command=self.apply_changes,
             width=240,
-        ).pack(side="left", pady=6)
+        ).pack(side="left", padx=6, pady=6)
 
     def _build_section(
         self, parent, title: str, side: str, slots: list[tuple[str, str]]
@@ -1329,7 +1372,7 @@ class EquipmentEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
         _VisualEquipmentBrowser(self.parent, self)
@@ -1464,14 +1507,14 @@ class EquipmentEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
         slot_idx = self.get_char_slot()
 
         if not CTkMessageBox.askyesno(
-            "Confirm",
+            "Apply Equipment",
             f"Apply equipment changes to Slot {slot_idx + 1}?\n\nA backup will be created.",
             parent=self.parent,
         ):
@@ -1497,7 +1540,9 @@ class EquipmentEditor:
                 or not slot.equipped_items_item_id
             ):
                 CTkMessageBox.showerror(
-                    "Error", "Character has no equipment data.", parent=self.parent
+                    "No Equipment Data",
+                    "Character has no equipment data.",
+                    parent=self.parent,
                 )
                 return
 
@@ -1586,11 +1631,13 @@ class EquipmentEditor:
                 save_file.to_file(Path(save_path))
 
             CTkMessageBox.showinfo(
-                "Done", "Equipment changes applied.", parent=self.parent
+                "Equipment Applied", "Equipment changes applied.", parent=self.parent
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to apply equipment changes:\n{e}", parent=self.parent
+                "Apply Failed",
+                f"Failed to apply equipment changes:\n{e}",
+                parent=self.parent,
             )
 
     def _get_raw(self, key: str) -> int:
@@ -1728,7 +1775,7 @@ class EquipmentEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
@@ -1745,14 +1792,16 @@ class EquipmentEditor:
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to save loadout:\n{e}", parent=self.parent
+                "Loadout Save Failed",
+                f"Failed to save loadout:\n{e}",
+                parent=self.parent,
             )
 
     def load_loadout(self):
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
@@ -1818,7 +1867,7 @@ class EquipmentEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
@@ -1847,14 +1896,16 @@ class EquipmentEditor:
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to export loadout:\n{e}", parent=self.parent
+                "Loadout Export Failed",
+                f"Failed to export loadout:\n{e}",
+                parent=self.parent,
             )
 
     def import_loadout_file(self):
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
@@ -1871,7 +1922,9 @@ class EquipmentEditor:
             slots = data.get("slots", data) if isinstance(data, dict) else {}
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to import loadout:\n{e}", parent=self.parent
+                "Loadout Import Failed",
+                f"Failed to import loadout:\n{e}",
+                parent=self.parent,
             )
             return
 
@@ -1888,7 +1941,7 @@ class EquipmentEditor:
             f"Shared {description}",
             code,
             lambda: show_toast(
-                self.parent.winfo_toplevel(), "Code copied to clipboard!"
+                self.parent.winfo_toplevel(), "Code copied to clipboard."
             ),
             font=ds.TITLE_LARGE,
         )
@@ -1904,7 +1957,7 @@ class EquipmentEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
@@ -1918,7 +1971,7 @@ class EquipmentEditor:
         code = share_loadout(self._collect_state(), save_type=save_type)
         if not code:
             CTkMessageBox.showerror(
-                "Error",
+                "Share Failed",
                 "Failed to share loadout. Check your internet connection.",
                 parent=self.parent,
             )
@@ -1930,7 +1983,7 @@ class EquipmentEditor:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 

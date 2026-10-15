@@ -26,7 +26,7 @@ class CharacterDetailsDialog:
         open_backup_settings=None,
     ):
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "No save file loaded!", parent=parent)
+            CTkMessageBox.showwarning("No Save", "No save file loaded.", parent=parent)
             return
 
         from er_save_manager.fixes.wiped_slot import is_wiped_slot
@@ -602,7 +602,7 @@ class CharacterDetailsDialog:
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to apply DLC fix:\n{e}", parent=dialog
+                "DLC Fix Failed", f"Failed to apply DLC fix:\n{e}", parent=dialog
             )
 
     @staticmethod
@@ -690,7 +690,7 @@ class CharacterDetailsDialog:
 
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Deep scan failed:\n{str(e)}", parent=dialog
+                "Deep Scan Failed", f"Deep scan failed:\n{str(e)}", parent=dialog
             )
             import traceback
 
@@ -803,7 +803,7 @@ class CharacterDetailsDialog:
                         reload_callback()
                     fixes_text = "\n".join(f"  - {fix}" for fix in fixes_applied)
                     CTkMessageBox.showinfo(
-                        "Success",
+                        "Fixes Applied",
                         f"Applied fixes:\n\n{fixes_text}\n\nBackup saved to backup manager.",
                         parent=teleport_dialog,
                     )
@@ -815,7 +815,9 @@ class CharacterDetailsDialog:
 
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Teleport failed:\n{str(e)}", parent=teleport_dialog
+                    "Teleport Failed",
+                    f"Teleport failed:\n{str(e)}",
+                    parent=teleport_dialog,
                 )
                 import traceback
 
@@ -859,14 +861,14 @@ class CharacterDetailsDialog:
         slot = save_file.characters[slot_idx]
         if not hasattr(slot, "net_man_offset") or slot.net_man_offset <= 0:
             CTkMessageBox.showerror(
-                "Error",
+                "NetMan Not Found",
                 "Cannot determine NetMan offset for this slot.",
                 parent=_parent,
             )
             return
 
         if not CTkMessageBox.askyesno(
-            "Confirm",
+            "Replace CSNetMan",
             f"Use this if you are still getting a Save is corrupted message or are still crashing after fixing corruption via the tool or if it does not detect any corruption."
             f" Replace the entire CSNetMan block in Slot {slot_idx + 1} with the clean template?\n\nA backup will be created.",
             parent=_parent,
@@ -894,7 +896,7 @@ class CharacterDetailsDialog:
                 reload_callback()
 
             CTkMessageBox.showinfo(
-                "Done",
+                "CSNetMan Replaced",
                 f"CSNetMan replaced in Slot {slot_idx + 1}.\n\nNOTE: {NETMAN_REPLACED_NOTE}"
                 "\n\nBackup saved to backup manager.",
                 parent=_parent,
@@ -902,7 +904,9 @@ class CharacterDetailsDialog:
             dialog.destroy()
 
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Replace failed:\n{e}", parent=_parent)
+            CTkMessageBox.showerror(
+                "Replace Failed", f"Replace failed:\n{e}", parent=_parent
+            )
             import traceback
 
             traceback.print_exc()
@@ -940,7 +944,7 @@ class CharacterDetailsDialog:
         confirm_parts.append("\nA backup will be created.")
 
         if not CTkMessageBox.askyesno(
-            "Confirm", "\n".join(confirm_parts), parent=_parent
+            "Fix Character", "\n".join(confirm_parts), parent=_parent
         ):
             return
 
@@ -1049,7 +1053,7 @@ class CharacterDetailsDialog:
                     reload_callback()
                 fix_summary = "\n".join(f"  - {fix}" for fix in fixes)
                 CTkMessageBox.showinfo(
-                    "Success",
+                    "Issues Fixed",
                     f"Fixed {len(fixes)} issue(s):\n\n{fix_summary}\n\nBackup saved to backup manager.\n\n"
                     "If the game still reports the save as corrupted or crashes on load,"
                     " open Character Details again and click 'Replace CSNetMan'.",
@@ -1057,11 +1061,15 @@ class CharacterDetailsDialog:
                 )
             else:
                 CTkMessageBox.showinfo(
-                    "Info", "No fixes were needed or could be applied.", parent=_parent
+                    "Nothing to Fix",
+                    "No fixes were needed or could be applied.",
+                    parent=_parent,
                 )
 
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Fix failed:\n{str(e)}", parent=_parent)
+            CTkMessageBox.showerror(
+                "Fix Failed", f"Fix failed:\n{str(e)}", parent=_parent
+            )
             import traceback
 
             traceback.print_exc()

@@ -262,7 +262,7 @@ class IconBrowser(ctk.CTkToplevel):
 
         self._loadout_switch = ctk.CTkSwitch(
             add_row,
-            text="Loadout Mode",
+            text="Loadout mode",
             variable=self._editor.loadout_mode_var,
             font=("Segoe UI", 11),
             width=40,

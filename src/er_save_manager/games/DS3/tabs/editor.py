@@ -216,7 +216,7 @@ class DS3EditorTab:
 
         cf = ctk.CTkFrame(frame, fg_color="transparent")
         cf.pack(fill="x", pady=5, padx=10)
-        ctk.CTkLabel(cf, text="Character Identity", font=("Segoe UI", 12, "bold")).grid(
+        ctk.CTkLabel(cf, text="Character identity", font=("Segoe UI", 12, "bold")).grid(
             row=0, column=0, columnspan=2, sticky="w", padx=5, pady=(5, 0)
         )
         ctk.CTkLabel(cf, text="Name:").grid(row=1, column=0, sticky="w", padx=5, pady=5)
@@ -403,7 +403,7 @@ class DS3EditorTab:
         if save is None or save_path is None:
             return
         if not CTkMessageBox.askyesno(
-            "Confirm",
+            "Apply Stats",
             f"Apply stat changes to Slot {self._current_slot + 1}?\n\nA backup will be created.",
             parent=self.parent,
         ):
@@ -477,7 +477,7 @@ class DS3EditorTab:
         if save is None or save_path is None:
             return
         if not CTkMessageBox.askyesno(
-            "Confirm",
+            "Apply Identity",
             f"Apply identity changes to Slot {self._current_slot + 1}?\n\nA backup will be created.",
             parent=self.parent,
         ):

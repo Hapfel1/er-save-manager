@@ -28,12 +28,16 @@ Lists all character slots with name and status. Selecting a slot and clicking **
 
 ### Identity
 
-- **Name** - up to 16 characters, written to both name fields stored in the save
+- **Name** - up to 13 characters (the in-game limit), written to both name fields stored in the save
 - **Body Type** - Type A (Male) / Type B (Female)
 - **Class** - starting class selection
 - **Covenant** - current covenant
 - **NG+** - New Game+ cycle (0-7)
 - **Play Time** - read-only, computed from stored playtime
+
+### Covenants
+
+Offering counts for the seven covenants that take offerings (Warrior of Sunlight, Darkwraith, Path of the Dragon, Gravelord Servant, Forest Hunter, Darkmoon Blade, Chaos Servant). Rank 1, 2 and 3 are reached at 10, 30 and 80 offerings; Forest Hunter has no ranks. Changing a count does not add the rank rewards.
 
 ### Attributes
 
@@ -77,6 +81,7 @@ The item spawner is on the left and the character's inventory on the right. The 
 
 - **Bosses**: kill or respawn. Defeat flags are per playthrough, so bosses show as alive again after starting NG+.
 - **NPCs**: kill or revive. Only the NPC's alive/hostile/dead state changes, the way the game's own NPC death event does it; quest progress is kept.
+- Kingseeker Frampt and Darkstalker Kaathe cannot be killed. Attacking them makes them leave (shown as Hostile); Revive brings them back.
 
 ---
 

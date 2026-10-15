@@ -6,6 +6,16 @@
       "area": "Depths"
     },
     {
+      "id": 11010901,
+      "name": "Taurus Demon",
+      "area": "Undead Burg"
+    },
+    {
+      "id": 11010902,
+      "name": "Capra Demon",
+      "area": "Lower Undead Burg"
+    },
+    {
       "id": 3,
       "name": "Bell Gargoyles",
       "area": "Undead Parish"
@@ -14,6 +24,11 @@
       "id": 4,
       "name": "Crossbreed Priscilla",
       "area": "Painted World of Ariamis"
+    },
+    {
+      "id": 11200900,
+      "name": "Moonlight Butterfly",
+      "area": "Darkroot Garden"
     },
     {
       "id": 5,
@@ -36,6 +51,21 @@
       "area": "Blighttown"
     },
     {
+      "id": 11410900,
+      "name": "Ceaseless Discharge",
+      "area": "Demon Ruins"
+    },
+    {
+      "id": 11410410,
+      "name": "Demon Firesage",
+      "area": "Demon Ruins"
+    },
+    {
+      "id": 11410901,
+      "name": "Centipede Demon",
+      "area": "Demon Ruins"
+    },
+    {
       "id": 10,
       "name": "Bed of Chaos",
       "area": "Lost Izalith"
@@ -44,6 +74,11 @@
       "id": 11,
       "name": "Iron Golem",
       "area": "Sen's Fortress"
+    },
+    {
+      "id": 11510900,
+      "name": "Dark Sun Gwyndolin",
+      "area": "Anor Londo"
     },
     {
       "id": 12,
@@ -71,9 +106,29 @@
       "area": "Undead Asylum"
     },
     {
+      "id": 11810900,
+      "name": "Stray Demon",
+      "area": "Undead Asylum"
+    },
+    {
+      "id": 11210000,
+      "name": "Sanctuary Guardian",
+      "area": "Sanctuary Garden (DLC)"
+    },
+    {
+      "id": 11210001,
+      "name": "Knight Artorias",
+      "area": "Royal Wood (DLC)"
+    },
+    {
       "id": 17,
       "name": "Manus, Father of the Abyss",
       "area": "Chasm of the Abyss (DLC)"
+    },
+    {
+      "id": 11210004,
+      "name": "Black Dragon Kalameet",
+      "area": "Royal Wood (DLC)"
     }
   ],
   "npc_states": {

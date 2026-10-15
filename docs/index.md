@@ -98,7 +98,7 @@
 3. Use tabs to access different features
 
 !!! tip "First Time?"
-    Check out the [Installation Guide](user-guide/installation.md) for platform-specific instructions!
+    Check out the [Installation Guide](user-guide/installation.md) for platform-specific instructions.
 
 ## Corruption Fixes
 

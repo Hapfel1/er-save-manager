@@ -230,7 +230,7 @@ class VanillaSaveWarningDialog(ctk.CTkToplevel):
         ).pack(side=tk.BOTTOM, anchor="w", pady=(12, 0))
 
         ds.header(
-            main, f"Vanilla {game_name} save", icon="!", icon_color=palette.PURPLE_TEXT
+            main, f"Vanilla {game_name} save", icon=".", icon_color=palette.PURPLE_TEXT
         )
         ctk.CTkLabel(
             main,

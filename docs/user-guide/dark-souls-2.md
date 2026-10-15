@@ -48,11 +48,11 @@ The item spawner is on the left and the character's items on the right.
 
 ### Bonfires
 
-Light or unlight bonfires, set their Bonfire Ascetic level (1 to 8), or unlock all of them at once. Lighting keeps a bonfire's level, unlighting resets it, and Set Level also lights unlit bonfires. The bonfire the character last rested at always stays lit. **Visual View** shows every bonfire as its picture, with unlit ones greyed out.
+Light or unlight bonfires, set their Bonfire Ascetic level (1 to 8), or unlock all of them at once. Lighting keeps a bonfire's level, unlighting resets it, and Set Level also lights unlit bonfires. The bonfire the character last rested at always stays lit. **Set as Last Rested** makes the selected bonfire the one death and the Homeward Bone return the character to (it is lit if needed; the character still loads where they saved). **Visual View** shows every bonfire as its picture, with unlit ones greyed out.
 
 ### NPCs
 
-Lists each NPC with its state (alive, hostile or dead). **Revive** clears the NPC's dead and hostile flags; **Calm** clears only the hostile flag. Quest progress is left as it is.
+Lists each NPC with its state (alive, hostile or dead). **Revive** clears the NPC's dead and hostile flags and the kill counts that keep a killed NPC from spawning; **Calm** clears only the hostile flags. Quest progress is left as it is.
 
 ---
 

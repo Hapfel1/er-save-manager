@@ -291,7 +291,7 @@ class ItemPickupsDialog:
                 else ""
             )
             if not CTkMessageBox.askyesno(
-                "Confirm",
+                "Respawn Item Pickups",
                 f"Respawn {len(targets)} item pickup(s) on Slot {slot_idx + 1}?\n\n"
                 "The items appear in the world again after the area reloads. "
                 "Items already in the inventory are kept."

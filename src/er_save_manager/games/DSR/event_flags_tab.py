@@ -504,6 +504,11 @@ class DSREventFlagsTab:
         except ValueError:
             self._lookup_result_var.set("Invalid flag ID.")
             return
+        if fid == 0:
+            # Map scripts test flag 0 as an always-off condition; no event
+            # sets it.
+            self._lookup_result_var.set("Flag 0 is reserved by the game.")
+            return
         try:
             char.set_flag(fid, value)
             _backup_and_save(

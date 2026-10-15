@@ -392,7 +392,7 @@ class IconBrowser(ctk.CTkToplevel):
                 return
             n = len(self._selected_keys)
             if CTkMessageBox.askyesno(
-                "Add items",
+                "Add Items",
                 f"Add the {n} selected items from {len(groups)} categories?",
                 parent=self,
             ):

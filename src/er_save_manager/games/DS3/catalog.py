@@ -81,6 +81,7 @@ def _item_from_row(row: dict[str, str]) -> dict:
         "Name": row["name"],
         "Id": row["id"],
         "MaxQuantity": int(row["max_quantity"]),
+        "MaxStorage": int(row.get("max_storage") or row["max_quantity"]),
         "MaxUpgrade": int(row["max_upgrade"]),
         "Durability": int(row["durability"]),
         "SortId": int(row["sort_id"]),
@@ -199,10 +200,23 @@ def is_obtainable(item: dict) -> bool:
 @dataclass(frozen=True)
 class Limits:
     max_quantity: int
+    # Storage box stack cap (EquipParamGoods maxRepNum, 600 for ammo).
+    max_storage: int
     max_upgrade: int
     durability: int
     sort_key: int
     key_item: bool
+
+
+def stack_cap(lim: Limits, in_storage: bool) -> int:
+    return lim.max_storage if in_storage else lim.max_quantity
+
+
+def stack_text(lim: Limits) -> str:
+    """Held stack cap, plus the storage box cap where it differs."""
+    if lim.max_storage == lim.max_quantity:
+        return f"Max stack: {lim.max_quantity}"
+    return f"Max stack: {lim.max_quantity} (storage box {lim.max_storage})"
 
 
 def limits(item: dict) -> Limits:
@@ -211,6 +225,7 @@ def limits(item: dict) -> Limits:
     sort_id = item["SortId"]
     return Limits(
         max_quantity=max(1, item["MaxQuantity"]),
+        max_storage=max(1, item.get("MaxStorage", item["MaxQuantity"])),
         max_upgrade=item["MaxUpgrade"],
         durability=item["Durability"],
         # Weapons and armor sort by sortId * 100 (plus the weapon's level).

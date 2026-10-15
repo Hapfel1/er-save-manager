@@ -174,7 +174,7 @@ class WorldStateTab:
         slot_frame.pack(fill=tk.X, padx=10, pady=10)
 
         ctk.CTkLabel(
-            slot_frame, text="Character Slot", font=("Segoe UI", 12, "bold")
+            slot_frame, text="Character slot", font=("Segoe UI", 12, "bold")
         ).pack(anchor="w", padx=10, pady=(10, 5))
 
         slot_select = ctk.CTkFrame(slot_frame, fg_color="transparent")
@@ -201,7 +201,7 @@ class WorldStateTab:
         tools_frame.pack(fill=tk.X, padx=10, pady=(0, 0))
         ctk.CTkLabel(
             tools_frame,
-            text="Map Markers and Item History",
+            text="Map markers and item history",
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=10, pady=(10, 2))
         self.markers_var = tk.StringVar(value="N/A")
@@ -229,7 +229,7 @@ class WorldStateTab:
         location_frame.pack(fill=tk.X, padx=10, pady=(10, 0))
 
         ctk.CTkLabel(
-            location_frame, text="Current Location", font=("Segoe UI", 12, "bold")
+            location_frame, text="Current location", font=("Segoe UI", 12, "bold")
         ).pack(anchor="w", padx=10, pady=(10, 5))
 
         map_frame = ctk.CTkFrame(location_frame, fg_color="transparent")
@@ -352,7 +352,7 @@ class WorldStateTab:
             image_label.bind("<Button-1>", lambda e: self._open_map_window())
         text = ctk.CTkFrame(card, fg_color="transparent")
         text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(8, 12), pady=10)
-        ctk.CTkLabel(text, text="World Map", font=ds.TITLE_LARGE, anchor="w").pack(
+        ctk.CTkLabel(text, text="World map", font=ds.TITLE_LARGE, anchor="w").pack(
             fill=tk.X
         )
         ctk.CTkLabel(
@@ -381,7 +381,7 @@ class WorldStateTab:
                 return
             CTkMessageBox.showwarning(
                 "No Save",
-                "Please load a save file first.",
+                "Load a save file first.",
                 parent=self._dialog_parent(),
             )
             return
@@ -453,7 +453,7 @@ class WorldStateTab:
     def _open_message_manager(self):
         if not self.editor:
             CTkMessageBox.showerror(
-                "Error", "Load a character first.", parent=self.parent
+                "No Character Loaded", "Load a character first.", parent=self.parent
             )
             return
 
@@ -474,7 +474,9 @@ class WorldStateTab:
     def _sync_bloodstain_to_player(self):
         if not self.editor:
             CTkMessageBox.showerror(
-                "Error", "Load a character first.", parent=self._dialog_parent()
+                "No Character Loaded",
+                "Load a character first.",
+                parent=self._dialog_parent(),
             )
             return
 
@@ -503,7 +505,9 @@ class WorldStateTab:
                 self.refresh()
             self.show_toast(message, duration=2500)
         else:
-            CTkMessageBox.showerror("Error", message, parent=self._dialog_parent())
+            CTkMessageBox.showerror(
+                "Bloodstain Not Moved", message, parent=self._dialog_parent()
+            )
 
     def set_maps_dir(self, path: Path):
         self._maps_dir = path
@@ -643,7 +647,7 @@ class WorldStateTab:
     def _apply_markers(self, editor: MapMarkerEditor) -> MapMarkerEditor | None:
         if not self.get_save_path():
             CTkMessageBox.showerror(
-                "Error", "No save file path.", parent=self._dialog_parent()
+                "No Save File", "No save file path.", parent=self._dialog_parent()
             )
             return None
         editor.apply()
@@ -892,14 +896,16 @@ class WorldStateTab:
     def _teleport_to_known(self):
         if not self.editor:
             CTkMessageBox.showerror(
-                "Error", "Load a character first.", parent=self.parent
+                "No Character Loaded", "Load a character first.", parent=self.parent
             )
             return
 
         sel = self.location_listbox.curselection()
         if not sel:
             CTkMessageBox.showerror(
-                "Error", "Select a location from the list.", parent=self.parent
+                "No Location Selected",
+                "Select a location from the list.",
+                parent=self.parent,
             )
             return
 
@@ -913,7 +919,9 @@ class WorldStateTab:
     def _teleport_to_known_loc(self, loc: MapLocation):
         if not self.editor:
             CTkMessageBox.showerror(
-                "Error", "Load a character first.", parent=self._dialog_parent()
+                "No Character Loaded",
+                "Load a character first.",
+                parent=self._dialog_parent(),
             )
             return
 
@@ -956,12 +964,14 @@ class WorldStateTab:
                 self.refresh()
             self.show_toast(f"Teleported to {loc.name}", duration=2500)
         else:
-            CTkMessageBox.showerror("Error", message, parent=self._dialog_parent())
+            CTkMessageBox.showerror(
+                "Teleport Failed", message, parent=self._dialog_parent()
+            )
 
     def _build_custom_teleport_ui(self):
         ctk.CTkLabel(
             self.content_frame,
-            text="Advanced: invalid coordinates may corrupt your save!",
+            text="Advanced: invalid coordinates may corrupt your save.",
             text_color="#ff6b6b",
             font=("Segoe UI", 10, "bold"),
         ).pack(pady=(0, 20))
@@ -1030,7 +1040,7 @@ class WorldStateTab:
     def _teleport_to_custom(self):
         if not self.editor:
             CTkMessageBox.showerror(
-                "Error", "Load a character first.", parent=self.parent
+                "No Character Loaded", "Load a character first.", parent=self.parent
             )
             return
 
@@ -1077,7 +1087,9 @@ class WorldStateTab:
                 coords = FloatVector3(x, y, z)
         except ValueError:
             CTkMessageBox.showerror(
-                "Error", "Coordinates must be numeric.", parent=self.parent
+                "Invalid Coordinates",
+                "Coordinates must be numeric.",
+                parent=self.parent,
             )
             return
 
@@ -1111,7 +1123,7 @@ class WorldStateTab:
                 self.refresh()
             self.show_toast(message, duration=2500)
         else:
-            CTkMessageBox.showerror("Error", message, parent=self.parent)
+            CTkMessageBox.showerror("Teleport Failed", message, parent=self.parent)
 
     def _refresh_marker_summary(self):
         if not hasattr(self, "markers_var"):

@@ -85,12 +85,12 @@ def test_event_flag_layout_matches_save_pairs():
     of its word's high byte)."""
     from er_save_manager.games.DSR.save import (
         FLAG_RECORD_TO_BASE,
-        NG_PLUS_OFFSET,
+        FLAG_SEARCH_START,
     )
 
     char = _character()
     char._data.extend(bytes(0x40000 - len(char._data)))
-    record = NG_PLUS_OFFSET + 0x300
+    record = FLAG_SEARCH_START + 0x300
     char._data[record : record + 10] = bytes.fromhex("ffffffff123456000008")
     base = record + FLAG_RECORD_TO_BASE
     assert char.flag_base() == base
@@ -122,3 +122,131 @@ def test_bonfire_record_lighting():
     assert char.set_bonfire_lit(1021960, False) and char.bonfire_level(1021960) == 0
     assert char.bonfire_level(1501961) is None
     assert not char.set_bonfire_lit(1501961, True)
+
+
+def _flag_character() -> tuple[DSRCharacter, int]:
+    from er_save_manager.games.DSR.save import FLAG_RECORD_TO_BASE, FLAG_SEARCH_START
+
+    char = _character()
+    char._data.extend(bytes(0x40000 - len(char._data)))
+    record = FLAG_SEARCH_START + 0x1000
+    char._data[record : record + 10] = bytes.fromhex("ffffffff123456000008")
+    return char, record + FLAG_RECORD_TO_BASE
+
+
+def test_ng_cycle_sits_before_the_flag_array():
+    from er_save_manager.games.DSR.save import NG_CYCLE_FROM_FLAGS
+
+    char, base = _flag_character()
+    struct.pack_into("<II", char._data, base - NG_CYCLE_FROM_FLAGS, 2, 2)
+    assert char.ng_plus == 2
+    char.ng_plus = 3
+    assert struct.unpack_from("<II", char._data, base - NG_CYCLE_FROM_FLAGS) == (3, 2)
+
+
+def test_play_time_and_hp_fields():
+    from er_save_manager.games.DSR.save import (
+        OFF_HP_BASE,
+        OFF_HP_CURRENT,
+        OFF_HP_MAX,
+        OFF_PLAY_MS,
+    )
+
+    char = _character()
+    struct.pack_into("<I", char._data, OFF_PLAY_MS, 41_135_500)
+    assert char.play_seconds == 41_135.5
+    char.set_stat("vit", 30)
+    for off in (OFF_HP_BASE, OFF_HP_MAX, OFF_HP_CURRENT):
+        assert struct.unpack_from("<I", char._data, off)[0] == 1100
+
+
+def test_covenant_offerings_and_rank():
+    from er_save_manager.games.DSR.save import (
+        OFF_COVENANT_OFFERINGS,
+        DSRCovenant,
+        covenant_rank,
+    )
+
+    char = _character()
+    char.set_covenant_offerings(DSRCovenant.ChaosServant, 30)
+    assert char._data[OFF_COVENANT_OFFERINGS + 6] == 30
+    assert char.covenant_offerings(DSRCovenant.ChaosServant) == 30
+    assert [covenant_rank(n) for n in (0, 9, 10, 29, 30, 79, 80, 255)] == [
+        0, 0, 1, 1, 2, 2, 3, 3,
+    ]  # fmt: skip
+
+
+def test_npc_and_boss_data():
+    import json
+    from pathlib import Path
+
+    data = Path(catalog.__file__).parent / "data"
+    npcs = json.loads((data / "npcs.json").read_text(encoding="utf-8"))
+    assert len({n["name"] for n in npcs}) == len(npcs)
+    for npc in npcs:
+        for flag in npc["dead"] + npc["hostile"]:
+            assert npc["lo"] < flag <= npc["hi"], npc["name"]
+    # Killing Crestfallen Warrior (save pair) finished his m10_02 hostility
+    # and death event instances (11020510 / 11020530, slot 10).
+    crestfallen = next(n for n in npcs if n["lo"] == 1460)
+    assert {11020520, 11020540} <= set(crestfallen["revive_clear"])
+    assert [10, 2, 8] in crestfallen["parts"]
+    bosses = json.loads((data / "dsr_named_flags.json").read_text(encoding="utf-8"))
+    ids = {b["id"] for b in bosses["boss_kills"]}
+    # Defeat flags of the boss reward event (common.emevd event 970), with
+    # Ornstein and Smough as their shared flag 12.
+    assert ids == {
+        2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+        11010901, 11010902, 11200900, 11210000, 11210001, 11210004,
+        11410410, 11410900, 11410901, 11510900, 11810900,
+    }  # fmt: skip
+
+
+def _with_chr(char: DSRCharacter, base: int) -> int:
+    """CHR block after the flag array with m10_02 (41 parts) and m10_01
+    (174 parts); returns the m10_02 bit offset."""
+    off = base + 0x16000
+    struct.pack_into("<I", char._data, off - 4, 0x68)
+    char._data[off : off + 8] = b" RHC" + bytes.fromhex("00030810")
+    rec = off + 8
+    for key, count in ((0x0A020000, 41), (0x0A010000, 174)):
+        size = 12 + (count + 7) // 8
+        struct.pack_into("<III", char._data, rec, key, size, count)
+        rec += size
+    struct.pack_into("<I", char._data, rec, 0xFFFFFFFF)
+    return off + 8 + 12
+
+
+def test_revive_clears_spawn_dead_bit_and_extra_flags():
+    char, base = _flag_character()
+    bits = _with_chr(char, base)
+    assert set(char.chr_records()) == {(10, 2), (10, 1)}
+    npc = {
+        "name": "Crestfallen Warrior",
+        "lo": 1460,
+        "hi": 1489,
+        "dead": [1462],
+        "hostile": [1461],
+        "parts": [[10, 2, 8], [16, 0, 3]],
+        "revive_clear": [11020100],
+    }
+    char.set_npc_state(npc, alive=False)
+    char._data[bits + 1] = 0x01  # what the game writes when he dies
+    char.set_flag(11020100, True)
+    assert char.part_spawns_dead(10, 2, 8)
+    char.set_npc_state(npc, alive=True)
+    assert not char.part_spawns_dead(10, 2, 8)
+    assert not char.get_flag(11020100)
+    assert char.npc_state(npc) == "Alive"
+
+
+def test_flag_zero_check():
+    from types import SimpleNamespace
+
+    from er_save_manager.games.save_check import _dsr_flag0_set
+
+    char, _base = _flag_character()
+    save = SimpleNamespace(characters=[char, None])
+    assert _dsr_flag0_set(save) == []
+    char.set_flag(0, True)
+    assert _dsr_flag0_set(save) == [0]

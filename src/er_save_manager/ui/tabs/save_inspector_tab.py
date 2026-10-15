@@ -201,7 +201,9 @@ class SaveInspectorTab:
                 anchor="w", padx=6, pady=6
             )
             CTkMessageBox.showerror(
-                "Error", f"Failed to load character list:\n{str(e)}", parent=self.parent
+                "Load Failed",
+                f"Failed to load character list:\n{str(e)}",
+                parent=self.parent,
             )
             import traceback
 
@@ -220,7 +222,7 @@ class SaveInspectorTab:
         """Show character details dialog"""
         if self.selected_slot is None:
             CTkMessageBox.showwarning(
-                "No Selection", "Please select a character first!", parent=self.parent
+                "No Selection", "Select a character first.", parent=self.parent
             )
             return
 
@@ -232,7 +234,7 @@ class SaveInspectorTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save Loaded", "Please load a save file first!", parent=self.parent
+                "No Save Loaded", "Load a save file first.", parent=self.parent
             )
             return
 

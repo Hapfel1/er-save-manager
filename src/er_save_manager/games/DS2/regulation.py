@@ -64,6 +64,9 @@ defeated" event flag, bonfireEventValueId the global event value counting
 defeats, and bonfireId the bonfire whose Bonfire Ascetic the fight belongs to.
 Some fights have a second row for a variant (multiplayer, first phase) that
 repeats or zeroes these ids.
+Bonfires: MapObjectBonfireParam has one row per bonfire id. mapId is the map
+as a decimal AABBCCDD (10100000 = m10_10_00_00); the save stores the same map
+as AA << 24 | BB << 16.
 Infusion index n is the value stored in the second byte of an inventory
 entry's unk_2. The order is the material order of CustomAttrCostParam, which
 lists one infusion stone per index: Palestone, Firedrake, Faintstone,
@@ -156,6 +159,7 @@ _BOSS_KILLED_FLAG = 0x10
 _BOSS_ONCE_KILLED_FLAG = 0x14
 _BOSS_DEFEAT_VALUE = 0x18
 _BOSS_BONFIRE_ID = 0x3C  # u16
+_BONFIRE_MAP_ID = 0x00  # s32, MapObjectBonfireParam mapId
 
 
 class _Param:
@@ -267,12 +271,14 @@ class Regulation:
         class_bases: dict[int, ClassBase],
         level_up_souls: dict[int, int],
         boss_fights: tuple[BossFight, ...] = (),
+        bonfire_maps: dict[int, int] | None = None,
     ) -> None:
         self._items = items
         self._attunement_slots = attunement_slots
         self._class_bases = class_bases
         self._level_up_souls = level_up_souls
         self._boss_fights = boss_fights
+        self._bonfire_maps = bonfire_maps or {}
 
     @classmethod
     def from_entry(cls, entry: bytes | bytearray) -> Regulation:
@@ -390,8 +396,22 @@ class Regulation:
                     continue
                 seen.add(fight.once_killed_flag)
                 boss_fights.append(fight)
+        bonfire_maps: dict[int, int] = {}
+        if "MapObjectBonfireParam.param" in files:
+            bonfires = param("MapObjectBonfireParam.param")
+            for row_id in bonfires.ids():
+                map_id = bonfires.s32(row_id, _BONFIRE_MAP_ID)
+                if map_id > 0:
+                    bonfire_maps[row_id] = (
+                        map_id // 1_000_000 << 24 | map_id // 10_000 % 100 << 16
+                    )
         return cls(
-            items, attunement_slots, class_bases, level_up_souls, tuple(boss_fights)
+            items,
+            attunement_slots,
+            class_bases,
+            level_up_souls,
+            tuple(boss_fights),
+            bonfire_maps,
         )
 
     @classmethod
@@ -417,6 +437,7 @@ class Regulation:
             },
             dict(v.LEVEL_UP_SOULS),
             tuple(BossFight(*row) for row in v.BOSS_FIGHTS),
+            dict(v.BONFIRE_MAPS),
         )
 
     def max_upgrade(self, item_id: int, category: str) -> int:
@@ -462,6 +483,10 @@ class Regulation:
     def boss_fights(self) -> tuple[BossFight, ...]:
         """Every boss fight in BossBattleParam order, one per fight."""
         return self._boss_fights
+
+    def bonfire_maps(self) -> dict[int, int]:
+        """Bonfire id to the map it stands in, in the save's map id format."""
+        return dict(self._bonfire_maps)
 
     def durability(self, item_id: int) -> float | None:
         """Maximum durability of a weapon, armor piece or ring, or None when

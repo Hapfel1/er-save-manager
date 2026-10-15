@@ -10,7 +10,12 @@ import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.settings import get_settings
-from er_save_manager.ui.utils import bind_mousewheel, center_window, pick_file
+from er_save_manager.ui.utils import (
+    bind_mousewheel,
+    center_window,
+    pick_file,
+    resource_path,
+)
 
 
 class SettingsTab:
@@ -390,7 +395,7 @@ class SettingsTab:
 
         self._auto_backup_header = ctk.CTkLabel(
             parent,
-            text="Auto-Backup on Game Launch",
+            text="Auto-backup on game launch",
             font=("Segoe UI", 11, "bold"),
         )
         self._auto_backup_header.pack(anchor="w", padx=12, pady=(0, 4))
@@ -546,7 +551,7 @@ class SettingsTab:
         if enabled and not self._game_auto_backup_path_valid(game_key):
             CTkMessageBox.showwarning(
                 "Configure Save File",
-                "Please choose which save file to monitor for auto-backup.",
+                "Choose which save file to monitor for auto-backup.",
                 parent=self.parent,
             )
             from er_save_manager.games.game_profiles import PROFILES_BY_KEY
@@ -685,7 +690,7 @@ class SettingsTab:
 
         ctk.CTkLabel(
             frame,
-            text="User Interface",
+            text="User interface",
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
@@ -717,7 +722,7 @@ class SettingsTab:
         scale_frame = ctk.CTkFrame(frame, fg_color="transparent")
         scale_frame.pack(fill="x", padx=12, pady=5)
 
-        ctk.CTkLabel(scale_frame, text="UI Scale:").pack(side="left", padx=(0, 10))
+        ctk.CTkLabel(scale_frame, text="UI scale:").pack(side="left", padx=(0, 10))
 
         _SCALE_OPTIONS = [
             "100%",
@@ -839,14 +844,25 @@ class SettingsTab:
 
         center_window(popup, 260, 130, parent=root)
 
+        # Tk cannot draw color emoji on Linux, so the image is the primary source
+        strawberry = resource_path("icon", "strawberry.png")
+        if strawberry.exists():
+            from PIL import Image
+
+            ctk.CTkLabel(
+                popup,
+                text="",
+                image=ctk.CTkImage(Image.open(strawberry), size=(48, 48)),
+            ).pack(pady=(16, 4))
+        else:
+            ctk.CTkLabel(
+                popup,
+                text="\U0001f353",
+                font=("Segoe UI", 36),
+            ).pack(pady=(16, 4))
         ctk.CTkLabel(
             popup,
-            text="\U0001f353",
-            font=("Segoe UI", 36),
-        ).pack(pady=(16, 4))
-        ctk.CTkLabel(
-            popup,
-            text="You found it!",
+            text="You found it",
             font=("Segoe UI", 13, "bold"),
         ).pack()
         ctk.CTkButton(
@@ -1120,7 +1136,9 @@ class SettingsTab:
             if hasattr(self, "_custom_item_adder_var"):
                 self._custom_item_adder_var.set(False)
             CTkMessageBox.showinfo(
-                "Success", "Settings have been reset to defaults.", parent=self.parent
+                "Settings Reset",
+                "Settings have been reset to defaults.",
+                parent=self.parent,
             )
 
     def _on_theme_changed(self, value=None):
@@ -1128,6 +1146,6 @@ class SettingsTab:
         self.settings.set("theme", theme)
         CTkMessageBox.showinfo(
             "Theme Changed",
-            f"Theme changed to {theme}.\n\nPlease restart the application for full effect.",
+            f"Theme changed to {theme}.\n\nRestart the application for full effect.",
             parent=self.parent,
         )

@@ -86,6 +86,7 @@ GAME_PROFILES: list[GameProfile] = [
         save_glob="DS3*.*",
         appdata_subdir="DarkSoulsIII",
         process_name="darksoulsiii.exe",
+        extensions=[".sl2", ".co2"],
     ),
     GameProfile(
         name="Dark Souls II: Scholar of the First Sin",
@@ -96,6 +97,7 @@ GAME_PROFILES: list[GameProfile] = [
         appdata_subdir="DarkSoulsII",
         process_name="darksoulsii.exe",
         steamid_folder_format="steam64_hex",
+        extensions=[".sl2", ".co2"],
     ),
     GameProfile(
         # DSR saves to Documents\NBGI\DARK SOULS REMASTERED\, not AppData.
@@ -109,6 +111,7 @@ GAME_PROFILES: list[GameProfile] = [
         documents_subdir="NBGI/DARK SOULS REMASTERED",
         process_name="darksoulsremastered.exe",
         steamid_folder_format="steam32_dec",
+        extensions=[".sl2", ".co2"],
     ),
     GameProfile(
         name="Sekiro: Shadows Die Twice",

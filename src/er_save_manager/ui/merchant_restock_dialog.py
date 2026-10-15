@@ -245,7 +245,7 @@ class MerchantRestockDialog:
                 )
                 return
             if not CTkMessageBox.askyesno(
-                "Confirm",
+                "Restock Merchants",
                 f"Restock {len(targets)} item(s) on Slot {slot_idx + 1}?\n\n"
                 "Merchants sell the full quantity again. "
                 "Items already bought are kept.\n\n"

@@ -204,7 +204,7 @@ class EventFlagsTab:
         slot_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         slot_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
-        ctk.CTkLabel(slot_frame, text="Character Slot:", font=("Segoe UI", 11)).pack(
+        ctk.CTkLabel(slot_frame, text="Character slot:", font=("Segoe UI", 11)).pack(
             side=tk.LEFT, padx=(0, 8)
         )
 
@@ -331,7 +331,7 @@ class EventFlagsTab:
 
         ctk.CTkLabel(
             filter_frame,
-            text="Browse by Category",
+            text="Browse by category",
             font=("Segoe UI", 12, "bold"),
         ).pack(pady=(10, 8), padx=12, anchor="w")
 
@@ -368,7 +368,7 @@ class EventFlagsTab:
 
         ctk.CTkLabel(
             search_frame,
-            text="Search Flags",
+            text="Search flags",
             font=("Segoe UI", 12, "bold"),
         ).pack(pady=(10, 8), padx=12, anchor="w")
 
@@ -461,7 +461,7 @@ class EventFlagsTab:
         save_file = self.get_save_file()
         if not save_file:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first!", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
             return
 
@@ -470,7 +470,7 @@ class EventFlagsTab:
 
         if slot.is_empty() or slot_idx not in save_file.get_active_slots():
             CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {slot_idx + 1} is empty!", parent=self.parent
+                "Empty Slot", f"Slot {slot_idx + 1} is empty.", parent=self.parent
             )
             return
 
@@ -478,7 +478,9 @@ class EventFlagsTab:
 
         if not hasattr(slot, "event_flags") or not slot.event_flags:
             CTkMessageBox.showerror(
-                "Error", "Event flags not available", parent=self.parent
+                "Event Flags Unavailable",
+                "Event flags not available",
+                parent=self.parent,
             )
             return
 
@@ -497,7 +499,7 @@ class EventFlagsTab:
         """Handle category selection"""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                "Not Loaded", "Load event flags for a character first."
             )
             return
 
@@ -696,12 +698,12 @@ class EventFlagsTab:
         """Unlock all flags in current category"""
         if not self.flag_rows:
             CTkMessageBox.showwarning(
-                "No Flags", "No flags are currently displayed!", parent=self.parent
+                "No Flags", "No flags are currently displayed.", parent=self.parent
             )
             return
 
         result = CTkMessageBox.askyesno(
-            "Confirm",
+            "Enable Shown Flags",
             f"Set all {len(self.flag_rows)} displayed flags to ON?\n\n"
             f"This will affect only the flags currently visible.",
             parent=self.parent,
@@ -712,7 +714,7 @@ class EventFlagsTab:
                 self._set_flag_state(flag_id, True)
 
             CTkMessageBox.showinfo(
-                "Success",
+                "Flags Enabled",
                 f"Enabled all {len(self.flag_rows)} displayed flags.\n\nClick 'Apply Changes' to save.",
                 parent=self.parent,
             )
@@ -721,13 +723,13 @@ class EventFlagsTab:
         """Apply flag changes to save file"""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "No event flags loaded!", parent=self.parent
+                "Not Loaded", "No event flags loaded.", parent=self.parent
             )
             return
 
         if not self.flag_states:
             CTkMessageBox.showwarning(
-                "No Changes", "No flags have been modified!", parent=self.parent
+                "No Changes", "No flags have been modified.", parent=self.parent
             )
             return
 
@@ -739,7 +741,7 @@ class EventFlagsTab:
 
         if changes == 0:
             CTkMessageBox.showinfo(
-                "No Changes", "No flags were modified!", parent=self.parent
+                "No Changes", "No flags were modified.", parent=self.parent
             )
             return
 
@@ -784,7 +786,7 @@ class EventFlagsTab:
         save_file.save(self.get_save_path())
         self.reload_save()
         self.show_toast(
-            f"Applied {changes} flag changes to Slot {self.current_slot + 1}!",
+            f"Applied {changes} flag changes to Slot {self.current_slot + 1}",
             duration=2500,
         )
 
@@ -794,7 +796,7 @@ class EventFlagsTab:
         """Export all set event flags to a JSON file."""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                "Not Loaded", "Load event flags for a character first."
             )
             return
 
@@ -873,7 +875,7 @@ class EventFlagsTab:
         Backward compatible: entries without a "state" field default to true."""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                "Not Loaded", "Load event flags for a character first."
             )
             return
 
@@ -995,7 +997,7 @@ class EventFlagsTab:
         """Open advanced flag editor dialog"""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                "Not Loaded", "Load event flags for a character first."
             )
             return
 
@@ -1035,7 +1037,9 @@ class EventFlagsTab:
             try:
                 flag_id = int(flag_id_var.get())
             except ValueError:
-                CTkMessageBox.showerror("Error", "Invalid flag ID!", parent=dialog)
+                CTkMessageBox.showerror(
+                    "Invalid Flag ID", "Invalid flag ID.", parent=dialog
+                )
                 return
             if not EventFlags.has_flag(flag_id):
                 CTkMessageBox.showwarning(
@@ -1091,7 +1095,7 @@ class EventFlagsTab:
                 )
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Failed to toggle flag: {e}", parent=dialog
+                    "Toggle Failed", f"Failed to toggle flag: {e}", parent=dialog
                 )
 
         def check_flag():
@@ -1110,10 +1114,12 @@ class EventFlagsTab:
                     parent=dialog,
                 )
             except ValueError:
-                CTkMessageBox.showerror("Error", "Invalid flag ID!", parent=dialog)
+                CTkMessageBox.showerror(
+                    "Invalid Flag ID", "Invalid flag ID.", parent=dialog
+                )
             except Exception as e:
                 CTkMessageBox.showerror(
-                    "Error", f"Failed to check flag: {e}", parent=dialog
+                    "Flag Check Failed", f"Failed to check flag: {e}", parent=dialog
                 )
 
         ds.button(input_frame, "Toggle", toggle_flag, width=90).pack(
@@ -1146,7 +1152,7 @@ class EventFlagsTab:
         """Boss status dialog - defeated/alive for all tracked bosses."""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                "Not Loaded", "Load event flags for a character first."
             )
             return
 
@@ -1274,7 +1280,7 @@ class EventFlagsTab:
         """Open boss respawn dialog"""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                "Not Loaded", "Load event flags for a character first."
             )
             return
 
@@ -1432,7 +1438,7 @@ class EventFlagsTab:
                     parent=dialog,
                 )
 
-            self.show_toast("Boss respawned successfully!", duration=2500)
+            self.show_toast("Boss respawned successfully", duration=2500)
             dialog.destroy()
 
         def respawn_all():
@@ -1447,7 +1453,7 @@ class EventFlagsTab:
                 return
 
             result = CTkMessageBox.askyesno(
-                "Confirm",
+                "Respawn All Bosses",
                 f"Respawn ALL bosses in {boss_category_var.get()}?\n\n"
                 f"This will reset {len(boss_vars)} boss(es).",
                 parent=dialog,
@@ -1520,7 +1526,7 @@ class EventFlagsTab:
                 )
 
             self.show_toast(
-                f"Respawned all {count} bosses in {boss_category_var.get()}!",
+                f"Respawned all {count} bosses in {boss_category_var.get()}",
                 duration=2500,
             )
             dialog.destroy()
@@ -1607,7 +1613,7 @@ class EventFlagsTab:
                     parent=dialog,
                 )
 
-            self.show_toast("Boss killed successfully!", duration=2500)
+            self.show_toast("Boss killed successfully", duration=2500)
             dialog.destroy()
 
         def kill_all():
@@ -1622,7 +1628,7 @@ class EventFlagsTab:
                 return
 
             result = CTkMessageBox.askyesno(
-                "Confirm",
+                "Kill All Bosses",
                 f"Kill ALL bosses in {boss_category_var.get()}?\n\n"
                 f"This will mark {len(boss_vars)} boss(es) as defeated.",
                 parent=dialog,
@@ -1696,7 +1702,7 @@ class EventFlagsTab:
                 )
 
             self.show_toast(
-                f"Killed all {count} bosses in {boss_category_var.get()}!",
+                f"Killed all {count} bosses in {boss_category_var.get()}",
                 duration=2500,
             )
             dialog.destroy()
@@ -1721,11 +1727,16 @@ class EventFlagsTab:
         """Open NPC revival dialog"""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                "Not Loaded", "Load event flags for a character first."
             )
             return
 
-        from er_save_manager.data.npc_data import NPC_FLAGS, get_npc_state, revive_npc
+        from er_save_manager.data.npc_data import (
+            get_all_npcs,
+            get_npc_location,
+            get_npc_state,
+            revive_npc,
+        )
         from er_save_manager.ui import dialog_style as ds
 
         dialog = ds.create(self.parent, "NPC Revival")
@@ -1763,7 +1774,8 @@ class EventFlagsTab:
             tree.tag_configure(status, foreground=palette.pick(color))
         tree_frame.pack(fill=tk.BOTH, expand=True)
         add_tooltip(tree, MULTI_SELECT_TIP)
-        for npc_name, (_base_flag, location) in sorted(NPC_FLAGS.items()):
+        for npc_name in get_all_npcs():
+            location = get_npc_location(npc_name)
             state = get_npc_state(self.current_event_flags, npc_name)
             if not state:
                 continue
@@ -1841,7 +1853,7 @@ class EventFlagsTab:
             save_file.save(self.get_save_path())
             self.reload_save()
 
-            self.show_toast(f"Revived {count} NPC(s)!", duration=2500)
+            self.show_toast(f"Revived {count} NPC(s)", duration=2500)
             dialog.destroy()
 
         ds.button(btn_frame, "Close", dialog.destroy, primary=False).pack(side=tk.RIGHT)
@@ -1853,7 +1865,7 @@ class EventFlagsTab:
     def open_quest_progress(self):
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                "Not Loaded", "Load event flags for a character first."
             )
             return
 
@@ -1873,7 +1885,7 @@ class EventFlagsTab:
         """Open the sites of grace unlock/lock dialog."""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                "Not Loaded", "Load event flags for a character first."
             )
             return
 
@@ -1893,7 +1905,7 @@ class EventFlagsTab:
         """Open the collected/missed item pickup checklist."""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                "Not Loaded", "Load event flags for a character first."
             )
             return
 
@@ -1913,7 +1925,7 @@ class EventFlagsTab:
         """Open the limited merchant stock restock dialog."""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                "Not Loaded", "Load event flags for a character first."
             )
             return
 
@@ -1933,7 +1945,7 @@ class EventFlagsTab:
         """Open the summoning pool enable/disable dialog."""
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
-                "Not Loaded", "Please load event flags for a character first!"
+                "Not Loaded", "Load event flags for a character first."
             )
             return
 
@@ -2019,7 +2031,7 @@ class EventFlagsTab:
 
             action = "Enable" if state else "Disable"
             result = CTkMessageBox.askyesno(
-                "Confirm",
+                "Change Summoning Pools",
                 f"{action} {len(selected)} summoning pool flags on Slot {self.current_slot + 1}?\n\n"
                 "A backup will be created automatically.",
                 parent=dialog,

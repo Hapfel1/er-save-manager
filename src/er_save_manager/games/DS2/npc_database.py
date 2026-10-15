@@ -1,53 +1,75 @@
 """
-DS2 NPC state flags.
+DS2 NPC state.
 
-An NPC's state lives in two byte arrays of the game's flag object, one for
-hostility and one for death. Offsets are relative to the start of that object.
-A byte is 0 while the flag is clear and holds bits once it is set, for example
-0x08 hostile and 0x80 dead for a killed NPC.
+Each NPC owns two blocks of ten global event flags, numbered by the NPC's
+block index b:
+- hostile: HOSTILE_FLAG_FIRST + 10 * b and the nine after it. The first is
+  the NPC turning hostile, the others the same per location.
+- death: DEATH_FLAG_FIRST + 10 * b and the nine after it, laid out the same
+  way. A death can set only a location flag.
+Ten-flag blocks do not line up with bytes, so neighbouring NPCs share bytes.
+
+Killing an NPC also raises the kill count of the generator that spawned them
+in that map's record. The generators are listed by GeneratorParam row id; an
+NPC uses the same ids in every map it appears in. Ids from 500 up are summon
+and invader variants and are not listed.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
+HOSTILE_FLAG_FIRST = 103500
+DEATH_FLAG_FIRST = 104000
+FLAGS_PER_NPC = 10
+
 
 @dataclass(frozen=True)
 class NpcEntry:
     name: str
-    hostile: int | None
-    dead: int | None
+    block: int
+    generators: tuple[int, ...]
+
+    @property
+    def hostile_flags(self) -> range:
+        first = HOSTILE_FLAG_FIRST + FLAGS_PER_NPC * self.block
+        return range(first, first + FLAGS_PER_NPC)
+
+    @property
+    def death_flags(self) -> range:
+        first = DEATH_FLAG_FIRST + FLAGS_PER_NPC * self.block
+        return range(first, first + FLAGS_PER_NPC)
 
 
 NPCS: tuple[NpcEntry, ...] = (
-    NpcEntry("Emerald Herald", 0x1C0, 0x1FE),
-    NpcEntry("Laddersmith Gilligan", 0x1C4, 0x202),
-    NpcEntry("Strowen", None, 0x204),
-    NpcEntry("Housekeeper Milibeth", None, 0x208),
-    NpcEntry("Darkdiver Grandahl", 0x1CC, 0x20B),
-    NpcEntry("Lonesome Gavlan", 0x1CD, 0x20C),
-    NpcEntry("Saulden, the Crestfallen Warrior", 0x1CF, 0x20D),
-    NpcEntry("Creighton the Wanderer", 0x1D0, 0x20E),
-    NpcEntry("Benhart of Jugo", 0x1D1, 0x210),
-    NpcEntry("Mild Mannered Pate", 0x1D2, 0x211),
-    NpcEntry("Lucatiel of Mirrah", 0x1D5, 0x214),
-    NpcEntry("Belfry Guard", 0x1D6, 0x215),
-    NpcEntry("Merchant Hag Melentia", 0x1D7, 0x216),
-    NpcEntry("Maughlin the Armourer", 0x1DC, 0x21B),
-    NpcEntry("Stone Trader Chloanne", 0x1DE, 0x21C),
-    NpcEntry("Rosabeth of Melfia", 0x1DF, 0x21D),
-    NpcEntry("Blacksmith Lenigrast", 0x1E0, 0x21F),
-    NpcEntry("Steady Hand McDuff", 0x1E1, 0x220),
-    NpcEntry("Carhillion of the Fold", 0x1E3, 0x221),
-    NpcEntry("Straid of Olaphis", 0x1E4, 0x222),
-    NpcEntry("Licia of Lindeldt", 0x1E5, 0x224),
-    NpcEntry("Felkin the Outcast", 0x1E6, 0x225),
-    NpcEntry("Royal Sorcerer Navlaan", 0x1E8, 0x226),
-    NpcEntry("Magerold of Lanafir", 0x1E9, 0x227),
-    NpcEntry("Weaponsmith Ornifex", 0x1EA, 0x229),
-    NpcEntry("Titchy Gren", 0x1ED, 0x22B),
-    NpcEntry("Cromwell the Pardoner", 0x1EE, 0x22C),
-    NpcEntry("Blue Sentinel Targray", 0x1EF, 0x22E),
-    NpcEntry("The Rat King", 0x1F2, 0x230),
-    NpcEntry("Manscorpion Tark", 0x1F3, 0x231),
+    NpcEntry("Emerald Herald", 2, (205, 207, 400, 401, 402, 405)),
+    NpcEntry("Laddersmith Gilligan", 5, (45, 46, 47)),
+    NpcEntry("Strowen", 6, (210, 211, 212)),
+    NpcEntry("Housekeeper Milibeth", 10, (15, 16, 17)),
+    NpcEntry("Darkdiver Grandahl", 12, (40, 41)),
+    NpcEntry("Lonesome Gavlan", 13, (245, 246)),
+    NpcEntry("Saulden, the Crestfallen Warrior", 14, (100, 101)),
+    NpcEntry("Creighton the Wanderer", 15, (55, 56, 57, 58)),
+    NpcEntry("Benhart of Jugo", 16, (60, 61)),
+    NpcEntry("Mild Mannered Pate", 17, (65, 66)),
+    NpcEntry("Lucatiel of Mirrah", 19, (90, 91)),
+    NpcEntry("Belfry Guard", 20, (95, 96)),
+    NpcEntry("Merchant Hag Melentia", 21, (260, 261)),
+    NpcEntry("Maughlin the Armourer", 25, (105, 106, 107, 108)),
+    NpcEntry("Stone Trader Chloanne", 26, (110, 111, 195, 196)),
+    NpcEntry("Rosabeth of Melfia", 27, (115, 116, 117)),
+    NpcEntry("Blacksmith Lenigrast", 28, (120, 121, 122)),
+    NpcEntry("Steady Hand McDuff", 29, (165, 166, 167)),
+    NpcEntry("Carhillion of the Fold", 30, (135, 136)),
+    NpcEntry("Straid of Olaphis", 31, (145, 146, 147)),
+    NpcEntry("Licia of Lindeldt", 32, (150, 151, 152)),
+    NpcEntry("Felkin the Outcast", 33, (155, 156)),
+    NpcEntry("Royal Sorcerer Navlaan", 34, (160, 161)),
+    NpcEntry("Magerold of Lanafir", 35, (175, 176)),
+    NpcEntry("Weaponsmith Ornifex", 36, (265, 266)),
+    NpcEntry("Titchy Gren", 38, (275, 276)),
+    NpcEntry("Cromwell the Pardoner", 39, (310, 311)),
+    NpcEntry("Blue Sentinel Targray", 40, (315, 316)),
+    NpcEntry("The Rat King", 42, (285, 286)),
+    NpcEntry("Manscorpion Tark", 43, (325,)),
 )

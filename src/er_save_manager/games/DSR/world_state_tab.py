@@ -151,7 +151,7 @@ class DSRWorldStateTab:
         ng_card.pack(fill="x", padx=4, pady=4)
 
         ctk.CTkLabel(
-            ng_card, text="New Game+ Counter", font=("Segoe UI", 12, "bold")
+            ng_card, text="New Game+ counter", font=("Segoe UI", 12, "bold")
         ).pack(anchor="w", padx=14, pady=(12, 4))
 
         ng_row = ctk.CTkFrame(ng_card, fg_color="transparent")
@@ -326,7 +326,7 @@ class DSRWorldStateTab:
         try:
             char.ng_plus = int(self._ng_var.get())
         except Exception as exc:
-            CTkMessageBox.showerror("Error", str(exc), parent=self.parent)
+            CTkMessageBox.showerror("NG+ Not Applied", str(exc), parent=self.parent)
             return
         try:
             _backup_and_save(save, save_path, f"set_ng_slot_{self._current_slot + 1}")

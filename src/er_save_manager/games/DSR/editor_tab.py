@@ -10,14 +10,20 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.games.DSR.character_ops import _sync_dir_name_level
 from er_save_manager.games.DSR.save import (
+    COVENANT_OFFERING_ORDER,
+    COVENANT_RANK_COUNTS,
+    MAX_COVENANT_OFFERINGS,
     MAX_HUMANITY,
     MAX_SOULS,
     MAX_STAT,
     NAME_MAX_CHARS,
     STAT_KEYS,
+    DSRCovenant,
     calc_level_from_stats,
     class_base_stats,
+    covenant_rank,
 )
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
@@ -80,6 +86,8 @@ class DSREditorTab:
         self._covenant_var = tk.StringVar(value=_COVENANTS[0])
         self._ng_var = tk.StringVar(value="0")
         self._playtime_var = tk.StringVar(value="--")
+        self._offering_vars = {c: tk.StringVar() for c in COVENANT_OFFERING_ORDER}
+        self._rank_vars = {c: tk.StringVar() for c in COVENANT_OFFERING_ORDER}
         # Starting class index at last load; used for level recalc
         self._loaded_class_idx: int = 0
         # False when the loaded stats sit below their own class's base
@@ -131,6 +139,8 @@ class DSREditorTab:
         self._build_stats_tab(tabs.add("Stats"))
         yield
         self._build_identity_tab(tabs.add("Identity"))
+        yield
+        self._build_covenants_tab(tabs.add("Covenants"))
 
     # --- Stats tab ------------------------------------------------------------ #
 
@@ -226,7 +236,7 @@ class DSREditorTab:
 
         cf = ctk.CTkFrame(frame, fg_color="transparent")
         cf.pack(fill="x", pady=5, padx=10)
-        ctk.CTkLabel(cf, text="Character Identity", font=("Segoe UI", 12, "bold")).grid(
+        ctk.CTkLabel(cf, text="Character identity", font=("Segoe UI", 12, "bold")).grid(
             row=0, column=0, columnspan=2, sticky="w", padx=5, pady=(5, 0)
         )
 
@@ -260,7 +270,7 @@ class DSREditorTab:
                 ).grid(row=i, column=1, padx=5, pady=5, sticky="w")
 
         # Play time read-only
-        ctk.CTkLabel(cf, text="Play Time:").grid(
+        ctk.CTkLabel(cf, text="Play time:").grid(
             row=len(rows) + 1, column=0, sticky="w", padx=5, pady=5
         )
         ctk.CTkLabel(cf, textvariable=self._playtime_var).grid(
@@ -269,13 +279,118 @@ class DSREditorTab:
 
         ctk.CTkLabel(
             frame,
-            text="Name supports up to 16 characters. Both name copies in the save are updated.",
+            text=f"Name supports up to {NAME_MAX_CHARS} characters. Both name copies in the save are updated.",
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=15, pady=(4, 0))
         ctk.CTkButton(
             frame, text="Apply Changes", command=self._apply_identity, width=200
         ).pack(pady=16)
+
+    # --- Covenants tab ------------------------------------------------------- #
+
+    def _build_covenants_tab(self, parent) -> None:
+        frame = ctk.CTkScrollableFrame(parent, fg_color="transparent")
+        frame.pack(fill="both", expand=True)
+        bind_mousewheel(frame)
+
+        cf = ctk.CTkFrame(frame, fg_color="transparent")
+        cf.pack(fill="x", pady=5, padx=10)
+        ctk.CTkLabel(cf, text="Covenant offerings", font=("Segoe UI", 12, "bold")).grid(
+            row=0, column=0, columnspan=3, sticky="w", padx=5, pady=(5, 0)
+        )
+        # Whole numbers only, up to the u8 the save stores.
+        vcmd = cf.register(
+            lambda text: text == ""
+            or (text.isdigit() and int(text) <= MAX_COVENANT_OFFERINGS)
+        )
+        for i, cov in enumerate(COVENANT_OFFERING_ORDER, start=1):
+            ctk.CTkLabel(cf, text=f"{_COVENANTS[int(cov)]}:").grid(
+                row=i, column=0, sticky="w", padx=5, pady=5
+            )
+            var = self._offering_vars[cov]
+            ctk.CTkEntry(
+                cf,
+                textvariable=var,
+                width=90,
+                validate="key",
+                validatecommand=(vcmd, "%P"),
+            ).grid(row=i, column=1, padx=5, pady=5, sticky="w")
+            ctk.CTkLabel(
+                cf, textvariable=self._rank_vars[cov], width=80, anchor="w"
+            ).grid(row=i, column=2, sticky="w", padx=5, pady=5)
+            var.trace_add("write", lambda *_, c=cov: self._update_rank(c))
+
+        *first, last = COVENANT_RANK_COUNTS
+        need = f"{', '.join(str(n) for n in first)} and {last}"
+        ctk.CTkLabel(
+            frame,
+            text=f"Ranks 1, 2 and 3 are reached at {need} offerings. Forest Hunter "
+            "counts offerings but has no ranks. Counts go from 0 to "
+            f"{MAX_COVENANT_OFFERINGS}. Rank rewards are not added.",
+            font=("Segoe UI", 10),
+            text_color=("gray40", "gray70"),
+            justify="left",
+            wraplength=520,
+        ).pack(anchor="w", padx=15, pady=(4, 0))
+        ctk.CTkButton(
+            frame, text="Apply Changes", command=self._apply_covenants, width=200
+        ).pack(pady=16)
+
+    def _update_rank(self, cov: DSRCovenant) -> None:
+        try:
+            count = int(self._offering_vars[cov].get())
+        except ValueError:
+            self._rank_vars[cov].set("")
+            return
+        if cov == DSRCovenant.ForestHunter:
+            self._rank_vars[cov].set("No ranks")
+        else:
+            self._rank_vars[cov].set(f"Rank {covenant_rank(count)}")
+
+    def _apply_covenants(self) -> None:
+        if _game_blocks_write(self.parent):
+            return
+        if self._current_slot < 0:
+            CTkMessageBox.showwarning(
+                "No Character", "Load a character first.", parent=self.parent
+            )
+            return
+        save, save_path = self._get_dsr_save(), self._get_save_path()
+        if save is None or save_path is None:
+            return
+        char = save.characters[self._current_slot]
+        if char is None:
+            return
+        try:
+            counts = {c: int(v.get()) for c, v in self._offering_vars.items()}
+        except ValueError:
+            counts = {}
+        if len(counts) != len(COVENANT_OFFERING_ORDER) or not all(
+            0 <= n <= MAX_COVENANT_OFFERINGS for n in counts.values()
+        ):
+            CTkMessageBox.showerror(
+                "Invalid Offering Count",
+                f"Offering counts must be whole numbers from 0 to {MAX_COVENANT_OFFERINGS}.",
+                parent=self.parent,
+            )
+            return
+        if not CTkMessageBox.askyesno(
+            "Apply Covenant Offerings",
+            f"Apply covenant offerings to Slot {self._current_slot + 1}?\n\n"
+            "A backup will be created.",
+            parent=self.parent,
+        ):
+            return
+        for cov, count in counts.items():
+            char.set_covenant_offerings(cov, count)
+        try:
+            _backup_and_save(
+                save, save_path, f"edit_covenants_slot_{self._current_slot + 1}"
+            )
+            self._show_toast("Covenant offerings applied. Backup created")
+        except Exception as exc:
+            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
 
     # --- Refresh / load ------------------------------------------------------- #
 
@@ -340,6 +455,8 @@ class DSREditorTab:
         self._stat_vars["souls"].set(str(char.souls))
         self._stat_vars["humanity"].set(str(char.humanity))
         self._name_var.set(char.name)
+        for cov, var in self._offering_vars.items():
+            var.set(str(char.covenant_offerings(cov)))
         self._body_type_var.set(
             "Type A (Male)" if char.body_type == 1 else "Type B (Female)"
         )
@@ -386,7 +503,7 @@ class DSREditorTab:
         if save is None or save_path is None:
             return
         if not CTkMessageBox.askyesno(
-            "Confirm",
+            "Apply Stats",
             f"Apply stat changes to Slot {self._current_slot + 1}?\n\nA backup will be created.",
             parent=self.parent,
         ):
@@ -422,6 +539,8 @@ class DSREditorTab:
         )
         char.souls = souls
         char.humanity = humanity
+        # The load screen reads name and level from its own directory copy.
+        _sync_dir_name_level(save, self._current_slot, char.name, char.level)
         try:
             _backup_and_save(
                 save, save_path, f"edit_stats_slot_{self._current_slot + 1}"
@@ -443,7 +562,7 @@ class DSREditorTab:
         if save is None or save_path is None:
             return
         if not CTkMessageBox.askyesno(
-            "Confirm",
+            "Apply Identity",
             f"Apply identity changes to Slot {self._current_slot + 1}?\n\nA backup will be created.",
             parent=self.parent,
         ):
@@ -485,10 +604,13 @@ class DSREditorTab:
             char.covenant = type(char.covenant)(
                 _COVENANTS.index(self._covenant_var.get())
             )
-            char.ng_plus = int(self._ng_var.get())
+            ng = int(self._ng_var.get())
+            if ng != char.ng_plus:
+                char.ng_plus = ng
         except (ValueError, IndexError) as exc:
             CTkMessageBox.showerror("Invalid Value", str(exc), parent=self.parent)
             return
+        _sync_dir_name_level(save, self._current_slot, char.name, char.level)
         try:
             _backup_and_save(
                 save, save_path, f"edit_identity_slot_{self._current_slot + 1}"

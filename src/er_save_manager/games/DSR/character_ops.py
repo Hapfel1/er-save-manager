@@ -21,6 +21,8 @@ from .save import (
     DSRCharacter,
     DSRSave,
     _decrypt,
+    _encrypt,
+    _md5,
 )
 
 _ERC_MAGIC = b"DSRC"
@@ -28,13 +30,27 @@ _ERC_VERSION = 1
 _STEAM64_BASE = 0x0110000100000000
 _STEAM64_MAX = 0x01100001FFFFFFFF
 
+# --- Slot state in system_data (slot 10) ----------------------------------
+#
+# One u8 per character slot at ACTIVE_FLAGS_OFFSET: 1 when the slot holds a
+# character. Deleting a character in game clears it and zeroes the slot's
+# character data; the directory entry below is left as it was.
+ACTIVE_FLAGS_OFFSET = 0xC4
+
+# Decrypted slot: u32 length of the character data at +0x10, the data from
+# +0x14, then PKCS7 padding.
+_DATA_LENGTH_OFFSET = 0x10
+_DATA_START = 0x14
+
 # --- Character-select directory (in system_data / slot 10) -----------------
 #
 # The load-screen character list is a separate 10-entry directory stored in
 # slot 10, not derived from the character slots themselves. Each entry mirrors
-# the name and level of its character slot. A character whose directory
-# entry is blank does not show on the in-game load screen, so character_ops
-# keeps this directory in sync on every slot mutation.
+# the name and level of its character slot. character_ops keeps the name and
+# level in sync on every slot mutation.
+#
+# The first 0x28 bytes of entry 0 overlap the slot header that holds the
+# active flags, so entry writes keep those flags.
 #
 # Layout per entry (400 bytes), offsets relative to entry start:
 #   +0x28  34   Character name (UTF-16LE, mirrors OFF_NAME_PRIMARY)
@@ -80,7 +96,31 @@ def _write_dir_entry(save: DSRSave, slot_index: int, entry: bytes) -> None:
             f"Directory entry must be {DIR_STRIDE} bytes, got {len(entry)}"
         )
     off = _dir_entry_offset(slot_index)
+    flags = bytes(
+        save.system_data[ACTIVE_FLAGS_OFFSET : ACTIVE_FLAGS_OFFSET + CHARACTER_SLOTS]
+    )
     save.system_data[off : off + DIR_STRIDE] = entry
+    save.system_data[ACTIVE_FLAGS_OFFSET : ACTIVE_FLAGS_OFFSET + CHARACTER_SLOTS] = (
+        flags
+    )
+
+
+def _set_active(save: DSRSave, slot_index: int, active: bool) -> None:
+    save.system_data[ACTIVE_FLAGS_OFFSET + slot_index] = 1 if active else 0
+
+
+def _clear_slot_data(save: DSRSave, slot_index: int) -> None:
+    """Zero the character data of a slot in the raw file, keeping the
+    plaintext header and padding, as the game does on delete."""
+    off = SLOTS_OFFSET + slot_index * SLOT_SIZE
+    iv = bytes(save._raw[off : off + 16])
+    ciphertext = bytes(save._raw[off + 16 : off + 16 + SLOT_DATA_SIZE])
+    data = bytearray(_decrypt(iv, ciphertext))
+    length = struct.unpack_from("<I", data, _DATA_LENGTH_OFFSET)[0]
+    data[_DATA_START : _DATA_START + length] = bytes(length)
+    ciphertext = _encrypt(iv, bytes(data))
+    save._raw[off : off + 16] = _md5(ciphertext)
+    save._raw[off + 16 : off + 16 + SLOT_DATA_SIZE] = ciphertext
 
 
 def _sync_dir_name_level(save: DSRSave, slot_index: int, name: str, level: int) -> None:
@@ -144,13 +184,16 @@ def copy_slot(save: DSRSave, from_slot: int, to_slot: int) -> None:
         slot_index=to_slot, _data=bytearray(src.get_raw())
     )
     _write_dir_entry(save, to_slot, _read_dir_entry(save, from_slot))
+    _set_active(save, to_slot, True)
 
 
 def delete_slot(save: DSRSave, slot_index: int) -> None:
-    """Clear a character slot."""
+    """Clear a character slot the way the game does: zero its character data
+    and clear its active flag."""
     _check_bounds(slot_index)
+    _clear_slot_data(save, slot_index)
     save.characters[slot_index] = None
-    _write_dir_entry(save, slot_index, _DIR_EMPTY_TEMPLATE)
+    _set_active(save, slot_index, False)
 
 
 def swap_slots(save: DSRSave, slot_a: int, slot_b: int) -> None:
@@ -174,6 +217,8 @@ def swap_slots(save: DSRSave, slot_a: int, slot_b: int) -> None:
     entry_b = _read_dir_entry(save, slot_b)
     _write_dir_entry(save, slot_a, entry_b)
     _write_dir_entry(save, slot_b, entry_a)
+    _set_active(save, slot_a, char_b is not None)
+    _set_active(save, slot_b, char_a is not None)
 
 
 def transfer_slot(
@@ -209,6 +254,7 @@ def transfer_slot(
 
     target_save.characters[to_slot] = DSRCharacter(slot_index=to_slot, _data=data)
     _write_dir_entry(target_save, to_slot, _read_dir_entry(source_save, from_slot))
+    _set_active(target_save, to_slot, True)
 
 
 def export_character(save: DSRSave, slot_index: int, output_path: str | Path) -> None:
@@ -280,4 +326,5 @@ def import_character(save: DSRSave, slot_index: int, input_path: str | Path) -> 
     char = DSRCharacter(slot_index=slot_index, _data=data)
     save.characters[slot_index] = char
     _sync_dir_name_level(save, slot_index, char.name, char.level)
+    _set_active(save, slot_index, True)
     return char.name

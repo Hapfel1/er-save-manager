@@ -161,7 +161,7 @@ class TroubleshooterAddon:
             zip_path.unlink()
 
             if progress_callback:
-                progress_callback("Installation complete!")
+                progress_callback("Installation complete.")
 
             return self.executable_path.exists()
 

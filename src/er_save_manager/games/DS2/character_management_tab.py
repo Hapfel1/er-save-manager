@@ -88,7 +88,7 @@ class DS2CharacterManagementTab:
         selector_frame = ctk.CTkFrame(scroll_frame, corner_radius=10)
         selector_frame.pack(fill="x", padx=20, pady=10)
         ctk.CTkLabel(
-            selector_frame, text="Select Operation", font=("Segoe UI", 12, "bold")
+            selector_frame, text="Select operation", font=("Segoe UI", 12, "bold")
         ).pack(anchor="w", padx=15, pady=(10, 5))
 
         selector_controls = ctk.CTkFrame(selector_frame, fg_color="transparent")
@@ -101,6 +101,7 @@ class DS2CharacterManagementTab:
             ("Export Character", "export"),
             ("Import Character", "import"),
             ("Delete Character", "delete"),
+            ("Copy to Another Extension", "extension"),
         ]
         self.operation_map = dict(operations)
         self.operation_var = tk.StringVar(value=operations[0][0])
@@ -142,6 +143,7 @@ class DS2CharacterManagementTab:
             "export": self._setup_export_panel,
             "import": self._setup_import_panel,
             "delete": self._setup_delete_panel,
+            "extension": self._setup_extension_panel,
         }[operation]()
 
     def _slot_display_names(self, save: DS2Save | None = None) -> list[str]:
@@ -276,6 +278,34 @@ class DS2CharacterManagementTab:
             row, text="Import Character...", command=self._import_character
         ).pack(side="left", padx=15)
 
+    def _setup_extension_panel(self) -> None:
+        ctk.CTkLabel(
+            self.ops_scrollable,
+            text=(
+                "Copy this save to another extension (vanilla or Seamless Co-op). "
+                "The current file is not changed."
+            ),
+            font=("Segoe UI", 11),
+            text_color=("gray40", "gray70"),
+        ).pack(anchor=tk.W, pady=10)
+        ctk.CTkButton(
+            self.ops_scrollable,
+            text="Choose Extension...",
+            command=self._open_extension_copy,
+            width=180,
+        ).pack(anchor=tk.W, pady=10)
+
+    def _open_extension_copy(self) -> None:
+        from er_save_manager.ui.dialogs.extension_copy import open_extension_copy
+
+        open_extension_copy(
+            self.parent,
+            "dark_souls_2",
+            self.get_save_path(),
+            on_done=lambda message: self.show_toast(message, duration=4000),
+            is_game_running=self.is_game_running,
+        )
+
     def _setup_delete_panel(self) -> None:
         ctk.CTkLabel(
             self.ops_scrollable,
@@ -303,8 +333,8 @@ class DS2CharacterManagementTab:
     def _check_game_not_running(self) -> bool:
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
-                "Game is running",
-                "Please close Dark Souls II before modifying save files.",
+                "Game Is Running",
+                "Close Dark Souls II before modifying save files.",
                 parent=self.parent,
             )
             return False
@@ -314,7 +344,7 @@ class DS2CharacterManagementTab:
         save = self.get_save()
         if save is None:
             CTkMessageBox.showwarning(
-                "No Save", "Please load a save file first.", parent=self.parent
+                "No Save", "Load a save file first.", parent=self.parent
             )
         return save
 
@@ -334,7 +364,7 @@ class DS2CharacterManagementTab:
         """Show the uninitialized-slot warning and ask whether to proceed
         anyway."""
         return CTkMessageBox.askyesno(
-            "Slot never created in-game",
+            "Slot Never Created In-Game",
             message + "\n\nWrite anyway?",
             parent=self.parent,
         )
@@ -362,14 +392,16 @@ class DS2CharacterManagementTab:
         to_slot = self._slot_index_from_display(self.copy_to_var.get())
         if from_slot == to_slot:
             CTkMessageBox.showerror(
-                "Error", "Source and destination slots must differ.", parent=self.parent
+                "Same Slot",
+                "Source and destination slots must differ.",
+                parent=self.parent,
             )
             return
 
         from_name = save.characters[from_slot].name
         if not from_name:
             CTkMessageBox.showerror(
-                "Error", f"Slot {from_slot} is empty.", parent=self.parent
+                "Empty Slot", f"Slot {from_slot} is empty.", parent=self.parent
             )
             return
 
@@ -393,7 +425,9 @@ class DS2CharacterManagementTab:
                 return
             DS2CharacterOperations.copy_slot(save, from_slot, to_slot, force=True)
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Copy failed:\n{e}", parent=self.parent)
+            CTkMessageBox.showerror(
+                "Copy Failed", f"Copy failed:\n{e}", parent=self.parent
+            )
             return
 
         self._write_and_reload(
@@ -410,7 +444,9 @@ class DS2CharacterManagementTab:
         slot_a = self._slot_index_from_display(self.swap_a_var.get())
         slot_b = self._slot_index_from_display(self.swap_b_var.get())
         if slot_a == slot_b:
-            CTkMessageBox.showerror("Error", "Slots must differ.", parent=self.parent)
+            CTkMessageBox.showerror(
+                "Same Slot", "Slots must differ.", parent=self.parent
+            )
             return
 
         try:
@@ -425,7 +461,9 @@ class DS2CharacterManagementTab:
                 return
             DS2CharacterOperations.swap_slots(save, slot_a, slot_b, force=True)
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Swap failed:\n{e}", parent=self.parent)
+            CTkMessageBox.showerror(
+                "Swap Failed", f"Swap failed:\n{e}", parent=self.parent
+            )
             return
 
         self._write_and_reload(save, f"Swapped Slot {slot_a} and Slot {slot_b}.")
@@ -439,7 +477,7 @@ class DS2CharacterManagementTab:
         character = save.characters[slot]
         if not character.name:
             CTkMessageBox.showerror(
-                "Error", f"Slot {slot} is empty.", parent=self.parent
+                "Empty Slot", f"Slot {slot} is empty.", parent=self.parent
             )
             return
 
@@ -459,11 +497,13 @@ class DS2CharacterManagementTab:
         try:
             DS2CharacterOperations.export_character(save, slot, output_path)
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Export failed:\n{e}", parent=self.parent)
+            CTkMessageBox.showerror(
+                "Export Failed", f"Export failed:\n{e}", parent=self.parent
+            )
             return
 
         CTkMessageBox.showinfo(
-            "Success",
+            "Character Exported",
             f"Character '{character.name}' exported to:\n{output_path}",
             parent=self.parent,
         )
@@ -504,7 +544,9 @@ class DS2CharacterManagementTab:
                 save, to_slot, input_path, force=True
             )
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Import failed:\n{e}", parent=self.parent)
+            CTkMessageBox.showerror(
+                "Import Failed", f"Import failed:\n{e}", parent=self.parent
+            )
             return
 
         self._write_and_reload(save, f"Character '{name}' imported to Slot {to_slot}.")
@@ -520,7 +562,9 @@ class DS2CharacterManagementTab:
         character = save.characters[slot]
         if not character.name:
             CTkMessageBox.showinfo(
-                "Info", f"Slot {slot} is already empty.", parent=self.parent
+                "Slot Already Empty",
+                f"Slot {slot} is already empty.",
+                parent=self.parent,
             )
             return
 
@@ -540,7 +584,9 @@ class DS2CharacterManagementTab:
             )
             DS2CharacterOperations.delete_slot(save, slot)
         except Exception as e:
-            CTkMessageBox.showerror("Error", f"Delete failed:\n{e}", parent=self.parent)
+            CTkMessageBox.showerror(
+                "Delete Failed", f"Delete failed:\n{e}", parent=self.parent
+            )
             return
 
         save_path = self.get_save_path()
@@ -605,7 +651,7 @@ class DS2CharacterManagementTab:
         from_character = save.characters[from_slot]
         if not from_character.name:
             CTkMessageBox.showerror(
-                "Error", f"Slot {from_slot} is empty.", parent=self.parent
+                "Empty Slot", f"Slot {from_slot} is empty.", parent=self.parent
             )
             return
 
@@ -616,7 +662,9 @@ class DS2CharacterManagementTab:
         current_path = self.get_save_path()
         if current_path and Path(target_path).resolve() == Path(current_path).resolve():
             CTkMessageBox.showerror(
-                "Error", "Select a different target save file.", parent=self.parent
+                "Same Save File",
+                "Select a different target save file.",
+                parent=self.parent,
             )
             return
 
@@ -624,7 +672,7 @@ class DS2CharacterManagementTab:
             target_save = DS2Save.from_file(target_path)
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Failed to load target save:\n{e}", parent=self.parent
+                "Load Failed", f"Failed to load target save:\n{e}", parent=self.parent
             )
             return
 
@@ -652,7 +700,7 @@ class DS2CharacterManagementTab:
             )
         except Exception as e:
             CTkMessageBox.showerror(
-                "Error", f"Transfer failed:\n{e}", parent=self.parent
+                "Transfer Failed", f"Transfer failed:\n{e}", parent=self.parent
             )
             return
 

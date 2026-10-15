@@ -24,7 +24,7 @@ def _state_text(state: NpcState) -> str:
         return "Dead"
     if state.hostile:
         return "Hostile"
-    return "Alive (hostility not tracked)" if state.entry.hostile is None else "Alive"
+    return "Alive"
 
 
 class DS2NpcPanel:
@@ -69,8 +69,8 @@ class DS2NpcPanel:
         ctk.CTkLabel(
             self.parent,
             text=(
-                "Revive clears the documented dead and hostile flags. Calm clears the "
-                "hostile flag only."
+                "Revive clears the NPC's dead and hostile flags and kill counts. Calm "
+                "clears the hostile flags only."
             ),
             text_color=("gray40", "gray60"),
             font=("Segoe UI", 11),

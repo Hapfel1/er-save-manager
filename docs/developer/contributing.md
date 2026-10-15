@@ -1,6 +1,6 @@
 # Contributing to Elden Ring Save Manager
 
-Thank you for considering contributing! This document provides guidelines for contributing to the project.
+Thank you for considering contributing. This document provides guidelines for contributing to the project.
 
 ---
 
@@ -342,4 +342,4 @@ By contributing, you agree that your contributions will be licensed under the pr
 
 ---
 
-Thank you for contributing!
+Thank you for contributing.

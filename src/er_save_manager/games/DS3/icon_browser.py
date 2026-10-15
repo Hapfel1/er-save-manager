@@ -316,11 +316,11 @@ class DS3IconBrowser(ctk.CTkToplevel):
         self._infusion_icon.configure(image=infusion_image(item, self._tab.source))
         lim = catalog.limits(item)
         upgradable = id_kind(int(item["Id"], 16)) == ID_WEAPON and lim.max_upgrade > 0
-        enable(self._qty_entry, lim.max_quantity > 1)
+        enable(self._qty_entry, max(lim.max_quantity, lim.max_storage) > 1)
         enable(self._upgrade_entry, upgradable)
         info = []
-        if lim.max_quantity > 1:
-            info.append(f"Max stack: {lim.max_quantity}")
+        if max(lim.max_quantity, lim.max_storage) > 1:
+            info.append(catalog.stack_text(lim))
         if lim.max_upgrade:
             info.append(f"Max upgrade: +{lim.max_upgrade}")
         if lim.key_item:

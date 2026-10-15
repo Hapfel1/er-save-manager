@@ -75,6 +75,7 @@ from er_save_manager.games.DS2.item_database import (
     SEAMLESS_MAX_STACK,
 )
 from er_save_manager.games.DS2.npc_database import NPCS, NpcEntry
+from er_save_manager.games.DS2.npc_generators import GENERATOR_ROWS
 from er_save_manager.games.DS2.regulation import BossFight, ClassBase, Regulation
 from er_save_manager.own_writes import record_write
 
@@ -273,58 +274,27 @@ BONFIRE_MAX_INTENSITY = 8
 
 # Two more structures sit at fixed distances from the first bonfire id array in
 # the same entry, so they are found through it.
-# - The last rested bonfire is a u32 id, _LAST_RESTED_AFTER_IDS bytes after the
-#   id array.
-# - The NPC flag object starts _NPC_FLAGS_BEFORE_IDS bytes before the id array,
-#   two flag bytes per NPC in the layout the cheat tables describe.
-_LAST_RESTED_AFTER_IDS = 0xC04
+# - The last rested bonfire, _LAST_RESTED_AFTER_IDS bytes after the id array:
+#   u32 map id (AA << 24 | BB << 16), u32 bonfire id, u32 state. A rest writes
+#   the bonfire's map and id with state 0; a character that never rested (or
+#   just started a new cycle) holds m10_02, bonfire 0, state 2. Death and the
+#   Homeward Bone return the character to this bonfire.
+# - The NPC flag object starts _NPC_FLAGS_BEFORE_IDS bytes before the id array.
+#   Its global event flags hold the NPC states, see npc_database.
+_LAST_RESTED_AFTER_IDS = 0xC00
 _NPC_FLAGS_BEFORE_IDS = 0x15A0
-# Bytes a kill writes for each NPC, as (offset from the first bonfire id
-# array, length in bytes). They are zero while the NPC was never killed.
-# Everyone except Lenigrast has a single-byte marker, 0 while alive and 1 once
-# killed. Unconfirmed entries are marked below.
-_NPC_KILL_RECORDS: dict[str, tuple[tuple[int, int], ...]] = {
-    "Blacksmith Lenigrast": (
-        (-0x27576, 1),
-        (-0x27440, 4),
-        (-0x27040, 2),
-        (-0x2703D, 1),
-        (-0x5B8, 2),
-        (0x5A94, 2),
-        (0x119C, 6),
-        (0x11A4, 4),
-    ),
-    "Emerald Herald": ((-0x27570, 1),),
-    "Merchant Hag Melentia": ((-0x26A72, 1),),
-    "Laddersmith Gilligan": ((-0x24948, 1),),
-    "Housekeeper Milibeth": ((-0x28098, 1),),
-    "Strowen": ((-0x28095, 1),),
-    "Darkdiver Grandahl": ((-0x1F0C8, 1),),
-    "Lonesome Gavlan": ((-0x23E34, 1),),
-    "Saulden, the Crestfallen Warrior": ((-0x27582, 1),),
-    "Creighton the Wanderer": ((-0x21D08, 1),),
-    "Benhart of Jugo": ((-0x129A8, 1),),
-    "Maughlin the Armourer": ((-0x27580, 1),),
-    "Royal Sorcerer Navlaan": ((-0x13FC6, 1),),
-    "Magerold of Lanafir": ((-0x23326, 1),),
-    "Cromwell the Pardoner": ((-0x25F60, 1),),
-    "The Rat King": ((-0x1E5B8, 1),),
-    "Manscorpion Tark": ((-0x1F0C0, 1),),
-    "Blue Sentinel Targray": ((-0x1FBD6, 1),),
-    "Mild Mannered Pate": ((-0x23E38, 1),),
-    # Unconfirmed: each pair shares its only candidate byte, so clearing it may
-    # not revive the right NPC.
-    "Rosabeth of Melfia": ((-0x129A4, 1),),
-    "Stone Trader Chloanne": ((-0x129A4, 1),),
-    "Titchy Gren": ((-0x21D04, 1),),
-    "Weaponsmith Ornifex": ((-0x21D04, 1),),
-    # Unconfirmed: one kill each with two candidate bytes. The one listed is
-    # the candidate not shared with another NPC.
-    "Steady Hand McDuff": ((-0x25451, 1),),
-    "Carhillion of the Fold": ((-0x23E36, 1),),
-    "Straid of Olaphis": ((-0x25452, 1),),
-    "Felkin the Outcast": ((-0x21D06, 1),),
-}
+# Bytes besides his generator kill count that Lenigrast's kill writes, as
+# (offset from the first bonfire id array, length in bytes). They are zero
+# while he was never killed.
+_LENIGRAST_KILL_RECORDS: tuple[tuple[int, int], ...] = (
+    (-0x27440, 4),
+    (-0x27040, 2),
+    (-0x2703D, 1),
+    (-0x5B8, 2),
+    (0x5A94, 2),
+    (0x119C, 6),
+    (0x11A4, 4),
+)
 # Event data, found through the first bonfire id array like the structures
 # above. Flags are one bit each, most significant bit first.
 # - Global event flags from _GLOBAL_FLAG_FIRST up start _GLOBAL_FLAGS_IN_OBJECT
@@ -347,8 +317,15 @@ _EVENT_COPY_DISTANCE = 0x604C
 # Per-map records, one per map in a fixed order, each starting with a u32 map
 # id (area << 24 | block << 16). The first starts _MAP_RECORDS_BEFORE_IDS bytes
 # before the first bonfire id array.
+# Each record holds, after a 16-byte header (u32 map id, u32 count), a list
+# of _MAP_GENERATOR_CAPACITY u16 generator ids and then one u8 kill count per
+# row of the map's GeneratorParam, in row order. A Bonfire Ascetic resets the
+# map's kill counts.
 _MAP_RECORDS_BEFORE_IDS = 0x282A8
 _MAP_RECORD_SIZE = 0xB10
+_MAP_RECORD_HEADER = 0x10
+_MAP_GENERATOR_CAPACITY = 256
+_MAP_KILL_COUNTS_IN_RECORD = _MAP_RECORD_HEADER + 2 * _MAP_GENERATOR_CAPACITY
 # Highest defeat count the editor writes. The game stores a u32 and adds one
 # per win.
 BOSS_MAX_DEFEATS = 999
@@ -373,6 +350,19 @@ _CACHE_LEVEL_FROM_NAME = 0x4A
 _CACHE_CLASS_FROM_NAME = 0x4C
 
 
+def _map_records(data: bytes | bytearray, anchor: int) -> list[tuple[int, int]]:
+    """(map id, record offset) of every per-map record, in save order."""
+    records = []
+    offset = anchor - _MAP_RECORDS_BEFORE_IDS
+    while 0 <= offset and offset + 4 <= len(data):
+        map_id = struct.unpack_from("<I", data, offset)[0]
+        if map_id & 0xFFFF or not map_id:
+            break
+        records.append((map_id, offset))
+        offset += _MAP_RECORD_SIZE
+    return records
+
+
 class Bonfires:
     """View over the bonfire lit states and intensities in one slot's large
     entry. cycle is the character's 0-based NG+ cycle, which the game adds to
@@ -383,9 +373,15 @@ class Bonfires:
     yields no blocks.
     """
 
-    def __init__(self, data: bytearray, cycle: int = 0) -> None:
+    def __init__(
+        self,
+        data: bytearray,
+        cycle: int = 0,
+        bonfire_maps: dict[int, int] | None = None,
+    ) -> None:
         self._data = data
         self._cycle = max(0, cycle)
+        self._bonfire_maps = bonfire_maps or {}
         self._ids = list(BONFIRES)
         pattern = struct.pack(f"<{len(self._ids)}H", *self._ids)
         self._id_offsets: list[int] = []
@@ -442,10 +438,32 @@ class Bonfires:
         """Id of the bonfire the character last rested at, or None when the
         stored value is not a known bonfire."""
         offset = self.anchor + _LAST_RESTED_AFTER_IDS
-        if offset + 4 > len(self._data):
+        if offset + 12 > len(self._data):
             return None
-        value = struct.unpack_from("<I", self._data, offset)[0]
+        value = struct.unpack_from("<I", self._data, offset + 4)[0]
         return value if value in BONFIRES else None
+
+    def can_set_last_rested(self, bonfire_id: int) -> bool:
+        """Whether the bonfire's map is known, which set_last_rested needs."""
+        return (
+            bonfire_id in BONFIRES
+            and bonfire_id in self._bonfire_maps
+            and self.anchor + _LAST_RESTED_AFTER_IDS + 12 <= len(self._data)
+        )
+
+    def set_last_rested(self, bonfire_id: int) -> bool:
+        """Make a bonfire the last rested one, as resting there does, and light
+        it in every copy. The character's current position is not changed.
+        Return whether anything changed. Raises ValueError for a bonfire whose
+        map is unknown."""
+        if not self.can_set_last_rested(bonfire_id):
+            raise ValueError(f"Map of bonfire {bonfire_id} is unknown")
+        offset = self.anchor + _LAST_RESTED_AFTER_IDS
+        record = struct.pack("<3I", self._bonfire_maps[bonfire_id], bonfire_id, 0)
+        changed = self._data[offset : offset + 12] != record
+        self._data[offset : offset + 12] = record
+        changed |= self.set_lit([bonfire_id], True) > 0
+        return changed
 
     def set_lit(self, bonfire_ids: Iterable[int], lit: bool) -> int:
         """Light or unlight bonfires in every copy and return how many changed
@@ -511,84 +529,115 @@ class NpcState:
 
 
 class NpcStates:
-    """View over the NPC hostile and dead flags in one slot's large entry.
+    """View over the NPC states in one slot's large entry.
 
-    A flag byte is 0 while clear and holds bits once set, so a flag counts as
-    set when its byte is non-zero. An NPC also counts as dead while their kill
-    record is stored, because with the record left over they stay dead in game
-    even with their flags clear. Reviving clears both flags and the record, which
-    is the state before the kill. Calming clears the hostile flag only.
+    An NPC counts as hostile while any flag of their hostile block is set, and
+    as dead while any flag of their death block is set or one of their
+    generators has a kill count. With a kill count left over they stay dead in
+    game even with their flags clear. Reviving clears both flag blocks and
+    the kill counts, which is the state before the kill. Calming clears the
+    hostile block only. Only the first copy of the global flags is used: the
+    second copy does not mirror this flag range.
     """
 
-    def __init__(self, data: bytearray, base: int, anchor: int) -> None:
+    def __init__(
+        self, data: bytearray, anchor: int, map_records: dict[int, int]
+    ) -> None:
         self._data = data
-        self._base = base
         self._anchor = anchor
+        self._map_records = map_records
 
-    def _record_spans(self, name: str) -> list[tuple[int, int]]:
+    def _flag_span(self, flag: int) -> tuple[int, int]:
+        index = flag - _GLOBAL_FLAG_FIRST
+        offset = (
+            self._anchor - _NPC_FLAGS_BEFORE_IDS + _GLOBAL_FLAGS_IN_OBJECT + index // 8
+        )
+        return offset, 0x80 >> (index % 8)
+
+    def _any_flag(self, flags: Iterable[int]) -> bool:
+        return any(self._data[o] & m for o, m in map(self._flag_span, flags))
+
+    def _clear_flags(self, flags: Iterable[int]) -> bool:
+        touched = False
+        for offset, mask in map(self._flag_span, flags):
+            if self._data[offset] & mask:
+                self._data[offset] &= ~mask & 0xFF
+                touched = True
+        return touched
+
+    def _kill_count_offsets(self, entry: NpcEntry) -> list[int]:
+        offsets = []
+        for generator in entry.generators:
+            for map_id, row in GENERATOR_ROWS.get(generator, ()):
+                record = self._map_records.get(map_id)
+                if record is not None:
+                    offsets.append(record + _MAP_KILL_COUNTS_IN_RECORD + row)
+        return offsets
+
+    def _extra_record_spans(self, entry: NpcEntry) -> list[tuple[int, int]]:
+        if entry.name != "Blacksmith Lenigrast":
+            return []
         return [
             (self._anchor + offset, length)
-            for offset, length in _NPC_KILL_RECORDS.get(name, ())
+            for offset, length in _LENIGRAST_KILL_RECORDS
             if self._anchor + offset >= 0
             and self._anchor + offset + length <= len(self._data)
         ]
 
-    def _record_present(self, name: str) -> bool:
-        return any(any(self._data[o : o + n]) for o, n in self._record_spans(name))
+    def _killed(self, entry: NpcEntry) -> bool:
+        return any(self._data[o] for o in self._kill_count_offsets(entry)) or any(
+            any(self._data[o : o + n]) for o, n in self._extra_record_spans(entry)
+        )
 
-    def _clear_record(self, name: str) -> bool:
-        if not self._record_present(name):
-            return False
-        for offset, length in self._record_spans(name):
-            self._data[offset : offset + length] = bytes(length)
-        if name == "Blacksmith Lenigrast":
+    def _clear_kills(self, entry: NpcEntry) -> bool:
+        touched = False
+        for offset in self._kill_count_offsets(entry):
+            if self._data[offset]:
+                self._data[offset] = 0
+                touched = True
+        spans = self._extra_record_spans(entry)
+        if any(any(self._data[o : o + n]) for o, n in spans):
+            for offset, length in spans:
+                self._data[offset : offset + length] = bytes(length)
             tail = self._anchor + _LENIGRAST_RECORD_TAIL
             if tail < len(self._data):
                 self._data[tail] = 0
-        return True
+            touched = True
+        return touched
 
     def states(self) -> list[NpcState]:
-        result = []
-        for entry in NPCS:
-            hostile = entry.hostile is not None and bool(
-                self._data[self._base + entry.hostile]
+        return [
+            NpcState(
+                entry,
+                self._any_flag(entry.hostile_flags),
+                self._any_flag(entry.death_flags) or self._killed(entry),
             )
-            dead = (
-                entry.dead is not None and bool(self._data[self._base + entry.dead])
-            ) or self._record_present(entry.name)
-            result.append(NpcState(entry, hostile, dead))
-        return result
+            for entry in NPCS
+        ]
 
     def revive(self, names: Iterable[str]) -> int:
-        """Clear the dead and hostile flags and the kill record of the named
+        """Clear the hostile and death flags and the kill counts of the named
         NPCs and return how many changed."""
         wanted = set(names)
         changed = 0
         for entry in NPCS:
             if entry.name not in wanted:
                 continue
-            touched = False
-            for offset in (entry.hostile, entry.dead):
-                if offset is not None and self._data[self._base + offset]:
-                    self._data[self._base + offset] = 0
-                    touched = True
-            if self._clear_record(entry.name):
-                touched = True
+            touched = self._clear_flags(entry.hostile_flags)
+            touched |= self._clear_flags(entry.death_flags)
+            touched |= self._clear_kills(entry)
             changed += touched
         return changed
 
     def calm(self, names: Iterable[str]) -> int:
-        """Clear the hostile flag of the named NPCs and return how many
+        """Clear the hostile flags of the named NPCs and return how many
         changed."""
         wanted = set(names)
-        changed = 0
-        for entry in NPCS:
-            if entry.name not in wanted or entry.hostile is None:
-                continue
-            if self._data[self._base + entry.hostile]:
-                self._data[self._base + entry.hostile] = 0
-                changed += 1
-        return changed
+        return sum(
+            self._clear_flags(entry.hostile_flags)
+            for entry in NPCS
+            if entry.name in wanted
+        )
 
 
 class BossStatus(Enum):
@@ -1235,6 +1284,60 @@ class Character:
         """Attunement slots a spell takes, or None when unknown."""
         regulation = self._regulation()
         return regulation.spell_slots(item_id) if regulation else None
+
+    def attuned_spells(self) -> list[InventoryItem]:
+        """Carried spell entries in attunement order. Raises ValueError for an
+        unknown equipment block layout."""
+        if not self.has_equipment_block():
+            raise ValueError("equipment block not found")
+        inventory = {item.offset: item for item in self.inventory()}
+        spells = []
+        for k in range(_EQUIP_SPELLS[1]):
+            position = struct.unpack_from(
+                "<H", self._data, EQUIPMENT_INDEX_OFFSET + 2 * (_INDEX_SPELLS + k)
+            )[0]
+            if position == _EMPTY_INDEX:
+                continue
+            item = inventory.get(INVENTORY_START + position * INVENTORY_SLOT_SIZE)
+            if item is not None:
+                spells.append(item)
+        return spells
+
+    def attune(self, spells: list[InventoryItem]) -> None:
+        """Replace the attuned spells with the given carried entries, in
+        order, packed from the first slot as the game keeps them. Raises
+        ValueError for more spells than slots, an entry that is not a known
+        spell, one listed twice, or a total slot cost above attunement_slots
+        when that is known."""
+        if len(spells) > _EQUIP_SPELLS[1]:
+            raise ValueError(f"At most {_EQUIP_SPELLS[1]} spells can be attuned")
+        if len({item.offset for item in spells}) != len(spells):
+            raise ValueError("A spell entry is listed twice")
+        cost = 0
+        for item in spells:
+            slots = self.spell_slots(item.item_id)
+            if not slots:
+                raise ValueError(f"Item {item.item_id} is not a known spell")
+            cost += slots
+        available = self.attunement_slots()
+        if available is not None and cost > available:
+            raise ValueError(
+                f"The spells take {cost} attunement slots, the character has "
+                f"{available}"
+            )
+        slots: list[InventoryItem | object | None] = list(spells)
+        for k in range(len(spells), _EQUIP_SPELLS[1]):
+            # Empty slots hold 0 or 0xFFFFFFFF; one already empty keeps its
+            # value.
+            spell_id = struct.unpack_from(
+                "<I", self._data, EQUIPMENT_OFFSET + _EQUIP_SPELLS[0] + 4 * k
+            )[0]
+            position = struct.unpack_from(
+                "<H", self._data, EQUIPMENT_INDEX_OFFSET + 2 * (_INDEX_SPELLS + k)
+            )[0]
+            empty = position == _EMPTY_INDEX and spell_id in (0, _EMPTY_EQUIP)
+            slots.append(KEEP_SLOT if empty else None)
+        self.equip(spells=slots)
 
     def equip(
         self,
@@ -1976,21 +2079,27 @@ class DS2Save:
         view = Bonfires(
             self.container.get_entry(BIG_ENTRY_START + slot_index),
             self.characters[slot_index].new_game_plus,
+            self.regulation.bonfire_maps(),
         )
         return view if view.found else None
 
     def npcs(self, slot_index: int) -> NpcStates | None:
-        """The slot's NPC flags, or None when the slot holds no bonfire data to
+        """The slot's NPC states, or None when the slot holds no bonfire data to
         locate them from."""
         data = self.container.get_entry(BIG_ENTRY_START + slot_index)
         view = Bonfires(data)
         if not view.found:
             return None
-        base = view.anchor - _NPC_FLAGS_BEFORE_IDS
-        top = max(o for e in NPCS for o in (e.hostile, e.dead) if o is not None)
-        if base < 0 or base + top >= len(data):
+        last = max(e.death_flags[-1] for e in NPCS) - _GLOBAL_FLAG_FIRST
+        first = view.anchor - _NPC_FLAGS_BEFORE_IDS
+        if first < 0 or first + _GLOBAL_FLAGS_IN_OBJECT + last // 8 >= len(data):
             return None
-        return NpcStates(data, base, view.anchor)
+        records = {
+            map_id: offset
+            for map_id, offset in _map_records(data, view.anchor)
+            if offset + _MAP_RECORD_SIZE <= len(data)
+        }
+        return NpcStates(data, view.anchor, records)
 
     def bosses(self, slot_index: int) -> BossStates | None:
         """The slot's boss records, or None when the slot holds no bonfire data
@@ -2005,14 +2114,7 @@ class DS2Save:
             return None
         if not fights:
             return None
-        maps = []
-        offset = view.anchor - _MAP_RECORDS_BEFORE_IDS
-        while 0 <= offset and offset + 4 <= len(data):
-            map_id = struct.unpack_from("<I", data, offset)[0]
-            if map_id & 0xFFFF or not map_id:
-                break
-            maps.append(map_id)
-            offset += _MAP_RECORD_SIZE
+        maps = [map_id for map_id, _ in _map_records(data, view.anchor)]
         return BossStates(data, view.anchor, fights, maps)
 
     def slot_state(self, slot_index: int) -> SlotState:
