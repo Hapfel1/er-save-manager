@@ -151,6 +151,12 @@ def test_add_items_of_every_kind(slot):
 def test_storage_and_key_rules(slot):
     stored = slot.add_item(TITANITE_SHARD, 10, sort_key=16010, to_storage=True)
     assert slot.in_storage(stored)
+    # Same index rule as held items: 0x80 + position, and the last-index
+    # field tracks 0x80 + the highest used position.
+    assert stored.index & 0xFFF == 0x80 + stored.position
+    storage = slot._get_layout().storage
+    last = struct.unpack_from("<I", slot.get_raw(), slot._last_index_off(storage))[0]
+    assert last >= 0x80 + stored.position
     with pytest.raises(ValueError):
         slot.add_item(SMALL_DOLL, key_item=True, to_storage=True)
 
@@ -170,6 +176,21 @@ def test_storage_stack_cap(slot):
         TITANITE_SHARD, 1, sort_key=16010, max_quantity=99, to_storage=True
     )
     assert stored.quantity == 600
+
+
+def test_fix_storage_indices(slot):
+    stored = slot.add_item(TITANITE_SHARD, 10, sort_key=16010, to_storage=True)
+    assert slot.bad_storage_indices() == 0
+    # The old spawn wrote position index 1 and last-index 1 into an empty box.
+    raw = slot._data
+    storage = slot._get_layout().storage
+    struct.pack_into("<I", raw, stored.offset + 12, (16010 << 12) | 1)
+    struct.pack_into("<I", raw, slot._last_index_off(storage), 1)
+    assert slot.bad_storage_indices() == 2
+    assert slot.fix_storage_indices() == 2
+    fixed = slot.entry_at(stored.offset)
+    assert fixed.index == (16010 << 12) | (0x80 + stored.position)
+    assert slot.bad_storage_indices() == 0
 
 
 def test_equipped_items_cannot_be_removed(slot):
