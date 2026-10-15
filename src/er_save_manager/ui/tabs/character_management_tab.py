@@ -126,6 +126,7 @@ class CharacterManagementTab:
             ("Export Character", "export"),
             ("Import Character", "import"),
             ("Delete Character", "delete"),
+            ("Copy to Another Extension", "extension"),
         ]
 
         op_label = ctk.CTkLabel(selector_controls, text="Operation:")
@@ -189,6 +190,8 @@ class CharacterManagementTab:
             self._setup_import_panel()
         elif operation == "delete":
             self._setup_delete_panel()
+        elif operation == "extension":
+            self._setup_extension_panel()
 
     def _get_slot_display_names(self, save_file=None):
         """Get display names for all slots"""
@@ -439,6 +442,34 @@ class CharacterManagementTab:
             width=180,
         )
         import_button.pack(side=tk.LEFT, padx=20)
+
+    def _setup_extension_panel(self):
+        ctk.CTkLabel(
+            self.ops_scrollable,
+            text=(
+                "Copy this save to another extension (vanilla, Seamless Co-op, Convergence). "
+                "The current file is not changed."
+            ),
+            font=("Segoe UI", 11),
+            text_color=("gray40", "gray70"),
+        ).pack(anchor=tk.W, pady=10)
+        ctk.CTkButton(
+            self.ops_scrollable,
+            text="Choose Extension...",
+            command=self._open_extension_copy,
+            width=180,
+        ).pack(anchor=tk.W, pady=10)
+
+    def _open_extension_copy(self):
+        from er_save_manager.ui.dialogs.extension_copy import open_extension_copy
+
+        open_extension_copy(
+            self.parent,
+            "elden_ring",
+            self.get_save_path(),
+            on_done=lambda message: self.show_toast(message, duration=4000),
+            is_game_running=self.is_game_running,
+        )
 
     def _setup_delete_panel(self):
         """Setup delete operation panel"""

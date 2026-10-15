@@ -101,6 +101,7 @@ class DS2CharacterManagementTab:
             ("Export Character", "export"),
             ("Import Character", "import"),
             ("Delete Character", "delete"),
+            ("Copy to Another Extension", "extension"),
         ]
         self.operation_map = dict(operations)
         self.operation_var = tk.StringVar(value=operations[0][0])
@@ -142,6 +143,7 @@ class DS2CharacterManagementTab:
             "export": self._setup_export_panel,
             "import": self._setup_import_panel,
             "delete": self._setup_delete_panel,
+            "extension": self._setup_extension_panel,
         }[operation]()
 
     def _slot_display_names(self, save: DS2Save | None = None) -> list[str]:
@@ -275,6 +277,34 @@ class DS2CharacterManagementTab:
         ctk.CTkButton(
             row, text="Import Character...", command=self._import_character
         ).pack(side="left", padx=15)
+
+    def _setup_extension_panel(self) -> None:
+        ctk.CTkLabel(
+            self.ops_scrollable,
+            text=(
+                "Copy this save to another extension (vanilla or Seamless Co-op). "
+                "The current file is not changed."
+            ),
+            font=("Segoe UI", 11),
+            text_color=("gray40", "gray70"),
+        ).pack(anchor=tk.W, pady=10)
+        ctk.CTkButton(
+            self.ops_scrollable,
+            text="Choose Extension...",
+            command=self._open_extension_copy,
+            width=180,
+        ).pack(anchor=tk.W, pady=10)
+
+    def _open_extension_copy(self) -> None:
+        from er_save_manager.ui.dialogs.extension_copy import open_extension_copy
+
+        open_extension_copy(
+            self.parent,
+            "dark_souls_2",
+            self.get_save_path(),
+            on_done=lambda message: self.show_toast(message, duration=4000),
+            is_game_running=self.is_game_running,
+        )
 
     def _setup_delete_panel(self) -> None:
         ctk.CTkLabel(

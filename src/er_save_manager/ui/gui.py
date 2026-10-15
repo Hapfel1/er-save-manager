@@ -19,6 +19,9 @@ from tkinter import ttk
 import customtkinter as ctk
 
 from er_save_manager import VersionChecker, __version__
+from er_save_manager.games.extension_copy import (
+    SUPPORTED_GAMES as SUPPORTED_EXTENSION_GAMES,
+)
 from er_save_manager.games.game_profiles import GAME_PROFILES, PROFILES_BY_KEY
 from er_save_manager.own_writes import is_own_write
 from er_save_manager.parser import Save
@@ -758,6 +761,15 @@ class SaveManagerGUI:
         self._default_game_btn.pack(side=tk.LEFT, padx=(8, 0))
         self._update_default_game_button()
 
+        self._extension_btn = ctk.CTkButton(
+            game_row,
+            text="Change Extension",
+            command=self._open_extension_copy,
+            width=150,
+        )
+        if self.active_game in SUPPORTED_EXTENSION_GAMES:
+            self._extension_btn.pack(side=tk.RIGHT, padx=(8, 4))
+
         self._select_save_label = ctk.CTkLabel(
             file_frame,
             text="Select a save file",
@@ -866,6 +878,23 @@ class SaveManagerGUI:
             pady=6,
         ).pack(fill=tk.X)
 
+    def _open_extension_copy(self):
+        """Copy the loaded save to another extension (vanilla / Seamless Co-op /
+        Convergence / custom)."""
+        from er_save_manager.ui.dialogs.extension_copy import open_extension_copy
+
+        profile = PROFILES_BY_KEY[self.active_game]
+        open_extension_copy(
+            self.root,
+            self.active_game,
+            self.save_path,
+            on_done=lambda message: self.show_toast(message, duration=4000),
+            is_game_running=lambda: (
+                not self.settings.get("skip_game_running_check", False)
+                and self.is_game_running(profile.process_name)
+            ),
+        )
+
     def _on_game_changed(self, _value=None):
         """Rebuild notebook tabs for the newly selected game."""
         name = self._game_selector_var.get()
@@ -884,6 +913,12 @@ class SaveManagerGUI:
                 )
             else:
                 self._ps_save_btn.pack_forget()
+
+        if hasattr(self, "_extension_btn"):
+            if profile.key in SUPPORTED_EXTENSION_GAMES:
+                self._extension_btn.pack(side=tk.RIGHT, padx=(8, 4))
+            else:
+                self._extension_btn.pack_forget()
 
         # Clear save state - switching games means the loaded save is no longer relevant.
         # This prevents tab setup_ui() calls from accessing stale save data.

@@ -83,6 +83,7 @@ class DSRCharacterManagementTab:
             ("Export Character", "export"),
             ("Import Character", "import"),
             ("Delete Character", "delete"),
+            ("Copy to Another Extension", "extension"),
         ]
         self._operation_map = {op[0]: op[1] for op in operations}
         self._operation_var = tk.StringVar(value=operations[0][0])
@@ -127,6 +128,7 @@ class DSRCharacterManagementTab:
             "export": self._setup_export_panel,
             "import": self._setup_import_panel,
             "delete": self._setup_delete_panel,
+            "extension": self._setup_extension_panel,
         }[operation]
         setup()
 
@@ -272,6 +274,34 @@ class DSRCharacterManagementTab:
             command=self._import_character,
             width=180,
         ).pack(side=tk.LEFT, padx=20)
+
+    def _setup_extension_panel(self) -> None:
+        ctk.CTkLabel(
+            self._ops_scrollable,
+            text=(
+                "Copy this save to another extension (vanilla or Seamless Co-op). "
+                "The current file is not changed."
+            ),
+            font=("Segoe UI", 11),
+            text_color=("gray40", "gray70"),
+        ).pack(anchor=tk.W, pady=10)
+        ctk.CTkButton(
+            self._ops_scrollable,
+            text="Choose Extension...",
+            command=self._open_extension_copy,
+            width=180,
+        ).pack(anchor=tk.W, pady=10)
+
+    def _open_extension_copy(self) -> None:
+        from er_save_manager.ui.dialogs.extension_copy import open_extension_copy
+
+        open_extension_copy(
+            self.parent,
+            "dark_souls_remastered",
+            self._get_save_path(),
+            on_done=lambda message: self._show_toast(message, duration=4000),
+            is_game_running=self.is_game_running,
+        )
 
     def _setup_delete_panel(self) -> None:
         ctk.CTkLabel(
