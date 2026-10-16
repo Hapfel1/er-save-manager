@@ -23,7 +23,7 @@ from er_save_manager.games.DS2.save import (
 from er_save_manager.games.DS2.soulsplanner_import import import_soulsplanner
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.scrollable_frame import ScrollableFrame
-from er_save_manager.ui.utils import game_blocks_write
+from er_save_manager.ui.utils import game_blocks_write, patch_combo_scroll
 
 
 def _game_blocks_write(parent) -> bool:
@@ -105,13 +105,15 @@ class DS2EditorTab:
 
         ctk.CTkLabel(top, text="Character slot:").pack(side="left")
         self.slot_var = tk.StringVar(value=self._slot_display_names()[0])
-        self.slot_menu = ctk.CTkOptionMenu(
+        self.slot_menu = ctk.CTkComboBox(
             top,
             variable=self.slot_var,
             values=self._slot_display_names(),
+            state="readonly",
             width=220,
         )
         self.slot_menu.pack(side="left", padx=(5, 15))
+        patch_combo_scroll(self.slot_menu)
 
         ctk.CTkButton(top, text="Load Slot", command=self._on_load_slot).pack(
             side="left", padx=5

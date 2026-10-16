@@ -9,11 +9,13 @@ import customtkinter as ctk
 
 from er_save_manager.data.grace_data import Grace, get_graces
 from er_save_manager.ui import dialog_style as ds
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import (
     center_window,
     force_render_dialog,
     patch_combo_scroll,
+    style_window_frame,
 )
 
 _ALL = "All"
@@ -52,6 +54,7 @@ class GraceDialog:
         parent.update_idletasks()
         center_window(dialog, width, height, parent=parent)
         dialog.resizable(True, True)
+        style_window_frame(dialog, dialog=False)
         force_render_dialog(dialog)
         dialog.grab_set()
 
@@ -133,8 +136,8 @@ class GraceDialog:
         tree.column("grace", width=360, anchor="w")
         tree.column("region", width=260, anchor="w")
 
-        tree.tag_configure("unlocked", foreground="#4caf50")
-        tree.tag_configure("locked", foreground="#9e9e9e")
+        tree.tag_configure("unlocked", foreground=palette.pick(palette.GREEN_TEXT))
+        tree.tag_configure("locked", foreground=palette.pick(ds.MUTED))
 
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
         # Tracks current sort: col -> ascending bool

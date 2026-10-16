@@ -113,6 +113,10 @@ class DS3EditorTab:
     # --- Stats tab ----------------------------------------------------------- #
 
     def _build_stats_tab(self, parent) -> None:
+        # Below the scroll area, so it stays in view on short windows
+        ctk.CTkButton(
+            parent, text="Apply Changes", command=self._apply_stats, width=200
+        ).pack(side="bottom", pady=(6, 10))
         frame = ctk.CTkScrollableFrame(parent, fg_color="transparent")
         frame.pack(fill="both", expand=True)
         bind_mousewheel(frame)
@@ -203,13 +207,13 @@ class DS3EditorTab:
         )
         self._class_note.pack(anchor="w", padx=15)
 
-        ctk.CTkButton(
-            frame, text="Apply Changes", command=self._apply_stats, width=200
-        ).pack(pady=16)
-
     # --- Identity tab -------------------------------------------------------- #
 
     def _build_identity_tab(self, parent) -> None:
+        # Below the scroll area, so it stays in view on short windows
+        ctk.CTkButton(
+            parent, text="Apply Changes", command=self._apply_identity, width=200
+        ).pack(side="bottom", pady=(6, 10))
         frame = ctk.CTkScrollableFrame(parent, fg_color="transparent")
         frame.pack(fill="both", expand=True)
         bind_mousewheel(frame)
@@ -238,9 +242,6 @@ class DS3EditorTab:
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=15, pady=(4, 0))
-        ctk.CTkButton(
-            frame, text="Apply Changes", command=self._apply_identity, width=200
-        ).pack(pady=16)
 
     # --- Refresh ------------------------------------------------------------- #
 

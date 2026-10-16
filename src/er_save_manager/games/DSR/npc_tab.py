@@ -14,12 +14,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from tkinter import ttk
 
 import customtkinter as ctk
 
 from er_save_manager.ui import dialog_style as ds
-from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write
@@ -53,26 +51,6 @@ def _backup_and_save(dsr_save, save_path: Path, op: str) -> None:
     dsr_save.save_to_file(save_path)
 
 
-def _style() -> None:
-    style = ttk.Style()
-    try:
-        style.theme_use("clam")
-    except Exception:
-        pass
-    style.configure(
-        "DSR.Treeview",
-        background="#2b2b2b",
-        foreground="white",
-        fieldbackground="#2b2b2b",
-        rowheight=22,
-        borderwidth=0,
-    )
-    style.configure("DSR.Treeview.Heading", background="#3b3b3b", foreground="white")
-    style.map(
-        "DSR.Treeview", background=[("selected", palette.pick(palette.PURPLE_SELECT))]
-    )
-
-
 class DSRNPCTab:
     def __init__(self, parent, get_dsr_save, get_save_path, show_toast) -> None:
         self.parent = parent
@@ -86,7 +64,6 @@ class DSRNPCTab:
     # --- Layout ------------------------------------------------------------ #
 
     def setup_ui(self) -> None:
-        _style()
         outer = ctk.CTkFrame(self.parent, corner_radius=12)
         outer.pack(fill="both", expand=True, pady=(0, 10))
 

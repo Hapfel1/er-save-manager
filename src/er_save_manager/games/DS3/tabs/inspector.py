@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import customtkinter as ctk
 
-from er_save_manager.ui import palette
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
@@ -18,7 +18,7 @@ class DS3InspectorTab:
         self._get_save = get_save
         self._on_slot_selected = on_slot_selected
         self.selected_slot: int | None = None
-        self._rows: list[tuple[int, ctk.CTkFrame, ctk.CTkLabel]] = []
+        self._rows: list[tuple[int, ctk.CTkFrame]] = []
 
     def setup_ui(self) -> None:
         outer = ctk.CTkFrame(self.parent, corner_radius=12)
@@ -76,32 +76,19 @@ class DS3InspectorTab:
 
         def select(slot_idx: int) -> None:
             self.selected_slot = slot_idx
-            for val, frame, label in self._rows:
-                if val == slot_idx:
-                    frame.configure(fg_color=palette.PURPLE_TINT)
-                    label.configure(text_color=("#1f1f28", "#f0f0f0"))
-                else:
-                    frame.configure(fg_color=("#f5f5f5", "#2a2a3e"))
-                    label.configure(text_color=("#333333", "#cccccc"))
+            for val, frame in self._rows:
+                ds.select_card_row(frame, val == slot_idx)
 
         for slot_idx, char in occupied:
             ng = "NG+?" if char.layout_error else f"NG+{char.ng_plus}"
-            display = (
-                f"Slot {slot_idx + 1:2d} | {char.name:16s} | "
-                f"Lv.{char.level:>3d} | "
-                f"Souls: {char.souls:>8,} | {ng}"
+            row = ds.card_row(
+                self.list_frame,
+                char.name,
+                f"Slot {slot_idx + 1}  ·  Level {char.level}  ·  "
+                f"Souls {char.souls:,}  ·  {ng}",
+                on_click=lambda v=slot_idx: select(v),
             )
-            row = ctk.CTkFrame(
-                self.list_frame, fg_color=("#f5f5f5", "#2a2a3e"), corner_radius=6
-            )
-            row.pack(fill="x", padx=4, pady=4)
-            label = ctk.CTkLabel(
-                row, text=display, anchor="w", padx=8, pady=8, font=("Courier", 13)
-            )
-            label.pack(fill="x")
-            row.bind("<Button-1>", lambda _e, v=slot_idx: select(v))
-            label.bind("<Button-1>", lambda _e, v=slot_idx: select(v))
-            self._rows.append((slot_idx, row, label))
+            self._rows.append((slot_idx, row))
 
         if self._rows:
             select(self._rows[0][0])

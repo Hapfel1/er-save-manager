@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
@@ -33,7 +34,7 @@ class NRInspectorTab:
         self._get_nr_save = get_nr_save
         self._on_slot_selected = on_slot_selected
         self.selected_slot: int | None = None
-        self._rows: list[tuple[int, ctk.CTkFrame, ctk.CTkLabel]] = []
+        self._rows: list[tuple[int, ctk.CTkFrame]] = []
 
     def setup_ui(self) -> None:
         outer = ctk.CTkFrame(self.parent, corner_radius=12)
@@ -108,35 +109,23 @@ class NRInspectorTab:
             return
 
         for slot_idx, slot in occupied:
-            display = (
-                f"Slot {slot_idx + 1:2d} | {slot.player_name:16s} | "
-                f"Murk: {slot.murk:>11,} | Sigils: {slot.marks_of_night:>6,} | "
-                f"Relics: {len(slot.relic_states):>4d}"
+            row = ds.card_row(
+                self.list_frame,
+                slot.player_name,
+                f"Slot {slot_idx + 1}  ·  Murk {slot.murk:,}  ·  "
+                f"Sigils {slot.marks_of_night:,}  ·  "
+                f"Relics {len(slot.relic_states)}",
+                on_click=lambda v=slot_idx: self._select_row(v),
             )
-            row = ctk.CTkFrame(
-                self.list_frame, fg_color=("#f5f5f5", "#2a2a3e"), corner_radius=6
-            )
-            row.pack(fill="x", padx=4, pady=4)
-            label = ctk.CTkLabel(
-                row, text=display, anchor="w", padx=8, pady=8, font=("Courier", 13)
-            )
-            label.pack(fill="x")
-            row.bind("<Button-1>", lambda _e, v=slot_idx: self._select_row(v))
-            label.bind("<Button-1>", lambda _e, v=slot_idx: self._select_row(v))
-            self._rows.append((slot_idx, row, label))
+            self._rows.append((slot_idx, row))
 
         if self._rows:
             self._select_row(self._rows[0][0])
 
     def _select_row(self, idx: int) -> None:
         self.selected_slot = idx
-        for val, frame, label in self._rows:
-            if val == idx:
-                frame.configure(fg_color=palette.PURPLE_TINT)
-                label.configure(text_color=("#1f1f28", "#f0f0f0"))
-            else:
-                frame.configure(fg_color=("#f5f5f5", "#2a2a3e"))
-                label.configure(text_color=("#333333", "#cccccc"))
+        for val, frame in self._rows:
+            ds.select_card_row(frame, val == idx)
 
     def _view_issues(self) -> None:
         if self.selected_slot is None:

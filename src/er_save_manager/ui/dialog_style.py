@@ -225,6 +225,37 @@ ROW = ("#f4f4f4", "#383838")
 ROW_TEXT = ("#111111", "#dce4ee")
 
 
+# Card rows sit on the default frame color, so they need more contrast than ROW
+CARD_ROW = ("#f9f9f9", "gray27")
+
+
+def card_row(parent, title, detail="", *, on_click=None, on_double=None, font=None):
+    """Clickable gray card: title, then muted detail text on the same line.
+
+    Packed with fill="x"; select_card_row() marks it selected. on_click and
+    on_double run for clicks on the card and on both labels.
+    """
+    row = ctk.CTkFrame(parent, fg_color=CARD_ROW, corner_radius=8)
+    row.pack(fill=tk.X, padx=4, pady=3)
+    labels = [ctk.CTkLabel(row, text=title, font=font or BOLD, text_color=ROW_TEXT)]
+    labels[0].pack(side=tk.LEFT, padx=(12, 10), pady=7)
+    if detail:
+        labels.append(
+            ctk.CTkLabel(row, text=detail, font=SMALL, text_color=MUTED, anchor="w")
+        )
+        labels[1].pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 12), pady=7)
+    for widget in (row, *labels):
+        if on_click:
+            widget.bind("<Button-1>", lambda _e: on_click(), add="+")
+        if on_double:
+            widget.bind("<Double-Button-1>", lambda _e: on_double(), add="+")
+    return row
+
+
+def select_card_row(row, selected: bool) -> None:
+    row.configure(fg_color=palette.PURPLE_TINT if selected else CARD_ROW)
+
+
 def _round_rect(canvas, x0, y0, x1, y1, *, radius, **kwargs):
     """Rounded rectangle as a smoothed polygon (tk canvases have no native one)."""
     r = min(radius, (x1 - x0) / 2, (y1 - y0) / 2)
@@ -463,6 +494,76 @@ def refit(dialog) -> None:
         f"{round(width / scale)}x{round(height / scale)}"
         f"+{dialog.winfo_x()}+{dialog.winfo_y()}"
     )
+
+
+def wrap_to_width(label: ctk.CTkLabel) -> ctk.CTkLabel:
+    """Rewrap a CTkLabel's text to its current width; pack it with fill="x"."""
+
+    def rewrap(event) -> None:
+        width = round(event.width / label._get_widget_scaling()) - 8
+        if width > 50 and width != label.cget("wraplength"):
+            label.configure(wraplength=width)
+
+    label.configure(justify="left", anchor="w")
+    # On the outer frame: CTkLabel.bind targets the inner text label, whose
+    # width follows the text
+    tk.Misc.bind(label, "<Configure>", rewrap, add="+")
+    return label
+
+
+class FlowRow(ctk.CTkFrame):
+    """Transparent row of widgets that wraps onto more lines when narrow.
+
+    Create the widgets with the row as master and add() them in order; the
+    row grids them again whenever its width changes the line breaks.
+    """
+
+    def __init__(self, master, gap: int = 6, **kwargs):
+        kwargs.setdefault("fg_color", "transparent")
+        super().__init__(master, **kwargs)
+        self._gap = gap
+        self._items: list = []
+        self._lines: list[int] = []
+        self._line_frames: list[ctk.CTkFrame] = []
+        self.bind("<Configure>", lambda _e: self._reflow(), add="+")
+
+    def add(self, *widgets) -> None:
+        self._items.extend(widgets)
+        self._lines = []
+        self._reflow()
+
+    def _reflow(self) -> None:
+        width = self.winfo_width()
+        if width <= 1:
+            # Not mapped yet: one line, the real width arrives with <Configure>
+            width = 1 << 30
+        gap = round(self._apply_widget_scaling(self._gap))
+        lines, used = [], 0
+        for widget in self._items:
+            w = widget.winfo_reqwidth()
+            if not lines or used + gap + w > width:
+                lines.append(0)
+                used = w
+            else:
+                used += gap + w
+            lines[-1] += 1
+        if lines == self._lines:
+            return
+        self._lines = lines
+        while len(self._line_frames) < len(lines):
+            self._line_frames.append(ctk.CTkFrame(self, fg_color="transparent"))
+        items = iter(self._items)
+        for row, frame in enumerate(self._line_frames):
+            if row >= len(lines):
+                frame.pack_forget()
+                continue
+            frame.pack(fill="x", pady=(0 if row == 0 else self._gap, 0))
+            for col in range(lines[row]):
+                widget = next(items)
+                widget.pack(
+                    in_=frame, side="left", padx=(0 if col == 0 else self._gap, 0)
+                )
+                widget.lift(frame)
 
 
 def collapsible(parent, title, build, *, expanded=False, pady=(10, 0)):

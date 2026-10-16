@@ -79,6 +79,20 @@ _TAB_BUILD_DELAY_MS = 15
 # Main window height (logical px) below which the header is compacted
 _COMPACT_HEIGHT = 900
 
+# Tab labels used when the full names do not fit the window width
+_SHORT_TAB_NAMES = {
+    "Save Fixer": "Fixer",
+    "Save Inspector": "Inspector",
+    "Character Management": "Characters",
+    "Character Editor": "Editor",
+    "World State": "World",
+    "SteamID Patcher": "SteamID",
+    "Event Flags": "Flags",
+    "Advanced Tools": "Tools",
+}
+# Header button width (logical px) when the row is too narrow for the full one
+_NARROW_HEADER_BUTTON = 130
+
 
 class SaveManagerGUI:
     """Main GUI application for Elden Ring Save Manager"""
@@ -217,6 +231,8 @@ class SaveManagerGUI:
         # Placed after scaling is applied so the scaled size is used
         self._normal_geometry: str | None = None
         self._compact = False
+        self._game_row_inline = False
+        self._header_narrow = False
         self._restore_window_state()
         self.root.after(100, lambda: style_window_frame(self.root, dialog=False))
 
@@ -298,7 +314,9 @@ class SaveManagerGUI:
 
     def _on_window_resize(self, event=None):
         """Debounce window resize events to improve responsiveness"""
-        if event is None:
+        # The binding on the root also receives every child widget's
+        # Configure event
+        if event is None or event.widget is not self.root:
             return
 
         # Only process if size actually changed (skip if just movement)
@@ -335,14 +353,56 @@ class SaveManagerGUI:
             return
         height = self.root.winfo_height() / self.root._get_window_scaling()
         compact = height < _COMPACT_HEIGHT
-        if compact == self._compact:
+        if compact != self._compact:
+            self._compact = compact
+            if compact:
+                self._subtitle_label.pack_forget()
+                self._title_label.pack_configure(pady=(14, 14))
+                self._select_save_label.pack_forget()
+                self._path_frame.pack_configure(pady=(10, 0))
+                self._buttons_frame.pack_configure(pady=(4, 8))
+                for child in self._buttons_frame.pack_slaves():
+                    child.pack_configure(pady=4)
+                for child in self._path_frame.pack_slaves():
+                    if child is not self._game_row:
+                        child.pack_configure(pady=6)
+            else:
+                self._title_label.pack_configure(pady=(10, 2))
+                self._subtitle_label.pack(pady=(0, 10))
+                self._select_save_label.pack(
+                    anchor="w", padx=12, pady=(4, 4), before=self._path_frame
+                )
+                self._path_frame.pack_configure(pady=(0, 12))
+                self._buttons_frame.pack_configure(pady=(6, 10))
+                for child in self._buttons_frame.pack_slaves():
+                    child.pack_configure(pady=10)
+                for child in self._path_frame.pack_slaves():
+                    if child is not self._game_row:
+                        child.pack_configure(pady=10)
+        self._place_game_row()
+        self._fit_header_buttons()
+        self._fit_tab_labels()
+
+    def _place_game_row(self) -> None:
+        """Game selector inside the save path row when compact and it fits
+        there next to the path buttons, else on its own row above."""
+        self.root.update_idletasks()
+        path_buttons = [
+            c for c in self._path_frame.pack_slaves() if c is not self._game_row
+        ]
+        # Room the path entry keeps, plus the row's paddings
+        spare = round(320 * self.root._get_window_scaling())
+        needed = (
+            self._game_row.winfo_reqwidth()
+            + sum(c.winfo_reqwidth() for c in path_buttons)
+            + spare
+        )
+        inline = self._compact and needed <= self._path_frame.winfo_width()
+        if inline == self._game_row_inline:
             return
-        self._compact = compact
-        if compact:
-            self._subtitle_label.pack_forget()
-            self._title_label.pack_configure(pady=(14, 14))
-            self._select_save_label.pack_forget()
-            self._game_row.pack_forget()
+        self._game_row_inline = inline
+        self._game_row.pack_forget()
+        if inline:
             self._game_row.pack(
                 in_=self._path_frame,
                 side=tk.LEFT,
@@ -352,33 +412,53 @@ class SaveManagerGUI:
             )
             # Created before path_frame, so it would be drawn underneath it
             self._game_row.lift(self._path_frame)
-            self._path_frame.pack_configure(pady=(10, 0))
-            self._buttons_frame.pack_configure(pady=(4, 8))
-            for child in self._buttons_frame.pack_slaves():
-                child.pack_configure(pady=4)
-            for child in self._path_frame.pack_slaves():
-                if child is not self._game_row:
-                    child.pack_configure(pady=6)
         else:
-            self._title_label.pack_configure(pady=(10, 2))
-            self._subtitle_label.pack(pady=(0, 10))
-            self._game_row.pack_forget()
             self._game_row.pack(
                 in_=self._game_row.master,
                 fill=tk.X,
                 padx=12,
-                pady=(12, 4),
-                before=self._path_frame,
+                pady=(10 if self._compact else 12, 4),
+                before=self._select_save_label
+                if self._select_save_label.winfo_manager()
+                else self._path_frame,
             )
-            self._select_save_label.pack(
-                anchor="w", padx=12, pady=(4, 4), before=self._path_frame
-            )
-            self._path_frame.pack_configure(pady=(0, 12))
-            self._buttons_frame.pack_configure(pady=(6, 10))
-            for child in self._buttons_frame.pack_slaves():
-                child.pack_configure(pady=10)
-            for child in self._path_frame.pack_slaves():
-                child.pack_configure(pady=10)
+
+    def _fit_header_buttons(self) -> None:
+        """Narrower header buttons when the full widths do not fit the row."""
+        self.root.update_idletasks()
+        scale = self.root._get_window_scaling()
+        shown = [(b, w) for b, w in self._header_buttons if b.winfo_manager() == "pack"]
+        full = sum(round((w + 12) * scale) for _b, w in shown)
+        narrow = full > self._buttons_frame.winfo_width()
+        if narrow == self._header_narrow:
+            return
+        self._header_narrow = narrow
+        for button, width in self._header_buttons:
+            button.configure(width=_NARROW_HEADER_BUTTON if narrow else width)
+
+    def _fit_tab_labels(self) -> None:
+        """Short tab labels when the full names do not fit the window width.
+
+        Only the button text changes; the tab names used by the code stay.
+        """
+        segmented = self.notebook._segmented_button
+        buttons = segmented._buttons_dict
+        if not buttons:
+            return
+        self.root.update_idletasks()
+        # Width with the full names = current width + the text width they add
+        font = tkfont.Font(font=next(iter(buttons.values()))._text_label.cget("font"))
+        full = segmented.winfo_reqwidth() + sum(
+            font.measure(name) - font.measure(button.cget("text"))
+            for name, button in buttons.items()
+        )
+        short = full > self.notebook.winfo_width() - round(
+            24 * self.root._get_window_scaling()
+        )
+        for name, button in buttons.items():
+            text = _SHORT_TAB_NAMES.get(name, name) if short else name
+            if button.cget("text") != text:
+                button.configure(text=text)
 
     def _is_maximized(self) -> bool:
         try:
@@ -821,19 +901,21 @@ class SaveManagerGUI:
         _reload_btn.pack(side=tk.LEFT, padx=6, pady=10)
         self._file_load_buttons.append(_reload_btn)
 
-        ctk.CTkButton(
+        _backup_btn = ctk.CTkButton(
             buttons_frame,
             text="Backup Manager",
             command=self.show_backup_manager_standalone,
             width=160,
-        ).pack(side=tk.LEFT, padx=6, pady=10)
+        )
+        _backup_btn.pack(side=tk.LEFT, padx=6, pady=10)
 
-        ctk.CTkButton(
+        _troubleshoot_btn = ctk.CTkButton(
             buttons_frame,
             text="Troubleshooting",
             command=self.open_troubleshooting,
             width=160,
-        ).pack(side=tk.RIGHT, padx=6, pady=10)
+        )
+        _troubleshoot_btn.pack(side=tk.RIGHT, padx=6, pady=10)
 
         self._ps_save_btn = ctk.CTkButton(
             buttons_frame,
@@ -852,6 +934,14 @@ class SaveManagerGUI:
         )
         _itemgib_btn.pack(side=tk.RIGHT, padx=6, pady=10)
         self._file_load_buttons.append(_itemgib_btn)
+        # (button, full width) for _fit_header_buttons
+        self._header_buttons = [
+            (_reload_btn, 160),
+            (_backup_btn, 160),
+            (_troubleshoot_btn, 160),
+            (self._ps_save_btn, 160),
+            (_itemgib_btn, 200),
+        ]
 
         self.notebook = ctk.CTkTabview(
             self.root,
@@ -993,6 +1083,8 @@ class SaveManagerGUI:
             self.create_tabs()
         else:
             self._create_other_game_tabs(profile)
+        # New tab names and header buttons: fit them to the current width
+        self.root.after_idle(self._update_compact_header)
 
     def create_tabs(self):
         """Create all Elden Ring tabs."""
@@ -2882,6 +2974,7 @@ class SaveManagerGUI:
         ):
             setattr(self, attr, None)
         self.create_tabs()
+        self.root.after_idle(self._fit_tab_labels)
 
     def _update_character_editor_slots(self):
         """Update Character Editor slot dropdown with character names"""

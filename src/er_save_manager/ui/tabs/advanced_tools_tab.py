@@ -6,6 +6,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.backup.manager import BackupManager
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 
 
@@ -59,20 +60,15 @@ class AdvancedToolsTab:
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
-        appearance = ctk.get_appearance_mode()
-        info_bg = "#1f1f28" if appearance == "Dark" else "#f5f5f5"
-        info_fg = "#e5e5f5" if appearance == "Dark" else "#1f1f28"
-
-        self.save_info_text = tk.Text(
+        self.save_info_text = ctk.CTkTextbox(
             info_frame,
-            height=8,
-            font=("Consolas", 11),
-            state="disabled",
+            height=150,
+            font=("Consolas", 12),
             wrap="word",
-            bg=info_bg,
-            fg=info_fg,
-            insertbackground=info_fg,
+            fg_color=ds.LIST_BG,
+            corner_radius=8,
         )
+        self.save_info_text.configure(state="disabled")
         self.save_info_text.pack(fill="x", padx=12, pady=(0, 12))
 
         tools_frame = ctk.CTkFrame(scroll_frame, corner_radius=12)
@@ -124,10 +120,10 @@ class AdvancedToolsTab:
         """Update save information display."""
         save_file = self.get_save_file()
         if not save_file:
-            self.save_info_text.config(state="normal")
+            self.save_info_text.configure(state="normal")
             self.save_info_text.delete("1.0", tk.END)
             self.save_info_text.insert("1.0", "No save file loaded")
-            self.save_info_text.config(state="disabled")
+            self.save_info_text.configure(state="disabled")
             return
 
         try:
@@ -149,16 +145,16 @@ class AdvancedToolsTab:
                 size_mb = Path(save_path).stat().st_size / (1024 * 1024)
                 info.append(f"File Size: {size_mb:.2f} MB")
 
-            self.save_info_text.config(state="normal")
+            self.save_info_text.configure(state="normal")
             self.save_info_text.delete("1.0", tk.END)
             self.save_info_text.insert("1.0", "\n".join(info))
-            self.save_info_text.config(state="disabled")
+            self.save_info_text.configure(state="disabled")
 
         except Exception as e:
-            self.save_info_text.config(state="normal")
+            self.save_info_text.configure(state="normal")
             self.save_info_text.delete("1.0", tk.END)
             self.save_info_text.insert("1.0", f"Error loading info: {str(e)}")
-            self.save_info_text.config(state="disabled")
+            self.save_info_text.configure(state="disabled")
 
     def validate_save(self):
         """Validate save file integrity."""
