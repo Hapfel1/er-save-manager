@@ -270,3 +270,70 @@ def test_attune_keeps_empty_slots_stored_as_zero():
     before = bytes(character.raw())
     character.attune([])
     assert bytes(character.raw()) == before
+
+
+SOUTHERN_RITUAL_BAND = 40350000
+
+
+def test_equipment_adapter_writes_slots_and_attunement():
+    import pytest
+
+    from er_save_manager.games.DS2.equipment_tab import DS2EquipAdapter
+    from er_save_manager.games.DS2.save import EQUIPMENT_INDEX_OFFSET
+
+    character, (_heal_a, _heal_b, affinity) = _spell_character()
+    data = character.raw()
+    for index in range(42):
+        struct.pack_into("<H", data, EQUIPMENT_INDEX_OFFSET + 2 * index, 0xFFFF)
+    for k, item_id in ((3, RAPIER), (4, SOUTHERN_RITUAL_BAND)):
+        struct.pack_into("<II", data, INVENTORY_START + 16 * k, item_id, 0)
+        struct.pack_into("<I", data, INVENTORY_START + 16 * k + 8, 1)
+
+    adapter = DS2EquipAdapter(character)
+    rapier = next(c for c in adapter.choices(("weapons", 1)) if "Rapier" in c.name)
+    band = adapter.choices(("rings", 0))[0]
+    staged = {("weapons", 1): rapier, ("rings", 0): band}
+    adapter.spells = [(affinity.offset, affinity.item_id)]
+    # 2 slots from attunement 13, 1 from the band: Affinity's 3 fit.
+    assert adapter.attunement_budget(staged) == 3
+    adapter.apply(staged)
+
+    entries = character.equipped_entries()
+    assert entries["weapons"][1].item_id == RAPIER
+    assert entries["rings"][0].item_id == SOUTHERN_RITUAL_BAND
+    assert [e.offset for e in character.attuned_spells()] == [affinity.offset]
+
+    # Taking the band off would leave Affinity without slots.
+    with pytest.raises(ValueError):
+        DS2EquipAdapter(character).apply({("rings", 0): None})
+    assert character.equipped_entries()["rings"][0].item_id == SOUTHERN_RITUAL_BAND
+
+
+def test_equip_ammo_writes_id_index_and_quantity():
+    from er_save_manager.games.DS2.save import (
+        _AMMO_QUANTITY_OFFSET,
+        EQUIPMENT_INDEX_OFFSET,
+        KEEP_SLOT,
+    )
+
+    data = bytearray(EQUIPMENT_INDEX_OFFSET + 0x80)
+    data[:INVENTORY_START] = _character().raw()
+    for index in range(42):
+        struct.pack_into("<H", data, EQUIPMENT_INDEX_OFFSET + 2 * index, 0xFFFF)
+    for k, (item_id, quantity) in enumerate(((60810000, 30), (60920000, 12))):
+        struct.pack_into("<II", data, INVENTORY_START + 16 * k, item_id, 0)
+        struct.pack_into("<I", data, INVENTORY_START + 16 * k + 8, quantity)
+    character = Character(data)
+    arrows, bolts = character.inventory()[:2]
+    character.equip(ammo=[arrows, KEEP_SLOT, bolts])
+    assert character.equipped_ammo_ids() == [60810000, None, 60920000, None]
+    assert [e and e.item_id for e in character.equipped_entries()["ammo"]] == [
+        60810000,
+        None,
+        60920000,
+        None,
+    ]
+    assert struct.unpack_from("<4H", data, _AMMO_QUANTITY_OFFSET) == (30, 0, 12, 0)
+    character.equip(ammo=[None])
+    assert struct.unpack_from("<H", data, _AMMO_QUANTITY_OFFSET)[0] == 0
+    assert Character.is_bolt(60920000) and not Character.is_bolt(60900000)

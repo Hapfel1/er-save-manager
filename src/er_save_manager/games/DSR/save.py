@@ -90,29 +90,38 @@ An empty character slot has bytes 0x20-0x90 all zero.
 +0x018C  34   Name, secondary copy (UTF-16LE, 16 chars + null terminator)
 
 --- Equipment: slot indices into the inventory array ---
-Each field is a u32 LE inventory slot index; 0xFFFFFFFF = nothing equipped.
+20 u32 LE inventory slot indices, 0xFFFFFFFF = nothing equipped:
 +0x02A8  4    Left hand slot 1
 +0x02AC  4    Right hand slot 1
 +0x02B0  4    Left hand slot 2
 +0x02B4  4    Right hand slot 2
++0x02B8  16   Ammo slots (4; arrow/bolt order unconfirmed)
 +0x02C8  4    Helm slot
 +0x02CC  4    Chest armor slot
 +0x02D0  4    Gauntlets slot
 +0x02D4  4    Leg armor slot
++0x02D8  4    Hair slot (always 0xFFFFFFFF)
 +0x02DC  4    Ring slot 1
 +0x02E0  4    Ring slot 2
++0x02E4  20   Quick item slots 1-5
+An empty hand slot points at a bare hand entry (weapon 900000), an empty
+armor slot at a bare armor entry (armor 900000 + 1000 * piece).
 
---- Equipment: cached item IDs (mirror of inventory, for quick lookup) ---
+--- Equipment: cached item IDs, one per slot above ---
 +0x0314  4    Left hand 1 item ID
 +0x0318  4    Right hand 1 item ID
 +0x031C  4    Left hand 2 item ID
 +0x0320  4    Right hand 2 item ID
++0x0324  16   Ammo item IDs
 +0x0334  4    Helm item ID
 +0x0338  4    Chest armor item ID
 +0x033C  4    Gauntlets item ID
 +0x0340  4    Leg armor item ID
++0x0344  4    Hair item ID (set although the hair slot is empty)
 +0x0348  4    Ring 1 item ID
 +0x034C  4    Ring 2 item ID
++0x0350  20   Quick item IDs 1-5
+The character-select directory keeps a copy of the 20 item IDs.
 
 --- Inventory ---
 +0x0370  2048 * 28   Item array (2048 slots, 28 bytes each; see item layout below)
@@ -266,18 +275,33 @@ OFF_EQ_ID_HAIR = 0x0344
 HAIR_ITEM_BASE = {0: 3000, 1: 1000}
 OFF_EQ_ID_RING1 = 0x0348
 OFF_EQ_ID_RING2 = 0x034C
-_EQUIP_SLOT_ID_PAIRS = (
-    (OFF_EQ_LH1, OFF_EQ_ID_LH1),
-    (OFF_EQ_RH1, OFF_EQ_ID_RH1),
-    (OFF_EQ_LH2, OFF_EQ_ID_LH2),
-    (OFF_EQ_RH2, OFF_EQ_ID_RH2),
-    (OFF_EQ_HELM, OFF_EQ_ID_HELM),
-    (OFF_EQ_CHEST, OFF_EQ_ID_CHEST),
-    (OFF_EQ_GAUNTLETS, OFF_EQ_ID_GAUNTLETS),
-    (OFF_EQ_LEGS, OFF_EQ_ID_LEGS),
-    (OFF_EQ_RING1, OFF_EQ_ID_RING1),
-    (OFF_EQ_RING2, OFF_EQ_ID_RING2),
+# All 20 equip slots: index k at OFF_EQ_LH1 + 4 * k, its cached id at
+# OFF_EQ_ID_LH1 + 4 * k.
+EQUIP_SLOT_COUNT = 20
+EQUIP_HANDS = range(0, 4)
+EQUIP_AMMO = range(4, 8)
+EQUIP_ARMOR = range(8, 12)
+EQUIP_HAIR = 12
+EQUIP_RINGS = range(13, 15)
+EQUIP_QUICK = range(15, 20)
+_EQUIP_SLOT_ID_PAIRS = tuple(
+    (OFF_EQ_LH1 + 4 * k, OFF_EQ_ID_LH1 + 4 * k) for k in range(EQUIP_SLOT_COUNT)
 )
+_EQUIP_EMPTY = 0xFFFFFFFF
+# Ammo slots: arrows 1, bolts 1, arrows 2, bolts 2.
+EQUIP_BOLT_SLOTS = frozenset({5, 7})
+# Ammo ids: arrows 20xxxxx, bolts 21xxxxx.
+_AMMO_FAMILY_STEP = 100000
+_BOLT_FAMILY = 21
+# Counts of held entries after the id cache: u32 common items (slots 64+),
+# u32 key items (slots 0-63).
+OFF_COMMON_COUNT = OFF_EQ_ID_LH1 + 4 * EQUIP_SLOT_COUNT
+OFF_KEY_COUNT = OFF_COMMON_COUNT + 4
+BARE_HAND_ID = 900000
+BARE_ARMOR_BASE = 900000
+# Armor ids are family * 10000 + piece * 1000 (+ upgrade): head, chest,
+# hands, legs.
+ARMOR_PIECE_STEP = 1000
 
 # Inventory
 OFF_INVENTORY = 0x0370  # start of item array
@@ -292,6 +316,17 @@ ORDER_SORT_SHIFT = 12
 # matchmaking counts it as weapon level 15 at any level.
 ASCENDED_FLAME_CAP = 5
 KEY_ITEM_SLOTS = 64  # key items occupy slots 0-63
+
+# Attunement after the inventory array: ATTUNE_SLOTS records of (u32 spell
+# id, u32 uses), packed from the first, empty (0xFFFFFFFF, 0); then the s32
+# index of the selected record, -1 with none. The game sets it to 0 on the
+# first attunement. uses = CASTS_PER_USE x the spell's Magic maxQuantity on
+# an attuned spell.
+OFF_ATTUNED = OFF_ITEMS_COUNT + 4
+ATTUNE_SLOTS = 12
+_ATTUNE_RECORD = 8
+OFF_SELECTED_SPELL = OFF_ATTUNED + ATTUNE_SLOTS * _ATTUNE_RECORD
+CASTS_PER_USE = 3
 
 # Appearance block after the inventory array.
 OFF_HAIR_RGBA = 0xE414  # 4 x f32
@@ -1179,7 +1214,15 @@ class DSRCharacter:
             ),
         )
         self._update_max_item_slot(free)
+        self._bump_count(free, 1)
         return free
+
+    def _bump_count(self, slot: int, step: int) -> None:
+        """Keep the common or key item count in step with a slot that was
+        filled (+1) or emptied (-1)."""
+        off = OFF_KEY_COUNT if slot < KEY_ITEM_SLOTS else OFF_COMMON_COUNT
+        count = struct.unpack_from("<I", self._data, off)[0]
+        struct.pack_into("<I", self._data, off, max(0, count + step))
 
     def set_item_id(
         self, slot: int, item_id: int, durability: int | None = None
@@ -1198,23 +1241,83 @@ class DSRCharacter:
 
     def equipped_slots(self) -> set[int]:
         """Inventory slots referenced by the equipment slots."""
-        eq = self.equipment
         return {
             slot
-            for slot in (
-                eq.lh1_slot,
-                eq.rh1_slot,
-                eq.lh2_slot,
-                eq.rh2_slot,
-                eq.helm_slot,
-                eq.chest_slot,
-                eq.gauntlets_slot,
-                eq.legs_slot,
-                eq.ring1_slot,
-                eq.ring2_slot,
-            )
-            if slot >= 0
+            for slot in (self.equip_slot(k)[0] for k in range(EQUIP_SLOT_COUNT))
+            if slot != _EQUIP_EMPTY
         }
+
+    def equip_slot(self, k: int) -> tuple[int, int]:
+        """(inventory slot, cached item id) of equip slot k."""
+        slot_off, id_off = _EQUIP_SLOT_ID_PAIRS[k]
+        return (
+            struct.unpack_from("<I", self._data, slot_off)[0],
+            struct.unpack_from("<I", self._data, id_off)[0],
+        )
+
+    def equipped_ids(self) -> list[int]:
+        """Cached item ids of the 20 equip slots, as the directory copy holds
+        them."""
+        return [self.equip_slot(k)[1] for k in range(EQUIP_SLOT_COUNT)]
+
+    @staticmethod
+    def is_bolt(item_id: int) -> bool:
+        return item_id // _AMMO_FAMILY_STEP == _BOLT_FAMILY
+
+    def attuned_spells(self) -> list[int]:
+        """Spell ids of the attunement records, in order."""
+        ids = []
+        for k in range(ATTUNE_SLOTS):
+            spell_id = struct.unpack_from(
+                "<I", self._data, OFF_ATTUNED + k * _ATTUNE_RECORD
+            )[0]
+            if spell_id != _EQUIP_EMPTY:
+                ids.append(spell_id)
+        return ids
+
+    def attune(self, spells: list[tuple[int, int]]) -> None:
+        """Replace the attunement records with (spell id, Magic maxQuantity)
+        pairs, packed from the first record with full casts. The selected
+        record stays when it still holds a spell, else moves to the first
+        (or -1 with no spells). Raises ValueError for more than ATTUNE_SLOTS
+        spells."""
+        if len(spells) > ATTUNE_SLOTS:
+            raise ValueError(f"At most {ATTUNE_SLOTS} spells can be attuned")
+        for k in range(ATTUNE_SLOTS):
+            spell_id, casts = (
+                (spells[k][0], spells[k][1] * CASTS_PER_USE)
+                if k < len(spells)
+                else (_EQUIP_EMPTY, 0)
+            )
+            struct.pack_into(
+                "<II", self._data, OFF_ATTUNED + k * _ATTUNE_RECORD, spell_id, casts
+            )
+        selected = struct.unpack_from("<i", self._data, OFF_SELECTED_SPELL)[0]
+        if not spells:
+            selected = -1
+        elif not 0 <= selected < len(spells):
+            selected = 0
+        struct.pack_into("<i", self._data, OFF_SELECTED_SPELL, selected)
+
+    def set_equip(self, k: int, slot: int | None) -> None:
+        """Point equip slot k at a held inventory slot and cache its item id,
+        or empty it (both 0xFFFFFFFF). Hand and armor slots are never empty
+        in game: pass a bare hand or bare armor entry instead. Raises
+        ValueError for an empty or out of range inventory slot."""
+        if not 0 <= k < EQUIP_SLOT_COUNT:
+            raise ValueError(f"Equip slot {k} out of range")
+        slot_off, id_off = _EQUIP_SLOT_ID_PAIRS[k]
+        if slot is None:
+            index, item_id = _EQUIP_EMPTY, _EQUIP_EMPTY
+        else:
+            if not 0 <= slot < MAX_INVENTORY_SLOTS:
+                raise ValueError(f"Inventory slot {slot} out of range")
+            item = self.read_item(slot)
+            if item.is_empty:
+                raise ValueError(f"Inventory slot {slot} is empty")
+            index, item_id = slot, item.item_id
+        struct.pack_into("<I", self._data, slot_off, index)
+        struct.pack_into("<I", self._data, id_off, item_id)
 
     def remove_item(self, slot: int) -> None:
         """
@@ -1224,6 +1327,8 @@ class DSRCharacter:
         """
         if not 0 <= slot < MAX_INVENTORY_SLOTS:
             raise IndexError(f"Slot {slot} out of range")
+        if not self.read_item(slot).is_empty:
+            self._bump_count(slot, -1)
         off = OFF_INVENTORY + slot * ITEM_SIZE
         self._data[off : off + ITEM_SIZE] = b"\xff" * ITEM_SIZE
         struct.pack_into("<I", self._data, off + 16, 0)  # exists = 0

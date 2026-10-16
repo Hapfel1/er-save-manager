@@ -58,6 +58,8 @@ _DATA_START = 0x14
 #   +0x88  16   Hair color RGBA (mirrors OFF_HAIR_RGBA)
 #   +0x98  16   Eye color RGBA (mirrors OFF_EYE_RGBA)
 #   +0xA8 100   Face data (mirrors OFF_FACE_DATA)
+#   +0x14C 80   Item ids of the 20 equip slots (copy of the slot's id cache);
+#               runs 12 bytes past DIR_STRIDE into the next entry's range
 #   remaining bytes: other load-screen display data not required for the
 #   character to load correctly.
 #
@@ -70,6 +72,7 @@ DIR_HAIR_RGBA_OFFSET = 0x88
 DIR_EYE_RGBA_OFFSET = 0x98
 DIR_FACE_DATA_OFFSET = 0xA8
 DIR_HAIR_ITEM_OFFSET = 0x17C  # copy of the slot's equipped hair id
+DIR_EQUIP_OFFSET = 0x14C
 
 _DIR_EMPTY_TEMPLATE = bytes.fromhex(
     "ffffffffffffffffffffffffffffffffffffffff000000000100000000000000"
@@ -148,6 +151,21 @@ def _sync_dir_name_level(save: DSRSave, slot_index: int, name: str, level: int) 
     entry[DIR_NAME_OFFSET : DIR_NAME_OFFSET + 34] = name_bytes
     struct.pack_into("<I", entry, DIR_LEVEL_OFFSET, level & 0xFFFFFFFF)
     _write_dir_entry(save, slot_index, entry)
+
+
+def sync_dir_equipment(save: DSRSave, slot_index: int) -> None:
+    """Copy a character's equip slot item ids into its directory entry, which
+    the load screen reads."""
+    char = save.characters[slot_index]
+    if char is None:
+        return
+    ids = char.equipped_ids()
+    struct.pack_into(
+        f"<{len(ids)}I",
+        save.system_data,
+        _dir_entry_offset(slot_index) + DIR_EQUIP_OFFSET,
+        *ids,
+    )
 
 
 def _sync_dir_appearance(save: DSRSave, slot_index: int, char: DSRCharacter) -> None:

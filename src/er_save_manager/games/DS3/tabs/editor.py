@@ -1,7 +1,7 @@
 """
 DS3 Character Editor tab.
 
-Sub-tabs: Stats | Identity | Appearance.
+Sub-tabs: Stats | Identity | Equipment | Appearance.
 """
 
 from __future__ import annotations
@@ -12,14 +12,20 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.games.DS3 import catalog
-from er_save_manager.games.DS3.character_ops import _sync_dir_name_level
+from er_save_manager.games.DS3.character_ops import (
+    _sync_dir_name_level,
+    sync_dir_equipment,
+)
 from er_save_manager.games.DS3.slot import (
+    ATTUNE_SLOTS,
     MAX_SOULS,
     MAX_STAT,
     NAME_MAX_CHARS,
     LayoutError,
 )
+from er_save_manager.games.DS3.tabs.equipment import DS3EquipAdapter
 from er_save_manager.ui import palette
+from er_save_manager.ui.editors.ds_equipment import AttunementSection, EquipmentPanel
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import (
     bind_mousewheel,
@@ -101,15 +107,23 @@ class DS3EditorTab:
 
         tabs = ctk.CTkTabview(
             outer,
+            command=self._on_subtab,
             fg_color=("gray90", "gray20"),
             segmented_button_fg_color=("gray80", "gray35"),
             segmented_button_selected_color=palette.PURPLE,
             segmented_button_unselected_color=("gray70", "gray30"),
         )
         tabs.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        self._tabs = tabs
         self._build_stats_tab(tabs.add("Stats"))
         yield
         self._build_identity_tab(tabs.add("Identity"))
+        yield
+        self._attunement = AttunementSection(ATTUNE_SLOTS)
+        self._equip_panel = EquipmentPanel(
+            tabs.add("Equipment"), self._apply_equipment, self._attunement.build
+        )
+        self._attunement.attach(self._equip_panel)
         yield
         from er_save_manager.games.DS3.tabs.appearance import DS3AppearanceTab
 
@@ -275,6 +289,9 @@ class DS3EditorTab:
         ]
         self._slot_combo.configure(values=options)
         self._slot_var.set(options[0] if options else "")
+        # A new save: the loaded character belongs to the old one.
+        self._current_slot = -1
+        self._load_equipment()
         if self._appearance is not None:
             self._appearance.refresh()
 
@@ -330,6 +347,69 @@ class DS3EditorTab:
         self._show_loaded_class()
         if self._appearance is not None:
             self._appearance.load_character(char)
+        self._load_equipment()
+
+    # --- Equipment ----------------------------------------------------------- #
+
+    def _on_subtab(self) -> None:
+        # Inventory edits change what the equipment pickers offer.
+        panel = getattr(self, "_equip_panel", None)
+        if (
+            self._tabs.get() == "Equipment"
+            and panel is not None
+            and not panel.staged
+            and not self._attunement.changed()
+        ):
+            self._load_equipment()
+
+    def _load_equipment(self) -> None:
+        panel = getattr(self, "_equip_panel", None)
+        if panel is None:
+            return
+        char = self._loaded_char()
+        if char is None:
+            panel.load(None)
+            return
+        error = char.layout_error or char.inventory_error
+        if error:
+            panel.load(None, f"Equipment cannot be edited: {error}")
+            return
+        panel.load(DS3EquipAdapter(char, self._source))
+
+    def _apply_equipment(self, adapter: DS3EquipAdapter, staged: dict) -> None:
+        if not staged and not adapter.spells_changed:
+            self._show_toast("No equipment changes to apply")
+            return
+        if _game_blocks_write(self.parent):
+            return
+        save = self._get_save()
+        save_path = self._get_save_path()
+        if save is None or save_path is None:
+            return
+        if not CTkMessageBox.askyesno(
+            "Apply Equipment",
+            f"Apply equipment changes to Slot {self._current_slot + 1}?\n\n"
+            "A backup will be created.",
+            parent=self.parent,
+        ):
+            return
+        try:
+            adapter.apply(staged)
+        except ValueError as exc:
+            CTkMessageBox.showerror(
+                "Equipment Not Applied", str(exc), parent=self.parent
+            )
+            self._load_equipment()
+            return
+        sync_dir_equipment(save, self._current_slot)
+        try:
+            _backup_and_save(
+                save, save_path, f"ds3_edit_equipment_slot_{self._current_slot + 1}"
+            )
+            self._show_toast("Equipment applied. Backup created.")
+        except Exception as exc:
+            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+        self._load_equipment()
 
     # --- Class and level ----------------------------------------------------- #
 
@@ -352,6 +432,7 @@ class DS3EditorTab:
         return save.characters[self._current_slot]
 
     def _on_source_change(self) -> None:
+        self._load_equipment()
         if not hasattr(self, "_class_combo"):
             return
         self._class_combo.configure(values=[c.name for c in self._classes()])

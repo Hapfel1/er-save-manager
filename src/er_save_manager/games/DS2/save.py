@@ -167,7 +167,7 @@ INVENTORY_SLOT_SIZE = 16
 #   +0x1C  4 armor slots (head, chest, hands, legs) holding the armor param
 #          id, which is the inventory item id minus 10000000
 #   +0x2C  2 u32 of unknown use, normally 0
-#   +0x34  4 slots, normally empty (arrows and bolts)
+#   +0x34  4 ammo slots: arrows 1, arrows 2, bolts 1, bolts 2
 #   +0x44  4 ring slots
 #   +0x54  10 belt item slots
 # The attuned spells follow the block (outside the load screen's copy) as 14
@@ -197,8 +197,17 @@ EQUIPMENT_INDEX_OFFSET = 0x11E30
 _INDEX_WEAPONS = 0
 _INDEX_ARMOR = 6
 _INDEX_RINGS = 10
+_INDEX_AMMO = 14
 _INDEX_BELT = 18
 _INDEX_SPELLS = 28
+
+# 4 x u16 quantity of the entry in each ammo slot, in the id block's ammo
+# order, 0 for an empty slot. The game writes it when ammo is equipped.
+_AMMO_QUANTITY_OFFSET = 0x25C
+# Ammo item ids: arrows and greatarrows below this, bolts from it on.
+_FIRST_BOLT_ID = 60910000
+# Ammo slots that hold bolts, by position in the id block.
+AMMO_BOLT_SLOTS = frozenset({2, 3})
 
 # u8 index of the selected attuned spell, 0xFF with none selected. The game
 # sets it to 0 when the first spell is attuned.
@@ -1284,18 +1293,20 @@ class Character:
             == EQUIPMENT_HEADER
         )
 
-    def attunement_slots(self) -> int | None:
+    def attunement_slots(self, equipped_ids: set[int] | None = None) -> int | None:
         """Attunement slots from the attunement stat and the equipped items
-        that add some. None when the regulation cannot be read."""
+        that add some, or the given equipped item ids instead. None when the
+        regulation cannot be read."""
         regulation = self._regulation()
         if regulation is None:
             return None
         slots = regulation.attunement_slots(self.get_stat("attunement"))
         if slots is None:
             return None
+        if equipped_ids is None:
+            equipped_ids = self.equipped_item_ids()
         return slots + sum(
-            _ATTUNEMENT_SLOT_ITEMS.get(item_id, 0)
-            for item_id in self.equipped_item_ids()
+            _ATTUNEMENT_SLOT_ITEMS.get(item_id, 0) for item_id in equipped_ids
         )
 
     def spell_slots(self, item_id: int) -> int | None:
@@ -1320,6 +1331,44 @@ class Character:
             if item is not None:
                 spells.append(item)
         return spells
+
+    def equipped_entries(self) -> dict[str, list[InventoryItem | None]]:
+        """Carried entry of every weapon, armor, ring, ammo and belt slot by group,
+        in equip()'s order; None for an empty slot or a position that holds
+        no entry. Raises ValueError for an unknown equipment block layout."""
+        if not self.has_equipment_block():
+            raise ValueError("equipment block not found")
+        inventory = {item.offset: item for item in self.inventory()}
+
+        def entry(index: int) -> InventoryItem | None:
+            position = struct.unpack_from(
+                "<H", self._data, EQUIPMENT_INDEX_OFFSET + 2 * index
+            )[0]
+            if position == _EMPTY_INDEX:
+                return None
+            return inventory.get(INVENTORY_START + position * INVENTORY_SLOT_SIZE)
+
+        return {
+            # Id block L1, R1, ... and index R1, L1, ...: swap within each set.
+            "weapons": [
+                entry(_INDEX_WEAPONS + (k ^ 1)) for k in range(_EQUIP_WEAPONS[1])
+            ],
+            "armor": [entry(_INDEX_ARMOR + k) for k in range(_EQUIP_ARMOR[1])],
+            "rings": [entry(_INDEX_RINGS + k) for k in range(_EQUIP_RINGS[1])],
+            "ammo": [entry(_INDEX_AMMO + k) for k in range(_EQUIP_AMMO[1])],
+            "belt": [entry(_INDEX_BELT + k) for k in range(_EQUIP_BELT[1])],
+        }
+
+    def equipped_ammo_ids(self) -> list[int | None]:
+        """Item ids in the 4 ammo slots of the id block, None when empty."""
+        ids = struct.unpack_from(
+            f"<{_EQUIP_AMMO[1]}I", self._data, EQUIPMENT_OFFSET + _EQUIP_AMMO[0]
+        )
+        return [None if v in (_EMPTY_EQUIP, 0) else v for v in ids]
+
+    @staticmethod
+    def is_bolt(item_id: int) -> bool:
+        return item_id >= _FIRST_BOLT_ID
 
     def attune(self, spells: list[InventoryItem]) -> None:
         """Replace the attuned spells with the given carried entries, in
@@ -1364,17 +1413,18 @@ class Character:
         rings: list[InventoryItem | object | None] = (),
         belt: list[InventoryItem | object | None] = (),
         spells: list[InventoryItem | object | None] = (),
+        ammo: list[InventoryItem | object | None] = (),
     ) -> None:
         """Equip carried inventory entries; None empties a slot and KEEP_SLOT
         leaves it as it is, as do slots past the end of a list. weapons is
         in the id block's order (L1, R1, L2, R2, L3, R3), armor is head,
-        chest, hands, legs. spells is the attunement list, which the game
-        keeps packed from the first slot. Ammo is left as it is. Raises
-        ValueError for an unknown block layout or an entry that is not
-        carried."""
+        chest, hands, legs, ammo is arrows 1, arrows 2, bolts 1, bolts 2.
+        spells is the attunement list, which the game keeps packed from the
+        first slot. Raises ValueError for an unknown block layout or an
+        entry that is not carried."""
         if not self.has_equipment_block():
             raise ValueError("equipment block not found")
-        for entry in (*weapons, *armor, *rings, *belt, *spells):
+        for entry in (*weapons, *armor, *rings, *belt, *spells, *ammo):
             if isinstance(entry, InventoryItem) and (
                 entry.in_box or not INVENTORY_START <= entry.offset < INVENTORY_END
             ):
@@ -1414,6 +1464,15 @@ class Character:
             write(_EQUIP_RINGS[0], _INDEX_RINGS + k, k, entry, _EMPTY_EQUIP)
         for k, entry in enumerate(belt[: _EQUIP_BELT[1]]):
             write(_EQUIP_BELT[0], _INDEX_BELT + k, k, entry, _EMPTY_EQUIP)
+        for k, entry in enumerate(ammo[: _EQUIP_AMMO[1]]):
+            write(_EQUIP_AMMO[0], _INDEX_AMMO + k, k, entry, _EMPTY_EQUIP)
+            if entry is not KEEP_SLOT:
+                struct.pack_into(
+                    "<H",
+                    self._data,
+                    _AMMO_QUANTITY_OFFSET + 2 * k,
+                    0 if entry is None else min(entry.quantity, 0xFFFF),
+                )
         for k, entry in enumerate(spells[: _EQUIP_SPELLS[1]]):
             write(_EQUIP_SPELLS[0], _INDEX_SPELLS + k, k, entry, _EMPTY_EQUIP)
         first_spell = struct.unpack_from(

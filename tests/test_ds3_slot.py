@@ -352,3 +352,108 @@ def test_character_death_bits(slot, slot_bytes):
     # No record for a map the character has no state for: nothing to change.
     assert slot.character_dead("m31_00", 158) is None
     assert not slot.set_character_dead("m31_00", 158, False)
+
+
+def test_equip_slots_reference_inventory_ids_and_handles(slot):
+    for k in range(22):
+        index, item_id, handle = slot.equip_slot(k)
+        entry = slot.equipped_entry(k)
+        if index == 0xFFFFFFFF:
+            assert entry is None and item_id == 0xFFFFFFFF and handle == 0
+        else:
+            assert item_id == entry.item_id & 0x0FFFFFFF and handle == entry.handle
+
+
+def test_set_equip_writes_index_id_and_handle(slot):
+    ring = slot.add_item(LIFE_RING, sort_key=20100)
+    arrows = slot.add_item(STANDARD_ARROW, 50, sort_key=1020000, max_quantity=99)
+    slot.set_equip(17, ring)
+    slot.set_equip(6, arrows)
+    assert slot.equip_slot(17) == (
+        ring.index & 0xFFF,
+        LIFE_RING & 0x0FFFFFFF,
+        ring.handle,
+    )
+    assert slot.equipped_entry(6).offset == arrows.offset
+    assert slot.is_equipped(ring)
+    slot.set_equip(17, None)
+    assert slot.equip_slot(17) == (0xFFFFFFFF, 0xFFFFFFFF, 0)
+    assert slot.equipped_ids()[6] == STANDARD_ARROW
+
+
+def test_set_equip_rejects_items_that_do_not_fit(slot):
+    ring = slot.add_item(LIFE_RING, sort_key=20100)
+    helm = slot.add_item(KNIGHT_HELM, sort_key=1013000, durability=380)
+    shard = slot.add_item(TITANITE_SHARD, 5, sort_key=16010, max_quantity=99)
+    for k, entry in ((1, ring), (13, helm), (17, shard), (21, ring), (10, ring)):
+        with pytest.raises(ValueError):
+            slot.set_equip(k, entry)
+
+
+def test_equip_slot_kinds():
+    accepts = DS3Slot.equip_slot_accepts
+    assert accepts(1, DAGGER) and not accepts(1, STANDARD_ARROW)
+    assert accepts(6, STANDARD_ARROW) and not accepts(7, STANDARD_ARROW)
+    assert accepts(7, 0x62A20) and not accepts(6, 0x62A20)  # Standard Bolt
+    assert accepts(12, KNIGHT_HELM) and not accepts(13, KNIGHT_HELM)
+    assert accepts(21, 0x20002710) and not accepts(17, 0x20002710)  # covenant
+    assert DS3Slot.equip_placeholder_id(0) == 110000
+    assert DS3Slot.equip_placeholder_id(15) == 0x100DC758
+    assert DS3Slot.equip_placeholder_id(17) is None
+
+
+def test_second_id_copy_matches_equip_and_quick_slots(slot):
+    copy = slot._get_layout().id_copy
+    for k in range(22):
+        entry = slot.equipped_entry(k)
+        want = 0xFFFFFFFF if entry is None else entry.item_id
+        assert struct.unpack_from("<I", slot._data, copy + 4 * k)[0] == want
+    for k in range(10):
+        entry = slot.quick_entry(k)
+        want = 0xFFFFFFFF if entry is None else entry.item_id
+        assert struct.unpack_from("<I", slot._data, copy + 88 + 4 * k)[0] == want
+
+
+def test_set_equip_and_quick_item_write_the_second_copy(slot):
+    copy = slot._get_layout().id_copy
+    ring = slot.add_item(LIFE_RING, sort_key=20100)
+    doll = slot.add_item(SMALL_DOLL, sort_key=20010, max_quantity=1)
+    shard = slot.add_item(TITANITE_SHARD, 5, sort_key=16010, max_quantity=99)
+    copy = slot._get_layout().id_copy
+    slot.set_equip(17, ring)
+    assert struct.unpack_from("<I", slot._data, copy + 4 * 17)[0] == LIFE_RING
+    slot.set_quick_item(3, shard)
+    assert slot.quick_entry(3).offset == shard.offset
+    assert struct.unpack_from("<I", slot._data, copy + 88 + 12)[0] == TITANITE_SHARD
+    slot.set_quick_item(3, None)
+    assert slot.quick_entry(3) is None
+    with pytest.raises(ValueError):
+        slot.set_quick_item(4, ring)
+    assert doll is not None
+
+
+def test_attune_records_and_selection(slot):
+    slot.attune([0x4013D620, 1301000])
+    assert slot.attuned_spells() == [1300000, 1301000]
+    base = slot._get_layout().inv
+    slot.attune([])
+    assert slot.attuned_spells() == []
+    assert base == slot._get_layout().inv
+
+
+def test_attunement_slots_per_source():
+    from er_save_manager.games.DS3 import attunement
+
+    assert attunement.slots(10, []) == 1
+    assert attunement.slots(13, []) == 1
+    # Darkmoon Ring: 2 in vanilla, 3 in Convergence.
+    assert attunement.slots(10, [0x20004F6A]) == 3
+    assert attunement.slots(10, [0x20004F6A], "convergence") == 4
+    assert attunement.spell_cost(0x4013D620) == 1
+
+
+def test_upgrade_materials_are_not_quick_items():
+    from er_save_manager.games.DS3 import attunement
+
+    assert attunement.is_material(TITANITE_SHARD)
+    assert not attunement.is_material(0x40000097)  # Estus Flask

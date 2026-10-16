@@ -7,6 +7,7 @@ import struct
 from er_save_manager.games.DSR import catalog
 from er_save_manager.games.DSR.icon_manager import get_icon
 from er_save_manager.games.DSR.save import (
+    EQUIP_SLOT_COUNT,
     ITEM_SIZE,
     KEY_ITEM_SLOTS,
     MAX_INVENTORY_SLOTS,
@@ -250,3 +251,99 @@ def test_flag_zero_check():
     assert _dsr_flag0_set(save) == []
     char.set_flag(0, True)
     assert _dsr_flag0_set(save) == [0]
+
+
+def test_set_equip_writes_slot_and_cached_id():
+    from types import SimpleNamespace
+
+    from er_save_manager.games.DSR.character_ops import (
+        DIR_EQUIP_OFFSET,
+        _dir_entry_offset,
+        sync_dir_equipment,
+    )
+
+    char = _character()
+    for k in range(EQUIP_SLOT_COUNT):
+        char.set_equip(k, None)
+    estus = char.add_item(4, 203, sort_key=4)
+    ring = char.add_item(2, 100, sort_key=100)
+    char.set_equip(15, estus)
+    char.set_equip(13, ring)
+    assert char.equip_slot(15) == (estus, 203)
+    assert {estus, ring} == char.equipped_slots()
+    # Quick item caches follow upgrades like the hand slots.
+    char.set_item_id(estus, 205)
+    assert char.equip_slot(15) == (estus, 205)
+    char.set_equip(13, None)
+    assert char.equip_slot(13) == (0xFFFFFFFF, 0xFFFFFFFF)
+
+    save = SimpleNamespace(characters=[char], system_data=bytearray(0x1000))
+    sync_dir_equipment(save, 0)
+    off = _dir_entry_offset(0) + DIR_EQUIP_OFFSET
+    copy = struct.unpack_from(f"<{EQUIP_SLOT_COUNT}I", save.system_data, off)
+    assert list(copy) == char.equipped_ids()
+
+
+def test_add_and_remove_keep_item_counts():
+    from er_save_manager.games.DSR.save import OFF_COMMON_COUNT, OFF_KEY_COUNT
+
+    char = _character()
+    common = char.add_item(4, 203, sort_key=4)
+    char.add_item(4, 2001, key_item=True)
+
+    def counts():
+        return struct.unpack_from("<II", char._data, OFF_COMMON_COUNT)
+
+    assert OFF_KEY_COUNT == OFF_COMMON_COUNT + 4
+    assert counts() == (1, 1)
+    char.remove_item(common)
+    char.remove_item(common)
+    assert counts() == (0, 1)
+
+
+def test_attune_writes_records_uses_and_selection():
+    from er_save_manager.games.DSR.save import OFF_ATTUNED, OFF_SELECTED_SPELL
+
+    char = _character()
+    struct.pack_into("<i", char._data, OFF_SELECTED_SPELL, -1)
+    for k in range(12):
+        struct.pack_into("<II", char._data, OFF_ATTUNED + 8 * k, 0xFFFFFFFF, 0)
+    # Great Magic Weapon: maxQuantity 3, stored as 9.
+    char.attune([(3110, 3), (4100, 16)])
+    assert struct.unpack_from("<4I", char._data, OFF_ATTUNED) == (3110, 9, 4100, 48)
+    assert char.attuned_spells() == [3110, 4100]
+    assert struct.unpack_from("<i", char._data, OFF_SELECTED_SPELL)[0] == 0
+    char.attune([])
+    assert char.attuned_spells() == []
+    assert struct.unpack_from("<i", char._data, OFF_SELECTED_SPELL)[0] == -1
+
+
+def test_attunement_slots_and_ammo_kinds():
+    from er_save_manager.games.DSR import attunement
+
+    assert attunement.spell(3110) == (1, 3)
+    assert attunement.slots(18, []) == 4
+    assert attunement.slots(19, []) == 5
+    # White Seance Ring and Darkmoon Seance Ring add one slot each.
+    assert attunement.slots(19, [114, 149, 100]) == 7
+    assert DSRCharacter.is_bolt(2100000) and not DSRCharacter.is_bolt(2008000)
+
+
+def test_clearing_armor_without_bare_entry_creates_it():
+    from er_save_manager.games.DSR.equipment_tab import DSREquipAdapter
+    from er_save_manager.games.DSR.save import OFF_COMMON_COUNT
+
+    char = _character()
+    for k in range(EQUIP_SLOT_COUNT):
+        char.set_equip(k, None)
+    helm = char.add_item(1, 210000, sort_key=1)
+    char.set_equip(8, helm)
+    adapter = DSREquipAdapter(char)
+    choice = adapter.clear_choice(8)
+    assert choice.name == "Bare head"
+    adapter.apply({8: choice})
+    slot, item_id = char.equip_slot(8)
+    item = char.read_item(slot)
+    assert item_id == 900000 and (item.category, item.item_id) == (1, 900000)
+    assert item.quantity == 1 and item.order == slot
+    assert struct.unpack_from("<I", char._data, OFF_COMMON_COUNT)[0] == 2

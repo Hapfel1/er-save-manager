@@ -10,8 +10,13 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
-from er_save_manager.games.DSR.character_ops import _sync_dir_name_level
+from er_save_manager.games.DSR.character_ops import (
+    _sync_dir_name_level,
+    sync_dir_equipment,
+)
+from er_save_manager.games.DSR.equipment_tab import DSREquipAdapter
 from er_save_manager.games.DSR.save import (
+    ATTUNE_SLOTS,
     COVENANT_OFFERING_ORDER,
     COVENANT_RANK_COUNTS,
     MAX_COVENANT_OFFERINGS,
@@ -26,6 +31,7 @@ from er_save_manager.games.DSR.save import (
     covenant_rank,
 )
 from er_save_manager.ui import palette
+from er_save_manager.ui.editors.ds_equipment import AttunementSection, EquipmentPanel
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
@@ -130,17 +136,25 @@ class DSREditorTab:
 
         tabs = ctk.CTkTabview(
             outer,
+            command=self._on_subtab,
             fg_color=("gray90", "gray20"),
             segmented_button_fg_color=("gray80", "gray35"),
             segmented_button_selected_color=palette.PURPLE,
             segmented_button_unselected_color=("gray70", "gray30"),
         )
         tabs.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        self._tabs = tabs
         self._build_stats_tab(tabs.add("Stats"))
         yield
         self._build_identity_tab(tabs.add("Identity"))
         yield
         self._build_covenants_tab(tabs.add("Covenants"))
+        yield
+        self._attunement = AttunementSection(ATTUNE_SLOTS)
+        self._equip_panel = EquipmentPanel(
+            tabs.add("Equipment"), self._apply_equipment, self._attunement.build
+        )
+        self._attunement.attach(self._equip_panel)
         yield
         from er_save_manager.games.DSR.appearance_tab import DSRAppearanceTab
 
@@ -419,6 +433,9 @@ class DSREditorTab:
         ]
         self._slot_combo.configure(values=options)
         self._slot_var.set(options[0] if options else "")
+        # A new save: the loaded character belongs to the old one.
+        self._current_slot = -1
+        self._load_equipment()
         if self._appearance is not None:
             self._appearance.refresh()
 
@@ -484,6 +501,67 @@ class DSREditorTab:
         m = int((char.play_seconds % 3600) // 60)
         s = int(char.play_seconds % 60)
         self._playtime_var.set(f"{h}h {m:02d}m {s:02d}s")
+        self._load_equipment()
+
+    # --- Equipment ------------------------------------------------------------ #
+
+    def _on_subtab(self) -> None:
+        # Inventory edits change what the equipment pickers offer.
+        panel = getattr(self, "_equip_panel", None)
+        if (
+            self._tabs.get() == "Equipment"
+            and panel is not None
+            and not panel.staged
+            and not self._attunement.changed()
+        ):
+            self._load_equipment()
+
+    def _load_equipment(self) -> None:
+        panel = getattr(self, "_equip_panel", None)
+        if panel is None:
+            return
+        save = self._get_dsr_save()
+        char = (
+            save.characters[self._current_slot]
+            if save is not None and self._current_slot >= 0
+            else None
+        )
+        panel.load(DSREquipAdapter(char) if char is not None else None)
+
+    def _apply_equipment(self, adapter: DSREquipAdapter, staged: dict) -> None:
+        if not staged and not adapter.spells_changed:
+            self._show_toast("No equipment changes to apply")
+            return
+        if _game_blocks_write(self.parent):
+            return
+        save = self._get_dsr_save()
+        save_path = self._get_save_path()
+        if save is None or save_path is None:
+            return
+        if not CTkMessageBox.askyesno(
+            "Apply Equipment",
+            f"Apply equipment changes to Slot {self._current_slot + 1}?\n\n"
+            "A backup will be created.",
+            parent=self.parent,
+        ):
+            return
+        try:
+            adapter.apply(staged)
+        except ValueError as exc:
+            CTkMessageBox.showerror(
+                "Equipment Not Applied", str(exc), parent=self.parent
+            )
+            self._load_equipment()
+            return
+        sync_dir_equipment(save, self._current_slot)
+        try:
+            _backup_and_save(
+                save, save_path, f"dsr_edit_equipment_slot_{self._current_slot + 1}"
+            )
+            self._show_toast("Equipment applied. Backup created.")
+        except Exception as exc:
+            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+        self._load_equipment()
 
     def _recalc_level(self) -> None:
         """Recalculate and update the level field from current stat inputs."""

@@ -30,6 +30,7 @@ _ERC_VERSION = 1
 #   +0x00  34   Character name (UTF-16LE)
 #   +0x22   4   Level (u32 LE)
 #   +0x3A       Appearance block (mirrors the slot's FACE block)
+#   +0x1AA 88   Item ids of the 22 equip slots (copy of the slot's id block)
 #   remaining bytes: other load-screen display data not required for the
 #   character to load correctly.
 #
@@ -39,6 +40,7 @@ DIR_STRIDE = 554
 DIR_NAME_OFFSET = 0x00
 DIR_LEVEL_OFFSET = 0x22
 DIR_FACE_OFFSET = 0x3A
+DIR_EQUIP_OFFSET = 0x1AA
 
 _DIR_EMPTY_TEMPLATE = bytes.fromhex(
     "0000000000000000000000000000000000000000000000000000000000000000"
@@ -99,6 +101,17 @@ def _sync_dir_name_level(save: DS3Save, slot_index: int, name: str, level: int) 
     entry[DIR_NAME_OFFSET : DIR_NAME_OFFSET + 34] = name_bytes
     struct.pack_into("<I", entry, DIR_LEVEL_OFFSET, level & 0xFFFFFFFF)
     _write_dir_entry(save, slot_index, entry)
+
+
+def sync_dir_equipment(save: DS3Save, slot_index: int) -> None:
+    """Copy a character's equip slot item ids into its directory entry, which
+    the load screen reads."""
+    char = save.characters[slot_index]
+    if char is None:
+        return
+    entry = _read_dir_entry(save, slot_index)
+    ids = char.equipped_ids()
+    struct.pack_into(f"<{len(ids)}I", entry, DIR_EQUIP_OFFSET, *ids)
 
 
 def _sync_dir_face(save: DS3Save, slot_index: int, block: bytes) -> None:
