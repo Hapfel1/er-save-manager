@@ -29,7 +29,6 @@ Lists all character slots with name and status. Selecting a slot and clicking **
 ### Identity
 
 - **Name** - up to 13 characters (the in-game limit), written to both name fields stored in the save
-- **Body Type** - Type A (Male) / Type B (Female)
 - **Class** - starting class selection
 - **Covenant** - current covenant
 - **NG+** - New Game+ cycle (0-7)
@@ -38,6 +37,15 @@ Lists all character slots with name and status. Selecting a slot and clicking **
 ### Covenants
 
 Offering counts for the seven covenants that take offerings (Warrior of Sunlight, Darkwraith, Path of the Dragon, Gravelord Servant, Forest Hunter, Darkmoon Blade, Chaos Servant). Rank 1, 2 and 3 are reached at 10, 30 and 80 offerings; Forest Hunter has no ranks. Changing a count does not add the rank rewards.
+
+### Appearance
+
+- **Body and hair** - body type (Type A (Male) / Type B (Female)), physique, face type and hairstyle, with the names from the character creation menu. Picking a face type replaces the face sliders with that face, as in the game.
+- **Colors** - the color preset sets hair and eye color together; the Red, Green and Blue sliders change each color afterwards.
+- **Face** - the game's face controls, split into Shape and Skin. Moving one slider can move related ones. Values are relative: 0 is the average face, and the slider ends reach past the most extreme faces the game ships.
+- **Copy and share** (top of the tab) - load the appearance of another character from the same save or from another DSR save file (**From Another Save...**), or export and import it as a JSON file.
+
+Nothing is written until **Apply Changes**; **Revert** reloads the saved appearance. Applying also updates the copy of the face, colors and hairstyle kept with the load-screen character list.
 
 ### Attributes
 

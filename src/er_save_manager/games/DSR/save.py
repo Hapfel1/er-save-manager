@@ -121,9 +121,14 @@ Each field is a u32 LE inventory slot index; 0xFFFFFFFF = nothing equipped.
 Key items occupy slots 0-63; weapons, armor, rings, consumables use slots 64-2047.
 
 --- Appearance (after the inventory) ---
-+0xE414  16   Hair color RGBA (4 x f32)
-+0xE424  16   Eye color RGBA (4 x f32)
-+0xE434  100  Face data (one byte per face slider)
++0xE414  16   Hair color RGBA (4 x f32, menu value / 255)
++0xE424  16   Eye color RGBA (4 x f32, menu value / 255)
++0xE434  100  Face data: 50 FaceGen geometry + 50 texture coefficients, u8,
+              128 = mean face (FaceGenParam faceGeoData / faceTexData)
+
+Physique 0-8, face type 0-9 (FaceGenParam row 1000 + n for Type A, 2000 + n
+for Type B), hair type 0-9, hair and eye color preset 0-9
+(MenuColorTableParam 36901 + n).
 
 === INVENTORY ITEM (28 bytes) ===
 
@@ -256,6 +261,9 @@ OFF_EQ_ID_HELM = 0x0334
 OFF_EQ_ID_CHEST = 0x0338
 OFF_EQ_ID_GAUNTLETS = 0x033C
 OFF_EQ_ID_LEGS = 0x0340
+# Hair is equipped as a part id: HAIR_ITEM_BASE[body type] + 100 * hairstyle.
+OFF_EQ_ID_HAIR = 0x0344
+HAIR_ITEM_BASE = {0: 3000, 1: 1000}
 OFF_EQ_ID_RING1 = 0x0348
 OFF_EQ_ID_RING2 = 0x034C
 _EQUIP_SLOT_ID_PAIRS = (
@@ -785,6 +793,74 @@ class DSRCharacter:
     @body_type.setter
     def body_type(self, value: int) -> None:
         self._data[OFF_BODY_TYPE] = value & 0xFF
+
+    # --- Appearance ---
+
+    @property
+    def physique(self) -> int:
+        return self._data[OFF_PHYSIQUE]
+
+    @physique.setter
+    def physique(self, value: int) -> None:
+        self._data[OFF_PHYSIQUE] = value & 0xFF
+
+    @property
+    def face_type(self) -> int:
+        return self._data[OFF_FACE_TYPE]
+
+    @face_type.setter
+    def face_type(self, value: int) -> None:
+        self._data[OFF_FACE_TYPE] = value & 0xFF
+
+    @property
+    def hair_type(self) -> int:
+        return self._data[OFF_HAIR_TYPE]
+
+    @hair_type.setter
+    def hair_type(self, value: int) -> None:
+        self._data[OFF_HAIR_TYPE] = value & 0xFF
+
+    @property
+    def hair_item_id(self) -> int:
+        return struct.unpack_from("<I", self._data, OFF_EQ_ID_HAIR)[0]
+
+    @hair_item_id.setter
+    def hair_item_id(self, value: int) -> None:
+        struct.pack_into("<I", self._data, OFF_EQ_ID_HAIR, value)
+
+    @property
+    def color_preset(self) -> int:
+        return self._data[OFF_HAIR_EYE_COLOR]
+
+    @color_preset.setter
+    def color_preset(self, value: int) -> None:
+        self._data[OFF_HAIR_EYE_COLOR] = value & 0xFF
+
+    @property
+    def hair_rgba(self) -> tuple[float, float, float, float]:
+        return struct.unpack_from("<4f", self._data, OFF_HAIR_RGBA)
+
+    @hair_rgba.setter
+    def hair_rgba(self, value: tuple[float, float, float, float]) -> None:
+        struct.pack_into("<4f", self._data, OFF_HAIR_RGBA, *value)
+
+    @property
+    def eye_rgba(self) -> tuple[float, float, float, float]:
+        return struct.unpack_from("<4f", self._data, OFF_EYE_RGBA)
+
+    @eye_rgba.setter
+    def eye_rgba(self, value: tuple[float, float, float, float]) -> None:
+        struct.pack_into("<4f", self._data, OFF_EYE_RGBA, *value)
+
+    @property
+    def face_data(self) -> bytes:
+        return bytes(self._data[OFF_FACE_DATA : OFF_FACE_DATA + FACE_DATA_SIZE])
+
+    @face_data.setter
+    def face_data(self, value: bytes) -> None:
+        if len(value) != FACE_DATA_SIZE:
+            raise ValueError(f"Face data must be {FACE_DATA_SIZE} bytes")
+        self._data[OFF_FACE_DATA : OFF_FACE_DATA + FACE_DATA_SIZE] = value
 
     @property
     def player_class(self) -> DSRClass:
