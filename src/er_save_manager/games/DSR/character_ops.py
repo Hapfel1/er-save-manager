@@ -55,6 +55,8 @@ _DATA_START = 0x14
 # Layout per entry (400 bytes), offsets relative to entry start:
 #   +0x28  34   Character name (UTF-16LE, mirrors OFF_NAME_PRIMARY)
 #   +0x4C   4   Level (u32 LE)
+#   +0x14C 80   Item ids of the 20 equip slots (copy of the slot's id cache);
+#               runs 12 bytes past DIR_STRIDE into the next entry's range
 #   remaining bytes: portrait thumbnail, appearance color cache, and other
 #   load-screen display data not required for the character to load correctly.
 #
@@ -63,6 +65,7 @@ DIR_BASE = 172
 DIR_STRIDE = 400
 DIR_NAME_OFFSET = 0x28
 DIR_LEVEL_OFFSET = 0x4C
+DIR_EQUIP_OFFSET = 0x14C
 
 _DIR_EMPTY_TEMPLATE = bytes.fromhex(
     "ffffffffffffffffffffffffffffffffffffffff000000000100000000000000"
@@ -141,6 +144,21 @@ def _sync_dir_name_level(save: DSRSave, slot_index: int, name: str, level: int) 
     entry[DIR_NAME_OFFSET : DIR_NAME_OFFSET + 34] = name_bytes
     struct.pack_into("<I", entry, DIR_LEVEL_OFFSET, level & 0xFFFFFFFF)
     _write_dir_entry(save, slot_index, entry)
+
+
+def sync_dir_equipment(save: DSRSave, slot_index: int) -> None:
+    """Copy a character's equip slot item ids into its directory entry, which
+    the load screen reads."""
+    char = save.characters[slot_index]
+    if char is None:
+        return
+    ids = char.equipped_ids()
+    struct.pack_into(
+        f"<{len(ids)}I",
+        save.system_data,
+        _dir_entry_offset(slot_index) + DIR_EQUIP_OFFSET,
+        *ids,
+    )
 
 
 def _check_bounds(slot_index: int) -> None:

@@ -1,4 +1,4 @@
-"""DS2 character editor tab: slot picker + Stats/Inventory subtabs."""
+"""DS2 character editor tab: slot picker + Stats/Inventory/Equipment subtabs."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ import customtkinter as ctk
 
 from er_save_manager.games.DS2.bonfire_tab import DS2BonfirePanel
 from er_save_manager.games.DS2.boss_tab import DS2BossPanel
+from er_save_manager.games.DS2.equipment_tab import DS2EquipmentPanel
 from er_save_manager.games.DS2.inventory_tab import DS2InventoryPanel
 from er_save_manager.games.DS2.npc_tab import DS2NpcPanel
 from er_save_manager.games.DS2.regulation import ClassBase
@@ -76,6 +77,7 @@ class DS2EditorTab:
         self._slot_index = 0
         self._stat_vars: dict[str, tk.StringVar] = {}
         self.inventory_panel: DS2InventoryPanel | None = None
+        self.equipment_panel: DS2EquipmentPanel | None = None
         self.bonfire_panel: DS2BonfirePanel | None = None
         self.npc_panel: DS2NpcPanel | None = None
         self.boss_panel: DS2BossPanel | None = None
@@ -123,10 +125,11 @@ class DS2EditorTab:
         self.slot_status_label = ctk.CTkLabel(top, text="")
         self.slot_status_label.pack(side="left", padx=(15, 0))
 
-        self.tabview = ctk.CTkTabview(self.parent)
+        self.tabview = ctk.CTkTabview(self.parent, command=self._on_subtab)
         self.tabview.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         self.tabview.add("Stats")
         self.tabview.add("Inventory")
+        self.tabview.add("Equipment")
         self.tabview.add("Bonfires")
         self.tabview.add("NPCs")
         self.tabview.add("Bosses")
@@ -142,6 +145,16 @@ class DS2EditorTab:
             show_toast=self.show_toast,
         )
         yield from self.inventory_panel.setup_steps()
+
+        yield
+        self.equipment_panel = DS2EquipmentPanel(
+            self.tabview.tab("Equipment"),
+            get_save=self.get_save,
+            get_slot_index=lambda: self._slot_index,
+            get_save_path=self.get_save_path,
+            show_toast=self.show_toast,
+        )
+        self.equipment_panel.setup_ui()
 
         yield
         self.bonfire_panel = DS2BonfirePanel(
@@ -175,6 +188,11 @@ class DS2EditorTab:
 
         yield
         self.refresh()
+
+    def _on_subtab(self) -> None:
+        # Inventory edits change what the equipment pickers offer.
+        if self.tabview.get() == "Equipment" and self.equipment_panel is not None:
+            self.equipment_panel.reload_if_unchanged()
 
     def _build_stats_tab(self, parent) -> None:
         # Packed before the scroll area so it stays visible on short windows.
@@ -491,6 +509,8 @@ class DS2EditorTab:
 
         if self.inventory_panel is not None:
             self.inventory_panel.refresh()
+        if self.equipment_panel is not None:
+            self.equipment_panel.refresh()
         if self.bonfire_panel is not None:
             self.bonfire_panel.refresh()
         if self.npc_panel is not None:

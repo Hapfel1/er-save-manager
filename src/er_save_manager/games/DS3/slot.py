@@ -45,7 +45,14 @@ game on its next save, so removing an item never needs to shrink the table.
   +0x78 name, UTF-16LE, 16 characters + terminator
   +0x9E starting class (u8, CharaInitParam row 3000 + class)
   +0x1F0 22 x u32 equip slots, each an inventory index or 0xFFFFFFFF
+  +0x264 22 x u32 item id of each equip slot (type nibble cleared)
+  +0x2BC 22 x u32 handle of each equip slot (0 when empty)
   +0x318 inventory
+Equip slot order: left/right hand 1-3 (L1 R1 L2 R2 L3 R3), arrow 1, bolt 1,
+arrow 2, bolt 2, two unknown slots, head, chest, hands, legs, one unknown
+slot, rings 1-4, covenant. An empty hand slot points at a Fists entry, an
+empty armor slot at a bare armor entry (item id 900000 + 1000 * piece).
+The character-select directory keeps a copy of the 22 item ids.
 
 === INVENTORY (same layout for the storage box) ===
 
@@ -62,9 +69,19 @@ Entry: [u32 handle][u32 item id][u32 quantity][u32 index]
 Goods and ring handles are the item id with the type nibble replaced by
 0xB / 0xA and never have gaitem entries.
 
-After the held inventory: 8-byte (handle, index) quick/belt slots, then a
-count-prefixed table of 8-byte records, the storage box, the gesture list
-and a count-prefixed list of visited region ids.
+After the held inventory:
+  14 x (u32 spell id, u32 0xFFFFFFFF) attunement records, packed from the
+     first, empty (0xFFFFFFFF, 0)
+  s32 selected attunement record, -1 with none (0 on the first attunement)
+  10 x (u32 handle, u32 index position) quick items, empty (0, 0xFFFFFFFF)
+  u32 unknown, 6 x (u32 handle, u32 index position) unknown item slots
+     (Darksign, Black Separation Crystal, White Circlet on new characters)
+  then a count-prefixed table of 8-byte records, directly followed by a
+  second copy of item ids with the type nibble (0xFFFFFFFF when empty): 22
+  equip slots, 10 quick items, 6 unknown item slots. Then the storage box,
+  the gesture list and a count-prefixed list of visited region ids.
+A quick item record keeps the handle the item had when it was slotted:
+upgrading an Estus Flask leaves the record's handle at the old flask.
 
 === GESTURES ===
 
@@ -160,7 +177,34 @@ NAME_MAX_CHARS = _NAME_LEN // 2
 _CLASS_REL = 0x9E
 _EQUIP_SLOTS_REL = 0x1F0
 _EQUIP_SLOT_COUNT = 22
+_EQUIP_IDS_REL = 0x264
+_EQUIP_HANDLES_REL = 0x2BC
+_EQUIP_ID_MASK = 0x0FFFFFFF
+# Equip slot groups by slot number. Slots 10, 11 and 16 are unidentified.
+EQUIP_HANDS = range(0, 6)
+EQUIP_AMMO = range(6, 10)
+EQUIP_ARMOR = range(12, 16)
+EQUIP_RINGS = range(17, 21)
+EQUIP_COVENANT = 21
+# Arrow slots 6 and 8, bolt slots 7 and 9. Ammo ids are family * 1000:
+# thousands digit 0 or 2 for arrows and greatarrows, 4 for bolts.
+_EQUIP_BOLT_SLOTS = frozenset({7, 9})
+_BOLT_FAMILY_DIGIT = 4
+# Covenant items are rings with ids below the first real ring (Life Ring).
+_COVENANT_ID_LIMIT = 20000
+FISTS_ID = 110000
+# Ammo ids, arrows to the last bolt family in any source.
+_AMMO_ID_MIN = 400000
+_AMMO_ID_END = 500000
+BARE_ARMOR_BASE = 900000
+_ARMOR_PIECE_STEP = 1000
 _INVENTORY_REL = 0x318
+ATTUNE_SLOTS = 14
+_ATTUNE_RECORD = 8
+QUICK_SLOTS = 10
+_QUICK_RECORD = 8
+# Second id copy: equip slots, then quick items.
+_COPY_QUICK_REL = 4 * 22
 
 MAX_STAT = 99
 MAX_SOULS = 999_999_999
@@ -310,6 +354,7 @@ class _Layout:
     ng_plus: int
     flags: int  # first flag byte (block 0)
     used_end: int  # end of the last directory section
+    id_copy: int  # second copy of the equip and quick item ids
 
 
 class DS3Slot:
@@ -392,7 +437,15 @@ class DS3Slot:
         if _read_u32(data, ng_plus) > _NG_MAX:
             raise LayoutError("NG+ counter is out of range")
         return _Layout(
-            gaitem_start, gaitem_end, inv, storage, gestures, ng_plus, flags, used_end
+            gaitem_start,
+            gaitem_end,
+            inv,
+            storage,
+            gestures,
+            ng_plus,
+            flags,
+            used_end,
+            table1 + 4 + table1_count * _TABLE1_ENTRY,
         )
 
     def _validate_lists(self) -> None:
@@ -884,6 +937,187 @@ class DS3Slot:
         start = layout.inv + _INVENTORY_BYTES
         pair = struct.pack("<II", entry.handle, entry.index & _INDEX_POS_MASK)
         return self._data.find(pair, start, layout.storage) != -1
+
+    # --- Equipment ------------------------------------------------------- #
+
+    def equip_slot(self, k: int) -> tuple[int, int, int]:
+        """(inventory index, item id, handle) stored for equip slot k."""
+        base = self._get_layout().gaitem_end
+        return (
+            _read_u32(self._data, base + _EQUIP_SLOTS_REL + 4 * k),
+            _read_u32(self._data, base + _EQUIP_IDS_REL + 4 * k),
+            _read_u32(self._data, base + _EQUIP_HANDLES_REL + 4 * k),
+        )
+
+    def equipped_ids(self) -> list[int]:
+        """Item ids of the 22 equip slots, as the directory copy holds them."""
+        return [self.equip_slot(k)[1] for k in range(_EQUIP_SLOT_COUNT)]
+
+    def equipped_entry(self, k: int) -> DS3InventoryEntry | None:
+        """Held common entry equip slot k references; None when the slot is
+        empty or its index matches no entry."""
+        index = self.equip_slot(k)[0]
+        if index == _EMPTY_ID:
+            return None
+        for entry in self.iter_inventory():
+            if (
+                not entry.is_key
+                and self.is_real_item(entry)
+                and entry.index & _INDEX_POS_MASK == index
+            ):
+                return entry
+        return None
+
+    @staticmethod
+    def equip_slot_accepts(k: int, item_id: int) -> bool:
+        """Whether an inventory item id fits equip slot k by item type: hands
+        take weapons other than ammo, ammo slots arrows or bolts, armor slots
+        their own piece, ring slots rings and the covenant slot covenant
+        items. Unidentified slots accept nothing."""
+        kind = id_kind(item_id)
+        bare = item_id & _EQUIP_ID_MASK
+        family_digit = bare // 1000 % 10
+        if k in EQUIP_HANDS or k in EQUIP_AMMO:
+            if kind != ID_WEAPON:
+                return False
+            is_ammo = _AMMO_ID_MIN <= bare < _AMMO_ID_END
+            if k in EQUIP_HANDS:
+                return not is_ammo
+            return is_ammo and (family_digit == _BOLT_FAMILY_DIGIT) == (
+                k in _EQUIP_BOLT_SLOTS
+            )
+        if k in EQUIP_ARMOR:
+            return kind == ID_ARMOR and family_digit == k - EQUIP_ARMOR.start
+        if k in EQUIP_RINGS:
+            return kind == ID_RING and bare >= _COVENANT_ID_LIMIT
+        if k == EQUIP_COVENANT:
+            return kind == ID_RING and bare < _COVENANT_ID_LIMIT
+        return False
+
+    @staticmethod
+    def equip_placeholder_id(k: int) -> int | None:
+        """Inventory item id an empty hand (Fists) or armor slot (bare piece)
+        points at; None for slots that can hold nothing."""
+        if k in EQUIP_HANDS:
+            return FISTS_ID
+        if k in EQUIP_ARMOR:
+            return (ID_ARMOR << 28) | (
+                BARE_ARMOR_BASE + (k - EQUIP_ARMOR.start) * _ARMOR_PIECE_STEP
+            )
+        return None
+
+    def set_equip(self, k: int, entry: DS3InventoryEntry | None) -> None:
+        """Point equip slot k at a held common entry, writing its index, item
+        id and handle, or empty the slot (index and id 0xFFFFFFFF, handle 0).
+        Hand and armor slots are never empty in game: pass the Fists or bare
+        armor entry instead. Raises ValueError for an entry that is not a
+        held common item or does not fit the slot."""
+        if not 0 <= k < _EQUIP_SLOT_COUNT:
+            raise ValueError(f"Equip slot {k} out of range")
+        if entry is None:
+            index, item_id, handle = _EMPTY_ID, _EMPTY_ID, 0
+        else:
+            if entry.is_key or self.in_storage(entry) or not self.is_real_item(entry):
+                raise ValueError(f"Item {entry.item_id:#x} is not a held item")
+            if not self.equip_slot_accepts(k, entry.item_id):
+                raise ValueError(f"Item {entry.item_id:#x} does not fit equip slot {k}")
+            index = entry.index & _INDEX_POS_MASK
+            item_id = entry.item_id & _EQUIP_ID_MASK
+            handle = entry.handle
+        layout = self._get_layout()
+        base = layout.gaitem_end
+        _write_u32(self._data, base + _EQUIP_SLOTS_REL + 4 * k, index)
+        _write_u32(self._data, base + _EQUIP_IDS_REL + 4 * k, item_id)
+        _write_u32(self._data, base + _EQUIP_HANDLES_REL + 4 * k, handle)
+        _write_u32(
+            self._data,
+            layout.id_copy + 4 * k,
+            _EMPTY_ID if entry is None else entry.item_id,
+        )
+
+    # --- Quick items and attunement -------------------------------------- #
+
+    def _attune_off(self) -> int:
+        return self._get_layout().inv + _INVENTORY_BYTES
+
+    def _quick_off(self) -> int:
+        return self._attune_off() + ATTUNE_SLOTS * _ATTUNE_RECORD + 4
+
+    def quick_entry(self, k: int) -> DS3InventoryEntry | None:
+        """Held common entry in quick item slot k, None when empty."""
+        handle, index = struct.unpack_from(
+            "<II", self._data, self._quick_off() + k * _QUICK_RECORD
+        )
+        if handle == 0 or index == _EMPTY_ID:
+            return None
+        for entry in self.iter_inventory():
+            if (
+                not entry.is_key
+                and self.is_real_item(entry)
+                and entry.index & _INDEX_POS_MASK == index
+            ):
+                return entry
+        return None
+
+    def set_quick_item(self, k: int, entry: DS3InventoryEntry | None) -> None:
+        """Put a held common goods entry in quick item slot k (handle and
+        index position, plus its id in the second copy), or empty the slot.
+        Raises ValueError for an entry that is not a held common good."""
+        if not 0 <= k < QUICK_SLOTS:
+            raise ValueError(f"Quick item slot {k} out of range")
+        if entry is None:
+            handle, index, item_id = 0, _EMPTY_ID, _EMPTY_ID
+        else:
+            if (
+                entry.is_key
+                or self.in_storage(entry)
+                or not self.is_real_item(entry)
+                or id_kind(entry.item_id) != ID_GOOD
+            ):
+                raise ValueError(f"Item {entry.item_id:#x} is not a held good")
+            handle = entry.handle
+            index = entry.index & _INDEX_POS_MASK
+            item_id = entry.item_id
+        struct.pack_into(
+            "<II", self._data, self._quick_off() + k * _QUICK_RECORD, handle, index
+        )
+        _write_u32(
+            self._data, self._get_layout().id_copy + _COPY_QUICK_REL + 4 * k, item_id
+        )
+
+    def attuned_spells(self) -> list[int]:
+        """Spell ids (goods ids without the type nibble) of the attunement
+        records, in order."""
+        base = self._attune_off()
+        ids = []
+        for k in range(ATTUNE_SLOTS):
+            spell_id = _read_u32(self._data, base + k * _ATTUNE_RECORD)
+            if spell_id != _EMPTY_ID:
+                ids.append(spell_id)
+        return ids
+
+    def attune(self, spell_ids: list[int]) -> None:
+        """Replace the attunement records, packed from the first. The
+        selected record stays when it still holds a spell, else moves to the
+        first (or -1 with no spells). Raises ValueError for more than
+        ATTUNE_SLOTS spells."""
+        if len(spell_ids) > ATTUNE_SLOTS:
+            raise ValueError(f"At most {ATTUNE_SLOTS} spells can be attuned")
+        base = self._attune_off()
+        for k in range(ATTUNE_SLOTS):
+            record = (
+                (spell_ids[k] & _EQUIP_ID_MASK, _EMPTY_ID)
+                if k < len(spell_ids)
+                else (_EMPTY_ID, 0)
+            )
+            struct.pack_into("<II", self._data, base + k * _ATTUNE_RECORD, *record)
+        selected_off = base + ATTUNE_SLOTS * _ATTUNE_RECORD
+        selected = struct.unpack_from("<i", self._data, selected_off)[0]
+        if not spell_ids:
+            selected = -1
+        elif not 0 <= selected < len(spell_ids):
+            selected = 0
+        struct.pack_into("<i", self._data, selected_off, selected)
 
     # --- Counters and sort keys ------------------------------------------ #
 
