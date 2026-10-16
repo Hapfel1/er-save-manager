@@ -3,6 +3,108 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 2.3.0
+**Released:** October 16, 2026
+
+
+### ✨ New Features
+
+- ER: Decode remaining save structs, repair CSNetMan by chunk, sync load screen profiles ([a1f13ad](https://github.com/Hapfel1/er-save-manager/commit/a1f13adf1091706977724ac08e0247efa487f238))
+
+- ER: Last rested grace dropdowns, validate stats and playtime input ([0211006](https://github.com/Hapfel1/er-save-manager/commit/0211006ff0e39bb209677c57f8df84967851db6f))
+
+- ER: Parse KeyConfig control options, name NetMan message chunk, rewrite save format do ([ffaf8cb](https://github.com/Hapfel1/er-save-manager/commit/ffaf8cbf4fe4338bb65ad8931a365c3f7e04b56d))
+
+- ER: Time of day editor, recover bloodstain runes, detect wiped character slots ([aafd816](https://github.com/Hapfel1/er-save-manager/commit/aafd816666eb03125a32877816944c5fe6ba3b95))
+
+- ER: Report zeroed out saves, find wiped characters in Windows Previous Versions, link backup settings ([329f40a](https://github.com/Hapfel1/er-save-manager/commit/329f40ad3a7296aa1311c6f9cf319e1c64a0038a))
+
+- ER: World map with markers and graces, auto-refill toggles, item history ([97b5a7b](https://github.com/Hapfel1/er-save-manager/commit/97b5a7b7bf1320ab29440e7e6533c6c5e24a5dbc))
+
+- ER: Message manager for own and cached messages ([ab12b4d](https://github.com/Hapfel1/er-save-manager/commit/ab12b4d090fbf5515ee4183e50ef35e159344f85))
+
+- ER: Game selection ring on the world map ([e54d576](https://github.com/Hapfel1/er-save-manager/commit/e54d576e0b7a0a129b3d10a018c6c6f96acc3180))
+
+- DS3: Class tables for vanilla, Convergence and Cinders ([d9d33ea](https://github.com/Hapfel1/er-save-manager/commit/d9d33eaaac1997f644fc51c6caa7d3e59d2a0afa))
+
+- DS3: Appearance editor tab ([f422325](https://github.com/Hapfel1/er-save-manager/commit/f422325d8239684bc962ba4ce04e3eb3dbea11ef))
+
+- DS2: Patch the SteamID instead of the file swap workaround ([a07993a](https://github.com/Hapfel1/er-save-manager/commit/a07993ad29502225808cef47e08380531a49fa74))
+
+- DS2: Appearance tab ([ff4a18f](https://github.com/Hapfel1/er-save-manager/commit/ff4a18fdc86a0070f9ab37aeba2dd464094e68e0))
+
+- DSR: Appearance editor tab ([762b3ef](https://github.com/Hapfel1/er-save-manager/commit/762b3efa6246cd652a98d63009688eaee301d684))
+
+- General: Reject saves from another game on load ([72c4a6d](https://github.com/Hapfel1/er-save-manager/commit/72c4a6d8d28d5188cf96c8600ac17f823b3c4b00))
+
+- General: Virtual icon grids with an All category, themed lists and tables ([a904966](https://github.com/Hapfel1/er-save-manager/commit/a904966c1c00a106e34d64460bb85baa2abee022))
+
+- General: Copy saves to another extension (vanilla, Seamless, Convergence) ([b197972](https://github.com/Hapfel1/er-save-manager/commit/b1979726a9354e20244a9614710ebc12d9ccbf5e))
+
+- General: Equipment editor for DS3, DSR and DS2 with attunement ([1c1b176](https://github.com/Hapfel1/er-save-manager/commit/1c1b1769f56788517f54ead8daee95933cf68bb5))
+
+
+### 🔧 Bug Fixes
+
+- ER: Time of day fix, playtime editor, blessing and memory stone fields ([b798e7f](https://github.com/Hapfel1/er-save-manager/commit/b798e7ff3cf07da4d7d607bfa968ba7dea049564))
+
+- ER: Keep runes memory consistent with level and held runes ([4eea364](https://github.com/Hapfel1/er-save-manager/commit/4eea3648498aec2c07e795cb2ca0ab31bfa14ac9))
+
+- ER: Keep intact messages when repairing a damaged NetMan message chunk ([5e5119b](https://github.com/Hapfel1/er-save-manager/commit/5e5119beceb5b33e9efc90f47563d578093d2fa7))
+
+- ER: Drop NPC revive entries without a life block, add Ensha ([71ddf26](https://github.com/Hapfel1/er-save-manager/commit/71ddf2617a064e9e78d146396cea2bf435b941a0))
+
+- DS3: Use the storage box stack cap for stored items ([39d3be9](https://github.com/Hapfel1/er-save-manager/commit/39d3be982728ffdb7201eb03a5849015def2a10a))
+
+- DS3: Give stored items valid indices and repair old ones ([6aac2c9](https://github.com/Hapfel1/er-save-manager/commit/6aac2c93242b3fe796973b77bd15bda266c2f617))
+
+- DS2: Fall back to vanilla params when the save has none ([766cbc6](https://github.com/Hapfel1/er-save-manager/commit/766cbc6d894ebbcc95b6500fa238def1a03ac9dc))
+
+- DS2: NPC states from flag blocks and generator kill counts, last rested bonfire, attunement API ([87e898b](https://github.com/Hapfel1/er-save-manager/commit/87e898bc251800e5da6e0866c3227d43f362102b))
+
+- DSR: NG+, play time, HP, NPC revive, bosses, flag 0, covenants ([e0ffafb](https://github.com/Hapfel1/er-save-manager/commit/e0ffafb807f9d8ba07b2d2af73a011fabef60bef))
+
+- DSR: Delete characters correctly ([3a5393a](https://github.com/Hapfel1/er-save-manager/commit/3a5393aad4fcd593a6500fb56928e7ff461aea92))
+
+- General: Sync slot SteamID on PS <-> PC character moves ([11866ef](https://github.com/Hapfel1/er-save-manager/commit/11866efe3754dff97f93f82578509defce57d390))
+
+- General: Read to the end of the full PC file instead of stopping 16 bytes short ([c8aea70](https://github.com/Hapfel1/er-save-manager/commit/c8aea709622bb8ddf3c2dd418fcafea65db5ec3e))
+
+- General: Fit windows above the taskbar and stop double DPI scaling ([512eff1](https://github.com/Hapfel1/er-save-manager/commit/512eff150bdb800c4d2afc388e44e8aa3837c389))
+
+- General: Ignore Windows display scaling by default, style dialog title bars ([503fc3b](https://github.com/Hapfel1/er-save-manager/commit/503fc3b6f076f5e3c08184125930831732dc3ebd))
+
+- General: Show the strawberry in the unlock popup on Linux ([b9114e4](https://github.com/Hapfel1/er-save-manager/commit/b9114e43adfea0e1046b348af8c0ca7a16a2c5f5))
+
+- General: UI review pass (themes, narrow windows, leftovers) ([a32fc84](https://github.com/Hapfel1/er-save-manager/commit/a32fc84d9c82514c59e6f14ff80eeabd3c83edc7))
+
+
+### 🎨 User Interface
+
+- ER: Adjust Save Fixer Dialogue box size ([dd9dd71](https://github.com/Hapfel1/er-save-manager/commit/dd9dd71f769d02d233aec9082e85817a6f53bc1f))
+
+- ER: Reworked dialogs ([bc4018a](https://github.com/Hapfel1/er-save-manager/commit/bc4018a78b7cfd85fb31c698e23c7d6dbddcfdfc))
+
+- General: Dialog review batch 3 and wording pass ([473d717](https://github.com/Hapfel1/er-save-manager/commit/473d717cecd0a1462341db5d3b1431a8f0ed5ce5))
+
+
+### 📖 Documentation
+
+- General: Added KeyConfigSaveLoad description ([1620f16](https://github.com/Hapfel1/er-save-manager/commit/1620f16491633d8cf91a6c96f226766b19f925aa))
+
+- General: Update docs ([d8033f9](https://github.com/Hapfel1/er-save-manager/commit/d8033f9cebe211d04c8bf54819593716ccb56088))
+
+- General: Update docs ([1b7b7a0](https://github.com/Hapfel1/er-save-manager/commit/1b7b7a0a7e59a79b71440c0891fa80fb03e86ec5))
+
+- General: Correct save format details found while updating the 010 template ([22d76b3](https://github.com/Hapfel1/er-save-manager/commit/22d76b3dc93aa5aa171c0993840f870a225d3121))
+
+
+### 📦 Dependencies
+
+- General: Bump the github-actions group with 5 updates ([a8fbdb3](https://github.com/Hapfel1/er-save-manager/commit/a8fbdb3fe63c208dcad6a38fa8ed26c8fba4f724))
+
+
+---
 ## 📦 Release 2.2.0
 **Released:** October 09, 2026
 
@@ -1915,6 +2017,7 @@ implementation) ([19bee2c](https://github.com/Hapfel1/er-save-manager/commit/19b
 
 
 ---
+[2.3.0]: https://github.com/Hapfel1/er-save-manager/compare/v2.2.0..v2.3.0
 [2.2.0]: https://github.com/Hapfel1/er-save-manager/compare/v2.1.0..v2.2.0
 [2.1.0]: https://github.com/Hapfel1/er-save-manager/compare/v2.0.1..v2.1.0
 [2.0.1]: https://github.com/Hapfel1/er-save-manager/compare/v2.0.0..v2.0.1
