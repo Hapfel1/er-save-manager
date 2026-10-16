@@ -43,9 +43,15 @@ game on its next save, so removing an item never needs to shrink the table.
   +0x34 Vigor, Attunement, Endurance, Strength, Dexterity, Intelligence,
         Faith, Luck (u32 each), +0x5C Vitality, +0x60 level, +0x64 souls
   +0x78 name, UTF-16LE, 16 characters + terminator
+  +0x9A body type (u8, 1 male, 0 female)
   +0x9E starting class (u8, CharaInitParam row 3000 + class)
   +0x1F0 22 x u32 equip slots, each an inventory index or 0xFFFFFFFF
   +0x318 inventory
+
+Further into the player data section sits the appearance block: "FACE",
+u32 version 3, u32 block size 0xF4 (header included). Its offset varies
+with the data before it. Other players' faces in later sections carry the
+same header. Field layout: appearance.py.
 
 === INVENTORY (same layout for the storage box) ===
 
@@ -158,6 +164,9 @@ NAME_MAX_CHARS = _NAME_LEN // 2
 # u8 starting class, CharaInitParam row 3000 + class (3000-3009 vanilla,
 # more rows in Convergence and Cinders).
 _CLASS_REL = 0x9E
+_BODY_TYPE_REL = 0x9A
+_FACE_HEADER = b"FACE" + struct.pack("<I", 3)
+_FACE_SIZE_FIELD = 8
 _EQUIP_SLOTS_REL = 0x1F0
 _EQUIP_SLOT_COUNT = 22
 _INVENTORY_REL = 0x318
@@ -526,6 +535,40 @@ class DS3Slot:
     @starting_class.setter
     def starting_class(self, value: int) -> None:
         self._data[self._player(_CLASS_REL)] = value & 0xFF
+
+    @property
+    def body_type(self) -> int:
+        return self._data[self._player(_BODY_TYPE_REL)]
+
+    @body_type.setter
+    def body_type(self, value: int) -> None:
+        self._data[self._player(_BODY_TYPE_REL)] = value & 0xFF
+
+    def _face_span(self) -> tuple[int, int]:
+        """(offset, size) of the appearance block: the one FACE header between
+        the player block and the end of the player data section."""
+        start = self._player(0)
+        section_off, section_size = self._dir(_DIR_PLAYER_DATA)
+        end = section_off + section_size
+        off = self._data.find(_FACE_HEADER, start, end)
+        if off < 0 or self._data.find(_FACE_HEADER, off + 1, end) >= 0:
+            raise LayoutError("Appearance block not found in the player data")
+        size = _read_u32(self._data, off + _FACE_SIZE_FIELD)
+        if not len(_FACE_HEADER) + 4 <= size <= end - off:
+            raise LayoutError(f"Appearance block size {size:#x} out of range")
+        return off, size
+
+    @property
+    def face_block(self) -> bytes:
+        off, size = self._face_span()
+        return bytes(self._data[off : off + size])
+
+    @face_block.setter
+    def face_block(self, block: bytes) -> None:
+        off, size = self._face_span()
+        if len(block) != size or block[: len(_FACE_HEADER)] != _FACE_HEADER:
+            raise ValueError("Appearance block does not match the slot's layout")
+        self._data[off : off + size] = block
 
     def _u32_prop(rel: int):  # noqa: N805
         def getter(self) -> int:
