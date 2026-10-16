@@ -28,12 +28,15 @@ from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.progress_dialog import ProgressDialog
 from er_save_manager.ui.utils import (
     bind_mousewheel,
-    center_window,
     open_url,
     patch_combo_scroll,
     trace_variable,
 )
-from er_save_manager.ui.virtual_grid import GridEntry, VirtualIconGrid
+from er_save_manager.ui.virtual_grid import (
+    GridEntry,
+    VirtualIconGrid,
+    no_image_icon,
+)
 
 try:
     from PIL import Image
@@ -717,7 +720,7 @@ class EnhancedPresetBrowser:
                     img.thumbnail((150, 150))
             except Exception:
                 img = None
-            self._thumbs[preset_id] = img
+            self._thumbs[preset_id] = img or no_image_icon()
             # Tk is only touched from the main thread (_poll_thumbnails)
             self._thumb_done.put(preset_id)
 
@@ -739,7 +742,8 @@ class EnhancedPresetBrowser:
             return
 
         # The preview download may have brought a thumbnail the grid lacked
-        if self._thumbs.get(preset["id"]) is None:
+        thumb = self._thumbs.get(preset["id"])
+        if thumb is None or thumb is no_image_icon():
             self._thumbs.pop(preset["id"], None)
             self._thumb_jobs.discard(preset["id"])
             self.grid.refresh_icon(preset["id"])
@@ -1026,48 +1030,4 @@ class EnhancedPresetBrowser:
             "Report Submitted",
             "Your browser has opened to GitHub.\n\nClick 'Submit new issue' to complete the report.",
             parent=self.dialog,
-        )
-
-
-class PresetBrowserDialog:
-    """Backward compatibility wrapper."""
-
-    @staticmethod
-    def show_coming_soon(parent):
-        from er_save_manager.ui.utils import force_render_dialog
-
-        dialog = ctk.CTkToplevel(parent)
-        dialog.title("Community Character Presets")
-        center_window(dialog, 600, 480, parent=parent)
-        dialog.transient(parent)
-
-        # Force rendering on Linux before grab_set
-        force_render_dialog(dialog)
-        dialog.grab_set()
-
-        frame = ctk.CTkFrame(dialog)
-        frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=20)
-
-        ctk.CTkLabel(
-            frame, text="Community Character Presets", font=("Segoe UI", 16, "bold")
-        ).pack(pady=(0, 12))
-        ctk.CTkLabel(
-            frame,
-            text="Community Character Presets",
-            font=("Segoe UI", 16, "bold"),
-            text_color=("#f59e0b", "#fcd34d"),
-        ).pack(pady=6)
-
-        desc = (
-            "Share and download character appearance presets.\n\n"
-            "Features:\n"
-            "  • Browse community character designs\n"
-            "  • Preview with screenshots\n"
-            "  • Apply to any character slot (1-15)\n"
-            "  • Submit your own creations\n\n"
-            "Database hosted externally and auto-updates."
-        )
-        ctk.CTkLabel(frame, text=desc, justify=ctk.LEFT).pack(pady=8)
-        ctk.CTkButton(frame, text="Close", command=dialog.destroy, width=120).pack(
-            pady=8
         )

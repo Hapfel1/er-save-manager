@@ -11,11 +11,13 @@ import customtkinter as ctk
 from er_save_manager.data.grace_data import get_graces
 from er_save_manager.data.shop_stock import StockRow, bought, get_stock
 from er_save_manager.ui import dialog_style as ds
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import (
     center_window,
     force_render_dialog,
     patch_combo_scroll,
+    style_window_frame,
 )
 
 _ALL = "All"
@@ -73,6 +75,7 @@ class MerchantRestockDialog:
         parent.update_idletasks()
         center_window(dialog, width, height, parent=parent)
         dialog.resizable(True, True)
+        style_window_frame(dialog, dialog=False)
         force_render_dialog(dialog)
         dialog.grab_set()
 
@@ -159,9 +162,9 @@ class MerchantRestockDialog:
             tree.heading(col, text=title, command=lambda c=col: _sort(c))
             tree.column(col, width=col_width, anchor="w", stretch=stretch)
 
-        tree.tag_configure("sold_out", foreground="#e57373")
-        tree.tag_configure("bought", foreground="#ffb74d")
-        tree.tag_configure("in_stock", foreground="#4caf50")
+        tree.tag_configure("sold_out", foreground=palette.pick(palette.RED_TEXT))
+        tree.tag_configure("bought", foreground=palette.pick(palette.WARNING_TEXT))
+        tree.tag_configure("in_stock", foreground=palette.pick(palette.GREEN_TEXT))
 
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
         # Tracks current sort: col -> ascending bool

@@ -11,7 +11,6 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.backup.manager import BackupManager
-from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
@@ -340,20 +339,17 @@ class AppearanceTab:
 
     def select_preset(self, slot_idx, frame):
         """Handle preset selection"""
+        from er_save_manager.ui import dialog_style as ds
+
         self.selected_slot = slot_idx
 
-        mode = ctk.get_appearance_mode().lower()
-        selected_color = palette.pick(palette.PURPLE_TINT)
-        unselected_color = "#f5f5f5" if mode == "light" else "#2a2a3e"
-
         for i, f in enumerate(self.preset_frames):
-            if i == slot_idx:
-                f.configure(fg_color=selected_color)
-            else:
-                f.configure(fg_color=unselected_color)
+            ds.select_card_row(f, i == slot_idx)
 
     def load_presets(self):
         """Load character presets"""
+        from er_save_manager.ui import dialog_style as ds
+
         for widget in self.list_frame.winfo_children():
             widget.destroy()
         self.preset_frames = []
@@ -371,45 +367,28 @@ class AppearanceTab:
                 ).pack(pady=10)
                 return
 
-            mode = ctk.get_appearance_mode().lower()
-            unselected_color = "#f5f5f5" if mode == "light" else "#2a2a3e"
-
             for i in range(15):
-                frame = ctk.CTkFrame(
-                    self.list_frame, corner_radius=8, fg_color=unselected_color
-                )
-                frame.pack(fill=tk.X, pady=4, padx=4)
-                self.preset_frames.append(frame)
-
-                frame.bind(
-                    "<Button-1>", lambda e, idx=i, f=frame: self.select_preset(idx, f)
-                )
-
                 try:
                     preset = presets.presets[i]
                     if preset.is_empty():
-                        label_text = f"Preset {i + 1:2d}: Empty"
+                        detail = "Empty"
                     else:
                         body_type_value = (
                             preset.get_body_type()
                             if hasattr(preset, "get_body_type")
                             else 0
                         )
-                        body_type = "Type A" if body_type_value == 0 else "Type B"
-                        label_text = f"Preset {i + 1:2d}: {body_type}"
+                        detail = "Type A" if body_type_value == 0 else "Type B"
                 except Exception:
-                    label_text = f"Preset {i + 1:2d}: Error"
+                    detail = "Error"
 
-                label = ctk.CTkLabel(
-                    frame,
-                    text=label_text,
-                    font=("Consolas", 11),
-                    anchor="w",
+                frame = ds.card_row(
+                    self.list_frame,
+                    f"Preset {i + 1}",
+                    detail,
+                    on_click=lambda idx=i: self.select_preset(idx, None),
                 )
-                label.pack(fill=tk.X, padx=12, pady=8)
-                label.bind(
-                    "<Button-1>", lambda e, idx=i, f=frame: self.select_preset(idx, f)
-                )
+                self.preset_frames.append(frame)
 
         except Exception as e:
             ctk.CTkLabel(

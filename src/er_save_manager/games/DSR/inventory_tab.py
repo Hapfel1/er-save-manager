@@ -21,7 +21,6 @@ import customtkinter as ctk
 from er_save_manager.games.DS3.tabs.inventory import enable
 from er_save_manager.games.DSR import catalog
 from er_save_manager.ui import dialog_style as ds
-from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write, raise_existing_window
@@ -43,26 +42,6 @@ def _backup_and_save(dsr_save, save_path: Path, op: str) -> None:
 
     BackupManager(save_path).create_backup(operation=op, save=None)
     dsr_save.save_to_file(save_path)
-
-
-def _apply_treeview_style() -> None:
-    style = ttk.Style()
-    try:
-        style.theme_use("clam")
-    except Exception:
-        pass
-    style.configure(
-        "DSR.Treeview",
-        background="#2b2b2b",
-        foreground="white",
-        fieldbackground="#2b2b2b",
-        rowheight=22,
-        borderwidth=0,
-    )
-    style.configure("DSR.Treeview.Heading", background="#3b3b3b", foreground="white")
-    style.map(
-        "DSR.Treeview", background=[("selected", palette.pick(palette.PURPLE_SELECT))]
-    )
 
 
 def _summary(done: str, count: int, skipped: list[str], capped: int = 0) -> str:
@@ -120,7 +99,6 @@ class DSRInventoryTab:
     # --- Layout ------------------------------------------------------------ #
 
     def setup_ui(self) -> None:
-        _apply_treeview_style()
         outer = ctk.CTkFrame(self.parent, corner_radius=12)
         outer.pack(fill="both", expand=True, pady=(0, 10))
 
@@ -154,21 +132,22 @@ class DSRInventoryTab:
         left.grid_rowconfigure(2, weight=1)
         left.grid_columnconfigure(0, weight=1)
 
-        head = ctk.CTkFrame(left, fg_color="transparent")
+        # Wraps the picker button onto a second line when the column is narrow
+        head = ds.FlowRow(left, gap=12)
         head.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 4))
-        ctk.CTkLabel(head, text="Spawn items", font=("Segoe UI", 12, "bold")).pack(
-            side="left"
-        )
         self._show_cut = tk.BooleanVar(value=False)
-        ctk.CTkCheckBox(
-            head,
-            text="Cut content",
-            variable=self._show_cut,
-            command=self._refresh_spawn_tree,
-        ).pack(side="left", padx=(16, 0))
-        ctk.CTkButton(
-            head, text="Visual Picker", width=110, command=self._open_picker
-        ).pack(side="right")
+        head.add(
+            ctk.CTkLabel(head, text="Spawn items", font=("Segoe UI", 12, "bold")),
+            ctk.CTkCheckBox(
+                head,
+                text="Cut content",
+                variable=self._show_cut,
+                command=self._refresh_spawn_tree,
+            ),
+            ctk.CTkButton(
+                head, text="Visual Picker", width=110, command=self._open_picker
+            ),
+        )
 
         frow = ctk.CTkFrame(left, fg_color="transparent")
         frow.grid(row=1, column=0, sticky="ew", padx=8, pady=(0, 4))
@@ -290,29 +269,32 @@ class DSRInventoryTab:
         self._edit_qty_var = tk.StringVar(value="1")
         self._edit_upg_var = tk.StringVar(value="0")
         self._edit_inf_var = tk.StringVar(value="")
-        qty_row = ctk.CTkFrame(edits, fg_color="transparent")
+        # Quantity and upgrade groups go onto separate lines when narrow
+        qty_row = ds.FlowRow(edits, gap=12)
         qty_row.pack(fill="x", pady=2)
-        ctk.CTkLabel(qty_row, text="Qty:", width=60, anchor="w").pack(side="left")
+        qty_group = ctk.CTkFrame(qty_row, fg_color="transparent")
+        upg_group = ctk.CTkFrame(qty_row, fg_color="transparent")
+        ctk.CTkLabel(qty_group, text="Qty:", width=60, anchor="w").pack(side="left")
         self._edit_qty_entry = ctk.CTkEntry(
-            qty_row, textvariable=self._edit_qty_var, width=55
+            qty_group, textvariable=self._edit_qty_var, width=55
         )
         self._edit_qty_entry.pack(side="left", padx=(0, 6))
         self._set_qty_btn = ctk.CTkButton(
-            qty_row,
+            qty_group,
             text="Set Quantity",
             width=110,
             command=lambda: self._read_and(
                 self._edit_qty_var, "Quantity", self.set_quantity
             ),
         )
-        self._set_qty_btn.pack(side="left", padx=(0, 12))
-        ctk.CTkLabel(qty_row, text="Upgrade:").pack(side="left", padx=(0, 4))
+        self._set_qty_btn.pack(side="left")
+        ctk.CTkLabel(upg_group, text="Upgrade:").pack(side="left", padx=(0, 4))
         self._edit_upg_entry = ctk.CTkEntry(
-            qty_row, textvariable=self._edit_upg_var, width=45
+            upg_group, textvariable=self._edit_upg_var, width=45
         )
         self._edit_upg_entry.pack(side="left", padx=(0, 6))
         self._set_upg_btn = ctk.CTkButton(
-            qty_row,
+            upg_group,
             text="Set Upgrade",
             width=110,
             command=lambda: self._read_and(
@@ -320,6 +302,7 @@ class DSRInventoryTab:
             ),
         )
         self._set_upg_btn.pack(side="left")
+        qty_row.add(qty_group, upg_group)
 
         inf_row = ctk.CTkFrame(edits, fg_color="transparent")
         inf_row.pack(fill="x", pady=2)

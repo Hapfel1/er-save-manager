@@ -10,7 +10,12 @@ import customtkinter as ctk
 from er_save_manager.data.item_database import get_item_name
 from er_save_manager.editors.auto_refill import RefillEntry
 from er_save_manager.ui import dialog_style as ds
-from er_save_manager.ui.utils import center_window, force_render_dialog
+from er_save_manager.ui import palette
+from er_save_manager.ui.utils import (
+    center_window,
+    force_render_dialog,
+    style_window_frame,
+)
 
 _ON = "On"
 _OFF = "Off"
@@ -28,6 +33,7 @@ def show_auto_refill(
     dialog.transient(parent)
     center_window(dialog, 720, 640, parent=parent)
     dialog.resizable(True, True)
+    style_window_frame(dialog, dialog=False)
     force_render_dialog(dialog)
     dialog.grab_set()
 
@@ -92,8 +98,8 @@ def show_auto_refill(
     ):
         tree.heading(col, text=title)
         tree.column(col, width=width, anchor="w", stretch=stretch)
-    tree.tag_configure("on", foreground="#4caf50")
-    tree.tag_configure("off", foreground="#e57373")
+    tree.tag_configure("on", foreground=palette.pick(palette.GREEN_TEXT))
+    tree.tag_configure("off", foreground=palette.pick(palette.RED_TEXT))
 
     def default_text(e: RefillEntry) -> str:
         if e.default is None:

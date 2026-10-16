@@ -106,18 +106,20 @@ class DS2BonfirePanel:
         )
         self._last_rested_button.pack(side="right")
 
-        ctk.CTkLabel(
-            self.parent,
-            text=(
-                "Intensity is what Bonfire "
-                "Ascetics raise, plus 1 per NG+ cycle the game adds itself; it is "
-                "kept when lighting or unlighting. Set "
-                "Intensity also lights unlit bonfires. The last rested bonfire "
-                "stays lit; death and the Homeward Bone return the character there."
-            ),
-            text_color=("gray40", "gray60"),
-            font=("Segoe UI", 11),
-        ).pack(side="bottom", anchor="w", padx=10)
+        ds.wrap_to_width(
+            ctk.CTkLabel(
+                self.parent,
+                text=(
+                    "Intensity is what Bonfire "
+                    "Ascetics raise, plus 1 per NG+ cycle the game adds itself; it is "
+                    "kept when lighting or unlighting. Set "
+                    "Intensity also lights unlit bonfires. The last rested bonfire "
+                    "stays lit; death and the Homeward Bone return the character there."
+                ),
+                text_color=("gray40", "gray60"),
+                font=("Segoe UI", 11),
+            )
+        ).pack(side="bottom", fill="x", padx=10)
 
         box, self._tree = ds.themed_tree(
             self.parent,

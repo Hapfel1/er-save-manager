@@ -22,6 +22,7 @@ import customtkinter as ctk
 
 from er_save_manager.games.DS3.slot import GESTURE_COUNT
 from er_save_manager.games.DS3.tabs.style import make_tree
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import game_blocks_write
 
@@ -110,12 +111,15 @@ class DS3WorldStateTab:
         ctk.CTkButton(row, text="Apply", command=self._apply_ng, width=80).pack(
             side="left"
         )
-        ctk.CTkLabel(
-            row,
-            text="0 = NG, 1 = NG+. The playthrough flags scripts check are kept in step.",
-            font=("Segoe UI", 10),
-            text_color=_HINT,
-        ).pack(side="left", padx=14)
+        ds.wrap_to_width(
+            ctk.CTkLabel(
+                row,
+                text="0 = NG, 1 = NG+. The playthrough flags scripts check are kept "
+                "in step.",
+                font=("Segoe UI", 10),
+                text_color=_HINT,
+            )
+        ).pack(side="left", fill="x", expand=True, padx=14)
 
     def _panel(self, parent, column: int, title: str, hint: str) -> ctk.CTkFrame:
         panel = ctk.CTkFrame(parent, corner_radius=10)
@@ -125,22 +129,24 @@ class DS3WorldStateTab:
         ctk.CTkLabel(panel, text=title, font=("Segoe UI", 12, "bold")).pack(
             anchor="w", padx=10, pady=(10, 0)
         )
-        ctk.CTkLabel(
-            panel, text=hint, font=("Segoe UI", 10), text_color=_HINT, justify="left"
-        ).pack(anchor="w", padx=10, pady=(0, 6))
+        ds.wrap_to_width(
+            ctk.CTkLabel(panel, text=hint, font=("Segoe UI", 10), text_color=_HINT)
+        ).pack(fill="x", padx=10, pady=(0, 6))
         return panel
 
     def _actions(self, panel, buttons) -> ctk.CTkLabel:
         box = ctk.CTkFrame(panel, fg_color="transparent")
         # Packed before the list so a short window shrinks the list, not this.
         box.pack(side="bottom", fill="x", padx=10, pady=(0, 10))
-        row = ctk.CTkFrame(box, fg_color="transparent")
+        # Wraps onto more lines when the panel is too narrow for the buttons
+        row = ds.FlowRow(box, gap=4)
         row.pack(fill="x")
-        for col, (text, command) in enumerate(buttons):
-            row.grid_columnconfigure(col, weight=1, uniform="actions")
-            ctk.CTkButton(row, text=text, width=90, command=command).grid(
-                row=0, column=col, sticky="ew", padx=(0 if col == 0 else 3, 0)
+        row.add(
+            *(
+                ctk.CTkButton(row, text=text, width=90, command=command)
+                for text, command in buttons
             )
+        )
         status = ctk.CTkLabel(box, text="", font=("Segoe UI", 10), text_color=_HINT)
         status.pack(anchor="w")
         return status

@@ -16,7 +16,6 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
-from er_save_manager.games.DSR.npc_tab import _style as _apply_tree_style
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
@@ -108,7 +107,6 @@ class DSRWorldStateTab:
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=14, pady=(0, 6))
-        _apply_tree_style()
         tree_frame, self._bonfire_tree = ds.themed_tree(
             bonfire_card,
             columns=("name", "state"),

@@ -27,6 +27,9 @@ PURPLE_TINT = ("#D4C6EF", "#3B2F5C")
 # Text on PURPLE fills. The lavender theme uses light text in both modes,
 # which is faint on light purple, so light mode gets Mocha Base.
 ON_PURPLE = ("#1E1E2E", "#DCE4EE")
+# Disabled text on PURPLE fills: dark purple, contrast 3.0 (light) and 3.8
+# (dark). The theme's gray74 / gray60 sit at 1.3 and cannot be read.
+ON_PURPLE_DISABLED = ("#5E4E80", "#2E2448")
 
 # Catppuccin Blue for highlighted actions: Frappe in light mode (as light as
 # the lavender purple), Mocha in dark mode.
@@ -67,12 +70,14 @@ def apply_theme_overrides() -> None:
     before any widget is created.
 
     Widgets filled with the theme purple get ON_PURPLE text, so light mode
-    is no longer light text on light purple.
+    is no longer light text on light purple, and ON_PURPLE_DISABLED when
+    disabled.
     """
     theme = ctk.ThemeManager.theme
     for widget in ("CTkButton", "CTkSegmentedButton", "CTkOptionMenu"):
         if widget in theme:
             theme[widget]["text_color"] = list(ON_PURPLE)
+            theme[widget]["text_color_disabled"] = list(ON_PURPLE_DISABLED)
 
 
 def pick(pair: tuple[str, str]) -> str:

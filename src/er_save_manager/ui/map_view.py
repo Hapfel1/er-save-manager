@@ -33,7 +33,12 @@ from er_save_manager.editors.map_markers import (
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, center_window, patch_combo_scroll
+from er_save_manager.ui.utils import (
+    bind_mousewheel,
+    center_window,
+    patch_combo_scroll,
+    style_window_frame,
+)
 
 _MAP_ORDER = (MAP_LANDS_BETWEEN, MAP_UNDERGROUND, MAP_REALM_OF_SHADOW)
 _ZOOM_MAX = 2.0  # screen pixels per map unit
@@ -284,6 +289,7 @@ class MapWindow:
         self._win.protocol("WM_DELETE_WINDOW", self._close)
         self._size_to_main_window()
         self._win.minsize(900, 600)
+        style_window_frame(self._win, dialog=False)
 
         self._show_tiles = tk.BooleanVar(value=True)
         self._show_grid = tk.BooleanVar(value=False)
@@ -362,48 +368,56 @@ class MapWindow:
     def _build_ui(self):
         bar = ctk.CTkFrame(self._win, corner_radius=0)
         bar.pack(fill=tk.X, side=tk.TOP)
+        # Packed first, so a narrow window wraps the groups, not this
+        ds.button(bar, "Close", self._close, primary=False, width=80).pack(
+            side=tk.RIGHT, padx=10, pady=8
+        )
+        # Two groups that move onto separate lines when the window is narrow
+        flow = ds.FlowRow(bar, gap=8)
+        flow.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(10, 0), pady=8)
+        pick = ctk.CTkFrame(flow, fg_color="transparent")
+        toggles = ctk.CTkFrame(flow, fg_color="transparent")
 
-        ctk.CTkLabel(bar, text="Character", font=ds.SMALL).pack(
-            side=tk.LEFT, padx=(10, 4)
+        ctk.CTkLabel(pick, text="Character", font=ds.SMALL).pack(
+            side=tk.LEFT, padx=(0, 4)
         )
         self._char_combo = ctk.CTkComboBox(
-            bar,
+            pick,
             values=[""],
             width=200,
             state="readonly",
             command=self._on_character_chosen,
         )
-        self._char_combo.pack(side=tk.LEFT, pady=8)
+        self._char_combo.pack(side=tk.LEFT)
         patch_combo_scroll(self._char_combo)
 
         self._map_switch = ctk.CTkSegmentedButton(
-            bar,
+            pick,
             values=[MAP_NAMES[m] for m in _MAP_ORDER],
             command=self._on_map_switch,
             font=ds.FONT,
         )
         self._map_switch.set(MAP_NAMES[self._map_no])
-        self._map_switch.pack(side=tk.LEFT, padx=(14, 10), pady=8)
+        self._map_switch.pack(side=tk.LEFT, padx=(14, 4))
 
-        for text, var in (
-            ("Tiles", self._show_tiles),
-            ("Grid", self._show_grid),
-            ("Graces", self._show_graces),
-            ("Dungeons", self._show_dungeons),
-            ("Markers", self._show_markers),
+        for i, (text, var) in enumerate(
+            (
+                ("Tiles", self._show_tiles),
+                ("Grid", self._show_grid),
+                ("Graces", self._show_graces),
+                ("Dungeons", self._show_dungeons),
+                ("Markers", self._show_markers),
+            )
         ):
             ctk.CTkCheckBox(
-                bar,
+                toggles,
                 text=text,
                 variable=var,
                 command=self._schedule_render,
                 font=ds.SMALL,
                 width=20,
-            ).pack(side=tk.LEFT, padx=(6, 4))
-
-        ds.button(bar, "Close", self._close, primary=False, width=80).pack(
-            side=tk.RIGHT, padx=10, pady=8
-        )
+            ).pack(side=tk.LEFT, padx=(0 if i == 0 else 6, 4))
+        flow.add(pick, toggles)
 
         body = ctk.CTkFrame(self._win, fg_color="transparent")
         body.pack(fill=tk.BOTH, expand=True)

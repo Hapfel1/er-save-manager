@@ -183,7 +183,8 @@ class DS2InventoryPanel:
             orient=tk.HORIZONTAL,
             sashwidth=6,
             sashrelief=tk.FLAT,
-            bg="#2b2b2b",
+            # Sash in the color of the area around the panes
+            bg=self.frame._apply_appearance_mode(self.frame.cget("bg_color")),
             height=_MIN_PANE_HEIGHT,
         )
         pane.pack(fill="both", expand=True, padx=4, pady=4)

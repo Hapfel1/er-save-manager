@@ -835,7 +835,8 @@ class InventoryEditor:
             orient=tk.HORIZONTAL,
             sashwidth=6,
             sashrelief=tk.FLAT,
-            bg="#2b2b2b",
+            # Sash in the color of the area around the panes
+            bg=self.frame._apply_appearance_mode(self.frame.cget("bg_color")),
         )
         pane.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
@@ -1182,19 +1183,7 @@ class InventoryEditor:
         ctk.CTkLabel(search_row, text="Filter:", width=42).pack(side=ctk.LEFT)
         self._inv_search_var = ctk.StringVar()
         self._inv_search_var.trace_add("write", lambda *_: self._apply_inv_filter())
-        ctk.CTkEntry(
-            search_row,
-            textvariable=self._inv_search_var,
-            placeholder_text="Filter items...",
-            width=220,
-        ).pack(side=ctk.LEFT, padx=(0, 6))
-        ctk.CTkButton(
-            search_row,
-            text="Clear",
-            width=60,
-            height=28,
-            command=lambda: self._inv_search_var.set(""),
-        ).pack(side=ctk.LEFT)
+        # Buttons packed before the entry, so a narrow pane shrinks the entry
         ctk.CTkButton(
             search_row,
             text="Visual Inventory...",
@@ -1205,6 +1194,19 @@ class InventoryEditor:
             text_color=palette.ON_BLUE,
             command=self._open_visual_inventory,
         ).pack(side=ctk.RIGHT)
+        ctk.CTkButton(
+            search_row,
+            text="Clear",
+            width=60,
+            height=28,
+            command=lambda: self._inv_search_var.set(""),
+        ).pack(side=ctk.RIGHT, padx=(0, 6))
+        ctk.CTkEntry(
+            search_row,
+            textvariable=self._inv_search_var,
+            placeholder_text="Filter items...",
+            width=220,
+        ).pack(side=ctk.LEFT, fill=ctk.X, expand=True, padx=(0, 6))
 
         lb_frame, self.inventory_tree = ds.themed_tree(
             parent,
@@ -1223,52 +1225,25 @@ class InventoryEditor:
 
         # Packed before the table so a short window shrinks the table, not
         # the buttons.
-        actions = ctk.CTkFrame(parent, fg_color="transparent")
+        # Wraps onto a second line when the pane is too narrow for all buttons
+        actions = ds.FlowRow(parent)
         actions.pack(side=ctk.BOTTOM, fill=ctk.X, padx=10, pady=(0, 10))
         lb_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=(0, 6))
 
-        ctk.CTkButton(
-            actions,
-            text="Remove Selected",
-            command=self.remove_item,
-            width=125,
-        ).pack(side=ctk.LEFT, padx=(0, 6))
-        ctk.CTkButton(
-            actions,
-            text="Set Quantity",
-            command=self.set_quantity,
-            width=110,
-        ).pack(side=ctk.LEFT, padx=(0, 6))
-        ctk.CTkButton(
-            actions,
-            text="Set Upgrade",
-            command=self.set_upgrade,
-            width=100,
-        ).pack(side=ctk.LEFT, padx=(0, 6))
-        ctk.CTkButton(
-            actions,
-            text="Set Affinity",
-            command=self.set_affinity,
-            width=100,
-        ).pack(side=ctk.LEFT, padx=(0, 6))
-        ctk.CTkButton(
-            actions,
-            text="Set AoW",
-            command=self.set_aow,
-            width=80,
-        ).pack(side=ctk.LEFT, padx=(0, 6))
-        ctk.CTkButton(
-            actions,
-            text="Auto-refill...",
-            command=self.open_auto_refill,
-            width=100,
-        ).pack(side=ctk.LEFT, padx=(0, 6))
-        ctk.CTkButton(
-            actions,
-            text="Refresh",
-            command=self.refresh_inventory,
-            width=80,
-        ).pack(side=ctk.LEFT)
+        actions.add(
+            *(
+                ctk.CTkButton(actions, text=text, command=command, width=width)
+                for text, command, width in (
+                    ("Remove Selected", self.remove_item, 125),
+                    ("Set Quantity", self.set_quantity, 110),
+                    ("Set Upgrade", self.set_upgrade, 100),
+                    ("Set Affinity", self.set_affinity, 100),
+                    ("Set AoW", self.set_aow, 80),
+                    ("Auto-refill...", self.open_auto_refill, 100),
+                    ("Refresh", self.refresh_inventory, 80),
+                )
+            )
+        )
 
     def _add_inventory_to_loadout(self, on_done=None):
         """Add all currently visible inventory rows to the loadout."""
