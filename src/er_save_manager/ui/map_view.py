@@ -33,7 +33,12 @@ from er_save_manager.editors.map_markers import (
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, center_window, patch_combo_scroll
+from er_save_manager.ui.utils import (
+    bind_mousewheel,
+    center_window,
+    patch_combo_scroll,
+    style_window_frame,
+)
 
 _MAP_ORDER = (MAP_LANDS_BETWEEN, MAP_UNDERGROUND, MAP_REALM_OF_SHADOW)
 _ZOOM_MAX = 2.0  # screen pixels per map unit
@@ -51,7 +56,8 @@ _BACKGROUND_HEX = "#141416"
 
 _HOVER_COLOR = "#ffffff"
 _GRID_COLOR = "#d8d8c8"
-_SELECT_COLOR = "#ff4466"
+# Tile selection outline, in the hue of the select_ring sprite.
+_SELECT_COLOR = "#f0d890"
 _PLAYER_COLOR = "#00cfff"
 _MODE_SELECT = "Select"
 _MODE_MARKER = "Add Marker"
@@ -129,7 +135,7 @@ class _MapIcons:
     """The game's map icons as PhotoImages per size, cut from the
     resources/maps/icons.png atlas (maps.json "icons" gives each one's
     x, y, w, h): marker_01..10 for the icon numbers the save stores, beacon,
-    grace and dungeon_<WorldMapPointParam icon id>."""
+    grace, dungeon_<WorldMapPointParam icon id> and select_ring."""
 
     def __init__(self, maps_dir: Path, rects: dict[str, list[int]]):
         atlas = Image.open(maps_dir / "icons.png").convert("RGBA")
@@ -141,6 +147,7 @@ class _MapIcons:
         self._beacon = self._sprites["beacon"]
         self._grace = self._sprites["grace"]
         self._bloodstain = self._sprites["bloodstain"]
+        self._select_ring = self._sprites["select_ring"]
         self._photos: dict[tuple, ImageTk.PhotoImage] = {}
 
     @staticmethod
@@ -194,6 +201,16 @@ class _MapIcons:
         if key not in self._photos:
             img = self._fit(self._bloodstain, size)
             self._photos[key] = ImageTk.PhotoImage(self._dimmed(img) if empty else img)
+        return self._photos[key]
+
+    def select_ring(self, icon_size: int) -> ImageTk.PhotoImage:
+        """The game's map selection ring, sized so its rim (at 0.49 of the
+        sprite's half width) clears an icon of icon_size by 3 px."""
+        size = round((icon_size / 2 + 3) / 0.49 * 2)
+        key = ("r", size)
+        if key not in self._photos:
+            img = self._select_ring.resize((size, size), Image.LANCZOS)
+            self._photos[key] = ImageTk.PhotoImage(img)
         return self._photos[key]
 
     def ctk_sprite(self, name: str, size: int, dimmed: bool = False) -> ctk.CTkImage:
@@ -284,6 +301,7 @@ class MapWindow:
         self._win.protocol("WM_DELETE_WINDOW", self._close)
         self._size_to_main_window()
         self._win.minsize(900, 600)
+        style_window_frame(self._win, dialog=False)
 
         self._show_tiles = tk.BooleanVar(value=True)
         self._show_grid = tk.BooleanVar(value=False)
@@ -362,48 +380,56 @@ class MapWindow:
     def _build_ui(self):
         bar = ctk.CTkFrame(self._win, corner_radius=0)
         bar.pack(fill=tk.X, side=tk.TOP)
+        # Packed first, so a narrow window wraps the groups, not this
+        ds.button(bar, "Close", self._close, primary=False, width=80).pack(
+            side=tk.RIGHT, padx=10, pady=8
+        )
+        # Two groups that move onto separate lines when the window is narrow
+        flow = ds.FlowRow(bar, gap=8)
+        flow.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(10, 0), pady=8)
+        pick = ctk.CTkFrame(flow, fg_color="transparent")
+        toggles = ctk.CTkFrame(flow, fg_color="transparent")
 
-        ctk.CTkLabel(bar, text="Character", font=ds.SMALL).pack(
-            side=tk.LEFT, padx=(10, 4)
+        ctk.CTkLabel(pick, text="Character", font=ds.SMALL).pack(
+            side=tk.LEFT, padx=(0, 4)
         )
         self._char_combo = ctk.CTkComboBox(
-            bar,
+            pick,
             values=[""],
             width=200,
             state="readonly",
             command=self._on_character_chosen,
         )
-        self._char_combo.pack(side=tk.LEFT, pady=8)
+        self._char_combo.pack(side=tk.LEFT)
         patch_combo_scroll(self._char_combo)
 
         self._map_switch = ctk.CTkSegmentedButton(
-            bar,
+            pick,
             values=[MAP_NAMES[m] for m in _MAP_ORDER],
             command=self._on_map_switch,
             font=ds.FONT,
         )
         self._map_switch.set(MAP_NAMES[self._map_no])
-        self._map_switch.pack(side=tk.LEFT, padx=(14, 10), pady=8)
+        self._map_switch.pack(side=tk.LEFT, padx=(14, 4))
 
-        for text, var in (
-            ("Tiles", self._show_tiles),
-            ("Grid", self._show_grid),
-            ("Graces", self._show_graces),
-            ("Dungeons", self._show_dungeons),
-            ("Markers", self._show_markers),
+        for i, (text, var) in enumerate(
+            (
+                ("Tiles", self._show_tiles),
+                ("Grid", self._show_grid),
+                ("Graces", self._show_graces),
+                ("Dungeons", self._show_dungeons),
+                ("Markers", self._show_markers),
+            )
         ):
             ctk.CTkCheckBox(
-                bar,
+                toggles,
                 text=text,
                 variable=var,
                 command=self._schedule_render,
                 font=ds.SMALL,
                 width=20,
-            ).pack(side=tk.LEFT, padx=(6, 4))
-
-        ds.button(bar, "Close", self._close, primary=False, width=80).pack(
-            side=tk.RIGHT, padx=10, pady=8
-        )
+            ).pack(side=tk.LEFT, padx=(0 if i == 0 else 6, 4))
+        flow.add(pick, toggles)
 
         body = ctk.CTkFrame(self._win, fg_color="transparent")
         body.pack(fill=tk.BOTH, expand=True)
@@ -870,6 +896,9 @@ class MapWindow:
         self._draw_markers()
         c.addtag_all("overlay")
         c.dtag("maptile", "overlay")
+        # The ring's center is opaque: keep it under every icon.
+        c.tag_lower("select_ring")
+        c.tag_lower("maptile")
 
     def _view_image(self, w: int, h: int, vx: float, vy: float) -> Image.Image:
         """The map in a w x h screen box whose top-left is map point (vx, vy)."""
@@ -959,9 +988,13 @@ class MapWindow:
             if not (-m - 30 < sx < w + m + 30 and -m - 30 < sy < h + m + 30):
                 continue
             if p is sel:
-                r = (_GRACE_SIZE if grace else _DUNGEON_SIZE) / 2 + 4
-                c.create_oval(
-                    sx - r, sy - r, sx + r, sy + r, outline=_SELECT_COLOR, width=3
+                c.create_image(
+                    sx,
+                    sy,
+                    image=self._icons.select_ring(
+                        _GRACE_SIZE if grace else _DUNGEON_SIZE
+                    ),
+                    tags="select_ring",
                 )
             image = (
                 self._icons.grace(_GRACE_SIZE, self._grace_locked(p))
@@ -1082,16 +1115,14 @@ class MapWindow:
             sx, sy = self._to_screen(m.x, m.y)
             selected = m is self._selected_marker
             if m.kind == BEACON:
-                # The pillar's tip marks the position.
+                # The pillar's tip marks the position; the ring surrounds the
+                # whole pillar.
                 if selected:
-                    c.create_oval(
-                        sx - 8,
-                        sy - 4,
-                        sx + 8,
-                        sy + 4,
-                        outline="white",
-                        width=2,
-                        tags=tag,
+                    c.create_image(
+                        sx,
+                        sy - _BEACON_HEIGHT / 2,
+                        image=self._icons.select_ring(_BEACON_HEIGHT),
+                        tags=(tag, "select_ring"),
                     )
                 item = c.create_image(
                     sx,
@@ -1102,15 +1133,11 @@ class MapWindow:
                 )
             else:
                 if selected:
-                    r = _MARKER_SIZE / 2 + 3
-                    c.create_oval(
-                        sx - r,
-                        sy - r,
-                        sx + r,
-                        sy + r,
-                        outline="white",
-                        width=3,
-                        tags=tag,
+                    c.create_image(
+                        sx,
+                        sy,
+                        image=self._icons.select_ring(_MARKER_SIZE),
+                        tags=(tag, "select_ring"),
                     )
                 item = c.create_image(
                     sx, sy, image=self._icons.marker(m.icon, _MARKER_SIZE), tags=tag

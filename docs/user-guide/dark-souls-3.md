@@ -29,6 +29,15 @@ Lists all character slots for the loaded save. Selecting a slot and clicking Edi
 
 Edit the nine DS3 attributes, Souls, name and NG+ cycle. Level follows the attributes automatically (every DS3 class has level = attribute total - 89). Name and level changes are also written to the load screen's character list so it does not show stale values.
 
+### Appearance
+
+- **Body** - body type and the five Build Detail sliders (head, chest, abdomen, arms, legs).
+- **Face** - base template and every face slider of the character creation menu, with the menu's own names and captions, split into Shape and Skin. Picking a base template replaces the face sliders and the base skin color, as in the game.
+- **Hair, eyes and tattoo** - hair, brow, beard, eyelashes, each pupil and the tattoo/mark, picked from the game's own icons, each with its color. The tattoo/mark position, angle and size are below it.
+- **Copy and share** (top of the tab) - load the appearance of another character from the same save or from another DS3 save file (**From Another Save...**), or export and import it as a JSON file.
+
+Nothing is written until **Apply Changes**; **Revert** reloads the saved appearance. Applying also updates the copy of the appearance kept with the load-screen character list.
+
 ---
 
 ## Inventory

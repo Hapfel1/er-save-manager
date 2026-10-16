@@ -10,6 +10,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
@@ -99,8 +100,7 @@ class SteamIDPatcherTab:
         ctk.CTkLabel(
             current_frame,
             textvariable=self.current_steamid_var,
-            font=("Consolas", 11),
-            text_color=("#2a2a2a", "#e5e5f5"),
+            font=("Segoe UI", 12),
         ).pack(pady=(0, 12), padx=12, anchor="w")
 
         # Note / warning for selected game - hidden when empty
@@ -192,8 +192,7 @@ class SteamIDPatcherTab:
             patch_frame,
             text="How to Use / Help",
             command=self._show_help_dialog,
-            text_color=("#2a5f3f", "#a8d5ba"),
-            fg_color=("#d0f0e5", "#1a3a2a"),
+            fg_color=ds.SECONDARY,
             width=140,
         ).pack(pady=(0, 12), padx=12, anchor="w")
 

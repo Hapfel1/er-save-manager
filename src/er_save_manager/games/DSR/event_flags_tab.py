@@ -13,7 +13,6 @@ from __future__ import annotations
 import json
 import tkinter as tk
 from pathlib import Path
-from tkinter import ttk
 from typing import TYPE_CHECKING
 
 import customtkinter as ctk
@@ -53,24 +52,9 @@ def _backup_and_save(dsr_save, save_path: Path, op: str) -> None:
     dsr_save.save_to_file(save_path)
 
 
-def _apply_treeview_style() -> None:
-    style = ttk.Style()
-    try:
-        style.theme_use("clam")
-    except Exception:
-        pass
-    style.configure(
-        "Flags.Treeview",
-        background="#2b2b2b",
-        foreground="white",
-        fieldbackground="#2b2b2b",
-        rowheight=24,
-        borderwidth=0,
-    )
-    style.configure("Flags.Treeview.Heading", background="#3b3b3b", foreground="white")
-    style.map(
-        "Flags.Treeview", background=[("selected", palette.pick(palette.PURPLE_SELECT))]
-    )
+def _state_color(on: bool) -> tuple[str, str]:
+    """Badge text color: green for set flags and taught gestures, else muted."""
+    return ds.FOUND if on else ds.MUTED
 
 
 class DSREventFlagsTab:
@@ -125,7 +109,6 @@ class DSREventFlagsTab:
             ctk.CTkLabel(p, text=t, text_color=("gray50", "gray60")).pack(pady=40)
 
         self._build_lookup_ui()
-        _apply_treeview_style()
 
     def _on_tab_change(self) -> None:
         _, _, char = self._get_char()
@@ -257,6 +240,7 @@ class DSREventFlagsTab:
             ),
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
+            justify="left",
         ).pack(anchor="w", padx=12, pady=(8, 4))
 
         self._world_scroll = ctk.CTkScrollableFrame(
@@ -300,35 +284,31 @@ class DSREventFlagsTab:
 
     def _world_row(self, char, flag_id: int, name: str, note: str = "") -> None:
         value = char.get_flag(flag_id)
-        row = ctk.CTkFrame(
-            self._world_scroll, fg_color=("#f5f5f5", "#2a2a3e"), corner_radius=6
-        )
+        row = ctk.CTkFrame(self._world_scroll, fg_color=ds.ROW, corner_radius=6)
         row.pack(fill="x", padx=4, pady=2)
         row.grid_columnconfigure(2, weight=1)
 
         ctk.CTkLabel(
             row,
             text=f"{flag_id}",
-            font=("Consolas", 9),
-            text_color=("gray50", "gray60"),
+            font=ds.SMALL,
+            text_color=ds.MUTED,
             width=65,
         ).grid(row=0, column=0, padx=(8, 4), pady=(6, 0 if note else 6))
-        badge_color = ("#2a6e2a", "#1e7e1e") if value else ("#555", "#444")
         badge = ctk.CTkLabel(
             row,
             text="ON" if value else "OFF",
-            fg_color=badge_color,
-            corner_radius=4,
+            text_color=_state_color(value),
             width=35,
-            font=("Segoe UI", 8, "bold"),
+            font=ds.BOLD,
         )
         badge.grid(row=0, column=1, padx=(0, 6), pady=(6, 0 if note else 6))
         ctk.CTkLabel(
             row,
             text=name,
             anchor="w",
-            font=("Segoe UI", 10),
-            text_color=("#333333", "#cccccc"),
+            font=ds.FONT,
+            text_color=ds.ROW_TEXT,
         ).grid(row=0, column=2, sticky="w", padx=4, pady=(6, 0 if note else 6))
         ctk.CTkButton(
             row,
@@ -341,41 +321,37 @@ class DSREventFlagsTab:
                 row,
                 text=note,
                 anchor="w",
-                font=("Segoe UI", 8),
-                text_color=("gray50", "gray60"),
+                font=ds.SMALL,
+                text_color=ds.MUTED,
             ).grid(row=1, column=0, columnspan=3, sticky="w", padx=(8, 4), pady=(0, 4))
 
     def _gesture_row(self, char, entry: dict) -> None:
         fid = entry["id"]
         value = char.get_flag(fid)
-        badge_color = ("#555", "#444") if value else ("#2a6e2a", "#1e7e1e")
-        row = ctk.CTkFrame(
-            self._world_scroll, fg_color=("#f5f5f5", "#2a2a3e"), corner_radius=6
-        )
+        row = ctk.CTkFrame(self._world_scroll, fg_color=ds.ROW, corner_radius=6)
         row.pack(fill="x", padx=4, pady=2)
         row.grid_columnconfigure(2, weight=1)
         ctk.CTkLabel(
             row,
             text=f"{fid}",
-            font=("Consolas", 9),
-            text_color=("gray50", "gray60"),
+            font=ds.SMALL,
+            text_color=ds.MUTED,
             width=65,
         ).grid(row=0, column=0, padx=(8, 4), pady=6)
         badge = ctk.CTkLabel(
             row,
             text="AVAILABLE" if value else "TAUGHT",
-            fg_color=badge_color,
-            corner_radius=4,
+            text_color=_state_color(not value),
             width=70,
-            font=("Segoe UI", 8, "bold"),
+            font=ds.BOLD,
         )
         badge.grid(row=0, column=1, padx=(0, 6), pady=6)
         ctk.CTkLabel(
             row,
             text=f"{entry['name']}  ({entry['teacher']})",
             anchor="w",
-            font=("Segoe UI", 10),
-            text_color=("#333333", "#cccccc"),
+            font=ds.FONT,
+            text_color=ds.ROW_TEXT,
         ).grid(row=0, column=2, sticky="w", padx=4, pady=6)
         ctk.CTkButton(
             row,
@@ -399,7 +375,7 @@ class DSREventFlagsTab:
             )
             badge.configure(
                 text="ON" if new_val else "OFF",
-                fg_color=("#2a6e2a", "#1e7e1e") if new_val else ("#555", "#444"),
+                text_color=_state_color(new_val),
             )
             self._show_toast(f"{name.lstrip('* ')} -> {'ON' if new_val else 'OFF'}.")
         except Exception as exc:
@@ -420,7 +396,7 @@ class DSREventFlagsTab:
             )
             badge.configure(
                 text="AVAILABLE" if new_val else "TAUGHT",
-                fg_color=("#555", "#444") if new_val else ("#2a6e2a", "#1e7e1e"),
+                text_color=_state_color(not new_val),
             )
             self._show_toast(
                 f"{entry['name']} -> {'AVAILABLE' if new_val else 'TAUGHT'}."

@@ -55,16 +55,23 @@ _DATA_START = 0x14
 # Layout per entry (400 bytes), offsets relative to entry start:
 #   +0x28  34   Character name (UTF-16LE, mirrors OFF_NAME_PRIMARY)
 #   +0x4C   4   Level (u32 LE)
+#   +0x88  16   Hair color RGBA (mirrors OFF_HAIR_RGBA)
+#   +0x98  16   Eye color RGBA (mirrors OFF_EYE_RGBA)
+#   +0xA8 100   Face data (mirrors OFF_FACE_DATA)
 #   +0x14C 80   Item ids of the 20 equip slots (copy of the slot's id cache);
 #               runs 12 bytes past DIR_STRIDE into the next entry's range
-#   remaining bytes: portrait thumbnail, appearance color cache, and other
-#   load-screen display data not required for the character to load correctly.
+#   remaining bytes: other load-screen display data not required for the
+#   character to load correctly.
 #
 # Entry 0 starts at DIR_BASE; entries are contiguous, DIR_STRIDE apart.
 DIR_BASE = 172
 DIR_STRIDE = 400
 DIR_NAME_OFFSET = 0x28
 DIR_LEVEL_OFFSET = 0x4C
+DIR_HAIR_RGBA_OFFSET = 0x88
+DIR_EYE_RGBA_OFFSET = 0x98
+DIR_FACE_DATA_OFFSET = 0xA8
+DIR_HAIR_ITEM_OFFSET = 0x17C  # copy of the slot's equipped hair id
 DIR_EQUIP_OFFSET = 0x14C
 
 _DIR_EMPTY_TEMPLATE = bytes.fromhex(
@@ -159,6 +166,22 @@ def sync_dir_equipment(save: DSRSave, slot_index: int) -> None:
         _dir_entry_offset(slot_index) + DIR_EQUIP_OFFSET,
         *ids,
     )
+
+
+def _sync_dir_appearance(save: DSRSave, slot_index: int, char: DSRCharacter) -> None:
+    """Patch the hair color, eye color, face data and hair id of a slot's
+    directory entry from the character. An empty-template entry is left
+    alone."""
+    off = _dir_entry_offset(slot_index)
+    entry = bytearray(save.system_data[off : off + DIR_STRIDE])
+    if bytes(entry) == _DIR_EMPTY_TEMPLATE:
+        return
+    struct.pack_into("<4f", entry, DIR_HAIR_RGBA_OFFSET, *char.hair_rgba)
+    struct.pack_into("<4f", entry, DIR_EYE_RGBA_OFFSET, *char.eye_rgba)
+    face = char.face_data
+    entry[DIR_FACE_DATA_OFFSET : DIR_FACE_DATA_OFFSET + len(face)] = face
+    struct.pack_into("<I", entry, DIR_HAIR_ITEM_OFFSET, char.hair_item_id)
+    _write_dir_entry(save, slot_index, entry)
 
 
 def _check_bounds(slot_index: int) -> None:

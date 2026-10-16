@@ -18,10 +18,12 @@ from er_save_manager.data.item_database import (
 )
 from er_save_manager.data.legendary_items import trophy_progress
 from er_save_manager.ui import dialog_style as ds
+from er_save_manager.ui import palette
 from er_save_manager.ui.utils import (
     center_window,
     force_render_dialog,
     patch_combo_scroll,
+    style_window_frame,
 )
 
 _ALL = "All"
@@ -87,6 +89,7 @@ def show_item_history(parent, save, slot_idx: int):
     dialog.transient(parent)
     center_window(dialog, 960, 700, parent=parent)
     dialog.resizable(True, True)
+    style_window_frame(dialog, dialog=False)
     force_render_dialog(dialog)
     dialog.grab_set()
 
@@ -115,8 +118,8 @@ def _make_tree(parent, columns: dict[str, tuple[str, int, bool]]):
     for col, (title, width, stretch) in columns.items():
         tree.heading(col, text=title)
         tree.column(col, width=width, anchor="w", stretch=stretch)
-    tree.tag_configure("yes", foreground="#4caf50")
-    tree.tag_configure("no", foreground="#e57373")
+    tree.tag_configure("yes", foreground=palette.pick(palette.GREEN_TEXT))
+    tree.tag_configure("no", foreground=palette.pick(palette.RED_TEXT))
     return tree
 
 

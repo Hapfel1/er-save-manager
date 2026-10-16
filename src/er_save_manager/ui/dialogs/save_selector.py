@@ -4,8 +4,8 @@ from pathlib import Path
 
 import customtkinter as ctk
 
-from er_save_manager.ui import palette
-from er_save_manager.ui.utils import center_window
+from er_save_manager.ui import dialog_style as ds
+from er_save_manager.ui.utils import center_window, style_window_frame
 
 
 class SaveSelectorDialog:
@@ -42,6 +42,7 @@ class SaveSelectorDialog:
         dialog.update_idletasks()
         parent.update_idletasks()
         center_window(dialog, width, height, parent=parent)
+        style_window_frame(dialog, dialog=False)
 
         title = ctk.CTkLabel(
             dialog,
@@ -64,47 +65,34 @@ class SaveSelectorDialog:
 
         bind_mousewheel(list_frame)
 
-        row_widgets: list[tuple[str, ctk.CTkFrame, ctk.CTkLabel]] = []
+        row_widgets: list[tuple[str, ctk.CTkFrame]] = []
         show_folders_var = ctk.BooleanVar(value=True)
-
-        def row_text(save) -> str:
-            # The file name comes first so its extension stays visible when a
-            # long path is cut off at the right edge.
-            path = Path(save)
-            if not show_folders_var.get():
-                return path.name
-            return f"{path.name}  -  {path.parent}"
-
-        def toggle_folders() -> None:
-            for value, _row, label in row_widgets:
-                label.configure(text=row_text(value))
 
         def apply_selection(value: str):
             selection_var.set(value)
-            for val, row, label in row_widgets:
-                if val == value:
-                    row.configure(fg_color=palette.PURPLE_TINT)
-                    label.configure(text_color=("#1f1f28", "#f0f0f0"))
-                else:
-                    row.configure(fg_color=("#f5f5f5", "#2a2a3e"))
-                    label.configure(text_color=("#333333", "#cccccc"))
+            for val, row in row_widgets:
+                ds.select_card_row(row, val == value)
 
-        for save in saves:
-            row = ctk.CTkFrame(
-                list_frame, fg_color=("#f5f5f5", "#2a2a3e"), corner_radius=6
-            )
-            row.pack(fill="x", pady=4, padx=4)
+        def build_rows() -> None:
+            for _value, row in row_widgets:
+                row.destroy()
+            row_widgets.clear()
+            for save in saves:
+                # File name as the title, so its extension stays visible when
+                # a long folder path is cut off at the right edge
+                path = Path(save)
+                row = ds.card_row(
+                    list_frame,
+                    path.name,
+                    str(path.parent) if show_folders_var.get() else "",
+                    on_click=lambda v=str(save): apply_selection(v),
+                    font=ds.FONT,
+                )
+                row_widgets.append((str(save), row))
+            if selection_var.get():
+                apply_selection(selection_var.get())
 
-            label = ctk.CTkLabel(row, text=row_text(save), anchor="w", padx=8, pady=6)
-            label.pack(fill="x")
-
-            row.bind("<Button-1>", lambda e, v=str(save): apply_selection(v))
-            label.bind("<Button-1>", lambda e, v=str(save): apply_selection(v))
-
-            row_widgets.append((str(save), row, label))
-
-        if saves:
-            apply_selection(str(saves[0]))
+        build_rows()
 
         def select_save():
             value = selection_var.get()
@@ -120,7 +108,7 @@ class SaveSelectorDialog:
             button_frame,
             text="Show folders",
             variable=show_folders_var,
-            command=toggle_folders,
+            command=build_rows,
         ).pack(side="left", padx=15)
 
         if browse_callback:

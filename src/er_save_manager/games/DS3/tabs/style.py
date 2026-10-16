@@ -1,33 +1,8 @@
-"""Shared ttk styling for the DS3 tabs' list views."""
+"""Shared list view builder for the DS3 tabs."""
 
 from __future__ import annotations
 
-from tkinter import ttk
-
 from er_save_manager.ui import dialog_style as ds
-from er_save_manager.ui import palette
-
-TREE_STYLE = "DS3.Treeview"
-
-
-def apply_treeview_style() -> None:
-    style = ttk.Style()
-    try:
-        style.theme_use("clam")
-    except Exception:
-        pass
-    style.configure(
-        TREE_STYLE,
-        background="#2b2b2b",
-        foreground="white",
-        fieldbackground="#2b2b2b",
-        rowheight=22,
-        borderwidth=0,
-    )
-    style.configure(f"{TREE_STYLE}.Heading", background="#3b3b3b", foreground="white")
-    style.map(
-        TREE_STYLE, background=[("selected", palette.pick(palette.PURPLE_SELECT))]
-    )
 
 
 def make_tree(parent, columns: list[tuple[str, str, int, str]], height: int = 8):

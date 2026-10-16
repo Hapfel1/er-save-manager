@@ -4,6 +4,7 @@ import tkinter as tk
 
 import customtkinter as ctk
 
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 
 
@@ -39,16 +40,14 @@ class HexEditorTab:
         )
         info_text.pack(pady=5)
 
-        warning_frame = ctk.CTkFrame(
-            self.parent, corner_radius=8, fg_color=("#ffe6e6", "#4a2a2a")
-        )
+        warning_frame = ctk.CTkFrame(self.parent, corner_radius=8, fg_color=ds.BOX)
         warning_frame.pack(fill="x", padx=20, pady=5)
 
         ctk.CTkLabel(
             warning_frame,
             text="Warning: Direct hex editing can corrupt your save file. Use with caution.",
             font=("Segoe UI", 12, "bold"),
-            text_color=("#cc0000", "#ff8080"),
+            text_color=ds.WARNING,
         ).pack(padx=10, pady=8)
 
         control_frame = ctk.CTkFrame(self.parent, fg_color="transparent")
@@ -91,15 +90,16 @@ class HexEditorTab:
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
         # Hex text display (using tk.Text since CTk doesn't have native text widget)
-        hex_inner = ctk.CTkFrame(hex_frame)
+        hex_inner = ctk.CTkFrame(hex_frame, fg_color=ds.LIST_BG, corner_radius=8)
         hex_inner.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
         scrollbar = ctk.CTkScrollbar(hex_inner)
-        scrollbar.pack(side="right", fill="y")
+        scrollbar.pack(side="right", fill="y", padx=(0, 3), pady=6)
 
-        appearance = ctk.get_appearance_mode()
-        hex_bg = "#1f1f28" if appearance == "Dark" else "#f5f5f5"
-        hex_fg = "#e5e5f5" if appearance == "Dark" else "#1f1f28"
+        hex_bg = hex_inner._apply_appearance_mode(ds.LIST_BG)
+        hex_fg = hex_inner._apply_appearance_mode(
+            ctk.ThemeManager.theme["CTkLabel"]["text_color"]
+        )
 
         self.hex_text = tk.Text(
             hex_inner,
@@ -111,8 +111,11 @@ class HexEditorTab:
             bg=hex_bg,
             fg=hex_fg,
             insertbackground=hex_fg,
+            relief="flat",
+            borderwidth=0,
+            highlightthickness=0,
         )
-        self.hex_text.pack(side="left", fill="both", expand=True)
+        self.hex_text.pack(side="left", fill="both", expand=True, padx=(8, 0), pady=6)
         scrollbar.configure(command=self.hex_text.yview)
 
         self.hex_text.insert("1.0", "Load a save file to view hex data")

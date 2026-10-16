@@ -1,7 +1,7 @@
 """
 DS3 Character Editor tab.
 
-Sub-tabs: Stats | Identity | Equipment.
+Sub-tabs: Stats | Identity | Equipment | Appearance.
 """
 
 from __future__ import annotations
@@ -70,6 +70,7 @@ class DS3EditorTab:
         # no row for: the level then moves by the change in the sum.
         self._loaded_level = 0
         self._loaded_sum = 0
+        self._appearance = None
 
     def setup_ui(self) -> None:
         for _ in self.setup_steps():
@@ -123,10 +124,32 @@ class DS3EditorTab:
             tabs.add("Equipment"), self._apply_equipment, self._attunement.build
         )
         self._attunement.attach(self._equip_panel)
+        yield
+        from er_save_manager.games.DS3.tabs.appearance import DS3AppearanceTab
+
+        self._appearance = DS3AppearanceTab(
+            tabs.add("Appearance"),
+            self._get_save,
+            self._get_save_path,
+            lambda: self._current_slot,
+            self._show_toast,
+            _backup_and_save,
+            _game_blocks_write,
+        )
+        yield from self._appearance.setup_steps()
+        # A save or character may have been loaded while the tab was building.
+        self._appearance.refresh()
+        char = self._loaded_char()
+        if char is not None:
+            self._appearance.load_character(char)
 
     # --- Stats tab ----------------------------------------------------------- #
 
     def _build_stats_tab(self, parent) -> None:
+        # Below the scroll area, so it stays in view on short windows
+        ctk.CTkButton(
+            parent, text="Apply Changes", command=self._apply_stats, width=200
+        ).pack(side="bottom", pady=(6, 10))
         frame = ctk.CTkScrollableFrame(parent, fg_color="transparent")
         frame.pack(fill="both", expand=True)
         bind_mousewheel(frame)
@@ -217,13 +240,13 @@ class DS3EditorTab:
         )
         self._class_note.pack(anchor="w", padx=15)
 
-        ctk.CTkButton(
-            frame, text="Apply Changes", command=self._apply_stats, width=200
-        ).pack(pady=16)
-
     # --- Identity tab -------------------------------------------------------- #
 
     def _build_identity_tab(self, parent) -> None:
+        # Below the scroll area, so it stays in view on short windows
+        ctk.CTkButton(
+            parent, text="Apply Changes", command=self._apply_identity, width=200
+        ).pack(side="bottom", pady=(6, 10))
         frame = ctk.CTkScrollableFrame(parent, fg_color="transparent")
         frame.pack(fill="both", expand=True)
         bind_mousewheel(frame)
@@ -252,9 +275,6 @@ class DS3EditorTab:
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=15, pady=(4, 0))
-        ctk.CTkButton(
-            frame, text="Apply Changes", command=self._apply_identity, width=200
-        ).pack(pady=16)
 
     # --- Refresh ------------------------------------------------------------- #
 
@@ -272,6 +292,8 @@ class DS3EditorTab:
         # A new save: the loaded character belongs to the old one.
         self._current_slot = -1
         self._load_equipment()
+        if self._appearance is not None:
+            self._appearance.refresh()
 
     def load_slot(self, slot_idx: int) -> None:
         options = self._slot_combo.cget("values")
@@ -323,6 +345,8 @@ class DS3EditorTab:
         self._name_var.set(char.name)
         self._ng_var.set("0" if char.layout_error else str(char.ng_plus))
         self._show_loaded_class()
+        if self._appearance is not None:
+            self._appearance.load_character(char)
         self._load_equipment()
 
     # --- Equipment ----------------------------------------------------------- #

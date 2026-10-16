@@ -205,13 +205,9 @@ class WorldStateTab:
             font=("Segoe UI", 12, "bold"),
         ).pack(anchor="w", padx=10, pady=(10, 2))
         self.markers_var = tk.StringVar(value="N/A")
-        ctk.CTkLabel(
-            tools_frame,
-            textvariable=self.markers_var,
-            font=ds.FONT,
-            wraplength=280,
-            justify="left",
-        ).pack(anchor="w", padx=10, pady=(0, 6))
+        ds.wrap_to_width(
+            ctk.CTkLabel(tools_frame, textvariable=self.markers_var, font=ds.FONT)
+        ).pack(fill=tk.X, padx=10, pady=(0, 6))
         buttons = ctk.CTkFrame(tools_frame, fg_color="transparent")
         buttons.pack(fill=tk.X, padx=10, pady=(0, 10))
         buttons.grid_columnconfigure((0, 1), weight=1)
@@ -236,24 +232,16 @@ class WorldStateTab:
         map_frame.pack(fill=tk.X, padx=10, pady=5)
         ctk.CTkLabel(map_frame, text="Map:", font=ds.BOLD).pack(anchor="w")
         self.map_name_var = tk.StringVar(value="No character loaded")
-        ctk.CTkLabel(
-            map_frame,
-            textvariable=self.map_name_var,
-            font=ds.FONT,
-            wraplength=280,
-            justify="left",
+        ds.wrap_to_width(
+            ctk.CTkLabel(map_frame, textvariable=self.map_name_var, font=ds.FONT)
         ).pack(fill=tk.X, pady=(2, 10))
 
         coords_frame = ctk.CTkFrame(location_frame, fg_color="transparent")
         coords_frame.pack(fill=tk.X, padx=10, pady=5)
         ctk.CTkLabel(coords_frame, text="Coordinates:", font=ds.BOLD).pack(anchor="w")
         self.coords_var = tk.StringVar(value="N/A")
-        ctk.CTkLabel(
-            coords_frame,
-            textvariable=self.coords_var,
-            font=ds.FONT,
-            wraplength=280,
-            justify="left",
+        ds.wrap_to_width(
+            ctk.CTkLabel(coords_frame, textvariable=self.coords_var, font=ds.FONT)
         ).pack(fill=tk.X, pady=(2, 10))
 
         bloodstain_frame = ctk.CTkFrame(location_frame, fg_color="transparent")
@@ -262,12 +250,10 @@ class WorldStateTab:
             anchor="w"
         )
         self.bloodstain_var = tk.StringVar(value="N/A")
-        ctk.CTkLabel(
-            bloodstain_frame,
-            textvariable=self.bloodstain_var,
-            font=ds.FONT,
-            wraplength=280,
-            justify="left",
+        ds.wrap_to_width(
+            ctk.CTkLabel(
+                bloodstain_frame, textvariable=self.bloodstain_var, font=ds.FONT
+            )
         ).pack(fill=tk.X, pady=(2, 4))
         self.bloodstain_btn = ctk.CTkButton(
             bloodstain_frame,
@@ -296,6 +282,22 @@ class WorldStateTab:
         # Right column: teleportation
         right_frame = ctk.CTkFrame(main_container, corner_radius=12)
         right_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
+
+        def place_columns(event) -> None:
+            # Side by side needs both column minimums (300 + 500) plus the
+            # paddings; narrower, the teleport column moves below
+            stacked = event.width < round(840 * main_container._get_widget_scaling())
+            if stacked == (int(right_frame.grid_info()["row"]) == 1):
+                return
+            main_container.grid_columnconfigure(1, minsize=0 if stacked else 500)
+            left_frame.grid_configure(columnspan=2 if stacked else 1)
+            right_frame.grid_configure(
+                row=1 if stacked else 0,
+                column=0 if stacked else 1,
+                columnspan=2 if stacked else 1,
+            )
+
+        main_container.bind("<Configure>", place_columns, add="+")
 
         ctk.CTkLabel(
             right_frame, text="Teleportation", font=("Segoe UI", 12, "bold")

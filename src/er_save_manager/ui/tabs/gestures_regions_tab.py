@@ -163,8 +163,10 @@ class GesturesRegionsTab:
             font=("Segoe UI", 12, "bold"),
         ).pack(pady=(12, 8), padx=12, anchor="w")
 
+        from er_save_manager.ui import dialog_style as ds
+
         self.gestures_inner_frame = ctk.CTkScrollableFrame(
-            gestures_frame, corner_radius=8, fg_color=("#f5f5f5", "#2a2a3e")
+            gestures_frame, corner_radius=8, fg_color=ds.LIST_BG
         )
         self.gestures_inner_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 12))
         bind_mousewheel(self.gestures_inner_frame)

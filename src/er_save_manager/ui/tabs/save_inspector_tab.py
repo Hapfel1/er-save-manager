@@ -8,7 +8,7 @@ import tkinter as tk
 import customtkinter as ctk
 
 from er_save_manager.fixes.wiped_slot import is_wiped_slot
-from er_save_manager.ui import palette
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 from er_save_manager.ui.version_mismatch_dialog import VersionMismatchDialog
@@ -123,13 +123,8 @@ class SaveInspectorTab:
             def select_slot(slot_index: int):
                 self.selected_slot = slot_index
                 self.selection_var.set(str(slot_index))
-                for val, frame, label in self.rows:
-                    if val == slot_index:
-                        frame.configure(fg_color=palette.PURPLE_TINT)
-                        label.configure(text_color=("#1f1f28", "#f0f0f0"))
-                    else:
-                        frame.configure(fg_color=("#f5f5f5", "#2a2a3e"))
-                        label.configure(text_color=("#333333", "#cccccc"))
+                for val, frame in self.rows:
+                    ds.select_card_row(frame, val == slot_index)
 
                 if self.on_slot_selected:
                     self.on_slot_selected(slot_index)
@@ -158,31 +153,18 @@ class SaveInspectorTab:
                     except Exception:
                         pass
 
-                    display_text = f"Slot {slot_idx + 1:2d} | {name:16s} | Lv.{level:>3s} | Map: {map_str}"
-                    if is_wiped_slot(save_file, slot_idx):
-                        display_text = f"Slot {slot_idx + 1:2d} | {name:16s} | Lv.{level:>3s} | DATA WIPED"
-
-                    row = ctk.CTkFrame(
+                    where = (
+                        "Data wiped"
+                        if is_wiped_slot(save_file, slot_idx)
+                        else f"Map {map_str}"
+                    )
+                    row = ds.card_row(
                         self.list_frame,
-                        fg_color=("#f5f5f5", "#2a2a3e"),
-                        corner_radius=6,
+                        name,
+                        f"Slot {slot_idx + 1}  ·  Level {level}  ·  {where}",
+                        on_click=lambda v=slot_idx: select_slot(v),
                     )
-                    row.pack(fill="x", padx=4, pady=4)
-
-                    label = ctk.CTkLabel(
-                        row,
-                        text=display_text,
-                        anchor="w",
-                        padx=8,
-                        pady=8,
-                        font=("Courier", 13),
-                    )
-                    label.pack(fill="x")
-
-                    row.bind("<Button-1>", lambda e, v=slot_idx: select_slot(v))
-                    label.bind("<Button-1>", lambda e, v=slot_idx: select_slot(v))
-
-                    self.rows.append((slot_idx, row, label))
+                    self.rows.append((slot_idx, row))
 
                 except Exception as e:
                     error_row = ctk.CTkLabel(

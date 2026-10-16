@@ -28,6 +28,35 @@ _SHIFT = 0x0001
 _CONTROL = 0x0004
 # Loaded icons kept for cells that scroll back into view.
 _IMAGE_CACHE = 600
+_NO_IMAGE: Image.Image | None = None
+
+
+def no_image_icon() -> Image.Image:
+    """Square "No image" tile for entries without a picture.
+
+    Transparent with mid-gray text, so it reads on the cell color of both
+    themes. The grid scales it to the icon size like any other icon.
+    """
+    global _NO_IMAGE
+    if _NO_IMAGE is None:
+        from PIL import ImageDraw, ImageFont
+
+        size = 150
+        img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        draw.rounded_rectangle(
+            (8, 8, size - 9, size - 9), radius=10, outline=(128, 128, 128, 255), width=2
+        )
+        font = ImageFont.load_default(size=20)
+        draw.text(
+            (size / 2, size / 2),
+            "No image",
+            fill=(128, 128, 128, 255),
+            font=font,
+            anchor="mm",
+        )
+        _NO_IMAGE = img
+    return _NO_IMAGE
 
 
 class GridEntry(NamedTuple):

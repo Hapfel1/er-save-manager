@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import tkinter as tk
-import tkinter.ttk as ttk
 from pathlib import Path
 
 import customtkinter as ctk
@@ -12,7 +11,12 @@ from er_save_manager.backup.manager import BackupManager
 from er_save_manager.editors.blood_messages import BloodMessage, BloodMessageEditor
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import center_window, force_render_dialog
+from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
+from er_save_manager.ui.utils import (
+    center_window,
+    force_render_dialog,
+    style_window_frame,
+)
 
 _OWN = "My Messages"
 _CACHED = "Cached Messages"
@@ -43,6 +47,7 @@ class MessageManagerDialog:
         self.dialog.transient(parent)
         center_window(self.dialog, 1000, 600, parent=parent)
         self.dialog.resizable(True, True)
+        style_window_frame(self.dialog, dialog=False)
         force_render_dialog(self.dialog)
         self.dialog.grab_set()
         self._build()
@@ -71,15 +76,10 @@ class MessageManagerDialog:
         )
         self.info_label.pack(fill=tk.X, pady=(0, 6))
 
-        tree_frame = tk.Frame(body)
-        tree_frame.pack(fill=tk.BOTH, expand=True)
-        self.tree = ttk.Treeview(tree_frame, show="headings", selectmode="extended")
-        scrollbar = ttk.Scrollbar(
-            tree_frame, orient="vertical", command=self.tree.yview
+        tree_frame, self.tree = ds.themed_tree(
+            body, show="headings", selectmode="extended"
         )
-        self.tree.configure(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        add_tooltip(self.tree, MULTI_SELECT_TIP)
         self.tree.bind("<<TreeviewSelect>>", lambda _e: self._update_buttons())
 
         _, buttons = ds.button_row(
@@ -100,6 +100,8 @@ class MessageManagerDialog:
             ],
         )
         self.edit_buttons = buttons[:3]
+        # After the button row, so a short window shrinks the list, not the buttons
+        tree_frame.pack(fill=tk.BOTH, expand=True)
 
     def _columns(self, own: bool) -> dict[str, tuple[str, int, bool]]:
         cols = {

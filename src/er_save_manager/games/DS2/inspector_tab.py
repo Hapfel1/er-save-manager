@@ -7,7 +7,7 @@ from __future__ import annotations
 import customtkinter as ctk
 
 from er_save_manager.games.DS2.save import CHARACTER_SELECT_ENTRY, DS2Save, SlotState
-from er_save_manager.ui import palette
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
@@ -27,7 +27,7 @@ class DS2InspectorTab:
         self.on_slot_selected = on_slot_selected
 
         self.selected_slot: int | None = None
-        self.rows: list[tuple[int, ctk.CTkFrame, ctk.CTkLabel]] = []
+        self.rows: list[tuple[int, ctk.CTkFrame]] = []
 
     def setup_ui(self) -> None:
         char_frame = ctk.CTkFrame(self.parent, corner_radius=12)
@@ -77,13 +77,8 @@ class DS2InspectorTab:
 
         def select_slot(slot_index: int):
             self.selected_slot = slot_index
-            for val, frame, label in self.rows:
-                if val == slot_index:
-                    frame.configure(fg_color=palette.PURPLE_TINT)
-                    label.configure(text_color=("#1f1f28", "#f0f0f0"))
-                else:
-                    frame.configure(fg_color=("#f5f5f5", "#2a2a3e"))
-                    label.configure(text_color=("#333333", "#cccccc"))
+            for val, frame in self.rows:
+                ds.select_card_row(frame, val == slot_index)
 
         for i, character in enumerate(save.characters):
             if save.slot_state(i) is SlotState.NEVER_CREATED:
@@ -94,27 +89,15 @@ class DS2InspectorTab:
             status = "Ready"
             check = self._check_slot(i, name, select_data)
 
-            display_text = (
-                f"Slot {i} | {display_name:24s} | Lv.{character.get_stat('level'):>3d} "
-                f"| Souls: {character.souls:<10d} | {status:24s} | {check}"
+            row = ds.card_row(
+                self.list_frame,
+                display_name,
+                f"Slot {i}  ·  Level {character.get_stat('level')}  ·  "
+                f"Souls {character.souls:,}  ·  {status}  ·  {check}",
+                on_click=lambda v=i: select_slot(v),
+                on_double=lambda v=i: self._edit_slot(v),
             )
-
-            row = ctk.CTkFrame(
-                self.list_frame, fg_color=("#f5f5f5", "#2a2a3e"), corner_radius=6
-            )
-            row.pack(fill="x", padx=4, pady=4)
-
-            label = ctk.CTkLabel(
-                row, text=display_text, anchor="w", padx=8, pady=8, font=("Courier", 13)
-            )
-            label.pack(fill="x")
-
-            row.bind("<Button-1>", lambda e, v=i: select_slot(v))
-            label.bind("<Button-1>", lambda e, v=i: select_slot(v))
-            row.bind("<Double-Button-1>", lambda e, v=i: self._edit_slot(v))
-            label.bind("<Double-Button-1>", lambda e, v=i: self._edit_slot(v))
-
-            self.rows.append((i, row, label))
+            self.rows.append((i, row))
 
         if self.rows:
             select_slot(self.rows[0][0])

@@ -17,7 +17,11 @@ from er_save_manager.fixes.wiped_slot import (
 )
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import center_window, force_render_dialog
+from er_save_manager.ui.utils import (
+    center_window,
+    force_render_dialog,
+    style_window_frame,
+)
 
 _WARNING = palette.WARNING_TEXT
 _FOUND = palette.GREEN_TEXT
@@ -216,6 +220,7 @@ def show_wiped_slot_dialog(
 
     dialog.update_idletasks()
     center_window(dialog, parent=parent)
+    style_window_frame(dialog)
     force_render_dialog(dialog)
     dialog.attributes("-alpha", 1)
     dialog.grab_set()

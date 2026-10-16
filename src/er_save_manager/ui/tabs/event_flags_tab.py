@@ -201,12 +201,11 @@ class EventFlagsTab:
             text_color=("gray50", "gray70"),
         ).pack(pady=(0, 12), padx=15, anchor="w")
 
-        slot_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        # Rows wrap onto more lines when the window is too narrow for them
+        slot_frame = ds.FlowRow(main_frame)
         slot_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
-        ctk.CTkLabel(slot_frame, text="Character slot:", font=("Segoe UI", 11)).pack(
-            side=tk.LEFT, padx=(0, 8)
-        )
+        ctk.CTkLabel(slot_frame, text="Character slot:", font=("Segoe UI", 11))
 
         self.eventflag_slot_var = tk.IntVar(value=1)
         slot_names = self._get_slot_display_names()
@@ -218,52 +217,53 @@ class EventFlagsTab:
             command=lambda v: self.eventflag_slot_var.set(int(v.split(" - ")[0])),
         )
         self.event_flag_slot_combo.set(slot_names[0])
-        self.event_flag_slot_combo.pack(side=tk.LEFT, padx=(0, 12))
 
         ctk.CTkButton(
             slot_frame,
             text="Load Flags",
             command=self.load_event_flags,
             width=130,
-        ).pack(side=tk.LEFT, padx=(0, 6))
+        )
 
         ctk.CTkButton(
             slot_frame,
             text="Advanced...",
             command=self.open_advanced_editor,
             width=110,
-        ).pack(side=tk.LEFT, padx=(0, 6))
+        )
 
         ctk.CTkButton(
             slot_frame,
             text="Apply Changes",
             command=self.apply_changes,
             width=130,
-        ).pack(side=tk.LEFT, padx=(0, 6))
+        )
 
         ctk.CTkButton(
             slot_frame,
             text="Unlock All in Category",
             command=self.unlock_all_in_category,
             width=160,
-        ).pack(side=tk.LEFT, padx=(0, 6))
+        )
 
         ctk.CTkButton(
             slot_frame,
             text="Export Flags...",
             command=self.export_flags,
             width=120,
-        ).pack(side=tk.LEFT, padx=(0, 6))
+        )
 
         ctk.CTkButton(
             slot_frame,
             text="Import Flags...",
             command=self.import_flags,
             width=120,
-        ).pack(side=tk.LEFT)
+        )
+
+        slot_frame.add(*slot_frame.winfo_children())
 
         # Row 2: secondary tools
-        tools_row = ctk.CTkFrame(main_frame, fg_color="transparent")
+        tools_row = ds.FlowRow(main_frame)
         tools_row.pack(fill=tk.X, padx=15, pady=(6, 6))
 
         ctk.CTkButton(
@@ -271,42 +271,43 @@ class EventFlagsTab:
             text="Boss Respawn...",
             command=self.open_boss_respawn,
             width=140,
-        ).pack(side=tk.LEFT, padx=(0, 6))
+        )
 
         ctk.CTkButton(
             tools_row,
             text="Boss Status...",
             command=self.open_boss_status,
             width=130,
-        ).pack(side=tk.LEFT, padx=(0, 6))
+        )
 
         ctk.CTkButton(
             tools_row,
             text="NPC Revival...",
             command=self.open_npc_revival,
             width=130,
-        ).pack(side=tk.LEFT, padx=(0, 6))
+        )
 
         ctk.CTkButton(
             tools_row,
             text="Quest Progress...",
             command=self.open_quest_progress,
             width=145,
-        ).pack(side=tk.LEFT, padx=(0, 6))
+        )
 
         ctk.CTkButton(
             tools_row,
             text="Summoning Pools...",
             command=self.open_summoning_pools,
             width=155,
-        ).pack(side=tk.LEFT, padx=(0, 6))
+        )
 
         ctk.CTkButton(
             tools_row,
             text="Sites of Grace...",
             command=self.open_grace_dialog,
             width=140,
-        ).pack(side=tk.LEFT, padx=(0, 6))
+        )
+        tools_row.add(*tools_row.winfo_children())
 
         # Row 3: item and merchant checklists
         items_row = ctk.CTkFrame(main_frame, fg_color="transparent")
@@ -436,7 +437,7 @@ class EventFlagsTab:
         self.flags_tree.column("flag_id", width=110, anchor="w", stretch=False)
         self.flags_tree.column("name", width=420, anchor="w")
         self.flags_tree.column("location", width=260, anchor="w")
-        self.flags_tree.tag_configure("on", foreground="#4caf50")
+        self.flags_tree.tag_configure("on", foreground=palette.pick(palette.GREEN_TEXT))
         self.flags_tree.bind("<Button-1>", self._on_tree_click)
         self.flags_tree.bind("<space>", self._toggle_selected)
 

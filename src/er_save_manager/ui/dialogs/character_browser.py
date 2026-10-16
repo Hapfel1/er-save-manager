@@ -30,7 +30,11 @@ from er_save_manager.ui.utils import (
     open_url,
     trace_variable,
 )
-from er_save_manager.ui.virtual_grid import GridEntry, VirtualIconGrid
+from er_save_manager.ui.virtual_grid import (
+    GridEntry,
+    VirtualIconGrid,
+    no_image_icon,
+)
 
 try:
     from PIL import Image
@@ -820,7 +824,8 @@ class CharacterBrowser:
             thumbnail_url = character.get("thumbnail_url")
             face_url = None
         if not thumbnail_url and not face_url:
-            self._thumbs[char_id] = None
+            self._thumbs[char_id] = no_image_icon()
+            self._thumb_done.put(char_id)
             return
 
         def _download_and_set():
@@ -836,7 +841,7 @@ class CharacterBrowser:
                     img.load()
             except Exception:
                 img = None
-            self._thumbs[char_id] = img
+            self._thumbs[char_id] = img or no_image_icon()
             # Tk is only touched from the main thread (_poll_thumbnails)
             self._thumb_done.put(char_id)
 
