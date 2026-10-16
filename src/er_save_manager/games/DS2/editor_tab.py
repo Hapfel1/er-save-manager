@@ -79,6 +79,7 @@ class DS2EditorTab:
         self.bonfire_panel: DS2BonfirePanel | None = None
         self.npc_panel: DS2NpcPanel | None = None
         self.boss_panel: DS2BossPanel | None = None
+        self.appearance_panel = None
 
         self._baseline_stats: dict[str, int] = {}
         self._baseline_level: int = 0
@@ -132,6 +133,7 @@ class DS2EditorTab:
         self.tabview.add("Bonfires")
         self.tabview.add("NPCs")
         self.tabview.add("Bosses")
+        self.tabview.add("Appearance")
 
         self._build_stats_tab(self.tabview.tab("Stats"))
 
@@ -174,6 +176,20 @@ class DS2EditorTab:
             show_toast=self.show_toast,
         )
         self.boss_panel.setup_ui()
+
+        yield
+        from er_save_manager.games.DS2.appearance_tab import DS2AppearanceTab
+
+        self.appearance_panel = DS2AppearanceTab(
+            self.tabview.tab("Appearance"),
+            get_save=self.get_save,
+            get_save_path=self.get_save_path,
+            get_slot=lambda: self._slot_index,
+            show_toast=self.show_toast,
+            blocks_write=_game_blocks_write,
+            backup=self._backup,
+        )
+        self.appearance_panel.setup_ui()
 
         yield
         self.refresh()
@@ -499,6 +515,8 @@ class DS2EditorTab:
             self.npc_panel.refresh()
         if self.boss_panel is not None:
             self.boss_panel.refresh()
+        if self.appearance_panel is not None:
+            self.appearance_panel.refresh()
 
     @staticmethod
     def _class_display(class_id: int) -> str:
