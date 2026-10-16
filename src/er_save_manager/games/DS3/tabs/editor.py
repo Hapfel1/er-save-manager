@@ -1,7 +1,7 @@
 """
 DS3 Character Editor tab.
 
-Sub-tabs: Stats | Identity.
+Sub-tabs: Stats | Identity | Appearance.
 """
 
 from __future__ import annotations
@@ -64,6 +64,7 @@ class DS3EditorTab:
         # no row for: the level then moves by the change in the sum.
         self._loaded_level = 0
         self._loaded_sum = 0
+        self._appearance = None
 
     def setup_ui(self) -> None:
         for _ in self.setup_steps():
@@ -109,6 +110,24 @@ class DS3EditorTab:
         self._build_stats_tab(tabs.add("Stats"))
         yield
         self._build_identity_tab(tabs.add("Identity"))
+        yield
+        from er_save_manager.games.DS3.tabs.appearance import DS3AppearanceTab
+
+        self._appearance = DS3AppearanceTab(
+            tabs.add("Appearance"),
+            self._get_save,
+            self._get_save_path,
+            lambda: self._current_slot,
+            self._show_toast,
+            _backup_and_save,
+            _game_blocks_write,
+        )
+        yield from self._appearance.setup_steps()
+        # A save or character may have been loaded while the tab was building.
+        self._appearance.refresh()
+        char = self._loaded_char()
+        if char is not None:
+            self._appearance.load_character(char)
 
     # --- Stats tab ----------------------------------------------------------- #
 
@@ -256,6 +275,8 @@ class DS3EditorTab:
         ]
         self._slot_combo.configure(values=options)
         self._slot_var.set(options[0] if options else "")
+        if self._appearance is not None:
+            self._appearance.refresh()
 
     def load_slot(self, slot_idx: int) -> None:
         options = self._slot_combo.cget("values")
@@ -307,6 +328,8 @@ class DS3EditorTab:
         self._name_var.set(char.name)
         self._ng_var.set("0" if char.layout_error else str(char.ng_plus))
         self._show_loaded_class()
+        if self._appearance is not None:
+            self._appearance.load_character(char)
 
     # --- Class and level ----------------------------------------------------- #
 

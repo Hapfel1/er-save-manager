@@ -1,0 +1,452 @@
+"""
+DSR Appearance tab: body, face and hair types, colors and FaceGen face sliders.
+
+Edits stay in the tab until Apply Changes writes them (with a backup). Copying
+from another character or importing JSON only loads values into the tab.
+"""
+
+from __future__ import annotations
+
+import json
+import tkinter as tk
+from collections import Counter
+from pathlib import Path
+from tkinter import filedialog
+
+import customtkinter as ctk
+
+from er_save_manager.games.DSR import appearance as app_data
+from er_save_manager.games.DSR.appearance import Appearance, FaceControl
+from er_save_manager.games.DSR.character_ops import _sync_dir_appearance
+from er_save_manager.games.DSR.save import DSRSave
+from er_save_manager.ui import dialog_style as ds
+from er_save_manager.ui.appearance_share import AppearanceShareCard, ShareSource
+from er_save_manager.ui.color_sliders import ColorSliders
+from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll
+
+_BODY_TYPES = ["Type B (Female)", "Type A (Male)"]  # index = stored body type
+_SAVE_FILETYPES = [("DSR save files", "*.sl2 *.co2"), ("All files", "*")]
+_LABEL_WIDTH = 230
+# Slider readout: control value as a share of its slider half-range.
+_READOUT_SCALE = 100
+_REFRESH_MS = 120
+
+
+def _cap(text: str) -> str:
+    return text[:1].upper() + text[1:]
+
+
+class DSRAppearanceTab:
+    def __init__(
+        self,
+        parent,
+        get_dsr_save,
+        get_save_path,
+        get_slot,
+        show_toast,
+        save_with_backup,
+        blocks_write,
+    ) -> None:
+        self.parent = parent
+        self._get_dsr_save = get_dsr_save
+        self._get_save_path = get_save_path
+        self._get_slot = get_slot
+        self._show_toast = show_toast
+        self._save_with_backup = save_with_backup
+        self._blocks_write = blocks_write
+        self._coeffs: list[float] = [0.0] * 100
+        self._sliders: list[tuple[FaceControl, ctk.CTkSlider, tk.StringVar]] = []
+        self._ranges: dict[FaceControl, float] = {}
+        self._refresh_job = None
+        self._skin_built = False
+
+        self._body_var = tk.StringVar(value=_BODY_TYPES[1])
+        self._physique_var = tk.StringVar()
+        self._face_var = tk.StringVar()
+        self._hair_var = tk.StringVar()
+        self._color_var = tk.StringVar()
+
+    # --- Building ------------------------------------------------------------ #
+
+    def setup_steps(self):
+        # Packed first so the slider list shrinks before the buttons do.
+        bar = ctk.CTkFrame(self.parent, fg_color="transparent")
+        bar.pack(side="bottom", fill="x", padx=10, pady=(4, 6))
+        ds.button(bar, "Apply Changes", self._apply, width=200).pack(side="left")
+        ds.button(bar, "Revert", self._revert, primary=False, width=120).pack(
+            side="left", padx=(8, 0)
+        )
+
+        frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
+        frame.pack(fill="both", expand=True)
+        bind_mousewheel(frame)
+        self._frame = frame
+
+        self._build_actions(frame)
+        self._build_types(frame)
+        self._build_colors(frame)
+        yield
+        self._build_face(frame)
+
+    def _card(self, parent, title: str, hint: str | None = None) -> ctk.CTkFrame:
+        card = ctk.CTkFrame(parent, corner_radius=10)
+        card.pack(fill="x", padx=10, pady=(6, 4))
+        ctk.CTkLabel(card, text=title, font=("Segoe UI", 12, "bold")).pack(
+            anchor="w", padx=12, pady=(10, 0)
+        )
+        if hint:
+            ctk.CTkLabel(
+                card,
+                text=hint,
+                font=("Segoe UI", 10),
+                text_color=ds.MUTED,
+                justify="left",
+                wraplength=700,
+            ).pack(anchor="w", padx=12)
+        body = ctk.CTkFrame(card, fg_color="transparent")
+        body.pack(fill="x", padx=12, pady=(4, 10))
+        return body
+
+    def _combo(self, parent, row: int, label: str, var, values, command=None):
+        ctk.CTkLabel(parent, text=label).grid(
+            row=row, column=0, sticky="w", padx=(0, 10), pady=4
+        )
+        combo = ctk.CTkComboBox(
+            parent,
+            values=values,
+            variable=var,
+            state="readonly",
+            width=260,
+            command=command,
+        )
+        combo.grid(row=row, column=1, sticky="w", pady=4)
+        patch_combo_scroll(combo)
+        return combo
+
+    def _build_types(self, parent) -> None:
+        body = self._card(
+            parent,
+            "Body and hair",
+            "Face types and hairstyles differ between body types. Picking a "
+            "face type replaces the face sliders with that face, as in the "
+            "character creation menu.",
+        )
+        self._combo(
+            body, 0, "Body type", self._body_var, _BODY_TYPES, self._on_body_change
+        )
+        self._combo(body, 1, "Physique", self._physique_var, app_data.physique_names())
+        self._face_combo = self._combo(
+            body, 2, "Face type", self._face_var, [], self._on_face_type
+        )
+        self._hair_combo = self._combo(body, 3, "Hairstyle", self._hair_var, [])
+        self._set_type_names(1)
+
+    def _build_colors(self, parent) -> None:
+        body = self._card(
+            parent,
+            "Colors",
+            "A preset sets hair and eye color together, as in the game. The "
+            "sliders change each color afterwards.",
+        )
+        top = ctk.CTkFrame(body, fg_color="transparent")
+        top.pack(fill="x")
+        self._combo(
+            top,
+            0,
+            "Color preset",
+            self._color_var,
+            app_data.color_names(),
+            self._on_color_preset,
+        )
+        rows = ctk.CTkFrame(body, fg_color="transparent")
+        rows.pack(fill="x", pady=(6, 0))
+        self._hair_color = ColorSliders(rows, "Hair color")
+        self._hair_color.frame.pack(side="left", anchor="n", padx=(0, 30))
+        self._eye_color = ColorSliders(rows, "Eye color")
+        self._eye_color.frame.pack(side="left", anchor="n")
+
+    def _build_actions(self, parent) -> None:
+        body = self._card(
+            parent,
+            "Copy and share",
+            "Load the look of another character, from this save or another "
+            "DSR save, or from a JSON file. Nothing is written until Apply "
+            "Changes.",
+        )
+        self._share = AppearanceShareCard(
+            body,
+            source=ShareSource(
+                characters=lambda save: [
+                    (i, c.name, c) for i, c in enumerate(save.characters) if c
+                ],
+                load_save=DSRSave.from_file,
+                save_filetypes=_SAVE_FILETYPES,
+            ),
+            get_save=self._get_dsr_save,
+            on_character=self.load_character,
+            on_export=self._export_json,
+            on_import=self._import_json,
+            show_toast=self._show_toast,
+        )
+
+    def _build_face(self, parent) -> None:
+        card = ctk.CTkFrame(parent, corner_radius=10)
+        card.pack(fill="x", padx=10, pady=(6, 4))
+        head = ctk.CTkFrame(card, fg_color="transparent")
+        head.pack(fill="x", padx=12, pady=(10, 0))
+        ctk.CTkLabel(head, text="Face", font=("Segoe UI", 12, "bold")).pack(side="left")
+        self._face_mode = ctk.CTkSegmentedButton(
+            head, values=["Shape", "Skin"], command=self._show_face_page
+        )
+        self._face_mode.pack(side="right")
+        self._face_mode.set("Shape")
+        ctk.CTkLabel(
+            card,
+            text="The game's FaceGen controls. Moving one slider can move "
+            "related ones. Values are relative: 0 is the average face.",
+            font=("Segoe UI", 10),
+            text_color=ds.MUTED,
+            justify="left",
+            wraplength=700,
+        ).pack(anchor="w", padx=12)
+        self._shape_page = ctk.CTkFrame(card, fg_color="transparent")
+        self._skin_page = ctk.CTkFrame(card, fg_color="transparent")
+        self._fill_sliders(self._shape_page, app_data.shape_controls())
+        self._shape_page.pack(fill="x", padx=12, pady=(4, 10))
+
+    def _show_face_page(self, mode: str) -> None:
+        if mode == "Skin" and not self._skin_built:
+            self._fill_sliders(self._skin_page, app_data.skin_controls())
+            self._skin_built = True
+            self._refresh_sliders(reset_ranges=True)
+        shown, hidden = (
+            (self._skin_page, self._shape_page)
+            if mode == "Skin"
+            else (self._shape_page, self._skin_page)
+        )
+        hidden.pack_forget()
+        shown.pack(fill="x", padx=12, pady=(4, 10))
+
+    def _fill_sliders(self, page, controls) -> None:
+        sizes = Counter(ctl.group for ctl in controls)
+        # One-slider groups share a final "Other" heading: "Temples: thin / wide".
+        rows = [
+            (_cap(ctl.group.lower()), _cap(ctl.label), ctl)
+            for ctl in controls
+            if sizes[ctl.group] > 1
+        ] + [
+            ("Other", f"{_cap(ctl.group.lower())}: {ctl.label}", ctl)
+            for ctl in controls
+            if sizes[ctl.group] == 1
+        ]
+        # si.ctl has two different controls with the same name; number them.
+        names = Counter((g, t) for g, t, _ in rows)
+        seen: Counter = Counter()
+        group = None
+        for heading, text, ctl in rows:
+            if names[(heading, text)] > 1:
+                seen[(heading, text)] += 1
+                text = f"{text} {seen[(heading, text)]}"
+            if heading != group:
+                group = heading
+                ctk.CTkLabel(page, text=heading, font=ds.BOLD).pack(
+                    anchor="w", pady=(8, 0)
+                )
+            row = ctk.CTkFrame(page, fg_color="transparent")
+            row.pack(fill="x")
+            ctk.CTkLabel(row, text=text, width=_LABEL_WIDTH, anchor="w").pack(
+                side="left"
+            )
+            readout = tk.StringVar(value="0")
+            slider = ctk.CTkSlider(
+                row,
+                from_=-1.0,
+                to=1.0,
+                width=280,
+                command=lambda v, c=ctl: self._on_slider(c, v),
+            )
+            slider.pack(side="left", padx=6)
+            ctk.CTkLabel(row, textvariable=readout, width=44, anchor="e").pack(
+                side="left"
+            )
+            self._sliders.append((ctl, slider, readout))
+
+    # --- State ------------------------------------------------------------------ #
+
+    def _set_type_names(self, body_type: int) -> None:
+        faces = app_data.face_names(body_type)
+        hairs = app_data.hair_names(body_type)
+        face_idx = self._index(self._face_combo, self._face_var)
+        hair_idx = self._index(self._hair_combo, self._hair_var)
+        self._face_combo.configure(values=faces)
+        self._hair_combo.configure(values=hairs)
+        self._face_var.set(faces[face_idx])
+        self._hair_var.set(hairs[hair_idx])
+
+    @staticmethod
+    def _index(combo, var) -> int:
+        values = list(combo.cget("values"))
+        return values.index(var.get()) if var.get() in values else 0
+
+    def _body_type(self) -> int:
+        return _BODY_TYPES.index(self._body_var.get())
+
+    def _on_body_change(self, _value=None) -> None:
+        self._set_type_names(self._body_type())
+
+    def _on_face_type(self, _value=None) -> None:
+        face = app_data.face_preset(
+            self._body_type(), self._index(self._face_combo, self._face_var)
+        )
+        self._coeffs = app_data.face_to_coeffs(face)
+        self._refresh_sliders(reset_ranges=True)
+
+    def _on_color_preset(self, _value=None) -> None:
+        rgb = app_data.color_preset_rgb(
+            app_data.color_names().index(self._color_var.get())
+        )
+        self._hair_color.set_rgb(rgb)
+        self._eye_color.set_rgb(rgb)
+
+    def _on_slider(self, ctl: FaceControl, position: float) -> None:
+        self._coeffs = ctl.apply(self._coeffs, position * self._ranges[ctl])
+        if self._refresh_job is not None:
+            self.parent.after_cancel(self._refresh_job)
+        self._refresh_job = self.parent.after(_REFRESH_MS, self._refresh_sliders)
+
+    def _refresh_sliders(self, reset_ranges: bool = False) -> None:
+        self._refresh_job = None
+        for ctl, slider, readout in self._sliders:
+            if reset_ranges or ctl not in self._ranges:
+                self._ranges[ctl] = ctl.slider_range(self._coeffs)
+            position = ctl.value(self._coeffs) / self._ranges[ctl]
+            position = max(-1.0, min(1.0, position))
+            slider.set(position)
+            readout.set(str(round(position * _READOUT_SCALE)))
+
+    def _current(self) -> Appearance:
+        return Appearance(
+            body_type=self._body_type(),
+            physique=app_data.physique_names().index(self._physique_var.get()),
+            face_type=self._index(self._face_combo, self._face_var),
+            hair_type=self._index(self._hair_combo, self._hair_var),
+            color_preset=app_data.color_names().index(self._color_var.get()),
+            hair_rgba=self._hair_color.rgba(),
+            eye_rgba=self._eye_color.rgba(),
+            face_data=app_data.coeffs_to_face(self._coeffs),
+        )
+
+    def _show(self, app: Appearance) -> None:
+        self._body_var.set(_BODY_TYPES[app.body_type])
+        self._set_type_names(app.body_type)
+        self._physique_var.set(app_data.physique_names()[app.physique])
+        self._face_var.set(app_data.face_names(app.body_type)[app.face_type])
+        self._hair_var.set(app_data.hair_names(app.body_type)[app.hair_type])
+        self._color_var.set(app_data.color_names()[app.color_preset])
+        self._hair_color.set_rgba(app.hair_rgba)
+        self._eye_color.set_rgba(app.eye_rgba)
+        self._coeffs = app_data.face_to_coeffs(app.face_data)
+        self._refresh_sliders(reset_ranges=True)
+
+    # --- Public ------------------------------------------------------------------ #
+
+    def refresh(self) -> None:
+        self._share.refresh()
+
+    def load_character(self, char) -> bool:
+        try:
+            app = Appearance.from_character(char)
+            app.validate()
+        except ValueError as exc:
+            CTkMessageBox.showwarning(
+                "Appearance Not Loaded",
+                f"This character's appearance values are out of range: {exc}",
+                parent=self.parent,
+            )
+            return False
+        self._show(app)
+        return True
+
+    # --- Actions ----------------------------------------------------------------- #
+
+    def _revert(self) -> None:
+        save = self._get_dsr_save()
+        slot = self._get_slot()
+        if save is None or slot < 0 or save.characters[slot] is None:
+            return
+        self.load_character(save.characters[slot])
+
+    def _export_json(self) -> None:
+        save = self._get_dsr_save()
+        slot = self._get_slot()
+        name = (
+            save.characters[slot].name
+            if save is not None and slot >= 0 and save.characters[slot]
+            else "appearance"
+        )
+        path = filedialog.asksaveasfilename(
+            parent=self.parent,
+            title="Export Appearance",
+            defaultextension=".json",
+            initialfile=f"{name or 'appearance'}_dsr_appearance.json",
+            filetypes=[("JSON files", "*.json")],
+        )
+        if not path:
+            return
+        try:
+            data = self._current().to_json()
+            Path(path).write_text(json.dumps(data, indent=2), encoding="utf-8")
+        except (OSError, ValueError) as exc:
+            CTkMessageBox.showerror("Export Failed", str(exc), parent=self.parent)
+            return
+        self._show_toast("Appearance exported.")
+
+    def _import_json(self) -> None:
+        path = filedialog.askopenfilename(
+            parent=self.parent,
+            title="Import Appearance",
+            filetypes=[("JSON files", "*.json")],
+        )
+        if not path:
+            return
+        try:
+            app = Appearance.from_json(
+                json.loads(Path(path).read_text(encoding="utf-8"))
+            )
+        except (OSError, ValueError) as exc:
+            CTkMessageBox.showerror("Import Failed", str(exc), parent=self.parent)
+            return
+        self._show(app)
+        self._show_toast("Appearance loaded. Apply to save it.")
+
+    def _apply(self) -> None:
+        if self._blocks_write(self.parent):
+            return
+        save, save_path = self._get_dsr_save(), self._get_save_path()
+        slot = self._get_slot()
+        if save is None or save_path is None:
+            return
+        if slot < 0 or save.characters[slot] is None:
+            CTkMessageBox.showwarning(
+                "No Character", "Load a character first.", parent=self.parent
+            )
+            return
+        if not CTkMessageBox.askyesno(
+            "Apply Appearance",
+            f"Apply appearance changes to Slot {slot + 1}?\n\nA backup will be created.",
+            parent=self.parent,
+        ):
+            return
+        char = save.characters[slot]
+        try:
+            self._current().apply_to(char)
+        except ValueError as exc:
+            CTkMessageBox.showerror("Invalid Value", str(exc), parent=self.parent)
+            return
+        _sync_dir_appearance(save, slot, char)
+        try:
+            self._save_with_backup(save, save_path, f"edit_appearance_slot_{slot + 1}")
+            self._show_toast("Appearance applied. Backup created.")
+        except Exception as exc:
+            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)

@@ -98,6 +98,10 @@ BIG_ENTRY_START = PROFILE_ENTRY_START + CHARACTER_SLOTS  # 11-20, one per slot
 # entry's game data (entries 1-10).
 NAME_OFFSET = 960
 NAME_SIZE = 32
+# Appearance block: colors, FaceGen coefficients, body type and part ids
+# (field layout in appearance.py).
+APPEARANCE_OFFSET = 0xE8
+APPEARANCE_SIZE = 0xA4
 # The load screen caches hold the name in 28 bytes.
 NAME_MAX_CHARS = 14
 SOULS_OFFSET = 60
@@ -348,6 +352,8 @@ _SELECT_NAME_SIZE = 28
 # u16 starting class at name + 0x4C, a copy of the profile's.
 _CACHE_LEVEL_FROM_NAME = 0x4A
 _CACHE_CLASS_FROM_NAME = 0x4C
+# The records also hold a copy of the profile's appearance block.
+_CACHE_APPEARANCE_FROM_NAME = -0x18A
 
 
 def _map_records(data: bytes | bytearray, anchor: int) -> list[tuple[int, int]]:
@@ -1071,6 +1077,18 @@ class Character:
     ) -> None:
         self._data = data
         self._regulation_source = regulation_source
+
+    @property
+    def appearance_block(self) -> bytes:
+        return bytes(
+            self._data[APPEARANCE_OFFSET : APPEARANCE_OFFSET + APPEARANCE_SIZE]
+        )
+
+    @appearance_block.setter
+    def appearance_block(self, value: bytes) -> None:
+        if len(value) != APPEARANCE_SIZE:
+            raise ValueError(f"Appearance block must be {APPEARANCE_SIZE} bytes")
+        self._data[APPEARANCE_OFFSET : APPEARANCE_OFFSET + APPEARANCE_SIZE] = value
 
     @property
     def name(self) -> str:
@@ -2032,6 +2050,19 @@ class DS2Save:
         off = _SELECT_EQUIPMENT_OFFSET + _OCC_STRIDE * slot_index
         if off + _EQUIPMENT_BLOCK_SIZE <= len(select_data):
             select_data[off : off + _EQUIPMENT_BLOCK_SIZE] = character.equipment_block()
+
+    def sync_appearance_cache(self, slot_index: int) -> None:
+        """Copy a slot's appearance block to the load screen records in
+        entries 0 and 22."""
+        block = self.characters[slot_index].appearance_block
+        for entry, name_offset in (
+            (OCCUPANCY_ENTRY, _OCC_NAME_OFFSET),
+            (CHARACTER_SELECT_ENTRY, _SELECT_NAME_OFFSET),
+        ):
+            data = self.container.get_entry(entry)
+            off = name_offset + _CACHE_APPEARANCE_FROM_NAME + _OCC_STRIDE * slot_index
+            if off + APPEARANCE_SIZE <= len(data):
+                data[off : off + APPEARANCE_SIZE] = block
 
     def sync_class_cache(self, slot_index: int) -> None:
         """Copy a slot's starting class to the load screen records in

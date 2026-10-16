@@ -54,6 +54,16 @@ Light or unlight bonfires, set their Bonfire Ascetic level (1 to 8), or unlock a
 
 Lists each NPC with its state (alive, hostile or dead). **Revive** clears the NPC's dead and hostile flags and the kill counts that keep a killed NPC from spawning; **Calm** clears only the hostile flags. Quest progress is left as it is.
 
+### Appearance
+
+DS2 has no way to change a character's look after creation; this tab does it for created characters (a slot before character creation gets its look from the creation menu).
+
+- **Copy and share** - load the look of another character from the same save or from another DS2 save file (**From Another Save...**), or export and import it as a JSON file. A copy carries the face, hair and all colors.
+- **Body and face** - gender, build, physique, hairstyle, eyebrow, beard and tattoo, numbered in the creation menu's order (left to right, top to bottom). Changing the gender keeps the build's and the hairstyle's place in the list.
+- **Colors** - hair, eyebrow, eye, beard and tattoo color with Red, Green and Blue sliders.
+
+Nothing is written until **Apply Changes**; **Revert** reloads the saved appearance. Applying also updates the copies kept with the load-screen character list.
+
 ---
 
 ## Souls Planner Build Import

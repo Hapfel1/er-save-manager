@@ -29,14 +29,16 @@ _ERC_VERSION = 1
 # Layout per entry (554 bytes), offsets relative to entry start:
 #   +0x00  34   Character name (UTF-16LE)
 #   +0x22   4   Level (u32 LE)
-#   remaining bytes: portrait thumbnail, appearance color cache, and other
-#   load-screen display data not required for the character to load correctly.
+#   +0x3A       Appearance block (mirrors the slot's FACE block)
+#   remaining bytes: other load-screen display data not required for the
+#   character to load correctly.
 #
 # Entry 0 starts at DIR_BASE; entries are contiguous, DIR_STRIDE apart.
 DIR_BASE = 4258
 DIR_STRIDE = 554
 DIR_NAME_OFFSET = 0x00
 DIR_LEVEL_OFFSET = 0x22
+DIR_FACE_OFFSET = 0x3A
 
 _DIR_EMPTY_TEMPLATE = bytes.fromhex(
     "0000000000000000000000000000000000000000000000000000000000000000"
@@ -96,6 +98,17 @@ def _sync_dir_name_level(save: DS3Save, slot_index: int, name: str, level: int) 
     name_bytes = name.encode("utf-16-le").ljust(34, b"\x00")[:34]
     entry[DIR_NAME_OFFSET : DIR_NAME_OFFSET + 34] = name_bytes
     struct.pack_into("<I", entry, DIR_LEVEL_OFFSET, level & 0xFFFFFFFF)
+    _write_dir_entry(save, slot_index, entry)
+
+
+def _sync_dir_face(save: DS3Save, slot_index: int, block: bytes) -> None:
+    """Copy the slot's appearance block into its directory entry. An entry
+    without a block header of the same size is left alone."""
+    entry = _read_dir_entry(save, slot_index)
+    end = DIR_FACE_OFFSET + len(block)
+    if end > DIR_STRIDE or entry[DIR_FACE_OFFSET : DIR_FACE_OFFSET + 12] != block[:12]:
+        return
+    entry[DIR_FACE_OFFSET:end] = block
     _write_dir_entry(save, slot_index, entry)
 
 

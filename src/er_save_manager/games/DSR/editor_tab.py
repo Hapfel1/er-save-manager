@@ -81,12 +81,12 @@ class DSREditorTab:
         self._current_slot = -1
         self._stat_vars: dict[str, tk.StringVar] = {}
         self._name_var = tk.StringVar()
-        self._body_type_var = tk.StringVar(value="Type A (Male)")
         self._class_var = tk.StringVar(value=_CLASSES[0])
         self._covenant_var = tk.StringVar(value=_COVENANTS[0])
         self._ng_var = tk.StringVar(value="0")
         self._playtime_var = tk.StringVar(value="--")
         self._offering_vars = {c: tk.StringVar() for c in COVENANT_OFFERING_ORDER}
+        self._appearance = None
         self._rank_vars = {c: tk.StringVar() for c in COVENANT_OFFERING_ORDER}
         # Starting class index at last load; used for level recalc
         self._loaded_class_idx: int = 0
@@ -141,6 +141,26 @@ class DSREditorTab:
         self._build_identity_tab(tabs.add("Identity"))
         yield
         self._build_covenants_tab(tabs.add("Covenants"))
+        yield
+        from er_save_manager.games.DSR.appearance_tab import DSRAppearanceTab
+
+        self._appearance = DSRAppearanceTab(
+            tabs.add("Appearance"),
+            self._get_dsr_save,
+            self._get_save_path,
+            lambda: self._current_slot,
+            self._show_toast,
+            _backup_and_save,
+            _game_blocks_write,
+        )
+        yield from self._appearance.setup_steps()
+        # A save or character may have been loaded while the tab was building.
+        self._appearance.refresh()
+        save = self._get_dsr_save()
+        if save is not None and 0 <= self._current_slot < len(save.characters):
+            char = save.characters[self._current_slot]
+            if char is not None:
+                self._appearance.load_character(char)
 
     # --- Stats tab ------------------------------------------------------------ #
 
@@ -242,12 +262,6 @@ class DSREditorTab:
 
         rows = [
             ("Name:", self._name_var, "entry", None),
-            (
-                "Body Type:",
-                self._body_type_var,
-                "combo",
-                ["Type A (Male)", "Type B (Female)"],
-            ),
             ("Class:", self._class_var, "combo", _CLASSES),
             ("Covenant:", self._covenant_var, "combo", _COVENANTS),
             ("NG+:", self._ng_var, "combo", [str(i) for i in range(8)]),
@@ -405,6 +419,8 @@ class DSREditorTab:
         ]
         self._slot_combo.configure(values=options)
         self._slot_var.set(options[0] if options else "")
+        if self._appearance is not None:
+            self._appearance.refresh()
 
     def load_slot(self, slot_idx: int) -> None:
         options = self._slot_combo.cget("values")
@@ -457,14 +473,13 @@ class DSREditorTab:
         self._name_var.set(char.name)
         for cov, var in self._offering_vars.items():
             var.set(str(char.covenant_offerings(cov)))
-        self._body_type_var.set(
-            "Type A (Male)" if char.body_type == 1 else "Type B (Female)"
-        )
         cls = int(char.player_class)
         self._class_var.set(_CLASSES[cls] if cls < len(_CLASSES) else str(cls))
         cov = int(char.covenant)
         self._covenant_var.set(_COVENANTS[cov] if cov < len(_COVENANTS) else str(cov))
         self._ng_var.set(str(char.ng_plus))
+        if self._appearance is not None:
+            self._appearance.load_character(char)
         h = int(char.play_seconds // 3600)
         m = int((char.play_seconds % 3600) // 60)
         s = int(char.play_seconds % 60)
@@ -594,7 +609,6 @@ class DSREditorTab:
             return
         try:
             char.name = self._name_var.get()
-            char.body_type = 1 if self._body_type_var.get() == "Type A (Male)" else 0
             if new_class != int(char.player_class):
                 char.player_class = type(char.player_class)(new_class)
                 # Level counts from the class's own starting level and stats.
