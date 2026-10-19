@@ -6,10 +6,15 @@ from __future__ import annotations
 
 import customtkinter as ctk
 
-from er_save_manager.games.DS2.save import CHARACTER_SELECT_ENTRY, DS2Save, SlotState
-from er_save_manager.ui import dialog_style as ds
+from er_save_manager.games.DS2.save import DS2Save, SlotState
+from er_save_manager.ui.character_list import (
+    CharacterList,
+    CharacterRow,
+    columns,
+    format_playtime,
+    slot_issues,
+)
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
 
 
 class DS2InspectorTab:
@@ -20,14 +25,16 @@ class DS2InspectorTab:
         on_slot_selected: callable(slot_index) invoked by the Edit Character button.
     """
 
-    def __init__(self, parent, get_save, on_slot_selected, check_save=None) -> None:
+    def __init__(
+        self, parent, get_save, on_slot_selected, check_save=None, get_issues=None
+    ) -> None:
         self.parent = parent
         self._check_save = check_save
+        self._get_issues = get_issues
         self.get_save = get_save
         self.on_slot_selected = on_slot_selected
 
         self.selected_slot: int | None = None
-        self.rows: list[tuple[int, ctk.CTkFrame]] = []
 
     def setup_ui(self) -> None:
         char_frame = ctk.CTkFrame(self.parent, corner_radius=12)
@@ -54,73 +61,45 @@ class DS2InspectorTab:
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=10, pady=(0, 10))
 
-        self.list_frame = ctk.CTkScrollableFrame(char_frame, corner_radius=10)
-        self.list_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
-        bind_mousewheel(self.list_frame)
+        self.list = CharacterList(
+            char_frame, on_select=self._select, on_double=self._edit_slot
+        )
+        self.list.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
         self.refresh()
 
-    def refresh(self) -> None:
-        for child in self.list_frame.winfo_children():
-            child.destroy()
-        self.rows.clear()
-        self.selected_slot = None
+    def _select(self, slot_index: int) -> None:
+        self.selected_slot = slot_index
 
+    def refresh(self) -> None:
+        self.selected_slot = None
         save: DS2Save | None = self.get_save()
         if save is None:
-            ctk.CTkLabel(self.list_frame, text="No save file loaded").pack(
-                anchor="w", padx=6, pady=6
-            )
+            self.list.message("No save file loaded.")
             return
 
-        select_data = save.container.get_entry(CHARACTER_SELECT_ENTRY)
-
-        def select_slot(slot_index: int):
-            self.selected_slot = slot_index
-            for val, frame in self.rows:
-                ds.select_card_row(frame, val == slot_index)
-
+        issues = self._get_issues() if self._get_issues else None
+        rows = []
         for i, character in enumerate(save.characters):
             if save.slot_state(i) is SlotState.NEVER_CREATED:
                 continue
-
             name = save.slot_display_name(i)
-            display_name = name if name else f"({save.slot_state(i).value})"
-            status = "Ready"
-            check = self._check_slot(i, name, select_data)
-
-            row = ds.card_row(
-                self.list_frame,
-                display_name,
-                f"Slot {i}  ·  Level {character.get_stat('level')}  ·  "
-                f"Souls {character.souls:,}  ·  {status}  ·  {check}",
-                on_click=lambda v=i: select_slot(v),
-                on_double=lambda v=i: self._edit_slot(v),
+            values = {
+                "level": str(character.get_stat("level")),
+                "class": character.starting_class_name or "",
+                "currency": f"{character.souls:,}",
+                "ng": f"NG+{character.new_game_plus}",
+                "playtime": format_playtime(save.slot_play_seconds(i)),
+            }
+            rows.append(
+                CharacterRow(
+                    i,
+                    name or f"({save.slot_state(i).value})",
+                    values,
+                    slot_issues(issues, i),
+                )
             )
-            self.rows.append((i, row))
-
-        if self.rows:
-            select_slot(self.rows[0][0])
-
-    def _check_slot(self, index: int, profile_name: str, select_data) -> str:
-        from er_save_manager.games.DS2.save import (
-            _OCC_STRIDE,
-            _SELECT_NAME_OFFSET,
-            _SELECT_NAME_SIZE,
-        )
-
-        if not profile_name:
-            return "OK"
-
-        off = _SELECT_NAME_OFFSET + _OCC_STRIDE * index
-        cached = (
-            select_data[off : off + _SELECT_NAME_SIZE]
-            .decode("utf-16-le", errors="ignore")
-            .rstrip("\x00")
-        )
-        if cached and cached != profile_name:
-            return f"Name mismatch (select screen shows '{cached}')"
-        return "OK"
+        self.list.show(columns("Souls"), rows)
 
     def _edit_slot(self, slot_index: int) -> None:
         self.selected_slot = slot_index

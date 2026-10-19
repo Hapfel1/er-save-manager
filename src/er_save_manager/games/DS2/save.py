@@ -365,6 +365,8 @@ _SELECT_NAME_SIZE = NAME_SIZE
 # Per-slot load screen record in entries 0 and 22: u16 level at name + 0x4A,
 # u16 starting class at name + 0x4C, a copy of the profile's.
 _CACHE_LEVEL_FROM_NAME = 0x4A
+# u32 play time in seconds at name + 0x42; the profile holds no copy.
+_CACHE_PLAYTIME_FROM_NAME = 0x42
 _CACHE_CLASS_FROM_NAME = 0x4C
 # The records also hold a copy of the profile's appearance block.
 _CACHE_APPEARANCE_FROM_NAME = -0x18A
@@ -2068,6 +2070,14 @@ class DS2Save:
         if _is_valid_name(profile_name):
             return profile_name
         return self.slot_occupancy().get(slot_index, "")
+
+    def slot_play_seconds(self, slot_index: int) -> int | None:
+        """Play time from the entry 0 load screen record, None if out of range."""
+        data = self.container.get_entry(OCCUPANCY_ENTRY)
+        off = _OCC_NAME_OFFSET + _OCC_STRIDE * slot_index + _CACHE_PLAYTIME_FROM_NAME
+        if off + 4 > len(data):
+            return None
+        return struct.unpack_from("<I", data, off)[0]
 
     def sync_name_caches(self) -> None:
         occ_data = self.container.get_entry(OCCUPANCY_ENTRY)

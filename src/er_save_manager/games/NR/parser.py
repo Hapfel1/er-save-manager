@@ -26,7 +26,8 @@ Entry layout:
 Offset  Size  Field
 0x0000     4  slot_header_magic (0x00100010)
 0x0004     4  slot_data_size
-0x0008     8  unknown_header
+0x0008     4  unknown_header
+0x000C     4  play time, milliseconds
 0x0010     8  unknown (all zeros when empty)
 0x0014     -  item_states[] - variable-size entries, 5120 slots max
                each ItemState:
@@ -234,6 +235,9 @@ _PS_ENTRIES = (
     (bytes.fromhex("20002000"), 0x200010),
 )
 _PS_FILE_SIZE = _PS_HEADER_SZ + sum(size for _, size in _PS_ENTRIES)
+
+# Slot header: u32 play time in milliseconds
+_SLOT_PLAY_TIME_OFFSET = 0x0C
 
 # Offsets relative to the end of the ItemEntry array
 _ACQ_COUNTER_REL = 0x6A  # next acquisition_id (u32)
@@ -729,6 +733,10 @@ class NightreignSlot:
     free_presets: list = field(
         default_factory=list
     )  # abs offsets of empty preset slots
+
+    @property
+    def play_time_ms(self) -> int:
+        return struct.unpack_from("<I", self.decrypted, _SLOT_PLAY_TIME_OFFSET)[0]
 
     def is_empty(self) -> bool:
         """Slot has no character data.
