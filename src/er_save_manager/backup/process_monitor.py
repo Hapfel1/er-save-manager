@@ -60,6 +60,40 @@ def _is_process_running(process_name: str) -> bool:
         return False
 
 
+def _running_processes_text() -> str:
+    """Lowercased list of all running processes, from one process spawn.
+
+    Windows: image names from tasklist. Elsewhere: full command lines from
+    ps, which hold the .exe name for Wine/Proton games as pgrep -f sees it.
+    Empty when the listing fails.
+    """
+    try:
+        if sys.platform == "win32":
+            si = subprocess.STARTUPINFO()
+            si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            si.wShowWindow = 0  # SW_HIDE
+            result = subprocess.run(
+                ["tasklist", "/FO", "CSV", "/NH"],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                timeout=2.0,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+                startupinfo=si,
+            )
+        else:
+            result = subprocess.run(
+                ["ps", "-A", "-o", "args="],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                timeout=2.0,
+            )
+        return result.stdout.decode(errors="replace").lower()
+    except Exception:
+        return ""
+
+
 class GameProcessMonitor:
     """
     Monitors for any configured game process and triggers automatic backups.
@@ -143,8 +177,9 @@ class GameProcessMonitor:
                     "cpu0_exclude_on_launch", False
                 )
 
+                listing = _running_processes_text()
                 for game_key, process_name in _PROCESS_NAMES.items():
-                    is_running = _is_process_running(process_name)
+                    is_running = process_name.lower() in listing
                     launched = is_running and not was_running[game_key]
 
                     if launched:

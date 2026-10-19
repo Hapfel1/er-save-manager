@@ -2112,8 +2112,10 @@ class SaveManagerGUI:
                     in result.stdout.decode(errors="replace").lower()
                 )
             else:
+                # -i: Proton command lines keep the exe's mixed case
+                # (DarkSoulsIII.exe), profile names are lowercase.
                 result = subprocess.run(
-                    ["pgrep", "-f", process_name],
+                    ["pgrep", "-if", process_name],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                 )

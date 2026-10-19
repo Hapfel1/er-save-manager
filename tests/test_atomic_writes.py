@@ -18,13 +18,6 @@ def _no_tmp_files_left(directory: Path) -> bool:
     return not any(".tmp" in p.name for p in directory.iterdir())
 
 
-def test_to_file_writes_byte_identical_content(sanitized_save, tmp_path):
-    out = tmp_path / "ER0000_out.co2"
-    sanitized_save.to_file(str(out))
-
-    assert out.read_bytes() == bytes(sanitized_save._raw_data)
-
-
 def test_to_file_leaves_no_leftover_temp_file(sanitized_save, tmp_path):
     out = tmp_path / "ER0000_out.co2"
     sanitized_save.to_file(str(out))

@@ -20,10 +20,10 @@ from er_save_manager.parser.world import (
 MAP = MapId(bytes([0x00, 0x24, 0x2A, 0x3C]))
 
 
-def test_fixture_blocks_decode_byte_identical(sanitized_save):
+def test_fixture_blocks_decode_byte_identical(sanitized_save_readonly):
     decoded = 0
     for i in range(10):
-        slot = sanitized_save.get_slot(i)
+        slot = sanitized_save_readonly.get_slot(i)
         if not slot.version:
             continue
         for block, data in (

@@ -16,6 +16,7 @@ from er_save_manager.parser.er_types import (
     FloatVector4,
     HorseState,
     MapId,
+    read_exact,
 )
 
 # ============================================================================
@@ -105,7 +106,9 @@ class Regions:
         """Read Regions from stream (variable size based on count)"""
         obj = cls()
         obj.count = struct.unpack("<I", f.read(4))[0]
-        obj.region_ids = [struct.unpack("<I", f.read(4))[0] for _ in range(obj.count)]
+        obj.region_ids = list(
+            struct.unpack(f"<{obj.count}I", read_exact(f, 4 * obj.count))
+        )
         return obj
 
         return obj
@@ -401,7 +404,11 @@ class GaitemGameData:
         """Read GaitemGameData from stream"""
         obj = cls()
         obj.count = struct.unpack("<q", f.read(8))[0]  # i64
-        obj.entries = [GaitemGameDataEntry.read(f) for _ in range(14000)]
+        data = read_exact(f, 8 * 14000)
+        obj.entries = [
+            GaitemGameDataEntry(i, a, p)
+            for i, a, p in struct.iter_unpack("<IB3s", data)
+        ]
         return obj
 
     @staticmethod
@@ -464,9 +471,9 @@ class TutorialDataChunk:
         # Read remaining data based on total_size (not based on count)
         num_ids = (total_size - 4) // 4
         if num_ids > 0:
-            obj.tutorial_ids = [
-                struct.unpack("<I", f.read(4))[0] for _ in range(num_ids)
-            ]
+            obj.tutorial_ids = list(
+                struct.unpack(f"<{num_ids}I", read_exact(f, 4 * num_ids))
+            )
 
         return obj
 

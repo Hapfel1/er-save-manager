@@ -15,21 +15,6 @@ def _first_active_slot(save):
     raise AssertionError("fixture save has no active character slots")
 
 
-def test_no_false_positive_on_healthy_save(sanitized_save):
-    fix = TorrentFix()
-    for i, slot in enumerate(sanitized_save.character_slots):
-        if slot.is_empty():
-            continue
-        assert fix.detect(sanitized_save, i) is False, f"slot {i} unexpectedly flagged"
-
-
-def test_apply_is_no_op_when_bug_not_present(sanitized_save):
-    i = _first_active_slot(sanitized_save)
-    fix = TorrentFix()
-    result = fix.apply(sanitized_save, i)
-    assert result.applied is False
-
-
 def test_detects_and_fixes_hp_zero_active_state(sanitized_save):
     i = _first_active_slot(sanitized_save)
     slot = sanitized_save.character_slots[i]

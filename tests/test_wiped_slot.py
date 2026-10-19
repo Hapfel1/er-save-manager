@@ -24,8 +24,8 @@ def _wipe(save, slot_index):
     save._raw_data[off : off + SLOT_SIZE] = bytes(SLOT_SIZE)
 
 
-def test_intact_slots_are_not_wiped(sanitized_save):
-    assert not any(is_wiped_slot(sanitized_save, i) for i in range(10))
+def test_intact_slots_are_not_wiped(sanitized_save_readonly):
+    assert not any(is_wiped_slot(sanitized_save_readonly, i) for i in range(10))
 
 
 def test_zeroed_active_slot_is_wiped(sanitized_save):
