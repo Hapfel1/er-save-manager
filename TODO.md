@@ -1,14 +1,14 @@
 make wrong game data tooltip for ds3 more apparent done
 
-make nr relic spawner and editor layout look better, maybe visual editor w icons? also better way to show the full perks since they are quite long
+make nr relic spawner and editor layout look better, maybe visual editor w icons? also better way to show the full perks since they are quite long done
 
-nr ink itemgib to relic spawner
+nr ink itemgib to relic spawner done
 
 unified info about characters on save inspector, also show Issues detected or OK if none are detected, also display nicely not liek varied by position varied by name done (in game: DS2 play time pending)
 
 bloodstains from other players netman
 
-other faceparamoverides and editing them
+other faceparamoverides and editing them done (eye overrides + Frenzied Flame mark)
 
 DS2 event flag storage layout (single-action pairs + flagdiff.py)
 
@@ -36,7 +36,7 @@ ds2 seamless save 32 chars make alphanumeric echeck done (in game: 20/14 char sl
 
 open folder using the utils function on linux, check every single one done (Windows untested)
 
-performance check loading everything, simulate windows and linux done (part 1; ds_equipment row reuse, DS appearance tab builds, World State map thumbnail left)
+performance check loading everything, simulate windows and linux done
 
 slim down tests only to what is needed done
 
@@ -84,7 +84,7 @@ DS2 attunement editor done
 
 DS3 visited regions / warp unlocks done
 
-in-game checks at the end: U Apply All write, V region unlock + Convergence map art + grace positions, W DS2 20/14 char Seamless names + open folder on Windows, W2 NR relic rows and curse picker in the real app, AB DS2 load screen play time matches the Save Inspector
+in-game checks at the end: U Apply All write, V region unlock + Convergence map art + grace positions, W DS2 20/14 char Seamless names + open folder on Windows, W2 NR relic rows and curse picker in the real app, AB DS2 load screen play time matches the Save Inspector, O DS2 face shape sliders + physique option count + new DS2 appearance selectors
 
 update all docs with newly added stuff (last task)
 
