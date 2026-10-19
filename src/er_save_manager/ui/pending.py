@@ -209,8 +209,9 @@ class CharacterBar(ctk.CTkFrame):
 class PendingBar(ctk.CTkFrame):
     """Lists pages with unapplied edits; Apply All writes them in one save.
 
-    backup(slot) backs up the save file on disk; write() writes the
-    in-memory save to it.
+    backup(slot, changes) backs up the save file on disk; changes lists the
+    pages being applied, as shown in the bar. write() writes the in-memory
+    save to it.
     blocks_write() returns True (after telling the user) when the game runs.
     after_apply() reloads the character into every tab.
     reload_from_disk() restores the in-memory save after a failed apply.
@@ -221,7 +222,7 @@ class PendingBar(ctk.CTkFrame):
         parent,
         *,
         get_slot: Callable[[], int],
-        backup: Callable[[int], None],
+        backup: Callable[[int, str], None],
         write: Callable[[], None],
         blocks_write: Callable[[], bool],
         after_apply: Callable[[], None],
@@ -282,8 +283,11 @@ class PendingBar(ctk.CTkFrame):
                 out.append((page, n))
         return out
 
-    def summary(self) -> str:
-        return ", ".join(f"{p.name} ({n})" for p, n in self.dirty())
+    def summary(self, dirty: list[tuple[PendingPage, int]] | None = None) -> str:
+        """Page names with their changed field counts."""
+        if dirty is None:
+            dirty = self.dirty()
+        return ", ".join(f"{p.name} ({n})" for p, n in dirty)
 
     def _poll(self) -> None:
         self._poll_job = None
@@ -303,7 +307,8 @@ class PendingBar(ctk.CTkFrame):
 
     def apply_all(self) -> bool:
         """Write every page with unapplied edits; True when nothing is left."""
-        dirty = [p for p, _n in self.dirty()]
+        pending = self.dirty()
+        dirty = [p for p, _n in pending]
         if not dirty:
             return True
         if self._busy:
@@ -330,7 +335,7 @@ class PendingBar(ctk.CTkFrame):
             slot = self._get_slot()
             notes: list[str] = []
             try:
-                self._backup(slot)
+                self._backup(slot, self.summary(pending))
             except Exception as exc:
                 CTkMessageBox.showerror(
                     "Backup Failed",
