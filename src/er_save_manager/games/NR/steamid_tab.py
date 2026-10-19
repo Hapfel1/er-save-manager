@@ -35,7 +35,7 @@ class NRSteamIDTab:
         outer = ctk.CTkFrame(self.parent, corner_radius=12)
         outer.pack(fill="both", expand=True, pady=(0, 10))
 
-        ctk.CTkLabel(outer, text="SteamID Patcher", font=("Segoe UI", 16, "bold")).pack(
+        ctk.CTkLabel(outer, text="SteamID Patcher", font=("Inter", 16, "bold")).pack(
             anchor="w", padx=14, pady=(12, 6)
         )
         ctk.CTkLabel(
@@ -46,7 +46,7 @@ class NRSteamIDTab:
             ),
             wraplength=700,
             justify="left",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         ).pack(anchor="w", padx=14, pady=(0, 12))
 
         grid = ctk.CTkFrame(outer, fg_color="transparent")
@@ -71,7 +71,7 @@ class NRSteamIDTab:
         ctk.CTkLabel(
             outer,
             text="Creates a backup before patching.",
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=("gray45", "gray60"),
         ).pack(anchor="w", padx=14)
 

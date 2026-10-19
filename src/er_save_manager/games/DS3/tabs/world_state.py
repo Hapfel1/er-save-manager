@@ -73,7 +73,7 @@ class DS3WorldStateTab:
 
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
-        ctk.CTkLabel(header, text="World State", font=("Segoe UI", 16, "bold")).pack(
+        ctk.CTkLabel(header, text="World State", font=("Inter", 16, "bold")).pack(
             side="left"
         )
 
@@ -99,13 +99,13 @@ class DS3WorldStateTab:
     def _build_ng_row(self, parent) -> None:
         row = ctk.CTkFrame(parent, corner_radius=10)
         row.pack(fill="x", padx=10, pady=(0, 8))
-        ctk.CTkLabel(row, text="New Game+", font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(row, text="New Game+", font=("Inter", 12, "bold")).pack(
             side="left", padx=(14, 12), pady=10
         )
         ctk.CTkLabel(row, text="Current:").pack(side="left", padx=(0, 6))
         self._ng_current_var = tk.StringVar(value="--")
         ctk.CTkLabel(
-            row, textvariable=self._ng_current_var, font=("Segoe UI", 11, "bold")
+            row, textvariable=self._ng_current_var, font=("Inter", 11, "bold")
         ).pack(side="left", padx=(0, 20))
         ctk.CTkLabel(row, text="Set to:").pack(side="left", padx=(0, 6))
         self._ng_var = ctk.StringVar(value="0")
@@ -118,7 +118,7 @@ class DS3WorldStateTab:
                 row,
                 text="0 = NG, 1 = NG+. The playthrough flags scripts check are kept "
                 "in step.",
-                font=("Segoe UI", 10),
+                font=("Inter", 10),
                 text_color=_HINT,
             )
         ).pack(side="left", fill="x", expand=True, padx=14)
@@ -128,11 +128,11 @@ class DS3WorldStateTab:
         panel.grid(
             row=0, column=column, sticky="nsew", padx=(0, 5) if column == 0 else (5, 0)
         )
-        ctk.CTkLabel(panel, text=title, font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(panel, text=title, font=("Inter", 12, "bold")).pack(
             anchor="w", padx=10, pady=(10, 0)
         )
         ds.wrap_to_width(
-            ctk.CTkLabel(panel, text=hint, font=("Segoe UI", 10), text_color=_HINT)
+            ctk.CTkLabel(panel, text=hint, font=("Inter", 10), text_color=_HINT)
         ).pack(fill="x", padx=10, pady=(0, 6))
         return panel
 
@@ -149,7 +149,7 @@ class DS3WorldStateTab:
                 for text, command in buttons
             )
         )
-        status = ctk.CTkLabel(box, text="", font=("Segoe UI", 10), text_color=_HINT)
+        status = ctk.CTkLabel(box, text="", font=("Inter", 10), text_color=_HINT)
         status.pack(anchor="w")
         return status
 

@@ -153,7 +153,7 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
         self._sel_lbl = ctk.CTkLabel(
             bar,
             text="No bonfire selected",
-            font=("Segoe UI", 10, "bold"),
+            font=("Inter", 10, "bold"),
             anchor="w",
             text_color=("gray50", "gray60"),
         )

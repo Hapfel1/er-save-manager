@@ -76,13 +76,13 @@ class SteamIDPatcherTab:
         ctk.CTkLabel(
             main_frame,
             text="SteamID Patcher",
-            font=("Segoe UI", 18, "bold"),
+            font=("Inter", 18, "bold"),
         ).pack(pady=(15, 5), padx=15, anchor="w")
 
         ctk.CTkLabel(
             main_frame,
             text="Transfer save files between Steam accounts by patching SteamID",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("#808080", "#a0a0a0"),
         ).pack(pady=(0, 10), padx=15, anchor="w")
 
@@ -93,14 +93,14 @@ class SteamIDPatcherTab:
         ctk.CTkLabel(
             current_frame,
             text="Current save file",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(pady=(12, 6), padx=12, anchor="w")
 
         self.current_steamid_var = tk.StringVar(value="No save file loaded")
         ctk.CTkLabel(
             current_frame,
             textvariable=self.current_steamid_var,
-            font=("Segoe UI", 12),
+            font=("Inter", 12),
         ).pack(pady=(0, 12), padx=12, anchor="w")
 
         # Note / warning for selected game - hidden when empty
@@ -113,7 +113,7 @@ class SteamIDPatcherTab:
         self._note_label = ctk.CTkLabel(
             self._note_frame,
             textvariable=self._note_var,
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray30", "gray70"),
             justify=tk.LEFT,
             wraplength=560,
@@ -126,13 +126,13 @@ class SteamIDPatcherTab:
         ctk.CTkLabel(
             patch_frame,
             text="Patch SteamID",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(pady=(12, 8), padx=12, anchor="w")
 
         ctk.CTkLabel(
             patch_frame,
             text="Enter new SteamID (17-digit number):",
-            font=("Segoe UI", 12),
+            font=("Inter", 12),
             text_color=("gray40", "gray70"),
         ).pack(pady=(0, 6), padx=12, anchor="w")
 
@@ -166,7 +166,7 @@ class SteamIDPatcherTab:
         ctk.CTkLabel(
             patch_frame,
             text="Or paste Steam profile URL:",
-            font=("Segoe UI", 12),
+            font=("Inter", 12),
             text_color=("gray40", "gray70"),
         ).pack(pady=(12, 6), padx=12, anchor="w")
 

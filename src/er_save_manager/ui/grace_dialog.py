@@ -61,7 +61,7 @@ class GraceDialog:
         ctk.CTkLabel(
             dialog,
             text="Sites of Grace",
-            font=("Segoe UI", 14, "bold"),
+            font=("Inter", 14, "bold"),
         ).pack(pady=(15, 2), padx=15)
 
         ctk.CTkLabel(
@@ -119,7 +119,7 @@ class GraceDialog:
             placeholder_text="Search graces or regions...",
         ).pack(fill=tk.X)
 
-        summary_label = ctk.CTkLabel(dialog, text="", font=("Segoe UI", 11))
+        summary_label = ctk.CTkLabel(dialog, text="", font=("Inter", 11))
         summary_label.pack(pady=(0, 4), padx=15, anchor="w")
 
         # ---- Grace list ----

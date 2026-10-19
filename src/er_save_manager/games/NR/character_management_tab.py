@@ -59,19 +59,19 @@ class NRCharacterManagementTab:
         bind_mousewheel(scroll)
 
         ctk.CTkLabel(
-            scroll, text="Character Management", font=("Segoe UI", 16, "bold")
+            scroll, text="Character Management", font=("Inter", 16, "bold")
         ).pack(pady=10)
         ctk.CTkLabel(
             scroll,
             text="Copy, transfer, swap, export, import, or delete character slots",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         ).pack(pady=5)
 
         selector = ctk.CTkFrame(scroll, corner_radius=10)
         selector.pack(fill=tk.X, padx=20, pady=10)
         ctk.CTkLabel(
-            selector, text="Select operation", font=("Segoe UI", 12, "bold")
+            selector, text="Select operation", font=("Inter", 12, "bold")
         ).pack(anchor=tk.W, padx=15, pady=(10, 5))
 
         controls = ctk.CTkFrame(selector, fg_color="transparent")
@@ -103,7 +103,7 @@ class NRCharacterManagementTab:
         self._ops_panel = ctk.CTkFrame(scroll, corner_radius=10)
         self._ops_panel.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
         ctk.CTkLabel(
-            self._ops_panel, text="Operation details", font=("Segoe UI", 12, "bold")
+            self._ops_panel, text="Operation details", font=("Inter", 12, "bold")
         ).pack(anchor=tk.W, padx=15, pady=(10, 5))
 
         self._ops_scrollable = ctk.CTkScrollableFrame(
@@ -165,7 +165,7 @@ class NRCharacterManagementTab:
         ctk.CTkLabel(
             self._ops_scrollable,
             text="Copy a character from one slot to another in the same save file",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         ).pack(anchor=tk.W, pady=10)
         ctk.CTkLabel(
@@ -175,7 +175,7 @@ class NRCharacterManagementTab:
                 "in it in-game, the copy will not appear on the in-game load "
                 "screen. Create a throwaway character there first, then copy."
             ),
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=("darkorange", "orange"),
             wraplength=520,
             justify=tk.LEFT,
@@ -192,7 +192,7 @@ class NRCharacterManagementTab:
         ctk.CTkLabel(
             self._ops_scrollable,
             text="Transfer a character to a different save file",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         ).pack(anchor=tk.W, pady=10)
         ctk.CTkLabel(
@@ -202,7 +202,7 @@ class NRCharacterManagementTab:
                 "in it in-game, the transfer will not appear on the in-game "
                 "load screen. Create a throwaway character there first."
             ),
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=("darkorange", "orange"),
             wraplength=520,
             justify=tk.LEFT,
@@ -221,7 +221,7 @@ class NRCharacterManagementTab:
         ctk.CTkLabel(
             self._ops_scrollable,
             text="Exchange two character slots",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         ).pack(anchor=tk.W, pady=10)
         controls = ctk.CTkFrame(self._ops_scrollable, fg_color="transparent")
@@ -236,7 +236,7 @@ class NRCharacterManagementTab:
         ctk.CTkLabel(
             self._ops_scrollable,
             text="Save character to a standalone .nrc file for backup or sharing",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         ).pack(anchor=tk.W, pady=10)
         controls = ctk.CTkFrame(self._ops_scrollable, fg_color="transparent")
@@ -253,7 +253,7 @@ class NRCharacterManagementTab:
         ctk.CTkLabel(
             self._ops_scrollable,
             text="Load a character from a .nrc file into a slot",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         ).pack(anchor=tk.W, pady=10)
         ctk.CTkLabel(
@@ -263,7 +263,7 @@ class NRCharacterManagementTab:
                 "in it in-game, the import will not appear on the in-game "
                 "load screen. Create a throwaway character there first."
             ),
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=("darkorange", "orange"),
             wraplength=520,
             justify=tk.LEFT,
@@ -285,7 +285,7 @@ class NRCharacterManagementTab:
                 "Copy this save to another extension (vanilla or Seamless Co-op). "
                 "The current file is not changed."
             ),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         ).pack(anchor=tk.W, pady=10)
         ctk.CTkButton(
@@ -310,7 +310,7 @@ class NRCharacterManagementTab:
         ctk.CTkLabel(
             self._ops_scrollable,
             text="Clear a character slot (creates backup)",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("red", "red"),
         ).pack(anchor=tk.W, pady=10)
         controls = ctk.CTkFrame(self._ops_scrollable, fg_color="transparent")

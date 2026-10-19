@@ -76,7 +76,7 @@ _SEAMLESS_CATEGORIES = frozenset({"seamless"})
 _DISABLED_TEXT = ("gray60", "gray45")
 _DISABLED_FILL = ("gray78", "gray28")
 _HINT_COLOR = ("gray40", "gray60")
-_HINT_FONT = ("Segoe UI", 11)
+_HINT_FONT = ("Inter", 11)
 
 
 # Where the item adder puts new items, carried inventory first as the default.
@@ -203,7 +203,7 @@ class DS2InventoryPanel:
     def _build_browser_panel(self, parent) -> None:
         header = ctk.CTkFrame(parent, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 4))
-        ctk.CTkLabel(header, text="Add Item", font=("Segoe UI", 13, "bold")).pack(
+        ctk.CTkLabel(header, text="Add Item", font=("Inter", 13, "bold")).pack(
             side="left"
         )
         ctk.CTkButton(
@@ -353,9 +353,9 @@ class DS2InventoryPanel:
     def _build_inventory_panel(self, parent) -> None:
         header = ctk.CTkFrame(parent, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 4))
-        ctk.CTkLabel(
-            header, text="Current inventory", font=("Segoe UI", 13, "bold")
-        ).pack(side="left")
+        ctk.CTkLabel(header, text="Current inventory", font=("Inter", 13, "bold")).pack(
+            side="left"
+        )
         ctk.CTkButton(
             header,
             text="Visual View...",

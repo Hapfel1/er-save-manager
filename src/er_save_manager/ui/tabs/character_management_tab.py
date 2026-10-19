@@ -68,14 +68,14 @@ class CharacterManagementTab:
         title_label = ctk.CTkLabel(
             scroll_frame,
             text="Character Management",
-            font=("Segoe UI", 16, "bold"),
+            font=("Inter", 16, "bold"),
         )
         title_label.pack(pady=10)
 
         info_text = ctk.CTkLabel(
             scroll_frame,
             text="Transfer characters between save files, copy slots, manage your character roster, share and download community builds",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         )
         info_text.pack(pady=5)
@@ -97,7 +97,7 @@ class CharacterManagementTab:
         ctk.CTkLabel(
             browser_frame,
             text="Download complete character builds from the community",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         ).pack(side=tk.LEFT, padx=(10, 15))
 
@@ -110,7 +110,7 @@ class CharacterManagementTab:
         selector_label = ctk.CTkLabel(
             selector_frame,
             text="Select operation",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         )
         selector_label.pack(anchor=tk.W, padx=15, pady=(10, 5))
 
@@ -156,7 +156,7 @@ class CharacterManagementTab:
         panel_label = ctk.CTkLabel(
             self.char_ops_panel,
             text="Operation details",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         )
         panel_label.pack(anchor=tk.W, padx=15, pady=(10, 5))
 
@@ -239,7 +239,7 @@ class CharacterManagementTab:
         desc_label = ctk.CTkLabel(
             self.ops_scrollable,
             text="Copy a character from one slot to another in the same save file",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         )
         desc_label.pack(anchor=tk.W, pady=10)
@@ -290,7 +290,7 @@ class CharacterManagementTab:
         desc_label = ctk.CTkLabel(
             self.ops_scrollable,
             text="Transfer a character to a different save file",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         )
         desc_label.pack(anchor=tk.W, pady=10)
@@ -326,7 +326,7 @@ class CharacterManagementTab:
         desc_label = ctk.CTkLabel(
             self.ops_scrollable,
             text="Exchange two character slots",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         )
         desc_label.pack(anchor=tk.W, pady=10)
@@ -376,7 +376,7 @@ class CharacterManagementTab:
         desc_label = ctk.CTkLabel(
             self.ops_scrollable,
             text="Save character to a standalone .erc file for backup or sharing",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         )
         desc_label.pack(anchor=tk.W, pady=10)
@@ -412,7 +412,7 @@ class CharacterManagementTab:
         desc_label = ctk.CTkLabel(
             self.ops_scrollable,
             text="Load a character from a .erc file into a slot",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         )
         desc_label.pack(anchor=tk.W, pady=10)
@@ -450,7 +450,7 @@ class CharacterManagementTab:
                 "Copy this save to another extension (vanilla, Seamless Co-op, Convergence). "
                 "The current file is not changed."
             ),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         ).pack(anchor=tk.W, pady=10)
         ctk.CTkButton(
@@ -476,7 +476,7 @@ class CharacterManagementTab:
         desc_label = ctk.CTkLabel(
             self.ops_scrollable,
             text="Clear a character slot (creates backup)",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("red", "red"),
         )
         desc_label.pack(anchor=tk.W, pady=10)

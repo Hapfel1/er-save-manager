@@ -86,13 +86,13 @@ class AppearanceTab:
         ctk.CTkLabel(
             header_frame,
             text="Character Appearance & Presets",
-            font=("Segoe UI", 16, "bold"),
+            font=("Inter", 16, "bold"),
         ).pack(anchor="w")
 
         ctk.CTkLabel(
             header_frame,
             text="Manage character appearance presets (15 slots)",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", pady=(2, 0))
 
@@ -109,7 +109,7 @@ class AppearanceTab:
         ctk.CTkLabel(
             list_container,
             text="Presets",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(pady=(12, 6), padx=12, anchor="w")
 
         self.list_frame = ctk.CTkScrollableFrame(
@@ -218,7 +218,7 @@ class AppearanceTab:
         ctk.CTkLabel(
             card,
             text="Eye overrides",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(pady=(12, 2), padx=12, anchor="w")
         ctk.CTkLabel(
             card,
@@ -226,7 +226,7 @@ class AppearanceTab:
                 "Eyes and marks the game puts over the selected character's face. "
                 "The load screen shows the change after the next in-game save."
             ),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("#808080", "#a0a0a0"),
             wraplength=_EYE_CARD_WIDTH - 24,
             justify="left",
@@ -259,7 +259,7 @@ class AppearanceTab:
         self._eye_note = ctk.CTkLabel(
             card,
             text="",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=palette.WARNING_TEXT,
             wraplength=_EYE_CARD_WIDTH - 24,
             justify="left",

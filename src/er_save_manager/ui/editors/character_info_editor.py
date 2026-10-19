@@ -135,7 +135,7 @@ class CharacterInfoEditor:
         ctk.CTkLabel(
             creation_frame,
             text="Character creation",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).grid(row=0, column=0, columnspan=5, sticky=ctk.W, padx=5, pady=(5, 0))
 
         ctk.CTkLabel(creation_frame, text="Name:").grid(
@@ -159,7 +159,7 @@ class CharacterInfoEditor:
         self.char_name_count_label = ctk.CTkLabel(
             creation_frame,
             text="0/16",
-            font=("Segoe UI", 8),
+            font=("Inter", 8),
         )
         self.char_name_count_label.grid(row=1, column=4, padx=5, pady=5)
 
@@ -238,7 +238,7 @@ class CharacterInfoEditor:
         ctk.CTkLabel(
             progression_frame,
             text="Game progression",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).grid(row=0, column=0, columnspan=6, sticky=ctk.W, padx=5, pady=(5, 0))
 
         # NG+ Level (event flag and ClearCount)
@@ -270,7 +270,7 @@ class CharacterInfoEditor:
         ctk.CTkLabel(
             playtime_frame,
             text="Playtime",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).grid(row=0, column=0, columnspan=6, sticky=ctk.W, padx=5, pady=(5, 0))
 
         ctk.CTkLabel(playtime_frame, text="Hours:").grid(
@@ -304,7 +304,7 @@ class CharacterInfoEditor:
         ).grid(row=1, column=5, padx=5, pady=5)
 
         self.playtime_error_label = ctk.CTkLabel(
-            playtime_frame, text="", text_color="red", font=("Segoe UI", 10)
+            playtime_frame, text="", text_color="red", font=("Inter", 10)
         )
         self.playtime_error_label.grid(
             row=2, column=0, columnspan=6, sticky=ctk.W, padx=5
@@ -322,7 +322,7 @@ class CharacterInfoEditor:
         ctk.CTkLabel(
             time_frame,
             text="Time of day",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).grid(row=0, column=0, columnspan=6, sticky=ctk.W, padx=5, pady=(5, 0))
 
         self.time_h_var = tk.StringVar(value="0")
@@ -344,7 +344,7 @@ class CharacterInfoEditor:
             trace_variable(var, "w", lambda *_a: self._on_playtime_change())
 
         self.time_error_label = ctk.CTkLabel(
-            time_frame, text="", text_color="red", font=("Segoe UI", 10)
+            time_frame, text="", text_color="red", font=("Inter", 10)
         )
         self.time_error_label.grid(row=2, column=0, columnspan=6, sticky=ctk.W, padx=5)
 

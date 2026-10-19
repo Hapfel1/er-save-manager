@@ -29,13 +29,13 @@ class HexEditorTab:
         ctk.CTkLabel(
             self.parent,
             text="Hex Editor",
-            font=("Segoe UI", 16, "bold"),
+            font=("Inter", 16, "bold"),
         ).pack(pady=10)
 
         info_text = ctk.CTkLabel(
             self.parent,
             text="Advanced: View and edit raw save file data in hexadecimal format\n(Full editing coming soon)",
-            font=("Segoe UI", 12),
+            font=("Inter", 12),
             text_color=("gray40", "gray70"),
         )
         info_text.pack(pady=5)
@@ -46,14 +46,14 @@ class HexEditorTab:
         ctk.CTkLabel(
             warning_frame,
             text="Warning: Direct hex editing can corrupt your save file. Use with caution.",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
             text_color=ds.WARNING,
         ).pack(padx=10, pady=8)
 
         control_frame = ctk.CTkFrame(self.parent, fg_color="transparent")
         control_frame.pack(fill="x", padx=20, pady=10)
 
-        ctk.CTkLabel(control_frame, text="Offset:", font=("Segoe UI", 12)).pack(
+        ctk.CTkLabel(control_frame, text="Offset:", font=("Inter", 12)).pack(
             side="left", padx=(0, 5)
         )
 
@@ -86,7 +86,7 @@ class HexEditorTab:
         ctk.CTkLabel(
             hex_frame,
             text="Hex data",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
         # Hex text display (using tk.Text since CTk doesn't have native text widget)
@@ -127,7 +127,7 @@ class HexEditorTab:
         ctk.CTkLabel(
             info_panel,
             text="Save structure info",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
         structure_info = """Save File Structure:

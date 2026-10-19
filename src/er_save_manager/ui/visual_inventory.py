@@ -240,7 +240,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         self._name_lbl = ctk.CTkLabel(
             bot,
             text="No item selected",
-            font=("Segoe UI", 10, "bold"),
+            font=("Inter", 10, "bold"),
             anchor="w",
             text_color=("gray50", "gray60"),
             height=22,
@@ -250,7 +250,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         self._detail_lbl = ctk.CTkLabel(
             bot,
             text="",
-            font=("Segoe UI", 9),
+            font=("Inter", 9),
             anchor="w",
             text_color=("gray50", "gray60"),
             height=18,

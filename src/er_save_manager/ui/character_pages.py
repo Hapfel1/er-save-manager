@@ -47,7 +47,7 @@ class CharacterPagesTab:
         outer.pack(fill="both", expand=True, pady=(0, 10))
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
-        ctk.CTkLabel(header, text=self._title, font=("Segoe UI", 16, "bold")).pack(
+        ctk.CTkLabel(header, text=self._title, font=("Inter", 16, "bold")).pack(
             side="left"
         )
         if len(self._builders) > 1:

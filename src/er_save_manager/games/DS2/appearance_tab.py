@@ -127,14 +127,14 @@ class DS2AppearanceTab:
     def _card(self, parent, title: str, hint: str | None = None) -> ctk.CTkFrame:
         card = ctk.CTkFrame(parent, corner_radius=10)
         card.pack(fill="x", padx=10, pady=(6, 4))
-        ctk.CTkLabel(card, text=title, font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(card, text=title, font=("Inter", 12, "bold")).pack(
             anchor="w", padx=12, pady=(10, 0)
         )
         if hint:
             ctk.CTkLabel(
                 card,
                 text=hint,
-                font=("Segoe UI", 10),
+                font=("Inter", 10),
                 text_color=ds.MUTED,
                 justify="left",
                 wraplength=700,

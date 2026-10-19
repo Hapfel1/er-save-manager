@@ -235,7 +235,7 @@ class DS3InventoryTab:
         head = ds.FlowRow(left, gap=12)
         head.grid(row=0, column=0, columnspan=2, sticky="ew", padx=10, pady=(10, 4))
         head.add(
-            ctk.CTkLabel(head, text="Spawn items", font=("Segoe UI", 12, "bold")),
+            ctk.CTkLabel(head, text="Spawn items", font=("Inter", 12, "bold")),
             ctk.CTkCheckBox(
                 head,
                 text="Cut content",
@@ -326,7 +326,7 @@ class DS3InventoryTab:
         )
         self._spawn_all_btn.pack(side="left")
         self._spawn_info = ctk.CTkLabel(
-            ctrl, text="", font=("Segoe UI", 9), text_color=_HINT
+            ctrl, text="", font=("Inter", 9), text_color=_HINT
         )
         self._spawn_info.grid(row=2, column=0, columnspan=5, sticky="w", pady=(0, 4))
 
@@ -338,7 +338,7 @@ class DS3InventoryTab:
 
         head = ctk.CTkFrame(right, fg_color="transparent")
         head.grid(row=0, column=0, columnspan=2, sticky="ew", padx=10, pady=(10, 4))
-        ctk.CTkLabel(head, text="Inventory", font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(head, text="Inventory", font=("Inter", 12, "bold")).pack(
             side="left"
         )
         ctk.CTkButton(
@@ -458,7 +458,7 @@ class DS3InventoryTab:
         )
         self._remove_btn.pack(side="left")
         self._edit_info = ctk.CTkLabel(
-            right, text="", font=("Segoe UI", 9), text_color=_HINT, anchor="w"
+            right, text="", font=("Inter", 9), text_color=_HINT, anchor="w"
         )
         self._edit_info.grid(
             row=5, column=0, columnspan=2, sticky="ew", padx=10, pady=(0, 8)

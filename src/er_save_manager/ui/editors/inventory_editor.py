@@ -963,7 +963,7 @@ class InventoryEditor:
             text="Add Item",
             command=self.add_item,
             height=30,
-            font=("Segoe UI", 11, "bold"),
+            font=("Inter", 11, "bold"),
         )
         self._add_item_btn.pack(side=ctk.LEFT, fill=ctk.X, expand=True, padx=(0, 4))
 
@@ -985,7 +985,7 @@ class InventoryEditor:
             bot_btn_row,
             text="Loadout mode",
             variable=self.loadout_mode_var,
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             width=40,
         )
         self.loadout_switch.pack(side=ctk.LEFT, padx=(0, 12))
@@ -1113,7 +1113,7 @@ class InventoryEditor:
             parent,
             text="No item selected",
             text_color=("gray50", "gray60"),
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             anchor="w",
             justify="left",
             wraplength=400,
@@ -1142,7 +1142,7 @@ class InventoryEditor:
         ctk.CTkLabel(
             header,
             text="Current inventory",
-            font=("Segoe UI", 13, "bold"),
+            font=("Inter", 13, "bold"),
         ).pack(side=ctk.LEFT)
 
         self.inv_filter_var = ctk.StringVar(value="All")

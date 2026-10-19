@@ -15,12 +15,12 @@ from er_save_manager.ui.utils import (
     title_bar_height,
 )
 
-FONT = ("Segoe UI", 13)
-BOLD = ("Segoe UI Semibold", 13)
-SMALL = ("Segoe UI", 12)
-TITLE = ("Segoe UI Semibold", 15)
+FONT = ("Inter", 13)
+BOLD = ("Inter SemiBold", 13)
+SMALL = ("Inter", 12)
+TITLE = ("Inter SemiBold", 15)
 # Main windows and announcement dialogs (update, console saves)
-TITLE_LARGE = ("Segoe UI", 19, "bold")
+TITLE_LARGE = ("Inter", 19, "bold")
 MUTED = ("gray40", "gray65")
 BOX = ("gray90", "gray18")
 WARNING = palette.WARNING_TEXT
@@ -67,7 +67,7 @@ def header(parent, text, icon=None, icon_color=WARNING, font=TITLE):
     row.pack(fill=tk.X)
     if icon:
         ctk.CTkLabel(
-            row, text=icon, font=("Segoe UI Semibold", 24), text_color=icon_color
+            row, text=icon, font=("Inter SemiBold", 24), text_color=icon_color
         ).pack(side=tk.LEFT, padx=(0, 10))
     ctk.CTkLabel(row, text=text, font=font, anchor="w", justify=tk.LEFT).pack(
         side=tk.LEFT, fill=tk.X
@@ -613,7 +613,7 @@ LIST_TEXT_PX = 13
 LIST_ROW_PX = 26
 
 
-def _list_font(box: ctk.CTkFrame, family: str = "Segoe UI") -> tuple[str, int]:
+def _list_font(box: ctk.CTkFrame, family: str = "Inter") -> tuple[str, int]:
     """Font tuple in negative (pixel) size, scaled like CTk fonts."""
     return (family, -round(box._apply_widget_scaling(LIST_TEXT_PX)))
 
@@ -682,7 +682,7 @@ def themed_tree(parent, xscroll: bool = False, **kwargs):
         foreground=fg,
         relief="flat",
         borderwidth=0,
-        font=_list_font(box, "Segoe UI Semibold"),
+        font=_list_font(box, "Inter SemiBold"),
     )
     style.map(f"{name}.Heading", background=[("active", head_bg)])
     style.map(name, background=[("selected", select)], foreground=[("selected", fg)])

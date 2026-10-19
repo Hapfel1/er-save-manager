@@ -28,9 +28,9 @@ _WARNING = palette.WARNING_TEXT
 _FOUND = palette.GREEN_TEXT
 _MUTED = ("gray40", "gray65")
 _BOX = ("gray90", "gray18")
-_FONT = ("Segoe UI", 13)
-_BOLD = ("Segoe UI Semibold", 13)
-_SMALL = ("Segoe UI", 12)
+_FONT = ("Inter", 13)
+_BOLD = ("Inter SemiBold", 13)
+_SMALL = ("Inter", 12)
 _WIDTH = 640
 _WRAP = _WIDTH - 60
 
@@ -91,12 +91,12 @@ def show_wiped_slot_dialog(
     header = ctk.CTkFrame(main, fg_color="transparent")
     header.pack(fill=tk.X)
     ctk.CTkLabel(
-        header, text="⚠", font=("Segoe UI Semibold", 24), text_color=_WARNING
+        header, text="⚠", font=("Inter SemiBold", 24), text_color=_WARNING
     ).pack(side=tk.LEFT, padx=(0, 10))
     ctk.CTkLabel(
         header,
         text=f"Slot {slot_idx + 1} ({name}, Lv. {level}) has no character data",
-        font=("Segoe UI Semibold", 15),
+        font=("Inter SemiBold", 15),
     ).pack(side=tk.LEFT)
 
     ctk.CTkLabel(

@@ -24,9 +24,9 @@ def github_notice(parent, action: str, retry: str = "", **pack) -> ctk.CTkFrame:
     box = ds.box(parent, **({"pady": (0, 12)} | pack))
     row = ctk.CTkFrame(box, fg_color="transparent")
     row.pack(fill=tk.X, padx=12, pady=(10, 0))
-    ctk.CTkLabel(
-        row, text=".", font=("Segoe UI Semibold", 20), text_color=ds.INFO
-    ).pack(side=tk.LEFT, padx=(0, 10))
+    ctk.CTkLabel(row, text=".", font=("Inter SemiBold", 20), text_color=ds.INFO).pack(
+        side=tk.LEFT, padx=(0, 10)
+    )
     ctk.CTkLabel(row, text="GitHub account required", font=ds.BOLD).pack(side=tk.LEFT)
     ctk.CTkLabel(
         box,

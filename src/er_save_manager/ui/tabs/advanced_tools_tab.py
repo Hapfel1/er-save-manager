@@ -48,7 +48,7 @@ class AdvancedToolsTab:
         ctk.CTkLabel(
             scroll_frame,
             text="Advanced Tools",
-            font=("Segoe UI", 14, "bold"),
+            font=("Inter", 14, "bold"),
         ).pack(pady=10)
 
         info_frame = ctk.CTkFrame(scroll_frame, corner_radius=12)
@@ -57,7 +57,7 @@ class AdvancedToolsTab:
         ctk.CTkLabel(
             info_frame,
             text="Save information",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
         self.save_info_text = ctk.CTkTextbox(
@@ -77,7 +77,7 @@ class AdvancedToolsTab:
         ctk.CTkLabel(
             tools_frame,
             text="Tools",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
         ctk.CTkButton(

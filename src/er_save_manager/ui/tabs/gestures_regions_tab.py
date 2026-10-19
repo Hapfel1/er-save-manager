@@ -75,13 +75,13 @@ class GesturesRegionsTab:
         ctk.CTkLabel(
             main_frame,
             text="Gestures & Unlocked Regions",
-            font=("Segoe UI", 18, "bold"),
+            font=("Inter", 18, "bold"),
         ).pack(pady=(15, 5), padx=15, anchor="w")
 
         ctk.CTkLabel(
             main_frame,
             text="View and manage unlocked gestures and unlocked regions.",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("#808080", "#a0a0a0"),
         ).pack(pady=(0, 15), padx=15, anchor="w")
 
@@ -91,7 +91,7 @@ class GesturesRegionsTab:
         ctk.CTkLabel(
             gestures_frame,
             text="Gestures",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(pady=(12, 8), padx=12, anchor="w")
 
         from er_save_manager.ui import dialog_style as ds
@@ -131,12 +131,12 @@ class GesturesRegionsTab:
         ctk.CTkLabel(
             wheel_frame,
             text="Gesture wheel",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(pady=(12, 2), padx=12, anchor="w")
         ctk.CTkLabel(
             wheel_frame,
             text="The six gestures on the in-game wheel. Only unlocked gestures can be placed.",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("#808080", "#a0a0a0"),
         ).pack(pady=(0, 8), padx=12, anchor="w")
         wheel_grid = ctk.CTkFrame(wheel_frame, fg_color="transparent")

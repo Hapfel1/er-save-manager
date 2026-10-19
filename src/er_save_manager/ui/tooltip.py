@@ -61,7 +61,7 @@ class Tooltip:
             justify="left",
             bg=_BG[pick],
             fg="gray90" if dark else "gray10",
-            font=("Segoe UI", -12),
+            font=("Inter", -12),
             padx=8,
             pady=4,
             wraplength=360,

@@ -78,7 +78,7 @@ class DSRIconBrowser(ctk.CTkToplevel):
         self._sel_lbl = ctk.CTkLabel(
             panel,
             text="No item selected",
-            font=("Segoe UI", 10, "bold"),
+            font=("Inter", 10, "bold"),
             anchor="w",
             text_color=("gray50", "gray60"),
         )
@@ -115,7 +115,7 @@ class DSRIconBrowser(ctk.CTkToplevel):
             row=1, column=1, columnspan=3, sticky="w", pady=(6, 0)
         )
         self._info = ctk.CTkLabel(
-            opts, text="", font=("Segoe UI", 9), text_color=("gray40", "gray60")
+            opts, text="", font=("Inter", 9), text_color=("gray40", "gray60")
         )
         self._info.grid(row=2, column=0, columnspan=4, sticky="w", pady=(4, 0))
 
@@ -126,7 +126,7 @@ class DSRIconBrowser(ctk.CTkToplevel):
             buttons,
             text="Spawn Selected",
             height=34,
-            font=("Segoe UI", 11, "bold"),
+            font=("Inter", 11, "bold"),
             command=self._do_spawn,
             state="disabled",
         )

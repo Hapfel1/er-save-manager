@@ -147,7 +147,7 @@ class WorldStateTab:
         ctk.CTkLabel(
             tools_frame,
             text="Map markers and item history",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(anchor="w", padx=10, pady=(10, 2))
         self.markers_var = tk.StringVar(value="N/A")
         ds.wrap_to_width(
@@ -170,7 +170,7 @@ class WorldStateTab:
         location_frame.pack(fill=tk.X, padx=10, pady=(10, 0))
 
         ctk.CTkLabel(
-            location_frame, text="Current location", font=("Segoe UI", 12, "bold")
+            location_frame, text="Current location", font=("Inter", 12, "bold")
         ).pack(anchor="w", padx=10, pady=(10, 5))
 
         map_frame = ctk.CTkFrame(location_frame, fg_color="transparent")
@@ -210,9 +210,9 @@ class WorldStateTab:
 
         messages_frame = ctk.CTkFrame(left_frame, corner_radius=12)
         messages_frame.pack(fill=tk.X, padx=10, pady=(10, 0))
-        ctk.CTkLabel(
-            messages_frame, text="Messages", font=("Segoe UI", 12, "bold")
-        ).pack(anchor="w", padx=10, pady=(10, 5))
+        ctk.CTkLabel(messages_frame, text="Messages", font=("Inter", 12, "bold")).pack(
+            anchor="w", padx=10, pady=(10, 5)
+        )
         self.messages_var = tk.StringVar(value="N/A")
         ctk.CTkLabel(messages_frame, textvariable=self.messages_var).pack(
             anchor="w", padx=10, pady=(0, 4)
@@ -245,7 +245,7 @@ class WorldStateTab:
         main_container.bind("<Configure>", place_columns, add="+")
 
         ctk.CTkLabel(
-            right_frame, text="Teleportation", font=("Segoe UI", 12, "bold")
+            right_frame, text="Teleportation", font=("Inter", 12, "bold")
         ).pack(anchor="w", padx=10, pady=(10, 5))
 
         self._build_map_card(right_frame)
@@ -312,7 +312,7 @@ class WorldStateTab:
         ctk.CTkButton(
             text,
             text="Open World Map",
-            font=("Segoe UI", 15),
+            font=("Inter", 15),
             height=40,
             width=200,
             command=self._open_map_window,
@@ -1029,12 +1029,12 @@ class WorldStateTab:
             self.content_frame,
             text="Advanced: invalid coordinates may corrupt your save.",
             text_color="#ff6b6b",
-            font=("Segoe UI", 10, "bold"),
+            font=("Inter", 10, "bold"),
         ).pack(pady=(0, 20))
 
         map_frame = ctk.CTkFrame(self.content_frame, corner_radius=12)
         map_frame.pack(fill=tk.X, pady=(0, 15))
-        ctk.CTkLabel(map_frame, text="Map ID", font=("Segoe UI", 11, "bold")).pack(
+        ctk.CTkLabel(map_frame, text="Map ID", font=("Inter", 11, "bold")).pack(
             anchor="w", padx=10, pady=(10, 5)
         )
         id_row = ctk.CTkFrame(map_frame, fg_color="transparent")
@@ -1049,19 +1049,19 @@ class WorldStateTab:
         ctk.CTkLabel(
             id_row,
             text="Format: m60_42_36_00 or 60 42 36 00",
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=("gray40", "gray70"),
         ).pack(side=tk.LEFT)
 
         coords_frame = ctk.CTkFrame(self.content_frame, corner_radius=12)
         coords_frame.pack(fill=tk.X, pady=(0, 15))
         ctk.CTkLabel(
-            coords_frame, text="Coordinates (optional)", font=("Segoe UI", 11, "bold")
+            coords_frame, text="Coordinates (optional)", font=("Inter", 11, "bold")
         ).pack(anchor="w", padx=10, pady=(10, 5))
         ctk.CTkLabel(
             coords_frame,
             text="Leave 0.0 to use current coordinates",
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=("gray40", "gray70"),
         ).pack(padx=10, pady=(0, 10))
 

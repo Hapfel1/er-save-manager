@@ -722,18 +722,18 @@ class SaveManagerGUI:
             header,
             text="" if update_icon else "↑",
             image=update_icon,
-            font=("Segoe UI Semibold", 24),
+            font=("Inter SemiBold", 24),
             text_color=palette.PURPLE_TEXT,
         ).pack(side=ctk.LEFT, padx=(0, 10))
-        ctk.CTkLabel(
-            header, text="Update Available", font=("Segoe UI", 19, "bold")
-        ).pack(side=ctk.LEFT)
+        ctk.CTkLabel(header, text="Update Available", font=("Inter", 19, "bold")).pack(
+            side=ctk.LEFT
+        )
         versions = ds.box(main_frame, pady=(12, 10))
         for i, (label, value) in enumerate(
             (("Current version", __version__), ("Latest version", latest_version))
         ):
             ctk.CTkLabel(
-                versions, text=label, font=("Segoe UI", 14), text_color=ds.MUTED
+                versions, text=label, font=("Inter", 14), text_color=ds.MUTED
             ).grid(
                 row=i,
                 column=0,
@@ -741,7 +741,7 @@ class SaveManagerGUI:
                 padx=(12, 24),
                 pady=(8 if i == 0 else 2, 8 if i else 2),
             )
-            ctk.CTkLabel(versions, text=value, font=("Segoe UI", 14, "bold")).grid(
+            ctk.CTkLabel(versions, text=value, font=("Inter", 14, "bold")).grid(
                 row=i,
                 column=1,
                 sticky="w",
@@ -788,7 +788,7 @@ class SaveManagerGUI:
             command=self._open_kofi,
             width=100,
             height=32,
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         )
         support_btn.place(relx=1.0, x=-12, y=12, anchor="ne")
 
@@ -798,7 +798,7 @@ class SaveManagerGUI:
             command=self._open_discord,
             width=100,
             height=32,
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         )
         discord_btn.place(relx=0.0, x=12, y=12, anchor="nw")
 
@@ -808,21 +808,21 @@ class SaveManagerGUI:
             command=self._open_youtube,
             width=100,
             height=32,
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         )
         youtube_btn.place(relx=0.0, x=124, y=12, anchor="nw")
 
         self._title_label = ctk.CTkLabel(
             title_frame,
             text="Elden Ring Save Manager",
-            font=("Segoe UI", 20, "bold"),
+            font=("Inter", 20, "bold"),
         )
         self._title_label.pack(pady=(10, 2))
 
         self._subtitle_label = ctk.CTkLabel(
             title_frame,
             text="Complete save editor, backup manager, and corruption fixer",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         )
         self._subtitle_label.pack(pady=(0, 10))
 
@@ -833,7 +833,7 @@ class SaveManagerGUI:
         game_row.pack(fill=tk.X, padx=12, pady=(12, 4))
         self._game_row = game_row
 
-        ctk.CTkLabel(game_row, text="Game:", font=("Segoe UI", 11)).pack(
+        ctk.CTkLabel(game_row, text="Game:", font=("Inter", 11)).pack(
             side=tk.LEFT, padx=(0, 8)
         )
 
@@ -872,7 +872,7 @@ class SaveManagerGUI:
         self._select_save_label = ctk.CTkLabel(
             file_frame,
             text="Select a save file",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         )
         self._select_save_label.pack(anchor="w", padx=12, pady=(4, 4))
 
@@ -2226,7 +2226,7 @@ class SaveManagerGUI:
         header = ctk.CTkLabel(
             parent,
             text="Character Editor",
-            font=("Segoe UI", 16, "bold"),
+            font=("Inter", 16, "bold"),
         )
         header.pack(anchor="w", padx=20, pady=(6, 8))
 
@@ -2419,17 +2419,17 @@ class SaveManagerGUI:
         ctk.CTkLabel(
             header,
             text="ℹ",
-            font=("Segoe UI", 30, "bold"),
+            font=("Inter", 30, "bold"),
             text_color=palette.PURPLE_TEXT,
         ).pack(side=ctk.LEFT, padx=(0, 10))
-        ctk.CTkLabel(
-            header, text="PS / Switch Saves", font=("Segoe UI", 19, "bold")
-        ).pack(side=ctk.LEFT)
+        ctk.CTkLabel(header, text="PS / Switch Saves", font=("Inter", 19, "bold")).pack(
+            side=ctk.LEFT
+        )
         ctk.CTkLabel(
             main_frame,
             text="Console saves must be decrypted and exported as memory.dat "
             "before you can load them. Auto-Find does not find memory.dat files.",
-            font=("Segoe UI", 15),
+            font=("Inter", 15),
             wraplength=500,
             justify=ctk.LEFT,
         ).pack(anchor=ctk.W, pady=(10, 10))
@@ -2439,7 +2439,7 @@ class SaveManagerGUI:
             text="Exporting or decrypting a console save may require custom "
             "firmware on your console; there are no instructions for that here. "
             "Use at your own risk.",
-            font=("Segoe UI", 14),
+            font=("Inter", 14),
             wraplength=476,
             justify=ctk.LEFT,
         ).pack(anchor=ctk.W, padx=12, pady=10)
@@ -3717,8 +3717,10 @@ def _set_dpi_aware_unscaled() -> None:
 def main():
     """Main entry point for GUI"""
     from er_save_manager.ui.emoji_fallback import install as install_emoji_fallback
+    from er_save_manager.ui.fonts import register as register_fonts
 
     install_emoji_fallback()
+    register_fonts()
     ignore_dpi = _windows_dpi_ignored()
     if ignore_dpi:
         _set_dpi_aware_unscaled()

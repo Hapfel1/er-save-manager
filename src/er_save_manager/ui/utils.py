@@ -308,6 +308,13 @@ def style_window_frame(window, *, dialog: bool = True) -> None:
     """
     if sys.platform != "win32":
         return
+    if isinstance(window, ctk.CTkToplevel):
+        # CTkToplevel.resizable() re-applies the dark title bar 10 ms later by
+        # withdrawing the window and restoring its state. With two pending
+        # calls the second records the state as withdrawn, so a window shown
+        # in between stays hidden while holding the grab. CTkToplevel already
+        # set the title bar in __init__; the later calls only redo it.
+        window._deactivate_windows_window_header_manipulation = True
 
     def apply():
         import ctypes

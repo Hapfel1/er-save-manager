@@ -131,9 +131,9 @@ class DSREditorTab:
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
 
-        ctk.CTkLabel(
-            header, text="Character Editor", font=("Segoe UI", 16, "bold")
-        ).pack(side="left")
+        ctk.CTkLabel(header, text="Character Editor", font=("Inter", 16, "bold")).pack(
+            side="left"
+        )
 
         tabs = ctk.CTkTabview(
             outer,
@@ -182,7 +182,7 @@ class DSREditorTab:
 
         af = ctk.CTkFrame(top_row, fg_color="transparent")
         af.pack(side="left", fill="both", expand=True, padx=(0, 5))
-        ctk.CTkLabel(af, text="Attributes", font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(af, text="Attributes", font=("Inter", 12, "bold")).pack(
             anchor="w", padx=5, pady=(5, 0)
         )
         ag = ctk.CTkFrame(af, fg_color="transparent")
@@ -211,7 +211,7 @@ class DSREditorTab:
 
         rf = ctk.CTkFrame(top_row, fg_color="transparent")
         rf.pack(side="left", fill="both", expand=True, padx=(5, 0))
-        ctk.CTkLabel(rf, text="Resources", font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(rf, text="Resources", font=("Inter", 12, "bold")).pack(
             anchor="w", padx=5, pady=(5, 0)
         )
         rg = ctk.CTkFrame(rf, fg_color="transparent")
@@ -239,7 +239,7 @@ class DSREditorTab:
         self._class_note = ctk.CTkLabel(
             frame,
             text="",
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=("gray40", "gray70"),
             wraplength=520,
             justify="left",
@@ -248,7 +248,7 @@ class DSREditorTab:
         ctk.CTkLabel(
             frame,
             text="Saving VIT updates derived max HP. Saving END updates max Stamina. Level is recalculated from stats automatically.",
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=15, pady=(4, 0))
 
@@ -261,7 +261,7 @@ class DSREditorTab:
 
         cf = ctk.CTkFrame(frame, fg_color="transparent")
         cf.pack(fill="x", pady=5, padx=10)
-        ctk.CTkLabel(cf, text="Character identity", font=("Segoe UI", 12, "bold")).grid(
+        ctk.CTkLabel(cf, text="Character identity", font=("Inter", 12, "bold")).grid(
             row=0, column=0, columnspan=2, sticky="w", padx=5, pady=(5, 0)
         )
 
@@ -299,7 +299,7 @@ class DSREditorTab:
         ctk.CTkLabel(
             frame,
             text=f"Name supports up to {NAME_MAX_CHARS} characters. Both name copies in the save are updated.",
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=15, pady=(4, 0))
 
@@ -312,7 +312,7 @@ class DSREditorTab:
 
         cf = ctk.CTkFrame(frame, fg_color="transparent")
         cf.pack(fill="x", pady=5, padx=10)
-        ctk.CTkLabel(cf, text="Covenant offerings", font=("Segoe UI", 12, "bold")).grid(
+        ctk.CTkLabel(cf, text="Covenant offerings", font=("Inter", 12, "bold")).grid(
             row=0, column=0, columnspan=3, sticky="w", padx=5, pady=(5, 0)
         )
         # Whole numbers only, up to the u8 the save stores.
@@ -344,7 +344,7 @@ class DSREditorTab:
             text=f"Ranks 1, 2 and 3 are reached at {need} offerings. Forest Hunter "
             "counts offerings but has no ranks. Counts go from 0 to "
             f"{MAX_COVENANT_OFFERINGS}. Rank rewards are not added.",
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=("gray40", "gray70"),
             justify="left",
             wraplength=520,

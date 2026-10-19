@@ -32,7 +32,7 @@ def show_toast(root: tk.Tk, message: str, duration: int = 3000, type: str = "suc
         text=message,
         text_color=theme["fg"],
         fg_color=theme["bg"],
-        font=("Segoe UI", 12, "bold"),
+        font=("Inter", 12, "bold"),
         wraplength=400,
     )
     label.pack(padx=20, pady=12)

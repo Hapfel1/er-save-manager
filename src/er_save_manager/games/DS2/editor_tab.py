@@ -131,7 +131,7 @@ class DS2EditorTab:
         top = ctk.CTkFrame(self.parent, fg_color="transparent")
         top.pack(fill="x", padx=10, pady=(10, 5))
 
-        ctk.CTkLabel(top, text="Character Editor", font=("Segoe UI", 16, "bold")).pack(
+        ctk.CTkLabel(top, text="Character Editor", font=("Inter", 16, "bold")).pack(
             side="left"
         )
         ctk.CTkButton(
@@ -295,7 +295,7 @@ class DS2EditorTab:
         stats_frame = ctk.CTkFrame(body, fg_color="transparent")
         stats_frame.pack(fill="x", padx=10, pady=5)
         ctk.CTkLabel(
-            stats_frame, text="Level & attributes", font=("Segoe UI", 12, "bold")
+            stats_frame, text="Level & attributes", font=("Inter", 12, "bold")
         ).grid(row=0, column=0, columnspan=6, sticky="w", padx=5, pady=(0, 5))
 
         ctk.CTkLabel(stats_frame, text="Level:").grid(
@@ -305,9 +305,7 @@ class DS2EditorTab:
         ctk.CTkEntry(stats_frame, textvariable=self.level_var, width=140).grid(
             row=1, column=1, sticky="w", padx=5, pady=3
         )
-        self.level_status_label = ctk.CTkLabel(
-            stats_frame, text="", font=("Segoe UI", 10)
-        )
+        self.level_status_label = ctk.CTkLabel(stats_frame, text="", font=("Inter", 10))
         self.level_status_label.grid(
             row=1, column=2, columnspan=4, sticky="w", padx=5, pady=3
         )

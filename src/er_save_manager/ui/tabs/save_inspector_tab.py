@@ -61,7 +61,7 @@ class SaveInspectorTab:
         ctk.CTkLabel(
             header,
             text="Save Fixer",
-            font=("Segoe UI", 16, "bold"),
+            font=("Inter", 16, "bold"),
         ).pack(side="left")
 
         ctk.CTkButton(
@@ -85,7 +85,7 @@ class SaveInspectorTab:
         ctk.CTkLabel(
             instructions_frame,
             text="Select a character and click 'View All Issues' to scan for problems and apply fixes",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         ).pack(side="left", anchor="w")
 

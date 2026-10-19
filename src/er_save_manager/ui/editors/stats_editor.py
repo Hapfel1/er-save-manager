@@ -180,7 +180,7 @@ class StatsEditor:
         ctk.CTkLabel(
             stats_frame,
             text="Attributes",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
 
         stats_grid = ctk.CTkFrame(stats_frame, fg_color="transparent")
@@ -216,7 +216,7 @@ class StatsEditor:
                 stats_grid,
                 text="",
                 text_color="red",
-                font=("Segoe UI", 10),
+                font=("Inter", 10),
                 width=80,
             )
             error_label.grid(row=i, column=2, padx=(0, 5), pady=5, sticky=ctk.W)
@@ -232,7 +232,7 @@ class StatsEditor:
         ctk.CTkLabel(
             resources_frame,
             text="Max health/FP/stamina",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
 
         resources_grid = ctk.CTkFrame(resources_frame, fg_color="transparent")
@@ -269,7 +269,7 @@ class StatsEditor:
         ctk.CTkLabel(
             other_frame,
             text="Level & runes",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
             text_color=("black", "white"),
         ).grid(row=0, column=0, columnspan=5, sticky=ctk.W, padx=5, pady=(5, 0))
 
@@ -299,7 +299,7 @@ class StatsEditor:
             other_frame,
             textvariable=self.calculated_level_var,
             text_color=("black", "white"),
-            font=("Segoe UI", 10, "bold"),
+            font=("Inter", 10, "bold"),
         ).grid(row=content_row, column=3, padx=5, pady=5)
 
         self.level_warning_var = ctk.StringVar(value="")
@@ -307,7 +307,7 @@ class StatsEditor:
             other_frame,
             textvariable=self.level_warning_var,
             text_color="red",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         )
         self.level_warning_label.grid(
             row=content_row, column=4, padx=10, pady=5, sticky=ctk.W
@@ -345,7 +345,7 @@ class StatsEditor:
             other_frame,
             textvariable=self.bloodstain_var,
             text_color=("black", "white"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         ).grid(row=content_row + 1, column=4, padx=10, pady=5, sticky=ctk.W)
 
         # Great rune / rune arc
@@ -355,7 +355,7 @@ class StatsEditor:
         ctk.CTkLabel(
             rune_frame,
             text="Great Rune & Rune Arc",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
             text_color=("black", "white"),
         ).grid(row=0, column=0, columnspan=4, sticky=ctk.W, padx=5, pady=(5, 0))
 
@@ -398,7 +398,7 @@ class StatsEditor:
         ctk.CTkLabel(
             blessing_frame,
             text="Blessings & Memory Stones",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
             text_color=("black", "white"),
         ).grid(row=0, column=0, columnspan=3, sticky=ctk.W, padx=5, pady=(5, 0))
 
@@ -438,7 +438,7 @@ class StatsEditor:
                 blessing_frame,
                 text=f"0-{limit}",
                 text_color=("gray50", "gray70"),
-                font=("Segoe UI", 9),
+                font=("Inter", 9),
             )
             hint.grid(row=row, column=2, sticky=ctk.W, padx=5, pady=5)
             self._range_fields[key] = (var, limit, hint, f"0-{limit}")
@@ -451,7 +451,7 @@ class StatsEditor:
         ctk.CTkLabel(
             grace_frame,
             text="Last rested grace",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
             text_color=("black", "white"),
         ).grid(row=0, column=0, columnspan=2, sticky=ctk.W, padx=5, pady=(5, 0))
 
@@ -491,7 +491,7 @@ class StatsEditor:
         ctk.CTkLabel(
             mm_frame,
             text="Matchmaking weapon level",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
             text_color=("black", "white"),
         ).grid(row=0, column=0, columnspan=3, sticky=ctk.W, padx=5, pady=(5, 0))
 
@@ -516,11 +516,11 @@ class StatsEditor:
             mm_frame,
             text="Min from inventory: --",
             text_color=("gray50", "gray60"),
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
         )
         self._mm_min_label.grid(row=1, column=2, padx=10, pady=5, sticky=ctk.W)
 
-        mm_error = ctk.CTkLabel(mm_frame, text="", font=("Segoe UI", 10))
+        mm_error = ctk.CTkLabel(mm_frame, text="", font=("Inter", 10))
         mm_error.grid(row=1, column=3, padx=5, pady=5, sticky=ctk.W)
         self._range_fields["matchmaking"] = (
             self.matchmaking_level_var,
