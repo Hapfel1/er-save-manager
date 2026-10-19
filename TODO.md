@@ -6,8 +6,6 @@ nr ink itemgib to relic spawner done
 
 unified info about characters on save inspector, also show Issues detected or OK if none are detected, also display nicely not liek varied by position varied by name done (in game: DS2 play time pending)
 
-bloodstains from other players netman
-
 other faceparamoverides and editing them done (eye overrides + Frenzied Flame mark)
 
 DS2 event flag storage layout (single-action pairs + flagdiff.py)
