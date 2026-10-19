@@ -28,7 +28,7 @@ from er_save_manager.games.game_profiles import GAME_PROFILES, PROFILES_BY_KEY
 from er_save_manager.own_writes import is_own_write
 from er_save_manager.parser import Save
 from er_save_manager.platform import PlatformUtils
-from er_save_manager.ui import palette
+from er_save_manager.ui import palette, popups
 from er_save_manager.ui.character_pages import CharacterPagesTab
 from er_save_manager.ui.dialogs.character_details import CharacterDetailsDialog
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
@@ -257,8 +257,9 @@ class SaveManagerGUI:
 
         self.root.bind("<Configure>", self._on_window_resize)
 
-        # Show external-modification dialog when the user refocuses the window
-        self.root.bind("<FocusIn>", self._on_window_focus)
+        # Show external-modification dialog when the user refocuses the main
+        # window or one of its popups (world map, editor dialogs)
+        self.root.bind_all("<FocusIn>", self._on_window_focus, add="+")
 
         self.root.after(2000, self._init_process_monitor)
 
@@ -3605,10 +3606,14 @@ class SaveManagerGUI:
         self.root.after(3000, self._poll_file_change)
 
     def _on_window_focus(self, event=None) -> None:
-        """Show the external-modification dialog when the window regains focus."""
-        # Only fire for the root window itself, not child widgets gaining focus
-        if event is not None and event.widget is not self.root:
-            return
+        """Show the external-modification dialog when an app window regains
+        focus."""
+        # Only fire for a window itself, not child widgets gaining focus
+        window = self.root
+        if event is not None:
+            window = event.widget
+            if isinstance(window, str) or window is not window.winfo_toplevel():
+                return
         if not self._pending_file_change or self._file_change_dialog_open:
             return
         if not self.settings.get("external_file_change_notification", True):
@@ -3620,7 +3625,7 @@ class SaveManagerGUI:
 
         from er_save_manager.ui import dialog_style as ds
 
-        dialog = ds.create(self.root, "Save File Modified")
+        dialog = ds.create(window, "Save File Modified")
         main = ctk.CTkFrame(dialog, fg_color="transparent")
         main.pack(fill=ctk.BOTH, expand=True, padx=20, pady=16)
 
@@ -3629,6 +3634,7 @@ class SaveManagerGUI:
         def on_reload():
             self._file_change_dialog_open = False
             dialog.destroy()
+            self._reopen_popups_after_reload(popups.open_popups(self.root))
             if self.active_game in (
                 "elden_ring",
                 "dark_souls_remastered",
@@ -3670,7 +3676,21 @@ class SaveManagerGUI:
             justify=ctk.LEFT,
             wraplength=400,
         ).pack(anchor=ctk.W, pady=(10, 0))
-        ds.finish(dialog, self.root)
+        ds.finish(dialog, window)
+
+    def _reopen_popups_after_reload(self, windows) -> None:
+        """Rebuild open data popups once the reload has replaced the save."""
+        if not windows:
+            return
+        old = self._active_save()
+
+        def wait(tries: int) -> None:
+            if self._active_save() is old and tries < 300:
+                self.root.after(100, wait, tries + 1)
+                return
+            self.root.after_idle(popups.reopen, windows)
+
+        self.root.after(100, wait, 0)
 
     def _verbose_log(self, message: str) -> None:
         """Write a timestamped line to the verbose log file next to the current save."""

@@ -30,6 +30,7 @@ from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import StageError
+from er_save_manager.ui.popups import reopenable
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import (
     bind_mousewheel,
@@ -893,6 +894,7 @@ class EventFlagsTab:
 
         self.show_toast(f"Imported {applied} flags", duration=2500)
 
+    @reopenable
     def open_advanced_editor(self):
         """Open advanced flag editor dialog"""
         if self.current_event_flags is None:
@@ -1048,6 +1050,7 @@ class EventFlagsTab:
         ds.finish(dialog, self.parent, min_width=480)
         flag_entry.focus_set()
 
+    @reopenable
     def open_boss_status(self):
         """Boss status dialog - defeated/alive for all tracked bosses."""
         if self.current_event_flags is None:
@@ -1176,6 +1179,7 @@ class EventFlagsTab:
         _refresh()
         ds.finish(dialog, self.parent, width=720, height=640)
 
+    @reopenable
     def open_boss_respawn(self):
         """Open boss respawn dialog"""
         if self.current_event_flags is None:
@@ -1623,6 +1627,7 @@ class EventFlagsTab:
         )
         ds.finish(dialog, self.parent, width=860, height=600)
 
+    @reopenable
     def open_npc_revival(self):
         """Open NPC revival dialog"""
         if self.current_event_flags is None:
@@ -1762,6 +1767,7 @@ class EventFlagsTab:
         )
         ds.finish(dialog, self.parent, width=760, height=600)
 
+    @reopenable
     def open_quest_progress(self):
         if self.current_event_flags is None:
             CTkMessageBox.showwarning(
@@ -1781,6 +1787,7 @@ class EventFlagsTab:
             self.show_toast,
         )
 
+    @reopenable
     def open_grace_dialog(self):
         """Open the sites of grace unlock/lock dialog."""
         if self.current_event_flags is None:
@@ -1801,6 +1808,7 @@ class EventFlagsTab:
             self.show_toast,
         )
 
+    @reopenable
     def open_item_pickups(self):
         """Open the collected/missed item pickup checklist."""
         if self.current_event_flags is None:
@@ -1821,6 +1829,7 @@ class EventFlagsTab:
             self.show_toast,
         )
 
+    @reopenable
     def open_merchant_restock(self):
         """Open the limited merchant stock restock dialog."""
         if self.current_event_flags is None:
@@ -1841,6 +1850,7 @@ class EventFlagsTab:
             self.show_toast,
         )
 
+    @reopenable
     def open_summoning_pools(self):
         """Open the summoning pool enable/disable dialog."""
         if self.current_event_flags is None:

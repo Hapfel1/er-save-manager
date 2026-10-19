@@ -490,12 +490,12 @@ data+0x000..0x007 is the nested header and 0x008 is its first field:
 
 | Offset | Content |
 |---|---|
-| 0x008 | 2 x (float, float), unknown |
-| 0x018 | uint32, unknown |
+| 0x008 | 4 map area records (0x20 each) |
 | 0x108 | 10 beacon records |
 | 0x1A8 | 100 map marker records |
 | 0x7E8 | int64, -2 or -1 |
-| 0x7F0 | 0x7E0 bytes up to 0xFD0, unknown |
+| 0x7F0 | 0x1A8 bytes: fog of war bits |
+| 0x998 | zero up to 0xFD0 |
 | 0xFD0 | 2 x float: world map cursor position (x, y) |
 | 0xFD8 | 8 bytes, 0 |
 | 0xFE0 | uint8 0 or 1, then 3 bytes of uninitialized memory (last field of the nested chunk) |
@@ -513,6 +513,34 @@ data+0x000..0x007 is the nested header and 0x008 is its first field:
 | 0x0E | uint16 | 0, or 0xFFFF on a newly placed beacon |
 
 Empty records hold id -1, x and y 0, map 0, icon 1 and leftover memory in the last two bytes.
+
+**Map area record (0x20 bytes):** the part of a map the map menu shows and lets the cursor reach.
+
+| Offset | Type | Field |
+|---|---|---|
+| 0x00 | float x 4 | left, top, right, bottom in world map units |
+| 0x10 | uint32 | low byte 1 once the map has an area; the upper bytes are leftover memory |
+| 0x14 | 12 bytes | 0 |
+
+Record 0 is the Lands Between (the Underground uses it as well), record 2 the Realm of Shadow; records 1
+and 3 stay zero. The area is the union of the `openTravelArea` rectangles of the map's revealed
+WorldMapPieceParam rows: (0, 0, 9648, 9112) for the whole Lands Between and (3037, 1869, 7880, 7803) for
+the whole Realm of Shadow.
+
+**Fog of war:** one bit per cell, least significant bit first, 1 = explored. A cell is 256 world map
+units; cells are numbered in rows of 41 that run from south to north:
+
+`index = floor((y0 - y) / 256) * 41 + floor((x - x0) / 256)`
+
+A map is wider than 41 cells, so a row of the map continues in the next row of bits. The map menu
+draws a revealed piece's art only on explored cells.
+
+| Map | Bits | x0 | y0 |
+|---|---|---|---|
+| Lands Between and Underground | 0 to 1680 | 5928 | 10232 |
+| Realm of Shadow | 1681 to 3391 | 4000 | 20624 |
+
+A character that has explored everything has all 0x1A8 bytes set to 0xFF.
 Beacons and markers share one id sequence; the save stores no counter.
 
 **World map units.** Marker, beacon and cursor positions are world map units: one unit is one
@@ -601,6 +629,8 @@ A block that is not in the tree has no storage.
 | ShopLineupParam `eventFlag_forStock` | purchase counter: `bit_length(sellQuantity)` flags, LSB first, value = number bought; clearing them restocks the item |
 | 6080 | first entry to a colosseum |
 | 9420, 9421, 9430-9433 | face param overrides (see [FaceData](#appearance-facedata)) |
+| 82001 | Underground entered; the map menu offers the Underground map only once it is set |
+| 62002, 82002 | Realm of Shadow entered; the map menu offers the Realm of Shadow map only once they are set |
 | 9800-9809 | exactly one is set, picked at random by common.emevd event 980; used to choose between alternative NPC placements |
 
 DLC NPC blocks: Igon 4260, St. Trina 4280, Priestess 4300, Jolan 4320, Queelign 4340, Hornsent 4360, Moore

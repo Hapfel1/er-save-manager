@@ -18,6 +18,7 @@ from er_save_manager.data.gestures import (
 from er_save_manager.data.regions import REGIONS
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import FieldTracker, StageError
+from er_save_manager.ui.popups import reopenable
 from er_save_manager.ui.utils import (
     bind_mousewheel,
     patch_combo_scroll,
@@ -365,6 +366,7 @@ class GesturesRegionsTab:
 
         self.show_toast("All gestures deselected", duration=2000)
 
+    @reopenable
     def open_unlocked_regions(self):
         """Open unlocked regions editor dialog."""
         save_file = self.get_save_file()
