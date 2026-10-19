@@ -10,6 +10,7 @@ first.
 from __future__ import annotations
 
 import tkinter as tk
+import tkinter.font as tkfont
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
@@ -86,6 +87,21 @@ def _status(issues: list[str] | None) -> tuple[str, tuple[str, str] | None]:
         return "✓  OK", ds.FOUND
     n = len(issues)
     return f"⚠  {n} issue{'s' if n != 1 else ''} detected", ds.WARNING
+
+
+def _elide(label: ctk.CTkLabel, text: str) -> None:
+    """Cut text that is wider than the name column, ending it with an
+    ellipsis, and show the full text as a tooltip. A CTkLabel grows with
+    its text, so a long name would push the row's other columns right."""
+    font = tkfont.Font(font=label._label.cget("font"))
+    limit = round(NAME_WIDTH * ctk.ScalingTracker.get_widget_scaling(label))
+    if font.measure(text) <= limit:
+        return
+    cut = len(text)
+    while cut > 1 and font.measure(text[:cut] + "…") > limit:
+        cut -= 1
+    label.configure(text=text[:cut].rstrip() + "…")
+    add_tooltip(label, text)
 
 
 class CharacterList:
@@ -192,6 +208,7 @@ class CharacterList:
             width=NAME_WIDTH, anchor="w",
         )  # fmt: skip
         cells["_name"].grid(row=0, column=0, padx=(_MARGIN, _GAP), pady=pady)
+        _elide(cells["_name"], name)
         for i, col in enumerate(self._columns, start=1):
             cells[col.key] = ctk.CTkLabel(
                 parent, text=values.get(col.key, ""), font=ds.SMALL,

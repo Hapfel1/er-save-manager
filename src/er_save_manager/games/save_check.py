@@ -197,12 +197,22 @@ def _ds2_cache_mismatches(save) -> list[tuple[int, str]]:
             name = ds2._decode_name(bytes(data[off : off + ds2._OCC_NAME_SIZE]))
             level = struct.unpack_from("<H", data, off + ds2._CACHE_LEVEL_FROM_NAME)[0]
             cls = struct.unpack_from("<H", data, off + ds2._CACHE_CLASS_FROM_NAME)[0]
+            playtime = struct.unpack_from(
+                "<I", data, off + ds2._CACHE_PLAYTIME_FROM_NAME
+            )[0]
             expected_name = char.name[: ds2._OCC_NAME_SIZE // 2]
-            if (name, level, cls) != (
-                expected_name,
-                char.get_stat("level"),
-                char.starting_class,
-            ):
+            # The game fills in the class with the play time on the first
+            # save in the world; a new character's record holds 0 or 10.
+            if playtime and cls != char.starting_class:
+                cached = ds2.STARTING_CLASSES.get(cls, f"class {cls}")
+                actual = char.starting_class_name or f"class {char.starting_class}"
+                out.append(
+                    (
+                        i,
+                        f"{label.capitalize()} shows {cached}, the character is {actual}",
+                    )
+                )
+            if (name, level) != (expected_name, char.get_stat("level")):
                 out.append(
                     (
                         i,

@@ -4,7 +4,7 @@ make nr relic spawner and editor layout look better, maybe visual editor w icons
 
 nr ink itemgib to relic spawner done
 
-unified info about characters on save inspector, also show Issues detected or OK if none are detected, also display nicely not liek varied by position varied by name done (in game: DS2 play time pending)
+unified info about characters on save inspector, also show Issues detected or OK if none are detected, also display nicely not liek varied by position varied by name done
 
 bloodstains from other players netman
 
@@ -32,7 +32,9 @@ check missing conv graces done
 
 check nr relic ops validation done (roll rules from the game's tables)
 
-ds2 seamless save 32 chars make alphanumeric echeck done (in game: 20/14 char slots not reported)
+ds2 seamless save 32 chars make alphanumeric echeck done
+
+DS2 Save Inspector: long names shift the row columns, new characters flagged for a class mismatch done
 
 open folder using the utils function on linux, check every single one done (Windows untested)
 
@@ -84,7 +86,11 @@ DS2 attunement editor done
 
 DS3 visited regions / warp unlocks done
 
-in-game checks at the end: U Apply All write, V region unlock + Convergence map art + grace positions, W DS2 20/14 char Seamless names + open folder on Windows, W2 NR relic rows and curse picker in the real app, AB DS2 load screen play time matches the Save Inspector, O DS2 face shape sliders + physique option count + new DS2 appearance selectors
+in-game checks at the end: U Apply All write, V region unlock + Convergence map art + grace positions, W open folder on Windows, W2 NR relic rows and curse picker in the real app
+
+Windows build: Backup Manager button does not open and the whole tool stops responding done (Windows retest pending)
+
+DS2 appearance in-game checks (future work): face shape sliders, physique option count, new DS2 appearance selectors
 
 update all docs with newly added stuff (last task) done
 
