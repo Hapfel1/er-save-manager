@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog
 from typing import TYPE_CHECKING
 
 import customtkinter as ctk
@@ -35,7 +34,7 @@ from er_save_manager.ui.map_view import (
     open_map_window,
 )
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll
+from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_file
 
 if TYPE_CHECKING:
     pass
@@ -724,9 +723,8 @@ class WorldStateTab:
         return self.marker_editor
 
     def _export_markers(self, editor: MapMarkerEditor):
-        parent = self._dialog_parent()
-        path = filedialog.asksaveasfilename(
-            parent=parent,
+        path = pick_file(
+            save=True,
             title="Export Map Markers",
             defaultextension=".json",
             filetypes=[("Map markers", "*.json"), ("All files", "*.*")],
@@ -766,8 +764,7 @@ class WorldStateTab:
 
     def _import_markers(self, editor: MapMarkerEditor) -> bool:
         parent = self._dialog_parent()
-        path = filedialog.askopenfilename(
-            parent=parent,
+        path = pick_file(
             title="Import Map Markers",
             filetypes=[("Map markers", "*.json"), ("All files", "*.*")],
         )

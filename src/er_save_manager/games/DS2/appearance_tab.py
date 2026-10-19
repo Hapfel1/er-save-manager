@@ -14,7 +14,6 @@ from __future__ import annotations
 import json
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog
 
 import customtkinter as ctk
 
@@ -25,7 +24,7 @@ from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.appearance_share import AppearanceShareCard, ShareSource
 from er_save_manager.ui.color_sliders import ColorSliders
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll
+from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_file
 
 _SAVE_FILETYPES = [("DS2 save files", "*.sl2 *.co2"), ("All files", "*")]
 
@@ -260,8 +259,8 @@ class DS2AppearanceTab:
             return
         save = self._get_save()
         name = save.slot_display_name(self._get_slot()) if save is not None else ""
-        path = filedialog.asksaveasfilename(
-            parent=self.parent,
+        path = pick_file(
+            save=True,
             title="Export Appearance",
             defaultextension=".json",
             initialfile=f"{name or 'appearance'}_ds2_appearance.json",
@@ -277,8 +276,7 @@ class DS2AppearanceTab:
         self._show_toast("Appearance exported.")
 
     def _import_json(self) -> None:
-        path = filedialog.askopenfilename(
-            parent=self.parent,
+        path = pick_file(
             title="Import Appearance",
             filetypes=[("JSON files", "*.json")],
         )

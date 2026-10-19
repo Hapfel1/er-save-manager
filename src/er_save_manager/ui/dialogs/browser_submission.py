@@ -12,7 +12,8 @@ import zipfile
 from pathlib import Path
 from tkinter import messagebox
 
-from er_save_manager.ui.utils import _get_subprocess_env, open_url
+from er_save_manager.ui.utils import open_folder as utils_open_folder
+from er_save_manager.ui.utils import open_url
 
 
 def submit_preset_via_browser(
@@ -278,27 +279,11 @@ Drag `{zip_filename}` into this text box.
 
 def show_submission_success_dialog(preset_name: str, zip_path: str):
     """Show success message with ZIP file location and open file explorer."""
-    import platform
-    import subprocess
-
     from er_save_manager.ui.dialogs.community_dialogs import show_submission_ready
 
     def open_folder():
-        """Open file explorer to ZIP location and select file."""
-        system = platform.system()
-
-        try:
-            if system == "Windows":
-                # Open explorer and select the file - use absolute path
-                abs_path = str(Path(zip_path).resolve())
-                subprocess.run(["explorer", f"/select,{abs_path}"], shell=False)
-            elif system == "Darwin":  # macOS
-                subprocess.run(["open", "-R", str(zip_path)])
-            else:  # Linux
-                zip_dir = str(Path(zip_path).parent)
-                subprocess.run(["xdg-open", zip_dir], env=_get_subprocess_env())
-        except Exception as e:
-            print(f"Failed to open file explorer: {e}")
+        if not utils_open_folder(zip_path):
+            print(f"Failed to open file explorer for {zip_path}")
 
     show_submission_ready(
         "Preset Ready to Submit",

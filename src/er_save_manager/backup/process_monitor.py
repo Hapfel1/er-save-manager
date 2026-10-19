@@ -228,9 +228,8 @@ def show_auto_backup_first_run_dialog(
     Returns True if auto-backup was configured, False if dismissed.
     """
     try:
-        import tkinter.filedialog as filedialog
-
         from er_save_manager.ui.messagebox import CTkMessageBox
+        from er_save_manager.ui.utils import pick_file
 
         settings = get_settings()
 
@@ -290,10 +289,9 @@ def show_auto_backup_first_run_dialog(
             ext_str = " ".join(
                 f"*{e}" for e in (profile.extensions if profile else [".sl2"])
             )
-            file_path = filedialog.askopenfilename(
+            file_path = pick_file(
                 title=f"Choose Save File for Auto-Backup - {game_name}",
                 filetypes=[(f"{game_name} Save", ext_str), ("All files", "*.*")],
-                parent=parent,
             )
             if file_path:
                 chosen_path = str(file_path)

@@ -20,6 +20,7 @@ from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import (
     center_window,
     force_render_dialog,
+    open_folder,
     style_window_frame,
 )
 
@@ -226,21 +227,3 @@ def show_wiped_slot_dialog(
     dialog.grab_set()
     dialog.protocol("WM_DELETE_WINDOW", close)
     dialog.wait_window()
-
-
-def open_folder(path: Path) -> None:
-    """Open the folder containing path, selecting the file where supported."""
-    import platform
-    import subprocess
-
-    from er_save_manager.ui.utils import _get_subprocess_env
-
-    try:
-        if platform.system() == "Windows":
-            subprocess.run(["explorer", f"/select,{path.resolve()}"])
-        elif platform.system() == "Darwin":
-            subprocess.run(["open", "-R", str(path)])
-        else:
-            subprocess.run(["xdg-open", str(path.parent)], env=_get_subprocess_env())
-    except Exception as e:
-        print(f"Failed to open folder: {e}")

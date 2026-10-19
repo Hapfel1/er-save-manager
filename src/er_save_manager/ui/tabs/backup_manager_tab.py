@@ -12,7 +12,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
+from er_save_manager.ui.utils import bind_mousewheel, open_folder
 
 STAR_SIZE = 20
 # Tk event.state modifier bits.
@@ -767,53 +767,11 @@ class BackupManagerTab:
             ds.finish(dd, dialog, min_width=440)
 
         def open_backup_folder():
-            import os
-            import subprocess
-
-            path = str(manager.backup_folder)
-            try:
-                if os.name == "nt":
-                    os.startfile(manager.backup_folder)
-                    return
-
-                # Inside the AppImage, LD_LIBRARY_PATH points at the bundled
-                # libs (readline, libstdc++). The file manager xdg-open spawns
-                # inherits it and fails to load against newer system libs, so
-                # strip it and fall back to known file managers.
-                from er_save_manager.ui.utils import _get_subprocess_env
-
-                env = _get_subprocess_env()
-
-                # Try xdg-open first with a clean environment.
-                result = subprocess.run(
-                    ["xdg-open", path],
-                    env=env,
-                    stderr=subprocess.DEVNULL,
-                    timeout=5,
-                )
-                if result.returncode == 0:
-                    return
-
-                # Fall back through common file managers.
-                for fm in ("nautilus", "thunar", "dolphin", "nemo", "pcmanfm", "caja"):
-                    try:
-                        subprocess.Popen(
-                            [fm, path],
-                            env=env,
-                            stderr=subprocess.DEVNULL,
-                        )
-                        return
-                    except FileNotFoundError:
-                        continue
-
+            if not open_folder(manager.backup_folder):
                 CTkMessageBox.showerror(
                     "Folder Not Opened",
-                    f"Could not open folder.\nPath: {path}",
+                    f"Could not open folder.\nPath: {manager.backup_folder}",
                     parent=dialog,
-                )
-            except Exception as e:
-                CTkMessageBox.showerror(
-                    "Folder Not Opened", f"Failed to open folder:\n{e}", parent=dialog
                 )
 
         # Actions on the selection on the left, window actions on the right

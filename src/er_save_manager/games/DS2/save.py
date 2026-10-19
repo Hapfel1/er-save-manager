@@ -96,14 +96,19 @@ BIG_ENTRY_START = PROFILE_ENTRY_START + CHARACTER_SLOTS  # 11-20, one per slot
 
 # Profile slot field offsets, relative to the start of a decrypted profile
 # entry's game data (entries 1-10).
+# UTF-16 name with NUL terminator in 64 bytes, so at most 31 characters. The
+# same 64 bytes are reserved in both load screen caches. The game crashes on
+# a 32-character name, which leaves no terminator before the next field.
 NAME_OFFSET = 960
-NAME_SIZE = 32
+NAME_SIZE = 64
 # Appearance block: colors, FaceGen coefficients, body type and part ids
 # (field layout in appearance.py).
 APPEARANCE_OFFSET = 0xE8
 APPEARANCE_SIZE = 0xA4
-# The load screen caches hold the name in 28 bytes.
+# Name length the vanilla character creation menu allows, and the field
+# limit, which Seamless Co-op saves can use.
 NAME_MAX_CHARS = 14
+NAME_MAX_CHARS_SEAMLESS = NAME_SIZE // 2 - 1
 SOULS_OFFSET = 60
 HP_OFFSET = 72
 # Stored 1-based: 1 is the first playthrough, 2 is NG+1, and so on.
@@ -352,11 +357,11 @@ _LENIGRAST_RECORD_TAIL = 0x11A8
 _OCC_STRIDE = 496
 _OCC_FLAG_OFFSET = 892
 _OCC_NAME_OFFSET = 1286
-_OCC_NAME_SIZE = 28
+_OCC_NAME_SIZE = NAME_SIZE
 
 CHARACTER_SELECT_ENTRY = 22
 _SELECT_NAME_OFFSET = 442
-_SELECT_NAME_SIZE = 28
+_SELECT_NAME_SIZE = NAME_SIZE
 # Per-slot load screen record in entries 0 and 22: u16 level at name + 0x4A,
 # u16 starting class at name + 0x4C, a copy of the profile's.
 _CACHE_LEVEL_FROM_NAME = 0x4A
@@ -1105,7 +1110,7 @@ class Character:
 
     @name.setter
     def name(self, value: str) -> None:
-        encoded = value.encode("utf-16-le")[:NAME_SIZE].ljust(NAME_SIZE, b"\x00")
+        encoded = value.encode("utf-16-le")[: NAME_SIZE - 2].ljust(NAME_SIZE, b"\x00")
         self._data[NAME_OFFSET : NAME_OFFSET + NAME_SIZE] = encoded
 
     @property
@@ -2072,7 +2077,7 @@ class DS2Save:
             name = character.name
             if not _is_valid_name(name):
                 continue
-            encoded = name.encode("utf-16-le")[:_OCC_NAME_SIZE].ljust(
+            encoded = name.encode("utf-16-le")[: _OCC_NAME_SIZE - 2].ljust(
                 _OCC_NAME_SIZE, b"\x00"
             )
 
