@@ -1,10 +1,10 @@
-make wrong game data tooltip for ds3 more apparent
+make wrong game data tooltip for ds3 more apparent done
 
 make nr relic spawner and editor layout look better, maybe visual editor w icons? also better way to show the full perks since they are quite long
 
 nr ink itemgib to relic spawner
 
-unified info about characters on save inspector, also show Issues detected or OK if none are detected, also display nicely not liek varied by position varied by name
+unified info about characters on save inspector, also show Issues detected or OK if none are detected, also display nicely not liek varied by position varied by name done (in game: DS2 play time pending)
 
 bloodstains from other players netman
 
@@ -83,6 +83,10 @@ Equipment editor for DS3, DSR and DS2 done
 DS2 attunement editor done
 
 DS3 visited regions / warp unlocks done
+
+in-game checks at the end: U Apply All write, V region unlock + Convergence map art + grace positions, W DS2 20/14 char Seamless names + open folder on Windows, W2 NR relic rows and curse picker in the real app, AB DS2 load screen play time matches the Save Inspector
+
+update all docs with newly added stuff (last task)
 
 DSR covenant rank and appearance done
 
