@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-import sys
-from tkinter import TclError, ttk
+from tkinter import ttk
 
 import customtkinter as ctk
+
+from er_save_manager.ui.utils import bind_mousewheel
 
 
 class ScrollableFrame(ctk.CTkScrollableFrame):
@@ -23,10 +24,7 @@ class ScrollableFrame(ctk.CTkScrollableFrame):
 
     def __init__(self, master, **kwargs) -> None:
         super().__init__(master, **kwargs)
-        if sys.platform.startswith("linux"):
-            # Tk 8.6 on X11 reports the wheel as Button-4/5, not <MouseWheel>.
-            self.bind_all("<Button-4>", self._wheel_linux, add="+")
-            self.bind_all("<Button-5>", self._wheel_linux, add="+")
+        bind_mousewheel(self)
 
     def _fit_frame_dimensions_to_canvas(self, event) -> None:
         super()._fit_frame_dimensions_to_canvas(event)
@@ -40,14 +38,3 @@ class ScrollableFrame(ctk.CTkScrollableFrame):
         if isinstance(event.widget, ttk.Treeview):
             return
         super()._mouse_wheel_all(event)
-
-    def _wheel_linux(self, event) -> None:
-        try:
-            if isinstance(event.widget, ttk.Treeview):
-                return
-            if not self.check_if_master_is_canvas(event.widget):
-                return
-            self._parent_canvas.yview_scroll(-1 if event.num == 4 else 1, "units")
-        except (AttributeError, TclError):
-            # Widget path is a string, or this frame was destroyed.
-            return
