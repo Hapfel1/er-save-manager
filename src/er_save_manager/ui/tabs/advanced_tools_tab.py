@@ -8,6 +8,7 @@ import customtkinter as ctk
 from er_save_manager.backup.manager import BackupManager
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.popups import reopenable
 
 
 class AdvancedToolsTab:
@@ -108,6 +109,7 @@ class AdvancedToolsTab:
             width=200,
         ).pack(pady=(5, 12), padx=12)
 
+    @reopenable
     def open_game_settings(self):
         """Edit the in-game options stored in the save."""
         from er_save_manager.ui.dialogs.game_settings import open_game_settings

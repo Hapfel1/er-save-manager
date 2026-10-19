@@ -16,6 +16,7 @@ from er_save_manager.data.convergence_items import is_seamless_save
 from er_save_manager.data.item_database import common_affinities
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.popups import reopenable
 from er_save_manager.ui.toast import show_toast
 from er_save_manager.ui.utils import (
     bind_mousewheel,
@@ -1734,6 +1735,7 @@ class InventoryEditor:
         self._search_cat_var.get() if hasattr(self, "_search_cat_var") else "All"
         self._browse_btn.configure(state="normal")
 
+    @reopenable
     def _open_visual_inventory(self) -> None:
         win = self._visual_inventory_win
         if win is not None and win.winfo_exists():
@@ -2864,6 +2866,7 @@ class InventoryEditor:
                 parent=parent_window,
             )
 
+    @reopenable
     def open_auto_refill(self):
         save_file = self.get_save_file()
         if save_file is None:

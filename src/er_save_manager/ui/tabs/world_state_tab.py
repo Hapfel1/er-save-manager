@@ -36,6 +36,7 @@ from er_save_manager.ui.map_view import (
 )
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import StageError
+from er_save_manager.ui.popups import reopenable
 from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_file
 
 if TYPE_CHECKING:
@@ -421,6 +422,7 @@ class WorldStateTab:
             self._snapshot_markers()
         self._update_map_window()
 
+    @reopenable
     def _open_message_manager(self):
         if not self.editor:
             CTkMessageBox.showerror(
@@ -581,6 +583,7 @@ class WorldStateTab:
                     (result.graces, "grace"),
                     (result.pieces, "map piece"),
                     (result.regions, "play region"),
+                    (result.fog_cells, "fog cell"),
                 )
                 if n
             ]
@@ -868,6 +871,7 @@ class WorldStateTab:
     # Item history
     # ------------------------------------------------------------------
 
+    @reopenable
     def _open_item_history(self):
         if not self.editor:
             CTkMessageBox.showwarning(

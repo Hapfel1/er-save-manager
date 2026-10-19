@@ -147,8 +147,10 @@ and saves the file. Unlocking a grace also adds its play region, so the area sho
 - **Unlock Whole Map** does the same for every area of the map that is shown (Lands Between,
   Underground or Realm of Shadow)
 
-Both ask first, list what changes, and add the play regions of the unlocked graces. A backup is
-made before saving.
+Both ask first, list what changes, and add the play regions of the unlocked graces. They also
+clear the fog of war over the unlocked area (Unlock Whole Map clears all fog of that map), extend
+the part of the map the map menu shows, and make the Underground or Realm of Shadow map available
+in game when one of its areas is unlocked. A backup is made before saving.
 
 ### Map Markers
 
