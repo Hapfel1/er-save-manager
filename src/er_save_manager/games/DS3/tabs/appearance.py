@@ -183,9 +183,8 @@ class DS3AppearanceTab:
         self._build_actions(frame)
         self._build_body(frame)
         yield
-        self._build_face(frame)
-        yield
-        self._build_parts(frame)
+        yield from self._build_face(frame)
+        yield from self._build_parts(frame)
 
     def _card(self, parent, title: str, hint: str | None = None) -> ctk.CTkFrame:
         card = ctk.CTkFrame(parent, corner_radius=10)
@@ -233,7 +232,8 @@ class DS3AppearanceTab:
         )
         self._fill_group(body, app_data.group(_BUILD_GROUP), heading=False)
 
-    def _build_face(self, parent) -> None:
+    def _build_face(self, parent):
+        """Build the face card, one slider group per stage."""
         card = ctk.CTkFrame(parent, corner_radius=10)
         card.pack(fill="x", padx=10, pady=(6, 4))
         head = ctk.CTkFrame(card, fg_color="transparent")
@@ -266,6 +266,7 @@ class DS3AppearanceTab:
         for grp in app_data.slider_groups():
             if grp.name not in skip:
                 self._fill_group(self._shape_page, grp)
+                yield
         self._shape_page.pack(fill="x", padx=12, pady=(4, 10))
 
     def _build_skin_page(self) -> None:
@@ -287,7 +288,8 @@ class DS3AppearanceTab:
         hidden.pack_forget()
         shown.pack(fill="x", padx=12, pady=(4, 10))
 
-    def _build_parts(self, parent) -> None:
+    def _build_parts(self, parent):
+        """Build the part rows, one row per stage."""
         body = self._card(
             parent,
             "Hair, eyes and tattoo",
@@ -299,6 +301,7 @@ class DS3AppearanceTab:
             self._part_rows.append(row)
             if part.name == _TATTOO_PART:
                 self._fill_group(body, app_data.group(_TATTOO_GROUP))
+            yield
 
     def _build_actions(self, parent) -> None:
         body = self._card(

@@ -28,6 +28,8 @@ from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_f
 _BODY_TYPES = ["Type B", "Type A"]  # index = stored body type
 _SAVE_FILETYPES = [("DSR save files", "*.sl2 *.co2"), ("All files", "*")]
 _LABEL_WIDTH = 230
+# Slider rows built per event loop turn while the tab builds in the background.
+_ROWS_PER_STAGE = 6
 # Slider readout: control value as a share of its slider half-range.
 _READOUT_SCALE = 100
 _REFRESH_MS = 120
@@ -71,10 +73,12 @@ class DSRAppearanceTab:
         self._frame = frame
 
         self._build_actions(frame)
+        yield
         self._build_types(frame)
+        yield
         self._build_colors(frame)
         yield
-        self._build_face(frame)
+        yield from self._build_face(frame)
 
     def _card(self, parent, title: str, hint: str | None = None) -> ctk.CTkFrame:
         card = ctk.CTkFrame(parent, corner_radius=10)
@@ -177,7 +181,8 @@ class DSRAppearanceTab:
             show_toast=self._show_toast,
         )
 
-    def _build_face(self, parent) -> None:
+    def _build_face(self, parent):
+        """Build the face card, a few slider rows per stage."""
         card = ctk.CTkFrame(parent, corner_radius=10)
         card.pack(fill="x", padx=10, pady=(6, 4))
         head = ctk.CTkFrame(card, fg_color="transparent")
@@ -199,12 +204,13 @@ class DSRAppearanceTab:
         ).pack(anchor="w", padx=12)
         self._shape_page = ctk.CTkFrame(card, fg_color="transparent")
         self._skin_page = ctk.CTkFrame(card, fg_color="transparent")
-        self._fill_sliders(self._shape_page, app_data.shape_controls())
+        yield from self._fill_sliders(self._shape_page, app_data.shape_controls())
         self._shape_page.pack(fill="x", padx=12, pady=(4, 10))
 
     def _show_face_page(self, mode: str) -> None:
         if mode == "Skin" and not self._skin_built:
-            self._fill_sliders(self._skin_page, app_data.skin_controls())
+            for _ in self._fill_sliders(self._skin_page, app_data.skin_controls()):
+                pass
             self._skin_built = True
             self._refresh_sliders(reset_ranges=True)
         shown, hidden = (
@@ -215,7 +221,8 @@ class DSRAppearanceTab:
         hidden.pack_forget()
         shown.pack(fill="x", padx=12, pady=(4, 10))
 
-    def _fill_sliders(self, page, controls) -> None:
+    def _fill_sliders(self, page, controls):
+        """Add slider rows, yielding every _ROWS_PER_STAGE rows."""
         sizes = Counter(ctl.group for ctl in controls)
         # One-slider groups share a final "Other" heading: "Temples: thin / wide".
         rows = [
@@ -258,6 +265,8 @@ class DSRAppearanceTab:
                 side="left"
             )
             self._sliders.append((ctl, slider, readout))
+            if len(self._sliders) % _ROWS_PER_STAGE == 0:
+                yield
 
     # --- State ------------------------------------------------------------------ #
 
