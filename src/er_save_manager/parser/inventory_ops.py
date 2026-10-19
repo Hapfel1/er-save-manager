@@ -961,6 +961,7 @@ _POST_GAITEM_OFFSETS = (
     "equipped_gestures_offset",
     "equipped_armaments_and_items_offset",
     "equipped_physics_offset",
+    "face_data_offset",
     "inventory_storage_offset",
     "gestures_offset",
     "horse_offset",
