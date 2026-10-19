@@ -3,6 +3,7 @@ Character Details Dialog
 Shows detailed character information with corruption detection
 """
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import customtkinter as ctk
@@ -11,6 +12,141 @@ from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 
 _WRAP = 600
+
+
+@dataclass
+class CharacterScan:
+    """Character Details check results for one slot."""
+
+    # "key:text" entries that Fix All Issues repairs
+    issues: list[str]
+    deep_scan_result: object | None
+    # A torn write was found and the deep scan fix applies
+    deep_scan_available: bool
+    has_dlc_flag: bool
+    has_invalid_dlc: bool
+    has_tarnished_pack_flag: bool
+
+    @property
+    def issue_texts(self) -> list[str]:
+        texts = [issue.split(":", 1)[-1] for issue in self.issues]
+        if self.deep_scan_available:
+            texts.insert(0, "Torn write detected")
+        return texts
+
+
+def scan_character(save_file, slot_idx) -> CharacterScan:
+    """Run the Character Details checks on one slot."""
+    slot = save_file.characters[slot_idx]
+    has_corruption = False
+    issues_detected = []
+    try:
+        correct_steam_id = None
+        if save_file.user_data_10_parsed and hasattr(
+            save_file.user_data_10_parsed, "steam_id"
+        ):
+            correct_steam_id = save_file.user_data_10_parsed.steam_id
+
+        has_corruption, corruption_issues = slot.has_corruption(correct_steam_id)
+        if has_corruption:
+            # PS saves have no SteamID - filter that issue out
+            if getattr(save_file, "is_ps", False):
+                corruption_issues = [
+                    i
+                    for i in corruption_issues
+                    if not i.startswith("steamid_corruption")
+                ]
+            issues_detected = corruption_issues
+    except Exception:
+        pass
+
+    has_dlc_flag = False
+    has_invalid_dlc = False
+    has_tarnished_pack_flag = False
+    try:
+        has_dlc_flag = slot.has_dlc_flag()
+        has_invalid_dlc = slot.has_invalid_dlc()
+        has_tarnished_pack_flag = slot.has_tarnished_pack_flag()
+    except Exception:
+        pass
+
+    # Checksum check - PS saves have no per-slot checksums
+    if not getattr(save_file, "is_ps", False):
+        try:
+            from er_save_manager.fixes.checksum import check_slot_checksum
+
+            valid, _, _ = check_slot_checksum(save_file, slot_idx)
+            if not valid:
+                issues_detected.append("checksum:Invalid slot checksum")
+        except Exception:
+            pass
+
+    # Deep scan check
+    deep_scan_available = False
+    deep_scan_result = None
+    try:
+        from er_save_manager.fixes.deep_scan import DeepScanFix
+
+        deep_fix = DeepScanFix()
+        deep_scan_result = deep_fix.scan_only(save_file, slot_idx)
+        deep_scan_available = (
+            deep_scan_result.steamid_found and deep_scan_result.delta != 0
+        )
+    except Exception:
+        pass
+
+    # Inventory counter check
+    has_inv_counter_issue = False
+    try:
+        from er_save_manager.fixes.inventory_counters import InventoryCountersFix
+
+        has_inv_counter_issue = InventoryCountersFix().detect(save_file, slot_idx)
+        if has_inv_counter_issue:
+            issues_detected.append(
+                "inventory_counters:Corrupted inventory item counters (can prevent key item pickups or cause crashes)"
+            )
+    except Exception:
+        pass
+
+    # NetMan chunk chain check (a torn write is handled by the deep scan)
+    if not deep_scan_available:
+        try:
+            from er_save_manager.fixes.netman import NetManFix
+
+            if NetManFix().detect(save_file, slot_idx):
+                issues_detected.append(
+                    "netman:Damaged network data (CSNetMan), can cause the"
+                    " 'save corrupted' message or crashes on load"
+                )
+        except Exception:
+            pass
+
+    # Structural checks with a well-defined, safe correction
+    try:
+        from er_save_manager.fixes.structural_scan import (
+            DanglingInventoryHandleFix,
+            StorageInventoryCountersFix,
+        )
+
+        if DanglingInventoryHandleFix().detect(save_file, slot_idx):
+            issues_detected.append(
+                "dangling_inventory_handle:Inventory rows reference items that no longer exist"
+            )
+        if StorageInventoryCountersFix().detect(save_file, slot_idx):
+            issues_detected.append(
+                "storage_inventory_counters:Corrupted storage box item counters"
+            )
+    except Exception:
+        pass
+
+    return CharacterScan(
+        issues_detected,
+        deep_scan_result,
+        deep_scan_available,
+        has_dlc_flag,
+        has_invalid_dlc,
+        has_tarnished_pack_flag,
+    )
 
 
 class CharacterDetailsDialog:
@@ -69,112 +205,18 @@ class CharacterDetailsDialog:
         except Exception:
             pass
 
-        has_corruption = False
-        issues_detected = []
-        try:
-            correct_steam_id = None
-            if save_file.user_data_10_parsed and hasattr(
-                save_file.user_data_10_parsed, "steam_id"
-            ):
-                correct_steam_id = save_file.user_data_10_parsed.steam_id
-
-            has_corruption, corruption_issues = slot.has_corruption(correct_steam_id)
-            if has_corruption:
-                # PS saves have no SteamID - filter that issue out
-                if getattr(save_file, "is_ps", False):
-                    corruption_issues = [
-                        i
-                        for i in corruption_issues
-                        if not i.startswith("steamid_corruption")
-                    ]
-                issues_detected = corruption_issues
-        except Exception:
-            pass
-
-        has_dlc_flag = False
-        has_invalid_dlc = False
-        has_tarnished_pack_flag = False
-        try:
-            has_dlc_flag = slot.has_dlc_flag()
-            has_invalid_dlc = slot.has_invalid_dlc()
-            has_tarnished_pack_flag = slot.has_tarnished_pack_flag()
-        except Exception:
-            pass
-
-        # Checksum check - PS saves have no per-slot checksums
-        if not getattr(save_file, "is_ps", False):
-            try:
-                from er_save_manager.fixes.checksum import check_slot_checksum
-
-                valid, _, _ = check_slot_checksum(save_file, slot_idx)
-                if not valid:
-                    issues_detected.append("checksum:Invalid slot checksum")
-            except Exception:
-                pass
-
-        # Deep scan check
-        deep_scan_available = False
-        deep_scan_result = None
-        try:
-            from er_save_manager.fixes.deep_scan import DeepScanFix
-
-            deep_fix = DeepScanFix()
-            deep_scan_result = deep_fix.scan_only(save_file, slot_idx)
-            deep_scan_available = (
-                deep_scan_result.steamid_found and deep_scan_result.delta != 0
-            )
-        except Exception:
-            pass
-
+        scan = scan_character(save_file, slot_idx)
+        issues_detected = scan.issues
+        deep_scan_result = scan.deep_scan_result
+        deep_scan_available = scan.deep_scan_available
+        has_dlc_flag = scan.has_dlc_flag
+        has_invalid_dlc = scan.has_invalid_dlc
+        has_tarnished_pack_flag = scan.has_tarnished_pack_flag
         has_dlc_section = (
             has_dlc_flag
             or has_tarnished_pack_flag
             or (has_invalid_dlc and not deep_scan_available)
         )
-
-        # Inventory counter check
-        has_inv_counter_issue = False
-        try:
-            from er_save_manager.fixes.inventory_counters import InventoryCountersFix
-
-            has_inv_counter_issue = InventoryCountersFix().detect(save_file, slot_idx)
-            if has_inv_counter_issue:
-                issues_detected.append(
-                    "inventory_counters:Corrupted inventory item counters (can prevent key item pickups or cause crashes)"
-                )
-        except Exception:
-            pass
-
-        # NetMan chunk chain check (a torn write is handled by the deep scan)
-        if not deep_scan_available:
-            try:
-                from er_save_manager.fixes.netman import NetManFix
-
-                if NetManFix().detect(save_file, slot_idx):
-                    issues_detected.append(
-                        "netman:Damaged network data (CSNetMan), can cause the"
-                        " 'save corrupted' message or crashes on load"
-                    )
-            except Exception:
-                pass
-
-        # Structural checks with a well-defined, safe correction
-        try:
-            from er_save_manager.fixes.structural_scan import (
-                DanglingInventoryHandleFix,
-                StorageInventoryCountersFix,
-            )
-
-            if DanglingInventoryHandleFix().detect(save_file, slot_idx):
-                issues_detected.append(
-                    "dangling_inventory_handle:Inventory rows reference items that no longer exist"
-                )
-            if StorageInventoryCountersFix().detect(save_file, slot_idx):
-                issues_detected.append(
-                    "storage_inventory_counters:Corrupted storage box item counters"
-                )
-        except Exception:
-            pass
 
         # Structural checks with no safe automatic correction, informational only
         structural_notes = []

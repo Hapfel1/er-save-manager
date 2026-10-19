@@ -46,6 +46,8 @@ BLUE_TINT = ("#CFDCF5", "#313953")
 # on the light mode background); hints and other info use the accent purple.
 # Green confirms and Red errors (Catppuccin Latte, Mocha).
 WARNING_TEXT = ("#EA580C", "#FB923C")
+# Background of warning banners, framed in WARNING_TEXT.
+WARNING_TINT = ("#FDEBDD", "#3A2A1E")
 HINT_TEXT = PURPLE_TEXT
 GREEN_TEXT = ("#40A02B", "#A6E3A1")
 RED_TEXT = ("#D20F39", "#F38BA8")

@@ -1694,6 +1694,7 @@ class SaveManagerGUI:
                 get_save=lambda: self.ds3_save,
                 on_slot_selected=self._on_ds3_slot_edit,
                 check_save=self._check_game_save,
+                get_issues=self._game_issues,
             )
             self._build_tab("Save Inspector", self.ds3_inspector_tab.setup_ui)
 
@@ -1836,6 +1837,7 @@ class SaveManagerGUI:
                 get_save=lambda: self.ds2_save,
                 on_slot_selected=self._on_ds2_slot_selected,
                 check_save=self._check_game_save,
+                get_issues=self._game_issues,
             )
             self._build_tab("Save Inspector", self.ds2_inspector_tab.setup_ui)
 
@@ -2006,6 +2008,7 @@ class SaveManagerGUI:
                 get_dsr_save=lambda: self.dsr_save,
                 on_slot_selected=self._on_dsr_slot_edit,
                 check_save=self._check_game_save,
+                get_issues=self._game_issues,
             )
             self._build_tab("Save Inspector", self.dsr_inspector_tab.setup_ui)
 
@@ -2131,6 +2134,7 @@ class SaveManagerGUI:
             lambda: self._nr_save,
             on_slot_selected=self._nr_on_slot_selected,
             check_save=self._check_game_save,
+            get_issues=self._game_issues,
         )
         self._build_tab("Save Inspector", self.nr_inspector_tab.setup_ui)
 
@@ -3125,6 +3129,14 @@ class SaveManagerGUI:
             self.settings.set("show_eac_warning", False)
         self._vanilla_warned_paths.add(key)
         return True
+
+    def _game_issues(self):
+        """save_check issues of the loaded non-ER save file."""
+        from er_save_manager.games import save_check
+
+        if not self.save_path:
+            return None
+        return save_check.check(self.active_game, self.save_path)
 
     def _check_game_save(self, slot_idx: int) -> None:
         """Show the issue view for one character of the active non-ER game."""

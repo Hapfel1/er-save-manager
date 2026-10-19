@@ -12,10 +12,15 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
-from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
+from er_save_manager.ui.character_list import (
+    CharacterList,
+    CharacterRow,
+    columns,
+    format_playtime,
+    slot_issues,
+)
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel
 
 if TYPE_CHECKING:
     pass
@@ -28,13 +33,14 @@ class NRInspectorTab:
         get_nr_save: Callable,
         on_slot_selected: Callable | None = None,
         check_save: Callable | None = None,
+        get_issues: Callable | None = None,
     ) -> None:
         self.parent = parent
         self._check_save = check_save
+        self._get_issues = get_issues
         self._get_nr_save = get_nr_save
         self._on_slot_selected = on_slot_selected
         self.selected_slot: int | None = None
-        self._rows: list[tuple[int, ctk.CTkFrame]] = []
 
     def setup_ui(self) -> None:
         outer = ctk.CTkFrame(self.parent, corner_radius=12)
@@ -53,79 +59,72 @@ class NRInspectorTab:
                 header, text="View All Issues", command=self._view_issues, width=180
             ).pack(side="right", padx=(0, 8))
 
-        hint_frame = ctk.CTkFrame(outer, fg_color="transparent")
-        hint_frame.pack(fill="x", padx=10, pady=(0, 4))
+        self._hint_frame = ctk.CTkFrame(outer, fg_color="transparent")
+        self._hint_frame.pack(fill="x", padx=10, pady=(0, 4))
         ctk.CTkLabel(
-            hint_frame,
+            self._hint_frame,
             text="Select a character and click 'Edit Character' to open the editor tabs.",
             font=("Segoe UI", 11),
             text_color=("gray40", "gray70"),
         ).pack(side="left", anchor="w")
 
-        self.list_frame = ctk.CTkScrollableFrame(
-            outer, width=900, height=320, corner_radius=10
+        # Packed above the list only while the file has junk bytes
+        self._junk_note = ctk.CTkLabel(
+            outer,
+            text="",
+            text_color=palette.PURPLE_TEXT,
+            font=("Segoe UI", 11),
+            wraplength=640,
+            justify="left",
+            anchor="w",
         )
-        self.list_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
-        bind_mousewheel(self.list_frame)
+        self.list = CharacterList(outer, on_select=self._select_row)
+        self.list.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
     def refresh(self) -> None:
-        for child in self.list_frame.winfo_children():
-            child.destroy()
-        self._rows.clear()
         self.selected_slot = None
-
+        self._junk_note.pack_forget()
         save = self._get_nr_save()
         if save is None:
-            ctk.CTkLabel(
-                self.list_frame,
-                text="No save file loaded.",
-                text_color=("gray50", "gray60"),
-            ).pack(anchor="w", padx=6, pady=6)
+            self.list.message("No save file loaded.")
             return
 
         if save.trailing_bytes:
-            ctk.CTkLabel(
-                self.list_frame,
+            self._junk_note.configure(
                 text=(
                     f"This file has {save.trailing_bytes} junk bytes past its last "
                     "entry. They are removed the next time the editor saves this file."
-                ),
-                text_color=palette.PURPLE_TEXT,
-                font=("Segoe UI", 11),
-                wraplength=640,
-                justify="left",
-                anchor="w",
-            ).pack(fill="x", padx=6, pady=(2, 4))
+                )
+            )
+            self._junk_note.pack(fill="x", padx=16, pady=(0, 4), after=self._hint_frame)
 
-        occupied = [
-            (i, slot)
-            for i, slot in enumerate(save.slots)
+        issues = self._get_issues() if self._get_issues else None
+        rows = [
+            CharacterRow(
+                slot_idx,
+                slot.player_name,
+                {
+                    "currency": f"{slot.murk:,}",
+                    "playtime": format_playtime(slot.play_time_ms / 1000),
+                    "sigils": f"{slot.marks_of_night:,}",
+                    "relics": str(len(slot.relic_states)),
+                },
+                slot_issues(issues, slot_idx),
+            )
+            for slot_idx, slot in enumerate(save.slots)
             if slot.entry_count > 0 or slot.player_name
         ]
-        if not occupied:
-            ctk.CTkLabel(self.list_frame, text="No active characters found.").pack(
-                anchor="w", padx=6, pady=6
-            )
-            return
-
-        for slot_idx, slot in occupied:
-            row = ds.card_row(
-                self.list_frame,
-                slot.player_name,
-                f"Slot {slot_idx + 1}  ·  Murk {slot.murk:,}  ·  "
-                f"Sigils {slot.marks_of_night:,}  ·  "
-                f"Relics {len(slot.relic_states)}",
-                on_click=lambda v=slot_idx: self._select_row(v),
-            )
-            self._rows.append((slot_idx, row))
-
-        if self._rows:
-            self._select_row(self._rows[0][0])
+        cols = columns(
+            "Murk",
+            level=False,
+            char_class=False,
+            ng_plus=False,
+            extras=(("sigils", "Sigils", 90), ("relics", "Relics", 60)),
+        )
+        self.list.show(cols, rows)
 
     def _select_row(self, idx: int) -> None:
         self.selected_slot = idx
-        for val, frame in self._rows:
-            ds.select_card_row(frame, val == idx)
 
     def _view_issues(self) -> None:
         if self.selected_slot is None:

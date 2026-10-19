@@ -9,7 +9,7 @@ structures that follow it. Nothing is addressed by absolute position.
 
 [0x00]  u32  Plaintext size after this field (0xC0000)
 [0x04]  u32  Version (0x62)
-[0x0C]  u32  Play time
+[0x0C]  u32  Play time, milliseconds
 [0x10..0x60]  Section directory, (u32 offset, u32 size) pairs:
   0x10  Player data: everything from the gaitem table to the event flags
   0x18  Player game data: gaitem table through the gesture list
@@ -140,6 +140,7 @@ _HANDLE_FOR_ID = {
 
 # --- Slot header ------------------------------------------------------------- #
 
+_PLAY_TIME_OFFSET = 0x0C
 _DIR_PLAYER_DATA = 0x10
 _DIR_EVENT_FLAGS = 0x38
 # Directory pairs that describe byte ranges in the slot, in file order.
@@ -394,6 +395,10 @@ class DS3Slot:
             return not self.name
         except LayoutError:
             return True
+
+    @property
+    def play_time_ms(self) -> int:
+        return _read_u32(self._data, _PLAY_TIME_OFFSET)
 
     def _dir(self, field: int) -> tuple[int, int]:
         return struct.unpack_from("<II", self._data, field)

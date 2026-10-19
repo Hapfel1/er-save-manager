@@ -23,9 +23,11 @@ from er_save_manager.games.DS3.slot import (
     NAME_MAX_CHARS,
 )
 from er_save_manager.games.DS3.tabs.equipment import DS3EquipAdapter
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.editors.ds_equipment import AttunementSection, EquipmentPanel
 from er_save_manager.ui.pending import FieldTracker, PendingPage, StageError, var_state
+from er_save_manager.ui.tooltip import add_tooltip
 from er_save_manager.ui.utils import (
     bind_mousewheel,
     game_blocks_write,
@@ -104,6 +106,14 @@ class DS3EditorTab:
         ctk.CTkSegmentedButton(
             header, values=list(catalog.SOURCES.values()), variable=self._source_var
         ).pack(side="left")
+        # Shown while the Stats banner reports a class or level mismatch
+        self._source_warning = ctk.CTkLabel(
+            header,
+            text="⚠",
+            font=("Segoe UI", 18, "bold"),
+            text_color=palette.WARNING_TEXT,
+        )
+        add_tooltip(self._source_warning, "Wrong game data? See the note in Stats.")
 
         tabs = ctk.CTkTabview(
             outer,
@@ -146,8 +156,33 @@ class DS3EditorTab:
         frame.pack(fill="both", expand=True)
         bind_mousewheel(frame)
 
+        # Packed above the stats only while there is a class or level note
+        self._class_banner = ctk.CTkFrame(
+            frame,
+            corner_radius=8,
+            border_width=1,
+            border_color=palette.WARNING_TEXT,
+            fg_color=palette.WARNING_TINT,
+        )
+        ctk.CTkLabel(
+            self._class_banner,
+            text="⚠",
+            font=("Segoe UI", 16, "bold"),
+            text_color=palette.WARNING_TEXT,
+        ).pack(side="left", anchor="n", padx=(10, 6), pady=6)
+        self._class_note = ds.wrap_to_width(
+            ctk.CTkLabel(
+                self._class_banner,
+                text="",
+                font=("Segoe UI", 12),
+                text_color=palette.WARNING_TEXT,
+            )
+        )
+        self._class_note.pack(side="left", fill="x", expand=True, padx=(0, 10), pady=6)
+
         top = ctk.CTkFrame(frame, fg_color="transparent")
         top.pack(fill="x", pady=5, padx=10)
+        self._stats_top = top
 
         af = ctk.CTkFrame(top, fg_color="transparent")
         af.pack(side="left", fill="both", expand=True, padx=(0, 5))
@@ -222,15 +257,6 @@ class DS3EditorTab:
         )
         self._class_combo.grid(row=row, column=1, padx=5, pady=5)
         patch_combo_scroll(self._class_combo)
-        self._class_note = ctk.CTkLabel(
-            frame,
-            text="",
-            font=("Segoe UI", 10),
-            text_color=("gray40", "gray70"),
-            wraplength=520,
-            justify="left",
-        )
-        self._class_note.pack(anchor="w", padx=15)
 
     # --- Identity tab -------------------------------------------------------- #
 
@@ -295,7 +321,7 @@ class DS3EditorTab:
         self._ng_var.set("0")
         self._class_var.set("")
         if hasattr(self, "_class_note"):
-            self._class_note.configure(text="")
+            self._set_class_note([])
         self._load_equipment()
 
     def _populate(self, slot_idx: int) -> None:
@@ -474,8 +500,21 @@ class DS3EditorTab:
                 f"{self._source_var.get()} class. "
                 "Select the game data the character was made with."
             )
-        self._class_note.configure(text="\n".join(notes))
+        self._set_class_note(notes)
         self._auto_recalc_level()
+
+    def _set_class_note(self, notes: list[str]) -> None:
+        """Show the notes in the Stats banner and flag the Game data selector,
+        or hide both when there are none."""
+        self._class_note.configure(text="\n".join(notes))
+        if notes:
+            self._class_banner.pack(
+                fill="x", padx=10, pady=(8, 0), before=self._stats_top
+            )
+            self._source_warning.pack(side="left", padx=(8, 0))
+        else:
+            self._class_banner.pack_forget()
+            self._source_warning.pack_forget()
 
     def _derived_level(self, stats: dict[str, int]) -> int:
         """Class level plus the attribute points above the class base; without

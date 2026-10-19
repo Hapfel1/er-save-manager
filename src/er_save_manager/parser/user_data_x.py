@@ -453,6 +453,10 @@ class UserDataX:
         """Get character level"""
         return self.player_game_data.level
 
+    def get_ng_plus(self) -> int:
+        """NG+ cycle (GameDataMan ClearCount), 0 on the first playthrough."""
+        return self.unk_gamedataman_0x120_or_gamedataman_0x130
+
     def get_slot_map_id(self):
         """
         Get the MapId object.
