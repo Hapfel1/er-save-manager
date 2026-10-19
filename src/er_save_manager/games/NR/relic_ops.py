@@ -145,33 +145,28 @@ def _find_spawn_offset(slot: NightreignSlot) -> int | None:
 
 
 def validate_relic(real_item_id: int, effects: list[int], curses: list[int]) -> None:
-    """Raise ValueError if the relic ID or any effect/curse is invalid.
+    """Raise ValueError unless the game can roll this relic (relic_rules.check).
 
-    No duplicate check: game-written saves hold many relics sharing one
-    real_item_id (random-roll relics and special relics alike).
+    No duplicate check across relics: game-written saves hold many relics
+    sharing one real_item_id.
     """
-    from er_save_manager.games.NR.item_db import (
-        combination_errors,
-        get_relic,
-        validate_curse,
-        validate_effect,
-    )
+    from er_save_manager.games.NR.relic_rules import check
 
-    relic_row = get_relic(real_item_id)
-    if relic_row is None:
-        raise ValueError(f"Unknown relic ID {real_item_id}")
-    is_deep = relic_row["deep"]
-    for slot_num, ef in enumerate(effects, 1):
-        err = validate_effect(ef, is_deep)
-        if err:
-            raise ValueError(f"Effect slot {slot_num}: {err}")
-    for slot_num, ef in enumerate(curses, 1):
-        err = validate_curse(ef)
-        if err:
-            raise ValueError(f"Curse slot {slot_num}: {err}")
-    errors = combination_errors(real_item_id, effects, curses)
-    if errors:
-        raise ValueError(" ".join(errors))
+    issues = check(real_item_id, effects, curses)
+    if issues:
+        raise ValueError(" ".join(i.message for i in issues))
+
+
+def prepare_relic(
+    real_item_id: int, effects: list[int], curses: list[int]
+) -> tuple[list[int], list[int]]:
+    """Effects and curses as the game stores them. A fixed relic given no
+    effects gets its fixed ones."""
+    from er_save_manager.games.NR.relic_rules import canonical, fixed_effects
+
+    if all(e == 0xFFFFFFFF for e in effects):
+        effects = fixed_effects(real_item_id) or effects
+    return canonical(effects, curses)
 
 
 def spawn_relic(
@@ -190,20 +185,17 @@ def spawn_relic(
     Raises ValueError on invalid IDs (when validate=True).
     Raises RuntimeError if there is no free space.
     """
+    (effect_1, effect_2, effect_3), (curse_1, curse_2, curse_3) = prepare_relic(
+        real_item_id,
+        [effect_1, effect_2, effect_3],
+        [curse_1, curse_2, curse_3],
+    )
     if validate:
         validate_relic(
             real_item_id,
             [effect_1, effect_2, effect_3],
             [curse_1, curse_2, curse_3],
         )
-
-    # Named special relics (Besmirched Frame, Silver Tear, ...) carry the
-    # AttachEffect that shares their ID in effect_1. Other relics, including
-    # fixed-roll scene relics below 10000, have no such effect.
-    from er_save_manager.games.NR.item_db import get_effect
-
-    if get_effect(real_item_id) is not None:
-        effect_1 = real_item_id
 
     spawn_offset = _find_spawn_offset(slot)
     if spawn_offset is None:
@@ -361,23 +353,44 @@ def _row_to_args(row: dict) -> tuple[int, list[int], list[int]]:
     return real_id, effects, curses
 
 
-def import_relics(slot: NightreignSlot, rows: list[dict]) -> list[int]:
-    """Validate every row, then spawn them all. Returns the new ga_handles.
+def import_issues(rows: list[dict]) -> tuple[list[str], list[str]]:
+    """(blocking, warnings) for importing rows, one message per problem.
 
-    Nothing is spawned if any row is invalid or the slot lacks room for all
-    of them, so a failure never leaves a partial import behind.
+    Unknown effects (mod data) and pool issues an older game version can
+    cause only warn, since exported relics come from a save.
     """
-    parsed = []
-    errors = []
+    from er_save_manager.games.NR.relic_rules import VERSION_SENSITIVE, check
+
+    blocking, warnings = [], []
     for i, row in enumerate(rows, 1):
         try:
             real_id, effects, curses = _row_to_args(row)
-            validate_relic(real_id, effects, curses)
-            parsed.append((real_id, effects, curses))
         except (KeyError, TypeError, ValueError) as e:
-            errors.append(f"Row {i}: {e}")
-    if errors:
-        raise ValueError("\n".join(errors))
+            blocking.append(f"Row {i}: {e}")
+            continue
+        effects, curses = prepare_relic(real_id, effects, curses)
+        for issue in check(real_id, effects, curses):
+            soft = issue.code == "unknown" or issue.code in VERSION_SENSITIVE
+            (warnings if soft else blocking).append(f"Row {i}: {issue.message}")
+    return blocking, warnings
+
+
+def import_relics(
+    slot: NightreignSlot, rows: list[dict], allow_warnings: bool = False
+) -> list[int]:
+    """Validate every row, then spawn them all. Returns the new ga_handles.
+
+    Nothing is spawned if any row is invalid (or only warns and
+    allow_warnings is False) or the slot lacks room for all of them, so a
+    failure never leaves a partial import behind.
+    """
+    blocking, warnings = import_issues(rows)
+    if blocking or (warnings and not allow_warnings):
+        raise ValueError("\n".join(blocking + warnings))
+    parsed = []
+    for row in rows:
+        real_id, effects, curses = _row_to_args(row)
+        parsed.append((real_id, *prepare_relic(real_id, effects, curses)))
 
     free_states = _count_spawnable_states(slot)
     free_entries = sum(1 for e in slot.item_entries if e.is_empty)

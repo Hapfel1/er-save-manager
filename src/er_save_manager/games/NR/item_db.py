@@ -2,40 +2,21 @@
 Nightreign item database.
 
 Effect tier classification (from AttachEffectParam ID ranges):
-  "deep"    6000000-6799999  - effects valid on deep relics
-  "normal"  7000000-7999999  - effects valid on normal relics
+  "deep"    6000000-6799999  - effects on deep relics
+  "normal"  7000000-7999999  - effects on normal relics
   "special" <100000          - fixed hero/ability effects (any relic type)
   "curse"   6800000-6999999  - curse slot effects (separate from effect slots)
 
-Validation rules:
-  Effect slots (1-3):
-    - deep relic:   tier in ("deep", "special", "normal")  - game allows both
-    - normal relic: tier in ("normal", "special", "deep")   both tiers in practice
-    Practical filter: show deep effects for deep relics, normal effects for normal relics,
-    special effects always. Both tiers work in-game, so the filter is advisory.
-  Curse slots (1-3):
-    - only tier == "curse" effects
-  Hero restriction:
-    - effect.heroes[hero_index] must be 1 (0-based, hero_type 1 = index 0)
-
-Pool IDs in EquipParamAntique (attachEffectTableId_N) reference an unreleased
-AttachEffectGroupParam table. Tier-based validation is the best available approach
-without that table.
+The tiers only sort effect lists for display. Which effects a relic can
+roll comes from the game's roll tables, see relic_rules.py.
 """
 
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 
 _DATA_FILE = Path(__file__).parent / "nr_items.json"
-_EMPTY = 0xFFFFFFFF
-# Relic ids from here on are randomly rolled; lower ids are fixed relics.
-_FIRST_RANDOM_RELIC = 1_000_000
-# Effect names of hero-specific effects start with "[Relic - Hero]" or
-# "[Special Relic - Hero]".
-_HERO_LABEL = re.compile(r"\[[^\]]*? - ([^\]]+)\]")
 _db: dict | None = None
 
 
@@ -130,80 +111,6 @@ def effects_for_curse_slot() -> list[tuple[int, str]]:
         ),
         key=lambda x: x[1],
     )
-
-
-def validate_effect(
-    effect_id: int, is_deep_relic: bool, hero_type: int = 0
-) -> str | None:
-    """
-    Validate an effect ID for an effect slot.
-    Returns None if valid, or an error string if invalid.
-    """
-    if effect_id == 0xFFFFFFFF:
-        return None  # empty is always valid
-    e = get_effect(effect_id)
-    if e is None:
-        return f"Effect {effect_id} not found in database."
-    if e["tier"] == "curse":
-        return "Curse effects cannot go in effect slots."
-    if e["tier"] == "other":
-        return "Not a relic effect."
-    hero_idx = hero_type - 1
-    if hero_type != 0 and hero_idx < len(e["heroes"]) and not e["heroes"][hero_idx]:
-        hero_names = [
-            "Wylder",
-            "Guardian",
-            "Ironeye",
-            "Duchess",
-            "Raider",
-            "Revenant",
-            "Recluse",
-            "Executor",
-            "Scholar",
-            "Undertaker",
-        ]
-        name = (
-            hero_names[hero_idx] if hero_idx < len(hero_names) else f"hero {hero_type}"
-        )
-        return f"Effect not allowed on {name}."
-    return None
-
-
-def combination_errors(
-    real_item_id: int, effects: list[int], curses: list[int]
-) -> list[str]:
-    """Problems with a relic's effects taken together.
-
-    No game-written relic repeats an effect, and a randomly rolled relic
-    (ids from 1000000) never carries effects labelled for two different
-    heroes. Fixed relics below that range can, so the hero rule skips them.
-    """
-    errors = []
-    for label, ids in (("effect", effects), ("curse", curses)):
-        filled = [e for e in ids if e != _EMPTY]
-        if len(filled) != len(set(filled)):
-            errors.append(f"The same {label} appears more than once.")
-    if real_item_id >= _FIRST_RANDOM_RELIC:
-        heroes = set()
-        for effect in filter(None, map(get_effect, effects)):
-            match = _HERO_LABEL.match(effect["name"])
-            if match:
-                heroes.add(match.group(1))
-        if len(heroes) > 1:
-            errors.append("Effects for different heroes cannot share one relic.")
-    return errors
-
-
-def validate_curse(effect_id: int) -> str | None:
-    """Validate an effect ID for a curse slot. Returns None if valid."""
-    if effect_id == 0xFFFFFFFF:
-        return None
-    e = get_effect(effect_id)
-    if e is None:
-        return f"Effect {effect_id} not found in database."
-    if e["tier"] != "curse":
-        return "Only curse-tier effects are valid in curse slots."
-    return None
 
 
 # ---------------------------------------------------------------------------

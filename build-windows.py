@@ -129,6 +129,10 @@ include_files = [
         "er_save_manager/games/NR/nr_items.json",
     ),
     (
+        "src/er_save_manager/games/NR/relic_rules.json",
+        "er_save_manager/games/NR/relic_rules.json",
+    ),
+    (
         "src/er_save_manager/games/DS2/icons.db",
         "er_save_manager/games/DS2/icons.db",
     ),
