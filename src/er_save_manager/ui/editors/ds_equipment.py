@@ -232,6 +232,7 @@ class EquipmentPanel:
         self._staged: dict[Hashable, EquipChoice | None] = {}
         self._name_labels: dict[Hashable, ctk.CTkLabel] = {}
         self._slots: dict[Hashable, EquipSlot] = {}
+        self._layout: tuple[EquipSlot, ...] | None = None
         # Called after any staged change and after Reset, for extra sections
         # that depend on the equipment (DS2 attunement slots).
         self.on_change: Callable[[], None] | None = None
@@ -258,6 +259,16 @@ class EquipmentPanel:
         slots."""
         self.adapter = adapter
         self._staged = {}
+        layout = tuple(adapter.slots()) if adapter is not None else None
+        # Same slots as the shown rows (switching characters of one game):
+        # keep the rows and refresh their text instead of rebuilding them.
+        if layout is not None and layout == self._layout:
+            for key in self._name_labels:
+                self._refresh_slot(key)
+            if self.on_change is not None:
+                self.on_change()
+            return
+        self._layout = layout
         for child in self._slots_frame.winfo_children():
             child.destroy()
         self._name_labels = {}
@@ -274,7 +285,7 @@ class EquipmentPanel:
                 self.on_change()
             return
         groups: dict[str, list[EquipSlot]] = {}
-        for slot in adapter.slots():
+        for slot in layout:
             groups.setdefault(slot.group, []).append(slot)
             self._slots[slot.key] = slot
         names = list(groups)

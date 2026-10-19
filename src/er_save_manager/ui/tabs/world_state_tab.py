@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 import tkinter as tk
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -39,6 +40,9 @@ from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_f
 
 if TYPE_CHECKING:
     pass
+
+# Interval at which the UI thread checks for the decoded map thumbnail.
+_THUMB_POLL_MS = 50
 
 
 class WorldStateTab:
@@ -282,18 +286,14 @@ class WorldStateTab:
             border_color=palette.PURPLE_TEXT,
         )
         card.pack(fill=tk.X, padx=10, pady=(5, 10))
-        thumb = None
-        if self._maps_dir and (self._maps_dir / "lands_between.jpg").exists():
-            from PIL import Image
-
-            img = Image.open(self._maps_dir / "lands_between.jpg")
-            # Overworld land area, scaled down
-            img = img.crop((400, 600, 4400, 4300)).resize((300, 186), Image.LANCZOS)
-            thumb = ctk.CTkImage(img, size=(300, 186))
-        if thumb is not None:
-            image_label = ctk.CTkLabel(card, text="", image=thumb, cursor="hand2")
+        map_path = self._maps_dir / "lands_between.jpg" if self._maps_dir else None
+        if map_path is not None and map_path.exists():
+            image_label = ctk.CTkLabel(
+                card, text="", width=300, height=186, cursor="hand2"
+            )
             image_label.pack(side=tk.LEFT, padx=8, pady=8)
             image_label.bind("<Button-1>", lambda e: self._open_map_window())
+            self._load_map_thumb(image_label, map_path)
         text = ctk.CTkFrame(card, fg_color="transparent")
         text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(8, 12), pady=10)
         ctk.CTkLabel(text, text="World map", font=ds.TITLE_LARGE, anchor="w").pack(
@@ -317,6 +317,33 @@ class WorldStateTab:
             width=200,
             command=self._open_map_window,
         ).pack(anchor="w")
+
+    @staticmethod
+    def _load_map_thumb(label, path: Path) -> None:
+        """Show the map thumbnail in label once a worker thread has decoded
+        it; decoding the full-size progressive JPEG would block the window."""
+        result = []
+
+        def decode():
+            from PIL import Image
+
+            with Image.open(path) as img:
+                # Overworld land area, scaled down
+                result.append(
+                    img.crop((400, 600, 4400, 4300)).resize((300, 186), Image.LANCZOS)
+                )
+
+        def poll():
+            if not label.winfo_exists():
+                return
+            if worker.is_alive():
+                label.after(_THUMB_POLL_MS, poll)
+            elif result:
+                label.configure(image=ctk.CTkImage(result[0], size=(300, 186)))
+
+        worker = threading.Thread(target=decode, daemon=True)
+        worker.start()
+        label.after(_THUMB_POLL_MS, poll)
 
     def _load_character(self, quiet: bool = False):
         save = self.get_save_file()

@@ -60,7 +60,8 @@ class DS2AppearanceTab:
 
     # --- Building ------------------------------------------------------------ #
 
-    def setup_ui(self) -> None:
+    def setup_steps(self):
+        """Build one card per stage."""
         frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
         frame.pack(fill="both", expand=True)
         bind_mousewheel(frame)
@@ -85,6 +86,7 @@ class DS2AppearanceTab:
             on_import=self._import_json,
             show_toast=self._show_toast,
         )
+        yield
 
         body = self._card(
             frame,
@@ -112,6 +114,7 @@ class DS2AppearanceTab:
                 lambda _value, p=part, v=var: self._on_part(p, v),
             )
             self._parts.append((part, var, combo))
+        yield
 
         body = self._card(frame, "Colors")
         for i, (title, offset) in enumerate(app_data.COLORS):
