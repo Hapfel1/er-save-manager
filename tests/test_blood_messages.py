@@ -58,9 +58,9 @@ def test_message_text():
     ]
 
 
-def test_cached_messages_read(sanitized_save):
-    i = _first_slot_with_messages(sanitized_save)
-    messages = BloodMessageEditor(sanitized_save, i).messages()
+def test_cached_messages_read(sanitized_save_readonly):
+    i = _first_slot_with_messages(sanitized_save_readonly)
+    messages = BloodMessageEditor(sanitized_save_readonly, i).messages()
     assert all(not m.is_own for m in messages)
     assert all("[" not in m.text for m in messages)
 

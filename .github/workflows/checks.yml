@@ -44,7 +44,7 @@ jobs:
         run: uv sync --locked --dev
       - name: Run tests
         run: |
-          uv run pytest -v
+          uv run pytest -v -n auto
           exit_code=$?
           if [ "$exit_code" -eq 5 ]; then
             echo "No tests collected"

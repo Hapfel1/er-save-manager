@@ -43,6 +43,22 @@ def sanitized_save(sanitized_save_path):
     return load_save(str(sanitized_save_path))
 
 
+@pytest.fixture(scope="session")
+def sanitized_save_readonly(sanitized_save_path):
+    """One parsed Save shared by tests that only read it.
+
+    Parsing costs about 0.1 s, so read-only tests share this instance. A
+    test that edits it fails the session at teardown; such a test takes
+    sanitized_save instead.
+    """
+    from er_save_manager.parser import load_save
+
+    save = load_save(str(sanitized_save_path))
+    raw = bytes(save._raw_data)
+    yield save
+    assert bytes(save._raw_data) == raw, "a test edited sanitized_save_readonly"
+
+
 @pytest.fixture
 def sanitized_save_copy(sanitized_save_path, tmp_path):
     """A writable on-disk copy of the sanitized fixture.

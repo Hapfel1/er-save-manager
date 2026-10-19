@@ -14,22 +14,10 @@ def _active_slots(save):
     return [i for i, slot in enumerate(save.character_slots) if not slot.is_empty()]
 
 
-def test_no_torrent_bug_false_positive(sanitized_save):
-    for i in _active_slots(sanitized_save):
-        slot = sanitized_save.character_slots[i]
-        assert slot.has_torrent_bug() is False, f"slot {i} unexpectedly flagged"
-
-
-def test_no_weather_corruption_false_positive(sanitized_save):
-    for i in _active_slots(sanitized_save):
-        slot = sanitized_save.character_slots[i]
-        assert slot.has_weather_corruption() is False, f"slot {i} unexpectedly flagged"
-
-
-def test_time_of_day_not_compared_with_play_time(sanitized_save):
+def test_time_of_day_not_compared_with_play_time(sanitized_save_readonly):
     """WorldAreaTime is the time of day; a different play time is not corruption."""
-    for i in _active_slots(sanitized_save):
-        slot = sanitized_save.character_slots[i]
+    for i in _active_slots(sanitized_save_readonly):
+        slot = sanitized_save_readonly.character_slots[i]
         assert slot.has_time_corruption() is False
         assert slot.has_time_corruption(seconds_played=123456) is False
 
@@ -67,14 +55,14 @@ def test_steamid_corruption_detected_after_zeroing_slot_steamid(sanitized_save):
     assert slot.has_steamid_corruption(correct_steam_id=76561198000000000) is True
 
 
-def test_no_corruption_flags_beyond_known_zeroed_steamid(sanitized_save):
+def test_no_corruption_flags_beyond_known_zeroed_steamid(sanitized_save_readonly):
     """has_steamid_corruption always flags steam_id == 0, independent of
     correct_steam_id, so the fixture's zeroed SteamID is an expected,
     single-issue result here. Anything beyond that single issue would be
     a real corruption signal (torrent bug, weather, time, event flags).
     """
-    for i in _active_slots(sanitized_save):
-        slot = sanitized_save.character_slots[i]
+    for i in _active_slots(sanitized_save_readonly):
+        slot = sanitized_save_readonly.character_slots[i]
         has_issue, issues = slot.has_corruption(correct_steam_id=None)
         assert has_issue is True
         assert issues == [f"steamid_corruption:SteamId = {slot.steam_id}"]

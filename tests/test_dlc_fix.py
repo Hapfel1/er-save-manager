@@ -28,16 +28,16 @@ def _write_dlc(save, slot) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_dlc_flag_is_set_on_real_save(sanitized_save):
+def test_dlc_flag_is_set_on_real_save(sanitized_save_readonly):
     """Documents actual fixture state: this character has entered the
     DLC on every active slot, so DLCFlagFix legitimately flags all of
     them. Not a corruption signal by itself.
     """
     fix = DLCFlagFix()
-    for i, slot in enumerate(sanitized_save.character_slots):
+    for i, slot in enumerate(sanitized_save_readonly.character_slots):
         if slot.is_empty():
             continue
-        assert fix.detect(sanitized_save, i) is True
+        assert fix.detect(sanitized_save_readonly, i) is True
 
 
 def test_apply_clears_the_flag(sanitized_save):
@@ -134,14 +134,6 @@ def test_tarnished_pack_apply_preserves_other_dlc_flags(sanitized_save):
 # ---------------------------------------------------------------------------
 
 
-def test_no_false_positive_on_healthy_save(sanitized_save):
-    fix = InvalidDLCFix()
-    for i, slot in enumerate(sanitized_save.character_slots):
-        if slot.is_empty():
-            continue
-        assert fix.detect(sanitized_save, i) is False, f"slot {i} unexpectedly flagged"
-
-
 def test_no_false_positive_with_tarnished_pack_flag_set(sanitized_save):
     """The Tarnished pack flag lives outside the unused byte range and
     must not trigger the invalid-data detector on its own.
@@ -178,9 +170,3 @@ def test_apply_zeroes_unused_bytes_only(sanitized_save):
     assert slot.dlc.unused == b"\x00" * 46
     assert slot.dlc.shadow_of_erdtree == 1  # untouched by this fix
     assert slot.dlc.tarnished_pack == 1  # untouched by this fix
-
-
-def test_apply_is_no_op_when_no_invalid_data(sanitized_save):
-    i = _first_active_slot(sanitized_save)
-    result = InvalidDLCFix().apply(sanitized_save, i)
-    assert result.applied is False

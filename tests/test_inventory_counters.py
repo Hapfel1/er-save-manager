@@ -17,12 +17,14 @@ def _first_active_slot(save):
     raise AssertionError("fixture save has no active character slots")
 
 
-def test_no_false_positive_on_healthy_save(sanitized_save):
+def test_no_false_positive_on_healthy_save(sanitized_save_readonly):
     fix = InventoryCountersFix()
-    for i, slot in enumerate(sanitized_save.character_slots):
+    for i, slot in enumerate(sanitized_save_readonly.character_slots):
         if slot.is_empty():
             continue
-        assert fix.detect(sanitized_save, i) is False, f"slot {i} unexpectedly flagged"
+        assert fix.detect(sanitized_save_readonly, i) is False, (
+            f"slot {i} unexpectedly flagged"
+        )
 
 
 def test_detects_inflated_common_item_count(sanitized_save):

@@ -49,9 +49,9 @@ def test_marker_record_round_trip():
     )
 
 
-def test_fixture_marker_layout(sanitized_save):
+def test_fixture_marker_layout(sanitized_save_readonly):
     for i in range(10):
-        slot = sanitized_save.get_slot(i)
+        slot = sanitized_save_readonly.get_slot(i)
         if not slot.version:
             continue
         block = slot.menu_profile_save_load

@@ -129,15 +129,11 @@ def patch_steamid_generic(
     new_bytes = struct.pack("<Q", new_steamid)
 
     offsets = []
-    i = 0
-    end = len(data) - 7
-    while i <= end:
-        if data[i : i + 8] == old_bytes:
-            data[i : i + 8] = new_bytes
-            offsets.append(i)
-            i += 8
-        else:
-            i += 1
+    i = data.find(old_bytes)
+    while i != -1:
+        data[i : i + 8] = new_bytes
+        offsets.append(i)
+        i = data.find(old_bytes, i + 8)
 
     if not offsets:
         return PatchResult(
