@@ -74,10 +74,10 @@ The Character Editor allows you to modify:
 
 1. Load save file
 2. Go to **Character Editor** tab
-3. Select character slot
+3. Pick the character in the **Character** bar
 4. Type new name in **Name** field
 5. Character count updates (max 16 chars)
-6. Click **Apply Changes**
+6. Click **Apply All** in the unapplied-changes bar
 
 **Validation:**
 
@@ -89,11 +89,11 @@ The Character Editor allows you to modify:
 
 **Steps:**
 
-1. Load save file and load character slot
+1. Load the save file and pick the character in the **Character** bar
 2. Locate stat to modify in Stats section
 3. Enter new value in input field
 4. Repeat for other stats as needed
-5. Click **Apply Changes**
+5. Click **Apply All** in the unapplied-changes bar
 
 **Constraints:**
 
@@ -106,7 +106,7 @@ The Character Editor allows you to modify:
 
 1. Find **Runes Held** field in Progression section
 2. Enter new amount
-3. Click **Apply Changes**
+3. Click **Apply All** in the unapplied-changes bar
 
 **Note:** Runes are currency held, not accumulated runes spent
 
@@ -124,7 +124,7 @@ Level is automatically calculated from stat totals. To change level:
 
 1. Find **NG Level** in Progression section
 2. Select Level
-3. Click **Apply Changes**
+3. Click **Apply All** in the unapplied-changes bar
 
 **Valid Range:** 0-7 (game supports up to NG+7)
 
@@ -260,16 +260,17 @@ Created before every character edit:
 - Save file integrity maintained
 - Changes verified
 
-### Apply Changes Button
+### Apply All
 
-All edits are temporary until clicking **Apply Changes**:
+The **Character** bar under the file row picks the character for every tab that edits one, and the first character is loaded when a save opens. All edits are staged until they are applied. The unapplied-changes bar lists every page with edits, across all tabs:
 
-1. Review all changes
-2. Click **Apply Changes**
-3. Backup created automatically
-4. Changes written to save
+1. Review the list in the bar
+2. Click **Apply All**
+3. One backup is created
+4. All staged edits are written in one save
 5. Checksums updated
-6. Save file ready
+
+**Discard** drops the staged edits instead. Switching characters, loading another save, switching games or closing the window with unapplied changes asks whether to apply or discard them first.
 
 ---
 
@@ -296,11 +297,11 @@ All edits are temporary until clicking **Apply Changes**:
 
 ### "Changes not applied"
 
-**Cause:** Forgot to click Apply Changes
+**Cause:** The edits were not applied
 
 **Solution:**
 
-- Click **Apply Changes** button
+- Click **Apply All** in the unapplied-changes bar
 - Wait for confirmation
 
 ### Character won't load in-game

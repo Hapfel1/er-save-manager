@@ -41,30 +41,31 @@
 ### :material-check-all: Working Features
 
 - **Save File Fixer** - Automatically detect and fix save corruption issues
-- **Character Management** - Export, import, and move characters between saves  
+- **Character Management** - Export, import, and move characters between saves, copy a save to another extension
 - **Community Character Browser** - Browse, download, and contribute characters
 - **Character Editor** - Edit stats, runes, name, level, and build attributes
-- **Appearance Editor** - View, export and import 15 preset slots
+- **Appearance Editor** - View, export and import 15 preset slots, edit eye overrides
 - **Community Preset Browser** - Browse and download appearance presets
 - **Inventory Editor** - Edit your inventory, spawn in items, import builds
 - **Equipment Editor** - Edit equipped items, save and share loadouts
-- **World State / Teleportation** - Known locations, custom coordinates and an interactive map
+- **World State / Teleportation** - Known locations, custom coordinates and an interactive map with grace and map unlocks, map markers and the Convergence map
+- **Message Manager and Item History** - Own and cached messages, Legendary trophy progress and picked-up items
 - **SteamID Patcher** - Transfer saves between Steam accounts
 - **Event Flags Editor** - View and toggle 948+ documented event flags
 - **Boss Respawner** - Respawn any boss for repeated fights
 - **NPC Respawner and Quest Tracker**
-- **Gestures** - Unlock all gestures including DLC and cut content
+- **Gestures** - Unlock all gestures including DLC and cut content, edit the gesture wheel
 - **Invasion Regions & Game Settings**
 - **Backup Manager** - Automatic and manual backups with restore functionality
 - **Troubleshooting** - Diagnostic checks for game and save file issues
 
 ### :material-controller: Other FromSoftware Games
 
-- [Nightreign](user-guide/nightreign.md) - Relic spawning and editing, Murk editing, character management
-- [Dark Souls III](user-guide/dark-souls-3.md) - Stats, character management, boss revival, item spawning, world state
-- [Dark Souls Remastered](user-guide/dark-souls-remastered.md) - Stats, character management, event flags, boss and NPC revival, item spawning
-- **Dark Souls II SotFS** - Stats, item spawning, character management, bonfire editing, NPC revival
-- Backup Manager and [SteamID Patcher](user-guide/steamid-patcher.md) for all of the above plus Armored Core 6 and Sekiro
+- [Nightreign](user-guide/nightreign.md) - Relics and Loadouts tabs with game icons, relic checks against the game's roll rules, Murk and Sovereign Sigils, character management
+- [Dark Souls III](user-guide/dark-souls-3.md) - Stats, equipment and attunement, appearance, character management, boss and NPC revival, item spawning, world state
+- [Dark Souls Remastered](user-guide/dark-souls-remastered.md) - Stats, covenants, equipment and attunement, appearance, character management, event flags, boss and NPC revival, item spawning
+- [Dark Souls II SotFS](user-guide/dark-souls-2.md) - Stats, equipment and attunement, appearance, item spawning, character management, bonfire editing, boss and NPC editing
+- Backup Manager for all of the above plus Armored Core 6 and Sekiro; [SteamID Patcher](user-guide/steamid-patcher.md) for all of them except Dark Souls Remastered
 
 ### :material-wrench: Work in Progress
 
@@ -94,8 +95,10 @@
 ## Quick Start
 
 1. **Launch** the application
-2. Click **Auto-Detect** or **Browse** to load your save file
-3. Use tabs to access different features
+2. Click **Auto-Find** or **Browse** to load your save file
+3. Pick the character in the **Character** bar; every tab that edits a character uses it
+4. Use tabs to access different features
+5. Click **Apply All** in the unapplied-changes bar to write the edits of every tab, with one backup
 
 !!! tip "First Time?"
     Check out the [Installation Guide](user-guide/installation.md) for platform-specific instructions.

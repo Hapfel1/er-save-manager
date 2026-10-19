@@ -1,17 +1,19 @@
 # World State & Teleportation
 
-View character location and teleport to any of 451 known safe locations, a custom coordinate, or a point on the world map. The world map also edits the character's map markers and beacons.
+View character location and teleport to any of 875 known safe locations, a custom coordinate, or a point on the world map. The world map also edits the character's map markers and beacons.
 
 ## Overview
 
 The World State tab displays character location information and provides teleportation:
 
 - View current map and coordinates
-- Teleport to a known location (searchable list of 451 locations)
+- Teleport to a known location (searchable list of 875 locations)
 - Teleport by clicking a tile, grace or dungeon on the world map
 - Custom coordinate teleportation
 - Move bloodstain to player's current position
 - Add, move, delete, export, import and copy map markers
+- Unlock graces, map areas or a whole map, with their map pieces and play regions
+- Convergence saves get the Convergence world map with its own grace positions
 - Legendary trophy progress and item history
 - List, protect and delete the character's messages
 
@@ -21,10 +23,9 @@ The World State tab displays character location information and provides telepor
 
 ### Left Column: Character Info
 
-**Character Slot Selector:**
+**Character:**
 
-- Select slot (1-10)
-- Load button to load character data
+- The **Character** bar under the file row picks the character; its data loads as soon as one is selected
 
 **Current Location Display:**
 
@@ -70,15 +71,14 @@ The World State tab displays character location information and provides telepor
 
 **Steps:**
 
-1. Select character slot (1-10)
-2. Click **Load**
-3. Character location displayed
+1. Pick the character in the **Character** bar
+2. Character location displayed
 
 ### Location Information
 
 **Map Name:**
 
-- Resolved from Map ID against the 451-entry location database
+- Resolved from Map ID against the 875-entry location database
 - Shows area name (e.g., "Roundtable Hold", "Limgrave", "Liurnia")
 - If unknown: Shows "Unknown Location"
 
@@ -96,7 +96,7 @@ The World State tab displays character location information and provides telepor
 
 ## Teleporting to a Known Location
 
-1. Load character data
+1. Pick the character in the **Character** bar
 2. Switch to **Known Locations** mode
 3. Type in the search bar to filter (matches name or Map ID)
 4. Select a location from the list
@@ -111,7 +111,8 @@ Teleporting to a known location also adds that location's region unlock ID if th
 ## The World Map
 
 The map window shows the game's own map for the Lands Between, the Underground and the Realm of
-Shadow, fully revealed. Switch between them with the buttons at the top left.
+Shadow, fully revealed. Switch between them with the buttons at the top left. On a Convergence save
+the map shows the Convergence map art, graces and locations instead.
 
 - Scroll to zoom, drag with the left mouse button to pan (right or middle button pans too)
 - Sites of Grace and dungeons use the game's map icons (legacy dungeons, catacombs and caves are
@@ -120,7 +121,7 @@ Shadow, fully revealed. Switch between them with the buttons at the top left.
   whether it is unlocked
 - The list on the left searches every grace, dungeon and tile by name or map ID; selecting an
   entry switches to its map, centers on it and selects it
-- **Character** at the top left switches the character (the same as the slot selector in the tab)
+- **Character** at the top left switches the character (the same as the Character bar)
 - The bloodstain shows where the character last died, with its runes; **Move Bloodstain to
   Player** in the right panel moves it to the character's position
 - The legend under the location list explains the icons
@@ -131,17 +132,23 @@ Shadow, fully revealed. Switch between them with the buttons at the top left.
 
 ### Teleporting from the Map
 
-1. Load character data
-2. Click **Open Map**
+1. Pick the character in the **Character** bar
+2. Click **Open World Map**
 3. Click a tile, grace or dungeon, or pick it from the list
 4. Click **Teleport Here**
 
-### Locking and Unlocking Graces
+### Locking and Unlocking Graces and Map Areas
 
 Select a Site of Grace on the map. The panel shows whether it is unlocked; **Unlock** / **Lock**
 sets its event flag (the same as the Sites of Grace dialog in the Event Flags tab), makes a backup
-and saves the file. **Unlock All Graces on This Map** unlocks every locked grace on the map that is
-shown (Lands Between, Underground or Realm of Shadow) in one save.
+and saves the file. Unlocking a grace also adds its play region, so the area shows as discovered.
+
+- **Unlock Area** reveals the map piece of the selected location's area and unlocks its graces
+- **Unlock Whole Map** does the same for every area of the map that is shown (Lands Between,
+  Underground or Realm of Shadow)
+
+Both ask first, list what changes, and add the play regions of the unlocked graces. A backup is
+made before saving.
 
 ### Map Markers
 
@@ -155,8 +162,8 @@ The side panel lists the character's map markers and beacons (up to 100 markers 
 - **Export...** writes the markers to a JSON file; **Import...** reads one and asks whether to
   replace or append
 - **Copy To...** copies the markers to another character in the same save, replacing or appending
-- Changes are kept in the window until **Apply Changes**, which makes a backup and saves the file.
-  **Revert** discards them
+- Changes are staged until **Apply All** in the unapplied-changes bar of the main window, which
+  writes them together with the other staged edits after one backup. **Revert** discards them
 
 Marker icons are listed by the number the save stores (1-10). Characters last saved by an old
 game version keep an older marker layout that the editor does not change; loading and saving them
@@ -184,7 +191,7 @@ Directly modify character's position coordinates in save file. Intended for prec
 
 **Steps:**
 
-1. Load character data
+1. Pick the character in the **Character** bar
 2. Switch to **Custom Coordinates** mode
 3. Enter custom coordinates:
    - X value (float)

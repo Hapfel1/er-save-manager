@@ -1,66 +1,86 @@
 # Dark Souls III
 
-Save editing for Dark Souls III: stats, inventory with visual item picker and editor, bosses, NPCs, bonfires, gestures and NG+, with Convergence and Cinders item data.
+Save editing for Dark Souls III: stats, identity, equipment and attunement, inventory with visual item picker and editor, appearance, bonfires, gestures, NG+, bosses and NPCs, with Convergence and Cinders item data.
 
 ## Overview
 
-DS3 support is a reduced tab set:
+DS3 support uses these tabs:
 
 - Save Inspector
-- Character Editor
 - Character Management
-- Inventory
-- Bosses
+- Character Editor (Stats, Identity, Equipment and Inventory sub-tabs)
+- Appearance
 - World State
-- NPCs
+- NPCs & Bosses
 - SteamID Patcher
 - Backup Manager (top-level button)
 - Settings
 
 ---
 
+## Selecting a Character and Applying Changes
+
+The **Character** bar under the file row picks the character for every tab that edits one; switching tabs keeps the selection. The first character is loaded when a save opens.
+
+Edits are staged until they are applied. The unapplied-changes bar lists the pages with edits: **Apply All** writes all of them in one save write with one backup, **Discard** drops them. Switching characters, loading another save, switching games or closing the window with unapplied changes asks whether to apply or discard them first.
+
+---
+
 ## Save Inspector
 
-Lists all character slots for the loaded save. Selecting a slot and clicking Edit Character loads it in every editing tab.
+Lists every character as a card with slot, level, class, souls, NG+ and play time, and a status on the right: **OK**, or the number of issues detected (hover for the list). **View All Issues** lists them for the whole save. Select a character and click **Edit Character** to open it in the editor tabs.
+
+---
+
+## Character Management
+
+Copy, transfer, swap, export, import and delete character slots, within a save or between two saves. The load-screen character list is kept in step.
 
 ---
 
 ## Character Editor
 
-Edit the nine DS3 attributes, Souls, name and NG+ cycle. Level follows the attributes automatically (every DS3 class has level = attribute total - 89). Name and level changes are also written to the load screen's character list so it does not show stale values.
+**Game data** at the top picks the item and class data: Vanilla, Convergence or Cinders. Each list is built from that game's own files (item parameters, item names and menu icons), so names, stack sizes, upgrade caps, icons and starting classes match what the game shows. Pick the one matching the mod the character was played with. When the character's class or level does not fit the selected game data, a warning sign appears next to the selector and the Stats sub-tab explains the mismatch.
 
-### Appearance
+### Stats
 
-- **Body** - body type and the five Build Detail sliders (head, chest, abdomen, arms, legs).
-- **Face** - base template and every face slider of the character creation menu, with the menu's own names and captions, split into Shape and Skin. Picking a base template replaces the face sliders and the base skin color, as in the game.
-- **Hair, eyes and tattoo** - hair, brow, beard, eyelashes, each pupil and the tattoo/mark, picked from the game's own icons, each with its color. The tattoo/mark position, angle and size are below it.
-- **Copy and share** (top of the tab) - load the appearance of another character from the same save or from another DS3 save file (**From Another Save...**), or export and import it as a JSON file.
+Edit the nine attributes and Souls. Level follows the attributes automatically (every DS3 class has level = attribute total - 89). Attributes cannot go below the starting class's base values unless the loaded character is already below them.
 
-Nothing is written until **Apply Changes**; **Revert** reloads the saved appearance. Applying also updates the copy of the appearance kept with the load-screen character list.
+### Identity
 
----
+Name (up to 16 characters), class and NG+ cycle. Name and level changes are also written to the load screen's character list so it does not show stale values.
 
-## Inventory
+### Equipment
+
+Every equipment slot of the character: right and left hand weapons 1-3, the four armor pieces, arrows and bolts 1-2, four rings, the covenant and the quick items. Click a slot to pick from the items the character carries that fit it, with icons, categories and search. A slot can be emptied unless the game requires it to hold something.
+
+**Attunement** lists the attuned spells in slot order, packed from the first slot as the game stores them. **Add Spell** picks from the carried spells; **Remove**, **Move Up** and **Move Down** change the list.
+
+### Inventory
 
 The item spawner is on the left and the character's items (held, key items and the storage box) on the right.
 
-- **Game data** picks the item list: Vanilla, Convergence or Cinders. Each list is built from that game's own files (item parameters, item names and menu icons), so names, stack sizes, upgrade caps and icons match what the game shows. Pick the list matching the mod the character was played with.
-- **Spawning** places items the way the game does when you pick something up: weapons and armor get their own item entry, goods stack, key items go to the key item list, and items can be sent to the storage box instead of the inventory. Infused weapons are listed once with an **Infusion** choice and its icon.
+- **Spawning** places items the way the game does when you pick something up: weapons and armor get their own item entry, goods stack, key items go to the key item list, and items can be sent to the storage box instead of the inventory. Infused weapons are listed once with an **Infusion** choice and its icon. Stored items use the storage box's stack limits.
 - **Visual Picker** shows the spawn list as an icon grid by category.
-- **Editing**: stackable items can have their quantity changed, weapons their upgrade level and infusion, items can move between the inventory and the storage box, and items that are not equipped can be removed. Equipped items and items on the quick/belt slots are protected; unequip them in game first.
+- **Editing**: stackable items can have their quantity changed, weapons their upgrade level and infusion, items can move between the inventory and the storage box, and items that are not equipped can be removed. Equipped items and items on the quick/belt slots are protected; unequip them first.
 - **Visual Editor** shows the character's items as an icon grid with the same editing options.
 - **Cut content** (vanilla items no item lot, shop or starting class hands out) is hidden by default and asks for confirmation before spawning.
 - **Seamless Co-op items** (the pendants, Ominous Tome and Taunter's Orb) are offered only when a Seamless Co-op `.co2` save is loaded.
 - **Estus Flasks**: a character holds one Estus Flask and one Ashen Estus Flask. Spawning another one while the character already has one is skipped; remove the existing flask first to switch levels.
 - Fields that do not apply to the selection (quantity for unstackable items, upgrade for items without levels, infusion for items without infusions) are greyed out.
 
-If a character's inventory was damaged by an earlier version of this editor, inventory editing is disabled for that character and the reason is shown. Bosses, NPCs, bonfires and gestures stay editable. Restore a backup from before the earlier edit to edit items again.
+If a character's inventory was damaged by an earlier version of this editor, inventory editing is disabled for that character and the reason is shown. The other tabs stay editable. Restore a backup from before the earlier edit to edit items again.
 
 ---
 
-## Bosses
+## Appearance
 
-Kill or respawn any boss, including DLC bosses. This sets or clears the boss's defeat flag and, for main story bosses, the "defeated" progression flag other scripts read. Boss souls are not given or taken.
+- **Body** - body type and the five Build Detail sliders (head, chest, abdomen, arms, legs).
+- **Face** - base template and every face slider of the character creation menu, with the menu's own names and captions, split into Shape and Skin. Picking a base template replaces the face sliders and the base skin color, as in the game.
+- **Hair, eyes and tattoo** - hair, brow, beard, eyelashes, each pupil and the tattoo/mark, picked from the game's own icons, each with its color. The tattoo/mark position, angle and size are below it.
+- **Copy and share** (top of the tab) - load the appearance of another character from the same save or from another DS3 save file (**From Another Save...**), or export and import it as a JSON file.
+
+**Revert** reloads the saved appearance. Applying also updates the copy of the appearance kept with the load-screen character list.
 
 ---
 
@@ -72,9 +92,15 @@ Kill or respawn any boss, including DLC bosses. This sets or clears the boss's d
 
 ---
 
-## NPCs
+## NPCs & Bosses
+
+### NPCs
 
 Revive a dead or hostile NPC, or mark one dead. Only the NPC's alive/hostile/dead state changes; quest progress is left as it is, so an NPC whose questline already moved on stays where it left off.
+
+### Bosses
+
+Kill or respawn any boss, including DLC bosses, selected ones or all at once (double-click toggles one). This sets or clears the boss's defeat flag and, for main story bosses, the "defeated" progression flag other scripts read. Boss souls are not given or taken.
 
 ---
 
@@ -86,7 +112,7 @@ Transfer a DS3 save between Steam accounts, same mechanism as the Elden Ring ver
 
 ## Safety
 
-Every edit creates a backup first, and the game must be closed while editing. Offsets are read from the save's own structure; a character whose layout does not match (for example saves from some randomizer mods) is shown read-only for the affected features instead of being written.
+Every write creates a backup first, and the game must be closed while editing. Offsets are read from the save's own structure; a character whose layout does not match (for example saves from some randomizer mods) is shown read-only for the affected features instead of being written.
 
 ---
 

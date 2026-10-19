@@ -13,6 +13,10 @@ The Character Management tab provides complete control over your character slots
 - Move characters between slots
 - Copy characters to different save files
 - Delete characters permanently
+- Copy the save to another extension (vanilla, Seamless Co-op, Convergence)
+- Open the community Character Browser (**Browse Character Library**)
+
+The operations pick their own slots, so the **Character** bar is not used on this tab.
 
 **When to Use:**
 
@@ -36,6 +40,7 @@ The Character Management tab provides complete control over your character slots
 - Export Character
 - Import Character
 - Delete Character
+- Copy to Another Extension
 
 **Operation details**
 
@@ -52,8 +57,8 @@ Copy a complete character to a different slot in the Save file
 1. Load your save file
 2. Go to **Character Management** tab
 3. Select **Copy Character** in the dropdown menu
-4. Select both Slots
-5. Click **Copy Character...**
+4. Pick the **From slot** and **To slot**
+5. Click **Copy Character**
 
 ---
 
@@ -84,10 +89,9 @@ Save a complete character to a standalone file.
 1. Load your save file
 2. Go to **Character Management** tab
 3. Select **Export Character** in the dropdown menu
-4. Select your slot (you can check the Save Fixer Tab for a character list)
+4. Pick the **Slot** (the slot list shows each character's name)
 5. Click **Export Character...**
-5. Choose save location
-6. Enter filename
+6. Choose save location and filename
 7. Click Save
 
 **Result:** `.erc` file created containing all character data
@@ -140,11 +144,10 @@ Everything from the `.erc` file:
 1. Load target save file
 2. Go to **Character Management** tab
 3. Select **Import Character** from the dropdown menu
-3. Select target slot (empty or occupied)
-4. Click **Import Character**
-5. Browse to `.erc` file
-6. **If slot occupied:** Confirm overwrite
-7. Click Import
+4. Select target slot (empty or occupied)
+5. Click **Import Character...**
+6. Browse to `.erc` file
+7. **If slot occupied:** Confirm overwrite
 
 **Result:** Character loaded into slot, ready to play
 
@@ -219,9 +222,9 @@ Transfer character to another save file.
 
 1. Select **Transfer to Another Save** in the dropdown menu
 2. Select your character
-3. Click **Select Target Save** and select your target save file
-4. Select the slot in your targets save file
-5. confirm
+3. Click **Select Target Save...** and select your target save file
+4. Select the slot in your target save file
+5. Confirm
 
 ### Automatic Adjustments
 
@@ -280,9 +283,8 @@ Permanently remove character from slot.
 
 **Confirmation Required:**
 
-- Must type character name
+- Yes/No confirmation naming the slot
 - Prevents accidental deletion
-- Clear warning message
 
 **Automatic Backup:**
 
@@ -309,6 +311,16 @@ Permanently remove character from slot.
 ```
 ER0000_2026-02-15_14-30-00_delete.bak
 ```
+
+---
+
+## Copy to Another Extension
+
+The game, or the mod loader, picks the save file by its extension: `.sl2` for the unmodded game, `.co2` for Seamless Co-op, `.cnv` for Convergence and `.cnvco2` for Convergence with Seamless Co-op. **Change Extension** in the file row, or **Copy to Another Extension** in the operation menu and then **Choose Extension...**, copies the loaded save to another extension, for Elden Ring, Nightreign, Dark Souls III, Dark Souls Remastered and Dark Souls II. **Custom** is for an extension set in the mod's own settings.
+
+- The loaded file is never changed. An existing target file is backed up before it is changed.
+- **Copy** puts the chosen characters into the target file: each goes into a free slot or replaces one character, and the others in the target stay. **Replace Whole File** overwrites the target with the loaded save.
+- Characters holding content the target setup lacks are not copied: Convergence items or flags going to an extension without Convergence, Seamless Co-op items going to `.sl2`, and weapons above +15 going to Convergence.
 
 ---
 

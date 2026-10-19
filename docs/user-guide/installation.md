@@ -154,11 +154,11 @@ See the [Contributing](../developer/contributing.md) guide for build details.
 After installation, verify the tool works:
 
 1. **Launch** the application
-2. Click **Auto-Detect** - should find your save file
+2. Click **Auto-Find** - should find your save file
 3. Select the correct file
-4. If successful, you'll see your character list
+4. If successful, the Save Fixer tab shows your character list and the **Character** bar selects the first character
 
-If auto-detect fails, use **Browse** to manually locate your save file.
+If Auto-Find fails, use **Browse** to manually locate your save file.
 
 ---
 

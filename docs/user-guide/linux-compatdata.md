@@ -158,7 +158,7 @@ Whichever location the game or launcher writes to. After setting the launch opti
 Only if you are certain you have the save copied correctly and the game loads it. Verify in-game first. The old compatdata folder may also contain other game files - deleting it removes everything for that entry.
 
 **Q: The tool can't find my save automatically.**
-Use the **Browse** button to locate it manually. Common non-standard locations to check:
+Use the **Browse** button to locate it manually. On Linux it opens the desktop's own file dialog (zenity, or kdialog on KDE), where Ctrl+L types a path and Ctrl+H shows hidden folders such as `.local`. Without zenity or kdialog installed, the built-in dialog is used. Common non-standard locations to check:
 ```
 ~/.local/share/Steam/steamapps/compatdata/<any_id>/pfx/drive_c/users/steamuser/AppData/Roaming/EldenRing/
 ```
