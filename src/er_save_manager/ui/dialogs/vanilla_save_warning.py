@@ -75,11 +75,14 @@ _GAME_TEXT: dict[str, tuple[str, list[tuple[str, list[_Bullet]]]]] = {
                 [
                     (
                         "Relics with effect combinations the game cannot roll "
-                        "(wrong effect for the slot color, duplicate or mixed "
-                        "character-specific effects)",
-                        "relic edits reject wrong-tier, duplicate and "
-                        "mixed-hero effects, and chalices only take relics "
-                        "of the slot's color",
+                        "(an effect the relic's slot cannot roll, duplicate or "
+                        "mixed character-specific effects)",
+                        "spawned and imported relics must fit the game's own "
+                        "roll tables (the effect pool of each slot, no "
+                        "duplicate or second character-specific effect, "
+                        "curses only where the game adds them), edits cannot "
+                        "add such problems, and chalices only take relics of "
+                        "the slot's color",
                     ),
                 ],
             ),
