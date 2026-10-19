@@ -292,7 +292,7 @@ copy path does not work on linux done
 
 add npc event flags done
 
-try fixing scrolling on linux skipped for now
+try fixing scrolling on linux done (nested frames + rows added later)
 
 zip done
 
