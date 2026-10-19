@@ -87,6 +87,7 @@ class UserDataX:
     equipped_gestures_offset: int = 0
     equipped_armaments_and_items_offset: int = 0
     equipped_physics_offset: int = 0
+    face_data_offset: int = 0
     # Header (4 + 4 + 8 + 16 = 32 bytes)
     version: int = 0
     map_id: MapId = field(default_factory=MapId)
@@ -349,6 +350,7 @@ class UserDataX:
         obj.equipped_physics = EquippedPhysics.read(f)
 
         # Read face data (303 bytes)
+        obj.face_data_offset = f.tell() - data_start
         obj.face_data = FaceData.read(f, in_profile_summary=False)
 
         obj.inventory_storage_offset = f.tell() - data_start

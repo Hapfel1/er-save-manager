@@ -1542,6 +1542,14 @@ class SaveManagerGUI:
             self.show_toast,
         )
         self._build_tab("Appearance", self.appearance_tab.setup_ui)
+        self._pending_register("Appearance")(
+            PendingPage(
+                "Eye overrides",
+                self.appearance_tab.eye_changes,
+                self.appearance_tab.prepare_eyes,
+                self.appearance_tab.discard_eyes,
+            )
+        )
 
         self.notebook.add("World State")
         tab_world = self.notebook.tab("World State")
@@ -1638,6 +1646,7 @@ class SaveManagerGUI:
 
         self._character_tabs = {
             "Character Editor": self._er_load_character,
+            "Appearance": self.appearance_tab.load_slot,
             "World State": self.world_tab.load_slot,
             "Event Flags": self.event_flags_tab.load_slot,
             "Gestures": self.gestures_tab.load_slot,

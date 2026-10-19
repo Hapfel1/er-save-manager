@@ -11,8 +11,21 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.backup.manager import BackupManager
+from er_save_manager.editors import face_overrides
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import bind_mousewheel, pick_file
+from er_save_manager.ui.pending import FieldTracker, StageError, var_state
+from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_file
+
+_EYE_CARD_WIDTH = 270
+
+# Slot 0 eye override choices, in event 1800 priority order
+_EYE_CHOICES = {
+    "None": face_overrides.NONE,
+    "Frenzied Flame": face_overrides.FRENZIED_FLAME_EYES,
+    "Bloody Finger (White Mask Varre)": face_overrides.BLOODY_FINGER_EYES,
+    "Dragon Communion": face_overrides.DRAGON_COMMUNION_EYES,
+}
 
 
 class AppearanceTab:
@@ -43,6 +56,23 @@ class AppearanceTab:
         self.preset_frames = []
         self.selected_slot = None
         self._warped_face_btn = None
+        self.current_slot = None
+        self._eye_names = dict(_EYE_CHOICES)
+        self._eyes_var = tk.StringVar(value="")
+        self._mark_var = tk.BooleanVar(value=False)
+        self._eye_alterations_var = tk.BooleanVar(value=True)
+        self._eye_widgets = []
+        self._eye_combo = None
+        self._eye_note = None
+        self._eye_tracker = FieldTracker(
+            var_state(
+                {
+                    "eyes": self._eyes_var,
+                    "mark": self._mark_var,
+                    "eye_alterations": self._eye_alterations_var,
+                }
+            )
+        )
 
     def setup_ui(self):
         """Setup the appearance tab UI"""
@@ -66,8 +96,15 @@ class AppearanceTab:
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", pady=(2, 0))
 
-        list_container = ctk.CTkFrame(scroll_frame, corner_radius=10)
-        list_container.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
+        row = ctk.CTkFrame(scroll_frame, fg_color="transparent")
+        row.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
+        row.grid_columnconfigure(0, weight=1)
+        left = ctk.CTkFrame(row, fg_color="transparent")
+        left.grid(row=0, column=0, sticky="nsew")
+        list_container = ctk.CTkFrame(left, corner_radius=10)
+        list_container.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        eye_card = self._build_eye_card(row)
+        self._eye_side = None
 
         ctk.CTkLabel(
             list_container,
@@ -81,8 +118,8 @@ class AppearanceTab:
         self.list_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 12))
         bind_mousewheel(self.list_frame)
 
-        action_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
-        action_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+        action_frame = ctk.CTkFrame(left, fg_color="transparent")
+        action_frame.pack(fill=tk.X, pady=(0, 5))
 
         btn_row = ctk.CTkFrame(action_frame, fg_color="transparent")
         btn_row.pack(fill=tk.X, pady=(0, 4))
@@ -157,6 +194,165 @@ class AppearanceTab:
             command=self.import_preset_from_code,
             width=130,
         ).pack(side=tk.LEFT, padx=(0, 6))
+
+        def place_eye_card(event=None):
+            # Next to the presets when their buttons still fit beside it,
+            # else below the buttons
+            side = (
+                row.winfo_width()
+                >= action_frame.winfo_reqwidth() + eye_card.winfo_reqwidth() + 10
+            )
+            if side == self._eye_side:
+                return
+            self._eye_side = side
+            if side:
+                eye_card.grid(row=0, column=1, sticky="n", padx=(10, 0), pady=0)
+            else:
+                eye_card.grid(row=1, column=0, sticky="ew", padx=0, pady=(10, 0))
+
+        place_eye_card()
+        row.bind("<Configure>", place_eye_card, add="+")
+
+    def _build_eye_card(self, parent):
+        card = ctk.CTkFrame(parent, corner_radius=10, width=_EYE_CARD_WIDTH)
+        ctk.CTkLabel(
+            card,
+            text="Eye overrides",
+            font=("Segoe UI", 12, "bold"),
+        ).pack(pady=(12, 2), padx=12, anchor="w")
+        ctk.CTkLabel(
+            card,
+            text=(
+                "Eyes and marks the game puts over the selected character's face. "
+                "The load screen shows the change after the next in-game save."
+            ),
+            font=("Segoe UI", 11),
+            text_color=("#808080", "#a0a0a0"),
+            wraplength=_EYE_CARD_WIDTH - 24,
+            justify="left",
+        ).pack(pady=(0, 8), padx=12, anchor="w")
+
+        grid = ctk.CTkFrame(card, fg_color="transparent")
+        grid.pack(fill=tk.X, padx=12)
+        ctk.CTkLabel(grid, text="Eyes:").grid(row=0, column=0, sticky="w")
+        self._eye_combo = ctk.CTkComboBox(
+            grid,
+            variable=self._eyes_var,
+            values=list(self._eye_names),
+            state="readonly",
+            width=_EYE_CARD_WIDTH - 24,
+        )
+        self._eye_combo.grid(row=1, column=0, sticky="w", pady=(0, 4))
+        patch_combo_scroll(self._eye_combo)
+        mark = ctk.CTkCheckBox(
+            grid, text="Frenzied Flame mark", variable=self._mark_var
+        )
+        mark.grid(row=2, column=0, sticky="w", pady=4)
+        alterations = ctk.CTkCheckBox(
+            grid,
+            text="Eye alterations shown",
+            variable=self._eye_alterations_var,
+        )
+        alterations.grid(row=3, column=0, sticky="w", pady=4)
+        self._eye_widgets = [self._eye_combo, mark, alterations]
+
+        self._eye_note = ctk.CTkLabel(
+            card,
+            text="",
+            font=("Segoe UI", 11),
+            text_color=palette.WARNING_TEXT,
+            wraplength=_EYE_CARD_WIDTH - 24,
+            justify="left",
+        )
+        self._eye_note.pack(pady=(4, 0), padx=12, anchor="w")
+        ctk.CTkFrame(card, fg_color="transparent", height=6).pack()
+        self._set_eye_card_enabled(False)
+        return card
+
+    def _set_eye_card_enabled(self, enabled: bool) -> None:
+        for widget in self._eye_widgets:
+            if not enabled:
+                state = "disabled"
+            elif widget is self._eye_combo:
+                state = "readonly"
+            else:
+                state = "normal"
+            widget.configure(state=state)
+
+    def _eye_label(self, eye_id: int) -> str:
+        for name, value in _EYE_CHOICES.items():
+            if value == eye_id:
+                return name
+        return f"Other ({eye_id})"
+
+    def load_slot(self, slot_idx: int) -> None:
+        """Show the eye overrides of the character in slot_idx; -1 or an
+        empty slot clears the card."""
+        if self._eye_combo is None:
+            return
+        save_file = self.get_save_file()
+        if (
+            save_file is None
+            or not 0 <= slot_idx < 10
+            or slot_idx not in save_file.get_active_slots()
+        ):
+            self.current_slot = None
+            self._eye_tracker.clear()
+            self._eyes_var.set("")
+            self._mark_var.set(False)
+            self._eye_alterations_var.set(True)
+            self._eye_note.configure(text="")
+            self._set_eye_card_enabled(False)
+            return
+        self.current_slot = slot_idx
+        state = face_overrides.read(save_file, slot_idx)
+        self._eye_names = dict(_EYE_CHOICES)
+        label = self._eye_label(state.eyes)
+        # An id the game never sets stays selectable so it is kept as is
+        self._eye_names[label] = state.eyes
+        self._eye_combo.configure(values=list(self._eye_names))
+        self._eyes_var.set(label)
+        self._mark_var.set(state.mark)
+        self._eye_alterations_var.set(state.eye_alterations)
+        self._eye_note.configure(
+            text=(
+                "Flag 9434 is set: the game removes Bloody Finger and Dragon "
+                "Communion eyes the next time an eye flag changes."
+                if state.eyes_blocked
+                else ""
+            )
+        )
+        self._set_eye_card_enabled(True)
+        self._eye_tracker.mark_clean()
+
+    def eye_changes(self) -> int:
+        return self._eye_tracker.changes()
+
+    def discard_eyes(self) -> None:
+        if self.current_slot is not None:
+            self.load_slot(self.current_slot)
+
+    def prepare_eyes(self):
+        """Validate and return the function that writes the eye overrides
+        into the in-memory save (Apply All in the main window)."""
+        save_file = self.get_save_file()
+        if not save_file or self.current_slot is None:
+            raise StageError("Load a character slot first.")
+        slot_idx = self.current_slot
+        try:
+            eyes = self._eye_names[self._eyes_var.get()]
+        except KeyError:
+            raise StageError("Pick the eyes for the character.") from None
+        state = face_overrides.FaceOverrides(
+            eyes=eyes,
+            mark=self._mark_var.get(),
+            eye_alterations=self._eye_alterations_var.get(),
+        )
+
+        def commit() -> None:
+            face_overrides.write(save_file, slot_idx, state)
+
+        return commit
 
     # Byte indices within unk0x6c and their labels, grouped by face region.
     # Indices with no observable effect are omitted.
