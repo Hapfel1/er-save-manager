@@ -759,11 +759,13 @@ class WorldStateTab:
         if save is None or not self.editor:
             return
         source = self.slot_var.get() - 1
-        names = [
-            n
-            for i, n in enumerate(self._get_slot_display_names())
-            if i != source and not n.endswith(" - Empty")
-        ]
+        # Character bar label -> slot index; ER bar labels list all 10 slots
+        targets = {
+            label: i
+            for i, label in enumerate(self._slot_labels)
+            if i != source and not label.endswith(" - Empty")
+        }
+        names = list(targets)
         if not names:
             CTkMessageBox.showinfo(
                 "Copy Markers",
@@ -794,7 +796,7 @@ class WorldStateTab:
         result: dict[str, int | None] = {"value": None}
 
         def confirm():
-            result["value"] = int(target_var.get().split(" - ")[0]) - 1
+            result["value"] = targets[target_var.get()]
             dialog.destroy()
 
         ds.button_row(
