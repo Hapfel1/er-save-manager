@@ -29,6 +29,7 @@ from er_save_manager.parser.event_flags import EventFlags
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import StageError
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import (
     bind_mousewheel,
@@ -83,7 +84,6 @@ class EventFlagsTab:
         self.get_save_path = get_save_path_callback
         self.reload_save = reload_callback
 
-        self.eventflag_slot_var = None
         self.current_slot = None
         self.category_var = None
         self.subcategory_var = None
@@ -107,51 +107,8 @@ class EventFlagsTab:
         self.subcat_combo.configure(values=[], state="disabled")
         self.search_var.set("")
 
-    def _get_slot_display_names(self):
-        """Get display names for all slots"""
-        save_file = self.get_save_file()
-        if not save_file:
-            return [str(i) for i in range(1, 11)]
-
-        slot_names = []
-        profiles = None
-
-        try:
-            if save_file.user_data_10_parsed:
-                profiles = save_file.user_data_10_parsed.profile_summary.profiles
-        except Exception:
-            pass
-
-        # Deleted characters keep their slot data and profile summary entry
-        # until a new character is created in the slot, so only slots marked
-        # active in the profile summary are listed by name.
-        active = set(save_file.get_active_slots())
-        for i in range(10):
-            slot_num = i + 1
-            char = save_file.characters[i]
-
-            if char.is_empty() or i not in active:
-                slot_names.append(f"{slot_num} - Empty")
-                continue
-
-            char_name = "Unknown"
-            if profiles and i < len(profiles):
-                try:
-                    char_name = profiles[i].character_name or "Unknown"
-                except Exception:
-                    pass
-
-            slot_names.append(f"{slot_num} - {char_name}")
-
-        return slot_names
-
-    def refresh_slot_names(self):
-        slot_names = self._get_slot_display_names()
-
-        if hasattr(self, "event_flag_slot_combo"):
-            self.event_flag_slot_combo.configure(values=slot_names)
-            self.event_flag_slot_combo.set(slot_names[0])
-
+    def refresh(self):
+        """A new save: drop the old character's flags."""
         self._refresh_subcategory_filter()
 
     def _refresh_subcategory_filter(self):
@@ -205,38 +162,11 @@ class EventFlagsTab:
         slot_frame = ds.FlowRow(main_frame)
         slot_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
-        ctk.CTkLabel(slot_frame, text="Character slot:", font=("Segoe UI", 11))
-
-        self.eventflag_slot_var = tk.IntVar(value=1)
-        slot_names = self._get_slot_display_names()
-        self.event_flag_slot_combo = ctk.CTkComboBox(
-            slot_frame,
-            values=slot_names,
-            width=200,
-            state="readonly",
-            command=lambda v: self.eventflag_slot_var.set(int(v.split(" - ")[0])),
-        )
-        self.event_flag_slot_combo.set(slot_names[0])
-
-        ctk.CTkButton(
-            slot_frame,
-            text="Load Flags",
-            command=self.load_event_flags,
-            width=130,
-        )
-
         ctk.CTkButton(
             slot_frame,
             text="Advanced...",
             command=self.open_advanced_editor,
             width=110,
-        )
-
-        ctk.CTkButton(
-            slot_frame,
-            text="Apply Changes",
-            command=self.apply_changes,
-            width=130,
         )
 
         ctk.CTkButton(
@@ -457,44 +387,46 @@ class EventFlagsTab:
         )
         self.status_label.pack(side=tk.LEFT)
 
-    def load_event_flags(self):
-        """Load event flags for selected character"""
+    def load_slot(self, slot_idx: int) -> None:
+        """Load the event flags of the character in slot_idx; -1 or an empty
+        slot clears the tab. Reloading the same slot (after Apply All) keeps
+        the shown category or search."""
         save_file = self.get_save_file()
-        if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+        same_slot = slot_idx == self.current_slot
+        self.flag_states.clear()
+        self.current_event_flags = None
+        self.current_slot = None
+        if not hasattr(self, "flags_tree"):
             return
-
-        slot_idx = int(self.eventflag_slot_var.get()) - 1
-        slot = save_file.characters[slot_idx]
-
-        if slot.is_empty() or slot_idx not in save_file.get_active_slots():
-            CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {slot_idx + 1} is empty.", parent=self.parent
-            )
+        self._clear_flag_view()
+        slot = (
+            save_file.characters[slot_idx]
+            if save_file is not None and 0 <= slot_idx < 10
+            else None
+        )
+        if (
+            slot is None
+            or slot.is_empty()
+            or slot_idx not in save_file.get_active_slots()
+            or not getattr(slot, "event_flags", None)
+        ):
+            self._reset_filters()
+            self.status_label.configure(text="No character loaded.")
             return
 
         self.current_slot = slot_idx
-
-        if not hasattr(slot, "event_flags") or not slot.event_flags:
-            CTkMessageBox.showerror(
-                "Event Flags Unavailable",
-                "Event flags not available",
-                parent=self.parent,
-            )
-            return
-
         self.current_event_flags = self._EventFlagAccessor(slot)
-        self.flag_states.clear()
-        self._clear_flag_view()
-        self._reset_filters()
-
-        self.status_label.configure(
-            text=f"Loaded Slot {slot_idx + 1}. Select category or search."
-        )
-
-        self.show_toast(f"Loaded event flags for Slot {slot_idx + 1}", duration=2500)
+        if not same_slot:
+            self._reset_filters()
+        if self.search_var.get().strip():
+            self._run_search(self.search_var.get().strip().lower())
+        elif self.category_var.get():
+            if self.subcategory_var.get():
+                self.on_subcategory_changed()
+            else:
+                self.display_flags(self.category_var.get(), None)
+        else:
+            self.status_label.configure(text="Select a category or search for flags")
 
     def on_category_changed(self, choice=None):
         """Handle category selection"""
@@ -716,82 +648,49 @@ class EventFlagsTab:
 
             CTkMessageBox.showinfo(
                 "Flags Enabled",
-                f"Enabled all {len(self.flag_rows)} displayed flags.\n\nClick 'Apply Changes' to save.",
+                f"Enabled all {len(self.flag_rows)} displayed flags.\n\nClick Apply All to save.",
                 parent=self.parent,
             )
 
-    def apply_changes(self):
-        """Apply flag changes to save file"""
+    def flag_changes(self) -> int:
+        """Shown flags whose state differs from the save."""
         if self.current_event_flags is None:
-            CTkMessageBox.showwarning(
-                "Not Loaded", "No event flags loaded.", parent=self.parent
-            )
-            return
-
-        if not self.flag_states:
-            CTkMessageBox.showwarning(
-                "No Changes", "No flags have been modified.", parent=self.parent
-            )
-            return
-
-        changes = 0
-        for flag_id, new_state in self.flag_states.items():
-            current_state = self.current_event_flags.get_flag(flag_id)
-            if current_state != new_state:
-                changes += 1
-
-        if changes == 0:
-            CTkMessageBox.showinfo(
-                "No Changes", "No flags were modified.", parent=self.parent
-            )
-            return
-
-        result = CTkMessageBox.askyesno(
-            "Confirm Changes",
-            f"Apply {changes} flag changes to Slot {self.current_slot + 1}?\n\n"
-            f"A backup will be created automatically.",
-            parent=self.parent,
+            return 0
+        return sum(
+            1
+            for flag_id, state in self.flag_states.items()
+            if self.current_event_flags.get_flag(flag_id) != state
         )
 
-        if not result:
+    def discard_flags(self) -> None:
+        if self.current_event_flags is None:
             return
+        for flag_id in list(self.flag_states):
+            self._set_flag_state(flag_id, self.current_event_flags.get_flag(flag_id))
 
+    def prepare_flags(self):
+        """Return the function that writes the changed flags into the
+        in-memory save (Apply All in the main window)."""
+        if self.current_event_flags is None or self.current_slot is None:
+            raise StageError("No event flags loaded.")
         save_file = self.get_save_file()
-
-        save_path = self.get_save_path()
-        if save_path:
-            backup_mgr = BackupManager(save_path)
-            backup_mgr.create_backup(
-                description=f"Before event flag changes (Slot {self.current_slot + 1})",
-                operation="event_flag_changes",
-                save=save_file,
-            )
-
-        for flag_id, new_state in self.flag_states.items():
-            self.current_event_flags.set_flag(flag_id, new_state)
-
-        # set_flag() only updates slot.event_flags in memory. The raw data
-        # buffer is what gets written to disk, so it needs the same write.
+        accessor = self.current_event_flags
         slot = save_file.character_slots[self.current_slot]
+        states = dict(self.flag_states)
 
-        if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
-            absolute_offset = slot.event_flags_offset
-            event_flags_size = 0x1BF99F  # 1,833,375 bytes
+        def commit() -> None:
+            for flag_id, new_state in states.items():
+                accessor.set_flag(flag_id, new_state)
+            # set_flag() only updates slot.event_flags in memory. The raw data
+            # buffer is what gets written to disk, so it needs the same write.
+            if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
+                absolute_offset = slot.event_flags_offset
+                event_flags_size = 0x1BF99F  # 1,833,375 bytes
+                save_file._raw_data[
+                    absolute_offset : absolute_offset + event_flags_size
+                ] = slot.event_flags
 
-            save_file._raw_data[
-                absolute_offset : absolute_offset + event_flags_size
-            ] = slot.event_flags
-
-        save_file.recalculate_checksums()
-
-        save_file.save(self.get_save_path())
-        self.reload_save()
-        self.show_toast(
-            f"Applied {changes} flag changes to Slot {self.current_slot + 1}",
-            duration=2500,
-        )
-
-        self.flag_states.clear()
+        return commit
 
     def export_flags(self):
         """Export all set event flags to a JSON file."""

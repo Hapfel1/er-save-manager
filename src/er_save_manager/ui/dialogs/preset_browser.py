@@ -38,6 +38,21 @@ from er_save_manager.ui.virtual_grid import (
     no_image_icon,
 )
 
+# Shared preset tags keep the stored "male"/"female"; the UI shows body types.
+_TAG_LABELS = {"male": "Type A", "female": "Type B"}
+
+
+def _tag_label(tag: str) -> str:
+    return _TAG_LABELS.get(tag.strip().lower(), tag)
+
+
+def _label_tag(label: str) -> str:
+    for tag, text in _TAG_LABELS.items():
+        if text == label:
+            return tag
+    return label.lower()
+
+
 try:
     from PIL import Image
 
@@ -135,7 +150,7 @@ class EnhancedPresetBrowser:
         ctk.CTkComboBox(
             filter_frame,
             variable=self.filter_var,
-            values=["All", "Male", "Female", "Cosplay", "Original"],
+            values=["All", "Type A", "Type B", "Cosplay", "Original"],
             width=140,
             font=ds.FONT,
             dropdown_font=ds.FONT,
@@ -349,7 +364,9 @@ class EnhancedPresetBrowser:
             var = ctk.BooleanVar(value=False)
             self.tag_vars[tag] = var
             row, col = divmod(i, 2)
-            ctk.CTkCheckBox(tags_box, text=tag, variable=var, font=ds.FONT).grid(
+            ctk.CTkCheckBox(
+                tags_box, text=_tag_label(tag), variable=var, font=ds.FONT
+            ).grid(
                 row=row,
                 column=col,
                 sticky="w",
@@ -606,7 +623,7 @@ class EnhancedPresetBrowser:
 
     def apply_filters(self):
         search_term = self.search_var.get().lower()
-        filter_tag = self.filter_var.get().lower()
+        filter_tag = _label_tag(self.filter_var.get())
         self.filtered_presets = []
 
         for preset in self.all_presets:
@@ -815,7 +832,7 @@ class EnhancedPresetBrowser:
         ).pack(fill=ctk.X, pady=(2, 0))
         ctk.CTkLabel(
             self.details_frame,
-            text=f"Tags: {', '.join(preset.get('tags', []))}",
+            text=f"Tags: {', '.join(_tag_label(t) for t in preset.get('tags', []))}",
             font=ds.FONT,
             anchor="w",
             wraplength=420,

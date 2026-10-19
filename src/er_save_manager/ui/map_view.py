@@ -574,7 +574,7 @@ class MapWindow:
         # Buttons are packed from the bottom so the list takes what is left.
         row = ctk.CTkFrame(mf, fg_color="transparent")
         row.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 0))
-        ds.button(row, "Apply Changes", self._apply, width=140).pack(side=tk.LEFT)
+        ds.button(row, "Apply All Changes", self._apply, width=160).pack(side=tk.LEFT)
         ds.button(row, "Revert", self._revert, primary=False, width=90).pack(
             side=tk.LEFT, padx=6
         )
@@ -1373,7 +1373,7 @@ class MapWindow:
                 "its next save; markers can be edited after that."
             )
         else:
-            changed = "  Unsaved changes." if editor.dirty else ""
+            changed = "  Unapplied changes." if editor.dirty else ""
             self._marker_status.set(
                 f"{editor.count(MARKER)} / 100 markers, "
                 f"{editor.count(BEACON)} / 10 beacons.{changed}"
@@ -1530,20 +1530,7 @@ class MapWindow:
     # ------------------------------------------------------------------
 
     def _close(self):
-        if self._editor is not None and self._editor.dirty:
-            answer = CTkMessageBox.askyesnocancel(
-                "Unsaved Markers",
-                "Apply the marker changes before closing?",
-                parent=self._win,
-            )
-            if answer is None:
-                return
-            if answer:
-                self._apply()
-                if self._editor is not None and self._editor.dirty:
-                    return
-            else:
-                self._editor.revert()
+        # Staged markers stay in the main window's unapplied-changes bar.
         MapWindow._instance = None
         self._win.destroy()
 

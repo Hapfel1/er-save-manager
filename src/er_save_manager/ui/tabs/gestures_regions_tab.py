@@ -5,7 +5,6 @@ View and unlock gestures
 
 import tkinter as tk
 from io import BytesIO
-from pathlib import Path
 
 import customtkinter as ctk
 
@@ -18,6 +17,7 @@ from er_save_manager.data.gestures import (
 )
 from er_save_manager.data.regions import REGIONS
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import FieldTracker, StageError
 from er_save_manager.ui.utils import (
     bind_mousewheel,
     patch_combo_scroll,
@@ -55,7 +55,6 @@ class GesturesRegionsTab:
         self.reload_save = reload_callback
         self.show_toast = show_toast_callback
 
-        self.gesture_slot_var = None
         self.current_slot = None
         self.gesture_states = {}
         self._initial_unlocked: set[int] = set()
@@ -63,51 +62,9 @@ class GesturesRegionsTab:
         self._wheel_vars: list[tk.StringVar] = []
         self._wheel_combos: list[ctk.CTkComboBox] = []
         self._wheel_names: dict[str, int] = {}
-
-    def _get_slot_display_names(self):
-        """Get display names for all slots"""
-        save_file = self.get_save_file()
-        if not save_file:
-            return [str(i) for i in range(1, 11)]
-
-        slot_names = []
-        profiles = None
-
-        try:
-            if save_file.user_data_10_parsed:
-                profiles = save_file.user_data_10_parsed.profile_summary.profiles
-        except Exception:
-            pass
-
-        # Deleted characters keep their slot data and profile summary entry
-        # until a new character is created in the slot, so only slots marked
-        # active in the profile summary are listed by name.
-        active = set(save_file.get_active_slots())
-        for i in range(10):
-            slot_num = i + 1
-            char = save_file.characters[i]
-
-            if char.is_empty() or i not in active:
-                slot_names.append(f"{slot_num} - Empty")
-                continue
-
-            char_name = "Unknown"
-            if profiles and i < len(profiles):
-                try:
-                    char_name = profiles[i].character_name or "Unknown"
-                except Exception:
-                    pass
-
-            slot_names.append(f"{slot_num} - {char_name}")
-
-        return slot_names
-
-    def refresh_slot_names(self):
-        slot_names = self._get_slot_display_names()
-
-        if hasattr(self, "gesture_slot_combo"):
-            self.gesture_slot_combo.configure(values=slot_names)
-            self.gesture_slot_combo.set(slot_names[0])
+        self._wheel_tracker = FieldTracker(
+            lambda: {i: var.get() for i, var in enumerate(self._wheel_vars)}
+        )
 
     def setup_ui(self):
         """Setup the gestures tab UI"""
@@ -128,32 +85,6 @@ class GesturesRegionsTab:
             text_color=("#808080", "#a0a0a0"),
         ).pack(pady=(0, 15), padx=15, anchor="w")
 
-        slot_frame = ctk.CTkFrame(main_frame, corner_radius=10)
-        slot_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
-
-        ctk.CTkLabel(slot_frame, text="Character slot:", font=("Segoe UI", 11)).pack(
-            side=tk.LEFT, padx=(12, 8), pady=12
-        )
-
-        self.gesture_slot_var = tk.IntVar(value=1)
-        slot_names = self._get_slot_display_names()
-        self.gesture_slot_combo = ctk.CTkComboBox(
-            slot_frame,
-            values=slot_names,
-            width=200,
-            state="readonly",
-            command=lambda v: self.gesture_slot_var.set(int(v.split(" - ")[0])),
-        )
-        self.gesture_slot_combo.set(slot_names[0])
-        self.gesture_slot_combo.pack(side=tk.LEFT, padx=(0, 10), pady=12)
-
-        ctk.CTkButton(
-            slot_frame,
-            text="Load",
-            command=self.load_gestures,
-            width=90,
-        ).pack(side=tk.LEFT, pady=12, padx=(0, 12))
-
         gestures_frame = ctk.CTkFrame(main_frame, corner_radius=10)
         gestures_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
 
@@ -173,13 +104,6 @@ class GesturesRegionsTab:
 
         gesture_buttons = ctk.CTkFrame(gestures_frame, fg_color="transparent")
         gesture_buttons.pack(fill=tk.X, pady=(0, 12), padx=12)
-
-        ctk.CTkButton(
-            gesture_buttons,
-            text="Apply Changes",
-            command=self.apply_gesture_changes,
-            width=140,
-        ).pack(side=tk.LEFT, padx=(0, 6))
 
         ctk.CTkButton(
             gesture_buttons,
@@ -229,12 +153,7 @@ class GesturesRegionsTab:
             patch_combo_scroll(combo)
             self._wheel_vars.append(var)
             self._wheel_combos.append(combo)
-        ctk.CTkButton(
-            wheel_frame,
-            text="Apply Wheel",
-            command=self.apply_gesture_wheel,
-            width=140,
-        ).pack(pady=12, padx=12, anchor="w")
+        ctk.CTkFrame(wheel_frame, fg_color="transparent", height=6).pack()
 
         tools_row = ctk.CTkFrame(main_frame, fg_color="transparent")
         tools_row.pack(fill=tk.X, padx=15, pady=(0, 15))
@@ -246,42 +165,31 @@ class GesturesRegionsTab:
             width=160,
         ).pack(side=tk.LEFT, padx=(0, 8))
 
-    def load_gestures(self):
-        """Load gestures for selected character"""
+    def load_slot(self, slot_idx: int) -> None:
+        """Show the gestures of the character in slot_idx; -1 or an empty slot
+        clears the tab."""
         save_file = self.get_save_file()
-        if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+        if self.gestures_inner_frame is None:
             return
-
-        try:
-            slot_idx = int(self.gesture_slot_var.get()) - 1
-        except (ValueError, AttributeError):
-            CTkMessageBox.showwarning(
-                "Invalid Slot", "Select a valid slot.", parent=self.parent
-            )
-            return
-
-        if slot_idx < 0 or slot_idx >= 10:
-            CTkMessageBox.showwarning(
-                "Invalid Slot", "Slot must be between 1 and 10.", parent=self.parent
-            )
-            return
-
-        slot = save_file.characters[slot_idx]
-
-        if slot.is_empty() or slot_idx not in save_file.get_active_slots():
-            CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {slot_idx + 1} is empty.", parent=self.parent
-            )
-            return
-
-        self.current_slot = slot_idx
-
         for widget in self.gestures_inner_frame.winfo_children():
             widget.destroy()
         self.gesture_states.clear()
+        self._initial_unlocked = set()
+        if (
+            save_file is None
+            or not 0 <= slot_idx < 10
+            or save_file.characters[slot_idx].is_empty()
+            or slot_idx not in save_file.get_active_slots()
+        ):
+            self.current_slot = None
+            self._wheel_tracker.clear()
+            for combo, var in zip(self._wheel_combos, self._wheel_vars, strict=True):
+                combo.configure(values=[])
+                var.set("")
+            return
+
+        self.current_slot = slot_idx
+        slot = save_file.characters[slot_idx]
 
         all_gestures = get_all_unlockable_gestures(include_cut_content=False)
         unlocked_gesture_ids = set()
@@ -314,131 +222,49 @@ class GesturesRegionsTab:
         self._initial_unlocked = unlocked_gesture_ids & set(all_gestures)
         self._load_wheel(slot)
 
-        self.show_toast(
-            f"Loaded {len(self.gesture_states)} gestures for Slot {slot_idx + 1}",
-            duration=2500,
-        )
+    def gesture_changes(self) -> int:
+        selected = {gid for gid, var in self.gesture_states.items() if var.get()}
+        return len(selected ^ self._initial_unlocked)
 
-    def apply_gesture_changes(self):
-        """Apply individual gesture changes"""
+    def discard_gestures(self) -> None:
+        for gesture_id, var in self.gesture_states.items():
+            var.set(gesture_id in self._initial_unlocked)
+
+    def prepare_gestures(self):
+        """Validate and return the function that writes the unlocked gestures
+        into the in-memory save (Apply All in the main window)."""
         save_file = self.get_save_file()
-        if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
-            return
-
-        if self.current_slot is None:
-            CTkMessageBox.showwarning(
-                "No Slot", "Load a character slot first.", parent=self.parent
-            )
-            return
-
+        if not save_file or self.current_slot is None:
+            raise StageError("Load a character slot first.")
         slot_idx = self.current_slot
         slot = save_file.characters[slot_idx]
+        if not hasattr(slot, "gestures_offset") or slot.gestures_offset < 0:
+            raise StageError("Gesture offset not tracked. Cannot write changes.")
 
-        if slot.is_empty():
-            CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {slot_idx + 1} is empty.", parent=self.parent
-            )
-            return
+        selected = sorted(gid for gid, var in self.gesture_states.items() if var.get())
+        if len(selected) > 64:
+            raise StageError(f"At most 64 gestures can be unlocked ({len(selected)}).")
+        new_gesture_ids = selected + [GESTURE_SLOT_EMPTY] * (64 - len(selected))
 
-        selected_set = {gid for gid, var in self.gesture_states.items() if var.get()}
-        # Compute intended changes vs original state
-        to_unlock = selected_set - self._initial_unlocked
-        to_lock = self._initial_unlocked - selected_set
-        selected_gestures = sorted(selected_set)
-
-        if not CTkMessageBox.askyesno(
-            "Apply Changes",
-            (
-                f"Apply gesture changes to Slot {slot_idx + 1}?\n"
-                f"{len(to_unlock)} gesture(s) will be unlocked"
-                + (f" and {len(to_lock)} locked" if to_lock else "")
-                + ".\n\nA backup will be created."
-            ),
-            parent=self.parent,
-        ):
-            return
-
-        try:
+        def commit() -> None:
             if isinstance(save_file._raw_data, bytes):
                 save_file._raw_data = bytearray(save_file._raw_data)
-
-            save_path = self.get_save_path()
-            if save_path:
-                manager = BackupManager(Path(save_path))
-                manager.create_backup(
-                    description=f"before_gesture_changes_slot_{slot_idx + 1}",
-                    operation=f"gesture_changes_slot_{slot_idx + 1}",
-                    save=save_file,
-                )
-
-            selected_gestures_sorted = sorted(selected_gestures)
-            new_gesture_ids = selected_gestures_sorted + [GESTURE_SLOT_EMPTY] * (
-                64 - len(selected_gestures_sorted)
-            )
-            new_gesture_ids = new_gesture_ids[:64]
-
-            if len(new_gesture_ids) != 64:
-                CTkMessageBox.showerror(
-                    "Invalid Gestures",
-                    f"Invalid gesture count: {len(new_gesture_ids)} (expected 64)",
-                    parent=self.parent,
-                )
-                return
-
             slot.gestures.gesture_ids = new_gesture_ids
-
-            if not hasattr(slot, "gestures_offset") or slot.gestures_offset < 0:
-                CTkMessageBox.showerror(
-                    "Offset Not Tracked",
-                    "Gesture offset not tracked. Cannot write changes.",
-                    parent=self.parent,
-                )
-                return
-
-            from io import BytesIO
-
             gesture_bytes = BytesIO()
             slot.gestures.write(gesture_bytes)
             gesture_data = gesture_bytes.getvalue()
-
             if len(gesture_data) != 256:
-                CTkMessageBox.showerror(
-                    "Invalid Gestures",
-                    f"Invalid gesture data size: {len(gesture_data)} bytes (expected 256)",
-                    parent=self.parent,
+                raise ValueError(
+                    f"Invalid gesture data size: {len(gesture_data)} bytes "
+                    "(expected 256)"
                 )
-                return
-
             # gestures_offset is absolute in the raw file
             abs_offset = slot.gestures_offset
-
             save_file._raw_data[abs_offset : abs_offset + len(gesture_data)] = (
                 gesture_data
             )
 
-            save_file.recalculate_checksums()
-            save_file.to_file(save_path)
-
-            if self.reload_save:
-                self.reload_save()
-
-            self.show_toast(
-                f"Applied changes to Slot {slot_idx + 1}: Unlocked {len(to_unlock)}"
-                + (f", locked {len(to_lock)}" if to_lock else ""),
-                duration=2500,
-            )
-
-            self.load_gestures()
-
-        except Exception as e:
-            CTkMessageBox.showerror(
-                "Apply Failed",
-                f"Failed to apply changes:\n{str(e)}",
-                parent=self.parent,
-            )
+        return commit
 
     def _load_wheel(self, slot) -> None:
         """Fill the wheel boxes; choices are the unlocked gestures plus
@@ -454,71 +280,44 @@ class GesturesRegionsTab:
         ):
             combo.configure(values=names)
             var.set(self._wheel_label(gesture_id))
+        self._wheel_tracker.mark_clean()
 
     @staticmethod
     def _wheel_label(gesture_id: int) -> str:
         return f"{get_gesture_name(gesture_id)} ({gesture_id})"
 
-    def apply_gesture_wheel(self):
-        """Write the six wheel gestures to the loaded slot."""
+    def wheel_changes(self) -> int:
+        return self._wheel_tracker.changes()
+
+    def discard_wheel(self) -> None:
+        save_file = self.get_save_file()
+        if save_file is not None and self.current_slot is not None:
+            self._load_wheel(save_file.characters[self.current_slot])
+
+    def prepare_wheel(self):
+        """Validate and return the function that writes the six wheel
+        gestures into the in-memory save (Apply All in the main window)."""
         save_file = self.get_save_file()
         if not save_file or self.current_slot is None:
-            CTkMessageBox.showwarning(
-                "No Slot", "Load a character slot first.", parent=self.parent
-            )
-            return
+            raise StageError("Load a character slot first.")
         slot = save_file.characters[self.current_slot]
         try:
             gesture_ids = [self._wheel_names[var.get()] for var in self._wheel_vars]
         except KeyError:
-            CTkMessageBox.showwarning(
-                "Incomplete Wheel",
-                "Pick a gesture for every wheel slot.",
-                parent=self.parent,
-            )
-            return
+            raise StageError("Pick a gesture for every wheel slot.") from None
         if len(set(gesture_ids)) != len(gesture_ids):
-            CTkMessageBox.showwarning(
-                "Duplicate Gesture",
-                "Each gesture can only be on the wheel once.",
-                parent=self.parent,
-            )
-            return
-        if not CTkMessageBox.askyesno(
-            "Apply Wheel",
-            f"Apply the gesture wheel to Slot {self.current_slot + 1}?\n\n"
-            "A backup will be created.",
-            parent=self.parent,
-        ):
-            return
-        try:
+            raise StageError("Each gesture can only be on the wheel once.")
+
+        def commit() -> None:
             if isinstance(save_file._raw_data, bytes):
                 save_file._raw_data = bytearray(save_file._raw_data)
-            save_path = self.get_save_path()
-            if save_path:
-                BackupManager(Path(save_path)).create_backup(
-                    description=f"before_gesture_wheel_slot_{self.current_slot + 1}",
-                    operation=f"gesture_wheel_slot_{self.current_slot + 1}",
-                    save=save_file,
-                )
             slot.equipped_gestures.gesture_ids = [g - 1 for g in gesture_ids]
             data = BytesIO()
             slot.equipped_gestures.write(data)
             start = slot.data_start + slot.equipped_gestures_offset
             save_file._raw_data[start : start + len(data.getvalue())] = data.getvalue()
-            save_file.recalculate_checksums()
-            save_file.to_file(save_path)
-            if self.reload_save:
-                self.reload_save()
-            self.show_toast(
-                f"Gesture wheel applied to Slot {self.current_slot + 1}",
-                duration=2500,
-            )
-            self.load_gestures()
-        except Exception as e:
-            CTkMessageBox.showerror(
-                "Apply Failed", f"Failed to apply wheel:\n{e}", parent=self.parent
-            )
+
+        return commit
 
     def select_all_gestures(self, select_type: str):
         """
@@ -540,7 +339,7 @@ class GesturesRegionsTab:
                 var.set(True)
 
         self.show_toast(
-            f"All {'base game + DLC' if include_dlc else 'base game'} gestures selected. Click 'Apply Changes' to save.",
+            f"All {'base game + DLC' if include_dlc else 'base game'} gestures selected. Click Apply All to save.",
             duration=2500,
         )
 

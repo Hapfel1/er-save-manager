@@ -1,7 +1,7 @@
 """
 DSR Appearance tab: body, face and hair types, colors and FaceGen face sliders.
 
-Edits stay in the tab until Apply Changes writes them (with a backup). Copying
+Edits stay in the tab until the main window's Apply All writes them. Copying
 from another character or importing JSON only loads values into the tab.
 """
 
@@ -23,9 +23,10 @@ from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.appearance_share import AppearanceShareCard, ShareSource
 from er_save_manager.ui.color_sliders import ColorSliders
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import FieldTracker, StageError
 from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll
 
-_BODY_TYPES = ["Type B (Female)", "Type A (Male)"]  # index = stored body type
+_BODY_TYPES = ["Type B", "Type A"]  # index = stored body type
 _SAVE_FILETYPES = [("DSR save files", "*.sl2 *.co2"), ("All files", "*")]
 _LABEL_WIDTH = 230
 # Slider readout: control value as a share of its slider half-range.
@@ -42,19 +43,14 @@ class DSRAppearanceTab:
         self,
         parent,
         get_dsr_save,
-        get_save_path,
-        get_slot,
         show_toast,
-        save_with_backup,
-        blocks_write,
     ) -> None:
         self.parent = parent
         self._get_dsr_save = get_dsr_save
-        self._get_save_path = get_save_path
-        self._get_slot = get_slot
+        # Slot of the character shown, -1 when none
+        self._slot = -1
         self._show_toast = show_toast
-        self._save_with_backup = save_with_backup
-        self._blocks_write = blocks_write
+        self._tracker = FieldTracker(self._state)
         self._coeffs: list[float] = [0.0] * 100
         self._sliders: list[tuple[FaceControl, ctk.CTkSlider, tk.StringVar]] = []
         self._ranges: dict[FaceControl, float] = {}
@@ -70,14 +66,6 @@ class DSRAppearanceTab:
     # --- Building ------------------------------------------------------------ #
 
     def setup_steps(self):
-        # Packed first so the slider list shrinks before the buttons do.
-        bar = ctk.CTkFrame(self.parent, fg_color="transparent")
-        bar.pack(side="bottom", fill="x", padx=10, pady=(4, 6))
-        ds.button(bar, "Apply Changes", self._apply, width=200).pack(side="left")
-        ds.button(bar, "Revert", self._revert, primary=False, width=120).pack(
-            side="left", padx=(8, 0)
-        )
-
         frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
         frame.pack(fill="both", expand=True)
         bind_mousewheel(frame)
@@ -184,7 +172,7 @@ class DSRAppearanceTab:
                 save_filetypes=_SAVE_FILETYPES,
             ),
             get_save=self._get_dsr_save,
-            on_character=self.load_character,
+            on_character=lambda char: self.load_character(char, copy=True),
             on_export=self._export_json,
             on_import=self._import_json,
             show_toast=self._show_toast,
@@ -354,11 +342,29 @@ class DSRAppearanceTab:
     def refresh(self) -> None:
         self._share.refresh()
 
-    def load_character(self, char) -> bool:
+    def load_slot(self, slot_idx: int) -> None:
+        """Show the character in slot_idx; -1 or an empty slot clears the tab."""
+        self.refresh()
+        save = self._get_dsr_save()
+        if save is None or not (
+            0 <= slot_idx < len(save.characters) and save.characters[slot_idx]
+        ):
+            self._slot = -1
+            self.clear()
+            return
+        self._slot = slot_idx
+        self.load_character(save.characters[slot_idx])
+
+    def load_character(self, char, *, copy: bool = False) -> bool:
+        """Show char's appearance. A failed copy keeps the loaded one; a
+        failed load clears it, so Apply All cannot write another
+        character's."""
         try:
             app = Appearance.from_character(char)
             app.validate()
         except ValueError as exc:
+            if not copy:
+                self._tracker.clear()
             CTkMessageBox.showwarning(
                 "Appearance Not Loaded",
                 f"This character's appearance values are out of range: {exc}",
@@ -366,20 +372,61 @@ class DSRAppearanceTab:
             )
             return False
         self._show(app)
+        if not copy:
+            self._tracker.mark_clean()
         return True
 
-    # --- Actions ----------------------------------------------------------------- #
+    def clear(self) -> None:
+        self._tracker.clear()
 
-    def _revert(self) -> None:
+    def changes(self) -> int:
+        return self._tracker.changes()
+
+    def discard(self) -> None:
         save = self._get_dsr_save()
-        slot = self._get_slot()
+        slot = self._slot
         if save is None or slot < 0 or save.characters[slot] is None:
             return
         self.load_character(save.characters[slot])
 
+    def prepare(self):
+        save = self._get_dsr_save()
+        slot = self._slot
+        if save is None or slot < 0 or save.characters[slot] is None:
+            raise StageError("No character loaded.")
+        try:
+            app = self._current()
+            app.validate()
+        except ValueError as exc:
+            raise StageError(str(exc)) from None
+        char = save.characters[slot]
+
+        def commit() -> None:
+            app.apply_to(char)
+            _sync_dir_appearance(save, slot, char)
+
+        return commit
+
+    def _state(self) -> dict:
+        """Every value Apply All writes, FACE bytes one by one."""
+        app = self._current()
+        state = {
+            "body": app.body_type,
+            "physique": app.physique,
+            "face_type": app.face_type,
+            "hair_type": app.hair_type,
+            "color_preset": app.color_preset,
+            "hair_rgba": tuple(app.hair_rgba),
+            "eye_rgba": tuple(app.eye_rgba),
+        }
+        state.update({f"face{i}": b for i, b in enumerate(app.face_data)})
+        return state
+
+    # --- Actions ----------------------------------------------------------------- #
+
     def _export_json(self) -> None:
         save = self._get_dsr_save()
-        slot = self._get_slot()
+        slot = self._slot
         name = (
             save.characters[slot].name
             if save is not None and slot >= 0 and save.characters[slot]
@@ -418,35 +465,4 @@ class DSRAppearanceTab:
             CTkMessageBox.showerror("Import Failed", str(exc), parent=self.parent)
             return
         self._show(app)
-        self._show_toast("Appearance loaded. Apply to save it.")
-
-    def _apply(self) -> None:
-        if self._blocks_write(self.parent):
-            return
-        save, save_path = self._get_dsr_save(), self._get_save_path()
-        slot = self._get_slot()
-        if save is None or save_path is None:
-            return
-        if slot < 0 or save.characters[slot] is None:
-            CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
-            )
-            return
-        if not CTkMessageBox.askyesno(
-            "Apply Appearance",
-            f"Apply appearance changes to Slot {slot + 1}?\n\nA backup will be created.",
-            parent=self.parent,
-        ):
-            return
-        char = save.characters[slot]
-        try:
-            self._current().apply_to(char)
-        except ValueError as exc:
-            CTkMessageBox.showerror("Invalid Value", str(exc), parent=self.parent)
-            return
-        _sync_dir_appearance(save, slot, char)
-        try:
-            self._save_with_backup(save, save_path, f"edit_appearance_slot_{slot + 1}")
-            self._show_toast("Appearance applied. Backup created.")
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+        self._show_toast("Appearance loaded. Apply All to save it.")

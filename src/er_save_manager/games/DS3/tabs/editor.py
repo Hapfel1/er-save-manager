@@ -1,7 +1,7 @@
 """
 DS3 Character Editor tab.
 
-Sub-tabs: Stats | Identity | Equipment | Appearance.
+Sub-tabs: Stats | Identity | Equipment | Inventory.
 """
 
 from __future__ import annotations
@@ -21,12 +21,11 @@ from er_save_manager.games.DS3.slot import (
     MAX_SOULS,
     MAX_STAT,
     NAME_MAX_CHARS,
-    LayoutError,
 )
 from er_save_manager.games.DS3.tabs.equipment import DS3EquipAdapter
 from er_save_manager.ui import palette
 from er_save_manager.ui.editors.ds_equipment import AttunementSection, EquipmentPanel
-from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import FieldTracker, PendingPage, StageError, var_state
 from er_save_manager.ui.utils import (
     bind_mousewheel,
     game_blocks_write,
@@ -47,9 +46,16 @@ def _backup_and_save(ds3_save, save_path: Path, operation: str) -> None:
 
 class DS3EditorTab:
     def __init__(
-        self, parent, get_save, get_save_path, show_toast, source_var=None
+        self,
+        parent,
+        get_save,
+        get_save_path,
+        show_toast,
+        source_var=None,
+        register_pending=None,
     ) -> None:
         self.parent = parent
+        self._register_pending = register_pending
         self._get_save = get_save
         self._get_save_path = get_save_path
         self._show_toast = show_toast
@@ -62,6 +68,9 @@ class DS3EditorTab:
         # it selects the class table.
         self._source_var = source_var or tk.StringVar(value=catalog.SOURCES["vanilla"])
         self._source_var.trace_add("write", lambda *_: self._on_source_change())
+        # Source whose class table the Class box shows; lags the source
+        # variable until _on_source_change has re-selected the class.
+        self._class_source = self._source
         # False when the loaded stats sit below their own class's base
         # (modded or edited character); class minimums are then not enforced.
         self._enforce_class_min = True
@@ -70,7 +79,11 @@ class DS3EditorTab:
         # no row for: the level then moves by the change in the sum.
         self._loaded_level = 0
         self._loaded_sum = 0
-        self._appearance = None
+        self.inventory = None
+        self._stats_tracker = FieldTracker(self._stats_state)
+        self._identity_tracker = FieldTracker(
+            var_state({"name": self._name_var, "ng": self._ng_var})
+        )
 
     def setup_ui(self) -> None:
         for _ in self.setup_steps():
@@ -91,19 +104,6 @@ class DS3EditorTab:
         ctk.CTkSegmentedButton(
             header, values=list(catalog.SOURCES.values()), variable=self._source_var
         ).pack(side="left")
-        ctk.CTkButton(
-            header, text="Load Character", command=self._load_selected, width=130
-        ).pack(side="right", padx=(6, 0))
-        self._slot_var = tk.StringVar()
-        self._slot_combo = ctk.CTkComboBox(
-            header,
-            variable=self._slot_var,
-            values=[],
-            state="readonly",
-            width=240,
-        )
-        self._slot_combo.pack(side="right")
-        ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
 
         tabs = ctk.CTkTabview(
             outer,
@@ -121,35 +121,27 @@ class DS3EditorTab:
         yield
         self._attunement = AttunementSection(ATTUNE_SLOTS)
         self._equip_panel = EquipmentPanel(
-            tabs.add("Equipment"), self._apply_equipment, self._attunement.build
+            tabs.add("Equipment"), self._attunement.build
         )
         self._attunement.attach(self._equip_panel)
         yield
-        from er_save_manager.games.DS3.tabs.appearance import DS3AppearanceTab
+        from er_save_manager.games.DS3.tabs.inventory import DS3InventoryTab
 
-        self._appearance = DS3AppearanceTab(
-            tabs.add("Appearance"),
-            self._get_save,
-            self._get_save_path,
-            lambda: self._current_slot,
-            self._show_toast,
-            _backup_and_save,
-            _game_blocks_write,
+        self.inventory = DS3InventoryTab(
+            tabs.add("Inventory"),
+            get_save=self._get_save,
+            get_save_path=self._get_save_path,
+            show_toast=self._show_toast,
+            source_var=self._source_var,
         )
-        yield from self._appearance.setup_steps()
+        yield from self.inventory.setup_steps()
         # A save or character may have been loaded while the tab was building.
-        self._appearance.refresh()
-        char = self._loaded_char()
-        if char is not None:
-            self._appearance.load_character(char)
+        self.inventory.load_slot(self._current_slot)
+        self._register_pages()
 
     # --- Stats tab ----------------------------------------------------------- #
 
     def _build_stats_tab(self, parent) -> None:
-        # Below the scroll area, so it stays in view on short windows
-        ctk.CTkButton(
-            parent, text="Apply Changes", command=self._apply_stats, width=200
-        ).pack(side="bottom", pady=(6, 10))
         frame = ctk.CTkScrollableFrame(parent, fg_color="transparent")
         frame.pack(fill="both", expand=True)
         bind_mousewheel(frame)
@@ -243,10 +235,6 @@ class DS3EditorTab:
     # --- Identity tab -------------------------------------------------------- #
 
     def _build_identity_tab(self, parent) -> None:
-        # Below the scroll area, so it stays in view on short windows
-        ctk.CTkButton(
-            parent, text="Apply Changes", command=self._apply_identity, width=200
-        ).pack(side="bottom", pady=(6, 10))
         frame = ctk.CTkScrollableFrame(parent, fg_color="transparent")
         frame.pack(fill="both", expand=True)
         bind_mousewheel(frame)
@@ -279,41 +267,36 @@ class DS3EditorTab:
     # --- Refresh ------------------------------------------------------------- #
 
     def refresh(self) -> None:
-        save = self._get_save()
-        if save is None:
-            self._slot_combo.configure(values=[])
-            return
-        options = [
-            f"Slot {i + 1} - {c.name}" if c else f"Slot {i + 1} - Empty"
-            for i, c in enumerate(save.characters)
-        ]
-        self._slot_combo.configure(values=options)
-        self._slot_var.set(options[0] if options else "")
         # A new save: the loaded character belongs to the old one.
-        self._current_slot = -1
-        self._load_equipment()
-        if self._appearance is not None:
-            self._appearance.refresh()
+        self.load_slot(-1)
 
     def load_slot(self, slot_idx: int) -> None:
-        options = self._slot_combo.cget("values")
-        if options and slot_idx < len(options):
-            self._slot_var.set(options[slot_idx])
+        """Show the character in slot_idx; -1 or an empty slot clears the tab."""
+        save = self._get_save()
+        if self.inventory is not None:
+            self.inventory.load_slot(slot_idx)
+        if (
+            save is None
+            or not 0 <= slot_idx < len(save.characters)
+            or save.characters[slot_idx] is None
+        ):
+            self._current_slot = -1
+            self._clear()
+            return
         self._current_slot = slot_idx
         self._populate(slot_idx)
 
-    def _load_selected(self) -> None:
-        idx = self._slot_idx()
-        if idx < 0:
-            return
-        save = self._get_save()
-        if save is None or save.characters[idx] is None:
-            CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {idx + 1} is empty.", parent=self.parent
-            )
-            return
-        self._current_slot = idx
-        self._populate(idx)
+    def _clear(self) -> None:
+        self._stats_tracker.clear()
+        self._identity_tracker.clear()
+        for var in self._stat_vars.values():
+            var.set("")
+        self._name_var.set("")
+        self._ng_var.set("0")
+        self._class_var.set("")
+        if hasattr(self, "_class_note"):
+            self._class_note.configure(text="")
+        self._load_equipment()
 
     def _populate(self, slot_idx: int) -> None:
         save = self._get_save()
@@ -322,6 +305,11 @@ class DS3EditorTab:
         char = save.characters[slot_idx]
         if char is None:
             return
+        self._fill_stats(char)
+        self._fill_identity(char)
+        self._load_equipment()
+
+    def _fill_stats(self, char) -> None:
         # Remove traces before writing to avoid premature recalc
         for key in catalog.STAT_KEYS:
             for tid in self._stat_vars[key].trace_info():
@@ -342,14 +330,36 @@ class DS3EditorTab:
         self._stat_vars["hp"].set(str(char.hp))
         self._stat_vars["fp"].set(str(char.fp))
         self._stat_vars["stamina"].set(str(char.stamina))
+        self._show_loaded_class()
+        self._stats_tracker.mark_clean()
+
+    def _fill_identity(self, char) -> None:
         self._name_var.set(char.name)
         self._ng_var.set("0" if char.layout_error else str(char.ng_plus))
-        self._show_loaded_class()
-        if self._appearance is not None:
-            self._appearance.load_character(char)
-        self._load_equipment()
+        self._identity_tracker.mark_clean()
+
+    def _stats_state(self) -> dict:
+        state = var_state(
+            {k: self._stat_vars[k] for k in (*catalog.STAT_KEYS, "souls")}
+        )()
+        # By index: a game data switch shows another name for the same class.
+        name = self._class_var.get()
+        state["class"] = next(
+            (
+                i
+                for i, c in enumerate(catalog.starting_classes(self._class_source))
+                if c.name == name
+            ),
+            None,
+        )
+        return state
 
     # --- Equipment ----------------------------------------------------------- #
+
+    def select(self, name: str) -> None:
+        """Show the sub-tab called name."""
+        self._tabs.set(name)
+        self._on_subtab()
 
     def _on_subtab(self) -> None:
         # Inventory edits change what the equipment pickers offer.
@@ -376,40 +386,24 @@ class DS3EditorTab:
             return
         panel.load(DS3EquipAdapter(char, self._source))
 
-    def _apply_equipment(self, adapter: DS3EquipAdapter, staged: dict) -> None:
-        if not staged and not adapter.spells_changed:
-            self._show_toast("No equipment changes to apply")
-            return
-        if _game_blocks_write(self.parent):
-            return
-        save = self._get_save()
-        save_path = self._get_save_path()
-        if save is None or save_path is None:
-            return
-        if not CTkMessageBox.askyesno(
-            "Apply Equipment",
-            f"Apply equipment changes to Slot {self._current_slot + 1}?\n\n"
-            "A backup will be created.",
-            parent=self.parent,
-        ):
-            return
-        try:
+    def _equipment_changes(self) -> int:
+        panel = getattr(self, "_equip_panel", None)
+        if panel is None or panel.adapter is None:
+            return 0
+        return len(panel.staged) + (1 if self._attunement.changed() else 0)
+
+    def _prepare_equipment(self):
+        adapter = self._equip_panel.adapter
+        staged = self._equip_panel.staged
+        save, slot = self._get_save(), self._current_slot
+        if adapter is None or save is None:
+            raise StageError("No character loaded.")
+
+        def commit() -> None:
             adapter.apply(staged)
-        except ValueError as exc:
-            CTkMessageBox.showerror(
-                "Equipment Not Applied", str(exc), parent=self.parent
-            )
-            self._load_equipment()
-            return
-        sync_dir_equipment(save, self._current_slot)
-        try:
-            _backup_and_save(
-                save, save_path, f"ds3_edit_equipment_slot_{self._current_slot + 1}"
-            )
-            self._show_toast("Equipment applied. Backup created.")
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
-        self._load_equipment()
+            sync_dir_equipment(save, slot)
+
+        return commit
 
     # --- Class and level ----------------------------------------------------- #
 
@@ -434,9 +428,15 @@ class DS3EditorTab:
     def _on_source_change(self) -> None:
         self._load_equipment()
         if not hasattr(self, "_class_combo"):
+            self._class_source = self._source
             return
         self._class_combo.configure(values=[c.name for c in self._classes()])
+        clean = self._stats_tracker.changes() == 0
         self._show_loaded_class()
+        self._class_source = self._source
+        # The class and level from the other class table are no edit, as on load
+        if clean:
+            self._stats_tracker.mark_clean()
 
     def _show_loaded_class(self) -> None:
         """Select the loaded character's class in the current source's table,
@@ -464,7 +464,7 @@ class DS3EditorTab:
                 notes.append(
                     f"The stored level {char.level} does not match the class and "
                     "attributes (wrong game data or an edited level). Apply "
-                    f"Changes writes level {derived}."
+                    f"All writes level {derived}."
                 )
         else:
             self._class_var.set("")
@@ -492,42 +492,59 @@ class DS3EditorTab:
             return  # user mid-typing, skip
         self._stat_vars["level"].set(str(self._derived_level(stats)))
 
-    # --- Apply --------------------------------------------------------------- #
+    # --- Pending changes ----------------------------------------------------- #
 
-    def _apply_stats(self) -> None:
-        if _game_blocks_write(self.parent):
+    def _register_pages(self) -> None:
+        if self._register_pending is None:
             return
 
-        if self._current_slot < 0:
-            CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
+        def page(name, changes, prepare, discard):
+            return PendingPage(
+                name, changes, prepare, discard, lambda: self._tabs.set(name)
             )
-            return
-        save = self._get_save()
-        save_path = self._get_save_path()
-        if save is None or save_path is None:
-            return
-        if not CTkMessageBox.askyesno(
-            "Apply Stats",
-            f"Apply stat changes to Slot {self._current_slot + 1}?\n\nA backup will be created.",
-            parent=self.parent,
-        ):
-            return
-        char = save.characters[self._current_slot]
+
+        self._register_pending(
+            page(
+                "Stats",
+                self._stats_tracker.changes,
+                self._prepare_stats,
+                lambda: self._refill(self._fill_stats),
+            )
+        )
+        self._register_pending(
+            page(
+                "Identity",
+                self._identity_tracker.changes,
+                self._prepare_identity,
+                lambda: self._refill(self._fill_identity),
+            )
+        )
+        self._register_pending(
+            page(
+                "Equipment",
+                self._equipment_changes,
+                self._prepare_equipment,
+                self._load_equipment,
+            )
+        )
+
+    def _refill(self, fill) -> None:
+        char = self._loaded_char()
+        if char is not None:
+            fill(char)
+
+    def _prepare_stats(self):
+        save, char = self._get_save(), self._loaded_char()
         if char is None:
-            return
+            raise StageError("No character loaded.")
+        slot = self._current_slot
         cls = self._selected_class()
         class_idx = self._classes().index(cls) if cls is not None else None
         try:
             stats = {key: int(self._stat_vars[key].get()) for key in catalog.STAT_KEYS}
             souls = int(self._stat_vars["souls"].get())
         except ValueError:
-            CTkMessageBox.showerror(
-                "Invalid Value",
-                "Stats and souls must be numbers.",
-                parent=self.parent,
-            )
-            return
+            raise StageError("Stats and souls must be numbers.") from None
         level = self._derived_level(stats)
         problems = [
             f"{key.upper()} above {MAX_STAT}"
@@ -547,77 +564,36 @@ class DS3EditorTab:
         if not 0 <= souls <= MAX_SOULS:
             problems.append(f"Souls must be 0-{MAX_SOULS:,}")
         if problems:
-            CTkMessageBox.showerror(
-                "Invalid Value", "\n".join(problems), parent=self.parent
-            )
-            return
-        for key, v in stats.items():
-            char.set_stat(key, v)
-        char.level = level
-        char.souls = souls
-        if class_idx is not None:
-            char.starting_class = class_idx
-        # The load screen reads name and level from its own directory copy.
-        _sync_dir_name_level(save, self._current_slot, char.name, char.level)
-        try:
-            _backup_and_save(
-                save, save_path, f"ds3_edit_stats_slot_{self._current_slot + 1}"
-            )
-            self._show_toast("Stats applied. Backup created.")
-            self._populate(self._current_slot)
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            raise StageError("\n".join(problems))
 
-    def _apply_identity(self) -> None:
-        if _game_blocks_write(self.parent):
-            return
+        def commit() -> None:
+            for key, v in stats.items():
+                char.set_stat(key, v)
+            char.level = level
+            char.souls = souls
+            if class_idx is not None:
+                char.starting_class = class_idx
+            # The load screen reads name and level from its own directory copy.
+            _sync_dir_name_level(save, slot, char.name, char.level)
 
-        if self._current_slot < 0:
-            CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
-            )
-            return
-        save = self._get_save()
-        save_path = self._get_save_path()
-        if save is None or save_path is None:
-            return
-        if not CTkMessageBox.askyesno(
-            "Apply Identity",
-            f"Apply identity changes to Slot {self._current_slot + 1}?\n\nA backup will be created.",
-            parent=self.parent,
-        ):
-            return
-        char = save.characters[self._current_slot]
+        return commit
+
+    def _prepare_identity(self):
+        save, char = self._get_save(), self._loaded_char()
         if char is None:
-            return
-        if len(self._name_var.get()) > NAME_MAX_CHARS:
-            CTkMessageBox.showerror(
-                "Name Too Long",
-                f"The name can be at most {NAME_MAX_CHARS} characters.",
-                parent=self.parent,
-            )
-            return
-        try:
-            char.name = self._name_var.get()
-            if int(self._ng_var.get()) != char.ng_plus:
-                char.ng_plus = int(self._ng_var.get())
-        except (ValueError, LayoutError) as exc:
-            CTkMessageBox.showerror("Invalid Value", str(exc), parent=self.parent)
-            return
-        _sync_dir_name_level(save, self._current_slot, char.name, char.level)
-        try:
-            _backup_and_save(
-                save, save_path, f"ds3_edit_identity_slot_{self._current_slot + 1}"
-            )
-            self._show_toast("Identity applied. Backup created.")
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            raise StageError("No character loaded.")
+        slot = self._current_slot
+        name = self._name_var.get()
+        if len(name) > NAME_MAX_CHARS:
+            raise StageError(f"The name can be at most {NAME_MAX_CHARS} characters.")
+        ng = int(self._ng_var.get())
+        if ng != char.ng_plus and char.layout_error:
+            raise StageError(f"NG+ cannot be changed: {char.layout_error}")
 
-    def _slot_idx(self) -> int:
-        val = self._slot_var.get()
-        if not val:
-            return -1
-        try:
-            return int(val.split(" - ")[0].replace("Slot", "").strip()) - 1
-        except (ValueError, IndexError):
-            return -1
+        def commit() -> None:
+            char.name = name
+            if ng != char.ng_plus:
+                char.ng_plus = ng
+            _sync_dir_name_level(save, slot, char.name, char.level)
+
+        return commit

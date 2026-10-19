@@ -4,13 +4,17 @@ Handles character information editing (name, body type, class, etc.)
 """
 
 import tkinter as tk
-from pathlib import Path
 
 import customtkinter as ctk
 
 from er_save_manager.data.starting_classes import get_all_classes, get_class_data
-from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import FieldTracker, StageError, var_state
 from er_save_manager.ui.utils import bind_mousewheel, trace_variable
+
+# Index = stored body type
+_BODY_TYPES = ["Type A", "Type B"]
+# Index = stored voice type
+_VOICE_TYPES = ["Young", "Mature", "Aged"]
 
 # Starting classes in the Tarnished Pack DLC slots (archetypes 10-11, which
 # Convergence uses for its Tarnished Edition classes). Hidden from the class
@@ -110,7 +114,8 @@ class CharacterInfoEditor:
         self.time_m_var = None
         self.time_s_var = None
         self.time_error_label = None
-        self.apply_button = None
+        self.tracker = FieldTracker(self._tracked_state)
+        self._loading = False
 
         self.frame = None
         # Called with the new archetype int when the user changes the class combo.
@@ -167,11 +172,12 @@ class CharacterInfoEditor:
         ctk.CTkLabel(creation_frame, text="Body type:").grid(
             row=2, column=0, sticky=ctk.W, padx=5, pady=5
         )
-        self.char_body_type_var = ctk.IntVar(value=0)
+        self.char_body_type_var = ctk.StringVar(value=_BODY_TYPES[0])
         body_type_combo = ctk.CTkComboBox(
             creation_frame,
             variable=self.char_body_type_var,
-            values=["Type A (0)", "Type B (1)"],
+            values=_BODY_TYPES,
+            state="readonly",
             width=140,
         )
         body_type_combo.grid(row=2, column=1, padx=5, pady=5)
@@ -190,7 +196,9 @@ class CharacterInfoEditor:
         self.char_archetype_combo.grid(row=2, column=3, padx=5, pady=5)
 
         def _on_archetype_combo_change(*_args):
-            if self.on_archetype_change is None:
+            # Loading a slot is not a class change; the stats editor reads
+            # the stored class itself.
+            if self.on_archetype_change is None or self._loading:
                 return
             class_name = self.char_archetype_var.get()
             save_file = self.get_save_file()
@@ -205,11 +213,12 @@ class CharacterInfoEditor:
         ctk.CTkLabel(creation_frame, text="Voice type:").grid(
             row=3, column=0, sticky=ctk.W, padx=5, pady=5
         )
-        self.char_voice_var = ctk.IntVar(value=0)
+        self.char_voice_var = ctk.StringVar(value=_VOICE_TYPES[0])
         voice_combo = ctk.CTkComboBox(
             creation_frame,
             variable=self.char_voice_var,
-            values=["Young (0)", "Mature (1)", "Aged (2)"],
+            values=_VOICE_TYPES,
+            state="readonly",
             width=140,
         )
         voice_combo.grid(row=3, column=1, padx=5, pady=5)
@@ -339,22 +348,6 @@ class CharacterInfoEditor:
         )
         self.time_error_label.grid(row=2, column=0, columnspan=6, sticky=ctk.W, padx=5)
 
-        button_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
-        button_frame.pack(fill=ctk.X, pady=10, padx=10)
-        ctk.CTkLabel(
-            button_frame,
-            text="Actions",
-            font=("Segoe UI", 12, "bold"),
-        ).pack(anchor=ctk.W, padx=5, pady=(5, 0))
-
-        self.apply_button = ctk.CTkButton(
-            button_frame,
-            text="Apply Changes",
-            command=self.apply_changes,
-            width=180,
-        )
-        self.apply_button.pack(side=ctk.LEFT, padx=5, pady=5)
-
     def _playtime_error(self) -> str:
         return _playtime_error(
             self.char_playtime_h_var.get(),
@@ -376,13 +369,35 @@ class CharacterInfoEditor:
             self.playtime_error_label.configure(text=error)
         if self.time_error_label is not None:
             self.time_error_label.configure(text=time_error)
-        if self.apply_button is not None:
-            self.apply_button.configure(
-                state="disabled" if error or time_error else "normal"
-            )
+
+    def _tracked_state(self) -> dict:
+        return var_state(
+            {
+                "name": self.char_name_var,
+                "body": self.char_body_type_var,
+                "class": self.char_archetype_var,
+                "voice": self.char_voice_var,
+                "gift": self.char_gift_var,
+                "ng": self.char_ng_level_var,
+                "play_h": self.char_playtime_h_var,
+                "play_m": self.char_playtime_m_var,
+                "play_s": self.char_playtime_s_var,
+                "time_h": self.time_h_var,
+                "time_m": self.time_m_var,
+                "time_s": self.time_s_var,
+            }
+        )()
 
     def load_character_info(self):
         """Load character info from current character slot"""
+        self._loading = True
+        try:
+            self._load_character_info_fields()
+        finally:
+            self._loading = False
+        self.tracker.mark_clean()
+
+    def _load_character_info_fields(self):
         save_file = self.get_save_file()
         if not save_file:
             return
@@ -400,7 +415,10 @@ class CharacterInfoEditor:
             char = slot.player_game_data
 
             self.char_name_var.set(getattr(char, "character_name", ""))
-            self.char_body_type_var.set(getattr(char, "gender", 0))
+            body = getattr(char, "gender", 0)
+            self.char_body_type_var.set(
+                _BODY_TYPES[body] if body < len(_BODY_TYPES) else str(body)
+            )
 
             archetype_id = getattr(char, "archetype", 0)
             is_convergence = save_file.is_convergence
@@ -423,7 +441,10 @@ class CharacterInfoEditor:
 
             self.char_archetype_var.set(class_name)
 
-            self.char_voice_var.set(getattr(char, "voice_type", 0))
+            voice = getattr(char, "voice_type", 0)
+            self.char_voice_var.set(
+                _VOICE_TYPES[voice] if voice < len(_VOICE_TYPES) else str(voice)
+            )
             self.char_gift_var.set(getattr(char, "gift", 0))
 
         # Play time lives in the slot header; the load screen copy follows it
@@ -458,180 +479,123 @@ class CharacterInfoEditor:
         else:
             self._load_ng_level(save_file, slot_idx)
 
-    def apply_changes(self):
-        """Apply character info changes to save file"""
+    def prepare(self):
+        """Validate the fields and return the function that writes them into
+        the in-memory save (Apply All in the main window)."""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
-            return
-
+            raise StageError("Load a save file first.")
         slot_idx = self.get_char_slot()
+        if not 0 <= slot_idx < len(save_file.characters):
+            raise StageError("No character loaded.")
+        slot = save_file.characters[slot_idx]
+        if not getattr(slot, "player_game_data", None):
+            raise StageError("Could not access character data.")
+        if not hasattr(slot, "player_game_data_offset"):
+            raise StageError("Offset not tracked.")
 
         playtime_error = self._playtime_error() or self._time_of_day_error()
         if playtime_error:
             self._on_playtime_change()
-            CTkMessageBox.showwarning(
-                "Invalid Time", playtime_error, parent=self.parent
+            raise StageError(playtime_error)
+
+        class_name = self.char_archetype_var.get()
+        is_convergence = save_file.is_convergence
+        if class_name in _TARNISHED_PACK_CLASS_NAMES and not _owns_tarnished_pack(slot):
+            raise StageError(
+                f"'{class_name}' requires the Tarnished Pack DLC (event flag "
+                f"{_TARNISHED_PACK_FLAG}) to be set on this character first."
             )
-            return
-
-        if not CTkMessageBox.askyesno(
-            "Apply Character Info",
-            f"Apply character info changes to Slot {slot_idx + 1}?\n\nA backup will be created.",
-            parent=self.parent,
-        ):
-            return
-
+        archetype_id = next(
+            (
+                i
+                for i, c in get_all_classes(is_convergence).items()
+                if c["name"] == class_name
+            ),
+            0,
+        )
         try:
+            body = _BODY_TYPES.index(self.char_body_type_var.get())
+            voice = _VOICE_TYPES.index(self.char_voice_var.get())
+            gift = int(self.char_gift_var.get())
+        except (ValueError, tk.TclError):
+            raise StageError(
+                "Body type, voice type and keepsake are invalid."
+            ) from None
+        char_name = self.char_name_var.get()
+        target_level = int(self.char_ng_level_var.get().split("(")[1].rstrip(")"))
+        time_of_day = (
+            int(self.time_h_var.get()),
+            int(self.time_m_var.get()),
+            int(self.time_s_var.get()),
+        )
+
+        def commit() -> None:
+            from io import BytesIO
+
+            from er_save_manager.parser.slot_rebuild import rebuild_slot
+
             if isinstance(save_file._raw_data, bytes):
                 save_file._raw_data = bytearray(save_file._raw_data)
-
-            from er_save_manager.backup.manager import BackupManager
-
-            save_path = self.get_save_path()
-            if save_path:
-                manager = BackupManager(Path(save_path))
-                manager.create_backup(
-                    description=f"before_edit_character_info_slot_{slot_idx + 1}",
-                    operation=f"edit_character_info_slot_{slot_idx + 1}",
-                    save=save_file,
-                )
-
-            slot = save_file.characters[slot_idx]
-            if hasattr(slot, "player_game_data") and slot.player_game_data:
-                char = slot.player_game_data
-                char_name = self.char_name_var.get()
-
-                char.character_name = char_name
-                if (
-                    hasattr(save_file, "user_data_10_parsed")
-                    and save_file.user_data_10_parsed
-                    and save_file.user_data_10_parsed.profile_summary
-                ):
-                    profiles = save_file.user_data_10_parsed.profile_summary.profiles
-                    if profiles and slot_idx < len(profiles):
-                        profiles[slot_idx].character_name = char_name
-
-                        # Also write to raw data so it persists to file
-                        from er_save_manager.transfer.character_ops import (
-                            CharacterOperations,
-                        )
-
-                        _, profiles_base = (
-                            CharacterOperations.get_profile_summary_offsets(save_file)
-                        )
-                        profile_size = 0x24C
-                        profile_offset = profiles_base + slot_idx * profile_size
-
-                        # Write character name (16 wide chars = 32 bytes + 2 byte terminator = 34 bytes)
-                        name_bytes = char_name.encode("utf-16-le")
-                        name_bytes = (name_bytes + b"\x00" * 32)[:32]
-                        save_file._raw_data[profile_offset : profile_offset + 32] = (
-                            name_bytes
-                        )
-                        save_file._raw_data[
-                            profile_offset + 32 : profile_offset + 34
-                        ] = b"\x00\x00"
-
-                char.gender = self.char_body_type_var.get()
-
-                class_name = self.char_archetype_var.get()
-                is_convergence = save_file.is_convergence
-
-                if (
-                    class_name in _TARNISHED_PACK_CLASS_NAMES
-                    and not _owns_tarnished_pack(slot)
-                ):
-                    CTkMessageBox.showwarning(
-                        "Tarnished Pack Required",
-                        f"'{class_name}' requires the Tarnished Pack DLC "
-                        f"(event flag {_TARNISHED_PACK_FLAG}) to be set on this "
-                        "character first.",
-                        parent=self.parent,
-                    )
-                    return
-
-                archetype_id = 0
-                for i, c in get_all_classes(is_convergence).items():
-                    if c["name"] == class_name:
-                        archetype_id = i
-                        break
-                char.archetype = archetype_id
-
-                char.voice_type = self.char_voice_var.get()
-                char.gift = self.char_gift_var.get()
-
-                # Set ClearCount (NG+ playthroughs, raw field) from dropdown
-                if hasattr(slot, "unk_gamedataman_0x120_or_gamedataman_0x130"):
-                    ng_string = self.char_ng_level_var.get()
-                    target_level = int(ng_string.split("(")[1].rstrip(")"))
-                    slot.unk_gamedataman_0x120_or_gamedataman_0x130 = target_level
-
-                if hasattr(slot, "player_game_data_offset"):
-                    from io import BytesIO
-
-                    char_bytes = BytesIO()
-                    char.write(char_bytes)
-                    char_data = char_bytes.getvalue()
-
-                    # player_game_data_offset is absolute in the raw file
-                    abs_offset = slot.player_game_data_offset
-
-                    save_file._raw_data[abs_offset : abs_offset + len(char_data)] = (
-                        char_data
-                    )
-
-                    self._apply_ng_level(
-                        save_file,
-                        slot_idx,
-                        force_clearcount=target_level,
-                    )
-
-                    self._apply_playtime(save_file, slot_idx, slot)
-                    slot.world_area_time.hour = int(self.time_h_var.get())
-                    slot.world_area_time.minute = int(self.time_m_var.get())
-                    slot.world_area_time.second = int(self.time_s_var.get())
-
-                    # Rebuild slot bytes and write to _raw_data before saving
-                    from er_save_manager.parser.slot_rebuild import rebuild_slot
-
-                    rebuilt_bytes = rebuild_slot(slot)
-                    abs_offset = save_file.slot_data_offset(slot_idx)
-                    save_file._raw_data[
-                        abs_offset : abs_offset + len(rebuilt_bytes)
-                    ] = rebuilt_bytes
-
-                    save_file.recalculate_checksums()
-                    save_path = self.get_save_path()
-                    if save_path:
-                        save_file.to_file(Path(save_path))
-
-                    self.load_character_info()
-
-                    CTkMessageBox.showinfo(
-                        "Character Info Updated",
-                        "Character info updated successfully.\n\nBackup saved to backup manager.",
-                        parent=self.parent,
-                    )
-                else:
-                    CTkMessageBox.showerror(
-                        "Offset Not Tracked", "Offset not tracked", parent=self.parent
-                    )
-            else:
-                CTkMessageBox.showerror(
-                    "Character Unavailable",
-                    "Could not access character data",
-                    parent=self.parent,
-                )
-
-        except Exception as e:
-            CTkMessageBox.showerror(
-                "Apply Failed",
-                f"Failed to apply changes:\n{str(e)}",
-                parent=self.parent,
+            char = slot.player_game_data
+            char.character_name = char_name
+            summary = (
+                save_file.user_data_10_parsed.profile_summary
+                if getattr(save_file, "user_data_10_parsed", None)
+                else None
             )
+            if summary and summary.profiles and slot_idx < len(summary.profiles):
+                summary.profiles[slot_idx].character_name = char_name
+
+                # Also write to raw data so it persists to file
+                from er_save_manager.transfer.character_ops import (
+                    CharacterOperations,
+                )
+
+                _, profiles_base = CharacterOperations.get_profile_summary_offsets(
+                    save_file
+                )
+                profile_offset = profiles_base + slot_idx * 0x24C
+
+                # Character name: 16 wide chars = 32 bytes + 2 byte terminator
+                name_bytes = char_name.encode("utf-16-le")
+                name_bytes = (name_bytes + b"\x00" * 32)[:32]
+                save_file._raw_data[profile_offset : profile_offset + 32] = name_bytes
+                save_file._raw_data[profile_offset + 32 : profile_offset + 34] = (
+                    b"\x00\x00"
+                )
+
+            char.gender = body
+            char.archetype = archetype_id
+            char.voice_type = voice
+            char.gift = gift
+
+            # ClearCount (NG+ playthroughs, raw field)
+            if hasattr(slot, "unk_gamedataman_0x120_or_gamedataman_0x130"):
+                slot.unk_gamedataman_0x120_or_gamedataman_0x130 = target_level
+
+            char_bytes = BytesIO()
+            char.write(char_bytes)
+            char_data = char_bytes.getvalue()
+            # player_game_data_offset is absolute in the raw file
+            abs_offset = slot.player_game_data_offset
+            save_file._raw_data[abs_offset : abs_offset + len(char_data)] = char_data
+
+            self._apply_ng_level(save_file, slot_idx, force_clearcount=target_level)
+            self._apply_playtime(save_file, slot_idx, slot)
+            (
+                slot.world_area_time.hour,
+                slot.world_area_time.minute,
+                slot.world_area_time.second,
+            ) = time_of_day
+
+            rebuilt_bytes = rebuild_slot(slot)
+            abs_offset = save_file.slot_data_offset(slot_idx)
+            save_file._raw_data[abs_offset : abs_offset + len(rebuilt_bytes)] = (
+                rebuilt_bytes
+            )
+
+        return commit
 
     def _load_ng_level(self, save_file, slot_idx):
         """Load NG+ level from event flags using EventFlags.get_flag (matches event flag tab)"""

@@ -41,7 +41,7 @@ _HEADER_SIZE = 12
 _SKIN_COLOR = 0x30
 JSON_FORMAT = "ds3_appearance"
 JSON_VERSION = 1
-BODY_TYPES = ("Female", "Male")  # index = stored body type
+BODY_TYPES = ("Type B", "Type A")  # index = stored body type
 
 
 @functools.cache

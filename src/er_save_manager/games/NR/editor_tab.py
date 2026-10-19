@@ -20,6 +20,13 @@ import customtkinter as ctk
 
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import (
+    FieldTracker,
+    PendingPage,
+    StageCancelled,
+    StageError,
+    var_state,
+)
 from er_save_manager.ui.utils import game_blocks_write
 
 
@@ -141,11 +148,13 @@ class NREditorTab:
         get_nr_save: Callable,
         get_save_path: Callable,
         show_toast: Callable,
+        register_pending: Callable | None = None,
     ) -> None:
         self.parent = parent
         self._get_nr_save = get_nr_save
         self._get_save_path = get_save_path
         self._show_toast = show_toast
+        self._register_pending = register_pending
         self._current_slot = -1
         self._name_var = tk.StringVar()
         self._murk_var = tk.StringVar()
@@ -163,22 +172,9 @@ class NREditorTab:
 
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
-        ctk.CTkLabel(header, text="Slot Editor", font=("Segoe UI", 16, "bold")).pack(
-            side="left"
-        )
-        ctk.CTkButton(
-            header, text="Load Slot", command=self._load_selected, width=120
-        ).pack(side="right", padx=(6, 0))
-        self._slot_var = tk.StringVar()
-        self._slot_combo = ctk.CTkComboBox(
-            header,
-            variable=self._slot_var,
-            values=[],
-            state="readonly",
-            width=220,
-        )
-        self._slot_combo.pack(side="right")
-        ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
+        ctk.CTkLabel(
+            header, text="Character Editor", font=("Segoe UI", 16, "bold")
+        ).pack(side="left")
 
         self._tabs = ctk.CTkTabview(outer, corner_radius=10)
         self._tabs.pack(fill="both", expand=True, padx=10, pady=(0, 10))
@@ -191,53 +187,55 @@ class NREditorTab:
         self._build_relics(self._tabs.tab("Relics"))
         yield
         self._build_loadouts(self._tabs.tab("Loadouts"))
+        if self._register_pending is not None:
+            self._register_pending(
+                PendingPage(
+                    "Overview",
+                    self._overview_tracker.changes,
+                    self._prepare_overview,
+                    lambda: self._refill_overview(),
+                    lambda: self._tabs.set("Overview"),
+                )
+            )
+            self._register_pending(
+                PendingPage(
+                    "Loadout",
+                    self._loadout_changes,
+                    self._prepare_loadout,
+                    self._discard_loadout,
+                    lambda: self._tabs.set("Loadouts"),
+                )
+            )
+
+    def select(self, name: str) -> None:
+        """Show the sub-tab called name."""
+        self._tabs.set(name)
 
     # ------------------------------------------------------------------
     # Slot selector
     # ------------------------------------------------------------------
 
-    def refresh_slot_list(self) -> None:
-        save = self._get_nr_save()
-        if save is None:
-            return
-        options = [
-            f"{i + 1} - {slot.player_name}" if slot.player_name else f"{i + 1} - Empty"
-            for i, slot in enumerate(save.slots)
-        ]
-        self._slot_combo.configure(values=options)
-        if options:
-            self._slot_combo.set(options[0])
-
     def load_slot(self, slot_index: int) -> None:
+        """Show the character in slot_index; -1 or an empty slot clears the
+        tab."""
         save = self._get_nr_save()
-        if save is None:
-            return
+        if save is None or not 0 <= slot_index < len(save.slots):
+            slot_index = -1
         self._current_slot = slot_index
-        vals = list(self._slot_combo.cget("values") or [])
-        if slot_index < len(vals):
-            self._slot_combo.set(vals[slot_index])
+        if slot_index < 0:
+            self._overview_tracker.clear()
+            for var in (self._name_var, self._murk_var, self._mon_var):
+                var.set("")
+            self._clear_loadout_edit()
+            self._populate_loadout_trees()
+            return
         slot = save.slots[slot_index]
         self._populate_overview(slot)
         self._populate_relics(slot)
         self._populate_loadouts(slot)
 
     def refresh(self) -> None:
-        save = self._get_nr_save()
-        if save is None:
-            return
-        self.refresh_slot_list()
-        if self._current_slot >= 0:
-            self.load_slot(self._current_slot)
-
-    def _load_selected(self) -> None:
-        val = self._slot_var.get()
-        if not val:
-            return
-        try:
-            idx = int(val.split(" - ")[0]) - 1
-        except (ValueError, IndexError):
-            return
-        self.load_slot(idx)
+        self.load_slot(self._current_slot)
 
     # ------------------------------------------------------------------
     # Overview
@@ -267,57 +265,46 @@ class NREditorTab:
                 row=row, column=1, padx=(6, 0), pady=4
             )
 
-        ctk.CTkButton(f, text="Apply", command=self._apply_overview, width=100).pack(
-            anchor="w", padx=14, pady=(12, 4)
+        self._overview_tracker = FieldTracker(
+            var_state(
+                {"name": self._name_var, "murk": self._murk_var, "mon": self._mon_var}
+            )
         )
 
     def _populate_overview(self, slot) -> None:
         self._name_var.set(slot.player_name)
         self._murk_var.set(str(slot.murk))
         self._mon_var.set(str(slot.marks_of_night))
+        self._overview_tracker.mark_clean()
 
-    def _apply_overview(self) -> None:
-        if _game_blocks_write(self.parent):
-            return
+    def _refill_overview(self) -> None:
+        slot = self._current_nr_slot()
+        if slot is not None:
+            self._populate_overview(slot)
 
+    def _prepare_overview(self):
         save = self._get_nr_save()
         if save is None or self._current_slot < 0:
-            return
+            raise StageError("No character loaded.")
         slot = save.slots[self._current_slot]
         try:
             murk = int(self._murk_var.get())
             mon = int(self._mon_var.get())
         except ValueError:
-            CTkMessageBox.showerror(
-                "Invalid Input",
-                "murk and Sovereign Sigils must be integers.",
-                parent=self.parent,
-            )
-            return
+            raise StageError("Murk and Sovereign Sigils must be integers.") from None
         if not (0 <= murk <= _MAX_CURRENCY and 0 <= mon <= _MAX_CURRENCY):
-            CTkMessageBox.showerror(
-                "Invalid Input",
-                f"Values must be between 0 and {_MAX_CURRENCY:,}.",
-                parent=self.parent,
-            )
-            return
-        slot.murk = murk
-        slot.marks_of_night = mon
+            raise StageError(f"Values must be between 0 and {_MAX_CURRENCY:,}.")
         name = self._name_var.get().strip()
-        if name:
-            if len(name) > 16:
-                CTkMessageBox.showerror(
-                    "Name Too Long",
-                    "Player name cannot exceed 16 characters.",
-                    parent=self.parent,
-                )
-                return
-            slot.player_name = name
-        try:
-            _backup_and_save(save, self._get_save_path(), "nr_overview")
-            self._show_toast("Overview saved.")
-        except Exception as e:
-            CTkMessageBox.showerror("Save Failed", str(e), parent=self.parent)
+        if len(name) > 16:
+            raise StageError("Player name cannot exceed 16 characters.")
+
+        def commit() -> None:
+            slot.murk = murk
+            slot.marks_of_night = mon
+            if name:
+                slot.player_name = name
+
+        return commit
 
     # ------------------------------------------------------------------
     # Relics
@@ -1140,9 +1127,6 @@ class NREditorTab:
             title, text="Select a chalice or preset.", font=("Segoe UI", 11, "bold")
         )
         self._lo_target_label.pack(side="left")
-        ctk.CTkButton(title, text="Apply", command=self._apply_loadout, width=90).pack(
-            side="right"
-        )
         ctk.CTkButton(
             title,
             text="Delete Preset",
@@ -1340,7 +1324,14 @@ class NREditorTab:
         tree = self._vessel_tree if kind == "vessel" else self._preset_tree
         mapping = self._lo_vessel_map if kind == "vessel" else self._lo_preset_map
         sel = tree.selection()
-        if not sel or sel[0] not in mapping:
+        if not sel or sel[0] not in mapping or mapping[sel[0]] is self._lo_target:
+            return
+        if self._loadout_changes() and not CTkMessageBox.askyesno(
+            "Unapplied Loadout",
+            "Discard the unapplied changes of the selected chalice or preset?",
+            parent=self.parent,
+        ):
+            self._reselect_loadout_target()
             return
         # Selecting in one tree deselects the other so Apply has one target
         other = self._preset_tree if kind == "vessel" else self._vessel_tree
@@ -1368,6 +1359,18 @@ class NREditorTab:
                 text=f"Slot {i + 1} ({color_txt}, {kind_txt}):"
             )
         self._refresh_loadout_slot_labels()
+
+    def _reselect_loadout_target(self) -> None:
+        """Select the edited chalice or preset again after a declined switch."""
+        for tree, mapping in (
+            (self._vessel_tree, self._lo_vessel_map),
+            (self._preset_tree, self._lo_preset_map),
+        ):
+            iid = next((i for i, t in mapping.items() if t is self._lo_target), None)
+            if iid is None:
+                tree.selection_remove(tree.selection())
+            else:
+                tree.selection_set(iid)
 
     def _refresh_loadout_slot_labels(self) -> None:
         slot = self._current_nr_slot()
@@ -1425,22 +1428,32 @@ class NREditorTab:
             return
         self._set_loadout_slot(idx, 0 if dlg.result == _EMPTY_EFFECT else dlg.result)
 
-    def _apply_loadout(self) -> None:
+    def _loadout_changes(self) -> int:
+        if self._lo_target is None:
+            return 0
+        changed = sum(
+            a != b
+            for a, b in zip(self._lo_relics, self._lo_target.relics, strict=False)
+        )
+        if self._lo_kind == "preset":
+            changed += int(self._lo_name_var.get().strip() != self._lo_target.name)
+        return changed
+
+    def _discard_loadout(self) -> None:
+        if self._lo_target is None:
+            return
+        self._lo_relics = list(self._lo_target.relics)
+        if self._lo_kind == "preset":
+            self._lo_name_var.set(self._lo_target.name)
+        self._refresh_loadout_slot_labels()
+
+    def _prepare_loadout(self):
         from er_save_manager.games.NR.item_db import vessel_slot_error
 
-        if _game_blocks_write(self.parent):
-            return
-        if self._lo_target is None:
-            CTkMessageBox.showinfo(
-                "No Selection",
-                "Select a chalice or preset first.",
-                parent=self.parent,
-            )
-            return
         save = self._get_nr_save()
         slot = self._current_nr_slot()
-        if save is None or slot is None:
-            return
+        if self._lo_target is None or save is None or slot is None:
+            raise StageError("Select a chalice or preset first.")
 
         vid = self._target_vessel_id()
         warnings = []
@@ -1459,31 +1472,26 @@ class NREditorTab:
                 warnings.append(f"Slot {i + 1}: same relic equipped twice")
             seen.add(ga)
         if warnings and not CTkMessageBox.askyesno(
-            "Validation Warning",
-            "Issues found:\n" + "\n".join(warnings) + "\n\nApply anyway?",
+            "Loadout Issues",
+            "Issues found in the loadout:\n"
+            + "\n".join(warnings)
+            + "\n\nApply anyway?",
             parent=self.parent,
         ):
-            return
+            raise StageCancelled()
 
-        try:
-            if self._lo_kind == "preset":
-                name = self._lo_name_var.get().strip()
-                save.update_preset(
-                    self._current_slot,
-                    self._lo_target.index,
-                    name=name,
-                    relics=self._lo_relics,
-                )
+        kind, target, slot_index = self._lo_kind, self._lo_target, self._current_slot
+        relics = list(self._lo_relics)
+        name = self._lo_name_var.get().strip()
+
+        def commit() -> None:
+            if kind == "preset":
+                save.update_preset(slot_index, target.index, name=name, relics=relics)
             else:
-                self._lo_target.relics = list(self._lo_relics)
-                self._lo_target.write_to(slot.decrypted)
-            _backup_and_save(save, self._get_save_path(), "nr_loadout_edit")
-        except Exception as e:
-            CTkMessageBox.showerror("Save Failed", str(e), parent=self.parent)
-            return
-        self._populate_loadout_trees()
-        self._clear_loadout_edit()
-        self._show_toast("Loadout saved.")
+                target.relics = relics
+                target.write_to(slot.decrypted)
+
+        return commit
 
     def _save_as_new_preset(self) -> None:
         """Store the edit panel's relics as a new preset for the target's hero."""

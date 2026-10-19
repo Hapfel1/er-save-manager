@@ -16,6 +16,7 @@ import customtkinter as ctk
 
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import FieldTracker, StageError
 from er_save_manager.ui.utils import (
     bind_mousewheel,
     center_window,
@@ -870,8 +871,8 @@ class _VisualEquipmentBrowser(ctk.CTkToplevel):
             main,
             [
                 {
-                    "text": "Apply Equipment Changes",
-                    "command": editor.apply_changes,
+                    "text": "Apply All Changes",
+                    "command": lambda: editor.apply_all and editor.apply_all(),
                     "width": 200,
                 },
                 {"text": "Close", "command": self.destroy, "primary": False},
@@ -1073,6 +1074,9 @@ class EquipmentEditor:
         # For talisman/quickitem/pouch: direct handle (0xA0/0xB0 | base_id).
         # For spell/physick: unused (0), those fields store the raw id only.
         self._handles: dict[str, int] = {}
+        self.tracker = FieldTracker(self._collect_tracked)
+        # Main window's Apply All, for the Visual Equipment Picker window
+        self.apply_all = None
 
         self.frame = None
 
@@ -1258,15 +1262,6 @@ class EquipmentEditor:
             command=self.import_loadout_code,
             width=150,
         ).pack(side="left")
-
-        btn_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
-        btn_frame.pack(fill="x", pady=10)
-        ctk.CTkButton(
-            btn_frame,
-            text="Apply Equipment Changes",
-            command=self.apply_changes,
-            width=240,
-        ).pack(side="left", padx=6, pady=6)
 
     def _build_section(
         self, parent, title: str, side: str, slots: list[tuple[str, str]]
@@ -1462,6 +1457,13 @@ class EquipmentEditor:
             self.update_equipment_name(key)
 
         self._apply_spell_lock(slot)
+        self.tracker.mark_clean()
+
+    def _collect_tracked(self) -> dict[str, tuple[int, int]]:
+        return {
+            key: (self._get_raw(key), self._handles.get(key, 0))
+            for key in self.equipment_vars
+        }
 
     def _apply_spell_lock(self, slot):
         """Disable pick buttons for empty spell slots beyond the estimated cap.
@@ -1503,48 +1505,25 @@ class EquipmentEditor:
 
     # ---- apply --------------------------------------------------------------
 
-    def apply_changes(self):
+    def prepare(self):
+        """Validate and return the function that writes the slots into the
+        in-memory save (Apply All in the main window)."""
         save_file = self.get_save_file()
-        if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
-            return
-
         slot_idx = self.get_char_slot()
-
-        if not CTkMessageBox.askyesno(
-            "Apply Equipment",
-            f"Apply equipment changes to Slot {slot_idx + 1}?\n\nA backup will be created.",
-            parent=self.parent,
+        if not save_file or slot_idx < 0:
+            raise StageError("No character loaded.")
+        slot = save_file.characters[slot_idx]
+        if (
+            not hasattr(slot, "equipped_items_item_id")
+            or not slot.equipped_items_item_id
         ):
-            return
+            raise StageError("Character has no equipment data.")
+        raw = {key: self._get_raw(key) for key in self.equipment_vars}
+        handles = dict(self._handles)
 
-        try:
+        def commit() -> None:
             if isinstance(save_file._raw_data, bytes):
                 save_file._raw_data = bytearray(save_file._raw_data)
-
-            save_path = self.get_save_path()
-            if save_path:
-                from er_save_manager.backup.manager import BackupManager
-
-                BackupManager(Path(save_path)).create_backup(
-                    description=f"before_edit_equipment_slot_{slot_idx + 1}",
-                    operation=f"edit_equipment_slot_{slot_idx + 1}",
-                    save=save_file,
-                )
-
-            slot = save_file.characters[slot_idx]
-            if (
-                not hasattr(slot, "equipped_items_item_id")
-                or not slot.equipped_items_item_id
-            ):
-                CTkMessageBox.showerror(
-                    "No Equipment Data",
-                    "Character has no equipment data.",
-                    parent=self.parent,
-                )
-                return
 
             # Write item_id to both structs that store item IDs, and handle
             # to the gaitem handle struct, for weapon/armor/talisman/ammo.
@@ -1553,8 +1532,8 @@ class EquipmentEditor:
             equip_handles = getattr(slot, "equipped_items_gaitem_handle", None)
 
             for key in _WEAPON_KEYS | _ARMOR_KEYS | _TALISMAN_KEYS:
-                item_id = _encode_slot_value(self._get_raw(key))
-                handle = self._handles.get(key, 0)
+                item_id = _encode_slot_value(raw.get(key, 0))
+                handle = handles.get(key, 0)
 
                 if hasattr(equip_ids, key):
                     setattr(equip_ids, key, item_id)
@@ -1572,7 +1551,7 @@ class EquipmentEditor:
                     setattr(
                         equip_index,
                         key,
-                        _find_equip_index(slot, self._handles.get(key, 0)),
+                        _find_equip_index(slot, handles.get(key, 0)),
                     )
 
             # Spells: raw id only, no handle concept for this struct.
@@ -1580,18 +1559,14 @@ class EquipmentEditor:
             if spells and spells.spell_slots:
                 for i in range(1, 15):
                     spells.spell_slots[i - 1].spell_id = _encode_slot_value(
-                        self._get_raw(f"spell{i}")
+                        raw.get(f"spell{i}", 0)
                     )
 
             # Wondrous Physick tears: goods category bit included on disk.
             physics = getattr(slot, "equipped_physics", None)
             if physics:
-                physics.slot1 = _encode_slot_value(
-                    self._get_raw("physick1"), 0x40000000
-                )
-                physics.slot2 = _encode_slot_value(
-                    self._get_raw("physick2"), 0x40000000
-                )
+                physics.slot1 = _encode_slot_value(raw.get("physick1", 0), 0x40000000)
+                physics.slot2 = _encode_slot_value(raw.get("physick2", 0), 0x40000000)
 
             # Quick items and pouch: goods-category mirror id plus the
             # direct gaitem handle (handle's own empty value is 0, not
@@ -1600,12 +1575,12 @@ class EquipmentEditor:
             equipped_items = getattr(slot, "equipped_items", None)
             for i in range(1, 11):
                 key = f"quickitem{i}"
-                raw = self._get_raw(key)
-                if _is_flask(raw):
+                value = raw.get(key, 0)
+                if _is_flask(value):
                     continue
-                handle = self._handles.get(key, 0)
+                handle = handles.get(key, 0)
                 if equip_armaments and hasattr(equip_armaments, key):
-                    setattr(equip_armaments, key, _encode_slot_value(raw, 0x40000000))
+                    setattr(equip_armaments, key, _encode_slot_value(value, 0x40000000))
                 if equipped_items and equipped_items.quick_items:
                     equipped_items.quick_items[i - 1].gaitem_handle = handle
                     equipped_items.quick_items[i - 1].equip_index = _find_equip_index(
@@ -1613,12 +1588,12 @@ class EquipmentEditor:
                     )
             for i in range(1, 7):
                 key = f"pouch{i}"
-                raw = self._get_raw(key)
-                if _is_flask(raw):
+                value = raw.get(key, 0)
+                if _is_flask(value):
                     continue
-                handle = self._handles.get(key, 0)
+                handle = handles.get(key, 0)
                 if equip_armaments and hasattr(equip_armaments, key):
-                    setattr(equip_armaments, key, _encode_slot_value(raw, 0x40000000))
+                    setattr(equip_armaments, key, _encode_slot_value(value, 0x40000000))
                 if equipped_items and equipped_items.pouch_items:
                     equipped_items.pouch_items[i - 1].gaitem_handle = handle
                     equipped_items.pouch_items[i - 1].equip_index = _find_equip_index(
@@ -1626,19 +1601,8 @@ class EquipmentEditor:
                     )
 
             _patch_equipment(save_file, slot_idx, slot)
-            save_file.recalculate_checksums()
-            if save_path:
-                save_file.to_file(Path(save_path))
 
-            CTkMessageBox.showinfo(
-                "Equipment Applied", "Equipment changes applied.", parent=self.parent
-            )
-        except Exception as e:
-            CTkMessageBox.showerror(
-                "Apply Failed",
-                f"Failed to apply equipment changes:\n{e}",
-                parent=self.parent,
-            )
+        return commit
 
     def _get_raw(self, key: str) -> int:
         try:

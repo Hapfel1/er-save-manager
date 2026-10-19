@@ -24,6 +24,7 @@ from er_save_manager.games.DS3.slot import GESTURE_COUNT
 from er_save_manager.games.DS3.tabs.style import make_tree
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import FieldTracker, PendingPage, StageError, var_state
 from er_save_manager.ui.utils import game_blocks_write
 
 
@@ -48,12 +49,15 @@ def _backup_and_save(ds3_save, save_path: Path, op: str) -> None:
 
 
 class DS3WorldStateTab:
-    def __init__(self, parent, get_save, get_save_path, show_toast) -> None:
+    def __init__(
+        self, parent, get_save, get_save_path, show_toast, register_pending=None
+    ) -> None:
         self.parent = parent
         self._get_save = get_save
         self._get_save_path = get_save_path
         self._show_toast = show_toast
-        self._current_slot = 0
+        self._register_pending = register_pending
+        self._current_slot = -1
         self._bonfires = _load("bonfires.json")
         self._gestures = sorted(
             (g for g in _load("gestures.json") if 0 <= g["id"] < GESTURE_COUNT),
@@ -72,15 +76,6 @@ class DS3WorldStateTab:
         ctk.CTkLabel(header, text="World State", font=("Segoe UI", 16, "bold")).pack(
             side="left"
         )
-        ctk.CTkButton(header, text="Load", command=self._load_selected, width=70).pack(
-            side="right", padx=(6, 0)
-        )
-        self._slot_var = ctk.StringVar()
-        self._slot_combo = ctk.CTkComboBox(
-            header, variable=self._slot_var, values=[], state="readonly", width=240
-        )
-        self._slot_combo.pack(side="right")
-        ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
 
         self._build_ng_row(outer)
 
@@ -91,6 +86,15 @@ class DS3WorldStateTab:
         body.grid_rowconfigure(0, weight=1)
         self._build_bonfires(body)
         self._build_gestures(body)
+        if self._register_pending is not None:
+            self._register_pending(
+                PendingPage(
+                    "New Game+",
+                    self._ng_tracker.changes,
+                    self._prepare_ng,
+                    self._discard_ng,
+                )
+            )
 
     def _build_ng_row(self, parent) -> None:
         row = ctk.CTkFrame(parent, corner_radius=10)
@@ -105,12 +109,10 @@ class DS3WorldStateTab:
         ).pack(side="left", padx=(0, 20))
         ctk.CTkLabel(row, text="Set to:").pack(side="left", padx=(0, 6))
         self._ng_var = ctk.StringVar(value="0")
+        self._ng_tracker = FieldTracker(var_state({"ng": self._ng_var}))
         ctk.CTkComboBox(
             row, variable=self._ng_var, values=_NG_CHOICES, state="readonly", width=80
         ).pack(side="left", padx=(0, 10))
-        ctk.CTkButton(row, text="Apply", command=self._apply_ng, width=80).pack(
-            side="left"
-        )
         ds.wrap_to_width(
             ctk.CTkLabel(
                 row,
@@ -248,35 +250,26 @@ class DS3WorldStateTab:
     # --- Refresh ----------------------------------------------------------- #
 
     def refresh(self) -> None:
-        save = self._get_save()
-        if save is None:
-            self._slot_combo.configure(values=[])
-            return
-        options = [
-            f"Slot {i + 1} - {c.name}" if c else f"Slot {i + 1} - Empty"
-            for i, c in enumerate(save.characters)
-        ]
-        self._slot_combo.configure(values=options)
-        if (
-            not (0 <= self._current_slot < len(options))
-            or save.characters[self._current_slot] is None
-        ):
-            self._current_slot = next(
-                (i for i, c in enumerate(save.characters) if c is not None), 0
-            )
-        self._slot_var.set(options[self._current_slot] if options else "")
-        self._update_states()
+        self.load_slot(self._current_slot)
 
     def load_slot(self, slot_idx: int) -> None:
-        options = self._slot_combo.cget("values")
-        if options and slot_idx < len(options):
-            self._slot_var.set(options[slot_idx])
+        """Show the character in slot_idx; -1 or an empty slot clears the tab."""
+        save = self._get_save()
+        if save is None or not (
+            0 <= slot_idx < len(save.characters) and save.characters[slot_idx]
+        ):
+            slot_idx = -1
         self._current_slot = slot_idx
+        self._ng_tracker.clear()
         self._update_states()
 
     def _char(self):
         save = self._get_save()
-        return save.characters[self._current_slot] if save else None
+        return (
+            save.characters[self._current_slot]
+            if save and self._current_slot >= 0
+            else None
+        )
 
     def _update_states(self) -> None:
         char = self._char()
@@ -284,8 +277,13 @@ class DS3WorldStateTab:
         flags_error = char.flags_error if char else "no character loaded"
 
         self._ng_current_var.set("--" if layout_error else f"NG+{char.ng_plus}")
-        if not layout_error:
+        # Writes of the other panels refresh the tab; an unapplied NG+ choice
+        # stays.
+        if layout_error:
+            self._ng_tracker.clear()
+        elif not self._ng_tracker.changes():
             self._ng_var.set(str(char.ng_plus))
+            self._ng_tracker.mark_clean()
 
         self._bonfire_status.configure(
             text=f"Unavailable: {flags_error}" if flags_error else ""
@@ -336,22 +334,23 @@ class DS3WorldStateTab:
 
     # --- Writes ------------------------------------------------------------ #
 
-    def _apply_ng(self) -> None:
-        if _game_blocks_write(self.parent):
-            return
-        save, save_path, char = self._get_char()
+    def _discard_ng(self) -> None:
+        self.load_slot(self._current_slot)
+
+    def _prepare_ng(self):
+        char = self._char()
         if char is None:
-            return
+            raise StageError("No character loaded.")
         if char.layout_error:
-            CTkMessageBox.showerror(
-                "Unavailable",
-                f"NG+ cannot be edited for this character: {char.layout_error}",
-                parent=self.parent,
+            raise StageError(
+                f"NG+ cannot be edited for this character: {char.layout_error}"
             )
-            return
-        char.ng_plus = int(self._ng_var.get())
-        if self._save(save, save_path, "ds3_set_ng"):
-            self._show_toast(f"NG+ set to {self._ng_var.get()}. Backup created.")
+        ng = int(self._ng_var.get())
+
+        def commit() -> None:
+            char.ng_plus = ng
+
+        return commit
 
     def _set_bonfires(self, rows: list[int], lit: bool) -> None:
         if not rows:
@@ -426,19 +425,6 @@ class DS3WorldStateTab:
 
     # --- Helpers ----------------------------------------------------------- #
 
-    def _load_selected(self) -> None:
-        save = self._get_save()
-        if save is None:
-            return
-        idx = self._slot_idx()
-        if idx < 0 or save.characters[idx] is None:
-            CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {idx + 1} is empty.", parent=self.parent
-            )
-            return
-        self._current_slot = idx
-        self._update_states()
-
     def _get_char(self):
         save = self._get_save()
         save_path = self._get_save_path()
@@ -447,19 +433,10 @@ class DS3WorldStateTab:
                 "No Save", "No DS3 save loaded.", parent=self.parent
             )
             return None, None, None
-        char = save.characters[self._current_slot]
+        char = save.characters[self._current_slot] if self._current_slot >= 0 else None
         if char is None:
             CTkMessageBox.showwarning(
                 "Empty Slot", "No character in this slot.", parent=self.parent
             )
             return None, None, None
         return save, save_path, char
-
-    def _slot_idx(self) -> int:
-        val = self._slot_var.get()
-        if not val:
-            return -1
-        try:
-            return int(val.split(" - ")[0].replace("Slot", "").strip()) - 1
-        except (ValueError, IndexError):
-            return -1
