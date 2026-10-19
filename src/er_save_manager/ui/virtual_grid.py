@@ -89,7 +89,7 @@ class VirtualIconGrid(ctk.CTkFrame):
     Click selects one cell. With multi, Ctrl click toggles a cell and Shift
     click selects the shown range from the last clicked cell. on_select gets
     the selected keys in entry order; on_activate gets the key of a
-    double-clicked cell.
+    double-clicked cell. tooltip(key) gives the hover text of a cell.
     """
 
     def __init__(
@@ -99,6 +99,7 @@ class VirtualIconGrid(ctk.CTkFrame):
         *,
         multi: bool = False,
         on_activate: Callable[[Hashable], None] | None = None,
+        tooltip: Callable[[Hashable], str] | None = None,
         cell_w: int = 116,
         cell_h: int = 124,
         pad: int = 4,
@@ -149,15 +150,25 @@ class VirtualIconGrid(ctk.CTkFrame):
 
         self._canvas.bind("<Configure>", lambda _e: self._relayout())
         self._bind_wheel(self._canvas)
+        self._tooltip_text = tooltip
+        self._tip = None
+        if tooltip is not None:
+            from er_save_manager.ui.tooltip import Tooltip
+
+            self._tip = Tooltip(self._canvas, "")
 
     # ---- public --------------------------------------------------------------
 
     def set_entries(self, entries: list[GridEntry], keep_selection: bool = False):
         self._entries = list(entries)
         self._order = {e.key: i for i, e in enumerate(self._entries)}
-        self._images.clear()
+        # Dropping a PhotoImage deletes the Tk image, and Tk fails any later
+        # itemconfigure of a canvas item that still names it, so the cells
+        # let go of their images first.
         for cell in [*self._cells.values(), *self._free]:
+            self._canvas.itemconfigure(cell.image, image="")
             cell.pos = -1
+        self._images.clear()
         if keep_selection:
             self.selected = [k for k in self.selected if k in self._order]
         else:
@@ -188,6 +199,23 @@ class VirtualIconGrid(ctk.CTkFrame):
 
     def visible_keys(self) -> list:
         return [self._entries[p].key for p in self._shown]
+
+    def see(self, key: Hashable) -> None:
+        """Scroll the cell of key into the middle of the view when it is not
+        in view."""
+        pos = self._order.get(key)
+        if pos is None or pos not in self._shown:
+            return
+        _, pitch_h = self._pitch()
+        top = (self._shown.index(pos) // self._cols) * pitch_h
+        view_top = self._canvas.canvasy(0)
+        view_h = self._canvas.winfo_height()
+        if view_top <= top and top + pitch_h <= view_top + view_h:
+            return
+        region = self._canvas.cget("scrollregion").split()
+        height = float(region[3]) if len(region) == 4 else 0.0
+        if height > 0:
+            self._canvas.yview_moveto(max(0.0, top - (view_h - pitch_h) / 2) / height)
 
     def set_selection(self, keys: list, notify: bool = True) -> None:
         self.selected = sorted(
@@ -381,11 +409,15 @@ class VirtualIconGrid(ctk.CTkFrame):
     def _set_hover(self, cell: _Cell) -> None:
         self._hover = cell
         self._paint(cell, self._cell_selected(cell))
+        if self._tip is not None and cell.pos >= 0:
+            self._tip.show_text(self._tooltip_text(self._entries[cell.pos].key))
 
     def _clear_hover(self, cell: _Cell) -> None:
         if self._hover is cell:
             self._hover = None
         self._paint(cell, self._cell_selected(cell))
+        if self._tip is not None:
+            self._tip.show_text("")
 
     def _image(self, pos: int) -> ImageTk.PhotoImage | None:
         if pos in self._images:
@@ -408,7 +440,12 @@ class VirtualIconGrid(ctk.CTkFrame):
             )
         self._images[pos] = img
         while len(self._images) > _IMAGE_CACHE:
-            self._images.popitem(last=False)
+            old, _ = self._images.popitem(last=False)
+            # A pooled cell still showing the evicted entry is redrawn on reuse
+            for cell in self._free:
+                if cell.pos == old:
+                    self._canvas.itemconfigure(cell.image, image="")
+                    cell.pos = -1
         return img
 
     # ---- input ---------------------------------------------------------------
@@ -427,6 +464,8 @@ class VirtualIconGrid(ctk.CTkFrame):
         _, pitch_h = self._pitch()
         self._canvas.configure(yscrollincrement=max(1, pitch_h // 3))
         self._canvas.yview_scroll(direction * 2, "units")
+        if self._tip is not None:
+            self._tip.show_text("")
 
     def _click(self, cell: _Cell, state: int) -> None:
         if cell.pos < 0:

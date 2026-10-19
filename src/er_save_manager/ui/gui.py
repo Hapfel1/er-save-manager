@@ -1065,7 +1065,6 @@ class SaveManagerGUI:
             "dark_souls_3": "ds3_editor_tab",
             "dark_souls_remastered": "dsr_editor_tab",
             "dark_souls_2": "ds2_editor_tab",
-            "nightreign": "nr_editor_tab",
         }.get(self.active_game)
         editor = getattr(self, attr, None) if attr else None
         if editor is not None:
@@ -2156,16 +2155,25 @@ class SaveManagerGUI:
         )
         self._build_tab("Character Management", self.nr_char_mgmt_tab.setup_ui)
 
-        self.notebook.add("Character Editor")
+        for name in ("Character Editor", "Relics", "Loadouts"):
+            self.notebook.add(name)
         self.nr_editor_tab = NREditorTab(
             self.notebook.tab("Character Editor"),
             lambda: self._nr_save,
             lambda: self.save_path,
             self.show_toast,
-            register_pending=self._pending_register("Character Editor"),
+            self._pending_register,
+            relics_parent=self.notebook.tab("Relics"),
+            loadouts_parent=self.notebook.tab("Loadouts"),
         )
         self._build_tab("Character Editor", self.nr_editor_tab.setup_steps)
-        self._character_tabs = {"Character Editor": self.nr_editor_tab.load_slot}
+        self._build_tab("Relics", self.nr_editor_tab.setup_relics)
+        self._build_tab("Loadouts", self.nr_editor_tab.setup_loadouts)
+        self._character_tabs = {
+            "Character Editor": self.nr_editor_tab.load_overview,
+            "Relics": self.nr_editor_tab.load_relics,
+            "Loadouts": self.nr_editor_tab.load_loadouts,
+        }
 
         self.notebook.add("SteamID Patcher")
         self.nr_steamid_tab = SteamIDPatcherTab(
@@ -2778,16 +2786,19 @@ class SaveManagerGUI:
         return None
 
     def _open_inventory_editor(self):
-        """Show Character Editor > Inventory for the active game."""
+        """Show Character Editor > Inventory for the active game; for
+        Nightreign the Relics tab with the new relic pane."""
         self._flush_pending_tabs()
-        if "Character Editor" not in self.notebook._name_list:
+        tab = "Relics" if self.active_game == "nightreign" else "Character Editor"
+        if tab not in self.notebook._name_list:
             return
-        self.notebook.set("Character Editor")
+        self.notebook.set(tab)
         self._on_tab_changed()
-        # Relics are Nightreign's inventory
-        self._show_editor_sub(
-            "Relics" if self.active_game == "nightreign" else "Inventory"
-        )
+        if self.active_game == "nightreign":
+            if self.nr_editor_tab is not None:
+                self.nr_editor_tab.open_spawner()
+            return
+        self._show_editor_sub("Inventory")
 
     def open_troubleshooting(self):
         """Open the troubleshooting dialog or install addon"""
