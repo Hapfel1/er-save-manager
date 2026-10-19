@@ -1323,13 +1323,13 @@ class SaveManagerGUI:
             "nightreign": self._nr_save,
         }.get(self.active_game)
 
-    def _pending_backup(self, slot: int) -> None:
+    def _pending_backup(self, slot: int, changes: str) -> None:
         from er_save_manager.backup.manager import BackupManager
 
         if self.save_path is None or self._active_save() is None:
             raise RuntimeError("No save file loaded")
         BackupManager(Path(self.save_path)).create_backup(
-            description=f"before_apply_changes_slot_{slot + 1}",
+            description=f"Slot {slot + 1}: {changes}",
             operation="apply_changes",
             save=self.save_file if self.active_game == "elden_ring" else None,
         )

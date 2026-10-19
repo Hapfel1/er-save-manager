@@ -169,7 +169,8 @@ class BackupManager:
         if operation:
             parts.append(self._sanitize_filename_part(operation).lower())
         if description:
-            parts.append(self._sanitize_filename_part(description).lower()[:30])
+            short = re.sub(r"[(),]", "", description)
+            parts.append(self._sanitize_filename_part(short).lower()[:30].rstrip("_"))
 
         extension = ".bak.zip" if compressed else ".bak"
         stem = "_".join(parts)
