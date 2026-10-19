@@ -18,8 +18,7 @@ can roll:
 The game stores effects sorted by (overrideEffectId, effectId); canonical()
 gives that order, with each deep curse kept in its effect's row.
 
-Pool contents change between game versions, so a relic rolled by an older
-version can break a pool rule today. VERSION_SENSITIVE lists those codes.
+Pool contents change between game versions.
 """
 
 from __future__ import annotations
