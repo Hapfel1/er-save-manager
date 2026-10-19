@@ -220,6 +220,10 @@ If the tear runs through NetMan, the damaged NetMan chunks are rebuilt as descri
 
 ## Interface
 
+### Character List
+
+The Save Fixer tab lists every character as a card with slot, level, class, runes, NG+, play time and location, and a status on the right: **OK**, or the number of issues detected (hover for the list). Select a character and click **View All Issues** to scan it and apply fixes.
+
 ### Scan Results
 
 **List shows:**

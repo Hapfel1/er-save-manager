@@ -11,14 +11,16 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 ### Working Features
 
 - **Save File Fixer**: Automatically detect and fix save corruption issues and infinite loading screens
-- **Character Management**: Export, import, and move characters between saves
+- **Character Management**: Export, import, and move characters between saves, copy a save to another extension (vanilla, Seamless Co-op, Convergence)
 - **Community Character Browser**: Browse, download, and contribute characters with likes and download tracking
 - **Character Editor**: Edit stats, runes, name, level, and build attributes
 - **Inventory Editor**: Edit your inventory, spawn in items, import builds
 - **Equipment Editor**: Edit your current equipped items, save and share loadouts
-- **Appearance Editor**: View, export and import Presets
+- **Appearance Editor**: View, export and import Presets, edit eye overrides (Frenzied Flame, Bloody Finger, Dragon Communion eyes)
 - **Community Preset Browser**: Browse, download, and contribute character appearance presets with likes and download tracking
-- **World State / Teleportation**: 451 known safe locations to warp to as well as custom coordinate teleportation. Interactive map of the overworld for teleporting.
+- **World State / Teleportation**: 875 known safe locations to warp to as well as custom coordinate teleportation. Interactive world map for teleporting, unlocking graces, areas and whole maps, and editing map markers and beacons, with the Convergence map on Convergence saves
+- **Message Manager**: List, protect and delete the character's own and cached messages
+- **Item History**: Legendary trophy progress and every item type the character has picked up
 - **SteamID Patcher**: Transfer saves between Steam accounts
 - **Event Flags Editor**: Read and toggle event flags
 - **Item Pickup Checklist**: See collected and missed item pickups and respawn world pickups
@@ -35,10 +37,10 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **Troubleshooting**: Troubleshooter for checking game launch/connection related issues
 - **Online Ban Warning**: Per-game warning before editing vanilla saves, listing which edits can get you banned online
 - **Backup Manager and SteamID Patcher for**: Elden Ring, Elden Ring Nightreign, Armored Core 6, Sekiro, Dark Souls III, Dark Souls II SotfS (Dark Souls Remastered: Backup Manager only, its saves hold no SteamID)
-- **DSR**: Stats Editing, Character Management, Save Fixer, Event Flags, Boss Revival, NPC Revival, Bonfire Lighting, NG+, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, Supports SeamlessCoop
-- **DS3**: Stats Editing, Character Management, Save Fixer, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, Boss Revival, NPC Revival, Bonfires, Gestures, NG+, Supports Convergence, Cinders and SeamlessCoop
-- **Nightreign**: Relic spawning and editing, Chalice Loadouts and Presets, Editing Murk and Sovereign Sigils, Character Management, Save Fixer, Supports decrypted PlayStation saves
-- **DS2**: Stats Editing, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, Build Import from Souls Planner, Character Management, Save Fixer, Bonfire Editing, Boss Editing, NPC Revival, Supports SeamlessCoop
+- **DSR**: Stats Editing, Covenants, Equipment and Attunement, Appearance, Character Management, Save Fixer, Event Flags, Boss Revival, NPC Revival, Bonfire Lighting, NG+, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, Supports SeamlessCoop
+- **DS3**: Stats Editing, Equipment and Attunement, Appearance, Character Management, Save Fixer, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, Boss Revival, NPC Revival, Bonfires, Gestures, NG+, Supports Convergence, Cinders and SeamlessCoop
+- **Nightreign**: Relic spawning and editing with game icons and the game's roll rules, Chalice Loadouts and Presets, Editing Murk and Sovereign Sigils, Character Management, Save Fixer, Supports decrypted PlayStation saves
+- **DS2**: Stats Editing, Equipment and Attunement, Appearance, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, Build Import from Souls Planner, Character Management, Save Fixer, Bonfire Editing, Boss Editing, NPC Revival, Supports SeamlessCoop
 
 ### Work in Progress
 
@@ -56,6 +58,8 @@ Download the latest release from [Releases](https://github.com/Hapfel1/er-save-m
   - Supports SteamDeck fully
   - Auto-detects Proton compatdata locations
   - Warns about non-default save locations
+  - Uses the desktop's own file dialogs (zenity or kdialog)
+- **Display scaling**: UI scale setting (Auto, 100% to 300%); on Windows the app ignores the Windows display scale by default so it fits on screen
 - **PlayStation/Switch Saves**: Supports editing decrypted console Save Files.
 
 ## Usage
@@ -63,7 +67,9 @@ Download the latest release from [Releases](https://github.com/Hapfel1/er-save-m
 1. Run `Elden Ring Save Manager`
 2. Select the game
 3. Use Auto-Find or Browse to select your Save File, it loads automatically
-4. Use the tabs to access different features
+4. Pick the character in the **Character** bar; every tab that edits a character uses it
+5. Use the tabs to access different features
+6. Click **Apply All** in the unapplied-changes bar to write the edits of every tab at once, with one backup. Switching characters, games or saves, or closing the window, asks first when edits are not applied
 
 ## Feature Details
 
@@ -106,6 +112,7 @@ Automatically detects issues with your game installation, your save file and any
 - **Move Between Slots**: Reorganize characters within a save
 - **Copy Between Saves**: Transfer characters to different save files
 - **Delete a Character**
+- **Copy to Another Extension**: Copy the save to `.sl2`, `.co2`, `.cnv` or `.cnvco2`; characters with content the target setup lacks are skipped
 
 ### Community Character Browser
 
@@ -137,6 +144,7 @@ Automatically detects issues with your game installation, your save file and any
 - Share Loadouts via unique code
 - Batch Adding Category functionality
 - Build Import Functionality from the Elden Ring Build & Inventory Planner
+- Auto-refill: choose which items the game refills from the chest
 
 ### Equipment Editor
 
@@ -152,6 +160,7 @@ Automatically detects issues with your game installation, your save file and any
 - Delete a Preset
 - Copy a Preset to a different Save file
 - Browse Community presets
+- Eye overrides: Frenzied Flame, Bloody Finger or Dragon Communion eyes, the Frenzied Flame mark and the Eye Alterations option
 
 ### Community Preset Browser
 
@@ -169,9 +178,13 @@ Automatically detects issues with your game installation, your save file and any
 
 - Display of current location
 - 875 known locations to teleport to, including every Site of Grace
-- Interactive map of the overworld for teleporting
+- Interactive world map (Lands Between, Underground, Realm of Shadow) for teleporting, with the Convergence map, graces and locations on Convergence saves
+- Lock and unlock graces, unlock a map area or a whole map with its map pieces and play regions
+- Map markers and beacons: place, move, delete, export, import and copy to another character
 - Custom Coordinate Teleportation
 - "Move Bloodstain to Player" function
+- Message Manager: list, protect and delete own and cached messages
+- Item History: Legendary trophy progress and every item type the character has picked up
 
 ### SteamID Patcher
 
@@ -236,9 +249,12 @@ Automatically detects issues with your game installation, your save file and any
 ### DSR
 
 - Stats Editing (stats validated against the starting class)
+- Identity (name, class, covenant, NG+) and covenant offering counts
+- Equipment Editor (weapons, armor, rings, ammo, quick items) and Attunement
+- Appearance Editor (body, face, hair and colors from the creation menu, copy and share)
 - Character Management
 - Save Fixer (checksums, load screen name and level)
-- Event Flags
+- Event Flags (NPC states, world flags, flag lookup)
 - Boss Revival
 - NPC Revival (kill or revive, quest progress kept)
 - Bonfire Lighting (light/unlight, keeps kindling)
@@ -252,6 +268,9 @@ Automatically detects issues with your game installation, your save file and any
 ### DS3
 
 - Stats Editing (level follows the attributes, stats validated against the starting class), name and NG+ cycle
+- Warning when the selected game data (Vanilla, Convergence, Cinders) does not fit the character's class or level
+- Equipment Editor (weapons, armor, ammo, rings, covenant, quick items) and Attunement
+- Appearance Editor (body, face sliders, hair, eyes and tattoo with the game's icons, copy and share)
 - Character Management
 - Save Fixer (checksums, load screen name and level, slot layout)
 - Item Spawning that stores items the way the game does, into the inventory or the storage box
@@ -268,10 +287,11 @@ Automatically detects issues with your game installation, your save file and any
 
 ### Nightreign 
 
-- Relic spawning and editing
+- Relics tab: icon grid of the character's relics with color and Deep filters, full effect texts, relic spawning and editing with icon pickers
+- Item Gib opens the relic spawner
 - Copy a relic to the spawner, JSON import/export of relics
-- Loadouts tab: edit chalice relic loadouts and custom presets, including modded and over-capacity loadouts
-- Relic validation: effect combinations the game cannot roll are rejected
+- Loadouts tab: chalice and preset icon grid per hero, one card per relic slot, custom presets, including modded and over-capacity loadouts
+- Relic validation from the game's roll tables: spawning or importing relics the game cannot roll is refused, issues an existing relic already had only warn
 - Editing Murk and Sovereign Sigils
 - Character Management
 - Save Fixer (checksums, leftover bytes from older relic spawns)
@@ -286,11 +306,15 @@ Automatically detects issues with your game installation, your save file and any
 - Visual Item Picker and Visual Inventory Editor with full Icon Support
 - Multi-select batch editing in the visual picker and inventory
 - Equipped items are protected from removal and storing
+- Equipment Editor (weapons, armor, rings, ammo, belt items) and Attunement
+- Appearance Editor (gender, build, physique, hairstyle, colors, copy and share)
 - Build Import from [Souls Planner](https://soulsplanner.com) links (stats and items, optionally equipping the build's loadout)
 - Character Management
 - Bonfire Editing (light/unlight, bonfire intensity including the NG+ cycle)
 - Boss Editing: check boss states, repair bosses killed in another world that block Bonfire Ascetic use, respawn, kill and set defeat counts
 - NPC Revival and calming hostile NPCs
+- Last rested bonfire
+- Seamless Co-op names up to 31 characters
 
 ## Building from Source
 

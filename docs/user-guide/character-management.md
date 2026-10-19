@@ -312,6 +312,16 @@ ER0000_2026-02-15_14-30-00_delete.bak
 
 ---
 
+## Copy to Another Extension
+
+The game, or the mod loader, picks the save file by its extension: `.sl2` for the unmodded game, `.co2` for Seamless Co-op, `.cnv` for Convergence and `.cnvco2` for Convergence with Seamless Co-op. **Change Extension** in the file row (or **Choose Extension...** in this tab) copies the loaded save to another extension, for Elden Ring, Nightreign, Dark Souls III, Dark Souls Remastered and Dark Souls II. **Custom** is for an extension set in the mod's own settings.
+
+- The loaded file is never changed. An existing target file is backed up before it is changed.
+- **Copy** puts the chosen characters into the target file: each goes into a free slot or replaces one character, and the others in the target stay. **Replace Whole File** overwrites the target with the loaded save.
+- Characters holding content the target setup lacks are not copied: Convergence items or flags going to an extension without Convergence, Seamless Co-op items going to `.sl2`, and weapons above +15 going to Convergence.
+
+---
+
 ## Safety & Backups
 
 ### Automatic Backups

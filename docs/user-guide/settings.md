@@ -18,11 +18,12 @@ The Settings tab provides control over:
 
 ### Sections
 
-**Three main sections:**
+**Four main sections:**
 
 1. General Settings
-2. Backup Settings  
+2. Backup Settings
 3. UI Settings
+4. Performance
 
 **Reset to Defaults:**
 
@@ -33,16 +34,22 @@ The Settings tab provides control over:
 
 ## General Settings
 
-### EAC Warning
+### Default Game
 
-**Setting:** Show EAC warning when loading .sl2 files
+**Setting:** Default game
+
+**What it does:** picks the game the editor opens on at startup.
+
+### Online Ban Warning
+
+**Setting:** Show online ban warning when loading vanilla saves
 
 **Default:** ON (checked)
 
 **What it does:**
 
-- Shows warning about Easy Anti-Cheat
-- Reminds to use offline mode
+- Shows a per-game warning before a vanilla `.sl2` or PlayStation `memory.dat` save is loaded
+- Lists the edits that can get the account banned online
 - Prevents accidental online play with modified save
 
 **When to disable:**
@@ -93,6 +100,12 @@ The Settings tab provides control over:
 - Checks for new versions on startup
 - Shows notification if update available
 - Links to download page
+
+### External Changes
+
+**Setting:** Notify when save file is modified externally
+
+**What it does:** shows a dialog when another program (for example the game) modifies the loaded save, so the editor can reload it instead of writing over the newer file.
 
 ---
 
@@ -180,15 +193,43 @@ ER0000_2026-02-15_18-30-00_game_launch.bak
 **Options:**
 
 - **Dark** (default)
-- **Light**
+- **Bright**
 
 **What it does:**
 
 - Changes entire UI color scheme
 - Dark: Dark background, light text
-- Light: Light background, dark text
+- Bright: Light background, dark text
 
 **Applied:** Application restart needed
+
+### UI Scale
+
+**Setting:** UI scale (Auto, 100% to 300%)
+
+**What it does:** scales the whole interface, for high-resolution screens and handhelds such as the Steam Deck. Auto follows the system scale.
+
+**Applied:** Application restart needed
+
+### Ignore Windows Display Scaling
+
+**Setting:** Ignore Windows display scaling (Windows only)
+
+**Default:** ON (checked)
+
+**What it does:** draws the app at its 100% size even when Windows is set to 125% or more, so windows fit on screen and buttons stay inside them. UI scale still applies on top; Auto then matches the Windows scale.
+
+**Applied:** Application restart needed
+
+---
+
+## Performance
+
+### Exclude CPU 0
+
+**Setting:** Exclude CPU 0 from Elden Ring, Nightreign and DS3 affinity on launch
+
+**What it does:** when eldenring.exe, nightreign.exe or darksoulsiii.exe is detected, CPU 0 is removed from its affinity mask. This can reduce stutter caused by Windows scheduling on core 0.
 
 ---
 

@@ -12,6 +12,7 @@ The Appearance tab manages character appearance presets stored in your save file
 - Import presets from JSON files (Supports importing from Elden Bling Sliders export)
 - Copy presets to other saves
 - Browse and download community presets
+- Set the eye overrides of the selected character (Frenzied Flame, Bloody Finger or Dragon Communion eyes, the Frenzied Flame mark and the Eye Alterations option)
 
 **When to Use:**
 
@@ -49,6 +50,16 @@ The Appearance tab manages character appearance presets stored in your save file
 - **Delete Preset** - Clear selected preset slot
 - **Copy to Another Save** - Transfer to different save file
 - **Browse Community Presets** - Open community browser
+
+### Eye Overrides
+
+The **Eye overrides** card next to the preset list edits the eyes and marks the game puts over the selected character's face (pick the character in the **Character** bar):
+
+- **Eyes** - None, Frenzied Flame, Bloody Finger (White Mask Varre) or Dragon Communion
+- **Frenzied Flame mark** - the second override the game adds after the Frenzied Flame is accepted
+- **Eye alterations shown** - the Face Edit option that shows or hides these eyes
+
+Only the eye and mark state changes; story progress such as the Frenzied Flame ending state is left as it is. The load screen shows the change after the next in-game save. Edits are applied with **Apply All** in the unapplied-changes bar.
 
 ---
 

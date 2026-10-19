@@ -27,14 +27,15 @@ The Event Flags tab provides:
 
 ### Top Section
 
-**Character Slot Selector:**
+The **Character** bar under the file row picks the character; its flags load as soon as one is selected.
 
-- Choose slot (1-10)
-- Load Flags button
-- Advanced... button (custom flag editor)
-- Apply Changes button
-- Unlock All in Category button
-- Boss Respawn... button
+**Buttons:**
+
+- Advanced... (check or toggle a single flag by ID)
+- Unlock All in Category
+- Export Flags... / Import Flags...
+- Boss Respawn..., Boss Status..., NPC Revival..., Quest Progress...
+- Summoning Pools..., Sites of Grace..., Item Pickups..., Merchant Restock...
 
 ### Category Selection
 
@@ -77,10 +78,9 @@ The Event Flags tab provides:
 
 **Steps:**
 
-1. Select character slot
-2. Click **Load Flags**
-3. Flag list populates with current states
-4. Category defaults to first category
+1. Pick the character in the **Character** bar
+2. Flag list populates with current states
+3. Category defaults to first category
 
 **Result:** All 1,295 flags loaded with current ON/OFF states
 
@@ -103,15 +103,15 @@ The Event Flags tab provides:
 **Single Flag:**
 
 1. Find flag in list
-2. Click checkbox to toggle ON/OFF
+2. Click its State cell (or select rows and press Space) to toggle ON/OFF
 3. State changes immediately in interface
-4. Changes not saved until **Apply Changes**
+4. Changes not saved until **Apply All** in the unapplied-changes bar
 
 **Multiple Flags:**
 
 1. Check/uncheck multiple flags
 2. All changes tracked
-3. Click **Apply Changes** to save all at once
+3. Click **Apply All** to save all at once
 
 ### Unlock All in Category
 
@@ -120,7 +120,7 @@ The Event Flags tab provides:
 1. Select category and subcategory
 2. Click **Unlock All in Category**
 3. All flags in current view set to ON
-4. Click **Apply Changes** to save
+4. Click **Apply All** to save
 
 **Use Cases:**
 
@@ -133,13 +133,12 @@ The Event Flags tab provides:
 **Steps:**
 
 1. Make flag changes
-2. Click **Apply Changes**
-3. Automatic backup created
-4. Changes written to save
-5. Checksums recalculated
-6. Confirmation shown
+2. Click **Apply All** in the unapplied-changes bar
+3. One backup is created and the staged edits of every tab are written in one save
+4. Checksums recalculated
+5. Confirmation shown
 
-**Important:** Changes only saved after clicking **Apply Changes**
+**Discard** drops the staged edits instead. Switching characters, loading another save, switching games or closing the window with unapplied changes asks whether to apply or discard them first.
 
 ---
 
@@ -344,17 +343,16 @@ The Event Flags tab provides:
 
 **Solution:**
 
-- Select character slot
-- Click Load Flags
+- Pick the character in the **Character** bar
 - Verify slot has character
 
 ### "Changes not applied"
 
-**Cause:** Forgot to click Apply Changes
+**Cause:** The edits were not applied
 
 **Solution:**
 
-- Click **Apply Changes** button
+- Click **Apply All** in the unapplied-changes bar
 - Wait for confirmation
 
 ### "Quest broken after changing flags"

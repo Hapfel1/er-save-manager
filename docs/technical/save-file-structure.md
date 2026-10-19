@@ -407,7 +407,8 @@ Wondrous Physick tears: slot 1, slot 2, int32 -1.
 | 0x112 | 1 | eye effect (255 = Frenzied Flame); only set in the ProfileSummary copy |
 | 0x113 | 17 | padding |
 | 0x124 | 1 | uint8 1 |
-| 0x125 | 2 | 2 x uint8 0/1, unknown |
+| 0x125 | 1 | uint8 Eye Alterations (Face Edit option): 1 shown, 0 hidden |
+| 0x126 | 1 | uint8 0/1, unknown |
 | 0x127 | 4 | int32 face param override slot 0 (FaceParam id, -1 = none) |
 | 0x12B | 4 | int32 face param override slot 1 (FaceParam id, -1 = none) |
 
@@ -440,7 +441,10 @@ the gesture table is `2k + 1` (1 Bow, 15 Wave, 41 Point Forwards). Each structur
 | equipped_gestures (wheel) | `2k`, -2 = empty |
 | message gesture (NetMan) | `k`, 0xFF = none |
 
-**Regions:** `uint32 count`, then `count` region ids (1001000, 1800010, 6100000, ...).
+**Regions:** `uint32 count`, then `count` region ids (1001000, 1800010, 6100000, ...). The ids are
+PlayRegionParam rows. A row's `mapMenuUnlockEventId` is the flag of the Site of Grace it belongs to
+(6100000 -> 76101). The list sits right before the horse data and has no fixed capacity: each added
+id moves every later section of the slot by 4 bytes.
 
 ---
 
@@ -526,6 +530,11 @@ point in a source map with a point in a destination map. The map menu tile shown
 the variant named by `tile mask & revealed pieces`, where the tile mask comes from
 `menu/71_maptile.mtmskbnd.dcx` and bit n is WorldMapPieceParam row n (overworld), 100 + n
 (underground) or 1000 + n (Realm of Shadow).
+
+**Map pieces.** A WorldMapPieceParam row counts as revealed while the event flag in its
+`openEventFlagId` is on (62004-62012 and 62020-62084). The map fragment items set these flags;
+other pieces open on entering an area or are on from the start. The art variants of pieces 62053
+(overworld) and 62065 (underground) are unfinished map drawings.
 
 ---
 
