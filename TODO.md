@@ -84,7 +84,7 @@ DS2 attunement editor done
 
 DS3 visited regions / warp unlocks done
 
-in-game checks at the end: U Apply All write, V region unlock + Convergence map art + grace positions, W DS2 20/14 char Seamless names + open folder on Windows, W2 NR relic rows and curse picker in the real app, AB DS2 load screen play time matches the Save Inspector
+in-game checks at the end: U Apply All write, V region unlock + Convergence map art + grace positions, W DS2 20/14 char Seamless names + open folder on Windows, W2 NR relic rows and curse picker in the real app, AB DS2 load screen play time matches the Save Inspector, O DS2 face shape sliders + physique option count + new DS2 appearance selectors
 
 update all docs with newly added stuff (last task)
 
