@@ -4,6 +4,7 @@ character picked in the main window's character bar."""
 from __future__ import annotations
 
 import tkinter as tk
+from pathlib import Path
 
 import customtkinter as ctk
 
@@ -14,6 +15,7 @@ from er_save_manager.games.DS2.save import (
     CHARACTER_SLOTS,
     LEVEL_STAT_KEYS,
     NAME_MAX_CHARS,
+    NAME_MAX_CHARS_SEAMLESS,
     NG_PLUS_MAX,
     STARTING_CLASSES,
     DS2Save,
@@ -591,6 +593,12 @@ class DS2EditorTab:
             duration=3000,
         )
 
+    def _name_max_chars(self) -> int:
+        path = self.get_save_path()
+        if path and Path(path).suffix.lower() == ".co2":
+            return NAME_MAX_CHARS_SEAMLESS
+        return NAME_MAX_CHARS
+
     def _prepare_stats(self):
         save: DS2Save | None = self.get_save()
         if save is None or self._slot_index < 0:
@@ -615,8 +623,16 @@ class DS2EditorTab:
             torch_seconds = _parse_torch(self.torch_var.get())
 
         name = self.name_var.get()
-        if len(name) > NAME_MAX_CHARS:
-            raise StageError(f"Name can be at most {NAME_MAX_CHARS} characters.")
+        # Only a changed name is checked, so stat edits keep a name the game
+        # accepted.
+        if name != save.characters[slot].name:
+            max_chars = self._name_max_chars()
+            if not name.strip():
+                raise StageError("Name cannot be empty.")
+            if len(name) > max_chars:
+                raise StageError(f"Name can be at most {max_chars} characters.")
+            if not all(ch.isalnum() or ch == " " for ch in name):
+                raise StageError("Name can only contain letters, digits and spaces.")
 
         expected_level = self._expected_level()
         if expected_level is None or entered_level != expected_level:

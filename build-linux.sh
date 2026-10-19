@@ -52,15 +52,19 @@ pyinstaller --clean --noconfirm \
     --add-data src/er_save_manager/data/shop_stock_convergence.csv:er_save_manager/data \
     --add-data src/er_save_manager/data/locations.json:er_save_manager/data \
     --add-data src/er_save_manager/data/grace_entities.json:er_save_manager/data \
+    --add-data src/er_save_manager/data/locations_convergence.json:er_save_manager/data \
+    --add-data src/er_save_manager/data/grace_regions.json:er_save_manager/data \
     --add-data src/er_save_manager/data/blood_messages.json:er_save_manager/data \
     --add-data src/er_save_manager/data/quest_flags.json:er_save_manager/data \
     --add-data src/er_save_manager/data/world_map_conversion.json:er_save_manager/data \
+    --add-data src/er_save_manager/data/world_map_conversion_convergence.json:er_save_manager/data \
     --add-data src/er_save_manager/data/auto_refill_defaults.json:er_save_manager/data \
     --add-data src/er_save_manager/fixes/CSNetMan.bin:er_save_manager/fixes \
     --add-data src/er_save_manager/fixes/EventFlagBits.bin:er_save_manager/fixes \
     --add-data src/er_save_manager/games/DSR/data:er_save_manager/games/DSR/data \
     --add-data src/er_save_manager/games/DS3/data:er_save_manager/games/DS3/data \
     --add-data src/er_save_manager/games/NR/nr_items.json:er_save_manager/games/NR \
+    --add-data src/er_save_manager/games/NR/relic_rules.json:er_save_manager/games/NR \
     --add-data src/er_save_manager/games/DS2/icons.db:er_save_manager/games/DS2 \
     --collect-data customtkinterthemes \
     --hidden-import customtkinterthemes \

@@ -98,6 +98,18 @@ include_files = [
         "er_save_manager/data/grace_entities.json",
     ),
     (
+        "src/er_save_manager/data/locations_convergence.json",
+        "er_save_manager/data/locations_convergence.json",
+    ),
+    (
+        "src/er_save_manager/data/grace_regions.json",
+        "er_save_manager/data/grace_regions.json",
+    ),
+    (
+        "src/er_save_manager/data/world_map_conversion_convergence.json",
+        "er_save_manager/data/world_map_conversion_convergence.json",
+    ),
+    (
         "src/er_save_manager/data/blood_messages.json",
         "er_save_manager/data/blood_messages.json",
     ),
@@ -115,6 +127,10 @@ include_files = [
     (
         "src/er_save_manager/games/NR/nr_items.json",
         "er_save_manager/games/NR/nr_items.json",
+    ),
+    (
+        "src/er_save_manager/games/NR/relic_rules.json",
+        "er_save_manager/games/NR/relic_rules.json",
     ),
     (
         "src/er_save_manager/games/DS2/icons.db",

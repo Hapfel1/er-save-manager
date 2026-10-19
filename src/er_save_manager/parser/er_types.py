@@ -86,6 +86,18 @@ class Util:
 # ============================================================================
 
 
+def read_exact(f: BytesIO, size: int) -> bytes:
+    """Read size bytes, raising ValueError when the stream ends first.
+
+    A count read from a misparsed slot can be any u32; reading its records
+    one at a time would walk to the end of the file before failing.
+    """
+    data = f.read(size)
+    if len(data) != size:
+        raise ValueError(f"needed {size} bytes, {len(data)} left")
+    return data
+
+
 @dataclass
 class FloatVector3:
     """3D float vector (12 bytes)"""
@@ -218,6 +230,10 @@ class MapId:
 # GAITEM - VARIABLE LENGTH STRUCTURE
 # ============================================================================
 
+_GAITEM_BASE = struct.Struct("<II")
+_GAITEM_ARMOR_EXTRA = struct.Struct("<ii")
+_GAITEM_WEAPON_EXTRA = struct.Struct("<iiiB")
+
 
 @dataclass
 class Gaitem:
@@ -252,22 +268,23 @@ class Gaitem:
             Gaitem instance with appropriate fields populated
         """
         # Always read base 8 bytes
-        gaitem_handle = struct.unpack("<I", f.read(4))[0]
-        item_id = struct.unpack("<I", f.read(4))[0]
+        gaitem_handle, item_id = _GAITEM_BASE.unpack(f.read(8))
 
         obj = cls(gaitem_handle=gaitem_handle, item_id=item_id)
 
         handle_type = gaitem_handle & 0xF0000000
 
         if gaitem_handle != 0 and handle_type != 0xC0000000:
-            # Read additional 8 bytes
-            obj.unk0x10 = struct.unpack("<i", f.read(4))[0]
-            obj.unk0x14 = struct.unpack("<i", f.read(4))[0]
-
             if handle_type == 0x80000000:
-                # Read additional 5 bytes (for gem items)
-                obj.gem_gaitem_handle = struct.unpack("<i", f.read(4))[0]
-                obj.unk0x1c = struct.unpack("<B", f.read(1))[0]
+                # Additional 8 bytes, plus 5 for weapons (gem handle, u8)
+                (
+                    obj.unk0x10,
+                    obj.unk0x14,
+                    obj.gem_gaitem_handle,
+                    obj.unk0x1c,
+                ) = _GAITEM_WEAPON_EXTRA.unpack(f.read(13))
+            else:
+                obj.unk0x10, obj.unk0x14 = _GAITEM_ARMOR_EXTRA.unpack(f.read(8))
 
         return obj
 

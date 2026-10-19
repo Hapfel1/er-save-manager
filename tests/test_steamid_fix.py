@@ -16,12 +16,12 @@ def _first_active_slot(save):
     raise AssertionError("fixture save has no active character slots")
 
 
-def test_zeroed_steamid_is_flagged_on_every_slot(sanitized_save):
+def test_zeroed_steamid_is_flagged_on_every_slot(sanitized_save_readonly):
     fix = SteamIdFix()
-    for i, slot in enumerate(sanitized_save.character_slots):
+    for i, slot in enumerate(sanitized_save_readonly.character_slots):
         if slot.is_empty():
             continue
-        assert fix.detect(sanitized_save, i) is True
+        assert fix.detect(sanitized_save_readonly, i) is True
 
 
 def test_apply_with_zeroed_reference_does_not_resolve_corruption(sanitized_save):

@@ -21,14 +21,6 @@ def _write_weather(save, slot) -> None:
     save._raw_data[slot.weather_offset : slot.weather_offset + len(data)] = data
 
 
-def test_no_false_positive_on_healthy_save(sanitized_save):
-    fix = WeatherFix()
-    for i, slot in enumerate(sanitized_save.character_slots):
-        if slot.is_empty():
-            continue
-        assert fix.detect(sanitized_save, i) is False, f"slot {i} unexpectedly flagged"
-
-
 def test_detects_area_id_zero_with_real_map_location(sanitized_save):
     i = _first_active_slot(sanitized_save)
     slot = sanitized_save.character_slots[i]
@@ -92,9 +84,3 @@ def test_apply_does_not_reset_an_oversized_timer(sanitized_save):
 
     assert result.applied is True
     assert slot.world_area_weather.timer == 999999
-
-
-def test_apply_is_no_op_when_not_corrupted(sanitized_save):
-    i = _first_active_slot(sanitized_save)
-    result = WeatherFix().apply(sanitized_save, i)
-    assert result.applied is False

@@ -8,6 +8,10 @@ region grouping (base game or Shadow of the Erdtree) used by the grace dialog.
 grace_entities.json maps each grace flag to its BonfireWarpParam
 bonfireEntityId, one table per regulation (Convergence moves and removes some
 vanilla graces).
+
+grace_regions.json maps each grace flag to the PlayRegionParam rows whose
+mapMenuUnlockEventId is that flag, per regulation (ids as stored in the
+slot's Regions list).
 """
 
 from __future__ import annotations
@@ -131,3 +135,21 @@ def grace_from_last_rested(value: int, convergence: bool) -> Grace | None:
             if table_entity == entity:
                 return graces.get(flag_id)
     return None
+
+
+@cache
+def _region_tables() -> dict[str, dict[int, tuple[int, ...]]]:
+    raw = json.loads(
+        (Path(__file__).parent / "grace_regions.json").read_text(encoding="utf-8")
+    )
+    return {
+        flavor: {int(flag): tuple(ids) for flag, ids in table.items()}
+        for flavor, table in raw.items()
+    }
+
+
+def grace_region_ids(flag_id: int, convergence: bool) -> tuple[int, ...]:
+    """PlayRegion ids belonging to a grace (empty when it has none)."""
+    return _region_tables()["convergence" if convergence else "vanilla"].get(
+        flag_id, ()
+    )

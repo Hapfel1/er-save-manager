@@ -49,14 +49,14 @@ def test_template_is_valid(template):
     assert netman_problems(template) == []
 
 
-def test_game_written_netman_is_valid_and_unchanged(sanitized_save, template):
-    slots = _slots_with_netman(sanitized_save)
+def test_game_written_netman_is_valid_and_unchanged(sanitized_save_readonly, template):
+    slots = _slots_with_netman(sanitized_save_readonly)
     assert slots
     for i in slots:
-        blob = _region(sanitized_save, i)[1]
+        blob = _region(sanitized_save_readonly, i)[1]
         assert netman_problems(blob) == []
         assert repair_netman(blob, template) == (blob, [])
-        assert NetManFix().detect(sanitized_save, i) is False
+        assert NetManFix().detect(sanitized_save_readonly, i) is False
 
 
 def test_damaged_chunk_is_rebuilt_and_neighbours_kept(sanitized_save, template):

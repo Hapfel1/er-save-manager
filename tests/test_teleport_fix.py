@@ -76,16 +76,16 @@ def test_all_locations_are_constructible():
 # ---------------------------------------------------------------------------
 
 
-def test_detect_flags_every_slot_in_real_save(sanitized_save):
+def test_detect_flags_every_slot_in_real_save(sanitized_save_readonly):
     """Documents actual behavior: has_corruption() always reports
     steamid_corruption on this sanitized fixture, so detect() is True
     everywhere regardless of map location.
     """
     fix = TeleportFix("limgrave")
-    for i, slot in enumerate(sanitized_save.character_slots):
+    for i, slot in enumerate(sanitized_save_readonly.character_slots):
         if slot.is_empty():
             continue
-        assert fix.detect(sanitized_save, i) is True
+        assert fix.detect(sanitized_save_readonly, i) is True
 
 
 # ---------------------------------------------------------------------------

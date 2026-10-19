@@ -77,8 +77,10 @@ class PlatformUtils:
                 )
                 return True
             elif PlatformUtils.is_linux():
+                # -i: Proton command lines keep the exe's mixed case
+                # (DarkSoulsIII.exe), profile names are lowercase.
                 subprocess.run(
-                    ["pkill", "-9", "-f", process_name],
+                    ["pkill", "-9", "-if", process_name],
                     check=True,
                 )
                 return True

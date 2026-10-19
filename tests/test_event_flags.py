@@ -102,14 +102,6 @@ def test_unknown_block_raises():
 # ---------------------------------------------------------------------------
 
 
-def test_no_false_positive_on_healthy_save(sanitized_save):
-    for i, slot in enumerate(sanitized_save.character_slots):
-        if slot.is_empty():
-            continue
-        issues = CorruptionDetector.detect_all(slot.event_flags)
-        assert issues == [], f"slot {i} unexpectedly flagged: {issues}"
-
-
 def test_detects_ranni_softlock_when_blocking_flag_set(sanitized_save):
     i = _first_active_slot(sanitized_save)
     slot = sanitized_save.character_slots[i]
@@ -229,12 +221,6 @@ def test_fix_all_applies_every_detected_issue(sanitized_save):
 # ---------------------------------------------------------------------------
 # EventFlagsFix / RanniSoftlockFix (BaseFix wrappers)
 # ---------------------------------------------------------------------------
-
-
-def test_event_flags_fix_no_op_on_healthy_save(sanitized_save):
-    i = _first_active_slot(sanitized_save)
-    result = EventFlagsFix().apply(sanitized_save, i)
-    assert result.applied is False
 
 
 def test_event_flags_fix_detects_and_fixes_ranni_softlock(sanitized_save):

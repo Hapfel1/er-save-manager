@@ -44,7 +44,7 @@ def _set_bit(ef: bytearray, pos: int, bit: int, value: bool) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_scan_only_reports_no_confidence_on_healthy_save(sanitized_save):
+def test_scan_only_reports_no_confidence_on_healthy_save(sanitized_save_readonly):
     """
     The sanitized fixture has SteamID zeroed everywhere (see
     conftest.py), so _get_save_steam_id returns 0 and the scan
@@ -52,13 +52,13 @@ def test_scan_only_reports_no_confidence_on_healthy_save(sanitized_save):
     documented early-exit, not evidence of "no corruption".
     """
     fix = DeepScanFix()
-    for i, slot in enumerate(sanitized_save.character_slots):
+    for i, slot in enumerate(sanitized_save_readonly.character_slots):
         if slot.is_empty():
             continue
-        result = fix.scan_only(sanitized_save, i)
+        result = fix.scan_only(sanitized_save_readonly, i)
         assert result.steamid_found is False
         assert result.confidence == "none"
-        assert fix.detect(sanitized_save, i) is False
+        assert fix.detect(sanitized_save_readonly, i) is False
 
 
 def test_apply_is_no_op_when_steamid_unreadable(sanitized_save):
@@ -72,15 +72,15 @@ def test_apply_is_no_op_when_steamid_unreadable(sanitized_save):
 # ---------------------------------------------------------------------------
 
 
-def test_ef_scan_no_false_positive_on_clean_slot(sanitized_save):
-    i = _clean_slot(sanitized_save)
-    result = DeepScanFix().ef_scan_only(sanitized_save, i)
+def test_ef_scan_no_false_positive_on_clean_slot(sanitized_save_readonly):
+    i = _clean_slot(sanitized_save_readonly)
+    result = DeepScanFix().ef_scan_only(sanitized_save_readonly, i)
     assert result.torn is False
     assert result.confident is False
 
 
-def test_ef_scan_detects_the_real_tear_in_this_fixture(sanitized_save):
-    result = DeepScanFix().ef_scan_only(sanitized_save, 1)
+def test_ef_scan_detects_the_real_tear_in_this_fixture(sanitized_save_readonly):
+    result = DeepScanFix().ef_scan_only(sanitized_save_readonly, 1)
 
     assert result.torn is True
     assert result.confident is True
@@ -128,12 +128,12 @@ def test_ef_scan_confident_tear_with_one_agreeing_and_one_disagreeing(sanitized_
     assert result.tear_lo < result.tear_hi
 
 
-def test_undefeated_boss_is_never_flagged(sanitized_save):
+def test_undefeated_boss_is_never_flagged(sanitized_save_readonly):
     """Both flags being 0 (boss never fought) is consistent but
     uninformative and must not be reported either way.
     """
-    i = _clean_slot(sanitized_save)
-    result = DeepScanFix().ef_scan_only(sanitized_save, i)
+    i = _clean_slot(sanitized_save_readonly)
+    result = DeepScanFix().ef_scan_only(sanitized_save_readonly, i)
     assert "Romina, Saint Of The Bud" not in result.agreeing
     assert "Romina, Saint Of The Bud" not in result.disagreeing
 

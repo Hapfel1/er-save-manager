@@ -560,6 +560,66 @@ def _open_url_linux(url: str) -> bool:
     return False
 
 
+_LINUX_FILE_MANAGERS = ("nautilus", "dolphin", "thunar", "nemo", "pcmanfm", "caja")
+
+
+def open_folder(path: str | Path) -> bool:
+    """Open a folder in the system file manager.
+
+    A file path opens its folder with the file selected on Windows and
+    macOS; Linux file managers have no common select option, so only the
+    folder opens there. Returns whether a file manager was launched.
+    """
+    path = Path(path).resolve()
+    select = path.is_file()
+    folder = path.parent if select else path
+    platform_name = platform_module.system()
+
+    if platform_name == "Windows":
+        if select:
+            return _run_command(["explorer", f"/select,{path}"])
+        try:
+            os.startfile(folder)
+            return True
+        except Exception:
+            return _run_command(["explorer", str(folder)])
+    if platform_name == "Darwin":
+        return _run_command(
+            ["open", "-R", str(path)] if select else ["open", str(folder)]
+        )
+    return _open_folder_linux(str(folder))
+
+
+def _open_folder_linux(folder: str) -> bool:
+    # Inside the AppImage, LD_LIBRARY_PATH points at the bundled libs. A file
+    # manager that inherits it fails to load against newer system libs, so
+    # every command runs with the cleaned environment.
+    env = _get_subprocess_env()
+    for opener in (["xdg-open"], ["gio", "open"]):
+        if not shutil.which(opener[0]):
+            continue
+        try:
+            result = subprocess.run(
+                [*opener, folder],
+                env=env,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=5,
+            )
+        except subprocess.TimeoutExpired:
+            # Still running means the opener stayed attached to the file
+            # manager it started.
+            return True
+        except OSError:
+            continue
+        if result.returncode == 0:
+            return True
+    for manager in _LINUX_FILE_MANAGERS:
+        if shutil.which(manager) and _run_command([manager, folder], env=env):
+            return True
+    return False
+
+
 def _run_command(args: list[str], env: dict | None = None) -> bool:
     try:
         subprocess.Popen(
@@ -643,8 +703,12 @@ def _pick_file_native_linux(
     to the Tk file dialog.
     """
     env = _get_subprocess_env()
+    # zenity is a GTK dialog, so KDE gets kdialog first.
+    kde = "KDE" in os.environ.get("XDG_CURRENT_DESKTOP", "").upper().split(":")
+    tools = ("kdialog", "zenity") if kde else ("zenity", "kdialog")
+    tool = next((t for t in tools if shutil.which(t)), None)
 
-    if shutil.which("zenity"):
+    if tool == "zenity":
         cmd = ["zenity", "--file-selection", f"--title={title}"]
         if save:
             cmd += ["--save", "--confirm-overwrite"]
@@ -661,7 +725,7 @@ def _pick_file_native_linux(
         path = result.stdout.strip() if result.returncode == 0 else ""
         return _apply_default_extension(path, save, defaultextension)
 
-    if shutil.which("kdialog"):
+    if tool == "kdialog":
         start = initialdir or os.path.expanduser("~")
         if initialfile:
             start = os.path.join(start, initialfile)

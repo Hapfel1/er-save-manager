@@ -12,7 +12,8 @@ import urllib.parse
 import zipfile
 from pathlib import Path
 
-from er_save_manager.ui.utils import _get_subprocess_env, open_url
+from er_save_manager.ui.utils import open_folder as utils_open_folder
+from er_save_manager.ui.utils import open_url
 
 
 def submit_character_via_browser(
@@ -306,27 +307,11 @@ def _create_compact_issue_body(
 
 def show_submission_success_dialog(char_name: str, zip_path: str):
     """Show success message with ZIP file location and open file explorer."""
-    import os
-    import platform
-    import subprocess
-
     from er_save_manager.ui.dialogs.community_dialogs import show_submission_ready
 
     def open_folder():
-        """Open the folder containing the ZIP file."""
-        folder_path = Path(zip_path).parent
-        try:
-            if platform.system() == "Windows":
-                os.startfile(folder_path)
-            elif platform.system() == "Darwin":  # macOS
-                os.system(f'open "{folder_path}"')
-            else:  # Linux
-                subprocess.run(
-                    ["xdg-open", str(folder_path)], env=_get_subprocess_env()
-                )
-        except Exception as e:
-            print(f"Failed to open folder: {e}")
-            print(f"Package location: {folder_path}")
+        if not utils_open_folder(zip_path):
+            print(f"Failed to open folder. Package location: {zip_path}")
 
     show_submission_ready(
         "Character Ready to Submit",

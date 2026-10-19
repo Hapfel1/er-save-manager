@@ -11,7 +11,6 @@ import json
 import tkinter as tk
 from collections import Counter
 from pathlib import Path
-from tkinter import filedialog
 
 import customtkinter as ctk
 
@@ -24,7 +23,7 @@ from er_save_manager.ui.appearance_share import AppearanceShareCard, ShareSource
 from er_save_manager.ui.color_sliders import ColorSliders
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import FieldTracker, StageError
-from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll
+from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_file
 
 _BODY_TYPES = ["Type B", "Type A"]  # index = stored body type
 _SAVE_FILETYPES = [("DSR save files", "*.sl2 *.co2"), ("All files", "*")]
@@ -432,8 +431,8 @@ class DSRAppearanceTab:
             if save is not None and slot >= 0 and save.characters[slot]
             else "appearance"
         )
-        path = filedialog.asksaveasfilename(
-            parent=self.parent,
+        path = pick_file(
+            save=True,
             title="Export Appearance",
             defaultextension=".json",
             initialfile=f"{name or 'appearance'}_dsr_appearance.json",
@@ -450,8 +449,7 @@ class DSRAppearanceTab:
         self._show_toast("Appearance exported.")
 
     def _import_json(self) -> None:
-        path = filedialog.askopenfilename(
-            parent=self.parent,
+        path = pick_file(
             title="Import Appearance",
             filetypes=[("JSON files", "*.json")],
         )

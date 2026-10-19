@@ -27,6 +27,7 @@ from er_save_manager.ui.pending import (
     StageError,
     var_state,
 )
+from er_save_manager.ui.tooltip import add_tooltip
 from er_save_manager.ui.utils import game_blocks_write
 
 
@@ -314,10 +315,10 @@ class NREditorTab:
         from er_save_manager.games.NR.item_db import (
             effects_for_curse_slot,
             effects_for_slot,
-            relics_sorted,
         )
+        from er_save_manager.games.NR.relic_rules import picker_relics
 
-        self._all_relic_opts: list[tuple[int, str, bool]] = relics_sorted()
+        self._all_relic_opts: list[tuple[int, str, bool]] = picker_relics()
         self._normal_effect_opts: list[tuple[int, str]] = effects_for_slot(False)
         self._deep_effect_opts: list[tuple[int, str]] = effects_for_slot(True)
         self._curse_opts: list[tuple[int, str]] = effects_for_curse_slot()
@@ -425,6 +426,9 @@ class NREditorTab:
         self._re_effect_labels = []
         self._re_curse_labels = []
         self._re_curse_widgets: list[tuple] = []
+        self._re_curse_tips: list[tuple] = []
+        self._re_effect_btns: list = []
+        self._re_rows: list = []
 
         slots_frame = ctk.CTkFrame(self._edit_panel, fg_color="transparent")
         slots_frame.pack(fill="x", padx=8, pady=(2, 6))
@@ -442,13 +446,14 @@ class NREditorTab:
                 wraplength=238,
             )
             lbl_e.pack(side="left", padx=(2, 4))
-            ctk.CTkButton(
+            btn_e = ctk.CTkButton(
                 row,
                 text="Browse",
                 width=65,
                 height=24,
                 command=lambda jj=j: self._browse_effect(jj),
-            ).pack(side="left", padx=(0, 16))
+            )
+            btn_e.pack(side="left", padx=(0, 16))
             lbl_c = ctk.CTkLabel(
                 row,
                 text=f"C{j + 1}: (empty)",
@@ -467,8 +472,11 @@ class NREditorTab:
             self._re_effect_labels.append(lbl_e)
             self._re_curse_labels.append(lbl_c)
             self._re_curse_widgets.append((lbl_c, btn_c, row))
+            self._re_curse_tips.append((add_tooltip(lbl_c, ""), add_tooltip(btn_c, "")))
+            self._re_effect_btns.append(btn_e)
+            self._re_rows.append(row)
 
-        self._set_edit_curse_visible(False)
+        self._refresh_rows("edit")
 
         spawn_outer = ctk.CTkFrame(
             _spawn_parent, corner_radius=10, fg_color=("gray84", "gray24")
@@ -523,6 +531,9 @@ class NREditorTab:
         self._spawn_effect_labels = []
         self._spawn_curse_labels = []
         self._spawn_curse_widgets: list[tuple] = []
+        self._spawn_curse_tips: list[tuple] = []
+        self._spawn_effect_btns: list = []
+        self._spawn_rows: list = []
 
         spawn_slots = ctk.CTkFrame(spawn_outer, fg_color="transparent")
         spawn_slots.pack(fill="x", padx=8, pady=(2, 8))
@@ -540,13 +551,14 @@ class NREditorTab:
                 wraplength=238,
             )
             lbl_e.pack(side="left", padx=(2, 4))
-            ctk.CTkButton(
+            btn_e = ctk.CTkButton(
                 row,
                 text="Browse",
                 width=65,
                 height=24,
                 command=lambda jj=j: self._browse_spawn_effect(jj),
-            ).pack(side="left", padx=(0, 16))
+            )
+            btn_e.pack(side="left", padx=(0, 16))
             lbl_c = ctk.CTkLabel(
                 row,
                 text=f"C{j + 1}: (empty)",
@@ -565,8 +577,13 @@ class NREditorTab:
             self._spawn_effect_labels.append(lbl_e)
             self._spawn_curse_labels.append(lbl_c)
             self._spawn_curse_widgets.append((lbl_c, btn_c, row))
+            self._spawn_curse_tips.append(
+                (add_tooltip(lbl_c, ""), add_tooltip(btn_c, ""))
+            )
+            self._spawn_effect_btns.append(btn_e)
+            self._spawn_rows.append(row)
 
-        self._set_spawn_curse_visible(False)
+        self._refresh_rows("spawn")
 
         self._selected_relic_ga: int | None = None
         self._all_relic_data: list = []
@@ -575,58 +592,193 @@ class NREditorTab:
     # Curse slot visibility
     # ------------------------------------------------------------------
 
-    def _set_edit_curse_visible(self, visible: bool) -> None:
-        for lbl_c, btn_c, _row in self._re_curse_widgets:
-            if visible:
+    def _panel(self, which: str) -> tuple:
+        """(relic id, effect vars, effect labels, effect buttons, curse vars,
+        curse widgets, rows) of the edit or spawn panel."""
+        if which == "edit":
+            try:
+                relic_id = int(self._re_item_var.get())
+            except ValueError:
+                relic_id = -1
+            return (
+                relic_id,
+                self._re_effect_vars,
+                self._re_effect_labels,
+                self._re_effect_btns,
+                self._re_curse_vars,
+                self._re_curse_widgets,
+                self._re_rows,
+            )
+        return (
+            self._spawn_relic_id.get(),
+            self._spawn_effect_vars,
+            self._spawn_effect_labels,
+            self._spawn_effect_btns,
+            self._spawn_curse_vars,
+            self._spawn_curse_widgets,
+            self._spawn_rows,
+        )
+
+    def _refresh_rows(self, which: str) -> None:
+        """Show one effect row per relic slot and a curse row where a deep
+        effect needs one. Rows that still hold a value stay visible so it
+        can be cleared; fixed relic effects cannot be picked."""
+        from er_save_manager.games.NR.item_db import get_relic
+        from er_save_manager.games.NR.relic_rules import (
+            fixed_effects,
+            needs_curse,
+            relic_kind,
+            slot_count,
+        )
+
+        relic_id, evars, elabels, ebtns, cvars, cwidgets, rows = self._panel(which)
+        tips = self._re_curse_tips if which == "edit" else self._spawn_curse_tips
+        kind = relic_kind(relic_id) if relic_id >= 0 else "unknown"
+        effects = [int(v.get()) for v in evars]
+        curses = [int(v.get()) for v in cvars]
+        filled = [
+            j + 1
+            for j in range(3)
+            if effects[j] != _EMPTY_EFFECT or curses[j] != _EMPTY_EFFECT
+        ]
+        shown = 3 if kind == "unknown" else slot_count(relic_id)
+        shown = max([shown, *filled])
+        for row in rows:
+            row.pack_forget()
+        for row in rows[:shown]:
+            row.pack(fill="x", pady=1)
+
+        row_info = get_relic(relic_id) if relic_id >= 0 else None
+        deep = kind == "deep" or (
+            kind == "unknown" and bool(row_info and row_info["deep"])
+        )
+        # A fixed relic's effects are set for it; the buttons only open when
+        # the stored effects differ, so wrong ones can be cleared.
+        locked = kind == "fixed" and sorted(
+            e for e in effects if e != _EMPTY_EFFECT
+        ) == (sorted(fixed_effects(relic_id)))
+        for j in range(3):
+            ebtns[j].configure(state="disabled" if locked else "normal")
+            lbl_c, btn_c, _row = cwidgets[j]
+            required = kind == "deep" and needs_curse(effects[j])
+            show = deep and (
+                kind == "unknown" or required or curses[j] != _EMPTY_EFFECT
+            )
+            text = ""
+            if required:
+                text = (
+                    f"{_fmt_effect(effects[j])} always comes with a curse: the "
+                    "game never rolls it without one, so this row needs a curse."
+                )
+            elif kind == "deep" and curses[j] != _EMPTY_EFFECT:
+                text = (
+                    "This curse has no effect in its row. Clear it."
+                    if effects[j] == _EMPTY_EFFECT
+                    else f"{_fmt_effect(effects[j])} never comes with a curse. "
+                    "Clear this curse."
+                )
+            for tip in tips[j]:
+                tip.text = text
+            if show:
+                missing = required and curses[j] == _EMPTY_EFFECT
+                lbl_c.configure(
+                    text=f"C{j + 1}{' (required)' if missing else ''}: "
+                    f"{_fmt_effect(curses[j])}"
+                )
                 lbl_c.pack(side="left", padx=(0, 4))
                 btn_c.pack(side="left")
             else:
                 lbl_c.pack_forget()
                 btn_c.pack_forget()
 
-    def _set_spawn_curse_visible(self, visible: bool) -> None:
-        for lbl_c, btn_c, _row in self._spawn_curse_widgets:
-            if visible:
-                lbl_c.pack(side="left", padx=(0, 4))
-                btn_c.pack(side="left")
+    def _fit_to_relic(self, which: str) -> None:
+        """After a relic type change, drop effects the new type cannot hold
+        and curses their effects cannot carry."""
+        from er_save_manager.games.NR.relic_rules import (
+            can_add,
+            needs_curse,
+            relic_kind,
+            slot_count,
+        )
+
+        relic_id, evars, elabels, _btns, cvars, _cw, _rows = self._panel(which)
+        kind = relic_kind(relic_id)
+        if kind == "unknown":
+            return
+        kept: list[int] = []
+        for j in range(3):
+            effect = int(evars[j].get())
+            fits = (
+                effect != _EMPTY_EFFECT
+                and j < slot_count(relic_id)
+                and can_add(relic_id, effect, kept)
+            )
+            if fits:
+                kept.append(effect)
             else:
-                lbl_c.pack_forget()
-                btn_c.pack_forget()
+                evars[j].set(str(_EMPTY_EFFECT))
+                elabels[j].configure(text=_fmt_effect(_EMPTY_EFFECT))
+            if not fits or kind != "deep" or not needs_curse(effect):
+                cvars[j].set(str(_EMPTY_EFFECT))
+
+    def _set_effect(self, which: str, idx: int, effect_id: int) -> None:
+        """Set an effect row; a curse the new effect cannot carry is cleared."""
+        from er_save_manager.games.NR.relic_rules import needs_curse, relic_kind
+
+        relic_id, evars, elabels, _btns, cvars, _cw, _rows = self._panel(which)
+        evars[idx].set(str(effect_id))
+        elabels[idx].configure(text=_fmt_effect(effect_id))
+        if relic_kind(relic_id) == "deep" and not needs_curse(effect_id):
+            cvars[idx].set(str(_EMPTY_EFFECT))
+        self._refresh_rows(which)
 
     # ------------------------------------------------------------------
     # Picker helpers
     # ------------------------------------------------------------------
 
     def _relic_picker_items(self) -> list[tuple[int, str]]:
-        return [
-            (rid, f"{'[Deep] ' if deep else ''}{name}")
-            for rid, name, deep in self._all_relic_opts
-        ]
+        return [(rid, label) for rid, label, _deep in self._all_relic_opts]
 
-    def _effect_picker_items(self, is_deep: bool) -> list[tuple[int, str]]:
-        opts = self._deep_effect_opts if is_deep else self._normal_effect_opts
+    def _effect_picker_items(
+        self, relic_id: int, others: list[int]
+    ) -> list[tuple[int, str]]:
+        """Effects the relic type can roll (the tier list for a relic type
+        the roll tables do not cover), minus those that cannot share the
+        relic with the effects in the other rows or no longer fit its slot
+        tables."""
+        from er_save_manager.games.NR.item_db import effect_name, get_relic
+        from er_save_manager.games.NR.relic_rules import can_add, rollable_effects
+
+        rollable = rollable_effects(relic_id)
+        if rollable is None:
+            row = get_relic(relic_id)
+            deep = bool(row and row["deep"])
+            opts = self._deep_effect_opts if deep else self._normal_effect_opts
+        else:
+            opts = sorted(((e, effect_name(e)) for e in rollable), key=lambda x: x[1])
+        opts = [(e, name) for e, name in opts if can_add(relic_id, e, others)]
         return [(_EMPTY_EFFECT, "(empty)")] + opts
 
-    def _curse_picker_items(self) -> list[tuple[int, str]]:
-        return [(_EMPTY_EFFECT, "(empty)")] + self._curse_opts
+    def _curse_picker_items(self, others: list[int]) -> list[tuple[int, str]]:
+        """Curses not already used in another row."""
+        return [(_EMPTY_EFFECT, "(empty)")] + [
+            (c, name) for c, name in self._curse_opts if c not in others
+        ]
 
-    def _current_is_deep(self) -> bool:
-        """Return whether the currently-selected relic type is deep."""
-        from er_save_manager.games.NR.item_db import get_relic
+    def _fill_fixed_effects(
+        self, relic_id: int, effect_vars, effect_labels, curse_vars
+    ) -> None:
+        """Show a fixed relic's effects, which cannot be chosen."""
+        from er_save_manager.games.NR.relic_rules import fixed_effects, relic_kind
 
-        try:
-            rid = int(self._re_item_var.get())
-        except ValueError:
-            return False
-        r = get_relic(rid)
-        return r["deep"] if r else False
-
-    def _spawn_is_deep(self) -> bool:
-        from er_save_manager.games.NR.item_db import get_relic
-
-        rid = self._spawn_relic_id.get()
-        r = get_relic(rid) if rid >= 0 else None
-        return r["deep"] if r else False
+        if relic_kind(relic_id) != "fixed":
+            return
+        effects = fixed_effects(relic_id)
+        effects += [_EMPTY_EFFECT] * (3 - len(effects))
+        for j in range(3):
+            effect_vars[j].set(str(effects[j]))
+            effect_labels[j].configure(text=_fmt_effect(effects[j]))
+            curse_vars[j].set(str(_EMPTY_EFFECT))
 
     # Edit panel pickers
 
@@ -643,30 +795,45 @@ class NREditorTab:
 
             self._re_item_var.set(str(dlg.result))
             self._re_item_label.configure(text=relic_name(dlg.result))
-            self._set_edit_curse_visible(self._current_is_deep())
+            self._fill_fixed_effects(
+                dlg.result,
+                self._re_effect_vars,
+                self._re_effect_labels,
+                self._re_curse_vars,
+            )
+            self._fit_to_relic("edit")
+            self._refresh_rows("edit")
 
     def _browse_effect(self, idx: int) -> None:
         try:
             cur = int(self._re_effect_vars[idx].get())
         except ValueError:
             cur = _EMPTY_EFFECT
-        items = self._effect_picker_items(self._current_is_deep())
+        try:
+            relic_id = int(self._re_item_var.get())
+        except ValueError:
+            relic_id = -1
+        others = [int(v.get()) for j, v in enumerate(self._re_effect_vars) if j != idx]
+        items = self._effect_picker_items(relic_id, others)
         dlg = _PickerDialog(self.parent, f"Select Effect {idx + 1}", items, cur)
         if dlg.result is not None:
-            self._re_effect_vars[idx].set(str(dlg.result))
-            self._re_effect_labels[idx].configure(text=_fmt_effect(dlg.result))
+            self._set_effect("edit", idx, dlg.result)
 
     def _browse_curse(self, idx: int) -> None:
         try:
             cur = int(self._re_curse_vars[idx].get())
         except ValueError:
             cur = _EMPTY_EFFECT
+        others = [int(v.get()) for j, v in enumerate(self._re_curse_vars) if j != idx]
         dlg = _PickerDialog(
-            self.parent, f"Select Curse {idx + 1}", self._curse_picker_items(), cur
+            self.parent,
+            f"Select Curse {idx + 1}",
+            self._curse_picker_items(others),
+            cur,
         )
         if dlg.result is not None:
             self._re_curse_vars[idx].set(str(dlg.result))
-            self._re_curse_labels[idx].configure(text=_fmt_effect(dlg.result))
+            self._refresh_rows("edit")
 
     # Spawn pickers
 
@@ -680,30 +847,45 @@ class NREditorTab:
 
             self._spawn_relic_id.set(dlg.result)
             self._spawn_relic_label.configure(text=relic_name(dlg.result))
-            self._set_spawn_curse_visible(self._spawn_is_deep())
+            self._fill_fixed_effects(
+                dlg.result,
+                self._spawn_effect_vars,
+                self._spawn_effect_labels,
+                self._spawn_curse_vars,
+            )
+            self._fit_to_relic("spawn")
+            self._refresh_rows("spawn")
 
     def _browse_spawn_effect(self, idx: int) -> None:
         try:
             cur = int(self._spawn_effect_vars[idx].get())
         except ValueError:
             cur = _EMPTY_EFFECT
-        items = self._effect_picker_items(self._spawn_is_deep())
+        others = [
+            int(v.get()) for j, v in enumerate(self._spawn_effect_vars) if j != idx
+        ]
+        items = self._effect_picker_items(self._spawn_relic_id.get(), others)
         dlg = _PickerDialog(self.parent, f"Select Effect {idx + 1}", items, cur)
         if dlg.result is not None:
-            self._spawn_effect_vars[idx].set(str(dlg.result))
-            self._spawn_effect_labels[idx].configure(text=_fmt_effect(dlg.result))
+            self._set_effect("spawn", idx, dlg.result)
 
     def _browse_spawn_curse(self, idx: int) -> None:
         try:
             cur = int(self._spawn_curse_vars[idx].get())
         except ValueError:
             cur = _EMPTY_EFFECT
+        others = [
+            int(v.get()) for j, v in enumerate(self._spawn_curse_vars) if j != idx
+        ]
         dlg = _PickerDialog(
-            self.parent, f"Select Curse {idx + 1}", self._curse_picker_items(), cur
+            self.parent,
+            f"Select Curse {idx + 1}",
+            self._curse_picker_items(others),
+            cur,
         )
         if dlg.result is not None:
             self._spawn_curse_vars[idx].set(str(dlg.result))
-            self._spawn_curse_labels[idx].configure(text=_fmt_effect(dlg.result))
+            self._refresh_rows("spawn")
 
     # ------------------------------------------------------------------
     # Relic list
@@ -790,8 +972,7 @@ class NREditorTab:
             self._re_effect_vars[j].set(str(effects[j]))
             self._re_effect_labels[j].configure(text=effect_name(effects[j]))
             self._re_curse_vars[j].set(str(effects[j + 3]))
-            self._re_curse_labels[j].configure(text=effect_name(effects[j + 3]))
-        self._set_edit_curse_visible(rs.is_deep)
+        self._refresh_rows("edit")
 
     # ------------------------------------------------------------------
     # Edit / remove
@@ -819,40 +1000,34 @@ class NREditorTab:
             )
             return
 
-        from er_save_manager.games.NR.item_db import (
-            combination_errors,
-            get_effect,
-            get_relic,
-            validate_curse,
-            validate_effect,
-        )
+        from er_save_manager.games.NR.relic_ops import prepare_relic
+        from er_save_manager.games.NR.relic_rules import edit_issues
 
-        relic_row = get_relic(real_id)
-        is_deep = relic_row["deep"] if relic_row else False
-        # Effects the database does not know (mod data) only warn; every other
-        # problem describes a relic the game cannot roll and blocks the edit.
-        errors, unknown = [], []
-        for label, ids, check in (
-            ("E", effects, lambda ef: validate_effect(ef, is_deep)),
-            ("C", curses, validate_curse),
-        ):
-            for i, ef in enumerate(ids):
-                err = check(ef)
-                if err is None:
-                    continue
-                target = unknown if get_effect(ef) is None else errors
-                target.append(f"{label}{i + 1}: {err}")
-        errors += combination_errors(real_id, effects, curses)
-        if errors:
+        rs = save.slots[self._current_slot].relic_states.get(self._selected_relic_ga)
+        if rs is None:
+            return
+        old = (
+            rs.real_item_id,
+            [rs.effect_1, rs.effect_2, rs.effect_3],
+            [rs.curse_1, rs.curse_2, rs.curse_3],
+        )
+        effects, curses = prepare_relic(real_id, effects, curses)
+        blocking, warnings = edit_issues(old, (real_id, effects, curses))
+        if blocking:
             CTkMessageBox.showerror(
                 "Invalid Relic",
-                "This relic cannot exist in the game:\n" + "\n".join(errors),
+                "The game cannot roll this relic:\n"
+                + "\n".join(i.message for i in blocking),
                 parent=self.parent,
             )
             return
-        if unknown and not CTkMessageBox.askyesno(
+        # Unknown effects (mod data) and issues the relic already had, which
+        # an older game version may have rolled, only warn.
+        if warnings and not CTkMessageBox.askyesno(
             "Validation Warning",
-            "Issues found:\n" + "\n".join(unknown) + "\n\nApply anyway?",
+            "\n".join(i.message for i in warnings)
+            + "\n\nThe relic may come from mod data or an older game version. "
+            "Apply anyway?",
             parent=self.parent,
         ):
             return
@@ -982,10 +1157,7 @@ class NREditorTab:
             self._spawn_effect_vars[j].set(str(effects[j]))
             self._spawn_effect_labels[j].configure(text=_fmt_effect(effects[j]))
             self._spawn_curse_vars[j].set(str(effects[j + 3]))
-            self._spawn_curse_labels[j].configure(
-                text=f"C{j + 1}: {_fmt_effect(effects[j + 3])}"
-            )
-        self._set_spawn_curse_visible(rs.is_deep)
+        self._refresh_rows("spawn")
         self._relic_action_tabs.set("Spawn")
 
     def _export_relics_json(self) -> None:
@@ -1024,7 +1196,7 @@ class NREditorTab:
     def _import_relics_json(self) -> None:
         import json
 
-        from er_save_manager.games.NR.relic_ops import import_relics
+        from er_save_manager.games.NR.relic_ops import import_issues, import_relics
         from er_save_manager.ui.utils import pick_file
 
         if _game_blocks_write(self.parent):
@@ -1043,15 +1215,26 @@ class NREditorTab:
         except (OSError, ValueError) as e:
             CTkMessageBox.showerror("Import Failed", str(e), parent=self.parent)
             return
-        if not CTkMessageBox.askyesno(
-            "Confirm Import",
-            f"Spawn {len(rows)} relics into this slot?",
-            parent=self.parent,
-        ):
+        blocking, warnings = import_issues(rows)
+        if blocking:
+            CTkMessageBox.showerror(
+                "Import Failed",
+                "The game cannot roll these relics:\n" + "\n".join(blocking),
+                parent=self.parent,
+            )
+            return
+        prompt = f"Spawn {len(rows)} relics into this slot?"
+        if warnings:
+            prompt = (
+                "\n".join(warnings)
+                + "\n\nThese relics may come from mod data or an older game "
+                "version.\n\n" + prompt
+            )
+        if not CTkMessageBox.askyesno("Confirm Import", prompt, parent=self.parent):
             return
         slot = save.slots[self._current_slot]
         try:
-            handles = import_relics(slot, rows)
+            handles = import_relics(slot, rows, allow_warnings=True)
             _backup_and_save(save, self._get_save_path(), "nr_relic_import")
         except Exception as e:
             CTkMessageBox.showerror("Import Failed", str(e), parent=self.parent)

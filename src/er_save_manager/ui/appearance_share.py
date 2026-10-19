@@ -11,14 +11,13 @@ import tkinter as tk
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from tkinter import filedialog
 from typing import Any
 
 import customtkinter as ctk
 
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import patch_combo_scroll
+from er_save_manager.ui.utils import patch_combo_scroll, pick_file
 
 
 @dataclass(frozen=True)
@@ -144,8 +143,7 @@ class AppearanceShareCard:
             self._show_toast(f"Appearance of slot {idx + 1} loaded. Apply to save it.")
 
     def _copy_other_save(self) -> None:
-        path = filedialog.askopenfilename(
-            parent=self._body,
+        path = pick_file(
             title="Choose a Save File",
             filetypes=self._source.save_filetypes,
         )

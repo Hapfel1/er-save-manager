@@ -13,6 +13,8 @@ from io import BytesIO
 from itertools import chain
 from operator import attrgetter
 
+from er_save_manager.parser.er_types import read_exact
+
 # ============================================================================
 # BASE CLASS FOR EQUIPMENT SLOTS
 # ============================================================================
@@ -215,6 +217,12 @@ class InventoryItem:
 _INVENTORY_ITEM_FIELDS = attrgetter("gaitem_handle", "quantity", "acquisition_index")
 
 
+def _read_items(f: BytesIO, count: int) -> list[InventoryItem]:
+    """Read count InventoryItem records with one read call."""
+    data = read_exact(f, 12 * count)
+    return [InventoryItem(h, q, a) for h, q, a in struct.iter_unpack("<3I", data)]
+
+
 @dataclass
 class Inventory:
     """
@@ -248,10 +256,10 @@ class Inventory:
         obj = cls()
 
         obj.common_item_count = struct.unpack("<I", f.read(4))[0]
-        obj.common_items = [InventoryItem.read(f) for _ in range(common_capacity)]
+        obj.common_items = _read_items(f, common_capacity)
 
         obj.key_item_count = struct.unpack("<I", f.read(4))[0]
-        obj.key_items = [InventoryItem.read(f) for _ in range(key_capacity)]
+        obj.key_items = _read_items(f, key_capacity)
 
         obj.equip_index_counter = struct.unpack("<I", f.read(4))[0]
         obj.acquisition_index_counter = struct.unpack("<I", f.read(4))[0]
@@ -457,7 +465,8 @@ class AcquiredProjectiles:
         obj.count = struct.unpack("<I", f.read(4))[0]
 
         # Read exactly count projectiles (each is 8 bytes)
-        obj.projectiles = [Projectile.read(f) for _ in range(obj.count)]
+        data = read_exact(f, 8 * obj.count)
+        obj.projectiles = [Projectile(i, r) for i, r in struct.iter_unpack("<2I", data)]
 
         return obj
 

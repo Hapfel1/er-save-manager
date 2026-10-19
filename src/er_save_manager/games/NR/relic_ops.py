@@ -15,8 +15,15 @@ count at 5120 but makes the section 72 bytes longer, so everything after it
 later. The decrypted entry has a fixed size, so the same 72 bytes are taken
 from the unused slack at the end of the slot.
 
+Every item's handle carries its state index in the low 16 bits and a
+generation byte in bits 16-23 (0x80-0xFF ring). The game allocates indices
+upward from the last one it used and wraps to 0 with the generation + 1,
+skipping used indices, so the newest generation's highest index is the
+cursor.
+
 Concretely:
-  1. Find the first 8-byte empty state slot after the last existing relic.
+  1. Take the first empty state after the cursor (wrapping to 0 with the next
+     generation); the handle is the relic type, generation and that index.
   2. Insert 72 null bytes at that offset and trim 72 bytes of trailing slack
      before the checksum tail, so the entry keeps its fixed size.
   3. Write the 80-byte relic block at that offset (overwriting the 72 nulls +
@@ -120,58 +127,48 @@ def _next_acquisition_id(slot: NightreignSlot) -> int:
     return max(slot.next_acquisition_id, scanned + 1)
 
 
-def _next_relic_handle(slot: NightreignSlot) -> int:
-    if not slot.relic_states:
-        return ITEM_TYPE_RELIC | 0x800001
-    return ITEM_TYPE_RELIC | (max(h & 0x00FFFFFF for h in slot.relic_states) + 1)
-
-
-def _find_spawn_offset(slot: NightreignSlot) -> int | None:
-    """
-    Return the absolute offset of the first 8-byte empty state slot at or after
-    the last existing relic state. Returns None if no suitable slot exists.
-    """
-    last_relic_off = -1
-    for _ga, rs in slot.relic_states.items():
-        if rs.abs_offset > last_relic_off:
-            last_relic_off = rs.abs_offset
-
-    for ga, size, off in slot.item_states:
-        if off <= last_relic_off:
-            continue
-        if ga == 0 and size == 8:
-            return off
+def _allocate_state(slot: NightreignSlot) -> tuple[int, int] | None:
+    """(absolute offset, ga_handle) of the state the game would use next for
+    a relic, or None when every state is in use."""
+    used = [(i, ga) for i, (ga, _size, _off) in enumerate(slot.item_states) if ga]
+    if used:
+        generation = max((ga >> 16) & 0xFF for _i, ga in used)
+        cursor = max(i for i, ga in used if (ga >> 16) & 0xFF == generation)
+    else:
+        generation, cursor = 0x80, -1
+    next_generation = generation + 1 if generation < 0xFF else 0x80
+    order = [(i, generation) for i in range(cursor + 1, len(slot.item_states))]
+    order += [(i, next_generation) for i in range(cursor + 1)]
+    for i, gen in order:
+        ga, _size, off = slot.item_states[i]
+        if ga == 0:
+            return off, ITEM_TYPE_RELIC | (gen << 16) | i
     return None
 
 
 def validate_relic(real_item_id: int, effects: list[int], curses: list[int]) -> None:
-    """Raise ValueError if the relic ID or any effect/curse is invalid.
+    """Raise ValueError unless the game can roll this relic (relic_rules.check).
 
-    No duplicate check: game-written saves hold many relics sharing one
-    real_item_id (random-roll relics and special relics alike).
+    No duplicate check across relics: game-written saves hold many relics
+    sharing one real_item_id.
     """
-    from er_save_manager.games.NR.item_db import (
-        combination_errors,
-        get_relic,
-        validate_curse,
-        validate_effect,
-    )
+    from er_save_manager.games.NR.relic_rules import check
 
-    relic_row = get_relic(real_item_id)
-    if relic_row is None:
-        raise ValueError(f"Unknown relic ID {real_item_id}")
-    is_deep = relic_row["deep"]
-    for slot_num, ef in enumerate(effects, 1):
-        err = validate_effect(ef, is_deep)
-        if err:
-            raise ValueError(f"Effect slot {slot_num}: {err}")
-    for slot_num, ef in enumerate(curses, 1):
-        err = validate_curse(ef)
-        if err:
-            raise ValueError(f"Curse slot {slot_num}: {err}")
-    errors = combination_errors(real_item_id, effects, curses)
-    if errors:
-        raise ValueError(" ".join(errors))
+    issues = check(real_item_id, effects, curses)
+    if issues:
+        raise ValueError(" ".join(i.message for i in issues))
+
+
+def prepare_relic(
+    real_item_id: int, effects: list[int], curses: list[int]
+) -> tuple[list[int], list[int]]:
+    """Effects and curses as the game stores them. A fixed relic given no
+    effects gets its fixed ones."""
+    from er_save_manager.games.NR.relic_rules import canonical, fixed_effects
+
+    if all(e == 0xFFFFFFFF for e in effects):
+        effects = fixed_effects(real_item_id) or effects
+    return canonical(effects, curses)
 
 
 def spawn_relic(
@@ -190,6 +187,11 @@ def spawn_relic(
     Raises ValueError on invalid IDs (when validate=True).
     Raises RuntimeError if there is no free space.
     """
+    (effect_1, effect_2, effect_3), (curse_1, curse_2, curse_3) = prepare_relic(
+        real_item_id,
+        [effect_1, effect_2, effect_3],
+        [curse_1, curse_2, curse_3],
+    )
     if validate:
         validate_relic(
             real_item_id,
@@ -197,17 +199,10 @@ def spawn_relic(
             [curse_1, curse_2, curse_3],
         )
 
-    # Named special relics (Besmirched Frame, Silver Tear, ...) carry the
-    # AttachEffect that shares their ID in effect_1. Other relics, including
-    # fixed-roll scene relics below 10000, have no such effect.
-    from er_save_manager.games.NR.item_db import get_effect
-
-    if get_effect(real_item_id) is not None:
-        effect_1 = real_item_id
-
-    spawn_offset = _find_spawn_offset(slot)
-    if spawn_offset is None:
-        raise RuntimeError("No free state slot found after existing relics")
+    allocated = _allocate_state(slot)
+    if allocated is None:
+        raise RuntimeError("No free state slot: all 5120 item states are in use")
+    spawn_offset, ga_handle = allocated
 
     free_entries = [e for e in slot.item_entries if e.is_empty]
     if not free_entries:
@@ -215,7 +210,6 @@ def spawn_relic(
 
     # Read entry_count before expanding the buffer
     old_count = struct.unpack_from("<I", slot.decrypted, slot.entry_count_offset)[0]
-    ga_handle = _next_relic_handle(slot)
     acq_id = _next_acquisition_id(slot)
     item_id = 0x80000000 | (real_item_id & 0x00FFFFFF)
 
@@ -361,23 +355,44 @@ def _row_to_args(row: dict) -> tuple[int, list[int], list[int]]:
     return real_id, effects, curses
 
 
-def import_relics(slot: NightreignSlot, rows: list[dict]) -> list[int]:
-    """Validate every row, then spawn them all. Returns the new ga_handles.
+def import_issues(rows: list[dict]) -> tuple[list[str], list[str]]:
+    """(blocking, warnings) for importing rows, one message per problem.
 
-    Nothing is spawned if any row is invalid or the slot lacks room for all
-    of them, so a failure never leaves a partial import behind.
+    Unknown effects (mod data) and pool issues an older game version can
+    cause only warn, since exported relics come from a save.
     """
-    parsed = []
-    errors = []
+    from er_save_manager.games.NR.relic_rules import VERSION_SENSITIVE, check
+
+    blocking, warnings = [], []
     for i, row in enumerate(rows, 1):
         try:
             real_id, effects, curses = _row_to_args(row)
-            validate_relic(real_id, effects, curses)
-            parsed.append((real_id, effects, curses))
         except (KeyError, TypeError, ValueError) as e:
-            errors.append(f"Row {i}: {e}")
-    if errors:
-        raise ValueError("\n".join(errors))
+            blocking.append(f"Row {i}: {e}")
+            continue
+        effects, curses = prepare_relic(real_id, effects, curses)
+        for issue in check(real_id, effects, curses):
+            soft = issue.code == "unknown" or issue.code in VERSION_SENSITIVE
+            (warnings if soft else blocking).append(f"Row {i}: {issue.message}")
+    return blocking, warnings
+
+
+def import_relics(
+    slot: NightreignSlot, rows: list[dict], allow_warnings: bool = False
+) -> list[int]:
+    """Validate every row, then spawn them all. Returns the new ga_handles.
+
+    Nothing is spawned if any row is invalid (or only warns and
+    allow_warnings is False) or the slot lacks room for all of them, so a
+    failure never leaves a partial import behind.
+    """
+    blocking, warnings = import_issues(rows)
+    if blocking or (warnings and not allow_warnings):
+        raise ValueError("\n".join(blocking + warnings))
+    parsed = []
+    for row in rows:
+        real_id, effects, curses = _row_to_args(row)
+        parsed.append((real_id, *prepare_relic(real_id, effects, curses)))
 
     free_states = _count_spawnable_states(slot)
     free_entries = sum(1 for e in slot.item_entries if e.is_empty)
@@ -394,12 +409,5 @@ def import_relics(slot: NightreignSlot, rows: list[dict]) -> list[int]:
 
 
 def _count_spawnable_states(slot: NightreignSlot) -> int:
-    """Empty 8-byte states after the last relic (where spawns are placed)."""
-    last_relic_off = max(
-        (rs.abs_offset for rs in slot.relic_states.values()), default=-1
-    )
-    return sum(
-        1
-        for ga, size, off in slot.item_states
-        if off > last_relic_off and ga == 0 and size == 8
-    )
+    """Empty states, where spawns are placed."""
+    return sum(1 for ga, _size, _off in slot.item_states if ga == 0)

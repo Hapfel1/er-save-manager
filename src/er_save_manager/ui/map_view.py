@@ -13,6 +13,7 @@ import customtkinter as ctk
 from PIL import Image, ImageDraw, ImageTk
 
 from er_save_manager.data.locations import MapLocation
+from er_save_manager.data.map_pieces import MapPiece, fragment_at, pieces_on_map
 from er_save_manager.data.world_map import (
     MAP_LANDS_BETWEEN,
     MAP_NAMES,
@@ -83,7 +84,14 @@ class _Placed:
     icon: int | None = None  # dungeon map icon id
 
 
-def _place(loc: MapLocation, dungeon_icons: dict[str, int]) -> _Placed | None:
+def count_phrase(n: int, word: str) -> str:
+    """Count with the word, plural unless n is 1."""
+    return f"{n} {word}" if n == 1 else f"{n} {word}s"
+
+
+def _place(
+    loc: MapLocation, dungeon_icons: dict[str, int], convergence: bool = False
+) -> _Placed | None:
     """Map position of a teleport location: a tile rectangle for small
     overworld tiles, a point for graces and dungeons."""
     if loc.tile_type == "small":
@@ -94,7 +102,9 @@ def _place(loc: MapLocation, dungeon_icons: dict[str, int]) -> _Placed | None:
         return _Placed(loc, map_no, rect=tile_map_rect(x, z, lod))
     if loc.safe_coords is None:
         return None
-    p = location_map_point(loc.map_id_str, loc.safe_coords[0], loc.safe_coords[2])
+    p = location_map_point(
+        loc.map_id_str, loc.safe_coords[0], loc.safe_coords[2], convergence
+    )
     if p is None:
         return None
     return _Placed(
@@ -105,14 +115,26 @@ def _place(loc: MapLocation, dungeon_icons: dict[str, int]) -> _Placed | None:
 class _MapImages:
     """Map images from resources/maps. maps.json gives each image's top-left
     and size in map units and the image pixels per map unit. Each image keeps
-    halved copies so zoomed-out views do not resample the full image."""
+    halved copies so zoomed-out views do not resample the full image.
 
-    def __init__(self, maps_dir: Path):
+    Convergence redraws some areas of the map: maps.json
+    "convergence_patches" lists them as [map, x, y, w, h, atlas x, atlas y]
+    in image pixels, cut from convergence_patches.jpg and pasted over the
+    vanilla image when convergence is on."""
+
+    def __init__(self, maps_dir: Path, convergence: bool = False):
         self._dir = maps_dir
         meta = json.loads((maps_dir / "maps.json").read_text(encoding="utf-8"))
         self.scale = float(meta["scale"])
         self._meta = {m["map"]: (key, m) for key, m in meta["maps"].items()}
+        self._patches = meta.get("convergence_patches", [])
+        self.convergence = convergence
         self._levels: dict[int, list[Image.Image]] = {}
+
+    def set_convergence(self, convergence: bool):
+        if convergence != self.convergence:
+            self.convergence = convergence
+            self._levels.clear()
 
     def bounds(self, map_no: int) -> tuple[float, float, float, float]:
         _, m = self._meta[map_no]
@@ -124,6 +146,11 @@ class _MapImages:
         if map_no not in self._levels:
             key, _ = self._meta[map_no]
             img = Image.open(self._dir / f"{key}.jpg").convert("RGB")
+            patches = [p for p in self._patches if p[0] == map_no]
+            if self.convergence and patches:
+                atlas = Image.open(self._dir / "convergence_patches.jpg").convert("RGB")
+                for _, x, y, w, h, ax, ay in patches:
+                    img.paste(atlas.crop((ax, ay, ax + w, ay + h)), (x, y))
             levels = [img]
             for _ in range(3):
                 levels.append(levels[-1].reduce(2))
@@ -243,9 +270,10 @@ class MapWindow:
         on_export_markers: Callable[[MapMarkerEditor], None] | None = None,
         grace_state: Callable[[int], bool | None] | None = None,
         on_set_grace: Callable[[int, bool], None] | None = None,
-        on_set_graces: Callable[[list[int], bool], None] | None = None,
+        on_unlock: Callable[[list[int], list[int]], None] | None = None,
         on_select_slot: Callable[[str], None] | None = None,
         on_move_bloodstain: Callable[[], None] | None = None,
+        convergence: bool = False,
     ):
         MapWindow._instance = self
         self._on_select_slot = on_select_slot
@@ -254,7 +282,7 @@ class MapWindow:
         # when there is none
         self._bloodstain: tuple[int, float, float, str, int] | None = None
         self._parent = parent
-        self._images = _MapImages(maps_dir)
+        self._images = _MapImages(maps_dir, convergence)
         meta = json.loads((maps_dir / "maps.json").read_text(encoding="utf-8"))
         self._icons = _MapIcons(maps_dir, meta["icons"])
         self._on_teleport = on_teleport
@@ -264,13 +292,10 @@ class MapWindow:
         self._on_export_markers = on_export_markers
         self._grace_state = grace_state
         self._on_set_grace = on_set_grace
-        self._on_set_graces = on_set_graces
+        self._on_unlock = on_unlock
         # Dungeon map id -> WorldMapPointParam icon id of the nearest map point.
-        dungeon_icons = meta["dungeon_icons"]
-        self._placed = [
-            p for p in (_place(loc, dungeon_icons) for loc in locations) if p
-        ]
-        self._tiles = {p.loc.map_id_str: p for p in self._placed if p.rect is not None}
+        self._dungeon_icons = meta["dungeon_icons"]
+        self._place_locations(locations)
         self._hover_tile: _Placed | None = None
         self._list_rows: list[_Placed] = []
         self._player = player
@@ -348,13 +373,38 @@ class MapWindow:
         self,
         grace_state: Callable[[int], bool | None] | None,
         on_set_grace: Callable[[int, bool], None] | None,
-        on_set_graces: Callable[[list[int], bool], None] | None = None,
+        on_unlock: Callable[[list[int], list[int]], None] | None = None,
     ):
+        """grace_state reads any event flag (graces and map pieces)."""
         self._grace_state = grace_state
         self._on_set_grace = on_set_grace
-        self._on_set_graces = on_set_graces
+        self._on_unlock = on_unlock
         self._update_location_info()
         self._schedule_render()
+
+    def set_locations(self, locations: list[MapLocation], convergence: bool):
+        """Teleport targets and map art of the save's flavor."""
+        if convergence == self._images.convergence:
+            return
+        self._images.set_convergence(convergence)
+        self._place_locations(locations)
+        self._selected_loc = None
+        self._hover_tile = None
+        self._tile_key = None
+        self._fill_location_list()
+        self._update_location_info()
+        self._schedule_render()
+
+    def _place_locations(self, locations: list[MapLocation]):
+        self._placed = [
+            p
+            for p in (
+                _place(loc, self._dungeon_icons, self._images.convergence)
+                for loc in locations
+            )
+            if p
+        ]
+        self._tiles = {p.loc.map_id_str: p for p in self._placed if p.rect is not None}
 
     def set_marker_editor(self, editor: MapMarkerEditor | None):
         self._editor = editor
@@ -517,13 +567,15 @@ class MapWindow:
             grace_row, "Unlock", self._toggle_grace, primary=False, width=90
         )
         self._grace_row = grace_row
-        self._unlock_all_btn = ds.button(
-            side,
-            "Unlock All Graces on This Map",
-            self._unlock_all_graces,
-            primary=False,
+        unlock_row = ctk.CTkFrame(side, fg_color="transparent")
+        unlock_row.pack(fill=tk.X, pady=(0, 6), **pad)
+        self._area_btn = ds.button(
+            unlock_row, "Unlock Area", self._unlock_area, primary=False
         )
-        self._unlock_all_btn.pack(fill=tk.X, pady=(0, 6), **pad)
+        self._area_btn.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 3))
+        ds.button(unlock_row, "Unlock Whole Map", self._unlock_map, primary=False).pack(
+            side=tk.LEFT, fill=tk.X, expand=True, padx=(3, 0)
+        )
         self._update_location_info()
 
         ctk.CTkFrame(side, height=2, fg_color=ds.BOX).pack(fill=tk.X, pady=6, **pad)
@@ -1266,13 +1318,16 @@ class MapWindow:
                 "Click a tile, grace or dungeon, or pick one from the list"
             )
             self._teleport_btn.configure(state="disabled")
+            self._area_btn.configure(state="disabled")
             self._grace_row.pack_forget()
             return
         loc = placed.loc
+        area = self._area_of(placed)
         self._info_var.set(
             f"{loc.name}\n{_KIND_LABELS.get(loc.tile_type, loc.tile_type)}  "
-            f"{loc.map_id_str}"
+            f"{loc.map_id_str}" + (f"\nMap area: {area.name}" if area else "")
         )
+        self._area_btn.configure(state="normal" if area else "disabled")
         self._teleport_btn.configure(state="normal")
         state = None
         if loc.tile_type == "grace" and loc.flag_id and self._grace_state is not None:
@@ -1300,40 +1355,82 @@ class MapWindow:
             return
         self._on_move_bloodstain()
 
-    def _unlock_all_graces(self):
-        if self._grace_state is None or self._on_set_graces is None:
+    @staticmethod
+    def _area_of(placed: _Placed) -> MapPiece | None:
+        """Map fragment area holding a location."""
+        if placed.point is not None:
+            x, y = placed.point
+        else:
+            x0, y0, x1, y1 = placed.rect
+            x, y = (x0 + x1) / 2, (y0 + y1) / 2
+        return fragment_at(placed.map_no, x, y)
+
+    def _graces_on_map(self, map_no: int, area: MapPiece | None = None) -> list[int]:
+        return sorted(
+            {
+                p.loc.flag_id
+                for p in self._placed
+                if p.map_no == map_no
+                and p.loc.tile_type == "grace"
+                and p.loc.flag_id
+                and (area is None or area.contains(*p.point))
+            }
+        )
+
+    def _unlock_area(self):
+        placed = self._selected_loc
+        area = self._area_of(placed) if placed is not None else None
+        if area is None:
+            return
+        self._confirm_unlock(
+            "Unlock Area",
+            f"the {area.name} area",
+            self._graces_on_map(area.map_no, area),
+            [area.flag_id],
+        )
+
+    def _unlock_map(self):
+        self._confirm_unlock(
+            "Unlock Map",
+            f"the {MAP_NAMES[self._map_no]} map",
+            self._graces_on_map(self._map_no),
+            [p.flag_id for p in pieces_on_map(self._map_no)],
+        )
+
+    def _confirm_unlock(
+        self, title: str, what: str, graces: list[int], pieces: list[int]
+    ):
+        """Ask, then reveal the map pieces and unlock the graces with their
+        play regions."""
+        if self._grace_state is None or self._on_unlock is None:
             CTkMessageBox.showinfo(
-                "Graces",
+                "No Character Loaded",
                 "Load a character in the World State tab first.",
                 parent=self._win,
             )
             return
-        flags = sorted(
-            {
-                p.loc.flag_id
-                for p in self._placed
-                if p.map_no == self._map_no
-                and p.loc.tile_type == "grace"
-                and p.loc.flag_id
-                and self._grace_state(p.loc.flag_id) is False
-            }
-        )
-        name = MAP_NAMES[self._map_no]
-        if not flags:
-            CTkMessageBox.showinfo(
-                "Graces",
-                f"Every grace on the {name} map is unlocked.",
-                parent=self._win,
+        locked = sum(self._grace_state(f) is False for f in graces)
+        hidden = sum(self._grace_state(f) is False for f in pieces)
+        actions = []
+        if hidden:
+            actions.append(f"reveal {count_phrase(hidden, 'map piece')}")
+        if locked:
+            actions.append(f"unlock {count_phrase(locked, 'grace')}")
+        if actions:
+            question = (
+                f"{' and '.join(actions).capitalize()} in {what}? "
+                "The play regions of its graces are added too."
             )
-            return
+        else:
+            question = (
+                f"Every map piece and grace in {what} is unlocked. Add any "
+                "missing play regions of its graces?"
+            )
         if not CTkMessageBox.askyesno(
-            "Unlock Graces",
-            f"Unlock {len(flags)} locked graces on the {name} map?\n\n"
-            "A backup is made before saving.",
-            parent=self._win,
+            title, f"{question}\n\nA backup is made before saving.", parent=self._win
         ):
             return
-        self._on_set_graces(flags, True)
+        self._on_unlock(graces, pieces)
         self._update_location_info()
         self._schedule_render()
 
@@ -1344,7 +1441,10 @@ class MapWindow:
         state = self._grace_state(placed.loc.flag_id)
         if state is None:
             return
-        self._on_set_grace(placed.loc.flag_id, not state)
+        if not state and self._on_unlock is not None:
+            self._on_unlock([placed.loc.flag_id], [])
+        else:
+            self._on_set_grace(placed.loc.flag_id, not state)
         self._update_location_info()
         self._schedule_render()
 
@@ -1543,6 +1643,7 @@ def open_map_window(
     if window is not None:
         try:
             if window._win.winfo_exists():
+                window.set_locations(locations, kwargs.get("convergence", False))
                 window.set_player(kwargs.get("player"))
                 window.set_marker_editor(kwargs.get("marker_editor"))
                 window.focus()

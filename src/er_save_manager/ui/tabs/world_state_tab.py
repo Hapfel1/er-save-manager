@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog
 from typing import TYPE_CHECKING
 
 import customtkinter as ctk
@@ -22,16 +21,21 @@ from er_save_manager.editors.map_markers import (
     MapMarkerEditor,
     copy_markers,
 )
+from er_save_manager.editors.map_unlock import unlock
 from er_save_manager.editors.world_state import WorldStateEditor
 from er_save_manager.parser.er_types import FloatVector3, MapId
 from er_save_manager.parser.event_flags import EventFlags
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.dialogs.message_manager import MessageManagerDialog
-from er_save_manager.ui.map_view import current_window, open_map_window
+from er_save_manager.ui.map_view import (
+    count_phrase,
+    current_window,
+    open_map_window,
+)
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import StageError
-from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll
+from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_file
 
 if TYPE_CHECKING:
     pass
@@ -60,6 +64,7 @@ class WorldStateTab:
         self.marker_editor_slot = 0
         self._maps_dir: Path | None = None  # set via set_maps_dir()
 
+        self._convergence = False
         self.all_locations: list[MapLocation] = (
             get_all_locations() + get_grace_locations()
         )
@@ -82,10 +87,31 @@ class WorldStateTab:
         self._slot_labels = list(labels)
         self._update_map_window()
 
+    def _sync_flavor(self):
+        """Use the Convergence locations and map for Convergence saves."""
+        save = self.get_save_file()
+        convergence = bool(save is not None and save.is_convergence)
+        if convergence == self._convergence:
+            return
+        self._convergence = convergence
+        self.all_locations = get_all_locations(convergence) + get_grace_locations(
+            convergence
+        )
+        if getattr(self, "count_label", None) is not None and (
+            self.count_label.winfo_exists()
+        ):
+            self._on_search_changed()
+        else:
+            self.filtered_locations = self.all_locations.copy()
+        window = current_window()
+        if window is not None:
+            window.set_locations(self.all_locations, convergence)
+
     def load_slot(self, slot_idx: int) -> None:
         """Load the character in slot_idx; -1 or an empty slot clears the
         tab."""
         self.slot_var.set(slot_idx + 1)
+        self._sync_flavor()
         if not hasattr(self, "map_name_var"):
             return
         if slot_idx < 0:
@@ -437,7 +463,9 @@ class WorldStateTab:
         coords = info.get("coordinates")
         if not info.get("map_id_str") or coords is None:
             return None
-        return location_map_point(info["map_id_str"], coords.x, coords.z)
+        return location_map_point(
+            info["map_id_str"], coords.x, coords.z, self._convergence
+        )
 
     def _bloodstain_map_point(self) -> tuple[int, float, float, str, int] | None:
         """Map position and label of the character's bloodstain, None when
@@ -450,7 +478,9 @@ class WorldStateTab:
             return None
         d = bs.map_id.data
         map_id = f"m{d[3]:02d}_{d[2]:02d}_{d[1]:02d}_{d[0]:02d}"
-        point = location_map_point(map_id, bs.coordinates.x, bs.coordinates.z)
+        point = location_map_point(
+            map_id, bs.coordinates.x, bs.coordinates.z, self._convergence
+        )
         if point is None:
             return None
         blood = self.editor.get_bloodstain_location() or {}
@@ -482,7 +512,7 @@ class WorldStateTab:
             window.set_grace_callbacks(
                 self._grace_state if loaded else None,
                 self._set_grace if loaded else None,
-                self._set_graces if loaded else None,
+                self._unlock_on_map if loaded else None,
             )
 
     def _grace_state(self, flag_id: int) -> bool | None:
@@ -497,6 +527,40 @@ class WorldStateTab:
 
     def _set_grace(self, flag_id: int, state: bool):
         self._set_graces([flag_id], state)
+
+    def _unlock_on_map(self, grace_flags: list[int], piece_flags: list[int]):
+        """Reveal map pieces and unlock graces with their play regions."""
+        save = self.get_save_file()
+        if save is None or self.editor is None:
+            return
+        try:
+            result = unlock(
+                save,
+                self.slot_var.get() - 1,
+                grace_flags,
+                piece_flags,
+                self._convergence,
+            )
+        except (ValueError, KeyError) as e:
+            CTkMessageBox.showerror(
+                "Unlock Failed", f"Could not unlock:\n{e}", parent=self._dialog_parent()
+            )
+            self.reload_save()
+            return
+        if self._persist("before_map_unlock", "map_unlock"):
+            parts = [
+                count_phrase(n, word)
+                for n, word in (
+                    (result.graces, "grace"),
+                    (result.pieces, "map piece"),
+                    (result.regions, "play region"),
+                )
+                if n
+            ]
+            self.show_toast(
+                f"Unlocked {', '.join(parts)}" if parts else "Nothing new to unlock",
+                duration=3000,
+            )
 
     def _set_graces(self, flag_ids: list[int], state: bool):
         """Lock or unlock graces: write their event flags and save the file."""
@@ -541,9 +605,10 @@ class WorldStateTab:
             on_export_markers=self._export_markers,
             grace_state=self._grace_state if self.editor else None,
             on_set_grace=self._set_grace if self.editor else None,
-            on_set_graces=self._set_graces if self.editor else None,
+            on_unlock=self._unlock_on_map if self.editor else None,
             on_select_slot=self._map_slot_selected,
             on_move_bloodstain=self._sync_bloodstain_to_player,
+            convergence=self._convergence,
         )
         self._update_map_window()
 
@@ -620,9 +685,8 @@ class WorldStateTab:
         return commit
 
     def _export_markers(self, editor: MapMarkerEditor):
-        parent = self._dialog_parent()
-        path = filedialog.asksaveasfilename(
-            parent=parent,
+        path = pick_file(
+            save=True,
             title="Export Map Markers",
             defaultextension=".json",
             filetypes=[("Map markers", "*.json"), ("All files", "*.*")],
@@ -662,8 +726,7 @@ class WorldStateTab:
 
     def _import_markers(self, editor: MapMarkerEditor) -> bool:
         parent = self._dialog_parent()
-        path = filedialog.askopenfilename(
-            parent=parent,
+        path = pick_file(
             title="Import Map Markers",
             filetypes=[("Map markers", "*.json"), ("All files", "*.*")],
         )
