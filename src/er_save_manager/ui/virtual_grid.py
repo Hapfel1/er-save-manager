@@ -303,7 +303,7 @@ class VirtualIconGrid(ctk.CTkFrame):
         if self._font is None:
             # Same size rule as CTk fonts: negative pixel size, scaled
             size = -abs(round(self._apply_widget_scaling(11)))
-            self._font = tkfont.Font(family="Segoe UI", size=size)
+            self._font = tkfont.Font(family="Inter", size=size)
             # Label height per line; the rest of the cell is icon and padding
             self._line_h = self._font.metrics("linespace")
         return self._font

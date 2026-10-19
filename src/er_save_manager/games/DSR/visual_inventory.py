@@ -70,7 +70,7 @@ class DSRVisualInventory(ctk.CTkToplevel):
         self._sel_lbl = ctk.CTkLabel(
             panel,
             text="No item selected",
-            font=("Segoe UI", 10, "bold"),
+            font=("Inter", 10, "bold"),
             anchor="w",
             text_color=("gray50", "gray60"),
         )
@@ -128,9 +128,7 @@ class DSRVisualInventory(ctk.CTkToplevel):
             ),
         )
         self._infusion_btn.grid(row=2, column=3, sticky="e", pady=2)
-        self._info = ctk.CTkLabel(
-            panel, text="", font=("Segoe UI", 9), text_color=_HINT
-        )
+        self._info = ctk.CTkLabel(panel, text="", font=("Inter", 9), text_color=_HINT)
         self._info.pack(fill="x", padx=10)
 
         buttons = ctk.CTkFrame(panel, fg_color="transparent")

@@ -99,9 +99,9 @@ class DS3EditorTab:
 
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
-        ctk.CTkLabel(
-            header, text="Character Editor", font=("Segoe UI", 16, "bold")
-        ).pack(side="left")
+        ctk.CTkLabel(header, text="Character Editor", font=("Inter", 16, "bold")).pack(
+            side="left"
+        )
         ctk.CTkLabel(header, text="Game data:").pack(side="left", padx=(20, 6))
         ctk.CTkSegmentedButton(
             header, values=list(catalog.SOURCES.values()), variable=self._source_var
@@ -110,7 +110,7 @@ class DS3EditorTab:
         self._source_warning = ctk.CTkLabel(
             header,
             text="⚠",
-            font=("Segoe UI", 18, "bold"),
+            font=("Inter", 18, "bold"),
             text_color=palette.WARNING_TEXT,
         )
         add_tooltip(self._source_warning, "Wrong game data? See the note in Stats.")
@@ -167,14 +167,14 @@ class DS3EditorTab:
         ctk.CTkLabel(
             self._class_banner,
             text="⚠",
-            font=("Segoe UI", 16, "bold"),
+            font=("Inter", 16, "bold"),
             text_color=palette.WARNING_TEXT,
         ).pack(side="left", anchor="n", padx=(10, 6), pady=6)
         self._class_note = ds.wrap_to_width(
             ctk.CTkLabel(
                 self._class_banner,
                 text="",
-                font=("Segoe UI", 12),
+                font=("Inter", 12),
                 text_color=palette.WARNING_TEXT,
             )
         )
@@ -186,7 +186,7 @@ class DS3EditorTab:
 
         af = ctk.CTkFrame(top, fg_color="transparent")
         af.pack(side="left", fill="both", expand=True, padx=(0, 5))
-        ctk.CTkLabel(af, text="Attributes", font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(af, text="Attributes", font=("Inter", 12, "bold")).pack(
             anchor="w", padx=5, pady=(5, 0)
         )
         ag = ctk.CTkFrame(af, fg_color="transparent")
@@ -215,7 +215,7 @@ class DS3EditorTab:
 
         rf = ctk.CTkFrame(top, fg_color="transparent")
         rf.pack(side="left", fill="both", expand=True, padx=(5, 0))
-        ctk.CTkLabel(rf, text="Resources", font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(rf, text="Resources", font=("Inter", 12, "bold")).pack(
             anchor="w", padx=5, pady=(5, 0)
         )
         rg = ctk.CTkFrame(rf, fg_color="transparent")
@@ -267,7 +267,7 @@ class DS3EditorTab:
 
         cf = ctk.CTkFrame(frame, fg_color="transparent")
         cf.pack(fill="x", pady=5, padx=10)
-        ctk.CTkLabel(cf, text="Character identity", font=("Segoe UI", 12, "bold")).grid(
+        ctk.CTkLabel(cf, text="Character identity", font=("Inter", 12, "bold")).grid(
             row=0, column=0, columnspan=2, sticky="w", padx=5, pady=(5, 0)
         )
         ctk.CTkLabel(cf, text="Name:").grid(row=1, column=0, sticky="w", padx=5, pady=5)
@@ -286,7 +286,7 @@ class DS3EditorTab:
         ctk.CTkLabel(
             frame,
             text="Name supports up to 16 characters.",
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=15, pady=(4, 0))
 

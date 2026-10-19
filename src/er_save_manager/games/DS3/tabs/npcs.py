@@ -89,7 +89,7 @@ class DS3NpcsTab:
                 "Kill marks them dead. Quest progress is not changed, so an NPC "
                 "whose questline already moved on stays where it left them."
             ),
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=("gray40", "gray70"),
             wraplength=850,
             justify="left",
@@ -111,7 +111,7 @@ class DS3NpcsTab:
             command=lambda: self._apply(False),
         ).pack(side="left", padx=(0, 8))
         self._status = ctk.CTkLabel(
-            actions, text="", font=("Segoe UI", 10), text_color=("gray40", "gray60")
+            actions, text="", font=("Inter", 10), text_color=("gray40", "gray60")
         )
         self._status.pack(side="left", padx=8)
 

@@ -70,7 +70,7 @@ class DSRWorldStateTab:
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
 
-        ctk.CTkLabel(header, text="World State", font=("Segoe UI", 16, "bold")).pack(
+        ctk.CTkLabel(header, text="World State", font=("Inter", 16, "bold")).pack(
             side="left"
         )
 
@@ -82,7 +82,7 @@ class DSRWorldStateTab:
         bonfire_card = ctk.CTkFrame(scroll, corner_radius=10)
         bonfire_card.pack(fill="x", padx=4, pady=(6, 4))
 
-        ctk.CTkLabel(bonfire_card, text="Bonfires", font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(bonfire_card, text="Bonfires", font=("Inter", 12, "bold")).pack(
             anchor="w", padx=14, pady=(12, 4)
         )
 
@@ -95,7 +95,7 @@ class DSRWorldStateTab:
             ),
             wraplength=680,
             justify="left",
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=14, pady=(0, 6))
         tree_frame, self._bonfire_tree = ds.themed_tree(
@@ -140,7 +140,7 @@ class DSRWorldStateTab:
         ng_card.pack(fill="x", padx=4, pady=4)
 
         ctk.CTkLabel(
-            ng_card, text="New Game+ counter", font=("Segoe UI", 12, "bold")
+            ng_card, text="New Game+ counter", font=("Inter", 12, "bold")
         ).pack(anchor="w", padx=14, pady=(12, 4))
 
         ng_row = ctk.CTkFrame(ng_card, fg_color="transparent")
@@ -150,7 +150,7 @@ class DSRWorldStateTab:
         ctk.CTkLabel(
             ng_row,
             textvariable=self._ng_current_var,
-            font=("Segoe UI", 11, "bold"),
+            font=("Inter", 11, "bold"),
         ).pack(side="left", padx=(0, 20))
         ctk.CTkLabel(ng_row, text="Set to:").pack(side="left", padx=(0, 6))
         self._ng_var = ctk.StringVar(value="0")
@@ -175,7 +175,7 @@ class DSRWorldStateTab:
         ctk.CTkLabel(
             ng_card,
             text="0 = NG, 1 = NG+, 2 = NG++, etc.",
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=14, pady=(0, 12))
 

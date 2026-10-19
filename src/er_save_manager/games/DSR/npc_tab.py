@@ -69,7 +69,7 @@ class DSRNPCTab:
 
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
-        ctk.CTkLabel(header, text="NPCs & Bosses", font=("Segoe UI", 16, "bold")).pack(
+        ctk.CTkLabel(header, text="NPCs & Bosses", font=("Inter", 16, "bold")).pack(
             side="left"
         )
 
@@ -109,13 +109,13 @@ class DSRNPCTab:
         panel.grid(
             row=0, column=column, sticky="nsew", padx=(0, 5) if column == 0 else (5, 0)
         )
-        ctk.CTkLabel(panel, text=title, font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(panel, text=title, font=("Inter", 12, "bold")).pack(
             anchor="w", padx=10, pady=(10, 0)
         )
         ctk.CTkLabel(
             panel,
             text=hint + " Double-click toggles.",
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=_HINT,
             wraplength=420,
             justify="left",

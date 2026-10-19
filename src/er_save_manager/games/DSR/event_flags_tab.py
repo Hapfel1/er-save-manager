@@ -75,7 +75,7 @@ class DSREventFlagsTab:
 
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
-        ctk.CTkLabel(header, text="Event Flags", font=("Segoe UI", 16, "bold")).pack(
+        ctk.CTkLabel(header, text="Event Flags", font=("Inter", 16, "bold")).pack(
             side="left"
         )
 
@@ -125,7 +125,7 @@ class DSREventFlagsTab:
         ctk.CTkLabel(
             self._npc_parent,
             text="Individual quest-state flags for all major NPCs. Select a row and click Toggle.",
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=12, pady=(8, 4))
 
@@ -152,7 +152,7 @@ class DSREventFlagsTab:
             btn_row, text="Toggle Selected", command=self._toggle_npc, width=140
         ).pack(side="left", padx=(0, 10))
         self._npc_sel_label = ctk.CTkLabel(
-            btn_row, text="", font=("Segoe UI", 10), text_color=("gray40", "gray70")
+            btn_row, text="", font=("Inter", 10), text_color=("gray40", "gray70")
         )
         self._npc_sel_label.pack(side="left")
         self._npc_iid_map: dict[str, tuple[int, dict]] = {}
@@ -229,7 +229,7 @@ class DSREventFlagsTab:
                 "Session/cycle flags (*): reset on NG+ or set by event scripts at load. "
                 "Editing still takes effect in-game."
             ),
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=("gray40", "gray70"),
             justify="left",
         ).pack(anchor="w", padx=12, pady=(8, 4))
@@ -251,7 +251,7 @@ class DSREventFlagsTab:
 
         for group_name, entries in by_group.items():
             ctk.CTkLabel(
-                self._world_scroll, text=group_name, font=("Segoe UI", 11, "bold")
+                self._world_scroll, text=group_name, font=("Inter", 11, "bold")
             ).pack(anchor="w", padx=12, pady=(10, 2))
             for entry in entries:
                 session = entry.get("session", False)
@@ -262,12 +262,12 @@ class DSREventFlagsTab:
         ctk.CTkLabel(
             self._world_scroll,
             text="Gestures (CanLearn flags)",
-            font=("Segoe UI", 11, "bold"),
+            font=("Inter", 11, "bold"),
         ).pack(anchor="w", padx=12, pady=(10, 2))
         ctk.CTkLabel(
             self._world_scroll,
             text="1 = not yet taught by NPC.  0 = NPC has taught it.  Resets on NG+.",
-            font=("Segoe UI", 9),
+            font=("Inter", 9),
             text_color=("gray50", "gray60"),
         ).pack(anchor="w", padx=12, pady=(0, 4))
         for entry in db["gestures"]:
@@ -404,7 +404,7 @@ class DSREventFlagsTab:
         ctk.CTkLabel(
             outer,
             text="Read or write any event flag by numeric ID.",
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", pady=(0, 8))
 

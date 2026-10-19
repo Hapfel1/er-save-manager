@@ -49,9 +49,7 @@ class DS2NpcPanel:
     def setup_ui(self) -> None:
         header = ctk.CTkFrame(self.parent, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 4))
-        ctk.CTkLabel(header, text="NPCs", font=("Segoe UI", 13, "bold")).pack(
-            side="left"
-        )
+        ctk.CTkLabel(header, text="NPCs", font=("Inter", 13, "bold")).pack(side="left")
         self._summary_label = ctk.CTkLabel(header, text="")
         self._summary_label.pack(side="left", padx=(12, 0))
 
@@ -73,7 +71,7 @@ class DS2NpcPanel:
                 "clears the hostile flags only."
             ),
             text_color=("gray40", "gray60"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             wraplength=900,
             justify="left",
         ).pack(side="bottom", anchor="w", padx=10)

@@ -1107,7 +1107,7 @@ class MapWindow:
                 text=text,
                 anchor=tk.NW,
                 fill="#f0f0f0",
-                font=("Segoe UI", 10),
+                font=("Inter", 10),
                 tags="hover",
             )
             x0, y0, x1, y1 = c.bbox(label)

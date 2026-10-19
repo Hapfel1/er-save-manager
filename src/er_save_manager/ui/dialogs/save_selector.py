@@ -47,7 +47,7 @@ class SaveSelectorDialog:
         title = ctk.CTkLabel(
             dialog,
             text=f"Found {len(saves)} save files:",
-            font=("Segoe UI", 14, "bold"),
+            font=("Inter", 14, "bold"),
             pady=10,
         )
         title.pack(padx=15, pady=(12, 6))

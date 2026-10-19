@@ -315,7 +315,7 @@ class EquipmentPanel:
     ) -> None:
         frame = ctk.CTkFrame(parent, fg_color=("gray86", "gray25"))
         frame.grid(row=0, column=column, sticky="nsew", padx=4)
-        ctk.CTkLabel(frame, text=title, font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(frame, text=title, font=("Inter", 12, "bold")).pack(
             anchor="w", padx=8, pady=(6, 0)
         )
         grid = ctk.CTkFrame(frame, fg_color="transparent")
@@ -471,7 +471,7 @@ class AttunementSection:
         frame.pack(fill=tk.X, padx=4, pady=5)
         head = ctk.CTkFrame(frame, fg_color="transparent")
         head.pack(fill=tk.X, padx=8, pady=(6, 0))
-        ctk.CTkLabel(head, text="Attunement", font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(head, text="Attunement", font=("Inter", 12, "bold")).pack(
             side=tk.LEFT
         )
         self._budget_label = ctk.CTkLabel(head, text="")

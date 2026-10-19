@@ -1216,9 +1216,9 @@ class EquipmentEditor:
         yield
         loadout_frame = ctk.CTkFrame(self.frame, fg_color=("gray86", "gray25"))
         loadout_frame.pack(fill="x", pady=(5, 0))
-        ctk.CTkLabel(
-            loadout_frame, text="Loadouts", font=("Segoe UI", 12, "bold")
-        ).pack(anchor="w", padx=8, pady=(6, 0))
+        ctk.CTkLabel(loadout_frame, text="Loadouts", font=("Inter", 12, "bold")).pack(
+            anchor="w", padx=8, pady=(6, 0)
+        )
         loadout_btns = ctk.CTkFrame(loadout_frame, fg_color="transparent")
         loadout_btns.pack(fill="x", padx=6, pady=(2, 8))
         ctk.CTkButton(
@@ -1269,7 +1269,7 @@ class EquipmentEditor:
         frame = ctk.CTkFrame(parent, fg_color=("gray86", "gray25"))
         frame.pack(side=side, fill="both", expand=True, padx=4)
 
-        ctk.CTkLabel(frame, text=title, font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(frame, text=title, font=("Inter", 12, "bold")).pack(
             anchor="w", padx=8, pady=(6, 0)
         )
 

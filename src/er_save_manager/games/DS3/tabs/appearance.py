@@ -189,14 +189,14 @@ class DS3AppearanceTab:
     def _card(self, parent, title: str, hint: str | None = None) -> ctk.CTkFrame:
         card = ctk.CTkFrame(parent, corner_radius=10)
         card.pack(fill="x", padx=10, pady=(6, 4))
-        ctk.CTkLabel(card, text=title, font=("Segoe UI", 12, "bold")).pack(
+        ctk.CTkLabel(card, text=title, font=("Inter", 12, "bold")).pack(
             anchor="w", padx=12, pady=(10, 0)
         )
         if hint:
             ctk.CTkLabel(
                 card,
                 text=hint,
-                font=("Segoe UI", 10),
+                font=("Inter", 10),
                 text_color=ds.MUTED,
                 justify="left",
                 wraplength=700,
@@ -238,7 +238,7 @@ class DS3AppearanceTab:
         card.pack(fill="x", padx=10, pady=(6, 4))
         head = ctk.CTkFrame(card, fg_color="transparent")
         head.pack(fill="x", padx=12, pady=(10, 0))
-        ctk.CTkLabel(head, text="Face", font=("Segoe UI", 12, "bold")).pack(side="left")
+        ctk.CTkLabel(head, text="Face", font=("Inter", 12, "bold")).pack(side="left")
         self._face_mode = ctk.CTkSegmentedButton(
             head, values=["Shape", "Skin"], command=self._show_face_page
         )
@@ -248,7 +248,7 @@ class DS3AppearanceTab:
             card,
             text="Picking a base template replaces the face sliders and the "
             "base skin color, as in character creation.",
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=ds.MUTED,
             justify="left",
             wraplength=700,

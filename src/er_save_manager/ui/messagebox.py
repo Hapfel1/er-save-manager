@@ -45,7 +45,7 @@ class CTkMessageBox:
         dialog.title(title)
         dialog.resizable(False, False)
 
-        font = ("Segoe UI", font_size)
+        font = ("Inter", font_size)
         # Wide layout once the text would run past ~12 lines at the normal wrap
         text_px = tkfont.Font(family=font[0], size=-font_size).measure(message)
         wraplength = 560 if text_px > 400 * 12 else 400
@@ -75,7 +75,7 @@ class CTkMessageBox:
             ctk.CTkLabel(
                 container,
                 text=icon_symbols.get(icon_type, "ℹ"),
-                font=("Segoe UI Semibold", 24),
+                font=("Inter SemiBold", 24),
                 text_color=icon_colors.get(icon_type, icon_colors["info"]),
             ).pack(side=tk.LEFT, anchor="n", padx=(0, 12))
             ctk.CTkLabel(

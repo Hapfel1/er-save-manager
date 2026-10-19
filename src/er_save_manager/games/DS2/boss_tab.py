@@ -55,7 +55,7 @@ class DS2BossPanel:
     def setup_ui(self) -> None:
         header = ctk.CTkFrame(self.parent, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 4))
-        ctk.CTkLabel(header, text="Bosses", font=("Segoe UI", 13, "bold")).pack(
+        ctk.CTkLabel(header, text="Bosses", font=("Inter", 13, "bold")).pack(
             side="left"
         )
         self._summary_label = ctk.CTkLabel(header, text="")
@@ -113,7 +113,7 @@ class DS2BossPanel:
                 "defeated without removing it from its arena."
             ),
             text_color=("gray40", "gray60"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             wraplength=900,
             justify="left",
         ).pack(side="bottom", anchor="w", padx=10)

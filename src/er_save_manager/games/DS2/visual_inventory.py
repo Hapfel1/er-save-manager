@@ -158,7 +158,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         self._sel_lbl = ctk.CTkLabel(
             panel,
             text="No item selected",
-            font=("Segoe UI", 10, "bold"),
+            font=("Inter", 10, "bold"),
             anchor="w",
             text_color=("gray50", "gray60"),
         )

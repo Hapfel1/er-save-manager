@@ -148,13 +148,13 @@ class EventFlagsTab:
         ctk.CTkLabel(
             main_frame,
             text="Event Flags",
-            font=("Segoe UI", 18, "bold"),
+            font=("Inter", 18, "bold"),
         ).pack(pady=(15, 5), padx=15, anchor="w")
 
         ctk.CTkLabel(
             main_frame,
             text="View and edit event flags and respawn bosses",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray50", "gray70"),
         ).pack(pady=(0, 12), padx=15, anchor="w")
 
@@ -263,7 +263,7 @@ class EventFlagsTab:
         ctk.CTkLabel(
             filter_frame,
             text="Browse by category",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(pady=(10, 8), padx=12, anchor="w")
 
         cat_inner = ctk.CTkFrame(filter_frame, fg_color="transparent")
@@ -300,7 +300,7 @@ class EventFlagsTab:
         ctk.CTkLabel(
             search_frame,
             text="Search flags",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(pady=(10, 8), padx=12, anchor="w")
 
         search_inner = ctk.CTkFrame(search_frame, fg_color="transparent")
@@ -330,7 +330,7 @@ class EventFlagsTab:
         ctk.CTkLabel(
             flags_frame,
             text="Event Flags",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(pady=(10, 8), padx=12, anchor="w")
 
         # A Treeview holds the full flag set without slowing down, where one

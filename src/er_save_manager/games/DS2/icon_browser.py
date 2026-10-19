@@ -134,7 +134,7 @@ class IconBrowser(ctk.CTkToplevel):
         self._sel_lbl = ctk.CTkLabel(
             panel,
             text="No item selected",
-            font=("Segoe UI", 10, "bold"),
+            font=("Inter", 10, "bold"),
             anchor="w",
             text_color=("gray50", "gray60"),
         )
@@ -204,7 +204,7 @@ class IconBrowser(ctk.CTkToplevel):
             buttons,
             text="Add Selected",
             height=34,
-            font=("Segoe UI", 11, "bold"),
+            font=("Inter", 11, "bold"),
             command=self._do_add,
             state="disabled",
         )

@@ -117,13 +117,13 @@ class BackupManagerTab:
         ctk.CTkLabel(
             title_frame,
             text="Backup Manager",
-            font=("Segoe UI", 16, "bold"),
+            font=("Inter", 16, "bold"),
         ).pack()
 
         ctk.CTkLabel(
             title_frame,
             text="Manage save file backups for all supported FromSoftware games",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         ).pack()
 
@@ -144,7 +144,7 @@ class BackupManagerTab:
         ctk.CTkLabel(
             stats_frame,
             text="Quick stats",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
             text_color=("gray70", "gray50"),
         ).pack(anchor=tk.W, padx=15, pady=(10, 5))
 
@@ -164,7 +164,7 @@ class BackupManagerTab:
         ctk.CTkLabel(
             info_frame,
             text="Backup information",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
             text_color=("gray70", "gray50"),
         ).pack(anchor=tk.W, padx=15, pady=(10, 5))
 
@@ -184,7 +184,7 @@ class BackupManagerTab:
         ctk.CTkLabel(
             info_frame,
             text=info_text,
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             justify=tk.LEFT,
         ).pack(anchor=tk.W, padx=15, pady=10)
 

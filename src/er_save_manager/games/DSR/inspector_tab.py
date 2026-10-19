@@ -56,7 +56,7 @@ class DSRInspectorTab:
 
         header = ctk.CTkFrame(char_frame, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
-        ctk.CTkLabel(header, text="Save Inspector", font=("Segoe UI", 16, "bold")).pack(
+        ctk.CTkLabel(header, text="Save Inspector", font=("Inter", 16, "bold")).pack(
             side="left"
         )
         ctk.CTkButton(
@@ -72,7 +72,7 @@ class DSRInspectorTab:
         ctk.CTkLabel(
             hint_frame,
             text="Select a character and click 'Edit Character' to open the editor tabs.",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         ).pack(side="left", anchor="w")
 

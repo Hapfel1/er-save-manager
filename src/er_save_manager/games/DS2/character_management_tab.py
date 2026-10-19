@@ -82,13 +82,13 @@ class DS2CharacterManagementTab:
         bind_mousewheel(scroll_frame)
 
         ctk.CTkLabel(
-            scroll_frame, text="Character Management", font=("Segoe UI", 16, "bold")
+            scroll_frame, text="Character Management", font=("Inter", 16, "bold")
         ).pack(pady=10)
 
         selector_frame = ctk.CTkFrame(scroll_frame, corner_radius=10)
         selector_frame.pack(fill="x", padx=20, pady=10)
         ctk.CTkLabel(
-            selector_frame, text="Select operation", font=("Segoe UI", 12, "bold")
+            selector_frame, text="Select operation", font=("Inter", 12, "bold")
         ).pack(anchor="w", padx=15, pady=(10, 5))
 
         selector_controls = ctk.CTkFrame(selector_frame, fg_color="transparent")
@@ -285,7 +285,7 @@ class DS2CharacterManagementTab:
                 "Copy this save to another extension (vanilla or Seamless Co-op). "
                 "The current file is not changed."
             ),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         ).pack(anchor=tk.W, pady=10)
         ctk.CTkButton(

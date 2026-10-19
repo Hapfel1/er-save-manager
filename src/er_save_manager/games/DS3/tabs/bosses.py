@@ -72,7 +72,7 @@ class DS3BossesTab:
                 fg_color=None if primary else ("gray55", "gray35"),
             ).pack(side="left", padx=(0, 8))
         self._status = ctk.CTkLabel(
-            actions, text="", font=("Segoe UI", 10), text_color=("gray40", "gray60")
+            actions, text="", font=("Inter", 10), text_color=("gray40", "gray60")
         )
         self._status.pack(side="left", padx=8)
 
@@ -91,7 +91,7 @@ class DS3BossesTab:
         ctk.CTkLabel(
             outer,
             text="Double-click toggles a boss.",
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=("gray40", "gray60"),
         ).pack(side="bottom", anchor="w", padx=12, pady=(0, 10))
         frame.pack(fill="both", expand=True, padx=10, pady=(0, 6))

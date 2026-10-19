@@ -468,9 +468,7 @@ class NREditorTab:
         outer.pack(fill="both", expand=True, pady=(0, 10))
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
-        ctk.CTkLabel(header, text=title, font=("Segoe UI", 16, "bold")).pack(
-            side="left"
-        )
+        ctk.CTkLabel(header, text=title, font=("Inter", 16, "bold")).pack(side="left")
         return outer, header
 
     def setup_steps(self) -> None:
@@ -561,7 +559,7 @@ class NREditorTab:
         f = ctk.CTkFrame(parent, corner_radius=10, fg_color=("gray86", "gray22"))
         f.pack(fill="both", expand=True, padx=10, pady=10)
 
-        ctk.CTkLabel(f, text="Character overview", font=("Segoe UI", 14, "bold")).pack(
+        ctk.CTkLabel(f, text="Character overview", font=("Inter", 14, "bold")).pack(
             anchor="w", padx=14, pady=(12, 6)
         )
         grid = ctk.CTkFrame(f, fg_color="transparent")

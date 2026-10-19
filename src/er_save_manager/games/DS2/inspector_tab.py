@@ -43,7 +43,7 @@ class DS2InspectorTab:
         header = ctk.CTkFrame(char_frame, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
 
-        ctk.CTkLabel(header, text="Save Inspector", font=("Segoe UI", 16, "bold")).pack(
+        ctk.CTkLabel(header, text="Save Inspector", font=("Inter", 16, "bold")).pack(
             side="left"
         )
         ctk.CTkButton(
@@ -57,7 +57,7 @@ class DS2InspectorTab:
         ctk.CTkLabel(
             char_frame,
             text="Select a character slot, then click Edit Character to open it in Character Editor.",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=10, pady=(0, 10))
 

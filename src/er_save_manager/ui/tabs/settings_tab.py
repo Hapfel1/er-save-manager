@@ -91,7 +91,7 @@ class SettingsTab:
         ctk.CTkLabel(
             title_frame,
             text="Settings",
-            font=("Segoe UI", 16, "bold"),
+            font=("Inter", 16, "bold"),
         ).pack(side="left")
 
         ctk.CTkButton(
@@ -119,7 +119,7 @@ class SettingsTab:
         ctk.CTkLabel(
             frame,
             text="General",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
         # Game selected when the application starts
@@ -144,7 +144,7 @@ class SettingsTab:
             frame,
             text="Game the editor opens on at startup.",
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         ).pack(anchor="w", padx=32, pady=(0, 10))
         self.settings.add_listener(self._on_setting_changed)
 
@@ -164,7 +164,7 @@ class SettingsTab:
             frame,
             text="Disabling this will skip the ban warning for .sl2 and PS memory.dat saves.",
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         ).pack(anchor="w", padx=32, pady=(0, 10))
 
         self.remember_location_var = tk.BooleanVar(
@@ -194,7 +194,7 @@ class SettingsTab:
             frame,
             text="Linux: Warns when save is not in the default compatdata folder.",
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         ).pack(anchor="w", padx=32, pady=(0, 10))
 
         self.show_update_notifications_var = tk.BooleanVar(
@@ -213,7 +213,7 @@ class SettingsTab:
             frame,
             text="Check for new versions and show notification dialog.",
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
         self.external_file_change_var = tk.BooleanVar(
@@ -232,7 +232,7 @@ class SettingsTab:
             frame,
             text="Shows a dialog when another program modifies the loaded save.",
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
     def _default_game_name(self) -> str:
@@ -275,7 +275,7 @@ class SettingsTab:
         ctk.CTkLabel(
             frame,
             text="Backups",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
         self.compress_backups_var = tk.BooleanVar(
@@ -293,7 +293,7 @@ class SettingsTab:
             frame,
             text="Reduces backup size by ~90% but takes slightly longer to create/restore.",
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         ).pack(anchor="w", padx=32, pady=(0, 10))
 
         max_backup_frame = ctk.CTkFrame(frame, fg_color="transparent")
@@ -348,7 +348,7 @@ class SettingsTab:
             frame,
             text="Older backups are automatically deleted when this limit is reached.",
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         ).pack(anchor="w", padx=32, pady=(0, 10))
 
         self.show_backup_pruning_warning_var = tk.BooleanVar(
@@ -396,7 +396,7 @@ class SettingsTab:
         self._auto_backup_header = ctk.CTkLabel(
             parent,
             text="Auto-backup on game launch",
-            font=("Segoe UI", 11, "bold"),
+            font=("Inter", 11, "bold"),
         )
         self._auto_backup_header.pack(anchor="w", padx=12, pady=(0, 4))
 
@@ -407,7 +407,7 @@ class SettingsTab:
                 "whenever the game launches."
             ),
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             wraplength=520,
             justify="left",
         ).pack(anchor="w", padx=12, pady=(0, 8))
@@ -432,7 +432,7 @@ class SettingsTab:
             header_row,
             text=f"Enable auto-backup for {profile.name}",
             variable=enabled_var,
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             command=lambda k=profile.key: self._on_game_auto_backup_toggle(k),
         ).pack(side="left")
 
@@ -445,7 +445,7 @@ class SettingsTab:
         ctk.CTkLabel(
             path_row,
             text="Monitored save file:",
-            font=("Segoe UI", 10),
+            font=("Inter", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w")
 
@@ -481,7 +481,7 @@ class SettingsTab:
             notify_row,
             text="Show toast notification when a backup is created via game launch",
             variable=self.show_auto_backup_notification_var,
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             command=lambda: self.settings.set(
                 "show_auto_backup_notification",
                 self.show_auto_backup_notification_var.get(),
@@ -504,7 +504,7 @@ class SettingsTab:
             interval_row,
             text="Also back up every",
             variable=interval_enabled_var,
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             state="normal" if enabled else "disabled",
             command=lambda k=profile.key: self._on_game_auto_backup_interval_toggle(k),
         )
@@ -537,7 +537,7 @@ class SettingsTab:
         ctk.CTkLabel(
             interval_row,
             text="minutes while the game is running",
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         ).pack(side="left")
 
         self._auto_backup_interval_widgets[profile.key] = (
@@ -691,7 +691,7 @@ class SettingsTab:
         ctk.CTkLabel(
             frame,
             text="User interface",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
         theme_frame = ctk.CTkFrame(frame, fg_color="transparent")
@@ -716,7 +716,7 @@ class SettingsTab:
             frame,
             text="(Restart required for full theme application)",
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
         scale_frame = ctk.CTkFrame(frame, fg_color="transparent")
@@ -765,7 +765,7 @@ class SettingsTab:
             frame,
             text="Restart required to apply.",
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             wraplength=520,
             justify="left",
         ).pack(anchor="w", padx=32, pady=(0, 12))
@@ -789,7 +789,7 @@ class SettingsTab:
                 "Restart required to apply."
             ),
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             wraplength=520,
             justify="left",
         ).pack(anchor="w", padx=32, pady=(0, 12))
@@ -858,12 +858,12 @@ class SettingsTab:
             ctk.CTkLabel(
                 popup,
                 text="\U0001f353",
-                font=("Segoe UI", 36),
+                font=("Inter", 36),
             ).pack(pady=(16, 4))
         ctk.CTkLabel(
             popup,
             text="You found it",
-            font=("Segoe UI", 13, "bold"),
+            font=("Inter", 13, "bold"),
         ).pack()
         ctk.CTkButton(
             popup,
@@ -891,7 +891,7 @@ class SettingsTab:
         ctk.CTkLabel(
             header,
             text="Advanced",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(side="left")
 
         ctk.CTkButton(
@@ -907,7 +907,7 @@ class SettingsTab:
             frame,
             text="These settings bypass safety checks. Use with care.",
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         ).pack(anchor="w", padx=12, pady=(0, 8))
 
         # Skip game running check
@@ -926,7 +926,7 @@ class SettingsTab:
             frame,
             text="Allows loading saves while the game is running. Risk of data loss.",
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         ).pack(anchor="w", padx=32, pady=(0, 10))
 
         # Verbose logging
@@ -945,7 +945,7 @@ class SettingsTab:
             frame,
             text="Writes er_save_manager.log next to the loaded save file.",
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
         # Icon export in Visual Item Picker
@@ -964,7 +964,7 @@ class SettingsTab:
             frame,
             text="Adds a Save Icon button to the Visual Item Picker for exporting item icons.",
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
         # Warped face sliders button in Appearance tab
@@ -983,7 +983,7 @@ class SettingsTab:
             frame,
             text="Adds a button to edit the hidden secondary face deformation sliders on a selected preset.",
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             wraplength=560,
             justify="left",
         ).pack(anchor="w", padx=32, pady=(0, 12))
@@ -1007,7 +1007,7 @@ class SettingsTab:
                 "the current inventory. Items missing from the database are listed too."
             ),
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             wraplength=560,
             justify="left",
         ).pack(anchor="w", padx=32, pady=(0, 12))
@@ -1031,7 +1031,7 @@ class SettingsTab:
                 "IDs that do not exist in the game can crash it."
             ),
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             wraplength=560,
             justify="left",
         ).pack(anchor="w", padx=32, pady=(0, 12))
@@ -1049,7 +1049,7 @@ class SettingsTab:
         ctk.CTkLabel(
             frame,
             text="Performance",
-            font=("Segoe UI", 12, "bold"),
+            font=("Inter", 12, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 6))
 
         self._cpu0_exclude_var = tk.BooleanVar(
@@ -1071,7 +1071,7 @@ class SettingsTab:
                 "Can reduce stutter caused by Windows scheduling on core 0."
             ),
             text_color=("gray40", "gray70"),
-            font=("Segoe UI", 11),
+            font=("Inter", 11),
             wraplength=560,
             justify="left",
         ).pack(anchor="w", padx=32, pady=(0, 12))
