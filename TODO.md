@@ -36,7 +36,7 @@ ds2 seamless save 32 chars make alphanumeric echeck done
 
 DS2 Save Inspector: long names shift the row columns, new characters flagged for a class mismatch done
 
-open folder using the utils function on linux, check every single one done (Windows untested)
+open folder using the utils function on linux, check every single one done
 
 performance check loading everything, simulate windows and linux done
 
@@ -86,9 +86,11 @@ DS2 attunement editor done
 
 DS3 visited regions / warp unlocks done
 
-in-game checks at the end: U Apply All write, V region unlock + Convergence map art + grace positions, W open folder on Windows, W2 NR relic rows and curse picker in the real app
+in-game checks at the end: U Apply All write, V region unlock + Convergence map art + grace positions, W2 NR relic rows and curse picker in the real app
 
-Windows build: Backup Manager button does not open and the whole tool stops responding done (Windows retest pending)
+Windows build: Backup Manager button does not open and the whole tool stops responding done
+
+same font on Windows and Linux (bundled Inter) done (Windows check pending)
 
 DS2 appearance in-game checks (future work): face shape sliders, physique option count, new DS2 appearance selectors
 
