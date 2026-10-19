@@ -90,7 +90,7 @@ in-game checks at the end: U Apply All write, V region unlock + Convergence map 
 
 Windows build: Backup Manager button does not open and the whole tool stops responding done
 
-same font on Windows and Linux (bundled Inter) done (Windows check pending)
+same font on Windows and Linux (bundled Inter) done
 
 DS2 appearance in-game checks (future work): face shape sliders, physique option count, new DS2 appearance selectors
 
