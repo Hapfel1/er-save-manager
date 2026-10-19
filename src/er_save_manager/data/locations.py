@@ -70,18 +70,31 @@ LOCATIONS: dict[str, MapLocation] = {
 
 GRACES: list[MapLocation] = [_location(*row) for row in _ROWS if row[2] == "grace"]
 
+# Convergence: the maps it adds, and every grace with the mod's names and
+# warp points (it moves, renames, adds and removes graces).
+_CNV_ROWS = json.loads(
+    (Path(__file__).parent / "locations_convergence.json").read_text(encoding="utf-8")
+)
+
+CONVERGENCE_LOCATIONS: dict[str, MapLocation] = {
+    **LOCATIONS,
+    **{row[0]: _location(*row) for row in _CNV_ROWS["maps"]},
+}
+
+CONVERGENCE_GRACES: list[MapLocation] = [_location(*row) for row in _CNV_ROWS["graces"]]
+
 
 def get_name_for_map_id(map_id_str: str) -> str:
-    loc = LOCATIONS.get(map_id_str)
+    loc = CONVERGENCE_LOCATIONS.get(map_id_str)
     return loc.name if loc else map_id_str
 
 
-def get_all_locations() -> list[MapLocation]:
-    return list(LOCATIONS.values())
+def get_all_locations(convergence: bool = False) -> list[MapLocation]:
+    return list((CONVERGENCE_LOCATIONS if convergence else LOCATIONS).values())
 
 
-def get_grace_locations() -> list[MapLocation]:
-    return list(GRACES)
+def get_grace_locations(convergence: bool = False) -> list[MapLocation]:
+    return list(CONVERGENCE_GRACES if convergence else GRACES)
 
 
 def get_locations_by_type(tile_type: str) -> list[MapLocation]:
