@@ -24,8 +24,7 @@ from er_save_manager.ui.editors.ds_equipment import (
     EquipSlot,
     check_attunement,
 )
-from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.utils import game_blocks_write
+from er_save_manager.ui.pending import StageError
 
 _ARMOR_PIECES = ("Head", "Chest", "Hands", "Legs")
 # Armor item ids end in the piece: head 0, chest 1, hands 2, legs 3.
@@ -67,10 +66,6 @@ _CATEGORY_LABELS = {
     "spells": "Spells",
     "bolts": "Ammo",
 }
-
-
-def _game_blocks_write(parent) -> bool:
-    return game_blocks_write(parent, "darksoulsii.exe", "Dark Souls II")
 
 
 class DS2EquipAdapter:
@@ -238,17 +233,15 @@ class DS2EquipAdapter:
 class DS2EquipmentPanel:
     """Equipment sub-tab of the DS2 character editor."""
 
-    def __init__(self, parent, get_save, get_slot_index, get_save_path, show_toast):
+    def __init__(self, parent, get_save, get_slot_index):
         self.parent = parent
         self.get_save = get_save
         self.get_slot_index = get_slot_index
-        self.get_save_path = get_save_path
-        self.show_toast = show_toast
         self.panel: EquipmentPanel | None = None
         self.attunement = AttunementSection(_SPELL_SLOTS)
 
     def setup_ui(self) -> None:
-        self.panel = EquipmentPanel(self.parent, self._apply, self.attunement.build)
+        self.panel = EquipmentPanel(self.parent, self.attunement.build)
         self.attunement.attach(self.panel)
 
     def _adapter(self) -> DS2EquipAdapter | None:
@@ -265,7 +258,7 @@ class DS2EquipmentPanel:
         if self.panel is None:
             return
         save: DS2Save | None = self.get_save()
-        if save is None:
+        if save is None or self.get_slot_index() < 0:
             self.panel.load(None)
         else:
             character = save.characters[self.get_slot_index()]
@@ -278,44 +271,21 @@ class DS2EquipmentPanel:
                     "its equipment cannot be edited.",
                 )
 
-    def _apply(self, adapter: DS2EquipAdapter, staged: dict) -> None:
-        if not staged and not adapter.spells_changed:
-            self.show_toast("No equipment changes to apply", duration=2000)
-            return
-        if _game_blocks_write(self.parent):
-            return
+    def changes(self) -> int:
+        if self.panel is None or self.panel.adapter is None:
+            return 0
+        return len(self.panel.staged) + (1 if self.attunement.changed() else 0)
+
+    def prepare(self):
+        adapter = self._adapter()
+        staged = self.panel.staged if self.panel is not None else {}
         save: DS2Save | None = self.get_save()
-        save_path = self.get_save_path()
-        if save is None or not save_path:
-            return
         slot_index = self.get_slot_index()
-        if not CTkMessageBox.askyesno(
-            "Apply Equipment",
-            f"Apply equipment changes to slot {slot_index + 1}?\n\n"
-            "A backup will be created.",
-            parent=self.parent,
-        ):
-            return
-        try:
+        if adapter is None or save is None:
+            raise StageError("No character loaded.")
+
+        def commit() -> None:
             adapter.apply(staged)
-        except ValueError as exc:
-            CTkMessageBox.showerror(
-                "Equipment Not Applied", str(exc), parent=self.parent
-            )
-            self.refresh()
-            return
-        save.sync_equipment_cache(slot_index)
-        try:
-            from pathlib import Path
+            save.sync_equipment_cache(slot_index)
 
-            from er_save_manager.backup.manager import BackupManager
-
-            BackupManager(Path(save_path)).create_backup(
-                description=f"before_equipment_edit_slot_{slot_index}",
-                operation="edit_equipment",
-            )
-            save.save_to_file(save_path)
-            self.show_toast("Equipment applied. Backup created.", duration=3000)
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
-        self.refresh()
+        return commit

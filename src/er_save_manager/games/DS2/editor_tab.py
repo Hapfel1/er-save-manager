@@ -1,4 +1,5 @@
-"""DS2 character editor tab: slot picker + Stats/Inventory/Equipment subtabs."""
+"""DS2 character editor tab: Stats, Equipment and Inventory sub-tabs for the
+character picked in the main window's character bar."""
 
 from __future__ import annotations
 
@@ -7,11 +8,8 @@ from pathlib import Path
 
 import customtkinter as ctk
 
-from er_save_manager.games.DS2.bonfire_tab import DS2BonfirePanel
-from er_save_manager.games.DS2.boss_tab import DS2BossPanel
 from er_save_manager.games.DS2.equipment_tab import DS2EquipmentPanel
 from er_save_manager.games.DS2.inventory_tab import DS2InventoryPanel
-from er_save_manager.games.DS2.npc_tab import DS2NpcPanel
 from er_save_manager.games.DS2.regulation import ClassBase
 from er_save_manager.games.DS2.save import (
     CHARACTER_SLOTS,
@@ -25,8 +23,9 @@ from er_save_manager.games.DS2.save import (
 )
 from er_save_manager.games.DS2.soulsplanner_import import import_soulsplanner
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import FieldTracker, PendingPage, StageError, var_state
 from er_save_manager.ui.scrollable_frame import ScrollableFrame
-from er_save_manager.ui.utils import game_blocks_write, patch_combo_scroll
+from er_save_manager.ui.utils import game_blocks_write
 
 
 def _game_blocks_write(parent) -> bool:
@@ -62,6 +61,28 @@ def _parse_torch(text: str) -> int:
     return seconds
 
 
+def slot_entries(save: DS2Save) -> list[tuple[int, str]]:
+    """(slot index, label) of the slots the character bar offers.
+
+    Never-created slots are hidden, as in the inspector, so the bar only
+    offers slots that hold a character or a pre-creation run. A save with no
+    such slot lists all of them so the bar is never empty.
+    """
+    offered = [
+        i
+        for i in range(CHARACTER_SLOTS)
+        if save.slot_state(i) is not SlotState.NEVER_CREATED
+    ]
+    entries = []
+    for i in offered or range(CHARACTER_SLOTS):
+        state = save.slot_state(i)
+        if state is SlotState.CHARACTER:
+            entries.append((i, f"Slot {i + 1} - {save.slot_display_name(i)}"))
+        else:
+            entries.append((i, f"Slot {i + 1} - ({state.value})"))
+    return entries
+
+
 class DS2EditorTab:
     """
     Args:
@@ -69,21 +90,22 @@ class DS2EditorTab:
         get_save: callable returning the current DS2Save, or None if unloaded.
         get_save_path: callable returning the current save file path.
         show_toast: callable(message, duration) for transient status messages.
+        register_pending: callable(PendingPage) that adds a page to the main
+            window's unapplied-changes bar.
     """
 
-    def __init__(self, parent, get_save, get_save_path, show_toast) -> None:
+    def __init__(
+        self, parent, get_save, get_save_path, show_toast, register_pending=None
+    ) -> None:
         self.parent = parent
         self.get_save = get_save
         self.get_save_path = get_save_path
         self.show_toast = show_toast
-        self._slot_index = 0
+        self._register_pending = register_pending
+        self._slot_index = -1
         self._stat_vars: dict[str, tk.StringVar] = {}
         self.inventory_panel: DS2InventoryPanel | None = None
         self.equipment_panel: DS2EquipmentPanel | None = None
-        self.bonfire_panel: DS2BonfirePanel | None = None
-        self.npc_panel: DS2NpcPanel | None = None
-        self.boss_panel: DS2BossPanel | None = None
-        self.appearance_panel = None
 
         self._baseline_stats: dict[str, int] = {}
         self._baseline_level: int = 0
@@ -93,6 +115,7 @@ class DS2EditorTab:
         # Starting class picked in the Class box, written on apply.
         self._class_id: int = 0
         self._suppress_recalc = False
+        self._stats_tracker = FieldTracker(self._stats_state)
 
     # ------------------------------------------------------------------
     # Setup
@@ -108,24 +131,12 @@ class DS2EditorTab:
         top = ctk.CTkFrame(self.parent, fg_color="transparent")
         top.pack(fill="x", padx=10, pady=(10, 5))
 
-        ctk.CTkLabel(top, text="Character slot:").pack(side="left")
-        self.slot_var = tk.StringVar(value=self._slot_display_names()[0])
-        self.slot_menu = ctk.CTkComboBox(
-            top,
-            variable=self.slot_var,
-            values=self._slot_display_names(),
-            state="readonly",
-            width=220,
-        )
-        self.slot_menu.pack(side="left", padx=(5, 15))
-        patch_combo_scroll(self.slot_menu)
-
-        ctk.CTkButton(top, text="Load Slot", command=self._on_load_slot).pack(
-            side="left", padx=5
+        ctk.CTkLabel(top, text="Character Editor", font=("Segoe UI", 16, "bold")).pack(
+            side="left"
         )
         ctk.CTkButton(
             top, text="Import Soulsplanner Build", command=self._on_import_build
-        ).pack(side="left", padx=5)
+        ).pack(side="left", padx=(20, 5))
 
         self.slot_status_label = ctk.CTkLabel(top, text="")
         self.slot_status_label.pack(side="left", padx=(15, 0))
@@ -133,19 +144,15 @@ class DS2EditorTab:
         self.tabview = ctk.CTkTabview(self.parent, command=self._on_subtab)
         self.tabview.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         self.tabview.add("Stats")
-        self.tabview.add("Inventory")
         self.tabview.add("Equipment")
-        self.tabview.add("Bonfires")
-        self.tabview.add("NPCs")
-        self.tabview.add("Bosses")
-        self.tabview.add("Appearance")
+        self.tabview.add("Inventory")
 
         self._build_stats_tab(self.tabview.tab("Stats"))
 
         yield
         self.inventory_panel = DS2InventoryPanel(
             self.tabview.tab("Inventory"),
-            get_save=self.get_save,
+            get_save=self._panel_save,
             get_slot_index=lambda: self._slot_index,
             get_save_path=self.get_save_path,
             show_toast=self.show_toast,
@@ -155,59 +162,50 @@ class DS2EditorTab:
         yield
         self.equipment_panel = DS2EquipmentPanel(
             self.tabview.tab("Equipment"),
-            get_save=self.get_save,
+            get_save=self._panel_save,
             get_slot_index=lambda: self._slot_index,
-            get_save_path=self.get_save_path,
-            show_toast=self.show_toast,
         )
         self.equipment_panel.setup_ui()
 
         yield
-        self.bonfire_panel = DS2BonfirePanel(
-            self.tabview.tab("Bonfires"),
-            get_save=self.get_save,
-            get_slot_index=lambda: self._slot_index,
-            get_save_path=self.get_save_path,
-            show_toast=self.show_toast,
-        )
-        self.bonfire_panel.setup_ui()
-
-        yield
-        self.npc_panel = DS2NpcPanel(
-            self.tabview.tab("NPCs"),
-            get_save=self.get_save,
-            get_slot_index=lambda: self._slot_index,
-            get_save_path=self.get_save_path,
-            show_toast=self.show_toast,
-        )
-        self.npc_panel.setup_ui()
-
-        yield
-        self.boss_panel = DS2BossPanel(
-            self.tabview.tab("Bosses"),
-            get_save=self.get_save,
-            get_slot_index=lambda: self._slot_index,
-            get_save_path=self.get_save_path,
-            show_toast=self.show_toast,
-        )
-        self.boss_panel.setup_ui()
-
-        yield
-        from er_save_manager.games.DS2.appearance_tab import DS2AppearanceTab
-
-        self.appearance_panel = DS2AppearanceTab(
-            self.tabview.tab("Appearance"),
-            get_save=self.get_save,
-            get_save_path=self.get_save_path,
-            get_slot=lambda: self._slot_index,
-            show_toast=self.show_toast,
-            blocks_write=_game_blocks_write,
-            backup=self._backup,
-        )
-        self.appearance_panel.setup_ui()
-
-        yield
         self.refresh()
+        self._register_pages()
+
+    def _panel_save(self) -> DS2Save | None:
+        """The save for the sub-tabs; None until a character is selected."""
+        return self.get_save() if self._slot_index >= 0 else None
+
+    def _register_pages(self) -> None:
+        if self._register_pending is None:
+            return
+        for name, changes, prepare, discard in (
+            (
+                "Stats",
+                self._stats_tracker.changes,
+                self._prepare_stats,
+                self._fill_stats,
+            ),
+            (
+                "Equipment",
+                self.equipment_panel.changes,
+                self.equipment_panel.prepare,
+                self.equipment_panel.refresh,
+            ),
+        ):
+            self._register_pending(
+                PendingPage(
+                    name,
+                    changes,
+                    prepare,
+                    discard,
+                    lambda n=name: self.tabview.set(n),
+                )
+            )
+
+    def select(self, name: str) -> None:
+        """Show the sub-tab called name."""
+        self.tabview.set(name)
+        self._on_subtab()
 
     def _on_subtab(self) -> None:
         # Inventory edits change what the equipment pickers offer.
@@ -215,11 +213,6 @@ class DS2EditorTab:
             self.equipment_panel.reload_if_unchanged()
 
     def _build_stats_tab(self, parent) -> None:
-        # Packed before the scroll area so it stays visible on short windows.
-        ctk.CTkButton(
-            parent, text="Apply Changes", command=self._apply_changes, height=34
-        ).pack(side="bottom", fill="x", padx=10, pady=10)
-
         body = ScrollableFrame(parent, fg_color="transparent")
         body.pack(fill="both", expand=True)
 
@@ -343,52 +336,24 @@ class DS2EditorTab:
     # Slot handling
     # ------------------------------------------------------------------
 
-    def _slot_labels(self) -> dict[int, str]:
-        """Picker label per offered slot index, in slot order.
+    def _stats_state(self) -> dict:
+        variables = {
+            "name": self.name_var,
+            "souls": self.souls_var,
+            "ng": self.ng_var,
+            "torch": self.torch_var,
+            "class": self.class_var,
+            "level": self.level_var,
+        }
+        return var_state(variables | self._stat_vars)()
 
-        Never-created slots are hidden, as in the inspector, so the picker only
-        offers slots that hold a character or a pre-creation run. A save with no
-        such slot lists all of them so the picker is never empty.
-        """
+    def load_slot(self, slot_index: int) -> None:
+        """Show the character in slot_index; -1 clears the tab."""
         save: DS2Save | None = self.get_save()
-        if save is None:
-            return {i: f"{i} - (no save loaded)" for i in range(CHARACTER_SLOTS)}
-
-        offered = [
-            i
-            for i in range(CHARACTER_SLOTS)
-            if save.slot_state(i) is not SlotState.NEVER_CREATED
-        ]
-        labels = {}
-        for i in offered or range(CHARACTER_SLOTS):
-            state = save.slot_state(i)
-            if state is SlotState.CHARACTER:
-                labels[i] = f"{i} - {save.slot_display_name(i)}"
-            else:
-                labels[i] = f"{i} - ({state.value})"
-        return labels
-
-    def _slot_display_names(self) -> list[str]:
-        return list(self._slot_labels().values())
-
-    @staticmethod
-    def _slot_index_from_display(value: str) -> int:
-        try:
-            return int(value.split(" - ")[0])
-        except (ValueError, IndexError):
-            return 0
-
-    def _on_load_slot(self) -> None:
-        self._slot_index = self._slot_index_from_display(self.slot_var.get())
+        if save is None or not 0 <= slot_index < CHARACTER_SLOTS:
+            slot_index = -1
+        self._slot_index = slot_index
         self.refresh()
-
-    def slot_var_set(self, slot_index: int) -> None:
-        """Programmatically select a slot (e.g. from the inspector's
-        double-click), then load it."""
-        labels = self._slot_labels()
-        if slot_index in labels:
-            self.slot_var.set(labels[slot_index])
-        self._on_load_slot()
 
     # ------------------------------------------------------------------
     # Level auto-recalc
@@ -481,24 +446,28 @@ class DS2EditorTab:
 
     def refresh(self) -> None:
         save: DS2Save | None = self.get_save()
-
-        labels = self._slot_labels()
-        if self._slot_index not in labels:
-            self._slot_index = next(iter(labels))
-        self.slot_menu.configure(values=list(labels.values()))
-        self.slot_var.set(labels[self._slot_index])
-
-        if save is None:
-            return
-
-        if save.slot_state(self._slot_index) is SlotState.NEVER_CREATED:
-            self.slot_status_label.configure(
-                text="Never created in-game - edits here will not appear at the load screen",
-                text_color="orange",
-            )
-        else:
+        if save is None or self._slot_index < 0:
+            self._stats_tracker.clear()
             self.slot_status_label.configure(text="")
+        else:
+            if save.slot_state(self._slot_index) is SlotState.NEVER_CREATED:
+                self.slot_status_label.configure(
+                    text="Never created in-game - edits here will not appear at the load screen",
+                    text_color="orange",
+                )
+            else:
+                self.slot_status_label.configure(text="")
+            self._fill_stats()
 
+        if self.inventory_panel is not None:
+            self.inventory_panel.refresh()
+        if self.equipment_panel is not None:
+            self.equipment_panel.refresh()
+
+    def _fill_stats(self) -> None:
+        save: DS2Save | None = self.get_save()
+        if save is None or self._slot_index < 0:
+            return
         character = save.characters[self._slot_index]
         self.name_var.set(character.name)
         self.souls_var.set(str(character.souls))
@@ -526,19 +495,7 @@ class DS2EditorTab:
                 text=f"Stats add up to level {expected_level} for this class",
                 text_color="orange",
             )
-
-        if self.inventory_panel is not None:
-            self.inventory_panel.refresh()
-        if self.equipment_panel is not None:
-            self.equipment_panel.refresh()
-        if self.bonfire_panel is not None:
-            self.bonfire_panel.refresh()
-        if self.npc_panel is not None:
-            self.npc_panel.refresh()
-        if self.boss_panel is not None:
-            self.boss_panel.refresh()
-        if self.appearance_panel is not None:
-            self.appearance_panel.refresh()
+        self._stats_tracker.mark_clean()
 
     @staticmethod
     def _class_display(class_id: int) -> str:
@@ -550,7 +507,7 @@ class DS2EditorTab:
         them after asking; declining keeps the previous class."""
         save: DS2Save | None = self.get_save()
         new_id = next(k for k, v in STARTING_CLASSES.items() if v == class_name)
-        if save is None or new_id == self._class_id:
+        if save is None or self._slot_index < 0 or new_id == self._class_id:
             self.class_var.set(self._class_display(self._class_id))
             return
         character = save.characters[self._slot_index]
@@ -613,7 +570,7 @@ class DS2EditorTab:
             return
         save: DS2Save | None = self.get_save()
         save_path = self.get_save_path()
-        if save is None or not save_path:
+        if save is None or not save_path or self._slot_index < 0:
             self.show_toast("No save file loaded", duration=2000)
             return
         character = save.characters[self._slot_index]
@@ -642,14 +599,11 @@ class DS2EditorTab:
             return NAME_MAX_CHARS_SEAMLESS
         return NAME_MAX_CHARS
 
-    def _apply_changes(self) -> None:
-        if _game_blocks_write(self.parent):
-            return
-
+    def _prepare_stats(self):
         save: DS2Save | None = self.get_save()
-        if save is None:
-            self.show_toast("No save file loaded", duration=2000)
-            return
+        if save is None or self._slot_index < 0:
+            raise StageError("No character loaded.")
+        slot = self._slot_index
 
         try:
             entered_level = int(self.level_var.get())
@@ -659,98 +613,67 @@ class DS2EditorTab:
             souls = int(self.souls_var.get())
             ng_plus = int(self.ng_var.get())
         except ValueError:
-            self.show_toast("Invalid numeric value, changes not applied", duration=2500)
-            return
+            raise StageError("Level, stats, souls and NG+ must be numbers.") from None
         # Written only when edited, so saving other fields keeps the stored
         # fraction of a second.
         torch_seconds = None
         if not self._check_torch():
-            self.show_toast(f"Torch time must be {_TORCH_FORMAT_HINT}", duration=3000)
-            return
+            raise StageError(f"Torch time must be {_TORCH_FORMAT_HINT}.")
         if self.torch_var.get().strip() != self._torch_loaded:
             torch_seconds = _parse_torch(self.torch_var.get())
 
         name = self.name_var.get()
         # Only a changed name is checked, so stat edits keep a name the game
         # accepted.
-        if name != save.characters[self._slot_index].name:
+        if name != save.characters[slot].name:
             max_chars = self._name_max_chars()
             if not name.strip():
-                self.show_toast("Name cannot be empty", duration=3000)
-                return
+                raise StageError("Name cannot be empty.")
             if len(name) > max_chars:
-                self.show_toast(
-                    f"Name can be at most {max_chars} characters", duration=3000
-                )
-                return
+                raise StageError(f"Name can be at most {max_chars} characters.")
             if not all(ch.isalnum() or ch == " " for ch in name):
-                self.show_toast(
-                    "Name can only contain letters, digits and spaces",
-                    duration=3000,
-                )
-                return
+                raise StageError("Name can only contain letters, digits and spaces.")
 
         expected_level = self._expected_level()
         if expected_level is None or entered_level != expected_level:
-            self.show_toast(
+            raise StageError(
                 f"Level ({entered_level}) does not match what these stats add up to "
-                f"({expected_level}). Adjust stats or Level to match before saving.",
-                duration=4000,
+                f"({expected_level}). Adjust stats or Level to match before applying."
             )
-            return
         below = self._stats_below_class()
         if below:
-            self.show_toast(
-                "Stats below the class's starting values: " + ", ".join(below),
-                duration=4000,
+            raise StageError(
+                "Stats below the class's starting values: " + ", ".join(below)
             )
-            return
+        class_id = self._class_id
 
-        character = save.characters[self._slot_index]
-        class_changed = self._class_id != character.starting_class
-        if class_changed:
-            # Before the soul memory sync, which counts level-ups from the
-            # class's starting level.
-            character.starting_class = self._class_id
-            save.sync_class_cache(self._slot_index)
-        character.name = name
-        character.souls = souls
-        character.new_game_plus = ng_plus
-        if torch_seconds is not None:
-            character.torch_seconds = torch_seconds
-        character.set_stat("level", entered_level)
-        for stat_name, value in stat_values.items():
-            character.set_stat(stat_name, value)
-        soul_memory_added = character.sync_soul_memory()
+        def commit() -> list[str]:
+            character = save.characters[slot]
+            if class_id != character.starting_class:
+                # Before the soul memory sync, which counts level-ups from the
+                # class's starting level.
+                character.starting_class = class_id
+                save.sync_class_cache(slot)
+            character.name = name
+            character.souls = souls
+            character.new_game_plus = ng_plus
+            if torch_seconds is not None:
+                character.torch_seconds = torch_seconds
+            character.set_stat("level", entered_level)
+            for stat_name, value in stat_values.items():
+                character.set_stat(stat_name, value)
+            added = character.sync_soul_memory()
+            if added:
+                return [f"Soul memory raised by {added:,} to cover the level."]
+            return []
 
-        save_path = self.get_save_path()
-        if not save_path:
-            self.show_toast("No save path to write to", duration=2000)
-            return
-
-        self._backup(
-            save_path, f"before_stats_edit_slot_{self._slot_index}", "edit_stats"
-        )
-
-        try:
-            save.save_to_file(save_path)
-        except Exception as e:
-            self.show_toast(f"Failed to write save: {e}", duration=3000)
-            return
-
-        self.refresh()
-        message = "Changes saved to disk"
-        if class_changed:
-            message += f", class set to {self._class_display(self._class_id)}"
-        if soul_memory_added:
-            message += f", soul memory raised by {soul_memory_added:,}"
-        self.show_toast(message, duration=3000)
+        return commit
 
     def _on_import_build(self) -> None:
         if _game_blocks_write(self.parent):
             return
         save: DS2Save | None = self.get_save()
-        if save is None:
+        if save is None or self._slot_index < 0:
             self.show_toast("No save file loaded", duration=2000)
             return
         import_soulsplanner(
@@ -775,3 +698,25 @@ class DS2EditorTab:
             )
         except Exception:
             pass
+
+
+class SlotPanelPage:
+    """A DS2 panel that reads its slot through get_slot_index, as a page with
+    load_slot for CharacterPagesTab. The panel sees no save until a character
+    is selected."""
+
+    def __init__(self, panel_cls, parent, get_save, **kwargs) -> None:
+        self._slot = -1
+        self.panel = panel_cls(
+            parent,
+            get_save=lambda: get_save() if self._slot >= 0 else None,
+            get_slot_index=lambda: self._slot,
+            **kwargs,
+        )
+
+    def setup_ui(self) -> None:
+        self.panel.setup_ui()
+
+    def load_slot(self, slot_index: int) -> None:
+        self._slot = slot_index if 0 <= slot_index < CHARACTER_SLOTS else -1
+        self.panel.refresh()

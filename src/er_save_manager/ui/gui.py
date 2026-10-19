@@ -3,6 +3,7 @@ Main GUI Application
 Modular Elden Ring Save Manager GUI
 """
 
+import logging
 import os
 import re
 import subprocess
@@ -10,7 +11,8 @@ import sys
 import threading
 import tkinter as tk
 from collections import deque
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
+from dataclasses import replace
 from importlib import resources
 from pathlib import Path
 from tkinter import font as tkfont
@@ -27,6 +29,7 @@ from er_save_manager.own_writes import is_own_write
 from er_save_manager.parser import Save
 from er_save_manager.platform import PlatformUtils
 from er_save_manager.ui import palette
+from er_save_manager.ui.character_pages import CharacterPagesTab
 from er_save_manager.ui.dialogs.character_details import CharacterDetailsDialog
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.editors import (
@@ -36,6 +39,7 @@ from er_save_manager.ui.editors import (
     StatsEditor,
 )
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import CharacterBar, PendingBar, PendingPage
 from er_save_manager.ui.settings import get_settings
 from er_save_manager.ui.tabs import (
     AdvancedToolsTab,
@@ -92,6 +96,8 @@ _SHORT_TAB_NAMES = {
 }
 # Header button width (logical px) when the row is too narrow for the full one
 _NARROW_HEADER_BUTTON = 130
+
+_log = logging.getLogger(__name__)
 
 
 class SaveManagerGUI:
@@ -219,6 +225,17 @@ class SaveManagerGUI:
 
         # Tab widgets built after the visible tab, in tab order (see _build_tab)
         self._pending_tabs: dict[str, deque] = {}
+        # Tabs of the active game that show the character picked in the
+        # character bar: tab name -> load(slot index, -1 for none)
+        self._character_tabs: dict[str, Callable[[int], None]] = {}
+        # Tab name -> (link text, action) shown in the character bar
+        self._feature_links: dict[str, list[tuple[str, Callable[[], None]]]] = {}
+        # Slot shown by the Elden Ring Character Editor
+        self._er_slot = -1
+        # Set while reloading after a failed Apply All, which must not ask
+        self._guard_bypass = False
+        # Set while the save path field is put back after a cancelled load
+        self._suppress_path_load = False
         self._auto_detect_running = False
         self._tab_build_job: str | None = None
 
@@ -756,8 +773,10 @@ class SaveManagerGUI:
         """Setup main UI structure with optimized layout"""
         self.root.grid_rowconfigure(0, weight=0)  # Title
         self.root.grid_rowconfigure(1, weight=0)  # File selection
-        self.root.grid_rowconfigure(2, weight=1)  # Main content (tabs)
-        self.root.grid_rowconfigure(3, weight=0)  # Status bar
+        self.root.grid_rowconfigure(2, weight=0)  # Character bar
+        self.root.grid_rowconfigure(3, weight=1)  # Main content (tabs)
+        self.root.grid_rowconfigure(4, weight=0)  # Unapplied changes bar
+        self.root.grid_rowconfigure(5, weight=0)  # Status bar
         self.root.grid_columnconfigure(0, weight=1)
 
         title_frame = ctk.CTkFrame(self.root, corner_radius=12)
@@ -943,6 +962,19 @@ class SaveManagerGUI:
             (_itemgib_btn, 200),
         ]
 
+        self.character_bar = CharacterBar(self.root, self._on_character_selected)
+        self.pending_bar = PendingBar(
+            self.root,
+            get_slot=lambda: self.character_bar.index,
+            backup=self._pending_backup,
+            write=self._pending_write,
+            blocks_write=self._pending_blocks_write,
+            after_apply=self._after_apply,
+            reload_from_disk=self._reload_after_failed_apply,
+            show_toast=self.show_toast,
+            on_visibility=self._show_pending_bar,
+        )
+
         self.notebook = ctk.CTkTabview(
             self.root,
             width=1100,
@@ -950,15 +982,16 @@ class SaveManagerGUI:
             corner_radius=12,
             command=self._on_tab_changed,
         )
-        self.notebook.grid(row=2, column=0, padx=12, pady=10, sticky="nsew")
+        self._grid_notebook()
 
         if self.active_game == "elden_ring":
             self.create_tabs()
         else:
             self._create_other_game_tabs(PROFILES_BY_KEY[self.active_game])
+        self._place_character_bar()
 
         status_frame = ctk.CTkFrame(self.root, corner_radius=0)
-        status_frame.grid(row=3, column=0, sticky="ew")
+        status_frame.grid(row=5, column=0, sticky="ew")
 
         ctk.CTkLabel(
             status_frame,
@@ -985,11 +1018,378 @@ class SaveManagerGUI:
             ),
         )
 
+    # ------------------------------------------------------------------
+    # Character bar and unapplied changes
+    # ------------------------------------------------------------------
+
+    def _grid_notebook(self) -> None:
+        self.notebook.grid(row=3, column=0, padx=12, pady=(6, 10), sticky="nsew")
+
+    def _place_character_bar(self) -> None:
+        """Show the character bar for games with character tabs."""
+        if self._character_tabs:
+            self.character_bar.grid(row=2, column=0, padx=12, pady=0, sticky="ew")
+        else:
+            self.character_bar.grid_remove()
+        self._update_character_bar_state()
+
+    def _update_character_bar_state(self) -> None:
+        try:
+            current = self.notebook.get()
+        except Exception:
+            current = ""
+        self.character_bar.set_active(current in self._character_tabs)
+        self.character_bar.set_links(self._feature_links.get(current, []))
+
+    def _feature(
+        self, tab: str, open_feature: Callable[[], None]
+    ) -> Callable[[], None]:
+        """Action of a feature link: show the tab, then open the feature."""
+
+        def run() -> None:
+            self._flush_pending_tabs()
+            if self.notebook.get() != tab:
+                self.notebook.set(tab)
+                self._on_tab_changed()
+            open_feature()
+
+        return run
+
+    def _show_editor_sub(self, sub: str) -> None:
+        """Select sub in the active game's Character Editor sub-tabs."""
+        if self.active_game == "elden_ring":
+            self._er_editor_tabs.set(sub)
+            self._ensure_tab_built(f"Character Editor/{sub}")
+            return
+        attr = {
+            "dark_souls_3": "ds3_editor_tab",
+            "dark_souls_remastered": "dsr_editor_tab",
+            "dark_souls_2": "ds2_editor_tab",
+            "nightreign": "nr_editor_tab",
+        }.get(self.active_game)
+        editor = getattr(self, attr, None) if attr else None
+        if editor is not None:
+            editor.select(sub)
+
+    def _editor_feature(
+        self, sub: str, open_feature: Callable[[], None]
+    ) -> Callable[[], None]:
+        """Action of a feature link on a Character Editor sub-tab."""
+
+        def open_sub() -> None:
+            self._show_editor_sub(sub)
+            open_feature()
+
+        return self._feature("Character Editor", open_sub)
+
+    def _register_appearance(self, host: CharacterPagesTab) -> None:
+        """Pending page for the Appearance page of host, built later."""
+
+        def changes() -> int:
+            page = host.pages.get("Appearance")
+            return page.changes() if page is not None else 0
+
+        def discard() -> None:
+            page = host.pages.get("Appearance")
+            if page is not None:
+                page.discard()
+
+        self._pending_register("Appearance")(
+            PendingPage(
+                "Appearance",
+                changes,
+                lambda: host.pages["Appearance"].prepare(),
+                discard,
+            )
+        )
+
+    def _set_er_feature_links(self) -> None:
+        editor = self._editor_feature
+        self._feature_links = {
+            "Character Editor": [
+                (
+                    "Visual Item Picker",
+                    editor(
+                        "Inventory", lambda: self.inventory_editor._open_icon_browser()
+                    ),
+                ),
+                (
+                    "Visual Inventory",
+                    editor(
+                        "Inventory",
+                        lambda: self.inventory_editor._open_visual_inventory(),
+                    ),
+                ),
+                (
+                    "Equipment Share Codes",
+                    editor(
+                        "Equipment", lambda: self.equipment_editor.share_loadout_code()
+                    ),
+                ),
+            ],
+            "Appearance": [
+                (
+                    "Community Presets",
+                    self._feature(
+                        "Appearance", lambda: self.appearance_tab.open_preset_browser()
+                    ),
+                ),
+            ],
+            "Character Management": [
+                (
+                    "Community Characters",
+                    self._feature(
+                        "Character Management",
+                        lambda: self.char_mgmt_tab.open_character_browser(),
+                    ),
+                ),
+            ],
+            "World State": [
+                (
+                    "World Map",
+                    self._feature(
+                        "World State", lambda: self.world_tab._open_map_window()
+                    ),
+                ),
+                (
+                    "Messages",
+                    self._feature(
+                        "World State", lambda: self.world_tab._open_message_manager()
+                    ),
+                ),
+            ],
+        }
+
+    def _show_pending_bar(self, shown: bool) -> None:
+        if shown:
+            self.pending_bar.grid(row=4, column=0, padx=12, pady=(0, 10), sticky="ew")
+        else:
+            self.pending_bar.grid_remove()
+
+    def _pending_register(self, tab_name: str) -> Callable[[PendingPage], None]:
+        """Register function for one tab's pages; showing a page also selects
+        the tab."""
+
+        def register(page: PendingPage) -> None:
+            inner = page.show
+
+            def show() -> None:
+                self._ensure_tab_built(tab_name)
+                self.notebook.set(tab_name)
+                self._on_tab_changed()
+                if inner is not None:
+                    inner()
+
+            self.pending_bar.register(replace(page, show=show))
+
+        return register
+
+    def _guard_pending(self, action: str) -> bool:
+        """Ask before an action that drops unapplied edits. A cancelled load
+        puts the loaded save's path back into the path field."""
+        if self._guard_bypass or self.pending_bar.guard(action):
+            return True
+        loaded = str(self.save_path) if self.save_path else ""
+        if self.file_path_var.get() != loaded:
+            self._suppress_path_load = True
+            self.file_path_var.set(loaded)
+            self._suppress_path_load = False
+        return False
+
+    def _slot_entries(self) -> list[tuple[int, str, bool]]:
+        """(slot index, label, holds a character) for the character bar."""
+        game = self.active_game
+        if game == "elden_ring" and self.save_file is not None:
+            save = self.save_file
+            profiles = None
+            try:
+                profiles = save.user_data_10_parsed.profile_summary.profiles
+            except Exception:
+                pass
+            # Deleted characters keep their slot data and profile summary
+            # entry until a new character is created in the slot, so only
+            # slots marked active in the profile summary hold a character.
+            active = set(save.get_active_slots())
+            entries = []
+            for i in range(10):
+                if save.characters[i].is_empty() or i not in active:
+                    entries.append((i, f"Slot {i + 1} - Empty", False))
+                    continue
+                name = "Unknown"
+                if profiles and i < len(profiles):
+                    name = getattr(profiles[i], "character_name", "") or "Unknown"
+                entries.append((i, f"Slot {i + 1} - {name}", True))
+            return entries
+        save = {
+            "dark_souls_3": self.ds3_save,
+            "dark_souls_remastered": self.dsr_save,
+        }.get(game)
+        if save is not None:
+            return [
+                (
+                    i,
+                    f"Slot {i + 1} - {c.name}" if c else f"Slot {i + 1} - Empty",
+                    bool(c),
+                )
+                for i, c in enumerate(save.characters)
+            ]
+        if game == "dark_souls_2" and self.ds2_save is not None:
+            from er_save_manager.games.DS2.editor_tab import slot_entries
+            from er_save_manager.games.DS2.save import SlotState
+
+            return [
+                (i, label, self.ds2_save.slot_state(i) is not SlotState.NEVER_CREATED)
+                for i, label in slot_entries(self.ds2_save)
+            ]
+        if game == "nightreign" and self._nr_save is not None:
+            return [
+                (
+                    i,
+                    f"Slot {i + 1} - {slot.player_name}"
+                    if slot.player_name
+                    else f"Slot {i + 1} - Empty",
+                    bool(slot.player_name),
+                )
+                for i, slot in enumerate(self._nr_save.slots)
+            ]
+        return []
+
+    def _slot_detail(self, slot_idx: int) -> str:
+        """Level shown next to the character bar."""
+        if slot_idx < 0:
+            return ""
+        try:
+            game = self.active_game
+            if game == "elden_ring" and self.save_file is not None:
+                level = self.save_file.characters[slot_idx].player_game_data.level
+            elif game == "dark_souls_3" and self.ds3_save is not None:
+                level = self.ds3_save.characters[slot_idx].level
+            elif game == "dark_souls_remastered" and self.dsr_save is not None:
+                level = self.dsr_save.characters[slot_idx].level
+            elif game == "dark_souls_2" and self.ds2_save is not None:
+                level = self.ds2_save.characters[slot_idx].get_stat("level")
+            else:
+                return ""
+        except Exception:
+            return ""
+        return f"Level {level}"
+
+    def _refresh_character_bar(self) -> None:
+        """List the loaded save's characters and load the selected one, or
+        the first character when the selected slot is empty."""
+        entries = self._slot_entries()
+        current = self.character_bar.index
+        used = [i for i, _label, holds in entries if holds]
+        if current not in used:
+            current = used[0] if used else (entries[0][0] if entries else -1)
+        self.character_bar.set_slots([(i, label) for i, label, _h in entries], current)
+        world = getattr(self, "world_tab", None)
+        if self.active_game == "elden_ring" and world is not None:
+            world.set_slot_labels(self.character_bar.labels)
+        self._load_character(current)
+
+    def _load_character(self, slot_idx: int) -> None:
+        """Show the character in slot_idx in every character tab."""
+        self._flush_pending_tabs()
+        self.selected_slot_index = slot_idx
+        self.character_bar.set_detail(self._slot_detail(slot_idx))
+        for name, load in self._character_tabs.items():
+            try:
+                load(slot_idx)
+            except Exception:
+                _log.exception("Loading slot %s into %s failed", slot_idx, name)
+
+    def _on_character_selected(self, slot_idx: int) -> bool:
+        """Character picked in the bar; False keeps the previous one."""
+        if not self._guard_pending("switch characters"):
+            return False
+        self._load_character(slot_idx)
+        return True
+
+    def _select_character(self, slot_idx: int) -> bool:
+        """Pick a character for the bar from elsewhere (inspector, map)."""
+        if slot_idx == self.character_bar.index:
+            return True
+        if not self._on_character_selected(slot_idx):
+            return False
+        self.character_bar.select(slot_idx)
+        return True
+
+    def _active_save(self):
+        return {
+            "elden_ring": self.save_file,
+            "dark_souls_3": self.ds3_save,
+            "dark_souls_remastered": self.dsr_save,
+            "dark_souls_2": self.ds2_save,
+            "nightreign": self._nr_save,
+        }.get(self.active_game)
+
+    def _pending_backup(self, slot: int) -> None:
+        from er_save_manager.backup.manager import BackupManager
+
+        if self.save_path is None or self._active_save() is None:
+            raise RuntimeError("No save file loaded")
+        BackupManager(Path(self.save_path)).create_backup(
+            description=f"before_apply_changes_slot_{slot + 1}",
+            operation="apply_changes",
+            save=self.save_file if self.active_game == "elden_ring" else None,
+        )
+
+    def _pending_write(self) -> None:
+        save, path = self._active_save(), Path(self.save_path)
+        if self.active_game == "elden_ring":
+            if isinstance(save._raw_data, bytes):
+                save._raw_data = bytearray(save._raw_data)
+            save.recalculate_checksums()
+            save.to_file(path)
+        elif self.active_game == "nightreign":
+            save.write_file(path)
+        else:
+            save.save_to_file(path)
+        self.acknowledge_save_written()
+
+    def _pending_blocks_write(self) -> bool:
+        from er_save_manager.ui.utils import game_blocks_write
+
+        profile = self._active_profile()
+        if profile is None or not profile.process_name:
+            return False
+        return game_blocks_write(self.root, profile.process_name, profile.name)
+
+    def _after_apply(self) -> None:
+        """Reload the character into every tab after Apply All; names and
+        levels in the bar may have changed."""
+        self._refresh_character_bar()
+
+    def _reload_after_failed_apply(self) -> None:
+        """Re-read the save from disk; the in-memory one holds partial
+        writes."""
+        if self.save_path is None:
+            return
+        path = str(self.save_path)
+        self._guard_bypass = True
+        try:
+            if self.active_game == "elden_ring":
+                self.load_save(silent=True)
+            elif self.active_game == "dark_souls_3":
+                self._load_ds3_save(path)
+            elif self.active_game == "dark_souls_remastered":
+                self._load_dsr_save(path)
+            elif self.active_game == "dark_souls_2":
+                self._load_ds2_save(path)
+            elif self.active_game == "nightreign":
+                self._load_nr_save(path)
+        finally:
+            self._guard_bypass = False
+
     def _on_game_changed(self, _value=None):
         """Rebuild notebook tabs for the newly selected game."""
         name = self._game_selector_var.get()
         profile = next((p for p in GAME_PROFILES if p.name == name), None)
-        if profile is None:
+        if profile is None or profile.key == self.active_game:
+            return
+        if not self.pending_bar.guard("switch games"):
+            self._game_selector_var.set(PROFILES_BY_KEY[self.active_game].name)
             return
 
         self.active_game = profile.key
@@ -1037,20 +1437,22 @@ class SaveManagerGUI:
             "settings_tab",
             "dsr_inspector_tab",
             "dsr_editor_tab",
-            "dsr_inventory_tab",
+            "dsr_appearance_tab",
             "dsr_npc_tab",
             "dsr_world_tab",
             "dsr_flags_tab",
             "dsr_char_mgmt_tab",
             "ds3_inspector_tab",
             "ds3_editor_tab",
-            "ds3_inventory_tab",
-            "ds3_bosses_tab",
+            "ds3_appearance_tab",
             "ds3_world_tab",
-            "ds3_npc_tab",
+            "ds3_npcs_bosses_tab",
             "ds3_char_mgmt_tab",
             "ds2_inspector_tab",
             "ds2_editor_tab",
+            "ds2_appearance_tab",
+            "ds2_world_tab",
+            "ds2_npcs_bosses_tab",
             "ds2_management_tab",
             "nr_inspector_tab",
             "nr_editor_tab",
@@ -1060,6 +1462,11 @@ class SaveManagerGUI:
             setattr(self, attr, None)
 
         self._drop_pending_tabs()
+        self.pending_bar.clear_pages()
+        self._character_tabs = {}
+        self._feature_links = {}
+        self.character_bar.set_slots([], -1)
+        self.character_bar.set_detail("")
         self.notebook.destroy()
         self.notebook = ctk.CTkTabview(
             self.root,
@@ -1068,7 +1475,7 @@ class SaveManagerGUI:
             corner_radius=12,
             command=self._on_tab_changed,
         )
-        self.notebook.grid(row=2, column=0, padx=12, pady=10, sticky="nsew")
+        self._grid_notebook()
 
         self.tabs_loaded = {
             "Save Fixer": False,
@@ -1083,6 +1490,7 @@ class SaveManagerGUI:
             self.create_tabs()
         else:
             self._create_other_game_tabs(profile)
+        self._place_character_bar()
         # New tab names and header buttons: fit them to the current width
         self.root.after_idle(self._update_compact_header)
 
@@ -1159,18 +1567,17 @@ class SaveManagerGUI:
                 self.world_tab.set_maps_dir(_maps_dir)
         except Exception:
             pass
+        self.world_tab.select_character = self._select_character
+        self.world_tab.apply_all = self.pending_bar.apply_all
         self._build_tab("World State", self.world_tab.setup_ui)
-
-        self.notebook.add("SteamID Patcher")
-        tab_steamid = self.notebook.tab("SteamID Patcher")
-        self.steamid_tab = SteamIDPatcherTab(
-            tab_steamid,
-            lambda: self.save_file,
-            lambda: self.save_path,
-            self.load_save,
-            self.show_toast,
+        self._pending_register("World State")(
+            PendingPage(
+                "Map markers",
+                self.world_tab.marker_changes,
+                self.world_tab.prepare_markers,
+                self.world_tab.discard_markers,
+            )
         )
-        self._build_tab("SteamID Patcher", self.steamid_tab.setup_ui)
 
         self.notebook.add("Event Flags")
         tab_event_flags = self.notebook.tab("Event Flags")
@@ -1182,6 +1589,14 @@ class SaveManagerGUI:
             self.show_toast,
         )
         self._build_tab("Event Flags", self.event_flags_tab.setup_ui)
+        self._pending_register("Event Flags")(
+            PendingPage(
+                "Event flags",
+                self.event_flags_tab.flag_changes,
+                self.event_flags_tab.prepare_flags,
+                self.event_flags_tab.discard_flags,
+            )
+        )
 
         self.notebook.add("Gestures")
         tab_gestures = self.notebook.tab("Gestures")
@@ -1193,6 +1608,41 @@ class SaveManagerGUI:
             self.show_toast,
         )
         self._build_tab("Gestures", self.gestures_tab.setup_ui)
+        register = self._pending_register("Gestures")
+        register(
+            PendingPage(
+                "Gestures",
+                self.gestures_tab.gesture_changes,
+                self.gestures_tab.prepare_gestures,
+                self.gestures_tab.discard_gestures,
+            )
+        )
+        register(
+            PendingPage(
+                "Gesture wheel",
+                self.gestures_tab.wheel_changes,
+                self.gestures_tab.prepare_wheel,
+                self.gestures_tab.discard_wheel,
+            )
+        )
+        self.notebook.add("SteamID Patcher")
+        tab_steamid = self.notebook.tab("SteamID Patcher")
+        self.steamid_tab = SteamIDPatcherTab(
+            tab_steamid,
+            lambda: self.save_file,
+            lambda: self.save_path,
+            self.load_save,
+            self.show_toast,
+        )
+        self._build_tab("SteamID Patcher", self.steamid_tab.setup_ui)
+
+        self._character_tabs = {
+            "Character Editor": self._er_load_character,
+            "World State": self.world_tab.load_slot,
+            "Event Flags": self.event_flags_tab.load_slot,
+            "Gestures": self.gestures_tab.load_slot,
+        }
+        self._set_er_feature_links()
 
         # Tab 9: Hex Editor - hidden for now
         _hex_hidden = ctk.CTkFrame(self.root, fg_color="transparent")
@@ -1233,10 +1683,10 @@ class SaveManagerGUI:
                 DS3BossesTab,
                 DS3EditorTab,
                 DS3InspectorTab,
-                DS3InventoryTab,
                 DS3NpcsTab,
                 DS3WorldStateTab,
             )
+            from er_save_manager.games.DS3.tabs.appearance import DS3AppearanceTab
 
             self.notebook.add("Save Inspector")
             self.ds3_inspector_tab = DS3InspectorTab(
@@ -1246,21 +1696,6 @@ class SaveManagerGUI:
                 check_save=self._check_game_save,
             )
             self._build_tab("Save Inspector", self.ds3_inspector_tab.setup_ui)
-
-            # Game data source (vanilla or a mod), shared by the editor and
-            # inventory tabs.
-            from er_save_manager.games.DS3 import catalog as ds3_catalog
-
-            ds3_source_var = tk.StringVar(value=ds3_catalog.SOURCES["vanilla"])
-            self.notebook.add("Character Editor")
-            self.ds3_editor_tab = DS3EditorTab(
-                self.notebook.tab("Character Editor"),
-                get_save=lambda: self.ds3_save,
-                get_save_path=lambda: self.save_path,
-                show_toast=self.show_toast,
-                source_var=ds3_source_var,
-            )
-            self._build_tab("Character Editor", self.ds3_editor_tab.setup_steps)
 
             from er_save_manager.games.DS3.character_management_tab import (
                 DS3CharacterManagementTab,
@@ -1280,24 +1715,37 @@ class SaveManagerGUI:
             )
             self._build_tab("Character Management", self.ds3_char_mgmt_tab.setup_ui)
 
-            self.notebook.add("Inventory")
-            self.ds3_inventory_tab = DS3InventoryTab(
-                self.notebook.tab("Inventory"),
+            # Game data source (vanilla or a mod), shared by the editor and
+            # inventory tabs.
+            from er_save_manager.games.DS3 import catalog as ds3_catalog
+
+            ds3_source_var = tk.StringVar(value=ds3_catalog.SOURCES["vanilla"])
+            self.notebook.add("Character Editor")
+            self.ds3_editor_tab = DS3EditorTab(
+                self.notebook.tab("Character Editor"),
                 get_save=lambda: self.ds3_save,
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
                 source_var=ds3_source_var,
+                register_pending=self._pending_register("Character Editor"),
             )
-            self._build_tab("Inventory", self.ds3_inventory_tab.setup_steps)
+            self._build_tab("Character Editor", self.ds3_editor_tab.setup_steps)
 
-            self.notebook.add("Bosses")
-            self.ds3_bosses_tab = DS3BossesTab(
-                self.notebook.tab("Bosses"),
-                get_save=lambda: self.ds3_save,
-                get_save_path=lambda: self.save_path,
-                show_toast=self.show_toast,
+            self.notebook.add("Appearance")
+            self.ds3_appearance_tab = CharacterPagesTab(
+                self.notebook.tab("Appearance"),
+                "Appearance",
+                [
+                    (
+                        "Appearance",
+                        lambda p: DS3AppearanceTab(
+                            p, lambda: self.ds3_save, self.show_toast
+                        ),
+                    )
+                ],
             )
-            self._build_tab("Bosses", self.ds3_bosses_tab.setup_ui)
+            self._build_tab("Appearance", self.ds3_appearance_tab.setup_steps)
+            self._register_appearance(self.ds3_appearance_tab)
 
             self.notebook.add("World State")
             self.ds3_world_tab = DS3WorldStateTab(
@@ -1305,17 +1753,49 @@ class SaveManagerGUI:
                 get_save=lambda: self.ds3_save,
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
+                register_pending=self._pending_register("World State"),
             )
             self._build_tab("World State", self.ds3_world_tab.setup_ui)
 
-            self.notebook.add("NPCs")
-            self.ds3_npc_tab = DS3NpcsTab(
-                self.notebook.tab("NPCs"),
-                get_save=lambda: self.ds3_save,
-                get_save_path=lambda: self.save_path,
-                show_toast=self.show_toast,
+            def ds3_page(cls):
+                return lambda p: cls(
+                    p,
+                    get_save=lambda: self.ds3_save,
+                    get_save_path=lambda: self.save_path,
+                    show_toast=self.show_toast,
+                )
+
+            self.notebook.add("NPCs & Bosses")
+            self.ds3_npcs_bosses_tab = CharacterPagesTab(
+                self.notebook.tab("NPCs & Bosses"),
+                "NPCs & Bosses",
+                [("NPCs", ds3_page(DS3NpcsTab)), ("Bosses", ds3_page(DS3BossesTab))],
             )
-            self._build_tab("NPCs", self.ds3_npc_tab.setup_ui)
+            self._build_tab("NPCs & Bosses", self.ds3_npcs_bosses_tab.setup_steps)
+            self._character_tabs = {
+                "Character Editor": self.ds3_editor_tab.load_slot,
+                "Appearance": self.ds3_appearance_tab.load_slot,
+                "World State": self.ds3_world_tab.load_slot,
+                "NPCs & Bosses": self.ds3_npcs_bosses_tab.load_slot,
+            }
+            self._feature_links = {
+                "Character Editor": [
+                    (
+                        "Visual Picker",
+                        self._editor_feature(
+                            "Inventory",
+                            lambda: self.ds3_editor_tab.inventory._open_visual_picker(),
+                        ),
+                    ),
+                    (
+                        "Visual Editor",
+                        self._editor_feature(
+                            "Inventory",
+                            lambda: self.ds3_editor_tab.inventory._open_visual_editor(),
+                        ),
+                    ),
+                ]
+            }
 
             self.notebook.add("SteamID Patcher")
             self.steamid_tab = SteamIDPatcherTab(
@@ -1379,8 +1859,90 @@ class SaveManagerGUI:
                 get_save=lambda: self.ds2_save,
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
+                register_pending=self._pending_register("Character Editor"),
             )
             self._build_tab("Character Editor", self.ds2_editor_tab.setup_steps)
+            from er_save_manager.games.DS2.appearance_tab import DS2AppearanceTab
+            from er_save_manager.games.DS2.bonfire_tab import DS2BonfirePanel
+            from er_save_manager.games.DS2.boss_tab import DS2BossPanel
+            from er_save_manager.games.DS2.editor_tab import SlotPanelPage
+            from er_save_manager.games.DS2.npc_tab import DS2NpcPanel
+
+            def ds2_page(cls):
+                return lambda p: SlotPanelPage(
+                    cls,
+                    p,
+                    lambda: self.ds2_save,
+                    get_save_path=lambda: self.save_path,
+                    show_toast=self.show_toast,
+                )
+
+            self.notebook.add("Appearance")
+            self.ds2_appearance_tab = CharacterPagesTab(
+                self.notebook.tab("Appearance"),
+                "Appearance",
+                [
+                    (
+                        "Appearance",
+                        lambda p: DS2AppearanceTab(
+                            p, lambda: self.ds2_save, self.show_toast
+                        ),
+                    )
+                ],
+            )
+            self._build_tab("Appearance", self.ds2_appearance_tab.setup_steps)
+            self._register_appearance(self.ds2_appearance_tab)
+
+            self.notebook.add("World State")
+            self.ds2_world_tab = CharacterPagesTab(
+                self.notebook.tab("World State"),
+                "World State",
+                [("Bonfires", ds2_page(DS2BonfirePanel))],
+            )
+            self._build_tab("World State", self.ds2_world_tab.setup_steps)
+
+            self.notebook.add("NPCs & Bosses")
+            self.ds2_npcs_bosses_tab = CharacterPagesTab(
+                self.notebook.tab("NPCs & Bosses"),
+                "NPCs & Bosses",
+                [("NPCs", ds2_page(DS2NpcPanel)), ("Bosses", ds2_page(DS2BossPanel))],
+            )
+            self._build_tab("NPCs & Bosses", self.ds2_npcs_bosses_tab.setup_steps)
+            self._character_tabs = {
+                "Character Editor": self.ds2_editor_tab.load_slot,
+                "Appearance": self.ds2_appearance_tab.load_slot,
+                "World State": self.ds2_world_tab.load_slot,
+                "NPCs & Bosses": self.ds2_npcs_bosses_tab.load_slot,
+            }
+            ed = self.ds2_editor_tab
+            self._feature_links = {
+                "Character Editor": [
+                    (
+                        "Visual Picker",
+                        self._editor_feature(
+                            "Inventory", lambda: ed.inventory_panel._open_icon_browser()
+                        ),
+                    ),
+                    (
+                        "Visual Inventory",
+                        self._editor_feature(
+                            "Inventory",
+                            lambda: ed.inventory_panel._open_visual_inventory(),
+                        ),
+                    ),
+                ],
+                "World State": [
+                    (
+                        "Visual Bonfires",
+                        self._feature(
+                            "World State",
+                            lambda: self.ds2_world_tab.pages[
+                                "Bonfires"
+                            ].panel._open_visual_view(),
+                        ),
+                    ),
+                ],
+            }
 
             self.notebook.add("SteamID Patcher")
             self.steamid_tab = SteamIDPatcherTab(
@@ -1432,9 +1994,9 @@ class SaveManagerGUI:
             )
 
         if profile.key == "dark_souls_remastered":
+            from er_save_manager.games.DSR.appearance_tab import DSRAppearanceTab
             from er_save_manager.games.DSR.editor_tab import DSREditorTab
             from er_save_manager.games.DSR.inspector_tab import DSRInspectorTab
-            from er_save_manager.games.DSR.inventory_tab import DSRInventoryTab
             from er_save_manager.games.DSR.npc_tab import DSRNPCTab
             from er_save_manager.games.DSR.world_state_tab import DSRWorldStateTab
 
@@ -1446,15 +2008,6 @@ class SaveManagerGUI:
                 check_save=self._check_game_save,
             )
             self._build_tab("Save Inspector", self.dsr_inspector_tab.setup_ui)
-
-            self.notebook.add("Character Editor")
-            self.dsr_editor_tab = DSREditorTab(
-                self.notebook.tab("Character Editor"),
-                get_dsr_save=lambda: self.dsr_save,
-                get_save_path=lambda: self.save_path,
-                show_toast=self.show_toast,
-            )
-            self._build_tab("Character Editor", self.dsr_editor_tab.setup_steps)
 
             from er_save_manager.games.DSR.character_management_tab import (
                 DSRCharacterManagementTab,
@@ -1474,14 +2027,41 @@ class SaveManagerGUI:
             )
             self._build_tab("Character Management", self.dsr_char_mgmt_tab.setup_ui)
 
-            self.notebook.add("Inventory")
-            self.dsr_inventory_tab = DSRInventoryTab(
-                self.notebook.tab("Inventory"),
+            self.notebook.add("Character Editor")
+            self.dsr_editor_tab = DSREditorTab(
+                self.notebook.tab("Character Editor"),
                 get_dsr_save=lambda: self.dsr_save,
                 get_save_path=lambda: self.save_path,
                 show_toast=self.show_toast,
+                register_pending=self._pending_register("Character Editor"),
             )
-            self._build_tab("Inventory", self.dsr_inventory_tab.setup_ui)
+            self._build_tab("Character Editor", self.dsr_editor_tab.setup_steps)
+
+            self.notebook.add("Appearance")
+            self.dsr_appearance_tab = CharacterPagesTab(
+                self.notebook.tab("Appearance"),
+                "Appearance",
+                [
+                    (
+                        "Appearance",
+                        lambda p: DSRAppearanceTab(
+                            p, lambda: self.dsr_save, self.show_toast
+                        ),
+                    )
+                ],
+            )
+            self._build_tab("Appearance", self.dsr_appearance_tab.setup_steps)
+            self._register_appearance(self.dsr_appearance_tab)
+
+            self.notebook.add("World State")
+            self.dsr_world_tab = DSRWorldStateTab(
+                self.notebook.tab("World State"),
+                get_dsr_save=lambda: self.dsr_save,
+                get_save_path=lambda: self.save_path,
+                show_toast=self.show_toast,
+                register_pending=self._pending_register("World State"),
+            )
+            self._build_tab("World State", self.dsr_world_tab.setup_ui)
 
             self.notebook.add("NPCs & Bosses")
             self.dsr_npc_tab = DSRNPCTab(
@@ -1502,15 +2082,31 @@ class SaveManagerGUI:
                 show_toast=self.show_toast,
             )
             self._build_tab("Event Flags", self.dsr_flags_tab.setup_ui)
-
-            self.notebook.add("World State")
-            self.dsr_world_tab = DSRWorldStateTab(
-                self.notebook.tab("World State"),
-                get_dsr_save=lambda: self.dsr_save,
-                get_save_path=lambda: self.save_path,
-                show_toast=self.show_toast,
-            )
-            self._build_tab("World State", self.dsr_world_tab.setup_ui)
+            self._character_tabs = {
+                "Character Editor": self.dsr_editor_tab.load_slot,
+                "Appearance": self.dsr_appearance_tab.load_slot,
+                "World State": self.dsr_world_tab.load_slot,
+                "NPCs & Bosses": self.dsr_npc_tab.load_slot,
+                "Event Flags": self.dsr_flags_tab.load_slot,
+            }
+            self._feature_links = {
+                "Character Editor": [
+                    (
+                        "Visual Picker",
+                        self._editor_feature(
+                            "Inventory",
+                            lambda: self.dsr_editor_tab.inventory._open_picker(),
+                        ),
+                    ),
+                    (
+                        "Visual Editor",
+                        self._editor_feature(
+                            "Inventory",
+                            lambda: self.dsr_editor_tab.inventory._open_editor(),
+                        ),
+                    ),
+                ]
+            }
 
         self.notebook.add("Settings")
         tab_settings = self.notebook.tab("Settings")
@@ -1529,23 +2125,14 @@ class SaveManagerGUI:
         self.nr_editor_tab = None
         self.nr_steamid_tab = None
 
-        self.notebook.add("Inspector")
+        self.notebook.add("Save Inspector")
         self.nr_inspector_tab = NRInspectorTab(
-            self.notebook.tab("Inspector"),
+            self.notebook.tab("Save Inspector"),
             lambda: self._nr_save,
             on_slot_selected=self._nr_on_slot_selected,
             check_save=self._check_game_save,
         )
-        self._build_tab("Inspector", self.nr_inspector_tab.setup_ui)
-
-        self.notebook.add("Editor")
-        self.nr_editor_tab = NREditorTab(
-            self.notebook.tab("Editor"),
-            lambda: self._nr_save,
-            lambda: self.save_path,
-            self.show_toast,
-        )
-        self._build_tab("Editor", self.nr_editor_tab.setup_steps)
+        self._build_tab("Save Inspector", self.nr_inspector_tab.setup_ui)
 
         from er_save_manager.games.NR.character_management_tab import (
             NRCharacterManagementTab,
@@ -1564,6 +2151,17 @@ class SaveManagerGUI:
             ),
         )
         self._build_tab("Character Management", self.nr_char_mgmt_tab.setup_ui)
+
+        self.notebook.add("Character Editor")
+        self.nr_editor_tab = NREditorTab(
+            self.notebook.tab("Character Editor"),
+            lambda: self._nr_save,
+            lambda: self.save_path,
+            self.show_toast,
+            register_pending=self._pending_register("Character Editor"),
+        )
+        self._build_tab("Character Editor", self.nr_editor_tab.setup_steps)
+        self._character_tabs = {"Character Editor": self.nr_editor_tab.load_slot}
 
         self.notebook.add("SteamID Patcher")
         self.nr_steamid_tab = SteamIDPatcherTab(
@@ -1592,49 +2190,29 @@ class SaveManagerGUI:
 
     def _nr_on_slot_selected(self, slot_index: int) -> None:
         """Navigate from inspector to editor for the selected slot."""
+        self._open_in_editor(slot_index)
+
+    def _open_in_editor(self, slot_index: int) -> None:
+        """Pick slot_index in the character bar and show the Character
+        Editor (inspector Edit Character buttons)."""
         self._flush_pending_tabs()
-        if hasattr(self, "nr_editor_tab") and self.nr_editor_tab:
-            self.nr_editor_tab.load_slot(slot_index)
-            self.notebook.set("Editor")
+        if self._select_character(slot_index):
+            self.notebook.set("Character Editor")
+            self._on_tab_changed()
 
     def setup_character_editor_tab(self, parent):
         """Setup character editor tab with modular editors"""
         header = ctk.CTkLabel(
             parent,
             text="Character Editor",
-            font=("Segoe UI", 18, "bold"),
+            font=("Segoe UI", 16, "bold"),
         )
-        header.pack(pady=(6, 12))
+        header.pack(anchor="w", padx=20, pady=(6, 8))
 
         container = ctk.CTkFrame(
             parent, corner_radius=10, fg_color=("gray86", "gray22")
         )
         container.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 12))
-
-        select_frame = ctk.CTkFrame(container, fg_color=("gray76", "gray24"))
-        select_frame.pack(fill=tk.X, padx=10, pady=(12, 8))
-
-        ctk.CTkLabel(select_frame, text="Character slot:").pack(
-            side=ctk.LEFT, padx=(0, 10)
-        )
-
-        self.char_slot_var = ctk.StringVar(value="1")
-        slot_combo = ctk.CTkComboBox(
-            select_frame,
-            variable=self.char_slot_var,
-            values=[str(i) for i in range(1, 11)],
-            state="readonly",
-            width=200,
-            command=lambda _e=None: self.load_character_for_edit(),
-        )
-        slot_combo.pack(side=ctk.LEFT, padx=(0, 12))
-
-        ctk.CTkButton(
-            select_frame,
-            text="Load Character",
-            command=self.load_character_for_edit,
-            width=140,
-        ).pack(side=ctk.LEFT)
 
         editor_tabs = ctk.CTkTabview(
             container,
@@ -1648,15 +2226,11 @@ class SaveManagerGUI:
             segmented_button_selected_color=palette.PURPLE,
             segmented_button_unselected_color=("gray70", "gray30"),
         )
-        editor_tabs.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 12))
+        editor_tabs.pack(fill=tk.BOTH, expand=True, padx=10, pady=(8, 12))
+        self._er_editor_tabs = editor_tabs
 
         def current_slot_index() -> int:
-            try:
-                # Extract slot number from display name "1 - Character Name"
-                slot_display = self.char_slot_var.get()
-                return int(slot_display.split(" - ")[0]) - 1
-            except Exception:
-                return -1
+            return self._er_slot
 
         stats_frame = editor_tabs.add("Stats")
         stats_frame = ctk.CTkFrame(stats_frame, fg_color="transparent")
@@ -1669,6 +2243,22 @@ class SaveManagerGUI:
         )
         self.stats_editor.setup_ui()
 
+        info_tab = editor_tabs.add("Identity")
+        info_frame = ctk.CTkFrame(info_tab, fg_color="transparent")
+        info_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self.char_info_editor = CharacterInfoEditor(
+            info_frame,
+            lambda: self.save_file,
+            current_slot_index,
+            lambda: self.save_path,
+        )
+        # Only the visible Stats editor is built now; the others follow in
+        # the background like top-level tabs (see _build_tab).
+        self._build_tab("Character Editor/Identity", self.char_info_editor.setup_ui)
+        self.char_info_editor.on_archetype_change = (
+            self.stats_editor.on_archetype_changed
+        )
+
         equipment_tab = editor_tabs.add("Equipment")
         equipment_frame = ctk.CTkFrame(equipment_tab, fg_color="transparent")
         equipment_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -1678,23 +2268,7 @@ class SaveManagerGUI:
             current_slot_index,
             lambda: self.save_path,
         )
-        # Only the visible Stats editor is built now; the others follow in
-        # the background like top-level tabs (see _build_tab).
         self._build_tab("Character Editor/Equipment", self.equipment_editor.setup_steps)
-
-        info_tab = editor_tabs.add("Info")
-        info_frame = ctk.CTkFrame(info_tab, fg_color="transparent")
-        info_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        self.char_info_editor = CharacterInfoEditor(
-            info_frame,
-            lambda: self.save_file,
-            current_slot_index,
-            lambda: self.save_path,
-        )
-        self._build_tab("Character Editor/Info", self.char_info_editor.setup_ui)
-        self.char_info_editor.on_archetype_change = (
-            self.stats_editor.on_archetype_changed
-        )
 
         inventory_tab = editor_tabs.add("Inventory")
         inventory_frame = ctk.CTkFrame(inventory_tab, fg_color="transparent")
@@ -1710,6 +2284,27 @@ class SaveManagerGUI:
         )
         self._build_tab("Character Editor/Inventory", self.inventory_editor.setup_steps)
 
+        self.equipment_editor.apply_all = self.pending_bar.apply_all
+        register = self._pending_register("Character Editor")
+        for name, editor, reload in (
+            ("Stats", self.stats_editor, self.stats_editor.load_stats),
+            ("Equipment", self.equipment_editor, self.equipment_editor.load_equipment),
+            (
+                "Identity",
+                self.char_info_editor,
+                self.char_info_editor.load_character_info,
+            ),
+        ):
+            register(
+                PendingPage(
+                    name,
+                    getattr(editor, "changes", editor.tracker.changes),
+                    editor.prepare,
+                    reload,
+                    lambda n=name: editor_tabs.set(n),
+                )
+            )
+
     def acknowledge_save_written(self) -> None:
         """Resnapshot the save file mtime after an internal write.
 
@@ -1722,49 +2317,39 @@ class SaveManagerGUI:
         """Refresh matchmaking weapon level floor after inventory changes."""
         self.acknowledge_save_written()
         try:
-            slot_idx = int(self.char_slot_var.get()) - 1
-            slot = self.save_file.characters[slot_idx]
+            slot = self.save_file.characters[self._er_slot]
             if hasattr(self, "stats_editor") and self.stats_editor:
                 self.stats_editor._refresh_matchmaking_min(slot)
         except Exception:
             pass
 
-    def load_character_for_edit(self):
-        """Load character data into editors"""
-        self._flush_pending_tabs()
-
-        if not self.save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.root
-            )
+    def _er_load_character(self, slot_idx: int) -> None:
+        """Show the character in slot_idx in the Character Editor; -1 or an
+        empty slot clears it."""
+        self._er_slot = slot_idx
+        if not hasattr(self, "stats_editor"):
             return
-
-        try:
-            # Extract slot number from display name "1 - Character Name"
-            slot_display = self.char_slot_var.get()
-            slot_idx = int(slot_display.split(" - ")[0]) - 1
-        except Exception:
-            CTkMessageBox.showwarning(
-                "Invalid Slot", "Choose a character slot.", parent=self.root
-            )
+        save = self.save_file
+        if (
+            save is None
+            or not 0 <= slot_idx < len(save.characters)
+            or save.characters[slot_idx].is_empty()
+            # A deleted character keeps its slot data until a new one is
+            # created there, so the active flag decides, as in the fixer.
+            or slot_idx not in save.get_active_slots()
+        ):
+            for editor in (
+                self.stats_editor,
+                self.equipment_editor,
+                self.char_info_editor,
+            ):
+                editor.tracker.clear()
+            self.inventory_editor.clear_inventory()
             return
-
-        slot = self.save_file.characters[slot_idx]
-
-        # A deleted character keeps its slot data until a new one is created
-        # there, so the active flag decides, as in the save fixer.
-        if slot.is_empty() or slot_idx not in self.save_file.get_active_slots():
-            CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {slot_idx + 1} is empty.", parent=self.root
-            )
-            return
-
         self.stats_editor.load_stats()
         self.equipment_editor.load_equipment()
         self.char_info_editor.load_character_info()
         self.inventory_editor.refresh_inventory()
-
-        self.status_var.set(f"Loaded character from Slot {slot_idx + 1}")
 
     def ensure_raw_data_mutable(self):
         """Ensure save file _raw_data is mutable (bytearray)"""
@@ -2189,44 +2774,16 @@ class SaveManagerGUI:
         return None
 
     def _open_inventory_editor(self):
-        """Navigate to the inventory editor for the active game."""
+        """Show Character Editor > Inventory for the active game."""
         self._flush_pending_tabs()
-        if self.active_game == "dark_souls_remastered":
-            try:
-                self.notebook.set("Inventory")
-            except Exception:
-                pass
+        if "Character Editor" not in self.notebook._name_list:
             return
-        if self.active_game == "dark_souls_3":
-            try:
-                self.notebook.set("Inventory")
-            except Exception:
-                pass
-            return
-        if self.active_game == "dark_souls_2":
-            try:
-                self.notebook.set("Character Editor")
-            except Exception:
-                pass
-            tab = getattr(self, "ds2_editor_tab", None)
-            if tab is not None and hasattr(tab, "tabview"):
-                try:
-                    tab.tabview.set("Inventory")
-                except Exception:
-                    pass
-            return
-        # Elden Ring: Character Editor > Inventory sub-tab
         self.notebook.set("Character Editor")
-        if hasattr(self, "inventory_editor"):
-            try:
-                for widget in self.notebook.tab("Character Editor").winfo_children():
-                    if isinstance(widget, ctk.CTkFrame):
-                        for child in widget.winfo_children():
-                            if isinstance(child, ctk.CTkTabview):
-                                child.set("Inventory")
-                                break
-            except Exception:
-                pass
+        self._on_tab_changed()
+        # Relics are Nightreign's inventory
+        self._show_editor_sub(
+            "Relics" if self.active_game == "nightreign" else "Inventory"
+        )
 
     def open_troubleshooting(self):
         """Open the troubleshooting dialog or install addon"""
@@ -2315,6 +2872,7 @@ class SaveManagerGUI:
         """Handle tab change event - lazy load and refresh tabs."""
         current_tab = self.notebook.get()
         self._ensure_tab_built(current_tab)
+        self._update_character_bar_state()
 
         # Load tab content in background for non-blocking UI
         if not self.tabs_loaded.get(current_tab, False):
@@ -2341,7 +2899,8 @@ class SaveManagerGUI:
             if tab_name == "Save Fixer":
                 self.inspector_tab.populate_character_list()
             elif tab_name == "Appearance":
-                self.appearance_tab.load_presets()
+                if self.appearance_tab is not None:
+                    self.appearance_tab.load_presets()
             elif tab_name == "Advanced Tools":
                 self.advanced_tab.update_save_info()
             elif tab_name == "Event Flags":
@@ -2375,6 +2934,8 @@ class SaveManagerGUI:
 
     def _on_file_path_changed(self, *args):
         """Auto-load save file when a valid file path is entered."""
+        if self._suppress_path_load:
+            return
         save_path = self.file_path_var.get()
         if not save_path or not os.path.exists(save_path):
             return
@@ -2397,6 +2958,8 @@ class SaveManagerGUI:
     def _load_non_er_save(self, save_path: str):
         """Store the selected save path for non-ER games and refresh the SteamID display."""
         self._flush_pending_tabs()
+        if not self._guard_pending("load another save file"):
+            return
         if self._reject_wrong_game(save_path):
             return
         profile = self._active_profile()
@@ -2443,6 +3006,8 @@ class SaveManagerGUI:
             CTkMessageBox.showerror(
                 "No Save File", "Select a valid save file first.", parent=self.root
             )
+            return
+        if not self._guard_pending("load the save file"):
             return
 
         if self._reject_wrong_game(save_path):
@@ -2593,6 +3158,8 @@ class SaveManagerGUI:
     def _load_dsr_save(self, save_path: str) -> None:
         """Parse a DSR save file and refresh all DSR tabs."""
         self._flush_pending_tabs()
+        if not self._guard_pending("load the save file"):
+            return
         if self._reject_wrong_game(save_path):
             return
         from er_save_manager.games.DSR.save import DSRSave
@@ -2623,18 +3190,12 @@ class SaveManagerGUI:
         self._update_watched_mtime()
         self._start_file_watcher()
 
-        for attr in (
-            "dsr_inspector_tab",
-            "dsr_editor_tab",
-            "dsr_inventory_tab",
-            "dsr_npc_tab",
-            "dsr_flags_tab",
-            "dsr_world_tab",
-            "dsr_char_mgmt_tab",
-        ):
+        # Character tabs load through the character bar.
+        for attr in ("dsr_inspector_tab", "dsr_char_mgmt_tab"):
             tab = getattr(self, attr, None)
             if tab is not None:
                 tab.refresh()
+        self._refresh_character_bar()
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         self.show_toast(
@@ -2645,13 +3206,7 @@ class SaveManagerGUI:
         """Navigate to Character Editor and load the selected slot.
         Called only from the inspector 'Edit Character' button - never from row clicks.
         """
-        self._flush_pending_tabs()
-        try:
-            self.notebook.set("Character Editor")
-        except Exception:
-            pass
-        if hasattr(self, "dsr_editor_tab") and self.dsr_editor_tab:
-            self.dsr_editor_tab.load_slot(slot_idx)
+        self._open_in_editor(slot_idx)
 
     def _load_ds3_save(self, save_path: str, running_checked: bool = False) -> None:
         """Parse a DS3 save file and refresh all DS3 tabs.
@@ -2660,6 +3215,8 @@ class SaveManagerGUI:
         already done it; the process query is slow on Windows.
         """
         self._flush_pending_tabs()
+        if not self._guard_pending("load the save file"):
+            return
         if self._reject_wrong_game(save_path):
             return
         from er_save_manager.games.DS3.save import DS3Save
@@ -2691,18 +3248,12 @@ class SaveManagerGUI:
         self._update_watched_mtime()
         self._start_file_watcher()
 
-        for attr in (
-            "ds3_inspector_tab",
-            "ds3_editor_tab",
-            "ds3_inventory_tab",
-            "ds3_bosses_tab",
-            "ds3_world_tab",
-            "ds3_npc_tab",
-            "ds3_char_mgmt_tab",
-        ):
+        # Character tabs load through the character bar.
+        for attr in ("ds3_inspector_tab", "ds3_char_mgmt_tab"):
             tab = getattr(self, attr, None)
             if tab is not None:
                 tab.refresh()
+        self._refresh_character_bar()
 
         # The SteamID scan reads the whole save in pure Python; run it off the
         # UI thread so reloads do not freeze the window.
@@ -2718,6 +3269,8 @@ class SaveManagerGUI:
     def _load_ds2_save(self, save_path: str) -> None:
         """Parse a DS2 SOTFS save file and refresh the DS2 tabs."""
         self._flush_pending_tabs()
+        if not self._guard_pending("load the save file"):
+            return
         if self._reject_wrong_game(save_path):
             return
         from er_save_manager.games.DS2.save import DS2Save
@@ -2748,14 +3301,12 @@ class SaveManagerGUI:
         self._update_watched_mtime()
         self._start_file_watcher()
 
-        for attr in (
-            "ds2_inspector_tab",
-            "ds2_editor_tab",
-            "ds2_management_tab",
-        ):
+        # Character tabs load through the character bar.
+        for attr in ("ds2_inspector_tab", "ds2_management_tab"):
             tab = getattr(self, attr, None)
             if tab is not None:
                 tab.refresh()
+        self._refresh_character_bar()
 
         # The SteamID scan reads the whole save in pure Python; run it off the
         # UI thread so reloads do not freeze the window.
@@ -2771,6 +3322,8 @@ class SaveManagerGUI:
     def _load_nr_save(self, save_path: str) -> None:
         """Parse a Nightreign save file and refresh all NR tabs."""
         self._flush_pending_tabs()
+        if not self._guard_pending("load the save file"):
+            return
         if self._reject_wrong_game(save_path):
             return
         profile = self._active_profile()
@@ -2799,13 +3352,12 @@ class SaveManagerGUI:
         self._update_watched_mtime()
         self._start_file_watcher()
 
-        for attr in ("nr_inspector_tab", "nr_editor_tab", "nr_char_mgmt_tab"):
+        # Character tabs load through the character bar.
+        for attr in ("nr_inspector_tab", "nr_char_mgmt_tab"):
             tab = getattr(self, attr, None)
             if tab is not None:
                 tab.refresh()
-
-        if hasattr(self, "nr_editor_tab") and self.nr_editor_tab:
-            self.nr_editor_tab.refresh_slot_list()
+        self._refresh_character_bar()
 
         if hasattr(self, "nr_steamid_tab") and self.nr_steamid_tab:
             if self._nr_save and self._nr_save.profile:
@@ -2831,38 +3383,14 @@ class SaveManagerGUI:
         """Navigate to Character Editor and load the selected slot.
         Called only from the DS3 inspector 'Edit Character' button.
         """
-        self._flush_pending_tabs()
-        try:
-            self.notebook.set("Character Editor")
-        except Exception:
-            pass
-        for attr in (
-            "ds3_editor_tab",
-            "ds3_inventory_tab",
-            "ds3_bosses_tab",
-            "ds3_world_tab",
-            "ds3_npc_tab",
-        ):
-            tab = getattr(self, attr, None)
-            if tab is not None:
-                tab.load_slot(slot_idx)
+        self._open_in_editor(slot_idx)
 
     def _on_ds2_slot_selected(self, slot_idx: int) -> None:
         """Navigate to Character Editor and load the selected slot.
         Called from the DS2 inspector row double-click or Edit Character
         button.
         """
-        self._flush_pending_tabs()
-        try:
-            self.notebook.set("Character Editor")
-        except Exception:
-            pass
-        tab = getattr(self, "ds2_editor_tab", None)
-        if tab is not None:
-            try:
-                tab.slot_var_set(slot_idx)
-            except Exception:
-                pass
+        self._open_in_editor(slot_idx)
 
     def _finalize_save_load(
         self,
@@ -2881,13 +3409,8 @@ class SaveManagerGUI:
         if self.active_game == "elden_ring":
             if hasattr(self, "char_mgmt_tab") and self.char_mgmt_tab:
                 self.char_mgmt_tab.refresh_slot_names()
-            if hasattr(self, "world_tab") and self.world_tab:
-                self.world_tab.refresh_slot_names()
             if hasattr(self, "event_flags_tab") and self.event_flags_tab:
-                self.event_flags_tab.refresh_slot_names()
-            if hasattr(self, "gestures_tab") and self.gestures_tab:
-                self.gestures_tab.refresh_slot_names()
-            self._update_character_editor_slots()
+                self.event_flags_tab.refresh()
 
         # Reset all tab flags so views will refresh with the new save
         for tab_name in self.tabs_loaded:
@@ -2895,7 +3418,8 @@ class SaveManagerGUI:
 
         if hasattr(self, "inventory_editor") and self.inventory_editor:
             self.inventory_editor.refresh_category_visibility()
-            self._reload_listed_inventory()
+        if self.active_game == "elden_ring":
+            self._refresh_character_bar()
 
         # Lazy-load the currently visible tab immediately (ensures live refresh)
         current_tab = self.notebook.get()
@@ -2922,29 +3446,6 @@ class SaveManagerGUI:
         if not silent:
             self.show_toast(toast_message, duration=2500)
 
-    def _reload_listed_inventory(self) -> None:
-        """Re-read the inventory editor's rows from the newly loaded save.
-
-        Rows listed for the previous file carry its gaitem handles; acting on
-        them, here or in an open Visual Inventory, would hit other items in
-        the new file. Without a character in that slot the rows are cleared.
-        """
-        editor = self.inventory_editor
-        if not editor._all_rows:
-            return
-        try:
-            slot_idx = int(self.char_slot_var.get().split(" - ")[0]) - 1
-            slot = self.save_file.characters[slot_idx]
-            valid = (
-                not slot.is_empty() and slot_idx in self.save_file.get_active_slots()
-            )
-        except Exception:
-            valid = False
-        if valid:
-            editor.refresh_inventory()
-        else:
-            editor.clear_inventory()
-
     def _rebuild_er_notebook(self) -> None:
         """Rebuild the ER notebook in place, preserving save state.
 
@@ -2952,6 +3453,9 @@ class SaveManagerGUI:
         is re-inserted at its correct position rather than appended at the end.
         """
         self._drop_pending_tabs()
+        self.pending_bar.clear_pages()
+        self._character_tabs = {}
+        self._feature_links = {}
         self.notebook.destroy()
         self.notebook = ctk.CTkTabview(
             self.root,
@@ -2960,7 +3464,7 @@ class SaveManagerGUI:
             corner_radius=12,
             command=self._on_tab_changed,
         )
-        self.notebook.grid(row=2, column=0, padx=12, pady=10, sticky="nsew")
+        self._grid_notebook()
         self.tabs_loaded = dict.fromkeys(self.tabs_loaded, False)
         for attr in (
             "inspector_tab",
@@ -2976,69 +3480,10 @@ class SaveManagerGUI:
         ):
             setattr(self, attr, None)
         self.create_tabs()
+        self._place_character_bar()
+        if self.save_file is not None:
+            self._refresh_character_bar()
         self.root.after_idle(self._fit_tab_labels)
-
-    def _update_character_editor_slots(self):
-        """Update Character Editor slot dropdown with character names"""
-        if not self.save_file:
-            return
-
-        slot_names = []
-        profiles = None
-
-        try:
-            if self.save_file.user_data_10_parsed:
-                profiles = self.save_file.user_data_10_parsed.profile_summary.profiles
-        except Exception:
-            pass
-
-        # Deleted characters keep their slot data and profile summary entry
-        # until a new character is created in the slot, so only slots marked
-        # active in the profile summary are listed by name.
-        active = set(self.save_file.get_active_slots())
-        for i in range(10):
-            slot_num = i + 1
-            char = self.save_file.characters[i]
-
-            if char.is_empty() or i not in active:
-                slot_names.append(f"{slot_num} - Empty")
-                continue
-
-            char_name = "Unknown"
-            if profiles and i < len(profiles):
-                try:
-                    char_name = profiles[i].character_name or "Unknown"
-                except Exception:
-                    pass
-
-            slot_names.append(f"{slot_num} - {char_name}")
-
-        if hasattr(self, "char_slot_var"):
-            # Find the combobox widget and update its values
-            # The combobox is in the character editor tab
-            for widget in self.root.winfo_children():
-                self._update_combobox_recursive(widget, slot_names)
-
-    def _update_combobox_recursive(self, widget, values):
-        """Recursively find and update character slot combobox"""
-        try:
-            if isinstance(widget, ctk.CTkComboBox):
-                if (
-                    hasattr(widget, "cget")
-                    and widget.cget("variable") == self.char_slot_var
-                ):
-                    current = self.char_slot_var.get()
-                    widget.configure(values=values)
-                    if current.isdigit() and 0 < int(current) <= 10:
-                        idx = int(current) - 1
-                        if idx < len(values):
-                            self.char_slot_var.set(values[idx])
-                    return
-
-            for child in widget.winfo_children():
-                self._update_combobox_recursive(child, values)
-        except Exception:
-            pass
 
     def show_character_details(self, slot_idx):
         """Show character details dialog"""
@@ -3252,6 +3697,8 @@ def main():
     app = SaveManagerGUI(root)
 
     def on_closing():
+        if not app.pending_bar.guard("close the window"):
+            return
         app.save_window_state()
         if app.process_monitor:
             app.process_monitor.stop()

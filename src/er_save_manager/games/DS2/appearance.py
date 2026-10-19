@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 JSON_FORMAT = "ds2_appearance"
 JSON_VERSION = 1
 
-GENDERS = ["Male", "Female"]  # index = stored value
+BODY_TYPES = ["Type A", "Type B"]  # index = stored value
 EYE_COLOR = 0x00
 HAIR_COLOR = 0x03
 EYEBROW_COLOR = 0x06
@@ -155,7 +155,7 @@ def set_gender(block: bytes, gender: int) -> bytes:
     (build, hairstyle) keep their menu position."""
     current = block[GENDER]
     out = set_u8(block, GENDER, gender)
-    if gender == current or current >= len(GENDERS):
+    if gender == current or current >= len(BODY_TYPES):
         return out
     for part in PARTS:
         values = [v for _label, v in part.choices(current)]
@@ -181,7 +181,7 @@ class Appearance:
         if len(self.block) != APPEARANCE_SIZE:
             raise ValueError(f"Appearance block must be {APPEARANCE_SIZE} bytes")
         if self.block[GENDER] not in (0, 1):
-            raise ValueError("Gender must be 0 or 1")
+            raise ValueError("Body type must be 0 or 1")
 
     def to_json(self) -> dict:
         return {

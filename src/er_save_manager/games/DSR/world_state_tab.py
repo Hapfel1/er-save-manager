@@ -18,6 +18,7 @@ import customtkinter as ctk
 
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import FieldTracker, PendingPage, StageError, var_state
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
@@ -47,12 +48,15 @@ _NOT_VISITED = (
 
 
 class DSRWorldStateTab:
-    def __init__(self, parent, get_dsr_save, get_save_path, show_toast) -> None:
+    def __init__(
+        self, parent, get_dsr_save, get_save_path, show_toast, register_pending=None
+    ) -> None:
+        self._register_pending = register_pending
         self.parent = parent
         self._get_dsr_save = get_dsr_save
         self._get_save_path = get_save_path
         self._show_toast = show_toast
-        self._current_slot = 0
+        self._current_slot = -1
         self._bonfires = json.loads(
             (Path(__file__).parent / "data" / "bonfires.json").read_text(
                 encoding="utf-8"
@@ -69,19 +73,6 @@ class DSRWorldStateTab:
         ctk.CTkLabel(header, text="World State", font=("Segoe UI", 16, "bold")).pack(
             side="left"
         )
-        ctk.CTkButton(header, text="Load", command=self._load_selected, width=70).pack(
-            side="right", padx=(6, 0)
-        )
-        self._slot_var = ctk.StringVar()
-        self._slot_combo = ctk.CTkComboBox(
-            header,
-            variable=self._slot_var,
-            values=[],
-            state="readonly",
-            width=220,
-        )
-        self._slot_combo.pack(side="right")
-        ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
 
         scroll = ctk.CTkScrollableFrame(outer, corner_radius=10)
         scroll.pack(fill="both", expand=True, padx=10, pady=(0, 10))
@@ -163,6 +154,7 @@ class DSRWorldStateTab:
         ).pack(side="left", padx=(0, 20))
         ctk.CTkLabel(ng_row, text="Set to:").pack(side="left", padx=(0, 6))
         self._ng_var = ctk.StringVar(value="0")
+        self._ng_tracker = FieldTracker(var_state({"ng": self._ng_var}))
         ctk.CTkComboBox(
             ng_row,
             variable=self._ng_var,
@@ -170,9 +162,15 @@ class DSRWorldStateTab:
             state="readonly",
             width=80,
         ).pack(side="left", padx=(0, 10))
-        ctk.CTkButton(ng_row, text="Apply", command=self._apply_ng, width=80).pack(
-            side="left"
-        )
+        if self._register_pending is not None:
+            self._register_pending(
+                PendingPage(
+                    "New Game+",
+                    self._ng_tracker.changes,
+                    self._prepare_ng,
+                    lambda: self.load_slot(self._current_slot),
+                )
+            )
 
         ctk.CTkLabel(
             ng_card,
@@ -184,49 +182,28 @@ class DSRWorldStateTab:
     # --- Refresh -------------------------------------------------------------- #
 
     def refresh(self) -> None:
-        save = self._get_dsr_save()
-        if save is None:
-            self._slot_combo.configure(values=[])
-            return
-        options = [
-            f"Slot {i + 1} - {c.name}" if c else f"Slot {i + 1} - Empty"
-            for i, c in enumerate(save.characters)
-        ]
-        self._slot_combo.configure(values=options)
-        self._slot_var.set(options[0] if options else "")
-        self._current_slot = 0
-        self._refresh_display()
+        self.load_slot(self._current_slot)
 
     def load_slot(self, slot_idx: int) -> None:
-        options = self._slot_combo.cget("values")
-        if options and slot_idx < len(options):
-            self._slot_var.set(options[slot_idx])
+        """Show the character in slot_idx; -1 or an empty slot clears the tab."""
+        save = self._get_dsr_save()
+        if save is None or not (
+            0 <= slot_idx < len(save.characters) and save.characters[slot_idx]
+        ):
+            slot_idx = -1
         self._current_slot = slot_idx
+        self._ng_tracker.clear()
         self._refresh_display()
 
     # --- Internal helpers ----------------------------------------------------- #
 
-    def _load_selected(self) -> None:
-        save = self._get_dsr_save()
-        if save is None:
-            CTkMessageBox.showwarning(
-                "No Save", "No DSR save loaded.", parent=self.parent
-            )
-            return
-        idx = self._slot_idx()
-        if idx < 0:
-            return
-        if save.characters[idx] is None:
-            CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {idx + 1} is empty.", parent=self.parent
-            )
-            return
-        self._current_slot = idx
-        self._refresh_display()
-
     def _refresh_display(self) -> None:
         save = self._get_dsr_save()
-        char = save.characters[self._current_slot] if save else None
+        char = (
+            save.characters[self._current_slot]
+            if save and self._current_slot >= 0
+            else None
+        )
         for i, bonfire in enumerate(self._bonfires):
             level = None if char is None else char.bonfire_level(bonfire["entity"])
             state = (
@@ -243,8 +220,13 @@ class DSRWorldStateTab:
             self._bonfire_tree.set(str(i), "state", state)
         if char is None:
             self._ng_current_var.set("--")
+            self._ng_tracker.clear()
             return
         self._ng_current_var.set(f"NG+{char.ng_plus}")
+        # Bonfire writes refresh the tab; an unapplied NG+ choice stays.
+        if not self._ng_tracker.changes():
+            self._ng_var.set(str(char.ng_plus))
+            self._ng_tracker.mark_clean()
 
     def _on_bonfire_double_click(self, event) -> None:
         row = self._bonfire_tree.identify_row(event.y)
@@ -268,7 +250,11 @@ class DSRWorldStateTab:
             return
         save = self._get_dsr_save()
         save_path = self._get_save_path()
-        char = save.characters[self._current_slot] if save else None
+        char = (
+            save.characters[self._current_slot]
+            if save and self._current_slot >= 0
+            else None
+        )
         if char is None or save_path is None:
             CTkMessageBox.showwarning(
                 "No Save", "No character loaded.", parent=self.parent
@@ -307,37 +293,16 @@ class DSRWorldStateTab:
             + skipped
         )
 
-    def _apply_ng(self) -> None:
-        if _game_blocks_write(self.parent):
-            return
-
+    def _prepare_ng(self):
         save = self._get_dsr_save()
-        save_path = self._get_save_path()
-        if save is None or save_path is None or self._current_slot < 0:
-            CTkMessageBox.showwarning(
-                "No Save", "No character loaded.", parent=self.parent
-            )
-            return
+        if save is None or self._current_slot < 0:
+            raise StageError("No character loaded.")
         char = save.characters[self._current_slot]
         if char is None:
-            return
-        try:
-            char.ng_plus = int(self._ng_var.get())
-        except Exception as exc:
-            CTkMessageBox.showerror("NG+ Not Applied", str(exc), parent=self.parent)
-            return
-        try:
-            _backup_and_save(save, save_path, f"set_ng_slot_{self._current_slot + 1}")
-            self._refresh_display()
-            self._show_toast(f"NG+ set to {self._ng_var.get()}. Backup created.")
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            raise StageError("No character loaded.")
+        ng = int(self._ng_var.get())
 
-    def _slot_idx(self) -> int:
-        val = self._slot_var.get()
-        if not val:
-            return -1
-        try:
-            return int(val.split(" - ")[0].replace("Slot", "").strip()) - 1
-        except (ValueError, IndexError):
-            return -1
+        def commit() -> None:
+            char.ng_plus = ng
+
+        return commit

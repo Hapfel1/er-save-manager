@@ -2,7 +2,7 @@
 
 Loads another character's appearance into the tab: from a slot of the open
 save, from a character in another save file of the same game, or from a
-JSON export. Nothing is written until the tab's Apply Changes.
+JSON export. Nothing is written until Apply All.
 """
 
 from __future__ import annotations

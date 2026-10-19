@@ -78,15 +78,6 @@ class DSREventFlagsTab:
         ctk.CTkLabel(header, text="Event Flags", font=("Segoe UI", 16, "bold")).pack(
             side="left"
         )
-        ctk.CTkButton(header, text="Load", command=self._load_selected, width=70).pack(
-            side="right", padx=(6, 0)
-        )
-        self._slot_var = ctk.StringVar()
-        self._slot_combo = ctk.CTkComboBox(
-            header, variable=self._slot_var, values=[], state="readonly", width=220
-        )
-        self._slot_combo.pack(side="right")
-        ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
 
         self._tabs = ctk.CTkTabview(
             outer,
@@ -500,42 +491,16 @@ class DSREventFlagsTab:
     # --- Refresh / helpers ---------------------------------------------------- #
 
     def refresh(self) -> None:
-        save = self._get_dsr_save()
-        if save is None:
-            self._slot_combo.configure(values=[])
-            return
-        options = [
-            f"Slot {i + 1} - {c.name}" if c else f"Slot {i + 1} - Empty"
-            for i, c in enumerate(save.characters)
-        ]
-        self._slot_combo.configure(values=options)
-        self._slot_var.set(options[0] if options else "")
-        self._current_slot = 0
-        self._on_tab_change()
+        self.load_slot(self._current_slot)
 
     def load_slot(self, slot_idx: int) -> None:
-        options = self._slot_combo.cget("values")
-        if options and slot_idx < len(options):
-            self._slot_var.set(options[slot_idx])
-        self._current_slot = slot_idx
-        self._on_tab_change()
-
-    def _load_selected(self) -> None:
+        """Show the character in slot_idx; -1 or an empty slot clears the tab."""
         save = self._get_dsr_save()
-        if save is None:
-            CTkMessageBox.showwarning(
-                "No Save", "No DSR save loaded.", parent=self.parent
-            )
-            return
-        idx = self._slot_idx()
-        if idx < 0:
-            return
-        if save.characters[idx] is None:
-            CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {idx + 1} is empty.", parent=self.parent
-            )
-            return
-        self._current_slot = idx
+        if save is None or not (
+            0 <= slot_idx < len(save.characters) and save.characters[slot_idx]
+        ):
+            slot_idx = -1
+        self._current_slot = slot_idx
         self._on_tab_change()
 
     def _get_char(self):
@@ -549,12 +514,3 @@ class DSREventFlagsTab:
             else None
         )
         return save, save_path, char
-
-    def _slot_idx(self) -> int:
-        val = self._slot_var.get()
-        if not val:
-            return -1
-        try:
-            return int(val.split(" - ")[0].replace("Slot", "").strip()) - 1
-        except (ValueError, IndexError):
-            return -1

@@ -34,6 +34,7 @@ from er_save_manager.ui.map_view import (
     open_map_window,
 )
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import StageError
 from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_file
 
 if TYPE_CHECKING:
@@ -70,39 +71,21 @@ class WorldStateTab:
         self.filtered_locations: list[MapLocation] = self.all_locations.copy()
 
         self.teleport_mode = tk.StringVar(value="known")
-        self.slot_var = tk.IntVar(value=1)
+        # 1-based slot of the character picked in the main window's bar
+        self.slot_var = tk.IntVar(value=0)
+        # Character bar labels and the bar's select function, for the map
+        # window's own character picker
+        self._slot_labels: list[str] = []
+        self.select_character = None
+        # Main window's Apply All, for the map window's Apply button
+        self.apply_all = None
+        # Marker records as loaded, to count the staged changes
+        self._marker_snapshot: set[tuple] = set()
 
-    def _get_slot_display_names(self) -> list[str]:
-        save_file = self.get_save_file()
-        if not save_file:
-            return [f"{i}" for i in range(1, 11)]
-
-        profiles = None
-        try:
-            if save_file.user_data_10_parsed:
-                profiles = save_file.user_data_10_parsed.profile_summary.profiles
-        except Exception:
-            pass
-
-        slot_names = []
-        # Deleted characters keep their slot data and profile summary entry
-        # until a new character is created in the slot, so only slots marked
-        # active in the profile summary are listed by name.
-        active = set(save_file.get_active_slots())
-        for i in range(10):
-            char = save_file.characters[i]
-            if char.is_empty() or i not in active:
-                slot_names.append(f"{i + 1} - Empty")
-                continue
-            char_name = "Unknown"
-            if profiles and i < len(profiles):
-                try:
-                    char_name = profiles[i].character_name or "Unknown"
-                except Exception:
-                    pass
-            slot_names.append(f"{i + 1} - {char_name}")
-
-        return slot_names
+    def set_slot_labels(self, labels: list[str]) -> None:
+        """Character bar labels, listed in the map window's picker."""
+        self._slot_labels = list(labels)
+        self._update_map_window()
 
     def _sync_flavor(self):
         """Use the Convergence locations and map for Convergence saves."""
@@ -124,62 +107,21 @@ class WorldStateTab:
         if window is not None:
             window.set_locations(self.all_locations, convergence)
 
-    def refresh_slot_names(self):
+    def load_slot(self, slot_idx: int) -> None:
+        """Load the character in slot_idx; -1 or an empty slot clears the
+        tab."""
+        self.slot_var.set(slot_idx + 1)
         self._sync_flavor()
-        slot_names = self._get_slot_display_names()
-        if hasattr(self, "slot_combo"):
-            current = self.slot_combo.get()
-            self.slot_combo.configure(values=slot_names)
-            if current in slot_names:
-                self.slot_combo.set(current)
-            else:
-                self.slot_combo.set(slot_names[0])
-        self._auto_load()
-
-    def _auto_load(self):
-        """Load the selected character, or the first one when none is
-        loaded or the selected slot is empty. A save reload (after an edit
-        anywhere in the app) keeps the slot and staged marker changes."""
-        save = self.get_save_file()
-        if save is None or not hasattr(self, "slot_combo"):
+        if not hasattr(self, "map_name_var"):
             return
-        active = [
-            i for i in save.get_active_slots() if not save.character_slots[i].is_empty()
-        ]
-        if not active:
+        if slot_idx < 0:
             self.editor = None
             self.marker_editor = None
+            self._snapshot_markers()
             self.refresh()
             self._update_map_window()
             return
-        slot_idx = self.slot_var.get() - 1
-        if self.editor is not None and slot_idx in active:
-            self._reload_editor()
-            self.refresh()
-            return
-        if slot_idx not in active:
-            slot_idx = active[0]
-        self._select_slot(slot_idx)
         self._load_character(quiet=True)
-
-    def _select_slot(self, slot_idx: int):
-        self.slot_var.set(slot_idx + 1)
-        for name in self.slot_combo.cget("values"):
-            if name.split(" - ")[0] == str(slot_idx + 1):
-                self.slot_combo.set(name)
-
-    def _on_slot_selected(self, value: str):
-        if self.marker_editor is not None and self.marker_editor.dirty:
-            if not CTkMessageBox.askyesno(
-                "Unsaved Markers",
-                "Discard the unsaved marker changes of this character?",
-                parent=self._dialog_parent(),
-            ):
-                self._select_slot(self.marker_editor_slot)
-                self._update_map_window()
-                return
-        self.slot_var.set(int(value.split(" - ")[0]))
-        self._load_character()
 
     def setup_ui(self):
         scroll_frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
@@ -196,35 +138,8 @@ class WorldStateTab:
         left_frame = ctk.CTkFrame(main_container, fg_color="transparent")
         left_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
 
-        slot_frame = ctk.CTkFrame(left_frame, corner_radius=12)
-        slot_frame.pack(fill=tk.X, padx=10, pady=10)
-
-        ctk.CTkLabel(
-            slot_frame, text="Character slot", font=("Segoe UI", 12, "bold")
-        ).pack(anchor="w", padx=10, pady=(10, 5))
-
-        slot_select = ctk.CTkFrame(slot_frame, fg_color="transparent")
-        slot_select.pack(fill=tk.X, padx=10, pady=(5, 10))
-
-        ctk.CTkLabel(slot_select, text="Slot:").pack(side=tk.LEFT, padx=(0, 5))
-
-        slot_names = self._get_slot_display_names()
-        self.slot_combo = ctk.CTkComboBox(
-            slot_select,
-            values=slot_names,
-            width=200,
-            state="readonly",
-            command=self._on_slot_selected,
-        )
-        self.slot_combo.set(slot_names[0])
-        self.slot_combo.pack(side=tk.LEFT, padx=(0, 10))
-
-        ctk.CTkButton(
-            slot_select, text="Reload", command=self._load_character, width=80
-        ).pack(side=tk.LEFT)
-
         tools_frame = ctk.CTkFrame(left_frame, corner_radius=12)
-        tools_frame.pack(fill=tk.X, padx=10, pady=(0, 0))
+        tools_frame.pack(fill=tk.X, padx=10, pady=(10, 0))
         ctk.CTkLabel(
             tools_frame,
             text="Map markers and item history",
@@ -354,7 +269,8 @@ class WorldStateTab:
         self.content_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         self._on_mode_changed()
-        self._auto_load()
+        if self.slot_var.get() > 0:
+            self._load_character(quiet=True)
 
     def _build_map_card(self, parent):
         """Card advertising the World Map window, with a map thumbnail."""
@@ -448,6 +364,7 @@ class WorldStateTab:
         self.editor = WorldStateEditor(save, slot_idx)
         self.marker_editor = MapMarkerEditor(save, slot_idx)
         self.marker_editor_slot = slot_idx
+        self._snapshot_markers()
         self.refresh()
         self._update_map_window()
 
@@ -458,7 +375,6 @@ class WorldStateTab:
             return
         # Preserve slot selection across reload
         slot_idx = self.slot_var.get() - 1
-        current_combo = self.slot_combo.get() if hasattr(self, "slot_combo") else None
         self.editor = WorldStateEditor(save, slot_idx)
         old_markers = self.marker_editor
         old_slot = self.marker_editor_slot
@@ -474,8 +390,8 @@ class WorldStateTab:
             # so staged markers keep their record positions.
             self.marker_editor.markers = old_markers.markers
             self.marker_editor.dirty = True
-        if current_combo and hasattr(self, "slot_combo"):
-            self.slot_combo.set(current_combo)
+        else:
+            self._snapshot_markers()
         self._update_map_window()
 
     def _open_message_manager(self):
@@ -573,16 +489,21 @@ class WorldStateTab:
         return (*point, label, runes)
 
     def _map_slot_selected(self, value: str):
-        """Character picked in the map window."""
-        if value:
-            self.slot_combo.set(value)
-            self._on_slot_selected(value)
+        """Character picked in the map window: switch the main window's
+        character bar, which loads it here."""
+        if value in self._slot_labels and self.select_character is not None:
+            self.select_character(self._slot_labels.index(value))
+        self._update_map_window()
 
     def _update_map_window(self):
         window = current_window()
         if window is not None:
+            index = self.slot_var.get() - 1
             window.set_character(
-                list(self.slot_combo.cget("values")), self.slot_combo.get()
+                self._slot_labels,
+                self._slot_labels[index]
+                if 0 <= index < len(self._slot_labels)
+                else None,
             )
             window.set_bloodstain(self._bloodstain_map_point())
             window.set_player(self._player_map_point())
@@ -712,15 +633,56 @@ class WorldStateTab:
         return True
 
     def _apply_markers(self, editor: MapMarkerEditor) -> MapMarkerEditor | None:
-        if not self.get_save_path():
-            CTkMessageBox.showerror(
-                "No Save File", "No save file path.", parent=self._dialog_parent()
-            )
-            return None
-        editor.apply()
-        self._persist("before_map_markers", "world_state_map_markers")
-        self.show_toast("Map markers saved.", duration=2500)
+        """Map window's Apply: the main window's Apply All."""
+        if self.apply_all is not None:
+            self.apply_all()
         return self.marker_editor
+
+    def _snapshot_markers(self) -> None:
+        m = self.marker_editor
+        self._marker_snapshot = (
+            {self._marker_key(x) for x in m.markers} if m is not None else set()
+        )
+
+    @staticmethod
+    def _marker_key(marker) -> tuple:
+        return (
+            marker.kind,
+            marker.id,
+            marker.x,
+            marker.y,
+            marker.map,
+            marker.icon,
+            marker.flags,
+        )
+
+    def marker_changes(self) -> int:
+        """Markers and beacons added, removed or changed since loading."""
+        m = self.marker_editor
+        if m is None or not m.dirty:
+            return 0
+        now = {self._marker_key(x) for x in m.markers}
+        return max(1, len(now ^ self._marker_snapshot))
+
+    def discard_markers(self) -> None:
+        if self.marker_editor is not None:
+            self.marker_editor.revert()
+        self._refresh_marker_summary()
+        self._update_map_window()
+
+    def prepare_markers(self):
+        editor = self.marker_editor
+        if editor is None:
+            raise StageError("No character loaded.")
+        if not editor.supported:
+            raise StageError("This character uses the older marker layout.")
+
+        def commit() -> None:
+            if isinstance(editor._save._raw_data, bytes):
+                editor._save._raw_data = bytearray(editor._save._raw_data)
+            editor.apply()
+
+        return commit
 
     def _export_markers(self, editor: MapMarkerEditor):
         path = pick_file(
@@ -787,7 +749,7 @@ class WorldStateTab:
             return False
         note = f" {skipped} did not fit." if skipped else ""
         self.show_toast(
-            f"Imported {added} markers. Apply Changes to save.{note}", duration=3500
+            f"Imported {added} markers. Apply All to save.{note}", duration=3500
         )
         return True
 
@@ -797,11 +759,13 @@ class WorldStateTab:
         if save is None or not self.editor:
             return
         source = self.slot_var.get() - 1
-        names = [
-            n
-            for i, n in enumerate(self._get_slot_display_names())
-            if i != source and not n.endswith(" - Empty")
-        ]
+        # Character bar label -> slot index; ER bar labels list all 10 slots
+        targets = {
+            label: i
+            for i, label in enumerate(self._slot_labels)
+            if i != source and not label.endswith(" - Empty")
+        }
+        names = list(targets)
         if not names:
             CTkMessageBox.showinfo(
                 "Copy Markers",
@@ -832,7 +796,7 @@ class WorldStateTab:
         result: dict[str, int | None] = {"value": None}
 
         def confirm():
-            result["value"] = int(target_var.get().split(" - ")[0]) - 1
+            result["value"] = targets[target_var.get()]
             dialog.destroy()
 
         ds.button_row(
@@ -1199,7 +1163,7 @@ class WorldStateTab:
         elif not m.supported:
             self.markers_var.set("Older marker layout (not editable)")
         else:
-            changed = "\nUnsaved changes" if m.dirty else ""
+            changed = "\nUnapplied changes" if m.dirty else ""
             self.markers_var.set(
                 f"{m.count(MARKER)} markers, {m.count(BEACON)} beacons{changed}"
             )

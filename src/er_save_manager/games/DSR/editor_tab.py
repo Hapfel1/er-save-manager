@@ -1,5 +1,7 @@
 """
-DSR Character Editor Tab
+DSR Character Editor tab.
+
+Sub-tabs: Stats | Identity | Covenants | Equipment | Inventory.
 """
 
 from __future__ import annotations
@@ -32,7 +34,7 @@ from er_save_manager.games.DSR.save import (
 )
 from er_save_manager.ui import palette
 from er_save_manager.ui.editors.ds_equipment import AttunementSection, EquipmentPanel
-from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import FieldTracker, PendingPage, StageError, var_state
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
 
@@ -79,8 +81,11 @@ def _backup_and_save(dsr_save, save_path: Path, operation: str) -> None:
 
 
 class DSREditorTab:
-    def __init__(self, parent, get_dsr_save, get_save_path, show_toast) -> None:
+    def __init__(
+        self, parent, get_dsr_save, get_save_path, show_toast, register_pending=None
+    ) -> None:
         self.parent = parent
+        self._register_pending = register_pending
         self._get_dsr_save = get_dsr_save
         self._get_save_path = get_save_path
         self._show_toast = show_toast
@@ -92,13 +97,25 @@ class DSREditorTab:
         self._ng_var = tk.StringVar(value="0")
         self._playtime_var = tk.StringVar(value="--")
         self._offering_vars = {c: tk.StringVar() for c in COVENANT_OFFERING_ORDER}
-        self._appearance = None
+        self.inventory = None
         self._rank_vars = {c: tk.StringVar() for c in COVENANT_OFFERING_ORDER}
         # Starting class index at last load; used for level recalc
         self._loaded_class_idx: int = 0
         # False when the loaded stats sit below their own class's base
         # (modded or edited character); class minimums are then not enforced.
         self._enforce_class_min = True
+        self._stats_tracker = FieldTracker(self._stats_state)
+        self._identity_tracker = FieldTracker(
+            var_state(
+                {
+                    "name": self._name_var,
+                    "class": self._class_var,
+                    "covenant": self._covenant_var,
+                    "ng": self._ng_var,
+                }
+            )
+        )
+        self._covenant_tracker = FieldTracker(var_state(self._offering_vars))
 
     def setup_ui(self) -> None:
         for _ in self.setup_steps():
@@ -117,22 +134,6 @@ class DSREditorTab:
         ctk.CTkLabel(
             header, text="Character Editor", font=("Segoe UI", 16, "bold")
         ).pack(side="left")
-        ctk.CTkButton(
-            header,
-            text="Load Character",
-            command=self._load_selected,
-            width=130,
-        ).pack(side="right", padx=(6, 0))
-        self._slot_var = tk.StringVar()
-        self._slot_combo = ctk.CTkComboBox(
-            header,
-            variable=self._slot_var,
-            values=[],
-            state="readonly",
-            width=240,
-        )
-        self._slot_combo.pack(side="right")
-        ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
 
         tabs = ctk.CTkTabview(
             outer,
@@ -152,29 +153,22 @@ class DSREditorTab:
         yield
         self._attunement = AttunementSection(ATTUNE_SLOTS)
         self._equip_panel = EquipmentPanel(
-            tabs.add("Equipment"), self._apply_equipment, self._attunement.build
+            tabs.add("Equipment"), self._attunement.build
         )
         self._attunement.attach(self._equip_panel)
         yield
-        from er_save_manager.games.DSR.appearance_tab import DSRAppearanceTab
+        from er_save_manager.games.DSR.inventory_tab import DSRInventoryTab
 
-        self._appearance = DSRAppearanceTab(
-            tabs.add("Appearance"),
-            self._get_dsr_save,
-            self._get_save_path,
-            lambda: self._current_slot,
-            self._show_toast,
-            _backup_and_save,
-            _game_blocks_write,
+        self.inventory = DSRInventoryTab(
+            tabs.add("Inventory"),
+            get_dsr_save=self._get_dsr_save,
+            get_save_path=self._get_save_path,
+            show_toast=self._show_toast,
         )
-        yield from self._appearance.setup_steps()
+        self.inventory.setup_ui()
         # A save or character may have been loaded while the tab was building.
-        self._appearance.refresh()
-        save = self._get_dsr_save()
-        if save is not None and 0 <= self._current_slot < len(save.characters):
-            char = save.characters[self._current_slot]
-            if char is not None:
-                self._appearance.load_character(char)
+        self.inventory.load_slot(self._current_slot)
+        self._register_pages()
 
     # --- Stats tab ------------------------------------------------------------ #
 
@@ -257,9 +251,6 @@ class DSREditorTab:
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=15, pady=(4, 0))
-        ctk.CTkButton(
-            frame, text="Apply Changes", command=self._apply_stats, width=200
-        ).pack(pady=16)
 
     # --- Identity tab --------------------------------------------------------- #
 
@@ -311,9 +302,6 @@ class DSREditorTab:
             font=("Segoe UI", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=15, pady=(4, 0))
-        ctk.CTkButton(
-            frame, text="Apply Changes", command=self._apply_identity, width=200
-        ).pack(pady=16)
 
     # --- Covenants tab ------------------------------------------------------- #
 
@@ -361,9 +349,6 @@ class DSREditorTab:
             justify="left",
             wraplength=520,
         ).pack(anchor="w", padx=15, pady=(4, 0))
-        ctk.CTkButton(
-            frame, text="Apply Changes", command=self._apply_covenants, width=200
-        ).pack(pady=16)
 
     def _update_rank(self, cov: DSRCovenant) -> None:
         try:
@@ -376,20 +361,10 @@ class DSREditorTab:
         else:
             self._rank_vars[cov].set(f"Rank {covenant_rank(count)}")
 
-    def _apply_covenants(self) -> None:
-        if _game_blocks_write(self.parent):
-            return
-        if self._current_slot < 0:
-            CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
-            )
-            return
-        save, save_path = self._get_dsr_save(), self._get_save_path()
-        if save is None or save_path is None:
-            return
-        char = save.characters[self._current_slot]
+    def _prepare_covenants(self):
+        char = self._loaded_char()
         if char is None:
-            return
+            raise StageError("No character loaded.")
         try:
             counts = {c: int(v.get()) for c, v in self._offering_vars.items()}
         except ValueError:
@@ -397,72 +372,59 @@ class DSREditorTab:
         if len(counts) != len(COVENANT_OFFERING_ORDER) or not all(
             0 <= n <= MAX_COVENANT_OFFERINGS for n in counts.values()
         ):
-            CTkMessageBox.showerror(
-                "Invalid Offering Count",
-                f"Offering counts must be whole numbers from 0 to {MAX_COVENANT_OFFERINGS}.",
-                parent=self.parent,
+            raise StageError(
+                "Offering counts must be whole numbers from 0 to "
+                f"{MAX_COVENANT_OFFERINGS}."
             )
-            return
-        if not CTkMessageBox.askyesno(
-            "Apply Covenant Offerings",
-            f"Apply covenant offerings to Slot {self._current_slot + 1}?\n\n"
-            "A backup will be created.",
-            parent=self.parent,
-        ):
-            return
-        for cov, count in counts.items():
-            char.set_covenant_offerings(cov, count)
-        try:
-            _backup_and_save(
-                save, save_path, f"edit_covenants_slot_{self._current_slot + 1}"
-            )
-            self._show_toast("Covenant offerings applied. Backup created")
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+
+        def commit() -> None:
+            for cov, count in counts.items():
+                char.set_covenant_offerings(cov, count)
+
+        return commit
 
     # --- Refresh / load ------------------------------------------------------- #
 
     def refresh(self) -> None:
-        save = self._get_dsr_save()
-        if save is None:
-            self._slot_combo.configure(values=[])
-            return
-        options = [
-            f"Slot {i + 1} - {c.name}" if c else f"Slot {i + 1} - Empty"
-            for i, c in enumerate(save.characters)
-        ]
-        self._slot_combo.configure(values=options)
-        self._slot_var.set(options[0] if options else "")
         # A new save: the loaded character belongs to the old one.
-        self._current_slot = -1
-        self._load_equipment()
-        if self._appearance is not None:
-            self._appearance.refresh()
+        self.load_slot(-1)
 
     def load_slot(self, slot_idx: int) -> None:
-        options = self._slot_combo.cget("values")
-        if options and slot_idx < len(options):
-            self._slot_var.set(options[slot_idx])
+        """Show the character in slot_idx; -1 or an empty slot clears the tab."""
+        save = self._get_dsr_save()
+        if self.inventory is not None:
+            self.inventory.load_slot(slot_idx)
+        if (
+            save is None
+            or not 0 <= slot_idx < len(save.characters)
+            or save.characters[slot_idx] is None
+        ):
+            self._current_slot = -1
+            self._clear()
+            return
         self._current_slot = slot_idx
         self._populate(slot_idx)
 
-    def _load_selected(self) -> None:
-        idx = self._slot_idx()
-        if idx < 0:
-            return
+    def _loaded_char(self):
         save = self._get_dsr_save()
-        if save is None:
-            CTkMessageBox.showwarning(
-                "No Save", "No DSR save loaded.", parent=self.parent
-            )
-            return
-        if save.characters[idx] is None:
-            CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {idx + 1} is empty.", parent=self.parent
-            )
-            return
-        self._current_slot = idx
-        self._populate(idx)
+        if save is None or self._current_slot < 0:
+            return None
+        return save.characters[self._current_slot]
+
+    def _clear(self) -> None:
+        for tracker in (
+            self._stats_tracker,
+            self._identity_tracker,
+            self._covenant_tracker,
+        ):
+            tracker.clear()
+        for var in (*self._stat_vars.values(), *self._offering_vars.values()):
+            var.set("")
+        self._name_var.set("")
+        self._playtime_var.set("--")
+        if hasattr(self, "_class_note"):
+            self._class_note.configure(text="")
+        self._load_equipment()
 
     def _populate(self, slot_idx: int) -> None:
         save = self._get_dsr_save()
@@ -471,6 +433,16 @@ class DSREditorTab:
         char = save.characters[slot_idx]
         if char is None:
             return
+        self._fill_stats(char)
+        self._fill_identity(char)
+        self._fill_covenants(char)
+        h = int(char.play_seconds // 3600)
+        m = int((char.play_seconds % 3600) // 60)
+        s = int(char.play_seconds % 60)
+        self._playtime_var.set(f"{h}h {m:02d}m {s:02d}s")
+        self._load_equipment()
+
+    def _fill_stats(self, char) -> None:
         self._loaded_class_idx = int(char.player_class)
         for key in ("vit", "atn", "end", "str", "dex", "int", "fth", "res"):
             self._stat_vars[key].set(str(char.get_stat(key)))
@@ -487,23 +459,73 @@ class DSREditorTab:
         self._stat_vars["level"].set(str(char.level))
         self._stat_vars["souls"].set(str(char.souls))
         self._stat_vars["humanity"].set(str(char.humanity))
+        self._stats_tracker.mark_clean()
+
+    def _fill_identity(self, char) -> None:
         self._name_var.set(char.name)
-        for cov, var in self._offering_vars.items():
-            var.set(str(char.covenant_offerings(cov)))
         cls = int(char.player_class)
         self._class_var.set(_CLASSES[cls] if cls < len(_CLASSES) else str(cls))
         cov = int(char.covenant)
         self._covenant_var.set(_COVENANTS[cov] if cov < len(_COVENANTS) else str(cov))
         self._ng_var.set(str(char.ng_plus))
-        if self._appearance is not None:
-            self._appearance.load_character(char)
-        h = int(char.play_seconds // 3600)
-        m = int((char.play_seconds % 3600) // 60)
-        s = int(char.play_seconds % 60)
-        self._playtime_var.set(f"{h}h {m:02d}m {s:02d}s")
-        self._load_equipment()
+        self._identity_tracker.mark_clean()
+
+    def _fill_covenants(self, char) -> None:
+        for cov, var in self._offering_vars.items():
+            var.set(str(char.covenant_offerings(cov)))
+        self._covenant_tracker.mark_clean()
+
+    def _stats_state(self) -> dict:
+        return var_state({k: v for k, v in self._stat_vars.items() if k != "level"})()
+
+    def _refill(self, fill) -> None:
+        char = self._loaded_char()
+        if char is not None:
+            fill(char)
+
+    def _register_pages(self) -> None:
+        if self._register_pending is None:
+            return
+        for name, tracker, prepare, fill in (
+            ("Stats", self._stats_tracker, self._prepare_stats, self._fill_stats),
+            (
+                "Identity",
+                self._identity_tracker,
+                self._prepare_identity,
+                self._fill_identity,
+            ),
+            (
+                "Covenants",
+                self._covenant_tracker,
+                self._prepare_covenants,
+                self._fill_covenants,
+            ),
+        ):
+            self._register_pending(
+                PendingPage(
+                    name,
+                    tracker.changes,
+                    prepare,
+                    lambda f=fill: self._refill(f),
+                    lambda n=name: self._tabs.set(n),
+                )
+            )
+        self._register_pending(
+            PendingPage(
+                "Equipment",
+                self._equipment_changes,
+                self._prepare_equipment,
+                self._load_equipment,
+                lambda: self._tabs.set("Equipment"),
+            )
+        )
 
     # --- Equipment ------------------------------------------------------------ #
+
+    def select(self, name: str) -> None:
+        """Show the sub-tab called name."""
+        self._tabs.set(name)
+        self._on_subtab()
 
     def _on_subtab(self) -> None:
         # Inventory edits change what the equipment pickers offer.
@@ -528,40 +550,24 @@ class DSREditorTab:
         )
         panel.load(DSREquipAdapter(char) if char is not None else None)
 
-    def _apply_equipment(self, adapter: DSREquipAdapter, staged: dict) -> None:
-        if not staged and not adapter.spells_changed:
-            self._show_toast("No equipment changes to apply")
-            return
-        if _game_blocks_write(self.parent):
-            return
-        save = self._get_dsr_save()
-        save_path = self._get_save_path()
-        if save is None or save_path is None:
-            return
-        if not CTkMessageBox.askyesno(
-            "Apply Equipment",
-            f"Apply equipment changes to Slot {self._current_slot + 1}?\n\n"
-            "A backup will be created.",
-            parent=self.parent,
-        ):
-            return
-        try:
+    def _equipment_changes(self) -> int:
+        panel = getattr(self, "_equip_panel", None)
+        if panel is None or panel.adapter is None:
+            return 0
+        return len(panel.staged) + (1 if self._attunement.changed() else 0)
+
+    def _prepare_equipment(self):
+        adapter = self._equip_panel.adapter
+        staged = self._equip_panel.staged
+        save, slot = self._get_dsr_save(), self._current_slot
+        if adapter is None or save is None:
+            raise StageError("No character loaded.")
+
+        def commit() -> None:
             adapter.apply(staged)
-        except ValueError as exc:
-            CTkMessageBox.showerror(
-                "Equipment Not Applied", str(exc), parent=self.parent
-            )
-            self._load_equipment()
-            return
-        sync_dir_equipment(save, self._current_slot)
-        try:
-            _backup_and_save(
-                save, save_path, f"dsr_edit_equipment_slot_{self._current_slot + 1}"
-            )
-            self._show_toast("Equipment applied. Backup created.")
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
-        self._load_equipment()
+            sync_dir_equipment(save, slot)
+
+        return commit
 
     def _recalc_level(self) -> None:
         """Recalculate and update the level field from current stat inputs."""
@@ -583,133 +589,79 @@ class DSREditorTab:
 
     # --- Apply ---------------------------------------------------------------- #
 
-    def _apply_stats(self) -> None:
-        if _game_blocks_write(self.parent):
-            return
-
-        if self._current_slot < 0:
-            CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
-            )
-            return
-        save, save_path = self._get_dsr_save(), self._get_save_path()
-        if save is None or save_path is None:
-            return
-        if not CTkMessageBox.askyesno(
-            "Apply Stats",
-            f"Apply stat changes to Slot {self._current_slot + 1}?\n\nA backup will be created.",
-            parent=self.parent,
-        ):
-            return
-        char = save.characters[self._current_slot]
+    def _prepare_stats(self):
+        save, char = self._get_dsr_save(), self._loaded_char()
         if char is None:
-            return
+            raise StageError("No character loaded.")
+        slot = self._current_slot
+        class_idx = self._loaded_class_idx
         try:
             stats = {key: int(self._stat_vars[key].get()) for key in STAT_KEYS}
             souls = int(self._stat_vars["souls"].get())
             humanity = int(self._stat_vars["humanity"].get())
         except ValueError:
-            CTkMessageBox.showerror(
-                "Invalid Value",
-                "Stats, souls and humanity must be numbers.",
-                parent=self.parent,
-            )
-            return
-        problems = self._stat_problems(stats, self._loaded_class_idx)
+            raise StageError("Stats, souls and humanity must be numbers.") from None
+        problems = self._stat_problems(stats, class_idx)
         if not 0 <= souls <= MAX_SOULS:
             problems.append(f"Souls must be 0-{MAX_SOULS:,}")
         if not 0 <= humanity <= MAX_HUMANITY:
             problems.append(f"Humanity must be 0-{MAX_HUMANITY}")
         if problems:
-            CTkMessageBox.showerror(
-                "Invalid Value", "\n".join(problems), parent=self.parent
-            )
-            return
-        for key, value in stats.items():
-            char.set_stat(key, value, update_derived=True)
-        char.level = max(
-            1, calc_level_from_stats(self._loaded_class_idx, *stats.values())
-        )
-        char.souls = souls
-        char.humanity = humanity
-        # The load screen reads name and level from its own directory copy.
-        _sync_dir_name_level(save, self._current_slot, char.name, char.level)
-        try:
-            _backup_and_save(
-                save, save_path, f"edit_stats_slot_{self._current_slot + 1}"
-            )
-            self._show_toast("Stats applied. Backup created.")
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            raise StageError("\n".join(problems))
 
-    def _apply_identity(self) -> None:
-        if _game_blocks_write(self.parent):
-            return
+        def commit() -> None:
+            for key, value in stats.items():
+                char.set_stat(key, value, update_derived=True)
+            char.level = max(1, calc_level_from_stats(class_idx, *stats.values()))
+            char.souls = souls
+            char.humanity = humanity
+            # The load screen reads name and level from its own directory copy.
+            _sync_dir_name_level(save, slot, char.name, char.level)
 
-        if self._current_slot < 0:
-            CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
-            )
-            return
-        save, save_path = self._get_dsr_save(), self._get_save_path()
-        if save is None or save_path is None:
-            return
-        if not CTkMessageBox.askyesno(
-            "Apply Identity",
-            f"Apply identity changes to Slot {self._current_slot + 1}?\n\nA backup will be created.",
-            parent=self.parent,
-        ):
-            return
-        char = save.characters[self._current_slot]
+        return commit
+
+    def _prepare_identity(self):
+        save, char = self._get_dsr_save(), self._loaded_char()
         if char is None:
-            return
-        if len(self._name_var.get()) > NAME_MAX_CHARS:
-            CTkMessageBox.showerror(
-                "Name Too Long",
-                f"The name can be at most {NAME_MAX_CHARS} characters.",
-                parent=self.parent,
-            )
-            return
+            raise StageError("No character loaded.")
+        slot = self._current_slot
+        name = self._name_var.get()
+        if len(name) > NAME_MAX_CHARS:
+            raise StageError(f"The name can be at most {NAME_MAX_CHARS} characters.")
         new_class = (
             _CLASSES.index(self._class_var.get())
             if self._class_var.get() in _CLASSES
             else int(char.player_class)
         )
-        stats = {key: char.get_stat(key) for key in STAT_KEYS}
+        # The Stats page's values, which Apply All writes first.
+        try:
+            stats = {key: int(self._stat_vars[key].get()) for key in STAT_KEYS}
+        except ValueError:
+            stats = {key: char.get_stat(key) for key in STAT_KEYS}
         problems = self._stat_problems(stats, new_class)
         if problems:
-            CTkMessageBox.showerror(
-                "Class Minimum Conflict",
-                f"The saved stats do not fit {_CLASSES[new_class]}:\n"
-                + "\n".join(problems),
-                parent=self.parent,
+            raise StageError(
+                f"The stats do not fit {_CLASSES[new_class]}:\n" + "\n".join(problems)
             )
-            return
         try:
-            char.name = self._name_var.get()
+            covenant = type(char.covenant)(_COVENANTS.index(self._covenant_var.get()))
+            ng = int(self._ng_var.get())
+        except ValueError as exc:
+            raise StageError(str(exc)) from None
+
+        def commit() -> None:
+            char.name = name
             if new_class != int(char.player_class):
                 char.player_class = type(char.player_class)(new_class)
                 # Level counts from the class's own starting level and stats.
-                char.level = max(1, calc_level_from_stats(new_class, *stats.values()))
-                self._loaded_class_idx = new_class
-                self._stat_vars["level"].set(str(char.level))
-            char.covenant = type(char.covenant)(
-                _COVENANTS.index(self._covenant_var.get())
-            )
-            ng = int(self._ng_var.get())
+                now = [char.get_stat(key) for key in STAT_KEYS]
+                char.level = max(1, calc_level_from_stats(new_class, *now))
+            char.covenant = covenant
             if ng != char.ng_plus:
                 char.ng_plus = ng
-        except (ValueError, IndexError) as exc:
-            CTkMessageBox.showerror("Invalid Value", str(exc), parent=self.parent)
-            return
-        _sync_dir_name_level(save, self._current_slot, char.name, char.level)
-        try:
-            _backup_and_save(
-                save, save_path, f"edit_identity_slot_{self._current_slot + 1}"
-            )
-            self._show_toast("Identity applied. Backup created.")
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            _sync_dir_name_level(save, slot, char.name, char.level)
+
+        return commit
 
     def _stat_problems(self, stats: dict[str, int], class_idx: int) -> list[str]:
         """Stats above the cap or below the class's starting values."""
@@ -730,12 +682,3 @@ class DSREditorTab:
                 f"{key.upper()} below 1" for key, value in stats.items() if value < 1
             ]
         return problems
-
-    def _slot_idx(self) -> int:
-        val = self._slot_var.get()
-        if not val:
-            return -1
-        try:
-            return int(val.split(" - ")[0].replace("Slot", "").strip()) - 1
-        except (ValueError, IndexError):
-            return -1

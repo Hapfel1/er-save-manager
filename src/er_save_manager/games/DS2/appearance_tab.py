@@ -1,9 +1,9 @@
 """
-DS2 Appearance tab: copy a look between characters, gender, the creation
+DS2 Appearance tab: copy a look between characters, body type, the creation
 menu selections (build, physique, hairstyle, eyebrow, beard, tattoo) and
 colors.
 
-Edits stay in the tab until Apply Changes writes them (with a backup). Copying
+Edits stay in the tab until the main window's Apply All writes them. Copying
 from another character or importing JSON only loads values into the tab.
 Only created characters are written: a slot before character creation gets
 its look from the creation menu.
@@ -24,6 +24,7 @@ from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.appearance_share import AppearanceShareCard, ShareSource
 from er_save_manager.ui.color_sliders import ColorSliders
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import FieldTracker, StageError
 from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_file
 
 _SAVE_FILETYPES = [("DS2 save files", "*.sl2 *.co2"), ("All files", "*")]
@@ -42,22 +43,17 @@ class DS2AppearanceTab:
         self,
         parent,
         get_save,
-        get_save_path,
-        get_slot,
         show_toast,
-        blocks_write,
-        backup,
     ) -> None:
         self.parent = parent
         self._get_save = get_save
-        self._get_save_path = get_save_path
-        self._get_slot = get_slot
+        # Slot of the character shown, -1 when none
+        self._slot = -1
         self._show_toast = show_toast
-        self._blocks_write = blocks_write
-        self._backup = backup
         # The appearance block being edited; None until a character is loaded.
         self.block: bytes | None = None
-        self._gender_var = tk.StringVar(value=app_data.GENDERS[0])
+        self._tracker = FieldTracker(self._state)
+        self._body_var = tk.StringVar(value=app_data.BODY_TYPES[0])
         # One (part, variable, combo box) per creation menu selection.
         self._parts: list[tuple[app_data.Part, tk.StringVar, object]] = []
         self._colors: list[tuple[ColorSliders, int]] = []
@@ -65,13 +61,6 @@ class DS2AppearanceTab:
     # --- Building ------------------------------------------------------------ #
 
     def setup_ui(self) -> None:
-        bar = ctk.CTkFrame(self.parent, fg_color="transparent")
-        bar.pack(side="bottom", fill="x", padx=10, pady=(4, 6))
-        ds.button(bar, "Apply Changes", self._apply, width=200).pack(side="left")
-        ds.button(bar, "Revert", self._revert, primary=False, width=120).pack(
-            side="left", padx=(8, 0)
-        )
-
         frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
         frame.pack(fill="both", expand=True)
         bind_mousewheel(frame)
@@ -81,7 +70,7 @@ class DS2AppearanceTab:
             "Copy and share",
             "Load the look of another character, from this save or another "
             "DS2 save, or from a JSON file. Copies include the face, hair "
-            "and all colors. Nothing is written until Apply Changes.",
+            "and all colors. Nothing is written until Apply All.",
         )
         self._share = AppearanceShareCard(
             body,
@@ -100,17 +89,17 @@ class DS2AppearanceTab:
         body = self._card(
             frame,
             "Body and face",
-            "Builds and hairstyles differ between genders; changing the "
-            "gender keeps their place in the list. Options are numbered in "
+            "Builds and hairstyles differ between body types; changing the "
+            "body type keeps their place in the list. Options are numbered in "
             "the creation menu's order.",
         )
         self._combo(
             body,
             0,
-            "Gender",
-            self._gender_var,
-            list(app_data.GENDERS),
-            self._on_gender,
+            "Body type",
+            self._body_var,
+            list(app_data.BODY_TYPES),
+            self._on_body_type,
         )
         for row, part in enumerate(app_data.PARTS, start=1):
             var = tk.StringVar()
@@ -176,11 +165,11 @@ class DS2AppearanceTab:
             options.append((f"Value {current}", current))
         return options
 
-    def _on_gender(self, _value=None) -> None:
+    def _on_body_type(self, _value=None) -> None:
         if self.block is None:
             return
-        gender = app_data.GENDERS.index(self._gender_var.get())
-        self.block = app_data.set_gender(self._pull_colors(self.block), gender)
+        body = app_data.BODY_TYPES.index(self._body_var.get())
+        self.block = app_data.set_gender(self._pull_colors(self.block), body)
         self._show_values()
 
     def _on_part(self, part: app_data.Part, var: tk.StringVar) -> None:
@@ -198,9 +187,9 @@ class DS2AppearanceTab:
     def _show_values(self) -> None:
         if self.block is None:
             return
-        gender = self.block[app_data.GENDER]
-        if gender < len(app_data.GENDERS):
-            self._gender_var.set(app_data.GENDERS[gender])
+        body = self.block[app_data.GENDER]
+        if body < len(app_data.BODY_TYPES):
+            self._body_var.set(app_data.BODY_TYPES[body])
         for part, var, combo in self._parts:
             options = self._options(part)
             combo.configure(values=[label for label, _v in options])
@@ -216,24 +205,33 @@ class DS2AppearanceTab:
 
     # --- Public -------------------------------------------------------------- #
 
+    def load_slot(self, slot: int) -> None:
+        """Show the character in slot; -1 clears the tab."""
+        self._slot = slot
+        self.refresh()
+
     def refresh(self) -> None:
         """Reload the share list and the selected slot's appearance."""
         self._share.refresh()
         save = self._get_save()
-        slot = self._get_slot()
-        if save is None:
+        slot = self._slot
+        if save is None or slot < 0:
+            self.block = None
+            self._tracker.clear()
             return
         self.load_character(save.characters[slot])
 
     def load_character(self, char, *, copy: bool = False) -> bool:
         """Show char's appearance. A failed copy keeps the loaded one; a
-        failed load clears it, so Apply cannot write another character's."""
+        failed load clears it, so Apply All cannot write another
+        character's."""
         try:
             app = Appearance.from_character(char)
             app.validate()
         except ValueError as exc:
             if not copy:
                 self.block = None
+                self._tracker.clear()
             CTkMessageBox.showwarning(
                 "Appearance Not Loaded",
                 f"This character's appearance could not be read: {exc}",
@@ -242,14 +240,45 @@ class DS2AppearanceTab:
             return False
         self.block = app.block
         self._show_values()
+        if not copy:
+            self._tracker.mark_clean()
         return True
 
-    # --- Actions ------------------------------------------------------------- #
+    def changes(self) -> int:
+        return self._tracker.changes()
 
-    def _revert(self) -> None:
+    def _state(self) -> dict:
+        """The appearance block byte by byte, as Apply All writes it."""
+        return dict(enumerate(self._current().block))
+
+    def discard(self) -> None:
         save = self._get_save()
-        if save is not None:
-            self.load_character(save.characters[self._get_slot()])
+        if save is not None and self._slot >= 0:
+            self.load_character(save.characters[self._slot])
+
+    def prepare(self):
+        save = self._get_save()
+        slot = self._slot
+        if save is None or slot < 0:
+            raise StageError("No character loaded.")
+        if save.slot_state(slot) is not SlotState.CHARACTER or self.block is None:
+            raise StageError(
+                "This slot holds no created character. Create the character "
+                "in game first; its look comes from the creation menu."
+            )
+        try:
+            app = self._current()
+            app.validate()
+        except ValueError as exc:
+            raise StageError(str(exc)) from None
+
+        def commit() -> None:
+            app.apply_to(save.characters[slot])
+            save.sync_appearance_cache(slot)
+
+        return commit
+
+    # --- Actions ------------------------------------------------------------- #
 
     def _export_json(self) -> None:
         try:
@@ -258,7 +287,7 @@ class DS2AppearanceTab:
             CTkMessageBox.showwarning("Nothing to Export", str(exc), parent=self.parent)
             return
         save = self._get_save()
-        name = save.slot_display_name(self._get_slot()) if save is not None else ""
+        name = save.slot_display_name(self._slot) if save is not None else ""
         path = pick_file(
             save=True,
             title="Export Appearance",
@@ -291,41 +320,4 @@ class DS2AppearanceTab:
             return
         self.block = app.block
         self._show_values()
-        self._show_toast("Appearance loaded. Apply to save it.")
-
-    def _apply(self) -> None:
-        if self._blocks_write(self.parent):
-            return
-        save, save_path = self._get_save(), self._get_save_path()
-        slot = self._get_slot()
-        if save is None or not save_path:
-            return
-        if save.slot_state(slot) is not SlotState.CHARACTER or self.block is None:
-            CTkMessageBox.showwarning(
-                "No Character",
-                "This slot holds no created character. Create the character "
-                "in game first; its look comes from the creation menu.",
-                parent=self.parent,
-            )
-            return
-        if not CTkMessageBox.askyesno(
-            "Apply Appearance",
-            f"Apply appearance changes to Slot {slot + 1}?\n\nA backup will be created.",
-            parent=self.parent,
-        ):
-            return
-        try:
-            self._current().apply_to(save.characters[slot])
-        except ValueError as exc:
-            CTkMessageBox.showerror("Invalid Value", str(exc), parent=self.parent)
-            return
-        save.sync_appearance_cache(slot)
-        self._backup(
-            save_path, f"before_appearance_edit_slot_{slot}", "edit_appearance"
-        )
-        try:
-            save.save_to_file(save_path)
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
-            return
-        self._show_toast("Appearance applied. Backup created.")
+        self._show_toast("Appearance loaded. Apply All to save it.")

@@ -185,29 +185,8 @@ class DS3InventoryTab:
         """Build the UI in stages; each yield lets the window redraw and handle
         input between stages (gui.py resumes it one stage per turn)."""
 
-        outer = ctk.CTkFrame(self.parent, corner_radius=12)
-        outer.pack(fill="both", expand=True, pady=(0, 10))
-
-        header = ctk.CTkFrame(outer, fg_color="transparent")
-        header.pack(fill="x", padx=10, pady=(10, 6))
-        ctk.CTkLabel(
-            header, text="Inventory Editor", font=("Segoe UI", 16, "bold")
-        ).pack(side="left")
-        ctk.CTkLabel(header, text="Game data:").pack(side="left", padx=(20, 6))
-        ctk.CTkSegmentedButton(
-            header,
-            values=list(catalog.SOURCES.values()),
-            variable=self._source_var,
-        ).pack(side="left")
-        ctk.CTkButton(header, text="Load", command=self._load_selected, width=70).pack(
-            side="right", padx=(6, 0)
-        )
-        self._slot_var = tk.StringVar()
-        self._slot_combo = ctk.CTkComboBox(
-            header, variable=self._slot_var, values=[], state="readonly", width=240
-        )
-        self._slot_combo.pack(side="right")
-        ctk.CTkLabel(header, text="Slot:").pack(side="right", padx=(0, 6))
+        outer = ctk.CTkFrame(self.parent, fg_color="transparent")
+        outer.pack(fill="both", expand=True)
 
         self._error_label = ctk.CTkLabel(
             outer,
@@ -511,48 +490,21 @@ class DS3InventoryTab:
     # --- Refresh ----------------------------------------------------------- #
 
     def refresh(self) -> None:
-        save = self._get_save()
-        if save is None:
-            self._slot_combo.configure(values=[])
-            return
-        options = [
-            f"Slot {i + 1} - {c.name}" if c else f"Slot {i + 1} - Empty"
-            for i, c in enumerate(save.characters)
-        ]
-        self._slot_combo.configure(values=options)
         self.last_offsets = []
-        if (
-            0 <= self._current_slot < len(options)
-            and save.characters[self._current_slot]
-        ):
-            self._slot_var.set(options[self._current_slot])
-            self._reload_inventory()
-        else:
-            self._current_slot = -1
-            self._slot_var.set(options[0] if options else "")
-            self._clear_inventory()
-            self._notify_listeners()
+        self.load_slot(self._current_slot)
 
     def load_slot(self, slot_idx: int) -> None:
-        options = self._slot_combo.cget("values")
-        if options and slot_idx < len(options):
-            self._slot_var.set(options[slot_idx])
-        self._current_slot = slot_idx
-        self.last_offsets = []
-        self._reload_inventory()
-
-    def _load_selected(self) -> None:
-        idx = self._slot_idx()
-        if idx < 0:
-            return
+        """Show the character in slot_idx; -1 or an empty slot clears the tab."""
         save = self._get_save()
-        if save is None or save.characters[idx] is None:
-            CTkMessageBox.showwarning(
-                "Empty Slot", f"Slot {idx + 1} is empty.", parent=self.parent
-            )
-            return
-        self._current_slot = idx
         self.last_offsets = []
+        if save is None or not (
+            0 <= slot_idx < len(save.characters) and save.characters[slot_idx]
+        ):
+            self._current_slot = -1
+            self._clear_inventory()
+            self._notify_listeners()
+            return
+        self._current_slot = slot_idx
         self._reload_inventory()
 
     # --- Inventory list ---------------------------------------------------- #
@@ -1370,12 +1322,3 @@ class DS3InventoryTab:
         from er_save_manager.games.DS3.visual_inventory import DS3VisualInventory
 
         self._visual_win = DS3VisualInventory(self.parent.winfo_toplevel(), self)
-
-    def _slot_idx(self) -> int:
-        val = self._slot_var.get()
-        if not val:
-            return -1
-        try:
-            return int(val.split(" - ")[0].replace("Slot", "").strip()) - 1
-        except (ValueError, IndexError):
-            return -1

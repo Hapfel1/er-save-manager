@@ -86,7 +86,8 @@ def _split(name: str) -> tuple[str, str]:
 
 @functools.cache
 def shape_controls() -> tuple[FaceControl, ...]:
-    """Age and gender first, then the geometry controls."""
+    """Age and the FaceGen gender control first, then the geometry controls.
+    The gender control is labelled with Dark Souls III's menu name for it."""
     d = _data()
     out = [
         FaceControl(
@@ -98,7 +99,7 @@ def shape_controls() -> tuple[FaceControl, ...]:
         ),
         FaceControl(
             "Overall",
-            "Gender",
+            "Facial aesthetic",
             tuple(d["gender"]["geo"]),
             tuple(d["gender"]["tex"]),
             d["gender"]["range"] * RANGE_MARGIN,

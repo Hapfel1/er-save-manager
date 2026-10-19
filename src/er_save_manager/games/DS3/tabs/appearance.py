@@ -3,7 +3,7 @@ DS3 Appearance tab: body type and build, base templates, face sliders, hair,
 brow, beard, eyelashes, pupils, tattoo/mark and their colors.
 
 The sliders are the character creation menu's own, with its captions. Edits
-stay in the tab until Apply Changes writes them (with a backup). Copying from
+stay in the tab until the main window's Apply All writes them. Copying from
 another character or importing JSON only loads values into the tab.
 """
 
@@ -24,6 +24,7 @@ from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.appearance_share import AppearanceShareCard, ShareSource
 from er_save_manager.ui.color_sliders import ColorSliders
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import FieldTracker, StageError
 from er_save_manager.ui.utils import (
     bind_mousewheel,
     center_window,
@@ -156,21 +157,16 @@ class DS3AppearanceTab:
         self,
         parent,
         get_save,
-        get_save_path,
-        get_slot,
         show_toast,
-        save_with_backup,
-        blocks_write,
     ) -> None:
         self.parent = parent
         self._get_save = get_save
-        self._get_save_path = get_save_path
-        self._get_slot = get_slot
+        # Slot of the character shown, -1 when none
+        self._slot = -1
         self._show_toast = show_toast
-        self._save_with_backup = save_with_backup
-        self._blocks_write = blocks_write
         # The FACE block being edited; None until a character is loaded.
         self.face: bytes | None = None
+        self._tracker = FieldTracker(self._state)
         self._sliders: list[tuple[Slider, tk.IntVar]] = []
         self._part_rows: list[_PartRow] = []
         self._skin_built = False
@@ -180,13 +176,6 @@ class DS3AppearanceTab:
     # --- Building ------------------------------------------------------------ #
 
     def setup_steps(self):
-        bar = ctk.CTkFrame(self.parent, fg_color="transparent")
-        bar.pack(side="bottom", fill="x", padx=10, pady=(4, 6))
-        ds.button(bar, "Apply Changes", self._apply, width=200).pack(side="left")
-        ds.button(bar, "Revert", self._revert, primary=False, width=120).pack(
-            side="left", padx=(8, 0)
-        )
-
         frame = ctk.CTkScrollableFrame(self.parent, fg_color="transparent")
         frame.pack(fill="both", expand=True)
         bind_mousewheel(frame)
@@ -316,8 +305,7 @@ class DS3AppearanceTab:
             parent,
             "Copy and share",
             "Load the look of another character, from this save or another "
-            "DS3 save, or from a JSON file. Nothing is written until Apply "
-            "Changes.",
+            "DS3 save, or from a JSON file. Nothing is written until Apply All.",
         )
         self._share = AppearanceShareCard(
             body,
@@ -440,6 +428,19 @@ class DS3AppearanceTab:
     def refresh(self) -> None:
         self._share.refresh()
 
+    def load_slot(self, slot_idx: int) -> None:
+        """Show the character in slot_idx; -1 or an empty slot clears the tab."""
+        self.refresh()
+        save = self._get_save()
+        if save is None or not (
+            0 <= slot_idx < len(save.characters) and save.characters[slot_idx]
+        ):
+            self._slot = -1
+            self.clear()
+            return
+        self._slot = slot_idx
+        self.load_character(save.characters[slot_idx])
+
     def load_character(self, char, *, copy: bool = False) -> bool:
         """Show char's appearance. A failed copy keeps the loaded one; a
         failed load clears it, so Apply cannot write another character's."""
@@ -449,6 +450,7 @@ class DS3AppearanceTab:
         except (LayoutError, ValueError) as exc:
             if not copy:
                 self.face = None
+                self._tracker.clear()
             CTkMessageBox.showwarning(
                 "Appearance Not Loaded",
                 f"This character's appearance could not be read: {exc}",
@@ -456,16 +458,53 @@ class DS3AppearanceTab:
             )
             return False
         self._show(app)
+        if not copy:
+            self._tracker.mark_clean()
         return True
 
-    # --- Actions ------------------------------------------------------------- #
+    def clear(self) -> None:
+        self.face = None
+        self._tracker.clear()
 
-    def _revert(self) -> None:
+    def changes(self) -> int:
+        return self._tracker.changes()
+
+    def _state(self) -> dict:
+        """Body type and the FACE block byte by byte, as Apply All writes them."""
+        app = self._current()
+        return {"body": app.body_type} | dict(enumerate(app.face))
+
+    def discard(self) -> None:
         save = self._get_save()
-        slot = self._get_slot()
+        slot = self._slot
         if save is None or slot < 0 or save.characters[slot] is None:
             return
         self.load_character(save.characters[slot])
+
+    def prepare(self):
+        save = self._get_save()
+        slot = self._slot
+        if save is None or slot < 0 or save.characters[slot] is None:
+            raise StageError("No character loaded.")
+        try:
+            app = self._current()
+            app.validate()
+            char = save.characters[slot]
+            if len(char.face_block) != len(app.face):
+                raise ValueError(
+                    f"Appearance block is {len(app.face)} bytes, the character's "
+                    f"is {len(char.face_block)}"
+                )
+        except (LayoutError, ValueError) as exc:
+            raise StageError(str(exc)) from None
+
+        def commit() -> None:
+            app.apply_to(char)
+            _sync_dir_face(save, slot, char.face_block)
+
+        return commit
+
+    # --- Actions ------------------------------------------------------------- #
 
     def _export_json(self) -> None:
         try:
@@ -474,7 +513,7 @@ class DS3AppearanceTab:
             CTkMessageBox.showwarning("Nothing to Export", str(exc), parent=self.parent)
             return
         save = self._get_save()
-        slot = self._get_slot()
+        slot = self._slot
         name = (
             save.characters[slot].name
             if save is not None and slot >= 0 and save.characters[slot]
@@ -511,37 +550,4 @@ class DS3AppearanceTab:
             CTkMessageBox.showerror("Import Failed", str(exc), parent=self.parent)
             return
         self._show(app)
-        self._show_toast("Appearance loaded. Apply to save it.")
-
-    def _apply(self) -> None:
-        if self._blocks_write(self.parent):
-            return
-        save, save_path = self._get_save(), self._get_save_path()
-        slot = self._get_slot()
-        if save is None or save_path is None:
-            return
-        if slot < 0 or save.characters[slot] is None or self.face is None:
-            CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
-            )
-            return
-        if not CTkMessageBox.askyesno(
-            "Apply Appearance",
-            f"Apply appearance changes to Slot {slot + 1}?\n\nA backup will be created.",
-            parent=self.parent,
-        ):
-            return
-        char = save.characters[slot]
-        try:
-            self._current().apply_to(char)
-        except (LayoutError, ValueError) as exc:
-            CTkMessageBox.showerror("Invalid Value", str(exc), parent=self.parent)
-            return
-        _sync_dir_face(save, slot, char.face_block)
-        try:
-            self._save_with_backup(
-                save, save_path, f"ds3_edit_appearance_slot_{slot + 1}"
-            )
-            self._show_toast("Appearance applied. Backup created.")
-        except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+        self._show_toast("Appearance loaded. Apply All to save it.")

@@ -217,18 +217,16 @@ class EquipPickerDialog:
 
 class EquipmentPanel:
     """Equip slots in section boxes with a picker per slot. Picks are staged
-    until Apply Changes, which calls on_apply(adapter, staged) with
-    {slot key: EquipChoice or None}; the game tab writes and saves them.
-    build_extra(body) adds game-specific sections below the slots."""
+    ({slot key: EquipChoice or None}, see staged) until the main window's
+    Apply All, which has the game tab write them. build_extra(body) adds
+    game-specific sections below the slots."""
 
     def __init__(
         self,
         parent,
-        on_apply: Callable[[EquipAdapter, dict], None],
         build_extra: Callable[[ctk.CTkFrame], None] | None = None,
     ) -> None:
         self.parent = parent
-        self._on_apply = on_apply
         self._build_extra = build_extra
         self.adapter: EquipAdapter | None = None
         self._staged: dict[Hashable, EquipChoice | None] = {}
@@ -238,20 +236,6 @@ class EquipmentPanel:
         # that depend on the equipment (DS2 attunement slots).
         self.on_change: Callable[[], None] | None = None
         self.on_reset: Callable[[], None] | None = None
-
-        btn_row = ctk.CTkFrame(parent, fg_color="transparent")
-        btn_row.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
-        ctk.CTkButton(btn_row, text="Apply Changes", command=self._apply).pack(
-            side=tk.RIGHT
-        )
-        ctk.CTkButton(
-            btn_row,
-            text="Reset",
-            command=self.reset,
-            fg_color=ds.SECONDARY,
-        ).pack(side=tk.RIGHT, padx=(0, 8))
-        self._status = ctk.CTkLabel(btn_row, text="", text_color=ds.INFO)
-        self._status.pack(side=tk.LEFT)
 
         self.body = ctk.CTkScrollableFrame(parent, fg_color="transparent")
         self.body.pack(fill=tk.BOTH, expand=True)
@@ -286,7 +270,6 @@ class EquipmentPanel:
                 wraplength=600,
                 justify=tk.LEFT,
             ).pack(anchor="w", padx=10, pady=10)
-            self._update_status()
             if self.on_change is not None:
                 self.on_change()
             return
@@ -304,7 +287,6 @@ class EquipmentPanel:
             )
             for column, name in enumerate(names[start : start + _GROUPS_PER_ROW]):
                 self._build_section(row, column, name, groups[name])
-        self._update_status()
         if self.on_change is not None:
             self.on_change()
 
@@ -312,7 +294,6 @@ class EquipmentPanel:
         self._staged = {}
         for key in self._name_labels:
             self._refresh_slot(key)
-        self._update_status()
         if self.on_reset is not None:
             self.on_reset()
         if self.on_change is not None:
@@ -378,12 +359,6 @@ class EquipmentPanel:
             text += " *"
         label.configure(text=text)
 
-    def _update_status(self) -> None:
-        count = len(self._staged)
-        self._status.configure(
-            text=f"{count} unapplied change{'s' if count != 1 else ''}" if count else ""
-        )
-
     def _stage(self, slot_key: Hashable, choice: EquipChoice | None) -> None:
         current = self.adapter.current(slot_key)
         if (None if choice is None else choice.key) == (
@@ -393,7 +368,6 @@ class EquipmentPanel:
         else:
             self._staged[slot_key] = choice
         self._refresh_slot(slot_key)
-        self._update_status()
         if self.on_change is not None:
             self.on_change()
 
@@ -429,14 +403,6 @@ class EquipmentPanel:
             )
             return
         self._stage(slot_key, choice)
-
-    def _apply(self) -> None:
-        if self.adapter is None:
-            CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
-            )
-            return
-        self._on_apply(self.adapter, dict(self._staged))
 
 
 class AttunementAdapter(Protocol):
