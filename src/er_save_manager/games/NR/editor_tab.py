@@ -1,12 +1,14 @@
 """
-Nightreign Slot Editor Tab
+Nightreign character tabs.
 
-Sub-tabs:
-  Overview - player name, murk, sovereign sigils
-  Relics   - searchable treeview, edit panel with name pickers, spawner, remove,
-             copy to spawn, JSON import/export
-  Loadouts - per-hero chalice and preset relic slots, preset rename/create/
-             delete, loadout chunk budget
+  Character Editor - player name, murk, sovereign sigils
+  Relics           - searchable icon grid with color / Deep filters, detail
+                     pane that edits the selected relic or spawns a new one
+                     (icon pickers), remove, copy to new relic, JSON
+                     import/export
+  Loadouts         - chalice / preset icon grid per hero, detail pane with
+                     one card per relic slot (icon picker of the relics that
+                     fit), preset rename/create/delete, loadout chunk budget
 """
 
 from __future__ import annotations
@@ -14,7 +16,6 @@ from __future__ import annotations
 import tkinter as tk
 from collections.abc import Callable
 from pathlib import Path
-from tkinter import ttk
 
 import customtkinter as ctk
 
@@ -62,10 +63,17 @@ def _fmt_effect(effect_id: int) -> str:
 
 
 class _PickerDialog(ctk.CTkToplevel):
-    """Modal searchable list for picking a relic or effect ID."""
+    """Modal searchable list for picking a relic or effect ID. icon(id)
+    gives a row's PIL icon."""
 
     def __init__(
-        self, parent, title: str, items: list[tuple[int, str]], current: int = -1
+        self,
+        parent,
+        title: str,
+        items: list[tuple[int, str]],
+        current: int = -1,
+        icon: Callable | None = None,
+        width: int = 540,
     ):
         super().__init__(parent)
         from er_save_manager.ui import dialog_style as ds
@@ -78,6 +86,7 @@ class _PickerDialog(ctk.CTkToplevel):
 
         self.result: int | None = None
         self._items = items
+        self._icon = icon
 
         main = ctk.CTkFrame(self, fg_color="transparent")
         main.pack(fill="both", expand=True, padx=20, pady=16)
@@ -96,7 +105,11 @@ class _PickerDialog(ctk.CTkToplevel):
         )
         search.pack(fill="x", pady=(10, 8))
 
-        self._rows = ds.RowList(main, on_activate=lambda _i: self._on_confirm())
+        self._rows = ds.RowList(
+            main,
+            icon_space=30 if icon else 0,
+            on_activate=lambda _i: self._on_confirm(),
+        )
         self._rows.pack(fill="both", expand=True)
 
         ds.button(
@@ -107,7 +120,7 @@ class _PickerDialog(ctk.CTkToplevel):
         self.bind("<Escape>", lambda _e: self.destroy())
 
         self._render(items)
-        ds.finish(self, parent, width=540, height=520)
+        ds.finish(self, parent, width=width, height=520)
 
         if current >= 0:
             for idx, (iid, _) in enumerate(self._filtered):
@@ -121,6 +134,8 @@ class _PickerDialog(ctk.CTkToplevel):
     def _render(self, items: list[tuple[int, str]]) -> None:
         self._filtered = items
         self._rows.set_rows([name for _, name in items])
+        if self._icon is not None:
+            self._rows.load_icons(lambda i: self._icon(self._filtered[i][0]))
 
     def _filter(self, q: str) -> None:
         q = q.lower()
@@ -142,97 +157,397 @@ class _PickerDialog(ctk.CTkToplevel):
         self.destroy()
 
 
+# Relic color filters: nr_items relic "color" (EquipParamAntique relicColor)
+_RELIC_COLORS = ("Burning", "Drizzly", "Luminous", "Tranquil")
+
+
+def _relic_grid_icon(real_item_id: int):
+    from er_save_manager.games.NR.icons import relic_icon
+    from er_save_manager.ui.virtual_grid import no_image_icon
+
+    return relic_icon(real_item_id) or no_image_icon()
+
+
+def _relic_filter_match(real_item_id: int, choice: str) -> bool:
+    """Whether a relic type passes the color / Deep / Fixed filter."""
+    from er_save_manager.games.NR.item_db import get_relic
+    from er_save_manager.games.NR.relic_rules import relic_kind
+
+    if choice == "All":
+        return True
+    if choice == "Deep":
+        return real_item_id >= 2000000
+    if choice == "Fixed":
+        return relic_kind(real_item_id) == "fixed"
+    row = get_relic(real_item_id)
+    return (
+        bool(row) and row["color"] in range(4) and _RELIC_COLORS[row["color"]] == choice
+    )
+
+
+class _RelicTypePicker(ctk.CTkToplevel):
+    """Modal icon grid for picking a relic type."""
+
+    def __init__(self, parent, items: list[tuple[int, str]], current: int = -1):
+        super().__init__(parent)
+        from er_save_manager.ui.virtual_grid import GridEntry, VirtualIconGrid
+
+        self.withdraw()
+        self.attributes("-alpha", 0)
+        self.title("Select Relic Type")
+        self.transient(parent)
+        self.resizable(True, True)
+
+        self.result: int | None = None
+        self._labels = dict(items)
+        self._all = [
+            GridEntry(
+                rid,
+                label,
+                f"{label} {rid}".lower(),
+                lambda r=rid: _relic_grid_icon(r),
+            )
+            for rid, label in items
+        ]
+
+        main = ctk.CTkFrame(self, fg_color="transparent")
+        main.pack(fill="both", expand=True, padx=20, pady=16)
+        btn_row = ctk.CTkFrame(main, fg_color="transparent")
+        btn_row.pack(side="bottom", fill="x", pady=(12, 0))
+        ds.header(main, "Select Relic Type", font=ds.TITLE_LARGE)
+
+        search_var = tk.StringVar()
+        search_var.trace_add(
+            "write", lambda *_: self._grid.apply_filter(search_var.get())
+        )
+        search = ctk.CTkEntry(
+            main,
+            textvariable=search_var,
+            placeholder_text="Search name or ID",
+            height=32,
+            font=ds.FONT,
+        )
+        search.pack(fill="x", pady=(10, 8))
+        self._filter = ctk.CTkSegmentedButton(
+            main,
+            values=["All", *_RELIC_COLORS, "Deep", "Fixed"],
+            command=lambda _v: self._apply_filter(),
+        )
+        self._filter.set("All")
+        self._filter.pack(anchor="w", pady=(0, 8))
+
+        self._grid = VirtualIconGrid(
+            main,
+            lambda _keys: None,
+            on_activate=lambda _key: self._on_confirm(),
+            tooltip=self._labels.get,
+            cell_w=112,
+            cell_h=126,
+            icon_size=64,
+            fg_color=ds.LIST_BG,
+            corner_radius=8,
+        )
+        self._grid.pack(fill="both", expand=True)
+        self._grid.set_entries(self._all)
+        if current >= 0 and current not in self._labels:
+            # The picker lists one id per relic name and kind
+            from er_save_manager.games.NR.item_db import relic_name
+            from er_save_manager.games.NR.relic_rules import relic_kind
+
+            name, kind = relic_name(current), relic_kind(current)
+            current = next(
+                (
+                    rid
+                    for rid in self._labels
+                    if relic_name(rid) == name and relic_kind(rid) == kind
+                ),
+                -1,
+            )
+        if current in self._labels:
+            self._grid.set_selection([current], notify=False)
+            # The grid has its size once the window is shown
+            self.after(100, lambda: self._grid.see(current))
+
+        ds.button(btn_row, "Cancel", self.destroy, primary=False).pack(side="right")
+        ds.button(btn_row, "Select", self._on_confirm).pack(side="right", padx=(0, 8))
+        self.bind("<Escape>", lambda _e: self.destroy())
+
+        ds.finish(self, parent, width=760, height=720)
+        search.focus_set()
+        self.wait_window()
+
+    def _apply_filter(self) -> None:
+        choice = self._filter.get()
+        self._grid.set_entries(
+            [e for e in self._all if _relic_filter_match(e.key, choice)],
+            keep_selection=True,
+        )
+
+    def _on_confirm(self) -> None:
+        if self._grid.selected:
+            self.result = self._grid.selected[0]
+        self.destroy()
+
+
+# Vessel slot stripe colors by nr_items color code; 4 (any color) is gray
+_SLOT_COLORS = {
+    0: ("#C0392B", "#E05A4F"),  # Burning
+    1: ("#2E6DB4", "#5B9BE0"),  # Drizzly
+    2: ("#C9A227", "#E6C24A"),  # Luminous
+    3: ("#3F9A4A", "#62C06E"),  # Tranquil
+}
+
+
+def _short_vessel_name(name: str) -> str:
+    """Vessel name without its "[Hero] " prefix."""
+    return name.split("] ", 1)[1] if name.startswith("[") and "] " in name else name
+
+
+def _slot_title(vessel_id: int, idx: int) -> str:
+    """Title of vessel slot idx (0-5), e.g. "Slot 2, Burning"."""
+    from er_save_manager.games.NR.item_db import COLOR_NAMES, vessel_slot_color
+
+    color = vessel_slot_color(vessel_id, idx)
+    if color == 4:
+        return f"Slot {idx + 1}, any color"
+    return f"Slot {idx + 1}, {COLOR_NAMES.get(color, 'unknown color')}"
+
+
+def _clip(text: str, n: int) -> str:
+    return text if len(text) <= n else text[: n - 1].rstrip() + "\u2026"
+
+
+def _vessel_grid_icon(vessel_id: int):
+    from er_save_manager.games.NR.icons import vessel_icon
+    from er_save_manager.ui.virtual_grid import no_image_icon
+
+    return vessel_icon(vessel_id) or no_image_icon()
+
+
+class _SlotRelicPicker(ctk.CTkToplevel):
+    """Modal icon grid of the character's relics for one loadout slot."""
+
+    def __init__(self, parent, title: str, relics: list, current: int, effect_lines):
+        super().__init__(parent)
+        from er_save_manager.games.NR.item_db import relic_name
+        from er_save_manager.ui.virtual_grid import GridEntry, VirtualIconGrid
+
+        self.withdraw()
+        self.attributes("-alpha", 0)
+        self.title(title)
+        self.transient(parent)
+        self.resizable(True, True)
+
+        self.result: int | None = None
+        self._tips: dict[int, str] = {}
+        entries = []
+        for rs in relics:
+            name = relic_name(rs.real_item_id)
+            lines = effect_lines(rs)
+            self._tips[rs.ga_handle] = "\n".join([name, "", *lines])
+            # Relics of one name differ by effects; the tile lists them, the
+            # curses are in the tooltip
+            shown = [_clip(ln, 34) for ln in lines if not ln.startswith(" ")]
+            entries.append(
+                GridEntry(
+                    rs.ga_handle,
+                    "\n".join([name, *shown]),
+                    " ".join([name, *lines]).lower(),
+                    lambda r=rs.real_item_id: _relic_grid_icon(r),
+                )
+            )
+
+        main = ctk.CTkFrame(self, fg_color="transparent")
+        main.pack(fill="both", expand=True, padx=20, pady=16)
+        btn_row = ctk.CTkFrame(main, fg_color="transparent")
+        btn_row.pack(side="bottom", fill="x", pady=(12, 0))
+        ds.header(main, title, font=ds.TITLE_LARGE)
+        ctk.CTkLabel(
+            main,
+            text="Relics of this character that fit the slot's color and type, "
+            "except the ones in the other slots.",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+            anchor="w",
+        ).pack(fill="x", pady=(4, 0))
+
+        search_var = tk.StringVar()
+        search_var.trace_add(
+            "write", lambda *_: self._grid.apply_filter(search_var.get())
+        )
+        search = ctk.CTkEntry(
+            main,
+            textvariable=search_var,
+            placeholder_text="Search name or effect",
+            height=32,
+            font=ds.FONT,
+        )
+        search.pack(fill="x", pady=(10, 8))
+
+        self._grid = VirtualIconGrid(
+            main,
+            lambda _keys: None,
+            on_activate=lambda _key: self._on_confirm(),
+            tooltip=self._tips.get,
+            cell_w=230,
+            cell_h=150,
+            icon_size=56,
+            fg_color=ds.LIST_BG,
+            corner_radius=8,
+        )
+        if entries:
+            self._grid.pack(fill="both", expand=True)
+            self._grid.set_entries(entries)
+            if current in self._tips:
+                self._grid.set_selection([current], notify=False)
+                # The grid has its size once the window is shown
+                self.after(100, lambda: self._grid.see(current))
+        else:
+            ctk.CTkLabel(
+                main,
+                text="No relic of this character fits this slot.",
+                font=ds.FONT,
+                text_color=ds.MUTED,
+            ).pack(fill="both", expand=True)
+
+        ds.button(btn_row, "Cancel", self.destroy, primary=False).pack(side="right")
+        ds.button(btn_row, "Select", self._on_confirm).pack(side="right", padx=(0, 8))
+        self.bind("<Escape>", lambda _e: self.destroy())
+
+        ds.finish(self, parent, width=1000, height=760)
+        search.focus_set()
+        self.wait_window()
+
+    def _on_confirm(self) -> None:
+        if self._grid.selected:
+            self.result = self._grid.selected[0]
+        self.destroy()
+
+
 class NREditorTab:
+    """Builds the Character Editor (parent), Relics and Loadouts tabs, which
+    share one character and the icon cache."""
+
     def __init__(
         self,
         parent,
         get_nr_save: Callable,
         get_save_path: Callable,
         show_toast: Callable,
-        register_pending: Callable | None = None,
+        pending_register: Callable[[str], Callable] | None = None,
+        *,
+        relics_parent=None,
+        loadouts_parent=None,
     ) -> None:
         self.parent = parent
+        self._relics_parent = relics_parent if relics_parent is not None else parent
+        self._loadouts_parent = (
+            loadouts_parent if loadouts_parent is not None else parent
+        )
         self._get_nr_save = get_nr_save
         self._get_save_path = get_save_path
         self._show_toast = show_toast
-        self._register_pending = register_pending
+        # pending_register(tab name) gives the register function of that tab
+        self._pending_register = pending_register
+        # CTkImage per (icon kind, id, size)
+        self._icon_images: dict[tuple, ctk.CTkImage | None] = {}
         self._current_slot = -1
         self._name_var = tk.StringVar()
         self._murk_var = tk.StringVar()
         self._mon_var = tk.StringVar()
 
     def setup_ui(self) -> None:
-        for _ in self.setup_steps():
-            pass
+        self.setup_steps()
+        self.setup_relics()
+        self.setup_loadouts()
 
-    def setup_steps(self):
-        """Build the UI in stages; each yield lets the window redraw and handle
-        input between stages (gui.py resumes it one stage per turn)."""
-        outer = ctk.CTkFrame(self.parent, corner_radius=12)
+    @staticmethod
+    def _tab_frame(parent, title: str) -> tuple[ctk.CTkFrame, ctk.CTkFrame]:
+        """Rounded tab body and its header row holding the title."""
+        outer = ctk.CTkFrame(parent, corner_radius=12)
         outer.pack(fill="both", expand=True, pady=(0, 10))
-
         header = ctk.CTkFrame(outer, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(10, 6))
-        ctk.CTkLabel(
-            header, text="Character Editor", font=("Segoe UI", 16, "bold")
-        ).pack(side="left")
+        ctk.CTkLabel(header, text=title, font=("Segoe UI", 16, "bold")).pack(
+            side="left"
+        )
+        return outer, header
 
-        self._tabs = ctk.CTkTabview(outer, corner_radius=10)
-        self._tabs.pack(fill="both", expand=True, padx=10, pady=(0, 10))
-
-        for name in ("Overview", "Relics", "Loadouts"):
-            self._tabs.add(name)
-
-        self._build_overview(self._tabs.tab("Overview"))
-        yield
-        self._build_relics(self._tabs.tab("Relics"))
-        yield
-        self._build_loadouts(self._tabs.tab("Loadouts"))
-        if self._register_pending is not None:
-            self._register_pending(
+    def setup_steps(self) -> None:
+        """Character Editor tab: name and currencies."""
+        outer, _header = self._tab_frame(self.parent, "Character Editor")
+        self._build_overview(outer)
+        if self._pending_register is not None:
+            self._pending_register("Character Editor")(
                 PendingPage(
                     "Overview",
                     self._overview_tracker.changes,
                     self._prepare_overview,
                     lambda: self._refill_overview(),
-                    lambda: self._tabs.set("Overview"),
+                    None,
                 )
             )
-            self._register_pending(
+
+    def setup_relics(self) -> None:
+        outer, header = self._tab_frame(self._relics_parent, "Relics")
+        self._build_relics(outer, header)
+
+    def setup_loadouts(self) -> None:
+        outer, header = self._tab_frame(self._loadouts_parent, "Loadouts")
+        self._build_loadouts(outer, header)
+        if self._pending_register is not None:
+            self._pending_register("Loadouts")(
                 PendingPage(
                     "Loadout",
                     self._loadout_changes,
                     self._prepare_loadout,
                     self._discard_loadout,
-                    lambda: self._tabs.set("Loadouts"),
+                    None,
                 )
             )
-
-    def select(self, name: str) -> None:
-        """Show the sub-tab called name."""
-        self._tabs.set(name)
 
     # ------------------------------------------------------------------
     # Slot selector
     # ------------------------------------------------------------------
 
     def load_slot(self, slot_index: int) -> None:
-        """Show the character in slot_index; -1 or an empty slot clears the
-        tab."""
+        """Show the character in slot_index in all three tabs."""
+        self.load_overview(slot_index)
+        self.load_relics(slot_index)
+        self.load_loadouts(slot_index)
+
+    def _set_slot(self, slot_index: int):
+        """Make slot_index current; returns its slot, or None (and current
+        -1) for no save or an index out of range."""
         save = self._get_nr_save()
         if save is None or not 0 <= slot_index < len(save.slots):
-            slot_index = -1
+            self._current_slot = -1
+            return None
         self._current_slot = slot_index
-        if slot_index < 0:
+        return save.slots[slot_index]
+
+    def load_overview(self, slot_index: int) -> None:
+        """Character Editor tab; -1 or an empty slot clears it."""
+        slot = self._set_slot(slot_index)
+        if slot is None:
             self._overview_tracker.clear()
             for var in (self._name_var, self._murk_var, self._mon_var):
                 var.set("")
-            self._clear_loadout_edit()
-            self._populate_loadout_trees()
             return
-        slot = save.slots[slot_index]
         self._populate_overview(slot)
-        self._populate_relics(slot)
+
+    def load_relics(self, slot_index: int) -> None:
+        slot = self._set_slot(slot_index)
+        if slot is not None:
+            self._populate_relics(slot)
+
+    def load_loadouts(self, slot_index: int) -> None:
+        """Loadouts tab; -1 or an empty slot clears it."""
+        slot = self._set_slot(slot_index)
+        if slot is None:
+            self._clear_loadout_edit()
+            self._populate_loadout_grid()
+            return
         self._populate_loadouts(slot)
 
     def refresh(self) -> None:
@@ -311,282 +626,250 @@ class NREditorTab:
     # Relics
     # ------------------------------------------------------------------
 
-    def _build_relics(self, parent) -> None:
+    def _build_relics(self, parent, header) -> None:
         from er_save_manager.games.NR.item_db import (
             effects_for_curse_slot,
             effects_for_slot,
         )
         from er_save_manager.games.NR.relic_rules import picker_relics
+        from er_save_manager.ui.virtual_grid import VirtualIconGrid
 
         self._all_relic_opts: list[tuple[int, str, bool]] = picker_relics()
         self._normal_effect_opts: list[tuple[int, str]] = effects_for_slot(False)
         self._deep_effect_opts: list[tuple[int, str]] = effects_for_slot(True)
         self._curse_opts: list[tuple[int, str]] = effects_for_curse_slot()
 
-        # Outer scrollable container so content is reachable at any window size
-        scroll = ctk.CTkScrollableFrame(parent, corner_radius=0, fg_color="transparent")
-        scroll.pack(fill="both", expand=True)
+        body = ctk.CTkFrame(parent, fg_color="transparent")
+        body.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
-        top = ctk.CTkFrame(scroll, fg_color="transparent")
-        top.pack(fill="x", padx=10, pady=(8, 4))
-        ctk.CTkLabel(top, text="Relics", font=("Segoe UI", 14, "bold")).pack(
-            side="left"
+        top = header
+        self._relic_count_label = ctk.CTkLabel(top, text="", text_color=ds.MUTED)
+        self._relic_count_label.pack(side="left", padx=(8, 0))
+        ds.button(top, "New Relic", lambda: self._show_relic_pane("spawn")).pack(
+            side="right"
         )
-        self._relic_search_var = tk.StringVar()
-        self._relic_search_var.trace_add("write", lambda *_: self._filter_relics())
-        ctk.CTkEntry(
+        ds.button(
             top,
-            textvariable=self._relic_search_var,
-            placeholder_text="Search name or effect...",
-            width=240,
-        ).pack(side="right")
-        ctk.CTkLabel(top, text="Search:").pack(side="right", padx=(0, 4))
-
-        # Treeview - fixed height so edit panel always visible below
-        tree_frame, self._relic_tree = ds.themed_tree(
-            scroll,
-            xscroll=True,
-            columns=("name", "deep", "e1", "e2", "e3"),
-            show="headings",
-            selectmode="browse",
-            height=8,
+            "Export JSON...",
+            self._export_relics_json,
+            primary=False,
+            width=120,
+        ).pack(side="right", padx=(0, 8))
+        # No textvariable: CTkEntry hides the placeholder while one is set
+        self._relic_search = ctk.CTkEntry(
+            top, placeholder_text="Search name or effect", width=240
         )
-        for col, label, w in [
-            ("name", "Relic Name", 200),
-            ("deep", "Deep", 45),
-            ("e1", "Effect 1", 220),
-            ("e2", "Effect 2", 220),
-            ("e3", "Effect 3", 220),
-        ]:
-            self._relic_tree.heading(col, text=label)
-            self._relic_tree.column(
-                col, width=w, minwidth=40, anchor="w", stretch=False
-            )
+        self._relic_search.pack(side="right", padx=(0, 8))
+        self._relic_search.bind("<KeyRelease>", lambda _e: self._filter_relics())
 
-        tree_frame.pack(fill="x", padx=10, pady=(0, 4))
-        self._relic_tree.bind("<<TreeviewSelect>>", self._on_relic_select)
-        self._tree_ga_map: dict[str, int] = {}
-
-        action_tabs = ctk.CTkTabview(scroll, corner_radius=8)
-        action_tabs.pack(fill="x", padx=10, pady=(0, 6))
-        self._relic_action_tabs = action_tabs
-        action_tabs.add("Edit")
-        action_tabs.add("Spawn")
-        _edit_parent = action_tabs.tab("Edit")
-        _spawn_parent = action_tabs.tab("Spawn")
-
-        self._edit_panel = ctk.CTkFrame(
-            _edit_parent, corner_radius=10, fg_color=("gray84", "gray24")
+        self._relic_filter = ctk.CTkSegmentedButton(
+            body,
+            values=["All", *_RELIC_COLORS, "Deep"],
+            command=lambda _v: self._populate_relic_grid(keep_selection=True),
         )
-        self._edit_panel.pack(fill="x", padx=4, pady=(4, 4))
+        self._relic_filter.set("All")
+        self._relic_filter.pack(anchor="w", pady=(0, 6))
 
-        ep_title = ctk.CTkFrame(self._edit_panel, fg_color="transparent")
-        ep_title.pack(fill="x", padx=8, pady=(6, 2))
-        ctk.CTkLabel(
-            ep_title, text="Edit selected relic:", font=("Segoe UI", 11, "bold")
-        ).pack(side="left")
-        ep_btns = ctk.CTkFrame(ep_title, fg_color="transparent")
-        ep_btns.pack(side="right")
-        ctk.CTkButton(
-            ep_btns, text="Apply Edit", command=self._apply_relic_edit, width=100
-        ).pack(side="left", padx=(0, 6))
-        ctk.CTkButton(
-            ep_btns, text="Copy to Spawn", command=self._copy_to_spawn, width=110
-        ).pack(side="left", padx=(0, 6))
-        ctk.CTkButton(
-            ep_btns,
-            text="Remove",
-            command=self._remove_selected_relic,
-            width=80,
-            fg_color=("gray65", "gray35"),
-        ).pack(side="left")
+        split = ctk.CTkFrame(body, fg_color="transparent")
+        split.pack(fill="both", expand=True)
+        split.grid_columnconfigure(0, weight=1)
+        split.grid_rowconfigure(0, weight=1)
 
-        relic_row = ctk.CTkFrame(self._edit_panel, fg_color="transparent")
-        relic_row.pack(fill="x", padx=8, pady=2)
-        ctk.CTkLabel(relic_row, text="Relic type:", width=90, anchor="w").pack(
-            side="left"
+        self._relic_grid = VirtualIconGrid(
+            split,
+            self._on_relic_select,
+            tooltip=self._relic_tooltip,
+            cell_w=112,
+            cell_h=126,
+            icon_size=72,
+            fg_color=ds.LIST_BG,
+            corner_radius=8,
         )
-        self._re_item_label = ctk.CTkLabel(
-            relic_row, text="(none selected)", anchor="w", width=280
-        )
-        self._re_item_label.pack(side="left", padx=(4, 6))
-        ctk.CTkButton(
-            relic_row,
-            text="Browse",
-            command=self._browse_relic_type,
-            width=70,
-            height=26,
-        ).pack(side="left")
+        self._relic_grid.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+
         self._re_item_var = tk.StringVar(value="-1")
-
-        self._re_effect_vars = [
-            tk.StringVar(value=str(_EMPTY_EFFECT)) for _ in range(3)
-        ]
-        self._re_curse_vars = [tk.StringVar(value=str(_EMPTY_EFFECT)) for _ in range(3)]
-        self._re_effect_labels = []
-        self._re_curse_labels = []
-        self._re_curse_widgets: list[tuple] = []
-        self._re_curse_tips: list[tuple] = []
-        self._re_effect_btns: list = []
-        self._re_rows: list = []
-
-        slots_frame = ctk.CTkFrame(self._edit_panel, fg_color="transparent")
-        slots_frame.pack(fill="x", padx=8, pady=(2, 6))
-
-        for j in range(3):
-            row = ctk.CTkFrame(slots_frame, fg_color="transparent")
-            row.pack(fill="x", pady=1)
-            ctk.CTkLabel(row, text=f"E{j + 1}:", width=28, anchor="w").pack(side="left")
-            lbl_e = ctk.CTkLabel(
-                row,
-                text="(empty)",
-                anchor="w",
-                width=240,
-                font=("Segoe UI", 10),
-                wraplength=238,
-            )
-            lbl_e.pack(side="left", padx=(2, 4))
-            btn_e = ctk.CTkButton(
-                row,
-                text="Browse",
-                width=65,
-                height=24,
-                command=lambda jj=j: self._browse_effect(jj),
-            )
-            btn_e.pack(side="left", padx=(0, 16))
-            lbl_c = ctk.CTkLabel(
-                row,
-                text=f"C{j + 1}: (empty)",
-                anchor="w",
-                width=240,
-                font=("Segoe UI", 10),
-                wraplength=238,
-            )
-            btn_c = ctk.CTkButton(
-                row,
-                text="Browse",
-                width=65,
-                height=24,
-                command=lambda jj=j: self._browse_curse(jj),
-            )
-            self._re_effect_labels.append(lbl_e)
-            self._re_curse_labels.append(lbl_c)
-            self._re_curse_widgets.append((lbl_c, btn_c, row))
-            self._re_curse_tips.append((add_tooltip(lbl_c, ""), add_tooltip(btn_c, "")))
-            self._re_effect_btns.append(btn_e)
-            self._re_rows.append(row)
-
-        self._refresh_rows("edit")
-
-        spawn_outer = ctk.CTkFrame(
-            _spawn_parent, corner_radius=10, fg_color=("gray84", "gray24")
-        )
-        spawn_outer.pack(fill="x", padx=4, pady=(4, 4))
-
-        spawn_title = ctk.CTkFrame(spawn_outer, fg_color="transparent")
-        spawn_title.pack(fill="x", padx=8, pady=(6, 2))
-        ctk.CTkLabel(
-            spawn_title, text="Spawn relic", font=("Segoe UI", 12, "bold")
-        ).pack(side="left")
-        ctk.CTkButton(
-            spawn_title, text="Spawn", command=self._spawn_relic, width=80
-        ).pack(side="right")
-        ctk.CTkButton(
-            spawn_title,
-            text="Export JSON...",
-            command=self._export_relics_json,
-            width=110,
-            fg_color=("gray65", "gray35"),
-        ).pack(side="right", padx=(0, 6))
-        ctk.CTkButton(
-            spawn_title,
-            text="Import JSON...",
-            command=self._import_relics_json,
-            width=110,
-            fg_color=("gray65", "gray35"),
-        ).pack(side="right", padx=(0, 6))
-
-        sr_row = ctk.CTkFrame(spawn_outer, fg_color="transparent")
-        sr_row.pack(fill="x", padx=8, pady=2)
-        ctk.CTkLabel(sr_row, text="Relic type:", width=90, anchor="w").pack(side="left")
-        self._spawn_relic_label = ctk.CTkLabel(
-            sr_row, text="(none selected)", anchor="w", width=280
-        )
-        self._spawn_relic_label.pack(side="left", padx=(4, 6))
-        ctk.CTkButton(
-            sr_row,
-            text="Browse",
-            command=self._browse_spawn_relic,
-            width=70,
-            height=26,
-        ).pack(side="left")
         self._spawn_relic_id = tk.IntVar(value=-1)
-
-        self._spawn_effect_vars = [
-            tk.StringVar(value=str(_EMPTY_EFFECT)) for _ in range(3)
-        ]
-        self._spawn_curse_vars = [
-            tk.StringVar(value=str(_EMPTY_EFFECT)) for _ in range(3)
-        ]
-        self._spawn_effect_labels = []
-        self._spawn_curse_labels = []
-        self._spawn_curse_widgets: list[tuple] = []
-        self._spawn_curse_tips: list[tuple] = []
-        self._spawn_effect_btns: list = []
-        self._spawn_rows: list = []
-
-        spawn_slots = ctk.CTkFrame(spawn_outer, fg_color="transparent")
-        spawn_slots.pack(fill="x", padx=8, pady=(2, 8))
-
-        for j in range(3):
-            row = ctk.CTkFrame(spawn_slots, fg_color="transparent")
-            row.pack(fill="x", pady=1)
-            ctk.CTkLabel(row, text=f"E{j + 1}:", width=28, anchor="w").pack(side="left")
-            lbl_e = ctk.CTkLabel(
-                row,
-                text="(empty)",
-                anchor="w",
-                width=240,
-                font=("Segoe UI", 10),
-                wraplength=238,
-            )
-            lbl_e.pack(side="left", padx=(2, 4))
-            btn_e = ctk.CTkButton(
-                row,
-                text="Browse",
-                width=65,
-                height=24,
-                command=lambda jj=j: self._browse_spawn_effect(jj),
-            )
-            btn_e.pack(side="left", padx=(0, 16))
-            lbl_c = ctk.CTkLabel(
-                row,
-                text=f"C{j + 1}: (empty)",
-                anchor="w",
-                width=240,
-                font=("Segoe UI", 10),
-                wraplength=238,
-            )
-            btn_c = ctk.CTkButton(
-                row,
-                text="Browse",
-                width=65,
-                height=24,
-                command=lambda jj=j: self._browse_spawn_curse(jj),
-            )
-            self._spawn_effect_labels.append(lbl_e)
-            self._spawn_curse_labels.append(lbl_c)
-            self._spawn_curse_widgets.append((lbl_c, btn_c, row))
-            self._spawn_curse_tips.append(
-                (add_tooltip(lbl_c, ""), add_tooltip(btn_c, ""))
-            )
-            self._spawn_effect_btns.append(btn_e)
-            self._spawn_rows.append(row)
-
-        self._refresh_rows("spawn")
+        self._panes: dict[str, dict] = {}
+        self._edit_panel = self._build_relic_pane(split, "edit")
+        self._spawn_panel = self._build_relic_pane(split, "spawn")
+        self._edit_panel.grid(row=0, column=1, sticky="nsew")
 
         self._selected_relic_ga: int | None = None
         self._all_relic_data: list = []
+        self._refresh_rows("edit")
+        self._refresh_rows("spawn")
+
+    def _build_relic_pane(self, parent, which: str) -> ctk.CTkFrame:
+        """Detail pane of the selected relic (edit) or a new relic (spawn):
+        relic type, one card per effect slot with its curse below."""
+        edit = which == "edit"
+        pane = ctk.CTkFrame(
+            parent, width=500, corner_radius=10, fg_color=("gray84", "gray24")
+        )
+        pane.grid_propagate(False)
+        pane.pack_propagate(False)
+
+        head = ctk.CTkFrame(pane, fg_color="transparent")
+        head.pack(fill="x", padx=14, pady=(14, 6))
+        icon = ctk.CTkLabel(head, text="", width=72, height=72)
+        icon.pack(side="left", padx=(0, 12))
+        ds.button(
+            head,
+            "Change...",
+            self._browse_relic_type if edit else self._browse_spawn_relic,
+            primary=False,
+            width=90,
+        ).pack(side="right", anchor="n")
+        text = ctk.CTkFrame(head, fg_color="transparent")
+        text.pack(side="left", fill="x", expand=True)
+        if not edit:
+            ctk.CTkLabel(
+                text, text="New relic", font=ds.SMALL, text_color=ds.MUTED, anchor="w"
+            ).pack(fill="x")
+        name = ds.wrap_to_width(ctk.CTkLabel(text, text="", font=ds.TITLE))
+        name.pack(fill="x")
+        kind = ds.wrap_to_width(
+            ctk.CTkLabel(text, text="", font=ds.SMALL, text_color=ds.MUTED)
+        )
+        kind.pack(fill="x")
+
+        btns = ctk.CTkFrame(pane, fg_color="transparent")
+        btns.pack(side="bottom", fill="x", padx=14, pady=14)
+        if edit:
+            ds.button(btns, "Apply Edit", self._apply_relic_edit, width=110).pack(
+                side="right"
+            )
+            ds.button(
+                btns,
+                "Copy to New Relic",
+                self._copy_to_spawn,
+                primary=False,
+                width=140,
+            ).pack(side="right", padx=(0, 8))
+            ds.button(
+                btns, "Remove", self._remove_selected_relic, primary=False, width=90
+            ).pack(side="left")
+        else:
+            ds.button(btns, "Spawn", self._spawn_relic, width=110).pack(side="right")
+            ds.button(
+                btns,
+                "Import JSON...",
+                self._import_relics_json,
+                primary=False,
+                width=120,
+            ).pack(side="left")
+
+        ctk.CTkLabel(pane, text="Effects", font=ds.BOLD, anchor="w").pack(
+            fill="x", padx=14, pady=(10, 2)
+        )
+        # Scrolls when the window is too short for three cards with curses
+        cards = ctk.CTkScrollableFrame(pane, fg_color="transparent", corner_radius=0)
+        cards.pack(fill="both", expand=True, padx=8)
+
+        browse_effect = self._browse_effect if edit else self._browse_spawn_effect
+        browse_curse = self._browse_curse if edit else self._browse_spawn_curse
+        effect_vars = [tk.StringVar(value=str(_EMPTY_EFFECT)) for _ in range(3)]
+        curse_vars = [tk.StringVar(value=str(_EMPTY_EFFECT)) for _ in range(3)]
+        effect_labels, effect_icons, effect_btns = [], [], []
+        curse_widgets, curse_icons, curse_tips, rows = [], [], [], []
+        for j in range(3):
+            card = ctk.CTkFrame(cards, fg_color=ds.BOX, corner_radius=8)
+            line = ctk.CTkFrame(card, fg_color="transparent")
+            line.pack(fill="x", padx=8, pady=6)
+            e_icon = ctk.CTkLabel(line, text="", width=28)
+            e_icon.pack(side="left", anchor="n")
+            btn_e = ds.button(
+                line,
+                "Change...",
+                lambda jj=j: browse_effect(jj),
+                primary=False,
+                width=84,
+            )
+            btn_e.pack(side="right", anchor="n")
+            lbl_e = ds.wrap_to_width(ctk.CTkLabel(line, text="", font=ds.FONT))
+            lbl_e.pack(side="left", fill="x", expand=True, padx=8)
+
+            curse_line = ctk.CTkFrame(card, fg_color="transparent")
+            c_icon = ctk.CTkLabel(curse_line, text="", width=22)
+            c_icon.pack(side="left", anchor="n")
+            btn_c = ds.button(
+                curse_line,
+                "Change...",
+                lambda jj=j: browse_curse(jj),
+                primary=False,
+                width=84,
+                height=26,
+            )
+            btn_c.pack(side="right", anchor="n")
+            lbl_c = ds.wrap_to_width(
+                ctk.CTkLabel(curse_line, text="", font=ds.SMALL, text_color=ds.MUTED)
+            )
+            lbl_c.pack(side="left", fill="x", expand=True, padx=8)
+
+            effect_labels.append(lbl_e)
+            effect_icons.append(e_icon)
+            effect_btns.append(btn_e)
+            curse_widgets.append((lbl_c, btn_c, curse_line))
+            curse_icons.append(c_icon)
+            curse_tips.append((add_tooltip(lbl_c, ""), add_tooltip(btn_c, "")))
+            rows.append(card)
+
+        if edit:
+            self._re_item_label = name
+            self._re_effect_vars = effect_vars
+            self._re_curse_vars = curse_vars
+            self._re_effect_labels = effect_labels
+            self._re_curse_widgets = curse_widgets
+            self._re_curse_tips = curse_tips
+            self._re_effect_btns = effect_btns
+            self._re_rows = rows
+        else:
+            self._spawn_relic_label = name
+            self._spawn_effect_vars = effect_vars
+            self._spawn_curse_vars = curse_vars
+            self._spawn_effect_labels = effect_labels
+            self._spawn_curse_widgets = curse_widgets
+            self._spawn_curse_tips = curse_tips
+            self._spawn_effect_btns = effect_btns
+            self._spawn_rows = rows
+        self._panes[which] = {
+            "icon": icon,
+            "kind": kind,
+            "effect_icons": effect_icons,
+            "curse_icons": curse_icons,
+        }
+        return pane
+
+    def _show_relic_pane(self, which: str) -> None:
+        """Show the edit pane or the new relic (spawn) pane."""
+        show, hide = (
+            (self._edit_panel, self._spawn_panel)
+            if which == "edit"
+            else (self._spawn_panel, self._edit_panel)
+        )
+        hide.grid_remove()
+        show.grid(row=0, column=1, sticky="nsew")
+
+    def open_spawner(self) -> None:
+        """Show the new relic pane in the Relics tab (Item Gib)."""
+        self._show_relic_pane("spawn")
+
+    def _icon_image(self, kind: str, item_id: int, size: int):
+        """Cached CTkImage of a relic, effect or vessel (chalice) icon."""
+        key = (kind, item_id, size)
+        if key not in self._icon_images:
+            from er_save_manager.games.NR.icons import (
+                effect_icon,
+                relic_icon,
+                vessel_icon,
+            )
+
+            load = {"relic": relic_icon, "effect": effect_icon, "vessel": vessel_icon}
+            pil = load[kind](item_id)
+            self._icon_images[key] = (
+                ctk.CTkImage(pil, size=(size, size)) if pil is not None else None
+            )
+        return self._icon_images[key]
 
     # ------------------------------------------------------------------
     # Curse slot visibility
@@ -620,9 +903,10 @@ class NREditorTab:
         )
 
     def _refresh_rows(self, which: str) -> None:
-        """Show one effect row per relic slot and a curse row where a deep
-        effect needs one. Rows that still hold a value stay visible so it
-        can be cleared; fixed relic effects cannot be picked."""
+        """Show one effect card per relic slot and a curse line where a deep
+        effect needs one. Cards that still hold a value stay visible so it
+        can be cleared; fixed relic effects cannot be picked. Also updates
+        the relic header, effect texts and icons from the panel's values."""
         from er_save_manager.games.NR.item_db import get_relic
         from er_save_manager.games.NR.relic_rules import (
             fixed_effects,
@@ -633,6 +917,7 @@ class NREditorTab:
 
         relic_id, evars, elabels, ebtns, cvars, cwidgets, rows = self._panel(which)
         tips = self._re_curse_tips if which == "edit" else self._spawn_curse_tips
+        pane = self._panes[which]
         kind = relic_kind(relic_id) if relic_id >= 0 else "unknown"
         effects = [int(v.get()) for v in evars]
         curses = [int(v.get()) for v in cvars]
@@ -646,9 +931,25 @@ class NREditorTab:
         for row in rows:
             row.pack_forget()
         for row in rows[:shown]:
-            row.pack(fill="x", pady=1)
+            row.pack(fill="x", pady=3)
 
         row_info = get_relic(relic_id) if relic_id >= 0 else None
+        pane["icon"].configure(
+            image=self._icon_image("relic", relic_id, 72) if relic_id >= 0 else None
+        )
+        if relic_id < 0:
+            (
+                self._re_item_label if which == "edit" else self._spawn_relic_label
+            ).configure(
+                text="No relic selected" if which == "edit" else "No relic type"
+            )
+            pane["kind"].configure(
+                text="Select a relic in the grid."
+                if which == "edit"
+                else "Choose a relic type with Change."
+            )
+        else:
+            pane["kind"].configure(text=self._relic_kind_line(relic_id, kind, row_info))
         deep = kind == "deep" or (
             kind == "unknown" and bool(row_info and row_info["deep"])
         )
@@ -658,8 +959,12 @@ class NREditorTab:
             e for e in effects if e != _EMPTY_EFFECT
         ) == (sorted(fixed_effects(relic_id)))
         for j in range(3):
+            elabels[j].configure(text=_fmt_effect(effects[j]))
+            pane["effect_icons"][j].configure(
+                image=self._icon_image("effect", effects[j], 26)
+            )
             ebtns[j].configure(state="disabled" if locked else "normal")
-            lbl_c, btn_c, _row = cwidgets[j]
+            lbl_c, _btn_c, curse_line = cwidgets[j]
             required = kind == "deep" and needs_curse(effects[j])
             show = deep and (
                 kind == "unknown" or required or curses[j] != _EMPTY_EFFECT
@@ -682,14 +987,35 @@ class NREditorTab:
             if show:
                 missing = required and curses[j] == _EMPTY_EFFECT
                 lbl_c.configure(
-                    text=f"C{j + 1}{' (required)' if missing else ''}: "
+                    text=f"Curse{' (required)' if missing else ''}: "
                     f"{_fmt_effect(curses[j])}"
                 )
-                lbl_c.pack(side="left", padx=(0, 4))
-                btn_c.pack(side="left")
+                pane["curse_icons"][j].configure(
+                    image=self._icon_image("effect", curses[j], 20)
+                )
+                curse_line.pack(fill="x", padx=(44, 8), pady=(0, 6))
             else:
-                lbl_c.pack_forget()
-                btn_c.pack_forget()
+                curse_line.pack_forget()
+
+    @staticmethod
+    def _relic_kind_line(relic_id: int, kind: str, row_info: dict | None) -> str:
+        """Kind, color and slot count under the relic name."""
+        from er_save_manager.games.NR.relic_rules import slot_count
+
+        parts = [
+            {
+                "random": "Random effects",
+                "deep": "Deep relic",
+                "fixed": "Fixed effects",
+                "unobtainable": "Not obtainable in game",
+            }.get(kind, "Unknown relic")
+        ]
+        if row_info and row_info["color"] in range(4):
+            parts.append(_RELIC_COLORS[row_info["color"]])
+        if kind != "unknown":
+            n = slot_count(relic_id)
+            parts.append(f"{n} effect slot{'' if n == 1 else 's'}")
+        return "  ·  ".join(parts)
 
     def _fit_to_relic(self, which: str) -> None:
         """After a relic type change, drop effects the new type cannot hold
@@ -780,6 +1106,17 @@ class NREditorTab:
             effect_labels[j].configure(text=_fmt_effect(effects[j]))
             curse_vars[j].set(str(_EMPTY_EFFECT))
 
+    def _effect_picker(
+        self, title: str, items: list[tuple[int, str]], current: int
+    ) -> _PickerDialog:
+        """Effect or curse picker with the effect icons, wide enough for the
+        longest effect names."""
+        from er_save_manager.games.NR.icons import effect_icon
+
+        return _PickerDialog(
+            self.parent, title, items, current, icon=effect_icon, width=780
+        )
+
     # Edit panel pickers
 
     def _browse_relic_type(self) -> None:
@@ -787,9 +1124,7 @@ class NREditorTab:
             cur = int(self._re_item_var.get())
         except ValueError:
             cur = -1
-        dlg = _PickerDialog(
-            self.parent, "Select Relic Type", self._relic_picker_items(), cur
-        )
+        dlg = _RelicTypePicker(self.parent, self._relic_picker_items(), cur)
         if dlg.result is not None and dlg.result != _EMPTY_EFFECT:
             from er_save_manager.games.NR.item_db import relic_name
 
@@ -815,7 +1150,7 @@ class NREditorTab:
             relic_id = -1
         others = [int(v.get()) for j, v in enumerate(self._re_effect_vars) if j != idx]
         items = self._effect_picker_items(relic_id, others)
-        dlg = _PickerDialog(self.parent, f"Select Effect {idx + 1}", items, cur)
+        dlg = self._effect_picker(f"Select Effect {idx + 1}", items, cur)
         if dlg.result is not None:
             self._set_effect("edit", idx, dlg.result)
 
@@ -825,11 +1160,8 @@ class NREditorTab:
         except ValueError:
             cur = _EMPTY_EFFECT
         others = [int(v.get()) for j, v in enumerate(self._re_curse_vars) if j != idx]
-        dlg = _PickerDialog(
-            self.parent,
-            f"Select Curse {idx + 1}",
-            self._curse_picker_items(others),
-            cur,
+        dlg = self._effect_picker(
+            f"Select Curse {idx + 1}", self._curse_picker_items(others), cur
         )
         if dlg.result is not None:
             self._re_curse_vars[idx].set(str(dlg.result))
@@ -839,9 +1171,7 @@ class NREditorTab:
 
     def _browse_spawn_relic(self) -> None:
         cur = self._spawn_relic_id.get()
-        dlg = _PickerDialog(
-            self.parent, "Select Relic Type", self._relic_picker_items(), cur
-        )
+        dlg = _RelicTypePicker(self.parent, self._relic_picker_items(), cur)
         if dlg.result is not None and dlg.result != _EMPTY_EFFECT:
             from er_save_manager.games.NR.item_db import relic_name
 
@@ -865,7 +1195,7 @@ class NREditorTab:
             int(v.get()) for j, v in enumerate(self._spawn_effect_vars) if j != idx
         ]
         items = self._effect_picker_items(self._spawn_relic_id.get(), others)
-        dlg = _PickerDialog(self.parent, f"Select Effect {idx + 1}", items, cur)
+        dlg = self._effect_picker(f"Select Effect {idx + 1}", items, cur)
         if dlg.result is not None:
             self._set_effect("spawn", idx, dlg.result)
 
@@ -877,11 +1207,8 @@ class NREditorTab:
         others = [
             int(v.get()) for j, v in enumerate(self._spawn_curse_vars) if j != idx
         ]
-        dlg = _PickerDialog(
-            self.parent,
-            f"Select Curse {idx + 1}",
-            self._curse_picker_items(others),
-            cur,
+        dlg = self._effect_picker(
+            f"Select Curse {idx + 1}", self._curse_picker_items(others), cur
         )
         if dlg.result is not None:
             self._spawn_curse_vars[idx].set(str(dlg.result))
@@ -891,79 +1218,93 @@ class NREditorTab:
     # Relic list
     # ------------------------------------------------------------------
 
-    def _populate_relics(self, slot) -> None:
-        from er_save_manager.games.NR.item_db import effect_name, relic_name
-
-        for iid in self._relic_tree.get_children():
-            self._relic_tree.delete(iid)
-        self._tree_ga_map.clear()
-        self._selected_relic_ga = None
+    def _populate_relics(self, slot, keep_selection: bool = False) -> None:
+        """Fill the grid from slot; keep_selection keeps the selected relic
+        when it still exists, otherwise the edit pane is cleared."""
         self._all_relic_data = list(slot.relic_states.values())
+        if not (keep_selection and self._selected_relic_ga in slot.relic_states):
+            self._selected_relic_ga = None
+            self._clear_edit_pane()
+        self._populate_relic_grid(keep_selection=self._selected_relic_ga is not None)
+
+    def _populate_relic_grid(self, keep_selection: bool) -> None:
+        """Grid entries of the relics passing the color / Deep filter."""
+        from er_save_manager.games.NR.item_db import effect_name, relic_name
+        from er_save_manager.ui.virtual_grid import GridEntry
+
+        choice = self._relic_filter.get()
+        entries = []
         for rs in sorted(
             self._all_relic_data, key=lambda r: relic_name(r.real_item_id)
         ):
-            iid = self._relic_tree.insert(
-                "",
-                "end",
-                values=(
-                    relic_name(rs.real_item_id),
-                    "Y" if rs.is_deep else "N",
-                    effect_name(rs.effect_1),
-                    effect_name(rs.effect_2),
-                    effect_name(rs.effect_3),
-                ),
+            if not _relic_filter_match(rs.real_item_id, choice):
+                continue
+            name = relic_name(rs.real_item_id)
+            texts = [effect_name(e) for e in rs.effects_list() if e != _EMPTY_EFFECT]
+            entries.append(
+                GridEntry(
+                    rs.ga_handle,
+                    name,
+                    " ".join([name, *texts]).lower(),
+                    lambda r=rs.real_item_id: _relic_grid_icon(r),
+                )
             )
-            self._tree_ga_map[iid] = rs.ga_handle
+        self._relic_grid.set_entries(entries, keep_selection=keep_selection)
+        if keep_selection and self._selected_relic_ga is not None:
+            self._relic_grid.set_selection([self._selected_relic_ga], notify=False)
+            self._relic_grid.update_idletasks()
+            self._relic_grid.see(self._selected_relic_ga)
+        self._update_relic_count()
 
     def _filter_relics(self) -> None:
+        self._relic_grid.apply_filter(self._relic_search.get())
+        self._update_relic_count()
+
+    def _update_relic_count(self) -> None:
+        shown = len(self._relic_grid.visible_keys())
+        total = len(self._all_relic_data)
+        self._relic_count_label.configure(
+            text=f"{total}" if shown == total else f"{shown} of {total}"
+        )
+
+    def _relic_tooltip(self, ga: int) -> str:
+        """Relic name with every effect and curse, one per line."""
         from er_save_manager.games.NR.item_db import effect_name, relic_name
 
-        q = self._relic_search_var.get().strip().lower()
-        for iid in self._relic_tree.get_children():
-            self._relic_tree.delete(iid)
-        self._tree_ga_map.clear()
-        for rs in sorted(
-            self._all_relic_data, key=lambda r: relic_name(r.real_item_id)
-        ):
-            name = relic_name(rs.real_item_id)
-            e1 = effect_name(rs.effect_1)
-            e2 = effect_name(rs.effect_2)
-            e3 = effect_name(rs.effect_3)
-            if q and not (
-                q in name.lower()
-                or q in e1.lower()
-                or q in e2.lower()
-                or q in e3.lower()
-            ):
-                continue
-            iid = self._relic_tree.insert(
-                "",
-                "end",
-                values=(
-                    name,
-                    "Y" if rs.is_deep else "N",
-                    e1,
-                    e2,
-                    e3,
-                ),
-            )
-            self._tree_ga_map[iid] = rs.ga_handle
+        save = self._get_nr_save()
+        if save is None or self._current_slot < 0:
+            return ""
+        rs = save.slots[self._current_slot].relic_states.get(ga)
+        if rs is None:
+            return ""
+        lines = [relic_name(rs.real_item_id), ""]
+        effects = rs.effects_list()
+        for j in range(3):
+            if effects[j] != _EMPTY_EFFECT:
+                lines.append(effect_name(effects[j]))
+            if effects[j + 3] != _EMPTY_EFFECT:
+                lines.append(f"    Curse: {effect_name(effects[j + 3])}")
+        return "\n".join(lines)
 
-    def _on_relic_select(self, _event=None) -> None:
+    def _clear_edit_pane(self) -> None:
+        self._re_item_var.set("-1")
+        for var in (*self._re_effect_vars, *self._re_curse_vars):
+            var.set(str(_EMPTY_EFFECT))
+        self._refresh_rows("edit")
+
+    def _on_relic_select(self, keys: list) -> None:
         from er_save_manager.games.NR.item_db import effect_name, relic_name
 
-        sel = self._relic_tree.selection()
-        if not sel:
+        if not keys:
             return
-        ga = self._tree_ga_map.get(sel[0])
-        if ga is None:
-            return
+        ga = keys[0]
         save = self._get_nr_save()
         if save is None or self._current_slot < 0:
             return
         rs = save.slots[self._current_slot].relic_states.get(ga)
         if rs is None:
             return
+        self._show_relic_pane("edit")
         self._selected_relic_ga = ga
         self._re_item_var.set(str(rs.real_item_id))
         self._re_item_label.configure(text=relic_name(rs.real_item_id))
@@ -1045,7 +1386,7 @@ class NREditorTab:
                 curse_3=curses[2],
             )
             _backup_and_save(save, self._get_save_path(), "nr_relic_edit")
-            self._populate_relics(save.slots[self._current_slot])
+            self._populate_relics(save.slots[self._current_slot], keep_selection=True)
             self._populate_loadouts(save.slots[self._current_slot])
             self._show_toast("Relic saved.")
         except Exception as e:
@@ -1125,7 +1466,7 @@ class NREditorTab:
                 curse_3=curses[2],
             )
             _backup_and_save(save, self._get_save_path(), "nr_relic_spawn")
-            self._populate_relics(save.slots[self._current_slot])
+            self._populate_relics(save.slots[self._current_slot], keep_selection=True)
             self._populate_loadouts(save.slots[self._current_slot])
             self._show_toast("Relic spawned.")
         except Exception as e:
@@ -1158,7 +1499,7 @@ class NREditorTab:
             self._spawn_effect_labels[j].configure(text=_fmt_effect(effects[j]))
             self._spawn_curse_vars[j].set(str(effects[j + 3]))
         self._refresh_rows("spawn")
-        self._relic_action_tabs.set("Spawn")
+        self._show_relic_pane("spawn")
 
     def _export_relics_json(self) -> None:
         import json
@@ -1170,8 +1511,9 @@ class NREditorTab:
         if save is None or self._current_slot < 0:
             CTkMessageBox.showinfo("No Slot", "Load a slot first.", parent=self.parent)
             return
-        # Export what the list currently shows, so a search narrows the export
-        shown = set(self._tree_ga_map.values())
+        # Export what the grid currently shows, so a search or filter narrows
+        # the export
+        shown = set(self._relic_grid.visible_keys())
         slot = save.slots[self._current_slot]
         rows = [
             relic_to_dict(rs)
@@ -1239,7 +1581,7 @@ class NREditorTab:
         except Exception as e:
             CTkMessageBox.showerror("Import Failed", str(e), parent=self.parent)
             return
-        self._populate_relics(slot)
+        self._populate_relics(slot, keep_selection=True)
         self._populate_loadouts(slot)
         self._show_toast(f"Imported {len(handles)} relics.")
 
@@ -1247,142 +1589,176 @@ class NREditorTab:
     # Loadouts (chalices and presets)
     # ------------------------------------------------------------------
 
-    def _build_loadouts(self, parent) -> None:
+    def _build_loadouts(self, parent, header) -> None:
         from er_save_manager.games.NR.parser import HERO_NAMES
+        from er_save_manager.ui.utils import patch_combo_scroll
+        from er_save_manager.ui.virtual_grid import VirtualIconGrid
 
-        scroll = ctk.CTkScrollableFrame(parent, corner_radius=0, fg_color="transparent")
-        scroll.pack(fill="both", expand=True)
-
-        self._budget_label = ctk.CTkLabel(
-            scroll,
-            text="",
-            anchor="w",
-            justify="left",
-            font=("Segoe UI", 11),
-            wraplength=760,
+        self._lo_count_label = ctk.CTkLabel(header, text="", text_color=ds.MUTED)
+        self._lo_count_label.pack(side="left", padx=(8, 0))
+        self._lo_view = ctk.CTkSegmentedButton(
+            header,
+            values=["Chalices", "Presets"],
+            command=lambda _v: self._populate_loadout_grid(),
         )
-        self._budget_label.pack(fill="x", padx=10, pady=(8, 4))
-
-        top = ctk.CTkFrame(scroll, fg_color="transparent")
-        top.pack(fill="x", padx=10, pady=(0, 4))
-        ctk.CTkLabel(top, text="Hero:").pack(side="left")
+        self._lo_view.set("Chalices")
+        self._lo_view.pack(side="right")
         self._lo_hero_var = tk.StringVar(value=HERO_NAMES[0])
         self._lo_hero_combo = ctk.CTkComboBox(
-            top,
+            header,
             variable=self._lo_hero_var,
             values=HERO_NAMES,
             state="readonly",
-            width=160,
-            command=lambda _v: self._populate_loadout_trees(),
+            width=170,
+            command=lambda _v: self._populate_loadout_grid(),
         )
-        self._lo_hero_combo.pack(side="left", padx=(6, 0))
+        patch_combo_scroll(self._lo_hero_combo)
+        self._lo_hero_combo.pack(side="right", padx=(0, 12))
+        ctk.CTkLabel(header, text="Hero:").pack(side="right", padx=(0, 6))
 
-        relic_cols = [(f"r{i}", f"Slot {i}", 150) for i in range(1, 7)]
-        ctk.CTkLabel(scroll, text="Chalices", font=("Segoe UI", 13, "bold")).pack(
-            anchor="w", padx=10, pady=(6, 2)
+        body = ctk.CTkFrame(parent, fg_color="transparent")
+        body.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        self._budget_label = ds.wrap_to_width(
+            ctk.CTkLabel(body, text="", anchor="w", justify="left", font=ds.SMALL)
         )
-        self._vessel_tree = self._make_loadout_tree(
-            scroll, [("name", "Chalice", 220)] + relic_cols, height=7
-        )
-        ctk.CTkLabel(scroll, text="Presets", font=("Segoe UI", 13, "bold")).pack(
-            anchor="w", padx=10, pady=(6, 2)
-        )
-        self._preset_tree = self._make_loadout_tree(
-            scroll,
-            [("name", "Preset", 140), ("vessel", "Chalice", 200)] + relic_cols,
-            height=5,
-        )
-        self._vessel_tree.bind(
-            "<<TreeviewSelect>>", lambda _e: self._on_loadout_select("vessel")
-        )
-        self._preset_tree.bind(
-            "<<TreeviewSelect>>", lambda _e: self._on_loadout_select("preset")
-        )
-        self._lo_vessel_map: dict[str, object] = {}
-        self._lo_preset_map: dict[str, object] = {}
+        # Shown only for a missing, modded or over capacity loadout block
 
-        # Edit panel shared by chalices and presets
-        panel = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("gray84", "gray24"))
-        panel.pack(fill="x", padx=10, pady=(6, 8))
-        title = ctk.CTkFrame(panel, fg_color="transparent")
-        title.pack(fill="x", padx=8, pady=(6, 2))
-        self._lo_target_label = ctk.CTkLabel(
-            title, text="Select a chalice or preset.", font=("Segoe UI", 11, "bold")
+        split = ctk.CTkFrame(body, fg_color="transparent")
+        split.pack(fill="both", expand=True)
+        split.grid_columnconfigure(0, weight=1)
+        split.grid_rowconfigure(0, weight=1)
+        self._lo_split = split
+        self._lo_grid = VirtualIconGrid(
+            split,
+            self._on_loadout_select,
+            tooltip=self._loadout_tooltip,
+            cell_w=124,
+            cell_h=140,
+            icon_size=72,
+            fg_color=ds.LIST_BG,
+            corner_radius=8,
         )
-        self._lo_target_label.pack(side="left")
-        ctk.CTkButton(
-            title,
-            text="Delete Preset",
-            command=self._delete_preset,
-            width=110,
-            fg_color=("gray65", "gray35"),
-        ).pack(side="right", padx=(0, 6))
-        ctk.CTkButton(
-            title,
-            text="Save as New Preset",
-            command=self._save_as_new_preset,
-            width=140,
-            fg_color=("gray65", "gray35"),
-        ).pack(side="right", padx=(0, 6))
+        self._lo_grid.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+        # Grid key ("vessel" | "preset", position) -> VesselLoadout / CustomPreset
+        self._lo_map: dict[tuple, object] = {}
 
-        self._lo_name_row = ctk.CTkFrame(panel, fg_color="transparent")
-        ctk.CTkLabel(self._lo_name_row, text="Preset name:", width=90, anchor="w").pack(
-            side="left"
+        pane = ctk.CTkFrame(
+            split, width=500, corner_radius=10, fg_color=("gray84", "gray24")
         )
+        pane.grid_propagate(False)
+        pane.pack_propagate(False)
+        pane.grid(row=0, column=1, sticky="nsew")
+
+        head = ctk.CTkFrame(pane, fg_color="transparent")
+        head.pack(fill="x", padx=14, pady=(14, 6))
+        self._lo_icon = ctk.CTkLabel(head, text="", width=72, height=72)
+        self._lo_icon.pack(side="left", padx=(0, 12))
+        text = ctk.CTkFrame(head, fg_color="transparent")
+        text.pack(side="left", fill="x", expand=True)
+        self._lo_target_label = ds.wrap_to_width(
+            ctk.CTkLabel(text, text="", font=ds.TITLE)
+        )
+        self._lo_target_label.pack(fill="x")
+        self._lo_kind_label = ds.wrap_to_width(
+            ctk.CTkLabel(text, text="", font=ds.SMALL, text_color=ds.MUTED)
+        )
+        self._lo_kind_label.pack(fill="x")
+
+        btns = ctk.CTkFrame(pane, fg_color="transparent")
+        btns.pack(side="bottom", fill="x", padx=14, pady=14)
+        self._lo_delete_btn = ds.button(
+            btns, "Delete Preset", self._delete_preset, primary=False, width=120
+        )
+        self._lo_delete_btn.pack(side="left")
+        self._lo_new_btn = ds.button(
+            btns, "Save as New Preset", self._save_as_new_preset, width=150
+        )
+        self._lo_new_btn.pack(side="right")
+
+        self._lo_name_row = ctk.CTkFrame(pane, fg_color="transparent")
+        self._lo_name_title = ctk.CTkLabel(self._lo_name_row, text="", anchor="w")
+        self._lo_name_title.pack(side="left")
         self._lo_name_var = tk.StringVar()
-        ctk.CTkEntry(self._lo_name_row, textvariable=self._lo_name_var, width=220).pack(
-            side="left", padx=(4, 0)
+        ctk.CTkEntry(self._lo_name_row, textvariable=self._lo_name_var).pack(
+            side="left", fill="x", expand=True, padx=(8, 0)
         )
 
-        self._lo_slot_frame = ctk.CTkFrame(panel, fg_color="transparent")
-        self._lo_slot_frame.pack(fill="x", padx=8, pady=(2, 8))
-        self._lo_slot_titles = []
-        self._lo_slot_labels = []
+        # Packed holder, so the name row can be packed before it (the
+        # scrollable frame itself is placed through an inner canvas)
+        self._lo_cards_box = ctk.CTkFrame(pane, fg_color="transparent")
+        self._lo_cards_box.pack(fill="both", expand=True, padx=8)
+        # Scrolls when the window is too short for six cards
+        self._lo_cards = ctk.CTkScrollableFrame(
+            self._lo_cards_box, fg_color="transparent", corner_radius=0
+        )
+        self._lo_cards.pack(fill="both", expand=True)
+        self._lo_slot_widgets: list[dict] = []
         for i in range(6):
-            row = ctk.CTkFrame(self._lo_slot_frame, fg_color="transparent")
-            row.pack(fill="x", pady=1)
-            t = ctk.CTkLabel(row, text=f"Slot {i + 1}:", width=150, anchor="w")
-            t.pack(side="left")
-            lbl = ctk.CTkLabel(
-                row, text="-", anchor="w", width=380, font=("Segoe UI", 10)
+            if i in (0, 3):
+                ctk.CTkLabel(
+                    self._lo_cards,
+                    text="Relics" if i == 0 else "Deep relics",
+                    font=ds.BOLD,
+                    anchor="w",
+                ).pack(fill="x", padx=6, pady=(6 if i == 0 else 12, 2))
+            card = ctk.CTkFrame(self._lo_cards, fg_color=ds.BOX, corner_radius=8)
+            card.pack(fill="x", pady=3)
+            # height=1: fill="y" sizes it, CTkFrame would request 200 px
+            stripe = ctk.CTkFrame(card, width=6, height=1, corner_radius=3)
+            stripe.pack(side="left", fill="y", padx=(6, 0), pady=6)
+            icon = ctk.CTkLabel(card, text="", width=48, height=48)
+            icon.pack(side="left", padx=(8, 0), pady=6, anchor="n")
+            side = ctk.CTkFrame(card, fg_color="transparent")
+            side.pack(side="right", padx=8, pady=6, anchor="n")
+            change = ds.button(
+                side,
+                "Change...",
+                lambda ii=i: self._browse_loadout_slot(ii),
+                primary=False,
+                width=84,
+                height=28,
             )
-            lbl.pack(side="left", padx=(2, 4))
-            ctk.CTkButton(
-                row,
-                text="Browse",
-                width=65,
-                height=24,
-                command=lambda ii=i: self._browse_loadout_slot(ii),
-            ).pack(side="left", padx=(0, 6))
-            ctk.CTkButton(
-                row,
-                text="Clear",
-                width=55,
-                height=24,
-                fg_color=("gray65", "gray35"),
-                command=lambda ii=i: self._set_loadout_slot(ii, 0),
-            ).pack(side="left")
-            self._lo_slot_titles.append(t)
-            self._lo_slot_labels.append(lbl)
+            change.pack()
+            clear = ds.button(
+                side,
+                "Clear",
+                lambda ii=i: self._set_loadout_slot(ii, 0),
+                primary=False,
+                width=84,
+                height=28,
+            )
+            clear.pack(pady=(4, 0))
+            col = ctk.CTkFrame(card, fg_color="transparent")
+            col.pack(side="left", fill="x", expand=True, padx=8, pady=6, anchor="n")
+            title = ctk.CTkLabel(
+                col, text="", font=ds.SMALL, text_color=ds.MUTED, anchor="w"
+            )
+            title.pack(fill="x")
+            name = ds.wrap_to_width(ctk.CTkLabel(col, text="", font=ds.FONT))
+            name.pack(fill="x")
+            effects = ds.wrap_to_width(
+                ctk.CTkLabel(col, text="", font=ds.SMALL, text_color=ds.MUTED)
+            )
+            effects.pack(fill="x")
+            problem = ds.wrap_to_width(
+                ctk.CTkLabel(col, text="", font=ds.SMALL, text_color=ds.ERROR)
+            )
+            self._lo_slot_widgets.append(
+                {
+                    "stripe": stripe,
+                    "icon": icon,
+                    "title": title,
+                    "name": name,
+                    "effects": effects,
+                    "problem": problem,
+                    "buttons": (change, clear),
+                }
+            )
 
         self._lo_kind: str | None = None
         self._lo_target = None
         self._lo_relics: list[int] = [0] * 6
-
-    def _make_loadout_tree(self, parent, cols, height: int) -> ttk.Treeview:
-        frame, tree = ds.themed_tree(
-            parent,
-            xscroll=True,
-            columns=[c[0] for c in cols],
-            show="headings",
-            selectmode="browse",
-            height=height,
-        )
-        for col, label, w in cols:
-            tree.heading(col, text=label)
-            tree.column(col, width=w, minwidth=40, anchor="w", stretch=False)
-        frame.pack(fill="x", padx=10, pady=(0, 4))
-        return tree
+        self._clear_loadout_edit()
 
     def _current_nr_slot(self):
         save = self._get_nr_save()
@@ -1390,45 +1766,40 @@ class NREditorTab:
             return None
         return save.slots[self._current_slot]
 
-    def _relic_short(self, slot, ga: int) -> str:
-        from er_save_manager.games.NR.item_db import effect_name, relic_name
+    def _relic_effect_lines(self, rs) -> list[str]:
+        """Effect names of a relic, each curse indented below its effect."""
+        from er_save_manager.games.NR.item_db import effect_name
 
-        if ga == 0:
-            return "-"
-        rs = slot.relic_states.get(ga)
-        if rs is None:
-            return f"(missing 0x{ga:08X})"
-        return f"{relic_name(rs.real_item_id)} ({effect_name(rs.effect_1)})"
+        effects = rs.effects_list()
+        lines = []
+        for j in range(3):
+            if effects[j] != _EMPTY_EFFECT:
+                lines.append(effect_name(effects[j]))
+            if effects[j + 3] != _EMPTY_EFFECT:
+                lines.append(f"    Curse: {effect_name(effects[j + 3])}")
+        return lines
 
     def _populate_loadouts(self, slot) -> None:
         info = slot.loadout
+        lines = []
+        color = ds.WARNING
         if info is None:
-            self._budget_label.configure(
-                text="No relic loadout section found in this slot.",
-                text_color=("gray40", "gray70"),
-            )
+            lines.append("No relic loadout section found in this slot.")
         else:
-            per_universal = info.hero_count * 28
-            lines = [
-                f"Loadout block: {info.used_bytes} / {info.chunk_size} bytes used, "
-                f"{info.spare_bytes} spare. {info.hero_count} heroes, "
-                f"{info.universal_count} universal chalices, "
-                f"{info.hero_vessel_count} hero chalices, {info.preset_count} preset slots.",
-                f"Each chalice a mod adds costs 28 bytes (hero chalice) or "
-                f"{per_universal} bytes (universal chalice).",
-            ]
-            color = ("gray30", "gray75")
             if not info.is_vanilla:
                 lines.append("Modded chalice counts (vanilla: 4 universal, 70 hero).")
-                color = ("#b35900", "#ffa94d")
             if info.spare_bytes < 0:
                 lines.append(
                     f"Over capacity by {-info.spare_bytes} bytes. The game still "
                     f"writes the {info.presets_that_fit} presets that fit but "
                     "loads none of them. They stay in the file."
                 )
-                color = ("#c0392b", "#ff6b6b")
+                color = ds.ERROR
+        if lines:
             self._budget_label.configure(text="\n".join(lines), text_color=color)
+            self._budget_label.pack(fill="x", pady=(0, 6), before=self._lo_split)
+        else:
+            self._budget_label.pack_forget()
         from er_save_manager.games.NR.parser import HERO_NAMES
 
         heroes = list(HERO_NAMES)
@@ -1438,7 +1809,7 @@ class NREditorTab:
         if self._lo_hero_var.get() not in heroes:
             self._lo_hero_var.set(HERO_NAMES[0])
         self._clear_loadout_edit()
-        self._populate_loadout_trees()
+        self._populate_loadout_grid()
 
     def _selected_hero_type(self) -> int:
         from er_save_manager.games.NR.parser import HERO_NAMES
@@ -1448,66 +1819,93 @@ class NREditorTab:
             return 0
         return HERO_NAMES.index(name) + 1 if name in HERO_NAMES else 1
 
-    def _populate_loadout_trees(self) -> None:
+    def _populate_loadout_grid(self) -> None:
+        """Grid of the selected hero's chalices or presets; the edited target
+        stays selected when it is shown."""
         from er_save_manager.games.NR.item_db import vessel_name
+        from er_save_manager.ui.virtual_grid import GridEntry
 
-        for tree in (self._vessel_tree, self._preset_tree):
-            for iid in tree.get_children():
-                tree.delete(iid)
-        self._lo_vessel_map.clear()
-        self._lo_preset_map.clear()
+        self._lo_map.clear()
         slot = self._current_nr_slot()
-        if slot is None:
-            return
-        hero_type = self._selected_hero_type()
-        if hero_type == 0:
-            vessels, presets = slot.unassigned_vessels, []
+        vessels, presets = [], []
+        if slot is not None:
+            hero_type = self._selected_hero_type()
+            if hero_type == 0:
+                vessels = slot.unassigned_vessels
+            elif (hero := slot.heroes.get(hero_type)) is not None:
+                vessels = hero.vessels
+                presets = sorted(hero.presets, key=lambda p: p.counter)
+
+        entries = []
+        if self._lo_view.get() == "Chalices":
+            for pos, v in enumerate(vessels):
+                name = _short_vessel_name(vessel_name(v.vessel_id))
+                key = ("vessel", pos)
+                self._lo_map[key] = v
+                entries.append(
+                    GridEntry(
+                        key,
+                        name,
+                        name.lower(),
+                        lambda vid=v.vessel_id: _vessel_grid_icon(vid),
+                    )
+                )
         else:
-            hero = slot.heroes.get(hero_type)
-            if hero is None:
-                return
-            vessels, presets = hero.vessels, hero.presets
-        for v in vessels:
-            iid = self._vessel_tree.insert(
-                "",
-                "end",
-                values=[vessel_name(v.vessel_id)]
-                + [self._relic_short(slot, r) for r in v.relics],
-            )
-            self._lo_vessel_map[iid] = v
-        for p in sorted(presets, key=lambda p: p.counter):
-            iid = self._preset_tree.insert(
-                "",
-                "end",
-                values=[p.name or "(unnamed)", vessel_name(p.vessel_id)]
-                + [self._relic_short(slot, r) for r in p.relics],
-            )
-            self._lo_preset_map[iid] = p
+            for pos, p in enumerate(presets):
+                name = p.name or "(unnamed)"
+                chalice = _short_vessel_name(vessel_name(p.vessel_id))
+                key = ("preset", pos)
+                self._lo_map[key] = p
+                entries.append(
+                    GridEntry(
+                        key,
+                        f"{name}\n{chalice}",
+                        f"{name} {chalice}".lower(),
+                        lambda vid=p.vessel_id: _vessel_grid_icon(vid),
+                    )
+                )
+        self._lo_grid.set_entries(entries)
+        self._lo_count_label.configure(text=str(len(entries)) if slot else "")
+        self._reselect_loadout_target()
+
+    def _loadout_tooltip(self, key) -> str:
+        """Chalice or preset name, then each slot with its relic."""
+        from er_save_manager.games.NR.item_db import relic_name, vessel_name
+
+        target = self._lo_map.get(key)
+        slot = self._current_nr_slot()
+        if target is None or slot is None:
+            return ""
+        lines = [vessel_name(target.vessel_id)]
+        if key[0] == "preset":
+            lines.insert(0, target.name or "(unnamed)")
+        lines.append("")
+        for i, ga in enumerate(target.relics):
+            rs = slot.relic_states.get(ga) if ga else None
+            what = "-" if not ga else relic_name(rs.real_item_id) if rs else "missing"
+            lines.append(f"{_slot_title(target.vessel_id, i)}: {what}")
+        return "\n".join(lines)
 
     def _clear_loadout_edit(self) -> None:
         self._lo_kind = None
         self._lo_target = None
         self._lo_relics = [0] * 6
-        self._lo_target_label.configure(text="Select a chalice or preset.")
+        self._lo_icon.configure(image=None)
+        self._lo_target_label.configure(text="No chalice selected")
+        self._lo_kind_label.configure(text="Select a chalice or preset in the grid.")
         self._lo_name_row.pack_forget()
-        for i in range(6):
-            self._lo_slot_titles[i].configure(text=f"Slot {i + 1}:")
-            self._lo_slot_labels[i].configure(text="-")
+        self._lo_delete_btn.configure(state="disabled")
+        self._lo_new_btn.configure(state="disabled")
+        self._refresh_loadout_slots()
 
     def _target_vessel_id(self) -> int:
         return self._lo_target.vessel_id if self._lo_target is not None else 0
 
-    def _on_loadout_select(self, kind: str) -> None:
-        from er_save_manager.games.NR.item_db import (
-            COLOR_NAMES,
-            vessel_name,
-            vessel_slot_color,
-        )
+    def _on_loadout_select(self, keys: list) -> None:
+        from er_save_manager.games.NR.item_db import vessel_name
 
-        tree = self._vessel_tree if kind == "vessel" else self._preset_tree
-        mapping = self._lo_vessel_map if kind == "vessel" else self._lo_preset_map
-        sel = tree.selection()
-        if not sel or sel[0] not in mapping or mapping[sel[0]] is self._lo_target:
+        target = self._lo_map.get(keys[0]) if keys else None
+        if target is None or target is self._lo_target:
             return
         if self._loadout_changes() and not CTkMessageBox.askyesno(
             "Unapplied Loadout",
@@ -1516,100 +1914,122 @@ class NREditorTab:
         ):
             self._reselect_loadout_target()
             return
-        # Selecting in one tree deselects the other so Apply has one target
-        other = self._preset_tree if kind == "vessel" else self._vessel_tree
-        other.selection_remove(other.selection())
 
-        self._lo_kind = kind
-        self._lo_target = mapping[sel[0]]
-        self._lo_relics = list(self._lo_target.relics)
-        vid = self._lo_target.vessel_id
-        if kind == "preset":
-            self._lo_target_label.configure(
-                text=f"Preset: {self._lo_target.name or '(unnamed)'} ({vessel_name(vid)})"
+        self._lo_kind = keys[0][0]
+        self._lo_target = target
+        self._lo_relics = list(target.relics)
+        vid = target.vessel_id
+        self._lo_icon.configure(image=self._icon_image("vessel", vid, 72))
+        hero = self._lo_hero_var.get()
+        if self._lo_kind == "preset":
+            self._lo_target_label.configure(text=target.name or "(unnamed)")
+            self._lo_kind_label.configure(
+                text=f"{hero} preset, {_short_vessel_name(vessel_name(vid))}"
             )
-            self._lo_name_var.set(self._lo_target.name)
+            self._lo_name_title.configure(text="Preset name:")
+            self._lo_name_var.set(target.name)
+            self._lo_delete_btn.configure(state="normal")
         else:
-            self._lo_target_label.configure(text=f"Chalice: {vessel_name(vid)}")
+            self._lo_target_label.configure(text=_short_vessel_name(vessel_name(vid)))
+            self._lo_kind_label.configure(text=f"{hero} chalice")
             # Name is only used when saving this chalice as a new preset
+            self._lo_name_title.configure(text="New preset name:")
             self._lo_name_var.set("")
-        self._lo_name_row.pack(fill="x", padx=8, pady=2, before=self._lo_slot_frame)
-        for i in range(6):
-            color = vessel_slot_color(vid, i)
-            kind_txt = "deep" if i >= 3 else "normal"
-            color_txt = COLOR_NAMES.get(color, "?") if color is not None else "?"
-            self._lo_slot_titles[i].configure(
-                text=f"Slot {i + 1} ({color_txt}, {kind_txt}):"
-            )
-        self._refresh_loadout_slot_labels()
+            self._lo_delete_btn.configure(state="disabled")
+        self._lo_new_btn.configure(state="normal")
+        self._lo_name_row.pack(
+            fill="x", padx=14, pady=(0, 6), before=self._lo_cards_box
+        )
+        self._refresh_loadout_slots()
 
     def _reselect_loadout_target(self) -> None:
-        """Select the edited chalice or preset again after a declined switch."""
-        for tree, mapping in (
-            (self._vessel_tree, self._lo_vessel_map),
-            (self._preset_tree, self._lo_preset_map),
-        ):
-            iid = next((i for i, t in mapping.items() if t is self._lo_target), None)
-            if iid is None:
-                tree.selection_remove(tree.selection())
-            else:
-                tree.selection_set(iid)
+        """Select the edited chalice or preset in the grid, or nothing when it
+        is not shown."""
+        key = next((k for k, t in self._lo_map.items() if t is self._lo_target), None)
+        self._lo_grid.set_selection([key] if key is not None else [], notify=False)
 
-    def _refresh_loadout_slot_labels(self) -> None:
+    def _refresh_loadout_slots(self) -> None:
+        """Slot cards from the edit state: slot color stripe, relic icon,
+        name, effects and why a relic does not fit its slot."""
+        from er_save_manager.games.NR.item_db import (
+            relic_name,
+            vessel_slot_color,
+            vessel_slot_error,
+        )
+
         slot = self._current_nr_slot()
-        if slot is None:
-            return
-        for i in range(6):
-            self._lo_slot_labels[i].configure(
-                text=self._relic_short(slot, self._lo_relics[i])
+        vid = self._target_vessel_id()
+        active = self._lo_target is not None
+        for i, w in enumerate(self._lo_slot_widgets):
+            color = vessel_slot_color(vid, i) if active else None
+            w["stripe"].configure(fg_color=_SLOT_COLORS.get(color, ds.SECONDARY))
+            w["title"].configure(
+                text=_slot_title(vid, i) if active else f"Slot {i + 1}"
             )
+            for btn in w["buttons"]:
+                btn.configure(state="normal" if active else "disabled")
+            ga = self._lo_relics[i]
+            rs = slot.relic_states.get(ga) if slot is not None and ga else None
+            problem = ""
+            if not ga:
+                w["icon"].configure(image=None)
+                w["name"].configure(text="Empty")
+                w["effects"].configure(text="")
+            elif rs is None:
+                w["icon"].configure(image=None)
+                w["name"].configure(text=f"Missing relic 0x{ga:08X}")
+                w["effects"].configure(text="")
+                problem = "This relic is not in the inventory."
+            else:
+                w["icon"].configure(
+                    image=self._icon_image("relic", rs.real_item_id, 48)
+                )
+                w["name"].configure(text=relic_name(rs.real_item_id))
+                w["effects"].configure(text="\n".join(self._relic_effect_lines(rs)))
+                err = vessel_slot_error(vid, i, rs.real_item_id)
+                if err:
+                    problem = f"Does not fit: {err}."
+                elif ga in self._lo_relics[:i]:
+                    problem = "Same relic as an earlier slot."
+            w["problem"].configure(text=problem)
+            if problem:
+                w["problem"].pack(fill="x")
+            else:
+                w["problem"].pack_forget()
 
     def _set_loadout_slot(self, idx: int, ga: int) -> None:
         if self._lo_target is None:
             return
         self._lo_relics[idx] = ga
-        self._refresh_loadout_slot_labels()
+        self._refresh_loadout_slots()
 
     def _browse_loadout_slot(self, idx: int) -> None:
-        from er_save_manager.games.NR.item_db import (
-            effect_name,
-            relic_name,
-            vessel_slot_error,
-        )
+        from er_save_manager.games.NR.item_db import relic_name, vessel_slot_error
 
-        if self._lo_target is None:
-            CTkMessageBox.showinfo(
-                "No Selection",
-                "Select a chalice or preset first.",
-                parent=self.parent,
-            )
-            return
         slot = self._current_nr_slot()
-        if slot is None:
+        if self._lo_target is None or slot is None:
             return
         vid = self._target_vessel_id()
-        items = []
-        for rs in slot.relic_states.values():
-            if vessel_slot_error(vid, idx, rs.real_item_id):
-                continue
-            effects = ", ".join(
-                effect_name(e)
-                for e in (rs.effect_1, rs.effect_2, rs.effect_3)
-                if e != _EMPTY_EFFECT
-            )
-            items.append(
-                (rs.ga_handle, f"{relic_name(rs.real_item_id)} | {effects or '-'}")
-            )
-        items.sort(key=lambda x: x[1])
-        dlg = _PickerDialog(
-            self.parent,
-            f"Relic for slot {idx + 1} (matching type and color)",
-            items,
-            self._lo_relics[idx],
+        # Relics in the other slots are left out: one relic per loadout
+        others = {ga for j, ga in enumerate(self._lo_relics) if j != idx and ga}
+        relics = sorted(
+            (
+                rs
+                for rs in slot.relic_states.values()
+                if not vessel_slot_error(vid, idx, rs.real_item_id)
+                and rs.ga_handle not in others
+            ),
+            key=lambda rs: relic_name(rs.real_item_id),
         )
-        if dlg.result is None:
-            return
-        self._set_loadout_slot(idx, 0 if dlg.result == _EMPTY_EFFECT else dlg.result)
+        picker = _SlotRelicPicker(
+            self.parent,
+            f"Select Relic for Slot {idx + 1}",
+            relics,
+            self._lo_relics[idx],
+            self._relic_effect_lines,
+        )
+        if picker.result is not None:
+            self._set_loadout_slot(idx, picker.result)
 
     def _loadout_changes(self) -> int:
         if self._lo_target is None:
@@ -1628,7 +2048,7 @@ class NREditorTab:
         self._lo_relics = list(self._lo_target.relics)
         if self._lo_kind == "preset":
             self._lo_name_var.set(self._lo_target.name)
-        self._refresh_loadout_slot_labels()
+        self._refresh_loadout_slots()
 
     def _prepare_loadout(self):
         from er_save_manager.games.NR.item_db import vessel_slot_error

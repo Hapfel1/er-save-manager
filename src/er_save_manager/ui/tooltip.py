@@ -68,6 +68,14 @@ class Tooltip:
         ).pack()
         self._tip = tip
 
+    def show_text(self, text: str) -> None:
+        """Hide the current tip and show text after the hover delay, for a
+        widget that draws several items (canvas cells) with their own text."""
+        self._hide()
+        self.text = text
+        if text:
+            self._schedule()
+
     def _hide(self, _event=None) -> None:
         self._cancel()
         if self._tip is not None:
