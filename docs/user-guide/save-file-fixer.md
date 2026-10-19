@@ -324,7 +324,7 @@ The Save Fixer tab lists every character as a card with slot, level, class, rune
 
 If fix causes issues:
 
-1. Go to Backup Manager tab
+1. Click **Backup Manager** in the top bar
 2. Select backup before fix
 3. Click Restore
 4. Original state restored
@@ -346,7 +346,7 @@ If fix causes issues:
 1. Try Teleport Fallback fix manually
 2. Export characters to new save
 3. Verify game files in Steam
-4. Check [Troubleshooting Tab](troubleshooting-tab.md)
+4. Run the [Troubleshooter](troubleshooting-tab.md)
 
 ### Fix applied but issue persists
 
@@ -364,7 +364,7 @@ If the tool does not help at all, feel free to contact me on Discord, server lin
 
 - **[Backup Manager](backup-manager.md)** - Manage backups created by fixer
 - **[SteamID Patcher](steamid-patcher.md)** - Fix SteamID issues
-- **[Troubleshooting Tab](troubleshooting-tab.md)** - Additional diagnostics
+- **[Troubleshooting](troubleshooting-tab.md)** - Additional diagnostics
 - **[Event Flags](event-flags.md)** - Manual flag manipulation
 
 ---

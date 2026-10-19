@@ -12,8 +12,10 @@ The Backup Manager provides safety for all save file modifications through autom
 - Manual backup creation with custom names
 - Browse and restore previous backups
 - Backup pruning with retention policies
-- Backup verification
+- Locked backups the retention limit never removes
 - Metadata tracking
+
+The **Backup Manager** button in the top bar opens the Backup Manager window for the loaded save, in every supported game. It has **Create Backup**, **Restore**, **View Details**, **Delete**, **Open Folder** and **Refresh**, a **Sort by** choice and the backup list.
 
 ---
 
@@ -52,8 +54,9 @@ Each backup includes:
 ### Creating Manual Backups
 
 1. Load save file
-2. Go to **Backup Manager** tab
+2. Click **Backup Manager** in the top bar
 3. Click **Create Backup**
+4. Enter a reason or name for the backup (optional)
 
 ---
 
@@ -71,13 +74,17 @@ Each backup includes:
 
 **Sorted by:** Most recent first
 
+### Locking Backups
+
+Click the star of a backup to lock it. The backup limit in [Settings](settings.md) never removes locked backups.
+
 ### Deleting Backups
 
 Select a backup and click **Delete**. Ctrl+click adds or removes single backups from the selection and Shift+click selects a range, so several backups can be deleted with one confirmation. Locked (starred) backups in the selection are kept. Restore and Details work on one selected backup.
 
 ### Backup Information
 
-Click any backup to view:
+Select a backup and click **View Details** to see:
 
 - Full metadata
 - Character list with levels
@@ -158,7 +165,7 @@ ER0000.co2.backups/
 
 **Solutions:**
 
-- Verify backup first
+- Check the backup with **View Details**
 - Try different backup
 - Check file permissions
 - Restore from earlier backup

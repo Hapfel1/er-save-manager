@@ -96,7 +96,7 @@ Automatically detects and fixes common save corruption issues:
 - **Save/Game Version Mismatch**: Lowers the save's version stamps so an older game version loads it
 - **Teleport Fallback**: Teleports your character to the roundtable for any other invalid coordinates that cause an infinite loading screen
 
-### Troubleshooting Tab
+### Troubleshooting
 
 Automatically detects issues with your game installation, your save file and any software that could cause issues
 

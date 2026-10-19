@@ -50,6 +50,8 @@ The Appearance tab manages character appearance presets stored in your save file
 - **Delete Preset** - Clear selected preset slot
 - **Copy to Another Save** - Transfer to different save file
 - **Browse Community Presets** - Open community browser
+- **Export to Code** / **Import from Code** - Share a preset as a short code
+- **Warped Face Sliders** - Edit the hidden secondary face sliders of the selected preset (shown when enabled in Settings)
 
 ### Eye Overrides
 

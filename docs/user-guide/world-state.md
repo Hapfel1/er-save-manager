@@ -71,9 +71,8 @@ The World State tab displays character location information and provides telepor
 
 **Steps:**
 
-1. Select character slot (1-10)
-2. Click **Load**
-3. Character location displayed
+1. Pick the character in the **Character** bar
+2. Character location displayed
 
 ### Location Information
 

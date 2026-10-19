@@ -4,7 +4,7 @@ Automated diagnostic system for detecting game, save file, and system issues.
 
 ## Overview
 
-The Troubleshooting tab runs comprehensive diagnostic checks:
+The Troubleshooting window runs diagnostic checks:
 
 - Game installation validation
 - Save file integrity checks
@@ -23,11 +23,11 @@ The Troubleshooting tab runs comprehensive diagnostic checks:
 
 ### Access
 
-**Location:** Troubleshooting tab in main interface
+**Location:** **Troubleshooting** button in the top bar (opens the Troubleshooting window)
 
 ### First-Time Setup
 
-If the addon isn't installed yet, the tab prompts to download it. This fetches the latest release from the [FromSoftware Troubleshooter](https://github.com/Hapfel1/fromsoftware-troubleshooter) repository and installs it to:
+If the addon isn't installed yet, the window prompts to download it. This fetches the latest release from the [FromSoftware Troubleshooter](https://github.com/Hapfel1/fromsoftware-troubleshooter) repository and installs it to:
 
 - Windows: `%APPDATA%\ER Save Manager\addons\troubleshooter\`
 - Linux: `~/.local/share/er-save-manager/addons/troubleshooter/`

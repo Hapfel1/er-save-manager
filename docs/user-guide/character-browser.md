@@ -51,8 +51,8 @@ Located inside of the Character Management tab
 1. Browse or search for character
 2. Click character card to view details
 3. Review full stats and equipment
-4. Select Character slot of loaded save file
-4. Click **Download & Import**
+4. Pick the **Target slot** of the loaded save file
+5. Click **Download & Import**
 
 **What Gets Downloaded:**
 
