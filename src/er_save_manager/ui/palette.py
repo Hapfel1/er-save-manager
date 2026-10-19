@@ -73,13 +73,19 @@ def apply_theme_overrides() -> None:
 
     Widgets filled with the theme purple get ON_PURPLE text, so light mode
     is no longer light text on light purple, and ON_PURPLE_DISABLED when
-    disabled.
+    disabled. The default font family becomes the one ui/fonts.register()
+    loaded, if any.
     """
+    from er_save_manager.ui import fonts
+
     theme = ctk.ThemeManager.theme
     for widget in ("CTkButton", "CTkSegmentedButton", "CTkOptionMenu"):
         if widget in theme:
             theme[widget]["text_color"] = list(ON_PURPLE)
             theme[widget]["text_color_disabled"] = list(ON_PURPLE_DISABLED)
+    # load_theme keeps only the current platform's CTkFont entry
+    if fonts.theme_family and "CTkFont" in theme:
+        theme["CTkFont"]["family"] = fonts.theme_family
 
 
 def pick(pair: tuple[str, str]) -> str:
