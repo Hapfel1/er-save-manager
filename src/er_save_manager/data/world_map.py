@@ -15,7 +15,8 @@ Legacy maps (dungeons, catacombs, the underground) are placed through
 WorldMapLegacyConvParam (world_map_conversion.json): each row pairs a point
 in a source map with a point in a destination map, and a position converts
 through the row of its map with the nearest source point. Rows chain (m35
-converts to m11, which converts to m60).
+converts to m11, which converts to m60; Convergence m30_21 converts to m30_20).
+Convergence has its own table (world_map_conversion_convergence.json).
 
 Map numbers follow the marker records: 0 Lands Between, 1 underground,
 10 Realm of Shadow. Underground maps (m12) convert to m60 coordinates and
@@ -43,6 +44,11 @@ _ORIGIN_Z = 16640.0
 
 _CONVERSION: list[list] = json.loads(
     (Path(__file__).parent / "world_map_conversion.json").read_text(encoding="utf-8")
+)
+_CONVERSION_CONVERGENCE: list[list] = json.loads(
+    (Path(__file__).parent / "world_map_conversion_convergence.json").read_text(
+        encoding="utf-8"
+    )
 )
 
 
@@ -75,15 +81,24 @@ def tile_map_rect(x: int, z: int, lod: int = 0) -> tuple[float, float, float, fl
 
 
 def _convert_once(
-    area: int, x: int, z: int, px: float, pz: float
+    table: list[list],
+    area: int,
+    x: int,
+    z: int,
+    px: float,
+    pz: float,
+    visited: set[tuple[int, int, int]],
 ) -> tuple[int, int, int, float, float] | None:
     """Convert through the nearest row of the map, preferring rows that
-    land on m60 / m61 over rows into another legacy map."""
+    land on m60 / m61 over rows into another legacy map. Rows into a map
+    in visited are skipped (m30_20 and m30_21 convert into each other)."""
     best = None
     best_key = (True, math.inf)
-    for row in _CONVERSION:
+    for row in table:
         src_area, src_x, src_z, spx, spz, dst_area, dst_x, dst_z, dpx, dpz, _ = row
-        if (src_area, src_x, src_z) != (area, x, z) or dst_area == src_area:
+        if (src_area, src_x, src_z) != (area, x, z):
+            continue
+        if (dst_area, dst_x, dst_z) in visited:
             continue
         key = (dst_area not in (60, 61), math.hypot(px - spx, pz - spz))
         if key < best_key:
@@ -93,7 +108,7 @@ def _convert_once(
 
 
 def location_map_point(
-    map_id_str: str, local_x: float, local_z: float
+    map_id_str: str, local_x: float, local_z: float, convergence: bool = False
 ) -> tuple[int, float, float] | None:
     """(map number, map x, map y) of a position in any map, or None when
     the map has no world map placement."""
@@ -102,7 +117,9 @@ def location_map_point(
     except ValueError:
         return None
     map_no = MAP_UNDERGROUND if area == 12 else None
+    table = _CONVERSION_CONVERGENCE if convergence else _CONVERSION
     px, pz = local_x, local_z
+    visited = {(area, x, z)}
     for _ in range(4):
         if area in (60, 61):
             size = 256 << lod
@@ -110,9 +127,10 @@ def location_map_point(
             if map_no is None:
                 map_no = MAP_LANDS_BETWEEN if area == 60 else MAP_REALM_OF_SHADOW
             return map_no, mx, my
-        step = _convert_once(area, x, z, px, pz)
+        step = _convert_once(table, area, x, z, px, pz, visited)
         if step is None:
             return None
         area, x, z, px, pz = step
+        visited.add((area, x, z))
         lod = 0
     return None

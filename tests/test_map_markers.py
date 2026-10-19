@@ -161,3 +161,16 @@ def test_location_map_point_layers():
     assert point is not None and point[0] == MAP_UNDERGROUND
     # Leyndell converts to m60 through its conversion rows.
     assert location_map_point("m11_00_00_00", 0.0, 0.0)[0] == MAP_LANDS_BETWEEN
+
+
+def test_location_map_point_convergence_maps():
+    # Maps only Convergence has conversion rows for.
+    assert location_map_point("m17_00_00_00", 0.0, 0.0) is None
+    assert location_map_point("m17_00_00_00", 0.0, 0.0, True)[0] == MAP_REALM_OF_SHADOW
+    assert location_map_point("m31_83_00_00", 0.0, 0.0, True)[0] == MAP_REALM_OF_SHADOW
+    # m30_21 converts to m30_20, which converts to m60 (the two maps also
+    # convert into each other).
+    stronghold = location_map_point("m30_21_00_00", 0.0, 0.0, True)
+    haligtree_path = location_map_point("m30_20_00_00", 0.0, 0.0, True)
+    assert stronghold == haligtree_path
+    assert stronghold[0] == MAP_LANDS_BETWEEN
