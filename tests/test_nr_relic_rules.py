@@ -100,3 +100,41 @@ def test_conflicts_hides_same_effect_and_same_group():
     assert rr.conflicts(effects[0], [effects[0]])
     assert not rr.conflicts(effects[0], [effects[1], effects[2]])
     assert not rr.conflicts(effects[0], [E, E])
+
+
+def test_picker_lists_each_relic_type_once():
+    entries = rr.picker_relics()
+    labels = [label for _rid, label, _deep in entries]
+    assert len(labels) == len(set(labels))
+    kinds = {rr.relic_kind(rid) for rid, _l, _d in entries}
+    assert kinds <= {"random", "deep", "fixed"}
+    assert all(rr.slot_count(rid) > 0 for rid, _l, _d in entries)
+    assert not any(label == "Antique" for _rid, label, _deep in entries)
+
+
+def test_effect_names_drop_the_relic_tag():
+    from er_save_manager.games.NR.item_db import effect_name
+
+    assert effect_name(7001702) == "Lightning Attack Power Up +2"
+    assert effect_name(6500900) == "[Undertaker] Executing Art readies Character Skill"
+    assert effect_name(10000) == "FP Restoration upon Successive Attacks"
+
+
+def test_allocation_follows_the_handle_ring():
+    from types import SimpleNamespace
+
+    from er_save_manager.games.NR.relic_ops import _allocate_state
+
+    def slot(handles):
+        return SimpleNamespace(
+            item_states=[(h, 8, i * 8) for i, h in enumerate(handles)]
+        )
+
+    # Newest generation 0x81 ends at index 1: next free index after it.
+    states = [0xC0810000, 0xC0810001, 0, 0xC0800003, 0]
+    assert _allocate_state(slot(states)) == (16, 0xC0810002)
+    # Last index used by the newest generation: wrap with the next one.
+    states = [0, 0xC0800001, 0xC0800002]
+    assert _allocate_state(slot(states)) == (0, 0xC0810000)
+    assert _allocate_state(slot([0, 0])) == (0, 0xC0800000)
+    assert _allocate_state(slot([0xC0800000])) is None

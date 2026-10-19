@@ -15,8 +15,15 @@ count at 5120 but makes the section 72 bytes longer, so everything after it
 later. The decrypted entry has a fixed size, so the same 72 bytes are taken
 from the unused slack at the end of the slot.
 
+Every item's handle carries its state index in the low 16 bits and a
+generation byte in bits 16-23 (0x80-0xFF ring). The game allocates indices
+upward from the last one it used and wraps to 0 with the generation + 1,
+skipping used indices, so the newest generation's highest index is the
+cursor.
+
 Concretely:
-  1. Find the first 8-byte empty state slot after the last existing relic.
+  1. Take the first empty state after the cursor (wrapping to 0 with the next
+     generation); the handle is the relic type, generation and that index.
   2. Insert 72 null bytes at that offset and trim 72 bytes of trailing slack
      before the checksum tail, so the entry keeps its fixed size.
   3. Write the 80-byte relic block at that offset (overwriting the 72 nulls +
@@ -120,27 +127,22 @@ def _next_acquisition_id(slot: NightreignSlot) -> int:
     return max(slot.next_acquisition_id, scanned + 1)
 
 
-def _next_relic_handle(slot: NightreignSlot) -> int:
-    if not slot.relic_states:
-        return ITEM_TYPE_RELIC | 0x800001
-    return ITEM_TYPE_RELIC | (max(h & 0x00FFFFFF for h in slot.relic_states) + 1)
-
-
-def _find_spawn_offset(slot: NightreignSlot) -> int | None:
-    """
-    Return the absolute offset of the first 8-byte empty state slot at or after
-    the last existing relic state. Returns None if no suitable slot exists.
-    """
-    last_relic_off = -1
-    for _ga, rs in slot.relic_states.items():
-        if rs.abs_offset > last_relic_off:
-            last_relic_off = rs.abs_offset
-
-    for ga, size, off in slot.item_states:
-        if off <= last_relic_off:
-            continue
-        if ga == 0 and size == 8:
-            return off
+def _allocate_state(slot: NightreignSlot) -> tuple[int, int] | None:
+    """(absolute offset, ga_handle) of the state the game would use next for
+    a relic, or None when every state is in use."""
+    used = [(i, ga) for i, (ga, _size, _off) in enumerate(slot.item_states) if ga]
+    if used:
+        generation = max((ga >> 16) & 0xFF for _i, ga in used)
+        cursor = max(i for i, ga in used if (ga >> 16) & 0xFF == generation)
+    else:
+        generation, cursor = 0x80, -1
+    next_generation = generation + 1 if generation < 0xFF else 0x80
+    order = [(i, generation) for i in range(cursor + 1, len(slot.item_states))]
+    order += [(i, next_generation) for i in range(cursor + 1)]
+    for i, gen in order:
+        ga, _size, off = slot.item_states[i]
+        if ga == 0:
+            return off, ITEM_TYPE_RELIC | (gen << 16) | i
     return None
 
 
@@ -197,9 +199,10 @@ def spawn_relic(
             [curse_1, curse_2, curse_3],
         )
 
-    spawn_offset = _find_spawn_offset(slot)
-    if spawn_offset is None:
-        raise RuntimeError("No free state slot found after existing relics")
+    allocated = _allocate_state(slot)
+    if allocated is None:
+        raise RuntimeError("No free state slot: all 5120 item states are in use")
+    spawn_offset, ga_handle = allocated
 
     free_entries = [e for e in slot.item_entries if e.is_empty]
     if not free_entries:
@@ -207,7 +210,6 @@ def spawn_relic(
 
     # Read entry_count before expanding the buffer
     old_count = struct.unpack_from("<I", slot.decrypted, slot.entry_count_offset)[0]
-    ga_handle = _next_relic_handle(slot)
     acq_id = _next_acquisition_id(slot)
     item_id = 0x80000000 | (real_item_id & 0x00FFFFFF)
 
@@ -407,12 +409,5 @@ def import_relics(
 
 
 def _count_spawnable_states(slot: NightreignSlot) -> int:
-    """Empty 8-byte states after the last relic (where spawns are placed)."""
-    last_relic_off = max(
-        (rs.abs_offset for rs in slot.relic_states.values()), default=-1
-    )
-    return sum(
-        1
-        for ga, size, off in slot.item_states
-        if off > last_relic_off and ga == 0 and size == 8
-    )
+    """Empty states, where spawns are placed."""
+    return sum(1 for ga, _size, _off in slot.item_states if ga == 0)

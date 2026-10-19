@@ -163,6 +163,73 @@ def conflicts(effect_id: int, others: list[int]) -> bool:
     return False
 
 
+def picker_relics() -> list[tuple[int, str, bool]]:
+    """(relic id, label, deep) per relic type a player can get, sorted by
+    label.
+
+    Random and deep relics of one name share their rules, so each name is
+    listed once (lowest id). Relics on the pre-1.03 tables only, relics
+    without effect slots (Murk, Sovereign Sigil, Scenic Flatstone), the
+    "Antique" rows 1-6 (placeholders whose tables hold effects no other
+    relic uses) and unobtainable placeholders are left out. A fixed relic whose name other
+    entries share gets its effects in the label.
+    """
+    from er_save_manager.games.NR.item_db import all_relics, effect_name
+
+    legacy = set(_load()["legacy_tables"])
+    groups: dict[tuple, int] = {}
+    for rid_str, row in all_relics().items():
+        rid = int(rid_str)
+        kind = relic_kind(rid)
+        tables = _slot_tables(rid) or []
+        if kind in ("unknown", "unobtainable") or not tables:
+            continue
+        if row["name"] == "Antique":
+            continue
+        if kind == "random" and set(tables) <= legacy:
+            continue
+        key = (row["name"], kind, tuple(fixed_effects(rid)) if kind == "fixed" else ())
+        groups[key] = min(groups.get(key, rid), rid)
+
+    per_name: dict[str, int] = {}
+    for name, _kind, _fixed in groups:
+        per_name[name] = per_name.get(name, 0) + 1
+    out = []
+    for (name, kind, fixed), rid in groups.items():
+        label = name
+        if kind == "fixed" and per_name[name] > 1:
+            label = f"{name} ({', '.join(effect_name(e) for e in fixed)})"
+        out.append((rid, label, kind == "deep"))
+    return sorted(out, key=lambda x: x[1])
+
+
+def needs_curse(effect_id: int) -> bool:
+    """Whether a deep relic effect always comes with a curse."""
+    return effect_id in _deep_pools()[0]
+
+
+def can_add(real_item_id: int, effect_id: int, others: list[int]) -> bool:
+    """Whether effect_id fits next to the effects in the other rows: no
+    conflict, and the relic's slot tables can still hold all of them."""
+    if conflicts(effect_id, others):
+        return False
+    kind = relic_kind(real_item_id)
+    filled = [e for e in others if e != _EMPTY]
+    if kind == "deep":
+        return effect_id in rollable_effects(real_item_id)
+    if kind == "fixed":
+        return effect_id in fixed_effects(real_item_id)
+    if kind == "random":
+        pools = [_pool(t) for t in _slot_tables(real_item_id)]
+        if effect_id not in frozenset().union(*pools):
+            return False
+        if len(filled) >= len(pools) or not _assignable(filled, pools):
+            # Other rows already break the slot rules; check() reports it.
+            return True
+        return _assignable([*filled, effect_id], pools)
+    return True
+
+
 def _assignable(effects: list[int], pools: list[frozenset[int]]) -> bool:
     return any(
         all(e in p for e, p in zip(effects, perm, strict=True))

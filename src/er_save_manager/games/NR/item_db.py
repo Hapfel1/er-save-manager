@@ -14,6 +14,7 @@ roll comes from the game's roll tables, see relic_rules.py.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 _DATA_FILE = Path(__file__).parent / "nr_items.json"
@@ -45,14 +46,6 @@ def all_relics() -> dict[str, dict]:
     return _load()["relics"]
 
 
-def relics_sorted() -> list[tuple[int, str, bool]]:
-    """Return (id, name, is_deep) sorted by name."""
-    return sorted(
-        ((int(k), v["name"], v["deep"]) for k, v in _load()["relics"].items()),
-        key=lambda x: x[1],
-    )
-
-
 # ---------------------------------------------------------------------------
 # Effects
 # ---------------------------------------------------------------------------
@@ -64,11 +57,20 @@ def get_effect(effect_id: int) -> dict | None:
     return _load()["effects"].get(str(effect_id))
 
 
+# "[Relic] " and "[Special Relic] " name prefixes, with an optional hero
+_RELIC_PREFIX = re.compile(r"^\[(?:Special )?Relic(?: - ([^\]]+))?\] ")
+
+
+def _display_name(name: str) -> str:
+    """Effect name without the "[Relic]" tag; hero effects keep "[Hero]"."""
+    return _RELIC_PREFIX.sub(lambda m: f"[{m.group(1)}] " if m.group(1) else "", name)
+
+
 def effect_name(effect_id: int) -> str:
     if effect_id == 0xFFFFFFFF or effect_id < 0:
         return "(empty)"
     e = get_effect(effect_id)
-    return e["name"] if e else f"Unknown ({effect_id})"
+    return _display_name(e["name"]) if e else f"Unknown ({effect_id})"
 
 
 def all_effects() -> dict[str, dict]:
@@ -97,7 +99,7 @@ def effects_for_slot(is_deep_relic: bool, hero_type: int = 0) -> list[tuple[int,
             continue
         if hero_type != 0 and hero_idx < len(e["heroes"]) and not e["heroes"][hero_idx]:
             continue
-        result.append((int(sid), e["name"]))
+        result.append((int(sid), _display_name(e["name"])))
     return sorted(result, key=lambda x: x[1])
 
 
@@ -105,7 +107,7 @@ def effects_for_curse_slot() -> list[tuple[int, str]]:
     """Return (effect_id, name) pairs valid for a curse slot."""
     return sorted(
         (
-            (int(sid), e["name"])
+            (int(sid), _display_name(e["name"]))
             for sid, e in _load()["effects"].items()
             if e["tier"] == "curse"
         ),

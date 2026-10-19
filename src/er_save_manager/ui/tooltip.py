@@ -44,7 +44,7 @@ class Tooltip:
 
     def _show(self) -> None:
         self._job = None
-        if self._tip is not None or not self.widget.winfo_exists():
+        if self._tip is not None or not self.text or not self.widget.winfo_exists():
             return
         x = self.widget.winfo_pointerx() + 14
         y = self.widget.winfo_pointery() + 18
