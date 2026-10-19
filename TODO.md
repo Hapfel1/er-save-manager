@@ -1,16 +1,64 @@
-scripts for zeroing out save files ave file watcher and game hook
+make wrong game data tooltip for ds3 more apparent
 
-appearance editor for non er
+make nr relic spawner and editor layout look better, maybe visual editor w icons? also better way to show the full perks since they are quite long
 
-steamdeck mode/high display scale windows
+nr ink itemgib to relic spawner
+
+unified info about characters on save inspector, also show Issues detected or OK if none are detected, also display nicely not liek varied by position varied by name
 
 bloodstains from other players netman
 
-review all dialogs for layout (oversized button text, off geometry, empty space) and rework them 
-
 other faceparamoverides and editing them
 
-wording
+DS2 event flag storage layout (single-action pairs + flagdiff.py)
+
+Sekiro save editing
+
+unify tabs layout for all games done (in-game check of an Apply All write pending)
+
+on everything that needs character loading auto load character 1 on default and reload on selection of other slots making the load slot button removable done
+
+stop closing if changes are unapplied and ask if they should be or just close done
+
+use body type and not male/female or (gender) done
+
+adverties community browsers and easily missed visual features better in the manager done
+
+viusal map view custom convergence map done (in game: Convergence map art and new grace positions pending)
+
+unlock map/regions in visual map? done (in game: unlock on a test character pending)
+
+check missing conv graces done
+
+check nr relic ops validation done (roll rules from the game's tables)
+
+ds2 seamless save 32 chars make alphanumeric echeck done (in game: 20/14 char slots not reported)
+
+open folder using the utils function on linux, check every single one done (Windows untested)
+
+performance check loading everything, simulate windows and linux done (part 1; ds_equipment row reuse, DS appearance tab builds, World State map thumbnail left)
+
+slim down tests only to what is needed done
+
+visual map world tab selection white rign replace w selection ring from ingame done
+
+visual pickers: "All" category showing every icon, working with search done
+
+windows display scale above 100% breaks the tool (Nexus report: 1920x1080 at 125%, windows open too low, buttons off screen even at 100%): option to ignore windows dpi scaling, start maximized done
+
+enter closes single-OK popups; "Elden Ring process terminated successfully" as toast instead of popup done
+
+safe renaming of save file extensions done
+
+scripts for zeroing out save files ave file watcher and game hook done (watcher + test wipe script; game hook not built) done
+
+appearance editor for non er done
+
+steamdeck mode/high display scale windows done
+
+review all dialogs for layout (oversized button text, off geometry, empty space) and rework them done
+
+wording done
 
 playtime editor done
 
@@ -20,29 +68,25 @@ research what csnetman has and corruption instead of the full replacement done
 
 ER full save documentation: decode and document every remaining unknown save struct done
 
-DS2 event flag storage layout (single-action pairs + flagdiff.py)
+DS2 shared revive bytes (Rosabeth/Chloanne, Gren/Ornifex): check whether the shared byte holds separate bits done
 
-DS2 shared revive bytes (Rosabeth/Chloanne, Gren/Ornifex): check whether the shared byte holds separate bits
+DSR event flags, flag 0 and NPC states done
 
-DSR event flags, flag 0 and NPC states
+add missing bosses dsr done
 
-add missing bosses dsr
-
-DS3 death-state byte (kill pair in m51_01)
+DS3 death-state byte (kill pair in m51_01) done
 
 ER unnamed NPC blocks: Finger Reader Crone 3500, bosses 3140/3200/3320/3340, Roundtable 3160/3700/3780/3840/3960, Ensha and Pidia bases done
 
-Sekiro save editing
+Equipment editor for DS3, DSR and DS2 done
 
-Equipment editor for DS3, DSR and DS2
+DS2 attunement editor done
 
-DS2 attunement editor
+DS3 visited regions / warp unlocks done
 
-DS3 visited regions / warp unlocks
+DSR covenant rank and appearance done
 
-DSR covenant rank and appearance
-
-DS2 last-bonfire warp
+DS2 last-bonfire warp done
 
 DS2 Bonfire Ascetic vs bonfire level byte contradiction done
 
@@ -117,16 +161,18 @@ check validation when batch adding done
 check inv corruption sometimes when adding a lot done
 
 demi human cleaver done
+
 jewel of the formless done
 
 export params for ds3 durability done
-add total level recalc for dsr and ds3 level changing and validate level + name item and data files in csv
 
-add conv + cinders items
+add total level recalc for dsr and ds3 level changing and validate level + name item and data files in csv done
 
-Investigate DSR Event flags again and flag 0 as wel as npc states
+add conv + cinders items done
 
-fix nexusmods upload, did not upload the appimage, needs to put old versions on archived and update the mods version
+Investigate DSR Event flags again and flag 0 as wel as npc states done
+
+fix nexusmods upload, did not upload the appimage, needs to put old versions on archived and update the mods version done
 
 fix affinities on convergence save done
 
@@ -176,7 +222,7 @@ ui when successfully adding item change to toast done
 
 import feature from nyasu.business done
 
-auto load character on selecting slot and do equipment editor then test everything release troubleshooter and this bump to v1.0.0
+auto load character on selecting slot and do equipment editor then test everything release troubleshooter and this bump to v1.0.0 done
 
 add ash of war for weapons on equipped done
 
@@ -187,9 +233,10 @@ dlc ashes cut off at swordhand of night jolan + 1 change to upgrade level select
 talismans not working done
 
 add detection for co2 done
-fix csprofilesummary when importing character via erc as well as steamid
 
-fix weapon names in the character submit flow
+fix csprofilesummary when importing character via erc as well as steamid done
+
+fix weapon names in the character submit flow done
 
 make level recalculation mandatory in stats editor, also recalculate in the other way if people change the soul level pbut the stats do not match up to that done
 
@@ -215,7 +262,7 @@ check autoloading, check autobackup again done
 
 Backup Manager + SteamID Patcher for the other games done
 
-item spawning
+item spawning done
 
 check ce functions to find missing features done
 
@@ -233,7 +280,7 @@ check steamid linux and windows virus warning done
 
 improve visuals done
 
-check item spawning again
+check item spawning again done
 
 add character slot names everywhere done
 
@@ -245,9 +292,9 @@ try fixing scrolling on linux skipped for now
 
 zip done
 
-troubleshooting borked save
+troubleshooting borked save done
 
-troubleshooter for each game
+troubleshooter for each game done
 
 check character presets wiping issue done
 
@@ -255,15 +302,13 @@ redo profiles done
 
 edit readme and description done
 
-add conv mode itemids
+add conv mode itemids done
 
-implement item spawning + check region unlock
+implement item spawning + check region unlock done
 
-implement hex editor
+check and fix worldstate locations done
 
-check and fix worldstate locations
-
-check consumable spawning as well as spawning on a further played profile
+check consumable spawning as well as spawning on a further played profile done
 
 add hp fp stam to character browser and submission done
 
@@ -275,7 +320,7 @@ add progress loading bar when loading presets in browser done
 
 troubled checking for running vpns done
 
-check for extracted or not - not needed, windows throws error
+check for extracted or not - not needed, windows throws error done
 
 backups zip, auto backup done
 
@@ -298,25 +343,28 @@ Add VERSION + update notice done
 investigate steam deck appearance browse issue, add logging build which puts out log in a log file done
 
 change first tab naming to save fixer and add clear instructions done
+
 change all info popups to be custom themed done
+
 implement ng+ editor done
+
 fix image resolution in browser done
 
 implement ng+ editor done
- 
+
  fix character editor bg in bright mode done
- 
+
  make appearance tab scrollable to view buttons done
- 
+
  fix readme and development done
- 
+
  fix linux warning/test on linux done
 
 - pic of character slots + explanation done
 
 - change eac warning done
 
-- change linux notice on seein gthat the save file is not in a default location
+- change linux notice on seein gthat the save file is not in a default location done
 
 - add better refresh logic done
 
@@ -348,7 +396,7 @@ Character Manager (DONE):
 - Make the window scrollable and the selection of the operations in sub tabs next to eachother, not in a list below eachother
 - Implement the Operation functionality
 
-Character Editor:
+Character Editor: done
 -  Put Health/FP/Stamina next to Attributes as there is a lot of free space in the window and put apply changes and revert in its own tab like view details & issues has its own action tab in the save inspector
 - Also calculate characterlevel and change it based on changing attributes, give a warning if it is not the same before applying and recommend setting it to the actual level (Example: you change vigor from 12 to 15, so your character level should go from 9 to 12 which needs to be changed too)
 - Make Health/FP/Stamina only the max values editable, the active values have no need for that
@@ -358,7 +406,7 @@ Character Editor:
 
 Appearance:
 - Give option to delete presets/edit them in there too done
-- Implement Tab for preset browser with presets (coming in the future) (The other difficult thing i am still unsure if i want to do is a character preset database where users can contribute presets to me which can be put in a database. Main issue is displaying how the preset looks nicely, Actually good idea - humm just screenshot from the game is enough i think, Yeah, gonna have to give users a good way to contribute (i will have to check every contribution manually anyways) and a way for me to update the db wo having to update the tool, i'm sure i can host it somewhere)
+- Implement Tab for preset browser with presets (coming in the future) (The other difficult thing i am still unsure if i want to do is a character preset database where users can contribute presets to me which can be put in a database. Main issue is displaying how the preset looks nicely, Actually good idea - humm just screenshot from the game is enough i think, Yeah, gonna have to give users a good way to contribute (i will have to check every contribution manually anyways) and a way for me to update the db wo having to update the tool, i'm sure i can host it somewhere) done
 
 World State: done
 - Implement World State
@@ -376,7 +424,7 @@ Gestures&Regions: done
 Hex Editor:
 - Make it scrollable and editable
 
-Save File Fixer: 
+Save File Fixer: done
 - make sure to implement the disable dlc flag function
 - make sure all the fixes work
 
@@ -385,7 +433,7 @@ Security:
 
 -- change design so that you don't have to expand the window that much sometimes to see everything
 
--- ng + state editor/changer
+-- ng + state editor/changer done
 
 
 Whole feature list below
