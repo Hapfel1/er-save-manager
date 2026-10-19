@@ -171,9 +171,6 @@ class GesturesRegionsTab:
         save_file = self.get_save_file()
         if self.gestures_inner_frame is None:
             return
-        for widget in self.gestures_inner_frame.winfo_children():
-            widget.destroy()
-        self.gesture_states.clear()
         self._initial_unlocked = set()
         if (
             save_file is None
@@ -181,6 +178,7 @@ class GesturesRegionsTab:
             or save_file.characters[slot_idx].is_empty()
             or slot_idx not in save_file.get_active_slots()
         ):
+            self._clear_gesture_rows()
             self.current_slot = None
             self._wheel_tracker.clear()
             for combo, var in zip(self._wheel_combos, self._wheel_vars, strict=True):
@@ -191,7 +189,7 @@ class GesturesRegionsTab:
         self.current_slot = slot_idx
         slot = save_file.characters[slot_idx]
 
-        all_gestures = get_all_unlockable_gestures(include_cut_content=False)
+        all_gestures = sorted(get_all_unlockable_gestures(include_cut_content=False))
         unlocked_gesture_ids = set()
 
         if hasattr(slot, "gestures") and slot.gestures:
@@ -201,26 +199,37 @@ class GesturesRegionsTab:
                 if g not in (0, 0xFFFFFFFF, GESTURE_SLOT_EMPTY)
             }
 
-        for gesture_id in sorted(all_gestures):
-            name = get_gesture_name(gesture_id)
-            dlc = " [DLC]" if is_dlc_gesture(gesture_id) else ""
-            cut = " [CUT]" if is_cut_content(gesture_id) else ""
+        # The gesture list is the same for every character: keep the shown
+        # rows and set their check state instead of rebuilding them.
+        if list(self.gesture_states) != all_gestures:
+            self._clear_gesture_rows()
+            for gesture_id in all_gestures:
+                name = get_gesture_name(gesture_id)
+                dlc = " [DLC]" if is_dlc_gesture(gesture_id) else ""
+                cut = " [CUT]" if is_cut_content(gesture_id) else ""
 
-            var = tk.BooleanVar(value=(gesture_id in unlocked_gesture_ids))
-            self.gesture_states[gesture_id] = var
+                var = tk.BooleanVar(value=False)
+                self.gesture_states[gesture_id] = var
 
-            checkbox = ctk.CTkCheckBox(
-                self.gestures_inner_frame,
-                text=f"{name}{dlc}{cut}",
-                variable=var,
-                onvalue=True,
-                offvalue=False,
-            )
-            checkbox.pack(anchor="w", pady=4, padx=8)
+                checkbox = ctk.CTkCheckBox(
+                    self.gestures_inner_frame,
+                    text=f"{name}{dlc}{cut}",
+                    variable=var,
+                    onvalue=True,
+                    offvalue=False,
+                )
+                checkbox.pack(anchor="w", pady=4, padx=8)
+        for gesture_id, var in self.gesture_states.items():
+            var.set(gesture_id in unlocked_gesture_ids)
 
         # Remember initial unlocked set for delta calculation on apply
         self._initial_unlocked = unlocked_gesture_ids & set(all_gestures)
         self._load_wheel(slot)
+
+    def _clear_gesture_rows(self) -> None:
+        for widget in self.gestures_inner_frame.winfo_children():
+            widget.destroy()
+        self.gesture_states.clear()
 
     def gesture_changes(self) -> int:
         selected = {gid for gid, var in self.gesture_states.items() if var.get()}
