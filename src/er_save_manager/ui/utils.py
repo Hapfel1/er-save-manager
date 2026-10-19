@@ -355,48 +355,78 @@ def style_window_frame(window, *, dialog: bool = True) -> None:
         pass
 
 
+# Widget classes whose own class bindings scroll them on Button-4/5.
+_SELF_SCROLLING_CLASSES = frozenset({"Treeview", "Listbox", "Text"})
+
+
+def _wheel_target(widget, sequence):
+    """Canvas of the innermost CTkScrollableFrame under widget that can scroll.
+
+    None when a widget on the way up handles the wheel itself (own binding
+    for sequence, or a Treeview/Listbox/Text). A fully visible frame passes
+    the wheel on to the next one out.
+    """
+    while widget is not None:
+        if widget.winfo_class() in _SELF_SCROLLING_CLASSES:
+            return None
+        frame = None
+        if isinstance(widget, ctk.CTkScrollableFrame):
+            frame = widget
+        elif isinstance(widget, tkinter.Canvas):
+            # Pointer over the canvas area around the content frame.
+            frame = next(
+                (
+                    c
+                    for c in widget.winfo_children()
+                    if isinstance(c, ctk.CTkScrollableFrame)
+                    and c._parent_canvas is widget
+                ),
+                None,
+            )
+            if frame is None and widget.bind(sequence):
+                return None
+        elif widget.bind(sequence):
+            return None
+        if frame is not None:
+            canvas = frame._parent_canvas
+            if canvas.yview() != (0.0, 1.0):
+                return canvas
+        widget = widget.master
+    return None
+
+
+def _wheel_linux(event):
+    widget = event.widget
+    try:
+        if isinstance(widget, str):
+            widget = event.widget.nametowidget(widget)
+        sequence = f"<Button-{event.num}>"
+        canvas = _wheel_target(widget, sequence)
+        if canvas is not None:
+            canvas.yview_scroll(-1 if event.num == 4 else 1, "units")
+    except (AttributeError, KeyError, tkinter.TclError):
+        # Widget path of a Tk-internal window, or a widget already destroyed.
+        return
+
+
 def bind_mousewheel(widget, target_widget=None):
     """
-    Bind mousewheel scrolling to a CTkScrollableFrame (AppImage-compatible).
+    Enable wheel scrolling of CTkScrollableFrames on Linux.
+
+    Tk 8.6 on X11 reports the wheel as Button-4/5, which CTkScrollableFrame
+    does not handle. One application-wide binding scrolls the innermost
+    scrollable frame under the pointer, so rows added later and nested frames
+    need no per-widget bindings. The arguments are kept for existing callers;
+    any widget of the application installs the binding.
     """
-    if target_widget is None:
-        target_widget = widget
-
-    # For CTkScrollableFrame, bind directly to internal canvas
-    if hasattr(target_widget, "_parent_canvas"):
-        canvas = target_widget._parent_canvas
-
-        def scroll_up(event):
-            canvas.yview_scroll(-1, "units")
-            return "break"
-
-        def scroll_down(event):
-            canvas.yview_scroll(1, "units")
-            return "break"
-
-        canvas.bind("<Button-4>", scroll_up)
-        canvas.bind("<Button-5>", scroll_down)
-
-        target_widget.bind("<Button-4>", scroll_up)
-        target_widget.bind("<Button-5>", scroll_down)
-
-        # Bind children recursively so widgets added later also scroll
-        def bind_to_children(w):
-            try:
-                w.bind("<Button-4>", scroll_up)
-                w.bind("<Button-5>", scroll_down)
-                for child in w.winfo_children():
-                    bind_to_children(child)
-            except Exception:
-                pass
-
-        bind_to_children(target_widget)
-
-        # Re-bind when content changes
-        def on_map(event):
-            bind_to_children(target_widget)
-
-        target_widget.bind("<Map>", on_map, add="+")
+    if not sys.platform.startswith("linux"):
+        return
+    root = (target_widget or widget)._root()
+    if getattr(root, "_er_wheel_bound", False):
+        return
+    root._er_wheel_bound = True
+    root.bind_all("<Button-4>", _wheel_linux, add="+")
+    root.bind_all("<Button-5>", _wheel_linux, add="+")
 
 
 def patch_combo_scroll(combo, max_visible_rows: int = 20, row_height: int = 28):
