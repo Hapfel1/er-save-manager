@@ -8,7 +8,6 @@ from __future__ import annotations
 import queue
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog
 from typing import Any
 
 import customtkinter as ctk
@@ -30,6 +29,7 @@ from er_save_manager.ui.utils import (
     bind_mousewheel,
     open_url,
     patch_combo_scroll,
+    pick_file,
     trace_variable,
 )
 from er_save_manager.ui.virtual_grid import (
@@ -408,7 +408,7 @@ class EnhancedPresetBrowser:
 
     # ---------------------- Image selection ----------------------
     def select_face_image(self):
-        path = filedialog.askopenfilename(
+        path = pick_file(
             title="Select Face Screenshot",
             filetypes=[("Image files", "*.png *.jpg *.jpeg"), ("All files", "*.*")],
         )
@@ -417,7 +417,7 @@ class EnhancedPresetBrowser:
             self.face_image_label.configure(text=Path(path).name)
 
     def select_body_image(self):
-        path = filedialog.askopenfilename(
+        path = pick_file(
             title="Select Full Body Screenshot",
             filetypes=[("Image files", "*.png *.jpg *.jpeg"), ("All files", "*.*")],
         )
@@ -426,7 +426,7 @@ class EnhancedPresetBrowser:
             self.body_image_label.configure(text=Path(path).name)
 
     def select_preview_image(self):
-        path = filedialog.askopenfilename(
+        path = pick_file(
             title="Select Preview Thumbnail",
             filetypes=[("Image files", "*.png *.jpg *.jpeg"), ("All files", "*.*")],
         )

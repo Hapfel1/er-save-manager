@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import tkinter as tk
+from pathlib import Path
 
 import customtkinter as ctk
 
@@ -16,6 +17,7 @@ from er_save_manager.games.DS2.save import (
     CHARACTER_SLOTS,
     LEVEL_STAT_KEYS,
     NAME_MAX_CHARS,
+    NAME_MAX_CHARS_SEAMLESS,
     NG_PLUS_MAX,
     STARTING_CLASSES,
     DS2Save,
@@ -634,6 +636,12 @@ class DS2EditorTab:
             duration=3000,
         )
 
+    def _name_max_chars(self) -> int:
+        path = self.get_save_path()
+        if path and Path(path).suffix.lower() == ".co2":
+            return NAME_MAX_CHARS_SEAMLESS
+        return NAME_MAX_CHARS
+
     def _apply_changes(self) -> None:
         if _game_blocks_write(self.parent):
             return
@@ -662,11 +670,25 @@ class DS2EditorTab:
         if self.torch_var.get().strip() != self._torch_loaded:
             torch_seconds = _parse_torch(self.torch_var.get())
 
-        if len(self.name_var.get()) > NAME_MAX_CHARS:
-            self.show_toast(
-                f"Name can be at most {NAME_MAX_CHARS} characters", duration=3000
-            )
-            return
+        name = self.name_var.get()
+        # Only a changed name is checked, so stat edits keep a name the game
+        # accepted.
+        if name != save.characters[self._slot_index].name:
+            max_chars = self._name_max_chars()
+            if not name.strip():
+                self.show_toast("Name cannot be empty", duration=3000)
+                return
+            if len(name) > max_chars:
+                self.show_toast(
+                    f"Name can be at most {max_chars} characters", duration=3000
+                )
+                return
+            if not all(ch.isalnum() or ch == " " for ch in name):
+                self.show_toast(
+                    "Name can only contain letters, digits and spaces",
+                    duration=3000,
+                )
+                return
 
         expected_level = self._expected_level()
         if expected_level is None or entered_level != expected_level:
@@ -691,7 +713,7 @@ class DS2EditorTab:
             # class's starting level.
             character.starting_class = self._class_id
             save.sync_class_cache(self._slot_index)
-        character.name = self.name_var.get()
+        character.name = name
         character.souls = souls
         character.new_game_plus = ng_plus
         if torch_seconds is not None:

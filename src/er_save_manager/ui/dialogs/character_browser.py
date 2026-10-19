@@ -8,7 +8,6 @@ from __future__ import annotations
 import queue
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog
 from typing import Any
 
 import customtkinter as ctk
@@ -28,6 +27,7 @@ from er_save_manager.ui.progress_dialog import ProgressDialog
 from er_save_manager.ui.utils import (
     bind_mousewheel,
     open_url,
+    pick_file,
     trace_variable,
 )
 from er_save_manager.ui.virtual_grid import (
@@ -455,7 +455,7 @@ class CharacterBrowser:
 
     # ---------------------- Image selection ----------------------
     def select_face_image(self):
-        path = filedialog.askopenfilename(
+        path = pick_file(
             title="Select Face Screenshot",
             filetypes=[("Image Files", "*.png *.jpg *.jpeg")],
         )
@@ -467,7 +467,7 @@ class CharacterBrowser:
             )
 
     def select_body_image(self):
-        path = filedialog.askopenfilename(
+        path = pick_file(
             title="Select Body Screenshot",
             filetypes=[("Image Files", "*.png *.jpg *.jpeg")],
         )
@@ -479,7 +479,7 @@ class CharacterBrowser:
             )
 
     def select_preview_image(self):
-        path = filedialog.askopenfilename(
+        path = pick_file(
             title="Select Preview Screenshot",
             filetypes=[("Image Files", "*.png *.jpg *.jpeg")],
         )
