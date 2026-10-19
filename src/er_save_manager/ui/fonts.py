@@ -6,6 +6,10 @@ Windows loads the files with AddFontResourceExW(FR_PRIVATE), Linux adds them
 to the fontconfig configuration Tk's Xft renderer reads. Nothing is
 installed system-wide. On macOS, or when a file is missing, Tk falls back
 to the platform's default font.
+
+GDI draws Inter's hinted outlines thinner than FreeType does, so Windows
+loads resources/fonts/windows: Medium, Bold and ExtraBold renamed to the
+Regular, SemiBold and Bold family/style names.
 """
 
 from __future__ import annotations
@@ -21,7 +25,8 @@ _FR_PRIVATE = 0x10
 
 def register() -> None:
     """Make the bundled fonts available to Tk; call before the first widget."""
-    paths = [p for p in (resource_path("fonts", f) for f in _FILES) if p.exists()]
+    folder = ("fonts", "windows") if sys.platform == "win32" else ("fonts",)
+    paths = [p for p in (resource_path(*folder, f) for f in _FILES) if p.exists()]
     if not paths:
         return
     try:
