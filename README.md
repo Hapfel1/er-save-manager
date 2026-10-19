@@ -307,7 +307,7 @@ Automatically detects issues with your game installation, your save file and any
 - Multi-select batch editing in the visual picker and inventory
 - Equipped items are protected from removal and storing
 - Equipment Editor (weapons, armor, rings, ammo, belt items) and Attunement
-- Appearance Editor (gender, build, physique, hairstyle, colors, copy and share)
+- Appearance Editor (body type, build, physique, hairstyle, colors, copy and share)
 - Build Import from [Souls Planner](https://soulsplanner.com) links (stats and items, optionally equipping the build's loadout)
 - Character Management
 - Bonfire Editing (light/unlight, bonfire intensity including the NG+ cycle)

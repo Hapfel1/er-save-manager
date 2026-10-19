@@ -78,7 +78,7 @@ The item spawner is on the left and the character's items on the right.
 DS2 has no way to change a character's look after creation; this tab does it for created characters (a slot before character creation gets its look from the creation menu).
 
 - **Copy and share** - load the look of another character from the same save or from another DS2 save file (**From Another Save...**), or export and import it as a JSON file. A copy carries the face, hair and all colors.
-- **Body and face** - gender, build, physique, hairstyle, eyebrow, beard and tattoo, numbered in the creation menu's order (left to right, top to bottom). Changing the gender keeps the build's and the hairstyle's place in the list.
+- **Body and face** - body type, build, physique, hairstyle, eyebrow, beard and tattoo, numbered in the creation menu's order (left to right, top to bottom). Changing the body type keeps the build's and the hairstyle's place in the list.
 - **Colors** - hair, eyebrow, eye, beard and tattoo color with Red, Green and Blue sliders.
 
 **Revert** reloads the saved appearance. Applying also updates the copies kept with the load-screen character list.

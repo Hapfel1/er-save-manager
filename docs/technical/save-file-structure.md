@@ -219,7 +219,7 @@ buffer: it is never read by the game and absorbs size changes of the blocks befo
 | 0x90 | 4 | unk0x90 | character type, 0 |
 | 0x94 | 32 | character_name | UTF-16LE, 16 characters |
 | 0xB4 | 2 | terminator | |
-| 0xB6 | 1 | gender | body type |
+| 0xB6 | 1 | body_type | body type |
 | 0xB7 | 1 | archetype | starting class |
 | 0xB8 | 1 | unk0xb8 | "appearance", 0 |
 | 0xB9 | 1 | unk0xb9 | |

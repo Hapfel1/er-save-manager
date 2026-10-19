@@ -85,7 +85,7 @@ The item spawner is on the left and the character's inventory on the right. The 
 
 ## Appearance
 
-- **Body and hair** - body type (Type A (Male) / Type B (Female)), physique, face type and hairstyle, with the names from the character creation menu. Picking a face type replaces the face sliders with that face, as in the game.
+- **Body and hair** - body type (Type A / Type B), physique, face type and hairstyle, with the names from the character creation menu. Picking a face type replaces the face sliders with that face, as in the game.
 - **Colors** - the color preset sets hair and eye color together; the Red, Green and Blue sliders change each color afterwards.
 - **Face** - the game's face controls, split into Shape and Skin. Moving one slider can move related ones. Values are relative: 0 is the average face, and the slider ends reach past the most extreme faces the game ships.
 - **Copy and share** (top of the tab) - load the appearance of another character from the same save or from another DSR save file (**From Another Save...**), or export and import it as a JSON file.
