@@ -1,5 +1,7 @@
 """Grace, map piece and play region unlock (editors.map_unlock)."""
 
+import struct
+
 from er_save_manager.data.grace_data import grace_region_ids
 from er_save_manager.data.locations import get_grace_locations
 from er_save_manager.data.map_pieces import MAP_PIECES
@@ -54,3 +56,69 @@ def test_unlock_round_trip(sanitized_save, sanitized_save_copy):
     wanted = {r for f in graces for r in grace_region_ids(f, convergence=False)}
     assert wanted <= set(slot.unlocked_regions.region_ids)
     assert slot.unlocked_regions.count == len(slot.unlocked_regions.region_ids)
+
+
+def test_unlock_pieces_only_leaves_graces_and_regions(sanitized_save):
+    idx = _first_slot(sanitized_save)
+    slot = sanitized_save.character_slots[idx]
+    graces = [g.flag_id for g in get_grace_locations()]
+    before = {f: EventFlags.get_flag(slot.event_flags, f) for f in graces}
+    regions = list(slot.unlocked_regions.region_ids)
+    result = unlock(sanitized_save, idx, piece_flags=[62010, 62020])
+    assert result.graces == 0
+    assert result.regions == 0
+    slot = sanitized_save.character_slots[idx]
+    assert EventFlags.get_flag(slot.event_flags, 62010)
+    assert EventFlags.get_flag(slot.event_flags, 62020)
+    assert {f: EventFlags.get_flag(slot.event_flags, f) for f in graces} == before
+    assert slot.unlocked_regions.region_ids == regions
+
+
+def test_underground_pieces_extend_lands_between_area():
+    from er_save_manager.editors.map_unlock import _set_bounds
+
+    ug = next(p for p in MAP_PIECES if p.map_no == 1)
+    flags = bytearray(EventFlags.EVENT_FLAGS_SIZE)
+    EventFlags.set_flag(flags, ug.flag_id, True)
+    data = bytearray(0x1000)
+    _set_bounds(data, bytes(flags))
+    assert struct.unpack_from("<4fI", data, 0x08) == (*ug.rect, 1)
+
+
+def test_grace_piece_splits_overlapping_underground_pieces():
+    from er_save_manager.data.map_pieces import grace_piece
+
+    # Ainsel River Downstream lies in the Ainsel River, Lake of Rot and
+    # Deeproot Depths rectangles; it belongs to Ainsel River (62060).
+    downstream = next(
+        g for g in get_grace_locations() if g.name.endswith("Ainsel River Downstream")
+    )
+    assert grace_piece(downstream.flag_id) == 62060
+    shoreside = next(
+        g for g in get_grace_locations() if g.name.endswith("Lake of Rot Shoreside")
+    )
+    assert grace_piece(shoreside.flag_id) == 62061
+
+
+def test_progress_overlay_shades_only_locked_pieces():
+    from pathlib import Path
+
+    from PIL import ImageChops
+
+    from er_save_manager.ui.map_view import _MapImages
+
+    maps = Path(__file__).parent.parent / "src" / "resources" / "maps"
+    images = _MapImages(maps)
+    flags = images.progress_flags(1)
+    assert set(flags) == {p.flag_id for p in MAP_PIECES if p.map_no == 1 and p.fragment}
+    plain = images.levels(1)[0].copy()
+    shaded = images.levels(1, frozenset({62060}))[0]
+    box = ImageChops.difference(plain, shaded).getbbox()
+    assert box is not None
+    # Changed pixels stay within Ainsel River's rectangle plus one map tile
+    # (its art runs past the travel area) and the edge blur
+    left, top, right, bottom = next(p.rect for p in MAP_PIECES if p.flag_id == 62060)
+    margin = 256 * images.scale + 16
+    s = images.scale
+    assert box[0] >= left * s - margin and box[2] <= right * s + margin
+    assert box[1] >= top * s - margin and box[3] <= bottom * s + margin

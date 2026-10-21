@@ -106,6 +106,10 @@ include_files = [
         "er_save_manager/data/grace_regions.json",
     ),
     (
+        "src/er_save_manager/data/grace_pieces.json",
+        "er_save_manager/data/grace_pieces.json",
+    ),
+    (
         "src/er_save_manager/data/world_map_conversion_convergence.json",
         "er_save_manager/data/world_map_conversion_convergence.json",
     ),

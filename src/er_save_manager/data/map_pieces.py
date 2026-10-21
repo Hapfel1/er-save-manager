@@ -9,11 +9,20 @@ MAP_NAMES. Convergence uses the same rows.
 
 Pieces 62053 (Lands Between) and 62065 (Underground) are left out: their art
 variants are unfinished map drawings.
+
+grace_pieces.json gives each grace one fragment piece, per regulation. The
+rectangles overlap, so they do not decide it: candidates are the pieces in
+the 71_maptile.mtmsk mask of the grace's tile (the pieces whose rectangle
+holds the grace when the tile has none); ties go to a piece named in the
+grace's region name, then to the nearest rectangle center.
 """
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+from functools import cache
+from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -84,4 +93,22 @@ def fragment_at(map_no: int, x: float, y: float) -> MapPiece | None:
         hits,
         key=lambda p: (p.rect[2] - p.rect[0]) * (p.rect[3] - p.rect[1]),
         default=None,
+    )
+
+
+@cache
+def _grace_piece_tables() -> dict[str, dict[int, int]]:
+    raw = json.loads(
+        (Path(__file__).parent / "grace_pieces.json").read_text(encoding="utf-8")
+    )
+    return {
+        flavor: {int(grace): piece for grace, piece in table.items()}
+        for flavor, table in raw.items()
+    }
+
+
+def grace_piece(grace_flag: int, convergence: bool = False) -> int | None:
+    """Open flag of the fragment piece a grace belongs to."""
+    return _grace_piece_tables()["convergence" if convergence else "vanilla"].get(
+        grace_flag
     )

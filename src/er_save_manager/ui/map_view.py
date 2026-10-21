@@ -10,10 +10,16 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import customtkinter as ctk
-from PIL import Image, ImageDraw, ImageTk
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageTk
 
 from er_save_manager.data.locations import MapLocation
-from er_save_manager.data.map_pieces import MapPiece, fragment_at, pieces_on_map
+from er_save_manager.data.map_pieces import (
+    MAP_PIECES,
+    MapPiece,
+    fragment_at,
+    grace_piece,
+    pieces_on_map,
+)
 from er_save_manager.data.world_map import (
     MAP_LANDS_BETWEEN,
     MAP_NAMES,
@@ -42,6 +48,10 @@ from er_save_manager.ui.utils import (
 )
 
 _MAP_ORDER = (MAP_LANDS_BETWEEN, MAP_UNDERGROUND, MAP_REALM_OF_SHADOW)
+# Opacity of the unrevealed-area art over a locked map fragment. The
+# Underground's unrevealed art is black over an already dark map.
+_PROGRESS_ALPHA = 0.65
+_PROGRESS_ALPHA_BY_MAP = {MAP_UNDERGROUND: 0.4}
 _ZOOM_MAX = 2.0  # screen pixels per map unit
 _ZOOM_STEP = 1.2
 _DRAG_THRESHOLD = 4
@@ -120,7 +130,12 @@ class _MapImages:
     Convergence redraws some areas of the map: maps.json
     "convergence_patches" lists them as [map, x, y, w, h, atlas x, atlas y]
     in image pixels, cut from convergence_patches.jpg and pasted over the
-    vanilla image when convergence is on."""
+    vanilla image when convergence is on.
+
+    maps.json "progress" gives per map a bit mask of which fragment piece
+    draws each pixel (bit i = flags[i] over the R, G, B bytes) and the
+    game's art for unrevealed areas. Locked fragments get that art blended
+    over their pixels."""
 
     def __init__(self, maps_dir: Path, convergence: bool = False):
         self._dir = maps_dir
@@ -128,8 +143,12 @@ class _MapImages:
         self.scale = float(meta["scale"])
         self._meta = {m["map"]: (key, m) for key, m in meta["maps"].items()}
         self._patches = meta.get("convergence_patches", [])
+        self._progress = {
+            meta["maps"][key]["map"]: entry
+            for key, entry in meta.get("progress", {}).get("maps", {}).items()
+        }
         self.convergence = convergence
-        self._levels: dict[int, list[Image.Image]] = {}
+        self._levels: dict[int, tuple[frozenset[int], list[Image.Image]]] = {}
 
     def set_convergence(self, convergence: bool):
         if convergence != self.convergence:
@@ -142,8 +161,18 @@ class _MapImages:
         w, h = m["size"]
         return ox, oy, ox + w, oy + h
 
-    def levels(self, map_no: int) -> list[Image.Image]:
-        if map_no not in self._levels:
+    def progress_flags(self, map_no: int) -> list[int]:
+        """Open flags of the fragment pieces the progress overlay covers."""
+        entry = self._progress.get(map_no)
+        return list(entry["flags"]) if entry else []
+
+    def levels(
+        self, map_no: int, locked: frozenset[int] = frozenset()
+    ) -> list[Image.Image]:
+        """The map image and its halved copies, with the fragments in locked
+        shaded."""
+        cached = self._levels.get(map_no)
+        if cached is None or cached[0] != locked:
             key, _ = self._meta[map_no]
             img = Image.open(self._dir / f"{key}.jpg").convert("RGB")
             patches = [p for p in self._patches if p[0] == map_no]
@@ -151,11 +180,42 @@ class _MapImages:
                 atlas = Image.open(self._dir / "convergence_patches.jpg").convert("RGB")
                 for _, x, y, w, h, ax, ay in patches:
                     img.paste(atlas.crop((ax, ay, ax + w, ay + h)), (x, y))
+            img = self._shade(img, map_no, locked)
             levels = [img]
             for _ in range(3):
                 levels.append(levels[-1].reduce(2))
-            self._levels[map_no] = levels
-        return self._levels[map_no]
+            self._levels[map_no] = (locked, levels)
+        return self._levels[map_no][1]
+
+    def _shade(
+        self, img: Image.Image, map_no: int, locked: frozenset[int]
+    ) -> Image.Image:
+        entry = self._progress.get(map_no)
+        if entry is None:
+            return img
+        bits = [i for i, flag_id in enumerate(entry["flags"]) if flag_id in locked]
+        if not bits:
+            return img
+        planes = Image.open(self._dir / entry["mask"]).convert("RGB").split()
+        alpha = Image.new("L", planes[0].size, 0)
+        for byte, plane in enumerate(planes):
+            sel = sum(1 << (i % 8) for i in bits if i // 8 == byte)
+            if sel:
+                alpha = ImageChops.lighter(
+                    alpha, plane.point(lambda v, sel=sel: 255 if v & sel else 0)
+                )
+        level = round(255 * _PROGRESS_ALPHA_BY_MAP.get(map_no, _PROGRESS_ALPHA))
+        alpha = (
+            alpha.filter(ImageFilter.GaussianBlur(1))
+            .point(lambda v: v * level // 255)
+            .resize(img.size, Image.BILINEAR)
+        )
+        blank = (
+            Image.open(self._dir / entry["blank"])
+            .convert("RGB")
+            .resize(img.size, Image.BILINEAR)
+        )
+        return Image.composite(blank, img, alpha)
 
 
 class _MapIcons:
@@ -317,7 +377,7 @@ class MapWindow:
         self._list_markers: list[MapMarker] = []
         self._syncing_list = False
         self._tile_items: dict[tuple[int, int], tuple[int, ImageTk.PhotoImage]] = {}
-        self._tile_key: tuple[int, float] | None = None
+        self._tile_key: tuple[int, float, frozenset[int]] | None = None
         self._settle_job = None
         self._marker_tags: dict[int, str] = {}
 
@@ -333,6 +393,7 @@ class MapWindow:
         self._show_graces = tk.BooleanVar(value=True)
         self._show_dungeons = tk.BooleanVar(value=True)
         self._show_markers = tk.BooleanVar(value=True)
+        self._show_progress = tk.BooleanVar(value=True)
         self._click_mode = tk.StringVar(value=_MODE_SELECT)
         self._icon = MARKER_ICONS[0]
         self._icon_buttons: dict[int, ctk.CTkButton] = {}
@@ -469,6 +530,7 @@ class MapWindow:
                 ("Graces", self._show_graces),
                 ("Dungeons", self._show_dungeons),
                 ("Markers", self._show_markers),
+                ("Progress", self._show_progress),
             )
         ):
             ctk.CTkCheckBox(
@@ -877,7 +939,7 @@ class MapWindow:
         self._render_pending = False
         if not self._win.winfo_exists():
             return
-        if self._tile_key != (self._map_no, self._zoom):
+        if self._tile_key != (self._map_no, self._zoom, self._locked_pieces()):
             self._render()
             return
         # The view may have jumped (center_on, clamp): place the tiles again.
@@ -895,7 +957,7 @@ class MapWindow:
             return
         self._canvas.delete("all")
         self._tile_items.clear()
-        self._tile_key = (self._map_no, self._zoom)
+        self._tile_key = (self._map_no, self._zoom, self._locked_pieces())
         self._ensure_tiles(ring=0)
         self._draw_overlays()
         # Tiles just outside the view, for the next pan, once this is shown
@@ -904,7 +966,7 @@ class MapWindow:
     def _ensure_tiles(self, ring: int = 1):
         """Create the map tiles covering the view plus ring tiles around it
         and drop the ones far outside it."""
-        if self._tile_key != (self._map_no, self._zoom):
+        if self._tile_key is None or self._tile_key[:2] != (self._map_no, self._zoom):
             self._render()
             return
         c = self._canvas
@@ -952,10 +1014,22 @@ class MapWindow:
         c.tag_lower("select_ring")
         c.tag_lower("maptile")
 
+    def _locked_pieces(self) -> frozenset[int]:
+        """Fragment pieces of the shown map the character has not revealed;
+        empty with Progress off or no character loaded."""
+        if not self._show_progress.get() or self._grace_state is None:
+            return frozenset()
+        states = {
+            f: self._grace_state(f) for f in self._images.progress_flags(self._map_no)
+        }
+        if None in states.values():
+            return frozenset()
+        return frozenset(f for f, state in states.items() if not state)
+
     def _view_image(self, w: int, h: int, vx: float, vy: float) -> Image.Image:
         """The map in a w x h screen box whose top-left is map point (vx, vy)."""
         x0, y0, x1, y1 = self._images.bounds(self._map_no)
-        levels = self._images.levels(self._map_no)
+        levels = self._images.levels(self._map_no, self._tile_key[2])
         # Image pixels per screen pixel at full resolution; use the smallest
         # copy that still has at least one pixel per screen pixel.
         density = self._images.scale / self._zoom
@@ -1355,9 +1429,13 @@ class MapWindow:
             return
         self._on_move_bloodstain()
 
-    @staticmethod
-    def _area_of(placed: _Placed) -> MapPiece | None:
-        """Map fragment area holding a location."""
+    def _area_of(self, placed: _Placed) -> MapPiece | None:
+        """Map fragment area a grace belongs to, or that holds a location."""
+        if placed.loc.tile_type == "grace" and placed.loc.flag_id:
+            flag_id = grace_piece(placed.loc.flag_id, self._images.convergence)
+            piece = next((p for p in MAP_PIECES if p.flag_id == flag_id), None)
+            if piece is not None and piece.map_no == placed.map_no:
+                return piece
         if placed.point is not None:
             x, y = placed.point
         else:
@@ -1373,7 +1451,11 @@ class MapWindow:
                 if p.map_no == map_no
                 and p.loc.tile_type == "grace"
                 and p.loc.flag_id
-                and (area is None or area.contains(*p.point))
+                and (
+                    area is None
+                    or grace_piece(p.loc.flag_id, self._images.convergence)
+                    == area.flag_id
+                )
             }
         )
 
@@ -1384,24 +1466,29 @@ class MapWindow:
             return
         self._confirm_unlock(
             "Unlock Area",
-            f"the {area.name} area",
+            f"{area.name} area",
+            [area],
             self._graces_on_map(area.map_no, area),
-            [area.flag_id],
         )
 
     def _unlock_map(self):
         self._confirm_unlock(
             "Unlock Map",
-            f"the {MAP_NAMES[self._map_no]} map",
+            f"{MAP_NAMES[self._map_no]} map",
+            pieces_on_map(self._map_no),
             self._graces_on_map(self._map_no),
-            [p.flag_id for p in pieces_on_map(self._map_no)],
         )
 
     def _confirm_unlock(
-        self, title: str, what: str, graces: list[int], pieces: list[int]
+        self, title: str, what: str, pieces: list[MapPiece], graces: list[int]
     ):
-        """Ask, then reveal the map pieces and unlock the graces with their
-        play regions."""
+        """Ask which of the map pieces to reveal and whether to unlock the
+        graces with their play regions, then unlock.
+
+        Only fragment pieces are listed; the others are added when every
+        fragment is chosen. Graces are those inside the chosen pieces, or all
+        of the given ones when no piece or every piece is chosen.
+        """
         if self._grace_state is None or self._on_unlock is None:
             CTkMessageBox.showinfo(
                 "No Character Loaded",
@@ -1409,28 +1496,148 @@ class MapWindow:
                 parent=self._win,
             )
             return
-        locked = sum(self._grace_state(f) is False for f in graces)
-        hidden = sum(self._grace_state(f) is False for f in pieces)
-        actions = []
-        if hidden:
-            actions.append(f"reveal {count_phrase(hidden, 'map piece')}")
-        if locked:
-            actions.append(f"unlock {count_phrase(locked, 'grace')}")
-        if actions:
-            question = (
-                f"{' and '.join(actions).capitalize()} in {what}? "
-                "The play regions of its graces are added too."
+        fragments = [p for p in pieces if p.fragment]
+        others = [p.flag_id for p in pieces if not p.fragment]
+        dialog = ds.create(self._win, title)
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
+        chosen: list[tuple[list[int], list[int]]] = []
+
+        piece_vars = {p.flag_id: tk.BooleanVar(value=True) for p in fragments}
+        grace_var = tk.BooleanVar(value=True)
+
+        def picked() -> tuple[list[int], list[int]]:
+            flags = [f for f, var in piece_vars.items() if var.get()]
+            if len(flags) in (0, len(fragments)):
+                scope = graces
+            else:
+                scope = sorted(
+                    {
+                        f
+                        for p in fragments
+                        if p.flag_id in flags
+                        for f in self._graces_on_map(p.map_no, p)
+                    }
+                )
+            if len(flags) == len(fragments):
+                flags += others
+            return flags, scope
+
+        def refresh():
+            flags, scope = picked()
+            locked = sum(self._grace_state(f) is False for f in scope)
+            where = (
+                f"in the {what}"
+                if len(flags) in (0, len(fragments) + len(others))
+                else "in the chosen pieces"
             )
-        else:
-            question = (
-                f"Every map piece and grace in {what} is unlocked. Add any "
-                "missing play regions of its graces?"
+            if not scope:
+                text = f"Unlock graces (none {where})"
+            elif locked:
+                text = f"Unlock {count_phrase(locked, 'grace')} {where}"
+            else:
+                text = (
+                    f"Add missing play regions of {count_phrase(len(scope), 'grace')} "
+                    + where
+                )
+            grace_box.configure(text=text, state="normal" if scope else "disabled")
+            hidden = sum(self._grace_state(f) is False for f in flags)
+            if hidden:
+                summary = f"{count_phrase(hidden, 'map piece')} to reveal."
+            elif flags:
+                summary = "Already revealed; the fog under them is cleared again."
+            else:
+                summary = "No map pieces chosen."
+            summary_var.set(summary)
+            ok = bool(flags) or (grace_var.get() and bool(scope))
+            unlock_btn.configure(state="normal" if ok else "disabled")
+
+        def confirm():
+            flags, scope = picked()
+            chosen.append((scope if grace_var.get() else [], flags))
+            dialog.destroy()
+
+        _row, (_cancel, unlock_btn) = ds.button_row(
+            main,
+            [
+                {"text": "Cancel", "command": dialog.destroy, "primary": False},
+                {"text": "Unlock", "command": confirm},
+            ],
+        )
+        ds.header(main, what[0].upper() + what[1:])
+
+        ctk.CTkLabel(main, text="Map pieces", font=ds.BOLD, anchor="w").pack(
+            fill=tk.X, pady=(10, 2)
+        )
+
+        def build_pieces(frame):
+            for p in fragments:
+                revealed = self._grace_state(p.flag_id)
+                ctk.CTkCheckBox(
+                    frame,
+                    text=p.name + (" (revealed)" if revealed else ""),
+                    variable=piece_vars[p.flag_id],
+                    command=refresh,
+                    font=ds.FONT,
+                ).pack(anchor="w", pady=2)
+
+        ds.content(main, build_pieces, max_height=320, fill=tk.X, expand=False)
+        if len(fragments) > 1:
+            all_row = ctk.CTkFrame(main, fg_color="transparent")
+            all_row.pack(fill=tk.X, pady=(4, 0))
+
+            def set_all(state: bool):
+                for var in piece_vars.values():
+                    var.set(state)
+                refresh()
+
+            ds.button(
+                all_row, "All", lambda: set_all(True), primary=False, width=70
+            ).pack(side=tk.LEFT, padx=(0, 6))
+            ds.button(
+                all_row, "None", lambda: set_all(False), primary=False, width=70
+            ).pack(side=tk.LEFT)
+        summary_var = tk.StringVar()
+        ds.wrap_to_width(
+            ctk.CTkLabel(
+                main,
+                textvariable=summary_var,
+                font=ds.SMALL,
+                text_color=ds.MUTED,
+                anchor="w",
+                justify=tk.LEFT,
             )
-        if not CTkMessageBox.askyesno(
-            title, f"{question}\n\nA backup is made before saving.", parent=self._win
-        ):
+        ).pack(fill=tk.X, pady=(4, 0))
+
+        ctk.CTkLabel(main, text="Graces", font=ds.BOLD, anchor="w").pack(
+            fill=tk.X, pady=(12, 2)
+        )
+        grace_box = ctk.CTkCheckBox(
+            main, text="", variable=grace_var, command=refresh, font=ds.FONT
+        )
+        grace_box.pack(anchor="w", pady=2)
+        ctk.CTkLabel(
+            main,
+            text="Their play regions are added too.",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+            anchor="w",
+        ).pack(fill=tk.X)
+        ctk.CTkLabel(
+            main,
+            text="A backup is made before saving.",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+            anchor="w",
+        ).pack(fill=tk.X, pady=(10, 0))
+
+        refresh()
+        dialog.bind("<Escape>", lambda _e: dialog.destroy())
+        ds.finish(dialog, self._win, min_width=380)
+        dialog.wait_window()
+        if not chosen:
             return
-        self._on_unlock(graces, pieces)
+        self._on_unlock(*chosen[0])
         self._update_location_info()
         self._schedule_render()
 
