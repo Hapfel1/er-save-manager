@@ -3,6 +3,16 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 2.4.0
+**Released:** October 21, 2026
+
+
+### ✨ New Features
+
+- ER: Choose map pieces and graces before a map unlock ([471d331](https://github.com/Hapfel1/er-save-manager/commit/471d33158ed71c9ab37e1b0030d95ec1f13b1353))
+
+
+---
 ## 📦 Release 2.3.0
 **Released:** October 19, 2026
 
@@ -2076,6 +2086,7 @@ implementation) ([19bee2c](https://github.com/Hapfel1/er-save-manager/commit/19b
 
 
 ---
+[2.4.0]: https://github.com/Hapfel1/er-save-manager/compare/v2.3.0..v2.4.0
 [2.3.0]: https://github.com/Hapfel1/er-save-manager/compare/v2.2.0..v2.3.0
 [2.2.0]: https://github.com/Hapfel1/er-save-manager/compare/v2.1.0..v2.2.0
 [2.1.0]: https://github.com/Hapfel1/er-save-manager/compare/v2.0.1..v2.1.0
