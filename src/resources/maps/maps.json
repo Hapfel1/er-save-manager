@@ -748,5 +748,54 @@
    1373,
    768
   ]
- ]
+ ],
+ "progress": {
+  "mask_scale": 0.125,
+  "blank_scale": 0.25,
+  "maps": {
+   "lands_between": {
+    "mask": "lands_between_pieces.png",
+    "blank": "lands_between_blank.jpg",
+    "flags": [
+     62010,
+     62011,
+     62012,
+     62020,
+     62021,
+     62022,
+     62030,
+     62031,
+     62032,
+     62040,
+     62041,
+     62050,
+     62051,
+     62052,
+     62004
+    ]
+   },
+   "underground": {
+    "mask": "underground_pieces.png",
+    "blank": "underground_blank.jpg",
+    "flags": [
+     62060,
+     62061,
+     62062,
+     62063,
+     62064
+    ]
+   },
+   "realm_of_shadow": {
+    "mask": "realm_of_shadow_pieces.png",
+    "blank": "realm_of_shadow_blank.jpg",
+    "flags": [
+     62080,
+     62081,
+     62082,
+     62083,
+     62084
+    ]
+   }
+  }
+ }
 }

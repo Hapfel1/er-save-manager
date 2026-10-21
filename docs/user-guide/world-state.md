@@ -127,6 +127,9 @@ the map shows the Convergence map art, graces and locations instead.
 - The legend under the location list explains the icons
 - The checkboxes at the top hide graces, dungeons or markers, turn tile selection off, or show the
   outline of every teleport tile (**Grid**). Tile selection is off while adding markers or beacons
+- **Progress** (on by default) shades the areas of map fragments the character has not picked up
+  with the game's unrevealed map art, so the map looks like it does for that character in game.
+  The locations underneath stay visible and clickable, and the shading updates after an unlock
 - Open it with **Open World Map** on the World Map card in the Teleportation column, or **Edit
   Markers on Map** in the left column
 
@@ -144,13 +147,15 @@ sets its event flag (the same as the Sites of Grace dialog in the Event Flags ta
 and saves the file. Unlocking a grace also adds its play region, so the area shows as discovered.
 
 - **Unlock Area** reveals the map piece of the selected location's area and unlocks its graces
-- **Unlock Whole Map** does the same for every area of the map that is shown (Lands Between,
-  Underground or Realm of Shadow)
+- **Unlock Whole Map** does the same for the map that is shown (Lands Between, Underground or
+  Realm of Shadow) and lists every map piece of it, so any set of pieces can be picked
 
-Both ask first, list what changes, and add the play regions of the unlocked graces. They also
-clear the fog of war over the unlocked area (Unlock Whole Map clears all fog of that map), extend
-the part of the map the map menu shows, and make the Underground or Realm of Shadow map available
-in game when one of its areas is unlocked. A backup is made before saving.
+Both open a dialog first: untick **Map pieces** to unlock only graces, or untick the graces to
+reveal only map pieces. Each grace belongs to one map piece, and only the graces of the picked
+pieces are unlocked (all of the area or map when none or every piece is picked), with their play
+regions. Revealing pieces also clears the fog of war over them (all fog of the map when every piece
+is picked), extends the part of the map the map menu shows, and makes the Underground or Realm of
+Shadow map available in game. A backup is made before saving.
 
 ### Map Markers
 

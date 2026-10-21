@@ -56,10 +56,11 @@ _PIECES_BY_FLAG = {p.flag_id: p for p in MAP_PIECES}
 
 # Shown map area per map: MenuSaveLoad data +0x08 + 0x20 * record, four f32
 # (left, top, right, bottom) in map units and a u32 whose low byte is 1 once
-# the map has an area. The Underground uses the Lands Between record.
+# the map has an area. The Underground has no record of its own: the Lands
+# Between record covers the pieces of both maps.
 BOUNDS_OFFSET = 0x08
 BOUNDS_STRIDE = 0x20
-BOUNDS_RECORD = {MAP_LANDS_BETWEEN: 0, MAP_REALM_OF_SHADOW: 2}
+BOUNDS_RECORD = {MAP_LANDS_BETWEEN: 0, MAP_UNDERGROUND: 0, MAP_REALM_OF_SHADOW: 2}
 
 # Flags the game sets on first entering a map. Without them the map menu
 # does not offer that map (right stick for the Underground, the map switch
@@ -95,11 +96,12 @@ def fog_cells(map_no: int, rect: tuple[float, float, float, float]) -> list[int]
 
 def _set_bounds(data: bytearray, event_flags: bytes) -> None:
     """Set each map's shown area to the union of its revealed pieces."""
-    for map_no, record in BOUNDS_RECORD.items():
+    for record in set(BOUNDS_RECORD.values()):
         rects = [
             p.rect
             for p in MAP_PIECES
-            if p.map_no == map_no and EventFlags.get_flag(event_flags, p.flag_id)
+            if BOUNDS_RECORD.get(p.map_no) == record
+            and EventFlags.get_flag(event_flags, p.flag_id)
         ]
         if not rects:
             continue

@@ -390,9 +390,9 @@ def _wheel_target(widget, sequence):
                 ),
                 None,
             )
-            if frame is None and widget.bind(sequence):
+            if frame is None and tkinter.Misc.bind(widget, sequence):
                 return None
-        elif widget.bind(sequence):
+        elif tkinter.Misc.bind(widget, sequence):
             return None
         if frame is not None:
             canvas = frame._parent_canvas
