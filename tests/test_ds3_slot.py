@@ -354,6 +354,23 @@ def test_character_death_bits(slot, slot_bytes):
     assert not slot.set_character_dead("m31_00", 158, False)
 
 
+def test_npc_quest_state_follows_revive_and_kill(slot):
+    """Rosaria stays removed while quest state 1501 is set, so Kill sets it
+    and Revive moves her to the revived state 1502, one-hot in 1500-1514."""
+    from er_save_manager.games.DS3.tabs.npcs import _set_state
+
+    npcs = json.loads((DATA / "npcs.json").read_text(encoding="utf-8"))
+    rosaria = next(n for n in npcs if n["alive_flag"] == 1515)
+    assert rosaria["quest"] == [1500, 1514, 1502, 1501]
+    quest = range(1500, 1515)
+    _set_state(slot, rosaria, False)
+    assert slot.get_flag(1518)
+    assert [f for f in quest if slot.get_flag(f)] == [1501]
+    _set_state(slot, rosaria, True)
+    assert [f for f in range(1515, 1520) if slot.get_flag(f)] == [1515]
+    assert [f for f in quest if slot.get_flag(f)] == [1502]
+
+
 def test_equip_slots_reference_inventory_ids_and_handles(slot):
     for k in range(22):
         index, item_id, handle = slot.equip_slot(k)
