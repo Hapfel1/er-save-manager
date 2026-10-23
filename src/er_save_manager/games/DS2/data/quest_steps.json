@@ -1,0 +1,239 @@
+{
+"Head of Vengarl":[
+["Summon sign in Aldia's Keep (Guardian Dragon)",null,[[102000,1]]],
+["Gave equipment",null,[[102001,1]]],
+["Vengarl's body defeated",null,[[102010,1]]]
+],
+"Grave Warden Agdayne":[
+["Gave equipment",null,[[102021,1]]],
+["Summon sign in Undead Crypt",null,[[102030,1]]]
+],
+"Emerald Herald":[
+["1 great souls collected",null,[[102080,1]]],
+["2 great souls collected",null,[[102081,1]]],
+["3 great souls collected",null,[[102082,1]]],
+["4 great souls collected",null,[[102083,1]]],
+["Gone from Drangleic Castle",null,[[102086,1]]],
+["Gone from Undead Crypt",null,[[102087,1]]],
+["Gone from Aldia's Keep",null,[[102088,1]]],
+["Gone from Throne of Want",null,[[102089,1]]],
+["Gave an item (Est Bottle)",null,[[102090,1]]],
+["Gave an item (Aldia's Keep)",null,[[102095,1]]],
+["Gave an item (Aldia's Keep, second)",null,[[102096,1]]]
+],
+"Nashandra":[
+["Gone",null,[[102140,1]]]
+],
+"Laddersmith Gilligan":[
+["Ladder placed",null,[[102160,1]]],
+["Moved to Majula",null,[[102165,1]]],
+["Ladder placed",null,[[102170,1]]],
+["Ladder placed",null,[[102171,1]]],
+["Ladder placed",null,[[102172,1]]],
+["Gave equipment",null,[[102173,1]]]
+],
+"Firekeepers":[
+["Gave equipment",null,[[102180,1]]]
+],
+"Chancellor Wellager":[
+["Gave equipment",null,[[102260,1]]]
+],
+"Milibeth":[
+["Gave equipment",null,[[102280,1]]],
+["Tutorial finished",null,[[102281,1]]]
+],
+"Captain Drummond":[
+["Gave equipment",null,[[102300,1]]],
+["Taught a gesture",null,[[102301,1]]],
+["Summon sign",null,[[102302,1]]]
+],
+"Darkdiver Grandahl":[
+["Gone from Black Gulch",null,[[102315,1]]],
+["Gone from Drangleic Castle",null,[[102316,1]]],
+["Gone from Shaded Woods",null,[[102317,1]]],
+["Gave the covenant ring",null,[[102319,1]]],
+["Gave equipment",null,[[102320,1]]],
+["Joined the Pilgrims of Dark",null,[[102321,1]]],
+["Can appear in Black Gulch",null,[[102322,1]]],
+["Can appear in Drangleic Castle",null,[[102323,1]]],
+["Can appear in Shaded Woods",null,[[102324,1]]],
+["Met in Black Gulch",null,[[102331,1]]],
+["Met in Drangleic Castle",null,[[102332,1]]],
+["Met in Shaded Woods",null,[[102333,1]]],
+["Covenant rank 1 reward",null,[[102337,1]]],
+["Covenant rank 2 reward",null,[[102338,1]]],
+["Covenant rank 3 reward",null,[[102339,1]]]
+],
+"Lonesome Gavlan":[
+["Moved to Harvest Valley",null,[[102340,1]]],
+["Can appear in Doors of Pharos",null,[[102343,1]]],
+["Died in Harvest Valley",null,[[102350,1]]],
+["Died in No-man's Wharf",null,[[102351,1]]],
+["Died in Black Gulch",null,[[102352,1]]],
+["Died in Doors of Pharos",null,[[102353,1]]],
+["Died in Shrine of Amana",null,[[102354,1]]],
+["Gave equipment",null,[[102355,1]]]
+],
+"Saulden":[
+["Gave equipment",null,[[102380,1]]],
+["Gave the covenant ring",null,[[102381,1]]],
+["Gave an item",null,[[102382,1]]],
+["Covenant rank 1 reward",null,[[102390,1]]],
+["Covenant rank 2 reward",null,[[102391,1]]],
+["Covenant rank 3 reward",null,[[102392,1]]]
+],
+"Creighton the Wanderer":[
+["Gave an item",null,[[102400,1]]],
+["Gave equipment",null,[[102401,1]]],
+["Taught a gesture",null,[[102403,1]]],
+["Moved to Shaded Woods",null,[[102405,1]]],
+["Moved to Brightstone Cove Tseldora",null,[[102406,1]]]
+],
+"Benhart of Jugo":[
+["Gave equipment",null,[[102420,1]]],
+["Moved to Drangleic Castle",null,[[102421,1]]],
+["Moved to Forest of Fallen Giants",null,[[102422,1]]],
+["Moved to Memory of the giants",null,[[102423,1]]],
+["Summon sign in Brightstone Cove Tseldora",null,[[102430,1]]],
+["Summon sign in Drangleic Castle",null,[[102431,1]]],
+["Summon sign in Memory of the giants",null,[[102432,1]]],
+["Summon sign in Throne of Want",null,[[102433,1]]],
+["Taught a gesture",null,[[102435,1]]],
+["Summoned as a white phantom",null,[[102436,1]]]
+],
+"Mild Mannered Pate":[
+["Gave an item (Brightstone Cove Tseldora)",null,[[102440,1]]],
+["Gave equipment",null,[[102441,1]]],
+["Summon sign in Forest of Fallen Giants",null,[[102442,1]]],
+["Gave an item (Forest of Fallen Giants)",null,[[102444,1]]],
+["Gave an item (Harvest Valley)",null,[[102446,1]]],
+["Moved to Harvest Valley",null,[[102450,1]]],
+["Moved to Brightstone Cove Tseldora",null,[[102451,1]]],
+["Summoned as a white phantom",null,[[102452,1]]]
+],
+"Cartographer Cale":[
+["Moved to Majula",null,[[102460,1]]],
+["Moved to Majula",null,[[102462,1]]],
+["Gave equipment",null,[[102470,1]]],
+["Gave an item",null,[[102471,1]]]
+],
+"Lucatiel of Mirrah":[
+["Met in Lost Bastille",null,[[102480,1]]],
+["Met in Harvest Valley",null,[[102481,1]]],
+["Met in No-man's Wharf",null,[[102482,1]]],
+["Met in Black Gulch",null,[[102483,1]]],
+["Gone from Lost Bastille",null,[[102484,1]]],
+["Gone from Lost Bastille",null,[[102485,1]]],
+["Gone from Harvest Valley",null,[[102486,1]]],
+["Gone from No-man's Wharf",null,[[102487,1]]],
+["Gone from Black Gulch",null,[[102488,1]]],
+["Gone from Aldia's Keep",null,[[102489,1]]],
+["Can appear in Lost Bastille",null,[[102490,1]]],
+["Can appear in Harvest Valley",null,[[102491,1]]],
+["Can appear in No-man's Wharf",null,[[102492,1]]],
+["Can appear in Black Gulch",null,[[102493,1]]],
+["Can appear in Aldia's Keep",null,[[102494,1]]],
+["Gave an item (2nd encounter)",null,[[102495,1]]],
+["Met",null,[[102496,1]]],
+["Gave equipment",null,[[102497,1]]],
+["Summoned as a white phantom",null,[[102498,1]]],
+["Summon sign in Lost Bastille",null,[[102500,1]]],
+["Summon sign in Harvest Valley",null,[[102501,1]]],
+["Summon sign in No-man's Wharf",null,[[102502,1]]],
+["Summon sign in Black Gulch",null,[[102503,1]]]
+],
+"Bell Keeper":[
+["Gave equipment",null,[[102510,1]]],
+["Gave the covenant ring",null,[[102511,1]]],
+["Covenant rank 1 reward",null,[[102512,1]]],
+["Covenant rank 2 reward",null,[[102513,1]]],
+["Covenant rank 3 reward",null,[[102514,1]]]
+],
+"Merchant Hag Melentia":[
+["Gave equipment",null,[[102520,1]]],
+["Moved to Majula",null,[[102521,1]]]
+],
+"Milfanito":[
+["Gave equipment",null,[[102550,1]]],
+["Gave an item",null,[[102551,1]]],
+["Gave an item (Rescue of Prisoner Girl)",null,[[102552,1]]],
+["Gave equipment",null,[[102560,1]]],
+["Gave an item",null,[[102561,1]]],
+["Gave an item (Rescue of Prisoner Girl)",null,[[102562,1]]]
+],
+"Milfanito (captive)":[
+["Rescued",null,[[102580,1]]],
+["Gave an item",null,[[102581,1]]],
+["Gone",null,[[102582,1]]]
+],
+"Maughlin the Armourer":[
+["Gave equipment",null,[[102600,1]]]
+],
+"Stone Trader Chloanne":[
+["Gave equipment",null,[[102620,1]]],
+["Moved to Majula",null,[[102625,1]]]
+],
+"Rosabeth of Melfia":[
+["Unpetrified",null,[[102640,1]]],
+["Moved on",null,[[102641,1]]],
+["Gave an item",null,[[102642,1]]],
+["Moved to Majula",null,[[102650,1]]]
+],
+"Blacksmith Lenigrast":[
+["Door unlocked",null,[[102660,1]]],
+["Door unlocked",null,[[102661,1]]],
+["Gave equipment",null,[[102662,1]]]
+],
+"Steady Hand McDuff":[
+["Given the Fire Seed",null,[[102680,1]]],
+["Gave equipment",null,[[102681,1]]],
+["Moved on",null,[[102690,1]]]
+],
+"Carhillion of the Fold":[
+["Gave equipment",null,[[102720,1]]],
+["Gone from No-man's Wharf",null,[[102721,1]]],
+["Moved to Majula",null,[[102722,1]]]
+],
+"Straid of Olaphis":[
+["Gave equipment",null,[[102740,1]]],
+["Unpetrified",null,[[102741,1]]],
+["Moved on",null,[[102742,1]]]
+],
+"Licia of Lindeldt":[
+["Gave equipment",null,[[102760,1]]],
+["Three great souls collected",null,[[102761,1]]],
+["Moved",null,[[102765,1]]]
+],
+"Felkin the Outcast":[
+["Gave equipment",null,[[102780,1]]]
+],
+"Royal Sorcerer Navlaan":[
+["Gave equipment",null,[[102800,1]]],
+["First request reward",null,[[102801,1]]],
+["Second request reward",null,[[102802,1]]],
+["Third request reward",null,[[102803,1]]],
+["Fourth request reward",null,[[102804,1]]],
+["Unsealed",null,[[102810,1]]],
+["Summon sign in Aldia's Keep",null,[[102811,1]]]
+],
+"Weaponsmith Ornifex":[
+["Freed from the barrel",null,[[102840,1]]],
+["Moved to Brightstone Cove Tseldora",null,[[102841,1]]],
+["Gave a free weapon",null,[[102850,1]]]
+],
+"Titchy Gren":[
+["Covenant rank 1 reward",null,[[102881,1]]],
+["Covenant rank 2 reward",null,[[102882,1]]],
+["Covenant rank 3 reward",null,[[102883,1]]],
+["Gave equipment",null,[[102890,1]]]
+],
+"Cromwell the Pardoner":[
+["Gave equipment",null,[[102900,1]]]
+],
+"Blue Sentinel Targray":[
+["Covenant rank 1 reward",null,[[102921,1]]],
+["Covenant rank 2 reward",null,[[102922,1]]],
+["Covenant rank 3 reward",null,[[102923,1]]],
+["Gave equipment",null,[[102930,1]]]
+]
+}

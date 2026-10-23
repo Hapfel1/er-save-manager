@@ -31,8 +31,18 @@ class QuestProgressDialog:
         slot_idx,
         reload_callback,
         show_toast,
+        quest_flags=None,
+        commit=None,
     ):
-        from er_save_manager.data.quest_flags_db import QUEST_FLAGS
+        """quest_flags: NPC -> steps table (default: the Elden Ring table).
+        commit(description): backs up and writes the save for games other
+        than Elden Ring; raises on failure. Without it the Elden Ring slot
+        buffer is written back."""
+        if quest_flags is None:
+            from er_save_manager.data.quest_flags_db import QUEST_FLAGS
+
+            quest_flags = QUEST_FLAGS
+        QUEST_FLAGS = quest_flags
 
         dialog = ds.create(parent, "Quest Progress")
         dialog.resizable(True, True)
@@ -267,6 +277,18 @@ class QuestProgressDialog:
         def _save_and_refresh(npc_name, toast_msg):
             """Write changes, recalculate checksums, save, and re-render."""
             from er_save_manager.backup.manager import BackupManager
+
+            if commit is not None:
+                try:
+                    commit(toast_msg)
+                except Exception as exc:
+                    CTkMessageBox.showerror("Save Failed", str(exc), parent=dialog)
+                    return
+                if show_toast:
+                    show_toast(toast_msg, duration=2500)
+                _render_steps(npc_name)
+                _rebuild_npc_list(search_var.get())
+                return
 
             if save_path and save_path.is_file():
                 try:
