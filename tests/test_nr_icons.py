@@ -35,7 +35,9 @@ def test_missing_ids_have_no_icon():
 
 def test_every_item_has_an_icon():
     items = json.loads(
-        (Path(icons.__file__).parent / "nr_items.json").read_text(encoding="utf-8")
+        (Path(icons.__file__).parent / "data" / "nr_items.json").read_text(
+            encoding="utf-8"
+        )
     )
     icons._ensure_loaded()
     for table, keys in (

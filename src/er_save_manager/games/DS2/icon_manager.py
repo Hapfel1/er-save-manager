@@ -1,7 +1,7 @@
 """
 Icon manager for the DS2 item browser.
 
-Icons are stored in icons.db (SQLite) alongside this file, keyed by item id.
+Icons are stored in data/icons.db (SQLite), keyed by item id.
 Images are loaded on demand and cached in memory.
 Returns PIL Images; callers create CTkImage at the desired display size.
 """
@@ -22,7 +22,7 @@ _cache: dict[int, PILImage.Image] = {}
 
 
 def _db_path() -> Path:
-    return Path(__file__).parent / "icons.db"
+    return Path(__file__).parent / "data" / "icons.db"
 
 
 def _ensure_loaded() -> bool:

@@ -1,7 +1,7 @@
 """
 Relic and relic effect icons for Nightreign.
 
-Icons are stored in nr_icons.db (SQLite) alongside this file: relic icons
+Icons are stored in data/nr_icons.db (SQLite): relic icons
 from EquipParamAntique iconId, effect icons from AttachEffectParam
 statusIconId (the game's buff category icons), chalice icons from
 AntiqueStandParam iconId. Images are loaded on demand
@@ -31,7 +31,7 @@ def _ensure_loaded() -> bool:
     if _loaded:
         return _db is not None
     _loaded = True
-    p = Path(__file__).parent / "nr_icons.db"
+    p = Path(__file__).parent / "data" / "nr_icons.db"
     if not p.exists():
         return False
     _db = sqlite3.connect(f"file:{p}?mode=ro", uri=True, check_same_thread=False)
