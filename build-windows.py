@@ -128,22 +128,8 @@ include_files = [
     ),
     ("src/er_save_manager/games/DSR/data/", "er_save_manager/games/DSR/data/"),
     ("src/er_save_manager/games/DS3/data/", "er_save_manager/games/DS3/data/"),
-    (
-        "src/er_save_manager/games/NR/nr_items.json",
-        "er_save_manager/games/NR/nr_items.json",
-    ),
-    (
-        "src/er_save_manager/games/NR/relic_rules.json",
-        "er_save_manager/games/NR/relic_rules.json",
-    ),
-    (
-        "src/er_save_manager/games/NR/nr_icons.db",
-        "er_save_manager/games/NR/nr_icons.db",
-    ),
-    (
-        "src/er_save_manager/games/DS2/icons.db",
-        "er_save_manager/games/DS2/icons.db",
-    ),
+    ("src/er_save_manager/games/NR/data/", "er_save_manager/games/NR/data/"),
+    ("src/er_save_manager/games/DS2/data/", "er_save_manager/games/DS2/data/"),
 ]
 
 # Explicitly pull OpenSSL DLLs into the root folder to prevent PATH conflicts

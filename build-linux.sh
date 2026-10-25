@@ -65,10 +65,8 @@ pyinstaller --clean --noconfirm \
     --add-data src/er_save_manager/fixes/EventFlagBits.bin:er_save_manager/fixes \
     --add-data src/er_save_manager/games/DSR/data:er_save_manager/games/DSR/data \
     --add-data src/er_save_manager/games/DS3/data:er_save_manager/games/DS3/data \
-    --add-data src/er_save_manager/games/NR/nr_items.json:er_save_manager/games/NR \
-    --add-data src/er_save_manager/games/NR/relic_rules.json:er_save_manager/games/NR \
-    --add-data src/er_save_manager/games/NR/nr_icons.db:er_save_manager/games/NR \
-    --add-data src/er_save_manager/games/DS2/icons.db:er_save_manager/games/DS2 \
+    --add-data src/er_save_manager/games/NR/data:er_save_manager/games/NR/data \
+    --add-data src/er_save_manager/games/DS2/data:er_save_manager/games/DS2/data \
     --collect-data customtkinterthemes \
     --hidden-import customtkinterthemes \
     --hidden-import PIL._tkinter_finder \

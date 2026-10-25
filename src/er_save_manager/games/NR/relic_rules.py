@@ -28,7 +28,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-_DATA_FILE = Path(__file__).parent / "relic_rules.json"
+_DATA_FILE = Path(__file__).parent / "data" / "relic_rules.json"
 _EMPTY = 0xFFFFFFFF
 _rules: dict | None = None
 

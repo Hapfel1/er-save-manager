@@ -17,7 +17,7 @@ import json
 import re
 from pathlib import Path
 
-_DATA_FILE = Path(__file__).parent / "nr_items.json"
+_DATA_FILE = Path(__file__).parent / "data" / "nr_items.json"
 _db: dict | None = None
 
 
