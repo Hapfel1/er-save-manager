@@ -132,3 +132,76 @@ def test_kill_after_respawn_counts_a_second_defeat():
     expected = _data()
     _kill_last_giant(expected, count=2)
     assert data == expected
+
+
+# BossBattleParam row 1014010, whose spawn-once enemies include Undead Laborer
+# generators 2530 and 2533 in m10_14.
+MAGUS = BossFight(1014010, 114000096, 101000, 41, 14655)
+M10_14 = 0x0A0E0000
+RECORD = 0x1000
+# Kill counts start after the 16-byte header and 256 u16 generator ids.
+KILLS = RECORD + 0x10 + 2 * 256
+# Generator ids in the record: 55 (an NPC), then two Laborers.
+GENERATORS = (55, 2530, 2533)
+
+
+def _magus_data() -> bytearray:
+    data = _data()
+    struct.pack_into("<II", data, RECORD, M10_14, len(GENERATORS))
+    struct.pack_into(f"<{len(GENERATORS)}H", data, RECORD + 0x10, *GENERATORS)
+    return data
+
+
+def _magus_view(data: bytearray) -> BossStates:
+    return BossStates(data, ANCHOR, (MAGUS,), MAPS + [M10_14], {M10_14: RECORD})
+
+
+def _magus_map_flag(data: bytearray) -> tuple[int, int]:
+    # Local flag 96 in the fourth map's 25-byte block.
+    return ANCHOR - 0xBD0 + 3 * 25 + 96 // 8, 0x80 >> 96 % 8
+
+
+def test_arena_enemy_marked_killed_with_boss_in_arena_is_invalid():
+    data = _magus_data()
+    data[KILLS + 1] = 1
+    data[KILLS + 2] = 1
+    state = _magus_view(data).states()[0]
+    assert state.status is BossStatus.INVALID
+    assert state.problem == "2 arena enemies marked killed"
+
+
+def test_repair_clears_only_the_arena_kill_counts():
+    data = _magus_data()
+    data[KILLS] = 3
+    data[KILLS + 2] = 1
+    view = _magus_view(data)
+    assert view.repair([MAGUS.row_id]) == 1
+
+    expected = _magus_data()
+    expected[KILLS] = 3
+    assert data == expected
+    assert view.states()[0].status is BossStatus.NOT_DEFEATED
+
+
+def test_arena_kill_counts_after_a_win_are_valid():
+    data = _magus_data()
+    data[KILLS + 1] = data[KILLS + 2] = 1
+    offset, mask = _magus_map_flag(data)
+    data[offset] |= mask
+    view = _magus_view(data)
+    view.set_defeats([MAGUS.row_id], 1)
+    assert view.states()[0].status is BossStatus.DEFEATED
+
+
+def test_respawn_resets_the_arena_kill_counts():
+    data = _magus_data()
+    data[KILLS] = 3
+    data[KILLS + 1] = data[KILLS + 2] = 1
+    offset, mask = _magus_map_flag(data)
+    data[offset] |= mask
+    view = _magus_view(data)
+    assert view.respawn([MAGUS.row_id]) == 1
+
+    expected = _magus_data()
+    expected[KILLS] = 3
+    assert data == expected

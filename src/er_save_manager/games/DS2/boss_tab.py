@@ -104,7 +104,10 @@ class DS2BossPanel:
             text=(
                 "Repair completes the records of a partly credited kill, for "
                 "example one made in another player's world, so the boss counts "
-                "as defeated and its bonfire accepts Bonfire Ascetics. Respawn "
+                "as defeated and its bonfire accepts Bonfire Ascetics. It also "
+                "brings back fight enemies that stay missing while their boss is "
+                "alive, which leaves health on the boss bar after everything is "
+                "dead. Respawn "
                 "puts a defeated boss back in its arena like a Bonfire Ascetic, "
                 "without raising the bonfire's intensity. Kill records a win and "
                 "removes the boss from its arena, without souls, drops or other "
@@ -243,8 +246,9 @@ class DS2BossPanel:
         self._apply(
             "Repair Bosses",
             f"Repair {len(row_ids)} bosses?\n\n"
-            "Each is recorded as defeated. A boss still in its arena stays "
-            "there. A backup is made first.",
+            "A boss with a partly recorded win is recorded as defeated. A boss "
+            "still in its arena stays there, and enemies of its fight marked "
+            "killed spawn again. A backup is made first.",
             "repair_bosses",
             lambda bosses: bosses.repair(row_ids),
         )
