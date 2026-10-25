@@ -69,6 +69,7 @@ from pathlib import Path
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from er_save_manager.games.DS2.bonfire_database import BONFIRES
+from er_save_manager.games.DS2.boss_arenas import LIMITED_ARENA_GENERATORS
 from er_save_manager.games.DS2.boss_database import BOSS_NAMES
 from er_save_manager.games.DS2.item_database import (
     SEAMLESS_ITEMS,
@@ -335,12 +336,14 @@ _EVENT_COPY_DISTANCE = 0x604C
 # Per-map records, one per map in a fixed order, each starting with a u32 map
 # id (area << 24 | block << 16). The first starts _MAP_RECORDS_BEFORE_IDS bytes
 # before the first bonfire id array.
-# Each record holds, after a 16-byte header (u32 map id, u32 count), a list
-# of _MAP_GENERATOR_CAPACITY u16 generator ids and then one u8 kill count per
-# row of the map's GeneratorParam, in row order. A Bonfire Ascetic resets the
-# map's kill counts.
+# Each record holds, after a 16-byte header (u32 map id, u32 generator count),
+# a list of _MAP_GENERATOR_CAPACITY u16 generator ids and then one u8 kill
+# count per row of the map's GeneratorParam, in row order. The id list holds
+# the GeneratorParam row ids in that order, so kill count i belongs to id i.
+# A Bonfire Ascetic resets the map's kill counts.
 _MAP_RECORDS_BEFORE_IDS = 0x282A8
 _MAP_RECORD_SIZE = 0xB10
+_MAP_GENERATOR_COUNT_IN_RECORD = 4
 _MAP_RECORD_HEADER = 0x10
 _MAP_GENERATOR_CAPACITY = 256
 _MAP_KILL_COUNTS_IN_RECORD = _MAP_RECORD_HEADER + 2 * _MAP_GENERATOR_CAPACITY
@@ -694,6 +697,12 @@ class BossStates:
     other are invalid; a kill credited only partly, as can happen in another
     player's world, leaves the defeat count at 0, which blocks the Bonfire
     Ascetic at the boss's bonfire.
+
+    Some fights have enemies that spawn only once (boss_arenas). Their kill
+    counts in the map record are 1 after a win and 0 while the boss is in its
+    arena, since a Bonfire Ascetic resets them. A count left at 1 with the boss
+    in its arena keeps that enemy from spawning while its health stays in the
+    fight's health bar, so the fight cannot be won; that state is invalid too.
     """
 
     def __init__(
@@ -702,10 +711,12 @@ class BossStates:
         anchor: int,
         fights: Iterable[BossFight],
         maps: list[int],
+        map_records: dict[int, int] | None = None,
     ) -> None:
         self._data = data
         self._anchor = anchor
         self._maps = maps
+        self._map_records = map_records or {}
         self._fights = [f for f in fights if self._in_range(f)]
 
     def _global_flag_spans(self, flag: int) -> list[tuple[int, int]]:
@@ -747,6 +758,43 @@ class BossStates:
             offsets.append(span[0])
         return all(0 <= o < len(self._data) for o in offsets)
 
+    def _arena_kill_offsets(self, fight: BossFight) -> list[int]:
+        """Kill count offsets of the fight's spawn-once enemies that its map's
+        record lists."""
+        generators = LIMITED_ARENA_GENERATORS.get(fight.row_id)
+        if not generators:
+            return []
+        flag = fight.killed_flag
+        map_id = flag // 100_000_000 * 10 << 24 | flag // 1_000_000 % 100 << 16
+        record = self._map_records.get(map_id)
+        if record is None:
+            return []
+        count = struct.unpack_from(
+            "<I", self._data, record + _MAP_GENERATOR_COUNT_IN_RECORD
+        )[0]
+        listed = struct.unpack_from(
+            f"<{min(count, _MAP_GENERATOR_CAPACITY)}H",
+            self._data,
+            record + _MAP_RECORD_HEADER,
+        )
+        return [
+            record + _MAP_KILL_COUNTS_IN_RECORD + listed.index(g)
+            for g in generators
+            if g in listed
+        ]
+
+    def _arena_kills(self, fight: BossFight) -> int:
+        """How many of the fight's spawn-once enemies are marked killed."""
+        return sum(1 for o in self._arena_kill_offsets(fight) if self._data[o])
+
+    def _clear_arena_kills(self, fight: BossFight) -> bool:
+        touched = False
+        for offset in self._arena_kill_offsets(fight):
+            if self._data[offset]:
+                self._data[offset] = 0
+                touched = True
+        return touched
+
     def _read(self, fight: BossFight) -> tuple[list[int], list[bool], bool | None]:
         counts = [
             struct.unpack_from("<I", self._data, o)[0]
@@ -777,6 +825,12 @@ class BossStates:
                 problem = "Defeated flag set, defeat count 0"
             elif not defeats and in_map:
                 problem = "Gone from its arena, defeat count 0"
+            elif not in_map and (killed := self._arena_kills(fight)):
+                problem = (
+                    "1 arena enemy marked killed"
+                    if killed == 1
+                    else f"{killed} arena enemies marked killed"
+                )
             if problem is not None:
                 status = BossStatus.INVALID
             elif not defeats:
@@ -798,13 +852,16 @@ class BossStates:
         """Complete the records of the selected bosses with any record of a
         win, the way a full kill writes them: defeat count at least 1 and the
         defeated flag set, in both copies. The map flag is kept, so a boss
-        still in its arena stays there. Return how many bosses changed."""
+        still in its arena stays there. For a boss in its arena, the kill
+        counts of its spawn-once enemies are cleared so they spawn again.
+        Return how many bosses changed."""
         changed = 0
         for fight in self._selected(row_ids):
             counts, flags, in_map = self._read(fight)
+            touched = not in_map and self._clear_arena_kills(fight)
             if not (any(counts) or any(flags) or in_map):
+                changed += touched
                 continue
-            touched = False
             defeats = max(max(counts), 1)
             for offset, count in zip(
                 self._value_offsets(fight.defeat_value), counts, strict=True
@@ -821,14 +878,16 @@ class BossStates:
 
     def respawn(self, row_ids: Iterable[int]) -> int:
         """Return the selected bosses to their arenas by clearing the map's
-        defeated flag, as a Bonfire Ascetic does. The defeat count and the
-        defeated flag are kept. Return how many bosses changed."""
+        defeated flag and the kill counts of the fight's spawn-once enemies,
+        as a Bonfire Ascetic does. The defeat count and the defeated flag are
+        kept. Return how many bosses changed."""
         changed = 0
         for fight in self._selected(row_ids):
             span = self._map_flag_span(fight.killed_flag)
             if span is None or not self._data[span[0]] & span[1]:
                 continue
             self._data[span[0]] &= ~span[1] & 0xFF
+            self._clear_arena_kills(fight)
             changed += 1
         return changed
 
@@ -2219,8 +2278,14 @@ class DS2Save:
             return None
         if not fights:
             return None
-        maps = [map_id for map_id, _ in _map_records(data, view.anchor)]
-        return BossStates(data, view.anchor, fights, maps)
+        records = _map_records(data, view.anchor)
+        maps = [map_id for map_id, _ in records]
+        in_data = {
+            map_id: offset
+            for map_id, offset in records
+            if offset + _MAP_RECORD_SIZE <= len(data)
+        }
+        return BossStates(data, view.anchor, fights, maps, in_data)
 
     def slot_state(self, slot_index: int) -> SlotState:
         """Classify a slot.
