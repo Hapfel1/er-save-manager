@@ -48,6 +48,17 @@ def test_weapon_ids_levels_and_infusions():
     assert flame["level_step"] == 100 and catalog.item_id_at(flame, 5) == 1330500
 
 
+def test_catalysts_and_talismans_have_no_upgrades():
+    for name in (
+        "Sorcerer's Catalyst",
+        "Manus Catalyst",
+        "Oolacile Catalyst",
+        "Talisman",
+    ):
+        assert _by_name(name)["max_upgrade"] == 0, name
+    assert catalog.lookup(0, 1300005) is None
+
+
 def test_seamless_goods_and_estus():
     blossom = next(i for i in catalog.items() if i["id"] == 389007)
     assert blossom["seamless"] and blossom["max_quantity"] == 5
@@ -78,6 +89,21 @@ def test_set_item_id_updates_equipped_cache():
     char.set_item_id(slot, 201003)
     assert struct.unpack_from("<I", char._data, OFF_EQ_ID_RH1)[0] == 201003
     assert slot in char.equipped_slots()
+
+
+def test_repair_resets_leveled_catalysts():
+    char = _character()
+    catalyst = char.add_item(0, 1300005, sort_key=200100, durability=90)
+    struct.pack_into("<I", char._data, OFF_EQ_RH1, catalyst)
+    struct.pack_into("<I", char._data, OFF_EQ_ID_RH1, 1300005)
+    fire = char.add_item(0, 201805, sort_key=11105, durability=200)
+    flame = char.add_item(0, 1330900, sort_key=203100, durability=30)
+    assert char.repair_unupgradable_levels() == [catalyst]
+    assert char.read_item(catalyst).item_id == 1300000
+    assert struct.unpack_from("<I", char._data, OFF_EQ_ID_RH1)[0] == 1300000
+    assert char.read_item(fire).item_id == 201805
+    assert char.read_item(flame).item_id == 1330900
+    assert char.repair_unupgradable_levels() == []
 
 
 def test_event_flag_layout_matches_save_pairs():
