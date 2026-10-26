@@ -118,6 +118,12 @@ class DS3NpcsTab:
             fg_color=("gray55", "gray35"),
             command=lambda: self._apply(False),
         ).pack(side="left", padx=(0, 8))
+        ctk.CTkButton(
+            actions,
+            text="Quest Progress",
+            width=130,
+            command=self._open_quests,
+        ).pack(side="left", padx=(0, 8))
         self._status = ctk.CTkLabel(
             actions, text="", font=("Inter", 10), text_color=("gray40", "gray60")
         )
@@ -158,6 +164,51 @@ class DS3NpcsTab:
             self._tree.set(str(i), "state", "--" if error else _npc_state(char, npc))
 
     # --- Writes ------------------------------------------------------------ #
+
+    def _open_quests(self) -> None:
+        from er_save_manager.data.quest_flags_db import load_quest_table
+        from er_save_manager.ui.quest_progress_dialog import QuestProgressDialog
+
+        save = self._get_save()
+        save_path = self._get_save_path()
+        char = (
+            save.characters[self._current_slot]
+            if save and self._current_slot >= 0
+            else None
+        )
+        if char is None or save_path is None:
+            CTkMessageBox.showwarning(
+                "No Character", "Load a character first.", parent=self.parent
+            )
+            return
+        if char.flags_error:
+            CTkMessageBox.showerror(
+                "Unavailable",
+                f"Event flags cannot be edited for this character: {char.flags_error}",
+                parent=self.parent,
+            )
+            return
+        if _game_blocks_write(self.parent):
+            return
+        slot = self._current_slot
+
+        def commit(_description: str) -> None:
+            _backup_and_save(save, save_path, f"ds3_quest_progress_slot_{slot + 1}")
+            self._update_states()
+
+        QuestProgressDialog.open(
+            self.parent,
+            char,
+            save,
+            save_path,
+            slot,
+            None,
+            self._show_toast,
+            quest_flags=load_quest_table(_DATA_DIR / "quest_steps.json"),
+            commit=commit,
+            apply_steps_between=True,
+            apply_all=False,
+        )
 
     def _apply(self, revive: bool) -> None:
         npcs = [self._npcs[int(i)] for i in self._tree.selection()]

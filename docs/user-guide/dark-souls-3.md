@@ -112,6 +112,8 @@ If a character's inventory was damaged by an earlier version of this editor, inv
 
 Revive a dead or hostile NPC, or mark one dead. Only the NPC's alive/hostile/dead state changes; quest progress is left as it is, so an NPC whose questline already moved on stays where it left off.
 
+**Quest Progress** lists each NPC's quest states with the current one marked. **Apply** moves the NPC to that state the way the game's events do, clearing the NPC's other states. Greirat, Orbeck, Cornyx, Irina and Karla keep earlier states set, as the game does for them; Apply clears only their later ones. A backup is made first.
+
 ### Bosses
 
 Kill or respawn any boss, including DLC bosses, selected ones or all at once (double-click toggles one). This sets or clears the boss's defeat flag and, for main story bosses, the "defeated" progression flag other scripts read. Boss souls are not given or taken.

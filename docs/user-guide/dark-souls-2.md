@@ -99,6 +99,8 @@ Light or unlight bonfires, set their intensity (1 to 8), or **Unlock All Bonfire
 
 Lists each NPC with its state (alive, hostile or dead). **Revive** clears the NPC's dead and hostile flags and the kill counts that keep a killed NPC from spawning; **Calm** clears only the hostile flags. Quest progress is left as it is.
 
+**Quest Progress** lists each NPC's quest steps (moves to Majula, places they can appear, rescues, rewards) and shows which are done. **Apply** sets one step. A backup is made first.
+
 ### Bosses
 
 Lists each boss with its state, defeat count and the Ascetic bonfire of its area. **Respawn Selected** returns defeated bosses to their arenas, **Kill Selected** marks them defeated and **Set Defeats** sets the defeat count. **Repair Selected** and **Repair All Invalid** fix boss records that block Bonfire Ascetic use, such as bosses killed in another player's world.

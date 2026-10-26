@@ -72,6 +72,9 @@ class DSRNPCTab:
         ctk.CTkLabel(header, text="NPCs & Bosses", font=("Inter", 16, "bold")).pack(
             side="left"
         )
+        ctk.CTkButton(
+            header, text="Quest Progress", width=130, command=self._open_quests
+        ).pack(side="right")
 
         body = ctk.CTkFrame(outer, fg_color="transparent")
         body.pack(fill="both", expand=True, padx=10, pady=(0, 10))
@@ -219,6 +222,39 @@ class DSRNPCTab:
             "npcs_killed" if killed else "npcs_revived",
             self._npcs[rows[0]]["name"] if len(rows) == 1 else f"{len(rows)} NPCs",
             "killed" if killed else "revived",
+        )
+
+    def _open_quests(self) -> None:
+        from er_save_manager.data.quest_flags_db import load_quest_table
+        from er_save_manager.ui.quest_progress_dialog import QuestProgressDialog
+
+        save = self._get_dsr_save()
+        save_path = self._get_save_path()
+        char = self._char()
+        if char is None or save_path is None:
+            CTkMessageBox.showwarning(
+                "No Character", "Load a character first.", parent=self.parent
+            )
+            return
+        if _game_blocks_write(self.parent):
+            return
+        slot = self._current_slot
+
+        def commit(_description: str) -> None:
+            _backup_and_save(save, save_path, f"quest_progress_slot_{slot + 1}")
+            self._update_states()
+
+        QuestProgressDialog.open(
+            self.parent,
+            char,
+            save,
+            save_path,
+            slot,
+            None,
+            self._show_toast,
+            quest_flags=load_quest_table(_DATA_DIR / "quest_steps.json"),
+            commit=commit,
+            apply_all=False,
         )
 
     def _write(self, change, op: str, what: str, verb: str) -> None:

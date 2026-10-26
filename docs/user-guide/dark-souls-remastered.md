@@ -110,6 +110,7 @@ Shows the current NG+ cycle and sets it to any value 0-7 (0 = NG, 1 = NG+, 2 = N
 
 - **Bosses**: kill or respawn. Defeat flags are per playthrough, so bosses show as alive again after starting NG+.
 - **NPCs**: kill or revive. Only the NPC's alive/hostile/dead state changes, the way the game's own NPC death event does it; quest progress is kept.
+- **Quest Progress**: each NPC's quest states (where they are, which path they took) with the current one marked. **Apply** moves the NPC to that state the way the game's events do: the NPC's other states are cleared. A backup is made first.
 - Kingseeker Frampt and Darkstalker Kaathe cannot be killed. Attacking them makes them leave (shown as Hostile); Revive brings them back.
 
 ---

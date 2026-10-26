@@ -41,7 +41,15 @@
 ["Giving him \"Two Fingers' Prayerbook\"",null,[[11109877,1]]],
 ["Giving him \"Assassin's Prayerbook\"",null,[[11109878,1]]],
 ["Giving him \"Dragon Cult Prayerbook\"",null,[[11109883,1]]],
-["Giving him \"Ancient Dragon Prayerbook\"",null,[[11109884,1]]]
+["Giving him \"Ancient Dragon Prayerbook\"",null,[[11109884,1]]],
+["Default (not met yet)",null,[[4205,1],[4206,0],[4207,0],[4208,0],[4209,0],[4210,0],[4211,0],[4212,0],[4213,0],[4214,0],[4215,0],[4216,0],[4217,0]]],
+["Talked at the Roundtable","Roundtable Hold",[[4206,1],[4207,0],[4208,0],[4209,0],[4210,0],[4211,0],[4212,0],[4213,0],[4214,0],[4215,0],[4216,0],[4217,0]]],
+["After: choosing \"Tell the noble Goldmask's whereabouts\", disappears afterwards",null,[[4207,1],[4208,0],[4209,0],[4210,0],[4211,0],[4212,0],[4213,0],[4214,0],[4215,0],[4216,0],[4217,0]]],
+["After: speaking to him next to Goldmask, \"About the noble Goldmask\" option appears",null,[[4208,1],[4209,0],[4210,0],[4211,0],[4212,0],[4213,0],[4214,0],[4215,0],[4216,0],[4217,0]]],
+["After: telling Goldmask Radagon is Marika, receiving \"Golden Order Totality\" gesture",null,[[4209,1],[4210,0],[4211,0],[4212,0],[4213,0],[4214,0],[4215,0],[4216,0],[4217,0]]],
+["Maliketh, the Black Blade defeated","Mountaintops of the Giants",[[4210,1],[4211,0],[4212,0],[4213,0],[4214,0],[4215,0],[4216,0],[4217,0]]],
+["Maliketh, the Black Blade defeated","Mountaintops of the Giants",[[4211,1],[4212,0],[4213,0],[4214,0],[4215,0],[4216,0],[4217,0]]],
+["After Melina: choosing \"I'm ready\"",null,[[4217,1]]]
 ],
 "Gatekeeper Gostoc":[
 ["Initial dialogue pop-up when approching him","Stormveil Castle Gate in Limgrave",[[10009549,1]]],
@@ -54,7 +62,11 @@
 ["Talking to him again saying \"I'm free\", repeating dialogue",null,[[10009549,1]]],
 ["Talking to him inside the Throne Room after beating Morgott","Godrick the Grafted grace in Limgrave",[[10009549,1]]],
 ["Dialogue ends",null,[[10009516,1]]],
-["Talking to him again, can purchase stuff, including a now \"Ancient Dragon Smithing Stone\", nothing new afterwards",null,[[10009517,1]]]
+["Talking to him again, can purchase stuff, including a now \"Ancient Dragon Smithing Stone\", nothing new afterwards",null,[[10009517,1]]],
+["Default (not met yet)",null,[[3265,1],[3266,0],[3267,0],[3268,0],[3269,0]]],
+["Opened the side gate for you","Stormveil Castle",[[3266,1],[3267,0],[3268,0],[3269,0]]],
+["Gate opened, Stormveil main gate talk done","Stormveil Castle",[[3268,1],[3269,0]]],
+["Nepheli became the Stormveil lord",null,[[3270,1]]]
 ],
 "D Hunter of the Dead":[
 ["Initial dialogue with D","Roundtable Hold",[[1044399206,1]]],
@@ -75,7 +87,11 @@
 ["Talking to him",null,[[1044399213,1]]],
 ["Dialogue finishes, repeating dialogue",null,[[1044399205,1],[1044399207,1],[1044399206,1]]],
 ["Reloading the area",null,[[1044399214,0]]],
-["Talking to him again, still repeating dialogue, unlocking the RTH will make him move",null,[[1044399214,1]]]
+["Talking to him again, still repeating dialogue, unlocking the RTH will make him move",null,[[1044399214,1]]],
+["Default (not met yet)",null,[[4045,1],[4046,0],[4047,0],[4048,0],[4049,0],[4050,0],[4051,0],[4052,0],[4053,0],[4054,0],[4055,0],[4056,0],[4057,0]]],
+["Tibia Mariner defeated","Limgrave",[[4046,1],[4047,0],[4048,0],[4049,0],[4050,0],[4051,0],[4052,0],[4053,0],[4054,0],[4055,0],[4056,0],[4057,0]]],
+["After: speaking to D after killing a Tibia Mariner, showing him a Deathroot and accepting to take his place to deliver Deathroots to Gurranq, marking your map, leading to","Roundtable Hold",[[4047,1],[4048,0],[4049,0],[4050,0],[4051,0],[4052,0],[4053,0],[4054,0],[4055,0],[4056,0],[4057,0]]],
+["Final state (set by another event)",null,[[4048,1],[4049,0],[4050,0],[4051,0],[4052,0],[4053,0],[4054,0],[4055,0],[4056,0],[4057,0]]]
 ],
 "Diallos":[
 ["Initial dialogue with Diallos","Roundtable Hold",[[11109406,1]]],
@@ -89,7 +105,13 @@
 ["After defeating Rykard, Diallos moves to Jarburg, he talks to a living jar when you approach him","Jarburg in Liurnia",[[1039442721,1],[1039449302,1]]],
 ["Talking to him, repeating dialogue",null,[[1039449305,1]]],
 ["Talking to the now wounded Diallos in the middle of the town, he asks if he defended the jars, you say no, he says hes a fool and dies",null,[[1040,1],[1039449315,1],[3440,0],[3441,0],[3442,0],[3443,0],[3444,0],[3443,1],[1039445049,1]]],
-["Looting Diallos, receiving his mask, a Numen Rune and Hoslow's whip",null,[[400452,1],[400451,1]]]
+["Looting Diallos, receiving his mask, a Numen Rune and Hoslow's whip",null,[[400452,1],[400451,1]]],
+["Default (not met yet)",null,[[3445,1],[3446,0],[3447,0],[3448,0],[3449,0],[3450,0],[3451,0],[3452,0],[3453,0],[3454,0],[3455,0],[3456,0],[3457,0]]],
+["After: talking to him again","5, 16009260, 4, 4",[[3449,1],[3450,0],[3451,0],[3452,0],[3453,0],[3454,0],[3455,0],[3456,0],[3457,0]]],
+["After Jar-Bairn: reloading yet again, telling you about the poachers",null,[[3450,1],[3451,0],[3452,0],[3453,0],[3454,0],[3455,0],[3456,0],[3457,0]]],
+["Jarburg: Jar-Bairn's quest moved on",null,[[3451,1],[3452,0],[3453,0],[3454,0],[3455,0],[3456,0],[3457,0]]],
+["After: approaching Diallos after the second invasion, talks to himself, no new dialogue",null,[[3456,1],[3457,0]]],
+["Rykard, Lord of Blasphemy defeated",null,[[3457,1]]]
 ],
 "Dung Eater":[
 ["First time talking to him, repeating dialogue","Roundtable Hold",[[11109955,1]]],
@@ -113,7 +135,13 @@
 ["Cutscene ends, Dung Eater dies, Mending Rune able to be picked up",null,[[2200,0],[35009333,1],[4240,0],[4241,0],[4242,0],[4243,0],[4243,1],[35003722,1],[35005034,1]]],
 ["Receiving \"Mending Rune of the Fell Curse\"",null,[[9504,1],[35003724,1]]],
 ["Reloading the area, he is lootable now",null,[[4243,0],[4243,1],[35009336,1],[4243,0],[4243,1],[35009303,0],[35009337,1],[35003725,1]]],
-["Picking up his armor set",null,[[400382,1],[35005038,1],[35005039,1]]]
+["Picking up his armor set",null,[[400382,1],[35005038,1],[35005039,1]]],
+["Default (not met yet)",null,[[4245,1],[4246,0],[4247,0],[4248,0],[4249,0],[4250,0],[4251,0],[4252,0],[4253,0],[4254,0],[4255,0],[4256,0],[4257,0]]],
+["After: talking to Dung Eater after picking up 1 Seedbed Curse, receiving \"Sewer-Gaol Key\"",null,[[4246,1],[4247,0],[4248,0],[4249,0],[4250,0],[4251,0],[4252,0],[4253,0],[4254,0],[4255,0],[4256,0],[4257,0]]],
+["After: choosing \"Leave your gaol!\"",null,[[4247,1],[4248,0],[4249,0],[4250,0],[4251,0],[4252,0],[4253,0],[4254,0],[4255,0],[4256,0],[4257,0]]],
+["After: killing him and receiving \"Sword of Milos\"",null,[[4248,1],[4249,0],[4250,0],[4251,0],[4252,0],[4253,0],[4254,0],[4255,0],[4256,0],[4257,0]]],
+["Talked at the Roundtable","Roundtable Hold",[[4249,1],[4250,0],[4251,0],[4252,0],[4253,0],[4254,0],[4255,0],[4256,0],[4257,0]]],
+["At the Frenzied Flame Proscription","Subterranean Shunning-Grounds",[[4251,1],[4252,0],[4253,0],[4254,0],[4255,0],[4256,0],[4257,0]]]
 ],
 "Ensha":[
 ["Receiving \"What do you want?\" emote","Roundtable Hold",[[60840,1]]],
@@ -161,7 +189,15 @@
 ["Talking to D's brother, repeating dialogue",null,[[12039005,1]]],
 ["Picking up Fia's armor set",null,[[400339,1],[12035054,1]]],
 ["Reloading the area, D's brother now gone, loot on the ground",null,[[12032503,0],[12039150,0],[12039150,1],[12032503,1]]],
-["Picking up \"Inseparable Sword\" and the \"Twinned\" armor set",null,[[400348,1],[12035047,1]]]
+["Picking up \"Inseparable Sword\" and the \"Twinned\" armor set",null,[[400348,1],[12035047,1]]],
+["Default (not met yet)",null,[[4125,1],[4126,0],[4127,0],[4128,0],[4129,0],[4130,0],[4131,0],[4132,0],[4133,0],[4134,0],[4135,0],[4136,0],[4137,0]]],
+["After: giving him the dagger",null,[[4126,1],[4127,0],[4128,0],[4129,0],[4130,0],[4131,0],[4132,0],[4133,0],[4134,0],[4135,0],[4136,0],[4137,0]]],
+["After Melina: activating the first grace in Altus Plateau",null,[[4127,1],[4128,0],[4129,0],[4130,0],[4131,0],[4132,0],[4133,0],[4134,0],[4135,0],[4136,0],[4137,0]]],
+["Fia's Champions defeated","Underground",[[4128,1],[4129,0],[4130,0],[4131,0],[4132,0],[4133,0],[4134,0],[4135,0],[4136,0],[4137,0]]],
+["After: choosing it again, \"Talk in secret\" stays",null,[[4129,1],[4130,0],[4131,0],[4132,0],[4133,0],[4134,0],[4135,0],[4136,0],[4137,0]]],
+["After: choosing \"Talk in secret\", saying goodbye, option stays",null,[[4130,1],[4131,0],[4132,0],[4133,0],[4134,0],[4135,0],[4136,0],[4137,0]]],
+["After: lichdragon Fortissax full fight, receiving the Remembrance",null,[[4131,1],[4132,0],[4133,0],[4134,0],[4135,0],[4136,0],[4137,0]]],
+["Final state (set by D, Beholder of Death's event)",null,[[4132,1],[4133,0],[4134,0],[4135,0],[4136,0],[4137,0]]]
 ],
 "Finger Reader Cone":[
 ["Exhausting single dialogue","Near Stormveil Castle in Limgrave",[[1041399200,1]]],
@@ -170,7 +206,11 @@
 ["Exhausting single dialogue","Forest-Spanning Greatbridge in Altus Plateau",[[1040529350,1]]],
 ["Exhausting single dialogue","Outer Wall Phantom Tree in Capital Outskirts",[[1043359300,1]]],
 ["Exhausting single dialogue","Deeproot Depths",[[12039101,1],[12039100,1]]],
-["Exhausting single dialogue","Grand Lift of Rold",[[1049539300,1]]]
+["Exhausting single dialogue","Grand Lift of Rold",[[1049539300,1]]],
+["Default (not met yet)",null,[[3485,1],[3486,0],[3487,0],[3488,0],[3489,0],[3490,0],[3491,0],[3492,0],[3493,0],[3494,0],[3495,0],[3496,0],[3497,0],[3498,0],[3499,0]]],
+["Leyndell Divine Bridge reached","Leyndell, Royal Capital",[[3487,1],[3488,0],[3489,0],[3490,0],[3491,0],[3492,0],[3493,0],[3494,0],[3495,0],[3496,0],[3497,0],[3498,0],[3499,0]]],
+["Chose to burn the Erdtree (\"I'm ready\")",null,[[3488,1],[3489,0],[3490,0],[3491,0],[3492,0],[3493,0],[3494,0],[3495,0],[3496,0],[3497,0],[3498,0],[3499,0]]],
+["Erdtree burned",null,[[3489,1],[3490,0],[3491,0],[3492,0],[3493,0],[3494,0],[3495,0],[3496,0],[3497,0],[3498,0],[3499,0]]]
 ],
 "Gideon Ofnir":[
 ["Getting welcomed by Gideon Ofnir","Roundtable Hold main grace room",[[11109658,1]]],
@@ -205,7 +245,9 @@
 ["Talking to Gideon after burning the tree and defeating Mohg, \"About the Lord of Blood's cocoon\" and \"Talk\" appear",null,[[11109666,1],[11109692,0],[11109692,1],[11109699,1],[11109689,1]]],
 ["Choosing \"Talk\", option stays afterwards",null,[[11109690,1],[11109689,0],[11109692,0],[11109699,0],[11109692,1],[11109699,1],[11109691,1]]],
 ["Choosing \"Talk\" again, option disappears afterwards",null,[[11109556,1],[11109691,0],[11109692,0],[11109699,0],[11109692,1],[11109699,1]]],
-["Choosing \"About the Lord of Blood's cocoon\", receiving \"Law of Causality\" as a final reward, afterwards no menu at all anymore, just repeating dialogue",null,[[11109550,1],[400285,1],[11100794,1],[11109692,0],[11109699,0]]]
+["Choosing \"About the Lord of Blood's cocoon\", receiving \"Law of Causality\" as a final reward, afterwards no menu at all anymore, just repeating dialogue",null,[[11109550,1],[400285,1],[11100794,1],[11109692,0],[11109699,0]]],
+["Default (not met yet)",null,[[3965,1],[3966,0],[3967,0],[3968,0]]],
+["Maliketh, the Black Blade defeated",null,[[3968,1]]]
 ],
 "Gowry":[
 ["Initial dialogue at his Shack, requesting","Gowry's Shack in Caelid",[[1050389209,0]]],
@@ -231,7 +273,13 @@
 ["Talking to Gowry after aiding Millicent, repeating dialogue",null,[[1050389234,1]]],
 ["Attacking him",null,[[1050383704,1]]],
 ["Killing him",null,[[4160,0],[4163,1],[1050389238,1],[1050383703,1]]],
-["Looting him, receiving \"Flock's Canvas Talisman\" and \"Gowry's Bell Bearing\"",null,[[400312,1],[1050385004,1]]]
+["Looting him, receiving \"Flock's Canvas Talisman\" and \"Gowry's Bell Bearing\"",null,[[400312,1],[1050385004,1]]],
+["Default (not met yet)",null,[[4165,1],[4166,0],[4167,0],[4168,0],[4169,0],[4170,0],[4171,0],[4172,0],[4173,0],[4174,0],[4175,0],[4176,0],[4177,0]]],
+["After: giving him the Unalloyed Gold Needle dialogue",null,[[4166,1],[4167,0],[4168,0],[4169,0],[4170,0],[4171,0],[4172,0],[4173,0],[4174,0],[4175,0],[4176,0],[4177,0]]],
+["Millicent's quest at the Unalloyed Gold Needle step",null,[[4168,1],[4169,0],[4170,0],[4171,0],[4172,0],[4173,0],[4174,0],[4175,0],[4176,0],[4177,0]]],
+["Millicent helped or invaded at the Haligtree",null,[[4169,1],[4170,0],[4171,0],[4172,0],[4173,0],[4174,0],[4175,0],[4176,0],[4177,0]]],
+["Millicent dead after the Haligtree choice",null,[[4170,1],[4171,0],[4172,0],[4173,0],[4174,0],[4175,0],[4176,0],[4177,0]]],
+["After Millicent: defeating Millicent",null,[[4171,1],[4172,0],[4173,0],[4174,0],[4175,0],[4176,0],[4177,0]]]
 ],
 "Gurranq":[
 ["\"...\" dialogue when talking to him the first time","Bestial Sanctuary in Caelid",[[1051439205,1]]],
@@ -255,7 +303,11 @@
 ["Picking up the ninth and last Deathroot",null,[[30207910,1]]],
 ["Giving him the last Deathroot, receiving \"Ancient Dragon Smithing Stone\"",null,[[400230,1],[1051439212,1],[1051430703,1],[1051435004,1],[1051435003,1]]],
 ["He howls and disappears",null,[[1051432709,1],[1051439206,0]]],
-["Gets set after a reload",null,[[1051439212,0]]]
+["Gets set after a reload",null,[[1051439212,0]]],
+["Default (not met yet)",null,[[3645,1],[3646,0],[3647,0],[3648,0],[3649,0],[3650,0],[3651,0],[3652,0],[3653,0],[3654,0],[3655,0],[3656,0],[3657,0]]],
+["Given Deathroot (count reached)","1, 1051439235, 5, 4",[[3646,1],[3647,0],[3648,0],[3649,0],[3650,0],[3651,0],[3652,0],[3653,0],[3654,0],[3655,0],[3656,0],[3657,0]]],
+["Deathroot handed in while alive",null,[[3647,1],[3648,0],[3649,0],[3650,0],[3651,0],[3652,0],[3653,0],[3654,0],[3655,0],[3656,0],[3657,0]]],
+["Given more Deathroot (count reached)","3, 1051439235, 5, 4",[[3648,1],[3649,0],[3650,0],[3651,0],[3652,0],[3653,0],[3654,0],[3655,0],[3656,0],[3657,0]]]
 ],
 "Hyetta":[
 ["Initial dialogue ends at Lake-Facing Cliffs site of grace in Liurnia","Lake-Facing Cliffs in Liurnia",[[1039409205,1]]],
@@ -279,7 +331,14 @@
 ["Talking to her after touching her",null,[[35009208,1]]],
 ["Dialogue ends",null,[[35009209,1]]],
 ["She burns away and dies",null,[[35009211,1],[35000703,1]]],
-["Looting her body, receiving \"Frenzied Flame Seal\" and \"Frenzyflame Stone\"",null,[[400089,1],[35005033,1]]]
+["Looting her body, receiving \"Frenzied Flame Seal\" and \"Frenzyflame Stone\"",null,[[400089,1],[35005033,1]]],
+["Default (not met yet)",null,[[3385,1],[3386,0],[3387,0],[3388,0],[3389,0],[3390,0],[3391,0],[3392,0],[3393,0],[3394,0],[3395,0],[3396,0],[3397,0]]],
+["After: giving her a Shabiri Grape",null,[[3388,1],[3389,0],[3390,0],[3391,0],[3392,0],[3393,0],[3394,0],[3395,0],[3396,0],[3397,0]]],
+["After: giving Hyetta her second Grape",null,[[3389,1],[3390,0],[3391,0],[3392,0],[3393,0],[3394,0],[3395,0],[3396,0],[3397,0]]],
+["After: telling her the Grapes are really human eyes",null,[[3390,1],[3391,0],[3392,0],[3393,0],[3394,0],[3395,0],[3396,0],[3397,0]]],
+["After: after resting at a grace and speaking to her again, she tells you she will become a Finger Maiden, disappears",null,[[3391,1],[3392,0],[3393,0],[3394,0],[3395,0],[3396,0],[3397,0]]],
+["After: giving her the Fingerprint Grape",null,[[3392,1],[3393,0],[3394,0],[3395,0],[3396,0],[3397,0]]],
+["After: dialogue ends",null,[[3393,1],[3394,0],[3395,0],[3396,0],[3397,0]]]
 ],
 "Iji":[
 ["Initial dialogue","Road to Manor in Liurnia",[[1034499205,1],[3092,1],[1034499200,1]]],
@@ -301,7 +360,9 @@
 ["Menu pop-up, \"Blaidd's death\" option appears",null,[[1034492702,1],[1034499225,0],[1034499226,0],[1034499227,0],[1034499228,0],[1034499229,0],[1034499244,0],[1034499245,0],[1034499246,0],[1034499221,0],[1034499249,0],[1034499247,0],[1034499248,0],[1034499231,0],[1034499234,0],[1034499235,0],[1034499248,1]]],
 ["Choosing \"Blaidd's death\", option disappears afterwards",null,[[1034499242,1],[1034499248,0]]],
 ["After a reload, Iji is now dead",null,[[9809,0],[9804,1],[1035502701,0],[1035502701,1],[1034495002,1],[1034495006,1],[1042379200,0],[1042379202,0],[1042379206,0],[1046389201,0],[1043349250,0],[1038509250,0],[1043539250,0],[11009255,0],[1043509200,0],[1054559200,0],[1036489250,0],[1039519250,0],[1037519200,0],[10009656,0],[11009270,0],[11009275,0],[1054539210,0],[35009350,0],[35009352,0],[1054539215,0],[1042379208,0],[11009265,0],[35009355,0],[35009358,0]]],
-["Picking up \"Iji's Bell Bearing\" and \"Iji's Mirrorhelm\"",null,[[400240,1],[400241,1],[1034495011,1]]]
+["Picking up \"Iji's Bell Bearing\" and \"Iji's Mirrorhelm\"",null,[[400240,1],[400241,1],[1034495011,1]]],
+["Default (not met yet)",null,[[3765,1],[3766,0],[3767,0],[3768,0],[3769,0],[3770,0],[3771,0],[3772,0],[3773,0],[3774,0],[3775,0],[3776,0],[3777,0]]],
+["After: choosing \"Blaidd's death\"",null,[[3768,1],[3769,0],[3770,0],[3771,0],[3772,0],[3773,0],[3774,0],[3775,0],[3776,0],[3777,0]]]
 ],
 "Irina":[
 ["Initial dialogue with Irina","Bridge of Sacrifice in Limgrave",[[1045349205,1]]],
@@ -345,7 +406,14 @@
 ["Dialogue ends, wants you to fight him",null,[[13009255,1]]],
 ["Talking to him and fighting him afterwards",null,[[13009256,1],[13005031,1],[13005032,1],[3660,0],[3661,0],[3662,0],[3663,0],[3662,1],[400175,1],[13009261,1],[13009262,1],[13002712,1],[3662,0],[3660,1],[13009258,1]]],
 ["Talking to him after the fight, he will die, you receive \"Shard of Alexander\" and \"Alexander's Innards\"",null,[[13009257,1],[3660,0],[3663,1],[13005033,1],[400174,1],[3663,0],[3663,1],[13003711,1]]],
-["Talking to him, repeating dialogue, when festival starts he will move","Gael Tunnel in Caelid",[[32009206,1]]]
+["Talking to him, repeating dialogue, when festival starts he will move","Gael Tunnel in Caelid",[[32009206,1]]],
+["Default (not met yet)",null,[[3665,1],[3666,0],[3667,0],[3668,0],[3669,0],[3670,0],[3671,0]]],
+["After: first dialogue after helping him out of the hole, receiving \"Exalted Flesh\" as a reward","Weeping Peninsula",[[3666,1],[3667,0],[3668,0],[3669,0],[3670,0],[3671,0]]],
+["Radahn festival announced (flag 9410)",null,[[3667,1],[3668,0],[3669,0],[3670,0],[3671,0]]],
+["Starscourge Radahn defeated",null,[[3668,1],[3669,0],[3670,0],[3671,0]]],
+["After: talking to him again",null,[[3669,1],[3670,0],[3671,0]]],
+["After: talking to him again","Mt. Gelmir",[[3670,1],[3671,0]]],
+["After: dialogue ends, he gives you \"Jar\" helmet",null,[[3671,1]]]
 ],
 "Jar-Bairn":[
 ["Initial dialogue, choosing the bottom option, saying you are not the new Potentate","Jar-Burg in Liurnia",[[1039449256,1],[4608,1],[1039449252,1]]],
@@ -371,7 +439,12 @@
 ["Reloading again, he is awake again, this cycle repeats",null,[[1039442731,0],[1039442715,0],[1039442736,1]]],
 ["Giving Jar-Bairn Alexander's innards",null,[[1039449289,1]]],
 ["Talking to him again, saying goodbye",null,[[1039449291,1]]],
-["After a reload he will be gone, picking up \"Companion Jar\" where he was",null,[[400460,1],[1039445027,1]]]
+["After a reload he will be gone, picking up \"Companion Jar\" where he was",null,[[400460,1],[1039445027,1]]],
+["Default (not met yet)",null,[[3825,1],[3826,0],[3827,0],[3828,0],[3829,0]]],
+["After Iron Fist Alexander: initial dialogue with Alexander, choice popup",null,[[3826,1],[3827,0],[3828,0],[3829,0]]],
+["Moved within Jarburg","Liurnia of the Lakes",[[3827,1],[3828,0],[3829,0]]],
+["After: talking to Jar-Bairn again, who now moved into the middle of the town",null,[[3828,1],[3829,0]]],
+["After: talking to him again, saying goodbye",null,[[3829,1]]]
 ],
 "Jerren":[
 ["Initial automatic dialogue when you get near him at the Plaza, welcoming everyone to the festival","Festival Plaza in Caelid",[[1051362701,1],[3097,1],[1051369222,1]]],
@@ -389,7 +462,15 @@
 ["Choosing yes, spawning in",null,[[14002141,1],[14002140,1]]],
 ["Defeating Sellen, receiving her Bell Bearing and \"Witch's Glintstone Crown\"",null,[[14002145,1],[7608,1],[14005028,1],[14002141,0],[14002660,0],[1034509259,0],[14002660,1],[400106,1],[400107,1]]],
 ["Speaking to Jerren outside, receiving an \"Ancient Dragon Smithing Stone\"",null,[[400400,1],[14009355,1]]],
-["Talking to him again, repeating dialogue",null,[[14009356,1]]]
+["Talking to him again, repeating dialogue",null,[[14009356,1]]],
+["Default (not met yet)",null,[[3365,1],[3366,0],[3367,0],[3368,0],[3369,0],[3370,0],[3371,0],[3372,0],[3373,0],[3374,0],[3375,0],[3376,0],[3377,0]]],
+["Radahn festival announced (flag 9410)",null,[[3366,1],[3367,0],[3368,0],[3369,0],[3370,0],[3371,0],[3372,0],[3373,0],[3374,0],[3375,0],[3376,0],[3377,0]]],
+["Starscourge Radahn defeated",null,[[3367,1],[3368,0],[3369,0],[3370,0],[3371,0],[3372,0],[3373,0],[3374,0],[3375,0],[3376,0],[3377,0]]],
+["After: talking to him after Radahn's fight","Caelid",[[3368,1],[3369,0],[3370,0],[3371,0],[3372,0],[3373,0],[3374,0],[3375,0],[3376,0],[3377,0]]],
+["After Sorceress Sellen: receiving \"Sellen's Primal Glintstone\", animation stops",null,[[3369,1],[3370,0],[3371,0],[3372,0],[3373,0],[3374,0],[3375,0],[3376,0],[3377,0]]],
+["After Sorceress Sellen: transplanting the glintstone into the puppet of her",null,[[3370,1],[3371,0],[3372,0],[3373,0],[3374,0],[3375,0],[3376,0],[3377,0]]],
+["After: defeating Sellen, receiving her Bell Bearing and \"Witch's Glintstone Crown\"",null,[[3371,1],[3372,0],[3373,0],[3374,0],[3375,0],[3376,0],[3377,0]]],
+["After: talking to him again",null,[[3372,1],[3373,0],[3374,0],[3375,0],[3376,0],[3377,0]]]
 ],
 "Kale":[
 ["First Kalé dialogue finished / Kalé menu pop-up","Church of Elleh in Limgrave",[[1042362712,1],[1042369308,1],[1042369306,0],[1042369307,0],[1042369319,0],[1042369321,0],[1042369322,0],[1042369319,1],[1042369320,0],[1042369325,0]]],
@@ -422,7 +503,10 @@
 ["End of second dialogue with Kenneth Haight",null,[[1046369206,1]]],
 ["End of third dialogue with Kenneth Haight -> leading to repeating dialogue",null,[[1046369207,1]]],
 ["Talking to him after killing Morgott, he will be moved here","Godrick the Grafted grace in Limgrave",[[10009755,1]]],
-["Talking to him again, repeating dialogue",null,[[10009756,1]]]
+["Talking to him again, repeating dialogue",null,[[10009756,1]]],
+["Default (not met yet)",null,[[3585,1],[3586,0],[3587,0]]],
+["After: after agreeing to enter his service dialogue with Kenneth Haight, leading to repeated dialogue",null,[[3586,1],[3587,0]]],
+["After: end of first dialogue with Kenneth Haight",null,[[3587,1]]]
 ],
 "Knight Bernahl":[
 ["Initial dialogue at \"Warmaster's Shack\" - menu pop-up","Warmaster's Shack in Limgrave",[[1042389255,1],[1042382713,1],[3087,1],[1042389252,1]]],
@@ -441,7 +525,10 @@
 ["Talking to him after the invasion, receiving \"Gerlmir's Fury\", no new dialogue","Drawing Room in Volcano Manor",[[16002840,1],[16009461,1],[400291,1]]],
 ["Talking to Bernahl after defeating Rykard, repeating dialogue",null,[[16009460,1],[16009452,0],[16009452,1]]],
 ["Getting invaded by Bernahl","Beside the Great Bridge site of grace in Crumbling Farum Azula",[[13009300,0],[13009300,1]]],
-["Defeating Bernahl, receiving \"Blasphemous Claw\", \"Devourer's Scepter\" and Beast Champion armor set",null,[[13002182,1],[13000180,1],[400292,1],[400293,1],[400294,1],[13005029,1],[13005028,1],[13005205,1],[13005206,1],[13005207,1],[13005208,1],[13005209,1],[13005030,1],[3087,1]]]
+["Defeating Bernahl, receiving \"Blasphemous Claw\", \"Devourer's Scepter\" and Beast Champion armor set",null,[[13002182,1],[13000180,1],[400292,1],[400293,1],[400294,1],[13005029,1],[13005028,1],[13005205,1],[13005206,1],[13005207,1],[13005208,1],[13005209,1],[13005030,1],[3087,1]]],
+["Default (not met yet)",null,[[3885,1],[3886,0],[3887,0],[3888,0],[3889,0],[3890,0],[3891,0],[3892,0],[3893,0],[3894,0],[3895,0],[3896,0],[3897,0],[3898,0],[3899,0]]],
+["Talked after Rykard's defeat",null,[[3887,1],[3888,0],[3889,0],[3890,0],[3891,0],[3892,0],[3893,0],[3894,0],[3895,0],[3896,0],[3897,0],[3898,0],[3899,0]]],
+["Rykard, Lord of Blasphemy defeated","Volcano Manor",[[3888,1],[3889,0],[3890,0],[3891,0],[3892,0],[3893,0],[3894,0],[3895,0],[3896,0],[3897,0],[3898,0],[3899,0]]]
 ],
 "Latenna":[
 ["Initiating dialogue with Latenna at Slumbering Wolfs Shack","Slumbering Wolf's Shack in Liurnia",[[1036419206,1],[3084,1]]],
@@ -458,7 +545,8 @@
 ["Summoning Latenna","Apostate Derelict in West Mountaintops of the Giants",[[1047582700,1],[1036419213,0],[1036419213,1],[1047589202,1],[1047583701,1]]],
 ["She talks after being summoned",null,[[1047583704,1]]],
 ["Talking to her, receiving \"Somber Ancient Dragon Smithing Stone\"",null,[[1047589206,1],[400411,1],[1036419213,0],[1047589202,0],[1036419213,1],[1047589202,1]]],
-["Finishes dialogue, disappears afterwards",null,[[1047589205,1],[1047589210,1],[1047583703,1]]]
+["Finishes dialogue, disappears afterwards",null,[[1047589205,1],[1047589210,1],[1047583703,1]]],
+["Default (not met yet)",null,[[4105,1],[4106,0],[4107,0],[4108,0],[4109,0],[4110,0],[4111,0],[4112,0],[4113,0],[4114,0],[4115,0],[4116,0],[4117,0],[4118,0],[4119,0]]]
 ],
 "Melina":[
 ["Dying to Grafted Scion","Chapel of Anticipation in Limgrave",[[10010030,1]]],
@@ -565,7 +653,14 @@
 ["Talking to her again, saying goodbye, repeating dialogue",null,[[15009211,1]]],
 ["Reloading the area, Millicent is now dead",null,[[4191,0],[4192,1]]],
 ["Looting her body, receiving \"Unalloyed Gold Needle\"",null,[[400321,1]]],
-["Returning \"Unalloyed Gold Needle\" to Malenia's Flower and receiving \"Miquella's Needle\" and \"Somber Ancient Dragone Smithing Stone\"","Malenia's bossroom in the Haligtree",[[9020,0],[400324,1],[400325,1],[15000713,1]]]
+["Returning \"Unalloyed Gold Needle\" to Malenia's Flower and receiving \"Miquella's Needle\" and \"Somber Ancient Dragone Smithing Stone\"","Malenia's bossroom in the Haligtree",[[9020,0],[400324,1],[400325,1],[15000713,1]]],
+["Default (not met yet)",null,[[4185,1],[4186,0],[4187,0],[4188,0],[4189,0],[4190,0],[4191,0],[4192,0],[4193,0],[4194,0],[4195,0],[4196,0],[4197,0]]],
+["After: giving her the needle, screen turns black",null,[[4186,1],[4187,0],[4188,0],[4189,0],[4190,0],[4191,0],[4192,0],[4193,0],[4194,0],[4195,0],[4196,0],[4197,0]]],
+["Moved on from the Church of the Plague","Caelid",[[4187,1],[4188,0],[4189,0],[4190,0],[4191,0],[4192,0],[4193,0],[4194,0],[4195,0],[4196,0],[4197,0]]],
+["After: giving her the \"Valkyrie's Prosthesis\"","Altus Plateau",[[4188,1],[4189,0],[4190,0],[4191,0],[4192,0],[4193,0],[4194,0],[4195,0],[4196,0],[4197,0]]],
+["After: talking to Millicent after the bossfight",null,[[4189,1],[4190,0],[4191,0],[4192,0],[4193,0],[4194,0],[4195,0],[4196,0],[4197,0]]],
+["After: talking to her again",null,[[4190,1],[4191,0],[4192,0],[4193,0],[4194,0],[4195,0],[4196,0],[4197,0]]],
+["After: talking to her again","Miquella's Haligtree",[[4193,1],[4194,0],[4195,0],[4196,0],[4197,0]]]
 ],
 "Miriel":[
 ["Finishing first dialogue","Church of Vows in Liurnia",[[1037469256,1],[1037462719,1]]],
@@ -592,7 +687,8 @@
 ["Giving him \"Ancient Dragon Prayerbook\"",null,[[1037469315,1]]],
 ["Giving him \"Conspectus Scroll\"",null,[[1037469300,1]]],
 ["Giving him \"Royal House Scroll\"",null,[[1037469301,1]]],
-["Giving him \"Academy Scroll\"",null,[[1037469316,1]]]
+["Giving him \"Academy Scroll\"",null,[[1037469316,1]]],
+["Default (not met yet)",null,[[3725,1],[3726,0],[3727,0],[3728,0],[3729,0],[3730,0],[3731,0],[3732,0],[3733,0],[3734,0],[3735,0],[3736,0],[3737,0],[3738,0],[3739,0]]]
 ],
 "Nepheli Loux":[
 ["Initial automatic dialogue when you approach her","Stormveil Castle in Limgrave",[[10002785,1]]],
@@ -617,7 +713,13 @@
 ["Dialogue ends after talking to her again, repeating dialogue",null,[[11109922,1]]],
 ["She moved inside the throne room after defeating Morgott, dialogue with her","Godrick the Grafted grace in Limgrave",[[10009715,1]]],
 ["Talking to her again, receiving \"Ancient Dragon Smithing Stone\"",null,[[400422,1],[10009716,1]]],
-["Talking to her again, repeating dialogue",null,[[10009717,1]]]
+["Talking to her again, repeating dialogue",null,[[10009717,1]]],
+["Default (not met yet)",null,[[4225,1],[4226,0],[4227,0],[4228,0],[4229,0],[4230,0],[4231,0],[4232,0],[4233,0],[4234,0],[4235,0],[4236,0],[4237,0]]],
+["After Ranni the Witch: talking to Spirit Seluvis",null,[[4226,1],[4227,0],[4228,0],[4229,0],[4230,0],[4231,0],[4232,0],[4233,0],[4234,0],[4235,0],[4236,0],[4237,0]]],
+["After: third and final dialogue with Nepehli after beating Godrick, saying she is heading off",null,[[4227,1],[4228,0],[4229,0],[4230,0],[4231,0],[4232,0],[4233,0],[4234,0],[4235,0],[4236,0],[4237,0]]],
+["After: initial dialogue","Liurnia of the Lakes",[[4228,1],[4229,0],[4230,0],[4231,0],[4232,0],[4233,0],[4234,0],[4235,0],[4236,0],[4237,0]]],
+["Margit, the Fell Omen defeated","Stormveil Castle",[[4229,1],[4230,0],[4231,0],[4232,0],[4233,0],[4234,0],[4235,0],[4236,0],[4237,0]]],
+["Talked at the Roundtable after Stormveil","Roundtable Hold",[[4230,1],[4231,0],[4232,0],[4233,0],[4234,0],[4235,0],[4236,0],[4237,0]]]
 ],
 "Patches":[
 ["Entering \"Murkwater Cave\" bossfight","Murkwater Cave in Limgrave",[[31002830,1],[31008821,1],[31002810,1]]],
@@ -669,7 +771,16 @@
 ["Talking to him near the shimmering stones, repeating dialogue","First Mt. Gelmir Campsite",[[1037549206,1],[1037549209,0],[1037549202,1]]],
 ["Getting near the last stone and cutscene starts where Patches kickes you off",null,[[1037549210,1],[9021,1],[2200,1]]],
 ["After the cutscene flags",null,[[3698,1],[1037543701,1],[1037549202,0],[1037549202,1],[1037549212,0]]],
-["Going back to Patches and talking to him, repeating dialogue, he will move to Volcano Manor after talking to Tanith and joining them",null,[[1037549207,1],[1037549202,0],[1037549202,1]]]
+["Going back to Patches and talking to him, repeating dialogue, he will move to Volcano Manor after talking to Tanith and joining them",null,[[1037549207,1],[1037549202,0],[1037549202,1]]],
+["Default (not met yet)",null,[[3685,1],[3686,0],[3687,0],[3688,0],[3689,0],[3690,0],[3691,0],[3692,0],[3693,0],[3694,0],[3695,0],[3696,0],[3697,0],[3698,0],[3699,0]]],
+["After: first dialogue after bossfight, choosing \"Forgive and Forget\"","Mt. Gelmir",[[3688,1],[3689,0],[3690,0],[3691,0],[3692,0],[3693,0],[3694,0],[3695,0],[3696,0],[3697,0],[3698,0],[3699,0]]],
+["After Tanith: talking to her again, agreeing to join, receiving the Drawing-Room Key",null,[[3689,1],[3690,0],[3691,0],[3692,0],[3693,0],[3694,0],[3695,0],[3696,0],[3697,0],[3698,0],[3699,0]]],
+["Talked after Rykard's defeat",null,[[3690,1],[3691,0],[3692,0],[3693,0],[3694,0],[3695,0],[3696,0],[3697,0],[3698,0],[3699,0]]],
+["After: talking to Patches, receiving \"Dancer's Castanets\"","Limgrave",[[3691,1],[3692,0],[3693,0],[3694,0],[3695,0],[3696,0],[3697,0],[3698,0],[3699,0]]],
+["Talked again at Murkwater Cave",null,[[3692,1],[3693,0],[3694,0],[3695,0],[3696,0],[3697,0],[3698,0],[3699,0]]],
+["After: getting near the last stone and cutscene starts where Patches kickes you off","Mt. Gelmir",[[3693,1],[3694,0],[3695,0],[3696,0],[3697,0],[3698,0],[3699,0]]],
+["After: full bossfight, after getting him lower on health he realizes it's you and you can spare him again. Receiving \"Patches' Crouch\" gesture",null,[[3694,1],[3695,0],[3696,0],[3697,0],[3698,0],[3699,0]]],
+["After: talking to Patches, receiving \"Dancer's Castanets\"",null,[[3696,1],[3697,0],[3698,0],[3699,0]]]
 ],
 "Pidia":[
 ["Initial dialogue","Caria Manor",[[1035509205,1]]],
@@ -736,7 +847,11 @@
 ["Choosing \"Talk to Ranni\", repeating dialogue afterwards",null,[[12019276,1]]],
 ["Talking to Ranni about the Cursemark","Ranni's Rise in Liurnia",[[1034509432,1],[1034509405,1],[1034509400,1]]],
 ["Talking to her again asking where the Cursemark is, she says its not here and sends you away",null,[[1034509409,1]]],
-["Going back to Ranni after talking to Rogier, you can now enter her service this way",null,[[1034509410,1],[1034509412,1],[3618,1],[3778,1],[3578,1],[1034500738,1],[1034500732,1],[1034500736,1],[1034505015,1],[3779,1],[3619,1],[3579,1],[3778,0],[3765,0],[3766,1],[1034509360,1],[1034509361,1],[3618,0],[3605,0],[3609,1],[3578,0],[3565,0],[3566,1],[1034500715,1],[1034500710,1],[1034500700,1],[1034490701,1],[1034490700,1]]]
+["Going back to Ranni after talking to Rogier, you can now enter her service this way",null,[[1034509410,1],[1034509412,1],[3618,1],[3778,1],[3578,1],[1034500738,1],[1034500732,1],[1034500736,1],[1034505015,1],[3779,1],[3619,1],[3579,1],[3778,0],[3765,0],[3766,1],[1034509360,1],[1034509361,1],[3618,0],[3605,0],[3609,1],[3578,0],[3565,0],[3566,1],[1034500715,1],[1034500710,1],[1034500700,1],[1034490701,1],[1034490700,1]]],
+["First meeting at Ranni's Rise pending",null,[[3745,1],[3746,0],[3747,0],[3748,0],[3749,0],[3750,0],[3751,0],[3752,0],[3753,0],[3754,0],[3755,0],[3756,0],[3757,0]]],
+["Met at The First Step (Church of Elleh)","Limgrave",[[3746,1],[3747,0],[3748,0],[3749,0],[3750,0],[3751,0],[3752,0],[3753,0],[3754,0],[3755,0],[3756,0],[3757,0]]],
+["After: talking to her again",null,[[3749,1],[3750,0],[3751,0],[3752,0],[3753,0],[3754,0],[3755,0],[3756,0],[3757,0]]],
+["After: talking to Ranni, she disappears afterwards",null,[[3751,1],[3752,0],[3753,0],[3754,0],[3755,0],[3756,0],[3757,0]]]
 ],
 "Roderika":[
 ["First time initiating dialogue with Roderika at \"Stormhill Shack\"","Stormhill Shack in Limgrave",[[1041382735,1]]],
@@ -779,7 +894,9 @@
 ["Talking to Roderika again after talking to Hewg, \"About Hewg\" appears",null,[[11109227,1]]],
 ["Choosing \"About Hewg\", option disappears afterwards",null,[[11109276,1]]],
 ["Talking to Hewg after talking to Roderika again, \"What happened to her?\" appears",null,[[11109236,1]]],
-["Choosing \"What happened to her?\", option disappears afterwards",null,[[11109232,1],[11109236,0]]]
+["Choosing \"What happened to her?\", option disappears afterwards",null,[[11109232,1],[11109236,0]]],
+["Default (not met yet)",null,[[3705,1],[3706,0],[3707,0],[3708,0],[3709,0],[3710,0],[3711,0],[3712,0],[3713,0],[3714,0],[3715,0],[3716,0],[3717,0],[3718,0],[3719,0]]],
+["After Melina: choosing \"I'm ready\"",null,[[3709,1],[3710,0],[3711,0],[3712,0],[3713,0],[3714,0],[3715,0],[3716,0],[3717,0],[3718,0],[3719,0]]]
 ],
 "Rya":[
 ["Initial dialogue with Rya next to the Telescope in Liurnia Lake, accepting her request, repeating dialogue","Near the telescope that is near Boilprawn Shack in Liurnia",[[1037429209,1],[1037429202,0],[1037429202,1]]],
@@ -808,7 +925,12 @@
 ["Reloading the area",null,[[16009464,0],[16009464,1],[16009312,0],[16009312,1]]],
 ["After reloading the area, Rya will be gone too, leaving behind loot you can pick up",null,[[16009338,1]]],
 ["Picking up the loot, receiving \"Daedicar's Woe\" - second Rya ending",null,[[400091,1],[16005045,1],[16009312,0],[16009312,1],[16009313,1]]],
-["Talking to Rya after killing Rykard and not giving her the tonic, repeating dialogue","Side room deeper inside Volcano Manor",[[16009328,1],[16009322,0],[16009322,1]]]
+["Talking to Rya after killing Rykard and not giving her the tonic, repeating dialogue","Side room deeper inside Volcano Manor",[[16009328,1],[16009322,0],[16009322,1]]],
+["Default (not met yet)",null,[[3425,1],[3426,0],[3427,0],[3428,0],[3429,0],[3430,0],[3431,0],[3432,0],[3433,0],[3434,0],[3435,0],[3436,0],[3437,0],[3438,0],[3439,0]]],
+["After Rya: talking to Rya as a serpent for the first time","3, 16009260, 3, 4",[[3428,1],[3429,0],[3430,0],[3431,0],[3432,0],[3433,0],[3434,0],[3435,0],[3436,0],[3437,0],[3438,0],[3439,0]]],
+["Given the Serpent's Amnion",null,[[3429,1],[3430,0],[3431,0],[3432,0],[3433,0],[3434,0],[3435,0],[3436,0],[3437,0],[3438,0],[3439,0]]],
+["After Tanith: talking to her again, saying she will leave the Manor","Volcano Manor",[[3430,1],[3431,0],[3432,0],[3433,0],[3434,0],[3435,0],[3436,0],[3437,0],[3438,0],[3439,0]]],
+["After Rya: after defeating Rykard and having everyone else leave the Manor and having given Rya the tonic from Tanith: Rya will be back in the Drawing Room. Talking to her, single dialogue","Volcano Manor",[[3431,1],[3432,0],[3433,0],[3434,0],[3435,0],[3436,0],[3437,0],[3438,0],[3439,0]]]
 ],
 "Seluvis":[
 ["Talking to Spirit Seluvis","Ranni's Rise in Liurnia",[[1034509305,1]]],
@@ -855,7 +977,9 @@
 ["Dialogue ends",null,[[1034509426,1],[1034509422,0]]],
 ["Talking to her again",null,[[1034509427,1]]],
 ["Talking to her the third time, she instantly kills you",null,[[1034509428,1]]],
-["Seluvis will now be dead at his Rise, you can loot his Bell Bearing and armor","Seluvis's Rise",[[400148,1],[1034505025,1]]]
+["Seluvis will now be dead at his Rise, you can loot his Bell Bearing and armor","Seluvis's Rise",[[400148,1],[1034505025,1]]],
+["Default (not met yet)",null,[[3565,1],[3566,0],[3567,0],[3568,0],[3569,0],[3570,0],[3571,0],[3572,0],[3573,0],[3574,0],[3575,0],[3576,0],[3577,0]]],
+["After: talking to him again",null,[[3568,1],[3569,0],[3570,0],[3571,0],[3572,0],[3573,0],[3574,0],[3575,0],[3576,0],[3577,0]]]
 ],
 "Sorcerer Rogier":[
 ["Talking to Rogier, telling him you want to defeat Godrick, menu pop-up","Stormveil Castle in Limgrave",[[10009606,1],[10009617,1],[10009616,1],[10009619,1],[10002770,1]]],
@@ -881,7 +1005,12 @@
 ["Choosing it, disappears, \"Rogier's proposition\" appears, repeating dialogue",null,[[11109518,1],[11109509,0],[11109542,1]]],
 ["\"Why do you want the cursemark\" appears after he tells you that he might fall into a slumber",null,[[11109516,1]]],
 ["Choosing it, option disappears",null,[[11109515,1],[11109516,0]]],
-["2x \"About D\" dialogue, disappears afterwards",null,[[11109524,1],[11109515,0],[11109516,1],[11109525,1],[11109516,0]]]
+["2x \"About D\" dialogue, disappears afterwards",null,[[11109524,1],[11109515,0],[11109516,1],[11109525,1],[11109516,0]]],
+["Default (not met yet)",null,[[3905,1],[3906,0],[3907,0],[3908,0],[3909,0],[3910,0],[3911,0],[3912,0],[3913,0],[3914,0],[3915,0],[3916,0],[3917,0]]],
+["Margit, the Fell Omen defeated","Stormveil Castle",[[3906,1],[3907,0],[3908,0],[3909,0],[3910,0],[3911,0],[3912,0],[3913,0],[3914,0],[3915,0],[3916,0],[3917,0]]],
+["Margit, the Fell Omen defeated",null,[[3907,1],[3908,0],[3909,0],[3910,0],[3911,0],[3912,0],[3913,0],[3914,0],[3915,0],[3916,0],[3917,0]]],
+["After Ranni the Witch: talking to her again",null,[[3908,1],[3909,0],[3910,0],[3911,0],[3912,0],[3913,0],[3914,0],[3915,0],[3916,0],[3917,0]]],
+["Talk options used up (event value)","4, 11109545, 5, 4",[[3909,1],[3910,0],[3911,0],[3912,0],[3913,0],[3914,0],[3915,0],[3916,0],[3917,0]]]
 ],
 "Sorceress Sellen":[
 ["Initiating first ever dialogue with Sellen","Waypoint Ruins Cellar in Limgrave",[[1044369202,1]]],
@@ -988,7 +1117,9 @@
 ["Receiving \"Erudition\" emote",null,[[60845,1]]],
 ["Dialogue ends after giving him the key",null,[[1039399220,1]]],
 ["Porting to the grace","Schoolhouse Classroom grace in Liurnia",[[14002660,0]]],
-["Looting his dead body and receiving \"Thops's Bell Bearing\", \"Academy Glintstone Staff\" and \"Thops's Barrier\"",null,[[14002660,1],[400360,1],[400361,1],[400362,1],[14005036,1]]]
+["Looting his dead body and receiving \"Thops's Bell Bearing\", \"Academy Glintstone Staff\" and \"Thops's Barrier\"",null,[[14002660,1],[400360,1],[400361,1],[400362,1],[14005036,1]]],
+["Default (not met yet)",null,[[3805,1],[3806,0]]],
+["After: dialogue ends after giving him the key",null,[[3806,1]]]
 ],
 "White Mask Varre":[
 ["Finishing first part of dialogue with White Mask Varré","First Step in Limgrave",[[1042369202,1]]],
@@ -1011,6 +1142,123 @@
 ["Talking to him next to where his invasion sign was",null,[[12059165,1]]],
 ["Talking to him again, he dies, lootable items appear",null,[[12059166,1]]],
 ["Picking up Festering Bloody Finger and Varré`s Bouquet, questline ends here and his corpse disappears after a reload",null,[[400036,1],[400037,1],[12059163,1]]],
-["Talking to him after beating Godrick, repeating dialogue","First Step in Limgrave",[[1042369235,1],[1042369202,0],[1042369202,1]]]
+["Talking to him after beating Godrick, repeating dialogue","First Step in Limgrave",[[1042369235,1],[1042369202,0],[1042369202,1]]],
+["Default (not met yet)",null,[[3185,1],[3186,0],[3187,0],[3188,0],[3189,0],[3190,0],[3191,0],[3192,0],[3193,0],[3194,0],[3195,0],[3196,0],[3197,0],[3198,0],[3199,0]]],
+["Talked at Rose Church (Liurnia)","Liurnia of the Lakes",[[3189,1],[3190,0],[3191,0],[3192,0],[3193,0],[3194,0],[3195,0],[3196,0],[3197,0],[3198,0],[3199,0]]],
+["Dyed the cloth with maiden's blood",null,[[3190,1],[3191,0],[3192,0],[3193,0],[3194,0],[3195,0],[3196,0],[3197,0],[3198,0],[3199,0]]],
+["Talked again after offering a finger",null,[[3192,1],[3193,0],[3194,0],[3195,0],[3196,0],[3197,0],[3198,0],[3199,0]]],
+["Mohgwyn Palace reached through his medal (flag 7601)",null,[[3193,1],[3194,0],[3195,0],[3196,0],[3197,0],[3198,0],[3199,0]]]
+],
+"Castellan Edgar":[
+["Default (not met yet)",null,[[3405,1],[3406,0],[3407,0],[3408,0],[3409,0],[3410,0],[3411,0],[3412,0],[3413,0],[3414,0],[3415,0],[3416,0],[3417,0]]],
+["After Irina: delivering Irina's Letter to Edgar",null,[[3406,1],[3407,0],[3408,0],[3409,0],[3410,0],[3411,0],[3412,0],[3413,0],[3414,0],[3415,0],[3416,0],[3417,0]]],
+["Leonine Misbegotten defeated","Weeping Peninsula",[[3407,1],[3408,0],[3409,0],[3410,0],[3411,0],[3412,0],[3413,0],[3414,0],[3415,0],[3416,0],[3417,0]]],
+["After Irina: defeating Leonine Misbegotten and talking to Edgar afterwards",null,[[3408,1],[3409,0],[3410,0],[3411,0],[3412,0],[3413,0],[3414,0],[3415,0],[3416,0],[3417,0]]],
+["After Irina: talking to Edgar at Irina's dead body",null,[[3409,1],[3410,0],[3411,0],[3412,0],[3413,0],[3414,0],[3415,0],[3416,0],[3417,0]]]
+],
+"Old Albus":[
+["Default (not met yet)",null,[[3545,1],[3546,0],[3547,0],[3548,0],[3549,0],[3550,0],[3551,0],[3552,0],[3553,0],[3554,0],[3555,0],[3556,0],[3557,0],[3558,0],[3559,0]]],
+["Talked to again after Latenna's request (dies)",null,[[3546,1],[3547,0],[3548,0],[3549,0],[3550,0],[3551,0],[3552,0],[3553,0],[3554,0],[3555,0],[3556,0],[3557,0],[3558,0],[3559,0]]]
+],
+"Blaidd the Half-Wolf":[
+["Bloodhound Knight Darriwil defeated","Limgrave",[[3605,1],[3606,0],[3607,0],[3608,0],[3609,0],[3610,0],[3611,0],[3612,0],[3613,0],[3614,0],[3615,0],[3616,0],[3617,0]]],
+["Met at Mistwood Ruins","Limgrave",[[3606,1],[3607,0],[3608,0],[3609,0],[3610,0],[3611,0],[3612,0],[3613,0],[3614,0],[3615,0],[3616,0],[3617,0]]],
+["Bloodhound Knight Darriwil defeated","Limgrave",[[3607,1],[3608,0],[3609,0],[3610,0],[3611,0],[3612,0],[3613,0],[3614,0],[3615,0],[3616,0],[3617,0]]],
+["Told about Darriwil (Bridge of Sacrifice)","Weeping Peninsula",[[3608,1],[3609,0],[3610,0],[3611,0],[3612,0],[3613,0],[3614,0],[3615,0],[3616,0],[3617,0]]],
+["Radahn festival not yet started",null,[[3611,1],[3612,0],[3613,0],[3614,0],[3615,0],[3616,0],[3617,0]]],
+["Radahn festival state (flag 9412)",null,[[3613,1],[3614,0],[3615,0],[3616,0],[3617,0]]],
+["After Ranni the Witch: receiving the Fingerslayer Blade","Caelid",[[3614,1],[3615,0],[3616,0],[3617,0]]],
+["After Ranni the Witch: choosing to enter her service","Limgrave",[[3615,1],[3616,0],[3617,0]]],
+["Talked at Agheel Lake South","Limgrave",[[3616,1],[3617,0]]],
+["Final state (set by another event)",null,[[3617,1]]]
+],
+"Yura, Hunter of Bloody Fingers":[
+["Met at Agheel Lake North","Limgrave",[[3625,1],[3626,0],[3627,0],[3628,0],[3629,0],[3630,0],[3631,0],[3632,0],[3633,0],[3634,0],[3635,0],[3636,0],[3637,0],[3638,0],[3639,0]]],
+["Second Church of Marika or Grand Lift of Rold reached","Altus Plateau",[[3631,1],[3632,0],[3633,0],[3634,0],[3635,0],[3636,0],[3637,0],[3638,0],[3639,0]]]
+],
+"Boc the Seamster":[
+["Default (not met yet)",null,[[3945,1],[3946,0],[3947,0],[3948,0],[3949,0]]],
+["Revealed at Agheel Lake North","Limgrave",[[3946,1],[3947,0],[3948,0],[3949,0]]],
+["Freed at Coastal Cave","Limgrave",[[3947,1],[3948,0],[3949,0]]],
+["Rennala defeated (first outcome)","Liurnia of the Lakes",[[3948,1],[3949,0]]],
+["Rennala defeated (second outcome)","Liurnia of the Lakes",[[3949,1]]],
+["At Lake-Facing Cliffs","Bellum Highway",[[3954,1]]],
+["At East Raya Lucaria Gate","Altus Plateau",[[3955,1]]],
+["At Altus Highway Junction","Roundtable Hold",[[3956,1]]],
+["In Leyndell",null,[[3957,1]]]
+],
+"D, Beholder of Death":[
+["Default (not met yet)",null,[[4065,1],[4066,0],[4067,0],[4068,0],[4069,0],[4070,0],[4071,0],[4072,0],[4073,0],[4074,0],[4075,0],[4076,0],[4077,0]]],
+["After Fia: receiving \"Mending Rune of the Death-Prince\" from her body",null,[[4066,1],[4067,0],[4068,0],[4069,0],[4070,0],[4071,0],[4072,0],[4073,0],[4074,0],[4075,0],[4076,0],[4077,0]]],
+["After Fia: talking to D's brother",null,[[4067,1],[4068,0],[4069,0],[4070,0],[4071,0],[4072,0],[4073,0],[4074,0],[4075,0],[4076,0],[4077,0]]],
+["After: choosing yes",null,[[4077,1]]]
+],
+"Blackguard":[
+["Default (not met yet)",null,[[4145,1],[4146,0],[4147,0],[4148,0],[4149,0],[4150,0],[4151,0],[4152,0],[4153,0],[4154,0],[4155,0],[4156,0],[4157,0],[4158,0],[4159,0]]],
+["Capital Outskirts state","Capital Outskirts",[[4147,1],[4148,0],[4149,0],[4150,0],[4151,0],[4152,0],[4153,0],[4154,0],[4155,0],[4156,0],[4157,0],[4158,0],[4159,0]]]
+],
+"Igon":[
+["Default (not met yet)",null,[[4265,1],[4266,0],[4267,0],[4268,0],[4269,0],[4270,0],[4271,0],[4272,0],[4273,0],[4274,0],[4275,0],[4276,0],[4277,0]]],
+["Met at the Pillar Path Waypoint (Gravesite Plain)","Gravesite Plain",[[4267,1],[4268,0],[4269,0],[4270,0],[4271,0],[4272,0],[4273,0],[4274,0],[4275,0],[4276,0],[4277,0]]],
+["Moved to the Foot of the Jagged Peak","Foot of the Jagged Peak",[[4268,1],[4269,0],[4270,0],[4271,0],[4272,0],[4273,0],[4274,0],[4275,0],[4276,0],[4277,0]]]
+],
+"Dragon Communion Priestess":[
+["Default (not met yet)",null,[[4305,1],[4306,0],[4307,0],[4308,0],[4309,0],[4310,0],[4311,0],[4312,0],[4313,0],[4314,0],[4315,0],[4316,0],[4317,0]]],
+["Talked at the Grand Altar of Dragon Communion","Foot of the Jagged Peak",[[4306,1],[4307,0],[4308,0],[4309,0],[4310,0],[4311,0],[4312,0],[4313,0],[4314,0],[4315,0],[4316,0],[4317,0]]]
+],
+"Swordhand of Night Jolán":[
+["Default (not met yet)",null,[[4325,1],[4326,0],[4327,0],[4328,0],[4329,0],[4330,0],[4331,0],[4332,0],[4333,0],[4334,0],[4335,0],[4336,0],[4337,0]]],
+["At the Cathedral of Manus Metyr","Scadu Altus",[[4326,1],[4327,0],[4328,0],[4329,0],[4330,0],[4331,0],[4332,0],[4333,0],[4334,0],[4335,0],[4336,0],[4337,0]]]
+],
+"Fire Knight Queelign":[
+["Default (not met yet)",null,[[4345,1],[4346,0],[4347,0],[4348,0],[4349,0],[4350,0],[4351,0],[4352,0],[4353,0],[4354,0],[4355,0],[4356,0],[4357,0]]],
+["Second state (flag 4865)",null,[[4346,1],[4347,0],[4348,0],[4349,0],[4350,0],[4351,0],[4352,0],[4353,0],[4354,0],[4355,0],[4356,0],[4357,0]]]
+],
+"Hornsent":[
+["Default (not met yet)",null,[[4365,1],[4366,0],[4367,0],[4368,0],[4369,0],[4370,0],[4371,0],[4372,0],[4373,0],[4374,0],[4375,0],[4376,0],[4377,0]]],
+["Talked at Three-Path Cross","Gravesite Plain",[[4366,1],[4367,0],[4368,0],[4369,0],[4370,0],[4371,0],[4372,0],[4373,0],[4374,0],[4375,0],[4376,0],[4377,0]]],
+["Moved to Highroad Cross (Scadu Altus)","Scadu Altus",[[4368,1],[4369,0],[4370,0],[4371,0],[4372,0],[4373,0],[4374,0],[4375,0],[4376,0],[4377,0]]],
+["In the Specimen Storehouse loft (first outcome)","Specimen Storehouse",[[4369,1],[4370,0],[4371,0],[4372,0],[4373,0],[4374,0],[4375,0],[4376,0],[4377,0]]],
+["In the Specimen Storehouse loft (second outcome)","Specimen Storehouse",[[4370,1],[4371,0],[4372,0],[4373,0],[4374,0],[4375,0],[4376,0],[4377,0]]]
+],
+"Moore":[
+["Default (not met yet)",null,[[4385,1],[4386,0],[4387,0],[4388,0],[4389,0],[4390,0],[4391,0],[4392,0],[4393,0],[4394,0],[4395,0],[4396,0],[4397,0]]],
+["Talked at Main Gate Cross (path A)","Gravesite Plain",[[4386,1],[4387,0],[4388,0],[4389,0],[4390,0],[4391,0],[4392,0],[4393,0],[4394,0],[4395,0],[4396,0],[4397,0]]],
+["Talked at Main Gate Cross (path B)","Gravesite Plain",[[4387,1],[4388,0],[4389,0],[4390,0],[4391,0],[4392,0],[4393,0],[4394,0],[4395,0],[4396,0],[4397,0]]]
+],
+"Sir Ansbach":[
+["Default (not met yet)",null,[[4405,1],[4406,0],[4407,0],[4408,0],[4409,0],[4410,0],[4411,0],[4412,0],[4413,0],[4414,0],[4415,0],[4416,0],[4417,0]]],
+["Talked at Main Gate Cross","Gravesite Plain",[[4406,1],[4407,0],[4408,0],[4409,0],[4410,0],[4411,0],[4412,0],[4413,0],[4414,0],[4415,0],[4416,0],[4417,0]]],
+["At the Enir-Ilim stairs","Enir-Ilim",[[4407,1],[4408,0],[4409,0],[4410,0],[4411,0],[4412,0],[4413,0],[4414,0],[4415,0],[4416,0],[4417,0]]],
+["At the Enir-Ilim stairs after Radahn","Enir-Ilim",[[4408,1],[4409,0],[4410,0],[4411,0],[4412,0],[4413,0],[4414,0],[4415,0],[4416,0],[4417,0]]]
+],
+"Redmane Freyja":[
+["Default (not met yet)",null,[[4425,1],[4426,0],[4427,0],[4428,0],[4429,0],[4430,0],[4431,0],[4432,0],[4433,0],[4434,0],[4435,0],[4436,0],[4437,0]]],
+["Talked at Three-Path Cross","Gravesite Plain",[[4426,1],[4427,0],[4428,0],[4429,0],[4430,0],[4431,0],[4432,0],[4433,0],[4434,0],[4435,0],[4436,0],[4437,0]]],
+["In the Specimen Storehouse loft","Specimen Storehouse",[[4427,1],[4428,0],[4429,0],[4430,0],[4431,0],[4432,0],[4433,0],[4434,0],[4435,0],[4436,0],[4437,0]]]
+],
+"Needle Knight Leda":[
+["Default (not met yet)",null,[[4445,1],[4446,0],[4447,0],[4448,0],[4449,0],[4450,0],[4451,0],[4452,0],[4453,0],[4454,0],[4455,0],[4456,0],[4457,0]]],
+["Talked at the Dynasty Mausoleum (Mohgwyn)","Mohgwyn Palace",[[4446,1],[4447,0],[4448,0],[4449,0],[4450,0],[4451,0],[4452,0],[4453,0],[4454,0],[4455,0],[4456,0],[4457,0]]],
+["Moved to Highroad Cross (Scadu Altus)","Scadu Altus",[[4447,1],[4448,0],[4449,0],[4450,0],[4451,0],[4452,0],[4453,0],[4454,0],[4455,0],[4456,0],[4457,0]]],
+["At the Enir-Ilim stairs","Enir-Ilim",[[4448,1],[4449,0],[4450,0],[4451,0],[4452,0],[4453,0],[4454,0],[4455,0],[4456,0],[4457,0]]]
+],
+"Thiollier":[
+["Default (not met yet)",null,[[4465,1],[4466,0],[4467,0],[4468,0],[4469,0],[4470,0],[4471,0],[4472,0],[4473,0],[4474,0],[4475,0],[4476,0],[4477,0]]],
+["Talked at Divided Falls (Abyssal Woods)","Abyssal Woods",[[4466,1],[4467,0],[4468,0],[4469,0],[4470,0],[4471,0],[4472,0],[4473,0],[4474,0],[4475,0],[4476,0],[4477,0]]],
+["Moved to the Stone Coffin Fissure","Stone Coffin Fissure",[[4467,1],[4468,0],[4469,0],[4470,0],[4471,0],[4472,0],[4473,0],[4474,0],[4475,0],[4476,0],[4477,0]]],
+["At the Enir-Ilim stairs","Enir-Ilim",[[4468,1],[4469,0],[4470,0],[4471,0],[4472,0],[4473,0],[4474,0],[4475,0],[4476,0],[4477,0]]],
+["Stone Coffin Fissure end state","Stone Coffin Fissure",[[4469,1],[4470,0],[4471,0],[4472,0],[4473,0],[4474,0],[4475,0],[4476,0],[4477,0]]]
+],
+"Hornsent Grandam":[
+["Default (not met yet)",null,[[4485,1],[4486,0],[4487,0],[4488,0],[4489,0],[4490,0],[4491,0],[4492,0],[4493,0],[4494,0],[4495,0],[4496,0],[4497,0]]]
+],
+"Count Ymir, High Priest":[
+["Default (not met yet)",null,[[4505,1],[4506,0],[4507,0],[4508,0],[4509,0],[4510,0],[4511,0],[4512,0],[4513,0],[4514,0],[4515,0],[4516,0],[4517,0]]],
+["Talked at the Cathedral of Manus Metyr","Scadu Altus",[[4506,1],[4507,0],[4508,0],[4509,0],[4510,0],[4511,0],[4512,0],[4513,0],[4514,0],[4515,0],[4516,0],[4517,0]]]
+],
+"Dryleaf Dane":[
+["Default (not met yet)",null,[[4565,1],[4566,0],[4567,0],[4568,0],[4569,0],[4570,0],[4571,0],[4572,0],[4573,0],[4574,0],[4575,0],[4576,0],[4577,0]]],
+["Talked at Bonny Village","Scadu Altus",[[4566,1],[4567,0],[4568,0],[4569,0],[4570,0],[4571,0],[4572,0],[4573,0],[4574,0],[4575,0],[4576,0],[4577,0]]]
 ]
 }

@@ -52,6 +52,9 @@ class DS2NpcPanel:
         ctk.CTkLabel(header, text="NPCs", font=("Inter", 13, "bold")).pack(side="left")
         self._summary_label = ctk.CTkLabel(header, text="")
         self._summary_label.pack(side="left", padx=(12, 0))
+        ctk.CTkButton(
+            header, text="Quest Progress", width=130, command=self._open_quests
+        ).pack(side="right")
 
         buttons = ctk.CTkFrame(self.parent, fg_color="transparent")
         buttons.pack(side="bottom", fill="x", padx=10, pady=(6, 10))
@@ -180,6 +183,46 @@ class DS2NpcPanel:
             f"Calm {len(names)} selected NPCs?\n\nA backup is made first.",
             "calm_npcs",
             lambda npcs: npcs.calm(names),
+        )
+
+    def _open_quests(self) -> None:
+        from er_save_manager.data.quest_flags_db import load_quest_table
+        from er_save_manager.ui.quest_progress_dialog import QuestProgressDialog
+
+        save: DS2Save | None = self.get_save()
+        save_path = self.get_save_path()
+        if save is None or not save_path:
+            self.show_toast("No save file loaded", duration=2000)
+            return
+        slot = self.get_slot_index()
+        flags = save.quest_flags(slot)
+        if flags is None:
+            self.show_toast("No event flag data in this slot", duration=2000)
+            return
+        if _game_blocks_write(self.parent):
+            return
+
+        def commit(_description: str) -> None:
+            self._backup(
+                save_path, f"before_quest_progress_slot_{slot + 1}", "quest_progress"
+            )
+            save.save_to_file(save_path)
+            self.refresh()
+
+        QuestProgressDialog.open(
+            self.parent,
+            flags,
+            save,
+            save_path,
+            slot,
+            None,
+            self.show_toast,
+            quest_flags=load_quest_table(
+                Path(__file__).parent / "data" / "quest_steps.json"
+            ),
+            commit=commit,
+            undo=True,
+            apply_all=False,
         )
 
     def _backup(self, save_path, description: str, operation: str) -> None:

@@ -665,6 +665,35 @@ class NpcStates:
         )
 
 
+class QuestFlags:
+    """Global event flags of one slot for the quest steps (quest_steps.json,
+    102000-102999). Reads the first copy; writes both, which agree on these
+    flags."""
+
+    def __init__(self, data: bytearray, anchor: int) -> None:
+        self._data = data
+        self._first = anchor - _NPC_FLAGS_BEFORE_IDS + _GLOBAL_FLAGS_IN_OBJECT
+
+    def _span(self, flag_id: int) -> tuple[int, int]:
+        index = flag_id - _GLOBAL_FLAG_FIRST
+        offset = self._first + index // 8
+        if index < 0 or offset + _EVENT_COPY_DISTANCE >= len(self._data):
+            raise ValueError(f"Flag {flag_id} is outside the global flags")
+        return offset, 0x80 >> (index % 8)
+
+    def get_flag(self, flag_id: int) -> bool:
+        offset, mask = self._span(flag_id)
+        return bool(self._data[offset] & mask)
+
+    def set_flag(self, flag_id: int, value: bool) -> None:
+        offset, mask = self._span(flag_id)
+        for o in (offset, offset + _EVENT_COPY_DISTANCE):
+            if value:
+                self._data[o] |= mask
+            else:
+                self._data[o] &= ~mask & 0xFF
+
+
 class BossStatus(Enum):
     """Where a boss stands. The values double as display labels."""
 
@@ -2264,6 +2293,15 @@ class DS2Save:
             if offset + _MAP_RECORD_SIZE <= len(data)
         }
         return NpcStates(data, view.anchor, records)
+
+    def quest_flags(self, slot_index: int) -> QuestFlags | None:
+        """The slot's global flags for quest steps, or None when the slot holds
+        no bonfire data to locate them from."""
+        data = self.container.get_entry(BIG_ENTRY_START + slot_index)
+        view = Bonfires(data)
+        if not view.found or view.anchor < _NPC_FLAGS_BEFORE_IDS:
+            return None
+        return QuestFlags(data, view.anchor)
 
     def bosses(self, slot_index: int) -> BossStates | None:
         """The slot's boss records, or None when the slot holds no bonfire data

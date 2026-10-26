@@ -14,6 +14,25 @@ from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
 
+def last_complete_index(steps, is_complete) -> int:
+    """Index of the furthest step whose flags all match, -1 if none."""
+    return max((i for i, s in enumerate(steps) if is_complete(s)), default=-1)
+
+
+def steps_up_to(steps, target: int, is_complete) -> list[dict]:
+    """Steps after the furthest complete one up to and including target, in
+    table order. A table whose map events build on the previous state (DS3)
+    needs every step in between applied, not only the target."""
+    start = last_complete_index(steps, is_complete) + 1
+    return steps[min(start, target) : target + 1]
+
+
+def is_tracked(step) -> bool:
+    """A step that only clears flags matches a quest that never reached it
+    as well, so its state cannot be read from the save."""
+    return any(f["value"] for f in step["flags"])
+
+
 class QuestProgressDialog:
     """
     Dialog for viewing and modifying NPC quest progress.
@@ -31,8 +50,27 @@ class QuestProgressDialog:
         slot_idx,
         reload_callback,
         show_toast,
+        quest_flags=None,
+        commit=None,
+        apply_steps_between=False,
+        undo=False,
+        apply_all=True,
     ):
-        from er_save_manager.data.quest_flags_db import QUEST_FLAGS
+        """quest_flags: NPC -> steps table (default: the Elden Ring table).
+        commit(description): backs up and writes the save for games other
+        than Elden Ring; raises on failure. Without it the Elden Ring slot
+        buffer is written back. apply_steps_between: Apply also applies the
+        steps between the furthest complete step and the chosen one.
+        undo: applied steps get an Undo button that clears the flags they
+        set, for tables whose steps are independent flags (DS2).
+        apply_all: show Apply All Steps to Here; it re-applies every step up
+        to the furthest complete one, which only helps a table whose steps
+        keep their flags as the quest moves on (Elden Ring)."""
+        if quest_flags is None:
+            from er_save_manager.data.quest_flags_db import QUEST_FLAGS
+
+            quest_flags = QUEST_FLAGS
+        QUEST_FLAGS = quest_flags
 
         dialog = ds.create(parent, "Quest Progress")
         dialog.resizable(True, True)
@@ -45,7 +83,8 @@ class QuestProgressDialog:
         apply_all_btn = ds.button(
             bottom, "Apply All Steps to Here", None, width=180, state="disabled"
         )
-        apply_all_btn.pack(side=tk.LEFT, padx=(0, 8))
+        if apply_all:
+            apply_all_btn.pack(side=tk.LEFT, padx=(0, 8))
         reset_btn = ds.button(
             bottom,
             "Reset All Quest Flags",
@@ -120,13 +159,14 @@ class QuestProgressDialog:
                 return False
 
         def _step_is_complete(step):
-            return all(
+            return is_tracked(step) and all(
                 bool(_safe_get_flag(f["id"])) == bool(f["value"]) for f in step["flags"]
             )
 
         def _count_complete(npc_name):
             steps = QUEST_FLAGS[npc_name]
-            return sum(1 for s in steps if _step_is_complete(s)), len(steps)
+            done = sum(1 for s in steps if _step_is_complete(s))
+            return done, sum(1 for s in steps if is_tracked(s))
 
         def _render_steps(npc_name):
             for w in steps_scroll.winfo_children():
@@ -165,6 +205,8 @@ class QuestProgressDialog:
                 if step["location"]:
                     meta_parts.append(step["location"])
                 meta_parts.append(f"{len(step['flags'])} flag(s)")
+                if not is_tracked(step):
+                    meta_parts.append("not tracked")
                 ctk.CTkLabel(
                     row_frame,
                     text="  |  ".join(meta_parts),
@@ -173,14 +215,23 @@ class QuestProgressDialog:
                     anchor="w",
                 ).grid(row=1, column=1, sticky="ew", padx=(0, 8), pady=(0, 8))
 
-                apply_btn = ds.button(
-                    row_frame,
-                    "Applied" if complete else "Apply",
-                    lambda s=step, npc=npc_name: _apply_step(s, npc),
-                    primary=not complete,
-                    width=80,
-                    state="disabled" if complete else "normal",
-                )
+                if undo and complete:
+                    apply_btn = ds.button(
+                        row_frame,
+                        "Undo",
+                        lambda s=step, npc=npc_name: _undo_step(s, npc),
+                        primary=False,
+                        width=80,
+                    )
+                else:
+                    apply_btn = ds.button(
+                        row_frame,
+                        "Applied" if complete else "Apply",
+                        lambda idx=i, npc=npc_name: _apply_step(idx, npc),
+                        primary=not complete,
+                        width=80,
+                        state="disabled" if complete else "normal",
+                    )
                 apply_btn.grid(row=0, column=2, rowspan=2, padx=8, pady=8)
 
                 step_widgets.append((step, apply_btn))
@@ -200,11 +251,31 @@ class QuestProgressDialog:
             except (ValueError, KeyError):
                 pass
 
-        def _apply_step(step, npc_name):
-            """Apply a single quest step's flags."""
+        def _apply_step(index, npc_name):
+            """Apply a quest step's flags, after the steps in between when
+            apply_steps_between is set."""
+            steps = QUEST_FLAGS[npc_name]
+            step = steps[index]
+            chain = (
+                steps_up_to(steps, index, _step_is_complete)
+                if apply_steps_between
+                else [step]
+            )
+            for s in chain:
+                for f in s["flags"]:
+                    _safe_set_flag(f["id"], bool(f["value"]))
+            if len(chain) > 1:
+                toast = f"Applied {len(chain)} steps up to: {step['description'][:50]}"
+            else:
+                toast = f"Applied: {step['description'][:60]}"
+            _save_and_refresh(npc_name, toast)
+
+        def _undo_step(step, npc_name):
+            """Clear the flags a step sets."""
             for f in step["flags"]:
-                _safe_set_flag(f["id"], bool(f["value"]))
-            _save_and_refresh(npc_name, f"Applied: {step['description'][:60]}")
+                if f["value"]:
+                    _safe_set_flag(f["id"], False)
+            _save_and_refresh(npc_name, f"Undid: {step['description'][:60]}")
 
         def _apply_up_to_last_complete(npc_name):
             """
@@ -267,6 +338,18 @@ class QuestProgressDialog:
         def _save_and_refresh(npc_name, toast_msg):
             """Write changes, recalculate checksums, save, and re-render."""
             from er_save_manager.backup.manager import BackupManager
+
+            if commit is not None:
+                try:
+                    commit(toast_msg)
+                except Exception as exc:
+                    CTkMessageBox.showerror("Save Failed", str(exc), parent=dialog)
+                    return
+                if show_toast:
+                    show_toast(toast_msg, duration=2500)
+                _render_steps(npc_name)
+                _rebuild_npc_list(search_var.get())
+                return
 
             if save_path and save_path.is_file():
                 try:
