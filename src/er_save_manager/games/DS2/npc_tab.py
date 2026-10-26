@@ -195,7 +195,7 @@ class DS2NpcPanel:
             self.show_toast("No save file loaded", duration=2000)
             return
         slot = self.get_slot_index()
-        flags = save.quest_flags(slot)
+        flags = save.event_flags(slot)
         if flags is None:
             self.show_toast("No event flag data in this slot", duration=2000)
             return

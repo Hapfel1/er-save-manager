@@ -1,0 +1,1205 @@
+{
+ "areas": {
+  "167903232": "Things Betwixt",
+  "168034304": "Majula",
+  "168427520": "Forest of Fallen Giants",
+  "168689664": "Brightstone Cove Tseldora",
+  "168755200": "Aldia's Keep",
+  "168820736": "The Lost Bastille",
+  "168886272": "Harvest Valley",
+  "168951808": "No-man's Wharf",
+  "169017344": "Iron Keep",
+  "169279488": "Huntsman's Copse",
+  "169410560": "The Gutter",
+  "169541632": "Dragon Aerie",
+  "169607168": "Firelink Throne",
+  "169672704": "Majula",
+  "169738240": "Heide's Tower of Flame",
+  "169803776": "Heide's Tower of Flame",
+  "169869312": "Shaded Woods",
+  "169934848": "Doors of Pharros",
+  "170000384": "Grave of Saints",
+  "336199680": "Memory of Vammar",
+  "336265216": "Shrine of Amana",
+  "336920576": "Drangleic Castle",
+  "337117184": "Undead Crypt",
+  "337248256": "Dragon Memories",
+  "671285248": "Dark Chasm of Old",
+  "841154560": "Shulva, Sanctum City",
+  "841220096": "Brume Tower",
+  "841285632": "Frozen Eleum Loyce",
+  "841351168": "Memory of the King"
+ },
+ "doors": [
+  {
+   "map": 168034304,
+   "flag": 104000050,
+   "object": 10040410,
+   "open": 30,
+   "label": "House Key door",
+   "near": "The Far Fire (Majula)"
+  },
+  {
+   "map": 168034304,
+   "flag": 104000051,
+   "object": 10040450,
+   "open": 30,
+   "label": "Lenigrast's Key door",
+   "near": "The Far Fire (Majula)"
+  },
+  {
+   "map": 168034304,
+   "flag": 104000052,
+   "object": 10040420,
+   "open": 30,
+   "label": "Forgotten Key door",
+   "near": "The Far Fire (Majula)"
+  },
+  {
+   "map": 168427520,
+   "flag": 110000070,
+   "object": 10100414,
+   "open": 30,
+   "label": "Iron Key door",
+   "near": "The Place Unbeknownst"
+  },
+  {
+   "map": 168427520,
+   "flag": 110000072,
+   "object": 10100416,
+   "open": 30,
+   "label": "Soldier Key door",
+   "near": "Cardinal Tower"
+  },
+  {
+   "map": 168427520,
+   "flag": 110000076,
+   "object": 10100409,
+   "open": 30,
+   "label": "Soldier Key door (waterway to the King's Gate)",
+   "near": "Cardinal Tower"
+  },
+  {
+   "map": 168427520,
+   "flag": 110000078,
+   "object": 10100411,
+   "open": 30,
+   "label": "Soldier Key door (giant's sword to the Pursuer)",
+   "near": "Cardinal Tower"
+  },
+  {
+   "map": 168689664,
+   "flag": 114000010,
+   "object": 10140410,
+   "open": 30,
+   "label": "Brightstone Key door",
+   "near": "Lower Brightstone Cove"
+  },
+  {
+   "map": 168689664,
+   "flag": 114000014,
+   "object": 10140412,
+   "open": 30,
+   "label": "Brightstone Key door 3",
+   "near": "Lower Brightstone Cove"
+  },
+  {
+   "map": 168689664,
+   "flag": 114000020,
+   "object": 10140480,
+   "open": 30,
+   "label": "One-way door (garbage chute room)",
+   "near": "Lower Brightstone Cove"
+  },
+  {
+   "map": 168689664,
+   "flag": 114000060,
+   "object": 10140481,
+   "open": 30,
+   "label": "Tseldora Den Key door",
+   "near": "Lower Brightstone Cove"
+  },
+  {
+   "map": 168755200,
+   "flag": 115000030,
+   "object": 10150405,
+   "open": 30,
+   "label": "Aldia Key door",
+   "near": "Ritual Site"
+  },
+  {
+   "map": 168755200,
+   "flag": 115000031,
+   "object": 10150420,
+   "open": 30,
+   "label": "Aldia Key door 2",
+   "near": "Ritual Site"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000041,
+   "object": 10160432,
+   "open": 30,
+   "label": "Bastille Key door 2",
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000043,
+   "object": 10160440,
+   "open": 30,
+   "label": "Bastille Key door 4",
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000045,
+   "object": 10160443,
+   "open": 30,
+   "label": "Bastille Key door 6",
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000046,
+   "object": 10160444,
+   "open": 30,
+   "label": "Bastille Key door 7",
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000052,
+   "object": 10160453,
+   "open": 30,
+   "label": "Bastille Key door 13",
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000053,
+   "object": 10160451,
+   "open": 30,
+   "label": "Bastille Key door 14",
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000054,
+   "object": 10160452,
+   "open": 30,
+   "label": "Bastille Key door 15",
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000055,
+   "object": 10160400,
+   "open": 30,
+   "label": "Antiquated Key door",
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000057,
+   "object": 10160490,
+   "open": 30,
+   "label": "Round tower one-way door",
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168886272,
+   "flag": 117000180,
+   "object": 10170410,
+   "open": 30,
+   "label": "One-way door (below the drop)",
+   "near": "Central Earthen Peak"
+  },
+  {
+   "map": 168951808,
+   "flag": 118000014,
+   "object": 10181080,
+   "open": 20,
+   "label": "Bridge that can be lowered",
+   "near": "Unseen Path to Heide"
+  },
+  {
+   "map": 169017344,
+   "flag": 119000040,
+   "object": 10191350,
+   "open": 30,
+   "label": "Lever that stops all flame statues",
+   "near": "Eygil's Idol"
+  },
+  {
+   "map": 169279488,
+   "flag": 123000020,
+   "object": 10230400,
+   "open": 30,
+   "label": "Undead Lockaway Key door (bonfire room)",
+   "near": "Undead Lockaway"
+  },
+  {
+   "map": 169279488,
+   "flag": 123000032,
+   "object": 10231500,
+   "open": 20,
+   "label": "Moving bridge",
+   "near": "Undead Lockaway"
+  },
+  {
+   "map": 169410560,
+   "flag": 125000055,
+   "object": 10250400,
+   "open": 30,
+   "label": "Forgotten Key door 1",
+   "near": "Black Gulch Mouth"
+  },
+  {
+   "map": 169410560,
+   "flag": 125000056,
+   "object": 10250405,
+   "open": 30,
+   "label": "Forgotten Key door 2",
+   "near": "Black Gulch Mouth"
+  },
+  {
+   "map": 169869312,
+   "flag": 132000050,
+   "object": 10320410,
+   "open": 30,
+   "label": "Fang Key door",
+   "near": null
+  },
+  {
+   "map": 336920576,
+   "flag": 221000020,
+   "object": 20210415,
+   "open": 30,
+   "label": "Key to King's Passage door",
+   "near": "Central Castle Drangleic"
+  },
+  {
+   "map": 336920576,
+   "flag": 221000033,
+   "object": 20210400,
+   "open": 20,
+   "label": "Golem door 1",
+   "near": "Under Castle Drangleic"
+  },
+  {
+   "map": 336920576,
+   "flag": 221000036,
+   "object": 20210403,
+   "open": 20,
+   "label": "Golem door 4",
+   "near": "King's Gate"
+  },
+  {
+   "map": 336920576,
+   "flag": 221000037,
+   "object": 20210404,
+   "open": 20,
+   "label": "Golem door 5",
+   "near": "King's Gate"
+  },
+  {
+   "map": 336920576,
+   "flag": 221000039,
+   "object": 20212600,
+   "open": 20,
+   "label": "Main gate golem (right)",
+   "near": "Under Castle Drangleic"
+  },
+  {
+   "map": 336920576,
+   "flag": 221000040,
+   "object": 20212605,
+   "open": 20,
+   "label": "Main gate golem (left)",
+   "near": "Under Castle Drangleic"
+  },
+  {
+   "map": 336920576,
+   "flag": 221000041,
+   "object": 20210407,
+   "open": 20,
+   "label": "Golem main gate",
+   "near": "Under Castle Drangleic"
+  },
+  {
+   "map": 841220096,
+   "flag": 536000027,
+   "object": 50361024,
+   "open": 20,
+   "label": "Large lever door (upper level)",
+   "near": "Foyer"
+  },
+  {
+   "map": 841220096,
+   "flag": 536000030,
+   "object": 50360415,
+   "open": 30,
+   "label": "One-way door beside the bonfire room",
+   "near": "Foyer"
+  },
+  {
+   "map": 841220096,
+   "flag": 536000032,
+   "object": 50360425,
+   "open": 30,
+   "label": "One-way door (trapdoor area)",
+   "near": "Foyer"
+  },
+  {
+   "map": 841220096,
+   "flag": 536000034,
+   "object": 50360442,
+   "open": 30,
+   "label": "Tower Key door",
+   "near": "Foyer"
+  },
+  {
+   "map": 841220096,
+   "flag": 536000036,
+   "object": 50360440,
+   "open": 30,
+   "label": "Tower Key door (memory)",
+   "near": "Foyer"
+  },
+  {
+   "map": 841220096,
+   "flag": 536000038,
+   "object": 50360441,
+   "open": 30,
+   "label": "Tower Key door (cut-off path)",
+   "near": "Foyer"
+  },
+  {
+   "map": 841285632,
+   "flag": 537000043,
+   "object": 50370442,
+   "open": 30,
+   "label": "One-way door (underpass)",
+   "near": "Lower Garrison"
+  },
+  {
+   "map": 841285632,
+   "flag": 537000044,
+   "object": 50370441,
+   "open": 30,
+   "label": "One-way door (elevator room)",
+   "near": "Inner Wall"
+  },
+  {
+   "map": 841285632,
+   "flag": 537000047,
+   "object": 50370410,
+   "open": 30,
+   "label": "Garrison Ward Key door (snowfield)",
+   "near": "Expulsion Chamber"
+  },
+  {
+   "map": 841285632,
+   "flag": 537000048,
+   "object": 50370412,
+   "open": 30,
+   "label": "One-way door under the bridge",
+   "near": "Inner Wall"
+  },
+  {
+   "map": 841285632,
+   "flag": 537000049,
+   "object": 50370440,
+   "open": 30,
+   "label": "One-way door (ladder room)",
+   "near": "Expulsion Chamber"
+  }
+ ],
+ "fog_gates": [
+  {
+   "map": 167903232,
+   "flag": 102000160,
+   "object": 10020600,
+   "boss": false,
+   "near": "Fire Keepers' Dwelling"
+  },
+  {
+   "map": 167903232,
+   "flag": 102000161,
+   "object": 10020605,
+   "boss": false,
+   "near": "Fire Keepers' Dwelling"
+  },
+  {
+   "map": 167903232,
+   "flag": 102000162,
+   "object": 10020610,
+   "boss": false,
+   "near": "Fire Keepers' Dwelling"
+  },
+  {
+   "map": 167903232,
+   "flag": 102000163,
+   "object": 10020615,
+   "boss": false,
+   "near": "Fire Keepers' Dwelling"
+  },
+  {
+   "map": 167903232,
+   "flag": 102000164,
+   "object": 10020620,
+   "boss": false,
+   "near": "Fire Keepers' Dwelling"
+  },
+  {
+   "map": 167903232,
+   "flag": 102000165,
+   "object": 10020625,
+   "boss": false,
+   "near": "Fire Keepers' Dwelling"
+  },
+  {
+   "map": 168034304,
+   "flag": 104000040,
+   "object": 10040600,
+   "boss": true,
+   "near": "The Far Fire (Majula)"
+  },
+  {
+   "map": 168034304,
+   "flag": 104000040,
+   "object": 10040605,
+   "boss": true,
+   "near": "The Far Fire (Majula)"
+  },
+  {
+   "map": 168034304,
+   "flag": 104000040,
+   "object": 10040610,
+   "boss": true,
+   "near": "The Far Fire (Majula)"
+  },
+  {
+   "map": 168034304,
+   "flag": 104000040,
+   "object": 10040640,
+   "boss": true,
+   "near": "The Far Fire (Majula)"
+  },
+  {
+   "map": 168427520,
+   "flag": 110000081,
+   "object": 10100600,
+   "boss": true,
+   "near": "The Place Unbeknownst"
+  },
+  {
+   "map": 168427520,
+   "flag": 110000081,
+   "object": 10100640,
+   "boss": true,
+   "near": "Cardinal Tower"
+  },
+  {
+   "map": 168427520,
+   "flag": 110000086,
+   "object": 10100610,
+   "boss": true,
+   "near": "Cardinal Tower"
+  },
+  {
+   "map": 168427520,
+   "flag": 110000086,
+   "object": 10100611,
+   "boss": true,
+   "near": "Cardinal Tower"
+  },
+  {
+   "map": 168427520,
+   "flag": 110000170,
+   "object": 10100630,
+   "boss": false,
+   "near": "Cardinal Tower"
+  },
+  {
+   "map": 168427520,
+   "flag": 110000171,
+   "object": 10100631,
+   "boss": false,
+   "near": "Cardinal Tower"
+  },
+  {
+   "map": 168427520,
+   "flag": 110000172,
+   "object": 10100632,
+   "boss": false,
+   "near": "Soldiers' Rest"
+  },
+  {
+   "map": 168689664,
+   "flag": 114000081,
+   "object": 10140601,
+   "boss": true,
+   "near": "Lower Brightstone Cove"
+  },
+  {
+   "map": 168689664,
+   "flag": 114000081,
+   "object": 10140602,
+   "boss": true,
+   "near": "Lower Brightstone Cove"
+  },
+  {
+   "map": 168689664,
+   "flag": 114000096,
+   "object": 10140600,
+   "boss": true,
+   "near": "Lower Brightstone Cove"
+  },
+  {
+   "map": 168689664,
+   "flag": 114000096,
+   "object": 10140603,
+   "boss": true,
+   "near": "Lower Brightstone Cove"
+  },
+  {
+   "map": 168755200,
+   "flag": 115000081,
+   "object": 10150600,
+   "boss": true,
+   "near": "Ritual Site"
+  },
+  {
+   "map": 168755200,
+   "flag": 115000081,
+   "object": 10150601,
+   "boss": true,
+   "near": "Ritual Site"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000081,
+   "object": 10160600,
+   "boss": true,
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000081,
+   "object": 10160605,
+   "boss": true,
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000081,
+   "object": 10160607,
+   "boss": true,
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000081,
+   "object": 10160608,
+   "boss": true,
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000081,
+   "object": 10160609,
+   "boss": true,
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000081,
+   "object": 10160610,
+   "boss": true,
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000081,
+   "object": 10160622,
+   "boss": true,
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000086,
+   "object": 10160602,
+   "boss": true,
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000086,
+   "object": 10160603,
+   "boss": true,
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000091,
+   "object": 10160620,
+   "boss": true,
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000091,
+   "object": 10160621,
+   "boss": true,
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168820736,
+   "flag": 116000171,
+   "object": 10160601,
+   "boss": false,
+   "near": "Exile Holding Cells"
+  },
+  {
+   "map": 168886272,
+   "flag": 117000081,
+   "object": 10170600,
+   "boss": true,
+   "near": "Lower Earthen Peak"
+  },
+  {
+   "map": 168886272,
+   "flag": 117000081,
+   "object": 10170601,
+   "boss": true,
+   "near": "Lower Earthen Peak"
+  },
+  {
+   "map": 168886272,
+   "flag": 117000091,
+   "object": 10170602,
+   "boss": true,
+   "near": "Upper Earthen Peak"
+  },
+  {
+   "map": 168886272,
+   "flag": 117000091,
+   "object": 10170603,
+   "boss": true,
+   "near": "Lower Earthen Peak"
+  },
+  {
+   "map": 168886272,
+   "flag": 117000179,
+   "object": 10170604,
+   "boss": false,
+   "near": "Central Earthen Peak"
+  },
+  {
+   "map": 168951808,
+   "flag": 118000081,
+   "object": 10180600,
+   "boss": true,
+   "near": "Unseen Path to Heide"
+  },
+  {
+   "map": 168951808,
+   "flag": 118000081,
+   "object": 10180601,
+   "boss": true,
+   "near": "Unseen Path to Heide"
+  },
+  {
+   "map": 169017344,
+   "flag": 119000081,
+   "object": 10190600,
+   "boss": true,
+   "near": "Ironhearth Hall"
+  },
+  {
+   "map": 169017344,
+   "flag": 119000081,
+   "object": 10190602,
+   "boss": true,
+   "near": "Ironhearth Hall"
+  },
+  {
+   "map": 169017344,
+   "flag": 119000081,
+   "object": 10190604,
+   "boss": true,
+   "near": "Ironhearth Hall"
+  },
+  {
+   "map": 169017344,
+   "flag": 119000086,
+   "object": 10190610,
+   "boss": true,
+   "near": "Eygil's Idol"
+  },
+  {
+   "map": 169017344,
+   "flag": 119000086,
+   "object": 10190612,
+   "boss": true,
+   "near": "Eygil's Idol"
+  },
+  {
+   "map": 169017344,
+   "flag": 119000160,
+   "object": 10190630,
+   "boss": false,
+   "near": "Belfry Sol Approach"
+  },
+  {
+   "map": 169017344,
+   "flag": 119000161,
+   "object": 10190640,
+   "boss": false,
+   "near": "Belfry Sol Approach"
+  },
+  {
+   "map": 169279488,
+   "flag": 123000074,
+   "object": 10230625,
+   "boss": false,
+   "near": "Undead Refuge"
+  },
+  {
+   "map": 169279488,
+   "flag": 123000081,
+   "object": 10230605,
+   "boss": true,
+   "near": "Undead Purgatory"
+  },
+  {
+   "map": 169279488,
+   "flag": 123000081,
+   "object": 10230610,
+   "boss": true,
+   "near": "Undead Purgatory"
+  },
+  {
+   "map": 169279488,
+   "flag": 123000086,
+   "object": 10230600,
+   "boss": true,
+   "near": "Undead Lockaway"
+  },
+  {
+   "map": 169279488,
+   "flag": 123000086,
+   "object": 10230620,
+   "boss": true,
+   "near": "Undead Lockaway"
+  },
+  {
+   "map": 169410560,
+   "flag": 125000081,
+   "object": 10250602,
+   "boss": true,
+   "near": "Black Gulch Mouth"
+  },
+  {
+   "map": 169410560,
+   "flag": 125000081,
+   "object": 10250606,
+   "boss": true,
+   "near": "Black Gulch Mouth"
+  },
+  {
+   "map": 169410560,
+   "flag": 125000160,
+   "object": 10250600,
+   "boss": false,
+   "near": "Black Gulch Mouth"
+  },
+  {
+   "map": 169410560,
+   "flag": 125000161,
+   "object": 10250601,
+   "boss": false,
+   "near": "Black Gulch Mouth"
+  },
+  {
+   "map": 169541632,
+   "flag": 127000082,
+   "object": 10270601,
+   "boss": true,
+   "near": "Shrine Entrance"
+  },
+  {
+   "map": 169803776,
+   "flag": 131000081,
+   "object": 10310600,
+   "boss": true,
+   "near": "Tower of Flame"
+  },
+  {
+   "map": 169803776,
+   "flag": 131000081,
+   "object": 10310601,
+   "boss": true,
+   "near": "Tower of Flame"
+  },
+  {
+   "map": 169803776,
+   "flag": 131000081,
+   "object": 10310605,
+   "boss": true,
+   "near": "Tower of Flame"
+  },
+  {
+   "map": 169803776,
+   "flag": 131000086,
+   "object": 10310602,
+   "boss": true,
+   "near": "Tower of Flame"
+  },
+  {
+   "map": 169803776,
+   "flag": 131000086,
+   "object": 10310603,
+   "boss": true,
+   "near": "Tower of Flame"
+  },
+  {
+   "map": 169869312,
+   "flag": 132000081,
+   "object": 10320600,
+   "boss": true,
+   "near": null
+  },
+  {
+   "map": 169869312,
+   "flag": 132000081,
+   "object": 10320601,
+   "boss": true,
+   "near": null
+  },
+  {
+   "map": 169934848,
+   "flag": 133000081,
+   "object": 10330600,
+   "boss": true,
+   "near": "Ordeal's End"
+  },
+  {
+   "map": 169934848,
+   "flag": 133000081,
+   "object": 10330601,
+   "boss": true,
+   "near": "Ordeal's End"
+  },
+  {
+   "map": 169934848,
+   "flag": 133000170,
+   "object": 10330640,
+   "boss": false,
+   "near": "Ordeal's End"
+  },
+  {
+   "map": 170000384,
+   "flag": 134000081,
+   "object": 10340605,
+   "boss": true,
+   "near": "Grave Entrance"
+  },
+  {
+   "map": 170000384,
+   "flag": 134000081,
+   "object": 10340610,
+   "boss": true,
+   "near": "Grave Entrance"
+  },
+  {
+   "map": 170000384,
+   "flag": 134000081,
+   "object": 10340620,
+   "boss": true,
+   "near": "Harval's Resting Place"
+  },
+  {
+   "map": 170000384,
+   "flag": 134000170,
+   "object": 10340600,
+   "boss": false,
+   "near": "Grave Entrance"
+  },
+  {
+   "map": 336199680,
+   "flag": 210000081,
+   "object": 20100600,
+   "boss": true,
+   "near": null
+  },
+  {
+   "map": 336199680,
+   "flag": 210000081,
+   "object": 20100601,
+   "boss": true,
+   "near": null
+  },
+  {
+   "map": 336265216,
+   "flag": 211000081,
+   "object": 20110600,
+   "boss": true,
+   "near": "Rhoy's Resting Place"
+  },
+  {
+   "map": 336265216,
+   "flag": 211000081,
+   "object": 20110602,
+   "boss": true,
+   "near": "Rise of the Dead"
+  },
+  {
+   "map": 336265216,
+   "flag": 211000160,
+   "object": 20110605,
+   "boss": false,
+   "near": "Crumbled Ruins"
+  },
+  {
+   "map": 336265216,
+   "flag": 211000161,
+   "object": 20110607,
+   "boss": false,
+   "near": "Rhoy's Resting Place"
+  },
+  {
+   "map": 336920576,
+   "flag": 221000081,
+   "object": 20210602,
+   "boss": true,
+   "near": "King's Gate"
+  },
+  {
+   "map": 336920576,
+   "flag": 221000081,
+   "object": 20210605,
+   "boss": true,
+   "near": "Central Castle Drangleic"
+  },
+  {
+   "map": 336920576,
+   "flag": 221000086,
+   "object": 20210601,
+   "boss": true,
+   "near": "Central Castle Drangleic"
+  },
+  {
+   "map": 336920576,
+   "flag": 221000086,
+   "object": 20210606,
+   "boss": true,
+   "near": "Central Castle Drangleic"
+  },
+  {
+   "map": 336920576,
+   "flag": 221000092,
+   "object": 20210607,
+   "boss": true,
+   "near": "Central Castle Drangleic"
+  },
+  {
+   "map": 337117184,
+   "flag": 224000081,
+   "object": 20240600,
+   "boss": true,
+   "near": "Undead Ditch"
+  },
+  {
+   "map": 337117184,
+   "flag": 224000081,
+   "object": 20240601,
+   "boss": true,
+   "near": "Undead Ditch"
+  },
+  {
+   "map": 337117184,
+   "flag": 224000087,
+   "object": 20240610,
+   "boss": true,
+   "near": "Undead Ditch"
+  },
+  {
+   "map": 337117184,
+   "flag": 224000160,
+   "object": 20240630,
+   "boss": false,
+   "near": "Undead Ditch"
+  },
+  {
+   "map": 671285248,
+   "flag": 403000081,
+   "object": 40030603,
+   "boss": true,
+   "near": null
+  },
+  {
+   "map": 841154560,
+   "flag": 535000081,
+   "object": 50350600,
+   "boss": true,
+   "near": "Hidden Sanctum Chamber"
+  },
+  {
+   "map": 841154560,
+   "flag": 535000081,
+   "object": 50350610,
+   "boss": true,
+   "near": "Sanctum Nadir"
+  },
+  {
+   "map": 841154560,
+   "flag": 535000091,
+   "object": 50350603,
+   "boss": true,
+   "near": "Priestess' Chamber"
+  },
+  {
+   "map": 841154560,
+   "flag": 535000091,
+   "object": 50350604,
+   "boss": true,
+   "near": "Priestess' Chamber"
+  },
+  {
+   "map": 841154560,
+   "flag": 535000096,
+   "object": 50350609,
+   "boss": true,
+   "near": "Sanctum Nadir"
+  },
+  {
+   "map": 841154560,
+   "flag": 535000160,
+   "object": 50350607,
+   "boss": false,
+   "near": "Priestess' Chamber"
+  },
+  {
+   "map": 841154560,
+   "flag": 535000161,
+   "object": 50350608,
+   "boss": false,
+   "near": "Sanctum Interior"
+  },
+  {
+   "map": 841220096,
+   "flag": 536000081,
+   "object": 50360600,
+   "boss": true,
+   "near": "Upper Floor"
+  },
+  {
+   "map": 841220096,
+   "flag": 536000081,
+   "object": 50360601,
+   "boss": true,
+   "near": "Upper Floor"
+  },
+  {
+   "map": 841220096,
+   "flag": 536000086,
+   "object": 50360604,
+   "boss": true,
+   "near": "Foyer"
+  },
+  {
+   "map": 841220096,
+   "flag": 536000086,
+   "object": 50360605,
+   "boss": true,
+   "near": "Throne Floor"
+  },
+  {
+   "map": 841220096,
+   "flag": 536000091,
+   "object": 50360602,
+   "boss": true,
+   "near": "Upper Floor"
+  },
+  {
+   "map": 841220096,
+   "flag": 536000091,
+   "object": 50360603,
+   "boss": true,
+   "near": "Upper Floor"
+  },
+  {
+   "map": 841220096,
+   "flag": 536000160,
+   "object": 50360610,
+   "boss": false,
+   "near": "Throne Floor"
+  },
+  {
+   "map": 841220096,
+   "flag": 536000161,
+   "object": 50360611,
+   "boss": false,
+   "near": "Foyer"
+  },
+  {
+   "map": 841220096,
+   "flag": 536000162,
+   "object": 50360612,
+   "boss": false,
+   "near": "Foyer"
+  },
+  {
+   "map": 841220096,
+   "flag": 536000163,
+   "object": 50360613,
+   "boss": false,
+   "near": "Foyer"
+  },
+  {
+   "map": 841285632,
+   "flag": 537000081,
+   "object": 50370610,
+   "boss": true,
+   "near": "Inner Wall"
+  },
+  {
+   "map": 841285632,
+   "flag": 537000081,
+   "object": 50370611,
+   "boss": true,
+   "near": "Inner Wall"
+  },
+  {
+   "map": 841285632,
+   "flag": 537000086,
+   "object": 50370605,
+   "boss": true,
+   "near": "Grand Cathedral"
+  },
+  {
+   "map": 841285632,
+   "flag": 537000091,
+   "object": 50370615,
+   "boss": true,
+   "near": "Outer Wall"
+  },
+  {
+   "map": 841285632,
+   "flag": 537000091,
+   "object": 50370616,
+   "boss": true,
+   "near": "Outer Wall"
+  },
+  {
+   "map": 841285632,
+   "flag": 537000160,
+   "object": 50370630,
+   "boss": false,
+   "near": "Inner Wall"
+  }
+ ]
+}

@@ -90,6 +90,7 @@ _SHORT_TAB_NAMES = {
     "Character Management": "Characters",
     "Character Editor": "Editor",
     "World State": "World",
+    "World Flags": "Flags",
     "SteamID Patcher": "SteamID",
     "Event Flags": "Flags",
     "Advanced Tools": "Tools",
@@ -1886,6 +1887,11 @@ class SaveManagerGUI:
             from er_save_manager.games.DS2.boss_tab import DS2BossPanel
             from er_save_manager.games.DS2.editor_tab import SlotPanelPage
             from er_save_manager.games.DS2.npc_tab import DS2NpcPanel
+            from er_save_manager.games.DS2.world_flags_tab import (
+                DS2DoorsPanel,
+                DS2FlagsPanel,
+                DS2ItemsPanel,
+            )
 
             def ds2_page(cls):
                 return lambda p: SlotPanelPage(
@@ -1920,6 +1926,18 @@ class SaveManagerGUI:
             )
             self._build_tab("World State", self.ds2_world_tab.setup_steps)
 
+            self.notebook.add("World Flags")
+            self.ds2_world_flags_tab = CharacterPagesTab(
+                self.notebook.tab("World Flags"),
+                "World Flags",
+                [
+                    ("Doors", ds2_page(DS2DoorsPanel)),
+                    ("Item Pickups", ds2_page(DS2ItemsPanel)),
+                    ("Event Flags", ds2_page(DS2FlagsPanel)),
+                ],
+            )
+            self._build_tab("World Flags", self.ds2_world_flags_tab.setup_steps)
+
             self.notebook.add("NPCs & Bosses")
             self.ds2_npcs_bosses_tab = CharacterPagesTab(
                 self.notebook.tab("NPCs & Bosses"),
@@ -1931,6 +1949,7 @@ class SaveManagerGUI:
                 "Character Editor": self.ds2_editor_tab.load_slot,
                 "Appearance": self.ds2_appearance_tab.load_slot,
                 "World State": self.ds2_world_tab.load_slot,
+                "World Flags": self.ds2_world_flags_tab.load_slot,
                 "NPCs & Bosses": self.ds2_npcs_bosses_tab.load_slot,
             }
             ed = self.ds2_editor_tab
