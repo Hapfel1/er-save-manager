@@ -45,6 +45,7 @@ game on its next save, so removing an item never needs to shrink the table.
   +0x78 name, UTF-16LE, 16 characters + terminator
   +0x9A body type (u8, 1 male, 0 female)
   +0x9E starting class (u8, CharaInitParam row 3000 + class)
+  +0xA3 highest weapon upgrade level reached (u8, weapon level matchmaking)
   +0x1F0 22 x u32 equip slots, each an inventory index or 0xFFFFFFFF
   +0x264 22 x u32 item id of each equip slot (type nibble cleared)
   +0x2BC 22 x u32 handle of each equip slot (0 when empty)
@@ -183,6 +184,10 @@ NAME_MAX_CHARS = _NAME_LEN // 2
 # more rows in Convergence and Cinders).
 _CLASS_REL = 0x9E
 _BODY_TYPE_REL = 0x9A
+# u8 highest weapon upgrade level reached, +5-cap weapons counting double.
+# The game raises it on an upgrade and never lowers it, so weapons upgraded
+# outside the game leave it stale.
+_WEAPON_LEVEL_REL = 0xA3
 _FACE_HEADER = b"FACE" + struct.pack("<I", 3)
 _FACE_SIZE_FIELD = 8
 _EQUIP_SLOTS_REL = 0x1F0
@@ -601,6 +606,14 @@ class DS3Slot:
     @body_type.setter
     def body_type(self, value: int) -> None:
         self._data[self._player(_BODY_TYPE_REL)] = value & 0xFF
+
+    @property
+    def weapon_level(self) -> int:
+        return self._data[self._player(_WEAPON_LEVEL_REL)]
+
+    @weapon_level.setter
+    def weapon_level(self, value: int) -> None:
+        self._data[self._player(_WEAPON_LEVEL_REL)] = value & 0xFF
 
     def _face_span(self) -> tuple[int, int]:
         """(offset, size) of the appearance block: the one FACE header between
