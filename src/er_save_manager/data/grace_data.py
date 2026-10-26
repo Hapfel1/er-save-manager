@@ -210,6 +210,11 @@ def grace_gate(flag_id: int, convergence: bool) -> BossGate | None:
     return BossGate(gate_flag, _boss_names().get(gate_flag))
 
 
+def arena_gate(boss_flag: int) -> BossGate | None:
+    """Gate of a fog-walled boss arena: its boss defeat flag."""
+    return BossGate(boss_flag, _boss_names().get(boss_flag)) if boss_flag else None
+
+
 def location_gate(
     tile_type: str, map_id_str: str, flag_id: int, convergence: bool
 ) -> BossGate | None:

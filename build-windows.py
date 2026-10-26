@@ -114,6 +114,14 @@ include_files = [
         "er_save_manager/data/grace_bosses.json",
     ),
     (
+        "src/er_save_manager/data/floor_vanilla.bin",
+        "er_save_manager/data/floor_vanilla.bin",
+    ),
+    (
+        "src/er_save_manager/data/floor_convergence.bin",
+        "er_save_manager/data/floor_convergence.bin",
+    ),
+    (
         "src/er_save_manager/data/world_map_conversion_convergence.json",
         "er_save_manager/data/world_map_conversion_convergence.json",
     ),

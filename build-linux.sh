@@ -57,6 +57,8 @@ pyinstaller --clean --noconfirm \
     --add-data src/er_save_manager/data/grace_regions.json:er_save_manager/data \
     --add-data src/er_save_manager/data/grace_pieces.json:er_save_manager/data \
     --add-data src/er_save_manager/data/grace_bosses.json:er_save_manager/data \
+    --add-data src/er_save_manager/data/floor_vanilla.bin:er_save_manager/data \
+    --add-data src/er_save_manager/data/floor_convergence.bin:er_save_manager/data \
     --add-data src/er_save_manager/data/blood_messages.json:er_save_manager/data \
     --add-data src/er_save_manager/data/quest_flags.json:er_save_manager/data \
     --add-data src/er_save_manager/data/world_map_conversion.json:er_save_manager/data \
