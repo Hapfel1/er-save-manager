@@ -114,7 +114,18 @@ class CharacterInfoEditor:
         self.time_m_var = None
         self.time_s_var = None
         self.time_error_label = None
-        self.tracker = FieldTracker(self._tracked_state)
+        self.tracker = FieldTracker(
+            self._tracked_state,
+            {
+                "body": "Body type",
+                "class": "Archetype",
+                "voice": "Voice type",
+                "gift": "Keepsake",
+                "ng": "NG+ level",
+                "play": "Play time",
+                "time": "Time of day",
+            },
+        )
         self._loading = False
 
         self.frame = None
@@ -371,7 +382,7 @@ class CharacterInfoEditor:
             self.time_error_label.configure(text=time_error)
 
     def _tracked_state(self) -> dict:
-        return var_state(
+        state = var_state(
             {
                 "name": self.char_name_var,
                 "body": self.char_body_type_var,
@@ -387,6 +398,11 @@ class CharacterInfoEditor:
                 "time_s": self.time_s_var,
             }
         )()
+        # One field each for play time and time of day, as h:mm:ss
+        for key in ("play", "time"):
+            h, m, sec = (state.pop(f"{key}_{part}") for part in "hms")
+            state[key] = f"{h}:{m:0>2}:{sec:0>2}"
+        return state
 
     def load_character_info(self):
         """Load character info from current character slot"""

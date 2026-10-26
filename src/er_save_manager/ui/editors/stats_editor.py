@@ -156,7 +156,18 @@ class StatsEditor:
         self._last_grace_raw = 0
         self._last_grace_loaded: tuple[str, str] = ("", "")
         self._matchmaking_min = 0  # floor derived from inventory scan
-        self.tracker = FieldTracker(self._tracked_state)
+        self.tracker = FieldTracker(
+            self._tracked_state,
+            {
+                "great_rune_on": "Great Rune active",
+                "great_rune": "Active Great Rune",
+                "grace": "Last rested grace",
+                "scadutree": "Scadutree Blessing",
+                "revered_spirit_ash": "Revered Spirit Ash Blessing",
+                "memory_stones": "Memory Stones",
+                "matchmaking": "Matchmaking level",
+            },
+        )
 
         self.frame = None
 
@@ -680,6 +691,12 @@ class StatsEditor:
     def changes(self) -> int:
         # Recovered runes also clear the bloodstain on apply.
         return self.tracker.changes() + (1 if self._recovered_runes else 0)
+
+    def details(self):
+        rows = self.tracker.details()
+        if self._recovered_runes:
+            rows.append(("Bloodstain", f"{self._recovered_runes:,} runes", "recovered"))
+        return rows
 
     def calculate_character_level(self):
         """Calculate expected character level from attributes based on starting class"""

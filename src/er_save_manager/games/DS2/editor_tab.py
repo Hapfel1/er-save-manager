@@ -115,7 +115,9 @@ class DS2EditorTab:
         # Starting class picked in the Class box, written on apply.
         self._class_id: int = 0
         self._suppress_recalc = False
-        self._stats_tracker = FieldTracker(self._stats_state)
+        self._stats_tracker = FieldTracker(
+            self._stats_state, {"ng": "NG+", "torch": "Torch time"}
+        )
 
     # ------------------------------------------------------------------
     # Setup
@@ -178,18 +180,20 @@ class DS2EditorTab:
     def _register_pages(self) -> None:
         if self._register_pending is None:
             return
-        for name, changes, prepare, discard in (
+        for name, changes, prepare, discard, details in (
             (
                 "Stats",
                 self._stats_tracker.changes,
                 self._prepare_stats,
                 self._fill_stats,
+                self._stats_tracker.details,
             ),
             (
                 "Equipment",
                 self.equipment_panel.changes,
                 self.equipment_panel.prepare,
                 self.equipment_panel.refresh,
+                self.equipment_panel.details,
             ),
         ):
             self._register_pending(
@@ -199,6 +203,7 @@ class DS2EditorTab:
                     prepare,
                     discard,
                     lambda n=name: self.tabview.set(n),
+                    details,
                 )
             )
 

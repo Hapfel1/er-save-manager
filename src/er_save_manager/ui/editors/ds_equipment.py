@@ -360,6 +360,24 @@ class EquipmentPanel:
     def staged(self) -> dict[Hashable, EquipChoice | None]:
         return dict(self._staged)
 
+    def details(self) -> list[tuple[str, str, str]]:
+        """(slot label, current item, staged item) per staged slot."""
+        adapter = self.adapter
+        if adapter is None:
+            return []
+        rows = []
+        for key, choice in self._staged.items():
+            slot = self._slots.get(key)
+            current = adapter.current(key)
+            rows.append(
+                (
+                    slot.label if slot is not None else str(key),
+                    current.name if current is not None else _EMPTY_TEXT,
+                    choice.name if choice is not None else _EMPTY_TEXT,
+                )
+            )
+        return rows
+
     def _refresh_slot(self, slot_key: Hashable) -> None:
         label = self._name_labels.get(slot_key)
         if label is None:
@@ -505,6 +523,23 @@ class AttunementSection:
     def changed(self) -> bool:
         adapter = self._adapter
         return adapter is not None and adapter.spells != adapter.loaded_spells
+
+    def details(self) -> list[tuple[str, str, str]]:
+        """Spells attuned or removed; one row when only the order changed."""
+        adapter = self._adapter
+        if adapter is None or not self.changed():
+            return []
+        before, after = adapter.loaded_spells, adapter.spells
+        rows = [
+            (adapter.spell_name(key), "", "Attuned")
+            for key in after
+            if key not in before
+        ] + [
+            (adapter.spell_name(key), "", "Removed from attunement")
+            for key in before
+            if key not in after
+        ]
+        return rows or [("Attunement", "", "Reordered")]
 
     def refresh(self) -> None:
         if self._list is None:
