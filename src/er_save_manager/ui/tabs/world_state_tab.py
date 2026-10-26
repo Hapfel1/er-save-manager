@@ -545,6 +545,14 @@ class WorldStateTab:
                 self._set_grace if loaded else None,
                 self._unlock_on_map if loaded else None,
             )
+            window.set_pickup_callback(self._set_pickup if loaded else None)
+            window.set_flag_callback(self._set_flags if loaded else None)
+            save = self.get_save_file()
+            path = (getattr(save, "_original_filepath", "") or "").lower()
+            # Seamless Co-op (.co2) and Convergence have no summoning pools
+            window.set_pools_available(
+                save is not None and path.endswith(".sl2") and not save.is_convergence
+            )
 
     def _grace_state(self, flag_id: int) -> bool | None:
         save = self.get_save_file()
@@ -628,6 +636,80 @@ class WorldStateTab:
                 f"{what} {'unlocked' if state else 'locked'}.", duration=2500
             )
 
+    def _set_pickup(self, flag_id: int, collected: bool):
+        """Mark a world item pickup collected, or clear its flag so the item
+        is placed again, and save the file."""
+        save = self.get_save_file()
+        if save is None or self.editor is None:
+            return
+        slot = save.character_slots[self.slot_var.get() - 1]
+        flags = bytearray(slot.event_flags)
+        try:
+            EventFlags.set_flag(flags, flag_id, collected)
+        except (ValueError, KeyError) as e:
+            CTkMessageBox.showerror(
+                "Item Pickup",
+                f"Could not write the flag:\n{e}",
+                parent=self._dialog_parent(),
+            )
+            return
+        slot.event_flags = bytes(flags)
+        off = slot.event_flags_offset
+        save._raw_data[off : off + len(flags)] = flags
+        if self._persist("before_pickup_edit", "pickup_edit", reload=False):
+            self.show_toast(
+                "Pickup marked collected."
+                if collected
+                else "Pickup respawns after the area reloads.",
+                duration=2500,
+            )
+
+    def _set_flags(
+        self,
+        changes: dict[int, bool],
+        operation: str,
+        message: str,
+        to_roundtable: bool,
+    ):
+        """Write NPC or boss flags from the map and save the file;
+        to_roundtable also teleports the character to Roundtable Hold."""
+        save = self.get_save_file()
+        if save is None or self.editor is None:
+            return
+        index = self.slot_var.get() - 1
+        slot = save.character_slots[index]
+        flags = bytearray(slot.event_flags)
+        try:
+            for flag_id, state in changes.items():
+                EventFlags.set_flag(flags, flag_id, state)
+        except (ValueError, KeyError) as e:
+            CTkMessageBox.showerror(
+                "Flags Not Written",
+                f"Could not write the flag:\n{e}",
+                parent=self._dialog_parent(),
+            )
+            return
+        slot.event_flags = bytes(flags)
+        off = slot.event_flags_offset
+        save._raw_data[off : off + len(flags)] = flags
+        if to_roundtable:
+            from er_save_manager.fixes.teleport import TELEPORT_LOCATIONS
+            from er_save_manager.parser.er_types import FloatVector3
+
+            dest = TELEPORT_LOCATIONS["roundtable"]
+            ok, msg = self.editor.teleport_to_custom(
+                dest.map_id, FloatVector3(*dest.coordinates)
+            )
+            if not ok:
+                CTkMessageBox.showwarning(
+                    "Teleport Failed",
+                    f"Could not move the character to Roundtable Hold:\n{msg}",
+                    parent=self._dialog_parent(),
+                )
+        # The Roundtable Hold move goes through the editor; reload after it
+        if self._persist(f"before_{operation}", operation, reload=to_roundtable):
+            self.show_toast(message, duration=2500)
+
     def _open_map_window(self):
         if not self._maps_dir:
             CTkMessageBox.showwarning(
@@ -658,8 +740,11 @@ class WorldStateTab:
     # Map markers
     # ------------------------------------------------------------------
 
-    def _persist(self, description: str, operation: str) -> bool:
-        """Back up the file on disk, write the edited save and reload it."""
+    def _persist(self, description: str, operation: str, reload: bool = True) -> bool:
+        """Back up the file on disk, write the edited save and reload it.
+        reload=False keeps the loaded save: for event flag writes, which
+        change no offsets, the loaded save already holds the new state and
+        a full reload only re-parses and refreshes every tab."""
         save_path = self.get_save_path()
         if not save_path:
             return False
@@ -669,8 +754,9 @@ class WorldStateTab:
         )
         save.recalculate_checksums()
         save.to_file(save_path)
-        self.reload_save()
-        self._reload_editor()
+        if reload:
+            self.reload_save()
+            self._reload_editor()
         self.refresh()
         return True
 

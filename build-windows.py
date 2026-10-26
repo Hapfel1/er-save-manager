@@ -82,6 +82,38 @@ include_files = [
         "er_save_manager/data/item_pickups_convergence.csv",
     ),
     (
+        "src/er_save_manager/data/boss_locations.json",
+        "er_save_manager/data/boss_locations.json",
+    ),
+    (
+        "src/er_save_manager/data/boss_locations_convergence.json",
+        "er_save_manager/data/boss_locations_convergence.json",
+    ),
+    (
+        "src/er_save_manager/data/merchants.json",
+        "er_save_manager/data/merchants.json",
+    ),
+    (
+        "src/er_save_manager/data/merchants_convergence.json",
+        "er_save_manager/data/merchants_convergence.json",
+    ),
+    (
+        "src/er_save_manager/data/map_objects.json",
+        "er_save_manager/data/map_objects.json",
+    ),
+    (
+        "src/er_save_manager/data/map_objects_convergence.json",
+        "er_save_manager/data/map_objects_convergence.json",
+    ),
+    (
+        "src/er_save_manager/data/npc_locations.json",
+        "er_save_manager/data/npc_locations.json",
+    ),
+    (
+        "src/er_save_manager/data/npc_locations_convergence.json",
+        "er_save_manager/data/npc_locations_convergence.json",
+    ),
+    (
         "src/er_save_manager/data/shop_stock.csv",
         "er_save_manager/data/shop_stock.csv",
     ),
