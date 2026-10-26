@@ -1239,6 +1239,26 @@ class DSRCharacter:
             if struct.unpack_from("<I", self._data, slot_off)[0] == slot:
                 struct.pack_into("<I", self._data, id_off, item_id)
 
+    def repair_unupgradable_levels(self) -> list[int]:
+        """Reset weapons that carry an upgrade level their item cannot have
+        (catalysts, talismans) to the base id; the game has no row for such
+        ids and shows ?WikiName?. Returns the repaired inventory slots."""
+        from er_save_manager.games.DSR import catalog
+
+        repaired = []
+        for item in self.iter_items():
+            if item.category != DSRItemCategory.WeaponShield:
+                continue
+            if catalog.lookup(item.category, item.item_id) is not None:
+                continue
+            base_id = item.item_id - item.item_id % catalog.INFUSION_STEP
+            hit = catalog.lookup(item.category, base_id)
+            if hit is None or hit[0]["max_upgrade"] or hit[0]["id"] != base_id:
+                continue
+            self.set_item_id(item.slot_index, base_id)
+            repaired.append(item.slot_index)
+        return repaired
+
     def equipped_slots(self) -> set[int]:
         """Inventory slots referenced by the equipment slots."""
         return {

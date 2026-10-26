@@ -786,17 +786,17 @@ weapons,Lightning Sniper Crossbow,1253200,0,1,5,1,150,1923,100,0,0,Lightning,1,0
 weapons,Magic Sniper Crossbow,1253400,0,1,10,1,150,1924,100,0,0,Magic,1,0
 weapons,Divine Sniper Crossbow,1253600,0,1,10,1,150,1925,100,0,0,Divine,1,0
 weapons,Fire Sniper Crossbow,1253800,0,1,10,1,150,1926,100,0,0,Fire,1,0
-weapons,Sorcerer's Catalyst,1300000,0,1,15,1,90,2001,101,0,0,,1,0
-weapons,Beatrice's Catalyst,1301000,0,1,15,1,90,2002,102,0,0,,1,0
-weapons,Tin Banishment Catalyst,1302000,0,1,15,1,160,2008,103,0,0,,1,0
-weapons,Logan's Catalyst,1303000,0,1,15,1,90,2003,104,0,0,,1,0
-weapons,Tin Darkmoon Catalyst,1304000,0,1,5,1,60,2011,172,0,0,,1,0
-weapons,Tin Darkmoon Catalyst,1304100,0,1,5,1,60,2012,172,0,0,,1,1
-weapons,Tin Darkmoon Catalyst,1304200,0,1,5,1,60,2013,172,0,0,,1,1
-weapons,Tin Darkmoon Catalyst,1304300,0,1,5,1,60,2014,172,0,0,,1,1
-weapons,Tin Darkmoon Catalyst,1304400,0,1,5,1,60,2015,172,0,0,,1,1
-weapons,Tin Darkmoon Catalyst,1304500,0,1,5,1,60,2016,172,0,0,,1,1
-weapons,Oolacile Ivory Catalyst,1305000,0,1,15,1,30,2004,173,0,0,,1,0
+weapons,Sorcerer's Catalyst,1300000,0,1,0,1,90,2001,101,0,0,,1,0
+weapons,Beatrice's Catalyst,1301000,0,1,0,1,90,2002,102,0,0,,1,0
+weapons,Tin Banishment Catalyst,1302000,0,1,0,1,160,2008,103,0,0,,1,0
+weapons,Logan's Catalyst,1303000,0,1,0,1,90,2003,104,0,0,,1,0
+weapons,Tin Darkmoon Catalyst,1304000,0,1,0,1,60,2011,172,0,0,,1,0
+weapons,Tin Darkmoon Catalyst,1304100,0,1,0,1,60,2012,172,0,0,,1,1
+weapons,Tin Darkmoon Catalyst,1304200,0,1,0,1,60,2013,172,0,0,,1,1
+weapons,Tin Darkmoon Catalyst,1304300,0,1,0,1,60,2014,172,0,0,,1,1
+weapons,Tin Darkmoon Catalyst,1304400,0,1,0,1,60,2015,172,0,0,,1,1
+weapons,Tin Darkmoon Catalyst,1304500,0,1,0,1,60,2016,172,0,0,,1,1
+weapons,Oolacile Ivory Catalyst,1305000,0,1,0,1,30,2004,173,0,0,,1,0
 weapons,Tin Crystallization Ctlyst.,1306000,0,1,0,1,90,2009,174,0,0,,1,0
 weapons,Demon's Catalyst,1307000,0,1,0,1,300,2006,175,0,0,,1,0
 weapons,Izalith Catalyst,1308000,0,1,0,1,300,2007,176,0,0,,1,0
@@ -1154,13 +1154,13 @@ weapons,Divine Plow,9016600,0,1,10,1,300,1437,199,0,0,Divine,1,0
 weapons,Occult Plow,9016700,0,1,5,1,300,1438,199,0,0,Occult,1,0
 weapons,Fire Plow,9016800,0,1,10,1,300,1439,199,0,0,Fire,1,0
 weapons,Chaos Plow,9016900,0,1,5,1,300,1440,199,0,0,Chaos,1,0
-weapons,Manus Catalyst,9017000,0,1,5,1,200,2021,200,0,0,,1,0
-weapons,Manus Catalyst,9017100,0,1,5,1,200,2022,200,0,0,,1,1
-weapons,Manus Catalyst,9017200,0,1,5,1,200,2023,200,0,0,,1,1
-weapons,Manus Catalyst,9017300,0,1,5,1,200,2024,200,0,0,,1,1
-weapons,Manus Catalyst,9017400,0,1,5,1,200,2025,200,0,0,,1,1
-weapons,Manus Catalyst,9017500,0,1,5,1,200,2026,200,0,0,,1,1
-weapons,Oolacile Catalyst,9018000,0,1,15,1,55,2005,201,0,0,,1,0
+weapons,Manus Catalyst,9017000,0,1,0,1,200,2021,200,0,0,,1,0
+weapons,Manus Catalyst,9017100,0,1,0,1,200,2022,200,0,0,,1,1
+weapons,Manus Catalyst,9017200,0,1,0,1,200,2023,200,0,0,,1,1
+weapons,Manus Catalyst,9017300,0,1,0,1,200,2024,200,0,0,,1,1
+weapons,Manus Catalyst,9017400,0,1,0,1,200,2025,200,0,0,,1,1
+weapons,Manus Catalyst,9017500,0,1,0,1,200,2026,200,0,0,,1,1
+weapons,Oolacile Catalyst,9018000,0,1,0,1,55,2005,201,0,0,,1,0
 weapons,Guardian Tail,9019000,0,1,15,1,250,1721,202,0,0,Normal,1,0
 weapons,Crystal Guardian Tail,9019100,0,1,5,1,25,1722,202,0,0,Crystal,1,0
 weapons,Lightning Guardian Tail,9019200,0,1,5,1,250,1723,202,0,0,Lightning,1,0

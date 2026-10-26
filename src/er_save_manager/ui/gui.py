@@ -3241,6 +3241,7 @@ class SaveManagerGUI:
                 "Load Failed", f"Failed to load DSR save:\n{e}", parent=self.root
             )
             return
+        self._repair_dsr_item_levels(Path(save_path))
 
         self.save_path = Path(save_path)
         self.save_file = None
@@ -3257,6 +3258,36 @@ class SaveManagerGUI:
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         self.show_toast(
             f"DSR save loaded: {os.path.basename(save_path)}", duration=2500
+        )
+
+    def _repair_dsr_item_levels(self, save_path: Path) -> None:
+        """Reset catalysts and talismans that an earlier editor version gave
+        an upgrade level back to their base id, with a backup first."""
+        from er_save_manager.backup.manager import BackupManager
+        from er_save_manager.games.DSR.character_ops import sync_dir_equipment
+
+        repaired = {}
+        for i, char in enumerate(self.dsr_save.characters):
+            if char is not None and (slots := char.repair_unupgradable_levels()):
+                sync_dir_equipment(self.dsr_save, i)
+                repaired[i] = len(slots)
+        if not repaired:
+            return
+        try:
+            BackupManager(save_path).create_backup(
+                operation="dsr_repair_item_levels", save=None
+            )
+            self.dsr_save.save_to_file(save_path)
+        except Exception as e:
+            CTkMessageBox.showerror("Repair Failed", str(e), parent=self.root)
+            return
+        slots = ", ".join(f"slot {i + 1} ({n})" for i, n in repaired.items())
+        CTkMessageBox.showinfo(
+            "Catalysts Repaired",
+            "Some catalysts or talismans had an upgrade level they cannot have "
+            "and showed as ?WikiName? in game. They were reset to +0.\n\n"
+            f"Repaired: {slots}. A backup was made first.",
+            parent=self.root,
         )
 
     def _on_dsr_slot_edit(self, slot_idx: int) -> None:
