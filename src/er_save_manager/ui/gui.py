@@ -97,6 +97,14 @@ _SHORT_TAB_NAMES = {
 # Header button width (logical px) when the row is too narrow for the full one
 _NARROW_HEADER_BUTTON = 130
 
+# Games that load console saves, shown the console save help button
+_CONSOLE_SAVE_GAMES = ("elden_ring", "nightreign", "dark_souls_3")
+
+
+def _console_button_text(game_key: str) -> str:
+    return "PS4 Save?" if game_key == "dark_souls_3" else "PS / Switch Save?"
+
+
 _log = logging.getLogger(__name__)
 
 
@@ -939,11 +947,11 @@ class SaveManagerGUI:
 
         self._ps_save_btn = ctk.CTkButton(
             buttons_frame,
-            text="PS / Switch Save?",
+            text=_console_button_text(self.active_game),
             command=self.show_console_save_info,
             width=160,
         )
-        if self.active_game in ("elden_ring", "nightreign"):
+        if self.active_game in _CONSOLE_SAVE_GAMES:
             self._ps_save_btn.pack(side=tk.RIGHT, padx=6, pady=10)
 
         _itemgib_btn = ctk.CTkButton(
@@ -1395,9 +1403,9 @@ class SaveManagerGUI:
         self.active_game = profile.key
         self._update_default_game_button()
 
-        # PS / Switch button applies to Elden Ring and Nightreign
         if hasattr(self, "_ps_save_btn"):
-            if profile.key in ("elden_ring", "nightreign"):
+            if profile.key in _CONSOLE_SAVE_GAMES:
+                self._ps_save_btn.configure(text=_console_button_text(profile.key))
                 self._ps_save_btn.pack(
                     side=tk.RIGHT, padx=6, pady=4 if self._compact else 10
                 )
@@ -2410,7 +2418,9 @@ class SaveManagerGUI:
         """Show instructions for loading a PlayStation or Switch save."""
         from er_save_manager.ui import dialog_style as ds
 
-        dialog = ds.create(self.root, "PS / Switch Saves")
+        ds3 = self.active_game == "dark_souls_3"
+        title = "PS4 Saves" if ds3 else "PS / Switch Saves"
+        dialog = ds.create(self.root, title)
         main_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         main_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=16)
 
@@ -2423,13 +2433,24 @@ class SaveManagerGUI:
             font=("Inter", 30, "bold"),
             text_color=palette.PURPLE_TEXT,
         ).pack(side=ctk.LEFT, padx=(0, 10))
-        ctk.CTkLabel(header, text="PS / Switch Saves", font=("Inter", 19, "bold")).pack(
-            side=ctk.LEFT
-        )
+        ctk.CTkLabel(header, text=title, font=("Inter", 19, "bold")).pack(side=ctk.LEFT)
+        if ds3:
+            text = (
+                "PS4 saves must be decrypted and exported as userdata files "
+                "(userdata0000 to userdata0009 for the characters, userdata0010 "
+                "for the load screen) before you can load them. Open any of them "
+                "and the files next to it are loaded too. A file opened on its "
+                "own only gives access to its own character. Auto-Find does not "
+                "find userdata files."
+            )
+        else:
+            text = (
+                "Console saves must be decrypted and exported as memory.dat "
+                "before you can load them. Auto-Find does not find memory.dat files."
+            )
         ctk.CTkLabel(
             main_frame,
-            text="Console saves must be decrypted and exported as memory.dat "
-            "before you can load them. Auto-Find does not find memory.dat files.",
+            text=text,
             font=("Inter", 15),
             wraplength=500,
             justify=ctk.LEFT,
@@ -2490,6 +2511,8 @@ class SaveManagerGUI:
             ext_str = " ".join(f"*{e}" for e in profile.extensions)
             if profile.key in ("elden_ring", "nightreign"):
                 ext_str += " *.dat"
+            elif profile.key == "dark_souls_3":
+                ext_str += " userdata*"
             filetypes = [(f"{profile.name} Saves", ext_str), ("All files", "*.*")]
             title = f"Select {profile.name} Save File"
         else:
@@ -3124,6 +3147,7 @@ class SaveManagerGUI:
         from er_save_manager.ui.dialogs.vanilla_save_warning import (
             VanillaSaveWarningDialog,
             is_vanilla_save,
+            warning_key,
         )
 
         key = os.path.normcase(os.path.abspath(save_path))
@@ -3137,7 +3161,7 @@ class SaveManagerGUI:
         profile = self._active_profile()
         dialog = VanillaSaveWarningDialog(
             self.root,
-            self.active_game,
+            warning_key(self.active_game, save_path),
             profile.name if profile else "Elden Ring",
             os.path.basename(save_path),
         )

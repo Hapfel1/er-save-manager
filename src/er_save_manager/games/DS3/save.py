@@ -1,7 +1,8 @@
 """
 DS3 save file - top-level access.
 
-DS3 uses BND4 with AES-CBC encrypted entries (see parser.py).
+PC saves are BND4 with AES-CBC encrypted entries, PS4 saves a folder of
+userdata files (see parser.py).
 10 character slots (entries 0-9) + 1 global slot (entry 10).
 """
 
@@ -9,7 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .parser import DS3Parser
+from .parser import DS3Parser, DS3PSParser, load_parser
 from .slot import DS3Slot
 
 
@@ -23,19 +24,44 @@ class DS3Save:
 
     CHARACTER_SLOTS = 10
 
-    def __init__(self, parser: DS3Parser, slots: list[DS3Slot | None]) -> None:
+    def __init__(
+        self, parser: DS3Parser | DS3PSParser, slots: list[DS3Slot | None]
+    ) -> None:
         self._parser = parser
         self.characters: list[DS3Slot | None] = slots
 
     @classmethod
     def from_file(cls, path: str | Path) -> DS3Save:
-        parser = DS3Parser.from_file(path)
+        parser = load_parser(path)
         slots: list[DS3Slot | None] = []
         for i in range(cls.CHARACTER_SLOTS):
-            data = bytearray(parser.get_slot(i))
+            plaintext = parser.get_slot(i)
+            if plaintext is None:
+                slots.append(None)
+                continue
+            data = bytearray(plaintext)
             slot = DS3Slot(i, data)
             slots.append(None if slot.is_empty else slot)
         return cls(parser, slots)
+
+    @property
+    def is_ps(self) -> bool:
+        return self._parser.is_ps
+
+    @property
+    def has_directory(self) -> bool:
+        """True when the global entry (character-select directory) is loaded."""
+        return self._parser.has_slot(self.CHARACTER_SLOTS)
+
+    def slot_available(self, slot: int) -> bool:
+        """False for a PS4 slot whose userdata file was not loaded."""
+        return self._parser.has_slot(slot)
+
+    def missing_slot_message(self, slot: int) -> str:
+        return (
+            f"Slot {slot + 1} has no {self._parser.file_name(slot)} file "
+            "next to the loaded save."
+        )
 
     def save_to_file(self, path: str | Path) -> None:
         """Re-encrypt all modified slots and write."""

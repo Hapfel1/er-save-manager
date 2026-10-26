@@ -18,6 +18,7 @@ import pytest
 from er_save_manager.games.DS3 import catalog
 from er_save_manager.games.DS3.slot import (
     _DIR_PAIRS,
+    FISTS_ID,
     GESTURE_COUNT,
     DS3Slot,
     LayoutError,
@@ -396,6 +397,14 @@ def test_set_equip_writes_index_id_and_handle(slot):
     slot.set_equip(17, None)
     assert slot.equip_slot(17) == (0xFFFFFFFF, 0xFFFFFFFF, 0)
     assert slot.equipped_ids()[6] == STANDARD_ARROW
+
+
+def test_weapon_level_updates_equipped_ids(slot):
+    k = next(k for k in range(6) if slot.equipped_ids()[k] != FISTS_ID)
+    weapon = slot.equipped_entry(k)
+    new_id = slot.set_weapon_level(weapon, 3)
+    assert slot.equipped_ids()[k] == new_id & 0x0FFFFFFF
+    assert slot.equipped_entry(k).offset == weapon.offset
 
 
 def test_set_equip_rejects_items_that_do_not_fit(slot):

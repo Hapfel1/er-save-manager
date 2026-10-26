@@ -48,7 +48,7 @@ The Settings tab provides control over:
 
 **What it does:**
 
-- Shows a per-game warning before a vanilla `.sl2` or PlayStation `memory.dat` save is loaded
+- Shows a per-game warning before a vanilla `.sl2`, PlayStation `memory.dat` or Dark Souls III PS4 `userdata` save is loaded
 - Lists the edits that can get the account banned online
 - Prevents accidental online play with modified save
 

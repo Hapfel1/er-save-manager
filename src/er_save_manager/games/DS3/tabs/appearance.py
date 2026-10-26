@@ -42,7 +42,7 @@ _TATTOO_GROUP = "Tweak Tattoo/Mark"
 _SKIN_GROUPS = ("Skin Color", "Cosmetics")
 _SKIN_COLOR_OFFSET = 0x30
 _TATTOO_PART = "Tattoo/Mark"
-_SAVE_FILETYPES = [("DS3 save files", "*.sl2 *.co2"), ("All files", "*")]
+_SAVE_FILETYPES = [("DS3 save files", "*.sl2 *.co2 userdata*"), ("All files", "*")]
 
 
 class PartPickerDialog(ctk.CTkToplevel):

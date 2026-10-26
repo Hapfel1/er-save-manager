@@ -276,6 +276,16 @@ class SteamIDPatcherTab:
 
         save_path = Path(selected)
 
+        if profile.key == "dark_souls_3":
+            from er_save_manager.games.DS3.parser import is_ps_userdata
+
+            if is_ps_userdata(save_path):
+                _set(
+                    f"Save: {save_path.name}  |  PS4 saves have no SteamID. "
+                    "Transferring a character to a PC save sets it."
+                )
+                return
+
         try:
             steamid = detect_steamid_in_file(save_path)
         except Exception as e:

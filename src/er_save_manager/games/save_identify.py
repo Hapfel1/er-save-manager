@@ -12,8 +12,8 @@ first entry size are fixed per game:
   Dark Souls Remastered 11       0x60030
   Armored Core VI       11       0xC0030
 
-PlayStation exports are matched by magic (ER) or exact length (NR, same
-rule as the NR parser).
+PlayStation exports are matched by magic (ER), exact length (NR, same
+rule as the NR parser) or userdataNNNN name plus size (DS3).
 Anything else returns None, so callers only reject a file that positively
 matches a different game.
 """
@@ -55,6 +55,8 @@ def identify_game(path: str | Path) -> str | None:
     except OSError:
         return None
 
+    from er_save_manager.games.DS3.parser import is_ps_userdata
+
     magic = head[:4]
     if magic == b"BND4" and len(head) >= _FIRST_ENTRY_SIZE_OFFSET + 8:
         count = struct.unpack_from("<I", head, _ENTRY_COUNT_OFFSET)[0]
@@ -64,4 +66,6 @@ def identify_game(path: str | Path) -> str | None:
         return "elden_ring"
     if size == _NR_PS_SIZE:
         return "nightreign"
+    if is_ps_userdata(path):
+        return "dark_souls_3"
     return None

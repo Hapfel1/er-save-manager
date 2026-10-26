@@ -162,7 +162,7 @@ class SettingsTab:
         ).pack(anchor="w", padx=12, pady=5)
         ctk.CTkLabel(
             frame,
-            text="Disabling this will skip the ban warning for .sl2 and PS memory.dat saves.",
+            text="Disabling this will skip the ban warning for .sl2 and PlayStation saves.",
             text_color=("gray40", "gray70"),
             font=("Inter", 11),
         ).pack(anchor="w", padx=32, pady=(0, 10))

@@ -1,11 +1,17 @@
 """
 Character operations for DS3: copy, transfer, swap, delete, export, import.
 
-Each DS3 slot is an independently AES-CBC encrypted BND4 entry, so operations
-work on plaintext bytearrays directly rather than splicing a shared raw
-buffer. SteamID lives inside each character slot 0x6F bytes into the last
-section of the slot's section directory (offset stored at 0x58, see
-slot.py), the same location ds3_steamid.py patches.
+Each DS3 slot is an independently stored entry (AES-CBC BND4 entry on PC,
+one userdata file on PS4), so operations work on plaintext bytearrays
+directly rather than splicing a shared raw buffer. The Steam64 ID lives
+inside each character slot as a u64 0x6F bytes into the last section of the
+slot's section directory (offset stored at 0x58, see slot.py), the same
+location ds3_steamid.py patches. PC slots hold the global entry's Steam64 ID,
+PS4 slots hold 0.
+
+A PS4 save opened without its userdata0010 file has no character-select
+directory; directory reads then return the empty entry and writes are
+skipped.
 """
 
 from __future__ import annotations
@@ -69,6 +75,8 @@ def _dir_entry_offset(slot_index: int) -> int:
 
 
 def _read_dir_entry(save: DS3Save, slot_index: int) -> bytearray:
+    if not save.has_directory:
+        return bytearray(_DIR_EMPTY_TEMPLATE)
     dec = save._parser.get_slot(10)
     off = _dir_entry_offset(slot_index)
     return bytearray(dec[off : off + DIR_STRIDE])
@@ -79,6 +87,8 @@ def _write_dir_entry(save: DS3Save, slot_index: int, entry: bytes) -> None:
         raise ValueError(
             f"Directory entry must be {DIR_STRIDE} bytes, got {len(entry)}"
         )
+    if not save.has_directory:
+        return
     dec = save._parser.get_slot(10)
     off = _dir_entry_offset(slot_index)
     dec[off : off + DIR_STRIDE] = entry
@@ -112,6 +122,7 @@ def sync_dir_equipment(save: DS3Save, slot_index: int) -> None:
     entry = _read_dir_entry(save, slot_index)
     ids = char.equipped_ids()
     struct.pack_into(f"<{len(ids)}I", entry, DIR_EQUIP_OFFSET, *ids)
+    _write_dir_entry(save, slot_index, entry)
 
 
 def _sync_dir_face(save: DS3Save, slot_index: int, block: bytes) -> None:
@@ -132,24 +143,34 @@ def _check_bounds(slot_index: int) -> None:
         )
 
 
-def _get_global_steam32(save: DS3Save) -> int | None:
-    """Read the Steam32 account ID from the global entry (index 10)."""
+def _check_available(save: DS3Save, slot_index: int) -> None:
+    if not save.slot_available(slot_index):
+        raise ValueError(save.missing_slot_message(slot_index))
+
+
+def _target_steam64(save: DS3Save) -> int | None:
+    """Steam64 ID a character slot written into save must carry: 0 on PS4,
+    the global entry's u64 at 0x8 on PC, None when it cannot be read."""
+    if save.is_ps:
+        return 0
     dec = save._parser.get_slot(10)
-    if len(dec) < 0xC:
+    if len(dec) < 0x10:
         return None
     steam32 = struct.unpack_from("<i", dec, 0x8)[0]
-    return steam32 if steam32 > 0 else None
+    if steam32 <= 0:
+        return None
+    return struct.unpack_from("<Q", dec, 0x8)[0]
 
 
-def _patch_slot_steamid(data: bytearray, new_steam32: int) -> None:
-    """Patch the SteamID embedded in a character slot, if the pointer resolves in bounds."""
+def _patch_slot_steamid(data: bytearray, new_steam64: int) -> None:
+    """Patch the Steam64 ID embedded in a character slot, if the pointer resolves in bounds."""
     if len(data) < 0x5C:
         return
     ptr = struct.unpack_from("<i", data, 0x58)[0]
     steam_off = ptr + 0x6F
-    if steam_off < 0 or steam_off + 4 > len(data):
+    if steam_off < 0 or steam_off + 8 > len(data):
         return
-    struct.pack_into("<i", data, steam_off, new_steam32)
+    struct.pack_into("<Q", data, steam_off, new_steam64)
 
 
 def copy_slot(save: DS3Save, from_slot: int, to_slot: int) -> None:
@@ -158,6 +179,7 @@ def copy_slot(save: DS3Save, from_slot: int, to_slot: int) -> None:
     _check_bounds(to_slot)
     if from_slot == to_slot:
         raise ValueError("Source and destination slots cannot be the same")
+    _check_available(save, to_slot)
 
     src = save.characters[from_slot]
     if src is None:
@@ -170,6 +192,7 @@ def copy_slot(save: DS3Save, from_slot: int, to_slot: int) -> None:
 def delete_slot(save: DS3Save, slot_index: int) -> None:
     """Clear a character slot, zeroing the underlying encrypted entry."""
     _check_bounds(slot_index)
+    _check_available(save, slot_index)
     size = save._parser.get_slot_plaintext_size(slot_index)
     save._parser.set_slot(slot_index, bytearray(size))
     save.characters[slot_index] = None
@@ -182,6 +205,8 @@ def swap_slots(save: DS3Save, slot_a: int, slot_b: int) -> None:
     _check_bounds(slot_b)
     if slot_a == slot_b:
         raise ValueError("Cannot swap a slot with itself")
+    _check_available(save, slot_a)
+    _check_available(save, slot_b)
 
     char_a = save.characters[slot_a]
     char_b = save.characters[slot_b]
@@ -205,6 +230,7 @@ def transfer_slot(
     """Transfer a character to another save file, patching the embedded SteamID."""
     _check_bounds(from_slot)
     _check_bounds(to_slot)
+    _check_available(target_save, to_slot)
 
     src = source_save.characters[from_slot]
     if src is None:
@@ -212,12 +238,16 @@ def transfer_slot(
 
     data = bytearray(src.get_raw())
 
-    new_steam32 = _get_global_steam32(target_save)
-    if new_steam32 is not None:
-        _patch_slot_steamid(data, new_steam32)
+    new_steam64 = _target_steam64(target_save)
+    if new_steam64 is not None:
+        _patch_slot_steamid(data, new_steam64)
 
-    target_save.characters[to_slot] = DS3Slot(to_slot, data)
-    _write_dir_entry(target_save, to_slot, _read_dir_entry(source_save, from_slot))
+    char = DS3Slot(to_slot, data)
+    target_save.characters[to_slot] = char
+    if source_save.has_directory:
+        _write_dir_entry(target_save, to_slot, _read_dir_entry(source_save, from_slot))
+    else:
+        _sync_dir_name_level(target_save, to_slot, char.name, char.level)
 
 
 def export_character(save: DS3Save, slot_index: int, output_path: str | Path) -> None:
@@ -245,6 +275,7 @@ def export_character(save: DS3Save, slot_index: int, output_path: str | Path) ->
 def import_character(save: DS3Save, slot_index: int, input_path: str | Path) -> str:
     """Import a character from a .ds3c file into a slot. Returns the character name."""
     _check_bounds(slot_index)
+    _check_available(save, slot_index)
 
     with open(input_path, "rb") as f:
         magic = f.read(4)
@@ -272,9 +303,9 @@ def import_character(save: DS3Save, slot_index: int, input_path: str | Path) -> 
         )
 
     data = bytearray(data)
-    new_steam32 = _get_global_steam32(save)
-    if new_steam32 is not None:
-        _patch_slot_steamid(data, new_steam32)
+    new_steam64 = _target_steam64(save)
+    if new_steam64 is not None:
+        _patch_slot_steamid(data, new_steam64)
 
     char = DS3Slot(slot_index, data)
     save.characters[slot_index] = char

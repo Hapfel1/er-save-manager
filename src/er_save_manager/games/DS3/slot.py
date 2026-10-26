@@ -1296,7 +1296,8 @@ class DS3Slot:
         """
         Turn a weapon into another weapon id (another level or infusion of
         the same weapon). The gaitem entry and handle stay, so equip and
-        quick slots keep pointing at it. Returns the new item id.
+        quick slots keep pointing at it; equip slots get the new id. Returns
+        the new item id.
         """
         self._require_inventory()
         if id_kind(entry.item_id) != ID_WEAPON or id_kind(new_id) != ID_WEAPON:
@@ -1308,6 +1309,20 @@ class DS3Slot:
         _write_u32(self._data, entry.offset + 4, new_id)
         index = _read_u32(self._data, entry.offset + 12)
         _write_u32(self._data, entry.offset + 12, self._index(sort_key, index))
+        # Equip slots holding this weapon carry its id twice.
+        layout = self._get_layout()
+        base = layout.gaitem_end
+        for k in range(_EQUIP_SLOT_COUNT):
+            if (
+                _read_u32(self._data, base + _EQUIP_SLOTS_REL + 4 * k)
+                == index & _INDEX_POS_MASK
+                and _read_u32(self._data, base + _EQUIP_HANDLES_REL + 4 * k)
+                == entry.handle
+            ):
+                _write_u32(
+                    self._data, base + _EQUIP_IDS_REL + 4 * k, new_id & _EQUIP_ID_MASK
+                )
+                _write_u32(self._data, layout.id_copy + 4 * k, new_id)
         entry.item_id = new_id
         return new_id
 
