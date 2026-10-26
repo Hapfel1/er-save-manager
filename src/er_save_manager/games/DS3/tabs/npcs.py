@@ -206,6 +206,8 @@ class DS3NpcsTab:
             self._show_toast,
             quest_flags=load_quest_table(_DATA_DIR / "quest_steps.json"),
             commit=commit,
+            apply_steps_between=True,
+            apply_all=False,
         )
 
     def _apply(self, revive: bool) -> None:

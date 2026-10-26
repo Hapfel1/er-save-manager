@@ -9,6 +9,7 @@ import pytest
 
 from er_save_manager.data.quest_flags_db import QUEST_FLAGS, load_quest_table
 from er_save_manager.games.DS2.save import QuestFlags
+from er_save_manager.ui.quest_progress_dialog import is_tracked, steps_up_to
 
 GAMES = Path(__file__).parent.parent / "src" / "er_save_manager" / "games"
 TABLES = {
@@ -28,14 +29,15 @@ def test_tables_load_with_labels_and_flags(game):
             assert any(f["value"] == 1 for f in step["flags"])
 
 
-# DS3 NPCs freed through common_func 20006003: earlier states may stay set,
-# so their steps only clear later states.
+# DS3 NPCs freed through common_func 20006003: states up to these stay set
+# together, so their steps only clear later states; later steps clear the
+# whole range.
 CUMULATIVE = {
-    "Greirat of the Undead Settlement",
-    "Orbeck of Vinheim",
-    "Cornyx of the Great Swamp",
-    "Irina of Carim",
-    "Karla",
+    "Greirat of the Undead Settlement": 1203,
+    "Orbeck of Vinheim": 1221,
+    "Cornyx of the Great Swamp": 1241,
+    "Irina of Carim": 1282,
+    "Karla": 1261,
 }
 
 
@@ -48,7 +50,7 @@ def test_steps_cover_the_whole_range(game):
         for step in steps:
             on = [f["id"] for f in step["flags"] if f["value"] == 1]
             assert len(on) == 1
-            if npc in CUMULATIVE:
+            if on[0] <= CUMULATIVE.get(npc, -1):
                 assert all(f["id"] > on[0] for f in step["flags"] if not f["value"])
                 continue
             ids = sorted(f["id"] for f in step["flags"])
@@ -89,3 +91,31 @@ def test_ds2_quest_flags_write_both_copies():
     assert not any(data)
     with pytest.raises(ValueError):
         flags.get_flag(99999)
+
+
+def _step(*flags):
+    return {"flags": [{"id": i, "value": v} for i, v in flags]}
+
+
+# Greirat-style steps: each sets its state and clears only later ones.
+RESCUE_STEPS = [
+    _step((1201, 1), (1202, 0), (1203, 0)),
+    _step((1202, 1), (1203, 0)),
+    _step((1203, 1)),
+]
+
+
+def _is_complete(state):
+    return lambda s: all(state.get(f["id"], 0) == f["value"] for f in s["flags"])
+
+
+def test_steps_up_to_applies_the_steps_in_between():
+    state = {1201: 1}
+    chain = steps_up_to(RESCUE_STEPS, 2, _is_complete(state))
+    assert chain == RESCUE_STEPS[1:]
+    assert steps_up_to(RESCUE_STEPS, 0, _is_complete({})) == RESCUE_STEPS[:1]
+
+
+def test_steps_that_only_clear_flags_are_not_tracked():
+    assert not is_tracked(_step((10, 0), (11, 0)))
+    assert is_tracked(_step((10, 0), (11, 1)))

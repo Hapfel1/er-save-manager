@@ -71,17 +71,17 @@
 ["Freed (left the cell)","High Wall of Lothric",[[1201,1],[1202,0],[1203,0],[1204,0],[1205,0],[1206,0],[1207,0]]],
 ["At Firelink (74000303)","Firelink Shrine",[[1202,1],[1203,0],[1204,0],[1205,0],[1206,0],[1207,0]]],
 ["Offered to go pillaging (74000316)","Firelink Shrine",[[1203,1],[1204,0],[1205,0],[1206,0],[1207,0]]],
-["Sent to the Undead Settlement (74000306)","Undead Settlement",[[1204,1],[1205,0],[1206,0],[1207,0]]],
-["Back from Irithyll alone (no Patches or Siegward help)","Firelink Shrine",[[1205,1],[1206,0],[1207,0]]],
-["Back from Irithyll with Patches' or Siegward's help","Firelink Shrine",[[1206,1],[1207,0]]],
-["Sent to Lothric Castle (74000309)","Lothric Castle",[[1207,1]]]
+["Sent to the Undead Settlement (74000306)","Undead Settlement",[[1204,1],[1200,0],[1201,0],[1202,0],[1203,0],[1205,0],[1206,0],[1207,0],[1208,0],[1209,0],[1210,0],[1211,0],[1212,0],[1213,0],[1214,0]]],
+["Back from Irithyll alone (no Patches or Siegward help)","Firelink Shrine",[[1205,1],[1200,0],[1201,0],[1202,0],[1203,0],[1204,0],[1206,0],[1207,0],[1208,0],[1209,0],[1210,0],[1211,0],[1212,0],[1213,0],[1214,0]]],
+["Back from Irithyll with Patches' or Siegward's help","Firelink Shrine",[[1206,1],[1200,0],[1201,0],[1202,0],[1203,0],[1204,0],[1205,0],[1207,0],[1208,0],[1209,0],[1210,0],[1211,0],[1212,0],[1213,0],[1214,0]]],
+["Sent to Lothric Castle (74000309)","Lothric Castle",[[1207,1],[1200,0],[1201,0],[1202,0],[1203,0],[1204,0],[1205,0],[1206,0],[1208,0],[1209,0],[1210,0],[1211,0],[1212,0],[1213,0],[1214,0]]]
 ],
 "Orbeck of Vinheim":[
 ["At the Road of Sacrifices","Road of Sacrifices",[[1220,1],[1221,0],[1222,0],[1223,0],[1224,0]]],
 ["Recruited (left for Firelink)","Road of Sacrifices",[[1221,1],[1222,0],[1223,0],[1224,0]]],
-["Conversation at Firelink (74000553)","Firelink Shrine",[[1222,1],[1223,0],[1224,0]]],
-["Conversation at Firelink (74000583)","Firelink Shrine",[[1223,1],[1224,0]]],
-["In the Grand Archives (Twin Princes defeated)","Grand Archives",[[1224,1]]]
+["Conversation at Firelink (74000553)","Firelink Shrine",[[1222,1],[1220,0],[1221,0],[1223,0],[1224,0],[1225,0],[1226,0],[1227,0],[1228,0],[1229,0],[1230,0],[1231,0],[1232,0],[1233,0],[1234,0]]],
+["Conversation at Firelink (74000583)","Firelink Shrine",[[1223,1],[1220,0],[1221,0],[1222,0],[1224,0],[1225,0],[1226,0],[1227,0],[1228,0],[1229,0],[1230,0],[1231,0],[1232,0],[1233,0],[1234,0]]],
+["In the Grand Archives (Twin Princes defeated)","Grand Archives",[[1224,1],[1220,0],[1221,0],[1222,0],[1223,0],[1225,0],[1226,0],[1227,0],[1228,0],[1229,0],[1230,0],[1231,0],[1232,0],[1233,0],[1234,0]]]
 ],
 "Cornyx of the Great Swamp":[
 ["Locked in the Undead Settlement","Undead Settlement",[[1240,1],[1241,0]]],
@@ -95,10 +95,10 @@
 ["In the Undead Settlement tower","Undead Settlement",[[1280,1],[1281,0],[1282,0],[1283,0],[1284,0],[1285,0],[1286,0]]],
 ["Agreed to serve (left for Firelink)","Undead Settlement",[[1281,1],[1282,0],[1283,0],[1284,0],[1285,0],[1286,0]]],
 ["Given at least one miracle tome","Firelink Shrine",[[1282,1],[1283,0],[1284,0],[1285,0],[1286,0]]],
-["Given all tomes and talked (74000351)","Firelink Shrine",[[1283,1],[1284,0],[1285,0],[1286,0]]],
-["State set by event 14005542","Firelink Shrine",[[1284,1],[1285,0],[1286,0]]],
-["State set by event 14005542 (second branch)","Firelink Shrine",[[1285,1],[1286,0]]],
-["Conversation with no tomes given (74000380)","Firelink Shrine",[[1286,1]]]
+["Given all tomes and talked (74000351)","Firelink Shrine",[[1283,1],[1280,0],[1281,0],[1282,0],[1284,0],[1285,0],[1286,0],[1287,0],[1288,0],[1289,0],[1290,0],[1291,0],[1292,0],[1293,0],[1294,0]]],
+["State set by event 14005542","Firelink Shrine",[[1284,1],[1280,0],[1281,0],[1282,0],[1283,0],[1285,0],[1286,0],[1287,0],[1288,0],[1289,0],[1290,0],[1291,0],[1292,0],[1293,0],[1294,0]]],
+["State set by event 14005542 (second branch)","Firelink Shrine",[[1285,1],[1280,0],[1281,0],[1282,0],[1283,0],[1284,0],[1286,0],[1287,0],[1288,0],[1289,0],[1290,0],[1291,0],[1292,0],[1293,0],[1294,0]]],
+["Conversation with no tomes given (74000380)","Firelink Shrine",[[1286,1],[1280,0],[1281,0],[1282,0],[1283,0],[1284,0],[1285,0],[1287,0],[1288,0],[1289,0],[1290,0],[1291,0],[1292,0],[1293,0],[1294,0]]]
 ],
 "Eygon of Carim":[
 ["In the Undead Settlement","Undead Settlement",[[1300,1],[1301,0],[1302,0],[1303,0],[1304,0],[1305,0],[1306,0],[1307,0],[1308,0],[1309,0],[1310,0],[1311,0],[1312,0],[1313,0],[1314,0]]],
@@ -180,7 +180,7 @@
 "Holy Knight Hodrick":[
 ["Invader state","Undead Settlement",[[1580,1],[1581,0],[1582,0],[1583,0],[1584,0],[1585,0],[1586,0],[1587,0],[1588,0],[1589,0],[1590,0],[1591,0],[1592,0],[1593,0],[1594,0]]]
 ],
-"Shrine Handmaid (second)":[
+"Shrine Handmaid (Untended Graves)":[
 ["At Firelink","Firelink Shrine",[[1600,1],[1601,0],[1602,0],[1603,0],[1604,0],[1605,0],[1606,0],[1607,0],[1608,0],[1609,0],[1610,0],[1611,0],[1612,0],[1613,0],[1614,0]]]
 ],
 "Slave Knight Gael":[

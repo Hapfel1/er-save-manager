@@ -221,6 +221,8 @@ class DS2NpcPanel:
                 Path(__file__).parent / "data" / "quest_steps.json"
             ),
             commit=commit,
+            undo=True,
+            apply_all=False,
         )
 
     def _backup(self, save_path, description: str, operation: str) -> None:

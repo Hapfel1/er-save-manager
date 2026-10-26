@@ -254,6 +254,7 @@ class DSRNPCTab:
             self._show_toast,
             quest_flags=load_quest_table(_DATA_DIR / "quest_steps.json"),
             commit=commit,
+            apply_all=False,
         )
 
     def _write(self, change, op: str, what: str, verb: str) -> None:
