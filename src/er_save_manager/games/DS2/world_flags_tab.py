@@ -440,8 +440,14 @@ class DS2FlagsPanel(_Page):
         id_row.pack(side="bottom", fill="x", padx=10, pady=(0, 6))
         ctk.CTkLabel(id_row, text="Flag id:").pack(side="left", padx=(0, 4))
         self._id_var = ctk.StringVar()
-        self._id_var.trace_add("write", lambda *_: self._update_id())
-        ctk.CTkEntry(id_row, textvariable=self._id_var, width=130).pack(side="left")
+        self._id_var.trace_add("write", lambda *_: self._on_id_typed())
+        self._checked_id: int | None = None
+        id_entry = ctk.CTkEntry(id_row, textvariable=self._id_var, width=130)
+        id_entry.pack(side="left")
+        id_entry.bind("<Return>", lambda _e: self._on_check_id())
+        ctk.CTkButton(id_row, text="Check", width=80, command=self._on_check_id).pack(
+            side="left", padx=(6, 0)
+        )
         self._id_state = ctk.CTkLabel(id_row, text="")
         self._id_state.pack(side="left", padx=8)
         self._id_clear = ctk.CTkButton(
@@ -453,12 +459,6 @@ class DS2FlagsPanel(_Page):
         )
         self._id_set.pack(side="right", padx=6)
 
-        self._note(
-            "The save holds global flags 100000-119999 and, per map, flags "
-            "A BB 000000-000199 (map mA0_BB). Changing a flag changes only the "
-            "flag: a door also needs its object state, which the Doors page "
-            "writes."
-        )
         self._tree_widget = self._tree(
             {
                 "flag": ("Flag", 110),
@@ -536,9 +536,21 @@ class DS2FlagsPanel(_Page):
         except ValueError:
             return None
 
+    def _on_id_typed(self) -> None:
+        self._checked_id = None
+        self._update_id()
+
+    def _on_check_id(self) -> None:
+        self._checked_id = self._id_value()
+        if self._checked_id is None and self._id_var.get().strip():
+            self._id_state.configure(text="Not a flag id")
+            return
+        self._update_id()
+
     def _update_id(self) -> None:
+        """Show the checked flag's state; Set and Clear act on it."""
         flags = self._flags()
-        flag = self._id_value()
+        flag = self._checked_id
         stored = flags is not None and flag is not None and flags.is_stored(flag)
         if flag is None or flags is None:
             text = ""
@@ -577,7 +589,7 @@ class DS2FlagsPanel(_Page):
         )
 
     def _on_set_id(self, value: bool) -> None:
-        flag = self._id_value()
+        flag = self._checked_id
         if flag is not None:
             self._write(
                 [flag], value, "Set Event Flag" if value else "Clear Event Flag"
