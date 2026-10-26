@@ -9,7 +9,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from er_save_manager.data.grace_data import BossGate, grace_gate, location_gate
+from er_save_manager.data.grace_data import (
+    BossGate,
+    arena_gate,
+    grace_gate,
+    location_gate,
+)
 from er_save_manager.data.locations import MapLocation
 from er_save_manager.ui.messagebox import CTkMessageBox
 
@@ -22,7 +27,10 @@ def closed_gate(
     loc: MapLocation, convergence: bool, flag_state: FlagState
 ) -> BossGate | None:
     """Gate of a location whose flag is not set on the character."""
-    gate = location_gate(loc.tile_type, loc.map_id_str, loc.flag_id, convergence)
+    if loc.tile_type == "pin":
+        gate = arena_gate(loc.arena_flag)
+    else:
+        gate = location_gate(loc.tile_type, loc.map_id_str, loc.flag_id, convergence)
     if gate is None or flag_state(gate.flag_id) is not False:
         return None
     return gate
@@ -42,21 +50,31 @@ def gate_status(gate: BossGate, flag_state: FlagState) -> str:
 def confirm_teleport(
     loc: MapLocation, convergence: bool, flag_state: FlagState, parent
 ) -> bool:
-    """Warn before a teleport onto a grace that the game has not spawned yet."""
+    """Warn before a teleport onto a grace that the game has not spawned yet,
+    or into the arena of a living boss."""
     gate = closed_gate(loc, convergence, flag_state)
     if gate is None:
         return True
-    if loc.tile_type == "grace":
-        where = f"The grace {loc.name} only appears after {gate.condition}."
-    else:
-        where = f"{loc.name} is at a grace that only appears after {gate.condition}."
     arrival = (
         " The character arrives in the boss arena with the boss alive."
         if gate.boss
         else ""
     )
+    if loc.tile_type == "grace":
+        where = f"The grace {loc.name} only appears after {gate.condition}."
+    elif loc.tile_type == "pin":
+        where = (
+            f"This spot is inside the fog wall of {gate.boss}."
+            if gate.boss
+            else "This spot is inside a boss fog wall. The boss (event flag "
+            f"{gate.flag_id}) is not defeated on this character."
+        )
+    else:
+        where = f"{loc.name} is at a grace that only appears after {gate.condition}."
     return CTkMessageBox.askyesno(
-        "Boss Not Defeated" if gate.boss else "Grace Not Spawned",
+        "Boss Not Defeated"
+        if gate.boss or loc.tile_type == "pin"
+        else "Grace Not Spawned",
         f"{where}{arrival}\n\nTeleport anyway?",
         parent=parent,
         icon_type="warning",

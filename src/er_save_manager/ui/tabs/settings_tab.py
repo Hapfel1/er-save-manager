@@ -197,6 +197,25 @@ class SettingsTab:
             font=("Inter", 11),
         ).pack(anchor="w", padx=32, pady=(0, 10))
 
+        self.show_pin_teleport_warning_var = tk.BooleanVar(
+            value=self.settings.get("show_pin_teleport_warning", True)
+        )
+        ctk.CTkCheckBox(
+            frame,
+            text="Show warning before teleporting to a map pin",
+            variable=self.show_pin_teleport_warning_var,
+            command=lambda: self.settings.set(
+                "show_pin_teleport_warning",
+                self.show_pin_teleport_warning_var.get(),
+            ),
+        ).pack(anchor="w", padx=12, pady=5)
+        ctk.CTkLabel(
+            frame,
+            text="Elden Ring: a spot picked on the world map can be out of bounds.",
+            text_color=("gray40", "gray70"),
+            font=("Inter", 11),
+        ).pack(anchor="w", padx=32, pady=(0, 10))
+
         self.show_update_notifications_var = tk.BooleanVar(
             value=self.settings.get("show_update_notifications", True)
         )
@@ -278,6 +297,7 @@ class SettingsTab:
             "default_game",
             "external_file_change_notification",
             "external_file_change_auto_reload",
+            "show_pin_teleport_warning",
             None,
         ):
             return
@@ -291,6 +311,9 @@ class SettingsTab:
             )
             self.external_file_auto_reload_var.set(
                 self.settings.get("external_file_change_auto_reload", False)
+            )
+            self.show_pin_teleport_warning_var.set(
+                self.settings.get("show_pin_teleport_warning", True)
             )
         except tk.TclError:
             self.settings.remove_listener(self._on_setting_changed)
@@ -1128,6 +1151,7 @@ class SettingsTab:
             self.show_linux_save_warning_var.set(True)
             self.show_update_notifications_var.set(True)
             self.show_backup_pruning_warning_var.set(True)
+            self.show_pin_teleport_warning_var.set(True)
             self.compress_backups_var.set(True)
             self.max_backups_var.set("50")
             self.theme_var.set("dark")

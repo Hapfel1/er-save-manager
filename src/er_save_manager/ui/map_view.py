@@ -12,8 +12,9 @@ from pathlib import Path
 import customtkinter as ctk
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageTk
 
-from er_save_manager.data.grace_data import location_gate
-from er_save_manager.data.locations import MapLocation
+from er_save_manager.data.floor_points import FloorPoint, floors_near, pin_location
+from er_save_manager.data.grace_data import arena_gate, location_gate
+from er_save_manager.data.locations import MapLocation, get_name_for_map_id
 from er_save_manager.data.map_pieces import (
     MAP_PIECES,
     MapPiece,
@@ -72,6 +73,15 @@ _GRID_COLOR = "#d8d8c8"
 # Tile selection outline, in the hue of the select_ring sprite.
 _SELECT_COLOR = "#f0d890"
 _PLAYER_COLOR = "#00cfff"
+# A click snaps to walkable floor within this many screen pixels, kept
+# between these map unit distances.
+_PIN_PICK_PX = 18
+_PIN_RADIUS_MIN = 4.0
+_PIN_RADIUS_MAX = 60.0
+# What a click on empty map selects: a pin on the nearest floor (the tile
+# when there is none), or the small overworld tile.
+_TARGET_PINS = "Pins"
+_TARGET_TILES = "Tiles"
 _MODE_SELECT = "Select"
 _MODE_MARKER = "Add Marker"
 _MODE_BEACON = "Add Beacon"
@@ -370,6 +380,9 @@ class MapWindow:
         self._items: dict[int, tuple[str, object]] = {}
         self._selected_loc: _Placed | None = None
         self._selected_marker: MapMarker | None = None
+        # Floors under the last map click, nearest first; _pin_var indexes it.
+        self._pins: list[FloorPoint] = []
+        self._pin_var = tk.IntVar(value=0)
         self._press: tuple[int, int] | None = None
         self._press_view: tuple[float, float] = (0.0, 0.0)
         self._pan_origin: tuple[int, int, float, float] = (0, 0, 0.0, 0.0)
@@ -390,7 +403,7 @@ class MapWindow:
         self._win.minsize(900, 600)
         style_window_frame(self._win, dialog=False)
 
-        self._show_tiles = tk.BooleanVar(value=True)
+        self._click_target = tk.StringVar(value=_TARGET_PINS)
         self._show_grid = tk.BooleanVar(value=False)
         self._show_graces = tk.BooleanVar(value=True)
         self._show_dungeons = tk.BooleanVar(value=True)
@@ -525,9 +538,18 @@ class MapWindow:
         self._map_switch.set(MAP_NAMES[self._map_no])
         self._map_switch.pack(side=tk.LEFT, padx=(14, 4))
 
+        ctk.CTkLabel(toggles, text="Click", font=ds.SMALL).pack(
+            side=tk.LEFT, padx=(0, 4)
+        )
+        ctk.CTkSegmentedButton(
+            toggles,
+            values=[_TARGET_PINS, _TARGET_TILES],
+            variable=self._click_target,
+            command=self._on_target_switch,
+            font=ds.SMALL,
+        ).pack(side=tk.LEFT, padx=(0, 10))
         for i, (text, var) in enumerate(
             (
-                ("Tiles", self._show_tiles),
                 ("Grid", self._show_grid),
                 ("Graces", self._show_graces),
                 ("Dungeons", self._show_dungeons),
@@ -595,6 +617,7 @@ class MapWindow:
             justify=tk.LEFT,
             wraplength=290,
         ).pack(fill=tk.X, **pad)
+        self._floor_frame = ctk.CTkFrame(side, fg_color="transparent")
         self._teleport_btn = ds.button(
             side, "Teleport Here", self._teleport, state="disabled"
         )
@@ -1008,6 +1031,7 @@ class MapWindow:
         c.delete("overlay")
         self._items.clear()
         self._draw_locations()
+        self._draw_pin()
         self._draw_player()
         self._draw_markers()
         c.addtag_all("overlay")
@@ -1132,11 +1156,12 @@ class MapWindow:
             item = c.create_image(sx, sy, image=image)
             self._items[item] = ("loc", p)
 
-    def _tile_at(self, mx: float, my: float) -> _Placed | None:
-        """Small overworld tile under a map point, if it is a teleport target."""
+    def _tile_at(self, mx: float, my: float, fallback: bool = False) -> _Placed | None:
+        """Small overworld tile under a map point, if it is a teleport target.
+        In Pins mode only as the fallback for a click without floor."""
         if (
             self._map_no == MAP_UNDERGROUND
-            or not self._show_tiles.get()
+            or (self._click_target.get() != _TARGET_TILES and not fallback)
             or self._click_mode.get() != _MODE_SELECT
         ):
             return None
@@ -1243,6 +1268,19 @@ class MapWindow:
         self._canvas.create_oval(
             sx - r, sy - r, sx + r, sy + r, fill=_PLAYER_COLOR, outline="white", width=2
         )
+
+    def _draw_pin(self):
+        if not self._pins:
+            return
+        pin = self._pins[self._pin_var.get()]
+        if pin.map_no != self._map_no:
+            return
+        sx, sy = self._to_screen(pin.mx, pin.my)
+        r = 7
+        c = self._canvas
+        c.create_oval(sx - r, sy - r, sx + r, sy + r, outline=_SELECT_COLOR, width=3)
+        c.create_line(sx, sy - r - 5, sx, sy + r + 5, fill=_SELECT_COLOR, width=2)
+        c.create_line(sx - r - 5, sy, sx + r + 5, sy, fill=_SELECT_COLOR, width=2)
 
     def _draw_markers(self):
         if self._editor is None or not self._show_markers.get():
@@ -1361,7 +1399,11 @@ class MapWindow:
         elif hit and hit[0] == "loc":
             self._select_location(hit[1])
         else:
-            self._select_location(self._tile_at(*self._to_map(*press)))
+            mx, my = self._to_map(*press)
+            if self._click_target.get() == _TARGET_TILES:
+                self._select_location(self._tile_at(mx, my))
+            elif not self._place_pin(mx, my):
+                self._select_location(self._tile_at(mx, my, fallback=True))
 
     def _on_pan_press(self, event):
         self._press = None
@@ -1375,9 +1417,21 @@ class MapWindow:
     def _on_motion(self, event):
         hit = self._hit(event.x, event.y)
         self._show_hover(event.x, event.y, hit)
-        self._canvas.configure(
-            cursor="hand2" if hit or self._hover_tile is not None else ""
-        )
+        if hit or self._hover_tile is not None:
+            cursor = "hand2"
+        elif (
+            self._click_target.get() == _TARGET_PINS
+            and self._click_mode.get() == _MODE_SELECT
+        ):
+            cursor = "crosshair"
+        else:
+            cursor = ""
+        self._canvas.configure(cursor=cursor)
+
+    def _on_target_switch(self, _value: str):
+        if self._pins:
+            self._select_location(None)
+        self._clear_hover()
 
     # ------------------------------------------------------------------
     # Selection and teleport
@@ -1398,14 +1452,90 @@ class MapWindow:
 
     def _select_location(self, placed: _Placed | None):
         self._selected_loc = placed
+        self._pins = []
         self._update_location_info()
         self._schedule_render()
 
+    def _place_pin(self, mx: float, my: float) -> bool:
+        """Pin the walkable floor nearest a clicked map point. False when there
+        is none within reach."""
+        radius = min(max(_PIN_PICK_PX / self._zoom, _PIN_RADIUS_MIN), _PIN_RADIUS_MAX)
+        floors = floors_near(
+            self._map_no, mx, my, self._images.convergence, radius=radius
+        )
+        if not floors:
+            return False
+        self._selected_loc = None
+        self._pins = floors
+        self._pin_var.set(0)
+        self._fill_floor_choices()
+        self._update_location_info()
+        self._schedule_render()
+        return True
+
+    def _fill_floor_choices(self):
+        """One radio button per floor under the pin, top floor first."""
+        for child in self._floor_frame.winfo_children():
+            child.destroy()
+        if len(self._pins) < 2:
+            return
+        several_maps = len({p.map_id_str for p in self._pins}) > 1
+        ctk.CTkLabel(
+            self._floor_frame, text="Floors here", font=ds.SMALL, anchor="w"
+        ).pack(fill=tk.X)
+        order = sorted(range(len(self._pins)), key=lambda k: -self._pins[k].y)
+        for k in order:
+            pin = self._pins[k]
+            text = f"Height {pin.y:.1f}"
+            if several_maps:
+                text = f"{get_name_for_map_id(pin.map_id_str)}, height {pin.y:.1f}"
+            ctk.CTkRadioButton(
+                self._floor_frame,
+                text=text,
+                variable=self._pin_var,
+                value=k,
+                font=ds.SMALL,
+                command=self._on_floor_chosen,
+            ).pack(fill=tk.X, pady=2)
+
+    def _on_floor_chosen(self):
+        self._update_location_info()
+        self._schedule_render()
+
+    def _pin_info(self, pin: FloorPoint) -> str:
+        lines = [
+            get_name_for_map_id(pin.map_id_str),
+            f"Map pin  {pin.map_id_str}",
+            f"Position {pin.x:.1f}, {pin.y:.1f}, {pin.z:.1f}",
+        ]
+        gate = arena_gate(pin.arena_flag)
+        if gate is not None:
+            status = (
+                gate_status(gate, self._grace_state)
+                if self._grace_state is not None
+                else gate.boss or f"event flag {gate.flag_id}"
+            )
+            lines.append(f"Boss arena: {status}")
+        return "\n".join(lines)
+
     def _update_location_info(self):
+        if self._pins:
+            self._info_var.set(self._pin_info(self._pins[self._pin_var.get()]))
+            self._teleport_btn.configure(state="normal")
+            self._area_btn.configure(state="disabled")
+            self._grace_row.pack_forget()
+            if len(self._pins) > 1:
+                self._floor_frame.pack(
+                    fill=tk.X, pady=(6, 0), padx=12, before=self._teleport_btn
+                )
+            else:
+                self._floor_frame.pack_forget()
+            return
+        self._floor_frame.pack_forget()
         placed = self._selected_loc
         if placed is None:
             self._info_var.set(
-                "Click a tile, grace or dungeon, or pick one from the list"
+                "Click anywhere on the map, or pick a grace or dungeon from the list"
             )
             self._teleport_btn.configure(state="disabled")
             self._area_btn.configure(state="disabled")
@@ -1675,7 +1805,9 @@ class MapWindow:
         self._schedule_render()
 
     def _teleport(self):
-        if self._selected_loc is not None:
+        if self._pins:
+            self._on_teleport(pin_location(self._pins[self._pin_var.get()]))
+        elif self._selected_loc is not None:
             self._on_teleport(self._selected_loc.loc)
 
     # ------------------------------------------------------------------

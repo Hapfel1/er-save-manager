@@ -10,6 +10,7 @@ Tile types:
   - small (_00): Small overworld tiles (256x256 units, most detailed)
   - medium (_01): Medium overworld tiles (contain some enemies/graces spanning multiple small tiles)
   - big (_02): Big overworld tiles (span entire region, contain cross-tile enemies and Sites of Grace)
+  - pin: a point picked on the world map (floor_points.pin_location)
 
 map_bytes = bytes([d0, d1, d2, d3]) where map_id_str = m{d3}_{d2}_{d1}_{d0:02d}
 region_id = 0 means no region unlock needed for this map.
@@ -36,6 +37,7 @@ class MapLocation:
     is_dlc: bool = False
     safe_coords: tuple[float, float, float] | None = None
     flag_id: int = 0  # grace unlock event flag (graces only)
+    arena_flag: int = 0  # boss flag of the fog-walled arena (map pins only)
 
 
 def _location(
