@@ -145,6 +145,8 @@ class DS3EditorTab:
             source_var=self._source_var,
         )
         yield from self.inventory.setup_steps()
+        # Set Upgrade can move the weapon level shown in Stats.
+        self.inventory.listeners.append(self._refresh_weapon_level)
         # A save or character may have been loaded while the tab was building.
         self.inventory.load_slot(self._current_slot)
         self._register_pages()
@@ -227,6 +229,7 @@ class DS3EditorTab:
                 ("HP", "hp"),
                 ("FP", "fp"),
                 ("Stamina", "stamina"),
+                ("Weapon level", "weapon_level"),
             ]
         ):
             ctk.CTkLabel(rg, text=f"{label}:").grid(
@@ -235,14 +238,22 @@ class DS3EditorTab:
             var = tk.StringVar(value="0")
             self._stat_vars[key] = var
             # The game derives HP, FP and stamina from the attributes on load;
-            # level follows from the class and the attributes.
-            derived = key in ("level", "hp", "fp", "stamina")
-            ctk.CTkEntry(
+            # level follows from the class and the attributes; weapon level
+            # follows Set Upgrade in the Inventory tab.
+            derived = key in ("level", "hp", "fp", "stamina", "weapon_level")
+            entry = ctk.CTkEntry(
                 rg,
                 textvariable=var,
                 width=120,
                 state="disabled" if derived else "normal",
-            ).grid(row=i, column=1, padx=5, pady=5)
+            )
+            entry.grid(row=i, column=1, padx=5, pady=5)
+            if key == "weapon_level":
+                add_tooltip(
+                    entry,
+                    "Highest weapon upgrade level reached, used for weapon level "
+                    "matchmaking. Weapons that max at +5 count double.",
+                )
         row = i + 1
         ctk.CTkLabel(rg, text="Class:").grid(
             row=row, column=0, sticky="w", padx=5, pady=5
@@ -356,8 +367,14 @@ class DS3EditorTab:
         self._stat_vars["hp"].set(str(char.hp))
         self._stat_vars["fp"].set(str(char.fp))
         self._stat_vars["stamina"].set(str(char.stamina))
+        self._stat_vars["weapon_level"].set(f"+{char.weapon_level}")
         self._show_loaded_class()
         self._stats_tracker.mark_clean()
+
+    def _refresh_weapon_level(self) -> None:
+        char = self.inventory.current_character()
+        if char is not None:
+            self._stat_vars["weapon_level"].set(f"+{char.weapon_level}")
 
     def _fill_identity(self, char) -> None:
         self._name_var.set(char.name)
