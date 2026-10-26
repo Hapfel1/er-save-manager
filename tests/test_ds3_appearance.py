@@ -132,6 +132,8 @@ class _Parser:
 
 
 class _Save:
+    has_directory = True
+
     def __init__(self, entry10: bytearray) -> None:
         self._parser = _Parser(entry10)
 

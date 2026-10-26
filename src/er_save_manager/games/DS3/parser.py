@@ -29,11 +29,19 @@ because PKCS7 padding on same-length plaintext produces same-length ciphertext.
 AES-128-CBC key:
   FD 46 4D 69 5E 69 A3 9A 10 E3 19 A7 AC E8 B7 FA
 Published in DS3SaveUnpacker by tremwil.
+
+PlayStation 4 (decrypted export): one unencrypted file per entry, named
+userdata0000-userdata0009 for the character slots and userdata0010 for the
+global entry. Each file is the PC plaintext without its leading u32 size
+field, so DS3PSParser rebuilds that field and serves entries in the PC
+layout. Entries whose file is missing are unavailable (get_slot returns
+None), which allows opening a single slot file on its own.
 """
 
 from __future__ import annotations
 
 import hashlib
+import re
 import struct
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -103,6 +111,7 @@ class DS3Parser:
 
     CHARACTER_SLOTS = 10
     TOTAL_SLOTS = 11
+    is_ps = False
 
     def __init__(self, raw: bytearray, entries: list[_BND4Entry]) -> None:
         self._raw = raw
@@ -139,6 +148,9 @@ class DS3Parser:
         """Replace the decrypted plaintext for the given slot."""
         self._entries[index].plaintext = data
 
+    def has_slot(self, index: int) -> bool:
+        return 0 <= index < self.TOTAL_SLOTS
+
     def save_to_file(self, path: str | Path) -> None:
         """Re-encrypt all modified slots and write the file."""
         out = bytearray(self._raw)
@@ -160,3 +172,139 @@ class DS3Parser:
 
     def get_slot_plaintext_size(self, index: int) -> int:
         return len(self._entries[index].plaintext)
+
+
+# --- PlayStation 4 -----------------------------------------------------------
+
+_PS_NAME = re.compile(r"userdata(\d{4})", re.IGNORECASE)
+_PS_SLOT_SIZE = 0xC0000
+_PS_GLOBAL_SIZE = 0x60000
+
+
+def _ps_index(path: Path) -> int | None:
+    """Entry index encoded in a PS userdata file name, or None."""
+    m = _PS_NAME.fullmatch(path.name)
+    if m is None:
+        return None
+    index = int(m.group(1))
+    return index if index < DS3Parser.TOTAL_SLOTS else None
+
+
+def _ps_expected_size(index: int) -> int:
+    return _PS_GLOBAL_SIZE if index == DS3Parser.CHARACTER_SLOTS else _PS_SLOT_SIZE
+
+
+def is_ps_userdata(path: str | Path) -> bool:
+    """True for a DS3 PS4 userdataNNNN file of the size its index requires."""
+    path = Path(path)
+    index = _ps_index(path)
+    if index is None:
+        return False
+    try:
+        return path.stat().st_size == _ps_expected_size(index)
+    except OSError:
+        return False
+
+
+def ps_folder_files(path: str | Path) -> dict[int, Path]:
+    """Entry index -> file for every valid userdata file next to path."""
+    folder = Path(path).parent
+    files = {}
+    try:
+        children = list(folder.iterdir())
+    except OSError:
+        return files
+    for child in children:
+        index = _ps_index(child)
+        if index is not None and index not in files and is_ps_userdata(child):
+            files[index] = child
+    return files
+
+
+def save_identity(path: str | Path) -> Path:
+    """Path that identifies the save a file belongs to: the folder for a PS
+    userdata file, the file itself otherwise."""
+    path = Path(path).resolve()
+    return path.parent if is_ps_userdata(path) else path
+
+
+class DS3PSParser:
+    """
+    PS4 userdata folder for a DS3 save, entries in the PC plaintext layout.
+
+    Only files whose content changed are written back.
+    """
+
+    CHARACTER_SLOTS = DS3Parser.CHARACTER_SLOTS
+    TOTAL_SLOTS = DS3Parser.TOTAL_SLOTS
+    is_ps = True
+
+    def __init__(self, entries: list[bytearray | None], names: list[str]) -> None:
+        self._entries = entries
+        self._names = names
+        self._written = [bytes(e) if e is not None else None for e in entries]
+
+    @classmethod
+    def from_file(cls, path: str | Path) -> DS3PSParser:
+        path = Path(path)
+        if not is_ps_userdata(path):
+            raise ValueError(f"{path.name} is not a DS3 PS4 userdata file")
+        files = ps_folder_files(path)
+        entries: list[bytearray | None] = []
+        names: list[str] = []
+        for i in range(cls.TOTAL_SLOTS):
+            file = files.get(i)
+            if file is None:
+                entries.append(None)
+                names.append(f"userdata{i:04d}")
+                continue
+            body = file.read_bytes()
+            entries.append(bytearray(struct.pack("<I", len(body)) + body))
+            names.append(file.name)
+        return cls(entries, names)
+
+    def has_slot(self, index: int) -> bool:
+        return 0 <= index < self.TOTAL_SLOTS and self._entries[index] is not None
+
+    def file_name(self, index: int) -> str:
+        return self._names[index]
+
+    def get_slot(self, index: int) -> bytearray | None:
+        """Return the PC-layout plaintext for the given slot (0-10), or None
+        when its file was not loaded."""
+        return self._entries[index]
+
+    def set_slot(self, index: int, data: bytearray) -> None:
+        if self._entries[index] is None:
+            raise ValueError(f"No {self._names[index]} file was loaded")
+        self._entries[index] = data
+
+    def get_slot_plaintext_size(self, index: int) -> int:
+        entry = self._entries[index]
+        return len(entry) if entry is not None else _ps_expected_size(index) + 4
+
+    def save_to_file(self, path: str | Path) -> None:
+        """Write every changed entry to its userdata file in path's folder."""
+        folder = Path(path).parent
+        for i, entry in enumerate(self._entries):
+            if entry is None or bytes(entry) == self._written[i]:
+                continue
+            expected = _ps_expected_size(i)
+            if len(entry) != expected + 4:
+                raise RuntimeError(
+                    f"{self._names[i]}: entry size changed. Plaintext must not "
+                    "change in length."
+                )
+            target = folder / self._names[i]
+            tmp_path = target.with_name(target.name + ".tmp")
+            tmp_path.write_bytes(entry[4:])
+            tmp_path.replace(target)
+            record_write(target)
+            self._written[i] = bytes(entry)
+
+
+def load_parser(path: str | Path) -> DS3Parser | DS3PSParser:
+    """Open a PC .sl2/.co2 or a PS4 userdata file."""
+    if is_ps_userdata(path):
+        return DS3PSParser.from_file(path)
+    return DS3Parser.from_file(path)

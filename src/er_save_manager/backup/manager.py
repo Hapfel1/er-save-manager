@@ -105,11 +105,36 @@ class BackupManager:
         Args:
             save_path: Path to the save file
         """
+        from er_save_manager.games.DS3.parser import is_ps_userdata
+
         self.save_path = Path(save_path).resolve()
-        self.backup_folder = self.save_path.parent / (
-            self.save_path.name + self.BACKUP_FOLDER_SUFFIX
-        )
+        # A DS3 PS4 save is a folder of userdata files; one backup holds all
+        # of them, whichever file was opened.
+        self._ps_folder = is_ps_userdata(self.save_path)
+        stem = "userdata" if self._ps_folder else self.save_path.name
+        self.backup_folder = self.save_path.parent / (stem + self.BACKUP_FOLDER_SUFFIX)
         self._history: BackupHistory | None = None
+
+    def _save_files(self) -> list[Path]:
+        """Files one backup of this save contains."""
+        if not self._ps_folder:
+            return [self.save_path]
+        from er_save_manager.games.DS3.parser import ps_folder_files
+
+        files = ps_folder_files(self.save_path)
+        return [files[i] for i in sorted(files)] or [self.save_path]
+
+    def _write_members(self, zipf: zipfile.ZipFile, target: Path) -> None:
+        """Write the zip's save files: a single member to target, several
+        members by name into target's folder."""
+        names = zipf.namelist()
+        if not names:
+            raise ValueError(f"Backup zip is empty: {zipf.filename}")
+        if len(names) == 1:
+            _atomic_write_bytes(target, zipf.read(names[0]))
+            return
+        for name in names:
+            _atomic_write_bytes(target.parent / Path(name).name, zipf.read(name))
 
     @property
     def history(self) -> BackupHistory:
@@ -221,7 +246,9 @@ class BackupManager:
         """
         self.backup_folder.mkdir(parents=True, exist_ok=True)
 
-        if compress is None:
+        if self._ps_folder:
+            compress = True
+        elif compress is None:
             try:
                 settings = get_settings()
                 compress = settings.get("compress_backups", False)
@@ -235,7 +262,8 @@ class BackupManager:
             with zipfile.ZipFile(
                 backup_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6
             ) as zipf:
-                zipf.write(self.save_path, arcname=self.save_path.name)
+                for file in self._save_files():
+                    zipf.write(file, arcname=file.name)
         else:
             shutil.copy2(self.save_path, backup_path)
 
@@ -380,12 +408,7 @@ class BackupManager:
 
         if is_zip:
             with zipfile.ZipFile(backup_path, "r") as zipf:
-                # Extract the save file (should be only file in zip)
-                names = zipf.namelist()
-                if not names:
-                    raise ValueError(f"Backup zip is empty: {backup_name}")
-                data = zipf.read(names[0])
-            _atomic_write_bytes(self.save_path, data)
+                self._write_members(zipf, self.save_path)
         elif is_gzip:
             # Legacy gzip support
             with gzip.open(backup_path, "rb") as f_in:
@@ -401,6 +424,9 @@ class BackupManager:
         """
         Restore a backup to a new file (doesn't overwrite current save).
         Automatically handles compressed backups (both .zip and legacy .gz).
+
+        A backup of several files (DS3 PS4 userdata folder) is written by
+        file name into target_path's folder.
 
         Args:
             backup_name: Name of the backup file to restore
@@ -419,11 +445,7 @@ class BackupManager:
 
         if is_zip:
             with zipfile.ZipFile(backup_path, "r") as zipf:
-                names = zipf.namelist()
-                if not names:
-                    raise ValueError(f"Backup zip is empty: {backup_name}")
-                data = zipf.read(names[0])
-            _atomic_write_bytes(target, data)
+                self._write_members(zipf, target)
         elif is_gzip:
             # Legacy gzip support
             with gzip.open(backup_path, "rb") as f_in:

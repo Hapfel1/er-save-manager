@@ -18,6 +18,7 @@ from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
 from . import character_ops
+from .parser import save_identity
 from .save import DS3Save
 
 
@@ -138,9 +139,12 @@ class DS3CharacterManagementTab:
             return [f"Slot {i + 1} - Empty" for i in range(DS3Save.CHARACTER_SLOTS)]
         names = []
         for i, char in enumerate(save.characters):
-            names.append(
-                f"Slot {i + 1} - {char.name}" if char else f"Slot {i + 1} - Empty"
-            )
+            if char:
+                names.append(f"Slot {i + 1} - {char.name}")
+            elif save.slot_available(i):
+                names.append(f"Slot {i + 1} - Empty")
+            else:
+                names.append(f"Slot {i + 1} - No File")
         return names
 
     @staticmethod
@@ -647,7 +651,7 @@ class DS3CharacterManagementTab:
         target_path = self._select_target_save_file()
         if not target_path:
             return
-        if current_path and Path(target_path).resolve() == Path(current_path).resolve():
+        if current_path and save_identity(target_path) == save_identity(current_path):
             CTkMessageBox.showerror(
                 "Same Save File",
                 "Select a different target save file for transfer.",
@@ -712,7 +716,10 @@ class DS3CharacterManagementTab:
         return pick_file(
             title="Select target save file",
             initialdir=initialdir,
-            filetypes=[("DS3 save files", "*.sl2"), ("All files", "*.*")],
+            filetypes=[
+                ("DS3 save files", "*.sl2 *.co2 userdata*"),
+                ("All files", "*.*"),
+            ],
         )
 
     def _select_target_save_file(self) -> str | None:

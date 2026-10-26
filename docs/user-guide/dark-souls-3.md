@@ -18,6 +18,16 @@ DS3 support uses these tabs:
 
 ---
 
+## PlayStation 4 Saves
+
+A decrypted PS4 export is a folder of `userdata` files: `userdata0000` to `userdata0009` hold the ten character slots and `userdata0010` holds the load-screen character list. Open any of them and every userdata file in the same folder is loaded with it. Edits write back only the files that changed, in the same format, so the folder can be imported to the console as it is.
+
+A userdata file opened without the rest of its folder gives access to its own character only. The other slots show as **No File**, and the load-screen list is not updated, since it lives in `userdata0010`.
+
+Auto-Find does not find PS4 saves; use **Browse**. The **PS4 Save?** button in the file row repeats these steps.
+
+---
+
 ## Selecting a Character and Applying Changes
 
 The **Character** bar under the file row picks the character for every tab that edits one; switching tabs keeps the selection. The first character is loaded when a save opens.
@@ -36,6 +46,8 @@ Lists every character as a card with slot, level, class, souls, NG+ and play tim
 
 Copy, transfer, swap, export, import and delete character slots, within a save or between two saves. The load-screen character list is kept in step.
 
+Transfer and `.ds3c` export/import also move characters between a PS4 folder and a PC save. A character moved to PC gets the target save's SteamID; a character moved to PS4 has it cleared, as on the console.
+
 ---
 
 ## Character Editor
@@ -53,6 +65,8 @@ Name (up to 16 characters), class and NG+ cycle. Name and level changes are also
 ### Equipment
 
 Every equipment slot of the character: right and left hand weapons 1-3, the four armor pieces, arrows and bolts 1-2, four rings, the covenant and the quick items. Click a slot to pick from the items the character carries that fit it, with icons, categories and search. A slot can be emptied unless the game requires it to hold something.
+
+Equipment changes are also written to the copy of the equipment kept with the load-screen character list.
 
 **Attunement** lists the attuned spells in slot order, packed from the first slot as the game stores them. **Add Spell** picks from the carried spells; **Remove**, **Move Up** and **Move Down** change the list.
 
@@ -106,7 +120,7 @@ Kill or respawn any boss, including DLC bosses, selected ones or all at once (do
 
 ## SteamID Patcher
 
-Transfer a DS3 save between Steam accounts, same mechanism as the Elden Ring version.
+Transfer a DS3 save between Steam accounts, same mechanism as the Elden Ring version. PS4 saves hold no SteamID, so the patcher does not apply to them.
 
 ---
 

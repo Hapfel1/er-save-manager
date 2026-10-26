@@ -13,8 +13,9 @@ from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 
 # Extensions of saves that reach the official servers: .sl2 on PC, the
-# PlayStation memory.dat export for Elden Ring. Seamless Co-op (.co2) saves
-# never connect to them.
+# PlayStation memory.dat export for Elden Ring and Nightreign. DS3 PS4
+# userdata files have no extension and are matched by is_ps_userdata.
+# Seamless Co-op (.co2) saves never connect to them.
 VANILLA_SUFFIXES = (".sl2", ".dat")
 
 _GUARANTEE_NOTE = (
@@ -186,8 +187,30 @@ _GAME_TEXT: dict[str, tuple[str, list[tuple[str, list[_Bullet]]]]] = {
 }
 
 
+# Same checks on PS4; the ban lands on the PlayStation Network account.
+_GAME_TEXT["dark_souls_3_ps4"] = (
+    "The game checks stats, world flags and inventory when the save "
+    "loads and every time it saves, offline included. A flagged save is "
+    "soft banned with no warning beforehand. The ban is tied to the "
+    "PlayStation Network account, not the save, and can only be lifted "
+    "by appealing to Bandai Namco support.",
+    _GAME_TEXT["dark_souls_3"][1],
+)
+
+
 def is_vanilla_save(save_path: str) -> bool:
-    return save_path.lower().endswith(VANILLA_SUFFIXES)
+    from er_save_manager.games.DS3.parser import is_ps_userdata
+
+    return save_path.lower().endswith(VANILLA_SUFFIXES) or is_ps_userdata(save_path)
+
+
+def warning_key(game_key: str, save_path: str) -> str:
+    """_GAME_TEXT key for a save: DS3 PS4 userdata files get their own text."""
+    from er_save_manager.games.DS3.parser import is_ps_userdata
+
+    if game_key == "dark_souls_3" and is_ps_userdata(save_path):
+        return "dark_souls_3_ps4"
+    return game_key
 
 
 class VanillaSaveWarningDialog(ctk.CTkToplevel):

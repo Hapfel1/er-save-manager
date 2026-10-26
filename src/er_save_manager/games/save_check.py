@@ -48,6 +48,8 @@ def _ds3_dir_mismatches(save) -> list[tuple[int, str]]:
     from er_save_manager.games.DS3 import character_ops as ops
 
     out = []
+    if not save.has_directory:
+        return out
     for i, char in enumerate(save.characters):
         if char is None:
             continue
@@ -66,19 +68,25 @@ def _ds3_dir_mismatches(save) -> list[tuple[int, str]]:
 
 
 def _check_ds3(path: Path) -> list[Issue]:
-    from er_save_manager.games.DS3.parser import DS3Parser, _read_entry_header
+    from er_save_manager.games.DS3.parser import (
+        DS3Parser,
+        _read_entry_header,
+        is_ps_userdata,
+    )
     from er_save_manager.games.DS3.save import DS3Save
 
-    raw = path.read_bytes()
     issues = []
-    for i in range(DS3Parser.TOTAL_SLOTS):
-        size, offset = _read_entry_header(raw, i)
-        blob = raw[offset : offset + size]
-        if _md5(blob[16:]) != blob[:16]:
-            if i < 10:
-                issues.append(Issue("Invalid slot checksum", True, i))
-            else:
-                issues.append(Issue("Invalid global data checksum", True))
+    # PS4 userdata files carry no checksum.
+    if not is_ps_userdata(path):
+        raw = path.read_bytes()
+        for i in range(DS3Parser.TOTAL_SLOTS):
+            size, offset = _read_entry_header(raw, i)
+            blob = raw[offset : offset + size]
+            if _md5(blob[16:]) != blob[:16]:
+                if i < 10:
+                    issues.append(Issue("Invalid slot checksum", True, i))
+                else:
+                    issues.append(Issue("Invalid global data checksum", True))
     save = DS3Save.from_file(path)
     for i, char in enumerate(save.characters):
         if char is not None and char.layout_error:

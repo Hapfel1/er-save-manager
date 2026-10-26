@@ -21,6 +21,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.games.DS3 import catalog
+from er_save_manager.games.DS3.character_ops import sync_dir_equipment
 from er_save_manager.games.DS3.icon_manager import get_infusion_icon
 from er_save_manager.games.DS3.slot import ID_ARMOR, ID_WEAPON, LayoutError, id_kind
 from er_save_manager.ui import dialog_style as ds
@@ -1169,6 +1170,7 @@ class DS3InventoryTab:
 
     def _save(self, save, save_path, op: str, message: str) -> bool:
         try:
+            sync_dir_equipment(save, self._current_slot)
             _backup_and_save(save, save_path, f"{op}_slot_{self._current_slot + 1}")
         except Exception as exc:
             CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
