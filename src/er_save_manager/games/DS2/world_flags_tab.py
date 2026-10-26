@@ -67,7 +67,7 @@ class _Page:
         self._summary_label.pack(side="left", padx=(12, 0))
         return header
 
-    def _area_filter(self, header: ctk.CTkFrame) -> None:
+    def _area_filter(self, header: ctk.CTkFrame, tip: str) -> None:
         self._area_var = ctk.StringVar(value=_ALL_AREAS)
         self._area_combo = ctk.CTkComboBox(
             header,
@@ -79,6 +79,7 @@ class _Page:
         )
         self._area_combo.pack(side="right")
         patch_combo_scroll(self._area_combo)
+        add_tooltip(self._area_combo, tip)
         ctk.CTkLabel(header, text="Area:").pack(side="right", padx=(0, 6))
 
     def _set_areas(self, names: list[str]) -> None:
@@ -180,7 +181,9 @@ class DS2DoorsPanel(_Page):
     title = "Doors"
 
     def setup_ui(self) -> None:
-        self._area_filter(self._header())
+        self._area_filter(
+            self._header(), "Lists only the areas that have doors this page can open."
+        )
         buttons = ctk.CTkFrame(self.parent, fg_color="transparent")
         buttons.pack(side="bottom", fill="x", padx=10, pady=(6, 10))
         self._open_button = self._button(
@@ -283,7 +286,12 @@ class DS2ItemsPanel(_Page):
 
     def setup_ui(self) -> None:
         self._items = build_item_db()
-        self._area_filter(self._header())
+        self._area_filter(
+            self._header(),
+            "Areas appear here once the character has entered them. The game "
+            "records an area's pickups on the first visit; lighting its "
+            "bonfires in an editor does not count.",
+        )
         buttons = ctk.CTkFrame(self.parent, fg_color="transparent")
         buttons.pack(side="bottom", fill="x", padx=10, pady=(6, 10))
         self._respawn_button = self._button(
@@ -405,7 +413,11 @@ class DS2FlagsPanel(_Page):
     def setup_ui(self) -> None:
         self._labels = flag_labels()
         header = self._header()
-        self._area_filter(header)
+        self._area_filter(
+            header,
+            "Lists only the areas that have named flags (doors and fog gates). "
+            "Any other flag can be read and changed with the flag id field.",
+        )
         self._search_var = ctk.StringVar()
         self._search_var.trace_add("write", lambda *_: self.refresh())
         ctk.CTkEntry(
