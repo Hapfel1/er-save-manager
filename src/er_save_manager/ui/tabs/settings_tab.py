@@ -235,6 +235,25 @@ class SettingsTab:
             font=("Inter", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
+        self.external_file_auto_reload_var = tk.BooleanVar(
+            value=self.settings.get("external_file_change_auto_reload", False)
+        )
+        ctk.CTkCheckBox(
+            frame,
+            text="Reload automatically when save file is modified externally",
+            variable=self.external_file_auto_reload_var,
+            command=lambda: self.settings.set(
+                "external_file_change_auto_reload",
+                self.external_file_auto_reload_var.get(),
+            ),
+        ).pack(anchor="w", padx=12, pady=5)
+        ctk.CTkLabel(
+            frame,
+            text="Reloads the save when the window regains focus, without asking.",
+            text_color=("gray40", "gray70"),
+            font=("Inter", 11),
+        ).pack(anchor="w", padx=32, pady=(0, 12))
+
     def _default_game_name(self) -> str:
         """Return the display name of the saved default game."""
         from er_save_manager.games.game_profiles import PROFILES_BY_KEY
@@ -255,7 +274,12 @@ class SettingsTab:
         The tab is rebuilt when the game changes, so drop the listener once
         its widgets are gone.
         """
-        if key not in ("default_game", "external_file_change_notification", None):
+        if key not in (
+            "default_game",
+            "external_file_change_notification",
+            "external_file_change_auto_reload",
+            None,
+        ):
             return
         try:
             if not self._default_game_combo.winfo_exists():
@@ -264,6 +288,9 @@ class SettingsTab:
             self.default_game_var.set(self._default_game_name())
             self.external_file_change_var.set(
                 self.settings.get("external_file_change_notification", True)
+            )
+            self.external_file_auto_reload_var.set(
+                self.settings.get("external_file_change_auto_reload", False)
             )
         except tk.TclError:
             self.settings.remove_listener(self._on_setting_changed)
