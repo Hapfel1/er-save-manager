@@ -128,6 +128,18 @@
     ]
   },
   {
+    "name": "Shrine Handmaid",
+    "alive_flag": 1195,
+    "dead_flag": 1198,
+    "last_flag": 1199,
+    "chr_bits": [
+      {
+        "map": "m40_00",
+        "bit": 96
+      }
+    ]
+  },
+  {
     "name": "Greirat of the Undead Settlement",
     "alive_flag": 1215,
     "dead_flag": 1218,
@@ -360,6 +372,18 @@
     ]
   },
   {
+    "name": "Tower Giant",
+    "alive_flag": 1475,
+    "dead_flag": 1478,
+    "last_flag": 1479,
+    "chr_bits": [
+      {
+        "map": "m31_00",
+        "bit": 160
+      }
+    ]
+  },
+  {
     "name": "Horace the Hushed",
     "alive_flag": 1495,
     "dead_flag": 1498,
@@ -377,6 +401,24 @@
         "map": "m40_00",
         "bit": 6
       }
+    ]
+  },
+  {
+    "name": "Rosaria, Mother of Rebirth",
+    "alive_flag": 1515,
+    "dead_flag": 1518,
+    "last_flag": 1519,
+    "chr_bits": [
+      {
+        "map": "m35_00",
+        "bit": 245
+      }
+    ],
+    "quest": [
+      1500,
+      1514,
+      1502,
+      1501
     ]
   },
   {
@@ -408,7 +450,7 @@
     ]
   },
   {
-    "name": "Shrine Handmaid",
+    "name": "Shrine Handmaid (Untended Graves)",
     "alive_flag": 1615,
     "dead_flag": 1618,
     "last_flag": 1619,
@@ -476,6 +518,18 @@
     ]
   },
   {
+    "name": "Dying Corvian",
+    "alive_flag": 1795,
+    "dead_flag": 1798,
+    "last_flag": 1799,
+    "chr_bits": [
+      {
+        "map": "m45_00",
+        "bit": 36
+      }
+    ]
+  },
+  {
     "name": "Amnesiac Lapp",
     "alive_flag": 1815,
     "dead_flag": 1818,
@@ -532,6 +586,18 @@
       {
         "map": "m50_00",
         "bit": 38
+      }
+    ]
+  },
+  {
+    "name": "Caged Hollow",
+    "alive_flag": 1950,
+    "dead_flag": 1953,
+    "last_flag": 1954,
+    "chr_bits": [
+      {
+        "map": "m31_00",
+        "bit": 173
       }
     ]
   }

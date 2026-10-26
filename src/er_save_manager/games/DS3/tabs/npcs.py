@@ -9,7 +9,9 @@ driven by the game's common NPC events (common_func 20006000-20006002):
   dead_flag       dead (alive_flag + 3)
 The events clear the whole range before setting one flag, so exactly one is
 on at a time. Revive and Kill do the same; quest progress flags outside the
-range are left alone.
+range are left alone, except for an NPC whose own events read its quest
+state for alive/dead (npcs.json quest = [lo, hi, alive state, dead state]):
+Revive and Kill set that range the way the game's revive and kill events do.
 
 A killed NPC also has its death bit set in the map's character state
 (npcs.json chr_bits, see DS3Slot.character_dead). The game spawns it dead
@@ -64,9 +66,15 @@ def _clear_death_bits(char, npc: dict) -> None:
         char.set_character_dead(part["map"], part["bit"], False)
 
 
-def _set_state(char, npc: dict, flag: int) -> None:
+def _set_state(char, npc: dict, revive: bool) -> None:
+    flag = npc["alive_flag"] if revive else npc["dead_flag"]
     for f in range(npc["alive_flag"], npc["last_flag"] + 1):
         char.set_flag(f, f == flag)
+    if "quest" in npc:
+        lo, hi, alive, dead = npc["quest"]
+        state = alive if revive else dead
+        for f in range(lo, hi + 1):
+            char.set_flag(f, f == state)
 
 
 class DS3NpcsTab:
@@ -189,7 +197,7 @@ class DS3NpcsTab:
                 CTkMessageBox.showerror("Unavailable", str(exc), parent=self.parent)
                 return
         for npc in npcs:
-            _set_state(char, npc, npc["alive_flag"] if revive else npc["dead_flag"])
+            _set_state(char, npc, revive)
         verb = "revived" if revive else "killed"
         try:
             _backup_and_save(
