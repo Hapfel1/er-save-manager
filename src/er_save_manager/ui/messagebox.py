@@ -216,12 +216,14 @@ class CTkMessageBox:
         )
 
     @staticmethod
-    def askyesno(title, message, parent=None, font_size=13, position=None):
+    def askyesno(
+        title, message, parent=None, font_size=13, position=None, icon_type="question"
+    ):
         result = CTkMessageBox._create_dialog(
             parent,
             title,
             message,
-            icon_type="question",
+            icon_type=icon_type,
             buttons=[("Yes", True), ("No", False)],
             font_size=font_size,
             position=position,
