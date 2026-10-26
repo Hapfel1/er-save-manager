@@ -483,3 +483,16 @@ def test_upgrade_materials_are_not_quick_items():
 
     assert attunement.is_material(TITANITE_SHARD)
     assert not attunement.is_material(0x40000097)  # Estus Flask
+
+
+def test_weapon_level_field(slot):
+    off = slot._player(0xA3)
+    slot.weapon_level = 7
+    assert slot._data[off] == 7
+    assert slot.weapon_level == 7
+
+
+def test_matchmaking_level_scale():
+    assert catalog.matchmaking_level(DAGGER + 7) == 7
+    assert catalog.matchmaking_level(0x107AC0 + 3) == 6  # Tailbone Short Sword, +5 cap
+    assert catalog.matchmaking_level(0x10000000 | 1000) == 0

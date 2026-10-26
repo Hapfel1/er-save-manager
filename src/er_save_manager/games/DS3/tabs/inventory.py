@@ -854,7 +854,12 @@ class DS3InventoryTab:
             value = max(0, min(level, opts["limits"].max_upgrade))
             capped += value != level
             if value != opts["level"]:
-                char.set_weapon_level(char.entry_at(offset), value)
+                new_id = char.set_weapon_level(char.entry_at(offset), value)
+                # The game raises the matchmaking weapon level on an upgrade
+                # and never lowers it.
+                char.weapon_level = max(
+                    char.weapon_level, catalog.matchmaking_level(new_id, self.source)
+                )
                 changed += 1
         self.last_offsets = list(offsets)
         return self._finish(

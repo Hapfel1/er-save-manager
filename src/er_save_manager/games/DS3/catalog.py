@@ -174,6 +174,18 @@ def display_name(item_id: int, source: str = "vanilla") -> str:
     return f"{entry['Name']} +{level}" if level else entry["Name"]
 
 
+def matchmaking_level(item_id: int, source: str = "vanilla") -> int:
+    """
+    Weapon upgrade level on the regular +10 scale: weapons that cap at +5
+    (twinkling titanite, boss souls) count each level twice.
+    """
+    if item_id >> 28 != 0:
+        return 0
+    level = item_id % INFUSION_STEP
+    entry = lookup(item_id, source)
+    return level * 2 if entry is not None and entry["MaxUpgrade"] == 5 else level
+
+
 def is_spell(item: dict) -> bool:
     return bool(item.get("Spell"))
 
