@@ -854,11 +854,11 @@ class DS3InventoryTab:
             value = max(0, min(level, opts["limits"].max_upgrade))
             capped += value != level
             if value != opts["level"]:
-                new_id = char.set_weapon_level(char.entry_at(offset), value)
-                # The game raises the matchmaking weapon level on an upgrade
-                # and never lowers it.
-                char.weapon_level = max(
-                    char.weapon_level, catalog.matchmaking_level(new_id, self.source)
+                entry = char.entry_at(offset)
+                old = catalog.matchmaking_level(entry.item_id, self.source)
+                new_id = char.set_weapon_level(entry, value)
+                self._sync_weapon_level(
+                    char, old, catalog.matchmaking_level(new_id, self.source)
                 )
                 changed += 1
         self.last_offsets = list(offsets)
@@ -869,6 +869,24 @@ class DS3InventoryTab:
             _summary(f"Set upgrade on {changed} weapon(s)", changed, skipped, capped),
             changed,
         )
+
+    def _sync_weapon_level(self, char, old: int, new: int) -> None:
+        """Keep the matchmaking weapon level in step with an upgrade edit:
+        raise it to a new highest weapon, or drop it to the highest weapon
+        left (inventory and storage) when the top weapon is lowered. The
+        game itself never lowers it."""
+        stored = char.weapon_level
+        if new > stored:
+            char.weapon_level = new
+        elif old >= stored > new:
+            char.weapon_level = max(
+                (
+                    catalog.matchmaking_level(e.item_id, self.source)
+                    for e in char.iter_inventory() + char.iter_storage()
+                    if char.is_real_item(e) and id_kind(e.item_id) == ID_WEAPON
+                ),
+                default=0,
+            )
 
     def set_infusion(self, offsets: list[int], infusion: str, parent=None) -> bool:
         """Give each selected weapon the named infusion, keeping its upgrade
