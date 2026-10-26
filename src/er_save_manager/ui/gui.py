@@ -3671,11 +3671,13 @@ class SaveManagerGUI:
                 return
         if not self._pending_file_change or self._file_change_dialog_open:
             return
+        self._pending_file_change = False
+        if self.settings.get("external_file_change_auto_reload", False):
+            self._reload_changed_save()
+            return
         if not self.settings.get("external_file_change_notification", True):
-            self._pending_file_change = False
             return
 
-        self._pending_file_change = False
         self._file_change_dialog_open = True
 
         from er_save_manager.ui import dialog_style as ds
@@ -3685,22 +3687,14 @@ class SaveManagerGUI:
         main.pack(fill=ctk.BOTH, expand=True, padx=20, pady=16)
 
         disable_var = ctk.BooleanVar(value=False)
+        auto_var = ctk.BooleanVar(value=False)
 
         def on_reload():
+            if auto_var.get():
+                self.settings.set("external_file_change_auto_reload", True)
             self._file_change_dialog_open = False
             dialog.destroy()
-            self._reopen_popups_after_reload(popups.open_popups(self.root))
-            if self.active_game in (
-                "elden_ring",
-                "dark_souls_remastered",
-                "dark_souls_3",
-                "dark_souls_2",
-            ) or (self.active_game == "nightreign" and _NR_AVAILABLE):
-                self.load_save(toast_message="Save file reloaded")
-            else:
-                # SteamID-only games have no parser; load_save would treat
-                # the file as an Elden Ring save.
-                self._load_non_er_save(str(self.save_path))
+            self._reload_changed_save()
 
         def on_dismiss():
             if disable_var.get():
@@ -3719,6 +3713,12 @@ class SaveManagerGUI:
         )
         ctk.CTkCheckBox(
             main, text="Don't show this again", variable=disable_var, font=ds.FONT
+        ).pack(side=ctk.BOTTOM, anchor=ctk.W, pady=(6, 0))
+        ctk.CTkCheckBox(
+            main,
+            text="Always reload automatically",
+            variable=auto_var,
+            font=ds.FONT,
         ).pack(side=ctk.BOTTOM, anchor=ctk.W, pady=(12, 0))
         ds.header(main, "Save modified externally", icon="⚠")
         ctk.CTkLabel(
@@ -3732,6 +3732,21 @@ class SaveManagerGUI:
             wraplength=400,
         ).pack(anchor=ctk.W, pady=(10, 0))
         ds.finish(dialog, window)
+
+    def _reload_changed_save(self) -> None:
+        """Reload the save after an external change, keeping open popups."""
+        self._reopen_popups_after_reload(popups.open_popups(self.root))
+        if self.active_game in (
+            "elden_ring",
+            "dark_souls_remastered",
+            "dark_souls_3",
+            "dark_souls_2",
+        ) or (self.active_game == "nightreign" and _NR_AVAILABLE):
+            self.load_save(toast_message="Save file reloaded")
+        else:
+            # SteamID-only games have no parser; load_save would treat
+            # the file as an Elden Ring save.
+            self._load_non_er_save(str(self.save_path))
 
     def _reopen_popups_after_reload(self, windows) -> None:
         """Rebuild open data popups once the reload has replaced the save."""

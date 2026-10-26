@@ -119,6 +119,8 @@ class Settings:
             "custom_item_adder": False,
             # Notify when the loaded save file is modified externally
             "external_file_change_notification": True,
+            # Reload the save on refocus instead of showing that notification
+            "external_file_change_auto_reload": False,
             # Show a toast when auto-backup creates a backup on game launch
             "show_auto_backup_notification": True,
             # UI scaling factor applied via CTk widget/window scaling APIs.
