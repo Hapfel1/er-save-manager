@@ -54,6 +54,15 @@ def test_sea_bed_west_of_liurnia_has_no_floor():
     assert floors_near(MAP_LANDS_BETWEEN, mx, my, False, radius=8) == []
 
 
+def test_forge_of_the_giants_bowl_keeps_only_the_rim():
+    # m60_54_53: bowl center (-86, -36), rim walkway at y ~1970
+    mx, my = _overworld(54, 53, -86.0, -36.0)
+    assert floors_near(MAP_LANDS_BETWEEN, mx, my, False, radius=30) == []
+    mx, my = _overworld(54, 53, -86.0, -36.0 + 68.0)
+    floors = floors_near(MAP_LANDS_BETWEEN, mx, my, False, radius=8)
+    assert any(p.y > 1960 for p in floors)
+
+
 def test_legacy_points_match_the_map_placement():
     f = floor_points._file("floor_vanilla.bin")
     checked = 0

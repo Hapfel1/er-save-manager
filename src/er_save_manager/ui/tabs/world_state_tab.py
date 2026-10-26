@@ -30,6 +30,7 @@ from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.boss_gate import closed_gate, confirm_teleport, filter_unlock
 from er_save_manager.ui.dialogs.message_manager import MessageManagerDialog
+from er_save_manager.ui.dialogs.pin_teleport_warning import confirm_pin_teleport
 from er_save_manager.ui.map_view import (
     count_phrase,
     current_window,
@@ -1022,6 +1023,9 @@ class WorldStateTab:
                     parent=self._dialog_parent(),
                 ):
                     return
+
+        if loc.tile_type == "pin" and not confirm_pin_teleport(self._dialog_parent()):
+            return
 
         if not confirm_teleport(
             loc, self._convergence, self._grace_state, self._dialog_parent()
