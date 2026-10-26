@@ -316,18 +316,25 @@ _LENIGRAST_KILL_RECORDS: tuple[tuple[int, int], ...] = (
 )
 # Event data, found through the first bonfire id array like the structures
 # above. Flags are one bit each, most significant bit first.
-# - Global event flags from _GLOBAL_FLAG_FIRST up start _GLOBAL_FLAGS_IN_OBJECT
-#   bytes into the NPC flag object.
+# - Global event flags _GLOBAL_FLAG_FIRST to _GLOBAL_FLAG_LAST start
+#   _GLOBAL_FLAGS_IN_OBJECT bytes into the NPC flag object.
 # - Map event flags A BB LLLLLL (map mA0_BB, local flag L) have one block of
 #   _MAP_FLAG_BLOCK_SIZE bytes per map for local flags 0 to 199. The blocks
 #   follow the order of the per-map records, the first one starting
 #   _MAP_FLAGS_BEFORE_IDS bytes before the id array.
 # - Global event values are u32 counters indexed by id, starting
 #   _EVENT_VALUES_BEFORE_IDS bytes before the id array.
-# Global flags and values have a second copy _EVENT_COPY_DISTANCE bytes further
-# on, which the game updates together with the first. The map flags in that
-# copy are not kept in step, so only the first copy's are read and written.
+# No other flag ids are stored: map flags with a local id from 200 up (chests,
+# NPC ghost flags) and the 7 and 8 digit ids are not saved; chests and levers
+# keep their state in the per-map object records instead.
+# The first _GLOBAL_FLAG_COPY_BYTES bytes of the global flags, and the values,
+# have a second copy _EVENT_COPY_DISTANCE bytes further on, which the game
+# updates together with the first. Other data follows the copied flags, and
+# the map flags in the copy are not kept in step, so only the first copy's map
+# flags are read and written.
 _GLOBAL_FLAG_FIRST = 100000
+_GLOBAL_FLAG_LAST = 119999
+_GLOBAL_FLAG_COPY_BYTES = 428
 _GLOBAL_FLAGS_IN_OBJECT = 8
 _MAP_FLAGS_BEFORE_IDS = 0xBD0
 _MAP_FLAG_BLOCK_SIZE = 25
@@ -347,6 +354,40 @@ _MAP_GENERATOR_COUNT_IN_RECORD = 4
 _MAP_RECORD_HEADER = 0x10
 _MAP_GENERATOR_CAPACITY = 256
 _MAP_KILL_COUNTS_IN_RECORD = _MAP_RECORD_HEADER + 2 * _MAP_GENERATOR_CAPACITY
+# Map object and treasure state, found through the first bonfire id array.
+# - One block of _OBJECT_BLOCK_SIZE bytes per map, the blocks back to back in
+#   first-visit order somewhere after the id array (the start moves with the
+#   data before it, so the chain is found by scanning): u32 map id, u32 object
+#   count, _OBJECT_BLOCK_CAPACITY x (u32 instance id, u32 state, low byte
+#   used), _OBJECT_BLOCK_CAPACITY x u32 treasure instance id, as many u32
+#   treasure states. Every map's objects are filled in; the treasure lists of
+#   maps the character never entered hold uninitialized memory.
+# - The live object list of the maps loaded at save time, _LIVE_OBJECTS_AFTER_IDS
+#   bytes after the id array: u32 map count, then per map u32 map id, u32
+#   record count and 16-byte records whose second u32 holds the state in byte
+#   2 and whose fourth holds instance id * 4 below bit 29.
+# - The live treasure list, _LIVE_TREASURE_IDS_AFTER_IDS bytes after the id
+#   array: _LIVE_TREASURE_CAPACITY u32 instance ids, then as many u32 states.
+# The game reads every copy, so writes go to all of them.
+# Treasure state: bits 0-9 one bit per item of the lot, bits 10-19 the items
+# still lying there, bit 20 set once the treasure is placed, bit 24 once taken.
+# Instance ids are AA BB LLLL for map mAA_BB.
+_OBJECT_BLOCK_SIZE = 0xC08
+_OBJECT_BLOCK_CAPACITY = 192
+_LIVE_OBJECTS_AFTER_IDS = 0xC50
+_LIVE_OBJECT_RECORD_SIZE = 16
+_LIVE_TREASURE_IDS_AFTER_IDS = 0x4C64
+_LIVE_TREASURE_CAPACITY = 1024
+_TREASURE_PLACED = 0x100000
+_TREASURE_TAKEN = 0x1000000
+_TREASURE_ITEMS_MASK = 0x3FF
+_TREASURE_PRESENT_SHIFT = 10
+# Door object states. Doors whose open state is not in world_flags.json are
+# not edited.
+DOOR_CLOSED_STATE = 10
+CHEST_CLOSED_STATE = 20
+CHEST_OPEN_STATE = 80
+
 # Highest defeat count the editor writes. The game stores a u32 and adds one
 # per win.
 BOSS_MAX_DEFEATS = 999
@@ -665,33 +706,244 @@ class NpcStates:
         )
 
 
-class QuestFlags:
-    """Global event flags of one slot for the quest steps (quest_steps.json,
-    102000-102999). Reads the first copy; writes both, which agree on these
-    flags."""
+def _map_flag_span(anchor: int, maps: list[int], flag: int) -> tuple[int, int] | None:
+    """Byte offset and mask of a map event flag, or None when its map has no
+    record or the local id is outside the map's block."""
+    area = flag // 100_000_000 * 10
+    block = flag // 1_000_000 % 100
+    local = flag % 1_000_000
+    map_id = area << 24 | block << 16
+    if map_id not in maps or local >= _MAP_FLAG_BLOCK_SIZE * 8:
+        return None
+    offset = (
+        anchor
+        - _MAP_FLAGS_BEFORE_IDS
+        + maps.index(map_id) * _MAP_FLAG_BLOCK_SIZE
+        + local // 8
+    )
+    return offset, 0x80 >> (local % 8)
 
-    def __init__(self, data: bytearray, anchor: int) -> None:
+
+class EventFlags:
+    """Event flags of one slot: the global flags 100000-119999 and the map
+    flags A BB LLLLLL with a local id below 200. Reads the first copy of a
+    global flag and writes both copies where the second one holds it."""
+
+    def __init__(self, data: bytearray, anchor: int, maps: list[int]) -> None:
         self._data = data
+        self._anchor = anchor
         self._first = anchor - _NPC_FLAGS_BEFORE_IDS + _GLOBAL_FLAGS_IN_OBJECT
+        self._maps = maps
 
-    def _span(self, flag_id: int) -> tuple[int, int]:
-        index = flag_id - _GLOBAL_FLAG_FIRST
-        offset = self._first + index // 8
-        if index < 0 or offset + _EVENT_COPY_DISTANCE >= len(self._data):
-            raise ValueError(f"Flag {flag_id} is outside the global flags")
-        return offset, 0x80 >> (index % 8)
+    def _spans(self, flag_id: int) -> list[tuple[int, int]]:
+        if _GLOBAL_FLAG_FIRST <= flag_id <= _GLOBAL_FLAG_LAST:
+            index = flag_id - _GLOBAL_FLAG_FIRST
+            spans = [(self._first + index // 8, 0x80 >> (index % 8))]
+            if index // 8 < _GLOBAL_FLAG_COPY_BYTES:
+                spans.append((spans[0][0] + _EVENT_COPY_DISTANCE, spans[0][1]))
+        elif (span := _map_flag_span(self._anchor, self._maps, flag_id)) is not None:
+            spans = [span]
+        else:
+            raise ValueError(f"Flag {flag_id} is not stored in the save")
+        if any(not 0 <= o < len(self._data) for o, _ in spans):
+            raise ValueError(f"Flag {flag_id} is outside the slot data")
+        return spans
+
+    def is_stored(self, flag_id: int) -> bool:
+        """Whether the slot holds this flag id."""
+        try:
+            self._spans(flag_id)
+        except ValueError:
+            return False
+        return True
 
     def get_flag(self, flag_id: int) -> bool:
-        offset, mask = self._span(flag_id)
+        """Raises ValueError for an id the slot does not hold."""
+        offset, mask = self._spans(flag_id)[0]
         return bool(self._data[offset] & mask)
 
     def set_flag(self, flag_id: int, value: bool) -> None:
-        offset, mask = self._span(flag_id)
-        for o in (offset, offset + _EVENT_COPY_DISTANCE):
+        """Raises ValueError for an id the slot does not hold."""
+        for o, mask in self._spans(flag_id):
             if value:
                 self._data[o] |= mask
             else:
                 self._data[o] &= ~mask & 0xFF
+
+
+@dataclass(frozen=True)
+class Treasure:
+    """An item pickup or chest content placed in a visited map."""
+
+    map_id: int
+    instance_id: int
+    taken: bool
+
+
+class WorldObjects:
+    """Map object and treasure states of one slot. Reads the per-map blocks and
+    writes them together with the live lists."""
+
+    def __init__(self, data: bytearray, anchor: int, maps: Iterable[int]) -> None:
+        self._data = data
+        self._anchor = anchor
+        self._maps = set(maps)
+        self._blocks = self._find_blocks()
+
+    def _u32(self, offset: int) -> int:
+        return struct.unpack_from("<I", self._data, offset)[0]
+
+    def _put(self, offset: int, value: int) -> None:
+        struct.pack_into("<I", self._data, offset, value)
+
+    def _find_blocks(self) -> list[tuple[int, int]]:
+        """(map id, offset) of each block in the chain after the id array."""
+        end = len(self._data) - 3 * _OBJECT_BLOCK_SIZE
+        for start in range(self._anchor, end, 4):
+            if all(
+                self._u32(start + k * _OBJECT_BLOCK_SIZE) in self._maps
+                for k in range(3)
+            ):
+                break
+        else:
+            return []
+        blocks = []
+        offset = start
+        while (
+            offset + _OBJECT_BLOCK_SIZE <= len(self._data)
+            and (map_id := self._u32(offset)) in self._maps
+        ):
+            if self._u32(offset + 4) <= _OBJECT_BLOCK_CAPACITY:
+                blocks.append((map_id, offset))
+            offset += _OBJECT_BLOCK_SIZE
+        return blocks
+
+    @staticmethod
+    def _in_map(instance_id: int, map_id: int) -> bool:
+        return instance_id // 10_000 == (map_id >> 24) * 100 + (map_id >> 16 & 0xFF)
+
+    @staticmethod
+    def _treasure_form(state: int) -> bool | None:
+        """True for a taken treasure, False for one still there, None for a
+        value that is not a treasure state."""
+        mask = state & _TREASURE_ITEMS_MASK
+        if not mask:
+            return None
+        if state == _TREASURE_PLACED | mask | mask << _TREASURE_PRESENT_SHIFT:
+            return False
+        if state == _TREASURE_TAKEN | _TREASURE_PLACED | mask:
+            return True
+        return None
+
+    def _block_objects(self) -> Iterator[tuple[int, int, int]]:
+        """(state offset, instance id, state) of every object in the blocks."""
+        for map_id, offset in self._blocks:
+            for k in range(self._u32(offset + 4)):
+                entry = offset + 8 + 8 * k
+                instance_id = self._u32(entry)
+                if self._in_map(instance_id, map_id):
+                    yield entry + 4, instance_id, self._u32(entry + 4) & 0xFF
+
+    def _block_treasures(self) -> Iterator[tuple[int, int, int, int]]:
+        """(state offset, map id, instance id, state) of every treasure in the
+        blocks."""
+        for map_id, offset in self._blocks:
+            ids = offset + 8 + 8 * _OBJECT_BLOCK_CAPACITY
+            states = ids + 4 * _OBJECT_BLOCK_CAPACITY
+            for k in range(_OBJECT_BLOCK_CAPACITY):
+                instance_id = self._u32(ids + 4 * k)
+                state = self._u32(states + 4 * k)
+                if self._in_map(instance_id, map_id) and (
+                    self._treasure_form(state) is not None
+                ):
+                    yield states + 4 * k, map_id, instance_id, state
+
+    def _live_objects(self) -> Iterator[tuple[int, int, int]]:
+        """(record state offset, instance id, state) of the live object list."""
+        offset = self._anchor + _LIVE_OBJECTS_AFTER_IDS
+        if offset + 4 > len(self._data):
+            return
+        count = self._u32(offset)
+        offset += 4
+        for _ in range(count):
+            if offset + 8 > len(self._data):
+                return
+            map_id, records = self._u32(offset), self._u32(offset + 4)
+            offset += 8
+            end = offset + records * _LIVE_OBJECT_RECORD_SIZE
+            if map_id not in self._maps or end > len(self._data):
+                return
+            for record in range(offset, end, _LIVE_OBJECT_RECORD_SIZE):
+                instance_id = (self._u32(record + 12) & 0x1FFFFFFF) >> 2
+                yield record + 4, instance_id, self._u32(record + 4) >> 16 & 0xFF
+            offset = end
+
+    def _live_treasures(self) -> Iterator[tuple[int, int, int]]:
+        """(state offset, instance id, state) of the live treasure list."""
+        ids = self._anchor + _LIVE_TREASURE_IDS_AFTER_IDS
+        states = ids + 4 * _LIVE_TREASURE_CAPACITY
+        if states + 4 * _LIVE_TREASURE_CAPACITY > len(self._data):
+            return
+        for k in range(_LIVE_TREASURE_CAPACITY):
+            state = self._u32(states + 4 * k)
+            if self._treasure_form(state) is not None:
+                yield states + 4 * k, self._u32(ids + 4 * k), state
+
+    def treasures(self) -> list[Treasure]:
+        """Every treasure of the visited maps, in block order."""
+        seen: set[int] = set()
+        out = []
+        for _offset, map_id, instance_id, state in self._block_treasures():
+            if instance_id not in seen:
+                seen.add(instance_id)
+                out.append(
+                    Treasure(map_id, instance_id, bool(self._treasure_form(state)))
+                )
+        return out
+
+    def respawn(self, instance_ids: Iterable[int]) -> int:
+        """Put taken treasures back and close their chests. Returns how many
+        treasures came back."""
+        wanted = set(instance_ids)
+        back: set[int] = set()
+        for offset, _map_id, instance_id, state in list(self._block_treasures()):
+            if instance_id in wanted and self._treasure_form(state):
+                self._put(offset, self._respawned(state))
+                back.add(instance_id)
+        for offset, instance_id, state in list(self._live_treasures()):
+            if instance_id in back and self._treasure_form(state):
+                self._put(offset, self._respawned(state))
+        for instance_id in back:
+            if self.object_state(instance_id) == CHEST_OPEN_STATE:
+                self.set_object_state(instance_id, CHEST_CLOSED_STATE)
+        return len(back)
+
+    @staticmethod
+    def _respawned(state: int) -> int:
+        mask = state & _TREASURE_ITEMS_MASK
+        return _TREASURE_PLACED | mask | mask << _TREASURE_PRESENT_SHIFT
+
+    def object_state(self, instance_id: int) -> int | None:
+        """State of a map object, or None when no visited map holds it."""
+        for _offset, found, state in self._block_objects():
+            if found == instance_id:
+                return state
+        return None
+
+    def set_object_state(self, instance_id: int, state: int) -> bool:
+        """Write a map object's state to every copy. Returns False when no
+        visited map holds the object."""
+        found = False
+        for offset, other, _state in list(self._block_objects()):
+            if other == instance_id:
+                self._put(offset, self._u32(offset) & ~0xFF | state)
+                found = True
+        if not found:
+            return False
+        for offset, other, _state in list(self._live_objects()):
+            if other == instance_id:
+                self._put(offset, self._u32(offset) & ~0xFF0000 | state << 16)
+        return True
 
 
 class BossStatus(Enum):
@@ -761,21 +1013,7 @@ class BossStates:
         return [first, first + _EVENT_COPY_DISTANCE]
 
     def _map_flag_span(self, flag: int) -> tuple[int, int] | None:
-        """Byte offset and mask of a map event flag, or None when its map has
-        no record or the local id is outside the map's block."""
-        area = flag // 100_000_000 * 10
-        block = flag // 1_000_000 % 100
-        local = flag % 1_000_000
-        map_id = area << 24 | block << 16
-        if map_id not in self._maps or local >= _MAP_FLAG_BLOCK_SIZE * 8:
-            return None
-        offset = (
-            self._anchor
-            - _MAP_FLAGS_BEFORE_IDS
-            + self._maps.index(map_id) * _MAP_FLAG_BLOCK_SIZE
-            + local // 8
-        )
-        return offset, 0x80 >> (local % 8)
+        return _map_flag_span(self._anchor, self._maps, flag)
 
     def _in_range(self, fight: BossFight) -> bool:
         if fight.once_killed_flag < _GLOBAL_FLAG_FIRST or fight.defeat_value <= 0:
@@ -2294,14 +2532,25 @@ class DS2Save:
         }
         return NpcStates(data, view.anchor, records)
 
-    def quest_flags(self, slot_index: int) -> QuestFlags | None:
-        """The slot's global flags for quest steps, or None when the slot holds
-        no bonfire data to locate them from."""
+    def event_flags(self, slot_index: int) -> EventFlags | None:
+        """The slot's event flags, or None when the slot holds no bonfire data
+        to locate them from."""
         data = self.container.get_entry(BIG_ENTRY_START + slot_index)
         view = Bonfires(data)
         if not view.found or view.anchor < _NPC_FLAGS_BEFORE_IDS:
             return None
-        return QuestFlags(data, view.anchor)
+        maps = [map_id for map_id, _ in _map_records(data, view.anchor)]
+        return EventFlags(data, view.anchor, maps)
+
+    def world_objects(self, slot_index: int) -> WorldObjects | None:
+        """The slot's map object and treasure states, or None when the slot
+        holds no bonfire data to locate them from."""
+        data = self.container.get_entry(BIG_ENTRY_START + slot_index)
+        view = Bonfires(data)
+        if not view.found:
+            return None
+        maps = [map_id for map_id, _ in _map_records(data, view.anchor)]
+        return WorldObjects(data, view.anchor, maps)
 
     def bosses(self, slot_index: int) -> BossStates | None:
         """The slot's boss records, or None when the slot holds no bonfire data

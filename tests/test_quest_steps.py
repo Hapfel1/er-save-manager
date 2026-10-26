@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from er_save_manager.data.quest_flags_db import QUEST_FLAGS, load_quest_table
-from er_save_manager.games.DS2.save import QuestFlags
+from er_save_manager.games.DS2.save import EventFlags
 from er_save_manager.ui.quest_progress_dialog import is_tracked, steps_up_to
 
 GAMES = Path(__file__).parent.parent / "src" / "er_save_manager" / "games"
@@ -80,7 +80,7 @@ COPY_DISTANCE = 0x604C
 
 def test_ds2_quest_flags_write_both_copies():
     data = bytearray(ANCHOR + 0x8000)
-    flags = QuestFlags(data, ANCHOR)
+    flags = EventFlags(data, ANCHOR, [])
     flags.set_flag(102480, True)
     first = ANCHOR - 0x15A0 + 8 + (102480 - 100000) // 8
     mask = 0x80 >> ((102480 - 100000) % 8)

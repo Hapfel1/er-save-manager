@@ -160,6 +160,10 @@ _BOSS_ONCE_KILLED_FLAG = 0x14
 _BOSS_DEFEAT_VALUE = 0x18
 _BOSS_BONFIRE_ID = 0x3C  # u16
 _BONFIRE_MAP_ID = 0x00  # s32, MapObjectBonfireParam mapId
+# ItemLotParam2_Other: row id = the instance id of the treasure that gives it.
+_LOT_ITEM_COUNT = 10
+_LOT_ITEM_NUM = 0x04  # u8 x 10
+_LOT_ITEM_ID = 0x2C  # s32 x 10
 
 
 class _Param:
@@ -272,6 +276,7 @@ class Regulation:
         level_up_souls: dict[int, int],
         boss_fights: tuple[BossFight, ...] = (),
         bonfire_maps: dict[int, int] | None = None,
+        treasure_lots: dict[int, tuple[tuple[int, int], ...]] | None = None,
     ) -> None:
         self._items = items
         self._attunement_slots = attunement_slots
@@ -279,6 +284,7 @@ class Regulation:
         self._level_up_souls = level_up_souls
         self._boss_fights = boss_fights
         self._bonfire_maps = bonfire_maps or {}
+        self._treasure_lots = treasure_lots or {}
 
     @classmethod
     def from_entry(cls, entry: bytes | bytearray) -> Regulation:
@@ -405,6 +411,22 @@ class Regulation:
                     bonfire_maps[row_id] = (
                         map_id // 1_000_000 << 24 | map_id // 10_000 % 100 << 16
                     )
+        treasure_lots: dict[int, tuple[tuple[int, int], ...]] = {}
+        if "ItemLotParam2_Other.param" in files:
+            lots = param("ItemLotParam2_Other.param")
+            for row_id in lots.ids():
+                entries = (
+                    (
+                        lots.s32(row_id, _LOT_ITEM_ID + 4 * k),
+                        lots.u8(row_id, _LOT_ITEM_NUM + k),
+                    )
+                    for k in range(_LOT_ITEM_COUNT)
+                )
+                treasure_lots[row_id] = tuple(
+                    (item_id, count)
+                    for item_id, count in entries
+                    if count > 0 and item_id in items
+                )
         return cls(
             items,
             attunement_slots,
@@ -412,6 +434,7 @@ class Regulation:
             level_up_souls,
             tuple(boss_fights),
             bonfire_maps,
+            treasure_lots,
         )
 
     @classmethod
@@ -487,6 +510,11 @@ class Regulation:
     def bonfire_maps(self) -> dict[int, int]:
         """Bonfire id to the map it stands in, in the save's map id format."""
         return dict(self._bonfire_maps)
+
+    def treasure_items(self, instance_id: int) -> tuple[tuple[int, int], ...]:
+        """(item id, count) of each item a map treasure gives, empty when the
+        regulation has no lot for it."""
+        return self._treasure_lots.get(instance_id, ())
 
     def durability(self, item_id: int) -> float | None:
         """Maximum durability of a weapon, armor piece or ring, or None when
