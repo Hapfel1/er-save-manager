@@ -12,6 +12,11 @@ vanilla graces).
 grace_regions.json maps each grace flag to the PlayRegionParam rows whose
 mapMenuUnlockEventId is that flag, per regulation (ids as stored in the
 slot's Regions list).
+
+grace_bosses.json maps each grace the game spawns only after an event flag
+(the boss defeat flag of its arena, from the map event scripts) to that flag,
+and each non-grace location sitting on such a grace to the grace flag, per
+regulation.
 """
 
 from __future__ import annotations
@@ -153,3 +158,65 @@ def grace_region_ids(flag_id: int, convergence: bool) -> tuple[int, ...]:
     return _region_tables()["convergence" if convergence else "vanilla"].get(
         flag_id, ()
     )
+
+
+@dataclass(frozen=True)
+class BossGate:
+    """Event flag the game waits for before it spawns a grace."""
+
+    flag_id: int
+    boss: str | None  # boss_data name, None when the flag is no boss defeat
+
+    @property
+    def condition(self) -> str:
+        if self.boss:
+            return f"{self.boss} is defeated"
+        return f"event flag {self.flag_id} is set"
+
+
+@cache
+def _gate_tables() -> dict[str, dict]:
+    raw = json.loads(
+        (Path(__file__).parent / "grace_bosses.json").read_text(encoding="utf-8")
+    )
+    return {
+        flavor: {
+            "graces": {int(f): b for f, b in table["graces"].items()},
+            "locations": dict(table["locations"]),
+        }
+        for flavor, table in raw.items()
+    }
+
+
+@cache
+def _boss_names() -> dict[int, str]:
+    """Boss name per flag: defeat flags (flags[0]) first, then any other flag
+    of the boss (Morgott's throne event, Radahn's meteor)."""
+    from er_save_manager.data.boss_data import BOSSES
+
+    names = {data["flags"][0]: name for name, data in BOSSES.items()}
+    for name, data in BOSSES.items():
+        for flag in data["flags"][1:]:
+            names.setdefault(flag, name)
+    return names
+
+
+def grace_gate(flag_id: int, convergence: bool) -> BossGate | None:
+    """Gate of a grace, or None when the game registers it unconditionally."""
+    flavor = "convergence" if convergence else "vanilla"
+    gate_flag = _gate_tables()[flavor]["graces"].get(flag_id)
+    if gate_flag is None:
+        return None
+    return BossGate(gate_flag, _boss_names().get(gate_flag))
+
+
+def location_gate(
+    tile_type: str, map_id_str: str, flag_id: int, convergence: bool
+) -> BossGate | None:
+    """Gate of a teleport location: its own for a grace, else the gate of
+    the grace it sits on."""
+    if tile_type == "grace":
+        return grace_gate(flag_id, convergence) if flag_id else None
+    flavor = "convergence" if convergence else "vanilla"
+    grace_flag = _gate_tables()[flavor]["locations"].get(map_id_str)
+    return None if grace_flag is None else grace_gate(grace_flag, convergence)

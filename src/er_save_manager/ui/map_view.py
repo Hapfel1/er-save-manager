@@ -12,6 +12,7 @@ from pathlib import Path
 import customtkinter as ctk
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageTk
 
+from er_save_manager.data.grace_data import location_gate
 from er_save_manager.data.locations import MapLocation
 from er_save_manager.data.map_pieces import (
     MAP_PIECES,
@@ -39,6 +40,7 @@ from er_save_manager.editors.map_markers import (
 )
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
+from er_save_manager.ui.boss_gate import gate_status
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import (
     bind_mousewheel,
@@ -1210,7 +1212,21 @@ class MapWindow:
             state = self._grace_state(loc.flag_id)
             if state is not None:
                 lines.append("Unlocked" if state else "Locked")
+        gate = self._gate_line(loc)
+        if gate:
+            lines.append(gate)
         return "\n".join(lines)
+
+    def _gate_line(self, loc: MapLocation) -> str | None:
+        """ "Appears after: <boss> (alive)" for a boss-gated location."""
+        gate = location_gate(
+            loc.tile_type, loc.map_id_str, loc.flag_id, self._images.convergence
+        )
+        if gate is None:
+            return None
+        if self._grace_state is None:
+            return f"Appears after: {gate.boss or f'event flag {gate.flag_id}'}"
+        return f"Appears after: {gate_status(gate, self._grace_state)}"
 
     def _draw_player(self):
         blood = self._bloodstain
@@ -1397,9 +1413,12 @@ class MapWindow:
             return
         loc = placed.loc
         area = self._area_of(placed)
+        gate = self._gate_line(loc)
         self._info_var.set(
             f"{loc.name}\n{_KIND_LABELS.get(loc.tile_type, loc.tile_type)}  "
-            f"{loc.map_id_str}" + (f"\nMap area: {area.name}" if area else "")
+            f"{loc.map_id_str}"
+            + (f"\nMap area: {area.name}" if area else "")
+            + (f"\n{gate}" if gate else "")
         )
         self._area_btn.configure(state="normal" if area else "disabled")
         self._teleport_btn.configure(state="normal")

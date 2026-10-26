@@ -7,9 +7,10 @@ import tkinter as tk
 
 import customtkinter as ctk
 
-from er_save_manager.data.grace_data import Grace, get_graces
+from er_save_manager.data.grace_data import Grace, get_graces, grace_gate
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
+from er_save_manager.ui.boss_gate import filter_unlock, gate_status
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import (
     center_window,
@@ -43,7 +44,8 @@ class GraceDialog:
         reload_callback,
         show_toast,
     ):
-        graces = get_graces(include_convergence=bool(save_file.is_convergence))
+        convergence = bool(save_file.is_convergence)
+        graces = get_graces(include_convergence=convergence)
         graces_by_iid = {str(g.flag_id): g for g in graces}
 
         dialog = ctk.CTkToplevel(parent)
@@ -125,16 +127,18 @@ class GraceDialog:
         # ---- Grace list ----
         tree_frame, tree = ds.themed_tree(
             dialog,
-            columns=("state", "grace", "region"),
+            columns=("state", "grace", "region", "boss"),
             show="headings",
             selectmode="extended",
         )
         tree.heading("state", text="State")
         tree.heading("grace", text="Grace")
         tree.heading("region", text="Region")
+        tree.heading("boss", text="Appears after")
         tree.column("state", width=90, anchor="w", stretch=False)
-        tree.column("grace", width=360, anchor="w")
-        tree.column("region", width=260, anchor="w")
+        tree.column("grace", width=300, anchor="w")
+        tree.column("region", width=200, anchor="w")
+        tree.column("boss", width=220, anchor="w")
 
         tree.tag_configure("unlocked", foreground=palette.pick(palette.GREEN_TEXT))
         tree.tag_configure("locked", foreground=palette.pick(ds.MUTED))
@@ -154,6 +158,7 @@ class GraceDialog:
         tree.heading("state", text="State", command=lambda: _sort("state"))
         tree.heading("grace", text="Grace", command=lambda: _sort("grace"))
         tree.heading("region", text="Region", command=lambda: _sort("region"))
+        tree.heading("boss", text="Appears after", command=lambda: _sort("boss"))
 
         # ---- Flag access ----
         def _is_unlocked(flag_id: int) -> bool:
@@ -161,6 +166,16 @@ class GraceDialog:
                 return bool(event_flag_accessor.get_flag(flag_id))
             except (ValueError, KeyError):
                 return False
+
+        def _flag_state(flag_id: int) -> bool | None:
+            try:
+                return bool(event_flag_accessor.get_flag(flag_id))
+            except (ValueError, KeyError):
+                return None
+
+        def _boss_text(grace: Grace) -> str:
+            gate = grace_gate(grace.flag_id, convergence)
+            return "" if gate is None else gate_status(gate, _flag_state)
 
         # ---- Filtering ----
         def _in_scope(grace: Grace) -> bool:
@@ -215,6 +230,7 @@ class GraceDialog:
                         "Unlocked" if unlocked else "Locked",
                         grace.name,
                         grace.region,
+                        _boss_text(grace),
                     ),
                     tags=("unlocked" if unlocked else "locked",),
                 )
@@ -235,6 +251,20 @@ class GraceDialog:
                 return
 
             changed = [g for g in targets if _is_unlocked(g.flag_id) != state]
+            if changed and state:
+                kept = filter_unlock(
+                    [g.flag_id for g in changed],
+                    {g.flag_id: g.name for g in changed},
+                    convergence,
+                    _flag_state,
+                    dialog,
+                )
+                if kept is None:
+                    return
+                kept_set = set(kept)
+                changed = [g for g in changed if g.flag_id in kept_set]
+                if not changed:
+                    return
             if not changed:
                 CTkMessageBox.showinfo(
                     "Nothing to Change",

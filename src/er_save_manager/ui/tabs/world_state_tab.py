@@ -28,6 +28,7 @@ from er_save_manager.parser.er_types import FloatVector3, MapId
 from er_save_manager.parser.event_flags import EventFlags
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
+from er_save_manager.ui.boss_gate import closed_gate, confirm_teleport, filter_unlock
 from er_save_manager.ui.dialogs.message_manager import MessageManagerDialog
 from er_save_manager.ui.map_view import (
     count_phrase,
@@ -562,6 +563,16 @@ class WorldStateTab:
         save = self.get_save_file()
         if save is None or self.editor is None:
             return
+        names = {loc.flag_id: loc.name for loc in self.all_locations if loc.flag_id}
+        grace_flags = filter_unlock(
+            grace_flags,
+            names,
+            self._convergence,
+            self._grace_state,
+            self._dialog_parent(),
+        )
+        if grace_flags is None:
+            return
         try:
             result = unlock(
                 save,
@@ -949,8 +960,14 @@ class WorldStateTab:
         for loc in self.filtered_locations:
             grace_tag = " [Grace]" if loc.tile_type == "grace" else ""
             dlc_tag = " [DLC]" if loc.is_dlc else ""
+            boss_tag = (
+                " [Boss Alive]"
+                if self.editor
+                and closed_gate(loc, self._convergence, self._grace_state)
+                else ""
+            )
             self.location_listbox.insert(
-                tk.END, f"{loc.map_id_str}  {loc.name}{grace_tag}{dlc_tag}"
+                tk.END, f"{loc.map_id_str}  {loc.name}{grace_tag}{dlc_tag}{boss_tag}"
             )
 
     def _teleport_to_known(self):
@@ -1005,6 +1022,11 @@ class WorldStateTab:
                     parent=self._dialog_parent(),
                 ):
                     return
+
+        if not confirm_teleport(
+            loc, self._convergence, self._grace_state, self._dialog_parent()
+        ):
+            return
 
         save_path = self.get_save_path()
         if save_path:
@@ -1209,6 +1231,9 @@ class WorldStateTab:
 
     def refresh(self):
         self._refresh_marker_summary()
+        listbox = getattr(self, "location_listbox", None)
+        if listbox is not None and listbox.winfo_exists():
+            self._update_location_list()
         if hasattr(self, "bloodstain_btn"):
             self.bloodstain_btn.configure(
                 state="normal" if self._bloodstain_has_runes() else "disabled"
