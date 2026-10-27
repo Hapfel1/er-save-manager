@@ -861,6 +861,52 @@ class FacePreset:
             "_pad": list(self.pad),
         }
 
+    # Keys every to_dict() export has carried; a dict without them is not a
+    # preset, and from_dict would fill the slot with defaults.
+    REQUIRED_KEYS = ("body_type", "face_model", "hair_model", "apparent_age")
+    # Dict keys stored wider than one byte
+    _WIDE_KEYS = ("_face_data_marker", "_alignment", "_size")
+
+    @classmethod
+    def dict_problem(cls, data) -> str | None:
+        """Reason the preset dict cannot be written to a slot, or None.
+
+        Checks the shape (object, FACE magic, REQUIRED_KEYS), that every
+        byte field is an integer 0-255, and that the preset serializes to
+        exactly 0x130 bytes.
+        """
+        if not isinstance(data, dict):
+            return "not a preset object"
+        magic = data.get("_magic", "FACE")
+        if magic != "FACE":
+            return f"_magic is {magic!r}, not 'FACE'"
+        missing = [key for key in cls.REQUIRED_KEYS if key not in data]
+        if missing:
+            return "missing " + ", ".join(missing)
+
+        def is_byte(value) -> bool:
+            return type(value) is int and 0 <= value <= 255
+
+        for key, value in data.items():
+            if key in cls._WIDE_KEYS:
+                if type(value) is not int:
+                    return f"{key} is not an integer"
+                continue
+            if isinstance(value, list):
+                if not all(is_byte(v) for v in value):
+                    return f"{key} has a value outside 0-255"
+            elif type(value) is int and not is_byte(value):
+                return f"{key} is {value}, outside 0-255"
+
+        try:
+            buf = BytesIO()
+            cls.from_dict(data).write(buf)
+        except (struct.error, TypeError, ValueError, IndexError) as exc:
+            return f"invalid value ({exc})"
+        if len(buf.getvalue()) != 0x130:
+            return "a byte array field has the wrong length"
+        return None
+
     @classmethod
     def from_dict(cls, data: dict) -> FacePreset:
         """
@@ -886,7 +932,9 @@ class FacePreset:
 
         preset.unk0x6c = bytes(data.get("_unk0x6c", [0] * 64))
         preset.unk0xb1 = bytes(data.get("_unk0xb1", [0, 0]))
-        preset.pad = bytes(data.get("_pad", [0] * 10))
+        # Some shared presets carry an 18-byte zero _pad; written as is, the
+        # extra 8 bytes would land on the next slot.
+        preset.pad = bytes(data.get("_pad", [0] * 10))[:10].ljust(10, b"\x00")
 
         # If body_type is explicitly provided, override it in unk0x00
         # (for backward compatibility with old JSONs that don't have _unk0x00)

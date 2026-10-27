@@ -12,7 +12,7 @@ from typing import Any
 
 import customtkinter as ctk
 
-from er_save_manager.backup.manager import BackupManager
+from er_save_manager.parser.character_presets import FacePreset
 from er_save_manager.preset_manager import PresetManager
 from er_save_manager.preset_metrics import PresetMetrics
 from er_save_manager.ui import dialog_style as ds
@@ -24,6 +24,7 @@ from er_save_manager.ui.dialogs.community_dialogs import (
     show_submission_link,
 )
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import guard_before_write
 from er_save_manager.ui.progress_dialog import ProgressDialog
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import (
@@ -920,60 +921,72 @@ class EnhancedPresetBrowser:
 
         slot_str = self.target_slot_var.get()
         target_slot = int(slot_str.split()[1]) - 1
+        name = self.current_preset.get("name", "preset")
 
-        try:
-            current_char = self.appearance_tab.get_current_character_slot()
-            char_name = f"Character {current_char + 1}"
-        except Exception:
-            char_name = "the current character"
+        save_file = self.appearance_tab.get_save_file()
+        if not save_file or not self.appearance_tab.get_save_path():
+            notify(self.dialog, "No save file loaded", "warning")
+            return
 
-        if not CTkMessageBox.askyesno(
-            "Apply Preset",
-            (
-                f"Apply '{self.current_preset.get('name', 'preset')}' to {char_name}'s {slot_str}?\n\n"
-                "This will add the preset to that character's appearance menu."
-            ),
-            parent=self.dialog,
-        ):
+        if target_slot >= self.NUM_SLOTS:
+            CTkMessageBox.showerror(
+                "Invalid Slot",
+                f"Preset slot {target_slot + 1} is invalid (max {self.NUM_SLOTS})",
+                parent=self.dialog,
+            )
+            return
+
+        # Presets live in USER_DATA_10 and are shared by every character
+        text = (
+            f"Apply '{name}' to Preset Slot {target_slot + 1}?\n\n"
+            "Presets are shared by all characters in this save."
+        )
+        if self.appearance_tab.occupied_slots(save_file, [target_slot]):
+            text += f"\nThe preset in slot {target_slot + 1} will be replaced."
+        if not CTkMessageBox.askyesno("Apply Preset", text, parent=self.dialog):
+            return
+        if not guard_before_write("apply the preset"):
             return
         try:
-            preset_data = self.manager.get_cached_preset(self.current_preset["id"])
+            preset_id = self.current_preset.get("id", "")
+            preset_data = self.manager.get_cached_preset(preset_id)
             if not preset_data:
-                preset_data = self.manager.download_preset()
+                preset_data = self.manager.download_preset(
+                    preset_id, self.current_preset
+                )
 
-            if not preset_data or "appearance" not in preset_data:
+            if not preset_data:
                 CTkMessageBox.showerror(
-                    "Preset Unavailable", "Invalid preset data", parent=self.dialog
+                    "Preset Unavailable",
+                    f"'{name}' could not be downloaded. Check your connection.",
+                    parent=self.dialog,
                 )
                 return
-
-            save_file = self.appearance_tab.get_save_file()
-            save_path = self.appearance_tab.get_save_path()
-
-            if not save_file or not save_path:
-                notify(self.dialog, "No save file loaded", "warning")
-                return
-
-            if target_slot >= self.NUM_SLOTS:
+            appearance = (
+                preset_data.get("appearance") if isinstance(preset_data, dict) else None
+            )
+            problem = FacePreset.dict_problem(appearance)
+            if problem:
                 CTkMessageBox.showerror(
-                    "Invalid Slot",
-                    f"Preset slot {target_slot + 1} is invalid (max {self.NUM_SLOTS})",
+                    "Preset Unavailable",
+                    f"'{name}' cannot be applied: {problem}",
                     parent=self.dialog,
                 )
                 return
 
-            manager = BackupManager(Path(save_path))
-            manager.create_backup(
-                description=f"before_applying_preset_to_slot_{target_slot + 1}",
-                operation="apply_community_preset",
-                save=save_file,
-            )
+            # Applying pending edits reloads the save
+            save_file = self.appearance_tab.get_save_file()
+            if not save_file:
+                return
+            if not self.appearance_tab.write_presets(
+                save_file,
+                lambda: save_file.import_preset(appearance, target_slot),
+                f"before_applying_preset_to_slot_{target_slot + 1}",
+                "apply_community_preset",
+                self.dialog,
+            ):
+                return
 
-            save_file.import_preset(preset_data["appearance"], target_slot)
-            save_file.recalculate_checksums()
-            save_file.to_file(Path(save_path))
-
-            preset_id = self.current_preset.get("id", "")
             if preset_id:
                 self.metrics.record_download(preset_id)
                 updated_metrics = self.metrics.fetch_metrics([preset_id])
@@ -983,16 +996,9 @@ class EnhancedPresetBrowser:
 
             notify(
                 self.dialog,
-                f"Applied '{self.current_preset.get('name', 'preset')}' to Preset Slot {target_slot + 1}.",
+                f"Applied '{name}' to Preset Slot {target_slot + 1}.",
                 "success",
             )
-
-            # Browser stays open after applying
-            if (
-                hasattr(self.appearance_tab, "reload_save")
-                and self.appearance_tab.reload_save
-            ):
-                self.appearance_tab.reload_save()
 
         except Exception as exc:  # pragma: no cover - UI path
             CTkMessageBox.showerror(

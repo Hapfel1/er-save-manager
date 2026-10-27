@@ -18,7 +18,9 @@ from er_save_manager.ui.pending import (
     FieldTracker,
     StageError,
     guard_before_write,
+    save_writable,
     var_state,
+    write_failed,
 )
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_file
@@ -1177,6 +1179,58 @@ class AppearanceTab:
 
             traceback.print_exc()
 
+    def occupied_slots(self, save_file, slots) -> list[int]:
+        """0-based slots among slots that hold a preset in save_file."""
+        presets = save_file.get_character_presets()
+        if not presets:
+            return []
+        return [s for s in slots if not presets.presets[s].is_empty()]
+
+    def _confirm_overwrite(self, save_file, slots, parent) -> bool:
+        """Ask before replacing presets; True when none of slots is occupied."""
+        occupied = self.occupied_slots(save_file, slots)
+        if not occupied:
+            return True
+        if len(occupied) == 1:
+            text = f"Preset slot {occupied[0] + 1} already holds a preset. Replace it?"
+        else:
+            names = ", ".join(str(s + 1) for s in occupied)
+            text = f"Preset slots {names} already hold presets. Replace them?"
+        return CTkMessageBox.askyesno("Replace Presets", text, parent=parent)
+
+    def write_presets(self, save_file, change, description, operation, parent):
+        """Back up the loaded save, run change, write the save and reload it.
+
+        change returns False when it could not change the presets; the save
+        is then reloaded from disk without writing. Returns True on success.
+        """
+        if not save_writable():
+            return False
+        save_path = self.get_save_path()
+        if save_path:
+            BackupManager(Path(save_path)).create_backup(
+                description=description, operation=operation, save=save_file
+            )
+        if not change():
+            if self.reload_save:
+                self.reload_save()
+            CTkMessageBox.showerror(
+                "Preset Not Written",
+                "The preset could not be written to the save. Nothing was changed.",
+                parent=parent,
+            )
+            return False
+        try:
+            save_file.recalculate_checksums()
+            if save_path:
+                save_file.to_file(Path(save_path))
+        except Exception as exc:
+            write_failed(exc, parent)
+            return False
+        if self.reload_save:
+            self.reload_save()
+        return True
+
     def import_preset_from_json(self):
         """Import preset from external JSON file"""
         save_file = self.get_save_file()
@@ -1264,10 +1318,35 @@ class AppearanceTab:
                 )
                 return
 
-            if not presets:
+            if not isinstance(presets, list) or not presets:
                 CTkMessageBox.showerror(
                     "No Presets Found",
                     "No presets found in the data",
+                    parent=self.parent,
+                )
+                return
+
+            from er_save_manager.parser.character_presets import FacePreset
+
+            # Entries that cannot be written are dropped and listed
+            valid = []
+            skipped = []
+            for i, entry in enumerate(presets):
+                body = entry.get("data", entry) if isinstance(entry, dict) else entry
+                problem = FacePreset.dict_problem(body)
+                if problem:
+                    skipped.append(f"Preset {i + 1}: {problem}")
+                else:
+                    valid.append((f"Preset {i + 1}", body))
+
+            skipped_text = "\n".join(skipped[:10])
+            if len(skipped) > 10:
+                skipped_text += f"\n... and {len(skipped) - 10} more"
+
+            if not valid:
+                CTkMessageBox.showerror(
+                    "Preset Not Imported",
+                    f"No preset in {source_label} can be imported:\n\n{skipped_text}",
                     parent=self.parent,
                 )
                 return
@@ -1285,9 +1364,17 @@ class AppearanceTab:
             ctk.CTkLabel(
                 main, text=f"From {source_label}", font=ds.SMALL, text_color=ds.MUTED
             ).pack(anchor=tk.W, pady=(2, 10))
+            if skipped:
+                ctk.CTkLabel(
+                    main,
+                    text=f"Skipped, cannot be imported:\n{skipped_text}",
+                    font=ds.SMALL,
+                    text_color=ds.WARNING,
+                    justify=tk.LEFT,
+                ).pack(anchor=tk.W, pady=(0, 10))
 
             frame = ds.box(main, pady=(0, 0))
-            preset_names = [f"Preset {i + 1}" for i in range(len(presets))]
+            preset_names = [label for label, _ in valid]
             combos = []
             for row, (label, values) in enumerate(
                 (
@@ -1316,41 +1403,22 @@ class AppearanceTab:
             def do_import():
                 if not guard_before_write("import the preset"):
                     return
+                # Applying pending edits reloads the save
+                target_save = self.get_save_file()
+                if not target_save:
+                    return
+                body = valid[preset_names.index(preset_combo.get())][1]
+                target_slot = int(slot_combo.get()) - 1
+                if not self._confirm_overwrite(target_save, [target_slot], dialog):
+                    return
                 try:
-                    from er_save_manager.backup.manager import BackupManager
-
-                    source_idx = preset_combo.cget("values").index(preset_combo.get())
-                    target_slot = int(slot_combo.get()) - 1
-
-                    if source_idx < 0 or target_slot < 0:
-                        notify(self.parent, "Select valid source and target", "warning")
-                        return
-
-                    save_path = self.get_save_path()
-                    if save_path:
-                        manager = BackupManager(Path(save_path))
-                        manager.create_backup(
-                            description=f"before_import_preset_to_slot_{target_slot + 1}",
-                            operation="import_preset",
-                            save=save_file,
-                        )
-
-                    save_file.import_preset(presets[source_idx], target_slot)
-
-                    save_file.recalculate_checksums()
-                    if save_path:
-                        save_file.to_file(Path(save_path))
-
-                    if self.reload_save:
-                        self.reload_save()
-
-                    dialog.destroy()
-
-                    # Delay message to ensure it appears on top after reload
-                    self.show_toast(
-                        f"Preset imported to Slot {target_slot + 1}", duration=2500
+                    written = self.write_presets(
+                        target_save,
+                        lambda: target_save.import_preset(body, target_slot),
+                        f"before_import_preset_to_slot_{target_slot + 1}",
+                        "import_preset",
+                        self.parent,
                     )
-
                 except Exception as e:
                     CTkMessageBox.showerror(
                         "Import Failed", f"Import failed:\n{str(e)}", parent=self.parent
@@ -1358,38 +1426,37 @@ class AppearanceTab:
                     import traceback
 
                     traceback.print_exc()
+                    return
+                if not written:
+                    return
+                dialog.destroy()
+                self.show_toast(
+                    f"Preset imported to Slot {target_slot + 1}", duration=2500
+                )
 
             def do_import_all():
                 if not guard_before_write("import the presets"):
                     return
-                try:
-                    from er_save_manager.backup.manager import BackupManager
+                target_save = self.get_save_file()
+                if not target_save:
+                    return
+                count = min(len(valid), 15)
+                if not self._confirm_overwrite(target_save, range(count), dialog):
+                    return
 
-                    save_path = self.get_save_path()
-                    if save_path:
-                        manager = BackupManager(Path(save_path))
-                        manager.create_backup(
-                            description="before_import_all_presets",
-                            operation="import_preset",
-                            save=save_file,
-                        )
-
-                    count = min(len(presets), 15)
-                    for i in range(count):
-                        save_file.import_preset(presets[i], i)
-
-                    save_file.recalculate_checksums()
-                    if save_path:
-                        save_file.to_file(Path(save_path))
-
-                    if self.reload_save:
-                        self.reload_save()
-
-                    dialog.destroy()
-                    self.show_toast(
-                        f"Imported {count} preset(s) to slots 1-{count}", duration=2500
+                def change():
+                    return all(
+                        target_save.import_preset(valid[i][1], i) for i in range(count)
                     )
 
+                try:
+                    written = self.write_presets(
+                        target_save,
+                        change,
+                        "before_import_all_presets",
+                        "import_preset",
+                        self.parent,
+                    )
                 except Exception as e:
                     CTkMessageBox.showerror(
                         "Import Failed",
@@ -1399,6 +1466,13 @@ class AppearanceTab:
                     import traceback
 
                     traceback.print_exc()
+                    return
+                if not written:
+                    return
+                dialog.destroy()
+                self.show_toast(
+                    f"Imported {count} preset(s) to slots 1-{count}", duration=2500
+                )
 
             ds.button(
                 button_frame,
@@ -1518,9 +1592,29 @@ class AppearanceTab:
                     )
                     return
 
+                # Applying pending edits reloads the save
+                source_save = self.get_save_file()
+                if not source_save:
+                    return
+                open_path = self.get_save_path()
+                if open_path and _same_file(dest_path, open_path):
+                    self._copy_within_open_save(
+                        source_save, source_slot, dest_slot - 1, dialog
+                    )
+                    return
+
                 from er_save_manager.parser import Save
 
                 dest_save = Save.from_file(dest_path)
+                if not dest_save.get_character_presets():
+                    CTkMessageBox.showerror(
+                        "Copy Failed",
+                        "The destination save has no preset data.",
+                        parent=self.parent,
+                    )
+                    return
+                if not self._confirm_overwrite(dest_save, [dest_slot - 1], dialog):
+                    return
 
                 manager = BackupManager(Path(dest_path))
                 manager.create_backup(
@@ -1530,7 +1624,7 @@ class AppearanceTab:
                 )
 
                 success = dest_save.copy_preset_to_save(
-                    save_file, self.selected_slot, dest_slot - 1
+                    source_save, source_slot, dest_slot - 1
                 )
 
                 if not success:
@@ -1563,10 +1657,37 @@ class AppearanceTab:
         ds.button(button_frame, "Copy", do_copy).pack(side=tk.RIGHT, padx=(0, 8))
         ds.finish(dialog, self.parent)
 
+    def _copy_within_open_save(self, save_file, source_slot, dest_slot, dialog):
+        """Copy a preset between slots of the loaded save in memory.
+
+        Writing the file on disk directly would leave the loaded save stale,
+        and the next Apply All would write the old presets back.
+        """
+        if dest_slot == source_slot:
+            notify(
+                dialog,
+                f"Preset {source_slot + 1} is the preset being copied. "
+                "Pick another slot.",
+                "warning",
+            )
+            return
+        if not self._confirm_overwrite(save_file, [dest_slot], dialog):
+            return
+        if self.write_presets(
+            save_file,
+            lambda: save_file.copy_preset_to_save(save_file, source_slot, dest_slot),
+            f"before_preset_copy_to_slot_{dest_slot + 1}",
+            "copy_preset",
+            self.parent,
+        ):
+            dialog.destroy()
+            self.show_toast(
+                f"Preset {source_slot + 1} copied to Slot {dest_slot + 1}",
+                duration=2500,
+            )
+
     def delete_preset(self):
         """Delete selected preset"""
-        if not guard_before_write("delete the preset"):
-            return
         if self.selected_slot is None:
             notify(self.parent, "Select a preset to delete", "warning")
             return
@@ -1576,45 +1697,32 @@ class AppearanceTab:
             notify(self.parent, "Load a save file first", "warning")
             return
 
+        slot = self.selected_slot
+        if not self.occupied_slots(save_file, [slot]):
+            notify(self.parent, f"Preset slot {slot + 1} is already empty", "info")
+            return
+
         if not CTkMessageBox.askyesno(
             "Confirm Delete",
-            f"Delete preset in Slot {self.selected_slot + 1}?\n\nThis will clear the slot.",
+            f"Delete preset in Slot {slot + 1}?\n\nThis will clear the slot.",
             parent=self.parent,
         ):
             return
+        if not guard_before_write("delete the preset"):
+            return
+        # Applying pending edits reloads the save
+        save_file = self.get_save_file()
+        if not save_file:
+            return
 
         try:
-            save_path = self.get_save_path()
-            if save_path:
-                manager = BackupManager(Path(save_path))
-                manager.create_backup(
-                    description=f"before_delete_preset_slot_{self.selected_slot + 1}",
-                    operation="delete_preset",
-                    save=save_file,
-                )
-
-            success = save_file.delete_preset(self.selected_slot)
-
-            if not success:
-                CTkMessageBox.showerror(
-                    "Delete Failed", "Failed to delete preset", parent=self.parent
-                )
-                return
-
-            save_file.recalculate_checksums()
-            if save_path:
-                save_file.to_file(Path(save_path))
-
-            # Capture slot number before reload resets selected_slot
-            deleted_slot = self.selected_slot
-
-            if self.reload_save:
-                self.reload_save()
-
-            self.load_presets()
-
-            self.show_toast(f"Preset in Slot {deleted_slot + 1} deleted", duration=2500)
-
+            deleted = self.write_presets(
+                save_file,
+                lambda: save_file.delete_preset(slot),
+                f"before_delete_preset_slot_{slot + 1}",
+                "delete_preset",
+                self.parent,
+            )
         except Exception as e:
             CTkMessageBox.showerror(
                 "Delete Failed", f"Delete failed:\n{str(e)}", parent=self.parent
@@ -1622,3 +1730,16 @@ class AppearanceTab:
             import traceback
 
             traceback.print_exc()
+            return
+        if not deleted:
+            return
+
+        self.load_presets()
+        self.show_toast(f"Preset in Slot {slot + 1} deleted", duration=2500)
+
+
+def _same_file(a, b) -> bool:
+    try:
+        return os.path.samefile(a, b)
+    except OSError:
+        return False
