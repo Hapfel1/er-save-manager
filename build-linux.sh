@@ -42,6 +42,13 @@ for f in $(find src/er_save_manager -type f ! -name '*.py' ! -name '*.pyc' ! -pa
     data_flags="$data_flags --add-data $f:$dest"
 done
 
+# Windows-only files in resources/ are left out: fonts.py loads
+# resources/fonts/windows only on Windows, and icon.ico is the exe icon
+# (Tk on X11 cannot read it; gui.py falls back to icon.png).
+for f in $(find resources/fonts -maxdepth 1 -type f; find resources/icon -type f ! -name icon.ico); do
+    data_flags="$data_flags --add-data $f:$(dirname "$f")"
+done
+
 # The excluded stdlib packages (unittest, pydoc, asyncio, ...) are reachable
 # only through optional imports in dependencies; nothing imports them at runtime.
 echo "Building GUI with PyInstaller..."
@@ -53,8 +60,6 @@ pyinstaller --clean --noconfirm \
     --copy-metadata er-save-manager \
     --copy-metadata customtkinterthemes \
     --add-data src/resources:resources \
-    --add-data resources/icon:resources/icon \
-    --add-data resources/fonts:resources/fonts \
     --collect-data customtkinterthemes \
     --hidden-import customtkinterthemes \
     --hidden-import PIL._tkinter_finder \
