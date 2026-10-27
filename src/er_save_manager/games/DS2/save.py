@@ -778,12 +778,16 @@ class WorldObjects:
         self._anchor = anchor
         self._maps = set(maps)
         self._blocks = self._find_blocks()
+        # Instance id -> state of its first block entry; built on the first
+        # object_state call, dropped on every write
+        self._states: dict[int, int] | None = None
 
     def _u32(self, offset: int) -> int:
         return struct.unpack_from("<I", self._data, offset)[0]
 
     def _put(self, offset: int, value: int) -> None:
         struct.pack_into("<I", self._data, offset, value)
+        self._states = None
 
     def _find_blocks(self) -> list[tuple[int, int]]:
         """(map id, offset) of each block in the chain after the id array."""
@@ -914,10 +918,11 @@ class WorldObjects:
 
     def object_state(self, instance_id: int) -> int | None:
         """State of a map object, or None when no visited map holds it."""
-        for _offset, found, state in self._block_objects():
-            if found == instance_id:
-                return state
-        return None
+        if self._states is None:
+            self._states = {}
+            for _offset, found, state in self._block_objects():
+                self._states.setdefault(found, state)
+        return self._states.get(instance_id)
 
     def set_object_state(self, instance_id: int, state: int) -> bool:
         """Write a map object's state to every copy. Returns False when no
