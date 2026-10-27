@@ -45,6 +45,10 @@ _SLOTS = (
 )
 
 
+def equip_slots() -> list[EquipSlot]:
+    return [EquipSlot(k, label, group) for k, label, group in _SLOTS]
+
+
 class DS3EquipAdapter:
     def __init__(self, char: DS3Slot, source: str) -> None:
         self.char = char
@@ -105,7 +109,7 @@ class DS3EquipAdapter:
     # ---- EquipAdapter ----------------------------------------------------------
 
     def slots(self) -> list[EquipSlot]:
-        return [EquipSlot(k, label, group) for k, label, group in _SLOTS]
+        return equip_slots()
 
     def _accepts(self, slot_key: Hashable, entry: DS3InventoryEntry) -> bool:
         if self._is_placeholder(entry):

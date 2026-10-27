@@ -68,6 +68,12 @@ _CATEGORY_LABELS = {
 }
 
 
+def equip_slots() -> list[EquipSlot]:
+    return [
+        EquipSlot((group, k), label, _GROUP_TITLES[group]) for group, k, label in _SLOTS
+    ]
+
+
 class DS2EquipAdapter:
     def __init__(self, character: Character) -> None:
         self.character = character
@@ -135,10 +141,7 @@ class DS2EquipAdapter:
     # ---- EquipAdapter ----------------------------------------------------------
 
     def slots(self) -> list[EquipSlot]:
-        return [
-            EquipSlot((group, k), label, _GROUP_TITLES[group])
-            for group, k, label in _SLOTS
-        ]
+        return equip_slots()
 
     def current(self, slot_key: Hashable) -> EquipChoice | None:
         group, k = slot_key

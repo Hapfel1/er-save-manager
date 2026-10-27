@@ -22,7 +22,7 @@ from er_save_manager.games.DS3.slot import (
     MAX_STAT,
     NAME_MAX_CHARS,
 )
-from er_save_manager.games.DS3.tabs.equipment import DS3EquipAdapter
+from er_save_manager.games.DS3.tabs.equipment import DS3EquipAdapter, equip_slots
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.editors.ds_equipment import AttunementSection, EquipmentPanel
@@ -145,6 +145,7 @@ class DS3EditorTab:
         )
         self._attunement.attach(self._equip_panel)
         yield
+        yield from self._equip_panel.prebuild(equip_slots())
         from er_save_manager.games.DS3.tabs.inventory import DS3InventoryTab
 
         self.inventory = DS3InventoryTab(

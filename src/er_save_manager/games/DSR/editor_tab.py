@@ -16,7 +16,7 @@ from er_save_manager.games.DSR.character_ops import (
     _sync_dir_name_level,
     sync_dir_equipment,
 )
-from er_save_manager.games.DSR.equipment_tab import DSREquipAdapter
+from er_save_manager.games.DSR.equipment_tab import DSREquipAdapter, equip_slots
 from er_save_manager.games.DSR.save import (
     ATTUNE_SLOTS,
     COVENANT_OFFERING_ORDER,
@@ -163,6 +163,7 @@ class DSREditorTab:
         )
         self._attunement.attach(self._equip_panel)
         yield
+        yield from self._equip_panel.prebuild(equip_slots())
         from er_save_manager.games.DSR.inventory_tab import DSRInventoryTab
 
         self.inventory = DSRInventoryTab(

@@ -8,7 +8,7 @@ The panel stages picks per slot and hands them to the game tab on Apply.
 from __future__ import annotations
 
 import tkinter as tk
-from collections.abc import Callable, Hashable
+from collections.abc import Callable, Hashable, Iterator
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -233,6 +233,8 @@ class EquipmentPanel:
         self._name_labels: dict[Hashable, ctk.CTkLabel] = {}
         self._slots: dict[Hashable, EquipSlot] = {}
         self._layout: tuple[EquipSlot, ...] | None = None
+        # Rows built by prebuild(), packed by the first load() with their slots
+        self._hidden_rows: list[ctk.CTkFrame] = []
         # Called after any staged change and after Reset, for extra sections
         # that depend on the equipment (DS2 attunement slots).
         self.on_change: Callable[[], None] | None = None
@@ -259,10 +261,25 @@ class EquipmentPanel:
         slots."""
         self.adapter = adapter
         self._staged = {}
+        if adapter is None and self._hidden_rows:
+            # Rows from prebuild() not shown yet: keep them for the first load
+            self._placeholder.configure(
+                text=message or "Load a character to edit its equipment.",
+                wraplength=600,
+                justify=tk.LEFT,
+            )
+            if self.on_change is not None:
+                self.on_change()
+            return
         layout = tuple(adapter.slots()) if adapter is not None else None
         # Same slots as the shown rows (switching characters of one game):
         # keep the rows and refresh their text instead of rebuilding them.
         if layout is not None and layout == self._layout:
+            if self._hidden_rows:
+                self._placeholder.destroy()
+                for row in self._hidden_rows:
+                    row.pack(fill=tk.X, pady=5)
+                self._hidden_rows = []
             for key in self._name_labels:
                 self._refresh_slot(key)
             if self.on_change is not None:
@@ -271,6 +288,7 @@ class EquipmentPanel:
         self._layout = layout
         for child in self._slots_frame.winfo_children():
             child.destroy()
+        self._hidden_rows = []
         self._name_labels = {}
         self._slots = {}
         if adapter is None:
@@ -300,6 +318,32 @@ class EquipmentPanel:
                 self._build_section(row, column, name, groups[name])
         if self.on_change is not None:
             self.on_change()
+
+    def prebuild(self, slots: list[EquipSlot]) -> Iterator[None]:
+        """Build the rows of slots before any character is loaded, yielding
+        after each section (a staged tab build step). They stay hidden behind
+        the placeholder until load() shows a character with these slots, so
+        the first load only fills in texts."""
+        if self._layout is not None:
+            return
+        groups: dict[str, list[EquipSlot]] = {}
+        for slot in slots:
+            groups.setdefault(slot.group, []).append(slot)
+            self._slots[slot.key] = slot
+        names = list(groups)
+        for start in range(0, len(names), _GROUPS_PER_ROW):
+            row = ctk.CTkFrame(self._slots_frame, fg_color="transparent")
+            row.grid_columnconfigure(
+                tuple(range(_GROUPS_PER_ROW)), weight=1, uniform="section"
+            )
+            self._hidden_rows.append(row)
+            for column, name in enumerate(names[start : start + _GROUPS_PER_ROW]):
+                self._build_section(row, column, name, groups[name])
+                yield
+                if row not in self._hidden_rows:
+                    # load() rebuilt the rows meanwhile
+                    return
+        self._layout = tuple(slots)
 
     def reset(self) -> None:
         self._staged = {}
