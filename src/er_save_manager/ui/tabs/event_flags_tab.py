@@ -29,7 +29,7 @@ from er_save_manager.parser.event_flags import EventFlags
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.pending import StageError
+from er_save_manager.ui.pending import StageError, guard_before_write
 from er_save_manager.ui.popups import reopenable
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
@@ -44,24 +44,38 @@ class EventFlagsTab:
     """Tab for event flag viewing and management (customtkinter version)"""
 
     class _EventFlagAccessor:
-        """Adapter that wraps slot.event_flags bytes with get/set helpers."""
+        """get/set on the event flags of the loaded character.
 
-        def __init__(self, slot):
-            self.slot = slot
-            # Keep a mutable buffer for repeated writes
-            self.buffer = (
-                bytearray(slot.event_flags)
-                if not isinstance(slot.event_flags, bytearray)
-                else slot.event_flags
-            )
+        Every call reads slot.event_flags of the slot get_slot returns, so
+        flags written by other tabs (map graces, NPCs, bosses, item spawns)
+        are seen and never overwritten by an older copy.
+        """
+
+        def __init__(self, get_slot):
+            self._get_slot = get_slot
+
+        @property
+        def slot(self):
+            return self._get_slot()
 
         def get_flag(self, flag_id: int) -> bool:
-            return EventFlags.get_flag(bytes(self.buffer), flag_id)
+            return EventFlags.get_flag(self.slot.event_flags, flag_id)
 
         def set_flag(self, flag_id: int, state: bool) -> None:
-            EventFlags.set_flag(self.buffer, flag_id, state)
-            # Persist back onto the slot so saves use updated bytes
-            self.slot.event_flags = bytes(self.buffer)
+            slot = self.slot
+            if not isinstance(slot.event_flags, bytearray):
+                slot.event_flags = bytearray(slot.event_flags)
+            EventFlags.set_flag(slot.event_flags, flag_id, state)
+
+        def sync_raw(self, save_file) -> None:
+            """Copy the slot's event flags into the save's raw data, which
+            is what gets written to disk."""
+            slot = self.slot
+            offset = getattr(slot, "event_flags_offset", 0)
+            if offset > 0:
+                save_file._raw_data[offset : offset + len(slot.event_flags)] = (
+                    slot.event_flags
+                )
 
     def __init__(
         self,
@@ -90,7 +104,9 @@ class EventFlagsTab:
         self.category_var = None
         self.subcategory_var = None
         self.search_var = None
-        self.flag_states = {}  # flag_id -> pending state, written on Apply
+        # flag_id -> state the user set that differs from the save, written
+        # on Apply. Flags without an entry show the slot's current state.
+        self.flag_states = {}
         self.flag_rows = {}  # flag_id -> tree row of every displayed flag
         self.current_event_flags = None
         self._search_after_id = None
@@ -372,6 +388,10 @@ class EventFlagsTab:
         self.flags_tree.tag_configure("on", foreground=palette.pick(palette.GREEN_TEXT))
         self.flags_tree.bind("<Button-1>", self._on_tree_click)
         self.flags_tree.bind("<space>", self._toggle_selected)
+        # Map, grace, boss and NPC edits elsewhere write flags straight to the
+        # slot; showing the tab or pointing at the list picks them up.
+        self.flags_tree.bind("<Enter>", self._refresh_rows, add="+")
+        self.parent.bind("<Map>", self._refresh_rows, add="+")
 
         ctk.CTkLabel(
             flags_frame,
@@ -417,7 +437,9 @@ class EventFlagsTab:
             return
 
         self.current_slot = slot_idx
-        self.current_event_flags = self._EventFlagAccessor(slot)
+        self.current_event_flags = self._EventFlagAccessor(
+            lambda: self.get_save_file().characters[slot_idx]
+        )
         if not same_slot:
             self._reset_filters()
         if self.search_var.get().strip():
@@ -487,9 +509,7 @@ class EventFlagsTab:
 
     def _insert_flag_row(self, flag_id, name, location=""):
         """Add a flag to the list, showing its pending state if it has one."""
-        state = self.flag_states.setdefault(
-            flag_id, self.current_event_flags.get_flag(flag_id)
-        )
+        state = self._shown_state(flag_id)
         self.flag_rows[flag_id] = self.flags_tree.insert(
             "",
             "end",
@@ -497,18 +517,45 @@ class EventFlagsTab:
             tags=("on",) if state else (),
         )
 
-    def _set_flag_state(self, flag_id, state):
-        """Record a pending state and update the flag's row if it is shown."""
-        self.flag_states[flag_id] = state
+    def _shown_state(self, flag_id) -> bool:
+        """Pending state of a flag, else its current state in the slot."""
+        state = self.flag_states.get(flag_id)
+        if state is None:
+            state = self.current_event_flags.get_flag(flag_id)
+        return state
+
+    def _show_row_state(self, flag_id, state):
         row = self.flag_rows.get(flag_id)
         if row is not None:
             self.flags_tree.set(row, "state", "ON" if state else "OFF")
             self.flags_tree.item(row, tags=("on",) if state else ())
 
+    def _set_flag_state(self, flag_id, state):
+        """Record a pending state and update the flag's row if it is shown.
+        A state equal to the slot's drops the pending entry."""
+        if state == self.current_event_flags.get_flag(flag_id):
+            self.flag_states.pop(flag_id, None)
+        else:
+            self.flag_states[flag_id] = state
+        self._show_row_state(flag_id, state)
+
+    def _refresh_rows(self, _event=None):
+        """Show the slot's current state on rows without a pending state;
+        other tabs write flags directly to the slot."""
+        if self.current_event_flags is None or not self.flag_rows:
+            return
+        for flag_id, row in self.flag_rows.items():
+            state = self._shown_state(flag_id)
+            if (self.flags_tree.set(row, "state") == "ON") != state:
+                self._show_row_state(flag_id, state)
+
     def _toggle_rows(self, rows):
+        # Toggles what the row shows, so a row not yet refreshed after another
+        # tab's write still flips to the state the user expects.
         for row in rows:
             flag_id = int(self.flags_tree.set(row, "flag_id"))
-            self._set_flag_state(flag_id, not self.flag_states[flag_id])
+            shown = self.flags_tree.set(row, "state") == "ON"
+            self._set_flag_state(flag_id, not shown)
 
     def _on_tree_click(self, event):
         """Toggle a flag when its State cell is clicked."""
@@ -651,7 +698,7 @@ class EventFlagsTab:
             )
 
     def flag_changes(self) -> int:
-        """Shown flags whose state differs from the save."""
+        """Pending flags whose state differs from the save."""
         if self.current_event_flags is None:
             return 0
         return sum(
@@ -686,20 +733,12 @@ class EventFlagsTab:
             raise StageError("No event flags loaded.")
         save_file = self.get_save_file()
         accessor = self.current_event_flags
-        slot = save_file.character_slots[self.current_slot]
         states = dict(self.flag_states)
 
         def commit() -> None:
             for flag_id, new_state in states.items():
                 accessor.set_flag(flag_id, new_state)
-            # set_flag() only updates slot.event_flags in memory. The raw data
-            # buffer is what gets written to disk, so it needs the same write.
-            if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
-                absolute_offset = slot.event_flags_offset
-                event_flags_size = 0x1BF99F  # 1,833,375 bytes
-                save_file._raw_data[
-                    absolute_offset : absolute_offset + event_flags_size
-                ] = slot.event_flags
+            accessor.sync_raw(save_file)
 
         return commit
 
@@ -808,23 +847,16 @@ class EventFlagsTab:
             )
             return
 
-        if "flags" not in data or not isinstance(data["flags"], list):
+        if not isinstance(data, dict) or not isinstance(data.get("flags"), list):
             CTkMessageBox.showerror(
                 "Invalid File",
-                "File does not contain a valid flags list.",
+                'The file needs a "flags" list, as written by Export.',
                 parent=self.parent,
             )
             return
 
-        # Parse (flag_id, state) pairs; "state" defaults to True for plain exports
-        flag_ops: list[tuple[int, bool]] = []
-        for entry in data["flags"]:
-            if isinstance(entry, dict) and "id" in entry:
-                try:
-                    state = bool(entry.get("state", True))
-                    flag_ops.append((int(entry["id"]), state))
-                except (ValueError, TypeError):
-                    pass
+        flag_ops, skipped = self._parse_import_entries(data["flags"])
+        skipped_text = self._skipped_entries_text(skipped)
 
         missing = sum(1 for flag_id, _ in flag_ops if not EventFlags.has_flag(flag_id))
         flag_ops = [op for op in flag_ops if EventFlags.has_flag(op[0])]
@@ -837,7 +869,8 @@ class EventFlagsTab:
                     "Elden Ring saves and were skipped."
                     if missing
                     else ""
-                ),
+                )
+                + skipped_text,
                 "info",
             )
             return
@@ -852,10 +885,14 @@ class EventFlagsTab:
             )
         result = CTkMessageBox.askyesno(
             "Confirm Import",
-            f"{summary} flags on Slot {self.current_slot + 1}?",
+            f"{summary} flags on Slot {self.current_slot + 1}?{skipped_text}",
             parent=self.parent,
         )
         if not result:
+            return
+        # The import writes the file and reloads it, which would drop
+        # unapplied edits after the write.
+        if not guard_before_write("import the flags"):
             return
 
         save_file = self.get_save_file()
@@ -882,23 +919,55 @@ class EventFlagsTab:
             except Exception:
                 pass
 
-        slot = save_file.character_slots[self.current_slot]
-        if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
-            absolute_offset = slot.event_flags_offset
-            event_flags_size = 0x1BF99F
-            save_file._raw_data[
-                absolute_offset : absolute_offset + event_flags_size
-            ] = slot.event_flags
+        self.current_event_flags.sync_raw(save_file)
 
         save_file.recalculate_checksums()
         save_file.save(self.get_save_path())
         self.reload_save()
-
-        # Refresh displayed rows to reflect imported state
-        for flag_id in self.flag_rows:
-            self._set_flag_state(flag_id, self.current_event_flags.get_flag(flag_id))
+        self._refresh_rows()
 
         self.show_toast(f"Imported {applied} flags", duration=2500)
+
+    @staticmethod
+    def _parse_import_entries(entries: list) -> tuple[list[tuple[int, bool]], list]:
+        """Split import entries into (flag_id, state) pairs and the entries
+        that are skipped. "state" must be true or false and defaults to true
+        (exports list set flags without it); "id" must be an integer."""
+        flag_ops: list[tuple[int, bool]] = []
+        skipped: list = []
+        for entry in entries:
+            flag_id = entry.get("id") if isinstance(entry, dict) else None
+            if isinstance(flag_id, str) and flag_id.strip().isdigit():
+                flag_id = int(flag_id)
+            state = entry.get("state", True) if isinstance(entry, dict) else None
+            if (
+                isinstance(flag_id, int)
+                and not isinstance(flag_id, bool)
+                and isinstance(state, bool)
+            ):
+                flag_ops.append((flag_id, state))
+            else:
+                skipped.append(entry)
+        return flag_ops, skipped
+
+    @staticmethod
+    def _skipped_entries_text(skipped: list, limit: int = 8) -> str:
+        """Message part listing skipped import entries, empty when none."""
+        if not skipped:
+            return ""
+        import json
+
+        lines = []
+        for entry in skipped[:limit]:
+            text = json.dumps(entry, ensure_ascii=False)
+            lines.append(text if len(text) <= 60 else text[:57] + "...")
+        if len(skipped) > limit:
+            lines.append(f"and {len(skipped) - limit} more")
+        count = "1 entry is" if len(skipped) == 1 else f"{len(skipped)} entries are"
+        return (
+            f'\n\n{count} skipped ("id" must be a whole number, "state" true '
+            "or false):\n" + "\n".join(lines)
+        )
 
     @reopenable
     def open_advanced_editor(self):
@@ -953,6 +1022,11 @@ class EventFlagsTab:
                 )
                 return
 
+            # The toggle writes the file and reloads it, which would drop
+            # unapplied edits after the write.
+            if not guard_before_write("toggle the flag"):
+                return
+
             try:
                 save_file = self.get_save_file()
                 save_path = self.get_save_path()
@@ -982,14 +1056,7 @@ class EventFlagsTab:
                 current = self.current_event_flags.get_flag(flag_id)
                 new_state = not current
                 self.current_event_flags.set_flag(flag_id, new_state)
-
-                slot = save_file.character_slots[self.current_slot]
-                if hasattr(slot, "event_flags_offset") and slot.event_flags_offset > 0:
-                    absolute_offset = slot.event_flags_offset
-                    event_flags_size = 0x1BF99F
-                    save_file._raw_data[
-                        absolute_offset : absolute_offset + event_flags_size
-                    ] = slot.event_flags
+                self.current_event_flags.sync_raw(save_file)
 
                 save_file.recalculate_checksums()
                 save_file.save(save_path)
